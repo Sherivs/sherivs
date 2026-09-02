@@ -345,7 +345,7 @@ Columns: L = highest engineering level achieved (§3.1). "Consumers" lists princ
 | 05 Core Application Runtime | Foundations | IMPLEMENTED | ✓ ◐ ✓ ◐ ◐ | runtime-core, runtime-command-query, runtime-events, runtime-jobs, runtime-capabilities, runtime-observability, runtime-webhooks, runtime-integrations, runtime-resilience, runtime-feature-flags, runtime-approval, runtime-bulk | runtime + runtime-extended suites | all domain layers | Canonical event/job/query fabric |
 | 06 Workspace Engine | Foundations | IMPLEMENTED | ✓ ◐ ✓ ◐ ◐ | workspace-core, workspace-composition, workspace-membership, workspace-governance | workspace suite | 19, 24, 50 | Role surfaces + Command Centre |
 | 07 AI Agent System | Intelligence | IMPLEMENTING | ✓ ◐ ◐ ✗ ✗ | agent-core, agent-memory, agent-tasks, agent-plans | 62 | 26, 35, 47, 50 | Not wired into routes/tool registry |
-| 08 Security Engine | Foundations | IMPLEMENTING | ✓ ◐ ◐ ◐ ✗ | security-core, security-risk, security-policy, security-session, security-events, security-agent-controls | 81 | all | Command Centre policy flow exercises createSecurityPolicy; no live middleware yet |
+| 08 Security Engine | Foundations | IMPLEMENTING | ✓ ◐ ◐ ◐ ✗ | security-core, security-risk, security-policy, security-session, security-events, security-agent-controls | 81 | all | Command Centre policy flow exercises createSecurityPolicy; S1 live gateway (security-gateway.server) wired into teachers.functions; remaining routes pending |
 | 09 Security Trust Fabric | Foundations | IMPLEMENTING | ✓ ◐ ◐ ✗ ✗ | trust-core, trust-assertions, trust-entities, trust-governance | 82 | 08, 42 | Not wired |
 | 10 Communication Platform | Runtime | IMPLEMENTING | ✓ ◐ ◐ ✗ ✗ | communication-core, communication-conversation, communication-channels, communication-templates | 59 | 24, 43 | Legacy push/notifications layer preserved |
 | 11 Academic Intelligence | Intelligence | IMPLEMENTING | ✓ ◐ ◐ ✗ ✗ | academic-core, academic-mastery, academic-pathways, academic-risk | 49 | 12, 18 | Not wired |
@@ -434,7 +434,7 @@ Milestones map to execution stages (§9). A milestone is COMPLETE only when its 
 | Milestone | Stage | Phase scope | Status |
 | --- | --- | --- | --- |
 | M0 Architecture & Registry | baseline | 51 docs, REGISTRY/DEPENDENCY/BOUNDARIES/architecture-map/catalog sync | COMPLETE (2026-08-30) |
-| M1 Kernel Foundations | S1 | 01, 02, 03, 08 | IMPLEMENTING (P08 live middleware pending) |
+| M1 Kernel Foundations | S1 | 01, 02, 03, 08 | IMPLEMENTING (P08 live gateway wired into teachers.functions; RLS re-verification + P02–P06 level audit pending) |
 | M2 Reality Representation | S2 | 04, 33 | IMPLEMENTING (P04 implemented; P33 at L1) |
 | M3 Runtime & Workspace | S3 | 05, 06, 19 | IMPLEMENTING (Command Centre live; full composition pending) |
 | M4 Security & Trust | S4 | 09, 42 | IMPLEMENTING (P09 L3-only; P42 L1) |
@@ -493,7 +493,7 @@ Proposed ADR index (recorded in DECISIONS.md):
 ### 17.1 Technical debt
 | Item | Owner | Impact | Plan |
 | --- | --- | --- | --- |
-| P07–P32 domain layers unwired to routes/server functions | each owning phase | Capabilities exist only at L3; isolated-phase risk | Wire in S1/S6 with P08 enforcement gate (ADR PLATFORM-008) |
+| P07–P32 domain layers unwired to routes/server functions (P08 gateway now live on teachers.functions) | each owning phase | Capabilities exist only at L3; isolated-phase risk | S1 in progress: security-gateway.server live on teachers.functions; remaining wiring S1/S6 behind the P08 gate (ADR PLATFORM-008) |
 | Legacy `IMPLEMENTED` flags for P02–P06 not yet level-audited | Engineering | Status may overstate maturity | Level audit in S1; downgrade if evidence missing |
 | phase-catalog.ts header comment previously stale (now fixed 2026-09-02) | Frontend | Doc drift | Keep comment synced with data |
 | Change-log ordering corruption in the legacy ledger | Engineering | History readability | Normalized §22; raw history preserved in git |

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { runSecurityGateway } from "@/lib/security-gateway.server";
 import { emailField, nonEmptyText, optionalText, phoneField } from "@/lib/validation";
 
 /**
@@ -38,10 +39,19 @@ export const inviteTeacher = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => inviteTeacherSchema.parse(input))
   .handler(async ({ data, context }): Promise<InviteTeacherResult> => {
-    const { data: isAdmin } = await context.supabase.rpc("is_school_admin");
-    if (!isAdmin) throw new Error("Forbidden: school admin only");
-    const { data: schoolId } = await context.supabase.rpc("get_my_school_id");
-    if (!schoolId) throw new Error("No school in scope");
+    const [adminResult, tenantResult] = await Promise.all([
+      context.supabase.rpc("is_school_admin"),
+      context.supabase.rpc("get_my_school_id"),
+    ]);
+    const { tenantId: schoolId } = runSecurityGateway({
+      actorId: context.userId,
+      hasActiveSession: true,
+      schoolAdmin: adminResult.error ? null : (adminResult.data as boolean),
+      schoolId: tenantResult.error ? null : (tenantResult.data as string | null),
+      role: null,
+      withinRateLimit: true,
+      requestIntegrityValid: true,
+    });
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -95,8 +105,19 @@ export const setTeacherActive = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => setActiveSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const { data: isAdmin } = await context.supabase.rpc("is_school_admin");
-    if (!isAdmin) throw new Error("Forbidden");
+    const [adminResult, tenantResult] = await Promise.all([
+      context.supabase.rpc("is_school_admin"),
+      context.supabase.rpc("get_my_school_id"),
+    ]);
+    runSecurityGateway({
+      actorId: context.userId,
+      hasActiveSession: true,
+      schoolAdmin: adminResult.error ? null : (adminResult.data as boolean),
+      schoolId: tenantResult.error ? null : (tenantResult.data as string | null),
+      role: null,
+      withinRateLimit: true,
+      requestIntegrityValid: true,
+    });
     // RLS already restricts to same school
     const { error } = await context.supabase
       .from("users")
