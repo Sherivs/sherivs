@@ -48,6 +48,21 @@ const STATUSES = [
 ];
 const STAGES = ["S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11", "S12"];
 
+// V5.3 Part 81 V1 scope guard: every phase must carry an explicit version
+// classification, and frozen scope must never be reported as implemented.
+const VERSION_TARGETS = [
+  "ACTIVE-V1",
+  "MIXED",
+  "FUTURE-V2",
+  "FUTURE-V3",
+  "FUTURE-UNASSIGNED",
+  "RESEARCH",
+  "EXPERIMENTAL",
+  "HISTORICAL",
+  "REJECTED",
+];
+const IMPLEMENTED_STATUSES = ["IMPLEMENTING", "IMPLEMENTED", "INTEGRATING", "TESTING", "SECURITY_REVIEW", "OPERATIONAL_VALIDATION", "PRODUCTION_READY", "COMPLETE"];
+
 const phases = registry.phases;
 const phaseIds = new Set(Array.isArray(phases) ? phases.map((p) => p?.id).filter(Boolean) : []);
 if (!Array.isArray(phases)) errors.push("phases is not an array");
@@ -65,6 +80,18 @@ else {
     seenNames.add(p.name);
     if (!LAYERS.includes(p.layer)) errors.push(`phase ${p.id}: unknown layer ${p.layer}`);
     if (!STATUSES.includes(p.status)) errors.push(`phase ${p.id}: unknown status ${p.status}`);
+    if (!p.version_target) {
+      errors.push(`phase ${p.id}: version_target missing (V5.3 Part 81 scope guard)`);
+    } else if (!VERSION_TARGETS.includes(p.version_target)) {
+      errors.push(`phase ${p.id}: unknown version_target ${p.version_target}`);
+    } else if (
+      IMPLEMENTED_STATUSES.includes(p.status) &&
+      ["FUTURE-V2", "FUTURE-V3", "FUTURE-UNASSIGNED"].includes(p.version_target)
+    ) {
+      errors.push(
+        `phase ${p.id}: version_target ${p.version_target} must not carry implemented status ${p.status} (V5.3 Part 42)`,
+      );
+    }
     if (!STAGES.includes(p.stage)) errors.push(`phase ${p.id}: unknown stage ${p.stage}`);
     if (
       !Array.isArray(p.levels) ||

@@ -1,139 +1,2019 @@
 {
   "schemaVersion": 1,
   "generated": "2026-09-07",
-  "authority": ["CONSTITUTION.md", "REGISTRY.md", "DEPENDENCY.md", "BOUNDARIES.md", "DECISIONS.md"],
-  "sourceOfTruth": ["REGISTRY.md", "PROGRESS.md", "architecture/phase-*.md", "frontend/src/lib/phase-catalog.ts"],
+  "authority": [
+    "CONSTITUTION.md",
+    "REGISTRY.md",
+    "DEPENDENCY.md",
+    "BOUNDARIES.md",
+    "DECISIONS.md"
+  ],
+  "sourceOfTruth": [
+    "REGISTRY.md",
+    "PROGRESS.md",
+    "architecture/phase-*.md",
+    "frontend/src/lib/phase-catalog.ts"
+  ],
   "phaseCount": 51,
   "phases": [
-    {"id":"01","name":"Foundation","layer":"Foundations","status":"COMPLETE","stage":"S1","levels":[true,false,true,true,true],"tests":38,"modules":["foundation-standards"],"consumers":["all"],"notes":"infra, CI, verification contracts + foundation-integrity suite; S1 hardening 2026-09-03: .mcp.json credential material removed (env-based MCP config), secret-scan extended (supabase project URL + publishable key), demo provisioning env-gated (ALLOW_DEMO_PROVISIONING=false default), foundation suite extended to 15 tests incl. documentation-integrity + line-ending-hygiene (.gitattributes) guards; whole-tree typecheck 0 errors + unit suite 99 files/1,954 tests green; production build PASS (vite build client + Nitro SSR, 2026-09-03). 2026-09-07 K-WAVES: kernel phase-contract layer landed — phase 01 declares all twenty engineering sections machine-checkably (kernel/engineering-sections.ts + kernel/phase-contract.ts + kernel/phase-contracts/), with connected-DAG enforcement, ASI invariant/tier law, Scholar as first runtime and reserved neutral domain seats; suite tests/unit/kernel-phase-contract.test.ts. 2026-09-14 AUDIT-P01: acceptance probe classified all 44 of the document's acceptance areas (ENFORCED 41 / UNWIRED 3 / MISSING 0) — observability, error capture, and the §59/§60 limits map are now proven by executable suites (foundation-observability/-error-architecture/-limits-map, 22 tests); the registry now records the foundation's real test count (37) instead of hiding it behind tests=15; unwired capabilities (structured logger, runtime limiter, AI budget) are recorded as libraries no boundary calls, never as enforcement; record: architecture/archaeology/phase-01-foundation.audit.md. 2026-09-21 REGISTRY-TRUTH SWEEP: status IMPLEMENTING to COMPLETE and levels corrected from the completion audit (L2 stays false because phase 01 owns no persistent state; the ratified exemption lives in architecture/phase-completion-exemptions.json and is recorded separately, never as evidence); ledger record architecture/archaeology/registry-truth-sweep.audit.md"},
-    {"id":"02","name":"Identity","layer":"Foundations","status":"COMPLETE","stage":"S1","levels":[true,true,true,true,true],"tests":38,"modules":["identity","identity-registry","identity-credentials","identity-lifecycle","identity-relationships","roles"],"consumers":["03","05","06","08","22","25","50"],"notes":"CLOSED 2026-09-21 (see the sweep note at the end). Historical S1 level-audit 2026-09-03, when the row read IMPLEMENTED — held for audit: L1 concept ✓; L2 data ◐ (universal identity L2 model pending); L3 backend ✓ live (auth middleware + identity RLS + P08 role gates); L4 ◐ (legacy role surfaces); L5 ✗. Not COMPLETE until the universal identity data model lands. Universal L2 model AUTHORED + DB-VALIDATED (2026-09-04): migration 20260904020000 creates cg_identity (P02 C2 Identity Registry; kinds human/organization/agent/service/device/runtime; lifecycle provisioned/active/suspended/archived/deleted; verified flag; optional FK to cg_entity) — live checks 8/8 on dev project; typed consumption contracts pending. 2026-09-07 R-WAVES: typed consumption contracts shipped (identity-registry) + every new portal account registers cg_identity; cg_workforce_kind/cg_workforce_position substrate applied live with the 71-kind Scholar catalog and org-admin HR RPCs. 2026-09-21 REGISTRY-TRUTH SWEEP: the row read IMPLEMENTED — held for audit while the phase's own audit record and the completion audit both derive COMPLETE, so status and levels were corrected from evidence (L2 universal identity model 20260904020000 — live checks 8/8; L4 /admin/identities; L5 acceptance proof architecture/proofs/phase-02-acceptance.proof.json plus the verify chain). Open items stay recorded rather than hidden: P02-1 identity events and P02-3 federation remain reserved. Record: architecture/archaeology/registry-truth-sweep.audit.md"},
-    {"id":"03","name":"Multi-Tenancy","layer":"Foundations","status":"COMPLETE","stage":"S1","levels":[true,true,true,true,true],"tests":56,"modules":["tenant","tenant-core","tenant-registry","tenant-isolation","tenant-lifecycle","tenant-quota","tenant-topology"],"consumers":["all"],"notes":"CLOSED 2026-09-21 (see the sweep note at the end). Historical S1 level-audit 2026-09-03, when the row read IMPLEMENTED — held for audit: L1 concept ✓; L2 data ◐ (flat school_id tenancy + RLS; tenant hierarchy/topology models pending); L3 backend ✓ live (RLS across migrations + P08 role gates + provisioning functions); L4 ◐ (tenant role surfaces); L5 ✗. Tenant hierarchy (district to state) tracked S1/S6; not COMPLETE. Universal L2 model AUTHORED + DB-VALIDATED (2026-09-04): migration 20260904020000 creates cg_tenant (P03 H1 Tenant Entity: tenant_type/name/slug/status(H2 enum)/parent_tenant_id/region/environment; hierarchy + self-parent CHECK) — live checks 8/8 on dev project; typed consumption contracts pending. 2026-09-21 REGISTRY-TRUTH SWEEP: the row read IMPLEMENTED — held for audit while the phase's own audit record and the completion audit both derive COMPLETE, so status and levels were corrected from evidence (L2 cg_tenant with hierarchy and self-parent CHECK — live checks 8/8; L4 /admin/tenants; L5 acceptance proof architecture/proofs/phase-03-acceptance.proof.json plus the verify chain). Open items stay recorded: async boundaries, deprovisioning and observability wiring, with the tenant hierarchy migration still reserved. Record: architecture/archaeology/registry-truth-sweep.audit.md"},
-    {"id":"04","name":"Education Reality Engine","layer":"Foundations","status":"COMPLETE","stage":"S2","levels":[true,true,true,true,true],"tests":81,"modules":["education-core","education-curriculum","education-institution","education-assessment","education-facilities","education-governance","education-reality-view","runtime/scholar","runtime/scholar-events"],"consumers":["11","12","13","25"],"notes":"S2 2026-09-03 (backward refinement §97): reframed as the Scholar domain-runtime manifest instance (runtime/scholar.ts) registered over kernel/domain-manifest.ts + cg_domain_runtime substrate; runtime domain-event vocabulary (runtime/scholar-events.ts, ontology-bound aggregates) recorded through the kernel eventDraft contract; legacy education modules remain the runtime's domain layer — never the kernel. S1 level-audit addendum 2026-09-03: IMPLEMENTED — held for audit, not COMPLETE (L2 universal reality models pending alongside P33; runtime/scholar manifest + cg_* substrate NOT_VALIDATED — DB-gated; L5 not met). 2026-09-21 REGISTRY-TRUTH SWEEP: status and levels corrected from the completion audit — L4 is /admin/education-reality and L5 is evidenced by architecture/proofs/phase-04-acceptance.proof.json plus the verify chain; the DB-gated items named above (runtime/scholar manifest, cg_* substrate NOT_VALIDATED) stay recorded as open work rather than silently cleared. Record: architecture/archaeology/registry-truth-sweep.audit.md"},
-    {"id":"05","name":"Core Application Runtime","layer":"Foundations","status":"COMPLETE","stage":"S3","levels":[true,true,true,true,true],"tests":100,"modules":["runtime-core","runtime-command-query","runtime-events","runtime-jobs","runtime-capabilities","runtime-observability","runtime-self-report","runtime-webhooks","runtime-integrations","runtime-resilience","runtime-feature-flags","runtime-approval","runtime-bulk"],"consumers":["all"],"notes":"CLOSED 2026-09-21 (see the sweep note at the end). Historical S1 level-audit 2026-09-03: downgraded from IMPLEMENTED at reconciliation — runtime-* modules are test-only (no live L3); legacy server functions remain ad-hoc (partially behind P08 role gates); canonical event/job/query fabric is an S3 target. 2026-09-21 REGISTRY-TRUTH SWEEP: the row read IMPLEMENTING while the completion audit derives COMPLETE, so status and levels were corrected from evidence — L4 is projected by /super-admin/runtime-contracts, whose self-check exercises the shipped state machines, and L5 by architecture/proofs/phase-05-acceptance.proof.json plus the verify chain. The S1 caveat above is about LIVE wiring, which is what L5 measures: it stays recorded as open work (runtime modules exercised by suites; legacy server functions still ad-hoc; the canonical fabric remains an S3 target), never cleared. The modules are domain-neutral — verified by tests/unit/platform-neutrality.test.ts. Record: architecture/archaeology/registry-truth-sweep.audit.md"},
-    {"id":"06","name":"Workspace Engine","layer":"Foundations","status":"COMPLETE","stage":"S3","levels":[true,true,true,true,true],"tests":28,"modules":["workspace-core","workspace-composition","workspace-membership","workspace-governance","workspace-projection"],"consumers":["19","24","50"],"notes":"CLOSED 2026-09-21 (see the sweep note at the end). Historical S1 level-audit 2026-09-03: downgraded from IMPLEMENTED at reconciliation — workspace-* modules are test-only (no live L3); live L4 surfaces are legacy Scholar role portals; genuine dynamic workspace composition pending S3. 2026-09-07 R-WAVES: resolution-based chrome + landings live in the shell; kind-to-chrome advisory resolution, per-page tips, school-profile persistence (cg_org_profile) and facility-twin binding shipped. 2026-09-21 REGISTRY-TRUTH SWEEP: the row read IMPLEMENTING while the completion audit derives COMPLETE, so status and levels were corrected from evidence — L4 is projected by /super-admin/workspace-projection (rebuilt in the neutrality correction as a neutral engine plus a runtime adapter, catalog-driven with no role list) and L5 by architecture/proofs/phase-06-acceptance.proof.json plus the verify chain. The historical caveat stays recorded: workspace modules are exercised by suites, the legacy Scholar role portals remain the legacy surface, and genuine dynamic workspace composition is still pending. Record: architecture/archaeology/registry-truth-sweep.audit.md"},
-    {"id":"07","name":"AI Agent System","layer":"Intelligence","status":"COMPLETE","stage":"S8","levels":[true,true,true,true,true],"tests":62,"modules":["agent-core","agent-memory","agent-tasks","agent-plans","agent-governance-report"],"consumers":["26","35","47","50"],"notes":"2026-09-21 REGISTRY-TRUTH SWEEP: the row carried no note while the phase closed, so its closure is recorded here from evidence — the document was completed to 20/20 by addendum KH, L4 is projected by /super-admin/agent-governance through agent-governance-report, L5 is evidenced by architecture/proofs/phase-07-acceptance.proof.json plus the verify chain, and L2 rests on the contract's declared substrates (agent memory and task records). Open: the agent system stays advisory — no surface deploys an agent autonomously, and Phase 08 remains the only authorization authority. Record: architecture/archaeology/registry-truth-sweep.audit.md"},
-    {"id":"08","name":"Security Engine","layer":"Foundations","status":"COMPLETE","stage":"S1","levels":[true,true,true,true,true],"tests":108,"modules":["security-core","security-risk","security-policy","security-session","security-events","security-agent-controls","security-role-gate"],"consumers":["all"],"notes":"S1 2026-09-03: security-role-gate (school-admin + platform super-admin; composite account-administration decision) — canonical runtime role gate; first consumers of security-core.evaluateSecurityGateway (fail-closed); adopted in all 13 role-scoped server-function families (facilities/teachers/school-settings/staff-accounts/provisioning/digital-twin/timetable/notification-digest/notifications-fanout/attendance/expense-insights/messages-broadcast/lesson-plan-ai), replacing duplicated inline `users.role` reads/checks; school-staff context kinds added to security-role-gate (`school_admin`/`school_teacher`/`teaching_staff`/`finance_staff`) as pure `decideStaffRole` + adapters over the existing `get_my_role` + `get_my_school_id` RPCs — no new database surface; p08-enforcement-surface guard machine-checks the 19-family inventory (13 ADOPTED / 6 documented-exempt with audit reasons — self-scope/public/driver/payment families; composite + unclassified debt cleared 2026-09-03); unit suite 100 files/1,969 tests green; typecheck 0 errors; production build PASS — 2026-09-16 CLOSURE (owner decision: CoreGrid owns the engine; Scholar is runtime-001 consuming it): the document was normalised (884 truncated duplicate lines removed) and completed to 20/20 mandatory engineering sections via addenda AW command model, AX data model, AY runtime consumer boundary and AZ query model, with its scope statements neutralised; acceptance probe classified 45 areas — ENFORCED 22 / DECLARED 14 / IMPLEMENTED_UNWIRED 9 / MISSING 0 (architecture/phase-acceptance/phase-08-security-engine.json); the phase contract now cites the security-events and security-role-gate suites (tests 70 -> 108); the seven security-* modules and 66 other kernel/capability modules were re-framed, and tests/unit/platform-neutrality.test.ts now enforces that only a runtime layer may name a runtime, with scripts/neutralise-scholar-framing.mjs --check reporting any regression."},
-    {"id":"09","name":"Security Trust Fabric","layer":"Foundations","status":"COMPLETE","stage":"S4","levels":[true,true,true,true,true],"tests":90,"modules":["trust-core","trust-assertions","trust-entities","trust-governance","trust-fabric-report"],"consumers":["08","42"],"notes":"2026-09-16 CLOSURE (L4 closed; owner decision: CoreGrid owns the fabric and Scholar is runtime-001 consuming it): the document stated 15/20 mandatory engineering sections — command, query, workflow, memory/knowledge and migration were absent — and four scope statements named a runtime as the owner; addenda BU command model, BV query model, BW workflow model, BX trust memory and knowledge, BY trust migration and BZ runtime consumer boundary were authored in the document's own lettered style, stating existing behaviour and its limits → 20/20, with the scope statements neutralised. L4 closed by trust-fabric-report.ts + /super-admin/trust-fabric: the report EXERCISES the shipped machines (10 invariants — a subject starts UNKNOWN, UNKNOWN cannot jump to a trusted state, trust cannot be withdrawn without evidence of the reason, REVOKED is terminal, revocation is attributable, relationships expire and revoke immediately, an evidence-free relationship is refused, a subject cannot trust itself, a score refuses to exist without evidence-backed factors and always carries its breakdown) and reports 15 exercised paths plus 10 declared gaps instead of describing capability; it also surfaces that the fabric's usable set includes VERIFIED while the Phase 08 reading does not. The contract now cites the new suite: tests 82 → 90. Acceptance probe classified 49 areas — ENFORCED 34 · DECLARED 13 · IMPLEMENTED_UNWIRED 2 · MISSING 0: subjects, state machine, relationships, expiry, tenant scope, scoring, assertions, verification, evidence, provenance, revocation, keys, certificates, device/workload/agent/model trust, supply chain, federation, delegation, anchors, policy and zero-trust are enforced by executable suites; DECLARED — cryptographic verification (no signature is ever verified: integrityVerified is caller-supplied), attestation engine, trust graph traversal and revocation propagation, trust persistence (no tables), service trust and posture records, trust agents and MCP, the adversarial programme, external provider integration, DR and operating procedures, migration, AI evaluation, performance, compliance; IMPLEMENTED_UNWIRED — Phase 08 does not consume the fabric (zero import sites outside the four trust modules) and trust telemetry is unmeasured (shared finding P01-1/P03-3/P05-4/P08-5)."},
-    {"id":"10","name":"Communication Platform","layer":"Runtime","status":"COMPLETE","stage":"S6","levels":[true,true,true,true,true],"tests":168,"modules":["communication-core","communication-conversation","communication-channels","communication-templates","communication-providers","communication-steward","communication-steward-report"],"consumers":["24","43"]},
-    {"id":"11","name":"Academic Intelligence","layer":"Intelligence","status":"COMPLETE","stage":"S6","levels":[true,true,true,true,true],"tests":80,"modules":["academic-core","academic-mastery","academic-pathways","academic-risk","academic-curriculum","academic-assessment","academic-intelligence-report"],"consumers":["12","18"]},
-    {"id":"12","name":"Scheduling Intelligence","layer":"Runtime","status":"COMPLETE","stage":"S6","levels":[true,true,true,true,true],"tests":74,"modules":["scheduling-core","scheduling-constraints","scheduling-availability","scheduling-validator","scheduling-conflicts","scheduling-quality","scheduling-intelligence-report"],"consumers":["04","25"],"notes":"COMPLETE (2026-09-20): the scheduling-domain subsystem is domain-neutral by construction — participants, resources, activities, intervals and constraints are institutional data, so a hospital, company, warehouse or ministry configures the same engine in its own vocabulary rather than forking it. New this phase: scheduling-conflicts (12-type conflict taxonomy, capacity/capability/accessibility/calendar/travel/turnaround detection, explicit conflict records with resolution strategies, escalateConflicts separating blocking from waivable and reporting infeasibility instead of fabricating a valid plan), scheduling-quality (independent scoring dimensions with binary feasibility, load balance, disruption vectors against an explicit stability tolerance, version comparison, impact analysis, placement explanation naming the constraints that decided and the preferences sacrificed, candidate ranking that prefers the least disruptive feasible plan) and scheduling-intelligence-report (14 rules tied to module+suite, 13 checks that execute the engines and record what they observed, 6 declared gaps: solver adapter, async runs, interop adapters, publication approval, DST rules, learned solver selection). Document completed 16/20 to 20/20 with ER domain neutrality, ES query model, ET memory and knowledge model, EU data model. Acceptance: architecture/phase-acceptance/phase-12-scheduling-intelligence.json (20 areas — ENFORCED 13 / DECLARED 7 / MISSING 0; proof architecture/proofs/phase-12-acceptance.proof.json). Record: architecture/archaeology/phase-12-scheduling-intelligence.audit.md"},
-    {"id":"13","name":"Financial System","layer":"Commerce","status":"COMPLETE","stage":"S6","levels":[true,true,true,true,true],"tests":130,"modules":["financial-core","financial-payments","financial-settlements","financial-controls","financial-splits","financial-routing","financial-journal","financial-tax","financial-intelligence-report"],"consumers":["27","49"],"notes":"COMPLETE (2026-09-21) — CoreGrid's Payment, Billing & Financial Operating System (the registry label stays short; the document and acceptance record carry the full identity). Domain-neutral by construction: the debtor and the beneficiary are identity references, and charge reasons, tax rules, calendars, discount categories and provider choices are institutional data, so an education provider, a health provider, a logistics operator, a warehouse operator, a public agency and a marketplace configure the same engine in their own vocabulary rather than forking it. New this phase — financial-splits (immutable splits whose legs sum exactly to the gross, per-leg settlement on real evidence, provider fees attributed to the leg that produced them, pro-rata refunds with a deterministic remainder that never returns more from a beneficiary than it received, unresolved legs kept visible, and the platform's own fee modelled as a leg like any other), financial-routing (provider neutrality as a decision over declared capabilities, where capability dominates preference, unroutable requirements are reported, and failover is refused after a success, after an unresolved timeout and without proof of no capture), financial-journal (append-only events with contiguous sequence, causation and correlation; a transactional outbox; reconstruction of money state from events with a disagreeing cache reported rather than preferred; double-entry-compatible postings refused when they do not balance) and financial-tax (versioned rules resolved by jurisdiction, category and instant, where an undeclared jurisdiction is unknown rather than zero and inclusive/exclusive pricing is computed in exact minor units). Document completed 14/20 to 20/20 by addenda EJ domain neutrality, EK provider neutrality and split payments, EL command model, EM query model, EN data model, EO dependency model and EP financial memory and knowledge model. Contract extended to nine suites and nine provided capabilities; surface /super-admin/financial-operations renders every executed check with its observation, the rules with their modules and blueprint sections, six organizations' vocabulary and the declared gaps, with no role list. Acceptance: architecture/phase-acceptance/phase-13-financial-system.json (24 areas — ENFORCED 16 / DECLARED 8 / UNWIRED 0 / MISSING 0). Declared and unproven: no live provider adapter, no persistence migration, no reconciliation run over a provider statement, no collections or dispute state machines, no metered usage or renewal generation, no asynchronous financial jobs, and no authorised ingestion boundary — so no platform surface calls these engines yet. Record: architecture/archaeology/phase-13-financial-system.audit.md"},
-    {"id":"14","name":"Data Platform","layer":"Foundations","status":"IMPLEMENTING","stage":"S5","levels":[true,false,false,false,false],"tests":43,"modules":["data-core","data-catalog","data-quality","data-governance"],"consumers":["all"]},
-    {"id":"15","name":"Hardware Integration","layer":"Runtime","status":"IMPLEMENTING","stage":"S6","levels":[true,false,false,false,false],"tests":89,"modules":["hardware-core","hardware-telemetry","hardware-commands","hardware-lifecycle"],"consumers":["16","44"]},
-    {"id":"16","name":"Digital Twin","layer":"Intelligence","status":"IMPLEMENTING","stage":"S6","levels":[true,false,false,false,false],"tests":74,"modules":["twin-core","twin-graph","twin-state","twin-governance"],"consumers":["17","18","46"]},
-    {"id":"17","name":"Automation Engine","layer":"Runtime","status":"IMPLEMENTING","stage":"S6","levels":[true,false,false,false,false],"tests":87,"modules":["automation-core","automation-workflow","automation-actions","automation-governance"],"consumers":["all"]},
-
-    {"id":"18","name":"Analytics Intelligence","layer":"Intelligence","status":"IMPLEMENTING","stage":"S6","levels":[true,false,false,false,false],"tests":62,"modules":["analytics-core","analytics-models","analytics-decisions","analytics-governance"],"consumers":["19","34"]},
-    {"id":"19","name":"Command Centre","layer":"Runtime","status":"IMPLEMENTING","stage":"S3","levels":[true,true,true,false,true],"tests":47,"modules":["command-core","command-alerts","command-incidents","command-governance"],"consumers":["control-plane"],"notes":"2026-09-21 REGISTRY-TRUTH SWEEP: the L4 claim was WITHDRAWN after hand review, and the review confirmed the audit rather than exposing a blind spot — no route or component imports command-core, command-alerts, command-incidents or command-governance, and no surfaces adapter consumes them either (lib/surfaces holds generated-site-view, marketplace-view and runtime-view only). The `/` Command Centre surface renders components/command-centre/command-centre, which is a platform provisioning console: it composes security policy, the onboarding flow and the phase catalog, not operational awareness. The platform therefore has no surface for health signals, alerts or incidents, and L4 closes only when an operational surface projects the command engines from real state. L1 (document plus contract), L2 (contract substrates: alert definitions, alert state, incidents), L3 (four modules and four cited suites, 47 tests) and L5 (scripts/verify-phase-consumption.mjs, which tests this phase as consumed) stand unchanged. Record: architecture/archaeology/registry-truth-sweep.audit.md"},
-    {"id":"20","name":"Government Education Cloud","layer":"Global","status":"IMPLEMENTING","stage":"S6","levels":[true,false,false,false,false],"tests":59,"modules":["government-core","government-policy","government-data","government-governance"],"consumers":["44"]},
-    {"id":"21","name":"Global Cloud Fabric","layer":"Global","status":"IMPLEMENTING","stage":"S6","levels":[true,false,false,false,false],"tests":46,"modules":["cloud-core","cloud-byoc","cloud-governance"],"consumers":["44"],"notes":"2026-09-21 REGISTRY-TRUTH SWEEP (module-resolution defect): the row listed cloud-fabric-iac among its modules, but registry modules are resolved as source modules under frontend/src/lib and that deliverable is infrastructure-as-code, not a library module — so the phase reported as the one phase whose modules do not resolve. The three real modules (cloud-core.ts, cloud-byoc.ts, cloud-governance.ts) stay; the IaC deliverable is named where it actually lives: infrastructure/terraform, infrastructure/kubernetes, infrastructure/workloads and infrastructure/monitoring, with the fabric's invariants proven by infrastructure-preflight and cloud-fabric-foundation proofs (64/64 invariants) and its deployment still BLOCKED pending owner credentials (CF-4…CF-12). Levels untouched — this correction moves no level, it stops the row claiming a module that does not exist. Record: architecture/archaeology/registry-truth-sweep.audit.md"},
-    {"id":"22","name":"Mobile Platform","layer":"Global","status":"IMPLEMENTING","stage":"S6","levels":[true,false,false,false,false],"tests":49,"modules":["platform-core","platform-device","platform-offline","platform-observability"],"consumers":["runtime-001"]},
-    {"id":"23","name":"Web Platform","layer":"Runtime","status":"IMPLEMENTING","stage":"S6","levels":[true,false,false,false,false],"tests":41,"modules":["web-core","web-storage","web-performance","web-platform"],"consumers":["runtime-001"]},
-    {"id":"24","name":"Experience & Design Intelligence","layer":"Intelligence","status":"IMPLEMENTING","stage":"S6","levels":[true,false,false,false,false],"tests":33,"modules":["experience-core","experience-personalization","experience-accessibility","experience-governance"],"consumers":["50"]},
-    {"id":"25","name":"Institutional Onboarding & Workforce","layer":"Foundations","status":"COMPLETE","stage":"S6","levels":[true,true,true,true,true],"tests":128,"modules":["institution-core","workforce-core","onboarding-core","attendance-identity","institution-admin","workforce-positions","onboarding/onboarding-flow"],"consumers":["runtime-001"],"notes":"2026-09-21 REGISTRY-TRUTH SWEEP: two corrections, both from evidence. (1) The L4 claim could not be evidenced because the module list was INCOMPLETE — frontend/src/lib/workforce-positions.ts declares itself 'Phase 25 Workforce Identity' and frontend/src/lib/onboarding/onboarding-flow.ts declares itself 'Phase 25 … domain-neutral ORGANIZATION ONBOARDING FLOW', and the contract already cites their suites (tests/unit/workforce-positions.test.ts, tests/unit/onboarding-flow.test.ts); both are now attributed to this phase. With the attribution corrected, L4 is evidenced: /_authenticated/admin/staff-accounts imports @/lib/workforce-positions with its server functions, and the Command Centre surface composes the onboarding flow. (2) tests corrected 53 to 128 — the count the contract's cited suites actually contain. L1, L2, L3 and L5 stand. The workforce extension of identity is the approved duplication D8 (CLOSED, owner 02). Open: the HR surface still reads several tables directly through the Supabase client, so the phase's engines are projected but are not yet the only path to that data. Record: architecture/archaeology/registry-truth-sweep.audit.md"},
-    {"id":"26","name":"AI Intelligence Layer","layer":"Intelligence","status":"IMPLEMENTING","stage":"S8","levels":[true,false,false,false,false],"tests":66,"modules":["ai-core","ai-context","ai-reasoning","ai-governance","ai-services"],"consumers":["07","34","35"]},
-    {"id":"27","name":"Marketplace","layer":"Commerce","status":"IMPLEMENTED","stage":"S7","levels":[true,true,true,true,true],"tests":52,"modules":["marketplace-core","marketplace-vendor","marketplace-package","marketplace-entitlement","marketplace-governance"],"consumers":["49","51"],"notes":"2026-09-21 REGISTRY-TRUTH SWEEP: levels corrected from evidence — L1 to L5 are all evidenced (L2 from the contract's declared substrates, L4 because the /marketplace route renders frontend/src/lib/surfaces/marketplace-view which consumes @/lib/marketplace-core and @/lib/marketplace-entitlement, L5 because scripts/verify-phase-consumption.mjs tests this phase as consumed), but the row is deliberately NOT closed to COMPLETE: this phase has no acceptance record (architecture/phase-acceptance/ holds records for phases 01–12 only) and no archaeology record, so closure is withheld until its own audit wave runs. This is the next audit target. Record: architecture/archaeology/registry-truth-sweep.audit.md"},
-    {"id":"28","name":"Developer Platform","layer":"Runtime","status":"IMPLEMENTING","stage":"S7","levels":[true,false,false,false,false],"tests":47,"modules":["dev-core","dev-api","dev-env","dev-build","dev-governance"],"consumers":["27","51"]},
-    {"id":"29","name":"CoreGrid Integration","layer":"Runtime","status":"IMPLEMENTING","stage":"S7","levels":[true,false,false,false,false],"tests":52,"modules":["integration-core","integration-transform","integration-connect","integration-ops","integration-governance"],"consumers":["43"]},
-    {"id":"30","name":"Globalization","layer":"Global","status":"IMPLEMENTING","stage":"S6","levels":[true,false,false,false,false],"tests":93,"modules":["globalization-core","localization-content","regional-context","global-formats","global-governance"],"consumers":["04","50"]},
-    {"id":"31","name":"Enterprise Scale","layer":"Global","status":"IMPLEMENTING","stage":"S6","levels":[true,false,false,false,false],"tests":58,"modules":["enterprise-core","enterprise-capacity","enterprise-reliability","enterprise-operations","enterprise-governance"],"consumers":["40"]},
-    {"id":"32","name":"Future Evolution","layer":"Intelligence","status":"IMPLEMENTING","stage":"S9","levels":[true,false,false,false,false],"tests":49,"modules":["evolution-core","evolution-experiments","evolution-migration","evolution-intelligence","evolution-governance"],"consumers":["47"]},
-    {"id":"33","name":"Reality Intelligence Kernel (URIK)","layer":"Universal","status":"ARCHITECTURE_DEFINED","stage":"S2","levels":[true,false,false,false,false],"tests":null,"modules":["kernel/reality","kernel/domain-manifest","kernel/outbox","kernel/runtime-registry"],"consumers":["34","36","48","51"],"notes":"S2 2026-09-03: universal kernel substrate first slice authored — migration 20260903000000_coregrid_universal_kernel_substrate.sql (cg_entity/cg_relationship/cg_event/cg_observation/cg_domain_runtime; provenance, temporal validity, classification, deny-by-default RLS, domain-agnostic) + kernel-purity enforcement test (Scholar Independence / Runtime Installation); typed reality contracts (frontend/src/lib/kernel/reality.ts, 21 tests, SQL-coherence pinned) mirror the substrate CHECK clauses for all four primitives (entity, relationship, event, observation); generic domain-runtime manifest schema (kernel/domain-manifest.ts, 12 tests) — installable runtime contract (P04/P40 consumers pending); S2→S3 boundary logic: event outbox state machine (kernel/outbox.ts, 8 tests) + runtime-registry lifecycle (kernel/runtime-registry.ts, 5 tests); cg_domain_runtime registry table in substrate (runtime-install home); rls-isolation-check.sql extended for deny-by-default cg_* posture + db-tooling-coherence tests; STATUS DB-VALIDATED (2026-09-04, dev project nwrflbpbhyiqdptmlccm): all 31 migrations applied via Management API (migration 20260903000000 included); rls-isolation-check PASS; live kernel-wiring verification 11/11 — cg_* substrate present for service role, anon denied (deny-by-default), register runtime:scholar persisted (proposed, v0.1.0), CHECK constraint enforced, cg_event pending insert + idempotency replay rejected. HTTP-layer E2E of the server functions pending an app runtime; phase implementation gates (ADR PLATFORM-003…008/010) unchanged"},
-    {"id":"34","name":"Universal Cognitive Intelligence Engine","layer":"Universal","status":"ARCHITECTURE_DEFINED","stage":"S8","levels":[true,false,false,false,false],"tests":null,"modules":[],"consumers":["26","35"]},
-
-    {"id":"35","name":"Autonomous Agent Civilization OS","layer":"Universal","status":"ARCHITECTURE_DEFINED","stage":"S8","levels":[true,false,false,false,false],"tests":null,"modules":[],"consumers":["07"]},
-    {"id":"36","name":"Universal Memory & Knowledge Engine","layer":"Universal","status":"ARCHITECTURE_DEFINED","stage":"S8","levels":[true,false,false,false,false],"tests":null,"modules":[],"consumers":["34","35","07"]},
-    {"id":"37","name":"Simulation & Future Intelligence Engine","layer":"Universal","status":"ARCHITECTURE_DEFINED","stage":"S11","levels":[true,false,false,false,false],"tests":null,"modules":[],"consumers":["41"]},
-    {"id":"38","name":"Evolution Engine","layer":"Universal","status":"ARCHITECTURE_DEFINED","stage":"S9","levels":[true,false,false,false,false],"tests":null,"modules":[],"consumers":["47"]},
-    {"id":"39","name":"Governance & Alignment Engine","layer":"Universal","status":"ARCHITECTURE_DEFINED","stage":"S9","levels":[true,false,false,false,false],"tests":null,"modules":[],"consumers":["51"]},
-    {"id":"40","name":"Universal Runtime Fabric","layer":"Universal","status":"ARCHITECTURE_DEFINED","stage":"S10","levels":[true,false,false,false,false],"tests":null,"modules":[],"consumers":["51"]},
-    {"id":"41","name":"Reality Simulation & Autonomous Sandbox Engine","layer":"Civilization","status":"ARCHITECTURE_DEFINED","stage":"S11","levels":[true,false,false,false,false],"tests":null,"modules":[],"consumers":["37","47"]},
-    {"id":"42","name":"Zero Trust & Adversarial Defense Engine","layer":"Civilization","status":"ARCHITECTURE_DEFINED","stage":"S4","levels":[true,false,false,false,false],"tests":null,"modules":[],"consumers":["08"]},
-    {"id":"43","name":"Universal Interface & Connectivity Intelligence","layer":"Civilization","status":"ARCHITECTURE_DEFINED","stage":"S7","levels":[true,false,false,false,false],"tests":null,"modules":[],"consumers":["50","51"]},
-    {"id":"44","name":"Planetary Distributed Infrastructure Engine","layer":"Civilization","status":"ARCHITECTURE_DEFINED","stage":"S11","levels":[true,false,false,false,false],"tests":null,"modules":[],"consumers":["15","21"]},
-    {"id":"45","name":"AI Compute Civilization Engine","layer":"Civilization","status":"ARCHITECTURE_DEFINED","stage":"S11","levels":[true,false,false,false,false],"tests":null,"modules":[],"consumers":["26"]},
-    {"id":"46","name":"Universal Digital Twin Civilization Layer","layer":"Civilization","status":"ARCHITECTURE_DEFINED","stage":"S11","levels":[true,false,false,false,false],"tests":null,"modules":[],"consumers":["16"]},
-    {"id":"47","name":"Autonomous Engineering Self-Improvement Engine","layer":"Civilization","status":"ARCHITECTURE_DEFINED","stage":"S9","levels":[true,false,false,false,false],"tests":null,"modules":[],"consumers":["32","38","39"]},
-    {"id":"48","name":"Civilization Knowledge Graph","layer":"Civilization","status":"ARCHITECTURE_DEFINED","stage":"S5","levels":[true,false,false,false,false],"tests":null,"modules":[],"consumers":["33","36"]},
-    {"id":"49","name":"Autonomous Economy Engine","layer":"Civilization","status":"ARCHITECTURE_DEFINED","stage":"S11","levels":[false,true,false,false,true],"tests":null,"modules":[],"consumers":["13","27"],"notes":"2026-09-21 REGISTRY-TRUTH SWEEP: the L1 claim was WITHDRAWN after hand review. The completion audit derives L1 only when a phase document states at least eight of the twenty mandatory engineering sections AND a kernel contract exists; the contract exists (phase-49-autonomous-economy.ts) but architecture/phase-49-autonomous-economy-engine.md states 7 of 20 sections, so the claim was unproven and the row now says so. This is a documentation gap to close by authoring the missing sections in a future phase-49 wave — the rule is not lowered to fit the document. L2 (data-model vocabulary plus the contract's declared substrates) and L5 (the phase is named by an operational artefact) stand; L3 and L4 are absent because the phase declares no modules at this stage. Record: architecture/archaeology/registry-truth-sweep.audit.md"},
-    {"id":"50","name":"Human Civilization Interface Layer","layer":"Civilization","status":"ARCHITECTURE_DEFINED","stage":"S12","levels":[true,false,false,false,false],"tests":null,"modules":[],"consumers":["06","24"]},
-    {"id":"51","name":"Universal Reality OS Kernel","layer":"Civilization","status":"ARCHITECTURE_DEFINED","stage":"S10","levels":[true,false,false,false,false],"tests":null,"modules":[],"consumers":["all"]}
-
+    {
+      "id": "01",
+      "name": "Foundation",
+      "layer": "Foundations",
+      "status": "COMPLETE",
+      "stage": "S1",
+      "levels": [
+        true,
+        false,
+        true,
+        true,
+        true
+      ],
+      "tests": 38,
+      "modules": [
+        "foundation-standards"
+      ],
+      "consumers": [
+        "all"
+      ],
+      "notes": "infra, CI, verification contracts + foundation-integrity suite; S1 hardening 2026-09-03: .mcp.json credential material removed (env-based MCP config), secret-scan extended (supabase project URL + publishable key), demo provisioning env-gated (ALLOW_DEMO_PROVISIONING=false default), foundation suite extended to 15 tests incl. documentation-integrity + line-ending-hygiene (.gitattributes) guards; whole-tree typecheck 0 errors + unit suite 99 files/1,954 tests green; production build PASS (vite build client + Nitro SSR, 2026-09-03). 2026-09-07 K-WAVES: kernel phase-contract layer landed — phase 01 declares all twenty engineering sections machine-checkably (kernel/engineering-sections.ts + kernel/phase-contract.ts + kernel/phase-contracts/), with connected-DAG enforcement, ASI invariant/tier law, Scholar as first runtime and reserved neutral domain seats; suite tests/unit/kernel-phase-contract.test.ts. 2026-09-14 AUDIT-P01: acceptance probe classified all 44 of the document's acceptance areas (ENFORCED 41 / UNWIRED 3 / MISSING 0) — observability, error capture, and the §59/§60 limits map are now proven by executable suites (foundation-observability/-error-architecture/-limits-map, 22 tests); the registry now records the foundation's real test count (37) instead of hiding it behind tests=15; unwired capabilities (structured logger, runtime limiter, AI budget) are recorded as libraries no boundary calls, never as enforcement; record: architecture/archaeology/phase-01-foundation.audit.md. 2026-09-21 REGISTRY-TRUTH SWEEP: status IMPLEMENTING to COMPLETE and levels corrected from the completion audit (L2 stays false because phase 01 owns no persistent state; the ratified exemption lives in architecture/phase-completion-exemptions.json and is recorded separately, never as evidence); ledger record architecture/archaeology/registry-truth-sweep.audit.md",
+      "version_target": "ACTIVE-V1"
+    },
+    {
+      "id": "02",
+      "name": "Identity",
+      "layer": "Foundations",
+      "status": "COMPLETE",
+      "stage": "S1",
+      "levels": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "tests": 38,
+      "modules": [
+        "identity",
+        "identity-registry",
+        "identity-credentials",
+        "identity-lifecycle",
+        "identity-relationships",
+        "roles"
+      ],
+      "consumers": [
+        "03",
+        "05",
+        "06",
+        "08",
+        "22",
+        "25",
+        "50"
+      ],
+      "notes": "CLOSED 2026-09-21 (see the sweep note at the end). Historical S1 level-audit 2026-09-03, when the row read IMPLEMENTED — held for audit: L1 concept ✓; L2 data ◐ (universal identity L2 model pending); L3 backend ✓ live (auth middleware + identity RLS + P08 role gates); L4 ◐ (legacy role surfaces); L5 ✗. Not COMPLETE until the universal identity data model lands. Universal L2 model AUTHORED + DB-VALIDATED (2026-09-04): migration 20260904020000 creates cg_identity (P02 C2 Identity Registry; kinds human/organization/agent/service/device/runtime; lifecycle provisioned/active/suspended/archived/deleted; verified flag; optional FK to cg_entity) — live checks 8/8 on dev project; typed consumption contracts pending. 2026-09-07 R-WAVES: typed consumption contracts shipped (identity-registry) + every new portal account registers cg_identity; cg_workforce_kind/cg_workforce_position substrate applied live with the 71-kind Scholar catalog and org-admin HR RPCs. 2026-09-21 REGISTRY-TRUTH SWEEP: the row read IMPLEMENTED — held for audit while the phase's own audit record and the completion audit both derive COMPLETE, so status and levels were corrected from evidence (L2 universal identity model 20260904020000 — live checks 8/8; L4 /admin/identities; L5 acceptance proof architecture/proofs/phase-02-acceptance.proof.json plus the verify chain). Open items stay recorded rather than hidden: P02-1 identity events and P02-3 federation remain reserved. Record: architecture/archaeology/registry-truth-sweep.audit.md",
+      "version_target": "ACTIVE-V1"
+    },
+    {
+      "id": "03",
+      "name": "Multi-Tenancy",
+      "layer": "Foundations",
+      "status": "COMPLETE",
+      "stage": "S1",
+      "levels": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "tests": 56,
+      "modules": [
+        "tenant",
+        "tenant-core",
+        "tenant-registry",
+        "tenant-isolation",
+        "tenant-lifecycle",
+        "tenant-quota",
+        "tenant-topology"
+      ],
+      "consumers": [
+        "all"
+      ],
+      "notes": "CLOSED 2026-09-21 (see the sweep note at the end). Historical S1 level-audit 2026-09-03, when the row read IMPLEMENTED — held for audit: L1 concept ✓; L2 data ◐ (flat school_id tenancy + RLS; tenant hierarchy/topology models pending); L3 backend ✓ live (RLS across migrations + P08 role gates + provisioning functions); L4 ◐ (tenant role surfaces); L5 ✗. Tenant hierarchy (district to state) tracked S1/S6; not COMPLETE. Universal L2 model AUTHORED + DB-VALIDATED (2026-09-04): migration 20260904020000 creates cg_tenant (P03 H1 Tenant Entity: tenant_type/name/slug/status(H2 enum)/parent_tenant_id/region/environment; hierarchy + self-parent CHECK) — live checks 8/8 on dev project; typed consumption contracts pending. 2026-09-21 REGISTRY-TRUTH SWEEP: the row read IMPLEMENTED — held for audit while the phase's own audit record and the completion audit both derive COMPLETE, so status and levels were corrected from evidence (L2 cg_tenant with hierarchy and self-parent CHECK — live checks 8/8; L4 /admin/tenants; L5 acceptance proof architecture/proofs/phase-03-acceptance.proof.json plus the verify chain). Open items stay recorded: async boundaries, deprovisioning and observability wiring, with the tenant hierarchy migration still reserved. Record: architecture/archaeology/registry-truth-sweep.audit.md",
+      "version_target": "ACTIVE-V1"
+    },
+    {
+      "id": "04",
+      "name": "Education Reality Engine",
+      "layer": "Foundations",
+      "status": "COMPLETE",
+      "stage": "S2",
+      "levels": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "tests": 81,
+      "modules": [
+        "education-core",
+        "education-curriculum",
+        "education-institution",
+        "education-assessment",
+        "education-facilities",
+        "education-governance",
+        "education-reality-view",
+        "runtime/scholar",
+        "runtime/scholar-events"
+      ],
+      "consumers": [
+        "11",
+        "12",
+        "13",
+        "25"
+      ],
+      "notes": "S2 2026-09-03 (backward refinement §97): reframed as the Scholar domain-runtime manifest instance (runtime/scholar.ts) registered over kernel/domain-manifest.ts + cg_domain_runtime substrate; runtime domain-event vocabulary (runtime/scholar-events.ts, ontology-bound aggregates) recorded through the kernel eventDraft contract; legacy education modules remain the runtime's domain layer — never the kernel. S1 level-audit addendum 2026-09-03: IMPLEMENTED — held for audit, not COMPLETE (L2 universal reality models pending alongside P33; runtime/scholar manifest + cg_* substrate NOT_VALIDATED — DB-gated; L5 not met). 2026-09-21 REGISTRY-TRUTH SWEEP: status and levels corrected from the completion audit — L4 is /admin/education-reality and L5 is evidenced by architecture/proofs/phase-04-acceptance.proof.json plus the verify chain; the DB-gated items named above (runtime/scholar manifest, cg_* substrate NOT_VALIDATED) stay recorded as open work rather than silently cleared. Record: architecture/archaeology/registry-truth-sweep.audit.md",
+      "version_target": "ACTIVE-V1"
+    },
+    {
+      "id": "05",
+      "name": "Core Application Runtime",
+      "layer": "Foundations",
+      "status": "COMPLETE",
+      "stage": "S3",
+      "levels": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "tests": 100,
+      "modules": [
+        "runtime-core",
+        "runtime-command-query",
+        "runtime-events",
+        "runtime-jobs",
+        "runtime-capabilities",
+        "runtime-observability",
+        "runtime-self-report",
+        "runtime-webhooks",
+        "runtime-integrations",
+        "runtime-resilience",
+        "runtime-feature-flags",
+        "runtime-approval",
+        "runtime-bulk"
+      ],
+      "consumers": [
+        "all"
+      ],
+      "notes": "CLOSED 2026-09-21 (see the sweep note at the end). Historical S1 level-audit 2026-09-03: downgraded from IMPLEMENTED at reconciliation — runtime-* modules are test-only (no live L3); legacy server functions remain ad-hoc (partially behind P08 role gates); canonical event/job/query fabric is an S3 target. 2026-09-21 REGISTRY-TRUTH SWEEP: the row read IMPLEMENTING while the completion audit derives COMPLETE, so status and levels were corrected from evidence — L4 is projected by /super-admin/runtime-contracts, whose self-check exercises the shipped state machines, and L5 by architecture/proofs/phase-05-acceptance.proof.json plus the verify chain. The S1 caveat above is about LIVE wiring, which is what L5 measures: it stays recorded as open work (runtime modules exercised by suites; legacy server functions still ad-hoc; the canonical fabric remains an S3 target), never cleared. The modules are domain-neutral — verified by tests/unit/platform-neutrality.test.ts. Record: architecture/archaeology/registry-truth-sweep.audit.md",
+      "version_target": "ACTIVE-V1"
+    },
+    {
+      "id": "06",
+      "name": "Workspace Engine",
+      "layer": "Foundations",
+      "status": "COMPLETE",
+      "stage": "S3",
+      "levels": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "tests": 28,
+      "modules": [
+        "workspace-core",
+        "workspace-composition",
+        "workspace-membership",
+        "workspace-governance",
+        "workspace-projection"
+      ],
+      "consumers": [
+        "19",
+        "24",
+        "50"
+      ],
+      "notes": "CLOSED 2026-09-21 (see the sweep note at the end). Historical S1 level-audit 2026-09-03: downgraded from IMPLEMENTED at reconciliation — workspace-* modules are test-only (no live L3); live L4 surfaces are legacy Scholar role portals; genuine dynamic workspace composition pending S3. 2026-09-07 R-WAVES: resolution-based chrome + landings live in the shell; kind-to-chrome advisory resolution, per-page tips, school-profile persistence (cg_org_profile) and facility-twin binding shipped. 2026-09-21 REGISTRY-TRUTH SWEEP: the row read IMPLEMENTING while the completion audit derives COMPLETE, so status and levels were corrected from evidence — L4 is projected by /super-admin/workspace-projection (rebuilt in the neutrality correction as a neutral engine plus a runtime adapter, catalog-driven with no role list) and L5 by architecture/proofs/phase-06-acceptance.proof.json plus the verify chain. The historical caveat stays recorded: workspace modules are exercised by suites, the legacy Scholar role portals remain the legacy surface, and genuine dynamic workspace composition is still pending. Record: architecture/archaeology/registry-truth-sweep.audit.md",
+      "version_target": "ACTIVE-V1"
+    },
+    {
+      "id": "07",
+      "name": "AI Agent System",
+      "layer": "Intelligence",
+      "status": "COMPLETE",
+      "stage": "S8",
+      "levels": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "tests": 62,
+      "modules": [
+        "agent-core",
+        "agent-memory",
+        "agent-tasks",
+        "agent-plans",
+        "agent-governance-report"
+      ],
+      "consumers": [
+        "26",
+        "35",
+        "47",
+        "50"
+      ],
+      "notes": "2026-09-21 REGISTRY-TRUTH SWEEP: the row carried no note while the phase closed, so its closure is recorded here from evidence — the document was completed to 20/20 by addendum KH, L4 is projected by /super-admin/agent-governance through agent-governance-report, L5 is evidenced by architecture/proofs/phase-07-acceptance.proof.json plus the verify chain, and L2 rests on the contract's declared substrates (agent memory and task records). Open: the agent system stays advisory — no surface deploys an agent autonomously, and Phase 08 remains the only authorization authority. Record: architecture/archaeology/registry-truth-sweep.audit.md",
+      "version_target": "ACTIVE-V1"
+    },
+    {
+      "id": "08",
+      "name": "Security Engine",
+      "layer": "Foundations",
+      "status": "COMPLETE",
+      "stage": "S1",
+      "levels": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "tests": 108,
+      "modules": [
+        "security-core",
+        "security-risk",
+        "security-policy",
+        "security-session",
+        "security-events",
+        "security-agent-controls",
+        "security-role-gate"
+      ],
+      "consumers": [
+        "all"
+      ],
+      "notes": "S1 2026-09-03: security-role-gate (school-admin + platform super-admin; composite account-administration decision) — canonical runtime role gate; first consumers of security-core.evaluateSecurityGateway (fail-closed); adopted in all 13 role-scoped server-function families (facilities/teachers/school-settings/staff-accounts/provisioning/digital-twin/timetable/notification-digest/notifications-fanout/attendance/expense-insights/messages-broadcast/lesson-plan-ai), replacing duplicated inline `users.role` reads/checks; school-staff context kinds added to security-role-gate (`school_admin`/`school_teacher`/`teaching_staff`/`finance_staff`) as pure `decideStaffRole` + adapters over the existing `get_my_role` + `get_my_school_id` RPCs — no new database surface; p08-enforcement-surface guard machine-checks the 19-family inventory (13 ADOPTED / 6 documented-exempt with audit reasons — self-scope/public/driver/payment families; composite + unclassified debt cleared 2026-09-03); unit suite 100 files/1,969 tests green; typecheck 0 errors; production build PASS — 2026-09-16 CLOSURE (owner decision: CoreGrid owns the engine; Scholar is runtime-001 consuming it): the document was normalised (884 truncated duplicate lines removed) and completed to 20/20 mandatory engineering sections via addenda AW command model, AX data model, AY runtime consumer boundary and AZ query model, with its scope statements neutralised; acceptance probe classified 45 areas — ENFORCED 22 / DECLARED 14 / IMPLEMENTED_UNWIRED 9 / MISSING 0 (architecture/phase-acceptance/phase-08-security-engine.json); the phase contract now cites the security-events and security-role-gate suites (tests 70 -> 108); the seven security-* modules and 66 other kernel/capability modules were re-framed, and tests/unit/platform-neutrality.test.ts now enforces that only a runtime layer may name a runtime, with scripts/neutralise-scholar-framing.mjs --check reporting any regression.",
+      "version_target": "ACTIVE-V1"
+    },
+    {
+      "id": "09",
+      "name": "Security Trust Fabric",
+      "layer": "Foundations",
+      "status": "COMPLETE",
+      "stage": "S4",
+      "levels": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "tests": 90,
+      "modules": [
+        "trust-core",
+        "trust-assertions",
+        "trust-entities",
+        "trust-governance",
+        "trust-fabric-report"
+      ],
+      "consumers": [
+        "08",
+        "42"
+      ],
+      "notes": "2026-09-16 CLOSURE (L4 closed; owner decision: CoreGrid owns the fabric and Scholar is runtime-001 consuming it): the document stated 15/20 mandatory engineering sections — command, query, workflow, memory/knowledge and migration were absent — and four scope statements named a runtime as the owner; addenda BU command model, BV query model, BW workflow model, BX trust memory and knowledge, BY trust migration and BZ runtime consumer boundary were authored in the document's own lettered style, stating existing behaviour and its limits → 20/20, with the scope statements neutralised. L4 closed by trust-fabric-report.ts + /super-admin/trust-fabric: the report EXERCISES the shipped machines (10 invariants — a subject starts UNKNOWN, UNKNOWN cannot jump to a trusted state, trust cannot be withdrawn without evidence of the reason, REVOKED is terminal, revocation is attributable, relationships expire and revoke immediately, an evidence-free relationship is refused, a subject cannot trust itself, a score refuses to exist without evidence-backed factors and always carries its breakdown) and reports 15 exercised paths plus 10 declared gaps instead of describing capability; it also surfaces that the fabric's usable set includes VERIFIED while the Phase 08 reading does not. The contract now cites the new suite: tests 82 → 90. Acceptance probe classified 49 areas — ENFORCED 34 · DECLARED 13 · IMPLEMENTED_UNWIRED 2 · MISSING 0: subjects, state machine, relationships, expiry, tenant scope, scoring, assertions, verification, evidence, provenance, revocation, keys, certificates, device/workload/agent/model trust, supply chain, federation, delegation, anchors, policy and zero-trust are enforced by executable suites; DECLARED — cryptographic verification (no signature is ever verified: integrityVerified is caller-supplied), attestation engine, trust graph traversal and revocation propagation, trust persistence (no tables), service trust and posture records, trust agents and MCP, the adversarial programme, external provider integration, DR and operating procedures, migration, AI evaluation, performance, compliance; IMPLEMENTED_UNWIRED — Phase 08 does not consume the fabric (zero import sites outside the four trust modules) and trust telemetry is unmeasured (shared finding P01-1/P03-3/P05-4/P08-5).",
+      "version_target": "ACTIVE-V1"
+    },
+    {
+      "id": "10",
+      "name": "Communication Platform",
+      "layer": "Runtime",
+      "status": "COMPLETE",
+      "stage": "S6",
+      "levels": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "tests": 168,
+      "modules": [
+        "communication-core",
+        "communication-conversation",
+        "communication-channels",
+        "communication-templates",
+        "communication-providers",
+        "communication-steward",
+        "communication-steward-report"
+      ],
+      "consumers": [
+        "24",
+        "43"
+      ],
+      "version_target": "ACTIVE-V1"
+    },
+    {
+      "id": "11",
+      "name": "Academic Intelligence",
+      "layer": "Intelligence",
+      "status": "COMPLETE",
+      "stage": "S6",
+      "levels": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "tests": 80,
+      "modules": [
+        "academic-core",
+        "academic-mastery",
+        "academic-pathways",
+        "academic-risk",
+        "academic-curriculum",
+        "academic-assessment",
+        "academic-intelligence-report"
+      ],
+      "consumers": [
+        "12",
+        "18"
+      ],
+      "version_target": "ACTIVE-V1"
+    },
+    {
+      "id": "12",
+      "name": "Scheduling Intelligence",
+      "layer": "Runtime",
+      "status": "COMPLETE",
+      "stage": "S6",
+      "levels": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "tests": 74,
+      "modules": [
+        "scheduling-core",
+        "scheduling-constraints",
+        "scheduling-availability",
+        "scheduling-validator",
+        "scheduling-conflicts",
+        "scheduling-quality",
+        "scheduling-intelligence-report"
+      ],
+      "consumers": [
+        "04",
+        "25"
+      ],
+      "notes": "COMPLETE (2026-09-20): the scheduling-domain subsystem is domain-neutral by construction — participants, resources, activities, intervals and constraints are institutional data, so a hospital, company, warehouse or ministry configures the same engine in its own vocabulary rather than forking it. New this phase: scheduling-conflicts (12-type conflict taxonomy, capacity/capability/accessibility/calendar/travel/turnaround detection, explicit conflict records with resolution strategies, escalateConflicts separating blocking from waivable and reporting infeasibility instead of fabricating a valid plan), scheduling-quality (independent scoring dimensions with binary feasibility, load balance, disruption vectors against an explicit stability tolerance, version comparison, impact analysis, placement explanation naming the constraints that decided and the preferences sacrificed, candidate ranking that prefers the least disruptive feasible plan) and scheduling-intelligence-report (14 rules tied to module+suite, 13 checks that execute the engines and record what they observed, 6 declared gaps: solver adapter, async runs, interop adapters, publication approval, DST rules, learned solver selection). Document completed 16/20 to 20/20 with ER domain neutrality, ES query model, ET memory and knowledge model, EU data model. Acceptance: architecture/phase-acceptance/phase-12-scheduling-intelligence.json (20 areas — ENFORCED 13 / DECLARED 7 / MISSING 0; proof architecture/proofs/phase-12-acceptance.proof.json). Record: architecture/archaeology/phase-12-scheduling-intelligence.audit.md",
+      "version_target": "ACTIVE-V1"
+    },
+    {
+      "id": "13",
+      "name": "Financial System",
+      "layer": "Commerce",
+      "status": "COMPLETE",
+      "stage": "S6",
+      "levels": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "tests": 130,
+      "modules": [
+        "financial-core",
+        "financial-payments",
+        "financial-settlements",
+        "financial-controls",
+        "financial-splits",
+        "financial-routing",
+        "financial-journal",
+        "financial-tax",
+        "financial-intelligence-report"
+      ],
+      "consumers": [
+        "27",
+        "49"
+      ],
+      "notes": "COMPLETE (2026-09-21) — CoreGrid's Payment, Billing & Financial Operating System (the registry label stays short; the document and acceptance record carry the full identity). Domain-neutral by construction: the debtor and the beneficiary are identity references, and charge reasons, tax rules, calendars, discount categories and provider choices are institutional data, so an education provider, a health provider, a logistics operator, a warehouse operator, a public agency and a marketplace configure the same engine in their own vocabulary rather than forking it. New this phase — financial-splits (immutable splits whose legs sum exactly to the gross, per-leg settlement on real evidence, provider fees attributed to the leg that produced them, pro-rata refunds with a deterministic remainder that never returns more from a beneficiary than it received, unresolved legs kept visible, and the platform's own fee modelled as a leg like any other), financial-routing (provider neutrality as a decision over declared capabilities, where capability dominates preference, unroutable requirements are reported, and failover is refused after a success, after an unresolved timeout and without proof of no capture), financial-journal (append-only events with contiguous sequence, causation and correlation; a transactional outbox; reconstruction of money state from events with a disagreeing cache reported rather than preferred; double-entry-compatible postings refused when they do not balance) and financial-tax (versioned rules resolved by jurisdiction, category and instant, where an undeclared jurisdiction is unknown rather than zero and inclusive/exclusive pricing is computed in exact minor units). Document completed 14/20 to 20/20 by addenda EJ domain neutrality, EK provider neutrality and split payments, EL command model, EM query model, EN data model, EO dependency model and EP financial memory and knowledge model. Contract extended to nine suites and nine provided capabilities; surface /super-admin/financial-operations renders every executed check with its observation, the rules with their modules and blueprint sections, six organizations' vocabulary and the declared gaps, with no role list. Acceptance: architecture/phase-acceptance/phase-13-financial-system.json (24 areas — ENFORCED 16 / DECLARED 8 / UNWIRED 0 / MISSING 0). Declared and unproven: no live provider adapter, no persistence migration, no reconciliation run over a provider statement, no collections or dispute state machines, no metered usage or renewal generation, no asynchronous financial jobs, and no authorised ingestion boundary — so no platform surface calls these engines yet. Record: architecture/archaeology/phase-13-financial-system.audit.md",
+      "version_target": "ACTIVE-V1"
+    },
+    {
+      "id": "14",
+      "name": "Data Platform",
+      "layer": "Foundations",
+      "status": "IMPLEMENTING",
+      "stage": "S5",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": 43,
+      "modules": [
+        "data-core",
+        "data-catalog",
+        "data-quality",
+        "data-governance"
+      ],
+      "consumers": [
+        "all"
+      ],
+      "version_target": "ACTIVE-V1"
+    },
+    {
+      "id": "15",
+      "name": "Hardware Integration",
+      "layer": "Runtime",
+      "status": "IMPLEMENTING",
+      "stage": "S6",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": 89,
+      "modules": [
+        "hardware-core",
+        "hardware-telemetry",
+        "hardware-commands",
+        "hardware-lifecycle"
+      ],
+      "consumers": [
+        "16",
+        "44"
+      ],
+      "version_target": "MIXED"
+    },
+    {
+      "id": "16",
+      "name": "Digital Twin",
+      "layer": "Intelligence",
+      "status": "IMPLEMENTING",
+      "stage": "S6",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": 74,
+      "modules": [
+        "twin-core",
+        "twin-graph",
+        "twin-state",
+        "twin-governance"
+      ],
+      "consumers": [
+        "17",
+        "18",
+        "46"
+      ],
+      "version_target": "MIXED"
+    },
+    {
+      "id": "17",
+      "name": "Automation Engine",
+      "layer": "Runtime",
+      "status": "IMPLEMENTING",
+      "stage": "S6",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": 87,
+      "modules": [
+        "automation-core",
+        "automation-workflow",
+        "automation-actions",
+        "automation-governance"
+      ],
+      "consumers": [
+        "all"
+      ],
+      "version_target": "ACTIVE-V1"
+    },
+    {
+      "id": "18",
+      "name": "Analytics Intelligence",
+      "layer": "Intelligence",
+      "status": "IMPLEMENTING",
+      "stage": "S6",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": 62,
+      "modules": [
+        "analytics-core",
+        "analytics-models",
+        "analytics-decisions",
+        "analytics-governance"
+      ],
+      "consumers": [
+        "19",
+        "34"
+      ],
+      "version_target": "ACTIVE-V1"
+    },
+    {
+      "id": "19",
+      "name": "Command Centre",
+      "layer": "Runtime",
+      "status": "IMPLEMENTING",
+      "stage": "S3",
+      "levels": [
+        true,
+        true,
+        true,
+        false,
+        true
+      ],
+      "tests": 47,
+      "modules": [
+        "command-core",
+        "command-alerts",
+        "command-incidents",
+        "command-governance"
+      ],
+      "consumers": [
+        "control-plane"
+      ],
+      "notes": "2026-09-21 REGISTRY-TRUTH SWEEP: the L4 claim was WITHDRAWN after hand review, and the review confirmed the audit rather than exposing a blind spot — no route or component imports command-core, command-alerts, command-incidents or command-governance, and no surfaces adapter consumes them either (lib/surfaces holds generated-site-view, marketplace-view and runtime-view only). The `/` Command Centre surface renders components/command-centre/command-centre, which is a platform provisioning console: it composes security policy, the onboarding flow and the phase catalog, not operational awareness. The platform therefore has no surface for health signals, alerts or incidents, and L4 closes only when an operational surface projects the command engines from real state. L1 (document plus contract), L2 (contract substrates: alert definitions, alert state, incidents), L3 (four modules and four cited suites, 47 tests) and L5 (scripts/verify-phase-consumption.mjs, which tests this phase as consumed) stand unchanged. Record: architecture/archaeology/registry-truth-sweep.audit.md",
+      "version_target": "ACTIVE-V1"
+    },
+    {
+      "id": "20",
+      "name": "Government Education Cloud",
+      "layer": "Global",
+      "status": "IMPLEMENTING",
+      "stage": "S6",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": 59,
+      "modules": [
+        "government-core",
+        "government-policy",
+        "government-data",
+        "government-governance"
+      ],
+      "consumers": [
+        "44"
+      ],
+      "version_target": "ACTIVE-V1"
+    },
+    {
+      "id": "21",
+      "name": "Global Cloud Fabric",
+      "layer": "Global",
+      "status": "IMPLEMENTING",
+      "stage": "S6",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": 46,
+      "modules": [
+        "cloud-core",
+        "cloud-byoc",
+        "cloud-governance"
+      ],
+      "consumers": [
+        "44"
+      ],
+      "notes": "2026-09-21 REGISTRY-TRUTH SWEEP (module-resolution defect): the row listed cloud-fabric-iac among its modules, but registry modules are resolved as source modules under frontend/src/lib and that deliverable is infrastructure-as-code, not a library module — so the phase reported as the one phase whose modules do not resolve. The three real modules (cloud-core.ts, cloud-byoc.ts, cloud-governance.ts) stay; the IaC deliverable is named where it actually lives: infrastructure/terraform, infrastructure/kubernetes, infrastructure/workloads and infrastructure/monitoring, with the fabric's invariants proven by infrastructure-preflight and cloud-fabric-foundation proofs (64/64 invariants) and its deployment still BLOCKED pending owner credentials (CF-4…CF-12). Levels untouched — this correction moves no level, it stops the row claiming a module that does not exist. Record: architecture/archaeology/registry-truth-sweep.audit.md",
+      "version_target": "ACTIVE-V1"
+    },
+    {
+      "id": "22",
+      "name": "Mobile Platform",
+      "layer": "Global",
+      "status": "IMPLEMENTING",
+      "stage": "S6",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": 49,
+      "modules": [
+        "platform-core",
+        "platform-device",
+        "platform-offline",
+        "platform-observability"
+      ],
+      "consumers": [
+        "runtime-001"
+      ],
+      "version_target": "ACTIVE-V1"
+    },
+    {
+      "id": "23",
+      "name": "Web Platform",
+      "layer": "Runtime",
+      "status": "IMPLEMENTING",
+      "stage": "S6",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": 41,
+      "modules": [
+        "web-core",
+        "web-storage",
+        "web-performance",
+        "web-platform"
+      ],
+      "consumers": [
+        "runtime-001"
+      ],
+      "version_target": "ACTIVE-V1"
+    },
+    {
+      "id": "24",
+      "name": "Experience & Design Intelligence",
+      "layer": "Intelligence",
+      "status": "IMPLEMENTING",
+      "stage": "S6",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": 33,
+      "modules": [
+        "experience-core",
+        "experience-personalization",
+        "experience-accessibility",
+        "experience-governance"
+      ],
+      "consumers": [
+        "50"
+      ],
+      "version_target": "ACTIVE-V1"
+    },
+    {
+      "id": "25",
+      "name": "Institutional Onboarding & Workforce",
+      "layer": "Foundations",
+      "status": "COMPLETE",
+      "stage": "S6",
+      "levels": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "tests": 128,
+      "modules": [
+        "institution-core",
+        "workforce-core",
+        "onboarding-core",
+        "attendance-identity",
+        "institution-admin",
+        "workforce-positions",
+        "onboarding/onboarding-flow"
+      ],
+      "consumers": [
+        "runtime-001"
+      ],
+      "notes": "2026-09-21 REGISTRY-TRUTH SWEEP: two corrections, both from evidence. (1) The L4 claim could not be evidenced because the module list was INCOMPLETE — frontend/src/lib/workforce-positions.ts declares itself 'Phase 25 Workforce Identity' and frontend/src/lib/onboarding/onboarding-flow.ts declares itself 'Phase 25 … domain-neutral ORGANIZATION ONBOARDING FLOW', and the contract already cites their suites (tests/unit/workforce-positions.test.ts, tests/unit/onboarding-flow.test.ts); both are now attributed to this phase. With the attribution corrected, L4 is evidenced: /_authenticated/admin/staff-accounts imports @/lib/workforce-positions with its server functions, and the Command Centre surface composes the onboarding flow. (2) tests corrected 53 to 128 — the count the contract's cited suites actually contain. L1, L2, L3 and L5 stand. The workforce extension of identity is the approved duplication D8 (CLOSED, owner 02). Open: the HR surface still reads several tables directly through the Supabase client, so the phase's engines are projected but are not yet the only path to that data. Record: architecture/archaeology/registry-truth-sweep.audit.md",
+      "version_target": "ACTIVE-V1"
+    },
+    {
+      "id": "26",
+      "name": "AI Intelligence Layer",
+      "layer": "Intelligence",
+      "status": "IMPLEMENTING",
+      "stage": "S8",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": 66,
+      "modules": [
+        "ai-core",
+        "ai-context",
+        "ai-reasoning",
+        "ai-governance",
+        "ai-services"
+      ],
+      "consumers": [
+        "07",
+        "34",
+        "35"
+      ],
+      "version_target": "ACTIVE-V1"
+    },
+    {
+      "id": "27",
+      "name": "Marketplace",
+      "layer": "Commerce",
+      "status": "IMPLEMENTED",
+      "stage": "S7",
+      "levels": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "tests": 52,
+      "modules": [
+        "marketplace-core",
+        "marketplace-vendor",
+        "marketplace-package",
+        "marketplace-entitlement",
+        "marketplace-governance"
+      ],
+      "consumers": [
+        "49",
+        "51"
+      ],
+      "notes": "2026-09-21 REGISTRY-TRUTH SWEEP: levels corrected from evidence — L1 to L5 are all evidenced (L2 from the contract's declared substrates, L4 because the /marketplace route renders frontend/src/lib/surfaces/marketplace-view which consumes @/lib/marketplace-core and @/lib/marketplace-entitlement, L5 because scripts/verify-phase-consumption.mjs tests this phase as consumed), but the row is deliberately NOT closed to COMPLETE: this phase has no acceptance record (architecture/phase-acceptance/ holds records for phases 01–12 only) and no archaeology record, so closure is withheld until its own audit wave runs. This is the next audit target. Record: architecture/archaeology/registry-truth-sweep.audit.md",
+      "version_target": "MIXED"
+    },
+    {
+      "id": "28",
+      "name": "Developer Platform",
+      "layer": "Runtime",
+      "status": "IMPLEMENTING",
+      "stage": "S7",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": 47,
+      "modules": [
+        "dev-core",
+        "dev-api",
+        "dev-env",
+        "dev-build",
+        "dev-governance"
+      ],
+      "consumers": [
+        "27",
+        "51"
+      ],
+      "version_target": "MIXED"
+    },
+    {
+      "id": "29",
+      "name": "CoreGrid Integration",
+      "layer": "Runtime",
+      "status": "IMPLEMENTING",
+      "stage": "S7",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": 52,
+      "modules": [
+        "integration-core",
+        "integration-transform",
+        "integration-connect",
+        "integration-ops",
+        "integration-governance"
+      ],
+      "consumers": [
+        "43"
+      ],
+      "version_target": "ACTIVE-V1"
+    },
+    {
+      "id": "30",
+      "name": "Globalization",
+      "layer": "Global",
+      "status": "IMPLEMENTING",
+      "stage": "S6",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": 93,
+      "modules": [
+        "globalization-core",
+        "localization-content",
+        "regional-context",
+        "global-formats",
+        "global-governance"
+      ],
+      "consumers": [
+        "04",
+        "50"
+      ],
+      "version_target": "ACTIVE-V1"
+    },
+    {
+      "id": "31",
+      "name": "Enterprise Scale",
+      "layer": "Global",
+      "status": "IMPLEMENTING",
+      "stage": "S6",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": 58,
+      "modules": [
+        "enterprise-core",
+        "enterprise-capacity",
+        "enterprise-reliability",
+        "enterprise-operations",
+        "enterprise-governance"
+      ],
+      "consumers": [
+        "40"
+      ],
+      "version_target": "ACTIVE-V1"
+    },
+    {
+      "id": "32",
+      "name": "Future Evolution",
+      "layer": "Intelligence",
+      "status": "IMPLEMENTING",
+      "stage": "S9",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": 49,
+      "modules": [
+        "evolution-core",
+        "evolution-experiments",
+        "evolution-migration",
+        "evolution-intelligence",
+        "evolution-governance"
+      ],
+      "consumers": [
+        "47"
+      ],
+      "version_target": "MIXED"
+    },
+    {
+      "id": "33",
+      "name": "Reality Intelligence Kernel (URIK)",
+      "layer": "Universal",
+      "status": "ARCHITECTURE_DEFINED",
+      "stage": "S2",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": null,
+      "modules": [
+        "kernel/reality",
+        "kernel/domain-manifest",
+        "kernel/outbox",
+        "kernel/runtime-registry"
+      ],
+      "consumers": [
+        "34",
+        "36",
+        "48",
+        "51"
+      ],
+      "notes": "S2 2026-09-03: universal kernel substrate first slice authored — migration 20260903000000_coregrid_universal_kernel_substrate.sql (cg_entity/cg_relationship/cg_event/cg_observation/cg_domain_runtime; provenance, temporal validity, classification, deny-by-default RLS, domain-agnostic) + kernel-purity enforcement test (Scholar Independence / Runtime Installation); typed reality contracts (frontend/src/lib/kernel/reality.ts, 21 tests, SQL-coherence pinned) mirror the substrate CHECK clauses for all four primitives (entity, relationship, event, observation); generic domain-runtime manifest schema (kernel/domain-manifest.ts, 12 tests) — installable runtime contract (P04/P40 consumers pending); S2→S3 boundary logic: event outbox state machine (kernel/outbox.ts, 8 tests) + runtime-registry lifecycle (kernel/runtime-registry.ts, 5 tests); cg_domain_runtime registry table in substrate (runtime-install home); rls-isolation-check.sql extended for deny-by-default cg_* posture + db-tooling-coherence tests; STATUS DB-VALIDATED (2026-09-04, dev project nwrflbpbhyiqdptmlccm): all 31 migrations applied via Management API (migration 20260903000000 included); rls-isolation-check PASS; live kernel-wiring verification 11/11 — cg_* substrate present for service role, anon denied (deny-by-default), register runtime:scholar persisted (proposed, v0.1.0), CHECK constraint enforced, cg_event pending insert + idempotency replay rejected. HTTP-layer E2E of the server functions pending an app runtime; phase implementation gates (ADR PLATFORM-003…008/010) unchanged",
+      "version_target": "MIXED"
+    },
+    {
+      "id": "34",
+      "name": "Universal Cognitive Intelligence Engine",
+      "layer": "Universal",
+      "status": "ARCHITECTURE_DEFINED",
+      "stage": "S8",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": null,
+      "modules": [],
+      "consumers": [
+        "26",
+        "35"
+      ],
+      "version_target": "FUTURE-UNASSIGNED"
+    },
+    {
+      "id": "35",
+      "name": "Autonomous Agent Civilization OS",
+      "layer": "Universal",
+      "status": "ARCHITECTURE_DEFINED",
+      "stage": "S8",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": null,
+      "modules": [],
+      "consumers": [
+        "07"
+      ],
+      "version_target": "FUTURE-UNASSIGNED"
+    },
+    {
+      "id": "36",
+      "name": "Universal Memory & Knowledge Engine",
+      "layer": "Universal",
+      "status": "ARCHITECTURE_DEFINED",
+      "stage": "S8",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": null,
+      "modules": [],
+      "consumers": [
+        "34",
+        "35",
+        "07"
+      ],
+      "version_target": "MIXED"
+    },
+    {
+      "id": "37",
+      "name": "Simulation & Future Intelligence Engine",
+      "layer": "Universal",
+      "status": "ARCHITECTURE_DEFINED",
+      "stage": "S11",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": null,
+      "modules": [],
+      "consumers": [
+        "41"
+      ],
+      "version_target": "FUTURE-V3"
+    },
+    {
+      "id": "38",
+      "name": "Evolution Engine",
+      "layer": "Universal",
+      "status": "ARCHITECTURE_DEFINED",
+      "stage": "S9",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": null,
+      "modules": [],
+      "consumers": [
+        "47"
+      ],
+      "version_target": "FUTURE-UNASSIGNED"
+    },
+    {
+      "id": "39",
+      "name": "Governance & Alignment Engine",
+      "layer": "Universal",
+      "status": "ARCHITECTURE_DEFINED",
+      "stage": "S9",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": null,
+      "modules": [],
+      "consumers": [
+        "51"
+      ],
+      "version_target": "MIXED"
+    },
+    {
+      "id": "40",
+      "name": "Universal Runtime Fabric",
+      "layer": "Universal",
+      "status": "ARCHITECTURE_DEFINED",
+      "stage": "S10",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": null,
+      "modules": [],
+      "consumers": [
+        "51"
+      ],
+      "version_target": "MIXED"
+    },
+    {
+      "id": "41",
+      "name": "Reality Simulation & Autonomous Sandbox Engine",
+      "layer": "Civilization",
+      "status": "ARCHITECTURE_DEFINED",
+      "stage": "S11",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": null,
+      "modules": [],
+      "consumers": [
+        "37",
+        "47"
+      ],
+      "version_target": "FUTURE-V3"
+    },
+    {
+      "id": "42",
+      "name": "Zero Trust & Adversarial Defense Engine",
+      "layer": "Civilization",
+      "status": "ARCHITECTURE_DEFINED",
+      "stage": "S4",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": null,
+      "modules": [],
+      "consumers": [
+        "08"
+      ],
+      "version_target": "MIXED"
+    },
+    {
+      "id": "43",
+      "name": "Universal Interface & Connectivity Intelligence",
+      "layer": "Civilization",
+      "status": "ARCHITECTURE_DEFINED",
+      "stage": "S7",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": null,
+      "modules": [],
+      "consumers": [
+        "50",
+        "51"
+      ],
+      "version_target": "MIXED"
+    },
+    {
+      "id": "44",
+      "name": "Planetary Distributed Infrastructure Engine",
+      "layer": "Civilization",
+      "status": "ARCHITECTURE_DEFINED",
+      "stage": "S11",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": null,
+      "modules": [],
+      "consumers": [
+        "15",
+        "21"
+      ],
+      "version_target": "FUTURE-V3"
+    },
+    {
+      "id": "45",
+      "name": "AI Compute Civilization Engine",
+      "layer": "Civilization",
+      "status": "ARCHITECTURE_DEFINED",
+      "stage": "S11",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": null,
+      "modules": [],
+      "consumers": [
+        "26"
+      ],
+      "version_target": "FUTURE-UNASSIGNED"
+    },
+    {
+      "id": "46",
+      "name": "Universal Digital Twin Civilization Layer",
+      "layer": "Civilization",
+      "status": "ARCHITECTURE_DEFINED",
+      "stage": "S11",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": null,
+      "modules": [],
+      "consumers": [
+        "16"
+      ],
+      "version_target": "FUTURE-V3"
+    },
+    {
+      "id": "47",
+      "name": "Autonomous Engineering Self-Improvement Engine",
+      "layer": "Civilization",
+      "status": "ARCHITECTURE_DEFINED",
+      "stage": "S9",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": null,
+      "modules": [],
+      "consumers": [
+        "32",
+        "38",
+        "39"
+      ],
+      "version_target": "FUTURE-UNASSIGNED"
+    },
+    {
+      "id": "48",
+      "name": "Civilization Knowledge Graph",
+      "layer": "Civilization",
+      "status": "ARCHITECTURE_DEFINED",
+      "stage": "S5",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": null,
+      "modules": [],
+      "consumers": [
+        "33",
+        "36"
+      ],
+      "version_target": "FUTURE-UNASSIGNED"
+    },
+    {
+      "id": "49",
+      "name": "Autonomous Economy Engine",
+      "layer": "Civilization",
+      "status": "ARCHITECTURE_DEFINED",
+      "stage": "S11",
+      "levels": [
+        false,
+        true,
+        false,
+        false,
+        true
+      ],
+      "tests": null,
+      "modules": [],
+      "consumers": [
+        "13",
+        "27"
+      ],
+      "notes": "2026-09-21 REGISTRY-TRUTH SWEEP: the L1 claim was WITHDRAWN after hand review. The completion audit derives L1 only when a phase document states at least eight of the twenty mandatory engineering sections AND a kernel contract exists; the contract exists (phase-49-autonomous-economy.ts) but architecture/phase-49-autonomous-economy-engine.md states 7 of 20 sections, so the claim was unproven and the row now says so. This is a documentation gap to close by authoring the missing sections in a future phase-49 wave — the rule is not lowered to fit the document. L2 (data-model vocabulary plus the contract's declared substrates) and L5 (the phase is named by an operational artefact) stand; L3 and L4 are absent because the phase declares no modules at this stage. Record: architecture/archaeology/registry-truth-sweep.audit.md",
+      "version_target": "FUTURE-UNASSIGNED"
+    },
+    {
+      "id": "50",
+      "name": "Human Civilization Interface Layer",
+      "layer": "Civilization",
+      "status": "ARCHITECTURE_DEFINED",
+      "stage": "S12",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": null,
+      "modules": [],
+      "consumers": [
+        "06",
+        "24"
+      ],
+      "version_target": "FUTURE-UNASSIGNED"
+    },
+    {
+      "id": "51",
+      "name": "Universal Reality OS Kernel",
+      "layer": "Civilization",
+      "status": "ARCHITECTURE_DEFINED",
+      "stage": "S10",
+      "levels": [
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tests": null,
+      "modules": [],
+      "consumers": [
+        "all"
+      ],
+      "version_target": "FUTURE-UNASSIGNED"
+    }
   ],
   "capabilities": [
-    {"capability":"foundation-standards-config-secrets-ci","owner":"01","consumers":["all"]},
-    {"capability":"universal-identity","owner":"02","consumers":["03","05","06","08","22","25","50"]},
-    {"capability":"tenancy-isolation-rls","owner":"03","consumers":["all"]},
-    {"capability":"education-reality-ontology","owner":"04","consumers":["11","12","13","25"]},
-    {"capability":"universal-reality-ontology","owner":"33","consumers":["34","36","48","51"]},
-    {"capability":"runtime-primitives","owner":"05","consumers":["all"]},
-    {"capability":"workspace-composition","owner":"06","consumers":["19","24","50"]},
-    {"capability":"agent-runtime","owner":"07","consumers":["26","35","47","50"]},
-    {"capability":"security-enforcement","owner":"08","consumers":["all"]},
-    {"capability":"trust-fabric","owner":"09","consumers":["08","42"]},
-    {"capability":"communication-messaging","owner":"10","consumers":["24","43"]},
-    {"capability":"academic-intelligence","owner":"11","consumers":["12","18"]},
-    {"capability":"scheduling","owner":"12","consumers":["04","25"]},
-    {"capability":"financial-ledger","owner":"13","consumers":["27","49"]},
-    {"capability":"data-platform","owner":"14","consumers":["all"]},
-    {"capability":"hardware-device-telemetry","owner":"15","consumers":["16","44"]},
-    {"capability":"live-digital-twin","owner":"16","consumers":["17","18","46"]},
-    {"capability":"automation-workflow-runtime","owner":"17","consumers":["all"]},
-    {"capability":"analytics-decision-intelligence","owner":"18","consumers":["19","34"]},
-    {"capability":"command-centre-surface","owner":"19","consumers":["control-plane"]},
-    {"capability":"government-sovereign-deployments","owner":"20","consumers":["44"]},
-    {"capability":"cloud-fabric-byoc","owner":"21","consumers":["44"]},
-    {"capability":"mobile-client-platform","owner":"22","consumers":["runtime-001"]},
-    {"capability":"web-client-platform","owner":"23","consumers":["runtime-001"]},
-    {"capability":"experience-design","owner":"24","consumers":["50"]},
-    {"capability":"onboarding-workforce-identity","owner":"25","consumers":["runtime-001"]},
-    {"capability":"ai-intelligence-gateway","owner":"26","consumers":["07","34","35"]},
-    {"capability":"marketplace","owner":"27","consumers":["49","51"]},
-    {"capability":"developer-platform","owner":"28","consumers":["27","51"]},
-    {"capability":"integration-adapters","owner":"29","consumers":["43"]},
-    {"capability":"globalization","owner":"30","consumers":["04","50"]},
-    {"capability":"enterprise-scale","owner":"31","consumers":["40"]},
-    {"capability":"evolution-lifecycle","owner":"32","consumers":["47"]},
-    {"capability":"cognitive-architecture","owner":"34","consumers":["26","35"]},
-    {"capability":"multi-agent-society-governance","owner":"35","consumers":["07"]},
-    {"capability":"memory-knowledge-civilization","owner":"36","consumers":["34","35","07"]},
-    {"capability":"simulation-engine","owner":"37","consumers":["41"]},
-    {"capability":"governance-alignment","owner":"39","consumers":["51"]},
-    {"capability":"universal-runtime-fabric","owner":"40","consumers":["51"]},
-    {"capability":"sandbox-runtime","owner":"41","consumers":["37","47"]},
-    {"capability":"zero-trust-adversarial-defense","owner":"42","consumers":["08"]},
-    {"capability":"universal-interface-connectivity","owner":"43","consumers":["50","51"]},
-    {"capability":"planetary-infrastructure","owner":"44","consumers":["15","21"]},
-    {"capability":"ai-compute","owner":"45","consumers":["26"]},
-    {"capability":"twin-civilization-federation","owner":"46","consumers":["16"]},
-    {"capability":"autonomous-engineering-self-improvement","owner":"47","consumers":["32","38","39"]},
-    {"capability":"civilization-knowledge-graph","owner":"48","consumers":["33","36"]},
-    {"capability":"autonomous-economy","owner":"49","consumers":["13","27"]},
-    {"capability":"human-civilization-interface","owner":"50","consumers":["06","24"]},
-    {"capability":"reality-os-kernel-composition","owner":"51","consumers":["all"]}
-
+    {
+      "capability": "foundation-standards-config-secrets-ci",
+      "owner": "01",
+      "consumers": [
+        "all"
+      ]
+    },
+    {
+      "capability": "universal-identity",
+      "owner": "02",
+      "consumers": [
+        "03",
+        "05",
+        "06",
+        "08",
+        "22",
+        "25",
+        "50"
+      ]
+    },
+    {
+      "capability": "tenancy-isolation-rls",
+      "owner": "03",
+      "consumers": [
+        "all"
+      ]
+    },
+    {
+      "capability": "education-reality-ontology",
+      "owner": "04",
+      "consumers": [
+        "11",
+        "12",
+        "13",
+        "25"
+      ]
+    },
+    {
+      "capability": "universal-reality-ontology",
+      "owner": "33",
+      "consumers": [
+        "34",
+        "36",
+        "48",
+        "51"
+      ]
+    },
+    {
+      "capability": "runtime-primitives",
+      "owner": "05",
+      "consumers": [
+        "all"
+      ]
+    },
+    {
+      "capability": "workspace-composition",
+      "owner": "06",
+      "consumers": [
+        "19",
+        "24",
+        "50"
+      ]
+    },
+    {
+      "capability": "agent-runtime",
+      "owner": "07",
+      "consumers": [
+        "26",
+        "35",
+        "47",
+        "50"
+      ]
+    },
+    {
+      "capability": "security-enforcement",
+      "owner": "08",
+      "consumers": [
+        "all"
+      ]
+    },
+    {
+      "capability": "trust-fabric",
+      "owner": "09",
+      "consumers": [
+        "08",
+        "42"
+      ]
+    },
+    {
+      "capability": "communication-messaging",
+      "owner": "10",
+      "consumers": [
+        "24",
+        "43"
+      ]
+    },
+    {
+      "capability": "academic-intelligence",
+      "owner": "11",
+      "consumers": [
+        "12",
+        "18"
+      ]
+    },
+    {
+      "capability": "scheduling",
+      "owner": "12",
+      "consumers": [
+        "04",
+        "25"
+      ]
+    },
+    {
+      "capability": "financial-ledger",
+      "owner": "13",
+      "consumers": [
+        "27",
+        "49"
+      ]
+    },
+    {
+      "capability": "data-platform",
+      "owner": "14",
+      "consumers": [
+        "all"
+      ]
+    },
+    {
+      "capability": "hardware-device-telemetry",
+      "owner": "15",
+      "consumers": [
+        "16",
+        "44"
+      ]
+    },
+    {
+      "capability": "live-digital-twin",
+      "owner": "16",
+      "consumers": [
+        "17",
+        "18",
+        "46"
+      ]
+    },
+    {
+      "capability": "automation-workflow-runtime",
+      "owner": "17",
+      "consumers": [
+        "all"
+      ]
+    },
+    {
+      "capability": "analytics-decision-intelligence",
+      "owner": "18",
+      "consumers": [
+        "19",
+        "34"
+      ]
+    },
+    {
+      "capability": "command-centre-surface",
+      "owner": "19",
+      "consumers": [
+        "control-plane"
+      ]
+    },
+    {
+      "capability": "government-sovereign-deployments",
+      "owner": "20",
+      "consumers": [
+        "44"
+      ]
+    },
+    {
+      "capability": "cloud-fabric-byoc",
+      "owner": "21",
+      "consumers": [
+        "44"
+      ]
+    },
+    {
+      "capability": "mobile-client-platform",
+      "owner": "22",
+      "consumers": [
+        "runtime-001"
+      ]
+    },
+    {
+      "capability": "web-client-platform",
+      "owner": "23",
+      "consumers": [
+        "runtime-001"
+      ]
+    },
+    {
+      "capability": "experience-design",
+      "owner": "24",
+      "consumers": [
+        "50"
+      ]
+    },
+    {
+      "capability": "onboarding-workforce-identity",
+      "owner": "25",
+      "consumers": [
+        "runtime-001"
+      ]
+    },
+    {
+      "capability": "ai-intelligence-gateway",
+      "owner": "26",
+      "consumers": [
+        "07",
+        "34",
+        "35"
+      ]
+    },
+    {
+      "capability": "marketplace",
+      "owner": "27",
+      "consumers": [
+        "49",
+        "51"
+      ]
+    },
+    {
+      "capability": "developer-platform",
+      "owner": "28",
+      "consumers": [
+        "27",
+        "51"
+      ]
+    },
+    {
+      "capability": "integration-adapters",
+      "owner": "29",
+      "consumers": [
+        "43"
+      ]
+    },
+    {
+      "capability": "globalization",
+      "owner": "30",
+      "consumers": [
+        "04",
+        "50"
+      ]
+    },
+    {
+      "capability": "enterprise-scale",
+      "owner": "31",
+      "consumers": [
+        "40"
+      ]
+    },
+    {
+      "capability": "evolution-lifecycle",
+      "owner": "32",
+      "consumers": [
+        "47"
+      ]
+    },
+    {
+      "capability": "cognitive-architecture",
+      "owner": "34",
+      "consumers": [
+        "26",
+        "35"
+      ]
+    },
+    {
+      "capability": "multi-agent-society-governance",
+      "owner": "35",
+      "consumers": [
+        "07"
+      ]
+    },
+    {
+      "capability": "memory-knowledge-civilization",
+      "owner": "36",
+      "consumers": [
+        "34",
+        "35",
+        "07"
+      ]
+    },
+    {
+      "capability": "simulation-engine",
+      "owner": "37",
+      "consumers": [
+        "41"
+      ]
+    },
+    {
+      "capability": "governance-alignment",
+      "owner": "39",
+      "consumers": [
+        "51"
+      ]
+    },
+    {
+      "capability": "universal-runtime-fabric",
+      "owner": "40",
+      "consumers": [
+        "51"
+      ]
+    },
+    {
+      "capability": "sandbox-runtime",
+      "owner": "41",
+      "consumers": [
+        "37",
+        "47"
+      ]
+    },
+    {
+      "capability": "zero-trust-adversarial-defense",
+      "owner": "42",
+      "consumers": [
+        "08"
+      ]
+    },
+    {
+      "capability": "universal-interface-connectivity",
+      "owner": "43",
+      "consumers": [
+        "50",
+        "51"
+      ]
+    },
+    {
+      "capability": "planetary-infrastructure",
+      "owner": "44",
+      "consumers": [
+        "15",
+        "21"
+      ]
+    },
+    {
+      "capability": "ai-compute",
+      "owner": "45",
+      "consumers": [
+        "26"
+      ]
+    },
+    {
+      "capability": "twin-civilization-federation",
+      "owner": "46",
+      "consumers": [
+        "16"
+      ]
+    },
+    {
+      "capability": "autonomous-engineering-self-improvement",
+      "owner": "47",
+      "consumers": [
+        "32",
+        "38",
+        "39"
+      ]
+    },
+    {
+      "capability": "civilization-knowledge-graph",
+      "owner": "48",
+      "consumers": [
+        "33",
+        "36"
+      ]
+    },
+    {
+      "capability": "autonomous-economy",
+      "owner": "49",
+      "consumers": [
+        "13",
+        "27"
+      ]
+    },
+    {
+      "capability": "human-civilization-interface",
+      "owner": "50",
+      "consumers": [
+        "06",
+        "24"
+      ]
+    },
+    {
+      "capability": "reality-os-kernel-composition",
+      "owner": "51",
+      "consumers": [
+        "all"
+      ]
+    }
   ],
   "runtimes": [
-    {"id":"runtime-001","name":"CoreGrid Scholar","type":"domain-runtime","status":"ACTIVE","phases":["04","10","11","12","13","15","16","17","18","20","22","23","25"],"surfaces":["role-dashboards","command-centre-provision","api-routes"],"note":"first production domain runtime; vertical L3/L4 partial, L5 pending. 2026-09-07 K-WAVES: registered as firstRuntime on all 51 kernel phase contracts, so the whole contract chain is validated against a live domain runtime rather than a placeholder. 2026-09-07 WAVE-K9: the phase list is now the exact owner set of the kernel capabilities Scholar consumes (mobile 22 + web 23 client platforms were consumed but unlisted) — locked by tests/unit/scholar-vertical-bindings.test.ts against the binding map in frontend/src/lib/runtime/scholar-vertical-bindings.ts"},
-    {"id":"runtime-002-plus","name":"Future runtimes","type":"domain-runtime","status":"RESERVED","phases":[],"surfaces":[],"note":"no runtime may be installed by rewriting the kernel; each new runtime registers over the generic contract (kernel/domain-manifest.ts) and holds a reserved neutral seat (healthcare, government, commerce, logistics, energy, transport) until it is bound"}
-
+    {
+      "id": "runtime-001",
+      "name": "CoreGrid Scholar",
+      "type": "domain-runtime",
+      "status": "ACTIVE",
+      "phases": [
+        "04",
+        "10",
+        "11",
+        "12",
+        "13",
+        "15",
+        "16",
+        "17",
+        "18",
+        "20",
+        "22",
+        "23",
+        "25"
+      ],
+      "surfaces": [
+        "role-dashboards",
+        "command-centre-provision",
+        "api-routes"
+      ],
+      "note": "first production domain runtime; vertical L3/L4 partial, L5 pending. 2026-09-07 K-WAVES: registered as firstRuntime on all 51 kernel phase contracts, so the whole contract chain is validated against a live domain runtime rather than a placeholder. 2026-09-07 WAVE-K9: the phase list is now the exact owner set of the kernel capabilities Scholar consumes (mobile 22 + web 23 client platforms were consumed but unlisted) — locked by tests/unit/scholar-vertical-bindings.test.ts against the binding map in frontend/src/lib/runtime/scholar-vertical-bindings.ts"
+    },
+    {
+      "id": "runtime-002-plus",
+      "name": "Future runtimes",
+      "type": "domain-runtime",
+      "status": "RESERVED",
+      "phases": [],
+      "surfaces": [],
+      "note": "no runtime may be installed by rewriting the kernel; each new runtime registers over the generic contract (kernel/domain-manifest.ts) and holds a reserved neutral seat (healthcare, government, commerce, logistics, energy, transport) until it is bound"
+    }
   ],
   "duplications": [
-    {"id":"D1","cluster":"memory","phases":["07","14","26","34","36"],"owner":"36","consumers":["07","34","35"],"status":"OPEN","adr":"PLATFORM-003"},
-    {"id":"D2","cluster":"knowledge-graphs","phases":["33","36","48","14"],"owner":"33/36/48","consumers":["34","35","51"],"status":"OPEN","adr":"PLATFORM-003"},
-    {"id":"D3","cluster":"evolution","phases":["32","38","47","31"],"owner":"32","consumers":["38","47"],"status":"OPEN","adr":"PLATFORM-004"},
-    {"id":"D4","cluster":"digital-twin","phases":["16","46","33","48"],"owner":"16","consumers":["46"],"status":"OPEN","adr":"PLATFORM-005"},
-    {"id":"D5","cluster":"simulation-sandbox","phases":["37","41","16","35"],"owner":"37","consumers":["41"],"status":"OPEN","adr":"PLATFORM-006"},
-    {"id":"D6","cluster":"agents","phases":["07","35","26","47","50"],"owner":"07","consumers":["35","26","47","50"],"status":"CLOSED","adr":null},
-    {"id":"D7","cluster":"security-trust","phases":["08","09","42","51"],"owner":"08/09/42","consumers":["all"],"status":"OPEN","adr":"PLATFORM-007"},
-    {"id":"D8","cluster":"identity-extensions","phases":["02","25","20"],"owner":"02","consumers":["25","20"],"status":"CLOSED","adr":null},
-    {"id":"D9","cluster":"ai-intelligence","phases":["07","11","18","26","34"],"owner":"26","consumers":["07","11","18","34","35"],"status":"CLOSED","adr":null},
-    {"id":"D10","cluster":"event-fabric","phases":["05","16","17"],"owner":"05","consumers":["all"],"status":"CLOSED","adr":null},
-    {"id":"D11","cluster":"workflow-automation","phases":["17","05","28","47"],"owner":"17","consumers":["28","47"],"status":"CLOSED","adr":null},
-    {"id":"D12","cluster":"workspace-vs-surfaces","phases":["06","19","22","23","24","50"],"owner":"06","consumers":["19","22","23","24","50"],"status":"CLOSED","adr":null},
-    {"id":"D13","cluster":"economy-finance","phases":["13","49","27"],"owner":"13","consumers":["49","27"],"status":"CLOSED","adr":null},
-    {"id":"D14","cluster":"catalog-module-naming","phases":["32","38"],"owner":null,"consumers":[],"status":"CLOSED","adr":"PLATFORM-004"},
-    {"id":"D15","cluster":"globalization-interface-human","phases":["30","43","50"],"owner":"30/43/50","consumers":[],"status":"CLOSED","adr":null}
-
-  ]
+    {
+      "id": "D1",
+      "cluster": "memory",
+      "phases": [
+        "07",
+        "14",
+        "26",
+        "34",
+        "36"
+      ],
+      "owner": "36",
+      "consumers": [
+        "07",
+        "34",
+        "35"
+      ],
+      "status": "OPEN",
+      "adr": "PLATFORM-003"
+    },
+    {
+      "id": "D2",
+      "cluster": "knowledge-graphs",
+      "phases": [
+        "33",
+        "36",
+        "48",
+        "14"
+      ],
+      "owner": "33/36/48",
+      "consumers": [
+        "34",
+        "35",
+        "51"
+      ],
+      "status": "OPEN",
+      "adr": "PLATFORM-003"
+    },
+    {
+      "id": "D3",
+      "cluster": "evolution",
+      "phases": [
+        "32",
+        "38",
+        "47",
+        "31"
+      ],
+      "owner": "32",
+      "consumers": [
+        "38",
+        "47"
+      ],
+      "status": "OPEN",
+      "adr": "PLATFORM-004"
+    },
+    {
+      "id": "D4",
+      "cluster": "digital-twin",
+      "phases": [
+        "16",
+        "46",
+        "33",
+        "48"
+      ],
+      "owner": "16",
+      "consumers": [
+        "46"
+      ],
+      "status": "OPEN",
+      "adr": "PLATFORM-005"
+    },
+    {
+      "id": "D5",
+      "cluster": "simulation-sandbox",
+      "phases": [
+        "37",
+        "41",
+        "16",
+        "35"
+      ],
+      "owner": "37",
+      "consumers": [
+        "41"
+      ],
+      "status": "OPEN",
+      "adr": "PLATFORM-006"
+    },
+    {
+      "id": "D6",
+      "cluster": "agents",
+      "phases": [
+        "07",
+        "35",
+        "26",
+        "47",
+        "50"
+      ],
+      "owner": "07",
+      "consumers": [
+        "35",
+        "26",
+        "47",
+        "50"
+      ],
+      "status": "CLOSED",
+      "adr": null
+    },
+    {
+      "id": "D7",
+      "cluster": "security-trust",
+      "phases": [
+        "08",
+        "09",
+        "42",
+        "51"
+      ],
+      "owner": "08/09/42",
+      "consumers": [
+        "all"
+      ],
+      "status": "OPEN",
+      "adr": "PLATFORM-007"
+    },
+    {
+      "id": "D8",
+      "cluster": "identity-extensions",
+      "phases": [
+        "02",
+        "25",
+        "20"
+      ],
+      "owner": "02",
+      "consumers": [
+        "25",
+        "20"
+      ],
+      "status": "CLOSED",
+      "adr": null
+    },
+    {
+      "id": "D9",
+      "cluster": "ai-intelligence",
+      "phases": [
+        "07",
+        "11",
+        "18",
+        "26",
+        "34"
+      ],
+      "owner": "26",
+      "consumers": [
+        "07",
+        "11",
+        "18",
+        "34",
+        "35"
+      ],
+      "status": "CLOSED",
+      "adr": null
+    },
+    {
+      "id": "D10",
+      "cluster": "event-fabric",
+      "phases": [
+        "05",
+        "16",
+        "17"
+      ],
+      "owner": "05",
+      "consumers": [
+        "all"
+      ],
+      "status": "CLOSED",
+      "adr": null
+    },
+    {
+      "id": "D11",
+      "cluster": "workflow-automation",
+      "phases": [
+        "17",
+        "05",
+        "28",
+        "47"
+      ],
+      "owner": "17",
+      "consumers": [
+        "28",
+        "47"
+      ],
+      "status": "CLOSED",
+      "adr": null
+    },
+    {
+      "id": "D12",
+      "cluster": "workspace-vs-surfaces",
+      "phases": [
+        "06",
+        "19",
+        "22",
+        "23",
+        "24",
+        "50"
+      ],
+      "owner": "06",
+      "consumers": [
+        "19",
+        "22",
+        "23",
+        "24",
+        "50"
+      ],
+      "status": "CLOSED",
+      "adr": null
+    },
+    {
+      "id": "D13",
+      "cluster": "economy-finance",
+      "phases": [
+        "13",
+        "49",
+        "27"
+      ],
+      "owner": "13",
+      "consumers": [
+        "49",
+        "27"
+      ],
+      "status": "CLOSED",
+      "adr": null
+    },
+    {
+      "id": "D14",
+      "cluster": "catalog-module-naming",
+      "phases": [
+        "32",
+        "38"
+      ],
+      "owner": null,
+      "consumers": [],
+      "status": "CLOSED",
+      "adr": "PLATFORM-004"
+    },
+    {
+      "id": "D15",
+      "cluster": "globalization-interface-human",
+      "phases": [
+        "30",
+        "43",
+        "50"
+      ],
+      "owner": "30/43/50",
+      "consumers": [],
+      "status": "CLOSED",
+      "adr": null
+    }
+  ],
+  "versionClassification": {
+    "profile": "V5.3",
+    "boundary": "V1 ACTIVE / V2 FROZEN / V3 FROZEN / FUTURE / RESEARCH",
+    "adopted": "2026-09-30",
+    "authority": "architecture/COREGRID_V53_DIRECTIVE_RECONCILIATION.json",
+    "classificationSource": "MISSION-V1-002 workforce stream B (Phase 52 V1/Future Decomposition)",
+    "enum": [
+      "ACTIVE-V1",
+      "MIXED",
+      "FUTURE-V2",
+      "FUTURE-V3",
+      "FUTURE-UNASSIGNED",
+      "RESEARCH",
+      "EXPERIMENTAL",
+      "HISTORICAL",
+      "REJECTED"
+    ],
+    "rule": "version_target classifies implementation scope; the existing status field is unchanged and never reports frozen scope as implemented.",
+    "knownBoundaryReviews": [
+      "phase-15: IMPLEMENTING status vs V2-frozen device scope — MIXED classification applied (organizational asset records are V1 per V5.3 Part 69; device/telemetry portions are V2 FROZEN); V1/V2 boundary split requires human review — UNRESOLVED, status conflict preserved"
+    ]
+  }
 }
