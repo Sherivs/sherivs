@@ -35,6 +35,7 @@ Nothing further could proceed tonight without one of these. Everything unblocked
 
 | # | Blocker | What it unblocks | Suggested action |
 | --- | --- | --- | --- |
+| BLK-7 | **GitHub push token invalidated mid-run** (first push succeeded 22:31; all retries failed). All Gate 17 work is COMMITTED LOCALLY — run `git push` or restart the agent to publish. | Publishing the Gate 17 commits + PR update | Push manually or refresh credentials |
 | BLK-1 | Supabase production project + service credentials; re-inject current `SUPABASE_PUBLISHABLE_KEY` (stale in Cursor Cloud Secrets) | Production migrations, deployment, launch validation | Add secrets; fix the stale publishable key |
 | BLK-2 | AI provider key (`AI_API_KEY` / `AI_GATEWAY_URL`) | Intelligence gateway live calls; the AI WORKER link in the vertical slice | Add provider key secret |
 | BLK-3 | Deployment target credentials (OCI `TF_VAR_oci_*` / Hetzner / Cloudflare per `infrastructure/CREDENTIALS.md`) | Dockerfile → serving environment → health probes; closes Gate 15 deployment dimension. **This decides the 10 Oct date.** | Add cloud credentials; I will stand up the environment first thing |
@@ -43,7 +44,7 @@ Nothing further could proceed tonight without one of these. Everything unblocked
 | BLK-6 | **Governance decision (no credential needed):** canonical mission/worker owner (CG-GAP-009/011) — the one critical-path item that needs a human ruling before code | Worker identity + delegation (the L-effort critical-path item) | Say the word and I implement V1-minimal delegation via `cg_role_assignment` |
 
 Additionally awaiting your explicit authorization (governance law: migration applies need a human decision):
-- Apply the **V1-minimal workspace persistence migration** (step 3 of the plan) to the dev project — prepared pattern mirrors the reviewed foundation-mission migration.
+- Apply the **V1-minimal workspace persistence migration** — **now AUTHORED** at `database/supabase/migrations/20260930000000_coregrid_v1_workspace_persistence.sql` (`cg_workspace` + `cg_workspace_member`, domain-neutral vocabulary mirroring `workspace-core.ts`, RLS deny-by-default, no anon/authenticated grants, rollback authored) with its **rollback** at `database/supabase/rollbacks/20260930000000_coregrid_v1_workspace_persistence.sql`. Step 3 of the plan; apply with `supabase db push --workdir database/supabase` after your decision.
 - Phase-15 V1/V2 code-boundary review (implemented hardware modules vs frozen device scope — currently recorded MIXED/UNRESOLVED, not silently resolved).
 
 ## Verification integrity notes
