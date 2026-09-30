@@ -53,6 +53,7 @@ export interface ScholarRelationshipInput {
   targetEntityId: string;
   tenantId?: string | null;
   attributes?: Record<string, unknown>;
+  sourceRef?: string | null;
   observedAt?: string | null;
   validFrom?: string | null;
   validTo?: string | null;

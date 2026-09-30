@@ -49,6 +49,11 @@ const AGGREGATE_BY_EVENT: Record<ScholarEventType, string> = {
   "learning_group.formed": "learning_group",
 };
 
+/** Aggregate type a Scholar event is bound to (flow-level binding checks). */
+export function scholarEventAggregateType(eventType: ScholarEventType): string {
+  return AGGREGATE_BY_EVENT[eventType];
+}
+
 const DECLARED_ENTITY_TYPES = new Set<string>(
   SCHOLAR_RUNTIME_MANIFEST.ontology.entityTypes.map((type) => type.name),
 );

@@ -67,6 +67,93 @@ describe.skipIf(!enabled)("foundation loop live session", () => {
     expect(result.verificationDecision).toBe("verified");
   }, 90000);
 
+  it("binds the Scholar entity into the reality graph with a relationship and event", async () => {
+    const supabase = createClient(url, anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const signedIn = await supabase.auth.signInWithPassword({ email, password });
+    expect(signedIn.error).toBeNull();
+
+    // The learning group is itself created through the same governed loop, so
+    // the enrollment edge always targets an in-scope, ontology-valid entity.
+    const group = await executeScholarFoundationLoop({
+      supabase,
+      userId,
+      data: {
+        entityType: "learning_group",
+        state: "formed-probe",
+        attributes: { probe: true },
+        idempotencyKey: "scholar-live-group-idem-001",
+      },
+    });
+    expect(group.replayed).toBe(false);
+    expect(group.scholarEntityType).toBe("learning_group");
+
+    const enrolled = await executeScholarFoundationLoop({
+      supabase,
+      userId,
+      data: {
+        entityType: "learner",
+        state: "enrolled-probe",
+        attributes: { probe: true },
+        idempotencyKey: "scholar-live-enroll-idem-001",
+        relationships: [
+          { relationType: "enrolls", targetEntityId: group.realityRef },
+        ],
+        event: { eventType: "learner.enrolled" },
+      },
+    });
+    expect(enrolled.replayed).toBe(false);
+    expect(enrolled.relationshipCount).toBe(1);
+    expect(enrolled.recordedEvent).toBe("learner.enrolled");
+    expect(enrolled.executionStatus).toBe("admitted");
+    expect(enrolled.verificationDecision).toBe("verified");
+
+    // Replay returns the recorded execution and creates no new reality rows.
+    const replay = await executeScholarFoundationLoop({
+      supabase,
+      userId,
+      data: {
+        entityType: "learner",
+        state: "enrolled-probe",
+        attributes: { probe: true },
+        idempotencyKey: "scholar-live-enroll-idem-001",
+        relationships: [
+          { relationType: "enrolls", targetEntityId: group.realityRef },
+        ],
+        event: { eventType: "learner.enrolled" },
+      },
+    });
+    expect(replay.replayed).toBe(true);
+    expect(replay.executionId).toBe(enrolled.executionId);
+    expect(replay.realityRef).toBe(enrolled.realityRef);
+  }, 90000);
+
+  it("rejects a relationship target outside the actor's tenant scope", async () => {
+    const supabase = createClient(url, anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const signedIn = await supabase.auth.signInWithPassword({ email, password });
+    expect(signedIn.error).toBeNull();
+
+    await expect(
+      executeScholarFoundationLoop({
+        supabase,
+        userId,
+        data: {
+          entityType: "learner",
+          idempotencyKey: "scholar-live-cross-tenant-01",
+          relationships: [
+            {
+              relationType: "enrolls",
+              targetEntityId: "00000000-0000-0000-0000-000000000000",
+            },
+          ],
+        },
+      }),
+    ).rejects.toThrow(/does not exist in the actor's tenant scope/);
+  }, 90000);
+
   it("rolls back an admitted execution and preserves both history entries", async () => {
     const supabase = createClient(url, anonKey, {
       auth: { persistSession: false, autoRefreshToken: false },
