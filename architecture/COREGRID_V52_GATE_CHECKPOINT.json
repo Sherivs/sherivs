@@ -115,6 +115,11 @@
         "conformance beyond assessed scope"
       ]
     },
+    "exerciserRepair": {
+      "record": "exercise-foundation-loop.mjs cleanup extended to delete cg_event and cg_relationship rows for the probe tenant before deleting cg_entity. Required because the extended Scholar loop now persists relationship and event rows that reference cg_entity with ON DELETE RESTRICT; without this repair the live exerciser would fail mid-cleanup and leak probe reality rows.",
+      "evidence": ["scripts/exercise-foundation-loop.mjs"],
+      "notClaimed": ["live execution of the repaired exerciser (requires laptop secrets)"]
+    },
     "baselineAmendments": {
       "record": "Governed amendment to architecture/COREGRID_EVOLUTION_BASELINE_2026-09-30.json knownGaps, per V5.1 Part 47 evolution law and the baseline's comparisonInstructions: changes are recorded decisions against the baseline, not silent rewrites of it.",
       "closed": [

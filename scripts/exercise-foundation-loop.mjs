@@ -105,6 +105,10 @@ await management(`
     WHERE tenant_id IN (SELECT id::text FROM public.schools WHERE slug = '${slug}');
   DELETE FROM public.cg_mission_intent
     WHERE tenant_id IN (SELECT id::text FROM public.schools WHERE slug = '${slug}');
+  DELETE FROM public.cg_event
+    WHERE tenant_id IN (SELECT id::text FROM public.schools WHERE slug = '${slug}');
+  DELETE FROM public.cg_relationship
+    WHERE tenant_id IN (SELECT id::text FROM public.schools WHERE slug = '${slug}');
   DELETE FROM public.cg_entity
     WHERE tenant_id IN (SELECT id::text FROM public.schools WHERE slug = '${slug}');
   DELETE FROM public.schools WHERE slug = '${slug}';
@@ -114,7 +118,8 @@ const created = await authAdmin("/admin/users", {
   method: "POST",
   body: JSON.stringify({ email, password, email_confirm: true }),
 });
-if (!created.ok) throw new Error(`create user HTTP ${created.status} ${sanitize(created.text).slice(0, 300)}`);
+if (!created.ok)
+  throw new Error(`create user HTTP ${created.status} ${sanitize(created.text).slice(0, 300)}`);
 const user = JSON.parse(created.text);
 const userId = user.id ?? user.user?.id;
 if (!userId) throw new Error("created user has no id");
@@ -155,8 +160,7 @@ const session = JSON.parse(sessionText);
 const sessionToken = session.access_token;
 if (!sessionToken) throw new Error("authenticated session did not return an access token");
 
-const serverFunctionId =
-  "e1de8e1bc360032225b0c71aae9a128614ea1bd75bc10c594eb26119b72a680f";
+const serverFunctionId = "e1de8e1bc360032225b0c71aae9a128614ea1bd75bc10c594eb26119b72a680f";
 const requestData = {
   realityRef: entityId,
   missionId: "COREGRID-FOUNDATION-MISSION-001",
@@ -216,7 +220,11 @@ console.log(
 
 const child = spawn(
   process.execPath,
-  [join(root, "node_modules/vitest/vitest.mjs"), "run", "tests/integration/foundation-loop.live.test.ts"],
+  [
+    join(root, "node_modules/vitest/vitest.mjs"),
+    "run",
+    "tests/integration/foundation-loop.live.test.ts",
+  ],
   {
     cwd: root,
     env: {
@@ -256,6 +264,8 @@ await management(`
     FOR EACH ROW EXECUTE FUNCTION public.cg_foundation_reject_history_mutation();
   DELETE FROM public.cg_execution_record WHERE tenant_id = '${schoolId}';
   DELETE FROM public.cg_mission_intent WHERE tenant_id = '${schoolId}';
+  DELETE FROM public.cg_event WHERE tenant_id = '${schoolId}';
+  DELETE FROM public.cg_relationship WHERE tenant_id = '${schoolId}';
   DELETE FROM public.cg_entity WHERE tenant_id = '${schoolId}';
   DELETE FROM public.users WHERE id = '${userId}';
   DELETE FROM public.schools WHERE id = '${schoolId}';
