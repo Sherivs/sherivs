@@ -22,6 +22,7 @@ import { Route as PlatformRouteImport } from './routes/platform'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RulesRouteImport } from './routes/rules'
+import { Route as ScholarFoundationLoopRouteImport } from './routes/scholar-foundation-loop'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SuperAdminBootstrapRouteImport } from './routes/super-admin-bootstrap'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
@@ -223,6 +224,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const RulesRoute = RulesRouteImport.update({
   id: '/rules',
   path: '/rules',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScholarFoundationLoopRoute = ScholarFoundationLoopRouteImport.update({
+  id: '/scholar-foundation-loop',
+  path: '/scholar-foundation-loop',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -1045,6 +1051,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rules': typeof RulesRoute
+  '/scholar-foundation-loop': typeof ScholarFoundationLoopRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/super-admin-bootstrap': typeof SuperAdminBootstrapRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
@@ -1197,6 +1204,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rules': typeof RulesRoute
+  '/scholar-foundation-loop': typeof ScholarFoundationLoopRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/super-admin-bootstrap': typeof SuperAdminBootstrapRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
@@ -1351,6 +1359,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rules': typeof RulesRoute
+  '/scholar-foundation-loop': typeof ScholarFoundationLoopRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/super-admin-bootstrap': typeof SuperAdminBootstrapRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
@@ -1505,6 +1514,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/rules'
+    | '/scholar-foundation-loop'
     | '/sitemap.xml'
     | '/super-admin-bootstrap'
     | '/admin'
@@ -1657,6 +1667,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/rules'
+    | '/scholar-foundation-loop'
     | '/sitemap.xml'
     | '/super-admin-bootstrap'
     | '/admin'
@@ -1810,6 +1821,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/rules'
+    | '/scholar-foundation-loop'
     | '/sitemap.xml'
     | '/super-admin-bootstrap'
     | '/_authenticated/admin'
@@ -1964,6 +1976,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   RulesRoute: typeof RulesRoute
+  ScholarFoundationLoopRoute: typeof ScholarFoundationLoopRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SuperAdminBootstrapRoute: typeof SuperAdminBootstrapRoute
   EventsIdRoute: typeof EventsIdRoute
@@ -2064,6 +2077,13 @@ declare module '@tanstack/react-router' {
       path: '/rules'
       fullPath: '/rules'
       preLoaderRoute: typeof RulesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scholar-foundation-loop': {
+      id: '/scholar-foundation-loop'
+      path: '/scholar-foundation-loop'
+      fullPath: '/scholar-foundation-loop'
+      preLoaderRoute: typeof ScholarFoundationLoopRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -3462,6 +3482,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   RulesRoute: RulesRoute,
+  ScholarFoundationLoopRoute: ScholarFoundationLoopRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SuperAdminBootstrapRoute: SuperAdminBootstrapRoute,
   EventsIdRoute: EventsIdRoute,
