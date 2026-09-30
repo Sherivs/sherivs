@@ -6,6 +6,20 @@ Authority Class: Architectural implementation authority beneath ARCHITECTURE.md 
 Scope: Structural realization of CoreGrid from canonical architecture into machine-operable software
 Domain: Universal CoreGrid substrate and its engineering/control-plane realization
 
+
+───
+
+V1 EXECUTION BOUNDARY (Constitution V5.3 MVP Execution Profile — adopted 2026-09-30)
+Authority: architecture/COREGRID_V53_DIRECTIVE_RECONCILIATION.json
+
+This surface is preserved in full as master architecture. Active implementation covers only the
+  V1 organizational capability envelope per the V5.3 MVP execution profile. Device/IoT
+  capabilities are V2 FROZEN. Universal Reality Intelligence capabilities are V3 FROZEN.
+  Unassigned capabilities are FUTURE — FROZEN. Sections describing frozen scope are preserved,
+  never deleted, never claimed as implemented. Un-freezing requires an explicit human
+  authorization record.
+
+
 ───
 
 1. IMPLEMENTATION MOTHER DEFINITION

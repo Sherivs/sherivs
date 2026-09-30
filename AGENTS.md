@@ -920,6 +920,11 @@ Build autonomous systems that remain aligned with human governance.
 
 ───
 
+45. V1 EXECUTION BOUNDARY
+Under the CoreGrid V5.3 MVP execution profile (adopted 2026-09-30 per architecture/COREGRID_V53_DIRECTIVE_RECONCILIATION.json), agents implement ONLY the V1 organizational capability envelope. V2 (device/IoT) and V3 (Reality Intelligence) and FUTURE-UNASSIGNED capabilities are FROZEN: an agent may inspect, analyze, and propose for frozen scope, but may not implement, migrate toward, or claim progress on it. Un-freezing requires an explicit human authorization record. Every implementation claim must state its version-target classification, and a claim without one is unverified.
+
+───
+
 FINAL COMMANDMENT
 When uncertain:
 Do not guess.

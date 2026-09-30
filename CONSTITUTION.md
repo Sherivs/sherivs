@@ -10,6 +10,20 @@ Applies To: CoreGrid infrastructure, runtimes, domains, agents, intelligence sys
 Reference Runtime: CoreGrid Scholar
 Constitutional Position of Scholar: First/reference runtime; never the architectural boundary of CoreGrid.
 
+
+───
+
+V1 EXECUTION BOUNDARY (Constitution V5.3 MVP Execution Profile — adopted 2026-09-30)
+Authority: architecture/COREGRID_V53_DIRECTIVE_RECONCILIATION.json
+
+This surface is preserved in full as master architecture. Active implementation covers only the
+  V1 organizational capability envelope per the V5.3 MVP execution profile. Device/IoT
+  capabilities are V2 FROZEN. Universal Reality Intelligence capabilities are V3 FROZEN.
+  Unassigned capabilities are FUTURE — FROZEN. Sections describing frozen scope are preserved,
+  never deleted, never claimed as implemented. Un-freezing requires an explicit human
+  authorization record.
+
+
 ───
 
 PART I — CONSTITUTIONAL IDENTITY
@@ -4371,3 +4385,11 @@ WITHOUT ALLOWING AUTHORITY TO ESCAPE GOVERNANCE.
 Constitutional Status: CANONICAL / NORMATIVE / PLATFORM-WIDE
 CoreGrid Constitutional Principle:
 The platform may continuously increase what it can represent, understand, remember, reason about, simulate, decide, and execute — but no increase in computational capability may silently create new constitutional authority.
+───
+
+228. V1 EXECUTION BOUNDARY (MVP EXECUTION PROFILE)
+Active implementation is bounded to the V1 organizational capability envelope under the CoreGrid V5.3 MVP execution profile, adopted per architecture/COREGRID_V53_DIRECTIVE_RECONCILIATION.json.
+V2 (device/IoT) and V3 (Reality Intelligence) and FUTURE-UNASSIGNED capability scope is frozen: preserved, never deleted, never claimed as implemented.
+The frozen corpus retains full constitutional protection and remains discoverable in architecture/future/COREGRID_FUTURE_ARCHITECTURE_REGISTER.json.
+Every capability record carries an explicit version_target classification enforced by the registry validator (V5.3 Part 81).
+Un-freezing is a constitutional-class change requiring an explicit, recorded human authorization decision.

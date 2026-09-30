@@ -11,6 +11,20 @@ Primary Authority: CoreGrid Architecture Governance System
 Constitutional Authority: CoreGrid Constitution
 Applies To: CoreGrid Platform, CoreGrid Scholar, CoreGrid Intelligence, CoreGrid Agents, CoreGrid Infrastructure, CoreGrid Digital Twins, CoreGrid Economy, CoreGrid Government/Enterprise Systems, CoreGrid Developer Ecosystem, future CoreGrid runtimes, and future reality-domain instantiations.
 
+
+───
+
+V1 EXECUTION BOUNDARY (Constitution V5.3 MVP Execution Profile — adopted 2026-09-30)
+Authority: architecture/COREGRID_V53_DIRECTIVE_RECONCILIATION.json
+
+This surface is preserved in full as master architecture. Active implementation covers only the
+  V1 organizational capability envelope per the V5.3 MVP execution profile. Device/IoT
+  capabilities are V2 FROZEN. Universal Reality Intelligence capabilities are V3 FROZEN.
+  Unassigned capabilities are FUTURE — FROZEN. Sections describing frozen scope are preserved,
+  never deleted, never claimed as implemented. Un-freezing requires an explicit human
+  authorization record.
+
+
 ───
 
 0. REGISTRY META-LAW
@@ -1208,6 +1222,7 @@ architecture_layer:
 domain:
 status:
 maturity:
+version_target:   # V5.3 Part 43/81 — ACTIVE-V1 | MIXED | FUTURE-V2 | FUTURE-V3 | FUTURE-UNASSIGNED | RESEARCH | EXPERIMENTAL | HISTORICAL | REJECTED (machine-enforced in registry.json)
 owner:
 purpose:
 

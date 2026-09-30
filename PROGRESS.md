@@ -9,6 +9,20 @@ Authority: CoreGrid Architecture Governance Layer
 Perspective: Reality-first / system-first / intelligence-native / evidence-driven / ASI-era
 Primary Function: Record what is actually true about CoreGrid's engineering state.
 
+
+───
+
+V1 EXECUTION BOUNDARY (Constitution V5.3 MVP Execution Profile — adopted 2026-09-30)
+Authority: architecture/COREGRID_V53_DIRECTIVE_RECONCILIATION.json
+
+This surface is preserved in full as master architecture. V1 boundary classification is recorded
+  via registry.json version_target; progress claims must state their version-target
+  classification. Device/IoT capabilities are V2 FROZEN. Universal Reality Intelligence
+  capabilities are V3 FROZEN. Unassigned capabilities are FUTURE — FROZEN. Sections describing
+  frozen scope are preserved, never deleted, never claimed as implemented. Un-freezing requires an
+  explicit human authorization record.
+
+
 ───
 
 00. COREGRID PROGRESS LAW
@@ -4691,3 +4705,16 @@ CONTROLLED EVOLUTION
 
 Canonical Principle:
 CoreGrid does not merely track what engineers have done. CoreGrid progressively develops the ability to know, represent, verify and govern the actual state of its own engineered reality.
+───
+
+226. V1 EXECUTION BOUNDARY RECORD
+Date: 2026-09-30
+Actor: CoreGrid V1 Autonomous Platform Engineering Organization (coordinator + workforce streams A-D)
+Change: Adopted the CoreGrid V5.3 MVP execution profile as the binding active implementation boundary; classified all 51 registry phases by version_target (ACTIVE-V1 x27, MIXED x10, FUTURE-V2 x0, FUTURE-V3 x4, FUTURE-UNASSIGNED x9; phase 15 reclassified MIXED with recorded boundary review); materialized architecture/coregrid-mvp-architecture/ and architecture/future/; extended the registry validator into the V1 scope guard.
+Affected Phase: ALL (classification layer only)
+Affected Capability: implementation scope governance
+Previous State: full-corpus evolution profile under V5.1/V5.2 with open-ended Gate 16 evolution
+New State: V1 MVP execution profile governing active work; frozen future architecture preserved under governance
+Evidence: architecture/COREGRID_V53_DIRECTIVE_RECONCILIATION.json; architecture/COREGRID_PHASE_52_V1_FUTURE_CLASSIFICATION.json; architecture/coregrid-mvp-architecture/foundation/COREGRID_V1_SCOPE_LOCK.json; architecture/coregrid-mvp-architecture/foundation/COREGRID_V1_MASTER_IMPLEMENTATION_PLAN.json; registry.json versionClassification
+Decision: PLATFORM-012 (DECISIONS.md §203)
+Reason: Operator directive issued Constitution V5.3 (MVP-first execution profile, launch target before 2026-10-10); Part 110 reconciliation adopted it with full history preservation; no existing status value changed and no ledger decision overturned.

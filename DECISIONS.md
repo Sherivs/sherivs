@@ -9,6 +9,20 @@ Authority: CoreGrid Architecture Governance Layer
 Perspective: Reality-first, system-first, intelligence-native, ASI-era
 Primary Runtime: CoreGrid Scholar — first/reference institutional runtime, not the boundary of the platform
 
+
+───
+
+V1 EXECUTION BOUNDARY (Constitution V5.3 MVP Execution Profile — adopted 2026-09-30)
+Authority: architecture/COREGRID_V53_DIRECTIVE_RECONCILIATION.json
+
+This surface is preserved in full as master architecture. Active implementation covers only the
+  V1 organizational capability envelope per the V5.3 MVP execution profile. Device/IoT
+  capabilities are V2 FROZEN. Universal Reality Intelligence capabilities are V3 FROZEN.
+  Unassigned capabilities are FUTURE — FROZEN. Sections describing frozen scope are preserved,
+  never deleted, never claimed as implemented. Un-freezing requires an explicit human
+  authorization record.
+
+
 ───
 
 1. PURPOSE
@@ -3022,3 +3036,13 @@ Rationale: PROGRESS §17.1 records the drift as a machine-readability debt; the 
 Owner: Architecture (PROGRESS §11). Consumers: registry.json, phase-catalog.ts, kernel phase contracts, /platform surface.
 Blast radius: DOCUMENTATION + FRONTEND LABELS (no runtime behaviour).
 Status: RATIFIED (2026-09-07) — executed in Wave K-7; enforced by tests/unit/kernel-contract-coverage.test.ts (registry ↔ catalog ↔ §11 ↔ contract four-way lockstep) and the §11 alignment test in tests/unit/kernel-phase-contract.test.ts, both of which now assert zero drift.
+
+───
+
+203. PLATFORM-012 — V1 ACTIVE / V2 FROZEN / V3 FROZEN / FUTURE IMPLEMENTATION BOUNDARY
+Decision (RATIFIED 2026-09-30): Adopt the CoreGrid V5.3 MVP execution profile as the binding active implementation boundary. V1 = the organizational capability envelope (identity, tenancy, organization, entity, state/events, authorization, workspace, workflow, mission, worker, intelligence gateway, context, practical memory, ephemeral agent runtime, action/tools, evidence, verification, application builder minimal, website, customer workspace, communication, payments, files, notifications, integrations, metering minimal, observability minimal, security, domain configuration). V2 (device/IoT), V3 (Reality Intelligence), and FUTURE-UNASSIGNED scope is FROZEN: preserved in architecture/future/COREGRID_FUTURE_ARCHITECTURE_REGISTER.json, never implemented during V1, never claimed as implemented.
+Rationale: Operator directive (supreme human authority) establishing the V1 launch target before 10 October 2026 with a commercially usable, domain-neutral, multi-tenant, AI-native platform. V5.3 preserves V5.1/V5.2 in full; the boundary changes implementation order, not architecture. Registry version_target classification is machine-enforced (scripts/verification/registry-validate.mjs, V5.3 Part 81).
+Owner: CoreGrid Architecture Governance.
+Consumers: All 13 mothers, REGISTRY.md, registry.json, all implementation missions MISSION-V1-001..018, all autonomous agents.
+Blast radius: PLATFORM (implementation scope, not architecture topology; no phase renamed, no status changed, no dependency edge altered).
+Status: RATIFIED (2026-09-30) — authority record: architecture/COREGRID_V53_DIRECTIVE_RECONCILIATION.json.

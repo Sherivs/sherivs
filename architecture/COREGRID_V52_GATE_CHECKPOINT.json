@@ -1,6 +1,6 @@
 {
   "mission": "COREGRID-MISSION-0001",
-  "directive": "V5.1 Parts 0-109 plus V5.2 Parts 110-141",
+  "directive": "V5.1 Parts 0-109 plus V5.2 Parts 110-141, executing under the V5.3 V1 MVP execution profile",
   "artifact": "COREGRID_V52_GATE_CHECKPOINT",
   "captured": "2026-09-30",
   "registryPhases": 51,
@@ -22,7 +22,8 @@
     "13": "VERIFIED_BOUNDED_PROBE",
     "14": "EXECUTED_BOUNDED_PROBE",
     "15": "CONFORMANCE_ASSESSED_RECOVERY_VERIFIED_DEPLOYMENT_BLOCKED",
-    "16": "BASELINE_ESTABLISHED"
+    "16": "BASELINE_ESTABLISHED",
+    "17": "V53_RECONCILED_V1_SCOPE_LOCKED_PLAN_MODE_COMPLETE"
   },
   "preservedConflicts": ["phase-27", "phase-33"],
   "campaign52": {
@@ -179,7 +180,7 @@
       ]
     }
   },
-  "nextAuthorizedGate": "Secrets-gated live battery EXECUTED AND VERIFIED (RLS isolation PASS; conformance CONDITIONALLY_CONFORMANT 8/0/2 of 10; live exerciser admitted + verified with idempotent replay and probe cleaned; 5/5 live integration tests). Two open items: (1) reconcile the operator's V5.3 directive per V5.2 Part 110 — the directive arrived with the marker '[V5.3 TEXT FOLLOWS]' and NO text; recorded in architecture/COREGRID_V53_DIRECTIVE_RECONCILIATION.json (provisions UNENUMERABLE, authority NOT_DETERMINABLE, V5.1 Parts 0-109 + V5.2 Parts 110-141 remain governing) and blocked pending governed re-delivery of the complete V5.3 text by the operator; (2) continue governed evolution against the 2026-09-30 baseline, including the recorded baseline amendments for the live-battery results.",
+  "nextAuthorizedGate": "ACT MODE under the V5.3 V1 MVP execution profile: execute the dependency-validated sequence in architecture/coregrid-mvp-architecture/foundation/COREGRID_V1_MASTER_IMPLEMENTATION_PLAN.json (deployment track in parallel from day 1; worker-delegation governance decision BLK-6 escalated to the operator).",
   "secretsBlocker": {
     "status": "RESOLVED",
     "originalRecord": {
@@ -218,5 +219,23 @@
     }
   },
   "v53DirectiveReconciliation": "architecture/COREGRID_V53_DIRECTIVE_RECONCILIATION.json",
+  "gate17": {
+    "artifact": "architecture/coregrid-mvp-architecture/foundation/COREGRID_V1_SCOPE_LOCK.json",
+    "record": "Constitution V5.3 (MVP-first execution profile, Parts 0-85) received in full and reconciled per V5.2 Part 110: ADOPTED as the binding MVP execution profile; V5.1/V5.2 preserved as master directives; five provisions analyzed (two conflicts resolved by adoption, one extension, two alignments). MISSION-V1-001/002/003 executed via a four-stream read-only workforce (repository archaeologist, Phase 52 classification officer, governance reconciliation officer, V1 planning analyst) with coordinator-only mutations and independent verification of every report.",
+    "evidence": [
+      "architecture/COREGRID_V53_DIRECTIVE_RECONCILIATION.json",
+      "architecture/coregrid-mvp-architecture/ (README, COREGRID-V1.md, scope lock, capability catalog, master implementation plan, launch criteria, blockers)",
+      "architecture/COREGRID_PHASE_52_V1_FUTURE_CLASSIFICATION.json (51 phases + 313 Phase 52 occurrences classified; 10 human-review items recorded UNRESOLVED)",
+      "architecture/future/COREGRID_FUTURE_ARCHITECTURE_REGISTER.json (V2/V3/FUTURE frozen registers with reopen conditions)",
+      "registry.json: version_target x51 + versionClassification block, additive only; scope guard enforced in scripts/verification/registry-validate.mjs (validated: it caught the phase-15 IMPLEMENTING-vs-FROZEN conflict, which is recorded UNRESOLVED rather than silently resolved)",
+      "19 governance/mother files carry the V1 EXECUTION BOUNDARY banner; CONSTITUTION.md §228; DECISIONS.md PLATFORM-012; PROGRESS.md §226; REGISTRY.md §19 version_target hook; AGENTS.md §45"
+    ],
+    "notClaimed": [
+      "any V1 capability implemented (PLAN MODE complete; ACT MODE entry recorded)",
+      "the 10 October 2026 launch target achieved or scheduled with evidence",
+      "Phase 52 line-level classification exhaustive (occurrence-level recorded; sub-section splits need human review)",
+      "quarantine of leakage modules executed (classified only; code moves require governed decisions)"
+    ]
+  },
   "rule": "Acceptance coverage, scope records, and bounded probes are not deployment, conformance, or operation."
 }
