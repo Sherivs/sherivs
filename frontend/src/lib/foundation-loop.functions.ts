@@ -17,17 +17,19 @@ import {
   type FoundationVerificationRow,
 } from "@/lib/control-plane/foundation-loop";
 
-const requestSchema = z.object({
-  realityRef: z.string().uuid(),
-  missionId: z.string().trim().min(1).max(160),
-  version: z.string().trim().min(1).max(32),
-  purpose: z.string().trim().min(1).max(200),
-  authorityRef: z.string().trim().min(1).max(200),
-  contextRef: z.string().trim().min(1).max(200),
-  ownerRef: z.string().trim().min(1).max(200),
-  action: z.literal("record-observation"),
-  idempotencyKey: z.string().trim().min(8).max(200),
-}).strict();
+const requestSchema = z
+  .object({
+    realityRef: z.string().uuid(),
+    missionId: z.string().trim().min(1).max(160),
+    version: z.string().trim().min(1).max(32),
+    purpose: z.string().trim().min(1).max(200),
+    authorityRef: z.string().trim().min(1).max(200),
+    contextRef: z.string().trim().min(1).max(200),
+    ownerRef: z.string().trim().min(1).max(200),
+    action: z.literal("record-observation"),
+    idempotencyKey: z.string().trim().min(8).max(200),
+  })
+  .strict();
 
 export type FoundationLoopResult = {
   ok: true;
@@ -69,10 +71,9 @@ export async function persistFoundationPlan(
   admin: KernelAdminClient,
 ): Promise<FoundationLoopResult> {
   const { execution } = plan;
-  const { error: missionError } = await admin.from("cg_mission_intent").upsert(
-    plan.mission,
-    { onConflict: "tenant_id,mission_id,version" },
-  );
+  const { error: missionError } = await admin
+    .from("cg_mission_intent")
+    .upsert(plan.mission, { onConflict: "tenant_id,mission_id,version" });
   if (missionError) throw new Error(missionError.message);
 
   const { error: executionError } = await admin.from("cg_execution_record").insert(execution);
@@ -103,7 +104,9 @@ export async function persistFoundationPlan(
   if (historyError) throw new Error(historyError.message);
 
   if (plan.evidence) {
-    const { error: evidenceError } = await admin.from("cg_foundation_evidence").insert(plan.evidence);
+    const { error: evidenceError } = await admin
+      .from("cg_foundation_evidence")
+      .insert(plan.evidence);
     if (evidenceError) throw new Error(evidenceError.message);
   }
   if (plan.verification) {
@@ -178,9 +181,7 @@ export async function executeRecordFoundationLoop(input: {
     tenantId,
     actorId: input.userId,
     now,
-    reality: entity
-      ? { id: String(entity.id), tenantId: entity.tenant_id ?? null }
-      : null,
+    reality: entity ? { id: String(entity.id), tenantId: entity.tenant_id ?? null } : null,
     requestedRealityRef: data.realityRef,
     request: {
       executionId,

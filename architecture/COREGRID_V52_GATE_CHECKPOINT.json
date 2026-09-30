@@ -91,7 +91,9 @@
       "verifyCampaign52DecisionLedger": "PASS_DECISIONS_RECORDED_WITH_BLOCKERS",
       "validateCampaign52AuthorizedDecisions": "PASS_NO_INVALID_DECISIONS",
       "typecheck": "PASS",
-      "build": "PASS (vite build; routeTree regenerated with the scholar-foundation-loop route)"
+      "build": "PASS (vite build; routeTree regenerated with the scholar-foundation-loop route)",
+      "fullVerifyPipeline": "PASS (npm run verify: typecheck + unit + registry + secret-scan + build)",
+      "lint": "RAN AND CLASSIFIED — touched files clean; repository-wide debt recorded (16099 prettier formatting, 175 no-explicit-any, 37 react-hooks/exhaustive-deps across 519 files). Repo-wide fix is a proposed governed hygiene mission, not executed here."
     },
     "change": "tests/unit/p08-enforcement-surface.test.ts — registered foundation-loop.functions.ts and scholar-foundation-loop.functions.ts as ADOPTED of the canonical security-role-gate; both import the gate and resolve tenant via requireSchoolAdminScope. No authorization behavior changed.",
     "evidence": ["tests/unit/p08-enforcement-surface.test.ts"],
@@ -111,6 +113,31 @@
         "deployment",
         "operation",
         "conformance beyond assessed scope"
+      ]
+    },
+    "baselineAmendments": {
+      "record": "Governed amendment to architecture/COREGRID_EVOLUTION_BASELINE_2026-09-30.json knownGaps, per V5.1 Part 47 evolution law and the baseline's comparisonInstructions: changes are recorded decisions against the baseline, not silent rewrites of it.",
+      "closed": [
+        {
+          "gap": "Scholar HTTP entry: scholarFoundationLoop verified via authenticated server path, not its own generated HTTP endpoint",
+          "resolution": "Authenticated HTTP entry point added and rebuilt",
+          "evidence": [
+            "frontend/src/routes/scholar-foundation-loop.tsx",
+            "frontend/src/routeTree.gen.ts (regenerated)",
+            "commit a9893eb"
+          ]
+        }
+      ],
+      "quantified": [
+        {
+          "gap": "Lint: previously interrupted, remains UNVERIFIED",
+          "resolution": "Lint executed and classified; NOT claimed verified",
+          "evidence": {
+            "touchedFiles": "lint-clean after prettier --fix on the files this loop changed",
+            "repositoryDebt": "519 files: 16099 prettier/prettier, 175 @typescript-eslint/no-explicit-any, 37 react-hooks/exhaustive-deps, 18 other",
+            "proposedGovernedMission": "Dedicated repo-wide hygiene mission: eslint --fix for mechanical formatting, then case-by-case review of no-explicit-any against Constitution §32 (kernel-admin-client.ts documents its justified any). Not executed inside this loop to keep review scoped (V5.1 Part 87, Part 19)."
+          }
+        }
       ]
     }
   },

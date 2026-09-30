@@ -87,9 +87,9 @@ describe("scholar foundation flow — governed relationship vocabulary", () => {
     expect(() =>
       assertScholarRelationshipVocabulary("enrolls", "institution", "learning_group"),
     ).toThrow(/does not accept source entity type "institution"/);
-    expect(() =>
-      assertScholarRelationshipVocabulary("enrolls", "learner", "campus"),
-    ).toThrow(/does not accept target entity type "campus"/);
+    expect(() => assertScholarRelationshipVocabulary("enrolls", "learner", "campus")).toThrow(
+      /does not accept target entity type "campus"/,
+    );
     expect(() =>
       assertScholarRelationshipVocabulary("teaches", "educator", "learning_group"),
     ).not.toThrow();

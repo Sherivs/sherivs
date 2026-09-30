@@ -1,6 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
-import { executeRecordFoundationLoop, rollbackFoundationExecution } from "@/lib/foundation-loop.functions";
+import {
+  executeRecordFoundationLoop,
+  rollbackFoundationExecution,
+} from "@/lib/foundation-loop.functions";
 import { executeScholarFoundationLoop } from "@/lib/scholar-foundation-loop.functions";
 
 const url = process.env.SUPABASE_URL ?? "";
@@ -97,9 +100,7 @@ describe.skipIf(!enabled)("foundation loop live session", () => {
         state: "enrolled-probe",
         attributes: { probe: true },
         idempotencyKey: "scholar-live-enroll-idem-001",
-        relationships: [
-          { relationType: "enrolls", targetEntityId: group.realityRef },
-        ],
+        relationships: [{ relationType: "enrolls", targetEntityId: group.realityRef }],
         event: { eventType: "learner.enrolled" },
       },
     });
@@ -118,9 +119,7 @@ describe.skipIf(!enabled)("foundation loop live session", () => {
         state: "enrolled-probe",
         attributes: { probe: true },
         idempotencyKey: "scholar-live-enroll-idem-001",
-        relationships: [
-          { relationType: "enrolls", targetEntityId: group.realityRef },
-        ],
+        relationships: [{ relationType: "enrolls", targetEntityId: group.realityRef }],
         event: { eventType: "learner.enrolled" },
       },
     });

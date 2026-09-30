@@ -16,8 +16,8 @@ function FoundationLoopRoute() {
     <main>
       <h1>Foundation Mission 001</h1>
       <p>
-        The authenticated foundation-loop server function is available through
-        the governed application client.
+        The authenticated foundation-loop server function is available through the governed
+        application client.
       </p>
       <button
         type="button"

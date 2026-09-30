@@ -19,8 +19,8 @@ function ScholarFoundationLoopRoute() {
     <main>
       <h1>Scholar Foundation Validation</h1>
       <p>
-        The authenticated Scholar foundation-loop server function is available
-        through the governed application client.
+        The authenticated Scholar foundation-loop server function is available through the governed
+        application client.
       </p>
       <button
         type="button"

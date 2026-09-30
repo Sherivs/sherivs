@@ -30,10 +30,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { asKernelAdmin, type KernelAdminClient } from "@/lib/kernel-admin-client";
 import { requireSchoolAdminScope } from "@/lib/security-role-gate";
 import { planFoundationLoop } from "@/lib/control-plane/foundation-loop";
-import {
-  auditFoundationLoop,
-  persistFoundationPlan,
-} from "@/lib/foundation-loop.functions";
+import { auditFoundationLoop, persistFoundationPlan } from "@/lib/foundation-loop.functions";
 import {
   buildScholarFoundationEntity,
   buildScholarFoundationEvent,
@@ -62,14 +59,16 @@ const eventSchema = z
   })
   .strict();
 
-const scholarSchema = z.object({
-  entityType: z.string().trim().min(1).max(128),
-  state: z.string().trim().max(120).optional().nullable(),
-  attributes: z.record(z.string(), z.unknown()).optional(),
-  idempotencyKey: z.string().trim().min(8).max(200),
-  relationships: z.array(relationshipSchema).max(4).optional(),
-  event: eventSchema.optional(),
-}).strict();
+const scholarSchema = z
+  .object({
+    entityType: z.string().trim().min(1).max(128),
+    state: z.string().trim().max(120).optional().nullable(),
+    attributes: z.record(z.string(), z.unknown()).optional(),
+    idempotencyKey: z.string().trim().min(8).max(200),
+    relationships: z.array(relationshipSchema).max(4).optional(),
+    event: eventSchema.optional(),
+  })
+  .strict();
 
 export type ScholarFoundationResult = {
   ok: true;
@@ -93,7 +92,12 @@ async function findReplayedExecution(
   admin: KernelAdminClient,
   tenantId: string,
   idempotencyKey: string,
-): Promise<{ id: string; status: string; realityRef: string; verificationDecision: string | null } | null> {
+): Promise<{
+  id: string;
+  status: string;
+  realityRef: string;
+  verificationDecision: string | null;
+} | null> {
   const { data: existing, error } = await admin
     .from("cg_execution_record")
     .select("id, status, reality_ref")
@@ -145,7 +149,11 @@ export async function executeScholarFoundationLoop(input: {
 
   // Scholar vocabulary is validated here, before any write (runtime owns it).
   const entityRow = buildScholarFoundationEntity(
-    { entityType: input.data.entityType, state: input.data.state ?? null, attributes: input.data.attributes },
+    {
+      entityType: input.data.entityType,
+      state: input.data.state ?? null,
+      attributes: input.data.attributes,
+    },
     tenantId,
     now,
   );
@@ -162,7 +170,11 @@ export async function executeScholarFoundationLoop(input: {
       .select("id, tenant_id, entity_type")
       .in("id", targetIds);
     if (targetError) throw new Error(targetError.message);
-    const rows = (targets ?? []) as Array<{ id: string; tenant_id: string | null; entity_type: string }>;
+    const rows = (targets ?? []) as Array<{
+      id: string;
+      tenant_id: string | null;
+      entity_type: string;
+    }>;
     const found = new Map(rows.map((row) => [row.id, row]));
     for (const id of targetIds) {
       const row = found.get(id);
