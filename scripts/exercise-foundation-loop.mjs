@@ -175,7 +175,7 @@ const requestData = {
 
 async function callServerFunction() {
   const response = await fetch(
-    `${process.env.FOUNDATION_LOOP_BASE_URL ?? "http://127.0.0.1:4173"}/_serverFn/${serverFunctionId}`,
+    `${process.env.FOUNDATION_LOOP_BASE_URL ?? "http://localhost:4173"}/_serverFn/${serverFunctionId}`,
     {
       method: "POST",
       headers: {
