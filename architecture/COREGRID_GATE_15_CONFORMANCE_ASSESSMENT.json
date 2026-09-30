@@ -2,7 +2,7 @@
   "mission": "COREGRID-MISSION-0001",
   "artifact": "COREGRID_GATE_15_CONFORMANCE_ASSESSMENT",
   "mechanism": "10 — Conformance",
-  "captured": "2026-09-30T05:45:48.446Z",
+  "captured": "2026-09-30T22:03:08.754Z",
   "assessedScope": {
     "contract": "frontend/src/lib/control-plane/foundation-mission.ts",
     "contractVersion": "1",
@@ -59,6 +59,12 @@
       "decision": "CONFORMANT"
     },
     {
+      "id": "scholar-reality-vocabulary",
+      "declared": "Scholar relationships and events are validated against the Scholar ontology at the runtime boundary and recorded through the universal kernel substrate (cg_relationship, cg_event).",
+      "observed": "relationship and event vocabulary enforced via scholarRelationshipDraft/scholarEventDraft; kernel substrate declares cg_relationship and cg_event",
+      "decision": "CONFORMANT"
+    },
+    {
       "id": "deployment",
       "declared": "Foundation slice installed in a named environment as an operational service.",
       "observed": "never deployed",
@@ -74,10 +80,10 @@
   "decision": "CONDITIONALLY_CONFORMANT",
   "decisionScope": "Foundation Mission 001 contracts and Scholar validation flow; deployment and operational runtime excluded from conformance until Gate 15 runtime evidence exists",
   "counts": {
-    "conformant": 7,
+    "conformant": 8,
     "nonconformant": 0,
     "notAssessed": 2,
-    "total": 9
+    "total": 10
   },
   "rule": "Conformance is assessed against declared contracts only. NOT_ASSESSED dimensions are unfinished work, not passes."
 }
