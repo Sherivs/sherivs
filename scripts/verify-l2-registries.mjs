@@ -62,7 +62,11 @@ try {
   const tIns = await svc.from("cg_tenant").insert(tRow).select("id, slug").single();
   if (tIns.error) throw new Error(`tenant insert: ${tIns.error.message}`);
   tenantId = tIns.data.id;
-  check("registerTenant DB path (tenantDraft → insert)", tIns.data.slug === tenantSlug, tIns.data.slug);
+  check(
+    "registerTenant DB path (tenantDraft → insert)",
+    tIns.data.slug === tenantSlug,
+    tIns.data.slug,
+  );
 
   const tDup = await svc.from("cg_tenant").select("id").eq("slug", tenantSlug).maybeSingle();
   check("tenant slug idempotency (existing returned)", !tDup.error && !!tDup.data, tDup.data?.id);

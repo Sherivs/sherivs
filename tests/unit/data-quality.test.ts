@@ -25,21 +25,36 @@ const NOW = "2026-01-01T00:00:00Z";
 
 describe("Quality rules (AD)", () => {
   it("enforces required-field rules", () => {
-    const rule = createQualityRule({ tenantId: TENANT_A, datasetName: "d", kind: "required_field", field: "student_id" });
+    const rule = createQualityRule({
+      tenantId: TENANT_A,
+      datasetName: "d",
+      kind: "required_field",
+      field: "student_id",
+    });
     if (!rule.ok) throw new Error("fixture failed");
     expect(evaluateQualityRule(rule.rule, { student_id: "s1" }).satisfied).toBe(true);
     expect(evaluateQualityRule(rule.rule, { student_id: "" }).satisfied).toBe(false);
   });
 
   it("enforces tenant_id presence", () => {
-    const rule = createQualityRule({ tenantId: TENANT_A, datasetName: "d", kind: "tenant_id_present", field: "tenant_id" });
+    const rule = createQualityRule({
+      tenantId: TENANT_A,
+      datasetName: "d",
+      kind: "tenant_id_present",
+      field: "tenant_id",
+    });
     if (!rule.ok) throw new Error("fixture failed");
     expect(evaluateQualityRule(rule.rule, { tenant_id: "tenant-a" }).satisfied).toBe(true);
     expect(evaluateQualityRule(rule.rule, {}).satisfied).toBe(false);
   });
 
   it("enforces non-negative amounts", () => {
-    const rule = createQualityRule({ tenantId: TENANT_A, datasetName: "d", kind: "non_negative", field: "amount" });
+    const rule = createQualityRule({
+      tenantId: TENANT_A,
+      datasetName: "d",
+      kind: "non_negative",
+      field: "amount",
+    });
     if (!rule.ok) throw new Error("fixture failed");
     expect(evaluateQualityRule(rule.rule, { amount: 100 }).satisfied).toBe(true);
     expect(evaluateQualityRule(rule.rule, { amount: -5 }).satisfied).toBe(false);
@@ -59,9 +74,16 @@ describe("Quality rules (AD)", () => {
   });
 
   it("enforces valid timestamps", () => {
-    const rule = createQualityRule({ tenantId: TENANT_A, datasetName: "d", kind: "valid_timestamp", field: "occurred_at" });
+    const rule = createQualityRule({
+      tenantId: TENANT_A,
+      datasetName: "d",
+      kind: "valid_timestamp",
+      field: "occurred_at",
+    });
     if (!rule.ok) throw new Error("fixture failed");
-    expect(evaluateQualityRule(rule.rule, { occurred_at: "2026-01-01T00:00:00Z" }).satisfied).toBe(true);
+    expect(evaluateQualityRule(rule.rule, { occurred_at: "2026-01-01T00:00:00Z" }).satisfied).toBe(
+      true,
+    );
     expect(evaluateQualityRule(rule.rule, { occurred_at: "not-a-date" }).satisfied).toBe(false);
   });
 });

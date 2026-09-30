@@ -113,19 +113,13 @@ const ROLE_PERMISSIONS: Record<CoreGridRole, readonly Permission[]> = {
     { resource: "settings", action: "read", scope: null },
     { resource: "audit_log", action: "read", scope: null },
   ],
-  data_engineer: [
-    { resource: "analytics", action: "read", scope: null },
-  ],
-  ai_engineer: [
-    { resource: "ai_agent", action: "manage", scope: null },
-  ],
+  data_engineer: [{ resource: "analytics", action: "read", scope: null }],
+  ai_engineer: [{ resource: "ai_agent", action: "manage", scope: null }],
   ai_operator: [
     { resource: "ai_agent", action: "read", scope: null },
     { resource: "ai_agent", action: "execute", scope: null },
   ],
-  product: [
-    { resource: "analytics", action: "read", scope: null },
-  ],
+  product: [{ resource: "analytics", action: "read", scope: null }],
   finance: [
     { resource: "payments", action: "read", scope: null },
     { resource: "fees", action: "read", scope: null },
@@ -134,12 +128,8 @@ const ROLE_PERMISSIONS: Record<CoreGridRole, readonly Permission[]> = {
     { resource: "audit_log", action: "read", scope: null },
     { resource: "identity", action: "read", scope: null },
   ],
-  auditor: [
-    { resource: "audit_log", action: "read", scope: null },
-  ],
-  support: [
-    { resource: "user", action: "read", scope: null },
-  ],
+  auditor: [{ resource: "audit_log", action: "read", scope: null }],
+  support: [{ resource: "user", action: "read", scope: null }],
   read_only: [],
   school_super_admin: [
     { resource: "school", action: "manage", scope: null },
@@ -173,15 +163,9 @@ const ROLE_PERMISSIONS: Record<CoreGridRole, readonly Permission[]> = {
     { resource: "fees", action: "manage", scope: null },
     { resource: "payments", action: "manage", scope: null },
   ],
-  parent: [
-    { resource: "student", action: "read", scope: null },
-  ],
-  student: [
-    { resource: "student", action: "read", scope: null },
-  ],
-  driver: [
-    { resource: "student", action: "read", scope: null },
-  ],
+  parent: [{ resource: "student", action: "read", scope: null }],
+  student: [{ resource: "student", action: "read", scope: null }],
+  driver: [{ resource: "student", action: "read", scope: null }],
 };
 
 /* ─────────────────────────────────────────────────────────────
@@ -297,10 +281,7 @@ export interface AuthorizeOptions {
  *   5. ReBAC relationship grants
  *   6. Default DENY
  */
-export function authorize(
-  req: AuthorizationRequest,
-  opts: AuthorizeOptions,
-): AuthorizationResult {
+export function authorize(req: AuthorizationRequest, opts: AuthorizeOptions): AuthorizationResult {
   // 1. Identity lifecycle gate.
   if (req.identity.lifecycle !== "active" && req.identity.lifecycle !== "provisioned") {
     return {

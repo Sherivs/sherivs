@@ -200,7 +200,13 @@ describe("Resource locks and deadlocks (AS, AT)", () => {
   it("reclaims an expired lease (AS recovery)", () => {
     const acquired = acquireResourceLock([], "room-1", "exec-1", 60_000, "2026-01-01T00:00:00Z");
     if (!acquired.ok) throw new Error("fixture failed");
-    const reclaimed = acquireResourceLock(acquired.locks, "room-1", "exec-2", 60_000, "2026-01-01T00:05:00Z");
+    const reclaimed = acquireResourceLock(
+      acquired.locks,
+      "room-1",
+      "exec-2",
+      60_000,
+      "2026-01-01T00:05:00Z",
+    );
     expect(reclaimed.ok).toBe(true);
     if (reclaimed.ok) {
       expect(reclaimed.locks[0].ownerExecutionId).toBe("exec-2");
@@ -227,9 +233,15 @@ describe("Resource locks and deadlocks (AS, AT)", () => {
 describe("Loop protection and budgets (FG, FH)", () => {
   it("enforces depth/action/duration budgets (FM.14, FM.15)", () => {
     const budget = { maxDepth: 3, maxActions: 10, maxDurationMs: 60_000 };
-    expect(isExecutionWithinBudget(budget, { depth: 2, actionsExecuted: 5, elapsedMs: 10_000 }).ok).toBe(true);
-    expect(isExecutionWithinBudget(budget, { depth: 4, actionsExecuted: 5, elapsedMs: 10_000 }).ok).toBe(false);
-    expect(isExecutionWithinBudget(budget, { depth: 2, actionsExecuted: 11, elapsedMs: 10_000 }).ok).toBe(false);
+    expect(
+      isExecutionWithinBudget(budget, { depth: 2, actionsExecuted: 5, elapsedMs: 10_000 }).ok,
+    ).toBe(true);
+    expect(
+      isExecutionWithinBudget(budget, { depth: 4, actionsExecuted: 5, elapsedMs: 10_000 }).ok,
+    ).toBe(false);
+    expect(
+      isExecutionWithinBudget(budget, { depth: 2, actionsExecuted: 11, elapsedMs: 10_000 }).ok,
+    ).toBe(false);
   });
 
   it("detects causal cycles and enforces recursion depth", () => {

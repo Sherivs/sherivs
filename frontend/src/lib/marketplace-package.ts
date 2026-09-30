@@ -174,7 +174,10 @@ export function isPackageSignatureValid(input: {
  * Least privilege + data minimization (Sections 33, 127): a product should request
  * only the permissions/data it needs. Excessive declared access is flagged.
  */
-export function hasExcessiveDataAccess(manifest: PackageManifest, maxCategories: number = 3): boolean {
+export function hasExcessiveDataAccess(
+  manifest: PackageManifest,
+  maxCategories: number = 3,
+): boolean {
   return manifest.dataAccessCategories.length > maxCategories;
 }
 
@@ -212,7 +215,9 @@ export interface CompatibilityResult {
 export function evaluateCompatibility(input: CompatibilityInput): CompatibilityResult {
   const reasons: string[] = [];
   if (!isCoreGridVersionCompatible(input.requiredCoreGridVersion, input.currentCoreGridVersion)) {
-    reasons.push(`Requires CoreGrid >= ${input.requiredCoreGridVersion}, found ${input.currentCoreGridVersion}`);
+    reasons.push(
+      `Requires CoreGrid >= ${input.requiredCoreGridVersion}, found ${input.currentCoreGridVersion}`,
+    );
   }
   for (const api of input.requiredApis) {
     if (!input.availableApis.includes(api)) reasons.push(`Required API unavailable: ${api}`);
@@ -304,5 +309,3 @@ export function createInstallationDryRun(input: {
     passed: input.checksPassed,
   };
 }
-
-

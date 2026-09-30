@@ -447,7 +447,8 @@ export function runCommunicationStewardCheck(): readonly StewardCheck[] {
   const ladder = failoverChain("voice", "africa");
   checks.push({
     id: "failover-ladder-is-declared",
-    proves: "a channel and a region resolve to an ordered ladder of carriers, regional before global secondary",
+    proves:
+      "a channel and a region resolve to an ordered ladder of carriers, regional before global secondary",
     ok:
       ladder.length > 1 &&
       ladder[0].id === "twilio" &&
@@ -473,7 +474,8 @@ export function communicationStewardGaps(): readonly StewardGap[] {
       gap: "Every external provider adapter is DISCOVERED: no credential is provisioned, so routing refuses every real channel.",
       consequence:
         "No SMS, voice call, WhatsApp message, email or push can leave the platform today. Only platform presence and in-app are live.",
-      owner: "Control Plane operations (per-tenant credential provisioning) — a deployment action, not a code change",
+      owner:
+        "Control Plane operations (per-tenant credential provisioning) — a deployment action, not a code change",
     },
     {
       id: "no-persistence",
@@ -494,7 +496,8 @@ export function communicationStewardGaps(): readonly StewardGap[] {
       gap: "The steward's decisions are deterministic policy with no model behind them: no generation path and no knowledge-pack store exists.",
       consequence:
         "The steward can decide what may be sent; it cannot yet compose an answer from the organization's own material.",
-      owner: "Phase 07 agent system for generation, with Phase 10 providing the knowledge pack store",
+      owner:
+        "Phase 07 agent system for generation, with Phase 10 providing the knowledge pack store",
     },
     {
       id: "no-recording-or-transcript-store",
@@ -506,7 +509,8 @@ export function communicationStewardGaps(): readonly StewardGap[] {
     {
       id: "no-subscription-billing",
       gap: "A subscription carries a billingRef string; nothing meters steward usage or charges by plan.",
-      consequence: "Seat counts and plan tiers are descriptive: no plan is enforced and nothing is invoiced.",
+      consequence:
+        "Seat counts and plan tiers are descriptive: no plan is enforced and nothing is invoiced.",
       owner: "Control Plane billing (commercial phases)",
     },
     {

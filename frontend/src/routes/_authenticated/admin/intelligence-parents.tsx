@@ -1,11 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  Baby,
-  LineChart,
-  HeartHandshake,
-  Wallet,
-  MessageSquare,
-} from "lucide-react";
+import { Baby, LineChart, HeartHandshake, Wallet, MessageSquare } from "lucide-react";
 import { IntelligenceCenter } from "@/components/intelligence-center";
 
 export const Route = createFileRoute("/_authenticated/admin/intelligence-parents")({
@@ -28,35 +22,40 @@ function ParentExperienceCenter() {
       features={[
         {
           title: "Child Timeline",
-          description: "Single feed of every milestone — grades, attendance, behaviour, projects and photos.",
+          description:
+            "Single feed of every milestone — grades, attendance, behaviour, projects and photos.",
           icon: Baby,
           tone: "sky",
           metric: { label: "Events this week", value: "3,420" },
         },
         {
           title: "Growth Analytics",
-          description: "Term-over-term progress charts across academics, attendance, behaviour and wellbeing.",
+          description:
+            "Term-over-term progress charts across academics, attendance, behaviour and wellbeing.",
           icon: LineChart,
           tone: "violet",
           metric: { label: "+ improvement", value: "+12%" },
         },
         {
           title: "Parent Trust Score",
-          description: "Sentiment + engagement + survey response → a per-family trust index you can act on.",
+          description:
+            "Sentiment + engagement + survey response → a per-family trust index you can act on.",
           icon: HeartHandshake,
           tone: "emerald",
           metric: { label: "School avg", value: "4.7 / 5" },
         },
         {
           title: "Fee Insights",
-          description: "Who's likely to pay late, who needs a plan, and where to focus collections this week.",
+          description:
+            "Who's likely to pay late, who needs a plan, and where to focus collections this week.",
           icon: Wallet,
           tone: "amber",
           metric: { label: "On-time", value: "88%" },
         },
         {
           title: "Communication Center",
-          description: "Unified inbox across SMS, WhatsApp, email and push — with auto-translation and AI replies.",
+          description:
+            "Unified inbox across SMS, WhatsApp, email and push — with auto-translation and AI replies.",
           icon: MessageSquare,
           tone: "slate",
           metric: { label: "Open threads", value: "57" },

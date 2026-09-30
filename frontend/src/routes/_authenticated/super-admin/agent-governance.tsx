@@ -68,8 +68,12 @@ function AgentGovernancePage() {
             {report.rules.map((rule) => (
               <tr key={rule.id} className="border-t border-border">
                 <td className="py-2">{rule.rule}</td>
-                <td className="py-2 font-mono text-[11px] text-muted-foreground">{rule.enforcedBy}</td>
-                <td className="py-2 font-mono text-[11px] text-muted-foreground">{rule.provedBy}</td>
+                <td className="py-2 font-mono text-[11px] text-muted-foreground">
+                  {rule.enforcedBy}
+                </td>
+                <td className="py-2 font-mono text-[11px] text-muted-foreground">
+                  {rule.provedBy}
+                </td>
               </tr>
             ))}
           </tbody>

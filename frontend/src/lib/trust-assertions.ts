@@ -86,12 +86,9 @@ export interface CreateTrustAssertionInput {
 }
 
 export type CreateTrustAssertionResult =
-  | { ok: true; assertion: TrustAssertion }
-  | { ok: false; error: string };
+  { ok: true; assertion: TrustAssertion } | { ok: false; error: string };
 
-export function createTrustAssertion(
-  input: CreateTrustAssertionInput,
-): CreateTrustAssertionResult {
+export function createTrustAssertion(input: CreateTrustAssertionInput): CreateTrustAssertionResult {
   if (input.issuer.trim() === "") {
     return { ok: false, error: "Assertion issuer is required (L.2)" };
   }
@@ -125,8 +122,7 @@ export function createTrustAssertion(
 }
 
 export type AssertionVerificationResult =
-  | { ok: true; reason: string }
-  | { ok: false; reason: string };
+  { ok: true; reason: string } | { ok: false; reason: string };
 
 /**
  * Verify an assertion is usable right now: not revoked, not expired, and
@@ -159,10 +155,7 @@ export function verifyTrustAssertion(
   return { ok: true, reason: "Assertion is valid" };
 }
 
-export function revokeTrustAssertion(
-  assertion: TrustAssertion,
-  now: string,
-): TrustAssertion {
+export function revokeTrustAssertion(assertion: TrustAssertion, now: string): TrustAssertion {
   return { ...assertion, revokedAt: now };
 }
 
@@ -197,12 +190,9 @@ export interface CreateTrustEvidenceInput {
 }
 
 export type CreateTrustEvidenceResult =
-  | { ok: true; evidence: TrustEvidence }
-  | { ok: false; error: string };
+  { ok: true; evidence: TrustEvidence } | { ok: false; error: string };
 
-export function createTrustEvidence(
-  input: CreateTrustEvidenceInput,
-): CreateTrustEvidenceResult {
+export function createTrustEvidence(input: CreateTrustEvidenceInput): CreateTrustEvidenceResult {
   if (input.reliability < 0 || input.reliability > 1) {
     return { ok: false, error: "Evidence reliability must be between 0 and 1 (M.2)" };
   }
@@ -225,7 +215,10 @@ export function createTrustEvidence(
 }
 
 export function isTrustEvidenceFresh(evidence: TrustEvidence, now: string): boolean {
-  return evidence.freshnessMs === null || Date.parse(now) - Date.parse(evidence.capturedAt) <= evidence.freshnessMs;
+  return (
+    evidence.freshnessMs === null ||
+    Date.parse(now) - Date.parse(evidence.capturedAt) <= evidence.freshnessMs
+  );
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -233,7 +226,8 @@ export function isTrustEvidenceFresh(evidence: TrustEvidence, now: string): bool
  * ────────────────────────────────────────────────────────────*/
 
 export interface ProvenanceLink {
-  kind: "trust_decision" | "trust_assertion" | "issuer" | "evidence" | "verification_method" | "source";
+  kind:
+    "trust_decision" | "trust_assertion" | "issuer" | "evidence" | "verification_method" | "source";
   id: string;
   detail: string;
   at: string;
@@ -245,7 +239,9 @@ export interface ProvenanceLink {
  * Method -> Source. Every important trust assertion must be traceable to its
  * evidence (N.3).
  */
-export function buildProvenanceChain(links: ProvenanceLink[]): { ok: true; chain: ProvenanceLink[] } | { ok: false; error: string } {
+export function buildProvenanceChain(
+  links: ProvenanceLink[],
+): { ok: true; chain: ProvenanceLink[] } | { ok: false; error: string } {
   if (links.length === 0) {
     return { ok: false, error: "Provenance chain cannot be empty (N.3)" };
   }
@@ -284,7 +280,8 @@ export const TRUST_REVOCATION_REASONS: readonly TrustRevocationReason[] = [
   "failed_attestation",
 ] as const;
 
-export type TrustRevocationKind = "temporary_suspension" | "permanent_revocation" | "quarantine" | "conditional_restoration";
+export type TrustRevocationKind =
+  "temporary_suspension" | "permanent_revocation" | "quarantine" | "conditional_restoration";
 
 export interface TrustRevocationRecord {
   id: string;
@@ -307,8 +304,7 @@ export interface CreateTrustRevocationInput {
 }
 
 export type CreateTrustRevocationResult =
-  | { ok: true; revocation: TrustRevocationRecord }
-  | { ok: false; error: string };
+  { ok: true; revocation: TrustRevocationRecord } | { ok: false; error: string };
 
 export function createTrustRevocation(
   input: CreateTrustRevocationInput,
@@ -319,7 +315,10 @@ export function createTrustRevocation(
   if (input.revokedBy.trim() === "") {
     return { ok: false, error: "Revocation requires an attributable actor (BR.14)" };
   }
-  if (input.kind === "conditional_restoration" && (input.restorationCondition ?? "").trim() === "") {
+  if (
+    input.kind === "conditional_restoration" &&
+    (input.restorationCondition ?? "").trim() === ""
+  ) {
     return { ok: false, error: "Conditional restoration requires a condition (AA.2)" };
   }
   return {

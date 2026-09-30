@@ -437,7 +437,13 @@ describe("registry alignment (REGISTRY.md / PROGRESS.md source of truth)", () =>
       }
       const phaseMatch = progressLines[index].match(/^\s*(\d{2})\s*$/);
       const name = progressLines[index + 1]?.trim();
-      if (phaseMatch && name && !/^(Complete|Pending|PROPOSED|IMPLEMENTED|ARCHITECTURE_DEFINED|DESIGNED|IN_PROGRESS|VALIDATING|OPERATIONAL|UNKNOWN)$/i.test(name)) {
+      if (
+        phaseMatch &&
+        name &&
+        !/^(Complete|Pending|PROPOSED|IMPLEMENTED|ARCHITECTURE_DEFINED|DESIGNED|IN_PROGRESS|VALIDATING|OPERATIONAL|UNKNOWN)$/i.test(
+          name,
+        )
+      ) {
         rows.set(phaseMatch[1], name);
       }
     }

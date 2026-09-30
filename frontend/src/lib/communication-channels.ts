@@ -45,8 +45,7 @@ export interface RoutingDecision {
 }
 
 export type RoutingResult =
-  | { ok: true; decisions: RoutingDecision[] }
-  | { ok: false; error: string };
+  { ok: true; decisions: RoutingDecision[] } | { ok: false; error: string };
 
 /**
  * Route a message to its ordered channel plan. Channels that are disabled or
@@ -129,7 +128,11 @@ export function decideRetry(
     return { shouldRetry: false, nextAttempt: attemptNumber, reason: "Delivery succeeded" };
   }
   if (attemptNumber >= policy.maxAttempts) {
-    return { shouldRetry: false, nextAttempt: attemptNumber, reason: "Max attempts reached; dead-letter" };
+    return {
+      shouldRetry: false,
+      nextAttempt: attemptNumber,
+      reason: "Max attempts reached; dead-letter",
+    };
   }
   return {
     shouldRetry: true,
@@ -191,10 +194,16 @@ export function evaluateMassCommunication(
     return { verdict: "blocked", reason: "Mass communication requires explicit permission (BO)" };
   }
   if (!request.hasPreview || !request.hasConfirmation) {
-    return { verdict: "blocked", reason: "Mass communication requires preview and confirmation (BO)" };
+    return {
+      verdict: "blocked",
+      reason: "Mass communication requires preview and confirmation (BO)",
+    };
   }
   if (request.audienceSize > request.maxRecipients) {
-    return { verdict: "blocked", reason: `Audience (${request.audienceSize}) exceeds max recipients (${request.maxRecipients}) (BN)` };
+    return {
+      verdict: "blocked",
+      reason: `Audience (${request.audienceSize}) exceeds max recipients (${request.maxRecipients}) (BN)`,
+    };
   }
   if (request.externalRecipientCount < 0 || request.externalRecipientCount > request.audienceSize) {
     return { verdict: "blocked", reason: "External recipient count is invalid (DP)" };

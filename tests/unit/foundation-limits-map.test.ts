@@ -141,11 +141,15 @@ describe("Phase 01 — the limits map is falsified against real source", () => {
     for (const scope of implemented) {
       const row = limits.rateLimitScopes.find((entry) => entry.scope === scope);
       expect(row, `scope ${scope} exists in code but is not mapped`).toBeTruthy();
-      expect(row?.status, `scope ${scope} exists in code but is marked ${row?.status}`).toBe("enforced");
+      expect(row?.status, `scope ${scope} exists in code but is marked ${row?.status}`).toBe(
+        "enforced",
+      );
     }
     for (const row of limits.rateLimitScopes) {
       if (row.status === "enforced") {
-        expect(implemented, `§59 scope ${row.scope} must exist in RateLimitScope`).toContain(row.scope);
+        expect(implemented, `§59 scope ${row.scope} must exist in RateLimitScope`).toContain(
+          row.scope,
+        );
       }
     }
   });

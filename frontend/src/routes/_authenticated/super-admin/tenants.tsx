@@ -4,11 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { PortalPage } from "@/components/portal-shell";
-import {
-  listTenants,
-  registerTenant,
-  type TenantSummary,
-} from "@/lib/tenant-registry.functions";
+import { listTenants, registerTenant, type TenantSummary } from "@/lib/tenant-registry.functions";
 import { TENANT_STATUSES, TENANT_ENVIRONMENTS } from "@/lib/tenant-registry";
 
 /**
@@ -36,7 +32,12 @@ function TenantsPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", slug: "", tenant_type: "school", region: "" });
 
-  const { data, isLoading, isError, error: queryError } = useQuery({
+  const {
+    data,
+    isLoading,
+    isError,
+    error: queryError,
+  } = useQuery({
     queryKey: ["tenants"],
     queryFn: () => list({ data: { limit: 100 } }),
   });

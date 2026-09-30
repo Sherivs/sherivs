@@ -140,14 +140,7 @@ export function isWorkspaceEntityInTenant(
  * These are workspace types, not separate architectural engines (Section G).
  */
 export type WorkspaceType =
-  | "institution"
-  | "campus"
-  | "department"
-  | "role"
-  | "team"
-  | "personal"
-  | "system"
-  | "custom";
+  "institution" | "campus" | "department" | "role" | "team" | "personal" | "system" | "custom";
 
 export const WORKSPACE_TYPES: readonly WorkspaceType[] = [
   "institution",
@@ -177,12 +170,7 @@ export interface WorkspaceTypeDefinition extends WorkspaceTenantScopedEntity {
  * Workspace lifecycle (Sections J–O)
  * ────────────────────────────────────────────────────────────*/
 
-export type WorkspaceLifecycleState =
-  | "draft"
-  | "active"
-  | "suspended"
-  | "archived"
-  | "deleted";
+export type WorkspaceLifecycleState = "draft" | "active" | "suspended" | "archived" | "deleted";
 
 export const WORKSPACE_LIFECYCLE_STATES: readonly WorkspaceLifecycleState[] = [
   "draft",
@@ -218,9 +206,7 @@ export function isWorkspaceLifecycleTransitionAllowed(
   from: WorkspaceLifecycleState,
   to: WorkspaceLifecycleState,
 ): { allowed: boolean; requiresReason: boolean } {
-  const transition = WORKSPACE_LIFECYCLE_TRANSITIONS.find(
-    (t) => t.from === from && t.to === to,
-  );
+  const transition = WORKSPACE_LIFECYCLE_TRANSITIONS.find((t) => t.from === from && t.to === to);
   if (!transition) {
     return { allowed: false, requiresReason: false };
   }
@@ -390,10 +376,7 @@ export function changeWorkspaceLifecycle(
     return { ok: false, error: "Workspace belongs to a different tenant" };
   }
 
-  const transition = isWorkspaceLifecycleTransitionAllowed(
-    workspace.lifecycleState,
-    input.to,
-  );
+  const transition = isWorkspaceLifecycleTransitionAllowed(workspace.lifecycleState, input.to);
 
   if (!transition.allowed) {
     return {
@@ -450,9 +433,7 @@ export function changeWorkspaceLifecycle(
  * Workspace activation validation (Section L)
  * ────────────────────────────────────────────────────────────*/
 
-export type ActivationValidationResult =
-  | { ok: true }
-  | { ok: false; errors: string[] };
+export type ActivationValidationResult = { ok: true } | { ok: false; errors: string[] };
 
 /**
  * Activation should verify required configuration, permissions, dependencies,
@@ -545,8 +526,7 @@ export interface WorkspaceContext {
 }
 
 export type WorkspaceContextSwitchResult =
-  | { ok: true; context: WorkspaceContext }
-  | { ok: false; error: string };
+  { ok: true; context: WorkspaceContext } | { ok: false; error: string };
 
 /**
  * Switching workspace must invalidate or recompute workspace-scoped state (Section BZ).
@@ -652,8 +632,7 @@ export interface ProvisionDefaultWorkspaceInput {
 }
 
 export type ProvisionDefaultWorkspaceResult =
-  | { ok: true; workspace: Workspace; created: boolean }
-  | { ok: false; error: string };
+  { ok: true; workspace: Workspace; created: boolean } | { ok: false; error: string };
 
 /**
  * CoreGrid may provision default workspaces based on institution type, user role,
@@ -668,9 +647,7 @@ export function provisionDefaultWorkspace(
   const code = `${input.workspaceType.toUpperCase()}_${codeBase.toUpperCase()}`.slice(0, 32);
 
   // Idempotency: if a matching default workspace already exists, return it (Section HA).
-  const existing = existingWorkspaces.find(
-    (w) => w.tenantId === input.tenantId && w.code === code,
-  );
+  const existing = existingWorkspaces.find((w) => w.tenantId === input.tenantId && w.code === code);
 
   if (existing) {
     return { ok: true, workspace: existing, created: false };

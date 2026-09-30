@@ -18,13 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   Select,
   SelectContent,
@@ -78,7 +72,10 @@ const BUS_TYPES = [
 
 const STATUS_META: Record<string, { label: string; cls: string }> = {
   idle: { label: "Idle", cls: "bg-white/10 text-white/80 border-white/30" },
-  en_route: { label: "On Route 🟢", cls: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40" },
+  en_route: {
+    label: "On Route 🟢",
+    cls: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
+  },
   at_school: { label: "At School", cls: "bg-blue-500/20 text-blue-300 border-blue-500/40" },
   returning: { label: "Returning", cls: "bg-amber-500/20 text-amber-300 border-amber-500/40" },
   maintenance: { label: "Maintenance", cls: "bg-red-500/20 text-red-300 border-red-500/40" },
@@ -205,12 +202,7 @@ function BusManagementPage() {
       title="Bus management"
       subtitle="Fleet overview, driver assignments, and live bus status"
       actions={
-        <BusFormSheet
-          mode="add"
-          schoolId={schoolId}
-          drivers={drivers}
-          onSaved={invalidate}
-        />
+        <BusFormSheet mode="add" schoolId={schoolId} drivers={drivers} onSaved={invalidate} />
       }
     >
       <SectionGrid>
@@ -229,12 +221,7 @@ function BusManagementPage() {
             title="No buses in your fleet"
             description="Add your first bus to begin managing student transport."
             action={
-              <BusFormSheet
-                mode="add"
-                schoolId={schoolId}
-                drivers={drivers}
-                onSaved={invalidate}
-              />
+              <BusFormSheet mode="add" schoolId={schoolId} drivers={drivers} onSaved={invalidate} />
             }
           />
         ) : (
@@ -302,7 +289,9 @@ function BusCard({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="text-2xl font-bold tracking-tight">{bus.bus_number}</div>
-          <div className="text-xs text-muted-foreground">{bus.registration_plate ?? "No plate"}</div>
+          <div className="text-xs text-muted-foreground">
+            {bus.registration_plate ?? "No plate"}
+          </div>
         </div>
         <Badge variant="outline" className={meta.cls}>
           {meta.label}
@@ -346,8 +335,7 @@ function BusCard({
           <AlertDialogHeader>
             <AlertDialogTitle>Deactivate this bus?</AlertDialogTitle>
             <AlertDialogDescription>
-              It will no longer appear in tracking. You can re-activate it later from the
-              database.
+              It will no longer appear in tracking. You can re-activate it later from the database.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -418,10 +406,7 @@ function BusFormSheet({
         });
         if (error) throw new Error(error.message);
       } else if (bus) {
-        const { error } = await supabase
-          .from("transport_buses")
-          .update(payload)
-          .eq("id", bus.id);
+        const { error } = await supabase.from("transport_buses").update(payload).eq("id", bus.id);
         if (error) throw new Error(error.message);
       }
     },
@@ -574,7 +559,8 @@ function StudentsSheet({
   const assignedStudents = students.filter((s) => assignedSet.has(s.id));
 
   const available = students.filter(
-    (s) => !assignedAcrossFleet.has(s.id) && s.full_name.toLowerCase().includes(search.toLowerCase()),
+    (s) =>
+      !assignedAcrossFleet.has(s.id) && s.full_name.toLowerCase().includes(search.toLowerCase()),
   );
 
   const capacity = bus.capacity ?? 0;
@@ -663,7 +649,9 @@ function StudentsSheet({
             </div>
             <Select value={picked} onValueChange={setPicked}>
               <SelectTrigger>
-                <SelectValue placeholder={available.length ? "Select a student" : "No eligible students"} />
+                <SelectValue
+                  placeholder={available.length ? "Select a student" : "No eligible students"}
+                />
               </SelectTrigger>
               <SelectContent>
                 {available.slice(0, 200).map((s) => (
@@ -673,7 +661,11 @@ function StudentsSheet({
                 ))}
               </SelectContent>
             </Select>
-            <Button onClick={add} disabled={!picked || mutate.isPending || atCapacity} className="w-full">
+            <Button
+              onClick={add}
+              disabled={!picked || mutate.isPending || atCapacity}
+              className="w-full"
+            >
               {atCapacity ? "At capacity" : "Add to bus"}
             </Button>
           </div>

@@ -84,20 +84,30 @@ export type AppendEventProblem =
 
 export type AppendEventResult =
   | { readonly ok: true; readonly journal: FinancialJournal; readonly event: FinancialEvent }
-  | { readonly ok: false; readonly problems: readonly AppendEventProblem[]; readonly detail: string };
+  | {
+      readonly ok: false;
+      readonly problems: readonly AppendEventProblem[];
+      readonly detail: string;
+    };
 
 /** Append one event. The journal never rewrites and never removes an event. */
-export function appendFinancialEvent(journal: FinancialJournal, event: FinancialEvent): AppendEventResult {
+export function appendFinancialEvent(
+  journal: FinancialJournal,
+  event: FinancialEvent,
+): AppendEventResult {
   const problems: AppendEventProblem[] = [];
-  if (journal.events.some((existing) => existing.eventId === event.eventId)) problems.push("duplicate-event-id");
+  if (journal.events.some((existing) => existing.eventId === event.eventId))
+    problems.push("duplicate-event-id");
   if (!event.correlationId?.trim()) problems.push("missing-correlation");
   if (!event.actor?.identityId?.trim()) problems.push("missing-actor");
 
   const siblings = journal.events.filter(
-    (existing) => existing.aggregateType === event.aggregateType && existing.aggregateId === event.aggregateId,
+    (existing) =>
+      existing.aggregateType === event.aggregateType && existing.aggregateId === event.aggregateId,
   );
   const last = siblings.reduce<FinancialEvent | null>(
-    (highest, candidate) => (!highest || candidate.sequence > highest.sequence ? candidate : highest),
+    (highest, candidate) =>
+      !highest || candidate.sequence > highest.sequence ? candidate : highest,
     null,
   );
   if (!last) {
@@ -109,14 +119,22 @@ export function appendFinancialEvent(journal: FinancialJournal, event: Financial
   }
 
   if (problems.length > 0) {
-    return { ok: false, problems: [...new Set(problems)], detail: describeAppendProblems(problems, event) };
+    return {
+      ok: false,
+      problems: [...new Set(problems)],
+      detail: describeAppendProblems(problems, event),
+    };
   }
   return { ok: true, journal: { events: [...journal.events, event] }, event };
 }
 
-export function describeAppendProblems(problems: readonly AppendEventProblem[], event: FinancialEvent): string {
+export function describeAppendProblems(
+  problems: readonly AppendEventProblem[],
+  event: FinancialEvent,
+): string {
   const reasons: Record<AppendEventProblem, string> = {
-    "duplicate-event-id": "an event with this identity was already recorded: money is never recorded twice",
+    "duplicate-event-id":
+      "an event with this identity was already recorded: money is never recorded twice",
     "sequence-out-of-order": "the sequence does not advance past the aggregate's last event",
     "sequence-gap": "the sequence skips a position, so the aggregate's history would have a hole",
     "version-regression": "the payload version regresses below the aggregate's recorded version",
@@ -152,7 +170,8 @@ export function verifyJournalIntegrity(journal: FinancialJournal): JournalIntegr
   for (const event of journal.events) {
     if (seenIds.has(event.eventId)) problems.push(`duplicate event id ${event.eventId}`);
     seenIds.add(event.eventId);
-    if (!event.correlationId?.trim()) problems.push(`event ${event.eventId} carries no correlation`);
+    if (!event.correlationId?.trim())
+      problems.push(`event ${event.eventId} carries no correlation`);
     const key = `${event.aggregateType}:${event.aggregateId}`;
     byAggregate.set(key, [...(byAggregate.get(key) ?? []), event]);
   }
@@ -203,7 +222,10 @@ export type EnqueueOutboxResult =
  */
 export function enqueueOutbox(outbox: FinancialOutbox, event: FinancialEvent): EnqueueOutboxResult {
   if (outbox.entries.some((entry) => entry.eventId === event.eventId)) {
-    return { ok: false, error: `event ${event.eventId} is already queued: a financial event is published once` };
+    return {
+      ok: false,
+      error: `event ${event.eventId} is already queued: a financial event is published once`,
+    };
   }
   return {
     ok: true,
@@ -222,17 +244,30 @@ export function enqueueOutbox(outbox: FinancialOutbox, event: FinancialEvent): E
   };
 }
 
-export function markOutboxPublished(outbox: FinancialOutbox, entryId: string, at: string): FinancialOutbox {
+export function markOutboxPublished(
+  outbox: FinancialOutbox,
+  entryId: string,
+  at: string,
+): FinancialOutbox {
   return {
     entries: outbox.entries.map((entry) =>
       entry.entryId === entryId
-        ? { ...entry, status: "published" as const, attempts: entry.attempts + 1, lastAttemptAt: at }
+        ? {
+            ...entry,
+            status: "published" as const,
+            attempts: entry.attempts + 1,
+            lastAttemptAt: at,
+          }
         : entry,
     ),
   };
 }
 
-export function markOutboxFailed(outbox: FinancialOutbox, entryId: string, at: string): FinancialOutbox {
+export function markOutboxFailed(
+  outbox: FinancialOutbox,
+  entryId: string,
+  at: string,
+): FinancialOutbox {
   return {
     entries: outbox.entries.map((entry) =>
       entry.entryId === entryId
@@ -277,11 +312,18 @@ function currencyFrom(payload: Readonly<Record<string, unknown>>): string | null
  * Rebuild an obligation's money state from its events alone. A missing history is
  * reported as unknown rather than as a zero balance.
  */
-export function reconstructObligation(journal: FinancialJournal, obligationId: string): ObligationProjection {
+export function reconstructObligation(
+  journal: FinancialJournal,
+  obligationId: string,
+): ObligationProjection {
   const events = journal.events
-    .filter((event) => event.aggregateId === obligationId || event.payload.obligationId === obligationId)
+    .filter(
+      (event) => event.aggregateId === obligationId || event.payload.obligationId === obligationId,
+    )
     .sort((a, b) =>
-      a.occurredAt === b.occurredAt ? a.sequence - b.sequence : a.occurredAt.localeCompare(b.occurredAt),
+      a.occurredAt === b.occurredAt
+        ? a.sequence - b.sequence
+        : a.occurredAt.localeCompare(b.occurredAt),
     );
 
   if (events.length === 0) {
@@ -333,7 +375,10 @@ export function reconstructObligation(journal: FinancialJournal, obligationId: s
     paid: money(paidMinor, resolved),
     refunded: money(refundedMinor, resolved),
     credited: money(creditedMinor, resolved),
-    outstanding: money(Math.max(chargedMinor - paidMinor - creditedMinor + refundedMinor, 0), resolved),
+    outstanding: money(
+      Math.max(chargedMinor - paidMinor - creditedMinor + refundedMinor, 0),
+      resolved,
+    ),
     currency,
     evidence: events.map((event) => event.eventId),
   };
@@ -351,7 +396,11 @@ export interface ProjectionMismatch {
  */
 export function compareProjectionToSnapshot(
   projection: ObligationProjection,
-  snapshot: { readonly chargedMinor: number; readonly paidMinor: number; readonly outstandingMinor: number },
+  snapshot: {
+    readonly chargedMinor: number;
+    readonly paidMinor: number;
+    readonly outstandingMinor: number;
+  },
 ): readonly ProjectionMismatch[] {
   const pairs: readonly [string, number, number][] = [
     ["charged", projection.charged.amountMinor, snapshot.chargedMinor],
@@ -406,7 +455,10 @@ export function postDoubleEntry(input: {
   }
   const currencies = [...new Set(input.lines.map((line) => line.amount.currency))];
   if (currencies.length !== 1) {
-    return { ok: false, error: "a posting must be single-currency: convert explicitly and record the rate" };
+    return {
+      ok: false,
+      error: "a posting must be single-currency: convert explicitly and record the rate",
+    };
   }
   const negative = input.lines.find((line) => line.amount.amountMinor < 0);
   if (negative) {
@@ -447,4 +499,3 @@ export function isPostingBalanced(posting: DoubleEntryPosting): boolean {
     .reduce((total, line) => total + line.amount.amountMinor, 0);
   return compareMoney(money(debit, posting.currency), money(credit, posting.currency)) === 0;
 }
-

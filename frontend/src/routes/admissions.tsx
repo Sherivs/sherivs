@@ -41,16 +41,66 @@ type School = {
 type ClassRow = { id: string; name: string };
 
 const INTERVIEW_QUESTIONS = [
-  { id: "q1", category: "Personal Development", question: "Tell us about yourself and what makes you unique as a student.", hint: "There are no right or wrong answers. Be yourself." },
-  { id: "q2", category: "Academic Motivation", question: "Why do you want to study at our school specifically?", hint: "Be specific about what attracted you to our institution." },
-  { id: "q3", category: "Academic Strengths", question: "What are your strongest academic subjects and why?", hint: "Give examples of achievements in these areas." },
-  { id: "q4", category: "Areas for Growth", question: "Which subjects do you find challenging and how do you work to improve?", hint: "Show self-awareness and a growth mindset." },
-  { id: "q5", category: "Extracurricular", question: "What activities, sports, or clubs are you involved in outside school?", hint: "Leadership roles are particularly valued." },
-  { id: "q6", category: "Character", question: "Describe a time you showed leadership or helped someone in need.", hint: "Be specific. Give a real example." },
-  { id: "q7", category: "Future Goals", question: "What career or university path are you considering and why?", hint: "Be honest. Having a clear goal is a positive indicator." },
-  { id: "q8", category: "Values", question: "What does integrity mean to you? Give an example from your own life.", hint: "Elite schools value character as much as academics." },
-  { id: "q9", category: "School Fit", question: "How do you plan to contribute to our school community?", hint: "Think about clubs, sports, academics, or community service." },
-  { id: "q10", category: "Family Support", question: "How does your family support your education at home?", hint: "For parents: how do you support your child's studies?" },
+  {
+    id: "q1",
+    category: "Personal Development",
+    question: "Tell us about yourself and what makes you unique as a student.",
+    hint: "There are no right or wrong answers. Be yourself.",
+  },
+  {
+    id: "q2",
+    category: "Academic Motivation",
+    question: "Why do you want to study at our school specifically?",
+    hint: "Be specific about what attracted you to our institution.",
+  },
+  {
+    id: "q3",
+    category: "Academic Strengths",
+    question: "What are your strongest academic subjects and why?",
+    hint: "Give examples of achievements in these areas.",
+  },
+  {
+    id: "q4",
+    category: "Areas for Growth",
+    question: "Which subjects do you find challenging and how do you work to improve?",
+    hint: "Show self-awareness and a growth mindset.",
+  },
+  {
+    id: "q5",
+    category: "Extracurricular",
+    question: "What activities, sports, or clubs are you involved in outside school?",
+    hint: "Leadership roles are particularly valued.",
+  },
+  {
+    id: "q6",
+    category: "Character",
+    question: "Describe a time you showed leadership or helped someone in need.",
+    hint: "Be specific. Give a real example.",
+  },
+  {
+    id: "q7",
+    category: "Future Goals",
+    question: "What career or university path are you considering and why?",
+    hint: "Be honest. Having a clear goal is a positive indicator.",
+  },
+  {
+    id: "q8",
+    category: "Values",
+    question: "What does integrity mean to you? Give an example from your own life.",
+    hint: "Elite schools value character as much as academics.",
+  },
+  {
+    id: "q9",
+    category: "School Fit",
+    question: "How do you plan to contribute to our school community?",
+    hint: "Think about clubs, sports, academics, or community service.",
+  },
+  {
+    id: "q10",
+    category: "Family Support",
+    question: "How does your family support your education at home?",
+    hint: "For parents: how do you support your child's studies?",
+  },
 ];
 
 const STEPS = [
@@ -162,8 +212,19 @@ type DocSpec = { key: string; label: string; accept: string; maxMb: number; opti
 const REQUIRED_DOCS: DocSpec[] = [
   { key: "passport", label: "Passport Photograph", accept: "image/*", maxMb: 2 },
   { key: "birth_cert", label: "Birth Certificate", accept: "image/*,application/pdf", maxMb: 5 },
-  { key: "report_card", label: "Last Term Report Card", accept: "image/*,application/pdf", maxMb: 5 },
-  { key: "transfer_cert", label: "Transfer Certificate (if applicable)", accept: "image/*,application/pdf", maxMb: 5, optional: true },
+  {
+    key: "report_card",
+    label: "Last Term Report Card",
+    accept: "image/*,application/pdf",
+    maxMb: 5,
+  },
+  {
+    key: "transfer_cert",
+    label: "Transfer Certificate (if applicable)",
+    accept: "image/*,application/pdf",
+    maxMb: 5,
+    optional: true,
+  },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -178,7 +239,9 @@ function AdmissionsPage() {
     queryFn: async (): Promise<School | null> => {
       const { data } = await supabase
         .from("schools")
-        .select("id, name, slug, logo_url, primary_color, admission_requirements, admission_deadline")
+        .select(
+          "id, name, slug, logo_url, primary_color, admission_requirements, admission_deadline",
+        )
         .eq("slug", slug as string)
         .eq("is_active", true)
         .maybeSingle();
@@ -245,7 +308,9 @@ function AdmissionsPage() {
         return "Emergency contact name and phone are required.";
     }
     if (s === 4) {
-      const missing = REQUIRED_DOCS.filter((d) => !d.optional && !form.docs[d.key]).map((d) => d.label);
+      const missing = REQUIRED_DOCS.filter((d) => !d.optional && !form.docs[d.key]).map(
+        (d) => d.label,
+      );
       if (missing.length) return `Please upload: ${missing.join(", ")}.`;
     }
     if (s === 5) {
@@ -320,7 +385,9 @@ function AdmissionsPage() {
         emergency_contact_phone: form.emergency_phone,
         medical_conditions: form.medical_conditions || null,
         has_special_needs: form.has_special_needs,
-        disabilities_or_special_needs: form.has_special_needs ? form.special_needs_detail || null : null,
+        disabilities_or_special_needs: form.has_special_needs
+          ? form.special_needs_detail || null
+          : null,
         has_allergies: form.has_allergies,
         allergies_detail: form.has_allergies ? form.allergies_detail || null : null,
         documents_uploaded: form.docs,
@@ -356,7 +423,15 @@ function AdmissionsPage() {
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
           <div className="flex items-center gap-3">
             {school.logo_url ? (
-              <img src={school.logo_url} alt="" width={40} height={40} loading="lazy" decoding="async" className="h-10 w-10 rounded-lg object-cover" />
+              <img
+                src={school.logo_url}
+                alt=""
+                width={40}
+                height={40}
+                loading="lazy"
+                decoding="async"
+                className="h-10 w-10 rounded-lg object-cover"
+              />
             ) : (
               <div
                 className="grid h-10 w-10 place-items-center rounded-lg font-bold"
@@ -404,8 +479,8 @@ function AdmissionsPage() {
                       (done
                         ? "bg-emerald-500 text-white"
                         : active
-                        ? "bg-white text-black"
-                        : "border border-white/15 text-white/50")
+                          ? "bg-white text-black"
+                          : "border border-white/15 text-white/50")
                     }
                   >
                     {done ? <Check className="h-4 w-4" /> : n}
@@ -425,14 +500,10 @@ function AdmissionsPage() {
         </div>
 
         <div className="mt-10 rounded-3xl border border-white/[0.07] bg-white/[0.03] p-6 md:p-8">
-          {step === 1 && (
-            <Step1 form={form} update={update} classes={classesQ.data ?? []} />
-          )}
+          {step === 1 && <Step1 form={form} update={update} classes={classesQ.data ?? []} />}
           {step === 2 && <Step2 form={form} update={update} />}
           {step === 3 && <Step3 form={form} update={update} />}
-          {step === 4 && (
-            <Step4 form={form} update={update} schoolId={school.id} />
-          )}
+          {step === 4 && <Step4 form={form} update={update} schoolId={school.id} />}
           {step === 5 && <Step5 form={form} update={update} classes={classesQ.data ?? []} />}
 
           <div className="mt-10 flex items-center justify-between border-t border-white/[0.06] pt-6">
@@ -544,39 +615,64 @@ type StepProps = {
   update: <K extends keyof FormState>(k: K, v: FormState[K]) => void;
 };
 
-function Step1({
-  form,
-  update,
-  classes,
-}: StepProps & { classes: ClassRow[] }) {
+function Step1({ form, update, classes }: StepProps & { classes: ClassRow[] }) {
   return (
     <div>
       <SectionLabel>Student Personal Info</SectionLabel>
       <div className="grid gap-5 md:grid-cols-2">
         <Field label="First Name" required>
-          <input className={inputCls} value={form.first_name} onChange={(e) => update("first_name", e.target.value)} />
+          <input
+            className={inputCls}
+            value={form.first_name}
+            onChange={(e) => update("first_name", e.target.value)}
+          />
         </Field>
         <Field label="Last Name" required>
-          <input className={inputCls} value={form.last_name} onChange={(e) => update("last_name", e.target.value)} />
+          <input
+            className={inputCls}
+            value={form.last_name}
+            onChange={(e) => update("last_name", e.target.value)}
+          />
         </Field>
         <Field label="Date of Birth" required>
-          <input type="date" className={inputCls} value={form.dob} onChange={(e) => update("dob", e.target.value)} />
+          <input
+            type="date"
+            className={inputCls}
+            value={form.dob}
+            onChange={(e) => update("dob", e.target.value)}
+          />
         </Field>
         <Field label="Gender">
-          <select className={inputCls} value={form.gender} onChange={(e) => update("gender", e.target.value)}>
+          <select
+            className={inputCls}
+            value={form.gender}
+            onChange={(e) => update("gender", e.target.value)}
+          >
             <option value="">Select…</option>
             <option>Male</option>
             <option>Female</option>
           </select>
         </Field>
         <Field label="Nationality">
-          <input className={inputCls} value={form.nationality} onChange={(e) => update("nationality", e.target.value)} />
+          <input
+            className={inputCls}
+            value={form.nationality}
+            onChange={(e) => update("nationality", e.target.value)}
+          />
         </Field>
         <Field label="Religion">
-          <input className={inputCls} value={form.religion} onChange={(e) => update("religion", e.target.value)} />
+          <input
+            className={inputCls}
+            value={form.religion}
+            onChange={(e) => update("religion", e.target.value)}
+          />
         </Field>
         <Field label="Blood Group">
-          <select className={inputCls} value={form.blood_group} onChange={(e) => update("blood_group", e.target.value)}>
+          <select
+            className={inputCls}
+            value={form.blood_group}
+            onChange={(e) => update("blood_group", e.target.value)}
+          >
             <option value="">—</option>
             {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((b) => (
               <option key={b}>{b}</option>
@@ -584,7 +680,11 @@ function Step1({
           </select>
         </Field>
         <Field label="Genotype">
-          <select className={inputCls} value={form.genotype} onChange={(e) => update("genotype", e.target.value)}>
+          <select
+            className={inputCls}
+            value={form.genotype}
+            onChange={(e) => update("genotype", e.target.value)}
+          >
             <option value="">—</option>
             {["AA", "AS", "SS", "AC", "SC"].map((g) => (
               <option key={g}>{g}</option>
@@ -592,39 +692,77 @@ function Step1({
           </select>
         </Field>
         <Field label="Applying for Class" required>
-          <select className={inputCls} value={form.applying_for_class} onChange={(e) => update("applying_for_class", e.target.value)}>
+          <select
+            className={inputCls}
+            value={form.applying_for_class}
+            onChange={(e) => update("applying_for_class", e.target.value)}
+          >
             <option value="">Select a class…</option>
             {classes.map((c) => (
-              <option key={c.id} value={c.name}>{c.name}</option>
+              <option key={c.id} value={c.name}>
+                {c.name}
+              </option>
             ))}
           </select>
         </Field>
         <Field label="Academic Year" required>
-          <input className={inputCls} value={form.academic_year} onChange={(e) => update("academic_year", e.target.value)} />
+          <input
+            className={inputCls}
+            value={form.academic_year}
+            onChange={(e) => update("academic_year", e.target.value)}
+          />
         </Field>
         <div className="md:col-span-2">
           <Field label="Home Address" required>
-            <textarea rows={2} className={inputCls} value={form.address} onChange={(e) => update("address", e.target.value)} />
+            <textarea
+              rows={2}
+              className={inputCls}
+              value={form.address}
+              onChange={(e) => update("address", e.target.value)}
+            />
           </Field>
         </div>
         <div className="md:col-span-2">
           <Field label="Medical Conditions">
-            <textarea rows={2} className={inputCls} value={form.medical_conditions} onChange={(e) => update("medical_conditions", e.target.value)} />
+            <textarea
+              rows={2}
+              className={inputCls}
+              value={form.medical_conditions}
+              onChange={(e) => update("medical_conditions", e.target.value)}
+            />
           </Field>
         </div>
-        <Toggle on={form.has_special_needs} onChange={(v) => update("has_special_needs", v)} label="Has disabilities or special needs?" />
-        <Toggle on={form.has_allergies} onChange={(v) => update("has_allergies", v)} label="Has allergies?" />
+        <Toggle
+          on={form.has_special_needs}
+          onChange={(v) => update("has_special_needs", v)}
+          label="Has disabilities or special needs?"
+        />
+        <Toggle
+          on={form.has_allergies}
+          onChange={(v) => update("has_allergies", v)}
+          label="Has allergies?"
+        />
         {form.has_special_needs && (
           <div className="md:col-span-2">
             <Field label="Special Needs Details">
-              <textarea rows={2} className={inputCls} value={form.special_needs_detail} onChange={(e) => update("special_needs_detail", e.target.value)} />
+              <textarea
+                rows={2}
+                className={inputCls}
+                value={form.special_needs_detail}
+                onChange={(e) => update("special_needs_detail", e.target.value)}
+              />
             </Field>
           </div>
         )}
         {form.has_allergies && (
           <div className="md:col-span-2">
             <Field label="Allergy Details">
-              <textarea rows={2} className={inputCls} value={form.allergies_detail} onChange={(e) => update("allergies_detail", e.target.value)} />
+              <textarea
+                rows={2}
+                className={inputCls}
+                value={form.allergies_detail}
+                onChange={(e) => update("allergies_detail", e.target.value)}
+              />
             </Field>
           </div>
         )}
@@ -639,32 +777,67 @@ function Step2({ form, update }: StepProps) {
       <SectionLabel>Academic History</SectionLabel>
       <div className="grid gap-5 md:grid-cols-2">
         <Field label="Previous School Name">
-          <input className={inputCls} value={form.previous_school} onChange={(e) => update("previous_school", e.target.value)} />
+          <input
+            className={inputCls}
+            value={form.previous_school}
+            onChange={(e) => update("previous_school", e.target.value)}
+          />
         </Field>
         <Field label="Previous School Address">
-          <input className={inputCls} value={form.previous_school_address} onChange={(e) => update("previous_school_address", e.target.value)} />
+          <input
+            className={inputCls}
+            value={form.previous_school_address}
+            onChange={(e) => update("previous_school_address", e.target.value)}
+          />
         </Field>
         <Field label="Last Class Completed">
-          <input className={inputCls} value={form.previous_class} onChange={(e) => update("previous_class", e.target.value)} />
+          <input
+            className={inputCls}
+            value={form.previous_class}
+            onChange={(e) => update("previous_class", e.target.value)}
+          />
         </Field>
         <Field label="Year Completed">
-          <input className={inputCls} value={form.year_completed} onChange={(e) => update("year_completed", e.target.value)} />
+          <input
+            className={inputCls}
+            value={form.year_completed}
+            onChange={(e) => update("year_completed", e.target.value)}
+          />
         </Field>
         <div className="md:col-span-2">
           <Field label="Reason for Leaving">
-            <textarea rows={2} className={inputCls} value={form.reason_for_leaving} onChange={(e) => update("reason_for_leaving", e.target.value)} />
+            <textarea
+              rows={2}
+              className={inputCls}
+              value={form.reason_for_leaving}
+              onChange={(e) => update("reason_for_leaving", e.target.value)}
+            />
           </Field>
         </div>
         <div className="md:col-span-2">
           <Field label="Academic Achievements or Distinctions">
-            <textarea rows={3} className={inputCls} value={form.achievements} onChange={(e) => update("achievements", e.target.value)} />
+            <textarea
+              rows={3}
+              className={inputCls}
+              value={form.achievements}
+              onChange={(e) => update("achievements", e.target.value)}
+            />
           </Field>
         </div>
-        <Toggle on={form.was_disciplined} onChange={(v) => update("was_disciplined", v)} label="Ever suspended or expelled?" />
+        <Toggle
+          on={form.was_disciplined}
+          onChange={(v) => update("was_disciplined", v)}
+          label="Ever suspended or expelled?"
+        />
         {form.was_disciplined && (
           <div className="md:col-span-2">
             <Field label="Please explain">
-              <textarea rows={2} className={inputCls} value={form.discipline_explanation} onChange={(e) => update("discipline_explanation", e.target.value)} />
+              <textarea
+                rows={2}
+                className={inputCls}
+                value={form.discipline_explanation}
+                onChange={(e) => update("discipline_explanation", e.target.value)}
+              />
             </Field>
           </div>
         )}
@@ -680,10 +853,18 @@ function Step3({ form, update }: StepProps) {
       <h3 className="mb-4 font-display text-base font-semibold">Parent / Guardian One</h3>
       <div className="grid gap-5 md:grid-cols-2">
         <Field label="Full Name" required>
-          <input className={inputCls} value={form.p1_name} onChange={(e) => update("p1_name", e.target.value)} />
+          <input
+            className={inputCls}
+            value={form.p1_name}
+            onChange={(e) => update("p1_name", e.target.value)}
+          />
         </Field>
         <Field label="Relationship" required>
-          <select className={inputCls} value={form.p1_relationship} onChange={(e) => update("p1_relationship", e.target.value)}>
+          <select
+            className={inputCls}
+            value={form.p1_relationship}
+            onChange={(e) => update("p1_relationship", e.target.value)}
+          >
             <option value="">Select…</option>
             <option>Father</option>
             <option>Mother</option>
@@ -692,33 +873,91 @@ function Step3({ form, update }: StepProps) {
           </select>
         </Field>
         <Field label="Phone" required>
-          <input className={inputCls} value={form.p1_phone} onChange={(e) => update("p1_phone", e.target.value)} />
+          <input
+            className={inputCls}
+            value={form.p1_phone}
+            onChange={(e) => update("p1_phone", e.target.value)}
+          />
         </Field>
         <Field label="Email" required>
-          <input type="email" className={inputCls} value={form.p1_email} onChange={(e) => update("p1_email", e.target.value)} />
+          <input
+            type="email"
+            className={inputCls}
+            value={form.p1_email}
+            onChange={(e) => update("p1_email", e.target.value)}
+          />
         </Field>
         <Field label="Occupation">
-          <input className={inputCls} value={form.p1_occupation} onChange={(e) => update("p1_occupation", e.target.value)} />
+          <input
+            className={inputCls}
+            value={form.p1_occupation}
+            onChange={(e) => update("p1_occupation", e.target.value)}
+          />
         </Field>
         <Field label="Home Address">
-          <input className={inputCls} value={form.p1_address} onChange={(e) => update("p1_address", e.target.value)} />
+          <input
+            className={inputCls}
+            value={form.p1_address}
+            onChange={(e) => update("p1_address", e.target.value)}
+          />
         </Field>
       </div>
 
       <div className="mt-8">
-        <Toggle on={form.add_parent_two} onChange={(v) => update("add_parent_two", v)} label="Add second parent / guardian details" />
+        <Toggle
+          on={form.add_parent_two}
+          onChange={(v) => update("add_parent_two", v)}
+          label="Add second parent / guardian details"
+        />
       </div>
 
       {form.add_parent_two && (
         <>
           <h3 className="mt-8 mb-4 font-display text-base font-semibold">Parent / Guardian Two</h3>
           <div className="grid gap-5 md:grid-cols-2">
-            <Field label="Full Name"><input className={inputCls} value={form.p2_name} onChange={(e) => update("p2_name", e.target.value)} /></Field>
-            <Field label="Relationship"><input className={inputCls} value={form.p2_relationship} onChange={(e) => update("p2_relationship", e.target.value)} /></Field>
-            <Field label="Phone"><input className={inputCls} value={form.p2_phone} onChange={(e) => update("p2_phone", e.target.value)} /></Field>
-            <Field label="Email"><input type="email" className={inputCls} value={form.p2_email} onChange={(e) => update("p2_email", e.target.value)} /></Field>
-            <Field label="Occupation"><input className={inputCls} value={form.p2_occupation} onChange={(e) => update("p2_occupation", e.target.value)} /></Field>
-            <Field label="Home Address"><input className={inputCls} value={form.p2_address} onChange={(e) => update("p2_address", e.target.value)} /></Field>
+            <Field label="Full Name">
+              <input
+                className={inputCls}
+                value={form.p2_name}
+                onChange={(e) => update("p2_name", e.target.value)}
+              />
+            </Field>
+            <Field label="Relationship">
+              <input
+                className={inputCls}
+                value={form.p2_relationship}
+                onChange={(e) => update("p2_relationship", e.target.value)}
+              />
+            </Field>
+            <Field label="Phone">
+              <input
+                className={inputCls}
+                value={form.p2_phone}
+                onChange={(e) => update("p2_phone", e.target.value)}
+              />
+            </Field>
+            <Field label="Email">
+              <input
+                type="email"
+                className={inputCls}
+                value={form.p2_email}
+                onChange={(e) => update("p2_email", e.target.value)}
+              />
+            </Field>
+            <Field label="Occupation">
+              <input
+                className={inputCls}
+                value={form.p2_occupation}
+                onChange={(e) => update("p2_occupation", e.target.value)}
+              />
+            </Field>
+            <Field label="Home Address">
+              <input
+                className={inputCls}
+                value={form.p2_address}
+                onChange={(e) => update("p2_address", e.target.value)}
+              />
+            </Field>
           </div>
         </>
       )}
@@ -726,24 +965,32 @@ function Step3({ form, update }: StepProps) {
       <h3 className="mt-10 mb-4 font-display text-base font-semibold">Emergency Contact</h3>
       <div className="grid gap-5 md:grid-cols-3">
         <Field label="Name" required>
-          <input className={inputCls} value={form.emergency_name} onChange={(e) => update("emergency_name", e.target.value)} />
+          <input
+            className={inputCls}
+            value={form.emergency_name}
+            onChange={(e) => update("emergency_name", e.target.value)}
+          />
         </Field>
         <Field label="Relationship">
-          <input className={inputCls} value={form.emergency_relationship} onChange={(e) => update("emergency_relationship", e.target.value)} />
+          <input
+            className={inputCls}
+            value={form.emergency_relationship}
+            onChange={(e) => update("emergency_relationship", e.target.value)}
+          />
         </Field>
         <Field label="Phone" required>
-          <input className={inputCls} value={form.emergency_phone} onChange={(e) => update("emergency_phone", e.target.value)} />
+          <input
+            className={inputCls}
+            value={form.emergency_phone}
+            onChange={(e) => update("emergency_phone", e.target.value)}
+          />
         </Field>
       </div>
     </div>
   );
 }
 
-function Step4({
-  form,
-  update,
-  schoolId,
-}: StepProps & { schoolId: string }) {
+function Step4({ form, update, schoolId }: StepProps & { schoolId: string }) {
   const [uploading, setUploading] = useState<string | null>(null);
   const applicationDraftId = useMemo(() => crypto.randomUUID(), []);
 
@@ -803,7 +1050,11 @@ function Step4({
                   )}
                 </div>
                 <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-sm text-white/90 hover:bg-white/5">
-                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  {busy ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4" />
+                  )}
                   {uploaded ? "Replace" : "Upload"}
                   <input
                     type="file"
@@ -822,12 +1073,9 @@ function Step4({
   );
 }
 
-function Step5({
-  form,
-  update,
-  classes,
-}: StepProps & { classes: ClassRow[] }) {
-  const className = classes.find((c) => c.name === form.applying_for_class)?.name ?? form.applying_for_class;
+function Step5({ form, update, classes }: StepProps & { classes: ClassRow[] }) {
+  const className =
+    classes.find((c) => c.name === form.applying_for_class)?.name ?? form.applying_for_class;
   const Row = ({ k, v }: { k: string; v: string | null | undefined }) => (
     <div className="flex justify-between gap-4 border-b border-white/[0.06] py-1.5 text-sm">
       <span className="text-white/50">{k}</span>
@@ -866,7 +1114,9 @@ function Step5({
           <Row k="Parent 1" v={`${form.p1_name} (${form.p1_relationship})`} />
           <Row k="Phone" v={form.p1_phone} />
           <Row k="Email" v={form.p1_email} />
-          {form.add_parent_two && <Row k="Parent 2" v={`${form.p2_name} (${form.p2_relationship})`} />}
+          {form.add_parent_two && (
+            <Row k="Parent 2" v={`${form.p2_name} (${form.p2_relationship})`} />
+          )}
           <Row k="Emergency" v={`${form.emergency_name} (${form.emergency_phone})`} />
         </div>
         <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5">

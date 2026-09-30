@@ -127,7 +127,12 @@ describe("Device registry (G)", () => {
 describe("Device lifecycle (L)", () => {
   it("allows a legal DISCOVERED -> PENDING_ENROLLMENT transition", () => {
     expect(isDeviceLifecycleTransitionAllowed("DISCOVERED", "PENDING_ENROLLMENT")).toBe(true);
-    const result = transitionDeviceLifecycle(device({ lifecycleState: "DISCOVERED" }), "PENDING_ENROLLMENT", "enrolling", NOW);
+    const result = transitionDeviceLifecycle(
+      device({ lifecycleState: "DISCOVERED" }),
+      "PENDING_ENROLLMENT",
+      "enrolling",
+      NOW,
+    );
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.device.lifecycleState).toBe("PENDING_ENROLLMENT");
@@ -148,7 +153,12 @@ describe("Device lifecycle (L)", () => {
   });
 
   it("allows DECOMMISSIONED -> RETIRED and then no further moves", () => {
-    const decommissioned = transitionDeviceLifecycle(device(), "DECOMMISSIONED", "end of life", NOW);
+    const decommissioned = transitionDeviceLifecycle(
+      device(),
+      "DECOMMISSIONED",
+      "end of life",
+      NOW,
+    );
     if (!decommissioned.ok) throw new Error("fixture failed");
     const retired = transitionDeviceLifecycle(decommissioned.device, "RETIRED", "end of life", NOW);
     expect(retired.ok).toBe(true);

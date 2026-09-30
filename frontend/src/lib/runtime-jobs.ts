@@ -20,13 +20,7 @@ import type { OperationId } from "./runtime-core";
  * ────────────────────────────────────────────────────────────*/
 
 export type JobStatus =
-  | "queued"
-  | "running"
-  | "succeeded"
-  | "failed"
-  | "retrying"
-  | "cancelled"
-  | "dead_lettered";
+  "queued" | "running" | "succeeded" | "failed" | "retrying" | "cancelled" | "dead_lettered";
 
 export const JOB_STATUSES: readonly JobStatus[] = [
   "queued",
@@ -130,10 +124,7 @@ export function shouldRetry(
   return true;
 }
 
-export function computeBackoffDelay(
-  attempt: number,
-  policy: RetryPolicy,
-): number {
+export function computeBackoffDelay(attempt: number, policy: RetryPolicy): number {
   if (policy.strategy === "no_retry") return 0;
   if (policy.strategy === "fixed") return policy.baseDelayMs;
   const delay = policy.baseDelayMs * Math.pow(2, attempt - 1);
@@ -145,7 +136,10 @@ export function computeBackoffDelay(
  * ────────────────────────────────────────────────────────────*/
 
 export interface JobExecutor {
-  execute(job: Job, now: string): { ok: true; result: unknown } | { ok: false; errorCategory: string; error: string };
+  execute(
+    job: Job,
+    now: string,
+  ): { ok: true; result: unknown } | { ok: false; errorCategory: string; error: string };
 }
 
 export type JobRunResult =

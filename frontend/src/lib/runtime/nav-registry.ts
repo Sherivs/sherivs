@@ -8,10 +8,7 @@
  *
  * A runtime's own name belongs here and in the runtime layer, never in the kernel.
  */
-import {
-  RUNTIME_SCHOLAR,
-  SCHOLAR_NAV_CONTRIBUTIONS,
-} from "./scholar-nav-catalog";
+import { RUNTIME_SCHOLAR, SCHOLAR_NAV_CONTRIBUTIONS } from "./scholar-nav-catalog";
 import type { NavContribution } from "@/lib/workspace-engine/navigation";
 
 /** Everything a runtime's own layer exports (capability sets, labels, helpers). */

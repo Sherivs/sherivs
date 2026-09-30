@@ -50,7 +50,8 @@ export type JobDefinitionVerdict =
 export function defineJob(contract: JobContract): JobDefinitionVerdict {
   const refusals: string[] = [];
   if (!contract.jobId?.trim()) refusals.push("a job must be identified");
-  if (!contract.ownerPhase?.trim()) refusals.push("a job must name the phase that owns its semantics");
+  if (!contract.ownerPhase?.trim())
+    refusals.push("a job must name the phase that owns its semantics");
   if (contract.keyFields.length === 0) {
     refusals.push("a job must declare the fields that identify its logical unit of work");
   }
@@ -64,8 +65,7 @@ export function defineJob(contract: JobContract): JobDefinitionVerdict {
 }
 
 export type JobKeyVerdict =
-  | { readonly ok: true; readonly key: string }
-  | { readonly ok: false; readonly error: string };
+  { readonly ok: true; readonly key: string } | { readonly ok: false; readonly error: string };
 
 /**
  * Derive the idempotency key from the declared fields. A missing field is refused rather
@@ -79,7 +79,10 @@ export function deriveIdempotencyKey(
   for (const field of [...contract.keyFields].sort()) {
     const value = input[field];
     if (value === undefined || value === null || value === "") {
-      return { ok: false, error: `key field ${field} is absent: the job's identity would be ambiguous` };
+      return {
+        ok: false,
+        error: `key field ${field} is absent: the job's identity would be ambiguous`,
+      };
     }
     parts.push(`${field}=${String(value)}`);
   }
@@ -155,8 +158,7 @@ export function startRun(input: {
 }
 
 export type RunTransitionVerdict =
-  | { readonly ok: true; readonly run: JobRun }
-  | { readonly ok: false; readonly error: string };
+  { readonly ok: true; readonly run: JobRun } | { readonly ok: false; readonly error: string };
 
 /** Record progress. Only a running job may checkpoint, and the marker must be named. */
 export function checkpointRun(run: JobRun, marker: string): RunTransitionVerdict {
@@ -179,7 +181,8 @@ export function failRun(run: JobRun, error: string, at: string): RunTransitionVe
 
 /** Cancellation is refused for a job that did not declare itself cancellable. */
 export function cancelRun(run: JobRun, contract: JobContract, at: string): RunTransitionVerdict {
-  if (!contract.cancellable) return { ok: false, error: `${contract.jobId} is not declared cancellable` };
+  if (!contract.cancellable)
+    return { ok: false, error: `${contract.jobId} is not declared cancellable` };
   if (run.state === "completed" || run.state === "cancelled") {
     return { ok: false, error: `a ${run.state} run cannot be cancelled` };
   }
@@ -207,7 +210,14 @@ export function resumeRun(run: JobRun, contract: JobContract, at: string): Start
   }
   return {
     ok: true,
-    run: { ...run, state: "running", attempt: run.attempt + 1, finishedAt: null, lastError: null, startedAt: at },
+    run: {
+      ...run,
+      state: "running",
+      attempt: run.attempt + 1,
+      finishedAt: null,
+      lastError: null,
+      startedAt: at,
+    },
   };
 }
 
@@ -226,7 +236,9 @@ export function burstVerdict(
 ): BurstVerdict {
   const limit = contract.burstLimitPerMinute ?? null;
   const windowStart = new Date(at).getTime() - 60_000;
-  const observed = recentStartTimes.filter((time) => new Date(time).getTime() >= windowStart).length;
+  const observed = recentStartTimes.filter(
+    (time) => new Date(time).getTime() >= windowStart,
+  ).length;
   if (limit === null) {
     return { allowed: true, observed, limit, detail: `${contract.jobId} declares no burst budget` };
   }
@@ -238,7 +250,12 @@ export function burstVerdict(
       detail: `${observed} runs started inside the last minute against a budget of ${limit}: the burst is refused rather than absorbed`,
     };
   }
-  return { allowed: true, observed, limit, detail: `${observed} of ${limit} runs used in the last minute` };
+  return {
+    allowed: true,
+    observed,
+    limit,
+    detail: `${observed} of ${limit} runs used in the last minute`,
+  };
 }
 
 export interface JobHealthReport {
@@ -249,7 +266,11 @@ export interface JobHealthReport {
 }
 
 /** How the job's runs stand: failures are named, and so is work that never finished. */
-export function jobHealth(runs: readonly JobRun[], now: string, stuckAfterMinutes = 60): JobHealthReport {
+export function jobHealth(
+  runs: readonly JobRun[],
+  now: string,
+  stuckAfterMinutes = 60,
+): JobHealthReport {
   const byState = JOB_STATES.reduce<Record<JobState, number>>(
     (counts, state) => ({ ...counts, [state]: runs.filter((run) => run.state === state).length }),
     { queued: 0, running: 0, paused: 0, completed: 0, failed: 0, cancelled: 0 },

@@ -48,7 +48,9 @@ describe("foundation persistence schema", () => {
 
   it("refuses verified decisions without evidence and conformant decisions on contract mismatch", () => {
     expect(MIGRATION).toContain("decision <> 'verified' OR cardinality(evidence_ids) > 0");
-    expect(MIGRATION).toContain("declared_contract_id = observed_contract_id AND declared_version = observed_version");
+    expect(MIGRATION).toContain(
+      "declared_contract_id = observed_contract_id AND declared_version = observed_version",
+    );
   });
 
   it("denies anon and authenticated by default and keeps history append-only", () => {

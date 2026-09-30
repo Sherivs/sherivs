@@ -11,11 +11,7 @@ const gapRegister = JSON.parse(
 );
 const proposals = JSON.parse(
   readFileSync(
-    join(
-      root,
-      "architecture",
-      "COREGRID_CAMPAIGN_52_RECEIVING_BLUEPRINT_PROPOSALS.json",
-    ),
+    join(root, "architecture", "COREGRID_CAMPAIGN_52_RECEIVING_BLUEPRINT_PROPOSALS.json"),
     "utf8",
   ),
 );

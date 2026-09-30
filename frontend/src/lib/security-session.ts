@@ -29,8 +29,7 @@ export interface SessionSecurityPolicy {
 }
 
 export type SessionSecurityEvaluation =
-  | { ok: true }
-  | { ok: false; reason: string; requiresStepUp: boolean };
+  { ok: true } | { ok: false; reason: string; requiresStepUp: boolean };
 
 export function evaluateSessionSecurity(
   session: IdentitySession,
@@ -39,7 +38,11 @@ export function evaluateSessionSecurity(
   now: string,
 ): SessionSecurityEvaluation {
   if (session.status !== "active") {
-    return { ok: false, reason: `Session status '${session.status}' is not usable`, requiresStepUp: true };
+    return {
+      ok: false,
+      reason: `Session status '${session.status}' is not usable`,
+      requiresStepUp: true,
+    };
   }
   if (session.expiresAt !== null && Date.parse(now) >= Date.parse(session.expiresAt)) {
     return { ok: false, reason: "Session has expired", requiresStepUp: true };
@@ -80,7 +83,11 @@ export function evaluateConcurrentSessions(
   maxConcurrentSessions: number,
 ): ConcurrentSessionResult {
   if (maxConcurrentSessions <= 0) {
-    return { allowed: false, reason: "Concurrent session policy misconfigured", sessionsToRevoke: [] };
+    return {
+      allowed: false,
+      reason: "Concurrent session policy misconfigured",
+      sessionsToRevoke: [],
+    };
   }
   if (activeSessions.length < maxConcurrentSessions) {
     return { allowed: true, reason: null, sessionsToRevoke: [] };
@@ -131,8 +138,6 @@ export type StepUpTrigger =
   | "sensitive_operation"
   | "concurrent_session_conflict";
 
-export function requiresStepUp(
-  triggers: StepUpTrigger[],
-): boolean {
+export function requiresStepUp(triggers: StepUpTrigger[]): boolean {
   return triggers.length > 0;
 }

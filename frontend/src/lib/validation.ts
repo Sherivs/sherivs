@@ -25,14 +25,20 @@ export const emailField = z
   .email("Enter a valid email")
   .max(255);
 
-export const optionalEmail = emailField.optional().or(z.literal("")).transform((v) => (v ? v : null));
+export const optionalEmail = emailField
+  .optional()
+  .or(z.literal(""))
+  .transform((v) => (v ? v : null));
 
 export const hexColor = z
   .string()
   .trim()
   .regex(/^#[0-9a-fA-F]{6}$/, "Use a 6-digit hex color like #1d4ed8");
 
-export const optionalHexColor = hexColor.optional().or(z.literal("")).transform((v) => (v ? v : null));
+export const optionalHexColor = hexColor
+  .optional()
+  .or(z.literal(""))
+  .transform((v) => (v ? v : null));
 
 export const urlField = z
   .string()

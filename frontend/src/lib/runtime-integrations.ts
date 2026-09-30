@@ -51,7 +51,11 @@ export interface IntegrationRequest {
 
 export type IntegrationResponse =
   | { ok: true; data: Record<string, unknown> }
-  | { ok: false; errorCategory: "transient" | "permanent" | "authorization" | "validation" | "timeout"; error: string };
+  | {
+      ok: false;
+      errorCategory: "transient" | "permanent" | "authorization" | "validation" | "timeout";
+      error: string;
+    };
 
 export interface IntegrationAdapterHandler {
   /** Executes a normalized operation against the external provider. */
@@ -70,7 +74,10 @@ export interface IntegrationRegistry {
 }
 
 export function createIntegrationRegistry(): IntegrationRegistry {
-  const adapters = new Map<string, { adapter: IntegrationAdapter; handler: IntegrationAdapterHandler }>();
+  const adapters = new Map<
+    string,
+    { adapter: IntegrationAdapter; handler: IntegrationAdapterHandler }
+  >();
 
   return {
     register(adapter, handler) {
@@ -82,7 +89,8 @@ export function createIntegrationRegistry(): IntegrationRegistry {
     isAvailable(name, tenantId) {
       const entry = adapters.get(name);
       if (!entry) return false;
-      if (entry.adapter.status === "disabled" || entry.adapter.status === "deprecated") return false;
+      if (entry.adapter.status === "disabled" || entry.adapter.status === "deprecated")
+        return false;
       if (entry.adapter.requiresTenantContext && tenantId === null) return false;
       if (entry.adapter.isPlatformOnly && tenantId !== null) return false;
       return true;
@@ -90,10 +98,18 @@ export function createIntegrationRegistry(): IntegrationRegistry {
     async execute(request) {
       const entry = adapters.get(request.adapterName);
       if (!entry) {
-        return { ok: false, errorCategory: "permanent", error: `Unknown integration: ${request.adapterName}` };
+        return {
+          ok: false,
+          errorCategory: "permanent",
+          error: `Unknown integration: ${request.adapterName}`,
+        };
       }
       if (!this.isAvailable(request.adapterName, request.tenantId)) {
-        return { ok: false, errorCategory: "authorization", error: `Integration not available: ${request.adapterName}` };
+        return {
+          ok: false,
+          errorCategory: "authorization",
+          error: `Integration not available: ${request.adapterName}`,
+        };
       }
       return entry.handler.execute(request);
     },

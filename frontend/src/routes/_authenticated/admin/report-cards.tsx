@@ -20,7 +20,12 @@ export const Route = createFileRoute("/_authenticated/admin/report-cards")({
 });
 
 type ClassRow = { id: string; name: string };
-type StudentRow = { id: string; admission_number: string | null; user_id: string | null; full_name: string };
+type StudentRow = {
+  id: string;
+  admission_number: string | null;
+  user_id: string | null;
+  full_name: string;
+};
 type GradeRow = {
   id: string;
   student_id: string;
@@ -77,7 +82,11 @@ function AdminReportCardsPage() {
         .eq("school_id", schoolId!)
         .eq("class_id", classId!)
         .eq("is_active", true);
-      const list = (data ?? []) as { id: string; admission_number: string | null; user_id: string | null }[];
+      const list = (data ?? []) as {
+        id: string;
+        admission_number: string | null;
+        user_id: string | null;
+      }[];
       const uids = list.map((s) => s.user_id).filter((u): u is string => !!u);
       const nameOf: Record<string, string> = {};
       if (uids.length) {
@@ -87,7 +96,8 @@ function AdminReportCardsPage() {
       return list
         .map((s) => ({
           ...s,
-          full_name: (s.user_id && nameOf[s.user_id]) || `Student ${s.admission_number ?? s.id.slice(0, 6)}`,
+          full_name:
+            (s.user_id && nameOf[s.user_id]) || `Student ${s.admission_number ?? s.id.slice(0, 6)}`,
         }))
         .sort((a, b) => a.full_name.localeCompare(b.full_name));
     },
@@ -137,7 +147,9 @@ function AdminReportCardsPage() {
       qc.invalidateQueries({ queryKey: ["admin-rc-grades"] });
       if (next && classId) {
         try {
-          const r = await notifyPublished({ data: { class_id: classId, term, academic_year: year } });
+          const r = await notifyPublished({
+            data: { class_id: classId, term, academic_year: year },
+          });
           if (r.notified > 0) toast.success(`Notified ${r.notified} parent(s)/student(s)`);
         } catch (e) {
           // notification failure should not block the publish
@@ -157,7 +169,10 @@ function AdminReportCardsPage() {
       subtitle="Bulk-publish report-card grades for a class and term. Published rows become visible to students and parents."
     >
       <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
-        <Link to="/admin/grades" className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40">
+        <Link
+          to="/admin/grades"
+          className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40"
+        >
           ← Grades
         </Link>
       </div>
@@ -168,9 +183,13 @@ function AdminReportCardsPage() {
           value={classId ?? ""}
           onChange={(e) => setClassId(e.target.value || null)}
         >
-          <option value="" disabled>Class…</option>
+          <option value="" disabled>
+            Class…
+          </option>
           {(classes.data ?? []).map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
           ))}
         </select>
         <select
@@ -178,7 +197,11 @@ function AdminReportCardsPage() {
           value={term}
           onChange={(e) => setTerm(e.target.value)}
         >
-          {TERMS.map((t) => <option key={t} value={t}>{t} term</option>)}
+          {TERMS.map((t) => (
+            <option key={t} value={t}>
+              {t} term
+            </option>
+          ))}
         </select>
         <input
           className="w-28 rounded-md border border-border bg-background px-3 py-2 text-sm"
@@ -191,14 +214,24 @@ function AdminReportCardsPage() {
             size="sm"
             variant="outline"
             disabled={busy || totals.published === 0}
-            onClick={() => setPublishedFor((grades.data ?? []).filter((g) => g.is_published).map((g) => g.id), false)}
+            onClick={() =>
+              setPublishedFor(
+                (grades.data ?? []).filter((g) => g.is_published).map((g) => g.id),
+                false,
+              )
+            }
           >
             Unpublish all
           </Button>
           <Button
             size="sm"
             disabled={busy || totals.draft === 0}
-            onClick={() => setPublishedFor((grades.data ?? []).filter((g) => !g.is_published).map((g) => g.id), true)}
+            onClick={() =>
+              setPublishedFor(
+                (grades.data ?? []).filter((g) => !g.is_published).map((g) => g.id),
+                true,
+              )
+            }
           >
             Publish all drafts
           </Button>
@@ -244,7 +277,12 @@ function AdminReportCardsPage() {
                         size="sm"
                         variant="outline"
                         disabled={busy || drf === 0}
-                        onClick={() => setPublishedFor(rows.filter((g) => !g.is_published).map((g) => g.id), true)}
+                        onClick={() =>
+                          setPublishedFor(
+                            rows.filter((g) => !g.is_published).map((g) => g.id),
+                            true,
+                          )
+                        }
                       >
                         Publish
                       </Button>
@@ -252,7 +290,12 @@ function AdminReportCardsPage() {
                         size="sm"
                         variant="outline"
                         disabled={busy || pub === 0}
-                        onClick={() => setPublishedFor(rows.filter((g) => g.is_published).map((g) => g.id), false)}
+                        onClick={() =>
+                          setPublishedFor(
+                            rows.filter((g) => g.is_published).map((g) => g.id),
+                            false,
+                          )
+                        }
                       >
                         Unpublish
                       </Button>

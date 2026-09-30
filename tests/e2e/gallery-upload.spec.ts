@@ -16,10 +16,7 @@ test.describe("Gallery upload → public site", () => {
     page,
     context,
   }) => {
-    const tmpFile = path.join(
-      test.info().outputDir,
-      `gallery-${Date.now()}.png`,
-    );
+    const tmpFile = path.join(test.info().outputDir, `gallery-${Date.now()}.png`);
     fs.mkdirSync(path.dirname(tmpFile), { recursive: true });
     fs.writeFileSync(tmpFile, PNG_1x1);
 
@@ -28,15 +25,16 @@ test.describe("Gallery upload → public site", () => {
 
     // Watch the storage upload request to verify the correct bucket.
     const uploadReq = page.waitForRequest(
-      (r) =>
-        r.url().includes("/storage/v1/object/school-media/") &&
-        r.method() === "POST",
+      (r) => r.url().includes("/storage/v1/object/school-media/") && r.method() === "POST",
       { timeout: 30_000 },
     );
 
     await page.goto("/admin/cms");
     await page.getByRole("tab", { name: /gallery/i }).click();
-    await page.getByRole("button", { name: /add|new/i }).first().click();
+    await page
+      .getByRole("button", { name: /add|new/i })
+      .first()
+      .click();
 
     // File input is hidden inside the "Upload image" label.
     const dialog = page.getByRole("dialog");
@@ -69,14 +67,12 @@ test.describe("Gallery upload → public site", () => {
     const pub = await context.newPage();
     await pub.goto(`/?school=${SCHOOL_SLUG}#gallery`);
     const galleryImg = pub
-      .locator('section#gallery img[alt]')
+      .locator("section#gallery img[alt]")
       .filter({ has: pub.locator("xpath=.") })
       .first();
     await galleryImg.scrollIntoViewIfNeeded();
     await expect(galleryImg).toBeVisible({ timeout: 15_000 });
-    const natural = await galleryImg.evaluate(
-      (el) => (el as HTMLImageElement).naturalWidth,
-    );
+    const natural = await galleryImg.evaluate((el) => (el as HTMLImageElement).naturalWidth);
     expect(natural, "gallery image loaded").toBeGreaterThan(0);
 
     // "Detail view" = click the image; ensure no error boundary appears.

@@ -71,12 +71,9 @@ export interface CreateTemplateInput {
 }
 
 export type CreateTemplateResult =
-  | { ok: true; template: CommunicationTemplate }
-  | { ok: false; error: string };
+  { ok: true; template: CommunicationTemplate } | { ok: false; error: string };
 
-export function createCommunicationTemplate(
-  input: CreateTemplateInput,
-): CreateTemplateResult {
+export function createCommunicationTemplate(input: CreateTemplateInput): CreateTemplateResult {
   if (input.name.trim() === "") {
     return { ok: false, error: "Template name is required (AG)" };
   }
@@ -107,8 +104,7 @@ export function createCommunicationTemplate(
 }
 
 export type ApproveTemplateResult =
-  | { ok: true; template: CommunicationTemplate }
-  | { ok: false; error: string };
+  { ok: true; template: CommunicationTemplate } | { ok: false; error: string };
 
 export function approveCommunicationTemplate(
   template: CommunicationTemplate,
@@ -132,7 +128,10 @@ export function approveCommunicationTemplate(
   };
 }
 
-export function activateTemplate(template: CommunicationTemplate, now: string): ApproveTemplateResult {
+export function activateTemplate(
+  template: CommunicationTemplate,
+  now: string,
+): ApproveTemplateResult {
   if (template.status !== "approved") {
     return { ok: false, error: "Only an approved template can be activated (AH)" };
   }
@@ -144,10 +143,10 @@ export function activateTemplate(template: CommunicationTemplate, now: string): 
  * ────────────────────────────────────────────────────────────*/
 
 export type RenderTemplateResult =
-  | { ok: true; subject: string; body: string }
-  | { ok: false; error: string };
+  { ok: true; subject: string; body: string } | { ok: false; error: string };
 
-const UNAUTHORIZED_VARIABLE_PATTERN = /^\s*(process\.|globalThis\.|window\.|document\.|import\(|require\()/;
+const UNAUTHORIZED_VARIABLE_PATTERN =
+  /^\s*(process\.|globalThis\.|window\.|document\.|import\(|require\()/;
 
 /**
  * Render a template with variable substitution. Template security (AI):
@@ -185,7 +184,11 @@ export function renderTemplate(
       return escapeHtml(value);
     });
 
-  return { ok: true, subject: render(template.subjectTemplate), body: render(template.bodyTemplate) };
+  return {
+    ok: true,
+    subject: render(template.subjectTemplate),
+    body: render(template.bodyTemplate),
+  };
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -226,12 +229,9 @@ export interface UpsertPreferenceInput {
 }
 
 export type UpsertPreferenceResult =
-  | { ok: true; preference: NotificationPreference }
-  | { ok: false; error: string };
+  { ok: true; preference: NotificationPreference } | { ok: false; error: string };
 
-export function upsertNotificationPreference(
-  input: UpsertPreferenceInput,
-): UpsertPreferenceResult {
+export function upsertNotificationPreference(input: UpsertPreferenceInput): UpsertPreferenceResult {
   if (input.category.trim() === "" || input.channel.trim() === "") {
     return { ok: false, error: "Preference requires a category and channel (AD)" };
   }
@@ -380,12 +380,9 @@ export interface CreateScheduleInput {
 }
 
 export type CreateScheduleResult =
-  | { ok: true; schedule: CommunicationSchedule }
-  | { ok: false; error: string };
+  { ok: true; schedule: CommunicationSchedule } | { ok: false; error: string };
 
-export function createCommunicationSchedule(
-  input: CreateScheduleInput,
-): CreateScheduleResult {
+export function createCommunicationSchedule(input: CreateScheduleInput): CreateScheduleResult {
   if (input.executionTime <= input.now) {
     return { ok: false, error: "Scheduled execution time must be in the future (BP)" };
   }

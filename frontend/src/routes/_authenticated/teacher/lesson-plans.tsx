@@ -13,7 +13,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { draftLessonPlan } from "@/lib/lesson-plan-ai.functions";
 
@@ -57,8 +62,13 @@ type FormVals = {
   homework_assignment: string;
 };
 const empty: FormVals = {
-  title: "", subject: "", topic: "", date_planned: "",
-  duration_minutes: "", description: "", homework_assignment: "",
+  title: "",
+  subject: "",
+  topic: "",
+  date_planned: "",
+  duration_minutes: "",
+  description: "",
+  homework_assignment: "",
 };
 
 function TeacherLessonPlans() {
@@ -117,7 +127,9 @@ function TeacherLessonPlans() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("lesson_plans")
-        .select("id,title,subject,topic,date_planned,duration_minutes,description,homework_assignment,status,review_notes")
+        .select(
+          "id,title,subject,topic,date_planned,duration_minutes,description,homework_assignment,status,review_notes",
+        )
         .eq("teacher_id", profile!.id)
         .order("created_at", { ascending: false });
       if (error) throw new Error(error.message);
@@ -161,7 +173,10 @@ function TeacherLessonPlans() {
         ({ error } = await supabase.from("lesson_plans").update(payload).eq("id", editing.id));
       } else {
         ({ error } = await supabase.from("lesson_plans").insert({
-          ...payload, teacher_id: profile.id, school_id: school.id, admin_viewed: false,
+          ...payload,
+          teacher_id: profile.id,
+          school_id: school.id,
+          admin_viewed: false,
         }));
       }
       if (error) throw error;
@@ -170,9 +185,13 @@ function TeacherLessonPlans() {
       setEditing(null);
       qc.invalidateQueries({ queryKey: ["teacher-lesson-plans", profile.id] });
     } catch (err) {
-      toast.error(err instanceof z.ZodError
-        ? err.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join(" • ")
-        : err instanceof Error ? err.message : "Failed to save");
+      toast.error(
+        err instanceof z.ZodError
+          ? err.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join(" • ")
+          : err instanceof Error
+            ? err.message
+            : "Failed to save",
+      );
     } finally {
       setSaving(false);
     }
@@ -183,7 +202,12 @@ function TeacherLessonPlans() {
   return (
     <PortalPage title="My lesson plans" subtitle="Draft, submit and track feedback from admin.">
       <div className="mb-4 flex justify-end">
-        <Button onClick={() => { setEditing(null); setOpen(true); }}>
+        <Button
+          onClick={() => {
+            setEditing(null);
+            setOpen(true);
+          }}
+        >
           <Plus className="size-4" /> New plan
         </Button>
       </div>
@@ -194,7 +218,9 @@ function TeacherLessonPlans() {
         <div className="uos-empty p-10 text-center">
           <FileText className="mx-auto size-10 text-muted-foreground/60" />
           <h3 className="mt-3 font-display text-lg font-semibold">No lesson plans yet</h3>
-          <p className="mt-1 text-sm text-muted-foreground">Create your first plan to get started.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Create your first plan to get started.
+          </p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -206,12 +232,15 @@ function TeacherLessonPlans() {
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="font-semibold">{r.title}</h3>
-                      <span className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded border ${cls}`}>
+                      <span
+                        className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded border ${cls}`}
+                      >
                         {(r.status ?? "draft").replace("_", " ")}
                       </span>
                     </div>
                     <div className="mt-1 text-xs text-muted-foreground">
-                      {[r.subject, r.topic, r.date_planned].filter(Boolean).join(" • ") || "No details"}
+                      {[r.subject, r.topic, r.date_planned].filter(Boolean).join(" • ") ||
+                        "No details"}
                     </div>
                     {r.status === "needs_revision" && r.review_notes && (
                       <div className="mt-2 rounded border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs">
@@ -220,7 +249,14 @@ function TeacherLessonPlans() {
                       </div>
                     )}
                   </div>
-                  <Button size="sm" variant="ghost" onClick={() => { setEditing(r); setOpen(true); }}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setEditing(r);
+                      setOpen(true);
+                    }}
+                  >
                     <Pencil className="size-4" /> Edit
                   </Button>
                 </div>
@@ -230,7 +266,13 @@ function TeacherLessonPlans() {
         </div>
       )}
 
-      <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditing(null); }}>
+      <Dialog
+        open={open}
+        onOpenChange={(v) => {
+          setOpen(v);
+          if (!v) setEditing(null);
+        }}
+      >
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing ? "Edit lesson plan" : "New lesson plan"}</DialogTitle>
@@ -238,37 +280,74 @@ function TeacherLessonPlans() {
           </DialogHeader>
           <div className="space-y-3">
             <Field label="Title">
-              <Input value={vals.title} onChange={(e) => setVals((s) => ({ ...s, title: e.target.value }))} />
+              <Input
+                value={vals.title}
+                onChange={(e) => setVals((s) => ({ ...s, title: e.target.value }))}
+              />
             </Field>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Subject">
-                <Input value={vals.subject} onChange={(e) => setVals((s) => ({ ...s, subject: e.target.value }))} />
+                <Input
+                  value={vals.subject}
+                  onChange={(e) => setVals((s) => ({ ...s, subject: e.target.value }))}
+                />
               </Field>
               <Field label="Topic">
-                <Input value={vals.topic} onChange={(e) => setVals((s) => ({ ...s, topic: e.target.value }))} />
+                <Input
+                  value={vals.topic}
+                  onChange={(e) => setVals((s) => ({ ...s, topic: e.target.value }))}
+                />
               </Field>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Date">
-                <Input type="date" value={vals.date_planned} onChange={(e) => setVals((s) => ({ ...s, date_planned: e.target.value }))} />
+                <Input
+                  type="date"
+                  value={vals.date_planned}
+                  onChange={(e) => setVals((s) => ({ ...s, date_planned: e.target.value }))}
+                />
               </Field>
               <Field label="Duration (minutes)">
-                <Input type="number" value={vals.duration_minutes} onChange={(e) => setVals((s) => ({ ...s, duration_minutes: e.target.value }))} />
+                <Input
+                  type="number"
+                  value={vals.duration_minutes}
+                  onChange={(e) => setVals((s) => ({ ...s, duration_minutes: e.target.value }))}
+                />
               </Field>
             </div>
             <Field label="Lesson description / objectives">
-              <Textarea rows={5} value={vals.description} onChange={(e) => setVals((s) => ({ ...s, description: e.target.value }))} />
+              <Textarea
+                rows={5}
+                value={vals.description}
+                onChange={(e) => setVals((s) => ({ ...s, description: e.target.value }))}
+              />
             </Field>
             <Field label="Homework">
-              <Textarea rows={2} value={vals.homework_assignment} onChange={(e) => setVals((s) => ({ ...s, homework_assignment: e.target.value }))} />
+              <Textarea
+                rows={2}
+                value={vals.homework_assignment}
+                onChange={(e) => setVals((s) => ({ ...s, homework_assignment: e.target.value }))}
+              />
             </Field>
           </div>
           <DialogFooter className="flex-wrap gap-2">
-            <Button type="button" variant="outline" onClick={runAiDraft} disabled={drafting || saving} className="mr-auto">
-              {drafting ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={runAiDraft}
+              disabled={drafting || saving}
+              className="mr-auto"
+            >
+              {drafting ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Sparkles className="size-4" />
+              )}
               {drafting ? "Drafting…" : "Draft with AI"}
             </Button>
-            <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
             <Button variant="outline" disabled={saving} onClick={() => save(false)}>
               Save draft
             </Button>

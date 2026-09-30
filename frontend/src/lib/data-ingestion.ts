@@ -63,15 +63,23 @@ export type EndpointVerdict =
 export function declareIngestionEndpoint(endpoint: IngestionEndpoint): EndpointVerdict {
   const refusals: string[] = [];
   if (!endpoint.endpointId?.trim()) refusals.push("an endpoint must be identified");
-  if (!endpoint.ownerPhase?.trim()) refusals.push("an endpoint must name the phase that owns the data's meaning");
-  if (!endpoint.purpose?.trim()) refusals.push("an endpoint must declare why the data is held at all");
-  if (!endpoint.authorised) refusals.push("an endpoint must be declared authorised before it may accept anything");
+  if (!endpoint.ownerPhase?.trim())
+    refusals.push("an endpoint must name the phase that owns the data's meaning");
+  if (!endpoint.purpose?.trim())
+    refusals.push("an endpoint must declare why the data is held at all");
+  if (!endpoint.authorised)
+    refusals.push("an endpoint must be declared authorised before it may accept anything");
   if (endpoint.naturalKey.length === 0) {
-    refusals.push("an endpoint must declare the fields that identify a record, or duplicates cannot be detected");
+    refusals.push(
+      "an endpoint must declare the fields that identify a record, or duplicates cannot be detected",
+    );
   }
-  if (!endpoint.schemaVersion?.trim()) refusals.push("an endpoint must name the schema version it expects");
+  if (!endpoint.schemaVersion?.trim())
+    refusals.push("an endpoint must name the schema version it expects");
   if (!endpoint.source.signed && endpoint.source.kind === "external-provider") {
-    refusals.push("an external provider feed must be signed: unsigned external input is not evidence");
+    refusals.push(
+      "an external provider feed must be signed: unsigned external input is not evidence",
+    );
   }
   return refusals.length === 0 ? { ok: true, endpoint } : { ok: false, refusals };
 }
@@ -132,7 +140,10 @@ export function ingestBatch(input: {
   const { endpoint, batch } = input;
 
   if (!endpoint.authorised) {
-    return { ok: false, error: `endpoint ${endpoint.endpointId} is not authorised: ingestion is refused` };
+    return {
+      ok: false,
+      error: `endpoint ${endpoint.endpointId} is not authorised: ingestion is refused`,
+    };
   }
   if (batch.endpointId !== endpoint.endpointId) {
     return {
@@ -141,9 +152,14 @@ export function ingestBatch(input: {
     };
   }
   if (!batch.correlationId?.trim()) {
-    return { ok: false, error: "a batch must carry the correlation that ties it to the operation that sent it" };
+    return {
+      ok: false,
+      error: "a batch must carry the correlation that ties it to the operation that sent it",
+    };
   }
-  if (classificationRank(batch.declaredClassification) < classificationRank(endpoint.classification)) {
+  if (
+    classificationRank(batch.declaredClassification) < classificationRank(endpoint.classification)
+  ) {
     return {
       ok: false,
       error: `batch declares ${batch.declaredClassification} while the endpoint holds ${endpoint.classification}: a payload is never re-classified downwards`,
@@ -223,7 +239,8 @@ export function explainIngestion(outcome: IngestionOutcome): string {
   const parts = [
     `${provenance.accepted} of ${provenance.accepted + provenance.rejected + provenance.duplicates} records accepted from ${provenance.sourceId} under purpose "${provenance.purpose}"`,
   ];
-  if (provenance.duplicates > 0) parts.push(`${provenance.duplicates} already held (replay ignored)`);
+  if (provenance.duplicates > 0)
+    parts.push(`${provenance.duplicates} already held (replay ignored)`);
   for (const record of rejected) parts.push(`record ${record.index} rejected: ${record.reason}`);
   return parts.join("; ");
 }

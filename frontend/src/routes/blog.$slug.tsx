@@ -130,12 +130,8 @@ function BlogDetail() {
           className="mt-8 w-full rounded-2xl object-cover"
         />
       )}
-      {p.excerpt && (
-        <p className="mt-8 text-lg text-slate-300 leading-relaxed">{p.excerpt}</p>
-      )}
-      <div className="mt-6 whitespace-pre-wrap text-slate-200 leading-relaxed">
-        {p.content}
-      </div>
+      {p.excerpt && <p className="mt-8 text-lg text-slate-300 leading-relaxed">{p.excerpt}</p>}
+      <div className="mt-6 whitespace-pre-wrap text-slate-200 leading-relaxed">{p.content}</div>
     </Shell>
   );
 }
@@ -146,9 +142,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       className="min-h-dvh text-white"
       style={{ background: "linear-gradient(180deg, #0a0f1e 0%, #0d1424 100%)" }}
     >
-      <article className="mx-auto max-w-3xl px-6 py-16 md:py-24">
-        {children}
-      </article>
+      <article className="mx-auto max-w-3xl px-6 py-16 md:py-24">{children}</article>
     </div>
   );
 }

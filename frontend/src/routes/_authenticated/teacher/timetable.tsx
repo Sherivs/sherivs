@@ -20,7 +20,9 @@ function TeacherTimetablePage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("timetable_slots")
-        .select("day_of_week, period_number, start_time, end_time, subject, room, is_break, break_label")
+        .select(
+          "day_of_week, period_number, start_time, end_time, subject, room, is_break, break_label",
+        )
         .eq("teacher_id", teacherId!)
         .order("period_number");
       return (data ?? []) as TimetableSlot[];
@@ -30,7 +32,10 @@ function TeacherTimetablePage() {
   return (
     <PortalPage title="My timetable" subtitle="Your weekly teaching schedule.">
       <div className="mb-4 text-xs">
-        <Link to="/teacher/dashboard" className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40">
+        <Link
+          to="/teacher/dashboard"
+          className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40"
+        >
           ← Back
         </Link>
       </div>

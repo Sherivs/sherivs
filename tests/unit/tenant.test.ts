@@ -237,7 +237,16 @@ describe("Tenant lifecycle engine (G3, K1, K3)", () => {
     const state: ProvisioningState = {
       tenantId: tenantId("tenant-1"),
       stage: "activation",
-      completedStages: ["request", "validation", "approval", "registration", "infrastructure", "configuration", "security_initialization", "validation_final"],
+      completedStages: [
+        "request",
+        "validation",
+        "approval",
+        "registration",
+        "infrastructure",
+        "configuration",
+        "security_initialization",
+        "validation_final",
+      ],
       startedAt: NOW,
       updatedAt: NOW,
     };
@@ -297,11 +306,7 @@ describe("Tenant isolation engine (G4, G6, J3–J8)", () => {
   });
 
   it("rejects unverified tenant context (Invariant 02)", () => {
-    const result = resolveTenantContext(
-      "tenant-3",
-      "user-1",
-      [tenantId("tenant-1")],
-    );
+    const result = resolveTenantContext("tenant-3", "user-1", [tenantId("tenant-1")]);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toContain("not authorized");
@@ -728,9 +733,27 @@ describe("Tenant topology engine (H8, R)", () => {
     const peer = tenantId("peer");
 
     const edges: TenantTopologyEdge[] = [
-      { fromTenantId: parent, toTenantId: child1, relation: "child", authorized: true, createdAt: NOW },
-      { fromTenantId: parent, toTenantId: child2, relation: "child", authorized: true, createdAt: NOW },
-      { fromTenantId: parent, toTenantId: peer, relation: "peer", authorized: true, createdAt: NOW },
+      {
+        fromTenantId: parent,
+        toTenantId: child1,
+        relation: "child",
+        authorized: true,
+        createdAt: NOW,
+      },
+      {
+        fromTenantId: parent,
+        toTenantId: child2,
+        relation: "child",
+        authorized: true,
+        createdAt: NOW,
+      },
+      {
+        fromTenantId: parent,
+        toTenantId: peer,
+        relation: "peer",
+        authorized: true,
+        createdAt: NOW,
+      },
     ];
 
     expect(getChildren(edges, parent)).toEqual([child1, child2]);
@@ -743,10 +766,22 @@ describe("Tenant topology engine (H8, R)", () => {
     const child = tenantId("child");
 
     const authorized: TenantTopologyEdge[] = [
-      { fromTenantId: parent, toTenantId: child, relation: "child", authorized: true, createdAt: NOW },
+      {
+        fromTenantId: parent,
+        toTenantId: child,
+        relation: "child",
+        authorized: true,
+        createdAt: NOW,
+      },
     ];
     const unauthorized: TenantTopologyEdge[] = [
-      { fromTenantId: parent, toTenantId: child, relation: "child", authorized: false, createdAt: NOW },
+      {
+        fromTenantId: parent,
+        toTenantId: child,
+        relation: "child",
+        authorized: false,
+        createdAt: NOW,
+      },
     ];
 
     expect(canAccessTenant(authorized, parent, child)).toBe(true);
@@ -778,7 +813,13 @@ describe("Tenant topology engine (H8, R)", () => {
     expect(validateTopology(valid, [a, b]).valid).toBe(true);
 
     const invalid: TenantTopologyEdge[] = [
-      { fromTenantId: a, toTenantId: tenantId("unknown"), relation: "child", authorized: true, createdAt: NOW },
+      {
+        fromTenantId: a,
+        toTenantId: tenantId("unknown"),
+        relation: "child",
+        authorized: true,
+        createdAt: NOW,
+      },
     ];
     expect(validateTopology(invalid, [a, b]).valid).toBe(false);
   });

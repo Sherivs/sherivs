@@ -102,8 +102,7 @@ export interface ConvertMoneyInput {
 }
 
 export type ConvertMoneyResult =
-  | { ok: true; converted: Money; rateUsed: ExchangeRateRecord }
-  | { ok: false; error: string };
+  { ok: true; converted: Money; rateUsed: ExchangeRateRecord } | { ok: false; error: string };
 
 /** Currency conversion must preserve the original amounts (U, V): the source
  * amount and the immutable rate are retained for traceability. */
@@ -126,7 +125,8 @@ export function convertMoney(input: ConvertMoneyInput): ConvertMoneyResult {
  * Financial obligation (N)
  * ────────────────────────────────────────────────────────────*/
 
-export type ObligationStatus = "open" | "partial" | "paid" | "overdue" | "written_off" | "cancelled";
+export type ObligationStatus =
+  "open" | "partial" | "paid" | "overdue" | "written_off" | "cancelled";
 
 export const OBLIGATION_STATUSES: readonly ObligationStatus[] = [
   "open",
@@ -162,8 +162,7 @@ export interface CreateObligationInput {
 }
 
 export type CreateObligationResult =
-  | { ok: true; obligation: FinancialObligation }
-  | { ok: false; error: string };
+  { ok: true; obligation: FinancialObligation } | { ok: false; error: string };
 
 export function createFinancialObligation(input: CreateObligationInput): CreateObligationResult {
   if (input.debtorId.trim() === "") {
@@ -204,13 +203,7 @@ export function isObligationOverdue(obligation: FinancialObligation, now: string
  * ────────────────────────────────────────────────────────────*/
 
 export type InvoiceStatus =
-  | "draft"
-  | "issued"
-  | "partially_paid"
-  | "paid"
-  | "overdue"
-  | "void"
-  | "cancelled";
+  "draft" | "issued" | "partially_paid" | "paid" | "overdue" | "void" | "cancelled";
 
 export const INVOICE_STATUSES: readonly InvoiceStatus[] = [
   "draft",
@@ -264,12 +257,13 @@ export interface CreateInvoiceInput {
   now: string;
 }
 
-export type CreateInvoiceResult =
-  | { ok: true; invoice: Invoice }
-  | { ok: false; error: string };
+export type CreateInvoiceResult = { ok: true; invoice: Invoice } | { ok: false; error: string };
 
 function sumLines(lines: InvoiceLine[], currency: string): Money {
-  const totalMinor = lines.reduce((sum, line) => sum + line.unitPrice.amountMinor * line.quantity, 0);
+  const totalMinor = lines.reduce(
+    (sum, line) => sum + line.unitPrice.amountMinor * line.quantity,
+    0,
+  );
   return money(totalMinor, currency);
 }
 
@@ -297,7 +291,10 @@ export function createInvoice(input: CreateInvoiceInput): CreateInvoiceResult {
   const subtotal = sumLines(input.lines, input.currency);
   const discounts = input.discounts ?? money(0, input.currency);
   const taxes = computeTaxes(subtotal, input.lines);
-  const total = addMoney(subtractMoney(addMoney(subtotal, taxes), discounts), money(0, input.currency));
+  const total = addMoney(
+    subtractMoney(addMoney(subtotal, taxes), discounts),
+    money(0, input.currency),
+  );
   const amountPaid = money(0, input.currency);
   return {
     ok: true,

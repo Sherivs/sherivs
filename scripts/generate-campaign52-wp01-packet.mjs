@@ -10,15 +10,10 @@ const gapRegister = JSON.parse(
   ),
 );
 const decomposition = JSON.parse(
-  readFileSync(
-    join(root, "architecture", "COREGRID_PHASE_52_DECOMPOSITION_MAP.json"),
-    "utf8",
-  ),
+  readFileSync(join(root, "architecture", "COREGRID_PHASE_52_DECOMPOSITION_MAP.json"), "utf8"),
 );
 
-const extracts = new Map(
-  decomposition.extracts.map((extract) => [extract.artifactId, extract]),
-);
+const extracts = new Map(decomposition.extracts.map((extract) => [extract.artifactId, extract]));
 const lines = [
   "# CAMPAIGN-52-WP-01 — Ownership Decision Packet",
   "",
@@ -69,9 +64,7 @@ for (const gap of gapRegister.gaps) {
   lines.push(`- Block: \`${gap.evidence?.block ?? "UNKNOWN"}\``);
   lines.push(`- Classification: \`${gap.evidence?.classification ?? "UNKNOWN"}\``);
   lines.push(`- Source: \`${gap.source?.[0] ?? "UNKNOWN"}\``);
-  lines.push(
-    `- Source lines: \`${gap.evidence?.sourceLines?.join("-") ?? "UNKNOWN"}\``,
-  );
+  lines.push(`- Source lines: \`${gap.evidence?.sourceLines?.join("-") ?? "UNKNOWN"}\``);
   lines.push(`- Severity: \`${gap.severity}\``);
   lines.push(
     `- Current candidate mother: \`${gap.affectedArchitecture?.motherSurface ?? "UNRESOLVED"}\``,
@@ -79,9 +72,7 @@ for (const gap of gapRegister.gaps) {
   lines.push(
     `- Current candidate phase: \`${gap.affectedArchitecture?.candidatePhaseOwner ?? "UNRESOLVED"}\``,
   );
-  lines.push(
-    `- Extract path: \`${extract?.extract ?? "UNRESOLVED"}\``,
-  );
+  lines.push(`- Extract path: \`${extract?.extract ?? "UNRESOLVED"}\``);
   lines.push("");
   lines.push("Decision record:");
   lines.push("- Disposition: `UNRESOLVED`");
@@ -118,8 +109,7 @@ console.log(
   JSON.stringify(
     {
       workItems: gapRegister.gaps.length,
-      output:
-        "architecture/COREGRID_CAMPAIGN_52_WP_01_OWNERSHIP_DECISION_PACKET.md",
+      output: "architecture/COREGRID_CAMPAIGN_52_WP_01_OWNERSHIP_DECISION_PACKET.md",
     },
     null,
     2,

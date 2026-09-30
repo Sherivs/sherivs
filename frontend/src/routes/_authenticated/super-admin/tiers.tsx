@@ -109,7 +109,10 @@ function TiersPage() {
             {ROW_GROUPS.map((group) => (
               <Fragment key={group.title}>
                 <tr key={`${group.title}-h`} className="bg-muted/10">
-                  <td colSpan={ALL_TIERS.length + 1} className="p-2 px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <td
+                    colSpan={ALL_TIERS.length + 1}
+                    className="p-2 px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                  >
                     {group.title}
                   </td>
                 </tr>
@@ -117,7 +120,9 @@ function TiersPage() {
                   <tr key={row.key} className="border-b border-border/40">
                     <td className="p-3">{row.label}</td>
                     {ALL_TIERS.map((t) => {
-                      const has = (SUBSCRIPTION_TIERS[t].features as Record<string, boolean>)[row.key] === true;
+                      const has =
+                        (SUBSCRIPTION_TIERS[t].features as Record<string, boolean>)[row.key] ===
+                        true;
                       return (
                         <td key={t} className="p-3 text-center">
                           {has ? (

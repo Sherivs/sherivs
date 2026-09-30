@@ -46,12 +46,29 @@ function StudentsPage() {
     schema: z.object({
       admission_number: z.string().trim().min(1, "Admission number is required").max(40),
       class_id: z.string().uuid().nullable(),
-      date_of_birth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD").nullable().or(z.literal("").transform(() => null)),
-      gender: z.enum(["male", "female", "other"]).nullable().or(z.literal("").transform(() => null)),
+      date_of_birth: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD")
+        .nullable()
+        .or(z.literal("").transform(() => null)),
+      gender: z
+        .enum(["male", "female", "other"])
+        .nullable()
+        .or(z.literal("").transform(() => null)),
       parent_name: z.string().trim().max(120).nullable(),
       parent_phone: z.string().trim().max(40).nullable(),
-      parent_email: z.string().trim().toLowerCase().email().nullable().or(z.literal("").transform(() => null)),
-      enrollment_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().or(z.literal("").transform(() => null)),
+      parent_email: z
+        .string()
+        .trim()
+        .toLowerCase()
+        .email()
+        .nullable()
+        .or(z.literal("").transform(() => null)),
+      enrollment_date: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .nullable()
+        .or(z.literal("").transform(() => null)),
       is_active: z.boolean().default(true),
     }),
     fields: [
@@ -97,7 +114,10 @@ function StudentsPage() {
   return (
     <PortalPage title="Students" subtitle="Enrollment records for your school">
       <div className="mb-4 flex flex-wrap gap-2 text-xs">
-        <Link to="/admin/dashboard" className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40">
+        <Link
+          to="/admin/dashboard"
+          className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40"
+        >
           ← Back to dashboard
         </Link>
       </div>

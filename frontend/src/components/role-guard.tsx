@@ -2,10 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { useApp } from "@/contexts/app-context";
 import type { AppRole } from "@/lib/roles";
-import {
-  scholarWorkspaceHome,
-  scholarWorkspaceLabelForRole,
-} from "@/lib/runtime/nav-registry";
+import { scholarWorkspaceHome, scholarWorkspaceLabelForRole } from "@/lib/runtime/nav-registry";
 
 /**
  * Client-side role guard. Wrap a portal's <Outlet /> with this to ensure

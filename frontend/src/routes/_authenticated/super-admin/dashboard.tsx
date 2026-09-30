@@ -10,12 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import { SkeletonDashboard } from "@/components/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
-import {
-  PortalPage,
-  StatCard,
-  SectionGrid,
-  EmptyCard,
-} from "@/components/portal-shell";
+import { PortalPage, StatCard, SectionGrid, EmptyCard } from "@/components/portal-shell";
 import { SUBSCRIPTION_TIERS, getTier, type TierName } from "@/lib/subscription-tiers";
 
 export const Route = createFileRoute("/_authenticated/super-admin/dashboard")({
@@ -190,10 +185,15 @@ function SuperAdminDashboard() {
 
   if (schoolsQ.isLoading) return <SkeletonDashboard />;
 
-  const priorityRank = { critical: 0, high: 1, normal: 2, medium: 2, low: 3 } as Record<string, number>;
-  const supportRows = (supportQ.data ?? []).slice().sort(
-    (a, b) => (priorityRank[a.priority ?? "low"] ?? 9) - (priorityRank[b.priority ?? "low"] ?? 9),
-  );
+  const priorityRank = { critical: 0, high: 1, normal: 2, medium: 2, low: 3 } as Record<
+    string,
+    number
+  >;
+  const supportRows = (supportQ.data ?? [])
+    .slice()
+    .sort(
+      (a, b) => (priorityRank[a.priority ?? "low"] ?? 9) - (priorityRank[b.priority ?? "low"] ?? 9),
+    );
 
   return (
     <PortalPage
@@ -313,10 +313,7 @@ function SuperAdminDashboard() {
                     </span>
                   </div>
                   <div className="mt-1 h-2 overflow-hidden rounded-full bg-muted/40">
-                    <div
-                      className="h-full bg-primary"
-                      style={{ width: `${t.pct}%` }}
-                    />
+                    <div className="h-full bg-primary" style={{ width: `${t.pct}%` }} />
                   </div>
                 </div>
               ))

@@ -64,7 +64,8 @@ export const PHASE_10_COMMUNICATION = definePhaseContractFromSeed({
     {
       id: "communication:steward-decide",
       kind: "api",
-      description: "decide whether a steward action is allowed, refused, needs approval or escalates",
+      description:
+        "decide whether a steward action is allowed, refused, needs approval or escalates",
     },
     {
       id: "communication:route-provider",
@@ -74,7 +75,8 @@ export const PHASE_10_COMMUNICATION = definePhaseContractFromSeed({
     {
       id: "communication:provision-subscription",
       kind: "command",
-      description: "provision an organization with a communication subscription and an inert steward mandate",
+      description:
+        "provision an organization with a communication subscription and an inert steward mandate",
     },
   ],
   consumesContracts: [

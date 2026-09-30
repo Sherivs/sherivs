@@ -56,12 +56,7 @@ export function useAIConversationStore(opts: {
   );
 
   const logInteraction = useCallback(
-    async (entry: {
-      prompt: string;
-      response: string;
-      latencyMs: number;
-      success: boolean;
-    }) => {
+    async (entry: { prompt: string; response: string; latencyMs: number; success: boolean }) => {
       if (!userId || !schoolId) return;
       await supabase.from("ai_interaction_log").insert({
         school_id: schoolId,

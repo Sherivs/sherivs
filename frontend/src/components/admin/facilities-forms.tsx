@@ -18,10 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import {
-  upsertSchoolMeals,
-  upsertSchoolTransport,
-} from "@/lib/facilities.functions";
+import { upsertSchoolMeals, upsertSchoolTransport } from "@/lib/facilities.functions";
 
 function Field({
   label,
@@ -34,9 +31,7 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-        {label}
-      </Label>
+      <Label className="text-xs uppercase tracking-wide text-muted-foreground">{label}</Label>
       {children}
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
@@ -66,10 +61,8 @@ function ToggleRow({
 }
 
 const str = (v: unknown) => (typeof v === "string" ? v : "");
-const numStr = (v: unknown) =>
-  typeof v === "number" ? String(v) : typeof v === "string" ? v : "";
-const bool = (v: unknown, fallback = false) =>
-  typeof v === "boolean" ? v : fallback;
+const numStr = (v: unknown) => (typeof v === "number" ? String(v) : typeof v === "string" ? v : "");
+const bool = (v: unknown, fallback = false) => (typeof v === "boolean" ? v : fallback);
 
 /* -------------------- Meals -------------------- */
 
@@ -188,10 +181,9 @@ export function MealsTab() {
         data: {
           ...form,
           meal_provider_type: form.meal_provider_type || null,
-          monthly_meal_fee:
-            form.monthly_meal_fee === "" ? null : Number(form.monthly_meal_fee),
+          monthly_meal_fee: form.monthly_meal_fee === "" ? null : Number(form.monthly_meal_fee),
           last_inspection_date: form.last_inspection_date || null,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       });
       toast.success("Meal settings saved");
@@ -493,7 +485,7 @@ export function TransportTab() {
             form.monthly_transport_fee === "" ? null : Number(form.monthly_transport_fee),
           annual_transport_fee:
             form.annual_transport_fee === "" ? null : Number(form.annual_transport_fee),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       });
       toast.success("Transport settings saved");
@@ -539,9 +531,7 @@ export function TransportTab() {
         <Field label="Provider type">
           <select
             value={form.provider_type}
-            onChange={(e) =>
-              set("provider_type", e.target.value as TransportForm["provider_type"])
-            }
+            onChange={(e) => set("provider_type", e.target.value as TransportForm["provider_type"])}
             className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
           >
             <option value="">—</option>

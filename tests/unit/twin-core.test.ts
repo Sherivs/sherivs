@@ -134,7 +134,11 @@ describe("Twin lifecycle (AX-BC)", () => {
   it("only allows hard deletion for ephemeral or retired twins (BB, BC)", () => {
     expect(isHardDeletionAllowed(twin({ creationSource: "derived" }))).toBe(true);
     expect(isHardDeletionAllowed(twin({ lifecycleState: "RETIRED" }))).toBe(true);
-    expect(isHardDeletionAllowed(twin({ creationSource: "institutional_record", lifecycleState: "ACTIVE" }))).toBe(false);
+    expect(
+      isHardDeletionAllowed(
+        twin({ creationSource: "institutional_record", lifecycleState: "ACTIVE" }),
+      ),
+    ).toBe(false);
   });
 });
 
@@ -182,7 +186,9 @@ describe("Type registry and templates (I, J)", () => {
       createdAt: NOW,
     });
     if (!result.ok) throw new Error("fixture failed");
-    expect(validateTwinAgainstTemplate(result.template, { capacity: 30, building: "A" }).ok).toBe(true);
+    expect(validateTwinAgainstTemplate(result.template, { capacity: 30, building: "A" }).ok).toBe(
+      true,
+    );
     expect(validateTwinAgainstTemplate(result.template, { capacity: 30 }).ok).toBe(false);
   });
 });
@@ -259,24 +265,74 @@ describe("Merge and split (AZ, BA)", () => {
   });
 
   it("splits a twin into at least two targets with a reason", () => {
-    const result = splitTwin({ sourceTwinId: "twin-1", targetTwinIds: ["twin-1a", "twin-1b"], reason: "covers two rooms", now: NOW });
+    const result = splitTwin({
+      sourceTwinId: "twin-1",
+      targetTwinIds: ["twin-1a", "twin-1b"],
+      reason: "covers two rooms",
+      now: NOW,
+    });
     expect(result.ok).toBe(true);
-    const tooFew = splitTwin({ sourceTwinId: "twin-1", targetTwinIds: ["twin-1a"], reason: "x", now: NOW });
+    const tooFew = splitTwin({
+      sourceTwinId: "twin-1",
+      targetTwinIds: ["twin-1a"],
+      reason: "x",
+      now: NOW,
+    });
     expect(tooFew.ok).toBe(false);
   });
 });
 
 describe("Lineage and provenance (AS, AT)", () => {
   it("accepts a connected lineage chain", () => {
-    const source = createProvenanceRecord({ source: "hardware", actor: null, transformation: null, timestamp: NOW, systemVersion: "1", modelVersion: null, parentProvenanceId: null });
-    const observation = createProvenanceRecord({ source: "hardware", actor: null, transformation: "normalize", timestamp: NOW, systemVersion: "1", modelVersion: null, parentProvenanceId: source.provenanceId });
-    const state = createProvenanceRecord({ source: "twin", actor: null, transformation: "project", timestamp: NOW, systemVersion: "1", modelVersion: null, parentProvenanceId: observation.provenanceId });
+    const source = createProvenanceRecord({
+      source: "hardware",
+      actor: null,
+      transformation: null,
+      timestamp: NOW,
+      systemVersion: "1",
+      modelVersion: null,
+      parentProvenanceId: null,
+    });
+    const observation = createProvenanceRecord({
+      source: "hardware",
+      actor: null,
+      transformation: "normalize",
+      timestamp: NOW,
+      systemVersion: "1",
+      modelVersion: null,
+      parentProvenanceId: source.provenanceId,
+    });
+    const state = createProvenanceRecord({
+      source: "twin",
+      actor: null,
+      transformation: "project",
+      timestamp: NOW,
+      systemVersion: "1",
+      modelVersion: null,
+      parentProvenanceId: observation.provenanceId,
+    });
     expect(isLineageChainValid([source, observation, state])).toBe(true);
   });
 
   it("rejects a broken lineage chain", () => {
-    const source = createProvenanceRecord({ source: "hardware", actor: null, transformation: null, timestamp: NOW, systemVersion: "1", modelVersion: null, parentProvenanceId: null });
-    const broken = createProvenanceRecord({ source: "twin", actor: null, transformation: "project", timestamp: NOW, systemVersion: "1", modelVersion: null, parentProvenanceId: "missing" });
+    const source = createProvenanceRecord({
+      source: "hardware",
+      actor: null,
+      transformation: null,
+      timestamp: NOW,
+      systemVersion: "1",
+      modelVersion: null,
+      parentProvenanceId: null,
+    });
+    const broken = createProvenanceRecord({
+      source: "twin",
+      actor: null,
+      transformation: "project",
+      timestamp: NOW,
+      systemVersion: "1",
+      modelVersion: null,
+      parentProvenanceId: "missing",
+    });
     expect(isLineageChainValid([source, broken])).toBe(false);
   });
 });
@@ -284,19 +340,40 @@ describe("Lineage and provenance (AS, AT)", () => {
 describe("Identity resolution (BD, BE)", () => {
   it("matches records sharing all identifiers", () => {
     expect(
-      resolveIdentity({ sharedIdentifiers: 2, totalIdentifiers: 2, nameSimilarity: 0.4, locationMatch: false, metadataMatch: false, timestampProximity: false }),
+      resolveIdentity({
+        sharedIdentifiers: 2,
+        totalIdentifiers: 2,
+        nameSimilarity: 0.4,
+        locationMatch: false,
+        metadataMatch: false,
+        timestampProximity: false,
+      }),
     ).toBe("same");
   });
 
   it("returns uncertain when identifiers partially match — never auto-merges", () => {
     expect(
-      resolveIdentity({ sharedIdentifiers: 1, totalIdentifiers: 2, nameSimilarity: 0.4, locationMatch: false, metadataMatch: false, timestampProximity: false }),
+      resolveIdentity({
+        sharedIdentifiers: 1,
+        totalIdentifiers: 2,
+        nameSimilarity: 0.4,
+        locationMatch: false,
+        metadataMatch: false,
+        timestampProximity: false,
+      }),
     ).toBe("uncertain");
   });
 
   it("distinguishes different entities on weak signals", () => {
     expect(
-      resolveIdentity({ sharedIdentifiers: 0, totalIdentifiers: 2, nameSimilarity: 0.1, locationMatch: false, metadataMatch: false, timestampProximity: false }),
+      resolveIdentity({
+        sharedIdentifiers: 0,
+        totalIdentifiers: 2,
+        nameSimilarity: 0.1,
+        locationMatch: false,
+        metadataMatch: false,
+        timestampProximity: false,
+      }),
     ).toBe("different");
   });
 });

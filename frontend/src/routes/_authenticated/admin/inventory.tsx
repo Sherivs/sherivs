@@ -27,8 +27,18 @@ function AdminInventoryPage() {
   const stats = [
     { label: "Total Assets", value: "0", icon: Boxes, color: "from-blue-500 to-blue-600" },
     { label: "Low Stock Alerts", value: "0", icon: AlertCircle, color: "from-red-500 to-red-600" },
-    { label: "Equipment Status", value: "Good", icon: CheckCircle2, color: "from-green-500 to-green-600" },
-    { label: "Requisitions Pending", value: "0", icon: Package, color: "from-purple-500 to-purple-600" },
+    {
+      label: "Equipment Status",
+      value: "Good",
+      icon: CheckCircle2,
+      color: "from-green-500 to-green-600",
+    },
+    {
+      label: "Requisitions Pending",
+      value: "0",
+      icon: Package,
+      color: "from-purple-500 to-purple-600",
+    },
   ];
 
   return (
@@ -38,7 +48,9 @@ function AdminInventoryPage() {
       actions={
         <>
           <Button disabled>Register Asset</Button>
-          <Button variant="outline" disabled>Create Requisition</Button>
+          <Button variant="outline" disabled>
+            Create Requisition
+          </Button>
         </>
       }
     >
@@ -178,9 +190,12 @@ function AdminInventoryPage() {
                 <div className="flex items-start gap-4">
                   <AlertCircle className="h-5 w-5 text-blue-600 mt-1 flex-shrink-0" />
                   <div>
-                    <p className="font-medium text-sm text-blue-900">Preventive Maintenance Tracking</p>
+                    <p className="font-medium text-sm text-blue-900">
+                      Preventive Maintenance Tracking
+                    </p>
                     <p className="text-sm text-blue-700 mt-1">
-                      Schedule and track maintenance for all equipment. Receive automated reminders and manage maintenance history.
+                      Schedule and track maintenance for all equipment. Receive automated reminders
+                      and manage maintenance history.
                     </p>
                   </div>
                 </div>

@@ -75,11 +75,7 @@ export const COMMUNICATION_CHANNEL_TYPES: readonly CommunicationChannelType[] = 
  * ────────────────────────────────────────────────────────────*/
 
 export type MessageClassification =
-  | "PUBLIC"
-  | "INTERNAL"
-  | "CONFIDENTIAL"
-  | "RESTRICTED"
-  | "HIGHLY_RESTRICTED";
+  "PUBLIC" | "INTERNAL" | "CONFIDENTIAL" | "RESTRICTED" | "HIGHLY_RESTRICTED";
 
 export const MESSAGE_CLASSIFICATIONS: readonly MessageClassification[] = [
   "PUBLIC",
@@ -125,8 +121,7 @@ export interface CreateMessageInput {
 }
 
 export type CreateMessageResult =
-  | { ok: true; message: CommunicationMessage }
-  | { ok: false; error: string };
+  { ok: true; message: CommunicationMessage } | { ok: false; error: string };
 
 export function createMessage(input: CreateMessageInput): CreateMessageResult {
   if (input.sender.trim() === "") {
@@ -167,7 +162,10 @@ export function createMessage(input: CreateMessageInput): CreateMessageResult {
 }
 
 /** Messages must not cross tenant boundaries implicitly (DN). */
-export function isMessageTenantConsistent(message: CommunicationMessage, tenantId: TenantId): boolean {
+export function isMessageTenantConsistent(
+  message: CommunicationMessage,
+  tenantId: TenantId,
+): boolean {
   return message.tenantId === tenantId;
 }
 
@@ -181,12 +179,7 @@ export function isMessageExpired(message: CommunicationMessage, now: string): bo
  * ────────────────────────────────────────────────────────────*/
 
 export type NotificationDeliveryState =
-  | "pending"
-  | "queued"
-  | "delivered"
-  | "failed"
-  | "suppressed"
-  | "acknowledged";
+  "pending" | "queued" | "delivered" | "failed" | "suppressed" | "acknowledged";
 
 export const NOTIFICATION_DELIVERY_STATES: readonly NotificationDeliveryState[] = [
   "pending",
@@ -223,8 +216,7 @@ export interface CreateNotificationInput {
 }
 
 export type CreateNotificationResult =
-  | { ok: true; notification: Notification }
-  | { ok: false; error: string };
+  { ok: true; notification: Notification } | { ok: false; error: string };
 
 export function createNotification(input: CreateNotificationInput): CreateNotificationResult {
   if (input.recipient.trim() === "") {

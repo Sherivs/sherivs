@@ -135,17 +135,21 @@ export interface ConfigurationValidationResult {
  * Detects missing rooms, invalid capacities, missing teachers, curriculum
  * conflicts, schedule conflicts, invalid policies, impossible assignments.
  */
-export function validateInstitutionalConfiguration(
-  config: {
-    campuses: Array<{ id: string; name: string; isActive: boolean }>;
-    buildings: Array<{ id: string; campusId: string; name: string }>;
-    rooms: Array<{ id: string; buildingId: string; name: string; capacity: number }>;
-    classes: Array<{ id: string; name: string; campusId: string; roomId: string | null; teacherAssignmentRefs: string[] }>;
-    teachers: Array<{ id: string; name: string }>;
-    subjects: Array<{ id: string; name: string }>;
-    policies: Array<{ id: string; name: string; type: string }>;
-  },
-): ConfigurationValidationResult {
+export function validateInstitutionalConfiguration(config: {
+  campuses: Array<{ id: string; name: string; isActive: boolean }>;
+  buildings: Array<{ id: string; campusId: string; name: string }>;
+  rooms: Array<{ id: string; buildingId: string; name: string; capacity: number }>;
+  classes: Array<{
+    id: string;
+    name: string;
+    campusId: string;
+    roomId: string | null;
+    teacherAssignmentRefs: string[];
+  }>;
+  teachers: Array<{ id: string; name: string }>;
+  subjects: Array<{ id: string; name: string }>;
+  policies: Array<{ id: string; name: string; type: string }>;
+}): ConfigurationValidationResult {
   const errors: string[] = [];
 
   // Missing rooms: classes must reference valid rooms.
@@ -237,14 +241,9 @@ export interface CreateScenarioInput {
   createdBy: string;
 }
 
-export type CreateScenarioResult =
-  | { ok: true; scenario: Scenario }
-  | { ok: false; error: string };
+export type CreateScenarioResult = { ok: true; scenario: Scenario } | { ok: false; error: string };
 
-export function createScenario(
-  input: CreateScenarioInput,
-  now: string,
-): CreateScenarioResult {
+export function createScenario(input: CreateScenarioInput, now: string): CreateScenarioResult {
   if (input.name.trim() === "") {
     return { ok: false, error: "Scenario name is required" };
   }
@@ -323,8 +322,7 @@ export interface RollbackConfigurationInput {
 }
 
 export type RollbackConfigurationResult =
-  | { ok: true; auditEvent: EducationalAuditEvent }
-  | { ok: false; error: string };
+  { ok: true; auditEvent: EducationalAuditEvent } | { ok: false; error: string };
 
 export function rollbackConfiguration(
   input: RollbackConfigurationInput,
@@ -454,8 +452,7 @@ export interface CaptureRealitySnapshotInput {
 }
 
 export type CaptureRealitySnapshotResult =
-  | { ok: true; snapshot: RealitySnapshot }
-  | { ok: false; error: string };
+  { ok: true; snapshot: RealitySnapshot } | { ok: false; error: string };
 
 export function captureRealitySnapshot(
   input: CaptureRealitySnapshotInput,

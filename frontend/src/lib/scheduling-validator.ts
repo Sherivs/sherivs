@@ -243,7 +243,9 @@ export function scoreFinalSchedule(
     return { ...quality, feasibility: 0, overallQuality: 0 };
   }
   const overall = Math.round(
-    quality.constraintScore * 0.4 + quality.resourceUtilization * 0.3 + quality.learnerConvenience * 0.3,
+    quality.constraintScore * 0.4 +
+      quality.resourceUtilization * 0.3 +
+      quality.learnerConvenience * 0.3,
   );
   return { ...quality, feasibility: 100, overallQuality: overall };
 }
@@ -253,13 +255,7 @@ export function scoreFinalSchedule(
  * ────────────────────────────────────────────────────────────*/
 
 export type ScheduleState =
-  | "draft"
-  | "validated"
-  | "approved"
-  | "published"
-  | "active"
-  | "archived"
-  | "rejected";
+  "draft" | "validated" | "approved" | "published" | "active" | "archived" | "rejected";
 
 export const SCHEDULE_STATES: readonly ScheduleState[] = [
   "draft",
@@ -293,10 +289,11 @@ export interface CreateScheduleVersionInput {
 }
 
 export type CreateScheduleVersionResult =
-  | { ok: true; version: ScheduleVersion }
-  | { ok: false; error: string };
+  { ok: true; version: ScheduleVersion } | { ok: false; error: string };
 
-export function createScheduleVersion(input: CreateScheduleVersionInput): CreateScheduleVersionResult {
+export function createScheduleVersion(
+  input: CreateScheduleVersionInput,
+): CreateScheduleVersionResult {
   if (input.creatorId.trim() === "") {
     return { ok: false, error: "Schedule version requires a creator (H)" };
   }
@@ -371,8 +368,7 @@ export interface CreateChangeRequestInput {
 }
 
 export type CreateChangeRequestResult =
-  | { ok: true; request: ChangeRequest }
-  | { ok: false; error: string };
+  { ok: true; request: ChangeRequest } | { ok: false; error: string };
 
 export function createChangeRequest(input: CreateChangeRequestInput): CreateChangeRequestResult {
   if (input.reason.trim() === "") {

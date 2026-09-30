@@ -216,7 +216,13 @@ export function computeIntegrationMetrics(input: {
   };
 }
 
-export type IntegrationAlertKind = "authentication_failure" | "error_spike" | "sync_drift" | "provider_outage" | "certificate_expiry" | "rate_limit_exhaustion";
+export type IntegrationAlertKind =
+  | "authentication_failure"
+  | "error_spike"
+  | "sync_drift"
+  | "provider_outage"
+  | "certificate_expiry"
+  | "rate_limit_exhaustion";
 
 export const INTEGRATION_ALERT_KINDS: readonly IntegrationAlertKind[] = [
   "authentication_failure",
@@ -246,7 +252,11 @@ export function raiseIntegrationAlert(input: {
   message: string;
   now?: string;
 }): IntegrationAlert {
-  const severity = input.severity ?? (input.kind === "provider_outage" || input.kind === "certificate_expiry" ? "critical" : "warning");
+  const severity =
+    input.severity ??
+    (input.kind === "provider_outage" || input.kind === "certificate_expiry"
+      ? "critical"
+      : "warning");
   return {
     id: input.id,
     tenantId: input.tenantId ?? null,
@@ -292,7 +302,11 @@ export function registerCertificate(input: {
 }
 
 /** Section CL: a certificate is expiring within the warning window. */
-export function isCertificateExpiringSoon(cert: CertificateRecord, now: string, warnWithinDays: number = 30): boolean {
+export function isCertificateExpiringSoon(
+  cert: CertificateRecord,
+  now: string,
+  warnWithinDays: number = 30,
+): boolean {
   const days = (new Date(cert.expiresAt).getTime() - new Date(now).getTime()) / 86_400_000;
   return days <= warnWithinDays;
 }
@@ -338,7 +352,14 @@ export function isTransferPermitted(input: {
   return true;
 }
 
-export type IntegrationAuditEventType = "integration_created" | "credential_changed" | "mapping_changed" | "synchronization" | "failure" | "approval" | "deletion";
+export type IntegrationAuditEventType =
+  | "integration_created"
+  | "credential_changed"
+  | "mapping_changed"
+  | "synchronization"
+  | "failure"
+  | "approval"
+  | "deletion";
 
 export const INTEGRATION_AUDIT_EVENT_TYPES: readonly IntegrationAuditEventType[] = [
   "integration_created",
@@ -379,5 +400,3 @@ export function recordIntegrationAuditEvent(input: {
     metadata: input.metadata ?? {},
   };
 }
-
-

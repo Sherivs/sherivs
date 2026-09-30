@@ -141,7 +141,9 @@ describe("Command lifecycle (AI)", () => {
   });
 
   it("records a failure reason when a command fails", () => {
-    const r = transitionCommandState(command({ status: "TRANSMITTED" }), "FAILED", { failureReason: "timeout" });
+    const r = transitionCommandState(command({ status: "TRANSMITTED" }), "FAILED", {
+      failureReason: "timeout",
+    });
     expect(r.ok).toBe(true);
     if (r.ok) {
       expect(r.command.failureReason).toBe("timeout");
@@ -171,103 +173,114 @@ describe("High-risk command approval (AK)", () => {
     }
   });
 
-
-describe("Command authorization (AJ)", () => {
-  it("authorizes a validated reversible command for an admin", () => {
-    const result = authorizeCommand({
-      command: command({ status: "VALIDATED", impact: "REVERSIBLE" }),
-      requiredCapability: null,
-      isAdmin: true,
-      isOwner: false,
+  describe("Command authorization (AJ)", () => {
+    it("authorizes a validated reversible command for an admin", () => {
+      const result = authorizeCommand({
+        command: command({ status: "VALIDATED", impact: "REVERSIBLE" }),
+        requiredCapability: null,
+        isAdmin: true,
+        isOwner: false,
+      });
+      expect(result.ok).toBe(true);
     });
-    expect(result.ok).toBe(true);
-  });
 
-  it("rejects a command that is not yet validated", () => {
-    const result = authorizeCommand({
-      command: command({ status: "QUEUED" }),
-      requiredCapability: null,
-      isAdmin: true,
-      isOwner: false,
+    it("rejects a command that is not yet validated", () => {
+      const result = authorizeCommand({
+        command: command({ status: "QUEUED" }),
+        requiredCapability: null,
+        isAdmin: true,
+        isOwner: false,
+      });
+      expect(result.ok).toBe(false);
     });
-    expect(result.ok).toBe(false);
-  });
 
-  it("rejects a requester who is neither admin nor owner", () => {
-    const result = authorizeCommand({
-      command: command({ status: "VALIDATED", impact: "REVERSIBLE" }),
-      requiredCapability: null,
-      isAdmin: false,
-      isOwner: false,
+    it("rejects a requester who is neither admin nor owner", () => {
+      const result = authorizeCommand({
+        command: command({ status: "VALIDATED", impact: "REVERSIBLE" }),
+        requiredCapability: null,
+        isAdmin: false,
+        isOwner: false,
+      });
+      expect(result.ok).toBe(false);
     });
-    expect(result.ok).toBe(false);
-  });
 
-  it("rejects destructive commands from non-admins", () => {
-    const result = authorizeCommand({
-      command: command({ status: "VALIDATED", impact: "DESTRUCTIVE" }),
-      requiredCapability: null,
-      isAdmin: false,
-      isOwner: true,
+    it("rejects destructive commands from non-admins", () => {
+      const result = authorizeCommand({
+        command: command({ status: "VALIDATED", impact: "DESTRUCTIVE" }),
+        requiredCapability: null,
+        isAdmin: false,
+        isOwner: true,
+      });
+      expect(result.ok).toBe(false);
     });
-    expect(result.ok).toBe(false);
-  });
 
-  it("rejects physical-safety commands from non-admins", () => {
-    const result = authorizeCommand({
-      command: command({ status: "VALIDATED", impact: "PHYSICAL_SAFETY" }),
-      requiredCapability: null,
-      isAdmin: false,
-      isOwner: true,
+    it("rejects physical-safety commands from non-admins", () => {
+      const result = authorizeCommand({
+        command: command({ status: "VALIDATED", impact: "PHYSICAL_SAFETY" }),
+        requiredCapability: null,
+        isAdmin: false,
+        isOwner: true,
+      });
+      expect(result.ok).toBe(false);
     });
-    expect(result.ok).toBe(false);
-  });
-});
-
-describe("Safety boundary (AL, AM)", () => {
-  it("blocks normal commands while a safety stop is active", () => {
-    const stop = issueSafetyStop("device-1", "safety-officer", "fire drill", NOW);
-    const blocked = isCommandBlockedBySafetyStop(command({ type: "unlock", impact: "REVERSIBLE" }), [stop]);
-    expect(blocked).toBe(true);
   });
 
-  it("allows a stop command even while a safety stop is active", () => {
-    const stop = issueSafetyStop("device-1", "safety-officer", "fire drill", NOW);
-    const allowed = isCommandBlockedBySafetyStop(command({ type: "stop", impact: "DISRUPTIVE" }), [stop]);
-    expect(allowed).toBe(false);
+  describe("Safety boundary (AL, AM)", () => {
+    it("blocks normal commands while a safety stop is active", () => {
+      const stop = issueSafetyStop("device-1", "safety-officer", "fire drill", NOW);
+      const blocked = isCommandBlockedBySafetyStop(
+        command({ type: "unlock", impact: "REVERSIBLE" }),
+        [stop],
+      );
+      expect(blocked).toBe(true);
+    });
+
+    it("allows a stop command even while a safety stop is active", () => {
+      const stop = issueSafetyStop("device-1", "safety-officer", "fire drill", NOW);
+      const allowed = isCommandBlockedBySafetyStop(
+        command({ type: "stop", impact: "DISRUPTIVE" }),
+        [stop],
+      );
+      expect(allowed).toBe(false);
+    });
+
+    it("allows physical-safety impact commands during a safety stop", () => {
+      const stop = issueSafetyStop("device-1", "safety-officer", "fire drill", NOW);
+      const allowed = isCommandBlockedBySafetyStop(
+        command({ type: "set", impact: "PHYSICAL_SAFETY" }),
+        [stop],
+      );
+      expect(allowed).toBe(false);
+    });
+
+    it("releases a safety stop explicitly", () => {
+      const stop = issueSafetyStop("device-1", "safety-officer", "fire drill", NOW);
+      const released = releaseSafetyStop(stop, LATER);
+      expect(released.active).toBe(false);
+      const blocked = isCommandBlockedBySafetyStop(
+        command({ type: "unlock", impact: "REVERSIBLE" }),
+        [released],
+      );
+      expect(blocked).toBe(false);
+    });
   });
 
-  it("allows physical-safety impact commands during a safety stop", () => {
-    const stop = issueSafetyStop("device-1", "safety-officer", "fire drill", NOW);
-    const allowed = isCommandBlockedBySafetyStop(command({ type: "set", impact: "PHYSICAL_SAFETY" }), [stop]);
-    expect(allowed).toBe(false);
-  });
+  describe("Idempotency and device state (AN, AQ)", () => {
+    it("detects a duplicate transmission by idempotency key", () => {
+      const existing = command({ idempotencyKey: "idem-1" });
+      expect(isDuplicateCommand(existing, "idem-1")).toBe(true);
+      expect(isDuplicateCommand(existing, "idem-2")).toBe(false);
+      expect(isDuplicateCommand(null, "idem-1")).toBe(false);
+    });
 
-  it("releases a safety stop explicitly", () => {
-    const stop = issueSafetyStop("device-1", "safety-officer", "fire drill", NOW);
-    const released = releaseSafetyStop(stop, LATER);
-    expect(released.active).toBe(false);
-    const blocked = isCommandBlockedBySafetyStop(command({ type: "unlock", impact: "REVERSIBLE" }), [released]);
-    expect(blocked).toBe(false);
+    it("only accepts commands in OPERATIONAL or DEGRADED state", () => {
+      expect(canAcceptCommands("OPERATIONAL")).toBe(true);
+      expect(canAcceptCommands("DEGRADED")).toBe(true);
+      expect(canAcceptCommands("OFFLINE")).toBe(false);
+      expect(canAcceptCommands("MAINTENANCE")).toBe(false);
+      expect(canAcceptCommands("QUARANTINED")).toBe(false);
+    });
   });
-});
-
-describe("Idempotency and device state (AN, AQ)", () => {
-  it("detects a duplicate transmission by idempotency key", () => {
-    const existing = command({ idempotencyKey: "idem-1" });
-    expect(isDuplicateCommand(existing, "idem-1")).toBe(true);
-    expect(isDuplicateCommand(existing, "idem-2")).toBe(false);
-    expect(isDuplicateCommand(null, "idem-1")).toBe(false);
-  });
-
-  it("only accepts commands in OPERATIONAL or DEGRADED state", () => {
-    expect(canAcceptCommands("OPERATIONAL")).toBe(true);
-    expect(canAcceptCommands("DEGRADED")).toBe(true);
-    expect(canAcceptCommands("OFFLINE")).toBe(false);
-    expect(canAcceptCommands("MAINTENANCE")).toBe(false);
-    expect(canAcceptCommands("QUARANTINED")).toBe(false);
-  });
-});
 
   it("cannot transmit an approval-required command before approval", () => {
     const c = command({ status: "AUTHORIZED", approvalRequired: true, approvedBy: null });
@@ -275,4 +288,3 @@ describe("Idempotency and device state (AN, AQ)", () => {
     expect(result.ok).toBe(false);
   });
 });
-

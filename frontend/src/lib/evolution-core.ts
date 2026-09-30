@@ -111,7 +111,8 @@ export function createFutureCapability(input: {
   rollbackStrategy?: string;
 }): { ok: true; capability: FutureCapability } | { ok: false; error: string } {
   if (!input.name.trim()) return { ok: false, error: "Capability name is required (Section F)" };
-  if (!input.originatingPhase.trim()) return { ok: false, error: "Originating phase is required (Section F)" };
+  if (!input.originatingPhase.trim())
+    return { ok: false, error: "Originating phase is required (Section F)" };
   if (!input.owner.trim()) return { ok: false, error: "Proposed owner is required (Section F)" };
   if (input.maturityLevel !== undefined && (input.maturityLevel < 0 || input.maturityLevel > 5)) {
     return { ok: false, error: "Maturity level must be between 0 and 5 (Section F)" };
@@ -163,17 +164,41 @@ export type EvolutionLifecycleState =
   | "archived";
 
 export const EVOLUTION_LIFECYCLE: readonly EvolutionLifecycleState[] = [
-  "idea", "candidate", "research", "architecture_proposal", "sandbox",
-  "experimental", "internal_pilot", "controlled_tenant_pilot", "limited_production",
-  "general_availability", "mature", "maintenance", "deprecated", "migration",
-  "sunset", "archived",
+  "idea",
+  "candidate",
+  "research",
+  "architecture_proposal",
+  "sandbox",
+  "experimental",
+  "internal_pilot",
+  "controlled_tenant_pilot",
+  "limited_production",
+  "general_availability",
+  "mature",
+  "maintenance",
+  "deprecated",
+  "migration",
+  "sunset",
+  "archived",
 ] as const;
 
 export const EVOLUTION_LIFECYCLE_RANK: Record<EvolutionLifecycleState, number> = {
-  idea: 0, candidate: 1, research: 2, architecture_proposal: 3, sandbox: 4,
-  experimental: 5, internal_pilot: 6, controlled_tenant_pilot: 7, limited_production: 8,
-  general_availability: 9, mature: 10, maintenance: 11, deprecated: 12, migration: 13,
-  sunset: 14, archived: 15,
+  idea: 0,
+  candidate: 1,
+  research: 2,
+  architecture_proposal: 3,
+  sandbox: 4,
+  experimental: 5,
+  internal_pilot: 6,
+  controlled_tenant_pilot: 7,
+  limited_production: 8,
+  general_availability: 9,
+  mature: 10,
+  maintenance: 11,
+  deprecated: 12,
+  migration: 13,
+  sunset: 14,
+  archived: 15,
 };
 
 // Section G: capabilities move through controlled states — no jumping from
@@ -242,9 +267,18 @@ export function isFutureEvolutionOwned(domain: string): boolean {
  * ────────────────────────────────────────────────────────────*/
 
 export const CHANGE_PROTOCOL_STEPS: readonly string[] = [
-  "idea", "classification", "impact_analysis", "architecture_proposal",
-  "security_review", "dependency_review", "experiment", "validation",
-  "approval", "controlled_rollout", "observation", "graduation_or_rejection",
+  "idea",
+  "classification",
+  "impact_analysis",
+  "architecture_proposal",
+  "security_review",
+  "dependency_review",
+  "experiment",
+  "validation",
+  "approval",
+  "controlled_rollout",
+  "observation",
+  "graduation_or_rejection",
 ] as const;
 
 export function isChangeProtocolStep(step: string): boolean {
@@ -262,9 +296,20 @@ export function isChangeProtocolOrdered(steps: readonly string[]): boolean {
  * ────────────────────────────────────────────────────────────*/
 
 export const DISCOVERY_SOURCES: readonly string[] = [
-  "user", "institution", "administrator", "teacher", "student", "parent",
-  "government", "developer", "support", "security", "ai_research",
-  "engineering", "market_intelligence", "operational_telemetry",
+  "user",
+  "institution",
+  "administrator",
+  "teacher",
+  "student",
+  "parent",
+  "government",
+  "developer",
+  "support",
+  "security",
+  "ai_research",
+  "engineering",
+  "market_intelligence",
+  "operational_telemetry",
 ] as const;
 
 export interface CapabilityDiscovery {
@@ -283,8 +328,15 @@ export function createCapabilityDiscovery(input: {
   if (!DISCOVERY_SOURCES.includes(input.source)) {
     return { ok: false, error: "Unknown capability discovery source (Section DF)" };
   }
-  if (!input.request.trim()) return { ok: false, error: "Capability request is required (Section DF)" };
-  return { ok: true, discovery: { id: input.id, source: input.source, request: input.request, institutionRef: input.institutionRef } };
+  if (!input.request.trim())
+    return { ok: false, error: "Capability request is required (Section DF)" };
+  return {
+    ok: true,
+    discovery: {
+      id: input.id,
+      source: input.source,
+      request: input.request,
+      institutionRef: input.institutionRef,
+    },
+  };
 }
-
-

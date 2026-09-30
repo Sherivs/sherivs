@@ -65,7 +65,10 @@ const plan = [
   "",
   ...(complete.length === 0
     ? ["None."]
-    : complete.map((row) => `- **${row.id} ${row.name}** — ${row.capability}, ${row.modules} modules, ${row.tests} tests`)),
+    : complete.map(
+        (row) =>
+          `- **${row.id} ${row.name}** — ${row.capability}, ${row.modules} modules, ${row.tests} tests`,
+      )),
   "",
   "## 3. L4 gap register — what each phase needs next",
   "",

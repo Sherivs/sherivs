@@ -69,7 +69,9 @@ export function createTranslationKey(
   return { ok: true, id: `${namespace}.${key}` as TranslationKeyId };
 }
 
-export function parseTranslationKey(key: TranslationKeyId): { namespace: string; key: string } | null {
+export function parseTranslationKey(
+  key: TranslationKeyId,
+): { namespace: string; key: string } | null {
   const dot = key.indexOf(".");
   if (dot <= 0 || dot === key.length - 1) return null;
   return { namespace: key.slice(0, dot), key: key.slice(dot + 1) };
@@ -79,10 +81,16 @@ export function parseTranslationKey(key: TranslationKeyId): { namespace: string;
  * Translation model + versioning (Sections O, Q)
  * ────────────────────────────────────────────────────────────*/
 
-export type TranslationQuality = "machine" | "ai" | "human" | "professional" | "reviewed" | "approved";
+export type TranslationQuality =
+  "machine" | "ai" | "human" | "professional" | "reviewed" | "approved";
 
 export const TRANSLATION_QUALITY_ORDER: readonly TranslationQuality[] = [
-  "machine", "ai", "human", "professional", "reviewed", "approved",
+  "machine",
+  "ai",
+  "human",
+  "professional",
+  "reviewed",
+  "approved",
 ] as const;
 
 export const TRANSLATION_QUALITY_RANK: Record<TranslationQuality, number> = {
@@ -117,7 +125,8 @@ export function createTranslation(input: {
   now?: string;
 }): { ok: true; translation: Translation } | { ok: false; error: string } {
   if (!input.id) return { ok: false, error: "Translation id is required (Section O)" };
-  if (!input.locale.trim()) return { ok: false, error: "Translation locale is required (Section O)" };
+  if (!input.locale.trim())
+    return { ok: false, error: "Translation locale is required (Section O)" };
   if (!input.text.trim()) return { ok: false, error: "Translation text is required (Section O)" };
   if (!input.sourceVersion.trim()) {
     return { ok: false, error: "Translation source version is required (Section DF)" };
@@ -165,17 +174,14 @@ export function updateTranslation(
  * ────────────────────────────────────────────────────────────*/
 
 export type TranslationRiskDomain =
-  | "education"
-  | "administrative"
-  | "finance"
-  | "government"
-  | "legal"
-  | "medical"
-  | "technology";
+  "education" | "administrative" | "finance" | "government" | "legal" | "medical" | "technology";
 
 // Section S: high-risk domains require human approval before deployment.
 export const HIGH_RISK_TRANSLATION_DOMAINS: readonly TranslationRiskDomain[] = [
-  "legal", "medical", "finance", "government",
+  "legal",
+  "medical",
+  "finance",
+  "government",
 ] as const;
 
 export function createAiTranslation(input: {
@@ -188,7 +194,8 @@ export function createAiTranslation(input: {
   now?: string;
 }): { ok: true; translation: Translation } | { ok: false; error: string } {
   if (!input.id) return { ok: false, error: "Translation id is required (Section S)" };
-  if (!input.locale.trim()) return { ok: false, error: "Translation locale is required (Section S)" };
+  if (!input.locale.trim())
+    return { ok: false, error: "Translation locale is required (Section S)" };
   if (!input.text.trim()) return { ok: false, error: "Translation text is required (Section S)" };
   const requiresHumanApproval = HIGH_RISK_TRANSLATION_DOMAINS.includes(input.domain);
   return {
@@ -278,7 +285,13 @@ export function createTranslationMemoryEntry(input: {
   targetText: string;
   domain: TranslationMemoryEntry["domain"];
 }): { ok: true; entry: TranslationMemoryEntry } | { ok: false; error: string } {
-  if (!input.id || !input.sourceLocale || !input.sourceText || !input.targetLocale || !input.targetText) {
+  if (
+    !input.id ||
+    !input.sourceLocale ||
+    !input.sourceText ||
+    !input.targetLocale ||
+    !input.targetText
+  ) {
     return { ok: false, error: "Translation memory entry requires all fields (Section T)" };
   }
   return { ok: true, entry: { ...input } };
@@ -305,7 +318,8 @@ export function findTranslationMemory(
  * Terminology management (Sections U, DN)
  * ────────────────────────────────────────────────────────────*/
 
-export type TerminologyDomain = "school" | "finance" | "hr" | "government" | "education" | "technology";
+export type TerminologyDomain =
+  "school" | "finance" | "hr" | "government" | "education" | "technology";
 
 export interface TerminologyEntry {
   id: TerminologyId;
@@ -325,8 +339,10 @@ export function createTerminologyEntry(input: {
   definition: string;
 }): { ok: true; entry: TerminologyEntry } | { ok: false; error: string } {
   if (!input.term.trim()) return { ok: false, error: "Terminology term is required (Section U)" };
-  if (!input.locale.trim()) return { ok: false, error: "Terminology locale is required (Section U)" };
-  if (!input.definition.trim()) return { ok: false, error: "Terminology definition is required (Section U)" };
+  if (!input.locale.trim())
+    return { ok: false, error: "Terminology locale is required (Section U)" };
+  if (!input.definition.trim())
+    return { ok: false, error: "Terminology definition is required (Section U)" };
   return {
     ok: true,
     entry: {
@@ -372,7 +388,10 @@ export function approveTerminologyChange(
   entry: TerminologyEntry,
 ): { ok: true; entry: TerminologyEntry } | { ok: false; error: string } {
   if (proposal.entryId !== entry.id || proposal.proposalVersion !== entry.version + 1) {
-    return { ok: false, error: "Proposal does not match the current terminology version (Section DN)" };
+    return {
+      ok: false,
+      error: "Proposal does not match the current terminology version (Section DN)",
+    };
   }
   return {
     ok: true,
@@ -422,7 +441,8 @@ export function createLocalizedContent(input: {
   }
   if (!input.locale.trim()) return { ok: false, error: "Content locale is required (Section DC)" };
   if (!input.body.trim()) return { ok: false, error: "Content body is required (Section DC)" };
-  if (!input.sourceVersion) return { ok: false, error: "Content source version is required (Section DE)" };
+  if (!input.sourceVersion)
+    return { ok: false, error: "Content source version is required (Section DE)" };
   return {
     ok: true,
     content: {
@@ -453,7 +473,10 @@ export function resolveContentFallback(
 }
 
 // Section DF: translation drift — content targeted an older source version.
-export function detectTranslationDrift(content: LocalizedContent, currentSourceVersion: string): boolean {
+export function detectTranslationDrift(
+  content: LocalizedContent,
+  currentSourceVersion: string,
+): boolean {
   return content.sourceVersion !== currentSourceVersion;
 }
 
@@ -498,7 +521,8 @@ export function createLocalizationFeedback(input: {
   details: string;
 }): { ok: true; feedback: LocalizationFeedback } | { ok: false; error: string } {
   if (!input.locale.trim()) return { ok: false, error: "Feedback locale is required (Section DM)" };
-  if (!input.details.trim()) return { ok: false, error: "Feedback details are required (Section DM)" };
+  if (!input.details.trim())
+    return { ok: false, error: "Feedback details are required (Section DM)" };
   return {
     ok: true,
     feedback: {
@@ -510,7 +534,3 @@ export function createLocalizationFeedback(input: {
     },
   };
 }
-
-
-
-

@@ -1,28 +1,13 @@
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  readdirSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const architectureDir = join(root, "architecture");
-const inventoryPath = join(
-  architectureDir,
-  "COREGRID_PHASE_52_SECTION_INVENTORY.json",
-);
-const allocationPath = join(
-  architectureDir,
-  "COREGRID_PHASE_52_CANONICAL_SURFACE_ALLOCATION.json",
-);
+const inventoryPath = join(architectureDir, "COREGRID_PHASE_52_SECTION_INVENTORY.json");
+const allocationPath = join(architectureDir, "COREGRID_PHASE_52_CANONICAL_SURFACE_ALLOCATION.json");
 const extractDir = join(architectureDir, "phase-52-extracts");
-const mapPath = join(
-  architectureDir,
-  "COREGRID_PHASE_52_DECOMPOSITION_MAP.json",
-);
+const mapPath = join(architectureDir, "COREGRID_PHASE_52_DECOMPOSITION_MAP.json");
 
 const inventory = JSON.parse(readFileSync(inventoryPath, "utf8"));
 const allocation = JSON.parse(readFileSync(allocationPath, "utf8"));
@@ -74,9 +59,10 @@ for (const occurrence of inventory.blockOccurrences) {
   const header = [
     "---",
     `mission: COREGRID-MISSION-0001`,
-    `artifact_id: p52-block-${occurrence.block}-occurrence-${String(
-      occurrence.occurrence,
-    ).padStart(3, "0")}`,
+    `artifact_id: p52-block-${occurrence.block}-occurrence-${String(occurrence.occurrence).padStart(
+      3,
+      "0",
+    )}`,
     `source: ${inventory.source.path}`,
     `source_sha256: ${inventory.source.sha256}`,
     `source_lines: ${occurrence.startLine}-${occurrence.endLine}`,
@@ -94,9 +80,10 @@ for (const occurrence of inventory.blockOccurrences) {
   ].join("\n");
   writeFileSync(extractPath, `${header}${body}\n`, "utf8");
   extracts.push({
-    artifactId: `p52-block-${occurrence.block}-occurrence-${String(
-      occurrence.occurrence,
-    ).padStart(3, "0")}`,
+    artifactId: `p52-block-${occurrence.block}-occurrence-${String(occurrence.occurrence).padStart(
+      3,
+      "0",
+    )}`,
     sourceLocation: inventory.source.path,
     sourceLines: [occurrence.startLine, occurrence.endLine],
     extract: relativeExtractPath,

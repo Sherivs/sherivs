@@ -68,14 +68,30 @@ function evt(overrides: Partial<TwinEvent> = {}): TwinEvent {
 
 describe("Events (BQ, BR, BS)", () => {
   it("emits an event with ordering metadata", () => {
-    const event = emitTwinEvent({ sequence: 3, type: "twin.state_changed", twinId: "twin-1", tenantId: TENANT_A, timestamp: NOW, source: "sync", correlationId: "corr-1" });
+    const event = emitTwinEvent({
+      sequence: 3,
+      type: "twin.state_changed",
+      twinId: "twin-1",
+      tenantId: TENANT_A,
+      timestamp: NOW,
+      source: "sync",
+      correlationId: "corr-1",
+    });
     expect(event.sequence).toBe(3);
     expect(event.correlationId).toBe("corr-1");
   });
 
   it("rejects out-of-order event sequences", () => {
-    expect(isEventSequenceInOrder([evt({ sequence: 1 }), evt({ eventId: "e2", sequence: 2 }), evt({ eventId: "e3", sequence: 3 })])).toBe(true);
-    expect(isEventSequenceInOrder([evt({ sequence: 2 }), evt({ eventId: "e2", sequence: 1 })])).toBe(false);
+    expect(
+      isEventSequenceInOrder([
+        evt({ sequence: 1 }),
+        evt({ eventId: "e2", sequence: 2 }),
+        evt({ eventId: "e3", sequence: 3 }),
+      ]),
+    ).toBe(true);
+    expect(
+      isEventSequenceInOrder([evt({ sequence: 2 }), evt({ eventId: "e2", sequence: 1 })]),
+    ).toBe(false);
   });
 
   it("detects duplicate event delivery", () => {
@@ -89,13 +105,19 @@ describe("Subscriptions (BM, BN)", () => {
   it("delivers only events within the subscription tenant (CP)", () => {
     const sub = createSubscription("consumer-1", TENANT_A, ["state_changes"]);
     expect(isEventVisibleToSubscription(sub, evt({ type: "twin.state_changed" }))).toBe(true);
-    expect(isEventVisibleToSubscription(sub, evt({ type: "twin.state_changed", tenantId: TENANT_B }))).toBe(false);
+    expect(
+      isEventVisibleToSubscription(sub, evt({ type: "twin.state_changed", tenantId: TENANT_B })),
+    ).toBe(false);
   });
 
   it("honors the twin filter and topic selection", () => {
     const sub = createSubscription("consumer-1", TENANT_A, ["state_changes"], "twin-1");
-    expect(isEventVisibleToSubscription(sub, evt({ type: "twin.state_changed", twinId: "twin-1" }))).toBe(true);
-    expect(isEventVisibleToSubscription(sub, evt({ type: "twin.state_changed", twinId: "twin-2" }))).toBe(false);
+    expect(
+      isEventVisibleToSubscription(sub, evt({ type: "twin.state_changed", twinId: "twin-1" })),
+    ).toBe(true);
+    expect(
+      isEventVisibleToSubscription(sub, evt({ type: "twin.state_changed", twinId: "twin-2" })),
+    ).toBe(false);
     expect(isEventVisibleToSubscription(sub, evt({ type: "twin.relationship_added" }))).toBe(false);
   });
 });
@@ -114,7 +136,10 @@ describe("Simulation (BU-BZ)", () => {
         model: "what-if-v1",
         timestamp: NOW,
       },
-      (state, inputs) => ({ ...state, occupancy: (state.occupancy as number) + (inputs.delta as number) }),
+      (state, inputs) => ({
+        ...state,
+        occupancy: (state.occupancy as number) + (inputs.delta as number),
+      }),
     );
     expect(isSimulationResultIsolated(result)).toBe(true);
     expect(result.resultingState.occupancy).toBe(30);
@@ -157,10 +182,26 @@ describe("Prediction (CA-CD)", () => {
 
 describe("Health and drift (CE-CK)", () => {
   it("computes an explainable health score and health threshold", () => {
-    const healthy = calculateTwinHealthScore({ freshness: 0.9, completeness: 0.9, synchronization: 0.9, consistency: 0.9, provenance: 0.9, sourceAvailability: 0.9, relationshipIntegrity: 0.9 });
+    const healthy = calculateTwinHealthScore({
+      freshness: 0.9,
+      completeness: 0.9,
+      synchronization: 0.9,
+      consistency: 0.9,
+      provenance: 0.9,
+      sourceAvailability: 0.9,
+      relationshipIntegrity: 0.9,
+    });
     expect(healthy).toBeGreaterThanOrEqual(0.7);
     expect(isTwinHealthy(healthy)).toBe(true);
-    const unhealthy = calculateTwinHealthScore({ freshness: 0.2, completeness: 0.2, synchronization: 0.2, consistency: 0.2, provenance: 0.2, sourceAvailability: 0.2, relationshipIntegrity: 0.2 });
+    const unhealthy = calculateTwinHealthScore({
+      freshness: 0.2,
+      completeness: 0.2,
+      synchronization: 0.2,
+      consistency: 0.2,
+      provenance: 0.2,
+      sourceAvailability: 0.2,
+      relationshipIntegrity: 0.2,
+    });
     expect(isTwinHealthy(unhealthy)).toBe(false);
   });
 
@@ -176,20 +217,52 @@ describe("Health and drift (CE-CK)", () => {
 
 describe("Security and tenant isolation (CL-CQ)", () => {
   it("grants same-tenant access and denies cross-tenant without a grant", () => {
-    const sameTenant = authorizeTwinAccess({ actorTenantId: TENANT_A, resourceTenantId: TENANT_A, resourceTwinId: "twin-1", operation: "read", crossTenantGranted: false });
+    const sameTenant = authorizeTwinAccess({
+      actorTenantId: TENANT_A,
+      resourceTenantId: TENANT_A,
+      resourceTwinId: "twin-1",
+      operation: "read",
+      crossTenantGranted: false,
+    });
     expect(sameTenant.allowed).toBe(true);
-    const crossTenant = authorizeTwinAccess({ actorTenantId: TENANT_A, resourceTenantId: TENANT_B, resourceTwinId: "twin-x", operation: "read", crossTenantGranted: false });
+    const crossTenant = authorizeTwinAccess({
+      actorTenantId: TENANT_A,
+      resourceTenantId: TENANT_B,
+      resourceTwinId: "twin-x",
+      operation: "read",
+      crossTenantGranted: false,
+    });
     expect(crossTenant.allowed).toBe(false);
-    const granted = authorizeTwinAccess({ actorTenantId: TENANT_A, resourceTenantId: TENANT_B, resourceTwinId: "twin-x", operation: "read", crossTenantGranted: true });
+    const granted = authorizeTwinAccess({
+      actorTenantId: TENANT_A,
+      resourceTenantId: TENANT_B,
+      resourceTwinId: "twin-x",
+      operation: "read",
+      crossTenantGranted: true,
+    });
     expect(granted.allowed).toBe(true);
   });
 });
 
 describe("Trust and reality score (EL-EN)", () => {
   it("assesses explainable twin trust levels", () => {
-    const strong = assessTwinTrust("twin-1", { sourceReliability: 0.95, freshness: 0.95, consistency: 0.95, observationCoverage: 0.95, calibration: 0.95, provenance: 0.95 });
+    const strong = assessTwinTrust("twin-1", {
+      sourceReliability: 0.95,
+      freshness: 0.95,
+      consistency: 0.95,
+      observationCoverage: 0.95,
+      calibration: 0.95,
+      provenance: 0.95,
+    });
     expect(strong.level).toBe("VERIFIED");
-    const weak = assessTwinTrust("twin-2", { sourceReliability: 0.2, freshness: 0.2, consistency: 0.2, observationCoverage: 0.2, calibration: 0.2, provenance: 0.2 });
+    const weak = assessTwinTrust("twin-2", {
+      sourceReliability: 0.2,
+      freshness: 0.2,
+      consistency: 0.2,
+      observationCoverage: 0.2,
+      calibration: 0.2,
+      provenance: 0.2,
+    });
     expect(weak.level).toBe("UNVERIFIED");
     expect(weak.factors).toBeDefined();
   });
@@ -222,9 +295,25 @@ describe("Manual override (EO-ER)", () => {
   });
 
   it("rejects an override without actor or reason", () => {
-    const noActor = createManualOverride({ twinId: "twin-1", tenantId: TENANT_A, actor: "", reason: "x", timestamp: NOW, previousValue: 1, newValue: 2 });
+    const noActor = createManualOverride({
+      twinId: "twin-1",
+      tenantId: TENANT_A,
+      actor: "",
+      reason: "x",
+      timestamp: NOW,
+      previousValue: 1,
+      newValue: 2,
+    });
     expect(noActor.ok).toBe(false);
-    const noReason = createManualOverride({ twinId: "twin-1", tenantId: TENANT_A, actor: "a", reason: "", timestamp: NOW, previousValue: 1, newValue: 2 });
+    const noReason = createManualOverride({
+      twinId: "twin-1",
+      tenantId: TENANT_A,
+      actor: "a",
+      reason: "",
+      timestamp: NOW,
+      previousValue: 1,
+      newValue: 2,
+    });
     expect(noReason.ok).toBe(false);
   });
 
@@ -242,7 +331,13 @@ describe("Manual override (EO-ER)", () => {
     });
     if (!result.ok) throw new Error("fixture failed");
     expect(isOverrideExpired(result.override, "2026-03-01T00:00:00Z")).toBe(true);
-    expect(reconcileAfterOverride(result.override, { authoritative: true, timestamp: LATER }, "2026-03-01T00:00:00Z")).toBe("expire");
+    expect(
+      reconcileAfterOverride(
+        result.override,
+        { authoritative: true, timestamp: LATER },
+        "2026-03-01T00:00:00Z",
+      ),
+    ).toBe("expire");
   });
 
   it("challenges unexpired overrides when authoritative data arrives", () => {
@@ -258,16 +353,31 @@ describe("Manual override (EO-ER)", () => {
       expiresAt: LATER,
     });
     if (!result.ok) throw new Error("fixture failed");
-    expect(reconcileAfterOverride(result.override, { authoritative: true, timestamp: LATER }, NOW)).toBe("challenge");
+    expect(
+      reconcileAfterOverride(result.override, { authoritative: true, timestamp: LATER }, NOW),
+    ).toBe("challenge");
   });
 });
 
 describe("Retention, archival, garbage collection (EE-EH)", () => {
   it("never collects production twins — only ephemeral ones per policy", () => {
-    const policy = { twinKind: "sensor", retentionMs: null, archiveAfterMs: null, collectEphemeralAfterMs: 3600_000 };
-    const productionTwin = { creationSource: "device_discovery", lifecycleState: "ACTIVE", createdAt: "2025-01-01T00:00:00Z" };
+    const policy = {
+      twinKind: "sensor",
+      retentionMs: null,
+      archiveAfterMs: null,
+      collectEphemeralAfterMs: 3600_000,
+    };
+    const productionTwin = {
+      creationSource: "device_discovery",
+      lifecycleState: "ACTIVE",
+      createdAt: "2025-01-01T00:00:00Z",
+    };
     expect(shouldCollectTwin(productionTwin, policy, NOW)).toBe(false);
-    const ephemeralTwin = { creationSource: "derived", lifecycleState: "ACTIVE", createdAt: "2025-01-01T00:00:00Z" };
+    const ephemeralTwin = {
+      creationSource: "derived",
+      lifecycleState: "ACTIVE",
+      createdAt: "2025-01-01T00:00:00Z",
+    };
     expect(shouldCollectTwin(ephemeralTwin, policy, NOW)).toBe(true);
   });
 
@@ -283,7 +393,10 @@ describe("Import and export (EC, ED)", () => {
     const result = runImport({
       dryRun: true,
       records: [{ id: "1" }, { id: "2" }, { id: "3" }],
-      validate: (r) => ((r as { id: string }).id !== "2" ? { ok: true as const } : { ok: false as const, error: "duplicate" }),
+      validate: (r) =>
+        (r as { id: string }).id !== "2"
+          ? { ok: true as const }
+          : { ok: false as const, error: "duplicate" },
     });
     expect(result.accepted).toBe(2);
     expect(result.rejected).toBe(1);

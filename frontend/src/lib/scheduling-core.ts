@@ -63,13 +63,7 @@ export function intervalDurationMinutes(interval: TimeInterval): number {
  * ────────────────────────────────────────────────────────────*/
 
 export type RecurrencePattern =
-  | "daily"
-  | "weekly"
-  | "biweekly"
-  | "monthly"
-  | "custom"
-  | "academic_week"
-  | "semester";
+  "daily" | "weekly" | "biweekly" | "monthly" | "custom" | "academic_week" | "semester";
 
 export const RECURRENCE_PATTERNS: readonly RecurrencePattern[] = [
   "daily",
@@ -99,15 +93,18 @@ export interface CreateRecurrenceRuleInput {
 }
 
 export type CreateRecurrenceRuleResult =
-  | { ok: true; rule: RecurrenceRule }
-  | { ok: false; error: string };
+  { ok: true; rule: RecurrenceRule } | { ok: false; error: string };
 
 export function createRecurrenceRule(input: CreateRecurrenceRuleInput): CreateRecurrenceRuleResult {
   const interval = input.interval ?? 1;
   if (interval < 1) {
     return { ok: false, error: "Recurrence interval must be at least 1 (J)" };
   }
-  if (input.endDate !== null && input.endDate !== undefined && Date.parse(input.endDate) < Date.parse(input.now)) {
+  if (
+    input.endDate !== null &&
+    input.endDate !== undefined &&
+    Date.parse(input.endDate) < Date.parse(input.now)
+  ) {
     return { ok: false, error: "Recurrence end date must be after the current time (J)" };
   }
   return {
@@ -141,7 +138,10 @@ export function expandRecurrence(
   const isDaily = rule.pattern === "daily";
   const stepMs = rule.interval * (isDaily ? 86_400_000 : 7 * 86_400_000);
   let cursor = Date.parse(anchorStart);
-  const end = Math.min(Date.parse(windowEnd), rule.endDate !== null ? Date.parse(rule.endDate) : Infinity);
+  const end = Math.min(
+    Date.parse(windowEnd),
+    rule.endDate !== null ? Date.parse(rule.endDate) : Infinity,
+  );
   const exceptionSet = new Set(rule.exceptionDates);
   while (cursor <= end) {
     if (!exceptionSet.has(new Date(cursor).toISOString())) {
@@ -198,8 +198,7 @@ export interface CreateCalendarEntryInput {
 }
 
 export type CreateCalendarEntryResult =
-  | { ok: true; entry: CalendarEntry }
-  | { ok: false; error: string };
+  { ok: true; entry: CalendarEntry } | { ok: false; error: string };
 
 export function createCalendarEntry(input: CreateCalendarEntryInput): CreateCalendarEntryResult {
   if (input.name.trim() === "") {
@@ -266,10 +265,11 @@ export interface CreateScheduleResourceInput {
 }
 
 export type CreateScheduleResourceResult =
-  | { ok: true; resource: ScheduleResource }
-  | { ok: false; error: string };
+  { ok: true; resource: ScheduleResource } | { ok: false; error: string };
 
-export function createScheduleResource(input: CreateScheduleResourceInput): CreateScheduleResourceResult {
+export function createScheduleResource(
+  input: CreateScheduleResourceInput,
+): CreateScheduleResourceResult {
   if (input.name.trim() === "") {
     return { ok: false, error: "Resource name is required" };
   }
@@ -319,10 +319,11 @@ export interface CreateScheduledActivityInput {
 }
 
 export type CreateScheduledActivityResult =
-  | { ok: true; activity: ScheduledActivity }
-  | { ok: false; error: string };
+  { ok: true; activity: ScheduledActivity } | { ok: false; error: string };
 
-export function createScheduledActivity(input: CreateScheduledActivityInput): CreateScheduledActivityResult {
+export function createScheduledActivity(
+  input: CreateScheduledActivityInput,
+): CreateScheduledActivityResult {
   if (input.subjectId.trim() === "" || input.classId.trim() === "") {
     return { ok: false, error: "Activity requires a subject and class (D.3)" };
   }
@@ -347,4 +348,3 @@ export function createScheduledActivity(input: CreateScheduledActivityInput): Cr
     },
   };
 }
-

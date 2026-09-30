@@ -34,7 +34,9 @@ import type { TenantId } from "./tenant-core";
 export type ProtocolAdapterId = string & { readonly __brand: "ProtocolAdapterId" };
 export type IntegrationTestId = string & { readonly __brand: "IntegrationTestId" };
 export type MockProviderId = string & { readonly __brand: "MockProviderId" };
-export type IntegrationCertificationId = string & { readonly __brand: "IntegrationCertificationId" };
+export type IntegrationCertificationId = string & {
+  readonly __brand: "IntegrationCertificationId";
+};
 
 export function protocolAdapterId(raw: string): ProtocolAdapterId {
   return raw as ProtocolAdapterId;
@@ -53,9 +55,20 @@ export function integrationCertificationId(raw: string): IntegrationCertificatio
  * Protocol translation (Sections BU, BV)
  * ────────────────────────────────────────────────────────────*/
 
-export type ProtocolKind = "soap" | "rest" | "graphql" | "rpc" | "xml" | "json" | "csv" | "yaml" | "binary";
+export type ProtocolKind =
+  "soap" | "rest" | "graphql" | "rpc" | "xml" | "json" | "csv" | "yaml" | "binary";
 
-export const PROTOCOL_KINDS: readonly ProtocolKind[] = ["soap", "rest", "graphql", "rpc", "xml", "json", "csv", "yaml", "binary"] as const;
+export const PROTOCOL_KINDS: readonly ProtocolKind[] = [
+  "soap",
+  "rest",
+  "graphql",
+  "rpc",
+  "xml",
+  "json",
+  "csv",
+  "yaml",
+  "binary",
+] as const;
 
 export interface ProtocolAdapter {
   id: ProtocolAdapterId;
@@ -127,7 +140,15 @@ export function aiCanSilentlyAlterMappings(): boolean {
  * Integration testing (Sections CA, CB, CC, CD, CE)
  * ────────────────────────────────────────────────────────────*/
 
-export type IntegrationTestKind = "connector" | "schema" | "authentication" | "contract" | "transformation" | "synchronization" | "failure" | "security";
+export type IntegrationTestKind =
+  | "connector"
+  | "schema"
+  | "authentication"
+  | "contract"
+  | "transformation"
+  | "synchronization"
+  | "failure"
+  | "security";
 
 export const INTEGRATION_TEST_KINDS: readonly IntegrationTestKind[] = [
   "connector",
@@ -196,7 +217,12 @@ export function isProductionCertified(input: {
   contractTestsPassed: boolean;
   approvalGranted: boolean;
 }): boolean {
-  return input.connectorTestsPassed && input.securityTestsPassed && input.contractTestsPassed && input.approvalGranted;
+  return (
+    input.connectorTestsPassed &&
+    input.securityTestsPassed &&
+    input.contractTestsPassed &&
+    input.approvalGranted
+  );
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -210,7 +236,13 @@ export function isWebhookDeliverySecure(input: {
   authenticated: boolean;
   authorized: boolean;
 }): boolean {
-  return input.signatureValid && input.timestampFresh && input.replayPrevented && input.authenticated && input.authorized;
+  return (
+    input.signatureValid &&
+    input.timestampFresh &&
+    input.replayPrevented &&
+    input.authenticated &&
+    input.authorized
+  );
 }
 
 export interface NetworkSecurityRequirement {
@@ -220,15 +252,17 @@ export interface NetworkSecurityRequirement {
   privateConnectivityRequired: boolean;
 }
 
-export function isNetworkSecuritySatisfied(requirement: NetworkSecurityRequirement, input: {
-  tls: boolean;
-  certificateValid: boolean;
-  sourceIp: string;
-}): boolean {
+export function isNetworkSecuritySatisfied(
+  requirement: NetworkSecurityRequirement,
+  input: {
+    tls: boolean;
+    certificateValid: boolean;
+    sourceIp: string;
+  },
+): boolean {
   if (requirement.tlsRequired && !input.tls) return false;
   if (requirement.certificateValidationRequired && !input.certificateValid) return false;
-  if (requirement.ipAllowlist.length > 0 && !requirement.ipAllowlist.includes(input.sourceIp)) return false;
+  if (requirement.ipAllowlist.length > 0 && !requirement.ipAllowlist.includes(input.sourceIp))
+    return false;
   return true;
 }
-
-

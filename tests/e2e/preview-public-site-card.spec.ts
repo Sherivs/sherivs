@@ -36,10 +36,7 @@ test.describe("Preview public site card", () => {
       await expect(again).toBeVisible();
 
       // it opens the public site with a school in a new tab
-      const [popup] = await Promise.all([
-        context.waitForEvent("page"),
-        again.click(),
-      ]);
+      const [popup] = await Promise.all([context.waitForEvent("page"), again.click()]);
       await popup.waitForLoadState("domcontentloaded");
       expect(popup.url()).toContain("?school=");
       await popup.close();

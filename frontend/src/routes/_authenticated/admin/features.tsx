@@ -140,7 +140,9 @@ function FeaturesDashboard() {
     if (!school?.id) return;
     setSaving(true);
     const payload = Object.fromEntries(
-      Object.entries(overrides).filter(([k]) => role === "super_admin" || hasTierFeature(tier, k as FeatureKey)),
+      Object.entries(overrides).filter(
+        ([k]) => role === "super_admin" || hasTierFeature(tier, k as FeatureKey),
+      ),
     );
     const { error } = await supabase
       .from("schools")

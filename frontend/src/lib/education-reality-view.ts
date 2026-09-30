@@ -13,10 +13,7 @@
  * numbers. Rendering a school that does not exist is the one thing this must never
  * do.
  */
-import {
-  SCHOLAR_ENTITY_TYPES,
-  SCHOLAR_RELATIONSHIP_TYPES,
-} from "@/lib/runtime/scholar-reality";
+import { SCHOLAR_ENTITY_TYPES, SCHOLAR_RELATIONSHIP_TYPES } from "@/lib/runtime/scholar-reality";
 
 /** The nine questions §1 of the phase document answers, in document order. */
 export const EDUCATION_REALITY_QUESTIONS: readonly string[] = [
@@ -81,9 +78,7 @@ export function parseOperatingModelSpec(raw: string | null): Record<string, unkn
   }
 }
 
-export function educationRealityView(
-  source: EducationRealitySource | null,
-): EducationRealityView {
+export function educationRealityView(source: EducationRealitySource | null): EducationRealityView {
   const vocabulary = {
     entityTypes: SCHOLAR_ENTITY_TYPES,
     relationshipTypes: SCHOLAR_RELATIONSHIP_TYPES,

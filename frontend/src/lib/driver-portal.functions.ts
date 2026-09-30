@@ -12,12 +12,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-export type DriverBusStatus =
-  | "idle"
-  | "en_route"
-  | "at_school"
-  | "returning"
-  | "maintenance";
+export type DriverBusStatus = "idle" | "en_route" | "at_school" | "returning" | "maintenance";
 
 export type DriverStudent = {
   id: string;
@@ -47,13 +42,7 @@ const Coords = z.object({
 });
 
 const StatusInput = z.object({
-  status: z.enum([
-    "idle",
-    "en_route",
-    "at_school",
-    "returning",
-    "maintenance",
-  ]),
+  status: z.enum(["idle", "en_route", "at_school", "returning", "maintenance"]),
 });
 
 function parseAssigned(raw: unknown): string[] {
@@ -87,16 +76,18 @@ export const getMyDriverBus = createServerFn({ method: "GET" })
         .in("id", assigned)
         .eq("school_id", bus.school_id);
       if (sErr) throw new Error(sErr.message);
-      students = (rows ?? []).map((r: {
-        id: string;
-        admission_number: string | null;
-        users: { full_name: string | null; avatar_url: string | null } | null;
-      }) => ({
-        id: r.id,
-        admission_number: r.admission_number,
-        full_name: r.users?.full_name ?? null,
-        avatar_url: r.users?.avatar_url ?? null,
-      }));
+      students = (rows ?? []).map(
+        (r: {
+          id: string;
+          admission_number: string | null;
+          users: { full_name: string | null; avatar_url: string | null } | null;
+        }) => ({
+          id: r.id,
+          admission_number: r.admission_number,
+          full_name: r.users?.full_name ?? null,
+          avatar_url: r.users?.avatar_url ?? null,
+        }),
+      );
     }
 
     return {
@@ -107,10 +98,8 @@ export const getMyDriverBus = createServerFn({ method: "GET" })
       capacity: bus.capacity,
       route_name: bus.route_name,
       current_status: (bus.current_status ?? "idle") as DriverBusStatus,
-      current_latitude:
-        bus.current_latitude !== null ? Number(bus.current_latitude) : null,
-      current_longitude:
-        bus.current_longitude !== null ? Number(bus.current_longitude) : null,
+      current_latitude: bus.current_latitude !== null ? Number(bus.current_latitude) : null,
+      current_longitude: bus.current_longitude !== null ? Number(bus.current_longitude) : null,
       last_location_update: bus.last_location_update,
       assigned_students: assigned,
       students,
@@ -212,4 +201,3 @@ export const notifyBusArrival = createServerFn({ method: "POST" })
     if (iErr) throw new Error(iErr.message);
     return { notified: rows.length };
   });
-

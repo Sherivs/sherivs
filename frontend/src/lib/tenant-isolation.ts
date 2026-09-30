@@ -24,8 +24,7 @@ import { isTenantUsable } from "./tenant-core";
  * ────────────────────────────────────────────────────────────*/
 
 export type TenantResolutionResult =
-  | { ok: true; context: TenantContext }
-  | { ok: false; error: string };
+  { ok: true; context: TenantContext } | { ok: false; error: string };
 
 /**
  * Resolve tenant context from a request.
@@ -83,9 +82,7 @@ export function resolveTenantContext(
  * Tenant isolation enforcement (G6)
  * ────────────────────────────────────────────────────────────*/
 
-export type IsolationCheckResult =
-  | { ok: true; reason: string }
-  | { ok: false; error: string };
+export type IsolationCheckResult = { ok: true; reason: string } | { ok: false; error: string };
 
 /**
  * Verify that a resource belongs to the current tenant context.
@@ -113,9 +110,7 @@ export function assertResourceInTenant(
  * Verify that a tenant is usable for operations.
  * Invariant 05: Tenant isolation applies to synchronous and asynchronous operations.
  */
-export function assertTenantUsable(
-  tenant: Pick<CoreGridTenant, "status">,
-): IsolationCheckResult {
+export function assertTenantUsable(tenant: Pick<CoreGridTenant, "status">): IsolationCheckResult {
   if (!isTenantUsable(tenant)) {
     return {
       ok: false,
@@ -141,8 +136,7 @@ export interface CrossTenantAccessRequest {
 }
 
 export type CrossTenantAccessResult =
-  | { ok: true; scope: TenantScope }
-  | { ok: false; error: string };
+  { ok: true; scope: TenantScope } | { ok: false; error: string };
 
 /**
  * Authorize cross-tenant access.
@@ -190,10 +184,7 @@ export function authorizeCrossTenantAccess(
  * Build a tenant-scoped cache key.
  * Invariant 06: Tenant boundaries must survive caches.
  */
-export function tenantCacheKey(
-  tenantId: TenantId | null,
-  key: string,
-): string {
+export function tenantCacheKey(tenantId: TenantId | null, key: string): string {
   return tenantId === null ? `platform:${key}` : `tenant:${tenantId}:${key}`;
 }
 

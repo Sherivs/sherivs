@@ -90,9 +90,16 @@ export function registerProjectTemplate(input: {
  * Static + dynamic analysis (BF, BG, BH)
  * ────────────────────────────────────────────────────────────*/
 
-export type StaticAnalysisCheck = "linting" | "type_checking" | "security_analysis" | "dependency_analysis" | "code_quality";
+export type StaticAnalysisCheck =
+  "linting" | "type_checking" | "security_analysis" | "dependency_analysis" | "code_quality";
 
-export const STATIC_ANALYSIS_CHECKS: readonly StaticAnalysisCheck[] = ["linting", "type_checking", "security_analysis", "dependency_analysis", "code_quality"] as const;
+export const STATIC_ANALYSIS_CHECKS: readonly StaticAnalysisCheck[] = [
+  "linting",
+  "type_checking",
+  "security_analysis",
+  "dependency_analysis",
+  "code_quality",
+] as const;
 
 export interface StaticAnalysisResult {
   passed: boolean;
@@ -186,7 +193,16 @@ export function buildDevPackage(input: {
  * CI/CD pipeline (Section BI)
  * ────────────────────────────────────────────────────────────*/
 
-export type CiStage = "commit" | "build" | "unit_test" | "security_scan" | "integration_test" | "compatibility_test" | "package" | "sign" | "publish";
+export type CiStage =
+  | "commit"
+  | "build"
+  | "unit_test"
+  | "security_scan"
+  | "integration_test"
+  | "compatibility_test"
+  | "package"
+  | "sign"
+  | "publish";
 
 export const CI_STAGES: readonly CiStage[] = [
   "commit",
@@ -209,11 +225,7 @@ export interface CiRun {
   startedAt: string;
 }
 
-export function createCiRun(input: {
-  id: string;
-  projectRef: string;
-  now?: string;
-}): CiRun {
+export function createCiRun(input: { id: string; projectRef: string; now?: string }): CiRun {
   return {
     id: input.id,
     projectRef: input.projectRef,
@@ -235,7 +247,13 @@ export function canAdvanceCiStage(current: CiStage, next: CiStage): boolean {
 
 export type ReleaseChannelKind = "experimental" | "alpha" | "beta" | "stable" | "lts";
 
-export const RELEASE_CHANNEL_KINDS: readonly ReleaseChannelKind[] = ["experimental", "alpha", "beta", "stable", "lts"] as const;
+export const RELEASE_CHANNEL_KINDS: readonly ReleaseChannelKind[] = [
+  "experimental",
+  "alpha",
+  "beta",
+  "stable",
+  "lts",
+] as const;
 
 export const RELEASE_CHANNEL_RANK: Record<ReleaseChannelKind, number> = {
   experimental: 0,
@@ -267,7 +285,10 @@ export function createReleaseChannel(input: {
 }
 
 /** Section BT: a release can only advance to a more stable channel. */
-export function canPromoteReleaseChannel(current: ReleaseChannelKind, next: ReleaseChannelKind): boolean {
+export function canPromoteReleaseChannel(
+  current: ReleaseChannelKind,
+  next: ReleaseChannelKind,
+): boolean {
   return RELEASE_CHANNEL_RANK[next] > RELEASE_CHANNEL_RANK[current];
 }
 
@@ -297,9 +318,20 @@ export function createCanaryDeployment(input: {
   const fraction = input.trafficFraction ?? 0.05;
   const max = input.maxTrafficFraction ?? 0.2;
   if (fraction <= 0 || fraction > max) {
-    return { ok: false, error: "Canary traffic fraction must be within the configured limit (Section BV)" };
+    return {
+      ok: false,
+      error: "Canary traffic fraction must be within the configured limit (Section BV)",
+    };
   }
-  return { ok: true, canary: { projectRef: input.projectRef, releaseRef: input.releaseRef, trafficFraction: fraction, maxTrafficFraction: max } };
+  return {
+    ok: true,
+    canary: {
+      projectRef: input.projectRef,
+      releaseRef: input.releaseRef,
+      trafficFraction: fraction,
+      maxTrafficFraction: max,
+    },
+  };
 }
 
 export interface DevFeatureFlag {
@@ -315,5 +347,3 @@ export function setDevFeatureFlag(input: {
 }): DevFeatureFlag {
   return { key: input.key, projectRef: input.projectRef, enabled: input.enabled };
 }
-
-

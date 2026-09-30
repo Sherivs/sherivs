@@ -9,7 +9,10 @@ export const Route = createFileRoute("/_authenticated/parent/ai-assistant")({
 
 function ParentAssistantPage() {
   return (
-    <PortalPage title="School Hermes" subtitle="Your personal AI companion for your child's school life">
+    <PortalPage
+      title="School Hermes"
+      subtitle="Your personal AI companion for your child's school life"
+    >
       <ParentAIAssistant />
     </PortalPage>
   );

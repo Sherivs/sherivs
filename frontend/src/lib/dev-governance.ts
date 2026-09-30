@@ -54,9 +54,17 @@ export function devCertificationId(raw: string): DevCertificationId {
  * Developer quotas (Section CA) + rate limit testing (CB)
  * ────────────────────────────────────────────────────────────*/
 
-export type DevQuotaKind = "api_calls" | "storage" | "compute" | "sandbox_usage" | "ai_inference" | "event_volume";
+export type DevQuotaKind =
+  "api_calls" | "storage" | "compute" | "sandbox_usage" | "ai_inference" | "event_volume";
 
-export const DEV_QUOTA_KINDS: readonly DevQuotaKind[] = ["api_calls", "storage", "compute", "sandbox_usage", "ai_inference", "event_volume"] as const;
+export const DEV_QUOTA_KINDS: readonly DevQuotaKind[] = [
+  "api_calls",
+  "storage",
+  "compute",
+  "sandbox_usage",
+  "ai_inference",
+  "event_volume",
+] as const;
 
 export interface DevQuota {
   id: DevQuotaId;
@@ -67,7 +75,10 @@ export interface DevQuota {
   windowRef: string;
 }
 
-export function consumeDevQuota(quota: DevQuota, amount: number): { ok: true; quota: DevQuota } | { ok: false; error: string } {
+export function consumeDevQuota(
+  quota: DevQuota,
+  amount: number,
+): { ok: true; quota: DevQuota } | { ok: false; error: string } {
   if (quota.used + amount > quota.limit) {
     return { ok: false, error: `Developer quota exhausted for ${quota.kind} (Section CA)` };
   }
@@ -78,7 +89,10 @@ export function consumeDevQuota(quota: DevQuota, amount: number): { ok: true; qu
  * Rate limit testing (Section CB): developers test behavior under rate limits.
  * Returns the allowed/exceeded decision for the current burst.
  */
-export function evaluateRateLimitBehavior(requestsInWindow: number, limit: number): { allowed: boolean; exceeded: boolean } {
+export function evaluateRateLimitBehavior(
+  requestsInWindow: number,
+  limit: number,
+): { allowed: boolean; exceeded: boolean } {
   return { allowed: requestsInWindow <= limit, exceeded: requestsInWindow > limit };
 }
 
@@ -86,7 +100,13 @@ export function evaluateRateLimitBehavior(requestsInWindow: number, limit: numbe
  * Failure simulation (Section CC)
  * ────────────────────────────────────────────────────────────*/
 
-export type FailureSimulationKind = "timeout" | "network_failure" | "api_failure" | "dependency_failure" | "authorization_failure" | "quota_exhaustion";
+export type FailureSimulationKind =
+  | "timeout"
+  | "network_failure"
+  | "api_failure"
+  | "dependency_failure"
+  | "authorization_failure"
+  | "quota_exhaustion";
 
 export const FAILURE_SIMULATION_KINDS: readonly FailureSimulationKind[] = [
   "timeout",
@@ -135,7 +155,14 @@ export function recordDevTelemetry(input: {
  * Project audit (CT)
  * ────────────────────────────────────────────────────────────*/
 
-export type DevAuditEventType = "project_created" | "membership_changed" | "credential_created" | "deployment" | "release" | "publishing" | "security_event";
+export type DevAuditEventType =
+  | "project_created"
+  | "membership_changed"
+  | "credential_created"
+  | "deployment"
+  | "release"
+  | "publishing"
+  | "security_event";
 
 export const DEV_AUDIT_EVENT_TYPES: readonly DevAuditEventType[] = [
   "project_created",
@@ -181,15 +208,27 @@ export function recordDevAuditEvent(input: {
  * Governance gates (FF) + release approval (FA)
  * ────────────────────────────────────────────────────────────*/
 
-export type GovernanceGate = "code" | "tests" | "security" | "compatibility" | "policy" | "approval" | "release";
+export type GovernanceGate =
+  "code" | "tests" | "security" | "compatibility" | "policy" | "approval" | "release";
 
-export const GOVERNANCE_GATES: readonly GovernanceGate[] = ["code", "tests", "security", "compatibility", "policy", "approval", "release"] as const;
+export const GOVERNANCE_GATES: readonly GovernanceGate[] = [
+  "code",
+  "tests",
+  "security",
+  "compatibility",
+  "policy",
+  "approval",
+  "release",
+] as const;
 
 /**
  * Governance gates (Section FF): a production release passes only when every
  * gate passes in order.
  */
-export function evaluateGovernanceGates(passedGates: GovernanceGate[]): { releaseable: boolean; missing: GovernanceGate[] } {
+export function evaluateGovernanceGates(passedGates: GovernanceGate[]): {
+  releaseable: boolean;
+  missing: GovernanceGate[];
+} {
   const missing = GOVERNANCE_GATES.filter((g) => !passedGates.includes(g));
   return { releaseable: missing.length === 0, missing };
 }
@@ -209,7 +248,12 @@ export function isReleaseApproved(input: {
 
 export type DevCertificationKind = "security" | "compatibility" | "enterprise" | "educational";
 
-export const DEV_CERTIFICATION_KINDS: readonly DevCertificationKind[] = ["security", "compatibility", "enterprise", "educational"] as const;
+export const DEV_CERTIFICATION_KINDS: readonly DevCertificationKind[] = [
+  "security",
+  "compatibility",
+  "enterprise",
+  "educational",
+] as const;
 
 export interface DevCertification {
   id: DevCertificationId;
@@ -243,7 +287,14 @@ export function grantDevCertification(input: {
  * Developer AI assistant boundary (CO, CP, CQ, CR)
  * ────────────────────────────────────────────────────────────*/
 
-export type DevAiAssistCapability = "api_discovery" | "code_generation" | "debugging" | "architecture_explanation" | "migration" | "test_generation" | "documentation";
+export type DevAiAssistCapability =
+  | "api_discovery"
+  | "code_generation"
+  | "debugging"
+  | "architecture_explanation"
+  | "migration"
+  | "test_generation"
+  | "documentation";
 
 export const DEV_AI_ASSIST_CAPABILITIES: readonly DevAiAssistCapability[] = [
   "api_discovery",
@@ -297,7 +348,10 @@ export function isDependencyApproved(input: {
   if (input.restrictedDependencies.includes(input.dependencyKey)) {
     reasons.push("Dependency is restricted by organization policy (Section EQ)");
   }
-  if (!input.approvedDependencies.includes(input.dependencyKey) && input.approvedDependencies.length > 0) {
+  if (
+    !input.approvedDependencies.includes(input.dependencyKey) &&
+    input.approvedDependencies.length > 0
+  ) {
     reasons.push("Dependency is not on the approved registry (Section ER)");
   }
   return { approved: reasons.length === 0, reasons };
@@ -365,12 +419,13 @@ export interface CompatibilityCell {
  * Compatibility matrix (Section EY): a cell is compatible only when every
  * dimension's version matches the supported set.
  */
-export function isCompatibilityCellValid(cell: CompatibilityCell, supportedVersions: Record<string, string[]>): boolean {
+export function isCompatibilityCellValid(
+  cell: CompatibilityCell,
+  supportedVersions: Record<string, string[]>,
+): boolean {
   for (const [dimension, value] of Object.entries(cell)) {
     const supported = supportedVersions[dimension];
     if (supported && supported.length > 0 && !supported.includes(value)) return false;
   }
   return true;
 }
-
-

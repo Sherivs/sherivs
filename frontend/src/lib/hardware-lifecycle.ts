@@ -45,7 +45,12 @@
 
 export type DeviceHealthStatus = "HEALTHY" | "DEGRADED" | "UNHEALTHY" | "UNKNOWN";
 
-export const DEVICE_HEALTH_STATUSES: readonly DeviceHealthStatus[] = ["HEALTHY", "DEGRADED", "UNHEALTHY", "UNKNOWN"] as const;
+export const DEVICE_HEALTH_STATUSES: readonly DeviceHealthStatus[] = [
+  "HEALTHY",
+  "DEGRADED",
+  "UNHEALTHY",
+  "UNKNOWN",
+] as const;
 
 export interface DeviceHealthSignals {
   connectivity: boolean;
@@ -95,7 +100,11 @@ export function evaluateDeviceHealth(signals: DeviceHealthSignals): DeviceHealth
  * Detect missing heartbeats (AS): configurable detection thresholds.
  * A device with no recorded heartbeat is immediately considered stale.
  */
-export function isHeartbeatStale(lastHeartbeatAt: string | null, now: string, expectedIntervalMs: number): boolean {
+export function isHeartbeatStale(
+  lastHeartbeatAt: string | null,
+  now: string,
+  expectedIntervalMs: number,
+): boolean {
   if (lastHeartbeatAt === null) {
     return true;
   }
@@ -135,7 +144,12 @@ export function createDiagnosticReport(
 
 export type FirmwareRolloutStage = "LAB" | "CANARY" | "LIMITED" | "GENERAL";
 
-export const FIRMWARE_ROLLOUT_STAGES: readonly FirmwareRolloutStage[] = ["LAB", "CANARY", "LIMITED", "GENERAL"] as const;
+export const FIRMWARE_ROLLOUT_STAGES: readonly FirmwareRolloutStage[] = [
+  "LAB",
+  "CANARY",
+  "LIMITED",
+  "GENERAL",
+] as const;
 
 export interface FirmwareRecord {
   firmwareId: string;
@@ -167,7 +181,8 @@ export interface RegisterFirmwareInput {
   releasedAt: string;
 }
 
-export type RegisterFirmwareResult = { ok: true; firmware: FirmwareRecord } | { ok: false; error: string };
+export type RegisterFirmwareResult =
+  { ok: true; firmware: FirmwareRecord } | { ok: false; error: string };
 
 /**
  * Register firmware (AV). Unsigned production firmware must be rejected
@@ -221,7 +236,10 @@ export function isFirmwareCompatible(
   device: { hardwareRevision: string; availableStorageBytes: number },
 ): { ok: true } | { ok: false; error: string } {
   if (!firmware.supportedHardwareRevisions.includes(device.hardwareRevision)) {
-    return { ok: false, error: `Firmware ${firmware.version} does not support hardware revision ${device.hardwareRevision} (AZ)` };
+    return {
+      ok: false,
+      error: `Firmware ${firmware.version} does not support hardware revision ${device.hardwareRevision} (AZ)`,
+    };
   }
   if (device.availableStorageBytes < firmware.storageRequirementBytes) {
     return { ok: false, error: "Device lacks storage for firmware update (AZ)" };
@@ -250,7 +268,13 @@ export function advanceFirmwareStage(stage: FirmwareRolloutStage): FirmwareRollo
 
 export type RollbackStep = "DETECT" | "HALT_ROLLOUT" | "ROLLBACK" | "VERIFY" | "INVESTIGATE";
 
-export const ROLLBACK_STEPS: readonly RollbackStep[] = ["DETECT", "HALT_ROLLOUT", "ROLLBACK", "VERIFY", "INVESTIGATE"] as const;
+export const ROLLBACK_STEPS: readonly RollbackStep[] = [
+  "DETECT",
+  "HALT_ROLLOUT",
+  "ROLLBACK",
+  "VERIFY",
+  "INVESTIGATE",
+] as const;
 
 /**
  * Evaluate the rollback flow (AY): DETECT -> HALT ROLLOUT -> ROLLBACK ->
@@ -290,7 +314,8 @@ export interface CreateConfigurationInput {
   settings: Record<string, unknown>;
 }
 
-export type CreateConfigurationResult = { ok: true; config: DeviceConfiguration } | { ok: false; error: string };
+export type CreateConfigurationResult =
+  { ok: true; config: DeviceConfiguration } | { ok: false; error: string };
 
 /**
  * Create a versioned configuration (BB): every configuration must have
@@ -347,7 +372,10 @@ export function isConfigurationDrifted(
  * Configuration reconciliation (BD): CoreGrid may detect and report drift;
  * automatic correction requires appropriate authorization.
  */
-export function canReconcileConfiguration(actor: { isAdmin: boolean; isOperator: boolean }): boolean {
+export function canReconcileConfiguration(actor: {
+  isAdmin: boolean;
+  isOperator: boolean;
+}): boolean {
   return actor.isAdmin || actor.isOperator;
 }
 
@@ -376,7 +404,9 @@ export interface InventoryEntry {
   movementHistory: Array<{ kind: string; at: string; detail: string }>;
 }
 
-export function createInventoryEntry(entry: Omit<InventoryEntry, "movementHistory">): InventoryEntry {
+export function createInventoryEntry(
+  entry: Omit<InventoryEntry, "movementHistory">,
+): InventoryEntry {
   return { ...entry, movementHistory: [] };
 }
 
@@ -479,7 +509,10 @@ export interface DeviceCertificate {
 
 export type CertificateStatus = "VALID" | "EXPIRED" | "REVOKED" | "ROTATION_DUE" | "MISSING";
 
-export function evaluateCertificateStatus(cert: DeviceCertificate | null, now: string): CertificateStatus {
+export function evaluateCertificateStatus(
+  cert: DeviceCertificate | null,
+  now: string,
+): CertificateStatus {
   if (cert === null) {
     return "MISSING";
   }
@@ -495,7 +528,11 @@ export function evaluateCertificateStatus(cert: DeviceCertificate | null, now: s
   return "VALID";
 }
 
-export function rotateCertificate(cert: DeviceCertificate, newExpiry: string, now: string): DeviceCertificate {
+export function rotateCertificate(
+  cert: DeviceCertificate,
+  newExpiry: string,
+  now: string,
+): DeviceCertificate {
   return {
     ...cert,
     issuedAt: now,
@@ -518,14 +555,19 @@ export interface DeviceCredentialPolicy {
  * Credential rotation (BM): credentials should rotate according to risk
  * and policy. A credential older than the policy maximum is due.
  */
-export function isCredentialRotationDue(issuedAt: string, now: string, policy: DeviceCredentialPolicy): boolean {
+export function isCredentialRotationDue(
+  issuedAt: string,
+  now: string,
+  policy: DeviceCredentialPolicy,
+): boolean {
   if (!policy.requireRotation) {
     return false;
   }
   return Date.parse(now) - Date.parse(issuedAt) >= policy.maxCredentialAgeMs;
 }
 
-export type DeviceRevocationReason = "compromised" | "stolen" | "decommissioned" | "policy" | "maintenance";
+export type DeviceRevocationReason =
+  "compromised" | "stolen" | "decommissioned" | "policy" | "maintenance";
 
 /**
  * Device revocation (BN): compromised devices must be immediately
@@ -537,7 +579,15 @@ export function revokeDevice(
   reason: DeviceRevocationReason,
   issuedBy: string,
   now: string,
-): { ok: true; status: string; revokedAt: string; issuedBy: string; reason: DeviceRevocationReason } | { ok: false; error: string } {
+):
+  | {
+      ok: true;
+      status: string;
+      revokedAt: string;
+      issuedBy: string;
+      reason: DeviceRevocationReason;
+    }
+  | { ok: false; error: string } {
   if (reason.trim() === "") {
     return { ok: false, error: "Revocation requires a reason (BN)" };
   }
@@ -557,7 +607,9 @@ export function quarantineDevice(
   reason: string,
   issuedBy: string,
   now: string,
-): { ok: true; status: "quarantined"; at: string; issuedBy: string; reason: string } | { ok: false; error: string } {
+):
+  | { ok: true; status: "quarantined"; at: string; issuedBy: string; reason: string }
+  | { ok: false; error: string } {
   if (reason.trim() === "") {
     return { ok: false, error: "Quarantine requires a reason (BO)" };
   }
@@ -580,7 +632,9 @@ export interface DeviceSecurityBaseline {
  * (BP). Where hardware supports it, secure boot verifies trusted firmware
  * (BQ). Hardware-backed trust should be used where practical (BR).
  */
-export function evaluateDeviceSecurityPosture(baseline: DeviceSecurityBaseline): "secure" | "weak" | "insecure" {
+export function evaluateDeviceSecurityPosture(
+  baseline: DeviceSecurityBaseline,
+): "secure" | "weak" | "insecure" {
   if (!baseline.encryptionEnabled) {
     return "insecure";
   }
@@ -593,7 +647,8 @@ export function evaluateDeviceSecurityPosture(baseline: DeviceSecurityBaseline):
   return "secure";
 }
 
-export type TamperEventKind = "enclosure_tamper" | "unauthorized_firmware" | "unexpected_configuration" | "physical_intrusion";
+export type TamperEventKind =
+  "enclosure_tamper" | "unauthorized_firmware" | "unexpected_configuration" | "physical_intrusion";
 
 export interface TamperEvent {
   deviceId: string;
@@ -605,7 +660,11 @@ export interface TamperEvent {
 /** Tamper detection (BS): enclosure tamper, unauthorized firmware,
  * unexpected configuration, and physical intrusion must escalate. */
 export function isTamperEventEscalated(event: TamperEvent): boolean {
-  return event.kind === "enclosure_tamper" || event.kind === "unauthorized_firmware" || event.kind === "physical_intrusion";
+  return (
+    event.kind === "enclosure_tamper" ||
+    event.kind === "unauthorized_firmware" ||
+    event.kind === "physical_intrusion"
+  );
 }
 
 export interface SupplyChainMetadata {
@@ -635,7 +694,8 @@ export interface VulnerabilityRecord {
   source: string;
   discoveredAt: string;
   severity: "critical" | "high" | "medium" | "low";
-  status: "DISCOVERED" | "ASSESSED" | "PRIORITIZED" | "MITIGATED" | "PATCHED" | "REPLACED" | "VERIFIED";
+  status:
+    "DISCOVERED" | "ASSESSED" | "PRIORITIZED" | "MITIGATED" | "PATCHED" | "REPLACED" | "VERIFIED";
   affectedFirmware: string | null;
 }
 
@@ -654,7 +714,10 @@ export type VulnerabilityResponseStep = (typeof VULNERABILITY_RESPONSE_STEPS)[nu
  * Vulnerability response (BV): DISCOVER -> ASSESS -> PRIORITIZE ->
  * MITIGATE -> PATCH/REPLACE -> VERIFY. A record can never jump steps.
  */
-export function isVulnerabilityStepAllowed(current: VulnerabilityResponseStep | null, next: VulnerabilityResponseStep): boolean {
+export function isVulnerabilityStepAllowed(
+  current: VulnerabilityResponseStep | null,
+  next: VulnerabilityResponseStep,
+): boolean {
   if (current === null) {
     return next === "DISCOVER";
   }
@@ -671,5 +734,7 @@ export function isUnsupportedHardware(
   supportedModels: string[],
   supportedFirmware: string[],
 ): boolean {
-  return !supportedModels.includes(device.model) || !supportedFirmware.includes(device.firmwareVersion);
+  return (
+    !supportedModels.includes(device.model) || !supportedFirmware.includes(device.firmwareVersion)
+  );
 }

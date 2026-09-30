@@ -43,13 +43,35 @@ function context(overrides: Partial<CommandContext> = {}): CommandContext {
 
 describe("Institutional state (I)", () => {
   it("treats UNKNOWN as never healthy", () => {
-    expect(isInstitutionalStateHealthy({ institutionId: "inst-1", tenantId: TENANT_A, status: "HEALTHY", asOf: NOW, freshness: 60_000, source: "twin" })).toBe(true);
-    expect(isInstitutionalStateHealthy({ institutionId: "inst-1", tenantId: TENANT_A, status: "UNKNOWN", asOf: NOW, freshness: 60_000, source: "twin" })).toBe(false);
+    expect(
+      isInstitutionalStateHealthy({
+        institutionId: "inst-1",
+        tenantId: TENANT_A,
+        status: "HEALTHY",
+        asOf: NOW,
+        freshness: 60_000,
+        source: "twin",
+      }),
+    ).toBe(true);
+    expect(
+      isInstitutionalStateHealthy({
+        institutionId: "inst-1",
+        tenantId: TENANT_A,
+        status: "UNKNOWN",
+        asOf: NOW,
+        freshness: 60_000,
+        source: "twin",
+      }),
+    ).toBe(false);
   });
 
   it("marks stale state when freshness is exceeded", () => {
-    expect(isCommandStateStale({ asOf: "2025-01-01T00:00:00Z", freshness: 60_000 }, NOW)).toBe(true);
-    expect(isCommandStateStale({ asOf: "2025-12-31T23:59:50Z", freshness: 60_000 }, NOW)).toBe(false);
+    expect(isCommandStateStale({ asOf: "2025-01-01T00:00:00Z", freshness: 60_000 }, NOW)).toBe(
+      true,
+    );
+    expect(isCommandStateStale({ asOf: "2025-12-31T23:59:50Z", freshness: 60_000 }, NOW)).toBe(
+      false,
+    );
   });
 });
 
@@ -74,7 +96,17 @@ describe("Dashboard system (P, Q)", () => {
       name: "Executive",
       template: "executive",
       tenantId: TENANT_A,
-      components: [{ componentId: "kpi-cards", source: "analytics", dataContract: "kpi-v1", permissions: ["view-kpis"], refreshPolicyMs: 30_000, renderingConfig: {}, version: 1 }],
+      components: [
+        {
+          componentId: "kpi-cards",
+          source: "analytics",
+          dataContract: "kpi-v1",
+          permissions: ["view-kpis"],
+          refreshPolicyMs: 30_000,
+          renderingConfig: {},
+          version: 1,
+        },
+      ],
       layout: {},
     });
     expect(result.ok).toBe(true);
@@ -84,11 +116,28 @@ describe("Dashboard system (P, Q)", () => {
   });
 
   it("rejects a dashboard without components", () => {
-    expect(createDashboard({ dashboardId: "dash-1", name: "Empty", template: "executive", tenantId: TENANT_A, components: [], layout: {} }).ok).toBe(false);
+    expect(
+      createDashboard({
+        dashboardId: "dash-1",
+        name: "Empty",
+        template: "executive",
+        tenantId: TENANT_A,
+        components: [],
+        layout: {},
+      }).ok,
+    ).toBe(false);
   });
 
   it("authorizes components against the user's permissions", () => {
-    const component = { componentId: "c1", source: "s", dataContract: "d", permissions: ["view-kpis"], refreshPolicyMs: null, renderingConfig: {}, version: 1 };
+    const component = {
+      componentId: "c1",
+      source: "s",
+      dataContract: "d",
+      permissions: ["view-kpis"],
+      refreshPolicyMs: null,
+      renderingConfig: {},
+      version: 1,
+    };
     expect(isDashboardComponentAuthorized(component, ["view-kpis", "view-alerts"])).toBe(true);
     expect(isDashboardComponentAuthorized(component, ["view-alerts"])).toBe(false);
   });
@@ -96,8 +145,23 @@ describe("Dashboard system (P, Q)", () => {
 
 describe("Live view and stale data (V, W, X)", () => {
   it("grades live, stale and unknown views", () => {
-    expect(gradeLiveViewStatus({ lastUpdate: "2025-12-31T23:59:50Z", freshness: 60_000, source: "twin", confidence: 0.9 }, NOW)).toBe("live");
-    expect(gradeLiveViewStatus({ lastUpdate: "2025-01-01T00:00:00Z", freshness: 60_000, source: "twin", confidence: 0.9 }, NOW)).toBe("stale");
-    expect(gradeLiveViewStatus({ lastUpdate: "", freshness: null, source: "twin", confidence: null }, NOW)).toBe("unknown");
+    expect(
+      gradeLiveViewStatus(
+        { lastUpdate: "2025-12-31T23:59:50Z", freshness: 60_000, source: "twin", confidence: 0.9 },
+        NOW,
+      ),
+    ).toBe("live");
+    expect(
+      gradeLiveViewStatus(
+        { lastUpdate: "2025-01-01T00:00:00Z", freshness: 60_000, source: "twin", confidence: 0.9 },
+        NOW,
+      ),
+    ).toBe("stale");
+    expect(
+      gradeLiveViewStatus(
+        { lastUpdate: "", freshness: null, source: "twin", confidence: null },
+        NOW,
+      ),
+    ).toBe("unknown");
   });
 });

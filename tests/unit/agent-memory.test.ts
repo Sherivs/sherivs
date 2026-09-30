@@ -39,7 +39,12 @@ describe("readMemory (Sections AR, AS)", () => {
   const entries: MemoryEntry[] = [];
 
   it("rejects access to a category outside the allowlist", () => {
-    const result = readMemory(baseRequest({ category: "episodic" }), entries, ["working"], "TENANT_INTERNAL");
+    const result = readMemory(
+      baseRequest({ category: "episodic" }),
+      entries,
+      ["working"],
+      "TENANT_INTERNAL",
+    );
     expect(result.ok).toBe(false);
   });
 
@@ -102,7 +107,19 @@ describe("writeMemory (Sections AT, AU)", () => {
 
 describe("buildContextPackage (Sections AW, AX)", () => {
   it("rejects an empty task summary", () => {
-    const result = buildContextPackage(AGENT_A, TENANT_A, "  ", [], [], [], "idle", [], [], 1000, NOW);
+    const result = buildContextPackage(
+      AGENT_A,
+      TENANT_A,
+      "  ",
+      [],
+      [],
+      [],
+      "idle",
+      [],
+      [],
+      1000,
+      NOW,
+    );
     expect(result.ok).toBe(false);
   });
 

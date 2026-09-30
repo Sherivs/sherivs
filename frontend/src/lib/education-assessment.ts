@@ -122,10 +122,7 @@ export type RecordGradeResult =
   | { ok: true; result: AssessmentResult; auditEvent: EducationalAuditEvent }
   | { ok: false; error: string };
 
-export function recordGrade(
-  input: RecordGradeInput,
-  now: string,
-): RecordGradeResult {
+export function recordGrade(input: RecordGradeInput, now: string): RecordGradeResult {
   // AI cannot alter authoritative grades without authorization (Section 117).
   if (input.isAiGenerated) {
     return { ok: false, error: "AI cannot record authoritative grades" };
@@ -187,11 +184,7 @@ export function recordGrade(
  * ────────────────────────────────────────────────────────────*/
 
 export type ProgressionDecision =
-  | "promoted"
-  | "retained"
-  | "conditional"
-  | "graduated"
-  | "referred";
+  "promoted" | "retained" | "conditional" | "graduated" | "referred";
 
 export const PROGRESSION_DECISIONS: readonly ProgressionDecision[] = [
   "promoted",

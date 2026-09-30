@@ -31,11 +31,13 @@ function FinancialOperationsPage() {
     >
       <section className="uos-card p-6">
         <h2 className="font-display text-lg font-bold">
-          Self-check: {report.checks.length - report.totals.failedChecks}/{report.checks.length} checks passed
+          Self-check: {report.checks.length - report.totals.failedChecks}/{report.checks.length}{" "}
+          checks passed
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          {report.totals.rules} claimed rules · {report.totals.modules} modules · {report.totals.organizations}{" "}
-          organizations' vocabulary · {report.totals.declaredGaps} declared gaps
+          {report.totals.rules} claimed rules · {report.totals.modules} modules ·{" "}
+          {report.totals.organizations} organizations' vocabulary · {report.totals.declaredGaps}{" "}
+          declared gaps
         </p>
         <p className="mt-2 text-sm">
           {failing.length === 0
@@ -61,13 +63,16 @@ function FinancialOperationsPage() {
       </section>
 
       <section className="uos-card mt-6 p-6">
-        <h2 className="font-display text-lg font-bold">Split payments: one collection, many beneficiaries</h2>
+        <h2 className="font-display text-lg font-bold">
+          Split payments: one collection, many beneficiaries
+        </h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          A split is created once and is immutable. Its legs must sum exactly to the gross amount, each leg
-          settles and reconciles on its own evidence, provider fees belong to the leg whose route produced
-          them, and a refund spreads pro rata across the legs that received money. The platform's own fee is
-          a leg like any other — there is no privileged path — and a beneficiary that cannot be paid stays
-          visible as an unresolved leg instead of quietly handing its share to someone else.
+          A split is created once and is immutable. Its legs must sum exactly to the gross amount,
+          each leg settles and reconciles on its own evidence, provider fees belong to the leg whose
+          route produced them, and a refund spreads pro rata across the legs that received money.
+          The platform's own fee is a leg like any other — there is no privileged path — and a
+          beneficiary that cannot be paid stays visible as an unresolved leg instead of quietly
+          handing its share to someone else.
         </p>
       </section>
 
@@ -76,8 +81,8 @@ function FinancialOperationsPage() {
           The same capability, in each organization's own words
         </h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          Nothing in the engine assumes one institution's process. Currency, jurisdiction, tax rules,
-          charge reasons, discount categories and provider choices are institutional data.
+          Nothing in the engine assumes one institution's process. Currency, jurisdiction, tax
+          rules, charge reasons, discount categories and provider choices are institutional data.
         </p>
         <table className="mt-4 w-full text-left text-sm">
           <thead className="text-muted-foreground">
@@ -109,7 +114,10 @@ function FinancialOperationsPage() {
           {report.rules.map((rule) => (
             <li key={rule.id} className="rounded-lg border border-border p-3">
               <p className="text-sm font-semibold">
-                {rule.id} <span className="font-normal text-muted-foreground">· blueprint {rule.blueprint}</span>
+                {rule.id}{" "}
+                <span className="font-normal text-muted-foreground">
+                  · blueprint {rule.blueprint}
+                </span>
               </p>
               <p className="mt-1 text-sm">{rule.statement}</p>
               <p className="mt-1 font-mono text-[11px] text-muted-foreground">
@@ -121,12 +129,10 @@ function FinancialOperationsPage() {
       </section>
 
       <section className="uos-card mt-6 p-6">
-        <h2 className="font-display text-lg font-bold">
-          Not done yet — declared, not implied
-        </h2>
+        <h2 className="font-display text-lg font-bold">Not done yet — declared, not implied</h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          These are the parts of the financial operating system that do not exist yet. Each names what would
-          close it, so a later review can verify rather than trust.
+          These are the parts of the financial operating system that do not exist yet. Each names
+          what would close it, so a later review can verify rather than trust.
         </p>
         <ul className="mt-3 space-y-2">
           {report.gaps.map((gap) => (

@@ -12,9 +12,7 @@ const sourceName = sourceCandidates.find((candidate) =>
   existsSync(join(root, "architecture", candidate)),
 );
 if (!sourceName) {
-  throw new Error(
-    `Phase 52 corpus not found. Checked: ${sourceCandidates.join(", ")}`,
-  );
+  throw new Error(`Phase 52 corpus not found. Checked: ${sourceCandidates.join(", ")}`);
 }
 const sourcePath = join(root, "architecture", sourceName);
 const outputPath = join(root, "architecture", "COREGRID_PHASE_52_SECTION_INVENTORY.json");
@@ -27,11 +25,7 @@ function hash(value) {
 }
 
 function normalizeTitle(value) {
-  return value
-    .toLowerCase()
-    .replace(/[—=:]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  return value.toLowerCase().replace(/[—=:]/g, " ").replace(/\s+/g, " ").trim();
 }
 
 const blockPattern = /^BLOCK\s+(\d{1,2})(?:\s*(?:—|=|:)\s*(.*))?$/i;
@@ -144,12 +138,19 @@ const inventory = {
   exactDuplicateGroups: duplicateGroups,
   numberedSections,
   letteredSections,
-  nextGate: "Review duplicate groups and overlapping block families before producing canonical per-block extracts.",
+  nextGate:
+    "Review duplicate groups and overlapping block families before producing canonical per-block extracts.",
 };
 
 writeFileSync(outputPath, `${JSON.stringify(inventory, null, 2)}\n`, "utf8");
-console.log(JSON.stringify({
-  sourceSha256: sourceHash,
-  ...inventory.summary,
-  output: "architecture/COREGRID_PHASE_52_SECTION_INVENTORY.json",
-}, null, 2));
+console.log(
+  JSON.stringify(
+    {
+      sourceSha256: sourceHash,
+      ...inventory.summary,
+      output: "architecture/COREGRID_PHASE_52_SECTION_INVENTORY.json",
+    },
+    null,
+    2,
+  ),
+);

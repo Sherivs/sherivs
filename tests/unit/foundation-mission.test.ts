@@ -63,7 +63,13 @@ describe("foundation mission 001 — admission", () => {
   });
 
   it.each([
-    ["missing authority", { ...mission, authorityRef: " ", lifecycle: "proposed" as const }, actor, request, "missing_authority"],
+    [
+      "missing authority",
+      { ...mission, authorityRef: " ", lifecycle: "proposed" as const },
+      actor,
+      request,
+      "missing_authority",
+    ],
     ["revoked mission", { ...mission, lifecycle: "revoked" as const }, actor, request, "revoked"],
     ["revoked actor", mission, { ...actor, revoked: true }, request, "revoked"],
     ["cross tenant", mission, { ...actor, tenantId: "tenant-b" }, request, "cross_tenant"],
@@ -78,7 +84,9 @@ describe("foundation mission 001 — admission", () => {
 
   it("replays an idempotent key without a second external effect and keeps history", () => {
     const first = admitExecution(mission, actor, request, now);
-    const replay = admitExecution(mission, actor, { ...request, executionId: "exec-2" }, now, [first]);
+    const replay = admitExecution(mission, actor, { ...request, executionId: "exec-2" }, now, [
+      first,
+    ]);
     expect(replay.recordId).toBe(first.recordId);
     expect(replay.externalEffect).toBe("none");
     expect(replay.history).toHaveLength(2);

@@ -29,9 +29,21 @@ const TENANT_A = tenantId("tenant-a");
 const NOW = "2026-01-01T00:00:00Z";
 const FUTURE = "2026-06-01T00:00:00Z";
 
-const INTERVAL_A: TimeInterval = { start: "2026-01-01T08:00:00Z", end: "2026-01-01T09:00:00Z", timezone: "UTC" };
-const INTERVAL_B: TimeInterval = { start: "2026-01-01T08:30:00Z", end: "2026-01-01T09:30:00Z", timezone: "UTC" };
-const INTERVAL_C: TimeInterval = { start: "2026-01-01T10:00:00Z", end: "2026-01-01T11:00:00Z", timezone: "UTC" };
+const INTERVAL_A: TimeInterval = {
+  start: "2026-01-01T08:00:00Z",
+  end: "2026-01-01T09:00:00Z",
+  timezone: "UTC",
+};
+const INTERVAL_B: TimeInterval = {
+  start: "2026-01-01T08:30:00Z",
+  end: "2026-01-01T09:30:00Z",
+  timezone: "UTC",
+};
+const INTERVAL_C: TimeInterval = {
+  start: "2026-01-01T10:00:00Z",
+  end: "2026-01-01T11:00:00Z",
+  timezone: "UTC",
+};
 
 describe("Time model (I)", () => {
   it("creates a valid time interval", () => {
@@ -57,7 +69,12 @@ describe("Time model (I)", () => {
 
 describe("Recurrence (J)", () => {
   it("creates a recurrence rule with a valid interval", () => {
-    const result = createRecurrenceRule({ pattern: "weekly", interval: 2, endDate: FUTURE, now: NOW });
+    const result = createRecurrenceRule({
+      pattern: "weekly",
+      interval: 2,
+      endDate: FUTURE,
+      now: NOW,
+    });
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.rule.interval).toBe(2);
@@ -78,7 +95,11 @@ describe("Recurrence (J)", () => {
       now: "2026-01-01T00:00:00.000Z",
     });
     if (!result.ok) throw new Error("fixture failed");
-    const occurrences = expandRecurrence(result.rule, "2026-01-01T08:00:00.000Z", "2026-01-29T00:00:00.000Z");
+    const occurrences = expandRecurrence(
+      result.rule,
+      "2026-01-01T08:00:00.000Z",
+      "2026-01-29T00:00:00.000Z",
+    );
     // 01-01, 01-15, 01-22 (01-08 excluded; 01-29T08:00 exceeds the end boundary)
     expect(occurrences).toHaveLength(3);
     expect(occurrences.some((o) => o.startsWith("2026-01-08"))).toBe(false);
@@ -91,7 +112,11 @@ describe("Recurrence (J)", () => {
       now: "2026-01-01T00:00:00.000Z",
     });
     if (!result.ok) throw new Error("fixture failed");
-    const occurrences = expandRecurrence(result.rule, "2026-01-01T08:00:00.000Z", "2026-02-01T00:00:00.000Z");
+    const occurrences = expandRecurrence(
+      result.rule,
+      "2026-01-01T08:00:00.000Z",
+      "2026-02-01T00:00:00.000Z",
+    );
     // 01-01, 01-02, 01-03 (01-04T08:00 exceeds the end boundary)
     expect(occurrences).toHaveLength(3);
   });
@@ -127,12 +152,24 @@ describe("Calendars (K)", () => {
 
 describe("Resources and activities (O, D.3)", () => {
   it("creates a room resource with positive capacity", () => {
-    const result = createScheduleResource({ id: "room-1", tenantId: TENANT_A, type: "room", name: "Lab A", capacity: 40 });
+    const result = createScheduleResource({
+      id: "room-1",
+      tenantId: TENANT_A,
+      type: "room",
+      name: "Lab A",
+      capacity: 40,
+    });
     expect(result.ok).toBe(true);
   });
 
   it("rejects a resource with zero capacity", () => {
-    const result = createScheduleResource({ id: "room-1", tenantId: TENANT_A, type: "room", name: "Lab A", capacity: 0 });
+    const result = createScheduleResource({
+      id: "room-1",
+      tenantId: TENANT_A,
+      type: "room",
+      name: "Lab A",
+      capacity: 0,
+    });
     expect(result.ok).toBe(false);
   });
 

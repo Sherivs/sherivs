@@ -64,12 +64,36 @@ export const PHASE_13_FINANCIAL_SYSTEM = definePhaseContractFromSeed({
     { id: "financial:record-payment", kind: "command", description: "record an intake" },
     { id: "financial:fee-state", kind: "query", description: "resolve fee lifecycle state" },
     { id: "financial:reconcile", kind: "api", description: "reconcile controls" },
-    { id: "financial:create-split", kind: "command", description: "split one gross payment across beneficiaries" },
-    { id: "financial:refund-split", kind: "command", description: "refund a split pro rata across its legs" },
-    { id: "financial:select-provider-route", kind: "query", description: "decide a provider route from declared capabilities" },
-    { id: "financial:append-event", kind: "command", description: "append an immutable financial event for an aggregate" },
-    { id: "financial:reconstruct-obligation", kind: "query", description: "reconstruct money state from its events" },
-    { id: "financial:calculate-tax", kind: "query", description: "calculate tax for a jurisdiction and category at an instant" },
+    {
+      id: "financial:create-split",
+      kind: "command",
+      description: "split one gross payment across beneficiaries",
+    },
+    {
+      id: "financial:refund-split",
+      kind: "command",
+      description: "refund a split pro rata across its legs",
+    },
+    {
+      id: "financial:select-provider-route",
+      kind: "query",
+      description: "decide a provider route from declared capabilities",
+    },
+    {
+      id: "financial:append-event",
+      kind: "command",
+      description: "append an immutable financial event for an aggregate",
+    },
+    {
+      id: "financial:reconstruct-obligation",
+      kind: "query",
+      description: "reconstruct money state from its events",
+    },
+    {
+      id: "financial:calculate-tax",
+      kind: "query",
+      description: "calculate tax for a jurisdiction and category at an instant",
+    },
   ],
   consumesContracts: [
     { id: "security:authorize", kind: "api" },

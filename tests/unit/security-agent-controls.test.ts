@@ -12,7 +12,11 @@
 
 import { describe, expect, it } from "vitest";
 import { tenantId } from "@/lib/tenant-core";
-import { createAgentDefinition, type AgentDefinition, type AgentPermission } from "@/lib/agent-core";
+import {
+  createAgentDefinition,
+  type AgentDefinition,
+  type AgentPermission,
+} from "@/lib/agent-core";
 import {
   evaluateAgentSecurity,
   evaluateToolSecurity,
@@ -58,13 +62,22 @@ function makeAgent(overrides: Partial<AgentDefinition> = {}): AgentDefinition {
     now: NOW,
   });
   if (!created.ok) throw new Error("fixture failed");
-  return { ...created.definition, lifecycleState: "deployed", environment: "production", ...overrides };
+  return {
+    ...created.definition,
+    lifecycleState: "deployed",
+    environment: "production",
+    ...overrides,
+  };
 }
 
 describe("evaluateAgentSecurity (Sections N.2, N.4 fail-safe)", () => {
   it("denies an agent that is not deployed/monitoring", () => {
     const agent = makeAgent({ lifecycleState: "proposed" });
-    const result = evaluateAgentSecurity({ agent, actionType: null, hasHumanApprovalContext: false });
+    const result = evaluateAgentSecurity({
+      agent,
+      actionType: null,
+      hasHumanApprovalContext: false,
+    });
     expect(result.decision).toBe("DENY");
   });
 
@@ -90,7 +103,11 @@ describe("evaluateAgentSecurity (Sections N.2, N.4 fail-safe)", () => {
 
   it("allows a non-high-risk action for a deployed agent without approval context", () => {
     const agent = makeAgent();
-    const result = evaluateAgentSecurity({ agent, actionType: null, hasHumanApprovalContext: false });
+    const result = evaluateAgentSecurity({
+      agent,
+      actionType: null,
+      hasHumanApprovalContext: false,
+    });
     expect(result.decision).toBe("ALLOW");
   });
 
@@ -102,7 +119,11 @@ describe("evaluateAgentSecurity (Sections N.2, N.4 fail-safe)", () => {
       trustLevel: "high",
       riskClassification: "low",
     });
-    const result = evaluateAgentSecurity({ agent, actionType: null, hasHumanApprovalContext: true });
+    const result = evaluateAgentSecurity({
+      agent,
+      actionType: null,
+      hasHumanApprovalContext: true,
+    });
     expect(result.decision).toBe("DENY");
   });
 });

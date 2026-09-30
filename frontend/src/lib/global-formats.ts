@@ -116,10 +116,20 @@ export function createNumberFormatConfig(input: {
   if (input.decimalSeparator === input.thousandsSeparator) {
     return { ok: false, error: "Decimal and thousands separators must differ (Section BI)" };
   }
-  return { ok: true, config: { decimalSeparator: input.decimalSeparator, thousandsSeparator: input.thousandsSeparator } };
+  return {
+    ok: true,
+    config: {
+      decimalSeparator: input.decimalSeparator,
+      thousandsSeparator: input.thousandsSeparator,
+    },
+  };
 }
 
-export function formatNumber(value: number, config: NumberFormatConfig, precision?: number): string {
+export function formatNumber(
+  value: number,
+  config: NumberFormatConfig,
+  precision?: number,
+): string {
   const rounded = Math.abs(value).toFixed(precision ?? 0);
   const [intPart, decPart] = rounded.split(".");
   const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, config.thousandsSeparator);
@@ -167,7 +177,10 @@ export function createFxRate(input: {
     return { ok: false, error: "FX rate currencies must be ISO 4217 codes (Section AY)" };
   }
   if (input.sourceCurrency === input.targetCurrency) {
-    return { ok: false, error: "FX rate requires distinct source and target currencies (Section AY)" };
+    return {
+      ok: false,
+      error: "FX rate requires distinct source and target currencies (Section AY)",
+    };
   }
   if (!Number.isFinite(input.rate) || input.rate <= 0) {
     return { ok: false, error: "FX rate must be a finite positive number (Section AY)" };
@@ -201,7 +214,10 @@ export function convertCurrency(
   targetPrecision: number,
 ): { ok: true; value: LocalizedMonetaryValue } | { ok: false; error: string } {
   if (rate.sourceCurrency !== value.currency) {
-    return { ok: false, error: "FX rate source currency must match the value currency (Section AY)" };
+    return {
+      ok: false,
+      error: "FX rate source currency must match the value currency (Section AY)",
+    };
   }
   const sourceMajor = value.amountMinor / Math.pow(10, value.precision);
   const targetMajor = roundCurrencyMajor(sourceMajor * rate.rate, targetPrecision);
@@ -227,7 +243,9 @@ export function getHistoricalFxRate(
   atDate: string,
 ): FxRate | null {
   const candidates = rates
-    .filter((r) => r.sourceCurrency === source && r.targetCurrency === target && r.timestamp <= atDate)
+    .filter(
+      (r) => r.sourceCurrency === source && r.targetCurrency === target && r.timestamp <= atDate,
+    )
     .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
   return candidates[0] ?? null;
 }
@@ -239,7 +257,11 @@ export function getHistoricalFxRate(
 export type TaxType = "vat" | "gst" | "sales_tax" | "withholding" | "local_levy";
 
 export const TAX_TYPES: readonly TaxType[] = [
-  "vat", "gst", "sales_tax", "withholding", "local_levy",
+  "vat",
+  "gst",
+  "sales_tax",
+  "withholding",
+  "local_levy",
 ] as const;
 
 export interface TaxConfiguration {
@@ -260,14 +282,16 @@ export function createTaxConfiguration(input: {
   effectiveFrom: string;
   effectiveUntil?: string;
 }): { ok: true; config: TaxConfiguration } | { ok: false; error: string } {
-  if (!input.jurisdictionRef) return { ok: false, error: "Tax jurisdiction is required (Section BC)" };
+  if (!input.jurisdictionRef)
+    return { ok: false, error: "Tax jurisdiction is required (Section BC)" };
   if (!TAX_TYPES.includes(input.taxType)) {
     return { ok: false, error: "Unknown tax type (Section BD)" };
   }
   if (!Number.isFinite(input.ratePercent) || input.ratePercent < 0) {
     return { ok: false, error: "Tax rate must be a non-negative percentage (Section BC)" };
   }
-  if (!input.effectiveFrom) return { ok: false, error: "Tax effective date is required (Section BE)" };
+  if (!input.effectiveFrom)
+    return { ok: false, error: "Tax effective date is required (Section BE)" };
   if (input.effectiveUntil && input.effectiveUntil <= input.effectiveFrom) {
     return { ok: false, error: "Tax effective-until must be after effective-from (Section BE)" };
   }
@@ -299,7 +323,7 @@ export function getEffectiveTaxRate(
         c.effectiveFrom <= atDate &&
         (c.effectiveUntil === undefined || atDate < c.effectiveUntil),
     )
-    .sort((a, b) => (b.version - a.version) || b.effectiveFrom.localeCompare(a.effectiveFrom));
+    .sort((a, b) => b.version - a.version || b.effectiveFrom.localeCompare(a.effectiveFrom));
   return candidates[0] ?? null;
 }
 
@@ -326,7 +350,13 @@ export function createUnitDefinition(input: {
   if (!input.symbol.trim()) return { ok: false, error: "Unit symbol is required (Section BF)" };
   return {
     ok: true,
-    unit: { id: input.id, system: input.system, name: input.name, symbol: input.symbol, kind: input.kind },
+    unit: {
+      id: input.id,
+      system: input.system,
+      name: input.name,
+      symbol: input.symbol,
+      kind: input.kind,
+    },
   };
 }
 
@@ -348,19 +378,32 @@ export function createUnitConversion(input: {
     return { ok: false, error: "Unit conversion requires distinct source and target (Section BG)" };
   }
   if (!Number.isFinite(input.factor) || input.factor <= 0) {
-    return { ok: false, error: "Unit conversion factor must be a finite positive number (Section BG)" };
+    return {
+      ok: false,
+      error: "Unit conversion factor must be a finite positive number (Section BG)",
+    };
   }
-  return { ok: true, conversion: { source: input.source, target: input.target, factor: input.factor, context: input.context } };
+  return {
+    ok: true,
+    conversion: {
+      source: input.source,
+      target: input.target,
+      factor: input.factor,
+      context: input.context,
+    },
+  };
 }
 
 // Section BG: conversion preserves the original unit and context.
 export function convertUnit(
   value: number,
   conversion: UnitConversion,
-): {
-  ok: true;
-  result: { value: number; originalUnit: string; convertedUnit: string; context?: string };
-} | { ok: false; error: string } {
+):
+  | {
+      ok: true;
+      result: { value: number; originalUnit: string; convertedUnit: string; context?: string };
+    }
+  | { ok: false; error: string } {
   if (!Number.isFinite(value)) {
     return { ok: false, error: "Converted value must be finite (Section BG)" };
   }
@@ -380,13 +423,19 @@ export function createEducationalMeasurement(input: {
   concept: string;
   localUnit: string;
   system: MeasurementSystem;
-}): {
-  ok: true;
-  measurement: { concept: string; localUnit: string; system: MeasurementSystem };
-} | { ok: false; error: string } {
-  if (!input.concept.trim()) return { ok: false, error: "Measurement concept is required (Section BH)" };
+}):
+  | {
+      ok: true;
+      measurement: { concept: string; localUnit: string; system: MeasurementSystem };
+    }
+  | { ok: false; error: string } {
+  if (!input.concept.trim())
+    return { ok: false, error: "Measurement concept is required (Section BH)" };
   if (!input.localUnit.trim()) return { ok: false, error: "Local unit is required (Section BH)" };
-  return { ok: true, measurement: { concept: input.concept, localUnit: input.localUnit, system: input.system } };
+  return {
+    ok: true,
+    measurement: { concept: input.concept, localUnit: input.localUnit, system: input.system },
+  };
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -447,7 +496,8 @@ export function createExportFormatConfig(input: {
   numberFormat: NumberFormatConfig;
 }): { ok: true; config: ExportFormatConfig } | { ok: false; error: string } {
   if (!input.locale.trim()) return { ok: false, error: "Export locale is required (Section EL)" };
-  if (!input.encoding.trim()) return { ok: false, error: "Export encoding is required (Section EL)" };
+  if (!input.encoding.trim())
+    return { ok: false, error: "Export encoding is required (Section EL)" };
   return {
     ok: true,
     config: {
@@ -486,7 +536,10 @@ export function createDocumentLocalizationProfile(input: {
   jurisdictionRef?: string;
 }): { ok: true; profile: DocumentLocalizationProfile } | { ok: false; error: string } {
   if (!input.language.trim() || !input.locale.trim() || !input.script.trim()) {
-    return { ok: false, error: "Document localization requires language, locale, and script (Section EO)" };
+    return {
+      ok: false,
+      error: "Document localization requires language, locale, and script (Section EO)",
+    };
   }
   const direction = input.direction ?? (input.script === "arab" ? "rtl" : "ltr");
   return {
@@ -522,7 +575,10 @@ export function createReportLocalization(input: {
   terminologyRef: string;
 }): { ok: true; localization: ReportLocalization } | { ok: false; error: string } {
   if (!input.titleKey.trim() || !input.locale.trim() || !input.terminologyRef.trim()) {
-    return { ok: false, error: "Report localization requires title, locale, and terminology (Section EP)" };
+    return {
+      ok: false,
+      error: "Report localization requires title, locale, and terminology (Section EP)",
+    };
   }
   return { ok: true, localization: { ...input } };
 }
@@ -545,7 +601,14 @@ export function createAuditDisplayLocalization(input: {
   if (!input.canonicalRef.trim()) {
     return { ok: false, error: "Canonical audit reference is required (Section EQ)" };
   }
-  return { ok: true, localization: { canonicalRef: input.canonicalRef, displayText: input.displayText, locale: input.locale } };
+  return {
+    ok: true,
+    localization: {
+      canonicalRef: input.canonicalRef,
+      displayText: input.displayText,
+      locale: input.locale,
+    },
+  };
 }
 
 export interface LocalizedLogView {
@@ -562,12 +625,17 @@ export function createLocalizedLogView(input: {
   if (!input.machineKey.trim()) {
     return { ok: false, error: "Machine log key is required (Section ER)" };
   }
-  return { ok: true, view: { machineKey: input.machineKey, humanView: input.humanView, locale: input.locale } };
+  return {
+    ok: true,
+    view: { machineKey: input.machineKey, humanView: input.humanView, locale: input.locale },
+  };
 }
 
 export function createApiLocalizationBoundary(input: {
   apiRef: string;
-}): { ok: true; boundary: { apiRef: string; presentationLocalized: boolean } } | { ok: false; error: string } {
+}):
+  | { ok: true; boundary: { apiRef: string; presentationLocalized: boolean } }
+  | { ok: false; error: string } {
   if (!input.apiRef.trim()) {
     return { ok: false, error: "API reference is required (Section ES)" };
   }
@@ -594,7 +662,10 @@ export function createCommunicationLocalization(input: {
   regionalSenderConventions?: string[];
 }): { ok: true; localization: CommunicationLocalization } | { ok: false; error: string } {
   if (!input.language.trim() || !input.templateRef.trim() || !input.timezone.trim()) {
-    return { ok: false, error: "Communication localization requires language, template, and timezone (Section CS)" };
+    return {
+      ok: false,
+      error: "Communication localization requires language, template, and timezone (Section CS)",
+    };
   }
   return {
     ok: true,
@@ -608,7 +679,8 @@ export function createCommunicationLocalization(input: {
   };
 }
 
-export type AfricanPaymentMethod = "bank_transfer" | "mobile_money" | "card" | "ussd" | "cash" | "local_provider";
+export type AfricanPaymentMethod =
+  "bank_transfer" | "mobile_money" | "card" | "ussd" | "cash" | "local_provider";
 
 export interface PaymentLocalization {
   jurisdictionRef: string;
@@ -661,12 +733,10 @@ export function createIntegrationLocalization(input: {
   regionalSchemaRef?: string;
 }): { ok: true; localization: IntegrationLocalization } | { ok: false; error: string } {
   if (!input.providerRef.trim() || !input.locale.trim() || !input.language.trim()) {
-    return { ok: false, error: "Integration localization requires provider, locale, and language (Section EV)" };
+    return {
+      ok: false,
+      error: "Integration localization requires provider, locale, and language (Section EV)",
+    };
   }
   return { ok: true, localization: { ...input } };
 }
-
-
-
-
-

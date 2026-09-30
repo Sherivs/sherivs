@@ -79,7 +79,7 @@ describe("Phase 04 — absent or unreadable state is reported, never fabricated"
     expect(parseOperatingModelSpec(null)).toBeNull();
     expect(parseOperatingModelSpec("   ")).toBeNull();
     expect(parseOperatingModelSpec("[1,2,3]")).toBeNull();
-    expect(parseOperatingModelSpec("\"text\"")).toBeNull();
+    expect(parseOperatingModelSpec('"text"')).toBeNull();
     expect(parseOperatingModelSpec("{}")).toEqual({});
   });
 });

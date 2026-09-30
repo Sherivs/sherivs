@@ -68,7 +68,10 @@ export type RunVerdict =
   | { readonly ok: true; readonly run: ReconciliationRun }
   | { readonly ok: false; readonly error: string };
 
-function keyOf(record: Readonly<Record<string, unknown>>, keyFields: readonly string[]): string | null {
+function keyOf(
+  record: Readonly<Record<string, unknown>>,
+  keyFields: readonly string[],
+): string | null {
   const parts: string[] = [];
   for (const field of keyFields) {
     const value = record[field];
@@ -81,7 +84,8 @@ function keyOf(record: Readonly<Record<string, unknown>>, keyFields: readonly st
 function numberAt(record: Readonly<Record<string, unknown>>, field: string): number | null {
   const value = record[field];
   if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value))) return Number(value);
+  if (typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value)))
+    return Number(value);
   return null;
 }
 
@@ -99,7 +103,10 @@ export function runDatasetReconciliation(input: {
   readonly asOf: string;
 }): RunVerdict {
   if (input.keyFields.length === 0) {
-    return { ok: false, error: "reconciliation needs declared key fields: without a key there is nothing to compare" };
+    return {
+      ok: false,
+      error: "reconciliation needs declared key fields: without a key there is nothing to compare",
+    };
   }
   const leftIndex = new Map<string, Readonly<Record<string, unknown>>>();
   for (const record of input.left) {
@@ -178,7 +185,9 @@ function compareIndices(
         if (leftText === rightText) continue;
         mismatched = true;
         push(
-          comparison.field.toLowerCase().includes("curren") ? "currency-mismatch" : "value-mismatch",
+          comparison.field.toLowerCase().includes("curren")
+            ? "currency-mismatch"
+            : "value-mismatch",
           key,
           `${comparison.field} differs: ${leftText} against ${rightText}`,
           leftText,
@@ -251,12 +260,16 @@ export function resolveException(
     readonly at: string;
   },
 ): ResolutionVerdict {
-  if (exception.resolution) return { ok: false, error: `exception ${exception.exceptionId} is already resolved` };
+  if (exception.resolution)
+    return { ok: false, error: `exception ${exception.exceptionId} is already resolved` };
   const missing = (["cause", "correction", "evidence", "actor"] as const).filter(
     (field) => !resolution[field]?.trim(),
   );
   if (missing.length > 0) {
-    return { ok: false, error: `a resolution must name ${missing.join(", ")}: ${exception.exceptionId} stays open` };
+    return {
+      ok: false,
+      error: `a resolution must name ${missing.join(", ")}: ${exception.exceptionId} stays open`,
+    };
   }
   return {
     ok: true,

@@ -20,7 +20,9 @@ import {
 
 const NOW = "2026-01-05T08:00:00Z";
 
-function assignment(overrides: Partial<SchedulingAssignment> & { id: string }): SchedulingAssignment {
+function assignment(
+  overrides: Partial<SchedulingAssignment> & { id: string },
+): SchedulingAssignment {
   return {
     tenantId: "tenant-a",
     activityId: `activity-${overrides.id}`,
@@ -289,7 +291,12 @@ describe("scheduling quality, disruption and explanation", () => {
 
   it("flags a rewrite that exceeds the stability tolerance", () => {
     const before = [assignment({ id: "a1" }), assignment({ id: "a2" })];
-    const disruption = measureDisruption(before, { added: [], removed: before, moved: [] }, before, 0.25);
+    const disruption = measureDisruption(
+      before,
+      { added: [], removed: before, moved: [] },
+      before,
+      0.25,
+    );
     expect(disruption.disruptionRatio).toBe(1);
     expect(disruption.withinTolerance).toBe(false);
   });
@@ -408,4 +415,3 @@ describe("scheduling version comparison, impact and candidate ranking", () => {
     expect(ranked[0].candidateId).toBe("steady");
   });
 });
-

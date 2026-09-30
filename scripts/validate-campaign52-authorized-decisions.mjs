@@ -4,10 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const ledger = JSON.parse(
-  readFileSync(
-    join(root, "architecture", "COREGRID_CAMPAIGN_52_DECISION_LEDGER.json"),
-    "utf8",
-  ),
+  readFileSync(join(root, "architecture", "COREGRID_CAMPAIGN_52_DECISION_LEDGER.json"), "utf8"),
 );
 
 const allowedStatuses = new Set([
@@ -46,19 +43,13 @@ for (const decision of ledger.decisions) {
     continue;
   }
   for (const field of requiredForApproved) {
-    if (
-      decision[field] === null ||
-      decision[field] === undefined ||
-      decision[field] === ""
-    ) {
+    if (decision[field] === null || decision[field] === undefined || decision[field] === "") {
       findings.push(`${decision.decisionId}: missing authorized field ${field}`);
     }
   }
   if (decision.status === "APPROVED_NEW_PHASE_PROPOSAL") {
     if (!decision.approvedOwner || !decision.registryUpdatePlan) {
-      findings.push(
-        `${decision.decisionId}: new-phase proposal requires owner and registry plan`,
-      );
+      findings.push(`${decision.decisionId}: new-phase proposal requires owner and registry plan`);
     }
   }
 }

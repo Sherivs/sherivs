@@ -133,11 +133,7 @@ export interface Query {
   readonly params: Record<string, unknown>;
 }
 
-export function createQuery(
-  name: string,
-  version: number,
-  params: Record<string, unknown>,
-): Query {
+export function createQuery(name: string, version: number, params: Record<string, unknown>): Query {
   return { name, version, params };
 }
 
@@ -243,8 +239,7 @@ export function validateQuerySorts(
  * ────────────────────────────────────────────────────────────*/
 
 export type QueryResult<T = unknown> =
-  | { ok: true; data: T }
-  | { ok: false; error: string; errorCategory: RuntimeErrorCategory };
+  { ok: true; data: T } | { ok: false; error: string; errorCategory: RuntimeErrorCategory };
 
 export interface QueryHandler<TQuery extends Query, TResult> {
   /** The query name this handler supports. */
@@ -339,21 +334,19 @@ export interface RuntimeAuditEvent {
   metadata: Record<string, unknown>;
 }
 
-export function createRuntimeAuditEvent(
-  input: {
-    tenantId: TenantId | null;
-    actorId: string | null;
-    capability: string;
-    command: string | null;
-    query: string | null;
-    operationId: OperationId;
-    correlationId: string;
-    occurredAt: string;
-    result: "success" | "failure";
-    isAgentInitiated: boolean;
-    metadata?: Record<string, unknown>;
-  },
-): RuntimeAuditEvent {
+export function createRuntimeAuditEvent(input: {
+  tenantId: TenantId | null;
+  actorId: string | null;
+  capability: string;
+  command: string | null;
+  query: string | null;
+  operationId: OperationId;
+  correlationId: string;
+  occurredAt: string;
+  result: "success" | "failure";
+  isAgentInitiated: boolean;
+  metadata?: Record<string, unknown>;
+}): RuntimeAuditEvent {
   return {
     id: `audit-${input.occurredAt}-${input.operationId}`,
     type: input.command ? "CommandExecuted" : "QueryExecuted",

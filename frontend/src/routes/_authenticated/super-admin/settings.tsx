@@ -59,7 +59,10 @@ function SuperAdminSettings() {
   }
 
   return (
-    <PortalPage title="Platform settings" subtitle="Manage your super-admin profile and platform oversight">
+    <PortalPage
+      title="Platform settings"
+      subtitle="Manage your super-admin profile and platform oversight"
+    >
       <SectionGrid>
         <StatCard label="Super admins" value={admins.data?.length ?? 0} />
         <StatCard label="Active" value={admins.data?.filter((a) => a.is_active).length ?? 0} />
@@ -75,7 +78,9 @@ function SuperAdminSettings() {
               <input className="uos-input mt-1" value={superAdmin?.email ?? ""} disabled />
             </div>
             <div>
-              <label className="text-xs uppercase tracking-wide text-muted-foreground">Full name</label>
+              <label className="text-xs uppercase tracking-wide text-muted-foreground">
+                Full name
+              </label>
               <input
                 className="uos-input mt-1"
                 value={fullName}

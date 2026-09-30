@@ -288,8 +288,8 @@ export const listInstitutionOperatingModelVersions = createServerFn({ method: "G
       .order("valid_from", { ascending: true });
     if (error) throw new Error(`operating model history read failed: ${error.message}`);
 
-    const versions: OperatingModelVersionSummary[] = (data ?? []).map(
-      (row: { id?: unknown; state?: unknown; attributes?: unknown }) => {
+    const versions: OperatingModelVersionSummary[] = (data ?? [])
+      .map((row: { id?: unknown; state?: unknown; attributes?: unknown }) => {
         const attributes = (row.attributes ?? {}) as {
           blueprint?: { version?: number; reason?: string; published_at?: string };
         };
@@ -300,10 +300,10 @@ export const listInstitutionOperatingModelVersions = createServerFn({ method: "G
           published_at: attributes.blueprint?.published_at ?? "",
           state: (row.state as string) ?? "",
         };
-      },
-    ).sort(
-      (a: OperatingModelVersionSummary, b: OperatingModelVersionSummary) => a.version - b.version,
-    );
+      })
+      .sort(
+        (a: OperatingModelVersionSummary, b: OperatingModelVersionSummary) => a.version - b.version,
+      );
 
     return { tenant_id: tenantId, versions };
   });

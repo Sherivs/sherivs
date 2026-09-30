@@ -37,15 +37,9 @@ import {
   type TimeoutPolicy,
 } from "@/lib/runtime-resilience";
 
-import {
-  createFeatureFlagService,
-  type FeatureFlag,
-} from "@/lib/runtime-feature-flags";
+import { createFeatureFlagService, type FeatureFlag } from "@/lib/runtime-feature-flags";
 
-import {
-  createApprovalService,
-  createOperationTracker,
-} from "@/lib/runtime-approval";
+import { createApprovalService, createOperationTracker } from "@/lib/runtime-approval";
 
 import {
   createBulkOperationService,
@@ -289,13 +283,21 @@ describe("runtime-integrations", () => {
 describe("runtime-resilience", () => {
   describe("circuit breaker", () => {
     it("starts closed and allows calls", () => {
-      const cb = createCircuitBreaker({ failureThreshold: 3, resetTimeoutMs: 1000, successThreshold: 2 });
+      const cb = createCircuitBreaker({
+        failureThreshold: 3,
+        resetTimeoutMs: 1000,
+        successThreshold: 2,
+      });
       expect(cb.state).toBe("closed");
       expect(cb.allowCall(NOW)).toBe(true);
     });
 
     it("opens after failure threshold", () => {
-      const cb = createCircuitBreaker({ failureThreshold: 3, resetTimeoutMs: 1000, successThreshold: 2 });
+      const cb = createCircuitBreaker({
+        failureThreshold: 3,
+        resetTimeoutMs: 1000,
+        successThreshold: 2,
+      });
       cb.recordFailure(NOW);
       cb.recordFailure(NOW);
       expect(cb.state).toBe("closed");
@@ -305,7 +307,11 @@ describe("runtime-resilience", () => {
     });
 
     it("transitions to half-open after reset timeout", () => {
-      const cb = createCircuitBreaker({ failureThreshold: 1, resetTimeoutMs: 1000, successThreshold: 2 });
+      const cb = createCircuitBreaker({
+        failureThreshold: 1,
+        resetTimeoutMs: 1000,
+        successThreshold: 2,
+      });
       cb.recordFailure(NOW);
       expect(cb.state).toBe("open");
       const later = "2026-08-22T12:00:02.000Z";
@@ -314,7 +320,11 @@ describe("runtime-resilience", () => {
     });
 
     it("closes after success threshold in half-open", () => {
-      const cb = createCircuitBreaker({ failureThreshold: 1, resetTimeoutMs: 1000, successThreshold: 2 });
+      const cb = createCircuitBreaker({
+        failureThreshold: 1,
+        resetTimeoutMs: 1000,
+        successThreshold: 2,
+      });
       cb.recordFailure(NOW);
       const later = "2026-08-22T12:00:02.000Z";
       cb.allowCall(later);
@@ -368,12 +378,20 @@ describe("runtime-resilience", () => {
     });
 
     it("resolves override", () => {
-      const policy: TimeoutPolicy = { defaultTimeoutMs: 5000, overrides: { slow: 10_000 }, maxTimeoutMs: 30_000 };
+      const policy: TimeoutPolicy = {
+        defaultTimeoutMs: 5000,
+        overrides: { slow: 10_000 },
+        maxTimeoutMs: 30_000,
+      };
       expect(resolveTimeout(policy, "slow")).toBe(10_000);
     });
 
     it("caps at max timeout", () => {
-      const policy: TimeoutPolicy = { defaultTimeoutMs: 5000, overrides: { slow: 60_000 }, maxTimeoutMs: 30_000 };
+      const policy: TimeoutPolicy = {
+        defaultTimeoutMs: 5000,
+        overrides: { slow: 60_000 },
+        maxTimeoutMs: 30_000,
+      };
       expect(resolveTimeout(policy, "slow")).toBe(30_000);
     });
   });
@@ -451,8 +469,12 @@ describe("runtime-feature-flags", () => {
     };
     svc.register(flag);
     svc.setTenantOverride("ai-tutor", "tenant-1", true);
-    expect(svc.isEnabled("ai-tutor", { tenantId: "tenant-1" as never, rolloutKey: "user-1" })).toBe(true);
-    expect(svc.isEnabled("ai-tutor", { tenantId: "tenant-2" as never, rolloutKey: "user-1" })).toBe(false);
+    expect(svc.isEnabled("ai-tutor", { tenantId: "tenant-1" as never, rolloutKey: "user-1" })).toBe(
+      true,
+    );
+    expect(svc.isEnabled("ai-tutor", { tenantId: "tenant-2" as never, rolloutKey: "user-1" })).toBe(
+      false,
+    );
   });
 
   it("kill switch disables feature", () => {
@@ -629,17 +651,31 @@ describe("runtime-approval", () => {
 describe("runtime-bulk", () => {
   it("enforces maximum batch size", async () => {
     const svc = createBulkOperationService();
-    const items: BulkItemInput[] = Array.from({ length: 10 }, (_, i) => ({ itemId: `item-${i}`, payload: i }));
+    const items: BulkItemInput[] = Array.from({ length: 10 }, (_, i) => ({
+      itemId: `item-${i}`,
+      payload: i,
+    }));
     const processor: BulkProcessor = {
       async processItem(item: BulkItemInput) {
-        return { index: 0, itemId: item.itemId, status: "succeeded", result: item.payload, error: null };
+        return {
+          index: 0,
+          itemId: item.itemId,
+          status: "succeeded",
+          result: item.payload,
+          error: null,
+        };
       },
     };
-    const result = await svc.execute(items, processor, { maxBatchSize: 3, allowPartialFailure: true, idempotent: true }, {
-      tenantId: null,
-      correlationId: "corr-1" as never,
-      now: NOW,
-    });
+    const result = await svc.execute(
+      items,
+      processor,
+      { maxBatchSize: 3, allowPartialFailure: true, idempotent: true },
+      {
+        tenantId: null,
+        correlationId: "corr-1" as never,
+        now: NOW,
+      },
+    );
     expect(result.totalItems).toBe(3);
     expect(result.succeededCount).toBe(3);
   });
@@ -653,16 +689,33 @@ describe("runtime-bulk", () => {
     const processor: BulkProcessor = {
       async processItem(item: BulkItemInput) {
         if (item.itemId === "bad") {
-          return { index: 1, itemId: item.itemId, status: "failed", result: null, error: "Invalid" };
+          return {
+            index: 1,
+            itemId: item.itemId,
+            status: "failed",
+            result: null,
+            error: "Invalid",
+          };
         }
-        return { index: 0, itemId: item.itemId, status: "succeeded", result: item.payload, error: null };
+        return {
+          index: 0,
+          itemId: item.itemId,
+          status: "succeeded",
+          result: item.payload,
+          error: null,
+        };
       },
     };
-    const result = await svc.execute(items, processor, { maxBatchSize: 10, allowPartialFailure: true, idempotent: true }, {
-      tenantId: null,
-      correlationId: "corr-1" as never,
-      now: NOW,
-    });
+    const result = await svc.execute(
+      items,
+      processor,
+      { maxBatchSize: 10, allowPartialFailure: true, idempotent: true },
+      {
+        tenantId: null,
+        correlationId: "corr-1" as never,
+        now: NOW,
+      },
+    );
     expect(result.succeededCount).toBe(1);
     expect(result.failedCount).toBe(1);
     expect(result.hasPartialFailure).toBe(true);
@@ -677,11 +730,16 @@ describe("runtime-bulk", () => {
         throw new Error("Boom");
       },
     };
-    const result = await svc.execute(items, processor, { maxBatchSize: 10, allowPartialFailure: true, idempotent: true }, {
-      tenantId: null,
-      correlationId: "corr-1" as never,
-      now: NOW,
-    });
+    const result = await svc.execute(
+      items,
+      processor,
+      { maxBatchSize: 10, allowPartialFailure: true, idempotent: true },
+      {
+        tenantId: null,
+        correlationId: "corr-1" as never,
+        now: NOW,
+      },
+    );
     expect(result.failedCount).toBe(1);
     expect(result.items[0].error).toBe("Boom");
   });

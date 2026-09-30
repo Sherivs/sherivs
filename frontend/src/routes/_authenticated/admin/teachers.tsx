@@ -87,11 +87,13 @@ function TeachersPage() {
   const rows = list.data?.rows ?? [];
   const total = list.data?.count ?? 0;
 
-
   return (
     <PortalPage title="Teachers" subtitle="Invite teachers and manage their access">
       <div className="mb-4 flex flex-wrap gap-2 text-xs">
-        <Link to="/admin/dashboard" className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40">
+        <Link
+          to="/admin/dashboard"
+          className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40"
+        >
           ← Back to dashboard
         </Link>
       </div>
@@ -136,9 +138,13 @@ function TeachersPage() {
                       <td className="px-4 py-3 font-medium">{t.full_name}</td>
                       <td className="px-4 py-3 text-muted-foreground">{t.email ?? "—"}</td>
                       <td className="px-4 py-3">{t.subject_specialty ?? "—"}</td>
-                      <td className="px-4 py-3">{t.years_experience != null ? `${t.years_experience} yrs` : "—"}</td>
                       <td className="px-4 py-3">
-                        <span className={t.is_active ? "text-emerald-400" : "text-muted-foreground"}>
+                        {t.years_experience != null ? `${t.years_experience} yrs` : "—"}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={t.is_active ? "text-emerald-400" : "text-muted-foreground"}
+                        >
                           {t.is_active ? "Active" : "Disabled"}
                         </span>
                       </td>
@@ -223,8 +229,8 @@ function TeachersPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Teacher invited</AlertDialogTitle>
             <AlertDialogDescription>
-              Share these credentials securely. Ask the teacher to change their
-              password on first sign-in.
+              Share these credentials securely. Ask the teacher to change their password on first
+              sign-in.
             </AlertDialogDescription>
           </AlertDialogHeader>
           {created && (
@@ -273,13 +279,7 @@ function TeachersPage() {
   );
 }
 
-function ToggleActiveButton({
-  row,
-  onDone,
-}: {
-  row: TeacherRow | null;
-  onDone: () => void;
-}) {
+function ToggleActiveButton({ row, onDone }: { row: TeacherRow | null; onDone: () => void }) {
   const fn = useServerFn(setTeacherActive);
   const [saving, setSaving] = useState(false);
   if (!row) return null;
@@ -342,7 +342,14 @@ function InviteTeacherDialog({
       });
       toast.success("Teacher invited");
       onCreated({ email: res.email, password: res.tempPassword });
-      setForm({ fullName: "", email: "", phone: "", subjectSpecialty: "", qualification: "", yearsExperience: "" });
+      setForm({
+        fullName: "",
+        email: "",
+        phone: "",
+        subjectSpecialty: "",
+        qualification: "",
+        yearsExperience: "",
+      });
       onOpenChange(false);
     } catch (err) {
       const msg =
@@ -372,24 +379,44 @@ function InviteTeacherDialog({
               <Input value={form.fullName} onChange={set("fullName")} required maxLength={120} />
             </Labeled>
             <Labeled label="Email">
-              <Input type="email" value={form.email} onChange={set("email")} required maxLength={255} />
+              <Input
+                type="email"
+                value={form.email}
+                onChange={set("email")}
+                required
+                maxLength={255}
+              />
             </Labeled>
             <Labeled label="Phone">
               <Input value={form.phone} onChange={set("phone")} maxLength={40} />
             </Labeled>
             <Labeled label="Subject specialty">
-              <Input value={form.subjectSpecialty} onChange={set("subjectSpecialty")} maxLength={120} />
+              <Input
+                value={form.subjectSpecialty}
+                onChange={set("subjectSpecialty")}
+                maxLength={120}
+              />
             </Labeled>
             <Labeled label="Qualification">
               <Input value={form.qualification} onChange={set("qualification")} maxLength={120} />
             </Labeled>
             <Labeled label="Years of experience">
-              <Input type="number" min={0} max={80} value={form.yearsExperience} onChange={set("yearsExperience")} />
+              <Input
+                type="number"
+                min={0}
+                max={80}
+                value={form.yearsExperience}
+                onChange={set("yearsExperience")}
+              />
             </Labeled>
           </div>
           <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button className="w-full sm:w-auto" type="submit" disabled={saving}>{saving ? "Inviting…" : "Invite"}</Button>
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button className="w-full sm:w-auto" type="submit" disabled={saving}>
+              {saving ? "Inviting…" : "Invite"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

@@ -71,7 +71,10 @@ export function reconcile(input: ReconcileInput): ReconcileOutput {
     input.providerAmount.amountMinor === input.internalAmount.amountMinor;
   const discrepancyAmount = matched
     ? money(0, input.internalAmount.currency)
-    : money(input.internalAmount.amountMinor - input.providerAmount.amountMinor, input.internalAmount.currency);
+    : money(
+        input.internalAmount.amountMinor - input.providerAmount.amountMinor,
+        input.internalAmount.currency,
+      );
   return {
     record: {
       id: `recon-${input.tenantId}-${input.provider}-${input.now}`,
@@ -116,8 +119,7 @@ export interface CreateSettlementInput {
 }
 
 export type CreateSettlementResult =
-  | { ok: true; settlement: Settlement }
-  | { ok: false; error: string };
+  { ok: true; settlement: Settlement } | { ok: false; error: string };
 
 export function createSettlement(input: CreateSettlementInput): CreateSettlementResult {
   if (input.grossAmount.currency !== input.fees.currency) {
@@ -153,8 +155,7 @@ export interface PaymentAllocationInput {
 }
 
 export type PaymentAllocationOutput =
-  | { ok: true; allocated: Money; overpayment: Money }
-  | { ok: false; error: string };
+  { ok: true; allocated: Money; overpayment: Money } | { ok: false; error: string };
 
 /**
  * Payment allocation (FF): partial payments and overpayments work. The
@@ -165,7 +166,10 @@ export function allocatePayment(input: PaymentAllocationInput): PaymentAllocatio
   if (input.paymentAmount.currency !== input.outstandingAmount.currency) {
     return { ok: false, error: "Payment and outstanding currency mismatch (T)" };
   }
-  const allocatedMinor = Math.min(input.paymentAmount.amountMinor, input.outstandingAmount.amountMinor);
+  const allocatedMinor = Math.min(
+    input.paymentAmount.amountMinor,
+    input.outstandingAmount.amountMinor,
+  );
   const overpaymentMinor = input.paymentAmount.amountMinor - allocatedMinor;
   return {
     ok: true,
@@ -231,8 +235,7 @@ export interface CreateProductInput {
 }
 
 export type CreateProductResult =
-  | { ok: true; product: FinancialProduct }
-  | { ok: false; error: string };
+  { ok: true; product: FinancialProduct } | { ok: false; error: string };
 
 export function createFinancialProduct(input: CreateProductInput): CreateProductResult {
   if (input.name.trim() === "") {
@@ -263,7 +266,11 @@ export function createFinancialProduct(input: CreateProductInput): CreateProduct
  * use the new version. This function produces a new product version rather
  * than mutating the existing one.
  */
-export function versionProductPrice(product: FinancialProduct, newPrice: Money, now: string): FinancialProduct {
+export function versionProductPrice(
+  product: FinancialProduct,
+  newPrice: Money,
+  now: string,
+): FinancialProduct {
   return {
     ...product,
     version: product.version + 1,
@@ -326,8 +333,7 @@ export interface CreateBillingPlanInput {
 }
 
 export type CreateBillingPlanResult =
-  | { ok: true; plan: BillingPlan }
-  | { ok: false; error: string };
+  { ok: true; plan: BillingPlan } | { ok: false; error: string };
 
 export function createBillingPlan(input: CreateBillingPlanInput): CreateBillingPlanResult {
   if (input.name.trim() === "") {
@@ -371,8 +377,7 @@ export interface CreateSubscriptionInput {
 }
 
 export type CreateSubscriptionResult =
-  | { ok: true; subscription: Subscription }
-  | { ok: false; error: string };
+  { ok: true; subscription: Subscription } | { ok: false; error: string };
 
 export function createSubscription(input: CreateSubscriptionInput): CreateSubscriptionResult {
   if (Date.parse(input.currentPeriodEnd) <= Date.parse(input.currentPeriodStart)) {

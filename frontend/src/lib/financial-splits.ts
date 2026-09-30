@@ -24,7 +24,14 @@
  *   - a leg that cannot be paid stays unresolved and visible instead of rolling
  *     its remainder into another beneficiary's leg.
  */
-import { addMoney, compareMoney, isZeroMoney, money, subtractMoney, type Money } from "./financial-core";
+import {
+  addMoney,
+  compareMoney,
+  isZeroMoney,
+  money,
+  subtractMoney,
+  type Money,
+} from "./financial-core";
 import {
   checkFinancialIdempotency,
   type FinancialIdempotencyStore,
@@ -76,7 +83,10 @@ export interface SplitPolicy {
 export interface CreateSplitPaymentInput {
   readonly splitId: string;
   readonly gross: Money;
-  readonly legs: readonly Omit<SplitLeg, "state" | "settlementRef" | "providerFees" | "reconciliation">[];
+  readonly legs: readonly Omit<
+    SplitLeg,
+    "state" | "settlementRef" | "providerFees" | "reconciliation"
+  >[];
   readonly policy?: SplitPolicy;
   readonly idempotency?: FinancialIdempotencyStore;
 }
@@ -96,7 +106,12 @@ export type SplitViolation =
 export type CreateSplitPaymentResult =
   | { readonly ok: true; readonly split: SplitPayment; readonly idempotentReplay: boolean }
   | { readonly ok: false; readonly refusals: readonly SplitViolation[]; readonly detail: string }
-  | { readonly ok: false; readonly refusals: readonly ["duplicate-request"]; readonly detail: string; readonly idempotency: FinancialIdempotencyResult };
+  | {
+      readonly ok: false;
+      readonly refusals: readonly ["duplicate-request"];
+      readonly detail: string;
+      readonly idempotency: FinancialIdempotencyResult;
+    };
 
 export interface SplitPayment {
   readonly splitId: string;
@@ -122,7 +137,8 @@ export function createSplitPayment(input: CreateSplitPaymentInput): CreateSplitP
   const at = new Date().toISOString();
   const refusals: SplitViolation[] = [];
 
-  if (compareMoney(input.gross, money(0, input.gross.currency)) <= 0) refusals.push("gross-not-positive");
+  if (compareMoney(input.gross, money(0, input.gross.currency)) <= 0)
+    refusals.push("gross-not-positive");
   if (input.legs.length === 0) refusals.push("no-legs");
   if (input.legs.length > policy.maxLegs) refusals.push("too-many-legs");
 
@@ -149,7 +165,11 @@ export function createSplitPayment(input: CreateSplitPaymentInput): CreateSplitP
 
   const unique = [...new Set(refusals)];
   if (unique.length > 0) {
-    return { ok: false, refusals: unique, detail: describeSplitRefusals(unique, input.gross, legSum) };
+    return {
+      ok: false,
+      refusals: unique,
+      detail: describeSplitRefusals(unique, input.gross, legSum),
+    };
   }
 
   if (input.idempotency) {
@@ -208,7 +228,10 @@ export function describeSplitRefusals(
 
 /** A split is balanced only when its legs sum exactly to its gross amount. */
 export function isSplitBalanced(split: SplitPayment): boolean {
-  const sum = split.legs.reduce((total, leg) => addMoney(total, leg.amount), money(0, split.gross.currency));
+  const sum = split.legs.reduce(
+    (total, leg) => addMoney(total, leg.amount),
+    money(0, split.gross.currency),
+  );
   return compareMoney(sum, split.gross) === 0;
 }
 
@@ -254,15 +277,22 @@ export function settleSplitLeg(
 ): SettleSplitLegResult {
   const leg = split.legs.find((candidate) => candidate.legId === input.legId);
   if (!leg) return { ok: false, error: `unknown leg ${input.legId}` };
-  if (leg.state === "settled") return { ok: false, error: "leg already settled: a settlement is recorded once" };
+  if (leg.state === "settled")
+    return { ok: false, error: "leg already settled: a settlement is recorded once" };
   if (leg.state === "reversed") {
-    return { ok: false, error: "leg was reversed: settle through a governed correction, never by re-settling" };
+    return {
+      ok: false,
+      error: "leg was reversed: settle through a governed correction, never by re-settling",
+    };
   }
   if (!input.settlementRef) {
     return { ok: false, error: "a settlement must cite the evidence that proves it" };
   }
   if (compareMoney(input.amount, leg.amount) !== 0) {
-    return { ok: false, error: "settlement amount differs from the leg amount: reconcile, do not adjust silently" };
+    return {
+      ok: false,
+      error: "settlement amount differs from the leg amount: reconcile, do not adjust silently",
+    };
   }
   return {
     ok: true,
@@ -270,7 +300,12 @@ export function settleSplitLeg(
       ...split,
       legs: split.legs.map((candidate) =>
         candidate.legId === input.legId
-          ? { ...candidate, state: "settled" as const, settlementRef: input.settlementRef, reconciliation: "matched" as const }
+          ? {
+              ...candidate,
+              state: "settled" as const,
+              settlementRef: input.settlementRef,
+              reconciliation: "matched" as const,
+            }
           : candidate,
       ),
     },
@@ -322,20 +357,29 @@ export function attributeProviderFee(
   input: { readonly legId: string; readonly fee: Money },
 ): AttributeProviderFeeResult {
   const leg = split.legs.find((candidate) => candidate.legId === input.legId);
-  if (!leg) return { ok: false, error: `unknown leg ${input.legId}: a fee cannot be attributed to nothing` };
+  if (!leg)
+    return {
+      ok: false,
+      error: `unknown leg ${input.legId}: a fee cannot be attributed to nothing`,
+    };
   if (input.fee.currency !== leg.amount.currency) {
     return { ok: false, error: "fee currency differs from the leg currency" };
   }
   if (input.fee.amountMinor < 0) return { ok: false, error: "a provider fee cannot be negative" };
   if (compareMoney(input.fee, leg.amount) > 0) {
-    return { ok: false, error: "provider fee exceeds the leg amount: surface the loss, never absorb it silently" };
+    return {
+      ok: false,
+      error: "provider fee exceeds the leg amount: surface the loss, never absorb it silently",
+    };
   }
   return {
     ok: true,
     split: {
       ...split,
       legs: split.legs.map((candidate) =>
-        candidate.legId === input.legId ? { ...candidate, providerFees: [...candidate.providerFees, input.fee] } : candidate,
+        candidate.legId === input.legId
+          ? { ...candidate, providerFees: [...candidate.providerFees, input.fee] }
+          : candidate,
       ),
     },
   };
@@ -348,7 +392,11 @@ export interface SplitRefundAllocation {
 }
 
 export type RefundSplitResult =
-  | { readonly ok: true; readonly allocations: readonly SplitRefundAllocation[]; readonly remainderAssignedTo: string }
+  | {
+      readonly ok: true;
+      readonly allocations: readonly SplitRefundAllocation[];
+      readonly remainderAssignedTo: string;
+    }
   | { readonly ok: false; readonly error: string };
 
 /**
@@ -368,7 +416,8 @@ export function refundSplitProRata(
   if (input.amount.currency !== split.gross.currency) {
     return { ok: false, error: "refund currency differs from the split currency" };
   }
-  if (input.amount.amountMinor <= 0) return { ok: false, error: "a refund must be a positive amount" };
+  if (input.amount.amountMinor <= 0)
+    return { ok: false, error: "a refund must be a positive amount" };
 
   const alreadyRefunded = input.alreadyRefundedMinor ?? {};
   const refundable = split.legs
@@ -387,7 +436,12 @@ export function refundSplitProRata(
   const requested = input.amount.amountMinor;
   const shares = refundable.map((entry) => {
     const exact = (requested * entry.remaining) / totalRefundable;
-    return { leg: entry.leg, remaining: entry.remaining, floor: Math.floor(exact), fraction: exact - Math.floor(exact) };
+    return {
+      leg: entry.leg,
+      remaining: entry.remaining,
+      floor: Math.floor(exact),
+      fraction: exact - Math.floor(exact),
+    };
   });
 
   let allocated = shares.reduce((total, share) => total + share.floor, 0);
@@ -465,4 +519,3 @@ export function explainSplit(split: SplitPayment): SplitExplanation {
     }),
   };
 }
-

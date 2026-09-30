@@ -41,7 +41,10 @@ export function contextPackageId(raw: string): ContextPackageId {
  * ─────────────────────────────────────────────*/
 
 export type MemoryProvenance =
-  | { kind: "authoritative"; source: "database" | "device" | "user" | "administrator" | "external_api" }
+  | {
+      kind: "authoritative";
+      source: "database" | "device" | "user" | "administrator" | "external_api";
+    }
   | { kind: "inference"; source: "agent"; agentId: AgentId }
   | { kind: "derived"; source: "computation" };
 
@@ -66,8 +69,7 @@ export interface MemoryAccessRequest {
 }
 
 export type MemoryAccessResult =
-  | { ok: true; entries: MemoryEntry[] }
-  | { ok: false; error: string };
+  { ok: true; entries: MemoryEntry[] } | { ok: false; error: string };
 
 export function readMemory(
   request: MemoryAccessRequest,
@@ -76,7 +78,10 @@ export function readMemory(
   maxClassification: MemoryAccessRequest["dataClassification"],
 ): MemoryAccessResult {
   if (!allowedCategories.includes(request.category)) {
-    return { ok: false, error: `Agent not permitted to access memory category ${request.category}` };
+    return {
+      ok: false,
+      error: `Agent not permitted to access memory category ${request.category}`,
+    };
   }
   const classificationRank: Record<string, number> = {
     PUBLIC: 0,
@@ -98,9 +103,7 @@ export function readMemory(
   return { ok: true, entries: filtered };
 }
 
-export type MemoryWriteResult =
-  | { ok: true; entry: MemoryEntry }
-  | { ok: false; error: string };
+export type MemoryWriteResult = { ok: true; entry: MemoryEntry } | { ok: false; error: string };
 
 export function writeMemory(
   request: MemoryAccessRequest,
@@ -157,8 +160,7 @@ export interface ContextPackage {
 }
 
 export type BuildContextPackageResult =
-  | { ok: true; context: ContextPackage }
-  | { ok: false; error: string };
+  { ok: true; context: ContextPackage } | { ok: false; error: string };
 
 export function buildContextPackage(
   agentId: AgentId,
@@ -220,12 +222,18 @@ export function isTrustedInstruction(
     return { trusted: true };
   }
   if (source.trust === "external" || source.trust === "tool_output") {
-    return { trusted: false, reason: "External/tool content is data, not instructions (Section BB)" };
+    return {
+      trusted: false,
+      reason: "External/tool content is data, not instructions (Section BB)",
+    };
   }
   // User content may be trusted only if it does not conflict with system policy (Section BA).
   if (source.trust === "user") {
     if (systemPolicy.some((p) => source.content.includes(p))) {
-      return { trusted: false, reason: "User content conflicts with higher-level policy (Section BA)" };
+      return {
+        trusted: false,
+        reason: "User content conflicts with higher-level policy (Section BA)",
+      };
     }
     return { trusted: true };
   }

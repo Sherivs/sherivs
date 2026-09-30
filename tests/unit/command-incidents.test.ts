@@ -58,7 +58,14 @@ function action(overrides: Partial<CommandAction> = {}): CommandAction {
 
 describe("Incident lifecycle (AM, AN, AQ, AP)", () => {
   it("creates a DETECTED incident and walks legal transitions", () => {
-    const result = createIncident({ incidentId: "inc-1", tenantId: TENANT_A, kind: "infrastructure_failure", severity: "high", scope: ["campus-a"], detectedAt: NOW });
+    const result = createIncident({
+      incidentId: "inc-1",
+      tenantId: TENANT_A,
+      kind: "infrastructure_failure",
+      severity: "high",
+      scope: ["campus-a"],
+      detectedAt: NOW,
+    });
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.incident.state).toBe("DETECTED");
@@ -69,11 +76,27 @@ describe("Incident lifecycle (AM, AN, AQ, AP)", () => {
   });
 
   it("rejects an incident without a scope (AL)", () => {
-    expect(createIncident({ incidentId: "inc-1", tenantId: TENANT_A, kind: "security_incident", severity: "high", scope: [], detectedAt: NOW }).ok).toBe(false);
+    expect(
+      createIncident({
+        incidentId: "inc-1",
+        tenantId: TENANT_A,
+        kind: "security_incident",
+        severity: "high",
+        scope: [],
+        detectedAt: NOW,
+      }).ok,
+    ).toBe(false);
   });
 
   it("assigns commanders, responders, notes and evidence", () => {
-    const result = createIncident({ incidentId: "inc-1", tenantId: TENANT_A, kind: "security_incident", severity: "critical", scope: ["campus-a"], detectedAt: NOW });
+    const result = createIncident({
+      incidentId: "inc-1",
+      tenantId: TENANT_A,
+      kind: "security_incident",
+      severity: "critical",
+      scope: ["campus-a"],
+      detectedAt: NOW,
+    });
     if (!result.ok) throw new Error("fixture failed");
     let incident = assignIncidentCommander(result.incident, "c-1");
     incident = addIncidentResponder(incident, "r-1");
@@ -86,14 +109,35 @@ describe("Incident lifecycle (AM, AN, AQ, AP)", () => {
   });
 
   it("creates a postmortem with root cause and lessons", () => {
-    const postmortem = createPostmortem({ incidentId: "inc-1", timeline: ["detected", "resolved"], rootCause: "power failure", contributingFactors: ["aging UPS"], impact: "2h outage", recovery: "switched to generator", lessons: ["test UPS"], correctiveActions: ["replace UPS"] });
+    const postmortem = createPostmortem({
+      incidentId: "inc-1",
+      timeline: ["detected", "resolved"],
+      rootCause: "power failure",
+      contributingFactors: ["aging UPS"],
+      impact: "2h outage",
+      recovery: "switched to generator",
+      lessons: ["test UPS"],
+      correctiveActions: ["replace UPS"],
+    });
     expect(postmortem.rootCause).toBe("power failure");
   });
 });
 
 describe("Decision centre (AU, AV, AW, AY)", () => {
   it("creates a decision card with options and owner", () => {
-    const result = createCommandDecision({ decisionId: "d-1", tenantId: TENANT_A, question: "Extend term?", context: "disruption", evidenceRefs: ["attendance-report"], options: ["extend", "do-not-extend"], risks: ["calendar conflict"], recommendation: "extend", uncertainty: "depends on recovery", deadline: "2026-02-01T00:00:00Z", owner: "principal" });
+    const result = createCommandDecision({
+      decisionId: "d-1",
+      tenantId: TENANT_A,
+      question: "Extend term?",
+      context: "disruption",
+      evidenceRefs: ["attendance-report"],
+      options: ["extend", "do-not-extend"],
+      risks: ["calendar conflict"],
+      recommendation: "extend",
+      uncertainty: "depends on recovery",
+      deadline: "2026-02-01T00:00:00Z",
+      owner: "principal",
+    });
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.decision.state).toBe("PENDING");
@@ -101,11 +145,32 @@ describe("Decision centre (AU, AV, AW, AY)", () => {
   });
 
   it("rejects a decision with fewer than two options", () => {
-    expect(createCommandDecision({ decisionId: "d-1", tenantId: TENANT_A, question: "q", context: "", evidenceRefs: [], options: ["only"], risks: [], owner: "o" }).ok).toBe(false);
+    expect(
+      createCommandDecision({
+        decisionId: "d-1",
+        tenantId: TENANT_A,
+        question: "q",
+        context: "",
+        evidenceRefs: [],
+        options: ["only"],
+        risks: [],
+        owner: "o",
+      }).ok,
+    ).toBe(false);
   });
 
   it("approves and expires decisions", () => {
-    const result = createCommandDecision({ decisionId: "d-1", tenantId: TENANT_A, question: "q", context: "", evidenceRefs: [], options: ["a", "b"], risks: [], owner: "o", deadline: "2026-02-01T00:00:00Z" });
+    const result = createCommandDecision({
+      decisionId: "d-1",
+      tenantId: TENANT_A,
+      question: "q",
+      context: "",
+      evidenceRefs: [],
+      options: ["a", "b"],
+      risks: [],
+      owner: "o",
+      deadline: "2026-02-01T00:00:00Z",
+    });
     if (!result.ok) throw new Error("fixture failed");
     const approved = decideCommandDecision(result.decision, "APPROVED", "principal", NOW);
     expect(approved.state).toBe("APPROVED");
@@ -123,7 +188,10 @@ describe("Action centre and execution control (BA, BC, BD)", () => {
 
 describe("Situations and annotations (CF, CG, CH, CI, CJ)", () => {
   it("combines alerts, incidents and decisions into a coordination object", () => {
-    const situation = createSituation("sit-1", TENANT_A, "HIGH", { alertIds: ["al-1"], incidentIds: ["inc-1"] });
+    const situation = createSituation("sit-1", TENANT_A, "HIGH", {
+      alertIds: ["al-1"],
+      incidentIds: ["inc-1"],
+    });
     const extended = addToSituation(situation, "decisionIds", "d-1");
     expect(extended.alertIds).toContain("al-1");
     expect(extended.decisionIds).toContain("d-1");
@@ -131,7 +199,13 @@ describe("Situations and annotations (CF, CG, CH, CI, CJ)", () => {
   });
 
   it("records annotation provenance", () => {
-    const annotation = createCommandAnnotation({ author: "ops-1", at: NOW, target: "inc-1", content: "check generator", version: 1 });
+    const annotation = createCommandAnnotation({
+      author: "ops-1",
+      at: NOW,
+      target: "inc-1",
+      content: "check generator",
+      version: 1,
+    });
     expect(annotation.author).toBe("ops-1");
     expect(annotation.version).toBe(1);
   });
@@ -139,24 +213,66 @@ describe("Situations and annotations (CF, CG, CH, CI, CJ)", () => {
 
 describe("Approvals, four-eyes and segregation (CU, CV, CW)", () => {
   it("requires distinct approvers (four-eyes)", () => {
-    const approval: CommandApproval = { approvalId: "ap-1", actionId: "act-1", requestedBy: "ops-1", requiredApprovers: 2, approvals: [{ approver: "mgr-1", decision: "approve", at: NOW }] };
+    const approval: CommandApproval = {
+      approvalId: "ap-1",
+      actionId: "act-1",
+      requestedBy: "ops-1",
+      requiredApprovers: 2,
+      approvals: [{ approver: "mgr-1", decision: "approve", at: NOW }],
+    };
     const result = evaluateCommandApproval({ approval, segregationOfDuties: false });
     expect(result.approved).toBe(false);
-    const twoEyes: CommandApproval = { ...approval, approvals: [{ approver: "mgr-1", decision: "approve", at: NOW }, { approver: "dir-1", decision: "approve", at: NOW }] };
-    expect(evaluateCommandApproval({ approval: twoEyes, segregationOfDuties: false }).approved).toBe(true);
+    const twoEyes: CommandApproval = {
+      ...approval,
+      approvals: [
+        { approver: "mgr-1", decision: "approve", at: NOW },
+        { approver: "dir-1", decision: "approve", at: NOW },
+      ],
+    };
+    expect(
+      evaluateCommandApproval({ approval: twoEyes, segregationOfDuties: false }).approved,
+    ).toBe(true);
   });
 
   it("enforces segregation of duties — proposer cannot approve (CW)", () => {
-    const approval: CommandApproval = { approvalId: "ap-1", actionId: "act-1", requestedBy: "ops-1", requiredApprovers: 1, approvals: [{ approver: "ops-1", decision: "approve", at: NOW }] };
+    const approval: CommandApproval = {
+      approvalId: "ap-1",
+      actionId: "act-1",
+      requestedBy: "ops-1",
+      requiredApprovers: 1,
+      approvals: [{ approver: "ops-1", decision: "approve", at: NOW }],
+    };
     expect(evaluateCommandApproval({ approval, segregationOfDuties: true }).approved).toBe(false);
   });
 });
 
 describe("Emergency mode (CX, CY)", () => {
   it("requires justification and policy permission", () => {
-    expect(activateEmergencyMode({ activatedBy: "ops-1", at: NOW, scope: "campus-a", justification: "", policyAllows: true }).ok).toBe(false);
-    expect(activateEmergencyMode({ activatedBy: "ops-1", at: NOW, scope: "campus-a", justification: "fire drill", policyAllows: false }).ok).toBe(false);
-    const result = activateEmergencyMode({ activatedBy: "ops-1", at: NOW, scope: "campus-a", justification: "fire drill", policyAllows: true });
+    expect(
+      activateEmergencyMode({
+        activatedBy: "ops-1",
+        at: NOW,
+        scope: "campus-a",
+        justification: "",
+        policyAllows: true,
+      }).ok,
+    ).toBe(false);
+    expect(
+      activateEmergencyMode({
+        activatedBy: "ops-1",
+        at: NOW,
+        scope: "campus-a",
+        justification: "fire drill",
+        policyAllows: false,
+      }).ok,
+    ).toBe(false);
+    const result = activateEmergencyMode({
+      activatedBy: "ops-1",
+      at: NOW,
+      scope: "campus-a",
+      justification: "fire drill",
+      policyAllows: true,
+    });
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.state.active).toBe(true);
@@ -167,13 +283,43 @@ describe("Emergency mode (CX, CY)", () => {
 
 describe("Handoff and escalation matrix (CQ, CR, CS, CT)", () => {
   it("records operator handoff", () => {
-    const handoff = createOperatorHandoff({ previousOwner: "ops-1", newOwner: "ops-2", at: NOW, reason: "shift change", scopeRef: "inc-1" });
+    const handoff = createOperatorHandoff({
+      previousOwner: "ops-1",
+      newOwner: "ops-2",
+      at: NOW,
+      reason: "shift change",
+      scopeRef: "inc-1",
+    });
     expect(handoff.previousOwner).toBe("ops-1");
     expect(handoff.newOwner).toBe("ops-2");
   });
 
   it("requires current escalation policy versions (CT)", () => {
-    expect(isEscalationMatrixPolicyCurrent({ matrixId: "m1", severity: "high", domain: "security", targetRole: "sec-lead", afterMinutes: 30, policyVersion: 2 }, 2)).toBe(true);
-    expect(isEscalationMatrixPolicyCurrent({ matrixId: "m1", severity: "high", domain: "security", targetRole: "sec-lead", afterMinutes: 30, policyVersion: 1 }, 2)).toBe(false);
+    expect(
+      isEscalationMatrixPolicyCurrent(
+        {
+          matrixId: "m1",
+          severity: "high",
+          domain: "security",
+          targetRole: "sec-lead",
+          afterMinutes: 30,
+          policyVersion: 2,
+        },
+        2,
+      ),
+    ).toBe(true);
+    expect(
+      isEscalationMatrixPolicyCurrent(
+        {
+          matrixId: "m1",
+          severity: "high",
+          domain: "security",
+          targetRole: "sec-lead",
+          afterMinutes: 30,
+          policyVersion: 1,
+        },
+        2,
+      ),
+    ).toBe(false);
   });
 });

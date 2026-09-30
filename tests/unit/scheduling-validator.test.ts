@@ -38,9 +38,21 @@ import {
 const TENANT_A = tenantId("tenant-a");
 const NOW = "2026-01-01T00:00:00Z";
 
-const INTERVAL_A: TimeInterval = { start: "2026-01-01T08:00:00Z", end: "2026-01-01T09:00:00Z", timezone: "UTC" };
-const INTERVAL_B: TimeInterval = { start: "2026-01-01T08:30:00Z", end: "2026-01-01T09:30:00Z", timezone: "UTC" };
-const INTERVAL_C: TimeInterval = { start: "2026-01-01T10:00:00Z", end: "2026-01-01T11:00:00Z", timezone: "UTC" };
+const INTERVAL_A: TimeInterval = {
+  start: "2026-01-01T08:00:00Z",
+  end: "2026-01-01T09:00:00Z",
+  timezone: "UTC",
+};
+const INTERVAL_B: TimeInterval = {
+  start: "2026-01-01T08:30:00Z",
+  end: "2026-01-01T09:30:00Z",
+  timezone: "UTC",
+};
+const INTERVAL_C: TimeInterval = {
+  start: "2026-01-01T10:00:00Z",
+  end: "2026-01-01T11:00:00Z",
+  timezone: "UTC",
+};
 
 function makeActivity(overrides: Partial<ScheduledActivity> = {}): ScheduledActivity {
   const created = createScheduledActivity({
@@ -57,8 +69,20 @@ function makeActivity(overrides: Partial<ScheduledActivity> = {}): ScheduledActi
   return { ...created.activity, ...overrides };
 }
 
-const ROOM_1: ScheduleResource = { id: "room-1", tenantId: TENANT_A, type: "room", name: "Lab A", capacity: 40 };
-const ROOM_2: ScheduleResource = { id: "room-2", tenantId: TENANT_A, type: "room", name: "Small Room", capacity: 20 };
+const ROOM_1: ScheduleResource = {
+  id: "room-1",
+  tenantId: TENANT_A,
+  type: "room",
+  name: "Lab A",
+  capacity: 40,
+};
+const ROOM_2: ScheduleResource = {
+  id: "room-2",
+  tenantId: TENANT_A,
+  type: "room",
+  name: "Small Room",
+  capacity: 20,
+};
 
 function makeHardConstraint(overrides: Partial<SchedulingConstraint> = {}): SchedulingConstraint {
   const created = createSchedulingConstraint({
@@ -202,13 +226,18 @@ describe("Schedule lifecycle and publication (G, H, BL, BM, BN)", () => {
 
     const invalidVersion = recordValidationResult(version.version, false);
     expect(
-      canPublishSchedule(invalidVersion, { feasible: false, conflicts: [], criticalActivityIds: [] }).ok,
+      canPublishSchedule(invalidVersion, {
+        feasible: false,
+        conflicts: [],
+        criticalActivityIds: [],
+      }).ok,
     ).toBe(false);
 
     const unvalidated = { ...version.version, approvalStatus: "approved" as const };
-    expect(canPublishSchedule(unvalidated, { feasible: true, conflicts: [], criticalActivityIds: [] }).ok).toBe(
-      false,
-    );
+    expect(
+      canPublishSchedule(unvalidated, { feasible: true, conflicts: [], criticalActivityIds: [] })
+        .ok,
+    ).toBe(false);
   });
 
   it("publishes a validated and approved version", () => {

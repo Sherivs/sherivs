@@ -1,9 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import {
-  PASSWORD_RESET_RATE_LIMIT,
-  passwordResetRetryAfterMs,
-} from "@/lib/auth-helpers";
+import { PASSWORD_RESET_RATE_LIMIT, passwordResetRetryAfterMs } from "@/lib/auth-helpers";
 
 const AUDIT_EVENTS = [
   "password_reset_requested",
@@ -31,9 +28,7 @@ export const Route = createFileRoute("/api/public/audit/password-reset")({
         }
 
         try {
-          const { supabaseAdmin } = await import(
-            "@/integrations/supabase/client.server"
-          );
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
           let userId = parsed.user_id ?? null;
           let schoolId: string | null = null;
@@ -64,9 +59,7 @@ export const Route = createFileRoute("/api/public/audit/password-reset")({
 
           // Rate limit only the *request* event (completion can't be abused).
           if (parsed.event === "password_reset_requested") {
-            const since = new Date(
-              Date.now() - PASSWORD_RESET_RATE_LIMIT.windowMs,
-            ).toISOString();
+            const since = new Date(Date.now() - PASSWORD_RESET_RATE_LIMIT.windowMs).toISOString();
 
             // Count recent attempts for this email AND this IP. Either over-limit blocks.
             const filters: Array<Promise<{ data: { created_at: string | null }[] | null }>> = [];

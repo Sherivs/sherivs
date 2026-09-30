@@ -39,13 +39,7 @@ export const IDENTITY_KINDS: readonly IdentityKind[] = [
  * ────────────────────────────────────────────────────────────*/
 
 export type IdentityLifecycleState =
-  | "proposed"
-  | "review"
-  | "provisioned"
-  | "active"
-  | "suspended"
-  | "deleted"
-  | "archived";
+  "proposed" | "review" | "provisioned" | "active" | "suspended" | "deleted" | "archived";
 
 export const IDENTITY_LIFECYCLE_STATES: readonly IdentityLifecycleState[] = [
   "proposed",
@@ -81,7 +75,8 @@ export function canTransitionIdentity(
  * Verification states (per G6 Identity Verification Engine)
  * ────────────────────────────────────────────────────────────*/
 
-export type VerificationLevel = "unverified" | "self_asserted" | "institutional" | "government" | "biometric";
+export type VerificationLevel =
+  "unverified" | "self_asserted" | "institutional" | "government" | "biometric";
 
 export const VERIFICATION_LEVELS: readonly VerificationLevel[] = [
   "unverified",
@@ -175,10 +170,7 @@ export const CREDENTIAL_STATUS_TRANSITIONS: Readonly<
   revoked: [],
 } as const;
 
-export function canTransitionCredential(
-  from: CredentialStatus,
-  to: CredentialStatus,
-): boolean {
+export function canTransitionCredential(from: CredentialStatus, to: CredentialStatus): boolean {
   return CREDENTIAL_STATUS_TRANSITIONS[from].includes(to);
 }
 
@@ -376,10 +368,7 @@ export const AGENT_LIFECYCLE_TRANSITIONS: Readonly<
   retired: [],
 } as const;
 
-export function canTransitionAgent(
-  from: AgentLifecycleState,
-  to: AgentLifecycleState,
-): boolean {
+export function canTransitionAgent(from: AgentLifecycleState, to: AgentLifecycleState): boolean {
   return AGENT_LIFECYCLE_TRANSITIONS[from].includes(to);
 }
 
@@ -503,7 +492,7 @@ export function isIdentityUsable(id: Pick<CoreGridIdentity, "lifecycle">): boole
 /** Invariant 03: AI agents are identities and therefore must be governed. */
 export function isAgentGoverned(agent: Pick<AgentIdentity, "lifecycle" | "permissions">): boolean {
   return (
-    agent.lifecycle === "deployed" ||
-    agent.lifecycle === "monitored"
-  ) && agent.permissions.length > 0;
+    (agent.lifecycle === "deployed" || agent.lifecycle === "monitored") &&
+    agent.permissions.length > 0
+  );
 }

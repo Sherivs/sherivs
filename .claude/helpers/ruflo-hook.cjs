@@ -10,30 +10,34 @@
  * never block a Claude Code turn.
  */
 
-'use strict';
+"use strict";
 
-const { spawnSync, execSync } = require('child_process');
-const fs = require('fs');
+const { spawnSync, execSync } = require("child_process");
+const fs = require("fs");
 
-function done() { process.exit(0); }
+function done() {
+  process.exit(0);
+}
 
 function commandExists(cmd) {
   try {
-    const r = execSync(
-      process.platform === 'win32' ? 'where ' + cmd : 'command -v ' + cmd,
-      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }
-    );
+    const r = execSync(process.platform === "win32" ? "where " + cmd : "command -v " + cmd, {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
     return r.trim().length > 0;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
 function invokeHook(bin, binArgs, hookArgs, stdinData) {
   const args = [...binArgs, ...hookArgs];
   const result = spawnSync(bin, args, {
-    shell: process.platform === 'win32',
-    input: stdinData || '',
-    encoding: 'utf8',
-    stdio: ['pipe', 'ignore', 'ignore'],
+    shell: process.platform === "win32",
+    input: stdinData || "",
+    encoding: "utf8",
+    stdio: ["pipe", "ignore", "ignore"],
     timeout: 30_000,
   });
   return result.status === 0;
@@ -45,14 +49,24 @@ function main() {
 
   const [subcommand, ...rest] = args;
 
-  let stdinData = '';
-  try { stdinData = fs.readFileSync(0, 'utf8'); } catch { stdinData = ''; }
+  let stdinData = "";
+  try {
+    stdinData = fs.readFileSync(0, "utf8");
+  } catch {
+    stdinData = "";
+  }
 
-  const hookArgs = ['hooks', subcommand, ...rest];
+  const hookArgs = ["hooks", subcommand, ...rest];
 
-  if (commandExists('ruflo')) { invokeHook('ruflo', [], hookArgs, stdinData); done(); }
-  if (commandExists('claude-flow')) { invokeHook('claude-flow', [], hookArgs, stdinData); done(); }
-  invokeHook('npx', ['--prefer-offline', '--yes', 'ruflo@latest'], hookArgs, stdinData);
+  if (commandExists("ruflo")) {
+    invokeHook("ruflo", [], hookArgs, stdinData);
+    done();
+  }
+  if (commandExists("claude-flow")) {
+    invokeHook("claude-flow", [], hookArgs, stdinData);
+    done();
+  }
+  invokeHook("npx", ["--prefer-offline", "--yes", "ruflo@latest"], hookArgs, stdinData);
   done();
 }
 

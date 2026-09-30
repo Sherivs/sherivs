@@ -22,21 +22,24 @@ function AiCommandCenter() {
       features={[
         {
           title: "AI Agents",
-          description: "Specialist agents for admissions, parent comms, grading assistance, lesson planning and more.",
+          description:
+            "Specialist agents for admissions, parent comms, grading assistance, lesson planning and more.",
           icon: Bot,
           tone: "violet",
           metric: { label: "Deployed", value: "8" },
         },
         {
           title: "AI Workflows",
-          description: "Drag-and-drop multi-step automations — e.g. ‘flag at-risk students → notify counsellor’.",
+          description:
+            "Drag-and-drop multi-step automations — e.g. ‘flag at-risk students → notify counsellor’.",
           icon: Workflow,
           tone: "sky",
           metric: { label: "Running", value: "12" },
         },
         {
           title: "AI Reports",
-          description: "Auto-generated term, monthly and ad-hoc reports — narrative + charts, board-ready.",
+          description:
+            "Auto-generated term, monthly and ad-hoc reports — narrative + charts, board-ready.",
           icon: FileBarChart2,
           tone: "emerald",
           metric: { label: "This month", value: "246" },

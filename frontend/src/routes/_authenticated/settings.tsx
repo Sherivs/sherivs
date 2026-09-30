@@ -157,9 +157,7 @@ function ProfileCard({
           <input
             className="uos-input"
             value={form.emergency_contact_name ?? ""}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, emergency_contact_name: e.target.value }))
-            }
+            onChange={(e) => setForm((f) => ({ ...f, emergency_contact_name: e.target.value }))}
           />
         </Field>
         <Field label="Emergency contact phone">
@@ -197,9 +195,9 @@ function PrivacyCard({
     <GlassCard className="flex flex-col gap-4">
       <SectionTitle icon={<Bot className="size-4" />} title="AI & privacy" />
       <p className="text-sm text-[color:var(--text-secondary)]">
-        The platform may use a Digital Twin to draft AI-assisted summaries and parent
-        calls based on your linked data. Opting out blocks the school from including you in
-        any AI-generated communication.
+        The platform may use a Digital Twin to draft AI-assisted summaries and parent calls based on
+        your linked data. Opting out blocks the school from including you in any AI-generated
+        communication.
       </p>
       <label className="flex items-center justify-between gap-4 rounded-xl border border-[color:var(--glass-border)] bg-[color:var(--glass-bg)] px-4 py-3">
         <span className="text-sm font-medium">Opt out of Digital Twin AI calls</span>

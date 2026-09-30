@@ -31,7 +31,9 @@ function TeacherSignInPage() {
   const [inside, setInside] = useState<boolean | null>(null);
   const [distance, setDistance] = useState<number | null>(null);
   const [scanProgress, setScanProgress] = useState(0);
-  const [outcome, setOutcome] = useState<{ ok: boolean; message: string; time?: string } | null>(null);
+  const [outcome, setOutcome] = useState<{ ok: boolean; message: string; time?: string } | null>(
+    null,
+  );
 
   const geofence = useQuery({
     queryKey: ["school-geofence", schoolId],
@@ -121,13 +123,20 @@ function TeacherSignInPage() {
         if (!fences.length) {
           setInside(false);
           setDistance(null);
-          setLocError("No campus boundary has been configured. Ask your admin to set the geofence.");
+          setLocError(
+            "No campus boundary has been configured. Ask your admin to set the geofence.",
+          );
           return;
         }
         let best = Number.POSITIVE_INFINITY;
         let ok = false;
         for (const f of fences) {
-          const d = distanceMeters(next.latitude, next.longitude, Number(f.latitude), Number(f.longitude));
+          const d = distanceMeters(
+            next.latitude,
+            next.longitude,
+            Number(f.latitude),
+            Number(f.longitude),
+          );
           if (d < best) best = d;
           if (d <= (f.radius_meters ?? 150)) ok = true;
         }
@@ -272,7 +281,11 @@ function TeacherSignInPage() {
                   {distance !== null && <> · {distance}m from campus centre</>}
                 </p>
               )}
-              {locating && <p className="text-sm text-[color:var(--text-secondary)]">Checking your location…</p>}
+              {locating && (
+                <p className="text-sm text-[color:var(--text-secondary)]">
+                  Checking your location…
+                </p>
+              )}
               {(locError || inside === false) && (
                 <div className="mx-auto max-w-md rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-300">
                   {locError ?? "You appear to be outside school premises."}
@@ -322,7 +335,9 @@ function TeacherSignInPage() {
               style={{ width: `${scanProgress}%` }}
             />
           </div>
-          <p className="mt-2 text-xs text-[color:var(--text-secondary)]">{Math.round(scanProgress)}%</p>
+          <p className="mt-2 text-xs text-[color:var(--text-secondary)]">
+            {Math.round(scanProgress)}%
+          </p>
         </GlassCard>
       )}
 
@@ -335,7 +350,9 @@ function TeacherSignInPage() {
               <p className="mt-1 text-sm text-[color:var(--text-secondary)]">
                 {outcome.message} Signed in at {outcome.time}
               </p>
-              <p className="mt-3 text-xs text-[color:var(--text-secondary)]">Redirecting to your dashboard…</p>
+              <p className="mt-3 text-xs text-[color:var(--text-secondary)]">
+                Redirecting to your dashboard…
+              </p>
             </>
           ) : (
             <>

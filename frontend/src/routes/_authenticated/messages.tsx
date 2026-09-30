@@ -88,8 +88,7 @@ function MessagesPage() {
     const rows = all.data ?? [];
     const map = new Map<string, MessageRow[]>();
     rows.forEach((m) => {
-      const inTab =
-        tab === "inbox" ? m.recipient_id === me : m.sender_id === me;
+      const inTab = tab === "inbox" ? m.recipient_id === me : m.sender_id === me;
       if (!inTab) return;
       const arr = map.get(m.thread_id) ?? [];
       arr.push(m);
@@ -99,11 +98,8 @@ function MessagesPage() {
     map.forEach((msgs, thread_id) => {
       msgs.sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
       const last = msgs[0];
-      const otherId =
-        tab === "inbox" ? last.sender_id : last.recipient_id;
-      const unread = msgs.filter(
-        (m) => m.recipient_id === me && !m.is_read,
-      ).length;
+      const otherId = tab === "inbox" ? last.sender_id : last.recipient_id;
+      const unread = msgs.filter((m) => m.recipient_id === me && !m.is_read).length;
       list.push({ thread_id, last, count: msgs.length, unread, otherId });
     });
     list.sort((a, b) => +new Date(b.last.created_at) - +new Date(a.last.created_at));
@@ -149,10 +145,7 @@ function MessagesPage() {
   }, [threads, search, people.data]);
 
   const inboxUnread = useMemo(
-    () =>
-      (all.data ?? []).filter(
-        (m) => m.recipient_id === me && !m.is_read,
-      ).length,
+    () => (all.data ?? []).filter((m) => m.recipient_id === me && !m.is_read).length,
     [all.data, me],
   );
 
@@ -162,7 +155,8 @@ function MessagesPage() {
   );
 
   const inboxCount = useMemo(
-    () => new Set((all.data ?? []).filter((m) => m.recipient_id === me).map((m) => m.thread_id)).size,
+    () =>
+      new Set((all.data ?? []).filter((m) => m.recipient_id === me).map((m) => m.thread_id)).size,
     [all.data, me],
   );
 
@@ -249,18 +243,14 @@ function MessagesPage() {
                   <div className="flex items-center justify-between gap-2">
                     <span className="truncate font-semibold">
                       {other?.full_name ?? "Unknown"}{" "}
-                      <span className="text-xs uppercase text-muted-foreground">
-                        {other?.role}
-                      </span>
+                      <span className="text-xs uppercase text-muted-foreground">{other?.role}</span>
                     </span>
                     <span className="shrink-0 text-xs text-muted-foreground">
                       {new Date(t.last.created_at).toLocaleDateString()}
                     </span>
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <div className="truncate text-sm">
-                      {t.last.subject || "(no subject)"}
-                    </div>
+                    <div className="truncate text-sm">{t.last.subject || "(no subject)"}</div>
                     {t.count > 1 && (
                       <span className="shrink-0 rounded-full bg-muted px-1.5 text-[10px]">
                         {t.count}
@@ -268,9 +258,7 @@ function MessagesPage() {
                     )}
                   </div>
                   <div className="truncate text-xs text-muted-foreground">
-                    {t.last.attachment_name && (
-                      <Paperclip className="mr-1 inline size-3" />
-                    )}
+                    {t.last.attachment_name && <Paperclip className="mr-1 inline size-3" />}
                     {t.last.body}
                   </div>
                 </button>
@@ -368,8 +356,7 @@ function ThreadView({
 
   const first = messages[0];
   const last = messages[messages.length - 1];
-  const recipientId =
-    last && last.sender_id === me ? last.recipient_id : last?.sender_id ?? null;
+  const recipientId = last && last.sender_id === me ? last.recipient_id : (last?.sender_id ?? null);
 
   async function sendReply(e: React.FormEvent) {
     e.preventDefault();
@@ -426,9 +413,7 @@ function ThreadView({
   return (
     <div className="uos-card flex flex-col">
       <header className="border-b border-border p-6">
-        <h2 className="font-display text-xl font-bold">
-          {first?.subject || "(no subject)"}
-        </h2>
+        <h2 className="font-display text-xl font-bold">{first?.subject || "(no subject)"}</h2>
         <p className="mt-1 text-xs text-muted-foreground">
           {messages.length} message{messages.length === 1 ? "" : "s"} in thread
         </p>
@@ -437,9 +422,7 @@ function ThreadView({
       <div className="max-h-[60vh] space-y-4 overflow-y-auto p-6">
         {messages.map((m) => {
           const mine = m.sender_id === me;
-          const who = mine
-            ? "You"
-            : people[m.sender_id ?? ""]?.full_name ?? "Unknown";
+          const who = mine ? "You" : (people[m.sender_id ?? ""]?.full_name ?? "Unknown");
           return (
             <article
               key={m.id}
@@ -450,8 +433,8 @@ function ThreadView({
               <header className="flex items-center justify-between text-xs text-muted-foreground">
                 <span className="font-semibold text-foreground">{who}</span>
                 <span className="flex items-center gap-1.5">
-                  {mine && (
-                    m.is_read ? (
+                  {mine &&
+                    (m.is_read ? (
                       <span className="flex items-center gap-0.5 text-emerald-400" title="Read">
                         <CheckCheck className="size-3" /> Read
                       </span>
@@ -459,14 +442,11 @@ function ThreadView({
                       <span className="flex items-center gap-0.5" title="Delivered">
                         <Check className="size-3" /> Sent
                       </span>
-                    )
-                  )}
+                    ))}
                   {new Date(m.created_at).toLocaleString()}
                 </span>
               </header>
-              <div className="mt-2 whitespace-pre-wrap text-sm leading-relaxed">
-                {m.body}
-              </div>
+              <div className="mt-2 whitespace-pre-wrap text-sm leading-relaxed">{m.body}</div>
               {m.attachment_url && (
                 <button
                   type="button"

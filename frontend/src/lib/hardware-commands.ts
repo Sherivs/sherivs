@@ -33,7 +33,17 @@ import type { TenantId } from "./tenant-core";
  * Command model (AH)
  * ────────────────────────────────────────────────────────────*/
 
-export type DeviceCommandType = "lock" | "unlock" | "open" | "close" | "stop" | "start" | "set" | "reboot" | "firmware" | "generic";
+export type DeviceCommandType =
+  | "lock"
+  | "unlock"
+  | "open"
+  | "close"
+  | "stop"
+  | "start"
+  | "set"
+  | "reboot"
+  | "firmware"
+  | "generic";
 
 export const DEVICE_COMMAND_TYPES: readonly DeviceCommandType[] = [
   "lock",
@@ -89,7 +99,11 @@ export const COMMAND_STATES: readonly CommandState[] = [
 /** Verification outcome for execution confirmation (AP). */
 export type VerificationStatus = "CONFIRMED" | "UNVERIFIED" | "FAILED";
 
-export const VERIFICATION_STATUSES: readonly VerificationStatus[] = ["CONFIRMED", "UNVERIFIED", "FAILED"] as const;
+export const VERIFICATION_STATUSES: readonly VerificationStatus[] = [
+  "CONFIRMED",
+  "UNVERIFIED",
+  "FAILED",
+] as const;
 
 export interface HardwareCommand {
   commandId: string;
@@ -122,7 +136,8 @@ export interface IssueCommandInput {
   approvalRequired: boolean;
 }
 
-export type IssueCommandResult = { ok: true; command: HardwareCommand } | { ok: false; error: string };
+export type IssueCommandResult =
+  { ok: true; command: HardwareCommand } | { ok: false; error: string };
 
 /**
  * Issue a command (AH). A command that requires approval can never start
@@ -182,7 +197,8 @@ export function isCommandTransitionAllowed(from: CommandState, to: CommandState)
   return COMMAND_TRANSITIONS[from].includes(to);
 }
 
-export type TransitionCommandResult = { ok: true; command: HardwareCommand } | { ok: false; error: string };
+export type TransitionCommandResult =
+  { ok: true; command: HardwareCommand } | { ok: false; error: string };
 
 export function transitionCommandState(
   command: HardwareCommand,
@@ -190,7 +206,10 @@ export function transitionCommandState(
   context?: { approvedBy?: string; failureReason?: string; now?: string },
 ): TransitionCommandResult {
   if (!isCommandTransitionAllowed(command.status, to)) {
-    return { ok: false, error: `Command transition ${command.status} -> ${to} is not allowed (AI)` };
+    return {
+      ok: false,
+      error: `Command transition ${command.status} -> ${to} is not allowed (AI)`,
+    };
   }
   // AUTHORIZED is the authorization gate. Commands that do not require
   // approval pass through it implicitly; commands that require approval
@@ -213,7 +232,6 @@ export function transitionCommandState(
   };
 }
 
-
 /* ─────────────────────────────────────────────────────────────
  * Command authorization (AJ)
  * ────────────────────────────────────────────────────────────*/
@@ -228,9 +246,7 @@ export interface CommandAuthorizationInput {
   isOwner: boolean;
 }
 
-export type CommandAuthorizationResult =
-  | { ok: true }
-  | { ok: false; error: string };
+export type CommandAuthorizationResult = { ok: true } | { ok: false; error: string };
 
 /**
  * Authorize a command (AJ): commands are authorized against device
@@ -272,7 +288,12 @@ export interface SafetyStop {
   active: boolean;
 }
 
-export function issueSafetyStop(deviceId: string, issuedBy: string, reason: string, issuedAt: string): SafetyStop {
+export function issueSafetyStop(
+  deviceId: string,
+  issuedBy: string,
+  reason: string,
+  issuedAt: string,
+): SafetyStop {
   return { deviceId, issuedAt, issuedBy, reason, active: true };
 }
 
@@ -311,7 +332,10 @@ export function isCommandBlockedBySafetyStop(
  * idempotency key returns the existing command without re-issuing or
  * re-executing.
  */
-export function isDuplicateCommand(existing: HardwareCommand | null, idempotencyKey: string): boolean {
+export function isDuplicateCommand(
+  existing: HardwareCommand | null,
+  idempotencyKey: string,
+): boolean {
   return existing !== null && existing.idempotencyKey === idempotencyKey;
 }
 
@@ -327,7 +351,8 @@ export function isCommandExpired(command: HardwareCommand, now: string): boolean
  * Device operational state (AQ)
  * ────────────────────────────────────────────────────────────*/
 
-export type DeviceOperationalState = "OPERATIONAL" | "DEGRADED" | "OFFLINE" | "MAINTENANCE" | "QUARANTINED";
+export type DeviceOperationalState =
+  "OPERATIONAL" | "DEGRADED" | "OFFLINE" | "MAINTENANCE" | "QUARANTINED";
 
 export const DEVICE_OPERATIONAL_STATES: readonly DeviceOperationalState[] = [
   "OPERATIONAL",

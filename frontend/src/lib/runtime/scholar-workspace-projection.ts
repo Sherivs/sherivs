@@ -99,9 +99,12 @@ export function scholarRoleWorkspaceCoverage(): ScholarRoleWorkspaceCoverage {
  * must display the registry total alongside it, so a sample is never mistaken for
  * the whole catalog.
  */
-export function scholarRoleWorkspaceSample(
-  limit = 25,
-): readonly { roleId: string; name: string; category: string; workspaces: readonly RoleWorkspaceKey[] }[] {
+export function scholarRoleWorkspaceSample(limit = 25): readonly {
+  roleId: string;
+  name: string;
+  category: string;
+  workspaces: readonly RoleWorkspaceKey[];
+}[] {
   return EDUCATION_REALITY_ROLES.slice(0, Math.max(0, limit)).map((role) => ({
     roleId: role.id,
     name: role.name,

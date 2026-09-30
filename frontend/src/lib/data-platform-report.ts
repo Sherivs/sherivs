@@ -57,7 +57,8 @@ export const DATA_RULES: readonly DataRule[] = [
   },
   {
     id: "history-is-preserved",
-    statement: "A data migration must state how stored history is preserved before it may touch a record.",
+    statement:
+      "A data migration must state how stored history is preserved before it may touch a record.",
     module: "frontend/src/lib/data-migration.ts",
     suite: "tests/unit/data-platform-engines.test.ts",
     blueprint: "provenance",
@@ -88,7 +89,8 @@ export const DATA_RULES: readonly DataRule[] = [
   },
   {
     id: "bursts-are-budgeted",
-    statement: "A declared burst budget is enforced and an exceeded budget is reported rather than absorbed.",
+    statement:
+      "A declared burst budget is enforced and an exceeded budget is reported rather than absorbed.",
     module: "frontend/src/lib/data-jobs.ts",
     suite: "tests/unit/data-platform-engines.test.ts",
     blueprint: "observability",
@@ -111,7 +113,8 @@ export const DATA_RULES: readonly DataRule[] = [
   },
   {
     id: "replays-do-not-double-count",
-    statement: "A record already held under the same natural key is reported as a duplicate and ingested once.",
+    statement:
+      "A record already held under the same natural key is reported as a duplicate and ingested once.",
     module: "frontend/src/lib/data-ingestion.ts",
     suite: "tests/unit/data-platform-engines.test.ts",
     blueprint: "idempotency",
@@ -158,7 +161,8 @@ export const DECLARED_GAP_MAPPING: readonly DeclaredGapMapping[] = [
   {
     gapId: "GAP-FIN-02",
     declaredBy: "Phase 13",
-    declared: "no persistence migration for invoices, payments, splits, journal events, outbox entries or idempotency records",
+    declared:
+      "no persistence migration for invoices, payments, splits, journal events, outbox entries or idempotency records",
     providedByDataPlatform:
       "the migration discipline (forward-only, validated, history-preserving) and the schema-invariant checker a domain uses to declare and prove the shape of its records",
     remains:
@@ -167,7 +171,8 @@ export const DECLARED_GAP_MAPPING: readonly DeclaredGapMapping[] = [
   {
     gapId: "GAP-FIN-03",
     declaredBy: "Phase 13",
-    declared: "reconciliation compares one pair of records; no run compares a whole provider statement and opens exceptions",
+    declared:
+      "reconciliation compares one pair of records; no run compares a whole provider statement and opens exceptions",
     providedByDataPlatform:
       "the dataset reconciliation engine: keyed comparison, declared tolerances, matched/missing/unexpected/duplicate classification, evidence-required resolution and exception ageing",
     remains:
@@ -176,39 +181,49 @@ export const DECLARED_GAP_MAPPING: readonly DeclaredGapMapping[] = [
   {
     gapId: "GAP-FIN-06",
     declaredBy: "Phase 13",
-    declared: "batch billing, webhook bursts, settlement polling and reconciliation runs are not schedulable or cancellable jobs",
+    declared:
+      "batch billing, webhook bursts, settlement polling and reconciliation runs are not schedulable or cancellable jobs",
     providedByDataPlatform:
       "the job contract: derived idempotency keys, an explicit run state machine, declared restartability with checkpoints, cancellation rules, attempt ceilings and burst budgets",
-    remains: "the financial jobs themselves and their scheduling, which belong to the financial phase with Phase 17",
+    remains:
+      "the financial jobs themselves and their scheduling, which belong to the financial phase with Phase 17",
   },
   {
     gapId: "GAP-FIN-07",
     declaredBy: "Phase 13",
-    declared: "no authorised ingestion boundary, so no platform surface calls the financial engines",
+    declared:
+      "no authorised ingestion boundary, so no platform surface calls the financial engines",
     providedByDataPlatform:
       "the ingestion boundary: declared endpoints with authority, source and signature requirements, natural-key deduplication, rejection with reasons and full provenance on every accepted record",
-    remains: "the financial endpoints and the server functions that use them, behind Phase 08's authorization",
+    remains:
+      "the financial endpoints and the server functions that use them, behind Phase 08's authorization",
   },
   {
     gapId: "GAP-FIN-01",
     declaredBy: "Phase 13",
     declared: "no live payment provider adapter",
-    providedByDataPlatform: "nothing — this is not a data-platform gap, and it is recorded here so that mapping it does not look like an answer",
-    remains: "provider adapters, contract tests and credentials, which belong to Phase 13 and the owner",
+    providedByDataPlatform:
+      "nothing — this is not a data-platform gap, and it is recorded here so that mapping it does not look like an answer",
+    remains:
+      "provider adapters, contract tests and credentials, which belong to Phase 13 and the owner",
   },
   {
     gapId: "GAP-FIN-04",
     declaredBy: "Phase 13",
     declared: "no collections or dispute state machines",
-    providedByDataPlatform: "the state-machine and lifecycle discipline the platform enforces (explicit states, evidence to close, ageing of open items)",
-    remains: "the collection and dispute states, their transitions and their financial effects, which are the financial phase's semantics",
+    providedByDataPlatform:
+      "the state-machine and lifecycle discipline the platform enforces (explicit states, evidence to close, ageing of open items)",
+    remains:
+      "the collection and dispute states, their transitions and their financial effects, which are the financial phase's semantics",
   },
   {
     gapId: "GAP-FIN-05",
     declaredBy: "Phase 13",
     declared: "no metered usage, overage computation or renewal generation",
-    providedByDataPlatform: "the ingestion boundary for meter readings and the job contract that makes a renewal run safe to repeat",
-    remains: "metering semantics, overage rules and renewal generation, which belong to the financial phase with Phase 17",
+    providedByDataPlatform:
+      "the ingestion boundary for meter readings and the job contract that makes a renewal run safe to repeat",
+    remains:
+      "metering semantics, overage rules and renewal generation, which belong to the financial phase with Phase 17",
   },
 ];
 
@@ -224,35 +239,44 @@ export const DATA_PLATFORM_GAPS: readonly DataGap[] = [
   {
     id: "GAP-DATA-01",
     area: "physical storage",
-    statement: "The platform defines data discipline, not storage: no warehouse, lake or analytical store is provisioned.",
-    closesWhen: "a storage layer is provisioned and the contracts here are enforced by it rather than by convention",
+    statement:
+      "The platform defines data discipline, not storage: no warehouse, lake or analytical store is provisioned.",
+    closesWhen:
+      "a storage layer is provisioned and the contracts here are enforced by it rather than by convention",
     owner: "Phase 14 with Phase 21",
   },
   {
     id: "GAP-DATA-02",
     area: "enforcement wiring",
-    statement: "The migration, job, ingestion and reconciliation contracts are executable libraries; no database, scheduler or gateway calls them yet.",
-    closesWhen: "migrations run through the migration contract, jobs through the job contract and inbound feeds through the ingestion boundary",
+    statement:
+      "The migration, job, ingestion and reconciliation contracts are executable libraries; no database, scheduler or gateway calls them yet.",
+    closesWhen:
+      "migrations run through the migration contract, jobs through the job contract and inbound feeds through the ingestion boundary",
     owner: "Phase 14 with Phase 05",
   },
   {
     id: "GAP-DATA-03",
     area: "streaming",
-    statement: "There is no streaming or change-data-capture path: every contract here is batch-shaped.",
-    closesWhen: "a stream consumer enforces the same key, dedup, provenance and burst rules as the batch boundary",
+    statement:
+      "There is no streaming or change-data-capture path: every contract here is batch-shaped.",
+    closesWhen:
+      "a stream consumer enforces the same key, dedup, provenance and burst rules as the batch boundary",
     owner: "Phase 14",
   },
   {
     id: "GAP-DATA-04",
     area: "quality feedback",
-    statement: "Quality rules exist, but their results do not feed the catalog or the reconciliation engine as evidence.",
-    closesWhen: "quality verdicts are recorded as evidence that a dataset's contract and its consumers can read",
+    statement:
+      "Quality rules exist, but their results do not feed the catalog or the reconciliation engine as evidence.",
+    closesWhen:
+      "quality verdicts are recorded as evidence that a dataset's contract and its consumers can read",
     owner: "Phase 14",
   },
   {
     id: "GAP-DATA-05",
     area: "retention enforcement",
-    statement: "Retention and residency are declared policies; nothing yet enforces expiry, masking or locality on a real store.",
+    statement:
+      "Retention and residency are declared policies; nothing yet enforces expiry, masking or locality on a real store.",
     closesWhen: "a storage layer enforces the declared retention, hold and residency rules",
     owner: "Phase 14 with Phase 21",
   },
@@ -284,7 +308,13 @@ const LEDGER_TABLE: TableContract = {
   columns: [
     { name: "record_id", type: "uuid", nullable: false },
     { name: "tenant_id", type: "uuid", nullable: false },
-    { name: "amount_minor", type: "bigint", nullable: false, minorUnits: true, currencyColumn: "currency" },
+    {
+      name: "amount_minor",
+      type: "bigint",
+      nullable: false,
+      minorUnits: true,
+      currencyColumn: "currency",
+    },
     { name: "currency", type: "char(3)", nullable: false },
     { name: "status", type: "text", nullable: false },
   ],
@@ -366,7 +396,9 @@ export function runDataPlatformChecks(): readonly DataCheck[] {
     id: "migrations-are-forward-only",
     rule: "migrations-are-forward-only",
     module: "data-migration",
-    observed: editedMigration.ok ? "an edited applied migration was accepted" : editedMigration.detail,
+    observed: editedMigration.ok
+      ? "an edited applied migration was accepted"
+      : editedMigration.detail,
     passed: !editedMigration.ok,
   });
 
@@ -384,7 +416,9 @@ export function runDataPlatformChecks(): readonly DataCheck[] {
     id: "migrations-declare-their-validation",
     rule: "migrations-are-forward-only",
     module: "data-migration",
-    observed: unvalidated.ok ? "a migration without a validation step was accepted" : unvalidated.detail,
+    observed: unvalidated.ok
+      ? "a migration without a validation step was accepted"
+      : unvalidated.detail,
     passed: !unvalidated.ok,
   });
 
@@ -408,5 +442,3 @@ export function runDataPlatformChecks(): readonly DataCheck[] {
 
   return checks;
 }
-
-

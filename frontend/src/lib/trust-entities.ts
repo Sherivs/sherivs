@@ -207,8 +207,7 @@ export interface RegisterModelTrustInput {
 }
 
 export function registerModelTrust(input: RegisterModelTrustInput): ModelTrustRecord {
-  const usable =
-    input.provenanceVerified && input.integrityVerified && input.evaluationPassed;
+  const usable = input.provenanceVerified && input.integrityVerified && input.evaluationPassed;
   return {
     modelId: input.modelId,
     version: input.version,
@@ -248,8 +247,7 @@ export interface RegisterSoftwareProvenanceInput {
 }
 
 export type RegisterSoftwareProvenanceResult =
-  | { ok: true; record: SoftwareProvenanceRecord }
-  | { ok: false; error: string };
+  { ok: true; record: SoftwareProvenanceRecord } | { ok: false; error: string };
 
 export function registerSoftwareProvenance(
   input: RegisterSoftwareProvenanceInput,
@@ -296,8 +294,7 @@ export interface ArtifactIntegrityVerdict {
 export function verifyArtifactIntegrity(
   input: VerifyArtifactIntegrityInput,
 ): ArtifactIntegrityVerdict {
-  const hashMatches =
-    input.expectedHash.trim() !== "" && input.expectedHash === input.actualHash;
+  const hashMatches = input.expectedHash.trim() !== "" && input.expectedHash === input.actualHash;
   const verified =
     hashMatches && input.signatureVerified && input.sourceVerified && input.buildIdentityVerified;
   return {
@@ -330,4 +327,3 @@ export function supplyChainTrustState(
   if (!integrityVerified) return "DEGRADED";
   return "TRUSTED";
 }
-

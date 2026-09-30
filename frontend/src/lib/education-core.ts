@@ -239,11 +239,7 @@ export function isEntityInTenant(
  * Student information requires heightened protection.
  */
 export type EducationalDataClassification =
-  | "PUBLIC"
-  | "TENANT_INTERNAL"
-  | "CONFIDENTIAL"
-  | "SENSITIVE"
-  | "RESTRICTED";
+  "PUBLIC" | "TENANT_INTERNAL" | "CONFIDENTIAL" | "SENSITIVE" | "RESTRICTED";
 
 export const EDUCATIONAL_DATA_CLASSIFICATIONS: readonly EducationalDataClassification[] = [
   "PUBLIC",
@@ -253,9 +249,7 @@ export const EDUCATIONAL_DATA_CLASSIFICATIONS: readonly EducationalDataClassific
   "RESTRICTED",
 ] as const;
 
-export function educationalClassificationRank(
-  c: EducationalDataClassification,
-): number {
+export function educationalClassificationRank(c: EducationalDataClassification): number {
   switch (c) {
     case "PUBLIC":
       return 0;
@@ -334,11 +328,7 @@ export interface EducationalLevel extends TenantScopedEntity {
  * ────────────────────────────────────────────────────────────*/
 
 export type LanguageRole =
-  | "instructional"
-  | "administrative"
-  | "local"
-  | "examination"
-  | "communication";
+  "instructional" | "administrative" | "local" | "examination" | "communication";
 
 export const LANGUAGE_ROLES: readonly LanguageRole[] = [
   "instructional",
@@ -362,12 +352,7 @@ export interface Language extends TenantScopedEntity {
  * ────────────────────────────────────────────────────────────*/
 
 export type AcademicPeriodType =
-  | "annual"
-  | "semester"
-  | "term"
-  | "trimester"
-  | "quarter"
-  | "custom";
+  "annual" | "semester" | "term" | "trimester" | "quarter" | "custom";
 
 export const ACADEMIC_PERIOD_TYPES: readonly AcademicPeriodType[] = [
   "annual",
@@ -569,13 +554,7 @@ export interface SchoolHours extends TenantScopedEntity {
  * ────────────────────────────────────────────────────────────*/
 
 export type AttendanceStatus =
-  | "present"
-  | "absent"
-  | "late"
-  | "excused"
-  | "early_departure"
-  | "remote"
-  | "field_activity";
+  "present" | "absent" | "late" | "excused" | "early_departure" | "remote" | "field_activity";
 
 export const ATTENDANCE_STATUSES: readonly AttendanceStatus[] = [
   "present",
@@ -587,13 +566,7 @@ export const ATTENDANCE_STATUSES: readonly AttendanceStatus[] = [
   "field_activity",
 ] as const;
 
-export type AttendanceSubject =
-  | "student"
-  | "staff"
-  | "class"
-  | "event"
-  | "practical"
-  | "boarding";
+export type AttendanceSubject = "student" | "staff" | "class" | "event" | "practical" | "boarding";
 
 export const ATTENDANCE_SUBJECTS: readonly AttendanceSubject[] = [
   "student",
@@ -872,6 +845,8 @@ export function isUnknown(value: string | null | undefined): boolean {
 }
 
 /** Section 146: AI is not the system of record. */
-export function isAiGeneratedEvidence(evidence: Pick<EducationalEvidence, "isAiGenerated">): boolean {
+export function isAiGeneratedEvidence(
+  evidence: Pick<EducationalEvidence, "isAiGenerated">,
+): boolean {
   return evidence.isAiGenerated;
 }

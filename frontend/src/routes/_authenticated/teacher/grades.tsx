@@ -42,10 +42,16 @@ function TeacherGradesPage() {
       subtitle="Enter CA + exam scores. Toggle 'Published' to release the report card."
     >
       <div className="mb-4 flex flex-wrap gap-2 text-xs">
-        <Link to="/teacher/dashboard" className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40">
+        <Link
+          to="/teacher/dashboard"
+          className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40"
+        >
           ← Dashboard
         </Link>
-        <Link to="/teacher/attendance" className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40">
+        <Link
+          to="/teacher/attendance"
+          className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40"
+        >
           Attendance
         </Link>
       </div>
@@ -65,8 +71,16 @@ function TeacherGradesPage() {
             { key: "grade", label: "Grade" },
             { key: "term", label: "Term" },
             { key: "academic_year", label: "Year" },
-            { key: "is_published", label: "Published", render: (r) => (r.is_published ? "✓" : "—") },
-            { key: "student_id", label: "Student", render: (r) => <code className="text-xs">{r.student_id.slice(0, 8)}…</code> },
+            {
+              key: "is_published",
+              label: "Published",
+              render: (r) => (r.is_published ? "✓" : "—"),
+            },
+            {
+              key: "student_id",
+              label: "Student",
+              render: (r) => <code className="text-xs">{r.student_id.slice(0, 8)}…</code>,
+            },
           ],
           fields: [
             { key: "student_id", label: "Student ID (UUID)", type: "text", required: true },

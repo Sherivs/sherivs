@@ -86,7 +86,8 @@ export const OBSERVATION_SOURCES: readonly ObservationSource[] = [
   "derived_computation",
 ] as const;
 
-export type ObservationQuality = "VALID" | "ESTIMATED" | "STALE" | "MISSING" | "CONFLICTING" | "INVALID" | "UNVERIFIED";
+export type ObservationQuality =
+  "VALID" | "ESTIMATED" | "STALE" | "MISSING" | "CONFLICTING" | "INVALID" | "UNVERIFIED";
 
 export const OBSERVATION_QUALITIES: readonly ObservationQuality[] = [
   "VALID",
@@ -128,7 +129,8 @@ export interface RecordObservationInput {
   value: unknown;
 }
 
-export type RecordObservationResult = { ok: true; observation: TwinObservation } | { ok: false; error: string };
+export type RecordObservationResult =
+  { ok: true; observation: TwinObservation } | { ok: false; error: string };
 
 /**
  * Record an observation (AB-AD). Observation != truth (AB); provenance is
@@ -136,10 +138,18 @@ export type RecordObservationResult = { ok: true; observation: TwinObservation }
  * interpretation.
  */
 export function recordObservation(input: RecordObservationInput): RecordObservationResult {
-  if (input.observedAt !== null && input.observedAt !== undefined && Number.isNaN(Date.parse(input.observedAt))) {
+  if (
+    input.observedAt !== null &&
+    input.observedAt !== undefined &&
+    Number.isNaN(Date.parse(input.observedAt))
+  ) {
     return { ok: false, error: "Observation timestamp is invalid (T)" };
   }
-  if (input.observedAt !== null && input.observedAt !== undefined && Date.parse(input.observedAt) > Date.parse(input.ingestedAt)) {
+  if (
+    input.observedAt !== null &&
+    input.observedAt !== undefined &&
+    Date.parse(input.observedAt) > Date.parse(input.ingestedAt)
+  ) {
     return { ok: false, error: "Observation time cannot be after ingestion time (T)" };
   }
   return {
@@ -181,7 +191,9 @@ export type ConflictResolutionResult =
  * the selected one, and the reason is explainable (source authority,
  * freshness, confidence).
  */
-export function resolveConflictingObservations(input: ConflictResolutionInput): ConflictResolutionResult {
+export function resolveConflictingObservations(
+  input: ConflictResolutionInput,
+): ConflictResolutionResult {
   if (input.observations.length === 0) {
     return { ok: false, error: "Cannot resolve an empty observation set (AG)" };
   }
@@ -191,14 +203,21 @@ export function resolveConflictingObservations(input: ConflictResolutionInput): 
     .map((o) => {
       const authority = input.sourceAuthority[o.source] ?? 0;
       const freshness = o.observedAt === null ? 0 : Date.parse(o.observedAt);
-      return { observation: o, score: authority * 1000 + (o.confidence ?? 0) * 10 + freshness / 1_000_000_000 };
+      return {
+        observation: o,
+        score: authority * 1000 + (o.confidence ?? 0) * 10 + freshness / 1_000_000_000,
+      };
     })
     .sort((a, b) => b.score - a.score);
   const selected = scored[0].observation;
   const reason = `Selected source="${selected.source}" authority=${input.sourceAuthority[selected.source] ?? 0} confidence=${selected.confidence ?? 0} (AG)`;
-  return { ok: true, selected, conflicting: input.observations.filter((o) => o.observationId !== selected.observationId), reason };
+  return {
+    ok: true,
+    selected,
+    conflicting: input.observations.filter((o) => o.observationId !== selected.observationId),
+    reason,
+  };
 }
-
 
 /* ─────────────────────────────────────────────────────────────
  * State model (U, V, AA) and snapshots (W)
@@ -286,8 +305,14 @@ export const defaultStateReducer: StateReducer = {
  * Event-sourced state (X): EVENTS -> STATE REDUCER -> CURRENT STATE.
  * Replaying the same event sequence always yields the same current state.
  */
-export function reconstructState(events: StateEvent[], reducer: StateReducer): Record<string, unknown> {
-  return events.reduce((state, event) => reducer.apply(state, event), {} as Record<string, unknown>);
+export function reconstructState(
+  events: StateEvent[],
+  reducer: StateReducer,
+): Record<string, unknown> {
+  return events.reduce(
+    (state, event) => reducer.apply(state, event),
+    {} as Record<string, unknown>,
+  );
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -397,4 +422,3 @@ export interface ReconciliationReport {
   orphanedTwins: string[];
   schemaMismatches: string[];
 }
-

@@ -105,9 +105,7 @@ export interface FoundationLoopPlan {
 const AUTHORIZED_ACTION = "record-observation";
 
 function integrityBinding(tenantId: string, realityId: string, observedAt: string): string {
-  return createHash("sha256")
-    .update(`${tenantId}|${realityId}|${observedAt}`)
-    .digest("hex");
+  return createHash("sha256").update(`${tenantId}|${realityId}|${observedAt}`).digest("hex");
 }
 
 export function planFoundationLoop(input: {
@@ -118,10 +116,8 @@ export function planFoundationLoop(input: {
   requestedRealityRef: string;
   request: FoundationLoopRequest;
 }): FoundationLoopPlan {
-  const realityInTenant =
-    input.reality !== null && input.reality.tenantId === input.tenantId;
-  const crossTenantReality =
-    input.reality !== null && input.reality.tenantId !== input.tenantId;
+  const realityInTenant = input.reality !== null && input.reality.tenantId === input.tenantId;
+  const crossTenantReality = input.reality !== null && input.reality.tenantId !== input.tenantId;
   const mission: MissionIntent = {
     missionId: input.request.missionId,
     version: input.request.version,
@@ -201,7 +197,14 @@ export function planFoundationLoop(input: {
   };
 
   if (admission.result.status !== "admitted" || !realityInTenant || !input.reality) {
-    return { admission, mission: missionRow, execution, history, evidence: null, verification: null };
+    return {
+      admission,
+      mission: missionRow,
+      execution,
+      history,
+      evidence: null,
+      verification: null,
+    };
   }
 
   const evidenceRecord: EvidenceRecord = {

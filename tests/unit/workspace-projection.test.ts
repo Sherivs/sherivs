@@ -81,7 +81,10 @@ describe("Phase 06 engine — composition from inputs, for any runtime", () => {
   });
 
   it("is deterministic and exposes the composition matrix", () => {
-    const inputs = [input({ key: "a" }), input({ key: "b", capabilities: new Set(["cap.finance"]) })];
+    const inputs = [
+      input({ key: "a" }),
+      input({ key: "b", capabilities: new Set(["cap.finance"]) }),
+    ];
     const first = composeWorkspaces(inputs).map((composition) => composition.itemCount);
 
     expect(first).toEqual(composeWorkspaces(inputs).map((composition) => composition.itemCount));

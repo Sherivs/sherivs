@@ -152,4 +152,3 @@ export function createCapabilityRegistry(): CapabilityRegistry {
     },
   };
 }
-

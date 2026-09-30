@@ -29,7 +29,9 @@ export function NewsList() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("news")
-        .select("id,title,excerpt,content,category,cover_image_url,is_pinned,published_at,created_at")
+        .select(
+          "id,title,excerpt,content,category,cover_image_url,is_pinned,published_at,created_at",
+        )
         .eq("school_id", school!.id)
         .eq("is_published", true)
         .order("is_pinned", { ascending: false })
@@ -48,10 +50,16 @@ export function NewsList() {
   useMarkNewsRead(ids);
 
   if (q.isLoading) {
-    return <div className="uos-card p-8 text-center text-sm text-muted-foreground">Loading news…</div>;
+    return (
+      <div className="uos-card p-8 text-center text-sm text-muted-foreground">Loading news…</div>
+    );
   }
   if (q.error) {
-    return <div className="uos-card p-8 text-center text-sm text-red-400">{(q.error as Error).message}</div>;
+    return (
+      <div className="uos-card p-8 text-center text-sm text-red-400">
+        {(q.error as Error).message}
+      </div>
+    );
   }
   if (rows.length === 0) {
     return (
@@ -77,7 +85,15 @@ export function NewsList() {
               </span>
             )}
             {n.cover_image_url && (
-              <img src={n.cover_image_url} alt="" width={640} height={160} loading="lazy" decoding="async" className="w-full h-40 object-cover" />
+              <img
+                src={n.cover_image_url}
+                alt=""
+                width={640}
+                height={160}
+                loading="lazy"
+                decoding="async"
+                className="w-full h-40 object-cover"
+              />
             )}
             <div className="p-4">
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -87,11 +103,15 @@ export function NewsList() {
                   </span>
                 )}
                 {n.category && (
-                  <span className="px-2 py-0.5 rounded border border-border uppercase tracking-wide">{n.category}</span>
+                  <span className="px-2 py-0.5 rounded border border-border uppercase tracking-wide">
+                    {n.category}
+                  </span>
                 )}
                 <span>
                   {new Date(n.published_at ?? n.created_at).toLocaleDateString(undefined, {
-                    month: "short", day: "numeric", year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
                   })}
                 </span>
               </div>

@@ -47,8 +47,7 @@ export interface CreateConversationInput {
 }
 
 export type CreateConversationResult =
-  | { ok: true; conversation: Conversation }
-  | { ok: false; error: string };
+  { ok: true; conversation: Conversation } | { ok: false; error: string };
 
 export function createConversation(input: CreateConversationInput): CreateConversationResult {
   if (input.participants.length < 2) {
@@ -77,14 +76,13 @@ export function createConversation(input: CreateConversationInput): CreateConver
   };
 }
 
-const CONVERSATION_TRANSITIONS: Readonly<
-  Record<ConversationState, readonly ConversationState[]>
-> = {
-  active: ["archived", "locked"],
-  archived: ["active", "deleted"],
-  locked: ["archived", "active"],
-  deleted: [],
-};
+const CONVERSATION_TRANSITIONS: Readonly<Record<ConversationState, readonly ConversationState[]>> =
+  {
+    active: ["archived", "locked"],
+    archived: ["active", "deleted"],
+    locked: ["archived", "active"],
+    deleted: [],
+  };
 
 export function transitionConversation(
   conversation: Conversation,
@@ -118,7 +116,12 @@ export function canAddParticipant(
 
 export type ReadState = "unread" | "delivered" | "read" | "acknowledged";
 
-export const READ_STATES: readonly ReadState[] = ["unread", "delivered", "read", "acknowledged"] as const;
+export const READ_STATES: readonly ReadState[] = [
+  "unread",
+  "delivered",
+  "read",
+  "acknowledged",
+] as const;
 
 export interface ReadReceipt {
   messageId: string;

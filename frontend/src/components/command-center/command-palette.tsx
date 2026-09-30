@@ -86,79 +86,298 @@ export function useTrackRecentPage(pathname: string, label: string) {
   }, [pathname, label]);
 }
 
-type NavEntry = { path: string; label: string; description?: string; icon: IconType; shortcut?: string };
+type NavEntry = {
+  path: string;
+  label: string;
+  description?: string;
+  icon: IconType;
+  shortcut?: string;
+};
 
 function navFor(role: AppRole | null): NavEntry[] {
   switch (role) {
     case "admin":
     case "principal":
       return [
-        { path: "/admin/dashboard", label: "Dashboard", description: "Executive command center", icon: LayoutDashboard, shortcut: "G D" },
-        { path: "/admin/student-intelligence", label: "Student Intelligence", description: "Risk and performance signals", icon: Sparkles },
-        { path: "/admin/teacher-intelligence", label: "Teacher Intelligence", description: "Staff performance signals", icon: Sparkles },
-        { path: "/admin/students", label: "Students", description: "Enrollment records", icon: GraduationCap, shortcut: "G S" },
+        {
+          path: "/admin/dashboard",
+          label: "Dashboard",
+          description: "Executive command center",
+          icon: LayoutDashboard,
+          shortcut: "G D",
+        },
+        {
+          path: "/admin/student-intelligence",
+          label: "Student Intelligence",
+          description: "Risk and performance signals",
+          icon: Sparkles,
+        },
+        {
+          path: "/admin/teacher-intelligence",
+          label: "Teacher Intelligence",
+          description: "Staff performance signals",
+          icon: Sparkles,
+        },
+        {
+          path: "/admin/students",
+          label: "Students",
+          description: "Enrollment records",
+          icon: GraduationCap,
+          shortcut: "G S",
+        },
         { path: "/admin/teachers", label: "Teachers", description: "Staff directory", icon: Users },
-        { path: "/admin/fees", label: "Fees", description: "Invoices and payments", icon: Wallet, shortcut: "G F" },
-        { path: "/admin/attendance", label: "Attendance", description: "Daily attendance registers", icon: ClipboardCheck },
-        { path: "/admin/calendar", label: "Calendar", description: "School calendar & events", icon: CalendarDays },
-        { path: "/admin/news", label: "News", description: "Announcements and posts", icon: Newspaper },
-        { path: "/admin/operations", label: "Operations", description: "Day-to-day operations", icon: Activity },
-        { path: "/admin/cms", label: "Public site CMS", description: "Website content", icon: Building2 },
-        { path: "/admin/settings", label: "Settings", description: "School configuration", icon: Settings },
+        {
+          path: "/admin/fees",
+          label: "Fees",
+          description: "Invoices and payments",
+          icon: Wallet,
+          shortcut: "G F",
+        },
+        {
+          path: "/admin/attendance",
+          label: "Attendance",
+          description: "Daily attendance registers",
+          icon: ClipboardCheck,
+        },
+        {
+          path: "/admin/calendar",
+          label: "Calendar",
+          description: "School calendar & events",
+          icon: CalendarDays,
+        },
+        {
+          path: "/admin/news",
+          label: "News",
+          description: "Announcements and posts",
+          icon: Newspaper,
+        },
+        {
+          path: "/admin/operations",
+          label: "Operations",
+          description: "Day-to-day operations",
+          icon: Activity,
+        },
+        {
+          path: "/admin/cms",
+          label: "Public site CMS",
+          description: "Website content",
+          icon: Building2,
+        },
+        {
+          path: "/admin/settings",
+          label: "Settings",
+          description: "School configuration",
+          icon: Settings,
+        },
       ];
     case "teacher":
       return [
-        { path: "/teacher/dashboard", label: "Dashboard", description: "Your teaching overview", icon: LayoutDashboard },
-        { path: "/teacher/attendance", label: "Mark Attendance", description: "Register for your classes", icon: ClipboardCheck },
-        { path: "/teacher/grades", label: "Enter Grades", description: "Score entry", icon: GraduationCap },
-        { path: "/teacher/gradebook", label: "Gradebook", description: "Full class gradebook", icon: BookOpen },
-        { path: "/teacher/lesson-plans", label: "Lesson Plans", description: "Plan and submit lessons", icon: BookOpen },
-        { path: "/teacher/class-intelligence", label: "Class Intelligence", description: "Class analytics", icon: Sparkles },
-        { path: "/teacher/ai-assistant", label: "AI Assistant", description: "Ask about your classes", icon: Sparkles },
-        { path: "/teacher/calendar", label: "Calendar", description: "Your schedule", icon: CalendarDays },
+        {
+          path: "/teacher/dashboard",
+          label: "Dashboard",
+          description: "Your teaching overview",
+          icon: LayoutDashboard,
+        },
+        {
+          path: "/teacher/attendance",
+          label: "Mark Attendance",
+          description: "Register for your classes",
+          icon: ClipboardCheck,
+        },
+        {
+          path: "/teacher/grades",
+          label: "Enter Grades",
+          description: "Score entry",
+          icon: GraduationCap,
+        },
+        {
+          path: "/teacher/gradebook",
+          label: "Gradebook",
+          description: "Full class gradebook",
+          icon: BookOpen,
+        },
+        {
+          path: "/teacher/lesson-plans",
+          label: "Lesson Plans",
+          description: "Plan and submit lessons",
+          icon: BookOpen,
+        },
+        {
+          path: "/teacher/class-intelligence",
+          label: "Class Intelligence",
+          description: "Class analytics",
+          icon: Sparkles,
+        },
+        {
+          path: "/teacher/ai-assistant",
+          label: "AI Assistant",
+          description: "Ask about your classes",
+          icon: Sparkles,
+        },
+        {
+          path: "/teacher/calendar",
+          label: "Calendar",
+          description: "Your schedule",
+          icon: CalendarDays,
+        },
       ];
     case "parent":
       return [
-        { path: "/parent/dashboard", label: "Dashboard", description: "Family overview", icon: LayoutDashboard },
-        { path: "/parent/children", label: "My Children", description: "Child profiles", icon: Users },
-        { path: "/parent/grades", label: "Grades", description: "Academic results", icon: GraduationCap },
-        { path: "/parent/attendance", label: "Attendance", description: "Presence history", icon: ClipboardCheck },
-        { path: "/parent/fees", label: "Pay Fees", description: "Outstanding invoices", icon: Wallet },
-        { path: "/parent/bus-tracking", label: "Bus Tracking", description: "Live transport status", icon: Bus },
-        { path: "/parent/ai-assistant", label: "AI Assistant", description: "Ask about your child", icon: Sparkles },
+        {
+          path: "/parent/dashboard",
+          label: "Dashboard",
+          description: "Family overview",
+          icon: LayoutDashboard,
+        },
+        {
+          path: "/parent/children",
+          label: "My Children",
+          description: "Child profiles",
+          icon: Users,
+        },
+        {
+          path: "/parent/grades",
+          label: "Grades",
+          description: "Academic results",
+          icon: GraduationCap,
+        },
+        {
+          path: "/parent/attendance",
+          label: "Attendance",
+          description: "Presence history",
+          icon: ClipboardCheck,
+        },
+        {
+          path: "/parent/fees",
+          label: "Pay Fees",
+          description: "Outstanding invoices",
+          icon: Wallet,
+        },
+        {
+          path: "/parent/bus-tracking",
+          label: "Bus Tracking",
+          description: "Live transport status",
+          icon: Bus,
+        },
+        {
+          path: "/parent/ai-assistant",
+          label: "AI Assistant",
+          description: "Ask about your child",
+          icon: Sparkles,
+        },
       ];
     case "student":
       return [
-        { path: "/student/dashboard", label: "Dashboard", description: "Your overview", icon: LayoutDashboard },
-        { path: "/student/grades", label: "Grades", description: "Your results", icon: GraduationCap },
-        { path: "/student/attendance", label: "Attendance", description: "Your attendance", icon: ClipboardCheck },
-        { path: "/student/timetable", label: "Timetable", description: "Your weekly schedule", icon: CalendarDays },
-        { path: "/student/report-card", label: "Report card", description: "Term report", icon: BookOpen },
+        {
+          path: "/student/dashboard",
+          label: "Dashboard",
+          description: "Your overview",
+          icon: LayoutDashboard,
+        },
+        {
+          path: "/student/grades",
+          label: "Grades",
+          description: "Your results",
+          icon: GraduationCap,
+        },
+        {
+          path: "/student/attendance",
+          label: "Attendance",
+          description: "Your attendance",
+          icon: ClipboardCheck,
+        },
+        {
+          path: "/student/timetable",
+          label: "Timetable",
+          description: "Your weekly schedule",
+          icon: CalendarDays,
+        },
+        {
+          path: "/student/report-card",
+          label: "Report card",
+          description: "Term report",
+          icon: BookOpen,
+        },
       ];
     case "bursar":
       return [
-        { path: "/bursar/dashboard", label: "Dashboard", description: "Finance overview", icon: LayoutDashboard },
-        { path: "/bursar/receipts", label: "Receipts", description: "Issue and view receipts", icon: Wallet },
-        { path: "/bursar/reconciliation", label: "Reconciliation", description: "Match payments", icon: Activity },
-        { path: "/bursar/reports", label: "Reports", description: "Financial reports", icon: BookOpen },
+        {
+          path: "/bursar/dashboard",
+          label: "Dashboard",
+          description: "Finance overview",
+          icon: LayoutDashboard,
+        },
+        {
+          path: "/bursar/receipts",
+          label: "Receipts",
+          description: "Issue and view receipts",
+          icon: Wallet,
+        },
+        {
+          path: "/bursar/reconciliation",
+          label: "Reconciliation",
+          description: "Match payments",
+          icon: Activity,
+        },
+        {
+          path: "/bursar/reports",
+          label: "Reports",
+          description: "Financial reports",
+          icon: BookOpen,
+        },
       ];
     case "driver":
       return [
-        { path: "/driver/dashboard", label: "Dashboard", description: "Route overview", icon: LayoutDashboard },
-        { path: "/driver/students", label: "My Students", description: "Riders on your route", icon: Users },
+        {
+          path: "/driver/dashboard",
+          label: "Dashboard",
+          description: "Route overview",
+          icon: LayoutDashboard,
+        },
+        {
+          path: "/driver/students",
+          label: "My Students",
+          description: "Riders on your route",
+          icon: Users,
+        },
       ];
     case "hq":
       return [
-        { path: "/hq/dashboard", label: "Dashboard", description: "Group overview", icon: LayoutDashboard },
+        {
+          path: "/hq/dashboard",
+          label: "Dashboard",
+          description: "Group overview",
+          icon: LayoutDashboard,
+        },
         { path: "/hq/finance", label: "Finance", description: "Group finance", icon: Wallet },
         { path: "/hq/reports", label: "Reports", description: "Group reports", icon: BookOpen },
       ];
     case "super_admin":
       return [
-        { path: "/super-admin/dashboard", label: "Dashboard", description: "Platform overview", icon: LayoutDashboard },
-        { path: "/super-admin/schools", label: "Schools", description: "Tenant management", icon: Building2 },
-        { path: "/super-admin/billing", label: "Billing", description: "Subscriptions & invoices", icon: Wallet },
-        { path: "/super-admin/support", label: "Support", description: "Complaints & tickets", icon: MessageSquare },
+        {
+          path: "/super-admin/dashboard",
+          label: "Dashboard",
+          description: "Platform overview",
+          icon: LayoutDashboard,
+        },
+        {
+          path: "/super-admin/schools",
+          label: "Schools",
+          description: "Tenant management",
+          icon: Building2,
+        },
+        {
+          path: "/super-admin/billing",
+          label: "Billing",
+          description: "Subscriptions & invoices",
+          icon: Wallet,
+        },
+        {
+          path: "/super-admin/support",
+          label: "Support",
+          description: "Complaints & tickets",
+          icon: MessageSquare,
+        },
       ];
     default:
       return [];
@@ -172,30 +391,102 @@ function quickActionsFor(role: AppRole | null): ActionEntry[] {
     case "admin":
     case "principal":
       return [
-        { id: "qa-add-student", label: "Add Student", description: "Enroll a new student record", icon: GraduationCap, path: "/admin/students" },
-        { id: "qa-record-fee", label: "Record Payment", description: "Log a fee payment", icon: Wallet, path: "/admin/fees" },
-        { id: "qa-attendance", label: "Mark Attendance", description: "Open the attendance register", icon: ClipboardCheck, path: "/admin/attendance" },
-        { id: "qa-announcement", label: "Send Announcement", description: "Broadcast to the school", icon: Megaphone, path: "/admin/broadcast" },
+        {
+          id: "qa-add-student",
+          label: "Add Student",
+          description: "Enroll a new student record",
+          icon: GraduationCap,
+          path: "/admin/students",
+        },
+        {
+          id: "qa-record-fee",
+          label: "Record Payment",
+          description: "Log a fee payment",
+          icon: Wallet,
+          path: "/admin/fees",
+        },
+        {
+          id: "qa-attendance",
+          label: "Mark Attendance",
+          description: "Open the attendance register",
+          icon: ClipboardCheck,
+          path: "/admin/attendance",
+        },
+        {
+          id: "qa-announcement",
+          label: "Send Announcement",
+          description: "Broadcast to the school",
+          icon: Megaphone,
+          path: "/admin/broadcast",
+        },
       ];
     case "teacher":
       return [
-        { id: "qa-start-class", label: "Start Class", description: "Open today's class register", icon: ClipboardCheck, path: "/teacher/attendance" },
-        { id: "qa-enter-grades", label: "Enter Grades", description: "Record assessment scores", icon: GraduationCap, path: "/teacher/grades" },
-        { id: "qa-lesson-plan", label: "Submit Lesson Plan", description: "Create or submit a plan", icon: BookOpen, path: "/teacher/lesson-plans" },
+        {
+          id: "qa-start-class",
+          label: "Start Class",
+          description: "Open today's class register",
+          icon: ClipboardCheck,
+          path: "/teacher/attendance",
+        },
+        {
+          id: "qa-enter-grades",
+          label: "Enter Grades",
+          description: "Record assessment scores",
+          icon: GraduationCap,
+          path: "/teacher/grades",
+        },
+        {
+          id: "qa-lesson-plan",
+          label: "Submit Lesson Plan",
+          description: "Create or submit a plan",
+          icon: BookOpen,
+          path: "/teacher/lesson-plans",
+        },
       ];
     case "parent":
       return [
-        { id: "qa-pay-fees", label: "Pay Fees", description: "Settle outstanding invoices", icon: Wallet, path: "/parent/fees" },
-        { id: "qa-report-card", label: "View Report Card", description: "Latest term results", icon: BookOpen, path: "/parent/grades" },
+        {
+          id: "qa-pay-fees",
+          label: "Pay Fees",
+          description: "Settle outstanding invoices",
+          icon: Wallet,
+          path: "/parent/fees",
+        },
+        {
+          id: "qa-report-card",
+          label: "View Report Card",
+          description: "Latest term results",
+          icon: BookOpen,
+          path: "/parent/grades",
+        },
       ];
     case "bursar":
       return [
-        { id: "qa-receipts", label: "New Receipt", description: "Issue a payment receipt", icon: Wallet, path: "/bursar/receipts" },
-        { id: "qa-reconcile", label: "Reconcile", description: "Match bank payments", icon: Activity, path: "/bursar/reconciliation" },
+        {
+          id: "qa-receipts",
+          label: "New Receipt",
+          description: "Issue a payment receipt",
+          icon: Wallet,
+          path: "/bursar/receipts",
+        },
+        {
+          id: "qa-reconcile",
+          label: "Reconcile",
+          description: "Match bank payments",
+          icon: Activity,
+          path: "/bursar/reconciliation",
+        },
       ];
     case "super_admin":
       return [
-        { id: "qa-onboard", label: "Onboard School", description: "Create a new tenant", icon: Building2, path: "/super-admin/schools" },
+        {
+          id: "qa-onboard",
+          label: "Onboard School",
+          description: "Create a new tenant",
+          icon: Building2,
+          path: "/super-admin/schools",
+        },
       ];
     default:
       return [];
@@ -272,7 +563,10 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
       let sq = supabase
         .from("students")
         .select("id, user_id, admission_number, class_id")
-        .in("user_id", list.map((u) => u.id));
+        .in(
+          "user_id",
+          list.map((u) => u.id),
+        );
       if (schoolId) sq = sq.eq("school_id", schoolId);
       const { data: srows } = await sq;
       const rows = (srows ?? []) as Array<{
@@ -284,7 +578,10 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
       const classIds = Array.from(new Set(rows.map((r) => r.class_id).filter(Boolean))) as string[];
       const classNames = new Map<string, string>();
       if (classIds.length > 0) {
-        const { data: crows } = await supabase.from("classes").select("id, name").in("id", classIds);
+        const { data: crows } = await supabase
+          .from("classes")
+          .select("id, name")
+          .in("id", classIds);
         for (const c of (crows ?? []) as Array<{ id: string; name: string | null }>) {
           if (c.name) classNames.set(c.id, c.name);
         }
@@ -480,7 +777,9 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
             {query ? query.trim().charAt(0).toUpperCase() : "A"}
           </div>
           <div>
-            <div className="text-[10px] uppercase tracking-[0.28em] text-white/35">Quick access</div>
+            <div className="text-[10px] uppercase tracking-[0.28em] text-white/35">
+              Quick access
+            </div>
             <div className="text-sm font-medium text-white/75">
               {query ? `Results for “${query}”` : "Start from a section"}
             </div>

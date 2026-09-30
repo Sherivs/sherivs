@@ -8,9 +8,19 @@ const DEMO = {
 };
 
 export const DEMO_CREDENTIALS = [
-  { role: "super_admin", label: "Super Admin", email: "super@universalschool.os", password: DEMO.password },
+  {
+    role: "super_admin",
+    label: "Super Admin",
+    email: "super@universalschool.os",
+    password: DEMO.password,
+  },
   { role: "admin", label: "School Admin", email: "admin@demo.school", password: DEMO.password },
-  { role: "principal", label: "Principal", email: "principal@demo.school", password: DEMO.password },
+  {
+    role: "principal",
+    label: "Principal",
+    email: "principal@demo.school",
+    password: DEMO.password,
+  },
   { role: "teacher", label: "Teacher", email: "teacher@demo.school", password: DEMO.password },
   { role: "parent", label: "Parent", email: "parent@demo.school", password: DEMO.password },
   { role: "student", label: "Student", email: "student@demo.school", password: DEMO.password },
@@ -47,8 +57,7 @@ export type DemoCredentials = {
 async function findAuthUserIdByEmail(supabaseAdmin: any, email: string) {
   const { data } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
   return data?.users?.find((u: any) => u.email?.toLowerCase() === email.toLowerCase())?.id as
-    | string
-    | undefined;
+    string | undefined;
 }
 
 async function ensureAuthUser(supabaseAdmin: any, email: string, fullName: string) {
@@ -135,7 +144,12 @@ async function ensureDemoClass(supabaseAdmin: any, schoolId: string) {
 
   const { data, error } = await supabaseAdmin
     .from("classes")
-    .insert({ school_id: schoolId, name: "Grade 7A", grade_level: "Grade 7", academic_year: "2026/2027" })
+    .insert({
+      school_id: schoolId,
+      name: "Grade 7A",
+      grade_level: "Grade 7",
+      academic_year: "2026/2027",
+    })
     .select("id")
     .single();
   if (error || !data) throw new Error(error?.message ?? "Failed to create demo class");

@@ -127,7 +127,9 @@ export interface WorkflowExecution {
  * Validate the dependency graph (AO, FI): detect cycles, unreachable
  * steps, dead ends and invalid dependencies before activation (FJ).
  */
-export function validateWorkflowGraph(steps: WorkflowStep[]): { ok: true } | { ok: false; error: string } {
+export function validateWorkflowGraph(
+  steps: WorkflowStep[],
+): { ok: true } | { ok: false; error: string } {
   const ids = new Set(steps.map((s) => s.stepId));
   if (steps.length === 0) {
     return { ok: false, error: "Workflow has no steps (AC)" };
@@ -181,7 +183,11 @@ export function nextReadySteps(steps: WorkflowStep[], completed: ReadonlySet<str
 
 export type IdempotencyClass = "idempotent" | "conditionally_idempotent" | "non_idempotent";
 
-export const IDEMPOTENCY_CLASSES: readonly IdempotencyClass[] = ["idempotent", "conditionally_idempotent", "non_idempotent"] as const;
+export const IDEMPOTENCY_CLASSES: readonly IdempotencyClass[] = [
+  "idempotent",
+  "conditionally_idempotent",
+  "non_idempotent",
+] as const;
 
 /**
  * Idempotency enforcement (AG, AH): non-idempotent actions require
@@ -236,7 +242,14 @@ export const FAILURE_CLASSES: readonly FailureClass[] = [
   "UNKNOWN",
 ] as const;
 
-const RETRYABLE_CLASSES: ReadonlySet<FailureClass> = new Set(["DEPENDENCY", "NETWORK", "TIMEOUT", "RESOURCE", "EXTERNAL", "SYSTEM"]);
+const RETRYABLE_CLASSES: ReadonlySet<FailureClass> = new Set([
+  "DEPENDENCY",
+  "NETWORK",
+  "TIMEOUT",
+  "RESOURCE",
+  "EXTERNAL",
+  "SYSTEM",
+]);
 
 /**
  * Retry safety (AI, AJ): never blindly retry irreversible operations.
@@ -246,7 +259,10 @@ export function isFailureRetryable(failureClass: FailureClass): boolean {
   return RETRYABLE_CLASSES.has(failureClass);
 }
 
-export function isActionReversible(actionId: string, reversibleActionIds: ReadonlySet<string>): boolean {
+export function isActionReversible(
+  actionId: string,
+  reversibleActionIds: ReadonlySet<string>,
+): boolean {
   return reversibleActionIds.has(actionId);
 }
 
@@ -344,19 +360,44 @@ export function acquireResourceLock(
       const rest = locks.filter((l) => l.resourceId !== resourceId);
       return {
         ok: true,
-        locks: [...rest, { resourceId, ownerExecutionId, leaseExpiresAt: new Date(Date.parse(now) + leaseDurationMs).toISOString(), acquiredAt: now }],
+        locks: [
+          ...rest,
+          {
+            resourceId,
+            ownerExecutionId,
+            leaseExpiresAt: new Date(Date.parse(now) + leaseDurationMs).toISOString(),
+            acquiredAt: now,
+          },
+        ],
       };
     }
-    return { ok: false, error: `Resource ${resourceId} is locked by ${existing.ownerExecutionId} (AS)` };
+    return {
+      ok: false,
+      error: `Resource ${resourceId} is locked by ${existing.ownerExecutionId} (AS)`,
+    };
   }
   return {
     ok: true,
-    locks: [...locks, { resourceId, ownerExecutionId, leaseExpiresAt: new Date(Date.parse(now) + leaseDurationMs).toISOString(), acquiredAt: now }],
+    locks: [
+      ...locks,
+      {
+        resourceId,
+        ownerExecutionId,
+        leaseExpiresAt: new Date(Date.parse(now) + leaseDurationMs).toISOString(),
+        acquiredAt: now,
+      },
+    ],
   };
 }
 
-export function releaseResourceLock(locks: ResourceLock[], resourceId: string, ownerExecutionId: string): ResourceLock[] {
-  return locks.filter((l) => !(l.resourceId === resourceId && l.ownerExecutionId === ownerExecutionId));
+export function releaseResourceLock(
+  locks: ResourceLock[],
+  resourceId: string,
+  ownerExecutionId: string,
+): ResourceLock[] {
+  return locks.filter(
+    (l) => !(l.resourceId === resourceId && l.ownerExecutionId === ownerExecutionId),
+  );
 }
 
 /**
@@ -412,10 +453,16 @@ export function isExecutionWithinBudget(
   current: { depth: number; actionsExecuted: number; elapsedMs: number },
 ): { ok: boolean; reason: string } {
   if (current.depth > budget.maxDepth) {
-    return { ok: false, reason: `Execution depth ${current.depth} exceeds max ${budget.maxDepth} (FH, FM.15)` };
+    return {
+      ok: false,
+      reason: `Execution depth ${current.depth} exceeds max ${budget.maxDepth} (FH, FM.15)`,
+    };
   }
   if (current.actionsExecuted > budget.maxActions) {
-    return { ok: false, reason: `Action count ${current.actionsExecuted} exceeds max ${budget.maxActions} (FH, FM.14)` };
+    return {
+      ok: false,
+      reason: `Action count ${current.actionsExecuted} exceeds max ${budget.maxActions} (FH, FM.14)`,
+    };
   }
   if (current.elapsedMs > budget.maxDurationMs) {
     return { ok: false, reason: `Execution duration exceeds max ${budget.maxDurationMs}ms (FH)` };
@@ -432,7 +479,10 @@ export function canNestWorkflow(
     return { ok: false, reason: `Causal cycle detected for ${proposedCausalId} (FG)` };
   }
   if (causalChain.length >= maxDepth) {
-    return { ok: false, reason: `Recursion depth ${causalChain.length} would exceed max ${maxDepth} (FH)` };
+    return {
+      ok: false,
+      reason: `Recursion depth ${causalChain.length} would exceed max ${maxDepth} (FH)`,
+    };
   }
   return { ok: true, reason: "Nesting allowed" };
 }

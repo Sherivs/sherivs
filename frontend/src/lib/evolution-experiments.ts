@@ -68,7 +68,12 @@ export function createInnovationSandbox(input: {
   if (!input.name.trim()) return { ok: false, error: "Sandbox name is required (Section J)" };
   return {
     ok: true,
-    sandbox: { id: input.id, name: input.name, productionIsolated: true, syntheticDataAllowed: input.syntheticDataAllowed ?? false },
+    sandbox: {
+      id: input.id,
+      name: input.name,
+      productionIsolated: true,
+      syntheticDataAllowed: input.syntheticDataAllowed ?? false,
+    },
   };
 }
 
@@ -118,7 +123,8 @@ export function createExperiment(input: {
   if (!input.rollbackPlan.trim() || !input.owner.trim()) {
     return { ok: false, error: "Experiment requires a rollback plan and owner (Section AI)" };
   }
-  if (!input.expiryDate) return { ok: false, error: "Experiment requires an expiry date (Section AI)" };
+  if (!input.expiryDate)
+    return { ok: false, error: "Experiment requires an expiry date (Section AI)" };
   return { ok: true, experiment: { ...input } };
 }
 
@@ -175,7 +181,16 @@ export function createAbTest(input: {
   if (!input.variantA.trim() || !input.variantB.trim()) {
     return { ok: false, error: "A/B test requires two variants (Section AJ)" };
   }
-  return { ok: true, test: { id: input.id, target: input.target, variantA: input.variantA, variantB: input.variantB, highImpact: input.highImpact ?? false } };
+  return {
+    ok: true,
+    test: {
+      id: input.id,
+      target: input.target,
+      variantA: input.variantA,
+      variantB: input.variantB,
+      highImpact: input.highImpact ?? false,
+    },
+  };
 }
 
 export function isAbTestGoverned(test: AbTest): boolean {
@@ -186,10 +201,21 @@ export function isAbTestGoverned(test: AbTest): boolean {
  * Progressive rollout + canary (Sections AG, AH)
  * ────────────────────────────────────────────────────────────*/
 
-export type RolloutStage = "sandbox" | "internal" | "pilot" | "limited_production" | "expanded_production" | "general_availability";
+export type RolloutStage =
+  | "sandbox"
+  | "internal"
+  | "pilot"
+  | "limited_production"
+  | "expanded_production"
+  | "general_availability";
 
 export const ROLLOUT_STAGES: readonly RolloutStage[] = [
-  "sandbox", "internal", "pilot", "limited_production", "expanded_production", "general_availability",
+  "sandbox",
+  "internal",
+  "pilot",
+  "limited_production",
+  "expanded_production",
+  "general_availability",
 ] as const;
 
 export interface ProgressiveRollout {
@@ -202,7 +228,8 @@ export function createProgressiveRollout(input: {
   id: RolloutId;
   capability: string;
 }): { ok: true; rollout: ProgressiveRollout } | { ok: false; error: string } {
-  if (!input.capability.trim()) return { ok: false, error: "Rollout capability is required (Section AG)" };
+  if (!input.capability.trim())
+    return { ok: false, error: "Rollout capability is required (Section AG)" };
   return { ok: true, rollout: { id: input.id, capability: input.capability, stage: "sandbox" } };
 }
 
@@ -213,8 +240,14 @@ export function canAdvanceRolloutStage(current: RolloutStage, next: RolloutStage
 }
 
 export const CANARY_MONITOR_DIMENSIONS: readonly string[] = [
-  "error_rates", "latency", "resource_consumption", "user_behavior",
-  "security_events", "ai_quality", "workflow_failures", "data_anomalies",
+  "error_rates",
+  "latency",
+  "resource_consumption",
+  "user_behavior",
+  "security_events",
+  "ai_quality",
+  "workflow_failures",
+  "data_anomalies",
 ] as const;
 
 export interface CanaryDeployment {
@@ -229,8 +262,17 @@ export function createCanaryDeployment(input: {
   capability: string;
   automaticRollback?: boolean;
 }): { ok: true; deployment: CanaryDeployment } | { ok: false; error: string } {
-  if (!input.capability.trim()) return { ok: false, error: "Canary capability is required (Section AH)" };
-  return { ok: true, deployment: { id: input.id, capability: input.capability, monitored: [], automaticRollback: input.automaticRollback ?? false } };
+  if (!input.capability.trim())
+    return { ok: false, error: "Canary capability is required (Section AH)" };
+  return {
+    ok: true,
+    deployment: {
+      id: input.id,
+      capability: input.capability,
+      monitored: [],
+      automaticRollback: input.automaticRollback ?? false,
+    },
+  };
 }
 
 export function addCanaryMonitor(
@@ -240,7 +282,10 @@ export function addCanaryMonitor(
   if (!CANARY_MONITOR_DIMENSIONS.includes(dimension)) {
     return { ok: false, error: `Unknown canary monitor dimension "${dimension}" (Section AH)` };
   }
-  return { ok: true, deployment: { ...deployment, monitored: [...new Set([...deployment.monitored, dimension])] } };
+  return {
+    ok: true,
+    deployment: { ...deployment, monitored: [...new Set([...deployment.monitored, dimension])] },
+  };
 }
 
 export function isCanaryMonitored(deployment: CanaryDeployment): boolean {
@@ -251,7 +296,8 @@ export function isCanaryMonitored(deployment: CanaryDeployment): boolean {
  * Feature flags (Section AF)
  * ────────────────────────────────────────────────────────────*/
 
-export type EvolutionFlagScope = "tenant" | "role" | "geography" | "device" | "cohort" | "percentage" | "capability_gate";
+export type EvolutionFlagScope =
+  "tenant" | "role" | "geography" | "device" | "cohort" | "percentage" | "capability_gate";
 
 export interface EvolutionFeatureFlag {
   id: string;
@@ -269,8 +315,10 @@ export function createEvolutionFeatureFlag(input: {
   owner: string;
   emergencyDisablement?: boolean;
 }): { ok: true; flag: EvolutionFeatureFlag } | { ok: false; error: string } {
-  if (!input.feature.trim()) return { ok: false, error: "Feature flag feature is required (Section AF)" };
-  if (!input.owner.trim()) return { ok: false, error: "Feature flag requires ownership metadata (Section AF)" };
+  if (!input.feature.trim())
+    return { ok: false, error: "Feature flag feature is required (Section AF)" };
+  if (!input.owner.trim())
+    return { ok: false, error: "Feature flag requires ownership metadata (Section AF)" };
   return {
     ok: true,
     flag: {
@@ -287,7 +335,11 @@ export function createEvolutionFeatureFlag(input: {
 // Section AF: feature flags must have ownership and lifecycle metadata and
 // support emergency disablement.
 export function isFlagControlled(flag: EvolutionFeatureFlag): boolean {
-  return flag.owner.trim().length > 0 && flag.lifecycleState.trim().length > 0 && flag.emergencyDisablement;
+  return (
+    flag.owner.trim().length > 0 &&
+    flag.lifecycleState.trim().length > 0 &&
+    flag.emergencyDisablement
+  );
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -311,8 +363,10 @@ export function createTenantExperimentCohort(input: {
   isolatedConfiguration?: boolean;
   emergencyDisablement?: boolean;
 }): { ok: true; cohort: TenantExperimentCohort } | { ok: false; error: string } {
-  if (!input.experimentRef.trim()) return { ok: false, error: "Experiment reference is required (Section DI)" };
-  if (input.tenants.length === 0) return { ok: false, error: "Experiment cohort requires at least one tenant (Section DI)" };
+  if (!input.experimentRef.trim())
+    return { ok: false, error: "Experiment reference is required (Section DI)" };
+  if (input.tenants.length === 0)
+    return { ok: false, error: "Experiment cohort requires at least one tenant (Section DI)" };
   return {
     ok: true,
     cohort: {
@@ -357,7 +411,8 @@ export function recordExperimentOutcome(input: {
   archived?: boolean;
   engineeringKnowledge?: boolean;
 }): { ok: true; outcome: ExperimentOutcome } | { ok: false; error: string } {
-  if (!input.experimentRef.trim()) return { ok: false, error: "Experiment reference is required (Section CY)" };
+  if (!input.experimentRef.trim())
+    return { ok: false, error: "Experiment reference is required (Section CY)" };
   return {
     ok: true,
     outcome: {
@@ -376,13 +431,16 @@ export function recordExperimentOutcome(input: {
 // Section CY: failure is acceptable, uncontrolled failure is not.
 export function isFailureControlled(outcome: ExperimentOutcome): boolean {
   if (outcome.result !== "failure") return true;
-  return outcome.documented && outcome.analyzed && outcome.isolated && outcome.archived && outcome.engineeringKnowledge;
+  return (
+    outcome.documented &&
+    outcome.analyzed &&
+    outcome.isolated &&
+    outcome.archived &&
+    outcome.engineeringKnowledge
+  );
 }
 
 // Section CZ: successful and failed experiments remain discoverable.
 export function isExperimentReusable(outcome: ExperimentOutcome): boolean {
   return outcome.archived && outcome.engineeringKnowledge;
 }
-
-
-

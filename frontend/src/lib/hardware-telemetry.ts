@@ -28,12 +28,7 @@ import type { TenantId } from "./tenant-core";
  * ────────────────────────────────────────────────────────────*/
 
 export type TelemetryQuality =
-  | "VALID"
-  | "ESTIMATED"
-  | "STALE"
-  | "MISSING"
-  | "INVALID"
-  | "CALIBRATION_REQUIRED";
+  "VALID" | "ESTIMATED" | "STALE" | "MISSING" | "INVALID" | "CALIBRATION_REQUIRED";
 
 export const TELEMETRY_QUALITIES: readonly TelemetryQuality[] = [
   "VALID",
@@ -81,7 +76,8 @@ export function evaluateCalibrationStatus(
  * Telemetry contract (Z) with event/ingestion time (AB)
  * ────────────────────────────────────────────────────────────*/
 
-export type TelemetryType = "temperature" | "humidity" | "pressure" | "motion" | "gps" | "battery" | "energy" | "generic";
+export type TelemetryType =
+  "temperature" | "humidity" | "pressure" | "motion" | "gps" | "battery" | "energy" | "generic";
 
 export const TELEMETRY_TYPES: readonly TelemetryType[] = [
   "temperature",
@@ -128,8 +124,7 @@ export interface ValidateTelemetryInput {
 }
 
 export type TelemetryValidationResult =
-  | { ok: true; telemetry: RawTelemetry }
-  | { ok: false; error: string };
+  { ok: true; telemetry: RawTelemetry } | { ok: false; error: string };
 
 /**
  * Validate raw telemetry (AE): range, unit, timestamp, physical
@@ -144,17 +139,26 @@ export function validateTelemetry(input: ValidateTelemetryInput): TelemetryValid
     return { ok: false, error: "Telemetry value must be finite (AE)" };
   }
   if (expectedUnit && telemetry.unit !== expectedUnit) {
-    return { ok: false, error: `Telemetry unit ${telemetry.unit} does not match expected unit ${expectedUnit} (AE)` };
+    return {
+      ok: false,
+      error: `Telemetry unit ${telemetry.unit} does not match expected unit ${expectedUnit} (AE)`,
+    };
   }
   if (range) {
     if (telemetry.value < range.min || telemetry.value > range.max) {
-      return { ok: false, error: `Telemetry value ${telemetry.value} outside physical range [${range.min}, ${range.max}] (AE)` };
+      return {
+        ok: false,
+        error: `Telemetry value ${telemetry.value} outside physical range [${range.min}, ${range.max}] (AE)`,
+      };
     }
   }
   if (telemetry.eventTime !== null && Number.isNaN(Date.parse(telemetry.eventTime))) {
     return { ok: false, error: "Telemetry event timestamp is invalid (AB)" };
   }
-  if (telemetry.eventTime !== null && Date.parse(telemetry.eventTime) > Date.parse(telemetry.ingestionTime)) {
+  if (
+    telemetry.eventTime !== null &&
+    Date.parse(telemetry.eventTime) > Date.parse(telemetry.ingestionTime)
+  ) {
     return { ok: false, error: "Telemetry event time is in the future (clock drift/AB)" };
   }
   return { ok: true, telemetry: t };
@@ -221,7 +225,11 @@ export function detectTelemetryAnomalies(ctx: AnomalyContext): TelemetryAnomaly[
     }
   }
   const recent = ctx.recentValues.slice(-ctx.stuckThreshold);
-  if (recent.length >= ctx.stuckThreshold && new Set(recent).size === 1 && recent[0] === ctx.value) {
+  if (
+    recent.length >= ctx.stuckThreshold &&
+    new Set(recent).size === 1 &&
+    recent[0] === ctx.value
+  ) {
     anomalies.push({
       type: "stuck_sensor",
       deviceId: "unknown",

@@ -59,7 +59,12 @@ export function TimetableGrid({ slots }: { slots: TimetableSlot[] }) {
               {DAYS.map((d) => {
                 const slot = byKey.get(`${d}-${p}`);
                 if (!slot)
-                  return <td key={d} className="rounded-md border border-dashed border-border/50 px-2 py-3" />;
+                  return (
+                    <td
+                      key={d}
+                      className="rounded-md border border-dashed border-border/50 px-2 py-3"
+                    />
+                  );
                 const isBreak = !!slot.is_break;
                 return (
                   <td

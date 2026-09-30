@@ -91,12 +91,9 @@ export interface CreateSecurityPolicyInput {
 }
 
 export type CreateSecurityPolicyResult =
-  | { ok: true; policy: SecurityPolicy }
-  | { ok: false; error: string };
+  { ok: true; policy: SecurityPolicy } | { ok: false; error: string };
 
-export function createSecurityPolicy(
-  input: CreateSecurityPolicyInput,
-): CreateSecurityPolicyResult {
+export function createSecurityPolicy(input: CreateSecurityPolicyInput): CreateSecurityPolicyResult {
   if (input.name.trim() === "") {
     return { ok: false, error: "Policy name is required" };
   }
@@ -127,8 +124,7 @@ export function createSecurityPolicy(
 }
 
 export type TransitionPolicyResult =
-  | { ok: true; policy: SecurityPolicy }
-  | { ok: false; error: string };
+  { ok: true; policy: SecurityPolicy } | { ok: false; error: string };
 
 /**
  * Transition a policy's lifecycle state. Publishing requires an approver

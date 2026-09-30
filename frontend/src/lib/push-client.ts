@@ -44,7 +44,9 @@ export async function registerPushToken(userId: string): Promise<string | null> 
   if (!supported || !userId) return null;
 
   const permission =
-    Notification.permission === "default" ? await Notification.requestPermission() : Notification.permission;
+    Notification.permission === "default"
+      ? await Notification.requestPermission()
+      : Notification.permission;
   if (permission !== "granted") return null;
 
   const registration = await ensureRegistration();

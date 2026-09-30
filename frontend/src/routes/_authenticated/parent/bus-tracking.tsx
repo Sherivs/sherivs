@@ -13,10 +13,7 @@ import {
 } from "@/components/portal-shell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  isFeatureActive,
-  type TierName,
-} from "@/lib/subscription-tiers";
+import { isFeatureActive, type TierName } from "@/lib/subscription-tiers";
 
 export const Route = createFileRoute("/_authenticated/parent/bus-tracking")({
   ssr: false,
@@ -44,38 +41,20 @@ function StatusBlock({ status }: { status: string | null }) {
           <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
           <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
         </span>
-        <span className="text-emerald-300 font-medium text-lg">
-          🟢 Bus is on the way
-        </span>
+        <span className="text-emerald-300 font-medium text-lg">🟢 Bus is on the way</span>
       </div>
     );
   }
   if (status === "at_school") {
-    return (
-      <span className="text-blue-300 font-medium text-lg">
-        🔵 Bus has arrived at school
-      </span>
-    );
+    return <span className="text-blue-300 font-medium text-lg">🔵 Bus has arrived at school</span>;
   }
   if (status === "returning") {
-    return (
-      <span className="text-amber-300 font-medium text-lg">
-        🟡 Bus is returning
-      </span>
-    );
+    return <span className="text-amber-300 font-medium text-lg">🟡 Bus is returning</span>;
   }
   if (status === "maintenance") {
-    return (
-      <span className="text-rose-300 font-medium text-lg">
-        🔧 Bus in maintenance
-      </span>
-    );
+    return <span className="text-rose-300 font-medium text-lg">🔧 Bus in maintenance</span>;
   }
-  return (
-    <span className="text-white/60 font-medium text-lg">
-      ⚪ Bus not yet departed
-    </span>
-  );
+  return <span className="text-white/60 font-medium text-lg">⚪ Bus not yet departed</span>;
 }
 
 function StatusBadge({ status }: { status: string | null }) {
@@ -96,8 +75,7 @@ function ParentBusTrackingPage() {
   const parentId = profile?.id ?? "";
 
   const tier = (school?.subscription_tier ?? "trial") as TierName;
-  const activeFeatures =
-    (school?.active_features as Record<string, boolean> | undefined) ?? {};
+  const activeFeatures = (school?.active_features as Record<string, boolean> | undefined) ?? {};
   const canTrack =
     isFeatureActive(tier, activeFeatures, "bus_live_tracking") ||
     isFeatureActive(tier, activeFeatures, "transport_basic");
@@ -126,10 +104,7 @@ function ParentBusTrackingPage() {
     },
   });
 
-  const childIds = useMemo(
-    () => (childrenQ.data ?? []).map((c) => c.id),
-    [childrenQ.data],
-  );
+  const childIds = useMemo(() => (childrenQ.data ?? []).map((c) => c.id), [childrenQ.data]);
 
   const busesQ = useQuery<BusRow[]>({
     queryKey: ["parent-buses", schoolId, childIds.join(",")],
@@ -144,9 +119,7 @@ function ParentBusTrackingPage() {
         .eq("is_active", true);
       if (error) throw error;
       return (data ?? []).filter((b: any) => {
-        const assigned = Array.isArray(b.assigned_students)
-          ? b.assigned_students
-          : [];
+        const assigned = Array.isArray(b.assigned_students) ? b.assigned_students : [];
         return assigned.some((sid: string) => childIds.includes(sid));
       });
     },
@@ -154,9 +127,7 @@ function ParentBusTrackingPage() {
 
   const driverIds = useMemo(
     () =>
-      Array.from(
-        new Set((busesQ.data ?? []).map((b) => b.driver_id).filter(Boolean)),
-      ) as string[],
+      Array.from(new Set((busesQ.data ?? []).map((b) => b.driver_id).filter(Boolean))) as string[],
     [busesQ.data],
   );
 
@@ -176,10 +147,7 @@ function ParentBusTrackingPage() {
   });
 
   // Realtime: subscribe per bus
-  const busIds = useMemo(
-    () => (busesQ.data ?? []).map((b) => b.id),
-    [busesQ.data],
-  );
+  const busIds = useMemo(() => (busesQ.data ?? []).map((b) => b.id), [busesQ.data]);
 
   useEffect(() => {
     if (!canTrack || busIds.length === 0) return;
@@ -195,12 +163,8 @@ function ParentBusTrackingPage() {
             filter: `id=eq.${id}`,
           },
           (payload) => {
-            qc.setQueryData<BusRow[]>(
-              ["parent-buses", schoolId, childIds.join(",")],
-              (prev) =>
-                (prev ?? []).map((b) =>
-                  b.id === id ? { ...b, ...(payload.new as any) } : b,
-                ),
+            qc.setQueryData<BusRow[]>(["parent-buses", schoolId, childIds.join(",")], (prev) =>
+              (prev ?? []).map((b) => (b.id === id ? { ...b, ...(payload.new as any) } : b)),
             );
           },
         )
@@ -264,14 +228,10 @@ function ParentBusTrackingPage() {
         <div className="grid gap-4">
           {buses.map((bus) => {
             const driverName = bus.driver_id
-              ? driversQ.data?.get(bus.driver_id) ?? "Unknown driver"
+              ? (driversQ.data?.get(bus.driver_id) ?? "Unknown driver")
               : "Unknown driver";
-            const lastUpdate = bus.last_location_update
-              ? new Date(bus.last_location_update)
-              : null;
-            const minsSince = lastUpdate
-              ? (Date.now() - lastUpdate.getTime()) / 60000
-              : null;
+            const lastUpdate = bus.last_location_update ? new Date(bus.last_location_update) : null;
+            const minsSince = lastUpdate ? (Date.now() - lastUpdate.getTime()) / 60000 : null;
             const stale = minsSince !== null && minsSince > 10;
             const assigned = Array.isArray(bus.assigned_students)
               ? (bus.assigned_students as string[])
@@ -316,9 +276,7 @@ function ParentBusTrackingPage() {
                       )}
                     </div>
                   ) : (
-                    <div className="text-white/50">
-                      Location not yet available
-                    </div>
+                    <div className="text-white/50">Location not yet available</div>
                   )}
                 </div>
 
@@ -333,13 +291,9 @@ function ParentBusTrackingPage() {
                           key={c.id}
                           className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-sm"
                         >
-                          <span className="text-white font-medium">
-                            {c.full_name}
-                          </span>
+                          <span className="text-white font-medium">{c.full_name}</span>
                           {c.class_name && (
-                            <span className="text-white/50 ml-2 text-xs">
-                              {c.class_name}
-                            </span>
+                            <span className="text-white/50 ml-2 text-xs">{c.class_name}</span>
                           )}
                         </div>
                       ))}

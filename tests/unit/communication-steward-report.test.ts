@@ -81,7 +81,9 @@ describe("Phase 10 — the steward report reflects the real contracts", () => {
 describe("Phase 10 — every steward check is a real call, and none of them fails", () => {
   it("passes every check it runs", () => {
     const checks = runCommunicationStewardCheck();
-    const failing = checks.filter((check) => !check.ok).map((check) => `${check.id}: ${check.detail}`);
+    const failing = checks
+      .filter((check) => !check.ok)
+      .map((check) => `${check.id}: ${check.detail}`);
 
     expect(failing).toEqual([]);
     expect(checks.length).toBeGreaterThanOrEqual(8);

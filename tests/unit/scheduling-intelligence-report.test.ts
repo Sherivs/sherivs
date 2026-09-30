@@ -30,8 +30,12 @@ describe("scheduling intelligence report", () => {
       expect(rule.suite.endsWith(".test.ts")).toBe(true);
       expect(rule.statement.length).toBeGreaterThan(20);
     }
-    expect(SCHEDULING_RULES.filter((rule) => rule.module === "scheduling-conflicts.ts").length).toBeGreaterThan(3);
-    expect(SCHEDULING_RULES.filter((rule) => rule.module === "scheduling-quality.ts").length).toBeGreaterThan(3);
+    expect(
+      SCHEDULING_RULES.filter((rule) => rule.module === "scheduling-conflicts.ts").length,
+    ).toBeGreaterThan(3);
+    expect(
+      SCHEDULING_RULES.filter((rule) => rule.module === "scheduling-quality.ts").length,
+    ).toBeGreaterThan(3);
   });
 
   it("declares its gaps with an owner instead of implying completeness", () => {

@@ -61,14 +61,29 @@ export type QuotaResource =
   | "files";
 
 export const QUOTA_RESOURCES: readonly QuotaResource[] = [
-  "api_calls", "storage", "compute", "ai_inference", "workflow_execution",
-  "messaging", "data_ingestion", "integrations", "devices", "files",
+  "api_calls",
+  "storage",
+  "compute",
+  "ai_inference",
+  "workflow_execution",
+  "messaging",
+  "data_ingestion",
+  "integrations",
+  "devices",
+  "files",
 ] as const;
 
-export type QuotaScope = "global" | "region" | "tenant" | "institution" | "campus" | "user" | "service";
+export type QuotaScope =
+  "global" | "region" | "tenant" | "institution" | "campus" | "user" | "service";
 
 export const QUOTA_HIERARCHY: readonly QuotaScope[] = [
-  "global", "region", "tenant", "institution", "campus", "user", "service",
+  "global",
+  "region",
+  "tenant",
+  "institution",
+  "campus",
+  "user",
+  "service",
 ] as const;
 
 export const QUOTA_RANK: Record<QuotaScope, number> = {
@@ -123,7 +138,8 @@ export function buildQuotaHierarchy(
   resource: QuotaResource,
 ): { ok: true; chain: Quota[] } | { ok: false; error: string } {
   const scoped = quotas.filter((q) => q.resource === resource);
-  if (scoped.length === 0) return { ok: false, error: "No quotas defined for resource (Section R)" };
+  if (scoped.length === 0)
+    return { ok: false, error: "No quotas defined for resource (Section R)" };
   const seen = new Set<QuotaScope>();
   for (const quota of scoped) {
     if (seen.has(quota.scope)) {
@@ -140,12 +156,15 @@ export function resolveEffectiveQuota(
   quotas: readonly Quota[],
   resource: QuotaResource,
   atScope: QuotaScope,
-): { ok: true; limit: number; protectedCapacity: number; sourceScope: QuotaScope } | { ok: false; error: string } {
+):
+  | { ok: true; limit: number; protectedCapacity: number; sourceScope: QuotaScope }
+  | { ok: false; error: string } {
   const applicable = quotas
     .filter((q) => q.resource === resource && QUOTA_RANK[q.scope] <= QUOTA_RANK[atScope])
     .sort((a, b) => QUOTA_RANK[b.scope] - QUOTA_RANK[a.scope]);
   const top = applicable[0];
-  if (!top) return { ok: false, error: `No quota for resource at or above "${atScope}" (Section R)` };
+  if (!top)
+    return { ok: false, error: `No quota for resource at or above "${atScope}" (Section R)` };
   return {
     ok: true,
     limit: top.limit,
@@ -166,11 +185,13 @@ export function consumeQuota(
   requestAmount = 1,
   critical = false,
 ): { ok: true; remaining: number } | { ok: false; error: string } {
-  const effectiveLimit = critical && quota.protectedCapacity !== undefined
-    ? quota.protectedCapacity
-    : quota.limit;
+  const effectiveLimit =
+    critical && quota.protectedCapacity !== undefined ? quota.protectedCapacity : quota.limit;
   if (usage + requestAmount > effectiveLimit) {
-    return { ok: false, error: critical ? "Protected quota capacity exhausted" : "Quota exceeded (Section S)" };
+    return {
+      ok: false,
+      error: critical ? "Protected quota capacity exhausted" : "Quota exceeded (Section S)",
+    };
   }
   return { ok: true, remaining: effectiveLimit - (usage + requestAmount) };
 }
@@ -199,7 +220,12 @@ export function createRateLimitPolicy(input: {
   }
   return {
     ok: true,
-    policy: { id: input.id, scope: input.scope, limitPerMinute: input.limitPerMinute, adaptive: input.adaptive ?? false },
+    policy: {
+      id: input.id,
+      scope: input.scope,
+      limitPerMinute: input.limitPerMinute,
+      adaptive: input.adaptive ?? false,
+    },
   };
 }
 
@@ -207,10 +233,15 @@ export function isWithinRateLimit(policy: RateLimitPolicy, count: number): boole
   return count <= policy.limitPerMinute;
 }
 
-export type AdaptiveFactor = "traffic" | "system_health" | "tenant_tier" | "resource_availability" | "abuse_signal";
+export type AdaptiveFactor =
+  "traffic" | "system_health" | "tenant_tier" | "resource_availability" | "abuse_signal";
 
 export const ADAPTIVE_FACTORS: readonly AdaptiveFactor[] = [
-  "traffic", "system_health", "tenant_tier", "resource_availability", "abuse_signal",
+  "traffic",
+  "system_health",
+  "tenant_tier",
+  "resource_availability",
+  "abuse_signal",
 ] as const;
 
 // Section U: adaptive limits respond to traffic, system health, tenant tier,
@@ -231,7 +262,10 @@ export function adaptRateLimit(
     }
   }
   const multiplier = factors.reduce((acc, factor) => acc * (1 - factor.severity * 0.5), 1);
-  return { ok: true, effectiveLimitPerMinute: Math.max(1, Math.floor(policy.limitPerMinute * multiplier)) };
+  return {
+    ok: true,
+    effectiveLimitPerMinute: Math.max(1, Math.floor(policy.limitPerMinute * multiplier)),
+  };
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -258,7 +292,16 @@ export function createBackpressureQueue(input: {
   if (!Number.isInteger(input.maxDepth) || input.maxDepth <= 0) {
     return { ok: false, error: "Backpressure queue depth must be a positive integer (Section V)" };
   }
-  return { ok: true, queue: { id: input.id, producer: input.producer, consumer: input.consumer, maxDepth: input.maxDepth, currentDepth: 0 } };
+  return {
+    ok: true,
+    queue: {
+      id: input.id,
+      producer: input.producer,
+      consumer: input.consumer,
+      maxDepth: input.maxDepth,
+      currentDepth: 0,
+    },
+  };
 }
 
 // Section V: explicit backpressure — controlled consumption over overload.
@@ -385,6 +428,3 @@ export function canReplayEventStream(stream: EventStream): boolean {
 export function isRetentionGoverned(stream: EventStream): boolean {
   return stream.retentionGoverned;
 }
-
-
-

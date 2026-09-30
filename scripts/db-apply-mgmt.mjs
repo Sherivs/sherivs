@@ -23,7 +23,9 @@ if (!token) {
   process.exit(2);
 }
 
-const files = readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith(".sql")).sort();
+const files = readdirSync(MIGRATIONS_DIR)
+  .filter((f) => f.endsWith(".sql"))
+  .sort();
 if (files.length === 0) {
   console.error(`No .sql migrations found in ${MIGRATIONS_DIR}`);
   process.exit(2);

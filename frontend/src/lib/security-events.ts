@@ -152,8 +152,7 @@ export interface CreateSecurityAlertInput {
 }
 
 export type CreateSecurityAlertResult =
-  | { ok: true; alert: SecurityAlert }
-  | { ok: false; error: string };
+  { ok: true; alert: SecurityAlert } | { ok: false; error: string };
 
 export function createSecurityAlert(input: CreateSecurityAlertInput): CreateSecurityAlertResult {
   if (input.confidence < 0 || input.confidence > 1) {
@@ -259,8 +258,7 @@ export interface CreateSecurityIncidentInput {
 }
 
 export type CreateSecurityIncidentResult =
-  | { ok: true; incident: SecurityIncident }
-  | { ok: false; error: string };
+  { ok: true; incident: SecurityIncident } | { ok: false; error: string };
 
 export function createSecurityIncident(
   input: CreateSecurityIncidentInput,

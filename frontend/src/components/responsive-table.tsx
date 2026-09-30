@@ -49,7 +49,11 @@ export function ResponsiveTable<T>({
   const isMobile = useMediaQuery("(max-width: 639px)");
 
   if (data.length === 0) {
-    return <>{emptyState ?? <p className="text-sm text-muted-foreground py-6 text-center">No data.</p>}</>;
+    return (
+      <>
+        {emptyState ?? <p className="text-sm text-muted-foreground py-6 text-center">No data.</p>}
+      </>
+    );
   }
 
   if (isMobile) {
@@ -60,7 +64,7 @@ export function ResponsiveTable<T>({
             key={rowKey(row)}
             className={cn(
               "uos-card p-3 min-w-0",
-              onRowClick && "cursor-pointer active:opacity-80 transition-opacity"
+              onRowClick && "cursor-pointer active:opacity-80 transition-opacity",
             )}
             onClick={onRowClick ? () => onRowClick(row) : undefined}
             role={onRowClick ? "button" : undefined}
@@ -92,7 +96,7 @@ export function ResponsiveTable<T>({
               key={rowKey(row)}
               className={cn(
                 "border-b border-border/50",
-                onRowClick && "cursor-pointer hover:bg-white/[0.03]"
+                onRowClick && "cursor-pointer hover:bg-white/[0.03]",
               )}
               onClick={onRowClick ? () => onRowClick(row) : undefined}
             >

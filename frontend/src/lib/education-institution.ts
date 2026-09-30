@@ -54,13 +54,7 @@ import {
  * ────────────────────────────────────────────────────────────*/
 
 export type StreamType =
-  | "science"
-  | "arts"
-  | "commercial"
-  | "technical"
-  | "vocational"
-  | "agricultural"
-  | "custom";
+  "science" | "arts" | "commercial" | "technical" | "vocational" | "agricultural" | "custom";
 
 export const STREAM_TYPES: readonly StreamType[] = [
   "science",
@@ -127,13 +121,7 @@ export interface Class extends TenantScopedEntity {
  * ────────────────────────────────────────────────────────────*/
 
 export type GroupType =
-  | "tutorial"
-  | "practical"
-  | "examination"
-  | "house"
-  | "sports"
-  | "club"
-  | "custom";
+  "tutorial" | "practical" | "examination" | "house" | "sports" | "club" | "custom";
 
 export const GROUP_TYPES: readonly GroupType[] = [
   "tutorial",
@@ -198,9 +186,7 @@ export interface CreateClassInput {
   shiftId: ShiftId | null;
 }
 
-export type CreateClassResult =
-  | { ok: true; class: Class }
-  | { ok: false; error: string };
+export type CreateClassResult = { ok: true; class: Class } | { ok: false; error: string };
 
 export function createClass(
   input: CreateClassInput,
@@ -418,11 +404,7 @@ export interface TransportRoute extends TenantScopedEntity {
  * ────────────────────────────────────────────────────────────*/
 
 export type FamilyRelationshipRole =
-  | "parent"
-  | "guardian"
-  | "foster_guardian"
-  | "emergency_contact"
-  | "authorized_representative";
+  "parent" | "guardian" | "foster_guardian" | "emergency_contact" | "authorized_representative";
 
 export const FAMILY_RELATIONSHIP_ROLES: readonly FamilyRelationshipRole[] = [
   "parent",

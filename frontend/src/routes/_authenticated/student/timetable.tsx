@@ -42,7 +42,9 @@ function StudentTimetablePage() {
       if (!tt) return [] as TimetableSlot[];
       const { data: slots } = await supabase
         .from("timetable_slots")
-        .select("day_of_week, period_number, start_time, end_time, subject, room, is_break, break_label")
+        .select(
+          "day_of_week, period_number, start_time, end_time, subject, room, is_break, break_label",
+        )
         .eq("timetable_id", tt.id)
         .order("period_number");
       return (slots ?? []) as TimetableSlot[];
@@ -52,7 +54,10 @@ function StudentTimetablePage() {
   return (
     <PortalPage title="My class timetable" subtitle="Your weekly class schedule.">
       <div className="mb-4 text-xs">
-        <Link to="/student/dashboard" className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40">
+        <Link
+          to="/student/dashboard"
+          className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40"
+        >
           ← Back
         </Link>
       </div>

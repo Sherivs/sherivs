@@ -15,17 +15,7 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import {
-  Eye,
-  Target,
-  Phone,
-  Mail,
-  MapPin,
-  Clock,
-  Quote,
-  Star,
-  ArrowRight,
-} from "lucide-react";
+import { Eye, Target, Phone, Mail, MapPin, Clock, Quote, Star, ArrowRight } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -88,10 +78,7 @@ export function HeroSection({ school }: { school: SchoolRow }) {
   ];
 
   return (
-    <section
-      id="home"
-      className="relative flex min-h-dvh items-center overflow-hidden pt-32 pb-16"
-    >
+    <section id="home" className="relative flex min-h-dvh items-center overflow-hidden pt-32 pb-16">
       <BackgroundOrbs />
       <Particles />
       <div className="relative z-10 mx-auto grid max-w-7xl gap-12 px-6 md:px-8 lg:grid-cols-[3fr_2fr]">
@@ -140,8 +127,6 @@ export function HeroSection({ school }: { school: SchoolRow }) {
     </section>
   );
 }
-
-
 
 /* ------------------------------------------------------------------ */
 /* Section 2 — About                                                   */
@@ -321,7 +306,11 @@ export function ProgramsSection({ school }: { school: SchoolRow }) {
           {items.length === 0
             ? Array.from({ length: 3 }).map((_, i) => (
                 <Reveal key={i} delay={i * 60}>
-                  <DashedBox label="PROGRAM" hint="Add in Admin → CMS → Academic Programs" className="h-48" />
+                  <DashedBox
+                    label="PROGRAM"
+                    hint="Add in Admin → CMS → Academic Programs"
+                    className="h-48"
+                  />
                 </Reveal>
               ))
             : items.map((p, i) => (
@@ -395,9 +384,7 @@ export function FacilitiesSection({ school }: { school: SchoolRow }) {
                     <div className="text-4xl transition-transform duration-500 group-hover:scale-110">
                       {(f.icon as string) || "🏫"}
                     </div>
-                    <h3 className="mt-4 font-display text-lg font-semibold text-white">
-                      {f.name}
-                    </h3>
+                    <h3 className="mt-4 font-display text-lg font-semibold text-white">{f.name}</h3>
                     <p className="mt-2 text-sm leading-relaxed text-white/60">{f.description}</p>
                   </GlassCard>
                 </Reveal>
@@ -420,14 +407,18 @@ export function StaffSection({ school }: { school: SchoolRow }) {
       // Prefer the CMS-curated staff cards; fall back to internal users
       const { data: curated } = await supabase
         .from("school_staff" as never)
-        .select("id, full_name, role, avatar_url, bio, subject_specialty, years_experience, qualification, order_index")
+        .select(
+          "id, full_name, role, avatar_url, bio, subject_specialty, years_experience, qualification, order_index",
+        )
         .eq("school_id", sid)
         .eq("is_published", true)
         .order("order_index");
       if (curated && curated.length > 0) return curated as never[];
       const { data } = await supabase
         .from("users")
-        .select("id, full_name, role, avatar_url, subject_specialty, years_experience, qualification")
+        .select(
+          "id, full_name, role, avatar_url, subject_specialty, years_experience, qualification",
+        )
         .eq("school_id", sid)
         .in("role", ["teacher", "admin", "principal"])
         .eq("is_active", true)
@@ -457,26 +448,26 @@ export function StaffSection({ school }: { school: SchoolRow }) {
           subtitle="Dedicated professionals shaping future leaders"
         />
         <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {items.length === 0
-            ? Array.from({ length: 6 }).map((_, i) => (
-                <Reveal key={i} delay={i * 60}>
-                  <DashedBox
-                    label="STAFF MEMBER"
-                    hint="Add in Admin → CMS → Staff"
-                    className="h-72"
-                  />
-                </Reveal>
-              ))
-            : (
-              <>
+          {items.length === 0 ? (
+            Array.from({ length: 6 }).map((_, i) => (
+              <Reveal key={i} delay={i * 60}>
+                <DashedBox
+                  label="STAFF MEMBER"
+                  hint="Add in Admin → CMS → Staff"
+                  className="h-72"
+                />
+              </Reveal>
+            ))
+          ) : (
+            <>
               {items.map((u, i) => {
                 const role = String(u.role ?? "");
                 const roleColor =
                   role === "principal"
                     ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
                     : role === "admin"
-                    ? "bg-violet-500/15 text-violet-300 border-violet-500/30"
-                    : "bg-sky-500/15 text-sky-300 border-sky-500/30";
+                      ? "bg-violet-500/15 text-violet-300 border-violet-500/30"
+                      : "bg-sky-500/15 text-sky-300 border-sky-500/30";
                 return (
                   <Reveal key={u.id} delay={i * 60}>
                     <GlassCard className="p-6 text-center">
@@ -506,7 +497,9 @@ export function StaffSection({ school }: { school: SchoolRow }) {
                         </p>
                       )}
                       {u.subject_specialty && (
-                        <p className="mt-2 text-xs text-white/60">{u.subject_specialty as string}</p>
+                        <p className="mt-2 text-xs text-white/60">
+                          {u.subject_specialty as string}
+                        </p>
                       )}
                       {u.years_experience ? (
                         <p className="mt-1 text-[11px] text-white/40">
@@ -531,8 +524,8 @@ export function StaffSection({ school }: { school: SchoolRow }) {
                   />
                 </Reveal>
               ))}
-              </>
-            )}
+            </>
+          )}
         </div>
       </div>
     </section>
@@ -643,7 +636,15 @@ export function NewsEventsSection({ school }: { school: SchoolRow }) {
                   <Link to={c.href} className="block">
                     <GlassCard className="overflow-hidden">
                       {c.image ? (
-                        <img src={c.image} alt={c.title} width={640} height={192} loading="lazy" decoding="async" className="h-48 w-full object-cover" />
+                        <img
+                          src={c.image}
+                          alt={c.title}
+                          width={640}
+                          height={192}
+                          loading="lazy"
+                          decoding="async"
+                          className="h-48 w-full object-cover"
+                        />
                       ) : (
                         <div className="h-48 w-full bg-gradient-to-br from-white/5 to-white/[0.02]" />
                       )}
@@ -745,9 +746,7 @@ export function TestimonialsSection({ school }: { school: SchoolRow }) {
                       )}
                       <div>
                         <div className="text-sm font-semibold text-white">{t.name}</div>
-                        {t.role && (
-                          <div className="text-xs text-white/50">{t.role}</div>
-                        )}
+                        {t.role && <div className="text-xs text-white/50">{t.role}</div>}
                       </div>
                     </div>
                   </GlassCard>
@@ -849,7 +848,8 @@ export function BlogSection({ school }: { school: SchoolRow }) {
 
 export function AdmissionsCtaSection({ school }: { school: SchoolRow }) {
   const reqs = school.admission_requirements as string | null;
-  const timeline = (school.admission_timeline as Array<{ title: string; description?: string }> | null) ?? null;
+  const timeline =
+    (school.admission_timeline as Array<{ title: string; description?: string }> | null) ?? null;
   return (
     <section id="admissions-cta" className="relative py-24 md:py-32">
       <div className="mx-auto max-w-7xl px-6 md:px-8">
@@ -861,7 +861,9 @@ export function AdmissionsCtaSection({ school }: { school: SchoolRow }) {
         <div className="mt-14 grid gap-8 lg:grid-cols-2">
           <Reveal>
             <div className="space-y-6">
-              <h3 className="font-display text-lg font-semibold text-white">Admission Requirements</h3>
+              <h3 className="font-display text-lg font-semibold text-white">
+                Admission Requirements
+              </h3>
               {reqs ? (
                 <p className="whitespace-pre-line text-sm leading-relaxed text-white/70">{reqs}</p>
               ) : (
@@ -1009,9 +1011,7 @@ export function SportsSection({ school }: { school: SchoolRow }) {
             <Reveal key={s.id} delay={i * 60}>
               <GlassCard className="p-7">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-display text-lg font-semibold text-white">
-                    {s.sport_name}
-                  </h3>
+                  <h3 className="font-display text-lg font-semibold text-white">{s.sport_name}</h3>
                   {s.sport_category && (
                     <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] uppercase tracking-wider text-white/50">
                       {s.sport_category}
@@ -1026,9 +1026,7 @@ export function SportsSection({ school }: { school: SchoolRow }) {
                     {[s.training_days, s.training_time].filter(Boolean).join(" • ")}
                   </p>
                 )}
-                {s.age_groups && (
-                  <p className="mt-1 text-xs text-white/50">Ages: {s.age_groups}</p>
-                )}
+                {s.age_groups && <p className="mt-1 text-xs text-white/50">Ages: {s.age_groups}</p>}
                 {s.facilities_description && (
                   <p className="mt-3 text-sm leading-relaxed text-white/60">
                     {s.facilities_description}
@@ -1070,7 +1068,11 @@ export function MealsSection({ school }: { school: SchoolRow }) {
   if (!m) return null;
   const services: Array<{ label: string; time: string | null; menu: string | null }> = [];
   if (m.breakfast_enabled)
-    services.push({ label: "Breakfast", time: m.breakfast_time, menu: m.breakfast_menu_description });
+    services.push({
+      label: "Breakfast",
+      time: m.breakfast_time,
+      menu: m.breakfast_menu_description,
+    });
   if (m.lunch_enabled)
     services.push({ label: "Lunch", time: m.lunch_time, menu: m.lunch_menu_description });
   if (m.snack_enabled) services.push({ label: "Snacks", time: m.snack_time, menu: null });
@@ -1099,7 +1101,10 @@ export function MealsSection({ school }: { school: SchoolRow }) {
                   <p className="text-sm text-white/50">Schedule will appear here.</p>
                 ) : (
                   services.map((s) => (
-                    <div key={s.label} className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                    <div
+                      key={s.label}
+                      className="rounded-xl border border-white/10 bg-white/[0.03] p-4"
+                    >
                       <div className="flex items-center justify-between">
                         <span className="font-semibold text-white">{s.label}</span>
                         {s.time && <span className="text-xs text-white/60">{s.time}</span>}
@@ -1209,9 +1214,7 @@ export function TransportSection({ school }: { school: SchoolRow }) {
           <Reveal>
             <GlassCard className="p-7">
               <h3 className="font-display text-lg font-semibold text-white">Fleet</h3>
-              <p className="mt-3 text-3xl font-bold text-white">
-                {t.fleet_size ?? "—"}
-              </p>
+              <p className="mt-3 text-3xl font-bold text-white">{t.fleet_size ?? "—"}</p>
               <p className="mt-1 text-xs text-white/50">buses in service</p>
               {t.transport_provider && (
                 <p className="mt-3 text-sm text-white/70">{t.transport_provider}</p>
@@ -1315,10 +1318,30 @@ export function FindUsMapSection({ school }: { school: SchoolRow }) {
 
 export function ContactSection({ school }: { school: SchoolRow }) {
   const items = [
-    { Icon: Phone, label: "Phone", value: school.phone as string | null, placeholder: "PHONE NUMBER" },
-    { Icon: Mail, label: "Email", value: school.email as string | null, placeholder: "EMAIL ADDRESS" },
-    { Icon: MapPin, label: "Address", value: school.address as string | null, placeholder: "SCHOOL ADDRESS" },
-    { Icon: Clock, label: "Office Hours", value: school.office_hours as string | null, placeholder: "OFFICE HOURS" },
+    {
+      Icon: Phone,
+      label: "Phone",
+      value: school.phone as string | null,
+      placeholder: "PHONE NUMBER",
+    },
+    {
+      Icon: Mail,
+      label: "Email",
+      value: school.email as string | null,
+      placeholder: "EMAIL ADDRESS",
+    },
+    {
+      Icon: MapPin,
+      label: "Address",
+      value: school.address as string | null,
+      placeholder: "SCHOOL ADDRESS",
+    },
+    {
+      Icon: Clock,
+      label: "Office Hours",
+      value: school.office_hours as string | null,
+      placeholder: "OFFICE HOURS",
+    },
   ];
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
   const rawEmbed = (school.google_maps_embed_url as string | null) ?? "";
@@ -1337,7 +1360,11 @@ export function ContactSection({ school }: { school: SchoolRow }) {
   return (
     <section id="contact" className="relative py-24 md:py-32">
       <div className="mx-auto max-w-6xl px-6 text-center md:px-8">
-        <SectionHeader badge="CONTACT_US" title="Get In Touch" subtitle="We'd love to hear from you" />
+        <SectionHeader
+          badge="CONTACT_US"
+          title="Get In Touch"
+          subtitle="We'd love to hear from you"
+        />
         <div className="mt-14 grid gap-8 justify-items-center text-left lg:grid-cols-2 lg:justify-items-stretch">
           <Reveal>
             <div className="mx-auto w-full max-w-md space-y-4 lg:max-w-xl">
@@ -1463,8 +1490,12 @@ export function GallerySection({ school }: { school: SchoolRow }) {
             style={{ scrollbarWidth: "thin" }}
           >
             {(items.length === 0
-              ? (Array.from({ length: 10 }).map((_, i) => ({ placeholder: true as const, i, g: null })))
-              : (items.slice(0, 10).map((g, i) => ({ placeholder: false as const, i, g })))
+              ? Array.from({ length: 10 }).map((_, i) => ({
+                  placeholder: true as const,
+                  i,
+                  g: null,
+                }))
+              : items.slice(0, 10).map((g, i) => ({ placeholder: false as const, i, g }))
             ).map((entry) =>
               entry.placeholder ? (
                 <div
@@ -1512,9 +1543,7 @@ export function GallerySection({ school }: { school: SchoolRow }) {
               ),
             )}
           </div>
-          <p className="mt-3 px-6 text-center text-xs text-white/50 md:px-8">
-            Swipe to see more →
-          </p>
+          <p className="mt-3 px-6 text-center text-xs text-white/50 md:px-8">Swipe to see more →</p>
         </div>
       </div>
     </section>

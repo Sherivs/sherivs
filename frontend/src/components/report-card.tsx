@@ -83,7 +83,9 @@ export function ReportCard({
     queryFn: async () => {
       let q = supabase
         .from("grades")
-        .select("id, subject, ca_score, exam_score, total_score, grade, grade_remark, term, academic_year")
+        .select(
+          "id, subject, ca_score, exam_score, total_score, grade, grade_remark, term, academic_year",
+        )
         .eq("student_id", studentId)
         .eq("is_published", true)
         .order("subject", { ascending: true });
@@ -125,7 +127,14 @@ export function ReportCard({
     }
     const total = rows.length;
     const rate = total ? Math.round((counts.present / total) * 100) : 0;
-    return { present: counts.present, absent: counts.absent, late: counts.late, excused: counts.excused, total, rate };
+    return {
+      present: counts.present,
+      absent: counts.absent,
+      late: counts.late,
+      excused: counts.excused,
+      total,
+      rate,
+    };
   }, [attendance.data]);
 
   async function downloadPdf() {
@@ -160,7 +169,9 @@ export function ReportCard({
     <article ref={cardRef} className="uos-card p-6 print:border-0 print:shadow-none">
       <header className="mb-6 flex flex-wrap items-start justify-between gap-4 border-b border-border pb-4">
         <div>
-          <h2 className="font-display text-xl font-bold">{school?.name ?? "School"} — Report Card</h2>
+          <h2 className="font-display text-xl font-bold">
+            {school?.name ?? "School"} — Report Card
+          </h2>
           <p className="text-sm text-muted-foreground">
             {studentName.data ?? "Student"} · Admission #{student.data?.admission_number ?? "—"}
           </p>
@@ -213,7 +224,9 @@ export function ReportCard({
                     <td className="px-3 py-2 text-right font-mono">{g.exam_score ?? "—"}</td>
                     <td className="px-3 py-2 text-right font-mono">{g.total_score ?? "—"}</td>
                     <td className="px-3 py-2 font-semibold">{g.grade ?? "—"}</td>
-                    <td className="px-3 py-2 text-xs text-muted-foreground">{g.grade_remark ?? "—"}</td>
+                    <td className="px-3 py-2 text-xs text-muted-foreground">
+                      {g.grade_remark ?? "—"}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -237,7 +250,9 @@ export function ReportCard({
       )}
 
       <section className="mt-6 border-t border-border pt-4">
-        <h3 className="mb-3 text-xs uppercase tracking-wide text-muted-foreground">Attendance summary</h3>
+        <h3 className="mb-3 text-xs uppercase tracking-wide text-muted-foreground">
+          Attendance summary
+        </h3>
         {attendanceStats.total === 0 ? (
           <p className="text-sm text-muted-foreground">No attendance records yet.</p>
         ) : (
@@ -254,9 +269,21 @@ export function ReportCard({
   );
 }
 
-function Stat({ label, value, highlight }: { label: string; value: number | string; highlight?: boolean }) {
+function Stat({
+  label,
+  value,
+  highlight,
+}: {
+  label: string;
+  value: number | string;
+  highlight?: boolean;
+}) {
   return (
-    <div className={"rounded-md border p-3 " + (highlight ? "border-primary bg-primary/10" : "border-border")}>
+    <div
+      className={
+        "rounded-md border p-3 " + (highlight ? "border-primary bg-primary/10" : "border-border")
+      }
+    >
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="font-display text-lg font-bold">{value}</p>
     </div>

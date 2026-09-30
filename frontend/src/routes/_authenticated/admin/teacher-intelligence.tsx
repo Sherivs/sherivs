@@ -60,13 +60,38 @@ type Enriched = {
   weeklyAttendance: { present: boolean }[][]; // 4 weeks × 5 days
 };
 
-type SortKey = "name" | "attendanceRate" | "submissionRate" | "health" | "burnout" | "classesAssigned";
+type SortKey =
+  "name" | "attendanceRate" | "submissionRate" | "health" | "burnout" | "classesAssigned";
 
 const HEALTH_LEVELS = [
-  { key: "excellent", label: "Excellent", min: 80, max: 100, color: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30" },
-  { key: "good", label: "Good", min: 60, max: 79, color: "bg-teal-500/15 text-teal-600 border-teal-500/30" },
-  { key: "support", label: "Needs Support", min: 40, max: 59, color: "bg-amber-500/15 text-amber-600 border-amber-500/30" },
-  { key: "at-risk", label: "At Risk", min: 0, max: 39, color: "bg-red-500/15 text-red-600 border-red-500/30" },
+  {
+    key: "excellent",
+    label: "Excellent",
+    min: 80,
+    max: 100,
+    color: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
+  },
+  {
+    key: "good",
+    label: "Good",
+    min: 60,
+    max: 79,
+    color: "bg-teal-500/15 text-teal-600 border-teal-500/30",
+  },
+  {
+    key: "support",
+    label: "Needs Support",
+    min: 40,
+    max: 59,
+    color: "bg-amber-500/15 text-amber-600 border-amber-500/30",
+  },
+  {
+    key: "at-risk",
+    label: "At Risk",
+    min: 0,
+    max: 39,
+    color: "bg-red-500/15 text-red-600 border-red-500/30",
+  },
 ] as const;
 
 function healthLevel(score: number) {
@@ -74,8 +99,10 @@ function healthLevel(score: number) {
 }
 
 function burnoutLevel(score: number) {
-  if (score >= 51) return { label: "High Risk", color: "bg-red-500/15 text-red-600 border-red-500/30" };
-  if (score >= 21) return { label: "Early Signs", color: "bg-amber-500/15 text-amber-600 border-amber-500/30" };
+  if (score >= 51)
+    return { label: "High Risk", color: "bg-red-500/15 text-red-600 border-red-500/30" };
+  if (score >= 21)
+    return { label: "Early Signs", color: "bg-amber-500/15 text-amber-600 border-amber-500/30" };
   return { label: "None", color: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30" };
 }
 
@@ -203,7 +230,9 @@ function TeacherIntelligencePage() {
       // Burnout
       const slotInfo = slotsBy.get(t.id);
       const classesAssigned = slotInfo?.count ?? 0;
-      const subjects = slotInfo ? Array.from(slotInfo.subjects).join(", ") : (t.subject_specialty ?? "—");
+      const subjects = slotInfo
+        ? Array.from(slotInfo.subjects).join(", ")
+        : (t.subject_specialty ?? "—");
 
       let burnout = 0;
       const reasons: string[] = [];
@@ -283,9 +312,10 @@ function TeacherIntelligencePage() {
     list = [...list].sort((a, b) => {
       const av = a[sortKey];
       const bv = b[sortKey];
-      const cmp = typeof av === "number" && typeof bv === "number"
-        ? av - bv
-        : String(av).localeCompare(String(bv));
+      const cmp =
+        typeof av === "number" && typeof bv === "number"
+          ? av - bv
+          : String(av).localeCompare(String(bv));
       return sortDir === "asc" ? cmp : -cmp;
     });
     return list;
@@ -313,7 +343,11 @@ function TeacherIntelligencePage() {
       map.set(dept, cur);
     }
     return Array.from(map.entries())
-      .map(([name, v]) => ({ name, teachers: v.teachers, avgHealth: Math.round(v.health / v.total) }))
+      .map(([name, v]) => ({
+        name,
+        teachers: v.teachers,
+        avgHealth: Math.round(v.health / v.total),
+      }))
       .sort((a, b) => b.avgHealth - a.avgHealth);
   }, [enriched]);
 
@@ -326,16 +360,24 @@ function TeacherIntelligencePage() {
       {burnoutAlerts.length > 0 && (
         <Card className="mb-6 border-red-500/30 bg-red-500/5 p-5">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-red-600">
-            <Flame className="h-4 w-4" /> Burnout Risk — {burnoutAlerts.length} teacher{burnoutAlerts.length > 1 ? "s" : ""} need attention
+            <Flame className="h-4 w-4" /> Burnout Risk — {burnoutAlerts.length} teacher
+            {burnoutAlerts.length > 1 ? "s" : ""} need attention
           </div>
           <ul className="space-y-2">
             {burnoutAlerts.slice(0, 8).map((t) => (
-              <li key={t.id} className="rounded-md border border-red-500/20 bg-background/50 p-2 text-sm">
+              <li
+                key={t.id}
+                className="rounded-md border border-red-500/20 bg-background/50 p-2 text-sm"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-medium">{t.name}</span>
-                  <Badge variant="outline" className="border-red-500/30 bg-red-500/10 text-red-600">Burnout {t.burnout}</Badge>
+                  <Badge variant="outline" className="border-red-500/30 bg-red-500/10 text-red-600">
+                    Burnout {t.burnout}
+                  </Badge>
                 </div>
-                <div className="mt-1 text-xs text-muted-foreground">{t.burnoutReasons.join(" · ") || "Multiple risk signals"}</div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {t.burnoutReasons.join(" · ") || "Multiple risk signals"}
+                </div>
               </li>
             ))}
           </ul>
@@ -348,28 +390,36 @@ function TeacherIntelligencePage() {
           <div className="flex items-center gap-2 text-sm font-semibold">
             <Users className="h-4 w-4" /> Workload Distribution
           </div>
-          <span className="text-xs text-muted-foreground">Avg {avgLoad.toFixed(1)} classes / teacher</span>
+          <span className="text-xs text-muted-foreground">
+            Avg {avgLoad.toFixed(1)} classes / teacher
+          </span>
         </div>
         {enriched.length === 0 ? (
           <p className="text-xs text-muted-foreground">No teacher data.</p>
         ) : (
           <div className="space-y-1.5">
-            {[...enriched].sort((a, b) => b.classesAssigned - a.classesAssigned).slice(0, 12).map((t) => {
-              const max = Math.max(...enriched.map((x) => x.classesAssigned), 1);
-              const pct = (t.classesAssigned / max) * 100;
-              const critical = avgLoad > 0 && t.classesAssigned > avgLoad * 2;
-              const over = !critical && avgLoad > 0 && t.classesAssigned > avgLoad * 1.2;
-              const color = critical ? "bg-red-500" : over ? "bg-amber-500" : "bg-primary";
-              return (
-                <div key={t.id} className="flex items-center gap-3 text-xs">
-                  <span className="w-40 shrink-0 truncate">{t.name}</span>
-                  <div className="h-4 flex-1 overflow-hidden rounded bg-muted">
-                    <div className={`h-full ${color}`} style={{ width: `${Math.max(4, pct)}%` }} />
+            {[...enriched]
+              .sort((a, b) => b.classesAssigned - a.classesAssigned)
+              .slice(0, 12)
+              .map((t) => {
+                const max = Math.max(...enriched.map((x) => x.classesAssigned), 1);
+                const pct = (t.classesAssigned / max) * 100;
+                const critical = avgLoad > 0 && t.classesAssigned > avgLoad * 2;
+                const over = !critical && avgLoad > 0 && t.classesAssigned > avgLoad * 1.2;
+                const color = critical ? "bg-red-500" : over ? "bg-amber-500" : "bg-primary";
+                return (
+                  <div key={t.id} className="flex items-center gap-3 text-xs">
+                    <span className="w-40 shrink-0 truncate">{t.name}</span>
+                    <div className="h-4 flex-1 overflow-hidden rounded bg-muted">
+                      <div
+                        className={`h-full ${color}`}
+                        style={{ width: `${Math.max(4, pct)}%` }}
+                      />
+                    </div>
+                    <span className="w-10 text-right font-medium">{t.classesAssigned}</span>
                   </div>
-                  <span className="w-10 text-right font-medium">{t.classesAssigned}</span>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         )}
       </Card>
@@ -379,14 +429,23 @@ function TeacherIntelligencePage() {
         <div className="grid gap-3 md:grid-cols-[1fr_200px]">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search teacher name" className="pl-9" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search teacher name"
+              className="pl-9"
+            />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger><SelectValue placeholder="All health statuses" /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue placeholder="All health statuses" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All health statuses</SelectItem>
               {HEALTH_LEVELS.map((l) => (
-                <SelectItem key={l.key} value={l.key}>{l.label}</SelectItem>
+                <SelectItem key={l.key} value={l.key}>
+                  {l.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -397,10 +456,14 @@ function TeacherIntelligencePage() {
       <Card className="mb-6 overflow-hidden">
         {query.isLoading ? (
           <div className="space-y-2 p-4">
-            {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-10 w-full" />
+            ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">No teachers match filters.</div>
+          <div className="p-8 text-center text-sm text-muted-foreground">
+            No teachers match filters.
+          </div>
         ) : (
           <>
             <div className="hidden md:block">
@@ -409,13 +472,55 @@ function TeacherIntelligencePage() {
                   <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
                     <tr>
                       <th className="w-8" />
-                      <SortableTh label="Teacher" k="name" sortKey={sortKey} sortDir={sortDir} setSortKey={setSortKey} setSortDir={setSortDir} />
+                      <SortableTh
+                        label="Teacher"
+                        k="name"
+                        sortKey={sortKey}
+                        sortDir={sortDir}
+                        setSortKey={setSortKey}
+                        setSortDir={setSortDir}
+                      />
                       <th className="px-3 py-2">Subjects</th>
-                      <SortableTh label="Classes" k="classesAssigned" sortKey={sortKey} sortDir={sortDir} setSortKey={setSortKey} setSortDir={setSortDir} />
-                      <SortableTh label="Attendance" k="attendanceRate" sortKey={sortKey} sortDir={sortDir} setSortKey={setSortKey} setSortDir={setSortDir} />
-                      <SortableTh label="Submissions" k="submissionRate" sortKey={sortKey} sortDir={sortDir} setSortKey={setSortKey} setSortDir={setSortDir} />
-                      <SortableTh label="Health" k="health" sortKey={sortKey} sortDir={sortDir} setSortKey={setSortKey} setSortDir={setSortDir} />
-                      <SortableTh label="Burnout" k="burnout" sortKey={sortKey} sortDir={sortDir} setSortKey={setSortKey} setSortDir={setSortDir} />
+                      <SortableTh
+                        label="Classes"
+                        k="classesAssigned"
+                        sortKey={sortKey}
+                        sortDir={sortDir}
+                        setSortKey={setSortKey}
+                        setSortDir={setSortDir}
+                      />
+                      <SortableTh
+                        label="Attendance"
+                        k="attendanceRate"
+                        sortKey={sortKey}
+                        sortDir={sortDir}
+                        setSortKey={setSortKey}
+                        setSortDir={setSortDir}
+                      />
+                      <SortableTh
+                        label="Submissions"
+                        k="submissionRate"
+                        sortKey={sortKey}
+                        sortDir={sortDir}
+                        setSortKey={setSortKey}
+                        setSortDir={setSortDir}
+                      />
+                      <SortableTh
+                        label="Health"
+                        k="health"
+                        sortKey={sortKey}
+                        sortDir={sortDir}
+                        setSortKey={setSortKey}
+                        setSortDir={setSortDir}
+                      />
+                      <SortableTh
+                        label="Burnout"
+                        k="burnout"
+                        sortKey={sortKey}
+                        sortDir={sortDir}
+                        setSortKey={setSortKey}
+                        setSortDir={setSortDir}
+                      />
                       <th className="px-3 py-2" />
                     </tr>
                   </thead>
@@ -428,17 +533,34 @@ function TeacherIntelligencePage() {
                         <>
                           <tr key={t.id} className="border-t border-border/60 hover:bg-muted/30">
                             <td className="px-2 py-2">
-                              <button onClick={() => setExpanded(open ? null : t.id)} className="text-muted-foreground hover:text-foreground">
-                                {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                              <button
+                                onClick={() => setExpanded(open ? null : t.id)}
+                                className="text-muted-foreground hover:text-foreground"
+                              >
+                                {open ? (
+                                  <ChevronUp className="h-4 w-4" />
+                                ) : (
+                                  <ChevronDown className="h-4 w-4" />
+                                )}
                               </button>
                             </td>
                             <td className="px-3 py-2 font-medium">{t.name}</td>
-                            <td className="px-3 py-2 text-xs text-muted-foreground">{t.subjects}</td>
+                            <td className="px-3 py-2 text-xs text-muted-foreground">
+                              {t.subjects}
+                            </td>
                             <td className="px-3 py-2">{t.classesAssigned}</td>
                             <td className="px-3 py-2">{Math.round(t.attendanceRate * 100)}%</td>
                             <td className="px-3 py-2">{Math.round(t.submissionRate * 100)}%</td>
-                            <td className="px-3 py-2"><Badge variant="outline" className={hl.color}>{t.health} · {hl.label}</Badge></td>
-                            <td className="px-3 py-2"><Badge variant="outline" className={bl.color}>{t.burnout} · {bl.label}</Badge></td>
+                            <td className="px-3 py-2">
+                              <Badge variant="outline" className={hl.color}>
+                                {t.health} · {hl.label}
+                              </Badge>
+                            </td>
+                            <td className="px-3 py-2">
+                              <Badge variant="outline" className={bl.color}>
+                                {t.burnout} · {bl.label}
+                              </Badge>
+                            </td>
                             <td className="px-3 py-2 text-right">
                               <TeacherActions />
                             </td>
@@ -464,20 +586,32 @@ function TeacherIntelligencePage() {
                 const open = expanded === t.id;
                 return (
                   <div key={t.id} className="p-3">
-                    <button className="flex w-full items-start justify-between gap-2 text-left" onClick={() => setExpanded(open ? null : t.id)}>
+                    <button
+                      className="flex w-full items-start justify-between gap-2 text-left"
+                      onClick={() => setExpanded(open ? null : t.id)}
+                    >
                       <div>
                         <div className="font-medium">{t.name}</div>
                         <div className="text-xs text-muted-foreground">{t.subjects}</div>
                       </div>
                       <div className="flex flex-col items-end gap-1">
-                        <Badge variant="outline" className={hl.color}>H {t.health}</Badge>
-                        <Badge variant="outline" className={bl.color}>B {t.burnout}</Badge>
+                        <Badge variant="outline" className={hl.color}>
+                          H {t.health}
+                        </Badge>
+                        <Badge variant="outline" className={bl.color}>
+                          B {t.burnout}
+                        </Badge>
                       </div>
                     </button>
                     <div className="mt-1 text-xs text-muted-foreground">
-                      {t.classesAssigned} classes · Att {Math.round(t.attendanceRate * 100)}% · Sub {Math.round(t.submissionRate * 100)}%
+                      {t.classesAssigned} classes · Att {Math.round(t.attendanceRate * 100)}% · Sub{" "}
+                      {Math.round(t.submissionRate * 100)}%
                     </div>
-                    {open && <div className="mt-3"><TeacherDetails t={t} /></div>}
+                    {open && (
+                      <div className="mt-3">
+                        <TeacherDetails t={t} />
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -500,7 +634,9 @@ function TeacherIntelligencePage() {
               return (
                 <div key={d.name} className={`rounded-lg border p-3 ${hl.color}`}>
                   <div className="text-sm font-semibold">{d.name}</div>
-                  <div className="text-xs opacity-80">{d.teachers} teacher{d.teachers !== 1 ? "s" : ""}</div>
+                  <div className="text-xs opacity-80">
+                    {d.teachers} teacher{d.teachers !== 1 ? "s" : ""}
+                  </div>
                   <div className="mt-2 flex items-baseline gap-1">
                     <span className="text-2xl font-bold">{d.avgHealth}</span>
                     <span className="text-xs opacity-70">avg health</span>
@@ -516,8 +652,20 @@ function TeacherIntelligencePage() {
 }
 
 function SortableTh({
-  label, k, sortKey, sortDir, setSortKey, setSortDir,
-}: { label: string; k: SortKey; sortKey: SortKey; sortDir: "asc" | "desc"; setSortKey: (k: SortKey) => void; setSortDir: (d: "asc" | "desc") => void }) {
+  label,
+  k,
+  sortKey,
+  sortDir,
+  setSortKey,
+  setSortDir,
+}: {
+  label: string;
+  k: SortKey;
+  sortKey: SortKey;
+  sortDir: "asc" | "desc";
+  setSortKey: (k: SortKey) => void;
+  setSortDir: (d: "asc" | "desc") => void;
+}) {
   const active = sortKey === k;
   return (
     <th className="px-3 py-2">
@@ -525,7 +673,10 @@ function SortableTh({
         className="flex items-center gap-1 hover:text-foreground"
         onClick={() => {
           if (active) setSortDir(sortDir === "asc" ? "desc" : "asc");
-          else { setSortKey(k); setSortDir("desc"); }
+          else {
+            setSortKey(k);
+            setSortDir("desc");
+          }
         }}
       >
         {label}
@@ -539,7 +690,9 @@ function TeacherActions() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button size="icon" variant="ghost"><MoreVertical className="h-4 w-4" /></Button>
+        <Button size="icon" variant="ghost">
+          <MoreVertical className="h-4 w-4" />
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem>Schedule Support Meeting</DropdownMenuItem>
@@ -557,7 +710,9 @@ function TeacherDetails({ t }: { t: Enriched }) {
   return (
     <div className="grid gap-4 md:grid-cols-[1fr_1fr_180px]">
       <div>
-        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Attendance heatmap (4 weeks)</div>
+        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Attendance heatmap (4 weeks)
+        </div>
         <div className="space-y-1">
           {t.weeklyAttendance.map((week, wi) => (
             <div key={wi} className="flex items-center gap-2">
@@ -580,7 +735,10 @@ function TeacherDetails({ t }: { t: Enriched }) {
         <ProgressRow label="Grade / engagement" value={t.engagementRate * 100} />
         <ProgressRow label="Attendance" value={t.attendanceRate * 100} />
         {t.avgStudentGrade != null && (
-          <div className="text-xs text-muted-foreground">Avg student grade in classes: <span className="font-medium text-foreground">{t.avgStudentGrade}</span></div>
+          <div className="text-xs text-muted-foreground">
+            Avg student grade in classes:{" "}
+            <span className="font-medium text-foreground">{t.avgStudentGrade}</span>
+          </div>
         )}
       </div>
       <div className="flex flex-col items-center justify-center">
@@ -610,13 +768,24 @@ function HealthGauge({ score, colorClass }: { score: number; colorClass: string 
   const r = 32;
   const c = 2 * Math.PI * r;
   const pct = Math.max(0, Math.min(100, score)) / 100;
-  const stroke = score >= 80 ? "stroke-emerald-500" : score >= 60 ? "stroke-teal-500" : score >= 40 ? "stroke-amber-500" : "stroke-red-500";
+  const stroke =
+    score >= 80
+      ? "stroke-emerald-500"
+      : score >= 60
+        ? "stroke-teal-500"
+        : score >= 40
+          ? "stroke-amber-500"
+          : "stroke-red-500";
   return (
-    <div className={`relative flex h-20 w-20 items-center justify-center rounded-full border ${colorClass}`}>
+    <div
+      className={`relative flex h-20 w-20 items-center justify-center rounded-full border ${colorClass}`}
+    >
       <svg className="absolute inset-0" viewBox="0 0 80 80">
         <circle cx="40" cy="40" r={r} className="fill-none stroke-muted" strokeWidth="6" />
         <circle
-          cx="40" cy="40" r={r}
+          cx="40"
+          cy="40"
+          r={r}
           className={`fill-none ${stroke} transition-all`}
           strokeWidth="6"
           strokeLinecap="round"

@@ -179,7 +179,9 @@ describe("Subscriptions (AE)", () => {
   it("subscribes and checks tenant-aware membership", () => {
     const subscription = subscribe("user-1", TENANT_A, "announcement", "ann-1", NOW);
     expect(isSubscribed([subscription], "user-1", TENANT_A, "announcement", "ann-1")).toBe(true);
-    expect(isSubscribed([subscription], "user-1", tenantId("tenant-b"), "announcement", "ann-1")).toBe(false);
+    expect(
+      isSubscribed([subscription], "user-1", tenantId("tenant-b"), "announcement", "ann-1"),
+    ).toBe(false);
   });
 });
 

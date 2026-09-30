@@ -141,15 +141,20 @@ describe("Heartbeats (AS)", () => {
 
 describe("Diagnostics (AT, AU)", () => {
   it("creates a diagnostic report and marks sensitive diagnostics", () => {
-    const report = createDiagnosticReport("device-1", NOW, {
-      connectivity: "ok",
-      firmware: "ok",
-      sensorTest: "ok",
-      actuatorTest: "ok",
-      protocolTest: "ok",
-      gatewayStatus: "ok",
-      errorLogs: [],
-    }, true);
+    const report = createDiagnosticReport(
+      "device-1",
+      NOW,
+      {
+        connectivity: "ok",
+        firmware: "ok",
+        sensorTest: "ok",
+        actuatorTest: "ok",
+        protocolTest: "ok",
+        gatewayStatus: "ok",
+        errorLogs: [],
+      },
+      true,
+    );
     expect(report.deviceId).toBe("device-1");
     expect(report.sensitive).toBe(true);
   });
@@ -220,7 +225,10 @@ describe("Firmware compatibility, rollout, rollback (AX, AY, AZ)", () => {
   }
 
   it("accepts a compatible firmware update", () => {
-    const result = isFirmwareCompatible(fw(), { hardwareRevision: "rev-a", availableStorageBytes: 4096 });
+    const result = isFirmwareCompatible(fw(), {
+      hardwareRevision: "rev-a",
+      availableStorageBytes: 4096,
+    });
     expect(result.ok).toBe(true);
   });
 
@@ -257,7 +265,6 @@ describe("Firmware compatibility, rollout, rollback (AX, AY, AZ)", () => {
     expect(isRollbackStepAllowed("DETECT", "VERIFY")).toBe(false);
   });
 });
-
 
 describe("Configuration (BA, BB, BC, BD)", () => {
   it("creates a versioned configuration with rollback pointer", () => {
@@ -316,7 +323,9 @@ describe("Configuration (BA, BB, BC, BD)", () => {
     if (!result.ok) throw new Error("fixture failed");
     expect(isConfigurationDrifted(result.config, { samplingHz: 60, mode: "normal" })).toBe(false);
     expect(isConfigurationDrifted(result.config, { samplingHz: 30, mode: "normal" })).toBe(true);
-    expect(isConfigurationDrifted(result.config, { samplingHz: 60, mode: "normal", rogue: true })).toBe(true);
+    expect(
+      isConfigurationDrifted(result.config, { samplingHz: 60, mode: "normal", rogue: true }),
+    ).toBe(true);
   });
 
   it("requires authorized actors to auto-reconcile drift", () => {
@@ -335,7 +344,14 @@ describe("Inventory, maintenance, warranty (BE, BH, BI)", () => {
       firmwareVersion: "1.0.0",
       status: "active",
       lifecycleState: "ACTIVE",
-      location: { campus: "Main", building: "A", floor: "1", room: "101", zone: null, equipmentArea: null },
+      location: {
+        campus: "Main",
+        building: "A",
+        floor: "1",
+        room: "101",
+        zone: null,
+        equipmentArea: null,
+      },
       ownerReference: "dept-1",
     });
     const relocated = recordDeviceMovement(entry, "relocation", NOW, "moved to Room 201");
@@ -344,18 +360,31 @@ describe("Inventory, maintenance, warranty (BE, BH, BI)", () => {
   });
 
   it("creates a maintenance record with technician and result", () => {
-    const record = createMaintenanceRecord("device-1", "tech-1", "battery replacement", NOW, "completed", ["battery"], []);
+    const record = createMaintenanceRecord(
+      "device-1",
+      "tech-1",
+      "battery replacement",
+      NOW,
+      "completed",
+      ["battery"],
+      [],
+    );
     expect(record.technician).toBe("tech-1");
     expect(record.parts).toContain("battery");
   });
 
   it("evaluates warranty status against now", () => {
-    const warranty = { deviceId: "device-1", vendor: "Acme", purchaseDate: NOW, warrantyEndDate: LATER, supportContract: null };
+    const warranty = {
+      deviceId: "device-1",
+      vendor: "Acme",
+      purchaseDate: NOW,
+      warrantyEndDate: LATER,
+      supportContract: null,
+    };
     expect(evaluateWarrantyStatus(warranty, NOW)).toBe("active");
     expect(evaluateWarrantyStatus(warranty, "2027-01-01T00:00:00Z")).toBe("expired");
   });
 });
-
 
 describe("Device security (BK, BL, BM, BN, BO, BP, BQ, BR, BS, BT)", () => {
   function cert(overrides: Partial<DeviceCertificate> = {}): DeviceCertificate {
@@ -374,8 +403,12 @@ describe("Device security (BK, BL, BM, BN, BO, BP, BQ, BR, BS, BT)", () => {
     expect(evaluateCertificateStatus(null, NOW)).toBe("MISSING");
     expect(evaluateCertificateStatus(cert(), NOW)).toBe("VALID");
     expect(evaluateCertificateStatus(cert({ revokedAt: NOW }), NOW)).toBe("REVOKED");
-    expect(evaluateCertificateStatus(cert({ expiresAt: "2025-06-01T00:00:00Z" }), NOW)).toBe("EXPIRED");
-    expect(evaluateCertificateStatus(cert({ rotationDueAt: "2025-12-01T00:00:00Z" }), NOW)).toBe("ROTATION_DUE");
+    expect(evaluateCertificateStatus(cert({ expiresAt: "2025-06-01T00:00:00Z" }), NOW)).toBe(
+      "EXPIRED",
+    );
+    expect(evaluateCertificateStatus(cert({ rotationDueAt: "2025-12-01T00:00:00Z" }), NOW)).toBe(
+      "ROTATION_DUE",
+    );
   });
 
   it("rotates and revokes certificates", () => {
@@ -390,11 +423,21 @@ describe("Device security (BK, BL, BM, BN, BO, BP, BQ, BR, BS, BT)", () => {
     const policy = { maxCredentialAgeMs: 90 * 24 * 3600_000, requireRotation: true };
     expect(isCredentialRotationDue("2025-01-01T00:00:00Z", NOW, policy)).toBe(true);
     expect(isCredentialRotationDue("2025-12-01T00:00:00Z", NOW, policy)).toBe(false);
-    expect(isCredentialRotationDue("2025-01-01T00:00:00Z", NOW, { maxCredentialAgeMs: 90 * 24 * 3600_000, requireRotation: false })).toBe(false);
+    expect(
+      isCredentialRotationDue("2025-01-01T00:00:00Z", NOW, {
+        maxCredentialAgeMs: 90 * 24 * 3600_000,
+        requireRotation: false,
+      }),
+    ).toBe(false);
   });
 
   it("revokes a compromised device immediately (BN)", () => {
-    const result = revokeDevice({ deviceId: "device-1", securityStatus: "trusted" }, "compromised", "security-1", NOW);
+    const result = revokeDevice(
+      { deviceId: "device-1", securityStatus: "trusted" },
+      "compromised",
+      "security-1",
+      NOW,
+    );
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.status).toBe("revoked");
@@ -403,12 +446,22 @@ describe("Device security (BK, BL, BM, BN, BO, BP, BQ, BR, BS, BT)", () => {
   });
 
   it("rejects revocation without a reason", () => {
-    const result = revokeDevice({ deviceId: "device-1", securityStatus: "trusted" }, "" as "policy", "security-1", NOW);
+    const result = revokeDevice(
+      { deviceId: "device-1", securityStatus: "trusted" },
+      "" as "policy",
+      "security-1",
+      NOW,
+    );
     expect(result.ok).toBe(false);
   });
 
   it("quarantines a device with a reason (BO)", () => {
-    const result = quarantineDevice({ deviceId: "device-1", securityStatus: "trusted" }, "suspected compromise", "security-1", NOW);
+    const result = quarantineDevice(
+      { deviceId: "device-1", securityStatus: "trusted" },
+      "suspected compromise",
+      "security-1",
+      NOW,
+    );
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.status).toBe("quarantined");
@@ -416,12 +469,23 @@ describe("Device security (BK, BL, BM, BN, BO, BP, BQ, BR, BS, BT)", () => {
   });
 
   it("rejects quarantine without a reason", () => {
-    const result = quarantineDevice({ deviceId: "device-1", securityStatus: "trusted" }, "", "security-1", NOW);
+    const result = quarantineDevice(
+      { deviceId: "device-1", securityStatus: "trusted" },
+      "",
+      "security-1",
+      NOW,
+    );
     expect(result.ok).toBe(false);
   });
 
   it("evaluates device security posture (BK, BP, BQ, BR)", () => {
-    const secure = { deviceId: "d", secureBootEnabled: true, rootOfTrustPresent: true, encryptionEnabled: true, networkSegmented: true };
+    const secure = {
+      deviceId: "d",
+      secureBootEnabled: true,
+      rootOfTrustPresent: true,
+      encryptionEnabled: true,
+      networkSegmented: true,
+    };
     const weak = { ...secure, secureBootEnabled: false, rootOfTrustPresent: false };
     const insecure = { ...secure, encryptionEnabled: false };
     const unsegmented = { ...secure, networkSegmented: false };
@@ -432,15 +496,35 @@ describe("Device security (BK, BL, BM, BN, BO, BP, BQ, BR, BS, BT)", () => {
   });
 
   it("escalates physical tamper events but not mere config noise (BS)", () => {
-    expect(isTamperEventEscalated({ deviceId: "d", kind: "enclosure_tamper", at: NOW, detail: "" })).toBe(true);
-    expect(isTamperEventEscalated({ deviceId: "d", kind: "unauthorized_firmware", at: NOW, detail: "" })).toBe(true);
-    expect(isTamperEventEscalated({ deviceId: "d", kind: "physical_intrusion", at: NOW, detail: "" })).toBe(true);
-    expect(isTamperEventEscalated({ deviceId: "d", kind: "unexpected_configuration", at: NOW, detail: "" })).toBe(false);
+    expect(
+      isTamperEventEscalated({ deviceId: "d", kind: "enclosure_tamper", at: NOW, detail: "" }),
+    ).toBe(true);
+    expect(
+      isTamperEventEscalated({ deviceId: "d", kind: "unauthorized_firmware", at: NOW, detail: "" }),
+    ).toBe(true);
+    expect(
+      isTamperEventEscalated({ deviceId: "d", kind: "physical_intrusion", at: NOW, detail: "" }),
+    ).toBe(true);
+    expect(
+      isTamperEventEscalated({
+        deviceId: "d",
+        kind: "unexpected_configuration",
+        at: NOW,
+        detail: "",
+      }),
+    ).toBe(false);
   });
 
   it("tracks supply-chain advisories (BT)", () => {
     const meta = addSupplyChainAdvisory(
-      { deviceId: "d", manufacturer: "Acme", model: "X1", firmwareProvenance: "vendor", componentProvenance: [], securityAdvisories: [] },
+      {
+        deviceId: "d",
+        manufacturer: "Acme",
+        model: "X1",
+        firmwareProvenance: "vendor",
+        componentProvenance: [],
+        securityAdvisories: [],
+      },
       "CVE-2026-0001",
     );
     expect(meta.securityAdvisories).toContain("CVE-2026-0001");
@@ -460,9 +544,14 @@ describe("Vulnerability management (BU, BV)", () => {
   });
 
   it("detects unsupported hardware models and outdated firmware", () => {
-    expect(isUnsupportedHardware({ model: "X1", firmwareVersion: "1.0.0" }, ["X1"], ["1.0.0"])).toBe(false);
-    expect(isUnsupportedHardware({ model: "X2", firmwareVersion: "1.0.0" }, ["X1"], ["1.0.0"])).toBe(true);
-    expect(isUnsupportedHardware({ model: "X1", firmwareVersion: "0.9.0" }, ["X1"], ["1.0.0"])).toBe(true);
+    expect(
+      isUnsupportedHardware({ model: "X1", firmwareVersion: "1.0.0" }, ["X1"], ["1.0.0"]),
+    ).toBe(false);
+    expect(
+      isUnsupportedHardware({ model: "X2", firmwareVersion: "1.0.0" }, ["X1"], ["1.0.0"]),
+    ).toBe(true);
+    expect(
+      isUnsupportedHardware({ model: "X1", firmwareVersion: "0.9.0" }, ["X1"], ["1.0.0"]),
+    ).toBe(true);
   });
 });
-

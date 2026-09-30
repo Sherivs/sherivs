@@ -154,8 +154,20 @@ export function trustInvariantChecks(): readonly TrustInvariantCheck[] {
   });
 
   if (created.ok) {
-    const direct = transitionTrustState(created.subject, "TRUSTED", "evidence-1", "actor-auditor", NOW);
-    const toUnverified = transitionTrustState(created.subject, "UNVERIFIED", "", "actor-auditor", NOW);
+    const direct = transitionTrustState(
+      created.subject,
+      "TRUSTED",
+      "evidence-1",
+      "actor-auditor",
+      NOW,
+    );
+    const toUnverified = transitionTrustState(
+      created.subject,
+      "UNVERIFIED",
+      "",
+      "actor-auditor",
+      NOW,
+    );
     const skip = toUnverified.ok
       ? transitionTrustState(toUnverified.subject, "TRUSTED", "evidence-1", "actor-auditor", NOW)
       : null;
@@ -166,16 +178,26 @@ export function trustInvariantChecks(): readonly TrustInvariantCheck[] {
       observed: "UNKNOWN→TRUSTED refused; UNVERIFIED→TRUSTED refused (VERIFIED is required)",
     });
 
-    const quarantined = transitionTrustState(created.subject, "QUARANTINED", "", "actor-auditor", NOW);
+    const quarantined = transitionTrustState(
+      created.subject,
+      "QUARANTINED",
+      "",
+      "actor-auditor",
+      NOW,
+    );
     checks.push({
       id: "BR.2",
       statement: "Trust that is withdrawn requires evidence of the reason.",
       holds: !quarantined.ok,
-      observed: quarantined.ok ? "quarantine accepted without evidence" : `refused: ${quarantined.error}`,
+      observed: quarantined.ok
+        ? "quarantine accepted without evidence"
+        : `refused: ${quarantined.error}`,
     });
   }
 
-  const revokedTerminal = TRUST_STATES.every((state) => !isTrustTransitionAllowed("REVOKED", state));
+  const revokedTerminal = TRUST_STATES.every(
+    (state) => !isTrustTransitionAllowed("REVOKED", state),
+  );
   checks.push({
     id: "BR.4",
     statement: "REVOKED is terminal: no transition leaves it.",
@@ -209,7 +231,8 @@ export function trustInvariantChecks(): readonly TrustInvariantCheck[] {
     now: NOW,
   });
   const activeNow = relationship.ok && isTrustRelationshipActive(relationship.relationship, NOW);
-  const activeLater = relationship.ok && isTrustRelationshipActive(relationship.relationship, LATER);
+  const activeLater =
+    relationship.ok && isTrustRelationshipActive(relationship.relationship, LATER);
   const revoked = relationship.ok ? revokeTrustRelationship(relationship.relationship, NOW) : null;
   const activeAfterRevocation = revoked !== null && isTrustRelationshipActive(revoked, NOW);
   checks.push({
@@ -231,7 +254,9 @@ export function trustInvariantChecks(): readonly TrustInvariantCheck[] {
     id: "BR.2b",
     statement: "A trust relationship without evidence is refused.",
     holds: !evidenceFree.ok,
-    observed: evidenceFree.ok ? "evidence-free relationship accepted" : `refused: ${evidenceFree.error}`,
+    observed: evidenceFree.ok
+      ? "evidence-free relationship accepted"
+      : `refused: ${evidenceFree.error}`,
   });
 
   const selfRelationship = createTrustRelationship({
@@ -258,7 +283,9 @@ export function trustInvariantChecks(): readonly TrustInvariantCheck[] {
     now: NOW,
   });
   const badConfidence = evaluateTrustScore({
-    factors: [{ factor: "identity_assurance", score: 90, weight: 1, evidenceRef: "evidence-score" }],
+    factors: [
+      { factor: "identity_assurance", score: 90, weight: 1, evidenceRef: "evidence-score" },
+    ],
     confidence: 2,
     context: "control-plane",
     now: NOW,
@@ -277,7 +304,8 @@ export function trustInvariantChecks(): readonly TrustInvariantCheck[] {
     id: "BR.9",
     statement:
       "A trust score is evidence-weighted confidence, never truth: it refuses to exist without factors and always carries its breakdown.",
-    holds: !noFactors.ok && !badConfidence.ok && scored.ok && scored.score.evidenceRefs.length === 3,
+    holds:
+      !noFactors.ok && !badConfidence.ok && scored.ok && scored.score.evidenceRefs.length === 3,
     observed: scored.ok
       ? `score=${scored.score.score}, evidenceRefs=${scored.score.evidenceRefs.length}, version=${scored.score.version}, recommended=${recommendedTrustStateForScore(scored.score.score)}`
       : "scoring refused",
@@ -320,12 +348,48 @@ export function trustExercises(): readonly TrustExercise[] {
 
   if (assertion.ok) {
     const issuers = ["issuer-identity-provider"];
-    const inScope = verifyTrustAssertion(assertion.assertion, true, issuers, "device-enrolment", NOW);
-    const uncheckedIntegrity = verifyTrustAssertion(assertion.assertion, false, issuers, "device-enrolment", NOW);
-    const wrongScope = verifyTrustAssertion(assertion.assertion, true, issuers, "payment-scope", NOW);
-    const expired = verifyTrustAssertion(assertion.assertion, true, issuers, "device-enrolment", LATER);
-    const unacceptedIssuer = verifyTrustAssertion(assertion.assertion, true, ["issuer-elsewhere"], "device-enrolment", NOW);
-    const revoked = verifyTrustAssertion(revokeTrustAssertion(assertion.assertion, NOW), true, issuers, "device-enrolment", NOW);
+    const inScope = verifyTrustAssertion(
+      assertion.assertion,
+      true,
+      issuers,
+      "device-enrolment",
+      NOW,
+    );
+    const uncheckedIntegrity = verifyTrustAssertion(
+      assertion.assertion,
+      false,
+      issuers,
+      "device-enrolment",
+      NOW,
+    );
+    const wrongScope = verifyTrustAssertion(
+      assertion.assertion,
+      true,
+      issuers,
+      "payment-scope",
+      NOW,
+    );
+    const expired = verifyTrustAssertion(
+      assertion.assertion,
+      true,
+      issuers,
+      "device-enrolment",
+      LATER,
+    );
+    const unacceptedIssuer = verifyTrustAssertion(
+      assertion.assertion,
+      true,
+      ["issuer-elsewhere"],
+      "device-enrolment",
+      NOW,
+    );
+    const revoked = verifyTrustAssertion(
+      revokeTrustAssertion(assertion.assertion, NOW),
+      true,
+      issuers,
+      "device-enrolment",
+      NOW,
+    );
     exercises.push({
       id: "assertion-verification",
       area: "Assertion verification (L, O.2, AB, BR.7)",
@@ -369,7 +433,12 @@ export function trustExercises(): readonly TrustExercise[] {
     { kind: "trust_assertion", id: "assertion-1", detail: "device assertion", at: NOW },
     { kind: "issuer", id: "issuer-identity-provider", detail: "accepted issuer", at: NOW },
     { kind: "evidence", id: "evidence-attestation-1", detail: "attestation evidence", at: NOW },
-    { kind: "verification_method", id: "method-signature", detail: "signature verification", at: NOW },
+    {
+      kind: "verification_method",
+      id: "method-signature",
+      detail: "signature verification",
+      at: NOW,
+    },
     { kind: "source", id: "source-device", detail: "device telemetry", at: NOW },
   ]);
   exercises.push({
@@ -586,7 +655,10 @@ export function trustExercises(): readonly TrustExercise[] {
     ...federationInput,
     parties: ["org-coregrid", "org-coregrid"] as [string, string],
   });
-  const expiredFederation = createFederation({ ...federationInput, expiresAt: "2026-01-01T00:00:00.000Z" });
+  const expiredFederation = createFederation({
+    ...federationInput,
+    expiresAt: "2026-01-01T00:00:00.000Z",
+  });
   exercises.push({
     id: "federation",
     area: "Trust federation and external trust (AC, AD) — never unrestricted internal trust",

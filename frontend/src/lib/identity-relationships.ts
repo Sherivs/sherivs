@@ -8,11 +8,7 @@
  * - No cross-tenant relationship leakage.
  */
 
-import type {
-  IdentityId,
-  IdentityRelationship,
-  RelationshipType,
-} from "./identity";
+import type { IdentityId, IdentityRelationship, RelationshipType } from "./identity";
 import { RELATIONSHIP_TYPES } from "./identity";
 
 /* ─────────────────────────────────────────────────────────────
@@ -30,8 +26,7 @@ export interface CreateRelationshipInput {
 }
 
 export type CreateRelationshipResult =
-  | { ok: true; relationship: IdentityRelationship }
-  | { ok: false; error: string };
+  { ok: true; relationship: IdentityRelationship } | { ok: false; error: string };
 
 export function createRelationship(
   input: CreateRelationshipInput,
@@ -110,9 +105,7 @@ export function relationshipsForSubject(
   subjectId: IdentityId,
   now: string = new Date().toISOString(),
 ): IdentityRelationship[] {
-  return activeRelationships(relationships, now).filter(
-    (r) => r.subjectId === subjectId,
-  );
+  return activeRelationships(relationships, now).filter((r) => r.subjectId === subjectId);
 }
 
 export function relationshipsForTarget(
@@ -120,9 +113,7 @@ export function relationshipsForTarget(
   targetId: string,
   now: string = new Date().toISOString(),
 ): IdentityRelationship[] {
-  return activeRelationships(relationships, now).filter(
-    (r) => r.targetId === targetId,
-  );
+  return activeRelationships(relationships, now).filter((r) => r.targetId === targetId);
 }
 
 /* ─────────────────────────────────────────────────────────────

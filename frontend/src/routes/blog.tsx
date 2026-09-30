@@ -54,10 +54,7 @@ function BlogIndex() {
     return list.filter((p) => {
       if (cat !== "all" && p.category !== cat) return false;
       if (!ql) return true;
-      return (
-        p.title.toLowerCase().includes(ql) ||
-        (p.excerpt ?? "").toLowerCase().includes(ql)
-      );
+      return p.title.toLowerCase().includes(ql) || (p.excerpt ?? "").toLowerCase().includes(ql);
     });
   }, [posts.data, q, cat]);
 
@@ -68,7 +65,10 @@ function BlogIndex() {
     >
       <div className="mx-auto max-w-6xl px-6 py-16 md:py-24">
         {school && (
-          <Link to="/" className="text-xs uppercase tracking-widest text-slate-400 hover:text-white">
+          <Link
+            to="/"
+            className="text-xs uppercase tracking-widest text-slate-400 hover:text-white"
+          >
             ← {school.name}
           </Link>
         )}
@@ -88,14 +88,20 @@ function BlogIndex() {
             className="rounded-md border border-white/10 bg-white/5 px-4 py-2 text-sm"
           >
             <option value="all">All categories</option>
-            {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+            {categories.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
           </select>
         </div>
 
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {loading || posts.isLoading || filtered.length === 0
-            ? <SkeletonCards />
-            : filtered.map((p) => <BlogCard key={p.id} post={p} />)}
+          {loading || posts.isLoading || filtered.length === 0 ? (
+            <SkeletonCards />
+          ) : (
+            filtered.map((p) => <BlogCard key={p.id} post={p} />)
+          )}
         </div>
       </div>
     </div>
@@ -127,13 +133,13 @@ function BlogCard({ post }: { post: Post }) {
           </span>
         )}
         <h3 className="mt-2 font-display text-xl font-bold leading-snug">{post.title}</h3>
-        {post.excerpt && (
-          <p className="mt-2 line-clamp-3 text-sm text-slate-400">{post.excerpt}</p>
-        )}
+        {post.excerpt && <p className="mt-2 line-clamp-3 text-sm text-slate-400">{post.excerpt}</p>}
         {post.published_at && (
           <p className="mt-3 text-xs text-slate-500">
             {new Date(post.published_at).toLocaleDateString(undefined, {
-              year: "numeric", month: "long", day: "numeric",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
             })}
           </p>
         )}

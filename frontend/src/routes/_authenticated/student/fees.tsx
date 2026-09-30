@@ -59,7 +59,10 @@ function StudentFeesPage() {
   if (!studentId && profile?.id) {
     return (
       <PortalPage title="My fees">
-        <EmptyCard title="Not linked yet" body="Ask your school admin to link your student record." />
+        <EmptyCard
+          title="Not linked yet"
+          body="Ask your school admin to link your student record."
+        />
       </PortalPage>
     );
   }
@@ -70,10 +73,7 @@ function StudentFeesPage() {
   const outstanding = billed - paid;
 
   return (
-    <PortalPage
-      title="My fees"
-      subtitle="View-only. Payments are made by your parent or guardian."
-    >
+    <PortalPage title="My fees" subtitle="View-only. Payments are made by your parent or guardian.">
       <SectionGrid>
         <StatCard label="Billed (₦)" value={billed.toLocaleString()} />
         <StatCard label="Paid (₦)" value={paid.toLocaleString()} />

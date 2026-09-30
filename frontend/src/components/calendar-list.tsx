@@ -31,11 +31,16 @@ const TYPE_COLOR: Record<string, string> = {
 
 function fmtDate(iso: string) {
   return new Date(iso + "T00:00:00").toLocaleDateString(undefined, {
-    weekday: "short", month: "short", day: "numeric",
+    weekday: "short",
+    month: "short",
+    day: "numeric",
   });
 }
 function monthKey(iso: string) {
-  return new Date(iso + "T00:00:00").toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  return new Date(iso + "T00:00:00").toLocaleDateString(undefined, {
+    month: "long",
+    year: "numeric",
+  });
 }
 
 export function CalendarList() {
@@ -47,7 +52,9 @@ export function CalendarList() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("school_calendar")
-        .select("id,title,description,start_date,end_date,event_type,color,all_day,start_time,end_time,location")
+        .select(
+          "id,title,description,start_date,end_date,event_type,color,all_day,start_time,end_time,location",
+        )
         .eq("school_id", school!.id)
         .gte("start_date", today)
         .order("start_date", { ascending: true });
@@ -57,10 +64,18 @@ export function CalendarList() {
   });
 
   if (q.isLoading) {
-    return <div className="uos-card p-8 text-center text-sm text-muted-foreground">Loading calendar…</div>;
+    return (
+      <div className="uos-card p-8 text-center text-sm text-muted-foreground">
+        Loading calendar…
+      </div>
+    );
   }
   if (q.error) {
-    return <div className="uos-card p-8 text-center text-sm text-red-400">{(q.error as Error).message}</div>;
+    return (
+      <div className="uos-card p-8 text-center text-sm text-red-400">
+        {(q.error as Error).message}
+      </div>
+    );
   }
   const rows = q.data ?? [];
   if (rows.length === 0) {
@@ -85,10 +100,13 @@ export function CalendarList() {
     <div className="space-y-6">
       {Object.entries(groups).map(([month, items]) => (
         <section key={month}>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">{month}</h2>
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            {month}
+          </h2>
           <div className="space-y-2">
             {items.map((e) => {
-              const cls = TYPE_COLOR[e.event_type ?? ""] ?? "bg-muted text-muted-foreground border-border";
+              const cls =
+                TYPE_COLOR[e.event_type ?? ""] ?? "bg-muted text-muted-foreground border-border";
               return (
                 <article key={e.id} className="uos-card p-4 flex gap-4 items-start">
                   <div className="text-center shrink-0 w-14">
@@ -96,29 +114,38 @@ export function CalendarList() {
                       {new Date(e.start_date + "T00:00:00").getDate()}
                     </div>
                     <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">
-                      {new Date(e.start_date + "T00:00:00").toLocaleDateString(undefined, { month: "short" })}
+                      {new Date(e.start_date + "T00:00:00").toLocaleDateString(undefined, {
+                        month: "short",
+                      })}
                     </div>
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="font-semibold">{e.title}</h3>
                       {e.event_type && (
-                        <span className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded border ${cls}`}>
+                        <span
+                          className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded border ${cls}`}
+                        >
                           {e.event_type}
                         </span>
                       )}
                     </div>
-                    {e.description && <p className="mt-1 text-sm text-muted-foreground">{e.description}</p>}
+                    {e.description && (
+                      <p className="mt-1 text-sm text-muted-foreground">{e.description}</p>
+                    )}
                     <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                       <span className="inline-flex items-center gap-1">
                         <CalendarDays className="size-3" />
                         {fmtDate(e.start_date)}
-                        {e.end_date && e.end_date !== e.start_date ? ` → ${fmtDate(e.end_date)}` : ""}
+                        {e.end_date && e.end_date !== e.start_date
+                          ? ` → ${fmtDate(e.end_date)}`
+                          : ""}
                       </span>
                       {!e.all_day && e.start_time && (
                         <span className="inline-flex items-center gap-1">
                           <Clock className="size-3" />
-                          {e.start_time.slice(0, 5)}{e.end_time ? `–${e.end_time.slice(0, 5)}` : ""}
+                          {e.start_time.slice(0, 5)}
+                          {e.end_time ? `–${e.end_time.slice(0, 5)}` : ""}
                         </span>
                       )}
                       {e.location && (

@@ -34,8 +34,7 @@ export interface LifecycleTransitionRequest {
 }
 
 export type LifecycleTransitionResult =
-  | { ok: true; identity: CoreGridIdentity; event: IdentityEvent }
-  | { ok: false; error: string };
+  { ok: true; identity: CoreGridIdentity; event: IdentityEvent } | { ok: false; error: string };
 
 /* ─────────────────────────────────────────────────────────────
  * Lifecycle engine

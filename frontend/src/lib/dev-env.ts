@@ -62,7 +62,8 @@ export function devWebhookId(raw: string): DevWebhookId {
  * Developer environments (Sections V, W)
  * ────────────────────────────────────────────────────────────*/
 
-export type DevEnvironmentKind = "local" | "development" | "test" | "integration" | "staging" | "preview" | "production";
+export type DevEnvironmentKind =
+  "local" | "development" | "test" | "integration" | "staging" | "preview" | "production";
 
 export const DEV_ENVIRONMENT_KINDS: readonly DevEnvironmentKind[] = [
   "local",
@@ -92,7 +93,9 @@ export interface DevEnvironment {
   configRefs: string[];
   endpoints: string[];
   featureFlags: string[];
-  quotas: Partial<Record<"api_calls" | "storage" | "compute" | "ai_inference" | "event_volume", number>>;
+  quotas: Partial<
+    Record<"api_calls" | "storage" | "compute" | "ai_inference" | "event_volume", number>
+  >;
   policyRefs: string[];
   createdAt: string;
 }
@@ -157,7 +160,10 @@ export function registerDevSecret(input: {
   now?: string;
 }): { ok: true; secret: DevSecret } | { ok: false; error: string } {
   if (input.environmentKind === "production") {
-    return { ok: false, error: "Production secrets remain controlled by secure infrastructure (Section 34)" };
+    return {
+      ok: false,
+      error: "Production secrets remain controlled by secure infrastructure (Section 34)",
+    };
   }
   if (!input.fingerprint.trim()) {
     return { ok: false, error: "Secret fingerprint is required" };
@@ -177,7 +183,13 @@ export function registerDevSecret(input: {
 
 export type SecretExposureKind = "api_key" | "token" | "password" | "certificate" | "private_key";
 
-export const SECRET_EXPOSURE_KINDS: readonly SecretExposureKind[] = ["api_key", "token", "password", "certificate", "private_key"] as const;
+export const SECRET_EXPOSURE_KINDS: readonly SecretExposureKind[] = [
+  "api_key",
+  "token",
+  "password",
+  "certificate",
+  "private_key",
+] as const;
 
 /**
  * Secret exposure prevention (Section 35): developer tooling must detect
@@ -240,7 +252,12 @@ export function createSandbox(input: {
 
 export type PermissionTestScenario = "full" | "restricted" | "denied" | "expired";
 
-export const PERMISSION_TEST_SCENARIOS: readonly PermissionTestScenario[] = ["full", "restricted", "denied", "expired"] as const;
+export const PERMISSION_TEST_SCENARIOS: readonly PermissionTestScenario[] = [
+  "full",
+  "restricted",
+  "denied",
+  "expired",
+] as const;
 
 export interface PermissionTestInput {
   permission: string;
@@ -264,7 +281,16 @@ export function isPermissionGrantedInScenario(input: PermissionTestInput): boole
  * Identity simulation (Section AB)
  * ────────────────────────────────────────────────────────────*/
 
-export type SyntheticRole = "administrator" | "teacher" | "student" | "parent" | "finance_user" | "hr_user" | "it_user" | "government_user" | "custom";
+export type SyntheticRole =
+  | "administrator"
+  | "teacher"
+  | "student"
+  | "parent"
+  | "finance_user"
+  | "hr_user"
+  | "it_user"
+  | "government_user"
+  | "custom";
 
 export const SYNTHETIC_ROLES: readonly SyntheticRole[] = [
   "administrator",
@@ -310,7 +336,10 @@ export function createSyntheticIdentity(input: {
  * Isolation testing (Section 39): automated tests must verify that tenant A
  * cannot access tenant B. This contract enforces the boundary at the domain layer.
  */
-export function isTenantIsolationRespected(resourceTenantId: TenantId, requesterTenantId: TenantId): boolean {
+export function isTenantIsolationRespected(
+  resourceTenantId: TenantId,
+  requesterTenantId: TenantId,
+): boolean {
   return resourceTenantId === requesterTenantId;
 }
 
@@ -408,9 +437,11 @@ export function isDevWebhookDeliveryValid(input: {
 }): { valid: boolean; reasons: string[] } {
   const reasons: string[] = [];
   if (!input.signatureValid) reasons.push("Invalid signature");
-  if (input.eventAgeMinutes > input.webhook.replayWindowMinutes) reasons.push("Replay window exceeded");
+  if (input.eventAgeMinutes > input.webhook.replayWindowMinutes)
+    reasons.push("Replay window exceeded");
   if (input.attempt > input.webhook.retryCount + 1) reasons.push("Retry limit exceeded");
-  if (input.webhook.idempotencySupported && !input.idempotentKeyPresent) reasons.push("Idempotency key required");
+  if (input.webhook.idempotencySupported && !input.idempotentKeyPresent)
+    reasons.push("Idempotency key required");
   return { valid: reasons.length === 0, reasons };
 }
 
@@ -420,10 +451,19 @@ export function isDevWebhookDeliveryValid(input: {
 
 export type DataAccessSimulation = "permitted" | "denied" | "partial" | "filtered";
 
-export const DATA_ACCESS_SIMULATIONS: readonly DataAccessSimulation[] = ["permitted", "denied", "partial", "filtered"] as const;
+export const DATA_ACCESS_SIMULATIONS: readonly DataAccessSimulation[] = [
+  "permitted",
+  "denied",
+  "partial",
+  "filtered",
+] as const;
 
 /** Data access simulation (Section AK): only permitted access grants full rows. */
-export function simulateDataAccess(kind: DataAccessSimulation): { granted: boolean; partial: boolean; filtered: boolean } {
+export function simulateDataAccess(kind: DataAccessSimulation): {
+  granted: boolean;
+  partial: boolean;
+  filtered: boolean;
+} {
   switch (kind) {
     case "permitted":
       return { granted: true, partial: false, filtered: false };
@@ -435,6 +475,3 @@ export function simulateDataAccess(kind: DataAccessSimulation): { granted: boole
       return { granted: true, partial: false, filtered: true };
   }
 }
-
-
-

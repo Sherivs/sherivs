@@ -66,18 +66,14 @@ function defaultAdminPassword(slug: string) {
 
 /* ---------- public read: is the platform bootstrapped? ---------- */
 
-export const checkPlatformBootstrap = createServerFn({ method: "GET" }).handler(
-  async () => {
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
-    const { count, error } = await supabaseAdmin
-      .from("super_admins")
-      .select("id", { count: "exact", head: true });
-    if (error) throw new Error(error.message);
-    return { hasSuperAdmin: (count ?? 0) > 0 };
-  },
-);
+export const checkPlatformBootstrap = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { count, error } = await supabaseAdmin
+    .from("super_admins")
+    .select("id", { count: "exact", head: true });
+  if (error) throw new Error(error.message);
+  return { hasSuperAdmin: (count ?? 0) > 0 };
+});
 
 /* ---------- bootstrap: become the first super admin ---------- */
 
@@ -85,9 +81,7 @@ export const claimFirstSuperAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: unknown) => claimSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // Gate: only proceeds when zero super admins exist
     const { count, error: countErr } = await supabaseAdmin
@@ -95,23 +89,19 @@ export const claimFirstSuperAdmin = createServerFn({ method: "POST" })
       .select("id", { count: "exact", head: true });
     if (countErr) throw new Error(countErr.message);
     if ((count ?? 0) > 0) {
-      throw new Error(
-        "Platform already has a super admin. Bootstrap is closed.",
-      );
+      throw new Error("Platform already has a super admin. Bootstrap is closed.");
     }
 
     // The caller (signed in via the bearer attacher) becomes the first super admin
     const userId = context.userId;
     const email = (context.claims as { email?: string })?.email ?? "";
 
-    const { error: insertErr } = await supabaseAdmin
-      .from("super_admins")
-      .insert({
-        id: userId,
-        full_name: data.fullName,
-        email,
-        is_active: true,
-      });
+    const { error: insertErr } = await supabaseAdmin.from("super_admins").insert({
+      id: userId,
+      full_name: data.fullName,
+      email,
+      is_active: true,
+    });
     if (insertErr) throw new Error(insertErr.message);
 
     return { ok: true, id: userId, email };
@@ -146,9 +136,7 @@ export const createSchoolWithAdmin = createServerFn({ method: "POST" })
     // Canonical Phase 08 role gate — platform super admin (fail closed).
     await requirePlatformSuperAdmin(context.supabase);
 
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     /* --- 1. resolve a unique slug --- */
     const base = slugify(data.schoolName) || "school";
@@ -185,13 +173,12 @@ export const createSchoolWithAdmin = createServerFn({ method: "POST" })
 
     /* --- 3. create the first admin auth user --- */
     const tempPassword = defaultAdminPassword(slug);
-    const { data: created, error: authErr } =
-      await supabaseAdmin.auth.admin.createUser({
-        email: data.adminEmail,
-        password: tempPassword,
-        email_confirm: true,
-        user_metadata: { full_name: data.adminFullName },
-      });
+    const { data: created, error: authErr } = await supabaseAdmin.auth.admin.createUser({
+      email: data.adminEmail,
+      password: tempPassword,
+      email_confirm: true,
+      user_metadata: { full_name: data.adminFullName },
+    });
     if (authErr || !created?.user) {
       // rollback school so we don't leave an orphan tenant
       await supabaseAdmin.from("schools").delete().eq("id", school.id);

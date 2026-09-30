@@ -134,10 +134,16 @@ function BiometricEnrollmentPage() {
             <GlassCard className="p-6">
               <h2 className="font-display text-lg font-semibold">What we collect &amp; why</h2>
               <ul className="mt-3 space-y-2 text-sm text-[color:var(--text-secondary)]">
-                <li>• Your device identifier and browser/OS name, to tie sign-ins to a trusted device.</li>
-                <li>• A face verification result (match / no match) — no photo or image is stored.</li>
+                <li>
+                  • Your device identifier and browser/OS name, to tie sign-ins to a trusted device.
+                </li>
+                <li>
+                  • A face verification result (match / no match) — no photo or image is stored.
+                </li>
                 <li>• Your GPS coordinates at sign-in, to confirm you are on campus.</li>
-                <li>• This data is used only for staff attendance and fraud prevention by your school.</li>
+                <li>
+                  • This data is used only for staff attendance and fraud prevention by your school.
+                </li>
                 <li>• You can ask your school admin to remove your enrollment at any time.</li>
               </ul>
               <label className="mt-5 flex items-start gap-3 text-sm">
@@ -158,7 +164,10 @@ function BiometricEnrollmentPage() {
               </div>
               <dl className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
                 <Info label="Device" value={device.model || "—"} />
-                <Info label="Device ID" value={device.deviceId ? `${device.deviceId.slice(0, 12)}…` : "—"} />
+                <Info
+                  label="Device ID"
+                  value={device.deviceId ? `${device.deviceId.slice(0, 12)}…` : "—"}
+                />
                 <div className="sm:col-span-2">
                   <Info label="User agent" value={device.userAgent || "—"} mono />
                 </div>
@@ -217,7 +226,9 @@ function BiometricEnrollmentPage() {
 function Info({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="rounded-xl border border-white/10 p-3">
-      <dt className="text-xs uppercase tracking-wide text-[color:var(--text-secondary)]">{label}</dt>
+      <dt className="text-xs uppercase tracking-wide text-[color:var(--text-secondary)]">
+        {label}
+      </dt>
       <dd className={`mt-1 break-words text-sm ${mono ? "font-mono text-xs" : ""}`}>{value}</dd>
     </div>
   );

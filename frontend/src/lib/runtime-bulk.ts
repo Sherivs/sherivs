@@ -133,7 +133,13 @@ export interface TransferJob {
 
 export interface TransferTracker {
   jobs: TransferJob[];
-  create(input: { type: "import" | "export"; tenantId: TenantId | null; correlationId: CorrelationId; totalItems: number; now: string }): TransferJob;
+  create(input: {
+    type: "import" | "export";
+    tenantId: TenantId | null;
+    correlationId: CorrelationId;
+    totalItems: number;
+    now: string;
+  }): TransferJob;
   updateProgress(id: string, processedItems: number, now: string): boolean;
   complete(id: string, now: string): boolean;
   fail(id: string, error: string, now: string): boolean;

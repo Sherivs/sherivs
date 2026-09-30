@@ -42,7 +42,9 @@ import type { InstitutionId, CampusId } from "./institution-core";
 export type AttendanceQRSessionId = string & { readonly __brand: "AttendanceQRSessionId" };
 export type BiometricEnrollmentId = string & { readonly __brand: "BiometricEnrollmentId" };
 export type AttendanceVerificationId = string & { readonly __brand: "AttendanceVerificationId" };
-export type AttendanceRiskAssessmentId = string & { readonly __brand: "AttendanceRiskAssessmentId" };
+export type AttendanceRiskAssessmentId = string & {
+  readonly __brand: "AttendanceRiskAssessmentId";
+};
 
 export function attendanceQRSessionId(raw: string): AttendanceQRSessionId {
   return raw as AttendanceQRSessionId;
@@ -92,7 +94,10 @@ export function createAttendanceQRSession(input: {
 }): { ok: true; session: AttendanceQRSession } | { ok: false; error: string } {
   const now = input.now ?? new Date().toISOString();
   if (input.ttlMinutes <= 0 || input.ttlMinutes > 60) {
-    return { ok: false, error: "QR session TTL must be between 1 and 60 minutes (short-lived, BP)" };
+    return {
+      ok: false,
+      error: "QR session TTL must be between 1 and 60 minutes (short-lived, BP)",
+    };
   }
   if (!input.validatorFingerprint.trim()) {
     return { ok: false, error: "QR validator fingerprint is required" };
@@ -116,10 +121,16 @@ export function createAttendanceQRSession(input: {
 }
 
 /** Replay resistance (BP): a consumed QR can never be redeemed again. */
-export function redeemQRSession(session: AttendanceQRSession, validatorFingerprint: string, now: string = new Date().toISOString()): {
-  ok: true;
-  session: AttendanceQRSession;
-} | { ok: false; error: string } {
+export function redeemQRSession(
+  session: AttendanceQRSession,
+  validatorFingerprint: string,
+  now: string = new Date().toISOString(),
+):
+  | {
+      ok: true;
+      session: AttendanceQRSession;
+    }
+  | { ok: false; error: string } {
   if (session.consumedAt !== null) {
     return { ok: false, error: "QR session has already been consumed (replay prevented)" };
   }
@@ -213,7 +224,10 @@ export function enrollBiometric(input: {
  * Revocation (Section FH privacy property): removing a biometric enrollment
  * prevents future biometric authentication using that enrollment.
  */
-export function revokeBiometricEnrollment(enrollment: BiometricEnrollment, now: string = new Date().toISOString()): BiometricEnrollment {
+export function revokeBiometricEnrollment(
+  enrollment: BiometricEnrollment,
+  now: string = new Date().toISOString(),
+): BiometricEnrollment {
   return { ...enrollment, state: "revoked", revokedAt: now };
 }
 
@@ -332,7 +346,13 @@ export function authorizeAttendance(
   input: AttendanceVerificationInput,
   now: string = new Date().toISOString(),
 ): AttendanceVerificationOutcome {
-  const base = { id: attendanceVerificationId(crypto.randomUUID()), tenantId: input.tenantId, institutionId: input.institutionId, identityRef: input.identityRef, occurredAt: now };
+  const base = {
+    id: attendanceVerificationId(crypto.randomUUID()),
+    tenantId: input.tenantId,
+    institutionId: input.institutionId,
+    identityRef: input.identityRef,
+    occurredAt: now,
+  };
 
   if (!input.identityVerified) {
     return { ...base, decision: "DENY", reason: "Identity verification failed" };
@@ -341,7 +361,11 @@ export function authorizeAttendance(
     return { ...base, decision: "DENY", reason: "Liveness check failed" };
   }
   if (!input.locationAuthorized) {
-    return { ...base, decision: "DENY", reason: "Location not authorized for this attendance session" };
+    return {
+      ...base,
+      decision: "DENY",
+      reason: "Location not authorized for this attendance session",
+    };
   }
   if (!input.policyRefs.some((p) => p.startsWith("attendance."))) {
     return { ...base, decision: "DENY", reason: "No attendance policy applies" };
@@ -350,7 +374,11 @@ export function authorizeAttendance(
     return { ...base, decision: "DENY", reason: "Role/context validation failed (Section BO)" };
   }
   // Capability check: the attendance capability must be present via the role.
-  return { ...base, decision: "ALLOW", reason: `Attendance authorized for capability '${input.requiredCapability}'` };
+  return {
+    ...base,
+    decision: "ALLOW",
+    reason: `Attendance authorized for capability '${input.requiredCapability}'`,
+  };
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -413,7 +441,10 @@ export function assessAttendanceRisk(input: {
     duplicate_attendance: 40,
     simultaneous_presence_anomaly: 45,
   };
-  const riskScore = Math.min(100, input.signals.reduce((sum, s) => sum + severity[s], 0));
+  const riskScore = Math.min(
+    100,
+    input.signals.reduce((sum, s) => sum + severity[s], 0),
+  );
   return {
     id: input.id,
     tenantId: input.tenantId,
@@ -452,12 +483,12 @@ export function isBiometricAttendanceAllowed(
   locationRef: string,
 ): boolean {
   if (!policy.enabled) return false;
-  if (policy.eligibleStaffRefs.length > 0 && !policy.eligibleStaffRefs.includes(identityRef)) return false;
-  if (policy.permittedLocationRefs.length > 0 && !policy.permittedLocationRefs.includes(locationRef)) return false;
+  if (policy.eligibleStaffRefs.length > 0 && !policy.eligibleStaffRefs.includes(identityRef))
+    return false;
+  if (
+    policy.permittedLocationRefs.length > 0 &&
+    !policy.permittedLocationRefs.includes(locationRef)
+  )
+    return false;
   return true;
 }
-
-
-
-
-

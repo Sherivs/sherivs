@@ -54,7 +54,10 @@ export interface TableContract {
     readonly scope: readonly string[];
   }[];
   readonly appendOnly?: boolean;
-  readonly foreignKeys?: readonly { readonly columns: readonly string[]; readonly references: string }[];
+  readonly foreignKeys?: readonly {
+    readonly columns: readonly string[];
+    readonly references: string;
+  }[];
   readonly rowLevelSecurity?: boolean;
   readonly requiresInvariants: readonly SchemaInvariant[];
 }
@@ -100,7 +103,8 @@ export function recordMigration(input: {
   if (input.kind === "data" && !input.preservesHistory) {
     refusals.push("a data migration must state how stored history is preserved");
   }
-  if (!input.checksum?.trim()) refusals.push("a migration must record the checksum of what was applied");
+  if (!input.checksum?.trim())
+    refusals.push("a migration must record the checksum of what was applied");
 
   const existing = input.applied.find((record) => record.version === input.version);
   if (existing) {
@@ -117,7 +121,9 @@ export function recordMigration(input: {
   const ordered = [...input.applied].sort((a, b) => a.version.localeCompare(b.version));
   const last = ordered[ordered.length - 1];
   if (last && input.version <= last.version) {
-    refusals.push("migrations are forward-only: the version does not advance past the applied head");
+    refusals.push(
+      "migrations are forward-only: the version does not advance past the applied head",
+    );
   }
 
   if (refusals.length > 0) {
@@ -141,12 +147,20 @@ export function recordMigration(input: {
 export function detectEditedMigrations(
   applied: readonly MigrationRecord[],
   offered: readonly { readonly version: string; readonly checksum: string }[],
-): readonly { readonly version: string; readonly appliedChecksum: string; readonly offeredChecksum: string }[] {
+): readonly {
+  readonly version: string;
+  readonly appliedChecksum: string;
+  readonly offeredChecksum: string;
+}[] {
   const edits: { version: string; appliedChecksum: string; offeredChecksum: string }[] = [];
   for (const record of applied) {
     const match = offered.find((candidate) => candidate.version === record.version);
     if (match && match.checksum !== record.checksum) {
-      edits.push({ version: record.version, appliedChecksum: record.checksum, offeredChecksum: match.checksum });
+      edits.push({
+        version: record.version,
+        appliedChecksum: record.checksum,
+        offeredChecksum: match.checksum,
+      });
     }
   }
   return edits;
@@ -170,7 +184,10 @@ export function validateSchemaContract(contract: TableContract): SchemaValidatio
     switch (invariant) {
       case "tenant-column-present":
         if (!columnNames.includes("tenant_id")) {
-          unmet.push({ invariant, why: "no tenant_id column: a record would not belong to an organization" });
+          unmet.push({
+            invariant,
+            why: "no tenant_id column: a record would not belong to an organization",
+          });
         }
         break;
       case "tenant-isolation-policy":
@@ -183,7 +200,10 @@ export function validateSchemaContract(contract: TableContract): SchemaValidatio
         break;
       case "append-only":
         if (!contract.appendOnly) {
-          unmet.push({ invariant, why: "the table is not declared append-only, so history could be rewritten" });
+          unmet.push({
+            invariant,
+            why: "the table is not declared append-only, so history could be rewritten",
+          });
         }
         break;
       case "unique-scope-key":
@@ -211,17 +231,26 @@ export function validateSchemaContract(contract: TableContract): SchemaValidatio
       }
       case "foreign-key-integrity":
         if (!contract.foreignKeys || contract.foreignKeys.length === 0) {
-          unmet.push({ invariant, why: "no foreign keys are declared, so orphaned records would be possible" });
+          unmet.push({
+            invariant,
+            why: "no foreign keys are declared, so orphaned records would be possible",
+          });
         }
         break;
       case "state-machine-column":
         if (!columnNames.some((name) => name === "status" || name.endsWith("_state"))) {
-          unmet.push({ invariant, why: "no state column is declared, so a status string could mutate freely" });
+          unmet.push({
+            invariant,
+            why: "no state column is declared, so a status string could mutate freely",
+          });
         }
         break;
       case "explicit-timezone":
         if (!columnNames.some((name) => name.includes("timezone") || name.endsWith("_tz"))) {
-          unmet.push({ invariant, why: "no explicit timezone column is declared for time-bearing records" });
+          unmet.push({
+            invariant,
+            why: "no explicit timezone column is declared for time-bearing records",
+          });
         }
         break;
       case "no-personal-data-without-purpose":

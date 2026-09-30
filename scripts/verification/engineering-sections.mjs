@@ -21,16 +21,49 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const archDir = join(root, "architecture");
 
 const CANONICAL_SECTIONS = [
-  "Identity", "Purpose", "Ownership", "Boundary", "Principle",
-  "Architecture", "Contract", "Data Model", "Event", "Workflow",
-  "Security", "Tenancy", "AI Safety", "Observability", "Testing",
-  "Integration", "Dependency", "Risk", "Completion", "Extension",
+  "Identity",
+  "Purpose",
+  "Ownership",
+  "Boundary",
+  "Principle",
+  "Architecture",
+  "Contract",
+  "Data Model",
+  "Event",
+  "Workflow",
+  "Security",
+  "Tenancy",
+  "AI Safety",
+  "Observability",
+  "Testing",
+  "Integration",
+  "Dependency",
+  "Risk",
+  "Completion",
+  "Extension",
 ];
 
 const KEYWORDS = [
-  "API", "EVENT", "COMMAND", "QUERY", "POLICY", "SECURITY", "TENANT",
-  "WORKFLOW", "AGENT", "MEMORY", "KNOWLEDGE", "OBSERVAB", "TEST", "AUDIT",
-  "DEPENDENC", "BOUNDARY", "OWNERSHIP", "FAILURE", "DATA MODEL", "MIGRATION",
+  "API",
+  "EVENT",
+  "COMMAND",
+  "QUERY",
+  "POLICY",
+  "SECURITY",
+  "TENANT",
+  "WORKFLOW",
+  "AGENT",
+  "MEMORY",
+  "KNOWLEDGE",
+  "OBSERVAB",
+  "TEST",
+  "AUDIT",
+  "DEPENDENC",
+  "BOUNDARY",
+  "OWNERSHIP",
+  "FAILURE",
+  "DATA MODEL",
+  "MIGRATION",
 ];
 
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
@@ -46,15 +79,15 @@ function detectDialect(text) {
 function topLevelLetters(text, dialect) {
   const found = new Set();
   if (dialect === "SECTION") {
-    for (const m of text.matchAll(/^SECTION\s+([A-Z]{1,3})\b/img)) {
+    for (const m of text.matchAll(/^SECTION\s+([A-Z]{1,3})\b/gim)) {
       for (const ch of m[1]) found.add(ch.toUpperCase());
     }
   } else if (dialect === "A_R") {
-    for (const m of text.matchAll(/^#{1,6}\s+([A-Z]{1,3})\.\s/img)) {
+    for (const m of text.matchAll(/^#{1,6}\s+([A-Z]{1,3})\.\s/gim)) {
       for (const ch of m[1]) found.add(ch.toUpperCase());
     }
   } else if (dialect === "DOT_LETTER") {
-    for (const m of text.matchAll(/^([A-Z]{1,3})\.\d/mg)) {
+    for (const m of text.matchAll(/^([A-Z]{1,3})\.\d/gm)) {
       for (const ch of m[1]) found.add(ch.toUpperCase());
     }
   }

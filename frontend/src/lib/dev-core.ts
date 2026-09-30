@@ -102,7 +102,15 @@ export const DEVELOPER_TYPES: readonly DeveloperType[] = [
  * Developer organizations (Sections 7, 8)
  * ────────────────────────────────────────────────────────────*/
 
-export type DeveloperOrgRole = "owner" | "administrator" | "developer" | "reviewer" | "security_engineer" | "release_manager" | "support_engineer" | "billing_administrator";
+export type DeveloperOrgRole =
+  | "owner"
+  | "administrator"
+  | "developer"
+  | "reviewer"
+  | "security_engineer"
+  | "release_manager"
+  | "support_engineer"
+  | "billing_administrator";
 
 export const DEVELOPER_ORG_ROLES: readonly DeveloperOrgRole[] = [
   "owner",
@@ -201,7 +209,11 @@ export const DEVELOPER_PROJECT_TYPES: readonly DeveloperProjectType[] = [
 
 export type ProjectVisibility = "private" | "org_internal" | "public";
 
-export const PROJECT_VISIBILITIES: readonly ProjectVisibility[] = ["private", "org_internal", "public"] as const;
+export const PROJECT_VISIBILITIES: readonly ProjectVisibility[] = [
+  "private",
+  "org_internal",
+  "public",
+] as const;
 
 export interface DeveloperProject {
   id: DeveloperProjectId;
@@ -316,9 +328,19 @@ export function createProjectManifest(input: {
   };
 }
 
-export type SdkLanguage = "typescript" | "javascript" | "python" | "java" | "kotlin" | "swift" | "go" | "rust";
+export type SdkLanguage =
+  "typescript" | "javascript" | "python" | "java" | "kotlin" | "swift" | "go" | "rust";
 
-export const SDK_LANGUAGES: readonly SdkLanguage[] = ["typescript", "javascript", "python", "java", "kotlin", "swift", "go", "rust"] as const;
+export const SDK_LANGUAGES: readonly SdkLanguage[] = [
+  "typescript",
+  "javascript",
+  "python",
+  "java",
+  "kotlin",
+  "swift",
+  "go",
+  "rust",
+] as const;
 
 export interface Sdk {
   id: SdkId;
@@ -366,7 +388,13 @@ export interface ProductionAccessCheck {
  * role, explicit authorization, auditability, and risk controls.
  */
 export function isProductionAccessPermitted(input: ProductionAccessCheck): boolean {
-  return input.strongerAuthentication && input.appropriateRole && input.explicitAuthorization && input.auditable && input.riskControls;
+  return (
+    input.strongerAuthentication &&
+    input.appropriateRole &&
+    input.explicitAuthorization &&
+    input.auditable &&
+    input.riskControls
+  );
 }
 
 export interface BreakGlassDevAccess {
@@ -392,7 +420,9 @@ export function grantBreakGlassDevAccess(input: {
   if (input.durationMinutes <= 0 || input.durationMinutes > 480) {
     return { ok: false, error: "Break-glass duration must be between 1 and 480 minutes" };
   }
-  const expiresAt = new Date(new Date(now).getTime() + input.durationMinutes * 60_000).toISOString();
+  const expiresAt = new Date(
+    new Date(now).getTime() + input.durationMinutes * 60_000,
+  ).toISOString();
   return {
     ok: true,
     access: {
@@ -405,5 +435,3 @@ export function grantBreakGlassDevAccess(input: {
     },
   };
 }
-
-

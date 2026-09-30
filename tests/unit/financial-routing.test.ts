@@ -70,16 +70,18 @@ describe("routing is a decision over declared capabilities", () => {
       policy: { preferredProviderIds: ["provider-preferred"] },
     });
     expect(decision.providerId).toBe("provider-capable");
-    const refused = decision.candidates.find((candidate) => candidate.providerId === "provider-preferred");
+    const refused = decision.candidates.find(
+      (candidate) => candidate.providerId === "provider-preferred",
+    );
     expect(refused?.disqualifiedBy).toContain("jurisdiction");
   });
 
   it("ranks eligible providers by preference first and declared cost second", () => {
     const cheap = provider({ providerId: "provider-cheap", feeBasisPoints: 50 });
     const pricey = provider({ providerId: "provider-pricey", feeBasisPoints: 400 });
-    expect(selectPaymentRoute({ providers: [pricey, cheap], requirement: REQUIREMENT }).providerId).toBe(
-      "provider-cheap",
-    );
+    expect(
+      selectPaymentRoute({ providers: [pricey, cheap], requirement: REQUIREMENT }).providerId,
+    ).toBe("provider-cheap");
     expect(
       selectPaymentRoute({
         providers: [pricey, cheap],
@@ -97,12 +99,17 @@ describe("routing is a decision over declared capabilities", () => {
     expect(noSplit.providerId).toBeNull();
 
     const noPartial = selectPaymentRoute({
-      providers: [provider({ capabilities: { ...provider().capabilities, supportsPartialRefund: false } })],
+      providers: [
+        provider({ capabilities: { ...provider().capabilities, supportsPartialRefund: false } }),
+      ],
       requirement: { ...REQUIREMENT, requiresPartialRefund: true },
     });
     expect(noPartial.providerId).toBeNull();
 
-    const inactive = selectPaymentRoute({ providers: [provider({ active: false })], requirement: REQUIREMENT });
+    const inactive = selectPaymentRoute({
+      providers: [provider({ active: false })],
+      requirement: REQUIREMENT,
+    });
     expect(inactive.providerId).toBeNull();
 
     const tooExpensive = selectPaymentRoute({
@@ -116,9 +123,16 @@ describe("routing is a decision over declared capabilities", () => {
   it("explains every candidate and the policy that applied", () => {
     const providers = [
       provider(),
-      provider({ providerId: "provider-b", capabilities: { ...provider().capabilities, currencies: ["USD"] } }),
+      provider({
+        providerId: "provider-b",
+        capabilities: { ...provider().capabilities, currencies: ["USD"] },
+      }),
     ];
-    const decision = selectPaymentRoute({ providers, requirement: REQUIREMENT, policy: { maxFeeBasisPoints: 200 } });
+    const decision = selectPaymentRoute({
+      providers,
+      requirement: REQUIREMENT,
+      policy: { maxFeeBasisPoints: 200 },
+    });
     const explanation = explainRoutingDecision(decision, providers);
     expect(explanation).toContain("provider-a");
     expect(explanation).toContain("provider-b");
@@ -128,7 +142,9 @@ describe("routing is a decision over declared capabilities", () => {
   it("knows which providers can carry a split at all", () => {
     expect(providerSupportsSplit(provider())).toBe(true);
     expect(
-      providerSupportsSplit(provider({ capabilities: { ...provider().capabilities, supportsSplit: false } })),
+      providerSupportsSplit(
+        provider({ capabilities: { ...provider().capabilities, supportsSplit: false } }),
+      ),
     ).toBe(false);
     expect(providerSupportsSplit(provider({ active: false }))).toBe(false);
   });
@@ -146,7 +162,11 @@ describe("failover can never double-charge", () => {
 
   it("refuses failover while a timeout is unresolved, because a timeout is not a failure", () => {
     const decision = canFailover({
-      attempt: { providerId: "provider-a", outcome: "unresolved_timeout", providerProvedNoCapture: true },
+      attempt: {
+        providerId: "provider-a",
+        outcome: "unresolved_timeout",
+        providerProvedNoCapture: true,
+      },
       toProviderId: "provider-b",
     });
     expect(decision.allowed).toBe(false);

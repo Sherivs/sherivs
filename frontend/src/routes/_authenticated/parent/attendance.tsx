@@ -17,7 +17,9 @@ function ParentAttendancePage() {
   const { profile } = useApp();
   const [selected, setSelected] = useState<string | null>(null);
   const [days, setDays] = useState<30 | 60 | 90 | 180>(60);
-  const [statusFilter, setStatusFilter] = useState<"all" | "present" | "absent" | "late" | "excused">("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "present" | "absent" | "late" | "excused"
+  >("all");
 
   const children = useQuery<Child[]>({
     queryKey: ["parent-children-att", profile?.id],
@@ -40,7 +42,7 @@ function ParentAttendancePage() {
       const nameOf = new Map((users ?? []).map((u) => [u.id, u.full_name as string]));
       return (students ?? []).map((s) => ({
         student_id: s.id as string,
-        full_name: s.user_id ? nameOf.get(s.user_id as string) ?? "Child" : "Child",
+        full_name: s.user_id ? (nameOf.get(s.user_id as string) ?? "Child") : "Child",
       }));
     },
   });
@@ -94,7 +96,10 @@ function ParentAttendancePage() {
   }
 
   return (
-    <PortalPage title="Children's attendance" subtitle={`Last ${days} days of recorded attendance.`}>
+    <PortalPage
+      title="Children's attendance"
+      subtitle={`Last ${days} days of recorded attendance.`}
+    >
       <div className="mb-6 flex flex-wrap gap-2">
         {(children.data ?? []).map((c) => (
           <button
@@ -132,7 +137,9 @@ function ParentAttendancePage() {
           <option value={90}>Last 90 days</option>
           <option value={180}>Last 180 days</option>
         </select>
-        <label className="ml-2 text-xs uppercase tracking-widest text-muted-foreground">Status</label>
+        <label className="ml-2 text-xs uppercase tracking-widest text-muted-foreground">
+          Status
+        </label>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}

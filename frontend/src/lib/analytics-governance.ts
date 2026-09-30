@@ -78,7 +78,14 @@ export function versionMetric(input: {
   changedAt: string;
   reason: string;
 }): MetricVersion {
-  return { metricId: input.metricId, version: input.currentVersion + 1, definitionHash: input.definitionHash, changedBy: input.changedBy, changedAt: input.changedAt, reason: input.reason };
+  return {
+    metricId: input.metricId,
+    version: input.currentVersion + 1,
+    definitionHash: input.definitionHash,
+    changedBy: input.changedBy,
+    changedAt: input.changedAt,
+    reason: input.reason,
+  };
 }
 
 export interface AnalyticalSnapshot {
@@ -103,7 +110,13 @@ export function isSnapshotUsableForLockedPeriod(snapshot: AnalyticalSnapshot): b
 
 export type ReportKind = "operational" | "academic" | "financial" | "executive" | "regulatory";
 
-export const REPORT_KINDS: readonly ReportKind[] = ["operational", "academic", "financial", "executive", "regulatory"] as const;
+export const REPORT_KINDS: readonly ReportKind[] = [
+  "operational",
+  "academic",
+  "financial",
+  "executive",
+  "regulatory",
+] as const;
 
 export interface ReportVersion {
   reportId: string;
@@ -136,11 +149,17 @@ export function createReportVersion(input: CreateReportVersionInput): ReportVers
   return { ...input, approvedBy: null };
 }
 
-export function isReportReproducible(report: ReportVersion, snapshot: AnalyticalSnapshot | null): boolean {
+export function isReportReproducible(
+  report: ReportVersion,
+  snapshot: AnalyticalSnapshot | null,
+): boolean {
   if (snapshot === null) {
     return false;
   }
-  return snapshot.dataVersion === report.datasetVersion && JSON.stringify(snapshot.metricVersions) === JSON.stringify(report.metricVersions);
+  return (
+    snapshot.dataVersion === report.datasetVersion &&
+    JSON.stringify(snapshot.metricVersions) === JSON.stringify(report.metricVersions)
+  );
 }
 
 export function approveReport(report: ReportVersion, approvedBy: string): ReportVersion {
@@ -153,7 +172,12 @@ export function approveReport(report: ReportVersion, approvedBy: string): Report
 
 export type AlertSeverity = "info" | "warning" | "critical" | "critical_escalated";
 
-export const ALERT_SEVERITIES: readonly AlertSeverity[] = ["info", "warning", "critical", "critical_escalated"] as const;
+export const ALERT_SEVERITIES: readonly AlertSeverity[] = [
+  "info",
+  "warning",
+  "critical",
+  "critical_escalated",
+] as const;
 
 export interface AnalyticalAlert {
   alertId: string;
@@ -197,7 +221,10 @@ export function shouldEmitAlert(
 }
 
 export function escalateAlert(alert: AnalyticalAlert): AnalyticalAlert {
-  return { ...alert, severity: alert.severity === "critical" ? "critical_escalated" : alert.severity };
+  return {
+    ...alert,
+    severity: alert.severity === "critical" ? "critical_escalated" : alert.severity,
+  };
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -232,7 +259,11 @@ export function computeCompositeScore(
   assumptions: string[],
 ): CompositeScore {
   const totalWeight = components.reduce((acc, c) => acc + c.weight, 0);
-  const score = totalWeight === 0 ? 0 : components.reduce((acc, c) => acc + c.weight * Math.max(0, Math.min(1, c.value)), 0) / totalWeight;
+  const score =
+    totalWeight === 0
+      ? 0
+      : components.reduce((acc, c) => acc + c.weight * Math.max(0, Math.min(1, c.value)), 0) /
+        totalWeight;
   return { scoreId, kind, components, score: Number(score.toFixed(3)), assumptions };
 }
 
@@ -254,12 +285,20 @@ export interface AnalyticsAccessRequest {
  * resource scope and data classification. Cross-tenant analytical access
  * is prohibited without an explicit grant.
  */
-export function authorizeAnalyticsAccess(input: AnalyticsAccessRequest & { crossTenantGranted: boolean }): { allowed: boolean; reason: string } {
+export function authorizeAnalyticsAccess(
+  input: AnalyticsAccessRequest & { crossTenantGranted: boolean },
+): { allowed: boolean; reason: string } {
   if (input.actorTenantId !== input.resourceTenantId && !input.crossTenantGranted) {
-    return { allowed: false, reason: "Cross-tenant analytical access denied without explicit grant (CH)" };
+    return {
+      allowed: false,
+      reason: "Cross-tenant analytical access denied without explicit grant (CH)",
+    };
   }
   if (!input.requiredRoles.includes(input.role)) {
-    return { allowed: false, reason: `Role "${input.role}" is not permitted for this analytical dataset (CH)` };
+    return {
+      allowed: false,
+      reason: `Role "${input.role}" is not permitted for this analytical dataset (CH)`,
+    };
   }
   if (classificationRank(input.dataClassification) > input.maxAllowedClassificationRank) {
     return { allowed: false, reason: "Data classification exceeds permitted level (CH)" };
@@ -268,7 +307,14 @@ export function authorizeAnalyticsAccess(input: AnalyticsAccessRequest & { cross
 }
 
 function classificationRank(classification: DataClassification): number {
-  const order: readonly DataClassification[] = ["PUBLIC", "INTERNAL", "CONFIDENTIAL", "SENSITIVE", "HIGHLY_SENSITIVE", "REGULATED"];
+  const order: readonly DataClassification[] = [
+    "PUBLIC",
+    "INTERNAL",
+    "CONFIDENTIAL",
+    "SENSITIVE",
+    "HIGHLY_SENSITIVE",
+    "REGULATED",
+  ];
   const index = order.indexOf(classification);
   return index === -1 ? 0 : index;
 }
@@ -338,8 +384,19 @@ export function evaluateExperiment(input: {
   significanceLevel: number;
   multipleComparisons: boolean;
 }): ExperimentResult {
-  if (input.treatmentMean === null || input.controlMean === null || input.treatmentStdDev === null || input.controlStdDev === null) {
-    return { experimentId: input.experimentId, effectSize: null, confidenceInterval: { lower: null, upper: null }, statisticallySignificant: null, comparisonsAdjusted: input.multipleComparisons };
+  if (
+    input.treatmentMean === null ||
+    input.controlMean === null ||
+    input.treatmentStdDev === null ||
+    input.controlStdDev === null
+  ) {
+    return {
+      experimentId: input.experimentId,
+      effectSize: null,
+      confidenceInterval: { lower: null, upper: null },
+      statisticallySignificant: null,
+      comparisonsAdjusted: input.multipleComparisons,
+    };
   }
   const effectSize = Number((input.treatmentMean - input.controlMean).toFixed(4));
   const pooledStd = Math.sqrt((input.treatmentStdDev ** 2 + input.controlStdDev ** 2) / 2);
@@ -350,7 +407,10 @@ export function evaluateExperiment(input: {
   return {
     experimentId: input.experimentId,
     effectSize,
-    confidenceInterval: { lower: Number((effectSize - halfWidth).toFixed(4)), upper: Number((effectSize + halfWidth).toFixed(4)) },
+    confidenceInterval: {
+      lower: Number((effectSize - halfWidth).toFixed(4)),
+      upper: Number((effectSize + halfWidth).toFixed(4)),
+    },
     statisticallySignificant: significant,
     comparisonsAdjusted: input.multipleComparisons,
   };
@@ -375,9 +435,16 @@ export function isVersionPinComplete(pin: VersionPin): boolean {
   return pin.datasetVersion.trim() !== "" && pin.queryVersion.trim() !== "";
 }
 
-export type AnalyticalFailureMode = "stale_data" | "incomplete_data" | "conflicting_data" | "unavailable_model" | "none";
+export type AnalyticalFailureMode =
+  "stale_data" | "incomplete_data" | "conflicting_data" | "unavailable_model" | "none";
 
-export const ANALYTICAL_FAILURE_MODES: readonly AnalyticalFailureMode[] = ["stale_data", "incomplete_data", "conflicting_data", "unavailable_model", "none"] as const;
+export const ANALYTICAL_FAILURE_MODES: readonly AnalyticalFailureMode[] = [
+  "stale_data",
+  "incomplete_data",
+  "conflicting_data",
+  "unavailable_model",
+  "none",
+] as const;
 
 /**
  * Analytical failure modes (HF): the system must detect stale,

@@ -125,13 +125,21 @@ describe("Action contract (AB)", () => {
 
 describe("Verification (BT, BU)", () => {
   it("marks a verified action as VERIFIED", () => {
-    const verified = verifyActionExecution({ execution: record(), verified: true, detail: "twin confirms locked" });
+    const verified = verifyActionExecution({
+      execution: record(),
+      verified: true,
+      detail: "twin confirms locked",
+    });
     expect(verified.status).toBe("VERIFIED");
     expect(verified.verified).toBe(true);
   });
 
   it("never reports failed verification as success (FM.12)", () => {
-    const failed = verifyActionExecution({ execution: record(), verified: false, detail: "twin still open" });
+    const failed = verifyActionExecution({
+      execution: record(),
+      verified: false,
+      detail: "twin still open",
+    });
     expect(failed.status).toBe("FAILED");
     expect(failed.verified).toBe(false);
   });
@@ -160,32 +168,58 @@ describe("Preconditions and postconditions (BR, BS)", () => {
 
 describe("Stale state protection (BQ, FM.10)", () => {
   it("allows fresh state", () => {
-    const result = isStateFreshForExecution({ lastObservedAt: "2025-12-31T23:59:50Z", now: NOW, maxAgeMs: 60_000, critical: true, allowStale: false });
+    const result = isStateFreshForExecution({
+      lastObservedAt: "2025-12-31T23:59:50Z",
+      now: NOW,
+      maxAgeMs: 60_000,
+      critical: true,
+      allowStale: false,
+    });
     expect(result.ok).toBe(true);
   });
 
   it("refuses stale state for critical automation unless explicitly permitted", () => {
-    const result = isStateFreshForExecution({ lastObservedAt: "2025-01-01T00:00:00Z", now: NOW, maxAgeMs: 60_000, critical: true, allowStale: false });
+    const result = isStateFreshForExecution({
+      lastObservedAt: "2025-01-01T00:00:00Z",
+      now: NOW,
+      maxAgeMs: 60_000,
+      critical: true,
+      allowStale: false,
+    });
     expect(result.ok).toBe(false);
     expect(result.reason).toContain("refuses stale state");
   });
 
   it("fails safe when no observation exists", () => {
-    const result = isStateFreshForExecution({ lastObservedAt: null, now: NOW, maxAgeMs: 60_000, critical: true, allowStale: false });
+    const result = isStateFreshForExecution({
+      lastObservedAt: null,
+      now: NOW,
+      maxAgeMs: 60_000,
+      critical: true,
+      allowStale: false,
+    });
     expect(result.ok).toBe(false);
   });
 });
 
 describe("Escalation (BV, BW)", () => {
   it("escalates after retries are exhausted", () => {
-    const decision = decideEscalation({ target: "security_team", afterRetries: 3, createIncident: true }, 3, "EXTERNAL");
+    const decision = decideEscalation(
+      { target: "security_team", afterRetries: 3, createIncident: true },
+      3,
+      "EXTERNAL",
+    );
     expect(decision.escalate).toBe(true);
     expect(decision.target).toBe("security_team");
     expect(decision.createIncident).toBe(true);
   });
 
   it("escalates authorization failures to an administrator", () => {
-    const decision = decideEscalation({ target: "system_owner", afterRetries: 3, createIncident: false }, 0, "AUTHORIZATION");
+    const decision = decideEscalation(
+      { target: "system_owner", afterRetries: 3, createIncident: false },
+      0,
+      "AUTHORIZATION",
+    );
     expect(decision.escalate).toBe(true);
     expect(decision.target).toBe("institution_administrator");
   });
@@ -216,29 +250,45 @@ describe("Kill switches (BX, BY)", () => {
   });
 
   it("blocks everything while a SYSTEM stop is active", () => {
-    const result = isStopped({ stops: [stop({ level: "SYSTEM", scopeId: "*" })], scope: { level: "ACTION", id: "any" } });
+    const result = isStopped({
+      stops: [stop({ level: "SYSTEM", scopeId: "*" })],
+      scope: { level: "ACTION", id: "any" },
+    });
     expect(result.stopped).toBe(true);
   });
 
   it("ignores released stops", () => {
-    const result = isStopped({ stops: [stop({ active: false })], scope: { level: "ACTION", id: "lock-door" } });
+    const result = isStopped({
+      stops: [stop({ active: false })],
+      scope: { level: "ACTION", id: "lock-door" },
+    });
     expect(result.stopped).toBe(false);
   });
 });
 
 describe("Execution modes and rollout (CA, CB, CC, CD, CE, CF)", () => {
   it("dry-run/simulation/shadow never produce production side effects (FM.8/FM.9)", () => {
-    expect(shouldExecuteAction({ mode: "dry_run", riskLevel: "R1", allowedInMode: true }).execute).toBe(false);
-    expect(shouldExecuteAction({ mode: "simulation", riskLevel: "R1", allowedInMode: true }).execute).toBe(false);
-    expect(shouldExecuteAction({ mode: "shadow", riskLevel: "R1", allowedInMode: true }).execute).toBe(false);
+    expect(
+      shouldExecuteAction({ mode: "dry_run", riskLevel: "R1", allowedInMode: true }).execute,
+    ).toBe(false);
+    expect(
+      shouldExecuteAction({ mode: "simulation", riskLevel: "R1", allowedInMode: true }).execute,
+    ).toBe(false);
+    expect(
+      shouldExecuteAction({ mode: "shadow", riskLevel: "R1", allowedInMode: true }).execute,
+    ).toBe(false);
   });
 
   it("allows production execution", () => {
-    expect(shouldExecuteAction({ mode: "production", riskLevel: "R2", allowedInMode: true }).execute).toBe(true);
+    expect(
+      shouldExecuteAction({ mode: "production", riskLevel: "R2", allowedInMode: true }).execute,
+    ).toBe(true);
   });
 
   it("blocks R4 actions in canary mode (CE)", () => {
-    expect(shouldExecuteAction({ mode: "canary", riskLevel: "R4", allowedInMode: true }).execute).toBe(false);
+    expect(
+      shouldExecuteAction({ mode: "canary", riskLevel: "R4", allowedInMode: true }).execute,
+    ).toBe(false);
   });
 
   it("only advances rollout stages in order (CF)", () => {
@@ -247,4 +297,3 @@ describe("Execution modes and rollout (CA, CB, CC, CD, CE, CF)", () => {
     expect(isRolloutAdvanceAllowed("DEV", "FULL_PRODUCTION")).toBe(false);
   });
 });
-

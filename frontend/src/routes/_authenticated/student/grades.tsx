@@ -78,8 +78,10 @@ function StudentGradesPage() {
           label="Best subject"
           value={
             rows.length
-              ? rows.slice().sort((a, b) => Number(b.total_score ?? 0) - Number(a.total_score ?? 0))[0]
-                  .subject ?? "—"
+              ? (rows
+                  .slice()
+                  .sort((a, b) => Number(b.total_score ?? 0) - Number(a.total_score ?? 0))[0]
+                  .subject ?? "—")
               : "—"
           }
         />

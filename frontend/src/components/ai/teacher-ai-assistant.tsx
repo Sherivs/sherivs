@@ -4,8 +4,14 @@ import { useApp } from "@/contexts/app-context";
 import { AIAssistantShell, type QuickPrompt } from "@/components/ai/ai-assistant-shell";
 
 const QUICK_PROMPTS: QuickPrompt[] = [
-  { label: "How is my class performing?", prompt: "Give me a performance summary of my classes this term" },
-  { label: "Which students need help?", prompt: "Which students in my classes have declining grades?" },
+  {
+    label: "How is my class performing?",
+    prompt: "Give me a performance summary of my classes this term",
+  },
+  {
+    label: "Which students need help?",
+    prompt: "Which students in my classes have declining grades?",
+  },
   { label: "Lesson plan ideas", prompt: "Help me plan a lesson on [topic]" },
   { label: "Mark attendance", prompt: "Show me today's attendance for my classes" },
   { label: "Generate quiz", prompt: "Generate 5 quiz questions on [subject]" },

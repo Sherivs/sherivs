@@ -64,9 +64,16 @@ export function compatibilityId(raw: string): CompatibilityId {
  * ────────────────────────────────────────────────────────────*/
 
 export const DEPRECATION_STEPS: readonly string[] = [
-  "capability_identification", "usage_analysis", "impact_analysis",
-  "replacement_identification", "communication", "migration_tooling",
-  "transition_period", "monitoring", "final_shutdown", "archival",
+  "capability_identification",
+  "usage_analysis",
+  "impact_analysis",
+  "replacement_identification",
+  "communication",
+  "migration_tooling",
+  "transition_period",
+  "monitoring",
+  "final_shutdown",
+  "archival",
 ] as const;
 
 export interface DeprecationPlan {
@@ -79,7 +86,8 @@ export function createDeprecationPlan(input: {
   id: DeprecationId;
   capability: string;
 }): { ok: true; plan: DeprecationPlan } | { ok: false; error: string } {
-  if (!input.capability.trim()) return { ok: false, error: "Deprecation capability is required (Section AB)" };
+  if (!input.capability.trim())
+    return { ok: false, error: "Deprecation capability is required (Section AB)" };
   return { ok: true, plan: { id: input.id, capability: input.capability, completedSteps: [] } };
 }
 
@@ -105,8 +113,16 @@ export function isDeprecationComplete(plan: DeprecationPlan): boolean {
  * ────────────────────────────────────────────────────────────*/
 
 export const SUNSET_VERIFICATION_AREAS: readonly string[] = [
-  "users", "dependencies", "data", "integrations", "apis", "workflows",
-  "agents", "devices", "reports", "regulatory_obligations",
+  "users",
+  "dependencies",
+  "data",
+  "integrations",
+  "apis",
+  "workflows",
+  "agents",
+  "devices",
+  "reports",
+  "regulatory_obligations",
 ] as const;
 
 export interface SunsetAnalysis {
@@ -119,7 +135,8 @@ export function createSunsetAnalysis(input: {
   id: DeprecationId;
   capability: string;
 }): { ok: true; analysis: SunsetAnalysis } | { ok: false; error: string } {
-  if (!input.capability.trim()) return { ok: false, error: "Sunset capability is required (Section AC)" };
+  if (!input.capability.trim())
+    return { ok: false, error: "Sunset capability is required (Section AC)" };
   return { ok: true, analysis: { id: input.id, capability: input.capability, verified: [] } };
 }
 
@@ -130,7 +147,10 @@ export function verifySunsetArea(
   if (!SUNSET_VERIFICATION_AREAS.includes(area)) {
     return { ok: false, error: `Unknown sunset area "${area}" (Section AC)` };
   }
-  return { ok: true, analysis: { ...analysis, verified: [...new Set([...analysis.verified, area])] } };
+  return {
+    ok: true,
+    analysis: { ...analysis, verified: [...new Set([...analysis.verified, area])] },
+  };
 }
 
 // Section AC: no critical capability disappears without dependency verification.
@@ -161,7 +181,8 @@ export function createMigrationPlan(input: {
   validationAvailable?: boolean;
   auditTrailAvailable?: boolean;
 }): { ok: true; plan: MigrationPlan } | { ok: false; error: string } {
-  if (!input.capability.trim()) return { ok: false, error: "Migration capability is required (Section AD)" };
+  if (!input.capability.trim())
+    return { ok: false, error: "Migration capability is required (Section AD)" };
   return {
     ok: true,
     plan: {
@@ -178,7 +199,9 @@ export function createMigrationPlan(input: {
 
 // Section AD: migration requires dry runs, rollback, validation, and audit.
 export function canExecuteMigration(plan: MigrationPlan): boolean {
-  return plan.dryRun && plan.rollbackAvailable && plan.validationAvailable && plan.auditTrailAvailable;
+  return (
+    plan.dryRun && plan.rollbackAvailable && plan.validationAvailable && plan.auditTrailAvailable
+  );
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -186,8 +209,15 @@ export function canExecuteMigration(plan: MigrationPlan): boolean {
  * ────────────────────────────────────────────────────────────*/
 
 export const COMPATIBILITY_SURFACES: readonly string[] = [
-  "apis", "schemas", "clients", "devices", "agents", "models",
-  "integrations", "infrastructure", "workflows",
+  "apis",
+  "schemas",
+  "clients",
+  "devices",
+  "agents",
+  "models",
+  "integrations",
+  "infrastructure",
+  "workflows",
 ] as const;
 
 export interface CompatibilityContract {
@@ -200,7 +230,8 @@ export function createCompatibilityContract(input: {
   id: CompatibilityId;
   capability: string;
 }): { ok: true; contract: CompatibilityContract } | { ok: false; error: string } {
-  if (!input.capability.trim()) return { ok: false, error: "Compatibility capability is required (Section AE)" };
+  if (!input.capability.trim())
+    return { ok: false, error: "Compatibility capability is required (Section AE)" };
   return { ok: true, contract: { id: input.id, capability: input.capability, testedSurfaces: [] } };
 }
 
@@ -211,7 +242,10 @@ export function verifyCompatibilitySurface(
   if (!COMPATIBILITY_SURFACES.includes(surface)) {
     return { ok: false, error: `Unknown compatibility surface "${surface}" (Section AE)` };
   }
-  return { ok: true, contract: { ...contract, testedSurfaces: [...new Set([...contract.testedSurfaces, surface])] } };
+  return {
+    ok: true,
+    contract: { ...contract, testedSurfaces: [...new Set([...contract.testedSurfaces, surface])] },
+  };
 }
 
 // Section AE: compatibility is measured rather than assumed.
@@ -376,9 +410,19 @@ export function isProtocolEvolutionComplete(plan: ProtocolEvolutionPlan): boolea
  * ────────────────────────────────────────────────────────────*/
 
 export const MODEL_MIGRATION_DIMENSIONS: readonly string[] = [
-  "accuracy", "reasoning_quality", "hallucination_behavior", "latency",
-  "cost", "safety", "privacy", "multilingual", "african_educational_context",
-  "tool_reliability", "structured_output", "agent_behavior", "regression_behavior",
+  "accuracy",
+  "reasoning_quality",
+  "hallucination_behavior",
+  "latency",
+  "cost",
+  "safety",
+  "privacy",
+  "multilingual",
+  "african_educational_context",
+  "tool_reliability",
+  "structured_output",
+  "agent_behavior",
+  "regression_behavior",
 ] as const;
 
 export interface ModelMigrationPlan {
@@ -396,7 +440,15 @@ export function createModelMigrationPlan(input: {
   if (!input.fromModel.trim() || !input.toModel.trim()) {
     return { ok: false, error: "Model migration requires source and target models (Section M)" };
   }
-  return { ok: true, plan: { id: input.id, fromModel: input.fromModel, toModel: input.toModel, measuredDimensions: [] } };
+  return {
+    ok: true,
+    plan: {
+      id: input.id,
+      fromModel: input.fromModel,
+      toModel: input.toModel,
+      measuredDimensions: [],
+    },
+  };
 }
 
 export function addModelMigrationMeasurement(
@@ -406,12 +458,17 @@ export function addModelMigrationMeasurement(
   if (!MODEL_MIGRATION_DIMENSIONS.includes(dimension)) {
     return { ok: false, error: `Unknown model migration dimension "${dimension}" (Section M)` };
   }
-  return { ok: true, plan: { ...plan, measuredDimensions: [...new Set([...plan.measuredDimensions, dimension])] } };
+  return {
+    ok: true,
+    plan: { ...plan, measuredDimensions: [...new Set([...plan.measuredDimensions, dimension])] },
+  };
 }
 
 // Section M: production migration requires measurable evidence.
 export function isModelMigrationEvidenceSufficient(plan: ModelMigrationPlan): boolean {
-  return MODEL_MIGRATION_DIMENSIONS.every((dimension) => plan.measuredDimensions.includes(dimension));
+  return MODEL_MIGRATION_DIMENSIONS.every((dimension) =>
+    plan.measuredDimensions.includes(dimension),
+  );
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -473,10 +530,20 @@ export function isCryptoAgile(plan: CryptoAgilityPlan): boolean {
  * ────────────────────────────────────────────────────────────*/
 
 export const GENERATION_MIGRATION_STEPS: readonly string[] = [
-  "architectural_assessment", "compatibility_analysis", "migration_architecture",
-  "data_strategy", "identity_strategy", "security_strategy", "tenant_migration",
-  "api_migration", "infrastructure_migration", "user_migration",
-  "operational_migration", "validation", "rollback_planning", "final_transition",
+  "architectural_assessment",
+  "compatibility_analysis",
+  "migration_architecture",
+  "data_strategy",
+  "identity_strategy",
+  "security_strategy",
+  "tenant_migration",
+  "api_migration",
+  "infrastructure_migration",
+  "user_migration",
+  "operational_migration",
+  "validation",
+  "rollback_planning",
+  "final_transition",
 ] as const;
 
 export interface GenerationalMigrationPlan {
@@ -492,9 +559,20 @@ export function createGenerationalMigrationPlan(input: {
   toGeneration: string;
 }): { ok: true; plan: GenerationalMigrationPlan } | { ok: false; error: string } {
   if (!input.fromGeneration.trim() || !input.toGeneration.trim()) {
-    return { ok: false, error: "Generation migration requires source and target generations (Section BC)" };
+    return {
+      ok: false,
+      error: "Generation migration requires source and target generations (Section BC)",
+    };
   }
-  return { ok: true, plan: { id: input.id, fromGeneration: input.fromGeneration, toGeneration: input.toGeneration, completedSteps: [] } };
+  return {
+    ok: true,
+    plan: {
+      id: input.id,
+      fromGeneration: input.fromGeneration,
+      toGeneration: input.toGeneration,
+      completedSteps: [],
+    },
+  };
 }
 
 export function completeGenerationStep(
@@ -504,7 +582,10 @@ export function completeGenerationStep(
   if (!GENERATION_MIGRATION_STEPS.includes(step)) {
     return { ok: false, error: `Unknown generation migration step "${step}" (Section BC)` };
   }
-  return { ok: true, plan: { ...plan, completedSteps: [...new Set([...plan.completedSteps, step])] } };
+  return {
+    ok: true,
+    plan: { ...plan, completedSteps: [...new Set([...plan.completedSteps, step])] },
+  };
 }
 
 export function isGenerationalMigrationComplete(plan: GenerationalMigrationPlan): boolean {
@@ -512,8 +593,13 @@ export function isGenerationalMigrationComplete(plan: GenerationalMigrationPlan)
 }
 
 export const GENERATION_CONTINUITY_AREAS: readonly string[] = [
-  "institutional_data_continuity", "identity_continuity", "security_continuity",
-  "tenant_isolation", "critical_workflows", "auditability", "contractual_compatibility",
+  "institutional_data_continuity",
+  "identity_continuity",
+  "security_continuity",
+  "tenant_isolation",
+  "critical_workflows",
+  "auditability",
+  "contractual_compatibility",
 ] as const;
 
 export interface GenerationContinuity {
@@ -587,8 +673,3 @@ export function isVendorIndependenceSatisfied(plan: VendorExitPlan): boolean {
     plan.contractDocumentation
   );
 }
-
-
-
-
-

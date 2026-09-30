@@ -81,7 +81,11 @@ const eventIds = [];
 try {
   const builtSpec = buildSchoolSpecFn(parts);
   if (!builtSpec.ok) throw new Error(`configuration invalid: ${builtSpec.issues.join("; ")}`);
-  check("A3 buildSchoolSpec validates fixture", builtSpec.ok, `${parts.levels.length} levels, ${parts.programmes.length} programmes`);
+  check(
+    "A3 buildSchoolSpec validates fixture",
+    builtSpec.ok,
+    `${parts.levels.length} levels, ${parts.programmes.length} programmes`,
+  );
 
   const makeBlueprint = (version) =>
     createBlueprintFn({
@@ -93,10 +97,14 @@ try {
       previous: version === 1 ? null : { version: version - 1 },
     });
   const bp1 = makeBlueprint(1);
-  check("A4 createBlueprint (v1)", bp1.ok, bp1.ok ? `version ${bp1.blueprint.header.version}` : bp1.issues.join("; "));
+  check(
+    "A4 createBlueprint (v1)",
+    bp1.ok,
+    bp1.ok ? `version ${bp1.blueprint.header.version}` : bp1.issues.join("; "),
+  );
   if (!bp1.ok) throw new Error("blueprint v1 failed");
 
-    const entityRow1 = entityDraftFn(
+  const entityRow1 = entityDraftFn(
     {
       entityType: ENTITY_TYPE,
       tenantId,
@@ -120,7 +128,11 @@ try {
     },
     now,
   );
-  const ins1 = await svc.from("cg_entity").insert(entityRow1).select("id, entity_type, tenant_id").single();
+  const ins1 = await svc
+    .from("cg_entity")
+    .insert(entityRow1)
+    .select("id, entity_type, tenant_id")
+    .single();
   if (ins1.error) throw new Error(`entity v1 insert: ${ins1.error.message}`);
   firstId = ins1.data.id;
   check(
@@ -184,7 +196,11 @@ try {
     },
     now,
   );
-  const evIns = await svc.from("cg_event").insert(audit).select("id, event_type, tenant_id").single();
+  const evIns = await svc
+    .from("cg_event")
+    .insert(audit)
+    .select("id, event_type, tenant_id")
+    .single();
   if (evIns.error) throw new Error(`audit event insert: ${evIns.error.message}`);
   eventIds.push(evIns.data.id);
   check(
@@ -244,6 +260,7 @@ try {
 }
 
 const failed = results.filter((r) => !r.ok).length;
-console.log(`\nScholar config wiring verification: ${results.length - failed}/${results.length} passed.`);
+console.log(
+  `\nScholar config wiring verification: ${results.length - failed}/${results.length} passed.`,
+);
 process.exit(failed === 0 ? 0 : 1);
-

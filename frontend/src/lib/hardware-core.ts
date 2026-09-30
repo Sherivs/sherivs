@@ -163,7 +163,10 @@ const DEVICE_LIFECYCLE_TRANSITIONS: Readonly<
   RETIRED: [],
 };
 
-export function isDeviceLifecycleTransitionAllowed(from: DeviceLifecycleState, to: DeviceLifecycleState): boolean {
+export function isDeviceLifecycleTransitionAllowed(
+  from: DeviceLifecycleState,
+  to: DeviceLifecycleState,
+): boolean {
   return DEVICE_LIFECYCLE_TRANSITIONS[from].includes(to);
 }
 
@@ -211,8 +214,7 @@ export interface RegisterDeviceInput {
 }
 
 export type RegisterDeviceResult =
-  | { ok: true; device: DeviceRecord }
-  | { ok: false; error: string };
+  { ok: true; device: DeviceRecord } | { ok: false; error: string };
 
 /** Register a device (G). Device identity (H) must never rely solely on a
  * hardware identifier/serial that can be spoofed — registration requires an

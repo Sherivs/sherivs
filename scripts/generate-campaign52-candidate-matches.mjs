@@ -3,9 +3,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
-const registry = JSON.parse(
-  readFileSync(join(root, "architecture", "registry.json"), "utf8"),
-);
+const registry = JSON.parse(readFileSync(join(root, "architecture", "registry.json"), "utf8"));
 const gaps = JSON.parse(
   readFileSync(
     join(root, "architecture", "COREGRID_PHASE_52_UNRESOLVED_GAP_REGISTER.json"),
@@ -61,9 +59,7 @@ const matches = gaps.gaps.map((gap) => {
   const titleTokens = tokens(gap.evidence.title);
   const scored = phaseCandidates
     .map((candidate) => {
-      const overlap = [...titleTokens].filter((token) =>
-        candidate.tokens.has(token),
-      );
+      const overlap = [...titleTokens].filter((token) => candidate.tokens.has(token));
       return {
         phase: candidate.phase,
         name: candidate.name,
@@ -99,15 +95,11 @@ const result = {
   prohibitedUse: [
     "Do not update phase ownership from this artifact alone.",
     "Do not register a new phase from this artifact.",
-    "Do not implement a candidate match without governance and contract evidence."
-  ]
+    "Do not implement a candidate match without governance and contract evidence.",
+  ],
 };
 
-const output = join(
-  root,
-  "architecture",
-  "COREGRID_CAMPAIGN_52_CANDIDATE_MATCHES.json",
-);
+const output = join(root, "architecture", "COREGRID_CAMPAIGN_52_CANDIDATE_MATCHES.json");
 writeFileSync(output, `${JSON.stringify(result, null, 2)}\n`, "utf8");
 console.log(
   JSON.stringify(

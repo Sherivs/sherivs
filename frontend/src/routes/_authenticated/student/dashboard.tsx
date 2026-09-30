@@ -105,9 +105,7 @@ function StudentDashboard() {
 
   const today = new Date();
   const todayDay = DAYS[today.getDay()];
-  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
-    .toISOString()
-    .slice(0, 10);
+  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
   const weekAhead = new Date(today.getTime() + 7 * 86400000).toISOString().slice(0, 10);
   const todayISO = today.toISOString().slice(0, 10);
 
@@ -291,7 +289,7 @@ function StudentDashboard() {
           {nextSlot && minutesToNext != null && minutesToNext > 0 && (
             <span className="flex items-center gap-1.5 rounded-full border border-border bg-muted/20 px-3 py-1 text-xs">
               <Clock className="size-3.5 text-primary" />
-              {nextSlot.is_break ? nextSlot.break_label ?? "Break" : nextSlot.subject} in{" "}
+              {nextSlot.is_break ? (nextSlot.break_label ?? "Break") : nextSlot.subject} in{" "}
               {minutesToNext >= 60
                 ? `${Math.floor(minutesToNext / 60)}h ${minutesToNext % 60}m`
                 : `${minutesToNext}m`}
@@ -300,7 +298,9 @@ function StudentDashboard() {
         </header>
 
         {!classId ? (
-          <p className="p-6 text-sm text-muted-foreground">You aren&apos;t assigned to a class yet.</p>
+          <p className="p-6 text-sm text-muted-foreground">
+            You aren&apos;t assigned to a class yet.
+          </p>
         ) : timetable.isLoading ? (
           <div className="space-y-2 p-4">
             <SkeletonLine />
@@ -330,7 +330,7 @@ function StudentDashboard() {
                     {String(s.start_time).slice(0, 5)}–{String(s.end_time).slice(0, 5)}
                   </p>
                   <p className="mt-1 truncate text-sm font-semibold">
-                    {s.is_break ? s.break_label ?? "Break" : s.subject}
+                    {s.is_break ? (s.break_label ?? "Break") : s.subject}
                   </p>
                   {s.room && <p className="mt-1 text-[11px] opacity-70">{s.room}</p>}
                   {active && (
@@ -387,9 +387,7 @@ function StudentDashboard() {
             <Bot className="size-7 text-primary" />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="font-display text-lg font-semibold">
-              Your personal AI tutor is ready
-            </h2>
+            <h2 className="font-display text-lg font-semibold">Your personal AI tutor is ready</h2>
             <p className="text-sm text-muted-foreground">
               Ask questions, get explanations and practice — any subject, any time.
             </p>
@@ -437,11 +435,15 @@ function StudentDashboard() {
                 const score = g.total_score == null ? null : Number(g.total_score);
                 return (
                   <li key={g.id as string} className="flex items-center gap-3 p-3 text-sm">
-                    <span className="min-w-0 flex-1 truncate font-medium">{g.subject as string}</span>
+                    <span className="min-w-0 flex-1 truncate font-medium">
+                      {g.subject as string}
+                    </span>
                     <span className={`font-semibold tabular-nums ${scoreTone(score)}`}>
                       {score == null ? "—" : `${score}%`}
                     </span>
-                    <span className="w-8 text-center text-xs font-bold">{(g.grade as string) ?? "—"}</span>
+                    <span className="w-8 text-center text-xs font-bold">
+                      {(g.grade as string) ?? "—"}
+                    </span>
                     <span className="w-24 text-right text-xs text-muted-foreground">
                       {g.created_at ? new Date(g.created_at as string).toLocaleDateString() : "—"}
                     </span>

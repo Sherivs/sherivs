@@ -96,7 +96,13 @@ export const VENDOR_TYPES: readonly VendorType[] = [
  * Vendor verification (Sections 14, 16)
  * ────────────────────────────────────────────────────────────*/
 
-export type VendorVerificationLevel = "registered" | "email_verified" | "identity_verified" | "organization_verified" | "legal_verified" | "fully_verified";
+export type VendorVerificationLevel =
+  | "registered"
+  | "email_verified"
+  | "identity_verified"
+  | "organization_verified"
+  | "legal_verified"
+  | "fully_verified";
 
 export const VENDOR_VERIFICATION_LEVELS: readonly VendorVerificationLevel[] = [
   "registered",
@@ -146,11 +152,12 @@ export interface CreateVendorInput {
   now?: string;
 }
 
-export type CreateVendorResult =
-  | { ok: true; vendor: Vendor }
-  | { ok: false; error: string };
+export type CreateVendorResult = { ok: true; vendor: Vendor } | { ok: false; error: string };
 
-export function createVendor(input: CreateVendorInput, now: string = new Date().toISOString()): CreateVendorResult {
+export function createVendor(
+  input: CreateVendorInput,
+  now: string = new Date().toISOString(),
+): CreateVendorResult {
   if (!input.organizationName.trim()) {
     return { ok: false, error: "Vendor organization name is required" };
   }
@@ -207,7 +214,15 @@ export function promoteVendorVerification(
  * Developer organizations (Sections 19, 20, 21, 22)
  * ────────────────────────────────────────────────────────────*/
 
-export type DeveloperRole = "owner" | "administrator" | "developer" | "reviewer" | "publisher" | "security_officer" | "finance_officer" | "support_operator";
+export type DeveloperRole =
+  | "owner"
+  | "administrator"
+  | "developer"
+  | "reviewer"
+  | "publisher"
+  | "security_officer"
+  | "finance_officer"
+  | "support_operator";
 
 export const DEVELOPER_ROLES: readonly DeveloperRole[] = [
   "owner",
@@ -254,7 +269,10 @@ export function createDeveloperOrganization(input: {
 }
 
 /** Only the owner/administrator may grant publishing authority (Section 21). */
-export function canGrantPublishingAuthority(org: DeveloperOrganization, identityRef: string): boolean {
+export function canGrantPublishingAuthority(
+  org: DeveloperOrganization,
+  identityRef: string,
+): boolean {
   const member = org.members.find((m) => m.identityRef === identityRef);
   if (!member) return false;
   return member.role === "owner" || member.role === "administrator";
@@ -349,7 +367,13 @@ export function createDraftSubmission(input: {
 
 export type RatingDimension = "quality" | "usability" | "reliability" | "support" | "value";
 
-export const RATING_DIMENSIONS: readonly RatingDimension[] = ["quality", "usability", "reliability", "support", "value"] as const;
+export const RATING_DIMENSIONS: readonly RatingDimension[] = [
+  "quality",
+  "usability",
+  "reliability",
+  "support",
+  "value",
+] as const;
 
 export interface ProductReview {
   id: ProductReviewId;
@@ -406,7 +430,9 @@ export function createProductReview(input: {
  * prevents fake reviews and manipulation.
  */
 export function canReviewProduct(existingReviews: ProductReview[], reviewerRef: string): boolean {
-  return !existingReviews.some((r) => r.reviewerRef === reviewerRef && r.moderationState !== "rejected");
+  return !existingReviews.some(
+    (r) => r.reviewerRef === reviewerRef && r.moderationState !== "rejected",
+  );
 }
 
 /** Average of a rating dimension across approved reviews. */
@@ -461,8 +487,10 @@ export function isVendorExitPermitted(input: {
   dataExportAvailable: boolean;
   securityRisksEvaluated: boolean;
 }): boolean {
-  return input.customersNotified && input.subscriptionsHandled && input.dataExportAvailable && input.securityRisksEvaluated;
+  return (
+    input.customersNotified &&
+    input.subscriptionsHandled &&
+    input.dataExportAvailable &&
+    input.securityRisksEvaluated
+  );
 }
-
-
-

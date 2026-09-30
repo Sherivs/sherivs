@@ -71,7 +71,9 @@ export const AUTOMATION_LIFECYCLE_STATES: readonly AutomationLifecycleState[] = 
   "RETIRED",
 ] as const;
 
-const LIFECYCLE_TRANSITIONS: Readonly<Record<AutomationLifecycleState, readonly AutomationLifecycleState[]>> = {
+const LIFECYCLE_TRANSITIONS: Readonly<
+  Record<AutomationLifecycleState, readonly AutomationLifecycleState[]>
+> = {
   DRAFT: ["VALIDATING", "RETIRED"],
   VALIDATING: ["APPROVED", "DRAFT", "RETIRED"],
   APPROVED: ["SHADOW", "CANARY", "ACTIVE", "PAUSED", "RETIRED"],
@@ -83,7 +85,10 @@ const LIFECYCLE_TRANSITIONS: Readonly<Record<AutomationLifecycleState, readonly 
   RETIRED: [],
 };
 
-export function isLifecycleTransitionAllowed(from: AutomationLifecycleState, to: AutomationLifecycleState): boolean {
+export function isLifecycleTransitionAllowed(
+  from: AutomationLifecycleState,
+  to: AutomationLifecycleState,
+): boolean {
   return LIFECYCLE_TRANSITIONS[from].includes(to);
 }
 
@@ -113,7 +118,11 @@ export interface AutomationOwnership {
 }
 
 export function isOwnershipComplete(ownership: AutomationOwnership): boolean {
-  return ownership.technicalOwner.trim() !== "" && ownership.businessOwner.trim() !== "" && ownership.riskOwner !== null;
+  return (
+    ownership.technicalOwner.trim() !== "" &&
+    ownership.businessOwner.trim() !== "" &&
+    ownership.riskOwner !== null
+  );
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -134,7 +143,9 @@ export interface AutomationSchedule {
  * Schedule timezone (AV): schedules must store explicit timezone
  * information; server timezone is never assumed.
  */
-export function validateSchedule(schedule: Omit<AutomationSchedule, "scheduleId" | "automationId" | "tenantId">): { ok: true } | { ok: false; error: string } {
+export function validateSchedule(
+  schedule: Omit<AutomationSchedule, "scheduleId" | "automationId" | "tenantId">,
+): { ok: true } | { ok: false; error: string } {
   if (schedule.cron === null && schedule.blackoutWindows.length === 0) {
     return { ok: false, error: "Schedule requires a cron expression or blackout policy (AU)" };
   }
@@ -169,7 +180,10 @@ export interface QuotaSnapshot {
   externalApiCalls: number;
 }
 
-export function isWithinQuota(quotas: AutomationQuotas, current: QuotaSnapshot): { ok: boolean; reason: string } {
+export function isWithinQuota(
+  quotas: AutomationQuotas,
+  current: QuotaSnapshot,
+): { ok: boolean; reason: string } {
   if (current.actionsThisMinute >= quotas.maxActionsPerMinute) {
     return { ok: false, reason: "Actions-per-minute quota exceeded (BH)" };
   }
@@ -240,14 +254,21 @@ export interface ExecutionTenantContext {
  * context and resource scope. Cross-tenant execution is prohibited unless
  * explicitly authorized (FM.2).
  */
-export function isCrossTenantExecutionAllowed(executionTenantId: TenantId, targetTenantId: TenantId, crossTenantAuthorized: boolean): { ok: boolean; reason: string } {
+export function isCrossTenantExecutionAllowed(
+  executionTenantId: TenantId,
+  targetTenantId: TenantId,
+  crossTenantAuthorized: boolean,
+): { ok: boolean; reason: string } {
   if (executionTenantId === targetTenantId) {
     return { ok: true, reason: "Same-tenant execution (DB)" };
   }
   if (crossTenantAuthorized) {
     return { ok: true, reason: "Cross-tenant execution explicitly authorized (DB, FM.2)" };
   }
-  return { ok: false, reason: "Cross-tenant execution prohibited without explicit authorization (DB, FM.2)" };
+  return {
+    ok: false,
+    reason: "Cross-tenant execution prohibited without explicit authorization (DB, FM.2)",
+  };
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -354,7 +375,10 @@ export interface AIAutomationProposal {
  * directly call unrestricted execution APIs (CP) — the proposal only
  * enters the automation API boundary.
  */
-export function isAIAutomationProposalComplete(proposal: AIAutomationProposal): { ok: boolean; reason: string } {
+export function isAIAutomationProposalComplete(proposal: AIAutomationProposal): {
+  ok: boolean;
+  reason: string;
+} {
   if (proposal.confidence < 0 || proposal.confidence > 1 || Number.isNaN(proposal.confidence)) {
     return { ok: false, reason: "AI proposal requires a valid confidence in [0, 1] (CQ)" };
   }
@@ -368,18 +392,23 @@ export function isAIAutomationProposalComplete(proposal: AIAutomationProposal): 
 }
 
 export type AgentPermission =
-  | "READ_TWIN"
-  | "REQUEST_AUTOMATION"
-  | "REQUEST_DRY_RUN"
-  | "REQUEST_APPROVAL";
+  "READ_TWIN" | "REQUEST_AUTOMATION" | "REQUEST_DRY_RUN" | "REQUEST_APPROVAL";
 
-export const AGENT_PERMISSIONS: readonly AgentPermission[] = ["READ_TWIN", "REQUEST_AUTOMATION", "REQUEST_DRY_RUN", "REQUEST_APPROVAL"] as const;
+export const AGENT_PERMISSIONS: readonly AgentPermission[] = [
+  "READ_TWIN",
+  "REQUEST_AUTOMATION",
+  "REQUEST_DRY_RUN",
+  "REQUEST_APPROVAL",
+] as const;
 
 /**
  * Agent permissions (FC): agents receive minimum necessary permissions —
  * never EXECUTE_ANYTHING.
  */
-export function authorizeAgentRequest(permissions: readonly AgentPermission[], requested: AgentPermission): { ok: boolean; reason: string } {
+export function authorizeAgentRequest(
+  permissions: readonly AgentPermission[],
+  requested: AgentPermission,
+): { ok: boolean; reason: string } {
   if (permissions.includes(requested)) {
     return { ok: true, reason: `Agent authorized for ${requested} (FC)` };
   }

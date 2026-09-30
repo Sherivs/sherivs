@@ -87,11 +87,12 @@ export interface RegisterPromptInput {
   now?: string;
 }
 
-export type RegisterPromptResult =
-  | { ok: true; prompt: AiPrompt }
-  | { ok: false; error: string };
+export type RegisterPromptResult = { ok: true; prompt: AiPrompt } | { ok: false; error: string };
 
-export function registerPrompt(input: RegisterPromptInput, now: string = new Date().toISOString()): RegisterPromptResult {
+export function registerPrompt(
+  input: RegisterPromptInput,
+  now: string = new Date().toISOString(),
+): RegisterPromptResult {
   if (!input.name.trim()) {
     return { ok: false, error: "Prompt name is required" };
   }
@@ -145,7 +146,8 @@ export function composePrompt(parts: PromptCompositionParts): string {
     .join("\n\n");
 }
 
-export type ContextTrustLevel = "trusted" | "trusted_data" | "untrusted_instruction" | "untrusted_content";
+export type ContextTrustLevel =
+  "trusted" | "trusted_data" | "untrusted_instruction" | "untrusted_content";
 
 export const CONTEXT_TRUST_LEVELS: readonly ContextTrustLevel[] = [
   "trusted",
@@ -159,7 +161,12 @@ export const CONTEXT_TRUST_LEVELS: readonly ContextTrustLevel[] = [
  * must never be treated as system instructions (Section 24 prompt injection).
  */
 export function classifyContextTrust(
-  source: "system_policy" | "institution_configuration" | "authorized_database_record" | "user_input" | "external_document",
+  source:
+    | "system_policy"
+    | "institution_configuration"
+    | "authorized_database_record"
+    | "user_input"
+    | "external_document",
 ): ContextTrustLevel {
   switch (source) {
     case "system_policy":
@@ -183,7 +190,8 @@ export function isTrustedSystemSource(trust: ContextTrustLevel): boolean {
  * Knowledge retrieval (Sections 26, 27, 28, 29, 30)
  * ────────────────────────────────────────────────────────────*/
 
-export type RetrievalMethod = "keyword" | "semantic" | "vector" | "graph" | "metadata" | "hybrid" | "rerank";
+export type RetrievalMethod =
+  "keyword" | "semantic" | "vector" | "graph" | "metadata" | "hybrid" | "rerank";
 
 export const RETRIEVAL_METHODS: readonly RetrievalMethod[] = [
   "keyword",
@@ -238,7 +246,11 @@ export interface RetrievalResult {
  * it reaches the model. A source is retrievable only when its authorized domains
  * intersect the requester's domains and the tenant matches.
  */
-export function isSourceRetrievable(source: KnowledgeSource, tenantId: TenantId, domains: string[]): boolean {
+export function isSourceRetrievable(
+  source: KnowledgeSource,
+  tenantId: TenantId,
+  domains: string[],
+): boolean {
   if (source.tenantId !== tenantId) return false;
   if (source.expiresAt !== null && source.expiresAt <= new Date().toISOString()) return false;
   if (source.confidence <= 0) return false;
@@ -359,7 +371,10 @@ function excerptsConflict(a: string, b: string): boolean {
  * ────────────────────────────────────────────────────────────*/
 
 /** Section 34: a knowledge source is fresh when it has not expired. */
-export function isKnowledgeSourceFresh(source: KnowledgeSource, at: string = new Date().toISOString()): boolean {
+export function isKnowledgeSourceFresh(
+  source: KnowledgeSource,
+  at: string = new Date().toISOString(),
+): boolean {
   if (source.expiresAt !== null && source.expiresAt <= at) return false;
   if (source.effectiveDate !== null && source.effectiveDate > at) return false;
   return true;
@@ -375,7 +390,8 @@ export function evaluateTemporalClaim(input: {
   currentAsOf: string;
   allowStaleWithinDays?: number;
 }): { current: boolean; stale: boolean } {
-  const staleDays = (new Date(input.currentAsOf).getTime() - new Date(input.claimAsOf).getTime()) / 86_400_000;
+  const staleDays =
+    (new Date(input.currentAsOf).getTime() - new Date(input.claimAsOf).getTime()) / 86_400_000;
   const maxStale = input.allowStaleWithinDays ?? 1;
   return { current: staleDays <= maxStale, stale: staleDays > maxStale };
 }
@@ -421,7 +437,11 @@ export interface ContextPiece {
 export function prioritizeContext(pieces: ContextPiece[], budgetTokens: number): ContextPiece[] {
   const scored = pieces.map((p) => ({
     piece: p,
-    score: p.authority * 0.4 + p.relevance * 0.3 + p.freshness * 0.2 + (p.priority === "policy" ? 0.5 : p.priority === "user_request" ? 0.3 : 0.1),
+    score:
+      p.authority * 0.4 +
+      p.relevance * 0.3 +
+      p.freshness * 0.2 +
+      (p.priority === "policy" ? 0.5 : p.priority === "user_request" ? 0.3 : 0.1),
   }));
   scored.sort((a, b) => b.score - a.score);
   const selected: ContextPiece[] = [];
@@ -466,7 +486,3 @@ export function compressContext(pieces: ContextPiece[]): {
   const compressed = compressedPieces.reduce((s, p) => s + p.tokens, 0) < originalTokens;
   return { compressed, originalTokens, compressedPieces };
 }
-
-
-
-

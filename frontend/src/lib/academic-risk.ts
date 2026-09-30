@@ -175,11 +175,7 @@ export function evaluateAcademicRisk(input: EvaluateRiskInput): EvaluateRiskOutp
  * ────────────────────────────────────────────────────────────*/
 
 export type SensitiveAttribute =
-  | "demographic"
-  | "socioeconomic"
-  | "accessibility"
-  | "language"
-  | "historical_institutional";
+  "demographic" | "socioeconomic" | "accessibility" | "language" | "historical_institutional";
 
 export const SENSITIVE_ATTRIBUTES: readonly SensitiveAttribute[] = [
   "demographic",
@@ -194,9 +190,10 @@ export const SENSITIVE_ATTRIBUTES: readonly SensitiveAttribute[] = [
  * academic intelligence. This check rejects risk evaluations that attempt to
  * condition academic decisions directly on sensitive attributes.
  */
-export function usesSensitiveAttributeImproperly(
-  attributes: string[],
-): { improper: boolean; rejected: string[] } {
+export function usesSensitiveAttributeImproperly(attributes: string[]): {
+  improper: boolean;
+  rejected: string[];
+} {
   const rejected = attributes.filter((a) => SENSITIVE_ATTRIBUTES.includes(a as SensitiveAttribute));
   return { improper: rejected.length > 0, rejected };
 }
@@ -272,8 +269,7 @@ export interface CreateRecommendationInput {
 }
 
 export type CreateRecommendationResult =
-  | { ok: true; recommendation: AcademicRecommendation }
-  | { ok: false; error: string };
+  { ok: true; recommendation: AcademicRecommendation } | { ok: false; error: string };
 
 /**
  * Create a recommendation with mandatory explainability (AV) and safety
@@ -293,7 +289,12 @@ export function createAcademicRecommendation(
   if (input.evidenceRefs.length === 0) {
     return { ok: false, error: "Recommendations must not fabricate academic evidence (AW)" };
   }
-  if (input.confidence < 0 || input.confidence > 1 || input.uncertainty < 0 || input.uncertainty > 1) {
+  if (
+    input.confidence < 0 ||
+    input.confidence > 1 ||
+    input.uncertainty < 0 ||
+    input.uncertainty > 1
+  ) {
     return { ok: false, error: "Confidence and uncertainty must be between 0 and 1 (AV)" };
   }
   return {

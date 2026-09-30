@@ -58,10 +58,11 @@ export interface CreatePrerequisiteEdgeInput {
 }
 
 export type CreatePrerequisiteEdgeResult =
-  | { ok: true; edge: PrerequisiteEdge }
-  | { ok: false; error: string };
+  { ok: true; edge: PrerequisiteEdge } | { ok: false; error: string };
 
-export function createPrerequisiteEdge(input: CreatePrerequisiteEdgeInput): CreatePrerequisiteEdgeResult {
+export function createPrerequisiteEdge(
+  input: CreatePrerequisiteEdgeInput,
+): CreatePrerequisiteEdgeResult {
   if (input.prerequisiteId === input.dependentId) {
     return { ok: false, error: "A competency cannot be its own prerequisite (AD)" };
   }
@@ -174,7 +175,9 @@ export function resolvePrerequisites(
     ok: true,
     satisfied,
     missing: [...new Set(missing)],
-    reason: satisfied ? "All prerequisites satisfied" : `Missing prerequisites: ${missing.join(", ")}`,
+    reason: satisfied
+      ? "All prerequisites satisfied"
+      : `Missing prerequisites: ${missing.join(", ")}`,
   };
 }
 
@@ -345,20 +348,22 @@ export const INTERVENTION_STATES: readonly InterventionState[] = [
   "RESOLVED",
 ] as const;
 
-const INTERVENTION_TRANSITIONS: Readonly<
-  Record<InterventionState, readonly InterventionState[]>
-> = {
-  DETECTED: ["ANALYZED"],
-  ANALYZED: ["RECOMMENDED"],
-  RECOMMENDED: ["REVIEWED", "ANALYZED"],
-  REVIEWED: ["ASSIGNED", "ANALYZED"],
-  ASSIGNED: ["ACTIVE"],
-  ACTIVE: ["EVALUATED"],
-  EVALUATED: ["RESOLVED"],
-  RESOLVED: [],
-};
+const INTERVENTION_TRANSITIONS: Readonly<Record<InterventionState, readonly InterventionState[]>> =
+  {
+    DETECTED: ["ANALYZED"],
+    ANALYZED: ["RECOMMENDED"],
+    RECOMMENDED: ["REVIEWED", "ANALYZED"],
+    REVIEWED: ["ASSIGNED", "ANALYZED"],
+    ASSIGNED: ["ACTIVE"],
+    ACTIVE: ["EVALUATED"],
+    EVALUATED: ["RESOLVED"],
+    RESOLVED: [],
+  };
 
-export function isInterventionTransitionAllowed(from: InterventionState, to: InterventionState): boolean {
+export function isInterventionTransitionAllowed(
+  from: InterventionState,
+  to: InterventionState,
+): boolean {
   return INTERVENTION_TRANSITIONS[from].includes(to);
 }
 
@@ -396,10 +401,11 @@ export interface RecommendInterventionInput {
 }
 
 export type RecommendInterventionResult =
-  | { ok: true; intervention: Intervention }
-  | { ok: false; error: string };
+  { ok: true; intervention: Intervention } | { ok: false; error: string };
 
-export function recommendIntervention(input: RecommendInterventionInput): RecommendInterventionResult {
+export function recommendIntervention(
+  input: RecommendInterventionInput,
+): RecommendInterventionResult {
   if (input.type === "assessment_retake") {
     return { ok: false, error: "Assessment retake requires institutional permission (AF)" };
   }

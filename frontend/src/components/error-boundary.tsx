@@ -36,7 +36,6 @@ export class ErrorBoundary extends Component<Props, State> {
     });
   }
 
-
   reset = () => {
     this.setState({ hasError: false, error: null });
     this.props.onReset?.();
@@ -56,8 +55,8 @@ export class ErrorBoundary extends Component<Props, State> {
           </div>
           <h2 className="text-white font-bold text-xl mb-2">Something went wrong</h2>
           <p className="text-white/50 text-sm max-w-sm mb-6">
-            This section encountered an error. Your data is safe. Try refreshing the page or
-            contact support if the problem persists.
+            This section encountered an error. Your data is safe. Try refreshing the page or contact
+            support if the problem persists.
           </p>
           {isDev && (
             <pre className="text-xs text-rose-400 bg-rose-500/5 border border-rose-500/10 rounded-xl p-4 text-left max-w-lg overflow-auto mb-4">
@@ -140,14 +139,10 @@ export function SectionBoundary({
         invalidateKeys?.forEach((key) => qc.invalidateQueries({ queryKey: key }));
       }}
       fallback={({ reset }) => (
-        <SectionErrorFallback
-          message={message ?? "This section could not load."}
-          onRetry={reset}
-        />
+        <SectionErrorFallback message={message ?? "This section could not load."} onRetry={reset} />
       )}
     >
       {children}
     </ErrorBoundary>
   );
 }
-

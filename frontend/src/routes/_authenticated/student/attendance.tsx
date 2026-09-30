@@ -22,8 +22,18 @@ const COLORS: Record<Status, string> = {
 };
 
 const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 function pad(n: number) {
@@ -132,16 +142,22 @@ function StudentAttendancePage() {
 
       <div className="uos-card p-5">
         <div className="flex items-center justify-between">
-          <Button variant="outline" size="sm" onClick={prevMonth}>← Prev</Button>
+          <Button variant="outline" size="sm" onClick={prevMonth}>
+            ← Prev
+          </Button>
           <h2 className="font-display text-lg font-semibold">
             {MONTHS[month]} {year}
           </h2>
-          <Button variant="outline" size="sm" onClick={nextMonth}>Next →</Button>
+          <Button variant="outline" size="sm" onClick={nextMonth}>
+            Next →
+          </Button>
         </div>
 
         <div className="mt-4 grid grid-cols-7 gap-1 text-center text-xs uppercase text-muted-foreground">
           {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
-            <div key={i} className="py-1">{d}</div>
+            <div key={i} className="py-1">
+              {d}
+            </div>
           ))}
         </div>
         <div className="mt-1 grid grid-cols-7 gap-1">
@@ -149,13 +165,9 @@ function StudentAttendancePage() {
             <div
               key={i}
               className={`aspect-square rounded-md flex items-center justify-center text-xs font-medium ${
-                !c.day
-                  ? ""
-                  : c.row
-                    ? COLORS[c.row.status]
-                    : "bg-muted/30 text-muted-foreground"
+                !c.day ? "" : c.row ? COLORS[c.row.status] : "bg-muted/30 text-muted-foreground"
               }`}
-              title={c.row ? `${c.date}: ${c.row.status}` : c.date ?? ""}
+              title={c.row ? `${c.date}: ${c.row.status}` : (c.date ?? "")}
             >
               {c.day ?? ""}
             </div>
@@ -180,7 +192,9 @@ function StudentAttendancePage() {
       </div>
 
       <div className="uos-card mt-6 p-5">
-        <h3 className="font-display text-base font-semibold">Records for {MONTHS[month]} {year}</h3>
+        <h3 className="font-display text-base font-semibold">
+          Records for {MONTHS[month]} {year}
+        </h3>
         <div className="mt-3 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -206,7 +220,9 @@ function StudentAttendancePage() {
                       {new Date(r.date).toLocaleDateString(undefined, { weekday: "long" })}
                     </td>
                     <td className="py-2">
-                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs ${COLORS[r.status]}`}>
+                      <span
+                        className={`inline-flex rounded-full px-2 py-0.5 text-xs ${COLORS[r.status]}`}
+                      >
                         {r.status}
                       </span>
                     </td>

@@ -21,7 +21,14 @@ describe("Phase 05 — the runtime reports its own execution fabric", () => {
     const ids = subsystems.map((subsystem) => subsystem.id);
 
     expect(ids).toEqual(
-      expect.arrayContaining(["capabilities", "jobs", "events", "approvals", "command-query", "resilience"]),
+      expect.arrayContaining([
+        "capabilities",
+        "jobs",
+        "events",
+        "approvals",
+        "command-query",
+        "resilience",
+      ]),
     );
     for (const subsystem of subsystems) {
       expect(subsystem.owns.length, `${subsystem.id} must state what it owns`).toBeGreaterThan(0);
@@ -69,7 +76,9 @@ describe("Phase 05 — the report cannot claim a health the runtime lacks", () =
 
     expect(report.passed + report.failed).toBe(report.checks.length);
     expect(report.healthy).toBe(report.failed === 0);
-    expect(report.failingChecks).toEqual(report.checks.filter((check) => !check.ok).map((c) => c.id));
+    expect(report.failingChecks).toEqual(
+      report.checks.filter((check) => !check.ok).map((c) => c.id),
+    );
     expect(report.failingChecks).toEqual([]);
   });
 });

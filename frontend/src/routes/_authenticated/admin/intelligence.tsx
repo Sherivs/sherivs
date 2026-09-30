@@ -1,14 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import {
-  Sparkles,
-  AlertTriangle,
-  Info,
-  Megaphone,
-  Plus,
-  ArrowRight,
-} from "lucide-react";
+import { Sparkles, AlertTriangle, Info, Megaphone, Plus, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
 import {
@@ -23,13 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   Select,
   SelectContent,
@@ -38,10 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import {
-  isFeatureActive,
-  type TierName,
-} from "@/lib/subscription-tiers";
+import { isFeatureActive, type TierName } from "@/lib/subscription-tiers";
 
 export const Route = createFileRoute("/_authenticated/admin/intelligence")({
   ssr: false,
@@ -62,13 +46,8 @@ function IntelligencePage() {
   const { profile, school } = useApp();
   const schoolId = profile?.school_id ?? "";
   const tier = (school?.subscription_tier ?? "trial") as TierName;
-  const activeFeatures =
-    (school?.active_features as Record<string, boolean> | undefined) ?? {};
-  const canIntelligence = isFeatureActive(
-    tier,
-    activeFeatures,
-    "vibeora_intelligence",
-  );
+  const activeFeatures = (school?.active_features as Record<string, boolean> | undefined) ?? {};
+  const canIntelligence = isFeatureActive(tier, activeFeatures, "vibeora_intelligence");
 
   const monthStart = useMemo(() => {
     const d = new Date();
@@ -102,19 +81,13 @@ function IntelligencePage() {
           .eq("school_id", schoolId)
           .eq("is_published", true)
           .gte("created_at", monthStart),
-        supabase
-          .from("fees")
-          .select("amount, paid_amount, status")
-          .eq("school_id", schoolId),
+        supabase.from("fees").select("amount, paid_amount, status").eq("school_id", schoolId),
         supabase
           .from("users")
           .select("id, is_active")
           .eq("school_id", schoolId)
           .eq("role", "teacher"),
-        supabase
-          .from("students")
-          .select("id, is_active")
-          .eq("school_id", schoolId),
+        supabase.from("students").select("id, is_active").eq("school_id", schoolId),
         supabase
           .from("attendance_logs")
           .select("teacher_id")
@@ -130,33 +103,24 @@ function IntelligencePage() {
           .select("id, burnout_risk_level")
           .eq("school_id", schoolId)
           .in("burnout_risk_level", ["high", "critical"]),
-        supabase
-          .from("news_reads")
-          .select("user_id")
-          .gte("read_at", monthStart),
+        supabase.from("news_reads").select("user_id").gte("read_at", monthStart),
       ]);
 
       const attRows = attendance.data ?? [];
       const presentCount = attRows.filter(
         (a: any) => a.status === "present" || a.status === "late",
       ).length;
-      const attendanceScore =
-        attRows.length > 0 ? (presentCount / attRows.length) * 100 : 0;
+      const attendanceScore = attRows.length > 0 ? (presentCount / attRows.length) * 100 : 0;
 
       const gradeRows = grades.data ?? [];
       const academicScore =
         gradeRows.length > 0
-          ? gradeRows.reduce(
-              (s: number, g: any) => s + (Number(g.total_score) || 0),
-              0,
-            ) / gradeRows.length
+          ? gradeRows.reduce((s: number, g: any) => s + (Number(g.total_score) || 0), 0) /
+            gradeRows.length
           : 0;
 
       const feeRows = fees.data ?? [];
-      const totalBilled = feeRows.reduce(
-        (s: number, f: any) => s + (Number(f.amount) || 0),
-        0,
-      );
+      const totalBilled = feeRows.reduce((s: number, f: any) => s + (Number(f.amount) || 0), 0);
       const totalCollected = feeRows.reduce(
         (s: number, f: any) => s + (Number(f.paid_amount) || 0),
         0,
@@ -186,8 +150,7 @@ function IntelligencePage() {
       const uniqueReaders = new Set(
         (newsReads.data ?? []).map((r: any) => r.user_id).filter(Boolean),
       ).size;
-      const parentEngagementRate =
-        activeStudents > 0 ? (uniqueReaders / activeStudents) * 100 : 0;
+      const parentEngagementRate = activeStudents > 0 ? (uniqueReaders / activeStudents) * 100 : 0;
 
       const sportsCount = sports.count ?? 0;
       const atRiskCount = (atRiskTeachers.data ?? []).length;
@@ -218,8 +181,7 @@ function IntelligencePage() {
         id: "parents",
         severity: "amber",
         title: "Parent Engagement Is Low",
-        impact:
-          "Schools with active parent portals see 23% better student outcomes.",
+        impact: "Schools with active parent portals see 23% better student outcomes.",
         actionLabel: "Enable WhatsApp Notifications",
         actionUrl: "/admin/api-keys",
       });
@@ -239,8 +201,7 @@ function IntelligencePage() {
         id: "social",
         severity: "amber",
         title: "No Social Media Presence Configured",
-        impact:
-          "Schools with active social media see 3x more admission inquiries.",
+        impact: "Schools with active social media see 3x more admission inquiries.",
         actionLabel: "Add Social Media",
         actionUrl: "/admin/settings",
       });
@@ -260,8 +221,7 @@ function IntelligencePage() {
         id: "burnout",
         severity: "red",
         title: `${q.data.atRiskCount} Teacher${q.data.atRiskCount === 1 ? "" : "s"} Show Burnout Risk`,
-        impact:
-          "At-risk teachers are 70% more likely to resign in 90 days.",
+        impact: "At-risk teachers are 70% more likely to resign in 90 days.",
         actionLabel: "View Teacher Performance",
         actionUrl: "/admin/teachers",
       });
@@ -285,10 +245,7 @@ function IntelligencePage() {
 
   if (!canIntelligence) {
     return (
-      <PortalPage
-        title="CoreGrid Intelligence"
-        subtitle="Opportunities and economy score"
-      >
+      <PortalPage title="CoreGrid Intelligence" subtitle="Opportunities and economy score">
         <FeatureLockedCard
           featureName="CoreGrid Intelligence"
           requiredTier="Professional"
@@ -366,12 +323,8 @@ function EconomyScoreSection({
     <div className="glass-card p-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <div className="text-xs uppercase tracking-wider text-white/50">
-            School Economy Score
-          </div>
-          <div className={`mt-2 text-6xl font-bold tabular-nums ${color}`}>
-            {data.overall}
-          </div>
+          <div className="text-xs uppercase tracking-wider text-white/50">School Economy Score</div>
+          <div className={`mt-2 text-6xl font-bold tabular-nums ${color}`}>{data.overall}</div>
           <div className="mt-1 text-sm text-white/60">{interp}</div>
         </div>
         <div className="text-xs text-white/40">Last updated: just now</div>
@@ -379,11 +332,7 @@ function EconomyScoreSection({
       <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {data.components.map((c) => {
           const fill =
-            c.score >= 80
-              ? "bg-emerald-500"
-              : c.score >= 60
-                ? "bg-amber-500"
-                : "bg-rose-500";
+            c.score >= 80 ? "bg-emerald-500" : c.score >= 60 ? "bg-amber-500" : "bg-rose-500";
           return (
             <div key={c.label}>
               <div className="flex justify-between text-xs text-white/60 mb-1">
@@ -404,13 +353,7 @@ function EconomyScoreSection({
   );
 }
 
-function OpportunityCard({
-  severity,
-  title,
-  impact,
-  actionLabel,
-  actionUrl,
-}: Opportunity) {
+function OpportunityCard({ severity, title, impact, actionLabel, actionUrl }: Opportunity) {
   const border =
     severity === "red"
       ? "border-l-rose-500"
@@ -458,10 +401,7 @@ const PLATFORMS = [
   { value: "both", label: "Both" },
 ];
 
-const STATUS_META: Record<
-  string,
-  { label: string; className: string }
-> = {
+const STATUS_META: Record<string, { label: string; className: string }> = {
   requested: { label: "Under Review", className: "bg-white/10 text-white/80" },
   approved: { label: "Approved", className: "bg-blue-500/15 text-blue-300" },
   running: { label: "Live 🟢", className: "bg-emerald-500/15 text-emerald-300" },
@@ -524,9 +464,7 @@ function AdCampaignSection({
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success(
-        "Campaign request submitted. Vibeora will review within 24 hours.",
-      );
+      toast.success("Campaign request submitted. Vibeora will review within 24 hours.");
       setOpen(false);
       setForm({
         campaign_name: "",
@@ -541,8 +479,7 @@ function AdCampaignSection({
       });
       qc.invalidateQueries({ queryKey: ["ad-campaigns", schoolId] });
     },
-    onError: (e: any) =>
-      toast.error(e?.message ?? "Failed to submit campaign request"),
+    onError: (e: any) => toast.error(e?.message ?? "Failed to submit campaign request"),
   });
 
   return (
@@ -566,9 +503,7 @@ function AdCampaignSection({
               <Field label="Campaign Name *">
                 <Input
                   value={form.campaign_name}
-                  onChange={(e) =>
-                    setForm({ ...form, campaign_name: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, campaign_name: e.target.value })}
                   maxLength={120}
                   placeholder="e.g. September Admissions Drive"
                 />
@@ -593,9 +528,7 @@ function AdCampaignSection({
               <Field label="Platform">
                 <Select
                   value={form.target_platform}
-                  onValueChange={(v) =>
-                    setForm({ ...form, target_platform: v })
-                  }
+                  onValueChange={(v) => setForm({ ...form, target_platform: v })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -612,9 +545,7 @@ function AdCampaignSection({
               <Field label="Target Area">
                 <Input
                   value={form.target_location}
-                  onChange={(e) =>
-                    setForm({ ...form, target_location: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, target_location: e.target.value })}
                   maxLength={120}
                   placeholder="e.g. Ikeja, Lagos"
                 />
@@ -622,9 +553,7 @@ function AdCampaignSection({
               <Field label="Target Radius">
                 <Select
                   value={String(form.target_radius_km)}
-                  onValueChange={(v) =>
-                    setForm({ ...form, target_radius_km: Number(v) })
-                  }
+                  onValueChange={(v) => setForm({ ...form, target_radius_km: Number(v) })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -651,16 +580,12 @@ function AdCampaignSection({
                     })
                   }
                 />
-                <p className="text-xs text-white/40 mt-1">
-                  Minimum budget: ₦10,000
-                </p>
+                <p className="text-xs text-white/40 mt-1">Minimum budget: ₦10,000</p>
               </Field>
               <Field label="Duration">
                 <Select
                   value={String(form.campaign_duration_days)}
-                  onValueChange={(v) =>
-                    setForm({ ...form, campaign_duration_days: Number(v) })
-                  }
+                  onValueChange={(v) => setForm({ ...form, campaign_duration_days: Number(v) })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -679,9 +604,7 @@ function AdCampaignSection({
                   type="date"
                   min={minStart}
                   value={form.start_date}
-                  onChange={(e) =>
-                    setForm({ ...form, start_date: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, start_date: e.target.value })}
                 />
               </Field>
               <Field label="Campaign Objective">
@@ -697,9 +620,7 @@ function AdCampaignSection({
                   rows={4}
                   placeholder="What should parents do after seeing the ad? e.g. Visit our website and fill out an admission form."
                 />
-                <p className="text-xs text-white/40 mt-1">
-                  {form.campaign_objective.length}/500
-                </p>
+                <p className="text-xs text-white/40 mt-1">{form.campaign_objective.length}/500</p>
               </Field>
               <Button
                 onClick={() => mutation.mutate()}
@@ -714,9 +635,7 @@ function AdCampaignSection({
       </div>
 
       {isLoading ? (
-        <div className="glass-card p-6 text-white/50 text-sm">
-          Loading campaigns...
-        </div>
+        <div className="glass-card p-6 text-white/50 text-sm">Loading campaigns...</div>
       ) : campaigns.length === 0 ? (
         <EmptyState
           icon={<Megaphone className="w-6 h-6 text-purple-400" />}
@@ -779,12 +698,9 @@ function CampaignList({ campaigns }: { campaigns: any[] }) {
           <div key={c.id} className="glass-card p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <div className="font-medium text-white truncate">
-                  {c.campaign_name}
-                </div>
+                <div className="font-medium text-white truncate">{c.campaign_name}</div>
                 <div className="text-xs text-white/50 mt-0.5 capitalize">
-                  {String(c.campaign_type).replace(/_/g, " ")} ·{" "}
-                  {c.target_platform}
+                  {String(c.campaign_type).replace(/_/g, " ")} · {c.target_platform}
                 </div>
               </div>
               <StatusBadge status={c.status} />
@@ -792,9 +708,7 @@ function CampaignList({ campaigns }: { campaigns: any[] }) {
             <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-white/60">
               <div>
                 Budget:{" "}
-                <span className="text-white">
-                  ₦{Number(c.budget_naira).toLocaleString()}
-                </span>
+                <span className="text-white">₦{Number(c.budget_naira).toLocaleString()}</span>
               </div>
               <div>
                 Start: <span className="text-white">{c.start_date ?? "—"}</span>
@@ -815,11 +729,7 @@ function StatusBadge({ status }: { status: string }) {
     label: status,
     className: "bg-white/10 text-white/80",
   };
-  return (
-    <Badge className={`${meta.className} border-0 font-medium`}>
-      {meta.label}
-    </Badge>
-  );
+  return <Badge className={`${meta.className} border-0 font-medium`}>{meta.label}</Badge>;
 }
 
 function ResultsCell({ c }: { c: any }) {
@@ -827,19 +737,12 @@ function ResultsCell({ c }: { c: any }) {
   const fmt = (n: number) => (n > 0 ? n.toLocaleString() : "—");
   return (
     <span className="tabular-nums">
-      {fmt(c.impressions ?? 0)} impr · {fmt(c.reach ?? 0)} reach ·{" "}
-      {fmt(c.clicks ?? 0)} clicks
+      {fmt(c.impressions ?? 0)} impr · {fmt(c.reach ?? 0)} reach · {fmt(c.clicks ?? 0)} clicks
     </span>
   );
 }
 
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
       <Label className="text-white/80">{label}</Label>

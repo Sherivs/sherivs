@@ -160,9 +160,13 @@ function BroadcastPage() {
               onChange={(e) => setClassId(e.target.value || null)}
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
             >
-              <option value="" disabled>Pick a class…</option>
+              <option value="" disabled>
+                Pick a class…
+              </option>
               {(classes.data ?? []).map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
               ))}
             </select>
           </label>
@@ -225,10 +229,9 @@ function DigestCard() {
         <Mailbox className="size-4" /> Notification digests
       </div>
       <p className="text-xs text-muted-foreground">
-        Collapse the last 24h or 7d of unread notifications into a single summary
-        for users who chose a digest cadence in their preferences. Safe to run on
-        demand; users with the matching cadence get one summary entry only when
-        they have two or more pending items.
+        Collapse the last 24h or 7d of unread notifications into a single summary for users who
+        chose a digest cadence in their preferences. Safe to run on demand; users with the matching
+        cadence get one summary entry only when they have two or more pending items.
       </p>
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" size="sm" disabled={busy !== null} onClick={() => fire("daily")}>

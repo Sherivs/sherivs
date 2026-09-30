@@ -59,14 +59,21 @@ const result = {
   mission: "COREGRID-MISSION-0001",
   artifact: "COREGRID_ACCEPTANCE_COVERAGE_AUDIT",
   capturedAt: new Date().toISOString(),
-  policy: "Missing acceptance definitions remain UNKNOWN; this audit never fabricates definitions or proofs.",
+  policy:
+    "Missing acceptance definitions remain UNKNOWN; this audit never fabricates definitions or proofs.",
   summary: {
     registeredPhases: phases.length,
     definitionsPresent: phases.filter((phase) => phase.acceptanceDefinition).length,
     proofsPresent: phases.filter((phase) => phase.proof).length,
-    unknownAcceptance: phases.filter((phase) => phase.coverage === "UNKNOWN_ACCEPTANCE_NOT_ESTABLISHED").map((phase) => phase.phaseId),
-    blockedProofs: phases.filter((phase) => phase.coverage === "BLOCKED_PROOF_MISSING").map((phase) => phase.phaseId),
-    passWithGaps: phases.filter((phase) => phase.coverage === "PASS_WITH_DECLARED_OR_UNWIRED_GAP").map((phase) => phase.phaseId),
+    unknownAcceptance: phases
+      .filter((phase) => phase.coverage === "UNKNOWN_ACCEPTANCE_NOT_ESTABLISHED")
+      .map((phase) => phase.phaseId),
+    blockedProofs: phases
+      .filter((phase) => phase.coverage === "BLOCKED_PROOF_MISSING")
+      .map((phase) => phase.phaseId),
+    passWithGaps: phases
+      .filter((phase) => phase.coverage === "PASS_WITH_DECLARED_OR_UNWIRED_GAP")
+      .map((phase) => phase.phaseId),
     pass: phases.filter((phase) => phase.coverage === "PASS").map((phase) => phase.phaseId),
   },
   phases,

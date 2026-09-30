@@ -32,13 +32,7 @@ import {
  * ────────────────────────────────────────────────────────────*/
 
 export type WorkspaceRole =
-  | "owner"
-  | "administrator"
-  | "manager"
-  | "editor"
-  | "contributor"
-  | "viewer"
-  | "guest";
+  "owner" | "administrator" | "manager" | "editor" | "contributor" | "viewer" | "guest";
 
 export const WORKSPACE_ROLES: readonly WorkspaceRole[] = [
   "owner",
@@ -86,24 +80,76 @@ export const DEFAULT_WORKSPACE_ROLE_DEFINITIONS: readonly Omit<
   WorkspaceRoleDefinition,
   "id" | "workspaceId" | "tenantId" | "createdAt" | "updatedAt"
 >[] = [
-  { role: "owner", name: "Owner", description: "Full workspace control", canManageMembership: true, canManageConfiguration: true, canPublishSharedViews: true, canManageLifecycle: true },
-  { role: "administrator", name: "Administrator", description: "Manages workspace configuration and membership", canManageMembership: true, canManageConfiguration: true, canPublishSharedViews: true, canManageLifecycle: true },
-  { role: "manager", name: "Manager", description: "Manages members and shared views within workspace", canManageMembership: true, canManageConfiguration: false, canPublishSharedViews: true, canManageLifecycle: false },
-  { role: "editor", name: "Editor", description: "Edits workspace content", canManageMembership: false, canManageConfiguration: false, canPublishSharedViews: true, canManageLifecycle: false },
-  { role: "contributor", name: "Contributor", description: "Contributes content", canManageMembership: false, canManageConfiguration: false, canPublishSharedViews: false, canManageLifecycle: false },
-  { role: "viewer", name: "Viewer", description: "Read-only access", canManageMembership: false, canManageConfiguration: false, canPublishSharedViews: false, canManageLifecycle: false },
-  { role: "guest", name: "Guest", description: "Limited read access", canManageMembership: false, canManageConfiguration: false, canPublishSharedViews: false, canManageLifecycle: false },
+  {
+    role: "owner",
+    name: "Owner",
+    description: "Full workspace control",
+    canManageMembership: true,
+    canManageConfiguration: true,
+    canPublishSharedViews: true,
+    canManageLifecycle: true,
+  },
+  {
+    role: "administrator",
+    name: "Administrator",
+    description: "Manages workspace configuration and membership",
+    canManageMembership: true,
+    canManageConfiguration: true,
+    canPublishSharedViews: true,
+    canManageLifecycle: true,
+  },
+  {
+    role: "manager",
+    name: "Manager",
+    description: "Manages members and shared views within workspace",
+    canManageMembership: true,
+    canManageConfiguration: false,
+    canPublishSharedViews: true,
+    canManageLifecycle: false,
+  },
+  {
+    role: "editor",
+    name: "Editor",
+    description: "Edits workspace content",
+    canManageMembership: false,
+    canManageConfiguration: false,
+    canPublishSharedViews: true,
+    canManageLifecycle: false,
+  },
+  {
+    role: "contributor",
+    name: "Contributor",
+    description: "Contributes content",
+    canManageMembership: false,
+    canManageConfiguration: false,
+    canPublishSharedViews: false,
+    canManageLifecycle: false,
+  },
+  {
+    role: "viewer",
+    name: "Viewer",
+    description: "Read-only access",
+    canManageMembership: false,
+    canManageConfiguration: false,
+    canPublishSharedViews: false,
+    canManageLifecycle: false,
+  },
+  {
+    role: "guest",
+    name: "Guest",
+    description: "Limited read access",
+    canManageMembership: false,
+    canManageConfiguration: false,
+    canPublishSharedViews: false,
+    canManageLifecycle: false,
+  },
 ];
 
 /* ─────────────────────────────────────────────────────────────
  * Membership states (Section Q)
  * ────────────────────────────────────────────────────────────*/
 
-export type MembershipState =
-  | "invited"
-  | "active"
-  | "suspended"
-  | "removed";
+export type MembershipState = "invited" | "active" | "suspended" | "removed";
 
 export const MEMBERSHIP_STATES: readonly MembershipState[] = [
   "invited",
@@ -380,7 +426,11 @@ export function sendWorkspaceInvitation(
     actorId: input.inviterId,
     occurredAt: input.now,
     result: "success",
-    metadata: { inviteeId: input.inviteeId, intendedRole: input.intendedRole, expiresAt: input.expiresAt },
+    metadata: {
+      inviteeId: input.inviteeId,
+      intendedRole: input.intendedRole,
+      expiresAt: input.expiresAt,
+    },
   };
 
   return { ok: true, invitation, auditEvent };
@@ -395,7 +445,12 @@ export interface AcceptWorkspaceInvitationInput {
 }
 
 export type AcceptWorkspaceInvitationResult =
-  | { ok: true; invitation: WorkspaceInvitation; membership: WorkspaceMembership; auditEvent: WorkspaceAuditEvent }
+  | {
+      ok: true;
+      invitation: WorkspaceInvitation;
+      membership: WorkspaceMembership;
+      auditEvent: WorkspaceAuditEvent;
+    }
   | { ok: false; error: string };
 
 export function acceptWorkspaceInvitation(
@@ -468,7 +523,9 @@ export function revokeWorkspaceInvitation(
   invitation: WorkspaceInvitation,
   actorId: string,
   now: string,
-): { ok: true; invitation: WorkspaceInvitation; auditEvent: WorkspaceAuditEvent } | { ok: false; error: string } {
+):
+  | { ok: true; invitation: WorkspaceInvitation; auditEvent: WorkspaceAuditEvent }
+  | { ok: false; error: string } {
   if (invitation.tenantId !== tenantId || invitation.workspaceId !== workspaceId) {
     return { ok: false, error: "Invitation does not belong to this workspace/tenant" };
   }
@@ -529,12 +586,16 @@ export interface WorkspaceAccessRequest {
   workspaceId: WorkspaceId;
   identityId: string;
   /** Required capability for this action. */
-  requiredCapability: "read" | "write" | "manage_membership" | "manage_configuration" | "manage_lifecycle" | "publish_views";
+  requiredCapability:
+    | "read"
+    | "write"
+    | "manage_membership"
+    | "manage_configuration"
+    | "manage_lifecycle"
+    | "publish_views";
 }
 
-export type WorkspaceAccessDecision =
-  | { decision: "ALLOW" }
-  | { decision: "DENY"; reason: string };
+export type WorkspaceAccessDecision = { decision: "ALLOW" } | { decision: "DENY"; reason: string };
 
 /**
  * Evaluate coarse-grained workspace access based on membership role and capability.

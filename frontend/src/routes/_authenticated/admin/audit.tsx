@@ -26,9 +26,19 @@ function AdminAuditPage() {
   const [activeTab, setActiveTab] = useState("overview");
 
   const stats = [
-    { label: "Total Events Logged", value: "0", icon: Activity, color: "from-blue-500 to-blue-600" },
+    {
+      label: "Total Events Logged",
+      value: "0",
+      icon: Activity,
+      color: "from-blue-500 to-blue-600",
+    },
     { label: "User Actions", value: "0", icon: Users, color: "from-green-500 to-green-600" },
-    { label: "System Changes", value: "0", icon: ShieldAlert, color: "from-purple-500 to-purple-600" },
+    {
+      label: "System Changes",
+      value: "0",
+      icon: ShieldAlert,
+      color: "from-purple-500 to-purple-600",
+    },
     { label: "Security Events", value: "0", icon: Lock, color: "from-red-500 to-red-600" },
   ];
 
@@ -39,7 +49,9 @@ function AdminAuditPage() {
       actions={
         <>
           <Button onClick={() => navigate({ to: "/admin/audit-logs" })}>View Detailed Logs</Button>
-          <Button variant="outline" disabled>Export Report</Button>
+          <Button variant="outline" disabled>
+            Export Report
+          </Button>
         </>
       }
     >
@@ -186,7 +198,8 @@ function AdminAuditPage() {
                     <div>
                       <p className="font-medium text-sm text-blue-900">GDPR Compliance</p>
                       <p className="text-sm text-blue-700 mt-1">
-                        Automatic data retention policies, consent tracking, and right-to-be-forgotten management
+                        Automatic data retention policies, consent tracking, and
+                        right-to-be-forgotten management
                       </p>
                     </div>
                   </div>

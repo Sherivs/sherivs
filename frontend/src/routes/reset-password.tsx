@@ -46,7 +46,6 @@ function ResetPasswordPage() {
 
   const expired = expiresAt !== null && remainingMs <= 0;
 
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -89,9 +88,12 @@ function ResetPasswordPage() {
 
         {!ready && !done && (
           <div className="mt-6 rounded-md border border-border bg-muted/30 px-3 py-3 text-sm text-muted-foreground">
-            Waiting for the recovery link to be verified… If this page was not
-            opened from a password-reset email, request a new link from{" "}
-            <Link to="/auth" className="underline">the sign-in page</Link>.
+            Waiting for the recovery link to be verified… If this page was not opened from a
+            password-reset email, request a new link from{" "}
+            <Link to="/auth" className="underline">
+              the sign-in page
+            </Link>
+            .
           </div>
         )}
 
@@ -115,7 +117,9 @@ function ResetPasswordPage() {
                 .
               </>
             ) : (
-              <>Link expires in <strong>{formatDuration(remainingMs)}</strong>.</>
+              <>
+                Link expires in <strong>{formatDuration(remainingMs)}</strong>.
+              </>
             )}
           </div>
         )}

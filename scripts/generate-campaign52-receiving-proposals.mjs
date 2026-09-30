@@ -4,10 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const matches = JSON.parse(
-  readFileSync(
-    join(root, "architecture", "COREGRID_CAMPAIGN_52_CANDIDATE_MATCHES.json"),
-    "utf8",
-  ),
+  readFileSync(join(root, "architecture", "COREGRID_CAMPAIGN_52_CANDIDATE_MATCHES.json"), "utf8"),
 );
 const gaps = JSON.parse(
   readFileSync(
@@ -44,13 +41,13 @@ const proposals = matches.matches.map((match) => {
       "Merge unique source content with provenance and supersession links.",
       "Define receiving capability boundaries, dependencies and consumers.",
       "Define contracts, schemas, security, failure, evidence and verification.",
-      "Update acceptance criteria and scope-lock record only after approval."
+      "Update acceptance criteria and scope-lock record only after approval.",
     ],
     implementationStatus: "BLOCKED",
     registryMutation: "NOT_AUTHORIZED",
     infrastructureChange: "NOT_AUTHORIZED",
     rationale:
-      "Candidate matches are deterministic discovery evidence, not architectural authority."
+      "Candidate matches are deterministic discovery evidence, not architectural authority.",
   };
 });
 
@@ -63,9 +60,9 @@ const result = {
   generatedAt: new Date().toISOString(),
   source: [
     "architecture/COREGRID_CAMPAIGN_52_CANDIDATE_MATCHES.json",
-    "architecture/COREGRID_PHASE_52_UNRESOLVED_GAP_REGISTER.json"
+    "architecture/COREGRID_PHASE_52_UNRESOLVED_GAP_REGISTER.json",
   ],
-  proposals
+  proposals,
 };
 
 const jsonOutput = join(
@@ -92,19 +89,20 @@ const markdown = [
     `- Title: ${proposal.sourceTitle || "UNRESOLVED SOURCE TITLE"}`,
     `- Disposition: \`${proposal.proposedDisposition}\``,
     `- Candidate phases: ${
-      proposal.candidateReceivingPhases.map((candidate) => `${candidate.phase} (${candidate.name})`).join(", ") ||
-      "none"
+      proposal.candidateReceivingPhases
+        .map((candidate) => `${candidate.phase} (${candidate.name})`)
+        .join(", ") || "none"
     }`,
     "- Required work:",
     ...proposal.receivingBlueprintWork.map((item) => `  - ${item}`),
     "- Implementation: `BLOCKED`",
     "- Registry mutation: `NOT AUTHORIZED`",
-    ""
+    "",
   ]),
   "## Exit condition",
   "",
   "A proposal becomes active only after an authoritative ownership decision,",
-  "receiving-blueprint review, acceptance criteria, and verification plan."
+  "receiving-blueprint review, acceptance criteria, and verification plan.",
 ].join("\n");
 const markdownOutput = join(
   root,
@@ -118,9 +116,8 @@ console.log(
     {
       proposals: proposals.length,
       json: "architecture/COREGRID_CAMPAIGN_52_RECEIVING_BLUEPRINT_PROPOSALS.json",
-      markdown:
-        "architecture/COREGRID_CAMPAIGN_52_RECEIVING_BLUEPRINT_PROPOSALS.md",
-      status: result.status
+      markdown: "architecture/COREGRID_CAMPAIGN_52_RECEIVING_BLUEPRINT_PROPOSALS.md",
+      status: result.status,
     },
     null,
     2,

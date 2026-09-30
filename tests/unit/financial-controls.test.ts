@@ -54,7 +54,11 @@ describe("Financial invariants", () => {
     const ok = canRefundPayment(money(100_000, "NGN"), money(70_000, "NGN"), money(40_000, "NGN"));
     expect(ok.ok).toBe(false);
 
-    const allowed = canRefundPayment(money(100_000, "NGN"), money(70_000, "NGN"), money(30_000, "NGN"));
+    const allowed = canRefundPayment(
+      money(100_000, "NGN"),
+      money(70_000, "NGN"),
+      money(30_000, "NGN"),
+    );
     expect(allowed.ok).toBe(true);
   });
 });
@@ -62,10 +66,22 @@ describe("Financial invariants", () => {
 describe("Financial idempotency", () => {
   it("the same key never produces duplicate financial effects", () => {
     const store: FinancialIdempotencyStore = { records: new Map() };
-    const first = checkFinancialIdempotency("capture-1", "payment.captured", "pay-ref-1", store, NOW);
+    const first = checkFinancialIdempotency(
+      "capture-1",
+      "payment.captured",
+      "pay-ref-1",
+      store,
+      NOW,
+    );
     expect(first.outcome).toBe("proceed");
 
-    const replay = checkFinancialIdempotency("capture-1", "payment.captured", "pay-ref-1", store, NOW);
+    const replay = checkFinancialIdempotency(
+      "capture-1",
+      "payment.captured",
+      "pay-ref-1",
+      store,
+      NOW,
+    );
     expect(replay.outcome).toBe("duplicate");
   });
 });
@@ -133,7 +149,9 @@ describe("Financial audit (FC) and state reconstruction (FE)", () => {
       now: "2026-01-02T00:00:00Z",
     });
     if (!evt1.ok || !evt2.ok) throw new Error("fixture failed");
-    const history = buildFinancialHistory("invoice", "INV-1", [evt2.event, evt1.event], { status: "paid" });
+    const history = buildFinancialHistory("invoice", "INV-1", [evt2.event, evt1.event], {
+      status: "paid",
+    });
     expect(history.reconstructable).toBe(true);
     expect(history.events[0].action).toBe("invoice.issued");
     expect(history.events[1].action).toBe("payment.captured");

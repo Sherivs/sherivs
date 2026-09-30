@@ -33,11 +33,23 @@ import type { TenantId } from "./tenant-core";
 
 export type CommandAlertSeverity = "INFO" | "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 
-export const COMMAND_ALERT_SEVERITIES: readonly CommandAlertSeverity[] = ["INFO", "LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
+export const COMMAND_ALERT_SEVERITIES: readonly CommandAlertSeverity[] = [
+  "INFO",
+  "LOW",
+  "MEDIUM",
+  "HIGH",
+  "CRITICAL",
+] as const;
 
 export type CommandAlertStatus = "OPEN" | "ACKNOWLEDGED" | "ESCALATED" | "RESOLVED" | "SUPPRESSED";
 
-export const COMMAND_ALERT_STATUSES: readonly CommandAlertStatus[] = ["OPEN", "ACKNOWLEDGED", "ESCALATED", "RESOLVED", "SUPPRESSED"] as const;
+export const COMMAND_ALERT_STATUSES: readonly CommandAlertStatus[] = [
+  "OPEN",
+  "ACKNOWLEDGED",
+  "ESCALATED",
+  "RESOLVED",
+  "SUPPRESSED",
+] as const;
 
 export type CommandAlertSource =
   | "analytics"
@@ -49,7 +61,16 @@ export type CommandAlertSource =
   | "automation"
   | "communication";
 
-export const COMMAND_ALERT_SOURCES: readonly CommandAlertSource[] = ["analytics", "security", "infrastructure", "hardware", "academic", "financial", "automation", "communication"] as const;
+export const COMMAND_ALERT_SOURCES: readonly CommandAlertSource[] = [
+  "analytics",
+  "security",
+  "infrastructure",
+  "hardware",
+  "academic",
+  "financial",
+  "automation",
+  "communication",
+] as const;
 
 export interface CommandAlert {
   alertId: string;
@@ -78,7 +99,8 @@ export interface CreateCommandAlertInput {
   createdAt: string;
 }
 
-export type CreateCommandAlertResult = { ok: true; alert: CommandAlert } | { ok: false; error: string };
+export type CreateCommandAlertResult =
+  { ok: true; alert: CommandAlert } | { ok: false; error: string };
 
 /**
  * Alert creation (Y, Z): Phase 19 coordinates the presentation of alerts;
@@ -138,7 +160,8 @@ export interface PriorityFactors {
  * stated factors (AK).
  */
 export function computeAlertPriority(factors: PriorityFactors): number {
-  const severityRank = COMMAND_ALERT_SEVERITIES.indexOf(factors.severity) / (COMMAND_ALERT_SEVERITIES.length - 1);
+  const severityRank =
+    COMMAND_ALERT_SEVERITIES.indexOf(factors.severity) / (COMMAND_ALERT_SEVERITIES.length - 1);
   const components = [
     severityRank,
     Math.max(0, Math.min(1, factors.impact)),
@@ -179,7 +202,11 @@ export function shouldEscalateAlert(
     return { escalate: false, target: policy.escalateTo, reason: "Below escalation severity (AE)" };
   }
   if (alert.status === "RESOLVED" || alert.status === "SUPPRESSED") {
-    return { escalate: false, target: policy.escalateTo, reason: "Alert already resolved or suppressed (AE)" };
+    return {
+      escalate: false,
+      target: policy.escalateTo,
+      reason: "Alert already resolved or suppressed (AE)",
+    };
   }
   if (alert.status === "ACKNOWLEDGED") {
     return { escalate: false, target: policy.escalateTo, reason: "Alert acknowledged (AE)" };
@@ -187,12 +214,18 @@ export function shouldEscalateAlert(
   if (Date.parse(now) - Date.parse(alert.createdAt) < policy.afterMinutes * 60_000) {
     return { escalate: false, target: policy.escalateTo, reason: "Within escalation window (AE)" };
   }
-  return { escalate: true, target: policy.escalateTo, reason: "Unacknowledged beyond escalation window (AE)" };
+  return {
+    escalate: true,
+    target: policy.escalateTo,
+    reason: "Unacknowledged beyond escalation window (AE)",
+  };
 }
 
 /** Correlation (AF): related alerts are grouped by correlation key. */
 export function correlateAlerts(alerts: CommandAlert[], correlationKey: string): CommandAlert[] {
-  return alerts.map((a) => (a.correlationGroup === null ? { ...a, correlationGroup: correlationKey } : a));
+  return alerts.map((a) =>
+    a.correlationGroup === null ? { ...a, correlationGroup: correlationKey } : a,
+  );
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -214,7 +247,10 @@ export function isAlertFlooded(input: {
   policy: FloodControlPolicy;
   recentSourceAlerts: number;
 }): { suppressed: boolean; reason: string } {
-  if (input.policy.deduplicateBySource && input.recentSourceAlerts >= input.policy.maxAlertsPerSourceWindow) {
+  if (
+    input.policy.deduplicateBySource &&
+    input.recentSourceAlerts >= input.policy.maxAlertsPerSourceWindow
+  ) {
     return { suppressed: true, reason: "Source alert rate exceeded — deduplicated (AG)" };
   }
   return { suppressed: false, reason: "Alert within flood-control limits (AG)" };
@@ -224,9 +260,24 @@ export function isAlertFlooded(input: {
  * Command queue (AI)
  * ────────────────────────────────────────────────────────────*/
 
-export type QueueItemKind = "urgent_alert" | "pending_decision" | "unresolved_incident" | "approval" | "investigation" | "escalation" | "operational_task";
+export type QueueItemKind =
+  | "urgent_alert"
+  | "pending_decision"
+  | "unresolved_incident"
+  | "approval"
+  | "investigation"
+  | "escalation"
+  | "operational_task";
 
-export const QUEUE_ITEM_KINDS: readonly QueueItemKind[] = ["urgent_alert", "pending_decision", "unresolved_incident", "approval", "investigation", "escalation", "operational_task"] as const;
+export const QUEUE_ITEM_KINDS: readonly QueueItemKind[] = [
+  "urgent_alert",
+  "pending_decision",
+  "unresolved_incident",
+  "approval",
+  "investigation",
+  "escalation",
+  "operational_task",
+] as const;
 
 export interface CommandQueueItem {
   queueItemId: string;
@@ -241,5 +292,7 @@ export interface CommandQueueItem {
 /** Attention queue ordering (AI): highest priority first, oldest first on
  * ties. */
 export function orderAttentionQueue(items: CommandQueueItem[]): CommandQueueItem[] {
-  return [...items].sort((a, b) => (b.priority - a.priority !== 0 ? b.priority - a.priority : a.createdAt < b.createdAt ? -1 : 1));
+  return [...items].sort((a, b) =>
+    b.priority - a.priority !== 0 ? b.priority - a.priority : a.createdAt < b.createdAt ? -1 : 1,
+  );
 }

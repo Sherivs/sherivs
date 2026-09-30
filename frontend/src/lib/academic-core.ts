@@ -52,8 +52,7 @@ export interface CreateLearnerReferenceInput {
 }
 
 export type CreateLearnerReferenceResult =
-  | { ok: true; learner: LearnerReference }
-  | { ok: false; error: string };
+  { ok: true; learner: LearnerReference } | { ok: false; error: string };
 
 export function createLearnerReference(
   input: CreateLearnerReferenceInput,
@@ -149,8 +148,7 @@ export interface CreateEvidenceInput {
 }
 
 export type CreateEvidenceResult =
-  | { ok: true; evidence: LearningEvidence }
-  | { ok: false; error: string };
+  { ok: true; evidence: LearningEvidence } | { ok: false; error: string };
 
 export function createLearningEvidence(input: CreateEvidenceInput): CreateEvidenceResult {
   if (input.score < 0 || input.score > 100) {
@@ -243,9 +241,7 @@ export interface EvaluateProgressResult {
  * Progress is always derived from evidence; it is never asserted by an AI
  * model directly (Section AA, P).
  */
-export function evaluateLearningProgress(
-  input: EvaluateProgressInput,
-): EvaluateProgressResult {
+export function evaluateLearningProgress(input: EvaluateProgressInput): EvaluateProgressResult {
   let state: LearningProgressState;
   let reason: string;
 

@@ -46,7 +46,12 @@ export interface Logger {
   info(message: string, context?: Record<string, unknown>): void;
   warn(message: string, context?: Record<string, unknown>): void;
   error(message: string, context?: Record<string, unknown>, error?: unknown): void;
-  setContext(context: { tenantId?: TenantId | null; actorId?: string | null; correlationId?: CorrelationId; traceId?: TraceId }): void;
+  setContext(context: {
+    tenantId?: TenantId | null;
+    actorId?: string | null;
+    correlationId?: CorrelationId;
+    traceId?: TraceId;
+  }): void;
   log(level: LogLevel, message: string, context?: Record<string, unknown>): void;
 }
 
@@ -70,7 +75,12 @@ export function createLogger(
     operation: initialContext.operation ?? null,
   };
 
-  const emit = (level: LogLevel, message: string, context?: Record<string, unknown>, error?: unknown) => {
+  const emit = (
+    level: LogLevel,
+    message: string,
+    context?: Record<string, unknown>,
+    error?: unknown,
+  ) => {
     const errorInfo = error
       ? {
           message: error instanceof Error ? error.message : String(error),
@@ -171,7 +181,13 @@ export interface Metric {
 }
 
 export interface MetricsCollector {
-  record(name: string, value: number, labels?: Record<string, string>, tenantId?: TenantId | null, capability?: string | null): void;
+  record(
+    name: string,
+    value: number,
+    labels?: Record<string, string>,
+    tenantId?: TenantId | null,
+    capability?: string | null,
+  ): void;
   snapshot(): Metric[];
   /** Compute p50/p95/p99 latency. */
   percentiles(name: string): { p50: number; p95: number; p99: number; count: number } | null;
@@ -195,9 +211,13 @@ export function createMetricsCollector(): MetricsCollector {
       return metrics;
     },
     percentiles(name) {
-      const values = metrics.filter((m) => m.name === name).map((m) => m.value).sort((a, b) => a - b);
+      const values = metrics
+        .filter((m) => m.name === name)
+        .map((m) => m.value)
+        .sort((a, b) => a - b);
       if (values.length === 0) return null;
-      const at = (pct: number) => values[Math.floor((values.length - 1) * pct)] ?? values[values.length - 1] ?? 0;
+      const at = (pct: number) =>
+        values[Math.floor((values.length - 1) * pct)] ?? values[values.length - 1] ?? 0;
       return { p50: at(0.5), p95: at(0.95), p99: at(0.99), count: values.length };
     },
   };
@@ -209,11 +229,16 @@ export function createMetricsCollector(): MetricsCollector {
 
 export interface HealthStatus {
   status: "healthy" | "degraded" | "unhealthy";
-  checks: Record<string, { status: "healthy" | "degraded" | "unhealthy"; detail: string | null; checkedAt: string }>;
+  checks: Record<
+    string,
+    { status: "healthy" | "degraded" | "unhealthy"; detail: string | null; checkedAt: string }
+  >;
   checkedAt: string;
 }
 
-export function createHealthStatus(checks: Record<string, { status: "healthy" | "degraded" | "unhealthy"; detail?: string | null }>): HealthStatus {
+export function createHealthStatus(
+  checks: Record<string, { status: "healthy" | "degraded" | "unhealthy"; detail?: string | null }>,
+): HealthStatus {
   const entries: HealthStatus["checks"] = {};
   let overall: HealthStatus["status"] = "healthy";
   for (const [name, check] of Object.entries(checks)) {

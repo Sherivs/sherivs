@@ -35,9 +35,7 @@ function ScoreGauge({ score }: { score: number }) {
         <span className="text-3xl font-bold" style={{ color }}>
           {score}
         </span>
-        <span className="text-[10px] text-white/40 uppercase tracking-widest mt-0.5">
-          / 100
-        </span>
+        <span className="text-[10px] text-white/40 uppercase tracking-widest mt-0.5">/ 100</span>
       </div>
     </div>
   );

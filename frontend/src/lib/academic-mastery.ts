@@ -53,8 +53,7 @@ export interface EstimateMasteryInput {
 }
 
 export type EstimateMasteryResult =
-  | { ok: true; mastery: MasteryState }
-  | { ok: false; error: string };
+  { ok: true; mastery: MasteryState } | { ok: false; error: string };
 
 /**
  * Estimate mastery from evidence (W, X).
@@ -80,7 +79,10 @@ export function estimateMastery(input: EstimateMasteryInput): EstimateMasteryRes
     (sum, e) => sum + e.score * e.weight * (0.5 + e.confidence / 2),
     0,
   );
-  const weightBasis = input.evidence.reduce((sum, e) => sum + e.weight * (0.5 + e.confidence / 2), 0);
+  const weightBasis = input.evidence.reduce(
+    (sum, e) => sum + e.weight * (0.5 + e.confidence / 2),
+    0,
+  );
   const estimatedLevel = Math.round((weightedScore / weightBasis) * 10) / 10;
 
   // Confidence grows with evidence count and average evidence confidence,
@@ -88,12 +90,16 @@ export function estimateMastery(input: EstimateMasteryInput): EstimateMasteryRes
   const avgEvidenceConfidence =
     input.evidence.reduce((sum, e) => sum + e.confidence, 0) / input.evidence.length;
   const confidence =
-    Math.round(Math.min(0.95, avgEvidenceConfidence * 0.5 + 0.3 + input.evidence.length * 0.06) * 100) / 100;
+    Math.round(
+      Math.min(0.95, avgEvidenceConfidence * 0.5 + 0.3 + input.evidence.length * 0.06) * 100,
+    ) / 100;
   const uncertainty = Math.round((1 - confidence) * 100) / 100;
 
   // Trend: compare the mean of the most recent half of evidence to the mean
   // of the earlier half.
-  const sorted = [...input.evidence].sort((a, b) => Date.parse(a.observedAt) - Date.parse(b.observedAt));
+  const sorted = [...input.evidence].sort(
+    (a, b) => Date.parse(a.observedAt) - Date.parse(b.observedAt),
+  );
   const midpoint = Math.floor(sorted.length / 2);
   const earlier = sorted.slice(0, midpoint);
   const recent = sorted.slice(midpoint);

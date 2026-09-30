@@ -21,7 +21,9 @@ import {
 describe("Phase 11 — the report exercises the phase rather than describing it", () => {
   it("passes every check it runs", () => {
     const checks = runAcademicIntelligenceCheck();
-    const failing = checks.filter((check) => !check.ok).map((check) => `${check.id}: ${check.detail}`);
+    const failing = checks
+      .filter((check) => !check.ok)
+      .map((check) => `${check.id}: ${check.detail}`);
     expect(failing).toEqual([]);
     expect(checks.length).toBeGreaterThanOrEqual(10);
   });
@@ -58,7 +60,9 @@ describe("Phase 11 — every claimed rule names its implementation and its proof
     for (const rule of rules) {
       expect(rule.rule.length, `${rule.id} must state the rule`).toBeGreaterThan(40);
       expect(rule.enforcedBy, `${rule.id} must name its module`).toMatch(/^frontend\/src\/lib\//);
-      expect(rule.provedBy, `${rule.id} must name its suite`).toMatch(/^tests\/unit\/.*\.test\.ts$/);
+      expect(rule.provedBy, `${rule.id} must name its suite`).toMatch(
+        /^tests\/unit\/.*\.test\.ts$/,
+      );
     }
     const ids = rules.map((rule) => rule.id);
     expect(ids).toEqual(

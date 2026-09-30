@@ -37,7 +37,14 @@ export const PHASE_11_ACADEMIC_INTELLIGENCE = definePhaseContractFromSeed({
     "Derived intelligence is labelled as derived: every estimate carries its inputs, its method and its confidence, and canonical records remain untouched.",
   dependsOn: ["01", "02", "03", "04", "07"],
   consumers: ["12", "18"],
-  substrates: ["mastery projections", "pathway recommendations", "risk signals", "curriculum versions", "competency graph", "learning objectives"],
+  substrates: [
+    "mastery projections",
+    "pathway recommendations",
+    "risk signals",
+    "curriculum versions",
+    "competency graph",
+    "learning objectives",
+  ],
   tests: [
     "tests/unit/academic-core.test.ts",
     "tests/unit/academic-mastery.test.ts",
@@ -63,7 +70,8 @@ export const PHASE_11_ACADEMIC_INTELLIGENCE = definePhaseContractFromSeed({
     {
       id: "academic:assessment-coverage",
       kind: "query",
-      description: "prove an assessment covers its competencies and objectives and reconciles its marks",
+      description:
+        "prove an assessment covers its competencies and objectives and reconciles its marks",
     },
   ],
   consumesContracts: [

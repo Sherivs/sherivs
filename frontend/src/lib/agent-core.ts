@@ -158,9 +158,7 @@ export function isAgentLifecycleTransitionAllowed(
   from: AgentLifecycleState,
   to: AgentLifecycleState,
 ): { allowed: boolean; requiresApproval: boolean } {
-  const transition = AGENT_LIFECYCLE_TRANSITIONS.find(
-    (t) => t.from === from && t.to === to,
-  );
+  const transition = AGENT_LIFECYCLE_TRANSITIONS.find((t) => t.from === from && t.to === to);
   if (!transition) {
     return { allowed: false, requiresApproval: false };
   }
@@ -270,12 +268,7 @@ export interface AgentMemoryPolicy {
   requireInferenceMarking: boolean;
 }
 
-export type AgentMemoryCategory =
-  | "working"
-  | "episodic"
-  | "semantic"
-  | "task"
-  | "procedural";
+export type AgentMemoryCategory = "working" | "episodic" | "semantic" | "task" | "procedural";
 
 export const AGENT_MEMORY_CATEGORIES: readonly AgentMemoryCategory[] = [
   "working",
@@ -357,8 +350,7 @@ export interface CreateAgentDefinitionInput {
 }
 
 export type CreateAgentDefinitionResult =
-  | { ok: true; definition: AgentDefinition }
-  | { ok: false; error: string };
+  { ok: true; definition: AgentDefinition } | { ok: false; error: string };
 
 export function createAgentDefinition(
   input: CreateAgentDefinitionInput,
@@ -419,21 +411,15 @@ export interface ChangeAgentLifecycleInput {
 }
 
 export type ChangeAgentLifecycleResult =
-  | { ok: true; definition: AgentDefinition }
-  | { ok: false; error: string };
+  { ok: true; definition: AgentDefinition } | { ok: false; error: string };
 
-export function changeAgentLifecycle(
-  input: ChangeAgentLifecycleInput,
-): ChangeAgentLifecycleResult {
+export function changeAgentLifecycle(input: ChangeAgentLifecycleInput): ChangeAgentLifecycleResult {
   // Retired agents lose production authority (Section HB).
   if (input.definition.lifecycleState === "retired") {
     return { ok: false, error: "Retired agents cannot change lifecycle state" };
   }
 
-  const transition = isAgentLifecycleTransitionAllowed(
-    input.definition.lifecycleState,
-    input.to,
-  );
+  const transition = isAgentLifecycleTransitionAllowed(input.definition.lifecycleState, input.to);
   if (!transition.allowed) {
     return {
       ok: false,
@@ -448,7 +434,10 @@ export function changeAgentLifecycle(
     input.definition.riskClassification !== "medium" &&
     (input.reason === null || input.reason.trim() === "")
   ) {
-    return { ok: false, error: "Deployment of high/critical-risk agents requires approval context" };
+    return {
+      ok: false,
+      error: "Deployment of high/critical-risk agents requires approval context",
+    };
   }
 
   return {

@@ -120,7 +120,9 @@ describe("AUDIT-P02/P03 — every phase acceptance probe is honest", () => {
       expect(proof.summary.missingRequired).toEqual([]);
       expect(proof.summary.unresolvedEvidencePaths).toEqual([]);
       expect(proof.ok).toBe(true);
-      expect(proof.limitations.join(" ")).toMatch(/IMPLEMENTED_UNWIRED area has a tested implementation/i);
+      expect(proof.limitations.join(" ")).toMatch(
+        /IMPLEMENTED_UNWIRED area has a tested implementation/i,
+      );
 
       for (const row of proof.areas) {
         const area = byId.get(row.id);
@@ -132,13 +134,17 @@ describe("AUDIT-P02/P03 — every phase acceptance probe is honest", () => {
         expect(row.declaredBoundary).toEqual((area?.boundary ?? []).map((entry) => entry.path));
         expect(row.unresolvedEvidence).toEqual([]);
         for (const ref of row.matchedEvidence) {
-          expect(referenceResolves(ref), `phase ${probe.id}: ${row.id} cites missing ${ref}`).toBe(true);
+          expect(referenceResolves(ref), `phase ${probe.id}: ${row.id} cites missing ${ref}`).toBe(
+            true,
+          );
         }
         for (const ref of row.boundaryEvidence) {
           expect(referenceResolves(ref), `phase ${probe.id}: ${row.id} boundary ${ref}`).toBe(true);
         }
 
-        const executable = (area?.evidence ?? []).filter((entry) => EXECUTABLE_KINDS.includes(entry.kind));
+        const executable = (area?.evidence ?? []).filter((entry) =>
+          EXECUTABLE_KINDS.includes(entry.kind),
+        );
         if (row.classification === "ENFORCED") {
           expect(
             executable.length,
@@ -151,8 +157,14 @@ describe("AUDIT-P02/P03 — every phase acceptance probe is honest", () => {
             ).toBeGreaterThan(0);
           }
         } else if (row.classification === "IMPLEMENTED_UNWIRED") {
-          expect(executable.length, `phase ${probe.id}: ${row.id} unwired needs a tested implementation`).toBeGreaterThan(0);
-          expect((area?.boundary ?? []).length, `phase ${probe.id}: ${row.id} unwired needs a boundary probe`).toBeGreaterThan(0);
+          expect(
+            executable.length,
+            `phase ${probe.id}: ${row.id} unwired needs a tested implementation`,
+          ).toBeGreaterThan(0);
+          expect(
+            (area?.boundary ?? []).length,
+            `phase ${probe.id}: ${row.id} unwired needs a boundary probe`,
+          ).toBeGreaterThan(0);
           expect(row.boundaryEvidence).toEqual([]);
         }
       }

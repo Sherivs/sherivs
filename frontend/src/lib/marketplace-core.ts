@@ -229,10 +229,12 @@ export interface CreateMarketplaceProductInput {
 }
 
 export type CreateMarketplaceProductResult =
-  | { ok: true; product: MarketplaceProduct }
-  | { ok: false; error: string };
+  { ok: true; product: MarketplaceProduct } | { ok: false; error: string };
 
-export function createMarketplaceProduct(input: CreateMarketplaceProductInput, now: string = new Date().toISOString()): CreateMarketplaceProductResult {
+export function createMarketplaceProduct(
+  input: CreateMarketplaceProductInput,
+  now: string = new Date().toISOString(),
+): CreateMarketplaceProductResult {
   if (!input.name.trim()) {
     return { ok: false, error: "Product name is required" };
   }
@@ -302,7 +304,12 @@ export function createProductVersion(input: {
 
 export type SupportLevel = "community" | "standard" | "premium" | "enterprise";
 
-export const SUPPORT_LEVELS: readonly SupportLevel[] = ["community", "standard", "premium", "enterprise"] as const;
+export const SUPPORT_LEVELS: readonly SupportLevel[] = [
+  "community",
+  "standard",
+  "premium",
+  "enterprise",
+] as const;
 
 export interface ProductListing {
   id: ProductListingId;
@@ -410,8 +417,10 @@ export function keywordDiscover(
     if (query.vendorRef && listing.vendorRef !== query.vendorRef) continue;
     if (query.capability && !product.capabilities.includes(query.capability)) continue;
     // Private distribution (Section 146): product must be public or allowlisted.
-    const haystack = `${listing.name} ${listing.description} ${product.capabilities.join(" ")}`.toLowerCase();
-    const relevance = tokens.length === 0 ? 0.5 : tokens.filter((t) => haystack.includes(t)).length / tokens.length;
+    const haystack =
+      `${listing.name} ${listing.description} ${product.capabilities.join(" ")}`.toLowerCase();
+    const relevance =
+      tokens.length === 0 ? 0.5 : tokens.filter((t) => haystack.includes(t)).length / tokens.length;
     if (relevance === 0 && tokens.length > 0) continue;
     results.push({ productId: product.id, listingName: listing.name, relevance });
   }
@@ -420,11 +429,10 @@ export function keywordDiscover(
 }
 
 /** Section 48: institutional discovery excludes products not authorized for the tenant. */
-export function isProductVisibleToTenant(
-  product: MarketplaceProduct,
-  tenantId: TenantId,
-): boolean {
-  return product.distributionScope.includes("public") || product.distributionScope.includes(tenantId);
+export function isProductVisibleToTenant(product: MarketplaceProduct, tenantId: TenantId): boolean {
+  return (
+    product.distributionScope.includes("public") || product.distributionScope.includes(tenantId)
+  );
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -454,8 +462,15 @@ export function evaluateProductHealth(input: {
 }): ProductHealth {
   const uptime = input.uptime ?? 1;
   const securityIncidents = input.securityIncidents ?? 0;
-  const failures = (input.installationFailures ?? 0) + (input.crashReports ?? 0) + (input.apiFailures ?? 0) + (input.updateFailures ?? 0);
-  const healthScore = Math.max(0, Math.min(100, uptime * 60 - failures * 5 - securityIncidents * 25));
+  const failures =
+    (input.installationFailures ?? 0) +
+    (input.crashReports ?? 0) +
+    (input.apiFailures ?? 0) +
+    (input.updateFailures ?? 0);
+  const healthScore = Math.max(
+    0,
+    Math.min(100, uptime * 60 - failures * 5 - securityIncidents * 25),
+  );
   return {
     productId: input.productId,
     installationFailures: input.installationFailures ?? 0,
@@ -472,6 +487,3 @@ export function evaluateProductHealth(input: {
 export function hasSecurityConcern(health: ProductHealth): boolean {
   return health.securityIncidents > 0;
 }
-
-
-

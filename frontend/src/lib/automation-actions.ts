@@ -51,7 +51,8 @@ export interface ActionDefinition {
   timeoutMs: number;
   maxRetries: number;
   compensationActionId: string | null;
-  verificationMethod: "twin" | "api_response" | "external_confirmation" | "human_confirmation" | "none";
+  verificationMethod:
+    "twin" | "api_response" | "external_confirmation" | "human_confirmation" | "none";
   idempotent: boolean;
   reversible: boolean;
 }
@@ -92,11 +93,33 @@ export function executeActionContract(
 ): ActionExecutionRecord {
   const validation = contract.validate(contract.input);
   if (!validation.ok) {
-    return { actionId, executionId, tenantId, status: "NOT_EXECUTED", startedAt, finishedAt: startedAt, result: null, error: validation.error, evidence: null, verified: false };
+    return {
+      actionId,
+      executionId,
+      tenantId,
+      status: "NOT_EXECUTED",
+      startedAt,
+      finishedAt: startedAt,
+      result: null,
+      error: validation.error,
+      evidence: null,
+      verified: false,
+    };
   }
   const authorization = contract.authorize();
   if (!authorization.ok) {
-    return { actionId, executionId, tenantId, status: "NOT_EXECUTED", startedAt, finishedAt: startedAt, result: null, error: authorization.error, evidence: null, verified: false };
+    return {
+      actionId,
+      executionId,
+      tenantId,
+      status: "NOT_EXECUTED",
+      startedAt,
+      finishedAt: startedAt,
+      result: null,
+      error: authorization.error,
+      evidence: null,
+      verified: false,
+    };
   }
   try {
     const { result, evidence } = contract.execute(contract.input);
@@ -163,9 +186,19 @@ export function verifyActionExecution(input: {
   detail: string;
 }): ActionExecutionRecord {
   if (!input.verified) {
-    return { ...input.execution, status: "FAILED", error: input.execution.error ?? input.detail, verified: false };
+    return {
+      ...input.execution,
+      status: "FAILED",
+      error: input.execution.error ?? input.detail,
+      verified: false,
+    };
   }
-  return { ...input.execution, status: "VERIFIED", verified: true, evidence: input.execution.evidence ?? input.detail };
+  return {
+    ...input.execution,
+    status: "VERIFIED",
+    verified: true,
+    evidence: input.execution.evidence ?? input.detail,
+  };
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -200,7 +233,12 @@ export function isStateFreshForExecution(input: {
  * Escalation and incidents (BV, BW)
  * ────────────────────────────────────────────────────────────*/
 
-export type EscalationTarget = "human_operator" | "institution_administrator" | "security_team" | "system_owner" | "incident_system";
+export type EscalationTarget =
+  | "human_operator"
+  | "institution_administrator"
+  | "security_team"
+  | "system_owner"
+  | "incident_system";
 
 export interface EscalationPlan {
   target: EscalationTarget;
@@ -221,12 +259,27 @@ export function decideEscalation(
   failureClass: string,
 ): EscalationDecision {
   if (retriesUsed >= plan.afterRetries) {
-    return { escalate: true, target: plan.target, createIncident: plan.createIncident, reason: `Retries ${retriesUsed} exhausted — escalate to ${plan.target} (BV)` };
+    return {
+      escalate: true,
+      target: plan.target,
+      createIncident: plan.createIncident,
+      reason: `Retries ${retriesUsed} exhausted — escalate to ${plan.target} (BV)`,
+    };
   }
   if (failureClass === "AUTHORIZATION" || failureClass === "POLICY") {
-    return { escalate: true, target: "institution_administrator", createIncident: false, reason: `${failureClass} failure — escalate to administrator (BV)` };
+    return {
+      escalate: true,
+      target: "institution_administrator",
+      createIncident: false,
+      reason: `${failureClass} failure — escalate to administrator (BV)`,
+    };
   }
-  return { escalate: false, target: null, createIncident: false, reason: "Retry window active (BV)" };
+  return {
+    escalate: false,
+    target: null,
+    createIncident: false,
+    reason: "Retry window active (BV)",
+  };
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -235,7 +288,13 @@ export function decideEscalation(
 
 export type StopLevel = "ACTION" | "WORKFLOW" | "AUTOMATION" | "TENANT" | "SYSTEM";
 
-export const STOP_LEVELS: readonly StopLevel[] = ["ACTION", "WORKFLOW", "AUTOMATION", "TENANT", "SYSTEM"] as const;
+export const STOP_LEVELS: readonly StopLevel[] = [
+  "ACTION",
+  "WORKFLOW",
+  "AUTOMATION",
+  "TENANT",
+  "SYSTEM",
+] as const;
 
 export interface KillSwitchEvent {
   stopId: string;
@@ -274,7 +333,13 @@ export function isStopped(input: {
 
 export type ExecutionMode = "production" | "dry_run" | "simulation" | "shadow" | "canary";
 
-export const EXECUTION_MODES: readonly ExecutionMode[] = ["production", "dry_run", "simulation", "shadow", "canary"] as const;
+export const EXECUTION_MODES: readonly ExecutionMode[] = [
+  "production",
+  "dry_run",
+  "simulation",
+  "shadow",
+  "canary",
+] as const;
 
 /**
  * Safe defaults (CA) and mode isolation (CB, CC, CD): dry-run,
@@ -290,7 +355,10 @@ export function shouldExecuteAction(input: {
     return { execute: false, reason: `Action not allowed in ${input.mode} mode (CB/CC/CD)` };
   }
   if (input.mode !== "production" && input.mode !== "canary") {
-    return { execute: false, reason: `${input.mode} mode never produces production side effects (FM.8/FM.9)` };
+    return {
+      execute: false,
+      reason: `${input.mode} mode never produces production side effects (FM.8/FM.9)`,
+    };
   }
   if (input.riskLevel === "R4" && input.mode === "canary") {
     return { execute: false, reason: "R4 actions are not allowed in canary mode (CE)" };
@@ -298,9 +366,18 @@ export function shouldExecuteAction(input: {
   return { execute: true, reason: "Execution permitted in this mode" };
 }
 
-export type RolloutStage = "DEV" | "TEST" | "SIMULATION" | "SHADOW" | "CANARY" | "LIMITED_PRODUCTION" | "FULL_PRODUCTION";
+export type RolloutStage =
+  "DEV" | "TEST" | "SIMULATION" | "SHADOW" | "CANARY" | "LIMITED_PRODUCTION" | "FULL_PRODUCTION";
 
-export const ROLLOUT_STAGES: readonly RolloutStage[] = ["DEV", "TEST", "SIMULATION", "SHADOW", "CANARY", "LIMITED_PRODUCTION", "FULL_PRODUCTION"] as const;
+export const ROLLOUT_STAGES: readonly RolloutStage[] = [
+  "DEV",
+  "TEST",
+  "SIMULATION",
+  "SHADOW",
+  "CANARY",
+  "LIMITED_PRODUCTION",
+  "FULL_PRODUCTION",
+] as const;
 
 /**
  * Progressive rollout (CF): automation deployment follows DEV -> TEST ->

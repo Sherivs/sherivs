@@ -95,15 +95,50 @@ export interface RiskControlProfile {
 export function riskControlProfile(level: RiskLevel): RiskControlProfile {
   switch (level) {
     case "R0":
-      return { level, requiresApproval: false, requiresHumanOversight: false, requiresRollback: false, timeoutMs: 30_000, monitoringLevel: "none" };
+      return {
+        level,
+        requiresApproval: false,
+        requiresHumanOversight: false,
+        requiresRollback: false,
+        timeoutMs: 30_000,
+        monitoringLevel: "none",
+      };
     case "R1":
-      return { level, requiresApproval: false, requiresHumanOversight: false, requiresRollback: false, timeoutMs: 60_000, monitoringLevel: "basic" };
+      return {
+        level,
+        requiresApproval: false,
+        requiresHumanOversight: false,
+        requiresRollback: false,
+        timeoutMs: 60_000,
+        monitoringLevel: "basic",
+      };
     case "R2":
-      return { level, requiresApproval: false, requiresHumanOversight: true, requiresRollback: true, timeoutMs: 120_000, monitoringLevel: "basic" };
+      return {
+        level,
+        requiresApproval: false,
+        requiresHumanOversight: true,
+        requiresRollback: true,
+        timeoutMs: 120_000,
+        monitoringLevel: "basic",
+      };
     case "R3":
-      return { level, requiresApproval: true, requiresHumanOversight: true, requiresRollback: true, timeoutMs: 300_000, monitoringLevel: "enhanced" };
+      return {
+        level,
+        requiresApproval: true,
+        requiresHumanOversight: true,
+        requiresRollback: true,
+        timeoutMs: 300_000,
+        monitoringLevel: "enhanced",
+      };
     case "R4":
-      return { level, requiresApproval: true, requiresHumanOversight: true, requiresRollback: true, timeoutMs: 600_000, monitoringLevel: "enhanced" };
+      return {
+        level,
+        requiresApproval: true,
+        requiresHumanOversight: true,
+        requiresRollback: true,
+        timeoutMs: 600_000,
+        monitoringLevel: "enhanced",
+      };
   }
 }
 
@@ -113,7 +148,12 @@ export function riskControlProfile(level: RiskLevel): RiskControlProfile {
 
 export type ConditionResult = "TRUE" | "FALSE" | "UNKNOWN" | "ERROR";
 
-export const CONDITION_RESULTS: readonly ConditionResult[] = ["TRUE", "FALSE", "UNKNOWN", "ERROR"] as const;
+export const CONDITION_RESULTS: readonly ConditionResult[] = [
+  "TRUE",
+  "FALSE",
+  "UNKNOWN",
+  "ERROR",
+] as const;
 
 export interface ConditionEvaluation {
   conditionId: string;
@@ -135,7 +175,10 @@ export function applyFailClosed(
   }
   if (results.some((r) => r.result === "UNKNOWN")) {
     if (highRisk) {
-      return { proceed: false, reason: "UNKNOWN condition — fail closed for high-risk automation (M)" };
+      return {
+        proceed: false,
+        reason: "UNKNOWN condition — fail closed for high-risk automation (M)",
+      };
     }
     return { proceed: false, reason: "UNKNOWN condition — automation does not proceed (L)" };
   }
@@ -236,9 +279,7 @@ export type PolicyVerdict = { allowed: true } | { allowed: false; reason: string
  * WORKFLOW > USER PREFERENCE. The hierarchy is explicit and never
  * ambiguous.
  */
-export function resolvePolicyConflict(
-  decisions: PolicyDecision[],
-): PolicyVerdict {
+export function resolvePolicyConflict(decisions: PolicyDecision[]): PolicyVerdict {
   if (decisions.length === 0) {
     return { allowed: false, reason: "No policy decision available — fail closed (O)" };
   }
@@ -285,19 +326,28 @@ export function authorizeExecution(
     return { allowed: false, reason: `Operation "${ctx.operation}" is not permitted (Q)` };
   }
   if (ctx.isAI && ctx.role === null) {
-    return { allowed: false, reason: "AI actors require an explicit role — never implicit authority (E)" };
+    return {
+      allowed: false,
+      reason: "AI actors require an explicit role — never implicit authority (E)",
+    };
   }
   if (ctx.role !== null && !permittedRoles.includes(ctx.role)) {
     return { allowed: false, reason: `Role "${ctx.role}" is not permitted for this operation (Q)` };
   }
-  return { allowed: true, reason: `Authorized ${ctx.identity} for ${ctx.operation} on ${ctx.resource}` };
+  return {
+    allowed: true,
+    reason: `Authorized ${ctx.identity} for ${ctx.operation} on ${ctx.resource}`,
+  };
 }
 
 /* ─────────────────────────────────────────────────────────────
  * Approval engine (R, S, T, U, V)
  * ────────────────────────────────────────────────────────────*/
 
-export type ApprovalOutcome = Extract<ApprovalStatus, "approved" | "rejected" | "expired" | "cancelled">;
+export type ApprovalOutcome = Extract<
+  ApprovalStatus,
+  "approved" | "rejected" | "expired" | "cancelled"
+>;
 
 export interface AutomationApprovalState {
   required: boolean;
@@ -307,7 +357,12 @@ export interface AutomationApprovalState {
 }
 
 export function createApprovalState(required: boolean): AutomationApprovalState {
-  return { required, status: required ? "pending" : "approved", approvedBy: required ? null : "system", decidedAt: null };
+  return {
+    required,
+    status: required ? "pending" : "approved",
+    approvedBy: required ? null : "system",
+    decidedAt: null,
+  };
 }
 
 /**
@@ -315,14 +370,20 @@ export function createApprovalState(required: boolean): AutomationApprovalState 
  * (human-in-the-loop, T). An unapproved required approval means the
  * execution cannot proceed (FM.6).
  */
-export function canProceedThroughApproval(state: AutomationApprovalState): { proceed: boolean; reason: string } {
+export function canProceedThroughApproval(state: AutomationApprovalState): {
+  proceed: boolean;
+  reason: string;
+} {
   if (!state.required) {
     return { proceed: true, reason: "Approval not required (human-on-the-loop, U)" };
   }
   if (state.status === "approved" && state.approvedBy !== null) {
     return { proceed: true, reason: `Approved by ${state.approvedBy} (T)` };
   }
-  return { proceed: false, reason: `Approval ${state.status} — high-risk action cannot proceed (R, FM.6)` };
+  return {
+    proceed: false,
+    reason: `Approval ${state.status} — high-risk action cannot proceed (R, FM.6)`,
+  };
 }
 
 /* ─────────────────────────────────────────────────────────────

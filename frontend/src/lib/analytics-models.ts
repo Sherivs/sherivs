@@ -54,7 +54,19 @@ export interface DescriptiveStats {
 export function computeDescriptiveStats(values: number[]): DescriptiveStats {
   const count = values.length;
   if (count === 0) {
-    return { count: 0, sum: null, average: null, median: null, percentile25: null, percentile75: null, min: null, max: null, variance: null, standardDeviation: null, skew: null };
+    return {
+      count: 0,
+      sum: null,
+      average: null,
+      median: null,
+      percentile25: null,
+      percentile75: null,
+      min: null,
+      max: null,
+      variance: null,
+      standardDeviation: null,
+      skew: null,
+    };
   }
   const sorted = [...values].sort((a, b) => a - b);
   const sum = values.reduce((a, b) => a + b, 0);
@@ -66,7 +78,9 @@ export function computeDescriptiveStats(values: number[]): DescriptiveStats {
   const stdDev = Math.sqrt(variance);
   let skew: number | null = null;
   if (stdDev > 0) {
-    skew = Number((values.reduce((acc, v) => acc + ((v - average) / stdDev) ** 3, 0) / count).toFixed(4));
+    skew = Number(
+      (values.reduce((acc, v) => acc + ((v - average) / stdDev) ** 3, 0) / count).toFixed(4),
+    );
   }
   return {
     count,
@@ -88,7 +102,9 @@ function percentile(sorted: number[], q: number): number {
   const pos = (sorted.length - 1) * q;
   const base = Math.floor(pos);
   const rest = pos - base;
-  return sorted[base + 1] !== undefined ? sorted[base] + rest * (sorted[base + 1] - sorted[base]) : sorted[base];
+  return sorted[base + 1] !== undefined
+    ? sorted[base] + rest * (sorted[base + 1] - sorted[base])
+    : sorted[base];
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -146,7 +162,12 @@ export function causalityWarning(correlation: CorrelationResult): string {
 
 export type AnomalyKind = "point" | "contextual" | "collective" | "trend";
 
-export const ANOMALY_KINDS: readonly AnomalyKind[] = ["point", "contextual", "collective", "trend"] as const;
+export const ANOMALY_KINDS: readonly AnomalyKind[] = [
+  "point",
+  "contextual",
+  "collective",
+  "trend",
+] as const;
 
 export interface Anomaly {
   anomalyId: string;
@@ -176,7 +197,16 @@ export function detectPointAnomaly(input: {
   if (input.baselineStdDev === 0) {
     return input.value === input.baselineMean
       ? null
-      : { anomalyId: input.anomalyId, metricId: input.metricId, kind: "point", score: 0, threshold: input.zThreshold, evidence: `value ${input.value} != baseline mean ${input.baselineMean} with zero variance`, confidence: 0.9, timestamp: input.timestamp };
+      : {
+          anomalyId: input.anomalyId,
+          metricId: input.metricId,
+          kind: "point",
+          score: 0,
+          threshold: input.zThreshold,
+          evidence: `value ${input.value} != baseline mean ${input.baselineMean} with zero variance`,
+          confidence: 0.9,
+          timestamp: input.timestamp,
+        };
   }
   const zScore = (input.value - input.baselineMean) / input.baselineStdDev;
   const isAnomaly = Math.abs(zScore) > input.zThreshold;
@@ -220,7 +250,10 @@ export function recordAnomalyFeedback(
   } else if (feedback.operatorFeedback === "true_positive") {
     next.truePositives += 1;
   }
-  next.precision = next.truePositives + next.falsePositives === 0 ? null : Number((next.truePositives / (next.truePositives + next.falsePositives)).toFixed(3));
+  next.precision =
+    next.truePositives + next.falsePositives === 0
+      ? null
+      : Number((next.truePositives / (next.truePositives + next.falsePositives)).toFixed(3));
   return next;
 }
 
@@ -230,7 +263,11 @@ export function recordAnomalyFeedback(
 
 export type ForecastHorizon = "short_term" | "medium_term" | "long_term";
 
-export const FORECAST_HORIZONS: readonly ForecastHorizon[] = ["short_term", "medium_term", "long_term"] as const;
+export const FORECAST_HORIZONS: readonly ForecastHorizon[] = [
+  "short_term",
+  "medium_term",
+  "long_term",
+] as const;
 
 export interface Forecast {
   forecastId: string;
@@ -271,7 +308,13 @@ export function createForecast(input: CreateForecastInput): CreateForecastResult
   if (input.modelReference.trim() === "") {
     return { ok: false, error: "Forecast requires a model reference (AS)" };
   }
-  if (input.lowerBound !== null && input.lowerBound !== undefined && input.upperBound !== null && input.upperBound !== undefined && input.lowerBound > input.upperBound) {
+  if (
+    input.lowerBound !== null &&
+    input.lowerBound !== undefined &&
+    input.upperBound !== null &&
+    input.upperBound !== undefined &&
+    input.lowerBound > input.upperBound
+  ) {
     return { ok: false, error: "Forecast lower bound cannot exceed upper bound (AS)" };
   }
   return {
@@ -325,7 +368,12 @@ export function evaluateForecast(input: {
   let covered = 0;
   for (let i = 0; i < n; i += 1) {
     const interval = input.intervals[i];
-    if (interval.lower !== null && interval.upper !== null && input.actuals[i] >= interval.lower && input.actuals[i] <= interval.upper) {
+    if (
+      interval.lower !== null &&
+      interval.upper !== null &&
+      input.actuals[i] >= interval.lower &&
+      input.actuals[i] <= interval.upper
+    ) {
       covered += 1;
     }
   }
@@ -342,9 +390,17 @@ export function evaluateForecast(input: {
  * Model registry and lifecycle (AX, AY, AZ, BA)
  * ────────────────────────────────────────────────────────────*/
 
-export type ModelDeploymentState = "development" | "validated" | "shadow" | "canary" | "production" | "retired";
+export type ModelDeploymentState =
+  "development" | "validated" | "shadow" | "canary" | "production" | "retired";
 
-export const MODEL_DEPLOYMENT_STATES: readonly ModelDeploymentState[] = ["development", "validated", "shadow", "canary", "production", "retired"] as const;
+export const MODEL_DEPLOYMENT_STATES: readonly ModelDeploymentState[] = [
+  "development",
+  "validated",
+  "shadow",
+  "canary",
+  "production",
+  "retired",
+] as const;
 
 export interface AnalyticalModel {
   modelId: string;
@@ -370,7 +426,8 @@ export interface RegisterModelInput {
   registeredAt: string;
 }
 
-export type RegisterModelResult = { ok: true; model: AnalyticalModel } | { ok: false; error: string };
+export type RegisterModelResult =
+  { ok: true; model: AnalyticalModel } | { ok: false; error: string };
 
 /**
  * Model registry (AX): every analytical model defines ID, version, owner,
@@ -404,9 +461,22 @@ export function registerModel(input: RegisterModelInput): RegisterModelResult {
   };
 }
 
-export type DriftKind = "data_drift" | "concept_drift" | "prediction_drift" | "schema_drift" | "metric_drift" | "semantic_drift";
+export type DriftKind =
+  | "data_drift"
+  | "concept_drift"
+  | "prediction_drift"
+  | "schema_drift"
+  | "metric_drift"
+  | "semantic_drift";
 
-export const DRIFT_KINDS: readonly DriftKind[] = ["data_drift", "concept_drift", "prediction_drift", "schema_drift", "metric_drift", "semantic_drift"] as const;
+export const DRIFT_KINDS: readonly DriftKind[] = [
+  "data_drift",
+  "concept_drift",
+  "prediction_drift",
+  "schema_drift",
+  "metric_drift",
+  "semantic_drift",
+] as const;
 
 export interface ModelDriftReport {
   modelId: string;

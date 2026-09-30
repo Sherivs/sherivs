@@ -51,8 +51,8 @@ function SchedulingIntelligencePage() {
           {report.checks.map((check) => (
             <li key={check.id} className="rounded-lg border border-border p-3">
               <p className="text-sm font-semibold">
-                {check.status === "ENFORCED" ? "✓" : check.status === "FAILED" ? "✗" : "○"} {check.id} —{" "}
-                {check.name}
+                {check.status === "ENFORCED" ? "✓" : check.status === "FAILED" ? "✗" : "○"}{" "}
+                {check.id} — {check.name}
               </p>
               <p className="mt-1 font-mono text-[11px] text-muted-foreground">{check.evidence}</p>
             </li>
@@ -132,8 +132,8 @@ function SchedulingIntelligencePage() {
       <section className="uos-card mt-6 p-6">
         <h2 className="font-display text-lg font-bold">What the phase cannot yet do</h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          {report.gaps.length} declared gaps. The engines are real; these are the parts that are not,
-          stated here rather than discovered later.
+          {report.gaps.length} declared gaps. The engines are real; these are the parts that are
+          not, stated here rather than discovered later.
         </p>
         <ul className="mt-4 space-y-3">
           {report.gaps.map((gap) => (

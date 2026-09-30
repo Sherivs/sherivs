@@ -34,7 +34,8 @@ import { classificationRank } from "./data-core";
  * Data lineage (AK, AL)
  * ────────────────────────────────────────────────────────────*/
 
-export type LineageNodeType = "source" | "pipeline" | "dataset" | "transformation" | "dashboard" | "model" | "api";
+export type LineageNodeType =
+  "source" | "pipeline" | "dataset" | "transformation" | "dashboard" | "model" | "api";
 
 export const LINEAGE_NODE_TYPES: readonly LineageNodeType[] = [
   "source",
@@ -69,14 +70,16 @@ export interface CreateLineageNodeInput {
 }
 
 export type CreateLineageNodeResult =
-  | { ok: true; node: LineageNode }
-  | { ok: false; error: string };
+  { ok: true; node: LineageNode } | { ok: false; error: string };
 
 export function createLineageNode(input: CreateLineageNodeInput): CreateLineageNodeResult {
   if (input.name.trim() === "") {
     return { ok: false, error: "Lineage node requires a name (AL)" };
   }
-  return { ok: true, node: { id: input.id, tenantId: input.tenantId, type: input.type, name: input.name } };
+  return {
+    ok: true,
+    node: { id: input.id, tenantId: input.tenantId, type: input.type, name: input.name },
+  };
 }
 
 export interface CreateLineageEdgeInput {
@@ -88,8 +91,7 @@ export interface CreateLineageEdgeInput {
 }
 
 export type CreateLineageEdgeResult =
-  | { ok: true; edge: LineageEdge }
-  | { ok: false; error: string };
+  { ok: true; edge: LineageEdge } | { ok: false; error: string };
 
 export function createLineageEdge(input: CreateLineageEdgeInput): CreateLineageEdgeResult {
   if (input.fromNodeId === input.toNodeId) {
@@ -179,11 +181,15 @@ export interface CreateConflictResolutionPolicyInput {
 }
 
 export type CreateConflictResolutionPolicyResult =
-  | { ok: true; policy: ConflictResolutionPolicy }
-  | { ok: false; error: string };
+  { ok: true; policy: ConflictResolutionPolicy } | { ok: false; error: string };
 
-export function createConflictResolutionPolicy(input: CreateConflictResolutionPolicyInput): CreateConflictResolutionPolicyResult {
-  if (input.strategy === "source_of_truth_precedence" && (input.authoritativeSource ?? "").trim() === "") {
+export function createConflictResolutionPolicy(
+  input: CreateConflictResolutionPolicyInput,
+): CreateConflictResolutionPolicyResult {
+  if (
+    input.strategy === "source_of_truth_precedence" &&
+    (input.authoritativeSource ?? "").trim() === ""
+  ) {
     return { ok: false, error: "Source-of-truth precedence requires an authoritative source (AW)" };
   }
   if (input.strategy === "human_review") {
@@ -228,9 +234,7 @@ export interface EvaluateQueryInput {
   exposure: DataClassification;
 }
 
-export type QueryGovernanceVerdict =
-  | { ok: true }
-  | { ok: false; reason: string };
+export type QueryGovernanceVerdict = { ok: true } | { ok: false; reason: string };
 
 /**
  * Query governance (BA): protects against unbounded queries, accidental
@@ -243,7 +247,9 @@ export function evaluateQueryGovernance(input: EvaluateQueryInput): QueryGoverna
   if (input.estimatedRows > input.policy.maxResultRows) {
     return { ok: false, reason: "Query exceeds the maximum result rows (BA)" };
   }
-  if (classificationRank(input.exposure) > classificationRank(input.policy.maxSensitivityExposure)) {
+  if (
+    classificationRank(input.exposure) > classificationRank(input.policy.maxSensitivityExposure)
+  ) {
     return { ok: false, reason: "Query would expose fields above the allowed sensitivity (BA)" };
   }
   return { ok: true };
@@ -303,10 +309,11 @@ export interface CreateRetentionPolicyInput {
 }
 
 export type CreateRetentionPolicyResult =
-  | { ok: true; policy: RetentionPolicy }
-  | { ok: false; error: string };
+  { ok: true; policy: RetentionPolicy } | { ok: false; error: string };
 
-export function createRetentionPolicy(input: CreateRetentionPolicyInput): CreateRetentionPolicyResult {
+export function createRetentionPolicy(
+  input: CreateRetentionPolicyInput,
+): CreateRetentionPolicyResult {
   if (input.retentionDays <= 0) {
     return { ok: false, error: "Retention days must be positive (BK)" };
   }
@@ -330,7 +337,11 @@ export function createRetentionPolicy(input: CreateRetentionPolicyInput): Create
 }
 
 /** A legal hold suspends deletion regardless of retention (BK/BL). */
-export function isSubjectToRetention(policy: RetentionPolicy, ageDays: number, nowLegalHoldActive: boolean): boolean {
+export function isSubjectToRetention(
+  policy: RetentionPolicy,
+  ageDays: number,
+  nowLegalHoldActive: boolean,
+): boolean {
   if (policy.legalHold || nowLegalHoldActive) return true;
   return ageDays < policy.retentionDays;
 }
@@ -373,10 +384,11 @@ export interface CreateResidencyRequirementInput {
 }
 
 export type CreateResidencyRequirementResult =
-  | { ok: true; requirement: ResidencyRequirement }
-  | { ok: false; error: string };
+  { ok: true; requirement: ResidencyRequirement } | { ok: false; error: string };
 
-export function createResidencyRequirement(input: CreateResidencyRequirementInput): CreateResidencyRequirementResult {
+export function createResidencyRequirement(
+  input: CreateResidencyRequirementInput,
+): CreateResidencyRequirementResult {
   if (input.allowedJurisdictions.length === 0) {
     return { ok: false, error: "Residency requires at least one allowed jurisdiction (BU)" };
   }

@@ -67,7 +67,15 @@ describe("Correlation (AJ, AL)", () => {
 
 describe("Anomaly detection (AM, AO, AP)", () => {
   it("flags a point anomaly beyond the z threshold with evidence", () => {
-    const anomaly = detectPointAnomaly({ anomalyId: "a1", metricId: "attendance", value: 10, baselineMean: 5, baselineStdDev: 1, zThreshold: 3, timestamp: "2026-01-01T00:00:00Z" });
+    const anomaly = detectPointAnomaly({
+      anomalyId: "a1",
+      metricId: "attendance",
+      value: 10,
+      baselineMean: 5,
+      baselineStdDev: 1,
+      zThreshold: 3,
+      timestamp: "2026-01-01T00:00:00Z",
+    });
     expect(anomaly).not.toBeNull();
     if (anomaly) {
       expect(anomaly.kind).toBe("point");
@@ -78,12 +86,25 @@ describe("Anomaly detection (AM, AO, AP)", () => {
   });
 
   it("does not flag normal variation", () => {
-    const anomaly = detectPointAnomaly({ anomalyId: "a2", metricId: "attendance", value: 5.2, baselineMean: 5, baselineStdDev: 1, zThreshold: 3, timestamp: "2026-01-01T00:00:00Z" });
+    const anomaly = detectPointAnomaly({
+      anomalyId: "a2",
+      metricId: "attendance",
+      value: 5.2,
+      baselineMean: 5,
+      baselineStdDev: 1,
+      zThreshold: 3,
+      timestamp: "2026-01-01T00:00:00Z",
+    });
     expect(anomaly).toBeNull();
   });
 
   it("tracks false positives and computes precision (AP)", () => {
-    let perf: AnomalyPerformance = { falsePositives: 0, falseNegatives: 0, truePositives: 0, precision: null };
+    let perf: AnomalyPerformance = {
+      falsePositives: 0,
+      falseNegatives: 0,
+      truePositives: 0,
+      precision: null,
+    };
     perf = recordAnomalyFeedback(perf, { anomalyId: "a1", operatorFeedback: "true_positive" });
     perf = recordAnomalyFeedback(perf, { anomalyId: "a2", operatorFeedback: "false_positive" });
     expect(perf.truePositives).toBe(1);
@@ -114,8 +135,30 @@ describe("Forecasting (AQ, AS, AT)", () => {
   });
 
   it("rejects a forecast with inverted bounds or missing model reference", () => {
-    expect(createForecast({ forecastId: "f1", metricId: "m", horizon: "short_term", pointEstimate: 100, lowerBound: 110, upperBound: 90, modelReference: "m1", assumptions: [], timestamp: "2026-01-01T00:00:00Z" }).ok).toBe(false);
-    expect(createForecast({ forecastId: "f1", metricId: "m", horizon: "short_term", pointEstimate: 100, modelReference: "", assumptions: [], timestamp: "2026-01-01T00:00:00Z" }).ok).toBe(false);
+    expect(
+      createForecast({
+        forecastId: "f1",
+        metricId: "m",
+        horizon: "short_term",
+        pointEstimate: 100,
+        lowerBound: 110,
+        upperBound: 90,
+        modelReference: "m1",
+        assumptions: [],
+        timestamp: "2026-01-01T00:00:00Z",
+      }).ok,
+    ).toBe(false);
+    expect(
+      createForecast({
+        forecastId: "f1",
+        metricId: "m",
+        horizon: "short_term",
+        pointEstimate: 100,
+        modelReference: "",
+        assumptions: [],
+        timestamp: "2026-01-01T00:00:00Z",
+      }).ok,
+    ).toBe(false);
   });
 
   it("evaluates forecasts with MAE, RMSE, MAPE and coverage (AU)", () => {
@@ -136,7 +179,16 @@ describe("Forecasting (AQ, AS, AT)", () => {
 
 describe("Model registry and governance (AX, AZ, BA)", () => {
   it("registers a model with full metadata", () => {
-    const result = registerModel({ modelId: "m1", version: 1, owner: "analytics-team", algorithm: "linear-regression", trainingDataRef: "dataset-2025", features: ["attendance", "engagement"], limitations: ["requires complete data"], registeredAt: "2026-01-01T00:00:00Z" });
+    const result = registerModel({
+      modelId: "m1",
+      version: 1,
+      owner: "analytics-team",
+      algorithm: "linear-regression",
+      trainingDataRef: "dataset-2025",
+      features: ["attendance", "engagement"],
+      limitations: ["requires complete data"],
+      registeredAt: "2026-01-01T00:00:00Z",
+    });
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.model.deploymentState).toBe("development");
@@ -144,16 +196,52 @@ describe("Model registry and governance (AX, AZ, BA)", () => {
   });
 
   it("rejects a model without an owner or algorithm", () => {
-    expect(registerModel({ modelId: "m1", version: 1, owner: "", algorithm: "x", trainingDataRef: "d", features: [], limitations: [], registeredAt: "2026-01-01T00:00:00Z" }).ok).toBe(false);
+    expect(
+      registerModel({
+        modelId: "m1",
+        version: 1,
+        owner: "",
+        algorithm: "x",
+        trainingDataRef: "d",
+        features: [],
+        limitations: [],
+        registeredAt: "2026-01-01T00:00:00Z",
+      }).ok,
+    ).toBe(false);
   });
 
   it("detects model drift beyond the threshold (AZ)", () => {
-    expect(isModelDrifting({ modelId: "m1", kind: "data_drift", magnitude: 0.8, threshold: 0.5, detectedAt: "2026-01-01T00:00:00Z" })).toBe(true);
-    expect(isModelDrifting({ modelId: "m1", kind: "data_drift", magnitude: 0.2, threshold: 0.5, detectedAt: "2026-01-01T00:00:00Z" })).toBe(false);
+    expect(
+      isModelDrifting({
+        modelId: "m1",
+        kind: "data_drift",
+        magnitude: 0.8,
+        threshold: 0.5,
+        detectedAt: "2026-01-01T00:00:00Z",
+      }),
+    ).toBe(true);
+    expect(
+      isModelDrifting({
+        modelId: "m1",
+        kind: "data_drift",
+        magnitude: 0.2,
+        threshold: 0.5,
+        detectedAt: "2026-01-01T00:00:00Z",
+      }),
+    ).toBe(false);
   });
 
   it("never promotes an unvalidated model (BA)", () => {
-    const result = registerModel({ modelId: "m1", version: 1, owner: "o", algorithm: "x", trainingDataRef: "d", features: [], limitations: [], registeredAt: "2026-01-01T00:00:00Z" });
+    const result = registerModel({
+      modelId: "m1",
+      version: 1,
+      owner: "o",
+      algorithm: "x",
+      trainingDataRef: "d",
+      features: [],
+      limitations: [],
+      registeredAt: "2026-01-01T00:00:00Z",
+    });
     if (!result.ok) throw new Error("fixture failed");
     expect(promoteModelToProduction(result.model, false).ok).toBe(false);
     const promoted = promoteModelToProduction(result.model, true);

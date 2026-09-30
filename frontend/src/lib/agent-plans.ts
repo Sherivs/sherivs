@@ -51,12 +51,7 @@ export interface PlanBudget {
  * ─────────────────────────────────────────────*/
 
 export type PlanStepActionType =
-  | "tool_call"
-  | "subtask"
-  | "delegation"
-  | "model_inference"
-  | "approval_request"
-  | "terminal";
+  "tool_call" | "subtask" | "delegation" | "model_inference" | "approval_request" | "terminal";
 
 export interface PlanStep {
   id: PlanStepId;
@@ -82,9 +77,7 @@ export interface AgentPlan {
   maxReplans: number;
 }
 
-export type CreatePlanResult =
-  | { ok: true; plan: AgentPlan }
-  | { ok: false; error: string };
+export type CreatePlanResult = { ok: true; plan: AgentPlan } | { ok: false; error: string };
 
 export function createAgentPlan(
   taskId: TaskId,
@@ -136,9 +129,7 @@ export function createAgentPlan(
  * Plan validation (Section AK)
  * ─────────────────────────────────────────────*/
 
-export type PlanValidationResult =
-  | { ok: true }
-  | { ok: false; errors: string[] };
+export type PlanValidationResult = { ok: true } | { ok: false; errors: string[] };
 
 export function validateAgentPlan(
   plan: AgentPlan,
@@ -169,8 +160,7 @@ export function validateAgentPlan(
  * ─────────────────────────────────────────────*/
 
 export type ReplanDecision =
-  | { ok: true; requiresApproval: boolean; plan: AgentPlan }
-  | { ok: false; error: string };
+  { ok: true; requiresApproval: boolean; plan: AgentPlan } | { ok: false; error: string };
 
 export function shouldReplan(
   plan: AgentPlan,

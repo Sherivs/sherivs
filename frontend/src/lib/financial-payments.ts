@@ -77,8 +77,7 @@ export interface CreatePaymentIntentInput {
 }
 
 export type CreatePaymentIntentResult =
-  | { ok: true; intent: PaymentIntent }
-  | { ok: false; error: string };
+  { ok: true; intent: PaymentIntent } | { ok: false; error: string };
 
 export function createPaymentIntent(input: CreatePaymentIntentInput): CreatePaymentIntentResult {
   if (input.invoiceId.trim() === "") {
@@ -118,7 +117,10 @@ export function transitionPaymentIntent(
   to: PaymentIntentStatus,
 ): { ok: true; intent: PaymentIntent } | { ok: false; error: string } {
   if (!INTENT_TRANSITIONS[intent.status].includes(to)) {
-    return { ok: false, error: `Payment intent transition ${intent.status} -> ${to} is not allowed (Y)` };
+    return {
+      ok: false,
+      error: `Payment intent transition ${intent.status} -> ${to} is not allowed (Y)`,
+    };
   }
   return { ok: true, intent: { ...intent, status: to } };
 }
@@ -150,8 +152,7 @@ export interface RecordPaymentAttemptInput {
 }
 
 export type RecordPaymentAttemptResult =
-  | { ok: true; attempt: PaymentAttempt }
-  | { ok: false; error: string };
+  { ok: true; attempt: PaymentAttempt } | { ok: false; error: string };
 
 export function recordPaymentAttempt(input: RecordPaymentAttemptInput): RecordPaymentAttemptResult {
   if (input.provider.trim() === "") {
@@ -245,8 +246,7 @@ export interface CreateTokenizedPaymentMethodInput {
 }
 
 export type CreateTokenizedPaymentMethodResult =
-  | { ok: true; method: TokenizedPaymentMethod }
-  | { ok: false; error: string };
+  { ok: true; method: TokenizedPaymentMethod } | { ok: false; error: string };
 
 export function createTokenizedPaymentMethod(
   input: CreateTokenizedPaymentMethodInput,
@@ -274,8 +274,7 @@ export function createTokenizedPaymentMethod(
  * ────────────────────────────────────────────────────────────*/
 
 export type WebhookVerificationResult =
-  | { ok: true; verifiedEventId: string }
-  | { ok: false; error: string };
+  { ok: true; verifiedEventId: string } | { ok: false; error: string };
 
 /**
  * Webhooks are untrusted external input until verified (AE). This function
@@ -283,7 +282,11 @@ export type WebhookVerificationResult =
  * provider-adapter responsibility. Every provider event requires a durable
  * idempotency identity (AF).
  */
-export function verifyWebhook(rawEvent: { provider: string; eventId: string; signatureValid: boolean }): WebhookVerificationResult {
+export function verifyWebhook(rawEvent: {
+  provider: string;
+  eventId: string;
+  signatureValid: boolean;
+}): WebhookVerificationResult {
   if (!rawEvent.signatureValid) {
     return { ok: false, error: "Webhook signature verification failed (AE)" };
   }
@@ -310,7 +313,12 @@ export function markWebhookEventProcessed(eventId: string, state: WebhookIdempot
 
 export type RefundStatus = "requested" | "processed" | "failed" | "cancelled";
 
-export const REFUND_STATUSES: readonly RefundStatus[] = ["requested", "processed", "failed", "cancelled"] as const;
+export const REFUND_STATUSES: readonly RefundStatus[] = [
+  "requested",
+  "processed",
+  "failed",
+  "cancelled",
+] as const;
 
 export interface Refund {
   id: string;
@@ -331,9 +339,7 @@ export interface CreateRefundInput {
   now: string;
 }
 
-export type CreateRefundResult =
-  | { ok: true; refund: Refund }
-  | { ok: false; error: string };
+export type CreateRefundResult = { ok: true; refund: Refund } | { ok: false; error: string };
 
 export function createRefund(input: CreateRefundInput): CreateRefundResult {
   if (input.originalPaymentReference.trim() === "") {
@@ -400,8 +406,7 @@ export interface CreateCreditInput {
 }
 
 export type CreateCreditResult =
-  | { ok: true; credit: FinancialCredit }
-  | { ok: false; error: string };
+  { ok: true; credit: FinancialCredit } | { ok: false; error: string };
 
 export function createFinancialCredit(input: CreateCreditInput): CreateCreditResult {
   if (input.amount.amountMinor <= 0) {
@@ -422,8 +427,7 @@ export function createFinancialCredit(input: CreateCreditInput): CreateCreditRes
 }
 
 export type ApplyCreditResult =
-  | { ok: true; credit: FinancialCredit; applied: Money }
-  | { ok: false; error: string };
+  { ok: true; credit: FinancialCredit; applied: Money } | { ok: false; error: string };
 
 /** Apply a credit toward an outstanding amount; partial application is
  * supported; a credit can never be over-applied. */
@@ -466,8 +470,7 @@ export interface CreateAdjustmentInput {
 }
 
 export type CreateAdjustmentResult =
-  | { ok: true; adjustment: FinancialAdjustment }
-  | { ok: false; error: string };
+  { ok: true; adjustment: FinancialAdjustment } | { ok: false; error: string };
 
 export function createFinancialAdjustment(input: CreateAdjustmentInput): CreateAdjustmentResult {
   if (input.reason.trim() === "") {

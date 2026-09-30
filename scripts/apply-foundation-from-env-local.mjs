@@ -43,60 +43,60 @@ async function projectStatus() {
 }
 
 try {
-let status = await projectStatus();
-console.log(`project_status=${status}`);
-if (status === "INACTIVE" || status === "PAUSED") {
-  const restore = await fetch(`https://api.supabase.com/v1/projects/${projectRef}/restore`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-  });
-  const restoreText = await restore.text();
-  if (!restore.ok) {
-    throw new Error(`restore HTTP ${restore.status} ${sanitize(restoreText).slice(0, 300)}`);
+  let status = await projectStatus();
+  console.log(`project_status=${status}`);
+  if (status === "INACTIVE" || status === "PAUSED") {
+    const restore = await fetch(`https://api.supabase.com/v1/projects/${projectRef}/restore`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    const restoreText = await restore.text();
+    if (!restore.ok) {
+      throw new Error(`restore HTTP ${restore.status} ${sanitize(restoreText).slice(0, 300)}`);
+    }
+    console.log("restore requested");
+    for (let attempt = 0; attempt < 18; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 10000));
+      status = await projectStatus();
+      console.log(`project_status=${status}`);
+      if (status === "ACTIVE_HEALTHY") break;
+    }
+    if (status !== "ACTIVE_HEALTHY") {
+      throw new Error(`project did not become ACTIVE_HEALTHY (status=${status})`);
+    }
   }
-  console.log("restore requested");
-  for (let attempt = 0; attempt < 18; attempt += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 10000));
-    status = await projectStatus();
-    console.log(`project_status=${status}`);
-    if (status === "ACTIVE_HEALTHY") break;
+  if (status === "COMING_UP" || status === "RESTORING") {
+    for (let attempt = 0; attempt < 18; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 10000));
+      status = await projectStatus();
+      console.log(`project_status=${status}`);
+      if (status === "ACTIVE_HEALTHY") break;
+    }
+    if (status !== "ACTIVE_HEALTHY") {
+      throw new Error(`project did not become ACTIVE_HEALTHY (status=${status})`);
+    }
   }
-  if (status !== "ACTIVE_HEALTHY") {
-    throw new Error(`project did not become ACTIVE_HEALTHY (status=${status})`);
-  }
-}
-if (status === "COMING_UP" || status === "RESTORING") {
-  for (let attempt = 0; attempt < 18; attempt += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 10000));
-    status = await projectStatus();
-    console.log(`project_status=${status}`);
-    if (status === "ACTIVE_HEALTHY") break;
-  }
-  if (status !== "ACTIVE_HEALTHY") {
-    throw new Error(`project did not become ACTIVE_HEALTHY (status=${status})`);
-  }
-}
 
-const endpoint = `https://api.supabase.com/v1/projects/${projectRef}/database/query`;
+  const endpoint = `https://api.supabase.com/v1/projects/${projectRef}/database/query`;
 
-async function query(sql) {
-  const res = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ query: sql }),
-  });
-  const text = await res.text();
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status} ${sanitize(text).slice(0, 500)}`);
+  async function query(sql) {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query: sql }),
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status} ${sanitize(text).slice(0, 500)}`);
+    }
+    return text;
   }
-  return text;
-}
 
   await query(readFileSync(migrationPath, "utf8"));
   console.log(`OK migration applied project=${projectRef}`);

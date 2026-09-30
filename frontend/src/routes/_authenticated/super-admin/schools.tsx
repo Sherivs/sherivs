@@ -8,10 +8,7 @@ import { PaginationBar } from "@/components/pagination-bar";
 import { usePagination, PAGE_SIZE } from "@/hooks/use-pagination";
 import { Input } from "@/components/ui/input";
 import { AddSchoolForm } from "@/components/super-admin/add-school-form";
-import {
-  updateSchoolPlan,
-  resetSchoolAdminPassword,
-} from "@/lib/provisioning.functions";
+import { updateSchoolPlan, resetSchoolAdminPassword } from "@/lib/provisioning.functions";
 import { ALL_TIERS } from "@/lib/subscription-tiers";
 
 export const Route = createFileRoute("/_authenticated/super-admin/schools")({
@@ -47,7 +44,11 @@ function SuperAdminSchools() {
     reset();
   }, [q, reset]);
 
-  const schools = useQuery<{ rows: SchoolRow[]; count: number; stats: { total: number; active: number; paying: number; expiring: number } }>({
+  const schools = useQuery<{
+    rows: SchoolRow[];
+    count: number;
+    stats: { total: number; active: number; paying: number; expiring: number };
+  }>({
     queryKey: ["all-schools", q, page],
     queryFn: async () => {
       // Stats query: small projection, no range — counts use head:true to skip rows.
@@ -66,9 +67,7 @@ function SuperAdminSchools() {
 
       const [{ data, error, count }, statsRes] = await Promise.all([
         listQuery,
-        supabase
-          .from("schools")
-          .select("is_active, subscription_tier, subscription_expires_at"),
+        supabase.from("schools").select("is_active, subscription_tier, subscription_expires_at"),
       ]);
       if (error) throw new Error(error.message);
       if (statsRes.error) throw new Error(statsRes.error.message);
@@ -123,7 +122,6 @@ function SuperAdminSchools() {
   const total = schools.data?.count ?? 0;
   const stats = schools.data?.stats ?? { total: 0, active: 0, paying: 0, expiring: 0 };
 
-
   return (
     <PortalPage title="Schools" subtitle="All tenant schools on the platform.">
       {showWizard && (
@@ -155,7 +153,8 @@ function SuperAdminSchools() {
           <div className="uos-card w-full max-w-md p-5" onClick={(e) => e.stopPropagation()}>
             <h3 className="font-display text-lg font-semibold">Password reset</h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Share these credentials with the school admin. This is the only time the temporary password is shown.
+              Share these credentials with the school admin. This is the only time the temporary
+              password is shown.
             </p>
             <div className="mt-4 space-y-2 text-sm">
               <div className="rounded-md border border-border p-2">
@@ -163,7 +162,9 @@ function SuperAdminSchools() {
                 <div className="font-mono break-all">{resetResult.email}</div>
               </div>
               <div className="rounded-md border border-border p-2">
-                <div className="text-[10px] uppercase text-muted-foreground">Temporary password</div>
+                <div className="text-[10px] uppercase text-muted-foreground">
+                  Temporary password
+                </div>
                 <div className="font-mono break-all">{resetResult.password}</div>
               </div>
             </div>
@@ -264,7 +265,9 @@ function SuperAdminSchools() {
                     <td className="px-3 py-2">
                       <span
                         className={`rounded-full px-2 py-0.5 text-[10px] uppercase ${
-                          s.is_active ? "uos-tenant-bg" : "border border-border text-muted-foreground"
+                          s.is_active
+                            ? "uos-tenant-bg"
+                            : "border border-border text-muted-foreground"
                         }`}
                       >
                         {s.is_active ? "active" : "inactive"}
@@ -378,7 +381,9 @@ function EditSchoolDialog({
         <h3 className="font-display text-lg font-semibold">Edit {school.name}</h3>
         <div className="mt-4 space-y-3 text-sm">
           <label className="block">
-            <span className="block text-[11px] uppercase tracking-widest text-muted-foreground">Tier</span>
+            <span className="block text-[11px] uppercase tracking-widest text-muted-foreground">
+              Tier
+            </span>
             <select
               value={tier}
               onChange={(e) => setTier(e.target.value)}
@@ -392,7 +397,9 @@ function EditSchoolDialog({
             </select>
           </label>
           <label className="block">
-            <span className="block text-[11px] uppercase tracking-widest text-muted-foreground">Status</span>
+            <span className="block text-[11px] uppercase tracking-widest text-muted-foreground">
+              Status
+            </span>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
@@ -406,7 +413,9 @@ function EditSchoolDialog({
             </select>
           </label>
           <label className="block">
-            <span className="block text-[11px] uppercase tracking-widest text-muted-foreground">Monthly fee (₦)</span>
+            <span className="block text-[11px] uppercase tracking-widest text-muted-foreground">
+              Monthly fee (₦)
+            </span>
             <input
               type="number"
               value={fee}
@@ -415,7 +424,9 @@ function EditSchoolDialog({
             />
           </label>
           <label className="block">
-            <span className="block text-[11px] uppercase tracking-widest text-muted-foreground">Expires</span>
+            <span className="block text-[11px] uppercase tracking-widest text-muted-foreground">
+              Expires
+            </span>
             <input
               type="date"
               value={expires}

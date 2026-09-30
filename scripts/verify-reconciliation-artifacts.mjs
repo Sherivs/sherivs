@@ -76,7 +76,8 @@ if (registry.phaseCount !== 51 || registry.phases?.length !== 51) {
 }
 
 const derived = readFileSync(join(root, "architecture", "phase-completion-status.md"), "utf8");
-if (!/^Phases audited: 51/m.test(derived)) errors.push("derived phase status does not declare 51 audited phases");
+if (!/^Phases audited: 51/m.test(derived))
+  errors.push("derived phase status does not declare 51 audited phases");
 
 const phase52Catalog = JSON.parse(
   readFileSync(join(root, "architecture", "COREGRID_PHASE_52_CAPABILITY_CATALOG.json"), "utf8"),
@@ -89,11 +90,16 @@ const verificationBaseline = JSON.parse(
   readFileSync(join(root, "architecture", "COREGRID_VERIFICATION_BASELINE.json"), "utf8"),
 );
 if (verificationBaseline.status !== "PARTIAL_EVIDENCE_BASELINE") {
-  errors.push("verification baseline must remain a partial evidence baseline until full checks run");
+  errors.push(
+    "verification baseline must remain a partial evidence baseline until full checks run",
+  );
 }
 
 const phase52Allocation = JSON.parse(
-  readFileSync(join(root, "architecture", "COREGRID_PHASE_52_CANONICAL_SURFACE_ALLOCATION.json"), "utf8"),
+  readFileSync(
+    join(root, "architecture", "COREGRID_PHASE_52_CANONICAL_SURFACE_ALLOCATION.json"),
+    "utf8",
+  ),
 );
 if (!Array.isArray(phase52Allocation.blocks) || phase52Allocation.blocks.length !== 18) {
   errors.push("Phase 52 allocation must contain exactly 18 engineering blocks");
@@ -102,7 +108,10 @@ if (!Array.isArray(phase52Allocation.blocks) || phase52Allocation.blocks.length 
 const phase52Inventory = JSON.parse(
   readFileSync(join(root, "architecture", "COREGRID_PHASE_52_SECTION_INVENTORY.json"), "utf8"),
 );
-if (phase52Inventory.source?.sha256 !== "A69A3E74FAA88B78B6FB33C36A499E764F7DE04A2C4B33B20C5795D1084CE286") {
+if (
+  phase52Inventory.source?.sha256 !==
+  "A69A3E74FAA88B78B6FB33C36A499E764F7DE04A2C4B33B20C5795D1084CE286"
+) {
   errors.push("Phase 52 section inventory source hash does not match the corpus baseline");
 }
 
@@ -113,7 +122,9 @@ if (
   firstMission.missionId !== "COREGRID-FOUNDATION-MISSION-001" ||
   firstMission.status !== "PROPOSED_NOT_AUTHORIZED_FOR_IMPLEMENTATION"
 ) {
-  errors.push("first mission definition must remain proposed and unauthorized until ownership is resolved");
+  errors.push(
+    "first mission definition must remain proposed and unauthorized until ownership is resolved",
+  );
 }
 if (!Array.isArray(firstMission.scope?.includes) || firstMission.scope.includes.length === 0) {
   errors.push("first mission definition requires an explicit bounded scope");
@@ -159,7 +170,9 @@ for (const block of phase52Allocation.blocks ?? []) {
     errors.push(`Phase 52 block ${block.block ?? "unknown"} is missing a primary surface or owner`);
   }
   if (block.canonicalPhaseOwner === "NEW_PHASE") {
-    errors.push(`Phase 52 block ${block.block ?? "unknown"} cannot register an unauthorized new phase`);
+    errors.push(
+      `Phase 52 block ${block.block ?? "unknown"} cannot register an unauthorized new phase`,
+    );
   }
 }
 if (!Array.isArray(verificationBaseline.checks) || verificationBaseline.checks.length === 0) {
@@ -169,8 +182,14 @@ for (const capability of phase52Catalog.capabilities ?? []) {
   if (!capability.id || !capability.classification || !capability.status) {
     errors.push("Phase 52 capability entries require id, classification, and status");
   }
-  if (capability.status === "IMPLEMENTED" || capability.status === "VERIFIED" || capability.status === "OPERATIONAL") {
-    errors.push(`Phase 52 capability ${capability.id} claims unauthorized completion status ${capability.status}`);
+  if (
+    capability.status === "IMPLEMENTED" ||
+    capability.status === "VERIFIED" ||
+    capability.status === "OPERATIONAL"
+  ) {
+    errors.push(
+      `Phase 52 capability ${capability.id} claims unauthorized completion status ${capability.status}`,
+    );
   }
 }
 
@@ -187,7 +206,13 @@ for (const line of derived.split(/\r?\n/)) {
 const statusConflicts = registry.phases
   .map((phase) => {
     const row = derivedRows.get(phase.id);
-    if (!row) return { phase: phase.id, registry: phase.status, derived: null, type: "missing-derived-row" };
+    if (!row)
+      return {
+        phase: phase.id,
+        registry: phase.status,
+        derived: null,
+        type: "missing-derived-row",
+      };
     if (phase.status !== row.registry || phase.status !== row.derived) {
       return {
         phase: phase.id,
@@ -205,12 +230,18 @@ const statusConflicts = registry.phases
 const result = {
   mission: "COREGRID-MISSION-0001",
   artifact: "COREGRID_REGISTRY_TRUTH_LOCK",
-  mothers: { expected: 13, present: requiredMothers.filter((file) => existsSync(join(root, file))).length },
+  mothers: {
+    expected: 13,
+    present: requiredMothers.filter((file) => existsSync(join(root, file))).length,
+  },
   registry: {
     phases: registry.phases?.length ?? 0,
     capabilities: registry.capabilities?.length ?? 0,
   },
-  artifacts: { expected: artifacts.length, present: artifacts.filter((file) => existsSync(join(root, "architecture", file))).length },
+  artifacts: {
+    expected: artifacts.length,
+    present: artifacts.filter((file) => existsSync(join(root, "architecture", file))).length,
+  },
   derivedStatusRows: derivedRows.size,
   statusConflicts,
   errors,

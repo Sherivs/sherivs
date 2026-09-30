@@ -131,10 +131,7 @@ function AuthenticatedLayout() {
   const scholarPortalKind: RuntimePortalKind | null =
     role === "parent" ? "parent" : role === "student" ? "student" : null;
   const bottomNavSections = scholarPortalKind
-    ? resolveWorkspaceNav(
-        ALL_NAV_CONTRIBUTIONS,
-        scholarCapabilitiesForPortal(scholarPortalKind),
-      )
+    ? resolveWorkspaceNav(ALL_NAV_CONTRIBUTIONS, scholarCapabilitiesForPortal(scholarPortalKind))
     : [];
   const hasBottomNav = hasNavDestinations(bottomNavSections);
 

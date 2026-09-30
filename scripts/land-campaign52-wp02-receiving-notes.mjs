@@ -10,14 +10,10 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const marker = "<!-- campaign-52-wp02-receiving-record -->";
-const source =
-  "architecture/COREGRID_CAMPAIGN_52_WP_02_RECEIVING_RECONCILIATION.json";
+const source = "architecture/COREGRID_CAMPAIGN_52_WP_02_RECEIVING_RECONCILIATION.json";
 
 const sections = {
-  "COREGRID.md": [
-    "CG-P52-GAP-016",
-    "CG-P52-GAP-020",
-  ],
+  "COREGRID.md": ["CG-P52-GAP-016", "CG-P52-GAP-020"],
   "ARCHITECTURE.md": [
     "CG-P52-GAP-012",
     "CG-P52-GAP-016",
@@ -52,14 +48,10 @@ const sections = {
   "architecture/phase-14-data-platform.md": ["CG-P52-GAP-011"],
   "architecture/phase-22-mobile-platform.md": ["CG-P52-GAP-013"],
   "architecture/phase-23-web-platform.md": ["CG-P52-GAP-013"],
-  "architecture/phase-24-coregrid-experience-design-intelligence.md": [
-    "CG-P52-GAP-021",
-  ],
+  "architecture/phase-24-coregrid-experience-design-intelligence.md": ["CG-P52-GAP-021"],
   "architecture/phase-27-marketplace.md": ["CG-P52-GAP-018"],
   "architecture/phase-28-developer-platform.md": ["CG-P52-GAP-018"],
-  "architecture/phase-50-human-civilization-interface-layer.md": [
-    "CG-P52-GAP-021",
-  ],
+  "architecture/phase-50-human-civilization-interface-layer.md": ["CG-P52-GAP-021"],
 };
 
 const notes = {
@@ -97,15 +89,11 @@ const notes = {
     "The first visible product is the universal experience, not a domain vertical. Foundation Mission 001 remains unauthorized.",
   "CG-P52-GAP-025":
     "Heading-only 55-phase binding. Registered phase capacity remains 51. Phase 52 is not registered.",
-  "CG-P52-GAP-026":
-    "Duplicate heading-only binding. It adds no phase authority.",
-  "CG-P52-GAP-027":
-    "Duplicate heading-only binding. It adds no phase authority.",
+  "CG-P52-GAP-026": "Duplicate heading-only binding. It adds no phase authority.",
+  "CG-P52-GAP-027": "Duplicate heading-only binding. It adds no phase authority.",
 };
 
-const reconciliation = JSON.parse(
-  readFileSync(join(root, source), "utf8"),
-);
+const reconciliation = JSON.parse(readFileSync(join(root, source), "utf8"));
 const known = new Set(reconciliation.records.map((record) => record.gapId));
 const landed = [];
 
@@ -154,8 +142,14 @@ writeFileSync(
   `${JSON.stringify(result, null, 2)}\n`,
   "utf8",
 );
-console.log(JSON.stringify({
-  status: result.status,
-  appended: landed.filter((item) => item.action === "APPENDED").length,
-  alreadyPresent: landed.filter((item) => item.action === "ALREADY_PRESENT").length,
-}, null, 2));
+console.log(
+  JSON.stringify(
+    {
+      status: result.status,
+      appended: landed.filter((item) => item.action === "APPENDED").length,
+      alreadyPresent: landed.filter((item) => item.action === "ALREADY_PRESENT").length,
+    },
+    null,
+    2,
+  ),
+);

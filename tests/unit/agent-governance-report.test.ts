@@ -31,7 +31,9 @@ describe("Phase 07 — the agent governance report reflects the real contracts",
     for (const rule of rules) {
       expect(rule.rule.length, `${rule.id} must state the rule`).toBeGreaterThan(10);
       expect(rule.enforcedBy, `${rule.id} must name its module`).toMatch(/^frontend\/src\/lib\//);
-      expect(rule.provedBy, `${rule.id} must name its suite`).toMatch(/^tests\/unit\/.*\.test\.ts$/);
+      expect(rule.provedBy, `${rule.id} must name its suite`).toMatch(
+        /^tests\/unit\/.*\.test\.ts$/,
+      );
     }
     const ids = rules.map((rule) => rule.id);
     expect(ids).toEqual(

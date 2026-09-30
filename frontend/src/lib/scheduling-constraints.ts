@@ -88,8 +88,7 @@ export interface CreateConstraintInput {
 }
 
 export type CreateConstraintResult =
-  | { ok: true; constraint: SchedulingConstraint }
-  | { ok: false; error: string };
+  { ok: true; constraint: SchedulingConstraint } | { ok: false; error: string };
 
 export function createSchedulingConstraint(input: CreateConstraintInput): CreateConstraintResult {
   if (input.scope.trim() === "") {
@@ -130,8 +129,7 @@ export function canRelaxConstraint(
  * ────────────────────────────────────────────────────────────*/
 
 export type ConstraintEvaluation =
-  | { satisfied: true }
-  | { satisfied: false; violatedType: ConstraintType; reason: string };
+  { satisfied: true } | { satisfied: false; violatedType: ConstraintType; reason: string };
 
 export interface EvaluateConstraintInput {
   constraint: SchedulingConstraint;
@@ -154,7 +152,11 @@ export function evaluateConstraint(input: EvaluateConstraintInput): ConstraintEv
       const capacityOk = assigned.every((r) => r.capacity >= activity.requiredCapacity);
       return capacityOk
         ? { satisfied: true }
-        : { satisfied: false, violatedType: "room_capacity", reason: "Room capacity below required capacity (O)" };
+        : {
+            satisfied: false,
+            violatedType: "room_capacity",
+            reason: "Room capacity below required capacity (O)",
+          };
     }
     case "instructor_availability": {
       const conflicting = allActivities.some(
@@ -164,7 +166,11 @@ export function evaluateConstraint(input: EvaluateConstraintInput): ConstraintEv
           intervalsOverlap(a.interval, activity.interval),
       );
       return conflicting
-        ? { satisfied: false, violatedType: "instructor_availability", reason: "Instructor double-booked (O)" }
+        ? {
+            satisfied: false,
+            violatedType: "instructor_availability",
+            reason: "Instructor double-booked (O)",
+          }
         : { satisfied: true };
     }
     case "learner_availability": {
@@ -175,7 +181,11 @@ export function evaluateConstraint(input: EvaluateConstraintInput): ConstraintEv
           intervalsOverlap(a.interval, activity.interval),
       );
       return conflicting
-        ? { satisfied: false, violatedType: "learner_availability", reason: "Learner double-booked (O)" }
+        ? {
+            satisfied: false,
+            violatedType: "learner_availability",
+            reason: "Learner double-booked (O)",
+          }
         : { satisfied: true };
     }
     case "resource_availability": {
@@ -186,7 +196,11 @@ export function evaluateConstraint(input: EvaluateConstraintInput): ConstraintEv
           intervalsOverlap(a.interval, activity.interval),
       );
       return conflicting
-        ? { satisfied: false, violatedType: "resource_availability", reason: "Resource double-booked (O)" }
+        ? {
+            satisfied: false,
+            violatedType: "resource_availability",
+            reason: "Resource double-booked (O)",
+          }
         : { satisfied: true };
     }
     case "permitted_period": {
@@ -198,7 +212,11 @@ export function evaluateConstraint(input: EvaluateConstraintInput): ConstraintEv
           Date.parse(activity.interval.end) <= Date.parse(permittedEnd);
         return ok
           ? { satisfied: true }
-          : { satisfied: false, violatedType: "permitted_period", reason: "Activity outside permitted period (O)" };
+          : {
+              satisfied: false,
+              violatedType: "permitted_period",
+              reason: "Activity outside permitted period (O)",
+            };
       }
       return { satisfied: true };
     }
@@ -210,14 +228,22 @@ export function evaluateConstraint(input: EvaluateConstraintInput): ConstraintEv
       );
       return hasEquipment
         ? { satisfied: true }
-        : { satisfied: false, violatedType: "required_equipment", reason: "Required equipment missing (O)" };
+        : {
+            satisfied: false,
+            violatedType: "required_equipment",
+            reason: "Required equipment missing (O)",
+          };
     }
     case "required_qualification": {
       const requiredQualification = String(constraint.params.qualification ?? "");
       const instructorHas = Boolean(constraint.params[`qualification:${activity.instructorId}`]);
       return instructorHas || requiredQualification === ""
         ? { satisfied: true }
-        : { satisfied: false, violatedType: "required_qualification", reason: "Instructor lacks required qualification (O)" };
+        : {
+            satisfied: false,
+            violatedType: "required_qualification",
+            reason: "Instructor lacks required qualification (O)",
+          };
     }
     case "prohibited_overlap": {
       const prohibitedId = String(constraint.params.prohibitedSubjectId ?? "");
@@ -229,7 +255,11 @@ export function evaluateConstraint(input: EvaluateConstraintInput): ConstraintEv
           intervalsOverlap(a.interval, activity.interval),
       );
       return conflicting
-        ? { satisfied: false, violatedType: "prohibited_overlap", reason: "Prohibited examination overlap (O)" }
+        ? {
+            satisfied: false,
+            violatedType: "prohibited_overlap",
+            reason: "Prohibited examination overlap (O)",
+          }
         : { satisfied: true };
     }
     default:
@@ -271,9 +301,7 @@ export interface TemporalConstraintInput {
   gapMinutes?: number;
 }
 
-export type TemporalConstraintResult =
-  | { ok: true }
-  | { ok: false; reason: string };
+export type TemporalConstraintResult = { ok: true } | { ok: false; reason: string };
 
 export function evaluateTemporalConstraint(
   input: TemporalConstraintInput,
@@ -286,17 +314,29 @@ export function evaluateTemporalConstraint(
 
   switch (input.relation) {
     case "before":
-      return aEnd <= r ? { ok: true } : { ok: false, reason: "Activity must be before reference (T)" };
+      return aEnd <= r
+        ? { ok: true }
+        : { ok: false, reason: "Activity must be before reference (T)" };
     case "after":
-      return a >= rEnd ? { ok: true } : { ok: false, reason: "Activity must be after reference (T)" };
+      return a >= rEnd
+        ? { ok: true }
+        : { ok: false, reason: "Activity must be after reference (T)" };
     case "during":
-      return a >= r && aEnd <= rEnd ? { ok: true } : { ok: false, reason: "Activity must occur during reference (T)" };
+      return a >= r && aEnd <= rEnd
+        ? { ok: true }
+        : { ok: false, reason: "Activity must occur during reference (T)" };
     case "not_during":
-      return a >= rEnd || aEnd <= r ? { ok: true } : { ok: false, reason: "Activity must not occur during reference (T)" };
+      return a >= rEnd || aEnd <= r
+        ? { ok: true }
+        : { ok: false, reason: "Activity must not occur during reference (T)" };
     case "overlap":
-      return a < rEnd && r < aEnd ? { ok: true } : { ok: false, reason: "Activity must overlap reference (T)" };
+      return a < rEnd && r < aEnd
+        ? { ok: true }
+        : { ok: false, reason: "Activity must overlap reference (T)" };
     case "non_overlap":
-      return a >= rEnd || aEnd <= r ? { ok: true } : { ok: false, reason: "Activity must not overlap reference (T)" };
+      return a >= rEnd || aEnd <= r
+        ? { ok: true }
+        : { ok: false, reason: "Activity must not overlap reference (T)" };
     case "minimum_gap": {
       const gap = input.gapMinutes ?? 0;
       const actualGap = a >= rEnd ? a - rEnd : r - aEnd;
@@ -315,4 +355,3 @@ export function evaluateTemporalConstraint(
       return { ok: false, reason: "Unsupported temporal relation" };
   }
 }
-

@@ -34,33 +34,29 @@ export function useSchoolEconomyScore() {
       const termStartStr = termStart.toISOString().split("T")[0];
 
       // Parallel queries for performance
-      const [feesRes, stuAttRes, tchAttRes, studentsRes, gradesRes] =
-        await Promise.all([
-          supabase
-            .from("fees")
-            .select("amount, paid_amount")
-            .eq("school_id", schoolId!),
-          supabase
-            .from("attendance")
-            .select("status")
-            .eq("school_id", schoolId!)
-            .gte("date", termStartStr),
-          supabase
-            .from("attendance_logs")
-            .select("timestamp")
-            .eq("school_id", schoolId!)
-            .gte("timestamp", termStartStr),
-          supabase
-            .from("students")
-            .select("id", { count: "exact", head: true })
-            .eq("school_id", schoolId!)
-            .eq("is_active", true),
-          supabase
-            .from("grades")
-            .select("total_score")
-            .eq("school_id", schoolId!)
-            .gte("created_at", termStartStr),
-        ]);
+      const [feesRes, stuAttRes, tchAttRes, studentsRes, gradesRes] = await Promise.all([
+        supabase.from("fees").select("amount, paid_amount").eq("school_id", schoolId!),
+        supabase
+          .from("attendance")
+          .select("status")
+          .eq("school_id", schoolId!)
+          .gte("date", termStartStr),
+        supabase
+          .from("attendance_logs")
+          .select("timestamp")
+          .eq("school_id", schoolId!)
+          .gte("timestamp", termStartStr),
+        supabase
+          .from("students")
+          .select("id", { count: "exact", head: true })
+          .eq("school_id", schoolId!)
+          .eq("is_active", true),
+        supabase
+          .from("grades")
+          .select("total_score")
+          .eq("school_id", schoolId!)
+          .gte("created_at", termStartStr),
+      ]);
 
       // Fee collection score (weight 25%)
       const fees = feesRes.data ?? [];
@@ -89,9 +85,7 @@ export function useSchoolEconomyScore() {
       // Academic score (weight 15%)
       const gr = gradesRes.data ?? [];
       const avgScore =
-        gr.length > 0
-          ? gr.reduce((s, g) => s + (g.total_score ?? 0), 0) / gr.length
-          : 0;
+        gr.length > 0 ? gr.reduce((s, g) => s + (g.total_score ?? 0), 0) / gr.length : 0;
       const acadScore = Math.round(avgScore * 0.15);
 
       const overall = feeScore + stuScore + tchScore + enrollScore + acadScore;

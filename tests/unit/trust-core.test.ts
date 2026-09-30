@@ -87,9 +87,21 @@ describe("Trust state machine (A.7, BR)", () => {
     const subject = makeSubject({ state: "VERIFIED" });
     const degraded = transitionTrustState(subject, "DEGRADED", "evt-anomaly", "actor-1", NOW);
     if (!degraded.ok) throw new Error("fixture failed");
-    const suspended = transitionTrustState(degraded.subject, "SUSPENDED", "evt-compromise", "actor-1", NOW);
+    const suspended = transitionTrustState(
+      degraded.subject,
+      "SUSPENDED",
+      "evt-compromise",
+      "actor-1",
+      NOW,
+    );
     if (!suspended.ok) throw new Error("fixture failed");
-    const revoked = transitionTrustState(suspended.subject, "REVOKED", "evt-compromise", "actor-1", NOW);
+    const revoked = transitionTrustState(
+      suspended.subject,
+      "REVOKED",
+      "evt-compromise",
+      "actor-1",
+      NOW,
+    );
     expect(revoked.ok).toBe(true);
     if (revoked.ok) {
       expect(revoked.subject.state).toBe("REVOKED");

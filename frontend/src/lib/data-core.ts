@@ -37,12 +37,7 @@ import type { TenantId } from "./tenant-core";
  * ────────────────────────────────────────────────────────────*/
 
 export type DataClassification =
-  | "PUBLIC"
-  | "INTERNAL"
-  | "CONFIDENTIAL"
-  | "SENSITIVE"
-  | "HIGHLY_SENSITIVE"
-  | "REGULATED";
+  "PUBLIC" | "INTERNAL" | "CONFIDENTIAL" | "SENSITIVE" | "HIGHLY_SENSITIVE" | "REGULATED";
 
 export const DATA_CLASSIFICATIONS: readonly DataClassification[] = [
   "PUBLIC",
@@ -148,8 +143,7 @@ export interface DeclareDataOwnershipInput {
 }
 
 export type DeclareDataOwnershipResult =
-  | { ok: true; declaration: DataOwnershipDeclaration }
-  | { ok: false; error: string };
+  { ok: true; declaration: DataOwnershipDeclaration } | { ok: false; error: string };
 
 /** Every important domain must declare its data ownership (F). */
 export function declareDataOwnership(input: DeclareDataOwnershipInput): DeclareDataOwnershipResult {
@@ -212,8 +206,7 @@ export interface RegisterDatasetInput {
 }
 
 export type RegisterDatasetResult =
-  | { ok: true; dataset: DatasetMetadata }
-  | { ok: false; error: string };
+  { ok: true; dataset: DatasetMetadata } | { ok: false; error: string };
 
 export function registerDataset(input: RegisterDatasetInput): RegisterDatasetResult {
   if (input.name.trim() === "") {
@@ -265,8 +258,7 @@ export interface CreateDatasetVersionInput {
 }
 
 export type CreateDatasetVersionResult =
-  | { ok: true; version: DatasetVersionRecord }
-  | { ok: false; error: string };
+  { ok: true; version: DatasetVersionRecord } | { ok: false; error: string };
 
 /** Data versioning (AP): important datasets support versions. */
 export function createDatasetVersion(input: CreateDatasetVersionInput): CreateDatasetVersionResult {
@@ -308,8 +300,7 @@ export interface CreateTemporalRecordInput {
 }
 
 export type CreateTemporalRecordResult =
-  | { ok: true; record: TemporalRecord }
-  | { ok: false; error: string };
+  { ok: true; record: TemporalRecord } | { ok: false; error: string };
 
 /** Temporal data (AQ): historical truth is preserved as versioned records;
  * current-value changes never overwrite earlier records. */

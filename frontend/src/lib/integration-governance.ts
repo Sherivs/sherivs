@@ -54,9 +54,19 @@ export function externalIdMappingId(raw: string): ExternalIdMappingId {
 
 export type IntegrationRiskLevel = "low" | "medium" | "high" | "critical";
 
-export const INTEGRATION_RISK_LEVELS: readonly IntegrationRiskLevel[] = ["low", "medium", "high", "critical"] as const;
+export const INTEGRATION_RISK_LEVELS: readonly IntegrationRiskLevel[] = [
+  "low",
+  "medium",
+  "high",
+  "critical",
+] as const;
 
-export const INTEGRATION_RISK_RANK: Record<IntegrationRiskLevel, number> = { low: 0, medium: 1, high: 2, critical: 3 };
+export const INTEGRATION_RISK_RANK: Record<IntegrationRiskLevel, number> = {
+  low: 0,
+  medium: 1,
+  high: 2,
+  critical: 3,
+};
 
 export interface IntegrationGovernanceRecord {
   integrationRef: string;
@@ -111,18 +121,39 @@ export function createIntegrationGovernanceRecord(input: {
 
 /** Section CV: financial, identity, government, and sensitive integrations are at least high risk. */
 export function classifyIntegrationRisk(input: {
-  domain: "financial" | "identity" | "government" | "sensitive" | "communication" | "productivity" | "other";
+  domain:
+    | "financial"
+    | "identity"
+    | "government"
+    | "sensitive"
+    | "communication"
+    | "productivity"
+    | "other";
   writesAuthoritativeData: boolean;
 }): IntegrationRiskLevel {
-  if (input.domain === "financial" || input.domain === "identity" || input.domain === "government") return "high";
+  if (input.domain === "financial" || input.domain === "identity" || input.domain === "government")
+    return "high";
   if (input.domain === "sensitive") return "high";
   if (input.writesAuthoritativeData) return "medium";
   return "low";
 }
 
-export type ApprovalStep = "developer" | "security_review" | "data_review" | "architecture_review" | "owner_approval" | "production";
+export type ApprovalStep =
+  | "developer"
+  | "security_review"
+  | "data_review"
+  | "architecture_review"
+  | "owner_approval"
+  | "production";
 
-export const APPROVAL_STEPS: readonly ApprovalStep[] = ["developer", "security_review", "data_review", "architecture_review", "owner_approval", "production"] as const;
+export const APPROVAL_STEPS: readonly ApprovalStep[] = [
+  "developer",
+  "security_review",
+  "data_review",
+  "architecture_review",
+  "owner_approval",
+  "production",
+] as const;
 
 export interface IntegrationApproval {
   id: IntegrationApprovalId;
@@ -135,9 +166,17 @@ export interface IntegrationApproval {
  * Approval workflow (CW): high-risk integrations advance through Security Review,
  * Data Review, Architecture Review, and Owner Approval before production.
  */
-export function canEnterProduction(approval: IntegrationApproval, riskLevel: IntegrationRiskLevel): boolean {
+export function canEnterProduction(
+  approval: IntegrationApproval,
+  riskLevel: IntegrationRiskLevel,
+): boolean {
   if (riskLevel === "low" || riskLevel === "medium") return true;
-  const required: ApprovalStep[] = ["security_review", "data_review", "architecture_review", "owner_approval"];
+  const required: ApprovalStep[] = [
+    "security_review",
+    "data_review",
+    "architecture_review",
+    "owner_approval",
+  ];
   return required.every((s) => approval.stepsCompleted.includes(s));
 }
 
@@ -145,9 +184,17 @@ export function canEnterProduction(approval: IntegrationApproval, riskLevel: Int
  * Provider status (CZ) + schema drift (DB) + drift response (DC)
  * ────────────────────────────────────────────────────────────*/
 
-export type ProviderStatus = "operational" | "degraded" | "maintenance" | "outage" | "api_changed" | "deprecated";
+export type ProviderStatus =
+  "operational" | "degraded" | "maintenance" | "outage" | "api_changed" | "deprecated";
 
-export const PROVIDER_STATUSES: readonly ProviderStatus[] = ["operational", "degraded", "maintenance", "outage", "api_changed", "deprecated"] as const;
+export const PROVIDER_STATUSES: readonly ProviderStatus[] = [
+  "operational",
+  "degraded",
+  "maintenance",
+  "outage",
+  "api_changed",
+  "deprecated",
+] as const;
 
 export interface ProviderRecord {
   providerRef: string;
@@ -209,7 +256,12 @@ export function pauseIntegration(input: {
   pausedByRef: string;
   now?: string;
 }): IntegrationPauseRecord {
-  return { integrationRef: input.integrationRef, paused: true, pausedAt: input.now ?? new Date().toISOString(), pausedByRef: input.pausedByRef };
+  return {
+    integrationRef: input.integrationRef,
+    paused: true,
+    pausedAt: input.now ?? new Date().toISOString(),
+    pausedByRef: input.pausedByRef,
+  };
 }
 
 export function resumeIntegration(record: IntegrationPauseRecord): IntegrationPauseRecord {
@@ -250,7 +302,9 @@ export const AFRICAN_CONNECTIVITY_DEFAULTS: ConnectivityProfile = {
  * may be queued until the provider becomes available (DK).
  */
 export function requiresStoreAndForward(profile: ConnectivityProfile): boolean {
-  return profile.unreliableConnectivity || profile.intermittentMobileNetworks || profile.regionalOutages;
+  return (
+    profile.unreliableConnectivity || profile.intermittentMobileNetworks || profile.regionalOutages
+  );
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -271,11 +325,16 @@ export function normalizeTimestamp(input: {
 }
 
 /** Currency normalization (DS): preserve original currency + exchange context. */
-export function normalizeCurrency(input: {
+export function normalizeCurrency(input: { amountMinorUnits: number; currency: string }): {
   amountMinorUnits: number;
   currency: string;
-}): { amountMinorUnits: number; currency: string; exchangeContextRequired: boolean } {
-  return { amountMinorUnits: input.amountMinorUnits, currency: input.currency, exchangeContextRequired: input.currency !== "NGN" };
+  exchangeContextRequired: boolean;
+} {
+  return {
+    amountMinorUnits: input.amountMinorUnits,
+    currency: input.currency,
+    exchangeContextRequired: input.currency !== "NGN",
+  };
 }
 
 export interface ExternalIdMapping {
@@ -379,6 +438,3 @@ export function publishIntegrationEvent(input: {
     metadata: input.metadata ?? {},
   };
 }
-
-
-

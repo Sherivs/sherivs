@@ -9,11 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 type StudentRow = {
   id: string;
@@ -59,15 +55,12 @@ export function StudentSelect({
         id: s.id as string,
         admission_number: (s.admission_number as string) ?? null,
         user_id: (s.user_id as string) ?? null,
-        full_name: s.user_id ? nameById.get(s.user_id as string) ?? null : null,
+        full_name: s.user_id ? (nameById.get(s.user_id as string) ?? null) : null,
       }));
     },
   });
 
-  const selected = useMemo(
-    () => (data ?? []).find((s) => s.id === value) ?? null,
-    [data, value],
-  );
+  const selected = useMemo(() => (data ?? []).find((s) => s.id === value) ?? null, [data, value]);
 
   const filtered = useMemo(() => {
     const list = data ?? [];
@@ -126,7 +119,11 @@ export function StudentSelect({
               <button
                 key={s.id}
                 type="button"
-                onClick={() => { onChange(s.id); setOpen(false); setQ(""); }}
+                onClick={() => {
+                  onChange(s.id);
+                  setOpen(false);
+                  setQ("");
+                }}
                 className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-accent"
               >
                 <span className="truncate">

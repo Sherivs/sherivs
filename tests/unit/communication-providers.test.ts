@@ -166,9 +166,9 @@ describe("Phase 10 — the provider lifecycle is a machine, not a label", () => 
   });
 
   it("treats RETIRED as terminal", () => {
-    expect(
-      PROVIDER_LIFECYCLE_STATES.some((to) => isProviderTransitionAllowed("RETIRED", to)),
-    ).toBe(false);
+    expect(PROVIDER_LIFECYCLE_STATES.some((to) => isProviderTransitionAllowed("RETIRED", to))).toBe(
+      false,
+    );
   });
 
   it("lets a working provider be suspended, and a suspended one be restored", () => {
@@ -390,7 +390,9 @@ describe("Phase 10 — the failover ladder walks down tiers, not sideways", () =
 
     for (const id of ids) {
       const entry = PROVIDER_CATALOGUE.find((candidate) => candidate.id === id);
-      expect(entry?.channels, `${id} must carry voice to be in the voice ladder`).toContain("voice");
+      expect(entry?.channels, `${id} must carry voice to be in the voice ladder`).toContain(
+        "voice",
+      );
     }
   });
 

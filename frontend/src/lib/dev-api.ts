@@ -50,7 +50,14 @@ export function dataContractId(raw: string): DataContractId {
 
 export type ApiStyle = "rest" | "graphql" | "event" | "websocket" | "streaming" | "internal_rpc";
 
-export const API_STYLES: readonly ApiStyle[] = ["rest", "graphql", "event", "websocket", "streaming", "internal_rpc"] as const;
+export const API_STYLES: readonly ApiStyle[] = [
+  "rest",
+  "graphql",
+  "event",
+  "websocket",
+  "streaming",
+  "internal_rpc",
+] as const;
 
 /* ─────────────────────────────────────────────────────────────
  * API catalog + documentation (Sections 22, 23)
@@ -58,7 +65,13 @@ export const API_STYLES: readonly ApiStyle[] = ["rest", "graphql", "event", "web
 
 export type ApiLifecycleStatus = "proposed" | "beta" | "stable" | "deprecated" | "sunset";
 
-export const API_LIFECYCLE_STATUSES: readonly ApiLifecycleStatus[] = ["proposed", "beta", "stable", "deprecated", "sunset"] as const;
+export const API_LIFECYCLE_STATUSES: readonly ApiLifecycleStatus[] = [
+  "proposed",
+  "beta",
+  "stable",
+  "deprecated",
+  "sunset",
+] as const;
 
 export interface ApiEndpoint {
   id: ApiEndpointId;
@@ -159,8 +172,10 @@ export function canApplyBreakingApiChange(input: {
   if (input.change.kind !== "breaking") {
     return { allowed: true, reasons };
   }
-  if (!input.migrationPlanRef) reasons.push("Breaking change requires a migration plan (Section 25)");
-  if (!input.previousVersionSupported) reasons.push("Previous API version must remain supported during migration");
+  if (!input.migrationPlanRef)
+    reasons.push("Breaking change requires a migration plan (Section 25)");
+  if (!input.previousVersionSupported)
+    reasons.push("Previous API version must remain supported during migration");
   if (!input.deprecated) reasons.push("API must be deprecated before breaking change");
   return { allowed: reasons.length === 0, reasons };
 }
@@ -291,6 +306,3 @@ export function createDataContract(input: {
     sensitivity: input.sensitivity ?? "TENANT_INTERNAL",
   };
 }
-
-
-

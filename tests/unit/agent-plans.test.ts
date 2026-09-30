@@ -48,7 +48,14 @@ function step(overrides: Partial<PlanStep> = {}): PlanStep {
 
 describe("createAgentPlan", () => {
   it("creates a draft plan with at least one step", () => {
-    const result = createAgentPlan(TASK_A, AGENT_A, "Summarize attendance", [step()], NO_BUDGET, NOW);
+    const result = createAgentPlan(
+      TASK_A,
+      AGENT_A,
+      "Summarize attendance",
+      [step()],
+      NO_BUDGET,
+      NOW,
+    );
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.plan.status).toBe("draft");

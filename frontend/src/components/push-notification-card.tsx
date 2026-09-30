@@ -13,7 +13,10 @@ import { sendTestPush } from "@/lib/push.functions";
 export function PushNotificationCard() {
   const { profile } = useApp();
   const userId = profile?.id;
-  const [support, setSupport] = useState(() => ({ supported: false, permission: "default" as string }));
+  const [support, setSupport] = useState(() => ({
+    supported: false,
+    permission: "default" as string,
+  }));
   const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
@@ -34,7 +37,8 @@ export function PushNotificationCard() {
       setSupport((s) => ({ ...s, permission: "granted" }));
       toast.success("Push notifications enabled on this device");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not enable push notifications"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not enable push notifications"),
   });
 
   const disable = useMutation({
@@ -46,7 +50,8 @@ export function PushNotificationCard() {
       setEnabled(false);
       toast.success("Push notifications turned off");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not turn off push notifications"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not turn off push notifications"),
   });
 
   const testFn = useServerFn(sendTestPush);
@@ -63,7 +68,8 @@ export function PushNotificationCard() {
       }
       toast.success("Test notification sent to your device");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not send a test notification"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not send a test notification"),
   });
 
   return (

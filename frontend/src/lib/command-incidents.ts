@@ -70,9 +70,17 @@ export const INCIDENT_KINDS: readonly IncidentKind[] = [
   "operational_emergency",
 ] as const;
 
-export type IncidentState = "DETECTED" | "ASSESSED" | "RESPONDING" | "MITIGATED" | "RESOLVED" | "CLOSED";
+export type IncidentState =
+  "DETECTED" | "ASSESSED" | "RESPONDING" | "MITIGATED" | "RESOLVED" | "CLOSED";
 
-export const INCIDENT_STATES: readonly IncidentState[] = ["DETECTED", "ASSESSED", "RESPONDING", "MITIGATED", "RESOLVED", "CLOSED"] as const;
+export const INCIDENT_STATES: readonly IncidentState[] = [
+  "DETECTED",
+  "ASSESSED",
+  "RESPONDING",
+  "MITIGATED",
+  "RESOLVED",
+  "CLOSED",
+] as const;
 
 const INCIDENT_TRANSITIONS: Readonly<Record<IncidentState, readonly IncidentState[]>> = {
   DETECTED: ["ASSESSED", "RESOLVED", "CLOSED"],
@@ -144,14 +152,27 @@ export function assignIncidentCommander(incident: Incident, commander: string): 
 }
 
 export function addIncidentResponder(incident: Incident, responder: string): Incident {
-  return incident.responders.includes(responder) ? incident : { ...incident, responders: [...incident.responders, responder] };
+  return incident.responders.includes(responder)
+    ? incident
+    : { ...incident, responders: [...incident.responders, responder] };
 }
 
-export function addIncidentNote(incident: Incident, noteId: string, author: string, at: string, content: string): Incident {
+export function addIncidentNote(
+  incident: Incident,
+  noteId: string,
+  author: string,
+  at: string,
+  content: string,
+): Incident {
   return { ...incident, notes: [...incident.notes, { noteId, author, at, content }] };
 }
 
-export function addIncidentEvidence(incident: Incident, evidenceId: string, source: string, reference: string): Incident {
+export function addIncidentEvidence(
+  incident: Incident,
+  evidenceId: string,
+  source: string,
+  reference: string,
+): Incident {
   return { ...incident, evidence: [...incident.evidence, { evidenceId, source, reference }] };
 }
 
@@ -166,7 +187,9 @@ export interface IncidentPostmortem {
   correctiveActions: string[];
 }
 
-export function createPostmortem(input: Omit<IncidentPostmortem, "rootCause"> & { rootCause?: string | null }): IncidentPostmortem {
+export function createPostmortem(
+  input: Omit<IncidentPostmortem, "rootCause"> & { rootCause?: string | null },
+): IncidentPostmortem {
   return { ...input, rootCause: input.rootCause ?? null };
 }
 
@@ -174,9 +197,17 @@ export function createPostmortem(input: Omit<IncidentPostmortem, "rootCause"> & 
  * Decision centre (AU, AV, AW, AX, AY)
  * ────────────────────────────────────────────────────────────*/
 
-export type CommandDecisionState = "PENDING" | "APPROVED" | "REJECTED" | "DEFERRED" | "ESCALATED" | "EXPIRED";
+export type CommandDecisionState =
+  "PENDING" | "APPROVED" | "REJECTED" | "DEFERRED" | "ESCALATED" | "EXPIRED";
 
-export const COMMAND_DECISION_STATES: readonly CommandDecisionState[] = ["PENDING", "APPROVED", "REJECTED", "DEFERRED", "ESCALATED", "EXPIRED"] as const;
+export const COMMAND_DECISION_STATES: readonly CommandDecisionState[] = [
+  "PENDING",
+  "APPROVED",
+  "REJECTED",
+  "DEFERRED",
+  "ESCALATED",
+  "EXPIRED",
+] as const;
 
 export interface CommandDecision {
   decisionId: string;
@@ -209,7 +240,8 @@ export interface CreateCommandDecisionInput {
   owner: string;
 }
 
-export type CreateCommandDecisionResult = { ok: true; decision: CommandDecision } | { ok: false; error: string };
+export type CreateCommandDecisionResult =
+  { ok: true; decision: CommandDecision } | { ok: false; error: string };
 
 /**
  * Decision card (AV): a decision shows question, context, evidence,
@@ -217,7 +249,9 @@ export type CreateCommandDecisionResult = { ok: true; decision: CommandDecision 
  * Command Centre coordinates decisions but does not redefine Phase 18
  * analytical evidence (AX).
  */
-export function createCommandDecision(input: CreateCommandDecisionInput): CreateCommandDecisionResult {
+export function createCommandDecision(
+  input: CreateCommandDecisionInput,
+): CreateCommandDecisionResult {
   if (input.question.trim() === "" || input.owner.trim() === "") {
     return { ok: false, error: "Decision requires a question and owner (AV)" };
   }
@@ -245,7 +279,12 @@ export function createCommandDecision(input: CreateCommandDecisionInput): Create
   };
 }
 
-export function decideCommandDecision(decision: CommandDecision, outcome: CommandDecisionState, actor: string, at: string): CommandDecision {
+export function decideCommandDecision(
+  decision: CommandDecision,
+  outcome: CommandDecisionState,
+  actor: string,
+  at: string,
+): CommandDecision {
   return { ...decision, state: outcome, decidedBy: actor, decidedAt: at };
 }
 
@@ -257,9 +296,26 @@ export function isCommandDecisionExpired(decision: CommandDecision, now: string)
  * Action centre and automation supervision (BA, BB, BC, BD)
  * ────────────────────────────────────────────────────────────*/
 
-export type CommandActionState = "AWAITING_AUTHORIZATION" | "AWAITING_EXECUTION" | "EXECUTING" | "SUCCEEDED" | "FAILED" | "UNKNOWN" | "REJECTED" | "CANCELLED";
+export type CommandActionState =
+  | "AWAITING_AUTHORIZATION"
+  | "AWAITING_EXECUTION"
+  | "EXECUTING"
+  | "SUCCEEDED"
+  | "FAILED"
+  | "UNKNOWN"
+  | "REJECTED"
+  | "CANCELLED";
 
-export const COMMAND_ACTION_STATES: readonly CommandActionState[] = ["AWAITING_AUTHORIZATION", "AWAITING_EXECUTION", "EXECUTING", "SUCCEEDED", "FAILED", "UNKNOWN", "REJECTED", "CANCELLED"] as const;
+export const COMMAND_ACTION_STATES: readonly CommandActionState[] = [
+  "AWAITING_AUTHORIZATION",
+  "AWAITING_EXECUTION",
+  "EXECUTING",
+  "SUCCEEDED",
+  "FAILED",
+  "UNKNOWN",
+  "REJECTED",
+  "CANCELLED",
+] as const;
 
 export interface CommandAction {
   actionId: string;
@@ -289,11 +345,21 @@ export function isCommandActionStateUnknown(action: CommandAction): boolean {
 
 export type SituationSeverity = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 
-export const SITUATION_SEVERITIES: readonly SituationSeverity[] = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
+export const SITUATION_SEVERITIES: readonly SituationSeverity[] = [
+  "LOW",
+  "MEDIUM",
+  "HIGH",
+  "CRITICAL",
+] as const;
 
 export type SituationState = "OPEN" | "COORDINATING" | "MONITORING" | "CLOSED";
 
-export const SITUATION_STATES: readonly SituationState[] = ["OPEN", "COORDINATING", "MONITORING", "CLOSED"] as const;
+export const SITUATION_STATES: readonly SituationState[] = [
+  "OPEN",
+  "COORDINATING",
+  "MONITORING",
+  "CLOSED",
+] as const;
 
 export interface Situation {
   situationId: string;
@@ -328,8 +394,15 @@ export function createSituation(
   };
 }
 
-export function addToSituation(situation: Situation, field: "alertIds" | "incidentIds" | "decisionIds", id: string): Situation {
-  return { ...situation, [field]: situation[field].includes(id) ? situation[field] : [...situation[field], id] };
+export function addToSituation(
+  situation: Situation,
+  field: "alertIds" | "incidentIds" | "decisionIds",
+  id: string,
+): Situation {
+  return {
+    ...situation,
+    [field]: situation[field].includes(id) ? situation[field] : [...situation[field], id],
+  };
 }
 
 export interface CommandAnnotation {
@@ -341,8 +414,13 @@ export interface CommandAnnotation {
   version: number;
 }
 
-export function createCommandAnnotation(input: Omit<CommandAnnotation, "annotationId">): CommandAnnotation {
-  return { ...input, annotationId: `ann-${input.target}-${input.at}-${Math.random().toString(36).slice(2, 8)}` };
+export function createCommandAnnotation(
+  input: Omit<CommandAnnotation, "annotationId">,
+): CommandAnnotation {
+  return {
+    ...input,
+    annotationId: `ann-${input.target}-${input.at}-${Math.random().toString(36).slice(2, 8)}`,
+  };
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -359,7 +437,10 @@ export interface OperatorHandoff {
 }
 
 export function createOperatorHandoff(input: Omit<OperatorHandoff, "handoffId">): OperatorHandoff {
-  return { ...input, handoffId: `handoff-${input.scopeRef}-${input.at}-${Math.random().toString(36).slice(2, 8)}` };
+  return {
+    ...input,
+    handoffId: `handoff-${input.scopeRef}-${input.at}-${Math.random().toString(36).slice(2, 8)}`,
+  };
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -376,7 +457,10 @@ export interface EscalationMatrixEntry {
 }
 
 /** Escalation policies must be externally governed and versioned (CT). */
-export function isEscalationMatrixPolicyCurrent(entry: EscalationMatrixEntry, currentVersion: number): boolean {
+export function isEscalationMatrixPolicyCurrent(
+  entry: EscalationMatrixEntry,
+  currentVersion: number,
+): boolean {
   return entry.policyVersion === currentVersion;
 }
 
@@ -384,7 +468,8 @@ export function isEscalationMatrixPolicyCurrent(entry: EscalationMatrixEntry, cu
  * Approvals, four-eyes and segregation of duties (CU, CV, CW)
  * ────────────────────────────────────────────────────────────*/
 
-export type ApprovalDecision = "approve" | "reject" | "defer" | "request_more_evidence" | "escalate";
+export type ApprovalDecision =
+  "approve" | "reject" | "defer" | "request_more_evidence" | "escalate";
 
 export interface CommandApproval {
   approvalId: string;
@@ -407,11 +492,17 @@ export function evaluateCommandApproval(input: {
   if (input.approval.approvals.some((a) => a.decision !== "approve")) {
     return { approved: false, reason: "Not all approvers approved (CU)" };
   }
-  if (input.segregationOfDuties && input.approval.approvals.some((a) => a.approver === input.approval.requestedBy)) {
+  if (
+    input.segregationOfDuties &&
+    input.approval.approvals.some((a) => a.approver === input.approval.requestedBy)
+  ) {
     return { approved: false, reason: "Proposer cannot approve — segregation of duties (CW)" };
   }
   if (distinct.size < input.approval.requiredApprovers) {
-    return { approved: false, reason: `Requires ${input.approval.requiredApprovers} distinct approvers (CV)` };
+    return {
+      approved: false,
+      reason: `Requires ${input.approval.requiredApprovers} distinct approvers (CV)`,
+    };
   }
   return { approved: true, reason: "Approval requirements satisfied (CV, CW)" };
 }
@@ -449,7 +540,13 @@ export function activateEmergencyMode(input: {
   }
   return {
     ok: true,
-    state: { active: true, activatedBy: input.activatedBy, activatedAt: input.at, scope: input.scope, justified: true },
+    state: {
+      active: true,
+      activatedBy: input.activatedBy,
+      activatedAt: input.at,
+      scope: input.scope,
+      justified: true,
+    },
   };
 }
 

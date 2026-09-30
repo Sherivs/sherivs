@@ -27,7 +27,13 @@ type GradeRow = {
   is_published: boolean | null;
 };
 
-type CellState = { ca: string; exam: string; published: boolean; dirty: boolean; savedId: string | null };
+type CellState = {
+  ca: string;
+  exam: string;
+  published: boolean;
+  dirty: boolean;
+  savedId: string | null;
+};
 
 function clampScore(v: string): number | null {
   if (v === "" || v == null) return null;
@@ -73,17 +79,23 @@ function GradebookPage() {
         .select("id, admission_number, user_id")
         .eq("class_id", classId);
       if (error) throw new Error(error.message);
-      const list = (data ?? []) as { id: string; admission_number: string | null; user_id: string | null }[];
+      const list = (data ?? []) as {
+        id: string;
+        admission_number: string | null;
+        user_id: string | null;
+      }[];
       const userIds = list.map((s) => s.user_id).filter(Boolean) as string[];
       const names = userIds.length
         ? await supabase.from("users").select("id, full_name").in("id", userIds)
         : { data: [] as { id: string; full_name: string }[], error: null };
       const nameOf = new Map((names.data ?? []).map((u) => [u.id, u.full_name]));
-      return list.map((s) => ({
-        id: s.id,
-        admission_number: s.admission_number,
-        full_name: (s.user_id && nameOf.get(s.user_id)) || "(unnamed)",
-      })).sort((a, b) => a.full_name.localeCompare(b.full_name));
+      return list
+        .map((s) => ({
+          id: s.id,
+          admission_number: s.admission_number,
+          full_name: (s.user_id && nameOf.get(s.user_id)) || "(unnamed)",
+        }))
+        .sort((a, b) => a.full_name.localeCompare(b.full_name));
     },
   });
 
@@ -187,7 +199,10 @@ function GradebookPage() {
       }
     >
       <div className="mb-2 flex flex-wrap gap-2 text-xs">
-        <Link to="/teacher/grades" className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40">
+        <Link
+          to="/teacher/grades"
+          className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40"
+        >
           Single-entry mode
         </Link>
       </div>
@@ -200,11 +215,19 @@ function GradebookPage() {
             onChange={(e) => setClassId(e.target.value)}
           >
             <option value="">Select class…</option>
-            {(classes.data ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            {(classes.data ?? []).map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
           </select>
         </Field>
         <Field label="Subject">
-          <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g. Mathematics" />
+          <Input
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            placeholder="e.g. Mathematics"
+          />
         </Field>
         <Field label="Term">
           <select
@@ -223,115 +246,167 @@ function GradebookPage() {
       </div>
 
       {!ready ? (
-        <EmptyCard title="Pick class, subject, term and year" body="Choose the four fields above to load the gradebook." />
+        <EmptyCard
+          title="Pick class, subject, term and year"
+          body="Choose the four fields above to load the gradebook."
+        />
       ) : students.isLoading || existing.isLoading ? (
-        <div className="uos-card p-8 text-center text-sm text-muted-foreground">Loading students…</div>
+        <div className="uos-card p-8 text-center text-sm text-muted-foreground">
+          Loading students…
+        </div>
       ) : (students.data ?? []).length === 0 ? (
-        <EmptyCard title="No students in this class" body="Add students to this class from the Admin → Students page." />
+        <EmptyCard
+          title="No students in this class"
+          body="Add students to this class from the Admin → Students page."
+        />
       ) : (
         <>
-        {/* Mobile: stacked cards */}
-        <div className="flex flex-col gap-2 sm:hidden">
-          {(students.data ?? []).map((s) => {
-            const c = cells[s.id] ?? { ca: "", exam: "", published: false, dirty: false, savedId: null };
-            return (
-              <div key={s.id} className="uos-card min-w-0 p-3">
-                <div className="flex min-w-0 items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium" title={s.full_name}>{s.full_name}</p>
-                    <p className="font-mono text-[11px] text-muted-foreground">{s.admission_number ?? "—"}</p>
+          {/* Mobile: stacked cards */}
+          <div className="flex flex-col gap-2 sm:hidden">
+            {(students.data ?? []).map((s) => {
+              const c = cells[s.id] ?? {
+                ca: "",
+                exam: "",
+                published: false,
+                dirty: false,
+                savedId: null,
+              };
+              return (
+                <div key={s.id} className="uos-card min-w-0 p-3">
+                  <div className="flex min-w-0 items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium" title={s.full_name}>
+                        {s.full_name}
+                      </p>
+                      <p className="font-mono text-[11px] text-muted-foreground">
+                        {s.admission_number ?? "—"}
+                      </p>
+                    </div>
+                    {c.dirty && (
+                      <span className="shrink-0 text-[10px] uppercase tracking-wider text-amber-300">
+                        unsaved
+                      </span>
+                    )}
                   </div>
-                  {c.dirty && <span className="shrink-0 text-[10px] uppercase tracking-wider text-amber-300">unsaved</span>}
-                </div>
-                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">CA</Label>
-                    <Input
-                      type="number" min={0} max={100} step="0.1" inputMode="decimal"
-                      value={c.ca}
-                      onChange={(e) => update(s.id, { ca: e.target.value })}
-                      className="h-11"
-                      aria-label={`CA score for ${s.full_name}`}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">Exam</Label>
-                    <Input
-                      type="number" min={0} max={100} step="0.1" inputMode="decimal"
-                      value={c.exam}
-                      onChange={(e) => update(s.id, { exam: e.target.value })}
-                      className="h-11"
-                      aria-label={`Exam score for ${s.full_name}`}
-                    />
-                  </div>
-                </div>
-                <label className="mt-3 flex min-h-11 items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={c.published}
-                    onChange={(e) => update(s.id, { published: e.target.checked })}
-                    className="size-5 accent-primary"
-                  />
-                  Publish to student &amp; parent
-                </label>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Desktop: table */}
-        <div className="uos-card hidden overflow-x-auto sm:block">
-          <table className="w-full min-w-[640px] text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
-                <th className="p-3">Student</th>
-                <th className="p-3 w-24">Adm. no.</th>
-                <th className="p-3 w-28">CA (0-100)</th>
-                <th className="p-3 w-28">Exam (0-100)</th>
-                <th className="p-3 w-24 text-center">Publish</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(students.data ?? []).map((s) => {
-                const c = cells[s.id] ?? { ca: "", exam: "", published: false, dirty: false, savedId: null };
-                return (
-                  <tr key={s.id} className="border-b border-border/40">
-                    <td className="p-3 font-medium">
-                      {s.full_name}
-                      {c.dirty && <span className="ml-2 text-[10px] uppercase tracking-wider text-amber-300">unsaved</span>}
-                    </td>
-                    <td className="p-3 text-muted-foreground font-mono text-xs">{s.admission_number ?? "—"}</td>
-                    <td className="p-3">
+                  <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                        CA
+                      </Label>
                       <Input
-                        type="number" min={0} max={100} step="0.1"
+                        type="number"
+                        min={0}
+                        max={100}
+                        step="0.1"
+                        inputMode="decimal"
                         value={c.ca}
                         onChange={(e) => update(s.id, { ca: e.target.value })}
-                        className="h-8"
+                        className="h-11"
+                        aria-label={`CA score for ${s.full_name}`}
                       />
-                    </td>
-                    <td className="p-3">
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                        Exam
+                      </Label>
                       <Input
-                        type="number" min={0} max={100} step="0.1"
+                        type="number"
+                        min={0}
+                        max={100}
+                        step="0.1"
+                        inputMode="decimal"
                         value={c.exam}
                         onChange={(e) => update(s.id, { exam: e.target.value })}
-                        className="h-8"
+                        className="h-11"
+                        aria-label={`Exam score for ${s.full_name}`}
                       />
-                    </td>
-                    <td className="p-3 text-center">
-                      <input
-                        type="checkbox"
-                        checked={c.published}
-                        onChange={(e) => update(s.id, { published: e.target.checked })}
-                        className="size-4 accent-primary"
-                        aria-label={`Publish grade for ${s.full_name}`}
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                    </div>
+                  </div>
+                  <label className="mt-3 flex min-h-11 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={c.published}
+                      onChange={(e) => update(s.id, { published: e.target.checked })}
+                      className="size-5 accent-primary"
+                    />
+                    Publish to student &amp; parent
+                  </label>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop: table */}
+          <div className="uos-card hidden overflow-x-auto sm:block">
+            <table className="w-full min-w-[640px] text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
+                  <th className="p-3">Student</th>
+                  <th className="p-3 w-24">Adm. no.</th>
+                  <th className="p-3 w-28">CA (0-100)</th>
+                  <th className="p-3 w-28">Exam (0-100)</th>
+                  <th className="p-3 w-24 text-center">Publish</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(students.data ?? []).map((s) => {
+                  const c = cells[s.id] ?? {
+                    ca: "",
+                    exam: "",
+                    published: false,
+                    dirty: false,
+                    savedId: null,
+                  };
+                  return (
+                    <tr key={s.id} className="border-b border-border/40">
+                      <td className="p-3 font-medium">
+                        {s.full_name}
+                        {c.dirty && (
+                          <span className="ml-2 text-[10px] uppercase tracking-wider text-amber-300">
+                            unsaved
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-3 text-muted-foreground font-mono text-xs">
+                        {s.admission_number ?? "—"}
+                      </td>
+                      <td className="p-3">
+                        <Input
+                          type="number"
+                          min={0}
+                          max={100}
+                          step="0.1"
+                          value={c.ca}
+                          onChange={(e) => update(s.id, { ca: e.target.value })}
+                          className="h-8"
+                        />
+                      </td>
+                      <td className="p-3">
+                        <Input
+                          type="number"
+                          min={0}
+                          max={100}
+                          step="0.1"
+                          value={c.exam}
+                          onChange={(e) => update(s.id, { exam: e.target.value })}
+                          className="h-8"
+                        />
+                      </td>
+                      <td className="p-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={c.published}
+                          onChange={(e) => update(s.id, { published: e.target.checked })}
+                          className="size-4 accent-primary"
+                          aria-label={`Publish grade for ${s.full_name}`}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </>
       )}
     </PortalPage>

@@ -144,7 +144,9 @@ check(
 check(
   "structure:composition-covers-providers",
   PROVIDER_ROOTS.every((provider) =>
-    read("infrastructure/terraform/environments/production/main.tf").includes(`module "${provider}"`),
+    read("infrastructure/terraform/environments/production/main.tf").includes(
+      `module "${provider}"`,
+    ),
   ),
   "the production composition consumes every provider root",
   "A",
@@ -185,7 +187,10 @@ check(
 
 const sensitiveOffenders = [];
 for (const ref of infraFiles.filter((file) => file.endsWith(".tf"))) {
-  const blocks = infraText.get(ref).split(/\nvariable\s+"/).slice(1);
+  const blocks = infraText
+    .get(ref)
+    .split(/\nvariable\s+"/)
+    .slice(1);
   for (const block of blocks) {
     const name = block.slice(0, block.indexOf('"'));
     const isStringType = /type\s*=\s*string/.test(block);
@@ -220,7 +225,6 @@ check(
   "workloads consume secrets through remote references, never inline values",
   "B",
 );
-
 
 /* ── C. State hygiene ────────────────────────────────────────────────────── */
 
@@ -361,7 +365,18 @@ const referencedRegions = new Set([
     .filter((ref) => ref.endsWith(".tf") || ref.endsWith(".tfvars.example"))
     .flatMap((ref) => [...infraText.get(ref).matchAll(/"([a-z]{2,4}-?[a-z0-9-]*|[a-z]{3})"/g)])
     .map((m) => m[1])
-    .filter((value) => ["fsn1", "nbg1", "jnb", "ams", "sgp", "eu-frankfurt-1", "uk-london-1", "af-johannesburg-1"].includes(value)),
+    .filter((value) =>
+      [
+        "fsn1",
+        "nbg1",
+        "jnb",
+        "ams",
+        "sgp",
+        "eu-frankfurt-1",
+        "uk-london-1",
+        "af-johannesburg-1",
+      ].includes(value),
+    ),
 ]);
 const undeclared = [...referencedRegions].filter((value) => !declaredRegions.has(value));
 check(
@@ -373,12 +388,12 @@ check(
   "E",
 );
 
-
-
 /* ── F. Cluster laws ─────────────────────────────────────────────────────── */
 
 const namespaceText = read("infrastructure/kubernetes/namespaces.yaml");
-const declaredNamespaces = [...namespaceText.matchAll(/name:\s+(coregrid-[a-z]+)/g)].map((m) => m[1]);
+const declaredNamespaces = [...namespaceText.matchAll(/name:\s+(coregrid-[a-z]+)/g)].map(
+  (m) => m[1],
+);
 const uniqueNamespaces = [...new Set(declaredNamespaces)].sort();
 check(
   "cluster:exact-namespace-set",
@@ -434,12 +449,13 @@ check(
 check(
   "cluster:no-implicit-tokens",
   ["coregrid-agent", "coregrid-runtime", "coregrid-sandbox"].every((name) =>
-    new RegExp(`name:\\s*${name}[\\s\\S]{0,120}automountServiceAccountToken:\\s*false`).test(rbacText),
+    new RegExp(`name:\\s*${name}[\\s\\S]{0,120}automountServiceAccountToken:\\s*false`).test(
+      rbacText,
+    ),
   ),
   "agents, runtimes and sandbox never auto-mount the API token",
   "F",
 );
-
 
 /* ── G. Sandbox isolation ────────────────────────────────────────────────── */
 
@@ -487,8 +503,9 @@ check(
 );
 check(
   "neutrality:runtime-seats-are-consumers",
-  read("infrastructure/kubernetes/namespaces.yaml").includes("coregrid.io/runtime-ref: runtime:scholar") &&
-    read("infrastructure/kubernetes/README.md").includes("first domain runtime"),
+  read("infrastructure/kubernetes/namespaces.yaml").includes(
+    "coregrid.io/runtime-ref: runtime:scholar",
+  ) && read("infrastructure/kubernetes/README.md").includes("first domain runtime"),
   "the first domain runtime holds a namespace as a CONSUMER, not as a design input",
   "H",
 );
@@ -573,4 +590,3 @@ if (failed.length > 0) {
   process.exit(1);
 }
 console.log("No credentials required: source invariants proven. CF-4+ await owner credentials.");
-

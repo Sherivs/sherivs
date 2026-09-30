@@ -32,7 +32,8 @@ function jsonToBase64Url(value: unknown): string {
 
 async function importVapidKey(publicKey: string, privateKey: string): Promise<CryptoKey> {
   const pub = base64UrlToBytes(publicKey);
-  if (pub.length !== 65 || pub[0] !== 4) throw new Error("VAPID_PUBLIC_KEY must be an uncompressed P-256 point");
+  if (pub.length !== 65 || pub[0] !== 4)
+    throw new Error("VAPID_PUBLIC_KEY must be an uncompressed P-256 point");
   const jwk: JsonWebKey = {
     kty: "EC",
     crv: "P-256",
@@ -42,10 +43,17 @@ async function importVapidKey(publicKey: string, privateKey: string): Promise<Cr
     ext: true,
     key_ops: ["sign"],
   };
-  return crypto.subtle.importKey("jwk", jwk, { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"]);
+  return crypto.subtle.importKey("jwk", jwk, { name: "ECDSA", namedCurve: "P-256" }, false, [
+    "sign",
+  ]);
 }
 
-async function vapidHeader(endpoint: string, publicKey: string, privateKey: string, subject: string) {
+async function vapidHeader(
+  endpoint: string,
+  publicKey: string,
+  privateKey: string,
+  subject: string,
+) {
   const audience = new URL(endpoint).origin;
   const header = jsonToBase64Url({ typ: "JWT", alg: "ES256" });
   const claims = jsonToBase64Url({
@@ -81,7 +89,12 @@ export async function sendWebPush(tokens: string[]): Promise<PushDeliveryResult>
 
   if (!tokens.length) return { attempted: 0, delivered: 0, expired: [] };
   if (!publicKey || !privateKey) {
-    return { attempted: tokens.length, delivered: 0, expired: [], skippedReason: "vapid_keys_missing" };
+    return {
+      attempted: tokens.length,
+      delivered: 0,
+      expired: [],
+      skippedReason: "vapid_keys_missing",
+    };
   }
 
   let delivered = 0;
@@ -113,7 +126,10 @@ export async function sendWebPush(tokens: string[]): Promise<PushDeliveryResult>
  * Look up push tokens for the given users, deliver, and clear dead ones.
  * `supabase` is the request-scoped authenticated client.
  */
-export async function deliverPushToUsers(supabase: any, userIds: string[]): Promise<PushDeliveryResult> {
+export async function deliverPushToUsers(
+  supabase: any,
+  userIds: string[],
+): Promise<PushDeliveryResult> {
   const ids = Array.from(new Set(userIds.filter(Boolean)));
   if (!ids.length) return { attempted: 0, delivered: 0, expired: [] };
 

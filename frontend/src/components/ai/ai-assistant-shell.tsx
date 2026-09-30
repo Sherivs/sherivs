@@ -48,7 +48,6 @@ export type AIAssistantShellProps = {
   initialPrompt?: string;
 };
 
-
 const MAX_STORED = 50;
 
 /* -------------------------------------------------------------------------- */
@@ -66,7 +65,11 @@ function renderInline(text: string, keyPrefix: string) {
     const token = m[0];
     const key = `${keyPrefix}-${i++}`;
     if (token.startsWith("**")) {
-      nodes.push(<strong key={key} className="font-semibold">{token.slice(2, -2)}</strong>);
+      nodes.push(
+        <strong key={key} className="font-semibold">
+          {token.slice(2, -2)}
+        </strong>,
+      );
     } else if (token.startsWith("`")) {
       nodes.push(
         <code key={key} className="rounded bg-black/30 px-1 py-0.5 font-mono text-[0.85em]">
@@ -91,7 +94,9 @@ function Markdown({ content }: { content: string }) {
     if (!bullets.length) return;
     out.push(
       <ul key={`ul-${key}`} className="my-1.5 list-disc space-y-1 pl-4">
-        {bullets.map((b, i) => <li key={i}>{renderInline(b, `${key}-${i}`)}</li>)}
+        {bullets.map((b, i) => (
+          <li key={i}>{renderInline(b, `${key}-${i}`)}</li>
+        ))}
       </ul>,
     );
     bullets = [];
@@ -106,11 +111,23 @@ function Markdown({ content }: { content: string }) {
     flush(String(idx));
     if (!line.trim()) return;
     if (/^###\s+/.test(line)) {
-      out.push(<h4 key={idx} className="mt-2 font-display text-sm font-semibold">{renderInline(line.replace(/^###\s+/, ""), `h${idx}`)}</h4>);
+      out.push(
+        <h4 key={idx} className="mt-2 font-display text-sm font-semibold">
+          {renderInline(line.replace(/^###\s+/, ""), `h${idx}`)}
+        </h4>,
+      );
     } else if (/^##\s+/.test(line)) {
-      out.push(<h3 key={idx} className="mt-2 font-display text-base font-semibold">{renderInline(line.replace(/^##\s+/, ""), `h${idx}`)}</h3>);
+      out.push(
+        <h3 key={idx} className="mt-2 font-display text-base font-semibold">
+          {renderInline(line.replace(/^##\s+/, ""), `h${idx}`)}
+        </h3>,
+      );
     } else {
-      out.push(<p key={idx} className="my-1">{renderInline(line, `p${idx}`)}</p>);
+      out.push(
+        <p key={idx} className="my-1">
+          {renderInline(line, `p${idx}`)}
+        </p>,
+      );
     }
   });
   flush("end");
@@ -134,7 +151,12 @@ const daysAgo = (n: number) => {
   return d;
 };
 
-async function answer(question: string, schoolId: string, scope: AIScope, systemContext: string): Promise<string> {
+async function answer(
+  question: string,
+  schoolId: string,
+  scope: AIScope,
+  systemContext: string,
+): Promise<string> {
   const q = question.toLowerCase();
   const who = scope.subjectLabel ?? "your school";
 
@@ -150,7 +172,8 @@ async function answer(question: string, schoolId: string, scope: AIScope, system
     const { data, error } = await req;
     if (error) throw error;
     const rows = data ?? [];
-    if (!rows.length) return `I could not find any attendance records for ${who} in the last 30 days.`;
+    if (!rows.length)
+      return `I could not find any attendance records for ${who} in the last 30 days.`;
     const ok = rows.filter((r) => r.status === "present" || r.status === "late").length;
     const late = rows.filter((r) => r.status === "late").length;
     const today = isoDate(new Date());
@@ -171,7 +194,12 @@ async function answer(question: string, schoolId: string, scope: AIScope, system
   }
 
   /* ------------------------------- fees / payments ------------------------- */
-  if (q.includes("fee") || q.includes("payment") || q.includes("owing") || q.includes("outstanding")) {
+  if (
+    q.includes("fee") ||
+    q.includes("payment") ||
+    q.includes("owing") ||
+    q.includes("outstanding")
+  ) {
     let req = supabase
       .from("fees")
       .select("amount, paid_amount, status, due_date, fee_type, term")
@@ -181,13 +209,19 @@ async function answer(question: string, schoolId: string, scope: AIScope, system
     if (error) throw error;
     const rows = data ?? [];
     if (!rows.length) return `There are no fee records on file for ${who} yet.`;
-    let billed = 0, collected = 0, overdue = 0, overdueCount = 0;
+    let billed = 0,
+      collected = 0,
+      overdue = 0,
+      overdueCount = 0;
     const cutoff = new Date();
     rows.forEach((f) => {
-      const a = Number(f.amount ?? 0), p = Number(f.paid_amount ?? 0);
-      billed += a; collected += p;
+      const a = Number(f.amount ?? 0),
+        p = Number(f.paid_amount ?? 0);
+      billed += a;
+      collected += p;
       if (f.status !== "paid" && f.due_date && new Date(f.due_date) < cutoff) {
-        overdue += Math.max(0, a - p); overdueCount += 1;
+        overdue += Math.max(0, a - p);
+        overdueCount += 1;
       }
     });
     return [
@@ -203,7 +237,13 @@ async function answer(question: string, schoolId: string, scope: AIScope, system
   }
 
   /* --------------------------------- students ------------------------------ */
-  if (q.includes("student") || q.includes("child") || q.includes("pupil") || q.includes("at-risk") || q.includes("at risk")) {
+  if (
+    q.includes("student") ||
+    q.includes("child") ||
+    q.includes("pupil") ||
+    q.includes("at-risk") ||
+    q.includes("at risk")
+  ) {
     let req = supabase
       .from("students")
       .select("id, admission_number, is_active, enrollment_date, class_id")
@@ -225,13 +265,19 @@ async function answer(question: string, schoolId: string, scope: AIScope, system
       ``,
       `### Most recent enrolments`,
       ...recent.map(
-        (s) => `- ${s.admission_number ?? "No admission number"} — enrolled ${s.enrollment_date ? new Date(s.enrollment_date).toLocaleDateString() : "date unknown"}`,
+        (s) =>
+          `- ${s.admission_number ?? "No admission number"} — enrolled ${s.enrollment_date ? new Date(s.enrollment_date).toLocaleDateString() : "date unknown"}`,
       ),
     ].join("\n");
   }
 
   /* --------------------------- schedule / timetable ------------------------ */
-  if (q.includes("schedule") || q.includes("timetable") || q.includes("lesson") || q.includes("period")) {
+  if (
+    q.includes("schedule") ||
+    q.includes("timetable") ||
+    q.includes("lesson") ||
+    q.includes("period")
+  ) {
     let req = supabase
       .from("timetable_slots")
       .select("day_of_week, period_number, subject, start_time, end_time, room, is_break")
@@ -244,12 +290,15 @@ async function answer(question: string, schoolId: string, scope: AIScope, system
     const rows = (data ?? []).filter((r) => !r.is_break);
     if (!rows.length) return `No timetable slots are published for ${who} yet.`;
     const dayName = new Date().toLocaleDateString(undefined, { weekday: "long" });
-    const todayRows = rows.filter((r) => String(r.day_of_week).toLowerCase() === dayName.toLowerCase());
+    const todayRows = rows.filter(
+      (r) => String(r.day_of_week).toLowerCase() === dayName.toLowerCase(),
+    );
     const show = (todayRows.length ? todayRows : rows).slice(0, 8);
     return [
       `## ${todayRows.length ? `${dayName}'s schedule` : "Upcoming schedule"}`,
       ...show.map(
-        (r) => `- Period ${r.period_number}: **${r.subject}** ${r.start_time?.slice(0, 5)}–${r.end_time?.slice(0, 5)}${r.room ? ` · ${r.room}` : ""}`,
+        (r) =>
+          `- Period ${r.period_number}: **${r.subject}** ${r.start_time?.slice(0, 5)}–${r.end_time?.slice(0, 5)}${r.room ? ` · ${r.room}` : ""}`,
       ),
       ``,
       `${rows.length} slots are scheduled in total.`,
@@ -257,7 +306,14 @@ async function answer(question: string, schoolId: string, scope: AIScope, system
   }
 
   /* ------------------------------ grades / results ------------------------- */
-  if (q.includes("grade") || q.includes("result") || q.includes("score") || q.includes("perform") || q.includes("quiz") || q.includes("exam")) {
+  if (
+    q.includes("grade") ||
+    q.includes("result") ||
+    q.includes("score") ||
+    q.includes("perform") ||
+    q.includes("quiz") ||
+    q.includes("exam")
+  ) {
     let req = supabase
       .from("grades")
       .select("subject, total_score, grade, term, student_id")
@@ -274,7 +330,8 @@ async function answer(question: string, schoolId: string, scope: AIScope, system
     const bySubject: Record<string, { sum: number; n: number }> = {};
     rows.forEach((g) => {
       const b = bySubject[g.subject] ?? { sum: 0, n: 0 };
-      b.sum += Number(g.total_score ?? 0); b.n += 1;
+      b.sum += Number(g.total_score ?? 0);
+      b.n += 1;
       bySubject[g.subject] = b;
     });
     const ranked = Object.entries(bySubject)
@@ -291,7 +348,10 @@ async function answer(question: string, schoolId: string, scope: AIScope, system
       ...ranked.slice(0, 3).map((r) => `- ${r.subject}: **${r.avg.toFixed(1)}%**`),
       ``,
       `### Needs attention`,
-      ...ranked.slice(-3).reverse().map((r) => `- ${r.subject}: **${r.avg.toFixed(1)}%**`),
+      ...ranked
+        .slice(-3)
+        .reverse()
+        .map((r) => `- ${r.subject}: **${r.avg.toFixed(1)}%**`),
     ].join("\n");
   }
 
@@ -341,7 +401,6 @@ export function AIAssistantShell({
   isLoadingScope = false,
   initialPrompt,
 }: AIAssistantShellProps) {
-
   const { school } = useApp();
   const storageKey = `vibeora_ai_${userId}_${portalName}`;
 
@@ -353,8 +412,6 @@ export function AIAssistantShell({
   useEffect(() => {
     if (initialPrompt) setInput(initialPrompt);
   }, [initialPrompt]);
-
-
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -437,13 +494,19 @@ export function AIAssistantShell({
     setInput("");
     setIsStreaming(true);
     const started = performance.now();
-    const withUser = [...messages, { role: "user" as const, content: text, timestamp: Date.now() }].slice(-MAX_STORED);
+    const withUser = [
+      ...messages,
+      { role: "user" as const, content: text, timestamp: Date.now() },
+    ].slice(-MAX_STORED);
     setMessages(withUser);
     try {
       const reply = await answer(text, schoolId, scope ?? {}, systemContext);
       // brief pause so the typing indicator reads as a response, not a flash
       await new Promise((r) => setTimeout(r, 350));
-      const withReply = [...withUser, { role: "assistant" as const, content: reply, timestamp: Date.now() }].slice(-MAX_STORED);
+      const withReply = [
+        ...withUser,
+        { role: "assistant" as const, content: reply, timestamp: Date.now() },
+      ].slice(-MAX_STORED);
       setMessages(withReply);
       // Persistence is best-effort: the chat must keep working if it fails.
       void saveConversation(conversationId, withReply).catch(() => {});
@@ -456,10 +519,16 @@ export function AIAssistantShell({
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Something went wrong";
       toast.error(`Assistant could not answer: ${msg}`);
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant" as const, content: `I could not reach your school data just now. Please try again.`, timestamp: Date.now() },
-      ].slice(-MAX_STORED));
+      setMessages((prev) =>
+        [
+          ...prev,
+          {
+            role: "assistant" as const,
+            content: `I could not reach your school data just now. Please try again.`,
+            timestamp: Date.now(),
+          },
+        ].slice(-MAX_STORED),
+      );
       void logInteraction({
         prompt: text,
         response: msg,
@@ -469,7 +538,17 @@ export function AIAssistantShell({
     } finally {
       setIsStreaming(false);
     }
-  }, [input, isStreaming, schoolId, scope, systemContext, messages, conversationId, saveConversation, logInteraction]);
+  }, [
+    input,
+    isStreaming,
+    schoolId,
+    scope,
+    systemContext,
+    messages,
+    conversationId,
+    saveConversation,
+    logInteraction,
+  ]);
 
   const newChat = () => {
     setMessages([]);
@@ -490,8 +569,12 @@ export function AIAssistantShell({
             <Bot className="h-5 w-5" />
           </span>
           <div className="min-w-0">
-            <h2 className="truncate font-display text-sm font-semibold sm:text-base">{assistantName}</h2>
-            <p className="truncate text-xs text-muted-foreground">{school?.name ?? "Your school"}</p>
+            <h2 className="truncate font-display text-sm font-semibold sm:text-base">
+              {assistantName}
+            </h2>
+            <p className="truncate text-xs text-muted-foreground">
+              {school?.name ?? "Your school"}
+            </p>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -518,7 +601,9 @@ export function AIAssistantShell({
       {/* Conversation history */}
       {historyOpen && (
         <div className="max-h-56 overflow-y-auto border-b border-border bg-muted/10 px-4 py-3 sm:px-5">
-          {history.isLoading && <p className="text-xs text-muted-foreground">Loading your past chats…</p>}
+          {history.isLoading && (
+            <p className="text-xs text-muted-foreground">Loading your past chats…</p>
+          )}
           {history.isError && (
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs text-muted-foreground">Could not load your past chats.</p>
@@ -566,7 +651,10 @@ export function AIAssistantShell({
         )}
 
         {messages.map((m, i) => (
-          <div key={`${m.timestamp}-${i}`} className={m.role === "user" ? "flex flex-col items-end" : "flex flex-col items-start"}>
+          <div
+            key={`${m.timestamp}-${i}`}
+            className={m.role === "user" ? "flex flex-col items-end" : "flex flex-col items-start"}
+          >
             <div className="flex max-w-full items-end gap-2">
               {m.role === "assistant" && (
                 <span className="mb-1 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
@@ -649,7 +737,9 @@ export function AIAssistantShell({
           </Button>
         </div>
         {input.length > 200 && (
-          <div className="mt-1.5 text-right text-[10px] text-muted-foreground">{input.length} characters</div>
+          <div className="mt-1.5 text-right text-[10px] text-muted-foreground">
+            {input.length} characters
+          </div>
         )}
       </div>
     </div>

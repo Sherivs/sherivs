@@ -8,7 +8,6 @@ import { CalendarMonth } from "@/components/calendar-month";
 import { useApp } from "@/contexts/app-context";
 import { notifyCalendarEvent } from "@/lib/notifications-fanout.functions";
 
-
 type Row = {
   id: string;
   title: string;
@@ -53,10 +52,12 @@ function AdminCalendar() {
             title: (row.title as string) ?? "Event",
             start_date: (row.start_date as string) ?? new Date().toISOString().slice(0, 10),
             event_type: (row.event_type as string | null) ?? null,
-            target_audience: ((row.target_audience as string) ?? "all") as "all" | "parents" | "teachers" | "students",
+            target_audience: ((row.target_audience as string) ?? "all") as
+              "all" | "parents" | "teachers" | "students",
           },
         });
-        if (res?.notified) toast.success(`Notified ${res.notified} ${res.notified === 1 ? "person" : "people"}`);
+        if (res?.notified)
+          toast.success(`Notified ${res.notified} ${res.notified === 1 ? "person" : "people"}`);
       } catch (e) {
         const m = e instanceof Error ? e.message : "Notify failed";
         toast.error(m);
@@ -71,7 +72,9 @@ function AdminCalendar() {
       { key: "start_time", label: "Start time", type: "time" },
       { key: "end_time", label: "End time", type: "time" },
       {
-        key: "event_type", label: "Type", type: "select",
+        key: "event_type",
+        label: "Type",
+        type: "select",
         options: [
           { value: "holiday", label: "Holiday" },
           { value: "exam", label: "Exam" },
@@ -81,7 +84,9 @@ function AdminCalendar() {
         ],
       },
       {
-        key: "target_audience", label: "Audience", type: "select",
+        key: "target_audience",
+        label: "Audience",
+        type: "select",
         options: [
           { value: "all", label: "Everyone" },
           { value: "students", label: "Students" },
@@ -92,11 +97,16 @@ function AdminCalendar() {
       { key: "location", label: "Location", type: "text", max: 180 },
     ],
     columns: [
-      { key: "start_date", label: "Date", render: (r) => (
-        <span className="font-mono text-xs">
-          {r.start_date}{r.end_date && r.end_date !== r.start_date ? ` → ${r.end_date}` : ""}
-        </span>
-      )},
+      {
+        key: "start_date",
+        label: "Date",
+        render: (r) => (
+          <span className="font-mono text-xs">
+            {r.start_date}
+            {r.end_date && r.end_date !== r.start_date ? ` → ${r.end_date}` : ""}
+          </span>
+        ),
+      },
       { key: "title", label: "Title" },
       { key: "event_type", label: "Type", render: (r) => r.event_type ?? "—" },
       { key: "location", label: "Location", render: (r) => r.location ?? "—" },
@@ -104,7 +114,10 @@ function AdminCalendar() {
   };
 
   return (
-    <PortalPage title="Calendar" subtitle="Holidays, exams, events and meetings published to your school.">
+    <PortalPage
+      title="Calendar"
+      subtitle="Holidays, exams, events and meetings published to your school."
+    >
       <CalendarMonth />
       <CrudList<Row> config={config} />
     </PortalPage>

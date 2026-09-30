@@ -56,9 +56,7 @@ export const TRUST_STATES: readonly TrustState[] = [
 ] as const;
 
 /** Ordered transitions allowed by the trust-state machine (Section A.7, BR). */
-const TRUST_STATE_TRANSITIONS: Readonly<
-  Record<TrustState, readonly TrustState[]>
-> = {
+const TRUST_STATE_TRANSITIONS: Readonly<Record<TrustState, readonly TrustState[]>> = {
   UNKNOWN: ["UNVERIFIED"],
   UNVERIFIED: ["UNKNOWN", "VERIFIED"],
   VERIFIED: ["TRUSTED", "CONDITIONALLY_TRUSTED", "UNVERIFIED", "DEGRADED"],
@@ -132,17 +130,14 @@ export interface CreateTrustSubjectInput {
 }
 
 export type CreateTrustSubjectResult =
-  | { ok: true; subject: TrustSubject }
-  | { ok: false; error: string };
+  { ok: true; subject: TrustSubject } | { ok: false; error: string };
 
 /**
  * Create a new trust subject. The default state is UNKNOWN — an entity is
  * never trusted merely because it exists (A.6, BR.1). A subject may not
  * silently skip the UNVERIFIED step to become trusted (BR.10).
  */
-export function createTrustSubject(
-  input: CreateTrustSubjectInput,
-): CreateTrustSubjectResult {
+export function createTrustSubject(input: CreateTrustSubjectInput): CreateTrustSubjectResult {
   if (input.id.trim() === "") {
     return { ok: false, error: "Subject id is required" };
   }
@@ -163,8 +158,7 @@ export function createTrustSubject(
 }
 
 export type TransitionTrustStateResult =
-  | { ok: true; subject: TrustSubject }
-  | { ok: false; error: string };
+  { ok: true; subject: TrustSubject } | { ok: false; error: string };
 
 /**
  * Transition a subject's trust state. Evidence is required to move from
@@ -261,17 +255,14 @@ export interface EvaluateTrustScoreInput {
 }
 
 export type EvaluateTrustScoreResult =
-  | { ok: true; score: TrustScore }
-  | { ok: false; error: string };
+  { ok: true; score: TrustScore } | { ok: false; error: string };
 
 /**
  * Compute an evidence-weighted trust score (K.1). The score is a weighted
  * average across factors; it never replaces the evidence itself (BR.9) and
  * always carries the factor breakdown so the score is explainable (K.3).
  */
-export function evaluateTrustScore(
-  input: EvaluateTrustScoreInput,
-): EvaluateTrustScoreResult {
+export function evaluateTrustScore(input: EvaluateTrustScoreInput): EvaluateTrustScoreResult {
   if (input.factors.length === 0) {
     return { ok: false, error: "Trust score requires at least one factor" };
   }
@@ -377,8 +368,7 @@ export interface CreateTrustRelationshipInput {
 }
 
 export type CreateTrustRelationshipResult =
-  | { ok: true; relationship: TrustRelationship }
-  | { ok: false; error: string };
+  { ok: true; relationship: TrustRelationship } | { ok: false; error: string };
 
 export function createTrustRelationship(
   input: CreateTrustRelationshipInput,
@@ -421,17 +411,11 @@ export function revokeTrustRelationship(
   return { ...relationship, revokedAt: now };
 }
 
-export function isTrustRelationshipExpired(
-  relationship: TrustRelationship,
-  now: string,
-): boolean {
+export function isTrustRelationshipExpired(relationship: TrustRelationship, now: string): boolean {
   return relationship.expiresAt !== null && Date.parse(now) >= Date.parse(relationship.expiresAt);
 }
 
-export function isTrustRelationshipActive(
-  relationship: TrustRelationship,
-  now: string,
-): boolean {
+export function isTrustRelationshipActive(relationship: TrustRelationship, now: string): boolean {
   return relationship.revokedAt === null && !isTrustRelationshipExpired(relationship, now);
 }
 
@@ -439,4 +423,3 @@ export function isTrustRelationshipActive(
 export function isUsableTrustState(state: TrustState): boolean {
   return state === "TRUSTED" || state === "CONDITIONALLY_TRUSTED" || state === "VERIFIED";
 }
-

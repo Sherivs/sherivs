@@ -113,9 +113,7 @@ export function createSecurityDecision(
   decision: SecurityDecisionState,
   reason: string,
 ): SecurityDecision {
-  const expiresAt = new Date(
-    Date.parse(ctx.now) + ctx.ttlSeconds * 1000,
-  ).toISOString();
+  const expiresAt = new Date(Date.parse(ctx.now) + ctx.ttlSeconds * 1000).toISOString();
   return {
     requestId: ctx.requestId,
     actorId: ctx.actorId,
@@ -134,10 +132,7 @@ export function createSecurityDecision(
   };
 }
 
-export function isSecurityDecisionExpired(
-  decision: SecurityDecision,
-  now: string,
-): boolean {
+export function isSecurityDecisionExpired(decision: SecurityDecision, now: string): boolean {
   return Date.parse(now) >= Date.parse(decision.expiresAt);
 }
 
@@ -160,12 +155,7 @@ export interface SecurityGatewayInput {
   authorizationDecision: "ALLOW" | "DENY" | "REDACT" | "ESCALATE" | "REQUIRE_APPROVAL";
 }
 
-export type SecurityGatewayDecision =
-  | "allow"
-  | "deny"
-  | "challenge"
-  | "throttle"
-  | "quarantine";
+export type SecurityGatewayDecision = "allow" | "deny" | "challenge" | "throttle" | "quarantine";
 
 /**
  * Evaluate the Security Gateway's first-boundary decision (Section H.3).
@@ -173,9 +163,10 @@ export type SecurityGatewayDecision =
  * Default Security Rule (Section I.5): fail closed. Any missing or invalid
  * upstream signal results in "deny", never a silent "allow" (Section AT.9).
  */
-export function evaluateSecurityGateway(
-  input: SecurityGatewayInput,
-): { decision: SecurityGatewayDecision; reason: string } {
+export function evaluateSecurityGateway(input: SecurityGatewayInput): {
+  decision: SecurityGatewayDecision;
+  reason: string;
+} {
   if (!input.identityValid) {
     return { decision: "deny", reason: "Identity assertion is invalid or missing" };
   }

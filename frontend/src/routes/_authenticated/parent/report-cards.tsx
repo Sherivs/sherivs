@@ -50,13 +50,29 @@ function ParentReportCardsPage() {
   const active = selected ?? children.data?.[0]?.student_id ?? null;
 
   return (
-    <PortalPage title="Children's report cards" subtitle="View published grades for each of your children.">
+    <PortalPage
+      title="Children's report cards"
+      subtitle="View published grades for each of your children."
+    >
       <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
-        <Link to="/parent/dashboard" className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40">
+        <Link
+          to="/parent/dashboard"
+          className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40"
+        >
           ← Dashboard
         </Link>
-        <Input placeholder="Term (e.g. 1st)" value={term} onChange={(e) => setTerm(e.target.value)} className="max-w-[140px]" />
-        <Input placeholder="Year (e.g. 2025/2026)" value={year} onChange={(e) => setYear(e.target.value)} className="max-w-[180px]" />
+        <Input
+          placeholder="Term (e.g. 1st)"
+          value={term}
+          onChange={(e) => setTerm(e.target.value)}
+          className="max-w-[140px]"
+        />
+        <Input
+          placeholder="Year (e.g. 2025/2026)"
+          value={year}
+          onChange={(e) => setYear(e.target.value)}
+          className="max-w-[180px]"
+        />
       </div>
 
       {(children.data?.length ?? 0) === 0 ? (
@@ -83,7 +99,9 @@ function ParentReportCardsPage() {
               </button>
             ))}
           </div>
-          {active && <ReportCard studentId={active} term={term || null} academicYear={year || null} />}
+          {active && (
+            <ReportCard studentId={active} term={term || null} academicYear={year || null} />
+          )}
         </>
       )}
     </PortalPage>

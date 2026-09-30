@@ -1,33 +1,22 @@
 import { createHash } from "node:crypto";
-import {
-  existsSync,
-  readFileSync,
-  readdirSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(fileURLToPath(new URL(".", import.meta.url)), "..");
 const architecture = join(root, "architecture");
-const outputPath = join(
-  architecture,
-  "COREGRID_PHASE_52_ROUTING_DECOMPOSITION.json",
-);
+const outputPath = join(architecture, "COREGRID_PHASE_52_ROUTING_DECOMPOSITION.json");
 const sourceCandidates = [
   "phase 52 cross domaiin and engineering sections",
   "phase-52-cross domain and engineering sections",
 ];
-const sourceName = sourceCandidates.find((name) =>
-  existsSync(join(architecture, name)),
-);
+const sourceName = sourceCandidates.find((name) => existsSync(join(architecture, name)));
 if (!sourceName) throw new Error("Phase 52 corpus not found");
 
 const sourcePath = join(architecture, sourceName);
 const source = readFileSync(sourcePath, "utf8");
 const lines = source.split(/\r?\n/);
-const hash = (value) =>
-  createHash("sha256").update(value).digest("hex").toUpperCase();
+const hash = (value) => createHash("sha256").update(value).digest("hex").toUpperCase();
 const sourceHash = hash(source);
 
 function readJson(name) {
@@ -107,10 +96,9 @@ function candidateFor(startLine, endLine, title, blockNumber) {
     return {
       source: "canonical-surface-allocation",
       claimedOwner: exactAllocation.canonicalPhaseOwner,
-      candidateOwner:
-        /^\d+$/.test(String(exactAllocation.canonicalPhaseOwner))
-          ? exactAllocation.canonicalPhaseOwner.padStart(2, "0")
-          : null,
+      candidateOwner: /^\d+$/.test(String(exactAllocation.canonicalPhaseOwner))
+        ? exactAllocation.canonicalPhaseOwner.padStart(2, "0")
+        : null,
       candidateOwners: /^\d+$/.test(String(exactAllocation.canonicalPhaseOwner))
         ? [String(exactAllocation.canonicalPhaseOwner).padStart(2, "0")]
         : [],
@@ -138,8 +126,7 @@ function candidateFor(startLine, endLine, title, blockNumber) {
     .filter((entry) => entry.score > 0)
     .sort(
       (left, right) =>
-        right.score - left.score ||
-        left.capability.id.localeCompare(right.capability.id),
+        right.score - left.score || left.capability.id.localeCompare(right.capability.id),
     );
   if (!ranked.length) return null;
 
@@ -161,8 +148,7 @@ function candidateFor(startLine, endLine, title, blockNumber) {
     candidateOwners: owners.map((owner) => owner.padStart(2, "0")),
     relatedPhases: owners.map((owner) => owner.padStart(2, "0")),
     conflictCluster: clusters.length ? clusters.join("/") : null,
-    classification:
-      classes.length > 1 ? "DUPLICATE_OR_CONFLICT" : candidate.classification,
+    classification: classes.length > 1 ? "DUPLICATE_OR_CONFLICT" : candidate.classification,
     implementationEvidence: top.flatMap(
       ({ capability }) => capability.implementationEvidence ?? [],
     ),
@@ -233,16 +219,11 @@ function makeRecord(kind, index, item, startLine, endLine, body, blockNumber) {
 }
 
 const blockRecords = inventory.blockOccurrences.map((item, index) => {
-  const body = lines.slice(item.startLine - 1, item.endLine).join("\n").trimEnd();
-  return makeRecord(
-    "block",
-    index + 1,
-    item,
-    item.startLine,
-    item.endLine,
-    body,
-    item.block,
-  );
+  const body = lines
+    .slice(item.startLine - 1, item.endLine)
+    .join("\n")
+    .trimEnd();
+  return makeRecord("block", index + 1, item, item.startLine, item.endLine, body, item.block);
 });
 
 function sectionRecords(kind, sourceItems) {
@@ -253,7 +234,10 @@ function sectionRecords(kind, sourceItems) {
     const next = sorted[index + 1]?.item;
     const startLine = item.line;
     const endLine = next ? next.line - 1 : lines.length - 1;
-    const body = lines.slice(startLine - 1, endLine).join("\n").trimEnd();
+    const body = lines
+      .slice(startLine - 1, endLine)
+      .join("\n")
+      .trimEnd();
     return makeRecord(kind, index + 1, item, startLine, endLine, body, null);
   });
 }
@@ -262,9 +246,10 @@ const numberedRecords = sectionRecords("numbered-section", inventory.numberedSec
 const letteredRecords = sectionRecords("lettered-section", inventory.letteredSections);
 const records = [...blockRecords, ...numberedRecords, ...letteredRecords];
 const counts = Object.fromEntries(
-  ["EXISTING_CANONICAL_OWNER", "PROPOSED_UNOWNED", "CONFLICTING", "DEFERRED"].map(
-    (status) => [status, records.filter((record) => record.status === status).length],
-  ),
+  ["EXISTING_CANONICAL_OWNER", "PROPOSED_UNOWNED", "CONFLICTING", "DEFERRED"].map((status) => [
+    status,
+    records.filter((record) => record.status === status).length,
+  ]),
 );
 
 const artifact = {
@@ -281,16 +266,14 @@ const artifact = {
   inputs: {
     inventory: "architecture/COREGRID_PHASE_52_SECTION_INVENTORY.json",
     capabilityCatalog: "architecture/COREGRID_PHASE_52_CAPABILITY_CATALOG.json",
-    canonicalSurfaceAllocation:
-      "architecture/COREGRID_PHASE_52_CANONICAL_SURFACE_ALLOCATION.json",
+    canonicalSurfaceAllocation: "architecture/COREGRID_PHASE_52_CANONICAL_SURFACE_ALLOCATION.json",
     registry: "architecture/registry.json",
     blueprintCatalog: "architecture/COREGRID_BLUEPRINT_CATALOG.json",
   },
   routingRules: {
     existingCanonicalOwner:
       "Only explicit existing-owner/extension evidence with a single candidate owner is routed here.",
-    proposedUnowned:
-      "Candidate boundaries remain proposals and are never registered as phases.",
+    proposedUnowned: "Candidate boundaries remain proposals and are never registered as phases.",
     conflicting:
       "Duplicate/conflict classifications or multiple top-ranked owners remain unresolved.",
     deferred:
@@ -320,9 +303,7 @@ const serialized = `${JSON.stringify(artifact, null, 2)}\n`;
 if (process.argv.includes("--check")) {
   const existing = readFileSync(outputPath, "utf8");
   if (existing !== serialized) {
-    throw new Error(
-      "Routing artifact is stale; run node scripts/generate-phase52-routing.mjs",
-    );
+    throw new Error("Routing artifact is stale; run node scripts/generate-phase52-routing.mjs");
   }
 } else {
   writeFileSync(outputPath, serialized, "utf8");

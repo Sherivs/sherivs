@@ -57,12 +57,22 @@ describe("createSecurityEvent (Sections F.3, S.2)", () => {
 
 describe("createSecurityAlert (Section W)", () => {
   it("rejects an out-of-range confidence value", () => {
-    const result = createSecurityAlert({ event: baseEvent(), confidence: 1.5, recommendedResponse: "block", now: NOW });
+    const result = createSecurityAlert({
+      event: baseEvent(),
+      confidence: 1.5,
+      recommendedResponse: "block",
+      now: NOW,
+    });
     expect(result.ok).toBe(false);
   });
 
   it("creates an open alert from an event", () => {
-    const result = createSecurityAlert({ event: baseEvent(), confidence: 0.8, recommendedResponse: "block IP", now: NOW });
+    const result = createSecurityAlert({
+      event: baseEvent(),
+      confidence: 0.8,
+      recommendedResponse: "block IP",
+      now: NOW,
+    });
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.alert.status).toBe("open");
@@ -73,14 +83,24 @@ describe("createSecurityAlert (Section W)", () => {
 
 describe("transitionSecurityAlert", () => {
   it("allows open -> acknowledged", () => {
-    const created = createSecurityAlert({ event: baseEvent(), confidence: 0.5, recommendedResponse: "review", now: NOW });
+    const created = createSecurityAlert({
+      event: baseEvent(),
+      confidence: 0.5,
+      recommendedResponse: "review",
+      now: NOW,
+    });
     if (!created.ok) throw new Error("fixture failed");
     const result = transitionSecurityAlert(created.alert, "acknowledged", NOW);
     expect(result.ok).toBe(true);
   });
 
   it("rejects resolved -> open (terminal state)", () => {
-    const created = createSecurityAlert({ event: baseEvent(), confidence: 0.5, recommendedResponse: "review", now: NOW });
+    const created = createSecurityAlert({
+      event: baseEvent(),
+      confidence: 0.5,
+      recommendedResponse: "review",
+      now: NOW,
+    });
     if (!created.ok) throw new Error("fixture failed");
     const resolved = { ...created.alert, status: "resolved" as const };
     const result = transitionSecurityAlert(resolved, "open", NOW);
@@ -90,12 +110,22 @@ describe("transitionSecurityAlert", () => {
 
 describe("Security incidents (Section X)", () => {
   it("requires an owner to create an incident", () => {
-    const result = createSecurityIncident({ ownerId: "", severity: "HIGH", evidenceRefs: [], now: NOW });
+    const result = createSecurityIncident({
+      ownerId: "",
+      severity: "HIGH",
+      evidenceRefs: [],
+      now: NOW,
+    });
     expect(result.ok).toBe(false);
   });
 
   it("creates an incident in the detected state", () => {
-    const result = createSecurityIncident({ ownerId: "sec-1", severity: "HIGH", evidenceRefs: ["evt-1"], now: NOW });
+    const result = createSecurityIncident({
+      ownerId: "sec-1",
+      severity: "HIGH",
+      evidenceRefs: ["evt-1"],
+      now: NOW,
+    });
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.incident.state).toBe("detected");
@@ -110,10 +140,21 @@ describe("Security incidents (Section X)", () => {
   });
 
   it("requires a resolution before closing", () => {
-    const created = createSecurityIncident({ ownerId: "sec-1", severity: "HIGH", evidenceRefs: [], now: NOW });
+    const created = createSecurityIncident({
+      ownerId: "sec-1",
+      severity: "HIGH",
+      evidenceRefs: [],
+      now: NOW,
+    });
     if (!created.ok) throw new Error("fixture failed");
     let incident = created.incident;
-    for (const to of ["triaged", "investigating", "contained", "remediating", "recovered"] as const) {
+    for (const to of [
+      "triaged",
+      "investigating",
+      "contained",
+      "remediating",
+      "recovered",
+    ] as const) {
       const step = transitionSecurityIncident(incident, to, `moved to ${to}`, NOW);
       if (!step.ok) throw new Error(`transition to ${to} failed`);
       incident = step.incident;
@@ -122,7 +163,12 @@ describe("Security incidents (Section X)", () => {
     expect(closeResult.ok).toBe(false);
 
     const withResolution = { ...incident, resolution: "Remediated and verified" };
-    const closeWithResolution = transitionSecurityIncident(withResolution, "closed", "closing", NOW);
+    const closeWithResolution = transitionSecurityIncident(
+      withResolution,
+      "closed",
+      "closing",
+      NOW,
+    );
     expect(closeWithResolution.ok).toBe(true);
   });
 });

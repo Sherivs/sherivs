@@ -26,9 +26,24 @@ function AdminPayrollPage() {
 
   const stats = [
     { label: "Staff Members", value: "0", icon: Users, color: "from-blue-500 to-blue-600" },
-    { label: "Monthly Payroll", value: "₦0", icon: DollarSign, color: "from-green-500 to-green-600" },
-    { label: "Payslips Generated", value: "0", icon: FileText, color: "from-purple-500 to-purple-600" },
-    { label: "Compliance Status", value: "Good", icon: CheckCircle2, color: "from-emerald-500 to-emerald-600" },
+    {
+      label: "Monthly Payroll",
+      value: "₦0",
+      icon: DollarSign,
+      color: "from-green-500 to-green-600",
+    },
+    {
+      label: "Payslips Generated",
+      value: "0",
+      icon: FileText,
+      color: "from-purple-500 to-purple-600",
+    },
+    {
+      label: "Compliance Status",
+      value: "Good",
+      icon: CheckCircle2,
+      color: "from-emerald-500 to-emerald-600",
+    },
   ];
 
   return (
@@ -38,7 +53,9 @@ function AdminPayrollPage() {
       actions={
         <>
           <Button disabled>Process Payroll</Button>
-          <Button variant="outline" disabled>Generate Payslips</Button>
+          <Button variant="outline" disabled>
+            Generate Payslips
+          </Button>
         </>
       }
     >
@@ -121,7 +138,9 @@ function AdminPayrollPage() {
                 System Status
               </h3>
               <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                <p className="font-medium text-sm text-green-900">✓ Payroll system is compliant and up-to-date</p>
+                <p className="font-medium text-sm text-green-900">
+                  ✓ Payroll system is compliant and up-to-date
+                </p>
               </div>
             </div>
           </TabsContent>
@@ -206,12 +225,17 @@ function AdminPayrollPage() {
                 </Button>
               </div>
               <div className="space-y-2">
-                {["Payslip Summary", "Tax Report", "Deductions Report", "Year-End Summary"].map((report) => (
-                  <div key={report} className="p-3 border border-border rounded-lg hover:bg-accent/50 flex items-center justify-between">
-                    <span className="text-sm font-medium">{report}</span>
-                    <Download className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                ))}
+                {["Payslip Summary", "Tax Report", "Deductions Report", "Year-End Summary"].map(
+                  (report) => (
+                    <div
+                      key={report}
+                      className="p-3 border border-border rounded-lg hover:bg-accent/50 flex items-center justify-between"
+                    >
+                      <span className="text-sm font-medium">{report}</span>
+                      <Download className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  ),
+                )}
               </div>
             </div>
           </TabsContent>

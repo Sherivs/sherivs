@@ -11,15 +11,8 @@
 
 import { describe, expect, it } from "vitest";
 import { tenantId } from "@/lib/tenant-core";
-import {
-  estimateMastery,
-  explainMastery,
-  type MasteryState,
-} from "@/lib/academic-mastery";
-import {
-  createLearningEvidence,
-  type LearningEvidence,
-} from "@/lib/academic-core";
+import { estimateMastery, explainMastery, type MasteryState } from "@/lib/academic-mastery";
+import { createLearningEvidence, type LearningEvidence } from "@/lib/academic-core";
 
 const TENANT_A = tenantId("tenant-a");
 const NOW = "2026-01-01T00:00:00Z";

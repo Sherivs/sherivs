@@ -43,19 +43,22 @@ export interface SchedulingRule {
 export const SCHEDULING_RULES: readonly SchedulingRule[] = [
   {
     id: "SCH-01",
-    statement: "A schedule is a constrained allocation of participants and resources to time, not a list of times.",
+    statement:
+      "A schedule is a constrained allocation of participants and resources to time, not a list of times.",
     module: "scheduling-conflicts.ts",
     suite: "scheduling-governance.test.ts",
   },
   {
     id: "SCH-02",
-    statement: "A hard-constraint violation is never resolved silently; blocking conflicts stop publication.",
+    statement:
+      "A hard-constraint violation is never resolved silently; blocking conflicts stop publication.",
     module: "scheduling-conflicts.ts",
     suite: "scheduling-governance.test.ts",
   },
   {
     id: "SCH-03",
-    statement: "An infeasible request is reported as infeasible with guidance, never fabricated into a valid plan.",
+    statement:
+      "An infeasible request is reported as infeasible with guidance, never fabricated into a valid plan.",
     module: "scheduling-conflicts.ts",
     suite: "scheduling-governance.test.ts",
   },
@@ -79,49 +82,57 @@ export const SCHEDULING_RULES: readonly SchedulingRule[] = [
   },
   {
     id: "SCH-07",
-    statement: "Movement between resources must be physically possible; impossible transitions are conflicts.",
+    statement:
+      "Movement between resources must be physically possible; impossible transitions are conflicts.",
     module: "scheduling-conflicts.ts",
     suite: "scheduling-governance.test.ts",
   },
   {
     id: "SCH-08",
-    statement: "Feasibility dominates optimization: feasibility is binary and never traded for quality.",
+    statement:
+      "Feasibility dominates optimization: feasibility is binary and never traded for quality.",
     module: "scheduling-quality.ts",
     suite: "scheduling-governance.test.ts",
   },
   {
     id: "SCH-09",
-    statement: "A change to an active plan is measured by its disruption, and stability tolerance is explicit.",
+    statement:
+      "A change to an active plan is measured by its disruption, and stability tolerance is explicit.",
     module: "scheduling-quality.ts",
     suite: "scheduling-governance.test.ts",
   },
   {
     id: "SCH-10",
-    statement: "Minimal disruption outranks theoretical efficiency when choosing between feasible candidates.",
+    statement:
+      "Minimal disruption outranks theoretical efficiency when choosing between feasible candidates.",
     module: "scheduling-quality.ts",
     suite: "scheduling-governance.test.ts",
   },
   {
     id: "SCH-11",
-    statement: "Two versions of a plan are comparable by placement, resource, participant and conflict.",
+    statement:
+      "Two versions of a plan are comparable by placement, resource, participant and conflict.",
     module: "scheduling-quality.ts",
     suite: "scheduling-governance.test.ts",
   },
   {
     id: "SCH-12",
-    statement: "Every placement is explainable: why here, why this resource, why not the alternatives.",
+    statement:
+      "Every placement is explainable: why here, why this resource, why not the alternatives.",
     module: "scheduling-quality.ts",
     suite: "scheduling-governance.test.ts",
   },
   {
     id: "SCH-13",
-    statement: "Fairness is measurable: load balance is computed from committed load, not asserted.",
+    statement:
+      "Fairness is measurable: load balance is computed from committed load, not asserted.",
     module: "scheduling-quality.ts",
     suite: "scheduling-governance.test.ts",
   },
   {
     id: "SCH-14",
-    statement: "Scheduling vocabulary is institutional data; the kernel never assumes one organization's roles.",
+    statement:
+      "Scheduling vocabulary is institutional data; the kernel never assumes one organization's roles.",
     module: "scheduling-conflicts.ts",
     suite: "platform-neutrality.test.ts",
   },
@@ -189,25 +200,31 @@ function require(condition: unknown, message: string): asserts condition {
  */
 export function runSchedulingChecks(): readonly SchedulingCheck[] {
   return [
-    evaluate("CHK-SCH-01", "A participant cannot be in two overlapping activities", "scheduling-conflicts.ts", () => {
-      const conflicts = detectConflicts({
-        tenantId: "tenant-under-check",
-        now: CHECKED_AT,
-        assignments: [
-          fixture({ id: "c1", activityId: "a1", participants: ["p-1"] }),
-          fixture({
-            id: "c2",
-            activityId: "a2",
-            participants: ["p-1"],
-            start: "2026-03-02T09:30:00Z",
-            end: "2026-03-02T10:30:00Z",
-          }),
-        ],
-      });
-      const blocking = conflicts.filter(isBlocking);
-      require(blocking.length === 1, `Expected one blocking participant conflict, observed ${blocking.length}`);
-      return `1 blocking participant conflict observed for an overlap of 30 minutes`;
-    }),
+    evaluate(
+      "CHK-SCH-01",
+      "A participant cannot be in two overlapping activities",
+      "scheduling-conflicts.ts",
+      () => {
+        const conflicts = detectConflicts({
+          tenantId: "tenant-under-check",
+          now: CHECKED_AT,
+          assignments: [
+            fixture({ id: "c1", activityId: "a1", participants: ["p-1"] }),
+            fixture({
+              id: "c2",
+              activityId: "a2",
+              participants: ["p-1"],
+              start: "2026-03-02T09:30:00Z",
+              end: "2026-03-02T10:30:00Z",
+            }),
+          ],
+        });
+        const blocking = conflicts.filter(isBlocking);
+        require(blocking.length ===
+          1, `Expected one blocking participant conflict, observed ${blocking.length}`);
+        return `1 blocking participant conflict observed for an overlap of 30 minutes`;
+      },
+    ),
 
     evaluate("CHK-SCH-02", "A resource cannot be double-booked", "scheduling-conflicts.ts", () => {
       const conflicts = detectConflicts({
@@ -215,7 +232,12 @@ export function runSchedulingChecks(): readonly SchedulingCheck[] {
         now: CHECKED_AT,
         assignments: [
           fixture({ id: "c1", resources: ["r-1"] }),
-          fixture({ id: "c2", resources: ["r-1"], start: "2026-03-02T09:45:00Z", end: "2026-03-02T10:15:00Z" }),
+          fixture({
+            id: "c2",
+            resources: ["r-1"],
+            start: "2026-03-02T09:45:00Z",
+            end: "2026-03-02T10:15:00Z",
+          }),
         ],
       });
       const blocking = conflicts.filter((conflict) => conflict.type === "resource");
@@ -223,185 +245,278 @@ export function runSchedulingChecks(): readonly SchedulingCheck[] {
       return `1 resource conflict observed; strategies offered: ${blocking[0].proposedResolutions.length}`;
     }),
 
-    evaluate("CHK-SCH-03", "Capacity exceedance is refused and quantified", "scheduling-conflicts.ts", () => {
-      const conflicts = detectConflicts({
-        tenantId: "tenant-under-check",
-        now: CHECKED_AT,
-        resourceCapacity: { "r-2": 2 },
-        assignments: [
-          fixture({ id: "c1", resources: ["r-2"], participants: ["p-1", "p-2", "p-3"] }),
-        ],
-      });
-      const capacity = conflicts.find((conflict) => conflict.type === "capacity");
-      require(capacity !== undefined, "No capacity conflict was reported for a 3-into-2 allocation");
-      return capacity.detail;
-    }),
+    evaluate(
+      "CHK-SCH-03",
+      "Capacity exceedance is refused and quantified",
+      "scheduling-conflicts.ts",
+      () => {
+        const conflicts = detectConflicts({
+          tenantId: "tenant-under-check",
+          now: CHECKED_AT,
+          resourceCapacity: { "r-2": 2 },
+          assignments: [
+            fixture({ id: "c1", resources: ["r-2"], participants: ["p-1", "p-2", "p-3"] }),
+          ],
+        });
+        const capacity = conflicts.find((conflict) => conflict.type === "capacity");
+        require(capacity !==
+          undefined, "No capacity conflict was reported for a 3-into-2 allocation");
+        return capacity.detail;
+      },
+    ),
 
-    evaluate("CHK-SCH-04", "Blocked periods are policy, not preference", "scheduling-conflicts.ts", () => {
-      const conflicts = detectConflicts({
-        tenantId: "tenant-under-check",
-        now: CHECKED_AT,
-        blockedPeriods: [
-          { id: "b-1", start: "2026-03-02T00:00:00Z", end: "2026-03-03T00:00:00Z", reason: "shutdown" },
-        ],
-        assignments: [fixture({ id: "c1" })],
-      });
-      const calendar = conflicts.find((conflict) => conflict.type === "calendar");
-      require(calendar !== undefined && isBlocking(calendar), "A blocked period did not block the plan");
-      return calendar.detail;
-    }),
+    evaluate(
+      "CHK-SCH-04",
+      "Blocked periods are policy, not preference",
+      "scheduling-conflicts.ts",
+      () => {
+        const conflicts = detectConflicts({
+          tenantId: "tenant-under-check",
+          now: CHECKED_AT,
+          blockedPeriods: [
+            {
+              id: "b-1",
+              start: "2026-03-02T00:00:00Z",
+              end: "2026-03-03T00:00:00Z",
+              reason: "shutdown",
+            },
+          ],
+          assignments: [fixture({ id: "c1" })],
+        });
+        const calendar = conflicts.find((conflict) => conflict.type === "calendar");
+        require(calendar !== undefined &&
+          isBlocking(calendar), "A blocked period did not block the plan");
+        return calendar.detail;
+      },
+    ),
 
-    evaluate("CHK-SCH-05", "Capability and accessibility requirements are enforced", "scheduling-conflicts.ts", () => {
-      const conflicts = detectConflicts({
-        tenantId: "tenant-under-check",
-        now: CHECKED_AT,
-        resourceCapabilities: { "r-3": [] },
-        accessibleResources: { "r-3": [] },
-        assignments: [
-          fixture({
-            id: "c1",
-            resources: ["r-3"],
-            demands: { specialised: 1 },
-            accessibilityRequirements: ["step_free"],
-          }),
-        ],
-      });
-      const types = conflicts.map((conflict) => conflict.type);
-      require(types.includes("capability") && types.includes("accessibility"), "A declared requirement was not enforced");
-      return `Observed conflict types: ${types.join(", ")}`;
-    }),
+    evaluate(
+      "CHK-SCH-05",
+      "Capability and accessibility requirements are enforced",
+      "scheduling-conflicts.ts",
+      () => {
+        const conflicts = detectConflicts({
+          tenantId: "tenant-under-check",
+          now: CHECKED_AT,
+          resourceCapabilities: { "r-3": [] },
+          accessibleResources: { "r-3": [] },
+          assignments: [
+            fixture({
+              id: "c1",
+              resources: ["r-3"],
+              demands: { specialised: 1 },
+              accessibilityRequirements: ["step_free"],
+            }),
+          ],
+        });
+        const types = conflicts.map((conflict) => conflict.type);
+        require(types.includes("capability") &&
+          types.includes("accessibility"), "A declared requirement was not enforced");
+        return `Observed conflict types: ${types.join(", ")}`;
+      },
+    ),
 
-    evaluate("CHK-SCH-06", "Impossible transitions between resources are detected", "scheduling-conflicts.ts", () => {
-      const conflicts = detectConflicts({
-        tenantId: "tenant-under-check",
-        now: CHECKED_AT,
-        assignments: [
-          fixture({ id: "c1", resources: ["r-a"], travelMinutesFrom: { "r-b": 45 } }),
-          fixture({ id: "c2", resources: ["r-b"], start: "2026-03-02T10:05:00Z", end: "2026-03-02T11:00:00Z" }),
-        ],
-      });
-      const travel = conflicts.find((conflict) => conflict.type === "travel");
-      require(travel !== undefined, "An impossible transition produced no conflict");
-      return travel.detail;
-    }),
+    evaluate(
+      "CHK-SCH-06",
+      "Impossible transitions between resources are detected",
+      "scheduling-conflicts.ts",
+      () => {
+        const conflicts = detectConflicts({
+          tenantId: "tenant-under-check",
+          now: CHECKED_AT,
+          assignments: [
+            fixture({ id: "c1", resources: ["r-a"], travelMinutesFrom: { "r-b": 45 } }),
+            fixture({
+              id: "c2",
+              resources: ["r-b"],
+              start: "2026-03-02T10:05:00Z",
+              end: "2026-03-02T11:00:00Z",
+            }),
+          ],
+        });
+        const travel = conflicts.find((conflict) => conflict.type === "travel");
+        require(travel !== undefined, "An impossible transition produced no conflict");
+        return travel.detail;
+      },
+    ),
   ];
 }
 
 /** The quality, disruption and explanation checks, all executed against the live engines. */
 export function runSchedulingQualityChecks(): readonly SchedulingCheck[] {
   return [
-    evaluate("CHK-SCH-07", "Feasibility is binary and derived from blocking conflicts", "scheduling-quality.ts", () => {
-      const conflicts = detectConflicts({
-        tenantId: "tenant-under-check",
-        now: CHECKED_AT,
-        resourceCapacity: { "r-4": 1 },
-        assignments: [fixture({ id: "c1", resources: ["r-4"], participants: ["p-1", "p-2"] })],
-      });
-      const quality = scoreSchedule({ assignments: [fixture({ id: "c1" })], conflicts });
-      const feasibility = quality.scores.find((score) => score.dimension === "feasibility");
-      require(feasibility?.value === 0, `Expected infeasibility, observed ${String(feasibility?.value)}`);
-      return feasibility.basis;
-    }),
+    evaluate(
+      "CHK-SCH-07",
+      "Feasibility is binary and derived from blocking conflicts",
+      "scheduling-quality.ts",
+      () => {
+        const conflicts = detectConflicts({
+          tenantId: "tenant-under-check",
+          now: CHECKED_AT,
+          resourceCapacity: { "r-4": 1 },
+          assignments: [fixture({ id: "c1", resources: ["r-4"], participants: ["p-1", "p-2"] })],
+        });
+        const quality = scoreSchedule({ assignments: [fixture({ id: "c1" })], conflicts });
+        const feasibility = quality.scores.find((score) => score.dimension === "feasibility");
+        require(feasibility?.value ===
+          0, `Expected infeasibility, observed ${String(feasibility?.value)}`);
+        return feasibility.basis;
+      },
+    ),
 
-    evaluate("CHK-SCH-08", "A change is measured by how much it disturbs the organization", "scheduling-quality.ts", () => {
-      const before = [fixture({ id: "c1" }), fixture({ id: "c2" }), fixture({ id: "c3" }), fixture({ id: "c4" })];
-      const vector = measureDisruption(
-        before,
-        {
-          added: [],
-          removed: [],
-          moved: [
+    evaluate(
+      "CHK-SCH-08",
+      "A change is measured by how much it disturbs the organization",
+      "scheduling-quality.ts",
+      () => {
+        const before = [
+          fixture({ id: "c1" }),
+          fixture({ id: "c2" }),
+          fixture({ id: "c3" }),
+          fixture({ id: "c4" }),
+        ];
+        const vector = measureDisruption(
+          before,
+          {
+            added: [],
+            removed: [],
+            moved: [
+              {
+                before: before[0],
+                after: { ...before[0], start: "2026-03-02T14:00:00Z", end: "2026-03-02T15:00:00Z" },
+              },
+            ],
+          },
+          before,
+          0.25,
+        );
+        require(vector.withinTolerance, "A single move was reported as exceeding a 25% stability tolerance");
+        return vector.summary;
+      },
+    ),
+
+    evaluate(
+      "CHK-SCH-09",
+      "Minimal disruption outranks theoretical efficiency",
+      "scheduling-quality.ts",
+      () => {
+        const quality = scoreSchedule({
+          assignments: [fixture({ id: "c1" })],
+          conflicts: [],
+          loads: { "p-1": 1 },
+        });
+        const candidate = (
+          id: string,
+          ratio: number,
+          overall: number,
+          recommended: boolean,
+        ): RankedCandidate => ({
+          candidateId: id,
+          quality: { ...quality, overall },
+          disruption: {
+            changedAssignments: Math.round(ratio * 10),
+            affectedParticipants: Math.round(ratio * 10),
+            affectedResources: Math.round(ratio * 10),
+            disruptionRatio: ratio,
+            withinTolerance: ratio <= 0.25,
+            summary: id,
+          },
+          conflicts: [],
+          recommended,
+          rationale: id,
+        });
+        const ranked = rankCandidates([
+          candidate("sweeping", 0.9, 0.99, false),
+          candidate("steady", 0.1, 0.6, true),
+        ]);
+        require(ranked[0].candidateId === "steady", `Ranking preferred ${ranked[0].candidateId}`);
+        return `Ranked ${ranked.map((entry) => entry.candidateId).join(" > ")}`;
+      },
+    ),
+
+    evaluate(
+      "CHK-SCH-10",
+      "Two versions are comparable and the difference is stated",
+      "scheduling-quality.ts",
+      () => {
+        const from = [fixture({ id: "c1", activityId: "act-1", resources: ["r-1"] })];
+        const to = [
+          fixture({
+            id: "c1",
+            activityId: "act-1",
+            resources: ["r-2"],
+            start: "2026-03-02T13:00:00Z",
+            end: "2026-03-02T14:00:00Z",
+          }),
+        ];
+        const comparison = compareVersions("v1", "v2", from, to);
+        require(comparison.movedActivities.includes("act-1"), "A moved activity was not reported");
+        return comparison.summary;
+      },
+    ),
+
+    evaluate(
+      "CHK-SCH-11",
+      "Impact analysis escalates what it cannot resolve automatically",
+      "scheduling-quality.ts",
+      () => {
+        const plan = [
+          fixture({ id: "c1", participants: ["p-1"] }),
+          fixture({ id: "c2", participants: ["p-2"] }),
+        ];
+        const conflicts = detectConflicts({
+          tenantId: "tenant-under-check",
+          now: CHECKED_AT,
+          blockedPeriods: [
             {
-              before: before[0],
-              after: { ...before[0], start: "2026-03-02T14:00:00Z", end: "2026-03-02T15:00:00Z" },
+              id: "b-2",
+              start: "2026-03-02T00:00:00Z",
+              end: "2026-03-03T00:00:00Z",
+              reason: "site closing",
             },
           ],
-        },
-        before,
-        0.25,
-      );
-      require(vector.withinTolerance, "A single move was reported as exceeding a 25% stability tolerance");
-      return vector.summary;
-    }),
+          assignments: plan,
+        });
+        const impact = analyseImpact("site closing", plan, conflicts);
+        require(impact.escalation !== null, "A critical conflict produced no escalation");
+        return `${impact.affectedActivities.length} activity(ies) affected; ${impact.escalation}`;
+      },
+    ),
 
-    evaluate("CHK-SCH-09", "Minimal disruption outranks theoretical efficiency", "scheduling-quality.ts", () => {
-      const quality = scoreSchedule({ assignments: [fixture({ id: "c1" })], conflicts: [], loads: { "p-1": 1 } });
-      const candidate = (id: string, ratio: number, overall: number, recommended: boolean): RankedCandidate => ({
-        candidateId: id,
-        quality: { ...quality, overall },
-        disruption: {
-          changedAssignments: Math.round(ratio * 10),
-          affectedParticipants: Math.round(ratio * 10),
-          affectedResources: Math.round(ratio * 10),
-          disruptionRatio: ratio,
-          withinTolerance: ratio <= 0.25,
-          summary: id,
-        },
-        conflicts: [],
-        recommended,
-        rationale: id,
-      });
-      const ranked = rankCandidates([
-        candidate("sweeping", 0.9, 0.99, false),
-        candidate("steady", 0.1, 0.6, true),
-      ]);
-      require(ranked[0].candidateId === "steady", `Ranking preferred ${ranked[0].candidateId}`);
-      return `Ranked ${ranked.map((entry) => entry.candidateId).join(" > ")}`;
-    }),
+    evaluate(
+      "CHK-SCH-12",
+      "A placement is explainable in terms of constraints and rejected alternatives",
+      "scheduling-quality.ts",
+      () => {
+        const whole = fixture({ id: "c1", resources: ["r-5"], participants: ["p-1"] });
+        const conflicts = detectConflicts({
+          tenantId: "tenant-under-check",
+          now: CHECKED_AT,
+          resourceCapabilities: { "r-5": [] },
+          assignments: [{ ...whole, demands: { specialised: 1 } }],
+        });
+        const explanation = explainPlacement(whole, conflicts, [
+          { id: "r-6", reason: "already committed" },
+        ]);
+        require(explanation.constraintsThatDecided.length > 0 &&
+          explanation.whyAlternativesRejected.length >
+            0, "The explanation named no constraint and no rejected alternative");
+        return `${explanation.constraintsThatDecided.length} constraint(s) named, ${explanation.selectedOver.length} alternative(s) rejected`;
+      },
+    ),
 
-    evaluate("CHK-SCH-10", "Two versions are comparable and the difference is stated", "scheduling-quality.ts", () => {
-      const from = [fixture({ id: "c1", activityId: "act-1", resources: ["r-1"] })];
-      const to = [
-        fixture({
-          id: "c1",
-          activityId: "act-1",
-          resources: ["r-2"],
-          start: "2026-03-02T13:00:00Z",
-          end: "2026-03-02T14:00:00Z",
-        }),
-      ];
-      const comparison = compareVersions("v1", "v2", from, to);
-      require(comparison.movedActivities.includes("act-1"), "A moved activity was not reported");
-      return comparison.summary;
-    }),
-
-    evaluate("CHK-SCH-11", "Impact analysis escalates what it cannot resolve automatically", "scheduling-quality.ts", () => {
-      const plan = [fixture({ id: "c1", participants: ["p-1"] }), fixture({ id: "c2", participants: ["p-2"] })];
-      const conflicts = detectConflicts({
-        tenantId: "tenant-under-check",
-        now: CHECKED_AT,
-        blockedPeriods: [
-          { id: "b-2", start: "2026-03-02T00:00:00Z", end: "2026-03-03T00:00:00Z", reason: "site closing" },
-        ],
-        assignments: plan,
-      });
-      const impact = analyseImpact("site closing", plan, conflicts);
-      require(impact.escalation !== null, "A critical conflict produced no escalation");
-      return `${impact.affectedActivities.length} activity(ies) affected; ${impact.escalation}`;
-    }),
-
-    evaluate("CHK-SCH-12", "A placement is explainable in terms of constraints and rejected alternatives", "scheduling-quality.ts", () => {
-      const whole = fixture({ id: "c1", resources: ["r-5"], participants: ["p-1"] });
-      const conflicts = detectConflicts({
-        tenantId: "tenant-under-check",
-        now: CHECKED_AT,
-        resourceCapabilities: { "r-5": [] },
-        assignments: [{ ...whole, demands: { specialised: 1 } }],
-      });
-      const explanation = explainPlacement(whole, conflicts, [{ id: "r-6", reason: "already committed" }]);
-      require(
-        explanation.constraintsThatDecided.length > 0 && explanation.whyAlternativesRejected.length > 0,
-        "The explanation named no constraint and no rejected alternative",
-      );
-      return `${explanation.constraintsThatDecided.length} constraint(s) named, ${explanation.selectedOver.length} alternative(s) rejected`;
-    }),
-
-    evaluate("CHK-SCH-13", "Fairness is measured from committed load, not asserted", "scheduling-quality.ts", () => {
-      const balanced = balanceOf({ "p-1": 4, "p-2": 4 });
-      const skewed = balanceOf({ "p-1": 0, "p-2": 8 });
-      require(balanced === 1 && skewed < 1, "Load balance did not distinguish equal from skewed load");
-      return `balanced=${balanced.toFixed(2)}, skewed=${skewed.toFixed(2)}`;
-    }),
+    evaluate(
+      "CHK-SCH-13",
+      "Fairness is measured from committed load, not asserted",
+      "scheduling-quality.ts",
+      () => {
+        const balanced = balanceOf({ "p-1": 4, "p-2": 4 });
+        const skewed = balanceOf({ "p-1": 0, "p-2": 8 });
+        require(balanced === 1 &&
+          skewed < 1, "Load balance did not distinguish equal from skewed load");
+        return `balanced=${balanced.toFixed(2)}, skewed=${skewed.toFixed(2)}`;
+      },
+    ),
   ];
 }
 
@@ -418,13 +533,15 @@ export const SCHEDULING_GAPS: readonly SchedulingGap[] = [
   },
   {
     id: "GAP-SCH-02",
-    statement: "Long-running optimization runs are not yet exposed as cancellable asynchronous jobs.",
+    statement:
+      "Long-running optimization runs are not yet exposed as cancellable asynchronous jobs.",
     why: "Job lifecycle, progress and cancellation belong to the runtime and automation layers; the domain reports run state without owning the queue.",
     owner: "Phase 05 / Phase 17",
   },
   {
     id: "GAP-SCH-03",
-    statement: "External calendar, HR and room-system import/export adapters are declared, not wired.",
+    statement:
+      "External calendar, HR and room-system import/export adapters are declared, not wired.",
     why: "Interoperability adapters require provider credentials and validation policy that are out of this phase's scope.",
     owner: "Phase 12 adapters with Phase 14 data platform",
   },
@@ -436,7 +553,8 @@ export const SCHEDULING_GAPS: readonly SchedulingGap[] = [
   },
   {
     id: "GAP-SCH-05",
-    statement: "Daylight-saving transition rules are represented by explicit timezone fields, not by a DST rule engine.",
+    statement:
+      "Daylight-saving transition rules are represented by explicit timezone fields, not by a DST rule engine.",
     why: "Interval semantics and timezones are enforced; a calendar conversion engine is a separate concern.",
     owner: "Phase 12 with the data platform",
   },
@@ -504,10 +622,7 @@ export function buildSchedulingIntelligenceReport(
     phase: "12",
     title: "Scheduling & Timetable Intelligence",
     generatedAt,
-    modules: [
-      "scheduling-conflicts.ts",
-      "scheduling-quality.ts",
-    ],
+    modules: ["scheduling-conflicts.ts", "scheduling-quality.ts"],
     rules: SCHEDULING_RULES,
     checks,
     gaps: SCHEDULING_GAPS,

@@ -204,21 +204,17 @@ describe("Phase 10 — organization subscription and the mandate it creates", ()
     });
     expect(essential.ok && essential.subscription.stewardSeats).toBe(1);
     expect(enterprise.ok && enterprise.subscription.stewardSeats).toBe(10);
-    expect(enterprise.ok && enterprise.subscription.channels).toEqual([
-      "sms",
-      "voice",
-      "whatsapp",
-    ]);
+    expect(enterprise.ok && enterprise.subscription.channels).toEqual(["sms", "voice", "whatsapp"]);
   });
 
   it("treats a revoked or expired mandate as not live, whatever it authorises", () => {
     expect(mandateIsActive(activeMandate({ revokedAt: NOW }), NOW)).toBe(false);
-    expect(
-      mandateIsActive(activeMandate({ expiresAt: "2026-02-01T00:00:00.000Z" }), NOW),
-    ).toBe(false);
-    expect(
-      mandateIsActive(activeMandate({ expiresAt: "2026-04-01T00:00:00.000Z" }), NOW),
-    ).toBe(true);
+    expect(mandateIsActive(activeMandate({ expiresAt: "2026-02-01T00:00:00.000Z" }), NOW)).toBe(
+      false,
+    );
+    expect(mandateIsActive(activeMandate({ expiresAt: "2026-04-01T00:00:00.000Z" }), NOW)).toBe(
+      true,
+    );
   });
 });
 
@@ -259,10 +255,9 @@ describe("Phase 10 — autonomy is a ladder, not a switch", () => {
 
   it("gives every action kind a minimum autonomy, and escalation the lowest", () => {
     for (const action of STEWARD_ACTION_KINDS) {
-      expect(
-        STEWARD_AUTONOMY_LEVELS,
-        `${action} must declare a minimum autonomy`,
-      ).toContain(ACTION_MINIMUM_AUTONOMY[action]);
+      expect(STEWARD_AUTONOMY_LEVELS, `${action} must declare a minimum autonomy`).toContain(
+        ACTION_MINIMUM_AUTONOMY[action],
+      );
     }
     expect(ACTION_MINIMUM_AUTONOMY.escalate_to_human).toBe("OBSERVE");
   });
@@ -290,7 +285,11 @@ describe("Phase 10 — hard limits are reported, not discovered", () => {
   it("warns before a limit is reached", () => {
     const status = limitStatus(
       activeMandate(),
-      usage({ spendMinorUnitsThisMonth: Math.floor(DEFAULT_STEWARD_LIMITS.maxMonthlySpendMinorUnits * 0.85) }),
+      usage({
+        spendMinorUnitsThisMonth: Math.floor(
+          DEFAULT_STEWARD_LIMITS.maxMonthlySpendMinorUnits * 0.85,
+        ),
+      }),
     );
     expect(status.exceeded).toEqual([]);
     expect(status.approaching).toContain("monthly_spend");
@@ -890,10 +889,7 @@ describe("Phase 10 — knowledge, limits and recording are refusals, not warning
 
 describe("Phase 10 — the autonomy ladder decides act, ask, or step aside", () => {
   it("keeps an OBSERVE steward watching and reporting, never acting", () => {
-    const decision = evaluateStewardAction(
-      activeMandate({ autonomy: "OBSERVE" }),
-      actionRequest(),
-    );
+    const decision = evaluateStewardAction(activeMandate({ autonomy: "OBSERVE" }), actionRequest());
     expect(decision.decision).toBe("DENY");
     expect(decision.failedRules).toContain("rule_autonomy_observe");
   });
@@ -973,10 +969,7 @@ describe("Phase 10 — mass and sensitive communication are always witnessed", (
         activeMandate({ autonomy }),
         actionRequest({ mass: true, purpose: "service" }),
       );
-      expect(
-        decision.decision,
-        `mass send at ${autonomy} must not be automatic`,
-      ).not.toBe("ALLOW");
+      expect(decision.decision, `mass send at ${autonomy} must not be automatic`).not.toBe("ALLOW");
     }
   });
 

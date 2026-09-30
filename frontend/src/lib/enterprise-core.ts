@@ -63,13 +63,24 @@ export type WorkloadType =
   | "automation";
 
 export const WORKLOAD_TYPES: readonly WorkloadType[] = [
-  "interactive", "background", "ai", "analytics", "integration", "media", "simulation", "automation",
+  "interactive",
+  "background",
+  "ai",
+  "analytics",
+  "integration",
+  "media",
+  "simulation",
+  "automation",
 ] as const;
 
 export type PriorityClass = "critical" | "high" | "normal" | "background" | "best_effort";
 
 export const PRIORITY_CLASSES: readonly PriorityClass[] = [
-  "critical", "high", "normal", "background", "best_effort",
+  "critical",
+  "high",
+  "normal",
+  "background",
+  "best_effort",
 ] as const;
 
 export const PRIORITY_RANK: Record<PriorityClass, number> = {
@@ -98,7 +109,15 @@ export function createWorkload(input: {
   if (!WORKLOAD_TYPES.includes(input.type)) {
     return { ok: false, error: "Unknown workload type (Section L)" };
   }
-  return { ok: true, workload: { id: input.id, name: input.name, type: input.type, priorityClass: input.priorityClass } };
+  return {
+    ok: true,
+    workload: {
+      id: input.id,
+      name: input.name,
+      type: input.type,
+      priorityClass: input.priorityClass,
+    },
+  };
 }
 
 export interface ComputePool {
@@ -122,16 +141,25 @@ export function createComputePool(input: {
 export function assignWorkloadToPool(
   workload: Workload,
   pool: ComputePool,
-): { ok: true; assignment: { workloadRef: WorkloadId; poolRef: ComputePoolId } } | { ok: false; error: string } {
+):
+  | { ok: true; assignment: { workloadRef: WorkloadId; poolRef: ComputePoolId } }
+  | { ok: false; error: string } {
   if (!pool.accepts.includes(workload.type)) {
-    return { ok: false, error: `Pool does not accept workload type "${workload.type}" (Section M)` };
+    return {
+      ok: false,
+      error: `Pool does not accept workload type "${workload.type}" (Section M)`,
+    };
   }
   return { ok: true, assignment: { workloadRef: workload.id, poolRef: pool.id } };
 }
 
 // Workload types that can consume disproportionate resources (Section N).
 export const EXPENSIVE_WORKLOAD_TYPES: readonly WorkloadType[] = [
-  "ai", "analytics", "media", "simulation", "integration",
+  "ai",
+  "analytics",
+  "media",
+  "simulation",
+  "integration",
 ] as const;
 
 // Section N: no expensive workload may share a pool with critical/high
@@ -174,9 +202,21 @@ export type ScaleDimensionName =
   | "operational";
 
 export const SCALE_DIMENSIONS: readonly ScaleDimensionName[] = [
-  "tenant", "institution", "geographic", "user", "device", "data", "event",
-  "workflow", "ai", "integration", "financial", "communication", "digital_twin",
-  "observability", "operational",
+  "tenant",
+  "institution",
+  "geographic",
+  "user",
+  "device",
+  "data",
+  "event",
+  "workflow",
+  "ai",
+  "integration",
+  "financial",
+  "communication",
+  "digital_twin",
+  "observability",
+  "operational",
 ] as const;
 
 export interface ScaleDimension {
@@ -198,9 +238,21 @@ export function createScaleDimension(input: {
     return { ok: false, error: "Unknown scale dimension (Section F)" };
   }
   if (input.current < 0 || input.projected < 0 || input.capacity <= 0) {
-    return { ok: false, error: "Scale dimension values must be non-negative with positive capacity (Section F)" };
+    return {
+      ok: false,
+      error: "Scale dimension values must be non-negative with positive capacity (Section F)",
+    };
   }
-  return { ok: true, dimension: { name: input.name, current: input.current, projected: input.projected, capacity: input.capacity, unit: input.unit } };
+  return {
+    ok: true,
+    dimension: {
+      name: input.name,
+      current: input.current,
+      projected: input.projected,
+      capacity: input.capacity,
+      unit: input.unit,
+    },
+  };
 }
 
 export function isDimensionAtRisk(dimension: ScaleDimension): boolean {
@@ -224,13 +276,20 @@ export function createScalingStrategy(input: {
   vertical: boolean;
   verticalOnlyJustification?: string;
 }): { ok: true; strategy: ScalingStrategy } | { ok: false; error: string } {
-  if (!input.service.trim()) return { ok: false, error: "Scaling strategy service is required (Section G)" };
+  if (!input.service.trim())
+    return { ok: false, error: "Scaling strategy service is required (Section G)" };
   if (!input.horizontal && !input.vertical) {
-    return { ok: false, error: "A scaling strategy must include at least one direction (Section H)" };
+    return {
+      ok: false,
+      error: "A scaling strategy must include at least one direction (Section H)",
+    };
   }
   // Section I: vertical scaling must never become the only strategy.
   if (!input.horizontal && !input.verticalOnlyJustification) {
-    return { ok: false, error: "Vertical-only scaling requires an explicit justification (Section I)" };
+    return {
+      ok: false,
+      error: "Vertical-only scaling requires an explicit justification (Section I)",
+    };
   }
   return {
     ok: true,
@@ -267,9 +326,12 @@ export function createStateContract(input: {
   migration: string;
 }): { ok: true; contract: StateContract } | { ok: false; error: string } {
   const required: [string, string][] = [
-    ["ownership", input.ownership], ["partitioning", input.partitioning],
-    ["replication", input.replication], ["consistency", input.consistency],
-    ["recovery", input.recovery], ["migration", input.migration],
+    ["ownership", input.ownership],
+    ["partitioning", input.partitioning],
+    ["replication", input.replication],
+    ["consistency", input.consistency],
+    ["recovery", input.recovery],
+    ["migration", input.migration],
   ];
   for (const [field, value] of required) {
     if (!value.trim()) {
@@ -308,4 +370,3 @@ export function createServiceBoundary(input: {
     },
   };
 }
-

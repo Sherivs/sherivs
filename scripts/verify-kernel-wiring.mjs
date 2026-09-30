@@ -67,13 +67,23 @@ const check = (name, ok, detail) => {
 };
 
 /* ---------- 3. Substrate presence + deny-by-default ---------- */
-for (const table of ["cg_entity", "cg_relationship", "cg_event", "cg_observation", "cg_domain_runtime"]) {
+for (const table of [
+  "cg_entity",
+  "cg_relationship",
+  "cg_event",
+  "cg_observation",
+  "cg_domain_runtime",
+]) {
   const { error } = await svc.from(table).select("id").limit(1);
   check(`table ${table} readable (service role)`, !error, error?.message ?? "ok");
 }
 {
   const { error } = await anon.from("cg_entity").select("id").limit(1);
-  check("anon denied on cg_entity (deny-by-default)", !!error, error?.message ?? "UNEXPECTED ALLOW");
+  check(
+    "anon denied on cg_entity (deny-by-default)",
+    !!error,
+    error?.message ?? "UNEXPECTED ALLOW",
+  );
 }
 
 /* ---------- 4. Register runtime:scholar (register-runtime DB path) ---------- */
@@ -82,21 +92,23 @@ const row = kernel.buildRegistryRow(kernel.scholarManifest, now, "proposed");
 {
   const existing = await svc.from("cg_domain_runtime").select("id").eq("id", row.id).maybeSingle();
   if (existing.error) throw new Error(`pre-check failed: ${existing.error.message}`);
-  const upsert = await svc
-    .from("cg_domain_runtime")
-    .upsert(
-      {
-        id: row.id,
-        name: row.name,
-        version: row.version,
-        status: row.status,
-        manifest: row.manifest,
-        updated_at: now,
-      },
-      { onConflict: "id" },
-    );
+  const upsert = await svc.from("cg_domain_runtime").upsert(
+    {
+      id: row.id,
+      name: row.name,
+      version: row.version,
+      status: row.status,
+      manifest: row.manifest,
+      updated_at: now,
+    },
+    { onConflict: "id" },
+  );
   check("register runtime:scholar upsert", !upsert.error, upsert.error?.message ?? row.id);
-  const read = await svc.from("cg_domain_runtime").select("id,name,version,status").eq("id", row.id).single();
+  const read = await svc
+    .from("cg_domain_runtime")
+    .select("id,name,version,status")
+    .eq("id", row.id)
+    .single();
   check(
     "runtime:scholar row persisted (status proposed)",
     !read.error && read.data.status === "proposed" && read.data.version === "0.1.0",
@@ -130,7 +142,11 @@ const row = kernel.buildRegistryRow(kernel.scholarManifest, now, "proposed");
   check("cg_event insert (state=pending)", !ins.error, ins.error?.message ?? ins.data?.id);
   const replay = await svc.from("cg_event").insert(ev);
   const duplicated = !!replay.error && /duplicate key/i.test(replay.error.message);
-  check("idempotency replay rejected (duplicate)", duplicated, replay.error?.message ?? "UNEXPECTED");
+  check(
+    "idempotency replay rejected (duplicate)",
+    duplicated,
+    replay.error?.message ?? "UNEXPECTED",
+  );
   // Cleanup test event only (scholar registration row is intentionally kept).
   const del = await svc.from("cg_event").delete().eq("idempotency_key", "wiring-verify-key-001");
   if (del.error) console.error(`cleanup note: ${del.error.message}`);

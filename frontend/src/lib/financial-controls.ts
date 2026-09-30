@@ -62,7 +62,10 @@ export function canRefundPayment(
   }
   const totalAfter = totalRefunded.amountMinor + requestedRefund.amountMinor;
   if (totalAfter > originalPaymentAmount.amountMinor) {
-    return { ok: false, error: "Total refunds would exceed the original payment (invariant violated)" };
+    return {
+      ok: false,
+      error: "Total refunds would exceed the original payment (invariant violated)",
+    };
   }
   return { ok: true };
 }
@@ -149,11 +152,12 @@ export interface CreateFinancialAuditEventInput {
 }
 
 export type CreateFinancialAuditEventResult =
-  | { ok: true; event: FinancialAuditEvent }
-  | { ok: false; error: string };
+  { ok: true; event: FinancialAuditEvent } | { ok: false; error: string };
 
 /** Create a financial audit event. Audit events are immutable records (FC). */
-export function createFinancialAuditEvent(input: CreateFinancialAuditEventInput): CreateFinancialAuditEventResult {
+export function createFinancialAuditEvent(
+  input: CreateFinancialAuditEventInput,
+): CreateFinancialAuditEventResult {
   if (input.actorId.trim() === "") {
     return { ok: false, error: "Financial audit requires an actor (FC)" };
   }

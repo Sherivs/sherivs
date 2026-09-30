@@ -8,10 +8,7 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  createSchoolWithAdmin,
-  type CreateSchoolResult,
-} from "@/lib/provisioning.functions";
+import { createSchoolWithAdmin, type CreateSchoolResult } from "@/lib/provisioning.functions";
 
 const TIERS = ["trial", "starter", "growth", "professional", "enterprise"] as const;
 
@@ -95,8 +92,8 @@ export function AddSchoolForm({ onCreated }: { onCreated?: (r: CreateSchoolResul
           <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-4 text-sm">
             <div className="font-semibold text-green-400">School created</div>
             <p className="mt-1 text-xs text-muted-foreground">
-              Hand these credentials to the school admin. The temporary password
-              cannot be retrieved again from here.
+              Hand these credentials to the school admin. The temporary password cannot be retrieved
+              again from here.
             </p>
           </div>
           <CredRow label="School name" value={result.schoolName} />
@@ -159,9 +156,7 @@ export function AddSchoolForm({ onCreated }: { onCreated?: (r: CreateSchoolResul
             <Field label="Subscription plan">
               <select
                 value={tier}
-                onChange={(e) =>
-                  setTier(e.target.value as (typeof TIERS)[number])
-                }
+                onChange={(e) => setTier(e.target.value as (typeof TIERS)[number])}
                 className="uos-input"
               >
                 {TIERS.map((t) => (
@@ -201,9 +196,7 @@ export function AddSchoolForm({ onCreated }: { onCreated?: (r: CreateSchoolResul
                 type="number"
                 min={0}
                 value={monthlyFee}
-                onChange={(e) =>
-                  setMonthlyFee(e.target.value === "" ? "" : Number(e.target.value))
-                }
+                onChange={(e) => setMonthlyFee(e.target.value === "" ? "" : Number(e.target.value))}
                 className="uos-input"
               />
             </Field>
@@ -247,21 +240,11 @@ function Field({
   );
 }
 
-function CredRow({
-  label,
-  value,
-  mono,
-}: {
-  label: string;
-  value: string;
-  mono?: boolean;
-}) {
+function CredRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="flex items-start justify-between gap-3 rounded-md border border-border px-3 py-2 text-sm">
       <div className="min-w-0">
-        <div className="text-[11px] uppercase tracking-widest text-muted-foreground">
-          {label}
-        </div>
+        <div className="text-[11px] uppercase tracking-widest text-muted-foreground">{label}</div>
         <div className={"mt-0.5 break-all " + (mono ? "font-mono" : "")}>{value}</div>
       </div>
       <button

@@ -29,7 +29,11 @@ function toCSV(rows: Log[]) {
   };
   return [
     headers.join(","),
-    ...rows.map((r) => [r.created_at ?? "", r.action, r.target_school_id ?? "", r.admin_id ?? "", r.details].map(esc).join(",")),
+    ...rows.map((r) =>
+      [r.created_at ?? "", r.action, r.target_school_id ?? "", r.admin_id ?? "", r.details]
+        .map(esc)
+        .join(","),
+    ),
   ].join("\n");
 }
 
@@ -58,7 +62,14 @@ function SuperAdminLogsPage() {
     return rows.filter((r) => {
       if (actionFilter && r.action !== actionFilter) return false;
       if (!needle) return true;
-      const hay = [r.action, r.target_school_id ?? "", r.admin_id ?? "", JSON.stringify(r.details ?? "")].join(" ").toLowerCase();
+      const hay = [
+        r.action,
+        r.target_school_id ?? "",
+        r.admin_id ?? "",
+        JSON.stringify(r.details ?? ""),
+      ]
+        .join(" ")
+        .toLowerCase();
       return hay.includes(needle);
     });
   }, [rows, q, actionFilter]);
@@ -81,7 +92,13 @@ function SuperAdminLogsPage() {
       title="Audit logs"
       subtitle="Recent super-admin actions across all tenants. Showing the latest 500 records."
       actions={
-        <Button type="button" variant="outline" size="sm" onClick={downloadCSV} disabled={filtered.length === 0}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={downloadCSV}
+          disabled={filtered.length === 0}
+        >
           <Download className="mr-2 size-4" /> Export CSV
         </Button>
       }
@@ -102,7 +119,11 @@ function SuperAdminLogsPage() {
           onChange={(e) => setActionFilter(e.target.value)}
         >
           <option value="">All actions</option>
-          {actions.map((a) => <option key={a} value={a}>{a}</option>)}
+          {actions.map((a) => (
+            <option key={a} value={a}>
+              {a}
+            </option>
+          ))}
         </select>
         <span className="text-xs text-muted-foreground ml-auto">
           {filtered.length} of {rows.length}
@@ -112,13 +133,17 @@ function SuperAdminLogsPage() {
       {logs.isLoading ? (
         <div className="uos-card p-8 text-center text-sm text-muted-foreground">Loading logs…</div>
       ) : logs.error ? (
-        <div className="uos-card p-8 text-center text-sm text-red-400">{(logs.error as Error).message}</div>
+        <div className="uos-card p-8 text-center text-sm text-red-400">
+          {(logs.error as Error).message}
+        </div>
       ) : filtered.length === 0 ? (
         <EmptyCard
           title={rows.length === 0 ? "No logs yet" : "No logs match your filters"}
-          body={rows.length === 0
-            ? "Super-admin actions like creating schools or rotating keys will appear here."
-            : "Try a different search term or action filter."}
+          body={
+            rows.length === 0
+              ? "Super-admin actions like creating schools or rotating keys will appear here."
+              : "Try a different search term or action filter."
+          }
         />
       ) : (
         <PaginatedSaLogs rows={filtered} />

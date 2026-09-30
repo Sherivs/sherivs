@@ -98,7 +98,8 @@ export function selectPaymentRoute(input: {
   });
 
   const eligible = input.providers.filter(
-    (provider) => candidates.find((candidate) => candidate.providerId === provider.providerId)?.eligible,
+    (provider) =>
+      candidates.find((candidate) => candidate.providerId === provider.providerId)?.eligible,
   );
 
   if (eligible.length === 0) {
@@ -152,7 +153,8 @@ function disqualifyingCapability(
   if (!provider.capabilities.jurisdictions.includes(requirement.jurisdiction)) {
     return `not declared for jurisdiction ${requirement.jurisdiction}`;
   }
-  if (requirement.requiresSplit && !provider.capabilities.supportsSplit) return "cannot route a split payment";
+  if (requirement.requiresSplit && !provider.capabilities.supportsSplit)
+    return "cannot route a split payment";
   if (requirement.requiresPartialRefund && !provider.capabilities.supportsPartialRefund) {
     return "cannot support partial refunds";
   }
@@ -188,7 +190,10 @@ export function canFailover(input: {
     return { allowed: false, reason: "a failover must move to a different provider" };
   }
   if (attempt.outcome === "succeeded") {
-    return { allowed: false, reason: "the attempt succeeded: failover would take the same money twice" };
+    return {
+      allowed: false,
+      reason: "the attempt succeeded: failover would take the same money twice",
+    };
   }
   if (attempt.outcome === "unresolved_timeout") {
     return {
@@ -203,12 +208,16 @@ export function canFailover(input: {
   return {
     allowed: true,
     toProviderId,
-    reason: "the provider declined or failed and proved no capture: re-routing cannot double-charge",
+    reason:
+      "the provider declined or failed and proved no capture: re-routing cannot double-charge",
   };
 }
 
 /** Explain a routing decision in words an operator can act on. */
-export function explainRoutingDecision(decision: RoutingDecision, providers: readonly ProviderProfile[]): string {
+export function explainRoutingDecision(
+  decision: RoutingDecision,
+  providers: readonly ProviderProfile[],
+): string {
   const lines = [`Routing decision: ${decision.providerId ?? "unroutable"}`];
   for (const candidate of decision.candidates) {
     const profile = providers.find((provider) => provider.providerId === candidate.providerId);
@@ -218,7 +227,8 @@ export function explainRoutingDecision(decision: RoutingDecision, providers: rea
         : `  - ${candidate.providerId} (${profile?.displayName ?? "unknown"}) was refused: ${candidate.disqualifiedBy}`,
     );
   }
-  if (decision.policyApplied.length > 0) lines.push(`  policy applied: ${decision.policyApplied.join("; ")}`);
+  if (decision.policyApplied.length > 0)
+    lines.push(`  policy applied: ${decision.policyApplied.join("; ")}`);
   lines.push(`  reason: ${decision.reason}`);
   return lines.join("\n");
 }

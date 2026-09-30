@@ -13,8 +13,7 @@
  */
 
 export const STATUS_SEMANTICS = {
-  COMPLETE:
-    "An approved scope has an evidenced outcome for that scope only.",
+  COMPLETE: "An approved scope has an evidenced outcome for that scope only.",
   VERIFIED:
     "An independent verification decision, backed by evidence, concluded the required result occurred. Worker completion is not verification.",
   CONFORMANT:
@@ -216,7 +215,10 @@ export function admitExecution(
   if (mission.expiresAt !== null && mission.expiresAt <= now) {
     return denied("expired");
   }
-  if (!mission.authorizedActions.includes(request.action) || mission.nonScope.includes(request.action)) {
+  if (
+    !mission.authorizedActions.includes(request.action) ||
+    mission.nonScope.includes(request.action)
+  ) {
     return denied("out_of_scope");
   }
   if (!request.realityRef.trim()) return denied("missing_reality");
@@ -233,10 +235,7 @@ export function admitExecution(
   };
 }
 
-export function rollbackExecution(
-  record: ExecutionRecord,
-  at: string,
-): ExecutionRecord {
+export function rollbackExecution(record: ExecutionRecord, at: string): ExecutionRecord {
   const result: ExecutionResult = { status: "rolled_back", reason: "rollback" };
   return {
     ...record,

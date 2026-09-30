@@ -35,8 +35,7 @@ export interface TenantLifecycleTransitionRequest {
 }
 
 export type TenantLifecycleTransitionResult =
-  | { ok: true; tenant: CoreGridTenant; event: TenantEvent }
-  | { ok: false; error: string };
+  { ok: true; tenant: CoreGridTenant; event: TenantEvent } | { ok: false; error: string };
 
 /* ─────────────────────────────────────────────────────────────
  * Lifecycle engine
@@ -198,13 +197,7 @@ export function isProvisioningComplete(state: ProvisioningState): boolean {
  * ────────────────────────────────────────────────────────────*/
 
 export type MigrationStage =
-  | "PLANNED"
-  | "VALIDATING"
-  | "SNAPSHOTTING"
-  | "COPYING"
-  | "VERIFYING"
-  | "SWITCHING"
-  | "COMPLETED";
+  "PLANNED" | "VALIDATING" | "SNAPSHOTTING" | "COPYING" | "VERIFYING" | "SWITCHING" | "COMPLETED";
 
 export const MIGRATION_PIPELINE: readonly MigrationStage[] = [
   "PLANNED",

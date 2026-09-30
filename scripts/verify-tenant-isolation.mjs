@@ -98,13 +98,19 @@ try {
   ids.userA = await createAuthUser(emailA);
   ids.userB = await createAuthUser(emailB);
 
-  const ua = await svc
-    .from("users")
-    .insert({ id: ids.userA, school_id: ids.schoolA, full_name: "Isolation Admin A", role: "admin" });
+  const ua = await svc.from("users").insert({
+    id: ids.userA,
+    school_id: ids.schoolA,
+    full_name: "Isolation Admin A",
+    role: "admin",
+  });
   if (ua.error) throw new Error(`users row A: ${ua.error.message}`);
-  const ub = await svc
-    .from("users")
-    .insert({ id: ids.userB, school_id: ids.schoolB, full_name: "Isolation Admin B", role: "admin" });
+  const ub = await svc.from("users").insert({
+    id: ids.userB,
+    school_id: ids.schoolB,
+    full_name: "Isolation Admin B",
+    role: "admin",
+  });
   if (ub.error) throw new Error(`users row B: ${ub.error.message}`);
 
   const msg = await svc
@@ -127,17 +133,39 @@ try {
   const tokenA = await signInAs(emailA);
   const tokenB = await signInAs(emailB);
 
-  const crossMsgs = await readAs(tokenA, "messages", { school_id: `eq.${ids.schoolB}`, select: "id" });
-  check("Tenant A cannot read Tenant B messages", Array.isArray(crossMsgs) && crossMsgs.length === 0, `rows=${crossMsgs.length}`);
+  const crossMsgs = await readAs(tokenA, "messages", {
+    school_id: `eq.${ids.schoolB}`,
+    select: "id",
+  });
+  check(
+    "Tenant A cannot read Tenant B messages",
+    Array.isArray(crossMsgs) && crossMsgs.length === 0,
+    `rows=${crossMsgs.length}`,
+  );
 
-  const crossUsers = await readAs(tokenA, "users", { school_id: `eq.${ids.schoolB}`, select: "id" });
-  check("Tenant A cannot read Tenant B users", Array.isArray(crossUsers) && crossUsers.length === 0, `rows=${crossUsers.length}`);
+  const crossUsers = await readAs(tokenA, "users", {
+    school_id: `eq.${ids.schoolB}`,
+    select: "id",
+  });
+  check(
+    "Tenant A cannot read Tenant B users",
+    Array.isArray(crossUsers) && crossUsers.length === 0,
+    `rows=${crossUsers.length}`,
+  );
 
   const ownMsgs = await readAs(tokenB, "messages", { id: `eq.${ids.msgId}`, select: "id" });
-  check("Tenant B can read own message (within tenant)", Array.isArray(ownMsgs) && ownMsgs.length === 1, `rows=${ownMsgs.length}`);
+  check(
+    "Tenant B can read own message (within tenant)",
+    Array.isArray(ownMsgs) && ownMsgs.length === 1,
+    `rows=${ownMsgs.length}`,
+  );
 
   const ownUsers = await readAs(tokenB, "users", { id: `eq.${ids.userB}`, select: "id" });
-  check("User B reads self", Array.isArray(ownUsers) && ownUsers.length === 1, `rows=${ownUsers.length}`);
+  check(
+    "User B reads self",
+    Array.isArray(ownUsers) && ownUsers.length === 1,
+    `rows=${ownUsers.length}`,
+  );
 } catch (err) {
   check("tenant-isolation spec execution", false, err.message);
 } finally {

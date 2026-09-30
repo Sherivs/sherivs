@@ -11,7 +11,12 @@ import { usePagination, PAGE_SIZE } from "@/hooks/use-pagination";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 
 type Row = {
@@ -88,7 +93,11 @@ function AdminLessonPlans() {
   return (
     <PortalPage
       title="Lesson plans"
-      subtitle={pending > 0 ? `${pending} plan${pending === 1 ? "" : "s"} awaiting review` : "Review and approve teacher lesson plans."}
+      subtitle={
+        pending > 0
+          ? `${pending} plan${pending === 1 ? "" : "s"} awaiting review`
+          : "Review and approve teacher lesson plans."
+      }
     >
       {q.isLoading ? (
         <div className="uos-card p-8 text-center text-sm text-muted-foreground">Loading…</div>
@@ -124,9 +133,18 @@ function AdminLessonPlans() {
                     <td className="px-4 py-3">{r.teacher?.full_name ?? "—"}</td>
                     <td className="px-4 py-3">{r.subject ?? "—"}</td>
                     <td className="px-4 py-3 font-mono text-xs">{r.date_planned ?? "—"}</td>
-                    <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={r.status} />
+                    </td>
                     <td className="px-4 py-3 text-right">
-                      <Button size="sm" variant="outline" onClick={() => { setReviewing(r); setNotes(r.review_notes ?? ""); }}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setReviewing(r);
+                          setNotes(r.review_notes ?? "");
+                        }}
+                      >
                         <ClipboardCheck className="size-3.5" /> Review
                       </Button>
                     </td>
@@ -157,7 +175,9 @@ function AdminLessonPlans() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            <label className="text-xs uppercase tracking-wide text-muted-foreground">Review notes</label>
+            <label className="text-xs uppercase tracking-wide text-muted-foreground">
+              Review notes
+            </label>
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -176,7 +196,9 @@ function AdminLessonPlans() {
             >
               Request revisions
             </Button>
-            <Button onClick={() => reviewing && setStatus(reviewing, "approved", notes.trim() || null)}>
+            <Button
+              onClick={() => reviewing && setStatus(reviewing, "approved", notes.trim() || null)}
+            >
               Approve
             </Button>
           </DialogFooter>

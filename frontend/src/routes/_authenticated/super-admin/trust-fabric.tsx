@@ -33,9 +33,10 @@ function TrustFabricPage() {
       <section className="uos-card p-6">
         <h2 className="font-display text-lg font-bold">Self-check</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          {report.verdict.satisfied} of {report.verdict.invariantCount} invariants hold (each checked
-          by calling the shipped machine, not by reading this page) · {report.exercises.length}{" "}
-          exercised paths · {report.verdict.reported} capabilities reported as not yet executable.
+          {report.verdict.satisfied} of {report.verdict.invariantCount} invariants hold (each
+          checked by calling the shipped machine, not by reading this page) ·{" "}
+          {report.exercises.length} exercised paths · {report.verdict.reported} capabilities
+          reported as not yet executable.
         </p>
         {failing.length > 0 ? (
           <p className="mt-3 text-sm text-destructive">
@@ -135,7 +136,6 @@ function TrustFabricPage() {
           ))}
         </ul>
       </section>
-
     </PortalPage>
   );
 }

@@ -53,6 +53,9 @@ for (const path of [
   const safe = result.text
     .replace(/sbp_[A-Za-z0-9_\-]+/g, "[redacted]")
     .replace(/postgres(?:ql)?:\/\/[^\s"\\]+/gi, "[redacted-url]")
-    .replace(/"(?:db_pass|password|connectionString|connection_string)"\s*:\s*"[^"]*"/gi, '"secret":"[redacted]"');
+    .replace(
+      /"(?:db_pass|password|connectionString|connection_string)"\s*:\s*"[^"]*"/gi,
+      '"secret":"[redacted]"',
+    );
   console.log(`\nGET ${path} HTTP ${result.status}\n${safe.slice(0, 1200)}`);
 }

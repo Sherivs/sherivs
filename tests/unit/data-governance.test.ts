@@ -40,9 +40,27 @@ describe("Data lineage (AK, AL)", () => {
       { id: "other-1", tenantId: TENANT_B, type: "dataset" as const, name: "other" },
     ];
     const edges = [
-      { id: "e1", tenantId: TENANT_A, fromNodeId: "src-1", toNodeId: "pipe-1", pipelineVersion: "v1" },
-      { id: "e2", tenantId: TENANT_A, fromNodeId: "pipe-1", toNodeId: "ds-1", pipelineVersion: "v1" },
-      { id: "e3", tenantId: TENANT_B, fromNodeId: "src-1", toNodeId: "other-1", pipelineVersion: null },
+      {
+        id: "e1",
+        tenantId: TENANT_A,
+        fromNodeId: "src-1",
+        toNodeId: "pipe-1",
+        pipelineVersion: "v1",
+      },
+      {
+        id: "e2",
+        tenantId: TENANT_A,
+        fromNodeId: "pipe-1",
+        toNodeId: "ds-1",
+        pipelineVersion: "v1",
+      },
+      {
+        id: "e3",
+        tenantId: TENANT_B,
+        fromNodeId: "src-1",
+        toNodeId: "other-1",
+        pipelineVersion: null,
+      },
     ];
     const { traced, terminal } = traceLineage("src-1", nodes, edges, TENANT_A);
     expect(traced).toEqual(["src-1", "pipe-1", "ds-1"]);
@@ -50,7 +68,12 @@ describe("Data lineage (AK, AL)", () => {
   });
 
   it("rejects self-referencing lineage edges", () => {
-    const result = createLineageEdge({ id: "e1", tenantId: TENANT_A, fromNodeId: "a", toNodeId: "a" });
+    const result = createLineageEdge({
+      id: "e1",
+      tenantId: TENANT_A,
+      fromNodeId: "a",
+      toNodeId: "a",
+    });
     expect(result.ok).toBe(false);
   });
 });
@@ -88,19 +111,47 @@ describe("Query governance (BA)", () => {
   };
 
   it("blocks a query without a tenant filter", () => {
-    expect(evaluateQueryGovernance({ policy, estimatedRows: 100, hasTenantFilter: false, exposure: "INTERNAL" }).ok).toBe(false);
+    expect(
+      evaluateQueryGovernance({
+        policy,
+        estimatedRows: 100,
+        hasTenantFilter: false,
+        exposure: "INTERNAL",
+      }).ok,
+    ).toBe(false);
   });
 
   it("blocks unbounded queries", () => {
-    expect(evaluateQueryGovernance({ policy, estimatedRows: 1_000_000, hasTenantFilter: true, exposure: "INTERNAL" }).ok).toBe(false);
+    expect(
+      evaluateQueryGovernance({
+        policy,
+        estimatedRows: 1_000_000,
+        hasTenantFilter: true,
+        exposure: "INTERNAL",
+      }).ok,
+    ).toBe(false);
   });
 
   it("blocks exposure above the allowed sensitivity", () => {
-    expect(evaluateQueryGovernance({ policy, estimatedRows: 100, hasTenantFilter: true, exposure: "SENSITIVE" }).ok).toBe(false);
+    expect(
+      evaluateQueryGovernance({
+        policy,
+        estimatedRows: 100,
+        hasTenantFilter: true,
+        exposure: "SENSITIVE",
+      }).ok,
+    ).toBe(false);
   });
 
   it("allows a governed query", () => {
-    expect(evaluateQueryGovernance({ policy, estimatedRows: 100, hasTenantFilter: true, exposure: "CONFIDENTIAL" }).ok).toBe(true);
+    expect(
+      evaluateQueryGovernance({
+        policy,
+        estimatedRows: 100,
+        hasTenantFilter: true,
+        exposure: "CONFIDENTIAL",
+      }).ok,
+    ).toBe(true);
   });
 });
 
@@ -124,7 +175,11 @@ describe("Masking and pseudonymization (BG, BH)", () => {
 
 describe("Retention and archival (BK, BN)", () => {
   it("creates a retention policy and honours legal holds", () => {
-    const result = createRetentionPolicy({ datasetName: "d", tenantId: TENANT_A, retentionDays: 365 });
+    const result = createRetentionPolicy({
+      datasetName: "d",
+      tenantId: TENANT_A,
+      retentionDays: 365,
+    });
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(isSubjectToRetention(result.policy, 400, false)).toBe(false); // past retention
@@ -133,7 +188,11 @@ describe("Retention and archival (BK, BN)", () => {
   });
 
   it("rejects a non-positive retention period", () => {
-    const result = createRetentionPolicy({ datasetName: "d", tenantId: TENANT_A, retentionDays: 0 });
+    const result = createRetentionPolicy({
+      datasetName: "d",
+      tenantId: TENANT_A,
+      retentionDays: 0,
+    });
     expect(result.ok).toBe(false);
   });
 });

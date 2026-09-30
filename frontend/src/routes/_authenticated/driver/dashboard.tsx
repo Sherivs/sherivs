@@ -58,15 +58,28 @@ export const Route = createFileRoute("/_authenticated/driver/dashboard")({
   component: DriverDashboard,
 });
 
-const STATUS_META: Record<
-  DriverBusStatus,
-  { label: string; chip: string; dot: string }
-> = {
+const STATUS_META: Record<DriverBusStatus, { label: string; chip: string; dot: string }> = {
   idle: { label: "Idle", chip: "bg-white/5 text-white/70 border-white/10", dot: "bg-white/40" },
-  en_route: { label: "On Route", chip: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30", dot: "bg-emerald-400" },
-  at_school: { label: "At School", chip: "bg-blue-500/15 text-blue-300 border-blue-500/30", dot: "bg-blue-400" },
-  returning: { label: "Returning", chip: "bg-amber-500/15 text-amber-300 border-amber-500/30", dot: "bg-amber-400" },
-  maintenance: { label: "Maintenance", chip: "bg-red-500/15 text-red-300 border-red-500/30", dot: "bg-red-400" },
+  en_route: {
+    label: "On Route",
+    chip: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+    dot: "bg-emerald-400",
+  },
+  at_school: {
+    label: "At School",
+    chip: "bg-blue-500/15 text-blue-300 border-blue-500/30",
+    dot: "bg-blue-400",
+  },
+  returning: {
+    label: "Returning",
+    chip: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+    dot: "bg-amber-400",
+  },
+  maintenance: {
+    label: "Maintenance",
+    chip: "bg-red-500/15 text-red-300 border-red-500/30",
+    dot: "bg-red-400",
+  },
 };
 
 const THROTTLE_OPTIONS: { label: string; ms: number }[] = [
@@ -100,7 +113,9 @@ function DriverDashboard() {
   const watchIdRef = useRef<number | null>(null);
   const lastPushRef = useRef<number>(0);
   const throttleRef = useRef<number>(throttleMs);
-  useEffect(() => { throttleRef.current = throttleMs; }, [throttleMs]);
+  useEffect(() => {
+    throttleRef.current = throttleMs;
+  }, [throttleMs]);
 
   const pushMut = useMutation({
     mutationFn: (c: { lat: number; lng: number }) =>
@@ -110,7 +125,9 @@ function DriverDashboard() {
 
   const statusMut = useMutation({
     mutationFn: (s: DriverBusStatus) => setStatus({ data: { status: s } }),
-    onSuccess: () => { void qc.invalidateQueries({ queryKey: ["driver", "my-bus"] }); },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["driver", "my-bus"] });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -129,10 +146,14 @@ function DriverDashboard() {
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "transport_buses", filter: `id=eq.${bus.id}` },
-        () => { void qc.invalidateQueries({ queryKey: ["driver", "my-bus"] }); },
+        () => {
+          void qc.invalidateQueries({ queryKey: ["driver", "my-bus"] });
+        },
       )
       .subscribe();
-    return () => { void supabase.removeChannel(channel); };
+    return () => {
+      void supabase.removeChannel(channel);
+    };
   }, [bus?.id, qc]);
 
   function clearWatcher() {
@@ -221,8 +242,12 @@ function DriverDashboard() {
         title={`Bus ${bus.bus_number}`}
         subtitle={bus.route_name ?? "No route assigned"}
         action={
-          <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${meta.chip}`}>
-            <span className={`size-2 rounded-full ${meta.dot} ${tracking ? "animate-pulse" : ""}`} />
+          <span
+            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${meta.chip}`}
+          >
+            <span
+              className={`size-2 rounded-full ${meta.dot} ${tracking ? "animate-pulse" : ""}`}
+            />
             {meta.label}
           </span>
         }
@@ -275,7 +300,8 @@ function DriverDashboard() {
         )}
         {permError === "denied" && (
           <AlertBox tone="amber">
-            Location access is required to track your bus. Please allow location access in your browser settings.
+            Location access is required to track your bus. Please allow location access in your
+            browser settings.
             <a
               href="https://support.google.com/chrome/answer/142065"
               target="_blank"
@@ -295,7 +321,8 @@ function DriverDashboard() {
               <Gauge className="size-4" /> GPS update interval
             </div>
             <span className="font-mono text-xs text-[color:var(--text-muted)]">
-              every {THROTTLE_OPTIONS.find((o) => o.ms === throttleMs)?.label ?? `${throttleMs / 1000}s`}
+              every{" "}
+              {THROTTLE_OPTIONS.find((o) => o.ms === throttleMs)?.label ?? `${throttleMs / 1000}s`}
             </span>
           </div>
           <div className="mt-2 flex flex-wrap gap-1.5">
@@ -540,7 +567,11 @@ function StudentRow({ student }: { student: DriverStudent }) {
   return (
     <li className="flex min-h-12 items-center gap-3 rounded-xl border border-[color:var(--glass-border)] bg-[color:var(--glass-bg)] px-3 py-2">
       {student.avatar_url ? (
-        <img src={student.avatar_url} alt="" className="size-9 shrink-0 rounded-full object-cover" />
+        <img
+          src={student.avatar_url}
+          alt=""
+          className="size-9 shrink-0 rounded-full object-cover"
+        />
       ) : (
         <div className="grid size-9 shrink-0 place-items-center rounded-full bg-white/5 text-sm font-semibold text-white/70">
           {initial}
@@ -549,7 +580,9 @@ function StudentRow({ student }: { student: DriverStudent }) {
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-medium">{name}</div>
         {student.admission_number && (
-          <div className="truncate text-xs text-[color:var(--text-muted)]">{student.admission_number}</div>
+          <div className="truncate text-xs text-[color:var(--text-muted)]">
+            {student.admission_number}
+          </div>
         )}
       </div>
     </li>

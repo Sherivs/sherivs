@@ -42,7 +42,9 @@ if (!res.ok) {
   console.error(`FAIL HTTP ${res.status} ${safe.slice(0, 500)}`);
   process.exit(1);
 }
-const failures = Array.isArray(rows) ? rows.filter((row) => String(row?.issue ?? "").startsWith("FAIL")) : [];
+const failures = Array.isArray(rows)
+  ? rows.filter((row) => String(row?.issue ?? "").startsWith("FAIL"))
+  : [];
 if (failures.length > 0) {
   console.error(JSON.stringify(failures, null, 2));
   process.exit(1);

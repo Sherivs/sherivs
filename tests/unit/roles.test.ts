@@ -9,10 +9,7 @@
  */
 import { describe, expect, it } from "vitest";
 import type { AppRole } from "../../frontend/src/lib/roles";
-import {
-  scholarWorkspaceHome,
-  scholarWorkspaceLabelForRole,
-} from "@/lib/runtime/nav-registry";
+import { scholarWorkspaceHome, scholarWorkspaceLabelForRole } from "@/lib/runtime/nav-registry";
 
 describe("workspace landing derivation (formerly dashboardPathForRole)", () => {
   const cases: Array<[AppRole, string]> = [

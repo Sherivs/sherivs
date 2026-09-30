@@ -29,7 +29,9 @@ const TENANT_A = tenantId("tenant-a");
 const TENANT_B = tenantId("tenant-b");
 const NOW = "2026-01-01T00:00:00Z";
 
-function baseInput(overrides: Partial<CreateAgentDefinitionInput> = {}): CreateAgentDefinitionInput {
+function baseInput(
+  overrides: Partial<CreateAgentDefinitionInput> = {},
+): CreateAgentDefinitionInput {
   return {
     tenantId: TENANT_A,
     name: "Attendance Assistant",

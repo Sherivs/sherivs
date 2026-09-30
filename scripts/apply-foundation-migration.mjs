@@ -13,7 +13,9 @@ const projectRef = process.argv[2] ?? "nwrflbpbhyiqdptmlccm";
 const file = "database/supabase/migrations/20260929000000_coregrid_foundation_mission_001.sql";
 
 if (!token) {
-  console.error("BLOCKED_NO_CREDENTIAL SUPABASE_ACCESS_TOKEN is not set. Migration was not applied.");
+  console.error(
+    "BLOCKED_NO_CREDENTIAL SUPABASE_ACCESS_TOKEN is not set. Migration was not applied.",
+  );
   process.exit(2);
 }
 

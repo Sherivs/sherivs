@@ -8,7 +8,16 @@ import { PortalPage, StatCard, SectionGrid } from "@/components/portal-shell";
 import { PreviewPublicSiteCard } from "@/components/preview-public-site";
 import { AnnouncementsFeed } from "@/components/announcements-feed";
 import {
-  QrCode, Award, CalendarCheck, FileText, AlertTriangle, Clock, ArrowRight, Bot, BookOpen, Users2,
+  QrCode,
+  Award,
+  CalendarCheck,
+  FileText,
+  AlertTriangle,
+  Clock,
+  ArrowRight,
+  Bot,
+  BookOpen,
+  Users2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/teacher/dashboard")({
@@ -51,10 +60,17 @@ function TeacherDashboard() {
       const { data } = await supabase
         .from("attendance_logs")
         .select("id, type, timestamp, verified")
-        .eq("school_id", schoolId!).eq("teacher_id", teacherId!)
-        .gte("timestamp", start).lte("timestamp", end)
+        .eq("school_id", schoolId!)
+        .eq("teacher_id", teacherId!)
+        .gte("timestamp", start)
+        .lte("timestamp", end)
         .order("timestamp", { ascending: true });
-      return (data ?? []) as { id: string; type: string; timestamp: string; verified: boolean | null }[];
+      return (data ?? []) as {
+        id: string;
+        type: string;
+        timestamp: string;
+        verified: boolean | null;
+      }[];
     },
   });
 
@@ -65,7 +81,9 @@ function TeacherDashboard() {
       const { data } = await supabase
         .from("timetable_slots")
         .select("id, period_number, start_time, end_time, subject, room")
-        .eq("teacher_id", teacherId!).eq("day_of_week", todayDay).eq("is_break", false)
+        .eq("teacher_id", teacherId!)
+        .eq("day_of_week", todayDay)
+        .eq("is_break", false)
         .order("period_number", { ascending: true });
       return (data ?? []) as Slot[];
     },
@@ -75,9 +93,11 @@ function TeacherDashboard() {
     queryKey: ["teacher-my-classes", teacherId, schoolId],
     enabled: !!teacherId && !!schoolId,
     queryFn: async () => {
-      const { data } = await supabase.from("classes")
+      const { data } = await supabase
+        .from("classes")
         .select("id, name, grade_level")
-        .eq("school_id", schoolId!).eq("teacher_id", teacherId!);
+        .eq("school_id", schoolId!)
+        .eq("teacher_id", teacherId!);
       return (data ?? []) as { id: string; name: string; grade_level: string | null }[];
     },
   });
@@ -91,16 +111,36 @@ function TeacherDashboard() {
       const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
       const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
       const [grades, attWeek, attMonth, students] = await Promise.all([
-        supabase.from("grades").select("class_id, total_score, student_id").in("class_id", classIds).eq("is_published", true),
-        supabase.from("attendance").select("class_id, status").in("class_id", classIds).gte("date", weekAgo),
-        supabase.from("attendance").select("student_id, status").in("class_id", classIds).gte("date", monthAgo),
+        supabase
+          .from("grades")
+          .select("class_id, total_score, student_id")
+          .in("class_id", classIds)
+          .eq("is_published", true),
+        supabase
+          .from("attendance")
+          .select("class_id, status")
+          .in("class_id", classIds)
+          .gte("date", weekAgo),
+        supabase
+          .from("attendance")
+          .select("student_id, status")
+          .in("class_id", classIds)
+          .gte("date", monthAgo),
         supabase.from("students").select("id, class_id, user_id").in("class_id", classIds),
       ]);
       return {
-        grades: (grades.data ?? []) as { class_id: string | null; total_score: number | null; student_id: string }[],
+        grades: (grades.data ?? []) as {
+          class_id: string | null;
+          total_score: number | null;
+          student_id: string;
+        }[],
         attWeek: (attWeek.data ?? []) as { class_id: string | null; status: string }[],
         attMonth: (attMonth.data ?? []) as { student_id: string; status: string }[],
-        students: (students.data ?? []) as { id: string; class_id: string | null; user_id: string }[],
+        students: (students.data ?? []) as {
+          id: string;
+          class_id: string | null;
+          user_id: string;
+        }[],
       };
     },
   });
@@ -112,10 +152,18 @@ function TeacherDashboard() {
       const { data } = await supabase
         .from("lesson_plans")
         .select("id, title, subject, date_planned, status")
-        .eq("school_id", schoolId!).eq("teacher_id", teacherId!)
+        .eq("school_id", schoolId!)
+        .eq("teacher_id", teacherId!)
         .in("status", ["draft", "needs_revision"])
-        .order("date_planned", { ascending: true, nullsFirst: false }).limit(5);
-      return (data ?? []) as { id: string; title: string; subject: string | null; date_planned: string | null; status: string }[];
+        .order("date_planned", { ascending: true, nullsFirst: false })
+        .limit(5);
+      return (data ?? []) as {
+        id: string;
+        title: string;
+        subject: string | null;
+        date_planned: string | null;
+        status: string;
+      }[];
     },
   });
 
@@ -123,8 +171,11 @@ function TeacherDashboard() {
     queryKey: ["teacher-unread-msg", teacherId],
     enabled: !!teacherId,
     queryFn: async () => {
-      const { count } = await supabase.from("messages").select("id", { count: "exact", head: true })
-        .eq("recipient_id", teacherId!).eq("is_read", false);
+      const { count } = await supabase
+        .from("messages")
+        .select("id", { count: "exact", head: true })
+        .eq("recipient_id", teacherId!)
+        .eq("is_read", false);
       return count ?? 0;
     },
   });
@@ -134,7 +185,9 @@ function TeacherDashboard() {
     if (!d) return [];
     return (myClasses.data ?? []).map((c) => {
       const g = d.grades.filter((r) => r.class_id === c.id);
-      const avg = g.length ? g.reduce((a, r) => a + Number(r.total_score ?? 0), 0) / g.length : null;
+      const avg = g.length
+        ? g.reduce((a, r) => a + Number(r.total_score ?? 0), 0) / g.length
+        : null;
       const a = d.attWeek.filter((r) => r.class_id === c.id);
       const present = a.filter((r) => r.status === "present" || r.status === "late").length;
       const rate = a.length ? Math.round((present / a.length) * 100) : null;
@@ -179,13 +232,21 @@ function TeacherDashboard() {
     enabled: atRisk.length > 0,
     queryFn: async () => {
       const sids = atRisk.map((r) => r.student_id);
-      const { data: students } = await supabase.from("students").select("id, user_id, admission_number").in("id", sids);
+      const { data: students } = await supabase
+        .from("students")
+        .select("id, user_id, admission_number")
+        .in("id", sids);
       const uids = (students ?? []).map((s) => s.user_id as string).filter(Boolean);
       const { data: users } = await supabase.from("users").select("id, full_name").in("id", uids);
       const nm = new Map<string, string>();
       (users ?? []).forEach((u) => nm.set(u.id as string, (u.full_name as string) ?? ""));
       const map = new Map<string, { name: string; adm: string | null }>();
-      (students ?? []).forEach((s) => map.set(s.id as string, { name: nm.get(s.user_id as string) ?? "Student", adm: (s.admission_number as string) ?? null }));
+      (students ?? []).forEach((s) =>
+        map.set(s.id as string, {
+          name: nm.get(s.user_id as string) ?? "Student",
+          adm: (s.admission_number as string) ?? null,
+        }),
+      );
       return map;
     },
   });
@@ -194,7 +255,9 @@ function TeacherDashboard() {
 
   const signInLog = signIn.data?.find((l) => l.type === "sign_in");
   const signOutLog = signIn.data?.find((l) => l.type === "sign_out");
-  const currentPeriod = classesToday.data?.find((s) => nowMin >= toMinutes(s.start_time) && nowMin < toMinutes(s.end_time));
+  const currentPeriod = classesToday.data?.find(
+    (s) => nowMin >= toMinutes(s.start_time) && nowMin < toMinutes(s.end_time),
+  );
   const nextPeriod = classesToday.data?.find((s) => nowMin < toMinutes(s.start_time));
 
   const pendingGrades = useMemo(() => {
@@ -214,17 +277,59 @@ function TeacherDashboard() {
 
       {/* Quick actions */}
       <div className="mb-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-        <QuickAction to="/teacher/attendance" icon={<QrCode className="h-4 w-4" />} label="Mark Attendance" />
-        <QuickAction to="/teacher/grades" icon={<Award className="h-4 w-4" />} label="Enter Grades" />
-        <QuickAction to="/teacher/timetable" icon={<CalendarCheck className="h-4 w-4" />} label="View Timetable" />
-        <QuickAction to="/teacher/lesson-plans" icon={<FileText className="h-4 w-4" />} label="Lesson Plan" />
+        <QuickAction
+          to="/teacher/attendance"
+          icon={<QrCode className="h-4 w-4" />}
+          label="Mark Attendance"
+        />
+        <QuickAction
+          to="/teacher/grades"
+          icon={<Award className="h-4 w-4" />}
+          label="Enter Grades"
+        />
+        <QuickAction
+          to="/teacher/timetable"
+          icon={<CalendarCheck className="h-4 w-4" />}
+          label="View Timetable"
+        />
+        <QuickAction
+          to="/teacher/lesson-plans"
+          icon={<FileText className="h-4 w-4" />}
+          label="Lesson Plan"
+        />
       </div>
 
       <SectionGrid>
-        <StatCard label="Sign-in today" value={signInLog ? new Date(signInLog.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"} hint={signInLog?.verified ? "Verified" : signInLog ? "Pending" : "Not signed in"} />
-        <StatCard label="Sign-out" value={signOutLog ? new Date(signOutLog.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"} hint={signOutLog ? "Recorded" : "Open"} />
+        <StatCard
+          label="Sign-in today"
+          value={
+            signInLog
+              ? new Date(signInLog.timestamp).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "—"
+          }
+          hint={signInLog?.verified ? "Verified" : signInLog ? "Pending" : "Not signed in"}
+        />
+        <StatCard
+          label="Sign-out"
+          value={
+            signOutLog
+              ? new Date(signOutLog.timestamp).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "—"
+          }
+          hint={signOutLog ? "Recorded" : "Open"}
+        />
         <StatCard label="Classes today" value={classesToday.data?.length ?? 0} hint={todayDay} />
-        <StatCard label="My classes" value={myClasses.data?.length ?? 0} hint={`${perClass.reduce((a, c) => a + c.studCount, 0)} students`} />
+        <StatCard
+          label="My classes"
+          value={myClasses.data?.length ?? 0}
+          hint={`${perClass.reduce((a, c) => a + c.studCount, 0)} students`}
+        />
       </SectionGrid>
 
       {/* Today's Schedule timeline */}
@@ -234,7 +339,9 @@ function TeacherDashboard() {
             <Clock className="h-4 w-4 text-muted-foreground" />
             <h2 className="font-display text-base">Today's schedule</h2>
           </div>
-          <Link to="/teacher/timetable" className="text-xs text-primary hover:underline">Full timetable</Link>
+          <Link to="/teacher/timetable" className="text-xs text-primary hover:underline">
+            Full timetable
+          </Link>
         </div>
         {(classesToday.data?.length ?? 0) === 0 ? (
           <p className="mt-4 text-sm text-muted-foreground">No classes scheduled today.</p>
@@ -248,7 +355,11 @@ function TeacherDashboard() {
                   <div
                     key={i}
                     className={`flex items-center gap-3 rounded-lg border p-3 transition-all ${
-                      active ? "border-primary bg-primary/10 shadow-md" : passed ? "border-border/40 opacity-60" : "border-border"
+                      active
+                        ? "border-primary bg-primary/10 shadow-md"
+                        : passed
+                          ? "border-border/40 opacity-60"
+                          : "border-border"
                     }`}
                   >
                     <div className="font-mono text-xs text-muted-foreground w-24">
@@ -259,7 +370,9 @@ function TeacherDashboard() {
                       {s.room && <p className="text-xs text-muted-foreground">Room {s.room}</p>}
                     </div>
                     {active && (
-                      <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] uppercase tracking-wide text-primary-foreground">Now</span>
+                      <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] uppercase tracking-wide text-primary-foreground">
+                        Now
+                      </span>
                     )}
                   </div>
                 );
@@ -267,7 +380,8 @@ function TeacherDashboard() {
             </div>
             {nextPeriod && !currentPeriod && (
               <p className="mt-3 text-xs text-muted-foreground">
-                Next: <span className="text-foreground font-medium">{nextPeriod.subject}</span> at {String(nextPeriod.start_time).slice(0, 5)}
+                Next: <span className="text-foreground font-medium">{nextPeriod.subject}</span> at{" "}
+                {String(nextPeriod.start_time).slice(0, 5)}
               </p>
             )}
           </>
@@ -282,7 +396,10 @@ function TeacherDashboard() {
               <Users2 className="h-4 w-4 text-muted-foreground" />
               <h2 className="font-display text-base">Class performance</h2>
             </div>
-            <Link to="/teacher/class-intelligence" className="text-xs text-primary hover:underline inline-flex items-center gap-1">
+            <Link
+              to="/teacher/class-intelligence"
+              className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+            >
               Details <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
@@ -291,19 +408,40 @@ function TeacherDashboard() {
           ) : (
             <ul className="mt-4 space-y-2">
               {perClass.map((c) => (
-                <li key={c.id} className="flex items-center justify-between rounded-md border border-border p-3 text-sm">
+                <li
+                  key={c.id}
+                  className="flex items-center justify-between rounded-md border border-border p-3 text-sm"
+                >
                   <div className="flex items-center gap-3">
-                    <span className={`h-2.5 w-2.5 rounded-full ${
-                      c.tone === "green" ? "bg-emerald-500" : c.tone === "amber" ? "bg-amber-500" : c.tone === "red" ? "bg-rose-500" : "bg-muted"
-                    }`} />
+                    <span
+                      className={`h-2.5 w-2.5 rounded-full ${
+                        c.tone === "green"
+                          ? "bg-emerald-500"
+                          : c.tone === "amber"
+                            ? "bg-amber-500"
+                            : c.tone === "red"
+                              ? "bg-rose-500"
+                              : "bg-muted"
+                      }`}
+                    />
                     <div>
                       <p className="font-medium">{c.name}</p>
                       <p className="text-[11px] text-muted-foreground">{c.studCount} students</p>
                     </div>
                   </div>
                   <div className="text-right text-xs">
-                    <p>Grade avg: <span className="font-mono text-foreground">{c.avg == null ? "—" : `${c.avg.toFixed(0)}%`}</span></p>
-                    <p>Attendance: <span className="font-mono text-foreground">{c.rate == null ? "—" : `${c.rate}%`}</span></p>
+                    <p>
+                      Grade avg:{" "}
+                      <span className="font-mono text-foreground">
+                        {c.avg == null ? "—" : `${c.avg.toFixed(0)}%`}
+                      </span>
+                    </p>
+                    <p>
+                      Attendance:{" "}
+                      <span className="font-mono text-foreground">
+                        {c.rate == null ? "—" : `${c.rate}%`}
+                      </span>
+                    </p>
                   </div>
                 </li>
               ))}
@@ -321,12 +459,17 @@ function TeacherDashboard() {
           ) : (
             <ul className="mt-4 space-y-2">
               {atRisk.map((r) => (
-                <li key={r.student_id} className="flex items-center justify-between rounded-md border border-rose-500/20 bg-rose-500/5 p-3 text-sm">
+                <li
+                  key={r.student_id}
+                  className="flex items-center justify-between rounded-md border border-rose-500/20 bg-rose-500/5 p-3 text-sm"
+                >
                   <div>
                     <p className="font-medium">{nameFor(r.student_id)}</p>
                     <p className="text-[11px] text-muted-foreground">
                       {r.attRate != null && r.attRate < 70 ? `Attendance ${r.attRate}%` : null}
-                      {r.attRate != null && r.attRate < 70 && r.avg != null && r.avg < 50 ? " · " : null}
+                      {r.attRate != null && r.attRate < 70 && r.avg != null && r.avg < 50
+                        ? " · "
+                        : null}
                       {r.avg != null && r.avg < 50 ? `Grade avg ${r.avg.toFixed(0)}%` : null}
                     </p>
                   </div>
@@ -344,20 +487,42 @@ function TeacherDashboard() {
           <h2 className="font-display text-base">Pending tasks</h2>
         </div>
         <div className="mt-4 grid gap-2 sm:grid-cols-3">
-          <TaskTile count={pendingGrades} label="Grades to enter" href="/teacher/grades" tone="amber" />
-          <TaskTile count={plans.data?.length ?? 0} label="Lesson plans open" href="/teacher/lesson-plans" tone="blue" />
-          <TaskTile count={unreadMsg.data ?? 0} label="Unread messages" href="/messages" tone="rose" />
+          <TaskTile
+            count={pendingGrades}
+            label="Grades to enter"
+            href="/teacher/grades"
+            tone="amber"
+          />
+          <TaskTile
+            count={plans.data?.length ?? 0}
+            label="Lesson plans open"
+            href="/teacher/lesson-plans"
+            tone="blue"
+          />
+          <TaskTile
+            count={unreadMsg.data ?? 0}
+            label="Unread messages"
+            href="/messages"
+            tone="rose"
+          />
         </div>
       </div>
 
       {/* AI Assistant teaser */}
       <div className="mt-6 uos-card p-5">
         <div className="flex items-start gap-3">
-          <div className="rounded-lg bg-primary/10 p-3 text-primary"><Bot className="h-5 w-5" /></div>
+          <div className="rounded-lg bg-primary/10 p-3 text-primary">
+            <Bot className="h-5 w-5" />
+          </div>
           <div className="flex-1">
             <h3 className="font-display text-base">Teacher AI Assistant</h3>
-            <p className="text-xs text-muted-foreground">Generate lesson plans, draft parent messages, and analyze class performance.</p>
-            <Link to="/teacher/ai-assistant" className="mt-3 inline-flex text-sm text-primary hover:underline items-center gap-1">
+            <p className="text-xs text-muted-foreground">
+              Generate lesson plans, draft parent messages, and analyze class performance.
+            </p>
+            <Link
+              to="/teacher/ai-assistant"
+              className="mt-3 inline-flex text-sm text-primary hover:underline items-center gap-1"
+            >
               Open assistant <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -373,14 +538,27 @@ function TeacherDashboard() {
 
 function QuickAction({ to, icon, label }: { to: string; icon: React.ReactNode; label: string }) {
   return (
-    <Link to={to} className="uos-card flex items-center gap-3 p-3 text-sm font-medium hover:border-primary/40 transition-colors">
+    <Link
+      to={to}
+      className="uos-card flex items-center gap-3 p-3 text-sm font-medium hover:border-primary/40 transition-colors"
+    >
       <span className="rounded-md bg-primary/10 p-2 text-primary">{icon}</span>
       {label}
     </Link>
   );
 }
 
-function TaskTile({ count, label, href, tone }: { count: number; label: string; href: string; tone: "amber" | "blue" | "rose" }) {
+function TaskTile({
+  count,
+  label,
+  href,
+  tone,
+}: {
+  count: number;
+  label: string;
+  href: string;
+  tone: "amber" | "blue" | "rose";
+}) {
   const cls = {
     amber: "border-amber-500/30 text-amber-300",
     blue: "border-blue-500/30 text-blue-300",

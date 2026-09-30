@@ -40,25 +40,44 @@ function rule(overrides: Partial<TaxRuleVersion> = {}): TaxRuleVersion {
 
 describe("the applicable tax rule is resolved, never assumed", () => {
   it("resolves the version effective at the instant", () => {
-    const old = rule({ versionId: "tax-v1", rateBasisPoints: 1500, effectiveTo: "2026-03-01T00:00:00Z" });
-    const current = rule({ versionId: "tax-v2", rateBasisPoints: 2000, effectiveFrom: "2026-03-01T00:00:00Z" });
-    const resolution = resolveTaxRule([old, current], { jurisdiction: "GB", category: "service-charge", at: AT });
+    const old = rule({
+      versionId: "tax-v1",
+      rateBasisPoints: 1500,
+      effectiveTo: "2026-03-01T00:00:00Z",
+    });
+    const current = rule({
+      versionId: "tax-v2",
+      rateBasisPoints: 2000,
+      effectiveFrom: "2026-03-01T00:00:00Z",
+    });
+    const resolution = resolveTaxRule([old, current], {
+      jurisdiction: "GB",
+      category: "service-charge",
+      at: AT,
+    });
     expect(resolution.known).toBe(true);
     if (resolution.known) expect(resolution.rule.versionId).toBe("tax-v2");
   });
 
   it("reports an undeclared jurisdiction as unknown instead of zero tax", () => {
-    const resolution = resolveTaxRule([rule()], { jurisdiction: "FR", category: "service-charge", at: AT });
+    const resolution = resolveTaxRule([rule()], {
+      jurisdiction: "FR",
+      category: "service-charge",
+      at: AT,
+    });
     expect(resolution.known).toBe(false);
     if (!resolution.known) expect(resolution.reason).toContain("no tax rule version");
   });
 
   it("refuses ambiguous rules rather than ordering them arbitrarily", () => {
-    const resolution = resolveTaxRule([rule({ versionId: "tax-a" }), rule({ versionId: "tax-b" })], {
-      jurisdiction: "GB",
-      category: "service-charge",
-      at: AT,
-    });
+    const resolution = resolveTaxRule(
+      [rule({ versionId: "tax-a" }), rule({ versionId: "tax-b" })],
+      {
+        jurisdiction: "GB",
+        category: "service-charge",
+        at: AT,
+      },
+    );
     expect(resolution.known).toBe(false);
     if (!resolution.known) expect(resolution.reason).toContain("ambiguous rules");
   });

@@ -76,7 +76,9 @@ const { data: pending, error: claimErr } = await svc
 if (claimErr) throw new Error(`claim failed: ${claimErr.message}`);
 const rows = pending ?? [];
 
-console.log(`\nEvent-fabric pass: ${rows.length} pending event(s) claimed (limit ${LIMIT}, maxAttempts ${MAX_ATTEMPTS}).`);
+console.log(
+  `\nEvent-fabric pass: ${rows.length} pending event(s) claimed (limit ${LIMIT}, maxAttempts ${MAX_ATTEMPTS}).`,
+);
 await summary("before");
 
 const transitions = [];
@@ -87,7 +89,10 @@ for (const row of rows) {
     console.log(`skip ${row.id}: publish not allowed from pending`);
     continue;
   }
-  const { error: pubErr } = await svc.from("cg_event").update({ state: "published" }).eq("id", row.id);
+  const { error: pubErr } = await svc
+    .from("cg_event")
+    .update({ state: "published" })
+    .eq("id", row.id);
   if (pubErr) throw new Error(`publish ${row.id}: ${pubErr.message}`);
   transitions.push({ id: row.id, from: "pending", to: "published" });
 
@@ -95,7 +100,10 @@ for (const row of rows) {
   if (autoAck) {
     const acknowledged = next("published", "acknowledge", attempts, MAX_ATTEMPTS);
     if (acknowledged === "acknowledged") {
-      const { error: ackErr } = await svc.from("cg_event").update({ state: "acknowledged" }).eq("id", row.id);
+      const { error: ackErr } = await svc
+        .from("cg_event")
+        .update({ state: "acknowledged" })
+        .eq("id", row.id);
       if (ackErr) throw new Error(`acknowledge ${row.id}: ${ackErr.message}`);
       transitions.push({ id: row.id, from: "published", to: "acknowledged" });
     }

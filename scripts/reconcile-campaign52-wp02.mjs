@@ -28,28 +28,24 @@ const plan = JSON.parse(
 
 const principles = {
   "CG-P52-GAP-007": {
-    principle:
-      "The universal CoreGrid application shell comes before additional domain runtimes.",
+    principle: "The universal CoreGrid application shell comes before additional domain runtimes.",
     nonPurpose:
       "The named home surfaces are product intent. They do not authorize a new shell phase; COREGRID GLOBAL SHELL remains blocked.",
   },
   "CG-P52-GAP-009": {
     principle:
       "One identity may participate in many realities. CoreGrid switches active context and does not replace identity.",
-    nonPurpose:
-      "This does not create a reality phase or grant cross-reality access.",
+    nonPurpose: "This does not create a reality phase or grant cross-reality access.",
   },
   "CG-P52-GAP-010": {
     principle:
       "An organization switch must verify membership, role, authority, domain, and organization reality before experience is loaded. A client organization id is not access.",
-    nonPurpose:
-      "This does not authorize a new context store or bypass existing authorization.",
+    nonPurpose: "This does not authorize a new context store or bypass existing authorization.",
   },
   "CG-P52-GAP-011": {
     principle:
       "Personal reality and organizational reality stay separated. Cross-context access requires identity, membership, permission, purpose, policy, and consent where applicable.",
-    nonPurpose:
-      "This does not create a new data platform or infer consent.",
+    nonPurpose: "This does not create a new data platform or infer consent.",
   },
   "CG-P52-GAP-012": {
     principle:
@@ -60,14 +56,12 @@ const principles = {
   "CG-P52-GAP-013": {
     principle:
       "Web and mobile clients share domain contracts, identity, authorization, ontology, and experience definitions, while native capabilities stay local.",
-    nonPurpose:
-      "This does not create a third platform phase or claim mobile runtime completion.",
+    nonPurpose: "This does not create a third platform phase or claim mobile runtime completion.",
   },
   "CG-P52-GAP-014": {
     principle:
       "Experience and engine construction follow a locked sequence. Engines are not the first build.",
-    nonPurpose:
-      "The extract stages do not override Mission 0001 gates or authorize those engines.",
+    nonPurpose: "The extract stages do not override Mission 0001 gates or authorize those engines.",
   },
   "CG-P52-GAP-015": {
     principle:
@@ -78,8 +72,7 @@ const principles = {
   "CG-P52-GAP-016": {
     principle:
       "CoreGrid does not need every domain prebuilt. Unknown domains are discovered, validated, and only then eligible to become packages.",
-    nonPurpose:
-      "Discovery and AI proposal are not canonical domain truth.",
+    nonPurpose: "Discovery and AI proposal are not canonical domain truth.",
   },
   "CG-P52-GAP-017": {
     principle:
@@ -102,8 +95,7 @@ const principles = {
   "CG-P52-GAP-021": {
     principle:
       "Experience is a composition of domain invariants, organization reality, role, authority, current state, and objectives.",
-    nonPurpose:
-      "The formula is not an executable experience compiler.",
+    nonPurpose: "The formula is not an executable experience compiler.",
   },
   "CG-P52-GAP-022": {
     principle:
@@ -124,22 +116,19 @@ const principles = {
       "The screen sketch is mission rationale beside Foundation Mission 001. That mission remains unauthorized.",
   },
   "CG-P52-GAP-025": {
-    principle:
-      "Heading-only source material names a 55-phase architectural binding.",
+    principle: "Heading-only source material names a 55-phase architectural binding.",
     nonPurpose:
       "It does not expand the canonical registry beyond 51 phases and does not register Phase 52.",
   },
   "CG-P52-GAP-026": {
     principle:
       "Duplicate heading-only binding. Provenance is preserved separately from occurrence 225.",
-    nonPurpose:
-      "Duplicate wording is not additional phase authority.",
+    nonPurpose: "Duplicate wording is not additional phase authority.",
   },
   "CG-P52-GAP-027": {
     principle:
       "Duplicate heading-only binding. Provenance is preserved separately from occurrences 225 and 254.",
-    nonPurpose:
-      "Duplicate wording is not additional phase authority.",
+    nonPurpose: "Duplicate wording is not additional phase authority.",
   },
 };
 
@@ -224,8 +213,7 @@ const reconciliation = {
   blockedCount: blockedRemaining,
   registryMutation: "NONE",
   phaseRegistration: "NONE",
-  rule:
-    "Mapped extracts are source-locked to existing owners. Blocked extracts stay untouched. No record authorizes runtime implementation.",
+  rule: "Mapped extracts are source-locked to existing owners. Blocked extracts stay untouched. No record authorizes runtime implementation.",
   records,
   excludedBlockedGapIds: ledger.decisions
     .filter((decision) => decision.status === "BLOCKED")
@@ -262,9 +250,15 @@ writeFileSync(
   "utf8",
 );
 
-console.log(JSON.stringify({
-  status: reconciliation.status,
-  mappedCount: reconciliation.mappedCount,
-  blockedCount: reconciliation.blockedCount,
-  registryMutation: "NONE",
-}, null, 2));
+console.log(
+  JSON.stringify(
+    {
+      status: reconciliation.status,
+      mappedCount: reconciliation.mappedCount,
+      blockedCount: reconciliation.blockedCount,
+      registryMutation: "NONE",
+    },
+    null,
+    2,
+  ),
+);

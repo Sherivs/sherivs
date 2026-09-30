@@ -49,14 +49,13 @@ function EventDetail() {
     const prev = document.title;
     document.title = title;
     const desc = (ev.data.description ?? "").slice(0, 280);
-    const startISO =
-      ev.data.event_time
-        ? `${ev.data.event_date}T${ev.data.event_time}`
-        : ev.data.event_date;
+    const startISO = ev.data.event_time
+      ? `${ev.data.event_date}T${ev.data.event_time}`
+      : ev.data.event_date;
     const endISO =
       ev.data.end_date && ev.data.end_time
         ? `${ev.data.end_date}T${ev.data.end_time}`
-        : ev.data.end_date ?? undefined;
+        : (ev.data.end_date ?? undefined);
 
     const tags: Array<[string, string, string]> = [
       ["name", "description", desc],
@@ -87,9 +86,7 @@ function EventDetail() {
       startDate: startISO,
       endDate: endISO,
       image: ev.data.cover_image_url ?? undefined,
-      location: ev.data.location
-        ? { "@type": "Place", name: ev.data.location }
-        : undefined,
+      location: ev.data.location ? { "@type": "Place", name: ev.data.location } : undefined,
       organizer: { "@type": "EducationalOrganization", name: school.name },
       eventStatus: "https://schema.org/EventScheduled",
       eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
@@ -158,9 +155,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       className="min-h-dvh text-white"
       style={{ background: "linear-gradient(180deg, #0a0f1e 0%, #0d1424 100%)" }}
     >
-      <article className="mx-auto max-w-3xl px-6 py-16 md:py-24">
-        {children}
-      </article>
+      <article className="mx-auto max-w-3xl px-6 py-16 md:py-24">{children}</article>
     </div>
   );
 }

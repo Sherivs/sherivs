@@ -57,7 +57,12 @@ describe("evaluateSessionSecurity (Section L.2)", () => {
   it("rejects a session exceeding idle timeout", () => {
     const session = baseSession();
     const policy: SessionSecurityPolicy = { ...LENIENT_POLICY, idleTimeoutMs: 5 * 60 * 1000 };
-    const result = evaluateSessionSecurity(session, policy, "2026-01-01T00:00:00Z", "2026-01-01T00:10:00Z");
+    const result = evaluateSessionSecurity(
+      session,
+      policy,
+      "2026-01-01T00:00:00Z",
+      "2026-01-01T00:10:00Z",
+    );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.requiresStepUp).toBe(true);
   });

@@ -35,8 +35,12 @@ if (!token) {
 const contractSource = read("frontend/src/lib/control-plane/foundation-mission.ts");
 const loopSource = read("frontend/src/lib/control-plane/foundation-loop.ts");
 const scholarSource = read("frontend/src/lib/runtime/scholar-foundation-flow.ts");
-const migration = read("database/supabase/migrations/20260929000000_coregrid_foundation_mission_001.sql");
-const kernelMigration = read("database/supabase/migrations/20260903000000_coregrid_universal_kernel_substrate.sql");
+const migration = read(
+  "database/supabase/migrations/20260929000000_coregrid_foundation_mission_001.sql",
+);
+const kernelMigration = read(
+  "database/supabase/migrations/20260903000000_coregrid_universal_kernel_substrate.sql",
+);
 const checkpoint = JSON.parse(read("architecture/COREGRID_V52_GATE_CHECKPOINT.json"));
 const gate14 = JSON.parse(read("architecture/COREGRID_GATE_14_SCHOLAR_VALIDATION.json"));
 
@@ -109,7 +113,11 @@ function checkFindings() {
   if (!migration.includes("decision <> 'verified' OR cardinality(evidence_ids) > 0")) {
     findings.push("migration does not pin verification-evidence constraint");
   }
-  if (!migration.includes("declared_contract_id = observed_contract_id AND declared_version = observed_version")) {
+  if (
+    !migration.includes(
+      "declared_contract_id = observed_contract_id AND declared_version = observed_version",
+    )
+  ) {
     findings.push("migration does not pin conformance contract-match constraint");
   }
   if (!loopSource.includes("requestedRealityRef")) {
@@ -152,34 +160,49 @@ const scholarEvidence = gate14.status ?? null;
 const dimensions = [
   {
     id: "contract-vocabulary-pinned",
-    declared: "All universal foundation contract vocabularies are pinned in the migration CHECK clauses.",
-    observed: staticFindings.some((f) => f.includes("pinned")) ? "mismatch found" : "all universal values pinned",
+    declared:
+      "All universal foundation contract vocabularies are pinned in the migration CHECK clauses.",
+    observed: staticFindings.some((f) => f.includes("pinned"))
+      ? "mismatch found"
+      : "all universal values pinned",
     decision: staticFindings.some((f) => f.includes("pinned")) ? "NONCONFORMANT" : "CONFORMANT",
   },
   {
     id: "scholar-ontology-boundary",
-    declared: "Scholar entity types are enforced at the runtime boundary through the universal kernel draft contract.",
-    observed: staticFindings.some((f) => f.includes("Scholar")) ? "boundary not enforced" : "ontology declared and enforced via scholarEntityDraft; kernel purity tests pass",
+    declared:
+      "Scholar entity types are enforced at the runtime boundary through the universal kernel draft contract.",
+    observed: staticFindings.some((f) => f.includes("Scholar"))
+      ? "boundary not enforced"
+      : "ontology declared and enforced via scholarEntityDraft; kernel purity tests pass",
     decision: staticFindings.some((f) => f.includes("Scholar")) ? "NONCONFORMANT" : "CONFORMANT",
   },
   {
     id: "append-only-execution-history",
     declared: "cg_execution_history rejects updates and deletes.",
-    observed: migration.includes("cg_execution_history is append-only") && live.passed
-      ? "trigger present and live isolation check confirms guards"
-      : "guard not established",
-    decision: migration.includes("cg_execution_history is append-only") && live.passed ? "CONFORMANT" : "NONCONFORMANT",
+    observed:
+      migration.includes("cg_execution_history is append-only") && live.passed
+        ? "trigger present and live isolation check confirms guards"
+        : "guard not established",
+    decision:
+      migration.includes("cg_execution_history is append-only") && live.passed
+        ? "CONFORMANT"
+        : "NONCONFORMANT",
   },
   {
     id: "deny-by-default-foundation-tables",
     declared: "anon and authenticated hold no privileges on foundation tables.",
-    observed: live.passed ? "live RLS isolation check returned no FAIL rows" : `live failures: ${JSON.stringify(live.failures).slice(0, 400)}`,
+    observed: live.passed
+      ? "live RLS isolation check returned no FAIL rows"
+      : `live failures: ${JSON.stringify(live.failures).slice(0, 400)}`,
     decision: live.passed ? "CONFORMANT" : "NONCONFORMANT",
   },
   {
     id: "independent-verification",
-    declared: "Verified decisions require evidence; conformance requires a contract and version match.",
-    observed: migration.includes("cardinality(evidence_ids) > 0") ? "constraints present in applied schema" : "missing",
+    declared:
+      "Verified decisions require evidence; conformance requires a contract and version match.",
+    observed: migration.includes("cardinality(evidence_ids) > 0")
+      ? "constraints present in applied schema"
+      : "missing",
     decision: migration.includes("cardinality(evidence_ids) > 0") ? "CONFORMANT" : "NONCONFORMANT",
   },
   {
@@ -192,7 +215,8 @@ const dimensions = [
     id: "scholar-domain-validation",
     declared: "Scholar entity flows through the universal substrate and the governed loop.",
     observed: scholarEvidence,
-    decision: scholarEvidence === "EXECUTED_AND_VERIFIED_BOUNDED_PROBE" ? "CONFORMANT" : "NOT_ASSESSED",
+    decision:
+      scholarEvidence === "EXECUTED_AND_VERIFIED_BOUNDED_PROBE" ? "CONFORMANT" : "NOT_ASSESSED",
   },
   {
     id: "scholar-reality-vocabulary",
@@ -250,17 +274,24 @@ const assessment = {
       : notAssessed > 0
         ? "CONDITIONALLY_CONFORMANT"
         : "CONFORMANT",
-  decisionScope: "Foundation Mission 001 contracts and Scholar validation flow; deployment and operational runtime excluded from conformance until Gate 15 runtime evidence exists",
+  decisionScope:
+    "Foundation Mission 001 contracts and Scholar validation flow; deployment and operational runtime excluded from conformance until Gate 15 runtime evidence exists",
   counts: { conformant, nonconformant, notAssessed, total: dimensions.length },
   rule: "Conformance is assessed against declared contracts only. NOT_ASSESSED dimensions are unfinished work, not passes.",
 };
 
 const output = join(root, "architecture", "COREGRID_GATE_15_CONFORMANCE_ASSESSMENT.json");
 writeFileSync(output, `${JSON.stringify(assessment, null, 2)}\n`, "utf8");
-console.log(JSON.stringify({
-  decision: assessment.decision,
-  counts: assessment.counts,
-  staticFindings: assessment.staticFindings.length,
-  livePassed: live.passed,
-}, null, 2));
+console.log(
+  JSON.stringify(
+    {
+      decision: assessment.decision,
+      counts: assessment.counts,
+      staticFindings: assessment.staticFindings.length,
+      livePassed: live.passed,
+    },
+    null,
+    2,
+  ),
+);
 if (assessment.decision === "NONCONFORMANT") process.exit(1);

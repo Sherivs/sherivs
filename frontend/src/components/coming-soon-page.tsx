@@ -2,8 +2,14 @@ import { PortalPage } from "@/components/portal-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sparkles } from "lucide-react";
 
-export function ComingSoonPage({ title, subtitle, description }: {
-  title: string; subtitle?: string; description?: string;
+export function ComingSoonPage({
+  title,
+  subtitle,
+  description,
+}: {
+  title: string;
+  subtitle?: string;
+  description?: string;
 }) {
   return (
     <PortalPage title={title} subtitle={subtitle ?? "Module preview"}>
@@ -14,7 +20,8 @@ export function ComingSoonPage({ title, subtitle, description }: {
           </div>
           <h2 className="text-lg font-semibold">Coming soon</h2>
           <p className="text-sm text-muted-foreground max-w-md mx-auto">
-            {description ?? "This module is scaffolded and ready for configuration. Full workflows will be enabled shortly."}
+            {description ??
+              "This module is scaffolded and ready for configuration. Full workflows will be enabled shortly."}
           </p>
         </CardContent>
       </Card>

@@ -43,7 +43,9 @@ import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
-const onlyPhase = (process.argv.find((a) => a.startsWith("--phase=")) ?? "").slice("--phase=".length);
+const onlyPhase = (process.argv.find((a) => a.startsWith("--phase=")) ?? "").slice(
+  "--phase=".length,
+);
 const quiet = process.argv.includes("--quiet");
 const PROOF_REF = "architecture/proofs/phase-completion.proof.json";
 const STATUS_REF = "architecture/phase-completion-status.md";
@@ -63,7 +65,9 @@ if (existsSync(exemptionsFile)) {
   exemptions = Array.isArray(parsed.exemptions) ? parsed.exemptions : [];
 }
 const exemptionsFor = (phaseId) => exemptions.filter((entry) => entry.phase === phaseId);
-const phaseDocs = readdirSync(join(ROOT, "architecture")).filter((f) => /^phase-\d\d-.*\.md$/.test(f));
+const phaseDocs = readdirSync(join(ROOT, "architecture")).filter((f) =>
+  /^phase-\d\d-.*\.md$/.test(f),
+);
 const contractFiles = listFiles(join(ROOT, "frontend/src/lib/kernel/phase-contracts"));
 const migrations = readdirSync(join(ROOT, "database/supabase/migrations")).filter((f) =>
   f.endsWith(".sql"),
@@ -205,7 +209,10 @@ const surfaceCorpus = surfaceFiles
   .join("\n")
   .toLowerCase();
 const operationalCorpus = operationalFiles
-  .map((file) => `${relative(ROOT, file).replace(/\\/g, "/").toLowerCase()}\n${readFileSync(file, "utf8").toLowerCase()}`)
+  .map(
+    (file) =>
+      `${relative(ROOT, file).replace(/\\/g, "/").toLowerCase()}\n${readFileSync(file, "utf8").toLowerCase()}`,
+  )
   .join("\n");
 
 const rows = [];
@@ -216,7 +223,10 @@ for (const phase of registry.phases) {
 
   const id = phase.id;
   const docs = phaseDocs.filter((file) => file.startsWith(`phase-${id}-`));
-  const docText = docs.map((file) => read(`architecture/${file}`)).join("\n").toLowerCase();
+  const docText = docs
+    .map((file) => read(`architecture/${file}`))
+    .join("\n")
+    .toLowerCase();
   const sections = REQUIRED_SECTIONS.filter((section) => docText.includes(section));
   const contract = contracts.get(id);
   const modules = Array.isArray(phase.modules) ? phase.modules : [];
@@ -244,7 +254,8 @@ for (const phase of registry.phases) {
   // L3 — backend implementation: real modules, or cited EXECUTABLE artefacts,
   // plus real tests. Documentation citations alone never satisfy this level.
   const modulesResolve = modules.length > 0 && modules.every((name) => resolveModule(name));
-  const testsPresent = citedTests.length > 0 && citedTests.every((ref) => existsSync(join(ROOT, ref)));
+  const testsPresent =
+    citedTests.length > 0 && citedTests.every((ref) => existsSync(join(ROOT, ref)));
   const testsCounted = citedTests.reduce(
     (total, ref) => total + (existsSync(join(ROOT, ref)) ? countTests(join(ROOT, ref)) : 0),
     0,
@@ -301,7 +312,9 @@ for (const phase of registry.phases) {
     if (claimed[index] && !evidence[index]) unconfirmed.push(LEVEL_NAMES[index]);
   }
   if (docs.length === 0) {
-    inconsistencies.push(`phase ${id}: registry lists this phase, but no architecture/phase-${id}-*.md exists`);
+    inconsistencies.push(
+      `phase ${id}: registry lists this phase, but no architecture/phase-${id}-*.md exists`,
+    );
   }
   for (const ref of citedTests) {
     if (!existsSync(join(ROOT, ref))) {
@@ -328,7 +341,9 @@ for (const phase of registry.phases) {
       continue;
     }
     if (!exemption.reason || !exemption.owner || !exemption.closesWhen || !exemption.ratified) {
-      inconsistencies.push(`phase ${id}: exemption for ${exemption.level} is not fully justified (reason/owner/closesWhen/ratified required)`);
+      inconsistencies.push(
+        `phase ${id}: exemption for ${exemption.level} is not fully justified (reason/owner/closesWhen/ratified required)`,
+      );
       continue;
     }
     exemptedLevels.push(exemption.level);
@@ -369,7 +384,6 @@ for (const phase of registry.phases) {
   });
 }
 
-
 /* ── Report ───────────────────────────────────────────────────────────────── */
 
 const complete = rows.filter((row) => row.complete);
@@ -379,7 +393,8 @@ const beyondRegistry = rows.filter((row) => row.beyondRegistry);
 const unconfirmed = rows.filter((row) => row.unconfirmed.length > 0);
 const gapFrequency = new Map();
 for (const row of rows) {
-  for (const level of row.missingLevels) gapFrequency.set(level, (gapFrequency.get(level) ?? 0) + 1);
+  for (const level of row.missingLevels)
+    gapFrequency.set(level, (gapFrequency.get(level) ?? 0) + 1);
 }
 
 const proof = {
@@ -446,12 +461,11 @@ const proof = {
   ok: inconsistencies.length === 0,
   limitations: [
     "Evidence-derived: this audit measures artefacts, not correctness of behaviour.",
-    "L4 requires a DISTINCTIVE reference: the capability id inside a surface, or a route/component importing the phase's module directly. A bare module word is not credited (\"identity\" used to match marketing prose and inflated three phases), and an INDIRECT projection (surface → server function → module) is not credited either, so L4 may UNDERSTATE a phase — the safe direction; close by hand review with recorded evidence.",
+    'L4 requires a DISTINCTIVE reference: the capability id inside a surface, or a route/component importing the phase\'s module directly. A bare module word is not credited ("identity" used to match marketing prose and inflated three phases), and an INDIRECT projection (surface → server function → module) is not credited either, so L4 may UNDERSTATE a phase — the safe direction; close by hand review with recorded evidence.',
     "DB-backed L2 registries are verified by scripts/verify-l2-registries.mjs, which requires live Supabase credentials.",
     "Incompleteness is reported, never failed: unfinished work is honest. Only overstated claims or missing cited artifacts fail the gate.",
   ],
 };
-
 
 mkdirSync(dirname(join(ROOT, PROOF_REF)), { recursive: true });
 writeFileSync(join(ROOT, PROOF_REF), `${JSON.stringify(proof, null, 2)}\n`, "utf8");
@@ -493,9 +507,7 @@ const statusLines = [
   "",
   "## Provable inconsistencies (these fail the gate)",
   "",
-  inconsistencies.length > 0
-    ? inconsistencies.map((issue) => `- ${issue}`).join("\n")
-    : "- none",
+  inconsistencies.length > 0 ? inconsistencies.map((issue) => `- ${issue}`).join("\n") : "- none",
   "",
   "## Missing levels (frequency across phases)",
   "",
@@ -541,4 +553,3 @@ if (inconsistencies.length > 0) {
 console.log(
   "No overstatement: every satisfied registry level is backed by an artefact. Incomplete phases are reported honestly.",
 );
-

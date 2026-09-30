@@ -42,7 +42,9 @@ function ReconciliationPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("fees")
-        .select("id, fee_type, amount, paid_amount, status, paystack_reference, paid_at, student_id, created_at")
+        .select(
+          "id, fee_type, amount, paid_amount, status, paystack_reference, paid_at, student_id, created_at",
+        )
         .eq("school_id", schoolId!)
         .order("created_at", { ascending: false })
         .limit(500);
@@ -101,10 +103,16 @@ function ReconciliationPage() {
       subtitle="Match Paystack webhooks against invoices and flag mismatches."
     >
       <div className="mb-4 flex flex-wrap gap-2 text-xs">
-        <Link to="/bursar/dashboard" className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40">
+        <Link
+          to="/bursar/dashboard"
+          className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40"
+        >
           ← Bursar dashboard
         </Link>
-        <Link to="/admin/fees" className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40">
+        <Link
+          to="/admin/fees"
+          className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40"
+        >
           Manage invoices
         </Link>
       </div>
@@ -113,7 +121,11 @@ function ReconciliationPage() {
         <StatCard label="Collected (₦)" value={stats.collected.toLocaleString()} />
         <StatCard label="Outstanding (₦)" value={stats.outstanding.toLocaleString()} />
         <StatCard label="Paid invoices" value={stats.paidCount} />
-        <StatCard label="Unreconciled webhooks" value={stats.orphanCount} hint="Webhook refs with no matching invoice" />
+        <StatCard
+          label="Unreconciled webhooks"
+          value={stats.orphanCount}
+          hint="Webhook refs with no matching invoice"
+        />
       </SectionGrid>
 
       <div className="mt-8 uos-card">
@@ -150,8 +162,12 @@ function ReconciliationPage() {
                 {filtered.map((r) => (
                   <tr key={r.id}>
                     <td className="px-3 py-2">{r.fee_type}</td>
-                    <td className="px-3 py-2 text-right font-mono">₦{Number(r.amount).toLocaleString()}</td>
-                    <td className="px-3 py-2 text-right font-mono">₦{Number(r.paid_amount ?? 0).toLocaleString()}</td>
+                    <td className="px-3 py-2 text-right font-mono">
+                      ₦{Number(r.amount).toLocaleString()}
+                    </td>
+                    <td className="px-3 py-2 text-right font-mono">
+                      ₦{Number(r.paid_amount ?? 0).toLocaleString()}
+                    </td>
                     <td className="px-3 py-2">
                       <span
                         className={
@@ -165,7 +181,9 @@ function ReconciliationPage() {
                         {r.status ?? "unpaid"}
                       </span>
                     </td>
-                    <td className="px-3 py-2"><code className="text-xs">{r.paystack_reference ?? "—"}</code></td>
+                    <td className="px-3 py-2">
+                      <code className="text-xs">{r.paystack_reference ?? "—"}</code>
+                    </td>
                     <td className="px-3 py-2 text-xs text-muted-foreground">
                       {r.paid_at ? new Date(r.paid_at).toLocaleString() : "—"}
                     </td>
@@ -181,7 +199,8 @@ function ReconciliationPage() {
         <header className="border-b border-border p-4">
           <h2 className="font-display text-lg font-semibold">Recent Paystack webhooks</h2>
           <p className="text-xs text-muted-foreground">
-            Signature-verified events received from Paystack. Orphans below have no matching invoice.
+            Signature-verified events received from Paystack. Orphans below have no matching
+            invoice.
           </p>
         </header>
         {(hooks.data?.length ?? 0) === 0 ? (
@@ -193,7 +212,10 @@ function ReconciliationPage() {
               const amount = (h.payload as { data?: { amount?: number } })?.data?.amount;
               const matched = ref && (fees.data ?? []).some((f) => f.paystack_reference === ref);
               return (
-                <li key={h.id} className="flex flex-wrap items-center justify-between gap-3 p-3 text-xs">
+                <li
+                  key={h.id}
+                  className="flex flex-wrap items-center justify-between gap-3 p-3 text-xs"
+                >
                   <div>
                     <p className="font-semibold">{h.event_type}</p>
                     <p className="text-muted-foreground">

@@ -3,7 +3,11 @@ import { Monitor, Moon, Sun } from "lucide-react";
 import { applyTheme, readThemeMode, setThemeMode, type ThemeMode } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
-const OPTIONS: Array<{ mode: ThemeMode; label: string; Icon: React.ComponentType<{ className?: string }> }> = [
+const OPTIONS: Array<{
+  mode: ThemeMode;
+  label: string;
+  Icon: React.ComponentType<{ className?: string }>;
+}> = [
   { mode: "light", label: "Light", Icon: Sun },
   { mode: "dark", label: "Dark", Icon: Moon },
   { mode: "system", label: "System", Icon: Monitor },
@@ -31,7 +35,10 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
     <div
       role="group"
       aria-label="Colour mode"
-      className={cn("inline-flex items-center gap-0.5 rounded-full border border-border p-0.5", className)}
+      className={cn(
+        "inline-flex items-center gap-0.5 rounded-full border border-border p-0.5",
+        className,
+      )}
     >
       {OPTIONS.map(({ mode: m, label, Icon }) => (
         <button

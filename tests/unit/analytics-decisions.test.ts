@@ -48,7 +48,14 @@ function option(overrides: Partial<DecisionOption> = {}): DecisionOption {
 describe("Scenario isolation (BC)", () => {
   it("never mutates production state", () => {
     const result = runIsolatedScenario(
-      { scenarioId: "s1", name: "enrollment +10%", type: "deterministic", tenantId: TENANT_A, assumptions: ["growth continues"], inputChanges: { enrollment: 1.1 } },
+      {
+        scenarioId: "s1",
+        name: "enrollment +10%",
+        type: "deterministic",
+        tenantId: TENANT_A,
+        assumptions: ["growth continues"],
+        inputChanges: { enrollment: 1.1 },
+      },
       (base, changes) => ({ enrollment: base.enrollment * changes.enrollment }),
       { enrollment: 1000 },
     );
@@ -59,7 +66,9 @@ describe("Scenario isolation (BC)", () => {
 
 describe("Constraint engine (BK)", () => {
   it("accepts satisfied constraints", () => {
-    expect(areConstraintsSatisfied([{ name: "budget", limit: 1000, currentValue: 800 }]).ok).toBe(true);
+    expect(areConstraintsSatisfied([{ name: "budget", limit: 1000, currentValue: 800 }]).ok).toBe(
+      true,
+    );
   });
 
   it("rejects violated constraints", () => {
@@ -69,9 +78,15 @@ describe("Constraint engine (BK)", () => {
   });
 
   it("treats unknown feasibility as infeasible", () => {
-    expect(isOptionFeasible(option({ feasibility: "unknown" }), [{ name: "budget", limit: 1000, currentValue: 800 }])).toBe(false);
+    expect(
+      isOptionFeasible(option({ feasibility: "unknown" }), [
+        { name: "budget", limit: 1000, currentValue: 800 },
+      ]),
+    ).toBe(false);
     expect(isOptionFeasible(option({ policyCompliant: false }), [])).toBe(false);
-    expect(isOptionFeasible(option(), [{ name: "budget", limit: 1000, currentValue: 800 }])).toBe(true);
+    expect(isOptionFeasible(option(), [{ name: "budget", limit: 1000, currentValue: 800 }])).toBe(
+      true,
+    );
   });
 });
 
@@ -110,12 +125,54 @@ describe("Recommendation contract (BN, BQ, BR)", () => {
   });
 
   it("rejects recommendations without evidence or uncertainty", () => {
-    expect(createRecommendation({ recommendationId: "r1", tenantId: TENANT_A, recommendation: "do something", evidence: [], evidenceQuality: "strong", assumptions: [], alternatives: [], risks: [], confidence: 0.8, uncertainty: "u", modelVersion: null }).ok).toBe(false);
-    expect(createRecommendation({ recommendationId: "r1", tenantId: TENANT_A, recommendation: "do something", evidence: ["e"], evidenceQuality: "strong", assumptions: [], alternatives: [], risks: [], confidence: 0.8, uncertainty: "", modelVersion: null }).ok).toBe(false);
+    expect(
+      createRecommendation({
+        recommendationId: "r1",
+        tenantId: TENANT_A,
+        recommendation: "do something",
+        evidence: [],
+        evidenceQuality: "strong",
+        assumptions: [],
+        alternatives: [],
+        risks: [],
+        confidence: 0.8,
+        uncertainty: "u",
+        modelVersion: null,
+      }).ok,
+    ).toBe(false);
+    expect(
+      createRecommendation({
+        recommendationId: "r1",
+        tenantId: TENANT_A,
+        recommendation: "do something",
+        evidence: ["e"],
+        evidenceQuality: "strong",
+        assumptions: [],
+        alternatives: [],
+        risks: [],
+        confidence: 0.8,
+        uncertainty: "",
+        modelVersion: null,
+      }).ok,
+    ).toBe(false);
   });
 
   it("rejects confidence outside [0, 1] — never presented as certainty (BQ)", () => {
-    expect(createRecommendation({ recommendationId: "r1", tenantId: TENANT_A, recommendation: "x", evidence: ["e"], evidenceQuality: "moderate", assumptions: [], alternatives: [], risks: [], confidence: 1.5, uncertainty: "u", modelVersion: null }).ok).toBe(false);
+    expect(
+      createRecommendation({
+        recommendationId: "r1",
+        tenantId: TENANT_A,
+        recommendation: "x",
+        evidence: ["e"],
+        evidenceQuality: "moderate",
+        assumptions: [],
+        alternatives: [],
+        risks: [],
+        confidence: 1.5,
+        uncertainty: "u",
+        modelVersion: null,
+      }).ok,
+    ).toBe(false);
   });
 
   it("distinguishes strong evidence from weak (BR)", () => {
@@ -162,21 +219,53 @@ describe("Decision audit and outcome (BT, BW, FF)", () => {
   });
 
   it("attributes outcomes and leaves missing actuals explicit (BW, FF)", () => {
-    const outcome = recordDecisionOutcome({ decisionId: "d1", expectedResult: 90, actualResult: 85, lessons: ["overestimated"] });
+    const outcome = recordDecisionOutcome({
+      decisionId: "d1",
+      expectedResult: 90,
+      actualResult: 85,
+      lessons: ["overestimated"],
+    });
     expect(outcome.variance).toBe(-5);
-    const missing = recordDecisionOutcome({ decisionId: "d2", expectedResult: 90, actualResult: null, lessons: [] });
+    const missing = recordDecisionOutcome({
+      decisionId: "d2",
+      expectedResult: 90,
+      actualResult: null,
+      lessons: [],
+    });
     expect(missing.variance).toBeNull();
   });
 });
 
 describe("Uncertainty and assumptions (EY, FB, FC)", () => {
   it("rejects incoherent uncertainty intervals", () => {
-    expect(isUncertaintyCoherent({ pointEstimate: 100, lowerBound: 110, upperBound: 90, confidenceLevel: 0.9, distribution: "normal" })).toBe(false);
-    expect(isUncertaintyCoherent({ pointEstimate: 100, lowerBound: 90, upperBound: 110, confidenceLevel: 0.9, distribution: "normal" })).toBe(true);
+    expect(
+      isUncertaintyCoherent({
+        pointEstimate: 100,
+        lowerBound: 110,
+        upperBound: 90,
+        confidenceLevel: 0.9,
+        distribution: "normal",
+      }),
+    ).toBe(false);
+    expect(
+      isUncertaintyCoherent({
+        pointEstimate: 100,
+        lowerBound: 90,
+        upperBound: 110,
+        confidenceLevel: 0.9,
+        distribution: "normal",
+      }),
+    ).toBe(true);
   });
 
   it("expires assumptions beyond their expiry (FC)", () => {
-    const assumption = { assumptionId: "a1", name: "retention", statement: "retention stable", registeredAt: "2025-01-01T00:00:00Z", expiresAt: "2025-06-01T00:00:00Z" };
+    const assumption = {
+      assumptionId: "a1",
+      name: "retention",
+      statement: "retention stable",
+      registeredAt: "2025-01-01T00:00:00Z",
+      expiresAt: "2025-06-01T00:00:00Z",
+    };
     expect(isAssumptionExpired(assumption, "2025-07-01T00:00:00Z")).toBe(true);
     expect(isAssumptionExpired(assumption, "2025-03-01T00:00:00Z")).toBe(false);
   });

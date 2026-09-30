@@ -119,7 +119,9 @@ function PlatformConfigPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs uppercase tracking-wide text-muted-foreground">Value (JSON)</Label>
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                Value (JSON)
+              </Label>
               <Textarea
                 value={newValue}
                 onChange={(e) => setNewValue(e.target.value)}
@@ -155,21 +157,21 @@ function PlatformConfigPage() {
                     </div>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm">Delete</Button>
+                        <Button variant="outline" size="sm">
+                          Delete
+                        </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
                           <AlertDialogTitle>Delete {r.key}?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            This removes the platform-wide flag. Code that
-                            reads this key will fall back to its default.
+                            This removes the platform-wide flag. Code that reads this key will fall
+                            back to its default.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => remove(r.id)}>
-                            Delete
-                          </AlertDialogAction>
+                          <AlertDialogAction onClick={() => remove(r.id)}>Delete</AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>

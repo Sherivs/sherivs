@@ -57,7 +57,10 @@ function AdminAttendancePage() {
     enabled: teacherIds.length > 0,
     queryFn: async () => {
       const { data } = await supabase.from("users").select("id, full_name").in("id", teacherIds);
-      return Object.fromEntries((data ?? []).map((u) => [u.id, u.full_name])) as Record<string, string>;
+      return Object.fromEntries((data ?? []).map((u) => [u.id, u.full_name])) as Record<
+        string,
+        string
+      >;
     },
   });
 
@@ -68,7 +71,12 @@ function AdminAttendancePage() {
       .channel(`signins-${schoolId}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "attendance_logs", filter: `school_id=eq.${schoolId}` },
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "attendance_logs",
+          filter: `school_id=eq.${schoolId}`,
+        },
         () => logs.refetch(),
       )
       .subscribe();
@@ -91,8 +99,10 @@ function AdminAttendancePage() {
   }, [qr]);
 
   const rows = logs.data ?? [];
-  const uniqueSignIns = new Set(rows.filter((r) => r.type === "sign_in").map((r) => r.teacher_id)).size;
-  const uniqueSignOuts = new Set(rows.filter((r) => r.type === "sign_out").map((r) => r.teacher_id)).size;
+  const uniqueSignIns = new Set(rows.filter((r) => r.type === "sign_in").map((r) => r.teacher_id))
+    .size;
+  const uniqueSignOuts = new Set(rows.filter((r) => r.type === "sign_out").map((r) => r.teacher_id))
+    .size;
 
   const mint = async () => {
     try {
@@ -114,14 +124,20 @@ function AdminAttendancePage() {
       subtitle="Display this QR code for teachers to scan when they arrive and leave."
     >
       <div className="mb-4 text-xs">
-        <Link to="/admin/dashboard" className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40">
+        <Link
+          to="/admin/dashboard"
+          className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40"
+        >
           ← Back
         </Link>
       </div>
 
       <SectionGrid>
         <StatCard label="Sign-in events" value={rows.filter((r) => r.type === "sign_in").length} />
-        <StatCard label="Sign-out events" value={rows.filter((r) => r.type === "sign_out").length} />
+        <StatCard
+          label="Sign-out events"
+          value={rows.filter((r) => r.type === "sign_out").length}
+        />
         <StatCard label="Teachers signed in" value={uniqueSignIns} />
         <StatCard label="Teachers signed out" value={uniqueSignOuts} />
       </SectionGrid>
@@ -130,17 +146,22 @@ function AdminAttendancePage() {
         <div className="uos-card p-5">
           <h3 className="font-display text-base font-semibold">Teacher check-in QR</h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            Teachers scan this with their phone camera to record their arrival or departure.
-            Codes expire after 30 seconds.
+            Teachers scan this with their phone camera to record their arrival or departure. Codes
+            expire after 30 seconds.
           </p>
 
           <div className="mt-3 inline-flex w-full rounded-md border border-border p-0.5">
             {(["sign_in", "sign_out"] as Mode[]).map((m) => (
               <button
                 key={m}
-                onClick={() => { setMode(m); setQr(null); }}
+                onClick={() => {
+                  setMode(m);
+                  setQr(null);
+                }}
                 className={`flex-1 rounded-sm px-3 py-1.5 text-xs font-semibold transition ${
-                  mode === m ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted/40"
+                  mode === m
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted/40"
                 }`}
               >
                 {m === "sign_in" ? "Sign In QR" : "Sign Out QR"}
@@ -199,7 +220,10 @@ function AdminAttendancePage() {
                   rows.map((r) => (
                     <tr key={r.id} className="border-b border-border/40">
                       <td className="py-2 text-muted-foreground">
-                        {new Date(r.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        {new Date(r.timestamp).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </td>
                       <td className="py-2">
                         {names.data?.[r.teacher_id] ?? r.teacher_id.slice(0, 8)}

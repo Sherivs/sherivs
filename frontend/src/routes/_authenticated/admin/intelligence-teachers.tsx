@@ -1,11 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  Gauge,
-  Flame,
-  CalendarCheck,
-  GraduationCap,
-  Award,
-} from "lucide-react";
+import { Gauge, Flame, CalendarCheck, GraduationCap, Award } from "lucide-react";
 import { IntelligenceCenter } from "@/components/intelligence-center";
 
 export const Route = createFileRoute("/_authenticated/admin/intelligence-teachers")({
@@ -28,7 +22,8 @@ function TeacherIntelligenceCenter() {
       features={[
         {
           title: "Teacher Performance Score",
-          description: "Composite score weighing student outcomes, lesson quality, attendance and parent feedback.",
+          description:
+            "Composite score weighing student outcomes, lesson quality, attendance and parent feedback.",
           icon: Gauge,
           tone: "emerald",
           metric: { label: "School avg", value: "8.4 / 10" },
@@ -36,7 +31,8 @@ function TeacherIntelligenceCenter() {
         },
         {
           title: "Burnout Detection",
-          description: "Predictive workload + sentiment model flags teachers trending toward burnout — 4 weeks ahead.",
+          description:
+            "Predictive workload + sentiment model flags teachers trending toward burnout — 4 weeks ahead.",
           icon: Flame,
           tone: "rose",
           metric: { label: "High risk", value: "3" },
@@ -44,7 +40,8 @@ function TeacherIntelligenceCenter() {
         },
         {
           title: "Attendance Trends",
-          description: "Late arrivals, sick days and substitution patterns across departments and terms.",
+          description:
+            "Late arrivals, sick days and substitution patterns across departments and terms.",
           icon: CalendarCheck,
           tone: "sky",
           metric: { label: "Punctuality", value: "97%" },
@@ -52,7 +49,8 @@ function TeacherIntelligenceCenter() {
         },
         {
           title: "Training Progress",
-          description: "Track CPD hours, certifications and required compliance training per teacher.",
+          description:
+            "Track CPD hours, certifications and required compliance training per teacher.",
           icon: GraduationCap,
           tone: "violet",
           metric: { label: "Completed", value: "76%" },

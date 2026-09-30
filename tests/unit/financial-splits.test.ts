@@ -114,7 +114,10 @@ describe("split payments: the legs must account for the gross exactly", () => {
     const allowed = createSplitPayment({
       splitId: "split-repeat-allowed",
       gross: money(1_000, GBP),
-      legs: [leg("a", "one", 400, "institution", "charge"), leg("b", "one", 600, "institution", "fee")],
+      legs: [
+        leg("a", "one", 400, "institution", "charge"),
+        leg("b", "one", 600, "institution", "fee"),
+      ],
       policy: { allowRepeatedBeneficiary: true },
     });
     expect(allowed.ok).toBe(true);
@@ -144,7 +147,11 @@ describe("split payments: the legs must account for the gross exactly", () => {
 describe("split payments: settlement belongs to each leg", () => {
   it("settles a leg only against evidence and only once", () => {
     const split = buildPlan();
-    const settled = settleSplitLeg(split, { legId: "leg-1", settlementRef: "settlement-1", amount: money(9_000, GBP) });
+    const settled = settleSplitLeg(split, {
+      legId: "leg-1",
+      settlementRef: "settlement-1",
+      amount: money(9_000, GBP),
+    });
     expect(settled.ok).toBe(true);
     if (!settled.ok) return;
     const again = settleSplitLeg(settled.split, {
@@ -169,7 +176,11 @@ describe("split payments: settlement belongs to each leg", () => {
 
   it("keeps the split incomplete and unknown while a leg is unresolved", () => {
     const split = buildPlan();
-    const first = settleSplitLeg(split, { legId: "leg-1", settlementRef: "settlement-1", amount: money(9_000, GBP) });
+    const first = settleSplitLeg(split, {
+      legId: "leg-1",
+      settlementRef: "settlement-1",
+      amount: money(9_000, GBP),
+    });
     if (!first.ok) throw new Error(first.error);
     const unresolved = markSplitLegUnresolved(first.split, {
       legId: "leg-3",
@@ -217,10 +228,16 @@ describe("split payments: provider fees and refunds", () => {
 
   it("spreads a refund pro rata and returns exactly the requested amount", () => {
     const split = buildPlan();
-    const refund = refundSplitProRata(split, { amount: money(3_333, GBP), reason: "service not delivered" });
+    const refund = refundSplitProRata(split, {
+      amount: money(3_333, GBP),
+      reason: "service not delivered",
+    });
     expect(refund.ok).toBe(true);
     if (!refund.ok) return;
-    const total = refund.allocations.reduce((sum, allocation) => sum + allocation.amount.amountMinor, 0);
+    const total = refund.allocations.reduce(
+      (sum, allocation) => sum + allocation.amount.amountMinor,
+      0,
+    );
     expect(total).toBe(3_333);
     const institution = refund.allocations.find((allocation) => allocation.legId === "leg-1");
     expect(institution?.amount.amountMinor).toBe(3_000);
@@ -235,7 +252,10 @@ describe("split payments: provider fees and refunds", () => {
 
   it("refuses a refund beyond what the split actually received", () => {
     const split = buildPlan();
-    const excessive = refundSplitProRata(split, { amount: money(10_001, GBP), reason: "excessive" });
+    const excessive = refundSplitProRata(split, {
+      amount: money(10_001, GBP),
+      reason: "excessive",
+    });
     expect(excessive.ok).toBe(false);
     if (!excessive.ok) expect(excessive.error).toContain("only returns what it received");
   });
@@ -252,7 +272,9 @@ describe("split payments: provider fees and refunds", () => {
     for (const allocation of refund.allocations) {
       const source = split.legs.find((candidate) => candidate.legId === allocation.legId);
       const already = allocation.legId === "leg-1" ? 8_900 : 0;
-      expect(allocation.amount.amountMinor).toBeLessThanOrEqual((source?.amount.amountMinor ?? 0) - already);
+      expect(allocation.amount.amountMinor).toBeLessThanOrEqual(
+        (source?.amount.amountMinor ?? 0) - already,
+      );
     }
   });
 
@@ -261,6 +283,10 @@ describe("split payments: provider fees and refunds", () => {
     const platformLeg = split.legs.find((candidate) => candidate.beneficiaryKind === "platform");
     expect(platformLeg?.amount.amountMinor).toBe(700);
     const explained = explainSplit(split);
-    expect(explained.perLeg.map((entry) => entry.beneficiaryKind)).toEqual(["institution", "platform", "partner"]);
+    expect(explained.perLeg.map((entry) => entry.beneficiaryKind)).toEqual([
+      "institution",
+      "platform",
+      "partner",
+    ]);
   });
 });

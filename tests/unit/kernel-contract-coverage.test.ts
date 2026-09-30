@@ -119,7 +119,13 @@ describe("phase-contract coverage snapshot (platform surface data)", () => {
       }
       const phaseMatch = progressLines[index].match(/^\s*(\d{2})\s*$/);
       const name = progressLines[index + 1]?.trim();
-      if (phaseMatch && name && !/^(Complete|Pending|PROPOSED|IMPLEMENTED|ARCHITECTURE_DEFINED|DESIGNED|IN_PROGRESS|VALIDATING|OPERATIONAL|UNKNOWN)$/i.test(name)) {
+      if (
+        phaseMatch &&
+        name &&
+        !/^(Complete|Pending|PROPOSED|IMPLEMENTED|ARCHITECTURE_DEFINED|DESIGNED|IN_PROGRESS|VALIDATING|OPERATIONAL|UNKNOWN)$/i.test(
+          name,
+        )
+      ) {
         progressRows.set(phaseMatch[1], name);
       }
     }

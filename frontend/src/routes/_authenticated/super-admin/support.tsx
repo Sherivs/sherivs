@@ -5,15 +5,34 @@ import { MessageCircle, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
-import { PortalPage, StatCard, SectionGrid, EmptyCard, CardListSkeleton } from "@/components/portal-shell";
+import {
+  PortalPage,
+  StatCard,
+  SectionGrid,
+  EmptyCard,
+  CardListSkeleton,
+} from "@/components/portal-shell";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/super-admin/support")({
   ssr: false,
@@ -85,7 +104,8 @@ function SuperSupportPage() {
     for (const r of rows) {
       const s = r.status ?? "open";
       if (s === "open" || s === "in_review") open++;
-      if (r.priority === "high" || r.priority === "critical") if (s !== "resolved" && s !== "closed") high++;
+      if (r.priority === "high" || r.priority === "critical")
+        if (s !== "resolved" && s !== "closed") high++;
       if (!r.super_admin_response && s !== "closed") awaiting++;
     }
     return { open, high, awaiting, total: rows.length };
@@ -104,7 +124,10 @@ function SuperSupportPage() {
         {q.isLoading ? (
           <CardListSkeleton rows={6} />
         ) : rows.length === 0 ? (
-          <EmptyCard title="No tickets yet" body="When schools open tickets they will appear here." />
+          <EmptyCard
+            title="No tickets yet"
+            body="When schools open tickets they will appear here."
+          />
         ) : (
           <>
             {/* Desktop table */}
@@ -161,7 +184,9 @@ function SuperSupportPage() {
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <div className="font-semibold truncate">{r.subject}</div>
-                      <div className="text-xs text-muted-foreground truncate">{r.schools?.name ?? "—"}</div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {r.schools?.name ?? "—"}
+                      </div>
                     </div>
                     <Badge variant="outline" className={priorityColor(r.priority)}>
                       {r.priority ?? "normal"}
@@ -172,10 +197,17 @@ function SuperSupportPage() {
                       {STATUS_LABEL[r.status ?? "open"]}
                     </Badge>
                     <span className="text-muted-foreground">{r.complaint_type}</span>
-                    <span className="text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</span>
+                    <span className="text-muted-foreground">
+                      {new Date(r.created_at).toLocaleDateString()}
+                    </span>
                   </div>
                   <div className="flex gap-2 pt-1">
-                    <Button size="sm" variant="outline" className="flex-1" onClick={() => setView(r)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => setView(r)}
+                    >
                       View
                     </Button>
                     <Button size="sm" className="flex-1" onClick={() => setRespond(r)}>

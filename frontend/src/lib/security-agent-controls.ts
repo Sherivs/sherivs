@@ -160,7 +160,10 @@ export function evaluateToolSecurity(
     return { decision: "DENY", reason: "Tool is on the agent's explicit deny list" };
   }
   if (!input.agent.allowedToolIds.includes(input.tool.id)) {
-    return { decision: "DENY", reason: "Tool is not on the agent's explicit allow list (Section U)" };
+    return {
+      decision: "DENY",
+      reason: "Tool is not on the agent's explicit allow list (Section U)",
+    };
   }
   if (input.tool.dangerousCategories.length > 0 && !input.hasHumanApprovalContext) {
     return {

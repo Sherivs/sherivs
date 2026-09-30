@@ -25,9 +25,7 @@ function readJson(path) {
 const files = walk(root).sort();
 const registryPath = join(architectureRoot, "registry.json");
 const registry = existsSync(registryPath) ? readJson(registryPath) : null;
-const phaseById = new Map(
-  (registry?.phases ?? []).map((phase) => [phase.id, phase]),
-);
+const phaseById = new Map((registry?.phases ?? []).map((phase) => [phase.id, phase]));
 
 const topLevel = new Map();
 for (const path of files) {
@@ -79,13 +77,22 @@ const inventory = {
     environmentTemplates: files.filter((path) => path.endsWith(".env.example")),
     workflows: files.filter((path) => path.startsWith(".github/workflows/")),
     migrations: files.filter((path) => path.startsWith("database/") && path.endsWith(".sql")),
-    sourceTypeScript: files.filter((path) => /\.(ts|tsx)$/.test(path) && path.startsWith("frontend/")),
+    sourceTypeScript: files.filter(
+      (path) => /\.(ts|tsx)$/.test(path) && path.startsWith("frontend/"),
+    ),
     tests: files.filter((path) => path.startsWith("tests/")),
     phaseDocuments: files.filter((path) => phasePattern.test(path.split("/").at(-1) ?? "")),
     phaseContracts: files.filter((path) => path.includes("kernel/phase-contracts/")),
   },
   classifications: {
-    canonical: ["CONSTITUTION.md", "REGISTRY.md", "DEPENDENCY.md", "BOUNDARIES.md", "DECISIONS.md", "PROGRESS.md"],
+    canonical: [
+      "CONSTITUTION.md",
+      "REGISTRY.md",
+      "DEPENDENCY.md",
+      "BOUNDARIES.md",
+      "DECISIONS.md",
+      "PROGRESS.md",
+    ],
     conceptualMotherSurfaces: [
       "COREGRID.md",
       "GOVERNANCE.md",
@@ -118,8 +125,8 @@ const inventory = {
     phase52Implementation: "UNVERIFIED",
     deployment: "UNVERIFIED",
     operational: "UNVERIFIED",
-    acceptanceDefinitionsPresent: files.filter((path) =>
-      path.startsWith("architecture/phase-acceptance/") && path.endsWith(".json"),
+    acceptanceDefinitionsPresent: files.filter(
+      (path) => path.startsWith("architecture/phase-acceptance/") && path.endsWith(".json"),
     ).length,
   },
   nextGate: "Reconcile authority aliases and ownership before implementation expansion.",
@@ -164,14 +171,20 @@ const blueprintCatalog = {
 writeFileSync(outputPath, `${JSON.stringify(inventory, null, 2)}\n`, "utf8");
 writeFileSync(blueprintOutputPath, `${JSON.stringify(blueprintCatalog, null, 2)}\n`, "utf8");
 
-console.log(JSON.stringify({
-  repositoryFiles: inventory.repository.fileCount,
-  phaseDocuments: inventory.repository.phaseDocuments.length,
-  phaseContracts: inventory.repository.phaseContracts.length,
-  blueprints: blueprintCatalog.blueprints.length,
-  phase52Registered: blueprintCatalog.phase52.registered,
-  outputs: [
-    "architecture/COREGRID_REPOSITORY_INVENTORY.json",
-    "architecture/COREGRID_BLUEPRINT_CATALOG.json",
-  ],
-}, null, 2));
+console.log(
+  JSON.stringify(
+    {
+      repositoryFiles: inventory.repository.fileCount,
+      phaseDocuments: inventory.repository.phaseDocuments.length,
+      phaseContracts: inventory.repository.phaseContracts.length,
+      blueprints: blueprintCatalog.blueprints.length,
+      phase52Registered: blueprintCatalog.phase52.registered,
+      outputs: [
+        "architecture/COREGRID_REPOSITORY_INVENTORY.json",
+        "architecture/COREGRID_BLUEPRINT_CATALOG.json",
+      ],
+    },
+    null,
+    2,
+  ),
+);

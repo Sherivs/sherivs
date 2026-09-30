@@ -5,11 +5,7 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const proposals = JSON.parse(
   readFileSync(
-    join(
-      root,
-      "architecture",
-      "COREGRID_CAMPAIGN_52_RECEIVING_BLUEPRINT_PROPOSALS.json",
-    ),
+    join(root, "architecture", "COREGRID_CAMPAIGN_52_RECEIVING_BLUEPRINT_PROPOSALS.json"),
     "utf8",
   ),
 );
@@ -67,16 +63,11 @@ const ledger = {
     blueprintUpdatePlan: null,
     implementationAuthorization: "DENIED",
   })),
-  rule:
-    "A pending decision cannot mutate architecture, registry, mothers, infrastructure or implementation.",
+  rule: "A pending decision cannot mutate architecture, registry, mothers, infrastructure or implementation.",
   nextGate: "Record authorized decisions, validate them, then update receiving blueprints.",
 };
 
-const output = join(
-  root,
-  "architecture",
-  "COREGRID_CAMPAIGN_52_DECISION_LEDGER.json",
-);
+const output = join(root, "architecture", "COREGRID_CAMPAIGN_52_DECISION_LEDGER.json");
 writeFileSync(output, `${JSON.stringify(ledger, null, 2)}\n`, "utf8");
 console.log(
   JSON.stringify(

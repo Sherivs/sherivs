@@ -67,13 +67,7 @@ export type ProviderRegion =
 
 /** Provider lifecycle (Section EB). */
 export type ProviderLifecycleState =
-  | "DISCOVERED"
-  | "CONFIGURED"
-  | "VALIDATED"
-  | "ACTIVE"
-  | "DEGRADED"
-  | "SUSPENDED"
-  | "RETIRED";
+  "DISCOVERED" | "CONFIGURED" | "VALIDATED" | "ACTIVE" | "DEGRADED" | "SUSPENDED" | "RETIRED";
 
 export const PROVIDER_LIFECYCLE_STATES: readonly ProviderLifecycleState[] = [
   "DISCOVERED",
@@ -85,7 +79,9 @@ export const PROVIDER_LIFECYCLE_STATES: readonly ProviderLifecycleState[] = [
   "RETIRED",
 ] as const;
 
-const PROVIDER_LIFECYCLE_TRANSITIONS: Readonly<Record<ProviderLifecycleState, readonly ProviderLifecycleState[]>> = {
+const PROVIDER_LIFECYCLE_TRANSITIONS: Readonly<
+  Record<ProviderLifecycleState, readonly ProviderLifecycleState[]>
+> = {
   DISCOVERED: ["CONFIGURED", "RETIRED"],
   CONFIGURED: ["VALIDATED", "SUSPENDED", "RETIRED"],
   VALIDATED: ["ACTIVE", "SUSPENDED", "RETIRED"],
@@ -153,7 +149,10 @@ export function assertCredentialReference(
     };
   }
   if (SECRET_SHAPE.test(reference)) {
-    return { ok: false, reason: `${adapter.id}: credential reference looks like raw provider material` };
+    return {
+      ok: false,
+      reason: `${adapter.id}: credential reference looks like raw provider material`,
+    };
   }
   return { ok: true };
 }
@@ -312,7 +311,8 @@ export const PROVIDER_CATALOGUE: readonly ProviderAdapter[] = [
     supportsDeliveryReceipts: false,
     requiresDataProcessingAgreement: false,
     emergencyCapable: false,
-    notes: "A tenant's own relay, keeping institutional mail on infrastructure the tenant controls.",
+    notes:
+      "A tenant's own relay, keeping institutional mail on infrastructure the tenant controls.",
   },
   {
     id: "sendgrid",
@@ -559,9 +559,7 @@ export function providerCapabilityMatrix(): readonly {
   }));
 }
 
-export function providersForChannel(
-  channel: CommunicationChannelKind,
-): readonly ProviderAdapter[] {
+export function providersForChannel(channel: CommunicationChannelKind): readonly ProviderAdapter[] {
   return PROVIDER_CATALOGUE.filter((adapter) => adapter.channels.includes(channel));
 }
 

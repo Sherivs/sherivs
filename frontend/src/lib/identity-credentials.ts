@@ -8,12 +8,7 @@
  * - Secrets must never be logged.
  */
 
-import type {
-  CredentialKind,
-  CredentialMetadata,
-  CredentialStatus,
-  IdentityId,
-} from "./identity";
+import type { CredentialKind, CredentialMetadata, CredentialStatus, IdentityId } from "./identity";
 import { canTransitionCredential } from "./identity";
 
 /* ─────────────────────────────────────────────────────────────
@@ -30,8 +25,7 @@ export interface CreateCredentialInput {
 }
 
 export type CreateCredentialResult =
-  | { ok: true; credential: CredentialMetadata }
-  | { ok: false; error: string };
+  { ok: true; credential: CredentialMetadata } | { ok: false; error: string };
 
 export function createCredential(
   input: CreateCredentialInput,
@@ -64,8 +58,7 @@ export function createCredential(
  * ────────────────────────────────────────────────────────────*/
 
 export type CredentialTransitionResult =
-  | { ok: true; credential: CredentialMetadata }
-  | { ok: false; error: string };
+  { ok: true; credential: CredentialMetadata } | { ok: false; error: string };
 
 export function transitionCredentialStatus(
   credential: CredentialMetadata,
@@ -144,7 +137,8 @@ export function validateCredentialAgainstPolicy(
     };
   }
 
-  const lifetimeMs = new Date(credential.expiresAt).getTime() - new Date(credential.issuedAt).getTime();
+  const lifetimeMs =
+    new Date(credential.expiresAt).getTime() - new Date(credential.issuedAt).getTime();
   if (lifetimeMs > policy.maxLifetimeSeconds * 1000) {
     return {
       valid: false,

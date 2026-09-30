@@ -89,9 +89,15 @@ export function createTechnologyRadarItem(input: {
   stage: RadarStage;
 }): { ok: true; item: TechnologyRadarItem } | { ok: false; error: string } {
   if (!input.technology.trim() || !input.domain.trim()) {
-    return { ok: false, error: "Technology radar item requires a technology and domain (Section H)" };
+    return {
+      ok: false,
+      error: "Technology radar item requires a technology and domain (Section H)",
+    };
   }
-  return { ok: true, item: { id: input.id, technology: input.technology, domain: input.domain, stage: input.stage } };
+  return {
+    ok: true,
+    item: { id: input.id, technology: input.technology, domain: input.domain, stage: input.stage },
+  };
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -99,12 +105,29 @@ export function createTechnologyRadarItem(input: {
  * ────────────────────────────────────────────────────────────*/
 
 export const TECHNOLOGY_EVALUATION_CRITERIA: readonly string[] = [
-  "strategic_relevance", "user_value", "institutional_value", "technical_maturity",
-  "security_maturity", "privacy", "regulatory", "integration_complexity",
-  "operational_complexity", "infrastructure_cost", "vendor_dependency",
-  "ecosystem_maturity", "scalability", "reliability", "maintainability",
-  "observability", "reversibility", "accessibility", "african_market_suitability",
-  "offline_suitability", "connectivity", "energy", "localization",
+  "strategic_relevance",
+  "user_value",
+  "institutional_value",
+  "technical_maturity",
+  "security_maturity",
+  "privacy",
+  "regulatory",
+  "integration_complexity",
+  "operational_complexity",
+  "infrastructure_cost",
+  "vendor_dependency",
+  "ecosystem_maturity",
+  "scalability",
+  "reliability",
+  "maintainability",
+  "observability",
+  "reversibility",
+  "accessibility",
+  "african_market_suitability",
+  "offline_suitability",
+  "connectivity",
+  "energy",
+  "localization",
 ] as const;
 
 export interface TechnologyAssessment {
@@ -122,10 +145,16 @@ export function createTechnologyAssessment(input: {
   for (const criterion of TECHNOLOGY_EVALUATION_CRITERIA) {
     const score = input.scores[criterion];
     if (!Number.isFinite(score) || score < 0 || score > 1) {
-      return { ok: false, error: `Evaluation score for "${criterion}" must be between 0 and 1 (Section I)` };
+      return {
+        ok: false,
+        error: `Evaluation score for "${criterion}" must be between 0 and 1 (Section I)`,
+      };
     }
   }
-  return { ok: true, assessment: { id: input.id, technology: input.technology, scores: input.scores } };
+  return {
+    ok: true,
+    assessment: { id: input.id, technology: input.technology, scores: input.scores },
+  };
 }
 
 export function scoreTechnologyAssessment(assessment: TechnologyAssessment): number {
@@ -135,7 +164,10 @@ export function scoreTechnologyAssessment(assessment: TechnologyAssessment): num
 }
 
 // Section H: integrate only technologies that materially improve CoreGrid.
-export function isTechnologyRecommended(assessment: TechnologyAssessment, threshold: number): boolean {
+export function isTechnologyRecommended(
+  assessment: TechnologyAssessment,
+  threshold: number,
+): boolean {
   return scoreTechnologyAssessment(assessment) >= threshold;
 }
 
@@ -156,8 +188,16 @@ export type TechDebtType =
   | "observability";
 
 export const TECH_DEBT_TYPES: readonly TechDebtType[] = [
-  "architectural", "code", "infrastructure", "schema", "api", "dependency",
-  "security", "documentation", "operational", "observability",
+  "architectural",
+  "code",
+  "infrastructure",
+  "schema",
+  "api",
+  "dependency",
+  "security",
+  "documentation",
+  "operational",
+  "observability",
 ] as const;
 
 export interface TechDebtItem {
@@ -186,11 +226,23 @@ export function registerTechDebt(input: {
   if (input.severity < 0 || input.severity > 10 || input.priority < 0 || input.priority > 10) {
     return { ok: false, error: "Debt severity and priority must be between 0 and 10 (Section AL)" };
   }
-  return { ok: true, item: { id: input.id, system: input.system, type: input.type, description: input.description, severity: input.severity, priority: input.priority } };
+  return {
+    ok: true,
+    item: {
+      id: input.id,
+      system: input.system,
+      type: input.type,
+      description: input.description,
+      severity: input.severity,
+      priority: input.priority,
+    },
+  };
 }
 
 // Section AL: technical debt must be measurable and prioritized.
-export function prioritizeTechDebt(items: readonly TechDebtItem[]): { id: DebtItemId; system: string; score: number }[] {
+export function prioritizeTechDebt(
+  items: readonly TechDebtItem[],
+): { id: DebtItemId; system: string; score: number }[] {
   return items
     .map((item) => ({ id: item.id, system: item.system, score: item.severity + item.priority }))
     .sort((a, b) => b.score - a.score);
@@ -237,7 +289,12 @@ export function createDependencyRecord(input: {
 }
 
 export function isDependencyHealthy(record: DependencyRecord): boolean {
-  return !record.endOfLife && !record.criticalVulnerability && record.licensingApproved && record.maintained;
+  return (
+    !record.endOfLife &&
+    !record.criticalVulnerability &&
+    record.licensingApproved &&
+    record.maintained
+  );
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -312,13 +369,32 @@ export function isAdrComplete(adr: EvolutionAdr): boolean {
  * ────────────────────────────────────────────────────────────*/
 
 export type EvolutionRiskCategory =
-  | "technical" | "operational" | "security" | "privacy" | "regulatory"
-  | "financial" | "educational" | "adoption" | "vendor" | "dependency"
-  | "ai" | "infrastructure";
+  | "technical"
+  | "operational"
+  | "security"
+  | "privacy"
+  | "regulatory"
+  | "financial"
+  | "educational"
+  | "adoption"
+  | "vendor"
+  | "dependency"
+  | "ai"
+  | "infrastructure";
 
 export const EVOLUTION_RISK_CATEGORIES: readonly EvolutionRiskCategory[] = [
-  "technical", "operational", "security", "privacy", "regulatory", "financial",
-  "educational", "adoption", "vendor", "dependency", "ai", "infrastructure",
+  "technical",
+  "operational",
+  "security",
+  "privacy",
+  "regulatory",
+  "financial",
+  "educational",
+  "adoption",
+  "vendor",
+  "dependency",
+  "ai",
+  "infrastructure",
 ] as const;
 
 export interface EvolutionRiskItem {
@@ -336,21 +412,33 @@ export function createEvolutionRiskItem(input: {
   likelihood: number;
   impact: number;
 }): { ok: true; risk: EvolutionRiskItem } | { ok: false; error: string } {
-  if (!input.description.trim()) return { ok: false, error: "Risk description is required (Section BG)" };
+  if (!input.description.trim())
+    return { ok: false, error: "Risk description is required (Section BG)" };
   if (!EVOLUTION_RISK_CATEGORIES.includes(input.category)) {
     return { ok: false, error: "Unknown evolution risk category (Section BG)" };
   }
   if (input.likelihood < 1 || input.likelihood > 5 || input.impact < 1 || input.impact > 5) {
     return { ok: false, error: "Risk likelihood and impact must be between 1 and 5 (Section BG)" };
   }
-  return { ok: true, risk: { id: input.id, category: input.category, description: input.description, likelihood: input.likelihood, impact: input.impact } };
+  return {
+    ok: true,
+    risk: {
+      id: input.id,
+      category: input.category,
+      description: input.description,
+      likelihood: input.likelihood,
+      impact: input.impact,
+    },
+  };
 }
 
 export function scoreEvolutionRisk(risk: EvolutionRiskItem): number {
   return risk.likelihood * risk.impact;
 }
 
-export function prioritizeEvolutionRisks(items: readonly EvolutionRiskItem[]): { id: EvolutionRiskId; category: EvolutionRiskCategory; score: number }[] {
+export function prioritizeEvolutionRisks(
+  items: readonly EvolutionRiskItem[],
+): { id: EvolutionRiskId; category: EvolutionRiskCategory; score: number }[] {
   return items
     .map((risk) => ({ id: risk.id, category: risk.category, score: scoreEvolutionRisk(risk) }))
     .sort((a, b) => b.score - a.score);
@@ -361,11 +449,21 @@ export function prioritizeEvolutionRisks(items: readonly EvolutionRiskItem[]): {
  * ────────────────────────────────────────────────────────────*/
 
 export const EVOLUTION_METRICS: readonly string[] = [
-  "innovation_velocity", "migration_success", "rollback_frequency",
-  "compatibility_rate", "technical_debt", "deprecated_capability_count",
-  "experimental_success_rate", "production_regression_rate", "platform_stability",
-  "adoption_rate", "capability_utilization", "infrastructure_efficiency",
-  "ai_improvement", "user_satisfaction", "institutional_outcomes",
+  "innovation_velocity",
+  "migration_success",
+  "rollback_frequency",
+  "compatibility_rate",
+  "technical_debt",
+  "deprecated_capability_count",
+  "experimental_success_rate",
+  "production_regression_rate",
+  "platform_stability",
+  "adoption_rate",
+  "capability_utilization",
+  "infrastructure_efficiency",
+  "ai_improvement",
+  "user_satisfaction",
+  "institutional_outcomes",
 ] as const;
 
 export interface EvolutionMetric {
@@ -384,9 +482,14 @@ export function recordEvolutionMetric(input: {
   if (!EVOLUTION_METRICS.includes(input.name)) {
     return { ok: false, error: `Unknown evolution metric "${input.name}" (Section AK)` };
   }
-  if (!Number.isFinite(input.value)) return { ok: false, error: "Evolution metric value must be finite (Section AK)" };
-  if (!input.period.trim()) return { ok: false, error: "Evolution metric period is required (Section AK)" };
-  return { ok: true, metric: { id: input.id, name: input.name, value: input.value, period: input.period } };
+  if (!Number.isFinite(input.value))
+    return { ok: false, error: "Evolution metric value must be finite (Section AK)" };
+  if (!input.period.trim())
+    return { ok: false, error: "Evolution metric period is required (Section AK)" };
+  return {
+    ok: true,
+    metric: { id: input.id, name: input.name, value: input.value, period: input.period },
+  };
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -404,10 +507,15 @@ export function createSyntheticDataPolicy(input: {
   purpose: string;
   isolatedFromInstitutionalEvidence?: boolean;
 }): { ok: true; policy: SyntheticDataPolicy } | { ok: false; error: string } {
-  if (!input.purpose.trim()) return { ok: false, error: "Synthetic data purpose is required (Section CB)" };
+  if (!input.purpose.trim())
+    return { ok: false, error: "Synthetic data purpose is required (Section CB)" };
   return {
     ok: true,
-    policy: { id: input.id, purpose: input.purpose, isolatedFromInstitutionalEvidence: input.isolatedFromInstitutionalEvidence ?? false },
+    policy: {
+      id: input.id,
+      purpose: input.purpose,
+      isolatedFromInstitutionalEvidence: input.isolatedFromInstitutionalEvidence ?? false,
+    },
   };
 }
 
@@ -417,7 +525,15 @@ export function isSyntheticDataIsolated(policy: SyntheticDataPolicy): boolean {
   return policy.isolatedFromInstitutionalEvidence;
 }
 
-export type EvolutionMemoryKind = "decision" | "experiment" | "result" | "adr" | "incident" | "migration" | "deprecation" | "reversal";
+export type EvolutionMemoryKind =
+  | "decision"
+  | "experiment"
+  | "result"
+  | "adr"
+  | "incident"
+  | "migration"
+  | "deprecation"
+  | "reversal";
 
 export interface EvolutionMemoryEntry {
   id: EvolutionMemoryId;
@@ -431,11 +547,26 @@ export function createEvolutionMemoryEntry(input: {
   kind: EvolutionMemoryKind;
   summary: string;
 }): { ok: true; entry: EvolutionMemoryEntry } | { ok: false; error: string } {
-  if (!input.summary.trim()) return { ok: false, error: "Evolution memory summary is required (Section CL)" };
-  if (!["decision", "experiment", "result", "adr", "incident", "migration", "deprecation", "reversal"].includes(input.kind)) {
+  if (!input.summary.trim())
+    return { ok: false, error: "Evolution memory summary is required (Section CL)" };
+  if (
+    ![
+      "decision",
+      "experiment",
+      "result",
+      "adr",
+      "incident",
+      "migration",
+      "deprecation",
+      "reversal",
+    ].includes(input.kind)
+  ) {
     return { ok: false, error: "Unknown evolution memory kind (Section CL)" };
   }
-  return { ok: true, entry: { id: input.id, kind: input.kind, summary: input.summary, preserved: true } };
+  return {
+    ok: true,
+    entry: { id: input.id, kind: input.kind, summary: input.summary, preserved: true },
+  };
 }
 
 // Section CK: engineering memory prevents future teams from repeating
@@ -443,6 +574,3 @@ export function createEvolutionMemoryEntry(input: {
 export function isKnowledgePreserved(entry: EvolutionMemoryEntry): boolean {
   return entry.preserved;
 }
-
-
-

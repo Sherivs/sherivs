@@ -52,10 +52,11 @@ export interface CreateAvailabilityWindowInput {
 }
 
 export type CreateAvailabilityWindowResult =
-  | { ok: true; window: AvailabilityWindow }
-  | { ok: false; error: string };
+  { ok: true; window: AvailabilityWindow } | { ok: false; error: string };
 
-export function createAvailabilityWindow(input: CreateAvailabilityWindowInput): CreateAvailabilityWindowResult {
+export function createAvailabilityWindow(
+  input: CreateAvailabilityWindowInput,
+): CreateAvailabilityWindowResult {
   if (input.entityId.trim() === "") {
     return { ok: false, error: "Availability requires an entity (L)" };
   }
@@ -97,9 +98,7 @@ export function resolveAvailability(
 ): AvailabilityVerdict {
   const covering = windows.filter(
     (w) =>
-      w.entityId === entityId &&
-      w.tenantId === tenantId &&
-      intervalsOverlap(w.interval, interval),
+      w.entityId === entityId && w.tenantId === tenantId && intervalsOverlap(w.interval, interval),
   );
   if (covering.length === 0) {
     return { verdict: "unavailable", reason: "No availability window covers the interval (L)" };
@@ -114,7 +113,10 @@ export function resolveAvailability(
     strength[w.state] > strength[acc.state] ? w : acc,
   );
   if (strongest.state === "unavailable") {
-    return { verdict: "unavailable", reason: `Entity is unavailable (source: ${strongest.source}) (L)` };
+    return {
+      verdict: "unavailable",
+      reason: `Entity is unavailable (source: ${strongest.source}) (L)`,
+    };
   }
   return {
     verdict: "available",

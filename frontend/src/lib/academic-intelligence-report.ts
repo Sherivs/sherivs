@@ -235,7 +235,8 @@ export function runAcademicIntelligenceCheck(): readonly AcademicCheck[] {
     proves: "the curriculum hierarchy accepts the declared chain and refuses a skipped one",
     ok:
       fixture.nodes.length === 4 &&
-      fixture.nodes.map((node) => node.level).join(">") === "institution>program>curriculum>course" &&
+      fixture.nodes.map((node) => node.level).join(">") ===
+        "institution>program>curriculum>course" &&
       !createCurriculumNode(
         { id: "bad", tenantId: TENANT, level: "course", key: "bad", title: "bad", parentId: "i1" },
         fixture.nodes,
@@ -272,7 +273,8 @@ export function runAcademicIntelligenceCheck(): readonly AcademicCheck[] {
   const diff = curriculumDiff(fixture.history, "cur1", 1, 2);
   checks.push({
     id: "curriculum-versioning-is-interpretable",
-    proves: "a record is read against the version in force when it was created, and changes are diffable",
+    proves:
+      "a record is read against the version in force when it was created, and changes are diffable",
     ok:
       fixture.history.length === 2 &&
       historical?.version === 1 &&
@@ -292,7 +294,8 @@ export function runAcademicIntelligenceCheck(): readonly AcademicCheck[] {
   });
   checks.push({
     id: "mastery-is-an-estimate-over-evidence",
-    proves: "mastery is estimated from preserved evidence, carries confidence and uncertainty, and is refused without evidence",
+    proves:
+      "mastery is estimated from preserved evidence, carries confidence and uncertainty, and is refused without evidence",
     ok:
       evidence.length === 4 &&
       mastery.ok &&
@@ -327,7 +330,9 @@ export function runAcademicIntelligenceCheck(): readonly AcademicCheck[] {
   checks.push({
     id: "gaps-are-typed-and-explained",
     proves: "a gap names its type, severity and detail rather than a bare shortfall",
-    ok: gaps.gaps.length > 0 && gaps.gaps.every((gap) => gap.type.length > 0 && gap.detail.length > 0),
+    ok:
+      gaps.gaps.length > 0 &&
+      gaps.gaps.every((gap) => gap.type.length > 0 && gap.detail.length > 0),
     detail: gaps.gaps.map((gap) => `${gap.type}:${gap.severity}`).join(" · "),
   });
 
@@ -345,7 +350,8 @@ export function runAcademicIntelligenceCheck(): readonly AcademicCheck[] {
   });
   checks.push({
     id: "risk-is-probabilistic-and-attributed",
-    proves: "risk signals carry evidence, factors, confidence, uncertainty and model version, and never assert a diagnosis",
+    proves:
+      "risk signals carry evidence, factors, confidence, uncertainty and model version, and never assert a diagnosis",
     ok:
       risk.signals.length > 0 &&
       risk.signals.every(
@@ -356,7 +362,9 @@ export function runAcademicIntelligenceCheck(): readonly AcademicCheck[] {
           signal.modelVersion.length > 0 &&
           signal.strength <= 100,
       ),
-    detail: risk.signals.map((signal) => `${signal.type}:${signal.strength}@${signal.confidence}`).join(" · "),
+    detail: risk.signals
+      .map((signal) => `${signal.type}:${signal.strength}@${signal.confidence}`)
+      .join(" · "),
   });
 
   const question = addQuestion(
@@ -399,18 +407,26 @@ export function runAcademicIntelligenceCheck(): readonly AcademicCheck[] {
     detail: `marks ${coverage.marksAllocated}/20 · missing competencies ${coverage.missingCompetencies.length} · problems ${coverage.problems.length}`,
   });
 
-  const uncovered: AssessmentBlueprint = { ...blueprint, competencies: ["c-algebra", "c-geometry"] };
-  const uncoveredResult = evaluateBlueprintCoverage(uncovered, question.ok ? [question.question] : []);
+  const uncovered: AssessmentBlueprint = {
+    ...blueprint,
+    competencies: ["c-algebra", "c-geometry"],
+  };
+  const uncoveredResult = evaluateBlueprintCoverage(
+    uncovered,
+    question.ok ? [question.question] : [],
+  );
   checks.push({
     id: "an-uncovered-competency-is-refused",
-    proves: "an assessment that claims a competency it never measures is refused, and the gap is named",
+    proves:
+      "an assessment that claims a competency it never measures is refused, and the gap is named",
     ok: !uncoveredResult.ok && uncoveredResult.missingCompetencies.includes("c-geometry"),
     detail: uncoveredResult.problems.join(" · "),
   });
 
   checks.push({
     id: "vocabulary-is-declared",
-    proves: "the phase declares its assessment types, cognitive levels, competency levels and risk types as data",
+    proves:
+      "the phase declares its assessment types, cognitive levels, competency levels and risk types as data",
     ok:
       ASSESSMENT_TYPES.length === 7 &&
       DEFAULT_COGNITIVE_LEVELS.length === 6 &&
@@ -435,37 +451,43 @@ export function academicIntelligenceGaps(): readonly AcademicGap[] {
     {
       id: "no-academic-persistence",
       gap: "Curriculum versions, competencies, objectives, questions, blueprint coverage and mastery estimates are computed and returned as values; no migration creates the tables that would keep them.",
-      consequence: "A curriculum version and the estimate computed from it live only as long as the process that built them, so a historical record cannot yet be re-read from storage.",
+      consequence:
+        "A curriculum version and the estimate computed from it live only as long as the process that built them, so a historical record cannot yet be re-read from storage.",
       owner: "Phase 11 schema work with Phase 03 row-level security",
     },
     {
       id: "no-model-registry-service",
       gap: "Mastery and risk carry a modelVersion string; there is no registry row, evaluation record, approval state or lifecycle machine behind it, and no drift monitor.",
-      consequence: "Model governance is declared by contract (sections CC–CE) but not enforced by an artefact: a model version could change without a recorded evaluation.",
+      consequence:
+        "Model governance is declared by contract (sections CC–CE) but not enforced by an artefact: a model version could change without a recorded evaluation.",
       owner: "Phase 11 model governance work, with Phase 24 for serving infrastructure",
     },
     {
       id: "no-intervention-outcome-loop",
       gap: "Interventions can be recommended, assigned and evaluated as states, but nothing yet joins an evaluated intervention back to the mastery change it produced.",
-      consequence: "Effectiveness can be recorded but not compared across interventions, so nothing learns which intervention works for which gap.",
+      consequence:
+        "Effectiveness can be recorded but not compared across interventions, so nothing learns which intervention works for which gap.",
       owner: "Phase 11 intervention analytics, consuming Phase 18 for cross-platform measurement",
     },
     {
       id: "no-evidence-ingestion-boundary",
       gap: "Evidence can be constructed and consumed, but no authorised boundary (server function or workflow) ingests it from real assessment or attendance systems.",
-      consequence: "Nothing calls the intelligence layer in production yet: the engines are tested libraries, and no surface outside this phase uses them.",
+      consequence:
+        "Nothing calls the intelligence layer in production yet: the engines are tested libraries, and no surface outside this phase uses them.",
       owner: "Phase 11 integration boundary, with Phase 04 for canonical academic records",
     },
     {
       id: "no-similarity-or-external-signal-adapter",
       gap: "The blueprint allows similarity and external assessment signals (§DH); no adapter exists, so integrity signals cannot yet enter as evidence.",
-      consequence: "Integrity-related evidence would have to be entered by hand, which is policy the institution should own explicitly.",
+      consequence:
+        "Integrity-related evidence would have to be entered by hand, which is policy the institution should own explicitly.",
       owner: "Phase 11 adapters, with Phase 28 for external-system contracts",
     },
     {
       id: "no-academic-search-or-export-surface",
       gap: "Academic search and controlled export (§DM, §DN) are specified but no search index or export boundary exists.",
-      consequence: "An institution cannot yet retrieve or export its academic intelligence under audit.",
+      consequence:
+        "An institution cannot yet retrieve or export its academic intelligence under audit.",
       owner: "Phase 11 search and export work, with Phase 14 for the index",
     },
   ];

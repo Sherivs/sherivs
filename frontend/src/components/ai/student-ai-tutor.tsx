@@ -26,9 +26,7 @@ export function StudentAITutor({
 
   if (!userId || !schoolId) return null;
 
-  const focus = subject
-    ? ` Right now the student wants to focus on ${subject}.`
-    : "";
+  const focus = subject ? ` Right now the student wants to focus on ${subject}.` : "";
 
   return (
     <AIAssistantShell

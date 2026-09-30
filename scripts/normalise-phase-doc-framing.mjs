@@ -42,7 +42,10 @@ const read = (ref) => readFileSync(join(ROOT, ref), "utf8");
 const REWRITES = [
   [/CoreGrid\s+Scholar/gi, "CoreGrid"],
   [/\bScholar's\s+(?=[A-Za-z-])/gi, "CoreGrid's "],
-  [/\bScholar is the first runtime\b/gi, "the first installed runtime is runtime-001, a consumer among equals"],
+  [
+    /\bScholar is the first runtime\b/gi,
+    "the first installed runtime is runtime-001, a consumer among equals",
+  ],
   [/\bScholar is\b/gi, "The first installed runtime is"],
   [/\bScholar consumes\b/gi, "A runtime consumes"],
   [/\bScholar provides\b/gi, "The platform provides"],
@@ -179,7 +182,9 @@ const report = [
 if (!CHECK) writeFileSync(REPORT, report.join("\n"), "utf8");
 
 console.log(`phase documents scanned: ${phaseDocs.length}`);
-console.log(`documents with owner-framing ${CHECK ? "to rewrite" : "rewritten"}: ${rewrittenFiles}`);
+console.log(
+  `documents with owner-framing ${CHECK ? "to rewrite" : "rewritten"}: ${rewrittenFiles}`,
+);
 console.log(`lines ${CHECK ? "to rewrite" : "rewritten"}: ${rewrittenLines}`);
 console.log(`human decisions required: ${residualMentions.length}`);
 if (!CHECK) console.log("report written: architecture/phase-blueprint-neutrality-report.md");

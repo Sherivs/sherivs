@@ -83,7 +83,10 @@ export function evaluateHighRiskGate(input: {
     return { allowed: true, requiresApproval: false };
   }
   if (input.riskLevel === "high") {
-    return { allowed: input.multiModelVerified || input.humanApproval, requiresApproval: !input.multiModelVerified };
+    return {
+      allowed: input.multiModelVerified || input.humanApproval,
+      requiresApproval: !input.multiModelVerified,
+    };
   }
   // critical: human approval is mandatory.
   return { allowed: input.humanApproval && input.multiModelVerified, requiresApproval: true };
@@ -203,7 +206,12 @@ export function consumeAiBudget(
 
 export type AiQuotaScope = "user" | "tenant" | "application" | "model";
 
-export const AI_QUOTA_SCOPES: readonly AiQuotaScope[] = ["user", "tenant", "application", "model"] as const;
+export const AI_QUOTA_SCOPES: readonly AiQuotaScope[] = [
+  "user",
+  "tenant",
+  "application",
+  "model",
+] as const;
 
 export interface AiQuota {
   scope: AiQuotaScope;
@@ -214,16 +222,26 @@ export interface AiQuota {
   windowRef: string;
 }
 
-export function consumeAiQuota(quota: AiQuota): { ok: true; quota: AiQuota } | { ok: false; error: string } {
+export function consumeAiQuota(
+  quota: AiQuota,
+): { ok: true; quota: AiQuota } | { ok: false; error: string } {
   if (quota.requestsUsed >= quota.requestLimit) {
-    return { ok: false, error: `AI quota exhausted for ${quota.scope}:${quota.scopeRef} (Section 104)` };
+    return {
+      ok: false,
+      error: `AI quota exhausted for ${quota.scope}:${quota.scopeRef} (Section 104)`,
+    };
   }
   return { ok: true, quota: { ...quota, requestsUsed: quota.requestsUsed + 1 } };
 }
 
 export type AiQueuePriority = "low" | "normal" | "high" | "critical";
 
-export const AI_QUEUE_PRIORITIES: readonly AiQueuePriority[] = ["low", "normal", "high", "critical"] as const;
+export const AI_QUEUE_PRIORITIES: readonly AiQueuePriority[] = [
+  "low",
+  "normal",
+  "high",
+  "critical",
+] as const;
 
 /**
  * Priority queues (Section 105): high-priority AI tasks receive higher scheduling
@@ -294,7 +312,10 @@ export function recordCircuitFailure(
   return { ...state, failureCount: failures };
 }
 
-export function isCircuitOpen(state: CircuitBreakerState, now: string = new Date().toISOString()): boolean {
+export function isCircuitOpen(
+  state: CircuitBreakerState,
+  now: string = new Date().toISOString(),
+): boolean {
   if (state.openedAt === null) return false;
   // Half-open probe after the configured cooldown is out of scope here; the state
   // exposes halfOpenAllowed for the caller to manage graceful degradation (108).
@@ -307,7 +328,13 @@ export function isCircuitOpen(state: CircuitBreakerState, now: string = new Date
 
 export type AiPolicyLevel = "platform" | "jurisdiction" | "tenant" | "application" | "user";
 
-export const AI_POLICY_LEVELS: readonly AiPolicyLevel[] = ["platform", "jurisdiction", "tenant", "application", "user"] as const;
+export const AI_POLICY_LEVELS: readonly AiPolicyLevel[] = [
+  "platform",
+  "jurisdiction",
+  "tenant",
+  "application",
+  "user",
+] as const;
 
 export const AI_POLICY_LEVEL_RANK: Record<AiPolicyLevel, number> = {
   platform: 5,
@@ -348,7 +375,11 @@ export function hasConsent(record: AiConsentRecord): boolean {
 
 export type AiDisclosureKind = "ai_generated" | "ai_assisted" | "human_reviewed";
 
-export const AI_DISCLOSURE_KINDS: readonly AiDisclosureKind[] = ["ai_generated", "ai_assisted", "human_reviewed"] as const;
+export const AI_DISCLOSURE_KINDS: readonly AiDisclosureKind[] = [
+  "ai_generated",
+  "ai_assisted",
+  "human_reviewed",
+] as const;
 
 /* ─────────────────────────────────────────────────────────────
  * Feedback (146) + safe learning (148, 149)
@@ -356,7 +387,13 @@ export const AI_DISCLOSURE_KINDS: readonly AiDisclosureKind[] = ["ai_generated",
 
 export type AiFeedbackKind = "incorrect" | "unsafe" | "irrelevant" | "missing_context" | "harmful";
 
-export const AI_FEEDBACK_KINDS: readonly AiFeedbackKind[] = ["incorrect", "unsafe", "irrelevant", "missing_context", "harmful"] as const;
+export const AI_FEEDBACK_KINDS: readonly AiFeedbackKind[] = [
+  "incorrect",
+  "unsafe",
+  "irrelevant",
+  "missing_context",
+  "harmful",
+] as const;
 
 export interface AiFeedback {
   tenantId: TenantId;
@@ -445,7 +482,8 @@ export function isModelPromotable(evaluation: AiEvaluation, minScore: number = 0
  * Release pipeline (131) + kill switch (181) + isolation (182)
  * ────────────────────────────────────────────────────────────*/
 
-export type AiReleaseStage = "research" | "evaluation" | "safety_review" | "pilot" | "canary" | "production" | "monitoring";
+export type AiReleaseStage =
+  "research" | "evaluation" | "safety_review" | "pilot" | "canary" | "production" | "monitoring";
 
 export const AI_RELEASE_STAGES: readonly AiReleaseStage[] = [
   "research",
@@ -495,7 +533,11 @@ export interface AiKillSwitch {
  * AI kill switch (Section 181): critical AI capabilities may be disabled
  * independently without shutting down CoreGrid (capability isolation, 182).
  */
-export function disableAiCapability(sw: AiKillSwitch, byRef: string, now: string = new Date().toISOString()): AiKillSwitch {
+export function disableAiCapability(
+  sw: AiKillSwitch,
+  byRef: string,
+  now: string = new Date().toISOString(),
+): AiKillSwitch {
   return { ...sw, disabled: true, disabledAt: now, disabledByRef: byRef };
 }
 
@@ -507,8 +549,20 @@ export function isAiCapabilityEnabled(sw: AiKillSwitch): boolean {
  * AI observability telemetry (Sections 99, 100, 101): capture structured telemetry
  * WITHOUT storing sensitive content. PII/credentials/secrets are excluded.
  */
-export function sanitizeAiTelemetry(raw: Record<string, string | number | boolean | null>): Record<string, string | number | boolean | null> {
-  const sensitiveKeys = ["email", "phone", "password", "token", "secret", "api_key", "student", "finance", "content"];
+export function sanitizeAiTelemetry(
+  raw: Record<string, string | number | boolean | null>,
+): Record<string, string | number | boolean | null> {
+  const sensitiveKeys = [
+    "email",
+    "phone",
+    "password",
+    "token",
+    "secret",
+    "api_key",
+    "student",
+    "finance",
+    "content",
+  ];
   const out: Record<string, string | number | boolean | null> = {};
   for (const [key, value] of Object.entries(raw)) {
     if (sensitiveKeys.some((k) => key.toLowerCase().includes(k))) continue;
@@ -520,7 +574,3 @@ export function sanitizeAiTelemetry(raw: Record<string, string | number | boolea
   }
   return out;
 }
-
-
-
-

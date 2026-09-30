@@ -69,9 +69,16 @@ export function scorecardId(raw: string): ScorecardId {
  * ────────────────────────────────────────────────────────────*/
 
 export const EVOLUTION_REVIEW_DIMENSIONS: readonly string[] = [
-  "business_value", "educational_value", "technical_value", "security",
-  "privacy", "compliance", "operational_impact", "financial_impact",
-  "user_impact", "architectural_compatibility",
+  "business_value",
+  "educational_value",
+  "technical_value",
+  "security",
+  "privacy",
+  "compliance",
+  "operational_impact",
+  "financial_impact",
+  "user_impact",
+  "architectural_compatibility",
 ] as const;
 
 export interface EvolutionReview {
@@ -85,13 +92,17 @@ export function createEvolutionReview(input: {
   capability: string;
   verdicts: Record<string, boolean>;
 }): { ok: true; review: EvolutionReview } | { ok: false; error: string } {
-  if (!input.capability.trim()) return { ok: false, error: "Review capability is required (Section BE)" };
+  if (!input.capability.trim())
+    return { ok: false, error: "Review capability is required (Section BE)" };
   for (const dimension of EVOLUTION_REVIEW_DIMENSIONS) {
     if (input.verdicts[dimension] === undefined) {
       return { ok: false, error: `Review dimension "${dimension}" is missing (Section BE)` };
     }
   }
-  return { ok: true, review: { id: input.id, capability: input.capability, verdicts: input.verdicts } };
+  return {
+    ok: true,
+    review: { id: input.id, capability: input.capability, verdicts: input.verdicts },
+  };
 }
 
 export function isReviewApproved(review: EvolutionReview): boolean {
@@ -103,8 +114,11 @@ export function isReviewApproved(review: EvolutionReview): boolean {
  * ────────────────────────────────────────────────────────────*/
 
 export const REVERSIBILITY_MECHANISMS: readonly string[] = [
-  "rollback", "feature_disablement", "migration_reversal",
-  "compatibility_fallback", "emergency_controls",
+  "rollback",
+  "feature_disablement",
+  "migration_reversal",
+  "compatibility_fallback",
+  "emergency_controls",
 ] as const;
 
 export interface ReversibilityContract {
@@ -118,17 +132,24 @@ export function createReversibilityContract(input: {
   capability: string;
   available?: string[];
 }): { ok: true; contract: ReversibilityContract } | { ok: false; error: string } {
-  if (!input.capability.trim()) return { ok: false, error: "Reversibility capability is required (Section DE)" };
+  if (!input.capability.trim())
+    return { ok: false, error: "Reversibility capability is required (Section DE)" };
   for (const mechanism of input.available ?? []) {
     if (!REVERSIBILITY_MECHANISMS.includes(mechanism)) {
       return { ok: false, error: `Unknown reversibility mechanism "${mechanism}" (Section DE)` };
     }
   }
-  return { ok: true, contract: { id: input.id, capability: input.capability, available: input.available ?? [] } };
+  return {
+    ok: true,
+    contract: { id: input.id, capability: input.capability, available: input.available ?? [] },
+  };
 }
 
 // Section DE: high-risk changes require all five reversibility mechanisms.
-export function isReversibilitySatisfied(contract: ReversibilityContract, highRisk: boolean): boolean {
+export function isReversibilitySatisfied(
+  contract: ReversibilityContract,
+  highRisk: boolean,
+): boolean {
   if (!highRisk) return contract.available.length > 0;
   return REVERSIBILITY_MECHANISMS.every((mechanism) => contract.available.includes(mechanism));
 }
@@ -137,10 +158,15 @@ export function isReversibilitySatisfied(contract: ReversibilityContract, highRi
  * Autonomy evolution (Sections AS, AT)
  * ────────────────────────────────────────────────────────────*/
 
-export type AutonomyEvolutionLevel = "human_only" | "assisted" | "supervised" | "controlled_autonomous" | "highly_autonomous";
+export type AutonomyEvolutionLevel =
+  "human_only" | "assisted" | "supervised" | "controlled_autonomous" | "highly_autonomous";
 
 export const AUTONOMY_EVOLUTION_ORDER: readonly AutonomyEvolutionLevel[] = [
-  "human_only", "assisted", "supervised", "controlled_autonomous", "highly_autonomous",
+  "human_only",
+  "assisted",
+  "supervised",
+  "controlled_autonomous",
+  "highly_autonomous",
 ] as const;
 
 export interface AutonomyEvolutionContract {
@@ -170,15 +196,26 @@ export function createAutonomyEvolutionContract(input: {
   escalationDefined?: boolean;
   emergencyShutdown?: boolean;
 }): { ok: true; contract: AutonomyEvolutionContract } | { ok: false; error: string } {
-  if (!input.capability.trim()) return { ok: false, error: "Autonomy capability is required (Section AS)" };
+  if (!input.capability.trim())
+    return { ok: false, error: "Autonomy capability is required (Section AS)" };
   if (!AUTONOMY_EVOLUTION_ORDER.includes(input.level)) {
     return { ok: false, error: "Unknown autonomy evolution level (Section AS)" };
   }
-  if (input.allowedActions.length === 0) return { ok: false, error: "Allowed actions are required (Section AT)" };
+  if (input.allowedActions.length === 0)
+    return { ok: false, error: "Allowed actions are required (Section AT)" };
   // Section AT: every autonomous capability must define its boundaries.
   if (input.level !== "human_only") {
-    if (input.approvalRequired === false || input.escalationDefined === false || input.emergencyShutdown === false || input.tenantBounded === false) {
-      return { ok: false, error: "Autonomous capabilities require approval, escalation, emergency shutdown, and tenant boundaries (Section AT)" };
+    if (
+      input.approvalRequired === false ||
+      input.escalationDefined === false ||
+      input.emergencyShutdown === false ||
+      input.tenantBounded === false
+    ) {
+      return {
+        ok: false,
+        error:
+          "Autonomous capabilities require approval, escalation, emergency shutdown, and tenant boundaries (Section AT)",
+      };
     }
   }
   return {
@@ -200,7 +237,11 @@ export function createAutonomyEvolutionContract(input: {
 }
 
 // Section AS: autonomy increases only when evidence supports it.
-export function canIncreaseAutonomy(current: AutonomyEvolutionLevel, target: AutonomyEvolutionLevel, evidence: boolean): boolean {
+export function canIncreaseAutonomy(
+  current: AutonomyEvolutionLevel,
+  target: AutonomyEvolutionLevel,
+  evidence: boolean,
+): boolean {
   const from = AUTONOMY_EVOLUTION_ORDER.indexOf(current);
   const to = AUTONOMY_EVOLUTION_ORDER.indexOf(target);
   if (from < 0 || to !== from + 1) return false;
@@ -252,7 +293,10 @@ export function createAgentEvolutionContract(input: {
   lifecycleState?: string;
 }): { ok: true; contract: AgentEvolutionContract } | { ok: false; error: string } {
   if (!input.agentRef.trim() || !input.version.trim()) {
-    return { ok: false, error: "Agent evolution contract requires an agent reference and version (Section AQ)" };
+    return {
+      ok: false,
+      error: "Agent evolution contract requires an agent reference and version (Section AQ)",
+    };
   }
   return {
     ok: true,
@@ -313,7 +357,10 @@ export function createAgentMigrationPlan(input: {
   verifySafety?: boolean;
 }): { ok: true; plan: AgentMigrationPlan } | { ok: false; error: string } {
   if (!input.fromVersion.trim() || !input.toVersion.trim()) {
-    return { ok: false, error: "Agent migration plan requires source and target versions (Section AR)" };
+    return {
+      ok: false,
+      error: "Agent migration plan requires source and target versions (Section AR)",
+    };
   }
   return {
     ok: true,
@@ -371,7 +418,8 @@ export function createEvolutionAgentPermission(input: {
   deployHighRiskCapabilities?: boolean;
   disableSafetyControls?: boolean;
 }): { ok: true; permission: EvolutionAgentPermission } | { ok: false; error: string } {
-  if (!input.agentRef.trim()) return { ok: false, error: "Agent reference is required (Section CN)" };
+  if (!input.agentRef.trim())
+    return { ok: false, error: "Agent reference is required (Section CN)" };
   if (
     input.modifyProductionArchitecture === true ||
     input.bypassSecurity === true ||
@@ -380,7 +428,11 @@ export function createEvolutionAgentPermission(input: {
     input.deployHighRiskCapabilities === true ||
     input.disableSafetyControls === true
   ) {
-    return { ok: false, error: "Evolution agents may not independently perform prohibited actions without authorization (Section CN)" };
+    return {
+      ok: false,
+      error:
+        "Evolution agents may not independently perform prohibited actions without authorization (Section CN)",
+    };
   }
   return {
     ok: true,
@@ -415,9 +467,18 @@ export function canAgentActIndependently(permission: EvolutionAgentPermission): 
  * ────────────────────────────────────────────────────────────*/
 
 export const SCORECARD_DIMENSIONS: readonly string[] = [
-  "strategic_value", "user_value", "technical_feasibility", "security",
-  "privacy", "scalability", "reliability", "cost", "compatibility",
-  "reversibility", "operational_complexity", "educational_impact",
+  "strategic_value",
+  "user_value",
+  "technical_feasibility",
+  "security",
+  "privacy",
+  "scalability",
+  "reliability",
+  "cost",
+  "compatibility",
+  "reversibility",
+  "operational_complexity",
+  "educational_impact",
   "african_context_suitability",
 ] as const;
 
@@ -432,14 +493,21 @@ export function createCapabilityScorecard(input: {
   capability: string;
   scores: Record<string, number>;
 }): { ok: true; scorecard: CapabilityScorecard } | { ok: false; error: string } {
-  if (!input.capability.trim()) return { ok: false, error: "Scorecard capability is required (Section CX)" };
+  if (!input.capability.trim())
+    return { ok: false, error: "Scorecard capability is required (Section CX)" };
   for (const dimension of SCORECARD_DIMENSIONS) {
     const score = input.scores[dimension];
     if (!Number.isFinite(score) || score < 0 || score > 1) {
-      return { ok: false, error: `Scorecard dimension "${dimension}" must be between 0 and 1 (Section CX)` };
+      return {
+        ok: false,
+        error: `Scorecard dimension "${dimension}" must be between 0 and 1 (Section CX)`,
+      };
     }
   }
-  return { ok: true, scorecard: { id: input.id, capability: input.capability, scores: input.scores } };
+  return {
+    ok: true,
+    scorecard: { id: input.id, capability: input.capability, scores: input.scores },
+  };
 }
 
 export function scoreCapability(scorecard: CapabilityScorecard): number {
@@ -453,10 +521,18 @@ export function scoreCapability(scorecard: CapabilityScorecard): number {
  * ────────────────────────────────────────────────────────────*/
 
 export const GRADUATION_READINESS_ITEMS: readonly string[] = [
-  "requirements_defined", "architecture_reviewed", "security_reviewed",
-  "dependencies_understood", "compatibility_tested", "performance_measured",
-  "user_impact_understood", "rollback_available", "operational_monitoring_exists",
-  "documentation_exists", "ownership_exists", "lifecycle_state_defined",
+  "requirements_defined",
+  "architecture_reviewed",
+  "security_reviewed",
+  "dependencies_understood",
+  "compatibility_tested",
+  "performance_measured",
+  "user_impact_understood",
+  "rollback_available",
+  "operational_monitoring_exists",
+  "documentation_exists",
+  "ownership_exists",
+  "lifecycle_state_defined",
 ] as const;
 
 export interface GraduationValidation {
@@ -470,17 +546,27 @@ export function createGraduationValidation(input: {
   capability: string;
   readiness: Record<string, boolean>;
 }): { ok: true; validation: GraduationValidation } | { ok: false; error: string } {
-  if (!input.capability.trim()) return { ok: false, error: "Graduation capability is required (Section CW)" };
+  if (!input.capability.trim())
+    return { ok: false, error: "Graduation capability is required (Section CW)" };
   for (const item of GRADUATION_READINESS_ITEMS) {
     if (input.readiness[item] === undefined) {
       return { ok: false, error: `Graduation readiness item "${item}" is missing (Section CW)` };
     }
   }
-  return { ok: true, validation: { id: input.id, capability: input.capability, readiness: input.readiness } };
+  return {
+    ok: true,
+    validation: { id: input.id, capability: input.capability, readiness: input.readiness },
+  };
 }
 
-export function isGraduationReady(validation: GraduationValidation, scorecard: CapabilityScorecard, minScore: number): boolean {
-  const allReadiness = GRADUATION_READINESS_ITEMS.every((item) => validation.readiness[item] === true);
+export function isGraduationReady(
+  validation: GraduationValidation,
+  scorecard: CapabilityScorecard,
+  minScore: number,
+): boolean {
+  const allReadiness = GRADUATION_READINESS_ITEMS.every(
+    (item) => validation.readiness[item] === true,
+  );
   return allReadiness && scoreCapability(scorecard) >= minScore;
 }
 
@@ -489,8 +575,14 @@ export function isGraduationReady(validation: GraduationValidation, scorecard: C
  * ────────────────────────────────────────────────────────────*/
 
 export const ETHICAL_DIMENSIONS: readonly string[] = [
-  "fairness", "accessibility", "transparency", "human_agency", "child_safety",
-  "privacy", "discrimination_risk", "unintended_consequences",
+  "fairness",
+  "accessibility",
+  "transparency",
+  "human_agency",
+  "child_safety",
+  "privacy",
+  "discrimination_risk",
+  "unintended_consequences",
 ] as const;
 
 export interface EthicalEvaluation {
@@ -504,13 +596,17 @@ export function createEthicalEvaluation(input: {
   capability: string;
   assessments: Record<string, boolean>;
 }): { ok: true; evaluation: EthicalEvaluation } | { ok: false; error: string } {
-  if (!input.capability.trim()) return { ok: false, error: "Ethical evaluation capability is required (Section BI)" };
+  if (!input.capability.trim())
+    return { ok: false, error: "Ethical evaluation capability is required (Section BI)" };
   for (const dimension of ETHICAL_DIMENSIONS) {
     if (input.assessments[dimension] === undefined) {
       return { ok: false, error: `Ethical dimension "${dimension}" is missing (Section BI)` };
     }
   }
-  return { ok: true, evaluation: { id: input.id, capability: input.capability, assessments: input.assessments } };
+  return {
+    ok: true,
+    evaluation: { id: input.id, capability: input.capability, assessments: input.assessments },
+  };
 }
 
 export function isEthicallyAcceptable(evaluation: EthicalEvaluation): boolean {
@@ -522,10 +618,17 @@ export function isEthicallyAcceptable(evaluation: EthicalEvaluation): boolean {
  * ────────────────────────────────────────────────────────────*/
 
 export const EVOLUTION_SECURITY_CONTROLS: readonly string[] = [
-  "privileged_change_approval", "immutable_audit_trails", "experimental_isolation",
-  "capability_signing", "deployment_authorization", "migration_authorization",
-  "model_provenance", "artifact_integrity", "supply_chain_verification",
-  "secrets_protection", "environment_isolation",
+  "privileged_change_approval",
+  "immutable_audit_trails",
+  "experimental_isolation",
+  "capability_signing",
+  "deployment_authorization",
+  "migration_authorization",
+  "model_provenance",
+  "artifact_integrity",
+  "supply_chain_verification",
+  "secrets_protection",
+  "environment_isolation",
 ] as const;
 
 export interface EvolutionSecurityContract {
@@ -539,13 +642,17 @@ export function createEvolutionSecurityContract(input: {
   capability: string;
   controls?: string[];
 }): { ok: true; contract: EvolutionSecurityContract } | { ok: false; error: string } {
-  if (!input.capability.trim()) return { ok: false, error: "Security contract capability is required (Section CS)" };
+  if (!input.capability.trim())
+    return { ok: false, error: "Security contract capability is required (Section CS)" };
   for (const control of input.controls ?? []) {
     if (!EVOLUTION_SECURITY_CONTROLS.includes(control)) {
       return { ok: false, error: `Unknown evolution security control "${control}" (Section CS)` };
     }
   }
-  return { ok: true, contract: { id: input.id, capability: input.capability, controls: input.controls ?? [] } };
+  return {
+    ok: true,
+    contract: { id: input.id, capability: input.capability, controls: input.controls ?? [] },
+  };
 }
 
 // Section CS: Phase 32 inherits Phase 08/09 security and adds its own controls.
@@ -554,8 +661,13 @@ export function isEvolutionSecuritySatisfied(contract: EvolutionSecurityContract
 }
 
 export const SUPPLY_CHAIN_DIMENSIONS: readonly string[] = [
-  "provenance", "licensing", "vulnerability_status", "maintenance",
-  "integrity", "ownership", "update_history",
+  "provenance",
+  "licensing",
+  "vulnerability_status",
+  "maintenance",
+  "integrity",
+  "ownership",
+  "update_history",
 ] as const;
 
 export interface SupplyChainEvaluation {
@@ -569,13 +681,17 @@ export function createSupplyChainEvaluation(input: {
   dependency: string;
   checks: Record<string, boolean>;
 }): { ok: true; evaluation: SupplyChainEvaluation } | { ok: false; error: string } {
-  if (!input.dependency.trim()) return { ok: false, error: "Supply-chain dependency is required (Section CT)" };
+  if (!input.dependency.trim())
+    return { ok: false, error: "Supply-chain dependency is required (Section CT)" };
   for (const dimension of SUPPLY_CHAIN_DIMENSIONS) {
     if (input.checks[dimension] === undefined) {
       return { ok: false, error: `Supply-chain dimension "${dimension}" is missing (Section CT)` };
     }
   }
-  return { ok: true, evaluation: { id: input.id, dependency: input.dependency, checks: input.checks } };
+  return {
+    ok: true,
+    evaluation: { id: input.id, dependency: input.dependency, checks: input.checks },
+  };
 }
 
 export function isSupplyChainSafe(evaluation: SupplyChainEvaluation): boolean {
@@ -587,8 +703,16 @@ export function isSupplyChainSafe(evaluation: SupplyChainEvaluation): boolean {
  * ────────────────────────────────────────────────────────────*/
 
 export const INCIDENT_RESPONSE_STEPS: readonly string[] = [
-  "detect", "classify", "contain", "disable_or_rollback", "investigate",
-  "preserve_evidence", "notify", "correct", "validate", "document",
+  "detect",
+  "classify",
+  "contain",
+  "disable_or_rollback",
+  "investigate",
+  "preserve_evidence",
+  "notify",
+  "correct",
+  "validate",
+  "document",
   "determine_rerelease",
 ] as const;
 
@@ -602,7 +726,8 @@ export function createEvolutionIncidentResponse(input: {
   id: string;
   capability: string;
 }): { ok: true; response: EvolutionIncidentResponse } | { ok: false; error: string } {
-  if (!input.capability.trim()) return { ok: false, error: "Incident response capability is required (Section CG)" };
+  if (!input.capability.trim())
+    return { ok: false, error: "Incident response capability is required (Section CG)" };
   return { ok: true, response: { id: input.id, capability: input.capability, completedSteps: [] } };
 }
 
@@ -613,7 +738,10 @@ export function completeIncidentStep(
   if (!INCIDENT_RESPONSE_STEPS.includes(step)) {
     return { ok: false, error: `Unknown incident response step "${step}" (Section CG)` };
   }
-  return { ok: true, response: { ...response, completedSteps: [...new Set([...response.completedSteps, step])] } };
+  return {
+    ok: true,
+    response: { ...response, completedSteps: [...new Set([...response.completedSteps, step])] },
+  };
 }
 
 export function isIncidentResponseComplete(response: EvolutionIncidentResponse): boolean {
@@ -621,8 +749,12 @@ export function isIncidentResponseComplete(response: EvolutionIncidentResponse):
 }
 
 export const RECOVERY_MECHANISMS: readonly string[] = [
-  "rollback", "version_restoration", "database_restoration",
-  "configuration_restoration", "capability_disabling", "feature_isolation",
+  "rollback",
+  "version_restoration",
+  "database_restoration",
+  "configuration_restoration",
+  "capability_disabling",
+  "feature_isolation",
   "tenant_level_recovery",
 ] as const;
 
@@ -637,21 +769,19 @@ export function createEvolutionRecoveryContract(input: {
   capability: string;
   available?: string[];
 }): { ok: true; contract: EvolutionRecoveryContract } | { ok: false; error: string } {
-  if (!input.capability.trim()) return { ok: false, error: "Recovery contract capability is required (Section CH)" };
+  if (!input.capability.trim())
+    return { ok: false, error: "Recovery contract capability is required (Section CH)" };
   for (const mechanism of input.available ?? []) {
     if (!RECOVERY_MECHANISMS.includes(mechanism)) {
       return { ok: false, error: `Unknown recovery mechanism "${mechanism}" (Section CH)` };
     }
   }
-  return { ok: true, contract: { id: input.id, capability: input.capability, available: input.available ?? [] } };
+  return {
+    ok: true,
+    contract: { id: input.id, capability: input.capability, available: input.available ?? [] },
+  };
 }
 
 export function isRecoveryComplete(contract: EvolutionRecoveryContract): boolean {
   return RECOVERY_MECHANISMS.every((mechanism) => contract.available.includes(mechanism));
 }
-
-
-
-
-
-

@@ -8,10 +8,7 @@ import {
   MEMBERSHIP_FOR_NAV_KIND,
   type CapabilityGateDecision,
 } from "../../frontend/src/lib/capability-gate";
-import {
-  isDeclaredRuntimeFeatureCode,
-  SCHOLAR_FEATURE_CODES,
-} from "@/lib/runtime/nav-registry";
+import { isDeclaredRuntimeFeatureCode, SCHOLAR_FEATURE_CODES } from "@/lib/runtime/nav-registry";
 
 const teacherCode = [...SCHOLAR_FEATURE_CODES].find((c) => c.startsWith("r001:teacher."));
 const adminCode = [...SCHOLAR_FEATURE_CODES].find((c) => c.startsWith("r001:org_admin."));

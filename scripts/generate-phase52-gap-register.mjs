@@ -4,16 +4,11 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const map = JSON.parse(
-  readFileSync(
-    join(root, "architecture", "COREGRID_PHASE_52_DECOMPOSITION_MAP.json"),
-    "utf8",
-  ),
+  readFileSync(join(root, "architecture", "COREGRID_PHASE_52_DECOMPOSITION_MAP.json"), "utf8"),
 );
 
 const gaps = map.unresolved.map((entry, index) => {
-  const extract = map.extracts.find(
-    (candidate) => candidate.artifactId === entry.artifactId,
-  );
+  const extract = map.extracts.find((candidate) => candidate.artifactId === entry.artifactId);
   const routing = extract?.routing ?? {};
   const candidateBoundary = entry.candidateBoundary === true;
   const conflict =
@@ -45,11 +40,7 @@ const gaps = map.unresolved.map((entry, index) => {
       "evidence requirements",
       "verification requirements",
     ],
-    severity: candidateBoundary || unresolvedBoundary
-      ? "HIGH"
-      : conflict
-        ? "MEDIUM"
-        : "LOW",
+    severity: candidateBoundary || unresolvedBoundary ? "HIGH" : conflict ? "MEDIUM" : "LOW",
     requiredAction:
       "Compare against existing canonical capabilities, determine ownership, record a decision, and scope-lock before implementation.",
     verification:
@@ -67,8 +58,7 @@ const register = {
     decompositionMap: "architecture/COREGRID_PHASE_52_DECOMPOSITION_MAP.json",
     corpusSha256: map.source.sha256,
   },
-  rule:
-    "These gaps do not authorize new phases, mother surfaces, infrastructure, or implementation.",
+  rule: "These gaps do not authorize new phases, mother surfaces, infrastructure, or implementation.",
   summary: {
     total: gaps.length,
     high: gaps.filter((gap) => gap.severity === "HIGH").length,
@@ -80,11 +70,7 @@ const register = {
     "Run bounded ownership decisions in dependency/risk order; preserve unresolved items as BLOCKED.",
 };
 
-const output = join(
-  root,
-  "architecture",
-  "COREGRID_PHASE_52_UNRESOLVED_GAP_REGISTER.json",
-);
+const output = join(root, "architecture", "COREGRID_PHASE_52_UNRESOLVED_GAP_REGISTER.json");
 writeFileSync(output, `${JSON.stringify(register, null, 2)}\n`, "utf8");
 console.log(
   JSON.stringify(

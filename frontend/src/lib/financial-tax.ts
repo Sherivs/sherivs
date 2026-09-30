@@ -59,7 +59,9 @@ export function resolveTaxRule(
       known: false,
       reason: `tax rule versions ${applicable
         .map((rule) => rule.versionId)
-        .join(", ")} all claim ${input.jurisdiction}/${input.category} at ${input.at}: ambiguous rules are refused rather than ordered arbitrarily`,
+        .join(
+          ", ",
+        )} all claim ${input.jurisdiction}/${input.category} at ${input.at}: ambiguous rules are refused rather than ordered arbitrarily`,
     };
   }
   return { known: true, rule: applicable[0] };

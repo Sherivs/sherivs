@@ -18,9 +18,7 @@ export function PreviewPublicSiteCard() {
       className="mb-6 flex items-center justify-between gap-4 rounded-lg border border-primary/40 bg-primary/10 p-4 transition hover:bg-primary/20"
     >
       <div className="min-w-0">
-        <div className="font-display text-sm font-semibold text-primary">
-          Preview public site
-        </div>
+        <div className="font-display text-sm font-semibold text-primary">Preview public site</div>
         <div className="mt-0.5 truncate text-xs text-muted-foreground">
           Open {school.name}'s public website in a new tab
         </div>

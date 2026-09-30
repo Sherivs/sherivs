@@ -25,21 +25,52 @@ type Fee = {
   academic_year: string | null;
 };
 
-type StudentLite = { id: string; admission_number: string | null; full_name: string; class_name: string | null };
+type StudentLite = {
+  id: string;
+  admission_number: string | null;
+  full_name: string;
+  class_name: string | null;
+};
 
-function csv(rows: Array<{ student: StudentLite; fee: Fee; outstanding: number; daysOverdue: number }>) {
-  const headers = ["student", "admission_no", "class", "fee_type", "term", "year", "amount", "paid", "outstanding", "due_date", "days_overdue"];
+function csv(
+  rows: Array<{ student: StudentLite; fee: Fee; outstanding: number; daysOverdue: number }>,
+) {
+  const headers = [
+    "student",
+    "admission_no",
+    "class",
+    "fee_type",
+    "term",
+    "year",
+    "amount",
+    "paid",
+    "outstanding",
+    "due_date",
+    "days_overdue",
+  ];
   const esc = (v: unknown) => {
     const s = v == null ? "" : String(v);
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
   const lines = [headers.join(",")];
   for (const r of rows) {
-    lines.push([
-      r.student.full_name, r.student.admission_number ?? "", r.student.class_name ?? "",
-      r.fee.fee_type, r.fee.term ?? "", r.fee.academic_year ?? "",
-      r.fee.amount, r.fee.paid_amount ?? 0, r.outstanding, r.fee.due_date ?? "", r.daysOverdue,
-    ].map(esc).join(","));
+    lines.push(
+      [
+        r.student.full_name,
+        r.student.admission_number ?? "",
+        r.student.class_name ?? "",
+        r.fee.fee_type,
+        r.fee.term ?? "",
+        r.fee.academic_year ?? "",
+        r.fee.amount,
+        r.fee.paid_amount ?? 0,
+        r.outstanding,
+        r.fee.due_date ?? "",
+        r.daysOverdue,
+      ]
+        .map(esc)
+        .join(","),
+    );
   }
   return lines.join("\n");
 }
@@ -55,7 +86,9 @@ function FeesDefaultersPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("fees")
-        .select("id, student_id, fee_type, amount, paid_amount, status, due_date, term, academic_year")
+        .select(
+          "id, student_id, fee_type, amount, paid_amount, status, due_date, term, academic_year",
+        )
         .eq("school_id", school!.id)
         .neq("status", "paid")
         .order("due_date", { ascending: true, nullsFirst: false })
@@ -65,7 +98,10 @@ function FeesDefaultersPage() {
     },
   });
 
-  const studentIds = useMemo(() => Array.from(new Set((fees.data ?? []).map((f) => f.student_id))), [fees.data]);
+  const studentIds = useMemo(
+    () => Array.from(new Set((fees.data ?? []).map((f) => f.student_id))),
+    [fees.data],
+  );
 
   const studentsQ = useQuery<Map<string, StudentLite>>({
     queryKey: ["defaulter-students", school?.id, studentIds.join(",")],
@@ -78,8 +114,12 @@ function FeesDefaultersPage() {
       const userIds = (students ?? []).map((s) => s.user_id).filter(Boolean) as string[];
       const classIds = (students ?? []).map((s) => s.class_id).filter(Boolean) as string[];
       const [{ data: users }, { data: classes }] = await Promise.all([
-        userIds.length ? supabase.from("users").select("id, full_name").in("id", userIds) : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
-        classIds.length ? supabase.from("classes").select("id, name").in("id", classIds) : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+        userIds.length
+          ? supabase.from("users").select("id, full_name").in("id", userIds)
+          : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
+        classIds.length
+          ? supabase.from("classes").select("id, name").in("id", classIds)
+          : Promise.resolve({ data: [] as { id: string; name: string }[] }),
       ]);
       const nameOf = new Map((users ?? []).map((u) => [u.id, u.full_name as string]));
       const classOf = new Map((classes ?? []).map((c) => [c.id, c.name as string]));
@@ -97,13 +137,17 @@ function FeesDefaultersPage() {
   });
 
   const rows = useMemo(() => {
-    const out: Array<{ student: StudentLite; fee: Fee; outstanding: number; daysOverdue: number }> = [];
+    const out: Array<{ student: StudentLite; fee: Fee; outstanding: number; daysOverdue: number }> =
+      [];
     const studentsMap = studentsQ.data ?? new Map<string, StudentLite>();
     for (const f of fees.data ?? []) {
       const outstanding = Number(f.amount) - Number(f.paid_amount ?? 0);
       if (outstanding <= 0) continue;
       const student = studentsMap.get(f.student_id) ?? {
-        id: f.student_id, admission_number: null, full_name: "(unknown)", class_name: null,
+        id: f.student_id,
+        admission_number: null,
+        full_name: "(unknown)",
+        class_name: null,
       };
       const daysOverdue = f.due_date
         ? Math.max(0, Math.floor((Date.parse(today) - Date.parse(f.due_date)) / 86400000))
@@ -113,7 +157,14 @@ function FeesDefaultersPage() {
     const needle = q.trim().toLowerCase();
     return out.filter((r) => {
       if (!needle) return true;
-      const hay = [r.student.full_name, r.student.admission_number ?? "", r.student.class_name ?? "", r.fee.fee_type].join(" ").toLowerCase();
+      const hay = [
+        r.student.full_name,
+        r.student.admission_number ?? "",
+        r.student.class_name ?? "",
+        r.fee.fee_type,
+      ]
+        .join(" ")
+        .toLowerCase();
       return hay.includes(needle);
     });
   }, [fees.data, studentsQ.data, q, today]);
@@ -145,7 +196,10 @@ function FeesDefaultersPage() {
       }
     >
       <div className="mb-4 flex flex-wrap gap-2 text-xs">
-        <Link to="/admin/fees" className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40">
+        <Link
+          to="/admin/fees"
+          className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40"
+        >
           ← All invoices
         </Link>
       </div>
@@ -168,11 +222,18 @@ function FeesDefaultersPage() {
       </div>
 
       {fees.isLoading ? (
-        <div className="uos-card p-8 text-center text-sm text-muted-foreground">Loading defaulters…</div>
+        <div className="uos-card p-8 text-center text-sm text-muted-foreground">
+          Loading defaulters…
+        </div>
       ) : fees.error ? (
-        <div className="uos-card p-8 text-center text-sm text-red-400">{(fees.error as Error).message}</div>
+        <div className="uos-card p-8 text-center text-sm text-red-400">
+          {(fees.error as Error).message}
+        </div>
       ) : rows.length === 0 ? (
-        <EmptyCard title="No outstanding fees 🎉" body="Every invoice in this school is fully paid." />
+        <EmptyCard
+          title="No outstanding fees 🎉"
+          body="Every invoice in this school is fully paid."
+        />
       ) : (
         <div className="uos-card overflow-x-auto">
           <table className="w-full text-sm">
@@ -188,19 +249,28 @@ function FeesDefaultersPage() {
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.fee.id} className={`border-b border-border/40 ${r.daysOverdue > 14 ? "bg-rose-500/5" : ""}`}>
+                <tr
+                  key={r.fee.id}
+                  className={`border-b border-border/40 ${r.daysOverdue > 14 ? "bg-rose-500/5" : ""}`}
+                >
                   <td className="p-3">
                     <div className="font-medium">{r.student.full_name}</div>
-                    <div className="text-[11px] text-muted-foreground font-mono">{r.student.admission_number ?? "—"}</div>
+                    <div className="text-[11px] text-muted-foreground font-mono">
+                      {r.student.admission_number ?? "—"}
+                    </div>
                   </td>
                   <td className="p-3 text-muted-foreground">{r.student.class_name ?? "—"}</td>
                   <td className="p-3">
                     <div>{r.fee.fee_type}</div>
-                    <div className="text-[11px] text-muted-foreground">{[r.fee.term, r.fee.academic_year].filter(Boolean).join(" · ")}</div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {[r.fee.term, r.fee.academic_year].filter(Boolean).join(" · ")}
+                    </div>
                   </td>
                   <td className="p-3 text-right font-mono">₦{r.outstanding.toLocaleString()}</td>
                   <td className="p-3 font-mono text-xs">{r.fee.due_date ?? "—"}</td>
-                  <td className={`p-3 text-right font-mono ${r.daysOverdue > 0 ? "text-rose-300" : "text-muted-foreground"}`}>
+                  <td
+                    className={`p-3 text-right font-mono ${r.daysOverdue > 0 ? "text-rose-300" : "text-muted-foreground"}`}
+                  >
                     {r.daysOverdue > 0 ? r.daysOverdue : "—"}
                   </td>
                 </tr>

@@ -30,9 +30,21 @@ import {
 
 const TENANT_A = tenantId("tenant-a");
 
-const INTERVAL_A: TimeInterval = { start: "2026-01-01T08:00:00Z", end: "2026-01-01T09:00:00Z", timezone: "UTC" };
-const INTERVAL_B: TimeInterval = { start: "2026-01-01T08:30:00Z", end: "2026-01-01T09:30:00Z", timezone: "UTC" };
-const INTERVAL_C: TimeInterval = { start: "2026-01-01T10:00:00Z", end: "2026-01-01T11:00:00Z", timezone: "UTC" };
+const INTERVAL_A: TimeInterval = {
+  start: "2026-01-01T08:00:00Z",
+  end: "2026-01-01T09:00:00Z",
+  timezone: "UTC",
+};
+const INTERVAL_B: TimeInterval = {
+  start: "2026-01-01T08:30:00Z",
+  end: "2026-01-01T09:30:00Z",
+  timezone: "UTC",
+};
+const INTERVAL_C: TimeInterval = {
+  start: "2026-01-01T10:00:00Z",
+  end: "2026-01-01T11:00:00Z",
+  timezone: "UTC",
+};
 
 function makeActivity(overrides: Partial<ScheduledActivity> = {}): ScheduledActivity {
   const created = createScheduledActivity({
@@ -49,8 +61,20 @@ function makeActivity(overrides: Partial<ScheduledActivity> = {}): ScheduledActi
   return { ...created.activity, ...overrides };
 }
 
-const ROOM_1: ScheduleResource = { id: "room-1", tenantId: TENANT_A, type: "room", name: "Lab A", capacity: 40 };
-const ROOM_2: ScheduleResource = { id: "room-2", tenantId: TENANT_A, type: "room", name: "Small Room", capacity: 20 };
+const ROOM_1: ScheduleResource = {
+  id: "room-1",
+  tenantId: TENANT_A,
+  type: "room",
+  name: "Lab A",
+  capacity: 40,
+};
+const ROOM_2: ScheduleResource = {
+  id: "room-2",
+  tenantId: TENANT_A,
+  type: "room",
+  name: "Small Room",
+  capacity: 20,
+};
 
 function makeConstraint(overrides: Partial<SchedulingConstraint> = {}): SchedulingConstraint {
   const created = createSchedulingConstraint({
@@ -165,7 +189,10 @@ describe("evaluateConstraint (O)", () => {
   });
 
   it("enforces required equipment", () => {
-    const constraint = makeConstraint({ type: "required_equipment", params: { equipmentId: "projector-1" } });
+    const constraint = makeConstraint({
+      type: "required_equipment",
+      params: { equipmentId: "projector-1" },
+    });
     const evaluation = evaluateConstraint({
       constraint,
       activity: makeActivity(),
@@ -178,23 +205,41 @@ describe("evaluateConstraint (O)", () => {
 
 describe("evaluateTemporalConstraint (T)", () => {
   it("enforces before/after/during/not_during", () => {
-    expect(evaluateTemporalConstraint({ relation: "before", reference: INTERVAL_C }, INTERVAL_A).ok).toBe(true);
-    expect(evaluateTemporalConstraint({ relation: "after", reference: INTERVAL_C }, INTERVAL_A).ok).toBe(false);
-    expect(evaluateTemporalConstraint({ relation: "during", reference: INTERVAL_C }, INTERVAL_A).ok).toBe(false);
-    expect(evaluateTemporalConstraint({ relation: "not_during", reference: INTERVAL_C }, INTERVAL_A).ok).toBe(true);
+    expect(
+      evaluateTemporalConstraint({ relation: "before", reference: INTERVAL_C }, INTERVAL_A).ok,
+    ).toBe(true);
+    expect(
+      evaluateTemporalConstraint({ relation: "after", reference: INTERVAL_C }, INTERVAL_A).ok,
+    ).toBe(false);
+    expect(
+      evaluateTemporalConstraint({ relation: "during", reference: INTERVAL_C }, INTERVAL_A).ok,
+    ).toBe(false);
+    expect(
+      evaluateTemporalConstraint({ relation: "not_during", reference: INTERVAL_C }, INTERVAL_A).ok,
+    ).toBe(true);
   });
 
   it("enforces overlap and non-overlap", () => {
-    expect(evaluateTemporalConstraint({ relation: "overlap", reference: INTERVAL_B }, INTERVAL_A).ok).toBe(true);
-    expect(evaluateTemporalConstraint({ relation: "non_overlap", reference: INTERVAL_B }, INTERVAL_A).ok).toBe(false);
+    expect(
+      evaluateTemporalConstraint({ relation: "overlap", reference: INTERVAL_B }, INTERVAL_A).ok,
+    ).toBe(true);
+    expect(
+      evaluateTemporalConstraint({ relation: "non_overlap", reference: INTERVAL_B }, INTERVAL_A).ok,
+    ).toBe(false);
   });
 
   it("enforces minimum and maximum gaps", () => {
     expect(
-      evaluateTemporalConstraint({ relation: "minimum_gap", reference: INTERVAL_C, gapMinutes: 60 }, INTERVAL_A).ok,
+      evaluateTemporalConstraint(
+        { relation: "minimum_gap", reference: INTERVAL_C, gapMinutes: 60 },
+        INTERVAL_A,
+      ).ok,
     ).toBe(true);
     expect(
-      evaluateTemporalConstraint({ relation: "minimum_gap", reference: INTERVAL_C, gapMinutes: 120 }, INTERVAL_A).ok,
+      evaluateTemporalConstraint(
+        { relation: "minimum_gap", reference: INTERVAL_C, gapMinutes: 120 },
+        INTERVAL_A,
+      ).ok,
     ).toBe(false);
   });
 });

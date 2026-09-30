@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { PortalPage } from "@/components/portal-shell";
-import { communicationStewardReport, stewardReportSummary } from "@/lib/communication-steward-report";
+import {
+  communicationStewardReport,
+  stewardReportSummary,
+} from "@/lib/communication-steward-report";
 
 /**
  * Phase 10 — Communication Platform: the Communication Steward surface.
@@ -116,7 +119,9 @@ function CommunicationStewardPage() {
                 <td className="py-2 font-mono text-[11px] text-muted-foreground">
                   {rule.enforcedBy}
                 </td>
-                <td className="py-2 font-mono text-[11px] text-muted-foreground">{rule.provedBy}</td>
+                <td className="py-2 font-mono text-[11px] text-muted-foreground">
+                  {rule.provedBy}
+                </td>
               </tr>
             ))}
           </tbody>

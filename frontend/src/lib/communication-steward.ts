@@ -50,7 +50,10 @@ export function autonomyRank(level: StewardAutonomyLevel): number {
   return AUTONOMY_RANK[level];
 }
 
-export function isAutonomyAtLeast(level: StewardAutonomyLevel, required: StewardAutonomyLevel): boolean {
+export function isAutonomyAtLeast(
+  level: StewardAutonomyLevel,
+  required: StewardAutonomyLevel,
+): boolean {
   return AUTONOMY_RANK[level] >= AUTONOMY_RANK[required];
 }
 
@@ -140,11 +143,7 @@ export const COMMUNICATION_PURPOSES: readonly CommunicationPurpose[] = [
 
 /** Classification affects access, retention, encryption, search and export (DM). */
 export type CommunicationClassification =
-  | "PUBLIC"
-  | "INTERNAL"
-  | "CONFIDENTIAL"
-  | "RESTRICTED"
-  | "HIGHLY_RESTRICTED";
+  "PUBLIC" | "INTERNAL" | "CONFIDENTIAL" | "RESTRICTED" | "HIGHLY_RESTRICTED";
 
 export const COMMUNICATION_CLASSIFICATIONS: readonly CommunicationClassification[] = [
   "PUBLIC",
@@ -299,7 +298,11 @@ export function limitStatus(
   usage: StewardUsage,
 ): { exceeded: readonly string[]; approaching: readonly string[] } {
   const pairs: readonly [string, number, number][] = [
-    ["outbound_calls_per_hour", usage.outboundCallsLastHour, mandate.limits.maxOutboundCallsPerHour],
+    [
+      "outbound_calls_per_hour",
+      usage.outboundCallsLastHour,
+      mandate.limits.maxOutboundCallsPerHour,
+    ],
     ["outbound_calls_per_day", usage.outboundCallsToday, mandate.limits.maxOutboundCallsPerDay],
     ["messages_per_day", usage.messagesToday, mandate.limits.maxMessagesPerDay],
     ["call_minutes_per_day", usage.callMinutesToday, mandate.limits.maxCallMinutesPerDay],
@@ -352,8 +355,7 @@ export interface CreateConsentInput {
 }
 
 export type CreateConsentResult =
-  | { ok: true; record: ConsentRecord }
-  | { ok: false; error: string };
+  { ok: true; record: ConsentRecord } | { ok: false; error: string };
 
 /**
  * Consent is recorded, never assumed: an opt-in without a source is refused, because
@@ -703,7 +705,11 @@ export interface EscalationDecision {
  * mandate, the knowledge pack or the person runs out.
  */
 export function evaluateEscalation(input: EscalationInput): EscalationDecision {
-  if (input.severity === "emergency" && !input.acknowledged && input.minutesSinceLastAttempt >= 10) {
+  if (
+    input.severity === "emergency" &&
+    !input.acknowledged &&
+    input.minutesSinceLastAttempt >= 10
+  ) {
     return { escalate: true, reason: "Emergency communication unacknowledged after 10 minutes" };
   }
   if (input.severity === "urgent" && !input.acknowledged && input.minutesSinceLastAttempt >= 60) {
@@ -809,7 +815,10 @@ export function disclosureObligation(
     request.action === "send_message";
   if (!speaksToHuman) return { required: false, reason: "Not a direct human conversation" };
   if (!mandate.requiresDisclosure && request.aiGenerated !== true) {
-    return { required: false, reason: "Mandate does not require disclosure and content is human-authored" };
+    return {
+      required: false,
+      reason: "Mandate does not require disclosure and content is human-authored",
+    };
   }
   return {
     required: true,
@@ -858,9 +867,12 @@ export function evaluateStewardAction(
 
   // 1. A mandate that is not live permits nothing.
   if (!mandateIsActive(mandate, request.now)) {
-    return decide("DENY", "The steward's mandate is revoked or expired", ["freeze_actions"], [
-      "rule_mandate_inactive",
-    ]);
+    return decide(
+      "DENY",
+      "The steward's mandate is revoked or expired",
+      ["freeze_actions"],
+      ["rule_mandate_inactive"],
+    );
   }
 
   // 2. A classification the platform forbids a steward from handling at all.
@@ -947,9 +959,12 @@ export function evaluateStewardAction(
     request.contactRef !== undefined &&
     isDoNotContact(request.doNotContact ?? [], request.contactRef, request.purpose)
   ) {
-    return decide("DENY", "The contact is on the do-not-contact list", ["honour_opt_out"], [
-      "rule_do_not_contact",
-    ]);
+    return decide(
+      "DENY",
+      "The contact is on the do-not-contact list",
+      ["honour_opt_out"],
+      ["rule_do_not_contact"],
+    );
   }
 
   // 8. Purpose: marketing needs recorded consent; emergency needs explicit authority.
@@ -991,9 +1006,12 @@ export function evaluateStewardAction(
 
   // 10. Limits are hard, and an approaching limit is reported before it bites.
   if (limits.exceeded.length > 0) {
-    return decide("DENY", `Mandate limit reached: ${limits.exceeded.join(", ")}`, ["notify_owner"], [
-      "rule_limits_exceeded",
-    ]);
+    return decide(
+      "DENY",
+      `Mandate limit reached: ${limits.exceeded.join(", ")}`,
+      ["notify_owner"],
+      ["rule_limits_exceeded"],
+    );
   }
 
   // 11. Quiet hours, for anything that reaches a person outside the platform.
@@ -1082,9 +1100,12 @@ export function evaluateStewardAction(
 
   // 15. Recording: permission is a mandate fact, and notice is a duty.
   if (request.requiresRecording === true && !mandate.recordingAllowed) {
-    return decide("DENY", "Call recording is not permitted by the mandate", ["notify_owner"], [
-      "rule_recording_not_permitted",
-    ]);
+    return decide(
+      "DENY",
+      "Call recording is not permitted by the mandate",
+      ["notify_owner"],
+      ["rule_recording_not_permitted"],
+    );
   }
 
   // 16. A permitted action still carries its duties: disclosure, opt-out, audit.

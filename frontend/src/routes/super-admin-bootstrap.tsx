@@ -14,10 +14,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  checkPlatformBootstrap,
-  claimFirstSuperAdmin,
-} from "@/lib/provisioning.functions";
+import { checkPlatformBootstrap, claimFirstSuperAdmin } from "@/lib/provisioning.functions";
 import { useApp } from "@/contexts/app-context";
 
 export const Route = createFileRoute("/super-admin-bootstrap")({
@@ -55,8 +52,8 @@ function BootstrapPage() {
       <Shell>
         <h1 className="font-display text-2xl font-bold">Bootstrap complete</h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          A super admin already exists for this platform. New super admins must
-          be invited by the existing one.
+          A super admin already exists for this platform. New super admins must be invited by the
+          existing one.
         </p>
         <Link
           to="/auth"
@@ -125,8 +122,8 @@ function BootstrapPage() {
           Claim the first super-admin account
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          This page works exactly once. After you submit, no one else can become
-          a super admin without your invitation.
+          This page works exactly once. After you submit, no one else can become a super admin
+          without your invitation.
         </p>
       </div>
 

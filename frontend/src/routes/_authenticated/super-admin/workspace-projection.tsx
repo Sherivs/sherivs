@@ -83,9 +83,9 @@ function WorkspaceProjectionPage() {
       <section className="uos-card mt-6 p-6">
         <h2 className="font-display text-lg font-bold">Composition by workspace kind</h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          {SCHOLAR_WORKSPACE_KINDS.length} kinds declared by the installed runtime catalog. Navigation items
-          are withheld when their required capabilities are absent — derived from authorization,
-          never from the UI.
+          {SCHOLAR_WORKSPACE_KINDS.length} kinds declared by the installed runtime catalog.
+          Navigation items are withheld when their required capabilities are absent — derived from
+          authorization, never from the UI.
         </p>
         <table className="mt-4 w-full text-left text-sm">
           <thead className="text-muted-foreground">

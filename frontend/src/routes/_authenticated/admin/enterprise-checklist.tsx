@@ -32,9 +32,17 @@ const CHECKS: Item[] = [
   { key: "transport_basic", label: "Bus management", url: "/admin/bus-management" },
   { key: "bus_live_tracking", label: "Live bus tracking", url: "/admin/buses" },
   { key: "vibeora_intelligence", label: "CoreGrid Intelligence", url: "/admin/intelligence" },
-  { key: "teacher_performance_ai", label: "Teacher Intelligence", url: "/admin/intelligence-teachers" },
+  {
+    key: "teacher_performance_ai",
+    label: "Teacher Intelligence",
+    url: "/admin/intelligence-teachers",
+  },
   { key: "student_at_risk", label: "Student Intelligence", url: "/admin/intelligence-students" },
-  { key: "parent_engagement_score", label: "Parent Experience", url: "/admin/intelligence-parents" },
+  {
+    key: "parent_engagement_score",
+    label: "Parent Experience",
+    url: "/admin/intelligence-parents",
+  },
   { key: "school_health_certificate", label: "Health certificate", url: "/admin/health" },
   { key: "digital_twin", label: "Digital Twin", url: "/admin/digital-twin" },
   { key: "advanced_analytics", label: "Advanced analytics", url: "/admin/analytics" },
@@ -49,8 +57,7 @@ function EnterpriseChecklist() {
   const tierFeatures = getTierFeatures(tier);
   const active = (school?.active_features as Record<string, unknown> | null) ?? {};
 
-  const isOn = (k: FeatureKey) =>
-    k in active ? active[k] === true : tierFeatures[k] === true;
+  const isOn = (k: FeatureKey) => (k in active ? active[k] === true : tierFeatures[k] === true);
 
   const totalOn = CHECKS.filter((c) => isOn(c.key)).length;
 
@@ -63,10 +70,7 @@ function EnterpriseChecklist() {
         {CHECKS.map((c) => {
           const on = isOn(c.key);
           return (
-            <div
-              key={c.key}
-              className="flex items-center justify-between gap-4 p-4"
-            >
+            <div key={c.key} className="flex items-center justify-between gap-4 p-4">
               <div className="flex items-center gap-3 min-w-0">
                 {on ? (
                   <CheckCircle2 className="size-5 shrink-0 text-emerald-500" />

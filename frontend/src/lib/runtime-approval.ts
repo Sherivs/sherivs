@@ -69,9 +69,21 @@ export function createApprovalRequest(input: CreateApprovalRequestInput): Approv
 export interface ApprovalService {
   requests: ApprovalRequest[];
   request(input: CreateApprovalRequestInput): ApprovalRequest;
-  approve(id: string, approver: string, now: string): { ok: true; request: ApprovalRequest } | { ok: false; error: string };
-  reject(id: string, approver: string, reason: string, now: string): { ok: true; request: ApprovalRequest } | { ok: false; error: string };
-  cancel(id: string, actor: string): { ok: true; request: ApprovalRequest } | { ok: false; error: string };
+  approve(
+    id: string,
+    approver: string,
+    now: string,
+  ): { ok: true; request: ApprovalRequest } | { ok: false; error: string };
+  reject(
+    id: string,
+    approver: string,
+    reason: string,
+    now: string,
+  ): { ok: true; request: ApprovalRequest } | { ok: false; error: string };
+  cancel(
+    id: string,
+    actor: string,
+  ): { ok: true; request: ApprovalRequest } | { ok: false; error: string };
   find(id: string): ApprovalRequest | null;
   /** Check if an approval has expired (Section CJ). */
   isExpired(request: ApprovalRequest, now: string): boolean;
@@ -90,7 +102,8 @@ export function createApprovalService(): ApprovalService {
     approve(id, approver, now) {
       const req = requests.find((r) => r.id === id);
       if (!req) return { ok: false, error: "Approval request not found" };
-      if (req.status !== "pending") return { ok: false, error: `Cannot approve request in status: ${req.status}` };
+      if (req.status !== "pending")
+        return { ok: false, error: `Cannot approve request in status: ${req.status}` };
       if (req.expiresAt && Date.parse(now) > Date.parse(req.expiresAt)) {
         req.status = "expired";
         return { ok: false, error: "Approval request has expired" };
@@ -103,7 +116,8 @@ export function createApprovalService(): ApprovalService {
     reject(id, approver, reason, now) {
       const req = requests.find((r) => r.id === id);
       if (!req) return { ok: false, error: "Approval request not found" };
-      if (req.status !== "pending") return { ok: false, error: `Cannot reject request in status: ${req.status}` };
+      if (req.status !== "pending")
+        return { ok: false, error: `Cannot reject request in status: ${req.status}` };
       req.status = "rejected";
       req.approvedBy = approver;
       req.approvedAt = now;
@@ -113,7 +127,8 @@ export function createApprovalService(): ApprovalService {
     cancel(id, actor) {
       const req = requests.find((r) => r.id === id);
       if (!req) return { ok: false, error: "Approval request not found" };
-      if (req.status !== "pending") return { ok: false, error: `Cannot cancel request in status: ${req.status}` };
+      if (req.status !== "pending")
+        return { ok: false, error: `Cannot cancel request in status: ${req.status}` };
       req.status = "cancelled";
       req.approvedBy = actor;
       req.approvedAt = new Date().toISOString();
@@ -150,7 +165,13 @@ export interface TrackedOperation {
 
 export interface OperationTracker {
   operations: TrackedOperation[];
-  start(input: { operationId: OperationId; commandName: string; tenantId: TenantId | null; correlationId: CorrelationId; now: string }): TrackedOperation;
+  start(input: {
+    operationId: OperationId;
+    commandName: string;
+    tenantId: TenantId | null;
+    correlationId: CorrelationId;
+    now: string;
+  }): TrackedOperation;
   complete(operationId: OperationId, result: unknown, now: string): boolean;
   fail(operationId: OperationId, error: string, now: string): boolean;
   find(operationId: OperationId): TrackedOperation | null;

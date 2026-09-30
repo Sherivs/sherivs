@@ -45,14 +45,7 @@ export function operationId(raw: string): OperationId {
  * ────────────────────────────────────────────────────────────*/
 
 export type ExecutionSource =
-  | "api"
-  | "webhook"
-  | "event"
-  | "job"
-  | "scheduler"
-  | "agent"
-  | "internal"
-  | "integration";
+  "api" | "webhook" | "event" | "job" | "scheduler" | "agent" | "internal" | "integration";
 
 export const EXECUTION_SOURCES: readonly ExecutionSource[] = [
   "api",
@@ -111,8 +104,7 @@ export interface ExecutionContext {
  * ────────────────────────────────────────────────────────────*/
 
 export type ContextValidationResult =
-  | { ok: true; context: ExecutionContext }
-  | { ok: false; error: string };
+  { ok: true; context: ExecutionContext } | { ok: false; error: string };
 
 /**
  * Validate that an execution context satisfies CoreGrid invariants.
@@ -120,9 +112,7 @@ export type ContextValidationResult =
  * - Cross-tenant operations require explicit elevated authority (Section DB).
  * - Platform operations must not accidentally execute with ordinary tenant privileges (Section DD).
  */
-export function validateExecutionContext(
-  context: ExecutionContext,
-): ContextValidationResult {
+export function validateExecutionContext(context: ExecutionContext): ContextValidationResult {
   // Tenant context is mandatory for tenant-scoped operations (Section DA, FV).
   if (context.tenantRequired && context.tenantId === null) {
     return {
@@ -183,11 +173,11 @@ export interface CreateExecutionContextInput {
   now: string;
 }
 
-export function createExecutionContext(
-  input: CreateExecutionContextInput,
-): ExecutionContext {
+export function createExecutionContext(input: CreateExecutionContextInput): ExecutionContext {
   const requestIdValue = requestId(`req-${input.now}-${Math.random().toString(36).slice(2, 10)}`);
-  const correlationIdValue = correlationId(`corr-${input.now}-${Math.random().toString(36).slice(2, 10)}`);
+  const correlationIdValue = correlationId(
+    `corr-${input.now}-${Math.random().toString(36).slice(2, 10)}`,
+  );
   const traceIdValue = traceId(`trace-${input.now}-${Math.random().toString(36).slice(2, 10)}`);
 
   return {
@@ -278,9 +268,7 @@ export interface CreateOperationInput {
   now: string;
 }
 
-export function createOperationRecord(
-  input: CreateOperationInput,
-): OperationRecord {
+export function createOperationRecord(input: CreateOperationInput): OperationRecord {
   return {
     id: operationId(`op-${input.now}-${Math.random().toString(36).slice(2, 10)}`),
     tenantId: input.tenantId,

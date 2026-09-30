@@ -35,9 +35,7 @@ function ParentChildrenPage() {
         .select("id, admission_number, user_id, class_id")
         .in("id", ids);
       const userIds = (students ?? []).map((s) => s.user_id).filter(Boolean) as string[];
-      const classIds = (students ?? [])
-        .map((s) => s.class_id)
-        .filter(Boolean) as string[];
+      const classIds = (students ?? []).map((s) => s.class_id).filter(Boolean) as string[];
       const [{ data: users }, { data: classes }] = await Promise.all([
         userIds.length
           ? supabase.from("users").select("id, full_name").in("id", userIds)
@@ -50,9 +48,9 @@ function ParentChildrenPage() {
       const classOf = new Map((classes ?? []).map((c) => [c.id, c.name as string]));
       return (students ?? []).map((s) => ({
         student_id: s.id as string,
-        full_name: s.user_id ? nameOf.get(s.user_id as string) ?? "Child" : "Child",
+        full_name: s.user_id ? (nameOf.get(s.user_id as string) ?? "Child") : "Child",
         admission_number: (s.admission_number as string) ?? null,
-        class_name: s.class_id ? classOf.get(s.class_id as string) ?? null : null,
+        class_name: s.class_id ? (classOf.get(s.class_id as string) ?? null) : null,
       }));
     },
   });

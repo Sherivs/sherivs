@@ -130,8 +130,9 @@ function StudentAITutorPage() {
   const subjectList = useMemo(() => subjects.data ?? [], [subjects.data]);
 
   const setSubject = (next: string | null) =>
-    navigate({ search: (prev: z.infer<typeof searchSchema>) => ({ ...prev, subject: next ?? undefined }) });
-
+    navigate({
+      search: (prev: z.infer<typeof searchSchema>) => ({ ...prev, subject: next ?? undefined }),
+    });
 
   return (
     <PortalPage
@@ -161,9 +162,7 @@ function StudentAITutorPage() {
               <li className="px-3 py-2 text-xs text-muted-foreground">Loading subjects…</li>
             )}
             {!subjects.isLoading && subjectList.length === 0 && (
-              <li className="px-3 py-2 text-xs text-muted-foreground">
-                No subjects found yet.
-              </li>
+              <li className="px-3 py-2 text-xs text-muted-foreground">No subjects found yet.</li>
             )}
             {subjectList.map((s) => (
               <li key={s}>

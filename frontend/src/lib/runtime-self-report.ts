@@ -49,10 +49,22 @@ export function runtimeSubsystems(): readonly RuntimeSubsystem[] {
   return [
     { id: "capabilities", owns: "capability registration and health", states: CAPABILITY_STATUSES },
     { id: "jobs", owns: "background work and retries", states: JOB_STATUSES },
-    { id: "events", owns: "application events and version compatibility", states: APPLICATION_EVENT_TYPES },
+    {
+      id: "events",
+      owns: "application events and version compatibility",
+      states: APPLICATION_EVENT_TYPES,
+    },
     { id: "approvals", owns: "approval-gated operations", states: APPROVAL_STATES },
-    { id: "command-query", owns: "command validation and paged queries", states: [`max_page_size=${MAX_PAGE_SIZE}`] },
-    { id: "resilience", owns: "circuit breaking, rate limiting, timeouts", states: ["closed", "open", "half_open"] },
+    {
+      id: "command-query",
+      owns: "command validation and paged queries",
+      states: [`max_page_size=${MAX_PAGE_SIZE}`],
+    },
+    {
+      id: "resilience",
+      owns: "circuit breaking, rate limiting, timeouts",
+      states: ["closed", "open", "half_open"],
+    },
   ];
 }
 
@@ -81,7 +93,12 @@ export function runRuntimeSelfCheck(): readonly RuntimeCheck[] {
   checks.push({
     id: "rate-limit-window",
     proves: "a tenant window allows its limit, denies beyond it, and resets afterwards",
-    ok: first.allowed && second.allowed && !third.allowed && afterWindow.allowed && third.retryAfterMs !== null,
+    ok:
+      first.allowed &&
+      second.allowed &&
+      !third.allowed &&
+      afterWindow.allowed &&
+      third.retryAfterMs !== null,
     detail: `allowed=${first.allowed},${second.allowed} denied=${!third.allowed} reset=${afterWindow.allowed}`,
   });
 

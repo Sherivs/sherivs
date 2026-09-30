@@ -28,17 +28,27 @@ export function parseDeviceInfo(): DeviceInfo {
     window.localStorage.setItem(STORAGE_KEY, id);
   }
   const ua = navigator.userAgent;
-  const os =
-    /Android/i.test(ua) ? "Android" :
-    /iPhone|iPad|iPod/i.test(ua) ? "iOS" :
-    /Windows/i.test(ua) ? "Windows" :
-    /Mac OS X/i.test(ua) ? "macOS" :
-    /Linux/i.test(ua) ? "Linux" : "Unknown OS";
-  const browser =
-    /Edg\//.test(ua) ? "Edge" :
-    /OPR\//.test(ua) ? "Opera" :
-    /Chrome\//.test(ua) ? "Chrome" :
-    /Safari\//.test(ua) ? "Safari" :
-    /Firefox\//.test(ua) ? "Firefox" : "Browser";
+  const os = /Android/i.test(ua)
+    ? "Android"
+    : /iPhone|iPad|iPod/i.test(ua)
+      ? "iOS"
+      : /Windows/i.test(ua)
+        ? "Windows"
+        : /Mac OS X/i.test(ua)
+          ? "macOS"
+          : /Linux/i.test(ua)
+            ? "Linux"
+            : "Unknown OS";
+  const browser = /Edg\//.test(ua)
+    ? "Edge"
+    : /OPR\//.test(ua)
+      ? "Opera"
+      : /Chrome\//.test(ua)
+        ? "Chrome"
+        : /Safari\//.test(ua)
+          ? "Safari"
+          : /Firefox\//.test(ua)
+            ? "Firefox"
+            : "Browser";
   return { deviceId: id, model: `${os} · ${browser}`, userAgent: ua };
 }

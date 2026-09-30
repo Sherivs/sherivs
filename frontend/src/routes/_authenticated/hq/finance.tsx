@@ -62,8 +62,7 @@ function HqFinance() {
       if (!r.paid_at) return;
       const d = new Date(r.paid_at);
       const diff =
-        (new Date().getFullYear() - d.getFullYear()) * 12 +
-        (new Date().getMonth() - d.getMonth());
+        (new Date().getFullYear() - d.getFullYear()) * 12 + (new Date().getMonth() - d.getMonth());
       if (diff >= 0 && diff < 12) {
         months[11 - diff].revenue += Number(r.paid_amount ?? 0);
       }

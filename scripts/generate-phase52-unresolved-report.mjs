@@ -4,22 +4,13 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const map = JSON.parse(
-  readFileSync(
-    join(root, "architecture", "COREGRID_PHASE_52_DECOMPOSITION_MAP.json"),
-    "utf8",
-  ),
+  readFileSync(join(root, "architecture", "COREGRID_PHASE_52_DECOMPOSITION_MAP.json"), "utf8"),
 );
 const catalog = JSON.parse(
-  readFileSync(
-    join(root, "architecture", "COREGRID_PHASE_52_CAPABILITY_CATALOG.json"),
-    "utf8",
-  ),
+  readFileSync(join(root, "architecture", "COREGRID_PHASE_52_CAPABILITY_CATALOG.json"), "utf8"),
 );
 const catalogByName = new Map(
-  catalog.capabilities.map((capability) => [
-    capability.name.toLowerCase(),
-    capability,
-  ]),
+  catalog.capabilities.map((capability) => [capability.name.toLowerCase(), capability]),
 );
 
 const groups = new Map();
@@ -94,9 +85,7 @@ for (const group of groups.values()) {
     lines.push(`Catalog decision: ${related.decision}`);
   }
   lines.push("");
-  lines.push(
-    "Decision state: `UNRESOLVED — preserve extract and open ownership review`",
-  );
+  lines.push("Decision state: `UNRESOLVED — preserve extract and open ownership review`");
   lines.push("");
 }
 
@@ -105,7 +94,9 @@ lines.push("");
 lines.push("- Do not register Phase 52.");
 lines.push("- Do not create a mother surface per extract.");
 lines.push("- Do not infer implementation from blueprint text.");
-lines.push("- Do not install graph, vector, queue, simulation, or runtime-generator infrastructure.");
+lines.push(
+  "- Do not install graph, vector, queue, simulation, or runtime-generator infrastructure.",
+);
 lines.push("- Do not move Scholar concepts into universal ownership without evidence.");
 lines.push("");
 lines.push("## Next mission");
@@ -114,11 +105,7 @@ lines.push(
   "Create a bounded ownership-decision mission for the unresolved groups, beginning with the highest-risk evidence/provenance, spatial, and cross-phase duplication boundaries.",
 );
 
-const output = join(
-  root,
-  "architecture",
-  "COREGRID_PHASE_52_UNRESOLVED_OWNERSHIP_REVIEW.md",
-);
+const output = join(root, "architecture", "COREGRID_PHASE_52_UNRESOLVED_OWNERSHIP_REVIEW.md");
 writeFileSync(output, `${lines.join("\n")}\n`, "utf8");
 console.log(
   JSON.stringify(

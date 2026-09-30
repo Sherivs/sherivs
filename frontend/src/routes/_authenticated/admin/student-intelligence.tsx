@@ -1,14 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  AlertTriangle,
-  Search,
-  ShieldAlert,
-  TrendingDown,
-  Users,
-  X,
-} from "lucide-react";
+import { AlertTriangle, Search, ShieldAlert, TrendingDown, Users, X } from "lucide-react";
 
 import { useDebounce } from "@/hooks/use-debounce";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,8 +41,19 @@ type StudentRow = {
 };
 type ClassRow = { id: string; name: string };
 type AttendanceRow = { student_id: string; status: string; date: string };
-type GradeRow = { student_id: string; total_score: number | null; created_at: string | null; subject: string };
-type FeeRow = { student_id: string; amount: number; paid_amount: number | null; paid_at: string | null; created_at: string | null };
+type GradeRow = {
+  student_id: string;
+  total_score: number | null;
+  created_at: string | null;
+  subject: string;
+};
+type FeeRow = {
+  student_id: string;
+  amount: number;
+  paid_amount: number | null;
+  paid_at: string | null;
+  created_at: string | null;
+};
 
 type Enriched = {
   id: string;
@@ -69,10 +73,34 @@ type Enriched = {
 type SortKey = "name" | "className" | "attendanceRate" | "gradeAvg" | "feeRate" | "risk";
 
 const RISK_LEVELS = [
-  { key: "critical", label: "Critical", min: 81, max: 100, color: "bg-red-500/15 text-red-600 border-red-500/30" },
-  { key: "high", label: "High Risk", min: 61, max: 80, color: "bg-orange-500/15 text-orange-600 border-orange-500/30" },
-  { key: "medium", label: "Medium Risk", min: 31, max: 60, color: "bg-amber-500/15 text-amber-600 border-amber-500/30" },
-  { key: "low", label: "Low Risk", min: 0, max: 30, color: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30" },
+  {
+    key: "critical",
+    label: "Critical",
+    min: 81,
+    max: 100,
+    color: "bg-red-500/15 text-red-600 border-red-500/30",
+  },
+  {
+    key: "high",
+    label: "High Risk",
+    min: 61,
+    max: 80,
+    color: "bg-orange-500/15 text-orange-600 border-orange-500/30",
+  },
+  {
+    key: "medium",
+    label: "Medium Risk",
+    min: 31,
+    max: 60,
+    color: "bg-amber-500/15 text-amber-600 border-amber-500/30",
+  },
+  {
+    key: "low",
+    label: "Low Risk",
+    min: 0,
+    max: 30,
+    color: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
+  },
 ] as const;
 
 function riskLevel(score: number) {
@@ -163,7 +191,10 @@ function StudentIntelligencePage() {
       const feeRate = f && f.billed > 0 ? Math.min(1, f.paid / f.billed) : 1;
       const risk = Math.max(
         0,
-        Math.min(100, Math.round(100 - (attendanceRate * 40 + (gradeAvg / 100) * 35 + feeRate * 25))),
+        Math.min(
+          100,
+          Math.round(100 - (attendanceRate * 40 + (gradeAvg / 100) * 35 + feeRate * 25)),
+        ),
       );
       return {
         id: s.id,
@@ -212,9 +243,10 @@ function StudentIntelligencePage() {
     list = [...list].sort((a, b) => {
       const av = a[sortKey];
       const bv = b[sortKey];
-      const cmp = typeof av === "number" && typeof bv === "number"
-        ? av - bv
-        : String(av).localeCompare(String(bv));
+      const cmp =
+        typeof av === "number" && typeof bv === "number"
+          ? av - bv
+          : String(av).localeCompare(String(bv));
       return sortDir === "asc" ? cmp : -cmp;
     });
     return list;
@@ -331,7 +363,7 @@ function StudentIntelligencePage() {
     ];
   }, [query.data, classHeatmap]);
 
-  const selected = selectedId ? enriched.find((r) => r.id === selectedId) ?? null : null;
+  const selected = selectedId ? (enriched.find((r) => r.id === selectedId) ?? null) : null;
 
   return (
     <PortalPage
@@ -365,11 +397,15 @@ function StudentIntelligencePage() {
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
         {RISK_LEVELS.map((lvl) => (
           <Card key={lvl.key} className={`border p-4 ${lvl.color}`}>
-            <div className="text-xs font-medium uppercase tracking-wide opacity-80">{lvl.label}</div>
-            <div className="mt-1 text-3xl font-bold">
-              {query.isLoading ? "—" : distribution[lvl.key] ?? 0}
+            <div className="text-xs font-medium uppercase tracking-wide opacity-80">
+              {lvl.label}
             </div>
-            <div className="text-xs opacity-70">Score {lvl.min}–{lvl.max}</div>
+            <div className="mt-1 text-3xl font-bold">
+              {query.isLoading ? "—" : (distribution[lvl.key] ?? 0)}
+            </div>
+            <div className="text-xs opacity-70">
+              Score {lvl.min}–{lvl.max}
+            </div>
           </Card>
         ))}
       </div>
@@ -387,20 +423,28 @@ function StudentIntelligencePage() {
             />
           </div>
           <Select value={classFilter} onValueChange={setClassFilter}>
-            <SelectTrigger><SelectValue placeholder="All classes" /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue placeholder="All classes" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All classes</SelectItem>
               {(query.data?.classes ?? []).map((c) => (
-                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={riskFilter} onValueChange={setRiskFilter}>
-            <SelectTrigger><SelectValue placeholder="All risk levels" /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue placeholder="All risk levels" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All risk levels</SelectItem>
               {RISK_LEVELS.map((l) => (
-                <SelectItem key={l.key} value={l.key}>{l.label}</SelectItem>
+                <SelectItem key={l.key} value={l.key}>
+                  {l.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -426,12 +470,54 @@ function StudentIntelligencePage() {
                 <table className="w-full text-sm">
                   <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
                     <tr>
-                      <SortableTh label="Student" k="name" sortKey={sortKey} sortDir={sortDir} setSortKey={setSortKey} setSortDir={setSortDir} />
-                      <SortableTh label="Class" k="className" sortKey={sortKey} sortDir={sortDir} setSortKey={setSortKey} setSortDir={setSortDir} />
-                      <SortableTh label="Attendance" k="attendanceRate" sortKey={sortKey} sortDir={sortDir} setSortKey={setSortKey} setSortDir={setSortDir} />
-                      <SortableTh label="Grade Avg" k="gradeAvg" sortKey={sortKey} sortDir={sortDir} setSortKey={setSortKey} setSortDir={setSortDir} />
-                      <SortableTh label="Fees" k="feeRate" sortKey={sortKey} sortDir={sortDir} setSortKey={setSortKey} setSortDir={setSortDir} />
-                      <SortableTh label="Risk" k="risk" sortKey={sortKey} sortDir={sortDir} setSortKey={setSortKey} setSortDir={setSortDir} />
+                      <SortableTh
+                        label="Student"
+                        k="name"
+                        sortKey={sortKey}
+                        sortDir={sortDir}
+                        setSortKey={setSortKey}
+                        setSortDir={setSortDir}
+                      />
+                      <SortableTh
+                        label="Class"
+                        k="className"
+                        sortKey={sortKey}
+                        sortDir={sortDir}
+                        setSortKey={setSortKey}
+                        setSortDir={setSortDir}
+                      />
+                      <SortableTh
+                        label="Attendance"
+                        k="attendanceRate"
+                        sortKey={sortKey}
+                        sortDir={sortDir}
+                        setSortKey={setSortKey}
+                        setSortDir={setSortDir}
+                      />
+                      <SortableTh
+                        label="Grade Avg"
+                        k="gradeAvg"
+                        sortKey={sortKey}
+                        sortDir={sortDir}
+                        setSortKey={setSortKey}
+                        setSortDir={setSortDir}
+                      />
+                      <SortableTh
+                        label="Fees"
+                        k="feeRate"
+                        sortKey={sortKey}
+                        sortDir={sortDir}
+                        setSortKey={setSortKey}
+                        setSortDir={setSortDir}
+                      />
+                      <SortableTh
+                        label="Risk"
+                        k="risk"
+                        sortKey={sortKey}
+                        sortDir={sortDir}
+                        setSortKey={setSortKey}
+                        setSortDir={setSortDir}
+                      />
                       <th className="px-3 py-2" />
                     </tr>
                   </thead>
@@ -442,17 +528,23 @@ function StudentIntelligencePage() {
                         <tr key={r.id} className="border-t border-border/60 hover:bg-muted/30">
                           <td className="px-3 py-2 font-medium">
                             <div>{r.name}</div>
-                            <div className="text-xs text-muted-foreground">{r.admission_number}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {r.admission_number}
+                            </div>
                           </td>
                           <td className="px-3 py-2">{r.className}</td>
                           <td className="px-3 py-2">{Math.round(r.attendanceRate * 100)}%</td>
                           <td className="px-3 py-2">{Math.round(r.gradeAvg)}</td>
                           <td className="px-3 py-2">{Math.round(r.feeRate * 100)}%</td>
                           <td className="px-3 py-2">
-                            <Badge variant="outline" className={lvl.color}>{r.risk} · {lvl.label}</Badge>
+                            <Badge variant="outline" className={lvl.color}>
+                              {r.risk} · {lvl.label}
+                            </Badge>
                           </td>
                           <td className="px-3 py-2 text-right">
-                            <Button size="sm" variant="ghost" onClick={() => setSelectedId(r.id)}>Review</Button>
+                            <Button size="sm" variant="ghost" onClick={() => setSelectedId(r.id)}>
+                              Review
+                            </Button>
                           </td>
                         </tr>
                       );
@@ -472,20 +564,34 @@ function StudentIntelligencePage() {
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-medium">{r.name}</span>
-                      <Badge variant="outline" className={lvl.color}>{r.risk}</Badge>
+                      <Badge variant="outline" className={lvl.color}>
+                        {r.risk}
+                      </Badge>
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {r.className} · Att {Math.round(r.attendanceRate * 100)}% · Grade {Math.round(r.gradeAvg)} · Fees {Math.round(r.feeRate * 100)}%
+                      {r.className} · Att {Math.round(r.attendanceRate * 100)}% · Grade{" "}
+                      {Math.round(r.gradeAvg)} · Fees {Math.round(r.feeRate * 100)}%
                     </div>
                   </button>
                 );
               })}
             </div>
             <div className="flex items-center justify-between border-t border-border/60 px-4 py-2 text-xs text-muted-foreground">
-              <span>{filtered.length} students · page {page + 1} of {totalPages}</span>
+              <span>
+                {filtered.length} students · page {page + 1} of {totalPages}
+              </span>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" disabled={page === 0} onClick={prevPage}>Prev</Button>
-                <Button size="sm" variant="outline" disabled={page >= totalPages - 1} onClick={nextPage}>Next</Button>
+                <Button size="sm" variant="outline" disabled={page === 0} onClick={prevPage}>
+                  Prev
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={page >= totalPages - 1}
+                  onClick={nextPage}
+                >
+                  Next
+                </Button>
               </div>
             </div>
           </>
@@ -498,7 +604,9 @@ function StudentIntelligencePage() {
           <AlertTriangle className="h-4 w-4 text-orange-500" /> Intervention Recommendations
         </div>
         {interventions.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No students currently require intervention. 🎉</p>
+          <p className="text-sm text-muted-foreground">
+            No students currently require intervention. 🎉
+          </p>
         ) : (
           <ul className="space-y-3">
             {interventions.map((i) => {
@@ -508,13 +616,20 @@ function StudentIntelligencePage() {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <div className="font-medium">{i.student.name}</div>
-                      <div className="text-xs text-muted-foreground">{i.student.className} · {i.reasons.join(" · ")}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {i.student.className} · {i.reasons.join(" · ")}
+                      </div>
                     </div>
-                    <Badge variant="outline" className={lvl.color}>Risk {i.student.risk}</Badge>
+                    <Badge variant="outline" className={lvl.color}>
+                      Risk {i.student.risk}
+                    </Badge>
                   </div>
                   <ul className="mt-2 space-y-1 text-sm text-foreground/90">
                     {i.recommendations.map((r, idx) => (
-                      <li key={idx} className="flex gap-2"><span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-orange-500" />{r}</li>
+                      <li key={idx} className="flex gap-2">
+                        <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-orange-500" />
+                        {r}
+                      </li>
                     ))}
                   </ul>
                 </li>
@@ -649,7 +764,11 @@ function StudentDetail({
       .filter((g) => g.student_id === student.id && g.total_score != null)
       .sort((a, b) => (a.created_at ?? "").localeCompare(b.created_at ?? ""))
       .slice(-4);
-    return list.map((g, i) => ({ label: g.subject.slice(0, 8), score: Number(g.total_score) || 0, i }));
+    return list.map((g, i) => ({
+      label: g.subject.slice(0, 8),
+      score: Number(g.total_score) || 0,
+      i,
+    }));
   }, [grades, student.id]);
 
   const studentFees = useMemo(
@@ -671,7 +790,9 @@ function StudentDetail({
               {student.admission_number} · {student.className}
             </SheetDescription>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}><X className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
         </div>
         <Badge variant="outline" className={`w-fit ${lvl.color}`}>
           Risk {student.risk} · {lvl.label}
@@ -680,7 +801,9 @@ function StudentDetail({
 
       <div className="mt-6 space-y-6">
         <section>
-          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Attendance (last 8 weeks)</h4>
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Attendance (last 8 weeks)
+          </h4>
           <div className="flex h-24 items-end gap-1">
             {weeks.map((w, i) => {
               const pct = w.total ? (w.present / w.total) * 100 : 0;
@@ -699,14 +822,20 @@ function StudentDetail({
         </section>
 
         <section>
-          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Grade trend (last 4)</h4>
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Grade trend (last 4)
+          </h4>
           {gradeTrend.length === 0 ? (
             <p className="text-xs text-muted-foreground">No grades recorded.</p>
           ) : (
             <div className="flex h-24 items-end gap-2">
               {gradeTrend.map((g) => (
                 <div key={g.i} className="flex flex-1 flex-col items-center gap-1">
-                  <div className="w-full rounded-t bg-primary" style={{ height: `${g.score}%` }} title={`${g.score}`} />
+                  <div
+                    className="w-full rounded-t bg-primary"
+                    style={{ height: `${g.score}%` }}
+                    title={`${g.score}`}
+                  />
                   <span className="text-[10px] text-muted-foreground">{g.label}</span>
                 </div>
               ))}
@@ -715,7 +844,9 @@ function StudentDetail({
         </section>
 
         <section>
-          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Fee payment timeline</h4>
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Fee payment timeline
+          </h4>
           {studentFees.length === 0 ? (
             <p className="text-xs text-muted-foreground">No fee records.</p>
           ) : (
@@ -723,9 +854,14 @@ function StudentDetail({
               {studentFees.map((f, i) => {
                 const pct = f.amount > 0 ? Math.round(((f.paid_amount ?? 0) / f.amount) * 100) : 0;
                 return (
-                  <li key={i} className="flex items-center justify-between rounded border border-border/60 px-2 py-1">
+                  <li
+                    key={i}
+                    className="flex items-center justify-between rounded border border-border/60 px-2 py-1"
+                  >
                     <span>{(f.created_at ?? "").slice(0, 10) || "—"}</span>
-                    <span>{Math.round(f.paid_amount ?? 0)} / {Math.round(f.amount)} ({pct}%)</span>
+                    <span>
+                      {Math.round(f.paid_amount ?? 0)} / {Math.round(f.amount)} ({pct}%)
+                    </span>
                   </li>
                 );
               })}
@@ -734,7 +870,9 @@ function StudentDetail({
         </section>
 
         <section>
-          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Risk score breakdown</h4>
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Risk score breakdown
+          </h4>
           <div className="space-y-2">
             <RiskBar label="Attendance" pct={student.attendanceRate * 100} />
             <RiskBar label="Grades" pct={student.gradeAvg} />
@@ -744,9 +882,16 @@ function StudentDetail({
         </section>
 
         <section className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm"><TrendingDown className="mr-1 h-3.5 w-3.5" />Contact Parent</Button>
-          <Button variant="outline" size="sm">Flag for Review</Button>
-          <Button variant="outline" size="sm">Schedule Meeting</Button>
+          <Button variant="outline" size="sm">
+            <TrendingDown className="mr-1 h-3.5 w-3.5" />
+            Contact Parent
+          </Button>
+          <Button variant="outline" size="sm">
+            Flag for Review
+          </Button>
+          <Button variant="outline" size="sm">
+            Schedule Meeting
+          </Button>
         </section>
       </div>
     </>

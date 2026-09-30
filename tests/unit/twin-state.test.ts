@@ -120,8 +120,22 @@ describe("Observations (AB-AD)", () => {
 
 describe("Conflict resolution (AF, AG)", () => {
   it("preserves the conflict and explains the resolution", () => {
-    const sensor = obs({ observationId: "o1", source: "hardware", quality: "CONFLICTING", value: "occupied", observedAt: EARLIER, confidence: 0.9 });
-    const human = obs({ observationId: "o2", source: "human_input", quality: "CONFLICTING", value: "vacant", observedAt: "2025-12-31T11:00:00Z", confidence: 1.0 });
+    const sensor = obs({
+      observationId: "o1",
+      source: "hardware",
+      quality: "CONFLICTING",
+      value: "occupied",
+      observedAt: EARLIER,
+      confidence: 0.9,
+    });
+    const human = obs({
+      observationId: "o2",
+      source: "human_input",
+      quality: "CONFLICTING",
+      value: "vacant",
+      observedAt: "2025-12-31T11:00:00Z",
+      confidence: 1.0,
+    });
     const result = resolveConflictingObservations({
       observations: [sensor, human],
       sourceAuthority: { human_input: 2, hardware: 1 },
@@ -154,13 +168,21 @@ describe("State model and history (U, V, W)", () => {
   });
 
   it("returns null for state that did not exist at the requested time", () => {
-    const result = getStateAt([entry({ timestamp: EARLIER })], "twin-1", "occupancy", "2020-01-01T00:00:00Z");
+    const result = getStateAt(
+      [entry({ timestamp: EARLIER })],
+      "twin-1",
+      "occupancy",
+      "2020-01-01T00:00:00Z",
+    );
     expect(result).toBeNull();
   });
 
   it("returns the transition history in chronological order", () => {
     const history = getStateTransitionHistory(
-      [entry({ timestamp: "2025-12-31T16:00:00Z", value: "maintenance" }), entry({ timestamp: EARLIER, value: "available" })],
+      [
+        entry({ timestamp: "2025-12-31T16:00:00Z", value: "maintenance" }),
+        entry({ timestamp: EARLIER, value: "available" }),
+      ],
       "twin-1",
       "occupancy",
     );
@@ -172,7 +194,12 @@ describe("State model and history (U, V, W)", () => {
 describe("Event-sourced state (X)", () => {
   it("reconstructs current state deterministically from events", () => {
     const events = [
-      { kind: "state_set" as const, stateName: "occupancy", value: "occupied", at: "2025-12-31T14:00:00Z" },
+      {
+        kind: "state_set" as const,
+        stateName: "occupancy",
+        value: "occupied",
+        at: "2025-12-31T14:00:00Z",
+      },
       { kind: "state_set" as const, stateName: "capacity", value: 30, at: "2025-12-31T14:00:01Z" },
       { kind: "state_cleared" as const, stateName: "occupancy", at: "2025-12-31T15:00:00Z" },
     ];
@@ -227,19 +254,25 @@ describe("Freshness, staleness, fidelity (AI, AJ, AK)", () => {
 
 describe("Synchronization (AL-AR)", () => {
   it("projects valid observations into twin state", () => {
-    const result = synchronizeObservation(obs({ quality: "VALID" }), (o) => ({ occupancy: o.value }));
+    const result = synchronizeObservation(obs({ quality: "VALID" }), (o) => ({
+      occupancy: o.value,
+    }));
     expect(result.state).toBe("SYNC_COMPLETE");
     expect(result.projectedState.occupancy).toBe("occupied");
   });
 
   it("never projects conflicting observations as authoritative state", () => {
-    const result = synchronizeObservation(obs({ quality: "CONFLICTING" }), (o) => ({ occupancy: o.value }));
+    const result = synchronizeObservation(obs({ quality: "CONFLICTING" }), (o) => ({
+      occupancy: o.value,
+    }));
     expect(result.state).toBe("SYNC_CONFLICT");
     expect(result.projectedState).toEqual({});
   });
 
   it("fails closed on invalid observations", () => {
-    const result = synchronizeObservation(obs({ quality: "INVALID" }), (o) => ({ occupancy: o.value }));
+    const result = synchronizeObservation(obs({ quality: "INVALID" }), (o) => ({
+      occupancy: o.value,
+    }));
     expect(result.state).toBe("SYNC_FAILED");
     expect(result.projectedState).toEqual({});
   });

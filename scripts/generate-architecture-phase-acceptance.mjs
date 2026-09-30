@@ -1,17 +1,11 @@
-import {
-  readdirSync,
-  readFileSync,
-  writeFileSync,
-} from "node:fs";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const architectureDir = join(root, "architecture");
 const acceptanceDir = join(architectureDir, "phase-acceptance");
-const registry = JSON.parse(
-  readFileSync(join(architectureDir, "registry.json"), "utf8"),
-);
+const registry = JSON.parse(readFileSync(join(architectureDir, "registry.json"), "utf8"));
 
 function findPhaseDocument(id) {
   const name = readdirSync(architectureDir).find(
@@ -25,9 +19,7 @@ function findPhaseContract(id) {
   const name = readdirSync(contractDir).find(
     (entry) => entry.startsWith(`phase-${id}-`) && entry.endsWith(".ts"),
   );
-  return name
-    ? `frontend/src/lib/kernel/phase-contracts/${name}`
-    : null;
+  return name ? `frontend/src/lib/kernel/phase-contracts/${name}` : null;
 }
 
 const generated = [];
@@ -59,8 +51,7 @@ for (const phase of registry.phases) {
       canonicalOwners: {
         [`phase-${phase.id}-capability`]: phase.id,
       },
-      note:
-        "Registry ownership is observed. Cross-phase duplication and runtime ownership remain subject to Mission 0001 reconciliation.",
+      note: "Registry ownership is observed. Cross-phase duplication and runtime ownership remain subject to Mission 0001 reconciliation.",
     },
     areas: [
       {
@@ -80,9 +71,7 @@ for (const phase of registry.phases) {
         requirement:
           "Executable modules, runtime consumers, deployment evidence and operational proof must be established by a later bounded mission; this definition does not infer them from design text.",
         required: false,
-        evidence: [
-          { kind: "document", path: source, contains: "Implementation" },
-        ],
+        evidence: [{ kind: "document", path: source, contains: "Implementation" }],
       },
     ],
   };

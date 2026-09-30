@@ -208,7 +208,14 @@ describe("Phase 06 — Workspace Engine", () => {
 
     it("rejects invalid workspace code", () => {
       const result = createWorkspace(
-        { tenantId: TENANT_A, name: "Bad", code: "has space", type: "institution", creatorId: "admin-1", now: NOW },
+        {
+          tenantId: TENANT_A,
+          name: "Bad",
+          code: "has space",
+          type: "institution",
+          creatorId: "admin-1",
+          now: NOW,
+        },
         [],
         NOW,
       );
@@ -218,14 +225,28 @@ describe("Phase 06 — Workspace Engine", () => {
 
     it("rejects duplicate workspace code within tenant (Section DB)", () => {
       const existing = createWorkspace(
-        { tenantId: TENANT_A, name: "A", code: "EXIST", type: "institution", creatorId: "u", now: NOW },
+        {
+          tenantId: TENANT_A,
+          name: "A",
+          code: "EXIST",
+          type: "institution",
+          creatorId: "u",
+          now: NOW,
+        },
         [],
         NOW,
       );
       expect(existing.ok).toBe(true);
 
       const result = createWorkspace(
-        { tenantId: TENANT_A, name: "B", code: "EXIST", type: "institution", creatorId: "u", now: NOW },
+        {
+          tenantId: TENANT_A,
+          name: "B",
+          code: "EXIST",
+          type: "institution",
+          creatorId: "u",
+          now: NOW,
+        },
         existing.ok ? [existing.workspace] : [],
         NOW,
       );
@@ -236,7 +257,14 @@ describe("Phase 06 — Workspace Engine", () => {
     it("rejects cross-tenant lifecycle change (Section GU)", () => {
       const ws = makeWorkspace();
       const result = changeWorkspaceLifecycle(
-        { tenantId: TENANT_B, workspaceId: ws.id, to: "active", reason: null, actorId: "admin-2", now: NOW },
+        {
+          tenantId: TENANT_B,
+          workspaceId: ws.id,
+          to: "active",
+          reason: null,
+          actorId: "admin-2",
+          now: NOW,
+        },
         ws,
       );
       expect(result.ok).toBe(false);
@@ -246,7 +274,14 @@ describe("Phase 06 — Workspace Engine", () => {
     it("allows draft → active activation", () => {
       const ws = makeWorkspace({ lifecycleState: "draft" });
       const result = changeWorkspaceLifecycle(
-        { tenantId: TENANT_A, workspaceId: ws.id, to: "active", reason: null, actorId: "admin-1", now: NOW },
+        {
+          tenantId: TENANT_A,
+          workspaceId: ws.id,
+          to: "active",
+          reason: null,
+          actorId: "admin-1",
+          now: NOW,
+        },
         ws,
       );
       expect(result.ok).toBe(true);
@@ -259,7 +294,14 @@ describe("Phase 06 — Workspace Engine", () => {
     it("requires reason for suspension (Section M)", () => {
       const ws = makeWorkspace({ lifecycleState: "active" });
       const result = changeWorkspaceLifecycle(
-        { tenantId: TENANT_A, workspaceId: ws.id, to: "suspended", reason: null, actorId: "admin-1", now: NOW },
+        {
+          tenantId: TENANT_A,
+          workspaceId: ws.id,
+          to: "suspended",
+          reason: null,
+          actorId: "admin-1",
+          now: NOW,
+        },
         ws,
       );
       expect(result.ok).toBe(false);
@@ -269,7 +311,14 @@ describe("Phase 06 — Workspace Engine", () => {
     it("suspends a workspace with reason and audit", () => {
       const ws = makeWorkspace({ lifecycleState: "active" });
       const result = changeWorkspaceLifecycle(
-        { tenantId: TENANT_A, workspaceId: ws.id, to: "suspended", reason: "Policy hold", actorId: "admin-1", now: NOW },
+        {
+          tenantId: TENANT_A,
+          workspaceId: ws.id,
+          to: "suspended",
+          reason: "Policy hold",
+          actorId: "admin-1",
+          now: NOW,
+        },
         ws,
       );
       expect(result.ok).toBe(true);
@@ -283,7 +332,14 @@ describe("Phase 06 — Workspace Engine", () => {
     it("blocks direct draft → deleted with no reason (Section O)", () => {
       const ws = makeWorkspace({ lifecycleState: "draft" });
       const result = changeWorkspaceLifecycle(
-        { tenantId: TENANT_A, workspaceId: ws.id, to: "deleted", reason: null, actorId: "admin-1", now: NOW },
+        {
+          tenantId: TENANT_A,
+          workspaceId: ws.id,
+          to: "deleted",
+          reason: null,
+          actorId: "admin-1",
+          now: NOW,
+        },
         ws,
       );
       expect(result.ok).toBe(false);
@@ -297,22 +353,41 @@ describe("Phase 06 — Workspace Engine", () => {
     });
 
     it("validates workspace for activation (required modules/nav/default page)", () => {
-      const ws = makeWorkspace({ lifecycleState: "draft", moduleIds: [moduleId(`${CURRENT_WS}:academic`)] });
-      expect(validateWorkspaceForActivation(ws, [moduleId(`${CURRENT_WS}:academic`)], true, true).ok).toBe(true);
+      const ws = makeWorkspace({
+        lifecycleState: "draft",
+        moduleIds: [moduleId(`${CURRENT_WS}:academic`)],
+      });
+      expect(
+        validateWorkspaceForActivation(ws, [moduleId(`${CURRENT_WS}:academic`)], true, true).ok,
+      ).toBe(true);
       expect(validateWorkspaceForActivation(ws, [], true, true).ok).toBe(false);
-      expect(validateWorkspaceForActivation(ws, [moduleId(`${CURRENT_WS}:academic`)], false, true).ok).toBe(false);
+      expect(
+        validateWorkspaceForActivation(ws, [moduleId(`${CURRENT_WS}:academic`)], false, true).ok,
+      ).toBe(false);
     });
 
     it("provisions an idempotent default workspace (Section HA)", () => {
       const existing: Workspace[] = [];
       const first = provisionDefaultWorkspace(
-        { tenantId: TENANT_A, workspaceType: "institution", role: "", actorId: "admin-1", now: NOW },
+        {
+          tenantId: TENANT_A,
+          workspaceType: "institution",
+          role: "",
+          actorId: "admin-1",
+          now: NOW,
+        },
         existing,
       );
       expect(first.ok).toBe(true);
 
       const second = provisionDefaultWorkspace(
-        { tenantId: TENANT_A, workspaceType: "institution", role: "", actorId: "admin-1", now: NOW },
+        {
+          tenantId: TENANT_A,
+          workspaceType: "institution",
+          role: "",
+          actorId: "admin-1",
+          now: NOW,
+        },
         first.ok ? [first.workspace] : [],
       );
       expect(second.ok).toBe(true);
@@ -367,20 +442,31 @@ describe("Phase 06 — Workspace Engine", () => {
     });
 
     it("evaluates workspace health correctly (Section HK)", () => {
-      const healthy = evaluateWorkspaceHealth(CURRENT_WS, true, [], [
-        { capabilityName: "academic", available: true, enabled: true },
-      ]);
+      const healthy = evaluateWorkspaceHealth(
+        CURRENT_WS,
+        true,
+        [],
+        [{ capabilityName: "academic", available: true, enabled: true }],
+      );
       expect(healthy.overallStatus).toBe("healthy");
 
-      const degraded = evaluateWorkspaceHealth(CURRENT_WS, true, [], [
-        { capabilityName: "finance", available: false, enabled: false },
-        { capabilityName: "academic", available: true, enabled: true },
-      ]);
+      const degraded = evaluateWorkspaceHealth(
+        CURRENT_WS,
+        true,
+        [],
+        [
+          { capabilityName: "finance", available: false, enabled: false },
+          { capabilityName: "academic", available: true, enabled: true },
+        ],
+      );
       expect(degraded.overallStatus).toBe("degraded");
 
-      const unhealthy = evaluateWorkspaceHealth(CURRENT_WS, true, [], [
-        { capabilityName: "academic", available: false, enabled: true },
-      ]);
+      const unhealthy = evaluateWorkspaceHealth(
+        CURRENT_WS,
+        true,
+        [],
+        [{ capabilityName: "academic", available: false, enabled: true }],
+      );
       expect(unhealthy.overallStatus).toBe("unhealthy");
     });
   });
@@ -389,7 +475,14 @@ describe("Phase 06 — Workspace Engine", () => {
     it("adds a member with audit event (Section P)", () => {
       const ws = makeWorkspace();
       const result = addWorkspaceMember(
-        { tenantId: TENANT_A, workspaceId: ws.id, identityId: "user-1", role: "viewer", actorId: "admin-1", now: NOW },
+        {
+          tenantId: TENANT_A,
+          workspaceId: ws.id,
+          identityId: "user-1",
+          role: "viewer",
+          actorId: "admin-1",
+          now: NOW,
+        },
         [],
         makeRoleDefinitions(),
       );
@@ -404,7 +497,14 @@ describe("Phase 06 — Workspace Engine", () => {
     it("rejects duplicate active members", () => {
       const ws = makeWorkspace();
       const result = addWorkspaceMember(
-        { tenantId: TENANT_A, workspaceId: ws.id, identityId: "user-1", role: "viewer", actorId: "admin-1", now: NOW },
+        {
+          tenantId: TENANT_A,
+          workspaceId: ws.id,
+          identityId: "user-1",
+          role: "viewer",
+          actorId: "admin-1",
+          now: NOW,
+        },
         [makeMember("user-1", "viewer")],
         makeRoleDefinitions(),
       );
@@ -415,7 +515,14 @@ describe("Phase 06 — Workspace Engine", () => {
       const ws = makeWorkspace();
       const member = makeMember("user-1", "viewer");
       const result = changeWorkspaceMemberRole(
-        { tenantId: TENANT_A, workspaceId: ws.id, membershipId: member.id, newRole: "editor", actorId: "admin-1", now: NOW },
+        {
+          tenantId: TENANT_A,
+          workspaceId: ws.id,
+          membershipId: member.id,
+          newRole: "editor",
+          actorId: "admin-1",
+          now: NOW,
+        },
         member,
         () => true,
       );
@@ -430,7 +537,14 @@ describe("Phase 06 — Workspace Engine", () => {
       const ws = makeWorkspace();
       const member = makeMember("user-1", "viewer");
       const result = changeWorkspaceMemberRole(
-        { tenantId: TENANT_A, workspaceId: ws.id, membershipId: member.id, newRole: "manager", actorId: "viewer", now: NOW },
+        {
+          tenantId: TENANT_A,
+          workspaceId: ws.id,
+          membershipId: member.id,
+          newRole: "manager",
+          actorId: "viewer",
+          now: NOW,
+        },
         member,
         () => false,
       );
@@ -442,7 +556,14 @@ describe("Phase 06 — Workspace Engine", () => {
       const ws = makeWorkspace();
       const member = makeMember("owner-1", "owner");
       const result = changeWorkspaceMemberRole(
-        { tenantId: TENANT_A, workspaceId: ws.id, membershipId: member.id, newRole: "viewer", actorId: "admin-1", now: NOW },
+        {
+          tenantId: TENANT_A,
+          workspaceId: ws.id,
+          membershipId: member.id,
+          newRole: "viewer",
+          actorId: "admin-1",
+          now: NOW,
+        },
         member,
         () => true,
       );
@@ -464,13 +585,23 @@ describe("Phase 06 — Workspace Engine", () => {
 
     it("cannot remove the owner", () => {
       const ws = makeWorkspace();
-      expect(removeWorkspaceMember(TENANT_A, ws.id, makeMember("owner-1", "owner"), "admin-1", NOW).ok).toBe(false);
+      expect(
+        removeWorkspaceMember(TENANT_A, ws.id, makeMember("owner-1", "owner"), "admin-1", NOW).ok,
+      ).toBe(false);
     });
 
     it("sends an invitation with future expiration (Section T)", () => {
       const ws = makeWorkspace();
       const result = sendWorkspaceInvitation(
-        { tenantId: TENANT_A, workspaceId: ws.id, inviterId: "admin-1", inviteeId: "user-9", intendedRole: "editor", expiresAt: "2026-09-01T00:00:00.000Z", now: NOW },
+        {
+          tenantId: TENANT_A,
+          workspaceId: ws.id,
+          inviterId: "admin-1",
+          inviteeId: "user-9",
+          intendedRole: "editor",
+          expiresAt: "2026-09-01T00:00:00.000Z",
+          now: NOW,
+        },
         [],
         [],
       );
@@ -484,7 +615,15 @@ describe("Phase 06 — Workspace Engine", () => {
     it("rejects an invitation with past expiration", () => {
       const ws = makeWorkspace();
       const result = sendWorkspaceInvitation(
-        { tenantId: TENANT_A, workspaceId: ws.id, inviterId: "admin-1", inviteeId: "user-9", intendedRole: "editor", expiresAt: "2020-01-01T00:00:00.000Z", now: NOW },
+        {
+          tenantId: TENANT_A,
+          workspaceId: ws.id,
+          inviterId: "admin-1",
+          inviteeId: "user-9",
+          intendedRole: "editor",
+          expiresAt: "2020-01-01T00:00:00.000Z",
+          now: NOW,
+        },
         [],
         [],
       );
@@ -496,7 +635,13 @@ describe("Phase 06 — Workspace Engine", () => {
       const ws = makeWorkspace();
       const invitation = makeInvitation("user-9", "2026-09-01T00:00:00.000Z");
       const result = acceptWorkspaceInvitation(
-        { tenantId: TENANT_A, workspaceId: ws.id, invitationId: invitation.id, acceptingIdentityId: "user-9", now: NOW_LATER },
+        {
+          tenantId: TENANT_A,
+          workspaceId: ws.id,
+          invitationId: invitation.id,
+          acceptingIdentityId: "user-9",
+          now: NOW_LATER,
+        },
         invitation,
         [],
       );
@@ -513,7 +658,13 @@ describe("Phase 06 — Workspace Engine", () => {
       const invitation = makeInvitation("user-1", "2020-01-01T00:00:00.000Z");
       expect(
         acceptWorkspaceInvitation(
-          { tenantId: TENANT_A, workspaceId: ws.id, invitationId: invitation.id, acceptingIdentityId: "user-1", now: NOW },
+          {
+            tenantId: TENANT_A,
+            workspaceId: ws.id,
+            invitationId: invitation.id,
+            acceptingIdentityId: "user-1",
+            now: NOW,
+          },
           invitation,
           [],
         ).ok,
@@ -526,13 +677,37 @@ describe("Phase 06 — Workspace Engine", () => {
       const admin = makeMember("admin", "administrator");
 
       expect(
-        evaluateWorkspaceAccess({ tenantId: TENANT_A, workspaceId: ws.id, identityId: "viewer", requiredCapability: "read" }, viewer).decision,
+        evaluateWorkspaceAccess(
+          {
+            tenantId: TENANT_A,
+            workspaceId: ws.id,
+            identityId: "viewer",
+            requiredCapability: "read",
+          },
+          viewer,
+        ).decision,
       ).toBe("ALLOW");
       expect(
-        evaluateWorkspaceAccess({ tenantId: TENANT_A, workspaceId: ws.id, identityId: "viewer", requiredCapability: "write" }, viewer).decision,
+        evaluateWorkspaceAccess(
+          {
+            tenantId: TENANT_A,
+            workspaceId: ws.id,
+            identityId: "viewer",
+            requiredCapability: "write",
+          },
+          viewer,
+        ).decision,
       ).toBe("DENY");
       expect(
-        evaluateWorkspaceAccess({ tenantId: TENANT_A, workspaceId: ws.id, identityId: "admin", requiredCapability: "manage_lifecycle" }, admin).decision,
+        evaluateWorkspaceAccess(
+          {
+            tenantId: TENANT_A,
+            workspaceId: ws.id,
+            identityId: "admin",
+            requiredCapability: "manage_lifecycle",
+          },
+          admin,
+        ).decision,
       ).toBe("ALLOW");
     });
 
@@ -551,7 +726,15 @@ describe("Phase 06 — Workspace Engine", () => {
         updatedAt: NOW,
       };
       expect(
-        evaluateWorkspaceAccess({ tenantId: TENANT_A, workspaceId: ws.id, identityId: "user-1", requiredCapability: "read" }, inactive).decision,
+        evaluateWorkspaceAccess(
+          {
+            tenantId: TENANT_A,
+            workspaceId: ws.id,
+            identityId: "user-1",
+            requiredCapability: "read",
+          },
+          inactive,
+        ).decision,
       ).toBe("DENY");
     });
   });
@@ -560,7 +743,14 @@ describe("Phase 06 — Workspace Engine", () => {
     it("creates a page with audit (Section AD)", () => {
       const ws = makeWorkspace();
       const result = createPage(
-        { tenantId: TENANT_A, workspaceId: ws.id, key: "dashboard", title: "Dashboard", actorId: "admin-1", now: NOW },
+        {
+          tenantId: TENANT_A,
+          workspaceId: ws.id,
+          key: "dashboard",
+          title: "Dashboard",
+          actorId: "admin-1",
+          now: NOW,
+        },
         [],
       );
       expect(result.ok).toBe(true);
@@ -573,14 +763,30 @@ describe("Phase 06 — Workspace Engine", () => {
     it("rejects duplicate page key", () => {
       const ws = makeWorkspace();
       expect(
-        createPage({ tenantId: TENANT_A, workspaceId: ws.id, key: "dashboard", title: "Dashboard", actorId: "admin-1", now: NOW }, [makePage("dashboard")]).ok,
+        createPage(
+          {
+            tenantId: TENANT_A,
+            workspaceId: ws.id,
+            key: "dashboard",
+            title: "Dashboard",
+            actorId: "admin-1",
+            now: NOW,
+          },
+          [makePage("dashboard")],
+        ).ok,
       ).toBe(false);
     });
 
     it("creates a dashboard (Section AH)", () => {
       const ws = makeWorkspace();
       const result = createDashboard(
-        { tenantId: TENANT_A, workspaceId: ws.id, name: "Operations", actorId: "admin-1", now: NOW },
+        {
+          tenantId: TENANT_A,
+          workspaceId: ws.id,
+          name: "Operations",
+          actorId: "admin-1",
+          now: NOW,
+        },
         [],
       );
       expect(result.ok).toBe(true);
@@ -603,7 +809,16 @@ describe("Phase 06 — Workspace Engine", () => {
     it("creates a view (Section BD)", () => {
       const ws = makeWorkspace();
       const result = createView(
-        { tenantId: TENANT_A, workspaceId: ws.id, name: "Active Students", scope: "private", creatorId: "admin-1", ownerId: "admin-1", viewType: "table", now: NOW },
+        {
+          tenantId: TENANT_A,
+          workspaceId: ws.id,
+          name: "Active Students",
+          scope: "private",
+          creatorId: "admin-1",
+          ownerId: "admin-1",
+          viewType: "table",
+          now: NOW,
+        },
         [],
       );
       expect(result.ok).toBe(true);
@@ -644,7 +859,13 @@ describe("Phase 06 — Workspace Engine", () => {
         updatedAt: NOW,
       };
       const result = personalizeWidgetInstance(
-        { tenantId: TENANT_A, workspaceId: ws.id, identityId: "admin-1", widgetInstanceId: instance.id, settings: { density: "compact" } },
+        {
+          tenantId: TENANT_A,
+          workspaceId: ws.id,
+          identityId: "admin-1",
+          widgetInstanceId: instance.id,
+          settings: { density: "compact" },
+        },
         instance,
         NOW_LATER,
       );
@@ -664,7 +885,17 @@ describe("Phase 06 — Workspace Engine", () => {
         updatedAt: NOW,
       };
       expect(
-        personalizeWidgetInstance({ tenantId: TENANT_B, workspaceId: CURRENT_WS, identityId: "x", widgetInstanceId: instance.id, settings: {} }, instance, NOW).ok,
+        personalizeWidgetInstance(
+          {
+            tenantId: TENANT_B,
+            workspaceId: CURRENT_WS,
+            identityId: "x",
+            widgetInstanceId: instance.id,
+            settings: {},
+          },
+          instance,
+          NOW,
+        ).ok,
       ).toBe(false);
     });
 
@@ -705,19 +936,35 @@ describe("Phase 06 — Workspace Engine", () => {
     });
 
     it("restricts filters to approved fields (Section BH)", () => {
-      const filter: FilterDefinition = { id: filterId("f1"), field: "status", operator: "eq", value: "active" };
+      const filter: FilterDefinition = {
+        id: filterId("f1"),
+        field: "status",
+        operator: "eq",
+        value: "active",
+      };
       expect(areFiltersOnApprovedFields([filter], ["status", "level"])).toBe(true);
-      expect(areFiltersOnApprovedFields([{ ...filter, field: "password" }], ["status"])).toBe(false);
+      expect(areFiltersOnApprovedFields([{ ...filter, field: "password" }], ["status"])).toBe(
+        false,
+      );
     });
 
     it("restricts sorting to approved fields (Section BI)", () => {
-      expect(areSortFieldsApproved([{ field: "name", direction: "asc" }], ["name", "createdAt"])).toBe(true);
-      expect(areSortFieldsApproved([{ field: "privateNote", direction: "desc" }], ["name"])).toBe(false);
+      expect(
+        areSortFieldsApproved([{ field: "name", direction: "asc" }], ["name", "createdAt"]),
+      ).toBe(true);
+      expect(areSortFieldsApproved([{ field: "privateNote", direction: "desc" }], ["name"])).toBe(
+        false,
+      );
     });
 
     it("resolves template overrides deterministically (Section CL)", () => {
-      expect(resolveTemplateValueFromOverrides("base", [{ key: "layout", value: "grid12" }], "layout")).toEqual({ ok: true, value: "grid12" });
-      expect(resolveTemplateValueFromOverrides("base", [], "layout")).toEqual({ ok: true, value: "base" });
+      expect(
+        resolveTemplateValueFromOverrides("base", [{ key: "layout", value: "grid12" }], "layout"),
+      ).toEqual({ ok: true, value: "grid12" });
+      expect(resolveTemplateValueFromOverrides("base", [], "layout")).toEqual({
+        ok: true,
+        value: "base",
+      });
     });
 
     it("saves a personalized view (Section AY)", () => {
@@ -759,7 +1006,9 @@ describe("Phase 06 — Workspace Engine", () => {
         allowSharedViews: true,
         allowCustomModules: false,
       };
-      expect(validateWorkspacePolicy(policy, ["academic", "finance"], ["attendance"], ["paystack"]).ok).toBe(true);
+      expect(
+        validateWorkspacePolicy(policy, ["academic", "finance"], ["attendance"], ["paystack"]).ok,
+      ).toBe(true);
 
       const invalid = validateWorkspacePolicy(policy, ["academic"], ["attendance"], ["paystack"]);
       expect(invalid.ok).toBe(false);
@@ -771,7 +1020,16 @@ describe("Phase 06 — Workspace Engine", () => {
       const result = createConfigurationSnapshot(
         TENANT_A,
         ws,
-        { lifecycleState: "active", moduleIds: [], pages: [], dashboards: [], navigation: [], layout: [], views: [], configVersion: 1 },
+        {
+          lifecycleState: "active",
+          moduleIds: [],
+          pages: [],
+          dashboards: [],
+          navigation: [],
+          layout: [],
+          views: [],
+          configVersion: 1,
+        },
         "pre-release",
         "admin-1",
         NOW,
@@ -786,7 +1044,14 @@ describe("Phase 06 — Workspace Engine", () => {
 
     it("records configuration version entries (Section CD)", () => {
       const ws = makeWorkspace();
-      const result = recordConfigVersion(TENANT_A, ws.id, 2, "admin-1", "Added finance module", NOW);
+      const result = recordConfigVersion(
+        TENANT_A,
+        ws.id,
+        2,
+        "admin-1",
+        "Added finance module",
+        NOW,
+      );
       expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.entry.version).toBe(2);
@@ -802,10 +1067,11 @@ describe("Phase 06 — Workspace Engine", () => {
         { ...makeAuditEvent(), id: "audit-3", tenantId: TENANT_B },
       ];
 
-      const result = filterWorkspaceAuditEvents(
-        events,
-        { tenantId: TENANT_A, workspaceId: CURRENT_WS, eventTypes: ["WorkspaceCreated"] },
-      );
+      const result = filterWorkspaceAuditEvents(events, {
+        tenantId: TENANT_A,
+        workspaceId: CURRENT_WS,
+        eventTypes: ["WorkspaceCreated"],
+      });
       expect(result.map((e) => e.id)).toEqual(["audit-evt-1", "audit-2"]);
     });
 

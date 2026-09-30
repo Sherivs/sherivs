@@ -58,9 +58,15 @@ function LockedAccounts() {
   const rows = q.data ?? [];
 
   return (
-    <PortalPage title="Locked accounts" subtitle="Users whose face login has been locked after too many failed attempts.">
+    <PortalPage
+      title="Locked accounts"
+      subtitle="Users whose face login has been locked after too many failed attempts."
+    >
       <div className="mb-6 flex flex-wrap gap-2">
-        <Link to="/admin/dashboard" className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-muted/40">
+        <Link
+          to="/admin/dashboard"
+          className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-muted/40"
+        >
           ← Dashboard
         </Link>
       </div>

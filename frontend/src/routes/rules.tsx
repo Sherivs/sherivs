@@ -17,7 +17,9 @@ function RulesPage() {
     return (
       <PolicyShell title="School Rules">
         <p>Open this page from a school site.</p>
-        <Link to="/" className="mt-4 inline-block text-[var(--tenant-primary)] underline">← Home</Link>
+        <Link to="/" className="mt-4 inline-block text-[var(--tenant-primary)] underline">
+          ← Home
+        </Link>
       </PolicyShell>
     );
   const body = (school as any).school_rules as string | null;

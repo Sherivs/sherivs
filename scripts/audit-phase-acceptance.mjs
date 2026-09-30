@@ -29,7 +29,9 @@ import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
-const phaseArg = (process.argv.find((arg) => arg.startsWith("--phase=")) ?? "").slice("--phase=".length);
+const phaseArg = (process.argv.find((arg) => arg.startsWith("--phase=")) ?? "").slice(
+  "--phase=".length,
+);
 if (!phaseArg) {
   console.error("Usage: node scripts/audit-phase-acceptance.mjs --phase=01");
   process.exit(2);
@@ -41,8 +43,8 @@ if (!existsSync(acceptanceDir)) {
   console.error(`No acceptance data found at ${relative(ROOT, acceptanceDir)}`);
   process.exit(2);
 }
-const dataFile = readdirSync(acceptanceDir).find((name) =>
-  name.startsWith(`phase-${phaseId}-`) && name.endsWith(".json"),
+const dataFile = readdirSync(acceptanceDir).find(
+  (name) => name.startsWith(`phase-${phaseId}-`) && name.endsWith(".json"),
 );
 if (!dataFile) {
   console.error(`No acceptance data for phase ${phaseId} (expected phase-${phaseId}-*.json)`);
@@ -92,7 +94,9 @@ const ROOT_FILES = readdirSync(ROOT).map((name) => name);
 function resolveEvidence(entry) {
   const matches = REPO_FILES.filter((file) =>
     entry.path.includes("*")
-      ? new RegExp(`^${entry.path.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*")}$`).test(file)
+      ? new RegExp(
+          `^${entry.path.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*")}$`,
+        ).test(file)
       : file === entry.path || file.startsWith(entry.path),
   );
   const rootMatch = ROOT_FILES.includes(entry.path);
@@ -107,9 +111,7 @@ function resolveEvidence(entry) {
 }
 
 function classify(evidence, boundary) {
-  const executable = evidence.filter(
-    (entry) => entry.matched && EXECUTABLE_KINDS.has(entry.kind),
-  );
+  const executable = evidence.filter((entry) => entry.matched && EXECUTABLE_KINDS.has(entry.kind));
   if (executable.length === 0) {
     return evidence.some((entry) => entry.matched) ? "DECLARED" : "MISSING";
   }
@@ -157,11 +159,13 @@ const proof = {
   source: data.source ?? null,
   generatedAt: new Date().toISOString(),
   classificationDefinitions: {
-    ENFORCED: "an executable artefact proves it (test, verifier script, migration, policy or machine-checked contract match) and, where a boundary is declared, a real call site invokes it",
+    ENFORCED:
+      "an executable artefact proves it (test, verifier script, migration, policy or machine-checked contract match) and, where a boundary is declared, a real call site invokes it",
     DECLARED: "a module, document or contract mentions it, but nothing executable proves it",
     IMPLEMENTED_UNWIRED:
       "implementation and tests exist, but the declared boundary patterns match nothing — the capability protects nothing yet",
-    IMPLEMENTED_UNWIRED: "implementation and tests exist, but the declared boundary patterns match nothing — the capability protects nothing yet",
+    IMPLEMENTED_UNWIRED:
+      "implementation and tests exist, but the declared boundary patterns match nothing — the capability protects nothing yet",
     MISSING: "no artefact found",
   },
   summary: {
@@ -219,14 +223,17 @@ if (unwired.length > 0) {
 }
 if (declared.length > 0) {
   console.log(`\nDeclared but not yet proven by an executable artefact (${declared.length}):`);
-  for (const row of declared) console.log(`  - ${row.id}: ${row.matchedEvidence.join(", ") || "—"}`);
+  for (const row of declared)
+    console.log(`  - ${row.id}: ${row.matchedEvidence.join(", ") || "—"}`);
 }
 if (missing.length > 0) {
   console.log(`\nNo evidence found (${missing.length}):`);
   for (const row of missing) console.log(`  - ${row.id}${row.required ? " [REQUIRED]" : ""}`);
 }
 if (unresolvedPaths.length > 0) {
-  console.error(`\nEvidence paths declared but not present in the repository (${unresolvedPaths.length}):`);
+  console.error(
+    `\nEvidence paths declared but not present in the repository (${unresolvedPaths.length}):`,
+  );
   for (const path of unresolvedPaths) console.error(`  - ${path}`);
 }
 console.log(`\nProof written: ${proofRef}`);
@@ -246,4 +253,3 @@ if (unresolvedPaths.length > 0) {
 console.log(
   "Every required acceptance area has evidence. DECLARED areas remain unfinished work and are reported as such.",
 );
-

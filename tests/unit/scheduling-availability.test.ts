@@ -20,9 +20,21 @@ import type { TimeInterval } from "@/lib/scheduling-core";
 
 const TENANT_A = tenantId("tenant-a");
 
-const INTERVAL_A: TimeInterval = { start: "2026-01-01T08:00:00Z", end: "2026-01-01T09:00:00Z", timezone: "UTC" };
-const INTERVAL_B: TimeInterval = { start: "2026-01-01T08:30:00Z", end: "2026-01-01T09:30:00Z", timezone: "UTC" };
-const INTERVAL_C: TimeInterval = { start: "2026-01-01T10:00:00Z", end: "2026-01-01T11:00:00Z", timezone: "UTC" };
+const INTERVAL_A: TimeInterval = {
+  start: "2026-01-01T08:00:00Z",
+  end: "2026-01-01T09:00:00Z",
+  timezone: "UTC",
+};
+const INTERVAL_B: TimeInterval = {
+  start: "2026-01-01T08:30:00Z",
+  end: "2026-01-01T09:30:00Z",
+  timezone: "UTC",
+};
+const INTERVAL_C: TimeInterval = {
+  start: "2026-01-01T10:00:00Z",
+  end: "2026-01-01T11:00:00Z",
+  timezone: "UTC",
+};
 
 function makeWindow(overrides: Partial<AvailabilityWindow> = {}): AvailabilityWindow {
   const created = createAvailabilityWindow({
@@ -45,23 +57,27 @@ describe("createAvailabilityWindow (L, M)", () => {
   });
 
   it("rejects an empty entity or source", () => {
-    expect(createAvailabilityWindow({
-      entityId: "",
-      tenantId: TENANT_A,
-      entityType: "instructor",
-      state: "allowed",
-      interval: INTERVAL_A,
-      source: "configuration",
-    }).ok).toBe(false);
+    expect(
+      createAvailabilityWindow({
+        entityId: "",
+        tenantId: TENANT_A,
+        entityType: "instructor",
+        state: "allowed",
+        interval: INTERVAL_A,
+        source: "configuration",
+      }).ok,
+    ).toBe(false);
 
-    expect(createAvailabilityWindow({
-      entityId: "teacher-1",
-      tenantId: TENANT_A,
-      entityType: "instructor",
-      state: "allowed",
-      interval: INTERVAL_A,
-      source: "",
-    }).ok).toBe(false);
+    expect(
+      createAvailabilityWindow({
+        entityId: "teacher-1",
+        tenantId: TENANT_A,
+        entityType: "instructor",
+        state: "allowed",
+        interval: INTERVAL_A,
+        source: "",
+      }).ok,
+    ).toBe(false);
   });
 });
 
@@ -72,7 +88,12 @@ describe("resolveAvailability (L)", () => {
   });
 
   it("allows an allowed window", () => {
-    const verdict = resolveAvailability([makeWindow({ state: "allowed" })], "teacher-1", TENANT_A, INTERVAL_B);
+    const verdict = resolveAvailability(
+      [makeWindow({ state: "allowed" })],
+      "teacher-1",
+      TENANT_A,
+      INTERVAL_B,
+    );
     expect(verdict.verdict).toBe("available");
     if (verdict.verdict === "available") {
       expect(verdict.state).toBe("allowed");

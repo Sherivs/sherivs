@@ -178,7 +178,11 @@ export function validateStructuredOutput(input: {
 }): StructuredOutputValidationResult {
   const errors: string[] = [];
   for (const field of input.requiredFields) {
-    if (input.value[field] === undefined || input.value[field] === null || input.value[field] === "") {
+    if (
+      input.value[field] === undefined ||
+      input.value[field] === null ||
+      input.value[field] === ""
+    ) {
       errors.push(`Missing required field: ${field}`);
     }
   }
@@ -197,7 +201,8 @@ export function validateStructuredOutput(input: {
  * Safe generation (89) + content moderation (90) + child safety (91)
  * ────────────────────────────────────────────────────────────*/
 
-export type ModerationSignal = "harmful_content" | "privacy_leakage" | "inappropriate_content" | "policy_violation";
+export type ModerationSignal =
+  "harmful_content" | "privacy_leakage" | "inappropriate_content" | "policy_violation";
 
 export const MODERATION_SIGNALS: readonly ModerationSignal[] = [
   "harmful_content",
@@ -221,7 +226,9 @@ export function moderateGeneratedContent(input: {
   audienceIsMinor?: boolean;
 }): ModerationResult {
   const signals = input.signals;
-  const passed = input.audienceIsMinor ? signals.length === 0 : !signals.includes("harmful_content") && !signals.includes("policy_violation");
+  const passed = input.audienceIsMinor
+    ? signals.length === 0
+    : !signals.includes("harmful_content") && !signals.includes("policy_violation");
   return { passed, signals };
 }
 
@@ -229,7 +236,10 @@ export function moderateGeneratedContent(input: {
  * Age-aware AI (Section 92): where authorized age information exists, AI policies
  * may adapt accordingly. This contract applies stricter moderation for minors.
  */
-export function applyAgeAwareProtection(age: number, baseline: ModerationSignal[]): ModerationSignal[] {
+export function applyAgeAwareProtection(
+  age: number,
+  baseline: ModerationSignal[],
+): ModerationSignal[] {
   if (age < 18) {
     const additional: ModerationSignal[] = [];
     if (baseline.includes("inappropriate_content")) additional.push("inappropriate_content");
@@ -242,7 +252,8 @@ export function applyAgeAwareProtection(age: number, baseline: ModerationSignal[
  * Multimodal (52) + document intelligence (53-56) + vision (57) + speech (59)
  * ────────────────────────────────────────────────────────────*/
 
-export type AiInputModality = "text" | "image" | "audio" | "video" | "document" | "table" | "diagram";
+export type AiInputModality =
+  "text" | "image" | "audio" | "video" | "document" | "table" | "diagram";
 
 export const AI_INPUT_MODALITIES: readonly AiInputModality[] = [
   "text",
@@ -289,8 +300,14 @@ export function recordDocumentExtraction(input: {
 }
 
 /** Document field extraction is only trustworthy above the confidence threshold. */
-export function isExtractionConfident(extraction: DocumentExtraction, threshold: number = 0.8): boolean {
-  return extraction.classificationConfidence >= threshold && extraction.fields.every((f) => f.confidence >= threshold);
+export function isExtractionConfident(
+  extraction: DocumentExtraction,
+  threshold: number = 0.8,
+): boolean {
+  return (
+    extraction.classificationConfidence >= threshold &&
+    extraction.fields.every((f) => f.confidence >= threshold)
+  );
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -332,7 +349,8 @@ export function requiresTranslationReview(input: {
  * Orchestration (171) + DAG execution (172) + pipeline versioning (173)
  * ────────────────────────────────────────────────────────────*/
 
-export type AiPipelineStage = "input" | "classification" | "retrieval" | "reasoning" | "verification" | "output";
+export type AiPipelineStage =
+  "input" | "classification" | "retrieval" | "reasoning" | "verification" | "output";
 
 export const AI_PIPELINE_STAGES: readonly AiPipelineStage[] = [
   "input",
@@ -419,8 +437,3 @@ export function isAgentModelRequestSatisfiable(
   if (!hasPermission) return false;
   return availableModelIds.length > 0;
 }
-
-
-
-
-

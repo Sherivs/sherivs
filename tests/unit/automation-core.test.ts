@@ -105,12 +105,22 @@ describe("Trigger deduplication and ordering (I, J)", () => {
   });
 
   it("deduplicates already-processed event IDs", () => {
-    expect(isTriggerDuplicate(new Set(["evt-1"]), event(), 0, "2026-01-01T00:01:00Z", new Map())).toBe(true);
+    expect(
+      isTriggerDuplicate(new Set(["evt-1"]), event(), 0, "2026-01-01T00:01:00Z", new Map()),
+    ).toBe(true);
   });
 
   it("preserves event order by sequence (J)", () => {
-    expect(isTriggerOrderPreserved([event({ sequence: 1 }), event({ eventId: "e2", sequence: 2 }), event({ eventId: "e3", sequence: 3 })])).toBe(true);
-    expect(isTriggerOrderPreserved([event({ sequence: 3 }), event({ eventId: "e2", sequence: 1 })])).toBe(false);
+    expect(
+      isTriggerOrderPreserved([
+        event({ sequence: 1 }),
+        event({ eventId: "e2", sequence: 2 }),
+        event({ eventId: "e3", sequence: 3 }),
+      ]),
+    ).toBe(true);
+    expect(
+      isTriggerOrderPreserved([event({ sequence: 3 }), event({ eventId: "e2", sequence: 1 })]),
+    ).toBe(false);
   });
 });
 
@@ -141,7 +151,15 @@ describe("Policy priority (O, P)", () => {
 describe("Authorization (Q, E)", () => {
   it("authorizes a permitted role for a permitted operation", () => {
     const verdict = authorizeExecution(
-      { identity: "ops-1", tenantId: TENANT_A, role: "operator", resource: "twin-1", operation: "lock_door", isAutomation: true, isAI: false },
+      {
+        identity: "ops-1",
+        tenantId: TENANT_A,
+        role: "operator",
+        resource: "twin-1",
+        operation: "lock_door",
+        isAutomation: true,
+        isAI: false,
+      },
       ["operator", "admin"],
       ["lock_door"],
     );
@@ -150,7 +168,15 @@ describe("Authorization (Q, E)", () => {
 
   it("denies an unpermitted operation", () => {
     const verdict = authorizeExecution(
-      { identity: "ops-1", tenantId: TENANT_A, role: "operator", resource: "twin-1", operation: "delete_all", isAutomation: true, isAI: false },
+      {
+        identity: "ops-1",
+        tenantId: TENANT_A,
+        role: "operator",
+        resource: "twin-1",
+        operation: "delete_all",
+        isAutomation: true,
+        isAI: false,
+      },
       ["operator"],
       ["lock_door"],
     );
@@ -159,7 +185,15 @@ describe("Authorization (Q, E)", () => {
 
   it("denies AI actors without an explicit role — never implicit authority (E)", () => {
     const verdict = authorizeExecution(
-      { identity: "agent-1", tenantId: TENANT_A, role: null, resource: "twin-1", operation: "lock_door", isAutomation: false, isAI: true },
+      {
+        identity: "agent-1",
+        tenantId: TENANT_A,
+        role: null,
+        resource: "twin-1",
+        operation: "lock_door",
+        isAutomation: false,
+        isAI: true,
+      },
       ["operator", "admin"],
       ["lock_door"],
     );
@@ -177,12 +211,22 @@ describe("Approval engine (R, S, T, U)", () => {
   it("blocks a required approval until approved (T, FM.6)", () => {
     const pending = createApprovalState(true);
     expect(canProceedThroughApproval(pending).proceed).toBe(false);
-    const approved = { required: true, status: "approved" as const, approvedBy: "admin-1", decidedAt: "2026-01-01T00:00:00Z" };
+    const approved = {
+      required: true,
+      status: "approved" as const,
+      approvedBy: "admin-1",
+      decidedAt: "2026-01-01T00:00:00Z",
+    };
     expect(canProceedThroughApproval(approved).proceed).toBe(true);
   });
 
   it("blocks a rejected or expired approval", () => {
-    const rejected = { required: true, status: "rejected" as const, approvedBy: null, decidedAt: "2026-01-01T00:00:00Z" };
+    const rejected = {
+      required: true,
+      status: "rejected" as const,
+      approvedBy: null,
+      decidedAt: "2026-01-01T00:00:00Z",
+    };
     expect(canProceedThroughApproval(rejected).proceed).toBe(false);
   });
 });

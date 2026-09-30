@@ -50,7 +50,16 @@ function alert(overrides: Partial<CommandAlert> = {}): CommandAlert {
 
 describe("Alert creation and ownership (Y, Z)", () => {
   it("creates an OPEN alert preserving the source alert ID", () => {
-    const result = createCommandAlert({ alertId: "al-1", tenantId: TENANT_A, source: "security", sourceAlertId: "sec-99", severity: "CRITICAL", summary: "access anomaly", impactedScope: ["campus-a"], createdAt: NOW });
+    const result = createCommandAlert({
+      alertId: "al-1",
+      tenantId: TENANT_A,
+      source: "security",
+      sourceAlertId: "sec-99",
+      severity: "CRITICAL",
+      summary: "access anomaly",
+      impactedScope: ["campus-a"],
+      createdAt: NOW,
+    });
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.alert.status).toBe("OPEN");
@@ -59,7 +68,18 @@ describe("Alert creation and ownership (Y, Z)", () => {
   });
 
   it("rejects an alert without source provenance (Z)", () => {
-    expect(createCommandAlert({ alertId: "al-1", tenantId: TENANT_A, source: "security", sourceAlertId: "", severity: "HIGH", summary: "x", impactedScope: [], createdAt: NOW }).ok).toBe(false);
+    expect(
+      createCommandAlert({
+        alertId: "al-1",
+        tenantId: TENANT_A,
+        source: "security",
+        sourceAlertId: "",
+        severity: "HIGH",
+        summary: "x",
+        impactedScope: [],
+        createdAt: NOW,
+      }).ok,
+    ).toBe(false);
   });
 });
 
@@ -73,9 +93,23 @@ describe("Acknowledgement and status (AD, AC)", () => {
 
 describe("Priority engine (AJ, AK)", () => {
   it("computes explainable priority from stated factors", () => {
-    const priority = computeAlertPriority({ severity: "CRITICAL", impact: 1, urgency: 1, confidence: 0.9, affectedPopulation: 800, businessImportance: 1 });
+    const priority = computeAlertPriority({
+      severity: "CRITICAL",
+      impact: 1,
+      urgency: 1,
+      confidence: 0.9,
+      affectedPopulation: 800,
+      businessImportance: 1,
+    });
     expect(priority).toBeGreaterThan(0.8);
-    const low = computeAlertPriority({ severity: "INFO", impact: 0.1, urgency: 0.1, confidence: 0.9, affectedPopulation: 5, businessImportance: 0.1 });
+    const low = computeAlertPriority({
+      severity: "INFO",
+      impact: 0.1,
+      urgency: 0.1,
+      confidence: 0.9,
+      affectedPopulation: 5,
+      businessImportance: 0.1,
+    });
     expect(low).toBeLessThan(0.4);
   });
 
@@ -87,28 +121,53 @@ describe("Priority engine (AJ, AK)", () => {
 
 describe("Escalation (AE)", () => {
   it("escalates unacknowledged high-severity alerts past the window", () => {
-    const policy = { afterMinutes: 15, escalateAtSeverity: "HIGH" as const, escalateTo: "security-team" };
+    const policy = {
+      afterMinutes: 15,
+      escalateAtSeverity: "HIGH" as const,
+      escalateTo: "security-team",
+    };
     const result = shouldEscalateAlert(alert({ createdAt: "2025-12-31T23:00:00Z" }), policy, NOW);
     expect(result.escalate).toBe(true);
     expect(result.target).toBe("security-team");
   });
 
   it("does not escalate acknowledged or low-severity alerts", () => {
-    const policy = { afterMinutes: 15, escalateAtSeverity: "HIGH" as const, escalateTo: "security-team" };
-    expect(shouldEscalateAlert(alert({ status: "ACKNOWLEDGED", createdAt: "2025-12-31T23:00:00Z" }), policy, NOW).escalate).toBe(false);
-    expect(shouldEscalateAlert(alert({ severity: "LOW", createdAt: "2025-12-31T23:00:00Z" }), policy, NOW).escalate).toBe(false);
+    const policy = {
+      afterMinutes: 15,
+      escalateAtSeverity: "HIGH" as const,
+      escalateTo: "security-team",
+    };
+    expect(
+      shouldEscalateAlert(
+        alert({ status: "ACKNOWLEDGED", createdAt: "2025-12-31T23:00:00Z" }),
+        policy,
+        NOW,
+      ).escalate,
+    ).toBe(false);
+    expect(
+      shouldEscalateAlert(
+        alert({ severity: "LOW", createdAt: "2025-12-31T23:00:00Z" }),
+        policy,
+        NOW,
+      ).escalate,
+    ).toBe(false);
   });
 });
 
 describe("Correlation and flood control (AF, AG, AH)", () => {
   it("groups related alerts by correlation key (AF)", () => {
-    const grouped = correlateAlerts([alert(), alert({ alertId: "al-2", sourceAlertId: "src-2" })], "incident-7");
+    const grouped = correlateAlerts(
+      [alert(), alert({ alertId: "al-2", sourceAlertId: "src-2" })],
+      "incident-7",
+    );
     expect(grouped.every((a) => a.correlationGroup === "incident-7")).toBe(true);
   });
 
   it("deduplicates source floods (AG, AH)", () => {
     const policy = { deduplicateBySource: true, maxAlertsPerSourceWindow: 3, windowMs: 60_000 };
-    expect(isAlertFlooded({ alert: alert(), policy, recentSourceAlerts: 2 }).suppressed).toBe(false);
+    expect(isAlertFlooded({ alert: alert(), policy, recentSourceAlerts: 2 }).suppressed).toBe(
+      false,
+    );
     expect(isAlertFlooded({ alert: alert(), policy, recentSourceAlerts: 3 }).suppressed).toBe(true);
   });
 });
@@ -116,9 +175,33 @@ describe("Correlation and flood control (AF, AG, AH)", () => {
 describe("Command queue (AI)", () => {
   it("orders the attention queue by priority then age", () => {
     const items: CommandQueueItem[] = [
-      { queueItemId: "q1", tenantId: TENANT_A, kind: "urgent_alert", referenceId: "al-1", priority: 0.9, createdAt: "2026-01-01T00:01:00Z", assignedTo: null },
-      { queueItemId: "q2", tenantId: TENANT_A, kind: "pending_decision", referenceId: "d-1", priority: 0.5, createdAt: "2026-01-01T00:00:00Z", assignedTo: null },
-      { queueItemId: "q3", tenantId: TENANT_A, kind: "escalation", referenceId: "e-1", priority: 0.9, createdAt: "2026-01-01T00:00:00Z", assignedTo: null },
+      {
+        queueItemId: "q1",
+        tenantId: TENANT_A,
+        kind: "urgent_alert",
+        referenceId: "al-1",
+        priority: 0.9,
+        createdAt: "2026-01-01T00:01:00Z",
+        assignedTo: null,
+      },
+      {
+        queueItemId: "q2",
+        tenantId: TENANT_A,
+        kind: "pending_decision",
+        referenceId: "d-1",
+        priority: 0.5,
+        createdAt: "2026-01-01T00:00:00Z",
+        assignedTo: null,
+      },
+      {
+        queueItemId: "q3",
+        tenantId: TENANT_A,
+        kind: "escalation",
+        referenceId: "e-1",
+        priority: 0.9,
+        createdAt: "2026-01-01T00:00:00Z",
+        assignedTo: null,
+      },
     ];
     const ordered = orderAttentionQueue(items);
     expect(ordered[0].queueItemId).toBe("q3");

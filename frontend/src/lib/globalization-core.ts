@@ -107,7 +107,14 @@ export function createLocale(input: {
  * ────────────────────────────────────────────────────────────*/
 
 export const RTL_LANGUAGE_CODES: readonly string[] = [
-  "ar", "he", "fa", "ur", "ps", "sd", "ug", "dv",
+  "ar",
+  "he",
+  "fa",
+  "ur",
+  "ps",
+  "sd",
+  "ug",
+  "dv",
 ] as const;
 
 export function detectScriptDirection(languageCode: string): LocaleDirection {
@@ -152,11 +159,7 @@ export function isUnicodeSafe(content: string): { ok: true } | { ok: false; erro
  * ────────────────────────────────────────────────────────────*/
 
 export type LocalePreferenceSource =
-  | "institutional_policy"
-  | "user_preference"
-  | "device"
-  | "browser"
-  | "platform_default";
+  "institutional_policy" | "user_preference" | "device" | "browser" | "platform_default";
 
 export interface LocalePreferenceInput {
   institutionalPolicy?: LocaleId;
@@ -286,7 +289,10 @@ export function createInstitutionLanguages(input: {
   ].filter((l): l is string => Boolean(l));
   const unknown = referenced.filter((l) => !input.languages.includes(l));
   if (unknown.length > 0) {
-    return { ok: false, error: `Referenced languages not declared: ${unknown.join(", ")} (Section L)` };
+    return {
+      ok: false,
+      error: `Referenced languages not declared: ${unknown.join(", ")} (Section L)`,
+    };
   }
   return { ok: true, config: { ...input } };
 }
@@ -318,10 +324,16 @@ export function createCulturalProfile(input: {
   assumesUniversal?: boolean;
 }): { ok: true; profile: CulturalProfile } | { ok: false; error: string } {
   if (input.assumesUniversal === true) {
-    return { ok: false, error: "Cultural profiles must never assert universal conventions (Section W)" };
+    return {
+      ok: false,
+      error: "Cultural profiles must never assert universal conventions (Section W)",
+    };
   }
   if (!input.region && (input.conventions ?? []).length === 0) {
-    return { ok: false, error: "Cultural profile requires a region or explicit conventions (Section V)" };
+    return {
+      ok: false,
+      error: "Cultural profile requires a region or explicit conventions (Section V)",
+    };
   }
   return {
     ok: true,
@@ -369,7 +381,13 @@ export function createPersonName(input: {
 }): { ok: true; name: PersonName } | { ok: false; error: string } {
   const compoundNames = input.compoundNames ?? [];
   if (input.mononym) {
-    if (input.givenName || input.familyName || input.middleName || input.patronymic || compoundNames.length > 0) {
+    if (
+      input.givenName ||
+      input.familyName ||
+      input.middleName ||
+      input.patronymic ||
+      compoundNames.length > 0
+    ) {
       return { ok: false, error: "A mononym must not carry other name components (Section X)" };
     }
     if (input.displayOrder === "given-first" || input.displayOrder === "family-first") {
@@ -410,7 +428,9 @@ export function formatNameForDisplay(name: PersonName): string {
     case "family-first":
       return [name.familyName, name.middleName, name.givenName].filter(Boolean).join(" ");
     case "custom":
-      return [name.familyName, name.givenName, name.middleName, ...name.compoundNames].filter(Boolean).join(" ");
+      return [name.familyName, name.givenName, name.middleName, ...name.compoundNames]
+        .filter(Boolean)
+        .join(" ");
   }
 }
 
@@ -445,8 +465,14 @@ export function createRegionalAddress(input: {
 }): { ok: true; address: RegionalAddress } | { ok: false; error: string } {
   if (!input.country.trim()) return { ok: false, error: "Address country is required (Section Z)" };
   const fields = [
-    input.street, input.district, input.ward, input.village, input.compound,
-    input.landmark, input.postalCode, input.locality,
+    input.street,
+    input.district,
+    input.ward,
+    input.village,
+    input.compound,
+    input.landmark,
+    input.postalCode,
+    input.locality,
   ];
   if (fields.every((f) => !f || !f.trim())) {
     return { ok: false, error: "Address requires at least one locator field (Section Z)" };
@@ -456,8 +482,14 @@ export function createRegionalAddress(input: {
 
 export function isAddressUsableForDelivery(address: RegionalAddress): boolean {
   const locators = [
-    address.street, address.district, address.ward, address.village,
-    address.compound, address.landmark, address.postalCode, address.locality,
+    address.street,
+    address.district,
+    address.ward,
+    address.village,
+    address.compound,
+    address.landmark,
+    address.postalCode,
+    address.locality,
   ];
   return Boolean(address.country.trim()) && locators.some((f) => f && f.trim());
 }
@@ -514,7 +546,8 @@ export function createEmailLocalizationProfile(input: {
   legalNotices?: string[];
   senderIdentity: string;
 }): { ok: true; profile: EmailLocalizationProfile } | { ok: false; error: string } {
-  if (!input.language.trim()) return { ok: false, error: "Email language is required (Section AC)" };
+  if (!input.language.trim())
+    return { ok: false, error: "Email language is required (Section AC)" };
   if (!input.senderIdentity.trim()) {
     return { ok: false, error: "Regional sender identity is required (Section AC)" };
   }
@@ -555,7 +588,8 @@ export function formatTimeForLocale(
   const hour = Number(m[1]);
   if (hour < 0 || hour > 23) return { ok: false, error: "Hour out of range (Section AE)" };
   const minutes = m[2];
-  if (timeFormat === "24h") return { ok: true, value: `${String(hour).padStart(2, "0")}:${minutes}` };
+  if (timeFormat === "24h")
+    return { ok: true, value: `${String(hour).padStart(2, "0")}:${minutes}` };
   const suffix = hour >= 12 ? "PM" : "AM";
   const hour12 = hour % 12 === 0 ? 12 : hour % 12;
   return { ok: true, value: `${hour12}:${minutes} ${suffix}` };
@@ -611,8 +645,3 @@ export function createAccessibilityLocalization(input: {
     },
   };
 }
-
-
-
-
-

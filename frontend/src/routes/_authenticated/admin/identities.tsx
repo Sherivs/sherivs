@@ -44,7 +44,12 @@ function IdentitiesPage() {
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({ kind: "human", display_name: "" });
 
-  const { data, isLoading, isError, error: queryError } = useQuery({
+  const {
+    data,
+    isLoading,
+    isError,
+    error: queryError,
+  } = useQuery({
     queryKey: ["identities"],
     queryFn: () => list({ data: { limit: 50 } }),
   });

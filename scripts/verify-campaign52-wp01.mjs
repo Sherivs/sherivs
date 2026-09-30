@@ -3,33 +3,21 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
-const gapPath = join(
-  root,
-  "architecture",
-  "COREGRID_PHASE_52_UNRESOLVED_GAP_REGISTER.json",
-);
+const gapPath = join(root, "architecture", "COREGRID_PHASE_52_UNRESOLVED_GAP_REGISTER.json");
 const packetPath = join(
   root,
   "architecture",
   "COREGRID_CAMPAIGN_52_WP_01_OWNERSHIP_DECISION_PACKET.md",
 );
-const outputPath = join(
-  root,
-  "architecture",
-  "COREGRID_CAMPAIGN_52_WP_01_VERIFICATION.json",
-);
+const outputPath = join(root, "architecture", "COREGRID_CAMPAIGN_52_WP_01_VERIFICATION.json");
 
 const gaps = JSON.parse(readFileSync(gapPath, "utf8"));
 const packet = readFileSync(packetPath, "utf8");
-const packetIds = [
-  ...packet.matchAll(/^### (CG-P52-GAP-\d{3}) —/gm),
-].map((match) => match[1]);
+const packetIds = [...packet.matchAll(/^### (CG-P52-GAP-\d{3}) —/gm)].map((match) => match[1]);
 const gapIds = gaps.gaps.map((gap) => gap.id);
 const missingFromPacket = gapIds.filter((id) => !packetIds.includes(id));
 const unexpectedInPacket = packetIds.filter((id) => !gapIds.includes(id));
-const unresolvedDispositionCount = (
-  packet.match(/- Disposition: `UNRESOLVED`/g) ?? []
-).length;
+const unresolvedDispositionCount = (packet.match(/- Disposition: `UNRESOLVED`/g) ?? []).length;
 const authorizedMarkers = [
   "AUTHORIZED_IMPLEMENTATION",
   "REGISTERED_PHASE",
@@ -48,8 +36,7 @@ const result = {
       : "FAIL",
   inputs: {
     gapRegister: "architecture/COREGRID_PHASE_52_UNRESOLVED_GAP_REGISTER.json",
-    decisionPacket:
-      "architecture/COREGRID_CAMPAIGN_52_WP_01_OWNERSHIP_DECISION_PACKET.md",
+    decisionPacket: "architecture/COREGRID_CAMPAIGN_52_WP_01_OWNERSHIP_DECISION_PACKET.md",
   },
   counts: {
     registeredGaps: gapIds.length,

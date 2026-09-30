@@ -78,7 +78,9 @@ function ParentFeesPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("fees")
-        .select("id, fee_type, amount, paid_amount, status, due_date, term, academic_year, student_id")
+        .select(
+          "id, fee_type, amount, paid_amount, status, due_date, term, academic_year, student_id",
+        )
         .eq("student_id", activeChild)
         .order("due_date", { ascending: true, nullsFirst: false });
       return (data ?? []) as Fee[];
@@ -86,7 +88,10 @@ function ParentFeesPage() {
   });
 
   async function payInvoice(fee: Fee) {
-    if (!profile?.email) { toast.error("No email on your profile — ask the school to update it."); return; }
+    if (!profile?.email) {
+      toast.error("No email on your profile — ask the school to update it.");
+      return;
+    }
     setPaying(fee.id);
     try {
       const init1 = await init({ data: { fee_id: fee.id, email: profile.email } });
@@ -104,9 +109,14 @@ function ParentFeesPage() {
                 toast.info("Payment processing — we'll update once Paystack confirms.");
               }
               resolve();
-            } catch (e) { reject(e); }
+            } catch (e) {
+              reject(e);
+            }
           },
-          onCancel: () => { toast.info("Payment cancelled"); resolve(); },
+          onCancel: () => {
+            toast.info("Payment cancelled");
+            resolve();
+          },
           onError: (err) => reject(new Error(err.message ?? "Payment error")),
         });
       });
@@ -125,13 +135,19 @@ function ParentFeesPage() {
   if ((children.data ?? []).length === 0 && !children.isLoading) {
     return (
       <PortalPage title="Fees">
-        <EmptyCard title="No children linked yet" body="Ask your school admin to link your children to your account." />
+        <EmptyCard
+          title="No children linked yet"
+          body="Ask your school admin to link your children to your account."
+        />
       </PortalPage>
     );
   }
 
   return (
-    <PortalPage title="Fees" subtitle="Pay invoices for your children securely. Receipts arrive in your inbox.">
+    <PortalPage
+      title="Fees"
+      subtitle="Pay invoices for your children securely. Receipts arrive in your inbox."
+    >
       {(children.data ?? []).length > 1 && (
         <div className="flex flex-wrap gap-2">
           {(children.data ?? []).map((c) => (
@@ -141,7 +157,9 @@ function ParentFeesPage() {
               onClick={() => setSelectedChild(c.student_id)}
               className={[
                 "rounded-md border px-3 py-1.5 text-xs",
-                c.student_id === activeChild ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-muted/40",
+                c.student_id === activeChild
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border text-muted-foreground hover:bg-muted/40",
               ].join(" ")}
             >
               {c.full_name}
@@ -161,7 +179,9 @@ function ParentFeesPage() {
         {fees.isLoading ? (
           <p className="p-8 text-center text-sm text-muted-foreground">Loading invoices…</p>
         ) : rows.length === 0 ? (
-          <p className="p-8 text-center text-sm text-muted-foreground">No invoices for this child yet.</p>
+          <p className="p-8 text-center text-sm text-muted-foreground">
+            No invoices for this child yet.
+          </p>
         ) : (
           <ul className="divide-y divide-border">
             {rows.map((f) => {
@@ -172,19 +192,30 @@ function ParentFeesPage() {
                   <div className="min-w-0">
                     <p className="font-semibold">{f.fee_type}</p>
                     <p className="text-xs text-muted-foreground">
-                      {[f.term, f.academic_year, f.due_date ? `due ${f.due_date}` : null].filter(Boolean).join(" · ")}
+                      {[f.term, f.academic_year, f.due_date ? `due ${f.due_date}` : null]
+                        .filter(Boolean)
+                        .join(" · ")}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-right">
                       <p className="font-mono text-sm">₦{Number(f.amount).toLocaleString()}</p>
-                      <span className={"mt-1 inline-block rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wide " + badge(f.status)}>
+                      <span
+                        className={
+                          "mt-1 inline-block rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wide " +
+                          badge(f.status)
+                        }
+                      >
                         {f.status ?? "unpaid"}
                       </span>
                     </div>
                     {canPay && (
                       <Button size="sm" onClick={() => payInvoice(f)} disabled={paying === f.id}>
-                        {paying === f.id ? <Loader2 className="size-4 animate-spin" /> : <CreditCard className="size-4" />}
+                        {paying === f.id ? (
+                          <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                          <CreditCard className="size-4" />
+                        )}
                         Pay ₦{due.toLocaleString()}
                       </Button>
                     )}

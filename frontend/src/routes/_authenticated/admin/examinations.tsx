@@ -29,7 +29,12 @@ function AdminExaminationsPage() {
     { label: "Scheduled Exams", value: "0", icon: Calendar, color: "from-blue-500 to-blue-600" },
     { label: "Exam Centers", value: "0", icon: MapPin, color: "from-purple-500 to-purple-600" },
     { label: "Invigilators", value: "0", icon: Users, color: "from-green-500 to-green-600" },
-    { label: "Completion Rate", value: "0%", icon: CheckCircle2, color: "from-emerald-500 to-emerald-600" },
+    {
+      label: "Completion Rate",
+      value: "0%",
+      icon: CheckCircle2,
+      color: "from-emerald-500 to-emerald-600",
+    },
   ];
 
   const exams = [
@@ -49,7 +54,9 @@ function AdminExaminationsPage() {
       actions={
         <>
           <Button disabled>Create Exam</Button>
-          <Button variant="outline" disabled>Export Schedule</Button>
+          <Button variant="outline" disabled>
+            Export Schedule
+          </Button>
         </>
       }
     >
@@ -238,9 +245,13 @@ function AdminExaminationsPage() {
                   <div className="flex items-start gap-4">
                     <AlertCircle className="h-5 w-5 text-blue-600 mt-1 flex-shrink-0" />
                     <div>
-                      <p className="font-medium text-sm text-blue-900">Automatic Seating Generation</p>
+                      <p className="font-medium text-sm text-blue-900">
+                        Automatic Seating Generation
+                      </p>
                       <p className="text-sm text-blue-700 mt-1">
-                        Generate optimal seating arrangements based on exam center capacity, student enrollment, and invigilation requirements. Our AI ensures fair distribution and accessibility.
+                        Generate optimal seating arrangements based on exam center capacity, student
+                        enrollment, and invigilation requirements. Our AI ensures fair distribution
+                        and accessibility.
                       </p>
                     </div>
                   </div>
@@ -301,9 +312,7 @@ function AdminExaminationsPage() {
                 </h3>
                 <div className="space-y-3 text-sm">
                   <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="font-medium text-yellow-900">
-                      ⚠ No exams scheduled
-                    </p>
+                    <p className="font-medium text-yellow-900">⚠ No exams scheduled</p>
                   </div>
                   <div className="p-3 border border-border rounded-lg">
                     <p className="text-muted-foreground">

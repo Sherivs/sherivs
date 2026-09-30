@@ -11,7 +11,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -137,7 +143,9 @@ function SupportPage() {
           <TabsContent key={tab} value={tab} className="mt-4">
             <TicketList
               loading={q.isLoading}
-              tickets={tab === "all" ? tickets : tickets.filter((t) => (t.status ?? "open") === tab)}
+              tickets={
+                tab === "all" ? tickets : tickets.filter((t) => (t.status ?? "open") === tab)
+              }
               emptyMsg={
                 tab === "all"
                   ? "Open a ticket to report a bug, request a feature, or raise a billing question."
@@ -354,8 +362,8 @@ function NewTicketSheet({
               <div className="mt-2 flex gap-2 rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">
                 <AlertTriangle className="size-4 shrink-0 mt-0.5" />
                 <p>
-                  Critical priority is reserved for issues that completely prevent school operations.
-                  Our team will respond within 2 hours.
+                  Critical priority is reserved for issues that completely prevent school
+                  operations. Our team will respond within 2 hours.
                 </p>
               </div>
             )}

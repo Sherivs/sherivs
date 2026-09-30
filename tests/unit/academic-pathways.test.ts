@@ -107,8 +107,18 @@ describe("resolvePrerequisites (AD)", () => {
 
   it("satisfies an alternative (OR-group) prerequisite when any member is met", () => {
     const edges = [
-      edge({ id: "e1", prerequisiteId: "comp-geometry", dependentId: "comp-trig", alternativeGroupId: "alt-1" }),
-      edge({ id: "e2", prerequisiteId: "comp-prealgebra", dependentId: "comp-trig", alternativeGroupId: "alt-1" }),
+      edge({
+        id: "e1",
+        prerequisiteId: "comp-geometry",
+        dependentId: "comp-trig",
+        alternativeGroupId: "alt-1",
+      }),
+      edge({
+        id: "e2",
+        prerequisiteId: "comp-prealgebra",
+        dependentId: "comp-trig",
+        alternativeGroupId: "alt-1",
+      }),
     ];
     const result = resolvePrerequisites({
       competencyId: "comp-trig",
@@ -123,8 +133,18 @@ describe("resolvePrerequisites (AD)", () => {
 
   it("reports a missing alternative group when no member is met", () => {
     const edges = [
-      edge({ id: "e1", prerequisiteId: "comp-geometry", dependentId: "comp-trig", alternativeGroupId: "alt-1" }),
-      edge({ id: "e2", prerequisiteId: "comp-prealgebra", dependentId: "comp-trig", alternativeGroupId: "alt-1" }),
+      edge({
+        id: "e1",
+        prerequisiteId: "comp-geometry",
+        dependentId: "comp-trig",
+        alternativeGroupId: "alt-1",
+      }),
+      edge({
+        id: "e2",
+        prerequisiteId: "comp-prealgebra",
+        dependentId: "comp-trig",
+        alternativeGroupId: "alt-1",
+      }),
     ];
     const result = resolvePrerequisites({
       competencyId: "comp-trig",

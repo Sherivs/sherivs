@@ -14,10 +14,7 @@ import {
   scholarChromeKindForWorkforceKindCode,
   scholarWorkspaceLabelForMember,
 } from "../../frontend/src/lib/runtime/scholar-workforce-nav";
-import {
-  scholarCapabilitiesForKind,
-  scholarCapabilitiesForRole,
-} from "@/lib/runtime/nav-registry";
+import { scholarCapabilitiesForKind, scholarCapabilitiesForRole } from "@/lib/runtime/nav-registry";
 import type { AppRole } from "../../frontend/src/lib/roles";
 
 describe("authority group → chrome kind mapping (R-001 data)", () => {
@@ -95,9 +92,7 @@ describe("shrink-only capability resolution (no escalation, no lockout)", () => 
     expect(scholarCapabilitiesForPrimaryPosition("laboratory_technician", teacherCaps)).toBe(
       teacherCaps,
     );
-    expect(scholarCapabilitiesForPrimaryPosition("records_officer", teacherCaps)).toBe(
-      teacherCaps,
-    );
+    expect(scholarCapabilitiesForPrimaryPosition("records_officer", teacherCaps)).toBe(teacherCaps);
   });
 
   it("is unchanged when membership already matches the position chrome", () => {

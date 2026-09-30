@@ -41,9 +41,16 @@ import type { TenantId } from "./tenant-core";
  * Scenario engine (BB, BC, BD)
  * ────────────────────────────────────────────────────────────*/
 
-export type ScenarioType = "deterministic" | "probabilistic" | "stress" | "sensitivity" | "monte_carlo";
+export type ScenarioType =
+  "deterministic" | "probabilistic" | "stress" | "sensitivity" | "monte_carlo";
 
-export const SCENARIO_TYPES: readonly ScenarioType[] = ["deterministic", "probabilistic", "stress", "sensitivity", "monte_carlo"] as const;
+export const SCENARIO_TYPES: readonly ScenarioType[] = [
+  "deterministic",
+  "probabilistic",
+  "stress",
+  "sensitivity",
+  "monte_carlo",
+] as const;
 
 export interface Scenario {
   scenarioId: string;
@@ -119,16 +126,29 @@ export interface DecisionOption {
  * Constraint evaluation (BK): every constraint must be satisfied before
  * an option is feasible. Unknown feasibility fails safe.
  */
-export function areConstraintsSatisfied(constraints: DecisionConstraint[]): { ok: boolean; reason: string } {
+export function areConstraintsSatisfied(constraints: DecisionConstraint[]): {
+  ok: boolean;
+  reason: string;
+} {
   const violated = constraints.find((c) => c.currentValue > c.limit);
   if (violated !== undefined) {
-    return { ok: false, reason: `Constraint "${violated.name}" exceeded: ${violated.currentValue} > ${violated.limit} (BK)` };
+    return {
+      ok: false,
+      reason: `Constraint "${violated.name}" exceeded: ${violated.currentValue} > ${violated.limit} (BK)`,
+    };
   }
   return { ok: true, reason: "All constraints satisfied (BK)" };
 }
 
-export function isOptionFeasible(option: DecisionOption, constraints: DecisionConstraint[]): boolean {
-  return option.policyCompliant && option.feasibility !== "unknown" && areConstraintsSatisfied(constraints).ok;
+export function isOptionFeasible(
+  option: DecisionOption,
+  constraints: DecisionConstraint[],
+): boolean {
+  return (
+    option.policyCompliant &&
+    option.feasibility !== "unknown" &&
+    areConstraintsSatisfied(constraints).ok
+  );
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -151,7 +171,10 @@ export function guardOptimizationResult(
   policyViolations: string[],
 ): { ok: true; result: OptimizationResult } | { ok: false; error: string } {
   if (policyViolations.length > 0) {
-    return { ok: false, error: `Optimization violates policy: ${policyViolations.join("; ")} (BM)` };
+    return {
+      ok: false,
+      error: `Optimization violates policy: ${policyViolations.join("; ")} (BM)`,
+    };
   }
   return { ok: true, result: { selectedOptionId, objectiveValues, policyViolations: [] } };
 }
@@ -190,7 +213,8 @@ export interface CreateRecommendationInput {
   modelVersion: string | null;
 }
 
-export type CreateRecommendationResult = { ok: true; rec: Recommendation } | { ok: false; error: string };
+export type CreateRecommendationResult =
+  { ok: true; rec: Recommendation } | { ok: false; error: string };
 
 /**
  * Recommendation contract (BN-BS): recommendations must contain evidence,
@@ -224,9 +248,17 @@ export function isEvidenceSufficient(evidenceQuality: EvidenceQuality): boolean 
 
 export type DecisionReversibility = "reversible" | "partially_reversible" | "irreversible";
 
-export type DecisionRiskCategory = "operational" | "financial" | "academic" | "legal" | "security" | "reputational";
+export type DecisionRiskCategory =
+  "operational" | "financial" | "academic" | "legal" | "security" | "reputational";
 
-export const DECISION_RISK_CATEGORIES: readonly DecisionRiskCategory[] = ["operational", "financial", "academic", "legal", "security", "reputational"] as const;
+export const DECISION_RISK_CATEGORIES: readonly DecisionRiskCategory[] = [
+  "operational",
+  "financial",
+  "academic",
+  "legal",
+  "security",
+  "reputational",
+] as const;
 
 export interface DecisionRecord {
   decisionId: string;
@@ -258,7 +290,8 @@ export interface CreateDecisionInput {
   risks: DecisionRiskCategory[];
 }
 
-export type CreateDecisionResult = { ok: true; decision: DecisionRecord } | { ok: false; error: string };
+export type CreateDecisionResult =
+  { ok: true; decision: DecisionRecord } | { ok: false; error: string };
 
 /**
  * Decision audit (BT): store decision ID, actor, time, evidence, options,
@@ -295,8 +328,17 @@ export function recordDecisionOutcome(input: {
   actualResult: number | null;
   lessons: string[];
 }): OutcomeAttribution {
-  const variance = input.expectedResult === null || input.actualResult === null ? null : Number((input.actualResult - input.expectedResult).toFixed(4));
-  return { decisionId: input.decisionId, expectedResult: input.expectedResult, actualResult: input.actualResult, variance, lessons: input.lessons };
+  const variance =
+    input.expectedResult === null || input.actualResult === null
+      ? null
+      : Number((input.actualResult - input.expectedResult).toFixed(4));
+  return {
+    decisionId: input.decisionId,
+    expectedResult: input.expectedResult,
+    actualResult: input.actualResult,
+    variance,
+    lessons: input.lessons,
+  };
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -312,10 +354,17 @@ export interface UncertaintyRepresentation {
 }
 
 export function isUncertaintyCoherent(uncertainty: UncertaintyRepresentation): boolean {
-  if (uncertainty.lowerBound !== null && uncertainty.upperBound !== null && uncertainty.lowerBound > uncertainty.upperBound) {
+  if (
+    uncertainty.lowerBound !== null &&
+    uncertainty.upperBound !== null &&
+    uncertainty.lowerBound > uncertainty.upperBound
+  ) {
     return false;
   }
-  if (uncertainty.confidenceLevel !== null && (uncertainty.confidenceLevel < 0 || uncertainty.confidenceLevel > 1)) {
+  if (
+    uncertainty.confidenceLevel !== null &&
+    (uncertainty.confidenceLevel < 0 || uncertainty.confidenceLevel > 1)
+  ) {
     return false;
   }
   return true;

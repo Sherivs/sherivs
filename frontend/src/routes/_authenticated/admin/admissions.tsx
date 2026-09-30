@@ -8,7 +8,14 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
-import { PortalPage, SectionGrid, StatCard, PortalPagination, usePagination, GlassCard } from "@/components/portal-shell";
+import {
+  PortalPage,
+  SectionGrid,
+  StatCard,
+  PortalPagination,
+  usePagination,
+  GlassCard,
+} from "@/components/portal-shell";
 import {
   Sheet,
   SheetContent,
@@ -142,7 +149,12 @@ function AdmissionsAdmin() {
       .channel(`adm-apps-${sid}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "admission_applications", filter: `school_id=eq.${sid}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "admission_applications",
+          filter: `school_id=eq.${sid}`,
+        },
         () => {
           qc.invalidateQueries({ queryKey: ["adm-apps", sid] });
         },
@@ -168,7 +180,8 @@ function AdmissionsAdmin() {
       if (filter !== "all" && a.status !== filter) return false;
       if (classFilter !== "all" && a.applying_for_class !== classFilter) return false;
       if (s) {
-        const hay = `${a.student_first_name} ${a.student_last_name} ${a.parent_one_name} ${a.application_number}`.toLowerCase();
+        const hay =
+          `${a.student_first_name} ${a.student_last_name} ${a.parent_one_name} ${a.application_number}`.toLowerCase();
         if (!hay.includes(s)) return false;
       }
       const t = new Date(a.submitted_at).getTime();
@@ -310,9 +323,7 @@ function AdmissionsAdmin() {
       <div className="mt-10">
         <div className="mb-3 flex items-baseline justify-between">
           <h2 className="text-lg font-semibold">Admissions pipeline</h2>
-          <span className="text-xs text-muted-foreground">
-            Use the "Move to…" menu on any card
-          </span>
+          <span className="text-xs text-muted-foreground">Use the "Move to…" menu on any card</span>
         </div>
         <div className="-mx-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
           <div className="flex min-w-max gap-3 sm:grid sm:min-w-0 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
@@ -347,8 +358,7 @@ function AdmissionsAdmin() {
                           {a.student_first_name} {a.student_last_name}
                         </button>
                         <div className="mt-0.5 text-[11px] text-muted-foreground">
-                          {a.applying_for_class} ·{" "}
-                          {new Date(a.submitted_at).toLocaleDateString()}
+                          {a.applying_for_class} · {new Date(a.submitted_at).toLocaleDateString()}
                         </div>
                         <div className="mt-1 truncate text-[11px] text-muted-foreground">
                           {a.parent_one_name} · {a.parent_one_phone}
@@ -500,7 +510,6 @@ function AdmissionsAdmin() {
         <PortalPagination page={page} pageCount={pageCount} />
       </div>
 
-
       {/* Analytics + forecast */}
       <div className="mt-10 grid gap-4 lg:grid-cols-3">
         <GlassCard className="lg:col-span-2">
@@ -587,9 +596,7 @@ function AdmissionsAdmin() {
           </h3>
           <div className="mt-4 space-y-3 text-sm">
             <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-3">
-              <div className="text-xs text-muted-foreground">
-                If all shortlisted are admitted
-              </div>
+              <div className="text-xs text-muted-foreground">If all shortlisted are admitted</div>
               <div className="mt-1 text-2xl font-semibold text-emerald-300">
                 +{counts.shortlisted + counts.accepted} new students
               </div>
@@ -666,9 +673,10 @@ function DetailSheet({
         .from("admission_applications")
         .update({
           status,
-          interview_date: status === "interview_scheduled" && interviewDate
-            ? new Date(interviewDate).toISOString()
-            : null,
+          interview_date:
+            status === "interview_scheduled" && interviewDate
+              ? new Date(interviewDate).toISOString()
+              : null,
           decision_notes: notes || null,
         })
         .eq("id", app.id);

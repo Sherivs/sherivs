@@ -193,7 +193,9 @@ describe("AUDIT-1 — the phase completion gate is executable", () => {
     expect(applied.length).toBe(source.exemptions.length);
     for (const row of proof.phases) {
       for (const level of row.exemptedLevels ?? []) {
-        expect(row.evidence[level], `${row.id}/${level} has evidence — delete the exemption`).toBe(false);
+        expect(row.evidence[level], `${row.id}/${level} has evidence — delete the exemption`).toBe(
+          false,
+        );
       }
       // A COMPLETE phase needs every level evidenced or explicitly exempted, and
       // must still evidence at least three levels of its own.

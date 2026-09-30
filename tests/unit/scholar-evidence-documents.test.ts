@@ -53,7 +53,13 @@ describe("documents (§98–99)", () => {
 describe("evidence (§100–101)", () => {
   it("validates evidence items and groups per learner", () => {
     const items: EvidenceItem[] = [
-      { id: "ev-1", studentId: "l-1", kind: "assignment", capturedAt: "2026-09-02T10:00:00.000Z", subjectCode: "MATH" },
+      {
+        id: "ev-1",
+        studentId: "l-1",
+        kind: "assignment",
+        capturedAt: "2026-09-02T10:00:00.000Z",
+        subjectCode: "MATH",
+      },
       { id: "ev-2", studentId: "l-1", kind: "practical", capturedAt: "2026-09-03T10:00:00.000Z" },
       { id: "ev-3", studentId: "l-2", kind: "exam", capturedAt: "2026-09-03T10:00:00.000Z" },
     ];

@@ -28,7 +28,12 @@ function AdminVisitorsPage() {
     { label: "Today's Visitors", value: "0", icon: Users, color: "from-blue-500 to-blue-600" },
     { label: "Checked In", value: "0", icon: LogIn, color: "from-green-500 to-green-600" },
     { label: "Active Passes", value: "0", icon: Lock, color: "from-purple-500 to-purple-600" },
-    { label: "Security Status", value: "Secure", icon: Shield, color: "from-emerald-500 to-emerald-600" },
+    {
+      label: "Security Status",
+      value: "Secure",
+      icon: Shield,
+      color: "from-emerald-500 to-emerald-600",
+    },
   ];
 
   return (
@@ -38,7 +43,9 @@ function AdminVisitorsPage() {
       actions={
         <>
           <Button disabled>Check In Visitor</Button>
-          <Button variant="outline" disabled>Issue Pass</Button>
+          <Button variant="outline" disabled>
+            Issue Pass
+          </Button>
         </>
       }
     >
@@ -177,7 +184,9 @@ function AdminVisitorsPage() {
               <div className="space-y-2">
                 <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                   <p className="text-sm font-medium text-blue-900">Digital Pass System</p>
-                  <p className="text-xs text-blue-700 mt-1">Generate and manage temporary visitor passes with QR codes and automatic expiry</p>
+                  <p className="text-xs text-blue-700 mt-1">
+                    Generate and manage temporary visitor passes with QR codes and automatic expiry
+                  </p>
                 </div>
               </div>
             </div>

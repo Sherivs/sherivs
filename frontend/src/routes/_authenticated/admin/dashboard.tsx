@@ -8,16 +8,47 @@ import { PortalPage, StatCard, EmptyState } from "@/components/portal-shell";
 import { PreviewPublicSiteCard } from "@/components/preview-public-site";
 import { SchoolEconomyScore } from "@/components/school-economy-score";
 import { useSchoolEconomyScore } from "@/hooks/use-school-economy-score";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  UserPlus, CreditCard, CheckSquare, Brain, Megaphone, Calendar, Globe, Activity,
-  AlertTriangle, Clock, TrendingDown, Bus, Users, Wallet, GraduationCap,
-  UserCheck, FileBarChart, Newspaper, Sparkles, DollarSign, LifeBuoy,
+  UserPlus,
+  CreditCard,
+  CheckSquare,
+  Brain,
+  Megaphone,
+  Calendar,
+  Globe,
+  Activity,
+  AlertTriangle,
+  Clock,
+  TrendingDown,
+  Bus,
+  Users,
+  Wallet,
+  GraduationCap,
+  UserCheck,
+  FileBarChart,
+  Newspaper,
+  Sparkles,
+  DollarSign,
+  LifeBuoy,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/dashboard")({
@@ -65,17 +96,25 @@ function useCountUp(target: number, durationMs = 900) {
       if (p < 1) raf.current = requestAnimationFrame(tick);
     };
     raf.current = requestAnimationFrame(tick);
-    return () => { if (raf.current) cancelAnimationFrame(raf.current); };
+    return () => {
+      if (raf.current) cancelAnimationFrame(raf.current);
+    };
   }, [target, durationMs]);
   return v;
 }
 
 function PanelShell({
-  title, subtitle, icon: Icon, action, children,
+  title,
+  subtitle,
+  icon: Icon,
+  action,
+  children,
 }: {
-  title: string; subtitle?: string;
+  title: string;
+  subtitle?: string;
   icon: React.ComponentType<{ className?: string }>;
-  action?: React.ReactNode; children: React.ReactNode;
+  action?: React.ReactNode;
+  children: React.ReactNode;
 }) {
   return (
     <div className="uos-card flex flex-col p-5">
@@ -101,7 +140,9 @@ function PanelError({ onRetry }: { onRetry: () => void }) {
     <div className="flex flex-col items-center gap-2 py-6 text-center">
       <AlertTriangle className="h-5 w-5 text-amber-400" />
       <p className="text-xs text-muted-foreground">Could not load this panel.</p>
-      <Button size="sm" variant="outline" onClick={onRetry}>Retry</Button>
+      <Button size="sm" variant="outline" onClick={onRetry}>
+        Retry
+      </Button>
     </div>
   );
 }
@@ -109,7 +150,9 @@ function PanelError({ onRetry }: { onRetry: () => void }) {
 function Bars({ n = 3 }: { n?: number }) {
   return (
     <div className="space-y-2">
-      {Array.from({ length: n }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
+      {Array.from({ length: n }).map((_, i) => (
+        <Skeleton key={i} className="h-8 w-full" />
+      ))}
     </div>
   );
 }
@@ -135,9 +178,22 @@ export default function AdminDashboard() {
     queryFn: async () => {
       const sid = schoolId!;
       const [students, teachers, tickets] = await Promise.all([
-        supabase.from("students").select("id", { count: "exact", head: true }).eq("school_id", sid).eq("is_active", true),
-        supabase.from("users").select("id", { count: "exact", head: true }).eq("school_id", sid).eq("role", "teacher").eq("is_active", true),
-        supabase.from("platform_complaints").select("id", { count: "exact", head: true }).eq("school_id", sid).in("status", ["open", "in_progress", "pending"]),
+        supabase
+          .from("students")
+          .select("id", { count: "exact", head: true })
+          .eq("school_id", sid)
+          .eq("is_active", true),
+        supabase
+          .from("users")
+          .select("id", { count: "exact", head: true })
+          .eq("school_id", sid)
+          .eq("role", "teacher")
+          .eq("is_active", true),
+        supabase
+          .from("platform_complaints")
+          .select("id", { count: "exact", head: true })
+          .eq("school_id", sid)
+          .in("status", ["open", "in_progress", "pending"]),
       ]);
       return {
         students: students.count ?? 0,
@@ -159,21 +215,27 @@ export default function AdminDashboard() {
         .eq("school_id", schoolId!);
       if (error) throw error;
       const rows = data ?? [];
-      let billed = 0, collected = 0, overdueCount = 0, overdueAmount = 0;
+      let billed = 0,
+        collected = 0,
+        overdueCount = 0,
+        overdueAmount = 0;
       const cutoff = daysAgo(14);
       rows.forEach((f) => {
         const a = Number(f.amount ?? 0);
         const p = Number(f.paid_amount ?? 0);
-        billed += a; collected += p;
+        billed += a;
+        collected += p;
         if (f.status !== "paid" && f.due_date && new Date(f.due_date) < cutoff) {
-          overdueCount += 1; overdueAmount += Math.max(0, a - p);
+          overdueCount += 1;
+          overdueAmount += Math.max(0, a - p);
         }
       });
       const paid = rows.filter((f) => f.paid_at);
       const todayPaid = paid.filter((f) => isoDate(new Date(f.paid_at!)) === today);
       const weekStart = daysAgo(7).getTime();
       const prevStart = daysAgo(14).getTime();
-      let thisWeek = 0, lastWeek = 0;
+      let thisWeek = 0,
+        lastWeek = 0;
       paid.forEach((f) => {
         const t = new Date(f.paid_at!).getTime();
         const amt = Number(f.paid_amount ?? 0);
@@ -181,13 +243,21 @@ export default function AdminDashboard() {
         else if (t >= prevStart) lastWeek += amt;
       });
       const dayKeys = new Set(paid.map((f) => isoDate(new Date(f.paid_at!))));
-      const dailyAverage = dayKeys.size ? paid.reduce((s, f) => s + Number(f.paid_amount ?? 0), 0) / dayKeys.size : 0;
+      const dailyAverage = dayKeys.size
+        ? paid.reduce((s, f) => s + Number(f.paid_amount ?? 0), 0) / dayKeys.size
+        : 0;
       return {
         rate: billed > 0 ? Math.round((collected / billed) * 100) : 0,
-        overdueCount, overdueAmount, thisWeek, lastWeek, dailyAverage,
+        overdueCount,
+        overdueAmount,
+        thisWeek,
+        lastWeek,
+        dailyAverage,
         todayTotal: todayPaid.reduce((s, f) => s + Number(f.paid_amount ?? 0), 0),
         todayCount: todayPaid.length,
-        recent: [...todayPaid].sort((a, b) => new Date(b.paid_at!).getTime() - new Date(a.paid_at!).getTime()).slice(0, 3),
+        recent: [...todayPaid]
+          .sort((a, b) => new Date(b.paid_at!).getTime() - new Date(a.paid_at!).getTime())
+          .slice(0, 3),
       };
     },
   });
@@ -226,11 +296,15 @@ export default function AdminDashboard() {
       const rows = data ?? [];
       const perStudent: Record<string, { p: number; t: number }> = {};
       const perClass: Record<string, { p: number; t: number }> = {};
-      let present = 0, absent = 0, late = 0, totalToday = 0;
+      let present = 0,
+        absent = 0,
+        late = 0,
+        totalToday = 0;
       rows.forEach((r) => {
         const ok = r.status === "present" || r.status === "late";
         const s = perStudent[r.student_id] ?? { p: 0, t: 0 };
-        s.t += 1; if (ok) s.p += 1;
+        s.t += 1;
+        if (ok) s.p += 1;
         perStudent[r.student_id] = s;
         if (String(r.date).slice(0, 10) === today) {
           totalToday += 1;
@@ -239,7 +313,8 @@ export default function AdminDashboard() {
           else absent += 1;
           if (r.class_id) {
             const c = perClass[r.class_id] ?? { p: 0, t: 0 };
-            c.t += 1; if (ok) c.p += 1;
+            c.t += 1;
+            if (ok) c.p += 1;
             perClass[r.class_id] = c;
           }
         }
@@ -290,7 +365,9 @@ export default function AdminDashboard() {
       if (error) throw error;
       const rows = (data ?? []).filter((r) => r.type === "sign_in");
       const seen = new Set<string>();
-      const unique = rows.filter((r) => (seen.has(r.teacher_id) ? false : (seen.add(r.teacher_id), true)));
+      const unique = rows.filter((r) =>
+        seen.has(r.teacher_id) ? false : (seen.add(r.teacher_id), true),
+      );
       return { signedIn: seen.size, last: unique.slice(0, 5) };
     },
   });
@@ -304,7 +381,10 @@ export default function AdminDashboard() {
     enabled: presenceIds.length > 0,
     queryFn: async () => {
       const { data } = await supabase.from("users").select("id, full_name").in("id", presenceIds);
-      return Object.fromEntries((data ?? []).map((u) => [u.id, u.full_name])) as Record<string, string>;
+      return Object.fromEntries((data ?? []).map((u) => [u.id, u.full_name])) as Record<
+        string,
+        string
+      >;
     },
   });
 
@@ -342,14 +422,22 @@ export default function AdminDashboard() {
       const rows = data ?? [];
       const active = rows.filter((b) => b.is_active);
       const stale = active.filter(
-        (b) => !b.last_location_update || Date.now() - new Date(b.last_location_update).getTime() > 2 * 3600_000,
+        (b) =>
+          !b.last_location_update ||
+          Date.now() - new Date(b.last_location_update).getTime() > 2 * 3600_000,
       );
       const lastPing = active
         .map((b) => b.last_location_update)
         .filter(Boolean)
         .sort()
         .pop() as string | undefined;
-      return { total: rows.length, active: active.length, stale, lastPing, rows: active.slice(0, 3) };
+      return {
+        total: rows.length,
+        active: active.length,
+        stale,
+        lastPing,
+        rows: active.slice(0, 3),
+      };
     },
   });
 
@@ -376,11 +464,20 @@ export default function AdminDashboard() {
       .channel(`exec-presence-${schoolId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "attendance_logs", filter: `school_id=eq.${schoolId}` },
-        () => { qc.invalidateQueries({ queryKey: ["exec-presence", schoolId, today] }); },
+        {
+          event: "*",
+          schema: "public",
+          table: "attendance_logs",
+          filter: `school_id=eq.${schoolId}`,
+        },
+        () => {
+          qc.invalidateQueries({ queryKey: ["exec-presence", schoolId, today] });
+        },
       )
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => {
+      supabase.removeChannel(ch);
+    };
   }, [schoolId, today, qc]);
 
   useEffect(() => {
@@ -389,38 +486,68 @@ export default function AdminDashboard() {
       .channel(`exec-audit-${schoolId}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "audit_logs", filter: `school_id=eq.${schoolId}` },
-        () => { qc.invalidateQueries({ queryKey: ["exec-activity", schoolId] }); },
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "audit_logs",
+          filter: `school_id=eq.${schoolId}`,
+        },
+        () => {
+          qc.invalidateQueries({ queryKey: ["exec-activity", schoolId] });
+        },
       )
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => {
+      supabase.removeChannel(ch);
+    };
   }, [schoolId, qc]);
 
   /* ------------------------------- insights -------------------------------- */
   const insights = useMemo(() => {
     const list: { tone: "good" | "warn"; text: string }[] = [];
     const atRisk = attendance.data?.atRisk ?? 0;
-    list.push(atRisk > 0
-      ? { tone: "warn", text: `⚠️ ${atRisk} students have attendance below 70% this week — review recommended` }
-      : { tone: "good", text: "✅ All students have healthy attendance this week" });
+    list.push(
+      atRisk > 0
+        ? {
+            tone: "warn",
+            text: `⚠️ ${atRisk} students have attendance below 70% this week — review recommended`,
+          }
+        : { tone: "good", text: "✅ All students have healthy attendance this week" },
+    );
 
     const tw = fees.data?.thisWeek ?? 0;
     const lw = fees.data?.lastWeek ?? 0;
     if (lw === 0 && tw === 0) {
-      list.push({ tone: "warn", text: "📉 No fee payments recorded in the last two weeks — consider follow-up" });
+      list.push({
+        tone: "warn",
+        text: "📉 No fee payments recorded in the last two weeks — consider follow-up",
+      });
     } else if (lw === 0) {
-      list.push({ tone: "good", text: `📈 ${naira(tw)} collected this week after a quiet week — strong payment momentum` });
+      list.push({
+        tone: "good",
+        text: `📈 ${naira(tw)} collected this week after a quiet week — strong payment momentum`,
+      });
     } else {
       const delta = Math.round(((tw - lw) / lw) * 100);
-      list.push(delta >= 0
-        ? { tone: "good", text: `📈 Fee collection up ${delta}% this week — strong payment momentum` }
-        : { tone: "warn", text: `📉 Fee collection slowed ${Math.abs(delta)}% vs last week — consider follow-up` });
+      list.push(
+        delta >= 0
+          ? {
+              tone: "good",
+              text: `📈 Fee collection up ${delta}% this week — strong payment momentum`,
+            }
+          : {
+              tone: "warn",
+              text: `📉 Fee collection slowed ${Math.abs(delta)}% vs last week — consider follow-up`,
+            },
+      );
     }
 
     const absent = staffAbsence.data?.count ?? 0;
-    list.push(absent > 0
-      ? { tone: "warn", text: `🔔 ${absent} staff members absent without recorded leave today` }
-      : { tone: "good", text: "✅ Full teaching staff present today" });
+    list.push(
+      absent > 0
+        ? { tone: "warn", text: `🔔 ${absent} staff members absent without recorded leave today` }
+        : { tone: "good", text: "✅ Full teaching staff present today" },
+    );
     return list;
   }, [attendance.data, fees.data, staffAbsence.data]);
 
@@ -444,7 +571,9 @@ export default function AdminDashboard() {
     },
     onSuccess: () => {
       toast.success("Announcement published");
-      setAnnTitle(""); setAnnBody(""); setAnnounceOpen(false);
+      setAnnTitle("");
+      setAnnBody("");
+      setAnnounceOpen(false);
       qc.invalidateQueries({ queryKey: ["exec-activity", schoolId] });
     },
     onError: (e: Error) => toast.error(e.message || "Could not publish announcement"),
@@ -452,9 +581,13 @@ export default function AdminDashboard() {
 
   const now = new Date();
   const dateLabel = now.toLocaleDateString(undefined, {
-    weekday: "long", day: "numeric", month: "long", year: "numeric",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
   });
-  const greeting = now.getHours() < 12 ? "Good morning" : now.getHours() < 17 ? "Good afternoon" : "Good evening";
+  const greeting =
+    now.getHours() < 12 ? "Good morning" : now.getHours() < 17 ? "Good afternoon" : "Good evening";
 
   return (
     <PortalPage
@@ -504,14 +637,48 @@ export default function AdminDashboard() {
 
       {/* 2 — Stats row */}
       <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-6">
-        <StatCard label="Active students" value={counts.data?.students ?? 0} hint="Enrolled & active" isLoading={counts.isLoading} />
-        <StatCard label="Teaching staff" value={counts.data?.teachers ?? 0} hint="Active teachers" isLoading={counts.isLoading} />
-        <StatCard label="Fee collection" value={`${fees.data?.rate ?? 0}%`} hint="Collected vs billed" isLoading={fees.isLoading} />
-        <StatCard label="Attendance today" value={`${attendance.data?.todayRate ?? 0}%`} hint="Present or late" isLoading={attendance.isLoading} />
-        <button type="button" onClick={() => setScoreOpen(true)} className="text-left transition hover:opacity-80">
-          <StatCard label="Economy score" value={economy.data?.overall ?? 0} hint="Tap for full breakdown" isLoading={economy.isLoading} />
+        <StatCard
+          label="Active students"
+          value={counts.data?.students ?? 0}
+          hint="Enrolled & active"
+          isLoading={counts.isLoading}
+        />
+        <StatCard
+          label="Teaching staff"
+          value={counts.data?.teachers ?? 0}
+          hint="Active teachers"
+          isLoading={counts.isLoading}
+        />
+        <StatCard
+          label="Fee collection"
+          value={`${fees.data?.rate ?? 0}%`}
+          hint="Collected vs billed"
+          isLoading={fees.isLoading}
+        />
+        <StatCard
+          label="Attendance today"
+          value={`${attendance.data?.todayRate ?? 0}%`}
+          hint="Present or late"
+          isLoading={attendance.isLoading}
+        />
+        <button
+          type="button"
+          onClick={() => setScoreOpen(true)}
+          className="text-left transition hover:opacity-80"
+        >
+          <StatCard
+            label="Economy score"
+            value={economy.data?.overall ?? 0}
+            hint="Tap for full breakdown"
+            isLoading={economy.isLoading}
+          />
         </button>
-        <StatCard label="Open tickets" value={counts.data?.tickets ?? 0} hint="Support requests" isLoading={counts.isLoading} />
+        <StatCard
+          label="Open tickets"
+          value={counts.data?.tickets ?? 0}
+          hint="Support requests"
+          isLoading={counts.isLoading}
+        />
       </div>
 
       {/* 3 — AI insights strip */}
@@ -538,9 +705,17 @@ export default function AdminDashboard() {
           icon={Users}
           title="Live teacher presence"
           subtitle="Realtime staff sign-ins"
-          action={<Link to="/admin/attendance" className="shrink-0 text-xs text-primary hover:underline">QR station →</Link>}
+          action={
+            <Link to="/admin/attendance" className="shrink-0 text-xs text-primary hover:underline">
+              QR station →
+            </Link>
+          }
         >
-          {presence.isLoading ? <Bars /> : presence.isError ? <PanelError onRetry={() => presence.refetch()} /> : (
+          {presence.isLoading ? (
+            <Bars />
+          ) : presence.isError ? (
+            <PanelError onRetry={() => presence.refetch()} />
+          ) : (
             <>
               <div className="flex items-baseline justify-between text-sm">
                 <span className="font-semibold">
@@ -549,7 +724,8 @@ export default function AdminDashboard() {
                 <span className="text-xs text-muted-foreground">
                   {counts.data?.teachers
                     ? Math.round(((presence.data?.signedIn ?? 0) / counts.data.teachers) * 100)
-                    : 0}%
+                    : 0}
+                  %
                 </span>
               </div>
               <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted/40">
@@ -562,15 +738,21 @@ export default function AdminDashboard() {
               </div>
               <ul className="mt-4 space-y-2">
                 {(presence.data?.last ?? []).length === 0 ? (
-                  <li className="py-4 text-center text-xs text-muted-foreground">No sign-ins recorded yet today.</li>
+                  <li className="py-4 text-center text-xs text-muted-foreground">
+                    No sign-ins recorded yet today.
+                  </li>
                 ) : (
                   presence.data!.last.map((r) => (
                     <li key={r.id} className="flex items-center justify-between gap-3 text-sm">
                       <span className="flex min-w-0 items-center gap-2">
                         <UserCheck className="h-4 w-4 shrink-0 text-emerald-400" />
-                        <span className="truncate">{teacherNames.data?.[r.teacher_id] ?? "Staff member"}</span>
+                        <span className="truncate">
+                          {teacherNames.data?.[r.teacher_id] ?? "Staff member"}
+                        </span>
                       </span>
-                      <span className="shrink-0 text-xs text-muted-foreground">{clockTime(r.timestamp)}</span>
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {clockTime(r.timestamp)}
+                      </span>
                     </li>
                   ))
                 )}
@@ -584,9 +766,17 @@ export default function AdminDashboard() {
           icon={Wallet}
           title="Today's fee activity"
           subtitle="Payments recorded today"
-          action={<Link to="/admin/fees" className="shrink-0 text-xs text-primary hover:underline">Fees →</Link>}
+          action={
+            <Link to="/admin/fees" className="shrink-0 text-xs text-primary hover:underline">
+              Fees →
+            </Link>
+          }
         >
-          {fees.isLoading ? <Bars /> : fees.isError ? <PanelError onRetry={() => fees.refetch()} /> : (
+          {fees.isLoading ? (
+            <Bars />
+          ) : fees.isError ? (
+            <PanelError onRetry={() => fees.refetch()} />
+          ) : (
             <>
               <div className="grid grid-cols-3 gap-3">
                 <MiniStat label="Collected" value={naira(fees.data?.todayTotal ?? 0)} />
@@ -595,13 +785,19 @@ export default function AdminDashboard() {
               </div>
               <ul className="mt-4 space-y-2">
                 {(fees.data?.recent ?? []).length === 0 ? (
-                  <li className="py-4 text-center text-xs text-muted-foreground">No payments recorded today.</li>
+                  <li className="py-4 text-center text-xs text-muted-foreground">
+                    No payments recorded today.
+                  </li>
                 ) : (
                   fees.data!.recent.map((f) => (
                     <li key={f.id} className="flex items-center justify-between gap-3 text-sm">
-                      <span className="truncate">{payerNames.data?.[f.student_id] ?? "Student"}</span>
+                      <span className="truncate">
+                        {payerNames.data?.[f.student_id] ?? "Student"}
+                      </span>
                       <span className="shrink-0 text-xs">
-                        <span className="font-semibold text-emerald-400">{naira(Number(f.paid_amount ?? 0))}</span>
+                        <span className="font-semibold text-emerald-400">
+                          {naira(Number(f.paid_amount ?? 0))}
+                        </span>
                         <span className="ml-2 text-muted-foreground">{clockTime(f.paid_at)}</span>
                       </span>
                     </li>
@@ -617,9 +813,17 @@ export default function AdminDashboard() {
           icon={Bus}
           title="Bus status"
           subtitle="Fleet telemetry"
-          action={<Link to="/admin/buses" className="shrink-0 text-xs text-primary hover:underline">Fleet →</Link>}
+          action={
+            <Link to="/admin/buses" className="shrink-0 text-xs text-primary hover:underline">
+              Fleet →
+            </Link>
+          }
         >
-          {buses.isLoading ? <Bars n={2} /> : buses.isError ? <PanelError onRetry={() => buses.refetch()} /> : (
+          {buses.isLoading ? (
+            <Bars n={2} />
+          ) : buses.isError ? (
+            <PanelError onRetry={() => buses.refetch()} />
+          ) : (
             <>
               <div className="grid grid-cols-2 gap-3">
                 <MiniStat label="Active buses" value={String(buses.data?.active ?? 0)} />
@@ -641,8 +845,13 @@ export default function AdminDashboard() {
               <ul className="mt-3 space-y-2">
                 {(buses.data?.rows ?? []).map((b) => (
                   <li key={b.id} className="flex items-center justify-between gap-3 text-sm">
-                    <span className="truncate">{b.bus_number}{b.route_name ? ` · ${b.route_name}` : ""}</span>
-                    <span className="shrink-0 text-xs text-muted-foreground">{timeAgo(b.last_location_update)}</span>
+                    <span className="truncate">
+                      {b.bus_number}
+                      {b.route_name ? ` · ${b.route_name}` : ""}
+                    </span>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {timeAgo(b.last_location_update)}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -655,9 +864,17 @@ export default function AdminDashboard() {
           icon={CheckSquare}
           title="Attendance summary"
           subtitle="Today across the school"
-          action={<Link to="/admin/attendance" className="shrink-0 text-xs text-primary hover:underline">Details →</Link>}
+          action={
+            <Link to="/admin/attendance" className="shrink-0 text-xs text-primary hover:underline">
+              Details →
+            </Link>
+          }
         >
-          {attendance.isLoading ? <Bars n={2} /> : attendance.isError ? <PanelError onRetry={() => attendance.refetch()} /> : (
+          {attendance.isLoading ? (
+            <Bars n={2} />
+          ) : attendance.isError ? (
+            <PanelError onRetry={() => attendance.refetch()} />
+          ) : (
             <div className="flex flex-col items-center gap-5 sm:flex-row">
               <AttendanceDonut
                 present={attendance.data?.presentPct ?? 0}
@@ -665,11 +882,21 @@ export default function AdminDashboard() {
                 absent={attendance.data?.absentPct ?? 0}
               />
               <div className="w-full flex-1 space-y-2 text-sm">
-                <Legend color="#10b981" label="Present" value={`${attendance.data?.presentPct ?? 0}%`} />
+                <Legend
+                  color="#10b981"
+                  label="Present"
+                  value={`${attendance.data?.presentPct ?? 0}%`}
+                />
                 <Legend color="#f59e0b" label="Late" value={`${attendance.data?.latePct ?? 0}%`} />
-                <Legend color="#ef4444" label="Absent" value={`${attendance.data?.absentPct ?? 0}%`} />
+                <Legend
+                  color="#ef4444"
+                  label="Absent"
+                  value={`${attendance.data?.absentPct ?? 0}%`}
+                />
                 <div className="pt-2 text-xs text-muted-foreground">
-                  {(attendance.data?.worstClasses ?? []).length === 0 ? "No class-level records today." : "Lowest attendance:"}
+                  {(attendance.data?.worstClasses ?? []).length === 0
+                    ? "No class-level records today."
+                    : "Lowest attendance:"}
                   <ul className="mt-1 space-y-1">
                     {(attendance.data?.worstClasses ?? []).map((c) => (
                       <li key={c.id} className="flex justify-between">
@@ -689,14 +916,54 @@ export default function AdminDashboard() {
       <div className="mt-10">
         <h3 className="mb-3 font-display text-base font-semibold">Quick actions</h3>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <QuickAction to="/admin/students" icon={UserPlus} label="Add Student" desc="Enroll a new student" />
-          <QuickAction to="/admin/fees" icon={CreditCard} label="Record Fee" desc="Billing & payments" />
-          <QuickAction to="/admin/attendance" icon={CheckSquare} label="Mark Attendance" desc="Open QR station" />
-          <QuickAction to="/admin/student-intelligence" icon={Brain} label="AI Intelligence" desc="Student insights" />
-          <QuickActionButton onClick={() => setAnnounceOpen(true)} icon={Megaphone} label="Send Announcement" desc="Publish to the school" />
-          <QuickAction to="/admin/timetable" icon={Calendar} label="View Timetable" desc="Class schedule" />
-          <QuickAction to="/admin/cms" icon={Globe} label="Public Website" desc="Edit school site" />
-          <QuickAction to="/admin/operations" icon={Activity} label="Operations Center" desc="Live operations" />
+          <QuickAction
+            to="/admin/students"
+            icon={UserPlus}
+            label="Add Student"
+            desc="Enroll a new student"
+          />
+          <QuickAction
+            to="/admin/fees"
+            icon={CreditCard}
+            label="Record Fee"
+            desc="Billing & payments"
+          />
+          <QuickAction
+            to="/admin/attendance"
+            icon={CheckSquare}
+            label="Mark Attendance"
+            desc="Open QR station"
+          />
+          <QuickAction
+            to="/admin/student-intelligence"
+            icon={Brain}
+            label="AI Intelligence"
+            desc="Student insights"
+          />
+          <QuickActionButton
+            onClick={() => setAnnounceOpen(true)}
+            icon={Megaphone}
+            label="Send Announcement"
+            desc="Publish to the school"
+          />
+          <QuickAction
+            to="/admin/timetable"
+            icon={Calendar}
+            label="View Timetable"
+            desc="Class schedule"
+          />
+          <QuickAction
+            to="/admin/cms"
+            icon={Globe}
+            label="Public Website"
+            desc="Edit school site"
+          />
+          <QuickAction
+            to="/admin/operations"
+            icon={Activity}
+            label="Operations Center"
+            desc="Live operations"
+          />
         </div>
       </div>
 
@@ -707,29 +974,33 @@ export default function AdminDashboard() {
           <span className="text-xs text-muted-foreground">Live feed</span>
         </div>
         <div className="uos-card p-2 sm:p-4">
-          {activity.isLoading ? <Bars n={5} /> : activity.isError ? <PanelError onRetry={() => activity.refetch()} /> : (
-            (activity.data ?? []).length === 0 ? (
-              <EmptyState
-                icon={<Activity className="h-5 w-5" />}
-                title="No activity yet"
-                description="Actions across the school will appear here in real time."
-              />
-            ) : (
-              <ul className="max-h-96 divide-y divide-border overflow-y-auto">
-                {activity.data!.map((a) => (
-                  <li key={a.id} className="flex items-center gap-3 px-2 py-3">
-                    <span className="shrink-0 rounded-md border border-border bg-muted/30 p-2">
-                      <ActivityIcon table={a.table_name ?? ""} />
-                    </span>
-                    <span className="min-w-0 flex-1 truncate text-sm">
-                      {prettyAction(a.action)}
-                      {a.table_name ? ` · ${a.table_name.replace(/_/g, " ")}` : ""}
-                    </span>
-                    <span className="shrink-0 text-xs text-muted-foreground">{timeAgo(a.created_at)}</span>
-                  </li>
-                ))}
-              </ul>
-            )
+          {activity.isLoading ? (
+            <Bars n={5} />
+          ) : activity.isError ? (
+            <PanelError onRetry={() => activity.refetch()} />
+          ) : (activity.data ?? []).length === 0 ? (
+            <EmptyState
+              icon={<Activity className="h-5 w-5" />}
+              title="No activity yet"
+              description="Actions across the school will appear here in real time."
+            />
+          ) : (
+            <ul className="max-h-96 divide-y divide-border overflow-y-auto">
+              {activity.data!.map((a) => (
+                <li key={a.id} className="flex items-center gap-3 px-2 py-3">
+                  <span className="shrink-0 rounded-md border border-border bg-muted/30 p-2">
+                    <ActivityIcon table={a.table_name ?? ""} />
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-sm">
+                    {prettyAction(a.action)}
+                    {a.table_name ? ` · ${a.table_name.replace(/_/g, " ")}` : ""}
+                  </span>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {timeAgo(a.created_at)}
+                  </span>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       </div>
@@ -755,11 +1026,22 @@ export default function AdminDashboard() {
             <DialogDescription>Publishes immediately to your school news feed.</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            <Input placeholder="Announcement title" value={annTitle} onChange={(e) => setAnnTitle(e.target.value)} />
-            <Textarea rows={5} placeholder="Write your message…" value={annBody} onChange={(e) => setAnnBody(e.target.value)} />
+            <Input
+              placeholder="Announcement title"
+              value={annTitle}
+              onChange={(e) => setAnnTitle(e.target.value)}
+            />
+            <Textarea
+              rows={5}
+              placeholder="Write your message…"
+              value={annBody}
+              onChange={(e) => setAnnBody(e.target.value)}
+            />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAnnounceOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setAnnounceOpen(false)}>
+              Cancel
+            </Button>
             <Button onClick={() => announce.mutate()} disabled={announce.isPending}>
               {announce.isPending ? "Publishing…" : "Publish"}
             </Button>
@@ -773,10 +1055,17 @@ export default function AdminDashboard() {
 /* ------------------------------ subcomponents ----------------------------- */
 
 function AlertTile({
-  icon: Icon, label, value, desc, to,
+  icon: Icon,
+  label,
+  value,
+  desc,
+  to,
 }: {
   icon: React.ComponentType<{ className?: string }>;
-  label: string; value: number; desc: string; to: string;
+  label: string;
+  value: number;
+  desc: string;
+  to: string;
 }) {
   const shown = useCountUp(value);
   const alert = value > 0;
@@ -787,11 +1076,15 @@ function AlertTile({
         alert ? "border-amber-500/30 bg-amber-500/5" : "border-border bg-muted/10"
       }`}
     >
-      <span className={`shrink-0 rounded-lg p-2 ${alert ? "bg-amber-500/15 text-amber-400" : "bg-emerald-500/15 text-emerald-400"}`}>
+      <span
+        className={`shrink-0 rounded-lg p-2 ${alert ? "bg-amber-500/15 text-amber-400" : "bg-emerald-500/15 text-emerald-400"}`}
+      >
         <Icon className="h-4 w-4" />
       </span>
       <span className="min-w-0">
-        <span className="block truncate text-sm font-semibold">{shown} · {label}</span>
+        <span className="block truncate text-sm font-semibold">
+          {shown} · {label}
+        </span>
         <span className="block truncate text-xs text-muted-foreground">{desc}</span>
       </span>
     </Link>
@@ -801,7 +1094,9 @@ function AlertTile({
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0 rounded-xl border border-border bg-muted/10 p-2.5">
-      <div className="truncate text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="truncate text-[10px] uppercase tracking-wide text-muted-foreground">
+        {label}
+      </div>
       <div className="mt-0.5 truncate text-sm font-semibold tabular-nums">{value}</div>
     </div>
   );
@@ -819,7 +1114,15 @@ function Legend({ color, label, value }: { color: string; label: string; value: 
   );
 }
 
-function AttendanceDonut({ present, late, absent }: { present: number; late: number; absent: number }) {
+function AttendanceDonut({
+  present,
+  late,
+  absent,
+}: {
+  present: number;
+  late: number;
+  absent: number;
+}) {
   const r = 46;
   const c = 2 * Math.PI * r;
   const segs = [
@@ -836,8 +1139,12 @@ function AttendanceDonut({ present, late, absent }: { present: number; late: num
         const el = (
           <circle
             key={i}
-            cx="64" cy="64" r={r} fill="none"
-            stroke={s.color} strokeWidth="14"
+            cx="64"
+            cy="64"
+            r={r}
+            fill="none"
+            stroke={s.color}
+            strokeWidth="14"
             strokeDasharray={`${len} ${c - len}`}
             strokeDashoffset={-offset}
             transform="rotate(-90 64 64)"
@@ -847,10 +1154,22 @@ function AttendanceDonut({ present, late, absent }: { present: number; late: num
         offset += len;
         return el;
       })}
-      <text x="64" y="60" textAnchor="middle" className="fill-foreground" style={{ fontSize: 22, fontWeight: 800 }}>
+      <text
+        x="64"
+        y="60"
+        textAnchor="middle"
+        className="fill-foreground"
+        style={{ fontSize: 22, fontWeight: 800 }}
+      >
         {present}%
       </text>
-      <text x="64" y="78" textAnchor="middle" className="fill-muted-foreground" style={{ fontSize: 10 }}>
+      <text
+        x="64"
+        y="78"
+        textAnchor="middle"
+        className="fill-muted-foreground"
+        style={{ fontSize: 10 }}
+      >
         present
       </text>
     </svg>
@@ -858,14 +1177,24 @@ function AttendanceDonut({ present, late, absent }: { present: number; late: num
 }
 
 function QuickAction({
-  to, icon: Icon, label, desc,
-}: { to: string; icon: React.ComponentType<{ className?: string }>; label: string; desc: string }) {
+  to,
+  icon: Icon,
+  label,
+  desc,
+}: {
+  to: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  desc: string;
+}) {
   return (
     <Link
       to={to}
       className="uos-card group flex min-h-[88px] flex-col gap-2 p-4 transition hover:border-primary/60 hover:bg-primary/5"
     >
-      <span className="w-fit rounded-md border border-border bg-muted/30 p-2 text-primary"><Icon className="h-5 w-5" /></span>
+      <span className="w-fit rounded-md border border-border bg-muted/30 p-2 text-primary">
+        <Icon className="h-5 w-5" />
+      </span>
       <div className="min-w-0">
         <div className="truncate text-sm font-semibold">{label}</div>
         <div className="truncate text-xs text-muted-foreground">{desc}</div>
@@ -875,15 +1204,25 @@ function QuickAction({
 }
 
 function QuickActionButton({
-  onClick, icon: Icon, label, desc,
-}: { onClick: () => void; icon: React.ComponentType<{ className?: string }>; label: string; desc: string }) {
+  onClick,
+  icon: Icon,
+  label,
+  desc,
+}: {
+  onClick: () => void;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  desc: string;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
       className="uos-card group flex min-h-[88px] flex-col gap-2 p-4 text-left transition hover:border-primary/60 hover:bg-primary/5"
     >
-      <span className="w-fit rounded-md border border-border bg-muted/30 p-2 text-primary"><Icon className="h-5 w-5" /></span>
+      <span className="w-fit rounded-md border border-border bg-muted/30 p-2 text-primary">
+        <Icon className="h-5 w-5" />
+      </span>
       <div className="min-w-0">
         <div className="truncate text-sm font-semibold">{label}</div>
         <div className="truncate text-xs text-muted-foreground">{desc}</div>

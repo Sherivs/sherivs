@@ -85,7 +85,9 @@ function AcademicIntelligencePage() {
                 <td className="py-2 font-mono text-[11px] text-muted-foreground">
                   {rule.enforcedBy}
                 </td>
-                <td className="py-2 font-mono text-[11px] text-muted-foreground">{rule.provedBy}</td>
+                <td className="py-2 font-mono text-[11px] text-muted-foreground">
+                  {rule.provedBy}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -95,8 +97,8 @@ function AcademicIntelligencePage() {
       <section className="uos-card mt-6 p-6">
         <h2 className="font-display text-lg font-bold">What the phase cannot yet do</h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          {report.gaps.length} declared gaps. The intelligence is real; these are the parts that
-          are not, stated here rather than discovered later.
+          {report.gaps.length} declared gaps. The intelligence is real; these are the parts that are
+          not, stated here rather than discovered later.
         </p>
         <ul className="mt-4 space-y-3">
           {report.gaps.map((gap) => (

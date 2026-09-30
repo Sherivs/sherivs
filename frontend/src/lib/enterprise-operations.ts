@@ -76,10 +76,14 @@ export function createCapacityPlan(input: {
   currentCapacity: number;
   headroomPercent: number;
 }): { ok: true; plan: CapacityPlan } | { ok: false; error: string } {
-  if (!input.workload.trim()) return { ok: false, error: "Capacity plan workload is required (Section CE)" };
-  if (input.historicalUsage < 0) return { ok: false, error: "Historical usage must be non-negative (Section CE)" };
-  if (input.currentCapacity <= 0) return { ok: false, error: "Current capacity must be positive (Section CE)" };
-  if (input.headroomPercent < 0) return { ok: false, error: "Headroom percentage must be non-negative (Section CG)" };
+  if (!input.workload.trim())
+    return { ok: false, error: "Capacity plan workload is required (Section CE)" };
+  if (input.historicalUsage < 0)
+    return { ok: false, error: "Historical usage must be non-negative (Section CE)" };
+  if (input.currentCapacity <= 0)
+    return { ok: false, error: "Current capacity must be positive (Section CE)" };
+  if (input.headroomPercent < 0)
+    return { ok: false, error: "Headroom percentage must be non-negative (Section CG)" };
   return {
     ok: true,
     plan: {
@@ -104,19 +108,24 @@ export function projectPeakDemand(plan: CapacityPlan): number {
   const aiFactor = 1 + plan.aiDemandPercent / 100;
   const dataFactor = 1 + plan.dataGrowthPercent / 100;
   const launchDemand = plan.plannedLaunches * (plan.geographicExpansion ? 1.5 : 1);
-  return plan.historicalUsage * growthFactor * seasonalityFactor * aiFactor * dataFactor + launchDemand;
+  return (
+    plan.historicalUsage * growthFactor * seasonalityFactor * aiFactor * dataFactor + launchDemand
+  );
 }
 
 // Section CG: critical systems must maintain sufficient capacity headroom.
 export function isHeadroomSufficient(plan: CapacityPlan, projectedDemand: number): boolean {
   if (projectedDemand >= plan.currentCapacity) return false;
-  const headroom = (plan.currentCapacity - projectedDemand) / plan.currentCapacity * 100;
+  const headroom = ((plan.currentCapacity - projectedDemand) / plan.currentCapacity) * 100;
   return headroom >= plan.headroomPercent;
 }
 
-export function forecastCapacity(
-  plan: CapacityPlan,
-): { ok: true; projectedDemand: number; requiredCapacity: number; sufficient: boolean } {
+export function forecastCapacity(plan: CapacityPlan): {
+  ok: true;
+  projectedDemand: number;
+  requiredCapacity: number;
+  sufficient: boolean;
+} {
   const projectedDemand = projectPeakDemand(plan);
   const requiredCapacity = projectedDemand / (1 - plan.headroomPercent / 100);
   return {
@@ -154,9 +163,15 @@ export function createAutoscalingPolicy(input: {
   tier: number;
   budgetLimitMonthly: number;
 }): { ok: true; policy: AutoscalingPolicy } | { ok: false; error: string } {
-  if (!input.service.trim()) return { ok: false, error: "Autoscaling service is required (Section CH)" };
-  if (input.metrics.length === 0) return { ok: false, error: "At least one autoscaling metric is required (Section CH)" };
-  if (input.minInstances <= 0 || input.maxInstances <= 0 || input.minInstances > input.maxInstances) {
+  if (!input.service.trim())
+    return { ok: false, error: "Autoscaling service is required (Section CH)" };
+  if (input.metrics.length === 0)
+    return { ok: false, error: "At least one autoscaling metric is required (Section CH)" };
+  if (
+    input.minInstances <= 0 ||
+    input.maxInstances <= 0 ||
+    input.minInstances > input.maxInstances
+  ) {
     return { ok: false, error: "Autoscaling bounds must satisfy 0 < min <= max (Section CK)" };
   }
   if (input.budgetLimitMonthly <= 0) {
@@ -164,7 +179,10 @@ export function createAutoscalingPolicy(input: {
   }
   // Section CJ: scale-to-zero is only suitable for noncritical workloads.
   if (input.scaleToZeroAllowed === true && input.tier < 3) {
-    return { ok: false, error: "Scale-to-zero is only permitted for noncritical workloads (Section CJ)" };
+    return {
+      ok: false,
+      error: "Scale-to-zero is only permitted for noncritical workloads (Section CJ)",
+    };
   }
   return {
     ok: true,
@@ -213,14 +231,23 @@ export function createScaleTest(input: {
   passed?: boolean;
   productionLike?: boolean;
 }): { ok: true; test: ScaleTest } | { ok: false; error: string } {
-  if (!input.target.trim()) return { ok: false, error: "Scale test target is required (Section BZ)" };
+  if (!input.target.trim())
+    return { ok: false, error: "Scale test target is required (Section BZ)" };
   if (!["load", "stress", "soak", "chaos"].includes(input.type)) {
     return { ok: false, error: "Unknown scale test type (Section BZ)" };
   }
-  if (input.peakLoad < 0) return { ok: false, error: "Scale test peak load must be non-negative (Section BZ)" };
+  if (input.peakLoad < 0)
+    return { ok: false, error: "Scale test peak load must be non-negative (Section BZ)" };
   return {
     ok: true,
-    test: { id: input.id, type: input.type, target: input.target, productionLike: input.productionLike ?? false, peakLoad: input.peakLoad, passed: input.passed ?? false },
+    test: {
+      id: input.id,
+      type: input.type,
+      target: input.target,
+      productionLike: input.productionLike ?? false,
+      peakLoad: input.peakLoad,
+      passed: input.passed ?? false,
+    },
   };
 }
 
@@ -248,21 +275,37 @@ export function createChaosExperiment(input: {
   failureType: ChaosExperiment["failureType"];
   controlled?: boolean;
 }): { ok: true; experiment: ChaosExperiment } | { ok: false; error: string } {
-  if (!input.target.trim()) return { ok: false, error: "Chaos experiment target is required (Section CC)" };
+  if (!input.target.trim())
+    return { ok: false, error: "Chaos experiment target is required (Section CC)" };
   if (input.controlled === false) {
     return { ok: false, error: "Chaos experiments must be controlled (Section CC)" };
   }
-  return { ok: true, experiment: { id: input.id, target: input.target, failureType: input.failureType, controlled: true } };
+  return {
+    ok: true,
+    experiment: {
+      id: input.id,
+      target: input.target,
+      failureType: input.failureType,
+      controlled: true,
+    },
+  };
 }
 
 /* ─────────────────────────────────────────────────────────────
  * Incidents + command (Sections EY, EZ)
  * ────────────────────────────────────────────────────────────*/
 
-export type IncidentStage = "detected" | "triaged" | "assigned" | "mitigated" | "recovered" | "reviewed" | "improved";
+export type IncidentStage =
+  "detected" | "triaged" | "assigned" | "mitigated" | "recovered" | "reviewed" | "improved";
 
 export const INCIDENT_STAGES: readonly IncidentStage[] = [
-  "detected", "triaged", "assigned", "mitigated", "recovered", "reviewed", "improved",
+  "detected",
+  "triaged",
+  "assigned",
+  "mitigated",
+  "recovered",
+  "reviewed",
+  "improved",
 ] as const;
 
 export interface Incident {
@@ -289,8 +332,11 @@ export function canAdvanceIncident(current: IncidentStage, next: IncidentStage):
 export function createIncidentCommand(input: {
   incidentRef: IncidentId;
   commander: string;
-}): { ok: true; command: { incidentRef: IncidentId; commander: string } } | { ok: false; error: string } {
-  if (!input.commander.trim()) return { ok: false, error: "Incident commander is required (Section EZ)" };
+}):
+  | { ok: true; command: { incidentRef: IncidentId; commander: string } }
+  | { ok: false; error: string } {
+  if (!input.commander.trim())
+    return { ok: false, error: "Incident commander is required (Section EZ)" };
   return { ok: true, command: { incidentRef: input.incidentRef, commander: input.commander } };
 }
 
@@ -319,7 +365,9 @@ export function createAlert(input: {
 }
 
 // Section EX: alerts prioritize customer, business, security, reliability.
-export function resolveAlertSeverity(impacts: AlertImpact[]): "critical" | "high" | "medium" | "low" {
+export function resolveAlertSeverity(
+  impacts: AlertImpact[],
+): "critical" | "high" | "medium" | "low" {
   if (impacts.includes("security")) return "critical";
   if (impacts.includes("customer")) return "critical";
   if (impacts.includes("business")) return "high";
@@ -345,8 +393,17 @@ export function createRunbook(input: {
   automatable?: boolean;
 }): { ok: true; runbook: Runbook } | { ok: false; error: string } {
   if (!input.target.trim()) return { ok: false, error: "Runbook target is required (Section GF)" };
-  if (input.steps.length === 0) return { ok: false, error: "Runbook requires at least one step (Section GF)" };
-  return { ok: true, runbook: { id: input.id, target: input.target, steps: input.steps, automatable: input.automatable ?? false } };
+  if (input.steps.length === 0)
+    return { ok: false, error: "Runbook requires at least one step (Section GF)" };
+  return {
+    ok: true,
+    runbook: {
+      id: input.id,
+      target: input.target,
+      steps: input.steps,
+      automatable: input.automatable ?? false,
+    },
+  };
 }
 
 // Section GG: safe operational procedures should be automatable.
@@ -355,7 +412,14 @@ export function isRunbookAutomatable(runbook: Runbook): boolean {
 }
 
 export const READINESS_CHECKLIST_ITEMS: readonly string[] = [
-  "scalability", "reliability", "observability", "security", "recovery", "documentation", "support", "cost",
+  "scalability",
+  "reliability",
+  "observability",
+  "security",
+  "recovery",
+  "documentation",
+  "support",
+  "cost",
 ] as const;
 
 export interface OperationalReadiness {
@@ -367,7 +431,8 @@ export function createOperationalReadiness(input: {
   service: string;
   checks: Record<string, boolean>;
 }): { ok: true; readiness: OperationalReadiness } | { ok: false; error: string } {
-  if (!input.service.trim()) return { ok: false, error: "Readiness service is required (Section GH)" };
+  if (!input.service.trim())
+    return { ok: false, error: "Readiness service is required (Section GH)" };
   for (const item of READINESS_CHECKLIST_ITEMS) {
     if (input.checks[item] === undefined) {
       return { ok: false, error: `Readiness checklist item "${item}" is missing (Section GI)` };
@@ -385,7 +450,8 @@ export function isOperationallyReady(readiness: OperationalReadiness): boolean {
  * Cost governance (Sections CL, CM, CN, CP, HW, HX)
  * ────────────────────────────────────────────────────────────*/
 
-export type CostAllocationDimension = "tenant" | "institution" | "service" | "region" | "workload" | "ai";
+export type CostAllocationDimension =
+  "tenant" | "institution" | "service" | "region" | "workload" | "ai";
 
 export interface CostAllocation {
   service: string;
@@ -400,11 +466,20 @@ export function createCostAllocation(input: {
   dimension: CostAllocationDimension;
   dimensionRef: string;
 }): { ok: true; allocation: CostAllocation } | { ok: false; error: string } {
-  if (!input.service.trim()) return { ok: false, error: "Cost allocation service is required (Section CN)" };
+  if (!input.service.trim())
+    return { ok: false, error: "Cost allocation service is required (Section CN)" };
   if (!Number.isFinite(input.amount) || input.amount < 0) {
     return { ok: false, error: "Cost allocation amount must be non-negative (Section CN)" };
   }
-  return { ok: true, allocation: { service: input.service, amount: input.amount, dimension: input.dimension, dimensionRef: input.dimensionRef } };
+  return {
+    ok: true,
+    allocation: {
+      service: input.service,
+      amount: input.amount,
+      dimension: input.dimension,
+      dimensionRef: input.dimensionRef,
+    },
+  };
 }
 
 // Section HW: detect abnormal cost growth.
@@ -412,8 +487,10 @@ export function detectAbnormalCostGrowth(
   history: { period: string; amount: number }[],
   thresholdPercent: number,
 ): { ok: true; abnormal: boolean; growthPercent: number } | { ok: false; error: string } {
-  if (history.length < 2) return { ok: false, error: "Cost history requires at least two periods (Section HW)" };
-  if (thresholdPercent < 0) return { ok: false, error: "Cost threshold must be non-negative (Section HW)" };
+  if (history.length < 2)
+    return { ok: false, error: "Cost history requires at least two periods (Section HW)" };
+  if (thresholdPercent < 0)
+    return { ok: false, error: "Cost threshold must be non-negative (Section HW)" };
   const sorted = [...history].sort((a, b) => a.period.localeCompare(b.period));
   const previous = sorted[sorted.length - 2].amount;
   const latest = sorted[sorted.length - 1].amount;
@@ -444,9 +521,21 @@ export function createCostCircuitBreaker(input: {
     return { ok: false, error: "Cost circuit breaker requires at least one action (Section HX)" };
   }
   if (input.neverDisablesAuthoritative === false) {
-    return { ok: false, error: "Cost controls must never silently disable authoritative business processes (Section HX)" };
+    return {
+      ok: false,
+      error:
+        "Cost controls must never silently disable authoritative business processes (Section HX)",
+    };
   }
-  return { ok: true, breaker: { id: input.id, thresholdPercent: input.thresholdPercent, actions: input.actions, neverDisablesAuthoritative: true } };
+  return {
+    ok: true,
+    breaker: {
+      id: input.id,
+      thresholdPercent: input.thresholdPercent,
+      actions: input.actions,
+      neverDisablesAuthoritative: true,
+    },
+  };
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -470,16 +559,23 @@ export function createPerformanceContract(input: {
   scalingStrategy: string;
   failureBehavior: string;
 }): { ok: true; contract: PerformanceContract } | { ok: false; error: string } {
-  if (!input.service.trim()) return { ok: false, error: "Performance contract service is required (Section LU)" };
-  if (input.expectedThroughputRps <= 0 || input.latencyTargetMs <= 0 || input.maxSupportedLoad <= 0) {
-    return { ok: false, error: "Performance contract requires positive throughput, latency, and load (Section LU)" };
+  if (!input.service.trim())
+    return { ok: false, error: "Performance contract service is required (Section LU)" };
+  if (
+    input.expectedThroughputRps <= 0 ||
+    input.latencyTargetMs <= 0 ||
+    input.maxSupportedLoad <= 0
+  ) {
+    return {
+      ok: false,
+      error: "Performance contract requires positive throughput, latency, and load (Section LU)",
+    };
   }
   if (!input.scalingStrategy.trim() || !input.failureBehavior.trim()) {
-    return { ok: false, error: "Performance contract requires a scaling strategy and failure behavior (Section LU)" };
+    return {
+      ok: false,
+      error: "Performance contract requires a scaling strategy and failure behavior (Section LU)",
+    };
   }
   return { ok: true, contract: { ...input } };
 }
-
-
-
-

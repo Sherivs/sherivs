@@ -9,7 +9,10 @@ export const Route = createFileRoute("/_authenticated/admin/ai-assistant")({
 
 function AdminAssistantPage() {
   return (
-    <PortalPage title="Vibeora Command AI" subtitle="Ask anything about your school, answered from live data">
+    <PortalPage
+      title="Vibeora Command AI"
+      subtitle="Ask anything about your school, answered from live data"
+    >
       <AdminAIAssistant />
     </PortalPage>
   );

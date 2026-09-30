@@ -71,7 +71,12 @@ function ReceiptsPage() {
 
   // Headline stats use a separate lightweight aggregate query so the cards
   // don't move when the user pages around.
-  const summary = useQuery<{ count: number; total: number; monthCount: number; monthTotal: number }>({
+  const summary = useQuery<{
+    count: number;
+    total: number;
+    monthCount: number;
+    monthTotal: number;
+  }>({
     queryKey: ["bursar-receipts-summary", schoolId],
     enabled: !!schoolId,
     queryFn: async () => {
@@ -84,7 +89,10 @@ function ReceiptsPage() {
       const all = (data ?? []) as Array<{ paid_amount: number | null; paid_at: string | null }>;
       const now = new Date();
       const thisMonth = all.filter(
-        (r) => r.paid_at && new Date(r.paid_at).getMonth() === now.getMonth() && new Date(r.paid_at).getFullYear() === now.getFullYear(),
+        (r) =>
+          r.paid_at &&
+          new Date(r.paid_at).getMonth() === now.getMonth() &&
+          new Date(r.paid_at).getFullYear() === now.getFullYear(),
       );
       return {
         count: all.length,
@@ -102,7 +110,6 @@ function ReceiptsPage() {
   const rows = receipts.data?.rows ?? [];
   const total = receipts.data?.count ?? 0;
 
-
   return (
     <PortalPage title="Receipts" subtitle="Printable receipts for every paid invoice.">
       <SectionGrid>
@@ -116,17 +123,43 @@ function ReceiptsPage() {
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4">
           <h2 className="font-display text-lg font-semibold">Paid invoices</h2>
           <div className="flex flex-wrap items-center gap-2">
-            <Input type="date" value={from_} onChange={(e) => setFrom_(e.target.value)} className="w-[150px]" aria-label="From date" />
+            <Input
+              type="date"
+              value={from_}
+              onChange={(e) => setFrom_(e.target.value)}
+              className="w-[150px]"
+              aria-label="From date"
+            />
             <span className="text-xs text-muted-foreground">→</span>
-            <Input type="date" value={to_} onChange={(e) => setTo_(e.target.value)} className="w-[150px]" aria-label="To date" />
-            <select value={status} onChange={(e) => setStatus(e.target.value as typeof status)} className="rounded-md border border-border bg-background px-2 py-1.5 text-sm">
+            <Input
+              type="date"
+              value={to_}
+              onChange={(e) => setTo_(e.target.value)}
+              className="w-[150px]"
+              aria-label="To date"
+            />
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value as typeof status)}
+              className="rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+            >
               <option value="all">All statuses</option>
               <option value="paid">Paid</option>
               <option value="partial">Partial</option>
               <option value="unpaid">Unpaid</option>
             </select>
-            <Input placeholder="Search…" value={q} onChange={(e) => setQ(e.target.value)} className="w-[180px]" />
-            <button onClick={() => exportCSV(rows)} className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">Export CSV</button>
+            <Input
+              placeholder="Search…"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              className="w-[180px]"
+            />
+            <button
+              onClick={() => exportCSV(rows)}
+              className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
+            >
+              Export CSV
+            </button>
           </div>
         </header>
         {receipts.isLoading ? (
@@ -134,96 +167,99 @@ function ReceiptsPage() {
         ) : total === 0 ? (
           <p className="p-6 text-sm text-muted-foreground">No receipts match your filter.</p>
         ) : (
-          <><div className="hidden overflow-x-auto sm:block">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/30 text-xs uppercase text-muted-foreground">
-                <tr>
-                  <th className="px-3 py-2 text-left">Student</th>
-                  <th className="px-3 py-2 text-left">Type</th>
-                  <th className="px-3 py-2 text-right">Amount</th>
-                  <th className="px-3 py-2 text-left">Paid at</th>
-                  <th className="px-3 py-2 text-left">Reference</th>
-                  <th className="px-3 py-2"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {rows.map((r) => (
-                  <tr key={r.id}>
-                    <td className="px-3 py-2">
-                      <div className="font-semibold">{r.student?.full_name ?? "—"}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {r.student?.admission_number ?? ""}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2">{r.fee_type}</td>
-                    <td className="px-3 py-2 text-right font-mono">
-                      ₦{Number(r.paid_amount ?? 0).toLocaleString()}
-                    </td>
-                    <td className="px-3 py-2 text-xs text-muted-foreground">
-                      {r.paid_at ? new Date(r.paid_at).toLocaleString() : "—"}
-                    </td>
-                    <td className="px-3 py-2"><code className="text-xs">{r.paystack_reference ?? "—"}</code></td>
-                    <td className="px-3 py-2 text-right">
-                      <button
-                        onClick={() => setActive(r)}
-                        className="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted/40"
-                      >
-                        View
-                      </button>
-                    </td>
+          <>
+            <div className="hidden overflow-x-auto sm:block">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/30 text-xs uppercase text-muted-foreground">
+                  <tr>
+                    <th className="px-3 py-2 text-left">Student</th>
+                    <th className="px-3 py-2 text-left">Type</th>
+                    <th className="px-3 py-2 text-right">Amount</th>
+                    <th className="px-3 py-2 text-left">Paid at</th>
+                    <th className="px-3 py-2 text-left">Reference</th>
+                    <th className="px-3 py-2"></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {rows.map((r) => (
+                    <tr key={r.id}>
+                      <td className="px-3 py-2">
+                        <div className="font-semibold">{r.student?.full_name ?? "—"}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {r.student?.admission_number ?? ""}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2">{r.fee_type}</td>
+                      <td className="px-3 py-2 text-right font-mono">
+                        ₦{Number(r.paid_amount ?? 0).toLocaleString()}
+                      </td>
+                      <td className="px-3 py-2 text-xs text-muted-foreground">
+                        {r.paid_at ? new Date(r.paid_at).toLocaleString() : "—"}
+                      </td>
+                      <td className="px-3 py-2">
+                        <code className="text-xs">{r.paystack_reference ?? "—"}</code>
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <button
+                          onClick={() => setActive(r)}
+                          className="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted/40"
+                        >
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-          {/* Mobile card list */}
-          <div className="space-y-3 p-4 sm:hidden">
-            {rows.map((r) => (
-              <div key={r.id} className="enterprise-card p-4">
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <span className="truncate text-sm font-semibold">
-                    {r.student?.full_name ?? "—"}
-                  </span>
-                  <span className="shrink-0 font-mono text-sm">
-                    ₦{Number(r.paid_amount ?? 0).toLocaleString()}
-                  </span>
-                </div>
-                <div className="space-y-1">
-                  <div className="flex justify-between gap-2 text-xs">
-                    <span className="text-muted-foreground">Type</span>
-                    <span className="truncate">{r.fee_type}</span>
-                  </div>
-                  <div className="flex justify-between gap-2 text-xs">
-                    <span className="text-muted-foreground">Paid at</span>
-                    <span className="truncate">
-                      {r.paid_at ? new Date(r.paid_at).toLocaleString() : "—"}
+            {/* Mobile card list */}
+            <div className="space-y-3 p-4 sm:hidden">
+              {rows.map((r) => (
+                <div key={r.id} className="enterprise-card p-4">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <span className="truncate text-sm font-semibold">
+                      {r.student?.full_name ?? "—"}
+                    </span>
+                    <span className="shrink-0 font-mono text-sm">
+                      ₦{Number(r.paid_amount ?? 0).toLocaleString()}
                     </span>
                   </div>
-                  <div className="flex justify-between gap-2 text-xs">
-                    <span className="text-muted-foreground">Reference</span>
-                    <code className="truncate text-xs">{r.paystack_reference ?? "—"}</code>
+                  <div className="space-y-1">
+                    <div className="flex justify-between gap-2 text-xs">
+                      <span className="text-muted-foreground">Type</span>
+                      <span className="truncate">{r.fee_type}</span>
+                    </div>
+                    <div className="flex justify-between gap-2 text-xs">
+                      <span className="text-muted-foreground">Paid at</span>
+                      <span className="truncate">
+                        {r.paid_at ? new Date(r.paid_at).toLocaleString() : "—"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-2 text-xs">
+                      <span className="text-muted-foreground">Reference</span>
+                      <code className="truncate text-xs">{r.paystack_reference ?? "—"}</code>
+                    </div>
                   </div>
+                  <button
+                    onClick={() => setActive(r)}
+                    className="mt-3 w-full rounded-md border border-border py-2 text-xs hover:bg-muted/40"
+                  >
+                    View receipt
+                  </button>
                 </div>
-                <button
-                  onClick={() => setActive(r)}
-                  className="mt-3 w-full rounded-md border border-border py-2 text-xs hover:bg-muted/40"
-                >
-                  View receipt
-                </button>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          <PaginationBar
-            page={page}
-            total={total}
-            pageSize={PAGE_SIZE}
-            onNext={nextPage}
-            onPrev={prevPage}
-            onPage={goToPage}
-            isLoading={receipts.isFetching}
-          />
+            <PaginationBar
+              page={page}
+              total={total}
+              pageSize={PAGE_SIZE}
+              onNext={nextPage}
+              onPrev={prevPage}
+              onPage={goToPage}
+              isLoading={receipts.isFetching}
+            />
           </>
         )}
       </div>
@@ -315,22 +351,37 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 function exportCSV(rows: ReceiptRow[]) {
-  const header = ["Student", "Admission #", "Type", "Amount", "Paid at", "Term", "Year", "Reference"];
+  const header = [
+    "Student",
+    "Admission #",
+    "Type",
+    "Amount",
+    "Paid at",
+    "Term",
+    "Year",
+    "Reference",
+  ];
   const lines = [header.join(",")].concat(
-    rows.map((r) => [
-      r.student?.full_name ?? "",
-      r.student?.admission_number ?? "",
-      r.fee_type,
-      String(r.paid_amount ?? 0),
-      r.paid_at ?? "",
-      r.term ?? "",
-      r.academic_year ?? "",
-      r.paystack_reference ?? "",
-    ].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")),
+    rows.map((r) =>
+      [
+        r.student?.full_name ?? "",
+        r.student?.admission_number ?? "",
+        r.fee_type,
+        String(r.paid_amount ?? 0),
+        r.paid_at ?? "",
+        r.term ?? "",
+        r.academic_year ?? "",
+        r.paystack_reference ?? "",
+      ]
+        .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+        .join(","),
+    ),
   );
   const blob = new Blob([lines.join("\n")], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url; a.download = `receipts-${new Date().toISOString().slice(0, 10)}.csv`;
-  a.click(); URL.revokeObjectURL(url);
+  a.href = url;
+  a.download = `receipts-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }

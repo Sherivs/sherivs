@@ -21,7 +21,11 @@ type StudentRow = { id: string; admission_number: string | null; user_id: string
 type StudentWithName = StudentRow & { full_name: string };
 
 const STATUS_STYLES: Record<Status, { active: string; label: string; sr: string }> = {
-  present: { active: "bg-emerald-500 text-white border-emerald-500", label: "P", sr: "Mark Present" },
+  present: {
+    active: "bg-emerald-500 text-white border-emerald-500",
+    label: "P",
+    sr: "Mark Present",
+  },
   absent: { active: "bg-rose-500 text-white border-rose-500", label: "A", sr: "Mark Absent" },
   late: { active: "bg-amber-500 text-white border-amber-500", label: "L", sr: "Mark Late" },
   excused: { active: "bg-blue-500 text-white border-blue-500", label: "E", sr: "Mark Excused" },
@@ -97,7 +101,8 @@ function TeacherAttendancePage() {
       return list
         .map((s) => ({
           ...s,
-          full_name: (s.user_id && names[s.user_id]) || `Student ${s.admission_number ?? s.id.slice(0, 6)}`,
+          full_name:
+            (s.user_id && names[s.user_id]) || `Student ${s.admission_number ?? s.id.slice(0, 6)}`,
         }))
         .sort((a, b) => a.full_name.localeCompare(b.full_name)) as StudentWithName[];
     },
@@ -165,8 +170,7 @@ function TeacherAttendancePage() {
     setMarks(next);
   };
 
-  const setOne = (id: string, status: Status) =>
-    setMarks((m) => ({ ...m, [id]: status }));
+  const setOne = (id: string, status: Status) => setMarks((m) => ({ ...m, [id]: status }));
 
   const onSave = async () => {
     if (!classId || !studentList.length) return;
@@ -237,8 +241,8 @@ function TeacherAttendancePage() {
 
         {!classes.isLoading && (classes.data ?? []).length === 0 && (
           <p className="mt-4 text-sm text-muted-foreground">
-            You're not assigned to any classes yet. Ask your school admin to assign you to a class or
-            schedule a timetable slot.
+            You're not assigned to any classes yet. Ask your school admin to assign you to a class
+            or schedule a timetable slot.
           </p>
         )}
 
@@ -273,9 +277,17 @@ function TeacherAttendancePage() {
                 </thead>
                 <tbody>
                   {students.isLoading ? (
-                    <tr><td colSpan={3} className="py-6 text-center text-muted-foreground">Loading students…</td></tr>
+                    <tr>
+                      <td colSpan={3} className="py-6 text-center text-muted-foreground">
+                        Loading students…
+                      </td>
+                    </tr>
                   ) : studentList.length === 0 ? (
-                    <tr><td colSpan={3} className="py-6 text-center text-muted-foreground">No students in this class yet.</td></tr>
+                    <tr>
+                      <td colSpan={3} className="py-6 text-center text-muted-foreground">
+                        No students in this class yet.
+                      </td>
+                    </tr>
                   ) : (
                     studentList.map((s) => {
                       const current = marks[s.id];
@@ -361,17 +373,21 @@ function TeacherSelfCheckCard({
         <div className="rounded-md border border-border p-3">
           <div className="text-xs uppercase text-muted-foreground">Signed in</div>
           <div className="mt-1 font-semibold">
-            {signInTime
-              ? new Date(signInTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-              : <span className="text-muted-foreground">Not signed in yet</span>}
+            {signInTime ? (
+              new Date(signInTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+            ) : (
+              <span className="text-muted-foreground">Not signed in yet</span>
+            )}
           </div>
         </div>
         <div className="rounded-md border border-border p-3">
           <div className="text-xs uppercase text-muted-foreground">Signed out</div>
           <div className="mt-1 font-semibold">
-            {signOutTime
-              ? new Date(signOutTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-              : <span className="text-muted-foreground">—</span>}
+            {signOutTime ? (
+              new Date(signOutTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+            ) : (
+              <span className="text-muted-foreground">—</span>
+            )}
           </div>
         </div>
       </div>
@@ -388,7 +404,9 @@ function TeacherSelfCheckCard({
         <Button className="w-full sm:w-auto" type="submit" disabled={busy || !code.trim()}>
           {busy ? "Checking…" : "Submit code"}
         </Button>
-        <span className="text-xs text-muted-foreground">Codes expire 30s after the admin generates them.</span>
+        <span className="text-xs text-muted-foreground">
+          Codes expire 30s after the admin generates them.
+        </span>
       </form>
     </div>
   );

@@ -70,18 +70,17 @@ export const TENANT_STATUSES: readonly TenantStatus[] = [
 ] as const;
 
 /** Allowed lifecycle transitions (G3 Tenant Lifecycle Engine). */
-export const TENANT_LIFECYCLE_TRANSITIONS: Readonly<
-  Record<TenantStatus, readonly TenantStatus[]>
-> = {
-  PROVISIONING: ["ACTIVE", "SUSPENDED", "TERMINATING"],
-  ACTIVE: ["RESTRICTED", "SUSPENDED", "MIGRATING", "ARCHIVED", "TERMINATING"],
-  RESTRICTED: ["ACTIVE", "SUSPENDED", "TERMINATING"],
-  SUSPENDED: ["ACTIVE", "ARCHIVED", "TERMINATING"],
-  MIGRATING: ["ACTIVE", "SUSPENDED", "TERMINATING"],
-  ARCHIVED: ["ACTIVE", "TERMINATING"],
-  TERMINATING: ["TERMINATED", "ACTIVE"],
-  TERMINATED: [],
-} as const;
+export const TENANT_LIFECYCLE_TRANSITIONS: Readonly<Record<TenantStatus, readonly TenantStatus[]>> =
+  {
+    PROVISIONING: ["ACTIVE", "SUSPENDED", "TERMINATING"],
+    ACTIVE: ["RESTRICTED", "SUSPENDED", "MIGRATING", "ARCHIVED", "TERMINATING"],
+    RESTRICTED: ["ACTIVE", "SUSPENDED", "TERMINATING"],
+    SUSPENDED: ["ACTIVE", "ARCHIVED", "TERMINATING"],
+    MIGRATING: ["ACTIVE", "SUSPENDED", "TERMINATING"],
+    ARCHIVED: ["ACTIVE", "TERMINATING"],
+    TERMINATING: ["TERMINATED", "ACTIVE"],
+    TERMINATED: [],
+  } as const;
 
 export function canTransitionTenant(from: TenantStatus, to: TenantStatus): boolean {
   return TENANT_LIFECYCLE_TRANSITIONS[from].includes(to);
@@ -153,11 +152,7 @@ export interface TenantResource {
  * ────────────────────────────────────────────────────────────*/
 
 export type DataClassification =
-  | "PUBLIC"
-  | "TENANT_INTERNAL"
-  | "CONFIDENTIAL"
-  | "SENSITIVE"
-  | "RESTRICTED";
+  "PUBLIC" | "TENANT_INTERNAL" | "CONFIDENTIAL" | "SENSITIVE" | "RESTRICTED";
 
 export const DATA_CLASSIFICATIONS: readonly DataClassification[] = [
   "PUBLIC",

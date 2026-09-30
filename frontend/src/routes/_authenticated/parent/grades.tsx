@@ -46,7 +46,7 @@ function ParentGradesPage() {
       const nameOf = new Map((users ?? []).map((u) => [u.id, u.full_name as string]));
       return (students ?? []).map((s) => ({
         student_id: s.id as string,
-        full_name: s.user_id ? nameOf.get(s.user_id as string) ?? "Child" : "Child",
+        full_name: s.user_id ? (nameOf.get(s.user_id as string) ?? "Child") : "Child",
       }));
     },
   });

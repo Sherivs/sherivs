@@ -20,7 +20,10 @@ export function PolicyShell({
     >
       <article className="mx-auto max-w-3xl px-6 py-16 md:py-24">
         {schoolName && (
-          <Link to="/" className="text-xs uppercase tracking-widest text-slate-400 hover:text-white">
+          <Link
+            to="/"
+            className="text-xs uppercase tracking-widest text-slate-400 hover:text-white"
+          >
             ← {schoolName}
           </Link>
         )}

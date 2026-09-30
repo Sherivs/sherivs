@@ -97,10 +97,26 @@ describe("Cycle prevention (P)", () => {
     // twin-campus contains twin-building contains twin-room; adding
     // twin-room contains twin-campus would cycle.
     const existing = [
-      rel({ relationshipId: "r1", sourceTwinId: "twin-campus", targetTwinId: "twin-building", type: "contains" }),
-      rel({ relationshipId: "r2", sourceTwinId: "twin-building", targetTwinId: "twin-room", type: "contains" }),
+      rel({
+        relationshipId: "r1",
+        sourceTwinId: "twin-campus",
+        targetTwinId: "twin-building",
+        type: "contains",
+      }),
+      rel({
+        relationshipId: "r2",
+        sourceTwinId: "twin-building",
+        targetTwinId: "twin-room",
+        type: "contains",
+      }),
     ];
-    expect(wouldCreateCycle(existing, { sourceTwinId: "twin-room", targetTwinId: "twin-campus" }, "contains")).toBe(true);
+    expect(
+      wouldCreateCycle(
+        existing,
+        { sourceTwinId: "twin-room", targetTwinId: "twin-campus" },
+        "contains",
+      ),
+    ).toBe(true);
     const result = addRelationship(existing, {
       sourceTwinId: "twin-room",
       targetTwinId: "twin-campus",
@@ -112,7 +128,14 @@ describe("Cycle prevention (P)", () => {
   });
 
   it("allows a non-cyclic contains relationship", () => {
-    const existing = [rel({ relationshipId: "r1", sourceTwinId: "twin-campus", targetTwinId: "twin-building", type: "contains" })];
+    const existing = [
+      rel({
+        relationshipId: "r1",
+        sourceTwinId: "twin-campus",
+        targetTwinId: "twin-building",
+        type: "contains",
+      }),
+    ];
     const result = addRelationship(existing, {
       sourceTwinId: "twin-campus",
       targetTwinId: "twin-room",
@@ -127,8 +150,18 @@ describe("Cycle prevention (P)", () => {
 describe("Graph traversal and queries (O, BJ)", () => {
   function chain(): TwinRelationship[] {
     return [
-      rel({ relationshipId: "r1", sourceTwinId: "campus", targetTwinId: "building", type: "contains" }),
-      rel({ relationshipId: "r2", sourceTwinId: "building", targetTwinId: "room", type: "contains" }),
+      rel({
+        relationshipId: "r1",
+        sourceTwinId: "campus",
+        targetTwinId: "building",
+        type: "contains",
+      }),
+      rel({
+        relationshipId: "r2",
+        sourceTwinId: "building",
+        targetTwinId: "room",
+        type: "contains",
+      }),
       rel({ relationshipId: "r3", sourceTwinId: "room", targetTwinId: "device", type: "contains" }),
     ];
   }
@@ -144,7 +177,14 @@ describe("Graph traversal and queries (O, BJ)", () => {
   });
 
   it("finds dependency relationships of a twin", () => {
-    const deps = [rel({ relationshipId: "d1", sourceTwinId: "twin-a", targetTwinId: "twin-b", type: "depends_on" })];
+    const deps = [
+      rel({
+        relationshipId: "d1",
+        sourceTwinId: "twin-a",
+        targetTwinId: "twin-b",
+        type: "depends_on",
+      }),
+    ];
     const found = findDependencies(deps, "twin-a");
     expect(found).toHaveLength(1);
     expect(found[0].type).toBe("depends_on");

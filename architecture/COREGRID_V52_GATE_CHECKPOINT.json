@@ -120,6 +120,17 @@
       "evidence": ["scripts/exercise-foundation-loop.mjs"],
       "notClaimed": ["live execution of the repaired exerciser (requires laptop secrets)"]
     },
+    "hygieneMissionExecution": {
+      "record": "Executed the previously proposed mechanical lint hygiene pass: eslint --fix across the repository (prettier formatting: quote normalization, line rewrapping). 16329 problems reduced to 231 (177 errors, 54 warnings). No manual code edits; behavior verified unchanged by the full pipeline.",
+      "verification": {
+        "fullVerifyPipeline": "PASS (typecheck + unit 3084 tests + registry + secret-scan + build)",
+        "remainingDebt": "177 errors: 175 @typescript-eslint/no-explicit-any, 1 no-var-requires, 1 @next/next/no-img-element; 54 warnings: 37 react-hooks/exhaustive-deps, 17 react-refresh/only-export-components"
+      },
+      "notClaimed": [
+        "resolution of no-explicit-any (case-by-case review per Constitution §32 — separate governed work)",
+        "resolution of react-hooks/exhaustive-deps (each dependency-array change is a behavior decision, not formatting)"
+      ]
+    },
     "baselineAmendments": {
       "record": "Governed amendment to architecture/COREGRID_EVOLUTION_BASELINE_2026-09-30.json knownGaps, per V5.1 Part 47 evolution law and the baseline's comparisonInstructions: changes are recorded decisions against the baseline, not silent rewrites of it.",
       "closed": [
@@ -136,11 +147,11 @@
       "quantified": [
         {
           "gap": "Lint: previously interrupted, remains UNVERIFIED",
-          "resolution": "Lint executed and classified; NOT claimed verified",
+          "resolution": "RESOLVED MECHANICALLY — repo-wide eslint --fix executed and full pipeline passed; remaining 231 non-mechanical problems classified and recorded",
           "evidence": {
-            "touchedFiles": "lint-clean after prettier --fix on the files this loop changed",
-            "repositoryDebt": "519 files: 16099 prettier/prettier, 175 @typescript-eslint/no-explicit-any, 37 react-hooks/exhaustive-deps, 18 other",
-            "proposedGovernedMission": "Dedicated repo-wide hygiene mission: eslint --fix for mechanical formatting, then case-by-case review of no-explicit-any against Constitution §32 (kernel-admin-client.ts documents its justified any). Not executed inside this loop to keep review scoped (V5.1 Part 87, Part 19)."
+            "mechanicalPass": "commit executing eslint --fix; 16329 -> 231 problems",
+            "repositoryDebt": "remaining: 175 @typescript-eslint/no-explicit-any (case-by-case review pending per Constitution §32), 37 react-hooks/exhaustive-deps, 17 react-refresh/only-export-components, 1 no-var-requires, 1 no-img-element",
+            "proposedGovernedMission": "no-explicit-any and exhaustive-deps require human-reviewed semantics changes; not executable mechanically"
           }
         }
       ]

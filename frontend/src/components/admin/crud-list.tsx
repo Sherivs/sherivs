@@ -18,7 +18,6 @@ import { Plus, Pencil, Trash2, Inbox } from "lucide-react";
 import { EmptyState } from "@/components/portal-shell";
 import { SkeletonTable } from "@/components/skeleton";
 
-
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
 import { Button } from "@/components/ui/button";
@@ -50,8 +49,23 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export type FieldDef =
-  | { key: string; label: string; type: "text" | "number" | "email" | "url" | "date" | "time"; placeholder?: string; required?: boolean; max?: number }
-  | { key: string; label: string; type: "textarea"; placeholder?: string; required?: boolean; max?: number; rows?: number }
+  | {
+      key: string;
+      label: string;
+      type: "text" | "number" | "email" | "url" | "date" | "time";
+      placeholder?: string;
+      required?: boolean;
+      max?: number;
+    }
+  | {
+      key: string;
+      label: string;
+      type: "textarea";
+      placeholder?: string;
+      required?: boolean;
+      max?: number;
+      rows?: number;
+    }
   | { key: string; label: string; type: "switch"; hint?: string }
   | { key: string; label: string; type: "select"; options: { value: string; label: string }[] }
   | { key: string; label: string; type: "student"; placeholder?: string; required?: boolean }
@@ -108,7 +122,8 @@ export function CrudList<Row extends { id: string }>({ config }: { config: CrudC
         .select("*", { count: "exact" })
         .eq("school_id", school!.id);
       if (config.selectFilter) q = q.eq(config.selectFilter.column, config.selectFilter.value);
-      if (config.orderBy) q = q.order(config.orderBy.column, { ascending: config.orderBy.ascending });
+      if (config.orderBy)
+        q = q.order(config.orderBy.column, { ascending: config.orderBy.ascending });
       q = q.range(from, to);
       const { data, error, count } = await q;
       if (error) throw new Error(error.message);
@@ -131,13 +146,21 @@ export function CrudList<Row extends { id: string }>({ config }: { config: CrudC
           <h2 className="font-display text-lg font-semibold">{config.title}</h2>
           <p className="text-xs text-muted-foreground">{total} records</p>
         </div>
-        <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }}>
+        <Button
+          size="sm"
+          onClick={() => {
+            setEditing(null);
+            setOpen(true);
+          }}
+        >
           <Plus className="size-4" /> Add
         </Button>
       </header>
 
       {list.isLoading ? (
-        <div className="p-4"><SkeletonTable rows={6} /></div>
+        <div className="p-4">
+          <SkeletonTable rows={6} />
+        </div>
       ) : list.error ? (
         <div className="p-8 text-center text-sm text-red-400">{(list.error as Error).message}</div>
       ) : total === 0 ? (
@@ -147,13 +170,18 @@ export function CrudList<Row extends { id: string }>({ config }: { config: CrudC
             title={`No ${config.title.toLowerCase()} yet`}
             description={config.emptyHint}
             action={
-              <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }}>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setEditing(null);
+                  setOpen(true);
+                }}
+              >
                 <Plus className="size-4" /> Add the first one
               </Button>
             }
           />
         </div>
-
       ) : (
         <>
           <div className="p-2 sm:p-0">
@@ -168,7 +196,9 @@ export function CrudList<Row extends { id: string }>({ config }: { config: CrudC
                     header: c.label,
                     className: "px-4 py-3 align-top portal-table-cell",
                     cell: (row: Row) =>
-                      c.render ? c.render(row) : String((row as Record<string, unknown>)[c.key as string] ?? "—"),
+                      c.render
+                        ? c.render(row)
+                        : String((row as Record<string, unknown>)[c.key as string] ?? "—"),
                   })),
                   {
                     key: "__actions",
@@ -176,10 +206,25 @@ export function CrudList<Row extends { id: string }>({ config }: { config: CrudC
                     className: "px-4 py-3 text-right",
                     cell: (row: Row) => (
                       <div className="inline-flex gap-1">
-                        <Button size="icon" variant="ghost" aria-label="Edit row" className="min-h-11 min-w-11" onClick={() => { setEditing(row); setOpen(true); }}>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          aria-label="Edit row"
+                          className="min-h-11 min-w-11"
+                          onClick={() => {
+                            setEditing(row);
+                            setOpen(true);
+                          }}
+                        >
                           <Pencil className="size-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" aria-label="Delete row" className="min-h-11 min-w-11" onClick={() => setConfirmDelete(row)}>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          aria-label="Delete row"
+                          className="min-h-11 min-w-11"
+                          onClick={() => setConfirmDelete(row)}
+                        >
                           <Trash2 className="size-4" />
                         </Button>
                       </div>
@@ -191,19 +236,39 @@ export function CrudList<Row extends { id: string }>({ config }: { config: CrudC
                 <div className="min-w-0">
                   <dl className="space-y-1.5">
                     {config.columns.map((c) => (
-                      <div key={String(c.key)} className="grid grid-cols-[minmax(0,7rem)_minmax(0,1fr)] gap-2 text-sm">
-                        <dt className="truncate text-[11px] uppercase tracking-wide text-muted-foreground">{c.label}</dt>
+                      <div
+                        key={String(c.key)}
+                        className="grid grid-cols-[minmax(0,7rem)_minmax(0,1fr)] gap-2 text-sm"
+                      >
+                        <dt className="truncate text-[11px] uppercase tracking-wide text-muted-foreground">
+                          {c.label}
+                        </dt>
                         <dd className="min-w-0 break-words">
-                          {c.render ? c.render(row) : String((row as Record<string, unknown>)[c.key as string] ?? "—")}
+                          {c.render
+                            ? c.render(row)
+                            : String((row as Record<string, unknown>)[c.key as string] ?? "—")}
                         </dd>
                       </div>
                     ))}
                   </dl>
                   <div className="mt-3 flex gap-2 border-t border-border/50 pt-2">
-                    <Button size="sm" variant="outline" className="min-h-11 flex-1" onClick={() => { setEditing(row); setOpen(true); }}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="min-h-11 flex-1"
+                      onClick={() => {
+                        setEditing(row);
+                        setOpen(true);
+                      }}
+                    >
                       <Pencil className="size-4" /> Edit
                     </Button>
-                    <Button size="sm" variant="outline" className="min-h-11 flex-1" onClick={() => setConfirmDelete(row)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="min-h-11 flex-1"
+                      onClick={() => setConfirmDelete(row)}
+                    >
                       <Trash2 className="size-4" /> Delete
                     </Button>
                   </div>
@@ -245,7 +310,10 @@ export function CrudList<Row extends { id: string }>({ config }: { config: CrudC
             <AlertDialogAction
               onClick={async () => {
                 if (!confirmDelete) return;
-                const { error } = await supabase.from(config.table).delete().eq("id", confirmDelete.id);
+                const { error } = await supabase
+                  .from(config.table)
+                  .delete()
+                  .eq("id", confirmDelete.id);
                 if (error) toast.error(error.message);
                 else toast.success("Deleted");
                 setConfirmDelete(null);
@@ -302,7 +370,8 @@ function CrudFormDialog<Row extends { id: string }>({
       for (const f of config.fields) {
         const raw = values[f.key];
         if (f.type === "switch") cleaned[f.key] = Boolean(raw);
-        else if (f.type === "number") cleaned[f.key] = raw === "" || raw == null ? null : Number(raw);
+        else if (f.type === "number")
+          cleaned[f.key] = raw === "" || raw == null ? null : Number(raw);
         else cleaned[f.key] = raw === "" || raw == null ? null : raw;
       }
       const parsed = config.schema.parse(cleaned);
@@ -319,7 +388,9 @@ function CrudFormDialog<Row extends { id: string }>({
       }
       if (error) throw error;
       if (!record && inserted && config.onAfterCreate) {
-        try { await config.onAfterCreate(inserted); } catch (e) {
+        try {
+          await config.onAfterCreate(inserted);
+        } catch (e) {
           const m = e instanceof Error ? e.message : "Post-create hook failed";
           toast.error(m);
         }
@@ -350,7 +421,9 @@ function CrudFormDialog<Row extends { id: string }>({
         <form onSubmit={onSubmit} className="space-y-4">
           {config.fields.map((f) => (
             <div key={f.key} className="space-y-1.5">
-              <Label className="text-xs uppercase tracking-wide text-muted-foreground">{f.label}</Label>
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                {f.label}
+              </Label>
               {f.type === "textarea" ? (
                 <Textarea
                   value={String(values[f.key] ?? "")}

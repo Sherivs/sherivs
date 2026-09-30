@@ -42,7 +42,8 @@ import type { TenantId } from "./tenant-core";
  * Analytical layers (G)
  * ────────────────────────────────────────────────────────────*/
 
-export type AnalyticsLayer = "descriptive" | "diagnostic" | "predictive" | "prescriptive" | "decision_intelligence";
+export type AnalyticsLayer =
+  "descriptive" | "diagnostic" | "predictive" | "prescriptive" | "decision_intelligence";
 
 export const ANALYTICS_LAYERS: readonly AnalyticsLayer[] = [
   "descriptive",
@@ -161,11 +162,28 @@ export function comparePeriods(input: {
   previousValue: number | null;
 }): PeriodComparison {
   if (input.previousValue === null) {
-    return { comparisonId: input.comparisonId, kind: input.kind, currentValue: input.currentValue, previousValue: null, absoluteChange: null, percentChange: null };
+    return {
+      comparisonId: input.comparisonId,
+      kind: input.kind,
+      currentValue: input.currentValue,
+      previousValue: null,
+      absoluteChange: null,
+      percentChange: null,
+    };
   }
   const absoluteChange = Number((input.currentValue - input.previousValue).toFixed(4));
-  const percentChange = input.previousValue === 0 ? null : Number(((absoluteChange / input.previousValue) * 100).toFixed(2));
-  return { comparisonId: input.comparisonId, kind: input.kind, currentValue: input.currentValue, previousValue: input.previousValue, absoluteChange, percentChange };
+  const percentChange =
+    input.previousValue === 0
+      ? null
+      : Number(((absoluteChange / input.previousValue) * 100).toFixed(2));
+  return {
+    comparisonId: input.comparisonId,
+    kind: input.kind,
+    currentValue: input.currentValue,
+    previousValue: input.previousValue,
+    absoluteChange,
+    percentChange,
+  };
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -210,20 +228,33 @@ export function isSegmentationPermitted(input: {
   requiresDemographicPermission: boolean;
   demographicPermissionGranted: boolean;
 }): { ok: boolean; reason: string } {
-  if (input.cohort.definition === "demographic_attributes" && input.requiresDemographicPermission && !input.demographicPermissionGranted) {
+  if (
+    input.cohort.definition === "demographic_attributes" &&
+    input.requiresDemographicPermission &&
+    !input.demographicPermissionGranted
+  ) {
     return { ok: false, reason: "Demographic segmentation requires explicit permission (N)" };
   }
   return { ok: true, reason: "Segmentation permitted (N)" };
 }
 
-
 /* ─────────────────────────────────────────────────────────────
  * Metric system (O)
  * ────────────────────────────────────────────────────────────*/
 
-export type AggregationMethod = "count" | "sum" | "average" | "median" | "percentile" | "rate" | "ratio" | "growth";
+export type AggregationMethod =
+  "count" | "sum" | "average" | "median" | "percentile" | "rate" | "ratio" | "growth";
 
-export const AGGREGATION_METHODS: readonly AggregationMethod[] = ["count", "sum", "average", "median", "percentile", "rate", "ratio", "growth"] as const;
+export const AGGREGATION_METHODS: readonly AggregationMethod[] = [
+  "count",
+  "sum",
+  "average",
+  "median",
+  "percentile",
+  "rate",
+  "ratio",
+  "growth",
+] as const;
 
 export interface MetricDefinition {
   metricId: string;
@@ -254,7 +285,8 @@ export interface CreateMetricInput {
   version: number;
 }
 
-export type CreateMetricResult = { ok: true; metric: MetricDefinition } | { ok: false; error: string };
+export type CreateMetricResult =
+  { ok: true; metric: MetricDefinition } | { ok: false; error: string };
 
 /**
  * Metric system (O): every metric must define its full contract. A metric
@@ -298,7 +330,12 @@ export function createMetric(input: CreateMetricInput): CreateMetricResult {
 
 export type KpiState = "ON_TRACK" | "AT_RISK" | "OFF_TRACK" | "UNKNOWN";
 
-export const KPI_STATES: readonly KpiState[] = ["ON_TRACK", "AT_RISK", "OFF_TRACK", "UNKNOWN"] as const;
+export const KPI_STATES: readonly KpiState[] = [
+  "ON_TRACK",
+  "AT_RISK",
+  "OFF_TRACK",
+  "UNKNOWN",
+] as const;
 
 export interface KpiDefinition {
   kpiId: string;
@@ -349,8 +386,15 @@ export function evaluateKpi(input: EvaluateKpiInput): KpiDefinition {
     };
   }
   const variance = input.target === null ? null : Number((input.actual - input.target).toFixed(4));
-  const isOnTrack = input.target === null ? true : input.higherIsBetter ? input.actual >= input.target : input.actual <= input.target;
-  const thresholdBreached = input.threshold !== null && (input.higherIsBetter ? input.actual < input.threshold : input.actual > input.threshold);
+  const isOnTrack =
+    input.target === null
+      ? true
+      : input.higherIsBetter
+        ? input.actual >= input.target
+        : input.actual <= input.target;
+  const thresholdBreached =
+    input.threshold !== null &&
+    (input.higherIsBetter ? input.actual < input.threshold : input.actual > input.threshold);
   return {
     kpiId: input.kpiId,
     metricId: input.metricId,
@@ -367,14 +411,19 @@ export function evaluateKpi(input: EvaluateKpiInput): KpiDefinition {
   };
 }
 
-
 /* ─────────────────────────────────────────────────────────────
  * Threshold engine (S)
  * ────────────────────────────────────────────────────────────*/
 
 export type ThresholdType = "static" | "dynamic" | "percentile" | "statistical" | "policy";
 
-export const THRESHOLD_TYPES: readonly ThresholdType[] = ["static", "dynamic", "percentile", "statistical", "policy"] as const;
+export const THRESHOLD_TYPES: readonly ThresholdType[] = [
+  "static",
+  "dynamic",
+  "percentile",
+  "statistical",
+  "policy",
+] as const;
 
 export interface Threshold {
   thresholdId: string;
@@ -418,10 +467,18 @@ export function canClaimImprovement(input: {
   higherIsBetter: boolean;
 }): { improved: boolean; reason: string } {
   if (input.baseline === null) {
-    return { improved: false, reason: "No baseline established — improvement cannot be claimed (T)" };
+    return {
+      improved: false,
+      reason: "No baseline established — improvement cannot be claimed (T)",
+    };
   }
-  const improved = input.higherIsBetter ? input.currentValue > input.baseline.value : input.currentValue < input.baseline.value;
-  return { improved, reason: improved ? "Improved versus baseline (T)" : "Not improved versus baseline (T)" };
+  const improved = input.higherIsBetter
+    ? input.currentValue > input.baseline.value
+    : input.currentValue < input.baseline.value;
+  return {
+    improved,
+    reason: improved ? "Improved versus baseline (T)" : "Not improved versus baseline (T)",
+  };
 }
 
 export interface Benchmark {
@@ -433,7 +490,10 @@ export interface Benchmark {
 
 /** Benchmarking (U): external benchmarks must include provenance. */
 export function isExternalBenchmarkValid(benchmark: Benchmark): boolean {
-  return benchmark.kind !== "external" || (benchmark.provenance !== null && benchmark.provenance.trim() !== "");
+  return (
+    benchmark.kind !== "external" ||
+    (benchmark.provenance !== null && benchmark.provenance.trim() !== "")
+  );
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -486,7 +546,8 @@ export function reportMissingData(input: {
     field: input.field,
     missingCount: input.missingCount,
     totalCount: input.totalCount,
-    missingRatio: input.totalCount === 0 ? 0 : Number((input.missingCount / input.totalCount).toFixed(4)),
+    missingRatio:
+      input.totalCount === 0 ? 0 : Number((input.missingCount / input.totalCount).toFixed(4)),
   };
 }
 
@@ -503,7 +564,9 @@ export interface ImputationRecord {
  * Imputation (Y): when imputation is used, record the method, assumptions,
  * affected observations and confidence.
  */
-export function createImputationRecord(input: Omit<ImputationRecord, "imputationId">): ImputationRecord {
+export function createImputationRecord(
+  input: Omit<ImputationRecord, "imputationId">,
+): ImputationRecord {
   return { ...input, imputationId: `imp-${input.field}-${Date.now()}` };
 }
 
@@ -540,4 +603,3 @@ export interface AnalyticalOutput {
 export function isAnalyticalOutputTruthSafe(output: AnalyticalOutput): boolean {
   return output.provenance.source.trim() !== "" && output.provenance.version.trim() !== "";
 }
-

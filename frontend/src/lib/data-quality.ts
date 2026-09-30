@@ -83,8 +83,7 @@ export interface CreateQualityRuleInput {
 }
 
 export type CreateQualityRuleResult =
-  | { ok: true; rule: QualityRule }
-  | { ok: false; error: string };
+  { ok: true; rule: QualityRule } | { ok: false; error: string };
 
 export function createQualityRule(input: CreateQualityRuleInput): CreateQualityRuleResult {
   if (input.field.trim() === "") {
@@ -107,7 +106,10 @@ export function createQualityRule(input: CreateQualityRuleInput): CreateQualityR
  * Evaluate a quality rule against a record (AD). Rule evaluation is
  * deterministic; domain-specific semantics remain owned by the domain.
  */
-export function evaluateQualityRule(rule: QualityRule, record: Record<string, unknown>): QualityRuleVerdict {
+export function evaluateQualityRule(
+  rule: QualityRule,
+  record: Record<string, unknown>,
+): QualityRuleVerdict {
   const value = record[rule.field];
   switch (rule.kind) {
     case "required_field":
@@ -126,7 +128,8 @@ export function evaluateQualityRule(rule: QualityRule, record: Record<string, un
     }
     case "valid_enum": {
       const allowedRaw = rule.params.allowed;
-      const allowed = typeof allowedRaw === "string" && allowedRaw !== "" ? allowedRaw.split(",") : [];
+      const allowed =
+        typeof allowedRaw === "string" && allowedRaw !== "" ? allowedRaw.split(",") : [];
       return typeof value === "string" && allowed.includes(value)
         ? { satisfied: true, reason: "value is valid" }
         : { satisfied: false, reason: `${rule.field} must be one of ${allowed.join(", ")} (AD)` };
@@ -174,7 +177,8 @@ export interface ComputeQualityScoreInput {
 
 export function computeQualityScore(input: ComputeQualityScoreInput): DatasetQualityScore {
   const overallScore = Math.round(
-    (input.completeness + input.validity + input.freshness + input.uniqueness + input.consistency) / 5,
+    (input.completeness + input.validity + input.freshness + input.uniqueness + input.consistency) /
+      5,
   );
   return {
     datasetName: input.datasetName,
@@ -216,8 +220,7 @@ export interface QuarantineRecordInput {
 }
 
 export type QuarantineRecordResult =
-  | { ok: true; quarantined: QuarantinedRecord }
-  | { ok: false; error: string };
+  { ok: true; quarantined: QuarantinedRecord } | { ok: false; error: string };
 
 /** Invalid records enter a controlled quarantine area (AF, AG) — they are
  * never silently discarded. */
@@ -254,7 +257,10 @@ export interface ReplayState {
  * produce duplicate effects. Deduplication uses deterministic idempotency
  * keys (AI).
  */
-export function replayDeduplicationCheck(idempotencyKey: string, state: ReplayState): { outcome: "proceed" | "duplicate" } {
+export function replayDeduplicationCheck(
+  idempotencyKey: string,
+  state: ReplayState,
+): { outcome: "proceed" | "duplicate" } {
   if (state.processedKeys.has(idempotencyKey)) {
     return { outcome: "duplicate" };
   }

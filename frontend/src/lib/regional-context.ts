@@ -154,12 +154,7 @@ export function createRegionProfile(input: {
  * ────────────────────────────────────────────────────────────*/
 
 export type JurisdictionLevel =
-  | "global"
-  | "country"
-  | "region"
-  | "district"
-  | "local_authority"
-  | "institution";
+  "global" | "country" | "region" | "district" | "local_authority" | "institution";
 
 export const JURISDICTION_LEVEL_RANK: Record<JurisdictionLevel, number> = {
   global: 0,
@@ -192,7 +187,15 @@ export function createJurisdiction(input: {
   } else if (!input.parentRef) {
     return { ok: false, error: "Non-global jurisdictions require a parent (Section CC)" };
   }
-  return { ok: true, jurisdiction: { id: input.id, level: input.level, parentRef: input.parentRef, name: input.name } };
+  return {
+    ok: true,
+    jurisdiction: {
+      id: input.id,
+      level: input.level,
+      parentRef: input.parentRef,
+      name: input.name,
+    },
+  };
 }
 
 export function isJurisdictionChainValid(chain: readonly Jurisdiction[]): boolean {
@@ -284,7 +287,9 @@ export function supersedeJurisdictionalRule(
   existing: EffectiveDatedRule,
   nextEffectiveFrom: string,
   nextPayload: Record<string, unknown>,
-): { ok: true; superseded: EffectiveDatedRule; current: EffectiveDatedRule } | { ok: false; error: string } {
+):
+  | { ok: true; superseded: EffectiveDatedRule; current: EffectiveDatedRule }
+  | { ok: false; error: string } {
   if (nextEffectiveFrom <= existing.effectiveFrom) {
     return { ok: false, error: "Superseding rule must start after the existing rule (Section CF)" };
   }
@@ -338,7 +343,8 @@ export function createJurisdictionLegalMetadata(input: {
   };
 }
 
-export type CoreDataClass = "PUBLIC" | "TENANT_INTERNAL" | "CONFIDENTIAL" | "SENSITIVE" | "RESTRICTED";
+export type CoreDataClass =
+  "PUBLIC" | "TENANT_INTERNAL" | "CONFIDENTIAL" | "SENSITIVE" | "RESTRICTED";
 
 // Section CI: transfer must respect the residency restriction and data class.
 // Advisory metadata for the Phase 08 security engine — never a substitute.
@@ -354,7 +360,10 @@ export function isDataTransferPermitted(
 }
 
 // Section CK: country-specific identity attribute formatting metadata.
-export function resolveIdentityFormat(metadata: JurisdictionLegalMetadata, attribute: string): string | null {
+export function resolveIdentityFormat(
+  metadata: JurisdictionLegalMetadata,
+  attribute: string,
+): string | null {
   return metadata.identityFormats?.[attribute] ?? null;
 }
 
@@ -377,8 +386,10 @@ export function createTimezoneProfile(input: {
   version: string;
   validFrom: string;
 }): { ok: true; profile: TimezoneProfile } | { ok: false; error: string } {
-  if (!input.ianaName.trim()) return { ok: false, error: "Timezone IANA name is required (Section AF)" };
-  if (!input.version.trim()) return { ok: false, error: "Timezone rule version is required (Section AI)" };
+  if (!input.ianaName.trim())
+    return { ok: false, error: "Timezone IANA name is required (Section AF)" };
+  if (!input.version.trim())
+    return { ok: false, error: "Timezone rule version is required (Section AI)" };
   return {
     ok: true,
     profile: {
@@ -461,7 +472,10 @@ export function createEventTime(input: {
   const hasInstant = Boolean(input.instant);
   const hasLocal = Boolean(input.localTime && input.timezone);
   if (!hasInstant && !hasLocal) {
-    return { ok: false, error: "Event time requires an instant or a local time with timezone (Section AL)" };
+    return {
+      ok: false,
+      error: "Event time requires an instant or a local time with timezone (Section AL)",
+    };
   }
   if (input.recurrence && !input.timezone) {
     return { ok: false, error: "Recurring events must be timezone-aware (Section AM)" };
@@ -499,7 +513,8 @@ export function createCalendarSystem(input: {
   isAuthoritativeMachineCalendar?: boolean;
   conventions?: string[];
 }): { ok: true; system: CalendarSystem } | { ok: false; error: string } {
-  if (!input.name.trim()) return { ok: false, error: "Calendar system name is required (Section AN)" };
+  if (!input.name.trim())
+    return { ok: false, error: "Calendar system name is required (Section AN)" };
   return {
     ok: true,
     system: {
@@ -601,8 +616,16 @@ export function createHoliday(input: {
   observance?: Holiday["observance"];
   effectiveYears?: string[];
 }): { ok: true; holiday: Holiday } | { ok: false; error: string } {
-  if (!input.jurisdictionRef || !input.authority.trim() || !input.name.trim() || !input.source.trim()) {
-    return { ok: false, error: "Holiday requires jurisdiction, authority, name, and source (Section AS)" };
+  if (
+    !input.jurisdictionRef ||
+    !input.authority.trim() ||
+    !input.name.trim() ||
+    !input.source.trim()
+  ) {
+    return {
+      ok: false,
+      error: "Holiday requires jurisdiction, authority, name, and source (Section AS)",
+    };
   }
   if (!input.fixedDate && !input.movable) {
     return { ok: false, error: "A holiday must be fixed-date or movable (Section AT)" };
@@ -635,7 +658,10 @@ export function resolveHolidayDate(
     }
     return { ok: true, date: `${year}-${holiday.fixedDate}` };
   }
-  return { ok: false, error: "Movable holidays require external calendar computation (Section AT)" };
+  return {
+    ok: false,
+    error: "Movable holidays require external calendar computation (Section AT)",
+  };
 }
 
 // Section AU: religious observances are configurable with provenance.
@@ -657,20 +683,30 @@ export function createEducationTerminology(input: {
   terms: { localTerm: string; concept: string; equivalent?: string }[];
 }): { ok: true; map: EducationTerminologyMap } | { ok: false; error: string } {
   if (!/^[A-Za-z]{2}$/.test(input.countryCode)) {
-    return { ok: false, error: "Education terminology country code must be ISO alpha-2 (Section CL)" };
+    return {
+      ok: false,
+      error: "Education terminology country code must be ISO alpha-2 (Section CL)",
+    };
   }
   if (input.terms.length === 0) {
     return { ok: false, error: "At least one education term is required (Section CM)" };
   }
   for (const term of input.terms) {
     if (!term.localTerm.trim() || !term.concept.trim()) {
-      return { ok: false, error: "Each education term requires a local term and concept (Section CM)" };
+      return {
+        ok: false,
+        error: "Each education term requires a local term and concept (Section CM)",
+      };
     }
   }
   return { ok: true, map: { countryCode: input.countryCode.toUpperCase(), terms: input.terms } };
 }
 
-export function resolveLocalTerm(map: EducationTerminologyMap, concept: string, fallback: string): string {
+export function resolveLocalTerm(
+  map: EducationTerminologyMap,
+  concept: string,
+  fallback: string,
+): string {
   const match = map.terms.find((t) => t.concept === concept);
   return match ? match.localTerm : fallback;
 }
@@ -735,7 +771,14 @@ export function createExaminationConvention(input: {
   if (input.authorities.length === 0) {
     return { ok: false, error: "At least one examination authority is required (Section CQ)" };
   }
-  return { ok: true, convention: { jurisdictionRef: input.jurisdictionRef, authorities: input.authorities, conventions: input.conventions ?? [] } };
+  return {
+    ok: true,
+    convention: {
+      jurisdictionRef: input.jurisdictionRef,
+      authorities: input.authorities,
+      conventions: input.conventions ?? [],
+    },
+  };
 }
 
 export interface GovernmentReportingLocalization {
@@ -753,7 +796,10 @@ export function createGovernmentReportingLocalization(input: {
   if (input.reportTypes.length === 0) {
     return { ok: false, error: "At least one government report type is required (Section CR)" };
   }
-  return { ok: true, localization: { jurisdictionRef: input.jurisdictionRef, reportTypes: input.reportTypes } };
+  return {
+    ok: true,
+    localization: { jurisdictionRef: input.jurisdictionRef, reportTypes: input.reportTypes },
+  };
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -801,7 +847,10 @@ export function createEducationalLanguageConfig(input: {
  * ────────────────────────────────────────────────────────────*/
 
 export const AFRICAN_LANGUAGE_FAMILIES: readonly string[] = [
-  "niger_congo", "afroasiatic", "nilo_saharan", "khoisan",
+  "niger_congo",
+  "afroasiatic",
+  "nilo_saharan",
+  "khoisan",
 ] as const;
 
 export type AfricanLanguageDriver =
@@ -828,14 +877,20 @@ export function createAfricanLanguagePriorityItem(input: {
   if (input.drivers.some((d) => !Number.isFinite(d.weight) || d.weight <= 0)) {
     return { ok: false, error: "Language driver weights must be positive (Section BZ)" };
   }
-  return { ok: true, item: { language: input.language, family: input.family, drivers: input.drivers } };
+  return {
+    ok: true,
+    item: { language: input.language, family: input.family, drivers: input.drivers },
+  };
 }
 
 export function scoreAfricanLanguagePriority(
   items: readonly AfricanLanguagePriorityItem[],
 ): { language: string; score: number }[] {
   return items
-    .map((item) => ({ language: item.language, score: item.drivers.reduce((sum, d) => sum + d.weight, 0) }))
+    .map((item) => ({
+      language: item.language,
+      score: item.drivers.reduce((sum, d) => sum + d.weight, 0),
+    }))
     .sort((a, b) => b.score - a.score);
 }
 
@@ -850,10 +905,3 @@ export function planAfricanLanguageExpansion(
     .slice(0, budget)
     .map((s) => s.language);
 }
-
-
-
-
-
-
-

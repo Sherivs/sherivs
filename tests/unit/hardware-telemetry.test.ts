@@ -25,7 +25,9 @@ import {
 const TENANT_A = tenantId("tenant-a");
 const NOW = "2026-01-01T00:00:00Z";
 
-function telemetry(overrides: Partial<Omit<RawTelemetry, "quality">> = {}): Omit<RawTelemetry, "quality"> {
+function telemetry(
+  overrides: Partial<Omit<RawTelemetry, "quality">> = {},
+): Omit<RawTelemetry, "quality"> {
   return {
     deviceId: "device-1",
     tenantId: TENANT_A,

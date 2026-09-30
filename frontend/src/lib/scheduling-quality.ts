@@ -67,7 +67,8 @@ export function balanceOf(loads: Readonly<Record<string, number>>): number {
   if (values.length === 0) return 1;
   const average = mean(values);
   if (average === 0) return 1;
-  const spread = values.reduce((total, value) => total + Math.abs(value - average), 0) / values.length;
+  const spread =
+    values.reduce((total, value) => total + Math.abs(value - average), 0) / values.length;
   return Math.max(0, 1 - spread / average);
 }
 
@@ -94,7 +95,8 @@ export function scoreSchedule(input: QualityInput): ScheduleQuality {
     },
     {
       dimension: "utilization",
-      value: total === 0 ? 0 : Math.min(1, total / Math.max(1, Object.keys(input.loads ?? {}).length)),
+      value:
+        total === 0 ? 0 : Math.min(1, total / Math.max(1, Object.keys(input.loads ?? {}).length)),
       basis: `${total} assignment(s) across ${Object.keys(input.loads ?? {}).length} tracked actor(s)`,
     },
     {
@@ -109,9 +111,13 @@ export function scoreSchedule(input: QualityInput): ScheduleQuality {
     },
     {
       dimension: "accessibility",
-      value: total === 0
-        ? 1
-        : Math.max(0, 1 - input.conflicts.filter((c) => c.type === "accessibility").length / total),
+      value:
+        total === 0
+          ? 1
+          : Math.max(
+              0,
+              1 - input.conflicts.filter((c) => c.type === "accessibility").length / total,
+            ),
       basis: "accessibility requirements met where the organization declared them",
     },
   ];
@@ -163,7 +169,11 @@ export function measureDisruption(
   ]);
   const participants = new Set<string>();
   const resources = new Set<string>();
-  for (const assignment of [...change.added, ...change.removed, ...change.moved.map((m) => m.after)]) {
+  for (const assignment of [
+    ...change.added,
+    ...change.removed,
+    ...change.moved.map((m) => m.after),
+  ]) {
     assignment.participants.forEach((participant) => participants.add(participant));
     assignment.resources.forEach((resourceRef) => resources.add(resourceRef));
   }
@@ -275,11 +285,15 @@ export function analyseImpact(
   options: { stabilityTolerance?: number } = {},
 ): ImpactAnalysis {
   const escalated = conflicts.filter((conflict) => conflict.severity === "critical");
-  const affectedActivities = Array.from(new Set(assignments.map((assignment) => assignment.activityId)));
+  const affectedActivities = Array.from(
+    new Set(assignments.map((assignment) => assignment.activityId)),
+  );
   const affectedParticipants = Array.from(
     new Set(assignments.flatMap((assignment) => [...assignment.participants])),
   );
-  const affectedResources = Array.from(new Set(assignments.flatMap((assignment) => [...assignment.resources])));
+  const affectedResources = Array.from(
+    new Set(assignments.flatMap((assignment) => [...assignment.resources])),
+  );
   const newConflictTypes = Array.from(new Set(conflicts.map((conflict) => conflict.type)));
   const tolerance = options.stabilityTolerance ?? 0.25;
 
@@ -338,7 +352,9 @@ export function explainPlacement(
       assignment.resources.length === 0
         ? "This activity requires no resource"
         : `${assignment.resources.join(", ")} met the declared capability, capacity and accessibility requirements`,
-    whyAlternativesRejected: alternatives.map((alternative) => `${alternative.id}: ${alternative.reason}`),
+    whyAlternativesRejected: alternatives.map(
+      (alternative) => `${alternative.id}: ${alternative.reason}`,
+    ),
     constraintsThatDecided: decided,
     preferencesSacrificed: sacrificed,
     selectedOver: alternatives.map((alternative) => alternative.id),

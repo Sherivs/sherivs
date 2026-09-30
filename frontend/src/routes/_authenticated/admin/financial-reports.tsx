@@ -28,7 +28,12 @@ function AdminFinancialReportsPage() {
     { label: "Total Revenue", value: "₦0", icon: DollarSign, color: "from-green-500 to-green-600" },
     { label: "Total Expenses", value: "₦0", icon: TrendingUp, color: "from-red-500 to-red-600" },
     { label: "Net Position", value: "₦0", icon: BarChart3, color: "from-blue-500 to-blue-600" },
-    { label: "Cash Flow Health", value: "—", icon: PieChart, color: "from-purple-500 to-purple-600" },
+    {
+      label: "Cash Flow Health",
+      value: "—",
+      icon: PieChart,
+      color: "from-purple-500 to-purple-600",
+    },
   ];
 
   return (
@@ -38,7 +43,9 @@ function AdminFinancialReportsPage() {
       actions={
         <>
           <Button disabled>Generate Report</Button>
-          <Button variant="outline" disabled>Export Data</Button>
+          <Button variant="outline" disabled>
+            Export Data
+          </Button>
         </>
       }
     >
@@ -184,8 +191,13 @@ function AdminFinancialReportsPage() {
                   <div className="flex items-start gap-4">
                     <AlertCircle className="h-5 w-5 text-blue-600 mt-1 flex-shrink-0" />
                     <div>
-                      <p className="font-medium text-sm text-blue-900">Real-time Cash Flow Monitoring</p>
-                      <p className="text-sm text-blue-700 mt-1">Track inflows, outflows, and predict future cash position with AI-powered forecasting</p>
+                      <p className="font-medium text-sm text-blue-900">
+                        Real-time Cash Flow Monitoring
+                      </p>
+                      <p className="text-sm text-blue-700 mt-1">
+                        Track inflows, outflows, and predict future cash position with AI-powered
+                        forecasting
+                      </p>
                     </div>
                   </div>
                 </div>

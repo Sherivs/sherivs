@@ -48,7 +48,13 @@ export function CalendarMonth() {
   const schoolDays = useMemo<Record<string, boolean>>(() => {
     const raw = (school?.school_days as Record<string, unknown> | null) ?? null;
     const defaults: Record<string, boolean> = {
-      mon: true, tue: true, wed: true, thu: true, fri: true, sat: false, sun: false,
+      mon: true,
+      tue: true,
+      wed: true,
+      thu: true,
+      fri: true,
+      sat: false,
+      sun: false,
     };
     if (!raw) return defaults;
     const next = { ...defaults };
@@ -113,20 +119,29 @@ export function CalendarMonth() {
         </div>
         <div className="flex items-center gap-1">
           <Button
-            type="button" variant="ghost" size="icon"
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
             aria-label="Previous month"
           >
             <ChevronLeft className="size-4" />
           </Button>
           <Button
-            type="button" variant="ghost" size="sm"
-            onClick={() => { const n = new Date(); setCursor(new Date(n.getFullYear(), n.getMonth(), 1)); }}
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              const n = new Date();
+              setCursor(new Date(n.getFullYear(), n.getMonth(), 1));
+            }}
           >
             Today
           </Button>
           <Button
-            type="button" variant="ghost" size="icon"
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}
             aria-label="Next month"
           >
@@ -136,7 +151,11 @@ export function CalendarMonth() {
       </div>
 
       <div className="grid grid-cols-7 gap-px text-center text-[10px] uppercase tracking-widest text-muted-foreground">
-        {DAY_LABELS.map((d) => <div key={d} className="py-1">{d}</div>)}
+        {DAY_LABELS.map((d) => (
+          <div key={d} className="py-1">
+            {d}
+          </div>
+        ))}
       </div>
 
       <div className="grid grid-cols-7 gap-px rounded-lg bg-border/40 overflow-hidden">
@@ -157,24 +176,32 @@ export function CalendarMonth() {
               ].join(" ")}
               aria-label={!isSchoolDay ? `Non-school day, ${key}` : key}
             >
-              <div className={[
-                "flex items-center justify-between",
-                inMonth ? "text-foreground" : "text-muted-foreground/60",
-              ].join(" ")}>
+              <div
+                className={[
+                  "flex items-center justify-between",
+                  inMonth ? "text-foreground" : "text-muted-foreground/60",
+                ].join(" ")}
+              >
                 <span className={isToday ? "font-bold text-primary" : ""}>{date.getDate()}</span>
                 {!isSchoolDay && inMonth && (
-                  <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70">Off</span>
+                  <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70">
+                    Off
+                  </span>
                 )}
               </div>
               <ul className="mt-1 space-y-0.5">
                 {dayEvents.slice(0, 3).map((e) => (
                   <li key={e.id} className="flex items-center gap-1 truncate">
-                    <span className={`size-1.5 rounded-full shrink-0 ${TYPE_DOT[e.event_type ?? ""] ?? "bg-foreground/50"}`} />
+                    <span
+                      className={`size-1.5 rounded-full shrink-0 ${TYPE_DOT[e.event_type ?? ""] ?? "bg-foreground/50"}`}
+                    />
                     <span className="truncate text-[11px]">{e.title}</span>
                   </li>
                 ))}
                 {dayEvents.length > 3 && (
-                  <li className="text-[10px] text-muted-foreground">+{dayEvents.length - 3} more</li>
+                  <li className="text-[10px] text-muted-foreground">
+                    +{dayEvents.length - 3} more
+                  </li>
                 )}
               </ul>
             </div>
@@ -183,13 +210,24 @@ export function CalendarMonth() {
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-3 text-[10px] uppercase tracking-wider text-muted-foreground">
-        <span className="inline-flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-rose-400" /> Holiday</span>
-        <span className="inline-flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-amber-400" /> Exam</span>
-        <span className="inline-flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-sky-400" /> Event</span>
-        <span className="inline-flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-violet-400" /> Meeting</span>
-        <span className="inline-flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-emerald-400" /> Term</span>
+        <span className="inline-flex items-center gap-1">
+          <span className="inline-block size-2 rounded-full bg-rose-400" /> Holiday
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="inline-block size-2 rounded-full bg-amber-400" /> Exam
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="inline-block size-2 rounded-full bg-sky-400" /> Event
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="inline-block size-2 rounded-full bg-violet-400" /> Meeting
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="inline-block size-2 rounded-full bg-emerald-400" /> Term
+        </span>
         <span className="ml-auto inline-flex items-center gap-1">
-          <span className="inline-block size-3 rounded bg-stripes border border-border" /> Non-school day
+          <span className="inline-block size-3 rounded bg-stripes border border-border" />{" "}
+          Non-school day
         </span>
       </div>
     </div>

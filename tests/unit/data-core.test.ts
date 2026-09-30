@@ -89,8 +89,28 @@ describe("Dataset registration (AM)", () => {
   });
 
   it("rejects a dataset without a name or owner", () => {
-    expect(registerDataset({ name: "", tenantId: TENANT_A, domain: "academic", owner: "o", description: "", sensitivity: "INTERNAL", now: NOW }).ok).toBe(false);
-    expect(registerDataset({ name: "d", tenantId: TENANT_A, domain: "academic", owner: "", description: "", sensitivity: "INTERNAL", now: NOW }).ok).toBe(false);
+    expect(
+      registerDataset({
+        name: "",
+        tenantId: TENANT_A,
+        domain: "academic",
+        owner: "o",
+        description: "",
+        sensitivity: "INTERNAL",
+        now: NOW,
+      }).ok,
+    ).toBe(false);
+    expect(
+      registerDataset({
+        name: "d",
+        tenantId: TENANT_A,
+        domain: "academic",
+        owner: "",
+        description: "",
+        sensitivity: "INTERNAL",
+        now: NOW,
+      }).ok,
+    ).toBe(false);
   });
 });
 

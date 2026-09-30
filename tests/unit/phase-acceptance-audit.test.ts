@@ -71,8 +71,7 @@ interface AcceptanceProof {
 
 const loadData = () =>
   JSON.parse(readFileSync(join(ROOT, DATA_REF), "utf8")) as { areas: AreaData[] };
-const loadProof = () =>
-  JSON.parse(readFileSync(join(ROOT, PROOF_REF), "utf8")) as AcceptanceProof;
+const loadProof = () => JSON.parse(readFileSync(join(ROOT, PROOF_REF), "utf8")) as AcceptanceProof;
 
 describe("AUDIT-P01 — the phase acceptance probe is executable", () => {
   it("runs cleanly for phase 01 and reports every classification", () => {
@@ -99,9 +98,12 @@ describe("AUDIT-P01 — the phase acceptance probe is executable", () => {
       expect(proof.classificationDefinitions[classification], classification).toBeTruthy();
     }
     expect(proof.summary.areas).toBe(proof.areas.length);
-    expect(proof.summary.enforced + proof.summary.declared + proof.summary.implementedUnwired + proof.summary.missing).toBe(
-      proof.areas.length,
-    );
+    expect(
+      proof.summary.enforced +
+        proof.summary.declared +
+        proof.summary.implementedUnwired +
+        proof.summary.missing,
+    ).toBe(proof.areas.length);
     expect(proof.summary.implementedUnwired).toBe(proof.summary.implementedUnwiredAreas.length);
   });
 
@@ -136,9 +138,14 @@ describe("AUDIT-P01 — the phase acceptance probe is executable", () => {
       const executable = (area?.evidence ?? []).filter((entry) =>
         EXECUTABLE_KINDS.includes(entry.kind),
       );
-      expect(executable.length, `${row.id} is ENFORCED without executable evidence`).toBeGreaterThan(0);
+      expect(
+        executable.length,
+        `${row.id} is ENFORCED without executable evidence`,
+      ).toBeGreaterThan(0);
       for (const entry of executable) {
-        expect(existsSync(join(ROOT, entry.path)), `${row.id} cites missing ${entry.path}`).toBe(true);
+        expect(existsSync(join(ROOT, entry.path)), `${row.id} cites missing ${entry.path}`).toBe(
+          true,
+        );
       }
     }
     // Anything without executable evidence must be reported, not promoted.
@@ -148,7 +155,9 @@ describe("AUDIT-P01 — the phase acceptance probe is executable", () => {
         EXECUTABLE_KINDS.includes(entry.kind),
       );
       if (executable.length === 0) {
-        expect(["DECLARED", "MISSING"], `${row.id} cannot be ENFORCED`).toContain(row.classification);
+        expect(["DECLARED", "MISSING"], `${row.id} cannot be ENFORCED`).toContain(
+          row.classification,
+        );
       }
     }
   });
@@ -162,16 +171,27 @@ describe("AUDIT-P01 — the phase acceptance probe is executable", () => {
     for (const row of unwired) {
       const area = byId.get(row.id);
       // Unwired means: implementation exists, boundary patterns were declared and matched nothing.
-      expect((area?.boundary ?? []).length, `${row.id} must declare a boundary probe`).toBeGreaterThan(0);
+      expect(
+        (area?.boundary ?? []).length,
+        `${row.id} must declare a boundary probe`,
+      ).toBeGreaterThan(0);
       expect(row.declaredBoundary.length).toBe((area?.boundary ?? []).length);
-      expect(row.boundaryEvidence, `${row.id} has a matched boundary — it is not unwired`).toEqual([]);
-      expect(row.matchedEvidence.length, `${row.id} must still show its implementation`).toBeGreaterThan(0);
+      expect(row.boundaryEvidence, `${row.id} has a matched boundary — it is not unwired`).toEqual(
+        [],
+      );
+      expect(
+        row.matchedEvidence.length,
+        `${row.id} must still show its implementation`,
+      ).toBeGreaterThan(0);
     }
     // And the converse: an area classified ENFORCED with a declared boundary must show the match.
     for (const row of proof.areas) {
       const area = byId.get(row.id);
       if (row.classification === "ENFORCED" && (area?.boundary ?? []).length > 0) {
-        expect(row.boundaryEvidence.length, `${row.id} claims ENFORCED without a boundary match`).toBeGreaterThan(0);
+        expect(
+          row.boundaryEvidence.length,
+          `${row.id} claims ENFORCED without a boundary match`,
+        ).toBeGreaterThan(0);
       }
     }
   });
@@ -254,7 +274,8 @@ describe("AUDIT-P01 — the phase acceptance probe is executable", () => {
       expect(output).toContain("Implemented and tested, but no boundary invokes it yet");
       for (const id of proof.summary.implementedUnwiredAreas) expect(output).toContain(id);
     }
-    const remaining = proof.summary.declared + proof.summary.missing + proof.summary.implementedUnwired;
+    const remaining =
+      proof.summary.declared + proof.summary.missing + proof.summary.implementedUnwired;
     if (remaining === 0) {
       expect(proof.summary.enforced).toBe(proof.summary.areas);
     } else {

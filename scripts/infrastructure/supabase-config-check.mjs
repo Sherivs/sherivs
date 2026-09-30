@@ -121,9 +121,13 @@ writeFileSync(proofPath, `${JSON.stringify(proof, null, 2)}\n`, "utf8");
 for (const entry of checks) {
   console.log(`${entry.ok ? "OK  " : "FAIL"}  ${entry.id} — ${entry.detail}`);
 }
-console.log(`\n${checks.length - failed.length}/${checks.length} data-layer checks hold (mode: ${proof.mode}).`);
+console.log(
+  `\n${checks.length - failed.length}/${checks.length} data-layer checks hold (mode: ${proof.mode}).`,
+);
 
 if (failed.length > 0) {
-  console.error("\nSupabase configuration check FAILED — refusing to treat the data layer as ready.");
+  console.error(
+    "\nSupabase configuration check FAILED — refusing to treat the data layer as ready.",
+  );
   process.exit(1);
 }

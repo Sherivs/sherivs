@@ -63,7 +63,11 @@ export function globalizationEventId(raw: string): GlobalizationEventId {
 export type ConfigOverrideLevel = "global" | "jurisdiction" | "region" | "institution" | "user";
 
 export const CONFIG_OVERRIDE_LEVELS: readonly ConfigOverrideLevel[] = [
-  "global", "jurisdiction", "region", "institution", "user",
+  "global",
+  "jurisdiction",
+  "region",
+  "institution",
+  "user",
 ] as const;
 
 export const CONFIG_RANK: Record<ConfigOverrideLevel, number> = {
@@ -129,7 +133,10 @@ export function resolveConfigValue(
     .sort((a, b) => CONFIG_RANK[b.level] - CONFIG_RANK[a.level]);
   const top = applicable[0];
   if (!top) {
-    return { ok: false, error: `No configuration value for "${key}" at level "${atLevel}" (Section DT)` };
+    return {
+      ok: false,
+      error: `No configuration value for "${key}" at level "${atLevel}" (Section DT)`,
+    };
   }
   return { ok: true, value: top.value, sourceLevel: top.level };
 }
@@ -185,7 +192,8 @@ export function isFeatureAvailable(
   const regional = flags.find(
     (f) => f.feature === feature && f.jurisdictionRef === jurisdictionRef,
   );
-  const target = regional ?? flags.find((f) => f.feature === feature && f.jurisdictionRef === undefined);
+  const target =
+    regional ?? flags.find((f) => f.feature === feature && f.jurisdictionRef === undefined);
   if (!target) return false;
   if (!target.enabled) return false;
   if (target.expiresAt && atDate >= target.expiresAt) return false;
@@ -213,7 +221,8 @@ export function createGlobalServiceCatalogEntry(input: {
 }): { ok: true; entry: GlobalServiceCatalogEntry } | { ok: false; error: string } {
   if (!input.service.trim()) return { ok: false, error: "Service name is required (Section DZ)" };
   if (!input.region.trim()) return { ok: false, error: "Service region is required (Section DZ)" };
-  if (!input.provider.trim()) return { ok: false, error: "Service provider is required (Section DZ)" };
+  if (!input.provider.trim())
+    return { ok: false, error: "Service provider is required (Section DZ)" };
   return {
     ok: true,
     entry: {
@@ -250,18 +259,22 @@ export function findServiceForRegion(
  * ────────────────────────────────────────────────────────────*/
 
 export const READINESS_DIMENSIONS: readonly string[] = [
-  "language", "currency", "timezone", "education", "payments", "government",
-  "connectivity", "cloud", "integration", "security", "localization", "support",
+  "language",
+  "currency",
+  "timezone",
+  "education",
+  "payments",
+  "government",
+  "connectivity",
+  "cloud",
+  "integration",
+  "security",
+  "localization",
+  "support",
 ] as const;
 
 export type CountryReadinessStatus =
-  | "research"
-  | "localization"
-  | "pilot"
-  | "validation"
-  | "launch"
-  | "monitoring"
-  | "scale";
+  "research" | "localization" | "pilot" | "validation" | "launch" | "monitoring" | "scale";
 
 export interface CountryReadiness {
   id: CountryReadinessId;
@@ -283,7 +296,10 @@ export function createCountryReadiness(input: {
   }
   for (const [dimension, score] of Object.entries(input.scores)) {
     if (!Number.isFinite(score) || score < 0 || score > 1) {
-      return { ok: false, error: `Readiness score for "${dimension}" must be between 0 and 1 (Section EA)` };
+      return {
+        ok: false,
+        error: `Readiness score for "${dimension}" must be between 0 and 1 (Section EA)`,
+      };
     }
   }
   return {
@@ -314,7 +330,13 @@ export function isCountryLaunchReady(readiness: CountryReadiness, minScore: numb
 }
 
 export const EXPANSION_ORDER: readonly CountryReadinessStatus[] = [
-  "research", "localization", "pilot", "validation", "launch", "monitoring", "scale",
+  "research",
+  "localization",
+  "pilot",
+  "validation",
+  "launch",
+  "monitoring",
+  "scale",
 ] as const;
 
 // Section ED: country expansion advances one stage at a time.
@@ -334,12 +356,23 @@ export function openRegionalPilot(input: {
   institutions: string[];
   startDate: string;
   monitoring?: boolean;
-}): {
-  ok: true;
-  pilot: { pilotRef: string; countryCode: string; institutions: string[]; startDate: string; status: "active"; monitoring: boolean };
-} | { ok: false; error: string } {
-  if (!input.pilotRef.trim()) return { ok: false, error: "Pilot reference is required (Section EC)" };
-  if (!input.countryCode.trim()) return { ok: false, error: "Pilot country is required (Section EC)" };
+}):
+  | {
+      ok: true;
+      pilot: {
+        pilotRef: string;
+        countryCode: string;
+        institutions: string[];
+        startDate: string;
+        status: "active";
+        monitoring: boolean;
+      };
+    }
+  | { ok: false; error: string } {
+  if (!input.pilotRef.trim())
+    return { ok: false, error: "Pilot reference is required (Section EC)" };
+  if (!input.countryCode.trim())
+    return { ok: false, error: "Pilot country is required (Section EC)" };
   if (input.institutions.length === 0) {
     return { ok: false, error: "A regional pilot requires at least one institution (Section EC)" };
   }
@@ -401,11 +434,23 @@ export function createIncidentCommunicationPlan(input: {
   timezone: string;
   templates?: string[];
 }): { ok: true; plan: IncidentCommunicationPlan } | { ok: false; error: string } {
-  if (!input.incidentRef.trim()) return { ok: false, error: "Incident reference is required (Section EH)" };
+  if (!input.incidentRef.trim())
+    return { ok: false, error: "Incident reference is required (Section EH)" };
   if (input.languages.length === 0 || !input.timezone.trim()) {
-    return { ok: false, error: "Incident communication requires languages and a timezone (Section EH)" };
+    return {
+      ok: false,
+      error: "Incident communication requires languages and a timezone (Section EH)",
+    };
   }
-  return { ok: true, plan: { incidentRef: input.incidentRef, languages: input.languages, timezone: input.timezone, templates: input.templates ?? [] } };
+  return {
+    ok: true,
+    plan: {
+      incidentRef: input.incidentRef,
+      languages: input.languages,
+      timezone: input.timezone,
+      templates: input.templates ?? [],
+    },
+  };
 }
 
 export interface LocalizedStatusView {
@@ -420,7 +465,10 @@ export function createLocalizedStatusView(input: {
   text: string;
 }): { ok: true; view: LocalizedStatusView } | { ok: false; error: string } {
   if (!input.statusRef.trim() || !input.locale.trim() || !input.text.trim()) {
-    return { ok: false, error: "Localized status view requires status, locale, and text (Section EI)" };
+    return {
+      ok: false,
+      error: "Localized status view requires status, locale, and text (Section EI)",
+    };
   }
   return { ok: true, view: { statusRef: input.statusRef, locale: input.locale, text: input.text } };
 }
@@ -439,8 +487,15 @@ export function createRegionalSla(input: {
   availabilityPercent: number;
 }): { ok: true; sla: RegionalSla } | { ok: false; error: string } {
   if (!input.region.trim()) return { ok: false, error: "SLA region is required (Section EJ)" };
-  if (!Number.isFinite(input.availabilityPercent) || input.availabilityPercent < 0 || input.availabilityPercent > 100) {
-    return { ok: false, error: "SLA availability must be a percentage between 0 and 100 (Section EJ)" };
+  if (
+    !Number.isFinite(input.availabilityPercent) ||
+    input.availabilityPercent < 0 ||
+    input.availabilityPercent > 100
+  ) {
+    return {
+      ok: false,
+      error: "SLA availability must be a percentage between 0 and 100 (Section EJ)",
+    };
   }
   return {
     ok: true,
@@ -470,11 +525,23 @@ export function createPseudoLocalizationConfig(input: {
   suffix: string;
   expansionFactor: number;
 }): { ok: true; config: PseudoLocalizationConfig } | { ok: false; error: string } {
-  if (!input.locale.trim()) return { ok: false, error: "Pseudo-localization locale is required (Section DH)" };
+  if (!input.locale.trim())
+    return { ok: false, error: "Pseudo-localization locale is required (Section DH)" };
   if (input.expansionFactor < 1) {
-    return { ok: false, error: "Pseudo-localization expansion factor must be at least 1 (Section DH)" };
+    return {
+      ok: false,
+      error: "Pseudo-localization expansion factor must be at least 1 (Section DH)",
+    };
   }
-  return { ok: true, config: { locale: input.locale, prefix: input.prefix, suffix: input.suffix, expansionFactor: input.expansionFactor } };
+  return {
+    ok: true,
+    config: {
+      locale: input.locale,
+      prefix: input.prefix,
+      suffix: input.suffix,
+      expansionFactor: input.expansionFactor,
+    },
+  };
 }
 
 // Section DH: exposes text overflow, hard-coded strings, layout assumptions.
@@ -496,12 +563,16 @@ export interface LocaleMatrixEntry {
 export function createLocaleMatrix(
   entries: readonly LocaleMatrixEntry[],
 ): { ok: true; matrix: readonly LocaleMatrixEntry[] } | { ok: false; error: string } {
-  if (entries.length === 0) return { ok: false, error: "Locale matrix requires entries (Section DI)" };
+  if (entries.length === 0)
+    return { ok: false, error: "Locale matrix requires entries (Section DI)" };
   if (!entries.every((e) => e.covered)) {
     return { ok: false, error: "Every supported locale must be covered (Section DI)" };
   }
   if (!entries.some((e) => e.direction === "ltr") || !entries.some((e) => e.direction === "rtl")) {
-    return { ok: false, error: "Locale matrix must include both LTR and RTL coverage (Section DI)" };
+    return {
+      ok: false,
+      error: "Locale matrix must include both LTR and RTL coverage (Section DI)",
+    };
   }
   return { ok: true, matrix: entries };
 }
@@ -525,7 +596,16 @@ export function createLocaleTestRun(input: {
   if (input.passed < 0 || input.failed < 0) {
     return { ok: false, error: "Test run counts must be non-negative (Section DG)" };
   }
-  return { ok: true, run: { id: input.id, locale: input.locale, tests: input.tests, passed: input.passed, failed: input.failed } };
+  return {
+    ok: true,
+    run: {
+      id: input.id,
+      locale: input.locale,
+      tests: input.tests,
+      passed: input.passed,
+      failed: input.failed,
+    },
+  };
 }
 
 export function isLocaleTestRunGreen(run: LocaleTestRun): boolean {
@@ -547,7 +627,10 @@ export function createHumanReview(input: {
   if (!input.target.trim() || !input.reviewer.trim()) {
     return { ok: false, error: "Human review requires a target and reviewer (Section DK)" };
   }
-  return { ok: true, review: { target: input.target, kind: "human", reviewer: input.reviewer, status: "pending" } };
+  return {
+    ok: true,
+    review: { target: input.target, kind: "human", reviewer: input.reviewer, status: "pending" },
+  };
 }
 
 export function approveCommunityReview(
@@ -582,7 +665,8 @@ export function createConnectivityProfile(input: {
   offlineSupport?: boolean;
   lowBandwidthDesign?: boolean;
 }): { ok: true; profile: ConnectivityProfile } | { ok: false; error: string } {
-  if (!input.region.trim()) return { ok: false, error: "Connectivity region is required (Section CV)" };
+  if (!input.region.trim())
+    return { ok: false, error: "Connectivity region is required (Section CV)" };
   return {
     ok: true,
     profile: {
@@ -662,7 +746,8 @@ export function createLowLiteracyUxConfig(input: {
   useVisualExplanations?: boolean;
   progressiveOnboarding?: boolean;
 }): { ok: true; config: LowLiteracyUxConfig } | { ok: false; error: string } {
-  if (!input.region.trim()) return { ok: false, error: "Low-literacy UX region is required (Section BS)" };
+  if (!input.region.trim())
+    return { ok: false, error: "Low-literacy UX region is required (Section BS)" };
   return {
     ok: true,
     config: {
@@ -691,7 +776,8 @@ export function createVoiceLocalization(input: {
   speechSynthesis?: boolean;
   localAccents?: string[];
 }): { ok: true; localization: VoiceLocalization } | { ok: false; error: string } {
-  if (!input.region.trim()) return { ok: false, error: "Voice localization region is required (Section BT)" };
+  if (!input.region.trim())
+    return { ok: false, error: "Voice localization region is required (Section BT)" };
   return {
     ok: true,
     localization: {
@@ -739,7 +825,9 @@ export function validateRegionalGraph(
   entities: readonly GlobalizationKnowledgeEntity[],
 ): { ok: true; nodeCount: number; edgeCount: number } | { ok: false; error: string } {
   const byId = new Map(entities.map((e) => [e.id, e]));
-  const allowedParents: Partial<Record<GlobalizationKnowledgeEntityType, readonly GlobalizationKnowledgeEntityType[]>> = {
+  const allowedParents: Partial<
+    Record<GlobalizationKnowledgeEntityType, readonly GlobalizationKnowledgeEntityType[]>
+  > = {
     region: ["country"],
     district: ["region"],
     institution: ["district", "region"],
@@ -748,11 +836,17 @@ export function validateRegionalGraph(
     if (!entity.parentRef) continue;
     const parent = byId.get(entity.parentRef);
     if (!parent) {
-      return { ok: false, error: `Missing parent "${entity.parentRef}" for "${entity.id}" (Section FD)` };
+      return {
+        ok: false,
+        error: `Missing parent "${entity.parentRef}" for "${entity.id}" (Section FD)`,
+      };
     }
     const allowed = allowedParents[entity.type];
     if (allowed && !allowed.includes(parent.type)) {
-      return { ok: false, error: `Invalid parent type "${parent.type}" for "${entity.type}" (Section FD)` };
+      return {
+        ok: false,
+        error: `Invalid parent type "${parent.type}" for "${entity.type}" (Section FD)`,
+      };
     }
   }
   return {
@@ -767,9 +861,20 @@ export function validateRegionalGraph(
  * ────────────────────────────────────────────────────────────*/
 
 export const GLOBALIZATION_APIS: readonly string[] = [
-  "LocaleAPI", "LanguageAPI", "TranslationAPI", "CurrencyPresentationAPI", "TimezoneAPI",
-  "CalendarAPI", "HolidayAPI", "MeasurementAPI", "CountryProfileAPI", "RegionProfileAPI",
-  "JurisdictionAPI", "LocalizationConfigAPI", "TerminologyAPI", "LocalizedContentAPI",
+  "LocaleAPI",
+  "LanguageAPI",
+  "TranslationAPI",
+  "CurrencyPresentationAPI",
+  "TimezoneAPI",
+  "CalendarAPI",
+  "HolidayAPI",
+  "MeasurementAPI",
+  "CountryProfileAPI",
+  "RegionProfileAPI",
+  "JurisdictionAPI",
+  "LocalizationConfigAPI",
+  "TerminologyAPI",
+  "LocalizedContentAPI",
   "GlobalizationReadinessAPI",
 ] as const;
 
@@ -792,10 +897,18 @@ export type GlobalizationEventType =
   | "localization.release.approved";
 
 export const GLOBALIZATION_EVENT_TYPES: readonly GlobalizationEventType[] = [
-  "locale.created", "locale.updated", "translation.created", "translation.updated",
-  "translation.reviewed", "country.profile.updated", "regional.rule.updated",
-  "holiday.updated", "timezone.rule.updated", "currency.rule.updated",
-  "localization.release.created", "localization.release.approved",
+  "locale.created",
+  "locale.updated",
+  "translation.created",
+  "translation.updated",
+  "translation.reviewed",
+  "country.profile.updated",
+  "regional.rule.updated",
+  "holiday.updated",
+  "timezone.rule.updated",
+  "currency.rule.updated",
+  "localization.release.created",
+  "localization.release.approved",
 ] as const;
 
 export interface GlobalizationEvent {
@@ -817,23 +930,41 @@ export function publishGlobalizationEvent(input: {
     return { ok: false, error: "Unknown globalization event type (Section FH)" };
   }
   if (!input.actorRef.trim() || !input.resourceRef.trim()) {
-    return { ok: false, error: "Globalization event requires actor and resource references (Section FH)" };
+    return {
+      ok: false,
+      error: "Globalization event requires actor and resource references (Section FH)",
+    };
   }
-  return { ok: true, event: { id: input.id, type: input.type, actorRef: input.actorRef, resourceRef: input.resourceRef, occurredAt: input.occurredAt } };
+  return {
+    ok: true,
+    event: {
+      id: input.id,
+      type: input.type,
+      actorRef: input.actorRef,
+      resourceRef: input.resourceRef,
+      occurredAt: input.occurredAt,
+    },
+  };
 }
 
 export const GLOBALIZATION_CORE_ENTITIES: readonly string[] = [
-  "Locale", "Language", "Script", "Country", "Region", "Jurisdiction", "Currency",
-  "Timezone", "Calendar", "Holiday", "MeasurementSystem", "Translation",
-  "TranslationKey", "Terminology", "LocalizedContent",
+  "Locale",
+  "Language",
+  "Script",
+  "Country",
+  "Region",
+  "Jurisdiction",
+  "Currency",
+  "Timezone",
+  "Calendar",
+  "Holiday",
+  "MeasurementSystem",
+  "Translation",
+  "TranslationKey",
+  "Terminology",
+  "LocalizedContent",
 ] as const;
 
 export function isGlobalizationEntity(name: string): boolean {
   return GLOBALIZATION_CORE_ENTITIES.includes(name);
 }
-
-
-
-
-
-

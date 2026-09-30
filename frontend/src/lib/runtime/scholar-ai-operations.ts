@@ -6,11 +6,7 @@
  * the kernel `classifyAiRisk`, `evaluateHighRiskGate` and `shouldEscalate`
  * own the rules. Unknown operation kinds fail closed (never defaulted).
  */
-import {
-  classifyAiRisk,
-  evaluateHighRiskGate,
-  shouldEscalate,
-} from "@/lib/ai-governance";
+import { classifyAiRisk, evaluateHighRiskGate, shouldEscalate } from "@/lib/ai-governance";
 import type { AiRiskLevel } from "@/lib/ai-core";
 
 export type ScholarAiOperationKind =

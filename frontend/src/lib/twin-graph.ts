@@ -107,8 +107,7 @@ export interface AddRelationshipInput {
 }
 
 export type AddRelationshipResult =
-  | { ok: true; relationship: TwinRelationship }
-  | { ok: false; error: string };
+  { ok: true; relationship: TwinRelationship } | { ok: false; error: string };
 
 /**
  * Add a relationship (M, O). The platform must prevent (P): impossible
@@ -122,7 +121,14 @@ export function addRelationship(
   if (input.sourceTwinId === input.targetTwinId) {
     return { ok: false, error: "A twin cannot relate to itself (P)" };
   }
-  if (existing.some((r) => r.sourceTwinId === input.sourceTwinId && r.targetTwinId === input.targetTwinId && r.type === input.type)) {
+  if (
+    existing.some(
+      (r) =>
+        r.sourceTwinId === input.sourceTwinId &&
+        r.targetTwinId === input.targetTwinId &&
+        r.type === input.type,
+    )
+  ) {
     return { ok: false, error: "Duplicate relationship is rejected (P)" };
   }
   if (ACYCLIC_RELATIONSHIP_TYPES.has(input.type)) {
@@ -237,16 +243,19 @@ export function findDependencies(
   relationships: TwinRelationship[],
   twinId: string,
 ): TwinRelationship[] {
-  return relationships.filter((r) => r.type === "depends_on" && (r.sourceTwinId === twinId || r.targetTwinId === twinId));
+  return relationships.filter(
+    (r) => r.type === "depends_on" && (r.sourceTwinId === twinId || r.targetTwinId === twinId),
+  );
 }
 
 export function isDanglingReference(
   relationship: TwinRelationship,
   knownTwinIds: Set<string>,
 ): boolean {
-  return !knownTwinIds.has(relationship.sourceTwinId) || !knownTwinIds.has(relationship.targetTwinId);
+  return (
+    !knownTwinIds.has(relationship.sourceTwinId) || !knownTwinIds.has(relationship.targetTwinId)
+  );
 }
-
 
 /* ─────────────────────────────────────────────────────────────
  * Spatial model (Q, R, S)
@@ -254,7 +263,13 @@ export function isDanglingReference(
 
 export type CoordinateSystem = "lat_long" | "local" | "building" | "floor" | "3d";
 
-export const COORDINATE_SYSTEMS: readonly CoordinateSystem[] = ["lat_long", "local", "building", "floor", "3d"] as const;
+export const COORDINATE_SYSTEMS: readonly CoordinateSystem[] = [
+  "lat_long",
+  "local",
+  "building",
+  "floor",
+  "3d",
+] as const;
 
 export interface SpatialPosition {
   coordinateSystem: CoordinateSystem;
@@ -315,4 +330,3 @@ export function createSpatialPosition(
 ): SpatialPosition {
   return { coordinateSystem, coordinates, metadata };
 }
-

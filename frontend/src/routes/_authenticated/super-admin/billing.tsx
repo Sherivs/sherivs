@@ -66,7 +66,9 @@ function SuperAdminBillingPage() {
       const in30 = new Date(Date.now() + 30 * 86_400_000).toISOString();
       const { data } = await supabase
         .from("schools")
-        .select("id, name, subscription_tier, subscription_expires_at, monthly_fee, subscription_status")
+        .select(
+          "id, name, subscription_tier, subscription_expires_at, monthly_fee, subscription_status",
+        )
         .not("subscription_expires_at", "is", null)
         .lte("subscription_expires_at", in30)
         .order("subscription_expires_at", { ascending: true });
@@ -227,7 +229,10 @@ function SuperAdminBillingPage() {
   }
 
   return (
-    <PortalPage title="Billing" subtitle="Subscriptions and monthly invoices across all tenant schools.">
+    <PortalPage
+      title="Billing"
+      subtitle="Subscriptions and monthly invoices across all tenant schools."
+    >
       <SectionGrid>
         <StatCard label="Total subscriptions" value={rows.length} />
         <StatCard label="Active" value={active} />
@@ -261,7 +266,9 @@ function SuperAdminBillingPage() {
         <section className="uos-card">
           <header className="border-b border-border p-4">
             <h2 className="font-display text-base font-semibold">Overdue</h2>
-            <p className="text-xs text-muted-foreground">Expired subscriptions requiring follow-up.</p>
+            <p className="text-xs text-muted-foreground">
+              Expired subscriptions requiring follow-up.
+            </p>
           </header>
           {overdue.length === 0 ? (
             <p className="p-4 text-sm text-muted-foreground">No overdue schools.</p>
@@ -272,7 +279,8 @@ function SuperAdminBillingPage() {
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">{s.name}</div>
                     <div className="truncate text-xs text-muted-foreground">
-                      {s.subscription_tier} · expired {new Date(s.subscription_expires_at!).toLocaleDateString()}
+                      {s.subscription_tier} · expired{" "}
+                      {new Date(s.subscription_expires_at!).toLocaleDateString()}
                     </div>
                   </div>
                   <button
@@ -307,7 +315,8 @@ function SuperAdminBillingPage() {
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">{s.name}</div>
                     <div className="truncate text-xs text-muted-foreground">
-                      {s.subscription_tier} · renews {new Date(s.subscription_expires_at!).toLocaleDateString()}
+                      {s.subscription_tier} · renews{" "}
+                      {new Date(s.subscription_expires_at!).toLocaleDateString()}
                     </div>
                   </div>
                   <button
@@ -339,12 +348,17 @@ function SuperAdminBillingPage() {
             </p>
           </div>
           <div className="text-right">
-            <div className="text-xs uppercase tracking-widest text-muted-foreground">All schools this month</div>
+            <div className="text-xs uppercase tracking-widest text-muted-foreground">
+              All schools this month
+            </div>
             <div className="font-mono text-xl font-bold">₦{monthlyTotal.toLocaleString()}</div>
           </div>
         </div>
         {invoiceRows.length === 0 ? (
-          <EmptyCard title="No active schools yet" body="Schools will appear here once provisioned." />
+          <EmptyCard
+            title="No active schools yet"
+            body="Schools will appear here once provisioned."
+          />
         ) : (
           <div className="overflow-x-auto -mx-4 sm:mx-0">
             <table className="w-full text-sm">
@@ -367,14 +381,21 @@ function SuperAdminBillingPage() {
                     <td className="p-3 text-right font-mono">{r.students.toLocaleString()}</td>
                     <td className="p-3 text-right font-mono">₦{r.platformFee.toLocaleString()}</td>
                     <td className="p-3 text-right font-mono">₦{r.perStudent.toLocaleString()}</td>
-                    <td className="p-3 text-right font-mono">₦{r.perStudentTotal.toLocaleString()}</td>
-                    <td className="p-3 text-right font-mono font-bold">₦{r.total.toLocaleString()}</td>
+                    <td className="p-3 text-right font-mono">
+                      ₦{r.perStudentTotal.toLocaleString()}
+                    </td>
+                    <td className="p-3 text-right font-mono font-bold">
+                      ₦{r.total.toLocaleString()}
+                    </td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
                 <tr className="border-t border-border">
-                  <td colSpan={6} className="p-3 text-right text-xs uppercase tracking-widest text-muted-foreground">
+                  <td
+                    colSpan={6}
+                    className="p-3 text-right text-xs uppercase tracking-widest text-muted-foreground"
+                  >
                     Combined monthly invoice
                   </td>
                   <td className="p-3 text-right font-mono text-base font-bold">
@@ -390,7 +411,10 @@ function SuperAdminBillingPage() {
       <div className="uos-card mt-6 overflow-x-auto">
         <h2 className="mb-3 text-lg font-semibold">Subscription history</h2>
         {rows.length === 0 ? (
-          <EmptyCard title="No subscriptions yet" body="When schools subscribe to a plan they will appear here." />
+          <EmptyCard
+            title="No subscriptions yet"
+            body="When schools subscribe to a plan they will appear here."
+          />
         ) : (
           <table className="w-full text-sm">
             <thead>
@@ -425,28 +449,31 @@ function SuperAdminBillingPage() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
           onClick={() => !busy && setPay(null)}
         >
-          <div
-            className="uos-card w-full max-w-md p-5"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="uos-card w-full max-w-md p-5" onClick={(e) => e.stopPropagation()}>
             <h3 className="font-display text-lg font-semibold">Record manual payment</h3>
             <div className="mt-4 space-y-3 text-sm">
               <label className="block">
-                <span className="block text-[11px] uppercase tracking-widest text-muted-foreground">Plan</span>
+                <span className="block text-[11px] uppercase tracking-widest text-muted-foreground">
+                  Plan
+                </span>
                 <select
                   value={pay.plan}
                   onChange={(e) => setPay({ ...pay, plan: e.target.value })}
                   className="uos-input mt-1"
                 >
-                  {(["trial", "starter", "growth", "professional", "enterprise"] as const).map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
+                  {(["trial", "starter", "growth", "professional", "enterprise"] as const).map(
+                    (p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ),
+                  )}
                 </select>
               </label>
               <label className="block">
-                <span className="block text-[11px] uppercase tracking-widest text-muted-foreground">Amount (₦)</span>
+                <span className="block text-[11px] uppercase tracking-widest text-muted-foreground">
+                  Amount (₦)
+                </span>
                 <input
                   type="number"
                   value={pay.amount}
@@ -455,7 +482,9 @@ function SuperAdminBillingPage() {
                 />
               </label>
               <label className="block">
-                <span className="block text-[11px] uppercase tracking-widest text-muted-foreground">Reference (optional)</span>
+                <span className="block text-[11px] uppercase tracking-widest text-muted-foreground">
+                  Reference (optional)
+                </span>
                 <input
                   value={pay.reference}
                   onChange={(e) => setPay({ ...pay, reference: e.target.value })}

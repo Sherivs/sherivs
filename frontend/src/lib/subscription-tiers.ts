@@ -415,12 +415,19 @@ export const SUBSCRIPTION_TIERS = {
       digital_twin: true,
     },
     platform_apis: [
-      "resend_email", "twilio_sms", "whatsapp_cloud",
-      "openai", "google_vision_ai", "google_maps",
+      "resend_email",
+      "twilio_sms",
+      "whatsapp_cloud",
+      "openai",
+      "google_vision_ai",
+      "google_maps",
     ] as string[],
     client_apis: [
-      "paystack", "flutterwave", "stripe",
-      "whatsapp_business", "africas_talking",
+      "paystack",
+      "flutterwave",
+      "stripe",
+      "whatsapp_business",
+      "africas_talking",
     ] as string[],
   },
 } as const;

@@ -85,8 +85,11 @@ const catalogProbe = await svc
   .eq("runtime_ref", scholarRuntimeRef)
   .limit(1000);
 if (catalogProbe.error) {
-  check("cg_workforce_kind reachable (substrate 20260907000000 applied)", false,
-    catalogProbe.error.message);
+  check(
+    "cg_workforce_kind reachable (substrate 20260907000000 applied)",
+    false,
+    catalogProbe.error.message,
+  );
 } else {
   const rows = (catalogProbe.data ?? []).filter((r) => typeof r.kind_code === "string");
   const dbCodes = new Set(rows.map((r) => r.kind_code));
@@ -97,8 +100,7 @@ if (catalogProbe.error) {
   );
   check(
     "seeded catalog codes == typed catalog codes",
-    dbCodes.size === scholarCodeSet.size &&
-      [...dbCodes].every((c) => scholarCodeSet.has(c)),
+    dbCodes.size === scholarCodeSet.size && [...dbCodes].every((c) => scholarCodeSet.has(c)),
     `db=${dbCodes.size} typed=${scholarCodeSet.size}`,
   );
   check(
@@ -118,7 +120,9 @@ check(
 
 // 5. Org-admin RPC surface is callable without error via service role (the
 //    security-definer gate simply returns no rows when auth.uid() is absent).
-const rpcProbe = await svc.rpc("list_workforce_positions", { p_tenant: "00000000-0000-4000-8000-000000000000" });
+const rpcProbe = await svc.rpc("list_workforce_positions", {
+  p_tenant: "00000000-0000-4000-8000-000000000000",
+});
 check(
   "list_workforce_positions callable (RPC migration 20260907000300 applied)",
   !rpcProbe.error,

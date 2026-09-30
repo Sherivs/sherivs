@@ -7,12 +7,7 @@ import { z } from "zod";
 import { useApp } from "@/contexts/app-context";
 import { supabase } from "@/integrations/supabase/client";
 import { PortalPage } from "@/components/portal-shell";
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -70,20 +65,14 @@ function SchoolSettingsPage() {
   if (loading || !fresh) {
     return (
       <PortalPage title="School settings" subtitle={`Editing ${school.name}`}>
-        <div className="uos-card p-6 text-sm text-muted-foreground">
-          Loading settings…
-        </div>
+        <div className="uos-card p-6 text-sm text-muted-foreground">Loading settings…</div>
       </PortalPage>
     );
   }
 
   const onSaved = async () => {
     await refresh();
-    const { data } = await supabase
-      .from("schools")
-      .select("*")
-      .eq("id", school.id)
-      .maybeSingle();
+    const { data } = await supabase.from("schools").select("*").eq("id", school.id).maybeSingle();
     setFresh((data as SchoolRow) ?? null);
   };
 
@@ -184,9 +173,7 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-        {label}
-      </Label>
+      <Label className="text-xs uppercase tracking-wide text-muted-foreground">{label}</Label>
       {children}
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
@@ -231,8 +218,9 @@ function ProfileTab({ row, onSaved }: { row: SchoolRow; onSaved: () => Promise<v
     website_url: str(row.website_url),
     office_hours: str(row.office_hours),
   });
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setForm((s) => ({ ...s, [k]: e.target.value }));
+  const set =
+    (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setForm((s) => ({ ...s, [k]: e.target.value }));
 
   return (
     <FormCard
@@ -259,7 +247,12 @@ function ProfileTab({ row, onSaved }: { row: SchoolRow; onSaved: () => Promise<v
           <Input value={form.phone} onChange={set("phone")} maxLength={40} />
         </Field>
         <Field label="Website URL">
-          <Input type="url" value={form.website_url} onChange={set("website_url")} placeholder="https://" />
+          <Input
+            type="url"
+            value={form.website_url}
+            onChange={set("website_url")}
+            placeholder="https://"
+          />
         </Field>
         <Field label="Founded year">
           <Input
@@ -308,9 +301,17 @@ function BrandingTab({ row, onSaved }: { row: SchoolRow; onSaved: () => Promise<
         <Input type="url" value={form.logo_url} onChange={set("logo_url")} placeholder="https://" />
       </Field>
       <div className="grid gap-4 md:grid-cols-2">
-        <Field label="Primary color" hint="Hex (e.g. #1d4ed8). Drives accents across the public site.">
+        <Field
+          label="Primary color"
+          hint="Hex (e.g. #1d4ed8). Drives accents across the public site."
+        >
           <div className="flex items-center gap-3">
-            <Input value={form.primary_color} onChange={set("primary_color")} placeholder="#000000" maxLength={7} />
+            <Input
+              value={form.primary_color}
+              onChange={set("primary_color")}
+              placeholder="#000000"
+              maxLength={7}
+            />
             <input
               type="color"
               value={form.primary_color || "#000000"}
@@ -322,7 +323,12 @@ function BrandingTab({ row, onSaved }: { row: SchoolRow; onSaved: () => Promise<
         </Field>
         <Field label="Secondary color">
           <div className="flex items-center gap-3">
-            <Input value={form.secondary_color} onChange={set("secondary_color")} placeholder="#000000" maxLength={7} />
+            <Input
+              value={form.secondary_color}
+              onChange={set("secondary_color")}
+              placeholder="#000000"
+              maxLength={7}
+            />
             <input
               type="color"
               value={form.secondary_color || "#000000"}
@@ -360,9 +366,10 @@ function SectionsTab({ row, onSaved }: { row: SchoolRow; onSaved: () => Promise<
   const { save, saving } = useSaveTab("sections");
   const initial = useMemo(
     () =>
-      Object.fromEntries(
-        SECTION_FLAG_KEYS.map((k) => [k, Boolean(row[k] ?? true)]),
-      ) as Record<(typeof SECTION_FLAG_KEYS)[number], boolean>,
+      Object.fromEntries(SECTION_FLAG_KEYS.map((k) => [k, Boolean(row[k] ?? true)])) as Record<
+        (typeof SECTION_FLAG_KEYS)[number],
+        boolean
+      >,
     [row],
   );
   const [form, setForm] = useState(initial);
@@ -377,8 +384,8 @@ function SectionsTab({ row, onSaved }: { row: SchoolRow; onSaved: () => Promise<
       }}
     >
       <p className="text-sm text-muted-foreground">
-        Turn public-site sections on or off. Sections without content already
-        render a placeholder — disable the toggle to hide them entirely.
+        Turn public-site sections on or off. Sections without content already render a placeholder —
+        disable the toggle to hide them entirely.
       </p>
       <div className="grid gap-3 md:grid-cols-2">
         {SECTION_FLAG_KEYS.map((key) => (
@@ -407,8 +414,9 @@ function HeroTab({ row, onSaved }: { row: SchoolRow; onSaved: () => Promise<void
     hero_subheadline: str(row.hero_subheadline),
     hero_cta_text: str(row.hero_cta_text),
   });
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setForm((s) => ({ ...s, [k]: e.target.value }));
+  const set =
+    (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setForm((s) => ({ ...s, [k]: e.target.value }));
 
   return (
     <FormCard
@@ -422,7 +430,12 @@ function HeroTab({ row, onSaved }: { row: SchoolRow; onSaved: () => Promise<void
         <Input value={form.hero_headline} onChange={set("hero_headline")} maxLength={160} />
       </Field>
       <Field label="Subheadline">
-        <Textarea value={form.hero_subheadline} onChange={set("hero_subheadline")} rows={3} maxLength={320} />
+        <Textarea
+          value={form.hero_subheadline}
+          onChange={set("hero_subheadline")}
+          rows={3}
+          maxLength={320}
+        />
       </Field>
       <Field label="Call-to-action button text" hint="Leave blank to hide the button.">
         <Input value={form.hero_cta_text} onChange={set("hero_cta_text")} maxLength={40} />
@@ -456,10 +469,20 @@ function AboutTab({ row, onSaved }: { row: SchoolRow; onSaved: () => Promise<voi
       </Field>
       <div className="grid gap-4 md:grid-cols-2">
         <Field label="Vision">
-          <Textarea value={form.school_vision} onChange={set("school_vision")} rows={5} maxLength={2000} />
+          <Textarea
+            value={form.school_vision}
+            onChange={set("school_vision")}
+            rows={5}
+            maxLength={2000}
+          />
         </Field>
         <Field label="Mission">
-          <Textarea value={form.school_mission} onChange={set("school_mission")} rows={5} maxLength={2000} />
+          <Textarea
+            value={form.school_mission}
+            onChange={set("school_mission")}
+            rows={5}
+            maxLength={2000}
+          />
         </Field>
       </div>
     </FormCard>
@@ -489,12 +512,15 @@ function PaymentsTab({ row, onSaved }: { row: SchoolRow; onSaved: () => Promise<
         <p className="mt-1">
           The platform handles transaction signing and webhooks. Add your
           <span className="font-mono"> pk_test_… </span> or
-          <span className="font-mono"> pk_live_… </span> public key here so it can
-          appear on receipts and future Paystack Inline checkouts. The secret
-          key is stored privately on the server — never paste it into the UI.
+          <span className="font-mono"> pk_live_… </span> public key here so it can appear on
+          receipts and future Paystack Inline checkouts. The secret key is stored privately on the
+          server — never paste it into the UI.
         </p>
       </div>
-      <Field label="Paystack public key" hint="Starts with pk_test_ or pk_live_. Leave blank to use platform defaults.">
+      <Field
+        label="Paystack public key"
+        hint="Starts with pk_test_ or pk_live_. Leave blank to use platform defaults."
+      >
         <Input
           value={form.paystack_public_key}
           onChange={set("paystack_public_key")}
@@ -568,7 +594,8 @@ function LocationTab({ row, onSaved }: { row: SchoolRow; onSaved: () => Promise<
         e.preventDefault();
         save(
           {
-            geofence_latitude: form.geofence_latitude === "" ? null : Number(form.geofence_latitude),
+            geofence_latitude:
+              form.geofence_latitude === "" ? null : Number(form.geofence_latitude),
             geofence_longitude:
               form.geofence_longitude === "" ? null : Number(form.geofence_longitude),
             geofence_radius_meters:
@@ -583,10 +610,9 @@ function LocationTab({ row, onSaved }: { row: SchoolRow; onSaved: () => Promise<
       <div className="rounded-md border border-border bg-muted/30 p-4 text-xs text-muted-foreground">
         <p className="font-semibold text-foreground">Location & geofencing</p>
         <p className="mt-1">
-          The school's coordinates anchor staff and student clock-in checks. Only
-          users within the configured radius can clock in or out from a device. The
-          embed URL (and toggle below) controls the &ldquo;Find Us&rdquo; map on your
-          public site.
+          The school's coordinates anchor staff and student clock-in checks. Only users within the
+          configured radius can clock in or out from a device. The embed URL (and toggle below)
+          controls the &ldquo;Find Us&rdquo; map on your public site.
         </p>
       </div>
 
@@ -615,9 +641,7 @@ function LocationTab({ row, onSaved }: { row: SchoolRow; onSaved: () => Promise<
             min={10}
             max={10000}
             value={form.geofence_radius_meters}
-            onChange={(e) =>
-              setForm((s) => ({ ...s, geofence_radius_meters: e.target.value }))
-            }
+            onChange={(e) => setForm((s) => ({ ...s, geofence_radius_meters: e.target.value }))}
             placeholder="200"
           />
         </Field>
@@ -645,9 +669,7 @@ function LocationTab({ row, onSaved }: { row: SchoolRow; onSaved: () => Promise<
       >
         <Textarea
           value={form.google_maps_embed_url}
-          onChange={(e) =>
-            setForm((s) => ({ ...s, google_maps_embed_url: e.target.value }))
-          }
+          onChange={(e) => setForm((s) => ({ ...s, google_maps_embed_url: e.target.value }))}
           rows={3}
           placeholder='<iframe src="https://www.google.com/maps/embed?pb=..." …></iframe>'
         />

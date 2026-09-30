@@ -90,13 +90,18 @@ describe("the journal is append-only and ordered per aggregate", () => {
     const noCorrelation = appendFinancialEvent({ events: [] }, event({ correlationId: "" }));
     expect(noCorrelation.ok).toBe(false);
     if (!noCorrelation.ok) expect(noCorrelation.problems).toContain("missing-correlation");
-    const noActor = appendFinancialEvent({ events: [] }, event({ actor: { identityId: "", kind: "service" } }));
+    const noActor = appendFinancialEvent(
+      { events: [] },
+      event({ actor: { identityId: "", kind: "service" } }),
+    );
     expect(noActor.ok).toBe(false);
     if (!noActor.ok) expect(noActor.problems).toContain("missing-actor");
   });
 
   it("reports a hole in a journal it did not build", () => {
-    const journal: FinancialJournal = { events: [event(), event({ eventId: "event-2", sequence: 3 })] };
+    const journal: FinancialJournal = {
+      events: [event(), event({ eventId: "event-2", sequence: 3 })],
+    };
     const integrity = verifyJournalIntegrity(journal);
     expect(integrity.ok).toBe(false);
     expect(integrity.problems.join(" ")).toContain("was expected");

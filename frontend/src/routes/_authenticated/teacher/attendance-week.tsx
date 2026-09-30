@@ -21,7 +21,12 @@ export const Route = createFileRoute("/_authenticated/teacher/attendance-week")(
 
 type Status = "present" | "absent" | "late" | "excused";
 type ClassRow = { id: string; name: string };
-type StudentRow = { id: string; admission_number: string | null; user_id: string | null; full_name: string };
+type StudentRow = {
+  id: string;
+  admission_number: string | null;
+  user_id: string | null;
+  full_name: string;
+};
 
 const CYCLE: (Status | null)[] = [null, "present", "absent", "late", "excused"];
 const STATUS_STYLES: Record<Status, { cls: string; label: string }> = {
@@ -109,7 +114,11 @@ function TeacherAttendanceWeekPage() {
         .eq("school_id", schoolId!)
         .eq("class_id", classId!)
         .eq("is_active", true);
-      const list = (rows.data ?? []) as { id: string; admission_number: string | null; user_id: string | null }[];
+      const list = (rows.data ?? []) as {
+        id: string;
+        admission_number: string | null;
+        user_id: string | null;
+      }[];
       const uids = list.map((s) => s.user_id).filter((u): u is string => !!u);
       const nameOf: Record<string, string> = {};
       if (uids.length) {
@@ -119,7 +128,8 @@ function TeacherAttendanceWeekPage() {
       return list
         .map((s) => ({
           ...s,
-          full_name: (s.user_id && nameOf[s.user_id]) || `Student ${s.admission_number ?? s.id.slice(0, 6)}`,
+          full_name:
+            (s.user_id && nameOf[s.user_id]) || `Student ${s.admission_number ?? s.id.slice(0, 6)}`,
         }))
         .sort((a, b) => a.full_name.localeCompare(b.full_name));
     },
@@ -218,7 +228,10 @@ function TeacherAttendanceWeekPage() {
       subtitle="Bulk-mark a class for the whole school week. Click a cell to cycle Present → Absent → Late → Excused."
     >
       <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
-        <Link to="/teacher/attendance" className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40">
+        <Link
+          to="/teacher/attendance"
+          className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40"
+        >
           ← Daily view
         </Link>
         <Button size="sm" variant="outline" onClick={() => shiftWeek(-1)}>
@@ -304,7 +317,9 @@ function TeacherAttendanceWeekPage() {
                           onClick={() => cycle(s.id, fmt(d))}
                           className={
                             "inline-flex h-8 w-10 items-center justify-center rounded-md border text-xs font-semibold transition " +
-                            (v ? STATUS_STYLES[v].cls : "border-dashed border-border text-muted-foreground hover:bg-muted/50") +
+                            (v
+                              ? STATUS_STYLES[v].cls
+                              : "border-dashed border-border text-muted-foreground hover:bg-muted/50") +
                             (isDirty ? " ring-2 ring-primary/40" : "")
                           }
                           title={v ?? "Not marked"}

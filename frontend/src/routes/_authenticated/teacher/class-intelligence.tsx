@@ -23,9 +23,11 @@ function ClassIntelligence() {
     queryKey: ["teacher-ci-classes", teacherId, schoolId],
     enabled: !!teacherId && !!schoolId,
     queryFn: async () => {
-      const { data } = await supabase.from("classes")
+      const { data } = await supabase
+        .from("classes")
         .select("id, name, grade_level")
-        .eq("school_id", schoolId!).eq("teacher_id", teacherId!);
+        .eq("school_id", schoolId!)
+        .eq("teacher_id", teacherId!);
       return (data ?? []) as Klass[];
     },
   });
@@ -38,9 +40,20 @@ function ClassIntelligence() {
     queryFn: async () => {
       const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
       const [students, grades, attendance] = await Promise.all([
-        supabase.from("students").select("id, class_id, user_id, admission_number").in("class_id", classIds),
-        supabase.from("grades").select("class_id, student_id, total_score").in("class_id", classIds).eq("is_published", true),
-        supabase.from("attendance").select("class_id, student_id, status").in("class_id", classIds).gte("date", monthAgo),
+        supabase
+          .from("students")
+          .select("id, class_id, user_id, admission_number")
+          .in("class_id", classIds),
+        supabase
+          .from("grades")
+          .select("class_id, student_id, total_score")
+          .in("class_id", classIds)
+          .eq("is_published", true),
+        supabase
+          .from("attendance")
+          .select("class_id, student_id, status")
+          .in("class_id", classIds)
+          .gte("date", monthAgo),
       ]);
       const uids = (students.data ?? []).map((s) => s.user_id as string).filter(Boolean);
       const nm = new Map<string, string>();
@@ -55,8 +68,16 @@ function ClassIntelligence() {
           admission_number: (s.admission_number as string) ?? null,
           name: nm.get(s.user_id as string) ?? "Student",
         })),
-        grades: (grades.data ?? []) as { class_id: string | null; student_id: string; total_score: number | null }[],
-        attendance: (attendance.data ?? []) as { class_id: string | null; student_id: string; status: string }[],
+        grades: (grades.data ?? []) as {
+          class_id: string | null;
+          student_id: string;
+          total_score: number | null;
+        }[],
+        attendance: (attendance.data ?? []) as {
+          class_id: string | null;
+          student_id: string;
+          status: string;
+        }[],
       };
     },
   });
@@ -66,24 +87,34 @@ function ClassIntelligence() {
     return (myClasses.data ?? []).map((c) => {
       const st = bulk.data.students.filter((s) => s.class_id === c.id);
       const g = bulk.data.grades.filter((r) => r.class_id === c.id);
-      const avg = g.length ? g.reduce((a, r) => a + Number(r.total_score ?? 0), 0) / g.length : null;
+      const avg = g.length
+        ? g.reduce((a, r) => a + Number(r.total_score ?? 0), 0) / g.length
+        : null;
       const a = bulk.data.attendance.filter((r) => r.class_id === c.id);
       const present = a.filter((r) => r.status === "present" || r.status === "late").length;
       const rate = a.length ? Math.round((present / a.length) * 100) : null;
       const studentRisk = st.map((s) => {
         const sg = g.filter((r) => r.student_id === s.id);
-        const savg = sg.length ? sg.reduce((x, r) => x + Number(r.total_score ?? 0), 0) / sg.length : null;
+        const savg = sg.length
+          ? sg.reduce((x, r) => x + Number(r.total_score ?? 0), 0) / sg.length
+          : null;
         const sa = a.filter((r) => r.student_id === s.id);
         const sp = sa.filter((r) => r.status === "present" || r.status === "late").length;
         const srate = sa.length ? Math.round((sp / sa.length) * 100) : null;
         const attScore = srate ?? 100;
         const grScore = savg ?? 60;
         const feeScore = 100;
-        const risk = Math.max(0, Math.min(100, 100 - (attScore * 0.4 + grScore * 0.35 + feeScore * 0.25)));
+        const risk = Math.max(
+          0,
+          Math.min(100, 100 - (attScore * 0.4 + grScore * 0.35 + feeScore * 0.25)),
+        );
         return { ...s, avg: savg, rate: srate, risk };
       });
       const atRisk = studentRisk.filter((s) => s.risk > 60).length;
-      const top = [...studentRisk].filter((s) => s.avg != null).sort((a, b) => (b.avg ?? 0) - (a.avg ?? 0)).slice(0, 3);
+      const top = [...studentRisk]
+        .filter((s) => s.avg != null)
+        .sort((a, b) => (b.avg ?? 0) - (a.avg ?? 0))
+        .slice(0, 3);
       return { ...c, studentCount: st.length, avg, rate, atRisk, top, studentRisk };
     });
   }, [bulk.data, myClasses.data]);
@@ -94,20 +125,29 @@ function ClassIntelligence() {
     <PortalPage title="My Classes" subtitle="Student analytics for every class you teach">
       {selectedClass ? (
         <>
-          <button onClick={() => setSelected(null)} className="mb-4 inline-flex items-center gap-1 text-sm text-primary hover:underline">
+          <button
+            onClick={() => setSelected(null)}
+            className="mb-4 inline-flex items-center gap-1 text-sm text-primary hover:underline"
+          >
             <ArrowLeft className="h-4 w-4" /> Back to classes
           </button>
           <div className="uos-card p-5">
             <h2 className="font-display text-xl">{selectedClass.name}</h2>
-            <p className="text-xs text-muted-foreground">{selectedClass.grade_level ?? ""} · {selectedClass.studentCount} students</p>
+            <p className="text-xs text-muted-foreground">
+              {selectedClass.grade_level ?? ""} · {selectedClass.studentCount} students
+            </p>
             <div className="mt-3 grid grid-cols-3 gap-3 text-sm">
               <div className="rounded-md border border-border p-3">
                 <p className="text-[10px] uppercase text-muted-foreground">Grade avg</p>
-                <p className="font-mono">{selectedClass.avg == null ? "—" : `${selectedClass.avg.toFixed(1)}%`}</p>
+                <p className="font-mono">
+                  {selectedClass.avg == null ? "—" : `${selectedClass.avg.toFixed(1)}%`}
+                </p>
               </div>
               <div className="rounded-md border border-border p-3">
                 <p className="text-[10px] uppercase text-muted-foreground">Attendance</p>
-                <p className="font-mono">{selectedClass.rate == null ? "—" : `${selectedClass.rate}%`}</p>
+                <p className="font-mono">
+                  {selectedClass.rate == null ? "—" : `${selectedClass.rate}%`}
+                </p>
               </div>
               <div className="rounded-md border border-border p-3">
                 <p className="text-[10px] uppercase text-muted-foreground">At risk</p>
@@ -132,21 +172,35 @@ function ClassIntelligence() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {selectedClass.studentRisk.sort((a, b) => b.risk - a.risk).map((s) => {
-                    const level = s.risk > 75 ? { label: "Critical", cls: "bg-rose-500/15 text-rose-300" }
-                      : s.risk > 60 ? { label: "High", cls: "bg-amber-500/15 text-amber-300" }
-                      : s.risk > 40 ? { label: "Medium", cls: "bg-yellow-500/15 text-yellow-300" }
-                      : { label: "Low", cls: "bg-emerald-500/15 text-emerald-300" };
-                    return (
-                      <tr key={s.id}>
-                        <td className="p-3 font-medium">{s.name}</td>
-                        <td className="p-3 text-muted-foreground">{s.admission_number ?? "—"}</td>
-                        <td className="p-3 font-mono">{s.rate == null ? "—" : `${s.rate}%`}</td>
-                        <td className="p-3 font-mono">{s.avg == null ? "—" : `${s.avg.toFixed(0)}%`}</td>
-                        <td className="p-3"><span className={`rounded-full px-2 py-0.5 text-[10px] uppercase ${level.cls}`}>{level.label}</span></td>
-                      </tr>
-                    );
-                  })}
+                  {selectedClass.studentRisk
+                    .sort((a, b) => b.risk - a.risk)
+                    .map((s) => {
+                      const level =
+                        s.risk > 75
+                          ? { label: "Critical", cls: "bg-rose-500/15 text-rose-300" }
+                          : s.risk > 60
+                            ? { label: "High", cls: "bg-amber-500/15 text-amber-300" }
+                            : s.risk > 40
+                              ? { label: "Medium", cls: "bg-yellow-500/15 text-yellow-300" }
+                              : { label: "Low", cls: "bg-emerald-500/15 text-emerald-300" };
+                      return (
+                        <tr key={s.id}>
+                          <td className="p-3 font-medium">{s.name}</td>
+                          <td className="p-3 text-muted-foreground">{s.admission_number ?? "—"}</td>
+                          <td className="p-3 font-mono">{s.rate == null ? "—" : `${s.rate}%`}</td>
+                          <td className="p-3 font-mono">
+                            {s.avg == null ? "—" : `${s.avg.toFixed(0)}%`}
+                          </td>
+                          <td className="p-3">
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-[10px] uppercase ${level.cls}`}
+                            >
+                              {level.label}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                 </tbody>
               </table>
             </div>
@@ -169,7 +223,9 @@ function ClassIntelligence() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="font-display text-base">{c.name}</h3>
-                      <p className="text-xs text-muted-foreground">{c.grade_level ?? ""} · {c.studentCount} students</p>
+                      <p className="text-xs text-muted-foreground">
+                        {c.grade_level ?? ""} · {c.studentCount} students
+                      </p>
                     </div>
                     {c.atRisk > 0 && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 px-2 py-0.5 text-[10px] text-rose-300">
@@ -189,12 +245,16 @@ function ClassIntelligence() {
                   </div>
                   {c.top.length > 0 && (
                     <div className="mt-3">
-                      <p className="text-[10px] uppercase text-muted-foreground flex items-center gap-1"><Trophy className="h-3 w-3" /> Top performers</p>
+                      <p className="text-[10px] uppercase text-muted-foreground flex items-center gap-1">
+                        <Trophy className="h-3 w-3" /> Top performers
+                      </p>
                       <ul className="mt-1 text-xs space-y-0.5">
                         {c.top.map((s) => (
                           <li key={s.id} className="flex justify-between">
                             <span className="truncate">{s.name}</span>
-                            <span className="font-mono text-muted-foreground">{s.avg?.toFixed(0)}%</span>
+                            <span className="font-mono text-muted-foreground">
+                              {s.avg?.toFixed(0)}%
+                            </span>
                           </li>
                         ))}
                       </ul>

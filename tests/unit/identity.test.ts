@@ -190,23 +190,13 @@ describe("Identity lifecycle state machine (G5)", () => {
 
 describe("Authorization engine (J4–J8)", () => {
   it("ALLOWs a role grant", () => {
-    const req = makeAuthorizationRequest(
-      makeIdentity(),
-      "student",
-      "read",
-      "class-1",
-    );
+    const req = makeAuthorizationRequest(makeIdentity(), "student", "read", "class-1");
     const result = authorize(req, { role: "teacher" });
     expect(result.decision).toBe("ALLOW");
   });
 
   it("DENYs by default", () => {
-    const req = makeAuthorizationRequest(
-      makeIdentity(),
-      "payments",
-      "manage",
-      "school-1",
-    );
+    const req = makeAuthorizationRequest(makeIdentity(), "payments", "manage", "school-1");
     const result = authorize(req, { role: "teacher" });
     expect(result.decision).toBe("DENY");
   });
@@ -224,12 +214,7 @@ describe("Authorization engine (J4–J8)", () => {
   });
 
   it("ALLOWs via extra permissions", () => {
-    const req = makeAuthorizationRequest(
-      makeIdentity(),
-      "payments",
-      "manage",
-      "school-1",
-    );
+    const req = makeAuthorizationRequest(makeIdentity(), "payments", "manage", "school-1");
     const result = authorize(req, {
       role: "teacher",
       extraPermissions: [permission("payments", "manage", "school-1")],
@@ -249,24 +234,13 @@ describe("Authorization engine (J4–J8)", () => {
       revokedAt: null,
       version: 1,
     };
-    const req = makeAuthorizationRequest(
-      makeIdentity(),
-      "school",
-      "update",
-      "school-1",
-      [rel],
-    );
+    const req = makeAuthorizationRequest(makeIdentity(), "school", "update", "school-1", [rel]);
     const result = authorize(req, { role: "read_only" });
     expect(result.decision).toBe("ALLOW");
   });
 
   it("ESCALATEs high-risk requests via ABAC", () => {
-    const req = makeAuthorizationRequest(
-      makeIdentity(),
-      "student",
-      "read",
-      "class-1",
-    );
+    const req = makeAuthorizationRequest(makeIdentity(), "student", "read", "class-1");
     const result = authorize(req, {
       role: "teacher",
       abac: { risk: 0.9 },
@@ -275,12 +249,7 @@ describe("Authorization engine (J4–J8)", () => {
   });
 
   it("DENYs destructive operations on untrusted devices", () => {
-    const req = makeAuthorizationRequest(
-      makeIdentity(),
-      "student",
-      "delete",
-      "class-1",
-    );
+    const req = makeAuthorizationRequest(makeIdentity(), "student", "delete", "class-1");
     const result = authorize(req, {
       role: "teacher",
       abac: { deviceTrust: 0.1 },
@@ -299,12 +268,7 @@ describe("Authorization engine (J4–J8)", () => {
         },
       ],
     };
-    const req = makeAuthorizationRequest(
-      makeIdentity(),
-      "student",
-      "delete",
-      "class-1",
-    );
+    const req = makeAuthorizationRequest(makeIdentity(), "student", "delete", "class-1");
     const result = authorize(req, { role: "teacher", policySet });
     expect(result.decision).toBe("REQUIRE_APPROVAL");
   });
@@ -333,8 +297,12 @@ describe("Authorization engine (J4–J8)", () => {
   });
 
   it("permissionKey builds canonical keys", () => {
-    expect(permissionKey({ resource: "student", action: "read", scope: null })).toBe("student:read");
-    expect(permissionKey({ resource: "student", action: "read", scope: "class-1" })).toBe("student:read:class-1");
+    expect(permissionKey({ resource: "student", action: "read", scope: null })).toBe(
+      "student:read",
+    );
+    expect(permissionKey({ resource: "student", action: "read", scope: "class-1" })).toBe(
+      "student:read:class-1",
+    );
   });
 });
 
@@ -404,11 +372,21 @@ describe("Relationship engine (F7 + G10)", () => {
 
   it("filters by type", () => {
     const rel1 = createRelationship(
-      { subjectId: identityId("00000000-0000-0000-0000-000000000001"), type: "parent_of", targetId: "s1", tenantId: "t1" },
+      {
+        subjectId: identityId("00000000-0000-0000-0000-000000000001"),
+        type: "parent_of",
+        targetId: "s1",
+        tenantId: "t1",
+      },
       NOW,
     );
     const rel2 = createRelationship(
-      { subjectId: identityId("00000000-0000-0000-0000-000000000001"), type: "teaches", targetId: "c1", tenantId: "t1" },
+      {
+        subjectId: identityId("00000000-0000-0000-0000-000000000001"),
+        type: "teaches",
+        targetId: "c1",
+        tenantId: "t1",
+      },
       NOW,
     );
     if (rel1.ok && rel2.ok) {
@@ -552,8 +530,18 @@ describe("Credential metadata engine (H9 + J3)", () => {
 
 describe("Agent governance (Invariant 03 + 12)", () => {
   it("isAgentGoverned requires deployed/monitored + permissions", () => {
-    expect(isAgentGoverned({ lifecycle: "deployed", permissions: [{ resource: "student", action: "read", scope: null }] })).toBe(true);
-    expect(isAgentGoverned({ lifecycle: "proposed", permissions: [{ resource: "student", action: "read", scope: null }] })).toBe(false);
+    expect(
+      isAgentGoverned({
+        lifecycle: "deployed",
+        permissions: [{ resource: "student", action: "read", scope: null }],
+      }),
+    ).toBe(true);
+    expect(
+      isAgentGoverned({
+        lifecycle: "proposed",
+        permissions: [{ resource: "student", action: "read", scope: null }],
+      }),
+    ).toBe(false);
     expect(isAgentGoverned({ lifecycle: "deployed", permissions: [] })).toBe(false);
   });
 

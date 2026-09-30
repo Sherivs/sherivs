@@ -37,7 +37,12 @@ import type { TenantId } from "./tenant-core";
 
 export type InstitutionalStatus = "HEALTHY" | "DEGRADED" | "CRITICAL" | "UNKNOWN";
 
-export const INSTITUTIONAL_STATUSES: readonly InstitutionalStatus[] = ["HEALTHY", "DEGRADED", "CRITICAL", "UNKNOWN"] as const;
+export const INSTITUTIONAL_STATUSES: readonly InstitutionalStatus[] = [
+  "HEALTHY",
+  "DEGRADED",
+  "CRITICAL",
+  "UNKNOWN",
+] as const;
 
 export interface InstitutionalState {
   institutionId: string;
@@ -59,7 +64,10 @@ export function isInstitutionalStateHealthy(state: InstitutionalState): boolean 
   return state.status === "HEALTHY";
 }
 
-export function isCommandStateStale(state: { asOf: string; freshness: number | null }, now: string): boolean {
+export function isCommandStateStale(
+  state: { asOf: string; freshness: number | null },
+  now: string,
+): boolean {
   if (state.freshness === null) {
     return true;
   }
@@ -81,9 +89,26 @@ export interface CommandContext {
   selectedOperationalScope: string | null;
 }
 
-export type CommandScope = "global" | "institution" | "campus" | "faculty" | "department" | "programme" | "facility" | "operational_domain";
+export type CommandScope =
+  | "global"
+  | "institution"
+  | "campus"
+  | "faculty"
+  | "department"
+  | "programme"
+  | "facility"
+  | "operational_domain";
 
-export const COMMAND_SCOPES: readonly CommandScope[] = ["global", "institution", "campus", "faculty", "department", "programme", "facility", "operational_domain"] as const;
+export const COMMAND_SCOPES: readonly CommandScope[] = [
+  "global",
+  "institution",
+  "campus",
+  "faculty",
+  "department",
+  "programme",
+  "facility",
+  "operational_domain",
+] as const;
 
 /**
  * Multi-tenant isolation (M): a user must never accidentally observe
@@ -105,16 +130,31 @@ export function isCommandAccessWithinTenant(
 }
 
 export function isCommandContextComplete(context: CommandContext): boolean {
-  return context.tenantId !== null && context.institutionId.trim() !== "" && context.userId.trim() !== "" && context.role.trim() !== "" && context.permissions.length > 0;
+  return (
+    context.tenantId !== null &&
+    context.institutionId.trim() !== "" &&
+    context.userId.trim() !== "" &&
+    context.role.trim() !== "" &&
+    context.permissions.length > 0
+  );
 }
 
 /* ─────────────────────────────────────────────────────────────
  * Dashboard system (P, Q, R, S, T)
  * ────────────────────────────────────────────────────────────*/
 
-export type DashboardTemplateKind = "executive" | "academic" | "finance" | "operations" | "infrastructure" | "security" | "campus";
+export type DashboardTemplateKind =
+  "executive" | "academic" | "finance" | "operations" | "infrastructure" | "security" | "campus";
 
-export const DASHBOARD_TEMPLATE_KINDS: readonly DashboardTemplateKind[] = ["executive", "academic", "finance", "operations", "infrastructure", "security", "campus"] as const;
+export const DASHBOARD_TEMPLATE_KINDS: readonly DashboardTemplateKind[] = [
+  "executive",
+  "academic",
+  "finance",
+  "operations",
+  "infrastructure",
+  "security",
+  "campus",
+] as const;
 
 export interface DashboardComponent {
   componentId: string;
@@ -145,7 +185,8 @@ export interface CreateDashboardInput {
   layout: Record<string, unknown>;
 }
 
-export type CreateDashboardResult = { ok: true; dashboard: DashboardDefinition } | { ok: false; error: string };
+export type CreateDashboardResult =
+  { ok: true; dashboard: DashboardDefinition } | { ok: false; error: string };
 
 /**
  * Dashboard creation (P, Q): dashboards are versioned presentation and
@@ -161,11 +202,22 @@ export function createDashboard(input: CreateDashboardInput): CreateDashboardRes
   }
   return {
     ok: true,
-    dashboard: { dashboardId: input.dashboardId, name: input.name, template: input.template, tenantId: input.tenantId, version: 1, components: input.components, layout: input.layout },
+    dashboard: {
+      dashboardId: input.dashboardId,
+      name: input.name,
+      template: input.template,
+      tenantId: input.tenantId,
+      version: 1,
+      components: input.components,
+      layout: input.layout,
+    },
   };
 }
 
-export function isDashboardComponentAuthorized(component: DashboardComponent, permissions: string[]): boolean {
+export function isDashboardComponentAuthorized(
+  component: DashboardComponent,
+  permissions: string[],
+): boolean {
   return component.permissions.some((p) => permissions.includes(p));
 }
 
@@ -195,7 +247,10 @@ export interface LiveViewStatus {
  * information and never make old data appear live. A view whose last
  * update exceeds its freshness window is STALE.
  */
-export function gradeLiveViewStatus(view: LiveViewStatus, now: string): "live" | "stale" | "unknown" {
+export function gradeLiveViewStatus(
+  view: LiveViewStatus,
+  now: string,
+): "live" | "stale" | "unknown" {
   if (view.freshness === null || view.lastUpdate === "") {
     return "unknown";
   }

@@ -42,10 +42,16 @@ function AdminGradesPage() {
       subtitle="Record CA + exam scores per subject. Publish to make report cards visible to students and parents."
     >
       <div className="mb-4 flex flex-wrap gap-2 text-xs">
-        <Link to="/admin/dashboard" className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40">
+        <Link
+          to="/admin/dashboard"
+          className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40"
+        >
           ← Dashboard
         </Link>
-        <Link to="/admin/students" className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40">
+        <Link
+          to="/admin/students"
+          className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40"
+        >
           Students
         </Link>
       </div>
@@ -86,7 +92,12 @@ function AdminGradesPage() {
             { key: "grade", label: "Grade (A, B…)", type: "text" },
             { key: "grade_remark", label: "Remark", type: "text" },
             { key: "term", label: "Term", type: "text", placeholder: "1st / 2nd / 3rd" },
-            { key: "academic_year", label: "Academic year", type: "text", placeholder: "2025/2026" },
+            {
+              key: "academic_year",
+              label: "Academic year",
+              type: "text",
+              placeholder: "2025/2026",
+            },
             { key: "is_published", label: "Published to students/parents", type: "switch" },
           ],
         }}

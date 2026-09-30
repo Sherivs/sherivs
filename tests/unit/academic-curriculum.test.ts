@@ -54,7 +54,8 @@ describe("Phase 11 — the curriculum hierarchy is a chain, not a bag", () => {
       createCurriculumNode({ id: "n1", tenantId: " ", level: "course", key: "k", title: "t" }).ok,
     ).toBe(false);
     expect(
-      createCurriculumNode({ id: "n1", tenantId: TENANT, level: "course", key: " ", title: "t" }).ok,
+      createCurriculumNode({ id: "n1", tenantId: TENANT, level: "course", key: " ", title: "t" })
+        .ok,
     ).toBe(false);
     expect(
       createCurriculumNode({ id: "n1", tenantId: TENANT, level: "course", key: "k", title: "" }).ok,
@@ -73,7 +74,14 @@ describe("Phase 11 — the curriculum hierarchy is a chain, not a bag", () => {
 
     // A course that claims an institution as its parent skips the chain.
     const skipping = createCurriculumNode(
-      { id: "c1", tenantId: TENANT, level: "course", key: "maths", title: "Mathematics", parentId: "i1" },
+      {
+        id: "c1",
+        tenantId: TENANT,
+        level: "course",
+        key: "maths",
+        title: "Mathematics",
+        parentId: "i1",
+      },
       [institution.ok ? institution.node : competencyNode("i1", "institution")],
     );
     expect(skipping.ok).toBe(false);
@@ -96,13 +104,27 @@ describe("Phase 11 — the curriculum hierarchy is a chain, not a bag", () => {
       node("cur1", "curriculum", "p1"),
     ];
     const course = createCurriculumNode(
-      { id: "c1", tenantId: TENANT, level: "course", key: "maths", title: "Mathematics", parentId: "cur1" },
+      {
+        id: "c1",
+        tenantId: TENANT,
+        level: "course",
+        key: "maths",
+        title: "Mathematics",
+        parentId: "cur1",
+      },
       nodes,
     );
     expect(course.ok).toBe(true);
 
     const foreign = createCurriculumNode(
-      { id: "c2", tenantId: "tenant-2", level: "course", key: "maths", title: "Mathematics", parentId: "cur1" },
+      {
+        id: "c2",
+        tenantId: "tenant-2",
+        level: "course",
+        key: "maths",
+        title: "Mathematics",
+        parentId: "cur1",
+      },
       nodes,
     );
     expect(foreign.ok).toBe(false);
@@ -136,7 +158,11 @@ describe("Phase 11 — competency levels are institutional data", () => {
   });
 
   it("accepts a custom scale and refuses a degenerate or duplicated one", () => {
-    const custom = defineCompetencyScale({ id: "s1", tenantId: TENANT, levels: ["beginning", "secure"] });
+    const custom = defineCompetencyScale({
+      id: "s1",
+      tenantId: TENANT,
+      levels: ["beginning", "secure"],
+    });
     expect(custom.ok && custom.scale.levels).toEqual(["BEGINNING", "SECURE"]);
     expect(defineCompetencyScale({ id: "s1", tenantId: TENANT, levels: ["only"] }).ok).toBe(false);
     expect(
@@ -145,12 +171,34 @@ describe("Phase 11 — competency levels are institutional data", () => {
   });
 });
 
-function node(id: string, level: CurriculumNode["level"], parentId: string | null = null): CurriculumNode {
-  return { id, tenantId: TENANT, level, key: id, title: id, parentId, competencies: [], version: 1 };
+function node(
+  id: string,
+  level: CurriculumNode["level"],
+  parentId: string | null = null,
+): CurriculumNode {
+  return {
+    id,
+    tenantId: TENANT,
+    level,
+    key: id,
+    title: id,
+    parentId,
+    competencies: [],
+    version: 1,
+  };
 }
 
 function competencyNode(id: string, level: CurriculumNode["level"]): CurriculumNode {
-  return { id, tenantId: TENANT, level, key: id, title: id, parentId: null, competencies: [], version: 1 };
+  return {
+    id,
+    tenantId: TENANT,
+    level,
+    key: id,
+    title: id,
+    parentId: null,
+    competencies: [],
+    version: 1,
+  };
 }
 
 describe("Phase 11 — prerequisites are explicit and the competency graph is acyclic", () => {
@@ -197,16 +245,28 @@ describe("Phase 11 — prerequisites are explicit and the competency graph is ac
     const functions = competency({ id: "c-functions", prerequisites: ["c-algebra"] });
     const calculus = competency({ id: "c-calculus", prerequisites: ["c-functions"] });
 
-    expect(transitivePrerequisites([foundational, algebra, functions, calculus], "c-calculus")).toEqual([
-      "c-found",
-      "c-algebra",
-      "c-functions",
-    ]);
+    expect(
+      transitivePrerequisites([foundational, algebra, functions, calculus], "c-calculus"),
+    ).toEqual(["c-found", "c-algebra", "c-functions"]);
   });
 
   it("accepts alternative prerequisite groups and refuses an empty one", () => {
-    const statistics = { id: "c-stats", tenantId: TENANT, name: "Statistics", description: "", domain: "mathematics", prerequisites: [] };
-    const data = { id: "c-data", tenantId: TENANT, name: "Data", description: "", domain: "mathematics", prerequisites: [] };
+    const statistics = {
+      id: "c-stats",
+      tenantId: TENANT,
+      name: "Statistics",
+      description: "",
+      domain: "mathematics",
+      prerequisites: [],
+    };
+    const data = {
+      id: "c-data",
+      tenantId: TENANT,
+      name: "Data",
+      description: "",
+      domain: "mathematics",
+      prerequisites: [],
+    };
     const inferential = competency({
       id: "c-inferential",
       prerequisites: [],
@@ -385,8 +445,12 @@ describe("Phase 11 — assessment intelligence proves what it measures", () => {
     };
     expect(addQuestion({ ...valid, marks: 0 }, { competencies, objectives }).ok).toBe(false);
     expect(addQuestion({ ...valid, difficulty: 9 }, { competencies, objectives }).ok).toBe(false);
-    expect(addQuestion({ ...valid, cognitiveLevel: "vibes" }, { competencies, objectives }).ok).toBe(false);
-    expect(addQuestion({ ...valid, objectiveId: "o-ghost" }, { competencies, objectives }).ok).toBe(false);
+    expect(
+      addQuestion({ ...valid, cognitiveLevel: "vibes" }, { competencies, objectives }).ok,
+    ).toBe(false);
+    expect(addQuestion({ ...valid, objectiveId: "o-ghost" }, { competencies, objectives }).ok).toBe(
+      false,
+    );
   });
 
   it("accepts a question that names both its competency and its objective", () => {

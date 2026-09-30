@@ -54,7 +54,9 @@ function DigitalTwinPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("digital_twin_config")
-        .select("id, twin_name, twin_voice, twin_personality, school_knowledge, trigger_rules, is_active")
+        .select(
+          "id, twin_name, twin_voice, twin_personality, school_knowledge, trigger_rules, is_active",
+        )
         .eq("school_id", sid!)
         .maybeSingle();
       if (error) throw new Error(error.message);
@@ -68,7 +70,9 @@ function DigitalTwinPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("digital_twin_calls")
-        .select("id, call_type, recipient_name, recipient_phone, call_status, call_outcome, call_summary, twilio_call_sid, created_at")
+        .select(
+          "id, call_type, recipient_name, recipient_phone, call_status, call_outcome, call_summary, twilio_call_sid, created_at",
+        )
         .eq("school_id", sid!)
         .order("created_at", { ascending: false })
         .limit(50);
@@ -109,8 +113,16 @@ function DigitalTwinPage() {
     mutationFn: async () => {
       let knowledge: Record<string, any> = {};
       let triggers: Record<string, any> = {};
-      try { knowledge = JSON.parse(value.knowledge || "{}"); } catch { throw new Error("Knowledge must be valid JSON"); }
-      try { triggers = JSON.parse(value.triggers || "{}"); } catch { throw new Error("Trigger rules must be valid JSON"); }
+      try {
+        knowledge = JSON.parse(value.knowledge || "{}");
+      } catch {
+        throw new Error("Knowledge must be valid JSON");
+      }
+      try {
+        triggers = JSON.parse(value.triggers || "{}");
+      } catch {
+        throw new Error("Trigger rules must be valid JSON");
+      }
       return saveFn({
         data: {
           twin_name: value.twin_name,
@@ -164,7 +176,10 @@ function DigitalTwinPage() {
       subtitle="An AI voice assistant that places real outbound calls on behalf of the school."
     >
       <div className="mb-6 flex flex-wrap gap-2">
-        <Link to="/admin/dashboard" className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-muted/40">
+        <Link
+          to="/admin/dashboard"
+          className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-muted/40"
+        >
           ← Dashboard
         </Link>
       </div>
@@ -187,7 +202,11 @@ function DigitalTwinPage() {
                 value={value.twin_voice}
                 onChange={(e) => setForm({ ...value, twin_voice: e.target.value })}
               >
-                {VOICES.map((v) => <option key={v} value={v}>{v}</option>)}
+                {VOICES.map((v) => (
+                  <option key={v} value={v}>
+                    {v}
+                  </option>
+                ))}
               </select>
             </Field>
             <Field label="Personality / tone">
@@ -204,7 +223,7 @@ function DigitalTwinPage() {
                 onChange={(e) => setForm({ ...value, knowledge: e.target.value })}
               />
             </Field>
-            <Field label='Trigger rules (JSON)'>
+            <Field label="Trigger rules (JSON)">
               <textarea
                 className="input min-h-[100px] w-full font-mono text-xs"
                 value={value.triggers}
@@ -240,7 +259,9 @@ function DigitalTwinPage() {
               <select
                 className="input w-full"
                 value={call.call_type}
-                onChange={(e) => setCall({ ...call, call_type: e.target.value as typeof call.call_type })}
+                onChange={(e) =>
+                  setCall({ ...call, call_type: e.target.value as typeof call.call_type })
+                }
               >
                 <option value="announcement">Announcement</option>
                 <option value="attendance_alert">Attendance alert</option>
@@ -249,18 +270,26 @@ function DigitalTwinPage() {
               </select>
             </Field>
             <Field label="Recipient name">
-              <input className="input w-full" value={call.recipient_name}
-                onChange={(e) => setCall({ ...call, recipient_name: e.target.value })} />
+              <input
+                className="input w-full"
+                value={call.recipient_name}
+                onChange={(e) => setCall({ ...call, recipient_name: e.target.value })}
+              />
             </Field>
             <Field label="Phone (E.164, e.g. +2348012345678)">
-              <input className="input w-full" value={call.recipient_phone}
-                onChange={(e) => setCall({ ...call, recipient_phone: e.target.value })} />
+              <input
+                className="input w-full"
+                value={call.recipient_phone}
+                onChange={(e) => setCall({ ...call, recipient_phone: e.target.value })}
+              />
             </Field>
             <Field label="Recipient role">
               <select
                 className="input w-full"
                 value={call.recipient_role}
-                onChange={(e) => setCall({ ...call, recipient_role: e.target.value as typeof call.recipient_role })}
+                onChange={(e) =>
+                  setCall({ ...call, recipient_role: e.target.value as typeof call.recipient_role })
+                }
               >
                 <option value="parent">Parent</option>
                 <option value="teacher">Teacher</option>
@@ -278,7 +307,9 @@ function DigitalTwinPage() {
             </Field>
             <button
               onClick={() => callM.mutate()}
-              disabled={callM.isPending || !call.recipient_name || !call.recipient_phone || !call.script}
+              disabled={
+                callM.isPending || !call.recipient_name || !call.recipient_phone || !call.script
+              }
               className="rounded-md bg-emerald-500 px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
             >
               {callM.isPending ? "Placing…" : "Place call"}
@@ -290,7 +321,9 @@ function DigitalTwinPage() {
       {/* ---------- Recent calls ---------- */}
       <section className="mt-8 overflow-hidden rounded-xl border border-border">
         <div className="border-b border-border bg-muted/20 px-4 py-3">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">Recent calls</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+            Recent calls
+          </h2>
         </div>
         <div className="overflow-x-auto -mx-4 sm:mx-0">
           <table className="min-w-full divide-y divide-border text-sm">
@@ -313,7 +346,9 @@ function DigitalTwinPage() {
               )}
               {(callsQ.data ?? []).map((c) => (
                 <tr key={c.id} className="hover:bg-muted/20">
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(c.created_at).toLocaleString()}</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                    {new Date(c.created_at).toLocaleString()}
+                  </td>
                   <td className="px-4 py-3 capitalize">{c.call_type?.replace(/_/g, " ") ?? "—"}</td>
                   <td className="px-4 py-3">
                     <div>{c.recipient_name ?? "—"}</div>
@@ -338,7 +373,9 @@ function DigitalTwinPage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs uppercase tracking-widest text-muted-foreground">{label}</span>
+      <span className="mb-1 block text-xs uppercase tracking-widest text-muted-foreground">
+        {label}
+      </span>
       {children}
     </label>
   );

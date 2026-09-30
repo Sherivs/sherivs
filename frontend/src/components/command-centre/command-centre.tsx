@@ -1062,7 +1062,10 @@ function GeneratedExperienceCard({ orgType }: { orgType: string }) {
           <a className="underline" href={`/marketplace?class=${encodeURIComponent(orgType)}`}>
             Marketplace catalog for this class
           </a>
-          <a className="underline" href={`/manifest.webmanifest?class=${encodeURIComponent(orgType)}`}>
+          <a
+            className="underline"
+            href={`/manifest.webmanifest?class=${encodeURIComponent(orgType)}`}
+          >
             Served manifest
           </a>
           <a className="underline" href="/platform/org">

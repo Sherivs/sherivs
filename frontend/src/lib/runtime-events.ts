@@ -20,12 +20,7 @@ import { correlationId, type CorrelationId } from "./runtime-core";
  * Event types
  * ────────────────────────────────────────────────────────────*/
 
-export type ApplicationEventType =
-  | "domain"
-  | "integration"
-  | "system"
-  | "audit"
-  | "notification";
+export type ApplicationEventType = "domain" | "integration" | "system" | "audit" | "notification";
 
 export const APPLICATION_EVENT_TYPES: readonly ApplicationEventType[] = [
   "domain",
@@ -67,7 +62,9 @@ export interface CreateApplicationEventInput {
 }
 
 export function createApplicationEvent(input: CreateApplicationEventInput): ApplicationEvent {
-  const correlation = input.correlationId ?? correlationId(`corr-${input.occurredAt}-${Math.random().toString(36).slice(2, 10)}`);
+  const correlation =
+    input.correlationId ??
+    correlationId(`corr-${input.occurredAt}-${Math.random().toString(36).slice(2, 10)}`);
   return {
     id: `evt-${input.occurredAt}-${Math.random().toString(36).slice(2, 10)}`,
     type: input.type ?? "domain",
@@ -134,7 +131,8 @@ export interface EventSubscription {
   handleEvent(event: ApplicationEvent): void;
 }
 
-export type EventDispatchResult = { ok: true; processedEventIds: string[] } | { ok: false; error: string };
+export type EventDispatchResult =
+  { ok: true; processedEventIds: string[] } | { ok: false; error: string };
 
 export interface EventDispatcher {
   subscribe(subscription: EventSubscription): void;
@@ -184,7 +182,7 @@ export function createEventDispatcher(): EventDispatcher {
 export interface DeadLetterRecord {
   eventId: string;
   eventName: string;
-  tenantId: TenantId | null;
+  tenantId: TenantId | null;
   consumer: string;
   lastError: string;
   attempts: number;
@@ -226,7 +224,9 @@ export function createDeadLetterQueue(): DeadLetterQueue {
     process(subscriptions, detector) {
       for (const d of dead) {
         if (d.status !== "queued") continue;
-        const sub = subscriptions.find((s) => s.eventName === d.eventName && s.consumer === d.consumer);
+        const sub = subscriptions.find(
+          (s) => s.eventName === d.eventName && s.consumer === d.consumer,
+        );
         if (!sub) continue;
         try {
           const event: ApplicationEvent = {

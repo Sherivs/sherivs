@@ -136,7 +136,15 @@ export function isKnownInstitutionType(type: string): boolean {
  * Ownership types (Section F)
  * ────────────────────────────────────────────────────────────*/
 
-export type OwnershipType = "private" | "public" | "government" | "faith_based" | "community" | "board_governed" | "network" | "custom";
+export type OwnershipType =
+  | "private"
+  | "public"
+  | "government"
+  | "faith_based"
+  | "community"
+  | "board_governed"
+  | "network"
+  | "custom";
 
 export const OWNERSHIP_TYPES: readonly OwnershipType[] = [
   "private",
@@ -153,7 +161,8 @@ export const OWNERSHIP_TYPES: readonly OwnershipType[] = [
  * Shift types (Section M)
  * ────────────────────────────────────────────────────────────*/
 
-export type ShiftType = "morning" | "afternoon" | "evening" | "night" | "weekend" | "rotating" | "custom";
+export type ShiftType =
+  "morning" | "afternoon" | "evening" | "night" | "weekend" | "rotating" | "custom";
 
 export const SHIFT_TYPES: readonly ShiftType[] = [
   "morning",
@@ -202,7 +211,9 @@ export interface InstitutionalLanguage {
   isActive: boolean;
 }
 
-export function validateLanguageConfig(languages: InstitutionalLanguage[]): { ok: true } | { ok: false; error: string } {
+export function validateLanguageConfig(
+  languages: InstitutionalLanguage[],
+): { ok: true } | { ok: false; error: string } {
   if (languages.length === 0) {
     return { ok: false, error: "At least one institutional language is required" };
   }
@@ -233,7 +244,9 @@ export interface InstitutionalTimezone {
   isActive: boolean;
 }
 
-export function validateTimezoneConfig(timezones: InstitutionalTimezone[]): { ok: true } | { ok: false; error: string } {
+export function validateTimezoneConfig(
+  timezones: InstitutionalTimezone[],
+): { ok: true } | { ok: false; error: string } {
   if (timezones.length === 0) {
     return { ok: false, error: "At least one institutional timezone is required" };
   }
@@ -431,7 +444,10 @@ export interface Institution {
 export interface CreateInstitutionInput {
   id: InstitutionId;
   tenantId: TenantId;
-  profile: Omit<InstitutionalProfile, "id" | "institutionId" | "tenantId" | "createdAt" | "updatedAt">;
+  profile: Omit<
+    InstitutionalProfile,
+    "id" | "institutionId" | "tenantId" | "createdAt" | "updatedAt"
+  >;
   /** Phase 02 identity reference for the institution itself. */
   identityRef: string;
   /** Phase 08 security-policy reference for the default administrative policy set. */
@@ -451,7 +467,10 @@ export type CreateInstitutionResult =
  * platform-level controls (Section E). An institution cannot be created without a
  * legal name, an official email domain, a country, and an initial administrator.
  */
-export function createInstitution(input: CreateInstitutionInput, now: string = new Date().toISOString()): CreateInstitutionResult {
+export function createInstitution(
+  input: CreateInstitutionInput,
+  now: string = new Date().toISOString(),
+): CreateInstitutionResult {
   const legalName = input.profile.legalName.trim();
   if (legalName === "") {
     return { ok: false, error: "Legal name is required" };
@@ -501,7 +520,10 @@ export function createInstitution(input: CreateInstitutionInput, now: string = n
 }
 
 /** Mark an institution's initial setup as complete. */
-export function markInstitutionSetupComplete(institution: Institution, now: string = new Date().toISOString()): Institution {
+export function markInstitutionSetupComplete(
+  institution: Institution,
+  now: string = new Date().toISOString(),
+): Institution {
   return { ...institution, setupComplete: true, updatedAt: now };
 }
 
@@ -537,7 +559,10 @@ export interface EducationComplexityConfig {
   mixedDigitalMaturity: boolean;
 }
 
-export const DEFAULT_EDUCATION_COMPLEXITY_CONFIG: Omit<EducationComplexityConfig, "institutionId" | "tenantId"> = {
+export const DEFAULT_EDUCATION_COMPLEXITY_CONFIG: Omit<
+  EducationComplexityConfig,
+  "institutionId" | "tenantId"
+> = {
   intermittentConnectivity: false,
   sharedDevices: false,
   byod: false,
@@ -550,9 +575,3 @@ export const DEFAULT_EDUCATION_COMPLEXITY_CONFIG: Omit<EducationComplexityConfig
   paperToDigitalMigration: false,
   mixedDigitalMaturity: false,
 };
-
-
-
-
-
-

@@ -122,7 +122,9 @@ describe("evaluateMassCommunication (BO, BN, DP)", () => {
 
   it("blocks without preview or confirmation (BO)", () => {
     expect(evaluateMassCommunication(baseRequest({ hasPreview: false })).verdict).toBe("blocked");
-    expect(evaluateMassCommunication(baseRequest({ hasConfirmation: false })).verdict).toBe("blocked");
+    expect(evaluateMassCommunication(baseRequest({ hasConfirmation: false })).verdict).toBe(
+      "blocked",
+    );
   });
 
   it("blocks an audience exceeding the recipient limit (BN)", () => {
@@ -136,8 +138,12 @@ describe("evaluateMassCommunication (BO, BN, DP)", () => {
   });
 
   it("rejects an invalid external recipient count (DP)", () => {
-    expect(evaluateMassCommunication(baseRequest({ externalRecipientCount: -1 })).verdict).toBe("blocked");
-    expect(evaluateMassCommunication(baseRequest({ externalRecipientCount: 5000 })).verdict).toBe("blocked");
+    expect(evaluateMassCommunication(baseRequest({ externalRecipientCount: -1 })).verdict).toBe(
+      "blocked",
+    );
+    expect(evaluateMassCommunication(baseRequest({ externalRecipientCount: 5000 })).verdict).toBe(
+      "blocked",
+    );
   });
 
   it("requires human approval for critical mass communication (BO)", () => {

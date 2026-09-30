@@ -34,26 +34,40 @@ const SECURITY_EVENTS = [
   "login_succeeded",
 ] as const;
 
-type Preset = "all" | "security" | "password_reset_requested" | "password_reset_completed" | "login_failed";
+type Preset =
+  "all" | "security" | "password_reset_requested" | "password_reset_completed" | "login_failed";
 
 function toCSV(rows: Log[]) {
-  const headers = ["when", "action", "table", "record_id", "user_id", "ip", "old_value", "new_value"];
+  const headers = [
+    "when",
+    "action",
+    "table",
+    "record_id",
+    "user_id",
+    "ip",
+    "old_value",
+    "new_value",
+  ];
   const esc = (v: unknown) => {
     const s = v == null ? "" : typeof v === "string" ? v : JSON.stringify(v);
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
   const lines = [headers.join(",")];
   for (const r of rows) {
-    lines.push([
-      r.created_at ?? "",
-      r.action,
-      r.table_name ?? "",
-      r.record_id ?? "",
-      r.user_id ?? "",
-      r.ip_address ?? "",
-      r.old_value,
-      r.new_value,
-    ].map(esc).join(","));
+    lines.push(
+      [
+        r.created_at ?? "",
+        r.action,
+        r.table_name ?? "",
+        r.record_id ?? "",
+        r.user_id ?? "",
+        r.ip_address ?? "",
+        r.old_value,
+        r.new_value,
+      ]
+        .map(esc)
+        .join(","),
+    );
   }
   return lines.join("\n");
 }
@@ -84,7 +98,10 @@ function AdminAuditLogsPage() {
       const to = from + PAGE_SIZE - 1;
       let qy = supabase
         .from("audit_logs")
-        .select("id, action, table_name, record_id, user_id, ip_address, old_value, new_value, created_at", { count: "exact" })
+        .select(
+          "id, action, table_name, record_id, user_id, ip_address, old_value, new_value, created_at",
+          { count: "exact" },
+        )
         .eq("school_id", school!.id);
 
       if (preset === "security") qy = qy.in("action", [...SECURITY_EVENTS]);
@@ -129,14 +146,13 @@ function AdminAuditLogsPage() {
   }
 
   const chips = useMemo(
-    () =>
-      [
-        { id: "all" as const, label: "All events" },
-        { id: "security" as const, label: "Security events", icon: true },
-        { id: "login_failed" as const, label: "Login failures" },
-        { id: "password_reset_requested" as const, label: "Password reset requests" },
-        { id: "password_reset_completed" as const, label: "Password resets completed" },
-      ],
+    () => [
+      { id: "all" as const, label: "All events" },
+      { id: "security" as const, label: "Security events", icon: true },
+      { id: "login_failed" as const, label: "Login failures" },
+      { id: "password_reset_requested" as const, label: "Password reset requests" },
+      { id: "password_reset_completed" as const, label: "Password resets completed" },
+    ],
     [],
   );
 
@@ -145,7 +161,13 @@ function AdminAuditLogsPage() {
       title="Audit logs"
       subtitle="Recent changes and security events for your school."
       actions={
-        <Button type="button" variant="outline" size="sm" onClick={downloadCSV} disabled={rows.length === 0}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={downloadCSV}
+          disabled={rows.length === 0}
+        >
           <Download className="mr-2 size-4" /> Export page CSV
         </Button>
       }
@@ -164,7 +186,9 @@ function AdminAuditLogsPage() {
           />
         </div>
         <span className="text-xs text-muted-foreground ml-auto">
-          {logs.isLoading ? "Loading…" : `Page ${page} of ${pageCount} • ${total.toLocaleString()} events`}
+          {logs.isLoading
+            ? "Loading…"
+            : `Page ${page} of ${pageCount} • ${total.toLocaleString()} events`}
         </span>
       </div>
 
@@ -187,12 +211,20 @@ function AdminAuditLogsPage() {
       </div>
 
       {logs.isLoading ? (
-        <div className="uos-card p-8 text-center text-sm text-muted-foreground">Loading audit logs…</div>
+        <div className="uos-card p-8 text-center text-sm text-muted-foreground">
+          Loading audit logs…
+        </div>
       ) : logs.error ? (
-        <div className="uos-card p-8 text-center text-sm text-red-400">{(logs.error as Error).message}</div>
+        <div className="uos-card p-8 text-center text-sm text-red-400">
+          {(logs.error as Error).message}
+        </div>
       ) : rows.length === 0 ? (
         <EmptyCard
-          title={total === 0 && !needle && preset === "all" ? "No audit logs yet" : "No logs match your filters"}
+          title={
+            total === 0 && !needle && preset === "all"
+              ? "No audit logs yet"
+              : "No logs match your filters"
+          }
           body={
             total === 0 && !needle && preset === "all"
               ? "Changes to records will show up here as people use the system."
@@ -223,7 +255,9 @@ function AdminAuditLogsPage() {
                         {r.created_at ? new Date(r.created_at).toLocaleString() : "—"}
                       </td>
                       <td className="p-3 font-medium">
-                        {isSecurity && <ShieldAlert className="mr-1 inline size-3 text-amber-500" />}
+                        {isSecurity && (
+                          <ShieldAlert className="mr-1 inline size-3 text-amber-500" />
+                        )}
                         {r.action}
                       </td>
                       <td className="p-3 text-muted-foreground">{r.table_name ?? "—"}</td>
@@ -233,10 +267,16 @@ function AdminAuditLogsPage() {
                       <td className="p-3 font-mono text-[11px] text-muted-foreground">
                         {r.user_id ? `${r.user_id.slice(0, 8)}…` : "—"}
                       </td>
-                      <td className="p-3 font-mono text-[11px] text-muted-foreground">{r.ip_address ?? "—"}</td>
+                      <td className="p-3 font-mono text-[11px] text-muted-foreground">
+                        {r.ip_address ?? "—"}
+                      </td>
                       <td className="p-3 max-w-md">
                         <code className="text-[10px] text-muted-foreground line-clamp-2 break-all">
-                          {r.new_value ? JSON.stringify(r.new_value) : r.old_value ? JSON.stringify(r.old_value) : "—"}
+                          {r.new_value
+                            ? JSON.stringify(r.new_value)
+                            : r.old_value
+                              ? JSON.stringify(r.old_value)
+                              : "—"}
                         </code>
                       </td>
                     </tr>
@@ -245,7 +285,7 @@ function AdminAuditLogsPage() {
               </tbody>
             </table>
           </div>
-          <PortalPagination page={page} pageCount={pageCount}  />
+          <PortalPagination page={page} pageCount={pageCount} />
         </div>
       )}
     </PortalPage>

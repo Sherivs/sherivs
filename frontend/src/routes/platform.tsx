@@ -124,8 +124,8 @@ function Platform() {
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             A school inherits the platform's governed core — identity, tenancy, security,
-            workspaces, AI — and adds only its own education domain. Remove that runtime and the kernel
-            stays fully valid.
+            workspaces, AI — and adds only its own education domain. Remove that runtime and the
+            kernel stays fully valid.
           </p>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {scholar.map((capability) => (

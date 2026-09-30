@@ -113,7 +113,12 @@ function resolutionsFor(type: ConflictType): readonly ResolutionStrategy[] {
   switch (type) {
     case "resource":
     case "capacity":
-      return ["change_resource", "move_activity", "split_participants", "invoke_approved_exception"];
+      return [
+        "change_resource",
+        "move_activity",
+        "split_participants",
+        "invoke_approved_exception",
+      ];
     case "capability":
     case "accessibility":
       return ["change_resource", "invoke_approved_exception", "escalate_to_human"];
@@ -174,10 +179,22 @@ export function detectConflicts(input: DetectConflictsInput): readonly Schedulin
 
   for (const assignment of input.assignments) {
     if (Date.parse(assignment.end) <= Date.parse(assignment.start)) {
-      push("time", "critical", [assignment], [assignment.activityId], "The activity ends before it begins");
+      push(
+        "time",
+        "critical",
+        [assignment],
+        [assignment.activityId],
+        "The activity ends before it begins",
+      );
     }
     if (assignment.timezone.trim() === "") {
-      push("time", "major", [assignment], [assignment.activityId], "The interval carries no timezone");
+      push(
+        "time",
+        "major",
+        [assignment],
+        [assignment.activityId],
+        "The interval carries no timezone",
+      );
     }
     for (const blocked of input.blockedPeriods ?? []) {
       if (overlaps(assignment, blocked)) {
@@ -238,8 +255,12 @@ export function detectConflicts(input: DetectConflictsInput): readonly Schedulin
       const b = input.assignments[j];
       if (a.activityId === b.activityId) continue;
 
-      const sharedParticipants = a.participants.filter((participant) => b.participants.includes(participant));
-      const sharedResources = a.resources.filter((resourceRef) => b.resources.includes(resourceRef));
+      const sharedParticipants = a.participants.filter((participant) =>
+        b.participants.includes(participant),
+      );
+      const sharedResources = a.resources.filter((resourceRef) =>
+        b.resources.includes(resourceRef),
+      );
 
       if (sharedParticipants.length > 0 && overlaps(a, b)) {
         push(
@@ -321,11 +342,19 @@ export function escalateConflicts(conflicts: readonly SchedulingConflict[]): Con
     if (blocking.some((conflict) => conflict.type === "capacity")) {
       guidance.push("Split the participant group or add capacity at a resource that can host it.");
     }
-    if (blocking.some((conflict) => conflict.type === "capability" || conflict.type === "accessibility")) {
-      guidance.push("Reassign to a resource declaring the missing capability or access requirement.");
+    if (
+      blocking.some(
+        (conflict) => conflict.type === "capability" || conflict.type === "accessibility",
+      )
+    ) {
+      guidance.push(
+        "Reassign to a resource declaring the missing capability or access requirement.",
+      );
     }
     if (blocking.some((conflict) => conflict.type === "calendar")) {
-      guidance.push("Move the activity outside the blocked period; blocked periods are policy, not preference.");
+      guidance.push(
+        "Move the activity outside the blocked period; blocked periods are policy, not preference.",
+      );
     }
   }
   if (waivable.length > 0) {

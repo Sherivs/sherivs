@@ -33,16 +33,31 @@ function StudentReportCardPage() {
   return (
     <PortalPage title="My report card" subtitle="View your published grades for any term.">
       <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
-        <Link to="/student/dashboard" className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40">
+        <Link
+          to="/student/dashboard"
+          className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:bg-muted/40"
+        >
           ← Dashboard
         </Link>
-        <Input placeholder="Term (e.g. 1st)" value={term} onChange={(e) => setTerm(e.target.value)} className="max-w-[140px]" />
-        <Input placeholder="Year (e.g. 2025/2026)" value={year} onChange={(e) => setYear(e.target.value)} className="max-w-[180px]" />
+        <Input
+          placeholder="Term (e.g. 1st)"
+          value={term}
+          onChange={(e) => setTerm(e.target.value)}
+          className="max-w-[140px]"
+        />
+        <Input
+          placeholder="Year (e.g. 2025/2026)"
+          value={year}
+          onChange={(e) => setYear(e.target.value)}
+          className="max-w-[180px]"
+        />
       </div>
       {student.isLoading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
       ) : !student.data ? (
-        <p className="text-sm text-muted-foreground">No student record is linked to your account yet.</p>
+        <p className="text-sm text-muted-foreground">
+          No student record is linked to your account yet.
+        </p>
       ) : (
         <ReportCard studentId={student.data.id} term={term || null} academicYear={year || null} />
       )}

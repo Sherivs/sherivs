@@ -4,10 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const ledger = JSON.parse(
-  readFileSync(
-    join(root, "architecture", "COREGRID_CAMPAIGN_52_DECISION_LEDGER.json"),
-    "utf8",
-  ),
+  readFileSync(join(root, "architecture", "COREGRID_CAMPAIGN_52_DECISION_LEDGER.json"), "utf8"),
 );
 
 const mapped = ledger.decisions
@@ -77,8 +74,7 @@ console.log(
     {
       mapped: mapped.length,
       blockedExcluded: blocked.length,
-      output:
-        "architecture/COREGRID_CAMPAIGN_52_WP_02_RECEIVING_BLUEPRINT_PLAN.json",
+      output: "architecture/COREGRID_CAMPAIGN_52_WP_02_RECEIVING_BLUEPRINT_PLAN.json",
     },
     null,
     2,

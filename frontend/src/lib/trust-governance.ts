@@ -34,13 +34,7 @@ import type { TrustState } from "./trust-core";
  * Key trust (P) — metadata only; private keys never enter
  * ────────────────────────────────────────────────────────────*/
 
-export type KeyTrustKind =
-  | "public"
-  | "signing"
-  | "encryption"
-  | "service"
-  | "agent"
-  | "device";
+export type KeyTrustKind = "public" | "signing" | "encryption" | "service" | "agent" | "device";
 
 export interface KeyTrustRecord {
   keyId: string;
@@ -63,8 +57,7 @@ export interface RegisterKeyTrustInput {
 }
 
 export type RegisterKeyTrustResult =
-  | { ok: true; record: KeyTrustRecord }
-  | { ok: false; error: string };
+  { ok: true; record: KeyTrustRecord } | { ok: false; error: string };
 
 export function registerKeyTrust(input: RegisterKeyTrustInput): RegisterKeyTrustResult {
   if (input.fingerprint.trim() === "") {
@@ -113,8 +106,7 @@ export interface RegisterCertificateTrustInput {
 }
 
 export type RegisterCertificateTrustResult =
-  | { ok: true; record: CertificateTrustRecord }
-  | { ok: false; error: string };
+  { ok: true; record: CertificateTrustRecord } | { ok: false; error: string };
 
 export function registerCertificateTrust(
   input: RegisterCertificateTrustInput,
@@ -174,8 +166,7 @@ export interface CreateFederationInput {
 }
 
 export type CreateFederationResult =
-  | { ok: true; relationship: FederationRelationship }
-  | { ok: false; error: string };
+  { ok: true; relationship: FederationRelationship } | { ok: false; error: string };
 
 /**
  * Create a federation relationship. Every federation defines parties, trust
@@ -240,8 +231,7 @@ export interface CreateTrustDelegationInput {
 }
 
 export type CreateTrustDelegationResult =
-  | { ok: true; delegation: TrustDelegation }
-  | { ok: false; error: string };
+  { ok: true; delegation: TrustDelegation } | { ok: false; error: string };
 
 export function createTrustDelegation(
   input: CreateTrustDelegationInput,
@@ -278,7 +268,13 @@ export function isDelegationActive(delegation: TrustDelegation, now: string): bo
  * Trust anchors (AI)
  * ────────────────────────────────────────────────────────────*/
 
-export type TrustAnchorKind = "root_certificate" | "root_key" | "approved_issuer" | "approved_registry" | "approved_identity_provider" | "approved_signing_authority";
+export type TrustAnchorKind =
+  | "root_certificate"
+  | "root_key"
+  | "approved_issuer"
+  | "approved_registry"
+  | "approved_identity_provider"
+  | "approved_signing_authority";
 
 export interface TrustAnchor {
   id: string;
@@ -297,8 +293,7 @@ export interface RegisterTrustAnchorInput {
 }
 
 export type RegisterTrustAnchorResult =
-  | { ok: true; anchor: TrustAnchor }
-  | { ok: false; error: string };
+  { ok: true; anchor: TrustAnchor } | { ok: false; error: string };
 
 export function registerTrustAnchor(input: RegisterTrustAnchorInput): RegisterTrustAnchorResult {
   if (input.managedBy.trim() === "") {
@@ -347,12 +342,9 @@ export interface CreateTrustPolicyInput {
 }
 
 export type CreateTrustPolicyResult =
-  | { ok: true; policy: TrustPolicyVersion }
-  | { ok: false; error: string };
+  { ok: true; policy: TrustPolicyVersion } | { ok: false; error: string };
 
-export function createTrustPolicy(
-  input: CreateTrustPolicyInput,
-): CreateTrustPolicyResult {
+export function createTrustPolicy(input: CreateTrustPolicyInput): CreateTrustPolicyResult {
   if (input.acceptedIssuers.length === 0) {
     return { ok: false, error: "Trust policy must accept at least one issuer (AE)" };
   }
@@ -374,14 +366,12 @@ export interface EvaluateTrustPolicyInput {
 }
 
 export type EvaluateTrustPolicyResult =
-  | { ok: true; reason: string }
-  | { ok: false; reason: string };
+  { ok: true; reason: string } | { ok: false; reason: string };
 
-export function evaluateTrustPolicy(
-  input: EvaluateTrustPolicyInput,
-): EvaluateTrustPolicyResult {
+export function evaluateTrustPolicy(input: EvaluateTrustPolicyInput): EvaluateTrustPolicyResult {
   if (!input.issuerAccepted) return { ok: false, reason: "Issuer is not accepted by policy (AE)" };
-  if (!input.evidenceAccepted) return { ok: false, reason: "Evidence kind is not accepted by policy (AE)" };
+  if (!input.evidenceAccepted)
+    return { ok: false, reason: "Evidence kind is not accepted by policy (AE)" };
   if (input.policy.requireAttestation && !input.attestationOk) {
     return { ok: false, reason: "Policy requires attestation (AE)" };
   }

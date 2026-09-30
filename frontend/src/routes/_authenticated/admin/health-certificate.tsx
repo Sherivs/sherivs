@@ -6,19 +6,10 @@ import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas-pro";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
-import {
-  PortalPage,
-  FeatureLockedCard,
-  PortalPageSkeleton,
-} from "@/components/portal-shell";
+import { PortalPage, FeatureLockedCard, PortalPageSkeleton } from "@/components/portal-shell";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import {
-  SUBSCRIPTION_TIERS,
-  isFeatureActive,
-  type TierName,
-} from "@/lib/subscription-tiers";
-
+import { SUBSCRIPTION_TIERS, isFeatureActive, type TierName } from "@/lib/subscription-tiers";
 
 export const Route = createFileRoute("/_authenticated/admin/health-certificate")({
   ssr: false,
@@ -48,10 +39,8 @@ function bandTailwind(score: number): string {
 
 function interpretation(score: number): string {
   const b = band(score);
-  if (b === "excellent")
-    return "Excellent — Your school is performing at the highest level";
-  if (b === "good")
-    return "Good — Some areas need attention to reach excellence";
+  if (b === "excellent") return "Excellent — Your school is performing at the highest level";
+  if (b === "good") return "Good — Some areas need attention to reach excellence";
   if (b === "fair") return "Fair — Multiple areas require immediate focus";
   return "Critical — Urgent intervention needed across key areas";
 }
@@ -81,15 +70,7 @@ function HealthCertificatePage() {
     queryKey: ["school-health-certificate", schoolId, startISO, endISO],
     enabled: !!schoolId && canHealth,
     queryFn: async () => {
-      const [
-        attendance,
-        grades,
-        fees,
-        teachers,
-        students,
-        staffLogs,
-        lessons,
-      ] = await Promise.all([
+      const [attendance, grades, fees, teachers, students, staffLogs, lessons] = await Promise.all([
         supabase
           .from("attendance")
           .select("status")
@@ -112,10 +93,7 @@ function HealthCertificatePage() {
           .select("id, is_active, role")
           .eq("school_id", schoolId)
           .eq("role", "teacher"),
-        supabase
-          .from("students")
-          .select("id, is_active")
-          .eq("school_id", schoolId),
+        supabase.from("students").select("id, is_active").eq("school_id", schoolId),
         supabase
           .from("attendance_logs")
           .select("teacher_id, timestamp")
@@ -140,18 +118,13 @@ function HealthCertificatePage() {
       const gradeRows = grades.data ?? [];
       const academicScore =
         gradeRows.length > 0
-          ? gradeRows.reduce(
-              (sum: number, g: any) => sum + (Number(g.total_score) || 0),
-              0,
-            ) / gradeRows.length
+          ? gradeRows.reduce((sum: number, g: any) => sum + (Number(g.total_score) || 0), 0) /
+            gradeRows.length
           : 0;
 
       // Component 3: Fee Collection
       const feeRows = fees.data ?? [];
-      const totalBilled = feeRows.reduce(
-        (s: number, f: any) => s + (Number(f.amount) || 0),
-        0,
-      );
+      const totalBilled = feeRows.reduce((s: number, f: any) => s + (Number(f.amount) || 0), 0);
       const totalCollected = feeRows.reduce(
         (s: number, f: any) => s + (Number(f.paid_amount) || 0),
         0,
@@ -162,9 +135,7 @@ function HealthCertificatePage() {
       const teacherRows = teachers.data ?? [];
       const totalTeachers = teacherRows.length;
       const logRows = staffLogs.data ?? [];
-      const uniqueTeachers = new Set(
-        logRows.map((l: any) => l.teacher_id).filter(Boolean),
-      ).size;
+      const uniqueTeachers = new Set(logRows.map((l: any) => l.teacher_id).filter(Boolean)).size;
       const staffScore = totalTeachers > 0 ? (uniqueTeachers / totalTeachers) * 100 : 0;
 
       // Component 5: Parent Engagement (placeholder)
@@ -184,12 +155,10 @@ function HealthCertificatePage() {
       const activeTeachers = teacherRows.filter((t: any) => t.is_active).length;
       const lessonsPlanned = (lessons.data ?? []).length;
       const absentRows = attRows.filter((a: any) => a.status === "absent").length;
-      const studentsAtRisk = totalAtt > 0
-        ? Math.round((absentRows / totalAtt) * activeStudents)
-        : 0;
-      const teacherAbsenceDays = totalTeachers > 0
-        ? Math.max(0, totalTeachers - uniqueTeachers)
-        : 0;
+      const studentsAtRisk =
+        totalAtt > 0 ? Math.round((absentRows / totalAtt) * activeStudents) : 0;
+      const teacherAbsenceDays =
+        totalTeachers > 0 ? Math.max(0, totalTeachers - uniqueTeachers) : 0;
 
       return {
         overall: Math.min(100, Math.max(0, overall)),
@@ -198,7 +167,12 @@ function HealthCertificatePage() {
           { label: "Academic Performance", score: Math.round(academicScore), weight: 25 },
           { label: "Fee Collection", score: Math.round(feeScore), weight: 20 },
           { label: "Staff Attendance", score: Math.round(staffScore), weight: 15 },
-          { label: "Parent Engagement", score: parentScore, weight: 15, note: "Based on portal activity estimates" },
+          {
+            label: "Parent Engagement",
+            score: parentScore,
+            weight: 15,
+            note: "Based on portal activity estimates",
+          },
         ],
         metrics: {
           totalStudents: activeStudents,
@@ -310,9 +284,7 @@ function HealthCertificatePage() {
         {/* Section 2: Overall Gauge */}
         <div className="glass-card p-6 sm:p-10 flex flex-col items-center text-center">
           <Gauge score={d.overall} />
-          <h2 className="mt-6 text-xl sm:text-2xl font-bold text-white">
-            Overall Health Score
-          </h2>
+          <h2 className="mt-6 text-xl sm:text-2xl font-bold text-white">Overall Health Score</h2>
           <p className="mt-2 text-sm sm:text-base text-white/60 max-w-xl">
             {interpretation(d.overall)}
           </p>
@@ -395,9 +367,7 @@ function Gauge({ score }: { score: number }) {
       aria-label={`Overall health score ${score} out of 100`}
     >
       <div className="absolute inset-2 rounded-full bg-[#0a0f1e] flex items-center justify-center border border-white/10">
-        <div className="text-5xl sm:text-6xl font-bold text-white tabular-nums">
-          {score}
-        </div>
+        <div className="text-5xl sm:text-6xl font-bold text-white tabular-nums">{score}</div>
       </div>
     </div>
   );
@@ -406,9 +376,7 @@ function Gauge({ score }: { score: number }) {
 function MetricCard({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="glass-card p-4">
-      <div className="text-xs uppercase tracking-wider text-white/50 mb-1">
-        {label}
-      </div>
+      <div className="text-xs uppercase tracking-wider text-white/50 mb-1">{label}</div>
       <div className="text-2xl font-bold text-white tabular-nums">{value}</div>
     </div>
   );

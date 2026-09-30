@@ -82,7 +82,14 @@ export type ProvisioningStage =
   | "activated";
 
 export const PROVISIONING_STAGES: readonly ProvisioningStage[] = [
-  "requested", "validated", "planned", "allocated", "provisioned", "configured", "verified", "activated",
+  "requested",
+  "validated",
+  "planned",
+  "allocated",
+  "provisioned",
+  "configured",
+  "verified",
+  "activated",
 ] as const;
 
 export interface ProvisioningRequest {
@@ -99,7 +106,10 @@ export function createProvisioningRequest(input: {
   return { ok: true, request: { id: input.id, entityType: input.entityType, stage: "requested" } };
 }
 
-export function canAdvanceProvisioning(current: ProvisioningStage, next: ProvisioningStage): boolean {
+export function canAdvanceProvisioning(
+  current: ProvisioningStage,
+  next: ProvisioningStage,
+): boolean {
   const from = PROVISIONING_STAGES.indexOf(current);
   const to = PROVISIONING_STAGES.indexOf(next);
   return from >= 0 && to === from + 1;
@@ -117,10 +127,16 @@ export function isDeprovisioningStructured(input: {
  * Rollout + kill switches + rollback (Sections EJ, EK, EL, EM, EO, EP, EQ)
  * ────────────────────────────────────────────────────────────*/
 
-export type RolloutStage = "internal" | "canary" | "small_customer_group" | "regional" | "enterprise" | "global";
+export type RolloutStage =
+  "internal" | "canary" | "small_customer_group" | "regional" | "enterprise" | "global";
 
 export const ROLLOUT_STAGES: readonly RolloutStage[] = [
-  "internal", "canary", "small_customer_group", "regional", "enterprise", "global",
+  "internal",
+  "canary",
+  "small_customer_group",
+  "regional",
+  "enterprise",
+  "global",
 ] as const;
 
 export interface RolloutPlan {
@@ -136,12 +152,16 @@ export function createRolloutPlan(input: {
   feature: string;
   canaryPercent?: number;
 }): { ok: true; plan: RolloutPlan } | { ok: false; error: string } {
-  if (!input.feature.trim()) return { ok: false, error: "Rollout feature is required (Section EM)" };
+  if (!input.feature.trim())
+    return { ok: false, error: "Rollout feature is required (Section EM)" };
   const canaryPercent = input.canaryPercent ?? 5;
   if (canaryPercent <= 0 || canaryPercent > 10) {
     return { ok: false, error: "Canary percentage must be small (0 < p <= 10) (Section EK)" };
   }
-  return { ok: true, plan: { id: input.id, feature: input.feature, stage: "internal", canaryPercent } };
+  return {
+    ok: true,
+    plan: { id: input.id, feature: input.feature, stage: "internal", canaryPercent },
+  };
 }
 
 export function canAdvanceRollout(current: RolloutStage, next: RolloutStage): boolean {
@@ -168,11 +188,15 @@ export function createKillSwitch(input: {
   controlled?: boolean;
   auditable?: boolean;
 }): { ok: true; killSwitch: KillSwitch } | { ok: false; error: string } {
-  if (!input.capability.trim()) return { ok: false, error: "Kill switch capability is required (Section EO)" };
+  if (!input.capability.trim())
+    return { ok: false, error: "Kill switch capability is required (Section EO)" };
   if (input.controlled === false || input.auditable === false) {
     return { ok: false, error: "Kill switches must be controlled and auditable (Section EO)" };
   }
-  return { ok: true, killSwitch: { id: input.id, capability: input.capability, controlled: true, auditable: true } };
+  return {
+    ok: true,
+    killSwitch: { id: input.id, capability: input.capability, controlled: true, auditable: true },
+  };
 }
 
 export function isKillSwitchControlled(killSwitch: KillSwitch): boolean {
@@ -225,7 +249,16 @@ export function createPolicyVersion(input: {
   if (!input.reversible) {
     return { ok: false, error: "Enterprise policies must be reversible (Section FX)" };
   }
-  return { ok: true, version: { id: input.id, policy: input.policy, version: input.version, rolloutMode: input.rolloutMode, reversible: true } };
+  return {
+    ok: true,
+    version: {
+      id: input.id,
+      policy: input.policy,
+      version: input.version,
+      rolloutMode: input.rolloutMode,
+      reversible: true,
+    },
+  };
 }
 
 export function canRolloutPolicy(version: PolicyVersion): boolean {
@@ -251,11 +284,15 @@ export function createConfigDistribution(input: {
   configKey: string;
   version: number;
 }): { ok: true; distribution: ConfigDistribution } | { ok: false; error: string } {
-  if (!input.configKey.trim()) return { ok: false, error: "Configuration key is required (Section FZ)" };
+  if (!input.configKey.trim())
+    return { ok: false, error: "Configuration key is required (Section FZ)" };
   if (!Number.isInteger(input.version) || input.version < 1) {
     return { ok: false, error: "Configuration version must be a positive integer (Section FZ)" };
   }
-  return { ok: true, distribution: { id: input.id, configKey: input.configKey, version: input.version } };
+  return {
+    ok: true,
+    distribution: { id: input.id, configKey: input.configKey, version: input.version },
+  };
 }
 
 // Section GA: services must know which configuration version they are using.
@@ -308,12 +345,18 @@ export function createServiceCatalogEntry(input: {
   scalingModel: string;
   recoveryModel: string;
 }): { ok: true; entry: ServiceCatalogEntry } | { ok: false; error: string } {
-  if (!input.service.trim()) return { ok: false, error: "Catalog service is required (Section GD)" };
-  if (!input.owner.trim()) return { ok: false, error: "Catalog service owner is required (Section GE)" };
-  if (!input.purpose.trim()) return { ok: false, error: "Catalog service purpose is required (Section GD)" };
-  if (!input.dataClassification.trim()) return { ok: false, error: "Catalog data classification is required (Section GD)" };
-  if (!input.scalingModel.trim()) return { ok: false, error: "Catalog scaling model is required (Section GD)" };
-  if (!input.recoveryModel.trim()) return { ok: false, error: "Catalog recovery model is required (Section GD)" };
+  if (!input.service.trim())
+    return { ok: false, error: "Catalog service is required (Section GD)" };
+  if (!input.owner.trim())
+    return { ok: false, error: "Catalog service owner is required (Section GE)" };
+  if (!input.purpose.trim())
+    return { ok: false, error: "Catalog service purpose is required (Section GD)" };
+  if (!input.dataClassification.trim())
+    return { ok: false, error: "Catalog data classification is required (Section GD)" };
+  if (!input.scalingModel.trim())
+    return { ok: false, error: "Catalog scaling model is required (Section GD)" };
+  if (!input.recoveryModel.trim())
+    return { ok: false, error: "Catalog recovery model is required (Section GD)" };
   return {
     ok: true,
     entry: {
@@ -358,7 +401,8 @@ export function declareServiceReadinessLevel(input: {
   service: string;
   level: ReadinessLevel;
 }): { ok: true; readiness: ServiceReadiness } | { ok: false; error: string } {
-  if (!input.service.trim()) return { ok: false, error: "Readiness service is required (Section LX)" };
+  if (!input.service.trim())
+    return { ok: false, error: "Readiness service is required (Section LX)" };
   if (input.level < 0 || input.level > 5 || !Number.isInteger(input.level)) {
     return { ok: false, error: "Readiness level must be an integer between 0 and 5 (Section LW)" };
   }
@@ -398,7 +442,13 @@ export function registerBottleneck(input: {
   if (!input.system.trim() || !input.description.trim()) {
     return { ok: false, error: "Bottleneck requires a system and description (Section MD)" };
   }
-  const scores = [input.customerImpact, input.growthRate, input.failureRisk, input.cost, input.strategicImportance];
+  const scores = [
+    input.customerImpact,
+    input.growthRate,
+    input.failureRisk,
+    input.cost,
+    input.strategicImportance,
+  ];
   if (scores.some((s) => !Number.isFinite(s) || s < 0 || s > 10)) {
     return { ok: false, error: "Bottleneck scores must be between 0 and 10 (Section MD)" };
   }
@@ -407,7 +457,9 @@ export function registerBottleneck(input: {
 
 // Section ME: prioritize by customer impact, growth rate, failure risk, cost,
 // and strategic importance.
-export function prioritizeBottlenecks(bottlenecks: readonly Bottleneck[]): { id: BottleneckId; system: string; score: number }[] {
+export function prioritizeBottlenecks(
+  bottlenecks: readonly Bottleneck[],
+): { id: BottleneckId; system: string; score: number }[] {
   return bottlenecks
     .map((b) => ({
       id: b.id,
@@ -434,11 +486,20 @@ export function createScaleLimit(input: {
   limit: number;
   monitored?: boolean;
 }): { ok: true; limit: ScaleLimit } | { ok: false; error: string } {
-  if (!input.dimension.trim()) return { ok: false, error: "Scale limit dimension is required (Section QE)" };
+  if (!input.dimension.trim())
+    return { ok: false, error: "Scale limit dimension is required (Section QE)" };
   if (!Number.isFinite(input.limit) || input.limit <= 0) {
     return { ok: false, error: "Scale limit must be a positive number (Section QE)" };
   }
-  return { ok: true, limit: { id: input.id, dimension: input.dimension, limit: input.limit, monitored: input.monitored ?? false } };
+  return {
+    ok: true,
+    limit: {
+      id: input.id,
+      dimension: input.dimension,
+      limit: input.limit,
+      monitored: input.monitored ?? false,
+    },
+  };
 }
 
 export function isLimitMonitored(limit: ScaleLimit): boolean {
@@ -461,14 +522,23 @@ export function createScaleChangeRecord(input: {
   if (!input.change.trim() || !input.approvedBy.trim()) {
     return { ok: false, error: "Scale change record requires a change and approver (Section PV)" };
   }
-  return { ok: true, record: { id: input.id, change: input.change, approvedBy: input.approvedBy, recordedAt: input.recordedAt } };
+  return {
+    ok: true,
+    record: {
+      id: input.id,
+      change: input.change,
+      approvedBy: input.approvedBy,
+      recordedAt: input.recordedAt,
+    },
+  };
 }
 
 /* ─────────────────────────────────────────────────────────────
  * Mass-event protection (Sections RJ-RN, RR, RT)
  * ────────────────────────────────────────────────────────────*/
 
-export type MassEventType = "login" | "notification" | "examination" | "payment" | "device_sync" | "data_ingestion";
+export type MassEventType =
+  "login" | "notification" | "examination" | "payment" | "device_sync" | "data_ingestion";
 
 export interface MassEventControl {
   id: string;
@@ -551,11 +621,19 @@ export function createRecoveryPriority(input: {
   priority: number;
   dependencyRefs?: string[];
 }): { ok: true; priority: RecoveryPriority } | { ok: false; error: string } {
-  if (!input.workload.trim()) return { ok: false, error: "Recovery workload is required (Section RV)" };
+  if (!input.workload.trim())
+    return { ok: false, error: "Recovery workload is required (Section RV)" };
   if (!Number.isInteger(input.priority) || input.priority < 1) {
     return { ok: false, error: "Recovery priority must be a positive integer (Section RV)" };
   }
-  return { ok: true, priority: { workload: input.workload, priority: input.priority, dependencyRefs: input.dependencyRefs ?? [] } };
+  return {
+    ok: true,
+    priority: {
+      workload: input.workload,
+      priority: input.priority,
+      dependencyRefs: input.dependencyRefs ?? [],
+    },
+  };
 }
 
 // Section RW: dependencies must be recovered no later than their dependents.
@@ -577,7 +655,12 @@ export function isRecoveryOrderValid(priorities: readonly RecoveryPriority[]): b
 
 export type AutonomyLevel = "manual" | "supervised" | "limited_autonomous" | "autonomous";
 
-export const AUTONOMY_ORDER: readonly AutonomyLevel[] = ["manual", "supervised", "limited_autonomous", "autonomous"] as const;
+export const AUTONOMY_ORDER: readonly AutonomyLevel[] = [
+  "manual",
+  "supervised",
+  "limited_autonomous",
+  "autonomous",
+] as const;
 
 export interface AutonomyContract {
   id: string;
@@ -603,7 +686,8 @@ export function createAutonomyContract(input: {
   humanApprovalRequiredForHighRisk?: boolean;
 }): { ok: true; contract: AutonomyContract } | { ok: false; error: string } {
   if (!input.scope.trim()) return { ok: false, error: "Autonomy scope is required (Section SL)" };
-  if (!AUTONOMY_ORDER.includes(input.level)) return { ok: false, error: "Unknown autonomy level (Section SL)" };
+  if (!AUTONOMY_ORDER.includes(input.level))
+    return { ok: false, error: "Unknown autonomy level (Section SL)" };
   // Section JV safety: no automated control loop operates without bounded
   // actions, observable outcomes, rollback, authorization, and failure limits.
   if (input.level !== "manual") {
@@ -614,7 +698,11 @@ export function createAutonomyContract(input: {
       input.authorizationRequired === false ||
       input.failureLimits === false
     ) {
-      return { ok: false, error: "Autonomous control loops require bounded actions, observable outcomes, rollback, authorization, and failure limits (Section JV)" };
+      return {
+        ok: false,
+        error:
+          "Autonomous control loops require bounded actions, observable outcomes, rollback, authorization, and failure limits (Section JV)",
+      };
     }
   }
   return {
@@ -645,7 +733,10 @@ export function canActAutonomously(contract: AutonomyContract): boolean {
 }
 
 // Sections SM + SN: high-risk scale actions require human approval.
-export function isAutonomousScaleActionPermitted(contract: AutonomyContract, highRisk: boolean): boolean {
+export function isAutonomousScaleActionPermitted(
+  contract: AutonomyContract,
+  highRisk: boolean,
+): boolean {
   if (!canActAutonomously(contract)) return false;
   if (highRisk && contract.humanApprovalRequiredForHighRisk) return false;
   return true;
@@ -670,10 +761,14 @@ export function createEngineeringContract(input: {
   dataOwned: string[];
   dataNotOwned: string[];
 }): { ok: true; contract: EngineeringContract } | { ok: false; error: string } {
-  if (!input.service.trim()) return { ok: false, error: "Engineering contract service is required (Section SE)" };
+  if (!input.service.trim())
+    return { ok: false, error: "Engineering contract service is required (Section SE)" };
   const overlap = input.dataOwned.filter((item) => input.dataNotOwned.includes(item));
   if (overlap.length > 0) {
-    return { ok: false, error: `Data cannot be both owned and not owned: ${overlap.join(", ")} (Section SI)` };
+    return {
+      ok: false,
+      error: `Data cannot be both owned and not owned: ${overlap.join(", ")} (Section SI)`,
+    };
   }
   return {
     ok: true,
@@ -688,11 +783,9 @@ export function createEngineeringContract(input: {
 }
 
 // Section SI: a service must never access data it does not own.
-export function isDataOwnershipRespected(contract: EngineeringContract, accessedData: string[]): boolean {
+export function isDataOwnershipRespected(
+  contract: EngineeringContract,
+  accessedData: string[],
+): boolean {
   return accessedData.every((item) => !contract.dataNotOwned.includes(item));
 }
-
-
-
-
-

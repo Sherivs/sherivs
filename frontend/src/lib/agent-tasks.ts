@@ -83,10 +83,7 @@ export const TASK_TRANSITIONS: readonly TaskTransition[] = [
   { from: "retrying", to: "cancelled", allowed: true },
 ] as const;
 
-export function isTaskTransitionAllowed(
-  from: TaskState,
-  to: TaskState,
-): boolean {
+export function isTaskTransitionAllowed(from: TaskState, to: TaskState): boolean {
   return TASK_TRANSITIONS.some((t) => t.from === from && t.to === to && t.allowed);
 }
 
@@ -141,9 +138,7 @@ export interface CreateTaskInput {
   now: string;
 }
 
-export type CreateTaskResult =
-  | { ok: true; task: AgentTask }
-  | { ok: false; error: string };
+export type CreateTaskResult = { ok: true; task: AgentTask } | { ok: false; error: string };
 
 export function createAgentTask(input: CreateTaskInput): CreateTaskResult {
   if (input.objective.trim() === "") {
@@ -158,10 +153,7 @@ export function createAgentTask(input: CreateTaskInput): CreateTaskResult {
   ) {
     return { ok: false, error: "Completion deadline must be after start deadline" };
   }
-  if (
-    (input.maxRetries ?? 0) < 0 ||
-    (input.maxRetries ?? 0) > 5
-  ) {
+  if ((input.maxRetries ?? 0) < 0 || (input.maxRetries ?? 0) > 5) {
     return { ok: false, error: "Task max retries must be between 0 and 5" };
   }
 
@@ -191,9 +183,7 @@ export function createAgentTask(input: CreateTaskInput): CreateTaskResult {
   };
 }
 
-export type TaskTransitionResult =
-  | { ok: true; task: AgentTask }
-  | { ok: false; error: string };
+export type TaskTransitionResult = { ok: true; task: AgentTask } | { ok: false; error: string };
 
 export function transitionTask(
   task: AgentTask,
@@ -212,8 +202,8 @@ export function transitionTask(
     updatedAt: now,
     startedAt: task.startedAt ?? (to === "running" ? now : null),
     completedAt: to === "succeeded" || to === "failed" || to === "cancelled" ? now : null,
-    cancelledBy: to === "cancelled" ? cancelledBy ?? null : null,
-    cancelReason: to === "cancelled" ? cancelReason ?? null : null,
+    cancelledBy: to === "cancelled" ? (cancelledBy ?? null) : null,
+    cancelReason: to === "cancelled" ? (cancelReason ?? null) : null,
   };
   return { ok: true, task: updated };
 }
@@ -250,10 +240,7 @@ export function createTaskCheckpoint(
   };
 }
 
-export function canResumeFromCheckpoint(
-  task: AgentTask,
-  checkpoint: TaskCheckpoint,
-): boolean {
+export function canResumeFromCheckpoint(task: AgentTask, checkpoint: TaskCheckpoint): boolean {
   return task.id === checkpoint.taskId && task.state === "paused";
 }
 

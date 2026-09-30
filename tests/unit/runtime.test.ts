@@ -12,10 +12,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import {
-  createExecutionContext,
-  validateExecutionContext,
-} from "@/lib/runtime-core";
+import { createExecutionContext, validateExecutionContext } from "@/lib/runtime-core";
 import {
   createCommand,
   createRuntimeError,
@@ -32,15 +29,8 @@ import {
   createDeadLetterQueue,
   createOutboxMessage,
 } from "@/lib/runtime-events";
-import {
-  createJob,
-  computeBackoffDelay,
-  shouldRetry,
-  runJob,
-} from "@/lib/runtime-jobs";
-import {
-  createCapabilityRegistry,
-} from "@/lib/runtime-capabilities";
+import { createJob, computeBackoffDelay, shouldRetry, runJob } from "@/lib/runtime-jobs";
+import { createCapabilityRegistry } from "@/lib/runtime-capabilities";
 import {
   redactSensitiveFields,
   createHealthStatus,
@@ -57,13 +47,25 @@ describe("ExecutionContext", () => {
   const tid = tenantId("tenant-1");
 
   it("accepts valid tenant-scoped context", () => {
-    const ctx = createExecutionContext({ source: "api", actorId: "user-1", tenantId: tid, tenantRequired: true, now: "2026-01-01T00:00:00Z" });
+    const ctx = createExecutionContext({
+      source: "api",
+      actorId: "user-1",
+      tenantId: tid,
+      tenantRequired: true,
+      now: "2026-01-01T00:00:00Z",
+    });
     const result = validateExecutionContext(ctx);
     expect(result.ok).toBe(true);
   });
 
   it("rejects tenant-scoped operation without tenant", () => {
-    const ctx = createExecutionContext({ source: "api", actorId: "user-1", tenantId: null, tenantRequired: true, now: "2026-01-01T00:00:00Z" });
+    const ctx = createExecutionContext({
+      source: "api",
+      actorId: "user-1",
+      tenantId: null,
+      tenantRequired: true,
+      now: "2026-01-01T00:00:00Z",
+    });
     const result = validateExecutionContext(ctx);
     expect(result.ok).toBe(false);
   });
@@ -95,7 +97,13 @@ describe("ExecutionContext", () => {
   });
 
   it("requires correlation ID", () => {
-    const ctx = createExecutionContext({ source: "api", actorId: null, tenantId: null, tenantRequired: false, now: "2026-01-01T00:00:00Z" });
+    const ctx = createExecutionContext({
+      source: "api",
+      actorId: null,
+      tenantId: null,
+      tenantRequired: false,
+      now: "2026-01-01T00:00:00Z",
+    });
     (ctx as unknown as { correlationId: string }).correlationId = "";
     const result = validateExecutionContext(ctx);
     expect(result.ok).toBe(false);
@@ -409,12 +417,20 @@ describe("Jobs", () => {
     };
 
     // First attempt fails transiently
-    const r1 = runJob(job, { execute: () => ({ ok: false as const, errorCategory: "transient", error: "e1" }) }, policy);
+    const r1 = runJob(
+      job,
+      { execute: () => ({ ok: false as const, errorCategory: "transient", error: "e1" }) },
+      policy,
+    );
     expect(r1.ok).toBe(false);
     if (!r1.ok) expect(r1.job.status).toBe("retrying");
 
     // Second attempt fails permanently (max reached)
-    const r2 = runJob(r1.ok ? job : r1.job, { execute: () => ({ ok: false as const, errorCategory: "permanent", error: "e2" }) }, policy);
+    const r2 = runJob(
+      r1.ok ? job : r1.job,
+      { execute: () => ({ ok: false as const, errorCategory: "permanent", error: "e2" }) },
+      policy,
+    );
     expect(r2.ok).toBe(false);
     if (!r2.ok) expect(r2.job.status).toBe("failed");
   });
@@ -435,7 +451,11 @@ describe("Jobs", () => {
       maxDelayMs: 0,
       retryableCategories: ["transient"],
     };
-    const r = runJob(job, { execute: () => ({ ok: true as const, result: { done: true } }) }, policy);
+    const r = runJob(
+      job,
+      { execute: () => ({ ok: true as const, result: { done: true } }) },
+      policy,
+    );
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.job.status).toBe("succeeded");
   });
@@ -551,7 +571,9 @@ describe("CapabilityRegistry", () => {
       deprecation: null,
     });
     const views = registry.discover(true);
-    expect(views.some((v) => v.name === "Analytics" && v.queries[0].name === "RunQuery")).toBe(true);
+    expect(views.some((v) => v.name === "Analytics" && v.queries[0].name === "RunQuery")).toBe(
+      true,
+    );
   });
 });
 

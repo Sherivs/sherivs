@@ -28,11 +28,7 @@ import {
  * Facility availability (Section 74)
  * ────────────────────────────────────────────────────────────*/
 
-export type FacilityAvailabilityState =
-  | "available"
-  | "unavailable"
-  | "restricted"
-  | "maintenance";
+export type FacilityAvailabilityState = "available" | "unavailable" | "restricted" | "maintenance";
 
 export const FACILITY_AVAILABILITY_STATES: readonly FacilityAvailabilityState[] = [
   "available",
@@ -100,7 +96,24 @@ export interface CreateFacilityInput {
 }
 
 export type CreateFacilityResult =
-  | { ok: true; facility: { id: FacilityId; tenantId: TenantId; campusId: CampusId; name: string; type: string; capacity: number | null; capabilities: string[]; state: "operational" | "degraded" | "maintenance" | "unavailable"; availabilityRestrictions: string[]; equipmentRefs: string[]; maintenanceState: string | null; createdAt: string; updatedAt: string } }
+  | {
+      ok: true;
+      facility: {
+        id: FacilityId;
+        tenantId: TenantId;
+        campusId: CampusId;
+        name: string;
+        type: string;
+        capacity: number | null;
+        capabilities: string[];
+        state: "operational" | "degraded" | "maintenance" | "unavailable";
+        availabilityRestrictions: string[];
+        equipmentRefs: string[];
+        maintenanceState: string | null;
+        createdAt: string;
+        updatedAt: string;
+      };
+    }
   | { ok: false; error: string };
 
 export function createFacility(

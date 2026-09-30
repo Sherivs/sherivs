@@ -5,7 +5,10 @@ import { CalendarMonth } from "@/components/calendar-month";
 
 export const Route = createFileRoute("/_authenticated/student/calendar")({
   component: () => (
-    <PortalPage title="School calendar" subtitle="What's coming up at school. Non-school days are shaded.">
+    <PortalPage
+      title="School calendar"
+      subtitle="What's coming up at school. Non-school days are shaded."
+    >
       <CalendarMonth />
       <CalendarList />
     </PortalPage>

@@ -16,16 +16,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import {
-  AlertTriangle,
-  Download,
-  Edit2,
-  Plus,
-  Search,
-  Trash2,
-  TrendingUp,
-  X,
-} from "lucide-react";
+import { AlertTriangle, Download, Edit2, Plus, Search, Trash2, TrendingUp, X } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -53,13 +44,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   Select,
   SelectContent,
@@ -114,8 +99,14 @@ const PAYMENT_METHODS = ["Cash", "Bank Transfer", "Card", "Cheque", "Other"] as 
 const RECURRING_FREQUENCIES = ["Weekly", "Monthly", "Quarterly", "Annual"] as const;
 
 const PIE_COLORS = [
-  "#0d9488", "#f59e0b", "#8b5cf6", "#ef4444",
-  "#3b82f6", "#10b981", "#f97316", "#6b7280",
+  "#0d9488",
+  "#f59e0b",
+  "#8b5cf6",
+  "#ef4444",
+  "#3b82f6",
+  "#10b981",
+  "#f97316",
+  "#6b7280",
 ];
 
 const CATEGORY_COLORS: Record<string, string> = EXPENSE_CATEGORIES.reduce(
@@ -227,7 +218,9 @@ function AdminExpensesPage() {
     const today = new Date().toISOString().slice(0, 10);
     const yearStart = `${now.getFullYear()}-01-01`;
     const monthStart = monthDefault;
-    let monthTotal = 0, yearTotal = 0, todayTotal = 0;
+    let monthTotal = 0,
+      yearTotal = 0,
+      todayTotal = 0;
     const byCat = new Map<string, number>();
     for (const r of rows) {
       const amt = Number(r.amount) || 0;
@@ -243,7 +236,20 @@ function AdminExpensesPage() {
   // ---- Monthly bars (current year) ----
   const monthlyData = useMemo(() => {
     const yr = now.getFullYear();
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
     const data = months.map((m) => ({ month: m, amount: 0 }));
     for (const r of rows) {
       const d = new Date(r.expense_date);
@@ -255,7 +261,8 @@ function AdminExpensesPage() {
   // ---- Category pie (top 7 + Other) ----
   const categoryData = useMemo(() => {
     const m = new Map<string, number>();
-    for (const r of rows) m.set(r.expense_category, (m.get(r.expense_category) ?? 0) + Number(r.amount));
+    for (const r of rows)
+      m.set(r.expense_category, (m.get(r.expense_category) ?? 0) + Number(r.amount));
     const sorted = [...m.entries()].sort((a, b) => b[1] - a[1]);
     const top = sorted.slice(0, 7);
     const restSum = sorted.slice(7).reduce((s, [, v]) => s + v, 0);
@@ -286,7 +293,15 @@ function AdminExpensesPage() {
   }
 
   function exportCsv() {
-    const headers = ["Date", "Title", "Category", "Vendor", "Amount", "Payment Method", "Description"];
+    const headers = [
+      "Date",
+      "Title",
+      "Category",
+      "Vendor",
+      "Amount",
+      "Payment Method",
+      "Description",
+    ];
     const lines = [headers.join(",")];
     for (const r of filtered) {
       const cells = [
@@ -374,10 +389,19 @@ function AdminExpensesPage() {
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <XAxis dataKey="month" stroke="#94a3b8" fontSize={11} />
-              <YAxis stroke="#94a3b8" fontSize={11} tickFormatter={(v) => `₦${(v / 1000).toFixed(0)}k`} />
+              <YAxis
+                stroke="#94a3b8"
+                fontSize={11}
+                tickFormatter={(v) => `₦${(v / 1000).toFixed(0)}k`}
+              />
               <Tooltip
                 cursor={{ fill: "rgba(255,255,255,0.05)" }}
-                contentStyle={{ background: "#0f172a", border: "1px solid #334155", borderRadius: 8, fontSize: 12 }}
+                contentStyle={{
+                  background: "#0f172a",
+                  border: "1px solid #334155",
+                  borderRadius: 8,
+                  fontSize: 12,
+                }}
                 formatter={(v: number) => [naira(v), "Total"]}
                 labelFormatter={(l) => `Month: ${l}`}
               />
@@ -398,13 +422,24 @@ function AdminExpensesPage() {
             <>
               <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
-                  <Pie data={categoryData} dataKey="value" nameKey="name" outerRadius={80} innerRadius={40}>
+                  <Pie
+                    data={categoryData}
+                    dataKey="value"
+                    nameKey="name"
+                    outerRadius={80}
+                    innerRadius={40}
+                  >
                     {categoryData.map((_, i) => (
                       <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={{ background: "#0f172a", border: "1px solid #334155", borderRadius: 8, fontSize: 12 }}
+                    contentStyle={{
+                      background: "#0f172a",
+                      border: "1px solid #334155",
+                      borderRadius: 8,
+                      fontSize: 12,
+                    }}
                     formatter={(v: number, n) => [naira(v), n as string]}
                   />
                 </PieChart>
@@ -413,10 +448,15 @@ function AdminExpensesPage() {
                 {categoryData.map((c, i) => (
                   <li key={c.name} className="flex items-center justify-between gap-2">
                     <span className="flex min-w-0 items-center gap-1.5">
-                      <span className="size-2.5 shrink-0 rounded-sm" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                      <span
+                        className="size-2.5 shrink-0 rounded-sm"
+                        style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
+                      />
                       <span className="truncate text-[color:var(--text-secondary)]">{c.name}</span>
                     </span>
-                    <span className="font-mono tabular-nums text-[color:var(--text-muted)]">{naira(c.value)}</span>
+                    <span className="font-mono tabular-nums text-[color:var(--text-muted)]">
+                      {naira(c.value)}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -435,20 +475,32 @@ function AdminExpensesPage() {
           <div className="min-w-[180px]">
             <Label className="text-xs">Category</Label>
             <Select value={fCategory} onValueChange={setFCategory}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All categories</SelectItem>
-                {EXPENSE_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                {EXPENSE_CATEGORIES.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
           <div className="min-w-[160px]">
             <Label className="text-xs">Payment method</Label>
             <Select value={fPayment} onValueChange={setFPayment}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All methods</SelectItem>
-                {PAYMENT_METHODS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                {PAYMENT_METHODS.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {p}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -456,7 +508,12 @@ function AdminExpensesPage() {
             <Label className="text-xs">Search title or vendor</Label>
             <div className="relative">
               <Search className="pointer-events-none absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
-              <Input value={fSearch} onChange={(e) => setFSearch(e.target.value)} placeholder="Generator, ABC Vendor…" className="pl-8" />
+              <Input
+                value={fSearch}
+                onChange={(e) => setFSearch(e.target.value)}
+                placeholder="Generator, ABC Vendor…"
+                className="pl-8"
+              />
             </div>
           </div>
           <Button variant="ghost" size="sm" onClick={clearFilters}>
@@ -469,7 +526,10 @@ function AdminExpensesPage() {
       <div className="glass-card p-4">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="font-display text-lg font-semibold">
-            Expenses <span className="text-sm font-normal text-[color:var(--text-muted)]">({filtered.length})</span>
+            Expenses{" "}
+            <span className="text-sm font-normal text-[color:var(--text-muted)]">
+              ({filtered.length})
+            </span>
           </h2>
         </div>
         {isLoading ? (
@@ -505,20 +565,38 @@ function AdminExpensesPage() {
                     <tr key={r.id} className="border-b border-border/40 hover:bg-white/[0.02]">
                       <td className="p-2 whitespace-nowrap">{formatDate(r.expense_date)}</td>
                       <td className="p-2 font-medium">{r.expense_title}</td>
-                      <td className="p-2"><CategoryBadge category={r.expense_category} /></td>
+                      <td className="p-2">
+                        <CategoryBadge category={r.expense_category} />
+                      </td>
                       <td className="p-2 text-muted-foreground">{r.vendor_name ?? "—"}</td>
-                      <td className="p-2 text-right font-mono tabular-nums">{nairaCents(r.amount)}</td>
+                      <td className="p-2 text-right font-mono tabular-nums">
+                        {nairaCents(r.amount)}
+                      </td>
                       <td className="p-2">
                         {r.payment_method ? (
-                          <span className="rounded-md border border-border bg-muted/30 px-2 py-0.5 text-xs">{r.payment_method}</span>
-                        ) : "—"}
+                          <span className="rounded-md border border-border bg-muted/30 px-2 py-0.5 text-xs">
+                            {r.payment_method}
+                          </span>
+                        ) : (
+                          "—"
+                        )}
                       </td>
                       <td className="p-2">
                         <div className="flex justify-end gap-1">
-                          <Button size="icon" variant="ghost" onClick={() => setEditing(r)} aria-label="Edit expense">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => setEditing(r)}
+                            aria-label="Edit expense"
+                          >
                             <Edit2 className="size-4" />
                           </Button>
-                          <Button size="icon" variant="ghost" onClick={() => setDeleting(r)} aria-label="Delete expense">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => setDeleting(r)}
+                            aria-label="Delete expense"
+                          >
                             <Trash2 className="size-4 text-red-400" />
                           </Button>
                         </div>
@@ -534,17 +612,33 @@ function AdminExpensesPage() {
                 <li key={r.id} className="rounded-xl border border-border bg-muted/20 p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="text-xs text-muted-foreground">{formatDate(r.expense_date)}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {formatDate(r.expense_date)}
+                      </div>
                       <div className="truncate font-medium">{r.expense_title}</div>
-                      <div className="mt-1"><CategoryBadge category={r.expense_category} /></div>
+                      <div className="mt-1">
+                        <CategoryBadge category={r.expense_category} />
+                      </div>
                     </div>
                     <div className="text-right">
                       <div className="font-mono text-sm font-semibold">{nairaCents(r.amount)}</div>
                       <div className="mt-1 flex justify-end gap-1">
-                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setEditing(r)} aria-label="Edit">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => setEditing(r)}
+                          aria-label="Edit"
+                        >
                           <Edit2 className="size-3.5" />
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setDeleting(r)} aria-label="Delete">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => setDeleting(r)}
+                          aria-label="Delete"
+                        >
                           <Trash2 className="size-3.5 text-red-400" />
                         </Button>
                       </div>
@@ -663,7 +757,10 @@ function ExpenseSheet({
           .insert({ ...payload, created_by: auth.user?.id ?? null });
         if (error) throw new Error(error.message);
       } else {
-        const { error } = await supabase.from("school_expenses").update(payload).eq("id", expense!.id);
+        const { error } = await supabase
+          .from("school_expenses")
+          .update(payload)
+          .eq("id", expense!.id);
         if (error) throw new Error(error.message);
       }
     },
@@ -681,11 +778,16 @@ function ExpenseSheet({
         <SheetTitle>{mode === "create" ? "Add expense" : "Edit expense"}</SheetTitle>
       </SheetHeader>
       <form
-        onSubmit={(e) => { e.preventDefault(); save.mutate(); }}
+        onSubmit={(e) => {
+          e.preventDefault();
+          save.mutate();
+        }}
         className="mt-4 flex flex-1 flex-col gap-3"
       >
         <div>
-          <Label>Expense title <span className="text-red-400">*</span></Label>
+          <Label>
+            Expense title <span className="text-red-400">*</span>
+          </Label>
           <Input
             value={form.expense_title}
             onChange={(e) => setForm({ ...form, expense_title: e.target.value })}
@@ -695,16 +797,29 @@ function ExpenseSheet({
         </div>
         <div>
           <Label>Category</Label>
-          <Select value={form.expense_category} onValueChange={(v) => setForm({ ...form, expense_category: v })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>{EXPENSE_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+          <Select
+            value={form.expense_category}
+            onValueChange={(v) => setForm({ ...form, expense_category: v })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {EXPENSE_CATEGORIES.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <Label>Amount</Label>
             <div className="relative">
-              <span className="pointer-events-none absolute left-2.5 top-2 text-sm text-muted-foreground">₦</span>
+              <span className="pointer-events-none absolute left-2.5 top-2 text-sm text-muted-foreground">
+                ₦
+              </span>
               <Input
                 type="number"
                 min="0"
@@ -727,18 +842,37 @@ function ExpenseSheet({
           </div>
         </div>
         <div>
-          <Label>Vendor / Supplier <span className="text-xs text-muted-foreground">(optional)</span></Label>
-          <Input value={form.vendor_name} onChange={(e) => setForm({ ...form, vendor_name: e.target.value })} maxLength={160} />
+          <Label>
+            Vendor / Supplier <span className="text-xs text-muted-foreground">(optional)</span>
+          </Label>
+          <Input
+            value={form.vendor_name}
+            onChange={(e) => setForm({ ...form, vendor_name: e.target.value })}
+            maxLength={160}
+          />
         </div>
         <div>
           <Label>Payment method</Label>
-          <Select value={form.payment_method} onValueChange={(v) => setForm({ ...form, payment_method: v })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>{PAYMENT_METHODS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+          <Select
+            value={form.payment_method}
+            onValueChange={(v) => setForm({ ...form, payment_method: v })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PAYMENT_METHODS.map((p) => (
+                <SelectItem key={p} value={p}>
+                  {p}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </div>
         <div>
-          <Label>Description <span className="text-xs text-muted-foreground">(optional, max 500)</span></Label>
+          <Label>
+            Description <span className="text-xs text-muted-foreground">(optional, max 500)</span>
+          </Label>
           <Textarea
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value.slice(0, 500) })}
@@ -749,22 +883,40 @@ function ExpenseSheet({
         <div className="flex items-center justify-between rounded-lg border border-border p-3">
           <div>
             <div className="text-sm font-medium">Recurring expense</div>
-            <div className="text-xs text-muted-foreground">Mark if this expense repeats on a schedule.</div>
+            <div className="text-xs text-muted-foreground">
+              Mark if this expense repeats on a schedule.
+            </div>
           </div>
-          <Switch checked={form.is_recurring} onCheckedChange={(v) => setForm({ ...form, is_recurring: v })} />
+          <Switch
+            checked={form.is_recurring}
+            onCheckedChange={(v) => setForm({ ...form, is_recurring: v })}
+          />
         </div>
         {form.is_recurring && (
           <div>
             <Label>Frequency</Label>
-            <Select value={form.recurring_frequency} onValueChange={(v) => setForm({ ...form, recurring_frequency: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>{RECURRING_FREQUENCIES.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
+            <Select
+              value={form.recurring_frequency}
+              onValueChange={(v) => setForm({ ...form, recurring_frequency: v })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {RECURRING_FREQUENCIES.map((f) => (
+                  <SelectItem key={f} value={f}>
+                    {f}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </div>
         )}
 
         <div className="mt-auto flex gap-2 pt-4">
-          <Button type="button" variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
+          <Button type="button" variant="outline" className="flex-1" onClick={onClose}>
+            Cancel
+          </Button>
           <Button type="submit" className="w-full sm:w-auto flex-1" disabled={save.isPending}>
             {save.isPending ? "Saving…" : mode === "create" ? "Save expense" : "Update expense"}
           </Button>
@@ -806,14 +958,9 @@ function BudgetTracking({ budgets, expenses }: { budgets: Budget[]; expenses: Ex
             const actual = actualByCategory.get(b.category) ?? 0;
             const pct = b.monthly_budget > 0 ? (actual / b.monthly_budget) * 100 : 0;
             const cappedPct = Math.min(100, pct);
-            const tone =
-              pct >= 100 ? "bg-red-500" :
-              pct >= 80 ? "bg-amber-500" :
-              "bg-emerald-500";
+            const tone = pct >= 100 ? "bg-red-500" : pct >= 80 ? "bg-amber-500" : "bg-emerald-500";
             const labelColor =
-              pct >= 100 ? "text-red-300" :
-              pct >= 80 ? "text-amber-300" :
-              "text-emerald-300";
+              pct >= 100 ? "text-red-300" : pct >= 80 ? "text-amber-300" : "text-emerald-300";
             return (
               <li key={b.id} className="rounded-xl border border-border bg-muted/20 p-3">
                 <div className="flex items-center justify-between gap-2">
@@ -829,7 +976,10 @@ function BudgetTracking({ budgets, expenses }: { budgets: Budget[]; expenses: Ex
                   </div>
                 </div>
                 <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
-                  <div className={`h-full transition-all ${tone}`} style={{ width: `${cappedPct}%` }} />
+                  <div
+                    className={`h-full transition-all ${tone}`}
+                    style={{ width: `${cappedPct}%` }}
+                  />
                 </div>
                 {pct >= 100 && (
                   <div className="mt-1.5 inline-flex items-center gap-1 rounded-md bg-red-500/20 px-2 py-0.5 text-[11px] font-semibold text-red-300">

@@ -26,21 +26,32 @@ const REPORT = buildFinancialIntelligenceReport();
 describe("every claimed rule is wired to real artefacts", () => {
   it("names a module and a suite that exist", () => {
     for (const rule of FINANCIAL_RULES) {
-      expect(existsSync(rule.module), `missing module for rule ${rule.id}: ${rule.module}`).toBe(true);
+      expect(existsSync(rule.module), `missing module for rule ${rule.id}: ${rule.module}`).toBe(
+        true,
+      );
       expect(existsSync(rule.suite), `missing suite for rule ${rule.id}: ${rule.suite}`).toBe(true);
     }
   });
 
   it("ties every rule to a blueprint section", () => {
     for (const rule of FINANCIAL_RULES) {
-      expect(rule.blueprint.trim().length, `rule ${rule.id} claims no blueprint section`).toBeGreaterThan(0);
+      expect(
+        rule.blueprint.trim().length,
+        `rule ${rule.id} claims no blueprint section`,
+      ).toBeGreaterThan(0);
       expect(rule.statement.length).toBeGreaterThan(20);
     }
   });
 
   it("keeps the phase contract citing the suites this report relies on", () => {
-    const contract = readFileSync("frontend/src/lib/kernel/phase-contracts/phase-13-financial-system.ts", "utf8");
-    for (const suite of ["tests/unit/financial-core.test.ts", "tests/unit/financial-payments.test.ts"]) {
+    const contract = readFileSync(
+      "frontend/src/lib/kernel/phase-contracts/phase-13-financial-system.ts",
+      "utf8",
+    );
+    for (const suite of [
+      "tests/unit/financial-core.test.ts",
+      "tests/unit/financial-payments.test.ts",
+    ]) {
       expect(contract, `contract no longer cites ${suite}`).toContain(suite);
     }
   });
@@ -51,7 +62,10 @@ describe("every executed check actually ran", () => {
     const checks = runFinancialChecks();
     expect(checks.length).toBeGreaterThanOrEqual(12);
     for (const check of checks) {
-      expect(check.observed.trim().length, `check ${check.id} recorded no observation`).toBeGreaterThan(10);
+      expect(
+        check.observed.trim().length,
+        `check ${check.id} recorded no observation`,
+      ).toBeGreaterThan(10);
       expect(check.passed, `check ${check.id} observed: ${check.observed}`).toBe(true);
     }
   });
@@ -148,7 +162,9 @@ describe("the phase belongs to every organization that handles money", () => {
   it("never presents a runtime as the platform, and never defaults to one institution's people", () => {
     const serialized = JSON.stringify(REPORT).toLowerCase();
     for (const forbidden of ["scholar", "pupil", "learner", "student", "teacher"]) {
-      expect(serialized, `the report frames the platform through "${forbidden}"`).not.toContain(forbidden);
+      expect(serialized, `the report frames the platform through "${forbidden}"`).not.toContain(
+        forbidden,
+      );
     }
   });
 });

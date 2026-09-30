@@ -20,9 +20,5 @@ export function EnterpriseBadge({
   variant?: BadgeVariant;
   className?: string;
 }) {
-  return (
-    <span className={cn(variants[variant], className)}>
-      {children}
-    </span>
-  );
+  return <span className={cn(variants[variant], className)}>{children}</span>;
 }

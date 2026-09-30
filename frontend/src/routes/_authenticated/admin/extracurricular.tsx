@@ -28,7 +28,12 @@ function AdminExtracurricularPage() {
     { label: "Active Clubs", value: "0", icon: Users, color: "from-blue-500 to-blue-600" },
     { label: "Total Members", value: "0", icon: Trophy, color: "from-purple-500 to-purple-600" },
     { label: "Upcoming Events", value: "0", icon: Calendar, color: "from-green-500 to-green-600" },
-    { label: "Engagement Rate", value: "0%", icon: TrendingUp, color: "from-emerald-500 to-emerald-600" },
+    {
+      label: "Engagement Rate",
+      value: "0%",
+      icon: TrendingUp,
+      color: "from-emerald-500 to-emerald-600",
+    },
   ];
 
   return (
@@ -38,7 +43,9 @@ function AdminExtracurricularPage() {
       actions={
         <>
           <Button disabled>Create Club</Button>
-          <Button variant="outline" disabled>Schedule Event</Button>
+          <Button variant="outline" disabled>
+            Schedule Event
+          </Button>
         </>
       }
     >
@@ -102,7 +109,9 @@ function AdminExtracurricularPage() {
                 <div className="space-y-3">
                   <div className="p-4 border border-border rounded-lg hover:bg-accent/50">
                     <p className="font-medium text-sm">No events scheduled</p>
-                    <p className="text-xs text-muted-foreground mt-1">Create new events to engage students</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Create new events to engage students
+                    </p>
                   </div>
                 </div>
               </div>
@@ -182,7 +191,9 @@ function AdminExtracurricularPage() {
                   Participation Trends
                 </h3>
                 <div className="p-6 bg-blue-50 rounded-lg text-center">
-                  <p className="text-muted-foreground text-sm">Data will appear after activities start</p>
+                  <p className="text-muted-foreground text-sm">
+                    Data will appear after activities start
+                  </p>
                 </div>
               </div>
               <div className="uos-card p-6">
@@ -194,7 +205,10 @@ function AdminExtracurricularPage() {
                   <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
                     <p className="font-medium text-green-900">✓ System Ready</p>
                   </div>
-                  <p className="text-muted-foreground">Advanced analytics will track member engagement, event attendance, and participation metrics</p>
+                  <p className="text-muted-foreground">
+                    Advanced analytics will track member engagement, event attendance, and
+                    participation metrics
+                  </p>
                 </div>
               </div>
             </div>

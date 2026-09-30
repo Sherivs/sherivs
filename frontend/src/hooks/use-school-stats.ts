@@ -50,11 +50,7 @@ export function useSchoolStats() {
           .select("id", { count: "exact", head: true })
           .eq("school_id", schoolId!),
         supabase.from("fees").select("amount, paid_amount").eq("school_id", schoolId!),
-        supabase
-          .from("attendance")
-          .select("status")
-          .eq("school_id", schoolId!)
-          .eq("date", today),
+        supabase.from("attendance").select("status").eq("school_id", schoolId!).eq("date", today),
       ]);
 
       const fees = feeRows.data ?? [];

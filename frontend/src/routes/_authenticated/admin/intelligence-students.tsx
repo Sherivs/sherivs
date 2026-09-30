@@ -1,12 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  Target,
-  CalendarCheck,
-  Brain,
-  Trophy,
-  TrendingDown,
-  ShieldAlert,
-} from "lucide-react";
+import { Target, CalendarCheck, Brain, Trophy, TrendingDown, ShieldAlert } from "lucide-react";
 import { IntelligenceCenter } from "@/components/intelligence-center";
 
 export const Route = createFileRoute("/_authenticated/admin/intelligence-students")({
@@ -29,7 +22,8 @@ function StudentIntelligenceCenter() {
       features={[
         {
           title: "Student Success Score",
-          description: "Composite 0–100 score blending attendance, grades, participation, and behaviour signals.",
+          description:
+            "Composite 0–100 score blending attendance, grades, participation, and behaviour signals.",
           icon: Target,
           tone: "emerald",
           metric: { label: "School avg", value: "82 / 100" },
@@ -37,7 +31,8 @@ function StudentIntelligenceCenter() {
         },
         {
           title: "Attendance Intelligence",
-          description: "Detect chronic absentees, pattern truancy and class-level attendance dips automatically.",
+          description:
+            "Detect chronic absentees, pattern truancy and class-level attendance dips automatically.",
           icon: CalendarCheck,
           tone: "sky",
           metric: { label: "30-day rate", value: "94%" },
@@ -45,7 +40,8 @@ function StudentIntelligenceCenter() {
         },
         {
           title: "Academic Intelligence",
-          description: "Subject-by-subject mastery, term-over-term trajectory and predicted exam outcomes.",
+          description:
+            "Subject-by-subject mastery, term-over-term trajectory and predicted exam outcomes.",
           icon: Brain,
           tone: "violet",
           metric: { label: "Predicted pass", value: "89%" },
@@ -53,7 +49,8 @@ function StudentIntelligenceCenter() {
         },
         {
           title: "Scholarship Ranking",
-          description: "Auto-ranked merit list using academics, attendance and conduct — ready for awards.",
+          description:
+            "Auto-ranked merit list using academics, attendance and conduct — ready for awards.",
           icon: Trophy,
           tone: "amber",
           metric: { label: "Candidates", value: "9" },
@@ -61,7 +58,8 @@ function StudentIntelligenceCenter() {
         },
         {
           title: "Dropout Prediction",
-          description: "Forecast which students are likely to drop out next term, with the top contributing signals.",
+          description:
+            "Forecast which students are likely to drop out next term, with the top contributing signals.",
           icon: TrendingDown,
           tone: "rose",
           metric: { label: "Flagged", value: "5" },
@@ -69,7 +67,8 @@ function StudentIntelligenceCenter() {
         },
         {
           title: "Student Risk Detection",
-          description: "Unified risk register: academic, behavioural, wellbeing and safeguarding alerts in one place.",
+          description:
+            "Unified risk register: academic, behavioural, wellbeing and safeguarding alerts in one place.",
           icon: ShieldAlert,
           tone: "rose",
           metric: { label: "Open alerts", value: "12" },

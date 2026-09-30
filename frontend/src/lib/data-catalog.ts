@@ -61,8 +61,7 @@ export interface RegisterCatalogEntryInput {
 }
 
 export type RegisterCatalogEntryResult =
-  | { ok: true; entry: CatalogEntry }
-  | { ok: false; error: string };
+  { ok: true; entry: CatalogEntry } | { ok: false; error: string };
 
 export function registerCatalogEntry(input: RegisterCatalogEntryInput): RegisterCatalogEntryResult {
   if (input.datasetName.trim() === "") {
@@ -102,7 +101,11 @@ export interface DiscoveryQuery {
  * Data discovery (AO): search catalog entries by name, owner, domain,
  * sensitivity, and tags. Results are always tenant-scoped.
  */
-export function discoverDatasets(entries: CatalogEntry[], query: DiscoveryQuery, tenantId: TenantId): CatalogEntry[] {
+export function discoverDatasets(
+  entries: CatalogEntry[],
+  query: DiscoveryQuery,
+  tenantId: TenantId,
+): CatalogEntry[] {
   const text = (query.text ?? "").toLowerCase();
   const tagSet = new Set(query.tags ?? []);
   return entries.filter((e) => {
@@ -157,8 +160,7 @@ export interface RegisterDataSourceInput {
 }
 
 export type RegisterDataSourceResult =
-  | { ok: true; source: DataSourceRecord }
-  | { ok: false; error: string };
+  { ok: true; source: DataSourceRecord } | { ok: false; error: string };
 
 export function registerDataSource(input: RegisterDataSourceInput): RegisterDataSourceResult {
   if (input.sourceId.trim() === "") {
@@ -217,12 +219,13 @@ export interface RegisterSchemaVersionInput {
 }
 
 export type RegisterSchemaVersionResult =
-  | { ok: true; schema: SchemaVersionRecord }
-  | { ok: false; error: string };
+  { ok: true; schema: SchemaVersionRecord } | { ok: false; error: string };
 
 /** Schema registry (Y): schemas are versioned; breaking changes are flagged
  * so they require explicit architectural decisions (Z). */
-export function registerSchemaVersion(input: RegisterSchemaVersionInput): RegisterSchemaVersionResult {
+export function registerSchemaVersion(
+  input: RegisterSchemaVersionInput,
+): RegisterSchemaVersionResult {
   if (input.fields.length === 0) {
     return { ok: false, error: "Schema version requires fields (Y)" };
   }
@@ -273,8 +276,7 @@ export interface CreateDataContractInput {
 }
 
 export type CreateDataContractResult =
-  | { ok: true; contract: DataContract }
-  | { ok: false; error: string };
+  { ok: true; contract: DataContract } | { ok: false; error: string };
 
 export function createDataContract(input: CreateDataContractInput): CreateDataContractResult {
   if (input.producer.trim() === "" || input.consumer.trim() === "") {

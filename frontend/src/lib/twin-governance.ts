@@ -136,10 +136,7 @@ export function isEventSequenceInOrder(events: TwinEvent[]): boolean {
 }
 
 /** Duplicate events (BS): consumers must tolerate duplicate delivery. */
-export function isDuplicateEvent(
-  processedEventIds: Set<string>,
-  event: TwinEvent,
-): boolean {
+export function isDuplicateEvent(processedEventIds: Set<string>, event: TwinEvent): boolean {
   return processedEventIds.has(event.eventId);
 }
 
@@ -202,7 +199,10 @@ export function createSubscription(
 }
 
 /** A subscription may only receive events within its tenant (CP). */
-export function isEventVisibleToSubscription(subscription: TwinSubscription, event: TwinEvent): boolean {
+export function isEventVisibleToSubscription(
+  subscription: TwinSubscription,
+  event: TwinEvent,
+): boolean {
   if (subscription.tenantId !== event.tenantId) {
     return false;
   }
@@ -262,7 +262,10 @@ export interface SimulationResult {
  */
 export function runIsolatedSimulation(
   input: Omit<SimulationInput, "namespace">,
-  model: (state: Record<string, unknown>, inputs: Record<string, unknown>) => Record<string, unknown>,
+  model: (
+    state: Record<string, unknown>,
+    inputs: Record<string, unknown>,
+  ) => Record<string, unknown>,
 ): SimulationResult {
   const simulated = model(input.startingState, input.inputs);
   return {
@@ -377,7 +380,13 @@ export function isTwinHealthy(score: number): boolean {
 
 export type DriftStep = "DETECT" | "CLASSIFY" | "INVESTIGATE" | "RECONCILE" | "VERIFY";
 
-export const DRIFT_STEPS: readonly DriftStep[] = ["DETECT", "CLASSIFY", "INVESTIGATE", "RECONCILE", "VERIFY"] as const;
+export const DRIFT_STEPS: readonly DriftStep[] = [
+  "DETECT",
+  "CLASSIFY",
+  "INVESTIGATE",
+  "RECONCILE",
+  "VERIFY",
+] as const;
 
 /**
  * Drift resolution (CK): DETECT -> CLASSIFY -> INVESTIGATE -> RECONCILE ->
@@ -394,9 +403,17 @@ export function isDriftStepAllowed(current: DriftStep | null, next: DriftStep): 
  * Security and access (CL-CQ)
  * ────────────────────────────────────────────────────────────*/
 
-export type AccessLevel = "tenant" | "institution" | "twin" | "attribute" | "relationship" | "operation";
+export type AccessLevel =
+  "tenant" | "institution" | "twin" | "attribute" | "relationship" | "operation";
 
-export const ACCESS_LEVELS: readonly AccessLevel[] = ["tenant", "institution", "twin", "attribute", "relationship", "operation"] as const;
+export const ACCESS_LEVELS: readonly AccessLevel[] = [
+  "tenant",
+  "institution",
+  "twin",
+  "attribute",
+  "relationship",
+  "operation",
+] as const;
 
 export type SensitiveTwinDataClass =
   | "individual_location"
@@ -444,7 +461,11 @@ export function authorizeTwinAccess(input: {
     resourceTwinId: input.resourceTwinId,
     operation: input.operation,
     allowed,
-    reason: sameTenant ? "Same tenant access (CP)" : allowed ? "Explicit cross-tenant grant (CQ)" : "Cross-tenant access denied without explicit grant (CP)",
+    reason: sameTenant
+      ? "Same tenant access (CP)"
+      : allowed
+        ? "Explicit cross-tenant grant (CQ)"
+        : "Cross-tenant access denied without explicit grant (CP)",
   };
 }
 
@@ -454,7 +475,13 @@ export function authorizeTwinAccess(input: {
 
 export type TwinTrustLevel = "UNVERIFIED" | "LOW" | "MEDIUM" | "HIGH" | "VERIFIED";
 
-export const TWIN_TRUST_LEVELS: readonly TwinTrustLevel[] = ["UNVERIFIED", "LOW", "MEDIUM", "HIGH", "VERIFIED"] as const;
+export const TWIN_TRUST_LEVELS: readonly TwinTrustLevel[] = [
+  "UNVERIFIED",
+  "LOW",
+  "MEDIUM",
+  "HIGH",
+  "VERIFIED",
+] as const;
 
 export interface TrustAssessment {
   twinId: string;
@@ -490,7 +517,16 @@ export function assessTwinTrust(
   ];
   const clamped = values.map((v) => Math.max(0, Math.min(1, v)));
   const score = Number((clamped.reduce((a, b) => a + b, 0) / clamped.length).toFixed(3));
-  const level: TwinTrustLevel = score >= 0.95 ? "VERIFIED" : score >= 0.8 ? "HIGH" : score >= 0.6 ? "MEDIUM" : score >= 0.35 ? "LOW" : "UNVERIFIED";
+  const level: TwinTrustLevel =
+    score >= 0.95
+      ? "VERIFIED"
+      : score >= 0.8
+        ? "HIGH"
+        : score >= 0.6
+          ? "MEDIUM"
+          : score >= 0.35
+            ? "LOW"
+            : "UNVERIFIED";
   return { twinId, level, score, factors };
 }
 
@@ -503,10 +539,11 @@ export interface RealityScoreFactors {
 /** Reality score (EN): a composite reality-fidelity indicator that stays
  * decomposable into fidelity, health and trust. */
 export function calculateRealityScore(factors: RealityScoreFactors): number {
-  const values = [factors.fidelity, factors.health, factors.trust].map((v) => Math.max(0, Math.min(1, v)));
+  const values = [factors.fidelity, factors.health, factors.trust].map((v) =>
+    Math.max(0, Math.min(1, v)),
+  );
   return Number((values.reduce((a, b) => a + b, 0) / values.length).toFixed(3));
 }
-
 
 /* ─────────────────────────────────────────────────────────────
  * Manual override (EO-ER)
@@ -537,7 +574,8 @@ export interface CreateOverrideInput {
   expiresAt?: string | null;
 }
 
-export type CreateOverrideResult = { ok: true; override: ManualOverride } | { ok: false; error: string };
+export type CreateOverrideResult =
+  { ok: true; override: ManualOverride } | { ok: false; error: string };
 
 /**
  * Manual override (EP): authorized humans may correct a twin
@@ -552,7 +590,11 @@ export function createManualOverride(input: CreateOverrideInput): CreateOverride
   if (input.reason.trim() === "") {
     return { ok: false, error: "Override requires a reason (EP)" };
   }
-  if (input.expiresAt !== null && input.expiresAt !== undefined && input.expiresAt <= input.timestamp) {
+  if (
+    input.expiresAt !== null &&
+    input.expiresAt !== undefined &&
+    input.expiresAt <= input.timestamp
+  ) {
     return { ok: false, error: "Override expiration must be after the override timestamp (EQ)" };
   }
   return {
@@ -576,11 +618,7 @@ export function isOverrideExpired(override: ManualOverride, now: string): boolea
   return override.expiresAt !== null && now > override.expiresAt;
 }
 
-export type OverrideReconciliation =
-  | "preserve"
-  | "replace"
-  | "challenge"
-  | "expire";
+export type OverrideReconciliation = "preserve" | "replace" | "challenge" | "expire";
 
 /**
  * Reconciliation after override (ER): the platform must determine whether
@@ -714,4 +752,3 @@ export function runExport(
   });
   return { records, redactedCount };
 }
-

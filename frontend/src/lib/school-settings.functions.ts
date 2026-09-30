@@ -77,7 +77,10 @@ const paymentsSchema = z.object({
     .string()
     .trim()
     .max(120)
-    .regex(/^(pk_test_|pk_live_)[A-Za-z0-9]+$/u, "Use a Paystack public key (pk_test_… or pk_live_…)")
+    .regex(
+      /^(pk_test_|pk_live_)[A-Za-z0-9]+$/u,
+      "Use a Paystack public key (pk_test_… or pk_live_…)",
+    )
     .optional()
     .or(z.literal(""))
     .transform((v) => (v ? v : null)),
@@ -100,10 +103,9 @@ const lngField = z
 const radiusField = z
   .union([z.number(), z.string(), z.null()])
   .transform((v) => (v === "" || v === null || v === undefined ? null : Number(v)))
-  .refine(
-    (v) => v === null || (Number.isInteger(v) && v >= 10 && v <= 10000),
-    { message: "Geofence radius must be 10–10000 meters" },
-  );
+  .refine((v) => v === null || (Number.isInteger(v) && v >= 10 && v <= 10000), {
+    message: "Geofence radius must be 10–10000 meters",
+  });
 
 const locationSchema = z.object({
   geofence_latitude: latField.nullable(),
@@ -146,10 +148,7 @@ export const updateSchoolSettings = createServerFn({ method: "POST" })
     // fails closed (replaces the legacy inline RPC checks).
     const schoolId = await requireSchoolAdminScope(context.supabase);
 
-    const { error } = await context.supabase
-      .from("schools")
-      .update(data.values)
-      .eq("id", schoolId);
+    const { error } = await context.supabase.from("schools").update(data.values).eq("id", schoolId);
     if (error) throw new Error(error.message);
 
     return { ok: true, tab: data.tab };

@@ -4,7 +4,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, Check, Settings as SettingsIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
-import { PortalPage, SectionGrid, StatCard, PortalPagination, usePagination } from "@/components/portal-shell";
+import {
+  PortalPage,
+  SectionGrid,
+  StatCard,
+  PortalPagination,
+  usePagination,
+} from "@/components/portal-shell";
 import { PushNotificationCard } from "@/components/push-notification-card";
 
 export const Route = createFileRoute("/_authenticated/notifications")({
@@ -40,8 +46,11 @@ type Prefs = {
   quiet_hours_end: string | null;
 };
 
-
-const CATS: Array<{ key: "messages" | "announcements" | "grades" | "attendance" | "fees"; label: string; hint: string }> = [
+const CATS: Array<{
+  key: "messages" | "announcements" | "grades" | "attendance" | "fees";
+  label: string;
+  hint: string;
+}> = [
   { key: "messages", label: "Messages", hint: "Direct messages from staff or parents" },
   { key: "announcements", label: "Announcements", hint: "School news and updates" },
   { key: "grades", label: "Grades & report cards", hint: "When new grades are published" },
@@ -142,21 +151,14 @@ function NotificationsPage() {
           </button>
         </div>
         {tab === "feed" && unread > 0 && (
-          <button
-            onClick={markAll}
-            className="rounded-md border border-border px-3 py-1.5 text-sm"
-          >
+          <button onClick={markAll} className="rounded-md border border-border px-3 py-1.5 text-sm">
             Mark all read
           </button>
         )}
       </div>
 
       {tab === "feed" ? (
-        <NotificationsFeed
-          loading={list.isLoading}
-          items={list.data ?? []}
-          onMarkOne={markOne}
-        />
+        <NotificationsFeed loading={list.isLoading} items={list.data ?? []} onMarkOne={markOne} />
       ) : (
         <PrefsPanel schoolId={schoolId!} userId={me!} />
       )}
@@ -175,15 +177,11 @@ function NotificationsFeed({
 }) {
   const { page, pageCount, pageItems } = usePagination(items, 20);
   if (loading) {
-    return (
-      <div className="uos-card mt-4 p-6 text-sm text-muted-foreground">Loading…</div>
-    );
+    return <div className="uos-card mt-4 p-6 text-sm text-muted-foreground">Loading…</div>;
   }
   if (items.length === 0) {
     return (
-      <div className="uos-card mt-4 p-6 text-sm text-muted-foreground">
-        No notifications yet.
-      </div>
+      <div className="uos-card mt-4 p-6 text-sm text-muted-foreground">No notifications yet.</div>
     );
   }
   return (
@@ -199,9 +197,7 @@ function NotificationsFeed({
             <Bell className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
-                <h3 className="truncate font-semibold">
-                  {n.title || (n.type ?? "Notification")}
-                </h3>
+                <h3 className="truncate font-semibold">{n.title || (n.type ?? "Notification")}</h3>
                 <span className="shrink-0 text-xs text-muted-foreground">
                   {new Date(n.created_at).toLocaleString()}
                 </span>
@@ -233,7 +229,6 @@ function NotificationsFeed({
     </div>
   );
 }
-
 
 function PrefsPanel({ schoolId, userId }: { schoolId: string; userId: string }) {
   const qc = useQueryClient();
@@ -275,7 +270,6 @@ function PrefsPanel({ schoolId, userId }: { schoolId: string; userId: string }) 
         quiet_hours_end: null,
       });
   }, [q.data, q.isSuccess, userId, schoolId]);
-
 
   if (!draft) {
     return <p className="mt-4 text-sm text-muted-foreground">Loading preferences…</p>;
@@ -376,18 +370,14 @@ function PrefsPanel({ schoolId, userId }: { schoolId: string; userId: string }) 
             <input
               type="time"
               value={draft.quiet_hours_start ?? ""}
-              onChange={(e) =>
-                setDraft({ ...draft, quiet_hours_start: e.target.value || null })
-              }
+              onChange={(e) => setDraft({ ...draft, quiet_hours_start: e.target.value || null })}
               className="rounded-md border border-border bg-background px-2 py-1.5 text-sm"
             />
             <span className="text-xs text-muted-foreground">to</span>
             <input
               type="time"
               value={draft.quiet_hours_end ?? ""}
-              onChange={(e) =>
-                setDraft({ ...draft, quiet_hours_end: e.target.value || null })
-              }
+              onChange={(e) => setDraft({ ...draft, quiet_hours_end: e.target.value || null })}
               className="rounded-md border border-border bg-background px-2 py-1.5 text-sm"
             />
             {(draft.quiet_hours_start || draft.quiet_hours_end) && (
@@ -415,11 +405,7 @@ function PrefsPanel({ schoolId, userId }: { schoolId: string; userId: string }) 
       </div>
 
       {status && (
-        <p
-          className={`mt-3 text-xs ${
-            status === "Saved" ? "text-emerald-400" : "text-rose-400"
-          }`}
-        >
+        <p className={`mt-3 text-xs ${status === "Saved" ? "text-emerald-400" : "text-rose-400"}`}>
           {status}
         </p>
       )}

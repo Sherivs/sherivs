@@ -4,18 +4,11 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const architectureDir = join(root, "architecture");
-const registry = JSON.parse(
-  readFileSync(join(architectureDir, "registry.json"), "utf8"),
-);
+const registry = JSON.parse(readFileSync(join(architectureDir, "registry.json"), "utf8"));
 const completion = JSON.parse(
-  readFileSync(
-    join(architectureDir, "proofs", "phase-completion.proof.json"),
-    "utf8",
-  ),
+  readFileSync(join(architectureDir, "proofs", "phase-completion.proof.json"), "utf8"),
 );
-const completionById = new Map(
-  completion.phases.map((phase) => [phase.id, phase]),
-);
+const completionById = new Map(completion.phases.map((phase) => [phase.id, phase]));
 const acceptanceDir = join(architectureDir, "phase-acceptance");
 const proofDir = join(architectureDir, "proofs");
 const openClusters = new Set(["D1", "D2", "D3", "D4", "D5", "D7"]);
@@ -47,12 +40,8 @@ const phases = registry.phases.map((phase) => {
     sections,
     modules: phase.modules,
     modulesResolve: audit?.modulesResolve ?? false,
-    acceptanceDefinition: acceptance
-      ? `architecture/phase-acceptance/${acceptance}`
-      : null,
-    acceptanceProof: acceptanceProofExists
-      ? `architecture/proofs/${acceptanceProof}`
-      : null,
+    acceptanceDefinition: acceptance ? `architecture/phase-acceptance/${acceptance}` : null,
+    acceptanceProof: acceptanceProofExists ? `architecture/proofs/${acceptanceProof}` : null,
     scopeLock,
     unresolvedClusters: conflicted ? [...openClusters] : [],
     implementationBoundary:
@@ -76,9 +65,7 @@ const map = {
   scopeLockLaw:
     "A long blueprint is not scope-locked unless purpose, non-purpose, owner, boundaries, dependencies, contracts, runtime expectations, security, failure, evidence, verification, conformance and evolution rules are sufficiently evidenced.",
   phaseCount: phases.length,
-  scopeLocked: phases.filter((phase) =>
-    phase.scopeLock.startsWith("DESIGN_SCOPE_LOCKED"),
-  ).length,
+  scopeLocked: phases.filter((phase) => phase.scopeLock.startsWith("DESIGN_SCOPE_LOCKED")).length,
   partial: phases.filter((phase) => phase.scopeLock.startsWith("PARTIAL")).length,
   openClusters: [...openClusters],
   phases,

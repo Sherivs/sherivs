@@ -61,7 +61,17 @@ export function productConfigurationId(raw: string): ProductConfigurationId {
  * Pricing models (Section 52)
  * ────────────────────────────────────────────────────────────*/
 
-export type PricingModel = "free" | "one_time" | "subscription" | "usage_based" | "seat_based" | "institution_based" | "transaction_based" | "tiered" | "freemium" | "negotiated_enterprise";
+export type PricingModel =
+  | "free"
+  | "one_time"
+  | "subscription"
+  | "usage_based"
+  | "seat_based"
+  | "institution_based"
+  | "transaction_based"
+  | "tiered"
+  | "freemium"
+  | "negotiated_enterprise";
 
 export const PRICING_MODELS: readonly PricingModel[] = [
   "free",
@@ -87,7 +97,9 @@ export interface MarketOffer {
   /** Recurrence for subscription models. */
   recurrence: "one_time" | "monthly" | "annual" | null;
   /** Educational pricing tiers (Section 55). */
-  educationalPricing: Partial<Record<"school" | "student" | "teacher" | "nonprofit" | "government" | "institutional", number>>;
+  educationalPricing: Partial<
+    Record<"school" | "student" | "teacher" | "nonprofit" | "government" | "institutional", number>
+  >;
   /** Regional pricing (Section 54) — ISO region code → minor units. */
   regionalPricing: Record<string, number>;
   /** Trial period in days (Section 56). */
@@ -115,7 +127,10 @@ export function createMarketOffer(input: {
   if (input.priceMinorUnits !== undefined && input.priceMinorUnits < 0) {
     return { ok: false, error: "Price cannot be negative" };
   }
-  if (input.discountPercent !== undefined && (input.discountPercent < 0 || input.discountPercent > 100)) {
+  if (
+    input.discountPercent !== undefined &&
+    (input.discountPercent < 0 || input.discountPercent > 100)
+  ) {
     return { ok: false, error: "Discount must be between 0 and 100" };
   }
   if (input.trialDays !== undefined && input.trialDays < 0) {
@@ -151,7 +166,14 @@ export function effectivePrice(offer: MarketOffer, region: string): number {
  * Entitlement (Sections 63, 64, 65, 66, 67)
  * ────────────────────────────────────────────────────────────*/
 
-export type EntitlementSource = "purchase" | "subscription" | "grant" | "institution_plan" | "government_program" | "coregrid_license" | "free_allocation";
+export type EntitlementSource =
+  | "purchase"
+  | "subscription"
+  | "grant"
+  | "institution_plan"
+  | "government_program"
+  | "coregrid_license"
+  | "free_allocation";
 
 export const ENTITLEMENT_SOURCES: readonly EntitlementSource[] = [
   "purchase",
@@ -163,7 +185,8 @@ export const ENTITLEMENT_SOURCES: readonly EntitlementSource[] = [
   "free_allocation",
 ] as const;
 
-export type EntitlementScopeKind = "tenant" | "campus" | "department" | "workspace" | "role" | "user" | "device";
+export type EntitlementScopeKind =
+  "tenant" | "campus" | "department" | "workspace" | "role" | "user" | "device";
 
 export const ENTITLEMENT_SCOPE_KINDS: readonly EntitlementScopeKind[] = [
   "tenant",
@@ -177,7 +200,12 @@ export const ENTITLEMENT_SCOPE_KINDS: readonly EntitlementScopeKind[] = [
 
 export type EntitlementState = "active" | "suspended" | "expired" | "revoked";
 
-export const ENTITLEMENT_STATES: readonly EntitlementState[] = ["active", "suspended", "expired", "revoked"] as const;
+export const ENTITLEMENT_STATES: readonly EntitlementState[] = [
+  "active",
+  "suspended",
+  "expired",
+  "revoked",
+] as const;
 
 export interface Entitlement {
   id: EntitlementId;
@@ -224,7 +252,10 @@ export function createEntitlement(input: {
 }
 
 /** Section 66: entitlement expiration. */
-export function isEntitlementActive(ent: Entitlement, now: string = new Date().toISOString()): boolean {
+export function isEntitlementActive(
+  ent: Entitlement,
+  now: string = new Date().toISOString(),
+): boolean {
   if (ent.state === "suspended" || ent.state === "revoked") return false;
   if (ent.state === "expired") return false;
   if (ent.expiresAt !== null && ent.expiresAt <= now) return false;
@@ -232,7 +263,10 @@ export function isEntitlementActive(ent: Entitlement, now: string = new Date().t
 }
 
 /** Section 67: suspension without deleting the product. */
-export function suspendEntitlement(ent: Entitlement, now: string = new Date().toISOString()): Entitlement {
+export function suspendEntitlement(
+  ent: Entitlement,
+  now: string = new Date().toISOString(),
+): Entitlement {
   return { ...ent, state: "suspended", suspendedAt: now };
 }
 
@@ -316,7 +350,10 @@ export function createInstallation(input: {
 }
 
 /** Installation advances one stage at a time (Section 68). */
-export function canTransitionInstallation(current: InstallationState, next: InstallationState): boolean {
+export function canTransitionInstallation(
+  current: InstallationState,
+  next: InstallationState,
+): boolean {
   if (next === "failed") return current !== "uninstalled";
   return INSTALLATION_ORDER[next] === INSTALLATION_ORDER[current] + 1;
 }
@@ -365,7 +402,16 @@ export function validateProductConfiguration(input: {
  * Procurement workflow (Sections 140, 141, 142, 143)
  * ────────────────────────────────────────────────────────────*/
 
-export type ProcurementState = "discovered" | "evaluated" | "requested" | "approved" | "purchased" | "installed" | "configured" | "monitoring" | "rejected";
+export type ProcurementState =
+  | "discovered"
+  | "evaluated"
+  | "requested"
+  | "approved"
+  | "purchased"
+  | "installed"
+  | "configured"
+  | "monitoring"
+  | "rejected";
 
 export const PROCUREMENT_STATES: readonly ProcurementState[] = [
   "discovered",
@@ -460,7 +506,3 @@ export function createUninstallPlan(input: {
     entitlementStateAfter: input.entitlementStateAfter ?? "revoked",
   };
 }
-
-
-
-

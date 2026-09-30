@@ -128,7 +128,9 @@ function ClassesPage() {
             <div className="flex items-start justify-between mb-6">
               <div>
                 <h2 className="text-2xl font-bold">{selectedClass.name}</h2>
-                <p className="text-sm text-muted-foreground mt-1">{selectedClass.grade_level} Grade</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {selectedClass.grade_level} Grade
+                </p>
               </div>
               <Button
                 size="sm"
@@ -141,7 +143,11 @@ function ClassesPage() {
                 }}
                 disabled={deleteClass.isPending}
               >
-                {deleteClass.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                {deleteClass.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Trash2 className="h-4 w-4 mr-2" />
+                )}
                 Delete
               </Button>
             </div>
@@ -182,12 +188,16 @@ function ClassesPage() {
           <GlassCard>
             <h3 className="text-lg font-semibold mb-4">Manage Sections</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Classes can have multiple sections (A, B, C, etc.). Select sections to create sub-classes.
+              Classes can have multiple sections (A, B, C, etc.). Select sections to create
+              sub-classes.
             </p>
             <div className="grid gap-4">
               <div className="flex flex-wrap gap-2">
                 {SECTIONS.map((section) => {
-                  const sectionName = buildName(selectedClass.grade_level || selectedClass.name, section);
+                  const sectionName = buildName(
+                    selectedClass.grade_level || selectedClass.name,
+                    section,
+                  );
                   const exists = q.data?.some((c) => c.name === sectionName);
                   return (
                     <Button
@@ -268,7 +278,9 @@ function ClassesPage() {
       {!selectedClass && (
         <div className="text-center py-12">
           <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-30" />
-          <p className="text-muted-foreground mb-6">Select a class from the dropdown to get started</p>
+          <p className="text-muted-foreground mb-6">
+            Select a class from the dropdown to get started
+          </p>
           <div className="space-y-4">
             <h3 className="font-semibold text-sm">Or create a new class:</h3>
             <div className="grid sm:grid-cols-2 gap-3 max-w-2xl mx-auto">

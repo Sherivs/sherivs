@@ -99,14 +99,7 @@ export const TWIN_KINDS: readonly TwinKind[] = [
  * ────────────────────────────────────────────────────────────*/
 
 export type TwinLifecycleState =
-  | "DISCOVERED"
-  | "CREATED"
-  | "ACTIVE"
-  | "DEGRADED"
-  | "STALE"
-  | "SUSPENDED"
-  | "ARCHIVED"
-  | "RETIRED";
+  "DISCOVERED" | "CREATED" | "ACTIVE" | "DEGRADED" | "STALE" | "SUSPENDED" | "ARCHIVED" | "RETIRED";
 
 export const TWIN_LIFECYCLE_STATES: readonly TwinLifecycleState[] = [
   "DISCOVERED",
@@ -119,7 +112,9 @@ export const TWIN_LIFECYCLE_STATES: readonly TwinLifecycleState[] = [
   "RETIRED",
 ] as const;
 
-const TWIN_LIFECYCLE_TRANSITIONS: Readonly<Record<TwinLifecycleState, readonly TwinLifecycleState[]>> = {
+const TWIN_LIFECYCLE_TRANSITIONS: Readonly<
+  Record<TwinLifecycleState, readonly TwinLifecycleState[]>
+> = {
   DISCOVERED: ["CREATED", "RETIRED"],
   CREATED: ["ACTIVE", "SUSPENDED", "RETIRED"],
   ACTIVE: ["DEGRADED", "STALE", "SUSPENDED", "ARCHIVED", "RETIRED"],
@@ -130,7 +125,10 @@ const TWIN_LIFECYCLE_TRANSITIONS: Readonly<Record<TwinLifecycleState, readonly T
   RETIRED: [],
 };
 
-export function isTwinLifecycleTransitionAllowed(from: TwinLifecycleState, to: TwinLifecycleState): boolean {
+export function isTwinLifecycleTransitionAllowed(
+  from: TwinLifecycleState,
+  to: TwinLifecycleState,
+): boolean {
   return TWIN_LIFECYCLE_TRANSITIONS[from].includes(to);
 }
 
@@ -212,7 +210,10 @@ export function transitionTwinLifecycle(
   to: TwinLifecycleState,
 ): { ok: true; twin: TwinInstance } | { ok: false; error: string } {
   if (!isTwinLifecycleTransitionAllowed(twin.lifecycleState, to)) {
-    return { ok: false, error: `Twin lifecycle transition ${twin.lifecycleState} -> ${to} is not allowed (AX)` };
+    return {
+      ok: false,
+      error: `Twin lifecycle transition ${twin.lifecycleState} -> ${to} is not allowed (AX)`,
+    };
   }
   return {
     ok: true,
@@ -263,7 +264,8 @@ export interface CreateTemplateInput {
   createdAt: string;
 }
 
-export type CreateTemplateResult = { ok: true; template: TwinTemplate } | { ok: false; error: string };
+export type CreateTemplateResult =
+  { ok: true; template: TwinTemplate } | { ok: false; error: string };
 
 /**
  * Create a versioned template (J). Templates must be versioned; every
@@ -521,6 +523,10 @@ export interface OntologyEntry {
 }
 
 /** Ontology changes must be versioned and migration-aware (BH). */
-export function createOntologyEntry(concept: SemanticConcept, name: string, version: number): OntologyEntry {
+export function createOntologyEntry(
+  concept: SemanticConcept,
+  name: string,
+  version: number,
+): OntologyEntry {
   return { concept, name, version };
 }

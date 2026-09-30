@@ -81,7 +81,10 @@ export function isCommandEventSequenceInOrder(events: CommandEvent[]): boolean {
 }
 
 /** Event duplication (DE): duplicate events are safely deduplicated. */
-export function isDuplicateCommandEvent(processedEventIds: ReadonlySet<string>, event: CommandEvent): boolean {
+export function isDuplicateCommandEvent(
+  processedEventIds: ReadonlySet<string>,
+  event: CommandEvent,
+): boolean {
   return processedEventIds.has(event.eventId);
 }
 
@@ -129,7 +132,11 @@ export interface CommandCacheEntry {
 
 /** Cache invalidation (DK): caches are invalidated when underlying state
  * changes — by key, or wholesale on version change. */
-export function isCommandCacheValid(entry: CommandCacheEntry, now: string, invalidatedKeys: ReadonlySet<string>): boolean {
+export function isCommandCacheValid(
+  entry: CommandCacheEntry,
+  now: string,
+  invalidatedKeys: ReadonlySet<string>,
+): boolean {
   if (invalidatedKeys.has(entry.key)) {
     return false;
   }
@@ -214,7 +221,8 @@ export interface CreateAIBriefingInput {
   generatedAt: string;
 }
 
-export type CreateAIBriefingResult = { ok: true; briefing: AIBriefing } | { ok: false; error: string };
+export type CreateAIBriefingResult =
+  { ok: true; briefing: AIBriefing } | { ok: false; error: string };
 
 /**
  * AI briefing contract (ED, EE, EF): AI summaries must be grounded in
@@ -249,7 +257,11 @@ export interface CommandActionResult {
  * possible. An unverified action is never presented as success.
  */
 export function verifyCommandActionResult(result: CommandActionResult): CommandActionResult {
-  return { ...result, verified: result.verified, detail: result.verified ? result.detail : `UNVERIFIED — ${result.detail}` };
+  return {
+    ...result,
+    verified: result.verified,
+    detail: result.verified ? result.detail : `UNVERIFIED — ${result.detail}`,
+  };
 }
 
 /** Rollback display (EN): rollback options may be displayed; actual
@@ -264,7 +276,12 @@ export function isRollbackDisplayable(actionState: string): boolean {
 
 export type CommandMode = "normal" | "degraded" | "read_only" | "emergency";
 
-export const COMMAND_MODES: readonly CommandMode[] = ["normal", "degraded", "read_only", "emergency"] as const;
+export const COMMAND_MODES: readonly CommandMode[] = [
+  "normal",
+  "degraded",
+  "read_only",
+  "emergency",
+] as const;
 
 export interface CommandRecoveryState {
   mode: CommandMode;
@@ -289,9 +306,24 @@ export function isCommandReadOnly(mode: CommandMode): boolean {
  * Command audit (DN) and observability (FM)
  * ────────────────────────────────────────────────────────────*/
 
-export type CommandAuditKind = "sensitive_view" | "acknowledgement" | "assignment" | "approval" | "escalation" | "command_action" | "emergency_action";
+export type CommandAuditKind =
+  | "sensitive_view"
+  | "acknowledgement"
+  | "assignment"
+  | "approval"
+  | "escalation"
+  | "command_action"
+  | "emergency_action";
 
-export const COMMAND_AUDIT_KINDS: readonly CommandAuditKind[] = ["sensitive_view", "acknowledgement", "assignment", "approval", "escalation", "command_action", "emergency_action"] as const;
+export const COMMAND_AUDIT_KINDS: readonly CommandAuditKind[] = [
+  "sensitive_view",
+  "acknowledgement",
+  "assignment",
+  "approval",
+  "escalation",
+  "command_action",
+  "emergency_action",
+] as const;
 
 export interface CommandAuditRecord {
   auditId: string;
@@ -307,4 +339,3 @@ export interface CommandAuditRecord {
 export function isHighImpactAudit(record: CommandAuditRecord): boolean {
   return record.kind === "emergency_action" || record.kind === "command_action";
 }
-

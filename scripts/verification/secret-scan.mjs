@@ -58,7 +58,12 @@ for (const file of tracked) {
       if (m) {
         // Ignore obvious placeholders and environment-var references.
         const value = (m[2] ?? m[0] ?? "").toLowerCase();
-        if (/^(your_|xxx|example|placeholder|<.*>|changeme|dummy|process\.env|import\.meta\.env|env\.)/.test(value)) continue;
+        if (
+          /^(your_|xxx|example|placeholder|<.*>|changeme|dummy|process\.env|import\.meta\.env|env\.)/.test(
+            value,
+          )
+        )
+          continue;
         findings.push({ file, line: i + 1, pattern: p.name, match: m[0].slice(0, 40) });
       }
     }
@@ -66,7 +71,9 @@ for (const file of tracked) {
 }
 
 if (findings.length > 0) {
-  console.error(`SECRET SCAN FAILED — ${findings.length} potential secret(s) found in tracked files:`);
+  console.error(
+    `SECRET SCAN FAILED — ${findings.length} potential secret(s) found in tracked files:`,
+  );
   for (const f of findings.slice(0, 25)) {
     console.error(`  ${f.file}:${f.line}  [${f.pattern}]  ${f.match}`);
   }

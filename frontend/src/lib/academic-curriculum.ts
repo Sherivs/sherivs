@@ -17,7 +17,17 @@
  */
 
 /** Where a curriculum sits in the institutional hierarchy (§J). */
-export const CURRICULUM_LEVELS = ["institution", "program", "curriculum", "course", "module", "unit", "lesson", "objective", "competency"] as const;
+export const CURRICULUM_LEVELS = [
+  "institution",
+  "program",
+  "curriculum",
+  "course",
+  "module",
+  "unit",
+  "lesson",
+  "objective",
+  "competency",
+] as const;
 export type CurriculumLevel = (typeof CURRICULUM_LEVELS)[number];
 
 /** A node in the curriculum hierarchy; children are referenced by id, never inlined. */
@@ -46,8 +56,7 @@ export interface CreateCurriculumNodeInput {
 }
 
 export type CreateCurriculumNodeResult =
-  | { ok: true; node: CurriculumNode }
-  | { ok: false; error: string };
+  { ok: true; node: CurriculumNode } | { ok: false; error: string };
 
 /** The level a node's parent must be at: the hierarchy is a chain, not a bag (§J). */
 const PARENT_LEVEL: Readonly<Record<CurriculumLevel, CurriculumLevel | null>> = {
@@ -66,13 +75,18 @@ export function createCurriculumNode(
   input: CreateCurriculumNodeInput,
   existing: readonly CurriculumNode[] = [],
 ): CreateCurriculumNodeResult {
-  if (input.tenantId.trim() === "") return { ok: false, error: "A curriculum node requires a tenant" };
-  if (input.key.trim() === "") return { ok: false, error: "A curriculum node requires a stable key" };
+  if (input.tenantId.trim() === "")
+    return { ok: false, error: "A curriculum node requires a tenant" };
+  if (input.key.trim() === "")
+    return { ok: false, error: "A curriculum node requires a stable key" };
   if (input.title.trim() === "") return { ok: false, error: "A curriculum node requires a title" };
 
   const requiredParent = PARENT_LEVEL[input.level];
   if (requiredParent === null && input.parentId !== undefined && input.parentId !== null) {
-    return { ok: false, error: `A ${input.level} node is the root of its hierarchy and takes no parent` };
+    return {
+      ok: false,
+      error: `A ${input.level} node is the root of its hierarchy and takes no parent`,
+    };
   }
   if (requiredParent !== null && !input.parentId) {
     return { ok: false, error: `A ${input.level} node must sit under a ${requiredParent}` };
@@ -81,7 +95,10 @@ export function createCurriculumNode(
     const parent = existing.find((node) => node.id === input.parentId);
     if (!parent) return { ok: false, error: `Unknown parent ${input.parentId}` };
     if (parent.level !== requiredParent) {
-      return { ok: false, error: `A ${input.level} node must sit under a ${requiredParent}, not a ${parent.level}` };
+      return {
+        ok: false,
+        error: `A ${input.level} node must sit under a ${requiredParent}, not a ${parent.level}`,
+      };
     }
     if (parent.tenantId !== input.tenantId) {
       return { ok: false, error: "A curriculum node may not cross a tenant boundary" };
@@ -127,7 +144,8 @@ export function defineCompetencyScale(input: {
   levels: readonly string[];
 }): { ok: true; scale: CompetencyLevelScale } | { ok: false; error: string } {
   const levels = input.levels.map((level) => level.trim().toUpperCase());
-  if (levels.length < 2) return { ok: false, error: "A competency scale needs at least two levels" };
+  if (levels.length < 2)
+    return { ok: false, error: "A competency scale needs at least two levels" };
   if (new Set(levels).size !== levels.length) {
     return { ok: false, error: "A competency scale may not repeat a level" };
   }
@@ -149,7 +167,8 @@ export interface Competency {
   alternativePrerequisites?: readonly (readonly string[])[];
 }
 
-export type DefineCompetencyResult = { ok: true; competency: Competency } | { ok: false; error: string };
+export type DefineCompetencyResult =
+  { ok: true; competency: Competency } | { ok: false; error: string };
 
 export function defineCompetency(
   input: Competency,
@@ -286,7 +305,10 @@ export function createLearningObjective(
     return { ok: false, error: "A learning objective needs a statement a teacher would recognise" };
   }
   if (!competencies.some((competency) => competency.id === input.competencyId)) {
-    return { ok: false, error: `Objective ${input.id} references unknown competency ${input.competencyId}` };
+    return {
+      ok: false,
+      error: `Objective ${input.id} references unknown competency ${input.competencyId}`,
+    };
   }
   if (input.masteryCriteria.length === 0) {
     return { ok: false, error: `Objective ${input.id} must declare how mastery is judged` };
@@ -315,8 +337,7 @@ export interface CurriculumVersion {
 }
 
 export type PublishCurriculumVersionResult =
-  | { ok: true; version: CurriculumVersion }
-  | { ok: false; error: string };
+  { ok: true; version: CurriculumVersion } | { ok: false; error: string };
 
 /**
  * Publishing a version never edits the previous one: a change produces a new version, and
@@ -351,7 +372,10 @@ export function publishCurriculumVersion(
   );
   const nextVersion = latest ? latest.version + 1 : 1;
   if (latest && Date.parse(input.effectiveFrom) < Date.parse(latest.effectiveFrom)) {
-    return { ok: false, error: `Version ${nextVersion} may not take effect before version ${latest.version}` };
+    return {
+      ok: false,
+      error: `Version ${nextVersion} may not take effect before version ${latest.version}`,
+    };
   }
   return {
     ok: true,
@@ -377,14 +401,16 @@ export function curriculumVersionAt(
   curriculumId: string,
   at: string,
 ): CurriculumVersion | null {
-  return (
-    history
-      .filter((version) => version.curriculumId === curriculumId && Date.parse(version.effectiveFrom) <= Date.parse(at))
-      .reduce<CurriculumVersion | null>(
-        (newest, version) => (!newest || version.version > newest.version ? version : newest),
-        null,
-      )
-  );
+  return history
+    .filter(
+      (version) =>
+        version.curriculumId === curriculumId &&
+        Date.parse(version.effectiveFrom) <= Date.parse(at),
+    )
+    .reduce<CurriculumVersion | null>(
+      (newest, version) => (!newest || version.version > newest.version ? version : newest),
+      null,
+    );
 }
 
 /** What changed between two versions, in the vocabulary the diff was recorded in. */
@@ -394,12 +420,18 @@ export function curriculumDiff(
   fromVersion: number,
   toVersion: number,
 ): { changes: readonly string[]; interpretable: boolean } {
-  const from = history.find((version) => version.curriculumId === curriculumId && version.version === fromVersion);
-  const to = history.find((version) => version.curriculumId === curriculumId && version.version === toVersion);
+  const from = history.find(
+    (version) => version.curriculumId === curriculumId && version.version === fromVersion,
+  );
+  const to = history.find(
+    (version) => version.curriculumId === curriculumId && version.version === toVersion,
+  );
   if (!from || !to) return { changes: [], interpretable: false };
   const changes: string[] = [];
   for (let version = fromVersion + 1; version <= toVersion; version += 1) {
-    const step = history.find((entry) => entry.curriculumId === curriculumId && entry.version === version);
+    const step = history.find(
+      (entry) => entry.curriculumId === curriculumId && entry.version === version,
+    );
     if (!step) return { changes, interpretable: false };
     changes.push(...step.changes);
   }

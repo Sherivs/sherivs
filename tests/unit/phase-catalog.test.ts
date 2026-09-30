@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  PHASE_CATALOG,
-  PHASE_LAYERS,
-  PHASES_TOTAL,
-} from "@/lib/phase-catalog";
+import { PHASE_CATALOG, PHASE_LAYERS, PHASES_TOTAL } from "@/lib/phase-catalog";
 
 describe("phase-catalog (Command Centre data)", () => {
   it("contains exactly 51 phases", () => {

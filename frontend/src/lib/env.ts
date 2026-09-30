@@ -6,7 +6,11 @@
 export type AppEnvironment = "local" | "development" | "test" | "staging" | "production";
 
 export const APP_ENVIRONMENTS: readonly AppEnvironment[] = [
-  "local", "development", "test", "staging", "production",
+  "local",
+  "development",
+  "test",
+  "staging",
+  "production",
 ] as const;
 
 /** Server-only secrets that must NEVER be exposed via VITE_ prefix. */
@@ -21,11 +25,38 @@ export const SERVER_ONLY_VARS = [
 
 /** Required vars per environment. */
 export const REQUIRED_VARS: Record<AppEnvironment, readonly string[]> = {
-  local: ["SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "VITE_SUPABASE_URL", "VITE_SUPABASE_PUBLISHABLE_KEY"],
-  development: ["SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "VITE_SUPABASE_URL", "VITE_SUPABASE_PUBLISHABLE_KEY"],
-  test: ["SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "VITE_SUPABASE_URL", "VITE_SUPABASE_PUBLISHABLE_KEY"],
-  staging: ["SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "SUPABASE_SERVICE_ROLE_KEY", "VITE_SUPABASE_URL", "VITE_SUPABASE_PUBLISHABLE_KEY"],
-  production: ["SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "SUPABASE_SERVICE_ROLE_KEY", "VITE_SUPABASE_URL", "VITE_SUPABASE_PUBLISHABLE_KEY"],
+  local: [
+    "SUPABASE_URL",
+    "SUPABASE_PUBLISHABLE_KEY",
+    "VITE_SUPABASE_URL",
+    "VITE_SUPABASE_PUBLISHABLE_KEY",
+  ],
+  development: [
+    "SUPABASE_URL",
+    "SUPABASE_PUBLISHABLE_KEY",
+    "VITE_SUPABASE_URL",
+    "VITE_SUPABASE_PUBLISHABLE_KEY",
+  ],
+  test: [
+    "SUPABASE_URL",
+    "SUPABASE_PUBLISHABLE_KEY",
+    "VITE_SUPABASE_URL",
+    "VITE_SUPABASE_PUBLISHABLE_KEY",
+  ],
+  staging: [
+    "SUPABASE_URL",
+    "SUPABASE_PUBLISHABLE_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "VITE_SUPABASE_URL",
+    "VITE_SUPABASE_PUBLISHABLE_KEY",
+  ],
+  production: [
+    "SUPABASE_URL",
+    "SUPABASE_PUBLISHABLE_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "VITE_SUPABASE_URL",
+    "VITE_SUPABASE_PUBLISHABLE_KEY",
+  ],
 };
 
 /** Classify raw env value. Unknown -> "development" (fail-safe). */
@@ -36,7 +67,10 @@ export function classifyEnvironment(raw: string | undefined): AppEnvironment {
 }
 
 /** Missing required var names for the given environment. */
-export function missingRequiredVars(env: Record<string, string | undefined>, environment: AppEnvironment): string[] {
+export function missingRequiredVars(
+  env: Record<string, string | undefined>,
+  environment: AppEnvironment,
+): string[] {
   return REQUIRED_VARS[environment].filter((name) => !env[name] || env[name]!.trim() === "");
 }
 
@@ -49,16 +83,26 @@ export function exposedServerOnlyVars(env: Record<string, string | undefined>): 
 }
 
 /** True when all required vars present and no secrets exposed. */
-export function isEnvironmentValid(env: Record<string, string | undefined>, environment: AppEnvironment): boolean {
-  return missingRequiredVars(env, environment).length === 0 && exposedServerOnlyVars(env).length === 0;
+export function isEnvironmentValid(
+  env: Record<string, string | undefined>,
+  environment: AppEnvironment,
+): boolean {
+  return (
+    missingRequiredVars(env, environment).length === 0 && exposedServerOnlyVars(env).length === 0
+  );
 }
 
 /** Human-readable issues; empty means valid. */
-export function environmentIssues(env: Record<string, string | undefined>, environment: AppEnvironment): string[] {
+export function environmentIssues(
+  env: Record<string, string | undefined>,
+  environment: AppEnvironment,
+): string[] {
   const issues: string[] = [];
   const missing = missingRequiredVars(env, environment);
-  if (missing.length > 0) issues.push(`Missing required variables for ${environment}: ${missing.join(", ")}`);
+  if (missing.length > 0)
+    issues.push(`Missing required variables for ${environment}: ${missing.join(", ")}`);
   const exposed = exposedServerOnlyVars(env);
-  if (exposed.length > 0) issues.push(`Server-only secrets exposed to client via VITE_ prefix: ${exposed.join(", ")}`);
+  if (exposed.length > 0)
+    issues.push(`Server-only secrets exposed to client via VITE_ prefix: ${exposed.join(", ")}`);
   return issues;
 }

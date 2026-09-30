@@ -51,8 +51,7 @@ export interface AssessmentQuestion {
 }
 
 export type AddQuestionResult =
-  | { ok: true; question: AssessmentQuestion }
-  | { ok: false; error: string };
+  { ok: true; question: AssessmentQuestion } | { ok: false; error: string };
 
 export function addQuestion(
   input: {
@@ -74,16 +73,26 @@ export function addQuestion(
     return { ok: false, error: "Difficulty runs from 1 to 5" };
   }
   if (!context.competencies.some((competency) => competency.id === input.competencyId)) {
-    return { ok: false, error: `Question ${input.id} references unknown competency ${input.competencyId}` };
+    return {
+      ok: false,
+      error: `Question ${input.id} references unknown competency ${input.competencyId}`,
+    };
   }
   const objective = context.objectives.find((entry) => entry.id === input.objectiveId);
   if (!objective) {
-    return { ok: false, error: `Question ${input.id} references unknown objective ${input.objectiveId}` };
+    return {
+      ok: false,
+      error: `Question ${input.id} references unknown objective ${input.objectiveId}`,
+    };
   }
   if (objective.competencyId !== input.competencyId) {
-    return { ok: false, error: `Question ${input.id} pairs objective ${objective.id} with the wrong competency` };
+    return {
+      ok: false,
+      error: `Question ${input.id} pairs objective ${objective.id} with the wrong competency`,
+    };
   }
-  const levels = COGNITIVE_FRAMEWORKS[input.framework ?? "bloom-revised"] ?? DEFAULT_COGNITIVE_LEVELS;
+  const levels =
+    COGNITIVE_FRAMEWORKS[input.framework ?? "bloom-revised"] ?? DEFAULT_COGNITIVE_LEVELS;
   if (!levels.includes(input.cognitiveLevel)) {
     return { ok: false, error: `Unknown cognitive level ${input.cognitiveLevel}` };
   }
@@ -103,7 +112,6 @@ export function addQuestion(
     },
   };
 }
-
 
 /* ─────────────────────────────────────────────────────────────
  * Assessment blueprint — prove the assessment measures what it claims (§T)
@@ -165,7 +173,10 @@ export function evaluateBlueprintCoverage(
   if (missingObjectives.length > 0) {
     problems.push(`No question addresses objectives: ${missingObjectives.join(", ")}`);
   }
-  const declared = Object.values(blueprint.difficultyDistribution).reduce((sum, value) => sum + value, 0);
+  const declared = Object.values(blueprint.difficultyDistribution).reduce(
+    (sum, value) => sum + value,
+    0,
+  );
   if (Object.keys(blueprint.difficultyDistribution).length > 0 && Math.abs(declared - 1) > 0.001) {
     problems.push("The declared difficulty distribution must sum to 1");
   }
@@ -174,7 +185,9 @@ export function evaluateBlueprintCoverage(
     problems.push("Blueprint weightings must sum to 1");
   }
   if (blueprint.totalMarks !== marksAllocated) {
-    problems.push(`Blueprint declares ${blueprint.totalMarks} marks but ${marksAllocated} are allocated`);
+    problems.push(
+      `Blueprint declares ${blueprint.totalMarks} marks but ${marksAllocated} are allocated`,
+    );
   }
 
   return {

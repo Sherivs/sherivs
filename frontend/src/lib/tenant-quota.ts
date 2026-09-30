@@ -117,10 +117,7 @@ export type QuotaCheckResult =
  * P2: Soft quota warns when approaching a limit.
  * P3: Hard quota blocks consumption after the limit.
  */
-export function checkQuota(
-  quota: TenantQuota,
-  requestedAmount: number = 1,
-): QuotaCheckResult {
+export function checkQuota(quota: TenantQuota, requestedAmount: number = 1): QuotaCheckResult {
   const projectedUsage = quota.currentUsage + requestedAmount;
 
   if (projectedUsage > quota.limit) {
@@ -233,9 +230,7 @@ export function assertQuotaFairness(
  * Quota validation
  * ────────────────────────────────────────────────────────────*/
 
-export function validateQuota(
-  quota: TenantQuota,
-): { valid: boolean; errors: string[] } {
+export function validateQuota(quota: TenantQuota): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
   if (!QUOTA_RESOURCES.includes(quota.resource)) {

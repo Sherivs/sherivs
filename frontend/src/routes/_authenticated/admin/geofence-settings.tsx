@@ -97,7 +97,12 @@ function GeofenceSettingsPage() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { campus_name: "Main Campus", latitude: "" as never, longitude: "" as never, radius_meters: 150 },
+    defaultValues: {
+      campus_name: "Main Campus",
+      latitude: "" as never,
+      longitude: "" as never,
+      radius_meters: 150,
+    },
   });
 
   useEffect(() => {
@@ -160,7 +165,8 @@ function GeofenceSettingsPage() {
         school_id: schoolId,
         user_id: teacher.id,
         title: "Complete your biometric enrollment",
-        message: "Please open the teacher portal and finish biometric enrollment so you can sign in for attendance.",
+        message:
+          "Please open the teacher portal and finish biometric enrollment so you can sign in for attendance.",
         type: "system",
       });
       if (error) throw error;
@@ -186,7 +192,8 @@ function GeofenceSettingsPage() {
     const lat = Number(form.getValues("latitude"));
     const lng = Number(form.getValues("longitude"));
     const radius = Number(form.getValues("radius_meters")) || 150;
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return toast.error("Enter coordinates first");
+    if (!Number.isFinite(lat) || !Number.isFinite(lng))
+      return toast.error("Enter coordinates first");
     if (!navigator.geolocation) return toast.error("Location is not available in this browser");
     setTesting(true);
     navigator.geolocation.getCurrentPosition(
@@ -211,16 +218,25 @@ function GeofenceSettingsPage() {
   const lng = Number(form.watch("longitude"));
   const hasCoords = Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0);
   const delta = 0.004;
-  const bbox = hasCoords
-    ? `${lng - delta},${lat - delta},${lng + delta},${lat + delta}`
-    : null;
+  const bbox = hasCoords ? `${lng - delta},${lat - delta},${lng + delta},${lat + delta}` : null;
 
   return (
     <PortalPage
       title="Geofence settings"
       subtitle="Define the campus boundary used for staff attendance verification"
       actions={
-        <Button variant="outline" onClick={() => { setSelected(null); form.reset({ campus_name: "", latitude: "" as never, longitude: "" as never, radius_meters: 150 }); }}>
+        <Button
+          variant="outline"
+          onClick={() => {
+            setSelected(null);
+            form.reset({
+              campus_name: "",
+              latitude: "" as never,
+              longitude: "" as never,
+              radius_meters: 150,
+            });
+          }}
+        >
           New campus
         </Button>
       }
@@ -228,10 +244,7 @@ function GeofenceSettingsPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         <GlassCard className="p-5">
           <h2 className="font-display text-base font-semibold">Campus boundary</h2>
-          <form
-            className="mt-4 space-y-4"
-            onSubmit={form.handleSubmit((v) => save.mutate(v))}
-          >
+          <form className="mt-4 space-y-4" onSubmit={form.handleSubmit((v) => save.mutate(v))}>
             <Field label="Campus name" error={form.formState.errors.campus_name?.message}>
               <Input {...form.register("campus_name")} placeholder="Main Campus" />
             </Field>
@@ -258,7 +271,9 @@ function GeofenceSettingsPage() {
               </Button>
             </div>
             {testResult && (
-              <p className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm">{testResult}</p>
+              <p className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm">
+                {testResult}
+              </p>
             )}
           </form>
         </GlassCard>
@@ -325,7 +340,10 @@ function GeofenceSettingsPage() {
         ) : teachers.isError ? (
           <RetryBox onRetry={() => void teachers.refetch()} />
         ) : (teachers.data ?? []).length === 0 ? (
-          <EmptyState title="No active teachers" description="Add teachers to track enrollment status." />
+          <EmptyState
+            title="No active teachers"
+            description="Add teachers to track enrollment status."
+          />
         ) : (
           <div className="mt-4 overflow-x-auto">
             <table className="w-full text-sm">
@@ -388,7 +406,8 @@ function GeofenceSettingsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this campus boundary?</AlertDialogTitle>
             <AlertDialogDescription>
-              Teachers will no longer be able to verify their location against “{pendingDelete?.campus_name}”.
+              Teachers will no longer be able to verify their location against “
+              {pendingDelete?.campus_name}”.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -403,10 +422,20 @@ function GeofenceSettingsPage() {
   );
 }
 
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+function Field({
+  label,
+  error,
+  children,
+}: {
+  label: string;
+  error?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="space-y-1.5">
-      <Label className="text-xs uppercase tracking-wide text-[color:var(--text-secondary)]">{label}</Label>
+      <Label className="text-xs uppercase tracking-wide text-[color:var(--text-secondary)]">
+        {label}
+      </Label>
       {children}
       {error && <p className="text-xs text-rose-400">{error}</p>}
     </div>

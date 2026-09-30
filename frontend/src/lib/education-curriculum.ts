@@ -181,12 +181,7 @@ export interface Unit extends TenantScopedEntity {
 }
 
 export type CompetencyType =
-  | "academic"
-  | "technical"
-  | "practical"
-  | "vocational"
-  | "behavioural"
-  | "professional";
+  "academic" | "technical" | "practical" | "vocational" | "behavioural" | "professional";
 
 export const COMPETENCY_TYPES: readonly CompetencyType[] = [
   "academic",
@@ -198,12 +193,7 @@ export const COMPETENCY_TYPES: readonly CompetencyType[] = [
 ] as const;
 
 export type MasteryState =
-  | "not_started"
-  | "developing"
-  | "competent"
-  | "proficient"
-  | "mastered"
-  | "institution_defined";
+  "not_started" | "developing" | "competent" | "proficient" | "mastered" | "institution_defined";
 
 export const MASTERY_STATES: readonly MasteryState[] = [
   "not_started",
@@ -408,9 +398,7 @@ export interface CreateSubjectInput {
   relatedSubjectIds: SubjectId[];
 }
 
-export type CreateSubjectResult =
-  | { ok: true; subject: Subject }
-  | { ok: false; error: string };
+export type CreateSubjectResult = { ok: true; subject: Subject } | { ok: false; error: string };
 
 export function createSubject(
   input: CreateSubjectInput,
@@ -470,8 +458,7 @@ export interface CreateProgrammeInput {
 }
 
 export type CreateProgrammeResult =
-  | { ok: true; programme: Programme }
-  | { ok: false; error: string };
+  { ok: true; programme: Programme } | { ok: false; error: string };
 
 export function createProgramme(
   input: CreateProgrammeInput,
@@ -529,8 +516,7 @@ export interface CreateCompetencyInput {
 }
 
 export type CreateCompetencyResult =
-  | { ok: true; competency: Competency }
-  | { ok: false; error: string };
+  { ok: true; competency: Competency } | { ok: false; error: string };
 
 export function createCompetency(
   input: CreateCompetencyInput,

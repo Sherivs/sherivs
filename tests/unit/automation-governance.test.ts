@@ -77,15 +77,38 @@ describe("Automation lifecycle (CT)", () => {
 
 describe("Ownership (CU)", () => {
   it("requires technical, business and risk owners", () => {
-    expect(isOwnershipComplete({ technicalOwner: "eng", businessOwner: "ops", tenantOwner: TENANT_A, riskOwner: "risk-1" })).toBe(true);
-    expect(isOwnershipComplete({ technicalOwner: "eng", businessOwner: "ops", tenantOwner: TENANT_A, riskOwner: null })).toBe(false);
+    expect(
+      isOwnershipComplete({
+        technicalOwner: "eng",
+        businessOwner: "ops",
+        tenantOwner: TENANT_A,
+        riskOwner: "risk-1",
+      }),
+    ).toBe(true);
+    expect(
+      isOwnershipComplete({
+        technicalOwner: "eng",
+        businessOwner: "ops",
+        tenantOwner: TENANT_A,
+        riskOwner: null,
+      }),
+    ).toBe(false);
   });
 });
 
 describe("Scheduling (AU, AV)", () => {
   it("requires an explicit timezone — never assumes server timezone", () => {
-    expect(validateSchedule({ cron: "0 8 * * 1", timezone: "", blackoutWindows: [], enabled: true }).ok).toBe(false);
-    expect(validateSchedule({ cron: "0 8 * * 1", timezone: "Africa/Lagos", blackoutWindows: [], enabled: true }).ok).toBe(true);
+    expect(
+      validateSchedule({ cron: "0 8 * * 1", timezone: "", blackoutWindows: [], enabled: true }).ok,
+    ).toBe(false);
+    expect(
+      validateSchedule({
+        cron: "0 8 * * 1",
+        timezone: "Africa/Lagos",
+        blackoutWindows: [],
+        enabled: true,
+      }).ok,
+    ).toBe(true);
   });
 
   it("detects blackout windows", () => {
@@ -97,17 +120,74 @@ describe("Scheduling (AU, AV)", () => {
 
 describe("Quotas and financial guardrails (BH, BJ, DC)", () => {
   it("enforces per-tenant quotas", () => {
-    const quotas = { maxActionsPerMinute: 100, maxWorkflowsPerTenant: 5, maxConcurrentExecutions: 10, maxExternalApiCalls: 50 };
-    expect(isWithinQuota(quotas, { actionsThisMinute: 10, activeWorkflows: 2, concurrentExecutions: 3, externalApiCalls: 5 }).ok).toBe(true);
-    expect(isWithinQuota(quotas, { actionsThisMinute: 100, activeWorkflows: 2, concurrentExecutions: 3, externalApiCalls: 5 }).ok).toBe(false);
+    const quotas = {
+      maxActionsPerMinute: 100,
+      maxWorkflowsPerTenant: 5,
+      maxConcurrentExecutions: 10,
+      maxExternalApiCalls: 50,
+    };
+    expect(
+      isWithinQuota(quotas, {
+        actionsThisMinute: 10,
+        activeWorkflows: 2,
+        concurrentExecutions: 3,
+        externalApiCalls: 5,
+      }).ok,
+    ).toBe(true);
+    expect(
+      isWithinQuota(quotas, {
+        actionsThisMinute: 100,
+        activeWorkflows: 2,
+        concurrentExecutions: 3,
+        externalApiCalls: 5,
+      }).ok,
+    ).toBe(false);
   });
 
   it("enforces financial guardrails (BJ)", () => {
-    const guardrail = { maxAmountMinor: 500_000, dailyLimitMinor: 2_000_000, requiresApproval: true, accountRestricted: false, maxTransactionsPerDay: 10 };
-    expect(evaluateFinancialAction({ amountMinor: 100_000, todayTotalMinor: 500_000, transactionsToday: 2, approvalGranted: true, guardrail }).allowed).toBe(true);
-    expect(evaluateFinancialAction({ amountMinor: 600_000, todayTotalMinor: 0, transactionsToday: 0, approvalGranted: true, guardrail }).allowed).toBe(false);
-    expect(evaluateFinancialAction({ amountMinor: 100_000, todayTotalMinor: 1_900_001, transactionsToday: 0, approvalGranted: true, guardrail }).allowed).toBe(false);
-    expect(evaluateFinancialAction({ amountMinor: 100_000, todayTotalMinor: 0, transactionsToday: 0, approvalGranted: false, guardrail }).allowed).toBe(false);
+    const guardrail = {
+      maxAmountMinor: 500_000,
+      dailyLimitMinor: 2_000_000,
+      requiresApproval: true,
+      accountRestricted: false,
+      maxTransactionsPerDay: 10,
+    };
+    expect(
+      evaluateFinancialAction({
+        amountMinor: 100_000,
+        todayTotalMinor: 500_000,
+        transactionsToday: 2,
+        approvalGranted: true,
+        guardrail,
+      }).allowed,
+    ).toBe(true);
+    expect(
+      evaluateFinancialAction({
+        amountMinor: 600_000,
+        todayTotalMinor: 0,
+        transactionsToday: 0,
+        approvalGranted: true,
+        guardrail,
+      }).allowed,
+    ).toBe(false);
+    expect(
+      evaluateFinancialAction({
+        amountMinor: 100_000,
+        todayTotalMinor: 1_900_001,
+        transactionsToday: 0,
+        approvalGranted: true,
+        guardrail,
+      }).allowed,
+    ).toBe(false);
+    expect(
+      evaluateFinancialAction({
+        amountMinor: 100_000,
+        todayTotalMinor: 0,
+        transactionsToday: 0,
+        approvalGranted: false,
+        guardrail,
+      }).allowed,
+    ).toBe(false);
   });
 });
 
@@ -173,10 +253,19 @@ describe("AI and agent governance (CQ, FC, FD)", () => {
   });
 
   it("enforces short-lived scoped execution tokens (FD)", () => {
-    const token = { tokenId: "t1", agentId: "agent-1", scope: "lock-door", issuedAt: NOW, expiresAt: LATER, used: false };
+    const token = {
+      tokenId: "t1",
+      agentId: "agent-1",
+      scope: "lock-door",
+      issuedAt: NOW,
+      expiresAt: LATER,
+      used: false,
+    };
     expect(isScopedExecutionTokenValid(token, NOW)).toBe(true);
     expect(isScopedExecutionTokenValid({ ...token, used: true }, NOW)).toBe(false);
-    expect(isScopedExecutionTokenValid({ ...token, expiresAt: "2025-01-01T00:00:00Z" }, NOW)).toBe(false);
+    expect(isScopedExecutionTokenValid({ ...token, expiresAt: "2025-01-01T00:00:00Z" }, NOW)).toBe(
+      false,
+    );
   });
 });
 
