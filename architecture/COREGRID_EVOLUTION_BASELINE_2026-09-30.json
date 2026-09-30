@@ -80,5 +80,44 @@
     "Status conflicts for phase-27 and phase-33 are preserved and must not be silently resolved"
   ],
   "comparisonInstructions": "A future baseline supersedes this one only through a recorded governed decision. Any dimension above whose evidence cannot be reproduced is drift until classified.",
+  "amendments": [
+    {
+      "date": "2026-09-30",
+      "mechanism": "V5.1 Part 47 evolution law — recorded amendment, original fields preserved",
+      "authority": "secrets-gated live battery executed on the secrets-injected VM (checkpoint continuation.liveBatteryExecution); operator directive to continue governed evolution",
+      "quantified": [
+        {
+          "field": "verificationBaseline.integrationTests",
+          "was": "3/3 live on dev project: foundation loop + idempotent replay, Scholar entity validation, rollback with preserved history",
+          "now": "5/5 live on dev project: foundation loop + idempotent replay, Scholar entity validation, Scholar relationship/event binding, cross-tenant relationship rejection, rollback with preserved history",
+          "evidence": ["tests/integration/foundation-loop.live.test.ts", "scripts/exercise-foundation-loop.mjs (probe_cleaned=true)"]
+        },
+        {
+          "field": "verificationBaseline.conformance",
+          "was": "CONDITIONALLY_CONFORMANT — 7 conformant, 0 nonconformant, 2 not assessed",
+          "now": "CONDITIONALLY_CONFORMANT — 8 conformant, 0 nonconformant, 2 not assessed (deployment, operational-runtime) of 10 dimensions",
+          "evidence": ["architecture/COREGRID_GATE_15_CONFORMANCE_ASSESSMENT.json (captured 2026-09-30T22:03:08.754Z)"]
+        },
+        {
+          "field": "verificationBaseline.artifacts",
+          "now": "adds architecture/COREGRID_GATE_15_OPERATIONAL_READINESS.json and architecture/COREGRID_V53_DIRECTIVE_RECONCILIATION.json"
+        }
+      ],
+      "knownGapSupersessions": [
+        {
+          "gap": "Lint: previously interrupted, remains UNVERIFIED",
+          "resolution": "SUPERSEDED by the recorded mechanical lint pass (checkpoint continuation.hygieneMissionExecution); remaining 231 non-mechanical problems classified in architecture/COREGRID_LINT_DEBT_CLASSIFICATION.json"
+        },
+        {
+          "gap": "Scholar HTTP entry: scholarFoundationLoop verified via authenticated server path, not its own generated HTTP endpoint",
+          "resolution": "SUPERSEDED by checkpoint baselineAmendments.closed (commit a9893eb)"
+        }
+      ],
+      "knownGapsAdditions": [
+        "Constitution V5.3: operator directive received with missing text; Part 110 reconciliation UNENUMERABLE pending governed re-delivery of the full corpus (architecture/COREGRID_V53_DIRECTIVE_RECONCILIATION.json)",
+        "Cursor Cloud Secret SUPABASE_PUBLISHABLE_KEY is stale relative to dev project nwrflbpbhyiqdptmlccm's current anon key; operator should re-inject the current value (worked around via the authorized management API on this VM)"
+      ]
+    }
+  ],
   "rule": "This baseline records evidence-backed state only. Deployment and operational claims remain outside it."
 }
