@@ -36,6 +36,7 @@ const contractSource = read("frontend/src/lib/control-plane/foundation-mission.t
 const loopSource = read("frontend/src/lib/control-plane/foundation-loop.ts");
 const scholarSource = read("frontend/src/lib/runtime/scholar-foundation-flow.ts");
 const migration = read("database/supabase/migrations/20260929000000_coregrid_foundation_mission_001.sql");
+const kernelMigration = read("database/supabase/migrations/20260903000000_coregrid_universal_kernel_substrate.sql");
 const checkpoint = JSON.parse(read("architecture/COREGRID_V52_GATE_CHECKPOINT.json"));
 const gate14 = JSON.parse(read("architecture/COREGRID_GATE_14_SCHOLAR_VALIDATION.json"));
 
@@ -90,6 +91,12 @@ function checkFindings() {
     findings.push("Scholar ontology entity types not declared");
   } else if (!scholarSource.includes("scholarEntityDraft")) {
     findings.push("Scholar flow does not enforce its ontology through the runtime boundary");
+  }
+  if (!scholarSource.includes("scholarRelationshipDraft")) {
+    findings.push("Scholar flow does not bind relationships through the runtime boundary");
+  }
+  if (!scholarSource.includes("scholarEventDraft")) {
+    findings.push("Scholar flow does not record events through the runtime boundary");
   }
   for (const table of foundationTables) {
     if (!migration.includes(`CREATE TABLE IF NOT EXISTS public.${table}`)) {
@@ -186,6 +193,23 @@ const dimensions = [
     declared: "Scholar entity flows through the universal substrate and the governed loop.",
     observed: scholarEvidence,
     decision: scholarEvidence === "EXECUTED_AND_VERIFIED_BOUNDED_PROBE" ? "CONFORMANT" : "NOT_ASSESSED",
+  },
+  {
+    id: "scholar-reality-vocabulary",
+    declared:
+      "Scholar relationships and events are validated against the Scholar ontology at the runtime boundary and recorded through the universal kernel substrate (cg_relationship, cg_event).",
+    observed:
+      staticFindings.some((f) => f.includes("runtime boundary")) ||
+      !kernelMigration.includes("CREATE TABLE IF NOT EXISTS public.cg_relationship") ||
+      !kernelMigration.includes("CREATE TABLE IF NOT EXISTS public.cg_event")
+        ? "runtime boundary or kernel substrate not established"
+        : "relationship and event vocabulary enforced via scholarRelationshipDraft/scholarEventDraft; kernel substrate declares cg_relationship and cg_event",
+    decision:
+      staticFindings.some((f) => f.includes("runtime boundary")) ||
+      !kernelMigration.includes("CREATE TABLE IF NOT EXISTS public.cg_relationship") ||
+      !kernelMigration.includes("CREATE TABLE IF NOT EXISTS public.cg_event")
+        ? "NONCONFORMANT"
+        : "CONFORMANT",
   },
   {
     id: "deployment",
