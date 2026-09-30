@@ -1,0 +1,36 @@
+{
+  "mission": "COREGRID-MISSION-0001",
+  "artifact": "COREGRID_V1_SCOPE_LOCK",
+  "mechanism": "V5.3 Parts 5, 37, 55, 73, 81",
+  "captured": "2026-09-30",
+  "authority": "architecture/COREGRID_V53_DIRECTIVE_RECONCILIATION.json (V5.3 adopted as binding MVP execution profile)",
+  "status": "SCOPE_LOCKED",
+  "classificationVocabulary": ["ACTIVE-V1", "MIXED", "FUTURE-V2", "FUTURE-V3", "FUTURE-UNASSIGNED", "RESEARCH", "EXPERIMENTAL", "HISTORICAL", "REJECTED"],
+  "machineGuard": "scripts/verification/registry-validate.mjs enforces version_target presence, the closed enum, and that frozen targets never carry implemented statuses (V5.3 Part 81)",
+  "v1Allowed": {
+    "record": "Capabilities classified ACTIVE-V1 in architecture/registry.json versionClassification plus the V1 portions of MIXED phases.",
+    "areas": ["identity", "tenancy", "organization", "entity", "relationship", "state", "event", "authorization", "workspace", "workflow", "mission", "workforce", "ai-worker", "intelligence-gateway", "context", "memory-practical", "application-builder-minimal", "website", "customer-workspace", "communication", "payments", "files", "notifications", "integrations", "metering-minimal", "observability-minimal", "audit", "evidence", "verification", "security", "domain-configuration", "scholar-runtime", "search-practical"]
+  },
+  "v1Frozen": {
+    "future-v2": "Device integration, IoT, sensors, telemetry ingestion, hardware control, robotics, edge orchestration, sensor fusion. Interfaces may be preserved as contracts (V5.3 Part 56); engines are NOT built.",
+    "future-v3": "Geospatial, GIS, satellite, geophysics, geology, mining, agricultural-satellite, environmental sensing, biological, chemical, physical digital twins, causal simulation, scientific simulation, planetary intelligence.",
+    "future-unassigned": "Civilization-scale cognition, autonomous agent civilization, autonomous economy, civilization knowledge graph, autonomous engineering self-hosting, universal reality OS kernel, planetary infrastructure, AI compute civilization, human civilization interface."
+  },
+  "scopeGuardRules": [
+    "Before adding a major dependency, subsystem, or capability: check its version_target classification.",
+    "FUTURE-V2 / FUTURE-V3 / FUTURE-UNASSIGNED: inspect, analyze, propose — never implement, migrate toward, or claim progress.",
+    "MIXED: implement only the V1 portion; the future portion stays frozen with its contract preserved.",
+    "UNKNOWN: stop the specific change, investigate evidence, classify before proceeding.",
+    "No agent may expand V1 scope silently (V5.3 Part 73). Un-freezing requires an explicit recorded human authorization decision.",
+    "Mixed classification claims must state which portion is V1; a claim without a version-target classification is unverified (V5.3 Part 75 law)."
+  ],
+  "knownBoundaryReviews": [
+    "phase-15 (Hardware Integration): MIXED — organizational asset records are V1 (V5.3 Part 69 permits minimal asset records); device/telemetry portions are V2 FROZEN. V1/V2 code-boundary split requires human review — UNRESOLVED.",
+    "phase-16 (Digital Twin): organizational-graph portions vs device/physical portions — split line UNRESOLVED (D4 open).",
+    "phase-33 (Reality Intelligence Kernel): the entity/relationship/state/event substrate IS V1 (live-verified); reality-observation portions are V3 FROZEN; registry status conflict preserved.",
+    "GAP-008 (Global Shell): V1-shaped capability vs BLOCKED status — human decision required; shell needs remain served by existing V1 surfaces until resolved.",
+    "Phases 34, 35, 38, 45, 47, 48, 49, 50, 51: classified from title + registry evidence only (no modules exist) — provisional."
+  ],
+  "notClaimed": ["any frozen capability is implemented", "boundary reviews resolved", "un-freezing authority exercised"],
+  "rule": "FREEZE, DON'T DELETE. The absence of implementation does not mean the architecture should be deleted."
+}

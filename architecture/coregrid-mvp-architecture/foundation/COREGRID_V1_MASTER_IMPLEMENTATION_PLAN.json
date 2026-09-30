@@ -1,0 +1,53 @@
+{
+  "mission": "COREGRID-MISSION-0001",
+  "artifact": "COREGRID_V1_MASTER_IMPLEMENTATION_PLAN",
+  "mechanism": "V5.3 Part 80 (PLAN MODE output) + Part 63 (build order, dependency-corrected)",
+  "captured": "2026-09-30",
+  "producedBy": "MISSION-V1-001 workforce stream D, dependency-validated against the codebase by the coordinator",
+  "mode": "PLAN_COMPLETE_TRANSITIONING_TO_ACT",
+  "launchTarget": "before 2026-10-10 (operator authority; recorded, not achieved)",
+  "verticalSlice": {
+    "definition": "V5.3 Part 62: USER -> AUTHENTICATION -> ORGANIZATION -> ENTITY -> WORKSPACE -> WORKFLOW -> AI WORKER -> MISSION -> CONTEXT -> AUTHORIZED ACTION -> STATE CHANGE -> EVIDENCE -> VERIFICATION -> USER RESULT",
+    "alreadyLiveVerified": ["authentication", "entity", "mission", "authorized action", "state change", "evidence", "verification"],
+    "missingSpine": ["organization binding (universal)", "workspace persistence", "AI worker identity + delegation", "governed context assembly", "result surfacing"],
+    "criticalPath": ["org binding (S)", "workspace persistence (M)", "worker identity + delegation (L)", "AI gateway + context (S+M)", "foundation-loop mission/action reuse (S)", "UI result + E2E (S)"]
+  },
+  "sequence": [
+    {"step": 0, "mission": "MISSION-V1-017 (parallel from day 1)", "work": "Deployment track: Dockerfile (nitro bundle), /_health endpoint, release workflow, IaC apply when credentials arrive", "effort": "L", "blockedOn": "BLK-3 deployment credentials", "note": "V5.3 Part 63 correction: deployment at position 36 is the deadliest sequencing error; it is the longest-lead LAUNCH_BLOCKER"},
+    {"step": 1, "mission": "MISSION-V1-005", "work": "Identity/tenancy hardening (reuse cg_identity/cg_tenant + requireSupabaseAuth; wire org scope resolution to workspace binding)", "effort": "S", "blockedOn": null},
+    {"step": 2, "mission": "MISSION-V1-006", "work": "Organization model V1-minimal: org unit + membership on cg_org_profile/cg_tenant; user -> org -> entity binding", "effort": "M", "blockedOn": null},
+    {"step": 3, "mission": "MISSION-V1-007", "work": "Workspace persistence V1-minimal: persist workspace + membership rows (new migration) behind existing workspace-core domain model", "effort": "M", "blockedOn": "migration apply requires explicit human decision (governance law)"},
+    {"step": 4, "mission": "MISSION-V1-009", "work": "Worker identity + delegation policy V1-minimal: worker as governed actor via cg_role_assignment; ephemeral runtime per V5.3 Parts 13-15", "effort": "L", "blockedOn": "BLK-6 governance decision: canonical mission/worker owner (CG-GAP-009/011)"},
+    {"step": 5, "mission": "MISSION-V1-010", "work": "Intelligence gateway V1-minimal: extend ai-gateway.server.ts with logging, cost note, rate limit", "effort": "S", "blockedOn": "BLK-2 AI provider key (live calls)"},
+    {"step": 6, "mission": "MISSION-V1-010", "work": "Context assembly V1-minimal: authorized, minimized context per AI PRIVACY LAW; persist minimal context record", "effort": "M", "blockedOn": null},
+    {"step": 7, "mission": "MISSION-V1-011", "work": "Mission + authorized action via the existing foundation loop (AI worker proposes -> policy check -> cg_mission_intent -> cg_execution_record with rollback -> cg_event)", "effort": "S", "blockedOn": null},
+    {"step": 8, "mission": "MISSION-V1-007", "work": "Result surfacing in workspace UI (verification result + evidence through workspace projection)", "effort": "S", "blockedOn": null},
+    {"step": 9, "mission": "MISSION-V1-014", "work": "Part 62 vertical slice E2E test (one scripted flow, live battery extension)", "effort": "S", "blockedOn": null},
+    {"step": 10, "mission": "MISSION-V1-012/013/015/016/018", "work": "Launch envelope in parallel by dependency: files (S), notifications (S), communication live-send (M, blocked on keys), payments live validation (S, blocked on key), security hardening (M: OPS-RISK-1/2, headers), observability-minimal (S), Scholar validation re-run, multi-domain validation, load test, launch validation", "effort": "mixed", "blockedOn": "BLK-1/4/5 for live-provider dimensions"}
+  ],
+  "part63OrderCorrections": {
+    "inverted": "workflow (11) vs mission (12): the durable mission loop exists and is live-tested; the workflow engine is in-memory contracts",
+    "shortened": "evidence (19) and verification (20) are already persisted and live-tested behind the loop — generalize, do not rebuild",
+    "pulledForward": "deployment (36) and minimal observability (30) run in parallel from day 1",
+    "deferOrMinimize": "application builder (21), metering (29), broad integrations (28), memory (16) — V1-minimal or post-launch per V5.3 Part 5 golden rule"
+  },
+  "missionModel": "MISSION-V1-001..018 per V5.3 Part 79; smaller missions only when dependency, risk, or ownership requires",
+  "reusedNotRebuilt": [
+    "foundation loop (mission/execution/evidence/verification/rollback) — live-verified",
+    "universal kernel substrate (cg_entity/cg_relationship/cg_event/cg_observation)",
+    "identity + tenancy L2 (cg_identity/cg_tenant)",
+    "authorization stack (security-role-gate, capability-gate, role assignment/grant substrate + RPCs)",
+    "workforce reality substrate (cg_workforce_kind/cg_workforce_position)",
+    "AI gateway entry point",
+    "workspace projection machinery",
+    "verification harness (unit suite + live battery + conformance assessment)"
+  ],
+  "topRisks": [
+    {"rank": 1, "risk": "Deployment path unbuilt and credential-blocked (no Dockerfile, health endpoint, release workflow; IaC never applied)", "mitigation": "Deployment track in parallel from day 1 (BLK-3); single-VM Docker deployment can bypass the cluster initially"},
+    {"rank": 2, "risk": "AI worker delegation has no canonical owner and no implemented policy (CG-GAP-009/011) — needs a human governance decision before code", "mitigation": "Escalate to operator; design delegation as V1-minimal cg_role_assignment extension"},
+    {"rank": 3, "risk": "Durable-state gap: workspace, workflow, context are in-memory models; persisting requires approved migrations inside a ~10-day window", "mitigation": "Pre-authorize the V1-minimal migration pattern mirroring the foundation-mission review path"},
+    {"rank": 4, "risk": "Scope creep from the 37-step envelope competing with slice work on a fixed deadline", "mitigation": "Enforce the scope lock: slice first, envelope second; app builder/metering V1-minimal or FUTURE"},
+    {"rank": 5, "risk": "Launch-blocking ops/security debt deprioritized (OPS-RISK-1/2, headers, in-process rate limiting)", "mitigation": "Bundle into the deployment track so they ship with the first serving environment"}
+  ],
+  "rule": "The launch date is decided by the deployment track, not the slice. Worker completion is never verification (V5.1 Part 27)."
+}

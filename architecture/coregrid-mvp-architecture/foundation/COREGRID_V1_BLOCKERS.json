@@ -1,0 +1,17 @@
+{
+  "mission": "COREGRID-MISSION-0001",
+  "artifact": "COREGRID_V1_BLOCKERS",
+  "mechanism": "V5.3 Part 58 (record UNKNOWN/blockers, never guess) + Part 140 discipline",
+  "captured": "2026-09-30",
+  "purpose": "Recorded external blockers for the CoreGrid V1 launch. Each entry states what it unblocks. Nothing here is bypassed; work continues on unblocked streams (overnight directive).",
+  "blockers": [
+    {"id": "BLK-1", "item": "Supabase production project + service credentials; also re-inject current SUPABASE_PUBLISHABLE_KEY (stale in Cursor Cloud Secrets per baseline amendment)", "unblocks": "production migrations, live RLS isolation check on target, deployment, launch validation"},
+    {"id": "BLK-2", "item": "AI provider key + gateway decision (AI_API_KEY / AI_GATEWAY_URL)", "unblocks": "intelligence gateway live calls, AI WORKER link in the Part 62 slice, agent runtime + context live testing"},
+    {"id": "BLK-3", "item": "Deployment target credentials: OCI (TF_VAR_oci_*), Hetzner/Vultr, Cloudflare (infrastructure/CREDENTIALS.md)", "unblocks": "IaC apply, cluster, release workflow, health probes; closes the Gate 15 deployment dimension; without it the 10 Oct target has no serving URL"},
+    {"id": "BLK-4", "item": "Paystack live/secret key; Stripe-vs-Paystack decision if V1 needs non-NGN currency", "unblocks": "live payment validation on the existing Scholar fee slice"},
+    {"id": "BLK-5", "item": "Communication provider keys (Resend/SendGrid/SMTP email, Twilio SMS/voice); Vapi go/no-go decision (not referenced in code)", "unblocks": "live send paths for notifications/communication; web-push (VAPID) already works"},
+    {"id": "BLK-6", "item": "Governance decisions (non-credential): canonical mission/worker owner (CG-GAP-009/011, D3 cluster); monitoring stack ADR; phase-15 V1/V2 code boundary; phase-16 twin split; GAP-008 global shell disposition", "unblocks": "worker delegation implementation (critical path), observability backend choice, quarantine execution"}
+  ],
+  "governanceConstraint": "Migration applies to the dev project require an explicit human decision per the established handoff law. V1-minimal schema migrations (workspace persistence) are prepared as governed proposals and wait for authorization rather than self-applying.",
+  "rule": "A recorded blocker never authorizes a bypass. Unblocked streams continue."
+}

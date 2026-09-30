@@ -1,0 +1,29 @@
+{
+  "mission": "COREGRID-MISSION-0001",
+  "artifact": "COREGRID_V1_LAUNCH_CRITERIA",
+  "mechanism": "V5.3 Part 74 (acceptance standard) + Part 53 (launch definition)",
+  "captured": "2026-09-30",
+  "status": "CRITERIA_DEFINED_NOT_MET",
+  "criteria": [
+    {"criterion": "PLATFORM", "question": "Can an organization be created?", "current": "PARTIAL — cg_org_profile exists; universal creation flow not wired end-to-end"},
+    {"criterion": "IDENTITY", "question": "Can users and roles be securely managed?", "current": "VERIFIED — Supabase auth + cg_identity + role substrate + RLS live-tested"},
+    {"criterion": "ORGANIZATION", "question": "Can organizational structures be represented?", "current": "PARTIAL — Scholar-flavored; universal org unit/membership model pending"},
+    {"criterion": "ENTITY", "question": "Can domain entities be configured?", "current": "VERIFIED — universal kernel substrate, live-tested"},
+    {"criterion": "WORKSPACE", "question": "Can different actors receive appropriate experiences?", "current": "PARTIAL — Scholar projections live; durable workspace persistence missing"},
+    {"criterion": "APPLICATION", "question": "Can useful internal applications be created?", "current": "NO — application builder not started (V1-minimal required)"},
+    {"criterion": "WORKFLOW", "question": "Can work be automated?", "current": "PARTIAL — workflow contracts rich; durable execution not persisted"},
+    {"criterion": "AI", "question": "Can AI workers perform useful authorized missions?", "current": "PARTIAL — gateway exists; worker delegation missing; blocked on provider key"},
+    {"criterion": "EXECUTION", "question": "Can agents actually perform actions?", "current": "VERIFIED for governed loop actions; AI-proposed action path pending"},
+    {"criterion": "EVIDENCE", "question": "Can CoreGrid show what happened?", "current": "VERIFIED — foundation evidence + append-only history, live-tested"},
+    {"criterion": "VERIFICATION", "question": "Can CoreGrid determine whether results satisfy criteria?", "current": "VERIFIED — cg_verification_result, live-tested"},
+    {"criterion": "MULTI-TENANCY", "question": "Are organizations isolated?", "current": "VERIFIED — RLS deny-by-default, cross-tenant rejection live-proven"},
+    {"criterion": "SECURITY", "question": "Are permissions enforced?", "current": "VERIFIED core (server-side tenant resolution, RLS); ops debt recorded (OPS-RISK-1/2)"},
+    {"criterion": "COMMUNICATION", "question": "Can organizations communicate with users?", "current": "PARTIAL — web push works; email/SMS/voice blocked on provider keys"},
+    {"criterion": "PAYMENTS", "question": "Can supported organizations process transactions?", "current": "PARTIAL — Paystack contract verified; live key validation pending"},
+    {"criterion": "OBSERVABILITY", "question": "Can operators know whether the system works?", "current": "NO — no health endpoint, metrics, or error reporting wiring (LAUNCH_BLOCKER)"},
+    {"criterion": "ECONOMICS", "question": "Can AI/resource consumption be measured?", "current": "NO — metering substrate absent (V1-minimal required)"},
+    {"criterion": "EXTENSIBILITY", "question": "Can another domain be added without rebuilding CoreGrid?", "current": "PARTIAL — Scholar runtime proves one domain; second-domain proof pending (Part 64)"}
+  ],
+  "launchDefinition": "V5.3 Part 53 organization lifecycle demonstrated with evidence, end to end, on a deployed environment",
+  "rule": "CoreGrid V1 is launch-ready only when every criterion is OPERATIONAL with evidence on a deployed environment — not when code exists."
+}

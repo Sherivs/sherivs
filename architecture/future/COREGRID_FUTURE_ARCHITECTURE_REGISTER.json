@@ -1,0 +1,43 @@
+{
+  "mission": "COREGRID-MISSION-0001",
+  "artifact": "COREGRID_FUTURE_ARCHITECTURE_REGISTER",
+  "mechanism": "V5.3 Parts 6, 37, 40, 72, 82",
+  "captured": "2026-09-30",
+  "purpose": "Single register of FROZEN future architecture. FREEZE, DON'T DELETE: every entry preserves identity, source, owner, rationale, version target, dependencies, blueprint reference, and reopen conditions. No entry may be implemented during V1.",
+  "directoryNote": "Part 40's conceptual future/ area is materialized here, under the repository's canonical architecture/ directory (Part 39 permits the established canonical equivalent). Subdirectories are created only where actual recovered architecture exists — nothing is fabricated.",
+  "frozenAreas": {
+    "FUTURE-V2": {
+      "theme": "Connected organizational / device intelligence",
+      "contents": "Device integration, IoT registries beyond minimal organizational asset records, sensor ingestion, hardware control, telemetry, connected assets, edge computing, device identity/commands, physical environment monitoring",
+      "phases": ["15 (MIXED — V1 asset-record portion active, device portions frozen)"],
+      "phase52Blocks": ["block-02 (31 occurrences; environmental/geospatial portions trend V3)"],
+      "codeQuarantineCandidates": ["frontend/src/lib/hardware-*.ts", "frontend/src/lib/platform-device.ts", "bus tracking routes", "teacher_biometrics/telemetry tables"],
+      "preservedContracts": ["DeviceAdapterContract may exist as an extension point (V5.3 Part 56); IoT/sensor-fusion engines do not"],
+      "reopenConditions": ["V1 exposes a genuine device dependency", "V2 enters active planning with human authorization"]
+    },
+    "FUTURE-V3": {
+      "theme": "Reality intelligence",
+      "contents": "Geospatial/GIS, satellite data, geophysics, geology, mining, agriculture-satellite, environmental intelligence, biological, chemical, physical digital twins, causal modelling, advanced simulation, counterfactual reality modelling",
+      "phases": ["37", "41", "44", "46", "16 (partially)"],
+      "phase52Blocks": ["block-05 (33 occurrences)"],
+      "codeQuarantineCandidates": ["frontend/src/lib/twin-*.ts", "digital_twin_* tables", "frontend/src/lib/geofence.ts", "school_geofence", "scholar/scholar-facility-twin.ts", "scholar/physical-digital-map.ts"],
+      "preservedContracts": ["Observation/observation-source extension points on cg_observation remain schema-compatible"],
+      "reopenConditions": ["V1 substrate exposes a proven dependency not replaceable by organizational abstraction (V5.3 Part 68)", "V3 enters active planning with human authorization"]
+    },
+    "FUTURE-UNASSIGNED": {
+      "theme": "Civilization-scale and self-hosting intelligence",
+      "contents": "Universal cognitive intelligence, autonomous agent civilization OS, evolution engine, AI compute civilization engine, autonomous engineering self-improvement, civilization knowledge graph, autonomous economy engine, human civilization interface, universal reality OS kernel, planetary distributed infrastructure",
+      "phases": ["34", "35", "38", "45", "47", "48", "49", "50", "51"],
+      "phase52Blocks": ["blocks 00, 06, 12, 14, 15, 18, 19, 20, 21, 22, 25, 33, 34, 35 (incl. BLOCKED GAP items)"],
+      "versionAssignment": "UNASSIGNED per V5.3 Part 4 — exact future version boundaries must not be invented prematurely",
+      "reopenConditions": ["sufficient evidence exists to assign a version", "explicit human authorization"]
+    }
+  },
+  "governance": {
+    "freezeRule": "Once classified and frozen, do not repeatedly redesign during V1 (V5.3 Part 72). Each frozen capability retains: identity, source, owner, rationale, version target, dependencies, blueprint reference, known constraints, reopen conditions.",
+    "noAmnesia": "Reducing V1 scope never deletes the future (V5.3 Part 82). Deferred capabilities stay discoverable here and in the source corpus.",
+    "interplayWithLedger": "Campaign-52 ledger statuses are preserved unchanged; this register adds the version layer only. Blocked items (GAP-001..006, 008, 019) remain blocked."
+  },
+  "notClaimed": ["any frozen capability implemented", "future version boundaries assigned", "quarantine executed (classification recorded; code moves require governed decisions)"],
+  "rule": "The future remains intact. The present becomes usable."
+}
