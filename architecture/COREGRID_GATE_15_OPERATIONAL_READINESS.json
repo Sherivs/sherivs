@@ -1,0 +1,138 @@
+{
+  "artifact": "COREGRID_GATE_15_OPERATIONAL_READINESS",
+  "captured": "2026-09-30",
+  "authority": "V5.2 Part 140 Gate 15 (operational assurance); V5.1 Parts 26, 29, 98, 100",
+  "producedBy": "Workforce stream B (SRE/platform-architect subagent), coordinated under MISSION-0002 Gate 15 Operational Assurance Closure",
+  "purpose": "Close the two previously notAssessed Gate 15 dimensions (deployment, operational-runtime) with an evidence-backed inventory and explicitly classified remaining work.",
+  "deploymentDimension": {
+    "assessed": "PARTIALLY (CI/artifact/env-contract layer)",
+    "implemented": [
+      "Build pipeline: vite build producing dist/client + dist/server (nitro SSR entry)",
+      "CI verify workflow: npm ci, Node 22, npm run verify on PR and push (.github/workflows/verify.yml)",
+      "CI infrastructure-verify: credential-free structural validation (terraform fmt/validate, kubeconform, supabase-config-check)",
+      "CI infrastructure plan/apply: manual workflow_dispatch, approval-gated GitHub Environment, APPLY confirmation word, credentials from Environments never commits (authored, never executed)",
+      "Env contract: .env.example plus frontend/src/lib/env.ts required-vars matrix with VITE_ secret-exposure guard (verify:env)",
+      "Secret scanning: scripts/verification/secret-scan.mjs in the verify pipeline"
+    ],
+    "definedButNotImplemented": [
+      "Terraform IaC: 5 provider roots (oci, hetzner, vultr, cloudflare, supabase) plus production composition; self-declared 'Authored - not applied'",
+      "Kubernetes baseline: namespaces, default-deny network policies, resource governance, RBAC; structural only, no cluster",
+      "Monitoring signal contract: metrics 30d / logs 30d / traces 7d / SLO error budget; explicitly 'Not deployed'"
+    ],
+    "missing": [
+      "HTTP health-check endpoint (no /health, /healthz, or /metrics route exists anywhere)",
+      "Dockerfile / compose / PaaS configs (none present)",
+      "App deployment workflow: CI verifies but never deploys or publishes the app artifact; nothing between 'CI passes' and 'serving'"
+    ],
+    "requirementsForFullAssessment": [
+      "A deployment target running the existing artifacts with recorded build-artifact hash and reachable URL",
+      "A release workflow or documented runbook step promoting the built artifact",
+      "Env contract applied on target with ALLOW_DEMO_PROVISIONING=false and verify:env passing (redacted evidence)",
+      "Migrations applied on target with db-apply output plus passing RLS isolation check",
+      "IaC assessed at structural validity only until provider credentials exist"
+    ]
+  },
+  "operationalRuntimeDimension": {
+    "assessed": "PARTIALLY (failure-handling and audit patterns strong; observability surface absent)",
+    "implemented": [
+      "House pattern for idempotent execution + replay: foundation-loop.functions.ts upsert on (tenant_id, mission_id, version) with duplicate-key replay of prior verification",
+      "Governed rollback: tenant-scope check (cross-tenant fails closed with identical signal), admitted-only guard, rolled_back/compensation_required, append-only history, audit_logs record",
+      "Central audit logging via frontend/src/lib/audit.ts (never-throw best-effort) backed by audit_logs table",
+      "Webhook signature validation: Paystack HMAC-SHA512 over raw body with 401 on mismatch",
+      "Resilience primitives: in-process rate limiter (user/tenant/api/service/integration/agent scopes), circuit breaker, retry engine",
+      "SSR error surface: errorComponent + notFoundComponent wired in __root.tsx; custom server.ts fallback for catastrophic failures",
+      "DB migrations: 44 ordered files, env-only DATABASE_URL, stop-on-first-failure, dry-run helper"
+    ],
+    "partiallyImplemented": [
+      "Logging: console.error only; error capture is a 5s-TTL in-memory last-error; no structured logs, request IDs, or levels",
+      "DB rollback strategy: forward-only compensating-migration policy defined; database/supabase/rollbacks/ exists but is empty (zero compensating migrations authored)"
+    ],
+    "missing": [
+      "Metrics/tracing: no application /metrics endpoint, no OpenTelemetry hooks",
+      "Health/liveness probes for the app process",
+      "Graceful shutdown (no SIGTERM handling)",
+      "Security headers/CORS at the app edge (no CSP, HSTS, X-Frame-Options; enforcement implied at Supabase/edge only)"
+    ],
+    "requirementsForFullAssessment": [
+      "A minimal /_health server route plus a probe-running target returning HTTP 200",
+      "Process supervision evidence (systemd unit, container restart policy, or equivalent)",
+      "One exemplar compensating migration exercised against a live database",
+      "Demonstrated log capture (stdout from server.ts) plus audit_logs rows written during a smoke exercise"
+    ]
+  },
+  "missingItemDispositions": [
+    {
+      "item": "Applied Terraform/k8s cluster",
+      "disposition": "BLOCKED",
+      "rationale": "Provider credentials not supplied; infrastructure/CREDENTIALS.md documents the gap"
+    },
+    {
+      "item": "Monitoring stack deployment",
+      "disposition": "BLOCKED",
+      "rationale": "Requires running cluster plus credentials"
+    },
+    {
+      "item": "Container image/Dockerfile",
+      "disposition": "DEFERRED",
+      "rationale": "Intended runtime documented (nitro bundle); containerization matters once a cluster target exists"
+    },
+    {
+      "item": "App /metrics and distributed tracing",
+      "disposition": "DEFERRED",
+      "rationale": "Signal contract defined; backend stack choice gated on an owner ADR"
+    },
+    {
+      "item": "HTTP health endpoint",
+      "disposition": "DEFERRED",
+      "rationale": "Small code change, but meaningless until a probe-running target exists"
+    },
+    {
+      "item": "Security headers/CORS",
+      "disposition": "DEFERRED",
+      "rationale": "Correct owner is the unapplied Cloudflare root or k8s ingress; app-level config would be duplicate policy"
+    },
+    {
+      "item": "DB compensating rollbacks",
+      "disposition": "DEFERRED",
+      "rationale": "Forward-only policy; at least one exemplar needed for Gate 15 closure"
+    },
+    {
+      "item": "Graceful shutdown",
+      "disposition": "FUTURE",
+      "rationale": "Matters only under a long-lived managed runtime"
+    },
+    {
+      "item": "Distributed rate limiting",
+      "disposition": "FUTURE",
+      "rationale": "In-process limiter suffices for single-instance"
+    }
+  ],
+  "risksRecorded": [
+    {
+      "id": "OPS-RISK-1",
+      "severity": "HIGH",
+      "finding": "scripts/db-apply.mjs sets ssl: { rejectUnauthorized: false } (MITM-tolerant DB connection). Proposed governed fix: enable certificate verification against the Supabase CA."
+    },
+    {
+      "id": "OPS-RISK-2",
+      "severity": "MEDIUM",
+      "finding": "Audit logging is best-effort and silently swallowed; logAudit uses the anon (client-side) client so audit writes depend on RLS permitting them, and failures are indistinguishable from success."
+    },
+    {
+      "id": "OPS-RISK-3",
+      "severity": "MEDIUM",
+      "finding": "Rate limiting is in-process (resets on restart, does not bound across replicas); only the password-reset route applies a limit."
+    },
+    {
+      "id": "OPS-RISK-4",
+      "severity": "LOW",
+      "finding": "dist/ is the only build proof (gitignored, ephemeral in CI); verified artifact and deployed artifact can diverge."
+    },
+    {
+      "id": "OPS-RISK-5",
+      "severity": "LOW",
+      "finding": "Post-apply 'health check' in infrastructure-plan-apply.yml is an echo statement that checks nothing."
+    }
+  ],
+  "status": "ASSESSED_WITH_CLASSIFIED_REMAINING_WORK"
+}

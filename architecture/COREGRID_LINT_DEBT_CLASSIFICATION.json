@@ -1,0 +1,119 @@
+{
+  "artifact": "COREGRID_LINT_DEBT_CLASSIFICATION",
+  "captured": "2026-09-30",
+  "authority": "V5.1 Part 48 (gap register) and Part 32 (code quality); V5.2 Part 133 (separate status dimensions)",
+  "producedBy": "Workforce stream A (security/quality analyst subagent), coordinated under MISSION-0002 Gate 15 Operational Assurance Closure",
+  "scope": "All @typescript-eslint/no-explicit-any and no-var-requires violations",
+  "totals": {
+    "rawFindings": 176,
+    "realNoExplicitAny": 175,
+    "noVarRequires": 1,
+    "noVarRequiresNote": "False positive: eslint.config.js registers typescript-eslint rules only for ts/tsx, so the rule is 'not found' for .cjs files; the single finding is triggered by the file's own eslint-disable comment in .claude/helpers/statusline.cjs:22. Lint-config gap, not code debt."
+  },
+  "classification": {
+    "justified": 0,
+    "fixableSimple": 85,
+    "fixableStructural": 9,
+    "testOnly": 81,
+    "testOnlyStance": "Constitution section 32 has no test exemption. The 81 test occurrences are 'as any' casts bypassing branded ID types and literal unions; replacement is mechanical via per-domain branded-cast test helpers."
+  },
+  "keyInfrastructureFinding": "Generated Supabase types already exist (frontend/src/integrations/supabase/types.ts, Database type with per-table Row shapes) and both clients are constructed as createClient<Database>. Nearly every 'any' is replaceable with an existing type; the annotations are legacy, not forced.",
+  "domainGrouping": {
+    "tests/unit (government/cloud domain)": 81,
+    "frontend/src/routes/_authenticated/admin": 78,
+    "frontend/src/routes/_authenticated/parent": 6,
+    "frontend/src/routes/_authenticated/super-admin": 1,
+    "frontend/src/routes (public)": 2,
+    "frontend/src/lib (server functions)": 7,
+    ".claude/helpers (tooling)": 1
+  },
+  "highestRiskFiles": [
+    {
+      "path": "frontend/src/lib/demo-provision.functions.ts",
+      "lines": [57, 59, 63, 85, 136, 160],
+      "risk": "HIGH",
+      "note": "supabaseAdmin: any on the service-role boundary; replace with SupabaseClient<Database>; requires human review per sections 27/17"
+    },
+    {
+      "path": "frontend/src/lib/push.server.ts",
+      "line": 130,
+      "risk": "HIGH",
+      "note": "supabase: any where prose ('request-scoped authenticated client') substitutes for a type"
+    },
+    {
+      "path": "frontend/src/routes/_authenticated/admin/operations.tsx",
+      "count": 24,
+      "risk": "MEDIUM",
+      "note": "Row callbacks, icon: any, realtime payload casts"
+    },
+    {
+      "path": "frontend/src/routes/_authenticated/admin/intelligence.tsx",
+      "count": 12,
+      "risk": "MEDIUM",
+      "note": "Row callbacks and campaigns: any[] cluster"
+    },
+    {
+      "path": "frontend/src/routes/_authenticated/admin/health-certificate.tsx",
+      "count": 10,
+      "risk": "MEDIUM"
+    },
+    {
+      "path": "frontend/src/routes/_authenticated/admin/health.tsx",
+      "count": 7,
+      "risk": "MEDIUM",
+      "note": "Touches medical/blood-group fields; type explicitly"
+    },
+    {
+      "path": "frontend/src/routes/_authenticated/parent/bus-tracking.tsx",
+      "count": 6,
+      "risk": "MEDIUM",
+      "note": "assigned_students: any on a parent-facing student roster field"
+    }
+  ],
+  "securityFindings": [
+    {
+      "id": "LINT-SEC-1",
+      "severity": "MEDIUM",
+      "finding": "demo-provision.functions.ts commits a shared demo password (Demo@2026!) for nine role accounts including super_admin; documented as a Phase 01 fixture gated behind ALLOW_DEMO_PROVISIONING !== 'true' (enforced server-side at line 185). Secrets-in-repo per section 30; requires a recorded human decision confirming accepted-exception status."
+    },
+    {
+      "id": "LINT-SEC-2",
+      "severity": "MEDIUM",
+      "finding": "digital-twin.tsx consumes school_knowledge/trigger_rules JSONB as Record<string, any> feeding AI-twin configuration; reclassify to Record<string, unknown> plus Zod validation at the boundary per sections 19/21."
+    },
+    {
+      "id": "LINT-SEC-3",
+      "severity": "LOW",
+      "finding": "Repeated onError: (e: any) => toast.error(e?.message) renders undefined for non-Error throws; observability gap, not a security hole."
+    },
+    {
+      "id": "LINT-SEC-4",
+      "severity": "NONE",
+      "finding": "No 'any'-swallowed authorization checks found: all 175 occurrences are data-reading UI callbacks, test casts, or server-fn client parameters. Authorization is enforced by RLS and server functions per section 34."
+    }
+  ],
+  "recommendedExecutionOrder": [
+    {
+      "wave": 1,
+      "target": "Server-function Supabase clients (demo-provision.functions.ts, push.server.ts)",
+      "review": "Human review required: service-role/authenticated-client boundary"
+    },
+    {
+      "wave": 2,
+      "target": "85 mechanical replacements (e: unknown narrowing, LucideIcon, generated Row types)",
+      "review": "Normal PR review"
+    },
+    {
+      "wave": 3,
+      "target": "9 light structural refactors (typed realtime channel helpers, CampaignRow contract, School type extension)",
+      "review": "Type-owner decision"
+    },
+    { "wave": 4, "target": "81 test-only branded-cast helpers", "review": "Mechanical, batchable" },
+    {
+      "wave": 5,
+      "target": "Lint config: register .cjs handling; annotate settings.tsx:147 suppression per section 32 pattern",
+      "review": "One-line config review"
+    }
+  ],
+  "status": "ASSESSED_NOT_EXECUTED"
+}
