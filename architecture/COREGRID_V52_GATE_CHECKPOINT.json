@@ -84,17 +84,35 @@
   ],
   "continuation": {
     "date": "2026-09-30",
-    "record": "Mobile continuation verified the loop position and repaired the P08 enforcement-surface inventory.",
+    "record": "Mobile continuation verified the loop position, repaired the P08 enforcement-surface inventory, and extended the Scholar validation with governed relationship and event vocabulary.",
     "verification": {
-      "testUnit": "PASS (196 files, 3078 tests; integration/live tests skipped without secrets)",
+      "testUnit": "PASS (196 files, 3084 tests; integration/live tests skipped without secrets)",
       "verifyReconciliationArtifacts": "PASS_WITH_REPORTED_CONFLICTS (preserved phase-27, phase-33)",
       "verifyCampaign52DecisionLedger": "PASS_DECISIONS_RECORDED_WITH_BLOCKERS",
       "validateCampaign52AuthorizedDecisions": "PASS_NO_INVALID_DECISIONS",
-      "typecheck": "PASS"
+      "typecheck": "PASS",
+      "build": "PASS (vite build; routeTree regenerated with the scholar-foundation-loop route)"
     },
     "change": "tests/unit/p08-enforcement-surface.test.ts — registered foundation-loop.functions.ts and scholar-foundation-loop.functions.ts as ADOPTED of the canonical security-role-gate; both import the gate and resolve tenant via requireSchoolAdminScope. No authorization behavior changed.",
     "evidence": ["tests/unit/p08-enforcement-surface.test.ts"],
-    "notClaimed": ["deployment", "operation", "conformance beyond assessed scope"]
+    "scholarRealityExtension": {
+      "record": "Scholar foundation loop extended through the SAME governed execution: ontology-validated relationships (enrolls, teaches) into cg_relationship and Scholar domain events (learner.enrolled) into cg_event, via runtime/scholar-events.ts and runtime/scholar-reality.ts. No new infrastructure; kernel substrate tables (20260903000000) reused.",
+      "flow": "frontend/src/lib/runtime/scholar-foundation-flow.ts",
+      "serverPath": "frontend/src/lib/scholar-foundation-loop.functions.ts",
+      "security": "Relationship targets are verified to exist inside the actor's resolved tenant before any write; ontology source/target types are enforced; the event aggregate must match the created entity type; replayed idempotency keys return the recorded execution without creating new reality rows.",
+      "httpEntry": "frontend/src/routes/scholar-foundation-loop.tsx (authenticated, mirrors foundation-loop.tsx)",
+      "conformance": "assess-foundation-conformance.mjs extended with the scholar-reality-vocabulary dimension (static, no secrets required to assess)",
+      "tests": [
+        "tests/unit/scholar-foundation-flow.test.ts",
+        "tests/integration/foundation-loop.live.test.ts (self-skips without secrets)"
+      ],
+      "notClaimed": [
+        "live execution of the extended loop (requires laptop secrets)",
+        "deployment",
+        "operation",
+        "conformance beyond assessed scope"
+      ]
+    }
   },
   "nextAuthorizedGate": "Close the remaining Gate 15 dimensions in an approved environment (deployment health, live telemetry, E2E), then continue governed evolution against the 2026-09-30 baseline.",
   "rule": "Acceptance coverage, scope records, and bounded probes are not deployment, conformance, or operation."
