@@ -20,6 +20,13 @@
  *   boundaries but does not own tenant records.
  * - Phase 07 owns the agent operating system; this module controls agent
  *   permissions/tool authorization but does not own agent runtime state.
+ * - Phase 09 owns trust state and evidence; this module only records, on the
+ *   decision, the trust-evidence set the decision consumed (ADR-002 Option A,
+ *   COND-007/V1CAP-022). The consumption contract is the pure function
+ *   `consumeTrustEvidence` in `security/trust-fabric.ts` — the engine adopts
+ *   it at one call site and attaches the returned citation below. The field
+ *   is optional, so the wiring is additive and reversible without a forced
+ *   refactor.
  */
 
 import type { TenantId } from "./tenant-core";
@@ -74,6 +81,40 @@ export function isGrantingDecision(state: SecurityDecisionState): boolean {
 
 export type ActorType = "human" | "ai_agent" | "service" | "device" | "system";
 
+/* ─────────────────────────────────────────────────────────────
+ * Trust-evidence citation (ADR-002 Option A, COND-007/V1CAP-022)
+ * ────────────────────────────────────────────────────────────*/
+
+/**
+ * Outcome of consuming the phase-09 trust fabric at decision time:
+ * - backed: the decision stands, cited against usable trust evidence.
+ * - unavailable: evidence could not be resolved or carries no elevation;
+ *   a granting decision must have been flipped to DENY (fail-closed).
+ * - stale: consumed evidence was past its validity window; flipped closed.
+ * - revoked: consumed evidence was revoked; the decision was flipped
+ *   (revocation-flips-decision, AGENTS §31).
+ * - not_applicable: the decision does not grant, so it consumes no trust.
+ */
+export type TrustEvidenceOutcome =
+  | "backed"
+  | "unavailable"
+  | "stale"
+  | "revoked"
+  | "not_applicable";
+
+/**
+ * The trust-evidence set a security decision was derived from (ADR-002
+ * constraint 2): assertion IDs, the trust-fabric state-machine version, the
+ * consumption time, and the outcome. Producing the citation is the
+ * responsibility of `consumeTrustEvidence` in `security/trust-fabric.ts`.
+ */
+export interface TrustEvidenceCitation {
+  assertionIds: readonly string[];
+  stateMachineVersion: string;
+  evaluatedAt: string;
+  outcome: TrustEvidenceOutcome;
+}
+
 export interface SecurityDecisionContext {
   requestId: string;
   actorId: string;
@@ -89,6 +130,12 @@ export interface SecurityDecisionContext {
   now: string;
   /** Decisions expire; a stale decision must be re-evaluated (Section F.1). */
   ttlSeconds: number;
+  /**
+   * Optional trust-evidence citation produced by the trust-fabric consumption
+   * contract (security/trust-fabric.ts, ADR-002 Option A). When provided, it
+   * is carried verbatim onto the decision record.
+   */
+  trustEvidence?: TrustEvidenceCitation;
 }
 
 export interface SecurityDecision {
@@ -106,6 +153,14 @@ export interface SecurityDecision {
   timestamp: string;
   expiresAt: string;
   correlationId: CorrelationId;
+  /**
+   * Trust-evidence citation (ADR-002 constraint 2): the phase-09 trust-evidence
+   * set (assertion IDs + state-machine version) this decision was derived
+   * from, plus the consumption outcome. Absent for decisions that did not
+   * consume the trust fabric; present and complete whenever the engine
+   * adopts `consumeTrustEvidence` (security/trust-fabric.ts).
+   */
+  trustEvidence?: TrustEvidenceCitation;
 }
 
 export function createSecurityDecision(
@@ -129,6 +184,7 @@ export function createSecurityDecision(
     timestamp: ctx.now,
     expiresAt,
     correlationId: ctx.correlationId,
+    trustEvidence: ctx.trustEvidence,
   };
 }
 
