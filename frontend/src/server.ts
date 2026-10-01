@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { logStructured } from "./lib/observability/structured-log";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -39,11 +40,33 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    const startedAt = Date.now();
+    // Pathname only — query strings can carry tokens and must never be logged.
+    const path = new URL(request.url).pathname;
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      const normalized = await normalizeCatastrophicSsrResponse(response);
+      logStructured({
+        level: normalized.status >= 500 ? "error" : "info",
+        msg: "server-fetch",
+        component: "server",
+        duration_ms: Date.now() - startedAt,
+        method: request.method,
+        path,
+        status: normalized.status,
+      });
+      return normalized;
     } catch (error) {
+      logStructured({
+        level: "error",
+        msg: "server-fetch-unhandled",
+        component: "server",
+        duration_ms: Date.now() - startedAt,
+        method: request.method,
+        path,
+        err: error,
+      });
       console.error(error);
       return new Response(renderErrorPage(), {
         status: 500,
