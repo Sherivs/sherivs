@@ -178,6 +178,17 @@ describe("kernel reality contracts — draft builders", () => {
   });
 });
 
+describe("kernel reality contracts — envelope posture (MISSION-R-10)", () => {
+  it("leaves unstamped drafts envelope-absent, never half-stamped", () => {
+    // Legacy posture: drafts without an envelope carry NO envelope columns.
+    // The envelope migration's atomic CHECK rejects half-stamped rows at the
+    // database boundary; `kernel-envelope.test.ts` proves the stamped path.
+    const draft = entityDraft({ entityType: "person", tenantId: "tenant-1" }, NOW);
+    expect("object_type" in draft).toBe(false);
+    expect("trace_id" in draft).toBe(false);
+  });
+});
+
 describe("kernel reality contracts — relationship draft", () => {
   it("enforces 1–128 relation_type and trims values", () => {
     expect(isRelationType("teaches")).toBe(true);
