@@ -1,0 +1,641 @@
+{
+  "stream": "F",
+  "artifact": "STREAM_F_PHASE_EXTRACTION",
+  "mission": "CTO DIRECTIVE STEPS 2-3 — phase historian extraction over all 51 canonical phases, re-derived under RULING-7 (V1/V2-only) and RULING-8 (V1 reconstructed from the ENTIRE corpus; completeness test = the closed loop Reality -> Observation -> Representation -> Context -> Intelligence -> Decision -> Mission -> Delegation -> Worker Execution -> Action -> State Change -> Evidence -> Verification -> Outcome -> Memory -> Observation)",
+  "captured": "2026-10-01",
+  "authority": [
+    "architecture/COREGRID_CTO_DIRECTIVE_RECONCILIATION.json (RULING-1..12; esp. RULING-6 hardware quarantine, RULING-7 V1/V2-only, RULING-8 whole-corpus reconstruction)",
+    "architecture/registry.json (schemaVersion 1, generated 2026-09-07)",
+    "architecture/COREGRID_BLUEPRINT_SCOPE_MAP.json (51 phase rows, scope-lock states)",
+    "architecture/COREGRID_PHASE_RECONCILIATION_MAP.json (bands, known contradictions)",
+    "architecture/COREGRID_ARCHITECTURE_OWNERSHIP_MAP.json (canonical owners, unresolved clusters D1-D5/D7)",
+    "architecture/COREGRID_ARCHITECTURE_TO_CODE_TRACEABILITY.json (broken links)",
+    "architecture/COREGRID_PHASE_52_V1_FUTURE_CLASSIFICATION.json (prior session: 27 ACTIVE-V1 / 10 MIXED / 0 FUTURE-V2 / 4 FUTURE-V3 / 9 FUTURE-UNASSIGNED)",
+    "architecture/coregrid-mvp-architecture/foundation/COREGRID_V1_CAPABILITY_CATALOG.json (prior session capability evidence, reused)",
+    "architecture/phase-01..51 blueprints (identity/purpose sections read for all reclassified phases)"
+  ],
+  "method": "Read-only corpus extraction. For each phase: declared status/layer/modules/consumers from registry; dependencies derived by inverting the registry consumers graph (P depends on Q iff P appears in Q.consumers); capabilities from registry.capabilities owner match; bucket re-derived from dependency evidence against the V1 completeness loop under the V1/V2-only rule. Prior-session classifications are evidence, not conclusions; every disagreement is recorded with reasons. Runtime consumption by runtime-001 (Scholar) is NOT sufficient for V1: RULING-6 froze hardware (phase 15) even though runtime-001 consumes it, establishing that domain-runtime consumption does not make a phase structurally necessary to the platform loop.",
+  "loopNodeOwnership": {
+    "Reality": "33 (kernel substrate cg_entity/cg_relationship/cg_event/cg_observation) + 02/03 identity/tenancy contexts",
+    "Observation": "33 (cg_observation) + 14 (data provenance/quality) + 21 (infrastructure monitoring)",
+    "Representation": "33 (kernel/reality.ts typed contracts; domain-runtime manifests); twin state/history expansion preserved in V2 (16)",
+    "Context": "26 (ai-context, context assembly) + 06 (workspace projection)",
+    "Intelligence": "26 (AI gateway) + 18 (analytics/decision intelligence) + 07 (agent plans/tasks)",
+    "Decision": "18 (analytics-decisions) + 08 (security gateway decisions ALLOW/DENY) + 17 (approval gates)",
+    "Mission": "foundation mission mechanism (cg_mission_intent/cg_execution_record, foundation-loop.ts) — canonical phase owner recorded UNRESOLVED (ownership map: concept 'mission' canonicalOwner null)",
+    "Delegation": "02 (identity/role substrate) + 07 (agent tasks/delegation contracts); canonical worker owner resolved by RULING-3 (worker = governed actor/delegation extension)",
+    "Worker Execution": "07 (agent-core) + 05 (runtime jobs/events) + 17 (workflow execution)",
+    "Action": "17 (automation-actions) + 05 (runtime capabilities)",
+    "State Change": "05 (runtime events) + 33 (cg_event append-only)",
+    "Evidence": "09 (trust assertions, evidence-backed trust) + 33 (kernel substrate provenance)",
+    "Verification": "09 (verification result machinery) + 01 (verify pipeline) ",
+    "Outcome": "05 (runtime self-report) + 19 (alerts/incidents surfacing)",
+    "Memory": "36 (universal memory engine — organizational/practical memory scope) + 07 (agent memory, in-process)",
+    "Observation (loop close)": "19 (command centre situational surface) + 21 (observability)"
+  },
+  "registrySnapshot": {
+    "phaseCount": 51,
+    "statusHistogram": { "COMPLETE": 14, "IMPLEMENTING": 17, "IMPLEMENTED": 1, "ARCHITECTURE_DEFINED": 19 },
+    "capabilityCount": 50,
+    "declaredDuplicationClusters": ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "D14", "D15"],
+    "registryVersionClassificationProfile": "V5.3 — boundary string 'V1 ACTIVE / V2 FROZEN / V3 FROZEN / FUTURE / RESEARCH' still carries V3/FUTURE buckets; superseded as authoritative boundary by CTO RULING-7 (recorded as contradiction, registry enum not rewritten here)"
+  },
+  "bucketCounts": { "V1": 24, "V2": 25, "DEFERRED_CORPUS": 2 },
+  "phases": [
+    {
+      "id": "01", "name": "Foundation", "layer": "Foundations", "declaredStatus": "COMPLETE",
+      "capabilities": ["foundation-standards-config-secrets-ci"], "consumers": ["all"],
+      "dependencies": [],
+      "v1Required": true,
+      "v1Justification": "Every phase consumes the foundation (registry consumers 'all'); the verify pipeline, CI, secret discipline and phase-contract layer are the evidence/Verification backbone of the completeness loop. Structurally necessary without qualification.",
+      "bucket": "V1", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/registry.json#phases[01]", "architecture/COREGRID_BLUEPRINT_SCOPE_MAP.json#phases[01] (DESIGN_SCOPE_LOCKED_WITH_ACCEPTANCE_EVIDENCE, 20/20 sections)", "architecture/phase-01-foundation.md"]
+    },
+    {
+      "id": "02", "name": "Identity", "layer": "Foundations", "declaredStatus": "COMPLETE",
+      "capabilities": ["universal-identity"], "consumers": ["03", "05", "06", "08", "22", "25", "50"],
+      "dependencies": [],
+      "v1Required": true,
+      "v1Justification": "cg_identity (kinds human/organization/agent/service/device/runtime) is the Actor substrate for every loop node; RULING-4's universal domain-neutral role vocabulary and RULING-3's worker-as-governed-actor both require the universal identity registry as authority. Ownership map: canonical owner of 'identity', VERIFIED.",
+      "bucket": "V1", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/registry.json#phases[02]", "database/supabase/migrations/20260904020000_coregrid_l2_identity_tenancy.sql (cg_identity, live 8/8)", "architecture/COREGRID_ARCHITECTURE_OWNERSHIP_MAP.json#owners[concept=identity]", "architecture/COREGRID_CTO_DIRECTIVE_RECONCILIATION.json#RULING-4-ROLE-VOCABULARY"]
+    },
+    {
+      "id": "03", "name": "Multi-Tenancy", "layer": "Foundations", "declaredStatus": "COMPLETE",
+      "capabilities": ["tenancy-isolation-rls"], "consumers": ["all"],
+      "dependencies": ["02"],
+      "v1Required": true,
+      "v1Justification": "Constitution Multi-Tenancy Law: every request must have tenant context; RLS is mandatory for tenant-sensitive data (Constitution s17). cg_tenant hierarchy live-verified; deny-by-default RLS is RULING-2-approved posture. No loop node can run without tenant context.",
+      "bucket": "V1", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/registry.json#phases[03]", "architecture/COREGRID_V1_CAPABILITY_CATALOG.json#capabilities[area=tenancy] (EXISTS_VERIFIED, cross-tenant rejection in live battery)", "architecture/phase-03-multi-tenancy.md"]
+    },
+    {
+      "id": "04", "name": "Education Reality Engine", "layer": "Foundations", "declaredStatus": "COMPLETE",
+      "capabilities": ["education-reality-ontology"], "consumers": ["11", "12", "13", "25"],
+      "dependencies": ["12", "30"],
+      "v1Required": true,
+      "v1Justification": "Per the registry notes the phase is the Scholar domain-runtime manifest instance registered over kernel/domain-manifest.ts + cg_domain_runtime — i.e. the live proof that the domain-neutral kernel's runtime-installation mechanism works, and the owner of the V1 'domain-configuration' capability (capability catalog: VERIFIED_SCHOLAR). RULING-8 requires domain configuration as a V1 capability and RULING-1 makes Scholar a domain runtime (not substrate); a domain-neutral Reality Intelligence platform structurally requires the runtime seat mechanism and its first proven instance. Education modules (curriculum, assessment) are runtime-domain content, never kernel — under RULING-1 any education-shaped residue in the universal layer is contamination to correct, not a scope basis.",
+      "bucket": "V1", "domainSpecific": true, "duplicateOf": null,
+      "evidence": ["architecture/registry.json#phases[04] (Scholar domain-runtime manifest instance note)", "architecture/registry.json#runtimes[runtime-001]", "architecture/coregrid-mvp-architecture/foundation/COREGRID_V1_CAPABILITY_CATALOG.json#capabilities[area=domain-configuration]", "architecture/COREGRID_CTO_DIRECTIVE_RECONCILIATION.json#RULING-1-DOMAIN-NEUTRALITY", "architecture/phase-04-education-reality-engine.md"]
+    },
+    {
+      "id": "05", "name": "Core Application Runtime", "layer": "Foundations", "declaredStatus": "COMPLETE",
+      "capabilities": ["runtime-primitives"], "consumers": ["all"],
+      "dependencies": ["02"],
+      "v1Required": true,
+      "v1Justification": "Runtime primitives (command/query, events, jobs, approval, bulk, resilience, feature flags) own the loop's Action, State Change and Worker Execution fabric; modules verified domain-neutral by tests/unit/platform-neutrality.test.ts. Ownership map: canonical owner 'runtime-primitives', consumers all.",
+      "bucket": "V1", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/registry.json#phases[05]", "architecture/COREGRID_ARCHITECTURE_OWNERSHIP_MAP.json#owners[concept=runtime-primitives]", "architecture/COREGRID_BLUEPRINT_SCOPE_MAP.json#phases[05]"]
+    },
+    {
+      "id": "06", "name": "Workspace Engine", "layer": "Foundations", "declaredStatus": "COMPLETE",
+      "capabilities": ["workspace-composition"], "consumers": ["19", "24", "50"],
+      "dependencies": ["02", "50"],
+      "v1Required": true,
+      "v1Justification": "Workspace runtime is a named V1 capability (COREGRID-V1.md s3 V1 row) and owns the Context/surfacing node: workspace projection is how governed context reaches humans. Capability catalog marks durable workspace persistence as a CRITICAL SLICE LINK on the V1 vertical-slice spine (organization binding -> workspace persistence).",
+      "bucket": "V1", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/coregrid-mvp-architecture/COREGRID-V1.md#3-versioned-maturity-boundary", "architecture/coregrid-mvp-architecture/foundation/COREGRID_V1_CAPABILITY_CATALOG.json#capabilities[area=workspace]", "architecture/registry.json#phases[06]"]
+    },
+    {
+      "id": "07", "name": "AI Agent System", "layer": "Intelligence", "declaredStatus": "COMPLETE",
+      "capabilities": ["agent-runtime"], "consumers": ["26", "35", "47", "50"],
+      "dependencies": ["26", "35", "36"],
+      "v1Required": true,
+      "v1Justification": "Owns Delegation and Worker Execution loop nodes. RULING-3 makes workers governed execution identities with persistent definition/capability/authority/delegation history — agent-core/agent-tasks/agent-plans/agent-governance-report are the substrate; capability catalog names the worker gap (phase-07 owner) a V1 LAUNCH_BLOCKER. The D6 duplication cluster is CLOSED with owner 07, so no competing agent phase is required for V1.",
+      "bucket": "V1", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/registry.json#phases[07]", "architecture/registry.json#duplications[D6] (CLOSED, owner 07)", "architecture/COREGRID_V1_CAPABILITY_CATALOG.json#capabilities[area=worker]", "architecture/COREGRID_CTO_DIRECTIVE_RECONCILIATION.json#RULING-3-WORKER-OWNERSHIP"]
+    },
+    {
+      "id": "08", "name": "Security Engine", "layer": "Foundations", "declaredStatus": "COMPLETE",
+      "capabilities": ["security-enforcement"], "consumers": ["all"],
+      "dependencies": ["02", "09", "42"],
+      "v1Required": true,
+      "v1Justification": "RULING-2: a domain-neutral authorization model (principals, roles, permissions, tenants, delegation, worker authority, policy evaluation, auditability) MUST be part of V1 before scope lock. Phase 08 is the canonical runtime role gate and security decision engine (security-core.evaluateSecurityGateway fail-closed, adopted across server-function families); the Decision node's DENY/ALLOW enforcement is unconditional for a production platform.",
+      "bucket": "V1", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/registry.json#phases[08]", "architecture/COREGRID_CTO_DIRECTIVE_RECONCILIATION.json#RULING-2-DEC-1-RLS", "architecture/coregrid-mvp-architecture/foundation/COREGRID_V1_CAPABILITY_CATALOG.json#capabilities[area=authorization]"]
+    },
+    {
+      "id": "09", "name": "Security Trust Fabric", "layer": "Foundations", "declaredStatus": "COMPLETE",
+      "capabilities": ["trust-fabric"], "consumers": ["08", "42"],
+      "dependencies": [],
+      "v1Required": true,
+      "v1Justification": "Owns the Evidence and Verification loop nodes: trust assertions with evidence-backed state machines, revocation, provenance ('a subject cannot trust itself', 'trust cannot be withdrawn without evidence'), plus cg_foundation_evidence and verification-result machinery per the capability catalog. Verification is a mandatory loop node; the fabric is its canonical owner (D7 partially: owner 08/09/42, with 08/09 in V1).",
+      "bucket": "V1", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/registry.json#phases[09] (10 invariants, 49-area acceptance probe)", "architecture/coregrid-mvp-architecture/foundation/COREGRID_V1_CAPABILITY_CATALOG.json#capabilities[area=evidence],[area=verification]", "architecture/registry.json#duplications[D7]"]
+    },
+    {
+      "id": "10", "name": "Communication Platform", "layer": "Runtime", "declaredStatus": "COMPLETE",
+      "capabilities": ["communication-messaging"], "consumers": ["24", "43"],
+      "dependencies": [],
+      "v1Required": true,
+      "v1Justification": "Communication and notifications are named V1 capabilities (COREGRID-V1.md s3); the loop's Outcome node must reach humans (notification digest/fanout are shipped surfaces), and Constitution s35 realtime security requires tenant-aware communication infrastructure. Domain-neutral by construction (provider catalog with credentialReference pattern).",
+      "bucket": "V1", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/coregrid-mvp-architecture/COREGRID-V1.md#3-versioned-maturity-boundary (communication, notifications)", "architecture/coregrid-mvp-architecture/foundation/COREGRID_V1_CAPABILITY_CATALOG.json#capabilities[area=communication],[area=notifications]", "architecture/registry.json#phases[10]"]
+    },
+    {
+      "id": "11", "name": "Academic Intelligence", "layer": "Intelligence", "declaredStatus": "COMPLETE",
+      "capabilities": ["academic-intelligence"], "consumers": ["12", "18"],
+      "dependencies": ["04"],
+      "v1Required": false,
+      "v1Justification": "Domain intelligence for the Scholar runtime (mastery, pathways, curriculum, academic risk). No loop node requires it: the Intelligence node is owned by the domain-neutral 26/18/07 trio. Its consumer edges (12, 18) are Scholar-era couplings — analytics-decisions consuming academic-intelligence is domain-era residue that RULING-1 flags as contamination to correct, not a dependency to preserve. Disagrees with prior ACTIVE-V1: that classification was education-corpus-driven; under RULING-1/8 the platform is domain-neutral and Scholar domain intelligence is expansion surface.",
+      "bucket": "V2", "domainSpecific": true, "duplicateOf": null,
+      "evidence": ["architecture/registry.json#phases[11]", "architecture/registry.json#capabilities[academic-intelligence] consumers 12/18", "architecture/COREGRID_CTO_DIRECTIVE_RECONCILIATION.json#RULING-1-DOMAIN-NEUTRALITY", "architecture/COREGRID_PHASE_52_V1_FUTURE_CLASSIFICATION.json#phaseClassifications[11]=ACTIVE-V1"]
+    },
+    {
+      "id": "12", "name": "Scheduling Intelligence", "layer": "Runtime", "declaredStatus": "COMPLETE",
+      "capabilities": ["scheduling"], "consumers": ["04", "25"],
+      "dependencies": ["04", "11"],
+      "v1Required": false,
+      "v1Justification": "The blueprint itself proves the engine is domain-neutral by construction (participants/resources/activities/constraints are institutional data). But domain-neutral is not sufficient for V1: no completeness-loop node and no V1 capability requires scheduling; its consumers are the Scholar runtime (04) and workforce onboarding (25) consuming timetable flows — domain-runtime needs. RULING-6 precedent (hardware frozen despite runtime-001 consuming it) establishes that runtime consumption does not force V1. Disagrees with prior ACTIVE-V1 for this reason; the engine is preserved intact as V2 expansion (valuable, not required).",
+      "bucket": "V2", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/registry.json#phases[12] (domain-neutral by construction note)", "architecture/phase-12-scheduling-intelligence.md (domain neutrality section ER)", "architecture/COREGRID_CTO_DIRECTIVE_RECONCILIATION.json#RULING-6-PHASE-15 (precedent: runtime consumption != V1)", "architecture/COREGRID_PHASE_52_V1_FUTURE_CLASSIFICATION.json#phaseClassifications[12]=ACTIVE-V1"]
+    },
+    {
+      "id": "13", "name": "Financial System", "layer": "Commerce", "declaredStatus": "COMPLETE",
+      "capabilities": ["financial-ledger"], "consumers": ["27", "49"],
+      "dependencies": ["04", "49"],
+      "v1Required": true,
+      "v1Justification": "Payments are a named V1 capability (COREGRID-V1.md s3) and capability catalog records payments (owner phase-13) as VERIFIED_CONTRACT with HMAC-SHA512 webhook verification — Constitution s36 payment security invariants (signature validation, idempotency, audit, replay protection) require a canonical ledger. Domain-neutral by construction (debtor/beneficiary are identity references). The D13 cluster is CLOSED with owner 13.",
+      "bucket": "V1", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/registry.json#phases[13]", "architecture/registry.json#duplications[D13] (CLOSED, owner 13)", "architecture/coregrid-mvp-architecture/COREGRID-V1.md#3-versioned-maturity-boundary (payments)", "architecture/phase-13-financial-system.md (domain-neutral by construction)"]
+    },
+    {
+      "id": "14", "name": "Data Platform", "layer": "Foundations", "declaredStatus": "IMPLEMENTING",
+      "capabilities": ["data-platform"], "consumers": ["all"],
+      "dependencies": [],
+      "v1Required": true,
+      "v1Justification": "Data governance/catalog/quality own the provenance law (Constitution s12: every important piece of information answers where it came from, who created it, was it AI-generated) which the Observation, Memory and Evidence nodes require; registry consumers 'all'. V1 scope is the minimal provenance/catalog/quality core — the civilization-scale analytics warehouse is not required.",
+      "bucket": "V1", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/registry.json#phases[14]", "AGENTS.md#12-data-provenance", "architecture/COREGRID_BLUEPRINT_SCOPE_MAP.json#phases[14]"]
+    },
+    {
+      "id": "15", "name": "Hardware Integration", "layer": "Runtime", "declaredStatus": "IMPLEMENTING",
+      "capabilities": ["hardware-device-telemetry"], "consumers": ["16", "44"],
+      "dependencies": ["44"],
+      "v1Required": false,
+      "v1Justification": "RULING-6 is dispositive: hardware/device material is QUARANTINE — CLASSIFY ONLY, DELETE NOTHING; V2 hardware expansion frozen; no hardware contamination of the V1 universal substrate unless an audit proves a capability genuinely foundational. The loop's Observation node in V1 is served by record/event observation (33/14), not device telemetry. The organizational asset-record residue (V5.3 Part 69) is plain entity records on the 33 kernel substrate — the phase is not their necessary owner, resolving the prior MIXED boundary review at classification level (code-boundary split stays recorded as unresolved). Prior MIXED (registry version_target MIXED; knownBoundaryReviews) resolved to V2 whole-phase under RULING-6 + RULING-7.",
+      "bucket": "V2", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/COREGRID_CTO_DIRECTIVE_RECONCILIATION.json#RULING-6-PHASE-15", "architecture/registry.json#versionClassification.knownBoundaryReviews[phase-15]", "architecture/phase-15-hardware-integration.md#B-purpose (device/edge/telemetry scope)", "architecture/coregrid-mvp-architecture/foundation/COREGRID_V1_CAPABILITY_CATALOG.json#futureLeakageFindings[hardware-device] QUARANTINE_CANDIDATE"]
+    },
+    {
+      "id": "16", "name": "Digital Twin", "layer": "Intelligence", "declaredStatus": "IMPLEMENTING",
+      "capabilities": ["live-digital-twin"], "consumers": ["17", "18", "46"],
+      "dependencies": ["15", "46"],
+      "v1Required": false,
+      "v1Justification": "The Representation and State Change loop nodes are owned by the live-verified Phase 33 kernel substrate (cg_entity/cg_relationship/cg_event/cg_observation + kernel/reality.ts, Gate-14 probe, live battery 5/5) — one canonical owner per the ownership law. Phase 16's distinctive content (live device twin binding, physical twins, simulation hooks) is not structurally necessary for the V1 loop and its dependency on 15 (hardware) is RULING-6-frozen. Old MIXED resolved to V2 consistent with the capability catalog's QUARANTINE_CANDIDATE disposition for twin modules (freeze behind contract, do not extend); Constitution s10 twin-governance duties are honored by the kernel substrate + V2 twin expansion when unfrozen. D4 cluster (16/46/33/48) preserved.",
+      "bucket": "V2", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/COREGRID_ARCHITECTURE_TO_CODE_TRACEABILITY.json#traces[concept=reality-primitives]", "architecture/coregrid-mvp-architecture/foundation/COREGRID_V1_CAPABILITY_CATALOG.json#futureLeakageFindings[digital-twin] QUARANTINE_CANDIDATE", "architecture/registry.json#duplications[D4]", "architecture/phase-16-digital-twin.md#B-purpose (device/simulation scope)"]
+    },
+    {
+      "id": "17", "name": "Automation Engine", "layer": "Runtime", "declaredStatus": "IMPLEMENTING",
+      "capabilities": ["automation-workflow-runtime"], "consumers": ["all"],
+      "dependencies": ["16"],
+      "v1Required": true,
+      "v1Justification": "Owns Action and Worker Execution execution fabric: automation-workflow.ts carries the durable retry/idempotency/compensation contracts that RULING-5 maps onto the ONE canonical workflow lifecycle (DEFINED...ARCHIVED, no competing state machines); automation-actions + foundation-loop execution records with governed rollback are live-verified (capability catalog: action-tools EXISTS_VERIFIED). Workflow engine is a named V1 capability. The declared dependency edge on 16 (twin) is not load-bearing for the V1 loop and is recorded as a stale civilization-tier edge.",
+      "bucket": "V1", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/registry.json#phases[17]", "architecture/COREGRID_CTO_DIRECTIVE_RECONCILIATION.json#RULING-5-WORKFLOW-VOCABULARY", "architecture/coregrid-mvp-architecture/foundation/COREGRID_V1_CAPABILITY_CATALOG.json#capabilities[area=workflow],[area=action-tools]", "architecture/registry.json#duplications[D11] (CLOSED, owner 17)"]
+    },
+    {
+      "id": "18", "name": "Analytics Intelligence", "layer": "Intelligence", "declaredStatus": "IMPLEMENTING",
+      "capabilities": ["analytics-decision-intelligence"], "consumers": ["19", "34"],
+      "dependencies": ["11", "16"],
+      "v1Required": true,
+      "v1Justification": "Owns the Intelligence and Decision loop nodes: analytics-models/analytics-decisions are the domain-neutral decision-support engine; blueprint scope-locked WITH acceptance evidence per the scope map. Its declared consumer edges from 11/16 (academic/twin) are Scholar-era couplings to be severed under RULING-1, but the phase's own capability is loop-mandatory: Decision is a named loop node and analytics-decision-intelligence is its canonical owner.",
+      "bucket": "V1", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/registry.json#phases[18]", "architecture/COREGRID_BLUEPRINT_SCOPE_MAP.json#phases[18] (DESIGN_SCOPE_LOCKED_WITH_ACCEPTANCE_EVIDENCE)", "D9 cluster CLOSED owner 26 — no competing intelligence owner"]
+    },
+    {
+      "id": "19", "name": "Command Centre", "layer": "Runtime", "declaredStatus": "IMPLEMENTING",
+      "capabilities": ["command-centre-surface"], "consumers": ["control-plane"],
+      "dependencies": ["06", "18"],
+      "v1Required": true,
+      "v1Justification": "Closes the loop tail Outcome -> Observation for human supervision: the registry note confirms L1/L2/L3/L5 stand (alert definitions, alert state, incidents substrates; four modules, 47 tests) — only the L4 operational surface was withdrawn. A domain-neutral Reality Intelligence platform structurally requires an institutional situational-awareness surface over alerts/incidents/decisions; the withdrawn L4 surface is open work within V1, not a scope reason. The existing '/' surface is a provisioning console and must be replaced by a real operational projection — recorded as remaining work, not as a V2 deferral.",
+      "bucket": "V1", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/registry.json#phases[19] (L4 withdrawal note: no route imports command modules)", "architecture/phase-19-command-centre.md#A.3-core-definition (observe/coordinate, never execute unrestricted actions)", "architecture/COREGRID_PHASE_RECONCILIATION_MAP.json#knownContradictions[phase-19]"]
+    },
+    {
+      "id": "20", "name": "Government Education Cloud", "layer": "Global", "declaredStatus": "IMPLEMENTING",
+      "capabilities": ["government-sovereign-deployments"], "consumers": ["44"],
+      "dependencies": [],
+      "v1Required": false,
+      "v1Justification": "Named vertical (ministries of education, public-school networks, examination authorities per blueprint A.1). Under RULING-1 education is a runtime and no vertical defines the substrate; under RULING-8 no loop node or V1 capability requires a government-education vertical. Its only consumer edge is 44 (deferred corpus). The identity/tenancy extensions it needs are already owned by 02/03 (D8 CLOSED, owner 02). Disagrees with prior ACTIVE-V1 — that classification predated the V1/V2-only rule; the prior session itself listed 'whether a government education vertical is inside V1' as needing human review. Sovereign-deployment isolation patterns remain valuable expansion surface.",
+      "bucket": "V2", "domainSpecific": true, "duplicateOf": null,
+      "evidence": ["architecture/phase-20-government-education-cloud.md#A.1-subsystem-identity", "architecture/registry.json#duplications[D8] (CLOSED, owner 02)", "architecture/COREGRID_PHASE_52_V1_FUTURE_CLASSIFICATION.json#needsHumanReview[phase-20]", "architecture/COREGRID_PHASE_52_V1_FUTURE_CLASSIFICATION.json#phaseClassifications[20]=ACTIVE-V1"]
+    },
+    {
+      "id": "21", "name": "Global Cloud Fabric", "layer": "Global", "declaredStatus": "IMPLEMENTING",
+      "capabilities": ["cloud-fabric-byoc"], "consumers": ["44"],
+      "dependencies": ["44"],
+      "v1Required": true,
+      "v1Justification": "A Foundational Production Platform must deploy: the capability catalog records deployment (owner phase-21) as a V1 LAUNCH_BLOCKER (no Dockerfile at capture; Dockerfile/release path since authored M-14) and observability as a V1 LAUNCH_BLOCKER owner. Deployment, monitoring and BYOC governance are structurally necessary; only multi-region planetary federation (dependency edge into 44) is not — that edge is a stale civilization-tier declaration, not a V1 dependency.",
+      "bucket": "V1", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/coregrid-mvp-architecture/foundation/COREGRID_V1_CAPABILITY_CATALOG.json#capabilities[area=deployment] (GAP_BLOCKED, LAUNCH_BLOCKER, owner phase-21)", "architecture/registry.json#phases[21] (module-resolution correction; deployment BLOCKED pending credentials CF-4..CF-12)", "architecture/coregrid-mvp-architecture/COREGRID_V1_MORNING_REPORT_2026-10-01.md#M-14-deployment"]
+    },
+    {
+      "id": "22", "name": "Mobile Platform", "layer": "Global", "declaredStatus": "IMPLEMENTING",
+      "capabilities": ["mobile-client-platform"], "consumers": ["runtime-001"],
+      "dependencies": ["02"],
+      "v1Required": true,
+      "v1Justification": "The prior session's block-level classification lists 'Web + iOS + Android' (block 29, GAP-013) among v1RequiredBlocks — the human loop nodes (observe outcomes, approve, act) require client surfaces on all three form factors, and offline-tolerant field use is a production-platform requirement. Kept V1 with the caveat recorded in unresolved: the basis is doctrine (block-29), not a hard dependency edge, since no V1 phase lists 22 as a consumer.",
+      "bucket": "V1", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/COREGRID_PHASE_52_V1_FUTURE_CLASSIFICATION.json#sectionClassifications.v1RequiredBlocks[29] ('Web + iOS + Android')", "architecture/registry.json#phases[22]", "architecture/COREGRID_PHASE_52_V1_FUTURE_CLASSIFICATION.json#phaseClassifications[22]=ACTIVE-V1"]
+    },
+    {
+      "id": "23", "name": "Web Platform", "layer": "Runtime", "declaredStatus": "IMPLEMENTING",
+      "capabilities": ["web-client-platform"], "consumers": ["runtime-001"],
+      "dependencies": [],
+      "v1Required": true,
+      "v1Justification": "Website and the primary client surface are named V1 capabilities (COREGRID-V1.md s3: website; capability catalog: website owner phase-23, EXISTS_PARTIAL with live public routes). The loop's human entry point is the web surface; no substitute owner exists.",
+      "bucket": "V1", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/coregrid-mvp-architecture/COREGRID-V1.md#3-versioned-maturity-boundary (website)", "architecture/coregrid-mvp-architecture/foundation/COREGRID_V1_CAPABILITY_CATALOG.json#capabilities[area=website]", "architecture/registry.json#phases[23]"]
+    },
+    {
+      "id": "24", "name": "Experience & Design Intelligence", "layer": "Intelligence", "declaredStatus": "IMPLEMENTING",
+      "capabilities": ["experience-design"], "consumers": ["50"],
+      "dependencies": ["06", "10", "50"],
+      "v1Required": true,
+      "v1Justification": "Customer workspace is a named V1 capability with phase-24 as recorded owner (capability catalog: customer-workspace, 'workspace projection machinery generic'); accessibility and experience governance are how the human loop nodes remain usable and auditable. GAP-008 (global shell V1-shape vs BLOCKED) is preserved as unresolved, but it does not remove the customer-workspace ownership evidence.",
+      "bucket": "V1", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/coregrid-mvp-architecture/foundation/COREGRID_V1_CAPABILITY_CATALOG.json#capabilities[area=customer-workspace]", "architecture/COREGRID_PHASE_52_V1_FUTURE_CLASSIFICATION.json#knownConflicts[GAP-008]", "architecture/registry.json#phases[24]"]
+    },
+    {
+      "id": "25", "name": "Institutional Onboarding & Workforce", "layer": "Foundations", "declaredStatus": "COMPLETE",
+      "capabilities": ["onboarding-workforce-identity"], "consumers": ["runtime-001"],
+      "dependencies": ["02", "04", "12"],
+      "v1Required": true,
+      "v1Justification": "The organization model is the missing spine of the V1 vertical slice (COREGRID-V1.md s4: organization binding -> workspace persistence); universal org units/memberships + workforce kind substrate are domain-neutral (workforce = universal ACTOR/WORKER/MANAGER roles per RULING-4, not education roles). Registry note: L4 evidenced via staff-accounts + onboarding flow; the workforce extension of identity is the approved duplication D8 (CLOSED, owner 02).",
+      "bucket": "V1", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/coregrid-mvp-architecture/COREGRID-V1.md#4-the-v1-vertical-slice (missing spine)", "architecture/registry.json#phases[25]", "architecture/COREGRID_CTO_DIRECTIVE_RECONCILIATION.json#RULING-4-ROLE-VOCABULARY", "architecture/COREGRID_ARCHITECTURE_OWNERSHIP_MAP.json#owners[concept=workforce]"]
+    },
+    {
+      "id": "26", "name": "AI Intelligence Layer", "layer": "Intelligence", "declaredStatus": "IMPLEMENTING",
+      "capabilities": ["ai-intelligence-gateway"], "consumers": ["07", "34", "35"],
+      "dependencies": ["07", "34", "45"],
+      "v1Required": true,
+      "v1Justification": "Constitution s20 requires ALL AI operations through a centralized gateway; the prior session's block classification marks 'Intelligence/Model Gateway' as a V1-required block. Owns the Intelligence and Context loop nodes (ai-context, context-assembly, ai-governance, ai-services); the governed entry with budget pre-check and rate limiting is shipped (M-05/M-12). Declared dependency edge into 45 (AI compute civilization) is a stale civilization-tier declaration — the V1 gateway is provider-agnostic via adapters (Constitution s25), not a compute-fabric consumer.",
+      "bucket": "V1", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/COREGRID_PHASE_52_V1_FUTURE_CLASSIFICATION.json#sectionClassifications.v1RequiredBlocks[07]", "architecture/coregrid-mvp-architecture/foundation/COREGRID_V1_CAPABILITY_CATALOG.json#capabilities[area=intelligence-gateway],[area=context]", "AGENTS.md#20-ai-gateway", "architecture/registry.json#phases[26]"]
+    },
+    {
+      "id": "27", "name": "Marketplace", "layer": "Commerce", "declaredStatus": "IMPLEMENTED",
+      "capabilities": ["marketplace"], "consumers": ["49", "51"],
+      "dependencies": ["13", "28", "49"],
+      "v1Required": false,
+      "v1Justification": "Old MIXED resolved to V2: the implemented organizational marketplace/entitlement slice is real but no completeness-loop node or V1 capability requires a capability-distribution ecosystem; entitlement checks for plans/billing are ownable by 13 (financial-ledger, D13 owner) without a marketplace. GAP-003/017/018 (SDK economy, App Store) are explicitly mapped as V2+ concerns by the prior session's knownConflicts. Disagreement with prior MIXED is grounded in RULING-7's 'structurally necessary' bar: expansion surface, not foundation. Registry status conflict (IMPLEMENTED vs derived COMPLETE, no acceptance record) preserved unchanged.",
+      "bucket": "V2", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/COREGRID_PHASE_52_V1_FUTURE_CLASSIFICATION.json#mixedPhaseReasons[27], knownConflicts[GAP-017/018]", "architecture/COREGRID_PHASE_RECONCILIATION_MAP.json#knownContradictions[phase-27]", "architecture/registry.json#phases[27]", "architecture/phase-27-marketplace.md#1-subsystem-identity (distribution ecosystem scope)"]
+    },
+    {
+      "id": "28", "name": "Developer Platform", "layer": "Runtime", "declaredStatus": "IMPLEMENTING",
+      "capabilities": ["developer-platform"], "consumers": ["27", "51"],
+      "dependencies": [],
+      "v1Required": false,
+      "v1Justification": "Old MIXED resolved to V2: internal engineering tooling is operational (and is governed by 01's verify pipeline and the phase-contract layer, both V1), but the external developer/SDK platform is blocked by GAP-004 and is an ecosystem expansion surface. The V1 platform must be programmable through its API contracts (Constitution s26 API governance), which does not require an SDK/package/signing developer platform. Disagreement with prior MIXED follows the same 'structurally necessary' bar as phase 27.",
+      "bucket": "V2", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/COREGRID_PHASE_52_V1_FUTURE_CLASSIFICATION.json#mixedPhaseReasons[28], needsHumanReview[block-18 GAP-004]", "architecture/phase-28-developer-platform.md#B-purpose (SDK/build/package scope)", "architecture/registry.json#phases[28]"]
+    },
+    {
+      "id": "29", "name": "CoreGrid Integration", "layer": "Runtime", "declaredStatus": "IMPLEMENTING",
+      "capabilities": ["integration-adapters"], "consumers": ["43"],
+      "dependencies": [],
+      "v1Required": true,
+      "v1Justification": "Integrations are a named V1 capability (COREGRID-V1.md s3) and Constitution s25 requires adapters for every external provider — the loop's Action node reaches external systems through this owner. Prior session's block 16 ('Organizations do not have to abandon their software') is a V1-required block pointing at exactly this capability. Live Supabase/Paystack integration evidence recorded in the capability catalog.",
+      "bucket": "V1", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/coregrid-mvp-architecture/COREGRID-V1.md#3-versioned-maturity-boundary (integrations)", "architecture/COREGRID_PHASE_52_V1_FUTURE_CLASSIFICATION.json#sectionClassifications.v1RequiredBlocks[16]", "architecture/coregrid-mvp-architecture/foundation/COREGRID_V1_CAPABILITY_CATALOG.json#capabilities[area=integrations]", "architecture/registry.json#phases[29]"]
+    },
+    {
+      "id": "30", "name": "Globalization", "layer": "Global", "declaredStatus": "IMPLEMENTING",
+      "capabilities": ["globalization"], "consumers": ["04", "50"],
+      "dependencies": [],
+      "v1Required": false,
+      "v1Justification": "Registry capability consumers are 04 (Scholar runtime) and 50 (human civilization interface, deferred) — no V1-mandatory node depends on localization; no completeness-loop node requires global formats. Valuable, domain-neutral expansion surface (locale/regional correctness for future runtimes). Disagrees with prior ACTIVE-V1: that classification carried no dependency evidence for 30, and RULING-7 requires dependency evidence, not breadth, for V1 inclusion.",
+      "bucket": "V2", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/registry.json#capabilities[globalization] consumers 04/50", "architecture/registry.json#phases[30]", "architecture/COREGRID_PHASE_52_V1_FUTURE_CLASSIFICATION.json#phaseClassifications[30]=ACTIVE-V1"]
+    },
+    {
+      "id": "31", "name": "Enterprise Scale", "layer": "Global", "declaredStatus": "IMPLEMENTING",
+      "capabilities": ["enterprise-scale"], "consumers": ["40"],
+      "dependencies": [],
+      "v1Required": false,
+      "v1Justification": "Capacity/reliability/operations management for enterprise scale is hardening, not foundation: the V1 platform's non-negotiable operational floor is security (08), tenancy (03), observability/deployment (21) and verification (01/09), all separately owned. No loop node or V1 capability requires enterprise capacity management; its only consumer edge is 40 (V2). Disagrees with prior ACTIVE-V1 on dependency grounds.",
+      "bucket": "V2", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/registry.json#phases[31]", "architecture/registry.json#capabilities[enterprise-scale] consumer 40", "architecture/COREGRID_PHASE_52_V1_FUTURE_CLASSIFICATION.json#phaseClassifications[31]=ACTIVE-V1"]
+    },
+    {
+      "id": "32", "name": "Future Evolution", "layer": "Intelligence", "declaredStatus": "IMPLEMENTING",
+      "capabilities": ["evolution-lifecycle"], "consumers": ["47"],
+      "dependencies": ["47"],
+      "v1Required": false,
+      "v1Justification": "Old MIXED resolved to V2: operational migration paths are already covered in V1 by database migration discipline (Constitution s28) and the phase-contract/verification pipeline (01); the phase's distinctive content — controlled experiments, graduation/deprecation of future capabilities — is evolution machinery whose only registered consumer is 47 (itself deferred). Constitution s8 (self-improvement law) restricts exactly this class of capability. D3 (32/38/47/31) and D14 (32/38 naming) clusters preserved as overlaps.",
+      "bucket": "V2", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/registry.json#phases[32]", "architecture/registry.json#duplications[D3],[D14]", "architecture/COREGRID_PHASE_52_V1_FUTURE_CLASSIFICATION.json#mixedPhaseReasons[32]", "architecture/phase-32-future-evolution.md#32.1 (evolutionary governance layer scope)"]
+    },
+    {
+      "id": "33", "name": "Reality Intelligence Kernel (URIK)", "layer": "Universal", "declaredStatus": "ARCHITECTURE_DEFINED",
+      "capabilities": ["universal-reality-ontology"], "consumers": ["34", "36", "48", "51"],
+      "dependencies": ["48"],
+      "v1Required": true,
+      "v1Justification": "THE V1 core: the universal kernel substrate (cg_entity/cg_relationship/cg_event/cg_observation, deny-by-default RLS, live-verified 11/11) plus kernel/reality.ts typed contracts and the generic domain-runtime manifest (kernel/domain-manifest.ts + cg_domain_runtime with runtime:scholar registered) own the loop's Reality, Observation, Representation, State Change, Evidence-provenance and Memory-substrate nodes. Old MIXED resolved: the substrate IS the V1 capability (prior session's own mixedPhaseReasons[33] says exactly this, with the capability catalog adding 'reclassify branding, keep substrate — do NOT quarantine the tables'); physical-reality observation portions of the blueprint are V2 scope. Registry status conflict (ARCHITECTURE_DEFINED vs derived IMPLEMENTING) preserved as contradiction.",
+      "bucket": "V1", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/registry.json#phases[33]", "architecture/COREGRID_PHASE_52_V1_FUTURE_CLASSIFICATION.json#mixedPhaseReasons[33]", "architecture/coregrid-mvp-architecture/foundation/COREGRID_V1_CAPABILITY_CATALOG.json#futureLeakageFindings[kernel-substrate-branding]", "architecture/COREGRID_ARCHITECTURE_TO_CODE_TRACEABILITY.json#traces[concept=reality-primitives]", "architecture/COREGRID_PHASE_RECONCILIATION_MAP.json#knownContradictions[phase-33]"]
+    },
+    {
+      "id": "34", "name": "Universal Cognitive Intelligence Engine", "layer": "Universal", "declaredStatus": "ARCHITECTURE_DEFINED",
+      "capabilities": ["cognitive-architecture"], "consumers": ["26", "35"],
+      "dependencies": ["18", "26", "33", "36"],
+      "v1Required": false,
+      "v1Justification": "Former FUTURE-UNASSIGNED re-evaluated under RULING-7: the V1 loop's Context and Intelligence nodes are owned by 26 (ai-context, gateway, context assembly) and 18 (decision intelligence); UCIE is the universal cognitive substrate above the kernel ('Perception -> Context -> ...') whose distinctive perception/cognitive-architecture layer no V1 capability requires. Re-classified V2 rather than left unassigned: it is concrete, dependency-anchored expansion architecture (consumes 18/26/33/36), valuable and preserved. Title-only implementation state (no modules/tests) noted as provisional.",
+      "bucket": "V2", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/phase-34-universal-cognitive-intelligence-engine.md#A-phase-identity", "architecture/COREGRID_PHASE_52_V1_FUTURE_CLASSIFICATION.json#needsHumanReview[34..51 title-only]", "architecture/registry.json#phases[34]"]
+    },
+    {
+      "id": "35", "name": "Autonomous Agent Civilization OS", "layer": "Universal", "declaredStatus": "ARCHITECTURE_DEFINED",
+      "capabilities": ["multi-agent-society-governance"], "consumers": ["07"],
+      "dependencies": ["07", "26", "34", "36"],
+      "v1Required": false,
+      "v1Justification": "Former FUTURE-UNASSIGNED re-evaluated: V1's Delegation/Worker Execution nodes are owned by 07 under RULING-3's governed worker chain (Definition -> Delegation -> Mission -> Ephemeral Runtime -> Execution -> Evidence -> Verification -> Outcome -> Terminate) — a single governed worker, not an agent society. Civilization-scale multi-agent coordination is expansion surface anchored to V1 via 07; re-classified V2. D6 (agents cluster) CLOSED with owner 07 confirms no V1 gap here.",
+      "bucket": "V2", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/COREGRID_CTO_DIRECTIVE_RECONCILIATION.json#RULING-3-WORKER-OWNERSHIP", "architecture/registry.json#duplications[D6] (CLOSED, owner 07)", "architecture/phase-35-autonomous-agent-civilization-os.md#1-mission-definition", "architecture/registry.json#phases[35]"]
+    },
+    {
+      "id": "36", "name": "Universal Memory & Knowledge Engine", "layer": "Universal", "declaredStatus": "ARCHITECTURE_DEFINED",
+      "capabilities": ["memory-knowledge-civilization"], "consumers": ["34", "35", "07"],
+      "dependencies": ["33", "48"],
+      "v1Required": true,
+      "v1Justification": "PULLED INTO V1 under RULING-7/8 despite the old MIXED mark: Memory is a mandatory completeness-loop node (Outcome -> Memory -> Observation) and the registry's D1 duplication cluster names 36 as canonical owner of the memory cluster (07/14/26/34/36). Ownership law requires the loop node to have a canonical owner in V1; the implemented in-process agent-memory.ts (07) is explicitly recorded as a GAP with 'persisted practical memory store' missing. V1 scope is the organizational/practical memory tier of the blueprint's memory architecture (personal/organizational/institutional/agent/domain/civilization); the civilization-scale knowledge-evolution tier is V2. This resolves the D1 tension in favor of 36 at classification level — governance ratification of the D1 owner remains recorded in unresolved.",
+      "bucket": "V1", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/registry.json#duplications[D1] (owner 36)", "architecture/COREGRID_PHASE_52_V1_FUTURE_CLASSIFICATION.json#mixedPhaseReasons[36], sectionClassifications.v1RequiredBlocks[09] ('Memory/Context — V1 memory; D1 ownership open')", "architecture/coregrid-mvp-architecture/foundation/COREGRID_V1_CAPABILITY_CATALOG.json#capabilities[area=memory] (GAP, persisted store missing)", "architecture/phase-36-universal-memory-knowledge-civilization-engine.md#3-universal-memory-architecture (tier split)"]
+    },
+    {
+      "id": "37", "name": "Simulation & Future Intelligence Engine", "layer": "Universal", "declaredStatus": "ARCHITECTURE_DEFINED",
+      "capabilities": ["simulation-engine"], "consumers": ["41"],
+      "dependencies": ["41"],
+      "v1Required": false,
+      "v1Justification": "Former FUTURE-V3 re-evaluated under RULING-7 (no V3 bucket): the V1 loop contains no simulation/prediction node — governed rollback and evidence in the live foundation loop do not require a simulation runtime. The engine is concrete, contract-declared expansion architecture (registry capability simulation-engine; consumer 41) — re-classified V2 rather than deferred: it has a real capability contract and a defined consumer.",
+      "bucket": "V2", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/registry.json#phases[37], capabilities[simulation-engine]", "architecture/phase-37-simulation-future-intelligence-engine.md#foundation-layer", "architecture/COREGRID_PHASE_52_V1_FUTURE_CLASSIFICATION.json#phaseClassifications[37]=FUTURE-V3"]
+    },
+    {
+      "id": "38", "name": "Evolution Engine", "layer": "Universal", "declaredStatus": "ARCHITECTURE_DEFINED",
+      "capabilities": [], "consumers": ["47"],
+      "dependencies": ["47"],
+      "v1Required": false,
+      "v1Justification": "Former FUTURE-UNASSIGNED re-evaluated: duplicate of 32's evolution scope (D3 cluster; D14 catalog-module-naming cluster 32/38) and the reconciliation map records that phase 38 has NO unique capability row in the registry — it declares no capability and no modules. Preserved as V2 corpus under 32's ownership; marked duplicateOf 32.",
+      "bucket": "V2", "domainSpecific": false, "duplicateOf": "32",
+      "evidence": ["architecture/COREGRID_PHASE_RECONCILIATION_MAP.json#knownContradictions[phase-38 no unique capability row]", "architecture/registry.json#duplications[D3],[D14]", "architecture/registry.json#phases[38] (modules: [])"]
+    },
+    {
+      "id": "39", "name": "Governance & Alignment Engine", "layer": "Universal", "declaredStatus": "ARCHITECTURE_DEFINED",
+      "capabilities": ["governance-alignment"], "consumers": ["51"],
+      "dependencies": ["47"],
+      "v1Required": false,
+      "v1Justification": "Former MIXED resolved to V2: AI governance FOR V1 workers is mandatory but already owned — 26 (ai-governance module) and 08 (security-agent-controls, 'Phase 08 remains the only authorization authority' per the phase-07 closure note). P39's distinctive universal alignment kernel (civilization-scale governance intelligence) is not structurally necessary for the loop. The prior session's mixedPhaseReasons[39] states the same split; under RULING-7 the universal alignment tier lands in V2, not a V3 bucket.",
+      "bucket": "V2", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/COREGRID_PHASE_52_V1_FUTURE_CLASSIFICATION.json#mixedPhaseReasons[39]", "architecture/registry.json#phases[07] (phase 08 as only authorization authority)", "architecture/registry.json#phases[39]"]
+    },
+    {
+      "id": "40", "name": "Universal Runtime Fabric", "layer": "Universal", "declaredStatus": "ARCHITECTURE_DEFINED",
+      "capabilities": ["universal-runtime-fabric"], "consumers": ["51"],
+      "dependencies": ["31"],
+      "v1Required": false,
+      "v1Justification": "Former MIXED resolved to V2: the V1 domain-runtime installation mechanism is owned by 33 (kernel/domain-manifest.ts + cg_domain_runtime, live-registered runtime:scholar) and the V1 application runtime by 05; P40's runtime GENERATION from first principles is DESIGNED_ONLY under GAP-014 doctrine ('do not build the engines first') — the prior session's own mixedPhaseReasons[40] says the V1 runtime is P05-owned. Runtime genesis remains valuable expansion architecture: V2.",
+      "bucket": "V2", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/COREGRID_PHASE_52_V1_FUTURE_CLASSIFICATION.json#mixedPhaseReasons[40], v1RequiredBlocks[30] GAP-014", "architecture/COREGRID_ARCHITECTURE_OWNERSHIP_MAP.json#owners[concept=runtime-primitives] (owner 05)", "architecture/phase-40-universal-runtime-fabric.md#1-universal-runtime-genesis-kernel", "architecture/registry.json#phases[40]"]
+    },
+    {
+      "id": "41", "name": "Reality Simulation & Autonomous Sandbox Engine", "layer": "Civilization", "declaredStatus": "ARCHITECTURE_DEFINED",
+      "capabilities": ["sandbox-runtime"], "consumers": ["37", "47"],
+      "dependencies": ["37"],
+      "v1Required": false,
+      "v1Justification": "Former FUTURE-V3 re-evaluated under RULING-7: the V1 verify pipeline (01) plus contract/acceptance/proof planes are the V1 validation environment; a reality-simulation laboratory ('runtimes are born, agents are created, systems are attacked safely') is expansion architecture whose consumers (37, 47) are themselves V2. Re-classified V2 — concrete capability contract (sandbox-runtime) with a defined consumer cluster; D5 simulation/sandbox cluster preserved as overlap.",
+      "bucket": "V2", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/phase-41-reality-simulation-autonomous-sandbox-civilization-engine.md (identity section)", "architecture/registry.json#duplications[D5]", "architecture/registry.json#phases[41], capabilities[sandbox-runtime]"]
+    },
+    {
+      "id": "42", "name": "Zero Trust & Adversarial Defense Engine", "layer": "Civilization", "declaredStatus": "ARCHITECTURE_DEFINED",
+      "capabilities": ["zero-trust-adversarial-defense"], "consumers": ["08"],
+      "dependencies": ["09"],
+      "v1Required": false,
+      "v1Justification": "Former MIXED resolved to V2: zero-trust ENFORCEMENT for V1 is mandatory but owned by 08 (fail-closed gateways, RLS deny-by-default under RULING-2) and 09 (evidence-backed trust state machines — the blueprint's own principles 'nothing is trusted, everything is verified, every action creates evidence' are implemented there, with the documented gap that 08 does not yet import the fabric, recorded as IMPLEMENTED_UNWIRED). P42's distinctive adversarial-defense civilization intelligence is not loop-required; its consumer edge from 08 is a declared, unwired civilization-tier edge. V2.",
+      "bucket": "V2", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/COREGRID_PHASE_52_V1_FUTURE_CLASSIFICATION.json#mixedPhaseReasons[42]", "architecture/registry.json#phases[09] (IMPLEMENTED_UNWIRED: Phase 08 does not consume the fabric)", "architecture/phase-42-zero-trust-security-adversarial-defense-civilization-engine.md#1-security-reality-principle", "architecture/registry.json#duplications[D7]"]
+    },
+    {
+      "id": "43", "name": "Universal Interface & Connectivity Intelligence", "layer": "Civilization", "declaredStatus": "ARCHITECTURE_DEFINED",
+      "capabilities": ["universal-interface-connectivity"], "consumers": ["50", "51"],
+      "dependencies": ["10", "29"],
+      "v1Required": false,
+      "v1Justification": "Former MIXED resolved to V2: interface/workspace intelligence for V1 is owned by 06/23/24 (all V1) and connectivity/integration by 29 (V1 adapters); P43's universal connectivity intelligence ('understand and interact with any reality inside or outside the organization') is not loop-required and its consumers (50, 51) are both outside V1. V2.",
+      "bucket": "V2", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/COREGRID_PHASE_52_V1_FUTURE_CLASSIFICATION.json#mixedPhaseReasons[43]", "architecture/phase-43-universal-interface-connectivity-intelligence.md#1-core-purpose", "architecture/registry.json#phases[43]"]
+    },
+    {
+      "id": "44", "name": "Planetary Distributed Infrastructure Engine", "layer": "Civilization", "declaredStatus": "ARCHITECTURE_DEFINED",
+      "capabilities": ["planetary-infrastructure"], "consumers": ["15", "21"],
+      "dependencies": ["15", "20", "21"],
+      "v1Required": false,
+      "v1Justification": "Former FUTURE-V3 re-evaluated under RULING-7: Earth-reality-signal perception ('transforming Earth reality signals into intelligence') has no anchor in the V1 loop — V1 Observation is organizational record/event observation (33/14) and V1 deployment is the 21 serving path, which does not require planetary fabric. Not classified V2 either: the blueprint is civilization-tier research architecture (the doc itself positions 'Phase 45+ Scientific/Economic/Civilization Intelligence' below it) with no capability contract beyond the registry row (tests null, modules []) and no V2 product dependency — deferred corpus material per RULING-7's 'neither V1 nor V2 -> deferred corpus material'. Its declared consumers (15, 21) are civilization-tier declarations that must not gate V1.",
+      "bucket": "DEFERRED_CORPUS", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/phase-44-planetary-distributed-infrastructure-engine.md (identity/architecture-position sections)", "architecture/COREGRID_CTO_DIRECTIVE_RECONCILIATION.json#RULING-7-V1-V2-ONLY", "architecture/registry.json#phases[44] (tests null, modules [])"]
+    },
+    {
+      "id": "45", "name": "AI Compute Civilization Engine", "layer": "Civilization", "declaredStatus": "ARCHITECTURE_DEFINED",
+      "capabilities": ["ai-compute"], "consumers": ["26"],
+      "dependencies": [],
+      "v1Required": false,
+      "v1Justification": "Former FUTURE-UNASSIGNED re-evaluated: the V1 AI gateway (26) is provider-agnostic over external providers via adapters (Constitution s25) — V1 needs provider keys and routing, not a self-optimizing compute civilization ('computational nervous system', per the blueprint explicitly 'not a GPU management layer, not merely inference API'). No loop node requires it; its single consumer edge (26) is a declared civilization-tier edge, not a V1 dependency. Research/civilization-tier corpus material per RULING-7 — deferred corpus rather than V2, since no V2 product surface depends on it either.",
+      "bucket": "DEFERRED_CORPUS", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/phase-45-ai-compute-civilization-engine.md#phase-identity (not GPU management / not inference API)", "AGENTS.md#25-external-providers", "architecture/registry.json#phases[45] (tests null, modules [])"]
+    },
+    {
+      "id": "46", "name": "Universal Digital Twin Civilization Layer", "layer": "Civilization", "declaredStatus": "ARCHITECTURE_DEFINED",
+      "capabilities": ["twin-civilization-federation"], "consumers": ["16"],
+      "dependencies": ["16"],
+      "v1Required": false,
+      "v1Justification": "Former FUTURE-V3 re-evaluated under RULING-7: federation of living digital realities across physical/organizational worlds is expansion surface above the twin layer; the D4 cluster records 16 as twin owner (with 33 owning the V1 representation substrate). Since 16 resolves to V2, 46 is V2 expansion of a V2 layer — marked duplicateOf 16 at cluster level (the twin federation capability has no other consumer).",
+      "bucket": "V2", "domainSpecific": false, "duplicateOf": "16",
+      "evidence": ["architecture/registry.json#duplications[D4] (owner 16)", "architecture/phase-46-universal-digital-twin-civilization-layer.md#phase-identity", "architecture/registry.json#phases[46]"]
+    },
+    {
+      "id": "47", "name": "Autonomous Engineering Self-Improvement Engine", "layer": "Civilization", "declaredStatus": "ARCHITECTURE_DEFINED",
+      "capabilities": ["autonomous-engineering-self-improvement"], "consumers": ["32", "38", "39"],
+      "dependencies": ["07", "32", "38", "41"],
+      "v1Required": false,
+      "v1Justification": "Former FUTURE-UNASSIGNED re-evaluated: Constitution s8 (self-improvement law: AI Improvement != AI Permission Expansion) and s7 (AI sovereignty boundary) govern exactly this capability; V1 engineering quality is enforced by 01's verify pipeline, phase contracts and acceptance probes — human-governed, not self-improving. The engine is valuable future capability: V2, with its governance constraints already encoded in the constitution.",
+      "bucket": "V2", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["AGENTS.md#7-ai-sovereignty-boundary, #8-self-improvement-law", "architecture/phase-47-autonomous-engineering-self-improvement-engine.md#phase-identity", "architecture/registry.json#phases[47]"]
+    },
+    {
+      "id": "48", "name": "Civilization Knowledge Graph", "layer": "Civilization", "declaredStatus": "ARCHITECTURE_DEFINED",
+      "capabilities": ["civilization-knowledge-graph"], "consumers": ["33", "36"],
+      "dependencies": ["33"],
+      "v1Required": false,
+      "v1Justification": "Former FUTURE-UNASSIGNED re-evaluated: the V1 Knowledge Graph duty (Constitution s11 — relationships with provenance, ownership, authorization, confidence) is carried by the 33 kernel substrate (cg_relationship with provenance/temporal validity/classification columns, live-verified). P48's civilization-scale semantic intelligence graph ('understand, connect, reason about every entity, concept, event... in civilization') is expansion. Its consumers 33/36 are both V1, but the dependency direction is 33->48 declared (kernel 'depends' on civilization graph) — a stale civilization-tier edge; the kernel's live implementation proves no such dependency exists in V1. V2.",
+      "bucket": "V2", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/registry.json#phases[33] (cg_relationship provenance/temporal/classification, live 11/11)", "AGENTS.md#11-knowledge-graph-principle", "architecture/phase-48-civilization-knowledge-graph.md#phase-identity", "architecture/registry.json#duplications[D2]"]
+    },
+    {
+      "id": "49", "name": "Autonomous Economy Engine", "layer": "Civilization", "declaredStatus": "ARCHITECTURE_DEFINED",
+      "capabilities": ["autonomous-economy"], "consumers": ["13", "27"],
+      "dependencies": ["13", "27"],
+      "v1Required": false,
+      "v1Justification": "Former FUTURE-UNASSIGNED re-evaluated: the D13 cluster is CLOSED with owner 13 — V1 money movement is the financial ledger; V1 commercial expansion is marketplace (V2). P49's economic intelligence layer ('simulate, coordinate, optimize economic activity across markets and civilizations') is explicitly NOT an accounting/payment system per its own blueprint. Registry note: L1 was WITHDRAWN (document states 7 of 20 sections) — documentation gap recorded. V2.",
+      "bucket": "V2", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/registry.json#duplications[D13] (CLOSED, owner 13)", "architecture/registry.json#phases[49] (L1 withdrawal note)", "architecture/phase-49-autonomous-economy-engine.md#phase-identity"]
+    },
+    {
+      "id": "50", "name": "Human Civilization Interface Layer", "layer": "Civilization", "declaredStatus": "ARCHITECTURE_DEFINED",
+      "capabilities": ["human-civilization-interface"], "consumers": ["06", "24"],
+      "dependencies": ["02", "06", "07", "24", "30", "43"],
+      "v1Required": false,
+      "v1Justification": "Former FUTURE-UNASSIGNED re-evaluated: the V1 human interface is owned by 06 (workspace), 22/23 (clients), 24 (experience) — all V1; P50's universal humanity-intelligence interaction layer (governments, communities, creators collaborating with CoreGrid intelligence) is civilization-tier expansion whose declared consumers (06, 24) do not require it (they are V1 without it). V2. D15 (globalization/interface/human cluster, CLOSED) preserved as overlap.",
+      "bucket": "V2", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/registry.json#duplications[D15] (CLOSED)", "architecture/phase-50-human-civilization-interface-layer.md#phase-identity", "architecture/registry.json#phases[50]"]
+    },
+    {
+      "id": "51", "name": "Universal Reality OS Kernel", "layer": "Civilization", "declaredStatus": "ARCHITECTURE_DEFINED",
+      "capabilities": ["reality-os-kernel-composition"], "consumers": ["all"],
+      "dependencies": ["27", "28", "33", "39", "40", "43"],
+      "v1Required": false,
+      "v1Justification": "Former FUTURE-UNASSIGNED re-evaluated: the V1 kernel is 33 — live substrate, typed contracts, domain-runtime registry, kernel-purity enforcement. P51 is the OS-composition/scale layer above it (its blueprint is substantially a distributed-scale engineering treatise: intelligence architecture + distributed software architecture + physical compute); the naming collision ('Reality OS Kernel' 51 vs 'Reality Intelligence Kernel' 33, and the substrate migration titled 'Phase 33 Universal Reality Intelligence Kernel') is recorded as an overlap/contradiction to rename at reconciliation. No loop node requires OS-kernel composition beyond what 33+05 already own. V2.",
+      "bucket": "V2", "domainSpecific": false, "duplicateOf": null,
+      "evidence": ["architecture/phase-51-universal-reality-operating-system-kernel.md (scaling treatise opening)", "architecture/coregrid-mvp-architecture/foundation/COREGRID_V1_CAPABILITY_CATALOG.json#futureLeakageFindings[kernel-substrate-branding]", "architecture/COREGRID_ARCHITECTURE_TO_CODE_TRACEABILITY.json#traces[concept=reality-primitives] (33 as kernel owner)", "architecture/registry.json#phases[51]"]
+    }
+  ],
+  "duplicates": [
+    {
+      "cluster": "evolution",
+      "duplicate": "38",
+      "canonicalOwner": "32",
+      "basis": "D3/D14 duplication clusters; reconciliation map records phase 38 has no unique capability row in the registry (no capability, no modules); both are V2 — collapse 38 into 32's evolution lifecycle at reconciliation",
+      "evidence": ["architecture/registry.json#duplications[D3],[D14]", "architecture/COREGRID_PHASE_RECONCILIATION_MAP.json#knownContradictions[phase-38]"]
+    },
+    {
+      "cluster": "digital-twin-federation",
+      "duplicate": "46",
+      "canonicalOwner": "16",
+      "basis": "D4 duplication cluster names 16 as twin owner; 46's twin-civilization-federation capability has 16 as its only consumer; both are V2 — fold 46 into the twin expansion surface owned by 16",
+      "evidence": ["architecture/registry.json#duplications[D4]", "architecture/registry.json#capabilities[twin-civilization-federation] consumers [16]"]
+    }
+  ],
+  "overlaps": [
+    {
+      "id": "D1", "cluster": "memory", "phases": ["07", "14", "26", "34", "36"], "registryOwner": "36", "status": "OPEN",
+      "streamFDisposition": "Memory is a mandatory V1 loop node; this stream classifies 36 V1 (organizational/practical memory tier) with 07's in-process agent memory as consumer-adjacent implementation and 14 owning provenance. Governance ratification of 36 as canonical owner required before implementation expansion.",
+      "evidence": ["architecture/registry.json#duplications[D1]", "architecture/COREGRID_ARCHITECTURE_OWNERSHIP_MAP.json#unresolvedOwnershipClusters"]
+    },
+    {
+      "id": "D2", "cluster": "knowledge-graphs", "phases": ["33", "36", "48", "14"], "registryOwner": "33/36/48", "status": "OPEN",
+      "streamFDisposition": "V1 relationship/provenance graph owned by 33 (live substrate); civilization-scale semantic graph (48) and knowledge-evolution tier (36 civilization tier) are V2. V1 requires no new owner decision beyond confirming 33.",
+      "evidence": ["architecture/registry.json#duplications[D2]", "architecture/registry.json#phases[33]"]
+    },
+    {
+      "id": "D3", "cluster": "evolution", "phases": ["32", "38", "47", "31"], "registryOwner": "32", "status": "OPEN",
+      "streamFDisposition": "All four phases classified V2; evolution ownership matters only when the expansion surface unfreezes. 31's enterprise-scale reliability overlaps evolution operations marginally.",
+      "evidence": ["architecture/registry.json#duplications[D3]"]
+    },
+    {
+      "id": "D4", "cluster": "digital-twin", "phases": ["16", "46", "33", "48"], "registryOwner": "16", "status": "OPEN",
+      "streamFDisposition": "V1 representation owned by 33; twin layer 16 V2 (frozen behind contract per capability catalog quarantine candidate); 46 duplicate-of-16 V2. Resolves the prior 'organizational-graph vs device twin split' review: V1 takes 33, V2 takes 16/46.",
+      "evidence": ["architecture/registry.json#duplications[D4]", "architecture/coregrid-mvp-architecture/foundation/COREGRID_V1_CAPABILITY_CATALOG.json#futureLeakageFindings[digital-twin]"]
+    },
+    {
+      "id": "D5", "cluster": "simulation-sandbox", "phases": ["37", "41", "16", "35"], "registryOwner": "37", "status": "OPEN",
+      "streamFDisposition": "All four phases V2 (37/41 simulation-sandbox, 16 twin, 35 agent civilization); no V1 capability touches the cluster.",
+      "evidence": ["architecture/registry.json#duplications[D5]"]
+    },
+    {
+      "id": "D7", "cluster": "security-trust", "phases": ["08", "09", "42", "51"], "registryOwner": "08/09/42", "status": "OPEN",
+      "streamFDisposition": "V1 security/trust owned by 08+09 (both V1, 09 records 'Phase 08 does not consume the fabric' as IMPLEMENTED_UNWIRED); 42/51 V2. Reconciliation duty: wire 08 to consume 09 in V1, or record the fabric as V1 evidence/verification owner without security enforcement duty.",
+      "evidence": ["architecture/registry.json#duplications[D7]", "architecture/registry.json#phases[09] (IMPLEMENTED_UNWIRED finding)"]
+    },
+    {
+      "id": "D13", "cluster": "economy-finance", "phases": ["13", "49", "27"], "registryOwner": "13", "status": "CLOSED",
+      "streamFDisposition": "Confirmed: 13 V1 canonical money owner; 27/49 V2 expansion. No re-opening.",
+      "evidence": ["architecture/registry.json#duplications[D13]"]
+    },
+    {
+      "cluster": "kernel-naming",
+      "phases": ["33", "51"],
+      "registryOwner": null,
+      "status": "OPEN",
+      "streamFDisposition": "Naming/ownership overlap: registry module path kernel/* and the substrate migration are titled 'Phase 33 Universal Reality Intelligence Kernel' while 51 is 'Universal Reality OS Kernel'; capability catalog directs 'reclassify branding, keep substrate'. V1 kernel = 33; 51 = V2 composition layer; rename at reconciliation (STEP 5) to remove the collision.",
+      "evidence": ["architecture/coregrid-mvp-architecture/foundation/COREGRID_V1_CAPABILITY_CATALOG.json#futureLeakageFindings[kernel-substrate-branding]", "architecture/registry.json#phases[51]"]
+    },
+    {
+      "cluster": "runtime-fabric-vs-runtime-primitives",
+      "phases": ["05", "40"],
+      "registryOwner": null,
+      "status": "RESOLVED_IN_FAVOR_OF_05",
+      "streamFDisposition": "V1 application runtime = 05 (domain-neutral runtime modules, platform-neutrality-tested); 40's runtime generation is V2. Overlap recorded so mission planning does not dual-own the runtime.",
+      "evidence": ["architecture/COREGRID_PHASE_52_V1_FUTURE_CLASSIFICATION.json#mixedPhaseReasons[40]", "architecture/registry.json#phases[05]"]
+    },
+    {
+      "cluster": "scholar-era-intelligence-coupling",
+      "phases": ["11", "18", "12", "04"],
+      "registryOwner": null,
+      "status": "OPEN_CONTAMINATION",
+      "streamFDisposition": "Registry consumer edges 11->18 and 11->12 couple domain-neutral analytics/scheduling to Scholar domain intelligence; under RULING-1 these edges are contamination candidates to sever at reconciliation (STEP 1/5), not dependencies to honor in the V1 graph.",
+      "evidence": ["architecture/registry.json#phases[11] consumers [12,18]", "architecture/COREGRID_CTO_DIRECTIVE_RECONCILIATION.json#RULING-1-DOMAIN-NEUTRALITY"]
+    }
+  ],
+  "v3Reclassification": [
+    { "formerClass": "FUTURE-V3", "phaseOrCapability": "37 Simulation & Future Intelligence Engine (simulation-engine)", "newBucket": "V2", "why": "No V3 bucket exists under RULING-7; concrete capability contract with consumer 41, no loop node requires simulation — V2 expansion, not deferred." },
+    { "formerClass": "FUTURE-V3", "phaseOrCapability": "41 Reality Simulation & Autonomous Sandbox Engine (sandbox-runtime)", "newBucket": "V2", "why": "RULING-7; sandbox consumers (37/47) are V2; V1 validation is the 01 verify pipeline + acceptance/proof planes." },
+    { "formerClass": "FUTURE-V3", "phaseOrCapability": "44 Planetary Distributed Infrastructure Engine (planetary-infrastructure)", "newBucket": "DEFERRED_CORPUS", "why": "RULING-7: Earth-signal perception is civilization-tier research architecture with no contract/tests and no V1-or-V2 product dependency; declared consumers 15/21 are stale civilization-tier edges." },
+    { "formerClass": "FUTURE-V3", "phaseOrCapability": "46 Universal Digital Twin Civilization Layer (twin-civilization-federation)", "newBucket": "V2", "why": "RULING-7; twin expansion above 16 (D4 owner), which is itself V2." },
+    { "formerClass": "FUTURE-UNASSIGNED", "phaseOrCapability": "34 Universal Cognitive Intelligence Engine (cognitive-architecture)", "newBucket": "V2", "why": "RULING-7; V1 Context/Intelligence owned by 26/18; UCIE is dependency-anchored expansion above 18/26/33/36." },
+    { "formerClass": "FUTURE-UNASSIGNED", "phaseOrCapability": "35 Autonomous Agent Civilization OS (multi-agent-society-governance)", "newBucket": "V2", "why": "RULING-7; V1 worker chain owned by 07 under RULING-3 (D6 CLOSED); agent-society coordination is expansion." },
+    { "formerClass": "FUTURE-UNASSIGNED", "phaseOrCapability": "38 Evolution Engine (no capability row)", "newBucket": "V2", "why": "RULING-7; duplicate of 32 (D3/D14); preserved under 32's evolution lifecycle." },
+    { "formerClass": "FUTURE-UNASSIGNED", "phaseOrCapability": "45 AI Compute Civilization Engine (ai-compute)", "newBucket": "DEFERRED_CORPUS", "why": "RULING-7; provider-agnostic V1 gateway needs adapters/keys, not a self-optimizing compute civilization; no V1-or-V2 product dependency." },
+    { "formerClass": "FUTURE-UNASSIGNED", "phaseOrCapability": "47 Autonomous Engineering Self-Improvement Engine (autonomous-engineering-self-improvement)", "newBucket": "V2", "why": "RULING-7; constitution-governed future capability (self-improvement law); V1 engineering quality enforced by human-governed 01 pipeline." },
+    { "formerClass": "FUTURE-UNASSIGNED", "phaseOrCapability": "48 Civilization Knowledge Graph (civilization-knowledge-graph)", "newBucket": "V2", "why": "RULING-7; V1 graph duties carried by 33 kernel substrate (cg_relationship with provenance/classification, live-verified)." },
+    { "formerClass": "FUTURE-UNASSIGNED", "phaseOrCapability": "49 Autonomous Economy Engine (autonomous-economy)", "newBucket": "V2", "why": "RULING-7; D13 CLOSED owner 13 for V1 money movement; economic intelligence layer is expansion. Registry L1 withdrawal preserved." },
+    { "formerClass": "FUTURE-UNASSIGNED", "phaseOrCapability": "50 Human Civilization Interface Layer (human-civilization-interface)", "newBucket": "V2", "why": "RULING-7; V1 human interface owned by 06/22/23/24; universal humanity-intelligence layer is expansion (D15 CLOSED)." },
+    { "formerClass": "FUTURE-UNASSIGNED", "phaseOrCapability": "51 Universal Reality OS Kernel (reality-os-kernel-composition)", "newBucket": "V2", "why": "RULING-7; V1 kernel is 33 (live substrate + contracts + runtime registry); 51 is the OS-composition/scale layer above it." }
+  ],
+  "disagreementsWithPriorClassification": [
+    { "phase": "11", "prior": "ACTIVE-V1", "new": "V2", "why": "Scholar domain intelligence; only consumer edges are Scholar-era couplings (12, 18); RULING-1 makes domain intelligence runtime content." },
+    { "phase": "12", "prior": "ACTIVE-V1", "new": "V2", "why": "Domain-neutral engine but no loop node or V1 capability requires scheduling; RULING-6 precedent: runtime-001 consumption does not force V1." },
+    { "phase": "15", "prior": "MIXED", "new": "V2", "why": "RULING-6 quarantine ruling resolves the boundary review at classification level; V1 asset-record residue is kernel entity data (33), not hardware integration." },
+    { "phase": "16", "prior": "MIXED", "new": "V2", "why": "Representation/State Change loop nodes owned by live-verified 33 substrate (single canonical owner); twin machinery frozen behind contract per capability catalog." },
+    { "phase": "20", "prior": "ACTIVE-V1", "new": "V2", "why": "Named education-government vertical; prior session itself listed the vertical's V1 membership as needing human review; RULING-1/8 bar not met." },
+    { "phase": "27", "prior": "MIXED", "new": "V2", "why": "Marketplace ecosystem not structurally necessary; entitlements ownable by 13; GAP-017/018 recorded as V2+ concerns by prior session." },
+    { "phase": "28", "prior": "MIXED", "new": "V2", "why": "External SDK platform blocked (GAP-004); V1 programmability satisfied by governed API contracts." },
+    { "phase": "30", "prior": "ACTIVE-V1", "new": "V2", "why": "No dependency evidence: capability consumers are 04/50, neither a V1-mandatory node." },
+    { "phase": "31", "prior": "ACTIVE-V1", "new": "V2", "why": "Enterprise capacity management is hardening above the V1 operational floor (03/08/21/01/09)." },
+    { "phase": "32", "prior": "MIXED", "new": "V2", "why": "V1 migration discipline owned by database migrations + 01 verification; evolution machinery's only consumer is deferred 47." },
+    { "phase": "33", "prior": "MIXED", "new": "V1 (substrate scoped; physical-reality portions V2)", "why": "Prior session's own mixedPhaseReasons[33] states the substrate IS the V1 capability list; RULING-7 removes the V3 residue reason." },
+    { "phase": "36", "prior": "MIXED", "new": "V1 (practical/organizational memory tier; civilization tier V2)", "why": "Memory is a mandatory loop node and 36 is D1's named owner; capability catalog records the persisted memory store as a V1 GAP needing an owner." },
+    { "phase": "39", "prior": "MIXED", "new": "V2", "why": "V1 AI governance owned by 26 (ai-governance) + 08 (security-agent-controls); universal alignment kernel is civilization-tier." },
+    { "phase": "40", "prior": "MIXED", "new": "V2", "why": "Runtime installation owned by 33 + application runtime by 05; runtime generation is GAP-014 doctrine (do not build engines first)." },
+    { "phase": "42", "prior": "MIXED", "new": "V2", "why": "V1 zero-trust enforcement owned by 08/09 (with the 08-does-not-consume-fabric gap recorded); adversarial-defense civilization intelligence is expansion." },
+    { "phase": "43", "prior": "MIXED", "new": "V2", "why": "Interface intelligence owned by 06/23/24 (V1); connectivity intelligence has no V1 consumer." }
+  ],
+  "contradictions": [
+    "Registry versionClassification still carries the V5.3 boundary string and enum (ACTIVE-V1/MIXED/FUTURE-V2/FUTURE-V3/FUTURE-UNASSIGNED/...) adopted 2026-09-30, which conflicts with CTO RULING-7's V1/V2-only buckets; this artifact re-derives under RULING-7 and the registry enum must be reconciled at STEP 5 without rewriting historical statuses.",
+    "Phase 27 registry status IMPLEMENTED vs derived COMPLETE without an acceptance record (reconciliation map knownContradictions) — status conflict preserved unchanged; bucket decision (V2) is independent of the status conflict.",
+    "Phase 33 registry status ARCHITECTURE_DEFINED vs derived IMPLEMENTING (reconciliation map); the substrate is live-verified (migrations applied, 11/11 live checks) while the phase row says ARCHITECTURE_DEFINED — a registry-truth defect in the row that hosts the V1 kernel.",
+    "Phase 38 has no unique capability row in the registry (no capability, modules []) yet is a registered phase with a blueprint — recorded as duplicate of 32.",
+    "Phase 19 registry note withdraws the L4 claim (no surface imports command modules) while the phase remains the only registered owner of the Outcome->Observation surface — V1 requires the operational surface to be built, not the claim to stand.",
+    "Phase 49 L1 withdrawn (document states 7 of 20 mandatory sections) while L2/L5 stand — documentation gap recorded, classification unaffected.",
+    "Phase 21: registry version_target ACTIVE-V1 while its declared consumer edge points at 44 (planetary infrastructure, here DEFERRED_CORPUS) — civilization-tier dependency edges inside V1-classified rows (also 08->42, 17->16, 26->45, 33->48, 36->48) must not gate V1 mission planning; flagged for dependency-graph cleanup at STEP 5.",
+    "Phase 09 closure records 'Phase 08 does not consume the fabric (zero import sites)' while D7 and both phases' V1 status imply 08 should consume 09 — V1 wiring duty, not a scope dispute.",
+    "Kernel naming collision: registry module path and substrate migration titled 'Phase 33 Universal Reality Intelligence Kernel' vs phase 51 'Universal Reality OS Kernel' — capability catalog directs reclassify-branding; rename belongs to STEP 5 reconciliation.",
+    "Phase 04 sits in the Foundations layer with education-named modules while being, per its own registry note, a domain-runtime manifest instance — layer placement vs RULING-1 domain-neutrality tension to resolve at reconciliation (manifest instance stays; education modules are runtime content)."
+  ],
+  "unresolved": [
+    "Mission ownership: the completeness loop's Mission node has no canonical phase owner (ownership map records concept 'mission' canonicalOwner null; capability catalog CG-GAP-003 'universal mission owner/model decision'); the foundation-loop mission machinery is live-verified but unowned by a phase. Mission planning must not begin until the owner is ratified.",
+    "D1 memory ownership: this stream's V1 classification of 36 rests on D1's owner=36 record; the implemented memory surface is 07's in-process model and the capability catalog lists owner phase-07 for 'memory'. Governance must ratify one canonical owner (36 recommended at classification level) before memory implementation expands.",
+    "Phase 15 code boundary: which implemented hardware-adjacent modules are organizational asset records (kernel entity data, V1) vs device/telemetry code (V2 frozen) — the prior session's UNRESOLVED code-boundary review stands; RULING-6 resolves classification, not the code split.",
+    "Phase 22 mobile V1 basis is doctrinal (prior session block-29 'Web + iOS + Android' v1RequiredBlock; GAP-013), not a registry dependency edge (no V1 phase consumes 22) — confirm mobile client scope at scope lock or re-bucket to V2.",
+    "Phases 34-51 title-only implementation state (no modules, no tests, ARCHITECTURE_DEFINED) makes their V2/DEFERRED_CORPUS buckets provisional by construction; the bucket decisions here are dependency-grounded but the underlying blueprints remain to be section-audited.",
+    "Phase 52 corpus itself is not a registered phase (reconciliation map: DESIGN_CORPUS_NOT_REGISTERED_PHASE); its 313 block occurrences were classified occurrence-level by the prior session and sub-section-level splits (e.g. block-02's 9,804-line V2/V3 environmental split) were never fully read — corpus-level residue for STEP 4 gap discovery.",
+    "GAP-008 Global Shell: V1-shaped capability vs BLOCKED status preserved as a known conflict; affects phases 24/50 experience scope but no bucket decision here depends on it.",
+    "Phase 20 vertical disposition: whether sovereign-deployment isolation patterns should be lifted into V1 platform capabilities (21) before the vertical itself unfreezes — raised by the prior session's needsHumanReview, still open.",
+    "Registry dependency edges are declared, not necessarily wired (multiple civilization-tier edges into/from V1 rows); a dependency-graph cleanup pass (which edges are load-bearing per phase contract) is required before STEP 6 coherent V1 architecture assembly.",
+    "Status histogram conflict: registry vs derived status reconciliation is recorded CONFLICTING in the reconciliation map (COMPLETE 14 vs 15, IMPLEMENTING 17 vs 18, ARCHITECTURE_DEFINED 19 vs 18); this artifact reports the registry histogram only and does not resolve it."
+  ],
+  "bucketCountsFooter": { "V1": 24, "V2": 25, "DEFERRED_CORPUS": 2, "total": 51 },
+  "rule": "Ground every conclusion in registry/blueprint evidence. UNKNOWN and UNRESOLVED are recorded states, not failures. Read-only stream: this file is the only artifact authored."
+}

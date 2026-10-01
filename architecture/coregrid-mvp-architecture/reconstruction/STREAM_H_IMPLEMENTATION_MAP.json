@@ -1,0 +1,687 @@
+{
+  "stream": "H",
+  "streamTitle": "IMPLEMENTATION TRACER — honest forward+backward trace of the existing implementation corpus: what exists, what is verified, what is orphaned",
+  "captured": "2026-10-01",
+  "authority": {
+    "ctoRuling": "V1 is reconstructed from the entire corpus, not from current implementation — but implemented reality must be traced honestly (exists / verified / orphaned). Only V1/V2 buckets exist.",
+    "traceabilityLaw": "Every implemented V1 capability must trace REQUIREMENT -> CAPABILITY -> OWNER -> CONTRACT -> IMPLEMENTATION -> TEST -> EVIDENCE -> VERIFICATION, and backwards CODE -> CAPABILITY -> REQUIREMENT -> AUTHORITY. No orphan code.",
+    "domainNeutralityLaw": "Domain-neutral kernel mandatory (restaurant = fixture, Scholar = domain runtime)."
+  },
+  "method": "READ-ONLY. Ran `npm run verify` once to record the machine baseline. Grouped the 255-entry frontend/src/lib tree into capability families (not per-file enumeration). Cross-referenced architecture/registry.json (phases[].modules/tests, capabilities[]), architecture/COREGRID_ARCHITECTURE_TO_CODE_TRACEABILITY.json, database/supabase/migrations, tests/unit (224 files), tests/integration, tests/e2e, scripts, infrastructure/, .github/workflows. Every claim is grounded in a path. Live-verified means executed against a real Supabase project (tests/integration/foundation-loop.live.test.ts + scripts/exercise-foundation-loop.mjs); in THIS environment live tests SKIP (no FOUNDATION_LOOP_* credentials) — live-verified claims rest on the recorded dev-project runs cited in architecture/coregrid-mvp-architecture/COREGRID_V1_MORNING_REPORT_2026-10-01.md.",
+  "verifyBaseline": {
+    "unitTests": 3458,
+    "typecheck": "PASS",
+    "build": "PASS",
+    "registryValidation": "PASS (phases=51 capabilities=50 duplications=15 runtimes=2)",
+    "secretScan": "PASS",
+    "evidence": "Test Files  224 passed | 1 skipped (225) / Tests  3458 passed | 5 skipped (3463) — the 5 skipped are tests/integration/foundation-loop.live.test.ts (live credentials absent in this VM); REGISTRY VALIDATION PASSED: phases=51 capabilities=50 duplications=15 runtimes=2; SECRET SCAN PASSED — no high-risk secret patterns in tracked files; vite client build `✓ built in 5.36s` + SSR build `✓ built in 4.81s`; tsc --noEmit 0 errors. Verbatim log saved at /opt/cursor/artifacts/stream-h-verify-baseline.log.",
+    "command": "npm run verify"
+  },
+  "implementedCapabilities": [
+    {
+      "capability": "Identity & tenancy substrate",
+      "modules": [
+        "frontend/src/lib/identity.ts",
+        "frontend/src/lib/identity-actor.ts",
+        "frontend/src/lib/identity-credentials.ts",
+        "frontend/src/lib/identity-lifecycle.ts",
+        "frontend/src/lib/identity-registry.ts",
+        "frontend/src/lib/identity-registry.functions.ts",
+        "frontend/src/lib/identity-relationships.ts",
+        "frontend/src/lib/roles.ts",
+        "frontend/src/lib/tenant.ts",
+        "frontend/src/lib/tenant-core.ts",
+        "frontend/src/lib/tenant-registry.ts",
+        "frontend/src/lib/tenant-registry.functions.ts",
+        "frontend/src/lib/tenant-isolation.ts",
+        "frontend/src/lib/tenant-lifecycle.ts",
+        "frontend/src/lib/tenant-quota.ts",
+        "frontend/src/lib/tenant-topology.ts",
+        "frontend/src/middleware.ts"
+      ],
+      "tests": [
+        "tests/unit/identity.test.ts",
+        "tests/unit/identity-actor.test.ts",
+        "tests/unit/identity-registry.test.ts",
+        "tests/unit/tenant.test.ts",
+        "tests/unit/tenant-registry.test.ts",
+        "tests/unit/roles.test.ts",
+        "tests/unit/p08-enforcement-surface.test.ts",
+        "tests/unit/platform-neutrality.test.ts"
+      ],
+      "durableState": [
+        "database/supabase/migrations/20260904020000_coregrid_l2_identity_tenancy.sql (cg_identity, cg_tenant) — header: AUTHORED, NOT APPLIED",
+        "database/supabase/migrations/20260904010000_coregrid_rls_transport_and_grants.sql",
+        "legacy UUID-named migrations (public.schools, public.school_api_keys) — pre-CoreGrid schema"
+      ],
+      "liveVerified": false,
+      "phaseOwner": "02 (identity) / 03 (multi-tenancy)",
+      "trace": "REQUIREMENT: AGENTS.md §13/§15/§17 -> CAPABILITY: registry capabilities universal-identity + tenancy-isolation-rls -> OWNER: phase 02/03 -> CONTRACT: frontend/src/lib/kernel/phase-contracts/phase-02-identity.ts, phase-03-multi-tenancy.ts -> IMPLEMENTATION: modules above -> TEST: suites above -> EVIDENCE: architecture/proofs/phase-02-acceptance.proof.json, phase-03-acceptance.proof.json -> VERIFICATION: scripts/verify-l2-registries.mjs, scripts/verify-tenant-isolation.mjs, scripts/run-rls-isolation-check.mjs",
+      "orphan": false,
+      "orphanReason": null
+    },
+    {
+      "capability": "Universal kernel substrate (reality primitives + domain-runtime manifest)",
+      "modules": [
+        "frontend/src/lib/kernel/reality.ts",
+        "frontend/src/lib/kernel/domain-manifest.ts",
+        "frontend/src/lib/kernel/outbox.ts",
+        "frontend/src/lib/kernel/runtime-registry.ts",
+        "frontend/src/lib/kernel/capability-registry.ts",
+        "frontend/src/lib/kernel/phase-contract.ts",
+        "frontend/src/lib/kernel/phase-contracts/ (all 51 phases declared machine-checkably)",
+        "frontend/src/lib/kernel-reality.functions.ts",
+        "frontend/src/lib/kernel-admin-client.ts"
+      ],
+      "tests": [
+        "tests/unit/kernel-reality.test.ts",
+        "tests/unit/kernel-domain-manifest.test.ts",
+        "tests/unit/kernel-outbox.test.ts",
+        "tests/unit/kernel-runtime-registry.test.ts",
+        "tests/unit/kernel-capability-registry.test.ts",
+        "tests/unit/kernel-phase-contract.test.ts",
+        "tests/unit/kernel-contract-coverage.test.ts",
+        "tests/unit/kernel-purity.test.ts (mechanical Scholar-Independence + Runtime-Installation guards: 33 education terms banned from kernel sources)"
+      ],
+      "durableState": [
+        "database/supabase/migrations/20260903000000_coregrid_universal_kernel_substrate.sql (cg_entity, cg_relationship, cg_event, cg_observation, cg_domain_runtime) — AUTHORED, NOT APPLIED"
+      ],
+      "liveVerified": false,
+      "phaseOwner": "33 (Reality Intelligence Kernel / URIK); phase-contract layer owned by phase 01 Foundation per registry notes",
+      "orphan": false,
+      "orphanReason": null
+    },
+    {
+      "capability": "Authorization & security engine",
+      "modules": [
+        "frontend/src/lib/authorization.ts (RBAC+ABAC+ReBAC+PBAC -> ALLOW|DENY|REDACT|ESCALATE|REQUIRE_APPROVAL)",
+        "frontend/src/lib/capability-gate.ts",
+        "frontend/src/lib/security-core.ts",
+        "frontend/src/lib/security-policy.ts",
+        "frontend/src/lib/security-session.ts",
+        "frontend/src/lib/security-events.ts",
+        "frontend/src/lib/security-risk.ts",
+        "frontend/src/lib/security-role-gate.ts",
+        "frontend/src/lib/security-agent-controls.ts",
+        "frontend/src/lib/trust-core.ts",
+        "frontend/src/lib/trust-assertions.ts",
+        "frontend/src/lib/trust-entities.ts",
+        "frontend/src/lib/trust-governance.ts",
+        "frontend/src/lib/trust-fabric-report.ts"
+      ],
+      "tests": [
+        "tests/unit/capability-gate.test.ts",
+        "tests/unit/security-core.test.ts",
+        "tests/unit/security-policy.test.ts",
+        "tests/unit/security-session.test.ts",
+        "tests/unit/security-events.test.ts",
+        "tests/unit/security-risk.test.ts",
+        "tests/unit/security-role-gate.test.ts",
+        "tests/unit/security-agent-controls.test.ts",
+        "tests/unit/trust-core.test.ts",
+        "tests/unit/trust-assertions.test.ts",
+        "tests/unit/trust-entities.test.ts",
+        "tests/unit/trust-governance.test.ts",
+        "tests/unit/trust-fabric-report.test.ts",
+        "tests/unit/p08-enforcement-surface.test.ts"
+      ],
+      "durableState": [],
+      "liveVerified": false,
+      "phaseOwner": "08 (security engine) / 09 (trust fabric); authorization.ts itself has NO registry phase owner (see orphans/unverified)",
+      "orphan": false,
+      "orphanReason": null
+    },
+    {
+      "capability": "Workspace engine",
+      "modules": [
+        "frontend/src/lib/workspace-core.ts",
+        "frontend/src/lib/workspace-composition.ts",
+        "frontend/src/lib/workspace-membership.ts",
+        "frontend/src/lib/workspace-governance.ts",
+        "frontend/src/lib/workspace-projection.ts",
+        "frontend/src/lib/workspace-engine/navigation.ts",
+        "frontend/src/lib/workspace-engine/views.ts"
+      ],
+      "tests": [
+        "tests/unit/workspace.test.ts",
+        "tests/unit/workspace-projection.test.ts",
+        "tests/unit/workspace-navigation.test.ts",
+        "tests/unit/workspace-views.test.ts",
+        "tests/unit/workspace-experience.test.ts"
+      ],
+      "durableState": [
+        "database/supabase/migrations/20260930000000_coregrid_v1_workspace_persistence.sql (cg_workspace, cg_workspace_member; RLS enabled, zero policies = deny by default) — AUTHORED, NOT APPLIED"
+      ],
+      "liveVerified": false,
+      "phaseOwner": "06",
+      "orphan": false,
+      "orphanReason": null
+    },
+    {
+      "capability": "Universal organization model (V1, MISSION-V1-006)",
+      "modules": [
+        "frontend/src/lib/org-model.ts (domain-neutral org-unit tree + memberships; docblock explicitly bans school vocabulary)",
+        "frontend/src/lib/org-profile.functions.ts"
+      ],
+      "tests": [
+        "tests/unit/org-model.test.ts"
+      ],
+      "durableState": [
+        "database/supabase/migrations/20261001000000_coregrid_v1_org_model.sql (cg_org_unit, cg_org_membership) — AUTHORED, NOT APPLIED",
+        "database/supabase/migrations/20260907000700_coregrid_org_profile_substrate.sql (cg_org_profile)",
+        "database/supabase/rollbacks/20261001000000_coregrid_v1_org_model.sql"
+      ],
+      "liveVerified": false,
+      "phaseOwner": null,
+      "traceNote": "Owned by V1 mission MISSION-V1-006 (V5.3 Part 7.2/46), not by a registry phase — mission-owned capability outside the 51-phase ownership graph; recorded in registry runtimes/versionClassification only indirectly. Backward trace CODE -> MISSION holds; CODE -> PHASE does not exist by design.",
+      "orphan": false,
+      "orphanReason": null
+    },
+    {
+      "capability": "Foundation mission loop (governed execution: mission -> admitted action -> state change -> evidence -> verification, idempotent replay)",
+      "modules": [
+        "frontend/src/lib/control-plane/foundation-mission.ts (pure admit/verify engine)",
+        "frontend/src/lib/control-plane/foundation-loop.ts (pure plan; caller cannot supply tenant or verification decision)",
+        "frontend/src/lib/foundation-loop.functions.ts (server functions)",
+        "frontend/src/lib/foundation-mission.ts",
+        "frontend/src/lib/foundation-standards.ts",
+        "scripts/exercise-foundation-loop.mjs (live battery; redacts secrets in output)"
+      ],
+      "tests": [
+        "tests/unit/foundation-loop.test.ts",
+        "tests/unit/foundation-mission.test.ts",
+        "tests/unit/foundation.test.ts",
+        "tests/unit/foundation-standards.test.ts",
+        "tests/unit/foundation-persistence.test.ts",
+        "tests/integration/foundation-loop.live.test.ts (LIVE battery — 5/5 passed on dev project per COREGRID_V1_MORNING_REPORT_2026-10-01.md; SKIP-when-uncredentialed)"
+      ],
+      "durableState": [
+        "database/supabase/migrations/20260929000000_coregrid_foundation_mission_001.sql (cg_mission_intent, cg_execution_record, cg_execution_history, cg_foundation_evidence, cg_verification_result, cg_conformance_assessment) — repo posture AUTHORED, NOT APPLIED; applied only to disposable dev project by the live battery",
+        "database/supabase/rollbacks/20260929000000_coregrid_foundation_mission_001.sql"
+      ],
+      "liveVerified": true,
+      "phaseOwner": null,
+      "traceNote": "Owned by control-plane mechanisms 04/06/08/09/10 (CONTROL-PLANE-04/06/08/09/10) + COREGRID_FOUNDATION_MISSION_001; the only capability in the repo with end-to-end LIVE execution evidence (idempotent replay: second call returned replayed=true with same executionId).",
+      "orphan": false,
+      "orphanReason": null
+    },
+    {
+      "capability": "Evidence & verification fabric (tooling)",
+      "modules": [
+        "scripts/verification/registry-validate.mjs",
+        "scripts/verification/secret-scan.mjs",
+        "scripts/verification/engineering-sections.mjs",
+        "scripts/verify-l2-registries.mjs",
+        "scripts/verify-kernel-wiring.mjs",
+        "scripts/verify-workforce-substrate.mjs",
+        "scripts/verify-role-assignment-substrate.mjs",
+        "scripts/verify-tenant-isolation.mjs",
+        "scripts/run-rls-isolation-check.mjs",
+        "scripts/audit-phase-acceptance.mjs",
+        "scripts/audit-acceptance-coverage.mjs",
+        "scripts/audit-phase-completion.mjs",
+        "scripts/probe-foundation-database.mjs",
+        "architecture/proofs/ (30 *.proof.json)",
+        "architecture/phase-acceptance/ (51 phase-*.json)"
+      ],
+      "tests": [
+        "tests/unit/foundation-observability.test.ts",
+        "tests/unit/foundation-error-architecture.test.ts",
+        "tests/unit/foundation-limits-map.test.ts",
+        "tests/unit/phase-acceptance-audit.test.ts",
+        "tests/unit/phase-acceptance-probes.test.ts",
+        "tests/unit/phase-completion-audit.test.ts"
+      ],
+      "durableState": [],
+      "liveVerified": true,
+      "phaseOwner": "01 (verification contracts); control-plane mechanisms 04/09/10",
+      "orphan": false,
+      "orphanReason": null
+    },
+    {
+      "capability": "AI gateway, metering, context assembly & agent runtime",
+      "modules": [
+        "frontend/src/lib/ai-gateway.server.ts (centralized gateway: authz, budget pre-check, rate limit, metering, secret-free logging; BLK-2 fail-closed on missing key)",
+        "frontend/src/lib/metering/usage-ledger.ts (attribution-complete, pure)",
+        "frontend/src/lib/context-assembly.ts (MISSION-V1-010; never grants authority; UNTRUSTED wrapping; auditable drops)",
+        "frontend/src/lib/ai-core.ts",
+        "frontend/src/lib/ai-context.ts",
+        "frontend/src/lib/ai-governance.ts",
+        "frontend/src/lib/ai-reasoning.ts",
+        "frontend/src/lib/ai-services.ts",
+        "frontend/src/lib/agent-core.ts",
+        "frontend/src/lib/agent-memory.ts",
+        "frontend/src/lib/agent-tasks.ts",
+        "frontend/src/lib/agent-plans.ts",
+        "frontend/src/lib/agent-governance-report.ts",
+        "frontend/src/lib/agent-runtime/mission-runner.ts (MISSION-V1-009; PLANS ONLY — execution stays with foundation loop)",
+        "frontend/src/lib/agent-runtime/ephemeral-lifecycle.ts",
+        "frontend/src/lib/jarvis/jarvis-contract.ts (Part 15 executive-orchestrator boundary, every MUST-NOT an enforced deny)",
+        "frontend/src/lib/jarvis/briefing.ts",
+        "frontend/src/lib/jarvis/escalation.ts"
+      ],
+      "tests": [
+        "tests/unit/ai-gateway.test.ts",
+        "tests/unit/ai-gateway-adoption-expense-insights.test.ts",
+        "tests/unit/ai-gateway-adoption-lesson-plan.test.ts",
+        "tests/unit/ai-gateway-adoption-timetable.test.ts (gateway-centralization is mechanically enforced: no @ai-sdk/createOpenAICompatible import exists outside ai-gateway*)",
+        "tests/unit/context-assembly.test.ts",
+        "tests/unit/metering-usage-ledger.test.ts",
+        "tests/unit/ai.test.ts",
+        "tests/unit/agent-core.test.ts",
+        "tests/unit/agent-memory.test.ts",
+        "tests/unit/agent-tasks.test.ts",
+        "tests/unit/agent-plans.test.ts",
+        "tests/unit/agent-governance-report.test.ts",
+        "tests/unit/agent-runtime-mission-runner.test.ts",
+        "tests/unit/agent-runtime-lifecycle.test.ts",
+        "tests/unit/jarvis-contract.test.ts",
+        "tests/unit/jarvis-briefing.test.ts",
+        "tests/unit/jarvis-escalation.test.ts",
+        "tests/unit/scholar-ai-contracts.test.ts",
+        "tests/unit/scholar-ai-operations.test.ts"
+      ],
+      "durableState": [
+        "legacy migrations only: 20260729054314_*.sql (ai_conversations, ai_interaction_log, study_sessions) — pre-CoreGrid schema, no V1 substrate table for AI operations"
+      ],
+      "liveVerified": false,
+      "phaseOwner": "26 (AI intelligence layer) / 07 (agent system); V1 pieces mission-owned (MISSION-V1-009/010); jarvis Part 15",
+      "traceNote": "BLK-2 (no AI provider key) means zero live model calls have ever been made — gateway verified at contract level only.",
+      "orphan": false,
+      "orphanReason": null
+    },
+    {
+      "capability": "Workflow & automation engine",
+      "modules": [
+        "frontend/src/lib/workflow/workflow-contract.ts",
+        "frontend/src/lib/workflow/workflow-engine.ts (MISSION-V1-008; pure in-memory evaluator; UNKNOWN never TRUE; approval steps require human approval record; generalizes — does not rebuild — the live-tested foundation loop)",
+        "frontend/src/lib/automation-core.ts",
+        "frontend/src/lib/automation-workflow.ts",
+        "frontend/src/lib/automation-actions.ts",
+        "frontend/src/lib/automation-governance.ts"
+      ],
+      "tests": [
+        "tests/unit/workflow-contract.test.ts",
+        "tests/unit/workflow-engine.test.ts",
+        "tests/unit/automation-core.test.ts",
+        "tests/unit/automation-workflow.test.ts",
+        "tests/unit/automation-actions.test.ts",
+        "tests/unit/automation-governance.test.ts"
+      ],
+      "durableState": [],
+      "liveVerified": false,
+      "phaseOwner": "17",
+      "orphan": false,
+      "orphanReason": null
+    },
+    {
+      "capability": "Financial system & payments",
+      "modules": [
+        "frontend/src/lib/financial-core.ts",
+        "frontend/src/lib/financial-payments.ts",
+        "frontend/src/lib/financial-settlements.ts",
+        "frontend/src/lib/financial-controls.ts",
+        "frontend/src/lib/financial-splits.ts",
+        "frontend/src/lib/financial-routing.ts",
+        "frontend/src/lib/financial-journal.ts",
+        "frontend/src/lib/financial-tax.ts",
+        "frontend/src/lib/financial-intelligence-report.ts",
+        "frontend/src/lib/payments/payment-contract.ts (MISSION-V1-012; provider-agnostic; BLK-4 blocks live calls)",
+        "frontend/src/lib/payments/paystack-adapter.ts",
+        "frontend/src/lib/payments/stripe-adapter.ts",
+        "frontend/src/lib/payments/replay-guard.ts",
+        "frontend/src/lib/paystack.functions.ts (legacy server fn, initFeePayment)",
+        "frontend/src/lib/paystack-inline.ts (legacy checkout modal helper)",
+        "frontend/src/lib/expense-insights.functions.ts"
+      ],
+      "tests": [
+        "tests/unit/financial-core.test.ts",
+        "tests/unit/financial-payments.test.ts",
+        "tests/unit/financial-settlements.test.ts",
+        "tests/unit/financial-controls.test.ts",
+        "tests/unit/financial-splits.test.ts",
+        "tests/unit/financial-routing.test.ts",
+        "tests/unit/financial-journal.test.ts",
+        "tests/unit/financial-tax.test.ts",
+        "tests/unit/financial-intelligence-report.test.ts",
+        "tests/unit/payments-contract.test.ts",
+        "tests/unit/payments-paystack-adapter.test.ts",
+        "tests/unit/payments-stripe-adapter.test.ts",
+        "tests/unit/payments-replay-guard.test.ts"
+      ],
+      "durableState": [
+        "legacy migrations only: public.student_platform_fee_ledger (20260726085612), public.school_expenses / school_expense_budgets (20260626150625) — no V1 payment substrate table"
+      ],
+      "liveVerified": false,
+      "phaseOwner": "13 (financial ledger); V1 payment contract mission-owned (MISSION-V1-012)",
+      "traceNote": "BLK-4: no live payment has ever been processed; webhook source-of-truth posture stated in paystack-inline.ts is legacy-app, not V1 contract.",
+      "orphan": false,
+      "orphanReason": null
+    },
+    {
+      "capability": "Communication & notifications",
+      "modules": [
+        "frontend/src/lib/communication-core.ts",
+        "frontend/src/lib/communication-conversation.ts",
+        "frontend/src/lib/communication-channels.ts",
+        "frontend/src/lib/communication-templates.ts",
+        "frontend/src/lib/communication-providers.ts",
+        "frontend/src/lib/communication-steward.ts",
+        "frontend/src/lib/communication-steward-report.ts",
+        "frontend/src/lib/notifications/notification-contract.ts (Part 20; fail-closed state machine; 'delivered' only reachable via provider receipt)",
+        "frontend/src/lib/notifications/dispatch-planner.ts",
+        "frontend/src/lib/notifications/email-adapter-contract.ts (record-only adapter; BLK-5 hold, never pretends delivery)",
+        "frontend/src/lib/notifications-fanout.functions.ts",
+        "frontend/src/lib/notification-digest.functions.ts",
+        "frontend/src/lib/messages-broadcast.functions.ts",
+        "frontend/src/lib/messages-unread.ts",
+        "frontend/src/lib/news-reads.ts",
+        "frontend/src/lib/push.functions.ts",
+        "frontend/src/lib/push.server.ts",
+        "frontend/src/lib/push-client.ts"
+      ],
+      "tests": [
+        "tests/unit/communication-core.test.ts",
+        "tests/unit/communication-conversation.test.ts",
+        "tests/unit/communication-channels.test.ts",
+        "tests/unit/communication-templates.test.ts",
+        "tests/unit/communication-providers.test.ts",
+        "tests/unit/communication-steward.test.ts",
+        "tests/unit/communication-steward-report.test.ts",
+        "tests/unit/notifications-contract.test.ts",
+        "tests/unit/notifications-dispatch-planner.test.ts",
+        "tests/unit/notifications-email-adapter.test.ts"
+      ],
+      "durableState": [
+        "legacy migration only: public.notification_preferences (20260623054451)"
+      ],
+      "liveVerified": false,
+      "phaseOwner": "10 (communication platform); V1 notifications work package Part 20",
+      "traceNote": "Push/digest/broadcast/unread helpers (push.*, notification-digest, messages-*, news-reads) have NO dedicated unit tests — see unverifiedImplementations.",
+      "orphan": false,
+      "orphanReason": null
+    },
+    {
+      "capability": "Files / document plane",
+      "modules": [
+        "frontend/src/lib/files/file-contract.ts (MISSION-V1-012 files; every non-allow path DENY)",
+        "frontend/src/lib/files/access-policy.ts",
+        "frontend/src/lib/files/storage-adapter.server.ts"
+      ],
+      "tests": [
+        "tests/unit/files-contract.test.ts",
+        "tests/unit/files-access-policy.test.ts",
+        "tests/unit/files-storage-adapter.test.ts"
+      ],
+      "durableState": [
+        "none — storage-adapter path convention + Supabase Storage; no V1 file substrate migration"
+      ],
+      "liveVerified": false,
+      "phaseOwner": null,
+      "traceNote": "Mission-owned (MISSION-V1-012 files work package); traceability doc classifies evidence-fabric closure as FILE_PLANE_ONLY.",
+      "orphan": false,
+      "orphanReason": null
+    },
+    {
+      "capability": "Observability & error capture",
+      "modules": [
+        "frontend/src/lib/observability/health.ts (fixed-whitelist health report, fail-closed)",
+        "frontend/src/lib/observability/structured-log.ts (secret-redacting JSON-line logger)",
+        "frontend/src/lib/platform-observability.ts",
+        "frontend/src/lib/runtime-observability.ts",
+        "frontend/src/lib/error-capture.ts",
+        "frontend/src/lib/platform-error-reporting.ts"
+      ],
+      "tests": [
+        "tests/unit/observability-health.test.ts",
+        "tests/unit/observability-structured-log.test.ts",
+        "tests/unit/foundation-observability.test.ts",
+        "tests/unit/foundation-error-architecture.test.ts"
+      ],
+      "durableState": [],
+      "liveVerified": true,
+      "phaseOwner": "01 (acceptance probe classified observability + error capture ENFORCED); Part 30",
+      "traceNote": "Deployment health endpoint verified live (health.json 200, runtime boot) per COREGRID_V1_MORNING_REPORT_2026-10-01.md mission M-14.",
+      "orphan": false,
+      "orphanReason": null
+    },
+    {
+      "capability": "Onboarding, workforce & institution substrate",
+      "modules": [
+        "frontend/src/lib/institution-core.ts",
+        "frontend/src/lib/institution-admin.ts",
+        "frontend/src/lib/workforce-core.ts",
+        "frontend/src/lib/workforce-kinds.ts",
+        "frontend/src/lib/workforce-positions.ts",
+        "frontend/src/lib/workforce-positions.functions.ts",
+        "frontend/src/lib/onboarding-core.ts",
+        "frontend/src/lib/onboarding/onboarding-flow.ts",
+        "frontend/src/lib/onboarding/invitations.ts",
+        "frontend/src/lib/onboarding/template-engine.ts",
+        "frontend/src/lib/onboarding/workforce-lifecycle.ts",
+        "frontend/src/lib/attendance-identity.ts",
+        "frontend/src/lib/staff-accounts.functions.ts"
+      ],
+      "tests": [
+        "tests/unit/institution.test.ts",
+        "tests/unit/workforce-kinds.test.ts",
+        "tests/unit/workforce-positions.test.ts",
+        "tests/unit/workforce-lifecycle.test.ts",
+        "tests/unit/onboarding-flow.test.ts",
+        "tests/unit/onboarding-invitations.test.ts",
+        "tests/unit/role-substrate-proof.test.ts"
+      ],
+      "durableState": [
+        "database/supabase/migrations/20260907000000_coregrid_workforce_kind_substrate.sql (cg_workforce_kind, cg_workforce_position)",
+        "database/supabase/migrations/20260907000800_coregrid_role_assignment_substrate.sql (cg_role_assignment, cg_role_grant)",
+        "database/supabase/migrations/20260907000300_coregrid_workforce_position_rpc.sql",
+        "database/supabase/migrations/20260907000400_coregrid_self_primary_position_rpc.sql",
+        "database/supabase/migrations/20260907000500_coregrid_end_position_promotion.sql",
+        "database/supabase/migrations/20260907000600_runtime_scholar_workforce_ecosystem_extension.sql"
+      ],
+      "liveVerified": false,
+      "phaseOwner": "25; workforce/role substrate verified by scripts/verify-workforce-substrate.mjs + scripts/verify-role-assignment-substrate.mjs with architecture/proofs/role-assignment-substrate.proof.json",
+      "orphan": false,
+      "orphanReason": null
+    },
+    {
+      "capability": "Scholar domain runtime (education vertical — the FIRST runtime, not the platform)",
+      "modules": [
+        "frontend/src/lib/scholar/ (~90 files: blueprint, curriculum-*, assessment-model, attendance-model, examination, fee-lifecycle, welfare, safeguarding, config-governance, reality-graph, ...)",
+        "frontend/src/lib/runtime/scholar.ts (runtime registration)",
+        "frontend/src/lib/runtime/scholar-*.ts (17 runtime bindings: reality, events, consumption, curriculum-gating, fee-lifecycle, workforce, nav catalogs, vertical-bindings, ai-operations, automation-policy, facility-twin, school-templates)",
+        "frontend/src/lib/academic-*.ts (7 files)",
+        "frontend/src/lib/education-*.ts (7 files)",
+        "frontend/src/lib/scheduling-*.ts (6 files)",
+        "frontend/src/lib/scholar-foundation-loop.functions.ts (proves a Scholar entity can be recorded THROUGH the universal substrate — live-tested)",
+        "frontend/src/lib/scholar-feature-access.functions.ts",
+        "frontend/src/lib/scholar-institution-config.functions.ts",
+        "frontend/src/lib/scholar-role-assignments.functions.ts",
+        "frontend/src/lib/school-settings.functions.ts",
+        "frontend/src/lib/teachers.functions.ts",
+        "frontend/src/lib/timetable.functions.ts",
+        "frontend/src/lib/lesson-plan-ai.functions.ts",
+        "frontend/src/lib/attendance.functions.ts",
+        "frontend/src/lib/bus-tracking.functions.ts",
+        "frontend/src/lib/driver-portal.functions.ts",
+        "frontend/src/lib/class-levels.ts",
+        "frontend/src/lib/facilities.functions.ts",
+        "frontend/src/lib/domain-config/domain-definition.ts + domain-config/restaurant.ts (the mandated SECOND domain proving the substrate is domain-neutral — restaurant exists purely as DomainDefinition configuration)"
+      ],
+      "tests": [
+        "tests/unit/scholar-*.test.ts (~50 files)",
+        "tests/unit/academic-*.test.ts (6)",
+        "tests/unit/education*.test.ts (2)",
+        "tests/unit/scheduling-*.test.ts (6)",
+        "tests/unit/domain-config-definition.test.ts",
+        "tests/unit/domain-config-restaurant.test.ts",
+        "tests/unit/runtime-scholar-events.test.ts",
+        "tests/unit/runtime-scholar-reality.test.ts",
+        "tests/unit/school-templates.test.ts",
+        "tests/integration/foundation-loop.live.test.ts (2nd live case records a Scholar entity through the universal substrate)"
+      ],
+      "durableState": [
+        "legacy Scholar schema in UUID-named migrations (public.schools, school_staff, staff_payroll, staff_leave, hostel_*, library_*, discipline_records, clinic_visits, school_sports, school_meals, school_transport, transport_buses, school_geofence, teacher_biometrics, admission_applications, school_gallery, school_ad_campaigns, ...) — pre-CoreGrid domain tables, NOT cg_* substrate"
+      ],
+      "liveVerified": true,
+      "phaseOwner": "04 (education reality engine) / 11 (academic intelligence) / 12 (scheduling); runtime-001 in registry runtimes",
+      "orphan": false,
+      "orphanReason": null
+    },
+    {
+      "capability": "Long-tail phase engines (registry phases 14–32, status IMPLEMENTING/IMPLEMENTED)",
+      "modules": [
+        "frontend/src/lib/data-*.ts (14)",
+        "frontend/src/lib/hardware-*.ts (15)",
+        "frontend/src/lib/twin-*.ts (16)",
+        "frontend/src/lib/analytics-*.ts (18)",
+        "frontend/src/lib/command-*.ts (19)",
+        "frontend/src/lib/government-*.ts (20)",
+        "frontend/src/lib/cloud-*.ts (21)",
+        "frontend/src/lib/platform-*.ts + client-platform.ts + use-client-platform.ts (22)",
+        "frontend/src/lib/web-*.ts (23)",
+        "frontend/src/lib/experience-*.ts + experience/ (24)",
+        "frontend/src/lib/marketplace-*.ts (27)",
+        "frontend/src/lib/dev-*.ts (28)",
+        "frontend/src/lib/integration-*.ts (29)",
+        "frontend/src/lib/globalization-*.ts + locale.ts + localization-content.ts + regional-context.ts + global-formats.ts (30)",
+        "frontend/src/lib/enterprise-*.ts (31)",
+        "frontend/src/lib/evolution-*.ts (32)"
+      ],
+      "tests": [
+        "one dedicated suite per module in tests/unit/ (data-core, hardware-core, twin-core, analytics-core, command-core, government-core, cloud-core, platform-core, web-core, experience, marketplace, dev-platform, integration, globalization, enterprise-scale, evolution) — registry attributes 43..128 tests per phase"
+      ],
+      "durableState": [],
+      "liveVerified": false,
+      "phaseOwner": "14–32 respectively (see architecture/registry.json phases[].modules)",
+      "traceNote": "Implemented as typed pure domain modules with unit suites + phase-acceptance probes; registry versionClassification marks device/telemetry scope of phase 15 as V2-FROZEN (MIXED) — see contradictions.",
+      "orphan": false,
+      "orphanReason": null
+    },
+    {
+      "capability": "Foundation, CI/CD & deployment path",
+      "modules": [
+        "Dockerfile (multi-stage, non-root, healthcheck)",
+        ".github/workflows/verify.yml (PR gate: typecheck+tests+build)",
+        ".github/workflows/release.yml (MISSION-V1-017; tag build, human-gated 'production' environment, SHA-pinned actions, fails closed without BLK-3 credentials)",
+        ".github/workflows/infrastructure-verify.yml + infrastructure-plan-apply.yml",
+        "infrastructure/ (V1 deployment path; scripts/infrastructure/preflight.mjs + bootstrap.mjs)",
+        "scripts/lib/pg-ssl.mjs (TLS fail-closed DB tooling)",
+        "scripts/db-apply.mjs / db-apply-one.mjs / db-run.mjs / db-apply-mgmt.mjs / db-run-mgmt.mjs",
+        "playwright.config.ts + tests/e2e/ (5 specs)"
+      ],
+      "tests": [
+        "tests/unit/foundation.test.ts (15 incl. registry + secrets contracts)",
+        "tests/unit/foundation-standards.test.ts",
+        "tests/unit/infrastructure-fabric.test.ts",
+        "tests/unit/infrastructure-readiness.test.ts",
+        "tests/unit/db-tooling-coherence.test.ts",
+        "tests/unit/env.test.ts",
+        "tests/e2e/*.spec.ts"
+      ],
+      "durableState": [],
+      "liveVerified": true,
+      "phaseOwner": "01",
+      "traceNote": "Live-verified: TLS probes + connectivity evidence (M-01) and runtime boot health.json 200 (M-14). Docker image build UNKNOWN (docker absent on VM — honestly recorded, not fabricated).",
+      "orphan": false,
+      "orphanReason": null
+    }
+  ],
+  "orphans": [
+    "frontend/src/lib/audit.ts — universal-root audit helper typed on schoolId ('AuditParams.schoolId'), no registry phase owner, no dedicated test file; predates the CoreGrid cg_* substrate and violates the domain-neutral vocabulary it sits among. Backward trace terminates in the legacy Scholar app, not in any architecture artifact.",
+    "frontend/src/lib/subscription-tiers.ts — platform billing vocabulary hard-wired to legacy Scholar schema ('schools.active_features', 'school.subscription_tier'); no phase owner, no contract; superseded conceptually by financial-* (phase 13) and payments/ (MISSION-V1-012) but never reconciled.",
+    "frontend/src/lib/geofence.ts — generic haversine math + device fingerprinting persisted under legacy storage key 'vibeora_device_id' (pre-CoreGrid product name); serves only teacher_biometrics/school_geofence features; no phase contract, no dedicated test.",
+    "frontend/src/lib/messages-unread.ts, frontend/src/lib/news-reads.ts — legacy Scholar UI helpers (table-backed by public.news_reads, 20260626111823) with no registry module, no phase, no dedicated tests.",
+    "frontend/src/lib/kbd.ts, frontend/src/lib/utils.ts, frontend/src/lib/theme.ts, frontend/src/lib/locale.ts (locale CONTENT is phase 30, the helper is plumbing), frontend/src/lib/error-page.ts, frontend/src/lib/validation.ts, frontend/src/lib/env.ts, frontend/src/lib/phase-catalog.ts — frontend plumbing/config with no architectural owner; benign (UI infrastructure, not capability logic) but strictly untraceable under the 33-link law.",
+    "frontend/src/lib/kernel-admin-client.ts — kernel-adjacent admin client not listed in registry phase 33 modules[] nor in the traceability JSON; no dedicated test (kernel-*.test.ts files do not cover it).",
+    "Legacy Scholar durable tables with no CoreGrid phase contract: public.hostel_rooms/hostel_allocations/hostel_attendance, library_books/library_borrowings, discipline_records, clinic_visits, school_sports, school_meals, school_transport/transport_buses, school_ad_campaigns, admission_applications, staff_payroll/staff_leave, school_api_keys, teacher_biometrics, school_geofence, attendance_verification_log, study_sessions (migrations 20260620122048..20260729054314). No REQUIREMENT -> OWNER -> CONTRACT chain exists for them in registry.json or COREGRID_ARCHITECTURE_TO_CODE_TRACEABILITY.json; several duplicate concepts the cg_* substrate now owns (e.g. attendance_verification_log vs cg_observation). These are durable-state orphans, not just code orphans.",
+    "frontend/src/lib/demo-provision.functions.ts — demo tenant provisioning; mentioned in phase-01 hardening notes (env-gated ALLOW_DEMO_PROVISIONING=false) but owned by no capability and no contract; test-only coverage via foundation suite guards, not a capability suite."
+  ],
+  "unverifiedImplementations": [
+    "frontend/src/lib/authorization.ts — the combined RBAC/ABAC/ReBAC/PBAC Authorization Engine has NO dedicated test suite (no tests/unit/authorization.test.ts exists; it is only incidentally imported by ai/automation/communication suites). The highest-stakes universal module in the repo is the least directly tested; its five-valued decision model is exercised but not exhaustively verified.",
+    "All V1 durable-state migrations (20260929000000_coregrid_foundation_mission_001.sql, 20260930000000_coregrid_v1_workspace_persistence.sql, 20261001000000_coregrid_v1_org_model.sql) — AUTHORED, NOT APPLIED in the repo posture; RLS 'enabled with zero policies = deny' posture is statically reasoned, not database-tested in CI (scripts/run-rls-isolation-check.mjs exists but requires live credentials).",
+    "AI gateway live path (ai-gateway.server.ts invokeAiGateway) — never executed against a real model: BLK-2 (no AI_API_KEY / AI_GATEWAY_URL). Unit tests verify fail-closed unconfigured behavior only.",
+    "Payments live path (payments/paystack-adapter.ts, stripe-adapter.ts) — BLK-4; adapters unit-tested against recorded semantics, zero live charge/webhook signature verification has occurred.",
+    "Email delivery (notifications/email-adapter-contract.ts) — record-only adapter by design (BLK-5); dispatch fanout (notifications-fanout.functions.ts, notification-digest.functions.ts) has no dedicated unit tests.",
+    "Push surface (push.functions.ts, push.server.ts, push-client.ts) — implemented, no dedicated test file, never live-exercised.",
+    "Domain server-function family without dedicated suites: attendance.functions.ts, bus-tracking.functions.ts, driver-portal.functions.ts, facilities.functions.ts, timetable.functions.ts, teachers.functions.ts, school-settings.functions.ts, staff-accounts.functions.ts, profile.functions.ts, org-profile.functions.ts, register-runtime.functions.ts, demo-provision.functions.ts, scholar-feature-access.functions.ts, scholar-institution-config.functions.ts, scholar-role-assignments.functions.ts — server functions are APIs under AGENTS.md §27; their authz posture rests on route-level usage and RLS, not on direct tests.",
+    "Docker image build + release deploy path (Dockerfile, release.yml deploy job) — docker absent on the authoring VM (honestly recorded in morning report M-14); deploy never executed (BLK-3).",
+    "E2E surface (tests/e2e — 5 specs: enterprise-checklist, gallery-upload, mobile-sidebar-active, mobile-swipe-open, preview-public-site-card) — not executable in this environment; not part of `npm run verify`; coverage is thin relative to the 3,458-test unit base.",
+    "Registry phase test attribution — registry.json phases[] sum to 2,228 attributed tests vs 3,458 actual: 1,230 passing tests (including all V1 mission suites: org-model, context-assembly, metering, payments, files, notifications, workflow, jarvis, agent-runtime, kernel-contract-coverage) are not attributed to any phase in the registry."
+  ],
+  "domainContaminationInCode": [
+    {
+      "location": "frontend/src/lib/ (root) — bus-tracking.functions.ts, driver-portal.functions.ts, teachers.functions.ts, timetable.functions.ts, attendance.functions.ts, lesson-plan-ai.functions.ts, class-levels.ts, facilities.functions.ts, school-settings.functions.ts, scholar-*.functions.ts",
+      "vocabulary": "bus, driver, teacher, timetable, attendance, school, lesson — Scholar-runtime server functions physically located at the universal lib root beside tenant-core.ts and authorization.ts",
+      "whyAtUniversalLayer": "historical growth: the repo began as the Scholar app (legacy migrations, 'vibeora' naming) and the CoreGrid lib tree grew around it; server functions were never relocated into the runtime/ or scholar/ namespace",
+      "proposedDisposition": "move-to-runtime (relocate under frontend/src/lib/runtime/scholar-* or scholar/; the phase-contract + kernel-purity machinery already provides the pattern)"
+    },
+    {
+      "location": "frontend/src/lib/audit.ts",
+      "vocabulary": "AuditParams.schoolId — domain term in a universal audit primitive",
+      "whyAtUniversalLayer": "legacy helper predating the L2 identity/tenancy substrate; never migrated to cg_tenant-scoped audit vocabulary",
+      "proposedDisposition": "rename (tenantId) + split (generic audit helper into platform layer; Scholar-specific callers bind tenantId at the runtime)"
+    },
+    {
+      "location": "frontend/src/lib/subscription-tiers.ts",
+      "vocabulary": "schools.active_features, school.subscription_tier",
+      "whyAtUniversalLayer": "legacy billing gate read directly by universal UI; conceptually superseded by financial-routing (phase 13) and payments contract (MISSION-V1-012) but still imported",
+      "proposedDisposition": "split — move tier vocabulary into the financial/payments plane keyed by TenantId; delete the legacy school-column coupling"
+    },
+    {
+      "location": "frontend/src/lib/geofence.ts",
+      "vocabulary": "storage key 'vibeora_device_id' (pre-CoreGrid product name), attendance-biometrics-only consumers",
+      "whyAtUniversalLayer": "generic math (haversine) is universal, but the module exists solely for the Scholar attendance-biometrics feature",
+      "proposedDisposition": "split — universal geospatial math to a neutral module; device-fingerprint binding moves to the Scholar runtime"
+    },
+    {
+      "location": "frontend/src/lib/kernel/phase-contracts/phase-02-identity.ts, phase-03-multi-tenancy.ts, phase-06-workspace-engine.ts, phase-09-trust-fabric.ts (docstrings only)",
+      "vocabulary": "'staff, student and guardian actors', 'school/campus', 'school, device or document' used as illustrative examples inside kernel-layer contract comments",
+      "whyAtUniversalLayer": "contracts explain themselves by citing the first runtime's vocabulary; the kernel-purity test scans kernel/*.ts sources but NOT the phase-contracts/ directory, so comment-level vocabulary is unguarded",
+      "proposedDisposition": "rename (neutralize comment examples to 'a runtime binds ITS OWN actor kinds…') AND extend tests/unit/kernel-purity.test.ts KERNEL_SOURCES to scan kernel/phase-contracts/ — code-level vocabulary is already clean; this is doc-level only"
+    },
+    {
+      "location": "frontend/src/lib/paystack.functions.ts + frontend/src/lib/paystack-inline.ts",
+      "vocabulary": "provider name + domain fee-payment flow ('initFeePayment') at universal root while the V1 payments/ adapter family exists in the same tree",
+      "whyAtUniversalLayer": "legacy Scholar fee-payment checkout predates the V1 payment contract; both paths currently coexist",
+      "proposedDisposition": "split — retire legacy flow behind the payments/ contract (provider adapter + webhook), keep paystack-inline as a runtime-UI concern, not a lib-root module"
+    },
+    {
+      "location": "frontend/src/lib/files/file-contract.ts (header)",
+      "vocabulary": "'reuses the existing scholar domain: documents carry a contentRef (scholar/documents.ts §99)…' — a universal V1 contract citing a domain module as its vocabulary anchor",
+      "whyAtUniversalLayer": "the V1-minimal files service was authored while Scholar is the only runtime; the dependency direction (universal -> domain) is inverted relative to the kernel law",
+      "proposedDisposition": "rename — re-express contentRef/artifactRef as opaque universal refs and let the Scholar runtime document the binding; keep behavior identical"
+    }
+  ],
+  "reusableVerifiedFoundations": [
+    "The governed mission loop: frontend/src/lib/control-plane/foundation-mission.ts + foundation-loop.ts + foundation-loop.functions.ts over database/supabase/migrations/20260929000000_coregrid_foundation_mission_001.sql — the ONLY end-to-end live-verified governed tail in the repo (admission -> idempotent replay -> evidence -> verification -> rollback), 5/5 live tests on the dev project (tests/integration/foundation-loop.live.test.ts; COREGRID_V1_MORNING_REPORT_2026-10-01.md). The reconstruction's execution spine can be built directly on this.",
+    "The universal kernel substrate contract: frontend/src/lib/kernel/reality.ts + domain-manifest.ts + outbox.ts + runtime-registry.ts, mechanically guarded by tests/unit/kernel-purity.test.ts (33-term education vocabulary banned; Scholar-Independence + Runtime-Installation tests) and kernel-contract-coverage.test.ts. Domain-neutral kernel is not an aspiration — it is CI-enforced today.",
+    "The restaurant fixture: frontend/src/lib/domain-config/domain-definition.ts + domain-config/restaurant.ts with tests/unit/domain-config-restaurant.test.ts — the mandated second-domain proof that the same substrate installs a different domain as pure configuration. Reusable as the acceptance oracle for the reconstructed kernel.",
+    "The L2 identity/tenancy + workforce/role substrate chain: 20260904020000_coregrid_l2_identity_tenancy.sql, 20260907000000_coregrid_workforce_kind_substrate.sql, 20260907000800_coregrid_role_assignment_substrate.sql with verify scripts (scripts/verify-l2-registries.mjs, verify-workforce-substrate.mjs, verify-role-assignment-substrate.mjs) and signed proof (architecture/proofs/role-assignment-substrate.proof.json).",
+    "The verification harness itself: `npm run verify` (typecheck + 3,458 unit tests + registry validation + secret scan + dual build) is green and reproducible in a bare VM (evidence: /opt/cursor/artifacts/stream-h-verify-baseline.log) — reconstruction streams can re-run the identical baseline after every change.",
+    "The AI governance perimeter: ai-gateway.server.ts + metering/usage-ledger.ts + context-assembly.ts with mechanical centralization tests (tests/unit/ai-gateway-adoption-*.test.ts — no direct @ai-sdk imports outside the gateway) and the Part 15 Jarvis deny-code contract (jarvis-contract.test.ts). Reconstruction can adopt these as the AI boundary verbatim.",
+    "The acceptance-evidence corpus: architecture/proofs/ (30 proof.json) + architecture/phase-acceptance/ (51 phase files) + scripts/audit-phase-acceptance.mjs — backward tracing CODE -> EVIDENCE is already machine-supported for phases 01–33.",
+    "The fail-closed contract style demonstrated across all V1 mission modules (org-model.ts, context-assembly.ts, workflow-engine.ts, files/file-contract.ts, notifications/notification-contract.ts, payments/payment-contract.ts): pure functions, explicit DENY on every unknown/malformed input, authority never implied. This is a transferable style exemplar for the reconstructed V1, independent of any single module."
+  ],
+  "contradictions": [
+    "LIVE-VERIFIED vs NOT APPLIED: the morning report (COREGRID_V1_MORNING_REPORT_2026-10-01.md) states the foundation loop is 'live-verified on the dev project (5/5 live tests)' while every migration header declares 'AUTHORED, NOT APPLIED. Do not treat this file as a live database.' Both are honest but tension-producing: live verification happened on a disposable Supabase dev project (scripts/exercise-foundation-loop.mjs provisions a probe tenant per run), whereas the canonical/production database state has none of the cg_* tables. Any V1 claim must therefore distinguish 'live-verified once on dev' from 'deployed'.",
+    "TRACEABILITY BROKEN-LINKS vs SUBSEQUENT IMPLEMENTATION: COREGRID_ARCHITECTURE_TO_CODE_TRACEABILITY.json (evidenceDate 2026-09-27) records 5 broken links (mission architecture->contract; universal evidence architecture->durable registry; execution architecture->durable execution state; conformance->independent conformance report; drift->persisted lifecycle) — but migrations 20260929000000 (cg_mission_intent, cg_execution_record, cg_foundation_evidence, cg_verification_result, cg_conformance_assessment) now author exactly the durable state those links call missing. The traceability artifact predates its own remediation and was never re-issued.",
+    "REGISTRY TEST ATTRIBUTION: registry.json phases[] attribute 2,228 tests in total, but the verified suite contains 3,458 — 1,230 passing tests (all recent V1 mission work) have no phase attribution, so registry-driven backward tracing (CODE -> phase) silently under-counts the implemented surface.",
+    "PHASE-15 STATUS MIXED: registry versionClassification records phase 15 as 'IMPLEMENTING status vs V2-frozen device scope — MIXED classification applied… V1/V2 boundary split requires human review — UNRESOLVED, status conflict preserved' — implemented organizational-asset records (V1) and frozen device/telemetry code (V2) share the same hardware-*.ts modules.",
+    "GOVERNANCE DOC VS CODE VOCABULARY: AGENTS.md/kernel law bans domain vocabulary from universal layers, and kernel code is clean — but the universal lib root hosts ~15 Scholar server-function modules and a schoolId-typed audit helper (see domainContaminationInCode); the enforcement boundary (kernel-purity test) covers the kernel + migrations only, not the lib root.",
+    "SERVER-FUNCTION RULE VS TEST REALITY: AGENTS.md §27 requires every server function to authenticate/resolve-tenant/authorize/validate/execute/audit — yet ~15 *.functions.ts modules have no dedicated tests (see unverifiedImplementations), so the mandated per-function invariant checks are largely unproven outside the foundation-loop family."
+  ],
+  "unresolved": [
+    "BLK-2: no AI provider key — the entire AI/gateway/context capability family is contract-verified only; the vertical slice's AI WORKER link cannot close. Requires secret added via Cursor Dashboard (Secrets) or an operator decision to stay keyless for V1.",
+    "BLK-3: no deployment credentials — release.yml deploy job fails closed; the deployment capability exists as code but has never executed.",
+    "BLK-4: no live payment provider key (Paystack live key; Stripe decision for non-NGN) — payment capability unverified against reality.",
+    "BLK-5: email delivery hold — notifications remain record-only; 'delivered' is unreachable by design until a provider decision.",
+    "Phase-15 V1/V2 boundary split (hardware-*.ts: organizational assets V1 vs device/telemetry V2) — explicitly recorded in registry as requiring human review.",
+    "Disposition of legacy Scholar durable tables (hostel_*, library_*, discipline_records, staff_payroll, school_* etc.): keep as Scholar-runtime legacy schema, migrate into cg_* substrate, or retire — no CTO ruling exists; until ruled, they remain durable-state orphans.",
+    "Relocation of domain server functions from the universal lib root (see contamination list) — no ruling on timing/ownership; the safest sequence is after the org-model + runtime-registry substrate is applied so runtimes can own their function namespaces.",
+    "authorization.ts has no dedicated exhaustive suite — whether to author one before or during reconstruction is undecided; given AGENTS.md §16/§31 this is the single highest-value unverified module.",
+    "Live-battery credentials are not present in this reconstruction VM — tests/integration/foundation-loop.live.test.ts SKIPS here; re-running the 5/5 live proof requires FOUNDATION_LOOP_* + SUPABASE_* secrets to be attached to the run.",
+    "1,230 unattributed tests (registry phases[] sum 2,228 vs actual 3,458): whether registry test attribution should be regenerated (registry-validate.mjs currently validates structure, not attribution totals) is an open governance question."
+  ],
+  "rule": "Traceability claims are evidence classifications, not completion claims. Nothing in this map has been committed; this artifact is the only file authored by STREAM H."
+}

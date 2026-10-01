@@ -1,0 +1,2282 @@
+{
+  "artifact": "COREGRID_V1_MISSION_GRAPH",
+  "stream": "M",
+  "streamTitle": "MISSION GRAPH ARCHITECT — engineering mission graph derived from the scope-locked capability graph; missions decompose into tasks executed by workers; no task theatre",
+  "captured": "2026-10-01",
+  "status": "DERIVED_FROM_SCOPE_LOCK",
+  "statusBasis": "Scope is locked (COREGRID_V1_V2_SCOPE_LOCK.json, SCOPE_LOCKED_WITH_RECORDED_CONDITIONS). Missions below cover only locked V1 capabilities. Gating conditions COND-001..014 are carried explicitly: six gate the START of specific missions (M-R-01, M-R-02, M-R-03, M-R-20, M-R-50, M-R-111) and the BLK family gates live-verification evidence only — per the established law, a recorded blocker never authorizes a bypass; unblocked streams continue and every blocked mission names fallback work.",
+  "hardeningProvenance": "COREGRID_V1_ARCHITECTURE_HARDENING.json is ABSENT from the repository (searched: architecture/**, no L-H- token exists anywhere). L-H-### identifiers are therefore UNKNOWN. Every mission's hardeningRefs is [] and its hardening obligation is derived instead from its cited STREAM J gap refs (J-###) and STREAM H unverifiedImplementations, which are the authoritative hardening evidence available. If the hardening artifact is later supplied, hardeningRefs must be back-filled without changing mission boundaries.",
+  "inputs": [
+    "architecture/coregrid-mvp-architecture/reconstruction/COREGRID_V1_V2_SCOPE_LOCK.json",
+    "architecture/coregrid-mvp-architecture/reconstruction/COREGRID_V1_RECONSTRUCTED_ARCHITECTURE.json",
+    "architecture/coregrid-mvp-architecture/reconstruction/STREAM_J_GAP_DISCOVERY.json",
+    "architecture/coregrid-mvp-architecture/reconstruction/STREAM_H_IMPLEMENTATION_MAP.json"
+  ],
+  "missions": [
+    {
+      "id": "MISSION-R-01",
+      "name": "Mission-node owner + D1 memory-owner ratification dossier",
+      "team": "Architecture",
+      "objective": "Produce the two ratification dossiers that unblock the spine: (a) canonical Mission node owner for cg_mission_intent/cg_execution_record (J-024, COND-001) with dependency analysis over the existing live-verified foundation-mission loop (STREAM H reusable[0]); (b) D1 practical/organizational memory owner (COND-002) with the phase-36 recommendation restated and contested points listed.",
+      "capabilities": [
+        "V1CAP-046",
+        "V1CAP-034"
+      ],
+      "hardeningRefs": [
+        "L-H-004"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author ratification dossier for Mission node owner (candidates: phase 07, control-plane mission artifact under phase 01) with dependency graph impact on V1CAP-046/047/052",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "dossier file with dependency analysis citing STREAM J J-024 and registry edges"
+        },
+        {
+          "taskId": "T2",
+          "task": "Author D1 memory-owner dossier (phase 36 vs 07) over the persisted-memory gap J-016",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "dossier file citing STREAM F D1 disposition and STREAM J J-016"
+        },
+        {
+          "taskId": "T3",
+          "task": "Verify both dossiers answer the golden questions (WHO/WHAT/WHERE/WHY/POLICY) and queue for operator ruling",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "verification note appended to dossiers; npm run verify PASS unchanged"
+        }
+      ],
+      "dependsOn": [],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "low",
+      "humanApprovalsRequired": [
+        "operator ratification of Mission node owner (COND-001)",
+        "operator ratification of D1 memory owner (COND-002)"
+      ],
+      "acceptance": "MISSION-R-01 reached verified state 'both ratification dossiers exist with dependency analysis and golden-question verification' with evidence: dossier file paths + verifier note + npm run verify PASS. Rulings themselves are operator acts recorded when they land.",
+      "wave": 1
+    },
+    {
+      "id": "MISSION-R-02",
+      "name": "tenant_id type divergence ruling dossier (text vs uuid)",
+      "team": "Architecture",
+      "objective": "Close COND-003: resolve the text-vs-uuid tenant_id divergence deferred at migration 20261001000000 lines 32-37, so neutral tenant-membership primitives (J-005) can be finalized.",
+      "capabilities": [
+        "V1CAP-013"
+      ],
+      "hardeningRefs": [
+        "L-H-001"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Map every cg_* substrate column and legacy table carrying tenant identifiers; enumerate both rulings' migration cost",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "inventory table in dossier with file:line citations to migrations"
+        },
+        {
+          "taskId": "T2",
+          "task": "Author ADR recommending one canonical type with transition plan for the divergent migration lines",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "ADR file with migration impact assessment per freezeRule step 6"
+        },
+        {
+          "taskId": "T3",
+          "task": "Verifier confirms ADR does not weaken RLS deny-by-default posture",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "verification note; kernel-purity + tenant isolation suites PASS"
+        }
+      ],
+      "dependsOn": [],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "low",
+      "humanApprovalsRequired": [
+        "operator ruling on tenant_id type (COND-003)"
+      ],
+      "acceptance": "MISSION-R-02 reached verified state 'tenant_id type ADR authored with full inventory and migration impact' with evidence: ADR path + inventory citations + verify pipeline PASS.",
+      "wave": 1
+    },
+    {
+      "id": "MISSION-R-03",
+      "name": "Governance ADR bundle: trust wiring, shell ownership, relocation timing, retention-vs-immutability",
+      "team": "Architecture",
+      "objective": "Author the four decision artifacts that gate later missions: (a) J-008/COND-007 trust-fabric direction (08 consumes 09 vs 09 evidence-only re-scope); (b) GAP-008/COND-004 global shell ownership; (c) COND-013 domain server-function relocation timing + control-plane namespace; (d) J-039 personal-data retention/erasure reconciled with immutable audit (V1CAP-066).",
+      "capabilities": [
+        "V1CAP-022",
+        "V1CAP-085",
+        "V1CAP-066"
+      ],
+      "hardeningRefs": [
+        "L-H-026"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author trust-wiring ADR with both options' security consequences (Evidence->Decision grounding)",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "ADR file citing STREAM F D7 and STREAM J J-008"
+        },
+        {
+          "taskId": "T2",
+          "task": "Author global-shell ownership review + relocation-timing ADR (phase-15 split scope noted for the neutrality guard)",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "ADR files citing STREAM J J-047 and COND-013/COND-005"
+        },
+        {
+          "taskId": "T3",
+          "task": "Author retention/erasure reconciliation ADR: what may be forgotten, what may not, how both are recorded against AGENTS 28 immutable audit",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "ADR file citing Constitution 19, STREAM J J-039"
+        },
+        {
+          "taskId": "T4",
+          "task": "Verify bundle consistency (no ADR contradicts another or the freezeRule)",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "cross-ADR consistency note; verify pipeline PASS"
+        }
+      ],
+      "dependsOn": [],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "low",
+      "humanApprovalsRequired": [
+        "operator acceptance of trust-wiring direction (COND-007)",
+        "GAP-008 shell ownership ruling (COND-004)",
+        "relocation-timing ADR acceptance (COND-013)",
+        "retention/erasure ADR acceptance"
+      ],
+      "acceptance": "MISSION-R-03 reached verified state 'four ADRs authored, cross-consistent, queued for ruling' with evidence: ADR paths + consistency note + verify PASS.",
+      "wave": 1
+    },
+    {
+      "id": "MISSION-R-04",
+      "name": "Registry reconciliation + test attribution + drift-baseline hook",
+      "team": "Architecture",
+      "objective": "Make the machine-operable registry a true statement of the platform: strip stale civilization-tier dependency edges from V1 rows, resolve the status-histogram conflict, attribute the 1230 unattributed tests (J-046, COND-012), and add the minimal drift hook that compares registry/contract state to COREGRID_EVOLUTION_BASELINE_2026-09-30.json in CI (J-038).",
+      "capabilities": [
+        "V1CAP-082",
+        "V1CAP-083"
+      ],
+      "hardeningRefs": [],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Remove non-load-bearing V1 dependency edges (08->42, 17->16, 26->45, 33->48, 36->48, 21->44) and reconcile status histogram",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "registry.json diff with per-edge justification; registry-validate.mjs PASS"
+        },
+        {
+          "taskId": "T2",
+          "task": "Regenerate test attribution so phases[] sum matches the verified suite; extend attribution to mission-owned suites",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "attribution totals reconciled (sum == actual) in registry validation output"
+        },
+        {
+          "taskId": "T3",
+          "task": "Add verify-pipeline step comparing declared registry state to evolution baseline",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "new pipeline step + its PASS output on the green baseline"
+        },
+        {
+          "taskId": "T4",
+          "task": "Verifier re-runs npm run verify and confirms no capability lost ownership",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "verify baseline log showing registry validation PASS post-change"
+        }
+      ],
+      "dependsOn": [],
+      "parallelizable": false,
+      "reversible": true,
+      "blastRadius": "medium",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-04 reached verified state 'registry edges/status/attribution reconciled and baseline-comparison step green in CI' with evidence: registry diff + updated verify baseline log (npm run verify). Reuses STREAM H reusable[6] acceptance-evidence corpus and reusable[4] verify baseline.",
+      "wave": 1
+    },
+    {
+      "id": "MISSION-R-05",
+      "name": "Continuous domain-neutrality CI guard",
+      "team": "Architecture",
+      "objective": "Extend domain-neutrality enforcement beyond the kernel: grep/token-based CI guard over the universal lib root, phase-contracts directory, and migrations, derived from STREAM I contamination audit tokens (J-037). The guard records current violations as an explicit baseline (quarantine list), it does not silently pass them.",
+      "capabilities": [
+        "V1CAP-067"
+      ],
+      "hardeningRefs": [
+        "L-H-023"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author guard script scanning lib root + kernel/phase-contracts + migrations for domain vocabulary and schoolId-typed universal helpers",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "guard script + baseline violation list matching STREAM H domainContaminationInCode exactly"
+        },
+        {
+          "taskId": "T2",
+          "task": "Wire guard into verify pipeline as fail-on-new-violation, warn-on-baseline",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "pipeline step output showing baseline accepted, new violations fail"
+        },
+        {
+          "taskId": "T3",
+          "task": "Verifier proves the guard catches a seeded violation in a scratch branch",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "transcript: seeded violation -> guard FAIL; revert -> PASS"
+        }
+      ],
+      "dependsOn": [],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "low",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-05 reached verified state 'neutrality guard live in CI with honest violation baseline and proven detection' with evidence: guard output + seeded-violation transcript + verify PASS. Extends STREAM H reusable[1] kernel-purity machinery.",
+      "wave": 1
+    },
+    {
+      "id": "MISSION-R-10",
+      "name": "Canonical CoreObject envelope conformance on kernel substrate",
+      "team": "Kernel",
+      "objective": "Author (not apply) the envelope conformance pass over cg_entity/cg_event/cg_observation: id, object_type, schema_version, tenant_id, status, created_by/updated_by, provenance, policy_context, trace_id, correlation_id, causation_id/parent_event_id (J-001, G-001, G-010). Reuses STREAM H reusable[1] kernel substrate contract and reusable[7] fail-closed contract style.",
+      "capabilities": [
+        "V1CAP-002"
+      ],
+      "hardeningRefs": [
+        "L-H-013"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author schema migration extending kernel tables with envelope columns + rollback file, authored-not-applied posture preserved",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "migration + rollback files with AUTHORED NOT APPLIED header; db-tooling-coherence test PASS"
+        },
+        {
+          "taskId": "T2",
+          "task": "Author envelope validation contract in kernel/reality.ts (no anonymous persistent object; causation chain required)",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "contract code + unit suite proving non-conformant writes are rejected"
+        },
+        {
+          "taskId": "T3",
+          "task": "Verifier proves every kernel write path enforces the envelope",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "kernel-purity + new envelope suites PASS in npm run verify"
+        }
+      ],
+      "dependsOn": [],
+      "parallelizable": false,
+      "reversible": true,
+      "blastRadius": "high",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-10 reached verified state 'envelope contract + migration authored, all kernel write paths proven conformant at unit level' with evidence: migration/rollback paths + suite PASS + verify baseline PASS. Critical-path mission (V1CAP-002).",
+      "wave": 1
+    },
+    {
+      "id": "MISSION-R-11",
+      "name": "Canonical object type registry with unknown-type rejection",
+      "team": "Kernel",
+      "objective": "Close J-002: type-allowlist gate over kernel writes so unknown object types never silently enter the canonical store, wired to the existing runtime-registry/capability-registry pattern.",
+      "capabilities": [
+        "V1CAP-003"
+      ],
+      "hardeningRefs": [],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author canonical type registry contract + unknown-type rejection at the kernel write API",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "contract + unit suite: unknown type -> explicit rejection, never silent"
+        },
+        {
+          "taskId": "T2",
+          "task": "Register Scholar runtime + restaurant fixture object types through the new gate",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "both domains pass through the gate; domain-config-restaurant suite PASS"
+        },
+        {
+          "taskId": "T3",
+          "task": "Verifier seeds an unregistered type and proves rejection",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "transcript: seeded unknown type rejected with error evidence"
+        }
+      ],
+      "dependsOn": [],
+      "parallelizable": false,
+      "reversible": true,
+      "blastRadius": "medium",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-11 reached verified state 'type allowlist enforced on kernel writes with both registered domains passing' with evidence: suite outputs + seeded-rejection transcript + verify PASS. Uses STREAM H reusable[2] restaurant fixture as acceptance oracle.",
+      "wave": 1
+    },
+    {
+      "id": "MISSION-R-13",
+      "name": "Bi-temporal discipline (valid_time vs record_time)",
+      "team": "Kernel",
+      "objective": "Close J-003: separate valid_time from record_time across state/event/observation records so late-arriving or corrected data reconstructs a true history for Evidence->Verification and Memory.",
+      "capabilities": [
+        "V1CAP-004"
+      ],
+      "hardeningRefs": [],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author schema addition (valid_time/record_time columns + invariants) over the envelope migration, with rollback",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "migration + rollback authored-not-applied; suite proving record_time never backdated semantics"
+        },
+        {
+          "taskId": "T2",
+          "task": "Author query contract: as-of-valid-time and as-of-record-time reads",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "unit suite with corrected/late data reconstructing both timelines correctly"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-10"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "medium",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-13 reached verified state 'bi-temporal schema + dual-timeline read contract authored and unit-proven' with evidence: migration paths + suite outputs + verify PASS.",
+      "wave": 2
+    },
+    {
+      "id": "MISSION-R-14",
+      "name": "State reconciliation & contradiction engine",
+      "team": "Kernel",
+      "objective": "Close J-004: reconcile conflicting observations with explicit rules (E-029, G-094: unknown must remain unknown), including explicit partial-observability/missingness representation on cg_observation.",
+      "capabilities": [
+        "V1CAP-005"
+      ],
+      "hardeningRefs": [],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author reconciliation rules over cg_observation (conflict precedence, correction, explicit UNKNOWN state)",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "rules contract + suite: duplicate events and human corrections converge without fabricating truth"
+        },
+        {
+          "taskId": "T2",
+          "task": "Prove unknown stays unknown: no rule invents a value from absence",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "property-test transcript over missingness cases"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-10"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "medium",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-14 reached verified state 'reconciliation subsystem authored with unknown-preservation proven' with evidence: suite + property-test transcripts + verify PASS.",
+      "wave": 3
+    },
+    {
+      "id": "MISSION-R-15",
+      "name": "Event kernel semantics + time-source authority",
+      "team": "Kernel",
+      "objective": "Close J-020 and J-023: taxonomy, deduplication, ordering, and significance classification over cg_event consumption (generalizing foundation-loop idempotent replay to the event plane), plus the single-authoritative-clock contract with monotonic ordering and skew handling for distributed writers.",
+      "capabilities": [
+        "V1CAP-042",
+        "V1CAP-045"
+      ],
+      "hardeningRefs": [
+        "L-H-012"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author time-source authority contract (one clock, monotonic ordering, skew rules; UUIDv7 ID ordering dependency documented)",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "contract + suite proving out-of-order writers do not corrupt event ordering"
+        },
+        {
+          "taskId": "T2",
+          "task": "Author event semantics: dedup, ordering, significance classification at consumption time",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "suite: duplicate/unordered events produce identical observation state"
+        },
+        {
+          "taskId": "T3",
+          "task": "Verifier confirms semantics generalize the foundation loop without breaking its live-tested behavior",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "foundation-loop suite PASS unchanged + new event suites PASS"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-10"
+      ],
+      "parallelizable": false,
+      "reversible": true,
+      "blastRadius": "high",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-15 reached verified state 'event semantics + time authority authored, proven against duplicate/unordered writers, foundation loop unregressed' with evidence: suite transcripts + verify PASS. Critical-path mission (V1CAP-042). Builds on STREAM H reusable[0] idempotent replay semantics.",
+      "wave": 2
+    },
+    {
+      "id": "MISSION-R-20",
+      "name": "Neutral tenant-membership DB primitives",
+      "team": "Identity",
+      "objective": "Close J-005 (blocking): get_my_tenant_id() + tenant-role/tenant-admin predicate SQL helpers replacing Scholar helpers as gates for every universal cg_ substrate RPC, so a non-Scholar tenant can hold and administer roles. Finalization gated by the COND-003 ruling (MISSION-R-02). Reuses STREAM H reusable[3] L2 identity/tenancy substrate chain.",
+      "capabilities": [
+        "V1CAP-013"
+      ],
+      "hardeningRefs": [
+        "L-H-001"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author neutral helper migration + rollback (authored-not-applied), parameterized for both tenant_id type outcomes",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "migration + rollback paths; no Scholar vocabulary in helper sources"
+        },
+        {
+          "taskId": "T2",
+          "task": "Re-point every universal cg_ substrate RPC gate from Scholar helpers to neutral helpers; prove non-Scholar tenant can hold/administer a role assignment in unit/RPC-level tests",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "diff of RPC gates + suite: role assignment created and administered under a non-Scholar tenant"
+        },
+        {
+          "taskId": "T3",
+          "task": "Finalize type choice per COND-003 ruling and re-run full verify",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "post-ruling suite PASS; I-002..I-005/I-007 findings each marked closed with test refs"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-02"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "high",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-20 reached verified state 'neutral tenant-membership primitives authored, all universal RPC gates re-pointed, non-Scholar tenancy proven at unit level' with evidence: migration paths + gate diff + suite transcripts + verify PASS. Critical-path mission (V1CAP-013).",
+      "wave": 1
+    },
+    {
+      "id": "MISSION-R-21",
+      "name": "Neutral universal role vocabulary + directional mapping",
+      "team": "Identity",
+      "objective": "Close J-006 (blocking): the domain-neutral universal role vocabulary plus DomainDefinition.roleMappings directional contract (domain->neutral only, never reverse; RULING-4), re-pointing the capability gate off Scholar AppRole.",
+      "capabilities": [
+        "V1CAP-014"
+      ],
+      "hardeningRefs": [
+        "L-H-002"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author neutral role vocabulary substrate + mapping contract with reverse-mapping prohibition",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "contract + suite: domain->neutral resolves; reverse attempt rejected"
+        },
+        {
+          "taskId": "T2",
+          "task": "Re-point capability gate (r001-era) to neutral vocabulary; map Scholar roles as the first domain mapping",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "gate diff + suite proving authorization resolution is domain-neutral"
+        },
+        {
+          "taskId": "T3",
+          "task": "Verifier proves restaurant.service_staff no longer forced to teacher semantics",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "transcript: restaurant mapping resolves to neutral role without Scholar vocabulary"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-20"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "high",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-21 reached verified state 'neutral vocabulary live at contract level, directional mapping enforced, I-010/I-030/I-031 findings closed with tests' with evidence: contract paths + suites + verify PASS. Critical-path mission (V1CAP-014).",
+      "wave": 1
+    },
+    {
+      "id": "MISSION-R-22",
+      "name": "Identity lifecycle enforcement proofs (revocation/expiry deny execution)",
+      "team": "Identity",
+      "objective": "Close J-009: author the mandatory security tests proving revoked/suspended/expired identities cannot execute (AGENTS 31: expired access fails, revoked access fails; G-004 lifecycle states).",
+      "capabilities": [
+        "V1CAP-020"
+      ],
+      "hardeningRefs": [],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author exhaustive lifecycle suite: ACTIVE executes; SUSPENDED/REVOKED/EXPIRED denied at every server-function gate pattern",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "suite file with per-state deny proof at the enforcement point (not the UI)"
+        },
+        {
+          "taskId": "T2",
+          "task": "Wire suite into verify pipeline as a permanent gate",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "pipeline step PASS output"
+        }
+      ],
+      "dependsOn": [],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "low",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-22 reached verified state 'revocation/expiry deny-execution proven in CI at the enforcement point' with evidence: suite + pipeline PASS. Satisfies the constitution's non-negotiable invariants for the Identity fabric.",
+      "wave": 1
+    },
+    {
+      "id": "MISSION-R-30",
+      "name": "Context package completeness + context-switch safety",
+      "team": "Intelligence",
+      "objective": "Close J-011 and J-012: extend the verified context-assembly contract with memory_scope, data_scope, risk_level, trace_id fields, recorded exclusions, and sufficiency assessment (unauditable minimization is a privacy-law failure); plus the context-switch guarantee that no tenant context bleeds across workspace/org switches.",
+      "capabilities": [
+        "V1CAP-023",
+        "V1CAP-024"
+      ],
+      "hardeningRefs": [
+        "L-H-021"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Extend context-assembly.ts contract with scope fields + exclusion recording + sufficiency verdict",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "contract diff + suite: every assembled package carries exclusions and sufficiency, auditable"
+        },
+        {
+          "taskId": "T2",
+          "task": "Author context-switch safety suite: switch realities/tenants mid-session and prove zero bleed",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "suite transcript: post-switch context carries no prior-tenant scope"
+        }
+      ],
+      "dependsOn": [],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "medium",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-30 reached verified state 'context packages fully scoped + exclusions auditable + switch safety proven' with evidence: suite outputs + verify PASS. Extends STREAM H reusable[5] AI governance perimeter (context-assembly.ts).",
+      "wave": 1
+    },
+    {
+      "id": "MISSION-R-31",
+      "name": "Model registry, routing policy & fallback",
+      "team": "Intelligence",
+      "objective": "Close J-014: model registry with routing policy, performance profiles, fallback/failover and circuit-breaker semantics inside the centralized gateway so the Intelligence node is not a single point of failure and stays provider-agnostic.",
+      "capabilities": [
+        "V1CAP-028"
+      ],
+      "hardeningRefs": [
+        "L-H-018"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author model registry + routing contract inside ai-gateway boundary (no new direct provider imports — centralization tests still enforce)",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "contract + suite: routing decision recorded, fallback triggers on failure class"
+        },
+        {
+          "taskId": "T2",
+          "task": "Author circuit-breaker + failover simulation tests (no live key required)",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "fault-injection suite transcript"
+        }
+      ],
+      "dependsOn": [],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "medium",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-31 reached verified state 'registry/routing/fallback proven by fault injection within the gateway perimeter' with evidence: suite transcripts + gateway-centralization tests PASS.",
+      "wave": 3
+    },
+    {
+      "id": "MISSION-R-32",
+      "name": "Live governed inference through the gateway",
+      "team": "Intelligence",
+      "objective": "Close J-013 (blocking, BLK-2): execute one end-to-end governed AI inference through the gateway with authorization, budget pre-check, rate limit, metering and evidence capture — the first live Intelligence->Decision closure. BLK-2 blocks the live evidence only.",
+      "capabilities": [
+        "V1CAP-027"
+      ],
+      "hardeningRefs": [
+        "L-H-006"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Fallback: prove fail-closed on missing key + full dry-run harness (recorded request/response contract exercised with a stub transport)",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "fail-closed suite + dry-run transcript; no secret in logs (secret-redacting logger)"
+        },
+        {
+          "taskId": "T2",
+          "task": "On BLK-2 provisioning: execute one governed live inference and capture evidence-class 'generated' provenance",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "live transcript with metering record + provenance fields; no bypass of budget/rate limits"
+        },
+        {
+          "taskId": "T3",
+          "task": "Verifier audits the live run against the AI privacy pipeline (minimization happened before model)",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "audit note over the captured context package + gateway log"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-31"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "medium",
+      "humanApprovalsRequired": [
+        "AI provider key provisioning via Cursor Dashboard (BLK-2/COND-006)"
+      ],
+      "acceptance": "MISSION-R-32 reached verified state 'one governed inference executed live with full metering/provenance evidence' with evidence: live gateway transcript + metering ledger entry + verifier audit. Until BLK-2 lands, verified state is the fail-closed + dry-run evidence.",
+      "wave": 4
+    },
+    {
+      "id": "MISSION-R-33",
+      "name": "Reasoning provenance & intelligence snapshots",
+      "team": "Intelligence",
+      "objective": "Close J-015: every AI output records which model, which context version, and which policy produced it (Constitution 9/12), expressible on the envelope so Evidence captured from AI output is classifiable as 'generated'.",
+      "capabilities": [
+        "V1CAP-029"
+      ],
+      "hardeningRefs": [],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author reasoning-provenance contract over the envelope provenance fields; gateway stamps provenance on every response",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "contract + suite: response without provenance is rejected downstream"
+        },
+        {
+          "taskId": "T2",
+          "task": "Author decision-record linkage with phase 18 decision objects",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "suite: decision object references its intelligence snapshot ids"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-10"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "low",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-33 reached verified state 'provenance stamped and enforced; AI-derived evidence distinguishable from direct observation' with evidence: suite transcripts + verify PASS.",
+      "wave": 3
+    },
+    {
+      "id": "MISSION-R-34",
+      "name": "AI output trust pipeline + human approval chains",
+      "team": "Intelligence",
+      "objective": "Close V1CAP-030/032 and J-032: risk-classified proposal pipeline where REQUIRE_APPROVAL outcomes have a guaranteed execution path — approval steps route through the canonical workflow lifecycle with human approval records (Constitution 21).",
+      "capabilities": [
+        "V1CAP-030",
+        "V1CAP-032"
+      ],
+      "hardeningRefs": [
+        "L-H-016"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author proposal pipeline contract: AI Proposal -> Validation -> Policy Check -> Approval -> Execution -> Audit, with escalation from authorization REQUIRE_APPROVAL",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "contract + suite: unapproved high-risk proposal cannot execute"
+        },
+        {
+          "taskId": "T2",
+          "task": "Wire approval routing into workflow-engine approval steps (human approval record required — existing verified machinery, never rebuilt)",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "suite: REQUIRE_APPROVAL decision produces a workflow approval step with human record"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-50"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "medium",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-34 reached verified state 'REQUIRE_APPROVAL has a guaranteed, audited execution path through the canonical workflow lifecycle' with evidence: suite transcripts + verify PASS. Reuses STREAM H workflow-engine approval machinery.",
+      "wave": 3
+    },
+    {
+      "id": "MISSION-R-36",
+      "name": "Persisted practical/organizational memory store + authorization-gated retrieval",
+      "team": "Intelligence",
+      "objective": "Close J-016 (blocking) and J-017: author the durable memory-tier schema (practical/organizational classes) so Outcome->Memory->Observation re-entry can iterate, with retrieval that requires identity AND tenant AND scope AND policy authorization — never vector-only (G-015). Gated by D1 ratification (MISSION-R-01, COND-002).",
+      "capabilities": [
+        "V1CAP-034",
+        "V1CAP-035",
+        "V1CAP-036"
+      ],
+      "hardeningRefs": [
+        "L-H-007",
+        "L-H-019"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author memory store migration + rollback (authored-not-applied) with memory classes, freshness fields, and scope fields",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "migration + rollback paths; class/scope/freshness fields present"
+        },
+        {
+          "taskId": "T2",
+          "task": "Author retrieval policy contract: every retrieval path passes authorization + tenant + scope checks; semantic search alone can never return a record",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "suite: vector-only retrieval of unauthorized record is impossible"
+        },
+        {
+          "taskId": "T3",
+          "task": "Verifier proves memory write/read respects tenant isolation at the policy layer (not just app code)",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "RLS policy review note + battery hooks registered for MISSION-R-85 execution"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-01"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "medium",
+      "humanApprovalsRequired": [
+        "D1 memory owner ratification (COND-002) before start"
+      ],
+      "acceptance": "MISSION-R-36 reached verified state 'durable memory schema + authorization-gated non-vector retrieval authored and unit-proven' with evidence: migration paths + retrieval suites + verify PASS. Critical-path mission (V1CAP-035).",
+      "wave": 2
+    },
+    {
+      "id": "MISSION-R-40",
+      "name": "Persistent governed worker definition substrate",
+      "team": "Workforce",
+      "objective": "Close J-027 (blocking, LAUNCH_BLOCKER, RULING-3): identity-linked worker definitions with capability set, authority bounds, and delegation history that survive worker process termination (G-014), built over cg_identity from phase 02.",
+      "capabilities": [
+        "V1CAP-048"
+      ],
+      "hardeningRefs": [
+        "L-H-005"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author worker definition migration + rollback (authored-not-applied): identity FK, capabilities, authority bounds, delegation history",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "migration + rollback paths; every worker row carries identity + bounded authority"
+        },
+        {
+          "taskId": "T2",
+          "task": "Prove persistence across process termination: definition and history survive restart in suite",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "suite transcript: worker process killed and restarted, delegation history intact"
+        },
+        {
+          "taskId": "T3",
+          "task": "Verifier proves agents are untrusted-by-default: new worker has zero implicit authority",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "suite: fresh worker denied every action without explicit grant"
+        }
+      ],
+      "dependsOn": [],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "high",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-40 reached verified state 'persistent worker substrate authored with survival + untrusted-default proven' with evidence: migration paths + suite transcripts + verify PASS. Critical-path mission (V1CAP-048).",
+      "wave": 2
+    },
+    {
+      "id": "MISSION-R-41",
+      "name": "Worker capability registry & delegation-contract matching",
+      "team": "Workforce",
+      "objective": "Close J-028: capability-over-agent-count matching (E-033/E-046) — delegation matches required capabilities to authorized workers via declarations registered in the capability registry, never name-based assignment.",
+      "capabilities": [
+        "V1CAP-049"
+      ],
+      "hardeningRefs": [],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author worker-capability declaration + matching contract over kernel/capability-registry.ts",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "contract + suite: delegation resolves by capability match or fails explicitly"
+        },
+        {
+          "taskId": "T2",
+          "task": "Prove model-neutrality: two differently-named workers with equal capability declarations are interchangeable to the matcher",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "property-test transcript"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-40"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "medium",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-41 reached verified state 'capability-based delegation matching proven, name-based assignment impossible' with evidence: suite + property-test + verify PASS.",
+      "wave": 3
+    },
+    {
+      "id": "MISSION-R-42",
+      "name": "Worker memory scopes & memory governance boundary",
+      "team": "Workforce",
+      "objective": "Close J-029 and J-018: enforce session/mission/long-term memory scopes in the worker runtime with no silent expansion (AGENTS 6/8; E-027), over the M-R-36 store; the agent never becomes owner of the memory system.",
+      "capabilities": [
+        "V1CAP-037"
+      ],
+      "hardeningRefs": [],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author scope enforcement in worker runtime over the memory store contract",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "suite: out-of-scope memory access denied; scope expansion without review denied"
+        },
+        {
+          "taskId": "T2",
+          "task": "Prove no silent expansion across missions/tenants (property test over scope lattice)",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "property-test transcript: expansion attempts all fail closed"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-36",
+        "MISSION-R-40"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "medium",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-42 reached verified state 'worker memory scopes enforced with silent expansion impossible' with evidence: suite + property-test + verify PASS.",
+      "wave": 3
+    },
+    {
+      "id": "MISSION-R-43",
+      "name": "Organization onboarding & reality discovery finalization",
+      "team": "Workforce",
+      "objective": "Complete V1CAP-090/091: organization onboarding with reality discovery/compilation over the verified workforce/position substrate, consuming the neutral vocabulary (V1CAP-014) and domain-runtime registration (V1CAP-007).",
+      "capabilities": [
+        "V1CAP-090",
+        "V1CAP-091"
+      ],
+      "hardeningRefs": [],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author reality-discovery/compilation contract over the kernel manifest + org model (no domain leakage)",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "contract + suite: onboarding a non-Scholar org produces compiled reality via neutral vocabulary"
+        },
+        {
+          "taskId": "T2",
+          "task": "Close the unverified server-function gap for onboarding paths (per-function authz/tenant/validate/audit checks per AGENTS 27)",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "per-function invariant checks in suite; onboarding suites PASS"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-21"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "medium",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-43 reached verified state 'onboarding reality discovery proven domain-neutral with per-function invariants tested' with evidence: suite transcripts + verify PASS. Reuses STREAM H onboarding + workforce substrate families.",
+      "wave": 3
+    },
+    {
+      "id": "MISSION-R-50",
+      "name": "First-class Mission & Delegation object contracts",
+      "team": "Mission",
+      "objective": "Close J-025 (blocking): author the Mission contract (15-element law subset) and the Delegation contract — bounded, revocable, non-escalating (E-045), acting-on-behalf-of — as first-class objects generalizing cg_mission_intent. Start gated by Mission-owner ratification (COND-001 via M-R-01). Built on the live-verified foundation-mission loop (STREAM H reusable[0]), never rebuilt.",
+      "capabilities": [
+        "V1CAP-046"
+      ],
+      "hardeningRefs": [
+        "L-H-004"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author Mission object contract (objective, scope, tenant, policy context, evidence requirements, gates, lifecycle)",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "contract file + suite: mission without required elements rejected"
+        },
+        {
+          "taskId": "T2",
+          "task": "Author Delegation contract: bounded, revocable, non-escalating, acting-on-behalf-of with revocation propagating",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "suite: revoked delegation denies execution; escalation attempt denied"
+        },
+        {
+          "taskId": "T3",
+          "task": "Prove both contracts generalize (not duplicate) the foundation loop idempotent replay",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "foundation-loop suite PASS unchanged + contract suite PASS"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-01"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "medium",
+      "humanApprovalsRequired": [
+        "Mission node owner ratification (COND-001) before contract work starts"
+      ],
+      "acceptance": "MISSION-R-50 reached verified state 'Mission + Delegation contracts authored and proven (bounded/revocable/non-escalating)' with evidence: contract paths + suites + verify PASS. Critical-path mission (J-025).",
+      "wave": 2
+    },
+    {
+      "id": "MISSION-R-51",
+      "name": "Mission gate & closure machinery",
+      "team": "Mission",
+      "objective": "Close J-026 / V1CAP-047: definition/security/verification/closure gates with PASSED/BLOCKED/WAIVED states where GATE-WAIVED is itself evidence-bearing (E-040: no evidence, no verified completion), integrated with the verify pipeline.",
+      "capabilities": [
+        "V1CAP-047"
+      ],
+      "hardeningRefs": [],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author gate taxonomy + state machine over the mission contract",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "suite: closure without gate evidence impossible; waiver requires evidence record"
+        },
+        {
+          "taskId": "T2",
+          "task": "Integrate gates with npm run verify as the machine-checkable closure evidence source",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "pipeline step: mission closure cites verify output id"
+        },
+        {
+          "taskId": "T3",
+          "task": "Verifier proves a waived gate leaves an auditable waiver record",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "transcript: waived mission closure carries waiver evidence"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-50"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "medium",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-51 reached verified state 'gate machinery proven: no-evidence closure impossible, waivers auditable' with evidence: suite transcripts + pipeline integration output + verify PASS.",
+      "wave": 3
+    },
+    {
+      "id": "MISSION-R-52",
+      "name": "Bounded delegation mechanism wired to missions",
+      "team": "Mission",
+      "objective": "Complete V1CAP-021: missions decompose into tasks executed by workers through the bounded delegation contract (V1CAP-021 dependsOn V1CAP-016 + V1CAP-048), with task assignment producing delegation records, never direct agent self-assignment.",
+      "capabilities": [
+        "V1CAP-021"
+      ],
+      "hardeningRefs": [],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author mission->task->worker decomposition mapping onto the delegation contract",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "suite: every executed task traces to a mission, a delegation record, and a worker identity"
+        },
+        {
+          "taskId": "T2",
+          "task": "Prove workers cannot self-assign or exceed delegated bounds",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "suite: self-assignment denied; out-of-bound execution denied"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-40",
+        "MISSION-R-50"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "medium",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-52 reached verified state 'mission->task->worker chain fully traced and bounded' with evidence: suite transcripts + verify PASS.",
+      "wave": 3
+    },
+    {
+      "id": "MISSION-R-60",
+      "name": "Command discipline: mandatory idempotency + resource quotas/leases",
+      "team": "Runtime",
+      "objective": "Close J-030 and J-031: platform-wide idempotency-key requirement on consequential commands (G-063) and lease/concurrency control over shared resources and worker execution (G-022, E-058), so exactly-once effects and safe multi-worker parallelism hold under retry.",
+      "capabilities": [
+        "V1CAP-054",
+        "V1CAP-055"
+      ],
+      "hardeningRefs": [
+        "L-H-017"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author command contract requiring idempotency keys; non-idempotent consequential commands rejected at registration",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "contract + suite: replay of same key returns identical effect (foundation-loop replay semantics generalized)"
+        },
+        {
+          "taskId": "T2",
+          "task": "Author lease/quota subsystem over tenant-quota patterns: concurrent workers cannot corrupt shared state",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "concurrency suite transcript: racing workers serialized by lease"
+        },
+        {
+          "taskId": "T3",
+          "task": "Verifier proves exactly-once under retry across the workflow engine",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "property-test transcript over retry storms"
+        }
+      ],
+      "dependsOn": [],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "medium",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-60 reached verified state 'idempotency mandatory + leases proven under concurrency' with evidence: suites + property tests + verify PASS. Builds on STREAM H reusable[0] idempotent replay.",
+      "wave": 2
+    },
+    {
+      "id": "MISSION-R-62",
+      "name": "Governed tool runtime & sandbox",
+      "team": "Runtime",
+      "objective": "Complete V1CAP-056: tool execution for workers inside a sandbox with credentials obtained via the broker (J-007), quotas applied (J-031), and security-runtime gates (V1CAP-018) enforced — no worker touches raw credentials or unbounded resources.",
+      "capabilities": [
+        "V1CAP-056"
+      ],
+      "hardeningRefs": [],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author sandboxed tool-execution contract: declared tools, scoped credentials via broker, quota accounting",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "suite: undeclared tool denied; credential never exposed to worker code"
+        },
+        {
+          "taskId": "T2",
+          "task": "Prove resource containment: runaway tool hits quota and is terminated cleanly with evidence",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "fault-injection transcript"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-82",
+        "MISSION-R-60"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "medium",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-62 reached verified state 'sandboxed tool runtime proven with brokered credentials and quota containment' with evidence: suite + fault-injection transcripts + verify PASS.",
+      "wave": 3
+    },
+    {
+      "id": "MISSION-R-63",
+      "name": "Tenant-scoped event routing & subscriptions",
+      "team": "Runtime",
+      "objective": "Close J-021 / V1CAP-043: governed subscription model over cg_event with tenant-scoped delivery, replay, and backpressure — never broadcast unauthorized events (Constitution 35), wiring the communication fanout (phase 10) as consumer.",
+      "capabilities": [
+        "V1CAP-043"
+      ],
+      "hardeningRefs": [
+        "L-H-025"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author subscription contract: subscriber authorization resolved per event; cross-tenant delivery impossible",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "suite: subscriber of tenant A receives zero tenant-B events"
+        },
+        {
+          "taskId": "T2",
+          "task": "Author replay + backpressure semantics over the event kernel",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "suite: replay reconstructs identical delivery state; backpressure sheds load without loss of auditability"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-15"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "medium",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-63 reached verified state 'tenant-scoped routing/replay/backpressure proven' with evidence: suite transcripts + verify PASS. Email delivery evidence under V1CAP-081 remains BLK-5-blocked and is never fabricated here.",
+      "wave": 3
+    },
+    {
+      "id": "MISSION-R-70",
+      "name": "Cost attribution: usage ledger rolled up to mission & tenant",
+      "team": "Data",
+      "objective": "Close J-043 / V1CAP-078: roll the verified usage ledger up to mission and tenant so quotas, billing (phase 13), and per-tenant rate limits become enforceable (E-051, AGENTS 20).",
+      "capabilities": [
+        "V1CAP-078"
+      ],
+      "hardeningRefs": [],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author rollup contract over metering/usage-ledger.ts keyed by mission id and tenant id",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "suite: every consumption record attributes to exactly one mission+tenant"
+        },
+        {
+          "taskId": "T2",
+          "task": "Prove attribution completeness: no ledger row without attribution (reuse ledger's own completeness invariant)",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "attribution-completeness property-test transcript"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-60"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "low",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-70 reached verified state 'mission/tenant cost attribution complete and enforced' with evidence: suite + property-test + verify PASS. Reuses STREAM H metering/usage-ledger.",
+      "wave": 3
+    },
+    {
+      "id": "MISSION-R-71",
+      "name": "Knowledge freshness, invalidation & source reliability registry",
+      "team": "Data",
+      "objective": "Close J-019 / V1CAP-040: freshness/validity fields + invalidation rule on memory/knowledge records (extension of bi-temporality) so stale stays distinguishable from current on loop re-entry (E-018 invariants 25-26).",
+      "capabilities": [
+        "V1CAP-040"
+      ],
+      "hardeningRefs": [],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author freshness/invalidation contract over the memory store + source reliability registry",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "suite: invalidated knowledge cannot re-enter Observation as current"
+        },
+        {
+          "taskId": "T2",
+          "task": "Prove staleness invariants with time-manipulated tests",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "transcript: stale record served only with stale marking"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-36",
+        "MISSION-R-13"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "low",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-71 reached verified state 'freshness/invalidation proven; stale never passes as current' with evidence: suite transcripts + verify PASS.",
+      "wave": 3
+    },
+    {
+      "id": "MISSION-R-72",
+      "name": "External adapter failure-semantics contract",
+      "team": "Data",
+      "objective": "Close J-045: timeouts, containment, degraded-mode behavior, and per-provider trust decisions for every external call the Action node makes (E-060: external systems are never automatically trusted), so new adapters inherit one pattern.",
+      "capabilities": [
+        "V1CAP-080"
+      ],
+      "hardeningRefs": [],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author failure-semantics contract over the payments/communication/integration adapter families",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "contract + fault-injection suite: timeout/degraded outcomes explicit, never silently trusted"
+        },
+        {
+          "taskId": "T2",
+          "task": "Prove degraded mode is distinguishable from success in evidence terms",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "suite transcript: degraded outcome captured as its own evidence class"
+        }
+      ],
+      "dependsOn": [],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "low",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-72 reached verified state 'adapter failure semantics proven under fault injection' with evidence: suite transcripts + verify PASS.",
+      "wave": 2
+    },
+    {
+      "id": "MISSION-R-73",
+      "name": "Financial contract reconciliation + live payment-rail verification",
+      "team": "Data",
+      "objective": "Close J-044: reconcile the orphaned subscription-tiers.ts legacy path into the phase-13 financial contract (kill the schools.active_features coupling), then verify live payment rails (webhook signature, replay guard, idempotency) once BLK-4 lands. Reconciliation is credential-free; live verification is blocked and never faked.",
+      "capabilities": [
+        "V1CAP-079"
+      ],
+      "hardeningRefs": [
+        "L-H-020"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Reconcile subscription/tier vocabulary into financial/payments plane keyed by TenantId; retire legacy school-column coupling from universal UI",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "diff removing legacy coupling + suite: tier gates resolve via TenantId only"
+        },
+        {
+          "taskId": "T2",
+          "task": "Author live-verification harness (signature validation, replay protection, idempotency) ready to execute on key provisioning",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "harness code + dry-run transcript; zero live charges until BLK-4"
+        },
+        {
+          "taskId": "T3",
+          "task": "On BLK-4: execute one live webhook-signature-verified charge + one replay attempt (must be rejected)",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "live transcript + audit record; replay attempt rejected evidence"
+        }
+      ],
+      "dependsOn": [],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "high",
+      "humanApprovalsRequired": [
+        "payment provider live key provisioning (BLK-4/COND-006)",
+        "approval for live charge execution"
+      ],
+      "acceptance": "MISSION-R-73 reached verified state 'legacy billing coupling removed and live signature/replay/idempotency proven on a real provider' with evidence: diff + live transcript. Until BLK-4, verified state is reconciliation + harness dry-run.",
+      "wave": 2
+    },
+    {
+      "id": "MISSION-R-80",
+      "name": "Authorization engine exhaustive suite",
+      "team": "Security",
+      "objective": "Close the highest-value unverified module (STREAM H unverifiedImplementations): the combined RBAC/ABAC/ReBAC/PBAC authorization.ts with its five-valued decision model gets a dedicated exhaustive suite (V1CAP-016 contract note; scope-lock unresolved item).",
+      "capabilities": [
+        "V1CAP-016"
+      ],
+      "hardeningRefs": [
+        "L-H-022"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author exhaustive decision-matrix suite: every (identity, tenant, role, relationship, resource, action, policy, context, risk) class exercised for ALLOW/DENY/REDACT/ESCALATE/REQUIRE_APPROVAL",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "matrix suite with full decision-class coverage report"
+        },
+        {
+          "taskId": "T2",
+          "task": "Prove deny-by-default: unknown/malformed inputs never yield ALLOW",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "fuzz/property-test transcript over malformed inputs"
+        }
+      ],
+      "dependsOn": [],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "low",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-80 reached verified state 'authorization engine exhaustively verified including deny-by-default fuzzing' with evidence: coverage report + property tests + verify PASS.",
+      "wave": 1
+    },
+    {
+      "id": "MISSION-R-81",
+      "name": "Per-event security contract",
+      "team": "Security",
+      "objective": "Close J-022 / V1CAP-044: authenticity, authorization, privacy, and provenance carried and enforced on every event (the policy/enforcement half of the envelope), so events can support Verification (E-017).",
+      "capabilities": [
+        "V1CAP-044"
+      ],
+      "hardeningRefs": [
+        "L-H-011"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author per-event security fields + enforcement at emission and consumption",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "suite: event without security contract rejected; tampered event fails authenticity"
+        },
+        {
+          "taskId": "T2",
+          "task": "Prove privacy fields respected at subscription delivery (cross-check with M-R-63)",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "joint suite transcript with event routing"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-15",
+        "MISSION-R-10"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "high",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-81 reached verified state 'every event carries and enforces its security contract' with evidence: suite transcripts + verify PASS. Critical-path mission (V1CAP-044).",
+      "wave": 3
+    },
+    {
+      "id": "MISSION-R-82",
+      "name": "Credential lifecycle, per-agent broker & emergency lockdown",
+      "team": "Security",
+      "objective": "Close J-007 and J-010: no universal master credential — per-agent credential broker with secret isolation and rotation (G-033), plus the bounded, authorized, audited emergency revocation/kill-switch path with security guardians (G-034). Both are blast-radius containment for a platform with autonomous workers.",
+      "capabilities": [
+        "V1CAP-017",
+        "V1CAP-019"
+      ],
+      "hardeningRefs": [
+        "L-H-015"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author credential broker contract: scoped per-agent credentials, isolation, rotation; worker code never sees raw secrets",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "suite: broker issues scoped creds only; rotation invalidates old creds"
+        },
+        {
+          "taskId": "T2",
+          "task": "Author emergency lockdown path: authorized kill-switch that suspends execution classes, itself audited and itself revocable",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "suite: lockdown denies execution; lockdown event audited; unauthenticated lockdown denied"
+        },
+        {
+          "taskId": "T3",
+          "task": "Verifier proves blast-radius: compromised worker credential cannot reach resources outside its scope",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "containment test transcript"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-40"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "high",
+      "humanApprovalsRequired": [
+        "secret provisioning policy acceptance (which secrets may be brokered)"
+      ],
+      "acceptance": "MISSION-R-82 reached verified state 'broker + rotation + audited emergency lockdown proven' with evidence: suite + containment transcripts + verify PASS.",
+      "wave": 2
+    },
+    {
+      "id": "MISSION-R-83",
+      "name": "Trust-fabric wiring into security decisions",
+      "team": "Security",
+      "objective": "Close J-008 / V1CAP-022 / COND-007 per the ruled direction: either the phase-08 engine consumes phase-09 trust assertions with evidence-backed state machines, or 09 is formally re-scoped evidence-only — implemented per the ADR from M-R-03, closing the D7 IMPLEMENTED_UNWIRED contradiction.",
+      "capabilities": [
+        "V1CAP-022"
+      ],
+      "hardeningRefs": [],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Implement the ADR-selected wiring (or formal re-scope artifact) and prove Evidence->Decision grounding",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "diff implementing ADR decision + suite: authorization decision cites trust-evidence state"
+        },
+        {
+          "taskId": "T2",
+          "task": "Verifier proves decisions are derived from evidence, not asserted",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "transcript: stale/revoked trust evidence flips the decision"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-03"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "high",
+      "humanApprovalsRequired": [
+        "trust-wiring ADR acceptance (COND-007) before implementation"
+      ],
+      "acceptance": "MISSION-R-83 reached verified state 'trust fabric wired (or formally re-scoped) per ADR with evidence-derived decisions proven' with evidence: diff + suites + verify PASS.",
+      "wave": 2
+    },
+    {
+      "id": "MISSION-R-84",
+      "name": "AI-specific runtime defenses",
+      "team": "Security",
+      "objective": "Close J-036 / V1CAP-033: prompt-injection defense, malicious-artifact defense, exfiltration control, and supply-chain checks as first-class runtime capabilities (E-062), enforced at the worker->gateway boundary.",
+      "capabilities": [
+        "V1CAP-033"
+      ],
+      "hardeningRefs": [
+        "L-H-014"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author prompt-injection + malicious-artifact defense contract at gateway ingress",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "adversarial suite: injection payloads contained; artifacts quarantined"
+        },
+        {
+          "taskId": "T2",
+          "task": "Author exfiltration control + supply-chain check tests",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "suite: exfil-shaped outbound content blocked; unsigned artifacts rejected"
+        },
+        {
+          "taskId": "T3",
+          "task": "Verifier runs a red-team battery and records residual risk",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "red-team transcript + residual-risk list"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-31"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "medium",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-84 reached verified state 'runtime defenses proven against adversarial battery with residual risk recorded' with evidence: red-team transcript + suites + verify PASS.",
+      "wave": 3
+    },
+    {
+      "id": "MISSION-R-85",
+      "name": "RLS isolation battery (authored + live-executed)",
+      "team": "Security",
+      "objective": "Close J-041 / V1CAP-073: convert RLS deny-by-default from statically reasoned to database-proven. Author the battery over all cg_* substrate tables (tenant A cannot read tenant B, user A cannot read user B, revoked/expired denied); execution requires live credentials (OPS-1 family) and is serialized on the canonical environment.",
+      "capabilities": [
+        "V1CAP-073",
+        "V1CAP-012"
+      ],
+      "hardeningRefs": [
+        "L-H-008"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author the RLS battery covering every cg_* table: cross-tenant read/write, cross-user, revoked identity, expired grant — all must fail",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "battery code + static policy lint PASS; battery runnable the moment credentials land"
+        },
+        {
+          "taskId": "T2",
+          "task": "Execute battery against a live database with credentials; record deny-by-default proof per table",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "live battery transcript: zero unauthorized rows returned across tables"
+        },
+        {
+          "taskId": "T3",
+          "task": "Wire battery into CI as credential-gated step (skips-with-recorded-reason when absent — never passes silently)",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "pipeline step output showing explicit SKIP-WITH-REASON, not PASS"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-20"
+      ],
+      "parallelizable": false,
+      "reversible": true,
+      "blastRadius": "medium",
+      "humanApprovalsRequired": [
+        "live-environment credential use for battery execution"
+      ],
+      "acceptance": "MISSION-R-85 reached verified state 'RLS battery authored and (once credentials land) live-proven per table' with evidence: battery code + live transcript + CI step output. Until then, verified state is authored battery + explicit skip record.",
+      "wave": 2
+    },
+    {
+      "id": "MISSION-R-90",
+      "name": "Evidence-class capture discipline",
+      "team": "Assurance",
+      "objective": "Close J-034 / V1CAP-059: generated/simulated/predicted evidence can never silently become direct observation — class field + invariant enforced at the capture API (E-017, G-040, G-041; Constitution 9).",
+      "capabilities": [
+        "V1CAP-059"
+      ],
+      "hardeningRefs": [
+        "L-H-010"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author evidence-class contract at the capture API over envelope provenance fields",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "suite: class-less capture rejected; class escalation (generated->direct) rejected"
+        },
+        {
+          "taskId": "T2",
+          "task": "Prove temporal-succession and simulation invariants (G-040/G-041) at capture time",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "transcript: simulation output captured as simulated class only"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-10"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "medium",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-90 reached verified state 'capture-time evidence-class discipline enforced and proven' with evidence: suite transcripts + verify PASS. Critical-path mission (V1CAP-059).",
+      "wave": 2
+    },
+    {
+      "id": "MISSION-R-91",
+      "name": "Evidence lifecycle (revocation, staleness, retention)",
+      "team": "Assurance",
+      "objective": "Close J-033 / V1CAP-058: sufficiency assessment, confidence, revocation, staleness detection, and retention policy over the evidence fabric — revoked evidence cannot silently support active claims; once-true claims are not permanently true (E-018 invariants 12-13).",
+      "capabilities": [
+        "V1CAP-058"
+      ],
+      "hardeningRefs": [],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author evidence lifecycle contract over cg_foundation_evidence patterns: sufficiency, confidence, revocation, staleness",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "suite: revoked evidence invalidates dependent claims; stale evidence flagged"
+        },
+        {
+          "taskId": "T2",
+          "task": "Prove retention policy interacts correctly with the M-R-03 retention/erasure ADR",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "transcript: retention rule + erasure rule co-exist without silent deletion of audited records"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-90",
+        "MISSION-R-03"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "medium",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-91 reached verified state 'evidence lifecycle proven including revocation cascade and staleness' with evidence: suite transcripts + verify PASS.",
+      "wave": 3
+    },
+    {
+      "id": "MISSION-R-92",
+      "name": "Verification independence enforcement",
+      "team": "Assurance",
+      "objective": "Close J-035 / V1CAP-061: a worker (AI or human) cannot verify its own output — verifier identity != executor identity enforced in the loop (E-050, AGENTS 21).",
+      "capabilities": [
+        "V1CAP-061"
+      ],
+      "hardeningRefs": [
+        "L-H-009"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author independence rule in the verification path binding verifier != executor identities",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "suite: self-verification attempt rejected with explicit error"
+        },
+        {
+          "taskId": "T2",
+          "task": "Prove independence holds for worker-substitutes (delegate chains cannot verify their principal's output)",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "property-test transcript over identity graphs"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-40"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "medium",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-92 reached verified state 'verification independence enforced and proven over identity graphs' with evidence: suite + property tests + verify PASS.",
+      "wave": 3
+    },
+    {
+      "id": "MISSION-R-100",
+      "name": "Applied substrate posture: apply migrations to canonical environment with state truth",
+      "team": "Reliability",
+      "objective": "Close J-040 (blocking) / V1CAP-072: execute the operational act of applying the authored cg_* migrations to the canonical environment (RULING-10 approved; rollback files exist for every migration) and record declared-vs-applied state as environment truth — ending the repo's worst contradiction (live-verified-once-on-dev vs canonical DB has no cg_* tables). Exclusive access to the canonical DB; serialized with M-R-85/101.",
+      "capabilities": [
+        "V1CAP-072"
+      ],
+      "hardeningRefs": [
+        "L-H-003"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Fallback (pre-credentials): author applied-posture record schema + preflight rehearsal scripts (TLS fail-closed per OPS-1; COREGRID_DB_INSECURE_TLS escape hatch stays logged and unused)",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "posture record schema + rehearsal dry-run transcript"
+        },
+        {
+          "taskId": "T2",
+          "task": "On OPS-1 + approvals: apply migrations in dependency order via scripts/db-apply.mjs; record per-migration applied state + checksum",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "apply transcript with per-migration success + declared-vs-applied record"
+        },
+        {
+          "taskId": "T3",
+          "task": "Verifier re-runs foundation-loop live battery + RLS battery against the canonical environment and records new evidence class 'canonical-verified'",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "live battery transcripts distinguishing canonical-verified from dev-verified"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-10",
+        "MISSION-R-13",
+        "MISSION-R-20",
+        "MISSION-R-21",
+        "MISSION-R-85",
+        "MISSION-R-03"
+      ],
+      "parallelizable": false,
+      "reversible": true,
+      "blastRadius": "high",
+      "humanApprovalsRequired": [
+        "migration apply to canonical database",
+        "OPS-1 credential provisioning (DATABASE_URL + CA cert)"
+      ],
+      "acceptance": "MISSION-R-100 reached verified state 'cg_* substrate applied to canonical environment with declared-vs-applied state truth recorded and canonical-verified evidence class established' with evidence: apply transcript + posture record + live battery outputs. Until OPS-1, verified state is authored posture + rehearsal. Critical-path mission (V1CAP-072).",
+      "wave": 3
+    },
+    {
+      "id": "MISSION-R-101",
+      "name": "Backup/restore & verified recovery",
+      "team": "Reliability",
+      "objective": "Close J-042 / V1CAP-074: backup and restore capability for tenant data and evidence stores with recovery itself verified (E-102 invariant 30: recovery must be verified, not assumed). Execution serialized on the canonical environment after M-R-100.",
+      "capabilities": [
+        "V1CAP-074"
+      ],
+      "hardeningRefs": [],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author backup/restore runbooks + tooling over the applied substrate, honoring data categories from the retention ADR",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "runbook + tooling code + dry-run transcript"
+        },
+        {
+          "taskId": "T2",
+          "task": "Execute a verified restore: backup -> destroy test table -> restore -> prove row-level identity with evidence integrity",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "restore transcript: checksums + evidence store intact post-restore"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-100"
+      ],
+      "parallelizable": false,
+      "reversible": true,
+      "blastRadius": "high",
+      "humanApprovalsRequired": [
+        "restore execution on canonical environment"
+      ],
+      "acceptance": "MISSION-R-101 reached verified state 'recovery executed and verified, not assumed' with evidence: restore transcript. Until OPS-1, verified state is runbook + dry-run.",
+      "wave": 3
+    },
+    {
+      "id": "MISSION-R-102",
+      "name": "Failure & incident architecture + reliability objectives",
+      "team": "Reliability",
+      "objective": "Complete V1CAP-075/077: failure-mode architecture over the verified observability foundation (health endpoint, structured redacting logs) and the first SLO/SLI set for the governed loop (mission admission, evidence capture, verification latency).",
+      "capabilities": [
+        "V1CAP-075",
+        "V1CAP-077"
+      ],
+      "hardeningRefs": [
+        "L-H-027"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author failure-mode catalogue + incident playbook for the loop-critical paths (DB, gateway, worker runtime)",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "catalogue + playbook + chaos-style unit tests on failure paths"
+        },
+        {
+          "taskId": "T2",
+          "task": "Author SLO/SLI definitions with measurement hooks over observability health/structured-log",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "SLO definitions + measurement suite PASS"
+        }
+      ],
+      "dependsOn": [],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "low",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-102 reached verified state 'failure architecture + SLOs defined with measurement proven' with evidence: catalogue + suites + verify PASS. Reuses STREAM H observability family (live-verified health endpoint).",
+      "wave": 2
+    },
+    {
+      "id": "MISSION-R-103",
+      "name": "Deployment & release path live execution",
+      "team": "Reliability",
+      "objective": "Complete V1CAP-076's remaining evidence: execute the first real BYOC deploy through release.yml (human-gated production environment, SHA-pinned actions, fails closed without BLK-3). Deployment code is live-verified in components (TLS probes M-01, runtime boot M-14); the deploy act itself has never executed.",
+      "capabilities": [
+        "V1CAP-076"
+      ],
+      "hardeningRefs": [],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Fallback (pre-BLK-3): release rehearsal — docker build verification where docker exists (recorded UNKNOWN on this VM), full pipeline dry-run to the human-approval gate without deploying",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "rehearsal transcript stopping exactly at the approval gate"
+        },
+        {
+          "taskId": "T2",
+          "task": "On BLK-3: execute tag build + deploy to the human-gated production environment; record deployed state in the environment-truth posture",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "deploy transcript + environment-state record + post-deploy health probe 200"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-100",
+        "MISSION-R-102"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "high",
+      "humanApprovalsRequired": [
+        "deploy credentials provisioning (BLK-3/COND-006)",
+        "production environment deployment approval (existing human-gated 'production' environment)"
+      ],
+      "acceptance": "MISSION-R-103 reached verified state 'first real deploy executed with post-deploy health evidence and environment truth updated' with evidence: deploy + health transcripts. Until BLK-3, verified state is rehearsal-to-gate evidence.",
+      "wave": 4
+    },
+    {
+      "id": "MISSION-R-110",
+      "name": "Command centre operational surface (loop closure for humans)",
+      "team": "Experience",
+      "objective": "Close J-048 / V1CAP-089: rebuild the withdrawn L4 surface as the real operational projection — alerts/incidents/decisions over the event and evidence fabrics — so Outcome->Observation closes for human operators (phase 19 is the sole registered owner of that node).",
+      "capabilities": [
+        "V1CAP-089",
+        "V1CAP-031"
+      ],
+      "hardeningRefs": [
+        "L-H-024"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author command-centre projection over tenant-scoped events + evidence lifecycle states (consume M-R-63/M-R-91 contracts; no direct substrate reach-around)",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "surface code + suite: projection renders only authorized tenant scope; decision objects surfaced with provenance"
+        },
+        {
+          "taskId": "T2",
+          "task": "Prove an operator can close the loop: observe -> annotate -> re-enter as observation through the surface",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "E2E transcript: operator action recorded as loop evidence"
+        },
+        {
+          "taskId": "T3",
+          "task": "Validate against the canonical environment once M-R-100 lands (live data, not fixtures)",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "live validation transcript (canonical-verified evidence class)"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-15",
+        "MISSION-R-63",
+        "MISSION-R-91"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "medium",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-110 reached verified state 'operational projection live with operator loop-closure proven end-to-end' with evidence: E2E + live validation transcripts + verify PASS. Critical-path mission (V1CAP-089).",
+      "wave": 3
+    },
+    {
+      "id": "MISSION-R-111",
+      "name": "Global shell implementation under ruled ownership",
+      "team": "Experience",
+      "objective": "Deliver V1CAP-085's neutralization contract and (post-COND-013 ruling) the mechanical relocation half: navigation, org switcher, global search, notifications, profile owned per the GAP-008 ruling (M-R-03), implemented domain-neutrally over the verified workspace engine.",
+      "capabilities": [
+        "V1CAP-085"
+      ],
+      "hardeningRefs": [],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Author neutral shell contract over workspace-core/projection (reuse verified workspace machinery)",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "contract + suite: shell surfaces resolve via neutral vocabulary only; neutrality guard PASS"
+        },
+        {
+          "taskId": "T2",
+          "task": "Implement shell surfaces; mechanical relocation half only after relocation ADR (M-R-03) is ruled",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "suite PASS + guard baseline unchanged-or-reduced"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-03",
+        "MISSION-R-05"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "medium",
+      "humanApprovalsRequired": [
+        "GAP-008 global shell ownership ruling (COND-004) before scheduling shell work"
+      ],
+      "acceptance": "MISSION-R-111 reached verified state 'shell implemented under ruled ownership with neutral vocabulary and guard-clean sources' with evidence: suite transcripts + guard output + verify PASS.",
+      "wave": 2
+    },
+    {
+      "id": "MISSION-R-120",
+      "name": "Domain runtime adoption of neutral vocabulary + fixture recertification",
+      "team": "Domain Runtime",
+      "objective": "Prove the reconstructed identity/authority primitives from the consumer side: Scholar runtime (V1CAP-092) re-verifies against the neutral role vocabulary and tenant primitives, and the restaurant fixture (V1CAP-093) recertifies as the second-domain domain-neutrality oracle under the new CI guard.",
+      "capabilities": [
+        "V1CAP-092",
+        "V1CAP-093",
+        "V1CAP-007"
+      ],
+      "hardeningRefs": [],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Adopt neutral role mappings in Scholar runtime bindings; prove all runtime authorization paths resolve without Scholar-global vocabulary",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "binding diff + suite: Scholar runtime fully functional via neutral vocabulary"
+        },
+        {
+          "taskId": "T2",
+          "task": "Recertify restaurant fixture through the type registry + neutrality guard as the standing second-domain acceptance oracle",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "recertification transcript: restaurant installs as pure configuration, guard-clean"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-21",
+        "MISSION-R-05"
+      ],
+      "parallelizable": true,
+      "reversible": true,
+      "blastRadius": "medium",
+      "humanApprovalsRequired": [],
+      "acceptance": "MISSION-R-120 reached verified state 'both runtimes certified against neutral primitives with the fixture re-established as acceptance oracle' with evidence: recertification transcripts + guard output + verify PASS. Reuses STREAM H reusable[2] restaurant fixture.",
+      "wave": 2
+    },
+    {
+      "id": "MISSION-R-121",
+      "name": "Domain server-function relocation (mechanical half, post-ADR)",
+      "team": "Domain Runtime",
+      "objective": "Execute the COND-013 mechanical relocation: move the ~15 Scholar server-function modules from the universal lib root into the runtime namespace (per the relocation ADR from M-R-03), reducing the neutrality-guard baseline to zero for server functions, with per-function invariant tests added (AGENTS 27).",
+      "capabilities": [
+        "V1CAP-085",
+        "V1CAP-067"
+      ],
+      "hardeningRefs": [
+        "L-H-023"
+      ],
+      "tasks": [
+        {
+          "taskId": "T1",
+          "task": "Relocate the enumerated contamination set (bus-tracking, driver-portal, teachers, timetable, attendance, lesson-plan-ai, class-levels, facilities, school-settings, scholar-*.functions, paystack split, audit.ts rename, geofence split, subscription-tiers per M-R-73)",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "relocation diff + import-graph proof: zero universal-root domain modules remain"
+        },
+        {
+          "taskId": "T2",
+          "task": "Add per-function invariant suites (authenticate/resolve-tenant/authorize/validate/audit) for relocated functions",
+          "workerKind": "engineer-agent",
+          "evidenceRequired": "suite per function; §27 invariant coverage report"
+        },
+        {
+          "taskId": "T3",
+          "task": "Verifier confirms neutrality-guard baseline reduced to zero server-function violations and no behavior regression",
+          "workerKind": "verifier-agent",
+          "evidenceRequired": "guard output at zero + full verify PASS + scholar runtime suites PASS"
+        }
+      ],
+      "dependsOn": [
+        "MISSION-R-03",
+        "MISSION-R-120"
+      ],
+      "parallelizable": false,
+      "reversible": true,
+      "blastRadius": "high",
+      "humanApprovalsRequired": [
+        "relocation ADR acceptance (COND-013) before mechanical move"
+      ],
+      "acceptance": "MISSION-R-121 reached verified state 'universal lib root domain-clean with §27 invariants tested per relocated function' with evidence: guard-at-zero output + invariant coverage report + verify PASS.",
+      "wave": 3
+    }
+  ],
+  "waves": {
+    "1": "Dependency-free foundation missions, launchable TODAY with zero credentials: ratification dossiers (M-R-01/02/03), registry + neutrality-guard engineering hygiene (M-R-04/05), kernel envelope + type gate (M-R-10/11, authored-not-applied), neutral identity primitives + role vocabulary + lifecycle proofs (M-R-20/21/22), context contract (M-R-30), authorization exhaustive suite (M-R-80). Every task produces repo evidence; nothing requires a secret or a ruling to START.",
+    "2": "Substrate authoring that depends only on wave-1 contracts and ratification dossiers: bi-temporal + event semantics (M-R-13/15), memory store (M-R-36, gated by COND-002 ruling), worker substrate (M-R-40), mission/delegation contracts (M-R-50, gated by COND-001 ruling), command discipline (M-R-60), adapter failure semantics (M-R-73 reconciliation half / M-R-72), credential broker + lockdown (M-R-82), trust wiring per ADR (M-R-83), evidence-class capture (M-R-90), RLS battery authoring (M-R-85), failure/SLO architecture (M-R-102), shell under ruled ownership (M-R-111), domain-runtime recertification (M-R-120).",
+    "3": "Hardening the closed loop to production legitimacy: reconciliation engine, model registry, provenance, proposal/approval chains, delegation matching, memory scopes, onboarding, gates, bounded delegation, tool sandbox, event routing, cost attribution, freshness, per-event security, AI defenses, evidence lifecycle, verification independence, and — with credentials + approvals — migration apply, backup/restore, command centre, and server-function relocation.",
+    "4": "Integration + live validation: first live governed inference (M-R-32, BLK-2) and first real deploy (M-R-103, BLK-3). Wave 4 exists ONLY for evidence that requires external credentials; every engineering prerequisite for both missions is delivered by earlier waves as fallback work."
+  },
+  "sharedContracts": [
+    {
+      "contract": "cg_* kernel substrate schema family (envelope columns, bi-temporal fields, event semantics, evidence-class provenance)",
+      "ownerTeam": "Kernel",
+      "consumers": [
+        "Identity",
+        "Security",
+        "Assurance",
+        "Runtime",
+        "Data",
+        "Intelligence",
+        "Mission",
+        "Workforce",
+        "Reliability",
+        "Domain Runtime",
+        "Experience"
+      ],
+      "changePath": "PROPOSE->IMPACT->DEPENDENCY->AUTHORITY->APPROVAL->IMPLEMENT->VERIFY"
+    },
+    {
+      "contract": "Neutral tenant-membership DB helpers (get_my_tenant_id + tenant-role/admin predicates) as universal RPC gates",
+      "ownerTeam": "Identity",
+      "consumers": [
+        "Kernel",
+        "Security",
+        "Data",
+        "Runtime",
+        "Reliability",
+        "Domain Runtime",
+        "Workforce",
+        "Mission"
+      ],
+      "changePath": "PROPOSE->IMPACT->DEPENDENCY->AUTHORITY->APPROVAL->IMPLEMENT->VERIFY"
+    },
+    {
+      "contract": "Neutral universal role vocabulary + DomainDefinition.roleMappings (domain->neutral only)",
+      "ownerTeam": "Identity",
+      "consumers": [
+        "Security",
+        "Workforce",
+        "Domain Runtime",
+        "Experience",
+        "Mission"
+      ],
+      "changePath": "PROPOSE->IMPACT->DEPENDENCY->AUTHORITY->APPROVAL->IMPLEMENT->VERIFY"
+    },
+    {
+      "contract": "Authorization decision contract (ALLOW/DENY/REDACT/ESCALATE/REQUIRE_APPROVAL) — single enforcement point for every server function",
+      "ownerTeam": "Security",
+      "consumers": [
+        "all 13 teams via AGENTS 27"
+      ],
+      "changePath": "PROPOSE->IMPACT->DEPENDENCY->AUTHORITY->APPROVAL->IMPLEMENT->VERIFY"
+    },
+    {
+      "contract": "Mission & Delegation object contracts (15-element mission law; bounded/revocable/non-escalating delegation)",
+      "ownerTeam": "Mission",
+      "consumers": [
+        "Workforce",
+        "Runtime",
+        "Assurance",
+        "Intelligence",
+        "Reliability"
+      ],
+      "changePath": "PROPOSE->IMPACT->DEPENDENCY->AUTHORITY->APPROVAL->IMPLEMENT->VERIFY"
+    },
+    {
+      "contract": "Governed worker definition schema (identity-linked capabilities, authority bounds, delegation history)",
+      "ownerTeam": "Workforce",
+      "consumers": [
+        "Mission",
+        "Security",
+        "Runtime",
+        "Assurance"
+      ],
+      "changePath": "PROPOSE->IMPACT->DEPENDENCY->AUTHORITY->APPROVAL->IMPLEMENT->VERIFY"
+    },
+    {
+      "contract": "AI gateway request/response contract (authz, budget, rate limit, metering, provenance stamping) — no direct provider calls",
+      "ownerTeam": "Intelligence",
+      "consumers": [
+        "Workforce",
+        "Security",
+        "Data",
+        "Assurance"
+      ],
+      "changePath": "PROPOSE->IMPACT->DEPENDENCY->AUTHORITY->APPROVAL->IMPLEMENT->VERIFY"
+    },
+    {
+      "contract": "Evidence record + evidence-class contract (capture-time discipline, lifecycle states)",
+      "ownerTeam": "Assurance",
+      "consumers": [
+        "Mission",
+        "Reliability",
+        "Experience",
+        "Kernel",
+        "Intelligence"
+      ],
+      "changePath": "PROPOSE->IMPACT->DEPENDENCY->AUTHORITY->APPROVAL->IMPLEMENT->VERIFY"
+    },
+    {
+      "contract": "Command contract (mandatory idempotency keys, leases/quotas)",
+      "ownerTeam": "Runtime",
+      "consumers": [
+        "Mission",
+        "Workforce",
+        "Data",
+        "Intelligence"
+      ],
+      "changePath": "PROPOSE->IMPACT->DEPENDENCY->AUTHORITY->APPROVAL->IMPLEMENT->VERIFY"
+    },
+    {
+      "contract": "Machine-operable registry.json (capabilities, owners, test attribution, drift baseline comparison)",
+      "ownerTeam": "Architecture",
+      "consumers": [
+        "all 13 teams + CI"
+      ],
+      "changePath": "PROPOSE->IMPACT->DEPENDENCY->AUTHORITY->APPROVAL->IMPLEMENT->VERIFY"
+    },
+    {
+      "contract": "Per-agent credential broker (scoped issuance, rotation, isolation)",
+      "ownerTeam": "Security",
+      "consumers": [
+        "Workforce",
+        "Runtime",
+        "Reliability"
+      ],
+      "changePath": "PROPOSE->IMPACT->DEPENDENCY->AUTHORITY->APPROVAL->IMPLEMENT->VERIFY"
+    }
+  ],
+  "integrationPoints": [
+    "V1CAP-001 kernel substrate is consumed by every fabric (Reality, Mission, Workforce, Evidence all register through it)",
+    "V1CAP-016 authorization engine is consumed by every server function (AGENTS 27) — single enforcement point for ALLOW/DENY/REDACT/ESCALATE/REQUIRE_APPROVAL",
+    "V1CAP-026 AI gateway <-> V1CAP-048/050 worker runtime: every worker AI action routes through the gateway and the proposal pipeline (V1CAP-030)",
+    "V1CAP-041 event outbox -> V1CAP-057 evidence fabric: state changes become evidence automatically",
+    "V1CAP-052 workflow lifecycle <-> V1CAP-046 mission orchestration: missions execute through the one canonical state machine (RULING-5)",
+    "V1CAP-079 financial ledger <-> V1CAP-078 metering: cost attribution flows into tenant/mission rollups",
+    "V1CAP-082 registry <-> V1CAP-070 phase-contract layer: registry validation is a CI gate over all 51 phase contracts",
+    "V1CAP-013/014 neutral primitives <-> V1CAP-012/073 RLS isolation: tenant/role helpers are the RLS activation dependency (I-007 root cause)",
+    "npm run verify is the shared integration surface: every mission's evidence terminates in the verify pipeline (typecheck + units + registry validation + secret scan + dual build); mission gates (M-R-51) make this machine-checkable",
+    "Canonical environment is an exclusive-access integration point: M-R-100 (apply), M-R-85 (RLS battery), M-R-101 (restore) serialize on it — never run concurrently"
+  ],
+  "criticalPathMissions": [
+    "MISSION-R-20 (V1CAP-013 neutral tenant primitives)",
+    "MISSION-R-21 (V1CAP-014 neutral role vocabulary)",
+    "MISSION-R-100 (V1CAP-072 applied substrate / environment state truth)",
+    "MISSION-R-01 -> MISSION-R-50 (V1CAP-046 ratified mission spine + first-class contracts)",
+    "MISSION-R-40 (V1CAP-048 persistent governed workers)",
+    "MISSION-R-32 (V1CAP-027 live governed inference, BLK-2)",
+    "MISSION-R-36 (V1CAP-035 persisted memory store, COND-002)",
+    "MISSION-R-10 (V1CAP-002 canonical envelope)",
+    "MISSION-R-15 (V1CAP-042 event kernel semantics)",
+    "MISSION-R-81 (V1CAP-044 per-event security contract)",
+    "MISSION-R-90 (V1CAP-059 evidence-class capture discipline)",
+    "MISSION-R-110 (V1CAP-089 command centre surface — human loop closure)"
+  ],
+  "criticalPathNote": "The critical path is a CLOSURE ordering (mirrors the reconstructed graph V1CAP-013->014->072->046->048->027->035->002->042->044->059->089), not an authoring serialization. Because the repo posture is authored-not-applied, envelope work (M-R-10) and memory-schema authoring (M-R-36) run earlier in the authoring graph; the apply-and-validate steps (M-R-100, live batteries) preserve the closure ordering. Authoring order and closure order are distinct and both recorded.",
+  "blockedOnCredentials": [
+    {
+      "missions": [
+        "MISSION-R-100",
+        "MISSION-R-85",
+        "MISSION-R-101"
+      ],
+      "secret": "OPS-1",
+      "fallbackWork": "Author the applied-posture record schema, preflight rehearsal scripts, and the full RLS/restore batteries now (TLS fail-closed per the OPS-RISK-1 fix; the COREGRID_DB_INSECURE_TLS=1 escape hatch stays logged and unused — no bypass). Execution evidence is recorded the moment DATABASE_URL + CA cert are provisioned; until then the missions report authored-verified states only, never applied/verified claims."
+    },
+    {
+      "missions": [
+        "MISSION-R-32"
+      ],
+      "secret": "BLK-2",
+      "fallbackWork": "Fail-closed behavior on missing key is re-proven and a stub-transport dry-run harness exercises the full governed request path (authz, budget pre-check, rate limit, metering, provenance) so BLK-2 provisioning reduces to swapping the transport. No live model call is claimed until the key lands via Cursor Dashboard."
+    },
+    {
+      "missions": [
+        "MISSION-R-103"
+      ],
+      "secret": "BLK-3",
+      "fallbackWork": "Release rehearsal runs the full pipeline to the human-approval gate and stops (release.yml already fails closed without BLK-3); docker build verification is performed where docker exists and honestly recorded UNKNOWN where it does not. First real deploy waits for credentials + production-environment approval."
+    },
+    {
+      "missions": [
+        "MISSION-R-73"
+      ],
+      "secret": "BLK-4",
+      "fallbackWork": "The credential-free half proceeds fully: legacy subscription-tier coupling removed, TenantId-keyed financial vocabulary in place, live-verification harness (webhook signature validation, replay guard, idempotency) authored and dry-run. Zero live charges and zero fabricated delivery/charge claims until the provider key is provisioned."
+    },
+    {
+      "missions": [
+        "MISSION-R-63"
+      ],
+      "secret": "BLK-5",
+      "fallbackWork": "Tenant-scoped routing, replay, and backpressure are fully provable without a provider. Email delivery evidence under V1CAP-081 remains record-only by design (Part 20 fail-closed contract): 'delivered' is unreachable until the email hold ends, and the routing mission never pretends otherwise."
+    }
+  ],
+  "teamRoster": [
+    {
+      "team": "Architecture",
+      "charter": "Owns decisions and the engineering nervous system: ratification dossiers/ADRs for every gating condition, machine-operable registry truth, continuous domain-neutrality guard. Does not implement domain features.",
+      "initialMissions": [
+        "MISSION-R-01",
+        "MISSION-R-02",
+        "MISSION-R-03",
+        "MISSION-R-04",
+        "MISSION-R-05"
+      ]
+    },
+    {
+      "team": "Kernel",
+      "charter": "Owns the universal reality substrate: envelope conformance, type registry, bi-temporality, reconciliation, event semantics, time authority. Sole writer to kernel/ surfaces; domain runtimes may register but never widen kernel semantics.",
+      "initialMissions": [
+        "MISSION-R-10",
+        "MISSION-R-11",
+        "MISSION-R-13",
+        "MISSION-R-14",
+        "MISSION-R-15"
+      ]
+    },
+    {
+      "team": "Identity",
+      "charter": "Owns who-and-what-tenancy: neutral tenant-membership primitives, neutral role vocabulary, lifecycle enforcement proofs. Every universal gate re-points through this team's contracts.",
+      "initialMissions": [
+        "MISSION-R-20",
+        "MISSION-R-21",
+        "MISSION-R-22"
+      ]
+    },
+    {
+      "team": "Intelligence",
+      "charter": "Owns the Intelligence node: context assembly completeness, model registry/fallback, live governed inference, reasoning provenance, proposal/approval pipeline, and the durable memory store.",
+      "initialMissions": [
+        "MISSION-R-30",
+        "MISSION-R-31",
+        "MISSION-R-32",
+        "MISSION-R-33",
+        "MISSION-R-34",
+        "MISSION-R-36"
+      ]
+    },
+    {
+      "team": "Workforce",
+      "charter": "Owns governed workers: persistent definitions, capability registry and matching, memory scopes, onboarding reality discovery. Workers are untrusted by default; every authority is bounded and granted.",
+      "initialMissions": [
+        "MISSION-R-40",
+        "MISSION-R-41",
+        "MISSION-R-42",
+        "MISSION-R-43"
+      ]
+    },
+    {
+      "team": "Mission",
+      "charter": "Owns the Mission->Delegation spine: first-class mission/delegation contracts, gate machinery, bounded delegation wiring. Generalizes — never rebuilds — the live-verified foundation loop.",
+      "initialMissions": [
+        "MISSION-R-50",
+        "MISSION-R-51",
+        "MISSION-R-52"
+      ]
+    },
+    {
+      "team": "Runtime",
+      "charter": "Owns execution primitives: idempotency standard, quotas/leases, sandboxed tool runtime, tenant-scoped event routing.",
+      "initialMissions": [
+        "MISSION-R-60",
+        "MISSION-R-62",
+        "MISSION-R-63"
+      ]
+    },
+    {
+      "team": "Data",
+      "charter": "Owns data-plane economics and quality: cost attribution, knowledge freshness, adapter failure semantics, financial contract reconciliation.",
+      "initialMissions": [
+        "MISSION-R-70",
+        "MISSION-R-71",
+        "MISSION-R-72",
+        "MISSION-R-73"
+      ]
+    },
+    {
+      "team": "Security",
+      "charter": "Owns enforcement: exhaustive authorization verification, per-event security contract, credential broker + emergency lockdown, trust-fabric wiring, AI runtime defenses, RLS battery.",
+      "initialMissions": [
+        "MISSION-R-80",
+        "MISSION-R-81",
+        "MISSION-R-82",
+        "MISSION-R-83",
+        "MISSION-R-84",
+        "MISSION-R-85"
+      ]
+    },
+    {
+      "team": "Reliability",
+      "charter": "Owns operational truth: applied-substrate posture and migration apply, backup/verified recovery, failure architecture + SLOs, deployment execution.",
+      "initialMissions": [
+        "MISSION-R-100",
+        "MISSION-R-101",
+        "MISSION-R-102",
+        "MISSION-R-103"
+      ]
+    },
+    {
+      "team": "Assurance",
+      "charter": "Owns evidence and verification integrity: evidence-class capture discipline, evidence lifecycle, verification independence.",
+      "initialMissions": [
+        "MISSION-R-90",
+        "MISSION-R-91",
+        "MISSION-R-92"
+      ]
+    },
+    {
+      "team": "Experience",
+      "charter": "Owns the human loop tail: command centre operational surface and the global shell under ruled ownership.",
+      "initialMissions": [
+        "MISSION-R-110",
+        "MISSION-R-111"
+      ]
+    },
+    {
+      "team": "Domain Runtime",
+      "charter": "Owns runtime instances as consumers proving substrate neutrality: Scholar runtime adoption of neutral vocabulary, restaurant fixture recertification, server-function relocation post-ADR.",
+      "initialMissions": [
+        "MISSION-R-120",
+        "MISSION-R-121"
+      ]
+    }
+  ],
+  "graphHonesty": {
+    "missionCount": 50,
+    "maxSafeConcurrency": 10,
+    "maxSafeConcurrencyRationale": "Wave missions are dependency-free within their wave, but concurrency is bounded by three real constraints: (1) shared-repo surfaces — registry.json (M-R-04 single-writer), kernel/ sources (Kernel team serializes its own missions), canonical environment (M-R-100/85/101 exclusive access); (2) the verify pipeline is a shared resource with no correctness risk but real contention above ~10 parallel runs; (3) ADR-gated missions (M-R-50, M-R-83, M-R-111, M-R-121) cannot start before their rulings land. 10 concurrent missions is the honest ceiling; wave membership expresses readiness order, not simultaneous launch count.",
+    "forcedParallelismWarnings": [
+      "The 50-mission count is derived, not forced: it is the set of missions dependency analysis actually proves; no filler missions were added to reach it and none of the STREAM J inflation candidates (twin runtime, simulation engines, SDK/marketplace, agent society, ontology compiler, globalization/enterprise/scheduling, ambient bridge, reality graph, CP-01..12 as full mechanisms, AI compute infrastructure) appear as missions.",
+      "Kernel missions M-R-10/11 are both wave-1 but share kernel/ sources: they are safe to run in parallel with other teams, NOT with each other — within-team one-writer rule applies.",
+      "M-R-04 (registry reconciliation) is wave-1 and parallelizable as repo work but is marked parallelizable:false because it rewrites registry.json while other missions concurrently edit phase contracts it validates — it must own the registry surface exclusively during its run.",
+      "Wave 3 holds 21 missions; they cannot launch simultaneously — the concurrency ceiling (10) plus exclusive canonical-DB serialization (M-R-100/85/101) and ADR gates mean wave 3 is a readiness pool, not a launch instruction.",
+      "M-R-20 -> M-R-21 is an intra-wave-1 dependency chain (V1CAP-014 depends on V1CAP-013); wave 1 therefore has a two-step spine inside it, honestly recorded rather than flattened.",
+      "Critical path is a closure ordering, not an authoring serialization: authored-not-applied posture lets M-R-10 (envelope) and M-R-36 (memory schema) complete before their critical-path positions; only apply/live-validation steps (M-R-100, M-R-32, M-R-103, live batteries) must respect closure order.",
+      "BLK-2/BLK-3/BLK-4/BLK-5/OPS-1 missions report authored/dry-run verified states until credentials land; the graph deliberately avoids scheduling any task whose only output would be a fabricated live claim."
+    ],
+    "unresolved": []
+  },
+  "unresolved": [
+    "COND-001 (Mission owner), COND-002 (D1 memory owner), COND-003 (tenant_id type), COND-004 (shell ownership), COND-007 (trust wiring), COND-013 (relocation timing) rulings must land before M-R-01-dependent contracts (M-R-50, M-R-36), M-R-20 finalization, M-R-111, M-R-83, and M-R-121 respectively; dossiers (wave 1) are the unblocked preparation.",
+    "BLK secret family (BLK-2 AI key, BLK-3 deploy, BLK-4 payments, BLK-5 email) plus OPS-1 DATABASE_URL/CA cert gate live-verification evidence only; fallback work is specified per mission and unblocked streams continue.",
+    "COND-005 phase-15 code-boundary split (hardware-* organizational V1 vs frozen device V2) remains open; it scopes M-R-05's guard baseline but blocks no mission start.",
+    "COND-008 canonical mother-surface set and COND-009 legacy Scholar durable-tables disposition remain open; M-R-121's relocation set inherits the J-044/COND-013 reconciliation without resolving table retirement — retirement of orphan tables is a governance event requiring a ruling.",
+    "COND-010 mobile V1 membership (J-049) unresolved: no mission covers V1CAP-088 treatment pending CTO confirmation; web surface (V1CAP-087/089) is unaffected.",
+    "COND-011 scope lines (ambient-bridge L2, minimal simulation, BLOCK-15 split) and COND-014 government-education disposition are non-blocking and unscheduled.",
+    "Whether M-R-83 implements wiring or formal re-scope depends on the COND-007 ruling; both paths are specified in the mission.",
+    "E2E coverage remains thin (5 specs, not in npm run verify); M-R-110 adds the first loop-closure E2E but full E2E expansion is not a scheduled mission — recorded as residual risk.",
+    "Docker build verification stays UNKNOWN on this VM; M-R-103 fallback records it honestly and defers proof to the first real deploy."
+  ],
+  "reportingLaw": "Every mission closes with a statement of the form 'MISSION-R-## reached verified state Y with evidence Z'. 'Agent finished' is never evidence. Evidence classes: unit-proven (repo), authored-not-applied (schema), rehearsal (ops dry-run), live-dev-verified (disposable dev project), canonical-verified (post M-R-100). Claims must name their class.",
+  "rule": "Single-artifact stream: this file is the only artifact authored by STREAM M; nothing committed; missions cover only scope-locked V1 capabilities; every mission names evidence-required acceptance; a recorded blocker never authorizes a bypass.",
+  "hardeningBackfill": {
+    "applied": true,
+    "hardeningArtifact": "COREGRID_V1_ARCHITECTURE_HARDENING.json",
+    "missionsTouched": 29,
+    "note": "L-H refs back-filled by the coordinator after STREAM L landed; obligations now traceable per mission."
+  }
+}

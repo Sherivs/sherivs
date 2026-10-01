@@ -1,0 +1,63 @@
+{
+  "artifact": "COREGRID_V1_V2_SCOPE_LOCK",
+  "version": "1.0",
+  "status": "SCOPE_LOCKED_WITH_RECORDED_CONDITIONS",
+  "statusBasis": "Every blocking gap (J-005, J-006, J-013, J-016, J-024, J-025, J-027, J-040) has a proposed owner and a deliverable kind (contract | schema | subsystem | operational | artifact), so engineering may proceed on all V1 capabilities; conditions below record non-blocking operator rulings and ratifications. Ratification-gated capabilities record their gating condition explicitly and are not started until the ruling lands.",
+  "declaration": "Engineering campaign may begin. The 8 blocking gaps are owned with concrete deliverable kinds. 14 conditions are recorded; none blocks the campaign as a whole, but 6 of them gate the START of specific capabilities (COND-001, COND-002, COND-003, COND-004, COND-010, and the live-verification halves of COND-006).",
+  "v1Count": 93,
+  "v2Count": 26,
+  "totalNodes": 119,
+  "conditions": [
+    { "id": "COND-001", "condition": "operator ruling still required", "what": "Mission loop node owner ratification (CG-GAP-003 / J-024): proposed owner is the existing live-verified control-plane/foundation-mission substrate (V1CAP-046). Gates the start of V1CAP-046 contract work (J-025) and V1CAP-047.", "blocksEngineering": false },
+    { "id": "COND-002", "condition": "operator ruling still required", "what": "D1 memory owner ratification: phase 36 recommended for practical/organizational memory tier (V1CAP-034/035). Gates the start of the V1CAP-035 persisted-memory schema (J-016).", "blocksEngineering": false },
+    { "id": "COND-003", "condition": "operator ruling still required", "what": "tenant_id type divergence ruling (text vs uuid, deferred at migration 20261001000000 lines 32-37). Gates finalization of V1CAP-013 neutral tenant-membership primitives (J-005).", "blocksEngineering": false },
+    { "id": "COND-004", "condition": "operator ruling still required", "what": "GAP-008 global shell ownership review: phase 24 proposed (J-047). Gates scheduling of V1CAP-085 global shell work.", "blocksEngineering": false },
+    { "id": "COND-005", "condition": "operator ruling still required", "what": "Phase-15 code-boundary split: classification resolved (RULING-6 quarantine to V2); the physical code split is open and scopes V1CAP-067 domain-neutrality guard coverage.", "blocksEngineering": false },
+    { "id": "COND-006", "condition": "operational secret provisioning via Cursor Dashboard (RULING-11)", "what": "BLK secret family: BLK-2 AI provider key (gates V1CAP-027 live inference), BLK-3 deploy credentials (gates V1CAP-076 first BYOC deploy execution), BLK-4 payments key (gates live payment verification under V1CAP-079), BLK-5 email hold (gates delivery evidence under V1CAP-081). Blocks live-verification evidence only, not engineering or implementation.", "blocksEngineering": false },
+    { "id": "COND-007", "condition": "ADR direction still required", "what": "J-008 trust-fabric wiring direction: 08 consumes 09 (recommended) vs 09 evidence-only re-scope. Gates V1CAP-022 implementation.", "blocksEngineering": false },
+    { "id": "COND-008", "condition": "operator ruling still required", "what": "Mother-surface canonical set and disposition of six root governance artifacts (STREAM E contradiction on canonical set + mother-surface count). Carried as governance metadata under V1CAP-064; no capability blocked.", "blocksEngineering": false },
+    { "id": "COND-009", "condition": "operator ruling still required", "what": "Legacy Scholar durable tables disposition (STREAM H orphans: durable scholar tables, subscription-tiers, geofence, messages-unread/news-reads, demo-provision, kernel-admin-client, audit.ts schoolId typing). Handled under J-044 reconciliation (V1CAP-079) and relocation ADR (COND-013).", "blocksEngineering": false },
+    { "id": "COND-010", "condition": "operator ruling still required", "what": "Mobile V1 membership confirmation (J-049): F22 is doctrinally V1; CTO confirmation pending. Gates V1CAP-088 treatment; web V1CAP-087 unaffected.", "blocksEngineering": false },
+    { "id": "COND-011", "condition": "operator ruling still required", "what": "Ambient-bridge L2 boundary, minimal V1 simulation scope line (V1CAP-009 vs V2CAP-003), and BLOCK-15 operational-vs-commercial split line. Scope-line rulings only; no capability start blocked.", "blocksEngineering": false },
+    { "id": "COND-012", "condition": "reconciliation work item", "what": "Registry status-histogram conflict resolution + 1230 unattributed tests attribution/regeneration + stale-edge cleanup (J-046), inside V1CAP-082 machine-operable registry. Engineering work, not a ruling; recorded because registry status conflicts touch every phase's declared status.", "blocksEngineering": false },
+    { "id": "COND-013", "condition": "ADR required", "what": "Domain server-function relocation timing (~15 Scholar server functions at universal lib root, I-025/I-027) and control-plane namespace ADR. Gates the mechanical relocation half of V1CAP-085; neutralization contracts proceed.", "blocksEngineering": false },
+    { "id": "COND-014", "condition": "operator ruling still required", "what": "Government-education vertical disposition (phase 20, V2): whether sovereign patterns lift into V1 interoperability (V1CAP-080). Non-blocking; V2 classification already locked.", "blocksEngineering": false }
+  ],
+  "formerV3Disposition": "RULING-7 admits only V1 and V2 buckets; no V3+ bucket exists in this synthesis. Former FUTURE-V3 / FUTURE-UNASSIGNED material landed as follows: (1) STREAM F v3Reclassification — 13 items: phases 34, 35, 37, 38, 41, 46, 47, 48, 49, 50, 51 reclassified to V2 (folded into V2CAP-004, 005, 003, 012, 001, 012, 006, 017, 018 respectively); phases 44 and 45 reclassified to DEFERRED_CORPUS (44 = deployment/infrastructure narrative; 45 = civilization-kernel narrative). (2) STREAM G narrative corpus — G-085 autonomous company OS, G-086 civilization kernel, G-087 strategy narrative, and the society portion of G-082 agent civilization land in DEFERRED_CORPUS (narrative intent, not engineering scope); G-083 personal reality graph and G-084 earth-aware services land in V2 (V2CAP-021, V2CAP-022) with proposed owners. (3) Already-V1 substrate pulls: phase 33 Reality Intelligence Kernel and phase 36 Universal Memory (practical/organizational tier) were never V3 — they are V1 pulls (V1CAP-001..009, V1CAP-034/035). Count summary: 13 F reclassifications (11 to V2, 2 to DEFERRED_CORPUS); 4 G narrative blocks to DEFERRED_CORPUS (G-085, G-086, G-087, G-082-society); 2 G blocks to V2 with proposed owners (G-083, G-084). DEFERRED_CORPUS holds narrative/intent material only — no engineering capability is deferred there.",
+  "deferredCorpus": {
+    "defined": true,
+    "contents": [
+      "F phase 44 (deployment/infrastructure narrative)",
+      "F phase 45 (civilization-kernel narrative)",
+      "G-085 autonomous company OS",
+      "G-086 civilization kernel",
+      "G-087 strategy narrative",
+      "G-082 society portion (agent civilization beyond governed worker identities)"
+    ],
+    "count": 6,
+    "rule": "DEFERRED_CORPUS is not a bucket — it holds unratified narrative material outside engineering scope; nothing in it can be promoted except through the freezeRule below."
+  },
+  "freezeRule": "CTO Part 29 (via RULING-9): no new V1 capability enters casually. A new V1 capability requires: (1) dependency justification against the reconciled graph, (2) named ownership (one capability one owner), (3) security analysis against deny-by-default invariants, (4) impact analysis on the completeness loop, (5) evidence requirement definition (how it will be verified), (6) migration impact assessment, (7) verification plan, (8) an explicit recorded architectural decision (ADR). Scope changes after this lock are governance events, not engineering convenience.",
+  "lockEvidence": {
+    "blockingGaps": [
+      { "gap": "J-005", "owner": "phase 02/03", "deliverableKind": "schema (neutral tenant-membership DB primitives)", "capability": "V1CAP-013" },
+      { "gap": "J-006", "owner": "phase 02 with 08", "deliverableKind": "contract (neutral role vocabulary + mapping)", "capability": "V1CAP-014" },
+      { "gap": "J-013", "owner": "phase 26", "deliverableKind": "operational (BLK-2 key + live governed inference)", "capability": "V1CAP-027" },
+      { "gap": "J-016", "owner": "phase 36 (ratification pending, COND-002)", "deliverableKind": "schema (persisted memory store)", "capability": "V1CAP-035" },
+      { "gap": "J-024", "owner": "control-plane/foundation-mission substrate (ratification pending, COND-001)", "deliverableKind": "artifact (owner ratification)", "capability": "V1CAP-046" },
+      { "gap": "J-025", "owner": "phase 07 + ratified Mission owner", "deliverableKind": "contract (Mission/Delegation object contracts)", "capability": "V1CAP-046" },
+      { "gap": "J-027", "owner": "phase 07", "deliverableKind": "schema (persistent governed worker definition, LAUNCH_BLOCKER)", "capability": "V1CAP-048" },
+      { "gap": "J-040", "owner": "phase 21 with 01", "deliverableKind": "operational/phase-adjustment (applied-migration posture + environment state truth)", "capability": "V1CAP-072" }
+    ],
+    "sixCtoOmissionsCovered": ["V1CAP-066 (privacy/retention)", "V1CAP-082 (machine-operable registry)", "V1CAP-017 (credential lifecycle)", "V1CAP-072 (environment state truth)", "V1CAP-045 (time-source authority)", "V1CAP-067 (domain-neutrality guard)"],
+    "contaminationWorkEmbedded": "The 8 blocking STREAM I findings generate required V1 work: I-001>V1CAP-010, I-002..I-005>V1CAP-013, I-010/I-011/I-012/I-030/I-031>V1CAP-014, I-019>V1CAP-007/082 — all owned, all with contracts-to-author."
+  },
+  "unresolved": [
+    "Live-verified evidence currently lives on the dev project while canonical DB migrations are AUTHORED-NOT-APPLIED — V1CAP-072 closes this, but until then 'live' and 'canonical-verified' are distinct evidence classes and must not be conflated in reporting",
+    "E2E coverage is thin and ~1230 tests are unattributed to registry capabilities — resolved inside J-046 (V1CAP-082), recorded as residual risk until then",
+    "authorization.ts dedicated exhaustive suite is owed (V1CAP-016 contract note)",
+    "Phase-52 line-level second-pass residue (minor) — not scope-affecting",
+    "Docker build verification UNKNOWN (STREAM H) — proven at first real deploy under V1CAP-076 (BLK-3/COND-006)",
+    "D1 and Mission-owner ratifications (COND-001/002) must land before the corresponding blocking-gap work starts; the lock holds because owners and deliverable kinds are named, not because the rulings are done"
+  ]
+}

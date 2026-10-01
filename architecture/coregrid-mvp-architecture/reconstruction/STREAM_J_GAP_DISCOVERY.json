@@ -1,0 +1,708 @@
+{
+  "stream": "J",
+  "title": "GAP DISCOVERY ANALYST — CTO Directive Step 4: per-fabric V1 provision verdicts, structurally-necessary gaps, loop-closure critical path, and explicit inflation rejections",
+  "captured": "2026-10-01",
+  "authority": [
+    "CTO directive: structurally-necessary-for-V1 capabilities belong in V1 even if undocumented/implied/absent from the original architecture (required by another V1 capability or by security, reliability, verification, or actual runtime operation); only V1/V2 buckets exist; do not inflate",
+    "architecture/COREGRID_CTO_DIRECTIVE_RECONCILIATION.json (RULING-1..12)",
+    "Completeness loop: Reality -> Observation -> Representation -> Context -> Intelligence -> Decision -> Mission -> Delegation -> Worker Execution -> Action -> State Change -> Evidence -> Verification -> Outcome -> Memory -> Observation",
+    "CTO Part 10 fabric checklist (16 fabrics)"
+  ],
+  "inputsReused": [
+    "architecture/coregrid-mvp-architecture/reconstruction/STREAM_E_MOTHERS_GOVERNANCE_EXTRACTION.json (124 mother/governance capabilities, 10 contradictions)",
+    "architecture/coregrid-mvp-architecture/reconstruction/STREAM_F_PHASE_EXTRACTION.json (51 phases re-bucketed V1x24/V2x25/DEFERRED_CORPUSx2)",
+    "architecture/coregrid-mvp-architecture/reconstruction/STREAM_G_PHASE52_EXTRACTION.json (104 requirements, 18 buried gems)",
+    "architecture/coregrid-mvp-architecture/reconstruction/STREAM_H_IMPLEMENTATION_MAP.json (17 capability families, 8 orphans, verify baseline 3458 unit tests PASS)",
+    "architecture/coregrid-mvp-architecture/reconstruction/STREAM_I_CONTAMINATION_AUDIT.json (34 findings, neutral-role model requirement)",
+    "architecture/coregrid-mvp-architecture/foundation/COREGRID_V1_CAPABILITY_CATALOG.json (gap/owner evidence cited by streams F/H)",
+    "architecture/COREGRID_V1_MORNING_REPORT_2026-10-01.md (M-01..M-14 mission evidence)"
+  ],
+  "method": "READ-ONLY over all same-session stream artifacts, registry, proofs, and the implementation tree. For each of the 16 CTO fabrics: (a) provision verdict from implementation evidence (STREAM H verified/orphan/unverified) and corpus evidence (E/F/G/I); (b) gaps only where a capability is structurally necessary for loop closure or for a legitimate production platform (security, failure, tenancy, cost, operational dimensions), each with evidence, an owner drawn from F's V1 bucket or an explicit new-artifact proposal, and a deliverable kind; (c) inflation rejections recorded explicitly. A gap exists only if NO verified V1 owner already covers it; gaps that restate an already-tracked stream finding reference that finding rather than duplicating it.",
+  "fabrics": [
+    {
+      "fabric": "Reality Fabric",
+      "providedForV1": "partial",
+      "evidence": [
+        "STREAM_F loopNodeOwnership: Reality/Representation/State Change owned by phase 33 kernel substrate (cg_entity/cg_relationship/cg_event/cg_observation, live-verified 11/11)",
+        "STREAM_H 'Universal kernel substrate' family: kernel/reality.ts + domain-manifest.ts + kernel-purity.test.ts CI-enforced domain neutrality; migration 20260903000000 AUTHORED NOT APPLIED",
+        "STREAM_I I-006: kernel substrate migration verified domain-neutral (clean anchor)"
+      ],
+      "gaps": [
+        {
+          "id": "J-001",
+          "capability": "Canonical CoreObject envelope conformance on kernel substrate (id, object_type, schema_version, tenant_id, status, created_by/updated_by, provenance, policy_context, trace_id, correlation_id, causation_id/parent_event_id)",
+          "whyStructurallyNecessary": "G-001 requires 'no anonymous persistent object'; G-010 requires causation/correlation chains. Verification (Evidence->Verification) and Outcome attribution are impossible if cg_entity/cg_event rows cannot be chained to the mission/action that caused them. Required for actual runtime operation of the loop tail, not new scope — it is a column/contract conformance pass over the existing live tables.",
+          "completenessLoopNode": "Reality (gates Observation, Evidence, Verification attribution)",
+          "proposedOwner": "phase 33 (kernel substrate conformance pass)",
+          "deliverableKind": "schema",
+          "severity": "major"
+        },
+        {
+          "id": "J-002",
+          "capability": "Canonical object type registry with unknown-type rejection",
+          "whyStructurallyNecessary": "G-002 (buried gem): unknown object types must not silently enter the canonical object store. Without it, Evidence->Verification is unverifiable because non-conformant representations contaminate canonical truth. The runtime-registry/capability-registry exist (STREAM H) but no type-allowlist gate over kernel writes is evidenced.",
+          "completenessLoopNode": "Representation -> State Change (type-safety of canonical truth)",
+          "proposedOwner": "phase 33 (new kernel contract + guard test)",
+          "deliverableKind": "contract",
+          "severity": "major"
+        },
+        {
+          "id": "J-003",
+          "capability": "Bi-temporal discipline (valid_time vs record_time) on state/event/observation records",
+          "whyStructurallyNecessary": "G-039 (buried gem): audit-grade verification requires distinguishing when something was true from when it was recorded. STREAM F gives 33 temporal-validity columns on cg_relationship; no stream evidences record-time/valid-time separation across cg_event/cg_observation. Without it, Evidence->Verification and Memory reconstruct a false history under late-arriving or corrected data.",
+          "completenessLoopNode": "Observation -> Evidence -> Verification (temporal integrity)",
+          "proposedOwner": "phase 33 (schema) with phase 14 (data platform provenance law)",
+          "deliverableKind": "schema",
+          "severity": "major"
+        },
+        {
+          "id": "J-004",
+          "capability": "State reconciliation from conflicting evidence and explicit partial-observability/missingness representation",
+          "whyStructurallyNecessary": "E-029 (REALITY.md §53-55) and G-094 (buried gem): 'unknown must remain unknown' and canonical truth cannot survive duplicate events and human corrections without a reconciliation rule. STREAM F assigns E-022's conflict handling no V1 implementation owner; the epistemic truth states are prescribed but no subsystem reconciles divergent observations in V1.",
+          "completenessLoopNode": "Observation (and Memory -> Observation re-entry) — without it the loop re-enters with corrupted state",
+          "proposedOwner": "phase 33 (reconciliation rules on cg_observation) with phase 18 (analytics) as consumer",
+          "deliverableKind": "subsystem",
+          "severity": "major"
+        }
+      ]
+    },
+    {
+      "fabric": "Identity & Authority Fabric",
+      "providedForV1": "partial",
+      "evidence": [
+        "STREAM_H 'Identity & tenancy substrate' family: 17 modules, 8 unit suites, phase owners 02/03, live 8/8 per STREAM F",
+        "STREAM_I neutralRoleModelRequirement: universal access path today routes through Scholar vocabulary (is_school_admin/get_my_school_id, AppRole, 'r001' capability gate)",
+        "STREAM_F phase 08/09 V1 verdicts; D7 cluster: 09 IMPLEMENTED_UNWIRED (phase 08 does not consume the fabric)"
+      ],
+      "gaps": [
+        {
+          "id": "J-005",
+          "capability": "Neutral tenant-membership database primitives (get_my_tenant_id() + tenant-role/tenant-admin predicate) replacing Scholar helpers as gates for every universal cg_ substrate RPC",
+          "whyStructurallyNecessary": "STREAM_I I-002/I-003/I-004/I-005/I-007 (blocking): a non-Scholar tenant can currently neither hold nor administer a role assignment; cg_org_unit/cg_org_membership RLS is deny-by-default with zero policies precisely because no neutral helper exists. This is required for the multi-tenancy law (every request must have tenant context) to hold for ANY tenant, i.e. structurally necessary for V1's own domain-neutral posture, not an enhancement.",
+          "completenessLoopNode": "gates every node: no loop stage may execute without resolved tenant authorization",
+          "proposedOwner": "phase 02/03 (migration + helper functions); unblocked by resolving I-unresolved tenant_id type divergence",
+          "deliverableKind": "schema",
+          "severity": "blocking"
+        },
+        {
+          "id": "J-006",
+          "capability": "Domain-neutral universal role vocabulary + directional domain-role-to-neutral mapping contract (DomainDefinition.roleMappings)",
+          "whyStructurallyNecessary": "CTO RULING-4 and STREAM_I I-010/I-030/I-031 (blocking): the platform role vocabulary IS the Scholar AppRole set, structurally forcing restaurant.service_staff->teacher. A domain-neutral V1 cannot host its second runtime without the neutral vocabulary and mapping direction (domain->neutral, never reverse). Required by an existing V1 capability (domain configuration, phase 04 owner) and by RULING-4, not invented.",
+          "completenessLoopNode": "Delegation + Decision (authorization resolution for every actor)",
+          "proposedOwner": "phase 02 (vocabulary substrate) with phase 08 (capability gate re-point)",
+          "deliverableKind": "contract",
+          "severity": "blocking"
+        },
+        {
+          "id": "J-007",
+          "capability": "Credential architecture: no universal master credential; per-agent credential broker, secret isolation, rotation",
+          "whyStructurallyNecessary": "G-033 (buried gem, agent fabric §84-85): blast-radius containment for V1 workers. AGENTS.md §5 makes agents untrusted first-class identities; workers executing Actions (loop stage) need scoped credentials or every worker effectively holds a master key. No stream evidences an implemented broker (identity-credentials.ts covers human credentials).",
+          "completenessLoopNode": "Worker Execution -> Action (bounded authority at execution time)",
+          "proposedOwner": "phase 08 (security engine) with phase 07 (worker issuance)",
+          "deliverableKind": "subsystem",
+          "severity": "major"
+        },
+        {
+          "id": "J-008",
+          "capability": "Wire phase 08 security engine to consume the phase 09 trust fabric (close D7 IMPLEMENTED_UNWIRED)",
+          "whyStructurallyNecessary": "STREAM_F D7 disposition makes this an explicit V1 reconciliation duty: trust assertions with evidence-backed state machines exist (verified) but the runtime authorization authority does not import them, so Evidence->Decision in the loop is asserted, not derived. Either wire it or formally record 09 as evidence/verification-only owner; both require a decision artifact and one is structurally required before scope lock.",
+          "completenessLoopNode": "Evidence -> Decision (security decisions grounded in trust evidence)",
+          "proposedOwner": "phase 08 (consumer) / phase 09 (fabric); ADR-level decision",
+          "deliverableKind": "phase-adjustment",
+          "severity": "major"
+        },
+        {
+          "id": "J-009",
+          "capability": "Identity lifecycle enforcement proof: revoked/suspended/expired identity cannot execute (mandatory security tests)",
+          "whyStructurallyNecessary": "AGENTS.md §31 mandatory invariants ('expired access fails', 'revoked access fails') and G-004 identity lifecycle (ACTIVE/SUSPENDED/REVOKED; revoked identity cannot execute). STREAM H lists identity suites but none evidences revocation-denies-execution tests; E-005 lifecycle is PRESCRIBED. Without this proof the Delegation->Worker Execution chain is unverified against the constitution's non-negotiable invariants.",
+          "completenessLoopNode": "Delegation (gates Worker Execution legitimacy)",
+          "proposedOwner": "phase 02 + phase 08 (test contract in verify pipeline)",
+          "deliverableKind": "none",
+          "severity": "major"
+        },
+        {
+          "id": "J-010",
+          "capability": "Emergency revocation / lockdown path (security guardians, kill-switch)",
+          "whyStructurallyNecessary": "G-034: revocation and emergency lockdown with security guardians. A production platform with autonomous workers needs a bounded emergency-stop that itself is authorized and audited; fail-closed posture exists piecemeal (security-core) but no emergency path is evidenced in any stream.",
+          "completenessLoopNode": "Decision (ESCALATE/DENY enforcement under incident conditions)",
+          "proposedOwner": "phase 08",
+          "deliverableKind": "subsystem",
+          "severity": "minor"
+        }
+      ]
+    },
+    {
+      "fabric": "Context Fabric",
+      "providedForV1": "partial",
+      "evidence": [
+        "STREAM_H 'AI gateway, metering, context assembly & agent runtime' family: context-assembly.ts implemented with dedicated suites (incl. V1 mission tests)",
+        "STREAM_F loopNodeOwnership: Context owned by 26 (ai-context, context assembly) + 06 (workspace projection)",
+        "STREAM_E E-030/E-031: context sovereignty law and CP-05 assembly mechanism PRESCRIBED with sufficiency/exclusions duties"
+      ],
+      "gaps": [
+        {
+          "id": "J-011",
+          "capability": "Context package contract completeness: memory_scope, data_scope, risk_level, trace_id fields plus recorded exclusions and sufficiency assessment",
+          "whyStructurallyNecessary": "G-011 specifies these fields; E-031 (CP-05) requires the assembly system to 'record exclusions and uncertainty' and determine sufficiency. STREAM H evidences context-assembly.ts but no stream evidences exclusion-recording or sufficiency semantics; without them the AI privacy law (§19 minimization before model) is unauditable — you cannot verify what was withheld.",
+          "completenessLoopNode": "Context (and Evidence: the context package is itself loop evidence)",
+          "proposedOwner": "phase 26 (extend context-assembly contract)",
+          "deliverableKind": "contract",
+          "severity": "major"
+        },
+        {
+          "id": "J-012",
+          "capability": "Context-switch safety across realities/tenants (one user, many realities — no context bleed between switches)",
+          "whyStructurallyNecessary": "G-070 and prior GAP-010 (context-switch safety). Multi-tenant workspaces (phase 06) plus organization switcher mean tenant context can change mid-session; a bleed is a tenant-isolation violation (Constitution §13) on the most-used human surface. Cheap contract-level guarantee; no stream evidences it.",
+          "completenessLoopNode": "Context (gates Intelligence/Decision tenant correctness)",
+          "proposedOwner": "phase 26 with phase 06 (workspace projection)",
+          "deliverableKind": "contract",
+          "severity": "minor"
+        }
+      ]
+    },
+    {
+      "fabric": "Intelligence Fabric",
+      "providedForV1": "partial",
+      "evidence": [
+        "STREAM_H: ai-gateway.server.ts + metering/usage-ledger.ts + adoption tests (no direct @ai-sdk outside gateway); budget pre-check + rate limiting shipped (STREAM_F phase 26 M-05/M-12)",
+        "STREAM_H BLK-2: no AI provider key — gateway never executed against a real model",
+        "STREAM_G G-017/G-054/G-055/G-056: model registry, routing, fallback, reasoning provenance requirements"
+      ],
+      "gaps": [
+        {
+          "id": "J-013",
+          "capability": "Live AI gateway operation (provider key + one end-to-end governed inference)",
+          "whyStructurallyNecessary": "STREAM H unresolved BLK-2: the Intelligence node of the loop is contract-verified only; 'the vertical slice's AI WORKER link cannot close' without it. Structurally necessary for actual runtime operation — a V1 that cannot perform one governed AI action does not close Intelligence->Decision->Worker Execution. Required operationally, not new architecture.",
+          "completenessLoopNode": "Intelligence -> Decision (cannot close while keyless)",
+          "proposedOwner": "phase 26 (BLK-2 secret via Cursor Dashboard / operator decision)",
+          "deliverableKind": "none",
+          "severity": "blocking"
+        },
+        {
+          "id": "J-014",
+          "capability": "Model registry with routing policy, performance profiles, fallback/failover/circuit breaker",
+          "whyStructurallyNecessary": "G-017/G-054/G-055 and Constitution §20 (gateway manages routing, fallback). STREAM H evidences gateway + metering but not a model registry or fallback behavior; without fallback the Intelligence node is a single point of failure for a 'reliable production platform' (CTO authority brief includes reliability).",
+          "completenessLoopNode": "Intelligence (availability and provider-neutrality of the node)",
+          "proposedOwner": "phase 26",
+          "deliverableKind": "subsystem",
+          "severity": "major"
+        },
+        {
+          "id": "J-015",
+          "capability": "Reasoning provenance and intelligence snapshots (which model, which context version, which policy produced this output)",
+          "whyStructurallyNecessary": "G-056 and Constitution §9 (AI interpretations must be distinguishable from canonical truth) + §12 provenance ('was it generated by AI?'). Without reasoning provenance, Evidence captured from AI output cannot be classified (E-017 class 'generated') and Verification cannot audit decisions. Depends on J-001 envelope fields.",
+          "completenessLoopNode": "Intelligence -> Evidence (provenance of derived understanding)",
+          "proposedOwner": "phase 26 with phase 18 (decision records)",
+          "deliverableKind": "contract",
+          "severity": "major"
+        }
+      ]
+    },
+    {
+      "fabric": "Memory & Knowledge",
+      "providedForV1": "partial",
+      "evidence": [
+        "STREAM_F phase 36 pulled into V1 (Memory is a mandatory loop node; D1 owner 36) but capability catalog area=memory records GAP: 'persisted practical memory store missing'; implemented memory is 07's in-process agent-memory.ts",
+        "STREAM_G G-015/G-060/G-061: scoped authorization-gated memory, memory classes, agent-must-not-own-memory",
+        "STREAM_F D1 ownership OPEN (governance ratification required)"
+      ],
+      "gaps": [
+        {
+          "id": "J-016",
+          "capability": "Persisted practical/organizational memory store (durable Memory tier)",
+          "whyStructurallyNecessary": "The loop's Outcome -> Memory -> Observation tail cannot iterate without durable memory: STREAM F's own V1 justification of phase 36 cites the capability catalog GAP. In-process agent memory dies with the worker process, so Memory is the single loop node with NO durable owner today. Required by the CTO completeness loop definition itself.",
+          "completenessLoopNode": "Memory -> Observation (loop re-entry)",
+          "proposedOwner": "phase 36 (pending D1 owner ratification — recorded unresolved)",
+          "deliverableKind": "schema",
+          "severity": "blocking"
+        },
+        {
+          "id": "J-017",
+          "capability": "Authorization-gated, non-vector-only memory retrieval",
+          "whyStructurallyNecessary": "G-015 (buried gem): retrieval must satisfy identity AND tenant AND scope AND policy authorization; 'memory must not be vector-only retrieval' — semantic-similarity search is a classic authorization bypass. The moment J-016 lands (likely with embeddings), this guard must exist or Memory becomes a tenant-isolation hole (Constitution §17/§35).",
+          "completenessLoopNode": "Memory (security of the node)",
+          "proposedOwner": "phase 36 with phase 08 (retrieval policy enforcement)",
+          "deliverableKind": "subsystem",
+          "severity": "major"
+        },
+        {
+          "id": "J-018",
+          "capability": "Memory governance boundary: the agent must not become the owner of the memory system; worker memory scopes enforced",
+          "whyStructurallyNecessary": "G-061 (one-line section with constitutional weight) and E-027 (WORKFORCE §17: no silent memory expansion; AGENTS §8 self-improvement law). Prevents workers from accumulating unauthorized context across missions/tenants. Contract-level rule over J-016's store; trivially cheap, structurally required by the identity model.",
+          "completenessLoopNode": "Memory (governance of the node)",
+          "proposedOwner": "phase 36 (rule) + phase 07 (scope enforcement in worker runtime)",
+          "deliverableKind": "contract",
+          "severity": "minor"
+        },
+        {
+          "id": "J-019",
+          "capability": "Knowledge freshness/invalidation and source reliability registry",
+          "whyStructurallyNecessary": "G-047/G-052 and E-018 staleness invariants: 'stale must remain distinguishable from current' (RUNTIME invariants 25-26). Memory that never expires corrupts Observation on loop re-entry. Minimal form: freshness/validity fields on memory/knowledge records + invalidation rule — an extension of J-003 bi-temporality, not a new engine.",
+          "completenessLoopNode": "Memory -> Observation (truthfulness of re-entry)",
+          "proposedOwner": "phase 14 (data platform quality/provenance) with phase 36",
+          "deliverableKind": "schema",
+          "severity": "minor"
+        }
+      ]
+    },
+    {
+      "fabric": "Event & Temporal Fabric",
+      "providedForV1": "partial",
+      "evidence": [
+        "STREAM_H kernel family: kernel/outbox.ts + cg_event append-only, unit-tested; STREAM_F assigns State Change to 05 runtime events + 33 cg_event",
+        "STREAM_G G-042/G-043/G-044: event kernel semantics, propagation/subscriptions/replay, per-event security",
+        "AGENTS.md §35 realtime security; STREAM_E E-111 realtime governance V1"
+      ],
+      "gaps": [
+        {
+          "id": "J-020",
+          "capability": "Event kernel semantics: taxonomy, deduplication, ordering, significance classification",
+          "whyStructurallyNecessary": "G-042. The loop's State Change -> Observation tail consumes events; duplicate or unordered events produce false observations and unverifiable Evidence. The outbox gives durable emission (verified) but no stream evidences dedup/ordering semantics over cg_event at consumption time. Idempotent replay exists in the foundation loop — this generalizes it to the event plane.",
+          "completenessLoopNode": "State Change -> Observation (integrity of the loop tail)",
+          "proposedOwner": "phase 33 (cg_event semantics) with phase 05 (runtime event bus)",
+          "deliverableKind": "subsystem",
+          "severity": "major"
+        },
+        {
+          "id": "J-021",
+          "capability": "Event routing/subscriptions with tenant-scoped delivery, replay, and backpressure",
+          "whyStructurallyNecessary": "G-043 + Constitution §35: realtime must respect tenant/authorization — 'never broadcast unauthorized events'. Notifications fanout exists (phase 10) but no stream evidences a governed subscription model over cg_event; without tenant-scoped subscription, the Outcome -> Observation tail leaks across tenants.",
+          "completenessLoopNode": "Outcome -> Observation (human loop tail delivery)",
+          "proposedOwner": "phase 05 with phase 10 (communication fanout)",
+          "deliverableKind": "subsystem",
+          "severity": "major"
+        },
+        {
+          "id": "J-022",
+          "capability": "Per-event security contract: authenticity, authorization, privacy, provenance carried on every event",
+          "whyStructurallyNecessary": "G-044: event security is stated per-event in the corpus. Events are the currency of Evidence; an event without provenance/authenticity cannot support Verification (E-017). Depends on J-001 envelope fields; this is the policy/enforcement half of the same schema.",
+          "completenessLoopNode": "State Change -> Evidence",
+          "proposedOwner": "phase 08 (enforcement) over phase 33 (event schema)",
+          "deliverableKind": "contract",
+          "severity": "major"
+        },
+        {
+          "id": "J-023",
+          "capability": "Time-source discipline: single authoritative clock, monotonic ordering guarantee, skew handling for distributed writers",
+          "whyStructurallyNecessary": "Underpins G-039/G-042 (buried gems) and E-015 (time primitives, assurance invariant 38): ordering of events IS the ordering of the loop tail. No stream names a time authority; UUIDv7 (G-023) embeds time, making clock discipline structurally load-bearing for ID ordering too. Small contract, real production failure mode.",
+          "completenessLoopNode": "Observation -> State Change (temporal integrity of the whole tail)",
+          "proposedOwner": "phase 33 (time contract) with phase 01 (standards)",
+          "deliverableKind": "contract",
+          "severity": "minor"
+        }
+      ]
+    },
+    {
+      "fabric": "Mission Fabric",
+      "providedForV1": "partial",
+      "evidence": [
+        "STREAM_H 'Foundation mission loop' family: the ONLY end-to-end live-verified governed tail (5/5 live tests: admission -> idempotent replay -> evidence -> verification -> rollback)",
+        "STREAM_F unresolved: Mission node has NO canonical phase owner (ownership map concept 'mission' canonicalOwner null; CG-GAP-003)",
+        "STREAM_G G-092/G-032 buried gems: Mission/Delegation are never specified as first-class objects"
+      ],
+      "gaps": [
+        {
+          "id": "J-024",
+          "capability": "Ratify the canonical Mission owner (phase or new artifact) for cg_mission_intent/cg_execution_record",
+          "whyStructurallyNecessary": "STREAM_F: 'Mission planning must not begin until the owner is ratified' — the loop's Mission node is live-implemented but architecturally unowned, which under the ownership law (one capability one owner, BOUNDARIES.md) blocks the coherent V1 assembly that Step 5/6 must produce. A decision artifact, not new machinery.",
+          "completenessLoopNode": "Mission (node ownership itself)",
+          "proposedOwner": "CTO ratification; candidates phase 07 or a new mission-artifact under phase 01 control-plane layer",
+          "deliverableKind": "artifact",
+          "severity": "blocking"
+        },
+        {
+          "id": "J-025",
+          "capability": "First-class Mission and Delegation object contracts (mission 15-element law subset + bounded, revocable, non-escalating delegation with acting-on-behalf-of)",
+          "whyStructurallyNecessary": "STREAM_G unresolved states it directly: 'the completeness loop requires first-class Mission and Delegation objects (G-032, G-092) but the corpus never specifies their schemas; kernel contract design must fill this gap explicitly.' Delegation non-escalation (E-045) is a security invariant; without a schema there is nothing to enforce. The foundation loop's cg_mission_intent is a minimal instance, not the contract.",
+          "completenessLoopNode": "Mission -> Delegation (the spine of governed work)",
+          "proposedOwner": "phase 07 (delegation contracts) + J-024 owner (mission contract)",
+          "deliverableKind": "contract",
+          "severity": "blocking"
+        },
+        {
+          "id": "J-026",
+          "capability": "Mission gate machinery (definition/security/verification/closure gates with PASSED/BLOCKED/WAIVED states) generalizing the foundation loop",
+          "whyStructurallyNecessary": "E-040 (MISSIONS §14) and E-088 quality gates: 'no evidence, no verified completion' needs enforceable gate points, and GATE-WAIVED must itself be evidence-bearing. The foundation loop proves admission/verification/rollback but no stream evidences the gate taxonomy or waiver governance. Required for Verification node discipline at platform level.",
+          "completenessLoopNode": "Mission -> Verification (gate-ordered closure)",
+          "proposedOwner": "J-024 mission owner with phase 01 (verify pipeline integration)",
+          "deliverableKind": "subsystem",
+          "severity": "major"
+        }
+      ]
+    },
+    {
+      "fabric": "Workforce Fabric",
+      "providedForV1": "partial",
+      "evidence": [
+        "STREAM_F phase 07 V1 justification: capability catalog names the worker gap (phase-07 owner) a V1 LAUNCH_BLOCKER; RULING-3 worker = governed actor with persistent definition/capability/authority/delegation history",
+        "STREAM_H agent-runtime family exists (jarvis contract, agent suites) but persistent worker substrate not evidenced",
+        "STREAM_E E-033/E-043/E-046: capability registry, dynamic workforce, CP-07 delegation mechanism"
+      ],
+      "gaps": [
+        {
+          "id": "J-027",
+          "capability": "Persistent governed worker definition: identity-linked capability set, authority bounds, delegation history surviving worker process termination",
+          "whyStructurallyNecessary": "RULING-3 (binding) and G-014 ('registered agent identity survives worker process termination'). STREAM F marks this a V1 LAUNCH_BLOCKER; ephemeral in-process agents cannot carry Delegation -> Worker Execution -> Evidence attribution across restarts. Required by the loop and by an explicit CTO ruling.",
+          "completenessLoopNode": "Delegation -> Worker Execution",
+          "proposedOwner": "phase 07 (worker substrate over cg_identity from phase 02)",
+          "deliverableKind": "schema",
+          "severity": "blocking"
+        },
+        {
+          "id": "J-028",
+          "capability": "Worker/intelligence capability registry with delegation-contract matching (capability-over-agent-count)",
+          "whyStructurallyNecessary": "E-033/E-046 (CP-07): delegation matches required capabilities to authorized workers — 'it does not merely assign agents'. kernel/capability-registry.ts exists (STREAM H) but no stream evidences worker-capability declarations or the matching contract; without it, delegation is name-based, violating model-neutrality (WORKFORCE §6).",
+          "completenessLoopNode": "Delegation (matching legitimacy)",
+          "proposedOwner": "phase 07",
+          "deliverableKind": "contract",
+          "severity": "major"
+        },
+        {
+          "id": "J-029",
+          "capability": "Worker memory scoping enforcement (session/mission/long-term scopes; no silent expansion)",
+          "whyStructurallyNecessary": "E-027 (WORKFORCE §17; AGENTS §5 memory-scope is a binding identity field; §8: memory expansion requires review). Without enforced scopes a worker's effective authority grows invisibly — the exact failure AGENTS §6 forbids ('agents cannot silently expand memory access'). Enforcement lives in the worker runtime (07) over J-016's store.",
+          "completenessLoopNode": "Worker Execution (authority containment)",
+          "proposedOwner": "phase 07 with phase 36",
+          "deliverableKind": "contract",
+          "severity": "major"
+        }
+      ]
+    },
+    {
+      "fabric": "Action/Execution Fabric",
+      "providedForV1": "partial",
+      "evidence": [
+        "STREAM_H 'Workflow & automation engine' family verified (workflow-engine.ts; action-tools EXISTS_VERIFIED per STREAM F); foundation loop adds governed rollback",
+        "STREAM_G G-016/G-019/G-022/G-063: governed tools, action lifecycle, resource quotas, idempotency keys",
+        "STREAM_F RULING-5: ONE canonical workflow lifecycle owned by 17"
+      ],
+      "gaps": [
+        {
+          "id": "J-030",
+          "capability": "Mandatory idempotency keys on consequential commands (cross-module standard)",
+          "whyStructurallyNecessary": "G-063 (buried gem): 'the difference between a demo and a production platform.' The foundation loop implements idempotent replay for itself (verified), but no stream evidences a platform-wide command-contract requirement; workers retry (E-057 retry semantics are prescribed), and un-idempotent Actions corrupt State Change under exactly the failure conditions V1 must survive.",
+          "completenessLoopNode": "Action -> State Change (exactly-once effect under retry)",
+          "proposedOwner": "phase 05 (command contract) with phase 17 (workflow steps)",
+          "deliverableKind": "contract",
+          "severity": "major"
+        },
+        {
+          "id": "J-031",
+          "capability": "Resource quotas and lease/concurrency control over shared resources and worker execution",
+          "whyStructurallyNecessary": "G-022 (quotas for scarce computation) and E-058 (RUNTIME §42-44 leases). Multi-worker execution without leases corrupts state; tenant-quota.ts exists (STREAM H identity family) but no stream evidences execution-resource leasing. Tenancy/cost dimension of the CTO authority brief.",
+          "completenessLoopNode": "Worker Execution -> Action (safe parallelism)",
+          "proposedOwner": "phase 05 (runtime primitives)",
+          "deliverableKind": "subsystem",
+          "severity": "major"
+        },
+        {
+          "id": "J-032",
+          "capability": "Human approval chains wired to high-risk actions (risk-classified approval routing through the workflow engine)",
+          "whyStructurallyNecessary": "G-036 and Constitution §21 (AI Proposal -> ... -> Approval -> Execution). Runtime primitives include an approval module (STREAM F phase 05) and authorization.ts produces REQUIRE_APPROVAL (verified), but no stream evidences risk-classified routing of approvals into workflow steps — the Decision node's REQUIRE_APPROVAL outcome currently has no guaranteed execution path.",
+          "completenessLoopNode": "Decision -> Action (REQUIRE_APPROVAL closure)",
+          "proposedOwner": "phase 17 with phase 08 (risk classification)",
+          "deliverableKind": "subsystem",
+          "severity": "major"
+        }
+      ]
+    },
+    {
+      "fabric": "Evidence & Assurance Fabric",
+      "providedForV1": "partial",
+      "evidence": [
+        "STREAM_H: cg_foundation_evidence/cg_verification_result migrations authored; 30 proof.json + 51 phase-acceptance files; evidence & verification tooling family verified",
+        "STREAM_E E-017/E-018/E-063: evidence 7 classes, lifecycle (revocation/staleness/retention), verification architecture — mostly PRESCRIBED, not implemented",
+        "STREAM_F loopNodeOwnership: Evidence owned by 09 + 33 provenance; Verification by 09 + 01"
+      ],
+      "gaps": [
+        {
+          "id": "J-033",
+          "capability": "Evidence lifecycle: sufficiency assessment, confidence, revocation, staleness detection, retention policy",
+          "whyStructurallyNecessary": "E-018 (ASSURANCE §13-17, invariants 12-13): 'revoked evidence cannot silently support active claims'; 'a claim is not permanently true merely because it was once supported.' Capture exists (foundation loop); lifecycle does not — without revocation/staleness the Verification node validates against rotting evidence, corrupting Outcome and Memory.",
+          "completenessLoopNode": "Evidence -> Verification (over-time integrity)",
+          "proposedOwner": "phase 09 (trust fabric lifecycle) over 33 substrate",
+          "deliverableKind": "subsystem",
+          "severity": "major"
+        },
+        {
+          "id": "J-034",
+          "capability": "Evidence-class discipline at capture time: generated/simulated/predicted evidence can never silently become direct observation",
+          "whyStructurallyNecessary": "E-017 (ASSURANCE §12) plus buried gems G-040 (temporal succession is not causation) and G-041 (simulation results never become observed reality). AI-native V1 produces AI-generated evidence by default; without a class field + invariant at the capture API, canonical truth is silently contaminated by inference (Constitution §9). Cheap schema/contract on J-001's envelope.",
+          "completenessLoopNode": "Observation -> Evidence (epistemic integrity of capture)",
+          "proposedOwner": "phase 09 (classes) with phase 33 (capture API)",
+          "deliverableKind": "contract",
+          "severity": "major"
+        },
+        {
+          "id": "J-035",
+          "capability": "Verification independence enforcement: a worker (AI or human) cannot verify its own output in the loop",
+          "whyStructurallyNecessary": "E-050 ('an AI worker must not validate its own unsupported claim' — ENGINEERING §0, invariant in three mothers) and AGENTS §21 AI output trust. The foundation loop verifies, but no stream evidences an independence rule binding verifier identity != executor identity. Without it the Verification node is self-confirming for exactly the AI workers V1 exists to govern.",
+          "completenessLoopNode": "Verification (independence invariant of the node)",
+          "proposedOwner": "phase 09 with phase 07 (worker identity distinction)",
+          "deliverableKind": "contract",
+          "severity": "major"
+        }
+      ]
+    },
+    {
+      "fabric": "Governance & Safety",
+      "providedForV1": "partial",
+      "evidence": [
+        "STREAM_H 'Authorization & security engine' family verified (security-core fail-closed, security-agent-controls); ai-governance module in phase 26 (STREAM F phase 39 disposition)",
+        "STREAM_E E-062: AI-specific runtime defenses PRESCRIBED (RUNTIME §26-29); E-069/E-070 drift/evolution PRESCRIBED",
+        "architecture/COREGRID_EVOLUTION_BASELINE_2026-09-30.json exists (baseline artifact)"
+      ],
+      "gaps": [
+        {
+          "id": "J-036",
+          "capability": "AI-specific runtime defenses: prompt-injection defense, malicious-artifact defense, exfiltration control, supply-chain checks",
+          "whyStructurallyNecessary": "E-062 (RUNTIME §26-29: 'first-class runtime capabilities, not add-ons'); ENGINEERING §23 AI threat model. An AI-native platform whose workers execute tools (J-027/J-032) is exposed to exactly these threat classes from day one; no stream evidences any implemented defense. Security dimension of the CTO authority brief.",
+          "completenessLoopNode": "Worker Execution -> Action (threat containment)",
+          "proposedOwner": "phase 08 with phase 26 (gateway-side enforcement)",
+          "deliverableKind": "subsystem",
+          "severity": "major"
+        },
+        {
+          "id": "J-037",
+          "capability": "Continuous domain-neutrality enforcement beyond the kernel (guard over lib root, phase-contracts, and migrations)",
+          "whyStructurallyNecessary": "STREAM H contradiction: kernel-purity test covers kernel + migrations only, while ~15 Scholar server functions and schoolId-typed helpers sit at the universal lib root; STREAM I unresolved recommends a grep-based CI guard it could not author. The RULING-1 domain-neutrality boundary is V1-defining; today it regresses silently. Guard is derived from existing audit token lists — not new scope.",
+          "completenessLoopNode": "gates the whole loop (substrate neutrality precondition)",
+          "proposedOwner": "phase 01 (CI guard in verify pipeline)",
+          "deliverableKind": "subsystem",
+          "severity": "major"
+        },
+        {
+          "id": "J-038",
+          "capability": "Drift-detection wiring: consume the evolution baseline in CI (declared vs actual conformance check)",
+          "whyStructurallyNecessary": "E-069/E-070 (baselines must be consumable, invariants 24-25); architecture/COREGRID_EVOLUTION_BASELINE_2026-09-30.json exists but no stream evidences anything consuming it. Minimal V1 form: verify-pipeline step comparing registry/contract state to baseline. Full drift system stays V2 (STREAM F phase 32) — this is only the baseline-comparison hook that keeps V1 honest about itself.",
+          "completenessLoopNode": "Memory -> Observation (platform self-observation)",
+          "proposedOwner": "phase 01 (verify pipeline)",
+          "deliverableKind": "subsystem",
+          "severity": "minor"
+        },
+        {
+          "id": "J-039",
+          "capability": "Personal-data retention & erasure lifecycle reconciled with immutable audit (what may be forgotten, what may not, and how both are recorded)",
+          "whyStructurallyNecessary": "Constitution §19 privacy law and E-094 retention duties vs AGENTS §28 'immutable audit records' — the two mandates collide for personal data inside audit/event/memory records, and no artifact resolves the collision. A multi-tenant institutional platform holding person data cannot operate legitimately without a retention/erasure rule; the CTO fabric list has no privacy/retention node (see missingFromCtoList).",
+          "completenessLoopNode": "Memory + Evidence (lawful lifecycle of stored truth)",
+          "proposedOwner": "phase 03 (tenancy/data classification) with phase 14 (retention policy) and phase 09 (audit immutability boundary)",
+          "deliverableKind": "artifact",
+          "severity": "major"
+        }
+      ]
+    },
+    {
+      "fabric": "Reliability",
+      "providedForV1": "partial",
+      "evidence": [
+        "STREAM_H verify baseline: 3458 unit tests, typecheck, build, registry validation, secret scan PASS; deployment path authored but never executed (BLK-3); docker image build UNKNOWN",
+        "STREAM_H contradiction: every cg_* migration AUTHORED NOT APPLIED — canonical database has none of the V1 tables",
+        "STREAM_H: run-rls-isolation-check.mjs requires live credentials; E-094/E-102 backup/recovery prescribed"
+      ],
+      "gaps": [
+        {
+          "id": "J-040",
+          "capability": "Applied-migration posture: cg_* substrate applied to canonical environments with deployed-state recorded (environment state truth)",
+          "whyStructurallyNecessary": "STREAM H contradiction is dispositive: 'live-verified once on dev' vs 'the canonical/production database has none of the cg_* tables.' RULING-10 approves migrations; a V1 that cannot boot its own substrate has no runtime operation at all. Deployment code exists (M-14); this is the operational act + a declared-vs-applied state record, not new architecture.",
+          "completenessLoopNode": "Reality -> State Change (the substrate must exist for the loop to run)",
+          "proposedOwner": "phase 21 (deployment owner) with phase 01 (posture record)",
+          "deliverableKind": "phase-adjustment",
+          "severity": "blocking"
+        },
+        {
+          "id": "J-041",
+          "capability": "RLS isolation battery executed with live credentials in CI (deny-by-default proven, not reasoned)",
+          "whyStructurallyNecessary": "STREAM H: RLS 'enabled with zero policies = deny' is 'statically reasoned, not database-tested in CI'; Constitution §17/§31 make tenant isolation and its tests mandatory, and RULING-2 approved the deny-by-default posture. Until executed against a real database, the platform's #1 security invariant is unproven. Credentials issue is operational (BLK family), the check itself exists.",
+          "completenessLoopNode": "Reality (isolation of every loop node's data)",
+          "proposedOwner": "phase 03 (battery) with phase 21 (CI credentials)",
+          "deliverableKind": "none",
+          "severity": "major"
+        },
+        {
+          "id": "J-042",
+          "capability": "Backup/restore and verified recovery for tenant data and evidence stores",
+          "whyStructurallyNecessary": "E-094 (backup and recovery as data-architecture duties) and E-102 invariant 30 ('recovery itself must be verified'). No stream evidences any backup/restore capability or test; a production platform that cannot restore tenant data (and the immutable evidence it is obligated to keep) fails the reliability dimension of the CTO authority brief regardless of application correctness.",
+          "completenessLoopNode": "Reality -> Memory (durability of the whole loop record)",
+          "proposedOwner": "phase 21 (infrastructure) with phase 14 (retention/data categories)",
+          "deliverableKind": "subsystem",
+          "severity": "major"
+        }
+      ]
+    },
+    {
+      "fabric": "Economics",
+      "providedForV1": "partial",
+      "evidence": [
+        "STREAM_H: metering/usage-ledger.ts implemented with suites; payments adapters contract-verified, BLK-4 no live key; subscription-tiers.ts orphan (legacy Scholar billing vocabulary)",
+        "STREAM_E E-051 workforce economics (mission/tenant attribution); AGENTS §20 cost tracking in gateway",
+        "STREAM_F phase 13 V1 (payments named capability, HMAC-SHA512 verified contract)"
+      ],
+      "gaps": [
+        {
+          "id": "J-043",
+          "capability": "Cost attribution: usage ledger rolled up to mission and tenant (workforce economics)",
+          "whyStructurallyNecessary": "E-051 (WORKFORCE §25) and AGENTS §20 (gateway cost tracking). The usage ledger records consumption (verified) but no stream evidences mission/tenant rollup; without attribution, quotas (J-031), billing (phase 13), and per-tenant rate limits are unenforceable — the tenancy/cost dimension of the CTO brief. Small aggregation over an existing ledger.",
+          "completenessLoopNode": "Mission -> Action (economic attribution of execution)",
+          "proposedOwner": "phase 26 (metering owner) with phase 13 (billing consumer)",
+          "deliverableKind": "contract",
+          "severity": "minor"
+        },
+        {
+          "id": "J-044",
+          "capability": "Live payment-rail verification (BLK-4) and reconciliation of the legacy subscription-tier path into the phase 13 financial contract",
+          "whyStructurallyNecessary": "STREAM H: zero live charge/webhook signature verification has occurred (Constitution §36 invariants therefore unproven against reality), while the orphaned subscription-tiers.ts still gates universal UI on legacy school columns — two economics truths coexist. Security (signature/replay) plus ownership reconciliation; both are required for the payments capability F already placed in V1.",
+          "completenessLoopNode": "Action (external money movement) + Outcome verification",
+          "proposedOwner": "phase 13",
+          "deliverableKind": "phase-adjustment",
+          "severity": "major"
+        }
+      ]
+    },
+    {
+      "fabric": "Interoperability",
+      "providedForV1": true,
+      "evidence": [
+        "STREAM_H 'Integration adapters' evidence: live Supabase/Paystack integration recorded in capability catalog (STREAM F phase 29); integration-*.ts family verified",
+        "STREAM_F phase 29 V1: integrations are a named V1 capability; Constitution §25 adapters",
+        "STREAM_E E-060/E-097: external system boundary and integration failure semantics PRESCRIBED"
+      ],
+      "gaps": [
+        {
+          "id": "J-045",
+          "capability": "External adapter failure-semantics contract (timeouts, containment, degraded-mode behavior, per-provider trust decisions)",
+          "whyStructurallyNecessary": "E-060 ('external systems are never automatically trusted'; integration failure semantics prescribed in IMPLEMENTATION §76). Adapters verified happy-path; failure semantics are the reliability dimension of every external call the Action node makes. Contract-level, small, and required before scope lock so new adapters inherit one pattern.",
+          "completenessLoopNode": "Action (bounded external effect)",
+          "proposedOwner": "phase 29",
+          "deliverableKind": "contract",
+          "severity": "minor"
+        }
+      ]
+    },
+    {
+      "fabric": "Evolution",
+      "providedForV1": "partial",
+      "evidence": [
+        "Database migration discipline + verify pipeline (phase 01, verified) carry V1 evolution; STREAM F buckets full evolution engines (32/38/47) V2",
+        "STREAM_F contradictions: stale civilization-tier dependency edges inside V1 rows (08->42, 17->16, 26->45, 33->48, 36->48, 21->44); registry status histogram CONFLICTING; 1230 unattributed tests (STREAM H)"
+      ],
+      "gaps": [
+        {
+          "id": "J-046",
+          "capability": "Registry/dependency reconciliation pass: strip stale civilization-tier edges from V1 rows, resolve status-histogram conflict, regenerate test attribution (1230 unattributed tests)",
+          "whyStructurallyNecessary": "STREAM F: 'dependency-graph cleanup is required before STEP 6 coherent V1 architecture assembly' — declared edges that are not load-bearing make the V1 dependency graph a false statement of the platform, and STREAM H shows registry backward-tracing under-counts the implemented surface by 1230 tests, breaking CODE->phase tracing (the traceability law). Reconciliation hygiene that gates coherent assembly; no new capability.",
+          "completenessLoopNode": "gates Verification of the architecture itself (declared == actual)",
+          "proposedOwner": "phase 01 (registry owner) as Step 5 input",
+          "deliverableKind": "artifact",
+          "severity": "major"
+        }
+      ]
+    },
+    {
+      "fabric": "Experience",
+      "providedForV1": "partial",
+      "evidence": [
+        "STREAM_H: web (23), experience (24), workspace (06) families implemented; onboarding verified; E2E thin (5 specs)",
+        "STREAM_F phase 19 contradiction: L4 operational surface withdrawn — no route imports command modules while 19 is the only registered owner of Outcome->Observation",
+        "STREAM_G G-068 global shell V1-shaped vs GAP-008 BLOCKED (STREAM G contradiction)"
+      ],
+      "gaps": [
+        {
+          "id": "J-047",
+          "capability": "Global shell ownership resolution (navigation, org switcher, global search, notifications, profile — GAP-008)",
+          "whyStructurallyNecessary": "G-068 buckets the shell V1 (structurally necessary: it is how one human reaches every loop surface) while the Campaign-52 ledger records it BLOCKED pending ownership review. The capability cannot be scheduled by Step 5/6 while ownership is open; a ruling artifact is required. Existing implementations (24 experience modules) are candidate owners.",
+          "completenessLoopNode": "Outcome -> Observation (human entry to every node)",
+          "proposedOwner": "phase 24 (proposed) — pending GAP-008 review",
+          "deliverableKind": "artifact",
+          "severity": "major"
+        },
+        {
+          "id": "J-048",
+          "capability": "Command centre operational surface (rebuild the withdrawn L4: alerts/incidents/decisions projection)",
+          "whyStructurallyNecessary": "STREAM F phase 19: substrates L1/L2/L3/L5 stand (47 tests) but the surface was withdrawn — 'the existing / surface is a provisioning console and must be replaced by a real operational projection; recorded as remaining work, not a V2 deferral.' The loop's final Outcome -> Observation tail for humans has no working surface; without it the loop does not close for human supervision.",
+          "completenessLoopNode": "Outcome -> Observation (human loop closure)",
+          "proposedOwner": "phase 19",
+          "deliverableKind": "subsystem",
+          "severity": "major"
+        },
+        {
+          "id": "J-049",
+          "capability": "Mobile (phase 22) V1 membership confirmation",
+          "whyStructurallyNecessary": "STREAM F unresolved: phase 22's V1 basis is doctrinal (block-29 'Web + iOS + Android'), not a dependency edge — no V1 phase consumes 22. The human loop nodes need a client surface, and web (23) provides one; whether mobile is V1 or V2 must be confirmed at scope lock or the platform carries an unowned doctrinal commitment. Decision artifact, not code.",
+          "completenessLoopNode": "Outcome -> Observation (form-factor coverage)",
+          "proposedOwner": "CTO scope-lock decision; phase 22 if confirmed",
+          "deliverableKind": "artifact",
+          "severity": "minor"
+        }
+      ]
+    }
+  ],
+  "gapCountBySeverity": { "blocking": 8, "major": 32, "minor": 9, "total": 49 },
+  "blockingGapIds": ["J-005", "J-006", "J-013", "J-016", "J-024", "J-025", "J-027", "J-040"],
+  "missingFromCtoList": [
+    "Privacy & retention lifecycle: retention, erasure, and the erasure-vs-immutable-audit reconciliation (J-039) — the 16-fabric list has no privacy/retention node, yet Constitution §19 and AGENTS §28 pull in opposite directions for personal data inside audit/memory records",
+    "Machine-operable architecture registry as a fabric: the list covers product Memory & Knowledge but not the engineering nervous system (E-006 CP-01 machine-operable registry of capabilities/owners/contracts) that every other fabric's ownership and traceability depends on; STREAM H/F evidence its degradation (unattributed tests, stale edges) and its absence would break Step 5/6 assembly",
+    "Credential & secret lifecycle as a first-class fabric item: Identity & Authority covers identity, but the no-master-credential/broker/rotation duty (G-033, J-007) is a distinct blast-radius control the list does not name",
+    "Environment state truth (declared vs applied/deployed): the list has Reliability but not the discipline of recording what is actually applied where (J-040); the corpus's own worst contradiction (AUTHORED NOT APPLIED vs live-verified) lives exactly in this blind spot",
+    "Time-source authority: Event & Temporal Fabric implies it but never states a single clock/monotonic-ordering authority (J-023), on which UUIDv7 IDs, event ordering, and bi-temporal verification all silently depend",
+    "Continuous domain-neutrality enforcement: the list treats domain-neutrality as a property, not an operated capability (J-037) — the corpus proves it regresses without a mechanical guard"
+  ],
+  "loopClosurePath": [
+    "1. J-005 + J-006 (neutral tenant helpers + neutral role vocabulary): nothing else is legitimizable — every loop node requires resolved tenant/role authorization that today is Scholar-only",
+    "2. J-040 (apply the substrate): Reality -> State Change cannot run on a database with no cg_* tables; deployment code exists (M-14), the act plus posture record is the gate",
+    "3. J-024 + J-025 (ratify Mission owner; author Mission/Delegation contracts): the Mission -> Delegation spine must be owned and contracted before workers can be delegated to",
+    "4. J-027 (persistent worker definition): Delegation -> Worker Execution requires workers that survive process termination and carry authority bounds",
+    "5. J-013 + J-014 (live gateway, then registry/fallback): Intelligence -> Decision closes only with one real governed inference",
+    "6. J-016 + J-017 (persisted, authorization-gated memory): Outcome -> Memory -> Observation re-entry is the loop's only fully-missing durable node",
+    "7. J-001 + J-020 + J-022 + J-034 (envelope, event semantics, event security, evidence classes): Evidence -> Verification integrity across the tail",
+    "8. J-048 (+J-047 shell ruling): Outcome -> Observation human closure via the command centre surface",
+    "9. J-041 (live RLS battery in CI): converts the security invariants from reasoned to proven before scope lock (RULING-9)",
+    "Remaining major gaps (J-003, J-004, J-007..J-012, J-015, J-018/J-019 via minors, J-021, J-023, J-026, J-028..J-033, J-035..J-039, J-042..J-046) harden the closed loop to production legitimacy; they do not gate first closure"
+  ],
+  "inflationWarnings": [
+    "REJECTED: Digital Twin as a V1 fabric requirement — STREAM F resolves Representation/State Change to the live-verified phase 33 substrate and freezes twin machinery (16/46) behind contract per RULING-6 and the capability-catalog quarantine candidate; adding a twin node would duplicate an owned loop node",
+    "REJECTED: Simulation/prediction runtime (G-078, E-024/E-118/E-120) — the loop has no simulation node; V1 needs only the safety invariants (G-040/G-041), which are captured as J-034, not the engines",
+    "REJECTED: SDK/developer platform and marketplace economy (G-079/G-080, phases 27/28) — STREAM F buckets them V2 on the structurally-necessary bar; entitlement checks are ownable by phase 13; GAP-004 blocks them regardless",
+    "REJECTED: Multi-agent society / agent civilization (G-082, phase 35) — RULING-3's single governed worker chain (D6 CLOSED, owner 07) covers Delegation/Worker Execution for V1; society-scale coordination is expansion",
+    "REJECTED: Universal Cognitive Intelligence Engine (phase 34) and ontology compiler (G-038) — Context/Intelligence are owned by 26/18; the kernel manifest + purity tests already provide the governed-inference subset; a compiler with sandboxed artifacts is V2 (STREAM F)",
+    "REJECTED: Globalization/localization, enterprise-scale capacity, scheduling (phases 30/31/12) — STREAM F dissents from prior ACTIVE-V1 with zero dependency evidence from any loop node; re-adding them here would be breadth, not necessity",
+    "REJECTED: Ambient intelligence bridge levels 1-4 (G-088) — the no-illicit-observation RULE is real and captured via evidence-class/privacy gaps (J-034/J-039), but the observation-level machinery is not required by any V1 loop node",
+    "REJECTED: Personal reality graph, earth-aware services, overlay intelligence, autonomous company OS (G-083/G-084/G-085/G-087) — consumer/strategy surfaces with no loop anchor (STREAM G treats them as DEFERRED_CORPUS narrative)",
+    "REJECTED: Full CP-01..CP-12 control-plane mechanisms as V1 subsystems — E-006/E-007 style registry/schema systems exist in embryonic verified form (phase-contract layer, registry.json validation); the gaps actually needed are J-037/J-038/J-046, not twelve new mechanisms",
+    "REJECTED: A new 'AI compute' or planetary infrastructure dependency (phases 44/45) — V1 gateway is provider-agnostic via adapters; STREAM F already deferred both as civilization-tier corpus",
+    "REJECTED: A dedicated 'authentication fabric' gap — identity-credentials.ts + security-session.ts are implemented with suites (STREAM H); E-002's duty is covered; inventing a gap here would inflate"
+  ],
+  "unresolved": [
+    "D1 memory ownership (36 vs 07): J-016's proposed owner assumes D1's named owner 36; governance ratification is STREAM F's own precondition — the gap is real whichever way the ruling goes",
+    "Mission owner (CG-GAP-003): J-024 proposes candidates but the ratification is a CTO act; contract design (J-025) is blocked behind it",
+    "tenant_id type divergence (text vs uuid) explicitly deferred to the operator in migration 20261001000000 lines 32-37 — J-005's helper design depends on it (STREAM I unresolved)",
+    "GAP-008 Global Shell ownership: J-047 requires the interface/experience/runtime infrastructure review to conclude; V1 bucket assignment does not resolve the owner",
+    "Phase-15 code-boundary split (organizational asset records vs frozen device code) — carried unchanged from STREAMS F/G/H; no J gap depends on the split, but J-037's guard scope does",
+    "BLK family credentials (BLK-2 AI key, BLK-3 deploy, BLK-4 payments, BLK-5 email): J-013/J-040/J-041/J-044 are gated on secrets/operator decisions, not on architecture",
+    "Whether 08 should consume 09 (J-008) or 09 should be formally re-scoped as evidence-only: both close the D7 contradiction; the ADR decision itself is unresolved",
+    "Canonical mother-surface set and the status of the six root governance artifacts (STREAM E unresolved): J-046's reconciliation pass inherits this authority question without resolving it",
+    "Phase 52 sub-section-level residue: G's occurrence-level pass covered the ~70 substantive blocks at header depth; a line-level second pass could surface additional sub-requirements inside the G-037/G-038/G-039 families (STREAM G unresolved, carried)"
+  ],
+  "summary": {
+    "perFabricVerdicts": {
+      "Reality Fabric": "partial",
+      "Identity & Authority Fabric": "partial",
+      "Context Fabric": "partial",
+      "Intelligence Fabric": "partial",
+      "Memory & Knowledge": "partial",
+      "Event & Temporal Fabric": "partial",
+      "Mission Fabric": "partial",
+      "Workforce Fabric": "partial",
+      "Action/Execution Fabric": "partial",
+      "Evidence & Assurance Fabric": "partial",
+      "Governance & Safety": "partial",
+      "Reliability": "partial",
+      "Economics": "partial",
+      "Interoperability": true,
+      "Evolution": "partial",
+      "Experience": "partial"
+    },
+    "headline": "No fabric is fully absent — the verified foundations (kernel substrate, identity/tenancy, security engine, gateway, workflow, foundation loop) cover every fabric at least partially, and Interoperability is provided — but no fabric closes for V1 without at least one gap, and the eight blocking gaps concentrate in exactly four places: neutral authorization primitives (J-005/J-006), applied substrate (J-040), mission ownership + mission/delegation contracts (J-024/J-025), and the two missing durable loop nodes' owners (J-016 memory, J-027 workers).",
+      "gapCountBySeverity": { "blocking": 8, "major": 32, "minor": 9, "total": 49 }
+  },
+  "rule": "READ-ONLY stream: this file is the only artifact authored; nothing committed; every gap cites stream/corpus/implementation evidence and every rejected candidate is recorded with a reason."
+}

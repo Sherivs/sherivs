@@ -1,0 +1,385 @@
+{
+  "stream": "L",
+  "artifact": "COREGRID_V1_ARCHITECTURE_HARDENING",
+  "version": "1.0",
+  "captured": "2026-10-01",
+  "authority": "CTO DIRECTIVE STEP 8 — hardening analysis against the reconstructed V1 architecture. RULING-2 (deny-by-default authoritative; domain-neutral authorization model designed pre-lock) is binding. No mitigation in this artifact weakens a security boundary for convenience; every gap is closed by tightening, never by relaxing.",
+  "primaryInputs": {
+    "reconstruction": "architecture/coregrid-mvp-architecture/reconstruction/COREGRID_V1_RECONSTRUCTED_ARCHITECTURE.json (93 V1 capabilities + 26 V2; critical path V1CAP-013→014→072→046→048→027→035→002→042→044→059→089; 28 contamination corrections)",
+    "scopeLock": "architecture/coregrid-mvp-architecture/reconstruction/COREGRID_V1_V2_SCOPE_LOCK.json (14 conditions, 8 blocking gaps owned)",
+    "contaminationAudit": "STREAM_I_CONTAMINATION_AUDIT.json (blocking findings I-001..I-005, I-010..I-012)",
+    "implementationMap": "STREAM_H_IMPLEMENTATION_MAP.json (verified foundations; orphans; unverified implementations)",
+    "gapDiscovery": "STREAM_J_GAP_DISCOVERY.json (49 gaps: 8 blocking, 32 major, 9 minor)"
+  },
+  "analyses": {
+    "dependency": {
+      "method": "Full DFS cycle detection over the dependsOn edges of all 93 V1 capabilities in COREGRID_V1_RECONSTRUCTED_ARCHITECTURE.json, plus fan-in computation for single-point-of-failure identification.",
+      "cycles": [],
+      "cyclesNote": "Zero dependency cycles among the 93 V1 capabilities (machine-verified this session). V2 rows carry stale civilization-tier edges (J-046) but those are registry hygiene, not V1 graph cycles.",
+      "singlePointsOfFailure": [
+        { "capability": "V1CAP-016", "fanIn": 19, "risk": "The layered authorization engine is the single enforcement point consumed by every server function (AGENTS 27). An outage or defect in authorization.ts silently widens the system unless it fails closed. It is also the least directly tested universal module (STREAM H: no dedicated authorization.test.ts).", "mitigation": "Fail-closed default decision; exhaustive dedicated suite (L-H-022); decision log auditability (V1CAP-016 contract)." },
+        { "capability": "V1CAP-001", "fanIn": 12, "risk": "Universal kernel reality substrate (cg_entity/cg_relationship/cg_event/cg_observation) underpins every fabric; 20260903000000 migration is AUTHORED-NOT-APPLIED to canonical environments.", "mitigation": "Applied-migration posture (J-040/L-H-003); kernel purity CI-enforced (tests/unit/kernel-purity.test.ts)." },
+        { "capability": "V1CAP-010", "fanIn": 12, "risk": "Identity substrate: every actor resolution flows through it; revocation failure would invalidate all downstream authorization.", "mitigation": "Revocation proofs owed under V1CAP-020 (J-009); revocation fail-closed invariant is a mandatory test battery." },
+        { "capability": "V1CAP-046", "fanIn": 5, "risk": "Mission orchestration spine has a single (ratification-pending) owner — CG-GAP-003/COND-001. Owner ambiguity is itself an availability SPOF for the loop.", "mitigation": "Ratification is an owned blocking gap with deliverable kind 'artifact'." },
+        { "capability": "V1CAP-070", "fanIn": 3, "risk": "The phase-01 verify pipeline is the only verification authority for nearly all V1 claims — a verification-infrastructure SPOF. Its green baseline (3,458 tests) is reproducible in a bare VM (STREAM H evidence).", "mitigation": "Self-hosting CI (V1CAP-070 impl=true verif=live); diversify with live batteries (V1CAP-073) and independent verification (V1CAP-061)." }
+      ],
+      "layeringViolations": [
+        { "finding": "I-019", "violation": "frontend/src/lib/kernel/phase-contracts/define-phase.ts:233-236 hard-codes firstRuntime: 'runtime:scholar' — the kernel layer imports/spells a runtime; kernel→runtime is an inverted dependency.", "severity": "major" },
+        { "finding": "I-018", "violation": "frontend/src/lib/files/file-contract.ts:10-13 header binds the universal file contract to Scholar module paths (scholar/documents.ts, scholar/evidence.ts) — universal→domain citation.", "severity": "minor" },
+        { "finding": "I-016", "violation": "frontend/src/lib/payments/paystack-adapter.ts:49,135-139 — universal payment adapter reads Scholar metadata keys (school_id, fee_id).", "severity": "major" },
+        { "finding": "I-025", "violation": "frontend/src/routes/platform.org.tsx:15-20 — Control-Plane organization page implemented inside lib/scholar/ namespace; the control plane is NOT a tenant (AGENTS 14).", "severity": "major" },
+        { "finding": "I-027", "violation": "frontend/src/routes/_authenticated/runtime.tsx:11-12 — universal 'generated runtime' surface wired directly to Scholar server functions (scholar-feature-access.functions.ts, scholar-role-assignments.functions.ts).", "severity": "major" },
+        { "finding": "STREAM H domainContaminationInCode", "violation": "~15 Scholar server functions (attendance.functions.ts, teachers.functions.ts, bus-tracking.functions.ts, ...) physically located at the universal lib root beside tenant-core.ts and authorization.ts; audit.ts typed on schoolId at universal root.", "severity": "major" }
+      ],
+      "verdict": "HEALTHY GRAPH, CONTAMINATED EDGES. The 93-capability V1 dependency graph is acyclic and the critical path is well-ordered (authorization primitives first, environment truth second, mission/worker spine third, evidence tail last). Single points of failure are concentrated at V1CAP-016/001/010 and are mitigable with fail-closed design plus the owed test batteries. The structural defect is not topology but vocabulary: six layering violations put Scholar domain vocabulary inside universal/kernel/control-plane layers (I-018/I-019/I-025/I-027 plus STREAM H relocation debt) — these are tracked as hardening requirements L-H-023 and do not reorder the critical path."
+    },
+    "threat": [
+      {
+        "id": "L-T-001",
+        "threat": "Scholar-fused universal authorization primitives: every universal cg_ substrate RPC (cg_role_assignment, cg_org_profile, workforce positions) is gated on is_school_admin()/get_my_school_id() resolved from public.users.school_id (migrations 20260907000300..00800; I-001..I-005). A non-Scholar tenant can neither hold nor administer any role assignment; conversely the platform's authorization truth is anchored to a domain slice table, so tenant authorization resolution is structurally wrong for every future runtime.",
+        "targetCapability": "V1CAP-013",
+        "stride": "ElevationOfPrivilege",
+        "existingMitigation": "Deny-by-default RLS with zero policies on cg_org_unit/cg_org_membership (20261001000000, applied to dev with RLS check PASS); the migrations deliberately refuse to wire Scholar helpers into the universal model (I-007 evidence).",
+        "requiredMitigation": "Neutral tenant-membership DB primitives (get_my_tenant_id() + holds_tenant_role(p_tenant, p_role_ref)) resolved from cg_role_assignment/cg_org_membership; re-gate every universal-substrate RPC on them; demote users.school_id semantics behind the Scholar adapter (J-005, blocked on COND-003 tenant_id type ruling). Hardened by L-H-001.",
+        "severity": "critical"
+      },
+      {
+        "id": "L-T-002",
+        "threat": "Cross-tenant information disclosure via unproven RLS: the 'RLS enabled with zero policies = deny' posture on every cg_ table is statically reasoned, not database-proven in CI (STREAM H unverifiedImplementations). A single malformed future policy grants Tenant A access to Tenant B — the mandatory AGENTS 31 invariant — with no CI gate to catch it.",
+        "targetCapability": "V1CAP-012",
+        "stride": "InformationDisclosure",
+        "existingMitigation": "Tenant resolution is server-side (tenant spoofing impossible via API governance); cross-tenant rejection live-tested once on the dev project; scripts/run-rls-isolation-check.mjs exists but requires live credentials; the two applied V1 migrations passed an RLS isolation check at application time.",
+        "requiredMitigation": "RLS isolation battery executed with live credentials in CI on every merge (V1CAP-073/J-041, hardened by L-H-008); battery failure blocks merge; battery covers Tenant-A-cannot-see-Tenant-B, revoked-fails, expired-fails per AGENTS 31.",
+        "severity": "critical"
+      },
+      {
+        "id": "L-T-003",
+        "threat": "Delegation privilege escalation: a worker (AI or human) receives a delegation and performs actions beyond the principal's authority, or re-delegates to expand its own reach. Mission/Delegation object contracts are unowned and unwritten (J-024/J-025) and persistent governed worker definitions with authority bounds do not exist (J-027, LAUNCH_BLOCKER).",
+        "targetCapability": "V1CAP-021",
+        "stride": "ElevationOfPrivilege",
+        "existingMitigation": "frontend/src/lib/control-plane/foundation-loop.ts is a pure plan engine — the caller cannot supply tenant or verification decision; agent-runtime/mission-runner.ts PLANS ONLY (execution stays with the foundation loop); authorization.ts Invariant 12: no autonomous agent may silently escalate its own authority.",
+        "requiredMitigation": "First-class bounded, revocable, non-escalating delegation contracts with acting-on-behalf-of semantics (J-025); persistent worker definitions whose capability set is identity-linked and authority-bounded (J-027); every delegated action re-resolves through V1CAP-016 under the principal's constraints. Hardened by L-H-004/L-H-005.",
+        "severity": "critical"
+      },
+      {
+        "id": "L-T-004",
+        "threat": "Self-verification: a worker verifies its own output inside the loop, converting generated claims into 'verified' status without independent judgment. Verification independence is required by the corpus (E-050: an AI worker must not validate its own unsupported claim) but is not enforced anywhere (J-035).",
+        "targetCapability": "V1CAP-061",
+        "stride": "Repudiation",
+        "existingMitigation": "The live-verified foundation loop structurally separates admission from verification (frontend/src/lib/control-plane/foundation-mission.ts pure admit/verify engine; foundation-loop.ts refuses caller-supplied verification decisions; cg_verification_result is a distinct table in 20260929000000).",
+        "requiredMitigation": "Verification independence enforcement generalized across the loop: verifier identity must differ from producer identity for every verification result; violations recorded as nonconformance (J-035). Hardened by L-H-009.",
+        "severity": "high"
+      },
+      {
+        "id": "L-T-005",
+        "threat": "Prompt injection through untrusted context: attacker-controlled content (customer messages, external documents, agent-retrieved artifacts) smuggles instructions into AI context and redirects model behavior into unauthorized actions. AI-specific runtime defenses (injection defense, exfiltration control, malicious-artifact defense) are declared but not implemented (J-036).",
+        "targetCapability": "V1CAP-023",
+        "stride": "ElevationOfPrivilege",
+        "existingMitigation": "frontend/src/lib/context-assembly.ts: UNTRUSTED wrapping of externally-derived content with enforced downstream delimitation; the assembler never re-classifies untrusted content into trusted instructions, never grants authority, and every dropped candidate is audited with an explicit reason; gateway-centralization is mechanically enforced (tests/unit/ai-gateway-adoption-*.test.ts).",
+        "requiredMitigation": "Implement J-036 defenses at the gateway/runtime layer (V1CAP-033): injection-resistant prompt delimitation enforcement, exfiltration controls on outputs, malicious-artifact scanning for worker-ingested files, supply-chain checks on tool/model integrations. Hardened by L-H-014.",
+        "severity": "high"
+      },
+      {
+        "id": "L-T-006",
+        "threat": "Evidence-class laundering: AI-generated, simulated or predicted content silently enters the record as direct observation, so downstream verification and canonical truth rest on fabricated provenance (J-034; Constitution §9 canonical-truth principle).",
+        "targetCapability": "V1CAP-059",
+        "stride": "Tampering",
+        "existingMitigation": "Evidence-class capture discipline is a named V1 capability on the critical path (V1CAP-059, impl=false); context-assembly trust classification (classifyContextTrust in ai-context.ts) marks source kinds at assembly time; cg_foundation_evidence records carry class fields in 20260929000000.",
+        "requiredMitigation": "Capture-time class enforcement: generated/simulated/predicted evidence can never silently become direct observation — the class is set at capture, immutable in the evidence store, and any promotion path requires an explicit governed verification step (L-H-010).",
+        "severity": "high"
+      },
+      {
+        "id": "L-T-007",
+        "threat": "Gateway bypass: a caller invokes a model provider directly (or through a fallback path) escaping authorization, budget pre-check, rate limiting and metering — unmetered, unlogged, unauthorized AI spend and data flow.",
+        "targetCapability": "V1CAP-026",
+        "stride": "ElevationOfPrivilege",
+        "existingMitigation": "Gateway centralization is mechanically test-enforced today: no @ai-sdk/createOpenAICompatible import exists outside ai-gateway* (tests/unit/ai-gateway-adoption-expense-insights/lesson-plan/timetable.test.ts); ai-gateway.server.ts fail-closed invariants (BLK-2 missing key → explicit unconfigured decision, never a live attempt); budget pre-check and rate limiting inside invokeAiGateway.",
+        "requiredMitigation": "Defense beyond import-lint: runtime egress enforcement (network policy allowing provider calls only from the gateway), model registry rejecting unregistered models, and fallback models inheriting the identical policy gates (J-014). Hardened by L-H-018.",
+        "severity": "medium"
+      },
+      {
+        "id": "L-T-008",
+        "threat": "Secret exfiltration through logs, context payloads, or the AI gateway: credential material (AI_API_KEY, deploy credentials, payment keys) leaks into structured logs, model prompts, or worker memory — creating a reusable exfiltration channel to external providers.",
+        "targetCapability": "V1CAP-017",
+        "stride": "InformationDisclosure",
+        "existingMitigation": "ai-gateway.server.ts: no key material ever reaches a log line; every emitted field is scrubbed against the live key as defense in depth; observability/structured-log.ts is a secret-redacting JSON-line logger; scripts/verification/secret-scan.mjs runs in npm run verify (PASS baseline); BLK secret family provisioned only via Cursor Dashboard (RULING-11/COND-006), never in repo.",
+        "requiredMitigation": "Per-agent credential broker with no universal master credential, secret isolation, rotation and blast-radius containment per credential (J-007); context assembly structurally excludes credential-class material from AI payloads. Hardened by L-H-015.",
+        "severity": "high"
+      },
+      {
+        "id": "L-T-009",
+        "threat": "Payment webhook forgery or replay: an attacker posts a forged or replayed webhook to convert it into a financial effect (credit, entitlement, settlement) without a real charge. Live signature verification has never been exercised (BLK-4) and idempotency exists only on the foundation loop, not as a cross-module standard (J-030).",
+        "targetCapability": "V1CAP-079",
+        "stride": "Tampering",
+        "existingMitigation": "frontend/src/lib/payments/replay-guard.ts: two rejection axes (seen event ids = duplicates; event timestamps outside 300s tolerance = stale/future replay indicators), stateless-in/stateless-out and unit-tested (tests/unit/payments-replay-guard.test.ts); adapters signature-validated against recorded semantics; webhook-source-of-truth posture stated in AGENTS 36.",
+        "requiredMitigation": "Live signature-verified webhook evidence under BLK-4 (COND-006) before any live rail; universal mandatory idempotency keys on all consequential commands (J-030); webhook processing behind the governed server-function chain (authenticate → resolve tenant → authorize → validate → execute → audit). Hardened by L-H-020/L-H-017.",
+        "severity": "high"
+      },
+      {
+        "id": "L-T-010",
+        "threat": "Cross-tenant event/realtime broadcast: an event, subscription or notification delivers another tenant's state change to a subscriber — the realtime plane leaks what the RLS plane denies (AGENTS 35: never broadcast unauthorized events). Per-event security contract and tenant-scoped routing are unbuilt (J-021/J-022).",
+        "targetCapability": "V1CAP-043",
+        "stride": "InformationDisclosure",
+        "existingMitigation": "V1CAP-012 security boundary states realtime broadcasts are tenant-filtered; harden-schools-and-realtime migration (20260819000000) established tenant-scoped realtime precedent on Scholar slice tables; per-event security contract is a named V1 capability (V1CAP-044, impl=false).",
+        "requiredMitigation": "Per-event security contract on every event (authenticity, authorization, privacy, provenance carried per-event, J-022); tenant-scoped subscription delivery with replay and backpressure (J-021); delivery authorization evaluated per-subscriber, not per-channel. Hardened by L-H-011/L-H-025.",
+        "severity": "high"
+      },
+      {
+        "id": "L-T-011",
+        "threat": "File-plane path escape: a crafted contentRef/storage path escapes the tenant path prefix in storage-adapter.server.ts, reading or writing another tenant's object. The V1 file plane has no substrate migration — the adapter's path-convention prefix is the only tenant enforcement below the pure access policy.",
+        "targetCapability": "V1CAP-012",
+        "stride": "InformationDisclosure",
+        "existingMitigation": "frontend/src/lib/files/access-policy.ts: deny-by-default with explicit reasons; cross-tenant access ALWAYS denied including for platform super-admins (no control-plane bypass in V1); grants honored only while unexpired; RLS remains the declared boundary and the adapter independently enforces the tenant path prefix; unit suites exist (tests/unit/files-*.test.ts).",
+        "requiredMitigation": "Adversarial path tests (traversal, encoding, prefix-confusion) added to the storage-adapter suite; a V1 file substrate table with tenant-scoped RLS so the database — not only a path convention — carries the boundary; grants bound to V1CAP-016 decisions.",
+        "severity": "medium"
+      },
+      {
+        "id": "L-T-012",
+        "threat": "Command replay outside the foundation loop: consequential commands (workflow transitions, payment operations, notifications, worker tasks) are retried or maliciously re-submitted, double-executing financial or state effects because idempotency keys are not a cross-module standard (J-030).",
+        "targetCapability": "V1CAP-054",
+        "stride": "Tampering",
+        "existingMitigation": "Foundation loop idempotent replay is live-verified (second call returned replayed=true with the same executionId on the dev project, tests/integration/foundation-loop.live.test.ts); workflow engine (workflow-engine.ts) is a pure evaluator where UNKNOWN is never TRUE; payments carry the replay guard.",
+        "requiredMitigation": "Mandatory idempotency keys on every consequential command across all modules (J-030), enforced at the execution-system layer (V1CAP-053/054) with duplicate submissions returning the original result, never re-executing. Hardened by L-H-017.",
+        "severity": "medium"
+      },
+      {
+        "id": "L-T-013",
+        "threat": "Escalation and approval abuse: the ESCALATE and REQUIRE_APPROVAL decision outcomes have no wired approval chains (J-032) and no emergency lockdown path (J-010), so an escalation either dead-ends (DoS on legitimate operations) or is resolved by an ungoverned shortcut; guardians themselves could become an unmonitored privilege path.",
+        "targetCapability": "V1CAP-032",
+        "stride": "ElevationOfPrivilege",
+        "existingMitigation": "frontend/src/lib/authorization.ts implements the five-valued decision model (ALLOW|DENY|REDACT|ESCALATE|REQUIRE_APPROVAL) with Invariant 12 (no silent agent self-escalation); jarvis-contract.ts encodes the Part 15 executive-orchestrator boundary where every MUST-NOT is an enforced deny (tests/unit/jarvis-contract.test.ts); workflow-engine.ts requires a human approval record for approval steps.",
+        "requiredMitigation": "Risk-classified approval routing through the one canonical workflow lifecycle (J-032): approval chains wired to high-risk actions with human approval records; emergency revocation/lockdown with security guardians who are themselves governed identities (J-010); every ESCALATE outcome resolves through an owned, audited flow. Hardened by L-H-016.",
+        "severity": "high"
+      },
+      {
+        "id": "L-T-014",
+        "threat": "Environment-state falsification: claims of 'live-verified' resting on a database whose canonical posture is 'AUTHORED, NOT APPLIED' let insecure or drifted schema be treated as deployed truth. The dev/canonical evidence-class split (STREAM H contradiction) is exactly the surface where unapplied security posture gets reported as proven.",
+        "targetCapability": "V1CAP-072",
+        "stride": "Repudiation",
+        "existingMitigation": "The two approved V1 migrations (20260930000000 workspace persistence, 20261001000000 org model) were applied to the dev project via the authorized management-API path with an RLS isolation check PASS and rowsecurity=true verified on all four tables (COREGRID_CTO_DIRECTIVE_RECONCILIATION.json disposition); drift between declared and applied schema is already designated a blocking nonconformance in the V1CAP-072 security boundary.",
+        "requiredMitigation": "Applied-migration manifest as environment state truth (J-040): every canonical environment records exactly which migrations are applied; cg_* substrate applied to canonical environments; reporting may never conflate 'live-verified once on dev' with 'deployed' (scope-lock unresolved item honored). Hardened by L-H-003.",
+        "severity": "critical"
+      },
+      {
+        "id": "L-T-015",
+        "threat": "Memory retrieval authorization bypass: persisted memory retrieval (especially vector/similarity search) returns records the querier could not have read directly, bypassing tenant, role and scope filters — 'memory must not be a side door around authorization' (J-017); worker memory scopes can silently expand (J-018/J-029).",
+        "targetCapability": "V1CAP-036",
+        "stride": "InformationDisclosure",
+        "existingMitigation": "Memory retrieval is a named V1 capability (V1CAP-036, impl=false) whose security boundary requires authorization-gated, non-vector-only retrieval; memory governance boundary (V1CAP-037) reserves ownership with the platform, not the agent; the persisted memory store itself does not exist yet (J-016, COND-002 gated).",
+        "requiredMitigation": "Every retrieval result filtered by identity AND tenant AND scope AND policy before return (post-filter AND pre-query scope constraints, not vector-similarity-only); worker memory scopes (session/mission/long-term) enforced with no silent expansion (J-029). Hardened by L-H-019.",
+        "severity": "medium"
+      },
+      {
+        "id": "L-T-016",
+        "threat": "Context-switch bleed: one user operating across multiple realities/tenants retains prior-scope tokens, cached context packages or workspace state after switching, so post-switch requests are served under stale authorization context (J-012).",
+        "targetCapability": "V1CAP-024",
+        "stride": "InformationDisclosure",
+        "existingMitigation": "V1CAP-024 is a named capability with a fail-closed security boundary ('post-switch requests must fail closed if any prior-scope token persists'); context packages are ephemeral-plus-trace-persisted by design in context-assembly.ts; workspace state is projection-layer, not canonical.",
+        "requiredMitigation": "Context-switch safety implementation: on switch, all prior-scope tokens and assembled context packages are invalidated; post-switch requests fail closed if any prior-scope token persists; switch events audited (L-H-021).",
+        "severity": "medium"
+      }
+    ],
+    "failure": [
+      { "component": "AI gateway (ai-gateway.server.ts)", "failureMode": "Provider outage, rate-limit exhaustion, or missing API key (BLK-2 fail-closed).", "detection": "Structured decision logging (secret-free) + explicit 'unconfigured' gateway decision on missing key; gateway suites verify fail-closed behavior.", "recovery": "Automatic: none required — the gateway refuses rather than degrades. Recovery is operator action (provision BLK-2 key). Fallback/failover and circuit breaker do not exist yet (J-014).", "blastRadius": "All AI features (V1CAP-027 inference, lesson-plan/expense insights adoption paths). No security impact — failure is fail-closed.", "verdict": "adequate at contract level; gap for live-path failure semantics (no circuit breaker, no fallback — J-014/L-H-018)" },
+      { "component": "Foundation mission loop (control-plane/foundation-mission.ts + 20260929000000 tables)", "failureMode": "Database outage or transaction failure mid-mission.", "detection": "Live battery probes + scripts/probe-foundation-database.mjs; structured logs; evidence tail absence is visible.", "recovery": "Idempotent replay (live-verified: replayed=true with same executionId) — retry is safe by construction.", "blastRadius": "Single mission; no partial state corruption (append-only cg_execution_history).", "verdict": "adequate" },
+      { "component": "RLS policy set on cg_* tables", "failureMode": "A future migration authors an over-broad policy (Tenant A reads Tenant B) or drops RLS during a refactor.", "detection": "NOT detected today: the isolation battery requires live credentials and is not in CI (J-041); scripts/run-rls-isolation-check.mjs exists but ran only at manual application time (PASS on the two applied V1 migrations).", "recovery": "Rollback migrations exist for 20260930000000 and 20261001000000; detection-first is the missing half.", "blastRadius": "Cross-tenant disclosure across all affected tables — the highest-consequence failure mode in the system.", "verdict": "gap (L-H-008)" },
+      { "component": "Worker runtime (agent-runtime/*)", "failureMode": "Worker process termination mid-mission — in-flight delegation state lost, no persistent definition to resume from.", "detection": "Mission runner is plans-only so execution failures surface through the foundation loop's evidence absence; no dedicated worker-crash telemetry.", "recovery": "None: persistent governed worker definitions with delegation history do not exist (J-027, LAUNCH_BLOCKER).", "blastRadius": "Lost missions; potential duplicate execution if re-dispatched without idempotency keys (J-030).", "verdict": "gap (L-H-005)" },
+      { "component": "Payment webhook processing (payments/* adapters + replay-guard)", "failureMode": "Provider redelivery storm, out-of-order events, or signature-verification failure.", "detection": "Replay-guard decisions are typed and unit-tested (duplicate_event | stale_event | future_event | unidentified_event).", "recovery": "Rejection with reason; financial effect applied exactly once by the governed server function afterwards.", "blastRadius": "Single payment event; but zero live verification means the detection claims are unproven against a real provider (BLK-4).", "verdict": "adequate in design; gap in evidence (L-H-020)" },
+      { "component": "Event outbox (kernel/outbox.ts + cg_event)", "failureMode": "Outbox backlog growth, duplicate emission, or subscriber starvation — no backpressure semantics (J-021).", "detection": "Outbox unit suite (tests/unit/kernel-outbox.test.ts) verifies emission; no production backlog metric or alert.", "recovery": "Undefined: no drain policy, no dead-letter path.", "blastRadius": "Evidence fabric starvation (state changes not becoming evidence) or unbounded delivery amplification.", "verdict": "gap (L-H-025)" },
+      { "component": "Notification delivery (notifications/* + email-adapter-contract.ts)", "failureMode": "Provider absence (BLK-5 hold) or dispatch failure.", "detection": "Fail-closed state machine: 'delivered' only reachable via provider receipt; record-only adapter never pretends delivery; dispatch-planner suites exist.", "recovery": "State machine parks in honest non-delivered states; no retry/backoff policy authored.", "blastRadius": "Communication fabric stalls honestly; no false-positive delivery evidence.", "verdict": "adequate" },
+      { "component": "Deployment path (release.yml + Dockerfile)", "failureMode": "Deploy without credentials, failed build, or unhealthy cutover.", "detection": "release.yml fails closed without BLK-3 credentials; human-gated 'production' environment; SHA-pinned actions; health-gated traffic cutover (health.json 200 live-verified, M-14).", "recovery": "Rollback migrations + redeploy of prior tag; Docker image build itself is UNVERIFIED (docker absent on the authoring VM — honestly recorded, proven at first real deploy under V1CAP-076).", "blastRadius": "Deploy blocked (fail-closed) rather than bad deploy; residual risk is the unverified image build.", "verdict": "adequate; residual recorded in unresolved" },
+      { "component": "Metering ledger (metering/usage-ledger.ts)", "failureMode": "Attribution corruption or ledger unavailability blocking gateway calls.", "detection": "Pure, attribution-complete ledger with unit suite; budget decisions typed (BudgetDecision).", "recovery": "Gateway budget pre-check fails closed if the ledger is unreadable — cost failure cannot produce unmetered spend.", "blastRadius": "AI operations pause (fail-closed), which is the correct direction.", "verdict": "adequate; cost rollup to tenant/mission is open (J-043)" }
+    ],
+    "scalability": {
+      "assumptions": [
+        "Target order of magnitude: tens of thousands of entities (people, devices, buildings, twins) per tenant and thousands of tenants — the reconstruction's loop model (per-tenant reality substrate over cg_* tables) must hold at this scale without per-entity resident processes.",
+        "AI volume is bounded by the gateway: every inference is metered, budget pre-checked and rate-limited inside invokeAiGateway (ai-gateway.server.ts); there is no unmetered AI path.",
+        "Worker execution is delegation-driven: workers are ephemeral runtimes executing bounded delegations from the foundation loop, not long-lived daemons per entity.",
+        "Event volume grows with entity activity; the outbox (kernel/outbox.ts) is the single emission point feeding the evidence fabric (V1CAP-041→V1CAP-057 integration point)."
+      ],
+      "limits": [
+        "No resource quotas or lease/concurrency control exist (J-031): concurrent workers over shared resources can thrash; mission throughput is unbounded above by anything except gateway rate limits.",
+        "Event routing/subscriptions lack backpressure (J-021): fan-out amplification is possible as tenant count grows.",
+        "No persisted memory store (J-016) and no retrieval index design: memory-dependent loop iteration is unbounded per request today (in-memory only).",
+        "Single-process rate limiting in the gateway: multi-instance deployment (V1CAP-076 path) requires distributed rate-limit state — currently in-process.",
+        "Registry-driven capability resolution (V1CAP-082) and 3,458-test verify pipeline: CI cost grows linearly with phases; test attribution debt (1,230 unattributed tests) makes scale-level regression triage slow (J-046)."
+      ],
+      "ephemeralAgentCompliance": "COMPLIANT AS DESIGNED, PROVISIONAL IN EVIDENCE. The runtime model is ephemeral-by-mission: frontend/src/lib/agent-runtime/ephemeral-lifecycle.ts governs agent instantiation, and agent-runtime/mission-runner.ts plans only — execution stays with the governed foundation loop, so there is no resident agent per entity. Agents are first-class identities whose durable parts are data (identity rows, capability registry entries, delegation records, memory scopes), not processes: 50k entities therefore mean 50k governable identity/capability records plus a bounded pool of ephemeral worker runtimes, satisfying the 'no 50k resident agents' requirement. The provisional part: persistent governed worker definitions with authority bounds do not exist yet (J-027/L-H-005), so today compliance rests on the plans-only mission runner rather than on enforced durable definitions. Once L-H-005 lands, the data-not-process model is structural, not conventional.",
+      "verdict": "ADEQUATE FOR V1-SCALE IF QUOTAS LAND. The loop's security-relevant scaling property (ephemeral agents, metered gateway, append-only evidence) is architecturally sound; the scaling gaps are operational (quotas/leases J-031, event backpressure J-021, distributed rate limiting) rather than architectural. None of these blocks first loop closure; all are required before multi-tenant production load."
+    },
+    "cost": {
+      "metered": [
+        "AI inference: every call through ai-gateway.server.ts is cost-estimated (estimateCostUsd), budget pre-checked (evaluateBudget → typed BudgetDecision), rate-limited and metered into metering/usage-ledger.ts — attribution-complete and pure; bypass is architecturally prevented and test-enforced.",
+        "Gateway purposes are constrained to organizational intelligence by the metering vocabulary (no ad-hoc purposes)."
+      ],
+      "unmeteredExposure": [
+        "Model fallback/failover (J-014 absent): a fallback provider would need identical metering; until the model registry exists, fallback semantics are undefined and would be an unmetered surface if ad-hoc.",
+        "File storage and egress: no V1 file substrate table, no storage metering; storage growth is invisible to budgets.",
+        "Email/push/communication dispatch when BLK-5 lifts: dispatch-planner exists but provider cost attribution is not wired to the usage ledger.",
+        "Worker compute: no quotas/leases (J-031) — worker execution time is not attributed to mission or tenant.",
+        "Event fan-out compute (J-021): broadcast amplification cost is unattributed."
+      ],
+      "budgetEnforcement": "Enforced today only at the AI gateway: budget pre-check precedes invocation and exhaustion yields a typed refusal, not silent degradation (matches V1CAP-077's boundary 'budget exhaustion triggers review, not silent degradation'). Cost attribution to tenant/mission rollups does not exist (J-043) — spend is recorded but not attributable in reports. No budget mechanism exists for storage, messaging or worker compute.",
+      "verdict": "STRONG ON AI, ABSENT ELSEWHERE. The AI cost plane is the exemplar: metered, attributed, fail-closed. Every other V1 cost surface (storage, communication, worker compute, event fan-out) is unmetered exposure. Required: J-043 cost rollups and quota-backed budget enforcement beyond the gateway (covered by L-H-025 and the J-031 quotas requirement); not mission-launch-blocking."
+    },
+    "tenancy": {
+      "model": "Shared-database multi-tenancy: every row carries tenant identity; access is enforced by PostgreSQL RLS (deny-by-default, zero policies until a neutral membership helper exists) plus server-resolved tenant context (tenant spoofing impossible via API governance — client tenant IDs never trusted, AGENTS 26). Tenant roots: cg_tenant (20260904020000, authored-not-applied) with legacy public.schools as the Scholar-slice tenant root (I-001/I-009).",
+      "enforcementLayers": [
+        "Database: RLS on every cg_ table, deny-by-default; verified rowsecurity=true on the four applied dev tables (RLS check PASS)",
+        "Server functions: AGENTS 27 chain (authenticate → resolve tenant → authorize → validate → execute → audit); IdentityActor carries tenant scope (identity-actor.ts — currently schoolId-typed, I-011)",
+        "Authorization engine: V1CAP-016 five-valued decisions consumed by every server function (fan-in 19)",
+        "Capability gate: capability-gate.ts evaluates runtime-declared features (currently hard-coded 'r001', I-012)",
+        "File plane: storage-adapter tenant path prefix + deny-by-default access-policy (cross-tenant denied even for super-admins)",
+        "Realtime: tenant-filtered broadcasts per V1CAP-012 boundary (per-event contract unbuilt, J-022)"
+      ],
+      "knownWeakPoints": [
+        "I-001: public.users fuses universal identity with Scholar slice (school_id uuid NOT NULL, Scholar role CHECK) — the canonical identity store is a domain table",
+        "I-002: get_my_school_id()/is_school_admin()/get_my_role() used as universal authorization primitives",
+        "I-003: cg_role_assignment/cg_role_grant RPCs (universal substrate) gated on Scholar helpers — non-Scholar tenants cannot hold or administer roles",
+        "I-004: cg_org_profile (declared domain-neutral) gated on is_school_admin AND own tenant",
+        "I-005: workforce position RPCs default p_runtime to 'runtime:scholar' and gate on Scholar helpers",
+        "I-011/I-012: IdentityActor.schoolId + capability-gate MEMBERSHIP_FOR_NAV_KIND/'r001' hard-code Scholar vocabulary in the universal access path",
+        "J-041: RLS isolation is statically reasoned, not CI-proven",
+        "COND-003: tenant_id type divergence (text vs uuid, 20261001000000 lines 32-37) blocks finalizing the neutral helper (J-005)"
+      ],
+      "verdict": "SOUND POSTURE, COMPROMISED PRIMITIVES. The tenancy model (RLS floor + server-resolved context + layered authorization) matches AGENTS 13/17/26 and the deny-by-default law. But the primitives the enforcement layers resolve from are Scholar-fused (I-001..I-005, I-011/I-012): today the platform cannot legitimately authorize a non-Scholar tenant at the database layer at all. This is the single most important tenancy hardening (L-H-001/L-H-002) and is already the top of the critical path (V1CAP-013→014). Verdict: gap pending L-H-001/L-H-002/L-H-008."
+    },
+    "authorization": {
+      "neutralModelRequirement": "Consolidated from STREAM I (neutralRoleModelRequirement) and the K-ruling synthesis: (1) closed domain-neutral ROLE VOCABULARY — ACTOR, MEMBER, OWNER, ADMINISTRATOR, OPERATOR, MANAGER, SUPERVISOR, CONTRIBUTOR, REVIEWER, APPROVER, AUDITOR, WORKER, AGENT, SERVICE, SYSTEM — owned by the platform (P02/P08), never by a runtime; (2) DIRECTIONAL MAPPING CONTRACT: runtimes declare mappings FROM local roles TO neutral roles via DomainDefinition.roleMappings (Scholar: principal→ADMINISTRATOR, teacher→CONTRIBUTOR, bursar→OPERATOR, driver→WORKER, student/parent→MEMBER; restaurant fixture: manager→ADMINISTRATOR/OWNER, cashier→OPERATOR, service_staff→WORKER, runner→WORKER) — the platform never learns a domain role name, never the reverse mapping; (3) CAPABILITY-BASED AUTHORIZATION: capability codes evaluate against neutral roles/grants resolved from cg_role_assignment/cg_role_grant, with runtime-declared feature declarations replacing MEMBERSHIP_FOR_NAV_KIND and the hard-coded 'r001'; (4) NEUTRAL TENANT MEMBERSHIP PRIMITIVES: get_my_tenant_id() + holds_tenant_role() over universal membership tables as the gate for every universal cg_ substrate RPC and the RLS activation dependency for cg_org_unit/cg_org_membership (I-007); (5) RUNTIME-DECLARED WORKSPACE KINDS: nav/workspace kinds contributed per runtime, not a fixed Scholar enum; (6) NEUTRAL IDENTITY ACTOR: IdentityActor carries tenantRef + neutral roles; domain adapters translate identity-store rows at the boundary. Deny-by-default is authoritative: any authorization state not explicitly granted is DENY; REDACT/ESCALATE/REQUIRE_APPROVAL are the only non-binary refinements and each resolves through an owned governed flow.",
+      "denyByDefaultCompliance": "STRONG IN DESIGN, PARTIALLY PROVEN. Compliant: zero-policy RLS on every authored cg_ table (deny unless policy); files access-policy denies every non-allow path including super-admin cross-tenant; ai-gateway fails closed on missing key and refuses unconfigured invocation; workflow engine never resolves UNKNOWN to TRUE; notification state machine cannot reach 'delivered' without provider receipt; foundation-loop refuses caller-supplied tenant/verification. Not yet proven: RLS posture is statically reasoned (J-041, L-H-008); authorization.ts — the engine itself — has no dedicated exhaustive suite (STREAM H: highest-stakes module, least directly tested, L-H-022); ESCALATE/REQUIRE_APPROVAL outcomes lack wired resolution flows (J-032, L-H-016); identity revocation/expiry fail-closed is unproven (J-009).",
+      "gaps": [
+        "J-005: neutral tenant-membership DB primitives (blocking, COND-003-gated finalization)",
+        "J-006: neutral universal role vocabulary + directional mapping contract (blocking)",
+        "J-009: revoked/suspended/expired identity cannot execute — mandatory enforcement proofs absent",
+        "J-032: human approval chains unwired to high-risk actions",
+        "J-010: emergency revocation/lockdown path absent",
+        "authorization.ts dedicated exhaustive suite owed (V1CAP-016 contract note; scope-lock unresolved)",
+        "J-037: continuous domain-neutrality guard beyond the kernel (authorization vocabulary currently unguarded at lib root)"
+      ],
+      "verdict": "ARCHITECTURALLY CORRECT, ENFORCEMENT-INCOMPLETE. The five-valued neutral decision model exists in code and the deny-by-default reflex is consistent across every V1 mission module (the transferable style exemplar per STREAM H). The neutral role/membership model is designed (RULING-2 satisfied at design level) but not built — the two blocking authorization gaps J-005/J-006 are the campaign's first work items and the head of the critical path. Verdict: gap pending L-H-001/L-H-002; no convenience-weakening mitigation is proposed anywhere in this artifact."
+    },
+    "dataLifecycle": {
+      "retention": "V1CAP-066 (privacy & retention lifecycle, owner phase 03 with 14 and 09) is a named capability with no implementation. AI snapshot retention is boundary-declared ('snapshots redacted per AI privacy pipeline; retention aligned to V1CAP-066') but the policy itself does not exist. Evidence records (cg_foundation_evidence) carry no retention policy (J-033 lifecycle: sufficiency, confidence, revocation, staleness, retention — all absent).",
+      "erasureVsImmutableAudit": "THE CENTRAL TENSION, EXPLICITLY UNRESOLVED: AGENTS 28 mandates immutable audit records while personal-data erasure (Constitution §19 privacy law) demands forgetting. J-039 captures the required reconciliation — what may be forgotten, what may not, and how both are recorded — as a major gap with no owner-authored design. Current posture: all cg_ substrate tables are append-leaning (cg_event append-only by design, V1CAP-041), so erasure semantics for personal data inside immutable streams is undesigned. Recommendation recorded as L-H-019-adjacent design duty under V1CAP-066; crypto-shredding or tenant-scoped redaction layers are the candidate mechanisms and must be decided in the V1CAP-066 contract, not improvised.",
+      "backup": "V1CAP-074/J-042: none. Backup/restore and verified recovery for tenant data and evidence stores is a named capability (impl=false); no backup exists for the dev project where the two approved migrations were applied; rollback SQL exists for 20260929000000/20260930000000/20261001000000 (authoring-time artifacts, not backups).",
+      "verdict": "GAP. Retention, erasure-vs-immutable-audit reconciliation, and backup/recovery are all unimplemented V1 capabilities with named owners. The evidence-critical path (V1CAP-002→042→044→059) hardens capture and provenance but not lifecycle. Data lifecycle must close before personal data at production scale enters the substrate (privacy law precedence in the governance hierarchy); it does not gate first loop closure on non-personal operational data. Tracked as L-H-026."
+    },
+    "migration": {
+      "applied": [
+        "20260930000000_coregrid_v1_workspace_persistence.sql (cg_workspace, cg_workspace_member; RLS deny-by-default, no anon/authenticated grants, rollback authored) — one of the two APPROVED V1 migrations; applied to dev project nwrflbpbhyiqdptmlccm via scripts/apply-approved-v1-migrations.mjs (authorized management-API path); RLS isolation check PASS; rowsecurity=true verified on all four tables",
+        "20261001000000_coregrid_v1_org_model.sql (cg_org_unit, cg_org_membership; RLS deny-by-default with zero policies, rollback authored) — second APPROVED V1 migration; same authorized application; RLS check PASS"
+      ],
+      "pending": [
+        "20260929000000_coregrid_foundation_mission_001.sql (cg_mission_intent, cg_execution_record, cg_execution_history, cg_foundation_evidence, cg_verification_result, cg_conformance_assessment) — applied only to a disposable dev project by the live battery; NOT canonical",
+        "20260903000000_coregrid_universal_kernel_substrate.sql (cg_entity/cg_relationship/cg_event/cg_observation/cg_domain_runtime) — AUTHORED, NOT APPLIED (V1CAP-001 state owner)",
+        "20260904020000_coregrid_l2_identity_tenancy.sql (cg_identity, cg_tenant) — AUTHORED, NOT APPLIED; promotion requires the I-001 ADR + dual-write period (users split)",
+        "20260907000000..00800 workforce/org-profile/role-assignment substrate chain — AUTHORED, NOT APPLIED; the I-002..I-005 neutral-helper re-gating must land in or alongside these",
+        "J-005 neutral tenant-membership helper migration — not yet authored; finalization gated on COND-003 tenant_id type ruling",
+        "Rollback posture: rollbacks exist for 20260929000000/20260930000000/20261001000000; older migrations have none"
+      ],
+      "riskAnalysis": "Three ordered risks. (1) TYPE-DIVERGENCE: tenant_id is text in 20261001000000 (org model) and uuid-flavored in legacy Scholar tables; the divergence is explicitly deferred to the operator (COND-003). Resolving it AFTER the neutral helper ships would force a breaking re-gate of every universal RPC; it must be ruled BEFORE L-H-001's migration is authored. (2) IDENTITY SPLIT: promoting cg_identity over public.users (I-001) touches the live identity store of the running Scholar app — requires ADR, dual-write period, evidence preservation, and a rollback plan (CHANGE MANAGEMENT §38); destructive steps are forbidden (NO DESTRUCTIVE REFACTORING §39). (3) POSTURE-CONFUSION: the two approved migrations are applied to dev only; treating 'applied to dev, RLS PASS' as 'deployed' would repeat the STREAM H live-verified-vs-not-applied conflation — the applied-migration manifest (L-H-003) is the control. Non-risk: no cycles or ordering hazards were found in the migration dependency set; the kernel substrate (20260903000000) correctly precedes all consumers.",
+      "verdict": "ON TRACK, GATED, NOT YET CANONICAL. The approved-and-applied pair proves the authorized application path works end-to-end (apply → RLS check PASS → rowsecurity verification). The remaining substrate is authored and correctly ordered. Risks are governance-gated (COND-003, I-001 ADR), not technical. Verdict: adequate posture; canonical application is J-040/L-H-003."
+    },
+    "operational": {
+      "health": "observability/health.ts: fixed-whitelist, fail-closed health report; deployment health endpoint live-verified (health.json 200, runtime boot — morning report M-14). Dockerfile carries a healthcheck. SLOs/SLIs are a named capability with no definition (V1CAP-077 impl=false).",
+      "observability": "observability/structured-log.ts: secret-redacting JSON-line logger (unit-tested); foundation-observability and error-capture suites enforce redaction and error architecture; the AI gateway logs decisions without key material and scrubs emitted fields against the live key; the foundation loop emits a complete evidence tail (admission → execution → evidence → verification) per mission; 30 proof.json + 51 phase-acceptance files support backward CODE→EVIDENCE tracing for phases 01–33.",
+      "runbookGaps": [
+        "No incident runbook or failure-mode playbook (V1CAP-075 impl=false) — AGENTS 31 failure tests are mandatory but no operational procedure exists for acting on them",
+        "No emergency lockdown/kill-switch drill (J-010) — revocation exists as contract, not as a rehearsed operational path",
+        "No backup/restore drill (J-042) — no backup exists at all",
+        "No deployment runbook beyond the fail-closed release.yml; BLK-3 means deploy has never executed; Docker image build unverified",
+        "No alerting wiring: structured logs exist but no alert rules, paging, or metric dashboards consume them",
+        "No live-battery operations note: foundation-loop live tests and the RLS battery require FOUNDATION_LOOP_*/SUPABASE_* credentials that are absent in this environment; re-running proofs is operator-dependent"
+      ],
+      "verdict": "OBSERVABLE BUT NOT OPERATED. The observability foundation is real and live-verified, and the fail-closed style means most failures are safe. But there is no operational layer above the logs: no SLOs, no alerts, no runbooks, no drills. For V1 launch the minimum operational set is: applied-migration manifest (L-H-003), RLS battery in CI (L-H-008), and a minimal incident/rollback runbook (L-H-027)."
+    },
+    "verification": {
+      "independenceOfVerification": "J-035 captures the twin gap: (a) the evidence lifecycle lacks sufficiency assessment, confidence, revocation, staleness detection and retention (J-033), and (b) verification independence — a worker (AI or human) cannot verify its own output — is required by the corpus (E-050, ENFORCED class) but enforced nowhere outside the foundation loop's structural admission/verification separation. The foundation loop is the only place independence holds today, and it holds by engine design (foundation-loop.ts refuses caller-supplied verification decisions), not by a generalizable independence rule over identities.",
+      "currentProofs": [
+        "npm run verify baseline (STREAM H): 3,458 unit tests passing / typecheck PASS / build PASS / registry validation PASS (phases=51 capabilities=50 duplications=15 runtimes=2) / secret scan PASS — reproducible in a bare VM",
+        "Foundation loop live battery: 5/5 live tests on the dev project including idempotent replay (replayed=true, same executionId) and a Scholar entity recorded through the universal substrate",
+        "Two approved V1 migrations applied to dev with RLS isolation check PASS and rowsecurity=true verified on all four tables",
+        "Deployment-path live evidence: TLS probes + connectivity (M-01), health.json 200 boot (M-14)",
+        "Gateway centralization mechanically enforced (adoption tests), kernel purity CI-enforced (33-term education vocabulary banned), role-assignment substrate signed proof (architecture/proofs/role-assignment-substrate.proof.json)",
+        "Failure-and-evidence honesty: Docker build UNKNOWN and BLK-2/3/4/5 unverified are recorded, not fabricated"
+      ],
+      "verificationDebt": [
+        "authorization.ts: no dedicated exhaustive suite — the five-valued decision engine is only incidentally exercised (STREAM H: highest-stakes, least-tested module) (L-H-022)",
+        "1,230 passing tests unattributed to any registry phase, including all V1 mission suites (J-046) — backward tracing under-counts the implemented surface",
+        "~15 server-function modules without dedicated tests despite AGENTS 27 (server functions are APIs): attendance, bus-tracking, driver-portal, facilities, timetable, teachers, school-settings, staff-accounts, profile, org-profile, register-runtime, demo-provision, scholar-feature-access, scholar-institution-config, scholar-role-assignments",
+        "RLS isolation battery not executable in CI (credentials) — deny-by-default is reasoned, not proven (J-041)",
+        "Live-path verification debt: AI inference (BLK-2), payments (BLK-4), email delivery (BLK-5), Docker build + deploy (BLK-3) — all honestly recorded as unverified",
+        "E2E coverage thin: 5 specs, not part of npm run verify, not executable in this environment",
+        "Verification independence not enforced as a general rule (J-035) — self-verification is structurally possible outside the foundation loop",
+        "Registry status-histogram conflict (COND-012) means declared status is not fully machine-trustable until J-046 reconciles it"
+      ],
+      "verdict": "STRONG UNIT BASE, INDEPENDENCE GAP. The verification culture is unusually honest (failures recorded as UNKNOWN, live/dev/canonical evidence classes separated). But the independence property is engine-local, the engine of record (authorization.ts) is unexhaustively tested, and the security invariants are reasoned rather than CI-proven. L-H-008, L-H-009 and L-H-022 are the three highest-value verification closures; none requires weakening any existing proof."
+    }
+  },
+  "hardeningRequirements": [
+    { "id": "L-H-001", "requirement": "Author and apply the neutral tenant-membership DB primitives migration: get_my_tenant_id() + holds_tenant_role(p_tenant, p_role_ref) resolved from cg_role_assignment/cg_org_membership; re-gate every universal cg_ substrate RPC (role assignment, org profile, workforce positions) on them; remove the 'runtime:scholar' default (I-002..I-005); finalization gated on COND-003 tenant_id type ruling.", "targetCapability": "V1CAP-013", "blocksMissionLaunch": true, "deliverableKind": "schema" },
+    { "id": "L-H-002", "requirement": "Author the domain-neutral universal role vocabulary (15 neutral roles) + directional DomainDefinition.roleMappings contract; re-point domain-definition role validation and MEMBERSHIP_FOR_NAV_KIND at neutral roles; parameterize the capability-gate 'r001' hard-code; rename IdentityActor schoolId→tenantRef behind I-010/I-011 sequencing (I-010/I-011/I-012/I-030/I-031).", "targetCapability": "V1CAP-014", "blocksMissionLaunch": true, "deliverableKind": "contract" },
+    { "id": "L-H-003", "requirement": "Applied-migration posture: apply the remaining authored cg_* substrate to the canonical environment via the authorized path; record the applied-migration manifest as environment state truth; forbid conflating 'live-verified on dev' with 'deployed' in any report (J-040).", "targetCapability": "V1CAP-072", "blocksMissionLaunch": true, "deliverableKind": "operational" },
+    { "id": "L-H-004", "requirement": "Ratify the Mission owner (COND-001) and author first-class Mission/Delegation object contracts: bounded, revocable, non-escalating delegation with acting-on-behalf-of; every delegated action re-resolves authorization under the principal's constraints (J-024/J-025).", "targetCapability": "V1CAP-046", "blocksMissionLaunch": true, "deliverableKind": "contract" },
+    { "id": "L-H-005", "requirement": "Persistent governed worker definition schema: identity-linked capability set, explicit authority bounds, delegation history surviving worker process termination; workers remain ephemeral runtimes over durable definitions — data, not resident processes (J-027).", "targetCapability": "V1CAP-048", "blocksMissionLaunch": true, "deliverableKind": "schema" },
+    { "id": "L-H-006", "requirement": "Live governed inference: provision BLK-2 key via Cursor Dashboard (COND-006) and execute one end-to-end governed inference through the gateway passing the full AI privacy pipeline + output trust chain (J-013).", "targetCapability": "V1CAP-027", "blocksMissionLaunch": true, "deliverableKind": "operational" },
+    { "id": "L-H-007", "requirement": "Persisted practical/organizational memory store schema (D1 tier, COND-002-gated); memory remains data owned by the platform, never by an agent (J-016, J-018).", "targetCapability": "V1CAP-035", "blocksMissionLaunch": true, "deliverableKind": "schema" },
+    { "id": "L-H-008", "requirement": "RLS isolation battery executed with live credentials in CI on every merge: Tenant A cannot access Tenant B; revoked/expired access fails; battery failure blocks merge (J-041).", "targetCapability": "V1CAP-073", "blocksMissionLaunch": true, "deliverableKind": "operational" },
+    { "id": "L-H-009", "requirement": "Verification independence enforcement: verifier identity must differ from producer identity for every verification result outside the foundation loop's built-in separation; violations recorded as nonconformance (J-035).", "targetCapability": "V1CAP-061", "blocksMissionLaunch": false, "deliverableKind": "contract" },
+    { "id": "L-H-010", "requirement": "Evidence-class capture discipline: generated/simulated/predicted evidence class set at capture time, immutable in the evidence store; class promotion requires an explicit governed verification step; generated evidence can never silently become direct observation (J-034).", "targetCapability": "V1CAP-059", "blocksMissionLaunch": true, "deliverableKind": "contract" },
+    { "id": "L-H-011", "requirement": "Per-event security contract: authenticity, authorization, privacy and provenance carried on every event; delivery authorization evaluated per-subscriber (J-022).", "targetCapability": "V1CAP-044", "blocksMissionLaunch": true, "deliverableKind": "contract" },
+    { "id": "L-H-012", "requirement": "Event kernel semantics: taxonomy, deduplication, ordering, significance classification on the append-only stream (J-020).", "targetCapability": "V1CAP-042", "blocksMissionLaunch": true, "deliverableKind": "contract" },
+    { "id": "L-H-013", "requirement": "Canonical CoreObject envelope conformance on the kernel substrate: id, object_type, schema_version, tenant_id, status, provenance, policy_context, trace/correlation/causation ids on every state change; unknown-type rejection in the type registry (J-001/J-002).", "targetCapability": "V1CAP-002", "blocksMissionLaunch": true, "deliverableKind": "schema" },
+    { "id": "L-H-014", "requirement": "AI-specific runtime defenses: prompt-injection-resistant delimitation enforcement downstream of UNTRUSTED wrapping, output exfiltration controls, malicious-artifact scanning for worker-ingested files, supply-chain checks on tool/model integrations (J-036).", "targetCapability": "V1CAP-033", "blocksMissionLaunch": false, "deliverableKind": "subsystem" },
+    { "id": "L-H-015", "requirement": "Credential architecture: per-agent credential broker, no universal master credential, secret isolation, rotation, blast-radius containment per credential; credential-class material structurally excluded from AI context payloads (J-007).", "targetCapability": "V1CAP-017", "blocksMissionLaunch": false, "deliverableKind": "subsystem" },
+    { "id": "L-H-016", "requirement": "Wire risk-classified human approval chains to high-risk actions through the canonical workflow lifecycle (J-032) and author the emergency revocation/lockdown path with governed security guardians (J-010); every ESCALATE/REQUIRE_APPROVAL outcome resolves through an owned audited flow.", "targetCapability": "V1CAP-032", "blocksMissionLaunch": false, "deliverableKind": "subsystem" },
+    { "id": "L-H-017", "requirement": "Mandatory idempotency keys on every consequential command across all modules, enforced at the execution-system layer; duplicate submissions return the original result (J-030).", "targetCapability": "V1CAP-054", "blocksMissionLaunch": false, "deliverableKind": "contract" },
+    { "id": "L-H-018", "requirement": "Model registry with routing policy, fallback/failover/circuit breaker; fallback models inherit identical policy gates; unregistered models rejected; runtime egress restricted to the gateway beyond import-lint (J-014).", "targetCapability": "V1CAP-028", "blocksMissionLaunch": false, "deliverableKind": "subsystem" },
+    { "id": "L-H-019", "requirement": "Authorization-gated non-vector-only memory retrieval: results filtered by identity AND tenant AND scope AND policy before return; worker memory scopes (session/mission/long-term) enforced with no silent expansion (J-017/J-029).", "targetCapability": "V1CAP-036", "blocksMissionLaunch": false, "deliverableKind": "subsystem" },
+    { "id": "L-H-020", "requirement": "Live payment-rail verification under BLK-4 (signed webhook evidence) and reconciliation of the legacy subscription-tier/school-column billing path into the phase 13 financial contract keyed by TenantId (J-044, COND-009).", "targetCapability": "V1CAP-079", "blocksMissionLaunch": false, "deliverableKind": "operational" },
+    { "id": "L-H-021", "requirement": "Context-switch safety: on reality/tenant switch, invalidate all prior-scope tokens and assembled context packages; post-switch requests fail closed if any prior-scope token persists; switches audited (J-012).", "targetCapability": "V1CAP-024", "blocksMissionLaunch": false, "deliverableKind": "subsystem" },
+    { "id": "L-H-022", "requirement": "Dedicated exhaustive authorization.ts test suite covering all five decision values, each layer (RBAC/ABAC/ReBAC/PBAC), and the mandatory AGENTS 31 invariants including Invariant 12 (no silent agent self-escalation) — the highest-stakes unverified module.", "targetCapability": "V1CAP-016", "blocksMissionLaunch": false, "deliverableKind": "artifact" },
+    { "id": "L-H-023", "requirement": "Continuous domain-neutrality guard beyond the kernel (J-037): extend the purity guard to the lib root, phase-contracts and migrations using the STREAM I token list; relocate ~15 domain server functions from the universal lib root per the COND-013 ADR; neutralize I-018/I-019/I-025/I-027 violations.", "targetCapability": "V1CAP-067", "blocksMissionLaunch": false, "deliverableKind": "subsystem" },
+    { "id": "L-H-024", "requirement": "Command centre operational surface: alerts/incidents/decisions projection through which human operators close the loop back to observation; operator actions are governed actions under approval chains (J-048).", "targetCapability": "V1CAP-089", "blocksMissionLaunch": true, "deliverableKind": "subsystem" },
+    { "id": "L-H-025", "requirement": "Event routing and tenant-scoped subscriptions with replay and backpressure; no unauthorized broadcast; outbox drain policy and dead-letter path defined (J-021).", "targetCapability": "V1CAP-043", "blocksMissionLaunch": false, "deliverableKind": "subsystem" },
+    { "id": "L-H-026", "requirement": "Privacy & retention lifecycle contract reconciling personal-data erasure with immutable audit: what may be forgotten, what may not, and how both are recorded; retention policy for evidence and AI snapshots (J-039).", "targetCapability": "V1CAP-066", "blocksMissionLaunch": false, "deliverableKind": "contract" },
+    { "id": "L-H-027", "requirement": "Minimal operational runbook set: incident/failure playbook (V1CAP-075), backup/restore drill (J-042), lockdown drill (J-010), and an applied-state reporting rule for operators; SLO definition for security-relevant surfaces (V1CAP-077).", "targetCapability": "V1CAP-075", "blocksMissionLaunch": false, "deliverableKind": "operational" }
+  ],
+  "unresolved": [
+    "REJECTED (recorded, not silent): zero-trust adversarial defense engine threats (V2CAP-014) — outside V1 by RULING-7 two-bucket lock; adversarial-hardening concerns for V1 are covered by L-H-008/L-H-014/L-H-016 instead of a new engine.",
+    "REJECTED: digital-twin attack-surface threats — twin machinery (phases 16/46) is frozen to V2 behind contract per RULING-6 and STREAM J inflation warnings; no V1 twin loop node exists to threaten.",
+    "REJECTED: multi-agent society/agent-civilization threats (swarm collusion, agent-generation abuse) — RULING-3's single governed worker chain covers Delegation/Worker Execution for V1; society-scale coordination is V2 (V2CAP-005).",
+    "REJECTED: marketplace/SDK supply-chain threats (phases 27/28) — V2-bucketed on the structurally-necessary bar; GAP-004 blocks them regardless; L-H-014's supply-chain checks cover the tool/model integrations that DO exist in V1.",
+    "REJECTED: ambient-bridge illicit-observation threats — the rule is real and captured via evidence-class/privacy requirements (J-034/J-039, L-H-010/L-H-026); the observation-level machinery itself is not required by any V1 loop node (COND-011 scope-line pending).",
+    "Docker image build verification UNKNOWN (STREAM H): no docker binary on the authoring VM; proven at first real deploy under V1CAP-076 (BLK-3/COND-006). Not hardenable here without fabricating evidence.",
+    "Live-DB divergence of the 'driver' role (I-002 unresolved): AppRole includes 'driver' but the users.role CHECK in 20260620122048 does not — the live database is not inspectable from this environment; carried as a migration-analysis input for the I-001 ADR, not resolved here.",
+    "COND-003 tenant_id type divergence (text vs uuid) — operator ruling pending; gates L-H-001 finalization. Hardening proceeds on the contract; the physical helper signature waits for the ruling.",
+    "Legacy Scholar durable tables as threat surface (hostel_*, library_*, discipline_records, school_api_keys as a legacy secret store, teacher_biometrics device fingerprinting, school_geofence) — disposition is COND-009/J-044 reconciliation; treating them as V1 substrate threats would re-admit domain vocabulary into platform analysis; recorded for the reconciliation owner instead.",
+    "Government-education vertical interoperability threats (sovereign patterns lifting into V1CAP-080) — COND-014 non-blocking; V2 classification locked; re-evaluate if the lift ruling lands.",
+    "Phase-15 hardware-* modules mix V1 organizational-asset records with V2-frozen device/telemetry code (registry MIXED classification) — the boundary split needs human review; no L requirement is authored against the frozen half.",
+    "E2E surface thinness (5 specs, not in npm run verify) — real debt but an attribution/coverage matter resolved inside J-046 (V1CAP-082); recorded in verificationDebt rather than duplicated as a hardening requirement."
+  ],
+  "report": {
+    "perAnalysisVerdicts": {
+      "dependency": "Healthy acyclic graph, contaminated edges — zero cycles; SPOFs at V1CAP-016/001/010 mitigable; six layering violations tracked (L-H-023)",
+      "threat": "16 threats: 4 critical, 7 high, 5 medium — all evidence-grounded, none mitigated by weakening",
+      "failure": "9 components analyzed: 5 adequate, 4 gaps (RLS detection, worker persistence, outbox backpressure, live-path evidence)",
+      "scalability": "Adequate for V1 scale if quotas land; ephemeral-agent compliance COMPLIANT AS DESIGNED (data-not-process model, provisional on J-027)",
+      "cost": "Strong on AI (metered, fail-closed), absent elsewhere (storage, messaging, worker compute, fan-out)",
+      "tenancy": "Sound posture, compromised primitives — the platform cannot legitimately authorize a non-Scholar tenant at the DB layer today",
+      "authorization": "Architecturally correct, enforcement-incomplete — RULING-2 satisfied at design level, J-005/J-006 unbuilt",
+      "dataLifecycle": "Gap — retention, erasure-vs-immutable-audit reconciliation, and backup/recovery all unimplemented",
+      "migration": "On track, gated, not yet canonical — approved pair applied to dev with RLS PASS; three ordered risks (type divergence, identity split, posture confusion)",
+      "operational": "Observable but not operated — no SLOs, alerts, runbooks, or drills",
+      "verification": "Strong unit base, independence gap — 3,458-test baseline honest and reproducible; independence engine-local; security invariants reasoned not proven"
+    },
+    "threatCountBySeverity": { "critical": 4, "high": 7, "medium": 5, "total": 16 },
+    "hardeningRequirementsCount": 27,
+    "hardeningRequirementsBlockingMissionLaunch": [
+      "L-H-001", "L-H-002", "L-H-003", "L-H-004", "L-H-005", "L-H-006", "L-H-007", "L-H-008",
+      "L-H-010", "L-H-011", "L-H-012", "L-H-013", "L-H-024"
+    ],
+    "hardeningRequirementsBlockingCount": 13,
+    "unresolvedCount": 12
+  }
+}
