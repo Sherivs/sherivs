@@ -1,0 +1,103 @@
+{
+  "artifact": "registry-drift-declaration",
+  "captured": "2026-10-01",
+  "authority": "MISSION-R-04 (J-038 drift hook; V1CAP-082/083) — recorded drift declaration consumed by scripts/verify-registry-drift.mjs",
+  "baseline": "architecture/COREGRID_EVOLUTION_BASELINE_2026-09-30.json",
+  "law": "This file anchors the declared registry state the drift hook compares against. Any future change to these dimensions must update declaredState AND add a driftRecord naming its governed authority. Drift never authorizes change by itself.",
+  "declaredState": {
+    "phases": 51,
+    "capabilities": 50,
+    "runtimes": 2,
+    "statusHistogram": {
+      "COMPLETE": 15,
+      "IMPLEMENTING": 18,
+      "ARCHITECTURE_DEFINED": 18
+    },
+    "capabilityIds": [
+      "foundation-standards-config-secrets-ci",
+      "universal-identity",
+      "tenancy-isolation-rls",
+      "education-reality-ontology",
+      "universal-reality-ontology",
+      "runtime-primitives",
+      "workspace-composition",
+      "agent-runtime",
+      "security-enforcement",
+      "trust-fabric",
+      "communication-messaging",
+      "academic-intelligence",
+      "scheduling",
+      "financial-ledger",
+      "data-platform",
+      "hardware-device-telemetry",
+      "live-digital-twin",
+      "automation-workflow-runtime",
+      "analytics-decision-intelligence",
+      "command-centre-surface",
+      "government-sovereign-deployments",
+      "cloud-fabric-byoc",
+      "mobile-client-platform",
+      "web-client-platform",
+      "experience-design",
+      "onboarding-workforce-identity",
+      "ai-intelligence-gateway",
+      "marketplace",
+      "developer-platform",
+      "integration-adapters",
+      "globalization",
+      "enterprise-scale",
+      "evolution-lifecycle",
+      "cognitive-architecture",
+      "multi-agent-society-governance",
+      "memory-knowledge-civilization",
+      "simulation-engine",
+      "governance-alignment",
+      "universal-runtime-fabric",
+      "sandbox-runtime",
+      "zero-trust-adversarial-defense",
+      "universal-interface-connectivity",
+      "planetary-infrastructure",
+      "ai-compute",
+      "twin-civilization-federation",
+      "autonomous-engineering-self-improvement",
+      "civilization-knowledge-graph",
+      "autonomous-economy",
+      "human-civilization-interface",
+      "reality-os-kernel-composition"
+    ]
+  },
+  "driftRecords": [
+    {
+      "dimension": "statusHistogram",
+      "captured": "2026-10-01",
+      "was": "registry COMPLETE 14 / IMPLEMENTING 17 / IMPLEMENTED 1 / ARCHITECTURE_DEFINED 19, recorded CONFLICTING against the derived COMPLETE 15 / IMPLEMENTING 18 / ARCHITECTURE_DEFINED 18 (architecture/COREGRID_PHASE_RECONCILIATION_MAP.json statusReconciliation)",
+      "now": "reconciled to the derived truth under COND-012 / J-046 (MISSION-R-04): phase 27 IMPLEMENTED to COMPLETE (its own audit wave ran — architecture/phase-acceptance/phase-27-marketplace.json + architecture/proofs/phase-27-acceptance.proof.json; scripts/audit-phase-completion.mjs on HEAD derives COMPLETE) and phase 33 ARCHITECTURE_DEFINED to IMPLEMENTING (live DB-validated kernel substrate, cited suites, acceptance record + proof). The preserved conflicts (baseline statusConflictsPreserved phase-27/phase-33) are resolved with recorded evidence, not silently.",
+      "evidence": [
+        "architecture/phase-completion-status.md",
+        "architecture/proofs/phase-completion.proof.json",
+        "architecture/registry.json phase-27/phase-33 notes"
+      ]
+    },
+    {
+      "dimension": "statusConflictsPreserved",
+      "captured": "2026-10-01",
+      "was": "baseline.baseline.registry.statusConflictsPreserved = [phase-27, phase-33]; baseline knownRisks: conflicts must not be silently resolved",
+      "now": "both conflicts resolved with recorded evidence under COND-012 / J-046 (MISSION-R-04) — see the statusHistogram driftRecord; the resolution is recorded in the registry rows, this declaration and architecture/phase-completion-status.md, so nothing was silent.",
+      "evidence": ["scripts/verification/registry-drift-declaration.json", "architecture/registry.json phase-27/phase-33 notes"]
+    },
+    {
+      "dimension": "dependencyEdges",
+      "captured": "2026-10-01",
+      "was": "five stale civilization-tier dependency edges declared inside V1 rows: 08->42, 26->45, 33->48, 36->48, 21->44 (STREAM F/J-046); edge 17->16 retained as load-bearing",
+      "now": "the five consumer-side-unborne edges removed from phases[].consumers and their capability mirrors (zero-trust-adversarial-defense, ai-compute, civilization-knowledge-graph, planetary-infrastructure); 17->16 KEPT because phase 17's kernel contract bears it on the consumer side (phase-17-automation-engine.ts dependsOn includes 16; consumes live-digital-twin; consumesContracts twin:read-state; twin.state_changed triggers and twin verification sources in the automation modules). Per-edge justification recorded in each touched provider row's notes (42, 44, 45, 48) and in phase-16's row history via 17's contract.",
+      "evidence": [
+        "frontend/src/lib/kernel/phase-contracts/phase-08-security-engine.ts",
+        "frontend/src/lib/kernel/phase-contracts/phase-17-automation-engine.ts",
+        "frontend/src/lib/kernel/phase-contracts/phase-21-cloud-fabric.ts",
+        "frontend/src/lib/kernel/phase-contracts/phase-26-ai-intelligence.ts",
+        "frontend/src/lib/kernel/phase-contracts/phase-33-reality-kernel.ts",
+        "frontend/src/lib/kernel/phase-contracts/phase-36-memory-knowledge.ts"
+      ]
+    }
+  ]
+}

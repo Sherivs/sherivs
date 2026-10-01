@@ -29,7 +29,7 @@
         true,
         true
       ],
-      "tests": 38,
+      "tests": 194,
       "modules": [
         "foundation-standards"
       ],
@@ -52,7 +52,7 @@
         true,
         true
       ],
-      "tests": 38,
+      "tests": 159,
       "modules": [
         "identity",
         "identity-registry",
@@ -86,7 +86,7 @@
         true,
         true
       ],
-      "tests": 56,
+      "tests": 77,
       "modules": [
         "tenant",
         "tenant-core",
@@ -115,7 +115,7 @@
         true,
         true
       ],
-      "tests": 81,
+      "tests": 536,
       "modules": [
         "education-core",
         "education-curriculum",
@@ -149,7 +149,7 @@
         true,
         true
       ],
-      "tests": 100,
+      "tests": 125,
       "modules": [
         "runtime-core",
         "runtime-command-query",
@@ -184,7 +184,7 @@
         true,
         true
       ],
-      "tests": 28,
+      "tests": 111,
       "modules": [
         "workspace-core",
         "workspace-composition",
@@ -213,7 +213,7 @@
         true,
         true
       ],
-      "tests": 62,
+      "tests": 136,
       "modules": [
         "agent-core",
         "agent-memory",
@@ -243,7 +243,7 @@
         true,
         true
       ],
-      "tests": 108,
+      "tests": 218,
       "modules": [
         "security-core",
         "security-risk",
@@ -300,7 +300,7 @@
         true,
         true
       ],
-      "tests": 168,
+      "tests": 200,
       "modules": [
         "communication-core",
         "communication-conversation",
@@ -388,7 +388,7 @@
         true,
         true
       ],
-      "tests": 130,
+      "tests": 191,
       "modules": [
         "financial-core",
         "financial-payments",
@@ -498,7 +498,7 @@
         false,
         false
       ],
-      "tests": 87,
+      "tests": 152,
       "modules": [
         "automation-core",
         "automation-workflow",
@@ -549,7 +549,7 @@
         false,
         true
       ],
-      "tests": 47,
+      "tests": 57,
       "modules": [
         "command-core",
         "command-alerts",
@@ -600,7 +600,7 @@
         false,
         false
       ],
-      "tests": 46,
+      "tests": 73,
       "modules": [
         "cloud-core",
         "cloud-byoc",
@@ -625,7 +625,7 @@
         false,
         false
       ],
-      "tests": 49,
+      "tests": 61,
       "modules": [
         "platform-core",
         "platform-device",
@@ -675,7 +675,7 @@
         false,
         false
       ],
-      "tests": 33,
+      "tests": 42,
       "modules": [
         "experience-core",
         "experience-personalization",
@@ -700,7 +700,7 @@
         true,
         true
       ],
-      "tests": 128,
+      "tests": 101,
       "modules": [
         "institution-core",
         "workforce-core",
@@ -729,7 +729,7 @@
         false,
         false
       ],
-      "tests": 66,
+      "tests": 151,
       "modules": [
         "ai-core",
         "ai-context",
@@ -748,7 +748,7 @@
       "id": "27",
       "name": "Marketplace",
       "layer": "Commerce",
-      "status": "IMPLEMENTED",
+      "status": "COMPLETE",
       "stage": "S7",
       "levels": [
         true,
@@ -757,7 +757,7 @@
         true,
         true
       ],
-      "tests": 52,
+      "tests": 61,
       "modules": [
         "marketplace-core",
         "marketplace-vendor",
@@ -769,7 +769,7 @@
         "49",
         "51"
       ],
-      "notes": "2026-09-21 REGISTRY-TRUTH SWEEP: levels corrected from evidence — L1 to L5 are all evidenced (L2 from the contract's declared substrates, L4 because the /marketplace route renders frontend/src/lib/surfaces/marketplace-view which consumes @/lib/marketplace-core and @/lib/marketplace-entitlement, L5 because scripts/verify-phase-consumption.mjs tests this phase as consumed), but the row is deliberately NOT closed to COMPLETE: this phase has no acceptance record (architecture/phase-acceptance/ holds records for phases 01–12 only) and no archaeology record, so closure is withheld until its own audit wave runs. This is the next audit target. Record: architecture/archaeology/registry-truth-sweep.audit.md",
+      "notes": "2026-09-21 REGISTRY-TRUTH SWEEP: levels corrected from evidence — L1 to L5 are all evidenced (L2 from the contract's declared substrates, L4 because the /marketplace route renders frontend/src/lib/surfaces/marketplace-view which consumes @/lib/marketplace-core and @/lib/marketplace-entitlement, L5 because scripts/verify-phase-consumption.mjs tests this phase as consumed), but the row is deliberately NOT closed to COMPLETE: this phase has no acceptance record (architecture/phase-acceptance/ holds records for phases 01–12 only) and no archaeology record, so closure is withheld until its own audit wave runs. This is the next audit target. 2026-10-01 MISSION-R-04 (COND-012) status reconciliation: the audit wave has run — architecture/phase-acceptance/phase-27-marketplace.json and architecture/proofs/phase-27-acceptance.proof.json exist and scripts/audit-phase-completion.mjs on HEAD derives COMPLETE for this row, so the withheld closure is recorded as resolved and the status moves IMPLEMENTED to COMPLETE (COREGRID_PHASE_RECONCILIATION_MAP.statusReconciliation CONFLICTING histogram reconciled to the derived truth: COMPLETE 15 / IMPLEMENTING 18 / ARCHITECTURE_DEFINED 18). Record: architecture/phase-completion-status.md",
       "version_target": "MIXED"
     },
     {
@@ -838,7 +838,7 @@
         false,
         false
       ],
-      "tests": 93,
+      "tests": 95,
       "modules": [
         "globalization-core",
         "localization-content",
@@ -908,7 +908,7 @@
       "id": "33",
       "name": "Reality Intelligence Kernel (URIK)",
       "layer": "Universal",
-      "status": "ARCHITECTURE_DEFINED",
+      "status": "IMPLEMENTING",
       "stage": "S2",
       "levels": [
         true,
@@ -917,7 +917,7 @@
         false,
         false
       ],
-      "tests": null,
+      "tests": 112,
       "modules": [
         "kernel/reality",
         "kernel/domain-manifest",
@@ -930,7 +930,7 @@
         "48",
         "51"
       ],
-      "notes": "S2 2026-09-03: universal kernel substrate first slice authored — migration 20260903000000_coregrid_universal_kernel_substrate.sql (cg_entity/cg_relationship/cg_event/cg_observation/cg_domain_runtime; provenance, temporal validity, classification, deny-by-default RLS, domain-agnostic) + kernel-purity enforcement test (Scholar Independence / Runtime Installation); typed reality contracts (frontend/src/lib/kernel/reality.ts, 21 tests, SQL-coherence pinned) mirror the substrate CHECK clauses for all four primitives (entity, relationship, event, observation); generic domain-runtime manifest schema (kernel/domain-manifest.ts, 12 tests) — installable runtime contract (P04/P40 consumers pending); S2→S3 boundary logic: event outbox state machine (kernel/outbox.ts, 8 tests) + runtime-registry lifecycle (kernel/runtime-registry.ts, 5 tests); cg_domain_runtime registry table in substrate (runtime-install home); rls-isolation-check.sql extended for deny-by-default cg_* posture + db-tooling-coherence tests; STATUS DB-VALIDATED (2026-09-04, dev project nwrflbpbhyiqdptmlccm): all 31 migrations applied via Management API (migration 20260903000000 included); rls-isolation-check PASS; live kernel-wiring verification 11/11 — cg_* substrate present for service role, anon denied (deny-by-default), register runtime:scholar persisted (proposed, v0.1.0), CHECK constraint enforced, cg_event pending insert + idempotency replay rejected. HTTP-layer E2E of the server functions pending an app runtime; phase implementation gates (ADR PLATFORM-003…008/010) unchanged",
+      "notes": "S2 2026-09-03: universal kernel substrate first slice authored — migration 20260903000000_coregrid_universal_kernel_substrate.sql (cg_entity/cg_relationship/cg_event/cg_observation/cg_domain_runtime; provenance, temporal validity, classification, deny-by-default RLS, domain-agnostic) + kernel-purity enforcement test (Scholar Independence / Runtime Installation); typed reality contracts (frontend/src/lib/kernel/reality.ts, 21 tests, SQL-coherence pinned) mirror the substrate CHECK clauses for all four primitives (entity, relationship, event, observation); generic domain-runtime manifest schema (kernel/domain-manifest.ts, 12 tests) — installable runtime contract (P04/P40 consumers pending); S2→S3 boundary logic: event outbox state machine (kernel/outbox.ts, 8 tests) + runtime-registry lifecycle (kernel/runtime-registry.ts, 5 tests); cg_domain_runtime registry table in substrate (runtime-install home); rls-isolation-check.sql extended for deny-by-default cg_* posture + db-tooling-coherence tests; STATUS DB-VALIDATED (2026-09-04, dev project nwrflbpbhyiqdptmlccm): all 31 migrations applied via Management API (migration 20260903000000 included); rls-isolation-check PASS; live kernel-wiring verification 11/11 — cg_* substrate present for service role, anon denied (deny-by-default), register runtime:scholar persisted (proposed, v0.1.0), CHECK constraint enforced, cg_event pending insert + idempotency replay rejected. HTTP-layer E2E of the server functions pending an app runtime; phase implementation gates (ADR PLATFORM-003…008/010) unchanged. 2026-10-01 MISSION-R-04 (COND-012) status reconciliation: the row read ARCHITECTURE_DEFINED while the live DB-validated substrate, the kernel modules with cited suites, the acceptance record (architecture/phase-acceptance/phase-33-reality-intelligence-kernel.json + architecture/proofs/phase-33-acceptance.proof.json) and scripts/audit-phase-completion.mjs on HEAD all derive IMPLEMENTING — status corrected to the derived truth (COREGRID_PHASE_RECONCILIATION_MAP.statusReconciliation CONFLICTING histogram reconciled; the preserved phase-33 status conflict is resolved with recorded evidence, not silently). Record: architecture/phase-completion-status.md",
       "version_target": "MIXED"
     },
     {
@@ -1112,9 +1112,8 @@
       ],
       "tests": null,
       "modules": [],
-      "consumers": [
-        "08"
-      ],
+      "consumers": [],
+      "notes": "2026-10-01 MISSION-R-04 (J-046) dependency-edge reconciliation: the declared consumer 08 was removed. The consumer side does not bear the edge — phase 08's kernel contract (frontend/src/lib/kernel/phase-contracts/phase-08-security-engine.ts dependsOn [01,02,03,05]) declares no dependency on 42, and no module, surface or suite consumes this phase's contract (ARCHITECTURE_DEFINED, no modules, tests null). The security-trust cluster relationship stays recorded by duplication D7 (owner 08/09/42). The stale civilization-tier edge made the V1 dependency graph a false statement of the platform (STREAM F; J-046).",
       "version_target": "MIXED"
     },
     {
@@ -1154,9 +1153,9 @@
       "tests": null,
       "modules": [],
       "consumers": [
-        "15",
-        "21"
+        "15"
       ],
+      "notes": "2026-10-01 MISSION-R-04 (J-046) dependency-edge reconciliation: the declared consumer 21 was removed. The consumer side does not bear the edge — phase 21's kernel contract (phase-21-cloud-fabric.ts dependsOn [01,02,03,05,14]) declares no dependency on 44, and the phase-21 row consumes only the infrastructure fabric's proofs (infrastructure-preflight, cloud-fabric-foundation), not this phase's contract. The edge 15->44 stays: it is not named for removal and the phase-15 row still declares 44 among its consumers. The stale civilization-tier edge made the V1 dependency graph a false statement of the platform (STREAM F; J-046).",
       "version_target": "FUTURE-V3"
     },
     {
@@ -1174,9 +1173,8 @@
       ],
       "tests": null,
       "modules": [],
-      "consumers": [
-        "26"
-      ],
+      "consumers": [],
+      "notes": "2026-10-01 MISSION-R-04 (J-046) dependency-edge reconciliation: the declared consumer 26 was removed. The consumer side does not bear the edge — phase 26's kernel contract (phase-26-ai-intelligence.ts dependsOn [01,02,03,05,07,14]) declares no dependency on 45, and no module, surface or suite consumes this phase's contract (ARCHITECTURE_DEFINED, no modules, tests null). The stale civilization-tier edge made the V1 dependency graph a false statement of the platform (STREAM F; J-046).",
       "version_target": "FUTURE-UNASSIGNED"
     },
     {
@@ -1236,10 +1234,8 @@
       ],
       "tests": null,
       "modules": [],
-      "consumers": [
-        "33",
-        "36"
-      ],
+      "consumers": [],
+      "notes": "2026-10-01 MISSION-R-04 (J-046) dependency-edge reconciliation: the declared consumers 33 and 36 were removed. Neither consumer side bears the edges — phase 33's kernel contract (phase-33-reality-kernel.ts dependsOn [01,02,03,05,14]) and phase 36's contract (phase-36-memory-knowledge.ts dependsOn [01,02,03,05,07,33]) declare no dependency on 48, and no module, surface or suite consumes this phase's contract (ARCHITECTURE_DEFINED, no modules, tests null). The knowledge-graph cluster relationship stays recorded by duplication D2 (owner 33/36/48). The stale civilization-tier edges made the V1 dependency graph a false statement of the platform (STREAM F; J-046).",
       "version_target": "FUTURE-UNASSIGNED"
     },
     {
@@ -1625,9 +1621,7 @@
     {
       "capability": "zero-trust-adversarial-defense",
       "owner": "42",
-      "consumers": [
-        "08"
-      ]
+      "consumers": []
     },
     {
       "capability": "universal-interface-connectivity",
@@ -1641,16 +1635,13 @@
       "capability": "planetary-infrastructure",
       "owner": "44",
       "consumers": [
-        "15",
-        "21"
+        "15"
       ]
     },
     {
       "capability": "ai-compute",
       "owner": "45",
-      "consumers": [
-        "26"
-      ]
+      "consumers": []
     },
     {
       "capability": "twin-civilization-federation",
@@ -1671,10 +1662,7 @@
     {
       "capability": "civilization-knowledge-graph",
       "owner": "48",
-      "consumers": [
-        "33",
-        "36"
-      ]
+      "consumers": []
     },
     {
       "capability": "autonomous-economy",
@@ -2015,5 +2003,29 @@
     "knownBoundaryReviews": [
       "phase-15: IMPLEMENTING status vs V2-frozen device scope — MIXED classification applied (organizational asset records are V1 per V5.3 Part 69; device/telemetry portions are V2 FROZEN); V1/V2 boundary split requires human review — UNRESOLVED, status conflict preserved"
     ]
+  },
+  "testAttribution": {
+    "generated": "2026-10-01",
+    "authority": "MISSION-R-04 (J-046 / COND-012) test-attribution regeneration",
+    "method": "per-file vitest counts (npx vitest run --reporter=json) attributed by kernel phase-contract citations (scripts/audit-phase-completion.mjs rule), then by the recorded subject-matter mapping in scripts/verification/registry-test-attribution.mjs; suites with no canonical owner are recorded unattributed below, never guessed",
+    "measured": {
+      "files": 231,
+      "tests": 3727,
+      "skipped": 5,
+      "note": "tests/unit/* plus the env-gated live integration battery; skipped tests are excluded from attribution"
+    },
+    "attributedSum": 3670,
+    "unattributed": {
+      "tests": 57,
+      "files": [
+        "tests/unit/files-access-policy.test.ts",
+        "tests/unit/files-contract.test.ts",
+        "tests/unit/files-storage-adapter.test.ts",
+        "tests/unit/foundation-loop.test.ts",
+        "tests/unit/foundation-mission.test.ts",
+        "tests/unit/foundation-persistence.test.ts"
+      ],
+      "todo": "no canonical phase owner yet (mission machinery: CG-GAP-003; files substrate unregistered) — attribute when owners are ratified, never by invention"
+    }
   }
 }
