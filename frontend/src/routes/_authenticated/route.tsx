@@ -14,10 +14,9 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { PortalSidebar } from "@/components/portal-sidebar";
 import { PortalPageSkeleton, RouteErrorBoundary } from "@/components/portal-shell";
 import { MobileSwipeToOpen } from "@/components/mobile-swipe-to-open";
-import { CommandCenterMount, openCommandCenter } from "@/components/command-center";
-import { Search as SearchIcon } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { useModKeyLabel } from "@/lib/kbd";
+import { CommandCenterMount } from "@/components/command-center";
+import { ShellHeaderActions } from "@/components/shell/shell-header-actions";
+import { WorkspaceSwitcher } from "@/components/shell/workspace-switcher";
 import { PLATFORM_NAME } from "@/lib/platform";
 import { INSTALLED_RUNTIME_NAME as SCHOLAR_RUNTIME_NAME } from "@/lib/runtime/installed-runtimes";
 import { WorkspaceBottomNav } from "@/components/mobile-bottom-nav";
@@ -65,9 +64,8 @@ function AuthenticatedRouteErrorComponent({ error, reset }: { error: Error; rese
 }
 
 function AuthenticatedLayout() {
-  const { profile, superAdmin, school, role, loading, signOut } = useApp();
+  const { profile, superAdmin, school, role, loading, signOut, authUser } = useApp();
   const navigate = useNavigate();
-  const modKey = useModKeyLabel();
   const getMyPrimaryPosition = useServerFn(getMyPrimaryWorkforcePosition);
 
   const myPosition = useQuery({
@@ -166,40 +164,27 @@ function AuthenticatedLayout() {
                     </div>
                   </div>
                 </Link>
+                <WorkspaceSwitcher
+                  options={school ? [{ id: school.id, label: school.name ?? "Workspace" }] : []}
+                  currentId={school?.id ?? null}
+                />
               </div>
               <div className="flex items-center gap-2 text-sm sm:gap-3">
-                <button
-                  onClick={openCommandCenter}
-                  className="hidden sm:inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent"
-                  title={`Command palette (${modKey}K)`}
-                >
-                  <SearchIcon className="size-3.5" />
-                  <span>Search</span>
-                  <kbd className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono">
-                    {modKey}K
-                  </kbd>
-                </button>
-                <button
-                  onClick={openCommandCenter}
-                  className="inline-flex sm:hidden items-center justify-center rounded-md border border-border p-1.5 text-muted-foreground hover:bg-accent"
-                  aria-label={`Search (${modKey}+K)`}
-                >
-                  <SearchIcon className="size-4" />
-                </button>
-                <ThemeToggle className="hidden xs:inline-flex" />
-                <span className="hidden sm:inline text-xs text-muted-foreground">
-                  {experience.greeting},{" "}
-                  <span className="font-medium text-foreground">{displayName}</span>
-                </span>
-                <button
-                  onClick={async () => {
+                <ShellHeaderActions
+                  displayName={displayName}
+                  roleTitle={experience.roleTitle}
+                  greeting={experience.greeting}
+                  workspaceName={school?.name ?? null}
+                  notificationViewer={
+                    school && authUser
+                      ? { tenantId: school.id, recipientId: authUser.id }
+                      : null
+                  }
+                  onSignOut={async () => {
                     await signOut();
                     navigate({ to: "/auth", replace: true });
                   }}
-                  className="rounded-md border border-border px-3 py-1.5 hover:bg-accent text-sm"
-                >
-                  Sign out
-                </button>
+                />
               </div>
             </div>
           </header>
