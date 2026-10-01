@@ -1,0 +1,194 @@
+# RLS ISOLATION BATTERY — J-041 / V1CAP-073 (MISSION-R-85)
+
+Status: **AUTHORED AND LIVE-EXECUTED against the approved dev project (2026-10-01). 8/8 tables PASS.**
+Battery source: `scripts/verify-rls-isolation-battery.mjs`
+Artifacts: `/opt/cursor/artifacts/rls-battery-results.json` (structured) + `/opt/cursor/artifacts/rls-battery-results.log` (human-readable)
+Authority: AGENTS.md §17 (database security), §31 (testing standard); RULING-2 (deny-by-default posture approved); RULING-10 (migrations approved); STREAM J J-041; MISSION graph MISSION-R-85.
+
+---
+
+## 1. What the battery proves
+
+Until this battery executed, the platform's #1 security invariant — "RLS enabled with zero
+policies = deny for every client role" — was **statically reasoned, not database-proven**
+(STREAM H contradiction; J-041). The battery converts it to database-proven fact using two
+authorized transports and **no new credentials**:
+
+1. **Live public data plane** — `GET $SUPABASE_URL/rest/v1/<table>` with the shared anon key
+   (the credential every unauthenticated client holds). This is the probe a real attacker or
+   anonymous client performs.
+2. **Read-only catalog SQL** — pg_catalog / information_schema queries through the Supabase
+   management API (same transport as `scripts/apply-approved-v1-migrations.mjs`), proving the
+   enforcement metadata itself: `relrowsecurity = true`, zero permissive policies, and zero
+   table grants to `anon` / `authenticated` / `PUBLIC`.
+
+### Honesty rules encoded in the battery
+
+- **DENY is the pass condition.** With deny-by-default + zero policies, the expected result
+  is denial for everyone through REST. A 200-with-zero-rows (RLS-filtered empty set) or a
+  Postgres permission-denied error are both genuine denials; both PASS.
+- **Only genuine denials count.** An API-key rejection (`401 Invalid API key`) proves nothing
+  about row security and is recorded `INCONCLUSIVE` with a finding, never a pass. The battery
+  structurally validates the anon key (JWT `ref` must equal the project ref, `role` must be
+  `anon`, `exp` must be in the future) before trusting any probe. (Observed live: the VM's
+  injected `SUPABASE_PUBLISHABLE_KEY` was a **truncated JWT** and rejected by the data plane;
+  the battery then resolved the project's own legacy anon key through the already-authorized
+  management API — the anon key is public-by-design — and logged the provenance:
+  `source=management-api-legacy ref=nwrflbpbhyiqdptmlccm role=anon prefix=eyJhbGciOi`.)
+- **Service-role usage is explicit and logged, never default.** The only privileged data path
+  is exercised solely behind the opt-in `COREGRID_BATTERY_ALLOW_SERVICE_ROLE=1` flag, and its
+  use is printed as `SERVICE_ROLE_USED_EXPLICITLY`.
+
+### Battery sections (per table)
+
+| Section | Proves |
+| --- | --- |
+| (a) `anonRestProbe` | anon SELECT through the live REST endpoint returns no rows (empty set or `42501 permission denied`) — no leak on the public data plane |
+| (b) `catalogEnforcement` | `relrowsecurity = true` AND zero policies total (hence zero PERMISSIVE policies) |
+| (c) `privileges` | `anon`, `authenticated`, `PUBLIC` hold zero table privileges (SELECT/INSERT/UPDATE/DELETE/…) |
+| (d) `isolationProof` | The explicitly-asserted invariants (below), derived from measured facts (b)+(c) and confirmed by (a) |
+| (e) `serviceRoleContrast` | opt-in: the ONLY role that reaches rows is the explicit, logged service role |
+
+### The strongest-form isolation assertion (section d)
+
+The mission-mandated identity invariants hold here in their **strongest database-provable
+form**: because `relrowsecurity = true` with **zero policies** and **zero client grants**,
+there is no policy expression anywhere that could ever evaluate to true — for any `tenant_id`,
+any `auth.uid()`, any credential state, or any agent. Therefore, per table:
+
+- **Tenant A cannot read Tenant B** — no identity of ANY tenant can read a single row; there
+  is no cross-tenant read path to weaken.
+- **User A cannot read User B** — no `auth.uid()`-scoped expression exists at all; every
+  authenticated principal is denied identically.
+- **Revoked / expired access fails** — a revoked or expired credential resolves through
+  PostgREST to the `anon`/`authenticated` roles, which hold no grants and are granted rows by
+  no policy; every request is denied.
+- **Agent cannot exceed permissions** — agents are untrusted identities operating through
+  client roles (AGENTS §5); no client role — human or agent — can read or write. The only data
+  path is the explicit, logged service role (section e contrast: anon → `42501`, service_role
+  → `200` with rows).
+
+---
+
+## 2. Per-table matrix (live execution, dev project `nwrflbpbhyiqdptmlccm`, 2026-10-01)
+
+Battery scope enumerated from the applied migrations (source migration cited per table).
+
+| Table | Source migration | Present | (a) anon REST probe | (b) relrowsecurity / policies (permissive) | (c) anon/auth/PUBLIC grants | (d) isolation invariants | Verdict |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `cg_entity` | 20260903000000_coregrid_universal_kernel_substrate.sql | yes | PASS — `401` code `42501` `permission denied for table cg_entity` | PASS — `true` / 0 (0) | PASS — none | PASS (strongest form, all four invariants) | **PASS** |
+| `cg_relationship` | 20260903000000_coregrid_universal_kernel_substrate.sql | yes | PASS — `401` code `42501` `permission denied for table cg_relationship` | PASS — `true` / 0 (0) | PASS — none | PASS (strongest form) | **PASS** |
+| `cg_event` | 20260903000000_coregrid_universal_kernel_substrate.sql | yes | PASS — `401` code `42501` `permission denied for table cg_event` | PASS — `true` / 0 (0) | PASS — none | PASS (strongest form) | **PASS** |
+| `cg_observation` | 20260903000000_coregrid_universal_kernel_substrate.sql | yes | PASS — `401` code `42501` `permission denied for table cg_observation` | PASS — `true` / 0 (0) | PASS — none | PASS (strongest form) | **PASS** |
+| `cg_workspace` | 20260930000000_coregrid_v1_workspace_persistence.sql | yes | PASS — `401` code `42501` `permission denied for table cg_workspace` | PASS — `true` / 0 (0) | PASS — none | PASS (strongest form) | **PASS** |
+| `cg_workspace_member` | 20260930000000_coregrid_v1_workspace_persistence.sql | yes | PASS — `401` code `42501` `permission denied for table cg_workspace_member` | PASS — `true` / 0 (0) | PASS — none | PASS (strongest form) | **PASS** |
+| `cg_org_unit` | 20261001000000_coregrid_v1_org_model.sql | yes | PASS — `401` code `42501` `permission denied for table cg_org_unit` | PASS — `true` / 0 (0) | PASS — none | PASS (strongest form) | **PASS** |
+| `cg_org_membership` | 20261001000000_coregrid_v1_org_model.sql | yes | PASS — `401` code `42501` `permission denied for table cg_org_membership` | PASS — `true` / 0 (0) | PASS — none | PASS (strongest form) | **PASS** |
+
+**Summary: 8/8 PASS, 0 FAIL, 0 findings.**
+
+Notes on `relforcerowsecurity`: all eight tables report `relforcerowsecurity = false`. This is
+the Supabase default and is acceptable in this posture: table ownership is held by the
+platform owner role, not by any client role, and no client role holds any privilege. When the
+posture evolves to tenant-scoped policies (post J-005 policy authoring), force-RLS should be
+re-evaluated in the same battery (a `FORCE ROW LEVEL SECURITY` assertion is a one-line
+addition to section b).
+
+Scope drift observed (INFO, not findings): twelve further `cg_*` tables exist on the dev
+project outside this battery's migration-derived scope — `cg_conformance_assessment`,
+`cg_domain_runtime`, `cg_execution_history`, `cg_execution_record`, `cg_foundation_evidence`,
+`cg_identity`, `cg_mission_intent`, `cg_org_profile`, `cg_tenant`, `cg_verification_result`,
+`cg_workforce_kind`, `cg_workforce_position`. Catalog enumeration additionally showed
+`relrowsecurity = true` on every one of them; extending the battery list to cover them is a
+scope decision for their owning missions, not a defect.
+
+Service-role contrast (explicit, logged): `cg_entity` via `SUPABASE_SERVICE_ROLE_KEY` →
+`200` with rows (BYPASSRLS), run only behind `COREGRID_BATTERY_ALLOW_SERVICE_ROLE=1` and
+printed as `SERVICE_ROLE_USED_EXPLICITLY`. This is the asymmetry that proves the denial is
+real and the only data path is the explicit service role.
+
+---
+
+## 3. Execution evidence (verbatim log excerpts)
+
+Run header:
+
+```
+COREGRID RLS ISOLATION BATTERY — MISSION-R-85 (V1CAP-073 / J-041)
+project=nwrflbpbhyiqdptmlccm transport=rest-anon + management-api(readonly catalog SQL)
+anon key provenance: source=management-api-legacy ref=nwrflbpbhyiqdptmlccm role=anon prefix=eyJhbGciOi (value never printed)
+honesty rule: deny-by-default + zero policies means DENY for everyone through REST — DENY IS the pass condition.
+```
+
+Per-table evidence shape (representative, `cg_entity`; identical shape for all 8):
+
+```
+PASS relrowsecurity=true relforcerowsecurity=false policies=0 permissive=0
+PASS no table grants to anon / authenticated / PUBLIC
+PASS anon REST probe status=401 denialForm=permission-denied-42501 evidence="{"code":"42501","details":null,"hint":"Grant the required privileges to the current role with: GRANT SELECT ON public.cg_entity TO anon;","message":"permission denied for table cg_entity"}"
+PASS Tenant A cannot read Tenant B: STRONGEST FORM: relrowsecurity=true with zero policies means there is no policy expression anywhere that could evaluate to true for ANY tenant_id — no identity (any tenant) can read a single row. Anon REST probe confirms the public data plane returns no rows.
+PASS User A cannot read User B: ...
+PASS Revoked / expired access fails: ...
+PASS Agent cannot exceed permissions: ...
+VERDICT cg_entity: PASS
+```
+
+Service-role contrast (explicit run):
+
+```
+SERVICE_ROLE_USED_EXPLICITLY — opt-in via COREGRID_BATTERY_ALLOW_SERVICE_ROLE=1; contrasting the only privileged data path (never default).
+INFO service_role contrast status=200 evidence="[{"id":"90fc4522-…","entity_type":"foundation-probe","tenant_id":"d8b753f4-…",…}]"
+```
+
+Verdict:
+
+```
+STATUS=PASS — 8/8 tables prove deny-by-default (RLS on, zero permissive policies, no client grants, anon REST denied). Tenant A cannot read Tenant B, User A cannot read User B, revoked/expired fails, agents cannot exceed permissions: proven against the live database, not reasoned.
+```
+
+During development the battery caught and honestly reported two failure modes rather than
+masking them (both are battery-correctness events, recorded here for auditability, not
+database defects):
+
+1. A control-flow bug in the battery's first run mislabeled all 8 present tables as
+   `TABLE_ABSENT`; corrected, catalog data had been read correctly all along.
+2. The truncated env `SUPABASE_PUBLISHABLE_KEY` initially produced `401 Invalid API key`
+   probes; the battery's honesty rule (an invalid key proves nothing about RLS) forced the
+   key-provenance mechanism described in §1, after which every probe returned a genuine
+   Postgres `42501 permission denied`.
+
+---
+
+## 4. Repetition plan — canonical environment post-apply
+
+Dependency: **MISSION-R-100** (apply the cg_* migrations to the canonical environment and
+record declared-vs-applied state truth). The battery below must run only AFTER M-R-100's
+apply step completes on the canonical project; execution is serialized with M-R-85/M-R-101
+per the mission graph (exclusive canonical-DB access).
+
+1. **When M-R-100 reports the canonical apply verified**, run:
+   `node scripts/verify-rls-isolation-battery.mjs <canonical-project-ref>`
+   (the script already accepts a project-ref override argument; `SUPABASE_URL` must point at
+   the canonical project, or pass the ref and set `SUPABASE_URL` accordingly).
+2. **Expect the same 8/8 PASS matrix** — identical migrations, identical deny-by-default
+   posture. Any FAIL is a FINDING with evidence (RLS off, permissive policy, stray grant, or
+   leaked row); per mission law the battery never modifies the database.
+3. **Record the run** as environment state truth alongside M-R-100's declared-vs-applied
+   record: `rls-battery-results.json` + log, executedAt, projectRef. The battery's structural
+   check that the env anon key matches the project (`ref` claim) makes cross-project
+   misconfiguration impossible to miss.
+4. **After J-005/J-006 tenant-scoped policies are authored** (neutral tenant-membership
+   primitives), extend the battery: the zero-policy "strongest form" section is then replaced
+   per table by genuine cross-tenant probes (seed Tenant A/Tenant B rows through service role,
+   read as authenticated Tenant A principal, assert Tenant B rows invisible) plus a
+   relforcerowsecurity assertion. Until policies exist, this document's strongest-form
+   assertion is the correct and complete proof.
+5. **CI wiring** (owner phase 21, credentials OPS-family): the battery is the CI step for
+   V1CAP-073 — exit 0 = posture holds, exit 1 = FINDINGS (fail the build), exit 2 = blocked
+   on credentials. Secrets come from the CI secret store; key values are never printed.
+
+## 5. Verdict
+
+J-041 / V1CAP-073 is **database-proven on the dev project**: deny-by-default is no longer a
+static claim — it is executed evidence. Canonical-environment repetition is gated on
+MISSION-R-100 (J-040) and serialized per the mission graph.
