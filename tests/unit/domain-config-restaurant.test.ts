@@ -1,0 +1,229 @@
+/**
+ * CoreGrid — V5.3 Part 64 proof: the restaurant domain validates against the
+ * SAME fail-closed validator as the Scholar domain, with zero shared entity
+ * types (V5.3 Part 46 NO DOMAIN CONTAMINATION).
+ */
+import { describe, expect, it } from "vitest";
+import {
+  validateDomainDefinition,
+  PLATFORM_APP_ROLES,
+  UNIVERSAL_ENTITY_VOCABULARY,
+  type DomainDefinition,
+} from "../../frontend/src/lib/domain-config/domain-definition";
+import { RESTAURANT_DOMAIN_DEFINITION } from "../../frontend/src/lib/domain-config/restaurant";
+import { MEMBERSHIP_FOR_NAV_KIND } from "../../frontend/src/lib/capability-gate";
+import { EVIDENCE_KINDS, EVIDENCE_SOURCES } from "../../frontend/src/lib/academic-core";
+
+/** Runtime nav registry vocabulary (the platform's neutral view of nav kinds). */
+const RUNTIME_NAV_KINDS: readonly string[] = Object.keys(MEMBERSHIP_FOR_NAV_KIND);
+
+function entityNames(definition: DomainDefinition): readonly string[] {
+  return definition.entityTypes.map((entityType) => entityType.name);
+}
+
+/**
+ * The Scholar domain expressed as a DomainDefinition from ITS OWN published
+ * vocabulary (academic-core evidence contracts + runtime nav kinds + AppRole
+ * mappings) — imported, not re-declared, so the coherence proof binds to what
+ * Scholar actually ships.
+ */
+const SCHOLAR_DOMAIN_DEFINITION: DomainDefinition = {
+  domainId: "scholar",
+  displayName: "Scholar (academic learning intelligence)",
+  entityTypes: [
+    {
+      name: "scholar.learner",
+      extends: "entity",
+      fields: {
+        display_name: { kind: "string", minLength: 1, maxLength: 120 },
+        cohort_id: { kind: "string" },
+      },
+    },
+    {
+      name: "scholar.course",
+      extends: "entity",
+      fields: {
+        code: { kind: "string", minLength: 1 },
+        title: { kind: "string", minLength: 1 },
+      },
+    },
+    {
+      name: "scholar.competency",
+      extends: "entity",
+      fields: {
+        code: { kind: "string", minLength: 1 },
+        statement: { kind: "string", maxLength: 500 },
+      },
+    },
+    {
+      name: "scholar.learning_evidence",
+      extends: "entity",
+      fields: {
+        kind: { kind: "enum", values: [...EVIDENCE_KINDS] },
+        source: { kind: "enum", values: [...EVIDENCE_SOURCES] },
+        learner: { kind: "ref", targetType: "scholar.learner" },
+        course: { kind: "ref", targetType: "scholar.course" },
+        competency: { kind: "ref", targetType: "scholar.competency" },
+      },
+    },
+  ],
+  relationships: [
+    {
+      name: "scholar.evidence_for_learner",
+      source: "scholar.learning_evidence",
+      target: "scholar.learner",
+      cardinality: "many-to-one",
+    },
+    {
+      name: "scholar.enrols_in",
+      source: "scholar.learner",
+      target: "scholar.course",
+      cardinality: "many-to-many",
+    },
+  ],
+  roles: [
+    { domainRole: "educator", appRoles: ["teacher"] },
+    { domainRole: "learner", appRoles: ["student"] },
+    { domainRole: "guardian", appRoles: ["parent"] },
+    { domainRole: "finance_officer", appRoles: ["bursar"] },
+    { domainRole: "operations", appRoles: ["admin", "principal"] },
+  ],
+  workspaces: [
+    { name: "scholar-administration", kind: "org_admin", label: "Administration" },
+    { name: "scholar-educator", kind: "teacher", label: "Educator" },
+    { name: "scholar-guardian", kind: "parent", label: "Guardian" },
+    { name: "scholar-learner", kind: "student", label: "Learner" },
+  ],
+  workflows: [{ name: "scholar.attendance_cycle" }, { name: "scholar.grade_publication" }],
+};
+
+describe("restaurant DomainDefinition (V5.3 Part 45)", () => {
+  it("validates cleanly against the fail-closed validator", () => {
+    const result = validateDomainDefinition(RESTAURANT_DOMAIN_DEFINITION);
+    expect(result.ok).toBe(true);
+  });
+
+  it("declares the Part 45 entity families as configuration", () => {
+    expect(entityNames(RESTAURANT_DOMAIN_DEFINITION)).toEqual([
+      "restaurant.menu_item",
+      "restaurant.customer",
+      "restaurant.order",
+      "restaurant.table",
+      "restaurant.staff",
+      "restaurant.inventory_item",
+      "restaurant.reservation",
+    ]);
+  });
+
+  it("resolves every entity reference to a declared entity type", () => {
+    const declared = new Set(entityNames(RESTAURANT_DOMAIN_DEFINITION));
+    const unresolved: string[] = [];
+    for (const entityType of RESTAURANT_DOMAIN_DEFINITION.entityTypes) {
+      for (const [fieldName, schema] of Object.entries(entityType.fields)) {
+        if (schema.kind === "ref" && !declared.has(schema.targetType)) {
+          unresolved.push(`${entityType.name}.${fieldName} -> ${schema.targetType}`);
+        }
+      }
+    }
+    for (const relationship of RESTAURANT_DOMAIN_DEFINITION.relationships) {
+      if (!declared.has(relationship.source)) {
+        unresolved.push(`${relationship.name}.source -> ${relationship.source}`);
+      }
+      if (!declared.has(relationship.target)) {
+        unresolved.push(`${relationship.name}.target -> ${relationship.target}`);
+      }
+    }
+    expect(unresolved).toEqual([]);
+  });
+
+  it("maps every domain role onto the platform AppRole vocabulary", () => {
+    expect(PLATFORM_APP_ROLES.length).toBeGreaterThan(0);
+    for (const role of RESTAURANT_DOMAIN_DEFINITION.roles) {
+      for (const appRole of role.appRoles) {
+        expect(PLATFORM_APP_ROLES).toContain(appRole);
+      }
+    }
+    expect(RESTAURANT_DOMAIN_DEFINITION.roles.map((role) => role.domainRole)).toEqual([
+      "manager",
+      "cashier",
+      "service_staff",
+      "runner",
+    ]);
+  });
+
+  it("uses only runtime nav registry kinds for its workspaces", () => {
+    const kinds = RESTAURANT_DOMAIN_DEFINITION.workspaces.map((workspace) => workspace.kind);
+    expect(kinds.length).toBeGreaterThan(0);
+    for (const kind of kinds) {
+      expect(RUNTIME_NAV_KINDS).toContain(kind);
+    }
+  });
+
+  it("declares no storage: every entity type extends the universal substrate vocabulary", () => {
+    for (const entityType of RESTAURANT_DOMAIN_DEFINITION.entityTypes) {
+      expect(UNIVERSAL_ENTITY_VOCABULARY).toContain(entityType.extends);
+    }
+    expect(RESTAURANT_DOMAIN_DEFINITION.entityTypes.length).toBe(7);
+  });
+});
+
+describe("cross-domain coherence (V5.3 Part 64)", () => {
+  it("validates Scholar through the SAME validator", () => {
+    const scholar = validateDomainDefinition(SCHOLAR_DOMAIN_DEFINITION);
+    const restaurant = validateDomainDefinition(RESTAURANT_DOMAIN_DEFINITION);
+    expect(scholar.ok).toBe(true);
+    expect(restaurant.ok).toBe(true);
+  });
+
+  it("binds Scholar vocabulary that actually ships (enum values come from academic-core)", () => {
+    expect(EVIDENCE_KINDS.length).toBeGreaterThan(0);
+    expect(EVIDENCE_SOURCES.length).toBeGreaterThan(0);
+    const evidence = SCHOLAR_DOMAIN_DEFINITION.entityTypes.find(
+      (entityType) => entityType.name === "scholar.learning_evidence",
+    );
+    expect(evidence).toBeDefined();
+    if (!evidence) return;
+    const kindField = evidence.fields.kind;
+    expect(kindField.kind).toBe("enum");
+    if (kindField.kind === "enum") {
+      expect([...kindField.values]).toEqual([...EVIDENCE_KINDS]);
+    }
+    const sourceField = evidence.fields.source;
+    expect(sourceField.kind).toBe("enum");
+    if (sourceField.kind === "enum") {
+      expect([...sourceField.values]).toEqual([...EVIDENCE_SOURCES]);
+    }
+  });
+
+  it("shares ZERO entity types between the two domains (no contamination)", () => {
+    const scholarNames = entityNames(SCHOLAR_DOMAIN_DEFINITION);
+    const restaurantNames = entityNames(RESTAURANT_DOMAIN_DEFINITION);
+    const shared = restaurantNames.filter((name) => scholarNames.includes(name));
+    expect(shared).toEqual([]);
+    expect(scholarNames.length).toBeGreaterThan(0);
+    expect(restaurantNames.length).toBeGreaterThan(0);
+  });
+
+  it("keeps every domain entity type inside its own namespace, never the universal vocabulary", () => {
+    for (const name of [
+      ...entityNames(SCHOLAR_DOMAIN_DEFINITION),
+      ...entityNames(RESTAURANT_DOMAIN_DEFINITION),
+    ]) {
+      expect(name.startsWith("scholar.") || name.startsWith("restaurant.")).toBe(true);
+      expect((UNIVERSAL_ENTITY_VOCABULARY as readonly string[]).includes(name)).toBe(false);
+    }
+  });
+
+  it("resolves both domains' workspaces from the SAME runtime nav registry vocabulary", () => {
+    const scholarKinds = SCHOLAR_DOMAIN_DEFINITION.workspaces.map((workspace) => workspace.kind);
+    const restaurantKinds = RESTAURANT_DOMAIN_DEFINITION.workspaces.map(
+      (workspace) => workspace.kind,
+    );
+    for (const kind of [...scholarKinds, ...restaurantKinds]) {
+      expect(RUNTIME_NAV_KINDS).toContain(kind);
+    }
+    // The shared substrate vocabulary is reused across domains even though
+    // their entity vocabularies are fully disjoint.
+    expect(scholarKinds.some((kind) => restaurantKinds.includes(kind))).toBe(true);
+  });
+});
