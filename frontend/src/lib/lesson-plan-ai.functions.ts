@@ -8,7 +8,9 @@ import { z } from "zod";
 import { generateText, Output } from "ai";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { requireStaffContext } from "@/lib/security-role-gate";
-import { createAiGatewayProvider } from "@/lib/ai-gateway.server";
+import { invokeAiGateway, type AiGatewayOutcome } from "@/lib/ai-gateway.server";
+
+const LESSON_PLAN_MODEL = "google/gemini-3-flash-preview";
 
 const Input = z.object({
   subject: z.string().trim().min(2).max(80),
@@ -44,12 +46,8 @@ export const draftLessonPlan = createServerFn({ method: "POST" })
     // Canonical Phase 08 teaching-staff gate (admin/principal/teacher).
     // Lesson-plan generation consumes the workspace AI gateway — cost-bearing,
     // so it is restricted to staff rather than any authenticated user.
-    await requireStaffContext(context.supabase, "teaching_staff");
+    const staff = await requireStaffContext(context.supabase, "teaching_staff");
 
-    const key = process.env.AI_API_KEY;
-    if (!key) throw new Error("AI is not configured");
-
-    const gateway = createAiGatewayProvider(key);
     const duration = data.duration_minutes ?? 40;
     const prompt = [
       `Draft a single classroom lesson plan.`,
@@ -63,13 +61,29 @@ export const draftLessonPlan = createServerFn({ method: "POST" })
       .filter(Boolean)
       .join("\n");
 
+    let outcome: AiGatewayOutcome<LessonPlanDraft>;
     try {
-      const { output } = await generateText({
-        model: gateway("google/gemini-3-flash-preview"),
-        output: Output.object({ schema: Schema }),
-        prompt,
+      outcome = await invokeAiGateway({
+        tenantRef: staff.schoolId,
+        actorRef: context.userId,
+        agentRef: null,
+        missionRef: null,
+        model: LESSON_PLAN_MODEL,
+        provider: "ai-gateway",
+        purpose: "drafting",
+        invoke: async (provider) => {
+          const { output, usage } = await generateText({
+            model: provider(LESSON_PLAN_MODEL),
+            output: Output.object({ schema: Schema }),
+            prompt,
+          });
+          return {
+            payload: output,
+            tokensIn: usage?.inputTokens ?? 0,
+            tokensOut: usage?.outputTokens ?? 0,
+          };
+        },
       });
-      return output;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       if (/429/.test(msg)) throw new Error("AI is busy right now — try again in a moment.");
@@ -79,4 +93,11 @@ export const draftLessonPlan = createServerFn({ method: "POST" })
         );
       throw new Error(`AI draft failed: ${msg}`);
     }
+    if (outcome.decision === "deny") {
+      if (outcome.code === "unconfigured") {
+        throw new Error("AI is not configured");
+      }
+      throw new Error(outcome.reason);
+    }
+    return outcome.payload;
   });

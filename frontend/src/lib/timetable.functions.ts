@@ -8,6 +8,9 @@ import { generateText, Output } from "ai";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { requireSchoolAdminScope } from "@/lib/security-role-gate";
+import { invokeAiGateway } from "@/lib/ai-gateway.server";
+
+const TIMETABLE_MODEL = "google/gemini-3-flash-preview";
 
 const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday"] as const;
 
@@ -48,12 +51,6 @@ export const generateTimetableDraft = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!klass || klass.school_id !== schoolId) throw new Error("Class not found in your school");
 
-    const key = process.env.AI_API_KEY;
-    if (!key) throw new Error("AI gateway not configured");
-
-    const { createAiGatewayProvider } = await import("./ai-gateway.server");
-    const gateway = createAiGatewayProvider(key);
-
     const prompt = `You are a school timetable planner. Build a 5-day weekly schedule (Mon–Fri) for class "${klass.name}" (${klass.grade_level ?? "general"}).
 Constraints:
 - ${data.periods_per_day} periods per school day, each ${data.period_minutes} minutes, starting at ${String(data.start_hour).padStart(2, "0")}:00.
@@ -66,12 +63,34 @@ Times must be HH:MM 24h. day_of_week is lowercase (monday..friday).`;
 
     let draft: z.infer<typeof draftSchema>;
     try {
-      const { output } = await generateText({
-        model: gateway("google/gemini-3-flash-preview"),
-        output: Output.object({ schema: draftSchema }),
-        prompt,
+      const outcome = await invokeAiGateway({
+        tenantRef: schoolId,
+        actorRef: context.userId,
+        agentRef: null,
+        missionRef: null,
+        model: TIMETABLE_MODEL,
+        provider: "ai-gateway",
+        purpose: "drafting",
+        invoke: async (provider) => {
+          const { output, usage } = await generateText({
+            model: provider(TIMETABLE_MODEL),
+            output: Output.object({ schema: draftSchema }),
+            prompt,
+          });
+          return {
+            payload: output,
+            tokensIn: usage?.inputTokens ?? 0,
+            tokensOut: usage?.outputTokens ?? 0,
+          };
+        },
       });
-      draft = output;
+      if (outcome.decision === "deny") {
+        if (outcome.code === "unconfigured") {
+          throw new Error("AI gateway not configured");
+        }
+        throw new Error(outcome.reason);
+      }
+      draft = outcome.payload;
     } catch (e) {
       const msg = e instanceof Error ? e.message : "AI generation failed";
       if (msg.includes("429")) throw new Error("AI rate limit reached. Try again in a moment.");

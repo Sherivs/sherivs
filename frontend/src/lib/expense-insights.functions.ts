@@ -9,7 +9,9 @@ import { generateText, Output } from "ai";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { requireStaffContext } from "@/lib/security-role-gate";
-import { createAiGatewayProvider } from "@/lib/ai-gateway.server";
+import { invokeAiGateway, type AiGatewayOutcome } from "@/lib/ai-gateway.server";
+
+const EXPENSE_INSIGHTS_MODEL = "google/gemini-3-flash-preview";
 
 const InsightSchema = z.object({
   headline: z.string(),
@@ -71,9 +73,6 @@ export const getExpenseInsights = createServerFn({ method: "POST" })
       };
     }
 
-    const key = process.env.AI_API_KEY;
-    if (!key) throw new Error("AI is not configured");
-    const gateway = createAiGatewayProvider(key);
     const prompt = [
       "You are a school finance analyst. Currency: Nigerian Naira (₦).",
       "Given the following 90-day expense aggregates per category and monthly budgets,",
@@ -85,17 +84,40 @@ export const getExpenseInsights = createServerFn({ method: "POST" })
       JSON.stringify(summary, null, 2),
     ].join("\n");
 
+    let outcome: AiGatewayOutcome<ExpenseInsights>;
     try {
-      const { output } = await generateText({
-        model: gateway("google/gemini-3-flash-preview"),
-        output: Output.object({ schema: InsightSchema }),
-        prompt,
+      outcome = await invokeAiGateway({
+        tenantRef: staff.schoolId,
+        actorRef: context.userId,
+        agentRef: null,
+        missionRef: null,
+        model: EXPENSE_INSIGHTS_MODEL,
+        provider: "ai-gateway",
+        purpose: "summarization",
+        invoke: async (provider) => {
+          const { output, usage } = await generateText({
+            model: provider(EXPENSE_INSIGHTS_MODEL),
+            output: Output.object({ schema: InsightSchema }),
+            prompt,
+          });
+          return {
+            payload: output,
+            tokensIn: usage?.inputTokens ?? 0,
+            tokensOut: usage?.outputTokens ?? 0,
+          };
+        },
       });
-      return output;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       if (/429/.test(msg)) throw new Error("AI is busy right now — try again in a moment.");
       if (/402/.test(msg)) throw new Error("AI credits exhausted for this workspace.");
       throw new Error(`AI insights failed: ${msg}`);
     }
+    if (outcome.decision === "deny") {
+      if (outcome.code === "unconfigured") {
+        throw new Error("AI is not configured");
+      }
+      throw new Error(outcome.reason);
+    }
+    return outcome.payload;
   });
