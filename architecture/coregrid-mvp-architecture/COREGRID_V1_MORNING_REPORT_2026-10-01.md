@@ -53,6 +53,53 @@ Additionally awaiting your explicit authorization (governance law: migration app
 - All registry changes are additive; every existing `status` value is untouched; `npm run verify` passes including the four-way name-lockstep tests.
 - Workforce law honored throughout: streams A–D read-only, coordinator held all mutations, every report independently checked before application (one report finding — phase 15 — was corrected by the guard, not by trusting the classification).
 
+## ACT MODE — Multi-mission overnight execution (Run 3, 2026-10-01)
+
+Operator directive: take multiple massive missions, spawn role-assigned agents per mission, execute as master orchestrator, record everything needing intervention. Fourteen missions were executed by ten role-assigned workers; the coordinator verified every claim independently with full `npm run verify` (worker claims were never accepted as verification — V5.3 Part 52).
+
+### BLK-7 RESOLVED
+
+The push-token invalidation was transient: `git push` succeeded at 03:46 UTC on retry — all Gate 17 commits (`db9f925..075482b`) and all fourteen mission commits are now on origin. No credential refresh was needed.
+
+### Missions executed (all role-assigned, coordinator-verified)
+
+| Mission | Role | Deliverable | Tests |
+| --- | --- | --- | --- |
+| M-01 ops-security | Sentinel | `scripts/lib/pg-ssl.mjs`: TLS fail-closed by default across `db-apply`/`db-run`/`db-apply-one`/`verify-role-assignment-substrate` (OPS-RISK-1); insecure mode only via logged `COREGRID_DB_INSECURE_TLS=1`; OPS-RISK-2 audited — anon-key audit-write pattern NOT present (reported, not invented) | live TLS probes + connectivity evidence |
+| M-02 observability | Vesta | `frontend/src/lib/observability/` structured logger (secret-redacting, JSON lines) + `health.json` endpoint (503 on failing, leak-free whitelist) + `server.ts` structured request log | 25 |
+| M-03 files | Custodian | `frontend/src/lib/files/`: file contract, tenant-scoped storage adapter (`tenant_id/...` path enforcement), deny-by-default access policy with grants | 34 |
+| M-04 payments | Argentum | `frontend/src/lib/payments/`: provider-agnostic contract, Paystack (HMAC-SHA512) + Stripe (`t=,v1=`) signature verification, replay guard — zero network under BLK-4 | 38 |
+| M-05+09 gateway+metering | Cortex | `ai-gateway.server.ts` governed entry (fail-closed unconfigured, budget pre-check, in-process rate limit) + `metering/usage-ledger.ts` (Part 49 attribution) | 48 |
+| M-06 context | Contextus | `frontend/src/lib/context-assembly.ts`: permission-bound, auditable drops, untrusted-content marking (Part 26) — composes existing `ai-context.ts` authority | 15 |
+| M-07 agent runtime | Aion | `frontend/src/lib/agent-runtime/`: Part 14 ephemeral lifecycle state machine (no resurrection, no escalation path) + pure mission runner (reuses foundation-mission vocabulary) | 29 |
+| M-08 Jarvis | Vigil | `frontend/src/lib/jarvis/`: all eight Part 15 prohibitions as enforced deny codes, human-closed escalation ladder, no-fabrication briefing | 39 |
+| M-10 domain proof | Domini | `frontend/src/lib/domain-config/`: fail-closed DomainDefinition validator + full restaurant config (Part 45) + cross-domain coherence proof vs Scholar (Part 64) | 19 |
+| M-11 org model | Ordinator | `frontend/src/lib/org-model.ts` universal org units/memberships + `cg_org_unit`/`cg_org_membership` migration (AUTHORED NOT APPLIED, deny-by-default RLS) | 21 |
+| M-12 gateway adoption | Hermes-Bound | All three AI call sites (`timetable`, `expense-insights`, `lesson-plan-ai`) now route through `invokeAiGateway` with full attribution — behavior-preserving | 9 new + 23 existing |
+| M-13 notifications | Nuntius | `frontend/src/lib/notifications/`: contract + fail-closed dispatch planner + record-only email adapter (BLK-5 hold, never pretends delivery) | 32 |
+| M-14 deployment | Ktion | Production multi-stage `Dockerfile` (non-root, healthcheck) + `.dockerignore` + SHA-pinned `release.yml` with human-gated fail-closed deploy + `infrastructure/README.md` V1 deployment path | runtime boot verified live (health.json 200); docker build UNKNOWN (docker absent on VM, not fabricated) |
+| M-15 workflow | Rhema | `frontend/src/lib/workflow/`: eight Part 17 triggers, human-only approvals (`ai_cannot_satisfy_approval`), evidence-before-completion gate, bounded action plans, immutable terminal states | 65 |
+
+### Verification (coordinator-independent, not worker claims)
+
+- Full `npm run verify` PASS after every batch: typecheck clean, registry valid, secret-scan clean, build green.
+- Unit suite: **3,458 passed** (from 3,084 baseline — 374 new tests tonight, all including §31 security negatives).
+- Worker-introduced typecheck defects were caught by the coordinator's independent verify (4 clusters) and fixed before commit — the verification law worked as designed.
+- Live evidence: production server booted from the built bundle; `GET /health.json` returned HTTP 200 with the structured payload; structured request log observed.
+
+### New items needing your intervention
+
+| # | Item | What it unblocks |
+| --- | --- | --- |
+| OPS-1 | Provision `DATABASE_URL` (dev-project DB password) and download the project CA cert (`prod-ca-2021.crt`, dashboard-only) for `NODE_EXTRA_CA_CERTS` | End-to-end secure-TLS `db-run "select 1"` proof; otherwise scripts now fail closed (intended) — escape hatch `COREGRID_DB_INSECURE_TLS=1` exists but is logged |
+| OPS-2 | Authorize applying the TWO authored migrations: workspace persistence (Step 3) + `cg_org_unit`/`cg_org_membership` (M-11) | Workspace + organization persistence; vertical-slice steps 3 and 2-complete |
+| DEC-1 | RLS posture for the new V1 tables: keep zero-policy strict deny-by-default (service-role only, current state, strictly stronger) vs author a domain-neutral tenant-membership helper migration enabling authenticated member policies | Org/workspace runtime against authenticated clients |
+| DEC-2 | `AppRole` vocabulary widening: restaurant config proves the current education-flavored roles force semantic stretches (`service_staff→teacher`); widen the platform role enum or accept the mapping | Clean multi-domain role mapping (Part 64) |
+| DEC-3 | BLK-6 canonical worker owner (CG-GAP-009/011) — unchanged; agent runtime deliberately delegates identity and will re-point at the canonical authority once decided | Worker identity + delegation (the L critical-path item) |
+| DEC-4 | Workflow vocabulary bridge: Part 17 engine (`running/waiting_approval/...`) vs `automation-workflow.ts` state machine (CREATED/WAITING/...) — map them before any runtime adopts both | Single retry/idempotency model |
+| SEC-1 | GitHub secrets for the release pipeline: `DOCKER_REGISTRY`, `DOCKER_USERNAME`, `DOCKER_PASSWORD`, `DOCKER_NAMESPACE` (+ later `DEPLOY_SSH_*`); approve the `production` environment gate on first release | First tagged release can build/push the image; deploy still waits on BLK-3 |
+| SEC-2 | Add a `version` field to root `package.json` | `health.json` currently reports `version: null` |
+
 ## Not claimed
 
-No V1 capability is implemented yet (PLAN MODE → ACT MODE transition recorded, not pretended). The 10 Oct target is recorded as operator authority, not achieved. Deployment, operational telemetry, and multi-domain proof remain open. CoreGrid V1 truthfully says: **AI-native organizational computing platform — in governed, verified construction.**
+Fourteen missions delivered governed contracts, pure engines, and one deployment path — none of it is OPERATIONAL truth yet: no migration has been applied (law), no live AI call has been made (BLK-2), no live payment/email sent (BLK-4/5), no Docker image built (docker absent), no deployment executed (BLK-3). All mission statuses are IMPLEMENTED + VERIFIED (unit/contract level), never DEPLOYED or OPERATIONAL (V5.3 Part 43 distinction preserved). The earlier Gate 17 boundary statement also still holds: the 10 Oct target is recorded as operator authority, not achieved. CoreGrid V1 truthfully says: **AI-native organizational computing platform — in governed, verified construction.**
