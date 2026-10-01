@@ -247,3 +247,118 @@ describe("cross-domain coherence (V5.3 Part 64)", () => {
     expect(scholarKinds.some((kind) => restaurantKinds.includes(kind))).toBe(true);
   });
 });
+
+/* ─────────────────────────────────────────────────────────────
+ * MISSION-R-120 / V1CAP-093 additions — fixture RECERTIFICATION through
+ * the neutral primitives: every role resolves through the declared
+ * neutral mapping only (no legacy AppRole declaration remains), no
+ * educator semantics survive anywhere in the fixture's semantic surface,
+ * and the only education-vocabulary string literals left are the
+ * documented chrome-kind borrows.
+ * ────────────────────────────────────────────────────────────*/
+import { RESTAURANT_NEUTRAL_ROLE_MAPPINGS } from "../../frontend/src/lib/domain-config/restaurant";
+import { isUniversalRole } from "../../frontend/src/lib/universal-roles";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
+/** The educator/education-vocabulary tokens (the neutrality guard's STRICT list). */
+const EDUCATOR_TOKENS: readonly string[] = [
+  "scholar",
+  "student",
+  "teacher",
+  "school",
+  "classroom",
+  "curriculum",
+  "exam",
+  "examination",
+  "grade",
+  "grading",
+  "attendance",
+  "fee",
+  "fees",
+  "tuition",
+  "timetable",
+  "admission",
+  "lesson",
+  "homework",
+  "library",
+  "hostel",
+  "bursar",
+  "principal",
+  "guardian",
+  "enrollment",
+  "enrolment",
+  "academic",
+];
+
+describe("restaurant fixture recertification (MISSION-R-120 / V1CAP-093)", () => {
+  it("every role declares the NEUTRAL vocabulary only — no legacy appRoles declaration remains", () => {
+    for (const role of RESTAURANT_DOMAIN_DEFINITION.roles) {
+      expect(role.appRoles, `role "${role.domainRole}" must not declare appRoles`).toBeUndefined();
+      expect(role.neutralRoles?.length, `role "${role.domainRole}"`).toBeGreaterThan(0);
+      expect(role.neutralRoles).toEqual(
+        RESTAURANT_NEUTRAL_ROLE_MAPPINGS[role.domainRole],
+      );
+    }
+  });
+
+  it("every declared neutral role is universal and NO restaurant role resolves to work-product-production (educator-resolved) semantics", () => {
+    for (const role of RESTAURANT_DOMAIN_DEFINITION.roles) {
+      for (const neutral of role.neutralRoles ?? []) {
+        expect(isUniversalRole(neutral)).toBe(true);
+        expect(neutral, `role "${role.domainRole}"`).not.toBe("CONTRIBUTOR");
+      }
+    }
+  });
+
+  it("resolves exactly the recertified semantics: WORKER / OPERATOR / ADMINISTRATOR / OWNER", () => {
+    const resolvedSemantics = new Set(
+      RESTAURANT_DOMAIN_DEFINITION.roles.flatMap((role) => [...(role.neutralRoles ?? [])]),
+    );
+    for (const semantic of [...resolvedSemantics]) {
+      expect(["WORKER", "OPERATOR", "ADMINISTRATOR", "OWNER"]).toContain(semantic);
+    }
+  });
+
+  it("every fixture surface is free of educator vocabulary (semantic scan over the compiled definition)", () => {
+    const surfaces: readonly string[] = [
+      ...RESTAURANT_DOMAIN_DEFINITION.entityTypes.flatMap((entityType) => [
+        entityType.name,
+        entityType.extends,
+        ...Object.keys(entityType.fields),
+      ]),
+      ...RESTAURANT_DOMAIN_DEFINITION.entityTypes.flatMap((entityType) =>
+        Object.values(entityType.fields).flatMap((schema) =>
+          schema.kind === "enum" ? [...schema.values] : [],
+        ),
+      ),
+      ...RESTAURANT_DOMAIN_DEFINITION.relationships.map((relationship) => relationship.name),
+      ...RESTAURANT_DOMAIN_DEFINITION.roles.map((role) => role.domainRole),
+      ...RESTAURANT_DOMAIN_DEFINITION.workflows.map((workflow) => workflow.name),
+      ...RESTAURANT_DOMAIN_DEFINITION.workspaces.map((workspace) => workspace.name),
+      ...RESTAURANT_DOMAIN_DEFINITION.workspaces.map((workspace) => workspace.label),
+    ];
+    for (const value of surfaces) {
+      for (const token of EDUCATOR_TOKENS) {
+        expect(value.toLowerCase(), `fixture surface value "${value}"`).not.toContain(token);
+      }
+    }
+  });
+
+  it("the only education-vocabulary string literals in the fixture source are the documented chrome-kind borrows", () => {
+    const source = readFileSync(
+      `${fileURLToPath(new URL("../..", import.meta.url))}/frontend/src/lib/domain-config/restaurant.ts`,
+      "utf8",
+    );
+    const observed = new Set<string>();
+    for (const line of source.split("\n")) {
+      for (const token of EDUCATOR_TOKENS) {
+        if (new RegExp(`['"\`]${token}['"\`]`, "i").test(line)) observed.add(token);
+      }
+    }
+    // "teacher" and "bursar" are runtime nav registry KIND strings — the
+    // documented-gated workspace-kind debt (see the workspaces note in the
+    // fixture). No role, mapping, entity or workflow may carry them.
+    expect([...observed].sort()).toEqual(["bursar", "teacher"]);
+  });
+});

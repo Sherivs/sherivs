@@ -354,3 +354,44 @@ describe("I-031 closure at the contract level (role validation re-pointed at the
     }
   });
 });
+
+/* ─────────────────────────────────────────────────────────────
+ * MISSION-R-120 / V1CAP-092 additions — I-012 closure seen from the
+ * vocabulary side: the nav-kind membership coupling consumes the declared
+ * domain mapping tables (forward resolution only), and the declaration
+ * lives in the runtime layer.
+ * ────────────────────────────────────────────────────────────*/
+import {
+  RUNTIME_NAV_KIND_NEUTRAL_MEMBERSHIP,
+  RUNTIME_NAV_KIND_ROLE_ASSIGNMENTS,
+} from "../../frontend/src/lib/runtime/nav-registry";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
+/** The runtime layer, per the platform-neutrality guard's own path list. */
+const RUNTIME_LAYER_PATH_PATTERN = /^frontend\/src\/lib\/runtime\/scholar[^/]*\.tsx?$/;
+const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url));
+
+describe("I-012 closure: nav-kind membership consumes the declared mapping tables", () => {
+  it("every assigned Scholar role resolves FORWARD through the Scholar mapping table into its kind's neutral membership", () => {
+    for (const [kind, roles] of Object.entries(RUNTIME_NAV_KIND_ROLE_ASSIGNMENTS)) {
+      for (const role of roles) {
+        const resolved = resolveDomainRoleToNeutral(SCHOLAR_NEUTRAL_ROLE_MAPPINGS, role);
+        expect(resolved, `role "${role}" of kind "${kind}"`).not.toBeNull();
+        for (const neutral of resolved ?? []) {
+          expect(
+            RUNTIME_NAV_KIND_NEUTRAL_MEMBERSHIP[kind as keyof typeof RUNTIME_NAV_KIND_NEUTRAL_MEMBERSHIP],
+            `role "${role}" neutral "${neutral}" of kind "${kind}"`,
+          ).toContain(neutral);
+        }
+      }
+    }
+  });
+
+  it("the declared mapping table is authoritative in the runtime layer, not re-listed in the gate", () => {
+    const mappingTablePath = "frontend/src/lib/runtime/scholar-role-mappings.ts";
+    expect(RUNTIME_LAYER_PATH_PATTERN.test(mappingTablePath)).toBe(true);
+    const gate = readFileSync(`${REPO_ROOT}/frontend/src/lib/capability-gate.ts`, "utf8");
+    expect(gate).not.toContain("defineDomainRoleMappings");
+  });
+});

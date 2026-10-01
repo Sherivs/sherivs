@@ -33,10 +33,14 @@
  * DomainDefinition (entity types, relationships, workspaces) is assembled in
  * tests/unit/domain-config-restaurant.test.ts and later missions.
  */
+import type { ScholarNavKind } from "./scholar-nav-catalog";
+import type { AppRole } from "@/lib/roles";
 import {
+  resolveDomainRoleToNeutral,
   roleMappingTable,
   type DirectionalRoleMappings,
   type DomainRoleMappingDeclaration,
+  type UniversalRole,
 } from "@/lib/universal-roles";
 
 export const SCHOLAR_DOMAIN_ID = "scholar";
@@ -100,3 +104,68 @@ export const SCHOLAR_ROLE_MAPPINGS: readonly DomainRoleMappingDeclaration[] = [
 /** The validated, directional Scholar mapping table (domain -> neutral only). */
 export const SCHOLAR_NEUTRAL_ROLE_MAPPINGS: DirectionalRoleMappings =
   roleMappingTable(SCHOLAR_ROLE_MAPPINGS);
+
+/* ─────────────────────────────────────────────────────────────
+ * Scholar nav-kind membership (I-012 closure, runtime-declared).
+ *
+ * The platform capability gate used to hand-write the nav-kind membership
+ * table in universal code (finding I-012: MEMBERSHIP_FOR_NAV_KIND keyed on
+ * Scholar vocabulary in the universal access path). The correction is
+ * runtime-declared declaration: the RUNTIME owns the statement "which of its
+ * own roles hold which of its own chrome kinds" — domain vocabulary that
+ * legitimately lives here, in the runtime layer — and derives the neutral
+ * membership THROUGH its declared mapping table above. The platform gate
+ * consumes both tables through the runtime registry's neutral aliases and
+ * holds no role list of its own.
+ * ────────────────────────────────────────────────────────────*/
+
+/**
+ * Scholar's own chrome-kind assignments in Scholar vocabulary: which of the
+ * runtime's identity-store roles hold each Scholar nav kind. This is the
+ * runtime's domain statement — it stays here because it names Scholar roles
+ * and Scholar kinds; the platform never learns it (the gate consumes only the
+ * DERIVED neutral table and re-exports this one under a neutral alias).
+ */
+export const SCHOLAR_NAV_KIND_ROLE_ASSIGNMENTS: Readonly<
+  Record<ScholarNavKind, readonly AppRole[]>
+> = {
+  org_admin: ["admin", "principal"],
+  teacher: ["teacher"],
+  bursar: ["bursar"],
+  hq: ["hq"],
+  super_admin: ["super_admin"],
+  parent: ["parent"],
+  student: ["student"],
+  driver: ["driver"],
+};
+
+/**
+ * The Scholar chrome kinds' membership in the NEUTRAL universal vocabulary —
+ * derived (never re-declared) through the authoritative mapping table via
+ * FORWARD resolution only. Fails closed at module init if any assigned role
+ * loses its declared neutral resolution: a chrome kind whose membership
+ * cannot be resolved must not install silently.
+ */
+export const SCHOLAR_NAV_KIND_NEUTRAL_MEMBERSHIP: Readonly<
+  Record<ScholarNavKind, readonly UniversalRole[]>
+> = (() => {
+  // Deliberate cast: the table is filled for every kind of the closed union in
+  // the loop below, failing closed if any assignment loses its resolution.
+  const table = {} as Record<ScholarNavKind, readonly UniversalRole[]>;
+  for (const kind of Object.keys(SCHOLAR_NAV_KIND_ROLE_ASSIGNMENTS) as ScholarNavKind[]) {
+    const resolved: UniversalRole[] = [];
+    for (const role of SCHOLAR_NAV_KIND_ROLE_ASSIGNMENTS[kind]) {
+      const neutral = resolveDomainRoleToNeutral(SCHOLAR_NEUTRAL_ROLE_MAPPINGS, role);
+      if (neutral === null) {
+        throw new Error(
+          `Scholar nav kind "${kind}" assigns role "${role}" which has no declared neutral resolution — fail closed (I-012)`,
+        );
+      }
+      for (const neutralRole of neutral) {
+        if (!resolved.includes(neutralRole)) resolved.push(neutralRole);
+      }
+    }
+    table[kind] = resolved;
+  }
+  return table;
+})();

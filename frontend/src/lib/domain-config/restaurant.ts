@@ -32,10 +32,10 @@ export const RESTAURANT_DOMAIN_ID = "restaurant";
  * The authoritative authorization semantics of this domain: mappings run FROM
  * restaurant roles TO the neutral universal role vocabulary, never the
  * reverse. Finding I-030's seeded contamination is closed here — most
- * importantly service_staff, which used to be forced into the Scholar
- * identity-store vocabulary (service_staff -> teacher) because the only
- * target vocabulary that existed WAS the Scholar role list. It now resolves
- * to WORKER|OPERATOR: floor workforce semantics with no educator meaning.
+ * importantly service_staff, which used to be forced into the first runtime's
+ * identity-store vocabulary because the only target vocabulary that existed
+ * WAS that role list. It now resolves to WORKER|OPERATOR: floor workforce
+ * semantics with no educator meaning.
  * ────────────────────────────────────────────────────────────*/
 export const RESTAURANT_ROLE_MAPPINGS: readonly DomainRoleMappingDeclaration[] = [
   {
@@ -54,7 +54,7 @@ export const RESTAURANT_ROLE_MAPPINGS: readonly DomainRoleMappingDeclaration[] =
     domainRole: "service_staff",
     neutralRoles: ["WORKER", "OPERATOR"],
     description:
-      "Floor service workforce (servers, cooks, hosts): executes assigned service tasks (WORKER) and drives the placed -> in_kitchen -> served order flow (OPERATOR). Deliberately NOT the Scholar educator semantic — the legacy service_staff -> teacher forced mapping (I-030) is closed by this declaration.",
+      "Floor service workforce (servers, cooks, hosts): executes assigned service tasks (WORKER) and drives the placed -> in_kitchen -> served order flow (OPERATOR). Deliberately NOT the first runtime's work-product-production semantic — the legacy forced identity-store bridge (I-030) is closed by this declaration.",
   },
   {
     domainRole: "runner",
@@ -214,23 +214,21 @@ export const RESTAURANT_DOMAIN_DEFINITION: DomainDefinition = {
   ],
   roles: [
     /*
-     * I-031 follow-through: the validator now accepts a role declared through
-     * EITHER the legacy identity-store appRoles (backwards compatibility) OR
-     * the neutral universal-role vocabulary — never neither. service_staff
-     * therefore maps PURELY through the neutral mapping that already exists
-     * (RESTAURANT_ROLE_MAPPINGS: WORKER|OPERATOR); the forced legacy
-     * service_staff -> teacher bridge (I-030/I-031) is removed. The other
-     * roles keep their legacy appRoles declarations, which are legitimate
-     * identity-store mappings (not forced bridges).
+     * Recertified neutral-only (MISSION-R-120 / V1CAP-093, closing the I-031
+     * backwards-compatibility path for THIS fixture): every restaurant role
+     * resolves through the authoritative RESTAURANT_ROLE_MAPPINGS table — no
+     * legacy identity-store declaration remains. The validator accepts EITHER
+     * appRoles OR neutralRoles (never neither); this fixture declares ONLY the
+     * neutral vocabulary, which is what a second-domain fixture must prove.
      */
     {
       domainRole: "manager",
-      appRoles: ["admin", "principal"],
-      description: "Runs the restaurant; maps onto the organization-administration membership.",
+      neutralRoles: RESTAURANT_NEUTRAL_ROLE_MAPPINGS.manager,
+      description: "Runs the restaurant; accountable for the operation and its administration.",
     },
     {
       domainRole: "cashier",
-      appRoles: ["bursar"],
+      neutralRoles: RESTAURANT_NEUTRAL_ROLE_MAPPINGS.cashier,
       description: "Handles payments and the cash office.",
     },
     {
@@ -243,11 +241,43 @@ export const RESTAURANT_DOMAIN_DEFINITION: DomainDefinition = {
     },
     {
       domainRole: "runner",
-      appRoles: ["driver"],
+      neutralRoles: RESTAURANT_NEUTRAL_ROLE_MAPPINGS.runner,
       description: "Field-facing delivery and errand workforce.",
     },
   ],
   workspaces: [
+    /*
+     * I-012 follow-through — WORKSPACE-KIND DEBT, documented-gated (consumer
+     * list below). Every workspace kind string here is drawn from the first
+     * runtime's chrome-kind vocabulary, not a neutral one — most visibly the
+     * `restaurant-service` workspace's kind, which reads as education
+     * vocabulary while carrying NO educator semantic. A neutral kind
+     * ("operations") was evaluated and is NOT permitted by current
+     * consumers: a DomainWorkspace.kind must be a member of the runtime nav
+     * registry's closed kind union (typed as RuntimeNavKind and validated
+     * fail-closed by validateDomainDefinition against the gate's routed-kind
+     * vocabulary), and that union is today the first runtime's
+     * ScholarNavKind (finding I-013). The runtime-declared workspace-kind
+     * vocabulary that would admit a domain-owned kind is future work
+     * (V1CAP-084), so the kind string stays — a chrome-kind BORROW, never an
+     * educator semantic of any restaurant role (all four resolve through
+     * RESTAURANT_ROLE_MAPPINGS above; none carries work-product-production
+     * semantics).
+     *
+     * Consumers of this kind string (exhaustive, verified by grep):
+     *  - tests/unit/domain-config-restaurant.test.ts ("uses only runtime nav
+     *    registry kinds for its workspaces"; "resolves both domains'
+     *    workspaces from the SAME runtime nav registry vocabulary")
+     *  - tests/unit/domain-runtime-recertification.test.ts (documents the
+     *    debt as the certification's recorded exception)
+     *  - validateDomainDefinition (frontend/src/lib/domain-config/
+     *    domain-definition.ts — fail-closed kind check against the registry
+     *    vocabulary)
+     * The fixture has NO other consumer (no route, storage or runtime
+     * surface reads it — it is a configuration fixture). When the
+     * runtime-declared workspace-kind vocabulary lands, rename this kind and
+     * ratchet the two assertions above.
+     */
     {
       name: "restaurant-manager",
       kind: "org_admin",
@@ -256,9 +286,14 @@ export const RESTAURANT_DOMAIN_DEFINITION: DomainDefinition = {
     },
     {
       name: "restaurant-service",
+      // TODO(I-012/V1CAP-084): legacy chrome-kind string, documented-gated —
+      // see the consumer list above before touching. Rename to a
+      // domain-owned neutral kind only when the runtime nav registry admits
+      // runtime-declared kinds.
       kind: "teacher",
       label: "Floor service",
-      description: "Service workforce chrome, resolved from the runtime nav registry teacher kind.",
+      description:
+        "Service workforce chrome. The kind string is the documented-gated chrome-kind borrow (see the workspaces note above); the role semantics are the neutral WORKER|OPERATOR mapping.",
     },
     {
       name: "restaurant-cashier",

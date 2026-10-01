@@ -15,12 +15,18 @@
  * chrome kind's NEUTRAL membership — the gate never decides on a domain role
  * name. Direction is domain -> neutral only; no reverse resolution exists.
  *
+ * I-012 closure: both membership tables (kind -> neutral roles, and the
+ * legacy kind -> identity-store-role view) are RUNTIME-DECLARED — the owning
+ * runtime publishes them through the runtime registry's neutral aliases, the
+ * neutral one derived through its declared domain mapping table. The gate
+ * hand-writes no role list; installing a runtime is a runtime-layer line.
+ *
  * The legacy identity-store role union (frontend/src/lib/roles.ts) is bridged
  * through the universal mapping engine below. The owning runtime declares the
- * authoritative mapping in its own layer
- * (the domain mapping table in the runtime layer); the bridge is deprecated and
- * proven coherent with that declaration by tests. It is deleted when identity
- * actors carry neutral roles natively (I-010 follow-through).
+ * authoritative mapping in its own layer and the gate consumes that
+ * declaration (deprecated bridge); coherence is proven by tests. It is
+ * deleted when identity actors carry neutral roles natively (I-010
+ * follow-through).
  *
  * Platform super-admin evaluation bypasses kind checks ONLY for codes the
  * runtime declared (mirrors the existing composite server gates). UI never
@@ -28,7 +34,6 @@
  */
 import type { AppRole } from "@/lib/roles";
 import {
-  defineDomainRoleMappings,
   isUniversalRole,
   resolveDomainRoleToNeutral,
   type DirectionalRoleMappings,
@@ -39,6 +44,17 @@ import {
   // The runtime layer names its own nav kinds; the platform gate speaks of them
   // generically, so the runtime's vocabulary never becomes the platform's.
   type ScholarNavKind as RuntimeNavKind,
+  // I-012 closure: the nav-kind membership tables below are RUNTIME-DECLARED —
+  // each installed runtime publishes {navKind -> its own roles} plus the neutral
+  // membership DERIVED through its declared domain mapping table (domain ->
+  // neutral only). The gate consumes the declarations through the runtime
+  // registry's neutral aliases and hand-writes no role list of its own.
+  RUNTIME_NAV_KIND_NEUTRAL_MEMBERSHIP,
+  RUNTIME_NAV_KIND_ROLE_ASSIGNMENTS,
+  // I-010 follow-through: the legacy identity-store role semantics are likewise
+  // the owning runtime's DECLARED mapping (authoritative there), consumed here
+  // under a neutral alias instead of being re-listed in the gate.
+  RUNTIME_DECLARED_LEGACY_ROLE_MAPPINGS,
 } from "@/lib/runtime/nav-registry";
 
 const CAPABILITY_CODE = /^([a-z0-9]+):([a-z0-9_]+)\.([a-z0-9_.]+)$/;
@@ -58,42 +74,28 @@ export function parseCapabilityCode(code: string): ParsedCapabilityCode | null {
 
 /* ─────────────────────────────────────────────────────────────
  * Neutral chrome-kind membership (V1CAP-014) — what each installed
- * chrome kind MEANS in the universal role vocabulary. The gate's
- * role checks resolve against THIS table.
+ * chrome kind MEANS in the universal role vocabulary. I-012 closure:
+ * this table is RUNTIME-DECLARED (each runtime derives its own kinds'
+ * neutral membership through its declared domain mapping table and
+ * publishes it via the runtime registry); the gate consumes it and
+ * owns none of the data.
  * ────────────────────────────────────────────────────────────*/
 export const NEUTRAL_ROLES_FOR_NAV_KIND: Readonly<
   Record<RuntimeNavKind, readonly UniversalRole[]>
-> = {
-  org_admin: ["ADMINISTRATOR"],
-  teacher: ["CONTRIBUTOR"],
-  bursar: ["OPERATOR"],
-  hq: ["SUPERVISOR"],
-  super_admin: ["ADMINISTRATOR", "SYSTEM"],
-  parent: ["MEMBER"],
-  student: ["MEMBER"],
-  driver: ["WORKER"],
-};
+> = RUNTIME_NAV_KIND_NEUTRAL_MEMBERSHIP;
 
 /**
- * LEGACY BRIDGE (I-010) — deprecated. Maps the legacy identity-store role
- * union FORWARD into the neutral vocabulary through the universal mapping
+ * LEGACY BRIDGE (I-010) — deprecated. The legacy identity-store role union
+ * resolves FORWARD into the neutral vocabulary through the universal mapping
  * engine, so the r001-era gate API keeps accepting identity-store roles while
  * every decision is made in neutral terms. The authoritative declaration of
- * these semantics is the owning runtime's domain mapping
- * (the domain mapping table in the runtime layer); coherence is test-enforced in
- * both directions. Deleted when identity actors carry neutral roles natively.
+ * these semantics is the owning runtime's domain mapping table, consumed here
+ * through the runtime registry's neutral alias — the gate re-lists no role.
+ * Coherence with the declared table is test-enforced in both directions.
+ * Deleted when identity actors carry neutral roles natively.
  */
-const LEGACY_IDENTITY_STORE_ROLE_MAPPINGS: DirectionalRoleMappings = defineDomainRoleMappings({
-  super_admin: ["ADMINISTRATOR", "SYSTEM"],
-  hq: ["SUPERVISOR"],
-  admin: ["ADMINISTRATOR"],
-  principal: ["ADMINISTRATOR"],
-  teacher: ["CONTRIBUTOR"],
-  bursar: ["OPERATOR"],
-  parent: ["MEMBER"],
-  student: ["MEMBER"],
-  driver: ["WORKER"],
-});
+const LEGACY_IDENTITY_STORE_ROLE_MAPPINGS: DirectionalRoleMappings =
+  RUNTIME_DECLARED_LEGACY_ROLE_MAPPINGS;
 
 /** Installed domain role mappings, in installation order (first declared wins). */
 export const INSTALLED_DOMAIN_ROLE_MAPPINGS: readonly {
@@ -117,17 +119,17 @@ export function neutralRolesForIdentityRole(role: string): readonly UniversalRol
   return null;
 }
 
-/** Membership kinds that satisfy a runtime chrome kind (P08-equivalent). */
-export const MEMBERSHIP_FOR_NAV_KIND: Readonly<Record<RuntimeNavKind, readonly AppRole[]>> = {
-  org_admin: ["admin", "principal"],
-  teacher: ["teacher"],
-  bursar: ["bursar"],
-  hq: ["hq"],
-  super_admin: ["super_admin"],
-  parent: ["parent"],
-  student: ["student"],
-  driver: ["driver"],
-};
+/**
+ * Membership kinds that satisfy a runtime chrome kind (P08-equivalent).
+ * I-012 closure: RUNTIME-DECLARED — the owning runtime states which of its own
+ * roles hold each of its own chrome kinds (domain vocabulary in the runtime
+ * layer); the platform consumes the declaration under this neutral alias and
+ * re-keys every decision to the NEUTRAL table above. The values are the
+ * legacy identity-store role strings, retained only while the deprecated
+ * I-010 bridge exists.
+ */
+export const MEMBERSHIP_FOR_NAV_KIND: Readonly<Record<RuntimeNavKind, readonly AppRole[]>> =
+  RUNTIME_NAV_KIND_ROLE_ASSIGNMENTS;
 
 const ROUTED_NAV_KINDS = Object.keys(MEMBERSHIP_FOR_NAV_KIND) as RuntimeNavKind[];
 

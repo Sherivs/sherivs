@@ -11,7 +11,8 @@
       "fail": "observed violation group absent from baselineEntries",
       "warn": "observed violation group present in baselineEntries (printed every run)",
       "ratchet": "baseline entry no longer observed — removable by the engineer who cleared it"
-    }
+    },
+    "lastRatchet": "2026-10-01: removed 6 capability-gate entries closed by MISSION-R-120 nav-kind re-keying (shrink-only)"
   },
   "summary": {
     "entryCount": 576,
@@ -3359,72 +3360,6 @@
         0
       ],
       "firstSnippet": "bus-tracking.functions.ts"
-    },
-    {
-      "file": "frontend/src/lib/capability-gate.ts",
-      "kind": "vocabulary",
-      "token": "bursar",
-      "streamIRef": "I-012/I-013",
-      "occurrences": 1,
-      "lines": [
-        43
-      ],
-      "firstSnippet": "bursar: [\"bursar\"],"
-    },
-    {
-      "file": "frontend/src/lib/capability-gate.ts",
-      "kind": "vocabulary",
-      "token": "principal",
-      "streamIRef": "I-012/I-013",
-      "occurrences": 1,
-      "lines": [
-        41
-      ],
-      "firstSnippet": "org_admin: [\"admin\", \"principal\"],"
-    },
-    {
-      "file": "frontend/src/lib/capability-gate.ts",
-      "kind": "vocabulary",
-      "token": "student",
-      "streamIRef": "I-012/I-013",
-      "occurrences": 1,
-      "lines": [
-        47
-      ],
-      "firstSnippet": "student: [\"student\"],"
-    },
-    {
-      "file": "frontend/src/lib/capability-gate.ts",
-      "kind": "vocabulary",
-      "token": "teacher",
-      "streamIRef": "I-012/I-013",
-      "occurrences": 1,
-      "lines": [
-        42
-      ],
-      "firstSnippet": "teacher: [\"teacher\"],"
-    },
-    {
-      "file": "frontend/src/lib/capability-gate.ts",
-      "kind": "vocabulary-literal",
-      "token": "driver",
-      "streamIRef": "I-012/I-013",
-      "occurrences": 1,
-      "lines": [
-        48
-      ],
-      "firstSnippet": "driver: [\"driver\"],"
-    },
-    {
-      "file": "frontend/src/lib/capability-gate.ts",
-      "kind": "vocabulary-literal",
-      "token": "parent",
-      "streamIRef": "I-012/I-013",
-      "occurrences": 1,
-      "lines": [
-        46
-      ],
-      "firstSnippet": "parent: [\"parent\"],"
     },
     {
       "file": "frontend/src/lib/class-levels.ts",

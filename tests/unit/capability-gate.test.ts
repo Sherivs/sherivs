@@ -283,3 +283,83 @@ describe("I-030 / I-031 closure at the gate (restaurant resolves without the Sch
     }
   });
 });
+
+/* ─────────────────────────────────────────────────────────────
+ * MISSION-R-120 / V1CAP-092 — I-012 CLOSURE (additive recertification).
+ * The nav-kind membership coupling is re-keyed to neutral roles and the
+ * tables are RUNTIME-DECLARED: Scholar nav kinds consume via the Scholar
+ * mapping table (in the runtime layer); the gate hand-writes no role list.
+ * Every export name, shape and decision is preserved.
+ * ────────────────────────────────────────────────────────────*/
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import {
+  RUNTIME_NAV_KIND_NEUTRAL_MEMBERSHIP,
+  RUNTIME_NAV_KIND_ROLE_ASSIGNMENTS,
+} from "../../frontend/src/lib/runtime/nav-registry";
+
+const GATE_PATH = join(
+  fileURLToPath(new URL("../..", import.meta.url)),
+  "frontend/src/lib/capability-gate.ts",
+);
+
+describe("I-012 closure: nav-kind membership is runtime-declared and neutral-keyed", () => {
+  it("MEMBERSHIP_FOR_NAV_KIND IS the runtime-declared assignment table (the gate owns no role list)", () => {
+    expect(MEMBERSHIP_FOR_NAV_KIND).toEqual(RUNTIME_NAV_KIND_ROLE_ASSIGNMENTS);
+  });
+
+  it("NEUTRAL_ROLES_FOR_NAV_KIND IS the runtime-declared neutral membership", () => {
+    expect(NEUTRAL_ROLES_FOR_NAV_KIND).toEqual(RUNTIME_NAV_KIND_NEUTRAL_MEMBERSHIP);
+  });
+
+  it("every chrome kind's neutral membership is DERIVED through the Scholar mapping table (forward resolution only)", () => {
+    for (const [kind, roles] of Object.entries(RUNTIME_NAV_KIND_ROLE_ASSIGNMENTS)) {
+      const derived: string[] = [];
+      for (const role of roles) {
+        const resolved = resolveDomainRoleToNeutral(SCHOLAR_NEUTRAL_ROLE_MAPPINGS, role);
+        expect(resolved, `role "${role}" of kind "${kind}"`).not.toBeNull();
+        for (const neutral of resolved ?? []) {
+          if (!derived.includes(neutral)) derived.push(neutral);
+        }
+      }
+      expect(derived, `kind "${kind}" derived through the declared mapping table`).toEqual([
+        ...NEUTRAL_ROLES_FOR_NAV_KIND[kind as keyof typeof NEUTRAL_ROLES_FOR_NAV_KIND],
+      ]);
+    }
+  });
+
+  it("the gate source hand-writes no legacy role list (I-012 correction: runtime-declared, not re-listed)", () => {
+    const source = readFileSync(GATE_PATH, "utf8");
+    expect(source).not.toMatch(/"(admin|principal|teacher|bursar|parent|student|driver|hq|super_admin)"/);
+  });
+
+  it("decision behavior is UNCHANGED: every decision equals the neutral-membership semantics", () => {
+    for (const [kind, roles] of Object.entries(MEMBERSHIP_FOR_NAV_KIND)) {
+      const code = [...SCHOLAR_FEATURE_CODES].find((c) => c.startsWith(`r001:${kind}.`));
+      expect(code, `kind "${kind}" has declared codes`).toBeDefined();
+      if (!code) continue;
+      for (const role of roles) {
+        const resolved = neutralRolesForIdentityRole(role);
+        expect(resolved, `role "${role}" resolves neutrally`).not.toBeNull();
+        for (const otherKind of Object.keys(MEMBERSHIP_FOR_NAV_KIND)) {
+          const otherCode = [...SCHOLAR_FEATURE_CODES].find((c) =>
+            c.startsWith(`r001:${otherKind}.`),
+          );
+          if (!otherCode) continue;
+          const expected = (resolved ?? []).some((neutral) =>
+            NEUTRAL_ROLES_FOR_NAV_KIND[otherKind as keyof typeof NEUTRAL_ROLES_FOR_NAV_KIND].includes(
+              neutral,
+            ),
+          )
+            ? "allow"
+            : "deny";
+          expect(
+            evaluateRuntimeCapability({ code: otherCode, role }).decision,
+            `${role} on ${otherCode}`,
+          ).toBe(expected);
+        }
+      }
+    }
+  });
+});

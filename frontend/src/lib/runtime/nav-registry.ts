@@ -18,6 +18,18 @@ export {
   // ("is this code declared by the runtime?") through this alias.
   isScholarFeatureCode as isDeclaredRuntimeFeatureCode,
 } from "./scholar-nav-catalog";
+export {
+  // I-012 closure: the nav-kind membership tables are RUNTIME-DECLARED. The
+  // runtime owns the domain-vocabulary statement (which of its roles hold which
+  // of its chrome kinds) and the derived neutral membership; the platform gate
+  // consumes both through these neutral aliases and holds no role list of its own.
+  SCHOLAR_NAV_KIND_ROLE_ASSIGNMENTS as RUNTIME_NAV_KIND_ROLE_ASSIGNMENTS,
+  SCHOLAR_NAV_KIND_NEUTRAL_MEMBERSHIP as RUNTIME_NAV_KIND_NEUTRAL_MEMBERSHIP,
+  // I-010 follow-through: the legacy identity-store role semantics are the
+  // runtime's DECLARED domain mapping (authoritative in the runtime layer);
+  // the platform gate consumes it under this neutral alias.
+  SCHOLAR_NEUTRAL_ROLE_MAPPINGS as RUNTIME_DECLARED_LEGACY_ROLE_MAPPINGS,
+} from "./scholar-role-mappings";
 
 export interface InstalledNavContributionSet {
   /** Manifest identifier of the installed runtime, e.g. runtime:scholar. */
