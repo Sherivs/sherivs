@@ -7,6 +7,34 @@
  *
  * Invariant 02: No authorization decision may rely solely on a username or role.
  * Invariant 12: No autonomous agent may silently escalate its own authority.
+ *
+ * Contract (decision inputs and precedence):
+ *
+ * Tenant boundary (AGENTS §13/§16/§26): when the acting identity carries a
+ * `tenantId` and the requested permission scope carries a tenant (the
+ * substring before the first ":" in the scope string), the two must match.
+ * A mismatch can never produce ALLOW: the request is DENIED at the tenant
+ * gate before PBAC, ABAC, RBAC, or ReBAC are consulted. Scope-null grants
+ * therefore cannot authorize another tenant's objects, and a relationship
+ * recorded against a foreign tenant's target cannot authorize either. An
+ * identity without a `tenantId` (platform-level) and a scope that carries
+ * no tenant segment are not constrained by this gate. The tenant identity
+ * used for the comparison is resolved server-side from the request; it is
+ * never accepted from callers as an override.
+ *
+ * Relationship activity: a relationship grants authority only while
+ * `revokedAt === null` AND (`expiresAt === null` or `expiresAt` is in the
+ * future relative to the request time). Expiry is identical to revocation:
+ * an expired grant no longer exists, and any decision path it would have
+ * enabled falls back to the deny path. The request time is `abac.now`
+ * (RFC 3339) when provided, otherwise `Date.now()`.
+ *
+ * Agent authority (`AuthorizeOptions.isAgent`, Invariant 12): role
+ * membership is never a source of agent authority. An agent identity
+ * receives ALLOW only through explicit delegation — `extraPermissions`
+ * granted to it or an explicit `owns`/`manages` relationship — never
+ * through `ROLE_PERMISSIONS`. Undelegated agent requests deny with an
+ * agent-specific reason so the enforcement point is observable.
  */
 
 import type {
@@ -207,9 +235,42 @@ export function hasRelationship(
   type: IdentityRelationship["type"],
   targetId: string,
 ): boolean {
+  // Expiry is evaluated against wall-clock time: this helper has no request
+  // context, so there is no `abac.now` to honor (see contract above).
   return relationships.some(
-    (r) => r.type === type && r.targetId === targetId && r.revokedAt === null,
+    (r) =>
+      r.type === type && r.targetId === targetId && isRelationshipActive(r, Date.now()),
   );
+}
+
+/** A relationship is active only while unrevoked and unexpired. */
+function isRelationshipActive(r: IdentityRelationship, nowMs: number): boolean {
+  if (r.revokedAt !== null) return false;
+  if (r.expiresAt !== null) {
+    const expiryMs = Date.parse(r.expiresAt);
+    // An unparseable expiry fails closed.
+    if (Number.isNaN(expiryMs) || expiryMs <= nowMs) return false;
+  }
+  return true;
+}
+
+/** Resolve the request time: ABAC `now` when provided (RFC 3339), else wall clock. */
+function resolveNowMs(abac?: AbacContext): number {
+  if (abac?.now !== undefined) {
+    const parsed = Date.parse(abac.now);
+    if (!Number.isNaN(parsed)) return parsed;
+  }
+  return Date.now();
+}
+
+/**
+ * Extract the tenant segment of a scope string: the substring before the
+ * first ":". A scope with no ":" carries no tenant and is not checked.
+ */
+function scopeTenant(scope: string | null): string | null {
+  if (scope === null) return null;
+  const separator = scope.indexOf(":");
+  return separator === -1 ? null : scope.slice(0, separator);
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -266,7 +327,12 @@ export interface AuthorizeOptions {
   policySet?: PolicySet;
   /** ABAC context. */
   abac?: AbacContext;
-  /** When true, the actor is an AI agent (Invariant 12). */
+  /**
+   * When true, the actor is an AI agent (Invariant 12): role grants are not
+   * a source of agent authority. The agent receives ALLOW only through
+   * explicit delegation (extraPermissions or an owns/manages relationship);
+   * every other path denies with an agent-specific reason.
+   */
   isAgent?: boolean;
 }
 
@@ -275,11 +341,12 @@ export interface AuthorizeOptions {
  *
  * Order of evaluation:
  *   1. Identity lifecycle gate (identity must be usable)
- *   2. PBAC policy set (explicit policy wins)
- *   3. ABAC context (risk/device)
- *   4. RBAC role grants + extra permissions
- *   5. ReBAC relationship grants
- *   6. Default DENY
+ *   2. Tenant boundary gate (identity tenant must match scope tenant)
+ *   3. PBAC policy set (explicit policy wins)
+ *   4. ABAC context (risk/device)
+ *   5. RBAC role grants + extra permissions (agents: explicit delegation only)
+ *   6. ReBAC relationship grants (active relationships only)
+ *   7. Default DENY
  */
 export function authorize(req: AuthorizationRequest, opts: AuthorizeOptions): AuthorizationResult {
   // 1. Identity lifecycle gate.
@@ -290,20 +357,39 @@ export function authorize(req: AuthorizationRequest, opts: AuthorizeOptions): Au
     };
   }
 
-  // 2. PBAC policy set.
+  // 2. Tenant boundary gate. Tenant context is mandatory (AGENTS §13) and
+  // resolved server-side — never trusted from callers. A scope carrying a
+  // tenant different from the acting identity's can never be ALLOW; the
+  // request denies before any grant or policy layer is consulted.
+  const identityTenant = req.identity.tenantId;
+  const requestedTenant = scopeTenant(req.permission.scope);
+  if (identityTenant !== null && requestedTenant !== null && requestedTenant !== identityTenant) {
+    return {
+      decision: "DENY",
+      reason: "Tenant boundary violation: requested scope belongs to a different tenant",
+    };
+  }
+
+  // 3. PBAC policy set.
   if (opts.policySet) {
     const policyResult = evaluatePolicySet(opts.policySet, req);
     if (policyResult) return policyResult;
   }
 
-  // 3. ABAC context.
+  // 4. ABAC context.
   if (opts.abac) {
     const abacResult = evaluateAbac(req, opts.abac);
     if (abacResult) return abacResult;
   }
 
-  // 4. RBAC role grants + extra permissions.
-  const roleGrants = ROLE_PERMISSIONS[opts.role] ?? [];
+  // 5. RBAC role grants + extra permissions.
+  // Invariant 12: role membership is never a source of agent authority.
+  // An agent acting under `isAgent` must hold every role-equivalent grant
+  // through explicit delegation (extraPermissions) or an explicit
+  // relationship grant below.
+  const roleGrants: readonly Permission[] = opts.isAgent
+    ? []
+    : (ROLE_PERMISSIONS[opts.role] ?? []);
   const allGrants = [...roleGrants, ...(opts.extraPermissions ?? [])];
 
   const hasGrant = allGrants.some(
@@ -317,10 +403,12 @@ export function authorize(req: AuthorizationRequest, opts: AuthorizeOptions): Au
     return { decision: "ALLOW", reason: "Granted by role or explicit permission" };
   }
 
-  // 5. ReBAC relationship grants.
+  // 6. ReBAC relationship grants. Expired relationships are treated exactly
+  // like revoked ones: the grant no longer exists (see contract above).
+  const nowMs = resolveNowMs(opts.abac);
   const relationshipGrant = req.relationships.some(
     (r) =>
-      r.revokedAt === null &&
+      isRelationshipActive(r, nowMs) &&
       r.targetId === req.permission.scope &&
       (r.type === "owns" || r.type === "manages"),
   );
@@ -329,7 +417,13 @@ export function authorize(req: AuthorizationRequest, opts: AuthorizeOptions): Au
     return { decision: "ALLOW", reason: "Granted by relationship" };
   }
 
-  // 6. Default DENY.
+  // 7. Default DENY.
+  if (opts.isAgent) {
+    return {
+      decision: "DENY",
+      reason: "Agent authority requires explicit delegation (Invariant 12)",
+    };
+  }
   return {
     decision: "DENY",
     reason: "No matching grant or policy",
