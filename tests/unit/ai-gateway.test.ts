@@ -8,6 +8,7 @@ import {
   createAiGatewayProvider,
   createRateLimiter,
   invokeAiGateway,
+  AI_GATEWAY_FAILURE_POLICY,
   type AiGatewayInvokeRequest,
   type AiGatewayProvider,
 } from "../../frontend/src/lib/ai-gateway.server";
@@ -18,6 +19,33 @@ import {
   type UsageRecord,
 } from "../../frontend/src/lib/metering/usage-ledger";
 import type { LogSink } from "../../frontend/src/lib/observability/structured-log";
+import {
+  createAdapterFailurePolicy,
+  type AdapterClock,
+} from "../../frontend/src/lib/adapters/failure-policy";
+
+/** Deferred-delay clock: the timeout fires only when the test fires it. */
+function manualClock(startMs = 1_000_000) {
+  const now = startMs;
+  const pending: (() => void)[] = [];
+  const clock: AdapterClock = {
+    nowMs: () => now,
+    delay: () =>
+      new Promise<void>((resolve) => {
+        pending.push(resolve);
+      }),
+  };
+  return {
+    clock,
+    fireDelays(): void {
+      const all = pending.splice(0, pending.length);
+      for (const fire of all) fire();
+    },
+  };
+}
+
+/** Flush queued microtasks so the policy has registered its timeout delay. */
+const tick = (): Promise<void> => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
 /**
  * Fixture credential marker. Every redaction assertion in this file checks
@@ -150,9 +178,7 @@ describe("redaction (no key values in any log output)", () => {
   it("scrubs a key sourced from the environment fallback", async () => {
     process.env.AI_API_KEY = FIXTURE_KEY;
     const { lines, sink } = captureSink();
-    const outcome = await invokeAiGateway(
-      baseRequest({ apiKey: undefined, logSink: sink }),
-    );
+    const outcome = await invokeAiGateway(baseRequest({ apiKey: undefined, logSink: sink }));
     expect(outcome.decision).toBe("allow");
     for (const line of lines) {
       expect(line).not.toContain(FIXTURE_KEY);
@@ -223,16 +249,14 @@ describe("budget pre-check (ledger consulted before invocation)", () => {
   });
 
   it("does not consult a budget when no ledger is supplied", async () => {
-    const outcome = await invokeAiGateway(
-      baseRequest({ budget: { maxRequests: 0 } }),
-    );
+    const outcome = await invokeAiGateway(baseRequest({ budget: { maxRequests: 0 } }));
     expect(outcome.decision).toBe("allow");
   });
 });
 
 describe("rate limiting (sliding window, boundary cases)", () => {
   it("allows maxRequests then denies the next within the window", async () => {
-    let clock = 1_000_000;
+    const clock = 1_000_000;
     const limiter = createRateLimiter({ maxRequests: 2, windowMs: 1_000 });
     const first = await invokeAiGateway(baseRequest({ rateLimiter: limiter, now: () => clock }));
     const second = await invokeAiGateway(baseRequest({ rateLimiter: limiter, now: () => clock }));
@@ -252,10 +276,16 @@ describe("rate limiting (sliding window, boundary cases)", () => {
     let clock = 1_000_000;
     const limiter = createRateLimiter({ maxRequests: 1, windowMs: 500 });
     const now = () => clock;
-    expect((await invokeAiGateway(baseRequest({ rateLimiter: limiter, now }))).decision).toBe("allow");
-    expect((await invokeAiGateway(baseRequest({ rateLimiter: limiter, now }))).decision).toBe("deny");
+    expect((await invokeAiGateway(baseRequest({ rateLimiter: limiter, now }))).decision).toBe(
+      "allow",
+    );
+    expect((await invokeAiGateway(baseRequest({ rateLimiter: limiter, now }))).decision).toBe(
+      "deny",
+    );
     clock += 501;
-    expect((await invokeAiGateway(baseRequest({ rateLimiter: limiter, now }))).decision).toBe("allow");
+    expect((await invokeAiGateway(baseRequest({ rateLimiter: limiter, now }))).decision).toBe(
+      "allow",
+    );
   });
 
   it("reports a positive retryAfterMs at the boundary", () => {
@@ -399,5 +429,127 @@ describe("metering hooks and attribution completeness (Part 49)", () => {
     );
     expect(outcome.decision).toBe("allow");
     expect(typeof received).toBe("function");
+  });
+});
+
+/* ─────────────────────────────────────────────────────────────
+ * J-045 failure-policy wiring (additive; legacy path unchanged)
+ * ────────────────────────────────────────────────────────────*/
+
+describe("adapter failure policy wiring (J-045)", () => {
+  function wiredPolicy() {
+    return createAdapterFailurePolicy({
+      provider: "ai-gateway",
+      timeoutMs: 1_000,
+      maxAttempts: 1,
+      backoffBaseMs: 100,
+      backoffCapMs: 1_000,
+      degradedAfterFailures: 2,
+      degradedWindowMs: 10_000,
+      breakerFailureThreshold: 3,
+      breakerResetMs: 5_000,
+    });
+  }
+
+  it("declares the module-level gateway policy", () => {
+    expect(AI_GATEWAY_FAILURE_POLICY.snapshot().provider).toBe("ai-gateway");
+    expect(AI_GATEWAY_FAILURE_POLICY.snapshot().declared.maxAttempts).toBe(1);
+  });
+
+  it("returns a contained provider_failed denial instead of rethrowing", async () => {
+    const policy = wiredPolicy();
+    const ledger = new UsageLedger(RATES);
+    const outcome = await invokeAiGateway(
+      baseRequest({
+        ledger,
+        failurePolicy: policy,
+        invoke: async () => {
+          throw new Error("provider down");
+        },
+      }),
+    );
+    expect(outcome.decision).toBe("deny");
+    if (outcome.decision === "deny") {
+      expect(outcome.code).toBe("provider_failed");
+      expect(outcome.reason).toContain("provider down");
+      expect(outcome.reason).toContain("adapter boundary");
+    }
+    expect(ledger.all()).toHaveLength(0);
+    expect(policy.snapshot()).toMatchObject({
+      provider: "ai-gateway",
+      totalCalls: 1,
+      totalFailures: 1,
+      consecutiveFailures: 1,
+    });
+    expect(policy.trustBasis().totalFailures).toBe(1);
+  });
+
+  it("enforces the per-call timeout on a hung provider", async () => {
+    const time = manualClock();
+    const policy = createAdapterFailurePolicy({
+      provider: "ai-gateway",
+      timeoutMs: 1_000,
+      maxAttempts: 1,
+      backoffBaseMs: 100,
+      backoffCapMs: 1_000,
+      degradedAfterFailures: 2,
+      degradedWindowMs: 10_000,
+      breakerFailureThreshold: 3,
+      breakerResetMs: 5_000,
+      clock: time.clock,
+    });
+    const pendingInvoke = invokeAiGateway(
+      baseRequest({
+        failurePolicy: policy,
+        invoke: () => new Promise<never>(() => {}),
+      }),
+    );
+    await tick();
+    time.fireDelays();
+    const outcome = await pendingInvoke;
+    expect(outcome.decision).toBe("deny");
+    if (outcome.decision === "deny") {
+      expect(outcome.code).toBe("provider_failed");
+      expect(outcome.reason).toContain("timeout");
+    }
+  });
+
+  it("still meters usage on success through the policy path", async () => {
+    const policy = wiredPolicy();
+    const ledger = new UsageLedger(RATES);
+    const outcome = await invokeAiGateway(
+      baseRequest({ ledger, rates: RATES, failurePolicy: policy }),
+    );
+    expect(outcome.decision).toBe("allow");
+    expect(ledger.all()).toHaveLength(1);
+    expect(policy.snapshot()).toMatchObject({ totalCalls: 1, totalFailures: 0 });
+  });
+
+  it("arms degraded mode after repeated contained failures", async () => {
+    const policy = wiredPolicy();
+    for (let i = 0; i < 2; i += 1) {
+      await invokeAiGateway(
+        baseRequest({
+          failurePolicy: policy,
+          invoke: async () => {
+            throw new Error("provider down");
+          },
+        }),
+      );
+    }
+    const snap = policy.snapshot();
+    expect(snap.mode).toBe("degraded");
+    expect(snap.degradedActive).toBe(true);
+    // Two failures stay below the trust floor (breaker threshold 3).
+    expect(policy.recommendTrust().verdict).toBe("unproven");
+    await invokeAiGateway(
+      baseRequest({
+        failurePolicy: policy,
+        invoke: async () => {
+          throw new Error("provider down");
+        },
+      }),
+    );
+    expect(policy.recommendTrust().verdict).toBe("untrusted");
   });
 });

@@ -7,9 +7,11 @@ import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
   createStripeAdapter,
+  STRIPE_FAILURE_POLICY,
   parseStripeWebhook,
   verifyStripeSignature,
 } from "../../frontend/src/lib/payments/stripe-adapter";
+import { createAdapterFailurePolicy } from "../../frontend/src/lib/adapters/failure-policy";
 import type { WebhookRequest } from "../../frontend/src/lib/payments/payment-contract";
 import { money } from "../../frontend/src/lib/financial-core";
 import { tenantId } from "../../frontend/src/lib/tenant-core";
@@ -60,11 +62,12 @@ describe("verifyStripeSignature", () => {
 
   it("accepts any rotated v1 signature in the header", () => {
     const rotated = signedRequest(successBody, { secret: "test-secret-fixture-rotated" });
-    const both = `t=${NOW_SEC},v1=${stripeSignature(successBody, NOW_SEC).split("v1=")[1]},v1=${
-      createHmac("sha256", "test-secret-fixture-rotated")
-        .update(`${NOW_SEC}.${successBody}`)
-        .digest("hex")
-    }`;
+    const both = `t=${NOW_SEC},v1=${stripeSignature(successBody, NOW_SEC).split("v1=")[1]},v1=${createHmac(
+      "sha256",
+      "test-secret-fixture-rotated",
+    )
+      .update(`${NOW_SEC}.${successBody}`)
+      .digest("hex")}`;
     const result = verifyStripeSignature(
       { signingSecret: FIXTURE_SECRET },
       { ...rotated, headers: { "stripe-signature": both } },
@@ -120,12 +123,7 @@ describe("verifyStripeSignature", () => {
     };
     expect(verifyStripeSignature({ signingSecret: FIXTURE_SECRET }, missing).ok).toBe(false);
 
-    for (const bad of [
-      "t=abc,v1=deadbeef",
-      "v1=" + "a".repeat(64),
-      "t=1727740000",
-      "garbage",
-    ]) {
+    for (const bad of ["t=abc,v1=deadbeef", "v1=" + "a".repeat(64), "t=1727740000", "garbage"]) {
       const result = verifyStripeSignature(
         { signingSecret: FIXTURE_SECRET },
         signedRequest(successBody, { signature: bad }),
@@ -138,7 +136,10 @@ describe("verifyStripeSignature", () => {
 
 describe("parseStripeWebhook", () => {
   it("translates a signed payment_intent.succeeded into a CoreGrid payment event", () => {
-    const result = parseStripeWebhook({ signingSecret: FIXTURE_SECRET }, signedRequest(successBody));
+    const result = parseStripeWebhook(
+      { signingSecret: FIXTURE_SECRET },
+      signedRequest(successBody),
+    );
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.event.type).toBe("payment.succeeded");
@@ -153,10 +154,7 @@ describe("parseStripeWebhook", () => {
 
   it("rejects a replayed event that is signed but stale", () => {
     const replay = signedRequest(successBody, { timestamp: NOW_SEC - 600 });
-    const result = parseStripeWebhook(
-      { signingSecret: FIXTURE_SECRET, toleranceSec: 300 },
-      replay,
-    );
+    const result = parseStripeWebhook({ signingSecret: FIXTURE_SECRET, toleranceSec: 300 }, replay);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.code).toBe("signature_invalid");
   });
@@ -201,5 +199,111 @@ describe("createStripeAdapter contract", () => {
   it("declares refunds unsupported while BLK-4 blocks live execution", () => {
     expect(adapter.capabilities.refunds).toBe(false);
     expect(adapter.refund).toBeUndefined();
+  });
+});
+
+/* ─────────────────────────────────────────────────────────────
+ * J-045 failure-semantics wiring (additive; results unchanged)
+ * ────────────────────────────────────────────────────────────*/
+
+describe("stripe adapter failure policy (J-045)", () => {
+  /** Fresh policy per test: counters must be deterministic, never shared. */
+  const freshPolicy = () =>
+    createAdapterFailurePolicy({
+      provider: "stripe",
+      timeoutMs: 5_000,
+      maxAttempts: 1,
+      backoffBaseMs: 250,
+      backoffCapMs: 4_000,
+      degradedAfterFailures: 3,
+      degradedWindowMs: 60_000,
+      breakerFailureThreshold: 5,
+      breakerResetMs: 30_000,
+    });
+
+  it("declares its policy instance with timeouts and thresholds", () => {
+    const adapter = createStripeAdapter({
+      signingSecret: FIXTURE_SECRET,
+      failurePolicy: freshPolicy(),
+    });
+    expect(STRIPE_FAILURE_POLICY.snapshot().provider).toBe("stripe");
+    const snap = adapter.failurePolicy.snapshot();
+    expect(snap.provider).toBe("stripe");
+    expect(snap.declared.timeoutMs).toBe(5_000);
+    expect(snap.declared.maxAttempts).toBe(1);
+    expect(snap.declared.breakerFailureThreshold).toBe(5);
+  });
+
+  it("contains adapter-internal defects and fails closed on signatures", () => {
+    // A non-string signing secret makes the HMAC construction throw — the
+    // adapter must contain the defect and fail closed, never propagate it.
+    const hostile = createStripeAdapter({
+      signingSecret: 12_345 as unknown as string,
+      failurePolicy: freshPolicy(),
+    });
+    const verified = hostile.verifySignature(signedRequest(successBody));
+    expect(verified.ok).toBe(false);
+    if (!verified.ok) {
+      expect(verified.code).toBe("signature_mismatch");
+      expect(verified.reason).toContain("contained");
+    }
+    const parsed = hostile.parseWebhook(signedRequest(successBody));
+    expect(parsed.ok).toBe(false);
+    if (!parsed.ok) {
+      expect(parsed.code).toBe("malformed_payload");
+      expect(parsed.reason).toContain("contained");
+    }
+  });
+
+  it("contains intent-creation defects without fabricating an intent", () => {
+    const adapter = createStripeAdapter({
+      signingSecret: FIXTURE_SECRET,
+      failurePolicy: freshPolicy(),
+    });
+    const result = adapter.createIntent(
+      {
+        tenantId: null as unknown as ReturnType<typeof tenantId>,
+        payerRef: "user-0001",
+        amount: money(12_500, "USD"),
+        purpose: { kind: "invoice_payment", ref: "invoice-0009" },
+      },
+      "2026-10-01T00:00:00.000Z",
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.code).toBe("invalid_reference");
+      expect(result.reason).toContain("contained");
+    }
+  });
+
+  it("feeds contained failures into degraded mode and the trust history", () => {
+    const adapter = createStripeAdapter({
+      signingSecret: 12_345 as unknown as string,
+      failurePolicy: freshPolicy(),
+    });
+    for (let i = 0; i < 3; i += 1) {
+      expect(adapter.verifySignature(signedRequest(successBody)).ok).toBe(false);
+    }
+    const snap = adapter.failurePolicy.snapshot();
+    expect(snap.consecutiveFailures).toBe(3);
+    expect(snap.mode).toBe("degraded");
+    expect(snap.degradedActive).toBe(true);
+    expect(adapter.failurePolicy.trustBasis().totalFailures).toBe(3);
+    // Below the trust floor (threshold 5): distrust must not be premature.
+    expect(adapter.failurePolicy.recommendTrust().verdict).toBe("unproven");
+
+    for (let i = 0; i < 2; i += 1) {
+      expect(adapter.verifySignature(signedRequest(successBody)).ok).toBe(false);
+    }
+    // Crossing the breaker threshold feeds the untrusted recommendation.
+    expect(adapter.failurePolicy.recommendTrust().verdict).toBe("untrusted");
+
+    // A healthy operation clears the degraded episode.
+    const restored = createStripeAdapter({
+      signingSecret: FIXTURE_SECRET,
+      failurePolicy: freshPolicy(),
+    });
+    expect(restored.verifySignature(signedRequest(successBody)).ok).toBe(true);
+    expect(restored.failurePolicy.snapshot().consecutiveFailures).toBe(0);
   });
 });

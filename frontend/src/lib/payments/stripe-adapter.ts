@@ -27,19 +27,52 @@ import {
 } from "./payment-contract";
 import { money, type Money } from "../financial-core";
 import { tenantId } from "../tenant-core";
+import { createAdapterFailurePolicy, type AdapterFailurePolicy } from "../adapters/failure-policy";
 
 export interface StripeAdapterConfig {
   /** Webhook signing secret (`whsec_...` in live mode). */
   signingSecret: string;
   /** Max age of the signed timestamp in seconds (default 300). */
   toleranceSec?: number;
+  /**
+   * J-045: declared failure-semantics policy. Defaults to
+   * `STRIPE_FAILURE_POLICY` when omitted; injected instances allow tests
+   * and deployments to tune thresholds without changing the contract.
+   */
+  failurePolicy?: AdapterFailurePolicy;
 }
+
+/**
+ * Declared failure-semantics policy for the Stripe adapter (J-045). Under
+ * BLK-4 all operations are local, so containment is synchronous; the
+ * declared timeout binds the future external-call surface when the block
+ * lifts. Webhook processing is exactly-once via the replay guard — the
+ * transport never retries.
+ */
+export const STRIPE_FAILURE_POLICY: AdapterFailurePolicy = createAdapterFailurePolicy({
+  provider: "stripe",
+  timeoutMs: 5_000,
+  maxAttempts: 1,
+  backoffBaseMs: 250,
+  backoffCapMs: 4_000,
+  degradedAfterFailures: 3,
+  degradedWindowMs: 60_000,
+  breakerFailureThreshold: 5,
+  breakerResetMs: 30_000,
+});
+
+/** The Stripe adapter plus its declared failure policy (J-045, additive). */
+export type StripeAdapter = PaymentAdapter & {
+  readonly failurePolicy: AdapterFailurePolicy;
+};
 
 const SIGNATURE_HEADER = "stripe-signature";
 const DEFAULT_TOLERANCE_SEC = 300;
 
 /** Stripe webhook event types this adapter understands (fail closed otherwise). */
-const KNOWN_EVENTS: Readonly<Record<string, "payment.succeeded" | "payment.failed" | "payment.refunded">> = {
+const KNOWN_EVENTS: Readonly<
+  Record<string, "payment.succeeded" | "payment.failed" | "payment.refunded">
+> = {
   "payment_intent.succeeded": "payment.succeeded",
   "payment_intent.payment_failed": "payment.failed",
   "charge.refunded": "payment.refunded",
@@ -103,7 +136,11 @@ export function verifyStripeSignature(
   }
   const parsed = parseStripeSignatureHeader(header);
   if (!parsed) {
-    return { ok: false, code: "malformed_signature", reason: "stripe-signature header is malformed" };
+    return {
+      ok: false,
+      code: "malformed_signature",
+      reason: "stripe-signature header is malformed",
+    };
   }
 
   const tolerance = config.toleranceSec ?? DEFAULT_TOLERANCE_SEC;
@@ -123,11 +160,13 @@ export function verifyStripeSignature(
     .digest("hex");
   // Stripe may emit multiple v1 entries during key rotation — any valid
   // match accepts, every mismatch denies.
-  const matched = parsed.signatures.some((candidate) =>
-    constantTimeHexEquals(candidate, expected),
-  );
+  const matched = parsed.signatures.some((candidate) => constantTimeHexEquals(candidate, expected));
   if (!matched) {
-    return { ok: false, code: "signature_mismatch", reason: "Webhook signature does not match payload" };
+    return {
+      ok: false,
+      code: "signature_mismatch",
+      reason: "Webhook signature does not match payload",
+    };
   }
   return { ok: true };
 }
@@ -163,7 +202,8 @@ export function parseStripeWebhook(
   }
 
   const object = parsed.data?.object ?? null;
-  const providerReference = typeof object?.id === "string" && object.id.trim() !== "" ? object.id : null;
+  const providerReference =
+    typeof object?.id === "string" && object.id.trim() !== "" ? object.id : null;
   const amount = object?.amount;
   const currency = object?.currency;
   if (
@@ -206,33 +246,67 @@ export function parseStripeWebhook(
  * the refund capability stays false until the block is lifted, so the
  * contract never promises what it cannot deliver.
  */
-export function createStripeAdapter(config: StripeAdapterConfig): PaymentAdapter {
+export function createStripeAdapter(config: StripeAdapterConfig): StripeAdapter {
+  const policy = config.failurePolicy ?? STRIPE_FAILURE_POLICY;
   return {
     provider: "stripe",
     capabilities: { refunds: false },
+    failurePolicy: policy,
     createIntent(reference, now) {
-      const validation = validatePaymentReference(reference);
-      if (!validation.ok) {
-        return { ok: false, code: "invalid_reference", reason: validation.reason };
-      }
-      return {
-        ok: true,
-        intent: {
-          id: `intent_stripe_${reference.purpose.kind}_${reference.purpose.ref}_${now}`,
-          reference,
-          provider: "stripe",
-          providerReference: null,
-          idempotencyKey: deriveIdempotencyKey(reference),
-          status: "created",
-          createdAt: now,
-        },
-      };
+      const outcome = policy.containSync("stripe.createIntent", () => {
+        const validation = validatePaymentReference(reference);
+        if (!validation.ok) {
+          return {
+            ok: false as const,
+            code: "invalid_reference" as const,
+            reason: validation.reason,
+          };
+        }
+        return {
+          ok: true as const,
+          intent: {
+            id: `intent_stripe_${reference.purpose.kind}_${reference.purpose.ref}_${now}`,
+            reference,
+            provider: "stripe",
+            providerReference: null,
+            idempotencyKey: deriveIdempotencyKey(reference),
+            status: "created" as const,
+            createdAt: now,
+          },
+        };
+      });
+      // Fail closed: a contained defect can never fabricate an intent.
+      return outcome.outcome === "ok"
+        ? outcome.value
+        : {
+            ok: false,
+            code: "invalid_reference",
+            reason: `intent creation failed closed (contained: ${outcome.reason})`,
+          };
     },
     verifySignature(request) {
-      return verifyStripeSignature(config, request);
+      const outcome = policy.containSync("stripe.verifySignature", () =>
+        verifyStripeSignature(config, request),
+      );
+      return outcome.outcome === "ok"
+        ? outcome.value
+        : {
+            ok: false,
+            code: "signature_mismatch",
+            reason: `signature verification failed closed (contained: ${outcome.reason})`,
+          };
     },
     parseWebhook(request) {
-      return parseStripeWebhook(config, request);
+      const outcome = policy.containSync("stripe.parseWebhook", () =>
+        parseStripeWebhook(config, request),
+      );
+      return outcome.outcome === "ok"
+        ? outcome.value
+        : {
+            ok: false,
+            code: "malformed_payload",
+            reason: `webhook processing failed closed (contained: ${outcome.reason})`,
+          };
     },
   };
 }

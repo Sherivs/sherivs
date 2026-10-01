@@ -14,31 +14,44 @@
  * tenant prefix check, or any key material.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createAdapterFailurePolicy, type AdapterFailurePolicy } from "../adapters/failure-policy";
 import { sanitizeFilename } from "./file-contract";
 
 /** Single V1 bucket; objects are always `tenant_id/purpose/filename`. */
 export const FILE_BUCKET = "coregrid-files";
 
+/**
+ * Declared failure-semantics policy for the storage adapter (J-045). Reads
+ * are idempotent and may retry once; callers may inject their own instance
+ * via `FileStorageClient.failurePolicy`.
+ */
+export const STORAGE_FAILURE_POLICY: AdapterFailurePolicy = createAdapterFailurePolicy({
+  provider: "supabase-storage",
+  timeoutMs: 10_000,
+  maxAttempts: 2,
+  backoffBaseMs: 200,
+  backoffCapMs: 2_000,
+  degradedAfterFailures: 3,
+  degradedWindowMs: 30_000,
+  breakerFailureThreshold: 5,
+  breakerResetMs: 15_000,
+});
+
 export interface FileStorageClient {
   client: SupabaseClient;
   bucket?: string;
+  /** J-045: declared adapter failure policy; defaulted when omitted. */
+  failurePolicy?: AdapterFailurePolicy;
 }
 
-export type FileStorageDenyCode =
-  | "tenant_path_required"
-  | "unsafe_object_key"
-  | "storage_error";
+export type FileStorageDenyCode = "tenant_path_required" | "unsafe_object_key" | "storage_error";
 
 /** Internal result for path construction (fail closed). */
 type ObjectPathResult =
   | { ok: true; objectPath: string }
   | { ok: false; code: "tenant_path_required" | "unsafe_object_key"; reason: string };
 
-function buildObjectPath(
-  tenantId: string,
-  purpose: string,
-  filename: string,
-): ObjectPathResult {
+function buildObjectPath(tenantId: string, purpose: string, filename: string): ObjectPathResult {
   if (!tenantId.trim()) {
     return { ok: false, code: "tenant_path_required", reason: "tenantId is required" };
   }
@@ -70,7 +83,8 @@ function buildObjectPath(
 export function assertTenantScopedPath(
   tenantId: string,
   objectPath: string,
-): { ok: true } | { ok: false; code: "tenant_path_required" | "unsafe_object_key"; reason: string } {
+):
+  { ok: true } | { ok: false; code: "tenant_path_required" | "unsafe_object_key"; reason: string } {
   if (!tenantId.trim()) {
     return { ok: false, code: "tenant_path_required", reason: "tenantId is required" };
   }
@@ -102,8 +116,7 @@ export type PutTenantObjectInput = {
 };
 
 export type PutTenantObjectResult =
-  | { ok: true; objectPath: string }
-  | { ok: false; code: FileStorageDenyCode; reason: string };
+  { ok: true; objectPath: string } | { ok: false; code: FileStorageDenyCode; reason: string };
 
 export async function putTenantObject(
   deps: FileStorageClient,
@@ -111,18 +124,27 @@ export async function putTenantObject(
 ): Promise<PutTenantObjectResult> {
   const path = buildObjectPath(input.tenantId, input.purpose, input.filename);
   if (!path.ok) return path;
-  const { error } = await deps.client.storage
-    .from(deps.bucket ?? FILE_BUCKET)
-    .upload(path.objectPath, input.body, { contentType: input.contentType });
-  if (error) {
-    return { ok: false, code: "storage_error", reason: error.message };
+  const policy = deps.failurePolicy ?? STORAGE_FAILURE_POLICY;
+  const outcome = await policy.run({
+    operation: "storage.put",
+    // Uploads are non-idempotent writes: never transport-retried.
+    maxAttempts: 1,
+    call: async () => {
+      const { data, error } = await deps.client.storage
+        .from(deps.bucket ?? FILE_BUCKET)
+        .upload(path.objectPath, input.body, { contentType: input.contentType });
+      if (error) throw new Error(error.message);
+      return data;
+    },
+  });
+  if (outcome.outcome === "error") {
+    return { ok: false, code: "storage_error", reason: outcome.reason };
   }
   return { ok: true, objectPath: path.objectPath };
 }
 
 export type GetTenantObjectResult =
-  | { ok: true; data: Blob }
-  | { ok: false; code: FileStorageDenyCode; reason: string };
+  { ok: true; data: Blob } | { ok: false; code: FileStorageDenyCode; reason: string };
 
 export async function getTenantObject(
   deps: FileStorageClient,
@@ -131,13 +153,22 @@ export async function getTenantObject(
 ): Promise<GetTenantObjectResult> {
   const scoped = assertTenantScopedPath(tenantId, objectPath);
   if (!scoped.ok) return scoped;
-  const { data, error } = await deps.client.storage
-    .from(deps.bucket ?? FILE_BUCKET)
-    .download(objectPath);
-  if (error || !data) {
-    return { ok: false, code: "storage_error", reason: error?.message ?? "object not found" };
+  const policy = deps.failurePolicy ?? STORAGE_FAILURE_POLICY;
+  const outcome = await policy.run({
+    operation: "storage.get",
+    call: async () => {
+      const { data, error } = await deps.client.storage
+        .from(deps.bucket ?? FILE_BUCKET)
+        .download(objectPath);
+      if (error) throw new Error(error.message);
+      if (!data) throw new Error("object not found");
+      return data;
+    },
+  });
+  if (outcome.outcome === "error") {
+    return { ok: false, code: "storage_error", reason: outcome.reason };
   }
-  return { ok: true, data };
+  return { ok: true, data: outcome.value };
 }
 
 export type SignedUrlResult =
@@ -159,11 +190,20 @@ export async function createTenantSignedUrl(
   }
   // Signed URLs are short-lived by design; longer asks are clamped, not grown.
   const effective = Math.min(expiresInSeconds, MAX_SIGNED_URL_SECONDS);
-  const { data, error } = await deps.client.storage
-    .from(deps.bucket ?? FILE_BUCKET)
-    .createSignedUrl(objectPath, effective);
-  if (error || !data) {
-    return { ok: false, code: "storage_error", reason: error?.message ?? "no signed url returned" };
+  const policy = deps.failurePolicy ?? STORAGE_FAILURE_POLICY;
+  const outcome = await policy.run({
+    operation: "storage.signedUrl",
+    call: async () => {
+      const { data, error } = await deps.client.storage
+        .from(deps.bucket ?? FILE_BUCKET)
+        .createSignedUrl(objectPath, effective);
+      if (error) throw new Error(error.message);
+      if (!data) throw new Error("no signed url returned");
+      return data;
+    },
+  });
+  if (outcome.outcome === "error") {
+    return { ok: false, code: "storage_error", reason: outcome.reason };
   }
-  return { ok: true, signedUrl: data.signedUrl, expiresInSeconds: effective };
+  return { ok: true, signedUrl: outcome.value.signedUrl, expiresInSeconds: effective };
 }

@@ -35,6 +35,7 @@ import {
   type LogLevel,
   type LogSink,
 } from "./observability/structured-log";
+import { createAdapterFailurePolicy, type AdapterFailurePolicy } from "./adapters/failure-policy";
 
 export function createAiGatewayProvider(apiKey: string) {
   const key = apiKey || process.env.AI_API_KEY || "";
@@ -47,6 +48,23 @@ export function createAiGatewayProvider(apiKey: string) {
 
 export type AiGatewayProvider = ReturnType<typeof createAiGatewayProvider>;
 
+/**
+ * Declared default failure-semantics policy for the AI gateway (J-045).
+ * Model invocations are billed, non-idempotent effects: a single transport
+ * attempt; the caller wires the policy via `AiGatewayInvokeRequest.failurePolicy`.
+ */
+export const AI_GATEWAY_FAILURE_POLICY: AdapterFailurePolicy = createAdapterFailurePolicy({
+  provider: "ai-gateway",
+  timeoutMs: 60_000,
+  maxAttempts: 1,
+  backoffBaseMs: 500,
+  backoffCapMs: 8_000,
+  degradedAfterFailures: 3,
+  degradedWindowMs: 120_000,
+  breakerFailureThreshold: 5,
+  breakerResetMs: 30_000,
+});
+
 // ---------------------------------------------------------------------------
 // In-process rate limiting (Part 31 economy: pure config, no Redis, no I/O)
 // ---------------------------------------------------------------------------
@@ -57,9 +75,7 @@ export interface RateLimitConfig {
   windowMs: number;
 }
 
-export type RateLimitDecision =
-  | { decision: "allow" }
-  | { decision: "deny"; retryAfterMs: number };
+export type RateLimitDecision = { decision: "allow" } | { decision: "deny"; retryAfterMs: number };
 
 export interface RateLimiter {
   /** Sliding-window check keyed by an arbitrary ref (e.g. "tenant:actor"). */
@@ -160,10 +176,7 @@ function emitGatewayLog(
   for (const [field, value] of Object.entries(fields)) {
     scrubbed[field] = scrubValue(value, secret);
   }
-  logStructured(
-    { msg, level, component: "ai-gateway", ...scrubbed },
-    sink ? { sink } : {},
-  );
+  logStructured({ msg, level, component: "ai-gateway", ...scrubbed }, sink ? { sink } : {});
 }
 
 // ---------------------------------------------------------------------------
@@ -189,9 +202,7 @@ export interface AiGatewayInvokeRequest<TPayload> {
    * returned — only forwarded to the provider factory (BLK-2).
    */
   apiKey?: string;
-  invoke: (
-    provider: AiGatewayProvider,
-  ) => Promise<AiGatewayInvocationResult<TPayload>>;
+  invoke: (provider: AiGatewayProvider) => Promise<AiGatewayInvocationResult<TPayload>>;
   /** Rate table for cost estimation; omitted => estimatedCostUsd stays null. */
   rates?: ModelRateTable;
   /** Budget limits evaluated against the ledger before invocation. */
@@ -200,11 +211,20 @@ export interface AiGatewayInvokeRequest<TPayload> {
   ledger?: UsageLedger;
   /** In-process rate limiter; keyed per tenantRef:actorRef. */
   rateLimiter?: RateLimiter;
+  /**
+   * J-045: adapter failure policy for the invocation itself. When provided,
+   * the model call is bounded (per-call timeout), contained (a failing
+   * provider returns a `provider_failed` denial instead of rethrowing) and
+   * recorded (degraded mode, breaker state, trust history). When omitted,
+   * the legacy rethrow semantics are preserved unchanged.
+   */
+  failurePolicy?: AdapterFailurePolicy;
   logSink?: LogSink;
   now?: () => number;
 }
 
-export type AiGatewayDenyCode = "unconfigured" | "budget_exhausted" | "rate_limited";
+export type AiGatewayDenyCode =
+  "unconfigured" | "budget_exhausted" | "rate_limited" | "provider_failed";
 
 export type AiGatewayOutcome<TPayload> =
   | { decision: "allow"; payload: TPayload; usage: UsageRecord }
@@ -219,9 +239,13 @@ export type AiGatewayOutcome<TPayload> =
  * 3. rate_limited  — tenantRef:actorRef sliding window is full.
  *
  * On success the invocation is metered (start/end hooks, usage record with
- * full attribution) and the payload returned. Invocation failures are logged
- * and rethrown — the gateway never converts a provider error into a policy
- * decision, and failed attempts record no usage.
+ * full attribution) and the payload returned. Without a wired failurePolicy,
+ * invocation failures are logged and rethrown — the gateway never converts a
+ * provider error into a policy decision, and failed attempts record no usage.
+ * With `failurePolicy` wired (J-045), the invocation is bounded and contained:
+ * a failing provider yields a contained `provider_failed` denial, degraded
+ * mode/breaker state and trust history are recorded on the policy, and no
+ * usage is recorded.
  */
 export async function invokeAiGateway<TPayload>(
   request: AiGatewayInvokeRequest<TPayload>,
@@ -245,8 +269,7 @@ export async function invokeAiGateway<TPayload>(
     emitGatewayLog(sink, level, msg, { ...attribution, ...fields }, apiKey);
 
   if (apiKey.length === 0) {
-    const reason =
-      "AI gateway is not configured: missing or empty API key (BLK-2)";
+    const reason = "AI gateway is not configured: missing or empty API key (BLK-2)";
     log("warn", "gateway.decision.deny", {
       decision: "deny",
       code: "unconfigured",
@@ -256,11 +279,7 @@ export async function invokeAiGateway<TPayload>(
   }
 
   if (request.ledger && request.budget) {
-    const budget = precheckGatewayBudget(
-      request.budget,
-      request.ledger,
-      request.tenantRef,
-    );
+    const budget = precheckGatewayBudget(request.budget, request.ledger, request.tenantRef);
     if (budget.decision === "deny") {
       log("warn", "gateway.decision.deny", {
         decision: "deny",
@@ -272,10 +291,7 @@ export async function invokeAiGateway<TPayload>(
   }
 
   if (request.rateLimiter) {
-    const limit = request.rateLimiter.check(
-      `${request.tenantRef}:${request.actorRef}`,
-      now(),
-    );
+    const limit = request.rateLimiter.check(`${request.tenantRef}:${request.actorRef}`, now());
     if (limit.decision === "deny") {
       const reason = `Rate limit exceeded for ${request.tenantRef}:${request.actorRef}; retry after ${limit.retryAfterMs}ms`;
       log("warn", "gateway.decision.deny", {
@@ -292,12 +308,34 @@ export async function invokeAiGateway<TPayload>(
   log("info", "gateway.invoke.start");
 
   let result: AiGatewayInvocationResult<TPayload>;
-  try {
-    const provider = createAiGatewayProvider(apiKey);
-    result = await request.invoke(provider);
-  } catch (err) {
-    log("error", "gateway.invoke.error", { duration_ms: now() - startMs, err });
-    throw err;
+  if (request.failurePolicy) {
+    const policyOutcome = await request.failurePolicy.run({
+      operation: "ai-gateway.invoke",
+      // Billed, non-idempotent model calls are never transport-retried here.
+      maxAttempts: 1,
+      call: async () => {
+        const provider = createAiGatewayProvider(apiKey);
+        return request.invoke(provider);
+      },
+    });
+    if (policyOutcome.outcome === "error") {
+      const reason = `AI invocation failed at the adapter boundary (code=${policyOutcome.code}): ${policyOutcome.reason}`;
+      log("error", "gateway.invoke.error", {
+        duration_ms: now() - startMs,
+        code: policyOutcome.code,
+        reason,
+      });
+      return { decision: "deny", code: "provider_failed", reason };
+    }
+    result = policyOutcome.value;
+  } else {
+    try {
+      const provider = createAiGatewayProvider(apiKey);
+      result = await request.invoke(provider);
+    } catch (err) {
+      log("error", "gateway.invoke.error", { duration_ms: now() - startMs, err });
+      throw err;
+    }
   }
 
   const durationMs = now() - startMs;

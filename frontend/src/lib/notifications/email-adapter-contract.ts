@@ -24,6 +24,7 @@ import {
   type DeliveryReceipt,
   type Notification,
 } from "./notification-contract";
+import { createAdapterFailurePolicy, type AdapterFailurePolicy } from "../adapters/failure-policy";
 
 /** Everything an email adapter needs to attempt one send. The recipient address
  * is resolved server-side; the notification carries tenant + category policy. */
@@ -94,12 +95,74 @@ export function createRecordOnlyEmailAdapter(): EmailAdapter {
   return {
     providerId: RECORD_ONLY_EMAIL_ADAPTER_ID,
 
-    async send(command: EmailSendCommand, _registry: EmailProviderRegistry): Promise<EmailDeliveryResult> {
+    async send(
+      command: EmailSendCommand,
+      _registry: EmailProviderRegistry,
+    ): Promise<EmailDeliveryResult> {
       void _registry;
       return {
         outcome: "undeliverable",
         code: "provider_not_configured",
         reason: `NOT_FOR_LIVE_USE: record-only email adapter holds the send for notification ${command.notification.id}; no live email is possible without provider keys (BLK-5)`,
+      };
+    },
+  };
+}
+
+/**
+ * Declared default failure-semantics policy for email adapters (J-045).
+ * A send is a non-idempotent side effect with no provider-side idempotency
+ * key in V1: the transport performs a single attempt and the notification
+ * pipeline owns retries via the structured `retryable` flag.
+ */
+export const DEFAULT_EMAIL_FAILURE_POLICY: AdapterFailurePolicy = createAdapterFailurePolicy({
+  provider: "email",
+  timeoutMs: 8_000,
+  maxAttempts: 1,
+  backoffBaseMs: 250,
+  backoffCapMs: 4_000,
+  degradedAfterFailures: 3,
+  degradedWindowMs: 60_000,
+  breakerFailureThreshold: 5,
+  breakerResetMs: 30_000,
+});
+
+/**
+ * J-045 composition: wrap any `EmailAdapter` so its send is bounded,
+ * contained and observable WITHOUT changing the `EmailAdapter` contract.
+ *
+ * - Timeout + containment: a hung or throwing provider becomes a structured
+ *   `failed("provider_error")` result — never a rejection that could crash
+ *   the dispatch loop.
+ * - Degraded mode, breaker state and trust history are recorded on the
+ *   policy and observable via `policy.snapshot()` / `policy.trustBasis()`.
+ * - Structured provider results (receipt OR failure) pass through
+ *   untouched: the contract's own failure vocabulary stays authoritative.
+ * - Sends are always a single transport attempt regardless of the policy's
+ *   declared `maxAttempts`: a send is non-idempotent in V1, and retries
+ *   belong to the notification pipeline, not the transport.
+ */
+export function withEmailFailurePolicy(
+  adapter: EmailAdapter,
+  policy: AdapterFailurePolicy,
+): EmailAdapter {
+  return {
+    providerId: adapter.providerId,
+    async send(
+      command: EmailSendCommand,
+      registry: EmailProviderRegistry,
+    ): Promise<EmailDeliveryResult> {
+      const outcome = await policy.run({
+        operation: `email.send:${adapter.providerId}`,
+        maxAttempts: 1,
+        call: () => adapter.send(command, registry),
+      });
+      if (outcome.outcome === "ok") return outcome.value;
+      return {
+        outcome: "failed",
+        code: "provider_error",
+        reason: `email delivery for notification ${command.notification.id} failed closed at the adapter boundary (code=${outcome.code}): ${outcome.reason}`,
+        retryable: outcome.code !== "breaker_open",
       };
     },
   };

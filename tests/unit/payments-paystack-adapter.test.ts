@@ -7,12 +7,14 @@ import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
   createPaystackAdapter,
+  PAYSTACK_FAILURE_POLICY,
   parsePaystackWebhook,
   verifyPaystackSignature,
 } from "../../frontend/src/lib/payments/paystack-adapter";
 import type { WebhookRequest } from "../../frontend/src/lib/payments/payment-contract";
 import { money } from "../../frontend/src/lib/financial-core";
 import { tenantId } from "../../frontend/src/lib/tenant-core";
+import { createAdapterFailurePolicy } from "../../frontend/src/lib/adapters/failure-policy";
 
 /** Clearly-marked test fixture secret — never a real credential. */
 const FIXTURE_SECRET = "test-secret-fixture";
@@ -107,10 +109,7 @@ describe("parsePaystackWebhook", () => {
   });
 
   it("fails closed on malformed JSON and unknown event types", () => {
-    const garbage = parsePaystackWebhook(
-      { secretKey: FIXTURE_SECRET },
-      signedRequest("{not json"),
-    );
+    const garbage = parsePaystackWebhook({ secretKey: FIXTURE_SECRET }, signedRequest("{not json"));
     expect(garbage.ok).toBe(false);
     if (!garbage.ok) expect(garbage.code).toBe("malformed_payload");
 
@@ -163,5 +162,112 @@ describe("createPaystackAdapter contract", () => {
   it("declares refunds unsupported while BLK-4 blocks live execution", () => {
     expect(adapter.capabilities.refunds).toBe(false);
     expect(adapter.refund).toBeUndefined();
+  });
+});
+
+/* ─────────────────────────────────────────────────────────────
+ * J-045 failure-semantics wiring (additive; results unchanged)
+ * ────────────────────────────────────────────────────────────*/
+
+describe("paystack adapter failure policy (J-045)", () => {
+  /** Fresh policy per test: counters must be deterministic, never shared. */
+  const freshPolicy = () =>
+    createAdapterFailurePolicy({
+      provider: "paystack",
+      timeoutMs: 5_000,
+      maxAttempts: 1,
+      backoffBaseMs: 250,
+      backoffCapMs: 4_000,
+      degradedAfterFailures: 3,
+      degradedWindowMs: 60_000,
+      breakerFailureThreshold: 5,
+      breakerResetMs: 30_000,
+    });
+
+  it("declares its policy instance with timeouts and thresholds", () => {
+    const adapter = createPaystackAdapter({
+      secretKey: FIXTURE_SECRET,
+      failurePolicy: freshPolicy(),
+    });
+    expect(PAYSTACK_FAILURE_POLICY.snapshot().provider).toBe("paystack");
+    const snap = adapter.failurePolicy.snapshot();
+    expect(snap.provider).toBe("paystack");
+    expect(snap.declared.timeoutMs).toBe(5_000);
+    expect(snap.declared.maxAttempts).toBe(1);
+    expect(snap.declared.breakerFailureThreshold).toBe(5);
+  });
+
+  it("contains adapter-internal defects and fails closed on signatures", () => {
+    // A non-string secret makes the HMAC construction throw — the adapter
+    // must contain the defect and fail closed, never propagate the throw.
+    const hostile = createPaystackAdapter({
+      secretKey: 12_345 as unknown as string,
+      failurePolicy: freshPolicy(),
+    });
+    const verified = hostile.verifySignature(signedRequest(successBody));
+    expect(verified.ok).toBe(false);
+    if (!verified.ok) {
+      expect(verified.code).toBe("signature_mismatch");
+      expect(verified.reason).toContain("contained");
+    }
+    const parsed = hostile.parseWebhook(signedRequest(successBody));
+    expect(parsed.ok).toBe(false);
+    if (!parsed.ok) {
+      expect(parsed.code).toBe("malformed_payload");
+      expect(parsed.reason).toContain("contained");
+    }
+  });
+
+  it("contains intent-creation defects without fabricating an intent", () => {
+    const adapter = createPaystackAdapter({
+      secretKey: FIXTURE_SECRET,
+      failurePolicy: freshPolicy(),
+    });
+    const result = adapter.createIntent(
+      {
+        tenantId: null as unknown as ReturnType<typeof tenantId>,
+        payerRef: "user-0001",
+        amount: money(15_000, "NGN"),
+        purpose: { kind: "fee_payment", ref: "fee-0001" },
+      },
+      "2026-10-01T00:00:00.000Z",
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.code).toBe("invalid_reference");
+      expect(result.reason).toContain("contained");
+    }
+  });
+
+  it("feeds contained failures into degraded mode, breaker state and trust history", () => {
+    const adapter = createPaystackAdapter({
+      secretKey: 12_345 as unknown as string,
+      failurePolicy: freshPolicy(),
+    });
+    for (let i = 0; i < 3; i += 1) {
+      const result = adapter.verifySignature(signedRequest(successBody));
+      expect(result.ok).toBe(false);
+    }
+    const snap = adapter.failurePolicy.snapshot();
+    expect(snap.consecutiveFailures).toBe(3);
+    expect(snap.mode).toBe("degraded");
+    expect(snap.degradedActive).toBe(true);
+    expect(adapter.failurePolicy.trustBasis().totalFailures).toBe(3);
+    // Below the trust floor (threshold 5): distrust must not be premature.
+    expect(adapter.failurePolicy.recommendTrust().verdict).toBe("unproven");
+
+    for (let i = 0; i < 2; i += 1) {
+      expect(adapter.verifySignature(signedRequest(successBody)).ok).toBe(false);
+    }
+    // Crossing the breaker threshold feeds the untrusted recommendation.
+    expect(adapter.failurePolicy.recommendTrust().verdict).toBe("untrusted");
+
+    // A healthy operation clears the degraded episode.
+    const restored = createPaystackAdapter({
+      secretKey: FIXTURE_SECRET,
+      failurePolicy: freshPolicy(),
+    });
+    expect(restored.verifySignature(signedRequest(successBody)).ok).toBe(true);
+    expect(restored.failurePolicy.snapshot().consecutiveFailures).toBe(0);
   });
 });

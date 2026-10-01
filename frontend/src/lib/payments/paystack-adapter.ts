@@ -25,16 +25,49 @@ import {
 } from "./payment-contract";
 import { money, type Money } from "../financial-core";
 import { tenantId } from "../tenant-core";
+import { createAdapterFailurePolicy, type AdapterFailurePolicy } from "../adapters/failure-policy";
 
 export interface PaystackAdapterConfig {
   /** Platform secret key (PAYSTACK_SECRET_KEY in the Scholar slice). */
   secretKey: string;
+  /**
+   * J-045: declared failure-semantics policy. Defaults to
+   * `PAYSTACK_FAILURE_POLICY` when omitted; injected instances allow tests
+   * and deployments to tune thresholds without changing the contract.
+   */
+  failurePolicy?: AdapterFailurePolicy;
 }
+
+/**
+ * Declared failure-semantics policy for the Paystack adapter (J-045). Under
+ * BLK-4 all operations are local, so containment is synchronous; the
+ * declared timeout binds the future external-call surface when the block
+ * lifts. Webhook processing is exactly-once via the replay guard — the
+ * transport never retries.
+ */
+export const PAYSTACK_FAILURE_POLICY: AdapterFailurePolicy = createAdapterFailurePolicy({
+  provider: "paystack",
+  timeoutMs: 5_000,
+  maxAttempts: 1,
+  backoffBaseMs: 250,
+  backoffCapMs: 4_000,
+  degradedAfterFailures: 3,
+  degradedWindowMs: 60_000,
+  breakerFailureThreshold: 5,
+  breakerResetMs: 30_000,
+});
+
+/** The Paystack adapter plus its declared failure policy (J-045, additive). */
+export type PaystackAdapter = PaymentAdapter & {
+  readonly failurePolicy: AdapterFailurePolicy;
+};
 
 const SIGNATURE_HEADER = "x-paystack-signature";
 
 /** Paystack webhook events this adapter understands (fail closed otherwise). */
-const KNOWN_EVENTS: Readonly<Record<string, "payment.succeeded" | "payment.failed" | "payment.refunded">> = {
+const KNOWN_EVENTS: Readonly<
+  Record<string, "payment.succeeded" | "payment.failed" | "payment.refunded">
+> = {
   "charge.success": "payment.succeeded",
   "charge.failed": "payment.failed",
   "refund.processed": "payment.refunded",
@@ -66,11 +99,19 @@ export function verifyPaystackSignature(
     return { ok: false, code: "missing_signature", reason: "Missing x-paystack-signature header" };
   }
   if (!/^[0-9a-f]{64,128}$/i.test(header)) {
-    return { ok: false, code: "malformed_signature", reason: "Signature header is not a hex digest" };
+    return {
+      ok: false,
+      code: "malformed_signature",
+      reason: "Signature header is not a hex digest",
+    };
   }
   const expected = createHmac("sha512", config.secretKey).update(request.rawBody).digest("hex");
   if (!constantTimeHexEquals(header, expected)) {
-    return { ok: false, code: "signature_mismatch", reason: "Webhook signature does not match payload" };
+    return {
+      ok: false,
+      code: "signature_mismatch",
+      reason: "Webhook signature does not match payload",
+    };
   }
   return { ok: true };
 }
@@ -98,7 +139,11 @@ export function parsePaystackWebhook(
   }
 
   if (typeof parsed.event !== "string" || typeof parsed.data !== "object" || parsed.data === null) {
-    return { ok: false, code: "malformed_payload", reason: "Webhook payload requires event and data" };
+    return {
+      ok: false,
+      code: "malformed_payload",
+      reason: "Webhook payload requires event and data",
+    };
   }
   const type = KNOWN_EVENTS[parsed.event];
   if (!type) {
@@ -136,7 +181,9 @@ export function parsePaystackWebhook(
         ? tenantId(metadata.school_id)
         : null,
     purposeRef:
-      typeof metadata?.fee_id === "string" && metadata.fee_id.trim() !== "" ? metadata.fee_id : null,
+      typeof metadata?.fee_id === "string" && metadata.fee_id.trim() !== ""
+        ? metadata.fee_id
+        : null,
     occurredAt: new Date(request.receivedAtSec * 1000).toISOString(),
   };
   return { ok: true, event };
@@ -147,33 +194,67 @@ export function parsePaystackWebhook(
  * the refund capability stays false until the block is lifted, so the
  * contract never promises what it cannot deliver.
  */
-export function createPaystackAdapter(config: PaystackAdapterConfig): PaymentAdapter {
+export function createPaystackAdapter(config: PaystackAdapterConfig): PaystackAdapter {
+  const policy = config.failurePolicy ?? PAYSTACK_FAILURE_POLICY;
   return {
     provider: "paystack",
     capabilities: { refunds: false },
+    failurePolicy: policy,
     createIntent(reference, now) {
-      const validation = validatePaymentReference(reference);
-      if (!validation.ok) {
-        return { ok: false, code: "invalid_reference", reason: validation.reason };
-      }
-      return {
-        ok: true,
-        intent: {
-          id: `intent_paystack_${reference.purpose.kind}_${reference.purpose.ref}_${now}`,
-          reference,
-          provider: "paystack",
-          providerReference: null,
-          idempotencyKey: deriveIdempotencyKey(reference),
-          status: "created",
-          createdAt: now,
-        },
-      };
+      const outcome = policy.containSync("paystack.createIntent", () => {
+        const validation = validatePaymentReference(reference);
+        if (!validation.ok) {
+          return {
+            ok: false as const,
+            code: "invalid_reference" as const,
+            reason: validation.reason,
+          };
+        }
+        return {
+          ok: true as const,
+          intent: {
+            id: `intent_paystack_${reference.purpose.kind}_${reference.purpose.ref}_${now}`,
+            reference,
+            provider: "paystack",
+            providerReference: null,
+            idempotencyKey: deriveIdempotencyKey(reference),
+            status: "created" as const,
+            createdAt: now,
+          },
+        };
+      });
+      // Fail closed: a contained defect can never fabricate an intent.
+      return outcome.outcome === "ok"
+        ? outcome.value
+        : {
+            ok: false,
+            code: "invalid_reference",
+            reason: `intent creation failed closed (contained: ${outcome.reason})`,
+          };
     },
     verifySignature(request) {
-      return verifyPaystackSignature(config, request);
+      const outcome = policy.containSync("paystack.verifySignature", () =>
+        verifyPaystackSignature(config, request),
+      );
+      return outcome.outcome === "ok"
+        ? outcome.value
+        : {
+            ok: false,
+            code: "signature_mismatch",
+            reason: `signature verification failed closed (contained: ${outcome.reason})`,
+          };
     },
     parseWebhook(request) {
-      return parsePaystackWebhook(config, request);
+      const outcome = policy.containSync("paystack.parseWebhook", () =>
+        parsePaystackWebhook(config, request),
+      );
+      return outcome.outcome === "ok"
+        ? outcome.value
+        : {
+            ok: false,
+            code: "malformed_payload",
+            reason: `webhook processing failed closed (contained: ${outcome.reason})`,
+          };
     },
   };
 }
