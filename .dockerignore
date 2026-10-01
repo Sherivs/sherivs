@@ -1,0 +1,21 @@
+# Build context hygiene — never enter an image layer.
+node_modules
+dist
+.git
+.gitignore
+
+# Secrets: .env files can NEVER reach the build context.
+.env
+.env.*
+*.pem
+*.key
+
+# Local-only and non-runtime trees.
+tests
+docs
+playwright-report
+test-results
+coverage
+
+# Infrastructure state (Terraform plans, state, kubeconfig).
+infrastructure

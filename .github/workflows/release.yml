@@ -1,0 +1,117 @@
+name: Release
+
+# V1 release pipeline (MISSION-V1-017 deployment work package).
+# Build and publish on version tags; deploy is human-gated on the
+# "production" environment (approval law, Part 15/28) and FAILS CLOSED
+# until BLK-3 deployment credentials are configured.
+#
+# Supply-chain hygiene: all third-party actions pinned to commit SHAs.
+#
+# Secret handling: DOCKER_* / DEPLOY_* values are referenced by name only,
+# passed through env blocks, and never echoed.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+env:
+  IMAGE_NAME: coregrid-scholar
+
+jobs:
+  verify:
+    name: Verify (typecheck, tests, registry, secrets, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Verify
+        run: npm run verify
+
+  build-and-push:
+    name: Build and push Docker image
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Log in to container registry
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ${{ secrets.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract tag from git ref
+        id: tag
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.version }}
+            ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+  deploy:
+    name: Deploy to production (human-approved)
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Human approval gate — Part 15/28 approval law.
+    environment: production
+    steps:
+      - name: Fail closed — deployment credentials not configured (BLK-3)
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          if [ -z "$DEPLOY_SSH_HOST" ] || [ -z "$DEPLOY_SSH_USER" ] || [ -z "$DEPLOY_SSH_KEY" ]; then
+            echo "::error::deployment credentials not configured (BLK-3)"
+            echo "Deploy is blocked until BLK-3 credentials are supplied via repository/environment secrets."
+            echo "IaC apply remains FROZEN pending BLK-3 — see infrastructure/README.md."
+            exit 1
+          fi
+
+      - name: Pull and run image on the deployment target
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+          DOCKER_NAMESPACE: ${{ secrets.DOCKER_NAMESPACE }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          install -m 600 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+          ssh-keyscan -H "$DEPLOY_SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          image="${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/coregrid-scholar:${IMAGE_TAG}"
+          ssh -i ~/.ssh/id_ed25519 "${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}" \
+            "docker pull '$image' && docker stop coregrid-scholar 2>/dev/null || true; \
+             docker rm coregrid-scholar 2>/dev/null || true; \
+             docker run -d --name coregrid-scholar --restart unless-stopped \
+               --env-file /opt/coregrid/scholar.env \
+               -p 3000:3000 '$image'"
+          rm -f ~/.ssh/id_ed25519

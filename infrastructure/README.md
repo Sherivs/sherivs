@@ -66,3 +66,67 @@ and rotation expectations, then follow `architecture/cloud-fabric-migration-plan
 
 Environment variables in `.env.example` remain the application runtime's contract;
 infrastructure variables are `TF_VAR_*` and never enter the application bundle.
+
+## V1 deployment path (sanctioned — Part 31 economy)
+
+The V1 launch deployment is a **single VM running Docker**. No Kubernetes, no
+service mesh, no multi-region. The `terraform/` and `kubernetes/` trees remain
+**authored but FROZEN pending BLK-3 credentials** — nothing in them is applied.
+
+### Runtime shape (verified against `vite build` output)
+
+| Artifact | Path |
+| --- | --- |
+| Static client assets | `dist/client/` |
+| Start server entry (fetch-style handler, not a runnable server) | `dist/server/server.js` |
+| Production server | `srvx` CLI (already in the dependency tree via nitro/h3 — no new dependency) |
+
+Start command (verified on this branch):
+
+```
+node node_modules/srvx/bin/srvx.mjs --prod -s ../client dist/server/server.js
+```
+
+`srvx` serves `dist/client/` as static assets and forwards everything else to
+the Start handler. The port is `PORT` (default 3000).
+
+### Docker image
+
+`Dockerfile` (repo root) is multi-stage (deps → build → `node:22-slim`
+runtime), runs as the non-root `node` user, `EXPOSE`s 3000, and its
+`HEALTHCHECK` polls the health endpoint. `.dockerignore` keeps `node_modules`,
+`dist`, `.git`, `tests`, `docs` and every `.env*` file out of the build
+context — **no secret can enter an image layer**. All application environment
+is injected at `docker run` time only (`--env-file`), never baked.
+
+### `/health.json` contract
+
+Unauthenticated, leak-free machine health endpoint (`frontend/src/routes/health[.]json.ts`):
+
+- `200` with a whitelisted JSON payload (`status`, `ts`, `uptime_s`, `memory`, `version`, `checks`) for `ok`/`degraded`
+- `503` when `status` is `failing` — orchestrators may drain the instance
+- `Cache-Control: no-store`
+
+### Environment variable contract (names only — never commit values)
+
+Runtime-only, supplied via `--env-file /opt/coregrid/scholar.env` on the VM
+(file permissions 600, owned by root — created out-of-band, never in git):
+
+- `PORT` — listen port (default 3000)
+- `NODE_ENV` — set to `production` in the image
+- `SUPABASE_URL` — project URL
+- `SUPABASE_ANON_KEY` — browser-safe anon key
+- `SUPABASE_SERVICE_ROLE_KEY` — server-only; must never reach the client bundle
+- `VITE_PUBLIC_*` variables — build-time (injected as build args), not runtime secrets
+
+See `.env.example` for the authoritative list.
+
+### CI/CD
+
+`.github/workflows/release.yml` runs on `v*` tag push:
+
+1. **verify** — `npm ci` + `npm run verify` (typecheck, unit tests, registry validation, secret scan, build)
+2. **build-and-push** — builds and pushes the image to the registry configured via `DOCKER_*` secrets (referenced by name only, never echoed)
+3. **deploy** — gated on the `production` GitHub environment (human approval). It **fails closed** with `deployment credentials not configured (BLK-3)` until `DEPLOY_SSH_HOST` / `DEPLOY_SSH_USER` / `DEPLOY_SSH_KEY` are configured.
+
+All third-party actions are pinned to commit SHAs.
