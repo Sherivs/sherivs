@@ -18,8 +18,54 @@
  * workflow vocabulary (names only).
  */
 import type { DomainDefinition } from "./domain-definition";
+import {
+  roleMappingTable,
+  type DirectionalRoleMappings,
+  type DomainRoleMappingDeclaration,
+} from "@/lib/universal-roles";
 
 export const RESTAURANT_DOMAIN_ID = "restaurant";
+
+/* ─────────────────────────────────────────────────────────────
+ * Directional role mappings (V1CAP-014 / J-006, CTO RULING-4).
+ *
+ * The authoritative authorization semantics of this domain: mappings run FROM
+ * restaurant roles TO the neutral universal role vocabulary, never the
+ * reverse. Finding I-030's seeded contamination is closed here — most
+ * importantly service_staff, which used to be forced into the Scholar
+ * identity-store vocabulary (service_staff -> teacher) because the only
+ * target vocabulary that existed WAS the Scholar role list. It now resolves
+ * to WORKER|OPERATOR: floor workforce semantics with no educator meaning.
+ * ────────────────────────────────────────────────────────────*/
+export const RESTAURANT_ROLE_MAPPINGS: readonly DomainRoleMappingDeclaration[] = [
+  {
+    domainRole: "manager",
+    neutralRoles: ["ADMINISTRATOR", "OWNER"],
+    description:
+      "Runs the restaurant: accountable for the operation (OWNER) and configures its structure, staff and settings (ADMINISTRATOR).",
+  },
+  {
+    domainRole: "cashier",
+    neutralRoles: ["OPERATOR"],
+    description:
+      "Handles payments and the cash office: transactional operational authority over the ledger.",
+  },
+  {
+    domainRole: "service_staff",
+    neutralRoles: ["WORKER", "OPERATOR"],
+    description:
+      "Floor service workforce (servers, cooks, hosts): executes assigned service tasks (WORKER) and drives the placed -> in_kitchen -> served order flow (OPERATOR). Deliberately NOT the Scholar educator semantic — the legacy service_staff -> teacher forced mapping (I-030) is closed by this declaration.",
+  },
+  {
+    domainRole: "runner",
+    neutralRoles: ["WORKER"],
+    description: "Field-facing delivery and errand workforce executing assigned tasks.",
+  },
+];
+
+/** The validated, directional restaurant mapping table (domain -> neutral only). */
+export const RESTAURANT_NEUTRAL_ROLE_MAPPINGS: DirectionalRoleMappings =
+  roleMappingTable(RESTAURANT_ROLE_MAPPINGS);
 
 export const RESTAURANT_DOMAIN_DEFINITION: DomainDefinition = {
   domainId: RESTAURANT_DOMAIN_ID,
@@ -162,10 +208,19 @@ export const RESTAURANT_DOMAIN_DEFINITION: DomainDefinition = {
       source: "restaurant.menu_item",
       target: "restaurant.inventory_item",
       cardinality: "many-to-many",
-      description: "Preparing a menu item consumes many stocked items; a stocked item feeds many menu items.",
+      description:
+        "Preparing a menu item consumes many stocked items; a stocked item feeds many menu items.",
     },
   ],
   roles: [
+    /*
+     * LEGACY appRoles BRIDGE (I-030/I-031): these identity-store entries exist
+     * ONLY because the current DomainDefinition validator still validates roles
+     * against the legacy identity-store vocabulary. The authoritative
+     * authorization semantics of this domain are RESTAURANT_ROLE_MAPPINGS
+     * above (directional, neutral). When the validator re-points at the
+     * neutral vocabulary (I-031 follow-through), this bridge is deleted.
+     */
     {
       domainRole: "manager",
       appRoles: ["admin", "principal"],
@@ -178,8 +233,13 @@ export const RESTAURANT_DOMAIN_DEFINITION: DomainDefinition = {
     },
     {
       domainRole: "service_staff",
+      // Forced legacy validator entry (I-030/I-031) — NOT an authorization
+      // mapping. The neutral resolution of service_staff is WORKER|OPERATOR
+      // (RESTAURANT_ROLE_MAPPINGS); no code path resolves service_staff
+      // through the legacy value below.
       appRoles: ["teacher"],
-      description: "Floor service workforce (servers, cooks, hosts).",
+      description:
+        "Floor service workforce (servers, cooks, hosts). Neutral semantics: WORKER|OPERATOR (see RESTAURANT_ROLE_MAPPINGS).",
     },
     {
       domainRole: "runner",
@@ -210,7 +270,8 @@ export const RESTAURANT_DOMAIN_DEFINITION: DomainDefinition = {
   workflows: [
     {
       name: "restaurant.order_lifecycle",
-      description: "Placed -> in_kitchen -> served -> paid (automation engine workflow vocabulary).",
+      description:
+        "Placed -> in_kitchen -> served -> paid (automation engine workflow vocabulary).",
     },
     {
       name: "restaurant.reservation_lifecycle",

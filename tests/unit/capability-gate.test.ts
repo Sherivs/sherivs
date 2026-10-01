@@ -8,6 +8,7 @@ import {
   MEMBERSHIP_FOR_NAV_KIND,
   type CapabilityGateDecision,
 } from "../../frontend/src/lib/capability-gate";
+import type { AppRole } from "../../frontend/src/lib/roles";
 import { isDeclaredRuntimeFeatureCode, SCHOLAR_FEATURE_CODES } from "@/lib/runtime/nav-registry";
 
 const teacherCode = [...SCHOLAR_FEATURE_CODES].find((c) => c.startsWith("r001:teacher."));
@@ -115,6 +116,170 @@ describe("evaluateRuntimeCapability (fail-closed on every non-allow path)", () =
     for (const [kind, roles] of Object.entries(MEMBERSHIP_FOR_NAV_KIND)) {
       expect(kind.length).toBeGreaterThan(0);
       expect(roles.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+/* ─────────────────────────────────────────────────────────────
+ * V1CAP-014 / J-006 additions: the gate resolves roles through the
+ * neutral universal vocabulary (CTO RULING-4, domain -> neutral only).
+ * Closes I-010 (role vocabulary), I-030 (restaurant fixture mapping)
+ * and I-031 (contract-level neutral role validation) for this gate.
+ * ────────────────────────────────────────────────────────────*/
+import { SCHOLAR_NEUTRAL_ROLE_MAPPINGS } from "../../frontend/src/lib/runtime/scholar-role-mappings";
+import { RESTAURANT_NEUTRAL_ROLE_MAPPINGS } from "../../frontend/src/lib/domain-config/restaurant";
+import {
+  INSTALLED_DOMAIN_ROLE_MAPPINGS,
+  NEUTRAL_ROLES_FOR_NAV_KIND,
+  neutralRolesForIdentityRole,
+} from "../../frontend/src/lib/capability-gate";
+import { resolveDomainRoleToNeutral } from "../../frontend/src/lib/universal-roles";
+
+const bursarCode = [...SCHOLAR_FEATURE_CODES].find((c) => c.startsWith("r001:bursar."));
+const superAdminCode = [...SCHOLAR_FEATURE_CODES].find((c) => c.startsWith("r001:super_admin."));
+
+describe("neutral role resolution (V1CAP-014 / J-006 / I-010)", () => {
+  it("resolves every legacy identity-store role FORWARD into the neutral vocabulary", () => {
+    const expected: Record<string, readonly string[]> = {
+      super_admin: ["ADMINISTRATOR", "SYSTEM"],
+      hq: ["SUPERVISOR"],
+      admin: ["ADMINISTRATOR"],
+      principal: ["ADMINISTRATOR"],
+      teacher: ["CONTRIBUTOR"],
+      bursar: ["OPERATOR"],
+      parent: ["MEMBER"],
+      student: ["MEMBER"],
+      driver: ["WORKER"],
+    };
+    for (const [role, neutralRoles] of Object.entries(expected)) {
+      expect(neutralRolesForIdentityRole(role), `role "${role}"`).toEqual(neutralRoles);
+    }
+  });
+
+  it("passes already-neutral roles through unchanged", () => {
+    expect(neutralRolesForIdentityRole("WORKER")).toEqual(["WORKER"]);
+    expect(neutralRolesForIdentityRole("SYSTEM")).toEqual(["SYSTEM"]);
+    expect(neutralRolesForIdentityRole("AUDITOR")).toEqual(["AUDITOR"]);
+  });
+
+  it("resolves nothing for unknown roles and for roles the gate has no mapping for", () => {
+    expect(neutralRolesForIdentityRole("chef")).toBeNull();
+    expect(neutralRolesForIdentityRole("service_staff")).toBeNull();
+    expect(neutralRolesForIdentityRole("")).toBeNull();
+  });
+
+  it("resolves every legacy role into its own chrome kind's neutral membership", () => {
+    for (const [kind, roles] of Object.entries(MEMBERSHIP_FOR_NAV_KIND)) {
+      const neutralMembership =
+        NEUTRAL_ROLES_FOR_NAV_KIND[kind as keyof typeof NEUTRAL_ROLES_FOR_NAV_KIND];
+      expect(neutralMembership.length, `kind "${kind}"`).toBeGreaterThan(0);
+      for (const role of roles) {
+        const resolved = neutralRolesForIdentityRole(role);
+        expect(resolved, `role "${role}" of kind "${kind}"`).not.toBeNull();
+        if (resolved) {
+          expect(resolved.some((neutral) => neutralMembership.includes(neutral))).toBe(true);
+        }
+      }
+    }
+  });
+
+  it("the gate's legacy bridge stays coherent with the runtime's DECLARED domain mapping, both ways", () => {
+    const bridge = INSTALLED_DOMAIN_ROLE_MAPPINGS[0]?.mappings;
+    expect(bridge).toBeDefined();
+    if (!bridge) return;
+    for (const [domainRole, neutralRoles] of Object.entries(SCHOLAR_NEUTRAL_ROLE_MAPPINGS)) {
+      expect(bridge[domainRole], `bridge entry "${domainRole}"`).toEqual(neutralRoles);
+    }
+    for (const [domainRole, neutralRoles] of Object.entries(bridge)) {
+      expect(
+        resolveDomainRoleToNeutral(SCHOLAR_NEUTRAL_ROLE_MAPPINGS, domainRole),
+        `declared entry "${domainRole}"`,
+      ).toEqual(neutralRoles);
+    }
+  });
+});
+
+describe("gate decisions resolve through the neutral vocabulary (not the role name)", () => {
+  it("grants a declared code to an already-neutral role matching the kind's semantics", () => {
+    if (teacherCode && adminCode && bursarCode) {
+      expect(evaluateRuntimeCapability({ code: teacherCode, role: "CONTRIBUTOR" }).decision).toBe(
+        "allow",
+      );
+      expect(evaluateRuntimeCapability({ code: adminCode, role: "ADMINISTRATOR" }).decision).toBe(
+        "allow",
+      );
+      expect(evaluateRuntimeCapability({ code: bursarCode, role: "OPERATOR" }).decision).toBe(
+        "allow",
+      );
+    } else {
+      throw new Error("Feature index unexpectedly empty");
+    }
+  });
+
+  it("denies neutral roles whose semantics do not match the chrome kind", () => {
+    if (teacherCode && adminCode) {
+      const denied = evaluateRuntimeCapability({ code: teacherCode, role: "WORKER" });
+      expect(denied.decision).toBe("deny");
+      if (denied.decision === "deny") {
+        expect(denied.code).toBe("role_required");
+        expect(denied.reason).toContain("WORKER");
+      }
+      expect(evaluateRuntimeCapability({ code: adminCode, role: "MEMBER" }).decision).toBe("deny");
+    }
+  });
+
+  it("maps super_admin as ADMINISTRATOR|SYSTEM per I-010 (documented platform-administration delta)", () => {
+    if (superAdminCode && adminCode && bursarCode) {
+      expect(
+        evaluateRuntimeCapability({ code: superAdminCode, role: "super_admin" }).decision,
+      ).toBe("allow");
+      expect(evaluateRuntimeCapability({ code: adminCode, role: "super_admin" }).decision).toBe(
+        "allow",
+      );
+      expect(evaluateRuntimeCapability({ code: bursarCode, role: "super_admin" }).decision).toBe(
+        "deny",
+      );
+    }
+  });
+
+  it("preserves legacy AppRole behavior: every identity-store role grants its own kind, denies others", () => {
+    for (const [kind, roles] of Object.entries(MEMBERSHIP_FOR_NAV_KIND)) {
+      const code = [...SCHOLAR_FEATURE_CODES].find((c) => c.startsWith(`r001:${kind}.`));
+      expect(code, `kind "${kind}" has declared codes`).toBeDefined();
+      if (!code) continue;
+      for (const role of roles) {
+        expect(evaluateRuntimeCapability({ code, role }).decision, `${role} on ${code}`).toBe(
+          "allow",
+        );
+      }
+    }
+    expect(
+      evaluateRuntimeCapability({ code: "r001:bursar.dashboard", role: "teacher" }).decision,
+    ).toBe("deny");
+    expect(
+      evaluateRuntimeCapability({ code: "r001:teacher.dashboard", role: "driver" }).decision,
+    ).toBe("deny");
+  });
+});
+
+describe("I-030 / I-031 closure at the gate (restaurant resolves without the Scholar vocabulary)", () => {
+  it("restaurant service_staff resolves to floor-workforce semantics through the same engine", () => {
+    const resolved = resolveDomainRoleToNeutral(RESTAURANT_NEUTRAL_ROLE_MAPPINGS, "service_staff");
+    expect(resolved).toEqual(["WORKER", "OPERATOR"]);
+    expect(resolved).not.toContain("CONTRIBUTOR");
+  });
+
+  it("the gate knows no restaurant role and no restaurant chrome kind (fixture stays quarantined)", () => {
+    expect(neutralRolesForIdentityRole("service_staff")).toBeNull();
+    // Untrusted input on purpose: the fixture role is outside the typed role
+    // unions, which is exactly the surface this denial proves stays closed.
+    const outcome = evaluateRuntimeCapability({
+      code: "r001:restaurant_service.pos",
+      role: "service_staff" as AppRole,
+    });
+    expect(outcome.decision).toBe("deny");
+    if (outcome.decision === "deny") {
+      expect(outcome.code).toBe("unknown_kind");
     }
   });
 });
