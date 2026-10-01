@@ -19,6 +19,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { pgSslConfig } from "./lib/pg-ssl.mjs";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const MIGRATIONS_DIR = join(ROOT, "database", "supabase", "migrations");
@@ -73,7 +74,7 @@ if (!pg) {
 
 const client = new pg.default.Client({
   connectionString: dbUrl,
-  ssl: { rejectUnauthorized: false },
+  ssl: pgSslConfig(dbUrl),
 });
 
 await client.connect();

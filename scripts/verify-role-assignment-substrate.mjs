@@ -29,6 +29,7 @@ import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { pgSslConfig } from "./lib/pg-ssl.mjs";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const MIGRATION_REF =
@@ -163,7 +164,7 @@ if (dbUrl) {
   } else {
     const client = new pg.default.Client({
       connectionString: dbUrl,
-      ssl: { rejectUnauthorized: false },
+      ssl: pgSslConfig(dbUrl),
     });
     await client.connect();
     try {
