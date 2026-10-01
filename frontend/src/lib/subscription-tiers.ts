@@ -1,11 +1,38 @@
 /**
- * Subscription tiers — single source of truth for what each plan
- * is allowed to enable. The schools.active_features jsonb is the
- * per-school override of which allowed features are currently on.
+ * SUBSCRIPTION TIERS — LEGACY MODULE, RECONCILED (MISSION-R-73, J-044).
  *
- * A feature can be toggled on for a school ONLY IF
- * SUBSCRIPTION_TIERS[school.subscription_tier].features[feature] === true.
+ * STATUS: deprecated as a DECISION surface; retained as the commercial tier
+ * catalog (prices, limits, feature matrix) because live consumers still
+ * import it. Public API is frozen for the MISSION-R-121 universal-root
+ * relocation — do not extend, do not add new consumers.
+ *
+ * Reconciliation facts (evidence: tests/unit/financial-reconciliation.test.ts
+ * and tests/unit/subscription-tiers.test.ts):
+ *
+ * 1. The `schools.active_features` jsonb column is an input to NO access
+ *    decision as of this mission. It never had SQL-level enforcement (no
+ *    migration, function, view or policy reads it — verified against
+ *    database/supabase/migrations); its only leverage was this module's
+ *    signature, and the per-school override parameters below are DEAD INPUTS
+ *    kept solely for signature stability. `isFeatureActive` /
+ *    `hasTierFeature` return the site-wide unlock decision every caller
+ *    already observed; the school-column argument cannot influence them
+ *    (proven exhaustively by the coupling-kill test).
+ *
+ * 2. "May THIS actor use this feature?" is answered exclusively by the
+ *    canonical feature-access contract surface: `getMyFeatureAccess` in
+ *    the feature-access server functions over the runtime feature gate —
+ *    keyed by TenantId + identity + roles, fail-closed, with explainable
+ *    decisions. New code must call that surface, never this module.
+ *
+ * 3. "What does this tenant's plan commercially entitle?" is resolved
+ *    TenantId-keyed by `payments/tier-entitlements.ts`, which translates
+ *    this catalog into the phase-13 financial contract plane with declared
+ *    provenance. That module also records why NO schema migration was
+ *    required for this reconciliation (column is decision-dead; retirement
+ *    of the still-written column is MISSION-R-121 follow-up work).
  */
+
 
 export const SUBSCRIPTION_TIERS = {
   trial: {
@@ -445,8 +472,16 @@ export function getTierFeatures(tier: string | null | undefined): TierFeatures {
   return SUBSCRIPTION_TIERS[getTier(tier)].features as TierFeatures;
 }
 
+/**
+ * @deprecated MISSION-R-73: legacy signature retained for API stability
+ * (consumers relocate in MISSION-R-121). `tier` is decorative and
+ * `activeFeatures` — the legacy `schools.active_features` column — is a dead
+ * input: no access decision reads it. Use the canonical contract surface
+ * (the feature-access entry point over the runtime feature gate) for access decisions.
+ */
 export function hasTierFeature(tier: string | null | undefined, feature: FeatureKey): boolean {
   void tier;
+  void feature;
   return true;
 }
 
@@ -455,6 +490,13 @@ export function hasTierFeature(tier: string | null | undefined, feature: Feature
  * All features are unlocked site-wide; any school-specific toggle should be
  * treated as a convenience override, not a trap. Super admins retain full
  * access to unlock modules for any school without tier hardcoding.
+ *
+ * @deprecated MISSION-R-73: the `activeFeatures` argument — the legacy
+ * `schools.active_features` column — is a DEAD INPUT; the decision never
+ * reads it and the school-column coupling is killed at this signature.
+ * Kept only so live consumers compile unchanged until MISSION-R-121
+ * relocates them. Access decisions go through the canonical contract
+ * surface (the feature-access entry point over the runtime feature gate).
  */
 export function isFeatureActive(
   tier: string | null | undefined,
