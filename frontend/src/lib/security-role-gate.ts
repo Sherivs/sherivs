@@ -15,13 +15,87 @@
  *   the application/database agreement (§19 phase-01). Neither layer is
  *   sufficient alone; both must agree.
  *
- * The pure decision (`evaluateRoleGate`) is unit-testable without a database.
+ * Lifecycle enforcement (AGENTS §27/§31): every decision accepts additive
+ * lifecycle/session signals (`LifecycleSignals`). When supplied, a
+ * non-usable identity lifecycle (anything outside active/provisioned) and a
+ * non-active session (expired/revoked/terminated or an explicit false
+ * validity assertion) DENY before the role is ever consulted. The pure
+ * decision (`evaluateRoleGate`) is unit-testable without a database.
  * `assertRoleScope` adapts it to the Supabase RPC primitives used by the
  * legacy server functions (`is_school_admin`, `get_my_school_id`,
  * `is_super_admin`).
  */
 
+import { isIdentityUsable, type IdentityLifecycleState, type SessionStatus } from "./identity";
 import { evaluateSecurityGateway } from "./security-core";
+
+/* ─────────────────────────────────────────────────────────────
+ * Additive lifecycle/session signals (shared contract)
+ * ────────────────────────────────────────────────────────────*/
+
+/**
+ * Identity lifecycle + session validity inputs every gate decision accepts.
+ *
+ * Opt-in contract: supplying any of these keys opts the call into
+ * lifecycle-attested evaluation. Calls that supply none keep the historical
+ * outcome shape exactly (byte-compatible with existing consumers); callers
+ * that opt in and leave a signal out get an allow flagged with
+ * `lifecycleUnverified: true`, so an unchecked gate can never be mistaken
+ * for a verified one inside the new contract.
+ */
+export interface LifecycleSignals {
+  /** Canonical Phase 02 lifecycle state of the acting identity. */
+  lifecycle?: IdentityLifecycleState | null;
+  /** Canonical session status when the caller holds the session record. */
+  sessionStatus?: SessionStatus | null;
+  /** Explicit session-validity assertion when no session record is available. */
+  sessionValid?: boolean;
+}
+
+export type LifecycleGateCheck =
+  | {
+      ok: true;
+      /** True when the opted-in call left lifecycle/session unverified. */
+      lifecycleUnverified: boolean;
+    }
+  | { ok: false; code: "lifecycle_denied" | "session_denied"; reason: string };
+
+const LIFECYCLE_REASONS = {
+  lifecycleDenied: "Forbidden: identity lifecycle does not permit execution",
+  sessionDenied: "Forbidden: session is expired or revoked",
+} as const;
+
+function hasLifecycleSignals(signals: LifecycleSignals): boolean {
+  return "lifecycle" in signals || "sessionStatus" in signals || "sessionValid" in signals;
+}
+
+/**
+ * Evaluate the lifecycle/session part of a gate decision (fail closed).
+ *
+ * - A supplied lifecycle outside the usable set (`active`/`provisioned`,
+ *   per `isIdentityUsable`) denies — including unknown values, which fail
+ *   closed rather than being trusted.
+ * - A supplied session status other than `active`, or an explicit
+   `sessionValid: false`, denies (expired/revoked/terminated).
+ */
+export function checkLifecycleSignals(signals: LifecycleSignals): LifecycleGateCheck {
+  if (signals.lifecycle != null && !isIdentityUsable({ lifecycle: signals.lifecycle })) {
+    return { ok: false, code: "lifecycle_denied", reason: LIFECYCLE_REASONS.lifecycleDenied };
+  }
+  if (signals.sessionStatus != null && signals.sessionStatus !== "active") {
+    return { ok: false, code: "session_denied", reason: LIFECYCLE_REASONS.sessionDenied };
+  }
+  if (signals.sessionValid === false) {
+    return { ok: false, code: "session_denied", reason: LIFECYCLE_REASONS.sessionDenied };
+  }
+
+  const optedIn = hasLifecycleSignals(signals);
+  const sessionUnverified = signals.sessionStatus == null && signals.sessionValid == null;
+  return {
+    ok: true,
+    lifecycleUnverified: optedIn && (signals.lifecycle == null || sessionUnverified),
+  };
+}
 
 /* ─────────────────────────────────────────────────────────────
  * Pure decision contract
@@ -29,7 +103,7 @@ import { evaluateSecurityGateway } from "./security-core";
 
 export type RoleGateKind = "school_admin" | "platform_super_admin";
 
-export interface RoleGateSignals {
+export interface RoleGateSignals extends LifecycleSignals {
   /** Result of the role RPC. Anything but `true` fails closed. */
   roleGranted?: boolean | null;
   /** Resolved scope (school id for school_admin; unused for platform roles). */
@@ -42,10 +116,17 @@ export type RoleGateOutcome =
       /** Resolved, trimmed scope; null for platform roles. */
       scope: string | null;
       reason: "Role gate verified";
+      /** Present (true) only on an opted-in allow that left lifecycle/session unverified. */
+      lifecycleUnverified?: boolean;
     }
   | {
       decision: "deny";
-      code: "role_required" | "tenant_unresolved" | "gateway_deny";
+      code:
+        | "role_required"
+        | "tenant_unresolved"
+        | "gateway_deny"
+        | "lifecycle_denied"
+        | "session_denied";
       reason: string;
     };
 
@@ -60,13 +141,20 @@ const REASONS = {
  * Decide whether an actor may perform a role-scoped operation.
  *
  * Evaluation order:
- *   1. Role gate — the actor must hold the required role.
- *   2. Tenant gate — school-admin actors must have a non-empty school scope.
- *   3. Security gateway — fail-closed confirmation (default rule §I.5).
+ *   1. Lifecycle/session gate — fail closed on non-usable identity state or
+ *      a non-active session (AGENTS §31: expired/revoked access fails).
+ *   2. Role gate — the actor must hold the required role.
+ *   3. Tenant gate — school-admin actors must have a non-empty school scope.
+ *   4. Security gateway — fail-closed confirmation (default rule §I.5).
  *
  * Any missing/unknown signal is a DENY, never a silent allow (AT.9).
  */
 export function evaluateRoleGate(kind: RoleGateKind, signals: RoleGateSignals): RoleGateOutcome {
+  const lifecycle = checkLifecycleSignals(signals);
+  if (!lifecycle.ok) {
+    return { decision: "deny", code: lifecycle.code, reason: lifecycle.reason };
+  }
+
   const roleGranted = signals.roleGranted === true;
   const rawScope = kind === "school_admin" ? signals.scope : null;
   const hasScope = typeof rawScope === "string" && rawScope.trim() !== "";
@@ -82,9 +170,9 @@ export function evaluateRoleGate(kind: RoleGateKind, signals: RoleGateSignals): 
     return { decision: "deny", code: "tenant_unresolved", reason: REASONS.tenantUnresolved };
   }
 
-  // The auth middleware (bearer token) and the server-function input validator
-  // have already run upstream; identity, session, integrity and rate-limit
-  // signals are satisfied at this enforcement point. The gateway's default
+  // The auth middleware (bearer token) has run upstream and the lifecycle/
+  // session signals above were verified when supplied; identity and session
+  // validity are attested at this enforcement point. The gateway's default
   // rule remains fail-closed: an unexpected decision below must never grant.
   const gateway = evaluateSecurityGateway({
     identityValid: true,
@@ -99,11 +187,12 @@ export function evaluateRoleGate(kind: RoleGateKind, signals: RoleGateSignals): 
     return { decision: "deny", code: "gateway_deny", reason: REASONS.gatewayDeny };
   }
 
-  return {
-    decision: "allow",
+  const allow = {
+    decision: "allow" as const,
     scope: kind === "school_admin" ? rawScope!.trim() : null,
-    reason: "Role gate verified",
+    reason: "Role gate verified" as const,
   };
+  return lifecycle.lifecycleUnverified ? { ...allow, lifecycleUnverified: true } : allow;
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -122,13 +211,17 @@ const ROLE_RPC: Record<RoleGateKind, { role: string; scope?: string }> = {
 
 /**
  * Resolve the role signal (and scope where applicable) from the database RPC
- * primitives and evaluate the role gate. Does not throw on DENY — callers that
- * need composite (any-of) authorization resolve multiple kinds and combine the
- * outcomes. Throws only on an RPC-level error.
+ * primitives and evaluate the role gate. The optional lifecycle signals are
+ * threaded through to the decision whenever the call site holds the acting
+ * identity's lifecycle/session state (additive param; existing call sites
+ * unchanged). Does not throw on DENY — callers that need composite (any-of)
+ * authorization resolve multiple kinds and combine the outcomes. Throws only
+ * on an RPC-level error.
  */
 export async function resolveRoleGate(
   supabase: SupabaseRpcClient,
   kind: RoleGateKind,
+  lifecycle?: LifecycleSignals,
 ): Promise<RoleGateOutcome> {
   const rpc = ROLE_RPC[kind];
   const roleRes = await supabase.rpc(rpc.role);
@@ -148,6 +241,7 @@ export async function resolveRoleGate(
   return evaluateRoleGate(kind, {
     roleGranted: (roleRes.data as boolean | null) ?? false,
     scope,
+    ...lifecycle,
   });
 }
 
@@ -155,8 +249,9 @@ export async function resolveRoleGate(
 export async function assertRoleScope(
   supabase: SupabaseRpcClient,
   kind: RoleGateKind,
+  lifecycle?: LifecycleSignals,
 ): Promise<string | null> {
-  const gate = await resolveRoleGate(supabase, kind);
+  const gate = await resolveRoleGate(supabase, kind, lifecycle);
   if (gate.decision !== "allow") {
     throw new Error(gate.reason);
   }
@@ -164,8 +259,11 @@ export async function assertRoleScope(
 }
 
 /** Assert a school-admin/principal scope and return the actor's school id. */
-export async function requireSchoolAdminScope(supabase: SupabaseRpcClient): Promise<string> {
-  const scope = await assertRoleScope(supabase, "school_admin");
+export async function requireSchoolAdminScope(
+  supabase: SupabaseRpcClient,
+  lifecycle?: LifecycleSignals,
+): Promise<string> {
+  const scope = await assertRoleScope(supabase, "school_admin", lifecycle);
   if (scope === null) {
     // Defensive: a null scope is a DENY in the gate above; this guards against
     // future divergence between the gate and this adapter.
@@ -175,8 +273,11 @@ export async function requireSchoolAdminScope(supabase: SupabaseRpcClient): Prom
 }
 
 /** Assert a platform super-admin. */
-export async function requirePlatformSuperAdmin(supabase: SupabaseRpcClient): Promise<void> {
-  await assertRoleScope(supabase, "platform_super_admin");
+export async function requirePlatformSuperAdmin(
+  supabase: SupabaseRpcClient,
+  lifecycle?: LifecycleSignals,
+): Promise<void> {
+  await assertRoleScope(supabase, "platform_super_admin", lifecycle);
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -184,7 +285,7 @@ export async function requirePlatformSuperAdmin(supabase: SupabaseRpcClient): Pr
  * (super-admin OR same-tenant school admin)
  * ────────────────────────────────────────────────────────────*/
 
-export interface AccountAdministrationSignals {
+export interface AccountAdministrationSignals extends LifecycleSignals {
   /** Platform super-admin resolved. */
   platformSuper: boolean;
   /** Same-school admin/principal role resolved. */
@@ -196,11 +297,28 @@ export interface AccountAdministrationSignals {
 }
 
 export type AccountAdministrationOutcome =
-  | { decision: "allow"; actor: "platform_super"; scope: null }
-  | { decision: "allow"; actor: "school_admin"; scope: string }
+  | {
+      decision: "allow";
+      actor: "platform_super";
+      scope: null;
+      /** Present (true) only on an opted-in allow that left lifecycle/session unverified. */
+      lifecycleUnverified?: boolean;
+    }
+  | {
+      decision: "allow";
+      actor: "school_admin";
+      scope: string;
+      /** Present (true) only on an opted-in allow that left lifecycle/session unverified. */
+      lifecycleUnverified?: boolean;
+    }
   | {
       decision: "deny";
-      code: "role_required" | "tenant_unresolved" | "not_same_tenant";
+      code:
+        | "role_required"
+        | "tenant_unresolved"
+        | "not_same_tenant"
+        | "lifecycle_denied"
+        | "session_denied";
       reason: string;
     };
 
@@ -208,13 +326,20 @@ export type AccountAdministrationOutcome =
  * Decide composite account-administration access: platform super-admins may
  * act on any tenant; school admins may act only inside their own tenant and
  * (when a target is supplied) only on records that belong to that same tenant.
- * Anything else fails closed.
+ * Anything else fails closed — including a non-usable identity lifecycle or a
+ * non-active session, which deny before any role is consulted (AGENTS §31).
  */
 export function decideAccountAdministration(
   signals: AccountAdministrationSignals,
 ): AccountAdministrationOutcome {
+  const lifecycle = checkLifecycleSignals(signals);
+  if (!lifecycle.ok) {
+    return { decision: "deny", code: lifecycle.code, reason: lifecycle.reason };
+  }
+
   if (signals.platformSuper) {
-    return { decision: "allow", actor: "platform_super", scope: null };
+    const allow = { decision: "allow" as const, actor: "platform_super" as const, scope: null };
+    return lifecycle.lifecycleUnverified ? { ...allow, lifecycleUnverified: true } : allow;
   }
 
   if (!signals.schoolAdmin) {
@@ -242,7 +367,8 @@ export function decideAccountAdministration(
     };
   }
 
-  return { decision: "allow", actor: "school_admin", scope };
+  const allow = { decision: "allow" as const, actor: "school_admin" as const, scope };
+  return lifecycle.lifecycleUnverified ? { ...allow, lifecycleUnverified: true } : allow;
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -283,9 +409,10 @@ const STAFF_REASONS = {
   roleRequired: "Forbidden: role not authorized for this operation",
   tenantUnresolved: "No school in scope",
   gatewayDeny: "Forbidden: role access denied",
+  ...LIFECYCLE_REASONS,
 } as const;
 
-export interface StaffDecisionSignals {
+export interface StaffDecisionSignals extends LifecycleSignals {
   /** Actor role from `public.users` (resolved via `public.get_my_role()`). */
   role?: string | null;
   /** Resolved school scope. */
@@ -298,23 +425,35 @@ export type StaffDecision =
       role: SchoolStaffRole;
       scope: string;
       reason: "Staff role verified";
+      /** Present (true) only on an opted-in allow that left lifecycle/session unverified. */
+      lifecycleUnverified?: boolean;
     }
   | {
       decision: "deny";
-      code: "role_required" | "tenant_unresolved" | "gateway_deny";
+      code:
+        | "role_required"
+        | "tenant_unresolved"
+        | "gateway_deny"
+        | "lifecycle_denied"
+        | "session_denied";
       reason: string;
     };
 
 /**
  * Pure decision for a school-staff role set. Fails closed on any unknown,
  * missing or malformed signal (AT.9): a role outside the set, a null/blank
- * scope, or a non-allow security-gateway outcome is a DENY — never a silent
- * grant.
+ * scope, a non-usable identity lifecycle, a non-active session, or a
+ * non-allow security-gateway outcome is a DENY — never a silent grant.
  */
 export function decideStaffRole(
   kind: SchoolStaffKind,
   signals: StaffDecisionSignals,
 ): StaffDecision {
+  const lifecycle = checkLifecycleSignals(signals);
+  if (!lifecycle.ok) {
+    return { decision: "deny", code: lifecycle.code, reason: lifecycle.reason };
+  }
+
   const allowed = SCHOOL_STAFF_ROLES[kind] as readonly string[];
   const rawRole = signals.role?.trim().toLowerCase() ?? "";
   if (!allowed.includes(rawRole)) {
@@ -338,12 +477,13 @@ export function decideStaffRole(
     return { decision: "deny", code: "gateway_deny", reason: STAFF_REASONS.gatewayDeny };
   }
 
-  return {
-    decision: "allow",
+  const allow = {
+    decision: "allow" as const,
     role: rawRole as SchoolStaffRole,
     scope,
-    reason: "Staff role verified",
+    reason: "Staff role verified" as const,
   };
+  return lifecycle.lifecycleUnverified ? { ...allow, lifecycleUnverified: true } : allow;
 }
 
 export interface SchoolStaffContext {
@@ -356,13 +496,17 @@ const STAFF_ROLE_RPC = "get_my_role";
 
 /**
  * Resolve the actor's staff role + school scope from the existing database
- * RPC primitives and evaluate the requested role set. Does not throw on DENY
- * (callers needing composite any-of authorization may combine outcomes);
- * throws only on an RPC-level error.
+ * RPC primitives and evaluate the requested role set. The optional lifecycle
+ * signals are threaded through to the decision whenever the call site holds
+ * the acting identity's lifecycle/session state (additive param; existing
+ * call sites unchanged). Does not throw on DENY (callers needing composite
+ * any-of authorization may combine outcomes); throws only on an RPC-level
+ * error.
  */
 export async function resolveStaffContext(
   supabase: SupabaseRpcClient,
   kind: SchoolStaffKind,
+  lifecycle?: LifecycleSignals,
 ): Promise<StaffDecision> {
   const roleRes = await supabase.rpc(STAFF_ROLE_RPC);
   if (roleRes.error) {
@@ -375,6 +519,7 @@ export async function resolveStaffContext(
   return decideStaffRole(kind, {
     role: (roleRes.data as string | null) ?? null,
     scope: (scopeRes.data as string | null) ?? null,
+    ...lifecycle,
   });
 }
 
@@ -382,8 +527,9 @@ export async function resolveStaffContext(
 export async function requireStaffContext(
   supabase: SupabaseRpcClient,
   kind: SchoolStaffKind,
+  lifecycle?: LifecycleSignals,
 ): Promise<SchoolStaffContext> {
-  const gate = await resolveStaffContext(supabase, kind);
+  const gate = await resolveStaffContext(supabase, kind, lifecycle);
   if (gate.decision !== "allow") {
     throw new Error(gate.reason);
   }
