@@ -23,6 +23,10 @@ import {
   createAdapterFailurePolicy,
   type AdapterClock,
 } from "../../frontend/src/lib/adapters/failure-policy";
+import {
+  ModelRegistry,
+  type DeclaredModel,
+} from "../../frontend/src/lib/ai-gateway/model-registry";
 
 /** Deferred-delay clock: the timeout fires only when the test fires it. */
 function manualClock(startMs = 1_000_000) {
@@ -551,5 +555,271 @@ describe("adapter failure policy wiring (J-045)", () => {
       }),
     );
     expect(policy.recommendTrust().verdict).toBe("untrusted");
+  });
+});
+
+/* ─────────────────────────────────────────────────────────────
+ * J-014 model registry routing (additive; legacy path unchanged)
+ * ────────────────────────────────────────────────────────────*/
+
+describe("model registry routing inside the gateway (J-014, V1CAP-028)", () => {
+  const REGISTRY_RATES: ModelRateTable = {
+    "coregrid/flash": RATES["coregrid/flash"],
+    "coregrid/deep": {
+      provider: "provider-y",
+      inputUsdPerMillionTokens: 5,
+      outputUsdPerMillionTokens: 10,
+    },
+  };
+
+  function smallPolicy() {
+    return createAdapterFailurePolicy({
+      provider: "ai-gateway",
+      timeoutMs: 1_000,
+      maxAttempts: 1,
+      backoffBaseMs: 100,
+      backoffCapMs: 1_000,
+      degradedAfterFailures: 2,
+      degradedWindowMs: 10_000,
+      breakerFailureThreshold: 3,
+      breakerResetMs: 5_000,
+    });
+  }
+
+  function registryModel(id: string, overrides: Partial<DeclaredModel> = {}): DeclaredModel {
+    return {
+      id,
+      providerClass: "small-fast",
+      profile: { contextWindowTokens: 128_000, latencyTier: "low", costTier: "low" },
+      ...overrides,
+    };
+  }
+
+  function testRegistry(): ModelRegistry {
+    return new ModelRegistry({
+      models: [
+        registryModel("coregrid/flash"),
+        registryModel("coregrid/deep", {
+          providerClass: "deep-reasoning",
+          profile: { contextWindowTokens: 200_000, latencyTier: "high", costTier: "high" },
+        }),
+      ],
+      fallbackChains: { summarization: ["coregrid/flash", "coregrid/deep"] },
+    });
+  }
+
+  it("routes the declared model through the registry and hands the resolved context to invoke", async () => {
+    const ledger = new UsageLedger(REGISTRY_RATES);
+    let context: { model: string; providerClass: string | null } | null = null;
+    const outcome = await invokeAiGateway(
+      baseRequest({
+        ledger,
+        rates: REGISTRY_RATES,
+        modelRegistry: testRegistry(),
+        failurePolicy: smallPolicy(),
+        invoke: async (_provider, ctx) => {
+          context = ctx;
+          return { payload: { ok: true }, tokensIn: 100, tokensOut: 40 };
+        },
+      }),
+    );
+    expect(outcome.decision).toBe("allow");
+    expect(context).toEqual({ model: "coregrid/flash", providerClass: "small-fast" });
+    expect(ledger.all()).toHaveLength(1);
+    expect(ledger.all()[0].model).toBe("coregrid/flash");
+    if (outcome.decision === "allow") expect(outcome.usage.model).toBe("coregrid/flash");
+  });
+
+  it("keeps the legacy declared path: invoke receives the declared model with a null provider class", async () => {
+    let context: { model: string; providerClass: string | null } | null = null;
+    const outcome = await invokeAiGateway(
+      baseRequest({
+        invoke: async (_provider, ctx) => {
+          context = ctx;
+          return { payload: { ok: true }, tokensIn: 1, tokensOut: 1 };
+        },
+      }),
+    );
+    expect(outcome.decision).toBe("allow");
+    expect(context).toEqual({ model: "coregrid/flash", providerClass: null });
+  });
+
+  it("denies an unregistered declared model, fail closed, without any provider contact", async () => {
+    const request = baseRequest({
+      model: "vendor/unlisted",
+      modelRegistry: testRegistry(),
+      failurePolicy: smallPolicy(),
+    });
+    const outcome = await invokeAiGateway(request);
+    expect(outcome.decision).toBe("deny");
+    if (outcome.decision === "deny") {
+      expect(outcome.code).toBe("model_unroutable");
+      expect(outcome.reason).toContain("not registered");
+    }
+    expect(request.invoke as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
+  });
+
+  it("routes by declared requirements, skipping a declared model that does not satisfy them", async () => {
+    const seen: string[] = [];
+    const outcome = await invokeAiGateway(
+      baseRequest({
+        model: "coregrid/deep",
+        modelRegistry: testRegistry(),
+        failurePolicy: smallPolicy(),
+        routingRequirements: { maxLatencyTier: "low" },
+        invoke: async (_provider, ctx) => {
+          seen.push(ctx.model);
+          return { payload: { ok: true }, tokensIn: 1, tokensOut: 1 };
+        },
+      }),
+    );
+    expect(outcome.decision).toBe("allow");
+    expect(seen).toEqual(["coregrid/flash"]);
+  });
+
+  it("falls back to the next healthy candidate on failure, metering only the successful attempt", async () => {
+    const registry = testRegistry();
+    const ledger = new UsageLedger(REGISTRY_RATES);
+    const attempted: string[] = [];
+    const outcome = await invokeAiGateway(
+      baseRequest({
+        ledger,
+        rates: REGISTRY_RATES,
+        modelRegistry: registry,
+        failurePolicy: smallPolicy(),
+        invoke: async (_provider, ctx) => {
+          attempted.push(ctx.model);
+          if (ctx.model === "coregrid/flash") throw new Error("provider down");
+          return { payload: { ok: true }, tokensIn: 10, tokensOut: 5 };
+        },
+      }),
+    );
+    expect(outcome.decision).toBe("allow");
+    expect(attempted).toEqual(["coregrid/flash", "coregrid/deep"]);
+    expect(ledger.all()).toHaveLength(1);
+    expect(ledger.all()[0].model).toBe("coregrid/deep");
+    expect(ledger.all()[0].estimatedCostUsd).toBeCloseTo((10 / 1e6) * 5 + (5 / 1e6) * 10, 12);
+    expect(registry.healthOf("coregrid/flash")).toBe("degraded");
+    expect(registry.healthOf("coregrid/deep")).toBe("healthy");
+  });
+
+  it("denies with provider_failed when every routed candidate fails, degrading each model", async () => {
+    const registry = testRegistry();
+    const ledger = new UsageLedger(REGISTRY_RATES);
+    const attempted: string[] = [];
+    const outcome = await invokeAiGateway(
+      baseRequest({
+        ledger,
+        modelRegistry: registry,
+        failurePolicy: smallPolicy(),
+        invoke: async (_provider, ctx) => {
+          attempted.push(ctx.model);
+          throw new Error("provider down");
+        },
+      }),
+    );
+    expect(outcome.decision).toBe("deny");
+    if (outcome.decision === "deny") {
+      expect(outcome.code).toBe("provider_failed");
+      expect(outcome.reason).toContain("provider down");
+      expect(outcome.reason).toContain("coregrid/flash");
+    }
+    expect(attempted).toEqual(["coregrid/flash", "coregrid/deep"]);
+    expect(ledger.all()).toHaveLength(0);
+    expect(registry.healthOf("coregrid/flash")).toBe("degraded");
+    expect(registry.healthOf("coregrid/deep")).toBe("degraded");
+  });
+
+  it("re-applies the rate limit per fallback attempt (governed path, no provider escape)", async () => {
+    const limiter = createRateLimiter({ maxRequests: 1, windowMs: 1_000 });
+    const registry = testRegistry();
+    const attempted: string[] = [];
+    const outcome = await invokeAiGateway(
+      baseRequest({
+        modelRegistry: registry,
+        failurePolicy: smallPolicy(),
+        rateLimiter: limiter,
+        now: () => 1_000_000,
+        invoke: async (_provider, ctx) => {
+          attempted.push(ctx.model);
+          if (ctx.model === "coregrid/flash") throw new Error("provider down");
+          return { payload: { ok: true }, tokensIn: 1, tokensOut: 1 };
+        },
+      }),
+    );
+    expect(outcome.decision).toBe("deny");
+    if (outcome.decision === "deny") {
+      expect(outcome.code).toBe("rate_limited");
+      expect(outcome.reason).toContain("retry after");
+    }
+    expect(attempted).toEqual(["coregrid/flash"]);
+    expect(registry.healthOf("coregrid/flash")).toBe("degraded");
+    expect(registry.healthOf("coregrid/deep")).toBe("healthy");
+  });
+
+  it("applies the budget pre-check to the routed path before any provider contact", async () => {
+    const ledger = seededLedger();
+    const request = baseRequest({
+      ledger,
+      budget: { maxRequests: 1 },
+      modelRegistry: testRegistry(),
+      failurePolicy: smallPolicy(),
+    });
+    const outcome = await invokeAiGateway(request);
+    expect(outcome.decision).toBe("deny");
+    if (outcome.decision === "deny") {
+      expect(outcome.code).toBe("budget_exhausted");
+      expect(outcome.reason).toContain("Request budget exhausted");
+    }
+    expect(request.invoke as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
+  });
+
+  it("denies with model_unroutable when no routed candidate is healthy, without invoking", async () => {
+    const registry = testRegistry();
+    registry.declareHealth("coregrid/flash", "isolated");
+    registry.declareHealth("coregrid/deep", "isolated");
+    const request = baseRequest({
+      modelRegistry: registry,
+      failurePolicy: smallPolicy(),
+    });
+    const outcome = await invokeAiGateway(request);
+    expect(outcome.decision).toBe("deny");
+    if (outcome.decision === "deny") {
+      expect(outcome.code).toBe("model_unroutable");
+      expect(outcome.reason).toContain("unhealthy");
+    }
+    expect(request.invoke as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
+  });
+
+  it("clears a degraded model back to healthy after recovery", async () => {
+    const registry = testRegistry();
+    registry.recordFailure("coregrid/flash");
+    const attempted: string[] = [];
+    await invokeAiGateway(
+      baseRequest({
+        modelRegistry: registry,
+        failurePolicy: smallPolicy(),
+        invoke: async (_provider, ctx) => {
+          attempted.push(ctx.model);
+          return { payload: { ok: true }, tokensIn: 1, tokensOut: 1 };
+        },
+      }),
+    );
+    expect(attempted).toEqual(["coregrid/deep"]);
+    // Recovery: the failed primary is declared healthy again (operator or
+    // upstream success signal), so the deterministic primary route resumes.
+    registry.recordSuccess("coregrid/flash");
+    const recovery: string[] = [];
+    await invokeAiGateway(
+      baseRequest({
+        modelRegistry: registry,
+        failurePolicy: smallPolicy(),
+        invoke: async (_provider, ctx) => {
+          recovery.push(ctx.model);
+          return { payload: { ok: true }, tokensIn: 1, tokensOut: 1 };
+        },
+      }),
+    );
+    expect(recovery).toEqual(["coregrid/flash"]);
   });
 });

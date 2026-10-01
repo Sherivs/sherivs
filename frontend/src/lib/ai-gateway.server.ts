@@ -36,6 +36,7 @@ import {
   type LogSink,
 } from "./observability/structured-log";
 import { createAdapterFailurePolicy, type AdapterFailurePolicy } from "./adapters/failure-policy";
+import type { ModelRegistry, ModelRoutingRequirements } from "./ai-gateway/model-registry";
 
 export function createAiGatewayProvider(apiKey: string) {
   const key = apiKey || process.env.AI_API_KEY || "";
@@ -202,7 +203,16 @@ export interface AiGatewayInvokeRequest<TPayload> {
    * returned — only forwarded to the provider factory (BLK-2).
    */
   apiKey?: string;
-  invoke: (provider: AiGatewayProvider) => Promise<AiGatewayInvocationResult<TPayload>>;
+  /**
+   * The model call. The second argument carries the gateway-resolved
+   * invocation context: on the legacy declared path the declared model is
+   * echoed back; when `modelRegistry` is wired it is the registry-resolved
+   * model for THIS attempt (§20: callers never choose providers themselves).
+   */
+  invoke: (
+    provider: AiGatewayProvider,
+    context: AiGatewayInvocationContext,
+  ) => Promise<AiGatewayInvocationResult<TPayload>>;
   /** Rate table for cost estimation; omitted => estimatedCostUsd stays null. */
   rates?: ModelRateTable;
   /** Budget limits evaluated against the ledger before invocation. */
@@ -219,16 +229,209 @@ export interface AiGatewayInvokeRequest<TPayload> {
    * the legacy rethrow semantics are preserved unchanged.
    */
   failurePolicy?: AdapterFailurePolicy;
+  /**
+   * J-014: when wired, EVERY model choice is resolved through the registry —
+   * routing by declared purpose requirements, health-state skipping, and
+   * fallback all execute inside this gateway. The declared `model` must be
+   * registered (unregistered -> typed denial) and is used as the primary
+   * route; alternatives come from the purpose's fallback chain.
+   */
+  modelRegistry?: ModelRegistry;
+  /**
+   * J-014: declared routing requirements (cost/latency/context capability)
+   * the registry applies when resolving the route for the declared purpose.
+   */
+  routingRequirements?: ModelRoutingRequirements;
   logSink?: LogSink;
   now?: () => number;
 }
 
 export type AiGatewayDenyCode =
-  "unconfigured" | "budget_exhausted" | "rate_limited" | "provider_failed";
+  | "unconfigured"
+  | "budget_exhausted"
+  | "rate_limited"
+  | "provider_failed"
+  | "model_unroutable";
+
+/**
+ * J-014: per-attempt invocation context handed to the `invoke` callback.
+ * `providerClass` is the registry's vendor-neutral class when the invocation
+ * was routed through the model registry; null on the legacy declared path.
+ */
+export interface AiGatewayInvocationContext {
+  model: string;
+  providerClass: string | null;
+}
 
 export type AiGatewayOutcome<TPayload> =
   | { decision: "allow"; payload: TPayload; usage: UsageRecord }
   | { decision: "deny"; code: AiGatewayDenyCode; reason: string };
+
+/**
+ * J-014: registry-routed invocation loop. All routing stays inside the
+ * gateway: the registry resolves the ordered candidate queue, and every
+ * candidate is attempted through the SAME governed path — health re-check,
+ * budget pre-check, rate limit, contained invocation, metering — per
+ * attempt. A failing model moves its registry health state (circuit-breaker
+ * handoff, J-045 vocabulary); the next healthy candidate is the fallback.
+ * Without a failure policy from the caller, the module-level gateway policy
+ * bounds and contains each attempt so fallback decisions remain deterministic.
+ */
+async function invokeRoutedThroughRegistry<TPayload>(
+  request: AiGatewayInvokeRequest<TPayload>,
+  deps: {
+    now: () => number;
+    apiKey: string;
+    log: (level: LogLevel, msg: string, fields?: GatewayLogFields) => void;
+  },
+): Promise<AiGatewayOutcome<TPayload>> {
+  const registry = request.modelRegistry;
+  if (!registry) {
+    throw new TypeError("invokeRoutedThroughRegistry requires a model registry");
+  }
+
+  const resolution = registry.resolveModel({
+    purpose: request.purpose,
+    declaredModel: request.model,
+    requirements: request.routingRequirements ?? null,
+  });
+  if (resolution.decision === "deny") {
+    deps.log("warn", "gateway.decision.deny", {
+      decision: "deny",
+      code: "model_unroutable",
+      routing_code: resolution.code,
+      reason: resolution.reason,
+    });
+    return { decision: "deny", code: "model_unroutable", reason: resolution.reason };
+  }
+
+  const failurePolicy = request.failurePolicy ?? AI_GATEWAY_FAILURE_POLICY;
+  const attempted: string[] = [];
+  let lastProviderError: { code: string; reason: string } | null = null;
+
+  for (const modelId of resolution.candidates) {
+    if (registry.healthOf(modelId) !== "healthy") {
+      deps.log("warn", "gateway.routing.skip_unhealthy", {
+        model: modelId,
+        health: registry.healthOf(modelId),
+      });
+      continue;
+    }
+
+    if (request.ledger && request.budget) {
+      const budget = precheckGatewayBudget(request.budget, request.ledger, request.tenantRef);
+      if (budget.decision === "deny") {
+        deps.log("warn", "gateway.decision.deny", {
+          decision: "deny",
+          code: "budget_exhausted",
+          reason: budget.reason,
+          model: modelId,
+        });
+        return { decision: "deny", code: "budget_exhausted", reason: budget.reason };
+      }
+    }
+
+    if (request.rateLimiter) {
+      const limit = request.rateLimiter.check(
+        `${request.tenantRef}:${request.actorRef}`,
+        deps.now(),
+      );
+      if (limit.decision === "deny") {
+        const reason = `Rate limit exceeded for ${request.tenantRef}:${request.actorRef}; retry after ${limit.retryAfterMs}ms`;
+        deps.log("warn", "gateway.decision.deny", {
+          decision: "deny",
+          code: "rate_limited",
+          reason,
+          retry_after_ms: limit.retryAfterMs,
+          model: modelId,
+        });
+        return { decision: "deny", code: "rate_limited", reason };
+      }
+    }
+
+    attempted.push(modelId);
+    const startMs = deps.now();
+    deps.log("info", "gateway.invoke.start", { model: modelId });
+
+    const policyOutcome = await failurePolicy.run({
+      operation: "ai-gateway.invoke",
+      // Billed, non-idempotent model calls are never transport-retried here;
+      // failover is model-level fallback, not a blind retry of the same call.
+      maxAttempts: 1,
+      call: async () => {
+        const provider = createAiGatewayProvider(deps.apiKey);
+        return request.invoke(provider, {
+          model: modelId,
+          providerClass: registry.describeModel(modelId).providerClass,
+        });
+      },
+    });
+
+    if (policyOutcome.outcome === "error") {
+      registry.recordFailure(modelId);
+      lastProviderError = { code: policyOutcome.code, reason: policyOutcome.reason };
+      deps.log("error", "gateway.invoke.error", {
+        model: modelId,
+        duration_ms: deps.now() - startMs,
+        code: policyOutcome.code,
+        reason: policyOutcome.reason,
+      });
+      continue;
+    }
+
+    const result = policyOutcome.value;
+    registry.recordSuccess(modelId);
+    const durationMs = deps.now() - startMs;
+    const costInput: UsageCostInput = {
+      model: modelId,
+      tokensIn: result.tokensIn,
+      tokensOut: result.tokensOut,
+    };
+    const usage: UsageRecord = {
+      tenantRef: request.tenantRef,
+      actorRef: request.actorRef,
+      agentRef: request.agentRef ?? null,
+      missionRef: request.missionRef ?? null,
+      model: modelId,
+      provider: request.provider,
+      purpose: request.purpose,
+      tokensIn: result.tokensIn,
+      tokensOut: result.tokensOut,
+      durationMs,
+      estimatedCostUsd: request.rates ? estimateCostUsd(costInput, request.rates) : null,
+      at: new Date(deps.now()).toISOString(),
+    };
+    if (request.ledger) {
+      request.ledger.recordUsage(usage);
+    }
+    deps.log("info", "gateway.invoke.end", {
+      model: modelId,
+      duration_ms: durationMs,
+      usage_in: result.tokensIn,
+      usage_out: result.tokensOut,
+      estimated_cost_usd: usage.estimatedCostUsd,
+    });
+    return { decision: "allow", payload: result.payload, usage };
+  }
+
+  if (lastProviderError) {
+    const reason = `AI invocation failed at the adapter boundary (code=${lastProviderError.code}) for every routed model (${attempted.join(", ") || "none"}): ${lastProviderError.reason}`;
+    deps.log("error", "gateway.decision.deny", {
+      decision: "deny",
+      code: "provider_failed",
+      reason,
+    });
+    return { decision: "deny", code: "provider_failed", reason };
+  }
+
+  const reason = `Routing exhausted: no healthy registered model could serve purpose "${request.purpose}"`;
+  deps.log("warn", "gateway.decision.deny", {
+    decision: "deny",
+    code: "model_unroutable",
+    reason,
+  });
+  return { decision: "deny", code: "model_unroutable", reason };
+}
 
 /**
  * Invoke a model through the governed gateway.
@@ -278,6 +481,12 @@ export async function invokeAiGateway<TPayload>(
     return { decision: "deny", code: "unconfigured", reason };
   }
 
+  // J-014: with a wired registry, routing is a gateway decision made before
+  // any metered attempt; budget/rate/authorization re-apply per candidate.
+  if (request.modelRegistry) {
+    return invokeRoutedThroughRegistry(request, { now, apiKey, log });
+  }
+
   if (request.ledger && request.budget) {
     const budget = precheckGatewayBudget(request.budget, request.ledger, request.tenantRef);
     if (budget.decision === "deny") {
@@ -315,7 +524,7 @@ export async function invokeAiGateway<TPayload>(
       maxAttempts: 1,
       call: async () => {
         const provider = createAiGatewayProvider(apiKey);
-        return request.invoke(provider);
+        return request.invoke(provider, { model: request.model, providerClass: null });
       },
     });
     if (policyOutcome.outcome === "error") {
@@ -331,7 +540,7 @@ export async function invokeAiGateway<TPayload>(
   } else {
     try {
       const provider = createAiGatewayProvider(apiKey);
-      result = await request.invoke(provider);
+      result = await request.invoke(provider, { model: request.model, providerClass: null });
     } catch (err) {
       log("error", "gateway.invoke.error", { duration_ms: now() - startMs, err });
       throw err;
