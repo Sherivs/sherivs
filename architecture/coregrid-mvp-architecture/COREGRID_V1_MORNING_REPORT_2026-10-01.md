@@ -103,3 +103,43 @@ The push-token invalidation was transient: `git push` succeeded at 03:46 UTC on 
 ## Not claimed
 
 Fourteen missions delivered governed contracts, pure engines, and one deployment path — none of it is OPERATIONAL truth yet: no migration has been applied (law), no live AI call has been made (BLK-2), no live payment/email sent (BLK-4/5), no Docker image built (docker absent), no deployment executed (BLK-3). All mission statuses are IMPLEMENTED + VERIFIED (unit/contract level), never DEPLOYED or OPERATIONAL (V5.3 Part 43 distinction preserved). The earlier Gate 17 boundary statement also still holds: the 10 Oct target is recorded as operator authority, not achieved. CoreGrid V1 truthfully says: **AI-native organizational computing platform — in governed, verified construction.**
+
+## CTO DIRECTIVE RUN (2026-10-01, morning) — V1 RECONSTRUCTED + SCOPE LOCKED
+
+The operator issued an authoritative CTO directive. Full adoption record: `architecture/COREGRID_CTO_DIRECTIVE_RECONCILIATION.json` (12 rulings). What it decided and what was executed:
+
+| CTO item | Outcome |
+| --- | --- |
+| DEC-1 RLS posture | **Decided**: deny-by-default service-role-only stands during reconciliation; domain-neutral authorization model designed pre-lock (STREAM I + K consolidated; V1CAP-013/014) |
+| Worker ownership | **Decided**: workers = governed execution identities, extension of the actor/delegation model (resolves BLK-6/CG-GAP-009/011) |
+| Role vocabulary | **Decided**: universal layer domain-neutral (ACTOR..SYSTEM); education roles are runtime mappings only |
+| Workflow vocabulary | **Decided**: one canonical lifecycle (15 states incl. RETRYING/COMPENSATING/QUARANTINED/ARCHIVED) mapped onto automation-workflow.ts semantics |
+| Phase 15 | **Decided**: QUARANTINE — CLASSIFY ONLY, DELETE NOTHING |
+| Restaurant proof | Reclassified as test/proof fixture; retained as the domain-neutrality stress test |
+| V1/V2 boundary | **Only V1/V2 buckets** — former FUTURE-V3/FUTURE-UNASSIGNED re-derived (V1×24 / V2×25 / DEFERRED_CORPUS×2 at phase level; 6 narrative items held as corpus, not a bucket) |
+| Part 30 migrations | **EXECUTED**: both approved migrations applied to dev project via `scripts/apply-approved-v1-migrations.mjs`; RLS isolation check PASS; all four tables `rowsecurity=true` |
+| Part 31 secrets | Adopted: missing secrets reported as BLOCKED — SECRET REQUIRED (OPS-1 remains open) |
+
+### The reconstruction (STEPS 1-9, six read-only analysis streams + synthesis)
+
+| Stream | Artifact | Headline |
+| --- | --- | --- |
+| E mothers/governance | `reconstruction/STREAM_E_MOTHERS_GOVERNANCE_EXTRACTION.json` | 124 capabilities, 10 contradictions (incl. mother-canon count conflict, 3 competing authority ladders) |
+| F 51 phases | `reconstruction/STREAM_F_PHASE_EXTRACTION.json` | V1×24 / V2×25 / DEFERRED×2; 13 reclassifications; phase 38 duplicates 32; kernel naming 33-vs-51 resolved |
+| G Phase 52 corpus | `reconstruction/STREAM_G_PHASE52_EXTRACTION.json` | 104 requirements (V1×91/V2×9/DEFERRED×4), 18 buried gems (verification as first-class loop stage; Mission/Delegation schemas never specified) |
+| H implementation trace | `reconstruction/STREAM_H_IMPLEMENTATION_MAP.json` | 17 capability families traced; 8 orphans (incl. legacy Scholar durable tables with no phase contract); verify baseline 3,458 green |
+| I contamination audit | `reconstruction/STREAM_I_CONTAMINATION_AUDIT.json` | 34 findings: 8 blocking (users.school_id fusion; universal RPCs gated on is_school_admin; AppRole as platform vocabulary; capability-gate "r001" hard-code). Kernel substrate verified CLEAN |
+| J gap discovery | `reconstruction/STREAM_J_GAP_DISCOVERY.json` | 49 gaps (8 blocking) across 16 fabrics; 11 inflation rejections; 6 capabilities the CTO fabric list itself missed |
+| K synthesis | `reconstruction/COREGRID_V1_RECONSTRUCTED_ARCHITECTURE.json` + `COREGRID_V1_V2_SCOPE_LOCK.json` | **93 V1 + 26 V2 capabilities, deduplicated with provenance; SCOPE_LOCKED_WITH_RECORDED_CONDITIONS (14 conditions, none blocking)** |
+| L hardening | `reconstruction/COREGRID_V1_ARCHITECTURE_HARDENING.json` | 11 analyses; 16 threats (4 critical — top: Scholar-fused universal authorization primitives; unproven RLS; delegation escalation; environment-state falsification); 27 hardening requirements (13 gate mission launch) |
+| M mission graph | `reconstruction/COREGRID_V1_MISSION_GRAPH.json` | **50 missions / 13 teams / 4 waves; max safe concurrency 10 (honest); wave 1 = 12 missions launchable TODAY with zero credentials** |
+
+### What we need from you now
+
+Secrets (BLOCKED — SECRET REQUIRED; use Cursor Cloud Secrets, never chat): `DATABASE_URL` + `prod-ca-2021.crt` (OPS-1), refreshed `SUPABASE_PUBLISHABLE_KEY` + prod project creds (BLK-1), `AI_API_KEY` (BLK-2), deployment creds (BLK-3 — decides 10 Oct), `PAYSTACK_SECRET_KEY` (BLK-4), email/SMS keys (BLK-5), Docker registry secrets (SEC-1), `version` field for package.json (SEC-2 — or approve `1.0.0-alpha.0`).
+
+Non-blocking rulings carried as scope-lock conditions (six gate the START of specific missions, not the campaign): Mission-owner ratification (CG-GAP-003 — K proposes the live-verified foundation mission substrate), D1 memory-owner ratification, tenant_id text-vs-uuid type ruling, GAP-008 shell ownership, mobile V1 membership, legacy Scholar durable-table retirement (governance event).
+
+### Next
+
+Per CTO Part 35: launch **wave 1** (12 dependency-free missions: ratification dossiers, registry reconciliation, domain-neutrality CI guard, kernel envelope, neutral tenant primitives + role vocabulary, context completeness, authorization exhaustive suite) at max safe concurrency 10, then waves 2-4 per the graph.

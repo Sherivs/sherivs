@@ -1,0 +1,80 @@
+{
+  "artifact": "COREGRID_CTO_DIRECTIVE_RECONCILIATION",
+  "captured": "2026-10-01",
+  "authority": "CTO DIRECTIVE — Architecture Reconciliation → V1 Scope Lock → Engineering Mission Mode (AUTHORITATIVE; supersedes accidental domain assumptions, temporary proof fixtures, implementation-first interpretations)",
+  "mechanism": "Governed adoption record; V5.3 remains the MVP execution profile except where this directive rules otherwise. Conflicts are resolved by recording, never by silent rewrite.",
+  "rulings": [
+    {
+      "id": "RULING-1-DOMAIN-NEUTRALITY",
+      "ruling": "Restaurant implementation is a TEST/PROOF FIXTURE only. Education is a runtime; restaurant, mining, healthcare, agriculture, government are runtimes. None define the CoreGrid substrate. Domain contamination found anywhere (roles, workflow states, tables, API contracts, UI assumptions, agent definitions, documents) must be corrected, not preserved.",
+      "disposition": "Drives STEP 1 contamination audit; restaurant proof retained as domain-neutrality stress test (Part 14), never deleted."
+    },
+    {
+      "id": "RULING-2-DEC-1-RLS",
+      "ruling": "DEC-1 APPROVED AS STATED: deny-by-default, strict service-role-only posture remains authoritative during architecture/reconciliation. Do not weaken security for slice convenience. A domain-neutral authorization model (principals, orgs, units, memberships, roles, permissions, scopes, tenants, ownership, delegation, worker authority, service/machine identities, policy evaluation, auditability) MUST be designed as part of V1 architecture BEFORE scope lock — not improvised during implementation.",
+      "disposition": "Becomes a mandatory V1 architecture work product (Identity & Authority Fabric design)."
+    },
+    {
+      "id": "RULING-3-WORKER-OWNERSHIP",
+      "ruling": "APPROVED: workers are governed actors, an extension of the CoreGrid actor/delegation model. Worker = governed execution identity (NOT merely LLM/process/container/consumer/prompt/script). Persistent: definition, capability, authority boundary, delegation history, execution history, evidence, outcomes. Ephemeral: runtime instance. Chain: Definition -> Delegation -> Mission Assignment -> Ephemeral Runtime -> Execution -> Evidence -> Verification -> Outcome -> Terminate. MANDATORY.",
+      "disposition": "Resolves BLK-6/CG-GAP-009/011 (canonical worker owner = actor/delegation model extension). Re-classifies DEC-3 as DECIDED."
+    },
+    {
+      "id": "RULING-4-ROLE-VOCABULARY",
+      "ruling": "Education-specific roles (teacher, student, principal, ...) and any single-domain roles must NOT be CoreGrid's universal ontology. Universal layer uses domain-neutral roles: ACTOR, MEMBER, OWNER, ADMINISTRATOR, OPERATOR, MANAGER, SUPERVISOR, CONTRIBUTOR, REVIEWER, APPROVER, AUDITOR, WORKER, AGENT, SERVICE, SYSTEM. Domain runtimes map these to domain-specific roles. The restaurant 'service_staff -> teacher' mapping must NOT be preserved as architecture.",
+      "disposition": "Universal role/capability model is a required V1 capability; existing AppRole/ScholarNavKind coupling recorded as contamination candidate for the audit."
+    },
+    {
+      "id": "RULING-5-WORKFLOW-VOCABULARY",
+      "ruling": "APPROVED: map the Part 17 workflow engine onto automation-workflow.ts ONLY IF the result is domain-neutral and preserves the stronger retry/idempotency semantics. ONE canonical workflow lifecycle: DEFINED, READY, QUEUED, RUNNING, WAITING, PAUSED, RETRYING, SUCCEEDED, FAILED, CANCELLED, TIMED_OUT, COMPENSATING, COMPENSATED, QUARANTINED, ARCHIVED. No competing state machines.",
+      "disposition": "DEC-4 DECIDED. Engineering work item post-scope-lock: single canonical lifecycle with the union state set."
+    },
+    {
+      "id": "RULING-6-PHASE-15",
+      "ruling": "CONFIRMED: QUARANTINE — CLASSIFY ONLY. DELETE NOTHING. Hardware/device material preserved as evidence; V2 hardware expansion frozen; no hardware contamination of the V1 universal substrate unless the architecture audit proves a capability genuinely foundational.",
+      "disposition": "Phase-15 UNRESOLVED boundary review → RESOLVED by this ruling (quarantine executed as classification)."
+    },
+    {
+      "id": "RULING-7-V1-V2-ONLY",
+      "ruling": "Do NOT keep creating V3/V4/V5/V6 buckets. Only V1 (Foundational Production Platform — everything necessary to legitimately function as a domain-neutral Reality Intelligence platform) and V2 (Frozen Expansion Surface — valuable but not required for V1). Neither V1 nor V2 → research/experimental/deferred CORPUS MATERIAL, not an invented product version. If genuinely necessary for V1, PULL INTO V1.",
+      "disposition": "Reconciles the V5.3-derived V2/V3/FUTURE-UNASSIGNED classification: former FUTURE-V3 items are re-evaluated V1-vs-V2-vs-deferred-corpus in the scope lock. The V5.3 classification register is preserved as history; the CTO scope lock supersedes it as the authoritative boundary."
+    },
+    {
+      "id": "RULING-8-RECONSTRUCT-V1",
+      "ruling": "V1 is NOT defined by the current repository, features, Scholar runtime, schema, UI, phase percentages, or MVP report. V1 is reconstructed from the ENTIRE architectural corpus (13 mothers, governance, 51 phases, Phase 52 corpus, registry, dependency/capability graphs, contracts, ontology, control-plane/runtime/implementation/assurance architecture, repository, code, database, migrations, tests, evidence, decisions, boundaries, slices, prototype archaeology, gaps, unresolved architecture, infrastructure, security, failure/recovery, temporal/event, AI, agent/worker, UI/UX, economics, interoperability, evolution). Missing-but-structurally-necessary capabilities MUST be added. The V1 completeness test is the closed loop: Reality -> Observation -> Representation -> Context -> Intelligence -> Decision -> Mission -> Delegation -> Worker Execution -> Action -> State Change -> Evidence -> Verification -> Outcome -> Memory -> Observation.",
+      "disposition": "Drives STEPS 2-8 (corpus extraction matrix, gap discovery, reconciliation, coherent V1 architecture, V1/V2 scope lock, hardening, scope-lock declaration)."
+    },
+    {
+      "id": "RULING-9-SCOPE-LOCK-GATE",
+      "ruling": "Do NOT begin the massive engineering campaign (30-50 concurrent missions, specialized teams) until the architecture can honestly be declared COREGRID V1 ARCHITECTURE — SCOPE LOCKED: ownership, boundaries, missing capabilities, duplicates, contamination, V1/V2 boundary, contracts, dependencies, security model, failure model, evidence model, runtime model, deployment assumptions, and engineering sequencing all known. No new capability enters V1 casually after lock (Part 29 freeze rule).",
+      "disposition": "Governs this run: architecture reconciliation FIRST; mission graph is DERIVED after lock, not before."
+    },
+    {
+      "id": "RULING-10-MIGRATIONS-APPROVED",
+      "ruling": "Migrations 20260930000000_coregrid_v1_workspace_persistence.sql and 20261001000000_coregrid_v1_org_model.sql are APPROVED for the development vertical slice. Their existence does NOT constitute proof that the final V1 data model is complete; they are implementation evidence to be reconciled against the final V1 architecture.",
+      "disposition": "EXECUTED: applied to dev project nwrflbpbhyiqdptmlccm via scripts/apply-approved-v1-migrations.mjs (authorized management-API path); RLS isolation check PASS; all four tables verified rowsecurity=true."
+    },
+    {
+      "id": "RULING-11-SECRETS-CHANNEL",
+      "ruling": "Never request credentials in chat; use Cursor Cloud Secrets. Never print secrets anywhere. Missing secret is reported as BLOCKED — SECRET REQUIRED.",
+      "disposition": "OPS-1 (DATABASE_URL + CA cert) recorded as BLOCKED — SECRET REQUIRED; secure-TLS db-run end-to-end proof remains open."
+    },
+    {
+      "id": "RULING-12-EVIDENCE-DISCIPLINE",
+      "ruling": "Every major mission produces IMPLEMENTATION + TEST + EXECUTION + OBSERVATION + EVIDENCE + VERIFICATION + CONFORMANCE. Never equate implemented=verified, test-exists=test-passed, build-succeeded=production-ready. No agent task theatre: optimize for verified architectural capability delivered into the operational platform. Report 'Mission X reached verified state Y with evidence Z', never 'Agent finished'.",
+      "disposition": "Reaffirms coordinator-verification law; applied to all mission reporting."
+    }
+  ],
+  "unresolved": [],
+  "executionOrder": [
+    "STEP 1 contamination audit",
+    "STEP 2-3 corpus reconstruction + extraction",
+    "STEP 4 gap discovery",
+    "STEP 5 reconciliation",
+    "STEP 6 coherent V1 architecture",
+    "STEP 7 V1/V2 scope lock",
+    "STEP 8 hardening",
+    "STEP 9 scope-lock declaration",
+    "then: mission graph + team formation + massive mission engineering"
+  ]
+}
