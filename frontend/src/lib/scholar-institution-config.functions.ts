@@ -28,6 +28,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { asKernelAdmin } from "@/lib/kernel-admin-client";
+import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireSchoolAdminScope } from "@/lib/security-role-gate";
 import { entityDraft, eventDraft } from "@/lib/kernel/reality";
 import { buildSchoolSpec, type SchoolBuildParts } from "@/lib/scholar/school-builder";
@@ -105,7 +106,14 @@ export const publishInstitutionOperatingModel = createServerFn({ method: "POST" 
   .validator((input: unknown) => publishSchema.parse(input))
   .handler(async ({ data, context }): Promise<PublishOperatingModelResult> => {
     // 2/3 — tenant boundary + authorization come from the resolved role scope.
-    const tenantId = await requireSchoolAdminScope(context.supabase);
+    // Lifecycle threading (DEFECT-1 follow-through): the JWT carries no
+    // lifecycle claim, so `lifecycle: null` opts this call into the lifecycle
+    // contract while flagging the identity lifecycle unverified (never silent);
+    // session validity is attested from the verified token's exp claim.
+    const tenantId = await requireSchoolAdminScope(context.supabase, {
+      lifecycle: null,
+      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+    });
 
     // 4 — validate through the pure Scholar contracts (A3 + A4); never accept
     // an inconsistent operating model.
@@ -220,7 +228,12 @@ export type CurrentOperatingModelDetailResult = {
 export const getCurrentInstitutionOperatingModelDetail = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<CurrentOperatingModelDetailResult> => {
-    const tenantId = await requireSchoolAdminScope(context.supabase);
+    // Lifecycle threading: see publishInstitutionOperatingModel for the signal
+    // semantics (unverified lifecycle flagged; session attested from exp).
+    const tenantId = await requireSchoolAdminScope(context.supabase, {
+      lifecycle: null,
+      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+    });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = asKernelAdmin(supabaseAdmin);
 
@@ -276,7 +289,12 @@ export type OperatingModelVersionListResult = {
 export const listInstitutionOperatingModelVersions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<OperatingModelVersionListResult> => {
-    const tenantId = await requireSchoolAdminScope(context.supabase);
+    // Lifecycle threading: see publishInstitutionOperatingModel for the signal
+    // semantics (unverified lifecycle flagged; session attested from exp).
+    const tenantId = await requireSchoolAdminScope(context.supabase, {
+      lifecycle: null,
+      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+    });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = asKernelAdmin(supabaseAdmin);
 
@@ -320,7 +338,12 @@ export type CurrentOperatingModelResult = {
 export const getCurrentInstitutionOperatingModel = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<CurrentOperatingModelResult> => {
-    const tenantId = await requireSchoolAdminScope(context.supabase);
+    // Lifecycle threading: see publishInstitutionOperatingModel for the signal
+    // semantics (unverified lifecycle flagged; session attested from exp).
+    const tenantId = await requireSchoolAdminScope(context.supabase, {
+      lifecycle: null,
+      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+    });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = asKernelAdmin(supabaseAdmin);
 

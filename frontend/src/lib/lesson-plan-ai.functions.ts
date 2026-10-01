@@ -7,6 +7,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { generateText, Output } from "ai";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireStaffContext } from "@/lib/security-role-gate";
 import { invokeAiGateway, type AiGatewayOutcome } from "@/lib/ai-gateway.server";
 
@@ -46,7 +47,14 @@ export const draftLessonPlan = createServerFn({ method: "POST" })
     // Canonical Phase 08 teaching-staff gate (admin/principal/teacher).
     // Lesson-plan generation consumes the workspace AI gateway — cost-bearing,
     // so it is restricted to staff rather than any authenticated user.
-    const staff = await requireStaffContext(context.supabase, "teaching_staff");
+    // Lifecycle threading (DEFECT-1 follow-through): the JWT carries no
+    // lifecycle claim, so `lifecycle: null` opts this call into the lifecycle
+    // contract while flagging the identity lifecycle unverified (never silent);
+    // session validity is attested from the verified token's exp claim.
+    const staff = await requireStaffContext(context.supabase, "teaching_staff", {
+      lifecycle: null,
+      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+    });
 
     const duration = data.duration_minutes ?? 40;
     const prompt = [

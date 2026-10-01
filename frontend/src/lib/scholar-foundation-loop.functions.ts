@@ -28,6 +28,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { asKernelAdmin, type KernelAdminClient } from "@/lib/kernel-admin-client";
+import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireSchoolAdminScope } from "@/lib/security-role-gate";
 import { planFoundationLoop } from "@/lib/control-plane/foundation-loop";
 import { auditFoundationLoop, persistFoundationPlan } from "@/lib/foundation-loop.functions";
@@ -126,9 +127,19 @@ async function findReplayedExecution(
 export async function executeScholarFoundationLoop(input: {
   supabase: Parameters<typeof requireSchoolAdminScope>[0];
   userId: string;
+  /** Authenticated request claims — attests session validity at the gate. */
+  claims?: { exp: number };
   data: z.infer<typeof scholarSchema>;
 }): Promise<ScholarFoundationResult> {
-  const tenantId = await requireSchoolAdminScope(input.supabase);
+  // Lifecycle threading (DEFECT-1 follow-through): the JWT carries no
+  // lifecycle claim, so `lifecycle: null` opts this call into the lifecycle
+  // contract while flagging the identity lifecycle unverified (never silent);
+  // session validity is attested from the verified token's exp claim when the
+  // caller supplies claims, and left unverified (flagged) otherwise.
+  const tenantId = await requireSchoolAdminScope(input.supabase, {
+    lifecycle: null,
+    sessionValid: input.claims ? tokenMsRemaining(input.claims.exp) > 0 : undefined,
+  });
   const admin = await loadAdmin();
   const now = new Date().toISOString();
 
@@ -286,6 +297,7 @@ export const scholarFoundationLoop = createServerFn({ method: "POST" })
     executeScholarFoundationLoop({
       supabase: context.supabase,
       userId: context.userId,
+      claims: context.claims,
       data,
     }),
   );

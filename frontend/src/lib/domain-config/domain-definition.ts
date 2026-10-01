@@ -10,9 +10,10 @@
  *
  * V5.3 Part 46 NO DOMAIN CONTAMINATION: this module adds no domain-specific
  * concept to universal infrastructure. validateDomainDefinition FAILS CLOSED
- * on unknown nav kinds, roles outside the platform AppRole vocabulary, entity
- * references to undeclared types, duplicate ids, and any attempt to declare
- * storage — a DomainDefinition defines semantics, never DDL.
+ * on unknown nav kinds, roles that resolve through NEITHER the legacy
+ * identity-store AppRole set NOR the neutral universal-role vocabulary (I-031
+ * re-point), entity references to undeclared types, duplicate ids, and any
+ * attempt to declare storage — a DomainDefinition defines semantics, never DDL.
  *
  * Boundary: pure data + one pure validator. No persistence, no runtime
  * engine, no vendor imports.
@@ -22,6 +23,7 @@ import { MEMBERSHIP_FOR_NAV_KIND } from "@/lib/capability-gate";
 // The runtime layer's nav-kind vocabulary, named neutrally for the platform.
 import type { ScholarNavKind as RuntimeNavKind } from "@/lib/runtime/nav-registry";
 import { isEntityType, isRelationType } from "@/lib/kernel/reality";
+import { isUniversalRole, type UniversalRole } from "@/lib/universal-roles";
 
 /* ─────────────────────────────────────────────────────────────
  * Universal substrate vocabulary (configuration binds to it,
@@ -100,8 +102,19 @@ export interface DomainRelationship {
 export interface DomainRoleDeclaration {
   /** Domain-local role name (e.g. "floor_staff"); the mapping is the semantic. */
   domainRole: string;
-  /** Platform AppRole vocabulary this domain role resolves to. */
-  appRoles: readonly AppRole[];
+  /**
+   * Legacy identity-store AppRole vocabulary this domain role resolves to.
+   * Backwards-compatibility path: a role may declare EITHER these (validated
+   * against the legacy platform AppRole set) OR the neutral mapping below —
+   * never neither (fail closed). New domains should prefer `neutralRoles`.
+   */
+  appRoles?: readonly AppRole[];
+  /**
+   * Neutral universal-role vocabulary this domain role resolves to (I-031
+   * re-point). Validated against the ruled universal vocabulary; a domain
+   * role name on this side is rejected (RULING-4 direction).
+   */
+  neutralRoles?: readonly UniversalRole[];
   description?: string;
 }
 
@@ -154,7 +167,7 @@ const DEFINITION_KEYS: readonly string[] = [
 ];
 const ENTITY_TYPE_KEYS: readonly string[] = ["name", "extends", "fields", "description"];
 const RELATIONSHIP_KEYS: readonly string[] = ["name", "source", "target", "cardinality", "description"];
-const ROLE_KEYS: readonly string[] = ["domainRole", "appRoles", "description"];
+const ROLE_KEYS: readonly string[] = ["domainRole", "appRoles", "neutralRoles", "description"];
 const WORKSPACE_KEYS: readonly string[] = ["name", "kind", "label", "description"];
 const WORKFLOW_KEYS: readonly string[] = ["name", "description"];
 
@@ -497,16 +510,48 @@ export function validateDomainDefinition(input: unknown): DomainDefinitionValida
       }
       if (seen.has(domainRole)) errors.push(`duplicate role id "${domainRole}"`);
       seen.add(domainRole);
+      // I-031 re-point: a role resolves through EITHER the legacy identity-store
+      // appRoles (validated against the legacy set for backwards compatibility)
+      // OR the neutral universal-role mapping. Neither is a validation failure
+      // (fail closed); an invalid entry in either supplied vocabulary also fails.
       const appRoles = entry.appRoles;
-      if (!Array.isArray(appRoles) || appRoles.length === 0) {
-        errors.push(`domain role "${domainRole}" must map to a non-empty appRoles array`);
+      const neutralRoles = entry.neutralRoles;
+      const appRolesSupplied = appRoles !== undefined;
+      const neutralRolesSupplied = neutralRoles !== undefined;
+      if (!appRolesSupplied && !neutralRolesSupplied) {
+        errors.push(
+          `domain role "${domainRole}" must declare a non-empty appRoles array or a non-empty neutralRoles mapping`,
+        );
         return;
       }
-      for (const appRole of appRoles) {
-        if (typeof appRole !== "string" || !PLATFORM_APP_ROLE_SET.has(appRole)) {
+      if (appRolesSupplied) {
+        if (!Array.isArray(appRoles) || appRoles.length === 0) {
           errors.push(
-            `domain role "${domainRole}" maps to ${renderValue(appRole)} which is not in the platform AppRole vocabulary`,
+            `domain role "${domainRole}" appRoles must be a non-empty array when present`,
           );
+        } else {
+          for (const appRole of appRoles) {
+            if (typeof appRole !== "string" || !PLATFORM_APP_ROLE_SET.has(appRole)) {
+              errors.push(
+                `domain role "${domainRole}" maps to ${renderValue(appRole)} which is not in the platform AppRole vocabulary`,
+              );
+            }
+          }
+        }
+      }
+      if (neutralRolesSupplied) {
+        if (!Array.isArray(neutralRoles) || neutralRoles.length === 0) {
+          errors.push(
+            `domain role "${domainRole}" neutralRoles must be a non-empty array when present`,
+          );
+        } else {
+          for (const neutralRole of neutralRoles) {
+            if (!isUniversalRole(neutralRole)) {
+              errors.push(
+                `domain role "${domainRole}" maps to ${renderValue(neutralRole)} which is not in the universal role vocabulary`,
+              );
+            }
+          }
         }
       }
       optionalDescription(`domain role "${domainRole}"`, entry, errors);

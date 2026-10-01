@@ -12,6 +12,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireStaffContext } from "@/lib/security-role-gate";
 
 const Audience = z.union([
@@ -33,12 +34,19 @@ export const broadcastMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((i: unknown) => Input.parse(i))
   .handler(async ({ data, context }): Promise<BroadcastResult> => {
-    const { supabase, userId } = context;
+    const { supabase, userId, claims } = context;
     // Canonical Phase 08 teaching-staff gate (admin/principal/teacher).
     // Replaces the legacy inline users.role read + check. Audience-specific
     // policy below (teacher → own class only; admin → any audience) branches
     // on the canonical role — never on a client-supplied claim.
-    const staff = await requireStaffContext(supabase, "teaching_staff");
+    // Lifecycle threading (DEFECT-1 follow-through): the JWT carries no
+    // lifecycle claim, so `lifecycle: null` opts this call into the lifecycle
+    // contract while flagging the identity lifecycle unverified (never silent);
+    // session validity is attested from the verified token's exp claim.
+    const staff = await requireStaffContext(supabase, "teaching_staff", {
+      lifecycle: null,
+      sessionValid: typeof claims?.exp === "number" && tokenMsRemaining(claims.exp) > 0,
+    });
     const { role: actorRole, schoolId } = staff;
     const isAdmin = actorRole === "admin" || actorRole === "principal";
     const isTeacher = actorRole === "teacher";

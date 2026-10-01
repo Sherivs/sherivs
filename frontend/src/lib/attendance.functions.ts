@@ -10,6 +10,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireSchoolAdminScope, requireStaffContext } from "@/lib/security-role-gate";
 
 const TOKEN_TTL_SECONDS = 30;
@@ -33,10 +34,17 @@ export const generateTeacherCheckQr = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((i: unknown) => genQrSchema.parse(i))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { supabase, userId, claims } = context;
     // Canonical Phase 08 school-admin gate (admin/principal). Replaces the
     // legacy inline users.role read + check.
-    const schoolId = await requireSchoolAdminScope(supabase);
+    // Lifecycle threading (DEFECT-1 follow-through): the JWT carries no
+    // lifecycle claim, so `lifecycle: null` opts this call into the lifecycle
+    // contract while flagging the identity lifecycle unverified (never silent);
+    // session validity is attested from the verified token's exp claim.
+    const schoolId = await requireSchoolAdminScope(supabase, {
+      lifecycle: null,
+      sessionValid: typeof claims?.exp === "number" && tokenMsRemaining(claims.exp) > 0,
+    });
 
     const token = randomToken();
     const expiresAt = new Date(Date.now() + TOKEN_TTL_SECONDS * 1000).toISOString();
@@ -61,10 +69,15 @@ export const teacherCheckWithQr = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((i: unknown) => teacherCheckSchema.parse(i))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { supabase, userId, claims } = context;
     // Canonical Phase 08 school-teacher gate (role = teacher). Replaces the
     // legacy inline users.role read + check.
-    const staff = await requireStaffContext(supabase, "school_teacher");
+    // Lifecycle threading: see the school-admin gate above for the signal
+    // semantics (unverified lifecycle flagged; session attested from exp).
+    const staff = await requireStaffContext(supabase, "school_teacher", {
+      lifecycle: null,
+      sessionValid: typeof claims?.exp === "number" && tokenMsRemaining(claims.exp) > 0,
+    });
 
     const { data: tok, error: tokErr } = await supabase
       .from("qr_tokens")
@@ -116,10 +129,15 @@ export const markClassAttendance = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((i: unknown) => markSchema.parse(i))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { supabase, userId, claims } = context;
     // Canonical Phase 08 teaching-staff gate (admin/principal/teacher).
     // Replaces the legacy inline users.role read + check.
-    const staff = await requireStaffContext(supabase, "teaching_staff");
+    // Lifecycle threading: see the school-admin gate above for the signal
+    // semantics (unverified lifecycle flagged; session attested from exp).
+    const staff = await requireStaffContext(supabase, "teaching_staff", {
+      lifecycle: null,
+      sessionValid: typeof claims?.exp === "number" && tokenMsRemaining(claims.exp) > 0,
+    });
 
     // Confirm the class belongs to the same school
     const { data: cls, error: clsErr } = await supabase

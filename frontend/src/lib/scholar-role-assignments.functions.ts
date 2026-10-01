@@ -15,6 +15,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { asKernelAdmin, type KernelAdminClient } from "@/lib/kernel-admin-client";
+import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireSchoolAdminScope } from "@/lib/security-role-gate";
 import { KERNEL_CAPABILITIES } from "@/lib/kernel/kernel-capability-registry";
 import { featureGateSnapshot, type FeatureGateDecision } from "@/lib/scholar/feature-gate";
@@ -134,7 +135,14 @@ export const assignRealityRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: unknown) => assignInputSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const schoolId = await requireSchoolAdminScope(context.supabase);
+    // Lifecycle threading (DEFECT-1 follow-through): the JWT carries no
+    // lifecycle claim, so `lifecycle: null` opts this call into the lifecycle
+    // contract while flagging the identity lifecycle unverified (never silent);
+    // session validity is attested from the verified token's exp claim.
+    const schoolId = await requireSchoolAdminScope(context.supabase, {
+      lifecycle: null,
+      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+    });
     if (!roleById(data.roleId)) throw new Error(`Unknown reality role "${data.roleId}"`);
     const { data: id, error } = await rpcClient(context.supabase).rpc("assign_role", {
       p_tenant: schoolId,
@@ -152,7 +160,11 @@ export const endRealityRoleAssignment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: unknown) => z.object({ assignmentId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    await requireSchoolAdminScope(context.supabase);
+    // Lifecycle threading: see assignRealityRole for the signal semantics.
+    await requireSchoolAdminScope(context.supabase, {
+      lifecycle: null,
+      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+    });
     const { data: ended, error } = await rpcClient(context.supabase).rpc("end_role_assignment", {
       p_assignment_id: data.assignmentId,
     });
@@ -165,7 +177,14 @@ export const listTenantRoleAssignments = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: unknown) => z.object({}).parse(input))
   .handler(async ({ context }): Promise<RoleAssignmentRow[]> => {
-    const schoolId = await requireSchoolAdminScope(context.supabase);
+    // Lifecycle threading (DEFECT-1 follow-through): the JWT carries no
+    // lifecycle claim, so `lifecycle: null` opts this call into the lifecycle
+    // contract while flagging the identity lifecycle unverified (never silent);
+    // session validity is attested from the verified token's exp claim.
+    const schoolId = await requireSchoolAdminScope(context.supabase, {
+      lifecycle: null,
+      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+    });
     const { data, error } = await rpcClient(context.supabase).rpc("list_role_assignments", {
       p_tenant: schoolId,
     });
@@ -178,7 +197,14 @@ export const listTenantRoleGrants = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: unknown) => z.object({}).parse(input))
   .handler(async ({ context }): Promise<RoleGrantRow[]> => {
-    const schoolId = await requireSchoolAdminScope(context.supabase);
+    // Lifecycle threading (DEFECT-1 follow-through): the JWT carries no
+    // lifecycle claim, so `lifecycle: null` opts this call into the lifecycle
+    // contract while flagging the identity lifecycle unverified (never silent);
+    // session validity is attested from the verified token's exp claim.
+    const schoolId = await requireSchoolAdminScope(context.supabase, {
+      lifecycle: null,
+      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+    });
     const { data, error } = await rpcClient(context.supabase).rpc("list_role_grants", {
       p_tenant: schoolId,
     });
@@ -191,7 +217,14 @@ export const grantRealityCapability = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: unknown) => grantInputSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const schoolId = await requireSchoolAdminScope(context.supabase);
+    // Lifecycle threading (DEFECT-1 follow-through): the JWT carries no
+    // lifecycle claim, so `lifecycle: null` opts this call into the lifecycle
+    // contract while flagging the identity lifecycle unverified (never silent);
+    // session validity is attested from the verified token's exp claim.
+    const schoolId = await requireSchoolAdminScope(context.supabase, {
+      lifecycle: null,
+      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+    });
     if (!roleById(data.roleId)) throw new Error(`Unknown reality role "${data.roleId}"`);
     if (!CAPABILITY_IDS.has(data.capability)) {
       throw new Error(`Unknown kernel capability "${data.capability}"`);
@@ -210,7 +243,11 @@ export const revokeRealityCapability = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: unknown) => z.object({ grantId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    await requireSchoolAdminScope(context.supabase);
+    // Lifecycle threading: see assignRealityRole for the signal semantics.
+    await requireSchoolAdminScope(context.supabase, {
+      lifecycle: null,
+      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+    });
     const { data: revoked, error } = await rpcClient(context.supabase).rpc(
       "revoke_role_capability",
       {

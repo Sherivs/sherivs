@@ -9,6 +9,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireSchoolAdminScope } from "@/lib/security-role-gate";
 
 const nullableNumber = (max?: number) =>
@@ -76,11 +77,20 @@ const transportSchema = z.object({
   buses_air_conditioned: z.boolean(),
 });
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function assertAdmin(ctx: { supabase: any }) {
+async function assertAdmin(ctx: {
+  supabase: Parameters<typeof requireSchoolAdminScope>[0];
+  claims: { exp: number };
+}) {
   // Canonical Phase 08 school-admin gate (fail closed). Replaces the legacy
   // inline is_school_admin()/get_my_school_id() ad-hoc checks.
-  return requireSchoolAdminScope(ctx.supabase);
+  // Lifecycle threading (DEFECT-1 follow-through): the JWT carries no
+  // lifecycle claim, so `lifecycle: null` opts this call into the lifecycle
+  // contract while flagging the identity lifecycle unverified (never silent);
+  // session validity is attested from the verified token's exp claim.
+  return requireSchoolAdminScope(ctx.supabase, {
+    lifecycle: null,
+    sessionValid: tokenMsRemaining(ctx.claims.exp) > 0,
+  });
 }
 
 export const upsertSchoolMeals = createServerFn({ method: "POST" })

@@ -31,6 +31,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { asKernelAdmin, type KernelAdminClient } from "@/lib/kernel-admin-client";
+import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requirePlatformSuperAdmin } from "@/lib/security-role-gate";
 import {
   isRuntimeManifestStatus,
@@ -121,7 +122,14 @@ export const registerDomainRuntime = createServerFn({ method: "POST" })
   .validator((input: unknown) => manifestEnvelopeSchema.parse(input))
   .handler(async ({ data, context }): Promise<RegisterRuntimeResult> => {
     // Control-plane gate: platform super-admin only (fail closed).
-    await requirePlatformSuperAdmin(context.supabase);
+    // Lifecycle threading (DEFECT-1 follow-through): the JWT carries no
+    // lifecycle claim, so `lifecycle: null` opts this call into the lifecycle
+    // contract while flagging the identity lifecycle unverified (never silent);
+    // session validity is attested from the verified token's exp claim.
+    await requirePlatformSuperAdmin(context.supabase, {
+      lifecycle: null,
+      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+    });
 
     const manifest = asManifest(data);
     assertValidManifest(manifest);
@@ -195,7 +203,11 @@ export const transitionRuntimeStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: unknown) => transitionSchema.parse(input))
   .handler(async ({ data, context }): Promise<TransitionRuntimeStatusResult> => {
-    await requirePlatformSuperAdmin(context.supabase);
+    // Lifecycle threading: see registerDomainRuntime for the signal semantics.
+    await requirePlatformSuperAdmin(context.supabase, {
+      lifecycle: null,
+      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+    });
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = asKernelAdmin(supabaseAdmin);

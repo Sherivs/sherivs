@@ -10,6 +10,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireSchoolAdminScope } from "@/lib/security-role-gate";
 
 // ---------------- Save config ----------------
@@ -27,10 +28,17 @@ export const saveTwinConfig = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((i: unknown) => ConfigInput.parse(i))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, claims } = context;
     // Canonical Phase 08 school-admin gate (fail closed). Replaces the legacy
     // inline users.role admin/principal read + check.
-    const schoolId = await requireSchoolAdminScope(supabase);
+    // Lifecycle threading (DEFECT-1 follow-through): the JWT carries no
+    // lifecycle claim, so `lifecycle: null` opts this call into the lifecycle
+    // contract while flagging the identity lifecycle unverified (never silent);
+    // session validity is attested from the verified token's exp claim.
+    const schoolId = await requireSchoolAdminScope(supabase, {
+      lifecycle: null,
+      sessionValid: typeof claims?.exp === "number" && tokenMsRemaining(claims.exp) > 0,
+    });
 
     const { data: existing } = await supabase
       .from("digital_twin_config")
@@ -79,10 +87,17 @@ export const placeTwinCall = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((i: unknown) => CallInput.parse(i))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, claims } = context;
     // Canonical Phase 08 school-admin gate (fail closed). Replaces the legacy
     // inline users.role admin/principal read + check.
-    const schoolId = await requireSchoolAdminScope(supabase);
+    // Lifecycle threading (DEFECT-1 follow-through): the JWT carries no
+    // lifecycle claim, so `lifecycle: null` opts this call into the lifecycle
+    // contract while flagging the identity lifecycle unverified (never silent);
+    // session validity is attested from the verified token's exp claim.
+    const schoolId = await requireSchoolAdminScope(supabase, {
+      lifecycle: null,
+      sessionValid: typeof claims?.exp === "number" && tokenMsRemaining(claims.exp) > 0,
+    });
 
     const { data: cfg } = await supabase
       .from("digital_twin_config")

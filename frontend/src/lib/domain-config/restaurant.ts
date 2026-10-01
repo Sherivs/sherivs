@@ -214,12 +214,14 @@ export const RESTAURANT_DOMAIN_DEFINITION: DomainDefinition = {
   ],
   roles: [
     /*
-     * LEGACY appRoles BRIDGE (I-030/I-031): these identity-store entries exist
-     * ONLY because the current DomainDefinition validator still validates roles
-     * against the legacy identity-store vocabulary. The authoritative
-     * authorization semantics of this domain are RESTAURANT_ROLE_MAPPINGS
-     * above (directional, neutral). When the validator re-points at the
-     * neutral vocabulary (I-031 follow-through), this bridge is deleted.
+     * I-031 follow-through: the validator now accepts a role declared through
+     * EITHER the legacy identity-store appRoles (backwards compatibility) OR
+     * the neutral universal-role vocabulary — never neither. service_staff
+     * therefore maps PURELY through the neutral mapping that already exists
+     * (RESTAURANT_ROLE_MAPPINGS: WORKER|OPERATOR); the forced legacy
+     * service_staff -> teacher bridge (I-030/I-031) is removed. The other
+     * roles keep their legacy appRoles declarations, which are legitimate
+     * identity-store mappings (not forced bridges).
      */
     {
       domainRole: "manager",
@@ -233,11 +235,9 @@ export const RESTAURANT_DOMAIN_DEFINITION: DomainDefinition = {
     },
     {
       domainRole: "service_staff",
-      // Forced legacy validator entry (I-030/I-031) — NOT an authorization
-      // mapping. The neutral resolution of service_staff is WORKER|OPERATOR
-      // (RESTAURANT_ROLE_MAPPINGS); no code path resolves service_staff
-      // through the legacy value below.
-      appRoles: ["teacher"],
+      // Neutral-only declaration (I-031): resolved through the authoritative
+      // RESTAURANT_ROLE_MAPPINGS table — no legacy identity-store bridge.
+      neutralRoles: RESTAURANT_NEUTRAL_ROLE_MAPPINGS.service_staff,
       description:
         "Floor service workforce (servers, cooks, hosts). Neutral semantics: WORKER|OPERATOR (see RESTAURANT_ROLE_MAPPINGS).",
     },

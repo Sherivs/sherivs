@@ -16,6 +16,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requirePlatformSuperAdmin } from "@/lib/security-role-gate";
 import {
   emailField,
@@ -134,7 +135,11 @@ export const createSchoolWithAdmin = createServerFn({ method: "POST" })
   .validator((input: unknown) => createSchoolSchema.parse(input))
   .handler(async ({ data, context }): Promise<CreateSchoolResult> => {
     // Canonical Phase 08 role gate — platform super admin (fail closed).
-    await requirePlatformSuperAdmin(context.supabase);
+    // Lifecycle threading: see assertSuper for the signal semantics.
+    await requirePlatformSuperAdmin(context.supabase, {
+      lifecycle: null,
+      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+    });
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -233,10 +238,19 @@ export const createSchoolWithAdmin = createServerFn({ method: "POST" })
 
 /* ---------- super-admin school ops ---------- */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function assertSuper(context: any) {
+async function assertSuper(context: {
+  supabase: Parameters<typeof requirePlatformSuperAdmin>[0];
+  claims: { exp: number };
+}) {
   // Canonical Phase 08 role gate — platform super admin (fail closed).
-  await requirePlatformSuperAdmin(context.supabase);
+  // Lifecycle threading (DEFECT-1 follow-through): the JWT carries no
+  // lifecycle claim, so `lifecycle: null` opts this call into the lifecycle
+  // contract while flagging the identity lifecycle unverified (never silent);
+  // session validity is attested from the verified token's exp claim.
+  await requirePlatformSuperAdmin(context.supabase, {
+    lifecycle: null,
+    sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+  });
 }
 
 const updateSchoolSchema = z.object({

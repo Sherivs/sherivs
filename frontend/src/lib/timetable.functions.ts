@@ -7,6 +7,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { generateText, Output } from "ai";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireSchoolAdminScope } from "@/lib/security-role-gate";
 import { invokeAiGateway } from "@/lib/ai-gateway.server";
 
@@ -39,10 +40,17 @@ export const generateTimetableDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((i: unknown) => generateInput.parse(i))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, claims } = context;
     // Canonical Phase 08 school-admin gate (fail closed). Replaces the legacy
     // inline users.role admin/principal read + check.
-    const schoolId = await requireSchoolAdminScope(supabase);
+    // Lifecycle threading (DEFECT-1 follow-through): the JWT carries no
+    // lifecycle claim, so `lifecycle: null` opts this call into the lifecycle
+    // contract while flagging the identity lifecycle unverified (never silent);
+    // session validity is attested from the verified token's exp claim.
+    const schoolId = await requireSchoolAdminScope(supabase, {
+      lifecycle: null,
+      sessionValid: typeof claims?.exp === "number" && tokenMsRemaining(claims.exp) > 0,
+    });
 
     const { data: klass } = await supabase
       .from("classes")
@@ -114,10 +122,14 @@ export const saveTimetable = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((i: unknown) => saveInput.parse(i))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, claims } = context;
     // Canonical Phase 08 school-admin gate (fail closed). Replaces the legacy
     // inline users.role admin/principal read + check.
-    const schoolId = await requireSchoolAdminScope(supabase);
+    // Lifecycle threading: see generateTimetableDraft for the signal semantics.
+    const schoolId = await requireSchoolAdminScope(supabase, {
+      lifecycle: null,
+      sessionValid: typeof claims?.exp === "number" && tokenMsRemaining(claims.exp) > 0,
+    });
 
     // Deactivate prior timetables for this class+year+term
     await supabase

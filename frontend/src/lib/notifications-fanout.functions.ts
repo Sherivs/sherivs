@@ -10,6 +10,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireSchoolAdminScope } from "@/lib/security-role-gate";
 
 /**
@@ -88,10 +89,17 @@ export const notifyGradesPublished = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((i: unknown) => GradesInput.parse(i))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, claims } = context;
     // Canonical Phase 08 school-admin gate (fail closed). Replaces the legacy
     // inline users.role admin/principal read + check.
-    const schoolId = await requireSchoolAdminScope(supabase);
+    // Lifecycle threading (DEFECT-1 follow-through): the JWT carries no
+    // lifecycle claim, so `lifecycle: null` opts this call into the lifecycle
+    // contract while flagging the identity lifecycle unverified (never silent);
+    // session validity is attested from the verified token's exp claim.
+    const schoolId = await requireSchoolAdminScope(supabase, {
+      lifecycle: null,
+      sessionValid: typeof claims?.exp === "number" && tokenMsRemaining(claims.exp) > 0,
+    });
 
     const { data: students } = await supabase
       .from("students")
@@ -143,10 +151,14 @@ export const notifyFeesDue = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((i: unknown) => FeesInput.parse(i))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, claims } = context;
     // Canonical Phase 08 school-admin gate (fail closed). Replaces the legacy
     // inline users.role admin/principal read + check.
-    const schoolId = await requireSchoolAdminScope(supabase);
+    // Lifecycle threading: see notifyGradesPublished for the signal semantics.
+    const schoolId = await requireSchoolAdminScope(supabase, {
+      lifecycle: null,
+      sessionValid: typeof claims?.exp === "number" && tokenMsRemaining(claims.exp) > 0,
+    });
 
     const cutoff = new Date(Date.now() + data.days_until_due * 86400_000)
       .toISOString()
@@ -210,10 +222,14 @@ export const pushNotification = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((i: unknown) => PushInput.parse(i))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { supabase, userId, claims } = context;
     // Canonical Phase 08 school-admin gate (fail closed). Replaces the legacy
     // inline users.role admin/principal read + check.
-    const schoolId = await requireSchoolAdminScope(supabase);
+    // Lifecycle threading: see notifyGradesPublished for the signal semantics.
+    const schoolId = await requireSchoolAdminScope(supabase, {
+      lifecycle: null,
+      sessionValid: typeof claims?.exp === "number" && tokenMsRemaining(claims.exp) > 0,
+    });
 
     let q = supabase.from("users").select("id").eq("school_id", schoolId).eq("is_active", true);
     if (data.audience === "parents") q = q.eq("role", "parent");
@@ -253,10 +269,14 @@ export const notifyCalendarEvent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((i: unknown) => CalendarInput.parse(i))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { supabase, userId, claims } = context;
     // Canonical Phase 08 school-admin gate (fail closed). Replaces the legacy
     // inline users.role admin/principal read + check.
-    const schoolId = await requireSchoolAdminScope(supabase);
+    // Lifecycle threading: see notifyGradesPublished for the signal semantics.
+    const schoolId = await requireSchoolAdminScope(supabase, {
+      lifecycle: null,
+      sessionValid: typeof claims?.exp === "number" && tokenMsRemaining(claims.exp) > 0,
+    });
 
     let q = supabase
       .from("users")
@@ -297,10 +317,14 @@ export const unlockFaceAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((i: unknown) => UnlockInput.parse(i))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, claims } = context;
     // Canonical Phase 08 school-admin gate (fail closed). Replaces the legacy
     // inline users.role admin/principal read + check.
-    const schoolId = await requireSchoolAdminScope(supabase);
+    // Lifecycle threading: see notifyGradesPublished for the signal semantics.
+    const schoolId = await requireSchoolAdminScope(supabase, {
+      lifecycle: null,
+      sessionValid: typeof claims?.exp === "number" && tokenMsRemaining(claims.exp) > 0,
+    });
 
     const { data: target, error: tErr } = await supabase
       .from("users")

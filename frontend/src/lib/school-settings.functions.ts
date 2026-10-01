@@ -8,6 +8,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireSchoolAdminScope } from "@/lib/security-role-gate";
 import {
   nonEmptyText,
@@ -146,7 +147,14 @@ export const updateSchoolSettings = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     // Canonical Phase 08 role gate — resolves the actor's school scope and
     // fails closed (replaces the legacy inline RPC checks).
-    const schoolId = await requireSchoolAdminScope(context.supabase);
+    // Lifecycle threading (DEFECT-1 follow-through): the JWT carries no
+    // lifecycle claim, so `lifecycle: null` opts this call into the lifecycle
+    // contract while flagging the identity lifecycle unverified (never silent);
+    // session validity is attested from the verified token's exp claim.
+    const schoolId = await requireSchoolAdminScope(context.supabase, {
+      lifecycle: null,
+      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+    });
 
     const { error } = await context.supabase.from("schools").update(data.values).eq("id", schoolId);
     if (error) throw new Error(error.message);

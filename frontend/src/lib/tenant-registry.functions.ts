@@ -14,6 +14,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { asKernelAdmin } from "@/lib/kernel-admin-client";
+import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requirePlatformSuperAdmin } from "@/lib/security-role-gate";
 import {
   TENANT_ENVIRONMENTS,
@@ -51,7 +52,14 @@ export const registerTenant = createServerFn({ method: "POST" })
   .validator((input: unknown) => registerTenantSchema.parse(input))
   .handler(async ({ data, context }): Promise<RegisterTenantResult> => {
     // Platform control-plane gate: super-admin only (fail closed).
-    await requirePlatformSuperAdmin(context.supabase);
+    // Lifecycle threading (DEFECT-1 follow-through): the JWT carries no
+    // lifecycle claim, so `lifecycle: null` opts this call into the lifecycle
+    // contract while flagging the identity lifecycle unverified (never silent);
+    // session validity is attested from the verified token's exp claim.
+    await requirePlatformSuperAdmin(context.supabase, {
+      lifecycle: null,
+      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+    });
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = asKernelAdmin(supabaseAdmin);
@@ -141,7 +149,12 @@ export const listTenants = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .validator((input: unknown) => listTenantsSchema.parse(input ?? {}))
   .handler(async ({ data, context }): Promise<ListTenantsResult> => {
-    await requirePlatformSuperAdmin(context.supabase);
+    await requirePlatformSuperAdmin(context.supabase, {
+      // Lifecycle threading: see registerTenant for the signal semantics
+      // (unverified lifecycle flagged; session attested from the token exp).
+      lifecycle: null,
+      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+    });
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = asKernelAdmin(supabaseAdmin);

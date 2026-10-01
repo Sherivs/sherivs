@@ -7,6 +7,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { tokenMsRemaining } from "@/lib/auth-helpers";
 import {
   decideAccountAdministration,
   resolveRoleGate,
@@ -89,17 +90,26 @@ export const createStaffAccount = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<CreateStaffAccountResult> => {
     // Canonical Phase 08 composite gate: platform super-admin OR same-school
     // admin/principal. Replaces legacy direct role-row parsing.
-    const superGate = await resolveRoleGate(context.supabase, "platform_super_admin");
+    // Lifecycle threading (DEFECT-1 follow-through): the JWT carries no
+    // lifecycle claim, so `lifecycle: null` opts this call into the lifecycle
+    // contract while flagging the identity lifecycle unverified (never silent);
+    // session validity is attested from the verified token's exp claim.
+    const lifecycle = {
+      lifecycle: null,
+      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+    };
+    const superGate = await resolveRoleGate(context.supabase, "platform_super_admin", lifecycle);
     const adminGate =
       superGate.decision === "allow"
         ? null
-        : await resolveRoleGate(context.supabase, "school_admin");
+        : await resolveRoleGate(context.supabase, "school_admin", lifecycle);
 
     const access = decideAccountAdministration({
       platformSuper: superGate.decision === "allow",
       schoolAdmin: adminGate?.decision === "allow",
       schoolScope: adminGate?.decision === "allow" ? adminGate.scope : null,
       targetSchoolId: null,
+      ...lifecycle,
     });
     if (access.decision === "deny") throw new Error(access.reason);
 
@@ -219,9 +229,14 @@ export const resetStaffPassword = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     // Canonical Phase 08 composite gate: platform super-admin OR same-school
     // admin/principal, with the target same-tenant rule for school admins.
+    // Lifecycle threading: see createStaffAccount for the signal semantics.
+    const lifecycle = {
+      lifecycle: null,
+      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+    };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const superGate = await resolveRoleGate(context.supabase, "platform_super_admin");
+    const superGate = await resolveRoleGate(context.supabase, "platform_super_admin", lifecycle);
     let access: AccountAdministrationOutcome;
 
     if (superGate.decision === "allow") {
@@ -230,9 +245,10 @@ export const resetStaffPassword = createServerFn({ method: "POST" })
         schoolAdmin: false,
         schoolScope: null,
         targetSchoolId: null,
+        ...lifecycle,
       });
     } else {
-      const adminGate = await resolveRoleGate(context.supabase, "school_admin");
+      const adminGate = await resolveRoleGate(context.supabase, "school_admin", lifecycle);
       if (adminGate.decision !== "allow") throw new Error("Forbidden");
       const { data: target } = await supabaseAdmin
         .from("users")
@@ -245,6 +261,7 @@ export const resetStaffPassword = createServerFn({ method: "POST" })
         schoolAdmin: true,
         schoolScope: adminGate.scope,
         targetSchoolId: (target.school_id as string | null) ?? null,
+        ...lifecycle,
       });
     }
 

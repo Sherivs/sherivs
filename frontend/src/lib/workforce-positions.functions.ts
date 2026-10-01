@@ -10,6 +10,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { asKernelAdmin } from "@/lib/kernel-admin-client";
+import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireSchoolAdminScope } from "@/lib/security-role-gate";
 import { scholarWorkforceKind } from "@/lib/runtime/scholar-workforce";
 import {
@@ -22,7 +23,14 @@ export const listWorkforcePositions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: unknown) => z.object({}).parse(input))
   .handler(async ({ context }): Promise<WorkforcePositionView[]> => {
-    const schoolId = await requireSchoolAdminScope(context.supabase);
+    // Lifecycle threading (DEFECT-1 follow-through): the JWT carries no
+    // lifecycle claim, so `lifecycle: null` opts this call into the lifecycle
+    // contract while flagging the identity lifecycle unverified (never silent);
+    // session validity is attested from the verified token's exp claim.
+    const schoolId = await requireSchoolAdminScope(context.supabase, {
+      lifecycle: null,
+      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+    });
     const db = asKernelAdmin(context.supabase);
     const { data, error } = await db.rpc("list_workforce_positions", { p_tenant: schoolId });
     if (error) throw new Error(error.message);
@@ -43,7 +51,14 @@ export const assignWorkforcePosition = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const schoolId = await requireSchoolAdminScope(context.supabase);
+    // Lifecycle threading (DEFECT-1 follow-through): the JWT carries no
+    // lifecycle claim, so `lifecycle: null` opts this call into the lifecycle
+    // contract while flagging the identity lifecycle unverified (never silent);
+    // session validity is attested from the verified token's exp claim.
+    const schoolId = await requireSchoolAdminScope(context.supabase, {
+      lifecycle: null,
+      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+    });
 
     if (!isWorkforceEmploymentType(data.employmentType)) {
       throw new Error(`Invalid employment type "${data.employmentType}"`);
@@ -85,7 +100,14 @@ export const endWorkforcePosition = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     // The RPC re-derives the tenant from the position row and re-checks the
     // actor scope; resolving the scope here is belt-and-braces context.
-    const schoolId = await requireSchoolAdminScope(context.supabase);
+    // Lifecycle threading (DEFECT-1 follow-through): the JWT carries no
+    // lifecycle claim, so `lifecycle: null` opts this call into the lifecycle
+    // contract while flagging the identity lifecycle unverified (never silent);
+    // session validity is attested from the verified token's exp claim.
+    const schoolId = await requireSchoolAdminScope(context.supabase, {
+      lifecycle: null,
+      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+    });
     void schoolId;
     const { data: ended, error } = await asKernelAdmin(context.supabase).rpc(
       "end_workforce_position",

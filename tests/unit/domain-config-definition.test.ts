@@ -94,6 +94,48 @@ describe("validateDomainDefinition (fail closed)", () => {
     expect(errors.join("\n")).toContain("AppRole vocabulary");
   });
 
+  it("accepts a role declared purely through the neutral universal-role vocabulary (I-031)", () => {
+    const result = validateDomainDefinition(
+      variant((definition) => {
+        (definition.roles as MutableEntity[])[0] = {
+          domainRole: "barista",
+          neutralRoles: ["WORKER", "OPERATOR"],
+        };
+      }),
+    );
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects a role with NEITHER a legacy appRoles entry NOR a neutral mapping (fail closed)", () => {
+    const neither = expectFailure(
+      variant((definition) => {
+        delete (definition.roles as MutableEntity[])[0].appRoles;
+      }),
+    );
+    expect(neither.join("\n")).toContain("barista");
+    expect(neither.join("\n")).toContain("neutralRoles");
+
+    const empty = expectFailure(
+      variant((definition) => {
+        (definition.roles as MutableEntity[])[0].appRoles = [];
+      }),
+    );
+    expect(empty.join("\n")).toContain("barista");
+  });
+
+  it("rejects a neutral mapping that puts a domain/legacy role name on the neutral side", () => {
+    const errors = expectFailure(
+      variant((definition) => {
+        (definition.roles as MutableEntity[])[0] = {
+          domainRole: "barista",
+          neutralRoles: ["teacher"],
+        };
+      }),
+    );
+    expect(errors.join("\n")).toContain('"teacher"');
+    expect(errors.join("\n")).toContain("universal role vocabulary");
+  });
+
   it("rejects entity references to undeclared entity types", () => {
     const errors = expectFailure(
       variant((definition) => {

@@ -8,6 +8,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { generateText, Output } from "ai";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireStaffContext } from "@/lib/security-role-gate";
 import { invokeAiGateway, type AiGatewayOutcome } from "@/lib/ai-gateway.server";
 
@@ -35,7 +36,14 @@ export const getExpenseInsights = createServerFn({ method: "POST" })
   .handler(async ({ context }): Promise<ExpenseInsights> => {
     // Canonical Phase 08 finance-staff gate (admin/principal/bursar). Replaces
     // the legacy inline users.role read + check.
-    const staff = await requireStaffContext(context.supabase, "finance_staff");
+    // Lifecycle threading (DEFECT-1 follow-through): the JWT carries no
+    // lifecycle claim, so `lifecycle: null` opts this call into the lifecycle
+    // contract while flagging the identity lifecycle unverified (never silent);
+    // session validity is attested from the verified token's exp claim.
+    const staff = await requireStaffContext(context.supabase, "finance_staff", {
+      lifecycle: null,
+      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+    });
     const cutoff = new Date(Date.now() - 90 * 86400_000).toISOString().slice(0, 10);
 
     const [{ data: rows }, { data: budgets }] = await Promise.all([

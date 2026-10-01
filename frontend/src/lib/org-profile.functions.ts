@@ -10,6 +10,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { asKernelAdmin } from "@/lib/kernel-admin-client";
+import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireSchoolAdminScope } from "@/lib/security-role-gate";
 import {
   SCHOLAR_PROFILE_CLOSING_PRESETS,
@@ -23,7 +24,14 @@ export const getOrganizationProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: unknown) => z.object({}).parse(input))
   .handler(async ({ context }) => {
-    const schoolId = await requireSchoolAdminScope(context.supabase);
+    // Lifecycle threading (DEFECT-1 follow-through): the JWT carries no
+    // lifecycle claim, so `lifecycle: null` opts this call into the lifecycle
+    // contract while flagging the identity lifecycle unverified (never silent);
+    // session validity is attested from the verified token's exp claim.
+    const schoolId = await requireSchoolAdminScope(context.supabase, {
+      lifecycle: null,
+      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+    });
     const db = asKernelAdmin(context.supabase);
     const { data, error } = await db.rpc("get_org_profile", {
       p_tenant: schoolId,
@@ -40,7 +48,14 @@ export const saveOrganizationProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: unknown) => z.object({ profile: scholarSchoolProfileSchema }).parse(input))
   .handler(async ({ data, context }) => {
-    const schoolId = await requireSchoolAdminScope(context.supabase);
+    // Lifecycle threading (DEFECT-1 follow-through): the JWT carries no
+    // lifecycle claim, so `lifecycle: null` opts this call into the lifecycle
+    // contract while flagging the identity lifecycle unverified (never silent);
+    // session validity is attested from the verified token's exp claim.
+    const schoolId = await requireSchoolAdminScope(context.supabase, {
+      lifecycle: null,
+      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+    });
     const { data: id, error } = await asKernelAdmin(context.supabase).rpc("upsert_org_profile", {
       p_tenant: schoolId,
       p_runtime: SCHOLAR_PROFILE_RUNTIME,

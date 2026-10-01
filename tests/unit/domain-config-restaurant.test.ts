@@ -136,11 +136,20 @@ describe("restaurant DomainDefinition (V5.3 Part 45)", () => {
     expect(unresolved).toEqual([]);
   });
 
-  it("maps every domain role onto the platform AppRole vocabulary", () => {
+  it("maps every domain role onto the legacy AppRole OR neutral vocabulary (I-031 re-point)", () => {
+    // I-031 follow-through note: this assertion was flipped from the bridge
+    // semantics ("every role maps onto the platform AppRole vocabulary") to the
+    // corrected EITHER/OR semantics — service_staff no longer carries the
+    // forced legacy appRoles ["teacher"] bridge and resolves purely through the
+    // neutral WORKER|OPERATOR mapping (RESTAURANT_ROLE_MAPPINGS).
     expect(PLATFORM_APP_ROLES.length).toBeGreaterThan(0);
     for (const role of RESTAURANT_DOMAIN_DEFINITION.roles) {
-      for (const appRole of role.appRoles) {
-        expect(PLATFORM_APP_ROLES).toContain(appRole);
+      if (role.appRoles) {
+        for (const appRole of role.appRoles) {
+          expect(PLATFORM_APP_ROLES).toContain(appRole);
+        }
+      } else {
+        expect(role.neutralRoles?.length).toBeGreaterThan(0);
       }
     }
     expect(RESTAURANT_DOMAIN_DEFINITION.roles.map((role) => role.domainRole)).toEqual([
@@ -149,6 +158,17 @@ describe("restaurant DomainDefinition (V5.3 Part 45)", () => {
       "service_staff",
       "runner",
     ]);
+  });
+
+  it("carries NO forced legacy bridge on service_staff (I-031 closure)", () => {
+    const serviceStaff = RESTAURANT_DOMAIN_DEFINITION.roles.find(
+      (role) => role.domainRole === "service_staff",
+    );
+    expect(serviceStaff).toBeDefined();
+    if (!serviceStaff) return;
+    expect(serviceStaff.appRoles).toBeUndefined();
+    expect(serviceStaff.neutralRoles).toEqual(["WORKER", "OPERATOR"]);
+    expect(serviceStaff.neutralRoles).not.toContain("teacher" as never);
   });
 
   it("uses only runtime nav registry kinds for its workspaces", () => {

@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { emailField, nonEmptyText, optionalText, phoneField } from "@/lib/validation";
+import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireSchoolAdminScope } from "@/lib/security-role-gate";
 
 /**
@@ -41,7 +42,14 @@ export const inviteTeacher = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<InviteTeacherResult> => {
     // Canonical Phase 08 school-admin gate — resolves the actor's school
     // scope and fails closed (replaces the legacy inline RPC checks).
-    const schoolId = await requireSchoolAdminScope(context.supabase);
+    // Lifecycle threading (DEFECT-1 follow-through): the JWT carries no
+    // lifecycle claim, so `lifecycle: null` opts this call into the lifecycle
+    // contract while flagging the identity lifecycle unverified (never silent);
+    // session validity is attested from the verified token's exp claim.
+    const schoolId = await requireSchoolAdminScope(context.supabase, {
+      lifecycle: null,
+      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+    });
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -96,7 +104,11 @@ export const setTeacherActive = createServerFn({ method: "POST" })
   .validator((input: unknown) => setActiveSchema.parse(input))
   .handler(async ({ data, context }) => {
     // Canonical Phase 08 school-admin gate (fail closed).
-    await requireSchoolAdminScope(context.supabase);
+    // Lifecycle threading: see inviteTeacher for the signal semantics.
+    await requireSchoolAdminScope(context.supabase, {
+      lifecycle: null,
+      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+    });
     // RLS already restricts to same school
     const { error } = await context.supabase
       .from("users")
