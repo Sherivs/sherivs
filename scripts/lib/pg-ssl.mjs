@@ -28,12 +28,34 @@
  * is honoured: the caller then gets no TLS at all, by explicit choice of the
  * operator, and this helper stays out of the way.
  *
+ * CA provisioning: set COREGRID_DB_CA_CERT to the managed CA's PEM text (or a
+ * path to the .crt file). The certificate is passed as the client's `ca`, so
+ * verification is strict against the managed authority without relying on
+ * NODE_EXTRA_CA_CERTS process-wide wiring.
+ *
  * Owners: SENTINEL (scripts/ work package). All Postgres client scripts in
  * scripts/ must derive their `ssl` option from this helper.
  */
 
+import { readFileSync } from "node:fs";
+
 const INSECURE_ENV = "COREGRID_DB_INSECURE_TLS";
 const INSECURE_TLS_WARNING = "WARNING: PostgreSQL TLS certificate verification is disabled";
+const CA_ENV = "COREGRID_DB_CA_CERT";
+
+/**
+ * Resolve the managed-Postgres CA for strict verification.
+ *
+ * Accepts either the PEM text itself (recommended when the CA is provisioned
+ * as a Cloud Agent runtime secret) or a filesystem path to the certificate.
+ * Returns undefined when unset — Node's default CA store applies.
+ */
+function resolveCa(env = process.env) {
+  const value = (env[CA_ENV] ?? "").trim();
+  if (!value) return undefined;
+  if (value.startsWith("-----BEGIN")) return value;
+  return readFileSync(value, "utf8");
+}
 
 /**
  * Resolve the node-postgres `ssl` option for a connection string.
@@ -54,5 +76,6 @@ export function pgSslConfig(connectionString = process.env.DATABASE_URL ?? "") {
     console.error(`${INSECURE_TLS_WARNING} (${INSECURE_ENV}=1 — never use in production).`);
     return { rejectUnauthorized: false };
   }
-  return { rejectUnauthorized: true };
+  const ca = resolveCa();
+  return ca ? { rejectUnauthorized: true, ca } : { rejectUnauthorized: true };
 }
