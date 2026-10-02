@@ -1,6 +1,6 @@
 import { SystemClock, TimeAuthority } from "../kernel/time-authority";
 
-/** J-023 time-source discipline: time enters only via the kernel authority — no direct wall-clock sampling. */
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
 const timeAuthority = new TimeAuthority(new SystemClock());
 
 /**
@@ -60,10 +60,15 @@ export type WriteAuditEntry = {
   readonly details?: Record<string, unknown>;
 };
 
-/** Minimal structural contract of a Supabase-compatible postgrest client. */
+/**
+ * Minimal structural contract of a Supabase-compatible postgrest client.
+ * Deliberately loose (`PromiseLike<unknown>`): the resolved postgrest response
+ * shape is narrowed inside the hook, so any typed SupabaseClient satisfies
+ * this contract without call-site casts.
+ */
 export interface WriteAuditClient {
   from(table: string): {
-    insert(payload: Record<string, unknown>): Promise<{ error: { message: string } | null }>;
+    insert(payload: Record<string, unknown>): PromiseLike<unknown>;
   };
 }
 
@@ -105,10 +110,13 @@ export async function writeAuditRecord(
     },
   };
 
-  const { error } = await client.from("audit_logs").insert(payload);
-  if (error) {
+  const result = (await client.from("audit_logs").insert(payload)) as
+    | { error?: { message: string } | null }
+    | null;
+  const message = result?.error?.message;
+  if (result?.error) {
     throw new Error(
-      `write-audit: audit record rejected for "${entry.action}" (gate ${entry.gate}, outcome ${entry.outcome}): ${error.message}`,
+      `write-audit: audit record rejected for "${entry.action}" (gate ${entry.gate}, outcome ${entry.outcome}): ${message ?? "unknown substrate error"}`,
     );
   }
   return { recordId: null };
