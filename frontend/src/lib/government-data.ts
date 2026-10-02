@@ -1,3 +1,8 @@
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
+
 // ─── CoreGrid Phase 20 — Government Education Cloud ──────────────────
 // government-data.ts — Reporting, data sharing, classification,
 //                      interoperability, API gateway, residency
@@ -148,7 +153,7 @@ export function createReportDefinition(params: {
     schema: params.schema,
     regulatory: params.regulatory ?? false,
     version: 1,
-    availableFrom: new Date().toISOString(),
+    availableFrom: timeAuthority.now().at,
     availableTo: params.availableTo ?? null,
   };
 }

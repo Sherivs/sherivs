@@ -23,6 +23,10 @@
  */
 
 import type { TenantId } from "./tenant-core";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Branded IDs
@@ -153,7 +157,7 @@ export function recordIntegrationLog(input: {
     result: input.result,
     errorClass: input.errorClass ?? null,
     payloadSanitized: input.payloadSanitized ?? true,
-    occurredAt: input.now ?? new Date().toISOString(),
+    occurredAt: input.now ?? timeAuthority.now().at,
   };
 }
 
@@ -178,7 +182,7 @@ export function createTraceSpan(input: {
     parentSpanId: input.parentSpanId ?? null,
     spanId: input.spanId,
     operation: input.operation,
-    startedAt: input.now ?? new Date().toISOString(),
+    startedAt: input.now ?? timeAuthority.now().at,
     completedAt: null,
   };
 }
@@ -264,7 +268,7 @@ export function raiseIntegrationAlert(input: {
     kind: input.kind,
     severity,
     message: input.message,
-    occurredAt: input.now ?? new Date().toISOString(),
+    occurredAt: input.now ?? timeAuthority.now().at,
   };
 }
 
@@ -396,7 +400,7 @@ export function recordIntegrationAuditEvent(input: {
     integrationRef: input.integrationRef,
     type: input.type,
     actorRef: input.actorRef,
-    occurredAt: input.now ?? new Date().toISOString(),
+    occurredAt: input.now ?? timeAuthority.now().at,
     metadata: input.metadata ?? {},
   };
 }

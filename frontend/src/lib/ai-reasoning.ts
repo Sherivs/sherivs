@@ -24,6 +24,10 @@
  */
 
 import type { AiModelId } from "./ai-core";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Branded IDs
@@ -122,7 +126,7 @@ export function createReasoningTrace(input: {
     decision: input.decision,
     outputRef: input.outputRef,
     confidence: input.confidence,
-    createdAt: input.now ?? new Date().toISOString(),
+    createdAt: input.now ?? timeAuthority.now().at,
   };
 }
 
@@ -255,7 +259,7 @@ export function verifyClaim(input: {
       id: verificationId(crypto.randomUUID()),
       method: input.method,
       supported,
-      checkedAt: input.now ?? new Date().toISOString(),
+      checkedAt: input.now ?? timeAuthority.now().at,
     },
     confidence: supported ? Math.min(1, input.verificationScore) : input.verificationScore * 0.5,
   };

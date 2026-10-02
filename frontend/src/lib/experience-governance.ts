@@ -1,3 +1,8 @@
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
+
 // ─── CoreGrid Phase 24 — Experience & Design Intelligence ────────────
 // experience-governance.ts — Design governance, experimentation, UX
 //                            telemetry, SLOs, release gates, QA
@@ -98,11 +103,11 @@ export function createUXTelemetryEvent(params: {
   anonymized?: boolean;
 }): UXTelemetryEvent {
   return {
-    id: `ux-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: `ux-${timeAuthority.now().atMs}-${Math.random().toString(36).slice(2, 8)}`,
     eventType: params.eventType,
     component: params.component,
     metadata: params.metadata ?? {},
-    timestamp: new Date().toISOString(),
+    timestamp: timeAuthority.now().at,
     sessionId: "",
     anonymized: params.anonymized ?? true,
   };
@@ -124,7 +129,7 @@ export function createExperiment(params: {
     variants: params.variants,
     targetingRules: params.targetingRules ?? [],
     status: "draft",
-    startDate: params.startDate ?? new Date().toISOString(),
+    startDate: params.startDate ?? timeAuthority.now().at,
     endDate: params.endDate ?? null,
   };
 }
@@ -154,7 +159,7 @@ export function evaluateReleaseGate(
     name: "Release Gate",
     checks,
     overallStatus: blocked ? "blocked" : checks.every((c) => c.passed) ? "passed" : "pending",
-    evaluatedAt: new Date().toISOString(),
+    evaluatedAt: timeAuthority.now().at,
   };
 }
 
@@ -170,12 +175,12 @@ export function createDesignVersion(params: {
   components: string[];
 }): DesignVersion {
   return {
-    id: `dv-${Date.now()}`,
+    id: `dv-${timeAuthority.now().atMs}`,
     version: params.version,
     changelog: params.changelog,
     tokens: params.tokens,
     components: params.components,
-    publishedAt: new Date().toISOString(),
+    publishedAt: timeAuthority.now().at,
     status: "draft",
   };
 }

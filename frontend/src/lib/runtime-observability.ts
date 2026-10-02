@@ -12,6 +12,10 @@
 
 import type { TenantId } from "./tenant-core";
 import type { CorrelationId, TraceId } from "./runtime-core";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Structured log model
@@ -89,7 +93,7 @@ export function createLogger(
       : null;
 
     sink.write({
-      timestamp: new Date().toISOString(),
+      timestamp: timeAuthority.now().at,
       level,
       message,
       correlationId: ctx.correlationId,
@@ -204,7 +208,7 @@ export function createMetricsCollector(): MetricsCollector {
         tenantId,
         capability,
         labels,
-        timestamp: new Date().toISOString(),
+        timestamp: timeAuthority.now().at,
       });
     },
     snapshot() {
@@ -245,10 +249,10 @@ export function createHealthStatus(
     entries[name] = {
       status: check.status,
       detail: check.detail ?? null,
-      checkedAt: new Date().toISOString(),
+      checkedAt: timeAuthority.now().at,
     };
     if (check.status === "unhealthy") overall = "unhealthy";
     else if (check.status === "degraded" && overall === "healthy") overall = "degraded";
   }
-  return { status: overall, checks: entries, checkedAt: new Date().toISOString() };
+  return { status: overall, checks: entries, checkedAt: timeAuthority.now().at };
 }

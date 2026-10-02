@@ -31,6 +31,10 @@
 import type { TenantId } from "./tenant-core";
 import type { InstitutionId } from "./institution-core";
 import type { WorkforceRoleId } from "./workforce-core";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Branded IDs
@@ -114,7 +118,7 @@ export function createStaffInvitation(input: {
   expiresAt: string;
   now?: string;
 }): { ok: true; invitation: StaffInvitation } | { ok: false; error: string } {
-  const now = input.now ?? new Date().toISOString();
+  const now = input.now ?? timeAuthority.now().at;
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(input.email)) {
     return { ok: false, error: "Invalid invitation email address" };
   }
@@ -149,7 +153,7 @@ export function createStaffInvitation(input: {
 export function redeemInvitation(
   invitation: StaffInvitation,
   tokenFingerprint: string,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ):
   | {
       ok: true;
@@ -173,7 +177,7 @@ export function redeemInvitation(
 
 export function revokeInvitation(
   invitation: StaffInvitation,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): StaffInvitation {
   return { ...invitation, status: "revoked" };
 }
@@ -181,7 +185,7 @@ export function revokeInvitation(
 /** Mark an invitation as expired when its expiry passes. */
 export function expireInvitation(
   invitation: StaffInvitation,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): StaffInvitation {
   if (invitation.status !== "accepted" && invitation.expiresAt <= now) {
     return { ...invitation, status: "expired" };
@@ -277,7 +281,7 @@ export function createOnboardingJourney(input: {
       ...s,
     })),
     isActive: input.isActive ?? true,
-    createdAt: input.now ?? new Date().toISOString(),
+    createdAt: input.now ?? timeAuthority.now().at,
   };
   return { ok: true, journey };
 }
@@ -353,7 +357,7 @@ export function startOnboarding(input: {
     journeyVersion: input.journeyVersion,
     stepStates,
     currentStepKey: input.steps[0]?.key ?? null,
-    updatedAt: input.now ?? new Date().toISOString(),
+    updatedAt: input.now ?? timeAuthority.now().at,
   };
 }
 
@@ -361,7 +365,7 @@ export function updateOnboardingStep(
   progress: OnboardingProgress,
   stepKey: string,
   state: OnboardingStepState,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): OnboardingProgress {
   return {
     ...progress,
@@ -503,7 +507,7 @@ export function acknowledgePolicy(input: {
     identityRef: input.identityRef,
     policyRef: input.policyRef,
     policyVersion: input.policyVersion,
-    acknowledgedAt: input.now ?? new Date().toISOString(),
+    acknowledgedAt: input.now ?? timeAuthority.now().at,
   };
 }
 

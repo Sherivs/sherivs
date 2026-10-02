@@ -12,6 +12,10 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireSchoolAdminScope, requireStaffContext } from "@/lib/security-role-gate";
+import { SystemClock, TimeAuthority } from "../../kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 const TOKEN_TTL_SECONDS = 30;
 const ALLOWED_STATUSES = ["present", "absent", "late", "excused"] as const;
@@ -47,7 +51,7 @@ export const generateTeacherCheckQr = createServerFn({ method: "POST" })
     });
 
     const token = randomToken();
-    const expiresAt = new Date(Date.now() + TOKEN_TTL_SECONDS * 1000).toISOString();
+    const expiresAt = new Date(timeAuthority.now().atMs + TOKEN_TTL_SECONDS * 1000).toISOString();
 
     const { error } = await supabase.from("qr_tokens").insert({
       school_id: schoolId,
@@ -89,7 +93,7 @@ export const teacherCheckWithQr = createServerFn({ method: "POST" })
     if (tok.type !== "sign_in" && tok.type !== "sign_out")
       throw new Error("This code is not a teacher check-in code");
     if (tok.used) throw new Error("This code has already been used");
-    if (new Date(tok.expires_at).getTime() < Date.now()) throw new Error("This code has expired");
+    if (new Date(tok.expires_at).getTime() < timeAuthority.now().atMs) throw new Error("This code has expired");
     if (tok.school_id !== staff.schoolId) throw new Error("Wrong school");
 
     const { error: logErr } = await supabase.from("attendance_logs").insert({

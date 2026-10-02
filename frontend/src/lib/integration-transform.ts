@@ -32,6 +32,10 @@
  */
 
 import type { TenantId } from "./tenant-core";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Branded IDs
@@ -246,7 +250,7 @@ export function recordDeadLetter(input: {
     attempts: input.attempts,
     error: input.error,
     correlationId: input.correlationId,
-    occurredAt: input.now ?? new Date().toISOString(),
+    occurredAt: input.now ?? timeAuthority.now().at,
   };
 }
 
@@ -457,7 +461,7 @@ export function reconcile(input: {
     unauthorizedChanges: [],
     lastSuccessfulSyncAt: input.lastSuccessfulSyncAt ?? null,
     failureRate: input.failureRate ?? 0,
-    completedAt: input.now ?? new Date().toISOString(),
+    completedAt: input.now ?? timeAuthority.now().at,
   };
 }
 

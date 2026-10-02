@@ -29,6 +29,10 @@
  */
 
 import type { TenantId } from "./tenant-core";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Branded IDs
@@ -216,7 +220,7 @@ export function updateProviderStatus(input: {
     status: input.status,
     apiVersion: input.apiVersion ?? "",
     incidentCount: input.incidentCount ?? 0,
-    updatedAt: input.now ?? new Date().toISOString(),
+    updatedAt: input.now ?? timeAuthority.now().at,
   };
 }
 
@@ -259,7 +263,7 @@ export function pauseIntegration(input: {
   return {
     integrationRef: input.integrationRef,
     paused: true,
-    pausedAt: input.now ?? new Date().toISOString(),
+    pausedAt: input.now ?? timeAuthority.now().at,
     pausedByRef: input.pausedByRef,
   };
 }
@@ -434,7 +438,7 @@ export function publishIntegrationEvent(input: {
     tenantId: input.tenantId ?? null,
     integrationRef: input.integrationRef,
     type: input.type,
-    occurredAt: input.now ?? new Date().toISOString(),
+    occurredAt: input.now ?? timeAuthority.now().at,
     metadata: input.metadata ?? {},
   };
 }

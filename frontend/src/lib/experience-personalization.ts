@@ -1,3 +1,8 @@
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
+
 // ─── CoreGrid Phase 24 — Experience & Design Intelligence ────────────
 // experience-personalization.ts — Personalization, AI experience,
 //                                 workspace, device adaptation, AI UX
@@ -156,10 +161,10 @@ export function createAIMessage(params: {
   streaming?: boolean;
 }): AIMessageModel {
   return {
-    id: `ai-msg-${Date.now()}`,
+    id: `ai-msg-${timeAuthority.now().atMs}`,
     role: params.role,
     content: params.content,
-    timestamp: new Date().toISOString(),
+    timestamp: timeAuthority.now().at,
     citations: [],
     artifacts: [],
     streaming: params.streaming ?? false,

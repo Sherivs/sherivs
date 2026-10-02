@@ -33,6 +33,10 @@ import { requireSchoolAdminScope } from "@/lib/security-role-gate";
 import { entityDraft, eventDraft } from "@/lib/kernel/reality";
 import { buildSchoolSpec, type SchoolBuildParts } from "@/lib/scholar/school-builder";
 import { createBlueprint } from "@/lib/scholar/blueprint";
+import { SystemClock, TimeAuthority } from "../../kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 export const SCHOLAR_OPERATING_MODEL_ENTITY = "scholar.institution.operating_model";
 export const SCHOLAR_CONFIG_EVENT = "scholar.institution.operating_model.published";
@@ -124,11 +128,11 @@ export const publishInstitutionOperatingModel = createServerFn({ method: "POST" 
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = asKernelAdmin(supabaseAdmin);
-    const now = new Date().toISOString();
+    const now = timeAuthority.now().at;
 
     const previous = await latestOperatingModel(admin, tenantId);
     const version = (previous?.version ?? 0) + 1;
-    const blueprintId = `bp:${tenantId}:${version}:${Date.now().toString(36)}`;
+    const blueprintId = `bp:${tenantId}:${version}:${timeAuthority.now().atMs.toString(36)}`;
 
     const blueprint = createBlueprint({
       spec: built.spec,

@@ -28,6 +28,10 @@
  */
 
 import type { TenantId } from "./tenant-core";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Branded IDs
@@ -91,7 +95,7 @@ export type RegisterPromptResult = { ok: true; prompt: AiPrompt } | { ok: false;
 
 export function registerPrompt(
   input: RegisterPromptInput,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): RegisterPromptResult {
   if (!input.name.trim()) {
     return { ok: false, error: "Prompt name is required" };
@@ -252,7 +256,7 @@ export function isSourceRetrievable(
   domains: string[],
 ): boolean {
   if (source.tenantId !== tenantId) return false;
-  if (source.expiresAt !== null && source.expiresAt <= new Date().toISOString()) return false;
+  if (source.expiresAt !== null && source.expiresAt <= timeAuthority.now().at) return false;
   if (source.confidence <= 0) return false;
   return source.authorizedDomains.some((d) => domains.includes(d));
 }
@@ -332,7 +336,7 @@ export function buildEvidencePacket(input: {
     evidence: input.evidence,
     policyRefs: input.policyRefs ?? [],
     constraints: input.constraints ?? [],
-    createdAt: input.now ?? new Date().toISOString(),
+    createdAt: input.now ?? timeAuthority.now().at,
   };
 }
 
@@ -373,7 +377,7 @@ function excerptsConflict(a: string, b: string): boolean {
 /** Section 34: a knowledge source is fresh when it has not expired. */
 export function isKnowledgeSourceFresh(
   source: KnowledgeSource,
-  at: string = new Date().toISOString(),
+  at: string = timeAuthority.now().at,
 ): boolean {
   if (source.expiresAt !== null && source.expiresAt <= at) return false;
   if (source.effectiveDate !== null && source.effectiveDate > at) return false;

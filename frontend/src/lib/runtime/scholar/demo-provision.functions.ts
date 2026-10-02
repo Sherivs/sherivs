@@ -1,5 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
+import type { supabaseAdmin as supabaseAdminRef } from "@/integrations/supabase/client.server";
 import { SUBSCRIPTION_TIERS } from "@/lib/subscription-tiers";
+
+/**
+ * Service-role admin client type, derived from the sanctioned substrate module
+ * (type-only import — erased at build time, no client-bundle leakage).
+ */
+type SupabaseAdminClient = typeof supabaseAdminRef;
 
 const DEMO = {
   schoolName: "Demo Enterprise Academy",
@@ -54,13 +61,21 @@ export type DemoCredentials = {
   accounts: typeof DEMO_CREDENTIALS;
 };
 
-async function findAuthUserIdByEmail(supabaseAdmin: any, email: string) {
+async function findAuthUserIdByEmail(
+  supabaseAdmin: SupabaseAdminClient,
+  email: string,
+): Promise<string | undefined> {
+  // listUsers is paged; a single 1000-page lookup is enough for tenants
+  // that don't exceed that size.
   const { data } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-  return data?.users?.find((u: any) => u.email?.toLowerCase() === email.toLowerCase())?.id as
-    string | undefined;
+  return data?.users?.find((u) => u.email?.toLowerCase() === email.toLowerCase())?.id;
 }
 
-async function ensureAuthUser(supabaseAdmin: any, email: string, fullName: string) {
+async function ensureAuthUser(
+  supabaseAdmin: SupabaseAdminClient,
+  email: string,
+  fullName: string,
+): Promise<string> {
   const existingId = await findAuthUserIdByEmail(supabaseAdmin, email);
   if (existingId) {
     const { error } = await supabaseAdmin.auth.admin.updateUserById(existingId, {
@@ -79,10 +94,12 @@ async function ensureAuthUser(supabaseAdmin: any, email: string, fullName: strin
     user_metadata: { full_name: fullName },
   });
   if (error || !data?.user) throw new Error(error?.message ?? `Failed to create ${email}`);
-  return data.user.id as string;
+  return data.user.id;
 }
 
-async function ensureSchool(supabaseAdmin: any) {
+async function ensureSchool(
+  supabaseAdmin: SupabaseAdminClient,
+): Promise<{ id: string; created: boolean }> {
   const { data: existing } = await supabaseAdmin
     .from("schools")
     .select("id, name")
@@ -105,7 +122,7 @@ async function ensureSchool(supabaseAdmin: any) {
       })
       .eq("id", existing.id);
     if (error) throw new Error(error.message);
-    return { id: existing.id as string, created: false };
+    return { id: existing.id, created: false };
   }
 
   const { data: school, error } = await supabaseAdmin
@@ -130,17 +147,20 @@ async function ensureSchool(supabaseAdmin: any) {
         ? `Failed to create demo school: ${error.message}`
         : "Failed to create demo school",
     );
-  return { id: school.id as string, created: true };
+  return { id: school.id, created: true };
 }
 
-async function ensureDemoClass(supabaseAdmin: any, schoolId: string) {
+async function ensureDemoClass(
+  supabaseAdmin: SupabaseAdminClient,
+  schoolId: string,
+): Promise<string> {
   const { data: existing } = await supabaseAdmin
     .from("classes")
     .select("id")
     .eq("school_id", schoolId)
     .eq("name", "Grade 7A")
     .limit(1);
-  if (existing?.[0]?.id) return existing[0].id as string;
+  if (existing?.[0]?.id) return existing[0].id;
 
   const { data, error } = await supabaseAdmin
     .from("classes")
@@ -153,14 +173,14 @@ async function ensureDemoClass(supabaseAdmin: any, schoolId: string) {
     .select("id")
     .single();
   if (error || !data) throw new Error(error?.message ?? "Failed to create demo class");
-  return data.id as string;
+  return data.id;
 }
 
 async function ensureTenantUser(
-  supabaseAdmin: any,
+  supabaseAdmin: SupabaseAdminClient,
   schoolId: string,
   role: Exclude<DemoRole, "super_admin">,
-) {
+): Promise<string> {
   const cred = DEMO_CREDENTIALS.find((c) => c.role === role)!;
   const userId = await ensureAuthUser(supabaseAdmin, cred.email, USER_NAMES[role]);
   const { error } = await supabaseAdmin.from("users").upsert({
@@ -220,8 +240,10 @@ export const provisionDemoEnterprise = createServerFn({ method: "POST" }).handle
       .select("id")
       .eq("user_id", ids.student)
       .limit(1);
-    let studentId = existingStudents?.[0]?.id as string | undefined;
-    if (studentId) {
+    const foundStudentId = existingStudents?.[0]?.id;
+    let studentId: string;
+    if (foundStudentId) {
+      studentId = foundStudentId;
       const { error } = await supabaseAdmin
         .from("students")
         .update({
@@ -252,7 +274,7 @@ export const provisionDemoEnterprise = createServerFn({ method: "POST" }).handle
         .select("id")
         .single();
       if (error || !data) throw new Error(error?.message ?? "Failed to create demo student");
-      studentId = data.id as string;
+      studentId = data.id;
     }
 
     const { error: mapErr } = await supabaseAdmin.from("parent_student_map").upsert(

@@ -1,3 +1,8 @@
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
+
 // ─── CoreGrid Phase 20 — Government Education Cloud ──────────────────
 // government-core.ts — Government identity, hierarchy, federation,
 //                      jurisdiction, organisation, network, autonomy
@@ -186,7 +191,7 @@ export function createFederation(params: {
 }): GovernmentFederation {
   if (params.scope.length === 0)
     throw new Error("Federation must have at least one authority scope");
-  if (params.expiresAt && new Date(params.expiresAt) <= new Date()) {
+  if (params.expiresAt && new Date(params.expiresAt) <= new Date(timeAuthority.now().atMs)) {
     throw new Error("Federation expiry must be in the future");
   }
   return { ...params, status: "active" as const };
@@ -200,10 +205,10 @@ export function assignGovernmentRole(params: {
   expiresAt: string | null;
 }): GovernmentRoleAssignment {
   if (params.privileges.length === 0) throw new Error("Role must have at least one privilege");
-  if (params.expiresAt && new Date(params.expiresAt) <= new Date()) {
+  if (params.expiresAt && new Date(params.expiresAt) <= new Date(timeAuthority.now().atMs)) {
     throw new Error("Role expiry must be in the future");
   }
-  return { ...params, grantedAt: new Date().toISOString() };
+  return { ...params, grantedAt: timeAuthority.now().at };
 }
 
 export function createJurisdiction(params: {
@@ -277,7 +282,7 @@ export function supersedeMasterRecord(
   return {
     ...record,
     status: "superseded" as const,
-    effectiveTo: new Date().toISOString(),
+    effectiveTo: timeAuthority.now().at,
     supersededBy: replacementId,
   };
 }

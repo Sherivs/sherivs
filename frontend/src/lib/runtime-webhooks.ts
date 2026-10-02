@@ -12,6 +12,10 @@
 
 import type { TenantId } from "./tenant-core";
 import type { CorrelationId } from "./runtime-core";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Webhook delivery model (Section GR)
@@ -181,7 +185,7 @@ export function createWebhookDeliveryTracker(): WebhookDeliveryTracker {
       const d = deliveries.find((x) => x.id === id);
       if (!d) return false;
       d.status = status;
-      d.updatedAt = new Date().toISOString();
+      d.updatedAt = timeAuthority.now().at;
       return true;
     },
   };
@@ -217,7 +221,7 @@ export async function processWebhookDelivery(
     delivery.status = attempt.retryDecision === "retry" ? "retrying" : "dead_lettered";
     delivery.nextRetryAt =
       attempt.retryDecision === "retry"
-        ? new Date(Date.now() + 1000 * Math.pow(2, attemptNumber - 1)).toISOString()
+        ? new Date(timeAuthority.now().atMs + 1000 * Math.pow(2, attemptNumber - 1)).toISOString()
         : null;
   } else {
     attempt.responseStatus = result.status;

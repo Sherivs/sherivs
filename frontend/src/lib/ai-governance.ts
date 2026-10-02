@@ -28,6 +28,10 @@
 
 import type { TenantId } from "./tenant-core";
 import type { AiRequestId, AiModelId, AiRiskLevel } from "./ai-core";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Branded IDs
@@ -147,7 +151,7 @@ export function createAiDecisionRecord(input: {
     policyDecision: input.policyDecision,
     approvalState: input.approvalState ?? "not_required",
     reviewerRef: input.reviewerRef ?? null,
-    createdAt: input.now ?? new Date().toISOString(),
+    createdAt: input.now ?? timeAuthority.now().at,
   };
 }
 
@@ -303,7 +307,7 @@ export interface CircuitBreakerState {
 
 export function recordCircuitFailure(
   state: CircuitBreakerState,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): CircuitBreakerState {
   const failures = state.failureCount + 1;
   if (failures >= state.failureThreshold && state.openedAt === null) {
@@ -314,7 +318,7 @@ export function recordCircuitFailure(
 
 export function isCircuitOpen(
   state: CircuitBreakerState,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): boolean {
   if (state.openedAt === null) return false;
   // Half-open probe after the configured cooldown is out of scope here; the state
@@ -463,7 +467,7 @@ export function evaluateAiOutput(input: {
     groundedness: input.groundedness,
     safety: input.safety,
     consistency: input.consistency,
-    evaluatedAt: input.now ?? new Date().toISOString(),
+    evaluatedAt: input.now ?? timeAuthority.now().at,
   };
 }
 
@@ -536,7 +540,7 @@ export interface AiKillSwitch {
 export function disableAiCapability(
   sw: AiKillSwitch,
   byRef: string,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): AiKillSwitch {
   return { ...sw, disabled: true, disabledAt: now, disabledByRef: byRef };
 }

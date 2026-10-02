@@ -1,3 +1,8 @@
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
+
 /**
  * CoreGrid Localization Content — translation, terminology, content variant,
  * and localized content governance domain.
@@ -143,7 +148,7 @@ export function createTranslation(input: {
       requiresHumanApproval: false,
       approved: false,
       sourceVersion: input.sourceVersion,
-      createdAt: input.now ?? new Date().toISOString(),
+      createdAt: input.now ?? timeAuthority.now().at,
     },
   };
 }
@@ -152,7 +157,7 @@ export function createTranslation(input: {
 export function updateTranslation(
   existing: Translation,
   newText: string,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): { ok: true; translation: Translation } | { ok: false; error: string } {
   if (!newText.trim()) {
     return { ok: false, error: "Updated translation text is required (Section Q)" };
@@ -210,7 +215,7 @@ export function createAiTranslation(input: {
       requiresHumanApproval,
       approved: false,
       sourceVersion: input.sourceVersion,
-      createdAt: input.now ?? new Date().toISOString(),
+      createdAt: input.now ?? timeAuthority.now().at,
     },
   };
 }
@@ -229,7 +234,7 @@ export function isAiTranslationDeployable(
 export function reviewTranslation(
   existing: Translation,
   reviewerRef: string,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): { ok: true; translation: Translation } | { ok: false; error: string } {
   if (!reviewerRef.trim()) {
     return { ok: false, error: "Reviewer reference is required (Section R)" };
@@ -248,7 +253,7 @@ export function reviewTranslation(
 export function approveTranslation(
   existing: Translation,
   approverRef: string,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): { ok: true; translation: Translation } | { ok: false; error: string } {
   if (!approverRef.trim()) {
     return { ok: false, error: "Approver reference is required (Section R)" };

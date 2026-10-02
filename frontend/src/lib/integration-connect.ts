@@ -26,6 +26,10 @@
  */
 
 import type { TenantId } from "./tenant-core";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Branded IDs
@@ -181,7 +185,7 @@ export function runIntegrationTest(input: {
     integrationRef: input.integrationRef,
     kind: input.kind,
     passed: input.passed,
-    testedAt: input.now ?? new Date().toISOString(),
+    testedAt: input.now ?? timeAuthority.now().at,
   };
 }
 

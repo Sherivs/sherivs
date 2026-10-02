@@ -15,6 +15,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { SystemClock, TimeAuthority } from "../../kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 const initSchema = z.object({ fee_id: z.string().uuid(), email: z.string().email() });
 
@@ -47,7 +51,7 @@ export const initFeePayment = createServerFn({ method: "POST" })
     const outstanding = Number(fee.amount) - Number(fee.paid_amount ?? 0);
     if (outstanding <= 0) throw new Error("Nothing to pay on this invoice");
 
-    const reference = `uos_${fee.id.replace(/-/g, "").slice(0, 16)}_${Date.now()}`;
+    const reference = `uos_${fee.id.replace(/-/g, "").slice(0, 16)}_${timeAuthority.now().atMs}`;
     const res = await fetch("https://api.paystack.co/transaction/initialize", {
       method: "POST",
       headers: {
@@ -117,7 +121,7 @@ export const verifyFeePayment = createServerFn({ method: "POST" })
         .update({
           status: "paid",
           paid_amount: body.data.amount / 100,
-          paid_at: new Date().toISOString(),
+          paid_at: timeAuthority.now().at,
         })
         .eq("id", feeId)
         .eq("paystack_reference", data.reference);

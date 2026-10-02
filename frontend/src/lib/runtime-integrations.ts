@@ -14,6 +14,10 @@
 
 import type { TenantId } from "./tenant-core";
 import type { CorrelationId } from "./runtime-core";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Integration adapter contract (Section BL)
@@ -161,7 +165,7 @@ export function createIntegrationHealth(
   return {
     adapterName,
     status,
-    lastCheckedAt: new Date().toISOString(),
+    lastCheckedAt: timeAuthority.now().at,
     lastError,
     consecutiveFailures: 0,
   };

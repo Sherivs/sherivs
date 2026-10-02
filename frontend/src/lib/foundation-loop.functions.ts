@@ -17,6 +17,10 @@ import {
   type FoundationLoopPlan,
   type FoundationVerificationRow,
 } from "@/lib/control-plane/foundation-loop";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 const requestSchema = z
   .object({
@@ -178,7 +182,7 @@ export async function executeRecordFoundationLoop(input: {
     sessionValid: input.claims ? tokenMsRemaining(input.claims.exp) > 0 : undefined,
   });
   const admin = await loadAdmin();
-  const now = new Date().toISOString();
+  const now = timeAuthority.now().at;
 
   const { data: entity, error: entityError } = await admin
     .from("cg_entity")
@@ -254,7 +258,7 @@ export async function rollbackFoundationExecution(input: {
     sessionValid: input.claims ? tokenMsRemaining(input.claims.exp) > 0 : undefined,
   });
   const admin = await loadAdmin();
-  const now = new Date().toISOString();
+  const now = timeAuthority.now().at;
 
   const { data: record, error: recordError } = await admin
     .from("cg_execution_record")

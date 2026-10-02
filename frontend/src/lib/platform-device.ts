@@ -1,3 +1,8 @@
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
+
 // ─── CoreGrid Phase 22 — Mobile Platform ─────────────────────────────
 // platform-device.ts — Device capability abstraction, camera, microphone,
 //                      location, biometrics, file system, device trust
@@ -172,7 +177,7 @@ export function evaluateBiometricAuth(
     authenticated,
     biometricType,
     error: error ?? null,
-    timestamp: new Date().toISOString(),
+    timestamp: timeAuthority.now().at,
   };
 }
 
@@ -191,7 +196,7 @@ export function assessDeviceTrust(params: {
     compromisedOS: params.compromisedOS ?? false,
     untrustedCertificate: params.untrustedCertificate ?? false,
     screenSharingDetected: params.screenSharingDetected ?? false,
-    timestamp: new Date().toISOString(),
+    timestamp: timeAuthority.now().at,
   };
   return { ...assessment, level: getDeviceTrustLevel(assessment as DeviceTrustAssessment) };
 }

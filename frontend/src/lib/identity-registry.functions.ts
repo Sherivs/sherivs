@@ -23,6 +23,10 @@ import {
   type IdentityKind,
   type IdentityState,
 } from "@/lib/identity-registry";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 const registerIdentitySchema = z.object({
   kind: z.enum(IDENTITY_KINDS as unknown as [string, ...string[]]),
@@ -56,7 +60,7 @@ export const registerIdentity = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = asKernelAdmin(supabaseAdmin);
-    const now = new Date().toISOString();
+    const now = timeAuthority.now().at;
 
     const row = identityDraft(
       {

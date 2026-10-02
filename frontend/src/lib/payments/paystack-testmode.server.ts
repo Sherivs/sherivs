@@ -33,6 +33,10 @@ import {
   type PaymentReference,
 } from "./payment-contract";
 import { createAdapterFailurePolicy, type AdapterFailurePolicy } from "../adapters/failure-policy";
+import { SystemClock, TimeAuthority } from "../kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 const DEFAULT_BASE_URL = "https://api.paystack.co";
 const TEST_KEY_PREFIX = "sk_test_";
@@ -226,7 +230,7 @@ export async function initializePaystackTestTransaction(
       idempotencyKey,
       amountMinor: reference.amount.amountMinor,
       currency: reference.amount.currency,
-      atIso: new Date().toISOString(),
+      atIso: timeAuthority.now().at,
     });
   } catch (err) {
     return {

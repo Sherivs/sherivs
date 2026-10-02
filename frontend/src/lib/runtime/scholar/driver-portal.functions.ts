@@ -11,6 +11,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { SystemClock, TimeAuthority } from "../../kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 export type DriverBusStatus = "idle" | "en_route" | "at_school" | "returning" | "maintenance";
 
@@ -116,7 +120,7 @@ export const pushDriverLocation = createServerFn({ method: "POST" })
       .update({
         current_latitude: data.latitude,
         current_longitude: data.longitude,
-        last_location_update: new Date().toISOString(),
+        last_location_update: timeAuthority.now().at,
         current_status: "en_route",
       })
       .eq("driver_id", userId)

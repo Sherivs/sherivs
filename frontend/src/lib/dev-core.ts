@@ -32,6 +32,10 @@
  */
 
 import type { TenantId } from "./tenant-core";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Branded IDs
@@ -155,8 +159,8 @@ export function createDeveloperOrganization(input: {
       tenantId: input.tenantId,
       name: input.name.trim(),
       members: input.members,
-      createdAt: input.now ?? new Date().toISOString(),
-      updatedAt: input.now ?? new Date().toISOString(),
+      createdAt: input.now ?? timeAuthority.now().at,
+      updatedAt: input.now ?? timeAuthority.now().at,
     },
   };
 }
@@ -257,8 +261,8 @@ export function createDeveloperProject(input: {
       visibility: input.visibility ?? "private",
       targetPhase: input.targetPhase ?? null,
       manifestRef: null,
-      createdAt: input.now ?? new Date().toISOString(),
-      updatedAt: input.now ?? new Date().toISOString(),
+      createdAt: input.now ?? timeAuthority.now().at,
+      updatedAt: input.now ?? timeAuthority.now().at,
     },
   };
 }
@@ -366,7 +370,7 @@ export function registerSdk(input: {
     version: input.version,
     abstractions: input.abstractions ?? [],
     isActive: input.isActive ?? false,
-    createdAt: input.now ?? new Date().toISOString(),
+    createdAt: input.now ?? timeAuthority.now().at,
   };
 }
 
@@ -413,7 +417,7 @@ export function grantBreakGlassDevAccess(input: {
   durationMinutes: number;
   now?: string;
 }): { ok: true; access: BreakGlassDevAccess } | { ok: false; error: string } {
-  const now = input.now ?? new Date().toISOString();
+  const now = input.now ?? timeAuthority.now().at;
   if (!input.reason.trim()) {
     return { ok: false, error: "Break-glass development access requires a reason (Section CZ)" };
   }

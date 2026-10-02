@@ -17,6 +17,10 @@ import type {
   TenantStatus,
 } from "./tenant-core";
 import { canTransitionTenant } from "./tenant-core";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Lifecycle transition request
@@ -43,7 +47,7 @@ export type TenantLifecycleTransitionResult =
 
 export function transitionTenantLifecycle(
   req: TenantLifecycleTransitionRequest,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): TenantLifecycleTransitionResult {
   // 1. Validate the transition is allowed by the state machine.
   if (!canTransitionTenant(req.from, req.to)) {
@@ -171,7 +175,7 @@ export interface ProvisioningState {
 
 export function advanceProvisioning(
   state: ProvisioningState,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): ProvisioningState {
   const currentIndex = PROVISIONING_PIPELINE.indexOf(state.stage);
   const nextStage = PROVISIONING_PIPELINE[currentIndex + 1];
@@ -223,7 +227,7 @@ export interface MigrationState {
 
 export function advanceMigration(
   state: MigrationState,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): MigrationState {
   const currentIndex = MIGRATION_PIPELINE.indexOf(state.stage);
   const nextStage = MIGRATION_PIPELINE[currentIndex + 1];

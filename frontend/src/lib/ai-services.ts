@@ -29,6 +29,10 @@
 
 import type { TenantId } from "./tenant-core";
 import type { AiModelId, IntelligenceCapability, AiRiskLevel } from "./ai-core";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Branded IDs
@@ -396,7 +400,7 @@ export function createAiPipeline(input: {
     latencyBudgetMs: input.latencyBudgetMs ?? 30_000,
     tokenBudget: input.tokenBudget ?? 8_000,
     isActive: input.isActive ?? false,
-    createdAt: input.now ?? new Date().toISOString(),
+    createdAt: input.now ?? timeAuthority.now().at,
   };
 }
 

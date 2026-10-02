@@ -7,7 +7,7 @@ import { requireSchoolAdminScope } from "@/lib/security-role-gate";
 import { SystemClock, TimeAuthority } from "../../kernel/time-authority";
 import { writeAuditRecord } from "@/lib/server/write-audit";
 
-/** J-023 time-source discipline: time enters only via the kernel authority — no direct wall-clock sampling. */
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
 const timeAuthority = new TimeAuthority(new SystemClock());
 
 /**

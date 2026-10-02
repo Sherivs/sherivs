@@ -331,6 +331,8 @@ defineFamilySuite({
       gate: "school-admin",
       audit: "write-through",
       auditMarkers: [/\.from\("digital_twin_config"\)/],
+      extra: [/ConfigInput\.parse/],
+      note: "JSON columns (school_knowledge/trigger_rules) validate through the versioned TwinPayloadEnvelope — no permissive untyped columns",
     },
     {
       fn: "placeTwinCall",
@@ -339,12 +341,12 @@ defineFamilySuite({
       gate: "school-admin",
       audit: "write-through",
       auditMarkers: [/\.from\("digital_twin_calls"\)/],
-      extra: [/fetch\(/],
-      note: "every call attempt (stub/failed/queued) is persisted as a digital_twin_calls row",
+      extra: [/fetch\(/, /TwilioCallResponse/],
+      note: "every call attempt (stub/failed/queued) is persisted as a digital_twin_calls row; provider output is schema-validated before use",
     },
   ],
   findings: [
-    "§27.4 finding: ConfigInput uses z.any() for school_knowledge/trigger_rules — the JSON columns accept untyped payloads (pre-existing shape); Zod cannot bound them. Recorded, not accommodated.",
+    "§27.4 finding (MH-02, 2026-10-02): CLOSED — ConfigInput previously used z.any() for school_knowledge/trigger_rules, leaving the JSON columns untyped. Both columns now validate through the versioned TwinPayloadEnvelope (validated version field, bounded JSON tree catchall, serialized-size cap) and the Twilio response passes TwilioCallResponse; strictness is pinned behaviorally by tests/unit/mh-02-validation-hardening.test.ts.",
   ],
 });
 

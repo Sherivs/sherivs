@@ -11,6 +11,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { SystemClock, TimeAuthority } from "../../kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 const Coords = z.object({
   latitude: z.number().min(-90).max(90),
@@ -59,7 +63,7 @@ export const updateBusLocation = createServerFn({ method: "POST" })
       .update({
         current_latitude: data.latitude,
         current_longitude: data.longitude,
-        last_location_update: new Date().toISOString(),
+        last_location_update: timeAuthority.now().at,
       })
       .eq("driver_id", userId)
       .eq("is_active", true);

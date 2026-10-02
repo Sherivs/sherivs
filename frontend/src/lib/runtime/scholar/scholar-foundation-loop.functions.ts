@@ -45,6 +45,10 @@ import {
   SCHOLAR_FOUNDATION_RELATIONSHIP_TYPES,
 } from "@/lib/runtime/scholar-foundation-flow";
 import { isScholarEventType, type ScholarEventType } from "@/lib/runtime/scholar-events";
+import { SystemClock, TimeAuthority } from "../../kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 const relationshipSchema = z
   .object({
@@ -141,7 +145,7 @@ export async function executeScholarFoundationLoop(input: {
     sessionValid: input.claims ? tokenMsRemaining(input.claims.exp) > 0 : undefined,
   });
   const admin = await loadAdmin();
-  const now = new Date().toISOString();
+  const now = timeAuthority.now().at;
 
   const replayed = await findReplayedExecution(admin, tenantId, input.data.idempotencyKey);
   if (replayed) {

@@ -23,6 +23,10 @@ import {
   type TenantEnvironment,
   type TenantStatus,
 } from "@/lib/tenant-registry";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 const registerTenantSchema = z.object({
   tenant_type: z.string().trim().min(1).max(80),
@@ -63,7 +67,7 @@ export const registerTenant = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = asKernelAdmin(supabaseAdmin);
-    const now = new Date().toISOString();
+    const now = timeAuthority.now().at;
 
     const row = tenantDraft(
       {

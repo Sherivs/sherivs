@@ -293,7 +293,7 @@ defineFamilySuite({
   findings: [
     "§27.1/§27.3 finding: provisionDemoEnterprise allows anonymous entry and performs no tenant/role authorization BY DESIGN — the control is the environment gate (ALLOW_DEMO_PROVISIONING !== 'true' throws; default OFF in every environment), documented in the p08-enforcement-surface DOCUMENTED_EXEMPT ledger and Phase 01 §34/§45 fixture isolation. Recorded, not accommodated.",
     "§27.6 finding: demo provisioning leaves no separate audit record — the fixture rows themselves are the record. Recorded, not accommodated.",
-    "§32 note (out of §27 scope): the family's helpers use untyped `any` Supabase payloads; flagged for the owning team, not accommodated here.",
+    "§32 note (out of §27 scope) — CLOSED by MH-02 (2026-10-02): the family's helpers previously used untyped `any` Supabase payloads; every helper now threads an explicit SupabaseAdminClient type derived from the sanctioned substrate module (type-only import, no vendor SDK reference). Verified by tests/unit/mh-02-validation-hardening.test.ts.",
   ],
 });
 

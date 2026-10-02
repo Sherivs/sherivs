@@ -39,6 +39,10 @@
 
 import type { TenantId } from "./tenant-core";
 import type { MarketplaceProductId } from "./marketplace-core";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Branded IDs
@@ -98,7 +102,7 @@ export interface ProductLifecycleRecord {
 export function transitionProductLifecycle(
   record: ProductLifecycleRecord,
   to: ProductLifecycleState,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): ProductLifecycleRecord {
   return {
     ...record,
@@ -256,7 +260,7 @@ export function reportMarketplaceIncident(input: {
     productId: input.productId ?? null,
     vendorRef: input.vendorRef ?? null,
     responseStage: "detect",
-    reportedAt: input.now ?? new Date().toISOString(),
+    reportedAt: input.now ?? timeAuthority.now().at,
   };
 }
 
@@ -316,7 +320,7 @@ export function recordMarketplaceAuditEvent(input: {
     type: input.type,
     actorRef: input.actorRef,
     productId: input.productId ?? null,
-    occurredAt: input.now ?? new Date().toISOString(),
+    occurredAt: input.now ?? timeAuthority.now().at,
     metadata: input.metadata ?? {},
   };
 }
@@ -456,7 +460,7 @@ export function createOfflinePackage(input: {
 /** Section 156: offline packages require signature + integrity + non-expiry. */
 export function isOfflinePackageValid(
   pkg: OfflinePackage,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): boolean {
   if (!pkg.signed) return false;
   if (pkg.checksumRef.trim() === "") return false;
@@ -517,7 +521,7 @@ export function publishMarketplaceEvent(input: {
     tenantId: input.tenantId ?? null,
     type: input.type,
     productId: input.productId ?? null,
-    occurredAt: input.now ?? new Date().toISOString(),
+    occurredAt: input.now ?? timeAuthority.now().at,
     metadata: input.metadata ?? {},
   };
 }

@@ -1,3 +1,8 @@
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
+
 // ─── CoreGrid Phase 22 — Mobile Platform ─────────────────────────────
 // platform-core.ts — Application shell, navigation, design system,
 //                    state management, API layer, resilience, performance
@@ -208,7 +213,7 @@ export function createLaunchContext(params: {
     deepLink: params.deepLink ?? null,
     notificationPayload: params.notificationPayload ?? null,
     previousState: params.previousState ?? null,
-    timestamp: new Date().toISOString(),
+    timestamp: timeAuthority.now().at,
   };
 }
 

@@ -39,6 +39,10 @@
 
 import type { TenantId } from "./tenant-core";
 import type { InstitutionId } from "./institution-core";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Branded IDs
@@ -108,7 +112,7 @@ export function createAdminDelegation(input: {
   durationHours: number;
   now?: string;
 }): { ok: true; delegation: AdminDelegation } | { ok: false; error: string } {
-  const now = input.now ?? new Date().toISOString();
+  const now = input.now ?? timeAuthority.now().at;
   if (input.delegatorRef === input.delegateRef) {
     return { ok: false, error: "A delegator cannot delegate to themselves" };
   }
@@ -139,14 +143,14 @@ export function createAdminDelegation(input: {
 
 export function revokeAdminDelegation(
   delegation: AdminDelegation,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): AdminDelegation {
   return { ...delegation, revokedAt: now };
 }
 
 export function isAdminDelegationActive(
   delegation: AdminDelegation,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): boolean {
   if (delegation.revokedAt !== null) return false;
   return now <= delegation.expiresAt;
@@ -182,7 +186,7 @@ export function createBreakGlassAccess(input: {
   durationMinutes: number;
   now?: string;
 }): { ok: true; access: BreakGlassAccess } | { ok: false; error: string } {
-  const now = input.now ?? new Date().toISOString();
+  const now = input.now ?? timeAuthority.now().at;
   if (!input.reason.trim()) {
     return { ok: false, error: "Break-glass access requires a reason (Section CM)" };
   }
@@ -221,7 +225,7 @@ export function recordBreakGlassReview(
 
 export function isBreakGlassActive(
   access: BreakGlassAccess,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): boolean {
   return now <= access.expiresAt;
 }
@@ -259,7 +263,7 @@ export function createImpersonationSession(input: {
   durationMinutes: number;
   now?: string;
 }): { ok: true; session: ImpersonationSession } | { ok: false; error: string } {
-  const now = input.now ?? new Date().toISOString();
+  const now = input.now ?? timeAuthority.now().at;
   if (input.actorRef === input.targetRef) {
     return { ok: false, error: "Cannot impersonate self" };
   }
@@ -289,14 +293,14 @@ export function createImpersonationSession(input: {
 
 export function endImpersonationSession(
   session: ImpersonationSession,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): ImpersonationSession {
   return { ...session, endedAt: now };
 }
 
 export function isImpersonationActive(
   session: ImpersonationSession,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): boolean {
   if (session.endedAt !== null) return false;
   return now <= session.endsAt;
@@ -359,7 +363,7 @@ export function recordAdminAuditEvent(input: {
     type: input.type,
     actorRef: input.actorRef,
     subjectRef: input.subjectRef,
-    occurredAt: input.now ?? new Date().toISOString(),
+    occurredAt: input.now ?? timeAuthority.now().at,
     metadata: input.metadata ?? {},
   };
 }
@@ -454,7 +458,7 @@ export interface RecomposedWorkspace {
 export function recomposeWorkspace(
   input: WorkspaceCompositionInput,
   registry: CapabilityDescriptor[],
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): RecomposedWorkspace {
   const permissions = [...new Set(input.rolePermissions)].sort();
   const capabilities = [...new Set(input.roleCapabilities)].sort();
@@ -503,7 +507,7 @@ export function simulatePolicyChange(input: {
     institutionId: input.institutionId,
     gainedAccessRefs: gained,
     lostAccessRefs: lost,
-    simulatedAt: input.now ?? new Date().toISOString(),
+    simulatedAt: input.now ?? timeAuthority.now().at,
   };
 }
 
@@ -628,7 +632,7 @@ export function createAdminSuccession(input: {
       outgoingAdministratorRef: input.outgoingAdministratorRef,
       incomingAdministratorRef: input.incomingAdministratorRef,
       platformSafeguardRef: input.platformSafeguardRef,
-      completedAt: input.now ?? new Date().toISOString(),
+      completedAt: input.now ?? timeAuthority.now().at,
     },
   };
 }

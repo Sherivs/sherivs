@@ -1,3 +1,8 @@
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
+
 // ─── CoreGrid Phase 23 — Web Platform ───────────────────────────────
 // web-performance.ts — Performance architecture, Core Web Vitals,
 //                      bundle/image/font optimization, CDN, SEO
@@ -88,7 +93,7 @@ export function evaluateCoreWebVital(name: CoreWebVital, value: number): CoreWeb
     name,
     value,
     rating: rating as "good" | "needs_improvement" | "poor",
-    timestamp: new Date().toISOString(),
+    timestamp: timeAuthority.now().at,
     element: null,
   };
 }

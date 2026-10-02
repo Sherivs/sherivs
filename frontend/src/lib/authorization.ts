@@ -27,7 +27,7 @@
  * future relative to the request time). Expiry is identical to revocation:
  * an expired grant no longer exists, and any decision path it would have
  * enabled falls back to the deny path. The request time is `abac.now`
- * (RFC 3339) when provided, otherwise `Date.now()`.
+ * (RFC 3339) when provided, otherwise `timeAuthority.now().atMs`.
  *
  * Agent authority (`AuthorizeOptions.isAgent`, Invariant 12): role
  * membership is never a source of agent authority. An agent identity
@@ -47,6 +47,10 @@ import type {
   PermissionAction,
   PermissionResource,
 } from "./identity";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Role definitions (RBAC layer)
@@ -239,7 +243,9 @@ export function hasRelationship(
   // context, so there is no `abac.now` to honor (see contract above).
   return relationships.some(
     (r) =>
-      r.type === type && r.targetId === targetId && isRelationshipActive(r, Date.now()),
+      r.type === type &&
+      r.targetId === targetId &&
+      isRelationshipActive(r, timeAuthority.now().atMs),
   );
 }
 
@@ -260,7 +266,7 @@ function resolveNowMs(abac?: AbacContext): number {
     const parsed = Date.parse(abac.now);
     if (!Number.isNaN(parsed)) return parsed;
   }
-  return Date.now();
+  return timeAuthority.now().atMs;
 }
 
 /**

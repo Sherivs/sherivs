@@ -31,6 +31,10 @@
  */
 
 import type { TenantId } from "./tenant-core";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Branded IDs
@@ -120,7 +124,7 @@ export function createDevEnvironment(input: {
     featureFlags: input.featureFlags ?? [],
     quotas: input.quotas ?? {},
     policyRefs: input.policyRefs ?? [],
-    createdAt: input.now ?? new Date().toISOString(),
+    createdAt: input.now ?? timeAuthority.now().at,
   };
 }
 
@@ -176,7 +180,7 @@ export function registerDevSecret(input: {
       environmentKind: input.environmentKind,
       ref: input.ref,
       fingerprint: input.fingerprint,
-      createdAt: input.now ?? new Date().toISOString(),
+      createdAt: input.now ?? timeAuthority.now().at,
     },
   };
 }
@@ -241,7 +245,7 @@ export function createSandbox(input: {
       projectRef: input.projectRef,
       datasetRefs: input.datasetRefs ?? [],
       productionIsolated: true,
-      createdAt: input.now ?? new Date().toISOString(),
+      createdAt: input.now ?? timeAuthority.now().at,
     },
   };
 }
@@ -324,7 +328,7 @@ export function createSyntheticIdentity(input: {
     tenantId: input.tenantId,
     role: input.role,
     label: input.label,
-    createdAt: input.now ?? new Date().toISOString(),
+    createdAt: input.now ?? timeAuthority.now().at,
   };
 }
 

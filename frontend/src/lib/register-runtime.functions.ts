@@ -45,6 +45,10 @@ import {
   registryRowFromManifest,
   type RuntimeRegistryRow,
 } from "@/lib/kernel/runtime-registry";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 // The generated `Database` type lags the authored (NOT applied) cg_* substrate
 // migration; the kernel client surface is shared with kernel-reality server
@@ -136,7 +140,7 @@ export const registerDomainRuntime = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = asKernelAdmin(supabaseAdmin);
-    const now = new Date().toISOString();
+    const now = timeAuthority.now().at;
 
     // Registry owns lifecycle state: registration always starts at `proposed`;
     // the client-declared manifest.status is never trusted for the row.
@@ -211,7 +215,7 @@ export const transitionRuntimeStatus = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = asKernelAdmin(supabaseAdmin);
-    const now = new Date().toISOString();
+    const now = timeAuthority.now().at;
 
     const { data: raw, error } = await admin
       .from("cg_domain_runtime")

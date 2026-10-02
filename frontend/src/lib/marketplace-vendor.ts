@@ -28,6 +28,10 @@
  */
 
 import type { TenantId } from "./tenant-core";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Branded IDs
@@ -156,7 +160,7 @@ export type CreateVendorResult = { ok: true; vendor: Vendor } | { ok: false; err
 
 export function createVendor(
   input: CreateVendorInput,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): CreateVendorResult {
   if (!input.organizationName.trim()) {
     return { ok: false, error: "Vendor organization name is required" };
@@ -205,7 +209,7 @@ export function promoteVendorVerification(
       ...vendor,
       verificationLevel: to,
       verificationChecks: [...new Set([...vendor.verificationChecks, check])],
-      updatedAt: new Date().toISOString(),
+      updatedAt: timeAuthority.now().at,
     },
   };
 }
@@ -264,7 +268,7 @@ export function createDeveloperOrganization(input: {
     members: input.members ?? [],
     environments: input.environments ?? ["development"],
     publishingAuthority: input.publishingAuthority ?? false,
-    createdAt: input.now ?? new Date().toISOString(),
+    createdAt: input.now ?? timeAuthority.now().at,
   };
 }
 
@@ -356,8 +360,8 @@ export function createDraftSubmission(input: {
     vendorRef: input.vendorRef,
     state: "draft",
     reviewFindings: [],
-    submittedAt: input.now ?? new Date().toISOString(),
-    updatedAt: input.now ?? new Date().toISOString(),
+    submittedAt: input.now ?? timeAuthority.now().at,
+    updatedAt: input.now ?? timeAuthority.now().at,
   };
 }
 
@@ -420,7 +424,7 @@ export function createProductReview(input: {
       rating: input.rating,
       comment: input.comment ?? "",
       moderationState: "pending",
-      createdAt: input.now ?? new Date().toISOString(),
+      createdAt: input.now ?? timeAuthority.now().at,
     },
   };
 }

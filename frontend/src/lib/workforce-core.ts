@@ -40,6 +40,10 @@
 
 import type { TenantId } from "./tenant-core";
 import type { InstitutionId, CampusId, ShiftId } from "./institution-core";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Branded IDs
@@ -138,7 +142,7 @@ export type CreateWorkforceRoleResult =
 
 export function createWorkforceRole(
   input: CreateWorkforceRoleInput,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): CreateWorkforceRoleResult {
   const key = input.key.trim().toLowerCase();
   if (key === "") {
@@ -342,7 +346,7 @@ export interface CreateWorkforceContextInput {
 
 export function createWorkforceContext(
   input: CreateWorkforceContextInput,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): WorkforceContext {
   return {
     id: input.id,
@@ -366,7 +370,7 @@ export function createWorkforceContext(
 /** Is the context currently effective for the given instant? */
 export function isContextEffective(
   ctx: WorkforceContext,
-  at: string = new Date().toISOString(),
+  at: string = timeAuthority.now().at,
 ): boolean {
   if (!ctx.isActive) return false;
   if (at < ctx.effectiveFrom) return false;
@@ -403,7 +407,7 @@ export function createWorkforceAssignment(input: {
   expiresAt?: string | null;
   now?: string;
 }): { ok: true; assignment: WorkforceAssignment } | { ok: false; error: string } {
-  if (input.expiresAt && input.expiresAt <= (input.now ?? new Date().toISOString())) {
+  if (input.expiresAt && input.expiresAt <= (input.now ?? timeAuthority.now().at)) {
     return { ok: false, error: "Assignment expiry must be in the future" };
   }
   return {
@@ -417,7 +421,7 @@ export function createWorkforceAssignment(input: {
       contextId: input.contextId,
       expiresAt: input.expiresAt ?? null,
       isActive: true,
-      createdAt: input.now ?? new Date().toISOString(),
+      createdAt: input.now ?? timeAuthority.now().at,
     },
   };
 }
@@ -455,7 +459,7 @@ export function grantJustInTimeAccess(input: {
   durationMinutes: number;
   now?: string;
 }): { ok: true; access: JustInTimeAccess } | { ok: false; error: string } {
-  const now = input.now ?? new Date().toISOString();
+  const now = input.now ?? timeAuthority.now().at;
   if (!input.reason.trim()) {
     return { ok: false, error: "Just-in-time access requires a reason (Section AD)" };
   }
@@ -487,14 +491,14 @@ export function grantJustInTimeAccess(input: {
 
 export function revokeJustInTimeAccess(
   access: JustInTimeAccess,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): JustInTimeAccess {
   return { ...access, revokedAt: now };
 }
 
 export function isJustInTimeAccessActive(
   access: JustInTimeAccess,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): boolean {
   if (access.revokedAt !== null) return false;
   return now <= access.expiresAt;
@@ -560,7 +564,7 @@ export function transitionStaffLifecycle(
   to: StaffLifecycleState,
   actorRef: string,
   reason: string,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): { ok: true; record: StaffLifecycleRecord } | { ok: false; error: string } {
   if (!canTransitionStaffLifecycle(record.state, to)) {
     return { ok: false, error: `Invalid staff lifecycle transition: ${record.state} -> ${to}` };
@@ -617,7 +621,7 @@ export function createStaffTransfer(input: {
     performedBy: input.performedBy,
     recalculationRequired: true,
     recalculationStatus: "pending",
-    occurredAt: input.now ?? new Date().toISOString(),
+    occurredAt: input.now ?? timeAuthority.now().at,
   };
 }
 
@@ -726,7 +730,7 @@ export interface StaffProfile {
  */
 export function isStaffProfileActive(
   profile: StaffProfile,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): boolean {
   if (profile.employmentStatus !== "active" && profile.employmentStatus !== "probation")
     return false;

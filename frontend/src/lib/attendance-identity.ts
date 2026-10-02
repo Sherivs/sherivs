@@ -34,6 +34,10 @@
 
 import type { TenantId } from "./tenant-core";
 import type { InstitutionId, CampusId } from "./institution-core";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Branded IDs
@@ -92,7 +96,7 @@ export function createAttendanceQRSession(input: {
   requiredLocationRefs?: string[];
   now?: string;
 }): { ok: true; session: AttendanceQRSession } | { ok: false; error: string } {
-  const now = input.now ?? new Date().toISOString();
+  const now = input.now ?? timeAuthority.now().at;
   if (input.ttlMinutes <= 0 || input.ttlMinutes > 60) {
     return {
       ok: false,
@@ -124,7 +128,7 @@ export function createAttendanceQRSession(input: {
 export function redeemQRSession(
   session: AttendanceQRSession,
   validatorFingerprint: string,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ):
   | {
       ok: true;
@@ -214,7 +218,7 @@ export function enrollBiometric(input: {
       purposeRef: input.purposeRef,
       retentionRef: input.retentionRef,
       state: "active",
-      enrolledAt: input.now ?? new Date().toISOString(),
+      enrolledAt: input.now ?? timeAuthority.now().at,
       revokedAt: null,
     },
   };
@@ -226,7 +230,7 @@ export function enrollBiometric(input: {
  */
 export function revokeBiometricEnrollment(
   enrollment: BiometricEnrollment,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): BiometricEnrollment {
   return { ...enrollment, state: "revoked", revokedAt: now };
 }
@@ -344,7 +348,7 @@ export interface AttendanceVerificationOutcome {
  */
 export function authorizeAttendance(
   input: AttendanceVerificationInput,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): AttendanceVerificationOutcome {
   const base = {
     id: attendanceVerificationId(crypto.randomUUID()),
@@ -453,7 +457,7 @@ export function assessAttendanceRisk(input: {
     signals: input.signals,
     riskScore,
     reviewRecommended: riskScore >= 40,
-    assessedAt: input.now ?? new Date().toISOString(),
+    assessedAt: input.now ?? timeAuthority.now().at,
   };
 }
 

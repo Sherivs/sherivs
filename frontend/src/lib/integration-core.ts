@@ -35,6 +35,10 @@
  */
 
 import type { TenantId } from "./tenant-core";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Branded IDs
@@ -234,7 +238,7 @@ export function createConnector(input: {
       retryBehavior: input.retryBehavior ?? "exponential_backoff",
       compatibleCoreGridVersion: input.compatibleCoreGridVersion ?? "",
       lifecycleState: input.lifecycleState ?? "draft",
-      createdAt: input.now ?? new Date().toISOString(),
+      createdAt: input.now ?? timeAuthority.now().at,
     },
   };
 }
@@ -309,8 +313,8 @@ export function createIntegration(input: {
       permissions: input.permissions ?? ["read"],
       ownerRef: input.ownerRef,
       isActive: false,
-      createdAt: input.now ?? new Date().toISOString(),
-      updatedAt: input.now ?? new Date().toISOString(),
+      createdAt: input.now ?? timeAuthority.now().at,
+      updatedAt: input.now ?? timeAuthority.now().at,
     },
   };
 }
@@ -343,7 +347,7 @@ export function createConnection(input: {
     state: "provisioning",
     credentialRef: null,
     lastValidatedAt: null,
-    createdAt: input.now ?? new Date().toISOString(),
+    createdAt: input.now ?? timeAuthority.now().at,
   };
 }
 
@@ -373,7 +377,7 @@ export function createCredentialReference(input: {
   expiresAt?: string | null;
   now?: string;
 }): { ok: true; credential: CredentialReference } | { ok: false; error: string } {
-  const now = input.now ?? new Date().toISOString();
+  const now = input.now ?? timeAuthority.now().at;
   if (!input.secretRef.trim()) {
     return { ok: false, error: "Credential reference requires a secret reference (Section L)" };
   }
@@ -398,7 +402,7 @@ export function createCredentialReference(input: {
 /** Section M: credential rotation — a credential is due when expired or revoked. */
 export function isCredentialValid(
   credential: CredentialReference,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): boolean {
   if (credential.revokedAt !== null) return false;
   if (credential.expiresAt !== null && credential.expiresAt <= now) return false;

@@ -37,9 +37,20 @@
  *   audited: there is no unlogged lockdown.
  * - Every grant, use, revocation, rotation and lockdown flows through an
  *   append-only audit sink (in-memory here; DB-backed later).
+ * - No-master invariant, TYPED (J-007 / H2-25): the ONLY credential-shaped
+ *   result any API here can produce is a fully scoped lease (capability
+ *   requirement ∧ tenant ∧ purpose ∧ TTL bound). `requiredCapabilities`
+ *   is a non-empty tuple and `UnscopedCredentialLease` resolves to `never`,
+ *   so a universal master credential cannot be EXPRESSED in this contract —
+ *   it fails to typecheck, and fail-closed policy registration rejects the
+ *   runtime-shaped attempt.
  *
  * Pure in-process implementation: time is supplied by the caller, nothing
  * runs implicitly, nothing is persisted, no I/O. All checks FAIL CLOSED.
+ * Storage/KMS adapters are follow-ups: a DB-backed vault and a KMS-backed
+ * vault implement the same `CredentialVault` interface (`InMemoryCredentialVault`
+ * is the in-process V1 reference), and a DB-backed audit sink implements
+ * `CredentialAuditSink`.
  */
 
 import { AGENT_RISK_CLASSIFICATIONS, type AgentRiskClassification } from "../agent-core";
@@ -191,13 +202,30 @@ export interface BrokeredCredentialPolicy {
   tenantRef: string;
   /** The single resource scope the credential grants access to. */
   resourceScope: string;
-  /** Capability ids an agent must hold (⊆ its declared set) to be granted. */
-  requiredCapabilities: readonly string[];
+  /**
+   * Capability ids an agent must hold (⊆ its declared set) to be granted.
+   * Non-empty BY TYPE (`[string, ...string[]]`): a credential requiring no
+   * capability is the shape of a universal master credential, and the
+   * no-master invariant (J-007) makes that shape inexpressible here — an
+   * empty list is a type error in TypeScript and a registration-contract
+   * error at runtime (fail closed).
+   */
+  requiredCapabilities: readonly [string, ...string[]];
   /** Risk class of using the credential; must be ≤ the subject's ceiling. */
   riskClass: AgentRiskClassification;
   /** Optional per-credential TTL cap tighter than the broker bound. */
   maxLeaseTtlMs: number | null;
 }
+
+/**
+ * The no-master invariant (J-007) as a type: there is NO credential-shaped
+ * value this module can hand out that is not a scoped lease. Every lease
+ * carries all four scope axes — capability requirement, tenant, purpose,
+ * TTL bound — as REQUIRED fields, and this alias resolves to `never`, so
+ * any code that attempts to mint or hold a universal/unscoped credential
+ * fails to typecheck before it can ever run.
+ */
+export type UnscopedCredentialLease = never;
 
 export type BrokeredCredentialPolicyResult =
   | { ok: true }
@@ -495,9 +523,12 @@ export class CredentialBroker {
     }
     if (
       !Array.isArray(policy.requiredCapabilities) ||
+      policy.requiredCapabilities.length === 0 ||
       policy.requiredCapabilities.some((c) => !isNonEmptyTrimmed(c, 160))
     ) {
-      errors.push("requiredCapabilities must be an array of non-empty strings");
+      errors.push(
+        "requiredCapabilities must be a non-empty array of non-empty strings (a credential requiring no capability is a master credential — denied, no-master invariant)",
+      );
     }
     if (!(AGENT_RISK_CLASSIFICATION_SET as ReadonlySet<string>).has(policy.riskClass)) {
       errors.push("riskClass must be in the agent risk vocabulary");

@@ -12,6 +12,10 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireSchoolAdminScope } from "@/lib/security-role-gate";
+import { SystemClock, TimeAuthority } from "../../kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /**
  * Best-effort web-push ping after in-app notification rows are created.
@@ -56,7 +60,7 @@ async function filterByPrefs(
   }>;
   const prefMap = new Map(rows.map((r) => [r.user_id, r]));
 
-  const now = new Date();
+  const now = new Date(timeAuthority.now().atMs);
   const nowMin = now.getUTCHours() * 60 + now.getUTCMinutes();
   const inQuiet = (s: string | null, e: string | null) => {
     if (!s || !e) return false;
@@ -160,7 +164,7 @@ export const notifyFeesDue = createServerFn({ method: "POST" })
       sessionValid: typeof claims?.exp === "number" && tokenMsRemaining(claims.exp) > 0,
     });
 
-    const cutoff = new Date(Date.now() + data.days_until_due * 86400_000)
+    const cutoff = new Date(timeAuthority.now().atMs + data.days_until_due * 86400_000)
       .toISOString()
       .slice(0, 10);
 

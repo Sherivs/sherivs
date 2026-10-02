@@ -29,6 +29,10 @@
  */
 
 import type { TenantId } from "./tenant-core";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Branded IDs
@@ -170,7 +174,7 @@ export interface CreateAiRequestInput {
  */
 export function createAiRequest(
   input: CreateAiRequestInput,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): AiRequestModel {
   if (!input.tenantId) {
     throw new Error("AI request requires an explicit tenant context (Section 11)");
@@ -303,7 +307,7 @@ export type RegisterModelResult =
 
 export function registerModel(
   input: RegisterModelInput,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): RegisterModelResult {
   if (!input.provider.trim() || !input.name.trim()) {
     return { ok: false, error: "Model provider and name are required" };
@@ -465,7 +469,7 @@ export function evaluateModelHealth(input: {
     hallucinationRate: input.hallucinationRate,
     safetyIncidentCount: input.safetyIncidentCount,
     healthy,
-    lastCheckedAt: input.now ?? new Date().toISOString(),
+    lastCheckedAt: input.now ?? timeAuthority.now().at,
   };
 }
 

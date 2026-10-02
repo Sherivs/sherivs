@@ -1,3 +1,8 @@
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
+
 // ─── CoreGrid Phase 21 — Global Cloud Fabric ─────────────────────────
 // cloud-byoc.ts — Bring Your Own Cloud: registration, trust, credentials,
 //                 networking, storage, encryption, observability
@@ -162,7 +167,7 @@ export function establishTrust(params: {
     deploymentId: params.deploymentId,
     oidcIssuer: params.oidcIssuer,
     certificateThumbprint: params.certificateThumbprint,
-    establishedAt: new Date().toISOString(),
+    establishedAt: timeAuthority.now().at,
     expiresAt: params.expiresAt ?? null,
     status: "active" as const,
   };
@@ -181,7 +186,7 @@ export function createPermissionManifest(params: {
     requiredPermissions: params.requiredPermissions,
     actualPermissions: params.actualPermissions,
     approvedBy: params.approvedBy,
-    approvedAt: new Date().toISOString(),
+    approvedAt: timeAuthority.now().at,
     status: "approved" as const,
   };
 }
@@ -198,7 +203,7 @@ export function revokeBYOC(params: {
     deploymentId: params.deploymentId,
     reason: params.reason,
     authorizedBy: params.authorizedBy,
-    initiatedAt: new Date().toISOString(),
+    initiatedAt: timeAuthority.now().at,
     dataExportRequired: params.dataExportRequired ?? true,
     status: "initiated" as const,
   };
@@ -219,7 +224,7 @@ export function checkBYOCHealth(
     deploymentId: deployment.id,
     controlPlaneConnected,
     agentHealthy,
-    lastHeartbeat: new Date().toISOString(),
+    lastHeartbeat: timeAuthority.now().at,
     status,
   };
 }

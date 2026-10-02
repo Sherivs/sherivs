@@ -6,21 +6,81 @@
  * not linked, `placeTwinCall` records a "stub" call row so the UI flow
  * can be exercised end-to-end and returns a clear message; no fake
  * Twilio response is fabricated.
+ *
+ * MH-02 validation hardening: the `digital_twin_config` JSON columns
+ * (`school_knowledge`, `trigger_rules`) are governed by the versioned
+ * `TwinPayloadEnvelope` contract — known fields are validated, the open
+ * part of the payload is explicitly structured as a bounded JSON tree
+ * (depth-, collection- and size-capped), and the provider response is
+ * schema-validated before use (untrusted output, §21). Nothing permissive.
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireSchoolAdminScope } from "@/lib/security-role-gate";
+import type { Json } from "@/integrations/supabase/types";
+import { SystemClock, TimeAuthority } from "../../kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
+
+// ---------------- Twin payload contract (MH-02) ----------------
+
+/** Envelope version — bumped when the twin-payload shape changes. */
+const TWIN_PAYLOAD_VERSION = 1;
+
+/** Contract bounds: a payload is data, not an unbounded structure (§19 minimization). */
+const TWIN_JSON_MAX_DEPTH = 8;
+const TWIN_JSON_MAX_COLLECTION = 128;
+const TWIN_JSON_MAX_STRING = 4000;
+const TWIN_JSON_MAX_SERIALIZED = 65536;
+
+/** Leaf scalars only — no nested escape hatch to an unbounded string. */
+const JsonScalar = z.union([
+  z.string().max(TWIN_JSON_MAX_STRING),
+  z.number().finite(),
+  z.boolean(),
+  z.null(),
+]);
+
+/**
+ * Explicitly structured JSON tree: scalars at the leaves, arrays and
+ * string-keyed records as the only composites, every level bounded.
+ * This replaces the permissive untyped contracts — the unknown part of a
+ * payload is still contracted.
+ */
+function boundedJsonTree(maxDepth: number): z.ZodType<Json> {
+  if (maxDepth <= 0) return JsonScalar;
+  return z.union([
+    JsonScalar,
+    z.array(boundedJsonTree(maxDepth - 1)).max(TWIN_JSON_MAX_COLLECTION),
+    z.record(z.string(), boundedJsonTree(maxDepth - 1)),
+  ]);
+}
+
+/**
+ * Versioned twin-payload envelope: `version` is a known, validated field;
+ * every other key must still satisfy the bounded JSON tree, and the whole
+ * payload must stay under the serialized-size cap. Nothing is permissive.
+ */
+export const TwinPayloadEnvelope = z
+  .object({
+    version: z.literal(TWIN_PAYLOAD_VERSION).default(TWIN_PAYLOAD_VERSION),
+  })
+  .catchall(boundedJsonTree(TWIN_JSON_MAX_DEPTH))
+  .refine((value) => (JSON.stringify(value) ?? "").length <= TWIN_JSON_MAX_SERIALIZED, {
+    message: `twin payload exceeds the ${TWIN_JSON_MAX_SERIALIZED}-byte serialized limit`,
+  });
 
 // ---------------- Save config ----------------
 
-const ConfigInput = z.object({
+export const ConfigInput = z.object({
   twin_name: z.string().trim().min(1).max(80),
   twin_voice: z.string().trim().min(1).max(40),
   twin_personality: z.string().trim().min(1).max(2000),
-  school_knowledge: z.any().optional().default({}),
-  trigger_rules: z.any().optional().default({}),
+  school_knowledge: TwinPayloadEnvelope.default({ version: TWIN_PAYLOAD_VERSION }),
+  trigger_rules: TwinPayloadEnvelope.default({ version: TWIN_PAYLOAD_VERSION }),
   is_active: z.boolean().default(true),
 });
 
@@ -46,23 +106,17 @@ export const saveTwinConfig = createServerFn({ method: "POST" })
       .eq("school_id", schoolId)
       .maybeSingle();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase upsert payload over a Zod-any JSON column (pre-existing shape).
-    const payload: any = {
-      ...data,
-      school_knowledge: data.school_knowledge ?? {},
-      trigger_rules: data.trigger_rules ?? {},
-    };
     if (existing) {
       const { error } = await supabase
         .from("digital_twin_config")
-        .update({ ...payload, updated_at: new Date().toISOString() })
+        .update({ ...data, updated_at: timeAuthority.now().at })
         .eq("id", existing.id);
       if (error) throw new Error(error.message);
       return { id: existing.id, updated: true };
     }
     const { data: ins, error } = await supabase
       .from("digital_twin_config")
-      .insert({ ...payload, school_id: schoolId })
+      .insert({ ...data, school_id: schoolId })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
@@ -71,7 +125,7 @@ export const saveTwinConfig = createServerFn({ method: "POST" })
 
 // ---------------- Place outbound call ----------------
 
-const CallInput = z.object({
+export const CallInput = z.object({
   call_type: z.enum(["attendance_alert", "fees_reminder", "announcement", "custom"]),
   trigger_event: z.string().trim().max(120).optional(),
   recipient_name: z.string().trim().min(1).max(160),
@@ -82,6 +136,16 @@ const CallInput = z.object({
 });
 
 const GATEWAY_URL = process.env.TWILIO_GATEWAY_URL || "https://api.twilio.com/2010-04-01";
+
+/**
+ * Twilio voice-gateway response contract (§21: provider output is untrusted
+ * by default). Only the two fields this function consumes are read and
+ * bounded; everything else in the response is stripped, never propagated.
+ */
+export const TwilioCallResponse = z.object({
+  sid: z.string().trim().min(1).max(64).optional(),
+  message: z.string().trim().max(500).optional(),
+});
 
 export const placeTwinCall = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -157,20 +221,20 @@ export const placeTwinCall = createServerFn({ method: "POST" })
         Twiml: twiml,
       }),
     });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Twilio JSON body is an external, untyped response (pre-existing shape).
-    const body: any = await resp.json().catch(() => ({}));
+    const parsed = TwilioCallResponse.safeParse(await resp.json().catch(() => ({})));
+    const body = parsed.success ? parsed.data : {};
     if (!resp.ok) {
       const { data: row } = await supabase
         .from("digital_twin_calls")
         .insert({
           ...baseRow,
           call_status: "failed",
-          call_outcome: body?.message ?? `twilio_${resp.status}`,
+          call_outcome: body.message ?? `twilio_${resp.status}`,
         })
         .select("id")
         .single();
       throw new Error(
-        `Twilio error [${resp.status}]: ${body?.message ?? "unknown"} (call id ${row?.id ?? "—"})`,
+        `Twilio error [${resp.status}]: ${body.message ?? "unknown"} (call id ${row?.id ?? "—"})`,
       );
     }
 
@@ -179,11 +243,11 @@ export const placeTwinCall = createServerFn({ method: "POST" })
       .insert({
         ...baseRow,
         call_status: "queued",
-        twilio_call_sid: body?.sid ?? null,
-        started_at: new Date().toISOString(),
+        twilio_call_sid: body.sid ?? null,
+        started_at: timeAuthority.now().at,
       })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
-    return { id: row.id, status: "queued" as const, sid: body?.sid ?? null };
+    return { id: row.id, status: "queued" as const, sid: body.sid ?? null };
   });

@@ -16,6 +16,10 @@ import type {
   IdentityLifecycleState,
 } from "./identity";
 import { canTransitionIdentity } from "./identity";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Lifecycle transition request
@@ -42,7 +46,7 @@ export type LifecycleTransitionResult =
 
 export function transitionIdentityLifecycle(
   req: LifecycleTransitionRequest,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): LifecycleTransitionResult {
   // 1. Validate the transition is allowed by the state machine.
   if (!canTransitionIdentity(req.from, req.to)) {

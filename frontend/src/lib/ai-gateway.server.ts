@@ -42,6 +42,10 @@ import {
   type IntelligenceSnapshot,
   type RoutingRationaleStep,
 } from "./ai-gateway/reasoning-provenance";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 export function createAiGatewayProvider(apiKey: string) {
   const key = apiKey || process.env.AI_API_KEY || "";
@@ -102,7 +106,7 @@ export function createRateLimiter(config: RateLimitConfig): RateLimiter {
   const hits = new Map<string, number[]>();
 
   return {
-    check(refKey: string, nowMs: number = Date.now()): RateLimitDecision {
+    check(refKey: string, nowMs: number = timeAuthority.now().atMs): RateLimitDecision {
       if (failClosed) return { decision: "deny", retryAfterMs: 0 };
       const windowStart = nowMs - windowMs;
       const recent = (hits.get(refKey) ?? []).filter((ts) => ts > windowStart);

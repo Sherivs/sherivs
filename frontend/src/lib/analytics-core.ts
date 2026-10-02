@@ -37,6 +37,10 @@
  */
 
 import type { TenantId } from "./tenant-core";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Analytical layers (G)
@@ -567,7 +571,7 @@ export interface ImputationRecord {
 export function createImputationRecord(
   input: Omit<ImputationRecord, "imputationId">,
 ): ImputationRecord {
-  return { ...input, imputationId: `imp-${input.field}-${Date.now()}` };
+  return { ...input, imputationId: `imp-${input.field}-${timeAuthority.now().atMs}` };
 }
 
 /* ─────────────────────────────────────────────────────────────

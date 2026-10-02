@@ -1,3 +1,8 @@
+import { SystemClock, TimeAuthority } from "../../kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
+
 /**
  * CoreGrid Scholar — experience memory (WAVE-R38, directive §23).
  *
@@ -72,7 +77,7 @@ export function recordExperienceMemory(request: RecordMemoryRequest): RecordMemo
 
   if (reasons.length > 0) return { ok: false, reasons };
 
-  const recordedAt = request.recordedAt ?? new Date().toISOString();
+  const recordedAt = request.recordedAt ?? timeAuthority.now().at;
   const expiresAt = new Date(
     Date.parse(recordedAt) + retentionDays * 24 * 60 * 60 * 1000,
   ).toISOString();
@@ -107,7 +112,7 @@ export function readExperienceMemory(
   records: readonly ExperienceMemoryRecord[],
   query: MemoryQuery,
 ): readonly ExperienceMemoryRecord[] {
-  const now = Date.parse(query.now ?? new Date().toISOString());
+  const now = Date.parse(query.now ?? timeAuthority.now().at);
   return records
     .filter((record) => record.consentGranted)
     .filter((record) => record.tenantId === query.tenantId)
@@ -137,7 +142,7 @@ export function forgetExperienceMemory(
 /** Audit: consent, retention and shape laws over the stored records. */
 export function auditExperienceMemory(
   records: readonly ExperienceMemoryRecord[],
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): string[] {
   const issues: string[] = [];
   const seen = new Set<string>();

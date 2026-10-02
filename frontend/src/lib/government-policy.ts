@@ -1,3 +1,8 @@
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
+
 // ─── CoreGrid Phase 20 — Government Education Cloud ──────────────────
 // government-policy.ts — Policy lifecycle, programmes, funding, workflow
 // ──────────────────────────────────────────────────────────────────────
@@ -170,7 +175,7 @@ export function acknowledgePolicy(
   return {
     policyId: policy.id,
     entityId,
-    acknowledgedAt: new Date().toISOString(),
+    acknowledgedAt: timeAuthority.now().at,
     acknowledgedBy,
   };
 }
@@ -249,7 +254,7 @@ export function submitApprovalWorkflow(params: {
     status: "pending" as const,
     submittedBy: params.submittedBy,
     reviewedBy: null,
-    submittedAt: new Date().toISOString(),
+    submittedAt: timeAuthority.now().at,
     reviewedAt: null,
     comments: [],
   };
@@ -270,7 +275,7 @@ export function reviewWorkflow(
     ...workflow,
     status: decision,
     reviewedBy: reviewer,
-    reviewedAt: new Date().toISOString(),
+    reviewedAt: timeAuthority.now().at,
     comments,
   };
 }
@@ -291,7 +296,7 @@ export function declareEmergency(params: {
   return {
     jurisdiction: params.jurisdiction,
     status: params.status,
-    declaredAt: new Date().toISOString(),
+    declaredAt: timeAuthority.now().at,
     declaredBy: params.declaredBy,
     affectedRegions: params.affectedRegions,
     educationContinuityPlan: params.educationContinuityPlan ?? false,

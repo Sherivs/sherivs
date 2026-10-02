@@ -31,6 +31,10 @@
  */
 
 import type { TenantId } from "./tenant-core";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Branded IDs
@@ -147,7 +151,7 @@ export function recordDevTelemetry(input: {
     environmentKind: input.environmentKind,
     kind: input.kind,
     sanitized: input.sanitized ?? true,
-    occurredAt: input.now ?? new Date().toISOString(),
+    occurredAt: input.now ?? timeAuthority.now().at,
   };
 }
 
@@ -199,7 +203,7 @@ export function recordDevAuditEvent(input: {
     projectRef: input.projectRef,
     type: input.type,
     actorRef: input.actorRef,
-    occurredAt: input.now ?? new Date().toISOString(),
+    occurredAt: input.now ?? timeAuthority.now().at,
     metadata: input.metadata ?? {},
   };
 }
@@ -279,7 +283,7 @@ export function grantDevCertification(input: {
     kind: input.kind,
     version: input.version ?? 1,
     passed: input.passed,
-    grantedAt: input.now ?? new Date().toISOString(),
+    grantedAt: input.now ?? timeAuthority.now().at,
   };
 }
 
@@ -382,7 +386,7 @@ export function registerBuildArtifact(input: {
     version: input.version,
     checksumRef: input.checksumRef,
     imageScanPassed: input.imageScanPassed ?? false,
-    createdAt: input.now ?? new Date().toISOString(),
+    createdAt: input.now ?? timeAuthority.now().at,
   };
 }
 

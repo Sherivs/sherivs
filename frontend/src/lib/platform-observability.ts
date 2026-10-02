@@ -1,3 +1,8 @@
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
+
 // ─── CoreGrid Phase 22 — Mobile Platform ─────────────────────────────
 // platform-observability.ts — Client observability, AI interaction,
 //                             analytics telemetry, feature flags, OTA
@@ -147,10 +152,10 @@ export function createTelemetryEvent(params: {
   anonymized?: boolean;
 }): ClientTelemetryEvent {
   return {
-    id: `telem-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: `telem-${timeAuthority.now().atMs}-${Math.random().toString(36).slice(2, 8)}`,
     eventType: params.eventType,
     category: params.category,
-    timestamp: new Date().toISOString(),
+    timestamp: timeAuthority.now().at,
     duration: params.duration ?? null,
     properties: params.properties ?? {},
     anonymized: params.anonymized ?? true,
@@ -186,13 +191,13 @@ export function createAIInteraction(params: {
   error?: string | null;
 }): ClientAIInteraction {
   return {
-    id: `ai-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: `ai-${timeAuthority.now().atMs}-${Math.random().toString(36).slice(2, 8)}`,
     agentId: params.agentId,
     prompt: params.prompt,
     response: params.response,
     durationMs: params.durationMs,
     streaming: params.streaming ?? false,
-    timestamp: new Date().toISOString(),
+    timestamp: timeAuthority.now().at,
     error: params.error ?? null,
   };
 }
@@ -206,14 +211,14 @@ export function createClientAuditEvent(params: {
   details?: Record<string, unknown>;
 }): ClientAuditEvent {
   return {
-    id: `audit-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: `audit-${timeAuthority.now().atMs}-${Math.random().toString(36).slice(2, 8)}`,
     eventType: params.eventType,
     actorId: params.actorId,
     action: params.action,
     resourceType: params.resourceType,
     resourceId: params.resourceId,
     details: params.details ?? {},
-    timestamp: new Date().toISOString(),
+    timestamp: timeAuthority.now().at,
     offlineGenerated: false,
   };
 }

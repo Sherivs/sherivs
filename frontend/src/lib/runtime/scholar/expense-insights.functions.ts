@@ -11,6 +11,10 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireStaffContext } from "@/lib/security-role-gate";
 import { invokeAiGateway, type AiGatewayOutcome } from "@/lib/ai-gateway.server";
+import { SystemClock, TimeAuthority } from "../../kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 const EXPENSE_INSIGHTS_MODEL = "google/gemini-3-flash-preview";
 
@@ -44,7 +48,7 @@ export const getExpenseInsights = createServerFn({ method: "POST" })
       lifecycle: null,
       sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
     });
-    const cutoff = new Date(Date.now() - 90 * 86400_000).toISOString().slice(0, 10);
+    const cutoff = new Date(timeAuthority.now().atMs - 90 * 86400_000).toISOString().slice(0, 10);
 
     const [{ data: rows }, { data: budgets }] = await Promise.all([
       context.supabase

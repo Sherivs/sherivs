@@ -1,3 +1,8 @@
+import { SystemClock, TimeAuthority } from "../kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
+
 /**
  * CoreGrid — external adapter failure-semantics contract (J-045, V1CAP-080,
  * MISSION-R-72; E-060: external systems are never automatically trusted).
@@ -57,7 +62,7 @@ export interface AdapterClock {
 }
 
 export const systemClock: AdapterClock = {
-  nowMs: () => Date.now(),
+  nowMs: () => timeAuthority.now().atMs,
   delay: (ms: number) =>
     new Promise<void>((resolve) => {
       setTimeout(resolve, ms);

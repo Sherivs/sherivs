@@ -14,6 +14,10 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireStaffContext } from "@/lib/security-role-gate";
+import { SystemClock, TimeAuthority } from "../../kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 const Audience = z.union([
   z.object({ kind: z.literal("class_students"), class_id: z.string().uuid() }),
@@ -119,7 +123,7 @@ export const broadcastMessage = createServerFn({ method: "POST" })
     if (!recipientIds.length) return { sent: 0, thread_id: "" };
 
     const thread_id = crypto.randomUUID();
-    const now = new Date().toISOString();
+    const now = timeAuthority.now().at;
 
     const msgRows = recipientIds.map((rid) => ({
       school_id: schoolId,

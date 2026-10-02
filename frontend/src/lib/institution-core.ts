@@ -25,6 +25,10 @@
  */
 
 import type { TenantId } from "./tenant-core";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Branded IDs
@@ -469,7 +473,7 @@ export type CreateInstitutionResult =
  */
 export function createInstitution(
   input: CreateInstitutionInput,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): CreateInstitutionResult {
   const legalName = input.profile.legalName.trim();
   if (legalName === "") {
@@ -522,7 +526,7 @@ export function createInstitution(
 /** Mark an institution's initial setup as complete. */
 export function markInstitutionSetupComplete(
   institution: Institution,
-  now: string = new Date().toISOString(),
+  now: string = timeAuthority.now().at,
 ): Institution {
   return { ...institution, setupComplete: true, updatedAt: now };
 }

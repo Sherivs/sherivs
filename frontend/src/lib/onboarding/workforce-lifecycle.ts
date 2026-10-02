@@ -1,3 +1,8 @@
+import { SystemClock, TimeAuthority } from "../kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
+
 /**
  * CoreGrid — Phase 25 (platform layer): organization membership lifecycle.
  *
@@ -104,7 +109,7 @@ export function transitionMemberLifecycle(
   to: MemberLifecycleState,
   input: TransitionMemberLifecycleInput,
 ): MemberTransitionResult {
-  const now = input.now ?? new Date().toISOString();
+  const now = input.now ?? timeAuthority.now().at;
   if (input.tenantId !== record.tenantId) {
     return { ok: false, issue: "cross-tenant lifecycle transition denied" };
   }
@@ -149,7 +154,7 @@ export function createOrganizationMembership(input: {
   roleCodes?: readonly string[];
   createdAt?: string;
 }): OrganizationMembership {
-  const createdAt = input.createdAt ?? new Date().toISOString();
+  const createdAt = input.createdAt ?? timeAuthority.now().at;
   return {
     membershipId: input.membershipId,
     tenantId: input.tenantId,
@@ -290,7 +295,7 @@ export function createMemberTransfer(input: {
     toRef: input.toRef,
     performedBy: input.performedBy,
     recalculationStatus: "pending",
-    occurredAt: input.now ?? new Date().toISOString(),
+    occurredAt: input.now ?? timeAuthority.now().at,
   };
 }
 
@@ -369,7 +374,7 @@ export function startMemberOffboarding(input: {
     tenantId: input.tenantId,
     completedSteps: [],
     status: "pending",
-    startedAt: input.startedAt ?? new Date().toISOString(),
+    startedAt: input.startedAt ?? timeAuthority.now().at,
     completedAt: null,
   };
 }
@@ -385,7 +390,7 @@ export function completeOffboardingStep(
     ...plan,
     completedSteps,
     status: finished ? "completed" : "in_progress",
-    completedAt: finished ? new Date().toISOString() : null,
+    completedAt: finished ? timeAuthority.now().at : null,
   };
 }
 

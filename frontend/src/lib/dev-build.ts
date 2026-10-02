@@ -30,6 +30,10 @@
 
 import type { TenantId } from "./tenant-core";
 import type { DeveloperProjectType } from "./dev-core";
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Branded IDs
@@ -114,7 +118,7 @@ export function evaluateStaticAnalysis(input: {
   return {
     passed: (input.failingChecks ?? []).length === 0,
     failingChecks: input.failingChecks ?? [],
-    analyzedAt: input.now ?? new Date().toISOString(),
+    analyzedAt: input.now ?? timeAuthority.now().at,
   };
 }
 
@@ -185,7 +189,7 @@ export function buildDevPackage(input: {
     sbomRef: input.sbomRef ?? null,
     provenanceRef: input.provenanceRef ?? null,
     reproducible: input.reproducible ?? false,
-    createdAt: input.now ?? new Date().toISOString(),
+    createdAt: input.now ?? timeAuthority.now().at,
   };
 }
 
@@ -232,7 +236,7 @@ export function createCiRun(input: { id: string; projectRef: string; now?: strin
     stagesPassed: [],
     currentStage: "commit",
     passed: false,
-    startedAt: input.now ?? new Date().toISOString(),
+    startedAt: input.now ?? timeAuthority.now().at,
   };
 }
 

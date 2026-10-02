@@ -10,6 +10,10 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireSchoolAdminScope } from "@/lib/security-role-gate";
+import { SystemClock, TimeAuthority } from "../../kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 const Input = z.object({
   frequency: z.enum(["daily", "weekly"]).default("daily"),
@@ -32,7 +36,7 @@ export const sendNotificationDigests = createServerFn({ method: "POST" })
     });
 
     const hours = data.frequency === "weekly" ? 168 : 24;
-    const since = new Date(Date.now() - hours * 3600_000).toISOString();
+    const since = new Date(timeAuthority.now().atMs - hours * 3600_000).toISOString();
 
     const { data: prefs } = await supabase
       .from("notification_preferences")

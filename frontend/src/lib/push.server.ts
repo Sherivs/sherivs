@@ -1,3 +1,8 @@
+import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
+
 /**
  * Server-side Web Push delivery (server-only).
  *
@@ -58,7 +63,7 @@ async function vapidHeader(
   const header = jsonToBase64Url({ typ: "JWT", alg: "ES256" });
   const claims = jsonToBase64Url({
     aud: audience,
-    exp: Math.floor(Date.now() / 1000) + 12 * 60 * 60,
+    exp: Math.floor(timeAuthority.now().atMs / 1000) + 12 * 60 * 60,
     sub: subject,
   });
   const key = await importVapidKey(publicKey, privateKey);
@@ -147,7 +152,7 @@ export async function deliverPushToUsers(
     if (staleIds.length) {
       await supabase
         .from("users")
-        .update({ push_token: null, push_token_updated_at: new Date().toISOString() })
+        .update({ push_token: null, push_token_updated_at: timeAuthority.now().at })
         .in("id", staleIds);
     }
   }

@@ -12,6 +12,10 @@
  * storage adapter enforces the tenant path prefix independently.
  */
 import type { FileDescriptor } from "./file-contract";
+import { SystemClock, TimeAuthority } from "../kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 export interface FileGrantRef {
   /** The fileId this grant refers to. */
@@ -59,7 +63,7 @@ function isExpired(grant: FileGrantRef, now: Date): boolean {
 export function decideFileAccess(
   principal: FilePrincipal,
   descriptor: FileDescriptor,
-  now: Date = new Date(),
+  now: Date = new Date(timeAuthority.now().atMs),
 ): FileAccessDecision {
   if (principal.tenantId !== descriptor.tenantId) {
     return {
