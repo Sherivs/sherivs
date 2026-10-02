@@ -24,14 +24,17 @@
 import { describe, expect, it } from "vitest";
 import {
   AI_PROVENANCE_MARKERS,
+  DEFAULT_EVIDENCE_RETENTION_POLICY_ID,
   EVIDENCE_CLASSES,
   EVIDENCE_OBJECT_TYPE,
   EvidenceCaptureError,
   captureEvidence,
+  isProvenanceCitedConfidence,
   isQuarantineEvidenceClass,
   provenanceCarriesAiMarkers,
   promoteEvidence,
   requireCanonicalTruthSupport,
+  requireProvenanceCitedConfidence,
   supersedeEvidence,
   supportsCanonicalTruth,
   type CapturedEvidence,
@@ -81,11 +84,13 @@ function captureInputFor(
     evidenceClass,
     claim: { event: "door_opened" },
     confidence: 0.98,
+    confidenceBasis: "sensor-calibration:door-3",
     observedAt: NOW,
     capturedBy: GATEWAY,
     capturedAt: NOW,
     sourceRef: "sensor/door-3",
     lineage: [],
+    retentionPolicyId: DEFAULT_EVIDENCE_RETENTION_POLICY_ID,
     envelope: envelopeInput(),
     ...overrides,
   };
@@ -555,5 +560,163 @@ describe("cross-tenant isolation", () => {
     });
     expect(result.validationAct.tenant_id).toBe(TENANT_A);
     expect(result.promoted.tenant_id).toBe(TENANT_A);
+  });
+});
+
+/* ─────────────────────────────────────────────────────────────
+ * Lifecycle capture-time gates (J-033 / V1CAP-058 / MISSION-R-91)
+ * — additive over the wave-2 class-discipline suites above.
+ * ────────────────────────────────────────────────────────────*/
+
+describe("evidence lifecycle: retention policy binding (ADR-005)", () => {
+  it("binds the declared retention policy id onto every captured record", () => {
+    const record = captureEvidence(
+      captureInputFor("direct_observation", { retentionPolicyId: "retention:evidence:edu-7y" }),
+    );
+    expect(record.retention_policy_id).toBe("retention:evidence:edu-7y");
+  });
+
+  it("rejects a record without a retention policy id (capture-time failure)", () => {
+    const unpolicied = { ...captureInputFor("direct_observation"), retentionPolicyId: undefined };
+    try {
+      captureEvidence(unpolicied);
+      expect.unreachable("evidence without a retention policy must be rejected");
+    } catch (error) {
+      expect(error).toBeInstanceOf(EvidenceCaptureError);
+      expect((error as EvidenceCaptureError).code).toBe("retention_policy_required");
+    }
+  });
+
+  it("honours the injected retention policy registry gate (fail-closed)", () => {
+    expect(() =>
+      captureEvidence(captureInputFor("direct_observation"), undefined, {
+        knownRetentionPolicies: [DEFAULT_EVIDENCE_RETENTION_POLICY_ID],
+      }),
+    ).not.toThrow();
+    try {
+      captureEvidence(
+        captureInputFor("direct_observation", {
+          retentionPolicyId: "retention:evidence:unknown",
+        }),
+        undefined,
+        { knownRetentionPolicies: [DEFAULT_EVIDENCE_RETENTION_POLICY_ID] },
+      );
+      expect.unreachable("unregistered retention policy must be rejected");
+    } catch (error) {
+      expect((error as EvidenceCaptureError).code).toBe("unregistered_retention_policy");
+    }
+  });
+
+  it("inherits the retention policy through promotion and the validation act", () => {
+    const original = captureEvidence(
+      captureInputFor("predicted", { retentionPolicyId: "retention:evidence:edu-7y" }),
+    );
+    const result = promoteEvidence(original, {
+      validatorId: "human-verifier-01",
+      method: "human_review",
+      validatedAt: "2026-10-01T13:00:00.000Z",
+    });
+    expect(result.promoted.retention_policy_id).toBe("retention:evidence:edu-7y");
+    expect(result.validationAct.retention_policy_id).toBe("retention:evidence:edu-7y");
+  });
+});
+
+describe("evidence lifecycle: confidence provenance citation (Constitution §12)", () => {
+  it("records the declared confidence basis verbatim", () => {
+    const record = captureEvidence(captureInputFor("direct_observation"));
+    expect(record.confidence).toBe(0.98);
+    expect(record.confidence_basis).toBe("sensor-calibration:door-3");
+    expect(isProvenanceCitedConfidence(record)).toBe(true);
+    expect(() => requireProvenanceCitedConfidence(record)).not.toThrow();
+  });
+
+  it("never lets an uncited declared confidence pass the consumption gate", () => {
+    const uncited = captureEvidence(
+      captureInputFor("direct_observation", { confidenceBasis: null }),
+    );
+    expect(uncited.confidence).toBe(0.98);
+    expect(uncited.confidence_basis).toBeNull();
+    expect(isProvenanceCitedConfidence(uncited)).toBe(false);
+    expect(() => requireProvenanceCitedConfidence(uncited)).toThrow(EvidenceCaptureError);
+    try {
+      requireProvenanceCitedConfidence(uncited);
+      expect.unreachable("uncited confidence must never pass the gate");
+    } catch (error) {
+      expect((error as EvidenceCaptureError).code).toBe("confidence_basis_required");
+    }
+  });
+
+  it("keeps the bounded scale law (0–1) at capture", () => {
+    expect(() => captureEvidence(captureInputFor("generated", { confidence: -0.1 }))).toThrow(
+      /confidence/,
+    );
+    expect(() => captureEvidence(captureInputFor("generated", { confidence: 1.01 }))).toThrow(
+      /confidence/,
+    );
+  });
+});
+
+describe("evidence lifecycle: declared sufficiency and validity window at capture", () => {
+  it("captures a declared sufficiency assessment verbatim", () => {
+    const record = captureEvidence(
+      captureInputFor("direct_observation", {
+        sufficiency: {
+          verdict: "sufficient",
+          assessedBy: "operator-07",
+          assessedAt: NOW,
+          rationale: "single direct observation of a door event suffices for the attendance claim",
+        },
+      }),
+    );
+    expect(record.sufficiency).toMatchObject({
+      verdict: "sufficient",
+      assessedBy: "operator-07",
+      assessedAt: NOW,
+    });
+  });
+
+  it("rejects malformed sufficiency assessments", () => {
+    const base = captureInputFor("direct_observation");
+    expect(() =>
+      captureEvidence({
+        ...base,
+        sufficiency: { verdict: "vibes" as never, assessedBy: "operator-07", assessedAt: NOW },
+      }),
+    ).toThrow(EvidenceCaptureError);
+    expect(() =>
+      captureEvidence({
+        ...base,
+        sufficiency: { verdict: "sufficient", assessedBy: "   ", assessedAt: NOW },
+      }),
+    ).toThrow(EvidenceCaptureError);
+    expect(() =>
+      captureEvidence({
+        ...base,
+        sufficiency: { verdict: "sufficient", assessedBy: "operator-07", assessedAt: "soon" },
+      }),
+    ).toThrow(EvidenceCaptureError);
+  });
+
+  it("captures the declared validity window and rejects an inverted one", () => {
+    const record = captureEvidence(
+      captureInputFor("direct_observation", {
+        validFrom: "2026-10-01T00:00:00.000Z",
+        validUntil: "2026-10-02T00:00:00.000Z",
+      }),
+    );
+    expect(record.valid_from).toBe("2026-10-01T00:00:00.000Z");
+    expect(record.valid_until).toBe("2026-10-02T00:00:00.000Z");
+
+    try {
+      captureEvidence(
+        captureInputFor("direct_observation", {
+          validFrom: "2026-10-02T00:00:00.000Z",
+          validUntil: "2026-10-01T00:00:00.000Z",
+        }),
+      );
+      expect.unreachable("inverted validity window must be rejected");
+    } catch (error) {
+      expect((error as EvidenceCaptureError).code).toBe("invalid_validity_window");
+    }
   });
 });
