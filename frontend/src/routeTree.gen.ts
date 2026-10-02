@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AdmissionsRouteImport } from './routes/admissions'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BlogRouteImport } from './routes/blog'
+import { Route as CommandCentreRouteImport } from './routes/command-centre'
 import { Route as FoundationLoopRouteImport } from './routes/foundation-loop'
 import { Route as HealthDotjsonRouteImport } from './routes/health[.]json'
 import { Route as LoginRouteImport } from './routes/login'
@@ -185,6 +186,11 @@ const AuthRoute = AuthRouteImport.update({
 const BlogRoute = BlogRouteImport.update({
   id: '/blog',
   path: '/blog',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CommandCentreRoute = CommandCentreRouteImport.update({
+  id: '/command-centre',
+  path: '/command-centre',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FoundationLoopRoute = FoundationLoopRouteImport.update({
@@ -1049,6 +1055,7 @@ export interface FileRoutesByFullPath {
   '/admissions': typeof AdmissionsRoute
   '/auth': typeof AuthRoute
   '/blog': typeof BlogRouteWithChildren
+  '/command-centre': typeof CommandCentreRoute
   '/foundation-loop': typeof FoundationLoopRoute
   '/health.json': typeof HealthDotjsonRoute
   '/login': typeof LoginRoute
@@ -1203,6 +1210,7 @@ export interface FileRoutesByTo {
   '/admissions': typeof AdmissionsRoute
   '/auth': typeof AuthRoute
   '/blog': typeof BlogRouteWithChildren
+  '/command-centre': typeof CommandCentreRoute
   '/foundation-loop': typeof FoundationLoopRoute
   '/health.json': typeof HealthDotjsonRoute
   '/login': typeof LoginRoute
@@ -1359,6 +1367,7 @@ export interface FileRoutesById {
   '/admissions': typeof AdmissionsRoute
   '/auth': typeof AuthRoute
   '/blog': typeof BlogRouteWithChildren
+  '/command-centre': typeof CommandCentreRoute
   '/foundation-loop': typeof FoundationLoopRoute
   '/health.json': typeof HealthDotjsonRoute
   '/login': typeof LoginRoute
@@ -1515,6 +1524,7 @@ export interface FileRouteTypes {
     | '/admissions'
     | '/auth'
     | '/blog'
+    | '/command-centre'
     | '/foundation-loop'
     | '/health.json'
     | '/login'
@@ -1669,6 +1679,7 @@ export interface FileRouteTypes {
     | '/admissions'
     | '/auth'
     | '/blog'
+    | '/command-centre'
     | '/foundation-loop'
     | '/health.json'
     | '/login'
@@ -1824,6 +1835,7 @@ export interface FileRouteTypes {
     | '/admissions'
     | '/auth'
     | '/blog'
+    | '/command-centre'
     | '/foundation-loop'
     | '/health.json'
     | '/login'
@@ -1980,6 +1992,7 @@ export interface RootRouteChildren {
   AdmissionsRoute: typeof AdmissionsRoute
   AuthRoute: typeof AuthRoute
   BlogRoute: typeof BlogRouteWithChildren
+  CommandCentreRoute: typeof CommandCentreRoute
   FoundationLoopRoute: typeof FoundationLoopRoute
   HealthDotjsonRoute: typeof HealthDotjsonRoute
   LoginRoute: typeof LoginRoute
@@ -2034,6 +2047,13 @@ declare module '@tanstack/react-router' {
       path: '/blog'
       fullPath: '/blog'
       preLoaderRoute: typeof BlogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/command-centre': {
+      id: '/command-centre'
+      path: '/command-centre'
+      fullPath: '/command-centre'
+      preLoaderRoute: typeof CommandCentreRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/foundation-loop': {
@@ -3494,6 +3514,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdmissionsRoute: AdmissionsRoute,
   AuthRoute: AuthRoute,
   BlogRoute: BlogRouteWithChildren,
+  CommandCentreRoute: CommandCentreRoute,
   FoundationLoopRoute: FoundationLoopRoute,
   HealthDotjsonRoute: HealthDotjsonRoute,
   LoginRoute: LoginRoute,
@@ -3515,13 +3536,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
