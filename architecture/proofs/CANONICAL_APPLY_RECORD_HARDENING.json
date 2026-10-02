@@ -1,0 +1,357 @@
+{
+  "mission": "MISSION-R-100 (TEAM 3 hardening continuation)",
+  "capability": "V1CAP-072",
+  "gap": "J-040",
+  "projectRef": "nwrflbpbhyiqdptmlccm",
+  "transport": "supabase-management-api-database-query",
+  "exclusiveAccess": "serialized — one canonical operation at a time (campaign canonical lock held by TEAM 3)",
+  "executedAt": "2026-10-02T20:44:31.516Z",
+  "completedAt": "2026-10-02T20:44:40.367Z",
+  "declaredVsApplied": [
+    {
+      "file": "20261002000005_coregrid_v1_reconciliation.sql",
+      "mission": "MISSION-R-100 continuation — reconciliation substrate",
+      "state": "ALREADY_APPLIED",
+      "checksum": "5f9796d54b1b34606a6e96fc683156c671d5f055254e95264ac5442ce0f80ba1",
+      "rollbackChecksum": "94ae98b83c156815566ec7cd7b971c167f8f543fd3169350c472599cc3acf33e",
+      "declaredObjectCount": 5,
+      "elapsedMs": null,
+      "evidence": "all 5 declared objects present (pre-flight catalog probe)",
+      "error": null
+    },
+    {
+      "file": "20261002000006_coregrid_v1_event_security.sql",
+      "mission": "MISSION-R-100 continuation — event security substrate",
+      "state": "ALREADY_APPLIED",
+      "checksum": "29c8263377bd34eafe47a7df72189977b6c49e3d3cb6838e6cb4e913e45a8f15",
+      "rollbackChecksum": "cb09db913b61cddb77a640c4cebb8dfe3b90cfc4153f3c1e95695b1bef16a534",
+      "declaredObjectCount": 9,
+      "elapsedMs": null,
+      "evidence": "all 9 declared objects present (pre-flight catalog probe)",
+      "error": null
+    },
+    {
+      "file": "20261002000007_coregrid_v1_event_routing.sql",
+      "mission": "MISSION-R-100 continuation — event routing substrate",
+      "state": "ALREADY_APPLIED",
+      "checksum": "dabdd5414b1da28288df441322da0d378610d4959d3c097a1a8dc2785175ea76",
+      "rollbackChecksum": "db29d2995fb42f27589bb4b901c8d22167e48bd18fe704eaee38d12aa50188fc",
+      "declaredObjectCount": 10,
+      "elapsedMs": null,
+      "evidence": "all 10 declared objects present (pre-flight catalog probe)",
+      "error": null
+    },
+    {
+      "file": "20261002000008_coregrid_v1_evidence_lifecycle.sql",
+      "mission": "MISSION-R-100 continuation — evidence lifecycle substrate",
+      "state": "ALREADY_APPLIED",
+      "checksum": "fb0a77987cee5d554a0a05bac56d8247574dacc743628d281a42677fb4d4a26b",
+      "rollbackChecksum": "ff27d6057a310eca153e0e9ac4599e9e5b9b6750b674f19d389fad1181085c07",
+      "declaredObjectCount": 9,
+      "elapsedMs": null,
+      "evidence": "all 9 declared objects present (pre-flight catalog probe)",
+      "error": null
+    },
+    {
+      "file": "20261002000009_coregrid_v1_reasoning_provenance.sql",
+      "mission": "MISSION-R-100 continuation — reasoning provenance substrate",
+      "state": "ALREADY_APPLIED",
+      "checksum": "7391ef7e739634d351e4f079c82097f5186e4ee7b30186d4dda87c65ed5b31f0",
+      "rollbackChecksum": "765f5cf06d96d9defbc06200ff4040fa8b697e8eb83bebd1824e71f2b1a94743",
+      "declaredObjectCount": 3,
+      "elapsedMs": null,
+      "evidence": "all 3 declared objects present (pre-flight catalog probe)",
+      "error": null
+    },
+    {
+      "file": "20261002000010_coregrid_v1_cost_attribution.sql",
+      "mission": "MISSION-R-100 continuation — cost attribution substrate",
+      "state": "ALREADY_APPLIED",
+      "checksum": "c5c7dabca7236513ec1c37d520b55945585b1bb845934b3771e7a1ff9fdf51dd",
+      "rollbackChecksum": "81a4755374993fce1c77dd61ccdb7b9204949105ceb10dcd986048f0a9759145",
+      "declaredObjectCount": 4,
+      "elapsedMs": null,
+      "evidence": "all 4 declared objects present (pre-flight catalog probe)",
+      "error": null
+    },
+    {
+      "file": "20261002000011_coregrid_v1_knowledge_currency.sql",
+      "mission": "MISSION-R-100 continuation — knowledge currency substrate",
+      "state": "ALREADY_APPLIED",
+      "checksum": "e7d8b6e0eebd77a5979c4a59bd9f27cf293d2fbf967bd8597677ac2af30f39f4",
+      "rollbackChecksum": "3fb1435bf4440c4bf530e852d0b81f0a4ce357254bc968e2fc4cdfe9e68d8c41",
+      "declaredObjectCount": 9,
+      "elapsedMs": null,
+      "evidence": "all 9 declared objects present (pre-flight catalog probe)",
+      "error": null
+    },
+    {
+      "file": "20261002000012_coregrid_v1_tool_runtime.sql",
+      "mission": "MISSION-R-100 continuation — tool runtime substrate",
+      "state": "ALREADY_APPLIED",
+      "checksum": "fd829fc13d06771a637fa1fb941494a48e9ece6fcb7d925b390bd6877cb20168",
+      "rollbackChecksum": "2d525d9f4737e65a4d4cd9625c0958f9e4c0322bb03b9a9f4242c7c86014f0d1",
+      "declaredObjectCount": 6,
+      "elapsedMs": null,
+      "evidence": "all 6 declared objects present (pre-flight catalog probe)",
+      "error": null
+    },
+    {
+      "file": "20261002000013_coregrid_v1_neutral_membership_policies.sql",
+      "mission": "TEAM 3 Stage 2 — J-005/J-006 neutral tenant-membership RLS policies (FORCE RLS + tenant-scoped predicates on the neutral primitives)",
+      "state": "ALREADY_APPLIED",
+      "checksum": "d633d725a8fe5120525d8adacea9b4197d8eb71ea8913ade6a9a7179ec3389bc",
+      "rollbackChecksum": "a4fb8c2742a13d08c169c4c3e6dee46fd3e4211e43548c3fa4be75c948302775",
+      "declaredObjectCount": 9,
+      "elapsedMs": null,
+      "evidence": "all 9 declared objects present (pre-flight catalog probe)",
+      "error": null
+    }
+  ],
+  "rlsPosture": [
+    {
+      "table": "cg_reconciliation_verdict",
+      "posture": "zero-policy (deny-by-default)",
+      "rlsEnabled": true,
+      "rlsForced": false,
+      "policies": 0,
+      "ok": true
+    },
+    {
+      "table": "cg_reconciliation_input",
+      "posture": "zero-policy (deny-by-default)",
+      "rlsEnabled": true,
+      "rlsForced": false,
+      "policies": 0,
+      "ok": true
+    },
+    {
+      "table": "cg_event_security",
+      "posture": "zero-policy (deny-by-default)",
+      "rlsEnabled": true,
+      "rlsForced": false,
+      "policies": 0,
+      "ok": true
+    },
+    {
+      "table": "cg_event_security_denial",
+      "posture": "zero-policy (deny-by-default)",
+      "rlsEnabled": true,
+      "rlsForced": false,
+      "policies": 0,
+      "ok": true
+    },
+    {
+      "table": "cg_event_security_redaction",
+      "posture": "zero-policy (deny-by-default)",
+      "rlsEnabled": true,
+      "rlsForced": false,
+      "policies": 0,
+      "ok": true
+    },
+    {
+      "table": "cg_event_route_subscription",
+      "posture": "zero-policy (deny-by-default)",
+      "rlsEnabled": true,
+      "rlsForced": false,
+      "policies": 0,
+      "ok": true
+    },
+    {
+      "table": "cg_event_route_queue",
+      "posture": "zero-policy (deny-by-default)",
+      "rlsEnabled": true,
+      "rlsForced": false,
+      "policies": 0,
+      "ok": true
+    },
+    {
+      "table": "cg_event_route_cursor",
+      "posture": "zero-policy (deny-by-default)",
+      "rlsEnabled": true,
+      "rlsForced": false,
+      "policies": 0,
+      "ok": true
+    },
+    {
+      "table": "cg_event_route_outcome",
+      "posture": "zero-policy (deny-by-default)",
+      "rlsEnabled": true,
+      "rlsForced": false,
+      "policies": 0,
+      "ok": true
+    },
+    {
+      "table": "cg_evidence_record",
+      "posture": "zero-policy (deny-by-default)",
+      "rlsEnabled": true,
+      "rlsForced": false,
+      "policies": 0,
+      "ok": true
+    },
+    {
+      "table": "cg_evidence_lifecycle_act",
+      "posture": "zero-policy (deny-by-default)",
+      "rlsEnabled": true,
+      "rlsForced": false,
+      "policies": 0,
+      "ok": true
+    },
+    {
+      "table": "cg_reasoning_provenance_snapshot",
+      "posture": "zero-policy (deny-by-default)",
+      "rlsEnabled": true,
+      "rlsForced": false,
+      "policies": 0,
+      "ok": true
+    },
+    {
+      "table": "cg_usage_attribution_rollup",
+      "posture": "zero-policy (deny-by-default)",
+      "rlsEnabled": true,
+      "rlsForced": false,
+      "policies": 0,
+      "ok": true
+    },
+    {
+      "table": "cg_usage_attribution_bucket",
+      "posture": "zero-policy (deny-by-default)",
+      "rlsEnabled": true,
+      "rlsForced": false,
+      "policies": 0,
+      "ok": true
+    },
+    {
+      "table": "cg_knowledge_source",
+      "posture": "zero-policy (deny-by-default)",
+      "rlsEnabled": true,
+      "rlsForced": false,
+      "policies": 0,
+      "ok": true
+    },
+    {
+      "table": "cg_knowledge_freshness_contract",
+      "posture": "zero-policy (deny-by-default)",
+      "rlsEnabled": true,
+      "rlsForced": false,
+      "policies": 0,
+      "ok": true
+    },
+    {
+      "table": "cg_knowledge_invalidation",
+      "posture": "zero-policy (deny-by-default)",
+      "rlsEnabled": true,
+      "rlsForced": false,
+      "policies": 0,
+      "ok": true
+    },
+    {
+      "table": "cg_knowledge_downgrade",
+      "posture": "zero-policy (deny-by-default)",
+      "rlsEnabled": true,
+      "rlsForced": false,
+      "policies": 0,
+      "ok": true
+    },
+    {
+      "table": "cg_tool_runtime_tool",
+      "posture": "zero-policy (deny-by-default)",
+      "rlsEnabled": true,
+      "rlsForced": false,
+      "policies": 0,
+      "ok": true
+    },
+    {
+      "table": "cg_tool_runtime_invocation",
+      "posture": "zero-policy (deny-by-default)",
+      "rlsEnabled": true,
+      "rlsForced": false,
+      "policies": 0,
+      "ok": true
+    },
+    {
+      "table": "cg_role_assignment",
+      "posture": "policy-backed (J-005/J-006 tenant-scoped)",
+      "rlsEnabled": true,
+      "rlsForced": true,
+      "policies": [
+        "role_assignment_insert_tenant_admin",
+        "role_assignment_select_own_tenant",
+        "role_assignment_update_tenant_admin"
+      ],
+      "ok": true
+    },
+    {
+      "table": "cg_role_grant",
+      "posture": "policy-backed (J-005/J-006 tenant-scoped)",
+      "rlsEnabled": true,
+      "rlsForced": true,
+      "policies": [
+        "role_grant_insert_tenant_admin",
+        "role_grant_select_own_tenant",
+        "role_grant_update_tenant_admin"
+      ],
+      "ok": true
+    },
+    {
+      "table": "cg_org_membership",
+      "posture": "policy-backed (J-005/J-006 tenant-scoped)",
+      "rlsEnabled": true,
+      "rlsForced": true,
+      "policies": [
+        "org_membership_insert_tenant_admin",
+        "org_membership_select_own_tenant",
+        "org_membership_update_tenant_admin"
+      ],
+      "ok": true
+    }
+  ],
+  "verification": [
+    {
+      "file": "20261002000005_coregrid_v1_reconciliation.sql",
+      "verified": true,
+      "missingCount": 0
+    },
+    {
+      "file": "20261002000006_coregrid_v1_event_security.sql",
+      "verified": true,
+      "missingCount": 0
+    },
+    {
+      "file": "20261002000007_coregrid_v1_event_routing.sql",
+      "verified": true,
+      "missingCount": 0
+    },
+    {
+      "file": "20261002000008_coregrid_v1_evidence_lifecycle.sql",
+      "verified": true,
+      "missingCount": 0
+    },
+    {
+      "file": "20261002000009_coregrid_v1_reasoning_provenance.sql",
+      "verified": true,
+      "missingCount": 0
+    },
+    {
+      "file": "20261002000010_coregrid_v1_cost_attribution.sql",
+      "verified": true,
+      "missingCount": 0
+    },
+    {
+      "file": "20261002000011_coregrid_v1_knowledge_currency.sql",
+      "verified": true,
+      "missingCount": 0
+    },
+    {
+      "file": "20261002000012_coregrid_v1_tool_runtime.sql",
+      "verified": true,
+      "missingCount": 0
+    },
+    {
+      "file": "20261002000013_coregrid_v1_neutral_membership_policies.sql",
+      "verified": true,
+      "missingCount": 0
+    }
+  ],
+  "findings": 0
+}

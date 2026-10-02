@@ -2,7 +2,7 @@
   "artifact": "role-assignment-substrate",
   "wave": "R39",
   "mode": "live",
-  "generatedAt": "2026-10-02T12:54:20.770Z",
+  "generatedAt": "2026-10-02T20:44:53.612Z",
   "migration": "database/supabase/migrations/20260907000800_coregrid_role_assignment_substrate.sql",
   "migrationDigest": "sha256:d76a8df9a7d26b953dca5fccf1a8ded78b37a0356b337b936e3047ca3a2721ff",
   "serverSurface": "frontend/src/lib/runtime/scholar/scholar-role-assignments.functions.ts",
@@ -180,24 +180,29 @@
       "detail": "public.cg_role_assignment has row level security enabled"
     },
     {
+      "id": "live:rls-forced:cg_role_assignment",
+      "ok": true,
+      "detail": "public.cg_role_assignment has FORCE ROW LEVEL SECURITY (owner bound for non-bypass owners)"
+    },
+    {
       "id": "live:policies:cg_role_assignment",
       "ok": true,
-      "detail": "public.cg_role_assignment declares 0 policies (0 = deny by default)"
+      "detail": "public.cg_role_assignment declares exactly the J-005/J-006 neutral tenant-membership policies: role_assignment_select_own_tenant, role_assignment_insert_tenant_admin, role_assignment_update_tenant_admin"
     },
     {
       "id": "live:privilege:cg_role_assignment:anon",
       "ok": true,
-      "detail": "anon table access = false (expected false)"
+      "detail": "anon table access = false (expected false; policy-backed posture)"
     },
     {
       "id": "live:privilege:cg_role_assignment:authenticated",
       "ok": true,
-      "detail": "authenticated table access = false (expected false)"
+      "detail": "authenticated table access = true (expected true; policy-backed posture)"
     },
     {
       "id": "live:privilege:cg_role_assignment:service_role",
       "ok": true,
-      "detail": "service_role table access = true (expected true)"
+      "detail": "service_role table access = true (expected true; policy-backed posture)"
     },
     {
       "id": "live:table:cg_role_grant",
@@ -210,24 +215,29 @@
       "detail": "public.cg_role_grant has row level security enabled"
     },
     {
+      "id": "live:rls-forced:cg_role_grant",
+      "ok": true,
+      "detail": "public.cg_role_grant has FORCE ROW LEVEL SECURITY (owner bound for non-bypass owners)"
+    },
+    {
       "id": "live:policies:cg_role_grant",
       "ok": true,
-      "detail": "public.cg_role_grant declares 0 policies (0 = deny by default)"
+      "detail": "public.cg_role_grant declares exactly the J-005/J-006 neutral tenant-membership policies: role_grant_select_own_tenant, role_grant_insert_tenant_admin, role_grant_update_tenant_admin"
     },
     {
       "id": "live:privilege:cg_role_grant:anon",
       "ok": true,
-      "detail": "anon table access = false (expected false)"
+      "detail": "anon table access = false (expected false; policy-backed posture)"
     },
     {
       "id": "live:privilege:cg_role_grant:authenticated",
       "ok": true,
-      "detail": "authenticated table access = false (expected false)"
+      "detail": "authenticated table access = true (expected true; policy-backed posture)"
     },
     {
       "id": "live:privilege:cg_role_grant:service_role",
       "ok": true,
-      "detail": "service_role table access = true (expected true)"
+      "detail": "service_role table access = true (expected true; policy-backed posture)"
     },
     {
       "id": "live:rpc:list_role_assignments",

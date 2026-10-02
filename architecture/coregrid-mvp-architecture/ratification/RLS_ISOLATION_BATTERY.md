@@ -1,6 +1,6 @@
 # RLS ISOLATION BATTERY — J-041 / V1CAP-073 (MISSION-R-85)
 
-Status: **AUTHORED AND LIVE-EXECUTED against the approved dev project (2026-10-01). 8/8 tables PASS.**
+Status: **AUTHORED AND LIVE-EXECUTED against the approved dev project (2026-10-01), the canonical project post-M-R-100 (2026-10-02, §5), and EXTENDED with genuine cross-tenant probes on the J-005/J-006 policy-backed tables (2026-10-02, §7 — 36/36 PASS).**
 Battery source: `scripts/verify-rls-isolation-battery.mjs`
 Artifacts: `/opt/cursor/artifacts/rls-battery-results.json` (structured) + `/opt/cursor/artifacts/rls-battery-results.log` (human-readable)
 Authority: AGENTS.md §17 (database security), §31 (testing standard); RULING-2 (deny-by-default posture approved); RULING-10 (migrations approved); STREAM J J-041; MISSION graph MISSION-R-85.
@@ -214,4 +214,162 @@ probe rows and auth user cleaned up (`probe_cleaned=true`).
 J-041 / V1CAP-073 is **database-proven on the dev project AND on the canonical project
 post-M-R-100**: deny-by-default is no longer a static claim — it is executed evidence on both
 environments. M-R-101 (backup/restore verified recovery) is serialized next per the mission
+graph.
+
+## 7. Battery extension — genuine cross-tenant probes on the J-005/J-006 policy-backed tables (canonical, 2026-10-02)
+
+TEAM 3 (phase-08 foundation loop / classification campaign) executed §4.4's planned
+extension. Migration `20261002000013_coregrid_v1_neutral_membership_policies.sql`
+(rollback: `database/supabase/rollbacks/20261002000013_coregrid_v1_neutral_membership_policies.sql`)
+gave the three neutral tenant-membership tables FORCED RLS with tenant-scoped policies built
+ONLY on the J-005 neutral primitives (`get_my_tenant_id()`, `is_tenant_admin()` — which binds
+the J-006 NEUTRAL `'role:administrator'` token; no Scholar helper, no hard-coded tenant id,
+no domain role name, and the directional domain mapping stays out of the policy layer):
+
+- `cg_role_assignment` — SELECT tenant-equality via `get_my_tenant_id()`;
+  INSERT/UPDATE require the neutral ADMINISTRATOR binding in the row's tenant; no DELETE
+  policy (history preserved).
+- `cg_role_grant` — SELECT tenant-equality; INSERT/UPDATE additionally pin
+  `granted_by = auth.uid()::text` (a client can never supply or re-attribute a grantor);
+  no DELETE policy (revocation is a `revoked_on` transition).
+- `cg_org_membership` (the neutral tenant-membership table the J-005 primitives resolve
+  tenancy from) — SELECT tenant-equality; INSERT/UPDATE require the neutral ADMINISTRATOR
+  binding; no DELETE policy.
+
+Provenance is preserved per AGENTS §11: no policy filters, mutates, or hides a provenance
+column (`granted_by/granted_on/revoked_on/created_at/started_on/ended_on`); erasure and
+retention are untouched.
+
+The battery (`scripts/verify-rls-isolation-battery.mjs`) now supports BOTH postures and
+reports which posture each table proved:
+
+- **zero-policy** (33 tables): the §1 strongest-form proof, unchanged (RLS on, zero
+  policies, no client grants, anon REST denied). `relforcerowsecurity=false` is reported
+  **INFO** on this posture — no policy expression exists, so force-RLS cannot strengthen it.
+- **policy-backed** (3 tables): FORCED RLS asserted (`relforcerowsecurity = true`), the
+  exact declared policy set asserted by name, privileges asserted
+  (`authenticated` = SELECT/INSERT/UPDATE/DELETE so the policies are the operative row
+  gate; `anon`/`PUBLIC` = none), and the strongest-form section is REPLACED by **genuine
+  cross-tenant probes** reusing the seed/cleanup discipline of
+  `scripts/exercise-foundation-loop.mjs`:
+  1. Privileged seed (management-channel SQL, logged `PRIVILEGED_SEED_USED_EXPLICITLY`):
+     Tenant A + Tenant B probe rows and THREE real auth principals — A (active binding in
+     Tenant A), B (active binding in Tenant B), C (binding in Tenant B that **expired
+     yesterday**).
+  2. Authenticated Tenant A read (real password-grant JWT through the live REST endpoint):
+     **Tenant A's own rows visible** (a policy that denies Tenant A its own rows is a
+     FINDING too) and every returned row belongs to Tenant A.
+  3. Tenant B invisible: explicit `?tenant_ref=eq.<B>` read as Tenant A returns 0 rows.
+  4. Expired/revoked access fails: principal C reads 0 rows anywhere — the neutral
+     primitive's time-validity excludes expired bindings.
+  5. Negative write probes: cross-tenant INSERT denied at the policy layer; on
+     `cg_role_grant` additionally a forged-grantor INSERT (`granted_by` = another
+     principal) rejected by the WITH CHECK.
+  6. Cleanup: all probe rows and users deleted through the same privileged channel and the
+     cleanup verified by re-count — `probe_cleaned=true` on every policy-backed table.
+     A failed cleanup is a FINDING.
+
+### Per-table matrix — canonical `nwrflbpbhyiqdptmlccm`, 2026-10-02 (36/36 PASS, 0 findings)
+
+| Table | Source migration | Posture | relrowsecurity | relforcerowsecurity | Policies | anon REST probe | Verdict |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `cg_entity` | 20260903000000 kernel substrate | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_relationship` | 20260903000000 kernel substrate | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_event` | 20260903000000 kernel substrate | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_observation` | 20260903000000 kernel substrate | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_workspace` | 20260930000000 workspace persistence | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_workspace_member` | 20260930000000 workspace persistence | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_org_unit` | 20261001000000 org model | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_org_membership` | 20261001000000 org model | **policy-backed** | true | **true** | 3 (exact declared set) | 401 / 42501 | **PASS** |
+| `cg_role_assignment` | 20260907000800 role-assignment substrate | **policy-backed** | true | **true** | 3 (exact declared set) | 401 / 42501 | **PASS** |
+| `cg_role_grant` | 20260907000800 role-assignment substrate | **policy-backed** | true | **true** | 3 (exact declared set) | 401 / 42501 | **PASS** |
+| `cg_worker_definition` | 20261002000002 worker definitions | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_worker_capability` | 20261002000002 worker definitions | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_worker_delegation` | 20261002000002 worker definitions | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_memory_scope` | 20261002000004 memory tier | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_memory_record` | 20261002000004 memory tier | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_memory_access_log` | 20261002000004 memory tier | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_reconciliation_verdict` | 20261002000005 reconciliation | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_reconciliation_input` | 20261002000005 reconciliation | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_event_security` | 20261002000006 event security | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_event_security_denial` | 20261002000006 event security | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_event_security_redaction` | 20261002000006 event security | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_event_route_subscription` | 20261002000007 event routing | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_event_route_queue` | 20261002000007 event routing | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_event_route_cursor` | 20261002000007 event routing | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_event_route_outcome` | 20261002000007 event routing | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_evidence_record` | 20261002000008 evidence lifecycle | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_evidence_lifecycle_act` | 20261002000008 evidence lifecycle | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_reasoning_provenance_snapshot` | 20261002000009 reasoning provenance | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_usage_attribution_rollup` | 20261002000010 cost attribution | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_usage_attribution_bucket` | 20261002000010 cost attribution | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_knowledge_source` | 20261002000011 knowledge currency | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_knowledge_freshness_contract` | 20261002000011 knowledge currency | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_knowledge_invalidation` | 20261002000011 knowledge currency | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_knowledge_downgrade` | 20261002000011 knowledge currency | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_tool_runtime_tool` | 20261002000012 tool runtime | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+| `cg_tool_runtime_invocation` | 20261002000012 tool runtime | zero-policy | true | false (INFO) | 0 | 401 / 42501 | **PASS** |
+
+Stage-1 substrate provenance: the 20 tables from migrations 20261002000005..20261002000012
+were applied to canonical through the checksummed apply pattern
+(`scripts/apply-canonical-hardening.mjs`; declared-vs-applied record
+`architecture/proofs/CANONICAL_APPLY_RECORD_HARDENING.json`), each verified in-catalog with
+`rowsecurity = true` and zero policies before this battery ran.
+
+### Live evidence excerpts (verbatim from `/opt/cursor/artifacts/rls-battery-results.log`)
+
+`cg_role_assignment` (policy-backed — representative; identical shape for all three):
+
+```
+PASS relrowsecurity=true relforcerowsecurity=true policies=3 exact-declared-set=true
+PASS privileges match policy-backed posture: authenticated=SELECT,INSERT,UPDATE,DELETE (policies are the operative row gate); anon/PUBLIC=none
+PASS anon REST probe status=401 denialForm=permission-denied-42501
+seed complete: tenantA=battery-tenant-a-9b8eaa626f09 tenantB=battery-tenant-b-9b8eaa626f09 principals=3 (A active-in-A, B active-in-B, C expired-in-B)
+PASS cross-tenant probe: tenantAVisible
+PASS cross-tenant probe: tenantBInvisible
+PASS cross-tenant probe: rowsReturnedAllTenantA
+PASS cross-tenant probe: expiredAccessFails
+PASS cross-tenant probe: crossTenantInsertDenied
+probe cleanup: probe_cleaned=true (re-count verified=true)
+VERDICT cg_role_assignment: PASS
+```
+
+`cg_role_grant` (adds the forged-grantor probe):
+
+```
+PASS cross-tenant probe: forgedGrantorInsertDenied
+VERDICT cg_role_grant: PASS
+```
+
+Final verdict line (verbatim):
+
+```
+STATUS=PASS — 36/36 tables prove their declared posture: zero-policy tables prove deny-by-default (RLS on, zero permissive policies, no client grants, anon REST denied, strongest-form isolation); policy-backed tables (J-005/J-006 neutral tenant-membership policies, FORCED RLS) prove genuine cross-tenant isolation (Tenant B invisible, Tenant A own rows visible, expired binding denied, cross-tenant INSERT denied, forged grantor rejected, probes cleaned). Proven against the live database, not reasoned.
+```
+
+FINDINGS: **0**. Artifacts: `/opt/cursor/artifacts/rls-battery-results.json` (structured,
+includes per-table `crossTenantProbe` details) + `/opt/cursor/artifacts/rls-battery-results.log`.
+
+### SECURITY DEFINER interaction record (post-FORCE-RLS verification)
+
+The role-assignment RPCs are SECURITY DEFINER; FORCE RLS binds the table owner. Mitigation
+verification after applying FORCE RLS + policies: the definer owner (platform role
+`postgres`) holds the sanctioned BYPASSRLS attribute (verified live in `pg_roles`:
+`rolbypassrls = true`, which holds under FORCE), so the definer path is unaffected.
+Re-proven live: `node scripts/verify-role-assignment-substrate.mjs` (DATABASE_URL set) →
+**59/59 substrate invariants hold (mode: live)** — all six RPCs present, SECURITY DEFINER,
+executable by `authenticated`; the two tables assert the post-J-005 posture (FORCED RLS,
+exactly the declared neutral policies, `authenticated` privileged so the policies are the
+operative gate, `anon` still denied). The verifier's zero-policy live expectations were
+updated to this posture-aware form — the assertions got strictly stronger (exact policy
+inventory + FORCE), never weaker.
+
+## 8. Verdict (post-extension)
+
+J-041 / V1CAP-073 is database-proven on the dev project, on canonical post-M-R-100, and —
+after the J-005/J-006 neutral tenant-membership policy migration — on canonical with
+GENUINE cross-tenant probes on the three policy-backed tables (36/36 PASS, 0 findings,
+`probe_cleaned=true` on every seeded probe). Both postures (zero-policy strongest-form and
+policy-backed tenant-scoped visibility) are supported by the battery and reported per
+table. M-R-101 (backup/restore verified recovery) remains serialized next per the mission
 graph.

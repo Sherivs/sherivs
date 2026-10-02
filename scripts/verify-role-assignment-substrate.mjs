@@ -38,6 +38,21 @@ const FUNCTIONS_REF = "frontend/src/lib/runtime/scholar/scholar-role-assignments
 const PROOF_REF = "architecture/proofs/role-assignment-substrate.proof.json";
 
 const TABLES = ["cg_role_assignment", "cg_role_grant"];
+const POLICY_BACKED_POSTURE = {
+  // Post J-005/J-006 (migration 20261002000013): these tables carry FORCED RLS
+  // with exactly the neutral tenant-membership policies, and authenticated
+  // holds table privileges so those policies are the operative row gate.
+  cg_role_assignment: [
+    "role_assignment_select_own_tenant",
+    "role_assignment_insert_tenant_admin",
+    "role_assignment_update_tenant_admin",
+  ],
+  cg_role_grant: [
+    "role_grant_select_own_tenant",
+    "role_grant_insert_tenant_admin",
+    "role_grant_update_tenant_admin",
+  ],
+};
 const RPCS = [
   "list_role_assignments",
   "assign_role",
@@ -160,37 +175,73 @@ async function runLiveChecks(client, check) {
       Boolean(rel.rows[0]?.oid),
       `public.${table} exists in the applied database`,
     );
-    const rls = await client.query("SELECT relrowsecurity FROM pg_class WHERE oid = $1::regclass", [
-      `public.${table}`,
-    ]);
+    const rls = await client.query(
+      "SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE oid = $1::regclass",
+      [`public.${table}`],
+    );
     check(
       `live:rls:${table}`,
       rls.rows[0]?.relrowsecurity === true,
       `public.${table} has row level security enabled`,
     );
-    const policies = await client.query(
-      "SELECT count(*)::int AS n FROM pg_policies WHERE schemaname = 'public' AND tablename = $1",
-      [table],
-    );
-    check(
-      `live:policies:${table}`,
-      policies.rows[0]?.n === 0,
-      `public.${table} declares ${policies.rows[0]?.n} policies (0 = deny by default)`,
-    );
-    for (const [role, expected] of [
-      ["anon", false],
-      ["authenticated", false],
-      ["service_role", true],
-    ]) {
-      const priv = await client.query(
-        "SELECT has_table_privilege($1, $2, 'SELECT,INSERT,UPDATE,DELETE') AS allowed",
-        [role, `public.${table}`],
+    const expectedPolicies = POLICY_BACKED_POSTURE[table] ?? null;
+    if (expectedPolicies) {
+      check(
+        `live:rls-forced:${table}`,
+        rls.rows[0]?.relforcerowsecurity === true,
+        `public.${table} has FORCE ROW LEVEL SECURITY (owner bound for non-bypass owners)`,
+      );
+      const declared = await client.query(
+        "SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = $1 ORDER BY policyname",
+        [table],
+      );
+      const names = declared.rows.map((r) => r.policyname).sort();
+      check(
+        `live:policies:${table}`,
+        names.length === expectedPolicies.length &&
+          expectedPolicies.slice().sort().every((name, i) => names[i] === name),
+        `public.${table} declares exactly the J-005/J-006 neutral tenant-membership policies: ${expectedPolicies.join(", ")}`,
+      );
+      for (const [role, expected] of [
+        ["anon", false],
+        ["authenticated", true],
+        ["service_role", true],
+      ]) {
+        const priv = await client.query(
+          "SELECT has_table_privilege($1, $2, 'SELECT,INSERT,UPDATE,DELETE') AS allowed",
+          [role, `public.${table}`],
+        );
+        check(
+          `live:privilege:${table}:${role}`,
+          priv.rows[0]?.allowed === expected,
+          `${role} table access = ${priv.rows[0]?.allowed} (expected ${expected}; policy-backed posture)`,
+        );
+      }
+    } else {
+      const policies = await client.query(
+        "SELECT count(*)::int AS n FROM pg_policies WHERE schemaname = 'public' AND tablename = $1",
+        [table],
       );
       check(
-        `live:privilege:${table}:${role}`,
-        priv.rows[0]?.allowed === expected,
-        `${role} table access = ${priv.rows[0]?.allowed} (expected ${expected})`,
+        `live:policies:${table}`,
+        policies.rows[0]?.n === 0,
+        `public.${table} declares ${policies.rows[0]?.n} policies (0 = deny by default)`,
       );
+      for (const [role, expected] of [
+        ["anon", false],
+        ["authenticated", false],
+        ["service_role", true],
+      ]) {
+        const priv = await client.query(
+          "SELECT has_table_privilege($1, $2, 'SELECT,INSERT,UPDATE,DELETE') AS allowed",
+          [role, `public.${table}`],
+        );
+        check(
+          `live:privilege:${table}:${role}`,
+          priv.rows[0]?.allowed === expected,
+          `${role} table access = ${priv.rows[0]?.allowed} (expected ${expected})`,
+        );
+      }
     }
   }
 
