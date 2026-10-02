@@ -301,8 +301,14 @@ function normalizeDelegationCore(core: MissionDelegationCore): MissionDelegation
   };
 }
 
-/** Returns an error string for the first violated contract law, else null. */
-export function validateDelegationCore(core: MissionDelegationCore): string | null {
+/** Returns an error string for the first violated contract law, else null.
+ *
+ * The optional `now` instant enables the STRUCTURAL status law (DEFECT-4):
+ * expiry is enforced, not just representable. Evaluated as-of an explicit
+ * instant, a contract cannot declare a status its own time window forbids —
+ * no implicit clock is consulted; the caller supplies time.
+ */
+export function validateDelegationCore(core: MissionDelegationCore, now?: string): string | null {
   if (!nonEmpty(core.delegationId)) return "delegationId is required";
   if (!/^\d+\.\d+$/.test(core.schemaVersion)) return "schemaVersion must match MAJOR.MINOR (e.g. 1.0)";
   if (!nonEmpty(core.tenantId)) return "tenantId is required";
@@ -351,12 +357,28 @@ export function validateDelegationCore(core: MissionDelegationCore): string | nu
   }
   if (!isContractTimestamp(core.provenance.grantedAt)) return "provenance.grantedAt must be a parseable timestamp";
   if (!nonEmpty(core.provenance.authorityRef)) return "provenance.authorityRef is required";
+  if (now !== undefined) {
+    if (!isContractTimestamp(now)) return "the structural-law evaluation instant must be a parseable timestamp";
+    if (core.lifecycle === "expired" && core.expiresAt > now) {
+      return "delegation is marked expired before its expiresAt — expiry is enforced structurally, never pre-empted by state";
+    }
+    if ((core.lifecycle === "active" || core.lifecycle === "suspended") && core.expiresAt <= now) {
+      return `delegation cannot be ${core.lifecycle} after its expiresAt — expired status is structural, never advisory (DEFECT-4)`;
+    }
+    if (core.lifecycle === "revoked" && core.revokedAt !== null && core.revokedAt > now) {
+      return "delegation cannot be revoked at a future instant — revocation is structural, never pre-emptive";
+    }
+  }
   return null;
 }
 
-/** Full contract validation: core laws + embedded kernel envelope conformance. */
-export function validateDelegationContract(delegation: MissionDelegation): ContractValidation {
-  const coreError = validateDelegationCore(delegation);
+/** Full contract validation: core laws + embedded kernel envelope conformance.
+ *
+ * The optional `now` instant enables the structural status law (DEFECT-4):
+ * see `validateDelegationCore`.
+ */
+export function validateDelegationContract(delegation: MissionDelegation, now?: string): ContractValidation {
+  const coreError = validateDelegationCore(delegation, now);
   if (coreError !== null) return { ok: false, error: coreError };
   const envelopeError = validateEmbeddedKernelEnvelope(
     delegation.envelope,
@@ -672,20 +694,164 @@ export function recordDelegatedAction(
 }
 
 /* ─────────────────────────────────────────────────────────────
+ * As-of evaluation: expiry is ENFORCED, not just representable
+ * (DEFECT-4, MISSION-R-52 / V1CAP-021)
+ * ────────────────────────────────────────────────────────────*/
+
+export type DelegationAsOfEvaluation =
+  | { ok: true; onBehalfOf: string }
+  | { ok: false; denyReason: DelegationDenyReason | "invalid_contract"; error: string };
+
+/**
+ * Authoritative evaluation of a delegation AS-OF an explicit instant (the
+ * contract receives time; no implicit Date.now()). The declared lifecycle
+ * status is never trusted over the record's own time window or its
+ * structural laws:
+ * - an invalid contract denies (fail closed) — including the structural
+ *   status law when the record carries a status its window forbids;
+ * - a not-yet-effective (`notBefore` in the future) delegation denies,
+ *   regardless of declared status;
+ * - a delegation whose `expiresAt` has passed denies as expired, regardless
+ *   of declared status (an "active" stamp cannot resurrect a lapsed grant);
+ * - revoked, expired and suspended statuses deny.
+ */
+export function evaluateDelegationAsOf(delegation: MissionDelegation, now: string): DelegationAsOfEvaluation {
+  if (!isContractTimestamp(now)) {
+    return { ok: false, denyReason: "invalid_contract", error: "evaluation instant is not a parseable timestamp" };
+  }
+  const validation = validateDelegationContract(delegation);
+  if (!validation.ok) {
+    return { ok: false, denyReason: "invalid_contract", error: validation.error };
+  }
+  if (delegation.lifecycle === "revoked") {
+    return { ok: false, denyReason: "revoked", error: `delegation "${delegation.delegationId}" is revoked` };
+  }
+  if (delegation.lifecycle === "expired") {
+    return { ok: false, denyReason: "expired", error: `delegation "${delegation.delegationId}" is expired` };
+  }
+  if (delegation.lifecycle === "suspended") {
+    return { ok: false, denyReason: "suspended", error: `delegation "${delegation.delegationId}" is suspended` };
+  }
+  if (delegation.notBefore !== null && delegation.notBefore > now) {
+    return {
+      ok: false,
+      denyReason: "not_yet_effective",
+      error: `delegation "${delegation.delegationId}" is not effective before ${delegation.notBefore}`,
+    };
+  }
+  if (delegation.expiresAt <= now) {
+    return {
+      ok: false,
+      denyReason: "expired",
+      error: `delegation "${delegation.delegationId}" expired at ${delegation.expiresAt} (evaluated as-of ${now})`,
+    };
+  }
+  return { ok: true, onBehalfOf: delegation.delegatorRef };
+}
+
+export type DelegationChainDenyReason =
+  | DelegationDenyReason
+  | "invalid_contract"
+  | "record_not_found"
+  | "chain_not_non_escalating";
+
+export type DelegationChainEvaluation =
+  | { ok: true; /** delegationIds on the evaluated ancestor closure, target first. */ path: readonly string[] }
+  | { ok: false; denyReason: DelegationChainDenyReason; error: string; delegationId: string | null };
+
+/**
+ * Transitive law composing REVOCATION with EXPIRY over a delegation chain
+ * (DEFECT-4): a delegation is usable as-of an instant only if EVERY record
+ * in its ancestor closure (the record itself plus every grant its authority
+ * transitively rests on) is usable as-of that instant. An expired, revoked,
+ * suspended, not-yet-effective or structurally invalid link anywhere in the
+ * closure invalidates the whole downstream path — a descendant cannot draw
+ * authority through a dead link. Composition is fail closed: the chain must
+ * first satisfy the structural non-escalation law (E-045), then every link
+ * must pass `evaluateDelegationAsOf`.
+ */
+export function evaluateDelegationChainAsOf(
+  chain: readonly MissionDelegation[],
+  targetDelegationId: string,
+  now: string,
+): DelegationChainEvaluation {
+  if (!isContractTimestamp(now)) {
+    return {
+      ok: false,
+      denyReason: "invalid_contract",
+      error: "chain evaluation instant is not a parseable timestamp",
+      delegationId: null,
+    };
+  }
+  const structure = delegationChainIsNonEscalating(chain);
+  if (!structure.ok) {
+    return { ok: false, denyReason: "chain_not_non_escalating", error: structure.error, delegationId: null };
+  }
+  const target = chain.find((record) => record.delegationId === targetDelegationId);
+  if (target === undefined) {
+    return {
+      ok: false,
+      denyReason: "record_not_found",
+      error: `delegation "${targetDelegationId}" is not part of the evaluated chain`,
+      delegationId: targetDelegationId,
+    };
+  }
+
+  const byDelegate = new Map<string, MissionDelegation[]>();
+  for (const record of chain) {
+    const list = byDelegate.get(record.delegateRef) ?? [];
+    list.push(record);
+    byDelegate.set(record.delegateRef, list);
+  }
+  const path: MissionDelegation[] = [];
+  const seen = new Set<string>([target.delegationId]);
+  let frontier: readonly MissionDelegation[] = [target];
+  while (frontier.length > 0) {
+    const next: MissionDelegation[] = [];
+    for (const record of frontier) {
+      path.push(record);
+      for (const parent of byDelegate.get(record.delegatorRef) ?? []) {
+        if (!seen.has(parent.delegationId)) {
+          seen.add(parent.delegationId);
+          next.push(parent);
+        }
+      }
+    }
+    frontier = next;
+  }
+
+  for (const record of path) {
+    const verdict = evaluateDelegationAsOf(record, now);
+    if (!verdict.ok) {
+      return {
+        ok: false,
+        denyReason: verdict.denyReason,
+        error: `delegation chain broken at "${record.delegationId}": ${verdict.error}`,
+        delegationId: record.delegationId,
+      };
+    }
+  }
+  return { ok: true, path: path.map((record) => record.delegationId) };
+}
+
+/* ─────────────────────────────────────────────────────────────
  * Bounded expiry and revocation propagation
  * ────────────────────────────────────────────────────────────*/
 
 /**
- * Bounded expiry enforcement: active delegations whose expiresAt has passed
- * become "expired". Idempotent — already-expired and revoked records are
- * untouched.
+ * Bounded expiry enforcement: non-terminal delegations (active OR suspended)
+ * whose expiresAt has passed become "expired" — a lapsed grant can never
+ * remain in a non-terminal status (DEFECT-4 structural law). Idempotent —
+ * already-expired and revoked records are untouched.
  */
 export function markExpiredDelegations(
   records: readonly MissionDelegation[],
   now: string,
 ): readonly MissionDelegation[] {
   return records.map((record) =>
-    record.lifecycle === "active" && record.expiresAt <= now ? { ...record, lifecycle: "expired" } : record,
+    (record.lifecycle === "active" || record.lifecycle === "suspended") && record.expiresAt <= now
+      ? { ...record, lifecycle: "expired" }
+      : record,
   );
 }
 
@@ -696,8 +862,12 @@ export type DelegationRevocationResult =
 /**
  * Revoke a delegation AND PROPAGATE the revocation transitively: every
  * delegation granted by a revoked record's delegate (same tenant and
- * mission) is revoked, and so on down the chain. Revocation is attributed
- * (by + reason) on every affected record.
+ * mission) is revoked, and so on down the chain. Propagation routes THROUGH
+ * non-usable links as well: a descendant whose chain passes through an
+ * expired or already-revoked link is revoked too, because it can no longer
+ * draw authority through that link (DEFECT-4 — revocation composes with
+ * expiry). Revocation is attributed (by + reason) on every affected record;
+ * terminal records keep their status.
  */
 export function revokeDelegationChain(
   root: MissionDelegation,
@@ -713,9 +883,11 @@ export function revokeDelegationChain(
   if (!nonEmpty(ctx.by)) return { ok: false, denyReason: "unattributed_revocation", error: "revocation requires an attributing actor (by)" };
   if (!nonEmpty(ctx.reason)) return { ok: false, denyReason: "unattributed_revocation", error: "revocation requires a reason" };
 
+  const visitedIds = new Set<string>();
   const revokedIds = new Set<string>();
   const revoked: MissionDelegation[] = [];
-  const revokeRecord = (record: MissionDelegation): void => {
+  const visitRecord = (record: MissionDelegation): void => {
+    visitedIds.add(record.delegationId);
     if (record.lifecycle === "active" || record.lifecycle === "suspended") {
       revokedIds.add(record.delegationId);
       revoked.push({
@@ -726,20 +898,24 @@ export function revokeDelegationChain(
         revocationReason: ctx.reason.trim(),
       });
     }
+    // Expired and already-revoked links stay in their terminal status but
+    // still PASS THE PROPAGATION FRONTIER THROUGH: descendants whose chains
+    // route through a revoked or expired link are invalidated too (DEFECT-4
+    // transitive law — revocation composes with expiry).
   };
 
-  revokeRecord(root);
+  visitRecord(root);
   let frontier: readonly string[] = [root.delegateRef];
   while (frontier.length > 0) {
     const nextFrontier: string[] = [];
     for (const candidate of candidates) {
-      if (revokedIds.has(candidate.delegationId)) continue;
+      if (visitedIds.has(candidate.delegationId)) continue;
       if (
         frontier.includes(candidate.delegatorRef) &&
         candidate.tenantId === root.tenantId &&
         candidate.missionId === root.missionId
       ) {
-        revokeRecord(candidate);
+        visitRecord(candidate);
         nextFrontier.push(candidate.delegateRef);
       }
     }
