@@ -143,12 +143,12 @@ END;
 $$;
 
 COMMENT ON FUNCTION public.get_my_tenant_id() IS
-  'MISSION-R-20 neutral tenancy primitive. Resolves the authenticated actor''s '
-  'tenant from cg_org_membership / cg_role_assignment only (no domain '
-  'vocabulary). SECURITY DEFINER because both substrate tables are '
-  'deny-by-default RLS. NULL when unbound; raises AMBIGUOUS_TENANCY when the '
-  'actor is bound in more than one tenant (fail-closed; use '
-  'is_tenant_admin(p_tenant) for multi-tenant actors).';
+  $comment$MISSION-R-20 neutral tenancy primitive. Resolves the authenticated actor's
+  tenant from cg_org_membership / cg_role_assignment only (no domain
+  vocabulary). SECURITY DEFINER because both substrate tables are
+  deny-by-default RLS. NULL when unbound; raises AMBIGUOUS_TENANCY when the
+  actor is bound in more than one tenant (fail-closed; use
+  is_tenant_admin(p_tenant) for multi-tenant actors).$comment$;
 
 -- Per-tenant neutral role predicate: does the authenticated actor hold the
 -- given neutral role ref in the given tenant, via EITHER an active
@@ -187,11 +187,11 @@ END;
 $$;
 
 COMMENT ON FUNCTION public.holds_tenant_role(text, text) IS
-  'MISSION-R-20 neutral per-tenant role predicate (I-002). Time-bounded: an '
-  'assignment whose started_on is in the future or whose ended_on has passed '
-  'does not hold (expired/revoked access fails). Role refs are opaque neutral '
-  'tokens owned by the MISSION-R-21 vocabulary contract. SECURITY DEFINER; '
-  'the actor is re-derived from auth.uid() — never a client parameter.';
+  $comment$MISSION-R-20 neutral per-tenant role predicate (I-002). Time-bounded: an
+  assignment whose started_on is in the future or whose ended_on has passed
+  does not hold (expired/revoked access fails). Role refs are opaque neutral
+  tokens owned by the MISSION-R-21 vocabulary contract. SECURITY DEFINER;
+  the actor is re-derived from auth.uid() — never a client parameter.$comment$;
 
 -- Tenant-administrator predicate: the gate every universal cg_ substrate RPC
 -- uses. The per-tenant argument makes "own tenant" inherent — the actor must
@@ -204,12 +204,12 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
 $$;
 
 COMMENT ON FUNCTION public.is_tenant_admin(text) IS
-  'MISSION-R-20 neutral tenant-administrator predicate. True when the actor '
-  'holds an active, time-valid neutral ADMINISTRATOR binding '
-  "('role:administrator') in the given tenant via cg_role_assignment or "
-  'cg_org_membership. The tenant argument is never trusted from the client in '
-  'the RPC layer — every gated RPC passes the tenant it re-derived from the '
-  'row being acted on.';
+  $comment$MISSION-R-20 neutral tenant-administrator predicate. True when the actor
+  holds an active, time-valid neutral ADMINISTRATOR binding
+  ('role:administrator') in the given tenant via cg_role_assignment or
+  cg_org_membership. The tenant argument is never trusted from the client in
+  the RPC layer — every gated RPC passes the tenant it re-derived from the
+  row being acted on.$comment$;
 
 REVOKE ALL ON FUNCTION public.get_my_tenant_id() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.get_my_tenant_id() FROM anon;

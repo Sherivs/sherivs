@@ -121,6 +121,8 @@ const SUBJECT_MAP = {
   "tests/unit/payments-paystack-adapter.test.ts": { phase: "13", why: "payment provider adapter — phase-13 financial-payments provider neutrality" },
   "tests/unit/payments-replay-guard.test.ts": { phase: "13", why: "payment replay protection (Constitution §36 payment security — phase-13 financial-controls)" },
   "tests/unit/payments-stripe-adapter.test.ts": { phase: "13", why: "payment provider adapter — phase-13 financial-payments provider neutrality" },
+  "tests/unit/payments-paystack-testmode.test.ts": { phase: "13", why: "Paystack test-mode integration (signature/idempotency/replay/ownership/audit, Constitution §36) — phase-13 financial-payments adapter discipline" },
+  "tests/unit/payments-paystack-testmode-live.test.ts": { phase: "13", why: "live-gated Paystack test-mode verification against api.paystack.co (sk_test_ only) — phase-13 financial-payments adapter discipline" },
   "tests/unit/metering-usage-ledger.test.ts": { phase: "13", why: "metering/usage-ledger — usage metering substrate toward phase-13's declared metering gap" },
   "tests/unit/subscription-tiers.test.ts": { phase: "13", why: "subscription tier billing vocabulary (phase-13 billing)" },
   "tests/unit/infrastructure-readiness.test.ts": { phase: "21", why: "infrastructure readiness for the phase-21 cloud fabric (infrastructure/ IaC deliverable)" },
@@ -168,6 +170,8 @@ const UNATTRIBUTED = {
   "tests/unit/files-access-policy.test.ts": "files substrate (frontend/src/lib/files/) is not a registered phase module. TODO: attribute when a phase registers the files/storage substrate.",
   "tests/unit/files-contract.test.ts": "files substrate (frontend/src/lib/files/) is not a registered phase module. TODO: attribute when a phase registers the files/storage substrate.",
   "tests/unit/files-storage-adapter.test.ts": "files substrate (frontend/src/lib/files/) is not a registered phase module. TODO: attribute when a phase registers the files/storage substrate.",
+  "tests/unit/storage-service-client.test.ts": "service-role storage client factory (frontend/src/lib/files/storage-service.server.ts) — files substrate is not a registered phase module. TODO: attribute when a phase registers the files/storage substrate.",
+  "tests/unit/storage-service-live.test.ts": "live-gated service-role storage verification against the approved project — files substrate is not a registered phase module. TODO: attribute when a phase registers the files/storage substrate.",
 };
 
 // ── 4. attribute every measured unit test file ─────────────────────────────

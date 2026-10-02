@@ -40,10 +40,10 @@ CREATE TABLE IF NOT EXISTS public.cg_role_assignment (
 );
 
 COMMENT ON TABLE public.cg_role_assignment IS
-  'Tenant-scoped appointment of an identity to an Educational Reality role '
-  '(role ids come from the role engine catalog; grants are separate rows). '
-  'Consumed by the runtime feature gate as an input; authorization is decided '
-  'by Phase 08 + policy, never by the mere existence of a row.';
+  $comment$Tenant-scoped appointment of an identity to an Educational Reality role
+  (role ids come from the role engine catalog; grants are separate rows).
+  Consumed by the runtime feature gate as an input; authorization is decided
+  by Phase 08 + policy, never by the mere existence of a row.$comment$;
 
 CREATE UNIQUE INDEX IF NOT EXISTS cg_role_assignment_active_idx
   ON public.cg_role_assignment (tenant_ref, identity_ref, role_id)
@@ -72,9 +72,9 @@ CREATE TABLE IF NOT EXISTS public.cg_role_grant (
 );
 
 COMMENT ON TABLE public.cg_role_grant IS
-  'Capability grant a tenant installs on a reality role. granted_by is always '
-  'auth.uid() captured inside grant_role_capability() — never client-supplied. '
-  'Revocation is a timestamp (history is preserved, never deleted).';
+  $comment$Capability grant a tenant installs on a reality role. granted_by is always
+  auth.uid() captured inside grant_role_capability() — never client-supplied.
+  Revocation is a timestamp (history is preserved, never deleted).$comment$;
 
 CREATE UNIQUE INDEX IF NOT EXISTS cg_role_grant_active_idx
   ON public.cg_role_grant (tenant_ref, role_id, capability)

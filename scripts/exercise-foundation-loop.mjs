@@ -24,11 +24,17 @@ function sanitize(text) {
     .replace(password, "[redacted]");
 }
 
-const envFile = readFileSync(join(root, ".env.local"), "utf8");
-let accessToken = "";
-for (const line of envFile.split(/\r?\n/)) {
-  const match = line.trim().match(/^(?:export\s+)?SUPABASE_ACCESS_TOKEN\s*=\s*(.*)$/);
-  if (match) accessToken = match[1].trim().replace(/^['"]|['"]$/g, "");
+let accessToken = process.env.SUPABASE_ACCESS_TOKEN ?? "";
+if (!accessToken) {
+  try {
+    const envFile = readFileSync(join(root, ".env.local"), "utf8");
+    for (const line of envFile.split(/\r?\n/)) {
+      const match = line.trim().match(/^(?:export\s+)?SUPABASE_ACCESS_TOKEN\s*=\s*(.*)$/);
+      if (match) accessToken = match[1].trim().replace(/^['"]|['"]$/g, "");
+    }
+  } catch {
+    // .env.local absent — the environment variable was the only source.
+  }
 }
 if (!accessToken) {
   console.error("BLOCKED_NO_CREDENTIAL");

@@ -152,6 +152,16 @@ const TABLES = [
   { name: "cg_workspace_member", source: "20260930000000_coregrid_v1_workspace_persistence.sql" },
   { name: "cg_org_unit", source: "20261001000000_coregrid_v1_org_model.sql" },
   { name: "cg_org_membership", source: "20261001000000_coregrid_v1_org_model.sql" },
+  // MISSION-R-100 canonical apply — substrate tables landed with the wave-3
+  // migrations (incl. the prerequisite role-assignment substrate).
+  { name: "cg_role_assignment", source: "20260907000800_coregrid_role_assignment_substrate.sql" },
+  { name: "cg_role_grant", source: "20260907000800_coregrid_role_assignment_substrate.sql" },
+  { name: "cg_worker_definition", source: "20261002000002_coregrid_v1_worker_definitions.sql" },
+  { name: "cg_worker_capability", source: "20261002000002_coregrid_v1_worker_definitions.sql" },
+  { name: "cg_worker_delegation", source: "20261002000002_coregrid_v1_worker_definitions.sql" },
+  { name: "cg_memory_scope", source: "20261002000004_coregrid_v1_memory_tier.sql" },
+  { name: "cg_memory_record", source: "20261002000004_coregrid_v1_memory_tier.sql" },
+  { name: "cg_memory_access_log", source: "20261002000004_coregrid_v1_memory_tier.sql" },
 ];
 const TABLE_NAMES = TABLES.map((t) => t.name);
 

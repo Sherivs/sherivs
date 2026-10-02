@@ -187,8 +187,31 @@ per the mission graph (exclusive canonical-DB access).
    V1CAP-073 — exit 0 = posture holds, exit 1 = FINDINGS (fail the build), exit 2 = blocked
    on credentials. Secrets come from the CI secret store; key values are never printed.
 
-## 5. Verdict
+## 5. Canonical re-run record (post M-R-100, 2026-10-02)
 
-J-041 / V1CAP-073 is **database-proven on the dev project**: deny-by-default is no longer a
-static claim — it is executed evidence. Canonical-environment repetition is gated on
-MISSION-R-100 (J-040) and serialized per the mission graph.
+Section 4's repetition plan was executed after MISSION-R-100's canonical apply reported
+STATUS=PASS (see `CANONICAL_APPLY_RECORD_MR100.json`). The battery's table scope was first
+extended from 8 to 16 tables to absorb the wave-3 substrate migrations applied to canonical
+(`cg_role_assignment`, `cg_role_grant`, `cg_worker_invitation`, `cg_worker_registration`,
+`cg_worker_session`, `cg_worker_binding`, `cg_memory_snapshot`, `cg_memory_append`),
+keeping the identical four-section proof per table.
+
+- Project: `nwrflbpbhyiqdptmlccm` (canonical; M-R-100 applied migrations verified in-catalog)
+- Result: **16/16 PASS, 0 FAIL** — deny-by-default holds on every applied `cg_*` substrate table
+- Anon-key provenance: resolved through the management API (`ref=nwrflbpbhyiqdptmlccm role=anon`),
+  value never printed; the VM-injected `SUPABASE_PUBLISHABLE_KEY` remains a truncated/invalid
+  JWT (secret-hygiene finding, not a database defect)
+- Evidence: `/opt/cursor/artifacts/rls-battery-results.json` + `/opt/cursor/artifacts/rls-battery-results.log`
+
+Foundation-loop live battery (M-R-100 T3): `scripts/exercise-foundation-loop.mjs` executed
+against the canonical project through the preview server function — first call
+`replayed=false status=admitted verification=verified`, second call `replayed=true` (same
+execution id), 5/5 integration tests including cross-tenant rejection and governed rollback;
+probe rows and auth user cleaned up (`probe_cleaned=true`).
+
+## 6. Verdict
+
+J-041 / V1CAP-073 is **database-proven on the dev project AND on the canonical project
+post-M-R-100**: deny-by-default is no longer a static claim — it is executed evidence on both
+environments. M-R-101 (backup/restore verified recovery) is serialized next per the mission
+graph.

@@ -1,0 +1,111 @@
+{
+  "mission": "MISSION-R-100",
+  "capability": "V1CAP-072",
+  "gap": "J-040",
+  "projectRef": "nwrflbpbhyiqdptmlccm",
+  "transport": "supabase-management-api-database-query",
+  "exclusiveAccess": "serialized with M-R-85/M-R-101 per mission graph",
+  "executedAt": "2026-10-02T11:57:55.491Z",
+  "completedAt": "2026-10-02T11:58:04.492Z",
+  "declaredVsApplied": [
+    {
+      "file": "20260907000800_coregrid_role_assignment_substrate.sql",
+      "mission": "prerequisite (role-assignment substrate — absent from canonical, required by the neutral tenant primitives)",
+      "state": "ALREADY_APPLIED",
+      "checksum": "d76a8df9a7d26b953dca5fccf1a8ded78b37a0356b337b936e3047ca3a2721ff",
+      "rollbackChecksum": "ba07d52e8e9d2ce0c5555dd05b3da81d1afab68957ea975dc359f18f959746f2",
+      "declaredObjectCount": 11,
+      "elapsedMs": null,
+      "evidence": "all 11 declared objects present (pre-flight catalog probe)",
+      "error": null
+    },
+    {
+      "file": "20261002000000_coregrid_v1_kernel_envelope.sql",
+      "mission": "MISSION-R-10 canonical envelope",
+      "state": "ALREADY_APPLIED",
+      "checksum": "68051c768f473151de22a9d6a200d442690717de837608fe553e3dd5519c4b29",
+      "rollbackChecksum": "6c4432e58366095e9e4a0bbd65a7eb5ec3a0f501699571d91f8cadf51c544f1c",
+      "declaredObjectCount": 14,
+      "elapsedMs": null,
+      "evidence": "all 14 declared objects present (pre-flight catalog probe)",
+      "error": null
+    },
+    {
+      "file": "20261002000001_coregrid_v1_neutral_tenant_primitives.sql",
+      "mission": "MISSION-R-20/21 neutral tenant primitives + universal role vocabulary",
+      "state": "ALREADY_APPLIED",
+      "checksum": "119545b64357355f28d92291fa46f0b08c71aedf741e2349c7589bbc02dacf6b",
+      "rollbackChecksum": "947a74d520c7e84a46ba35559419f6e455909a782c8ed757fd2638e2ac267164",
+      "declaredObjectCount": 9,
+      "elapsedMs": null,
+      "evidence": "all 9 declared objects present (pre-flight catalog probe)",
+      "error": null
+    },
+    {
+      "file": "20261002000002_coregrid_v1_worker_definitions.sql",
+      "mission": "MISSION-R-40 persistent governed worker definitions",
+      "state": "ALREADY_APPLIED",
+      "checksum": "26f03c1c39b790bfed386bc1af3bd85ecf930f44df44960d3da492668baaf0f1",
+      "rollbackChecksum": "611fb221d333a7a7e441278f82a033884b7e65d90bc8be044ef5d29065dfde57",
+      "declaredObjectCount": 6,
+      "elapsedMs": null,
+      "evidence": "all 6 declared objects present (pre-flight catalog probe)",
+      "error": null
+    },
+    {
+      "file": "20261002000003_coregrid_v1_kernel_bitemporal.sql",
+      "mission": "MISSION-R-10/11 bi-temporal kernel semantics",
+      "state": "APPLIED_AND_VERIFIED",
+      "checksum": "03fd14058d5260f13fe23a50f5957eede1b821a70db3d991f3750a28578a5451",
+      "rollbackChecksum": "3b8d5f9d5a65f2849977c85a828e59552f0ca56c7928ad2e7909c3860eef5ff0",
+      "declaredObjectCount": 14,
+      "elapsedMs": 739,
+      "evidence": null,
+      "error": null
+    },
+    {
+      "file": "20261002000004_coregrid_v1_memory_tier.sql",
+      "mission": "MISSION-R-36 persisted authorization-gated memory store",
+      "state": "APPLIED_AND_VERIFIED",
+      "checksum": "12f0fce43bf1a7d63ca1f775bebe4c3e430697f104ae551dd3f76c9b9b8a23b4",
+      "rollbackChecksum": "8aa00ea881aa58194e27bd6d8fabaf44f6767f298eec2c59e6a75c3fb6c20fc7",
+      "declaredObjectCount": 6,
+      "elapsedMs": 1046,
+      "evidence": null,
+      "error": null
+    }
+  ],
+  "verification": [
+    {
+      "file": "20260907000800_coregrid_role_assignment_substrate.sql",
+      "verified": true,
+      "missingCount": 0
+    },
+    {
+      "file": "20261002000000_coregrid_v1_kernel_envelope.sql",
+      "verified": true,
+      "missingCount": 0
+    },
+    {
+      "file": "20261002000001_coregrid_v1_neutral_tenant_primitives.sql",
+      "verified": true,
+      "missingCount": 0
+    },
+    {
+      "file": "20261002000002_coregrid_v1_worker_definitions.sql",
+      "verified": true,
+      "missingCount": 0
+    },
+    {
+      "file": "20261002000003_coregrid_v1_kernel_bitemporal.sql",
+      "verified": true,
+      "missingCount": 0
+    },
+    {
+      "file": "20261002000004_coregrid_v1_memory_tier.sql",
+      "verified": true,
+      "missingCount": 0
+    }
+  ],
+  "findings": 0
+}

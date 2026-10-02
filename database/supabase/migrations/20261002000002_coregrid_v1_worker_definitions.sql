@@ -157,13 +157,13 @@ ALTER TABLE public.cg_worker_definition
   ADD CONSTRAINT cg_worker_definition_object_type CHECK (object_type = 'worker_definition');
 
 COMMENT ON TABLE public.cg_worker_definition IS
-  'MISSION-R-40 / J-027 persistent governed worker definition (CTO RULING-3). '
-  'The persistent half of a governed worker: identity-linked capability '
-  'declarations, authority bounds and delegation history that survive worker '
-  'process termination (G-014). Grants nothing by itself; authority is '
-  'resolved through the shared identity-actor primitives at request time. '
-  'Envelope-bearing (V1CAP-002); anonymous rows are unsatisfiable by '
-  'construction (created_by NOT NULL + atomicity CHECK).';
+  $comment$MISSION-R-40 / J-027 persistent governed worker definition (CTO RULING-3).
+  The persistent half of a governed worker: identity-linked capability
+  declarations, authority bounds and delegation history that survive worker
+  process termination (G-014). Grants nothing by itself; authority is
+  resolved through the shared identity-actor primitives at request time.
+  Envelope-bearing (V1CAP-002); anonymous rows are unsatisfiable by
+  construction (created_by NOT NULL + atomicity CHECK).$comment$;
 
 CREATE INDEX IF NOT EXISTS cg_worker_definition_tenant_idx
   ON public.cg_worker_definition (tenant_id, lifecycle_state);
@@ -198,11 +198,11 @@ CREATE TABLE IF NOT EXISTS public.cg_worker_capability (
 );
 
 COMMENT ON TABLE public.cg_worker_capability IS
-  'MISSION-R-40 owned capability declarations of a persistent worker '
-  'definition. Explicit and documented only: a capability absent here is '
-  'unclaimable by any runtime instance (deny-by-default, untrusted '
-  'new-worker posture). Matched by declaration id, never by worker name '
-  '(J-028 capability-over-agent-count).';
+  $comment$MISSION-R-40 owned capability declarations of a persistent worker
+  definition. Explicit and documented only: a capability absent here is
+  unclaimable by any runtime instance (deny-by-default, untrusted
+  new-worker posture). Matched by declaration id, never by worker name
+  (J-028 capability-over-agent-count).$comment$;
 
 CREATE INDEX IF NOT EXISTS cg_worker_capability_capability_idx
   ON public.cg_worker_capability (capability_id);
@@ -229,11 +229,11 @@ CREATE TABLE IF NOT EXISTS public.cg_worker_delegation (
 );
 
 COMMENT ON TABLE public.cg_worker_delegation IS
-  'MISSION-R-40 append-only delegation history (CTO RULING-3 persistent '
-  'delegation history). Every delegation that bound a runtime instance to a '
-  'worker definition, with the capability set and risk ceiling actually '
-  'granted. Never mutated, never deleted except with the definition; '
-  'Delegation -> Worker Execution attribution survives process restarts.';
+  $comment$MISSION-R-40 append-only delegation history (CTO RULING-3 persistent
+  delegation history). Every delegation that bound a runtime instance to a
+  worker definition, with the capability set and risk ceiling actually
+  granted. Never mutated, never deleted except with the definition;
+  Delegation -> Worker Execution attribution survives process restarts.$comment$;
 
 CREATE INDEX IF NOT EXISTS cg_worker_delegation_tenant_idx
   ON public.cg_worker_delegation (tenant_id, definition_id);

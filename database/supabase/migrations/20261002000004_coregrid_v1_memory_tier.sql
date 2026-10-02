@@ -88,12 +88,12 @@ CREATE TABLE IF NOT EXISTS public.cg_memory_scope (
 );
 
 COMMENT ON TABLE public.cg_memory_scope IS
-  'MISSION-R-36 / J-016 declared memory scope: the explicit boundary of every '
-  'memory read AND write — tenant, mission ref, actor scope, domains, and the '
-  'sensitivity ceiling (context-assembly vocabulary). Empty actor_scope or '
-  'domains grant nothing (deny-by-default). No silent memory expansion '
-  '(J-017/E-027): writes exceeding a declared scope are rejected, never '
-  'clamped.';
+  $comment$MISSION-R-36 / J-016 declared memory scope: the explicit boundary of every
+  memory read AND write — tenant, mission ref, actor scope, domains, and the
+  sensitivity ceiling (context-assembly vocabulary). Empty actor_scope or
+  domains grant nothing (deny-by-default). No silent memory expansion
+  (J-017/E-027): writes exceeding a declared scope are rejected, never
+  clamped.$comment$;
 
 CREATE INDEX IF NOT EXISTS cg_memory_scope_tenant_idx
   ON public.cg_memory_scope (tenant_id);
@@ -199,13 +199,13 @@ ALTER TABLE public.cg_memory_record
   );
 
 COMMENT ON TABLE public.cg_memory_record IS
-  'MISSION-R-36 / J-016 durable practical/organizational memory tier '
-  '(V1CAP-034/035). Envelope-bearing (V1CAP-002), bi-temporally explicit '
-  '(V1CAP-004), scope-bound (every row is written through a declared '
-  'cg_memory_scope of its own tenant), freshness-stamped, and carries NO '
-  'embedding/vector column — retrieval is authorization-gated and '
-  'non-vector-only (G-015). Memory remains platform-owned data, never '
-  'agent-owned (G-061, L-H-007).';
+  $comment$MISSION-R-36 / J-016 durable practical/organizational memory tier
+  (V1CAP-034/035). Envelope-bearing (V1CAP-002), bi-temporally explicit
+  (V1CAP-004), scope-bound (every row is written through a declared
+  cg_memory_scope of its own tenant), freshness-stamped, and carries NO
+  embedding/vector column — retrieval is authorization-gated and
+  non-vector-only (G-015). Memory remains platform-owned data, never
+  agent-owned (G-061, L-H-007).$comment$;
 
 CREATE INDEX IF NOT EXISTS cg_memory_record_tenant_class_idx
   ON public.cg_memory_record (tenant_id, memory_class);
@@ -241,13 +241,13 @@ CREATE TABLE IF NOT EXISTS public.cg_memory_access_log (
 );
 
 COMMENT ON TABLE public.cg_memory_access_log IS
-  'MISSION-R-36 / J-017 append-only memory access audit: one row per '
-  'retrieval attempt — granted, partial, or DENIED — with the identity, '
-  'tenant, scope, purpose, returned record ids, exclusion ledger, denial '
-  'reason and audit instant. Denied attempts are recorded, never discarded: '
-  'retrieval without identity AND tenant AND declared scope fails closed and '
-  'leaves evidence. Immutable audit record (Constitution §28/§29); no UPDATE '
-  'or DELETE path is authored.';
+  $comment$MISSION-R-36 / J-017 append-only memory access audit: one row per
+  retrieval attempt — granted, partial, or DENIED — with the identity,
+  tenant, scope, purpose, returned record ids, exclusion ledger, denial
+  reason and audit instant. Denied attempts are recorded, never discarded:
+  retrieval without identity AND tenant AND declared scope fails closed and
+  leaves evidence. Immutable audit record (Constitution §28/§29); no UPDATE
+  or DELETE path is authored.$comment$;
 
 CREATE INDEX IF NOT EXISTS cg_memory_access_log_tenant_idx
   ON public.cg_memory_access_log (tenant_id, recorded_at);
