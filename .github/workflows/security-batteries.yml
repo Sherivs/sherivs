@@ -1,0 +1,219 @@
+name: Security Batteries
+
+# V1CAP-073 (MISSION-R-85 RLS isolation battery) + V1CAP-074 (MISSION-R-101
+# restore/recovery drill) against the canonical CoreGrid database.
+#
+# These batteries are LIVE-CREDENTIAL-GATED: they touch the canonical database
+# through authorized transports, so they intentionally do NOT run on
+# pull_request. Triggers: manual (workflow_dispatch) + weekly schedule.
+#
+# CANONICAL EXCLUSIVE ACCESS — coordinator lock mechanism in CI:
+#   Both batteries operate on the canonical database. The `concurrency` group
+#   below is the serialization lock: at most ONE battery job runs at a time
+#   across all workflow runs, and `cancel-in-progress: false` guarantees a
+#   running battery is never interrupted mid-drill by a newer trigger — new
+#   runs queue behind it. Do not remove or widen this group without an ADR.
+#
+# Secrets come exclusively from the GitHub Actions secret store, mapped into
+# job env below. Values are NEVER printed: the battery scripts redact secret
+# material in their output (the RLS battery truncates evidence and redacts
+# sbp_* tokens; only a 10-character anon-key prefix is logged — the anon key
+# is public by design), and GitHub Actions automatically masks anything mapped
+# from `secrets.*` that could otherwise appear in logs.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Weekly, Mondays 06:17 UTC (off the top of the hour to avoid scheduler herds).
+    - cron: "17 6 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: canonical-db-batteries
+  cancel-in-progress: false
+
+env:
+  # Canonical project ref (MISSION-R-100 canonical apply target; the restore
+  # drill's built-in DEFAULT_REF). The RLS battery derives its project ref from
+  # SUPABASE_URL and accepts no positional ref (a positional argument is
+  # ignored by design) — the ref is pinned here for the restore drill's CLI.
+  CANONICAL_PROJECT_REF: nwrflbpbhyiqdptmlccm
+
+jobs:
+  rls-isolation-battery:
+    name: RLS isolation battery (V1CAP-073)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # NOTE: all values below resolve from GitHub Actions secrets. Secret
+      # values are never echoed by any step in this workflow; the battery
+      # scripts print only redacted/truncated evidence.
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      # Optional: a structurally valid anon key short-circuits the management
+      # API fallback resolution. The anon key is public by design (it is the
+      # credential every unauthenticated client shares).
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      # Optional and DORMANT by default: the service-role contrast section only
+      # runs when COREGRID_BATTERY_ALLOW_SERVICE_ROLE=1 is set (opt-in). The
+      # key is mapped here so an opt-in requires no workflow edit beyond
+      # exporting that env var in the run step.
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Prepare battery artifacts directory
+        # Both battery scripts write their result artifacts to the fixed path
+        # /opt/cursor/artifacts (outside the repo). Pre-create it writable so
+        # artifact persistence cannot be mistaken for a battery FINDING.
+        run: |
+          sudo mkdir -p /opt/cursor/artifacts
+          sudo chown "$(id -u):$(id -g)" /opt/cursor/artifacts
+
+      - name: Run RLS isolation battery
+        id: rls
+        run: |
+          # Exit-code contract (scripts/verify-rls-isolation-battery.mjs):
+          #   0 = posture holds (deny-by-default proven for every cg_* table)
+          #   1 = FINDINGS (RLS off / permissive policy / row leak / stray
+          #       grants) — FAILS the build
+          #   2 = BLOCKED_NO_CREDENTIAL — battery secrets absent; job is
+          #       marked blocked, NOT failed (credentials are expected to be
+          #       configured by the operator via the secret store)
+          set +e
+          node scripts/verify-rls-isolation-battery.mjs
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          case "$code" in
+            0)
+              echo "STATUS=PASS — deny-by-default posture proven against the canonical database (project ref derives from SUPABASE_URL)."
+              ;;
+            2)
+              echo "STATUS=BLOCKED_NO_CREDENTIAL — SUPABASE_URL and/or SUPABASE_ACCESS_TOKEN are not configured in the GitHub Actions secret store. No posture claim is made either way."
+              ;;
+            *)
+              echo "STATUS=FAIL — RLS isolation battery recorded FINDINGS (see step output and /opt/cursor/artifacts/rls-battery-results.json)."
+              exit "$code"
+              ;;
+          esac
+
+      - name: Record battery outcome
+        if: always()
+        run: |
+          {
+            echo "### RLS isolation battery (V1CAP-073)"
+            echo ""
+            echo "Exit code: \`${{ steps.rls.outputs.exit_code || 'no-run' }}\`"
+            if [ "${{ steps.rls.outputs.exit_code }}" = "2" ]; then
+              echo "**BLOCKED on credentials** — the job did not fail: the battery could not run because secrets are absent. Configure \`SUPABASE_URL\` and \`SUPABASE_ACCESS_TOKEN\` (optionally \`SUPABASE_ANON_KEY\`) in the repository secret store."
+            elif [ "${{ steps.rls.outputs.exit_code }}" = "0" ]; then
+              echo "PASS — tenant isolation posture holds (RLS on, zero permissive policies, no client grants, anon REST denied for every cg_* table)."
+            else
+              echo "**FINDINGS recorded** — see the run step output above; result JSON attached to the runner at /opt/cursor/artifacts/rls-battery-results.json."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload battery artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rls-battery-results
+          path: |
+            /opt/cursor/artifacts/rls-battery-results.json
+            /opt/cursor/artifacts/rls-battery-results.log
+          if-no-files-found: ignore
+
+  restore-recovery-drill:
+    name: Restore/recovery drill (V1CAP-074)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # NOTE: values resolve from GitHub Actions secrets and are never echoed.
+      # The drill uses the authorized Management API channel
+      # (SUPABASE_ACCESS_TOKEN), which needs no CA cert (see the drill header:
+      # direct-Postgres paths would derive TLS from scripts/lib/pg-ssl.mjs).
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Prepare drill artifacts directory
+        run: |
+          sudo mkdir -p /opt/cursor/artifacts
+          sudo chown "$(id -u):$(id -g)" /opt/cursor/artifacts
+
+      - name: Run restore/recovery drill
+        id: drill
+        run: |
+          # Exit-code contract (scripts/restore-recovery-drill.mjs):
+          #   0 = PASS (row-level identity + evidence integrity verified)
+          #   1 = FAIL — FAILS the build
+          #   2 = BLOCKED_NO_CREDENTIAL — job marked blocked, NOT failed
+          #
+          # The drill creates and drops ONLY its own dedicated drill table
+          # (no personal data; ADR-005 record families untouched) and proves
+          # the immutable evidence/audit stores are unchanged by the drill.
+          set +e
+          node scripts/restore-recovery-drill.mjs "$CANONICAL_PROJECT_REF"
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          case "$code" in
+            0)
+              echo "STATUS=PASS — recovery executed and verified, not assumed."
+              ;;
+            2)
+              echo "STATUS=BLOCKED_NO_CREDENTIAL — SUPABASE_ACCESS_TOKEN is not configured in the GitHub Actions secret store. No recovery claim is made either way."
+              ;;
+            *)
+              echo "STATUS=FAIL — restore/recovery drill failed (see step output and /opt/cursor/artifacts/restore-recovery-results.json)."
+              exit "$code"
+              ;;
+          esac
+
+      - name: Record drill outcome
+        if: always()
+        run: |
+          {
+            echo "### Restore/recovery drill (V1CAP-074)"
+            echo ""
+            echo "Exit code: \`${{ steps.drill.outputs.exit_code || 'no-run' }}\`"
+            if [ "${{ steps.drill.outputs.exit_code }}" = "2" ]; then
+              echo "**BLOCKED on credentials** — the job did not fail: the drill could not run because \`SUPABASE_ACCESS_TOKEN\` is absent from the repository secret store."
+            elif [ "${{ steps.drill.outputs.exit_code }}" = "0" ]; then
+              echo "PASS — backup/restore row-level identity and immutable evidence-store integrity verified against the canonical database."
+            else
+              echo "**FINDINGS recorded** — see the run step output above; result JSON attached to the runner at /opt/cursor/artifacts/restore-recovery-results.json."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload drill artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: restore-recovery-drill-results
+          path: |
+            /opt/cursor/artifacts/restore-recovery-results.json
+            /opt/cursor/artifacts/restore-recovery-transcript.log
+            /opt/cursor/artifacts/restore-drill-backup.json
+          if-no-files-found: ignore

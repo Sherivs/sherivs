@@ -1,0 +1,770 @@
+{
+  "meta": {
+    "document": "RETENTION_POLICY_SCHEDULE — machine-readable personal-data retention policy schedule",
+    "capability": "V1CAP-066 (privacy & retention lifecycle)",
+    "adr": "ADR-005_RETENTION_VS_IMMUTABLE_AUDIT.md (PROPOSED — operator-ruled mechanism; this schedule carries the numbers)",
+    "scheduleRequirement": "ADR-005 'Retention schedule requirement' paragraph — binding on the V1CAP-066 contract",
+    "schemaVersion": "1.0.0",
+    "authoredOn": "2026-10-02",
+    "authoredBy": "TEAM 4 (V1 campaign, branch cursor/p08-foundation-loop-classification-fe86)",
+    "owners": {
+      "phase03": "tenancy / data classification (policy key authority)",
+      "phase14": "retention policy (schedule owner)",
+      "phase09": "audit immutability boundary"
+    },
+    "validationGate": {
+      "script": "scripts/verify-retention-schedule.mjs",
+      "command": "node scripts/verify-retention-schedule.mjs",
+      "contractModule": "frontend/src/lib/governance/retention-policy-schedule.ts",
+      "gate": "V1-minimal gate per ADR-005: every personal-data-bearing record family in recordFamilyInventory must reference a policy ID that resolves to a matching policy entry (same recordFamily and dataClassification). A family without a resolvable policy reference is a validation FAILURE (exit 1).",
+      "exitCodes": { "0": "schedule valid, gate holds", "1": "schema or gate validation failure" },
+      "determinism": "offline and deterministic — no database, no network, no wall-clock inputs"
+    },
+    "provenance": {
+      "authority": "ADR-005 (mechanism) + Constitution §19 privacy law (J-039) + AGENTS §12/§16/§17/§19/§28",
+      "method": "Record families enumerated by inspection of database/supabase/migrations/*.sql (CREATE TABLE statements) and frontend/src/lib/ contracts; every family cites the migration files that create its tables.",
+      "durationStatus": "All retention durations and expiry triggers are PROVISIONAL DEFAULTS. ADR-005 UNKNOWNs rule that concrete durations are jurisdiction-dependent (education records, child data, staff payroll) and require operator/legal input; this schedule carries explicit defaults so the gate is enforceable now and is expected to be re-ruled by the operator without changing the mechanism.",
+      "crossTenantErasure": "ADR-005 UNKNOWN: whether a subject spanning multiple tenants is erased per-tenant or globally is unresolved (COND-003 tenant_id type ruling); every policy here is scoped per tenant class and erasure scope is recorded in the erasure event (ADR-005 reconciliation mechanism)."
+    },
+    "reconciliationModel": {
+      "mechanism": "ADR-005 Option 2 — redaction-with-tombstone is the V1 erasure mechanism. Immutable records are never mutated or deleted; erasure appends an erasure event referencing the tombstoned record IDs, the retention policy ID, the authorizing identity, and the erasure scope.",
+      "erasureEvent": "append-only audit event; itself a record of the audit family",
+      "verificationInvariant": "for every tombstoned record: the record exists, is non-readable as personal data through the redaction layer, and its erasure event is present and well-formed",
+      "neverForgotten": "decision facts (event type, tenant attribution, timestamp/ordering, actor role and relationship structure, policy reference), verification results, evidence-class metadata, and the erasure event itself",
+      "forgotten": "subject-identifying personal values inside audit/event/memory/evidence records, memory-store personal content, AI snapshot personal content, personal identifiers in knowledge-graph personal nodes"
+    }
+  },
+
+  "vocabularies": {
+    "dataClassification": {
+      "values": ["public", "internal", "restricted", "personal", "special-category"],
+      "notes": "public/internal/restricted mirror the context-assembly sensitivity vocabulary (cg_memory_record.sensitivity). 'personal' marks families carrying subject-identifying values. 'special-category' marks biometric and equivalent highly-sensitive classes (Constitution §19 minimization applies maximally). Data classification is a Prime Directive input (AGENTS Prime Directive §6)."
+    },
+    "tenantClass": {
+      "values": ["education-institution", "organization", "platform"],
+      "notes": "Every request carries tenant context (AGENTS §13). 'platform' denotes the Control Plane (AGENTS §14) — it is NOT a tenant, but platform-operated records still require a retention ruling."
+    },
+    "retentionKind": {
+      "values": ["duration", "event-triggered"],
+      "notes": "ADR-005: 'retention duration or event-triggered expiry'. event-triggered entries carry a named trigger and an optional maxRetentionDays backstop."
+    },
+    "lawfulBasis": {
+      "values": ["consent", "explicit-consent", "contract", "legal-obligation", "legitimate-interests", "public-task"],
+      "notes": "Lawful basis per record family and tenant class; special-category processing (biometrics) requires explicit-consent."
+    },
+    "erasureMechanism": {
+      "values": ["tombstone", "crypto-shred"],
+      "notes": "tombstone is the ADR-005 Option 2 default (redaction-with-tombstone; immutable records are never mutated or deleted). crypto-shred is Option 1 and is ONLY valid where the schedule designates a shred-class; no family is designated in V1 — crypto-shredding is deferred to a follow-up ADR unless the operator designates a data class (ADR-005 implementation path step 5)."
+    }
+  },
+
+  "policies": [
+    {
+      "policyId": "RP-AUDIT-EDU",
+      "recordFamily": "audit",
+      "dataClassification": "personal",
+      "tenantClass": "education-institution",
+      "retention": { "kind": "duration", "retentionDays": 2555, "clock": "recorded_at" },
+      "lawfulBasis": "legitimate-interests",
+      "erasure": {
+        "mechanism": "tombstone",
+        "scope": "subject-identifying personal values inside the audit record",
+        "redactionPlaceholder": "record erased per retention policy RP-AUDIT-EDU"
+      },
+      "downstreamAggregation": {
+        "required": false,
+        "obligation": "Decision facts (event type, tenant attribution, timestamp, actor role/relationship structure, policy reference) are retained in full — aggregation may supplement but never replace individual decision granularity (AGENTS §16 decision reconstruction; Constitution §9: aggregates are Intelligence, never Reality)."
+      }
+    },
+    {
+      "policyId": "RP-AUDIT-ORG",
+      "recordFamily": "audit",
+      "dataClassification": "personal",
+      "tenantClass": "organization",
+      "retention": { "kind": "duration", "retentionDays": 2555, "clock": "recorded_at" },
+      "lawfulBasis": "legitimate-interests",
+      "erasure": {
+        "mechanism": "tombstone",
+        "scope": "subject-identifying personal values inside the audit record",
+        "redactionPlaceholder": "record erased per retention policy RP-AUDIT-ORG"
+      },
+      "downstreamAggregation": {
+        "required": false,
+        "obligation": "Decision facts are retained in full; aggregation may supplement but never replace individual decision granularity."
+      }
+    },
+    {
+      "policyId": "RP-AUDIT-PLT",
+      "recordFamily": "audit",
+      "dataClassification": "internal",
+      "tenantClass": "platform",
+      "retention": { "kind": "duration", "retentionDays": 1825, "clock": "recorded_at" },
+      "lawfulBasis": "legitimate-interests",
+      "erasure": {
+        "mechanism": "tombstone",
+        "scope": "subject-identifying personal values inside the audit record",
+        "redactionPlaceholder": "record erased per retention policy RP-AUDIT-PLT"
+      },
+      "downstreamAggregation": {
+        "required": false,
+        "obligation": "Decision facts are retained in full; aggregation may supplement but never replace individual decision granularity."
+      }
+    },
+    {
+      "policyId": "RP-EVENT-EDU",
+      "recordFamily": "event",
+      "dataClassification": "personal",
+      "tenantClass": "education-institution",
+      "retention": { "kind": "duration", "retentionDays": 1095, "clock": "recorded_at" },
+      "lawfulBasis": "public-task",
+      "erasure": {
+        "mechanism": "tombstone",
+        "scope": "subject-identifying personal values inside the event payload",
+        "redactionPlaceholder": "record erased per retention policy RP-EVENT-EDU"
+      },
+      "downstreamAggregation": {
+        "required": true,
+        "obligation": "Before expiry, personal-level events are aggregated into statistics (attendance counts, event frequencies); aggregates are Intelligence, never Reality (Constitution §9), and never overwrite the canonical append-only event substrate."
+      }
+    },
+    {
+      "policyId": "RP-EVENT-ORG",
+      "recordFamily": "event",
+      "dataClassification": "personal",
+      "tenantClass": "organization",
+      "retention": { "kind": "duration", "retentionDays": 1095, "clock": "recorded_at" },
+      "lawfulBasis": "legitimate-interests",
+      "erasure": {
+        "mechanism": "tombstone",
+        "scope": "subject-identifying personal values inside the event payload",
+        "redactionPlaceholder": "record erased per retention policy RP-EVENT-ORG"
+      },
+      "downstreamAggregation": {
+        "required": true,
+        "obligation": "Before expiry, personal-level events are aggregated into statistics; aggregates are Intelligence, never Reality."
+      }
+    },
+    {
+      "policyId": "RP-EVENT-PLT",
+      "recordFamily": "event",
+      "dataClassification": "internal",
+      "tenantClass": "platform",
+      "retention": { "kind": "duration", "retentionDays": 730, "clock": "recorded_at" },
+      "lawfulBasis": "legitimate-interests",
+      "erasure": {
+        "mechanism": "tombstone",
+        "scope": "subject-identifying personal values inside the event payload",
+        "redactionPlaceholder": "record erased per retention policy RP-EVENT-PLT"
+      },
+      "downstreamAggregation": {
+        "required": true,
+        "obligation": "Before expiry, personal-level events are aggregated into operational statistics; aggregates are Intelligence, never Reality."
+      }
+    },
+    {
+      "policyId": "RP-MEMORY-EDU",
+      "recordFamily": "memory",
+      "dataClassification": "personal",
+      "tenantClass": "education-institution",
+      "retention": { "kind": "event-triggered", "trigger": "purpose-expiry", "maxRetentionDays": 365, "notes": "Memory records are purpose-limited (AGENTS §19: expired purpose means redaction there too); freshness_at drives staleness (J-019 posture)." },
+      "lawfulBasis": "legitimate-interests",
+      "erasure": {
+        "mechanism": "tombstone",
+        "scope": "personal content inside memory records and observations; personal identifiers in knowledge-graph personal nodes",
+        "redactionPlaceholder": "record erased per retention policy RP-MEMORY-EDU"
+      },
+      "downstreamAggregation": {
+        "required": true,
+        "obligation": "Expired memory may be distilled into non-personal patterns before erasure; distilled patterns carry provenance (AGENTS §12) and never overwrite canonical truth (Constitution §9)."
+      }
+    },
+    {
+      "policyId": "RP-MEMORY-ORG",
+      "recordFamily": "memory",
+      "dataClassification": "personal",
+      "tenantClass": "organization",
+      "retention": { "kind": "event-triggered", "trigger": "purpose-expiry", "maxRetentionDays": 365, "notes": "Purpose-limited per AGENTS §19; freshness_at drives staleness." },
+      "lawfulBasis": "legitimate-interests",
+      "erasure": {
+        "mechanism": "tombstone",
+        "scope": "personal content inside memory records and observations",
+        "redactionPlaceholder": "record erased per retention policy RP-MEMORY-ORG"
+      },
+      "downstreamAggregation": {
+        "required": true,
+        "obligation": "Expired memory may be distilled into non-personal patterns before erasure; patterns carry provenance and never overwrite canonical truth."
+      }
+    },
+    {
+      "policyId": "RP-MEMORY-PLT",
+      "recordFamily": "memory",
+      "dataClassification": "internal",
+      "tenantClass": "platform",
+      "retention": { "kind": "event-triggered", "trigger": "purpose-expiry", "maxRetentionDays": 365, "notes": "Purpose-limited per AGENTS §19; freshness_at drives staleness." },
+      "lawfulBasis": "legitimate-interests",
+      "erasure": {
+        "mechanism": "tombstone",
+        "scope": "personal content inside memory records and observations",
+        "redactionPlaceholder": "record erased per retention policy RP-MEMORY-PLT"
+      },
+      "downstreamAggregation": {
+        "required": true,
+        "obligation": "Expired memory may be distilled into non-personal patterns before erasure; patterns carry provenance and never overwrite canonical truth."
+      }
+    },
+    {
+      "policyId": "RP-EVID-EDU",
+      "recordFamily": "evidence",
+      "dataClassification": "personal",
+      "tenantClass": "education-institution",
+      "retention": { "kind": "duration", "retentionDays": 1825, "clock": "recorded_at" },
+      "lawfulBasis": "legitimate-interests",
+      "erasure": {
+        "mechanism": "tombstone",
+        "scope": "personal content embedded in evidence artifacts; evidence-class metadata (what was verified, when, by which policy) is retained",
+        "redactionPlaceholder": "record erased per retention policy RP-EVID-EDU"
+      },
+      "downstreamAggregation": {
+        "required": false,
+        "obligation": "Verification results and evidence-class metadata are retained in full (J-034 family); aggregation of evidence destroys the verification function and is prohibited."
+      }
+    },
+    {
+      "policyId": "RP-EVID-ORG",
+      "recordFamily": "evidence",
+      "dataClassification": "personal",
+      "tenantClass": "organization",
+      "retention": { "kind": "duration", "retentionDays": 1825, "clock": "recorded_at" },
+      "lawfulBasis": "legitimate-interests",
+      "erasure": {
+        "mechanism": "tombstone",
+        "scope": "personal content embedded in evidence artifacts",
+        "redactionPlaceholder": "record erased per retention policy RP-EVID-ORG"
+      },
+      "downstreamAggregation": {
+        "required": false,
+        "obligation": "Verification results and evidence-class metadata are retained in full; aggregation of evidence is prohibited."
+      }
+    },
+    {
+      "policyId": "RP-EVID-PLT",
+      "recordFamily": "evidence",
+      "dataClassification": "internal",
+      "tenantClass": "platform",
+      "retention": { "kind": "duration", "retentionDays": 1825, "clock": "recorded_at" },
+      "lawfulBasis": "legitimate-interests",
+      "erasure": {
+        "mechanism": "tombstone",
+        "scope": "personal content embedded in evidence artifacts",
+        "redactionPlaceholder": "record erased per retention policy RP-EVID-PLT"
+      },
+      "downstreamAggregation": {
+        "required": false,
+        "obligation": "Verification results and evidence-class metadata are retained in full; aggregation of evidence is prohibited."
+      }
+    },
+    {
+      "policyId": "RP-KOBJ-EDU",
+      "recordFamily": "kernel-object",
+      "dataClassification": "personal",
+      "tenantClass": "education-institution",
+      "retention": { "kind": "event-triggered", "trigger": "superseded-and-past-validity", "maxRetentionDays": 1095, "notes": "Bi-temporal validity (V1CAP-004): a record whose valid_until has passed and which has been superseded is retention-expired." },
+      "lawfulBasis": "contract",
+      "erasure": {
+        "mechanism": "tombstone",
+        "scope": "subject-identifying personal values inside the CoreObject payload",
+        "redactionPlaceholder": "record erased per retention policy RP-KOBJ-EDU"
+      },
+      "downstreamAggregation": {
+        "required": true,
+        "obligation": "Expired CoreObjects may be aggregated into statistics where a downstream surface needs them; aggregates are Intelligence, never Reality."
+      }
+    },
+    {
+      "policyId": "RP-KOBJ-ORG",
+      "recordFamily": "kernel-object",
+      "dataClassification": "personal",
+      "tenantClass": "organization",
+      "retention": { "kind": "event-triggered", "trigger": "superseded-and-past-validity", "maxRetentionDays": 1095 },
+      "lawfulBasis": "contract",
+      "erasure": {
+        "mechanism": "tombstone",
+        "scope": "subject-identifying personal values inside the CoreObject payload",
+        "redactionPlaceholder": "record erased per retention policy RP-KOBJ-ORG"
+      },
+      "downstreamAggregation": {
+        "required": true,
+        "obligation": "Expired CoreObjects may be aggregated into statistics; aggregates are Intelligence, never Reality."
+      }
+    },
+    {
+      "policyId": "RP-KOBJ-PLT",
+      "recordFamily": "kernel-object",
+      "dataClassification": "internal",
+      "tenantClass": "platform",
+      "retention": { "kind": "event-triggered", "trigger": "superseded-and-past-validity", "maxRetentionDays": 1095 },
+      "lawfulBasis": "legitimate-interests",
+      "erasure": {
+        "mechanism": "tombstone",
+        "scope": "subject-identifying personal values inside the CoreObject payload",
+        "redactionPlaceholder": "record erased per retention policy RP-KOBJ-PLT"
+      },
+      "downstreamAggregation": {
+        "required": true,
+        "obligation": "Expired CoreObjects may be aggregated into statistics; aggregates are Intelligence, never Reality."
+      }
+    },
+    {
+      "policyId": "RP-AISNAP-EDU",
+      "recordFamily": "ai-snapshot",
+      "dataClassification": "personal",
+      "tenantClass": "education-institution",
+      "retention": { "kind": "duration", "retentionDays": 180, "clock": "created_at", "notes": "AI snapshots are redacted per the AI privacy pipeline; retention aligned to V1CAP-066 (shortest window in the schedule — child and student prompt/response content)." },
+      "lawfulBasis": "explicit-consent",
+      "erasure": {
+        "mechanism": "tombstone",
+        "scope": "AI snapshot personal content (prompt_text, response_text, conversation message payloads); operational metadata (tokens, latency, model) is retained in full",
+        "redactionPlaceholder": "record erased per retention policy RP-AISNAP-EDU"
+      },
+      "downstreamAggregation": {
+        "required": true,
+        "obligation": "Only operational aggregates (token counts, latency distributions, success rates) survive expiry; personal conversation content is never aggregated into any downstream surface (AGENTS §19 minimization)."
+      }
+    },
+    {
+      "policyId": "RP-AISNAP-ORG",
+      "recordFamily": "ai-snapshot",
+      "dataClassification": "personal",
+      "tenantClass": "organization",
+      "retention": { "kind": "duration", "retentionDays": 180, "clock": "created_at" },
+      "lawfulBasis": "consent",
+      "erasure": {
+        "mechanism": "tombstone",
+        "scope": "AI snapshot personal content; operational metadata retained in full",
+        "redactionPlaceholder": "record erased per retention policy RP-AISNAP-ORG"
+      },
+      "downstreamAggregation": {
+        "required": true,
+        "obligation": "Only operational aggregates survive expiry; personal conversation content is never aggregated downstream."
+      }
+    },
+    {
+      "policyId": "RP-IDPRO-EDU",
+      "recordFamily": "identity-profile",
+      "dataClassification": "personal",
+      "tenantClass": "education-institution",
+      "retention": { "kind": "event-triggered", "trigger": "subject-relationship-end", "maxRetentionDays": 1825, "notes": "Child/education-record retention runs to the end of the institutional relationship plus the statutory window; the number is a provisional default pending operator/legal ruling (ADR-005 UNKNOWN)." },
+      "lawfulBasis": "public-task",
+      "erasure": {
+        "mechanism": "tombstone",
+        "scope": "subject-identifying profile values (names, contact details, guardian mappings, admissions content)",
+        "redactionPlaceholder": "record erased per retention policy RP-IDPRO-EDU"
+      },
+      "downstreamAggregation": {
+        "required": true,
+        "obligation": "Enrollment/headcount statistics may survive erasure as aggregates; aggregates are Intelligence, never Reality."
+      }
+    },
+    {
+      "policyId": "RP-IDPRO-ORG",
+      "recordFamily": "identity-profile",
+      "dataClassification": "personal",
+      "tenantClass": "organization",
+      "retention": { "kind": "event-triggered", "trigger": "subject-relationship-end", "maxRetentionDays": 1825 },
+      "lawfulBasis": "contract",
+      "erasure": {
+        "mechanism": "tombstone",
+        "scope": "subject-identifying profile values",
+        "redactionPlaceholder": "record erased per retention policy RP-IDPRO-ORG"
+      },
+      "downstreamAggregation": {
+        "required": true,
+        "obligation": "Membership/headcount statistics may survive erasure as aggregates."
+      }
+    },
+    {
+      "policyId": "RP-BIOMET-EDU",
+      "recordFamily": "biometric-reference",
+      "dataClassification": "special-category",
+      "tenantClass": "education-institution",
+      "retention": { "kind": "event-triggered", "trigger": "consent-withdrawal-or-enrollment-end", "maxRetentionDays": 365, "notes": "Special-category data: minimization is maximal (AGENTS §19); erasure on consent withdrawal is immediate regardless of the backstop. cryptoShredCandidate = true: whether biometric references become a designated crypto-shred class depends on COND-009 (legacy durable-tables disposition) and an explicit operator designation — until then the tombstone mechanism applies (ADR-005 implementation path step 5)." },
+      "lawfulBasis": "explicit-consent",
+      "erasure": {
+        "mechanism": "tombstone",
+        "scope": "biometric reference material (face_template_hash and any derived template); enrollment audit facts (who, when, under which policy) are retained",
+        "redactionPlaceholder": "record erased per retention policy RP-BIOMET-EDU"
+      },
+      "downstreamAggregation": {
+        "required": false,
+        "obligation": "No biometric-derived aggregates are permitted downstream; only verification outcome counts (non-biometric operational statistics) may be aggregated."
+      }
+    },
+    {
+      "policyId": "RP-WKFOR-EDU",
+      "recordFamily": "workforce-employment",
+      "dataClassification": "personal",
+      "tenantClass": "education-institution",
+      "retention": { "kind": "event-triggered", "trigger": "employment-end", "maxRetentionDays": 2555, "notes": "Employment/payroll records typically carry statutory retention obligations (tax, labor law); the 7-year backstop is a provisional default pending operator/legal ruling." },
+      "lawfulBasis": "contract",
+      "erasure": {
+        "mechanism": "tombstone",
+        "scope": "personal values in employment, payroll, leave, discipline, and clinic records where the lawful basis has expired; statutory-obligation fields are retained for the statutory period and take precedence",
+        "redactionPlaceholder": "record erased per retention policy RP-WKFOR-EDU"
+      },
+      "downstreamAggregation": {
+        "required": true,
+        "obligation": "Workforce analytics aggregate over positions and periods; aggregates are Intelligence, never Reality."
+      }
+    },
+    {
+      "policyId": "RP-WKFOR-ORG",
+      "recordFamily": "workforce-employment",
+      "dataClassification": "personal",
+      "tenantClass": "organization",
+      "retention": { "kind": "event-triggered", "trigger": "employment-end", "maxRetentionDays": 2555 },
+      "lawfulBasis": "contract",
+      "erasure": {
+        "mechanism": "tombstone",
+        "scope": "personal values in employment and position records where the lawful basis has expired",
+        "redactionPlaceholder": "record erased per retention policy RP-WKFOR-ORG"
+      },
+      "downstreamAggregation": {
+        "required": true,
+        "obligation": "Workforce analytics aggregate over positions and periods."
+      }
+    },
+    {
+      "policyId": "RP-ATTND-EDU",
+      "recordFamily": "attendance-activity",
+      "dataClassification": "personal",
+      "tenantClass": "education-institution",
+      "retention": { "kind": "duration", "retentionDays": 730, "clock": "recorded_at", "notes": "Activity/behavioral records of minors (attendance, study sessions, hostel, library, content reads) carry a short window and mandatory aggregation." },
+      "lawfulBasis": "public-task",
+      "erasure": {
+        "mechanism": "tombstone",
+        "scope": "subject-identifying values inside activity records",
+        "redactionPlaceholder": "record erased per retention policy RP-ATTND-EDU"
+      },
+      "downstreamAggregation": {
+        "required": true,
+        "obligation": "Attendance and engagement statistics MUST be the surviving downstream surface; individual activity rows are erasable once aggregated. Aggregates are Intelligence, never Reality."
+      }
+    },
+    {
+      "policyId": "RP-ATTND-ORG",
+      "recordFamily": "attendance-activity",
+      "dataClassification": "personal",
+      "tenantClass": "organization",
+      "retention": { "kind": "duration", "retentionDays": 730, "clock": "recorded_at" },
+      "lawfulBasis": "legitimate-interests",
+      "erasure": {
+        "mechanism": "tombstone",
+        "scope": "subject-identifying values inside activity records",
+        "redactionPlaceholder": "record erased per retention policy RP-ATTND-ORG"
+      },
+      "downstreamAggregation": {
+        "required": true,
+        "obligation": "Engagement statistics are the surviving downstream surface."
+      }
+    },
+    {
+      "policyId": "RP-FINAN-EDU",
+      "recordFamily": "financial",
+      "dataClassification": "personal",
+      "tenantClass": "education-institution",
+      "retention": { "kind": "duration", "retentionDays": 2555, "clock": "recorded_at", "notes": "Fee, subscription, and ledger records carry statutory accounting/tax retention; legal-obligation retention takes precedence over erasure requests for the statutory period." },
+      "lawfulBasis": "legal-obligation",
+      "erasure": {
+        "mechanism": "tombstone",
+        "scope": "subject-identifying values inside financial records after the statutory period; transaction facts (amount, tenant, timestamp, policy reference) are retained in full",
+        "redactionPlaceholder": "record erased per retention policy RP-FINAN-EDU"
+      },
+      "downstreamAggregation": {
+        "required": true,
+        "obligation": "Revenue and arrears statistics are the surviving downstream surface; payment-security facts (idempotency, signature validation records) are audit facts and never erased."
+      }
+    },
+    {
+      "policyId": "RP-FINAN-ORG",
+      "recordFamily": "financial",
+      "dataClassification": "personal",
+      "tenantClass": "organization",
+      "retention": { "kind": "duration", "retentionDays": 2555, "clock": "recorded_at" },
+      "lawfulBasis": "legal-obligation",
+      "erasure": {
+        "mechanism": "tombstone",
+        "scope": "subject-identifying values inside financial records after the statutory period",
+        "redactionPlaceholder": "record erased per retention policy RP-FINAN-ORG"
+      },
+      "downstreamAggregation": {
+        "required": true,
+        "obligation": "Revenue statistics are the surviving downstream surface; payment-security facts are audit facts and never erased."
+      }
+    },
+    {
+      "policyId": "RP-COMMS-EDU",
+      "recordFamily": "communication",
+      "dataClassification": "personal",
+      "tenantClass": "education-institution",
+      "retention": { "kind": "duration", "retentionDays": 365, "clock": "recorded_at" },
+      "lawfulBasis": "contract",
+      "erasure": {
+        "mechanism": "tombstone",
+        "scope": "message bodies, notification payloads, and preference choices tied to the subject",
+        "redactionPlaceholder": "record erased per retention policy RP-COMMS-EDU"
+      },
+      "downstreamAggregation": {
+        "required": true,
+        "obligation": "Delivery/success statistics are the surviving downstream surface; message content is never aggregated into any AI surface (AGENTS §19)."
+      }
+    },
+    {
+      "policyId": "RP-COMMS-ORG",
+      "recordFamily": "communication",
+      "dataClassification": "personal",
+      "tenantClass": "organization",
+      "retention": { "kind": "duration", "retentionDays": 365, "clock": "recorded_at" },
+      "lawfulBasis": "contract",
+      "erasure": {
+        "mechanism": "tombstone",
+        "scope": "message bodies, notification payloads, and preference choices tied to the subject",
+        "redactionPlaceholder": "record erased per retention policy RP-COMMS-ORG"
+      },
+      "downstreamAggregation": {
+        "required": true,
+        "obligation": "Delivery/success statistics are the surviving downstream surface."
+      }
+    }
+  ],
+
+  "recordFamilyInventory": [
+    {
+      "family": "audit",
+      "description": "Append-only audit and access records: memory access audits, execution history, verification results, platform audit logs, and attendance verification logs. Decision facts, tenant attribution, provenance, and the erasure events themselves are never forgotten (ADR-005 'What may NOT be forgotten').",
+      "personalDataBearing": true,
+      "immutable": true,
+      "defaultDataClassification": "personal",
+      "policyId": "RP-AUDIT-EDU",
+      "personalValues": ["identity_ref / actor identifiers", "purpose free-text", "subject references in legacy audit_logs", "attendance verification subject and device context"],
+      "tables": [
+        { "table": "cg_memory_access_log", "source": "20261002000004_coregrid_v1_memory_tier.sql" },
+        { "table": "cg_execution_history", "source": "20260929000000_coregrid_foundation_mission_001.sql" },
+        { "table": "cg_execution_record", "source": "20260929000000_coregrid_foundation_mission_001.sql" },
+        { "table": "cg_verification_result", "source": "20260929000000_coregrid_foundation_mission_001.sql" },
+        { "table": "audit_logs", "source": "20260620122048_50e590c2-5911-4c98-8931-fb46a4b509f3.sql" },
+        { "table": "super_admin_logs", "source": "20260620122048_50e590c2-5911-4c98-8931-fb46a4b509f3.sql" },
+        { "table": "attendance_verification_log", "source": "20260729054314_21b2720c-0c44-46ce-8404-e256ce7cf4ee.sql" }
+      ],
+      "tombstoneInvariant": "immutable — erasure appends an erasure event and tombstones personal values through the redaction layer; the record row is never mutated or deleted (AGENTS §28; ADR-005 Option 2)."
+    },
+    {
+      "family": "event",
+      "description": "Append-only event fabric and operational event logs. cg_event is append-only by design (V1CAP-041) and already matches the tombstone model.",
+      "personalDataBearing": true,
+      "immutable": true,
+      "defaultDataClassification": "personal",
+      "policyId": "RP-EVENT-EDU",
+      "personalValues": ["actor/subject references", "free-text event payloads containing personal content"],
+      "tables": [
+        { "table": "cg_event", "source": "20260903000000_coregrid_universal_kernel_substrate.sql" },
+        { "table": "attendance_logs", "source": "20260620122048_50e590c2-5911-4c98-8931-fb46a4b509f3.sql" },
+        { "table": "fraud_attempts", "source": "20260620122048_50e590c2-5911-4c98-8931-fb46a4b509f3.sql" }
+      ],
+      "tombstoneInvariant": "immutable — tombstoned, never deleted; event type, tenant attribution, timestamp, and policy reference survive erasure in full."
+    },
+    {
+      "family": "memory",
+      "description": "Durable practical/organizational memory tier and kernel observations. Platform-owned data, never agent-owned (G-061). Purpose-limited per AGENTS §19: expired purpose means redaction.",
+      "personalDataBearing": true,
+      "immutable": true,
+      "defaultDataClassification": "personal",
+      "policyId": "RP-MEMORY-EDU",
+      "personalValues": ["content free-text (up to 100000 chars)", "subject references in observations"],
+      "tables": [
+        { "table": "cg_memory_record", "source": "20261002000004_coregrid_v1_memory_tier.sql" },
+        { "table": "cg_observation", "source": "20260903000000_coregrid_universal_kernel_substrate.sql" }
+      ],
+      "tombstoneInvariant": "immutable with append-only supersession — erasure tombstones personal content; the record row and its envelope/provenance are never mutated or deleted."
+    },
+    {
+      "family": "evidence",
+      "description": "Foundation evidence artifacts produced by the verification pipeline. Evidence-class metadata (what was verified, when, under which policy) is never forgotten (ADR-005).",
+      "personalDataBearing": true,
+      "immutable": true,
+      "defaultDataClassification": "personal",
+      "policyId": "RP-EVID-EDU",
+      "personalValues": ["personal content embedded in evidence artifacts and payloads"],
+      "tables": [
+        { "table": "cg_foundation_evidence", "source": "20260929000000_coregrid_foundation_mission_001.sql" }
+      ],
+      "tombstoneInvariant": "immutable — erasure tombstones embedded personal content; verification results and evidence-class metadata are retained in full."
+    },
+    {
+      "family": "ai-snapshot",
+      "description": "AI interaction snapshots: conversations and prompt/response interaction logs. Redacted per the AI privacy pipeline; retention aligned to V1CAP-066 (AGENTS §19/§21).",
+      "personalDataBearing": true,
+      "immutable": false,
+      "defaultDataClassification": "personal",
+      "policyId": "RP-AISNAP-EDU",
+      "personalValues": ["prompt_text", "response_text", "conversation message payloads"],
+      "tables": [
+        { "table": "ai_conversations", "source": "20260729054314_21b2720c-0c44-46ce-8404-e256ce7cf4ee.sql" },
+        { "table": "ai_interaction_log", "source": "20260729054314_21b2720c-0c44-46ce-8404-e256ce7cf4ee.sql" }
+      ],
+      "tombstoneInvariant": "not an immutable audit family, but erasure still uses the tombstone mechanism for uniformity: personal content is redacted through the projection layer and the erasure event is appended; rows are never silently deleted."
+    },
+    {
+      "family": "identity-profile",
+      "description": "Subject master data: identities, user/student/staff profiles, guardian mappings, admissions, and membership records. The canonical Reality layer for who a subject is within a tenant.",
+      "personalDataBearing": true,
+      "immutable": false,
+      "defaultDataClassification": "personal",
+      "policyId": "RP-IDPRO-EDU",
+      "personalValues": ["names", "contact details", "guardian/parent mappings", "admissions application content", "push tokens"],
+      "tables": [
+        { "table": "cg_identity", "source": "20260904020000_coregrid_l2_identity_tenancy.sql" },
+        { "table": "cg_org_membership", "source": "20261001000000_coregrid_v1_org_model.sql" },
+        { "table": "users", "source": "20260620122048_50e590c2-5911-4c98-8931-fb46a4b509f3.sql" },
+        { "table": "students", "source": "20260620122048_50e590c2-5911-4c98-8931-fb46a4b509f3.sql" },
+        { "table": "parent_student_map", "source": "20260620122048_50e590c2-5911-4c98-8931-fb46a4b509f3.sql" },
+        { "table": "school_staff", "source": "20260705002543_e6b3e3bb-6d5e-4783-97cd-39e875bece40.sql" },
+        { "table": "admission_applications", "source": "20260626133221_e95464b7-e864-413c-a934-7428cb26da47.sql" }
+      ],
+      "tombstoneInvariant": "profile correction is via supersession/status; erasure tombstones subject-identifying values and appends the erasure event — no destructive deletion."
+    },
+    {
+      "family": "biometric-reference",
+      "description": "Biometric enrollment references (legacy scholar substrate). Special-category data; maximal minimization. cryptoShredCandidate — designation depends on COND-009 and an explicit operator ruling; tombstone applies until then.",
+      "personalDataBearing": true,
+      "immutable": false,
+      "defaultDataClassification": "special-category",
+      "policyId": "RP-BIOMET-EDU",
+      "cryptoShredCandidate": true,
+      "personalValues": ["face_template_hash and any derived biometric template"],
+      "tables": [
+        { "table": "teacher_biometrics", "source": "20260729052237_75252732-97d3-448f-b082-93517558a096.sql" }
+      ],
+      "tombstoneInvariant": "erasure tombstones the biometric reference and appends the erasure event; enrollment audit facts survive. Crypto-shred becomes the mechanism ONLY on explicit operator designation recorded in a follow-up ADR."
+    },
+    {
+      "family": "workforce-employment",
+      "description": "Employment, payroll, leave, discipline, and clinic records plus the governed workforce position substrate.",
+      "personalDataBearing": true,
+      "immutable": false,
+      "defaultDataClassification": "personal",
+      "policyId": "RP-WKFOR-EDU",
+      "personalValues": ["payroll amounts and bank references", "leave reasons", "discipline and clinic visit content", "position holder references"],
+      "tables": [
+        { "table": "cg_workforce_position", "source": "20260907000000_coregrid_workforce_kind_substrate.sql" },
+        { "table": "staff_payroll", "source": "20260725065302_ddd47f8e-25ed-4581-84e8-658d1e38ecdb.sql" },
+        { "table": "staff_leave", "source": "20260725065302_ddd47f8e-25ed-4581-84e8-658d1e38ecdb.sql" },
+        { "table": "discipline_records", "source": "20260725063636_d379b679-904b-4d2a-b9ed-11b463817fda.sql" },
+        { "table": "clinic_visits", "source": "20260725063636_d379b679-904b-4d2a-b9ed-11b463817fda.sql" }
+      ],
+      "tombstoneInvariant": "erasure tombstones personal values after the lawful basis/statutory period expires; statutory-obligation fields take precedence and are retained for the statutory period."
+    },
+    {
+      "family": "attendance-activity",
+      "description": "Individual attendance and engagement/activity records of subjects, including minors' activity traces (study sessions, hostel attendance, library borrowings, content reads).",
+      "personalDataBearing": true,
+      "immutable": false,
+      "defaultDataClassification": "personal",
+      "policyId": "RP-ATTND-EDU",
+      "personalValues": ["subject references", "activity traces tied to a minor or adult subject"],
+      "tables": [
+        { "table": "attendance", "source": "20260620122048_50e590c2-5911-4c98-8931-fb46a4b509f3.sql" },
+        { "table": "study_sessions", "source": "20260729054314_21b2720c-0c44-46ce-8404-e256ce7cf4ee.sql" },
+        { "table": "hostel_attendance", "source": "20260725063636_d379b679-904b-4d2a-b9ed-11b463817fda.sql" },
+        { "table": "library_borrowings", "source": "20260725063636_d379b679-904b-4d2a-b9ed-11b463817fda.sql" },
+        { "table": "news_reads", "source": "20260626111823_66d215f2-2628-4490-93eb-0379825258b9.sql" }
+      ],
+      "tombstoneInvariant": "erasure tombstones subject-identifying values once the retention window passes AND the mandatory downstream aggregation has produced the surviving statistics (aggregates are Intelligence, never Reality)."
+    },
+    {
+      "family": "financial",
+      "description": "Fee, subscription, and ledger records. Payment-security facts (signature validation, idempotency, replay-protection records) are audit facts and never erased (AGENTS §36).",
+      "personalDataBearing": true,
+      "immutable": false,
+      "defaultDataClassification": "personal",
+      "policyId": "RP-FINAN-EDU",
+      "personalValues": ["payer subject references", "payer contact/payment details"],
+      "tables": [
+        { "table": "fees", "source": "20260620122048_50e590c2-5911-4c98-8931-fb46a4b509f3.sql" },
+        { "table": "subscriptions", "source": "20260620122048_50e590c2-5911-4c98-8931-fb46a4b509f3.sql" },
+        { "table": "student_platform_fee_ledger", "source": "20260726085612_c410e01a-1b96-4b65-b539-0eb71556bb31.sql" }
+      ],
+      "tombstoneInvariant": "legal-obligation retention takes precedence over erasure for the statutory period; after expiry, subject-identifying values are tombstoned and transaction facts survive."
+    },
+    {
+      "family": "communication",
+      "description": "Messages, notifications, and notification preferences tied to subjects.",
+      "personalDataBearing": true,
+      "immutable": false,
+      "defaultDataClassification": "personal",
+      "policyId": "RP-COMMS-EDU",
+      "personalValues": ["message bodies", "notification payloads", "preference choices"],
+      "tables": [
+        { "table": "messages", "source": "20260620122048_50e590c2-5911-4c98-8931-fb46a4b509f3.sql" },
+        { "table": "notifications", "source": "20260620122048_50e590c2-5911-4c98-8931-fb46a4b509f3.sql" },
+        { "table": "notification_preferences", "source": "20260623054451_c6c2ad41-5c74-4c10-9920-f6ef5546d4e6.sql" }
+      ],
+      "tombstoneInvariant": "erasure tombstones message/payload content; delivery audit facts survive."
+    },
+    {
+      "family": "kernel-object",
+      "description": "Generic CoreObject envelopes (cg_entity, cg_relationship): free-form payloads that MAY carry personal values. Declared personal-data-bearing conservatively (Prime Directive: data classification is an input; unknown payload shape must fail safe).",
+      "personalDataBearing": true,
+      "immutable": true,
+      "defaultDataClassification": "personal",
+      "policyId": "RP-KOBJ-EDU",
+      "personalValues": ["subject-identifying values inside generic CoreObject payloads"],
+      "tables": [
+        { "table": "cg_entity", "source": "20260903000000_coregrid_universal_kernel_substrate.sql" },
+        { "table": "cg_relationship", "source": "20260903000000_coregrid_universal_kernel_substrate.sql" }
+      ],
+      "tombstoneInvariant": "immutable with bi-temporal supersession — erasure tombstones payload personal values; envelope, provenance, and decision facts survive."
+    },
+    {
+      "family": "governance-config",
+      "description": "Tenant, scope, role, worker-definition, mission, geofence, and platform configuration records that carry NO subject-identifying personal values by design (identities are referenced, never embedded).",
+      "personalDataBearing": false,
+      "immutable": false,
+      "defaultDataClassification": "internal",
+      "policyId": null,
+      "personalValues": [],
+      "tables": [
+        { "table": "cg_tenant", "source": "20260904020000_coregrid_l2_identity_tenancy.sql" },
+        { "table": "cg_memory_scope", "source": "20261002000004_coregrid_v1_memory_tier.sql" },
+        { "table": "cg_workspace", "source": "20260930000000_coregrid_v1_workspace_persistence.sql" },
+        { "table": "cg_workspace_member", "source": "20260930000000_coregrid_v1_workspace_persistence.sql" },
+        { "table": "cg_org_unit", "source": "20261001000000_coregrid_v1_org_model.sql" },
+        { "table": "cg_org_profile", "source": "20260907000700_coregrid_org_profile_substrate.sql" },
+        { "table": "cg_role_assignment", "source": "20260907000800_coregrid_role_assignment_substrate.sql" },
+        { "table": "cg_role_grant", "source": "20260907000800_coregrid_role_assignment_substrate.sql" },
+        { "table": "cg_worker_definition", "source": "20261002000002_coregrid_v1_worker_definitions.sql" },
+        { "table": "cg_worker_capability", "source": "20261002000002_coregrid_v1_worker_definitions.sql" },
+        { "table": "cg_worker_delegation", "source": "20261002000002_coregrid_v1_worker_definitions.sql" },
+        { "table": "cg_workforce_kind", "source": "20260907000000_coregrid_workforce_kind_substrate.sql" },
+        { "table": "cg_mission_intent", "source": "20260929000000_coregrid_foundation_mission_001.sql" },
+        { "table": "cg_conformance_assessment", "source": "20260929000000_coregrid_foundation_mission_001.sql" },
+        { "table": "cg_domain_runtime", "source": "20260903000000_coregrid_universal_kernel_substrate.sql" },
+        { "table": "platform_config", "source": "20260626111823_66d215f2-2628-4490-93eb-0379825258b9.sql" },
+        { "table": "digital_twin_config", "source": "20260626133221_e95464b7-e864-413c-a934-7428cb26da47.sql" },
+        { "table": "digital_twin_calls", "source": "20260626133221_e95464b7-e864-413c-a934-7428cb26da47.sql" },
+        { "table": "school_geofence", "source": "20260729054314_21b2720c-0c44-46ce-8404-e256ce7cf4ee.sql" },
+        { "table": "school_gallery", "source": "20260705002543_e6b3e3bb-6d5e-4783-97cd-39e875bece40.sql" }
+      ],
+      "tombstoneInvariant": "not personal-data-bearing: no erasure policy required. If any of these tables later gains a personal-data column, it MUST be re-declared into a personal-data-bearing family (the gate fails an undeclared family only when it is declared PDB without a policy — so re-declaration is the author's duty, AGENTS §12 provenance)."
+    }
+  ],
+
+  "summary": {
+    "policyCount": 28,
+    "recordFamilyCount": 13,
+    "personalDataBearingFamilies": 12,
+    "nonPersonalDataBearingFamilies": 1,
+    "erasureMechanismDistribution": { "tombstone": 28, "crypto-shred": 0 },
+    "cryptoShredCandidates": ["biometric-reference (pending COND-009 + explicit operator designation)"],
+    "gate": "every personalDataBearing family references a resolvable policyId — enforced by scripts/verify-retention-schedule.mjs (exit 1 on failure)"
+  }
+}
