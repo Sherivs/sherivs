@@ -619,9 +619,12 @@ describe("memory tier migration posture (authored-not-applied)", () => {
 
   it("authored NO embedding/vector/similarity column (G-015)", () => {
     // Prose in the header comments discusses the law; the pin is on the
-    // authored DDL: strip comment lines, then assert no column carries a
-    // vector/embedding/similarity type or name.
-    const ddl = MIGRATION.split("\n")
+    // authored DDL: strip comment lines AND dollar-quoted COMMENT prose
+    // (the Management-API transport requires dollar-quoted comment strings,
+    // which the line filters below cannot recognise), then assert no column
+    // carries a vector/embedding/similarity type or name.
+    const ddl = MIGRATION.replace(/\$comment\$[\s\S]*?\$comment\$/g, "")
+      .split("\n")
       .filter(
         (line) =>
           !line.trim().startsWith("--") &&

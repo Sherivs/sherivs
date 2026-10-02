@@ -1,7 +1,14 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, beforeEach } from "vitest";
 import { pgSslConfig } from "../../scripts/lib/pg-ssl.mjs";
 
 const CA_PEM = "-----BEGIN CERTIFICATE-----\nMIITest\n-----END CERTIFICATE-----\n";
+
+beforeEach(() => {
+  // Baseline hygiene: some environments legitimately provision COREGRID_DB_CA_CERT
+  // for live verification; each test sets the env it asserts on.
+  delete process.env.COREGRID_DB_CA_CERT;
+  delete process.env.COREGRID_DB_INSECURE_TLS;
+});
 
 afterEach(() => {
   delete process.env.COREGRID_DB_CA_CERT;

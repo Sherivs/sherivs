@@ -1,10 +1,10 @@
 {
   "artifact": "role-assignment-substrate",
   "wave": "R39",
-  "mode": "static",
-  "generatedAt": "2026-10-02T06:05:05.159Z",
+  "mode": "live",
+  "generatedAt": "2026-10-02T12:54:20.770Z",
   "migration": "database/supabase/migrations/20260907000800_coregrid_role_assignment_substrate.sql",
-  "migrationDigest": "sha256:06c134d8ca63354f8abed06bc9f3a424a2bfa27118bd0b2745fe2dd55cea7fcd",
+  "migrationDigest": "sha256:d76a8df9a7d26b953dca5fccf1a8ded78b37a0356b337b936e3047ca3a2721ff",
   "serverSurface": "frontend/src/lib/runtime/scholar/scholar-role-assignments.functions.ts",
   "tables": [
     "cg_role_assignment",
@@ -168,6 +168,141 @@
       "id": "static:history-preserved",
       "ok": true,
       "detail": "revocation timestamps instead of deleting grant history"
+    },
+    {
+      "id": "live:table:cg_role_assignment",
+      "ok": true,
+      "detail": "public.cg_role_assignment exists in the applied database"
+    },
+    {
+      "id": "live:rls:cg_role_assignment",
+      "ok": true,
+      "detail": "public.cg_role_assignment has row level security enabled"
+    },
+    {
+      "id": "live:policies:cg_role_assignment",
+      "ok": true,
+      "detail": "public.cg_role_assignment declares 0 policies (0 = deny by default)"
+    },
+    {
+      "id": "live:privilege:cg_role_assignment:anon",
+      "ok": true,
+      "detail": "anon table access = false (expected false)"
+    },
+    {
+      "id": "live:privilege:cg_role_assignment:authenticated",
+      "ok": true,
+      "detail": "authenticated table access = false (expected false)"
+    },
+    {
+      "id": "live:privilege:cg_role_assignment:service_role",
+      "ok": true,
+      "detail": "service_role table access = true (expected true)"
+    },
+    {
+      "id": "live:table:cg_role_grant",
+      "ok": true,
+      "detail": "public.cg_role_grant exists in the applied database"
+    },
+    {
+      "id": "live:rls:cg_role_grant",
+      "ok": true,
+      "detail": "public.cg_role_grant has row level security enabled"
+    },
+    {
+      "id": "live:policies:cg_role_grant",
+      "ok": true,
+      "detail": "public.cg_role_grant declares 0 policies (0 = deny by default)"
+    },
+    {
+      "id": "live:privilege:cg_role_grant:anon",
+      "ok": true,
+      "detail": "anon table access = false (expected false)"
+    },
+    {
+      "id": "live:privilege:cg_role_grant:authenticated",
+      "ok": true,
+      "detail": "authenticated table access = false (expected false)"
+    },
+    {
+      "id": "live:privilege:cg_role_grant:service_role",
+      "ok": true,
+      "detail": "service_role table access = true (expected true)"
+    },
+    {
+      "id": "live:rpc:list_role_assignments",
+      "ok": true,
+      "detail": "public.list_role_assignments is present and SECURITY DEFINER"
+    },
+    {
+      "id": "live:rpc-execute:list_role_assignments",
+      "ok": true,
+      "detail": "authenticated may execute list_role_assignments = true"
+    },
+    {
+      "id": "live:rpc:assign_role",
+      "ok": true,
+      "detail": "public.assign_role is present and SECURITY DEFINER"
+    },
+    {
+      "id": "live:rpc-execute:assign_role",
+      "ok": true,
+      "detail": "authenticated may execute assign_role = true"
+    },
+    {
+      "id": "live:rpc:end_role_assignment",
+      "ok": true,
+      "detail": "public.end_role_assignment is present and SECURITY DEFINER"
+    },
+    {
+      "id": "live:rpc-execute:end_role_assignment",
+      "ok": true,
+      "detail": "authenticated may execute end_role_assignment = true"
+    },
+    {
+      "id": "live:rpc:list_role_grants",
+      "ok": true,
+      "detail": "public.list_role_grants is present and SECURITY DEFINER"
+    },
+    {
+      "id": "live:rpc-execute:list_role_grants",
+      "ok": true,
+      "detail": "authenticated may execute list_role_grants = true"
+    },
+    {
+      "id": "live:rpc:grant_role_capability",
+      "ok": true,
+      "detail": "public.grant_role_capability is present and SECURITY DEFINER"
+    },
+    {
+      "id": "live:rpc-execute:grant_role_capability",
+      "ok": true,
+      "detail": "authenticated may execute grant_role_capability = true"
+    },
+    {
+      "id": "live:rpc:revoke_role_capability",
+      "ok": true,
+      "detail": "public.revoke_role_capability is present and SECURITY DEFINER"
+    },
+    {
+      "id": "live:rpc-execute:revoke_role_capability",
+      "ok": true,
+      "detail": "authenticated may execute revoke_role_capability = true"
+    },
+    {
+      "id": "live:rpc-complete",
+      "ok": true,
+      "detail": "6/6 substrate RPCs present"
+    },
+    {
+      "id": "live:index:cg_role_assignment_active_idx",
+      "ok": true,
+      "detail": "cg_role_assignment_active_idx backs active-row uniqueness"
+    },
+    {
+      "id": "live:index:cg_role_grant_active_idx",
+      "ok": true,
+      "detail": "cg_role_grant_active_idx backs active-row uniqueness"
     }
   ],
   "ok": true,
