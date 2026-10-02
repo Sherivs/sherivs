@@ -5,8 +5,8 @@
   "projectRef": "nwrflbpbhyiqdptmlccm",
   "transport": "supabase-management-api-database-query",
   "exclusiveAccess": "serialized — one canonical operation at a time (campaign canonical lock held by TEAM 3)",
-  "executedAt": "2026-10-02T20:44:31.516Z",
-  "completedAt": "2026-10-02T20:44:40.367Z",
+  "executedAt": "2026-10-02T21:40:13.097Z",
+  "completedAt": "2026-10-02T21:40:26.433Z",
   "declaredVsApplied": [
     {
       "file": "20261002000005_coregrid_v1_reconciliation.sql",
@@ -106,6 +106,28 @@
       "elapsedMs": null,
       "evidence": "all 9 declared objects present (pre-flight catalog probe)",
       "error": null
+    },
+    {
+      "file": "20261002000014_coregrid_v2_transport_buses_rls.sql",
+      "mission": "H2-03 — transport_buses RLS normalization to the zero-policy deny-by-default posture (drops every legacy permissive policy; revokes client-role privileges; service_role parity)",
+      "state": "APPLIED_AND_VERIFIED",
+      "checksum": "a1e3bcc3b0f1436de6c49d4ccd601cd894fdd10bdae5f25d692b02f37be83517",
+      "rollbackChecksum": "cd8ccc673c2f525ae0dfce7100f9b35e68870e7485b9f1544dbfe10721c84f14",
+      "declaredObjectCount": 1,
+      "elapsedMs": 1097,
+      "evidence": null,
+      "error": null
+    },
+    {
+      "file": "20261002000015_coregrid_v1_substrate_policies.sql",
+      "mission": "H2-04 — batch-A/B substrate policy layer: FORCE RLS + neutral-primitive tenant-scoped SELECT/INSERT policies on the four retained client-facing substrate tables",
+      "state": "APPLIED_AND_VERIFIED",
+      "checksum": "e38c8e100c3c39ad745d01d8751ae838b55f2a64c06b7fabec38e70680d298d5",
+      "rollbackChecksum": "cc7281ef52a309d203c3ede0b31bfb9318ae213dc3ec5553a942d1cfb6002926",
+      "declaredObjectCount": 8,
+      "elapsedMs": 882,
+      "evidence": null,
+      "error": null
     }
   ],
   "rlsPosture": [
@@ -119,10 +141,13 @@
     },
     {
       "table": "cg_reconciliation_input",
-      "posture": "zero-policy (deny-by-default)",
+      "posture": "policy-backed (J-005/J-006 tenant-scoped)",
       "rlsEnabled": true,
-      "rlsForced": false,
-      "policies": 0,
+      "rlsForced": true,
+      "policies": [
+        "reconciliation_input_insert_tenant_admin",
+        "reconciliation_input_select_own_tenant"
+      ],
       "ok": true
     },
     {
@@ -151,10 +176,13 @@
     },
     {
       "table": "cg_event_route_subscription",
-      "posture": "zero-policy (deny-by-default)",
+      "posture": "policy-backed (J-005/J-006 tenant-scoped)",
       "rlsEnabled": true,
-      "rlsForced": false,
-      "policies": 0,
+      "rlsForced": true,
+      "policies": [
+        "event_route_subscription_insert_tenant_admin",
+        "event_route_subscription_select_own_tenant"
+      ],
       "ok": true
     },
     {
@@ -183,10 +211,13 @@
     },
     {
       "table": "cg_evidence_record",
-      "posture": "zero-policy (deny-by-default)",
+      "posture": "policy-backed (J-005/J-006 tenant-scoped)",
       "rlsEnabled": true,
-      "rlsForced": false,
-      "policies": 0,
+      "rlsForced": true,
+      "policies": [
+        "evidence_record_insert_tenant_admin",
+        "evidence_record_select_own_tenant"
+      ],
       "ok": true
     },
     {
@@ -215,10 +246,13 @@
     },
     {
       "table": "cg_usage_attribution_bucket",
-      "posture": "zero-policy (deny-by-default)",
+      "posture": "policy-backed (J-005/J-006 tenant-scoped)",
       "rlsEnabled": true,
-      "rlsForced": false,
-      "policies": 0,
+      "rlsForced": true,
+      "policies": [
+        "usage_attribution_bucket_insert_tenant_admin",
+        "usage_attribution_bucket_select_own_tenant"
+      ],
       "ok": true
     },
     {
@@ -263,6 +297,14 @@
     },
     {
       "table": "cg_tool_runtime_invocation",
+      "posture": "zero-policy (deny-by-default)",
+      "rlsEnabled": true,
+      "rlsForced": false,
+      "policies": 0,
+      "ok": true
+    },
+    {
+      "table": "transport_buses",
       "posture": "zero-policy (deny-by-default)",
       "rlsEnabled": true,
       "rlsForced": false,
@@ -349,6 +391,16 @@
     },
     {
       "file": "20261002000013_coregrid_v1_neutral_membership_policies.sql",
+      "verified": true,
+      "missingCount": 0
+    },
+    {
+      "file": "20261002000014_coregrid_v2_transport_buses_rls.sql",
+      "verified": true,
+      "missingCount": 0
+    },
+    {
+      "file": "20261002000015_coregrid_v1_substrate_policies.sql",
       "verified": true,
       "missingCount": 0
     }

@@ -131,6 +131,12 @@
  *                      the neutral-membership exemplar set; string values may
  *                      use the placeholders $TENANT_A, $TENANT_B, $ACTOR_A_ID,
  *                      $ACTOR_B_ID, $ACTOR_C_ID, $RUN_ID
+ *       probeAuxTables optional data-declared parent rows for recipes on
+ *                      tables whose composite FK requires a privileged parent
+ *                      (e.g. cg_reconciliation_input → cg_reconciliation_verdict):
+ *                      [{table, tenantColumn, seedRows}] — seeded after the
+ *                      probe rows, deleted (and re-counted) by cleanup, cg_*
+ *                      tables only
  *       any further fields (rationale, appendOnly, absentPolicies, …) are
  *                      passed through untouched as provenance.
  *
@@ -375,6 +381,38 @@ export function validatePostureEntry(rawEntry, fileName) {
       failInvalidPosture(fileName, `entry ${tableName}: probeInsertPayload must be a column->value object`);
     }
   }
+  if (rawEntry.probeAuxTables !== undefined) {
+    if (rawEntry.posture !== "policy-backed" || !hasSeedRows) {
+      failInvalidPosture(
+        fileName,
+        `entry ${tableName}: probeAuxTables is only meaningful alongside a policy-backed §4.4 probe recipe (probeSeedRows + probeInsertPayload)`,
+      );
+    }
+    if (!Array.isArray(rawEntry.probeAuxTables) || rawEntry.probeAuxTables.length === 0) {
+      failInvalidPosture(fileName, `entry ${tableName}: probeAuxTables must be a non-empty array when present`);
+    }
+    for (const aux of rawEntry.probeAuxTables) {
+      if (aux === null || typeof aux !== "object" || Array.isArray(aux)) {
+        failInvalidPosture(fileName, `entry ${tableName}: probeAuxTables entries must be objects`);
+      }
+      if (typeof aux.table !== "string" || !SQL_IDENTIFIER_PATTERN.test(aux.table) || !aux.table.startsWith("cg_")) {
+        failInvalidPosture(fileName, `entry ${tableName}: probeAuxTables.table must be a cg_-prefixed SQL identifier`);
+      }
+      if (typeof aux.tenantColumn !== "string" || !SQL_IDENTIFIER_PATTERN.test(aux.tenantColumn)) {
+        failInvalidPosture(fileName, `entry ${tableName}: probeAuxTables.tenantColumn must be a plain SQL identifier`);
+      }
+      if (
+        !Array.isArray(aux.seedRows) ||
+        aux.seedRows.length === 0 ||
+        aux.seedRows.some((r) => r === null || typeof r !== "object" || Array.isArray(r) || Object.keys(r).length === 0)
+      ) {
+        failInvalidPosture(
+          fileName,
+          `entry ${tableName}: probeAuxTables.seedRows must be a non-empty array of non-empty column->value objects`,
+        );
+      }
+    }
+  }
 
   const normalized = {
     ...rawEntry,
@@ -574,8 +612,9 @@ const managementEndpoint = `https://api.supabase.com/v1/projects/${projectRef}/d
 
 // Resolved only on the CLI path (ensureCredentials). Importing this module —
 // as the unit suite does — must not require credentials, touch the network,
-// write artifacts, or exit.
-let token = "";
+// write artifacts, or exit. Environment first (the documented contract),
+// .env.local as the interactive fallback.
+let token = process.env.SUPABASE_ACCESS_TOKEN ?? "";
 let anonKey = "";
 let anonKeyProvenance = null;
 
@@ -938,15 +977,25 @@ async function crossTenantProbe(table, entry) {
 
   async function cleanup() {
     try {
+      const auxTables = recipeSeeded ? (table.probeAuxTables ?? []) : [];
       const recipeDelete = recipeSeeded
         ? `DELETE FROM public.${table.name} WHERE ${tenantCol} IN ('${probe.tenantA}','${probe.tenantB}');\n        `
         : "";
+      const auxDeletes = auxTables
+        .map((aux) => `DELETE FROM public.${aux.table} WHERE ${aux.tenantColumn} IN ('${probe.tenantA}','${probe.tenantB}');`)
+        .join("\n        ");
       const recipeCount = recipeSeeded
         ? `
         + (SELECT count(*) FROM public.${table.name} WHERE ${tenantCol} IN ('${probe.tenantA}','${probe.tenantB}'))`
         : "";
+      const auxCount = auxTables
+        .map(
+          (aux) => `
+        + (SELECT count(*) FROM public.${aux.table} WHERE ${aux.tenantColumn} IN ('${probe.tenantA}','${probe.tenantB}'))`,
+        )
+        .join("");
       await sql(`
-        ${recipeDelete}DELETE FROM public.cg_org_membership WHERE tenant_id IN ('${probe.tenantA}','${probe.tenantB}');
+        ${recipeDelete}${auxDeletes.length > 0 ? `${auxDeletes}\n        ` : ""}DELETE FROM public.cg_org_membership WHERE tenant_id IN ('${probe.tenantA}','${probe.tenantB}');
         DELETE FROM public.cg_role_grant WHERE tenant_ref IN ('${probe.tenantA}','${probe.tenantB}');
         DELETE FROM public.cg_role_assignment WHERE tenant_ref IN ('${probe.tenantA}','${probe.tenantB}');
         DELETE FROM public.cg_org_unit WHERE tenant_id IN ('${probe.tenantA}','${probe.tenantB}');
@@ -959,7 +1008,7 @@ async function crossTenantProbe(table, entry) {
           (SELECT count(*) FROM public.cg_role_assignment WHERE tenant_ref IN ('${probe.tenantA}','${probe.tenantB}'))
         + (SELECT count(*) FROM public.cg_role_grant WHERE tenant_ref IN ('${probe.tenantA}','${probe.tenantB}'))
         + (SELECT count(*) FROM public.cg_org_membership WHERE tenant_id IN ('${probe.tenantA}','${probe.tenantB}'))
-        + (SELECT count(*) FROM public.cg_org_unit WHERE tenant_id IN ('${probe.tenantA}','${probe.tenantB}'))${recipeCount} AS remaining;
+        + (SELECT count(*) FROM public.cg_org_unit WHERE tenant_id IN ('${probe.tenantA}','${probe.tenantB}'))${recipeCount}${auxCount} AS remaining;
       `);
       probe.cleanupVerified = Number(leftover[0]?.remaining ?? -1) === 0;
       probe.cleaned = probe.cleanupVerified;
@@ -1016,6 +1065,11 @@ async function crossTenantProbe(table, entry) {
         ('battery-mem-b-${suffix}', '${probe.tenantB}', 'battery-unit-b-${suffix}', '${users.b.id}', 'role:actor', 'active', 'battery-seed');
     `);
     if (recipeSeeded) {
+      for (const aux of table.probeAuxTables ?? []) {
+        const auxRows = aux.seedRows.map((row) => substituteProbeValue(row, probeContext()));
+        await sql(buildProbeSeedSql(aux.table, auxRows));
+        report(`probe aux seed: ${auxRows.length} parent row(s) inserted into ${aux.table} via the privileged channel (composite-FK parent of the §4.4 probe; values non-secret by construction)`);
+      }
       const seedRows = table.probeSeedRows.map((row) => substituteProbeValue(row, probeContext()));
       await sql(buildProbeSeedSql(table.name, seedRows));
       report(`probe seed: ${table.probeSeedRows.length} Tenant-A row(s) inserted into ${table.name} via the privileged channel (data-declared probe recipe; values non-secret by construction)`);

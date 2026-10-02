@@ -38,6 +38,8 @@ const EXPECTED_MIGRATIONS = [
   "20261002000011_coregrid_v1_knowledge_currency.sql",
   "20261002000012_coregrid_v1_tool_runtime.sql",
   "20261002000013_coregrid_v1_neutral_membership_policies.sql",
+  "20261002000014_coregrid_v2_transport_buses_rls.sql",
+  "20261002000015_coregrid_v1_substrate_policies.sql",
 ];
 
 interface ManifestMigration {
@@ -54,6 +56,7 @@ interface ManifestMigration {
     functions: string[];
     triggers: string[];
     policies?: string[];
+    zeroPolicyTables?: string[];
   };
 }
 interface Manifest {
@@ -123,11 +126,13 @@ describe("MH-06 — canonical apply path is rehearsal-ready and CI-portable", ()
     expect(manifest.mode).toBe("manifest");
   });
 
-  it("manifest prints the declared migrations in dependency order (20261002000005–13 present today)", () => {
+  it("manifest prints the declared migrations in dependency order (20261002000005–15 present today)", () => {
     expect(manifest.migrations.map((m) => m.file)).toEqual(EXPECTED_MIGRATIONS);
     manifest.migrations.forEach((m, i) => expect(m.order).toBe(i + 1));
     expect(manifestRun.stdout).toContain("20261002000005_coregrid_v1_reconciliation.sql");
     expect(manifestRun.stdout).toContain("20261002000013_coregrid_v1_neutral_membership_policies.sql");
+    expect(manifestRun.stdout).toContain("20261002000014_coregrid_v2_transport_buses_rls.sql");
+    expect(manifestRun.stdout).toContain("20261002000015_coregrid_v1_substrate_policies.sql");
     expect(manifest.migrations.every((m) => m.filePresent)).toBe(true);
   });
 
@@ -153,7 +158,8 @@ describe("MH-06 — canonical apply path is rehearsal-ready and CI-portable", ()
         declared.indexes.length +
         declared.functions.length +
         declared.triggers.length +
-        (declared.policies?.length ?? 0);
+        (declared.policies?.length ?? 0) +
+        (declared.zeroPolicyTables?.length ?? 0);
       expect(m.declaredObjectCount).toBe(counted);
       expect(m.declaredObjectCount).toBeGreaterThan(0);
       for (const t of declared.tables) {
@@ -161,6 +167,9 @@ describe("MH-06 — canonical apply path is rehearsal-ready and CI-portable", ()
       }
       for (const idx of declared.indexes) {
         expect(manifestRun.stdout).toContain(`  index:${idx}`);
+      }
+      for (const zt of declared.zeroPolicyTables ?? []) {
+        expect(manifestRun.stdout).toContain(`  zero-policy:${zt}`);
       }
     }
     expect(manifest.totalDeclaredObjects).toBe(
@@ -174,6 +183,22 @@ describe("MH-06 — canonical apply path is rehearsal-ready and CI-portable", ()
     expect(stage2?.declared.policies).toHaveLength(9);
     expect(stage2?.declared.policies).toContain("cg_role_assignment.role_assignment_select_own_tenant");
     expect(stage2?.declared.policies).toContain("cg_org_membership.org_membership_update_tenant_admin");
+  });
+
+  it("declares the H2-03 transport normalization by its zero-policy signature (absence, not presence)", () => {
+    const transport = manifest.migrations.find((m) => m.file.startsWith("20261002000014"));
+    expect(transport).toBeDefined();
+    expect(transport?.declared.tables).toHaveLength(0);
+    expect(transport?.declared.zeroPolicyTables).toEqual(["transport_buses"]);
+    expect(manifestRun.stdout).toContain("  zero-policy:transport_buses");
+  });
+
+  it("declares the H2-04 substrate policy layer as exactly eight neutral-primitive policies", () => {
+    const substrate = manifest.migrations.find((m) => m.file.startsWith("20261002000015"));
+    expect(substrate).toBeDefined();
+    expect(substrate?.declared.policies).toHaveLength(8);
+    expect(substrate?.declared.policies).toContain("cg_reconciliation_input.reconciliation_input_select_own_tenant");
+    expect(substrate?.declared.policies).toContain("cg_usage_attribution_bucket.usage_attribution_bucket_insert_tenant_admin");
   });
 
   it("writes the manifest artifact into COREGRID_ARTIFACTS_DIR (CI-portable redirection)", () => {

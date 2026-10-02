@@ -373,3 +373,90 @@ GENUINE cross-tenant probes on the three policy-backed tables (36/36 PASS, 0 fin
 policy-backed tenant-scoped visibility) are supported by the battery and reported per
 table. M-R-101 (backup/restore verified recovery) remains serialized next per the mission
 graph.
+
+## 9. H2-wave extension — declarative posture registry to 37 tables + the substrate policy layer applied (canonical, 2026-10-02)
+
+Mission wave H2 (30 parallel engineering missions) extended this battery from the 36-table
+J-005/J-006 posture to **37 tables in the dual-posture model**, applied the two pending
+migrations to canonical through the checksummed apply path, and proved the whole scope live.
+
+### Scope change (data, not code)
+
+- `scripts/verification/rls-table-postures-substrate.json` — the H2-04 declarative posture
+  file for the eight batch-A/B substrate families (20261002000005..20261002000012): four
+  tables POLICY-BACKED (tenant-scoped, see below), twelve zero-policy unchanged, four
+  append-only audit ledgers explicitly documented zero-policy (no client write path, ever).
+- `scripts/verification/rls-table-postures-transport.json` — `transport_buses` declared
+  ZERO-POLICY (H2-03 normalization).
+- Battery machinery gained only two data-declared capabilities, both fail-closed:
+  the §4.4 cross-tenant probe recipe (`probeSeedRows` + `probeInsertPayload`) for
+  policy-backed tables outside the neutral-membership exemplar set, and
+  `probeAuxTables` (privileged composite-FK parent rows, cg_* only, cleanup-verified).
+  An undeclared probe stage on a policy-backed table is a FINDING, never a silent pass —
+  the battery refuses to claim an unprovable isolation proof (observed live on the first
+  post-apply run before the recipes were authored).
+
+### Canonical apply (checksummed, serialized, exclusive-access)
+
+Migrations `20261002000014_coregrid_v2_transport_buses_rls.sql` (normalization:
+transport_buses → zero-policy strongest form; drops every legacy permissive policy;
+revokes anon/authenticated/PUBLIC; service_role parity) and
+`20261002000015_coregrid_v1_substrate_policies.sql` (FORCE RLS + eight neutral-primitive
+tenant-scoped policies on the four retained client-facing substrate tables; authenticated
+granted exactly SELECT+INSERT — append-only substrates) were applied to canonical via
+`scripts/apply-canonical-hardening.mjs` (Management-API transport, sha256 per migration,
+ALREADY_APPLIED/MIXED detection, post-apply catalog re-verification) — record:
+`architecture/proofs/CANONICAL_APPLY_RECORD_HARDENING.json` (11 migrations declared,
+14+15 APPLIED_AND_VERIFIED, `--verify-only` re-run idempotent PASS).
+
+### Live evidence excerpts (verbatim from `/opt/cursor/artifacts/rls-battery-results.log`)
+
+`cg_reconciliation_input` (policy-backed — first data-declared §4.4 recipe, composite-FK
+parent via probeAuxTables; identical shape for `cg_usage_attribution_bucket`):
+
+```
+probe aux seed: 1 parent row(s) inserted into cg_reconciliation_verdict via the privileged channel (composite-FK parent of the §4.4 probe; values non-secret by construction)
+probe seed: 1 Tenant-A row(s) inserted into cg_reconciliation_input via the privileged channel (data-declared probe recipe; values non-secret by construction)
+VERDICT cg_reconciliation_input: PASS
+```
+
+`cg_event_route_subscription` and `cg_evidence_record` (policy-backed, actor
+self-derivation pinned by the INSERT policies): `VERDICT …: PASS`.
+
+`transport_buses` (zero-policy strongest form, H2-03 normalization proven live):
+
+```
+PASS relrowsecurity=true relforcerowsecurity=false policies=0
+PASS no table grants to anon / authenticated / PUBLIC
+PASS anon REST probe status=401 denialForm=permission-denied-42501
+VERDICT transport_buses: PASS
+```
+
+Final verdict line (verbatim):
+
+```
+STATUS=PASS — 37/37 tables prove their declared posture: zero-policy tables prove deny-by-default (RLS on, zero permissive policies, no client grants, anon REST denied, strongest-form isolation); policy-backed tables (J-005/J-006 neutral tenant-membership policies, FORCED RLS) prove genuine cross-tenant isolation (Tenant B invisible, Tenant A own rows visible, expired binding denied, cross-tenant INSERT denied, forged grantor rejected, probes cleaned). Proven against the live database, not reasoned.
+```
+
+FINDINGS: **0** (30 zero-policy / 7 policy-backed). Every one of the seven policy-backed
+cross-tenant probes reports `cleaned=true` — probe rows, aux parent rows and the three
+probe principals removed and re-count-verified. Posture inventory: the battery scope
+enumeration is now data-declared end to end (`--dry-parse-scope` → tables=37
+zero-policy=30 policy-backed=7).
+
+### Posture matrix (canonical, post-H2-wave)
+
+| Tables | Posture | Proof |
+|---|---|---|
+| 30 (incl. `transport_buses`, the four append-only audit ledgers, and the twelve out-of-scope batch-A/B tables) | zero-policy deny-by-default | RLS on, zero policies, no client grants, anon REST denied — the strongest form |
+| 3 neutral-membership exemplars (`cg_role_assignment`, `cg_role_grant`, `cg_org_membership`) | policy-backed, FORCE RLS | built-in §4.4 probes |
+| 4 substrate tables (`cg_reconciliation_input`, `cg_event_route_subscription`, `cg_evidence_record`, `cg_usage_attribution_bucket`) | policy-backed, FORCE RLS | data-declared §4.4 recipes |
+
+## 10. Verdict (post H2-wave)
+
+J-041 / V1CAP-073 is database-proven on the dev project, on canonical post-M-R-100, after
+the J-005/J-006 neutral membership policies, and now after the H2-wave substrate policy
+layer: **37/37 PASS, 0 findings, live**. The dual-posture model extends by authoring a
+posture-file entry (data) — the next policy migration extends the battery without touching
+battery code. Remaining serialized next per the mission graph: M-R-101 (backup/restore
+verified recovery).

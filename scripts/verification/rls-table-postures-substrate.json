@@ -3,7 +3,7 @@
   "captured": "2026-10-02",
   "mission": "H2-04 — first policy layer for the eight batch-A/B substrate families",
   "role": "RLS Policy Author (authorization specialist)",
-  "status": "AUTHORED, NOT APPLIED — no canonical access, no battery runs",
+  "status": "APPLIED to canonical 2026-10-02 (checksummed apply via scripts/apply-canonical-hardening.mjs, migration 20261002000015); battery-proven live",
   "migration": "database/supabase/migrations/20261002000015_coregrid_v1_substrate_policies.sql",
   "rollback": "database/supabase/rollbacks/20261002000015_coregrid_v1_substrate_policies.sql",
   "consumer": "RLS isolation battery steward (scripts/verify-rls-isolation-battery.mjs TABLES registry) — extend the policy-backed cross-tenant probe stage with these tables",
@@ -76,7 +76,62 @@
       "absentPolicies": {
         "UPDATE": "no policy and no privilege — append-only resolution law (Constitution §28)",
         "DELETE": "no policy and no privilege — history preserved"
-      }
+      },
+      "probeSeedRows": [
+        {
+          "verdict_row_id": "$RUN_ID-verdict",
+          "tenant_id": "$TENANT_A",
+          "observation_id": "$RUN_ID-obs-1",
+          "subject_entity_id": "$RUN_ID-subject",
+          "attribute": "battery-probe-attribute",
+          "kind": "observed",
+          "evidence_class": "direct_observation",
+          "reliability": "authoritative",
+          "recorded_at": "2026-10-02T00:00:00Z"
+        }
+      ],
+      "probeInsertPayload": {
+        "verdict_row_id": "$RUN_ID-verdict-x",
+        "tenant_id": "$TENANT_B",
+        "observation_id": "$RUN_ID-obs-x",
+        "subject_entity_id": "$RUN_ID-subject",
+        "attribute": "battery-probe-attribute",
+        "kind": "observed",
+        "evidence_class": "direct_observation",
+        "reliability": "authoritative",
+        "recorded_at": "2026-10-02T00:00:00Z"
+      },
+      "probeAuxTables": [
+        {
+          "table": "cg_reconciliation_verdict",
+          "tenantColumn": "tenant_id",
+          "seedRows": [
+            {
+              "id": "$RUN_ID-verdict",
+              "tenant_id": "$TENANT_A",
+              "verdict_id": "$RUN_ID-verdict-id",
+              "subject_entity_id": "$RUN_ID-subject",
+              "attribute": "battery-probe-attribute",
+              "outcome": "RESOLVED",
+              "value": { "known": true, "value": "battery-probe-value" },
+              "residual_uncertainty": {},
+              "verdict_provenance": { "method": "battery-probe" },
+              "recorded_at": "2026-10-02T00:00:00Z",
+              "created_by": "battery-seed",
+              "object_type": "core.reconciliation.verdict",
+              "schema_version": "1.0",
+              "status": "active",
+              "updated_by": "battery-seed",
+              "provenance": {},
+              "policy_context": {},
+              "trace_id": "$RUN_ID-trace",
+              "correlation_id": "$RUN_ID-corr",
+              "declared_origin": "battery-probe"
+            }
+          ]
+        }
+      ],
+      "probeRationale": "§4.4 data-declared recipe: the composite FK (verdict_row_id, tenant_id) requires a same-tenant privileged parent verdict row (probeAuxTables); the cross-tenant INSERT payload is fully constraint-valid so the denial is the is_tenant_admin WITH CHECK predicate, never a FK or CHECK error"
     },
     {
       "name": "cg_reconciliation_verdict",
@@ -135,7 +190,28 @@
       "absentPolicies": {
         "UPDATE": "no policy and no privilege — declaration immutability while it exists; a scope change is a retire plus a NEW subscription identity; suspension state transitions run server-side through the gated path",
         "DELETE": "no policy and no privilege — unsubscribe is a state transition, never an erasure"
-      }
+      },
+      "probeSeedRows": [
+        {
+          "id": "$RUN_ID-sub",
+          "tenant_id": "$TENANT_A",
+          "subscriber_id": "$ACTOR_A_ID",
+          "max_sensitivity": "public",
+          "ordering": "tenant-total-order",
+          "dedup": "collapse-duplicates",
+          "max_undelivered": 10
+        }
+      ],
+      "probeInsertPayload": {
+        "id": "$RUN_ID-sub-x",
+        "tenant_id": "$TENANT_B",
+        "subscriber_id": "$ACTOR_A_ID",
+        "max_sensitivity": "public",
+        "ordering": "tenant-total-order",
+        "dedup": "collapse-duplicates",
+        "max_undelivered": 10
+      },
+      "probeRationale": "§4.4 data-declared recipe, no aux parent needed (no FK): the cross-tenant INSERT payload pins subscriber_id to the acting identity so the denial is the composite is_tenant_admin(TENANT_B)=false AND subscriber_id=auth.uid() WITH CHECK predicate, never a constraint error"
     },
     {
       "name": "cg_event_route_queue",
@@ -186,7 +262,54 @@
       "absentPolicies": {
         "UPDATE": "no policy and no privilege — append-only lifecycle law: promotion/supersession/revocation are NEW records, the original is retained verbatim (E-018)",
         "DELETE": "no policy and no privilege — revoked and superseded evidence is retained verbatim"
-      }
+      },
+      "probeSeedRows": [
+        {
+          "id": "$RUN_ID-ev",
+          "tenant_id": "$TENANT_A",
+          "evidence_type": "battery-probe",
+          "evidence_class": "direct_observation",
+          "claim": { "claim": "battery-probe" },
+          "recorded_at": "2026-10-02T00:00:00Z",
+          "captured_by": "$ACTOR_A_ID",
+          "captured_at": "2026-10-02T00:00:00Z",
+          "canonical_truth_eligible": true,
+          "retention_policy_id": "battery-retention-probe",
+          "object_type": "core.evidence",
+          "schema_version": "1.0",
+          "status": "active",
+          "created_by": "$ACTOR_A_ID",
+          "updated_by": "$ACTOR_A_ID",
+          "provenance": {},
+          "policy_context": {},
+          "trace_id": "$RUN_ID-trace",
+          "correlation_id": "$RUN_ID-corr",
+          "declared_origin": "battery-probe"
+        }
+      ],
+      "probeInsertPayload": {
+        "id": "$RUN_ID-ev-x",
+        "tenant_id": "$TENANT_B",
+        "evidence_type": "battery-probe",
+        "evidence_class": "direct_observation",
+        "claim": { "claim": "battery-probe" },
+        "recorded_at": "2026-10-02T00:00:00Z",
+        "captured_by": "$ACTOR_A_ID",
+        "captured_at": "2026-10-02T00:00:00Z",
+        "canonical_truth_eligible": true,
+        "retention_policy_id": "battery-retention-probe",
+        "object_type": "core.evidence",
+        "schema_version": "1.0",
+        "status": "active",
+        "created_by": "$ACTOR_A_ID",
+        "updated_by": "$ACTOR_A_ID",
+        "provenance": {},
+        "policy_context": {},
+        "trace_id": "$RUN_ID-trace",
+        "correlation_id": "$RUN_ID-corr",
+        "declared_origin": "battery-probe"
+      },
+      "probeRationale": "§4.4 data-declared recipe, no aux parent needed (self-referential FKs are nullable): the envelope is fully stamped (J-001/J-034 atomicity), canonical_truth_eligible satisfies the derived-flag CHECK, and the cross-tenant INSERT payload pins captured_by/created_by to the acting identity so the denial is the is_tenant_admin(TENANT_B)=false WITH CHECK predicate, never a constraint error"
     },
     {
       "name": "cg_evidence_lifecycle_act",
@@ -237,7 +360,61 @@
       "absentPolicies": {
         "UPDATE": "no policy and no privilege — the partition is immutable once persisted; defect reconciliation is a NEW roll-up",
         "DELETE": "no policy and no privilege — the audit partition is never erased"
-      }
+      },
+      "probeSeedRows": [
+        {
+          "rollup_row_id": "$RUN_ID-rollup",
+          "tenant_id": "$TENANT_A",
+          "dimension": "tenant",
+          "bucket_key": "$RUN_ID-key",
+          "totals": {
+            "requests": 1,
+            "tokensIn": 1,
+            "tokensOut": 1,
+            "durationMs": 1,
+            "estimatedCostUsd": 0,
+            "unpricedRequests": 0
+          }
+        }
+      ],
+      "probeInsertPayload": {
+        "rollup_row_id": "$RUN_ID-rollup-x",
+        "tenant_id": "$TENANT_B",
+        "dimension": "tenant",
+        "bucket_key": "$RUN_ID-key-x",
+        "totals": {
+          "requests": 1,
+          "tokensIn": 1,
+          "tokensOut": 1,
+          "durationMs": 1,
+          "estimatedCostUsd": 0,
+          "unpricedRequests": 0
+        }
+      },
+      "probeAuxTables": [
+        {
+          "table": "cg_usage_attribution_rollup",
+          "tenantColumn": "tenant_id",
+          "seedRows": [
+            {
+              "id": "$RUN_ID-rollup",
+              "tenant_id": "$TENANT_A",
+              "grand_total": {
+                "requests": 1,
+                "tokensIn": 1,
+                "tokensOut": 1,
+                "durationMs": 1,
+                "estimatedCostUsd": 0,
+                "unpricedRequests": 0
+              },
+              "integrity_ok": true,
+              "integrity_conserves": true,
+              "recorded_at": "2026-10-02T00:00:00Z"
+            }
+          ]
+        }
+      ],
+      "probeRationale": "§4.4 data-declared recipe: the composite FK (rollup_row_id, tenant_id) requires a same-tenant privileged parent roll-up row (probeAuxTables); the cross-tenant INSERT payload is fully constraint-valid so the denial is the is_tenant_admin WITH CHECK predicate, never a FK or CHECK error"
     },
     {
       "name": "cg_knowledge_source",

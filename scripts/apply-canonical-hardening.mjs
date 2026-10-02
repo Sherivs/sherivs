@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * CoreGrid — TEAM 3 hardening apply: MISSION-R-100 continuation (V1CAP-072).
- * Applies the Team-1 hardening migrations (20261002000005..20261002000013) to
+ * Applies the hardening migrations (20261002000005..20261002000015) to
  * the canonical environment and records declared-vs-applied state truth.
  *
  * Modes (H2-06 — rehearsal-ready, CI-portable canonical apply path):
@@ -275,6 +275,55 @@ const MIGRATIONS = [
       ],
     },
   },
+  {
+    file: "20261002000014_coregrid_v2_transport_buses_rls.sql",
+    mission:
+      "H2-03 — transport_buses RLS normalization to the zero-policy deny-by-default posture (drops every legacy permissive policy; revokes client-role privileges; service_role parity)",
+    declared: {
+      columns: [],
+      indexes: [],
+      tables: [],
+      functions: [],
+      triggers: [],
+      // The applied-state signature of a pure NORMALIZATION migration is the
+      // absence it produces, not an object it creates: this migration is
+      // ALREADY_APPLIED iff transport_buses holds ZERO policies. Presence of
+      // the table itself is legacy (20260626150625) and proves nothing about
+      // this migration, so it is deliberately not a declared object here.
+      zeroPolicyTables: ["transport_buses"],
+    },
+  },
+  {
+    file: "20261002000015_coregrid_v1_substrate_policies.sql",
+    mission:
+      "H2-04 — batch-A/B substrate policy layer: FORCE RLS + neutral-primitive tenant-scoped SELECT/INSERT policies on the four retained client-facing substrate tables",
+    declared: {
+      columns: [],
+      indexes: [],
+      tables: [],
+      functions: [],
+      triggers: [],
+      policies: [
+        "cg_reconciliation_input.reconciliation_input_select_own_tenant",
+        "cg_reconciliation_input.reconciliation_input_insert_tenant_admin",
+        "cg_event_route_subscription.event_route_subscription_select_own_tenant",
+        "cg_event_route_subscription.event_route_subscription_insert_tenant_admin",
+        "cg_evidence_record.evidence_record_select_own_tenant",
+        "cg_evidence_record.evidence_record_insert_tenant_admin",
+        "cg_usage_attribution_bucket.usage_attribution_bucket_select_own_tenant",
+        "cg_usage_attribution_bucket.usage_attribution_bucket_insert_tenant_admin",
+      ],
+      // FORCE RLS is not a catalog "object" presence can probe; it is
+      // verified by the post-apply posture check below (rls_forced must be
+      // true for every policy-backed table).
+      forcedRlsTables: [
+        "cg_reconciliation_input",
+        "cg_event_route_subscription",
+        "cg_evidence_record",
+        "cg_usage_attribution_bucket",
+      ],
+    },
+  },
 ];
 
 const report = (line, log) => {
@@ -287,7 +336,8 @@ const declaredObjectCount = (declared) =>
   declared.indexes.length +
   declared.functions.length +
   declared.triggers.length +
-  (declared.policies?.length ?? 0);
+  (declared.policies?.length ?? 0) +
+  (declared.zeroPolicyTables?.length ?? 0);
 
 /**
  * Read-only plan construction: binds every declared migration to its on-disk
@@ -348,6 +398,7 @@ function printPlan(plan, reportLine) {
       for (const f of m.declared.functions) reportLine(`  function:${f}`);
       for (const tg of m.declared.triggers) reportLine(`  trigger:${tg}`);
       for (const p of m.declared.policies ?? []) reportLine(`  policy:${p}`);
+      for (const z of m.declared.zeroPolicyTables ?? []) reportLine(`  zero-policy:${z}`);
     }
   }
 }
@@ -414,6 +465,10 @@ function presenceFor(migration, catalog) {
   }
   for (const pol of migration.declared.policies ?? []) {
     (catalog.policies.has(pol) ? present : missing).push(`policy:${pol}`);
+  }
+  for (const zt of migration.declared.zeroPolicyTables ?? []) {
+    const hasPolicy = [...catalog.policies].some((p) => p.startsWith(`${zt}.`));
+    (hasPolicy ? missing : present).push(`zero-policy:${zt}`);
   }
   return { present, missing };
 }
@@ -627,18 +682,33 @@ if (catalog2) {
 
 // ── Stage-1 security verification: deny-by-default posture on every new table ──
 const declaredTables = MIGRATIONS.flatMap((m) => m.declared.tables);
-// Stage-2 policy-backed tables: RLS on, FORCE on, exactly the declared
-// neutral-primitive policies (zero-policy posture no longer applies to them).
+// Tables whose declared applied-state signature is a ZERO-policy posture
+// (normalization migrations): probed as zero-policy regardless of declared.tables.
+const zeroPolicyWatchTables = MIGRATIONS.flatMap((m) => m.declared.zeroPolicyTables ?? []);
+// Policy-backed tables: RLS FORCED on, carrying exactly the declared
+// neutral-primitive policies (no more, no less) authored across the policy
+// migrations (20261002000013 exemplar + 20261002000015 substrate layer).
 const policyBackedTables = [
-  { table: "cg_role_assignment", tenantColumn: "tenant_ref" },
-  { table: "cg_role_grant", tenantColumn: "tenant_ref" },
-  { table: "cg_org_membership", tenantColumn: "tenant_id" },
-];
+  "cg_role_assignment",
+  "cg_role_grant",
+  "cg_org_membership",
+  "cg_reconciliation_input",
+  "cg_event_route_subscription",
+  "cg_evidence_record",
+  "cg_usage_attribution_bucket",
+].map((table) => ({
+  table,
+  expectedPolicies: MIGRATIONS.flatMap((m) => m.declared.policies ?? [])
+    .filter((p) => p.startsWith(`${table}.`))
+    .map((p) => p.split(".")[1]),
+}));
 let rlsPosture = null;
 const sqlArrayLiteral = (values) =>
   `ARRAY[${values.map((v) => `'${v.replaceAll("'", "''")}'`).join(",")}]::text[]`;
 try {
-  const probedTables = [...declaredTables, ...policyBackedTables.map((t) => t.table)];
+  const probedTables = [
+    ...new Set([...declaredTables, ...zeroPolicyWatchTables, ...policyBackedTables.map((t) => t.table)]),
+  ];
   const rlsRows = await query(
     `SELECT c.relname AS table_name, c.relrowsecurity AS rls_enabled, c.relforcerowsecurity AS rls_forced
        FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -653,14 +723,12 @@ try {
   rlsPosture = probedTables.map((t) => {
     const rls = rlsRows.find((r) => r.table_name === t);
     const policies = polRows.filter((p) => p.tablename === t).map((p) => p.policyname);
-    const policyBacked = policyBackedTables.some((pb) => pb.table === t);
+    const policyBacked = policyBackedTables.find((pb) => pb.table === t);
     const ok = policyBacked
       ? rls?.rls_enabled === true &&
         rls?.rls_forced === true &&
-        MIGRATIONS.find((m) => m.file.startsWith("20261002000013")).declared.policies
-          .filter((p) => p.startsWith(`${t}.`))
-          .every((p) => policies.includes(p.split(".")[1])) &&
-        policies.length === 3
+        policyBacked.expectedPolicies.every((p) => policies.includes(p)) &&
+        policies.length === policyBacked.expectedPolicies.length
       : rls?.rls_enabled === true && policies.length === 0;
     if (!ok) findings += 1;
     report(
@@ -717,4 +785,4 @@ if (findings > 0) {
   console.error(`STATUS=FINDINGS (${findings}) — see record. Nothing is claimed applied without catalog verification.`);
   process.exit(1);
 }
-console.log("STATUS=PASS — migrations applied (or already applied) and catalog-verified: zero-policy deny-by-default holds on the Stage-1 substrate tables; the Stage-2 policy tables carry RLS FORCED with exactly the nine declared neutral-primitive policies.");
+console.log("STATUS=PASS — migrations applied (or already applied) and catalog-verified: zero-policy deny-by-default holds on the Stage-1 substrate tables and the normalized transport fleet table; the policy-backed tables carry RLS FORCED with exactly the declared neutral-primitive policies.");
