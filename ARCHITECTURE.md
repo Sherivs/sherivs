@@ -2971,3 +2971,93 @@ These mapped Phase 52 extracts are received here as provenance. They do not auth
 - `CG-P52-GAP-025`: Heading-only 55-phase binding. Registered phase capacity remains 51. Phase 52 is not registered.
 - `CG-P52-GAP-026`: Duplicate heading-only binding. It adds no phase authority.
 - `CG-P52-GAP-027`: Duplicate heading-only binding. It adds no phase authority.
+
+## Substrate hardening record (2026-10-02)
+
+Status: RECORDED FROM VERIFIED EVIDENCE. This is a documentation-surface
+reconciliation of shipped substrate work against the architecture above; it
+registers no new phase, capability, or authority.
+
+Sources: `architecture/proofs/CANONICAL_APPLY_RECORD_HARDENING.json`;
+`architecture/coregrid-mvp-architecture/ratification/RLS_ISOLATION_BATTERY.md`;
+`architecture/coregrid-mvp-architecture/RETENTION_POLICY_SCHEDULE.md`;
+`architecture/proofs/role-assignment-substrate.proof.json`.
+
+### 1. Engineering substrate persistence families (§22.2 Adapter Principle, concretized)
+
+Eight wave-3 substrate families gained database persistence, each as a store
+adapter composed from outside through the AdapterFailurePolicy surface
+(bounded timeouts, circuit breaker, degraded mode, trust ledger; injected
+service-role client as the sole vendor boundary):
+
+kernel reconciliation, event security, event routing, evidence lifecycle,
+reasoning provenance, cost attribution, knowledge currency, tool runtime.
+
+- Adapters: `frontend/src/lib/adapters/` (8 store adapters + `failure-policy.ts`).
+- Migrations: `database/supabase/migrations/20261002000005_coregrid_v1_reconciliation.sql`
+  through `20261002000012_coregrid_v1_tool_runtime.sql`, each with a matching
+  rollback under `database/supabase/rollbacks/` (RLS enabled, revoked from
+  anon/authenticated, ZERO policies deny-by-default, envelope + bi-temporal +
+  same-tenant composite-FK law).
+- Applied to the canonical database and catalog-verified with declared-vs-applied
+  checksums: `architecture/proofs/CANONICAL_APPLY_RECORD_HARDENING.json`
+  (9 migrations verified, 0 findings).
+
+These families implement substrate persistence behind the adapter boundary; they
+do not redefine phase ownership (Architecture Law §24: Domain → Application →
+Policy → Infrastructure → External Provider).
+
+### 2. Dual-posture RLS enforcement model (§17.3 Security Boundaries)
+
+The canonical database now proves tenant isolation in two database-proven
+postures, both demonstrated by the RLS isolation battery
+(`scripts/verify-rls-isolation-battery.mjs`; runbook §7, 36/36 PASS, 0 findings):
+
+1. **Zero-policy deny-by-default (strongest form).** `relrowsecurity = true`
+   with zero policies and zero client grants — no policy expression exists that
+   could evaluate to true, for any tenant, actor, or credential state.
+   Posture held by the eight substrate-family table groups (20 new tables) and
+   earlier `cg_*` substrate tables.
+2. **Policy-backed neutral tenant-membership (J-005/J-006).** First genuine RLS
+   policies on canonical: `cg_role_assignment`, `cg_role_grant`,
+   `cg_org_membership` carry FORCED RLS with exactly nine tenant-scoped policies
+   built only on the neutral primitives (`get_my_tenant_id` / `is_tenant_admin` /
+   `holds_tenant_role`, J-006 neutral role token) — no domain helper, no
+   hard-coded tenant, no domain role in the policy layer; grantor pinned to
+   `auth.uid()` server-side
+   (`database/supabase/migrations/20261002000013_coregrid_v1_neutral_membership_policies.sql`).
+
+The battery probes both postures with genuine cross-tenant checks (Tenant B
+invisible, Tenant A own rows visible, expired binding denied, cross-tenant
+INSERT denied, forged grantor rejected). The substrate verifier runs the
+policy-backed posture live: 59/59 invariants
+(`architecture/proofs/role-assignment-substrate.proof.json`).
+
+### 3. Retention layer (§13.3 Data Lineage: Retention/Deletion, concretized)
+
+ADR-005 (`architecture/coregrid-mvp-architecture/adr/ADR-005_RETENTION_VS_IMMUTABLE_AUDIT.md`)
+resolves the collision between AGENTS §28 (immutable audit records) and the
+personal-data lifecycle with **Option 2 — redaction-with-tombstone**: immutable
+records are never mutated or deleted; erasure appends an erasure audit event and
+tombstones subject-identifying personal values through a redaction layer.
+
+The binding retention schedule is machine-readable:
+`architecture/coregrid-mvp-architecture/RETENTION_POLICY_SCHEDULE.json`
+(28 policies over 13 record families — 12 personal-data-bearing plus
+governance-config — keyed by data classification × tenant class × record
+family, tombstone erasure throughout V1), explained in the sibling `.md`, typed
+by `frontend/src/lib/governance/retention-policy-schedule.ts`, and enforced by
+the offline validation gate `scripts/verify-retention-schedule.mjs`
+(personal-data-bearing family without a resolvable policy ID = exit 1).
+Durations are provisional defaults pending operator/legal ruling; the gate is
+currently a standalone script and is not yet in the committed verify chain.
+
+### 4. Continuous security validation (§17 / Engineering Loop)
+
+`.github/workflows/security-batteries.yml` runs the V1CAP-073 RLS isolation
+battery and the V1CAP-074 restore/recovery drill against the canonical database
+under the `canonical-db-batteries` concurrency lock (weekly schedule + manual
+dispatch; live-credential-gated — exit 2 reports BLOCKED_NO_CREDENTIAL without
+failing the job; secret values are never printed). PR-gated CI
+(`.github/workflows/verify.yml`) runs `npm run verify`: typecheck, unit tests,
+registry/drift/neutrality gates, secret scan, production build.

@@ -3971,6 +3971,8 @@ Runtime Conformance            NOT_STARTED
 
 These values must be updated only from verified engineering evidence.
 
+Note (2026-10-02): the zero-state indicators above reflect the §192-era architecture baseline and are preserved as a historical record per §118. The current verified state of the credential-era completion and the substrate-hardening wave is recorded in entries 226 and 227; where the two records differ, the dated entries 226–227 govern.
+
 ───
 
 193. CURRENT OVERALL STATE
@@ -4718,3 +4720,33 @@ New State: V1 MVP execution profile governing active work; frozen future archite
 Evidence: architecture/COREGRID_V53_DIRECTIVE_RECONCILIATION.json; architecture/COREGRID_PHASE_52_V1_FUTURE_CLASSIFICATION.json; architecture/coregrid-mvp-architecture/foundation/COREGRID_V1_SCOPE_LOCK.json; architecture/coregrid-mvp-architecture/foundation/COREGRID_V1_MASTER_IMPLEMENTATION_PLAN.json; registry.json versionClassification
 Decision: PLATFORM-012 (DECISIONS.md §203)
 Reason: Operator directive issued Constitution V5.3 (MVP-first execution profile, launch target before 2026-10-10); Part 110 reconciliation adopted it with full history preservation; no existing status value changed and no ledger decision overturned.
+
+───
+
+227. SUBSTRATE HARDENING RECORD
+Date: 2026-10-02
+Actor: CoreGrid V1 platform engineering workforce (credential-era remediation wave, then substrate-hardening wave)
+Change: Two hardening waves recorded.
+
+Wave 1 — credential-era completion:
+• The role-assignment substrate verifier executed LIVE against the canonical database (57/57 invariants at execution) via the strict-TLS session pooler, with the Supabase CA certificate fingerprint-verified against the vendor-published prod-ca-2021 CA; `scripts/lib/pg-connect.mjs` added for IPv6-only direct endpoints (pooler fallback; TLS posture never weakened); proofs regenerated.
+• `.mcp.json` de-secreted: credential material removed; the tracked file now holds only non-secret server configuration (verified by direct inspection 2026-10-02); re-introduction blocked by AD-181 (`DECISIONS.md`, RATIFIED 2026-09-03), the secret scan, and the foundation integrity suite.
+• CI added: `.github/workflows/verify.yml` runs `npm run verify` (typecheck + unit tests + registry/drift/neutrality gates + secret scan + production build) on pull_request and push; phase-01/02 architecture documents populated (`architecture/phase-01-foundation.md`, 2,507 lines; `architecture/phase-02-identity.md`, 2,476 lines).
+
+Wave 2 — substrate hardening:
+• Machine-readable retention policy schedule (ADR-005 Option 2, tombstone erasure): 28 policies over 13 record families (12 personal-data-bearing + governance-config), typed Zod contract, validation gate `scripts/verify-retention-schedule.mjs` (personal-data-bearing family without a resolvable policy ID = exit 1).
+• §27 invariant suites for all 23 relocated Scholar server-function families: 58 exported server functions machine-checked against the six §27 steps (authenticate / resolve tenant / authorize / validate / execute / audit), 188 tests across 5 suites grouped by governance class; coverage ledger partitions the 23 families exactly once; registered in the test-attribution registry (phase 08).
+• DB-backed substrate adapters + migrations for 8 families (kernel reconciliation, event security, event routing, evidence lifecycle, reasoning provenance, cost attribution, knowledge currency, tool runtime — migrations 20261002000005–12 with matching rollbacks), adapters composed through the AdapterFailurePolicy surface in `frontend/src/lib/adapters/`.
+• Canonical policies J-005/J-006: neutral tenant-membership RLS applied to the canonical database — `cg_role_assignment`, `cg_role_grant`, `cg_org_membership` carry FORCED RLS with exactly nine tenant-scoped policies built only on the neutral primitives (`get_my_tenant_id` / `is_tenant_admin` / `holds_tenant_role`, J-006 neutral role token); no domain helper, no hard-coded tenant, no domain role in the policy layer; grantor pinned to `auth.uid()` server-side. Applied via the checksummed apply pattern (`scripts/apply-canonical-hardening.mjs`) together with the eight batch-A/B substrate migrations; declared-vs-applied record kept.
+• RLS isolation battery extended to the 36-table dual-posture proof (zero-policy strongest-form tables vs policy-backed genuine cross-tenant probes on the J-005/J-006 tables: Tenant B invisible, Tenant A own rows visible, expired binding denied, cross-tenant INSERT denied, forged grantor rejected, probes cleaned; relforcerowsecurity asserted). Live canonical re-run: 36/36 PASS, 0 findings. Substrate verifier posture updated to the policy-backed form: 59/59 invariants live.
+• CI wiring: `.github/workflows/security-batteries.yml` runs the V1CAP-073 RLS battery and the V1CAP-074 restore/recovery drill against the canonical database under the `canonical-db-batteries` concurrency lock (exit 1 fails, exit 2 reports BLOCKED without failing; secrets from the CI secret store, values never printed).
+
+Affected Phase: 08 (security-engine enforcement evidence), 01 (foundation/CI), 03 and 14 (retention), substrate persistence surfaces
+Affected Capability: RLS enforcement evidence, retention governance, server-function §27 conformance, substrate persistence
+Previous State: RLS deny-by-default statically reasoned; substrate contracts pure (no persistence); retention obligation unmet; no live-database CI batteries
+New State: Posture database-proven (36/36 dual posture, 0 findings); substrate persisted for 8 families; retention schedule machine-enforced offline; security batteries CI-wired (credential-gated)
+Evidence: architecture/proofs/CANONICAL_APPLY_RECORD_HARDENING.json (9 migrations verified, 0 findings); architecture/proofs/role-assignment-substrate.proof.json (mode live, 59/59 checks ok); architecture/coregrid-mvp-architecture/ratification/RLS_ISOLATION_BATTERY.md (§7, 36/36 PASS); architecture/coregrid-mvp-architecture/RETENTION_POLICY_SCHEDULE.json and .md; scripts/verify-retention-schedule.mjs; tests/unit/scholar-invariant-{tenant-gated,staff-platform-gated,environment-gated,kernel-substrate,self-scope}.test.ts; scripts/verification/registry-test-attribution.mjs (phase 08); database/supabase/migrations/20261002000005_coregrid_v1_reconciliation.sql through 20261002000013_coregrid_v1_neutral_membership_policies.sql; frontend/src/lib/adapters/ (8 store adapters + failure-policy.ts); .github/workflows/security-batteries.yml; .github/workflows/verify.yml
+Decision: ADR-005_RETENTION_VS_IMMUTABLE_AUDIT.md; J-005/J-006 canonical policies (recorded in the apply record)
+Reason: Bring the platform's #1 security invariant from static reasoning to database-proven fact; close the credential-era verification debt; give the retention and §27 obligations machine-checkable gates
+Open items (honest): the retention gate remains a standalone script — it is not yet in the committed `npm run verify` chain; §27.6 audit-record gaps recorded as findings, never accommodated; CI batteries are live-credential-gated and report BLOCKED_NO_CREDENTIAL when secrets are absent; retention durations are provisional defaults pending operator/legal ruling
+Status: ACTIVE.

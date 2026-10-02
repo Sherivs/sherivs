@@ -167,6 +167,37 @@ const SUBJECT_MAP = {
   "tests/unit/adapter-cost-attribution.test.ts": { phase: "13", why: "Team 1 batch B substrate-persistence workstream: DB-backed adapter for the metering cost-attribution contract (J-043/V1CAP-078/MISSION-R-70) over migration 20261002000010 (AUTHORED, NOT APPLIED) — phase-13 financial metering substrate, matching tests/unit/metering-usage-ledger.test.ts" },
   "tests/unit/adapter-knowledge-currency.test.ts": { phase: "36", why: "Team 1 batch B substrate-persistence workstream: DB-backed adapter for the memory knowledge-currency contract (J-019/V1CAP-040/MISSION-R-71) over migration 20261002000011 (AUTHORED, NOT APPLIED) — phase-36 Universal Memory & Knowledge Engine owner" },
   "tests/unit/adapter-tool-runtime.test.ts": { phase: "25", why: "Team 1 batch B substrate-persistence workstream: DB-backed adapter for the workforce tool-runtime contract (J-008/V1CAP-056/MISSION-R-62) over migration 20261002000012 (AUTHORED, NOT APPLIED) — phase-25 Institutional Onboarding & Workforce owner" },
+  // ── H2-28 (J-046 registry reconciliation, 2026-10-02): suites landed by the
+  // hardening waves without attribution — mapped by the phase whose registry
+  // modules own the tested module, or recorded unattributed when the mission
+  // graph records no phase owner (COREGRID_V1_MISSION_GRAPH.json) ──
+  "tests/unit/ai-gateway-model-registry.test.ts": { phase: "26", why: "AI gateway model registry (J-014/V1CAP-028/MISSION-R-31) — phase-26 AI intelligence layer gateway substrate, matching tests/unit/ai-gateway.test.ts" },
+  "tests/unit/ai-gateway-output-trust.test.ts": { phase: "26", why: "AI output-trust pipeline (J-035/V1CAP-030/032, Constitution §21) — phase-26 AI intelligence layer gateway substrate, matching tests/unit/ai-gateway.test.ts" },
+  "tests/unit/ai-gateway-reasoning-provenance.test.ts": { phase: "26", why: "reasoning-provenance intelligence-snapshot contract (J-015/V1CAP-029/MISSION-R-33) — phase-26 gateway substrate, matching tests/unit/adapter-reasoning-provenance.test.ts" },
+  "tests/unit/ai-gateway-runtime-defenses.test.ts": { phase: "26", why: "AI runtime defenses (J-036/V1CAP-033/MISSION-R-84, Constitution §19/§20/§21) — phase-26 gateway substrate, matching tests/unit/ai-gateway.test.ts" },
+  "tests/unit/command-centre.test.ts": { phase: "19", why: "command-centre operational projection (V1CAP-089/J-048/MISSION-R-110) over phase-19 registry modules command-alerts/command-incidents — recorded in the phase-19 row note (MISSION-R-110 wave 3)" },
+  "tests/unit/cost-attribution.test.ts": { phase: "13", why: "metering cost-attribution engine (J-043/V1CAP-078/MISSION-R-70) — phase-13 financial metering substrate, matching tests/unit/metering-usage-ledger.test.ts and tests/unit/adapter-cost-attribution.test.ts" },
+  "tests/unit/domain-runtime-recertification.test.ts": { phase: "33", why: "domain-runtime recertification (MISSION-R-120, V1CAP-092/093) over the kernel domain-config/runtime manifest machinery — phase-33 domain-runtime" },
+  "tests/unit/evidence-capture.test.ts": { phase: "09", why: "Evidence-class capture discipline (J-034/V1CAP-059/MISSION-R-90) — phase-09 Security Trust Fabric, matching tests/unit/adapter-evidence-capture-store.test.ts" },
+  "tests/unit/evidence-lifecycle.test.ts": { phase: "09", why: "Evidence lifecycle revocation/promotion contract (J-033/V1CAP-058/MISSION-R-91) — phase-09 Security Trust Fabric" },
+  "tests/unit/financial-reconciliation.test.ts": { phase: "13", why: "payment-acceptance reconciliation dry run (J-044/MISSION-R-73) over financial-core/payments — phase-13 financial-payments, matching the payments-* suites" },
+  "tests/unit/global-shell.test.ts": { phase: "06", why: "platform shell chrome/switcher/notifications contracts (MISSION-R-111/V1CAP-085) — the shell surface recorded in the phase-06 row (R-WAVES: resolution-based chrome + landings live in the shell; phase-06 workspace-composition)" },
+  "tests/unit/kernel-bitemporal.test.ts": { phase: "33", why: "kernel bi-temporal discipline (V1CAP-004/J-003/MISSION-R-13) over kernel/reality — phase-33 registry module" },
+  "tests/unit/kernel-event-routing.test.ts": { phase: "33", why: "kernel/event-routing subscriptions (V1CAP-043/J-021/MISSION-R-63) — phase-33 kernel substrate, matching tests/unit/adapter-event-routing-store.test.ts" },
+  "tests/unit/kernel-event-security.test.ts": { phase: "33", why: "kernel/event-security consumption gate (V1CAP-044/J-022/MISSION-R-81) — phase-33 kernel substrate, matching tests/unit/adapter-event-security-store.test.ts" },
+  "tests/unit/kernel-event-semantics.test.ts": { phase: "33", why: "kernel/event-semantics taxonomy/ordering (V1CAP-042/J-020/MISSION-R-15) — phase-33 kernel substrate" },
+  "tests/unit/kernel-reconciliation.test.ts": { phase: "33", why: "kernel/reconciliation contradiction engine (V1CAP-005/J-004/MISSION-R-14) — phase-33 kernel substrate, matching tests/unit/adapter-reconciliation-store.test.ts" },
+  "tests/unit/kernel-time-authority.test.ts": { phase: "33", why: "kernel/time-authority (V1CAP-045/J-023/MISSION-R-15) — phase-33 kernel substrate" },
+  "tests/unit/knowledge-currency.test.ts": { phase: "36", why: "memory knowledge-currency (J-019/V1CAP-040/MISSION-R-71) — phase-36 Universal Memory & Knowledge Engine owner, matching tests/unit/adapter-knowledge-currency.test.ts" },
+  "tests/unit/lifecycle-threading.test.ts": { phase: "08", why: "lifecycle-signal threading at the security-role-gate server-function call sites — phase-08 registry module security-role-gate" },
+  "tests/unit/memory-store.test.ts": { phase: "36", why: "durable practical/organizational memory tier (J-016/J-017, V1CAP-034/035/036) — phase-36 Universal Memory & Knowledge Engine owner" },
+  "tests/unit/memory-worker-scopes.test.ts": { phase: "36", why: "worker memory scopes & the memory governance boundary (J-007/V1CAP-016/MISSION-R-42) — phase-36 memory owner over the phase-25 workforce worker-definition substrate" },
+  "tests/unit/onboarding-reality-discovery.test.ts": { phase: "25", why: "onboarding reality discovery (MISSION-R-43, V1CAP-090/091) — phase-25 onboarding substrate (onboarding-core / onboarding/onboarding-flow)" },
+  "tests/unit/pg-ssl-tls-policy.test.ts": { phase: "33", why: "pg-ssl TLS policy for DB tooling (scripts/lib/pg-ssl.mjs, credential-era remediation) — phase-33 db-tooling discipline, matching tests/unit/db-tooling-coherence.test.ts" },
+  "tests/unit/tool-runtime.test.ts": { phase: "25", why: "governed tool runtime & sandbox (J-008/V1CAP-056/MISSION-R-62) — phase-25 Institutional Onboarding & Workforce owner, matching tests/unit/adapter-tool-runtime.test.ts" },
+  "tests/unit/trust-fabric.test.ts": { phase: "09", why: "trust-fabric wiring (J-008/V1CAP-022/MISSION-R-83, ADR-002 Option A) over trust-assertions (phase-09 registry module) seamed into security-core (phase-08 decision record)" },
+  "tests/unit/worker-definition.test.ts": { phase: "25", why: "persistent governed worker definition substrate (J-027/V1CAP-048, CTO RULING-3) — phase-25 workforce substrate" },
+  "tests/unit/workforce-capability-registry.test.ts": { phase: "25", why: "worker capability registry & delegation matching (J-028/V1CAP-049) — phase-25 workforce substrate" },
 };
 
 // Scholar runtime domain layer: every scholar-* suite tests the Scholar
@@ -174,6 +205,14 @@ const SUBJECT_MAP = {
 // ("legacy education modules remain the runtime's domain layer" — phase-04 note).
 const PREFIX_MAP = [
   { prefix: "tests/unit/scholar-", phase: "04", why: "Scholar runtime domain layer — registry module runtime/scholar (phase-04)" },
+  // H2-28 (J-046): the 30-mission H2 hardening wave lands ~25 gate/harness
+  // suites under the tests/unit/mh-*.test.ts pattern. They verify the
+  // foundation's verification machinery (gates, harnesses, watch programs), so
+  // they attribute automatically to phase "01" foundation verification. When a
+  // sibling mission's report ratifies a different owner for its suite, record
+  // the explicit per-file SUBJECT_MAP entry above — it wins over this prefix.
+  { prefix: "tests/unit/mh-", phase: "01", why: "H2 hardening wave gate/harness suites" },
+  { prefix: "tests/failure/mh-", phase: "01", why: "H2 hardening wave gate/harness suites (failure battery)" },
 ];
 
 // Suites with no canonical phase owner: recorded unattributed with a TODO —
@@ -188,6 +227,20 @@ const UNATTRIBUTED = {
   "tests/unit/files-storage-adapter.test.ts": "files substrate (frontend/src/lib/files/) is not a registered phase module. TODO: attribute when a phase registers the files/storage substrate.",
   "tests/unit/storage-service-client.test.ts": "service-role storage client factory (frontend/src/lib/files/storage-service.server.ts) — files substrate is not a registered phase module. TODO: attribute when a phase registers the files/storage substrate.",
   "tests/unit/storage-service-live.test.ts": "live-gated service-role storage verification against the approved project — files substrate is not a registered phase module. TODO: attribute when a phase registers the files/storage substrate.",
+  // ── H2-28 (J-046 registry reconciliation, 2026-10-02): hardening-wave suites
+  // whose owning missions record phase: null in
+  // architecture/coregrid-mvp-architecture/reconstruction/COREGRID_V1_MISSION_GRAPH.json
+  // and whose substrate modules no phase registers — unowned, never guessed ──
+  "tests/unit/adapter-failure-policy.test.ts": "adapter failure-semantics policy engine (J-045/V1CAP-080/MISSION-R-72, frontend/src/lib/adapters/) — lib/adapters/ is not a registered phase module and the mission graph records no phase owner. TODO: attribute when the owner is ratified.",
+  "tests/unit/command-idempotency.test.ts": "platform-wide command idempotency (J-030/V1CAP-054, MISSION-R-60 phase: null; frontend/src/lib/command/) — command-infrastructure substrate is not a registered phase module. TODO: attribute when the owner is ratified.",
+  "tests/unit/command-leases.test.ts": "lease/concurrency control (J-031/V1CAP-055, MISSION-R-60 phase: null; frontend/src/lib/command/) — same unregistered-substrate basis. TODO: attribute when the owner is ratified.",
+  "tests/unit/credential-broker.test.ts": "per-agent credential broker & emergency lockdown (J-007/J-010, V1CAP-017/019, MISSION-R-82 phase: null; frontend/src/lib/security/credential-broker) — no registered phase module owns agent credential machinery. TODO: attribute when the owner is ratified.",
+  "tests/unit/failure-architecture.test.ts": "failure & incident architecture (V1CAP-075, MISSION-R-102 phase: null; frontend/src/lib/reliability/) — reliability substrate is not a registered phase module. TODO: attribute when the owner is ratified.",
+  "tests/unit/slo.test.ts": "SLO/SLI contract set (V1CAP-077, MISSION-R-102 phase: null; frontend/src/lib/reliability/) — same unregistered-substrate basis. TODO: attribute when the owner is ratified.",
+  "tests/unit/mission-contract.test.ts": "Mission object contract (J-025/V1CAP-046, MISSION-R-50) — mission machinery has no canonical phase owner (CG-GAP-003). TODO: attribute when the owner is ratified.",
+  "tests/unit/delegation-contract.test.ts": "Delegation object contract (J-025/V1CAP-046, MISSION-R-50) — same unowned-mission basis (CG-GAP-003). TODO: attribute when the owner is ratified.",
+  "tests/unit/delegation-enforcement.test.ts": "delegation expiry enforcement in the mission runner (MISSION-R-52/V1CAP-021 mission wiring) — same unowned-mission basis (CG-GAP-003); consumes phase-07 agent-plans/agent-tasks machinery without owning it. TODO: attribute when the owner is ratified.",
+  "tests/unit/verification-independence.test.ts": "verification independence over the foundation loop (control-plane/foundation-loop) — same unowned-mission basis (CG-GAP-003), matching tests/unit/foundation-loop.test.ts. TODO: attribute when the owner is ratified.",
 };
 
 // ── 4. attribute every measured unit test file ─────────────────────────────

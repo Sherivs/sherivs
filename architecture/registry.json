@@ -29,7 +29,7 @@
         true,
         true
       ],
-      "tests": 194,
+      "tests": 679,
       "modules": [
         "foundation-standards"
       ],
@@ -52,7 +52,7 @@
         true,
         true
       ],
-      "tests": 159,
+      "tests": 182,
       "modules": [
         "identity",
         "identity-registry",
@@ -184,7 +184,7 @@
         true,
         true
       ],
-      "tests": 111,
+      "tests": 136,
       "modules": [
         "workspace-core",
         "workspace-composition",
@@ -224,10 +224,9 @@
       "consumers": [
         "26",
         "35",
-        "47",
-        "50"
+        "47"
       ],
-      "notes": "2026-09-21 REGISTRY-TRUTH SWEEP: the row carried no note while the phase closed, so its closure is recorded here from evidence — the document was completed to 20/20 by addendum KH, L4 is projected by /super-admin/agent-governance through agent-governance-report, L5 is evidenced by architecture/proofs/phase-07-acceptance.proof.json plus the verify chain, and L2 rests on the contract's declared substrates (agent memory and task records). Open: the agent system stays advisory — no surface deploys an agent autonomously, and Phase 08 remains the only authorization authority. Record: architecture/archaeology/registry-truth-sweep.audit.md",
+      "notes": "2026-09-21 REGISTRY-TRUTH SWEEP: the row carried no note while the phase closed, so its closure is recorded here from evidence — the document was completed to 20/20 by addendum KH, L4 is projected by /super-admin/agent-governance through agent-governance-report, L5 is evidenced by architecture/proofs/phase-07-acceptance.proof.json plus the verify chain, and L2 rests on the contract's declared substrates (agent memory and task records). Open: the agent system stays advisory — no surface deploys an agent autonomously, and Phase 08 remains the only authorization authority. Record: architecture/archaeology/registry-truth-sweep.audit.md | 2026-10-02 H2-28 (J-046) reconciliation: the declared consumer 50 was removed — phase-50's kernel contract (phase-50-human-interface.ts dependsOn [01,02,05,06,24,30,43]) does not declare 07 and no row mirror bears the edge; a V1 row declaring a frozen civilization-tier consumer it does not consume is a false statement of the platform (STREAM F; J-046). Record: architecture/proofs/REGISTRY_RECONCILIATION_H2.json",
       "version_target": "ACTIVE-V1"
     },
     {
@@ -243,7 +242,7 @@
         true,
         true
       ],
-      "tests": 218,
+      "tests": 420,
       "modules": [
         "security-core",
         "security-risk",
@@ -272,7 +271,7 @@
         true,
         true
       ],
-      "tests": 90,
+      "tests": 196,
       "modules": [
         "trust-core",
         "trust-assertions",
@@ -300,7 +299,7 @@
         true,
         true
       ],
-      "tests": 200,
+      "tests": 206,
       "modules": [
         "communication-core",
         "communication-conversation",
@@ -388,7 +387,7 @@
         true,
         true
       ],
-      "tests": 191,
+      "tests": 278,
       "modules": [
         "financial-core",
         "financial-payments",
@@ -531,9 +530,9 @@
         "analytics-governance"
       ],
       "consumers": [
-        "19",
-        "34"
+        "19"
       ],
+      "notes": "2026-10-02 H2-28 (J-046) reconciliation: the declared consumer 34 was removed — phase-34's kernel contract (phase-34-cognitive-engine.ts dependsOn [01,02,05,07,26,33,36]) does not declare 18 and no row mirror bears the edge; a V1 row declaring a frozen civilization-tier consumer it does not consume is a false statement of the platform (STREAM F; J-046). Record: architecture/proofs/REGISTRY_RECONCILIATION_H2.json",
       "version_target": "ACTIVE-V1"
     },
     {
@@ -549,7 +548,7 @@
         false,
         true
       ],
-      "tests": 57,
+      "tests": 78,
       "modules": [
         "command-core",
         "command-alerts",
@@ -582,9 +581,8 @@
         "government-data",
         "government-governance"
       ],
-      "consumers": [
-        "44"
-      ],
+      "consumers": [],
+      "notes": "2026-10-02 H2-28 (J-046) reconciliation: the declared consumer 44 was removed — phase-44's kernel contract (phase-44-planetary-infrastructure.ts dependsOn [01,03,05,15,21,31]) does not declare 20 and no row mirror bears the edge; a V1 row declaring a frozen civilization-tier consumer it does not consume is a false statement of the platform (STREAM F; J-046). Record: architecture/proofs/REGISTRY_RECONCILIATION_H2.json",
       "version_target": "ACTIVE-V1"
     },
     {
@@ -700,7 +698,7 @@
         true,
         true
       ],
-      "tests": 101,
+      "tests": 226,
       "modules": [
         "institution-core",
         "workforce-core",
@@ -729,7 +727,7 @@
         false,
         false
       ],
-      "tests": 151,
+      "tests": 279,
       "modules": [
         "ai-core",
         "ai-context",
@@ -739,9 +737,9 @@
       ],
       "consumers": [
         "07",
-        "34",
-        "35"
+        "34"
       ],
+      "notes": "2026-10-02 H2-28 (J-046) reconciliation: the declared consumer 35 was removed — phase-35's kernel contract (phase-35-agent-civilization.ts dependsOn [01,02,03,05,07,34,36]) does not declare 26 and no row mirror bears the edge; a V1 row declaring a frozen civilization-tier consumer it does not consume is a false statement of the platform (STREAM F; J-046). Record: architecture/proofs/REGISTRY_RECONCILIATION_H2.json",
       "version_target": "ACTIVE-V1"
     },
     {
@@ -766,10 +764,9 @@
         "marketplace-governance"
       ],
       "consumers": [
-        "49",
-        "51"
+        "49"
       ],
-      "notes": "2026-09-21 REGISTRY-TRUTH SWEEP: levels corrected from evidence — L1 to L5 are all evidenced (L2 from the contract's declared substrates, L4 because the /marketplace route renders frontend/src/lib/surfaces/marketplace-view which consumes @/lib/marketplace-core and @/lib/marketplace-entitlement, L5 because scripts/verify-phase-consumption.mjs tests this phase as consumed), but the row is deliberately NOT closed to COMPLETE: this phase has no acceptance record (architecture/phase-acceptance/ holds records for phases 01–12 only) and no archaeology record, so closure is withheld until its own audit wave runs. This is the next audit target. 2026-10-01 MISSION-R-04 (COND-012) status reconciliation: the audit wave has run — architecture/phase-acceptance/phase-27-marketplace.json and architecture/proofs/phase-27-acceptance.proof.json exist and scripts/audit-phase-completion.mjs on HEAD derives COMPLETE for this row, so the withheld closure is recorded as resolved and the status moves IMPLEMENTED to COMPLETE (COREGRID_PHASE_RECONCILIATION_MAP.statusReconciliation CONFLICTING histogram reconciled to the derived truth: COMPLETE 15 / IMPLEMENTING 18 / ARCHITECTURE_DEFINED 18). Record: architecture/phase-completion-status.md",
+      "notes": "2026-09-21 REGISTRY-TRUTH SWEEP: levels corrected from evidence — L1 to L5 are all evidenced (L2 from the contract's declared substrates, L4 because the /marketplace route renders frontend/src/lib/surfaces/marketplace-view which consumes @/lib/marketplace-core and @/lib/marketplace-entitlement, L5 because scripts/verify-phase-consumption.mjs tests this phase as consumed), but the row is deliberately NOT closed to COMPLETE: this phase has no acceptance record (architecture/phase-acceptance/ holds records for phases 01–12 only) and no archaeology record, so closure is withheld until its own audit wave runs. This is the next audit target. 2026-10-01 MISSION-R-04 (COND-012) status reconciliation: the audit wave has run — architecture/phase-acceptance/phase-27-marketplace.json and architecture/proofs/phase-27-acceptance.proof.json exist and scripts/audit-phase-completion.mjs on HEAD derives COMPLETE for this row, so the withheld closure is recorded as resolved and the status moves IMPLEMENTED to COMPLETE (COREGRID_PHASE_RECONCILIATION_MAP.statusReconciliation CONFLICTING histogram reconciled to the derived truth: COMPLETE 15 / IMPLEMENTING 18 / ARCHITECTURE_DEFINED 18). Record: architecture/phase-completion-status.md | 2026-10-02 H2-28 (J-046) reconciliation: the declared consumer 51 was removed — phase-51's kernel contract (phase-51-reality-os.ts dependsOn [01,02,03,05,06,14,33,36,39,40,47,48]) does not declare 27 and no row mirror bears the edge; a V1 row declaring a frozen civilization-tier consumer it does not consume is a false statement of the platform (STREAM F; J-046). Record: architecture/proofs/REGISTRY_RECONCILIATION_H2.json",
       "version_target": "MIXED"
     },
     {
@@ -794,9 +791,9 @@
         "dev-governance"
       ],
       "consumers": [
-        "27",
-        "51"
+        "27"
       ],
+      "notes": "2026-10-02 H2-28 (J-046) reconciliation: the declared consumer 51 was removed — phase-51's kernel contract (phase-51-reality-os.ts dependsOn [01,02,03,05,06,14,33,36,39,40,47,48]) does not declare 28 and no row mirror bears the edge; a V1 row declaring a frozen civilization-tier consumer it does not consume is a false statement of the platform (STREAM F; J-046). Record: architecture/proofs/REGISTRY_RECONCILIATION_H2.json",
       "version_target": "MIXED"
     },
     {
@@ -917,7 +914,7 @@
         false,
         false
       ],
-      "tests": 112,
+      "tests": 387,
       "modules": [
         "kernel/reality",
         "kernel/domain-manifest",
@@ -987,7 +984,7 @@
         false,
         false
       ],
-      "tests": null,
+      "tests": 128,
       "modules": [],
       "consumers": [
         "34",
@@ -1372,8 +1369,7 @@
       "consumers": [
         "26",
         "35",
-        "47",
-        "50"
+        "47"
       ]
     },
     {
@@ -1458,8 +1454,7 @@
       "capability": "analytics-decision-intelligence",
       "owner": "18",
       "consumers": [
-        "19",
-        "34"
+        "19"
       ]
     },
     {
@@ -1472,9 +1467,7 @@
     {
       "capability": "government-sovereign-deployments",
       "owner": "20",
-      "consumers": [
-        "44"
-      ]
+      "consumers": []
     },
     {
       "capability": "cloud-fabric-byoc",
@@ -1516,24 +1509,21 @@
       "owner": "26",
       "consumers": [
         "07",
-        "34",
-        "35"
+        "34"
       ]
     },
     {
       "capability": "marketplace",
       "owner": "27",
       "consumers": [
-        "49",
-        "51"
+        "49"
       ]
     },
     {
       "capability": "developer-platform",
       "owner": "28",
       "consumers": [
-        "27",
-        "51"
+        "27"
       ]
     },
     {
@@ -2005,25 +1995,37 @@
     ]
   },
   "testAttribution": {
-    "generated": "2026-10-01",
+    "generated": "2026-10-02",
     "authority": "MISSION-R-04 (J-046 / COND-012) test-attribution regeneration",
     "method": "per-file vitest counts (npx vitest run --reporter=json) attributed by kernel phase-contract citations (scripts/audit-phase-completion.mjs rule), then by the recorded subject-matter mapping in scripts/verification/registry-test-attribution.mjs; suites with no canonical owner are recorded unattributed below, never guessed",
     "measured": {
-      "files": 231,
-      "tests": 3727,
+      "files": 308,
+      "tests": 5582,
       "skipped": 5,
       "note": "tests/unit/* plus the env-gated live integration battery; skipped tests are excluded from attribution"
     },
-    "attributedSum": 3670,
+    "attributedSum": 5281,
     "unattributed": {
-      "tests": 57,
+      "tests": 301,
       "files": [
+        "tests/unit/adapter-failure-policy.test.ts",
+        "tests/unit/command-idempotency.test.ts",
+        "tests/unit/command-leases.test.ts",
+        "tests/unit/credential-broker.test.ts",
+        "tests/unit/delegation-contract.test.ts",
+        "tests/unit/delegation-enforcement.test.ts",
+        "tests/unit/failure-architecture.test.ts",
         "tests/unit/files-access-policy.test.ts",
         "tests/unit/files-contract.test.ts",
         "tests/unit/files-storage-adapter.test.ts",
         "tests/unit/foundation-loop.test.ts",
         "tests/unit/foundation-mission.test.ts",
-        "tests/unit/foundation-persistence.test.ts"
+        "tests/unit/foundation-persistence.test.ts",
+        "tests/unit/mission-contract.test.ts",
+        "tests/unit/slo.test.ts",
+        "tests/unit/storage-service-client.test.ts",
+        "tests/unit/storage-service-live.test.ts",
+        "tests/unit/verification-independence.test.ts"
       ],
       "todo": "no canonical phase owner yet (mission machinery: CG-GAP-003; files substrate unregistered) — attribute when owners are ratified, never by invention"
     }

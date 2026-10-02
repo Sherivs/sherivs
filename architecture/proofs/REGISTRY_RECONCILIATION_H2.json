@@ -1,0 +1,63 @@
+{
+  "artifact": "REGISTRY_RECONCILIATION_H2",
+  "mission": "H2-28 — Registry reconciliation pass (J-046) + honest status accounting",
+  "captured": "2026-10-02",
+  "role": "Registry Curator (single-writer for registry files this wave)",
+  "branch": "cursor/p08-foundation-loop-classification-fe86",
+  "authority": [
+    "AGENTS.md §22 (repository discovery), §29 (observability), §42 (report format), §45 (V1 execution boundary)",
+    "J-046 registry-vs-reality reconciliation; precedent: the 2026-10-01 MISSION-R-04 dependency-edge reconciliation recorded in scripts/verification/registry-drift-declaration.json",
+    "STREAM F law: the V1 dependency graph must be a true statement of the platform"
+  ],
+  "filesOwnedAndChanged": [
+    "scripts/verification/registry-test-attribution.mjs",
+    "architecture/registry.json",
+    "architecture/proofs/REGISTRY_RECONCILIATION_H2.json"
+  ],
+  "reconciliation": {
+    "modules": {
+      "checked": "every phases[].modules entry resolved as a source module under frontend/src/lib (flat <module>.ts, <dir>/index.ts, or declared subpath — the phase-21 resolution rule recorded in the 2026-09-21 registry-truth sweep)",
+      "result": "ALL RESOLVE — zero missing module references across the 51 phase rows; no module required removal"
+    },
+    "tests": {
+      "checked": "full unit suite re-measured (npx vitest run --reporter=json) and re-attributed with scripts/verification/registry-test-attribution.mjs; phases[].tests and the testAttribution block regenerated from the live measurement",
+      "measured": "5,582 tests in 308 files (5 skipped, excluded from attribution); attributed to phases 5,281 + recorded-unattributed 301 = 5,582 (accounting exact)",
+      "previousRegistryRecord": "3,727 tests in 231 files (2026-10-01) — the delta is the hardening-wave suites landed by sibling missions since the last attribution, none of which had been attributed"
+    },
+    "statusAccounting": {
+      "decision": "NO status changed. Every row keeps its status; the 18 IMPLEMENTING rows were reviewed against their own acceptance criteria and none was proven COMPLETE by inspection this pass — the conservative rule holds (a phase stays IMPLEMENTING unless its own acceptance evidence proves COMPLETE).",
+      "invariants": "status histogram COMPLETE 15 / IMPLEMENTING 18 / ARCHITECTURE_DEFINED 18 is anchored in scripts/verification/registry-drift-declaration.json; the curator does not own that file this wave, so any status change would be undeclared drift and fail scripts/verify-registry-drift.mjs by construction. Statuses therefore change only through the declaration's own recorded process, which this pass did not need.",
+      "frozenScope": "per AGENTS.md §45 no row with a FUTURE version_target was progressed, and no frozen scope is reported as implemented"
+    },
+    "civilizationTierEdgesRemoved": {
+      "principle": "same rule as the recorded 2026-10-01 J-046 pass (drift declaration dependencyEdges record): a civilization-tier edge is stale when the consumer phase's own ratified kernel contract does not declare the dependency AND no row mirror bears it — a V1 row declaring a frozen civilization-tier consumer it does not consume is a false statement of the platform. Edges mirrored on both rows (e.g. 15-44, 16-46, 34-26, 35-07, 49-13, 49-27, 50-06) are retained per the recorded precedent, as are edges borne by the consumer contract (e.g. 21's consumer 44: phase-44's contract dependsOn includes 21; 07's consumers 35/47; 27's consumer 49; 26's consumer 34; 33's consumers 34/48/51; 39/40's consumer 51).",
+      "removed": [
+        { "edge": "07 <- consumer 50", "evidence": "frontend/src/lib/kernel/phase-contracts/phase-50-human-interface.ts dependsOn [01,02,05,06,24,30,43] — no 07; phase-50 row does not mirror", "capabilityMirror": "agent-runtime consumers 50 removed" },
+        { "edge": "18 <- consumer 34", "evidence": "frontend/src/lib/kernel/phase-contracts/phase-34-cognitive-engine.ts dependsOn [01,02,05,07,26,33,36] — no 18; phase-34 row does not mirror", "capabilityMirror": "analytics-decision-intelligence consumers 34 removed" },
+        { "edge": "20 <- consumer 44", "evidence": "frontend/src/lib/kernel/phase-contracts/phase-44-planetary-infrastructure.ts dependsOn [01,03,05,15,21,31] — no 20; phase-44 row does not mirror", "capabilityMirror": "government-sovereign-deployments consumers 44 removed" },
+        { "edge": "26 <- consumer 35", "evidence": "frontend/src/lib/kernel/phase-contracts/phase-35-agent-civilization.ts dependsOn [01,02,03,05,07,34,36] — no 26; phase-35 row does not mirror", "capabilityMirror": "ai-intelligence-gateway consumers 35 removed" },
+        { "edge": "27 <- consumer 51", "evidence": "frontend/src/lib/kernel/phase-contracts/phase-51-reality-os.ts dependsOn [01,02,03,05,06,14,33,36,39,40,47,48] — no 27; phase-51 row declares only 'all'", "capabilityMirror": "marketplace consumers 51 removed" },
+        { "edge": "28 <- consumer 51", "evidence": "frontend/src/lib/kernel/phase-contracts/phase-51-reality-os.ts dependsOn [01,02,03,05,06,14,33,36,39,40,47,48] — no 28; phase-51 row declares only 'all'", "capabilityMirror": "developer-platform consumers 51 removed" }
+      ],
+      "reviewedAndRetained": [
+        { "edge": "43 <- consumer 51 (unborne, unmirrored)", "why": "row 43 itself is FUTURE-UNASSIGNED frozen scope; AGENTS.md §45 bars progressing or re-declaring frozen-scope rows, so the edge is recorded here, not edited" },
+        { "edge": "41 <- consumer 47 and 47 <- consumer 39 (unborne, unmirrored)", "why": "all endpoints are frozen FUTURE rows — same §45 basis" },
+        { "edge": "36 <- consumer 07 (unborne, unmirrored)", "why": "row 36 carries status ARCHITECTURE_DEFINED (no implementation to falsify); the memory-cluster relationship is recorded by duplication D1; edit left to the phase's own audit wave" },
+        { "edge": "V1-V1 unborne edges (e.g. 09-08, 10-24/43, 11-12/18, 12-04/25, 26-07, 30-04, 36-07)", "why": "outside the civilization-tier scope of J-046/STREAM F; several are cluster-recorded (D7, D9). Recorded for the next reconciliation pass, not silently kept" }
+      ],
+      "rowNotes": "each touched V1 row (07, 18, 20, 26, 27, 28) carries a dated 2026-10-02 H2-28 (J-046) note naming the removed consumer, the disproving contract and this record"
+    }
+  },
+  "attributionWiring": {
+    "mhPattern": "PREFIX_MAP gained tests/unit/mh- -> phase 01 and tests/failure/mh- -> phase 01, why 'H2 hardening wave gate/harness suites' — the ~25 mh-* gate/harness suites the 30-mission hardening wave lands attribute automatically to phase-01 foundation verification; a mission may override with an explicit SUBJECT_MAP entry when its report ratifies a different owner (SUBJECT_MAP wins by order of rules)",
+    "subjectMapAdditions": "suites landed by hardening-wave siblings since 2026-10-01 were attributed by the phase whose registry modules own the tested module: ai-gateway family -> 26; command-centre -> 19; cost-attribution/financial-reconciliation -> 13; domain-runtime-recertification, kernel-* machinery, pg-ssl-tls-policy -> 33; evidence-capture/lifecycle, trust-fabric -> 09; global-shell -> 06; lifecycle-threading -> 08; onboarding-reality-discovery, tool-runtime, worker-definition, workforce-capability-registry -> 25; memory tiers -> 36 (per the adapter-*-store precedent)",
+    "unattributedAdditions": "10 suites recorded UNATTRIBUTED, never guessed: mission machinery (mission-contract, delegation-contract, delegation-enforcement, verification-independence — CG-GAP-003 basis) and suites whose owning mission records phase: null in COREGRID_V1_MISSION_GRAPH.json with no registered phase module (adapter-failure-policy, command-idempotency, command-leases, credential-broker, failure-architecture, slo)",
+    "transient": "the first measurement pass captured a since-deleted transient debug file (tests/unit/zz-dbg-mh08.test.ts) from a sibling mission working concurrently in the tree; the suite was re-run and the committed attribution measures only files that exist at the recorded run"
+  },
+  "verification": [
+    { "command": "node scripts/verification/registry-validate.mjs", "result": "REGISTRY VALIDATION PASSED: phases=51 capabilities=50 duplications=15 runtimes=2" },
+    { "command": "node scripts/verify-registry-drift.mjs", "result": "REGISTRY DRIFT CHECK PASSED: phases=51 capabilities=50 runtimes=2 statuses=COMPLETE 15, IMPLEMENTING 18, ARCHITECTURE_DEFINED 18 — matches COREGRID_EVOLUTION_BASELINE_2026-09-30 + declared drift" },
+    { "command": "node scripts/verification/registry-test-attribution.mjs /tmp/vitest-results.json", "result": "TEST ATTRIBUTION REGENERATED: measured 5582 tests in 308 files (skipped 5); attributed to phases: 5281 unattributed (recorded, TODO): 301" }
+  ],
+  "driftDeclaration": "No dimension covered by scripts/verify-registry-drift.mjs changed (phase/capability/runtime counts, status histogram, capability ids all untouched), so no drift declaration update was required and none was made (file not owned this wave). Consumer-edge edits are outside the declared dimensions and are recorded here and in the touched rows' notes instead."
+}

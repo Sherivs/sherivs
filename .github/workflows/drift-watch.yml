@@ -1,0 +1,144 @@
+name: Drift Watch
+
+# H2-24 — MISSION J-038 (STREAM_J gap registry): "Drift-detection wiring:
+# consume the evolution baseline in CI".
+#
+# This workflow consumes, continuously and offline:
+#   - architecture/COREGRID_EVOLUTION_BASELINE_2026-09-30.json via the registry
+#     drift check (scripts/verify-registry-drift.mjs): undeclared drift FAILS
+#     CI; declared drift passes WITH its record attached. Drift never
+#     authorizes change by itself (baseline evolutionLaw; AGENTS.md §9
+#     canonical truth, §21 AI output trust).
+#   - the domain-neutrality guard (scripts/verify-domain-neutrality.mjs,
+#     J-037) with its verdict grepped from the verifier's own output.
+#   - the SHRINK-ONLY ratchet on the neutrality quarantine baseline
+#     (architecture/coregrid-mvp-architecture/NEUTRALITY_GUARD_BASELINE.json):
+#     the baseline-tamper tripwire below fails any push where the baseline
+#     file changed while the repo's own neutrality verifier reports NEW
+#     violations. A baseline edit is legitimate only when it changed together
+#     with a corresponding evidence regeneration — here, a verifier PASS on
+#     the resulting tree. The tripwire also observes the drift declaration
+#     (scripts/verification/registry-drift-declaration.json); declaration
+#     honesty is independently gated by the drift check itself.
+#
+# Fully OFFLINE: no secrets, no network access, no dependency-install step —
+# both guard scripts and the tripwire use only the Node standard library and
+# local git, so the runner needs only the preinstalled Node toolchain.
+#
+# Tripwire diff basis: checkout uses fetch-depth: 0 so the push's `before`
+# commit is always locally diffable. On schedule/workflow_dispatch there is
+# no `before` commit by definition, so the tripwire degrades to a plain
+# verifier-verdict gate (changed = false, fail-closed on any verdict it
+# cannot read).
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+  schedule:
+    # Weekly, Wednesdays 04:37 UTC (off the top of the hour to avoid scheduler
+    # herds, and away from the Monday security-batteries window).
+    - cron: "37 4 * * 3"
+
+permissions:
+  contents: read
+
+jobs:
+  drift-watch:
+    name: Registry drift check + neutrality guard + baseline tamper tripwire
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source (full history for the tamper diff)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Registry drift check (J-038)
+        # Exit-code contract (scripts/verify-registry-drift.mjs):
+        #   0 = declared registry state matches the evolution baseline and the
+        #       recorded drift declaration (declared drift passes with the
+        #       record printed as notes)
+        #   1 = UNDECLARED DRIFT or STALE DECLARATION — FAILS the build
+        run: node scripts/verify-registry-drift.mjs
+
+      - name: Domain-neutrality guard (J-037)
+        id: neutrality
+        # Record-only here: the tripwire step below is the single failure
+        # point so its verdict can distinguish a plain neutrality failure
+        # from a tampered baseline edit. Exit codes (verifier contract):
+        #   0 = PASS (clean or baseline-quarantined only)
+        #   1 = FAIL (new violation, unreadable baseline, or scan error)
+        run: |
+          set +e
+          node scripts/verify-domain-neutrality.mjs 2>&1 | tee /tmp/neutrality-guard.log
+          code=${PIPESTATUS[0]}
+          set -e
+          verdict="$(grep -oE 'STATUS=(PASS|FAIL)' /tmp/neutrality-guard.log | tail -n 1 || true)"
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          echo "verdict=${verdict:-UNREADABLE}" >> "$GITHUB_OUTPUT"
+
+      - name: Baseline-tamper tripwire (H2-24)
+        if: always()
+        env:
+          EVENT_BEFORE: ${{ github.event.before }}
+          NEUTRALITY_EXIT: ${{ steps.neutrality.outputs.exit_code }}
+          NEUTRALITY_VERDICT: ${{ steps.neutrality.outputs.verdict }}
+        run: |
+          node <<'NODE'
+          const { execFileSync } = require("node:child_process");
+
+          // TRIPWIRE-DECISION-BEGIN
+          function tripwireDecision(input) {
+            const verdict = String(input.verdict ?? "").trim();
+            const neutralityExit = Number(input.neutralityExit);
+            if (verdict !== "STATUS=PASS" && verdict !== "STATUS=FAIL") {
+              return { fail: true, kind: "unreadable-verdict", reason: "neutrality verdict unreadable — refusing to pass the tripwire on an unverifiable verifier run" };
+            }
+            if (!Number.isInteger(neutralityExit)) {
+              return { fail: true, kind: "unreadable-verdict", reason: "neutrality exit code unreadable — refusing to pass the tripwire on an unverifiable verifier run" };
+            }
+            if ((neutralityExit === 0) !== (verdict === "STATUS=PASS")) {
+              return { fail: true, kind: "verdict-contradiction", reason: "neutrality exit code contradicts its verdict — refusing to trust the run" };
+            }
+            if (neutralityExit !== 0) {
+              if (input.baselineChanged) {
+                return { fail: true, kind: "baseline-tamper", reason: "TAMPER — NEUTRALITY_GUARD_BASELINE.json changed while the neutrality verifier reports NEW violations. The baseline is a shrink-only ratchet: an edit that re-arms violations is illegitimate. Regenerate the evidence or revert the baseline." };
+              }
+              return { fail: true, kind: "neutrality-failure", reason: "domain-neutrality verifier reports NEW violations (baseline unchanged — plain neutrality failure, not a baseline edit)" };
+            }
+            return { fail: false, kind: "pass", reason: "neutrality PASS — baseline consistent with observed violations (shrink-only ratchet edits allowed with regenerated evidence)" };
+          }
+          // TRIPWIRE-DECISION-END
+
+          const BASELINE = "architecture/coregrid-mvp-architecture/NEUTRALITY_GUARD_BASELINE.json";
+          const DECLARATION = "scripts/verification/registry-drift-declaration.json";
+          const before = process.env.EVENT_BEFORE || "";
+          // Single-quoted heredoc delimiter + strict SHA shape check keep the
+          // diff arguments free of shell interpolation; execFileSync is
+          // fail-closed (any git failure throws and fails the step).
+          const diffable = /^[0-9a-f]{40}$/.test(before);
+
+          function changedSince(path) {
+            if (!diffable) return false;
+            const out = execFileSync("git", ["diff", "--name-only", before, "HEAD", "--", path], { encoding: "utf8" });
+            return out.trim().length > 0;
+          }
+
+          const input = {
+            baselineChanged: changedSince(BASELINE),
+            declarationChanged: changedSince(DECLARATION),
+            neutralityExit: Number(process.env.NEUTRALITY_EXIT ?? "1"),
+            verdict: process.env.NEUTRALITY_VERDICT ?? "",
+          };
+          console.log("tripwire inputs: baselineChanged=" + input.baselineChanged + " declarationChanged=" + input.declarationChanged + " neutralityExit=" + input.neutralityExit + " verdict=" + (input.verdict || "UNREADABLE"));
+          const decision = tripwireDecision(input);
+          console.log("tripwire decision: " + decision.kind + " — " + decision.reason);
+          process.exit(decision.fail ? 1 : 0);
+          NODE

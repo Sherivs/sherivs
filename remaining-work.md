@@ -8,16 +8,80 @@ Future implementation roadmap. Phase specifications live in
 
 1. **Rotate credentials** that existed in git history (Supabase service
    role, `.mcp.json` GitHub token, Supabase keys in `.mcp.json`).
-2. **Move `.mcp.json` secrets to environment variables** so the file can be
-   shared safely.
+   **Still open (2026-10-02).** Rotation is an operator-side action and
+   cannot be proven from the repository; git history is also not
+   rewritten. The exposure surface shrank: `.mcp.json` no longer embeds
+   credential material (see item 2), and AD-181 (DECISIONS.md, RATIFIED
+   2026-09-03) plus `scripts/verification/secret-scan.mjs` and
+   `tests/unit/foundation.test.ts` now block re-introduction.
+2. ~~**Move `.mcp.json` secrets to environment variables** so the file can be
+   shared safely.~~ → **DONE (verified by inspection 2026-10-02)**: the
+   tracked `.mcp.json` now contains only non-secret server configuration
+   (no token/key values for the GitHub or Supabase MCP servers); the
+   no-credential-material rule is enforced by AD-181 (DECISIONS.md,
+   RATIFIED 2026-09-03), the secret scan, and the foundation integrity
+   suite.
 3. **Ratify constitution** - confirm `CONSTITUTION.md` is authoritative and
-   record ratification in `DECISIONS.md`.
-4. **Add CI** - build + unit tests + e2e + secret scan + RLS isolation
-   check on every PR (`.codex/pull-request-policy.md`).
-5. **Single verification command** - add `scripts/check` (PowerShell +
-   bash) that runs build, unit tests, and RLS checks.
-6. **Fill phase 01 (Foundation)** and **phase 02 (Identity)** content in
-   `architecture/`.
+   record ratification in `DECISIONS.md`. **Still open (2026-10-02)** — no
+   explicit constitution-ratification record exists in `DECISIONS.md`
+   (AD-181 ratifies a secrets/fixture decision, not the constitution).
+4. ~~**Add CI** - build + unit tests + e2e + secret scan + RLS isolation
+   check on every PR (`.codex/pull-request-policy.md`).~~ → **DONE
+   (2026-10-02)**: `.github/workflows/verify.yml` runs `npm run verify`
+   (typecheck + unit tests + registry/drift/neutrality gates + secret scan
+   + production build) on pull_request and push to main;
+   `.github/workflows/security-batteries.yml` runs the V1CAP-073 RLS
+   isolation battery and the V1CAP-074 restore/recovery drill against the
+   canonical database (weekly schedule + manual; live-credential-gated, so
+   intentionally not on pull_request; exit 2 = BLOCKED_NO_CREDENTIAL does
+   not fail the job). E2E remains a local `npm run test:e2e` (Playwright)
+   — not yet a CI job.
+5. ~~**Single verification command** - add `scripts/check` (PowerShell +
+   bash) that runs build, unit tests, and RLS checks.~~ → **DONE, with a
+   deviation (2026-10-02)**: the single command is `npm run verify`
+   (typecheck + unit tests + registry/drift/neutrality/secret gates +
+   build), not a `scripts/check` wrapper; a PowerShell bundle also exists
+   at `scripts/verification/check.ps1` (typecheck -> unit tests -> build).
+   No bash wrapper was added.
+6. ~~**Fill phase 01 (Foundation)** and **phase 02 (Identity)** content in
+   `architecture/`.~~ → **DONE (verified 2026-10-02)**:
+   `architecture/phase-01-foundation.md` and
+   `architecture/phase-02-identity.md` are populated (2,507 and 2,476
+   lines respectively).
+
+## Substrate-hardening wave findings (2026-10-02)
+
+Recorded honestly from the 2026-10-02 hardening waves; each item cites its
+evidence:
+
+- **Retention gate is standalone.** `scripts/verify-retention-schedule.mjs`
+  (exit 1 on a personal-data-bearing family without a policy ID) is not yet
+  in the committed `npm run verify` chain; the schedule's own authoring
+  report flags the verify-chain recommendation
+  (`architecture/coregrid-mvp-architecture/RETENTION_POLICY_SCHEDULE.md`).
+- **Retention durations are provisional defaults** pending operator/legal
+  ruling; erasure mechanism in V1 is tombstone only (ADR-005 Option 2);
+  crypto-shred is deferred to a follow-up ADR
+  (`architecture/coregrid-mvp-architecture/RETENTION_POLICY_SCHEDULE.md`).
+- **§27.6 audit-record gaps** in the Scholar server-function families were
+  recorded as findings, never accommodated
+  (`tests/unit/scholar-invariant-*.test.ts`; commit 5b22d4b).
+- **CI batteries are live-credential-gated.** Both
+  `.github/workflows/security-batteries.yml` jobs report
+  BLOCKED_NO_CREDENTIAL (exit 2, job not failed) until the operator
+  configures the repository secret store; no posture claim is made either
+  way.
+- **Battery table set is a maintained inventory.** The 36-table dual-posture
+  proof covers the applied `cg_*` tables as of 2026-10-02
+  (`architecture/proofs/CANONICAL_APPLY_RECORD_HARDENING.json`); new
+  `cg_*` tables must be added per the §4.4 runbook
+  (`architecture/coregrid-mvp-architecture/ratification/RLS_ISOLATION_BATTERY.md`).
+- **One genuine-policy beachhead.** J-005/J-006 neutral tenant-membership
+  policies exist on exactly three tables (`cg_role_assignment`,
+  `cg_role_grant`, `cg_org_membership` — nine tenant-scoped policies,
+  FORCED RLS); the remaining `cg_*` tables hold the zero-policy
+  deny-by-default posture. Broadening the policy-backed posture is future
+  work (`database/supabase/migrations/20261002000013_coregrid_v1_neutral_membership_policies.sql`).
 
 ## Phase-by-phase roadmap
 
