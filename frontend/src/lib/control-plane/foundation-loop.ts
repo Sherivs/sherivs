@@ -16,7 +16,7 @@ import {
 } from "./foundation-mission";
 import {
   checkVerificationIndependence,
-  type IdentityPrincipalRegistry,
+  type IdentityEquivalenceRegistry,
   type IndependenceCheckResult,
   type WorkCriticality,
 } from "../verification";
@@ -104,7 +104,7 @@ export interface FoundationVerificationRow {
  * MISSION-R-92): when the verification stage declares a verifier, the loop
  * consumes the independence check. A stage whose verification fails
  * independence BLOCKS stage closure — the loop cannot proceed on self-verified
- * or equivalent-principal-verified work, and critical work can never close on
+ * or equivalent-identity-verified work, and critical work can never close on
  * an AI verifier (E-027 structural law).
  */
 export interface LoopVerificationGovernance {
@@ -112,8 +112,8 @@ export interface LoopVerificationGovernance {
   readonly verifierIdentityRef: string;
   /** Criticality of the work being verified (critical work requires a human verifier). */
   readonly workCriticality: WorkCriticality;
-  /** Declarative identity → principal equivalence-class registry. */
-  readonly identityRegistry: IdentityPrincipalRegistry;
+  /** Declarative identity → effective-identity equivalence-class registry. */
+  readonly identityRegistry: IdentityEquivalenceRegistry;
 }
 
 export interface FoundationLoopPlan {

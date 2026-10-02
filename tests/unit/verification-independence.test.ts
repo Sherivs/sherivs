@@ -4,9 +4,9 @@ import {
   checkVerificationIndependence,
   identityIsAi,
   identityIsProvablyHuman,
-  resolvePrincipalRef,
+  resolveEffectiveIdentity,
   VerificationIndependenceError,
-  type IdentityPrincipalRegistry,
+  type IdentityEquivalenceRegistry,
   type VerificationRecord,
 } from "@/lib/verification";
 import { planFoundationLoop } from "@/lib/control-plane/foundation-loop";
@@ -19,25 +19,25 @@ const now = "2026-10-02T00:00:00.000Z";
  * principal is the operator "principal:operator-1"; a second human operator
  * holds a distinct principal.
  */
-const REGISTRY: IdentityPrincipalRegistry = [
+const REGISTRY: IdentityEquivalenceRegistry = [
   {
     identityRef: "identity:worker-7",
-    principalRef: "principal:operator-1",
+    effectiveIdentityRef: "principal:operator-1",
     identityKind: "ai_agent",
   },
   {
     identityRef: "identity:operator-1",
-    principalRef: "principal:operator-1",
+    effectiveIdentityRef: "principal:operator-1",
     identityKind: "human",
   },
   {
     identityRef: "identity:operator-2",
-    principalRef: "principal:operator-2",
+    effectiveIdentityRef: "principal:operator-2",
     identityKind: "human",
   },
   {
     identityRef: "ai:unregistered-verifier",
-    principalRef: "principal:platform-ai",
+    effectiveIdentityRef: "principal:platform-ai",
     identityKind: "ai_agent",
   },
 ];
@@ -61,12 +61,12 @@ function recordInput(overrides: Partial<Parameters<typeof captureVerificationRec
 
 describe("verification independence registry (equivalence classes)", () => {
   it("resolves a delegated identity to its true executor principal", () => {
-    expect(resolvePrincipalRef(REGISTRY, "identity:worker-7")).toBe("principal:operator-1");
-    expect(resolvePrincipalRef(REGISTRY, "identity:operator-2")).toBe("principal:operator-2");
+    expect(resolveEffectiveIdentity(REGISTRY, "identity:worker-7")).toBe("principal:operator-1");
+    expect(resolveEffectiveIdentity(REGISTRY, "identity:operator-2")).toBe("principal:operator-2");
   });
 
   it("treats an unregistered identity as its own principal", () => {
-    expect(resolvePrincipalRef(REGISTRY, "identity:unknown")).toBe("identity:unknown");
+    expect(resolveEffectiveIdentity(REGISTRY, "identity:unknown")).toBe("identity:unknown");
   });
 
   it("detects AI identities by registry kind and by provenance markers", () => {
@@ -105,9 +105,9 @@ describe("verification independence check (E-027 structural law)", () => {
       identityRegistry: REGISTRY,
     });
     expect(result.independent).toBe(false);
-    expect(result.rejectionCode).toBe("equivalent_principal_rejected");
-    expect(result.evidence.verifierPrincipalRef).toBe("principal:operator-1");
-    expect(result.evidence.executorPrincipalRef).toBe("principal:operator-1");
+    expect(result.rejectionCode).toBe("equivalent_identity_rejected");
+    expect(result.evidence.verifierEffectiveRef).toBe("principal:operator-1");
+    expect(result.evidence.executorEffectiveRef).toBe("principal:operator-1");
   });
 
   it("rejects an AI verifier on critical work", () => {
@@ -151,8 +151,8 @@ describe("verification record capture (typed rejection at capture time)", () => 
     expect(record.decision).toBe("verified");
     expect(record.independence.verifierIdentityRef).toBe("identity:operator-2");
     expect(record.independence.executorIdentityRef).toBe("identity:worker-7");
-    expect(record.independence.verifierPrincipalRef).toBe("principal:operator-2");
-    expect(record.independence.executorPrincipalRef).toBe("principal:operator-1");
+    expect(record.independence.verifierEffectiveRef).toBe("principal:operator-2");
+    expect(record.independence.executorEffectiveRef).toBe("principal:operator-1");
     expect(record.independence.verdict).toBe("independent");
     expect(record.independence.rejectionCode).toBeNull();
     expect(record.evidenceIds).toEqual(["evidence-1"]);
@@ -180,7 +180,7 @@ describe("verification record capture (typed rejection at capture time)", () => 
       captureVerificationRecord(recordInput({ verifierIdentityRef: "identity:operator-1" }));
     } catch (error) {
       const typed = error as VerificationIndependenceError;
-      expect(typed.code).toBe("equivalent_principal_rejected");
+      expect(typed.code).toBe("equivalent_identity_rejected");
       expect(typed.evidence.verdict).toBe("rejected");
     }
   });
@@ -284,9 +284,9 @@ describe("foundation loop verification stage consumes independence (loop wiring)
     });
     expect(plan.verification?.decision).toBe("failed");
     expect(plan.verification?.reason).toBe("verification_independence_failed");
-    expect(plan.verificationIndependence?.rejectionCode).toBe("equivalent_principal_rejected");
-    expect(plan.verificationIndependence?.evidence.executorPrincipalRef).toBe(
-      plan.verificationIndependence?.evidence.verifierPrincipalRef,
+    expect(plan.verificationIndependence?.rejectionCode).toBe("equivalent_identity_rejected");
+    expect(plan.verificationIndependence?.evidence.executorEffectiveRef).toBe(
+      plan.verificationIndependence?.evidence.verifierEffectiveRef,
     );
   });
 

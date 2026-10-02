@@ -10,11 +10,11 @@
  * require appropriately independent verification).
  *
  * Declarative equivalence classes: independence is evaluated against an
- * injected registry of identity → principal bindings (the delegation /
- * agent-identity model — AGENTS.md §5). Delegated work names its TRUE executor
- * principal: a worker identity delegated by an operator resolves to that
- * operator's principal, so the operator cannot "verify" the delegated work
- * under a second identity. An unregistered identity is its own principal.
+ * injected registry of identity → effective-identity bindings (the delegation /
+ * agent-identity model — AGENTS.md §5). Delegated work names its TRUE acting
+ * identity: a worker identity delegated by an operator resolves to that
+ * operator's identity, so the operator cannot "verify" the delegated work
+ * under a second identity. An unregistered identity is its own effective identity.
  *
  * AI verifiers: an identity known to be an AI identity (registry kind
  * `ai_agent`, or an identityRef carrying AI provenance markers per the
@@ -26,7 +26,7 @@
  * critical incidents: it ends at a human, never at the machine that did it.
  *
  * Every recorded verification carries its independence evidence: BOTH
- * identities, the equivalence-class resolution (resolved principal refs) and
+ * identities, the equivalence-class resolution (resolved effective-identity refs) and
  * the verdict.
  *
  * Boundary: pure contract, no persistence, no wall-clock sampling (time is
@@ -59,43 +59,43 @@ export function isCriticalWork(criticality: WorkCriticality): boolean {
 }
 
 /* ─────────────────────────────────────────────────────────────
- * Identity → principal equivalence-class registry
+ * Identity → effective-identity equivalence-class registry
  * ────────────────────────────────────────────────────────────*/
 
 /**
  * One equivalence-class binding: `identityRef` (the acting identity, possibly
- * a delegated worker or agent identity) resolves to `principalRef` (the
- * underlying principal it acts for, per the delegation / agent identity
+ * a delegated worker or agent identity) resolves to `effectiveIdentityRef` (the
+ * underlying identity it acts for, per the delegation / agent identity
  * model). The registry is declarative and injected — this module owns no
  * identities.
  */
-export interface IdentityPrincipalBinding {
+export interface IdentityEquivalenceBinding {
   readonly identityRef: string;
-  readonly principalRef: string;
+  readonly effectiveIdentityRef: string;
   readonly identityKind: IdentityKind;
 }
 
-export type IdentityPrincipalRegistry = readonly IdentityPrincipalBinding[];
+export type IdentityEquivalenceRegistry = readonly IdentityEquivalenceBinding[];
 
 function findBinding(
-  registry: IdentityPrincipalRegistry,
+  registry: IdentityEquivalenceRegistry,
   identityRef: string,
-): IdentityPrincipalBinding | null {
+): IdentityEquivalenceBinding | null {
   return registry.find((binding) => binding.identityRef.trim() === identityRef) ?? null;
 }
 
 /**
  * Equivalence-class resolution: a registered identity resolves to its
- * declared principal; an unregistered identity IS its own principal (an
+ * declared effective identity; an unregistered identity IS its own effective identity (an
  * identity cannot alias itself to escape the comparison — aliasing requires a
  * recorded binding, which is exactly the delegation record).
  */
-export function resolvePrincipalRef(
-  registry: IdentityPrincipalRegistry,
+export function resolveEffectiveIdentity(
+  registry: IdentityEquivalenceRegistry,
   identityRef: string,
 ): string {
   const trimmed = identityRef.trim();
-  return findBinding(registry, trimmed)?.principalRef.trim() ?? trimmed;
+  return findBinding(registry, trimmed)?.effectiveIdentityRef.trim() ?? trimmed;
 }
 
 /**
@@ -105,7 +105,7 @@ export function resolvePrincipalRef(
  * `ai:`-prefixed identity into a human).
  */
 export function identityIsAi(
-  registry: IdentityPrincipalRegistry,
+  registry: IdentityEquivalenceRegistry,
   identityRef: string,
 ): boolean {
   const trimmed = identityRef.trim();
@@ -120,7 +120,7 @@ export function identityIsAi(
  * human — the absence of a registration is never evidence of humanity.
  */
 export function identityIsProvablyHuman(
-  registry: IdentityPrincipalRegistry,
+  registry: IdentityEquivalenceRegistry,
   identityRef: string,
 ): boolean {
   const trimmed = identityRef.trim();
@@ -135,20 +135,20 @@ export function identityIsProvablyHuman(
 export type IndependenceRejectionCode =
   | "invalid_independence_input"
   | "self_verification_rejected"
-  | "equivalent_principal_rejected"
+  | "equivalent_identity_rejected"
   | "ai_verifier_rejected_on_critical"
   | "human_verifier_required";
 
 /**
  * The independence evidence carried by every verification record: both
- * identities, the equivalence-class resolution of each (resolved principal
- * refs), the work criticality, and the verdict.
+ * identities, the equivalence-class resolution of each (resolved effective
+ * identity refs), the work criticality, and the verdict.
  */
 export interface VerificationIndependenceEvidence {
   readonly verifierIdentityRef: string;
   readonly executorIdentityRef: string;
-  readonly verifierPrincipalRef: string;
-  readonly executorPrincipalRef: string;
+  readonly verifierEffectiveRef: string;
+  readonly executorEffectiveRef: string;
   readonly workCriticality: WorkCriticality;
   readonly verdict: "independent" | "rejected";
   readonly rejectionCode: IndependenceRejectionCode | null;
@@ -158,7 +158,7 @@ export interface IndependenceCheckInput {
   readonly verifierIdentityRef: string;
   readonly executorIdentityRef: string;
   readonly workCriticality: WorkCriticality;
-  readonly identityRegistry: IdentityPrincipalRegistry;
+  readonly identityRegistry: IdentityEquivalenceRegistry;
 }
 
 export interface IndependenceCheckResult {
@@ -173,8 +173,8 @@ export interface IndependenceCheckResult {
  * and deterministic:
  * - malformed identities or unknown criticality -> `invalid_independence_input`;
  * - verifier identity equals the executor identity -> `self_verification_rejected`;
- * - both identities resolve to the SAME principal (delegated executor naming
- *   its true executor principal) -> `equivalent_principal_rejected`;
+ * - both identities resolve to the SAME effective identity (delegated executor naming
+ *   its true acting identity) -> `equivalent_identity_rejected`;
  * - critical work verified by an AI identity -> `ai_verifier_rejected_on_critical`;
  * - critical work whose verifier is not PROVABLY human -> `human_verifier_required`.
  */
@@ -186,8 +186,8 @@ export function checkVerificationIndependence(input: IndependenceCheckInput): In
     verifierIdentityRef: string,
     executorIdentityRef: string,
     workCriticality: WorkCriticality,
-    verifierPrincipalRef: string,
-    executorPrincipalRef: string,
+    verifierEffectiveRef: string,
+    executorEffectiveRef: string,
   ): IndependenceCheckResult => ({
     independent,
     rejectionCode,
@@ -195,8 +195,8 @@ export function checkVerificationIndependence(input: IndependenceCheckInput): In
     evidence: {
       verifierIdentityRef,
       executorIdentityRef,
-      verifierPrincipalRef,
-      executorPrincipalRef,
+      verifierEffectiveRef,
+      executorEffectiveRef,
       workCriticality,
       verdict: independent ? "independent" : "rejected",
       rejectionCode,
@@ -236,8 +236,8 @@ export function checkVerificationIndependence(input: IndependenceCheckInput): In
     );
   }
 
-  const verifierPrincipalRef = resolvePrincipalRef(input.identityRegistry, verifierIdentityRef);
-  const executorPrincipalRef = resolvePrincipalRef(input.identityRegistry, executorIdentityRef);
+  const verifierEffectiveRef = resolveEffectiveIdentity(input.identityRegistry, verifierIdentityRef);
+  const executorEffectiveRef = resolveEffectiveIdentity(input.identityRegistry, executorIdentityRef);
 
   if (verifierIdentityRef === executorIdentityRef) {
     return build(
@@ -247,20 +247,20 @@ export function checkVerificationIndependence(input: IndependenceCheckInput): In
       verifierIdentityRef,
       executorIdentityRef,
       input.workCriticality,
-      verifierPrincipalRef,
-      executorPrincipalRef,
+      verifierEffectiveRef,
+      executorEffectiveRef,
     );
   }
-  if (verifierPrincipalRef === executorPrincipalRef) {
+  if (verifierEffectiveRef === executorEffectiveRef) {
     return build(
       false,
-      "equivalent_principal_rejected",
-      `verifier identity "${verifierIdentityRef}" resolves to principal "${verifierPrincipalRef}", which is the executor principal of the verified work (executor "${executorIdentityRef}") — equivalent principals cannot verify each other's work`,
+      "equivalent_identity_rejected",
+      `verifier identity "${verifierIdentityRef}" resolves to effective identity "${verifierEffectiveRef}", which is the acting identity of the verified work's executor (executor "${executorIdentityRef}") — equivalent identities cannot verify each other's work`,
       verifierIdentityRef,
       executorIdentityRef,
       input.workCriticality,
-      verifierPrincipalRef,
-      executorPrincipalRef,
+      verifierEffectiveRef,
+      executorEffectiveRef,
     );
   }
   if (isCriticalWork(input.workCriticality)) {
@@ -272,8 +272,8 @@ export function checkVerificationIndependence(input: IndependenceCheckInput): In
         verifierIdentityRef,
         executorIdentityRef,
         input.workCriticality,
-        verifierPrincipalRef,
-        executorPrincipalRef,
+        verifierEffectiveRef,
+        executorEffectiveRef,
       );
     }
     if (!identityIsProvablyHuman(input.identityRegistry, verifierIdentityRef)) {
@@ -284,8 +284,8 @@ export function checkVerificationIndependence(input: IndependenceCheckInput): In
         verifierIdentityRef,
         executorIdentityRef,
         input.workCriticality,
-        verifierPrincipalRef,
-        executorPrincipalRef,
+        verifierEffectiveRef,
+        executorEffectiveRef,
       );
     }
   }
@@ -297,8 +297,8 @@ export function checkVerificationIndependence(input: IndependenceCheckInput): In
     verifierIdentityRef,
     executorIdentityRef,
     input.workCriticality,
-    verifierPrincipalRef,
-    executorPrincipalRef,
+    verifierEffectiveRef,
+    executorEffectiveRef,
   );
 }
 
@@ -357,7 +357,7 @@ export interface VerificationRecordInput {
   executorIdentityRef: string;
   verifierIdentityRef: string;
   evidenceIds?: readonly string[];
-  identityRegistry: IdentityPrincipalRegistry;
+  identityRegistry: IdentityEquivalenceRegistry;
 }
 
 /**
@@ -448,8 +448,8 @@ function emptyEvidence(): VerificationIndependenceEvidence {
   return {
     verifierIdentityRef: "",
     executorIdentityRef: "",
-    verifierPrincipalRef: "",
-    executorPrincipalRef: "",
+    verifierEffectiveRef: "",
+    executorEffectiveRef: "",
     workCriticality: "minor",
     verdict: "rejected",
     rejectionCode: "invalid_independence_input",
