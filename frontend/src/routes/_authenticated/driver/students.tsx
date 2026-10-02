@@ -17,7 +17,7 @@ import {
   getMyDriverBus,
   type DriverBusFull,
   type DriverStudent,
-} from "@/lib/driver-portal.functions";
+} from "@/lib/runtime/scholar/driver-portal.functions";
 
 export const Route = createFileRoute("/_authenticated/driver/students")({
   component: DriverStudentsPage,

@@ -210,12 +210,12 @@
       "ownerPhase": null,
       "classification": "ENFORCED",
       "declaredEvidence": [
-        "frontend/src/lib/provisioning.functions.ts",
+        "frontend/src/lib/runtime/scholar/provisioning.functions.ts",
         "tests/unit/p08-enforcement-surface.test.ts",
         "tests/unit/onboarding-flow.test.ts"
       ],
       "matchedEvidence": [
-        "frontend/src/lib/provisioning.functions.ts",
+        "frontend/src/lib/runtime/scholar/provisioning.functions.ts",
         "tests/unit/p08-enforcement-surface.test.ts",
         "tests/unit/onboarding-flow.test.ts"
       ],

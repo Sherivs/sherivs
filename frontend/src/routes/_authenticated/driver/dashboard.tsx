@@ -52,7 +52,7 @@ import {
   type DriverBusFull,
   type DriverBusStatus,
   type DriverStudent,
-} from "@/lib/driver-portal.functions";
+} from "@/lib/runtime/scholar/driver-portal.functions";
 
 export const Route = createFileRoute("/_authenticated/driver/dashboard")({
   component: DriverDashboard,

@@ -61,6 +61,7 @@ const RUNTIME_LAYER_PATTERNS: readonly RegExp[] = [
   /^frontend\/src\/lib\/scholar\//,
   /^frontend\/src\/lib\/scholar-[^/]+\.tsx?$/,
   /^frontend\/src\/lib\/runtime\/scholar[^/]*\.tsx?$/,
+  /^frontend\/src\/lib\/runtime\/scholar\/[^/]+\.tsx?$/,
 ];
 
 const inRuntimeLayer = (ref: string) => RUNTIME_LAYER_PATTERNS.some((p) => p.test(ref));

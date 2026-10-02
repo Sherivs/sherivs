@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
 import { PortalPage } from "@/components/portal-shell";
-import { unlockFaceAccount } from "@/lib/notifications-fanout.functions";
+import { unlockFaceAccount } from "@/lib/runtime/scholar/notifications-fanout.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/locked-accounts")({
   ssr: false,

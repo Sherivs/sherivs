@@ -210,7 +210,7 @@ export const SCHOLAR_VERTICAL_BINDINGS: readonly ScholarVerticalBinding[] = [
       "frontend/src/routes/_authenticated/admin/hr.tsx",
       "frontend/src/routes/_authenticated/admin/staff-accounts.tsx",
       "frontend/src/lib/runtime/scholar-workforce.ts",
-      "frontend/src/lib/workforce-positions.functions.ts",
+      "frontend/src/lib/runtime/scholar/workforce-positions.functions.ts",
     ],
   },
   {

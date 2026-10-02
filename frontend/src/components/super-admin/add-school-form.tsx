@@ -8,7 +8,7 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
-import { createSchoolWithAdmin, type CreateSchoolResult } from "@/lib/provisioning.functions";
+import { createSchoolWithAdmin, type CreateSchoolResult } from "@/lib/runtime/scholar/provisioning.functions";
 
 const TIERS = ["trial", "starter", "growth", "professional", "enterprise"] as const;
 

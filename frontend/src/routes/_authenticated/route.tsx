@@ -34,7 +34,7 @@ import {
 import { hasNavDestinations, resolveWorkspaceNav } from "@/lib/workspace-engine/navigation";
 import { resolveMemberWorkspaceExperience } from "@/lib/experience/workspace-experience";
 import { scholarWorkspaceLabelForMember } from "@/lib/runtime/scholar-workforce-nav";
-import { getMyPrimaryWorkforcePosition } from "@/lib/workforce-positions.functions";
+import { getMyPrimaryWorkforcePosition } from "@/lib/runtime/scholar/workforce-positions.functions";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 

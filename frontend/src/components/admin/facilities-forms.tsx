@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { upsertSchoolMeals, upsertSchoolTransport } from "@/lib/facilities.functions";
+import { upsertSchoolMeals, upsertSchoolTransport } from "@/lib/runtime/scholar/facilities.functions";
 
 function Field({
   label,

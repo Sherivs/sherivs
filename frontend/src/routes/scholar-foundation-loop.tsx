@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { scholarFoundationLoop } from "@/lib/scholar-foundation-loop.functions";
+import { scholarFoundationLoop } from "@/lib/runtime/scholar/scholar-foundation-loop.functions";
 
 export const Route = createFileRoute("/scholar-foundation-loop")({
   component: ScholarFoundationLoopRoute,

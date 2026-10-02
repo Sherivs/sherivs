@@ -67,7 +67,7 @@ const { invokeAiGateway, createAiGatewayProvider } = (await import(
   invokeAiGateway: ReturnType<typeof vi.fn>;
   createAiGatewayProvider: ReturnType<typeof vi.fn>;
 };
-const { draftLessonPlan } = await import("../../frontend/src/lib/lesson-plan-ai.functions");
+const { draftLessonPlan } = await import("../../frontend/src/lib/runtime/scholar/lesson-plan-ai.functions");
 
 const fakeModel = { modelId: "fake-gateway-model" };
 const fakeProvider = vi.fn(() => fakeModel);

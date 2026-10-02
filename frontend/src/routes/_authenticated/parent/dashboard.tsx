@@ -12,7 +12,7 @@ import { PreviewPublicSiteCard } from "@/components/preview-public-site";
 import { AnnouncementsFeed } from "@/components/announcements-feed";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { initFeePayment, verifyFeePayment } from "@/lib/paystack.functions";
+import { initFeePayment, verifyFeePayment } from "@/lib/runtime/scholar/paystack.functions";
 import { openPaystackInline } from "@/lib/paystack-inline";
 
 export const Route = createFileRoute("/_authenticated/parent/dashboard")({

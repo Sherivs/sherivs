@@ -12,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
 import { PortalPage, StatCard, SectionGrid } from "@/components/portal-shell";
 import { Button } from "@/components/ui/button";
-import { notifyGradesPublished } from "@/lib/notifications-fanout.functions";
+import { notifyGradesPublished } from "@/lib/runtime/scholar/notifications-fanout.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/report-cards")({
   ssr: false,

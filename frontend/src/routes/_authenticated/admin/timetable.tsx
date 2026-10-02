@@ -10,7 +10,7 @@ import { TimetableGrid, type TimetableSlot } from "@/components/timetable-grid";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { generateTimetableDraft, saveTimetable } from "@/lib/timetable.functions";
+import { generateTimetableDraft, saveTimetable } from "@/lib/runtime/scholar/timetable.functions";
 import {
   DAY_PRESETS,
   recommendDayRoutines,

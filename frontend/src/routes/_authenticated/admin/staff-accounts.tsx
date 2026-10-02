@@ -13,7 +13,7 @@ import {
   CREATABLE_STAFF_ROLES,
   type CreatableStaffRole,
   type CreateStaffAccountResult,
-} from "@/lib/staff-accounts.functions";
+} from "@/lib/runtime/scholar/staff-accounts.functions";
 import {
   SCHOLAR_WORKFORCE_KINDS,
   scholarWorkforceKindForMembershipKind,
@@ -23,7 +23,7 @@ import {
   assignWorkforcePosition,
   endWorkforcePosition,
   listWorkforcePositions,
-} from "@/lib/workforce-positions.functions";
+} from "@/lib/runtime/scholar/workforce-positions.functions";
 import {
   isOpenWorkforcePosition,
   summarizeWorkforcePositions,

@@ -69,12 +69,12 @@
       "classification": "ENFORCED",
       "declaredEvidence": [
         "frontend/src/lib/education-institution.ts",
-        "frontend/src/lib/scholar-institution-config.functions.ts",
+        "frontend/src/lib/runtime/scholar/scholar-institution-config.functions.ts",
         "tests/unit/scholar-config-lifecycle.test.ts"
       ],
       "matchedEvidence": [
         "frontend/src/lib/education-institution.ts",
-        "frontend/src/lib/scholar-institution-config.functions.ts",
+        "frontend/src/lib/runtime/scholar/scholar-institution-config.functions.ts",
         "tests/unit/scholar-config-lifecycle.test.ts"
       ],
       "unresolvedEvidence": [],
@@ -110,11 +110,11 @@
       "ownerPhase": null,
       "classification": "ENFORCED",
       "declaredEvidence": [
-        "frontend/src/lib/scholar-institution-config.functions.ts",
+        "frontend/src/lib/runtime/scholar/scholar-institution-config.functions.ts",
         "tests/unit/p08-enforcement-surface.test.ts"
       ],
       "matchedEvidence": [
-        "frontend/src/lib/scholar-institution-config.functions.ts",
+        "frontend/src/lib/runtime/scholar/scholar-institution-config.functions.ts",
         "tests/unit/p08-enforcement-surface.test.ts"
       ],
       "unresolvedEvidence": [],

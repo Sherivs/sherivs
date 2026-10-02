@@ -67,7 +67,7 @@ const { invokeAiGateway, createAiGatewayProvider } = (await import(
   invokeAiGateway: ReturnType<typeof vi.fn>;
   createAiGatewayProvider: ReturnType<typeof vi.fn>;
 };
-const { generateTimetableDraft } = await import("../../frontend/src/lib/timetable.functions");
+const { generateTimetableDraft } = await import("../../frontend/src/lib/runtime/scholar/timetable.functions");
 
 const fakeModel = { modelId: "fake-gateway-model" };
 const fakeProvider = vi.fn(() => fakeModel);

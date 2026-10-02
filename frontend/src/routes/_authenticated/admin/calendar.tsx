@@ -6,7 +6,7 @@ import { PortalPage } from "@/components/portal-shell";
 import { CrudList, type CrudConfig } from "@/components/admin/crud-list";
 import { CalendarMonth } from "@/components/calendar-month";
 import { useApp } from "@/contexts/app-context";
-import { notifyCalendarEvent } from "@/lib/notifications-fanout.functions";
+import { notifyCalendarEvent } from "@/lib/runtime/scholar/notifications-fanout.functions";
 
 type Row = {
   id: string;

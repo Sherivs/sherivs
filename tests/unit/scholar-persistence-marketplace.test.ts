@@ -44,7 +44,7 @@ import {
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const MIGRATION =
   "database/supabase/migrations/20260907000800_coregrid_role_assignment_substrate.sql";
-const FUNCTIONS_FILE = "frontend/src/lib/scholar-role-assignments.functions.ts";
+const FUNCTIONS_FILE = "frontend/src/lib/runtime/scholar/scholar-role-assignments.functions.ts";
 
 const RPC_NAMES = [
   "list_role_assignments",

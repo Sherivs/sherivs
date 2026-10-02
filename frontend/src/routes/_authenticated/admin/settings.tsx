@@ -17,7 +17,7 @@ import {
   SECTION_FLAG_KEYS,
   updateSchoolSettings,
   type SchoolSettingsTab,
-} from "@/lib/school-settings.functions";
+} from "@/lib/runtime/scholar/school-settings.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/settings")({
   ssr: false,

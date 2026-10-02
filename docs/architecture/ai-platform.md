@@ -6,10 +6,10 @@
 
 | Feature | Module |
 | --- | --- |
-| Lesson-plan drafting | `lib/lesson-plan-ai.functions.ts` |
-| Timetable generation | `lib/timetable.functions.ts` |
-| Expense insights | `lib/expense-insights.functions.ts` |
-| Digital twin summaries | `lib/digital-twin.functions.ts` |
+| Lesson-plan drafting | `lib/runtime/scholar/lesson-plan-ai.functions.ts` |
+| Timetable generation | `lib/runtime/scholar/timetable.functions.ts` |
+| Expense insights | `lib/runtime/scholar/expense-insights.functions.ts` |
+| Digital twin summaries | `lib/runtime/scholar/digital-twin.functions.ts` |
 | Portal assistants | `components/ai/**` (admin, teacher, student, parent) |
 
 ## Architecture

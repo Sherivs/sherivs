@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
 import { PortalPage, StatCard, SectionGrid } from "@/components/portal-shell";
 import { Button } from "@/components/ui/button";
-import { generateTeacherCheckQr } from "@/lib/attendance.functions";
+import { generateTeacherCheckQr } from "@/lib/runtime/scholar/attendance.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/attendance")({
   ssr: false,

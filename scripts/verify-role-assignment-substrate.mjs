@@ -34,7 +34,7 @@ import { pgSslConfig } from "./lib/pg-ssl.mjs";
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const MIGRATION_REF =
   "database/supabase/migrations/20260907000800_coregrid_role_assignment_substrate.sql";
-const FUNCTIONS_REF = "frontend/src/lib/scholar-role-assignments.functions.ts";
+const FUNCTIONS_REF = "frontend/src/lib/runtime/scholar/scholar-role-assignments.functions.ts";
 const PROOF_REF = "architecture/proofs/role-assignment-substrate.proof.json";
 
 const TABLES = ["cg_role_assignment", "cg_role_grant"];

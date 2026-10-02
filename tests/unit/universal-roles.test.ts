@@ -369,7 +369,8 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 /** The runtime layer, per the platform-neutrality guard's own path list. */
-const RUNTIME_LAYER_PATH_PATTERN = /^frontend\/src\/lib\/runtime\/scholar[^/]*\.tsx?$/;
+const RUNTIME_LAYER_PATH_PATTERN =
+  /^frontend\/src\/lib\/runtime\/scholar([-\/][^/]*)?\.tsx?$/;
 const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url));
 
 describe("I-012 closure: nav-kind membership consumes the declared mapping tables", () => {

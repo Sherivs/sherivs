@@ -4,7 +4,7 @@ import {
   executeRecordFoundationLoop,
   rollbackFoundationExecution,
 } from "@/lib/foundation-loop.functions";
-import { executeScholarFoundationLoop } from "@/lib/scholar-foundation-loop.functions";
+import { executeScholarFoundationLoop } from "@/lib/runtime/scholar/scholar-foundation-loop.functions";
 
 const url = process.env.SUPABASE_URL ?? "";
 const anonKey = process.env.SUPABASE_PUBLISHABLE_KEY ?? "";

@@ -119,7 +119,7 @@
       "requirement": "Provisioning is approval-gated and idempotent: repeated requests must not create duplicate environments.",
       "required": true,
       "evidence": [
-        { "kind": "module", "path": "frontend/src/lib/provisioning.functions.ts" },
+        { "kind": "module", "path": "frontend/src/lib/runtime/scholar/provisioning.functions.ts" },
         { "kind": "test", "path": "tests/unit/p08-enforcement-surface.test.ts", "contains": "provisioning.functions.ts" },
         { "kind": "test", "path": "tests/unit/onboarding-flow.test.ts" }
       ]

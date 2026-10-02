@@ -14,7 +14,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { checkPlatformBootstrap, claimFirstSuperAdmin } from "@/lib/provisioning.functions";
+import { checkPlatformBootstrap, claimFirstSuperAdmin } from "@/lib/runtime/scholar/provisioning.functions";
 import { useApp } from "@/contexts/app-context";
 
 export const Route = createFileRoute("/super-admin-bootstrap")({

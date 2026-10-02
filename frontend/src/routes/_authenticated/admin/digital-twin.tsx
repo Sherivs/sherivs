@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
 import { PortalPage } from "@/components/portal-shell";
-import { saveTwinConfig, placeTwinCall } from "@/lib/digital-twin.functions";
+import { saveTwinConfig, placeTwinCall } from "@/lib/runtime/scholar/digital-twin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/digital-twin")({
   ssr: false,

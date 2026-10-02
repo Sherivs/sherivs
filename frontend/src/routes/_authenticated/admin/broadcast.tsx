@@ -18,8 +18,8 @@ import { PortalPage } from "@/components/portal-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { broadcastMessage } from "@/lib/messages-broadcast.functions";
-import { sendNotificationDigests } from "@/lib/notification-digest.functions";
+import { broadcastMessage } from "@/lib/runtime/scholar/messages-broadcast.functions";
+import { sendNotificationDigests } from "@/lib/runtime/scholar/notification-digest.functions";
 import { Mailbox } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/broadcast")({

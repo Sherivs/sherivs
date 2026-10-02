@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 
 import { PortalPage } from "@/components/portal-shell";
-import { getCurrentInstitutionOperatingModelDetail } from "@/lib/scholar-institution-config.functions";
+import { getCurrentInstitutionOperatingModelDetail } from "@/lib/runtime/scholar/scholar-institution-config.functions";
 import { educationRealityView } from "@/lib/education-reality-view";
 
 /**

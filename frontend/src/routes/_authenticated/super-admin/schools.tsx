@@ -8,7 +8,7 @@ import { PaginationBar } from "@/components/pagination-bar";
 import { usePagination, PAGE_SIZE } from "@/hooks/use-pagination";
 import { Input } from "@/components/ui/input";
 import { AddSchoolForm } from "@/components/super-admin/add-school-form";
-import { updateSchoolPlan, resetSchoolAdminPassword } from "@/lib/provisioning.functions";
+import { updateSchoolPlan, resetSchoolAdminPassword } from "@/lib/runtime/scholar/provisioning.functions";
 import { ALL_TIERS } from "@/lib/subscription-tiers";
 
 export const Route = createFileRoute("/_authenticated/super-admin/schools")({

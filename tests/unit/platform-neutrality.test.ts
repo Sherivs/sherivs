@@ -149,6 +149,7 @@ const RUNTIME_LAYER = [
   /^frontend\/src\/lib\/scholar\//,
   /^frontend\/src\/lib\/scholar-[^/]+\.tsx?$/,
   /^frontend\/src\/lib\/runtime\/scholar[^/]*\.tsx?$/,
+  /^frontend\/src\/lib\/runtime\/scholar\/[^/]+\.tsx?$/,
   /^frontend\/src\/routes\/_authenticated\/scholar\//,
   // The runtime's own row/insert/update aliases for the tables it owns.
   /^frontend\/src\/types\/coregrid-scholar\.ts$/,

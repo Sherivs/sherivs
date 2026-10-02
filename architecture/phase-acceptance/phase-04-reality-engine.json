@@ -46,7 +46,7 @@
       "required": true,
       "evidence": [
         { "kind": "module", "path": "frontend/src/lib/education-institution.ts" },
-        { "kind": "module", "path": "frontend/src/lib/scholar-institution-config.functions.ts", "contains": "publishInstitutionOperatingModel" },
+        { "kind": "module", "path": "frontend/src/lib/runtime/scholar/scholar-institution-config.functions.ts", "contains": "publishInstitutionOperatingModel" },
         { "kind": "test", "path": "tests/unit/scholar-config-lifecycle.test.ts" }
       ]
     },
@@ -68,7 +68,7 @@
       "requirement": "Every reality mutation is a server-side, validated, authorised, versioned command that fails closed.",
       "required": true,
       "evidence": [
-        { "kind": "module", "path": "frontend/src/lib/scholar-institution-config.functions.ts", "contains": "listInstitutionOperatingModelVersions" },
+        { "kind": "module", "path": "frontend/src/lib/runtime/scholar/scholar-institution-config.functions.ts", "contains": "listInstitutionOperatingModelVersions" },
         { "kind": "test", "path": "tests/unit/p08-enforcement-surface.test.ts", "contains": "scholar-institution-config.functions.ts" }
       ],
       "boundary": [

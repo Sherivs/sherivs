@@ -32,7 +32,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { inviteTeacher, setTeacherActive } from "@/lib/teachers.functions";
+import { inviteTeacher, setTeacherActive } from "@/lib/runtime/scholar/teachers.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/teachers")({
   ssr: false,

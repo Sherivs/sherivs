@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
 import { PortalPage, EmptyCard, StatCard, SectionGrid } from "@/components/portal-shell";
 import { Button } from "@/components/ui/button";
-import { initFeePayment, verifyFeePayment } from "@/lib/paystack.functions";
+import { initFeePayment, verifyFeePayment } from "@/lib/runtime/scholar/paystack.functions";
 import { loadPaystackInline } from "@/lib/paystack-inline";
 
 export const Route = createFileRoute("/_authenticated/parent/fees")({

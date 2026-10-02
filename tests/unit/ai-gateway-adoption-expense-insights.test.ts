@@ -68,7 +68,7 @@ const { invokeAiGateway, createAiGatewayProvider } = (await import(
   createAiGatewayProvider: ReturnType<typeof vi.fn>;
 };
 const { getExpenseInsights } = await import(
-  "../../frontend/src/lib/expense-insights.functions"
+  "../../frontend/src/lib/runtime/scholar/expense-insights.functions"
 );
 
 const fakeModel = { modelId: "fake-gateway-model" };

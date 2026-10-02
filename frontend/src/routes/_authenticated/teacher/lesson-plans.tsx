@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { draftLessonPlan } from "@/lib/lesson-plan-ai.functions";
+import { draftLessonPlan } from "@/lib/runtime/scholar/lesson-plan-ai.functions";
 
 type Row = {
   id: string;

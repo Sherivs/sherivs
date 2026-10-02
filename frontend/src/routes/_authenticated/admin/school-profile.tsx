@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { PortalPage } from "@/components/portal-shell";
 import { RoleGuard } from "@/components/role-guard";
-import { getOrganizationProfile, saveOrganizationProfile } from "@/lib/org-profile.functions";
+import { getOrganizationProfile, saveOrganizationProfile } from "@/lib/runtime/scholar/org-profile.functions";
 import { recommendTemplates } from "@/lib/onboarding/template-engine";
 import {
   SCHOLAR_SCHOOL_TEMPLATES,

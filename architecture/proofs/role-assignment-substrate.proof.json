@@ -2,10 +2,10 @@
   "artifact": "role-assignment-substrate",
   "wave": "R39",
   "mode": "static",
-  "generatedAt": "2026-10-01T22:02:04.110Z",
+  "generatedAt": "2026-10-02T06:05:05.159Z",
   "migration": "database/supabase/migrations/20260907000800_coregrid_role_assignment_substrate.sql",
   "migrationDigest": "sha256:06c134d8ca63354f8abed06bc9f3a424a2bfa27118bd0b2745fe2dd55cea7fcd",
-  "serverSurface": "frontend/src/lib/scholar-role-assignments.functions.ts",
+  "serverSurface": "frontend/src/lib/runtime/scholar/scholar-role-assignments.functions.ts",
   "tables": [
     "cg_role_assignment",
     "cg_role_grant"

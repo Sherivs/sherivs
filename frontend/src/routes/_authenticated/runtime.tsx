@@ -6,8 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Boxes, Building2, LayoutDashboard, ShieldAlert } from "lucide-react";
-import { getMyFeatureAccess } from "@/lib/scholar-feature-access.functions";
-import { getMyRealityRoles } from "@/lib/scholar-role-assignments.functions";
+import { getMyFeatureAccess } from "@/lib/runtime/scholar/scholar-feature-access.functions";
+import { getMyRealityRoles } from "@/lib/runtime/scholar/scholar-role-assignments.functions";
 import { buildRuntimeView } from "@/lib/surfaces/runtime-view";
 
 export const Route = createFileRoute("/_authenticated/runtime")({

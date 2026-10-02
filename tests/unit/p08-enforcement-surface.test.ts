@@ -30,32 +30,34 @@ import { fileURLToPath } from "node:url";
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const LIB_DIR = join(ROOT, "frontend/src/lib");
 
-/** Families that have adopted the canonical gate (import must be present). */
+/** Families that have adopted the canonical gate (import must be present).
+ *  Paths are relative to frontend/src/lib — relocated families live in the
+ *  Scholar runtime namespace (MISSION-R-121 mechanical relocation). */
 const ADOPTED = [
-  "attendance.functions.ts",
-  "digital-twin.functions.ts",
-  "expense-insights.functions.ts",
-  "facilities.functions.ts",
+  "runtime/scholar/attendance.functions.ts",
+  "runtime/scholar/digital-twin.functions.ts",
+  "runtime/scholar/expense-insights.functions.ts",
+  "runtime/scholar/facilities.functions.ts",
   "foundation-loop.functions.ts",
   "identity-registry.functions.ts",
   "kernel-reality.functions.ts",
-  "lesson-plan-ai.functions.ts",
-  "messages-broadcast.functions.ts",
-  "notification-digest.functions.ts",
-  "notifications-fanout.functions.ts",
-  "org-profile.functions.ts",
-  "provisioning.functions.ts",
+  "runtime/scholar/lesson-plan-ai.functions.ts",
+  "runtime/scholar/messages-broadcast.functions.ts",
+  "runtime/scholar/notification-digest.functions.ts",
+  "runtime/scholar/notifications-fanout.functions.ts",
+  "runtime/scholar/org-profile.functions.ts",
+  "runtime/scholar/provisioning.functions.ts",
   "register-runtime.functions.ts",
-  "scholar-foundation-loop.functions.ts",
-  "scholar-institution-config.functions.ts",
-  "scholar-feature-access.functions.ts",
-  "scholar-role-assignments.functions.ts",
-  "school-settings.functions.ts",
-  "staff-accounts.functions.ts",
-  "teachers.functions.ts",
+  "runtime/scholar/scholar-foundation-loop.functions.ts",
+  "runtime/scholar/scholar-institution-config.functions.ts",
+  "runtime/scholar/scholar-feature-access.functions.ts",
+  "runtime/scholar/scholar-role-assignments.functions.ts",
+  "runtime/scholar/school-settings.functions.ts",
+  "runtime/scholar/staff-accounts.functions.ts",
+  "runtime/scholar/teachers.functions.ts",
   "tenant-registry.functions.ts",
-  "timetable.functions.ts",
-  "workforce-positions.functions.ts",
+  "runtime/scholar/timetable.functions.ts",
+  "runtime/scholar/workforce-positions.functions.ts",
 ] as const;
 
 /**
@@ -65,13 +67,13 @@ const ADOPTED = [
  * fails CI.
  */
 const DOCUMENTED_EXEMPT: Readonly<Record<string, string>> = {
-  "bus-tracking.functions.ts":
+  "runtime/scholar/bus-tracking.functions.ts":
     "driver self-scope only (writes filtered by driver_id = auth.uid()); RLS finding queued: transport_buses policy is school-wide, not driver-scoped (DB re-verify)",
-  "demo-provision.functions.ts":
+  "runtime/scholar/demo-provision.functions.ts":
     "public demo provisioning, environment-gated (ALLOW_DEMO_PROVISIONING=false default, foundation-pinned); service-role fixtures only",
-  "driver-portal.functions.ts":
+  "runtime/scholar/driver-portal.functions.ts":
     "driver self-scope only (own bus reads/writes by driver_id = auth.uid()); same transport_buses RLS finding as bus-tracking",
-  "paystack.functions.ts":
+  "runtime/scholar/paystack.functions.ts":
     "payment flow: fee rows are RLS-scoped on the authenticated client; webhook signature verification is the source of truth; parent/bursar roles are outside the school-admin gate by design",
   "profile.functions.ts":
     "self-scope only (own users row by id = auth.uid()); super-admins have no tenant profile (no-op)",
