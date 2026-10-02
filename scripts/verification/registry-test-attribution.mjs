@@ -157,6 +157,11 @@ const SUBJECT_MAP = {
   "tests/unit/scholar-invariant-kernel-substrate.test.ts": { phase: "08", why: "M-R-121 T2 §27 per-function invariant suites — kernel-substrate Scholar server-function families (phase-08 security enforcement)" },
   "tests/unit/scholar-invariant-self-scope.test.ts": { phase: "08", why: "M-R-121 T2 §27 per-function invariant suites — self-scoped/RLS-scoped Scholar server-function families (phase-08 security enforcement)" },
   "tests/unit/scholar-invariant-environment-gated.test.ts": { phase: "08", why: "M-R-121 T2 §27 per-function invariant suites — environment-gated family + the 23-family §27 coverage ledger (phase-08 security enforcement)" },
+  // ── Team 1 batch A substrate-persistence workstream (P08 foundation loop): wave-3 pure contracts given DB-backed adapters over migrations 20261002000005–08 (AUTHORED, NOT APPLIED); zero-policy deny-by-default RLS per §17/§28, service-role adapters only, J-045 failure semantics ──
+  "tests/unit/adapter-reconciliation-store.test.ts": { phase: "33", why: "Team 1 batch A substrate-persistence workstream: DB-backed adapter for kernel/reconciliation (V1CAP-005/J-004/MISSION-R-14) over migrations 20261002000005 (AUTHORED, NOT APPLIED) — phase-33 universal kernel substrate" },
+  "tests/unit/adapter-event-security-store.test.ts": { phase: "33", why: "Team 1 batch A substrate-persistence workstream: DB-backed adapter for kernel/event-security (V1CAP-044/J-022/MISSION-R-81) over migrations 20261002000006 (AUTHORED, NOT APPLIED) — phase-33 universal kernel substrate" },
+  "tests/unit/adapter-event-routing-store.test.ts": { phase: "33", why: "Team 1 batch A substrate-persistence workstream: DB-backed adapter for kernel/event-routing (V1CAP-043/J-021/MISSION-R-63) over migrations 20261002000007 (AUTHORED, NOT APPLIED) — phase-33 universal kernel substrate" },
+  "tests/unit/adapter-evidence-capture-store.test.ts": { phase: "09", why: "Team 1 batch A substrate-persistence workstream: DB-backed adapter for the evidence/capture lifecycle (J-034/V1CAP-059/MISSION-R-90, phase-09 Security Trust Fabric) over migration 20261002000008 (AUTHORED, NOT APPLIED)" },
 };
 
 // Scholar runtime domain layer: every scholar-* suite tests the Scholar
