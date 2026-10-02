@@ -10,6 +10,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireSchoolAdminScope } from "@/lib/security-role-gate";
+import { writeAuditRecord } from "@/lib/server/write-audit";
 import {
   nonEmptyText,
   optionalText,
@@ -158,6 +159,18 @@ export const updateSchoolSettings = createServerFn({ method: "POST" })
 
     const { error } = await context.supabase.from("schools").update(data.values).eq("id", schoolId);
     if (error) throw new Error(error.message);
+
+    // §27.6 AUDIT — fail-closed separate audit record for the canonical write.
+    await writeAuditRecord(context.supabase, {
+      action: "school_settings.update",
+      gate: "requireSchoolAdminScope",
+      tenantId: schoolId,
+      actorId: context.userId,
+      table: "schools",
+      recordId: schoolId,
+      outcome: "succeeded",
+      details: { tab: data.tab },
+    });
 
     return { ok: true, tab: data.tab };
   });

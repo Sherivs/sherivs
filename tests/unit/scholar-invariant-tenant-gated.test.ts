@@ -359,22 +359,29 @@ defineFamilySuite({
       method: "POST",
       input: "zod",
       gate: "school-admin",
-      audit: "write-through",
-      auditMarkers: [/\.from\("school_meals"\)/],
+      audit: "explicit-event",
+      auditMarkers: [
+        /\.from\("school_meals"\)/,
+        /writeAuditRecord\(/,
+        /\.from\("audit_logs"\)/,
+      ],
       gateMarker: /assertAdmin\(context\)/,
+      note: "§27.6 closed via the shared write-audit hook: fail-closed audit_logs record (who/tenant/action/gate/when/outcome)",
     },
     {
       fn: "upsertSchoolTransport",
       method: "POST",
       input: "zod",
       gate: "school-admin",
-      audit: "write-through",
-      auditMarkers: [/\.from\("school_transport"\)/],
+      audit: "explicit-event",
+      auditMarkers: [
+        /\.from\("school_transport"\)/,
+        /writeAuditRecord\(/,
+        /\.from\("audit_logs"\)/,
+      ],
       gateMarker: /assertAdmin\(context\)/,
+      note: "§27.6 closed via the shared write-audit hook: fail-closed audit_logs record (who/tenant/action/gate/when/outcome)",
     },
-  ],
-  findings: [
-    "§27.6 finding: the singleton upserts (school_meals/school_transport) leave no separate audit record — the canonical row is the record. Gate + RLS scope the write; actor attribution is not persisted. Recorded, not accommodated.",
   ],
 });
 
@@ -472,12 +479,10 @@ defineFamilySuite({
       method: "POST",
       input: "zod",
       gate: "school-admin",
-      audit: "write-through",
-      auditMarkers: [/\.from\("schools"\)/],
+      audit: "explicit-event",
+      auditMarkers: [/\.from\("schools"\)/, /writeAuditRecord\(/, /\.from\("audit_logs"\)/],
+      note: "§27.6 closed via the shared write-audit hook: fail-closed actor-attributed audit_logs record (who/tenant/action/gate/when/outcome)",
     },
-  ],
-  findings: [
-    "§27.6 finding: updateSchoolSettings writes the canonical schools row without a separate audit record and the update is not actor-attributed (RLS + gate scope the write). Recorded, not accommodated.",
   ],
 });
 
@@ -489,23 +494,20 @@ defineFamilySuite({
       method: "POST",
       input: "zod",
       gate: "school-admin",
-      audit: "write-through",
-      auditMarkers: [/\.from\("users"\)/],
-      note: "the created users row (school_id = gate scope) is the canonical record",
+      audit: "explicit-event",
+      auditMarkers: [/\.from\("users"\)/, /writeAuditRecord\(/, /\.from\("audit_logs"\)/],
+      note: "created users row (school_id = gate scope) is the canonical record; §27.6 closed via the shared write-audit hook (fail-closed audit_logs record; the temp credential is never audited, §29)",
     },
     {
       fn: "setTeacherActive",
       method: "POST",
       input: "zod",
       gate: "school-admin",
-      audit: "write-through",
-      auditMarkers: [/\.from\("users"\)/],
+      audit: "explicit-event",
+      auditMarkers: [/\.from\("users"\)/, /writeAuditRecord\(/, /\.from\("audit_logs"\)/],
       extra: [/\.eq\("role", "teacher"\)/],
-      note: "write is role-scoped AND RLS same-school restricted",
+      note: "write is role-scoped AND RLS same-school restricted; §27.6 closed via the shared write-audit hook (fail-closed audit_logs record)",
     },
-  ],
-  findings: [
-    "§27.6 finding: teacher provisioning writes (invite/set-active) leave no separate audit row; the users row itself is the record. Recorded, not accommodated.",
   ],
 });
 

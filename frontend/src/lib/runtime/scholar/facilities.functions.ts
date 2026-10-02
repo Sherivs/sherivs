@@ -11,6 +11,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireSchoolAdminScope } from "@/lib/security-role-gate";
+import { writeAuditRecord } from "@/lib/server/write-audit";
 
 const nullableNumber = (max?: number) =>
   z
@@ -102,6 +103,19 @@ export const upsertSchoolMeals = createServerFn({ method: "POST" })
       .from("school_meals")
       .upsert({ school_id: schoolId, ...data }, { onConflict: "school_id" });
     if (error) throw new Error(error.message);
+
+    // §27.6 AUDIT — fail-closed separate audit record for the singleton upsert.
+    await writeAuditRecord(context.supabase, {
+      action: "facilities.meals_upsert",
+      gate: "requireSchoolAdminScope",
+      tenantId: schoolId,
+      actorId: context.userId,
+      table: "school_meals",
+      recordId: schoolId,
+      outcome: "succeeded",
+      details: { meal_service_enabled: data.meal_service_enabled },
+    });
+
     return { ok: true };
   });
 
@@ -114,6 +128,19 @@ export const upsertSchoolTransport = createServerFn({ method: "POST" })
       .from("school_transport")
       .upsert({ school_id: schoolId, ...data }, { onConflict: "school_id" });
     if (error) throw new Error(error.message);
+
+    // §27.6 AUDIT — fail-closed separate audit record for the singleton upsert.
+    await writeAuditRecord(context.supabase, {
+      action: "facilities.transport_upsert",
+      gate: "requireSchoolAdminScope",
+      tenantId: schoolId,
+      actorId: context.userId,
+      table: "school_transport",
+      recordId: schoolId,
+      outcome: "succeeded",
+      details: { transport_enabled: data.transport_enabled },
+    });
+
     return { ok: true };
   });
 

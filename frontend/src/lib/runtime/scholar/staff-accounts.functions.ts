@@ -15,8 +15,13 @@ import {
 } from "@/lib/security-role-gate";
 import { asKernelAdmin } from "@/lib/kernel-admin-client";
 import { identityDraft } from "@/lib/identity-registry";
+import { writeAuditRecord } from "@/lib/server/write-audit";
 import { SCHOLAR_RUNTIME_REF, scholarWorkforceKind } from "@/lib/runtime/scholar-workforce";
 import { WORKFORCE_KIND_CODES } from "@/lib/workforce-kinds";
+import { SystemClock, TimeAuthority } from "../../kernel/time-authority";
+
+/** J-023 time-source discipline: time enters only via the kernel authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 const CREATABLE_ROLES = [
   "admin",
@@ -160,7 +165,7 @@ export const createStaffAccount = createServerFn({ method: "POST" })
     // runtime account and the P02 identity model stay unified. Skipped on the
     // reused (password-reset) path where the identity row already exists.
     if (!reused && schoolId) {
-      const now = new Date().toISOString();
+      const now = timeAuthority.now().at;
       const identityRow = identityDraft(
         {
           kind: "human",
@@ -202,7 +207,7 @@ export const createStaffAccount = createServerFn({ method: "POST" })
         identity_ref: userId,
         is_primary: true,
         employment_type: "full_time",
-        started_on: new Date().toISOString().slice(0, 10),
+        started_on: timeAuthority.now().at.slice(0, 10),
         status: "active",
         attributes: {},
       });
@@ -276,9 +281,29 @@ export const resetStaffPassword = createServerFn({ method: "POST" })
 
     const { data: fresh } = await supabaseAdmin
       .from("users")
-      .select("email")
+      .select("school_id, email")
       .eq("id", data.userId)
       .maybeSingle();
+
+    // §27.6 AUDIT — fail-closed separate audit record for the credential
+    // reset. Never records the new credential (§29). A platform super admin
+    // has no canonical tenant user row (audit_logs.user_id FK), so actor
+    // attribution falls to the verified email claim while the auth uid stays
+    // in the record payload.
+    await writeAuditRecord(supabaseAdmin, {
+      action: "staff_account.reset_password",
+      gate: "decideAccountAdministration",
+      tenantId: (fresh?.school_id as string | null) ?? null,
+      actorId: superGate.decision === "allow" ? null : context.userId,
+      actorEmail:
+        superGate.decision === "allow"
+          ? ((context.claims as { email?: string })?.email ?? null)
+          : null,
+      table: "users",
+      recordId: data.userId,
+      outcome: "succeeded",
+      details: { actor_user_id: context.userId, target_email: fresh?.email ?? null },
+    });
 
     return { userId: data.userId, email: fresh?.email ?? null, password };
   });

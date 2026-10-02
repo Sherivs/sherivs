@@ -18,6 +18,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requirePlatformSuperAdmin } from "@/lib/security-role-gate";
+import { writeAuditRecord } from "@/lib/server/write-audit";
 import {
   emailField,
   nonEmptyText,

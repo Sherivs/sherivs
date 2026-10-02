@@ -346,10 +346,14 @@ defineFamilySuite({
       method: "POST",
       input: "zod",
       gate: "bootstrap-count",
-      audit: "write-through",
-      auditMarkers: [/\.from\("super_admins"\)/],
+      audit: "explicit-event",
+      auditMarkers: [
+        /\.from\("super_admins"\)/,
+        /writeAuditRecord\(/,
+        /\.from\("audit_logs"\)/,
+      ],
       extra: [/Bootstrap is closed/],
-      note: "authorization = bootstrap-closed precondition (only proceeds when zero super admins exist); caller's own auth identity is used",
+      note: "authorization = bootstrap-closed precondition (only proceeds when zero super admins exist); caller's own auth identity is used; §27.6 closed via the shared write-audit hook (control-plane-scope fail-closed audit record)",
     },
     {
       fn: "createSchoolWithAdmin",
@@ -381,7 +385,6 @@ defineFamilySuite({
   findings: [
     "§27.2 note: provisioning is a platform-authority family — its super-admin functions address TARGET tenants by client-supplied, UUID-validated id; authorization is the platform super-admin gate (requirePlatformSuperAdmin) and every write is audited to super_admin_logs, so the client id is a resource selector, never an authorization input. Recorded as the declared clientTenantSelector exception.",
     "§27.1 finding: checkPlatformBootstrap allows anonymous entry by design (public bootstrap liveness probe). Exposure is bounded to a derived boolean (hasSuperAdmin) over the service-role client; no tenant data is returned. Recorded, not accommodated.",
-    "§27.6 finding: claimFirstSuperAdmin inserts the first super-admin row without a separate audit record — the bootstrap-closed precondition (count === 0) is the control, and the super_admins row itself is the record. Recorded, not accommodated.",
   ],
 });
 
@@ -403,12 +406,13 @@ defineFamilySuite({
       method: "POST",
       input: "zod",
       gate: "composite-account",
-      audit: "write-through",
-      auditMarkers: [/updateUserById/],
-      note: "same-tenant rule for school admins enforced via decideAccountAdministration(targetSchoolId)",
+      audit: "explicit-event",
+      auditMarkers: [
+        /updateUserById/,
+        /writeAuditRecord\(/,
+        /\.from\("audit_logs"\)/,
+      ],
+      note: "same-tenant rule for school admins enforced via decideAccountAdministration(targetSchoolId); §27.6 closed via the shared write-audit hook (fail-closed audit_logs record; the new credential is never audited, §29)",
     },
-  ],
-  findings: [
-    "§27.6 finding: resetStaffPassword performs the credential reset through the auth admin API with no separate audit row. Recorded, not accommodated.",
   ],
 });

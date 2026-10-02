@@ -4,6 +4,11 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { emailField, nonEmptyText, optionalText, phoneField } from "@/lib/validation";
 import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireSchoolAdminScope } from "@/lib/security-role-gate";
+import { SystemClock, TimeAuthority } from "../../kernel/time-authority";
+import { writeAuditRecord } from "@/lib/server/write-audit";
+
+/** J-023 time-source discipline: time enters only via the kernel authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /**
  * Tenant-admin server functions that need privileged work (creating auth
@@ -33,7 +38,7 @@ export type InviteTeacherResult = {
 
 function tempPassword() {
   const rand = Math.random().toString(36).slice(2, 8);
-  return `Teach@${rand}${new Date().getFullYear()}!`;
+  return `Teach@${rand}${new Date(timeAuthority.now().atMs).getFullYear()}!`;
 }
 
 export const inviteTeacher = createServerFn({ method: "POST" })
@@ -91,6 +96,19 @@ export const inviteTeacher = createServerFn({ method: "POST" })
       throw new Error(userErr.message);
     }
 
+    // §27.6 AUDIT — fail-closed separate audit record for the provisioning
+    // write. Never records the temporary credential (§29).
+    await writeAuditRecord(supabaseAdmin, {
+      action: "teacher.invite",
+      gate: "requireSchoolAdminScope",
+      tenantId: schoolId,
+      actorId: context.userId,
+      table: "users",
+      recordId: created.user.id,
+      outcome: "succeeded",
+      details: { email: data.email, role: "teacher" },
+    });
+
     return { userId: created.user.id, email: data.email, tempPassword: password };
   });
 
@@ -105,7 +123,7 @@ export const setTeacherActive = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     // Canonical Phase 08 school-admin gate (fail closed).
     // Lifecycle threading: see inviteTeacher for the signal semantics.
-    await requireSchoolAdminScope(context.supabase, {
+    const schoolId = await requireSchoolAdminScope(context.supabase, {
       lifecycle: null,
       sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
     });
@@ -116,5 +134,18 @@ export const setTeacherActive = createServerFn({ method: "POST" })
       .eq("id", data.userId)
       .eq("role", "teacher");
     if (error) throw new Error(error.message);
+
+    // §27.6 AUDIT — fail-closed separate audit record for the status write.
+    await writeAuditRecord(context.supabase, {
+      action: "teacher.set_active",
+      gate: "requireSchoolAdminScope",
+      tenantId: schoolId,
+      actorId: context.userId,
+      table: "users",
+      recordId: data.userId,
+      outcome: "succeeded",
+      details: { isActive: data.isActive },
+    });
+
     return { ok: true };
   });
