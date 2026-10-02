@@ -37,6 +37,11 @@ import {
 } from "./observability/structured-log";
 import { createAdapterFailurePolicy, type AdapterFailurePolicy } from "./adapters/failure-policy";
 import type { ModelRegistry, ModelRoutingRequirements } from "./ai-gateway/model-registry";
+import {
+  buildIntelligenceSnapshot,
+  type IntelligenceSnapshot,
+  type RoutingRationaleStep,
+} from "./ai-gateway/reasoning-provenance";
 
 export function createAiGatewayProvider(apiKey: string) {
   const key = apiKey || process.env.AI_API_KEY || "";
@@ -190,6 +195,18 @@ export interface AiGatewayInvocationResult<TPayload> {
   tokensOut: number;
 }
 
+/**
+ * J-015: the governed context package the invocation draws on. When declared,
+ * the intelligence snapshot's context version records the package's trace id
+ * plus a content digest of the exact assembled context; when omitted, the
+ * snapshot records an explicitly absent context version (null traceId and
+ * digest — never silently assumed empty).
+ */
+export interface AiGatewayIntelligenceContext {
+  traceId: string;
+  assembledContent: string;
+}
+
 export interface AiGatewayInvokeRequest<TPayload> {
   tenantRef: string;
   actorRef: string;
@@ -242,6 +259,12 @@ export interface AiGatewayInvokeRequest<TPayload> {
    * the registry applies when resolving the route for the declared purpose.
    */
   routingRequirements?: ModelRoutingRequirements;
+  /**
+   * J-015: the governed context package this invocation draws on (its trace
+   * id and exact assembled content). Omitted => the snapshot records an
+   * explicitly absent context version.
+   */
+  intelligenceContext?: AiGatewayIntelligenceContext | null;
   logSink?: LogSink;
   now?: () => number;
 }
@@ -264,8 +287,59 @@ export interface AiGatewayInvocationContext {
 }
 
 export type AiGatewayOutcome<TPayload> =
-  | { decision: "allow"; payload: TPayload; usage: UsageRecord }
+  | {
+      decision: "allow";
+      payload: TPayload;
+      usage: UsageRecord;
+      /**
+       * J-015: the intelligence snapshot of THIS output — which model,
+       * which context version, which routing/policy decision, token/cost
+       * attribution and the deterministic output digest. Immutable,
+       * serializable and envelope-bearing; the unit Evidence -> Verification
+       * later consumes. Every successful invocation carries one.
+       */
+      intelligence: IntelligenceSnapshot;
+    }
   | { decision: "deny"; code: AiGatewayDenyCode; reason: string };
+
+/**
+ * J-015: build the intelligence snapshot for one successful invocation.
+ * Fail-closed through buildIntelligenceSnapshot — an output that cannot be
+ * fully attributed never leaves the gateway.
+ */
+function stampIntelligence<TPayload>(args: {
+  request: AiGatewayInvokeRequest<TPayload>;
+  modelId: string;
+  providerClass: string | null;
+  routedViaRegistry: boolean;
+  rationale: readonly RoutingRationaleStep[];
+  tokensIn: number;
+  tokensOut: number;
+  estimatedCostUsd: number | null;
+  output: TPayload;
+  recordedAt: string;
+}): IntelligenceSnapshot {
+  const context = args.request.intelligenceContext ?? null;
+  return buildIntelligenceSnapshot({
+    tenantRef: args.request.tenantRef,
+    actorRef: args.request.actorRef,
+    agentRef: args.request.agentRef ?? null,
+    missionRef: args.request.missionRef ?? null,
+    purpose: args.request.purpose,
+    model: { id: args.modelId, providerClass: args.providerClass },
+    contextVersion: context
+      ? { traceId: context.traceId, assembledContent: context.assembledContent }
+      : null,
+    routing: { routedViaRegistry: args.routedViaRegistry, rationale: args.rationale },
+    usage: {
+      tokensIn: args.tokensIn,
+      tokensOut: args.tokensOut,
+      estimatedCostUsd: args.estimatedCostUsd,
+    },
+    output: args.output,
+    recordedAt: args.recordedAt,
+  });
+}
 
 /**
  * J-014: registry-routed invocation loop. All routing stays inside the
@@ -307,10 +381,25 @@ async function invokeRoutedThroughRegistry<TPayload>(
 
   const failurePolicy = request.failurePolicy ?? AI_GATEWAY_FAILURE_POLICY;
   const attempted: string[] = [];
+  const rationale: RoutingRationaleStep[] = [];
   let lastProviderError: { code: string; reason: string } | null = null;
+
+  // J-015: the routing rationale chain opens with the registry's route
+  // decision — every downstream consumer must be able to answer "under which
+  // policy was this model chosen".
+  rationale.push({
+    stage: "registry_route_resolved",
+    model: resolution.modelId,
+    detail: `Model registry resolved purpose "${request.purpose}" to the ordered candidate queue [${resolution.candidates.join(", ")}] with primary route "${resolution.modelId}"`,
+  });
 
   for (const modelId of resolution.candidates) {
     if (registry.healthOf(modelId) !== "healthy") {
+      rationale.push({
+        stage: "health_gate_skip",
+        model: modelId,
+        detail: `Candidate skipped: registry health is "${registry.healthOf(modelId)}"`,
+      });
       deps.log("warn", "gateway.routing.skip_unhealthy", {
         model: modelId,
         health: registry.healthOf(modelId),
@@ -370,6 +459,11 @@ async function invokeRoutedThroughRegistry<TPayload>(
     if (policyOutcome.outcome === "error") {
       registry.recordFailure(modelId);
       lastProviderError = { code: policyOutcome.code, reason: policyOutcome.reason };
+      rationale.push({
+        stage: "fallback_attempt_failed",
+        model: modelId,
+        detail: `Attempt failed (code=${policyOutcome.code}); advancing to the next routed candidate`,
+      });
       deps.log("error", "gateway.invoke.error", {
         model: modelId,
         duration_ms: deps.now() - startMs,
@@ -382,6 +476,11 @@ async function invokeRoutedThroughRegistry<TPayload>(
     const result = policyOutcome.value;
     registry.recordSuccess(modelId);
     const durationMs = deps.now() - startMs;
+    rationale.push({
+      stage: "provider_success",
+      model: modelId,
+      detail: "Attempt succeeded; output is attributed to this model through the governed path",
+    });
     const costInput: UsageCostInput = {
       model: modelId,
       tokensIn: result.tokensIn,
@@ -401,8 +500,27 @@ async function invokeRoutedThroughRegistry<TPayload>(
       estimatedCostUsd: request.rates ? estimateCostUsd(costInput, request.rates) : null,
       at: new Date(deps.now()).toISOString(),
     };
+    // J-015: every successful output leaves the gateway with its own
+    // intelligence snapshot — the fallback winner's snapshot names the model
+    // that actually produced the output and the full rationale chain.
+    const intelligence = stampIntelligence({
+      request,
+      modelId,
+      providerClass: registry.describeModel(modelId).providerClass,
+      routedViaRegistry: true,
+      rationale,
+      tokensIn: result.tokensIn,
+      tokensOut: result.tokensOut,
+      estimatedCostUsd: usage.estimatedCostUsd,
+      output: result.payload,
+      recordedAt: usage.at,
+    });
+    const meteredUsage: UsageRecord & { intelligence: IntelligenceSnapshot } = {
+      ...usage,
+      intelligence,
+    };
     if (request.ledger) {
-      request.ledger.recordUsage(usage);
+      request.ledger.recordUsage(meteredUsage);
     }
     deps.log("info", "gateway.invoke.end", {
       model: modelId,
@@ -410,8 +528,9 @@ async function invokeRoutedThroughRegistry<TPayload>(
       usage_in: result.tokensIn,
       usage_out: result.tokensOut,
       estimated_cost_usd: usage.estimatedCostUsd,
+      snapshot_id: intelligence.snapshotId,
     });
-    return { decision: "allow", payload: result.payload, usage };
+    return { decision: "allow", payload: result.payload, usage: meteredUsage, intelligence };
   }
 
   if (lastProviderError) {
@@ -449,6 +568,11 @@ async function invokeRoutedThroughRegistry<TPayload>(
  * a failing provider yields a contained `provider_failed` denial, degraded
  * mode/breaker state and trust history are recorded on the policy, and no
  * usage is recorded.
+ *
+ * J-015: every ALLOW outcome carries an immutable intelligence snapshot
+ * (which model, which context version, which routing/policy decision, token
+ * and cost attribution, deterministic output digest). The snapshot also
+ * flows into the usage-ledger record for the invocation.
  */
 export async function invokeAiGateway<TPayload>(
   request: AiGatewayInvokeRequest<TPayload>,
@@ -567,8 +691,33 @@ export async function invokeAiGateway<TPayload>(
     estimatedCostUsd: request.rates ? estimateCostUsd(costInput, request.rates) : null,
     at: new Date(now()).toISOString(),
   };
+  // J-015: the legacy declared path stamps the same fail-closed snapshot —
+  // no registry means the rationale records the declared-path decision.
+  const intelligence = stampIntelligence({
+    request,
+    modelId: request.model,
+    providerClass: null,
+    routedViaRegistry: false,
+    rationale: [
+      {
+        stage: "legacy_declared_path",
+        model: request.model,
+        detail:
+          "No model registry wired; the declared model was invoked directly through the governed gateway path",
+      },
+    ],
+    tokensIn: result.tokensIn,
+    tokensOut: result.tokensOut,
+    estimatedCostUsd: usage.estimatedCostUsd,
+    output: result.payload,
+    recordedAt: usage.at,
+  });
+  const meteredUsage: UsageRecord & { intelligence: IntelligenceSnapshot } = {
+    ...usage,
+    intelligence,
+  };
   if (request.ledger) {
-    request.ledger.recordUsage(usage);
+    request.ledger.recordUsage(meteredUsage);
   }
 
   // Usage counts are named usage_in/usage_out: the structured logger
@@ -580,7 +729,8 @@ export async function invokeAiGateway<TPayload>(
     usage_in: result.tokensIn,
     usage_out: result.tokensOut,
     estimated_cost_usd: usage.estimatedCostUsd,
+    snapshot_id: intelligence.snapshotId,
   });
 
-  return { decision: "allow", payload: result.payload, usage };
+  return { decision: "allow", payload: result.payload, usage: meteredUsage, intelligence };
 }

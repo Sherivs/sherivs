@@ -27,6 +27,12 @@ import {
   ModelRegistry,
   type DeclaredModel,
 } from "../../frontend/src/lib/ai-gateway/model-registry";
+import {
+  ReasoningProvenanceError,
+  digestContent,
+  validateIntelligenceSnapshot,
+  type IntelligenceSnapshot,
+} from "../../frontend/src/lib/ai-gateway/reasoning-provenance";
 
 /** Deferred-delay clock: the timeout fires only when the test fires it. */
 function manualClock(startMs = 1_000_000) {
@@ -821,5 +827,157 @@ describe("model registry routing inside the gateway (J-014, V1CAP-028)", () => {
       }),
     );
     expect(recovery).toEqual(["coregrid/flash"]);
+  });
+});
+
+/* ─────────────────────────────────────────────────────────────
+ * J-015 reasoning provenance — intelligence snapshots (additive)
+ * ────────────────────────────────────────────────────────────*/
+
+describe("reasoning provenance — intelligence snapshots (J-015, V1CAP-029)", () => {
+  const CONTEXT = {
+    traceId: "ctx-trace-4a7d1ed414474e4033ac29ccb8653d9b",
+    assembledContent: "the exact assembled governed context",
+  };
+
+  function snapshotPolicy() {
+    return createAdapterFailurePolicy({
+      provider: "ai-gateway",
+      timeoutMs: 1_000,
+      maxAttempts: 1,
+      backoffBaseMs: 100,
+      backoffCapMs: 1_000,
+      degradedAfterFailures: 2,
+      degradedWindowMs: 10_000,
+      breakerFailureThreshold: 3,
+      breakerResetMs: 5_000,
+    });
+  }
+
+  function snapshotRegistry(): ModelRegistry {
+    return new ModelRegistry({
+      models: [
+        {
+          id: "coregrid/flash",
+          providerClass: "small-fast",
+          profile: { contextWindowTokens: 128_000, latencyTier: "low", costTier: "low" },
+        },
+        {
+          id: "coregrid/deep",
+          providerClass: "deep-reasoning",
+          profile: { contextWindowTokens: 200_000, latencyTier: "high", costTier: "high" },
+        },
+      ],
+      fallbackChains: { summarization: ["coregrid/flash", "coregrid/deep"] },
+    });
+  }
+
+  it("stamps a complete snapshot on the legacy declared path, with an explicitly absent context version", async () => {
+    const outcome = await invokeAiGateway(baseRequest({}));
+    expect(outcome.decision).toBe("allow");
+    if (outcome.decision !== "allow") return;
+    expect(() => validateIntelligenceSnapshot(outcome.intelligence)).not.toThrow();
+    expect(outcome.intelligence.model).toEqual({ id: "coregrid/flash", providerClass: null });
+    expect(outcome.intelligence.routing.routedViaRegistry).toBe(false);
+    expect(outcome.intelligence.routing.rationale).toHaveLength(1);
+    expect(outcome.intelligence.routing.rationale[0]).toMatchObject({
+      stage: "legacy_declared_path",
+      model: "coregrid/flash",
+    });
+    expect(outcome.intelligence.contextVersion).toEqual({ traceId: null, contentDigest: null });
+    expect(outcome.intelligence.outputDigest).toBe(digestContent({ ok: true }));
+    expect(outcome.intelligence.usage).toEqual({
+      tokensIn: 100,
+      tokensOut: 40,
+      estimatedCostUsd: null,
+    });
+    expect(outcome.intelligence.evidenceClass).toBe("generated");
+    expect(outcome.intelligence.generatedByAi).toBe(true);
+  });
+
+  it("records the declared context version (trace id + content digest of the exact assembled context)", async () => {
+    const outcome = await invokeAiGateway(baseRequest({ intelligenceContext: CONTEXT }));
+    expect(outcome.decision).toBe("allow");
+    if (outcome.decision !== "allow") return;
+    expect(outcome.intelligence.contextVersion).toEqual({
+      traceId: CONTEXT.traceId,
+      contentDigest: digestContent(CONTEXT.assembledContent),
+    });
+  });
+
+  it("flows the snapshot into the usage-ledger record for the invocation", async () => {
+    const ledger = new UsageLedger(RATES);
+    const outcome = await invokeAiGateway(baseRequest({ ledger, rates: RATES }));
+    expect(outcome.decision).toBe("allow");
+    if (outcome.decision !== "allow") return;
+    const records = ledger.all();
+    expect(records).toHaveLength(1);
+    const stored = records[0] as UsageRecord & { intelligence: IntelligenceSnapshot };
+    expect(stored.intelligence).toEqual(outcome.intelligence);
+    expect(stored).toEqual(outcome.usage);
+  });
+
+  it("attributes the fallback winner's own snapshot with the full routing rationale chain", async () => {
+    const registry = snapshotRegistry();
+    const outcome = await invokeAiGateway(
+      baseRequest({
+        modelRegistry: registry,
+        failurePolicy: snapshotPolicy(),
+        intelligenceContext: CONTEXT,
+        invoke: async (_provider, ctx) => {
+          if (ctx.model === "coregrid/flash") throw new Error("provider down");
+          return { payload: { ok: true, via: ctx.model }, tokensIn: 10, tokensOut: 5 };
+        },
+      }),
+    );
+    expect(outcome.decision).toBe("allow");
+    if (outcome.decision !== "allow") return;
+    expect(() => validateIntelligenceSnapshot(outcome.intelligence)).not.toThrow();
+    expect(outcome.intelligence.model).toEqual({
+      id: "coregrid/deep",
+      providerClass: "deep-reasoning",
+    });
+    expect(outcome.intelligence.routing.routedViaRegistry).toBe(true);
+    const stages = outcome.intelligence.routing.rationale.map((step) => step.stage);
+    expect(stages).toEqual([
+      "registry_route_resolved",
+      "fallback_attempt_failed",
+      "provider_success",
+    ]);
+    expect(outcome.intelligence.routing.rationale[1]).toMatchObject({
+      stage: "fallback_attempt_failed",
+      model: "coregrid/flash",
+    });
+    expect(outcome.intelligence.routing.rationale[2]).toMatchObject({
+      stage: "provider_success",
+      model: "coregrid/deep",
+    });
+    expect(outcome.intelligence.outputDigest).toBe(
+      digestContent({ ok: true, via: "coregrid/deep" }),
+    );
+    expect(outcome.intelligence.contextVersion).toEqual({
+      traceId: CONTEXT.traceId,
+      contentDigest: digestContent(CONTEXT.assembledContent),
+    });
+  });
+
+  it("makes unattributed output impossible: a result snapshot missing fields fails downstream", async () => {
+    const outcome = await invokeAiGateway(baseRequest({}));
+    expect(outcome.decision).toBe("allow");
+    if (outcome.decision !== "allow") return;
+    const { outputDigest: _stripped, ...withoutDigest } = outcome.intelligence;
+    expect(() => validateIntelligenceSnapshot(withoutDigest)).toThrow(
+      new ReasoningProvenanceError(
+        "missing_provenance_field",
+        "outputDigest",
+        "intelligence snapshot is missing the output digest",
+      ),
+    );
+    // Tampering with the model attribution fails the same gate.
+    const unattributed = {
+      ...outcome.intelligence,
+      model: { id: "", providerClass: null },
+    };
+    expect(() => validateIntelligenceSnapshot(unattributed)).toThrow(/model/);
   });
 });
