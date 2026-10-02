@@ -106,6 +106,22 @@ export const claimFirstSuperAdmin = createServerFn({ method: "POST" })
     });
     if (insertErr) throw new Error(insertErr.message);
 
+    // §27.6 AUDIT — fail-closed separate audit record for the bootstrap
+    // claim. Control-plane scope: the claimant has no tenant and (by the
+    // bootstrap precondition) no canonical tenant user row, so WHO is the
+    // verified email claim + auth uid in the record payload.
+    await writeAuditRecord(supabaseAdmin, {
+      action: "bootstrap.claim_first_super_admin",
+      gate: "bootstrap-closed-precondition",
+      tenantId: null,
+      actorId: null,
+      actorEmail: email || null,
+      table: "super_admins",
+      recordId: userId,
+      outcome: "succeeded",
+      details: { actor_user_id: userId, full_name: data.fullName },
+    });
+
     return { ok: true, id: userId, email };
   });
 

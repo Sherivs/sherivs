@@ -347,13 +347,9 @@ defineFamilySuite({
       input: "zod",
       gate: "bootstrap-count",
       audit: "explicit-event",
-      auditMarkers: [
-        /\.from\("super_admins"\)/,
-        /writeAuditRecord\(/,
-        /\.from\("audit_logs"\)/,
-      ],
+      auditMarkers: [/\.from\("super_admins"\)/, /writeAuditRecord\(/],
       extra: [/Bootstrap is closed/],
-      note: "authorization = bootstrap-closed precondition (only proceeds when zero super admins exist); caller's own auth identity is used; §27.6 closed via the shared write-audit hook (control-plane-scope fail-closed audit record)",
+      note: "authorization = bootstrap-closed precondition (only proceeds when zero super admins exist); caller's own auth identity is used; §27.6 closed via the shared write-audit hook (frontend/src/lib/server/write-audit.ts, control-plane-scope fail-closed audit record)",
     },
     {
       fn: "createSchoolWithAdmin",
@@ -407,12 +403,8 @@ defineFamilySuite({
       input: "zod",
       gate: "composite-account",
       audit: "explicit-event",
-      auditMarkers: [
-        /updateUserById/,
-        /writeAuditRecord\(/,
-        /\.from\("audit_logs"\)/,
-      ],
-      note: "same-tenant rule for school admins enforced via decideAccountAdministration(targetSchoolId); §27.6 closed via the shared write-audit hook (fail-closed audit_logs record; the new credential is never audited, §29)",
+      auditMarkers: [/updateUserById/, /writeAuditRecord\(/],
+      note: "same-tenant rule for school admins enforced via decideAccountAdministration(targetSchoolId); §27.6 closed via the shared write-audit hook (frontend/src/lib/server/write-audit.ts, fail-closed audit_logs record; the new credential is never audited, §29)",
     },
   ],
 });
