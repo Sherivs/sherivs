@@ -151,6 +151,12 @@ const SUBJECT_MAP = {
   "tests/unit/domain-config-definition.test.ts": { phase: "33", why: "domain-config runtime definition — phase-33 domain-runtime manifest machinery" },
   "tests/unit/domain-config-restaurant.test.ts": { phase: "33", why: "domain-config vertical instance — phase-33 domain-runtime machinery" },
   "tests/unit/db-tooling-coherence.test.ts": { phase: "33", why: "db tooling coherence — recorded phase-33 S2 deliverable (phase-33 note)" },
+  // ── M-R-121 T2: §27 per-function invariant suites (Scholar server functions) ──
+  "tests/unit/scholar-invariant-tenant-gated.test.ts": { phase: "08", why: "M-R-121 T2 §27 per-function invariant suites — tenant-gated Scholar server-function families (phase-08 security enforcement)" },
+  "tests/unit/scholar-invariant-staff-platform-gated.test.ts": { phase: "08", why: "M-R-121 T2 §27 per-function invariant suites — staff/platform-gated Scholar server-function families (phase-08 security enforcement)" },
+  "tests/unit/scholar-invariant-kernel-substrate.test.ts": { phase: "08", why: "M-R-121 T2 §27 per-function invariant suites — kernel-substrate Scholar server-function families (phase-08 security enforcement)" },
+  "tests/unit/scholar-invariant-self-scope.test.ts": { phase: "08", why: "M-R-121 T2 §27 per-function invariant suites — self-scoped/RLS-scoped Scholar server-function families (phase-08 security enforcement)" },
+  "tests/unit/scholar-invariant-environment-gated.test.ts": { phase: "08", why: "M-R-121 T2 §27 per-function invariant suites — environment-gated family + the 23-family §27 coverage ledger (phase-08 security enforcement)" },
 };
 
 // Scholar runtime domain layer: every scholar-* suite tests the Scholar
