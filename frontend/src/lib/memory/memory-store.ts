@@ -43,8 +43,25 @@
  * with deny-by-default RLS (enabled, zero policies, no anon/authenticated
  * grants); application code is never the only security layer
  * (Constitution §17).
+ *
+ * Worker memory sessions (J-007 / V1CAP-016, MISSION-R-42, wave 3): a worker's
+ * memory session is bounded by its DECLARED memory scope (AGENTS §5 — memory
+ * scope is a declared identity field), resolved against a governed worker
+ * definition. Every write and retrieval through a session is evaluated against
+ * that scope; out-of-scope writes are REJECTED (never dropped, never coerced),
+ * out-of-scope reads return nothing with a first-class audit exclusion record,
+ * scope escalation is structurally impossible (a session cannot widen its own
+ * scope — widening requires a new governed worker-definition revision), and
+ * session termination (worker lifecycle end) invalidates the session's live
+ * handles. Every scope decision — open, write, retrieve, terminate, grant and
+ * denial — is appended to an auditable session decision log (Constitution §12).
  */
 
+import { isIdentityUsable } from "../identity";
+import type {
+  WorkerDefinition,
+  WorkerDefinitionLifecycleState,
+} from "../workforce/worker-definition";
 import {
   biTemporalColumns,
   isTimestamp,
@@ -135,6 +152,8 @@ export interface MemoryRecord {
   missionRef: string | null;
   memoryClass: MemoryTierClass;
   domain: string;
+  /** Subject the record concerns; null when the write named no subject. */
+  subjectRef: string | null;
   content: string;
   sensitivity: MemorySensitivity;
   /** Permission a retriever must hold; null means no additional policy gate. */
@@ -160,7 +179,11 @@ export type MemoryExclusionReason =
   | "stale"
   | "validity_expired"
   | "superseded"
-  | "item_budget";
+  | "item_budget"
+  /** Worker-session binding gate (J-007/V1CAP-016): namespace outside the binding. */
+  | "outside_binding_namespace"
+  /** Worker-session binding gate (J-007/V1CAP-016): tier not readable via the binding. */
+  | "binding_tier_not_readable";
 
 /**
  * The memory twin of context-assembly's exclusion record: a record that was
@@ -208,15 +231,33 @@ export interface MemoryTierStore {
   readonly scopes: readonly MemoryScopeDeclaration[];
   readonly records: readonly MemoryRecord[];
   readonly accessLog: readonly MemoryAccessRecord[];
+  /**
+   * Registry of worker memory sessions (J-007/V1CAP-016). Session operations
+   * resolve their binding from THIS registry by session id — a caller-held
+   * handle is only a key, so a tampered or widened handle has no authority
+   * (no self-widening).
+   */
+  readonly workerSessions: readonly WorkerMemorySession[];
+  /**
+   * Audit of every worker-session scope decision — open, write, retrieve,
+   * terminate; grants AND denials (Constitution §12: who accessed what, under
+   * which declared scope, when).
+   */
+  readonly sessionAuditLog: readonly WorkerMemoryAuditRecord[];
 }
 
 export function createMemoryTierStore(): MemoryTierStore {
-  return { scopes: [], records: [], accessLog: [] };
+  return {
+    scopes: [],
+    records: [],
+    accessLog: [],
+    workerSessions: [],
+    sessionAuditLog: [],
+  };
 }
 
 export type MemoryScopeDeclareResult =
-  | { ok: true; store: MemoryTierStore }
-  | { ok: false; error: string };
+  { ok: true; store: MemoryTierStore } | { ok: false; error: string };
 
 /** Fails closed on: missing ids/tenant, malformed refs, duplicate scopeId. */
 export function declareMemoryScope(
@@ -264,6 +305,12 @@ export interface MemoryWriteRequest {
   missionRef: string | null;
   memoryClass: MemoryTierClass;
   domain: string;
+  /**
+   * Subject the record concerns (worker-session vocabulary, J-007). When
+   * present, a worker-session write must name a subject declared in the
+   * session binding's subject scope; absent means no subject constraint.
+   */
+  subjectRef?: string | null;
   content: string;
   sensitivity: MemorySensitivity;
   requiredPermission: string | null;
@@ -277,8 +324,7 @@ export interface MemoryWriteRequest {
 }
 
 export type MemoryWriteResult =
-  | { ok: true; store: MemoryTierStore; record: MemoryRecord }
-  | { ok: false; error: string };
+  { ok: true; store: MemoryTierStore; record: MemoryRecord } | { ok: false; error: string };
 
 /**
  * Write one memory record through a declared scope. REJECTS (never clamps):
@@ -288,6 +334,12 @@ export type MemoryWriteResult =
  * object type for this substrate, non-explicit bi-temporal validity, a
  * dangling or cross-tenant `supersedes` pointer, or a duplicate record id.
  * This is the J-017/E-027 no-silent-memory-expansion guard on the write path.
+ *
+ * Governance surface (J-007/V1CAP-016): this is the tier's own primitive.
+ * WORKER RUNTIME code paths must NOT call it directly — they write memory only
+ * through `writeMemoryThroughWorkerSession`, whose session binding is resolved
+ * from the store's session registry against the worker's DECLARED memory scope
+ * (AGENTS §5). Raw tier access from runtime code is a governance violation.
  */
 export function writeMemoryRecord(
   store: MemoryTierStore,
@@ -418,6 +470,7 @@ export function writeMemoryRecord(
     missionRef: writeMission,
     memoryClass: request.memoryClass,
     domain: request.domain,
+    subjectRef: request.subjectRef ?? null,
     content: request.content,
     sensitivity: request.sensitivity,
     requiredPermission: request.requiredPermission,
@@ -454,6 +507,18 @@ export interface MemoryRetrievalRequest {
   maxAgeSeconds?: number;
   /** Item budget; in-scope authorized records beyond it are excluded, not dropped. */
   maxResults?: number;
+  /**
+   * Worker-session binding gate (J-007/V1CAP-016): when present, only records
+   * whose tier class is listed are readable; every other record is withheld
+   * with an audited `binding_tier_not_readable` exclusion.
+   */
+  requireReadableTierClasses?: readonly MemoryTierClass[];
+  /**
+   * Worker-session binding gate (J-007/V1CAP-016): when present, only records
+   * whose domain (namespace) is listed are readable; every other record is
+   * withheld with an audited `outside_binding_namespace` exclusion.
+   */
+  requireNamespaces?: readonly string[];
 }
 
 export interface MemoryRetrievalConfig {
@@ -503,6 +568,11 @@ function appendAccess(store: MemoryTierStore, accessRecord: MemoryAccessRecord):
  *
  * The result is NEVER a bare record list: it always carries the exclusions
  * and the access record, so minimization is auditable (Constitution §19).
+ *
+ * Governance surface (J-007/V1CAP-016): this is the tier's own primitive.
+ * WORKER RUNTIME code paths must NOT call it directly — they retrieve memory
+ * only through `retrieveMemoryThroughWorkerSession`, which gates every record
+ * against the session binding's declared namespaces and readable tiers.
  */
 export function retrieveMemory(
   store: MemoryTierStore,
@@ -637,6 +707,8 @@ export function retrieveMemory(
   // 3. Per-record authorization gates, in a fixed deterministic order.
   const maxAgeSeconds = request.maxAgeSeconds ?? null;
   const maxResults = request.maxResults ?? null;
+  const requireNamespaces = request.requireNamespaces ?? null;
+  const requireReadableTiers = request.requireReadableTierClasses ?? null;
   const supersededIds = new Set(
     store.records
       .filter((r) => r.tenantId === request.tenantId && r.biTemporal.supersedes != null)
@@ -644,6 +716,29 @@ export function retrieveMemory(
   );
   const returned: MemoryRecord[] = [];
   for (const record of candidates) {
+    // Worker-session binding gates run FIRST (outermost boundary): a record the
+    // session binding cannot see is excluded with an audit record before any
+    // other gate is evaluated (J-007/V1CAP-016).
+    if (requireNamespaces != null && !requireNamespaces.includes(record.domain)) {
+      recordExclusion(
+        record.id,
+        record.tenantId,
+        "outside_binding_namespace",
+        `Record namespace "${record.domain}" is outside the session binding's declared namespaces`,
+        null,
+      );
+      continue;
+    }
+    if (requireReadableTiers != null && !requireReadableTiers.includes(record.memoryClass)) {
+      recordExclusion(
+        record.id,
+        record.tenantId,
+        "binding_tier_not_readable",
+        `Record tier class "${record.memoryClass}" is not readable through the session binding's declared tier set`,
+        null,
+      );
+      continue;
+    }
     if (!scope.domains.includes(record.domain)) {
       recordExclusion(
         record.id,
@@ -764,4 +859,611 @@ export function retrieveMemory(
     accessRecord,
     store: storeWithAccess,
   };
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * Worker memory sessions — the governed memory boundary
+ * (J-007 / V1CAP-016, MISSION-R-42, wave 3; AGENTS §5)
+ * ────────────────────────────────────────────────────────────*/
+
+/**
+ * The declared memory scope of a worker, resolved against a governed worker
+ * definition at session-open time. Empty tier sets, namespaces or subjects
+ * grant NOTHING (deny-by-default): a declared boundary is never an implicit
+ * wildcard (AGENTS §5 — memory scope is a declared identity field).
+ */
+export interface WorkerMemoryScopeInput {
+  /** The DECLARED memory scope (in the store) the session draws on. */
+  scopeId: string;
+  /** Tier classes the worker may WRITE. Empty writes nothing. */
+  writableTierClasses: readonly MemoryTierClass[];
+  /** Tier classes the worker may READ. Empty reads nothing. */
+  readableTierClasses: readonly MemoryTierClass[];
+  /** Memory domains (namespaces) the session may touch; must be a subset of the underlying scope's domains. */
+  namespaces: readonly string[];
+  /** Subjects a session write may name. Empty permits no named subject. */
+  subjects: readonly string[];
+  /** Sensitivity ceiling — must be at or below the underlying scope's ceiling. */
+  maxSensitivity: MemorySensitivity;
+}
+
+/**
+ * The immutable binding a session is opened with. Derived from the worker
+ * definition (identity, tenant, definition ref) and the declared scope; the
+ * mission ref is inherited from the underlying scope. Frozen at open time —
+ * a session cannot widen its own scope (widening requires a new governed
+ * worker-definition revision that re-declares a scope and opens a new session).
+ */
+export interface WorkerMemoryScopeBinding {
+  workerDefinitionId: string;
+  identityRef: string;
+  tenantId: string;
+  scopeId: string;
+  missionRef: string | null;
+  readonly writableTierClasses: readonly MemoryTierClass[];
+  readonly readableTierClasses: readonly MemoryTierClass[];
+  readonly namespaces: readonly string[];
+  readonly subjects: readonly string[];
+  maxSensitivity: MemorySensitivity;
+}
+
+export type WorkerMemorySessionState = "open" | "terminated";
+
+/** A live worker memory session handle. Registered in the store; frozen. */
+export interface WorkerMemorySession {
+  sessionId: string;
+  binding: WorkerMemoryScopeBinding;
+  /** Definition lifecycle snapshot at open time (open refuses unusable workers). */
+  workerLifecycle: WorkerDefinitionLifecycleState;
+  state: WorkerMemorySessionState;
+  openedAt: string;
+  terminatedAt: string | null;
+  terminationReason: string | null;
+}
+
+/** Which worker-session operation an audit record evidences. */
+export type WorkerMemorySessionOperation = "open" | "write" | "retrieve" | "terminate";
+
+/**
+ * ONE auditable record per worker-session scope decision — granted AND
+ * denied (Constitution §12/§29: who, what, under which declared scope, when).
+ */
+export interface WorkerMemoryAuditRecord {
+  id: string;
+  sessionId: string;
+  workerDefinitionId: string;
+  identityRef: string;
+  tenantId: string;
+  scopeId: string;
+  operation: WorkerMemorySessionOperation;
+  allowed: boolean;
+  /** Record id for write decisions; null for open/retrieve/terminate. */
+  recordId: string | null;
+  /** Explicit denial reason; null when allowed. */
+  reason: string | null;
+  recordedAt: string;
+}
+
+export interface WorkerMemorySessionOpenInput {
+  sessionId: string;
+  /** The governed worker definition the session is bound to. */
+  workerDefinition: WorkerDefinition;
+  /** The worker's DECLARED memory scope (from the definition revision). */
+  scope: WorkerMemoryScopeInput;
+  /** Open instant (ISO-8601) — supplied, never sampled. */
+  openedAt: string;
+}
+
+export type WorkerMemorySessionOpenResult =
+  | { ok: true; store: MemoryTierStore; session: WorkerMemorySession }
+  | { ok: false; error: string; store: MemoryTierStore };
+
+export type WorkerMemoryWriteResult =
+  | { ok: true; store: MemoryTierStore; record: MemoryRecord }
+  | { ok: false; error: string; store: MemoryTierStore };
+
+export type WorkerMemoryRetrievalResult =
+  | {
+      ok: true;
+      outcome: "granted" | "partial";
+      records: readonly MemoryRecord[];
+      exclusions: readonly MemoryExclusionRecord[];
+      accessRecord: MemoryAccessRecord;
+      session: WorkerMemorySession;
+      store: MemoryTierStore;
+    }
+  | {
+      ok: false;
+      outcome: "denied";
+      records: readonly MemoryRecord[];
+      exclusions: readonly MemoryExclusionRecord[];
+      /** Null when the session layer denied before any record was evaluated. */
+      accessRecord: MemoryAccessRecord | null;
+      denialReason: string;
+      session: WorkerMemorySession | null;
+      store: MemoryTierStore;
+    };
+
+export interface WorkerMemorySessionTerminateInput {
+  terminatedAt: string;
+  reason: string;
+}
+
+export type WorkerMemorySessionTerminateResult =
+  | { ok: true; store: MemoryTierStore; session: WorkerMemorySession }
+  | { ok: false; error: string; store: MemoryTierStore };
+
+function sessionAuditRecordId(store: MemoryTierStore): string {
+  return `mem-session-audit-${String(store.sessionAuditLog.length + 1).padStart(6, "0")}`;
+}
+
+function appendSessionAudit(
+  store: MemoryTierStore,
+  entry: Omit<WorkerMemoryAuditRecord, "id">,
+): MemoryTierStore {
+  return {
+    ...store,
+    sessionAuditLog: [...store.sessionAuditLog, { id: sessionAuditRecordId(store), ...entry }],
+  };
+}
+
+function auditSessionDecision(
+  store: MemoryTierStore,
+  session: WorkerMemorySession,
+  operation: WorkerMemorySessionOperation,
+  allowed: boolean,
+  reason: string | null,
+  recordId: string | null,
+  recordedAt: string,
+): MemoryTierStore {
+  return appendSessionAudit(store, {
+    sessionId: session.sessionId,
+    workerDefinitionId: session.binding.workerDefinitionId,
+    identityRef: session.binding.identityRef,
+    tenantId: session.binding.tenantId,
+    scopeId: session.binding.scopeId,
+    operation,
+    allowed,
+    recordId,
+    reason,
+    recordedAt,
+  });
+}
+
+function registeredWorkerSession(
+  store: MemoryTierStore,
+  handle: Pick<WorkerMemorySession, "sessionId">,
+): WorkerMemorySession | null {
+  return store.workerSessions.find((s) => s.sessionId === handle.sessionId) ?? null;
+}
+
+/**
+ * Open a worker memory session bounded by the worker's DECLARED memory scope.
+ * Fails closed (audited) on: an unusable worker-definition lifecycle
+ * (suspended/archived/deleted), an unknown underlying scope, a cross-tenant
+ * scope, a worker identity outside the scope's actorScope, a namespace outside
+ * the scope's domains, a ceiling above the scope's ceiling, an unknown tier
+ * class, or a duplicate session id. The binding is FROZEN: a session cannot
+ * widen its own scope.
+ */
+export function openWorkerMemorySession(
+  store: MemoryTierStore,
+  input: WorkerMemorySessionOpenInput,
+): WorkerMemorySessionOpenResult {
+  const denied = (reason: string): WorkerMemorySessionOpenResult => {
+    const audited = appendSessionAudit(store, {
+      sessionId: input.sessionId,
+      workerDefinitionId: input.workerDefinition.id,
+      identityRef: input.workerDefinition.identityRef,
+      tenantId: input.workerDefinition.tenantScope,
+      scopeId: input.scope.scopeId,
+      operation: "open",
+      allowed: false,
+      recordId: null,
+      reason,
+      recordedAt: input.openedAt,
+    });
+    return { ok: false, error: reason, store: audited };
+  };
+  const failed = (error: string): WorkerMemorySessionOpenResult => ({
+    ok: false,
+    error,
+    store,
+  });
+
+  if (!isRecordRef(input.sessionId, 160)) {
+    return failed("worker memory session id must be 1–160 characters");
+  }
+  if (store.workerSessions.some((s) => s.sessionId === input.sessionId)) {
+    return denied(`worker memory session "${input.sessionId}" is already registered`);
+  }
+  if (!isTimestamp(input.openedAt)) {
+    return failed("worker memory session openedAt must be an ISO-8601 timestamp");
+  }
+  if (!isIdentityUsable({ lifecycle: input.workerDefinition.lifecycle })) {
+    return denied(
+      `worker definition lifecycle "${input.workerDefinition.lifecycle}" is unusable — memory session denied (fail-closed)`,
+    );
+  }
+  for (const tier of [...input.scope.writableTierClasses, ...input.scope.readableTierClasses]) {
+    if (!(MEMORY_TIER_CLASSES as readonly unknown[]).includes(tier)) {
+      return failed(`memory tier class "${String(tier)}" is not a registered V1 memory tier class`);
+    }
+  }
+  for (const namespace of input.scope.namespaces) {
+    if (!isRecordRef(namespace, 128)) {
+      return failed("worker memory scope namespace entries must be 1–128 characters");
+    }
+  }
+  for (const subject of input.scope.subjects) {
+    if (!isRecordRef(subject, 160)) {
+      return failed("worker memory scope subject entries must be 1–160 characters");
+    }
+  }
+  if (!(input.scope.maxSensitivity in SENSITIVITY_RANK)) {
+    return failed(
+      `worker memory scope maxSensitivity "${String(input.scope.maxSensitivity)}" is not a registered sensitivity`,
+    );
+  }
+
+  const underlyingScope = store.scopes.find((s) => s.scopeId === input.scope.scopeId);
+  if (underlyingScope == null) {
+    return denied(
+      `worker memory scope "${input.scope.scopeId}" is not declared — no silent scope expansion`,
+    );
+  }
+  if (underlyingScope.tenantId !== input.workerDefinition.tenantScope) {
+    return denied(
+      `worker memory scope "${underlyingScope.scopeId}" is bound to tenant "${underlyingScope.tenantId}", worker definition tenant is "${input.workerDefinition.tenantScope}" — cross-tenant denied`,
+    );
+  }
+  if (!underlyingScope.actorScope.includes(input.workerDefinition.identityRef)) {
+    return denied(
+      `worker identity "${input.workerDefinition.identityRef}" is outside the declared scope's actorScope — no silent scope expansion`,
+    );
+  }
+  for (const namespace of input.scope.namespaces) {
+    if (!underlyingScope.domains.includes(namespace)) {
+      return denied(
+        `worker memory scope namespace "${namespace}" is outside the declared scope's domains — scope escalation denied`,
+      );
+    }
+  }
+  if (
+    SENSITIVITY_RANK[input.scope.maxSensitivity] > SENSITIVITY_RANK[underlyingScope.maxSensitivity]
+  ) {
+    return denied(
+      `worker memory scope ceiling "${input.scope.maxSensitivity}" exceeds the declared scope ceiling "${underlyingScope.maxSensitivity}" — scope escalation denied`,
+    );
+  }
+
+  const binding: WorkerMemoryScopeBinding = Object.freeze({
+    workerDefinitionId: input.workerDefinition.id,
+    identityRef: input.workerDefinition.identityRef,
+    tenantId: input.workerDefinition.tenantScope,
+    scopeId: underlyingScope.scopeId,
+    missionRef: underlyingScope.missionRef,
+    writableTierClasses: Object.freeze([...input.scope.writableTierClasses]),
+    readableTierClasses: Object.freeze([...input.scope.readableTierClasses]),
+    namespaces: Object.freeze([...input.scope.namespaces]),
+    subjects: Object.freeze([...input.scope.subjects]),
+    maxSensitivity: input.scope.maxSensitivity,
+  });
+  const session: WorkerMemorySession = Object.freeze({
+    sessionId: input.sessionId,
+    binding,
+    workerLifecycle: input.workerDefinition.lifecycle,
+    state: "open",
+    openedAt: input.openedAt,
+    terminatedAt: null,
+    terminationReason: null,
+  });
+  const storeWithSession: MemoryTierStore = {
+    ...store,
+    workerSessions: [...store.workerSessions, session],
+  };
+  const audited = auditSessionDecision(
+    storeWithSession,
+    session,
+    "open",
+    true,
+    null,
+    null,
+    input.openedAt,
+  );
+  return { ok: true, store: audited, session };
+}
+
+/**
+ * Write one memory record THROUGH a worker memory session. The binding is
+ * resolved from the store's session registry by session id — the handle is
+ * only a key, so a tampered or widened handle has no authority (no
+ * self-widening). Out-of-scope writes are REJECTED (never dropped, never
+ * coerced) and every rejection is appended to the session audit log. Scope
+ * axes enforced at the session layer: session state, identity, tenant,
+ * mission, writable tier, namespace, subject, sensitivity ceiling. The
+ * remaining tier invariants (envelope stamp, bi-temporal validity,
+ * supersession, duplicate ids) remain the tier's own fail-closed gates.
+ */
+export function writeMemoryThroughWorkerSession(
+  store: MemoryTierStore,
+  session: Pick<WorkerMemorySession, "sessionId">,
+  request: MemoryWriteRequest,
+): WorkerMemoryWriteResult {
+  const registered = registeredWorkerSession(store, session);
+  const deny = (reason: string): WorkerMemoryWriteResult => {
+    const auditSession = registered ?? fallbackSession(store, session);
+    const audited = auditSessionDecision(
+      store,
+      auditSession,
+      "write",
+      false,
+      reason,
+      request.recordId,
+      request.recordedAt,
+    );
+    return { ok: false, error: reason, store: audited };
+  };
+  if (registered == null) {
+    return deny(
+      `worker memory session "${session.sessionId}" is not registered in this store — fail-closed`,
+    );
+  }
+  if (registered.state === "terminated") {
+    return deny(
+      `worker memory session "${registered.sessionId}" is terminated ("${registered.terminationReason}") — live handles invalidated`,
+    );
+  }
+  const binding = registered.binding;
+  if (request.identityRef !== binding.identityRef) {
+    return deny(
+      `write identity "${request.identityRef}" does not match the session binding's worker identity "${binding.identityRef}"`,
+    );
+  }
+  if (request.tenantId !== binding.tenantId) {
+    return deny(
+      `write tenant "${request.tenantId}" does not match the session binding's tenant "${binding.tenantId}" — cross-tenant denied`,
+    );
+  }
+  const writeMission = request.missionRef?.trim() || null;
+  if (binding.missionRef !== writeMission) {
+    return deny(
+      `write mission "${writeMission ?? "null"}" does not match the session binding's mission "${binding.missionRef ?? "null"}" — no silent scope expansion`,
+    );
+  }
+  if (!binding.writableTierClasses.includes(request.memoryClass)) {
+    return deny(
+      `memory class "${request.memoryClass}" is not writable through the session binding's declared tier set — no silent scope expansion`,
+    );
+  }
+  if (!binding.namespaces.includes(request.domain)) {
+    return deny(
+      `write namespace "${request.domain}" is outside the session binding's declared namespaces — no silent scope expansion`,
+    );
+  }
+  if (request.subjectRef != null && !binding.subjects.includes(request.subjectRef)) {
+    return deny(
+      `write subject "${request.subjectRef}" is not declared in the session binding's subject scope`,
+    );
+  }
+  if (SENSITIVITY_RANK[request.sensitivity] > SENSITIVITY_RANK[binding.maxSensitivity]) {
+    return deny(
+      `write sensitivity "${request.sensitivity}" exceeds the session binding's declared ceiling "${binding.maxSensitivity}" — no silent scope expansion`,
+    );
+  }
+  const writeResult = writeMemoryRecord(store, request);
+  if (!writeResult.ok) {
+    return { ok: false, error: writeResult.error, store };
+  }
+  const audited = auditSessionDecision(
+    writeResult.store,
+    registered,
+    "write",
+    true,
+    null,
+    writeResult.record.id,
+    request.recordedAt,
+  );
+  return { ok: true, store: audited, record: writeResult.record };
+}
+
+/** Fallback audit view for a handle that is not registered in this store. */
+function fallbackSession(
+  store: MemoryTierStore,
+  handle: Pick<WorkerMemorySession, "sessionId">,
+): WorkerMemorySession {
+  const registered = registeredWorkerSession(store, handle);
+  if (registered != null) return registered;
+  return Object.freeze({
+    sessionId: handle.sessionId,
+    binding: Object.freeze({
+      workerDefinitionId: "unknown",
+      identityRef: "unknown",
+      tenantId: "unknown",
+      scopeId: "unknown",
+      missionRef: null,
+      writableTierClasses: Object.freeze([]),
+      readableTierClasses: Object.freeze([]),
+      namespaces: Object.freeze([]),
+      subjects: Object.freeze([]),
+      maxSensitivity: "public",
+    }),
+    workerLifecycle: "deleted",
+    state: "terminated",
+    openedAt: "",
+    terminatedAt: null,
+    terminationReason: "unregistered_handle",
+  });
+}
+
+/**
+ * Retrieve memory THROUGH a worker memory session. The binding gates every
+ * candidate record: records outside the binding's namespaces or above its
+ * readable tier set are withheld with first-class audit exclusion records
+ * (`outside_binding_namespace`, `binding_tier_not_readable`) inside the
+ * retrieval's access record — out-of-scope reads return nothing, and nothing
+ * is withheld silently. Session-layer denials (unregistered/terminated
+ * session, identity/tenant/scope mismatch) are appended to the session audit
+ * log; the tier's own denials remain audited in the access record.
+ */
+export function retrieveMemoryThroughWorkerSession(
+  store: MemoryTierStore,
+  session: Pick<WorkerMemorySession, "sessionId">,
+  request: MemoryRetrievalRequest,
+  config: MemoryRetrievalConfig,
+): WorkerMemoryRetrievalResult {
+  const registered = registeredWorkerSession(store, session);
+  const deny = (reason: string): WorkerMemoryRetrievalResult => {
+    const auditSession = registered ?? fallbackSession(store, session);
+    const audited = auditSessionDecision(
+      store,
+      auditSession,
+      "retrieve",
+      false,
+      reason,
+      null,
+      config.now,
+    );
+    return {
+      ok: false,
+      outcome: "denied",
+      records: [],
+      exclusions: [],
+      accessRecord: null,
+      denialReason: reason,
+      session: null,
+      store: audited,
+    };
+  };
+  if (registered == null) {
+    return deny(
+      `worker memory session "${session.sessionId}" is not registered in this store — fail-closed`,
+    );
+  }
+  if (registered.state === "terminated") {
+    return deny(
+      `worker memory session "${registered.sessionId}" is terminated ("${registered.terminationReason}") — live handles invalidated`,
+    );
+  }
+  const binding = registered.binding;
+  if (request.identityRef !== binding.identityRef) {
+    return deny(
+      `retrieval identity "${request.identityRef}" does not match the session binding's worker identity "${binding.identityRef}"`,
+    );
+  }
+  if (request.tenantId !== binding.tenantId) {
+    return deny(
+      `retrieval tenant "${request.tenantId}" does not match the session binding's tenant "${binding.tenantId}" — cross-tenant denied`,
+    );
+  }
+  if (request.scopeId !== binding.scopeId) {
+    return deny(
+      `retrieval scope "${request.scopeId}" does not match the session binding's declared scope "${binding.scopeId}"`,
+    );
+  }
+  const result = retrieveMemory(
+    store,
+    {
+      ...request,
+      requireReadableTierClasses: binding.readableTierClasses,
+      requireNamespaces: binding.namespaces,
+    },
+    config,
+  );
+  const audited = auditSessionDecision(
+    result.store,
+    registered,
+    "retrieve",
+    result.ok,
+    result.ok ? null : (result.accessRecord.denialReason ?? "retrieval denied at the tier gate"),
+    null,
+    config.now,
+  );
+  if (result.ok) {
+    return {
+      ok: true,
+      outcome: result.outcome,
+      records: result.records,
+      exclusions: result.exclusions,
+      accessRecord: result.accessRecord,
+      session: registered,
+      store: audited,
+    };
+  }
+  return {
+    ok: false,
+    outcome: "denied",
+    records: result.records,
+    exclusions: result.exclusions,
+    accessRecord: result.accessRecord,
+    denialReason: result.accessRecord.denialReason ?? "retrieval denied at the tier gate",
+    session: registered,
+    store: audited,
+  };
+}
+
+/**
+ * Terminate a worker memory session (worker lifecycle end). Termination is
+ * permanent — no resurrection — and invalidates every live handle: session
+ * operations resolve the binding from THIS store's registry, so any handle
+ * bearing the terminated session id is denied from then on. Termination and
+ * every post-termination denial are audited.
+ */
+export function terminateWorkerMemorySession(
+  store: MemoryTierStore,
+  sessionId: string,
+  input: WorkerMemorySessionTerminateInput,
+): WorkerMemorySessionTerminateResult {
+  if (!isRecordRef(sessionId, 160)) {
+    return { ok: false, error: "worker memory session id must be 1–160 characters", store };
+  }
+  const registered = registeredWorkerSession(store, { sessionId });
+  if (registered == null) {
+    return {
+      ok: false,
+      error: `worker memory session "${sessionId}" is not registered in this store`,
+      store,
+    };
+  }
+  if (!isTimestamp(input.terminatedAt)) {
+    return {
+      ok: false,
+      error: "worker memory session terminatedAt must be an ISO-8601 timestamp",
+      store,
+    };
+  }
+  if (!isRecordRef(input.reason, 200)) {
+    return {
+      ok: false,
+      error: "worker memory session termination reason must be 1–200 characters",
+      store,
+    };
+  }
+  if (registered.state === "terminated") {
+    return {
+      ok: false,
+      error: `worker memory session "${sessionId}" is already terminated — no resurrection`,
+      store,
+    };
+  }
+  const terminated: WorkerMemorySession = Object.freeze({
+    ...registered,
+    state: "terminated",
+    terminatedAt: input.terminatedAt,
+    terminationReason: input.reason,
+  });
+  const storeWithTerminated: MemoryTierStore = {
+    ...store,
+    workerSessions: store.workerSessions.map((s) => (s.sessionId === sessionId ? terminated : s)),
+  };
+  const audited = auditSessionDecision(
+    storeWithTerminated,
+    terminated,
+    "terminate",
+    true,
+    null,
+    null,
+    input.terminatedAt,
+  );
+  return { ok: true, store: audited, session: terminated };
 }

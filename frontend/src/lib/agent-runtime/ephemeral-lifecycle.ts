@@ -24,6 +24,15 @@
  */
 
 import type { AgentDefinitionId, AgentPermission } from "../agent-core";
+import {
+  openWorkerMemorySession,
+  terminateWorkerMemorySession,
+  type MemorySensitivity,
+  type MemoryTierClass,
+  type MemoryTierStore,
+  type WorkerMemorySession,
+} from "../memory/memory-store";
+import type { WorkerDefinition } from "../workforce/worker-definition";
 
 /* ─────────────────────────────────────────────────────────────
  * Agent definition (runtime view over the persistent substrate)
@@ -338,4 +347,98 @@ function forceTerminate(
     lastEventAtMs: atMs,
     forcedTermination: reason,
   };
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * Worker memory sessions — the ONLY memory surface for runtime code paths
+ * (J-007 / V1CAP-016, MISSION-R-42, wave 3; AGENTS §5)
+ * ────────────────────────────────────────────────────────────*/
+
+/**
+ * The worker's DECLARED memory scope as presented to the runtime (AGENTS §5:
+ * memory scope is a declared identity field). The runtime NEVER supplies the
+ * identity, tenant, definition or mission of a session — those are derived
+ * from the persistent worker definition inside the scoped-session constructor,
+ * so a runtime code path structurally cannot fabricate a cross-tenant or
+ * foreign-identity memory session.
+ */
+export interface RuntimeWorkerMemoryScopeDeclaration {
+  /** The DECLARED memory scope (in the store) the session draws on. */
+  scopeId: string;
+  /** Tier classes the worker may WRITE. Empty writes nothing. */
+  writableTierClasses: readonly MemoryTierClass[];
+  /** Tier classes the worker may READ. Empty reads nothing. */
+  readableTierClasses: readonly MemoryTierClass[];
+  /** Memory namespaces the session may touch (subset of the scope's domains). */
+  namespaces: readonly string[];
+  /** Subjects a session write may name. Empty permits no named subject. */
+  subjects: readonly string[];
+  /** Sensitivity ceiling — must be at or below the scope's ceiling. */
+  maxSensitivity: MemorySensitivity;
+}
+
+export interface OpenRuntimeMemorySessionInput {
+  store: MemoryTierStore;
+  /** The persistent governed worker definition (workforce substrate). */
+  workerDefinition: WorkerDefinition;
+  declaredScope: RuntimeWorkerMemoryScopeDeclaration;
+  sessionId: string;
+  /** Open instant (ISO-8601) — supplied, never sampled. */
+  now: string;
+}
+
+export type RuntimeMemorySessionDecision =
+  | { ok: true; store: MemoryTierStore; session: WorkerMemorySession }
+  | { ok: false; reason: string; store: MemoryTierStore };
+
+/**
+ * THE runtime memory-session constructor. Worker runtime code paths open
+ * memory sessions ONLY here: the binding's actor, tenant, definition and
+ * mission are derived from the persistent worker definition (never
+ * caller-supplied), the binding is frozen (no self-widening), and every open
+ * decision is audited. Raw tier access (`writeMemoryRecord` /
+ * `retrieveMemory`) from runtime code is a governance violation
+ * (J-007/V1CAP-016, MISSION-R-42) — the runtime surface deliberately exposes
+ * no raw tier primitive.
+ */
+export function openRuntimeMemorySession(
+  input: OpenRuntimeMemorySessionInput,
+): RuntimeMemorySessionDecision {
+  const result = openWorkerMemorySession(input.store, {
+    sessionId: input.sessionId,
+    workerDefinition: input.workerDefinition,
+    scope: input.declaredScope,
+    openedAt: input.now,
+  });
+  if (!result.ok) {
+    return { ok: false, reason: result.error, store: result.store };
+  }
+  return { ok: true, store: result.store, session: result.session };
+}
+
+export interface TerminateRuntimeMemorySessionInput {
+  store: MemoryTierStore;
+  sessionId: string;
+  terminatedAt: string;
+  /** Worker lifecycle end (or other governed close) — audited. */
+  reason: string;
+}
+
+/**
+ * Terminate a runtime-opened worker memory session. Called when the worker's
+ * lifecycle ends: termination is permanent, invalidates every live handle
+ * (operations resolve the binding from the store registry by session id), and
+ * is itself audited.
+ */
+export function terminateRuntimeMemorySession(
+  input: TerminateRuntimeMemorySessionInput,
+): RuntimeMemorySessionDecision {
+  const result = terminateWorkerMemorySession(input.store, input.sessionId, {
+    terminatedAt: input.terminatedAt,
+    reason: input.reason,
+  });
+  if (!result.ok) {
+    return { ok: false, reason: result.error, store: result.store };
+  }
+  return { ok: true, store: result.store, session: result.session };
 }
