@@ -1,8 +1,20 @@
 #!/usr/bin/env node
 /**
  * CoreGrid — TEAM 3 hardening apply: MISSION-R-100 continuation (V1CAP-072).
- * Applies the eight Team-1 hardening migrations (20261002000005..20261002000012)
- * to the canonical environment and records declared-vs-applied state truth.
+ * Applies the Team-1 hardening migrations (20261002000005..20261002000013) to
+ * the canonical environment and records declared-vs-applied state truth.
+ *
+ * Modes (H2-06 — rehearsal-ready, CI-portable canonical apply path):
+ *   apply        default. Plan, probe, apply, verify, record. Requires
+ *                SUPABASE_ACCESS_TOKEN. Serialized exclusive canonical access.
+ *   --manifest   print the full apply plan (migration order, sha256 per file,
+ *                rollback checksums, declared signature objects) WITHOUT
+ *                touching any database and WITHOUT credentials. The
+ *                coordinator's serialized canonical apply runs plan-then-
+ *                execute: this is the plan half.
+ *   --verify-only  re-check the declared-vs-applied record against the live
+ *                catalog (read-only probes only, idempotent, nothing applied).
+ *                Requires SUPABASE_ACCESS_TOKEN.
  *
  * Pattern: byte-for-byte the checksummed-apply exemplar
  * scripts/apply-canonical-mr100.mjs — sha256 per migration, rollback checksum
@@ -14,23 +26,32 @@
  * Postgres connection is opened, so no CA cert is needed and the TLS posture
  * (COREGRID_DB_INSECURE_TLS must never be set) is untouched.
  *
- * Stage-1-specific post-apply verification: every table the eight migrations
- * declare must exist with rowsecurity = true and ZERO policies (deny-by-default
- * posture carried into canonical; the battery re-proves it live in Stage 3).
+ * Artifacts directory: derived from COREGRID_ARTIFACTS_DIR (defaulting to
+ * /opt/cursor/artifacts) so CI runners can redirect evidence without touching
+ * the script. The declared-vs-applied record itself always lands at
+ * architecture/proofs/CANONICAL_APPLY_RECORD_HARDENING.json in-repo.
+ *
+ * Stage-1-specific post-apply verification: every table the hardening
+ * migrations declare must exist with rowsecurity = true and ZERO policies
+ * (deny-by-default posture carried into canonical; the battery re-proves it
+ * live in Stage 3).
  *
  * Honesty rules (mission law):
  * - Exclusive canonical access: serialized, one canonical command at a time,
- *   never concurrent with another canonical operation.
+ *   never concurrent with another canonical operation (apply mode only).
  * - Idempotent-by-detection: all declared signature objects present →
  *   ALREADY_APPLIED and skipped; a MIXED (partially applied) state FAILS the
  *   run — partial state needs a human decision, never a silent re-run.
  * - A migration is "applied" only when its declared objects verify in-catalog.
  *
- * Usage: SUPABASE_ACCESS_TOKEN=... node scripts/apply-canonical-hardening.mjs [project-ref]
- * Exit codes: 0 applied/verified · 1 FINDING · 2 BLOCKED_NO_CREDENTIAL.
+ * Usage:
+ *   node scripts/apply-canonical-hardening.mjs [project-ref]
+ *   node scripts/apply-canonical-hardening.mjs --manifest [project-ref]
+ *   node scripts/apply-canonical-hardening.mjs --verify-only [project-ref]
+ * Exit codes: 0 applied/verified/manifest-clean · 1 FINDING · 2 BLOCKED_NO_CREDENTIAL.
  */
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -38,11 +59,32 @@ const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const MIGRATIONS_DIR = join(ROOT, "database", "supabase", "migrations");
 const ROLLBACKS_DIR = join(ROOT, "database", "supabase", "rollbacks");
 const RECORD_PATH = join(ROOT, "architecture", "proofs", "CANONICAL_APPLY_RECORD_HARDENING.json");
-const ARTIFACTS_DIR = "/opt/cursor/artifacts";
+const DEFAULT_ARTIFACTS_DIR = "/opt/cursor/artifacts";
+const ARTIFACTS_DIR = process.env.COREGRID_ARTIFACTS_DIR ?? DEFAULT_ARTIFACTS_DIR;
+
+// ── mode / argument parsing ──────────────────────────────────────────────────
+const argv = process.argv.slice(2);
+const flags = argv.filter((a) => a.startsWith("--"));
+const positionals = argv.filter((a) => !a.startsWith("--"));
+const KNOWN_FLAGS = new Set(["--manifest", "--verify-only"]);
+const unknownFlags = flags.filter((f) => !KNOWN_FLAGS.has(f));
+const MODE = flags.includes("--manifest")
+  ? "manifest"
+  : flags.includes("--verify-only")
+    ? "verify-only"
+    : "apply";
+const projectRef = positionals[0] ?? "nwrflbpbhyiqdptmlccm";
+
+if (unknownFlags.length > 0 || positionals.length > 1) {
+  console.error(
+    `BLOCKED_USAGE unknown argument(s): ${[...unknownFlags, ...positionals.slice(1)].join(" ")}. ` +
+      `Supported: [project-ref] with optional --manifest or --verify-only.`,
+  );
+  process.exit(2);
+}
 
 const token = process.env.SUPABASE_ACCESS_TOKEN;
-const projectRef = process.argv[2] ?? "nwrflbpbhyiqdptmlccm";
-if (!token) {
+if (MODE !== "manifest" && !token) {
   console.error("BLOCKED_NO_CREDENTIAL SUPABASE_ACCESS_TOKEN is not set. Nothing was applied.");
   process.exit(2);
 }
@@ -64,9 +106,10 @@ const sha256 = (text) => createHash("sha256").update(text).digest("hex");
 
 /**
  * The Team-1 hardening migrations in dependency order, each with the DECLARED
- * signature objects that prove application. These eight migrations declare
- * tables and indexes only (no functions, no triggers, no policies — verified
- * by source scan); each also ENABLEs RLS and REVOKEs from anon/authenticated.
+ * signature objects that prove application. These migrations declare tables
+ * and indexes only (no functions, no triggers — verified by source scan),
+ * except the Stage-2 policy migration which declares RLS policies; each also
+ * ENABLEs RLS and REVOKEs from anon/authenticated.
  */
 const MIGRATIONS = [
   {
@@ -239,6 +282,93 @@ const report = (line, log) => {
   log.push(line);
 };
 
+const declaredObjectCount = (declared) =>
+  declared.tables.length +
+  declared.indexes.length +
+  declared.functions.length +
+  declared.triggers.length +
+  (declared.policies?.length ?? 0);
+
+/**
+ * Read-only plan construction: binds every declared migration to its on-disk
+ * bytes (sha256), its rollback bytes, and its declared signature objects.
+ * Never contacts the database. A missing migration or rollback file is a
+ * plan FINDING — the plan must be complete before any apply may run.
+ */
+function buildPlan(reportLine = () => {}) {
+  const plan = [];
+  let findings = 0;
+  MIGRATIONS.forEach((migration, i) => {
+    let checksum = null;
+    let filePresent = true;
+    try {
+      checksum = sha256(readFileSync(join(MIGRATIONS_DIR, migration.file), "utf8"));
+    } catch {
+      filePresent = false;
+      findings += 1;
+      reportLine(`FINDING ${migration.file}: migration file missing from database/supabase/migrations — the plan cannot bind a checksum.`);
+    }
+
+    let rollbackChecksum = null;
+    try {
+      rollbackChecksum = sha256(readFileSync(join(ROLLBACKS_DIR, migration.file), "utf8"));
+    } catch {
+      findings += 1;
+      reportLine(`FINDING ${migration.file}: rollback file missing — a rollback plan is mandatory (Constitution §38).`);
+    }
+
+    plan.push({
+      order: i + 1,
+      file: migration.file,
+      mission: migration.mission,
+      filePresent,
+      checksum,
+      rollbackChecksum,
+      declared: migration.declared,
+      declaredObjectCount: declaredObjectCount(migration.declared),
+    });
+  });
+  return { plan, findings };
+}
+
+function printPlan(plan, reportLine) {
+  reportLine(
+    `plan: ${plan.length} migrations, ${plan.reduce((n, m) => n + m.declaredObjectCount, 0)} declared signature objects, dependency order locked.`,
+  );
+  for (const m of plan) {
+    reportLine(
+      `MIGRATION ${m.order} ${m.file}` +
+        ` checksum=${m.checksum ?? "MISSING"}` +
+        ` rollback=${m.rollbackChecksum ?? "MISSING"}` +
+        ` declaredObjects=${m.declaredObjectCount}`,
+    );
+    if (m.filePresent) {
+      for (const t of m.declared.tables) reportLine(`  table:${t}`);
+      for (const idx of m.declared.indexes) reportLine(`  index:${idx}`);
+      for (const f of m.declared.functions) reportLine(`  function:${f}`);
+      for (const tg of m.declared.triggers) reportLine(`  trigger:${tg}`);
+      for (const p of m.declared.policies ?? []) reportLine(`  policy:${p}`);
+    }
+  }
+}
+
+/**
+ * Guarded artifact write: the artifacts directory is environment-derived
+ * (COREGRID_ARTIFACTS_DIR), so an unwritable location must degrade to a
+ * warning, never silently lose evidence or crash the run.
+ */
+function writeArtifact(name, content, reportLine) {
+  try {
+    mkdirSync(ARTIFACTS_DIR, { recursive: true });
+    writeFileSync(join(ARTIFACTS_DIR, name), content);
+    reportLine(`artifact: ${ARTIFACTS_DIR}/${name}`);
+    return true;
+  } catch (err) {
+    reportLine(`WARN artifact write failed (${ARTIFACTS_DIR}/${name}): ${err.message}`);
+    return false;
+  }
+}
+
 // ── catalog presence probes (read-only) ─────────────────────────────────────
 async function probeCatalog() {
   const state = { tables: new Set(), columns: new Map(), functions: new Set(), triggers: new Set(), indexes: new Set(), policies: new Set() };
@@ -288,14 +418,137 @@ function presenceFor(migration, catalog) {
   return { present, missing };
 }
 
-// ── run ─────────────────────────────────────────────────────────────────────
+// ── run ──────────────────────────────────────────────────────────────────────
 const log = [];
 const startedAtIso = new Date().toISOString();
+const logLine = (line) => report(line, log);
+
+if (MODE === "manifest") {
+  console.log("COREGRID HARDENING APPLY — MANIFEST (plan-only rehearsal; no database is contacted, nothing is applied)");
+  console.log(`mode=manifest artifactsDir=${ARTIFACTS_DIR} databaseContact=false`);
+  const { plan, findings } = buildPlan(logLine);
+  printPlan(plan, logLine);
+  const manifest = {
+    mission: "MISSION-R-100 (TEAM 3 hardening continuation)",
+    capability: "V1CAP-072",
+    mode: "manifest",
+    generatedAt: new Date().toISOString(),
+    artifactsDir: ARTIFACTS_DIR,
+    projectRef,
+    databaseContact: false,
+    migrations: plan.map((m) => ({
+      order: m.order,
+      file: m.file,
+      mission: m.mission,
+      filePresent: m.filePresent,
+      checksum: m.checksum,
+      rollbackChecksum: m.rollbackChecksum,
+      declaredObjectCount: m.declaredObjectCount,
+      declared: m.declared,
+    })),
+    totalDeclaredObjects: plan.reduce((n, m) => n + m.declaredObjectCount, 0),
+    findings,
+  };
+  writeArtifact("canonical-apply-hardening.manifest.json", JSON.stringify(manifest, null, 2) + "\n", logLine);
+  if (findings > 0) {
+    console.error(`STATUS=MANIFEST_FINDINGS (${findings}) — the plan is incomplete; do not execute it.`);
+    process.exit(1);
+  }
+  console.log("STATUS=MANIFEST_OK — plan is complete and checksum-bound; execute with the serialized canonical apply.");
+  process.exit(0);
+}
+
+if (MODE === "verify-only") {
+  console.log("COREGRID HARDENING APPLY — VERIFY-ONLY (read-only catalog re-verification; nothing is applied)");
+  console.log(`mode=verify-only artifactsDir=${ARTIFACTS_DIR}`);
+  let findings = 0;
+
+  const { plan, findings: planFindings } = buildPlan(logLine);
+  findings += planFindings;
+
+  const recordExists = existsSync(RECORD_PATH);
+  let record = null;
+  if (recordExists) {
+    try {
+      record = JSON.parse(readFileSync(RECORD_PATH, "utf8"));
+    } catch (err) {
+      findings += 1;
+      logLine(`FINDING declared-vs-applied record at ${RECORD_PATH} is unreadable: ${err.message}`);
+    }
+  } else {
+    findings += 1;
+    logLine(`FINDING no declared-vs-applied record at ${RECORD_PATH} — run the apply at least once before verifying.`);
+  }
+
+  let catalog;
+  try {
+    catalog = await probeCatalog();
+  } catch (err) {
+    console.error(`BLOCKED read-only catalog probe failed: ${err.message}`);
+    process.exit(1);
+  }
+
+  const verification = [];
+  for (const m of plan) {
+    const { missing } = presenceFor({ declared: m.declared }, catalog);
+    let drift = null;
+    const recordEntry = record?.declaredVsApplied?.find((r) => r.file === m.file);
+    if (record && m.checksum !== null && recordEntry?.checksum && recordEntry.checksum !== m.checksum) {
+      drift = `on-disk bytes drifted from the recorded checksum (${recordEntry.checksum.slice(0, 12)}…)`;
+      findings += 1;
+    } else if (record && !recordEntry) {
+      drift = "declared-vs-applied record does not cover this migration";
+      findings += 1;
+    }
+
+    if (missing.length === 0 && !drift) {
+      verification.push({ file: m.file, order: m.order, verified: true, missingCount: 0, checksumBound: true });
+      logLine(`VERIFY OK   ${m.file} — all ${m.declaredObjectCount} declared objects present; checksum bound.`);
+    } else {
+      verification.push({
+        file: m.file,
+        order: m.order,
+        verified: false,
+        missingCount: missing.length,
+        missingSample: missing.slice(0, 10),
+        drift,
+      });
+      logLine(`VERIFY FAIL ${m.file} — missing ${missing.length} declared objects${drift ? `; ${drift}` : ""}.`);
+    }
+  }
+
+  const verifyRecord = {
+    mission: "MISSION-R-100 (TEAM 3 hardening continuation)",
+    capability: "V1CAP-072",
+    mode: "verify-only",
+    projectRef,
+    artifactsDir: ARTIFACTS_DIR,
+    executedAt: startedAtIso,
+    completedAt: new Date().toISOString(),
+    recordChecked: recordExists,
+    declaredVsApplied: verification,
+    findings,
+  };
+  writeArtifact("canonical-apply-hardening-verify.json", JSON.stringify(verifyRecord, null, 2) + "\n", logLine);
+  if (findings > 0) {
+    console.error(`STATUS=VERIFY_FINDINGS (${findings}) — declared-vs-applied does not hold against the live catalog.`);
+    process.exit(1);
+  }
+  console.log("STATUS=VERIFY_PASS — declared-vs-applied record matches the live catalog; idempotent, nothing applied.");
+  process.exit(0);
+}
+
 console.log(`COREGRID HARDENING APPLY (MISSION-R-100 continuation) — canonical project=${projectRef}`);
 console.log(`exclusive-access law: serialized, one canonical operation at a time; no other canonical work runs concurrently.`);
 
 let findings = 0;
 const migrations = [];
+
+const { plan, findings: planFindings } = buildPlan(logLine);
+if (planFindings > 0) {
+  console.error(`BLOCKED plan incomplete (${planFindings} findings) — fix the plan before any canonical contact.`);
+  process.exit(1);
+}
 
 let catalog;
 try {
@@ -305,45 +558,33 @@ try {
   process.exit(1);
 }
 
-for (const migration of MIGRATIONS) {
-  const sqlPath = join(MIGRATIONS_DIR, migration.file);
-  const sql = readFileSync(sqlPath, "utf8");
-  const checksum = sha256(sql);
-
-  let rollbackChecksum = null;
-  try {
-    rollbackChecksum = sha256(readFileSync(join(ROLLBACKS_DIR, migration.file), "utf8"));
-  } catch {
-    findings += 1;
-    report(`FINDING ${migration.file}: rollback file missing — a rollback plan is mandatory (Constitution §38).`, log);
-  }
-
-  const { present, missing } = presenceFor(migration, catalog);
+for (const m of plan) {
+  const { present, missing } = presenceFor({ declared: m.declared }, catalog);
   const entry = {
-    file: migration.file,
-    mission: migration.mission,
-    checksum,
-    rollbackChecksum,
-    declaredObjectCount: present.length + missing.length,
+    file: m.file,
+    mission: m.mission,
+    checksum: m.checksum,
+    rollbackChecksum: m.rollbackChecksum,
+    declaredObjectCount: m.declaredObjectCount,
   };
 
   if (missing.length === 0) {
     entry.state = "ALREADY_APPLIED";
     entry.evidence = `all ${present.length} declared objects present (pre-flight catalog probe)`;
-    report(`SKIP  ${migration.file} — ALREADY_APPLIED (${present.length}/${present.length} declared objects present)`, log);
+    report(`SKIP  ${m.file} — ALREADY_APPLIED (${present.length}/${present.length} declared objects present)`, log);
   } else if (present.length === 0) {
-    report(`APPLY ${migration.file} — ${migration.mission} (checksum ${checksum.slice(0, 12)}…)`, log);
+    report(`APPLY ${m.file} — ${m.mission} (checksum ${m.checksum.slice(0, 12)}…)`, log);
     const t0 = Date.now();
     try {
-      await query(sql);
+      await query(readFileSync(join(MIGRATIONS_DIR, m.file), "utf8"));
       entry.state = "APPLIED";
       entry.elapsedMs = Date.now() - t0;
-      report(`OK    ${migration.file} (${entry.elapsedMs}ms)`, log);
+      report(`OK    ${m.file} (${entry.elapsedMs}ms)`, log);
     } catch (err) {
       entry.state = "APPLY_FAILED";
       entry.error = err.message;
       findings += 1;
-      report(`FAIL  ${migration.file}: ${err.message}`, log);
+      report(`FAIL  ${m.file}: ${err.message}`, log);
       migrations.push(entry);
       break; // dependency order: stop at the first failure, never skip ahead
     }
@@ -352,7 +593,7 @@ for (const migration of MIGRATIONS) {
     entry.presentCount = present.length;
     entry.missingSample = missing.slice(0, 10);
     findings += 1;
-    report(`FINDING ${migration.file}: partially applied state (${present.length} present / ${missing.length} missing) — human decision required, refusing to re-run.`, log);
+    report(`FINDING ${m.file}: partially applied state (${present.length} present / ${missing.length} missing) — human decision required, refusing to re-run.`, log);
     migrations.push(entry);
     break;
   }
@@ -370,16 +611,16 @@ try {
 
 const verification = [];
 if (catalog2) {
-  for (const migration of MIGRATIONS) {
-    const { missing } = presenceFor(migration, catalog2);
-    const entry = migrations.find((m) => m.file === migration.file);
+  for (const m of plan) {
+    const { missing } = presenceFor({ declared: m.declared }, catalog2);
+    const entry = migrations.find((x) => x.file === m.file);
     if (missing.length === 0) {
-      verification.push({ file: migration.file, verified: true, missingCount: 0 });
+      verification.push({ file: m.file, verified: true, missingCount: 0 });
       if (entry) entry.state = entry.state === "ALREADY_APPLIED" ? "ALREADY_APPLIED" : "APPLIED_AND_VERIFIED";
     } else {
       findings += 1;
-      verification.push({ file: migration.file, verified: false, missingSample: missing.slice(0, 10) });
-      report(`FINDING ${migration.file}: post-apply verification missing ${missing.length} declared objects.`, log);
+      verification.push({ file: m.file, verified: false, missingSample: missing.slice(0, 10) });
+      report(`FINDING ${m.file}: post-apply verification missing ${missing.length} declared objects.`, log);
     }
   }
 }

@@ -1,0 +1,78 @@
+{
+  "artifact": "rls-table-postures-transport",
+  "captured": "2026-10-02",
+  "mission": "H2-03 — resolve the queued transport_buses RLS re-verify; declare the driver-family substrate posture",
+  "role": "Database Security Engineer (RLS author)",
+  "status": "AUTHORED, NOT APPLIED — no canonical access, no battery runs",
+  "migration": "database/supabase/migrations/20261002000014_coregrid_v2_transport_buses_rls.sql",
+  "rollback": "database/supabase/rollbacks/20261002000014_coregrid_v2_transport_buses_rls.sql",
+  "consumer": "RLS isolation battery steward (scripts/verify-rls-isolation-battery.mjs TABLES registry) — adopt these declarative expected states for the transport table; the battery script itself is owned by another mission and is NOT modified here",
+  "authority": [
+    "AGENTS.md §17 RLS mandatory; application code is never the only security layer",
+    "AGENTS.md §28 database law (RLS, revocable grants over application logic)",
+    "AGENTS.md §22 repository discovery (schema source inspected, cited per table)",
+    "AGENTS.md §31 testing standard (revoked/expired access fails; agents cannot exceed permissions)",
+    "RULING-2 deny-by-default posture approved",
+    "RLS_ISOLATION_BATTERY.md §7 dual-posture model (zero-policy | policy-backed)"
+  ],
+  "schemaSource": {
+    "definitionMigration": "database/supabase/migrations/20260626150625_35a08443-45fd-46ae-807b-3644b44efe26.sql",
+    "correctionMigration": "database/supabase/migrations/20260904010000_coregrid_rls_transport_and_grants.sql",
+    "note": "the legacy definition carried a campus-wide FOR ALL policy (the recorded 2026-09-03 finding); the correction migration replaced it with four scoped policies; this mission normalizes to zero-policy"
+  },
+  "postureSelectionLaw": "zero-policy chosen over tenant-scoped because the legacy table carries no neutral tenant reference and its only available scoping predicates are the legacy domain helpers — the predicate class J-005/J-006 bans from the policy layer; deny-by-default is the approved platform posture (RULING-2) and resolves the queued finding in its strongest form",
+  "tables": [
+    {
+      "name": "transport_buses",
+      "qualifiedName": "public.transport_buses",
+      "posture": "zero-policy",
+      "sourceMigration": "database/supabase/migrations/20260626150625_35a08443-45fd-46ae-807b-3644b44efe26.sql",
+      "normalizedBy": "database/supabase/migrations/20261002000014_coregrid_v2_transport_buses_rls.sql",
+      "expectedCatalog": {
+        "relrowsecurity": true,
+        "relforcerowsecurity": false,
+        "relforcerowsecurityClassification": "INFO (zero-policy posture: no policy expression exists, so force cannot strengthen the denial — RLS_ISOLATION_BATTERY.md §7 zero-policy convention)",
+        "policies": [],
+        "permissivePolicies": 0
+      },
+      "droppedPolicies": [
+        "buses_school_rw",
+        "buses_school_read",
+        "buses_driver_or_admin_update",
+        "buses_school_admin_insert",
+        "buses_school_admin_delete"
+      ],
+      "expectedPrivileges": {
+        "anon": [],
+        "authenticated": [],
+        "PUBLIC": [],
+        "service_role": ["ALL"]
+      },
+      "expectedAnonRestProbe": {
+        "denyExpected": true,
+        "acceptableDenialForms": ["empty-set-200", "42501-permission-denied"],
+        "inconclusiveForms": ["401-invalid-api-key"]
+      },
+      "realtime": {
+        "publication": "supabase_realtime",
+        "expectation": "row visibility follows RLS — zero policies means zero client-visible realtime events for the declared posture"
+      },
+      "consumerImpact": "driver-family self-scoped reads and caregiver tracking deny at the data plane until the owning mission re-provisions access through neutral tenant-scoped policies (the 20261002000013 J-005/J-006 pattern) or a substrate conversion; service-role server paths unaffected",
+      "conversionPath": "a future policy-backed conversion must introduce a neutral tenant reference on the substrate and author FORCE RLS + declared policies in the same migration (20261002000013 exemplar); this mission deliberately does not pre-author such policies"
+    }
+  ],
+  "outOfScope": [
+    {
+      "name": "school_transport",
+      "qualifiedName": "public.school_transport",
+      "reason": "the payments/config family's table, not read by the driver families; holds its own product-decision anon-read policy owned by another mission"
+    }
+  ],
+  "batteryExpectations": {
+    "zeroPolicyTables": ["transport_buses"],
+    "policyBackedTables": [],
+    "verificationGuard": "the normalization migration itself fails the apply if any permissive policy survives (pg_catalog.pg_policies guard, §5) — the declared zero-policy posture is exact, not assumed",
+    "honestyRule": "denial is the pass condition; only genuine denials (empty set or 42501) count; an invalid-key rejection is INCONCLUSIVE, never a pass",
+    "genuineInverse": "the rollback restores exactly the 20260904010000 corrected legacy posture (four scoped policies re-created verbatim, authenticated = SELECT/INSERT/UPDATE/DELETE, service_role = ALL, anon/PUBLIC = none, RLS enabled, force=false) — and the legacy campus-wide FOR ALL policy (buses_school_rw) stays dropped; note the restored posture is outside the battery's dual-posture model, so a post-rollback battery run reports FINDINGS for this table by design"
+  }
+}

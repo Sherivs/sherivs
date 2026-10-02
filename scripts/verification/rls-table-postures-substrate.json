@@ -1,0 +1,307 @@
+{
+  "artifact": "rls-table-postures-substrate",
+  "captured": "2026-10-02",
+  "mission": "H2-04 — first policy layer for the eight batch-A/B substrate families",
+  "role": "RLS Policy Author (authorization specialist)",
+  "status": "AUTHORED, NOT APPLIED — no canonical access, no battery runs",
+  "migration": "database/supabase/migrations/20261002000015_coregrid_v1_substrate_policies.sql",
+  "rollback": "database/supabase/rollbacks/20261002000015_coregrid_v1_substrate_policies.sql",
+  "consumer": "RLS isolation battery steward (scripts/verify-rls-isolation-battery.mjs TABLES registry) — extend the policy-backed cross-tenant probe stage with these tables",
+  "authority": [
+    "AGENTS.md §13 multi-tenancy (every request must have tenant context)",
+    "AGENTS.md §16 layered authorization",
+    "AGENTS.md §17 RLS mandatory; application code is never the only security layer",
+    "AGENTS.md §11/§12 provenance preserved — policies filter rows, never provenance columns",
+    "AGENTS.md §26 never trust client-supplied identity/tenant/role",
+    "AGENTS.md §28 immutable audit records",
+    "AGENTS.md §35 realtime security",
+    "J-005 neutral tenant primitives (20261002000001)",
+    "J-006 closed domain-neutral role vocabulary — directional mapping never in the policy layer",
+    "Exemplar migration 20261002000013_coregrid_v1_neutral_membership_policies.sql"
+  ],
+  "policyConstructionLaw": {
+    "allowedPredicates": [
+      "public.get_my_tenant_id()",
+      "public.is_tenant_admin(p_tenant)",
+      "public.holds_tenant_role(p_tenant, p_role_ref)",
+      "auth.uid()::text (actor self-derivation pins only, where a natural actor column exists)"
+    ],
+    "forbiddenInPredicates": [
+      "legacy domain helpers (the pre-J-005 domain tenancy/role reader pair)",
+      "domain role names (J-006: mapping lives in DomainDefinition.roleMappings)",
+      "hard-coded tenant ids",
+      "client-supplied tenant/identity/role references"
+    ],
+    "neutralRoleTokenReached": "only 'role:administrator', only inside public.is_tenant_admin()",
+    "holdsTenantRoleUsage": "available but intentionally unused — no legitimate client path on these substrates requires a non-administrator role gate",
+    "provenanceLaw": "no policy filters, mutates, or hides a provenance column; predicates reference only tenant_id and actor identity columns",
+    "multiTenantActor": "SELECT raises AMBIGUOUS_TENANCY for multi-bound actors (fail-closed, observable); INSERT predicates are per-tenant via is_tenant_admin(row.tenant_id)"
+  },
+  "forceRls": {
+    "applies": "the four policy-backed tables only",
+    "safety": "owner postgres holds the sanctioned BYPASSRLS attribute (verified live during the exemplar's authoring); SECURITY DEFINER primitives and gated RPCs unaffected; service_role holds the sanctioned platform bypass attribute — if absent, service_role sees zero rows (fail-closed)"
+  },
+  "privilegesConvention": {
+    "authenticated": "SELECT + INSERT only (no UPDATE/DELETE privilege — append-only substrates, least privilege)",
+    "anon": "zero privileges, zero policy grants (untouched from source migrations)",
+    "service_role": "ALL (sanctioned server-only bypass-path parity, 20260907000800 §3 convention)"
+  },
+  "tables": [
+    {
+      "name": "cg_reconciliation_input",
+      "source": "20261002000005_coregrid_v1_reconciliation.sql",
+      "posture": "policy-backed",
+      "tenantColumn": "tenant_id",
+      "appendOnly": true,
+      "forceRls": true,
+      "privileges": {
+        "authenticated": ["SELECT", "INSERT"],
+        "anon": [],
+        "service_role": ["ALL"]
+      },
+      "policies": [
+        {
+          "name": "reconciliation_input_select_own_tenant",
+          "command": "SELECT",
+          "roles": ["authenticated"],
+          "predicate": "tenant_id = public.get_my_tenant_id()"
+        },
+        {
+          "name": "reconciliation_input_insert_tenant_admin",
+          "command": "INSERT",
+          "roles": ["authenticated"],
+          "predicate": "public.is_tenant_admin(tenant_id)"
+        }
+      ],
+      "absentPolicies": {
+        "UPDATE": "no policy and no privilege — append-only resolution law (Constitution §28)",
+        "DELETE": "no policy and no privilege — history preserved"
+      }
+    },
+    {
+      "name": "cg_reconciliation_verdict",
+      "source": "20261002000005_coregrid_v1_reconciliation.sql",
+      "posture": "zero-policy",
+      "rationale": "derived verdict records consumed via the service-role adapter; tenant-scoped client access not authorized by H2-04 — unchanged deny-by-default"
+    },
+    {
+      "name": "cg_event_security",
+      "source": "20261002000006_coregrid_v1_event_security.sql",
+      "posture": "zero-policy",
+      "rationale": "per-event security contracts are gate inputs, not client surfaces; visibility enforcement belongs to the consumption gate — unchanged deny-by-default"
+    },
+    {
+      "name": "cg_event_security_denial",
+      "source": "20261002000006_coregrid_v1_event_security.sql",
+      "posture": "zero-policy",
+      "auditAppendOnly": true,
+      "clientWritePolicy": "NONE — append-only gate denial audit (Constitution §28): no client INSERT/UPDATE/DELETE policy is ever authored; rows are immutable gate decisions; reads remain service-role only",
+      "rationale": "H2-04 documents the deliberate absence: every denial must remain an unwritable, unerazable audit record"
+    },
+    {
+      "name": "cg_event_security_redaction",
+      "source": "20261002000006_coregrid_v1_event_security.sql",
+      "posture": "zero-policy",
+      "auditAppendOnly": true,
+      "clientWritePolicy": "NONE — append-only gate redaction audit (Constitution §28/§19): no client INSERT/UPDATE/DELETE policy is ever authored; withheld-field records are immutable; reads remain service-role only",
+      "rationale": "H2-04 documents the deliberate absence: redaction history must be tamper-evident by posture"
+    },
+    {
+      "name": "cg_event_route_subscription",
+      "source": "20261002000007_coregrid_v1_event_routing.sql",
+      "posture": "policy-backed",
+      "tenantColumn": "tenant_id",
+      "appendOnly": true,
+      "forceRls": true,
+      "privileges": {
+        "authenticated": ["SELECT", "INSERT"],
+        "anon": [],
+        "service_role": ["ALL"]
+      },
+      "policies": [
+        {
+          "name": "event_route_subscription_select_own_tenant",
+          "command": "SELECT",
+          "roles": ["authenticated"],
+          "predicate": "tenant_id = public.get_my_tenant_id()"
+        },
+        {
+          "name": "event_route_subscription_insert_tenant_admin",
+          "command": "INSERT",
+          "roles": ["authenticated"],
+          "predicate": "public.is_tenant_admin(tenant_id) AND subscriber_id = auth.uid()::text"
+        }
+      ],
+      "absentPolicies": {
+        "UPDATE": "no policy and no privilege — declaration immutability while it exists; a scope change is a retire plus a NEW subscription identity; suspension state transitions run server-side through the gated path",
+        "DELETE": "no policy and no privilege — unsubscribe is a state transition, never an erasure"
+      }
+    },
+    {
+      "name": "cg_event_route_queue",
+      "source": "20261002000007_coregrid_v1_event_routing.sql",
+      "posture": "zero-policy",
+      "rationale": "gated delivery state is routing-plane truth owned by the service-role router; tenant-scoped client access not authorized by H2-04 — unchanged deny-by-default"
+    },
+    {
+      "name": "cg_event_route_cursor",
+      "source": "20261002000007_coregrid_v1_event_routing.sql",
+      "posture": "zero-policy",
+      "rationale": "one-way delivery frontier is router-owned state; unchanged deny-by-default"
+    },
+    {
+      "name": "cg_event_route_outcome",
+      "source": "20261002000007_coregrid_v1_event_routing.sql",
+      "posture": "zero-policy",
+      "auditAppendOnly": true,
+      "clientWritePolicy": "NONE — append-only routing outcome audit (Constitution §28): no client INSERT/UPDATE/DELETE policy is ever authored; every evaluation stays an unwritable, unerazable record; reads remain service-role only",
+      "rationale": "H2-04 documents the deliberate absence: nothing silently dropped means nothing client-rewritable either"
+    },
+    {
+      "name": "cg_evidence_record",
+      "source": "20261002000008_coregrid_v1_evidence_lifecycle.sql",
+      "posture": "policy-backed",
+      "tenantColumn": "tenant_id",
+      "appendOnly": true,
+      "forceRls": true,
+      "privileges": {
+        "authenticated": ["SELECT", "INSERT"],
+        "anon": [],
+        "service_role": ["ALL"]
+      },
+      "policies": [
+        {
+          "name": "evidence_record_select_own_tenant",
+          "command": "SELECT",
+          "roles": ["authenticated"],
+          "predicate": "tenant_id = public.get_my_tenant_id()"
+        },
+        {
+          "name": "evidence_record_insert_tenant_admin",
+          "command": "INSERT",
+          "roles": ["authenticated"],
+          "predicate": "public.is_tenant_admin(tenant_id) AND captured_by = auth.uid()::text AND created_by = auth.uid()::text"
+        }
+      ],
+      "absentPolicies": {
+        "UPDATE": "no policy and no privilege — append-only lifecycle law: promotion/supersession/revocation are NEW records, the original is retained verbatim (E-018)",
+        "DELETE": "no policy and no privilege — revoked and superseded evidence is retained verbatim"
+      }
+    },
+    {
+      "name": "cg_evidence_lifecycle_act",
+      "source": "20261002000008_coregrid_v1_evidence_lifecycle.sql",
+      "posture": "zero-policy",
+      "auditAppendOnly": true,
+      "clientWritePolicy": "NONE — append-only lifecycle act ledger (Constitution §28): no client INSERT/UPDATE/DELETE policy is ever authored; promotion/revocation/assessment acts are immutable records with actor and instant; reads remain service-role only",
+      "rationale": "H2-04 documents the deliberate absence: the act ledger is the tamper-evidence substrate of the evidence lifecycle"
+    },
+    {
+      "name": "cg_reasoning_provenance_snapshot",
+      "source": "20261002000009_coregrid_v1_reasoning_provenance.sql",
+      "posture": "zero-policy",
+      "rationale": "reasoning provenance snapshots are derived-intelligence records consumed server-side; not authorized for tenant-scoped client access by H2-04 — unchanged deny-by-default"
+    },
+    {
+      "name": "cg_usage_attribution_rollup",
+      "source": "20261002000010_coregrid_v1_cost_attribution.sql",
+      "posture": "zero-policy",
+      "rationale": "roll-up headers are financial-metering aggregates consumed via the service-role adapter; unchanged deny-by-default"
+    },
+    {
+      "name": "cg_usage_attribution_bucket",
+      "source": "20261002000010_coregrid_v1_cost_attribution.sql",
+      "posture": "policy-backed",
+      "tenantColumn": "tenant_id",
+      "appendOnly": true,
+      "forceRls": true,
+      "privileges": {
+        "authenticated": ["SELECT", "INSERT"],
+        "anon": [],
+        "service_role": ["ALL"]
+      },
+      "policies": [
+        {
+          "name": "usage_attribution_bucket_select_own_tenant",
+          "command": "SELECT",
+          "roles": ["authenticated"],
+          "predicate": "tenant_id = public.get_my_tenant_id()"
+        },
+        {
+          "name": "usage_attribution_bucket_insert_tenant_admin",
+          "command": "INSERT",
+          "roles": ["authenticated"],
+          "predicate": "public.is_tenant_admin(tenant_id)"
+        }
+      ],
+      "absentPolicies": {
+        "UPDATE": "no policy and no privilege — the partition is immutable once persisted; defect reconciliation is a NEW roll-up",
+        "DELETE": "no policy and no privilege — the audit partition is never erased"
+      }
+    },
+    {
+      "name": "cg_knowledge_source",
+      "source": "20261002000011_coregrid_v1_knowledge_currency.sql",
+      "posture": "zero-policy",
+      "rationale": "knowledge-currency family not authorized for tenant-scoped client access by H2-04 — unchanged deny-by-default"
+    },
+    {
+      "name": "cg_knowledge_freshness_contract",
+      "source": "20261002000011_coregrid_v1_knowledge_currency.sql",
+      "posture": "zero-policy",
+      "rationale": "knowledge-currency family not authorized for tenant-scoped client access by H2-04 — unchanged deny-by-default"
+    },
+    {
+      "name": "cg_knowledge_invalidation",
+      "source": "20261002000011_coregrid_v1_knowledge_currency.sql",
+      "posture": "zero-policy",
+      "rationale": "knowledge-currency family not authorized for tenant-scoped client access by H2-04 — unchanged deny-by-default"
+    },
+    {
+      "name": "cg_knowledge_downgrade",
+      "source": "20261002000011_coregrid_v1_knowledge_currency.sql",
+      "posture": "zero-policy",
+      "rationale": "knowledge-currency family not authorized for tenant-scoped client access by H2-04 — unchanged deny-by-default"
+    },
+    {
+      "name": "cg_tool_runtime_tool",
+      "source": "20261002000012_coregrid_v1_tool_runtime.sql",
+      "posture": "zero-policy",
+      "rationale": "tool-runtime family not authorized for tenant-scoped client access by H2-04 — unchanged deny-by-default"
+    },
+    {
+      "name": "cg_tool_runtime_invocation",
+      "source": "20261002000012_coregrid_v1_tool_runtime.sql",
+      "posture": "zero-policy",
+      "rationale": "tool-runtime family not authorized for tenant-scoped client access by H2-04 — unchanged deny-by-default"
+    }
+  ],
+  "batteryExpectations": {
+    "policyBackedTables": [
+      "cg_reconciliation_input",
+      "cg_event_route_subscription",
+      "cg_evidence_record",
+      "cg_usage_attribution_bucket"
+    ],
+    "zeroPolicyTables": [
+      "cg_reconciliation_verdict",
+      "cg_event_security",
+      "cg_event_security_denial",
+      "cg_event_security_redaction",
+      "cg_event_route_queue",
+      "cg_event_route_cursor",
+      "cg_event_route_outcome",
+      "cg_evidence_lifecycle_act",
+      "cg_reasoning_provenance_snapshot",
+      "cg_usage_attribution_rollup",
+      "cg_knowledge_source",
+      "cg_knowledge_freshness_contract",
+      "cg_knowledge_invalidation",
+      "cg_knowledge_downgrade",
+      "cg_tool_runtime_tool",
+      "cg_tool_runtime_invocation"
+    ],
+    "crossTenantProbeLaw": "for each policy-backed table: an authenticated actor bound to tenant A must see zero rows of tenant B for all four commands; an unbound actor must see zero rows; AMBIGUOUS_TENANCY must raise; anon must be denied by privilege; insert probes must fail the is_tenant_admin predicate for non-administrators and the auth.uid() self-derivation pins where present",
+    "genuineInverse": "the rollback must restore relforcerowsecurity=false, zero policies, and the source-migration grant state (anon/authenticated revoked, service_role silent) on exactly the four policy-backed tables — and nothing else"
+  }
+}
