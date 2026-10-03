@@ -1,0 +1,47 @@
+# CoreGrid Scholar — single-VM production compose definition (V1, Part 31 economy).
+#
+# Runs the prebuilt coregrid-scholar image (built by Dockerfile / release.yml).
+# Compose NEVER builds here: what ships to the VM is a digest-pinned image, and
+# what runs is the tag recorded in SCHOLAR_IMAGE.
+#
+# Secrets law (§30): this file contains NO secret values. Every credential is
+# injected at run time through the env_file below, created out-of-band on the
+# VM (mode 600, root-owned, never in git). The env manifest of expected NAMES
+# is infrastructure/deploy/scholar.env.example.
+#
+# The env_file is REQUIRED (compose `required: true`) — this definition fails
+# closed at parse/up time if /opt/coregrid/scholar.env is absent, per §26/§28
+# fail-closed discipline. That file must never live in the repo.
+
+services:
+  coregrid-scholar:
+    # Required at invocation: export SCHOLAR_IMAGE=registry/namespace/coregrid-scholar:tag
+    # (deploy.sh supplies it; `docker compose config` fails loudly without it).
+    image: ${SCHOLAR_IMAGE:?SCHOLAR_IMAGE must be set to registry/namespace/coregrid-scholar:<tag>}
+    container_name: coregrid-scholar
+    restart: unless-stopped
+    env_file:
+      - path: /opt/coregrid/scholar.env
+        required: true
+    ports:
+      # Host port is configurable so a reverse proxy (TLS terminator) can own 80/443.
+      - "${SCHOLAR_HOST_PORT:-3000}:3000"
+    healthcheck:
+      # Mirrors the Dockerfile HEALTHCHECK exactly: /health.json returns
+      # 200 for ok|degraded, 503 for failing (orchestrator drain contract).
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/health.json').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true

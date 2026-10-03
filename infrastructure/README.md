@@ -121,6 +121,17 @@ Runtime-only, supplied via `--env-file /opt/coregrid/scholar.env` on the VM
 
 See `.env.example` for the authoritative list.
 
+### Single-VM deployment substrate (validated 2026-10-03, INFRA-OPS/R8)
+
+`infrastructure/deploy/` holds the run definition for the sanctioned V1 target:
+`docker-compose.yml` (image + required `/opt/coregrid/scholar.env` env_file +
+`/health.json` healthcheck, no values committed), `scholar.env.example` (the
+env-name manifest), and `deploy.sh` (pull → compose up → health gate →
+auto-rollback per §38). See `infrastructure/deploy/README.md` for the
+build → ship → run → healthcheck → rollback procedure and its validation
+evidence. The operator-facing credential map for every external gate lives in
+`architecture/campaigns/V1-PROGRAM/OPERATIONS.md`.
+
 ### CI/CD
 
 `.github/workflows/release.yml` runs on `v*` tag push:
