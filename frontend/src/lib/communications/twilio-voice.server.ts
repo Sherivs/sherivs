@@ -30,6 +30,7 @@
 
 import { z } from "zod";
 import { SystemClock, TimeAuthority } from "../kernel/time-authority";
+import { withTelephonyDeliveryEvidence, type DeliveryEvidenceSink } from "./delivery-evidence.server";
 import {
   DEFAULT_TELEPHONY_FAILURE_POLICY,
   evaluateTelephonyPreCall,
@@ -123,8 +124,17 @@ export const TwilioVoiceCallResponseSchema = z.object({
  * adapter is wrapped by `withTelephonyFailurePolicy(
  * DEFAULT_TELEPHONY_FAILURE_POLICY)` so a hung or throwing transport is
  * contained as a structured failure.
+ *
+ * `evidence` (optional): a `DeliveryEvidenceSink` — when present, EVERY call
+ * attempt (receipt, structured failure, or typed BLOCKED_NO_CREDENTIAL
+ * block) records one append-only delivery-evidence row, non-fatally. The
+ * evidence wrap sits OUTSIDE the failure policy so the row reflects the
+ * attempt's final typed outcome.
  */
-export function createTwilioVoiceAdapter(config: TwilioVoiceConfig | null): TelephonyAdapter {
+export function createTwilioVoiceAdapter(
+  config: TwilioVoiceConfig | null,
+  evidence: DeliveryEvidenceSink | null = null,
+): TelephonyAdapter {
   const raw: TelephonyAdapter = {
     providerId: TWILIO_VOICE_PROVIDER_ID,
 
@@ -199,5 +209,8 @@ export function createTwilioVoiceAdapter(config: TwilioVoiceConfig | null): Tele
     },
   };
 
-  return withTelephonyFailurePolicy(raw, DEFAULT_TELEPHONY_FAILURE_POLICY);
+  return withTelephonyDeliveryEvidence(
+    withTelephonyFailurePolicy(raw, DEFAULT_TELEPHONY_FAILURE_POLICY),
+    evidence,
+  );
 }

@@ -28,6 +28,7 @@ import {
   type TelephonyCallResult,
   type TelephonyProviderRegistry,
 } from "./telephony-adapter-contract";
+import { withTelephonyDeliveryEvidence, type DeliveryEvidenceSink } from "./delivery-evidence.server";
 
 /** Registry provider id under which the Vapi adapter is configured. */
 export const VAPI_VOICE_PROVIDER_ID = "vapi";
@@ -68,9 +69,11 @@ export function createVapiVoiceProviderRegistry(env: ServerEnv): TelephonyProvid
 /**
  * Build the Vapi voice adapter stub. J-045-composed like the real adapters
  * so its observability posture matches, though its `placeCall` never
- * performs network I/O in any credential state.
+ * performs network I/O in any credential state. An optional
+ * `DeliveryEvidenceSink` records every blocked attempt (the block IS the
+ * evidence — see delivery-evidence.server.ts), non-fatally.
  */
-export function createVapiVoiceAdapter(config: VapiVoiceConfig): TelephonyAdapter {
+export function createVapiVoiceAdapter(config: VapiVoiceConfig, evidence: DeliveryEvidenceSink | null = null): TelephonyAdapter {
   const raw: TelephonyAdapter = {
     providerId: VAPI_VOICE_PROVIDER_ID,
 
@@ -95,5 +98,8 @@ export function createVapiVoiceAdapter(config: VapiVoiceConfig): TelephonyAdapte
     },
   };
 
-  return withTelephonyFailurePolicy(raw, DEFAULT_TELEPHONY_FAILURE_POLICY);
+  return withTelephonyDeliveryEvidence(
+    withTelephonyFailurePolicy(raw, DEFAULT_TELEPHONY_FAILURE_POLICY),
+    evidence,
+  );
 }

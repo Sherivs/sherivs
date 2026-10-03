@@ -27,6 +27,7 @@
 
 import { z } from "zod";
 import { SystemClock, TimeAuthority } from "../kernel/time-authority";
+import { withEmailDeliveryEvidence, type DeliveryEvidenceSink } from "./delivery-evidence.server";
 import {
   DEFAULT_EMAIL_FAILURE_POLICY,
   evaluateEmailPreSend,
@@ -131,8 +132,14 @@ export const ResendEmailResponseSchema = z.object({
  * Build the Resend email adapter. Returns a J-045-composed adapter: the raw
  * fetch is wrapped by `withEmailFailurePolicy(DEFAULT_EMAIL_FAILURE_POLICY)`
  * so a hung or throwing transport is contained as a structured failure.
+ *
+ * `evidence` (optional): a `DeliveryEvidenceSink` — when present, EVERY send
+ * attempt (receipt, structured failure, or typed BLOCKED_NO_CREDENTIAL
+ * block) records one append-only delivery-evidence row, non-fatally. Pass
+ * null/omit when no substrate is configured: the send result stays exactly
+ * as typed.
  */
-export function createResendEmailAdapter(config: ResendEmailConfig): EmailAdapter {
+export function createResendEmailAdapter(config: ResendEmailConfig, evidence: DeliveryEvidenceSink | null = null): EmailAdapter {
   const raw: EmailAdapter = {
     providerId: RESEND_EMAIL_PROVIDER_ID,
 
@@ -231,5 +238,8 @@ export function createResendEmailAdapter(config: ResendEmailConfig): EmailAdapte
     },
   };
 
-  return withEmailFailurePolicy(raw, DEFAULT_EMAIL_FAILURE_POLICY);
+  // Evidence wraps OUTSIDE the failure policy so the recorded row reflects
+  // the attempt's FINAL typed outcome — including a transport failure the
+  // policy contained as a structured failure.
+  return withEmailDeliveryEvidence(withEmailFailurePolicy(raw, DEFAULT_EMAIL_FAILURE_POLICY), evidence);
 }
