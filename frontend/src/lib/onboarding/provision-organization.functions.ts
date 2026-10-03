@@ -94,13 +94,27 @@ export const provisionOrganization = createServerFn({ method: "POST" })
 
     // §27.6 AUDIT — fail-closed audit record. Control-plane scope: the
     // request provisions a NEW tenant (the actor holds no gate-resolved
-    // membership in it), so tenantId is null and WHO is the authenticated
-    // platform super admin.
+    // membership in it), so tenantId is null. WHO: the actor's canonical
+    // users row when one exists; a bootstrap-claimed super admin has none
+    // (the bootstrap precondition), so — exactly like the claim audit — the
+    // attribution degrades to the verified email claim with a null actor id
+    // (audit_logs.user_id FKs public.users; a raw auth uid without a
+    // canonical row is rejected, which failed the audit fail-closed).
+    const actorRow = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("id", context.userId)
+      .maybeSingle();
+    if (actorRow.error) throw new Error(actorRow.error.message);
+    const actorHasCanonicalRow = actorRow.data != null;
+    const actorEmail =
+      actorHasCanonicalRow ? null : ((context.claims as { email?: string })?.email ?? null);
     await writeAuditRecord(supabaseAdmin, {
       action: "onboarding.provision_organization",
       gate: "requirePlatformSuperAdmin",
       tenantId: null,
-      actorId: context.userId,
+      actorId: actorHasCanonicalRow ? context.userId : null,
+      actorEmail,
       table: outcome.organization.table,
       recordId: outcome.organization.id,
       outcome: "succeeded",
