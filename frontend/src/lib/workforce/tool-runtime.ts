@@ -85,9 +85,7 @@ export type ToolInvocationRejectionCode =
   | "credential_lease_denied";
 
 export type ToolExecutionFailureCode =
-  | "lease_invalidated"
-  | "tool_execution_failed"
-  | "result_secret_material_detected";
+  "lease_invalidated" | "tool_execution_failed" | "result_secret_material_detected";
 
 export interface ToolInvocationRejection {
   readonly code: ToolInvocationRejectionCode;
@@ -159,8 +157,7 @@ export interface GovernedToolDeclaration {
 }
 
 export type ToolRegistrationResult =
-  | { ok: true; toolId: string }
-  | { ok: false; errors: readonly string[] };
+  { ok: true; toolId: string } | { ok: false; errors: readonly string[] };
 
 /* ─────────────────────────────────────────────────────────────
  * Invocation records (append-only, redacted by construction)
@@ -428,10 +425,13 @@ export class ToolRuntime {
     if (
       declaration.rateGuard !== undefined &&
       declaration.rateGuard !== null &&
-      (!Number.isFinite(declaration.rateGuard.windowMs) || declaration.rateGuard.windowMs <= 0 ||
+      (!Number.isFinite(declaration.rateGuard.windowMs) ||
+        declaration.rateGuard.windowMs <= 0 ||
         !isPositiveInt(declaration.rateGuard.maxInvocationsPerWindow))
     ) {
-      errors.push("rateGuard requires a positive windowMs and a positive integer maxInvocationsPerWindow");
+      errors.push(
+        "rateGuard requires a positive windowMs and a positive integer maxInvocationsPerWindow",
+      );
     }
     if (
       declaration.budgetGuard !== undefined &&
@@ -447,7 +447,12 @@ export class ToolRuntime {
       declaration: { ...declaration, toolId },
       sensitiveParamKeys: [...sensitiveParamKeys],
     });
-    this.audit.append({ kind: "TOOL_REGISTERED", atMs: nowMs, toolId, riskClass: declaration.riskClass });
+    this.audit.append({
+      kind: "TOOL_REGISTERED",
+      atMs: nowMs,
+      toolId,
+      riskClass: declaration.riskClass,
+    });
     return { ok: true, toolId };
   }
 
@@ -479,8 +484,16 @@ export class ToolRuntime {
       evidenceRef: null as string | null,
     };
 
-    const rejected = (rejection: ToolInvocationRejection, base: typeof recordBase): ToolInvocationResult => {
-      const record = this.emitRecord({ ...base, outcome: "rejected", reasonCode: rejection.code, reasonDetail: rejection.detail });
+    const rejected = (
+      rejection: ToolInvocationRejection,
+      base: typeof recordBase,
+    ): ToolInvocationResult => {
+      const record = this.emitRecord({
+        ...base,
+        outcome: "rejected",
+        reasonCode: rejection.code,
+        reasonDetail: rejection.detail,
+      });
       return { ok: false, outcome: "rejected", rejection, record };
     };
 
@@ -495,7 +508,10 @@ export class ToolRuntime {
       input.params === null
     ) {
       return rejected(
-        { code: "invalid_invocation_input", detail: "worker, tenantRef, toolId, params and nowMs are required" },
+        {
+          code: "invalid_invocation_input",
+          detail: "worker, tenantRef, toolId, params and nowMs are required",
+        },
         recordBase,
       );
     }
@@ -517,7 +533,10 @@ export class ToolRuntime {
     }
     if (probe !== null && probe(rawParamsSerialized)) {
       return rejected(
-        { code: "param_secret_material_detected", detail: "invocation params contain live secret material" },
+        {
+          code: "param_secret_material_detected",
+          detail: "invocation params contain live secret material",
+        },
         recordBase,
       );
     }
@@ -525,7 +544,10 @@ export class ToolRuntime {
     const tool = this.tools.get(input.toolId.trim());
     // 3. Unregistered tools are unexecutable (sandbox isolation, fail closed).
     if (tool === undefined) {
-      return rejected({ code: "tool_not_registered", detail: `"${input.toolId}" is not registered` }, recordBase);
+      return rejected(
+        { code: "tool_not_registered", detail: `"${input.toolId}" is not registered` },
+        recordBase,
+      );
     }
 
     const base: typeof recordBase = {
@@ -549,7 +571,10 @@ export class ToolRuntime {
     // 5. Worker lifecycle (revocation propagation — fresh at invocation).
     if (!workerLifecycleUsable(worker)) {
       return rejected(
-        { code: "worker_lifecycle_unusable", detail: `worker lifecycle "${worker.lifecycle}" is unusable` },
+        {
+          code: "worker_lifecycle_unusable",
+          detail: `worker lifecycle "${worker.lifecycle}" is unusable`,
+        },
         base,
       );
     }
@@ -562,13 +587,19 @@ export class ToolRuntime {
       const registered = this.config.registry.get(capabilityId);
       if (registered === undefined) {
         return rejected(
-          { code: "capability_not_registered", detail: `required capability "${capabilityId}" vanished from the registry` },
+          {
+            code: "capability_not_registered",
+            detail: `required capability "${capabilityId}" vanished from the registry`,
+          },
           base,
         );
       }
       if (!declared.has(capabilityId)) {
         return rejected(
-          { code: "capability_not_declared", detail: `required capability "${capabilityId}" is not declared by worker "${worker.id}"` },
+          {
+            code: "capability_not_declared",
+            detail: `required capability "${capabilityId}" is not declared by worker "${worker.id}"`,
+          },
           base,
         );
       }
@@ -746,10 +777,10 @@ export class ToolRuntime {
     // Guards count EXECUTED invocations only — rejections are free, so a
     // guard can never be exhausted by denied traffic.
     const now = input.nowMs;
-    this.executedTimestampsByTool.set(
-      tool.declaration.toolId,
-      [...(this.executedTimestampsByTool.get(tool.declaration.toolId) ?? []), now],
-    );
+    this.executedTimestampsByTool.set(tool.declaration.toolId, [
+      ...(this.executedTimestampsByTool.get(tool.declaration.toolId) ?? []),
+      now,
+    ]);
     this.executedTotalByTool.set(
       tool.declaration.toolId,
       (this.executedTotalByTool.get(tool.declaration.toolId) ?? 0) + 1,
@@ -764,7 +795,13 @@ export class ToolRuntime {
       resultSummary: output.summary,
       evidenceRef: output.evidenceRef,
     });
-    return { ok: true, outcome: "executed", summary: output.summary, evidenceRef: output.evidenceRef, record };
+    return {
+      ok: true,
+      outcome: "executed",
+      summary: output.summary,
+      evidenceRef: output.evidenceRef,
+      record,
+    };
   }
 
   private emitRecord(record: ToolInvocationRecord): ToolInvocationRecord {

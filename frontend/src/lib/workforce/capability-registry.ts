@@ -39,15 +39,9 @@
  * Boundary: pure data + pure functions. No persistence, no I/O, no vendor.
  */
 
-import {
-  AGENT_RISK_CLASSIFICATIONS,
-  type AgentRiskClassification,
-} from "../agent-core";
+import { AGENT_RISK_CLASSIFICATIONS, type AgentRiskClassification } from "../agent-core";
 import { UNIVERSAL_ROLE_SET, type UniversalRole } from "../universal-roles";
-import {
-  riskClassRank,
-  type WorkerDefinition,
-} from "./worker-definition";
+import { riskClassRank, type WorkerDefinition } from "./worker-definition";
 
 /** The risk vocabulary as a set, for fail-closed membership checks. */
 const AGENT_RISK_CLASSIFICATION_SET: ReadonlySet<string> = new Set<string>(
@@ -81,8 +75,7 @@ export interface CapabilityRegistrationInput {
 export type CapabilityRegistry = ReadonlyMap<string, RegisteredCapability>;
 
 export type CapabilityRegistrationResult =
-  | { ok: true; registry: CapabilityRegistry }
-  | { ok: false; errors: readonly string[] };
+  { ok: true; registry: CapabilityRegistry } | { ok: false; errors: readonly string[] };
 
 function isNonEmptyTrimmed(value: unknown, maxLength: number): value is string {
   return typeof value === "string" && value.trim().length >= 1 && value.trim().length <= maxLength;
@@ -200,11 +193,7 @@ export interface CapabilityRequirement {
 
 /** The axes a worker can fail a match on — every denial names its axis. */
 export type CapabilityMatchAxis =
-  | "tenant"
-  | "lifecycle"
-  | "registry_integrity"
-  | "capability"
-  | "risk";
+  "tenant" | "lifecycle" | "registry_integrity" | "capability" | "risk";
 
 export interface CapabilityMatchFailure {
   readonly workerId: string;
@@ -368,12 +357,7 @@ export interface DelegationAuthorityRequirement {
 
 /** The axes a delegation compatibility verdict evaluates. */
 export type DelegationCompatibilityAxis =
-  | "tenant"
-  | "lifecycle"
-  | "registry_integrity"
-  | "capability"
-  | "risk"
-  | "role";
+  "tenant" | "lifecycle" | "registry_integrity" | "capability" | "risk" | "role";
 
 export interface DelegationCompatibilityReason {
   readonly axis: DelegationCompatibilityAxis;
@@ -478,10 +462,7 @@ export function evaluateDelegationCompatibility(
       });
       continue;
     }
-    if (
-      riskClassRank(capability.riskClass) >
-      riskClassRank(worker.authorityBounds.maxRiskClass)
-    ) {
+    if (riskClassRank(capability.riskClass) > riskClassRank(worker.authorityBounds.maxRiskClass)) {
       reasons.push({
         axis: "risk",
         reason: `authorized action "${action}" risk "${capability.riskClass}" exceeds worker authority ceiling "${worker.authorityBounds.maxRiskClass}"`,
