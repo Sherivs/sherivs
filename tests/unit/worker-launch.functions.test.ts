@@ -29,12 +29,12 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  executeWorkerMissionLaunch,
   resolveAiCredentialGate,
   WORKER_LAUNCH_AUDIT_ACTION,
   workerLaunchRequestSchema,
   type WorkerLaunchDeps,
 } from "@/lib/workforce/worker-launch.functions";
+import { executeWorkerMissionLaunch } from "@/lib/workforce/worker-launch-runtime.server";
 import type { WriteAuditEntry } from "@/lib/server/write-audit";
 import { requirePlatformSuperAdmin } from "@/lib/security-role-gate";
 import { createInMemoryMissionExecutionStore } from "@/lib/missions/mission-execution-store";
@@ -50,6 +50,11 @@ import {
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const FAMILY_SRC = join(ROOT, "frontend/src/lib/workforce/worker-launch.functions.ts");
+const CONTRACT_SRC = join(ROOT, "frontend/src/lib/workforce/worker-launch-contract.ts");
+const RUNTIME_SRC = join(
+  ROOT,
+  "frontend/src/lib/workforce/worker-launch-runtime.server.ts",
+);
 const ROUTE_SRC = join(ROOT, "frontend/src/routes/_authenticated/super-admin/worker-missions.tsx");
 
 /* ─────────────────────────────────────────────────────────────
@@ -492,7 +497,7 @@ describe("launched path (host cycle over in-memory ports, injected executor)", (
   });
 
   it("the default executor wires the mission work through the centralized AI gateway (§20, source pin)", () => {
-    const src = readFileSync(FAMILY_SRC, "utf8");
+    const src = readFileSync(RUNTIME_SRC, "utf8");
     expect(src).toMatch(/buildAiGatewayExecutor/);
     expect(src).toMatch(/invokeAiGateway/);
     expect(src).toMatch(/purpose:\s*"workflow_assistance"/);
@@ -508,35 +513,41 @@ describe("launched path (host cycle over in-memory ports, injected executor)", (
 
 describe("§27 server-function invariants — worker-launch.functions.ts", () => {
   const src = readFileSync(FAMILY_SRC, "utf8");
+  const runtime = readFileSync(RUNTIME_SRC, "utf8");
+  const contract = readFileSync(CONTRACT_SRC, "utf8");
 
   it("1 AUTHENTICATE: requireSupabaseAuth middleware on the server function", () => {
     expect(src).toMatch(/\.middleware\(\[\s*requireSupabaseAuth\s*\]\)/);
   });
 
   it("2+3 AUTHORIZE: the canonical platform super-admin gate with lifecycle/session threading", () => {
-    expect(src).toMatch(/requirePlatformSuperAdmin\(/);
-    expect(src).toMatch(/lifecycle:\s*null/);
-    expect(src).toMatch(/sessionValid/);
+    expect(runtime).toMatch(/requirePlatformSuperAdmin\(/);
+    expect(runtime).toMatch(/lifecycle:\s*null/);
+    expect(runtime).toMatch(/sessionValid/);
   });
 
   it("4 VALIDATE: the Zod strict validator is wired into the server function", () => {
     expect(src).toMatch(/\.validator\(\(input: unknown\) => workerLaunchRequestSchema\.parse\(input\)\)/);
-    expect(src).toMatch(/\.strict\(\)/);
+    expect(contract).toMatch(/\.strict\(\)/);
   });
 
   it("5 EXECUTE: the substrate is the sanctioned registry + mission ports — no raw vendor calls in the core", () => {
-    expect(src).toMatch(/createWorkerRegistryDb/);
-    expect(src).toMatch(/createDbMissionLeasePort/);
-    expect(src).toMatch(/runWorkerHost/);
-    expect(src).not.toMatch(/from ["'](@supabase\/supabase-js|twilio|paystack)["']/);
+    expect(runtime).toMatch(/createWorkerRegistryDb/);
+    expect(runtime).toMatch(/createDbMissionLeasePort/);
+    expect(runtime).toMatch(/runWorkerHost/);
+    expect(runtime).not.toMatch(/from ["'](@supabase\/supabase-js|twilio|paystack)["']/);
+    // Server modules stay OUT of the client graph: the functions module may
+    // only reach the runtime inside handler bodies (dynamic import).
+    expect(src).not.toMatch(/^import\s+(?!type\b).*worker-launch-runtime\.server/m);
+    expect(src).toMatch(/import\(\s*["']\.\/worker-launch-runtime\.server["']\s*\)/);
   });
 
   it("6 AUDIT: every attempt writes a fail-closed audit record; no secrets logged", () => {
-    expect(src).toMatch(/writeAuditRecord/);
-    expect(src).toMatch(/WORKER_LAUNCH_AUDIT_ACTION = "workforce\.launch_worker_mission"/);
-    expect(src).not.toMatch(/console\.log/);
+    expect(runtime).toMatch(/writeAuditRecord/);
+    expect(contract).toMatch(/WORKER_LAUNCH_AUDIT_ACTION = "workforce\.launch_worker_mission"/);
+    expect(runtime).not.toMatch(/console\.log/);
     // Credential names only — never values — in the typed outcome.
-    expect(src).toMatch(/missing_environment/);
+    expect(runtime).toMatch(/missing_environment/);
   });
 });
 
