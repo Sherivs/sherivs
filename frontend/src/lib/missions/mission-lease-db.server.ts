@@ -138,11 +138,18 @@ export interface CreateDbMissionLeasePortInput {
  * Fails closed: config is Zod-validated up front; every untrusted row is
  * Zod-validated; unknown and cross-tenant executions return the SAME
  * `cross_tenant` signal (no existence oracle, AGENTS §31).
+ *
+ * The returned port ALSO exposes the enriched `getExecution` read (record
+ * port state ⊕ lease truth, including the persisted executor of record) —
+ * exactly the `MissionLeasePort & Pick<MissionRecordPort, "getExecution">`
+ * composite the leased driver and the worker host drive. Wire `getExecution`
+ * from THIS port, not from the bare record port, wherever the composite is
+ * assembled; reads through the bare record port stay un-enriched by design.
  */
 export function createDbMissionLeasePort(
   client: MissionLeaseDbClient,
   input: CreateDbMissionLeasePortInput,
-): MissionLeasePort {
+): MissionLeasePort & Pick<MissionRecordPort, "getExecution"> {
   const configCheck = missionExecutionConfigSchema.safeParse(
     input.config ?? DEFAULT_MISSION_EXECUTION_CONFIG,
   );
@@ -199,6 +206,13 @@ export function createDbMissionLeasePort(
    * release is `evidenced`; a recorded verification decision is `verified`
    * (or stays `evidenced`); otherwise failed/recovered leases requeue — and
    * an attempt budget fully consumed by failures is `exhausted`.
+   *
+   * `lastWorkerId` is the executor of record: the latest persisted lease
+   * row's worker. Lease rows survive release/recovery (only their state
+   * changes), so the executor of record remains persisted for post-release
+   * audit — the refinement V1-004 reported as pending the lease substrate
+   * (V1-003 §42 reported edit 4). No lease rows → the record port's own
+   * projection stands (conservatively null on the DB record path).
    */
   async function enrichedExecution(
     tenantId: string,
@@ -238,6 +252,7 @@ export function createDbMissionLeasePort(
       attempt: Math.max(base.attempt, latest.attempt),
       failureCount: Math.max(base.failureCount, failedCount),
       retryScheduledAt: latest.retry_not_before ?? base.retryScheduledAt,
+      lastWorkerId: latest.worker_id,
       verificationDecision: verification?.decision ?? base.verificationDecision,
       lease:
         active === null
@@ -371,6 +386,16 @@ export function createDbMissionLeasePort(
   }
 
   return {
+    /**
+     * The enriched execution read: record-port projection ⊕ lease truth
+     * (stage, attempt, retry gate, verification decision, active lease and
+     * the persisted executor of record). Unknown executions return null —
+     * the same fail-closed signal every lease operation composes over.
+     */
+    async getExecution(tenantId: string, executionId: string) {
+      return enrichedExecution(tenantId, executionId);
+    },
+
     async acquireLease({
       actor,
       request,

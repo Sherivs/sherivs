@@ -517,3 +517,81 @@ describe("db lease port — worker gate, untrusted rows, tenant boundary", () =>
     expect(denied.reason).toContain("verified");
   });
 });
+
+/* ─────────────────────────────────────────────────────────────
+ * 11. Persisted executor of record (lastWorkerId, V1-003 §42 edit 4)
+ * ────────────────────────────────────────────────────────────*/
+
+describe("db lease port — persisted executor of record (lastWorkerId)", () => {
+  it("surfaces the enriched execution read through getExecution", async () => {
+    const db = fakeSupabaseDb(initialDb());
+    const port = leasePort(db);
+    // No lease rows yet: the record port's projection stands un-enriched.
+    const before = await port.getExecution(TENANT_A, EXECUTION_ID);
+    expect(before?.stage).toBe("assigned");
+    expect(before?.lastWorkerId).toBeNull();
+
+    const grant = expectOk(
+      await port.acquireLease({
+        actor: workerActor(),
+        request: { tenantId: TENANT_A, executionId: EXECUTION_ID, workerId: "worker-1", now: T0 },
+      }),
+    );
+    const leased = await port.getExecution(TENANT_A, EXECUTION_ID);
+    expect(leased?.stage).toBe("leased");
+    expect(leased?.lastWorkerId).toBe("worker-1");
+    expect(leased?.lease?.leaseId).toBe(grant.leaseId);
+  });
+
+  it("keeps lastWorkerId persisted AFTER a succeeded release (post-release audit)", async () => {
+    const db = fakeSupabaseDb(initialDb());
+    const port = leasePort(db);
+    const grant = expectOk(
+      await port.acquireLease({
+        actor: workerActor(),
+        request: { tenantId: TENANT_A, executionId: EXECUTION_ID, workerId: "worker-1", now: T0 },
+      }),
+    );
+    await port.completeExecution({
+      actor: workerActor(),
+      request: {
+        tenantId: TENANT_A,
+        executionId: EXECUTION_ID,
+        leaseId: grant.leaseId,
+        workerId: "worker-1",
+        outcome: {
+          outcome: "succeeded",
+          evidence: [{ evidenceKind: "observation", sourceRef: "runtime:runtime-a", lineage: [] }],
+        },
+        now: new Date(Date.parse(T0) + 5_000).toISOString(),
+      },
+    });
+    const released = await port.getExecution(TENANT_A, EXECUTION_ID);
+    expect(released?.stage).toBe("evidenced");
+    expect(released?.lease).toBeNull();
+    // The lease row survives release (state → released, outcome → succeeded),
+    // so the executor of record stays persisted for post-release audit.
+    expect(released?.lastWorkerId).toBe("worker-1");
+  });
+
+  it("keeps the LAST attempt's worker as executor of record after a handoff", async () => {
+    const db = fakeSupabaseDb({ ...initialDb(), cg_mission_lease: [activeLeaseRow()] });
+    const port = leasePort(db);
+    expectOk(
+      await port.acquireLease({
+        actor: workerActor("worker-2"),
+        request: {
+          tenantId: TENANT_A,
+          executionId: EXECUTION_ID,
+          workerId: "worker-2",
+          now: new Date(Date.parse(T0) + 40_000).toISOString(),
+        },
+      }),
+    );
+    const handed = await port.getExecution(TENANT_A, EXECUTION_ID);
+    expect(handed?.attempt).toBe(2);
+    // The latest (attempt-2) lease holder is the executor of record; the
+    // recovered attempt-1 worker is history, not the executor of record.
+    expect(handed?.lastWorkerId).toBe("worker-2");
+  });
+});

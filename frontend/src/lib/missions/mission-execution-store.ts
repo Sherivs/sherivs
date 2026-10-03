@@ -335,7 +335,18 @@ export function createInMemoryMissionExecutionStore(
 
     const failureCount = execution.failureCount + 1;
     if (execution.attempt >= cfg.maxAttempts) {
-      putExecution({ ...execution, stage: "exhausted", lease: null, failureCount, updatedAt: now });
+      // Terminal write clears the retry gate: a stale backoff stamp on an
+      // exhausted execution is dead state (the acquire gate denies on
+      // attempts_exhausted first, so it is inert — but the stored record must
+      // not carry a schedule it will never honor).
+      putExecution({
+        ...execution,
+        stage: "exhausted",
+        lease: null,
+        failureCount,
+        retryScheduledAt: null,
+        updatedAt: now,
+      });
       const exhausted = getExecutionSync(tenantId, executionId);
       return exhausted === null
         ? deny("not_found", "execution vanished during failure recording")
@@ -874,16 +885,28 @@ export async function runLeasedMissionExecution(
     executionId: string;
     /** Executor callback (V1-003's seam): run the mission work under the lease. */
     execute: (grant: LeaseGrant) => Promise<MissionDriverExecutorResult>;
+    /** The wake instant: stamps the lease-acquisition phase without a clock. */
     now: string;
+    /**
+     * Optional injected clock (J-023 — no wall-clock sampling here; the caller
+     * owns the time authority). When supplied, the driver samples it at EACH
+     * phase boundary (lease acquisition, outcome report) so completion and
+     * retry stamps reflect the actual act instants instead of the single wake
+     * instant. Absent → the one `now` instant stamps every phase (the
+     * deterministic behavior every existing caller keeps). Unparseable clock
+     * output is rejected by the store's Zod timestamp boundary — fail closed.
+     */
+    clock?: () => string;
   },
 ): Promise<MissionDriverResult> {
+  const phaseNow = input.clock ?? (() => input.now);
   const acquired = await store.acquireLease({
     actor: input.worker,
     request: {
       tenantId: input.tenantId,
       executionId: input.executionId,
       workerId: input.worker.actorId,
-      now: input.now,
+      now: phaseNow(),
     },
   });
   if (!acquired.ok) {
@@ -898,6 +921,9 @@ export async function runLeasedMissionExecution(
   }
   const grant = acquired.value;
   const outcome = await input.execute(grant);
+  // The outcome report is its own phase: completion/failure/retry stamps bind
+  // to THIS instant, not to the wake instant (per-phase instants, V1-003 §42
+  // reported edit 1 — the host threads its injected clock here).
   const reported = await store.completeExecution({
     actor: input.worker,
     request: {
@@ -906,7 +932,7 @@ export async function runLeasedMissionExecution(
       leaseId: grant.leaseId,
       workerId: grant.workerId,
       outcome,
-      now: input.now,
+      now: phaseNow(),
     },
   });
   if (!reported.ok) {

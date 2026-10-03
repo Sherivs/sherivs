@@ -630,13 +630,10 @@ describe("worker host loop — retry exhaustion", () => {
     const execution = await h.store.getExecution(TENANT, "exec-1");
     expect(execution?.stage).toBe("exhausted");
     expect(execution?.attempt).toBe(3);
-    // NOTE (reported V1-004 edit): the in-memory store's terminal-exhaustion
-    // branch spreads the prior state and leaves the LAST retryScheduledAt
-    // stamped on the stored execution even though its return value is null.
-    // The timestamp is inert — the acquire gate below denies on
-    // `attempts_exhausted` before the backoff check ever runs. The V1-004
-    // store should null it on the terminal write.
-    expect(execution?.retryScheduledAt).not.toBeNull();
+    // The terminal-exhausted write nulls the stored retry gate (V1-003 §42
+    // reported edit 2, reconciled by W3-INT in the mission path): the stale
+    // backoff stamp is no longer left on the stored execution.
+    expect(execution?.retryScheduledAt).toBeNull();
 
     // A terminal execution is never leased again — the exhausted gate fires
     // BEFORE the retry-backoff gate, so the stale timestamp cannot resurrect

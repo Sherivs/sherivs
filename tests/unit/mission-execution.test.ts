@@ -566,6 +566,14 @@ describe("mission retry semantics (V1-004)", () => {
       }),
       "attempts_exhausted",
     );
+
+    // The terminal-exhausted write nulls the stored retry gate (V1-003 §42
+    // reported edit 2, reconciled by W3-INT): the returned value was already
+    // null, and the STORED execution must not carry a backoff stamp it can
+    // never honor.
+    const stored = await store.getExecution(TENANT_A, "exec-1");
+    expect(stored?.stage).toBe("exhausted");
+    expect(stored?.retryScheduledAt).toBeNull();
   });
 
   it("records a reported failure through completeExecution (outcome failed)", async () => {
@@ -1026,5 +1034,90 @@ describe("driver seam: runLeasedMissionExecution (V1-004 → V1-003)", () => {
     expect(result.leased).toBe(false);
     expect(result.outcome).toBe("not_leased");
     expect(result.denyCode).toBe("lease_held");
+  });
+
+  it("records the executor of record (lastWorkerId) on the execution", async () => {
+    const { store } = await seedAssignedExecution();
+    const result = await runLeasedMissionExecution(store, {
+      worker: worker(TENANT_A, "worker-7"),
+      tenantId: TENANT_A,
+      executionId: "exec-1",
+      now: T0,
+      execute: async () => ({
+        outcome: "succeeded" as const,
+        evidence: [{ evidenceKind: "observation", sourceRef: "cg_entity:1111", lineage: [] }],
+      }),
+    });
+    expect(result.outcome).toBe("evidenced");
+    const execution = await store.getExecution(TENANT_A, "exec-1");
+    expect(execution?.lastWorkerId).toBe("worker-7");
+  });
+
+  it("threads per-phase instants from the injected clock (completion ≠ wake instant)", async () => {
+    const { store } = await seedAssignedExecution();
+    // The host's injected clock advances DURING the executor callback (work
+    // takes 500ms); the driver samples it at each phase boundary.
+    let nowMs = Date.parse(T0);
+    const result = await runLeasedMissionExecution(store, {
+      worker: worker(),
+      tenantId: TENANT_A,
+      executionId: "exec-1",
+      now: T0,
+      clock: () => new Date(nowMs).toISOString(),
+      execute: async () => {
+        nowMs += 500; // inside the 1s FAST_CONFIG lease TTL
+        return {
+          outcome: "succeeded" as const,
+          evidence: [{ evidenceKind: "observation", sourceRef: "cg_entity:1111", lineage: [] }],
+        };
+      },
+    });
+    expect(result.outcome).toBe("evidenced");
+
+    // The lease was acquired at the WAKE instant…
+    expect(result.lease?.acquiredAt).toBe(T0);
+    // …but the completion act (evidence §12 stamps, updatedAt) binds to the
+    // act instant sampled at the outcome-report phase boundary.
+    const execution = await store.getExecution(TENANT_A, "exec-1");
+    expect(execution?.updatedAt).toBe(at(500));
+    expect(execution?.evidenceIds).toEqual(["exec-1:evidence:observation"]);
+  });
+
+  it("schedules the retry from the failure act instant, not the wake instant", async () => {
+    const { store } = await seedAssignedExecution();
+    const failedAt = at(100); // the act instant sampled at the report phase
+    const result = await runLeasedMissionExecution(store, {
+      worker: worker(),
+      tenantId: TENANT_A,
+      executionId: "exec-1",
+      now: T0,
+      clock: () => failedAt,
+      execute: async () => ({ outcome: "failed" as const, reason: "transient fault" }),
+    });
+    expect(result.outcome).toBe("failed");
+    // Backoff is bounded exponential from the FAILURE instant (act instant),
+    // not from the wake instant T0.
+    const expectedRetry = new Date(
+      Date.parse(failedAt) + nextRetryAt(FAST_CONFIG, 1),
+    ).toISOString();
+    const execution = await store.getExecution(TENANT_A, "exec-1");
+    expect(execution?.retryScheduledAt).toBe(expectedRetry);
+  });
+
+  it("keeps the single-`now` deterministic behavior when no clock is supplied", async () => {
+    const { store } = await seedAssignedExecution();
+    const result = await runLeasedMissionExecution(store, {
+      worker: worker(),
+      tenantId: TENANT_A,
+      executionId: "exec-1",
+      now: T0,
+      execute: async () => ({
+        outcome: "succeeded" as const,
+        evidence: [{ evidenceKind: "observation", sourceRef: "cg_entity:1111", lineage: [] }],
+      }),
+    });
+    expect(result.lease?.acquiredAt).toBe(T0);
+    const execution = await store.getExecution(TENANT_A, "exec-1");
+    expect(execution?.updatedAt).toBe(T0);
   });
 });
