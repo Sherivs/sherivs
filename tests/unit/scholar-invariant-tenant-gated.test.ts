@@ -529,6 +529,51 @@ defineFamilySuite({
 });
 
 defineFamilySuite({
+  family: "portal-overview.functions.ts",
+  helpers: {
+    gateSignals: [/requireSchoolAdminScope\(/, /lifecycle:\s*null/, /sessionValid/],
+  },
+  functions: [
+    {
+      fn: "loadAuditOverview",
+      method: "GET",
+      input: "none",
+      gate: "school-admin",
+      audit: "pure-read",
+      gateMarker: /requireSchoolAdminScope\(context\.supabase,\s*lifecycle\)/,
+      note: "head-count reads over audit_logs scoped by the gate-resolved tenant; no write path",
+    },
+    {
+      fn: "loadPayrollOverview",
+      method: "GET",
+      input: "none",
+      gate: "school-admin",
+      audit: "pure-read",
+      gateMarker: /requireSchoolAdminScope\(context\.supabase,\s*lifecycle\)/,
+      note: "reads staff_payroll for the gate-resolved tenant and current period; no write path (payroll processing is planned capability)",
+    },
+    {
+      fn: "loadFinancialReportsOverview",
+      method: "GET",
+      input: "none",
+      gate: "school-admin",
+      audit: "pure-read",
+      gateMarker: /requireSchoolAdminScope\(context\.supabase,\s*lifecycle\)/,
+      note: "aggregate reads over fees and school_expenses scoped by the gate-resolved tenant; no write path",
+    },
+    {
+      fn: "loadExtracurricularOverview",
+      method: "GET",
+      input: "none",
+      gate: "school-admin",
+      audit: "pure-read",
+      gateMarker: /requireSchoolAdminScope\(context\.supabase,\s*lifecycle\)/,
+      note: "reads school_sports for the gate-resolved tenant; no write path",
+    },
+  ],
+});
+
+defineFamilySuite({
   family: "workforce-positions.functions.ts",
   functions: [
     {
