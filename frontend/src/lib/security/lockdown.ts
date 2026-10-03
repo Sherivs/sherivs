@@ -39,11 +39,21 @@
  *    lift its own lockdown. A non-empty lift reason is mandatory.
  * 7. Pure in-process contract. Time is supplied by the caller; nothing runs
  *    implicitly; nothing is persisted; no I/O. All checks FAIL CLOSED.
+ * 8. Emergency revocation depth (B-011). A lockdown ends exactly three ways:
+ *    independent LIFT (second guardian, incident adjudicated), bounded
+ *    RENEWAL (a different guardian extends the window under a mandatory
+ *    expiry ceiling and renewal cap — no self-extension), or emergency
+ *    KILL-SWITCH REVOCATION (any authorized guardian including the declarer
+ *    throws the off-switch; the locked-out agent can never revoke, lift or
+ *    renew). Revocation only stops a deny — it never grants anything. Every
+ *    path is audited and every check fails closed.
  */
 
 /* ─────────────────────────────────────────────────────────────
  * Vocabulary
  * ────────────────────────────────────────────────────────────*/
+
+import { z } from "zod";
 
 /** Version of the lockdown contract semantics recorded on declarations. */
 export const LOCKDOWN_CONTRACT_VERSION = "lockdown-v1";
@@ -61,7 +71,7 @@ export const LOCKDOWN_DECISIONS = ["DENY", "CLEAR"] as const;
 export type LockdownDecision = (typeof LOCKDOWN_DECISIONS)[number];
 
 /** Lifecycle of a declaration as observed at a point in time. */
-export const LOCKDOWN_STATES = ["active", "expired", "lifted"] as const;
+export const LOCKDOWN_STATES = ["active", "expired", "lifted", "revoked"] as const;
 export type LockdownState = (typeof LOCKDOWN_STATES)[number];
 
 /* ─────────────────────────────────────────────────────────────
@@ -103,6 +113,23 @@ export interface LockdownDeclaration {
   readonly liftedAt: string | null;
   readonly liftedBy: string | null;
   readonly liftReason: string | null;
+  /**
+   * Emergency kill-switch revocation record (B-011 depth). Present-but-null on
+   * a fresh declaration; a revocation is distinct from a lift — it is the
+   * fast emergency off-switch any authorized guardian (including the
+   * declarer) may throw, never the locked-out agent itself.
+   */
+  readonly revokedAt?: string | null;
+  readonly revokedBy?: string | null;
+  readonly revokeReason?: string | null;
+  /**
+   * Bounded renewal ledger (B-011 depth): every extension of the emergency
+   * window is counted, attributed and reason-bearing, and capped.
+   */
+  readonly renewalCount?: number;
+  readonly lastRenewedAt?: string | null;
+  readonly lastRenewedBy?: string | null;
+  readonly lastRenewalReason?: string | null;
 }
 
 /** The request a lockdown boundary check evaluates. */
@@ -183,6 +210,36 @@ export type LockdownAuditEvent =
     }
   | {
       readonly kind: "LOCKDOWN_LIFT_DENIED";
+      readonly at: string;
+      readonly guardianRef: string;
+      readonly lockdownId: string | null;
+      readonly denyReason: string;
+    }
+  | {
+      readonly kind: "LOCKDOWN_REVOKED";
+      readonly at: string;
+      readonly lockdownId: string;
+      readonly revokedBy: string;
+      readonly reason: string;
+    }
+  | {
+      readonly kind: "LOCKDOWN_REVOKE_DENIED";
+      readonly at: string;
+      readonly guardianRef: string;
+      readonly lockdownId: string | null;
+      readonly denyReason: string;
+    }
+  | {
+      readonly kind: "LOCKDOWN_RENEWED";
+      readonly at: string;
+      readonly lockdownId: string;
+      readonly renewedBy: string;
+      readonly reason: string;
+      readonly newExpiresAt: string;
+      readonly renewalCount: number;
+    }
+  | {
+      readonly kind: "LOCKDOWN_RENEW_DENIED";
       readonly at: string;
       readonly guardianRef: string;
       readonly lockdownId: string | null;
@@ -383,6 +440,13 @@ export function declareLockdown(
     liftedAt: null,
     liftedBy: null,
     liftReason: null,
+    revokedAt: null,
+    revokedBy: null,
+    revokeReason: null,
+    renewalCount: 0,
+    lastRenewedAt: null,
+    lastRenewedBy: null,
+    lastRenewalReason: null,
   });
 
   audit.append({
@@ -403,9 +467,10 @@ export function declareLockdown(
  * Lifecycle observation
  * ────────────────────────────────────────────────────────────*/
 
-/** Observed lifecycle state at `now`: lifted, decayed, or actively denying. */
+/** Observed lifecycle state at `now`: lifted, revoked, decayed, or actively denying. */
 export function lockdownState(lockdown: LockdownDeclaration, now: string): LockdownState {
   if (lockdown.liftedAt !== null) return "lifted";
+  if (lockdown.revokedAt !== undefined && lockdown.revokedAt !== null) return "revoked";
   const nowMs = Date.parse(now);
   const expiresMs = Date.parse(lockdown.expiresAt);
   if (Number.isNaN(nowMs) || Number.isNaN(expiresMs) || nowMs >= expiresMs) {
@@ -596,4 +661,365 @@ export function liftLockdown(
     reason: lifted.liftReason ?? "",
   });
   return { ok: true, lockdown: lifted };
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * B-011 depth: deny-wins coverage view
+ * ────────────────────────────────────────────────────────────*/
+
+/**
+ * The full deny-wins blast-radius view: every ACTIVE declaration whose scope
+ * covers the request at `now` — including declarations whose exemption would
+ * clear the request, because an exemption granted by one lockdown never
+ * bypasses another lockdown that also matches (the deny wins). Purely
+ * observational: returns the same frozen declaration objects.
+ */
+export function activeApplicableLockdowns(
+  lockdowns: readonly LockdownDeclaration[],
+  request: LockdownRequest,
+  now: string,
+): readonly LockdownDeclaration[] {
+  return lockdowns.filter(
+    (lockdown) => isLockdownActive(lockdown, now) && lockdownAppliesTo(lockdown, request),
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * B-011 depth: emergency kill-switch revocation
+ * ────────────────────────────────────────────────────────────*/
+
+export interface RevokeLockdownInput {
+  readonly lockdown: LockdownDeclaration;
+  readonly guardianRef: string;
+  readonly reason: string;
+  readonly authorizedGuardians: readonly string[];
+  readonly now: string;
+}
+
+export type LockdownRevokeResult =
+  | { readonly ok: true; readonly lockdown: LockdownDeclaration }
+  | { readonly ok: false; readonly error: string };
+
+/**
+ * The emergency kill-switch RELEASE (distinct from lift). Semantics:
+ *
+ * - ANY authorized guardian may revoke, INCLUDING the declarer. Lift is the
+ *   independent, second-guardian adjudication that the incident is over;
+ *   revocation is the fast off-switch for a false alarm, a mis-scoped
+ *   lockdown, or a lockdown that is itself blocking incident responders.
+ *   Revocation only STOPS a deny — it never grants anything, so the looser
+ *   authority is safe by construction.
+ * - The locked-out agent can NEVER revoke its own lockdown (§5: agents are
+ *   untrusted), even when listed as an authorized guardian.
+ * - A non-empty reason is mandatory; the lockdown must still be active;
+ *   every attempt — granted or denied — is audited.
+ * - Pure: returns a NEW frozen declaration; the original is never mutated.
+ *   A revoked lockdown is terminal: no further revoke, lift or renewal.
+ */
+export function revokeLockdown(
+  input: RevokeLockdownInput,
+  audit: LockdownAuditSink,
+): LockdownRevokeResult {
+  const deny = (denyReason: string, lockdownId: string | null): LockdownRevokeResult => {
+    audit.append({
+      kind: "LOCKDOWN_REVOKE_DENIED",
+      at: input.now,
+      guardianRef: typeof input.guardianRef === "string" ? input.guardianRef : "",
+      lockdownId,
+      denyReason,
+    });
+    return { ok: false, error: denyReason };
+  };
+
+  if (!isNonEmptyTrimmed(input.guardianRef, 200)) return deny("guardian_ref_required", null);
+  if (!isNonEmptyTrimmed(input.reason, 500)) return deny("revoke_reason_required", input.lockdown.id);
+  if (
+    !Array.isArray(input.authorizedGuardians) ||
+    !input.authorizedGuardians.includes(input.guardianRef)
+  ) {
+    return deny("guardian_not_authorized", input.lockdown.id);
+  }
+  if (lockdownState(input.lockdown, input.now) !== "active") {
+    return deny("lockdown_not_active", input.lockdown.id);
+  }
+  if (input.lockdown.scope === "agent" && input.guardianRef === input.lockdown.agentRef) {
+    return deny("self_revoke_denied", input.lockdown.id);
+  }
+
+  const revoked: LockdownDeclaration = Object.freeze({
+    ...input.lockdown,
+    exemptions: Object.freeze([...input.lockdown.exemptions]),
+    revokedAt: input.now,
+    revokedBy: input.guardianRef.trim(),
+    revokeReason: input.reason.trim(),
+  });
+
+  audit.append({
+    kind: "LOCKDOWN_REVOKED",
+    at: input.now,
+    lockdownId: revoked.id,
+    revokedBy: revoked.revokedBy ?? "",
+    reason: revoked.revokeReason ?? "",
+  });
+  return { ok: true, lockdown: revoked };
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * B-011 depth: bounded emergency-window renewal
+ * ────────────────────────────────────────────────────────────*/
+
+export interface RenewLockdownInput {
+  readonly lockdown: LockdownDeclaration;
+  readonly guardianRef: string;
+  readonly reason: string;
+  readonly authorizedGuardians: readonly string[];
+  /** The new expiry: must parse, be strictly after the current expiry… */
+  readonly newExpiresAt: string;
+  /** …and no later than this mandatory ceiling. */
+  readonly maxExpiresAt: string;
+  /** Mandatory positive-integer cap on total renewals of this declaration. */
+  readonly maxRenewals: number;
+  readonly now: string;
+}
+
+export type LockdownRenewResult =
+  | { readonly ok: true; readonly lockdown: LockdownDeclaration }
+  | { readonly ok: false; readonly error: string };
+
+/**
+ * Bounded renewal of an ACTIVE lockdown's emergency window. Semantics:
+ *
+ * - Renewal is a re-adjudication of an ongoing emergency, so — like lift —
+ *   it requires INDEPENDENCE: the declarer cannot renew their own lockdown,
+ *   and a targeted agent can never renew it. There is no path by which one
+ *   guardian extends their own emergency power indefinitely.
+ * - The new expiry must strictly extend the current expiry and must not
+ *   exceed the caller-supplied ceiling; renewals are also capped by count.
+ *   An emergency window can decay, never grow without bound.
+ * - A non-empty reason is mandatory; every attempt is audited; the result is
+ *   a NEW frozen declaration (pure contract, caller swaps the reference).
+ */
+export function renewLockdown(
+  input: RenewLockdownInput,
+  audit: LockdownAuditSink,
+): LockdownRenewResult {
+  const deny = (denyReason: string, lockdownId: string | null): LockdownRenewResult => {
+    audit.append({
+      kind: "LOCKDOWN_RENEW_DENIED",
+      at: input.now,
+      guardianRef: typeof input.guardianRef === "string" ? input.guardianRef : "",
+      lockdownId,
+      denyReason,
+    });
+    return { ok: false, error: denyReason };
+  };
+
+  if (!isNonEmptyTrimmed(input.guardianRef, 200)) return deny("guardian_ref_required", null);
+  if (!isNonEmptyTrimmed(input.reason, 500)) return deny("renewal_reason_required", input.lockdown.id);
+  if (
+    !Array.isArray(input.authorizedGuardians) ||
+    !input.authorizedGuardians.includes(input.guardianRef)
+  ) {
+    return deny("guardian_not_authorized", input.lockdown.id);
+  }
+  if (lockdownState(input.lockdown, input.now) !== "active") {
+    return deny("lockdown_not_active", input.lockdown.id);
+  }
+  if (input.guardianRef === input.lockdown.declaredBy) {
+    return deny("renewal_independence_denied", input.lockdown.id);
+  }
+  if (input.lockdown.scope === "agent" && input.guardianRef === input.lockdown.agentRef) {
+    return deny("self_renew_denied", input.lockdown.id);
+  }
+  if (!Number.isInteger(input.maxRenewals) || input.maxRenewals < 1) {
+    return deny("renewal_cap_invalid", input.lockdown.id);
+  }
+  const currentCount = input.lockdown.renewalCount ?? 0;
+  if (currentCount >= input.maxRenewals) {
+    return deny("renewal_cap_reached", input.lockdown.id);
+  }
+  if (!isParseableFutureTimestamp(input.maxExpiresAt, Date.parse(input.now))) {
+    return deny("renewal_cap_invalid", input.lockdown.id);
+  }
+  const currentExpiryMs = Date.parse(input.lockdown.expiresAt);
+  const newExpiryMs = Date.parse(input.newExpiresAt);
+  if (Number.isNaN(newExpiryMs) || newExpiryMs <= currentExpiryMs) {
+    return deny("renewal_expiry_invalid", input.lockdown.id);
+  }
+  if (newExpiryMs > Date.parse(input.maxExpiresAt)) {
+    return deny("renewal_expiry_exceeds_cap", input.lockdown.id);
+  }
+
+  const renewed: LockdownDeclaration = Object.freeze({
+    ...input.lockdown,
+    exemptions: Object.freeze([...input.lockdown.exemptions]),
+    expiresAt: input.newExpiresAt,
+    renewalCount: currentCount + 1,
+    lastRenewedAt: input.now,
+    lastRenewedBy: input.guardianRef.trim(),
+    lastRenewalReason: input.reason.trim(),
+  });
+
+  audit.append({
+    kind: "LOCKDOWN_RENEWED",
+    at: input.now,
+    lockdownId: renewed.id,
+    renewedBy: renewed.lastRenewedBy ?? "",
+    reason: renewed.lastRenewalReason ?? "",
+    newExpiresAt: renewed.expiresAt,
+    renewalCount: renewed.renewalCount ?? 0,
+  });
+  return { ok: true, lockdown: renewed };
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * B-011 depth: Zod contract layer (fail-closed parse of the
+ * lockdown artifacts as they cross a trust boundary)
+ * ────────────────────────────────────────────────────────────*/
+
+export const lockdownExemptionSchema = z.strictObject({
+  identityRef: z.string().min(1).max(200).optional(),
+  tenantRef: z.string().min(1).max(128).optional(),
+  capabilityRef: z.string().min(1).max(200).optional(),
+  reason: z.string().min(1).max(500),
+});
+
+export const lockdownRequestSchema = z.strictObject({
+  identityRef: z.string().min(1).max(200),
+  tenantRef: z.string().min(1).max(200),
+  capabilityRef: z.string().min(1).max(200),
+});
+
+export const lockdownDeclarationSchema = z.strictObject({
+  id: z.string().min(1).max(128),
+  scope: z.enum(LOCKDOWN_SCOPES),
+  tenantRef: z.string().max(200).nullable(),
+  agentRef: z.string().max(300).nullable(),
+  capabilityRef: z.string().max(300).nullable(),
+  declaredBy: z.string().min(1).max(200),
+  declaredAt: z.string().min(1),
+  reason: z.string().min(1).max(500),
+  expiresAt: z.string().min(1),
+  exemptions: z.array(lockdownExemptionSchema),
+  contractVersion: z.string().min(1),
+  liftedAt: z.string().nullable(),
+  liftedBy: z.string().max(200).nullable(),
+  liftReason: z.string().max(500).nullable(),
+  revokedAt: z.string().nullable().optional(),
+  revokedBy: z.string().max(200).nullable().optional(),
+  revokeReason: z.string().max(500).nullable().optional(),
+  renewalCount: z.number().int().nonnegative().optional(),
+  lastRenewedAt: z.string().nullable().optional(),
+  lastRenewedBy: z.string().max(200).nullable().optional(),
+  lastRenewalReason: z.string().max(500).nullable().optional(),
+});
+
+export const lockdownAuditEventSchema = z.discriminatedUnion("kind", [
+  z.strictObject({
+    kind: z.literal("LOCKDOWN_DECLARED"),
+    at: z.string().min(1),
+    lockdownId: z.string().min(1),
+    scope: z.enum(LOCKDOWN_SCOPES),
+    targetRef: z.string().max(300).nullable(),
+    declaredBy: z.string().min(1).max(200),
+    reason: z.string().min(1).max(500),
+    expiresAt: z.string().min(1),
+    exemptionCount: z.number().int().nonnegative(),
+  }),
+  z.strictObject({
+    kind: z.literal("LOCKDOWN_DECLARE_DENIED"),
+    at: z.string().min(1),
+    guardianRef: z.string().max(200),
+    scope: z.enum(LOCKDOWN_SCOPES).nullable(),
+    denyReason: z.string().min(1).max(200),
+  }),
+  z.strictObject({
+    kind: z.literal("LOCKDOWN_REQUEST_DENIED"),
+    at: z.string().min(1),
+    lockdownId: z.string().min(1),
+    scope: z.enum(LOCKDOWN_SCOPES),
+    identityRef: z.string().min(1).max(200),
+    tenantRef: z.string().min(1).max(200),
+    capabilityRef: z.string().min(1).max(200),
+  }),
+  z.strictObject({
+    kind: z.literal("LOCKDOWN_REQUEST_EXEMPTED"),
+    at: z.string().min(1),
+    lockdownId: z.string().min(1),
+    identityRef: z.string().min(1).max(200),
+    tenantRef: z.string().min(1).max(200),
+    capabilityRef: z.string().min(1).max(200),
+  }),
+  z.strictObject({
+    kind: z.literal("LOCKDOWN_LIFTED"),
+    at: z.string().min(1),
+    lockdownId: z.string().min(1),
+    liftedBy: z.string().min(1).max(200),
+    reason: z.string().min(1).max(500),
+  }),
+  z.strictObject({
+    kind: z.literal("LOCKDOWN_LIFT_DENIED"),
+    at: z.string().min(1),
+    guardianRef: z.string().max(200),
+    lockdownId: z.string().max(128).nullable(),
+    denyReason: z.string().min(1).max(200),
+  }),
+  z.strictObject({
+    kind: z.literal("LOCKDOWN_REVOKED"),
+    at: z.string().min(1),
+    lockdownId: z.string().min(1),
+    revokedBy: z.string().min(1).max(200),
+    reason: z.string().min(1).max(500),
+  }),
+  z.strictObject({
+    kind: z.literal("LOCKDOWN_REVOKE_DENIED"),
+    at: z.string().min(1),
+    guardianRef: z.string().max(200),
+    lockdownId: z.string().max(128).nullable(),
+    denyReason: z.string().min(1).max(200),
+  }),
+  z.strictObject({
+    kind: z.literal("LOCKDOWN_RENEWED"),
+    at: z.string().min(1),
+    lockdownId: z.string().min(1),
+    renewedBy: z.string().min(1).max(200),
+    reason: z.string().min(1).max(500),
+    newExpiresAt: z.string().min(1),
+    renewalCount: z.number().int().nonnegative(),
+  }),
+  z.strictObject({
+    kind: z.literal("LOCKDOWN_RENEW_DENIED"),
+    at: z.string().min(1),
+    guardianRef: z.string().max(200),
+    lockdownId: z.string().max(128).nullable(),
+    denyReason: z.string().min(1).max(200),
+  }),
+]);
+
+export type LockdownParseResult<T> =
+  | { readonly ok: true; readonly value: T }
+  | { readonly ok: false; readonly error: string };
+
+/** Fail-closed parse of a declaration crossing a trust boundary. */
+export function parseLockdownDeclaration(value: unknown): LockdownParseResult<LockdownDeclaration> {
+  const result = lockdownDeclarationSchema.safeParse(value);
+  return result.success
+    ? { ok: true, value: result.data }
+    : { ok: false, error: "lockdown_declaration_invalid" };
+}
+
+/** Fail-closed parse of an audit event crossing a trust boundary. */
+export function parseLockdownAuditEvent(value: unknown): LockdownParseResult<LockdownAuditEvent> {
+  const result = lockdownAuditEventSchema.safeParse(value);
+  return result.success
+    ? { ok: true, value: result.data }
+    : { ok: false, error: "lockdown_audit_event_invalid" };
+}
+
+/** Fail-closed parse of a boundary request crossing a trust boundary. */
+export function parseLockdownRequest(value: unknown): LockdownParseResult<LockdownRequest> {
+  const result = lockdownRequestSchema.safeParse(value);
+  return result.success
+    ? { ok: true, value: result.data }
+    : { ok: false, error: "lockdown_request_invalid" };
 }
