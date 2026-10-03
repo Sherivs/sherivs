@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import type { supabaseAdmin as supabaseAdminRef } from "@/integrations/supabase/client.server";
+import { generateInitialPassword } from "@/lib/onboarding/generated-credentials";
 import { SUBSCRIPTION_TIERS } from "@/lib/subscription-tiers";
 
 /**
@@ -8,35 +9,31 @@ import { SUBSCRIPTION_TIERS } from "@/lib/subscription-tiers";
  */
 type SupabaseAdminClient = typeof supabaseAdminRef;
 
+/**
+ * V1-008 (§30 SECRETS): the demo fixture carries NO fixed credentials. The
+ * account emails below are deterministic fixture identifiers (required for
+ * the idempotent ensure* upsert flow), but every initial password is
+ * GENERATED ONCE per provisioning run by the platform credential generator
+ * and returned to the caller exactly once — never a constant, never logged.
+ */
 const DEMO = {
   schoolName: "Demo Enterprise Academy",
   slug: "demo-enterprise",
-  password: "Demo@2026!",
 };
 
-export const DEMO_CREDENTIALS = [
-  {
-    role: "super_admin",
-    label: "Super Admin",
-    email: "super@universalschool.os",
-    password: DEMO.password,
-  },
-  { role: "admin", label: "School Admin", email: "admin@demo.school", password: DEMO.password },
-  {
-    role: "principal",
-    label: "Principal",
-    email: "principal@demo.school",
-    password: DEMO.password,
-  },
-  { role: "teacher", label: "Teacher", email: "teacher@demo.school", password: DEMO.password },
-  { role: "parent", label: "Parent", email: "parent@demo.school", password: DEMO.password },
-  { role: "student", label: "Student", email: "student@demo.school", password: DEMO.password },
-  { role: "bursar", label: "Bursar", email: "bursar@demo.school", password: DEMO.password },
-  { role: "hq", label: "HQ", email: "hq@demo.school", password: DEMO.password },
-  { role: "driver", label: "Driver", email: "driver@demo.school", password: DEMO.password },
+export const DEMO_ACCOUNTS = [
+  { role: "super_admin", label: "Super Admin", email: "super@universalschool.os" },
+  { role: "admin", label: "School Admin", email: "admin@demo.school" },
+  { role: "principal", label: "Principal", email: "principal@demo.school" },
+  { role: "teacher", label: "Teacher", email: "teacher@demo.school" },
+  { role: "parent", label: "Parent", email: "parent@demo.school" },
+  { role: "student", label: "Student", email: "student@demo.school" },
+  { role: "bursar", label: "Bursar", email: "bursar@demo.school" },
+  { role: "hq", label: "HQ", email: "hq@demo.school" },
+  { role: "driver", label: "Driver", email: "driver@demo.school" },
 ] as const;
 
-type DemoRole = (typeof DEMO_CREDENTIALS)[number]["role"];
+type DemoRole = (typeof DEMO_ACCOUNTS)[number]["role"];
 
 const USER_NAMES: Record<Exclude<DemoRole, "super_admin">, string> = {
   admin: "Demo School Admin",
@@ -53,12 +50,19 @@ const ENTERPRISE_FEATURES = Object.fromEntries(
   Object.keys(SUBSCRIPTION_TIERS.enterprise.features).map((key) => [key, true]),
 ) as Record<string, boolean>;
 
+export type DemoAccount = {
+  role: DemoRole;
+  label: string;
+  email: string;
+};
+
 export type DemoCredentials = {
   email: string;
+  /** Generated once per provisioning run; returned once; never a stored constant. */
   password: string;
   schoolName: string;
   created: boolean;
-  accounts: typeof DEMO_CREDENTIALS;
+  accounts: readonly DemoAccount[];
 };
 
 async function findAuthUserIdByEmail(
@@ -75,11 +79,12 @@ async function ensureAuthUser(
   supabaseAdmin: SupabaseAdminClient,
   email: string,
   fullName: string,
+  password: string,
 ): Promise<string> {
   const existingId = await findAuthUserIdByEmail(supabaseAdmin, email);
   if (existingId) {
     const { error } = await supabaseAdmin.auth.admin.updateUserById(existingId, {
-      password: DEMO.password,
+      password,
       email_confirm: true,
       user_metadata: { full_name: fullName },
     });
@@ -89,7 +94,7 @@ async function ensureAuthUser(
 
   const { data, error } = await supabaseAdmin.auth.admin.createUser({
     email,
-    password: DEMO.password,
+    password,
     email_confirm: true,
     user_metadata: { full_name: fullName },
   });
@@ -180,9 +185,10 @@ async function ensureTenantUser(
   supabaseAdmin: SupabaseAdminClient,
   schoolId: string,
   role: Exclude<DemoRole, "super_admin">,
+  password: string,
 ): Promise<string> {
-  const cred = DEMO_CREDENTIALS.find((c) => c.role === role)!;
-  const userId = await ensureAuthUser(supabaseAdmin, cred.email, USER_NAMES[role]);
+  const cred = DEMO_ACCOUNTS.find((c) => c.role === role)!;
+  const userId = await ensureAuthUser(supabaseAdmin, cred.email, USER_NAMES[role], password);
   const { error } = await supabaseAdmin.from("users").upsert({
     id: userId,
     school_id: schoolId,
@@ -201,7 +207,8 @@ export const provisionDemoEnterprise = createServerFn({ method: "POST" }).handle
     // provisioned when an operator explicitly enables it in the environment.
     // Default is OFF in every environment, including local. This server function
     // creates live rows (school, auth users, classes, bus, subscription) with
-    // fixed credentials, so it must never run silently.
+    // generated-once credentials (V1-008: no fixed credential constant exists),
+    // so it must never run silently.
     if (process.env.ALLOW_DEMO_PROVISIONING !== "true") {
       throw new Error(
         "Demo provisioning is disabled on this environment. Set ALLOW_DEMO_PROVISIONING=true to enable it.",
@@ -210,11 +217,15 @@ export const provisionDemoEnterprise = createServerFn({ method: "POST" }).handle
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    // §30: the demo password is generated ONCE per run from platform entropy
+    // and returned to the caller exactly once — never a stored constant.
+    const demoPassword = generateInitialPassword();
+
     const { id: schoolId, created } = await ensureSchool(supabaseAdmin);
     const classId = await ensureDemoClass(supabaseAdmin, schoolId);
 
-    const superCred = DEMO_CREDENTIALS.find((c) => c.role === "super_admin")!;
-    const superId = await ensureAuthUser(supabaseAdmin, superCred.email, "Demo Super Admin");
+    const superCred = DEMO_ACCOUNTS.find((c) => c.role === "super_admin")!;
+    const superId = await ensureAuthUser(supabaseAdmin, superCred.email, "Demo Super Admin", demoPassword);
     const { error: superErr } = await supabaseAdmin.from("super_admins").upsert({
       id: superId,
       full_name: "Demo Super Admin",
@@ -225,14 +236,14 @@ export const provisionDemoEnterprise = createServerFn({ method: "POST" }).handle
     if (superErr) throw new Error(superErr.message);
 
     const ids = {
-      admin: await ensureTenantUser(supabaseAdmin, schoolId, "admin"),
-      principal: await ensureTenantUser(supabaseAdmin, schoolId, "principal"),
-      teacher: await ensureTenantUser(supabaseAdmin, schoolId, "teacher"),
-      parent: await ensureTenantUser(supabaseAdmin, schoolId, "parent"),
-      student: await ensureTenantUser(supabaseAdmin, schoolId, "student"),
-      bursar: await ensureTenantUser(supabaseAdmin, schoolId, "bursar"),
-      hq: await ensureTenantUser(supabaseAdmin, schoolId, "hq"),
-      driver: await ensureTenantUser(supabaseAdmin, schoolId, "driver"),
+      admin: await ensureTenantUser(supabaseAdmin, schoolId, "admin", demoPassword),
+      principal: await ensureTenantUser(supabaseAdmin, schoolId, "principal", demoPassword),
+      teacher: await ensureTenantUser(supabaseAdmin, schoolId, "teacher", demoPassword),
+      parent: await ensureTenantUser(supabaseAdmin, schoolId, "parent", demoPassword),
+      student: await ensureTenantUser(supabaseAdmin, schoolId, "student", demoPassword),
+      bursar: await ensureTenantUser(supabaseAdmin, schoolId, "bursar", demoPassword),
+      hq: await ensureTenantUser(supabaseAdmin, schoolId, "hq", demoPassword),
+      driver: await ensureTenantUser(supabaseAdmin, schoolId, "driver", demoPassword),
     };
 
     const { data: existingStudents } = await supabaseAdmin
@@ -335,10 +346,10 @@ export const provisionDemoEnterprise = createServerFn({ method: "POST" }).handle
 
     return {
       email: "admin@demo.school",
-      password: DEMO.password,
+      password: demoPassword,
       schoolName: DEMO.schoolName,
       created,
-      accounts: DEMO_CREDENTIALS,
+      accounts: DEMO_ACCOUNTS,
     };
   },
 );

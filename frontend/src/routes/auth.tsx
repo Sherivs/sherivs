@@ -6,10 +6,7 @@ import { useApp } from "@/contexts/app-context";
 import { scholarWorkspaceHome } from "@/lib/runtime/nav-registry";
 import { PLATFORM_NAME } from "@/lib/platform";
 import { INSTALLED_RUNTIME_NAME as SCHOLAR_RUNTIME_NAME } from "@/lib/runtime/installed-runtimes";
-import { provisionDemoEnterprise, DEMO_CREDENTIALS } from "@/lib/runtime/scholar/demo-provision.functions";
-
-const ADMIN_DEMO =
-  DEMO_CREDENTIALS.find((account) => account.role === "admin") ?? DEMO_CREDENTIALS[0];
+import { provisionDemoEnterprise } from "@/lib/runtime/scholar/demo-provision.functions";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -286,28 +283,10 @@ function AuthPage() {
             >
               {demoBusy ? "Provisioning…" : "Sign in as Enterprise demo"}
             </button>
-            <div className="mt-3 space-y-0.5 text-[11px] text-muted-foreground">
-              <div>
-                <span className="text-foreground">Email:</span> {ADMIN_DEMO.email}
-              </div>
-              <div>
-                <span className="text-foreground">Password:</span> {ADMIN_DEMO.password}
-              </div>
-              <details className="mt-2">
-                <summary className="cursor-pointer text-foreground">Show all role logins</summary>
-                <div className="mt-2 grid gap-1">
-                  {DEMO_CREDENTIALS.map((account) => (
-                    <div
-                      key={account.email}
-                      className="rounded-md border border-border/60 px-2 py-1"
-                    >
-                      <div className="font-medium text-foreground">{account.label}</div>
-                      <div>{account.email}</div>
-                    </div>
-                  ))}
-                </div>
-              </details>
-            </div>
+            <p className="mt-3 text-[11px] text-muted-foreground">
+              Demo credentials are generated at provisioning time and are never displayed or stored
+              on this page (V1-008). Provisioning is environment-gated and disabled by default.
+            </p>
           </div>
           {mode === "signin" && (
             <button
