@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as siteRouteRouteImport } from './routes/(site)/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AdmissionsRouteImport } from './routes/admissions'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -27,6 +28,7 @@ import { Route as RulesRouteImport } from './routes/rules'
 import { Route as ScholarFoundationLoopRouteImport } from './routes/scholar-foundation-loop'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SuperAdminBootstrapRouteImport } from './routes/super-admin-bootstrap'
+import { Route as siteCoregridRouteImport } from './routes/(site)/coregrid'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as AuthenticatedBursarRouteRouteImport } from './routes/_authenticated/bursar/route'
 import { Route as AuthenticatedDriverRouteRouteImport } from './routes/_authenticated/driver/route'
@@ -169,6 +171,10 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const siteRouteRoute = siteRouteRouteImport.update({
+  id: '/(site)',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -252,6 +258,11 @@ const SuperAdminBootstrapRoute = SuperAdminBootstrapRouteImport.update({
   id: '/super-admin-bootstrap',
   path: '/super-admin-bootstrap',
   getParentRoute: () => rootRouteImport,
+} as any)
+const siteCoregridRoute = siteCoregridRouteImport.update({
+  id: '/coregrid',
+  path: '/coregrid',
+  getParentRoute: () => siteRouteRoute,
 } as any)
 const AuthenticatedAdminRouteRoute = AuthenticatedAdminRouteRouteImport.update({
   id: '/admin',
@@ -1076,6 +1087,7 @@ export interface FileRoutesByFullPath {
   '/student': typeof AuthenticatedStudentRouteRouteWithChildren
   '/super-admin': typeof AuthenticatedSuperAdminRouteRouteWithChildren
   '/teacher': typeof AuthenticatedTeacherRouteRouteWithChildren
+  '/coregrid': typeof siteCoregridRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/runtime': typeof AuthenticatedRuntimeRoute
@@ -1231,6 +1243,7 @@ export interface FileRoutesByTo {
   '/student': typeof AuthenticatedStudentRouteRouteWithChildren
   '/super-admin': typeof AuthenticatedSuperAdminRouteRouteWithChildren
   '/teacher': typeof AuthenticatedTeacherRouteRouteWithChildren
+  '/coregrid': typeof siteCoregridRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/runtime': typeof AuthenticatedRuntimeRoute
@@ -1363,6 +1376,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/(site)': typeof siteRouteRouteWithChildren
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/admissions': typeof AdmissionsRoute
   '/auth': typeof AuthRoute
@@ -1388,6 +1402,7 @@ export interface FileRoutesById {
   '/_authenticated/student': typeof AuthenticatedStudentRouteRouteWithChildren
   '/_authenticated/super-admin': typeof AuthenticatedSuperAdminRouteRouteWithChildren
   '/_authenticated/teacher': typeof AuthenticatedTeacherRouteRouteWithChildren
+  '/(site)/coregrid': typeof siteCoregridRoute
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/runtime': typeof AuthenticatedRuntimeRoute
@@ -1545,6 +1560,7 @@ export interface FileRouteTypes {
     | '/student'
     | '/super-admin'
     | '/teacher'
+    | '/coregrid'
     | '/messages'
     | '/notifications'
     | '/runtime'
@@ -1700,6 +1716,7 @@ export interface FileRouteTypes {
     | '/student'
     | '/super-admin'
     | '/teacher'
+    | '/coregrid'
     | '/messages'
     | '/notifications'
     | '/runtime'
@@ -1831,6 +1848,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/(site)'
     | '/_authenticated'
     | '/admissions'
     | '/auth'
@@ -1856,6 +1874,7 @@ export interface FileRouteTypes {
     | '/_authenticated/student'
     | '/_authenticated/super-admin'
     | '/_authenticated/teacher'
+    | '/(site)/coregrid'
     | '/_authenticated/messages'
     | '/_authenticated/notifications'
     | '/_authenticated/runtime'
@@ -1988,6 +2007,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  siteRouteRoute: typeof siteRouteRouteWithChildren
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AdmissionsRoute: typeof AdmissionsRoute
   AuthRoute: typeof AuthRoute
@@ -2019,6 +2039,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(site)': {
+      id: '/(site)'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof siteRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -2139,6 +2166,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/super-admin-bootstrap'
       preLoaderRoute: typeof SuperAdminBootstrapRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/(site)/coregrid': {
+      id: '/(site)/coregrid'
+      path: '/coregrid'
+      fullPath: '/coregrid'
+      preLoaderRoute: typeof siteCoregridRouteImport
+      parentRoute: typeof siteRouteRoute
     }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
@@ -3095,6 +3129,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface siteRouteRouteChildren {
+  siteCoregridRoute: typeof siteCoregridRoute
+}
+
+const siteRouteRouteChildren: siteRouteRouteChildren = {
+  siteCoregridRoute: siteCoregridRoute,
+}
+
+const siteRouteRouteWithChildren = siteRouteRoute._addFileChildren(
+  siteRouteRouteChildren,
+)
+
 interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminAdmissionsRoute: typeof AuthenticatedAdminAdmissionsRoute
   AuthenticatedAdminAiAssistantRoute: typeof AuthenticatedAdminAiAssistantRoute
@@ -3510,6 +3556,7 @@ const PlatformRouteWithChildren = PlatformRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  siteRouteRoute: siteRouteRouteWithChildren,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AdmissionsRoute: AdmissionsRoute,
   AuthRoute: AuthRoute,
