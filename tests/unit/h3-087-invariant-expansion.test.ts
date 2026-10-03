@@ -54,8 +54,10 @@ import {
 import {
   parseResourceQuotaRegistry,
   ResourceQuotaAuthority,
+  type ResourceQuotaAuditEvent,
 } from "@/lib/reliability/quotas";
-import type { AdapterClock, LeaseHandleRef, LeaseTargetKind } from "@/lib/reliability/leases";
+import type { AdapterClock } from "@/lib/adapters/failure-policy";
+import type { LeaseHandleRef, LeaseTargetKind } from "@/lib/reliability/leases";
 import {
   capabilityRegistryFromDeclarations,
   matchCapabilities,
@@ -469,13 +471,23 @@ describe("§27 behavior — approval/chains (ESCALATE/REQUIRE_APPROVAL resolutio
   it("(b) fails closed on cross-tenant chains, impossible depths, AI resolvers and self-resolution", () => {
     const kase = openResolutionFlow(baseInput);
 
-    const foreignChain = declareApprovalChain({ ...chain, chainId: "chain-foreign", tenantId: OTHER_TENANT });
+    // ApprovalChain freezes its resolvers; re-declare with mutable entries to
+    // satisfy ApprovalChainConfig (the runtime data is unchanged).
+    const foreignChain = declareApprovalChain({
+      ...chain,
+      chainId: "chain-foreign",
+      tenantId: OTHER_TENANT,
+      resolvers: chain.resolvers.map((entry) => ({ ...entry, capabilities: [...entry.capabilities] })),
+    });
     const routed = routeToApprovalChain(kase, foreignChain);
     expect(routed.ok).toBe(false);
     expect(!routed.ok && routed.code).toBe("chain_tenant_mismatch");
 
     // critical mandates quorum (3); a two-person chain cannot satisfy it.
-    const shallow = declareApprovalChain({ ...chain, resolvers: chain.resolvers.slice(0, 2) });
+    const shallow = declareApprovalChain({
+      ...chain,
+      resolvers: chain.resolvers.slice(0, 2).map((entry) => ({ ...entry, capabilities: [...entry.capabilities] })),
+    });
     const undersupplied = routeToApprovalChain(kase, shallow);
     expect(undersupplied.ok).toBe(false);
     expect(!undersupplied.ok && undersupplied.code).toBe("no_eligible_resolver");
@@ -561,14 +573,14 @@ describe("§27 behavior — reliability/quotas (fail-closed metered admission)",
       maxUnitsPerWindow: number;
       windowMs: number;
     }[],
-    onEvent?: (event: unknown) => void,
+    onEvent?: (event: ResourceQuotaAuditEvent) => void,
   ): ResourceQuotaAuthority {
     const parsed = parseResourceQuotaRegistry({ ceilings: ceilings.map((c) => ({ ...c, provenance })) });
     expect(parsed.ok, "fixture registry must parse").toBe(true);
     return new ResourceQuotaAuthority({
       registry: parsed.ok ? parsed.registry : undefined!,
       clock,
-      ...(onEvent ? { onEvent: onEvent as (event: never) => void } : {}),
+      ...(onEvent ? { onEvent } : {}),
     });
   }
 

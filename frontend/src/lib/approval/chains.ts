@@ -331,7 +331,10 @@ export function openResolutionFlowForAuthorizationOutcome(
       `decision "${parsedOutcome.decision}" is terminal in the authorization engine and never routed to resolution`,
     );
   }
-  const kase = openResolutionFlow({ ...base, decision: parsedOutcome.decision });
+  // The guard above (with fail()'s throw) proves routability at runtime; the
+  // cast records it for the type system.
+  const decision = parsedOutcome.decision as ResolvableDecision;
+  const kase = openResolutionFlow({ ...base, decision });
   return deepFreeze({ ...kase, authorizationReason: parsedOutcome.reason });
 }
 

@@ -46,7 +46,8 @@ const DECISION_DOC_PATHS: Record<string, string> = {
   transport_buses: "architecture/campaigns/h3/posture-adjudication/transport_buses.md",
 };
 
-const ADJUDICATED_TABLES = Object.keys(DECISION_DOC_PATHS) as const;
+type AdjudicatedTable = keyof typeof DECISION_DOC_PATHS;
+const ADJUDICATED_TABLES = Object.keys(DECISION_DOC_PATHS) as AdjudicatedTable[];
 
 /* ── Read-only fixtures ─────────────────────────────────────────── */
 

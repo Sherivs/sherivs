@@ -31,6 +31,7 @@ import {
   traceIdSchema,
   traceLogEntry,
   traceLogFields,
+  type CreateTraceContextOptions,
   type TraceContext,
 } from "../../frontend/src/lib/observability/trace-context";
 import {
@@ -51,7 +52,7 @@ const NOW = () => 1_700_000_000_000;
 const FAKE_BEARER = "Bearer AAAA-fake-token-fixture";
 const FAKE_KEY = "sk-test-000000000000000000";
 
-function contextFor(overrides: Partial<TraceContext> = {}): TraceContext {
+function contextFor(overrides: Partial<CreateTraceContextOptions> = {}): TraceContext {
   return createTraceContext({ now: NOW, ...overrides });
 }
 
@@ -237,11 +238,17 @@ describe("untrusted boundary data is parsed fail-closed", () => {
       const verdict = extractTraceContext(bad);
       expect(verdict.ok).toBe(false);
     }
-    expect(extractTraceContext({}).reason).toBe("empty_carrier");
-    expect(extractTraceContext({ trace_id: "short" }).reason).toBe("invalid_trace_id");
-    expect(
-      extractTraceContext({ trace_id: "valid-trace-0001", correlation_id: 7 }).reason,
-    ).toBe("invalid_correlation_id");
+    const emptyVerdict = extractTraceContext({});
+    expect(emptyVerdict.ok).toBe(false);
+    if (!emptyVerdict.ok) expect(emptyVerdict.reason).toBe("empty_carrier");
+
+    const shortTraceVerdict = extractTraceContext({ trace_id: "short" });
+    expect(shortTraceVerdict.ok).toBe(false);
+    if (!shortTraceVerdict.ok) expect(shortTraceVerdict.reason).toBe("invalid_trace_id");
+
+    const badCorrVerdict = extractTraceContext({ trace_id: "valid-trace-0001", correlation_id: 7 });
+    expect(badCorrVerdict.ok).toBe(false);
+    if (!badCorrVerdict.ok) expect(badCorrVerdict.reason).toBe("invalid_correlation_id");
   });
 
   it("continueTraceContext prefers the incoming trace and keeps continuity", () => {

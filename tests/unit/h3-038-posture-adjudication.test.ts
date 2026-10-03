@@ -132,12 +132,27 @@ function policyHasTable(sql: string, table: string): boolean {
   return false;
 }
 
+/** Shape of the battery's resolved posture registry (plain-JS module; declared here). */
+interface BatteryRegistryEntry {
+  name: string;
+  posture: string;
+  policies: string[];
+  forceRls: boolean;
+  source: string;
+  postureSource: string;
+}
+
+interface BatteryRegistry {
+  tables: BatteryRegistryEntry[];
+}
+
 describe("H3-038 posture adjudication — battery scope (declarative posture registry)", () => {
   it("the resolved battery registry scopes each table exactly once as zero-policy with its cited source migration", async () => {
-    const { loadPostureRegistry } = await import(
-      "../../scripts/verify-rls-isolation-battery.mjs"
-    );
-    const registry = loadPostureRegistry(POSTURES_DIR);
+    // @ts-expect-error — plain-JS verification script without type declarations (read-only module import; same pattern as tests/unit/mh-05-battery-postures.test.ts)
+    const batteryModule = await import("../../scripts/verify-rls-isolation-battery.mjs");
+    const registry = (
+      batteryModule as unknown as { loadPostureRegistry: (dir: string) => BatteryRegistry }
+    ).loadPostureRegistry(POSTURES_DIR);
 
     for (const { table, migration } of ADJUDICATED) {
       const entries = registry.tables.filter((t) => t.name === table);

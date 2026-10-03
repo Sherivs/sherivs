@@ -39,7 +39,7 @@ import {
   SUBSTRATE_TELEMETRY_COMPONENT,
   type SubstrateTelemetry,
 } from "@/lib/observability/substrate-telemetry";
-import { formatLogLine } from "@/lib/observability/structured-log";
+import { formatLogLine, type StructuredLogEntry } from "@/lib/observability/structured-log";
 import type { AdapterPolicyEvent } from "@/lib/adapters/failure-policy";
 
 const FIXED_TS = "2026-10-02T00:00:00.000Z";
@@ -462,7 +462,7 @@ describe("redaction guarantees across every event kind", () => {
       failed("p1", "op.read", "provider_error", 1, 1, `oops "\\u0041" ${CANARY} "}</script>`),
     );
 
-    const entry = telemetry.takeLogEntries()[0] as Record<string, unknown>;
+    const entry = telemetry.takeLogEntries()[0] as StructuredLogEntry;
     expect(Object.keys(entry).sort()).toEqual([
       "attempt", "code", "component", "level", "msg", "operation", "provider",
     ]);

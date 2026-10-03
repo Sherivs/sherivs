@@ -16,7 +16,13 @@ import { readFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { parsePostureFile, validatePostureEntry } from "../../scripts/verify-rls-isolation-battery.mjs";
+// @ts-expect-error — plain-JS verification script without type declarations imported into the TS unit suite (read-only module import; same pattern as tests/unit/mh-05-battery-postures.test.ts)
+import * as batteryMjs from "../../scripts/verify-rls-isolation-battery.mjs";
+
+const battery = batteryMjs as unknown as {
+  parsePostureFile: (contents: string, fileName: string) => PostureEntry[];
+  validatePostureEntry: (entry: unknown, fileName: string) => unknown;
+};
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
@@ -115,18 +121,18 @@ describe("H3-036 posture adjudication — battery scope (read-only)", () => {
 
   it("is accepted by the battery's own exported posture validation", () => {
     const raw = readRepoFile(POSTURE_FILE);
-    const parsed = parsePostureFile(raw, POSTURE_FILE) as PostureEntry[];
+    const parsed = battery.parsePostureFile(raw, POSTURE_FILE) as PostureEntry[];
     for (const table of ADJUDICATED_TABLES) {
       const entry = parsed.find((e) => e.name === table || e.table === table);
       expect(entry, `${table} entry parses`).toBeDefined();
-      expect(() => validatePostureEntry(entry, POSTURE_FILE)).not.toThrow();
+      expect(() => battery.validatePostureEntry(entry, POSTURE_FILE)).not.toThrow();
       expect(entry?.posture).toBe("zero-policy");
     }
   });
 
   it("finds no duplicate declaration of the adjudicated tables in the transport posture file", () => {
     const raw = readRepoFile(TRANSPORT_POSTURE_FILE);
-    const parsed = parsePostureFile(raw, TRANSPORT_POSTURE_FILE) as PostureEntry[];
+    const parsed = battery.parsePostureFile(raw, TRANSPORT_POSTURE_FILE) as PostureEntry[];
     for (const table of ADJUDICATED_TABLES) {
       expect(
         parsed.filter((e) => e.name === table || e.table === table),

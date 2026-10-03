@@ -359,7 +359,7 @@ describe("escalation (advisory-only by construction)", () => {
     };
     expect(escalationRecordSchema.safeParse(record).success).toBe(true);
     expect(escalationRecordSchema.safeParse({ ...record, authorizes: true }).success).toBe(false);
-    const missing = { ...record };
+    const missing: Partial<typeof record> = { ...record };
     delete missing.authorizes;
     expect(escalationRecordSchema.safeParse(missing).success).toBe(false);
   });

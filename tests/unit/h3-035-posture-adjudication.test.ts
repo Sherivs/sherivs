@@ -26,18 +26,14 @@ import { describe, expect, it } from "vitest";
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import {
-  BUILTIN_TABLE_POSTURES,
-  parsePostureFile,
-  resolvePostureRegistry,
-  validatePostureEntry,
-} from "../../scripts/verify-rls-isolation-battery.mjs";
+// @ts-expect-error — plain-JS verification script without type declarations imported into the TS unit suite (read-only module import; same pattern as tests/unit/mh-05-battery-postures.test.ts)
+import * as batteryMjs from "../../scripts/verify-rls-isolation-battery.mjs";
 
 /** Shape of a resolved posture entry (battery module is plain JS; declared here). */
 interface PostureTableEntry {
   name: string;
   posture: string;
-  source?: string;
+  source: string;
   postureSource?: string;
   policies?: string[];
   forceRls?: boolean;
@@ -45,6 +41,15 @@ interface PostureTableEntry {
   probeSeedRows?: unknown[];
   probeInsertPayload?: unknown;
 }
+
+interface BatteryModule {
+  BUILTIN_TABLE_POSTURES: PostureTableEntry[];
+  parsePostureFile: (contents: string, fileName: string) => PostureTableEntry[];
+  resolvePostureRegistry: (files: Array<{ name: string; entries: PostureTableEntry[] }>) => { tables: PostureTableEntry[] };
+  validatePostureEntry: (entry: PostureTableEntry, label: string) => PostureTableEntry;
+}
+
+const battery = batteryMjs as unknown as BatteryModule;
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const read = (rel: string): string => readFileSync(join(ROOT, rel), "utf8");
@@ -79,8 +84,8 @@ const MIGRATIONS = new Map(ADJUDICATED.map((a) => [a.table, read(a.migration)]))
 const postureDir = join(ROOT, "scripts", "verification");
 const postureFiles = ["rls-table-postures-substrate.json", "rls-table-postures-transport.json"]
   .sort()
-  .map((name) => ({ name, entries: parsePostureFile(read(`scripts/verification/${name}`), name) }));
-const REGISTRY = resolvePostureRegistry(postureFiles);
+  .map((name) => ({ name, entries: battery.parsePostureFile(read(`scripts/verification/${name}`), name) }));
+const REGISTRY = battery.resolvePostureRegistry(postureFiles);
 
 function registryEntry(table: string): PostureTableEntry {
   const entry = REGISTRY.tables.find((t) => t.name === table);
@@ -142,7 +147,7 @@ describe("H3-035 posture adjudication — battery scope holds each table as zero
       expect(entry.probeInsertPayload).toBeUndefined();
       // validatePostureEntry is the battery's fail-closed gate — a zero-policy
       // entry must re-validate without error and preserve its posture.
-      const revalidated = validatePostureEntry(entry, "h3-035-revalidation");
+      const revalidated = battery.validatePostureEntry(entry, "h3-035-revalidation");
       expect(revalidated.posture).toBe("zero-policy");
       expect(revalidated.policies).toEqual([]);
     });
@@ -156,7 +161,7 @@ describe("H3-035 posture adjudication — battery scope holds each table as zero
   }
 
   it("the built-in canonical registry declares cg_memory_access_log zero-policy (and the posture files do not re-declare it)", () => {
-    const builtin = BUILTIN_TABLE_POSTURES.find((t) => t.name === "cg_memory_access_log");
+    const builtin = battery.BUILTIN_TABLE_POSTURES.find((t) => t.name === "cg_memory_access_log");
     expect(builtin?.posture).toBe("zero-policy");
     expect(builtin?.source).toBe("20261002000004_coregrid_v1_memory_tier.sql");
     for (const file of postureFiles) {

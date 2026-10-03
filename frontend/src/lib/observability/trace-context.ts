@@ -204,7 +204,7 @@ function toTraceContext(parsed: {
 }
 
 function verdictFromZod(
-  parsed: z.SafeParseReturnType<unknown, z.infer<typeof traceContextSchema>>,
+  parsed: ReturnType<typeof traceContextSchema.safeParse>,
 ): TraceVerdict {
   if (parsed.success) {
     return { ok: true, context: toTraceContext(parsed.data) };

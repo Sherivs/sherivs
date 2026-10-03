@@ -33,11 +33,23 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import {
-  BUILTIN_TABLE_POSTURES,
-  parsePostureFile,
-  resolvePostureRegistry,
-} from "../../scripts/verify-rls-isolation-battery.mjs";
+// @ts-expect-error — plain-JS verification script without type declarations imported into the TS unit suite (read-only module import; same pattern as tests/unit/mh-05-battery-postures.test.ts)
+import * as batteryMjs from "../../scripts/verify-rls-isolation-battery.mjs";
+
+interface BatteryPostureEntry {
+  name: string;
+  posture?: string;
+  source?: string;
+  policies?: string[];
+}
+
+interface BatteryModule {
+  BUILTIN_TABLE_POSTURES: BatteryPostureEntry[];
+  parsePostureFile: (contents: string, fileName: string) => unknown[];
+  resolvePostureRegistry: (files: Array<{ name: string; entries: unknown[] }>) => unknown;
+}
+
+const battery = batteryMjs as unknown as BatteryModule;
 
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 
@@ -118,7 +130,7 @@ describe("H3-032 posture adjudication — internal consistency (D-032)", () => {
 
   it("the battery's built-in canonical posture scopes all three tables as zero-policy from the cited migrations", () => {
     for (const table of ADJUDICATED_TABLES) {
-      const entry = BUILTIN_TABLE_POSTURES.find(
+      const entry = battery.BUILTIN_TABLE_POSTURES.find(
         (t: { name: string }) => t.name === table,
       );
       expect(entry, `${table}: missing from BUILTIN_TABLE_POSTURES`).toBeDefined();
@@ -130,7 +142,7 @@ describe("H3-032 posture adjudication — internal consistency (D-032)", () => {
 
   it("no posture JSON file overrides the adjudicated posture (single source of truth)", () => {
     for (const fileName of POSTURE_FILES) {
-      const entries = parsePostureFile(
+      const entries = battery.parsePostureFile(
         readRepoFile(`scripts/verification/${fileName}`),
         fileName,
       ) as Array<{ name?: string; table?: string }>;
@@ -147,9 +159,9 @@ describe("H3-032 posture adjudication — internal consistency (D-032)", () => {
   it("the merged posture registry keeps all three tables zero-policy with builtin-canonical provenance", () => {
     const files = POSTURE_FILES.map((name) => ({
       name,
-      entries: parsePostureFile(readRepoFile(`scripts/verification/${name}`), name) as unknown[],
+      entries: battery.parsePostureFile(readRepoFile(`scripts/verification/${name}`), name) as unknown[],
     }));
-    const registry = resolvePostureRegistry(files) as {
+    const registry = battery.resolvePostureRegistry(files) as {
       tables: Array<{
         name: string;
         posture: string;

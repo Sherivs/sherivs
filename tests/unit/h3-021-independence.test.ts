@@ -431,7 +431,7 @@ describe("H3-021 — malformed input fails closed with a named reason", () => {
         verifier: {
           identityRef: INDEPENDENT_HUMAN,
           classification: "android",
-        } as IndependenceCheckInput["verifier"],
+        } as unknown as IndependenceCheckInput["verifier"],
       }),
     },
     {

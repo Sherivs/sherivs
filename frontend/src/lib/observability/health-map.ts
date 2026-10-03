@@ -50,6 +50,7 @@ import {
   type HealthStatus,
   type MinimalProcess,
   type NamedDependencyCheck,
+  type ProcessSnapshot,
 } from "./health";
 
 /* ─────────────────────────────────────────────────────────────

@@ -35,9 +35,11 @@ import type { AdapterClock } from "../../frontend/src/lib/adapters/failure-polic
 import {
   LeaseQuotaGovernor,
   type LeaseGrant,
+  type FenceResult,
   type LeaseHandleRef,
   type LeasePrincipal,
   type LeaseTarget,
+  type LeaseTargetKind,
   type LeaseQuotaAuditEvent,
 } from "../../frontend/src/lib/reliability/leases";
 import {
@@ -45,7 +47,6 @@ import {
   ResourceQuotaAuthority,
   parseResourceQuotaRegistry,
   type ConsumptionRequest,
-  type FenceResult,
   type QuotaCeiling,
   type QuotaLeasePlane,
   type ResourceQuotaAuditEvent,
@@ -679,7 +680,7 @@ describe("adversarial inputs — lease governor", () => {
   it("denies malformed targets and principals with typed codes", () => {
     const gov = governor();
     const attempts: readonly { request: { target: LeaseTarget; principal: LeasePrincipal; ttlMs: number }; expected: string }[] = [
-      { request: { target: { kind: "bogus", ref: "x" }, principal: TENANT_A, ttlMs: 1_000 }, expected: "invalid_input" },
+      { request: { target: { kind: "bogus" as unknown as LeaseTargetKind, ref: "x" }, principal: TENANT_A, ttlMs: 1_000 }, expected: "invalid_input" },
       { request: { target: { kind: "resource", ref: "" }, principal: TENANT_A, ttlMs: 1_000 }, expected: "invalid_input" },
       { request: { target: { kind: "resource", ref: "   " }, principal: TENANT_A, ttlMs: 1_000 }, expected: "invalid_input" },
       { request: { target: BUF, principal: { tenantRef: "", agentRef: null }, ttlMs: 1_000 }, expected: "invalid_input" },
@@ -891,12 +892,12 @@ describe("approval chains — audit containment under failure", () => {
     const { kase, routing, chain } = routedCase();
     const attempts: readonly Partial<ResolutionInput>[] = [
       { decidedAt: "garbage" },
-      { verdict: "maybe" },
-      { capabilities: CAP },
+      { verdict: "maybe" } as unknown as Partial<ResolutionInput>,
+      { capabilities: CAP } as unknown as Partial<ResolutionInput>,
       { evidence: 42 } as unknown as Partial<ResolutionInput>,
       { tenantId: "" },
       { resolutionId: "   " },
-      { identityKind: "robot" },
+      { identityKind: "robot" } as unknown as Partial<ResolutionInput>,
     ];
     for (const overrides of attempts) {
       expect(

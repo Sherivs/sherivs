@@ -173,7 +173,7 @@ describe("screenContent — typed rule catalog", () => {
   });
 
   it("rejects malformed input fail-closed via schema", () => {
-    expect(() => screenContent({ content: 42, now: NOW })).toThrow();
+    expect(() => screenContent({ content: 42 as unknown as string, now: NOW })).toThrow();
     expect(() => screenContent({ content: CLEAN_TEXT, now: "not-a-time" })).toThrow();
   });
 });
@@ -271,7 +271,7 @@ describe("markUntrustedContent — delimiting semantics", () => {
   it("rejects invalid kind, empty nonce and malformed instants fail-closed", () => {
     expect(() =>
       markUntrustedContent({
-        kind: "not_a_kind",
+        kind: "not_a_kind" as never,
         content: CLEAN_TEXT,
         originRef: null,
         nonce: NONCE,
@@ -403,7 +403,7 @@ describe("quarantine semantics", () => {
     const allowedScreen = {
       verdict: "allowed" as const,
       matches: [],
-      contentDigest: record.evidence.contentDigest,
+      contentDigest: record.evidence.contentDigest as string,
       contentLength: record.evidence.contentLength ?? 0,
       screenedAt: LATER_OK,
       schemaVersion: INJECTION_DEFENSE_SCHEMA_VERSION,
@@ -414,7 +414,7 @@ describe("quarantine semantics", () => {
   it("rejects malformed quarantine input fail-closed", () => {
     expect(() =>
       openQuarantine({
-        evidence: { contentDigest: null, contentLength: null, verdict: "maybe" },
+        evidence: { contentDigest: null, contentLength: null, verdict: "maybe" as never },
         envelopeId: null,
         reason: "bad",
         now: NOW,
@@ -668,7 +668,7 @@ describe("screenArtifact — malicious artifact contracts", () => {
       screenArtifact({ descriptor: { ...GOOD_DESCRIPTOR, sizeBytes: -1 }, content: null, now: NOW }),
     ).toThrow();
     expect(() =>
-      screenArtifact({ descriptor: { ...GOOD_DESCRIPTOR, mimeClass: "font" }, content: null, now: NOW }),
+      screenArtifact({ descriptor: { ...GOOD_DESCRIPTOR, mimeClass: "font" as never }, content: null, now: NOW }),
     ).toThrow();
   });
 });

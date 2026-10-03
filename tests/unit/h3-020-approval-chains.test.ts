@@ -123,14 +123,23 @@ function chain(
   };
 }
 
+/**
+ * Chain overrides for `routed` — resolvers are declared as pool ref strings
+ * (mapped through `pool()` inside `chain()`), all other fields match the
+ * `ApprovalChainConfig` contract verbatim.
+ */
+type RoutedChainOverrides = Omit<Partial<ApprovalChainConfig>, "resolvers"> & {
+  resolvers?: readonly string[];
+};
+
 /** Open a case + route it through a chain (the common happy prefix). */
 function routed(
   inputOverrides: Partial<ResolutionFlowInput> = {},
-  chainOverrides: Partial<ApprovalChainConfig> = {},
+  chainOverrides: RoutedChainOverrides = {},
 ): { kase: EscalationCase; routing: RoutingResult } {
   const kase = openResolutionFlow(baseInput(inputOverrides));
   const { resolvers, ...chainRest } = chainOverrides;
-  const refs = resolvers ?? [ALICE, BOB, CAROL, DAVE];
+  const refs: readonly string[] = resolvers ?? [ALICE, BOB, CAROL, DAVE];
   const routing = routeToApprovalChain(kase, declareApprovalChain(chain(refs, chainRest)));
   return { kase, routing };
 }

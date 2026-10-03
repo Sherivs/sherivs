@@ -32,7 +32,17 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { BUILTIN_TABLE_POSTURES, loadPostureRegistry } from "../../scripts/verify-rls-isolation-battery.mjs";
+// @ts-expect-error — plain-JS verification script without type declarations imported into the TS unit suite (read-only module import; same pattern as tests/unit/mh-05-battery-postures.test.ts)
+import * as batteryMjs from "../../scripts/verify-rls-isolation-battery.mjs";
+
+const battery = batteryMjs as unknown as {
+  BUILTIN_TABLE_POSTURES: BatteryTableEntry[];
+  loadPostureRegistry: (dir: string) => {
+    tables: BatteryTableEntry[];
+    files: string[];
+    fallbackUsed: boolean;
+  };
+};
 
 const root = join(import.meta.dirname, "..", "..");
 const migrationsDir = join(root, "database", "supabase", "migrations");
@@ -136,7 +146,7 @@ describe("H3-034 posture adjudication (mission D-034) — internal consistency",
   describe("2. the RLS isolation battery scopes each table as zero-policy", () => {
     // Read-only offline resolution of the declarative posture registry:
     // built-in canonical posture merged with the landed posture files.
-    const registry = loadPostureRegistry(postureDir);
+    const registry = battery.loadPostureRegistry(postureDir);
 
     it("the posture registry resolves offline from the landed posture files plus the built-in canonical posture", () => {
       expect(registry.fallbackUsed).toBe(false);
@@ -144,7 +154,7 @@ describe("H3-034 posture adjudication (mission D-034) — internal consistency",
         "rls-table-postures-substrate.json",
         "rls-table-postures-transport.json",
       ]);
-      expect(registry.tables.length).toBeGreaterThanOrEqual(BUILTIN_TABLE_POSTURES.length);
+      expect(registry.tables.length).toBeGreaterThanOrEqual(battery.BUILTIN_TABLE_POSTURES.length);
     });
 
     for (const table of ADJUDICATED_TABLES) {
@@ -171,7 +181,7 @@ describe("H3-034 posture adjudication (mission D-034) — internal consistency",
 
     it("the built-in canonical posture declares each adjudicated table zero-policy with its migration provenance", () => {
       for (const table of ADJUDICATED_TABLES) {
-        const builtin = BUILTIN_TABLE_POSTURES.filter((t) => t.name === table);
+        const builtin = battery.BUILTIN_TABLE_POSTURES.filter((t) => t.name === table);
         expect(builtin.length).toBe(1);
         expect(builtin[0]!.posture).toBe("zero-policy");
         expect(builtin[0]!.source).toBe(EXPECTED_SOURCE_MIGRATION[table]);

@@ -15,14 +15,33 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import {
+interface SecretsHygieneFinding {
+  readonly file: string;
+  readonly line: number;
+  readonly patternClass: string;
+  readonly redacted: string;
+}
+
+interface SecretsHygieneModule {
+  readonly PATTERN_CLASSES: readonly { readonly name: string }[];
+  classifyValue(value: string): string | null;
+  redact(value: string): string;
+  isAllowlistedPath(relPath: string): boolean;
+  scanContent(content: string, relPath: string): SecretsHygieneFinding[];
+  scanTree(rootDir: string): SecretsHygieneFinding[];
+}
+
+// @ts-expect-error — plain-JS verification script imported into the TS unit suite (read-only module import; same pattern as tests/unit/h3-088-posture-validation.test.ts). A `declare module` ambient declaration cannot name a relative specifier (TS1042), so the repo convention is an error-suppressed namespace import plus a typed local interface.
+import * as secretsHygieneMjs from "../../scripts/verify-secrets-hygiene.mjs";
+
+const {
   PATTERN_CLASSES,
   classifyValue,
   isAllowlistedPath,
   redact,
   scanContent,
   scanTree,
-} from "../../scripts/verify-secrets-hygiene.mjs";
+} = secretsHygieneMjs as unknown as SecretsHygieneModule;
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const SCRIPT = join(ROOT, "scripts", "verify-secrets-hygiene.mjs");

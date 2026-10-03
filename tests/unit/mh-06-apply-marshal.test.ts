@@ -40,6 +40,11 @@ const EXPECTED_MIGRATIONS = [
   "20261002000013_coregrid_v1_neutral_membership_policies.sql",
   "20261002000014_coregrid_v2_transport_buses_rls.sql",
   "20261002000015_coregrid_v1_substrate_policies.sql",
+  // H3-wave (2026-10-03): H3-027 file substrate, H3-028 idempotency substrate,
+  // and the battery-finding privilege correction for the latter.
+  "20261003000016_coregrid_v1_file_substrate.sql",
+  "20261003000017_coregrid_v1_idempotency_substrate.sql",
+  "20261003000018_coregrid_v1_idempotency_privilege_revoke.sql",
 ];
 
 interface ManifestMigration {
@@ -57,6 +62,7 @@ interface ManifestMigration {
     triggers: string[];
     policies?: string[];
     zeroPolicyTables?: string[];
+    privilegePostures?: Array<{ table: string }>;
   };
 }
 interface Manifest {
@@ -126,13 +132,16 @@ describe("MH-06 — canonical apply path is rehearsal-ready and CI-portable", ()
     expect(manifest.mode).toBe("manifest");
   });
 
-  it("manifest prints the declared migrations in dependency order (20261002000005–15 present today)", () => {
+  it("manifest prints the declared migrations in dependency order (20261002000005–18 present today)", () => {
     expect(manifest.migrations.map((m) => m.file)).toEqual(EXPECTED_MIGRATIONS);
     manifest.migrations.forEach((m, i) => expect(m.order).toBe(i + 1));
     expect(manifestRun.stdout).toContain("20261002000005_coregrid_v1_reconciliation.sql");
     expect(manifestRun.stdout).toContain("20261002000013_coregrid_v1_neutral_membership_policies.sql");
     expect(manifestRun.stdout).toContain("20261002000014_coregrid_v2_transport_buses_rls.sql");
     expect(manifestRun.stdout).toContain("20261002000015_coregrid_v1_substrate_policies.sql");
+    expect(manifestRun.stdout).toContain("20261003000016_coregrid_v1_file_substrate.sql");
+    expect(manifestRun.stdout).toContain("20261003000017_coregrid_v1_idempotency_substrate.sql");
+    expect(manifestRun.stdout).toContain("20261003000018_coregrid_v1_idempotency_privilege_revoke.sql");
     expect(manifest.migrations.every((m) => m.filePresent)).toBe(true);
   });
 
@@ -159,7 +168,8 @@ describe("MH-06 — canonical apply path is rehearsal-ready and CI-portable", ()
         declared.functions.length +
         declared.triggers.length +
         (declared.policies?.length ?? 0) +
-        (declared.zeroPolicyTables?.length ?? 0);
+        (declared.zeroPolicyTables?.length ?? 0) +
+        (declared.privilegePostures?.length ?? 0);
       expect(m.declaredObjectCount).toBe(counted);
       expect(m.declaredObjectCount).toBeGreaterThan(0);
       for (const t of declared.tables) {

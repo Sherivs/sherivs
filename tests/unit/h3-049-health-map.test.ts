@@ -91,7 +91,7 @@ describe("dependency health inventory parsing", () => {
 
   it("rejects entries without provenance or with a non-UTC instant", () => {
     const missing = { ...entry(), provenance: undefined };
-    expect(() => inventory(missing as DependencyHealthEntry)).toThrow();
+    expect(() => inventory(missing as unknown as DependencyHealthEntry)).toThrow();
     expect(() =>
       inventory(entry({ provenance: { ...PROVENANCE, declaredAt: "not-a-date" } })),
     ).toThrow();

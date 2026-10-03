@@ -236,7 +236,7 @@ describe("F-052: AI gateway emission scrubs key material (AGENTS §29 defense in
       actorRef: "actor-1",
       model: "model-x",
       provider: "synthetic",
-      purpose: "org.ops.assist",
+      purpose: "workflow_assistance",
       apiKey: "",
       invoke: async () => {
         throw new Error("must never be invoked when unconfigured");
@@ -264,7 +264,7 @@ describe("F-052: AI gateway emission scrubs key material (AGENTS §29 defense in
       actorRef: "actor-1",
       model: "model-x",
       provider: "synthetic",
-      purpose: "org.ops.assist",
+      purpose: "workflow_assistance",
       apiKey: FAKE_API_KEY,
       rateLimiter: createRateLimiter({ maxRequests: 0, windowMs: 60_000 }),
       invoke: async () => {
@@ -289,7 +289,7 @@ describe("F-052: AI gateway emission scrubs key material (AGENTS §29 defense in
       actorRef: "actor-1",
       model: "model-x",
       provider: "synthetic",
-      purpose: "org.ops.assist",
+      purpose: "workflow_assistance",
       apiKey: FAKE_API_KEY,
       invoke: async () => ({ payload: "ok", tokensIn: 1, tokensOut: 2 }),
       logSink: (line) => seen.push(line),

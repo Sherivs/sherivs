@@ -99,6 +99,16 @@ const BATCH_AB_TABLES = [
   "cg_tool_runtime_invocation",
 ] as const;
 
+/**
+ * H3-wave posture extension (battery steward, 2026-10-03): the coordinator
+ * merged the INTENDED POSTURE ENTRY authored in each H3 migration header into
+ * this posture file after canonical apply. These two policy-backed entries are
+ * OUTSIDE the H2-04 inventory — this suite pins them as declared extensions
+ * (presence, shape, law compliance), while the H2-04-owned inventory above
+ * stays pinned exactly.
+ */
+const H3_WAVE_POLICY_BACKED = ["cg_file_object", "cg_idempotency_record"] as const;
+
 const SOURCE_MIGRATIONS = [
   "20261002000005_coregrid_v1_reconciliation.sql",
   "20261002000006_coregrid_v1_event_security.sql",
@@ -445,8 +455,13 @@ describe("H2-04 substrate policies — genuine inverse rollback", () => {
 describe("H2-04 substrate policies — declarative posture JSON (battery steward contract)", () => {
   it("declares exactly the four policy-backed tables with the authored policy inventory", () => {
     const backed = POSTURE.tables.filter((t) => t.posture === "policy-backed");
-    expect(backed.map((t) => t.name).sort()).toEqual([...POLICY_BACKED].sort());
-    for (const table of backed) {
+    // H2-04's own four substrates are pinned exactly; the H3-wave extension
+    // entries are pinned separately below (never silently absorbed here).
+    expect(backed.map((t) => t.name).sort()).toEqual(
+      [...POLICY_BACKED, ...H3_WAVE_POLICY_BACKED].sort(),
+    );
+    const h2Backed = backed.filter((t) => (POLICY_BACKED as readonly string[]).includes(t.name));
+    for (const table of h2Backed) {
       expect(table.forceRls).toBe(true);
       expect(table.tenantColumn).toBe("tenant_id");
       expect(table.privileges).toEqual({
@@ -470,10 +485,59 @@ describe("H2-04 substrate policies — declarative posture JSON (battery steward
     }
   });
 
+  it("carries the H3-wave extension entries with FORCE RLS, owner/actor pins and tombstone/immutable-tombstone law", () => {
+    const backed = POSTURE.tables.filter((t) => t.posture === "policy-backed");
+    for (const table of backed.filter((t) =>
+      (H3_WAVE_POLICY_BACKED as readonly string[]).includes(t.name),
+    )) {
+      expect(table.forceRls).toBe(true);
+      expect(table.tenantColumn).toBe("tenant_id");
+      // H3 substrates grant UPDATE (policy-gated) but NEVER DELETE — the
+      // tombstone law (§28) holds on both entries.
+      expect(table.privileges?.authenticated.sort()).toEqual(
+        ["INSERT", "SELECT", "UPDATE"].sort(),
+      );
+      expect(table.privileges?.anon).toEqual([]);
+      expect(table.absentPolicies?.DELETE).toBeDefined();
+      // Every declared predicate is built ONLY on the J-005 neutral primitives
+      // plus the auth.uid() self-derivation pin — no domain helper, no domain
+      // role name, no hard-coded tenant.
+      for (const policy of table.policies ?? []) {
+        expect(policy.predicate).toMatch(
+          /get_my_tenant_id|is_tenant_admin|holds_tenant_role|auth\.uid\(\)/,
+        );
+      }
+    }
+    // cg_file_object: SELECT tenant-equality; INSERT/UPDATE tenant-equality AND
+    // the owner self-derivation pin; DELETE has no policy and no privilege.
+    const file = backed.find((t) => t.name === "cg_file_object");
+    expect(file?.policies?.map((p) => p.command).sort()).toEqual(["INSERT", "SELECT", "UPDATE"]);
+    const fileInsert = file?.policies?.find((p) => p.command === "INSERT");
+    expect(fileInsert?.predicate).toContain("owner_ref = auth.uid()::text");
+    // cg_idempotency_record: INSERT requires the neutral administrator binding
+    // AND the actor pin; UPDATE is replace-expired-only (USING filters to
+    // already-expired rows — a live recorded outcome can never be rewritten).
+    const idem = backed.find((t) => t.name === "cg_idempotency_record");
+    const idemInsert = idem?.policies?.find((p) => p.command === "INSERT");
+    expect(idemInsert?.predicate).toContain("public.is_tenant_admin(tenant_id)");
+    expect(idemInsert?.predicate).toContain("actor_id = auth.uid()::text");
+    const idemUpdate = idem?.policies?.find((p) => p.command === "UPDATE");
+    expect(idemUpdate?.predicate).toContain("expires_at <= now()");
+  });
+
   it("covers every table of the eight batch-A/B migrations with cited sources", () => {
-    const names = POSTURE.tables.map((t) => t.name).sort();
-    expect(names).toEqual([...BATCH_AB_TABLES].sort());
-    for (const table of POSTURE.tables) {
+    const names = POSTURE.tables.map((t) => t.name);
+    // The H2-04 inventory is covered exhaustively; the H3-wave extension adds
+    // entries beyond it (declared, pinned, never absorbed into this list).
+    for (const table of BATCH_AB_TABLES) {
+      expect(names).toContain(table);
+    }
+    expect(names.filter((n) => !(BATCH_AB_TABLES as readonly string[]).includes(n))).toEqual(
+      [...H3_WAVE_POLICY_BACKED],
+    );
+    for (const table of POSTURE.tables.filter((t) =>
+      (BATCH_AB_TABLES as readonly string[]).includes(t.name),
+    )) {
       expect(SOURCE_MIGRATIONS).toContain(
         table.source as (typeof SOURCE_MIGRATIONS)[number],
       );
@@ -496,7 +560,9 @@ describe("H2-04 substrate policies — declarative posture JSON (battery steward
     const zero = POSTURE.tables.filter((t) => t.posture === "zero-policy").map((t) => t.name);
     expect(POSTURE.batteryExpectations.policyBackedTables.sort()).toEqual(backed.sort());
     expect(POSTURE.batteryExpectations.zeroPolicyTables.sort()).toEqual(zero.sort());
-    expect(backed.length + zero.length).toBe(BATCH_AB_TABLES.length);
+    expect(backed.length + zero.length).toBe(
+      BATCH_AB_TABLES.length + H3_WAVE_POLICY_BACKED.length,
+    );
   });
 
   it("declares the policy construction law and its forbidden vocabulary", () => {

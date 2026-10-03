@@ -49,6 +49,7 @@ import {
   type MemoryScopeDeclaration,
   type MemoryTierStore,
   type MemoryWriteRequest,
+  type WorkerMemoryRetrievalResult,
   type WorkerMemoryScopeInput,
   type WorkerMemorySession,
 } from "@/lib/memory/memory-store";
@@ -60,7 +61,7 @@ import {
   enforceMemoryScopeAccess,
   type MemoryScopeAccessRequest,
   type MemoryScopeAccessVerdict,
-  type MemoryScopeDeclaration,
+  type MemoryScopeDeclaration as ScopeGateMemoryScopeDeclaration,
 } from "@/lib/context/memory-scope-enforcement";
 import { readMemory, type MemoryEntry } from "@/lib/agent-memory";
 import { agentId } from "@/lib/agent-core";
@@ -225,17 +226,19 @@ function retrievalConfig(now: string = NOW): { now: string } {
   return { now };
 }
 
+type TierRetrievalResult = MemoryRetrievalResult | WorkerMemoryRetrievalResult;
+
 /** Narrows a tier retrieval to the denied variant, asserting denial on the way. */
-function expectTierDenied(result: MemoryRetrievalResult): Extract<MemoryRetrievalResult, { ok: false }> {
+function expectTierDenied<T extends TierRetrievalResult>(result: T): Extract<T, { ok: false }> {
   expect(result.ok).toBe(false);
   if (result.ok) throw new Error("expected a denial");
-  return result;
+  return result as Extract<T, { ok: false }>;
 }
 
-function expectTierGranted(result: MemoryRetrievalResult): Extract<MemoryRetrievalResult, { ok: true }> {
+function expectTierGranted<T extends TierRetrievalResult>(result: T): Extract<T, { ok: true }> {
   expect(result.ok).toBe(true);
   if (!result.ok) throw new Error("expected a grant");
-  return result;
+  return result as Extract<T, { ok: true }>;
 }
 
 /**
@@ -244,7 +247,7 @@ function expectTierGranted(result: MemoryRetrievalResult): Extract<MemoryRetriev
  * `ok:false` with outcome "partial" by contract — still a fully gated,
  * fully audited evaluation.
  */
-function expectTierEvaluated(result: MemoryRetrievalResult): MemoryRetrievalResult {
+function expectTierEvaluated<T extends TierRetrievalResult>(result: T): T {
   return result;
 }
 
@@ -286,8 +289,8 @@ function seedWideRecord(
  * ────────────────────────────────────────────────────────────*/
 
 function scopeGateDeclaration(
-  overrides?: Partial<MemoryScopeDeclaration>,
-): MemoryScopeDeclaration {
+  overrides?: Partial<ScopeGateMemoryScopeDeclaration>,
+): ScopeGateMemoryScopeDeclaration {
   return {
     scopeKey: "session-scope-alpha",
     tenantRef: TENANT_A,
@@ -307,7 +310,7 @@ function scopeGateDeclaration(
   };
 }
 
-function scopeGateRegistry(overrides?: Partial<MemoryScopeDeclaration>) {
+function scopeGateRegistry(overrides?: Partial<ScopeGateMemoryScopeDeclaration>) {
   const result = declareScopeGateScope(emptyMemoryScopeRegistry(), scopeGateDeclaration(overrides));
   if (!result.ok) throw new Error(`fixture broken: ${result.error}`);
   return result.registry;
@@ -336,7 +339,9 @@ function expectGateDenied(verdict: MemoryScopeAccessVerdict): { reason: string; 
  * Fixtures — phase-07 consumer surface (agent-memory.ts, read-only)
  * ────────────────────────────────────────────────────────────*/
 
-function consumerEntry(overrides?: Partial<MemoryEntry>): MemoryEntry {
+function consumerEntry(
+  overrides?: Partial<Omit<MemoryEntry, "id">> & { id?: string },
+): MemoryEntry {
   return {
     id: (overrides?.id ?? "mem-entry-001") as MemoryEntry["id"],
     tenantId: overrides?.tenantId ?? tenantId(TENANT_A),
