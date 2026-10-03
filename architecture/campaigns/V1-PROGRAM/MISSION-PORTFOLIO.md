@@ -28,7 +28,8 @@ Machine-readable mission graph. Status lifecycle per §47: DEFINED → DESIGNED 
 
 ## Execution order
 
-- **Wave 1 (parallel now):** V1-001, V1-005, V1-006, V1-007, V1-009, F-14 — zero interdependencies.
+- **Wave 1 (CLOSED 2026-10-03, all verified):** V1-001 ✅ (PWA artifacts ship in dist/client, 13 tests) · V1-005 ✅ (memory DB adapter, 21 tests + 219 regressions) · V1-006 ✅ (neutral RBAC core + Scholar adapter, full unit suite 8,480 green, ratchet 1576→1499) · V1-007 ✅ (/coregrid public site, 65/65 + neutrality PASS) · V1-009 ✅ (Resend/Twilio/Vapi fail-closed, 34 tests + 156 regressions) · F-14 ✅ baseline (prod server runs in-VM, /health.json 200; live deploy = BLK-3 external gate). Integration: full `npm run verify` GREEN on combined tree; PWA artifacts confirmed in fresh build.
+- **Wave 2 (parallel now):** V1-004, V1-008, V1-011.
 - **Wave 2 (after V1-006):** V1-008, V1-011, V1-004.
 - **Wave 3 (after V1-004):** V1-003, V1-010 scaffold, V1-012.
 - **Wave 4 (integration):** V1-002, F-13.
