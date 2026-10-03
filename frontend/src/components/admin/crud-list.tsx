@@ -421,11 +421,12 @@ function CrudFormDialog<Row extends { id: string }>({
         <form onSubmit={onSubmit} className="space-y-4">
           {config.fields.map((f) => (
             <div key={f.key} className="space-y-1.5">
-              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+              <Label htmlFor={f.key} className="text-xs uppercase tracking-wide text-muted-foreground">
                 {f.label}
               </Label>
               {f.type === "textarea" ? (
                 <Textarea
+                  id={f.key}
                   value={String(values[f.key] ?? "")}
                   rows={f.rows ?? 4}
                   maxLength={f.max}
@@ -442,6 +443,7 @@ function CrudFormDialog<Row extends { id: string }>({
                 </div>
               ) : f.type === "select" ? (
                 <select
+                  id={f.key}
                   className="uos-input w-full"
                   value={String(values[f.key] ?? "")}
                   onChange={(e) => setValues((s) => ({ ...s, [f.key]: e.target.value }))}
@@ -468,6 +470,7 @@ function CrudFormDialog<Row extends { id: string }>({
                 />
               ) : (
                 <Input
+                  id={f.key}
                   type={f.type}
                   value={String(values[f.key] ?? "")}
                   placeholder={f.placeholder}

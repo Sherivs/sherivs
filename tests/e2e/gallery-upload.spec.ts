@@ -40,7 +40,7 @@ test.describe("Gallery upload → public site", () => {
     const bucketReady = await schoolMediaBucketExists();
     test.skip(
       bucketReady === false,
-      "SKIP: the school-media storage bucket is not provisioned on the configured Supabase backend (storage.listBuckets() has no 'school-media'); the gallery upload journey cannot run and e2e must not create the bucket itself. External dependency: storage bucket provisioning by the infrastructure owner.",
+      "SKIP: the school-media storage bucket is not provisioned on the configured Supabase backend (storage.listBuckets() has no 'school-media'); the gallery upload journey cannot run and e2e must not create the bucket itself. Remediation: apply the declarative provisioning migration database/supabase/migrations/20261003000040_coregrid_school_media_bucket.sql (coordinator canonical apply).",
     );
     test.skip(
       bucketReady === null,

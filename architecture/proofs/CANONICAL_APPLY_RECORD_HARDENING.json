@@ -5,8 +5,8 @@
   "projectRef": "nwrflbpbhyiqdptmlccm",
   "transport": "supabase-management-api-database-query",
   "exclusiveAccess": "serialized — one canonical operation at a time (campaign canonical lock held by TEAM 3)",
-  "executedAt": "2026-10-03T11:58:41.756Z",
-  "completedAt": "2026-10-03T11:58:53.066Z",
+  "executedAt": "2026-10-03T21:05:55.929Z",
+  "completedAt": "2026-10-03T21:06:07.374Z",
   "declaredVsApplied": [
     {
       "file": "20261002000005_coregrid_v1_reconciliation.sql",
@@ -182,6 +182,39 @@
       "declaredObjectCount": 1,
       "elapsedMs": null,
       "evidence": "all 1 declared objects present (pre-flight catalog probe)",
+      "error": null
+    },
+    {
+      "file": "20261003000030_coregrid_hermes_observation_substrate.sql",
+      "mission": "R-wave R4 — Hermes observation substrate: cg_hermes_observation append-only intelligence ledger with full §12 provenance (source/event_ref/subject_ref, observed_at vs recorded_at, created_by, generated_by_ai), §9 canonical-truth CHECK (AI-generated implies unverified), exactly-once event consumption via partial unique (tenant_id, event_ref), append-only trigger, deny-by-default: RLS enabled, zero policies, anon/authenticated revoked, service_role granted",
+      "state": "ALREADY_APPLIED",
+      "checksum": "de1578478b5d1bd6312d720d91d78db73003a0edc229d5fdca594d0c62033e38",
+      "rollbackChecksum": "506fd905aa2b608387ff44304346c65b0d7e807e3952ea42035f9a0586a935c9",
+      "declaredObjectCount": 8,
+      "elapsedMs": null,
+      "evidence": "all 8 declared objects present (pre-flight catalog probe)",
+      "error": null
+    },
+    {
+      "file": "20261003000031_coregrid_delivery_evidence.sql",
+      "mission": "R-wave R6 — delivery-evidence substrate: cg_delivery_evidence append-only attempt ledger over the email/voice channels (one row per outbound ATTEMPT including fail-closed BLOCKED_NO_CREDENTIAL — the block is evidence), redacted recipients, outcome-coherence CHECK (provider-confirmed id only on delivered), append-only trigger, deny-by-default: RLS enabled, zero policies, anon/authenticated revoked, service_role granted",
+      "state": "ALREADY_APPLIED",
+      "checksum": "24fc4eb2215fd08cfe2ae45febcf3614415d31603bae984e9931d56b2fe33e5b",
+      "rollbackChecksum": "e916d17868ff0a82f7ded256888504c819cbbb538a698d2cae50eb1a35648951",
+      "declaredObjectCount": 7,
+      "elapsedMs": null,
+      "evidence": "all 7 declared objects present (pre-flight catalog probe)",
+      "error": null
+    },
+    {
+      "file": "20261003000040_coregrid_school_media_bucket.sql",
+      "mission": "Post-R-wave T-C — storage provisioning: school-media bucket (PRIVATE — the admin gallery flow uploads authenticated and renders via 10-year createSignedUrl; envelope bounded to 8 MB + image mime types mirroring the client contract), idempotent INSERT ON CONFLICT DO NOTHING; grants NOTHING new — the five tenant-scoped school-media object policies are owned by applied migration 20260707223958",
+      "state": "APPLIED_AND_VERIFIED",
+      "checksum": "e2a97176d54a75feacc72c7ba5dd3770dae91ccfd56d61681966f0527176cce7",
+      "rollbackChecksum": "39655afd2b5eaa954f52ba24090e4bce366111f78039d5466321e7dfe0f5d2ef",
+      "declaredObjectCount": 0,
+      "elapsedMs": 688,
+      "evidence": null,
       "error": null
     }
   ],
@@ -407,6 +440,22 @@
       "ok": true
     },
     {
+      "table": "cg_hermes_observation",
+      "posture": "zero-policy (deny-by-default)",
+      "rlsEnabled": true,
+      "rlsForced": false,
+      "policies": 0,
+      "ok": true
+    },
+    {
+      "table": "cg_delivery_evidence",
+      "posture": "zero-policy (deny-by-default)",
+      "rlsEnabled": true,
+      "rlsForced": false,
+      "policies": 0,
+      "ok": true
+    },
+    {
       "table": "transport_buses",
       "posture": "zero-policy (deny-by-default)",
       "rlsEnabled": true,
@@ -529,6 +578,21 @@
     },
     {
       "file": "20261003000020_coregrid_is_super_admin_definer.sql",
+      "verified": true,
+      "missingCount": 0
+    },
+    {
+      "file": "20261003000030_coregrid_hermes_observation_substrate.sql",
+      "verified": true,
+      "missingCount": 0
+    },
+    {
+      "file": "20261003000031_coregrid_delivery_evidence.sql",
+      "verified": true,
+      "missingCount": 0
+    },
+    {
+      "file": "20261003000040_coregrid_school_media_bucket.sql",
       "verified": true,
       "missingCount": 0
     }

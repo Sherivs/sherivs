@@ -477,6 +477,19 @@ const MIGRATIONS = [
       ],
     },
   },
+  {
+    file: "20261003000040_coregrid_school_media_bucket.sql",
+    mission:
+      "Post-R-wave T-C — storage provisioning: school-media bucket (PRIVATE — the admin gallery flow uploads authenticated and renders via 10-year createSignedUrl; envelope bounded to 8 MB + image mime types mirroring the client contract), idempotent INSERT ON CONFLICT DO NOTHING; grants NOTHING new — the five tenant-scoped school-media object policies are owned by applied migration 20260707223958",
+    declared: {
+      columns: [],
+      indexes: [],
+      tables: [],
+      functions: [],
+      triggers: [],
+      policies: [],
+    },
+  },
 ];
 
 const report = (line, log) => {
@@ -819,11 +832,18 @@ for (const m of plan) {
     declaredObjectCount: m.declaredObjectCount,
   };
 
-  if (missing.length === 0) {
+  // A migration that declares ZERO catalog objects (pure data/infrastructure
+  // statements, e.g. storage bucket provisioning) can never be proven applied
+  // by presence-probing — "nothing missing" proves nothing. The skip
+  // optimization must not fire for it: it is executed on every apply, which
+  // is safe because manifest membership REQUIRES idempotency (manifest law).
+  const zeroDeclared = m.declaredObjectCount === 0;
+
+  if (!zeroDeclared && missing.length === 0) {
     entry.state = "ALREADY_APPLIED";
     entry.evidence = `all ${present.length} declared objects present (pre-flight catalog probe)`;
     report(`SKIP  ${m.file} — ALREADY_APPLIED (${present.length}/${present.length} declared objects present)`, log);
-  } else if (present.length === 0) {
+  } else if (zeroDeclared || present.length === 0) {
     report(`APPLY ${m.file} — ${m.mission} (checksum ${m.checksum.slice(0, 12)}…)`, log);
     const t0 = Date.now();
     try {

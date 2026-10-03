@@ -57,6 +57,10 @@ const EXPECTED_MIGRATIONS = [
   // R-wave remediation (2026-10-03): R6 delivery-evidence attempt ledger
   // (append-only, blocked sends are evidence too).
   "20261003000031_coregrid_delivery_evidence.sql",
+  // Post-R-wave (2026-10-03): T-C storage provisioning — school-media bucket
+  // (idempotent, private, bounded envelope; policy set already owned by
+  // 20260707223958 — this migration grants nothing new).
+  "20261003000040_coregrid_school_media_bucket.sql",
 ];
 
 interface ManifestMigration {
@@ -183,6 +187,16 @@ describe("MH-06 — canonical apply path is rehearsal-ready and CI-portable", ()
         (declared.zeroPolicyTables?.length ?? 0) +
         (declared.privilegePostures?.length ?? 0);
       expect(m.declaredObjectCount).toBe(counted);
+      // Zero-declared entries are legitimate only for data-only migrations
+      // (e.g. declarative storage-bucket provisioning) that declare no catalog
+      // signature objects; the apply path executes them unconditionally, so
+      // they must carry the idempotency guarantee in their bytes.
+      if (m.declaredObjectCount === 0) {
+        expect(m.file, `${m.file}: zero-declared entries must be idempotent data-only migrations`).toMatch(/bucket|backfill|seed|data-only/i);
+        const bytes = readFileSync(join(MIGRATIONS_DIR, m.file), "utf8");
+        expect(bytes, `${m.file}: zero-declared migration must be idempotent`).toMatch(/ON CONFLICT|IF NOT EXISTS|WHERE NOT EXISTS/i);
+        continue;
+      }
       expect(m.declaredObjectCount).toBeGreaterThan(0);
       for (const t of declared.tables) {
         expect(manifestRun.stdout).toContain(`  table:${t}`);

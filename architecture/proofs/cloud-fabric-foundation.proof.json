@@ -4,9 +4,9 @@
   "owner": "21",
   "capability": "cloud-fabric-byoc",
   "mode": "static",
-  "generatedAt": "2026-10-03T11:39:18.948Z",
-  "infrastructureFiles": 54,
-  "inventoryDigest": "sha256:7880109bc4d7c46cf69ee09dcb8d4ed705fbc37771784531f92ac6c06cd4799d",
+  "generatedAt": "2026-10-03T15:19:41.846Z",
+  "infrastructureFiles": 58,
+  "inventoryDigest": "sha256:86523ed1d4bfe47e3118a7b4963e5da054e91e1b1e860753fd4ba562876e67fd",
   "providers": [
     "oci",
     "hetzner",
@@ -36,7 +36,7 @@
     {
       "id": "structure:infrastructure-present",
       "ok": true,
-      "detail": "54 infrastructure source file(s) under infrastructure/",
+      "detail": "58 infrastructure source file(s) under infrastructure/",
       "category": "A"
     },
     {
@@ -240,7 +240,7 @@
     {
       "id": "secrets:docs-carry-no-values",
       "ok": true,
-      "detail": "documentation scanned for embedded values (7 files)",
+      "detail": "documentation scanned for embedded values (8 files)",
       "category": "B"
     },
     {
