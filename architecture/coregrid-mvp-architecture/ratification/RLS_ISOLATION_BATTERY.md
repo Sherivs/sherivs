@@ -460,3 +460,67 @@ layer: **37/37 PASS, 0 findings, live**. The dual-posture model extends by autho
 posture-file entry (data) — the next policy migration extends the battery without touching
 battery code. Remaining serialized next per the mission graph: M-R-101 (backup/restore
 verified recovery).
+
+## 11. H3-wave extension — 39 tables: the file substrate + the durable idempotency substrate (canonical, 2026-10-03)
+
+Battery steward (H3-000, coordinator): the H3-wave authored two policy-backed
+substrate migrations (H3-027 L-T-011 file substrate; H3-028 L-T-012/J-030
+durable idempotency substrate), applied them via the serialized canonical apply
+(`scripts/apply-canonical-hardening.mjs`, migrations 12–13 of 14, checksum-bound,
+`STATUS=PASS`), and merged the migrations' authored INTENDED POSTURE ENTRY into
+`rls-table-postures-substrate.json` — posture/policy data only, with a full §4.4
+cross-tenant probe recipe per table and the battery's `$template` value form
+added (purely additive; exact-match substitution semantics unchanged — H3-088's
+pins unbroken, 129/129 posture tests pass).
+
+Serialized canonical apply record: `architecture/proofs/CANONICAL_APPLY_RECORD_HARDENING.json`.
+
+### Battery finding and correction (why 39, not 38)
+
+The first live run at 39 tables returned **38/39** with one real finding:
+
+```
+cg_idempotency_record / privileges: PRIVILEGE_POSTURE_MISMATCH
+  anon: [DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE]
+  authenticated: [DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE]
+  declaredAuthenticated: [SELECT, INSERT, UPDATE]
+```
+
+Root cause: `20261003000017` omitted the table-level `REVOKE ALL … FROM anon,
+authenticated` that its own comment claims and every exemplar performs — while
+this project carries broad `ALTER DEFAULT PRIVILEGES` on public tables. The RLS
+policies remained the operative row gate (all cross-tenant probes PASSED), but
+the declared defense-in-depth privilege posture did not hold. Correction:
+`20261003000018_coregrid_v1_idempotency_privilege_revoke.sql` (+ rollback) —
+authored, registered in the apply script with a new declarable
+`privilegePostures` applied-state signature (exact per-role grant set probed
+from `information_schema.table_privileges`), applied serialized
+(`STATUS=PASS`), never editing the already-applied checksum-bound migration.
+
+### Final live run (39/39)
+
+Final verdict line (verbatim):
+
+```
+STATUS=PASS — 39/39 tables prove their declared posture: zero-policy tables prove deny-by-default (RLS on, zero permissive policies, no client grants, anon REST denied, strongest-form isolation); policy-backed tables (J-005/J-006 neutral tenant-membership policies, FORCED RLS) prove genuine cross-tenant isolation (Tenant B invisible, Tenant A own rows visible, expired binding denied, cross-tenant INSERT denied, forged grantor rejected, probes cleaned). Proven against the live database, not reasoned.
+```
+
+FINDINGS: **0** (30 zero-policy / 9 policy-backed). Posture inventory:
+`--dry-parse-scope` → tables=39 zero-policy=30 policy-backed=9.
+
+### Posture matrix (canonical, post-H3-wave)
+
+| Tables | Posture | Proof |
+|---|---|---|
+| 30 (unchanged zero-policy fleet incl. `transport_buses`) | zero-policy deny-by-default | RLS on, zero policies, no client grants, anon REST denied — the strongest form |
+| 3 neutral-membership exemplars (`cg_role_assignment`, `cg_role_grant`, `cg_org_membership`) | policy-backed, FORCE RLS | built-in §4.4 probes |
+| 6 substrate tables (`cg_reconciliation_input`, `cg_event_route_subscription`, `cg_evidence_record`, `cg_usage_attribution_bucket`, `cg_file_object`, `cg_idempotency_record`) | policy-backed, FORCE RLS | data-declared §4.4 recipes (`cg_file_object` via the additive `$template` form for its derived `content_ref` CHECK) |
+
+## 12. Verdict (post H3-wave)
+
+J-041 / V1CAP-073 is database-proven on the dev project, on canonical
+post-M-R-100, after the J-005/J-006 neutral membership policies, the H2-wave
+substrate policy layer, and now the H3-wave file + idempotency substrates:
+**39/39 PASS, 0 findings, live**. The battery caught one real authoring defect
+(the missing table-level REVOKE) and the correction is itself checksum-bound
+and posture-probed — the battery works as designed.

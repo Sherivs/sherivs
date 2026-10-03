@@ -55,21 +55,30 @@
       "appendOnly": true,
       "forceRls": true,
       "privileges": {
-        "authenticated": ["SELECT", "INSERT"],
+        "authenticated": [
+          "SELECT",
+          "INSERT"
+        ],
         "anon": [],
-        "service_role": ["ALL"]
+        "service_role": [
+          "ALL"
+        ]
       },
       "policies": [
         {
           "name": "reconciliation_input_select_own_tenant",
           "command": "SELECT",
-          "roles": ["authenticated"],
+          "roles": [
+            "authenticated"
+          ],
           "predicate": "tenant_id = public.get_my_tenant_id()"
         },
         {
           "name": "reconciliation_input_insert_tenant_admin",
           "command": "INSERT",
-          "roles": ["authenticated"],
+          "roles": [
+            "authenticated"
+          ],
           "predicate": "public.is_tenant_admin(tenant_id)"
         }
       ],
@@ -113,9 +122,14 @@
               "subject_entity_id": "$RUN_ID-subject",
               "attribute": "battery-probe-attribute",
               "outcome": "RESOLVED",
-              "value": { "known": true, "value": "battery-probe-value" },
+              "value": {
+                "known": true,
+                "value": "battery-probe-value"
+              },
               "residual_uncertainty": {},
-              "verdict_provenance": { "method": "battery-probe" },
+              "verdict_provenance": {
+                "method": "battery-probe"
+              },
               "recorded_at": "2026-10-02T00:00:00Z",
               "created_by": "battery-seed",
               "object_type": "core.reconciliation.verdict",
@@ -169,21 +183,30 @@
       "appendOnly": true,
       "forceRls": true,
       "privileges": {
-        "authenticated": ["SELECT", "INSERT"],
+        "authenticated": [
+          "SELECT",
+          "INSERT"
+        ],
         "anon": [],
-        "service_role": ["ALL"]
+        "service_role": [
+          "ALL"
+        ]
       },
       "policies": [
         {
           "name": "event_route_subscription_select_own_tenant",
           "command": "SELECT",
-          "roles": ["authenticated"],
+          "roles": [
+            "authenticated"
+          ],
           "predicate": "tenant_id = public.get_my_tenant_id()"
         },
         {
           "name": "event_route_subscription_insert_tenant_admin",
           "command": "INSERT",
-          "roles": ["authenticated"],
+          "roles": [
+            "authenticated"
+          ],
           "predicate": "public.is_tenant_admin(tenant_id) AND subscriber_id = auth.uid()::text"
         }
       ],
@@ -241,21 +264,30 @@
       "appendOnly": true,
       "forceRls": true,
       "privileges": {
-        "authenticated": ["SELECT", "INSERT"],
+        "authenticated": [
+          "SELECT",
+          "INSERT"
+        ],
         "anon": [],
-        "service_role": ["ALL"]
+        "service_role": [
+          "ALL"
+        ]
       },
       "policies": [
         {
           "name": "evidence_record_select_own_tenant",
           "command": "SELECT",
-          "roles": ["authenticated"],
+          "roles": [
+            "authenticated"
+          ],
           "predicate": "tenant_id = public.get_my_tenant_id()"
         },
         {
           "name": "evidence_record_insert_tenant_admin",
           "command": "INSERT",
-          "roles": ["authenticated"],
+          "roles": [
+            "authenticated"
+          ],
           "predicate": "public.is_tenant_admin(tenant_id) AND captured_by = auth.uid()::text AND created_by = auth.uid()::text"
         }
       ],
@@ -269,7 +301,9 @@
           "tenant_id": "$TENANT_A",
           "evidence_type": "battery-probe",
           "evidence_class": "direct_observation",
-          "claim": { "claim": "battery-probe" },
+          "claim": {
+            "claim": "battery-probe"
+          },
           "recorded_at": "2026-10-02T00:00:00Z",
           "captured_by": "$ACTOR_A_ID",
           "captured_at": "2026-10-02T00:00:00Z",
@@ -292,7 +326,9 @@
         "tenant_id": "$TENANT_B",
         "evidence_type": "battery-probe",
         "evidence_class": "direct_observation",
-        "claim": { "claim": "battery-probe" },
+        "claim": {
+          "claim": "battery-probe"
+        },
         "recorded_at": "2026-10-02T00:00:00Z",
         "captured_by": "$ACTOR_A_ID",
         "captured_at": "2026-10-02T00:00:00Z",
@@ -339,21 +375,30 @@
       "appendOnly": true,
       "forceRls": true,
       "privileges": {
-        "authenticated": ["SELECT", "INSERT"],
+        "authenticated": [
+          "SELECT",
+          "INSERT"
+        ],
         "anon": [],
-        "service_role": ["ALL"]
+        "service_role": [
+          "ALL"
+        ]
       },
       "policies": [
         {
           "name": "usage_attribution_bucket_select_own_tenant",
           "command": "SELECT",
-          "roles": ["authenticated"],
+          "roles": [
+            "authenticated"
+          ],
           "predicate": "tenant_id = public.get_my_tenant_id()"
         },
         {
           "name": "usage_attribution_bucket_insert_tenant_admin",
           "command": "INSERT",
-          "roles": ["authenticated"],
+          "roles": [
+            "authenticated"
+          ],
           "predicate": "public.is_tenant_admin(tenant_id)"
         }
       ],
@@ -451,6 +496,162 @@
       "source": "20261002000012_coregrid_v1_tool_runtime.sql",
       "posture": "zero-policy",
       "rationale": "adjudicated zero-policy-by-design by H3-040 (architecture/campaigns/h3/posture-adjudication/cg_tool_runtime_invocation.md): invocations are the audited output of the Constitution §21 AI-proposal chain — capability gate, delegation bounding, credential-lease mediation — not a client surface; the append-only ledger must stay unwritable and unerazable by any client path (§28), client reads would expose tenant-wide tool-invocation history without purpose/policy context (§19), and COND-003 leaves the tenant_id parameterization unresolved"
+    },
+    {
+      "name": "cg_file_object",
+      "source": "20261003000016_coregrid_v1_file_substrate.sql",
+      "rollback": "database/supabase/rollbacks/20261003000016_coregrid_v1_file_substrate.sql",
+      "posture": "policy-backed",
+      "tenantColumn": "tenant_id",
+      "forceRls": true,
+      "privileges": {
+        "authenticated": [
+          "SELECT",
+          "INSERT",
+          "UPDATE"
+        ],
+        "anon": [],
+        "service_role": [
+          "ALL"
+        ]
+      },
+      "policies": [
+        {
+          "name": "file_object_select_own_tenant",
+          "command": "SELECT",
+          "roles": [
+            "authenticated"
+          ],
+          "predicate": "tenant_id = public.get_my_tenant_id()"
+        },
+        {
+          "name": "file_object_insert_own_tenant",
+          "command": "INSERT",
+          "roles": [
+            "authenticated"
+          ],
+          "predicate": "tenant_id = public.get_my_tenant_id() AND owner_ref = auth.uid()::text"
+        },
+        {
+          "name": "file_object_update_own_tenant",
+          "command": "UPDATE",
+          "roles": [
+            "authenticated"
+          ],
+          "predicate": "tenant_id = public.get_my_tenant_id() AND owner_ref = auth.uid()::text"
+        }
+      ],
+      "absentPolicies": {
+        "DELETE": "no policy and no privilege — removal is a tombstone transition via deleted_at (Constitution §28)"
+      },
+      "probeSeedRows": [
+        {
+          "id": "$RUN_ID-file",
+          "tenant_id": "$TENANT_A",
+          "owner_ref": "$ACTOR_A_ID",
+          "purpose": "evidence",
+          "content_type": "text/plain",
+          "size_bytes": 11,
+          "filename": "battery-probe.txt",
+          "visibility": "private",
+          "grant_refs": [],
+          "content_ref": {
+            "$template": "$TENANT_A/evidence/battery-probe.txt"
+          }
+        }
+      ],
+      "probeInsertPayload": {
+        "id": "$RUN_ID-file-x",
+        "tenant_id": "$TENANT_B",
+        "owner_ref": "$ACTOR_A_ID",
+        "purpose": "evidence",
+        "content_type": "text/plain",
+        "size_bytes": 11,
+        "filename": "battery-probe.txt",
+        "visibility": "private",
+        "grant_refs": [],
+        "content_ref": {
+          "$template": "$TENANT_B/evidence/battery-probe.txt"
+        }
+      },
+      "probeRationale": "§4.4 data-declared recipe: the cross-tenant INSERT payload is fully constraint-valid (content_ref template-resolves to the TENANT_B-prefixed path, satisfying the derived CHECK) so the denial is the file_object_insert_own_tenant WITH CHECK predicate (tenant-equality AND owner self-derivation), never a CHECK or FK error. The $template value form exists because the content_ref CHECK derives from the row tenant — inexpressible with exact-match placeholders."
+    },
+    {
+      "name": "cg_idempotency_record",
+      "source": "20261003000017_coregrid_v1_idempotency_substrate.sql",
+      "rollback": "database/supabase/rollbacks/20261003000017_coregrid_v1_idempotency_substrate.sql",
+      "posture": "policy-backed",
+      "tenantColumn": "tenant_id",
+      "forceRls": true,
+      "privileges": {
+        "authenticated": [
+          "SELECT",
+          "INSERT",
+          "UPDATE"
+        ],
+        "anon": [],
+        "service_role": [
+          "ALL"
+        ]
+      },
+      "policies": [
+        {
+          "name": "idempotency_record_select_own_tenant",
+          "command": "SELECT",
+          "roles": [
+            "authenticated"
+          ],
+          "predicate": "tenant_id = public.get_my_tenant_id()"
+        },
+        {
+          "name": "idempotency_record_insert_tenant_admin",
+          "command": "INSERT",
+          "roles": [
+            "authenticated"
+          ],
+          "predicate": "public.is_tenant_admin(tenant_id) AND actor_id = auth.uid()::text"
+        },
+        {
+          "name": "idempotency_record_replace_expired",
+          "command": "UPDATE",
+          "roles": [
+            "authenticated"
+          ],
+          "predicate": "USING: tenant_id = public.get_my_tenant_id() AND expires_at <= now(); WITH CHECK: tenant_id = public.get_my_tenant_id() AND public.is_tenant_admin(tenant_id) AND actor_id = auth.uid()::text"
+        }
+      ],
+      "absentPolicies": {
+        "DELETE": "no policy and no privilege for any client role — the only deletion surface is the service-role-only SECURITY DEFINER prune of expired rows (exactly-once substrate cannot be sabotaged through the client boundary)"
+      },
+      "probeSeedRows": [
+        {
+          "tenant_id": "$TENANT_A",
+          "idempotency_key": "idem:battery:$RUN_ID:record",
+          "scope": "battery",
+          "actor_id": "$ACTOR_A_ID",
+          "intent": "battery.record_outcome",
+          "payload_digest": "a3f1c0b2d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f",
+          "status": "succeeded",
+          "external_effect": "recorded_intent",
+          "response_ref": "$RUN_ID-response",
+          "created_at": "2026-10-02T00:00:00Z",
+          "expires_at": "2030-01-01T00:00:00Z"
+        }
+      ],
+      "probeInsertPayload": {
+        "tenant_id": "$TENANT_B",
+        "idempotency_key": "idem:battery:$RUN_ID:cross",
+        "scope": "battery",
+        "actor_id": "$ACTOR_A_ID",
+        "intent": "battery.record_outcome",
+        "payload_digest": "b4f1c0b2d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f",
+        "status": "succeeded",
+        "external_effect": "recorded_intent",
+        "response_ref": "$RUN_ID-cross-response",
+        "created_at": "2026-10-02T00:00:00Z",
+        "expires_at": "2030-01-01T00:00:00Z"
+      },
+      "probeRationale": "§4.4 data-declared recipe: the id column is omitted (uuid DEFAULT gen_random_uuid()), all CHECK constraints are satisfied with static values (64-hex digests, expires_at > created_at, bounded lengths), so the cross-tenant INSERT denial is the idempotency_record_insert_tenant_admin WITH CHECK predicate (is_tenant_admin on TENANT_B is false for the tenant-A-bound actor) — never a constraint error. UPDATE is replace-expired-only and there is NO client DELETE."
     }
   ],
   "batteryExpectations": {
@@ -458,7 +659,9 @@
       "cg_reconciliation_input",
       "cg_event_route_subscription",
       "cg_evidence_record",
-      "cg_usage_attribution_bucket"
+      "cg_usage_attribution_bucket",
+      "cg_file_object",
+      "cg_idempotency_record"
     ],
     "zeroPolicyTables": [
       "cg_reconciliation_verdict",
@@ -479,6 +682,14 @@
       "cg_tool_runtime_invocation"
     ],
     "crossTenantProbeLaw": "for each policy-backed table: an authenticated actor bound to tenant A must see zero rows of tenant B for all four commands; an unbound actor must see zero rows; AMBIGUOUS_TENANCY must raise; anon must be denied by privilege; insert probes must fail the is_tenant_admin predicate for non-administrators and the auth.uid() self-derivation pins where present",
-    "genuineInverse": "the rollback must restore relforcerowsecurity=false, zero policies, and the source-migration grant state (anon/authenticated revoked, service_role silent) on exactly the four policy-backed tables — and nothing else"
+    "genuineInverse": "the rollback must restore relforcerowsecurity=false, zero policies, and the source-migration grant state (anon/authenticated revoked, service_role silent) on exactly the six policy-backed tables — and nothing else"
+  },
+  "h3WaveExtension": {
+    "captured": "2026-10-03",
+    "mission": "H3-wave battery-steward extension (coordinator H3-000): added the cg_file_object (H3-027) and cg_idempotency_record (H3-028) policy-backed entries after canonical apply 2026-10-03, merging the INTENDED POSTURE ENTRY authored in each migration header. Probe recipes are new data authored here; the {$template} value form was added to the battery substitution for derived CHECK constraints (content_ref).",
+    "migrations": [
+      "database/supabase/migrations/20261003000016_coregrid_v1_file_substrate.sql",
+      "database/supabase/migrations/20261003000017_coregrid_v1_idempotency_substrate.sql"
+    ]
   }
 }

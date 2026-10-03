@@ -324,6 +324,76 @@ const MIGRATIONS = [
       ],
     },
   },
+  {
+    file: "20261003000016_coregrid_v1_file_substrate.sql",
+    mission:
+      "H3-027 (L-T-011) — file-plane descriptor substrate: cg_file_object with FORCE RLS, tenant-scoped policies on the J-005 neutral primitives, actor self-derivation pin, no DELETE (tombstone law)",
+    declared: {
+      columns: [],
+      indexes: [
+        "cg_file_object_tenant_content_ref_idx",
+        "cg_file_object_tenant_owner_idx",
+        "cg_file_object_tenant_purpose_idx",
+      ],
+      tables: ["cg_file_object"],
+      functions: [],
+      triggers: [],
+      policies: [
+        "cg_file_object.file_object_select_own_tenant",
+        "cg_file_object.file_object_insert_own_tenant",
+        "cg_file_object.file_object_update_own_tenant",
+      ],
+      forcedRlsTables: ["cg_file_object"],
+    },
+  },
+  {
+    file: "20261003000017_coregrid_v1_idempotency_substrate.sql",
+    mission:
+      "H3-028 (L-T-012 / J-030) — durable exactly-once idempotency substrate: cg_idempotency_record with FORCE RLS, tenant-scoped policies, replace-expired-only UPDATE, service-role-only SECURITY DEFINER prune",
+    declared: {
+      columns: [],
+      indexes: [
+        "cg_idempotency_record_expires_idx",
+        "cg_idempotency_record_tenant_idx",
+      ],
+      tables: ["cg_idempotency_record"],
+      functions: ["cg_prune_expired_idempotency_records"],
+      triggers: [],
+      policies: [
+        "cg_idempotency_record.idempotency_record_select_own_tenant",
+        "cg_idempotency_record.idempotency_record_insert_tenant_admin",
+        "cg_idempotency_record.idempotency_record_replace_expired",
+      ],
+      forcedRlsTables: ["cg_idempotency_record"],
+    },
+  },
+  {
+    file: "20261003000018_coregrid_v1_idempotency_privilege_revoke.sql",
+    mission:
+      "H3-000 battery-finding correction — restore the declared deny-by-default privilege posture on cg_idempotency_record (anon: zero; authenticated: exactly SELECT/INSERT/UPDATE) that 20261003000017 omitted while the project's ALTER DEFAULT PRIVILEGES grants broad client privileges on new public tables",
+    declared: {
+      columns: [],
+      indexes: [],
+      tables: [],
+      functions: [],
+      triggers: [],
+      policies: [],
+      // Privilege posture is not a catalog "object" presence can probe; the
+      // applied-state signature IS the privilege grant set, probed from
+      // information_schema.table_privileges (the battery's privileges stage is
+      // the independent live verifier). A pure REVOKE+reGRANT has no declarable
+      // catalog object; this posture probe is what makes the migration's
+      // applied state checkable at all.
+      privilegePostures: [
+        {
+          table: "cg_idempotency_record",
+          anon: [],
+          authenticated: ["SELECT", "INSERT", "UPDATE"],
+          service_role: ["ALL"],
+        },
+      ],
+    },
+  },
 ];
 
 const report = (line, log) => {
@@ -337,7 +407,8 @@ const declaredObjectCount = (declared) =>
   declared.functions.length +
   declared.triggers.length +
   (declared.policies?.length ?? 0) +
-  (declared.zeroPolicyTables?.length ?? 0);
+  (declared.zeroPolicyTables?.length ?? 0) +
+  (declared.privilegePostures?.length ?? 0);
 
 /**
  * Read-only plan construction: binds every declared migration to its on-disk
@@ -399,6 +470,7 @@ function printPlan(plan, reportLine) {
       for (const tg of m.declared.triggers) reportLine(`  trigger:${tg}`);
       for (const p of m.declared.policies ?? []) reportLine(`  policy:${p}`);
       for (const z of m.declared.zeroPolicyTables ?? []) reportLine(`  zero-policy:${z}`);
+      for (const pp of m.declared.privilegePostures ?? []) reportLine(`  privilege-posture:${pp.table}`);
     }
   }
 }
@@ -422,12 +494,23 @@ function writeArtifact(name, content, reportLine) {
 
 // ── catalog presence probes (read-only) ─────────────────────────────────────
 async function probeCatalog() {
-  const state = { tables: new Set(), columns: new Map(), functions: new Set(), triggers: new Set(), indexes: new Set(), policies: new Set() };
+  const state = { tables: new Set(), columns: new Map(), functions: new Set(), triggers: new Set(), indexes: new Set(), policies: new Set(), privileges: new Map() };
   const rows = await query(`SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname='public'`);
   for (const r of rows) state.tables.add(r.tablename);
 
   const polRows = await query(`SELECT tablename, policyname FROM pg_catalog.pg_policies WHERE schemaname='public'`);
   for (const r of polRows) state.policies.add(`${r.tablename}.${r.policyname}`);
+
+  // Table privileges per grantee (the applied-state signature of a pure
+  // privilege-correction migration): key `table|grantee` -> Set(privilege_type).
+  const privRows = await query(
+    `SELECT table_name, grantee, privilege_type FROM information_schema.table_privileges WHERE table_schema='public'`,
+  );
+  for (const r of privRows) {
+    const key = `${r.table_name}|${r.grantee}`;
+    if (!state.privileges.has(key)) state.privileges.set(key, new Set());
+    state.privileges.get(key).add(r.privilege_type);
+  }
 
   const fnRows = await query(
     `SELECT DISTINCT proname FROM pg_catalog.pg_proc WHERE pronamespace='public'::regnamespace`,
@@ -469,6 +552,36 @@ function presenceFor(migration, catalog) {
   for (const zt of migration.declared.zeroPolicyTables ?? []) {
     const hasPolicy = [...catalog.policies].some((p) => p.startsWith(`${zt}.`));
     (hasPolicy ? missing : present).push(`zero-policy:${zt}`);
+  }
+  // Declared privilege postures (privilege-correction migrations): the catalog
+  // grants must match the declared grant set EXACTLY per role — all-of AND
+  // none-of — because the posture is least privilege, not "at least these".
+  for (const pp of migration.declared.privilegePostures ?? []) {
+    const ALL = ["DELETE", "INSERT", "REFERENCES", "SELECT", "TRIGGER", "TRUNCATE", "UPDATE"];
+    const declared = pp.service_role?.includes("ALL")
+      ? ALL
+      : Object.entries({ anon: pp.anon ?? [], authenticated: pp.authenticated ?? [] }).flatMap(([role, privs]) => privs);
+    const declaredAnon = pp.anon ?? [];
+    const declaredAuth = pp.authenticated ?? [];
+    const declaredService = pp.service_role?.includes("ALL") ? ALL : (pp.service_role ?? []);
+    const granteeDeclared = [
+      ["anon", new Set(declaredAnon)],
+      ["authenticated", new Set(declaredAuth)],
+      ["service_role", new Set(declaredService)],
+    ];
+    let postureOk = true;
+    const detail = [];
+    for (const [grantee, expected] of granteeDeclared) {
+      const actual = catalog.privileges.get(`${pp.table}|${grantee}`) ?? new Set();
+      const expectedSet = new Set(expected);
+      for (const p of expectedSet) {
+        if (!actual.has(p)) { postureOk = false; detail.push(`missing ${grantee}:${p}`); }
+      }
+      for (const p of actual) {
+        if (!expectedSet.has(p)) { postureOk = false; detail.push(`unexpected ${grantee}:${p}`); }
+      }
+    }
+    (postureOk ? present : missing).push(`privilege-posture:${pp.table}${postureOk ? "" : ` (${detail.slice(0, 6).join(", ")})`}`);
   }
   return { present, missing };
 }
@@ -686,16 +799,13 @@ const declaredTables = MIGRATIONS.flatMap((m) => m.declared.tables);
 // (normalization migrations): probed as zero-policy regardless of declared.tables.
 const zeroPolicyWatchTables = MIGRATIONS.flatMap((m) => m.declared.zeroPolicyTables ?? []);
 // Policy-backed tables: RLS FORCED on, carrying exactly the declared
-// neutral-primitive policies (no more, no less) authored across the policy
-// migrations (20261002000013 exemplar + 20261002000015 substrate layer).
+// neutral-primitive policies (no more, no less). DERIVED from the declared
+// policies across the policy migrations (20261002000013 exemplar +
+// 20261002000015 substrate layer + the H3-wave 2026100300001[67] substrates):
+// any table with a declared policy is policy-backed, so new policy-backed
+// migrations classify themselves instead of requiring this list to grow.
 const policyBackedTables = [
-  "cg_role_assignment",
-  "cg_role_grant",
-  "cg_org_membership",
-  "cg_reconciliation_input",
-  "cg_event_route_subscription",
-  "cg_evidence_record",
-  "cg_usage_attribution_bucket",
+  ...new Set(MIGRATIONS.flatMap((m) => m.declared.policies ?? []).map((p) => p.split(".")[0])),
 ].map((table) => ({
   table,
   expectedPolicies: MIGRATIONS.flatMap((m) => m.declared.policies ?? [])

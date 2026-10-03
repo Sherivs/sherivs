@@ -559,12 +559,30 @@ export function resolveProbeStage(table) {
 
 // Substitute §4.4 probe-recipe placeholders — exact-match on string values
 // only, applied recursively through rows/payloads.
+//
+// Template form (additive, H3-wave): a value of the shape
+// {"$template": "<text>"} substitutes every canonical placeholder occurrence
+// INSIDE the text (e.g. "$TENANT_A/evidence/probe.txt"). Exact-match strings
+// and all other shapes are untouched — a plain "prefix-$TENANT_A" string still
+// stays literal, exactly as before. This exists because derived CHECK
+// constraints (e.g. cg_file_object.content_ref = tenant_id || '/' || purpose
+// || '/' || filename) cannot be expressed with exact-match placeholders.
 export const PROBE_PLACEHOLDERS = ["$TENANT_A", "$TENANT_B", "$ACTOR_A_ID", "$ACTOR_B_ID", "$ACTOR_C_ID", "$RUN_ID"];
+
+export function substituteTemplateText(text, ctx) {
+  return PROBE_PLACEHOLDERS.reduce(
+    (out, token) => out.split(token).join(Object.hasOwn(ctx, token) ? ctx[token] : token),
+    text,
+  );
+}
 
 export function substituteProbeValue(value, ctx) {
   if (typeof value === "string") return Object.hasOwn(ctx, value) ? ctx[value] : value;
   if (Array.isArray(value)) return value.map((v) => substituteProbeValue(v, ctx));
   if (value !== null && typeof value === "object") {
+    if (Object.keys(value).length === 1 && Object.hasOwn(value, "$template") && typeof value.$template === "string") {
+      return substituteTemplateText(value.$template, ctx);
+    }
     return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, substituteProbeValue(v, ctx)]));
   }
   return value;

@@ -5,8 +5,8 @@
   "projectRef": "nwrflbpbhyiqdptmlccm",
   "transport": "supabase-management-api-database-query",
   "exclusiveAccess": "serialized — one canonical operation at a time (campaign canonical lock held by TEAM 3)",
-  "executedAt": "2026-10-02T21:40:13.097Z",
-  "completedAt": "2026-10-02T21:40:26.433Z",
+  "executedAt": "2026-10-03T04:36:30.079Z",
+  "completedAt": "2026-10-03T04:36:41.062Z",
   "declaredVsApplied": [
     {
       "file": "20261002000005_coregrid_v1_reconciliation.sql",
@@ -110,22 +110,55 @@
     {
       "file": "20261002000014_coregrid_v2_transport_buses_rls.sql",
       "mission": "H2-03 — transport_buses RLS normalization to the zero-policy deny-by-default posture (drops every legacy permissive policy; revokes client-role privileges; service_role parity)",
-      "state": "APPLIED_AND_VERIFIED",
+      "state": "ALREADY_APPLIED",
       "checksum": "a1e3bcc3b0f1436de6c49d4ccd601cd894fdd10bdae5f25d692b02f37be83517",
       "rollbackChecksum": "cd8ccc673c2f525ae0dfce7100f9b35e68870e7485b9f1544dbfe10721c84f14",
       "declaredObjectCount": 1,
-      "elapsedMs": 1097,
-      "evidence": null,
+      "elapsedMs": null,
+      "evidence": "all 1 declared objects present (pre-flight catalog probe)",
       "error": null
     },
     {
       "file": "20261002000015_coregrid_v1_substrate_policies.sql",
       "mission": "H2-04 — batch-A/B substrate policy layer: FORCE RLS + neutral-primitive tenant-scoped SELECT/INSERT policies on the four retained client-facing substrate tables",
-      "state": "APPLIED_AND_VERIFIED",
+      "state": "ALREADY_APPLIED",
       "checksum": "e38c8e100c3c39ad745d01d8751ae838b55f2a64c06b7fabec38e70680d298d5",
       "rollbackChecksum": "cc7281ef52a309d203c3ede0b31bfb9318ae213dc3ec5553a942d1cfb6002926",
       "declaredObjectCount": 8,
-      "elapsedMs": 882,
+      "elapsedMs": null,
+      "evidence": "all 8 declared objects present (pre-flight catalog probe)",
+      "error": null
+    },
+    {
+      "file": "20261003000016_coregrid_v1_file_substrate.sql",
+      "mission": "H3-027 (L-T-011) — file-plane descriptor substrate: cg_file_object with FORCE RLS, tenant-scoped policies on the J-005 neutral primitives, actor self-derivation pin, no DELETE (tombstone law)",
+      "state": "ALREADY_APPLIED",
+      "checksum": "60d515a6610cf1d4bfbd1365c06c98211a434bbc547b0fa9f2f863f97bae92a4",
+      "rollbackChecksum": "5276a3f8827b6fea5a8fea7688420859dcec11bcef57aeba1a8865bd28011c9c",
+      "declaredObjectCount": 7,
+      "elapsedMs": null,
+      "evidence": "all 7 declared objects present (pre-flight catalog probe)",
+      "error": null
+    },
+    {
+      "file": "20261003000017_coregrid_v1_idempotency_substrate.sql",
+      "mission": "H3-028 (L-T-012 / J-030) — durable exactly-once idempotency substrate: cg_idempotency_record with FORCE RLS, tenant-scoped policies, replace-expired-only UPDATE, service-role-only SECURITY DEFINER prune",
+      "state": "ALREADY_APPLIED",
+      "checksum": "1165260c38c88f4726fc56a824ad5b6097001daabbe261bdc0b80b31035cb328",
+      "rollbackChecksum": "1539075307609f0a45ed904f7d0ff6a1c143bee920137d75d87ec2c7a15b6a6b",
+      "declaredObjectCount": 7,
+      "elapsedMs": null,
+      "evidence": "all 7 declared objects present (pre-flight catalog probe)",
+      "error": null
+    },
+    {
+      "file": "20261003000018_coregrid_v1_idempotency_privilege_revoke.sql",
+      "mission": "H3-000 battery-finding correction — restore the declared deny-by-default privilege posture on cg_idempotency_record (anon: zero; authenticated: exactly SELECT/INSERT/UPDATE) that 20261003000017 omitted while the project's ALTER DEFAULT PRIVILEGES grants broad client privileges on new public tables",
+      "state": "APPLIED_AND_VERIFIED",
+      "checksum": "242630a6c791eb423758161fadce185d9b9c3434f2fcfd1966bd4dbc9d3edecc",
+      "rollbackChecksum": "68a350f05aefbf47567ddf93203c90b2f9df5e17f525fde7697a786b33413e24",
+      "declaredObjectCount": 1,
+      "elapsedMs": 687,
       "evidence": null,
       "error": null
     }
@@ -304,6 +337,30 @@
       "ok": true
     },
     {
+      "table": "cg_file_object",
+      "posture": "policy-backed (J-005/J-006 tenant-scoped)",
+      "rlsEnabled": true,
+      "rlsForced": true,
+      "policies": [
+        "file_object_insert_own_tenant",
+        "file_object_select_own_tenant",
+        "file_object_update_own_tenant"
+      ],
+      "ok": true
+    },
+    {
+      "table": "cg_idempotency_record",
+      "posture": "policy-backed (J-005/J-006 tenant-scoped)",
+      "rlsEnabled": true,
+      "rlsForced": true,
+      "policies": [
+        "idempotency_record_insert_tenant_admin",
+        "idempotency_record_replace_expired",
+        "idempotency_record_select_own_tenant"
+      ],
+      "ok": true
+    },
+    {
       "table": "transport_buses",
       "posture": "zero-policy (deny-by-default)",
       "rlsEnabled": true,
@@ -401,6 +458,21 @@
     },
     {
       "file": "20261002000015_coregrid_v1_substrate_policies.sql",
+      "verified": true,
+      "missingCount": 0
+    },
+    {
+      "file": "20261003000016_coregrid_v1_file_substrate.sql",
+      "verified": true,
+      "missingCount": 0
+    },
+    {
+      "file": "20261003000017_coregrid_v1_idempotency_substrate.sql",
+      "verified": true,
+      "missingCount": 0
+    },
+    {
+      "file": "20261003000018_coregrid_v1_idempotency_privilege_revoke.sql",
       "verified": true,
       "missingCount": 0
     }
