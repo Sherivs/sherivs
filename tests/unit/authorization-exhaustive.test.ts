@@ -20,6 +20,10 @@
  * `authorization-exhaustive.DEFECTS.md`.
  */
 import { describe, expect, it } from "vitest";
+// The Scholar runtime contributes its roles/relationship types/gate bindings
+// through registration; importing the adapter is the registration path.
+import "@/lib/domain-config/scholar-authorization";
+import { registeredDomainIds, registeredDomainRoles } from "@/lib/rbac/domain-contribution";
 import {
   authorize,
   COREGRID_ROLES,
@@ -36,6 +40,7 @@ import {
   type PolicySet,
 } from "@/lib/authorization";
 import {
+  domainPermissionResource,
   IDENTITY_LIFECYCLE_STATES,
   RELATIONSHIP_TYPES,
   identityId,
@@ -114,8 +119,15 @@ function req(
   );
 }
 
-function opts(overrides: Partial<AuthorizeOptions> = {}): AuthorizeOptions {
-  return { role: "read_only", ...overrides };
+/**
+ * Options builder. The role may be any registered role name — a neutral core
+ * role or a domain-contributed one (registered by the adapter import above) —
+ * so the decision matrix exercises both vocabularies through the same engine.
+ */
+function opts(
+  overrides: Omit<Partial<AuthorizeOptions>, "role"> & { role?: string } = {},
+): AuthorizeOptions {
+  return { role: "read_only", ...overrides } as AuthorizeOptions;
 }
 
 /** Cast an arbitrary string into an engine role/resource/action for fail-closed probes. */
@@ -124,98 +136,115 @@ function unsafe<T>(value: string): T {
 }
 
 /* ─────────────────────────────────────────────────────────────
- * Role → grant mirror table (RBAC layer, transcribed from
- * authorization.ts ROLE_PERMISSIONS; the engine does not export it).
+ * Role → grant mirror table (RBAC layer): neutral core roles are
+ * transcribed from `rbac/neutral-roles.ts`; the Scholar runtime roles are
+ * transcribed from the domain contribution registered by the adapter import
+ * (the engine resolves both through the same registry).
  * ────────────────────────────────────────────────────────────*/
 
-const ROLE_GRANTS: Record<CoreGridRole, readonly (readonly [PermissionResource, PermissionAction])[]> =
-  {
-    coregrid_owner: [
-      ["school", "manage"],
-      ["identity", "manage"],
-      ["settings", "manage"],
-      ["audit_log", "read"],
-    ],
-    platform_admin: [
-      ["school", "manage"],
-      ["identity", "manage"],
-      ["settings", "manage"],
-    ],
-    engineer: [
-      ["settings", "read"],
-      ["audit_log", "read"],
-    ],
-    senior_engineer: [
-      ["settings", "manage"],
-      ["audit_log", "read"],
-    ],
-    support_engineer: [
-      ["user", "read"],
-      ["identity", "read"],
-    ],
-    security_engineer: [
-      ["identity", "read"],
-      ["audit_log", "read"],
-      ["session", "read"],
-    ],
-    sre: [
-      ["settings", "read"],
-      ["audit_log", "read"],
-    ],
-    data_engineer: [["analytics", "read"]],
-    ai_engineer: [["ai_agent", "manage"]],
-    ai_operator: [
-      ["ai_agent", "read"],
-      ["ai_agent", "execute"],
-    ],
-    product: [["analytics", "read"]],
-    finance: [
-      ["payments", "read"],
-      ["fees", "read"],
-    ],
-    compliance: [
-      ["audit_log", "read"],
-      ["identity", "read"],
-    ],
-    auditor: [["audit_log", "read"]],
-    support: [["user", "read"]],
-    read_only: [],
-    school_super_admin: [
-      ["school", "manage"],
-      ["user", "manage"],
-      ["identity", "manage"],
-      ["settings", "manage"],
-    ],
-    school_admin: [
-      ["school", "update"],
-      ["user", "manage"],
-      ["settings", "update"],
-    ],
-    campus_admin: [
-      ["campus", "manage"],
-      ["user", "manage"],
-    ],
-    principal: [
-      ["school", "read"],
-      ["teacher", "read"],
-      ["student", "read"],
-      ["attendance", "read"],
-      ["grades", "read"],
-    ],
-    teacher: [
-      ["class", "read"],
-      ["student", "read"],
-      ["attendance", "update"],
-      ["grades", "update"],
-    ],
-    bursar: [
-      ["fees", "manage"],
-      ["payments", "manage"],
-    ],
-    parent: [["student", "read"]],
-    student: [["student", "read"]],
-    driver: [["student", "read"]],
-  };
+const ROLE_GRANTS: Record<string, readonly (readonly [string, PermissionAction])[]> = {
+  coregrid_owner: [
+    ["tenant", "manage"],
+    ["identity", "manage"],
+    ["settings", "manage"],
+    ["audit_log", "read"],
+  ],
+  platform_admin: [
+    ["tenant", "manage"],
+    ["identity", "manage"],
+    ["settings", "manage"],
+  ],
+  engineer: [
+    ["settings", "read"],
+    ["audit_log", "read"],
+  ],
+  senior_engineer: [
+    ["settings", "manage"],
+    ["audit_log", "read"],
+  ],
+  support_engineer: [
+    ["user", "read"],
+    ["identity", "read"],
+  ],
+  security_engineer: [
+    ["identity", "read"],
+    ["audit_log", "read"],
+    ["session", "read"],
+  ],
+  sre: [
+    ["settings", "read"],
+    ["audit_log", "read"],
+  ],
+  data_engineer: [["analytics", "read"]],
+  ai_engineer: [["ai_agent", "manage"]],
+  ai_operator: [
+    ["ai_agent", "read"],
+    ["ai_agent", "execute"],
+  ],
+  product: [["analytics", "read"]],
+  finance: [
+    ["payments", "read"],
+    ["billing", "read"],
+  ],
+  compliance: [
+    ["audit_log", "read"],
+    ["identity", "read"],
+  ],
+  auditor: [["audit_log", "read"]],
+  support: [["user", "read"]],
+  read_only: [],
+  org_owner: [
+    ["tenant", "manage"],
+    ["identity", "manage"],
+    ["settings", "manage"],
+    ["audit_log", "read"],
+  ],
+  org_admin: [
+    ["tenant", "update"],
+    ["user", "manage"],
+    ["settings", "update"],
+    ["identity", "read"],
+  ],
+  // Baseline tenant participant: authority flows only through explicit
+  // delegation (extraPermissions) or an owns/manages relationship.
+  member: [],
+  // Scholar runtime roles (registered by the domain adapter import above).
+  school_super_admin: [
+    ["school", "manage"],
+    ["user", "manage"],
+    ["identity", "manage"],
+    ["settings", "manage"],
+  ],
+  school_admin: [
+    ["school", "update"],
+    ["user", "manage"],
+    ["settings", "update"],
+  ],
+  campus_admin: [
+    ["campus", "manage"],
+    ["user", "manage"],
+  ],
+  principal: [
+    ["school", "read"],
+    ["teacher", "read"],
+    ["student", "read"],
+    ["attendance", "read"],
+    ["grades", "read"],
+  ],
+  teacher: [
+    ["class", "read"],
+    ["student", "read"],
+    ["attendance", "update"],
+    ["grades", "update"],
+  ],
+  bursar: [
+    ["fees", "manage"],
+    ["payments", "manage"],
+  ],
+  parent: [["student", "read"]],
+  student: [["student", "read"]],
+  driver: [["student", "read"]],
+};
 
 /* ─────────────────────────────────────────────────────────────
  * Independent ALLOW-oracle used by the property/fuzz tests.
@@ -264,8 +293,7 @@ function oracleAllows(request: AuthorizationRequest, options: AuthorizeOptions):
   }
 
   // Invariant 12: an agent holds no role-derived authority.
-  const roleGrants =
-    options.isAgent === true ? [] : (ROLE_GRANTS[options.role] ?? []);
+  const roleGrants = options.isAgent === true ? [] : (ROLE_GRANTS[options.role] ?? []);
   const rbacMatch = roleGrants.some(
     ([resource, action]) =>
       resource === request.permission.resource && action === request.permission.action,
@@ -289,9 +317,7 @@ function oracleAllows(request: AuthorizationRequest, options: AuthorizeOptions):
       const expiryMs = Date.parse(r.expiresAt);
       if (Number.isNaN(expiryMs) || expiryMs <= nowMs) return false;
     }
-    return (
-      r.targetId === request.permission.scope && (r.type === "owns" || r.type === "manages")
-    );
+    return r.targetId === request.permission.scope && (r.type === "owns" || r.type === "manages");
   });
   return rebacMatch;
 }
@@ -301,12 +327,18 @@ function oracleAllows(request: AuthorizationRequest, options: AuthorizeOptions):
  * ────────────────────────────────────────────────────────────*/
 
 describe("Decision matrix: RBAC allow/deny per role class", () => {
-  it("declares the full role index", () => {
-    expect(COREGRID_ROLES).toHaveLength(25);
+  it("declares the full role index (neutral core + registered domain roles)", () => {
+    // The neutral core index is closed: 19 domain-neutral roles, zero domain
+    // vocabulary. Domain roles exist only through registration.
+    expect(COREGRID_ROLES).toHaveLength(19);
     expect(new Set(COREGRID_ROLES).size).toBe(COREGRID_ROLES.length);
+    // The Scholar runtime contributes its 9 roles through registration; they
+    // resolve through the same engine but never enter the core index.
+    expect(registeredDomainRoles()).toHaveLength(9);
+    expect(registeredDomainIds()).toEqual(["scholar"]);
   });
 
-  for (const role of COREGRID_ROLES) {
+  for (const role of [...COREGRID_ROLES, ...registeredDomainRoles()]) {
     describe(`role ${role}`, () => {
       const grants = ROLE_GRANTS[role];
 
@@ -330,7 +362,7 @@ describe("Decision matrix: RBAC allow/deny per role class", () => {
       it("DENYs an ungranted resource:action (deny case for every modeled class)", () => {
         // Pick a probe this role genuinely lacks so every role gets a true
         // deny case (bursar does hold payments:manage).
-        const probes: readonly (readonly [PermissionResource, PermissionAction])[] = [
+        const probes: readonly (readonly [string, PermissionAction])[] = [
           ["payments", "manage"],
           ["school", "delete"],
           ["student", "delete"],
@@ -362,7 +394,10 @@ describe("Decision matrix: scope classes for explicit grants (ABAC-free RBAC sco
   it("ALLOWs an extra permission whose scope matches the request scope", () => {
     const result = authorize(
       req("fees", "manage", OBJECT_A),
-      opts({ role: "teacher", extraPermissions: [permission("fees", "manage", OBJECT_A)] }),
+      opts({
+        role: "teacher",
+        extraPermissions: [permission(domainPermissionResource("fees"), "manage", OBJECT_A)],
+      }),
     );
     expect(result.decision).toBe("ALLOW");
   });
@@ -370,7 +405,10 @@ describe("Decision matrix: scope classes for explicit grants (ABAC-free RBAC sco
   it("DENYs an extra permission whose scope differs from the request scope", () => {
     const result = authorize(
       req("fees", "manage", OBJECT_B),
-      opts({ role: "teacher", extraPermissions: [permission("fees", "manage", OBJECT_A)] }),
+      opts({
+        role: "teacher",
+        extraPermissions: [permission(domainPermissionResource("fees"), "manage", OBJECT_A)],
+      }),
     );
     expect(result.decision).toBe("DENY");
   });
@@ -378,7 +416,10 @@ describe("Decision matrix: scope classes for explicit grants (ABAC-free RBAC sco
   it("a scope-null extra permission matches any scope within the identity's tenant", () => {
     const result = authorize(
       req("fees", "manage", OBJECT_A),
-      opts({ role: "teacher", extraPermissions: [permission("fees", "manage", null)] }),
+      opts({
+        role: "teacher",
+        extraPermissions: [permission(domainPermissionResource("fees"), "manage", null)],
+      }),
     );
     expect(result.decision).toBe("ALLOW");
   });
@@ -386,7 +427,10 @@ describe("Decision matrix: scope classes for explicit grants (ABAC-free RBAC sco
   it("an extra permission on the right resource but wrong action is not a match", () => {
     const result = authorize(
       req("fees", "manage", OBJECT_A),
-      opts({ role: "teacher", extraPermissions: [permission("fees", "read", OBJECT_A)] }),
+      opts({
+        role: "teacher",
+        extraPermissions: [permission(domainPermissionResource("fees"), "read", OBJECT_A)],
+      }),
     );
     expect(result.decision).toBe("DENY");
   });
@@ -778,7 +822,10 @@ describe("Deny-by-default: unknown and malformed inputs fail closed", () => {
     for (const scope of malformedScopes) {
       const withoutGrant = authorize(
         req("fees", "manage", scope),
-        opts({ role: "read_only", extraPermissions: [permission("fees", "manage", OBJECT_A)] }),
+        opts({
+          role: "read_only",
+          extraPermissions: [permission(domainPermissionResource("fees"), "manage", OBJECT_A)],
+        }),
       );
       expect(withoutGrant.decision, `malformed scope ${JSON.stringify(scope)}`).toBe("DENY");
     }
@@ -815,7 +862,10 @@ describe("Cross-tenant combinations", () => {
   it("DENYs a scoped grant requested against a foreign scope", () => {
     const result = authorize(
       req("fees", "manage", OBJECT_B),
-      opts({ role: "read_only", extraPermissions: [permission("fees", "manage", OBJECT_A)] }),
+      opts({
+        role: "read_only",
+        extraPermissions: [permission(domainPermissionResource("fees"), "manage", OBJECT_A)],
+      }),
     );
     expect(result.decision).toBe("DENY");
   });
@@ -867,7 +917,10 @@ describe("Revocation and expiry authority classes", () => {
 
   it("an unexpired relationship remains usable", () => {
     const live = rel("owns", OBJECT_A, { expiresAt: "2099-01-01T00:00:00.000Z" });
-    const result = authorize(req("school", "update", OBJECT_A, [live]), opts({ role: "read_only" }));
+    const result = authorize(
+      req("school", "update", OBJECT_A, [live]),
+      opts({ role: "read_only" }),
+    );
     expect(result.decision).toBe("ALLOW");
   });
 
@@ -876,7 +929,10 @@ describe("Revocation and expiry authority classes", () => {
     // resolved, the ReBAC grant treats the relationship as inactive and the
     // request falls through to the deny path.
     const expired = rel("owns", OBJECT_A, { expiresAt: "2020-01-01T00:00:00.000Z" });
-    const result = authorize(req("school", "update", OBJECT_A, [expired]), opts({ role: "read_only" }));
+    const result = authorize(
+      req("school", "update", OBJECT_A, [expired]),
+      opts({ role: "read_only" }),
+    );
     expect(result.decision).toBe("DENY");
   });
 
@@ -935,8 +991,11 @@ describe("Property tests: no ALLOW outside explicitly-allowed classes (seeded fu
     };
   }
 
-  const ROLES: readonly CoreGridRole[] = [
+  const ROLES: readonly string[] = [
     ...COREGRID_ROLES,
+    // Registered domain roles are fuzzed too: they must behave exactly like
+    // core roles under the deny-by-default oracle.
+    ...registeredDomainRoles(),
     unsafe<CoreGridRole>("root"),
     unsafe<CoreGridRole>(""),
     unsafe<CoreGridRole>("teacher "),
@@ -960,7 +1019,13 @@ describe("Property tests: no ALLOW outside explicitly-allowed classes (seeded fu
     unsafe<PermissionAction>("purge"),
     unsafe<PermissionAction>(""),
   ];
-  const SCOPES: readonly (string | null)[] = [null, OBJECT_A, OBJECT_B, "", "tenant-1:object-1:deep"];
+  const SCOPES: readonly (string | null)[] = [
+    null,
+    OBJECT_A,
+    OBJECT_B,
+    "",
+    "tenant-1:object-1:deep",
+  ];
   const LIFECYCLES: readonly IdentityLifecycleState[] = [...IDENTITY_LIFECYCLE_STATES];
   const RISK = [undefined, 0, 0.5, 0.8, 0.9] as const;
   const DEVICE_TRUST = [undefined, 0.1, 0.3, 0.9] as const;
@@ -1008,7 +1073,13 @@ describe("Property tests: no ALLOW outside explicitly-allowed classes (seeded fu
               {
                 id: `fuzz-rule-${i}`,
                 applies: (r) => r.permission.resource === resource,
-                decision: pick(rand, ["ALLOW", "DENY", "REDACT", "ESCALATE", "REQUIRE_APPROVAL"] as const),
+                decision: pick(rand, [
+                  "ALLOW",
+                  "DENY",
+                  "REDACT",
+                  "ESCALATE",
+                  "REQUIRE_APPROVAL",
+                ] as const),
                 reason: "fuzz policy",
               },
             ],
@@ -1019,12 +1090,18 @@ describe("Property tests: no ALLOW outside explicitly-allowed classes (seeded fu
       const options = opts({
         role,
         ...(useExtra
-          ? { extraPermissions: [permission("fees", "manage", pick(rand, [OBJECT_A, OBJECT_B, null] as const))] }
+          ? {
+              extraPermissions: [
+                permission(
+                  domainPermissionResource("fees"),
+                  "manage",
+                  pick(rand, [OBJECT_A, OBJECT_B, null] as const),
+                ),
+              ],
+            }
           : {}),
         ...(policySet ? { policySet } : {}),
-        ...(risk !== undefined || deviceTrust !== undefined
-          ? { abac: { risk, deviceTrust } }
-          : {}),
+        ...(risk !== undefined || deviceTrust !== undefined ? { abac: { risk, deviceTrust } } : {}),
       });
 
       const tenantId = pick(rand, [TENANT_A, TENANT_B] as const);
@@ -1074,7 +1151,10 @@ describe("Property tests: no ALLOW outside explicitly-allowed classes (seeded fu
           {
             id: `p${i}`,
             applies: () => rand() < 0.5,
-            decision: pick(rand, DECISIONS.filter((d) => d !== "ALLOW")),
+            decision: pick(
+              rand,
+              DECISIONS.filter((d) => d !== "ALLOW"),
+            ),
             reason: "non-allow policy",
           },
         ],
@@ -1091,9 +1171,9 @@ describe("Property tests: no ALLOW outside explicitly-allowed classes (seeded fu
       if (result.decision === "ALLOW") {
         expect(oracleAllows).toBeDefined();
         const oracleOptions = opts({ role: "teacher", abac: { risk: 0 } });
-        expect(oracleAllows(req("student", "read", OBJECT_A, [rel("owns", OBJECT_A)]), oracleOptions)).toBe(
-          true,
-        );
+        expect(
+          oracleAllows(req("student", "read", OBJECT_A, [rel("owns", OBJECT_A)]), oracleOptions),
+        ).toBe(true);
       }
     }
   });

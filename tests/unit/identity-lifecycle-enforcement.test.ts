@@ -29,6 +29,7 @@ import {
   canTransitionCredential,
   canTransitionIdentity,
   CREDENTIAL_STATUS_TRANSITIONS,
+  domainPermissionResource,
   IDENTITY_LIFECYCLE_STATES,
   IDENTITY_LIFECYCLE_TRANSITIONS,
   isAgentGoverned,
@@ -196,7 +197,9 @@ describe("Lifecycle state enumeration (from the identity modules)", () => {
       "reviewed",
       "retired",
     ]);
-    const granted = [{ resource: "student", action: "read", scope: null }] as const;
+    const granted = [
+      { resource: domainPermissionResource("student"), action: "read", scope: null },
+    ] as const;
     for (const state of AGENT_LIFECYCLE_STATES) {
       const expected = state === "deployed" || state === "monitored";
       expect(

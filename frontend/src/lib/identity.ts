@@ -198,34 +198,94 @@ export interface IdentitySession {
  * — relationships are first-class objects.
  * ────────────────────────────────────────────────────────────*/
 
-export type RelationshipType =
-  | "member_of" // user -> school / campus
-  | "employed_by" // teacher/staff -> school
-  | "enrolled_in" // student -> class
-  | "parent_of" // parent -> student
-  | "teaches" // teacher -> class
+/**
+ * The CORE relationship vocabulary — domain-neutral, closed at the platform
+ * layer. Domain-specific relationship types (a runtime's own ontology) are
+ * never declared here: a domain contributes them at runtime through
+ * `registerDomainRelationshipTypes` (the DomainDefinition registration
+ * pattern — see `domain-config/`), and they resolve through the same
+ * `RELATIONSHIP_TYPES` registry once registered.
+ */
+export type CoreRelationshipType =
+  | "member_of" // participant -> tenant / organizational unit
+  | "employed_by" // workforce member -> tenant
   | "owns" // owner -> resource
-  | "manages" // admin -> resource
+  | "manages" // administrator -> resource
   | "agent_for" // AI agent -> owner
   | "linked_to" // external identity linking
   | "assigned_to" // device -> location / person
-  | "guardian_of" // guardian -> student
-  | "delegated_to"; // delegation (principal A -> delegate B)
+  | "delegated_to"; // delegation (party A -> delegate B)
 
-export const RELATIONSHIP_TYPES: readonly RelationshipType[] = [
+export const CORE_RELATIONSHIP_TYPES: readonly CoreRelationshipType[] = [
   "member_of",
   "employed_by",
-  "enrolled_in",
-  "parent_of",
-  "teaches",
   "owns",
   "manages",
   "agent_for",
   "linked_to",
   "assigned_to",
-  "guardian_of",
   "delegated_to",
 ] as const;
+
+/**
+ * Domain-contributed relationship types. The core union above is closed and
+ * neutral; a domain's own types enter the vocabulary ONLY through
+ * `registerDomainRelationshipTypes`, which validates fail-closed (shape,
+ * core-shadowing and duplicate checks) before the type resolves anywhere.
+ * Direction follows RULING-4: domains contribute vocabulary; the core never
+ * learns a domain term by declaration.
+ */
+export type DomainRelationshipType = string;
+
+export type RelationshipType = CoreRelationshipType | DomainRelationshipType;
+
+/**
+ * Live relationship-type registry: the core types plus every type registered
+ * by a domain contribution. Typed `readonly` for consumers; the registration
+ * function below is the only writer.
+ */
+const RELATIONSHIP_TYPE_REGISTRY: RelationshipType[] = [...CORE_RELATIONSHIP_TYPES];
+export const RELATIONSHIP_TYPES: readonly RelationshipType[] = RELATIONSHIP_TYPE_REGISTRY;
+
+const RELATIONSHIP_TYPE_NAME_PATTERN = /^[a-z][a-z0-9_]*$/;
+
+export type RelationshipTypeRegistrationResult =
+  { ok: true; added: readonly string[] } | { ok: false; errors: readonly string[] };
+
+/**
+ * Register domain-contributed relationship types (fail-closed, atomic):
+ * every name must be a well-formed domain-local name, must not shadow a core
+ * type, must not duplicate an already-registered type (core or contributed),
+ * and must not duplicate within the batch. Nothing is appended unless every
+ * name validates.
+ */
+export function registerDomainRelationshipTypes(
+  types: readonly string[],
+): RelationshipTypeRegistrationResult {
+  const errors: string[] = [];
+  const seen = new Set<string>();
+  for (const type of types) {
+    if (typeof type !== "string" || !RELATIONSHIP_TYPE_NAME_PATTERN.test(type)) {
+      errors.push(
+        `relationship type ${JSON.stringify(type)} is not a valid domain-local name (/^[a-z][a-z0-9_]*$/)`,
+      );
+      continue;
+    }
+    if ((CORE_RELATIONSHIP_TYPES as readonly string[]).includes(type)) {
+      errors.push(`relationship type "${type}" shadows a core relationship type`);
+      continue;
+    }
+    if (seen.has(type) || RELATIONSHIP_TYPE_REGISTRY.includes(type)) {
+      errors.push(`relationship type "${type}" is already registered`);
+      continue;
+    }
+    seen.add(type);
+  }
+  if (errors.length > 0) return { ok: false, errors };
+  const added = [...seen];
+  RELATIONSHIP_TYPE_REGISTRY.push(...added);
+  return { ok: true, added };
+}
 
 export interface IdentityRelationship {
   id: string;
@@ -249,36 +309,57 @@ export interface IdentityRelationship {
  * — combines RBAC + ABAC + ReBAC + policy.
  * ────────────────────────────────────────────────────────────*/
 
-export type PermissionResource =
-  | "school"
-  | "campus"
-  | "department"
-  | "class"
-  | "student"
-  | "teacher"
-  | "staff"
-  | "parent"
-  | "user"
+/**
+ * The CORE permission-resource vocabulary — domain-neutral, closed at the
+ * platform layer. A domain's own resources are never declared here: domain
+ * roles carry grants over domain resources through the domain contribution
+ * registry (`rbac/domain-contribution.ts`), constructed with
+ * `domainPermissionResource`.
+ */
+export type CorePermissionResource =
+  | "tenant"
   | "identity"
+  | "user"
   | "session"
   | "credential"
   | "device"
   | "ai_agent"
   | "service"
-  | "fees"
   | "payments"
-  | "grades"
-  | "attendance"
-  | "timetable"
-  | "discipline"
-  | "health"
-  | "hostel"
-  | "library"
-  | "communication"
-  | "notification"
-  | "audit_log"
+  | "billing"
   | "analytics"
-  | "settings";
+  | "audit_log"
+  | "settings"
+  | "communication"
+  | "notification";
+
+export const CORE_PERMISSION_RESOURCES: readonly CorePermissionResource[] = [
+  "tenant",
+  "identity",
+  "user",
+  "session",
+  "credential",
+  "device",
+  "ai_agent",
+  "service",
+  "payments",
+  "billing",
+  "analytics",
+  "audit_log",
+  "settings",
+  "communication",
+  "notification",
+] as const;
+
+/** A domain-contributed permission resource (validated at registration, never typed into the core union). */
+export type DomainPermissionResource = string & { readonly __brand: "DomainPermissionResource" };
+
+/** Mark a string as a domain-owned permission resource at the domain boundary. */
+export function domainPermissionResource(value: string): DomainPermissionResource {
+  return value as DomainPermissionResource;
+}
+
+export type PermissionResource = CorePermissionResource | DomainPermissionResource;
 
 export type PermissionAction =
   | "create"
@@ -296,7 +377,7 @@ export type PermissionAction =
   | "review";
 
 export interface Permission {
-  /** e.g. "school:student:create" */
+  /** e.g. "tenant:identity:manage" */
   resource: PermissionResource;
   action: PermissionAction;
   /** Optional tenant scope. */

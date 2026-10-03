@@ -1,11 +1,23 @@
 /**
  * CoreGrid — Phase 08 Security Engine: canonical runtime role gate.
  *
- * Single enforcement module for role-scoped server functions. Both supported
- * role kinds (school-admin and platform super-admin) evaluate through the
- * Phase 08 security gateway (`security-core.evaluateSecurityGateway`), which
- * remains the single decision authority: fail-closed by default (§I.5), never
- * a silent allow on an unknown signal (AT.9).
+ * Single enforcement module for role-scoped server functions. The supported
+ * role kinds evaluate through the Phase 08 security gateway
+ * (`security-core.evaluateSecurityGateway`), which remains the single
+ * decision authority: fail-closed by default (§I.5), never a silent allow on
+ * an unknown signal (AT.9).
+ *
+ * Neutrality (V1-006): the decision mechanics are the domain-neutral core in
+ * `rbac/role-gate.ts` — lifecycle/session enforcement and a binding-driven
+ * gate decision. An installed runtime contributes its gate kinds, database
+ * RPC primitives and role-set memberships through
+ * `registerRuntimeRoleGate`; resolution is registry-first. The constants
+ * marked LEGACY below are the frozen contribution of the FIRST INSTALLED
+ * RUNTIME (runtime-001), quarantined here so that consumers which import
+ * only this module keep byte-identical behavior; they exist purely as the
+ * fallback until every consumer resolves the runtime's own contribution (the
+ * registered binding is value-identical — see the runtime's adapter under
+ * `domain-config/`).
  *
  * Boundary:
  * - Phase 02 owns identity; this module consumes identity assertions.
@@ -21,81 +33,21 @@
  * non-active session (expired/revoked/terminated or an explicit false
  * validity assertion) DENY before the role is ever consulted. The pure
  * decision (`evaluateRoleGate`) is unit-testable without a database.
- * `assertRoleScope` adapts it to the Supabase RPC primitives used by the
- * legacy server functions (`is_school_admin`, `get_my_school_id`,
- * `is_super_admin`).
  */
 
-import { isIdentityUsable, type IdentityLifecycleState, type SessionStatus } from "./identity";
+import {
+  evaluateGateDecision,
+  resolveGateKindBinding,
+  resolveStaffRoleSet,
+} from "./rbac/role-gate";
+import type { RoleGateKindBinding } from "./rbac/role-gate";
+import { checkLifecycleSignals, type LifecycleSignals } from "./rbac/role-gate";
 import { evaluateSecurityGateway } from "./security-core";
 
-/* ─────────────────────────────────────────────────────────────
- * Additive lifecycle/session signals (shared contract)
- * ────────────────────────────────────────────────────────────*/
-
-/**
- * Identity lifecycle + session validity inputs every gate decision accepts.
- *
- * Opt-in contract: supplying any of these keys opts the call into
- * lifecycle-attested evaluation. Calls that supply none keep the historical
- * outcome shape exactly (byte-compatible with existing consumers); callers
- * that opt in and leave a signal out get an allow flagged with
- * `lifecycleUnverified: true`, so an unchecked gate can never be mistaken
- * for a verified one inside the new contract.
- */
-export interface LifecycleSignals {
-  /** Canonical Phase 02 lifecycle state of the acting identity. */
-  lifecycle?: IdentityLifecycleState | null;
-  /** Canonical session status when the caller holds the session record. */
-  sessionStatus?: SessionStatus | null;
-  /** Explicit session-validity assertion when no session record is available. */
-  sessionValid?: boolean;
-}
-
-export type LifecycleGateCheck =
-  | {
-      ok: true;
-      /** True when the opted-in call left lifecycle/session unverified. */
-      lifecycleUnverified: boolean;
-    }
-  | { ok: false; code: "lifecycle_denied" | "session_denied"; reason: string };
-
-const LIFECYCLE_REASONS = {
-  lifecycleDenied: "Forbidden: identity lifecycle does not permit execution",
-  sessionDenied: "Forbidden: session is expired or revoked",
-} as const;
-
-function hasLifecycleSignals(signals: LifecycleSignals): boolean {
-  return "lifecycle" in signals || "sessionStatus" in signals || "sessionValid" in signals;
-}
-
-/**
- * Evaluate the lifecycle/session part of a gate decision (fail closed).
- *
- * - A supplied lifecycle outside the usable set (`active`/`provisioned`,
- *   per `isIdentityUsable`) denies — including unknown values, which fail
- *   closed rather than being trusted.
- * - A supplied session status other than `active`, or an explicit
-   `sessionValid: false`, denies (expired/revoked/terminated).
- */
-export function checkLifecycleSignals(signals: LifecycleSignals): LifecycleGateCheck {
-  if (signals.lifecycle != null && !isIdentityUsable({ lifecycle: signals.lifecycle })) {
-    return { ok: false, code: "lifecycle_denied", reason: LIFECYCLE_REASONS.lifecycleDenied };
-  }
-  if (signals.sessionStatus != null && signals.sessionStatus !== "active") {
-    return { ok: false, code: "session_denied", reason: LIFECYCLE_REASONS.sessionDenied };
-  }
-  if (signals.sessionValid === false) {
-    return { ok: false, code: "session_denied", reason: LIFECYCLE_REASONS.sessionDenied };
-  }
-
-  const optedIn = hasLifecycleSignals(signals);
-  const sessionUnverified = signals.sessionStatus == null && signals.sessionValid == null;
-  return {
-    ok: true,
-    lifecycleUnverified: optedIn && (signals.lifecycle == null || sessionUnverified),
-  };
-}
+/* Re-exported from the neutral gate core: the shared lifecycle/session
+ * contract every gate decision accepts. */
+export { checkLifecycleSignals } from "./rbac/role-gate";
+export type { LifecycleGateCheck, LifecycleSignals } from "./rbac/role-gate";
 
 /* ─────────────────────────────────────────────────────────────
  * Pure decision contract
@@ -106,7 +58,7 @@ export type RoleGateKind = "school_admin" | "platform_super_admin";
 export interface RoleGateSignals extends LifecycleSignals {
   /** Result of the role RPC. Anything but `true` fails closed. */
   roleGranted?: boolean | null;
-  /** Resolved scope (school id for school_admin; unused for platform roles). */
+  /** Resolved scope for scope-requiring kinds; unused for platform roles. */
   scope?: string | null;
 }
 
@@ -130,12 +82,58 @@ export type RoleGateOutcome =
       reason: string;
     };
 
+/**
+ * LEGACY (runtime-001 fallback, frozen): canonical deny reasons and kind
+ * semantics. The registered runtime binding carries identical values; these
+ * constants serve only consumers that load this module without any runtime
+ * contribution registered.
+ */
 const REASONS = {
-  schoolAdminRole: "Forbidden: school admin role required",
+  institutionAdminRole: "Forbidden: school admin role required",
   platformSuperAdminRole: "Forbidden: platform super admin role required",
   tenantUnresolved: "No school in scope",
   gatewayDeny: "Forbidden: role access denied",
 } as const;
+
+const LEGACY_GATE_KINDS: Readonly<
+  Record<
+    RoleGateKind,
+    Pick<RoleGateKindBinding, "requiresScope" | "roleRequiredReason" | "tenantUnresolvedReason">
+  >
+> = {
+  school_admin: {
+    requiresScope: true,
+    roleRequiredReason: REASONS.institutionAdminRole,
+    tenantUnresolvedReason: REASONS.tenantUnresolved,
+  },
+  platform_super_admin: {
+    requiresScope: false,
+    roleRequiredReason: REASONS.platformSuperAdminRole,
+    tenantUnresolvedReason: REASONS.tenantUnresolved,
+  },
+};
+
+// The Supabase client type is intentionally structural: only the RPC surface
+// is used, matching the legacy helpers this gate replaces.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SupabaseRpcClient = any;
+
+type GateKindRpc = { role: string; scope?: string };
+
+/**
+ * LEGACY (runtime-001 fallback, frozen): the RPC primitives resolving each
+ * gate kind's role (and tenant-scope) signal. Registry-first: a registered
+ * runtime binding supplies identical values; this table serves only
+ * consumers that load this module without a contribution registered.
+ */
+const ROLE_RPC: Record<RoleGateKind, GateKindRpc> = {
+  school_admin: { role: "is_school_admin", scope: "get_my_school_id" },
+  platform_super_admin: { role: "is_super_admin" },
+};
+
+function gateKindRpc(kind: RoleGateKind): GateKindRpc {
+  return resolveGateKindBinding(kind)?.rpc ?? ROLE_RPC[kind];
+}
 
 /**
  * Decide whether an actor may perform a role-scoped operation.
@@ -144,70 +142,23 @@ const REASONS = {
  *   1. Lifecycle/session gate — fail closed on non-usable identity state or
  *      a non-active session (AGENTS §31: expired/revoked access fails).
  *   2. Role gate — the actor must hold the required role.
- *   3. Tenant gate — school-admin actors must have a non-empty school scope.
+ *   3. Tenant gate — scope-requiring kinds must have a non-empty scope.
  *   4. Security gateway — fail-closed confirmation (default rule §I.5).
  *
  * Any missing/unknown signal is a DENY, never a silent allow (AT.9).
  */
 export function evaluateRoleGate(kind: RoleGateKind, signals: RoleGateSignals): RoleGateOutcome {
-  const lifecycle = checkLifecycleSignals(signals);
-  if (!lifecycle.ok) {
-    return { decision: "deny", code: lifecycle.code, reason: lifecycle.reason };
-  }
-
-  const roleGranted = signals.roleGranted === true;
-  const rawScope = kind === "school_admin" ? signals.scope : null;
-  const hasScope = typeof rawScope === "string" && rawScope.trim() !== "";
-
-  if (!roleGranted) {
-    return {
-      decision: "deny",
-      code: "role_required",
-      reason: kind === "school_admin" ? REASONS.schoolAdminRole : REASONS.platformSuperAdminRole,
-    };
-  }
-  if (kind === "school_admin" && !hasScope) {
-    return { decision: "deny", code: "tenant_unresolved", reason: REASONS.tenantUnresolved };
-  }
-
-  // The auth middleware (bearer token) has run upstream and the lifecycle/
-  // session signals above were verified when supplied; identity and session
-  // validity are attested at this enforcement point. The gateway's default
-  // rule remains fail-closed: an unexpected decision below must never grant.
-  const gateway = evaluateSecurityGateway({
-    identityValid: true,
-    tenantContextValid: kind !== "school_admin" || hasScope,
-    sessionValid: true,
-    withinRateLimit: true,
-    requestIntegrityValid: true,
-    authorizationDecision: "ALLOW",
-  });
-
-  if (gateway.decision !== "allow") {
-    return { decision: "deny", code: "gateway_deny", reason: REASONS.gatewayDeny };
-  }
-
-  const allow = {
-    decision: "allow" as const,
-    scope: kind === "school_admin" ? rawScope!.trim() : null,
-    reason: "Role gate verified" as const,
+  const binding: RoleGateKindBinding = resolveGateKindBinding(kind) ?? {
+    kind,
+    ...LEGACY_GATE_KINDS[kind],
+    rpc: ROLE_RPC[kind],
   };
-  return lifecycle.lifecycleUnverified ? { ...allow, lifecycleUnverified: true } : allow;
+  return evaluateGateDecision(binding, signals);
 }
 
 /* ─────────────────────────────────────────────────────────────
- * Server adapters (consume the legacy Supabase RPC primitives)
+ * Server adapters (consume the runtime-declared RPC primitives)
  * ────────────────────────────────────────────────────────────*/
-
-// The Supabase client type is intentionally structural: only the RPC surface
-// is used, matching the legacy helpers this gate replaces.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SupabaseRpcClient = any;
-
-const ROLE_RPC: Record<RoleGateKind, { role: string; scope?: string }> = {
-  school_admin: { role: "is_school_admin", scope: "get_my_school_id" },
-  platform_super_admin: { role: "is_super_admin" },
-};
 
 /**
  * Resolve the role signal (and scope where applicable) from the database RPC
@@ -223,7 +174,7 @@ export async function resolveRoleGate(
   kind: RoleGateKind,
   lifecycle?: LifecycleSignals,
 ): Promise<RoleGateOutcome> {
-  const rpc = ROLE_RPC[kind];
+  const rpc = gateKindRpc(kind);
   const roleRes = await supabase.rpc(rpc.role);
   if (roleRes.error) {
     throw new Error(roleRes.error?.message ?? "Failed to verify role access");
@@ -258,7 +209,7 @@ export async function assertRoleScope(
   return gate.scope;
 }
 
-/** Assert a school-admin/principal scope and return the actor's school id. */
+/** Assert the first installed runtime's institution-admin scope and return its tenant id. */
 export async function requireSchoolAdminScope(
   supabase: SupabaseRpcClient,
   lifecycle?: LifecycleSignals,
@@ -282,17 +233,17 @@ export async function requirePlatformSuperAdmin(
 
 /* ─────────────────────────────────────────────────────────────
  * Composite account-administration decision
- * (super-admin OR same-tenant school admin)
+ * (super-admin OR same-tenant institution admin)
  * ────────────────────────────────────────────────────────────*/
 
 export interface AccountAdministrationSignals extends LifecycleSignals {
   /** Platform super-admin resolved. */
   platformSuper: boolean;
-  /** Same-school admin/principal role resolved. */
+  /** Same-tenant institution-admin role resolved. */
   schoolAdmin: boolean;
-  /** School scope of the school-admin actor (null when not resolved). */
+  /** Tenant scope of the institution-admin actor (null when not resolved). */
   schoolScope: string | null;
-  /** School of the target record. Null/omitted when no target check applies. */
+  /** Tenant of the target record. Null/omitted when no target check applies. */
   targetSchoolId?: string | null;
 }
 
@@ -324,10 +275,11 @@ export type AccountAdministrationOutcome =
 
 /**
  * Decide composite account-administration access: platform super-admins may
- * act on any tenant; school admins may act only inside their own tenant and
- * (when a target is supplied) only on records that belong to that same tenant.
- * Anything else fails closed — including a non-usable identity lifecycle or a
- * non-active session, which deny before any role is consulted (AGENTS §31).
+ * act on any tenant; institution admins may act only inside their own tenant
+ * and (when a target is supplied) only on records that belong to that same
+ * tenant. Anything else fails closed — including a non-usable identity
+ * lifecycle or a non-active session, which deny before any role is consulted
+ * (AGENTS §31). Reason strings are frozen behavior.
  */
 export function decideAccountAdministration(
   signals: AccountAdministrationSignals,
@@ -372,27 +324,24 @@ export function decideAccountAdministration(
 }
 
 /* ─────────────────────────────────────────────────────────────
- * School staff context (role sets beyond the school-admin kind)
+ * Institution staff context (role sets beyond the admin kind)
  * ────────────────────────────────────────────────────────────*/
 
 /**
- * Staff roles as the identity system records them. This is a runtime's own
- * vocabulary (the legacy `public.users.role` column), resolved through the
- * existing `public.get_my_role()` RPC — the kernel imports no runtime's role
- * table and keeps role-set membership declarative here so every server-function
- * family authorizes through one module. The first installed runtime (runtime-001) is the
- * consumer of this gate; a second runtime supplies its own kind map through an
- * adapter in the runtime layer, never by editing this kernel module.
+ * LEGACY (runtime-001 fallback, frozen): staff roles as the first installed
+ * runtime's own vocabulary (the legacy `public.users.role` column), resolved
+ * through its `public.get_my_role()` RPC — the core imports no runtime's
+ * role table and keeps role-set membership registry-driven
+ * (`resolveStaffRoleSet`); a second runtime supplies its own role sets
+ * through `registerRuntimeRoleGate`, never by editing this module. The
+ * fallback below serves only consumers that load this module without the
+ * runtime's contribution registered.
  */
 export type SchoolStaffRole = "admin" | "principal" | "teacher" | "bursar";
 
 /**
  * Role sets a server-function family may require. Membership mirrors the
- * database truth (migration 20260620122110):
- * - `school_admin`    → role IN (admin, principal)   == public.is_school_admin()
- * - `school_teacher`  → role = teacher               (RLS: attendance_logs teacher-only)
- * - `teaching_staff`  → role IN (admin, principal, teacher)
- * - `finance_staff`   → role IN (admin, principal, bursar)
+ * database truth (migration 20260620122110) of the first installed runtime.
  * Anything outside these sets fails closed.
  */
 export type SchoolStaffKind =
@@ -409,13 +358,14 @@ const STAFF_REASONS = {
   roleRequired: "Forbidden: role not authorized for this operation",
   tenantUnresolved: "No school in scope",
   gatewayDeny: "Forbidden: role access denied",
-  ...LIFECYCLE_REASONS,
+  lifecycleDenied: "Forbidden: identity lifecycle does not permit execution",
+  sessionDenied: "Forbidden: session is expired or revoked",
 } as const;
 
 export interface StaffDecisionSignals extends LifecycleSignals {
-  /** Actor role from `public.users` (resolved via `public.get_my_role()`). */
+  /** Actor role from the runtime's identity store (resolved via its RPC). */
   role?: string | null;
-  /** Resolved school scope. */
+  /** Resolved tenant scope. */
   scope?: string | null;
 }
 
@@ -440,10 +390,12 @@ export type StaffDecision =
     };
 
 /**
- * Pure decision for a school-staff role set. Fails closed on any unknown,
+ * Pure decision for a runtime staff role set. Fails closed on any unknown,
  * missing or malformed signal (AT.9): a role outside the set, a null/blank
  * scope, a non-usable identity lifecycle, a non-active session, or a
  * non-allow security-gateway outcome is a DENY — never a silent grant.
+ * Role-set membership is registry-first (`resolveStaffRoleSet`); the frozen
+ * runtime-001 table above is the fallback.
  */
 export function decideStaffRole(
   kind: SchoolStaffKind,
@@ -454,7 +406,7 @@ export function decideStaffRole(
     return { decision: "deny", code: lifecycle.code, reason: lifecycle.reason };
   }
 
-  const allowed = SCHOOL_STAFF_ROLES[kind] as readonly string[];
+  const allowed = (resolveStaffRoleSet(kind) ?? SCHOOL_STAFF_ROLES[kind]) as readonly string[];
   const rawRole = signals.role?.trim().toLowerCase() ?? "";
   if (!allowed.includes(rawRole)) {
     return { decision: "deny", code: "role_required", reason: STAFF_REASONS.roleRequired };
@@ -491,11 +443,15 @@ export interface SchoolStaffContext {
   schoolId: string;
 }
 
+/**
+ * LEGACY (runtime-001 fallback, frozen): the RPC primitives resolving the
+ * staff role and tenant-scope signals of the first installed runtime.
+ */
 const STAFF_SCOPE_RPC = "get_my_school_id";
 const STAFF_ROLE_RPC = "get_my_role";
 
 /**
- * Resolve the actor's staff role + school scope from the existing database
+ * Resolve the actor's staff role + tenant scope from the existing database
  * RPC primitives and evaluate the requested role set. The optional lifecycle
  * signals are threaded through to the decision whenever the call site holds
  * the acting identity's lifecycle/session state (additive param; existing
@@ -523,7 +479,7 @@ export async function resolveStaffContext(
   });
 }
 
-/** Assert a school-staff role set; throws a canonical reason on DENY. */
+/** Assert a staff role set; throws a canonical reason on DENY. */
 export async function requireStaffContext(
   supabase: SupabaseRpcClient,
   kind: SchoolStaffKind,

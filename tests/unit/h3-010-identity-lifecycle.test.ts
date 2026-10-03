@@ -35,6 +35,10 @@
  *   `abac.now` (documented in the engine header comment).
  */
 import { describe, expect, it } from "vitest";
+// The Scholar runtime registers the "teacher" role and its grants; importing
+// the adapter is the registration path that makes the role resolvable.
+import "@/lib/domain-config/scholar-authorization";
+import { domainRole } from "@/lib/rbac/domain-contribution";
 import {
   authorize,
   hasRelationship,
@@ -45,6 +49,7 @@ import {
   type PolicySet,
 } from "@/lib/authorization";
 import {
+  domainPermissionResource,
   IDENTITY_KINDS,
   IDENTITY_LIFECYCLE_STATES,
   identityId,
@@ -114,7 +119,7 @@ function request(
 ): AuthorizationRequest {
   return makeAuthorizationRequest(
     identity(identityOverrides),
-    "student",
+    domainPermissionResource("student"),
     "read",
     OBJECT_A,
     overrides.relationships ?? [],
@@ -122,8 +127,10 @@ function request(
   );
 }
 
-function opts(overrides: Partial<AuthorizeOptions> = {}): AuthorizeOptions {
-  return { role: "teacher", ...overrides };
+function opts(
+  overrides: Omit<Partial<AuthorizeOptions>, "role"> & { role?: string } = {},
+): AuthorizeOptions {
+  return { role: domainRole("teacher"), ...overrides } as AuthorizeOptions;
 }
 
 /** A request + options pair that yields ALLOW for a usable ("active") identity. */
@@ -138,9 +145,7 @@ function canonicalAllow(
 }
 
 const ALLOW_ALL_POLICY: PolicySet = {
-  rules: [
-    { id: "allow-all", applies: () => true, decision: "ALLOW", reason: "policy allow" },
-  ],
+  rules: [{ id: "allow-all", applies: () => true, decision: "ALLOW", reason: "policy allow" }],
 };
 
 /* ─────────────────────────────────────────────────────────────
@@ -169,9 +174,11 @@ describe("Identity lifecycle model: usable vs non-usable states", () => {
     // engine never sees a "revoked" identity because the model cannot express
     // one. A "revoked" value is not constructible as a valid state.
     expect(IDENTITY_LIFECYCLE_STATES).not.toContain("revoked");
-    expect(["deleted", "archived"].every((s) => !isIdentityUsable({ lifecycle: s as IdentityLifecycleState }))).toBe(
-      true,
-    );
+    expect(
+      ["deleted", "archived"].every(
+        (s) => !isIdentityUsable({ lifecycle: s as IdentityLifecycleState }),
+      ),
+    ).toBe(true);
   });
 
   it("gate parity: for EVERY lifecycle state, authorize ALLOWs a canonical request iff isIdentityUsable", () => {
@@ -207,7 +214,7 @@ describe("Fail-closed proof: non-usable lifecycle blocks every authority path", 
           request({}, { lifecycle: state }),
           opts({
             role: "read_only",
-            extraPermissions: [permission("student", "read", OBJECT_A)],
+            extraPermissions: [permission(domainPermissionResource("student"), "read", OBJECT_A)],
           }),
         );
         expect(result.decision).toBe("DENY");
@@ -215,7 +222,10 @@ describe("Fail-closed proof: non-usable lifecycle blocks every authority path", 
       });
 
       it("DENYs through a policy ALLOW (PBAC unreachable behind the gate)", () => {
-        const result = authorize(request({}, { lifecycle: state }), opts({ policySet: ALLOW_ALL_POLICY }));
+        const result = authorize(
+          request({}, { lifecycle: state }),
+          opts({ policySet: ALLOW_ALL_POLICY }),
+        );
         expect(result.decision).toBe("DENY");
         expect(result.reason).toContain("not usable");
       });
@@ -234,10 +244,7 @@ describe("Fail-closed proof: non-usable lifecycle blocks every authority path", 
 
       it("DENYs an active manages relationship", () => {
         const result = authorize(
-          request(
-            { relationships: [rel("manages", OBJECT_A)] },
-            { lifecycle: state },
-          ),
+          request({ relationships: [rel("manages", OBJECT_A)] }, { lifecycle: state }),
           opts({ role: "read_only" }),
         );
         expect(result.decision).toBe("DENY");
@@ -245,13 +252,10 @@ describe("Fail-closed proof: non-usable lifecycle blocks every authority path", 
 
       it("DENYs with combined authority (role grant + delegation + policy + relationship)", () => {
         const result = authorize(
-          request(
-            { relationships: [rel("owns", OBJECT_A)] },
-            { lifecycle: state },
-          ),
+          request({ relationships: [rel("owns", OBJECT_A)] }, { lifecycle: state }),
           opts({
             role: "teacher",
-            extraPermissions: [permission("student", "read", null)],
+            extraPermissions: [permission(domainPermissionResource("student"), "read", null)],
             policySet: ALLOW_ALL_POLICY,
           }),
         );
@@ -283,7 +287,7 @@ describe("Gate precedence: lifecycle denies before tenant, PBAC, ABAC, and ReBAC
     // deny too — but the lifecycle gate runs first and must own the reason.
     const crossTenant = makeAuthorizationRequest(
       identity({ lifecycle: "suspended", tenantId: TENANT_A }),
-      "student",
+      domainPermissionResource("student"),
       "read",
       OBJECT_B,
       [],
@@ -332,11 +336,17 @@ describe("Lifecycle gate across every identity kind", () => {
   it("every modeled kind passes through the same gate", () => {
     expect(IDENTITY_KINDS).toHaveLength(8);
     for (const kind of IDENTITY_KINDS as readonly IdentityKind[]) {
-      const suspended = authorize(request({}, { kind, lifecycle: "suspended" }), opts({ role: "teacher" }));
+      const suspended = authorize(
+        request({}, { kind, lifecycle: "suspended" }),
+        opts({ role: "teacher" }),
+      );
       expect(suspended.decision, `kind ${kind} suspended`).toBe("DENY");
       expect(suspended.reason).toBe("Identity lifecycle 'suspended' is not usable");
 
-      const active = authorize(request({}, { kind, lifecycle: "active" }), opts({ role: "teacher" }));
+      const active = authorize(
+        request({}, { kind, lifecycle: "active" }),
+        opts({ role: "teacher" }),
+      );
       expect(active.decision, `kind ${kind} active`).toBe("ALLOW");
     }
   });
@@ -347,7 +357,7 @@ describe("Lifecycle gate across every identity kind", () => {
       opts({
         role: "read_only",
         isAgent: true,
-        extraPermissions: [permission("student", "read", OBJECT_A)],
+        extraPermissions: [permission(domainPermissionResource("student"), "read", OBJECT_A)],
       }),
     );
     expect(suspendedAgent.decision).toBe("DENY");
@@ -398,9 +408,9 @@ describe("Revocation: a revoked relationship authorizes nothing", () => {
       opts({ role: "read_only" }),
     );
     expect(result.decision).toBe("DENY");
-    expect(hasRelationship([rel("owns", OBJECT_A, { revokedAt: FAR_FUTURE })], "owns", OBJECT_A)).toBe(
-      false,
-    );
+    expect(
+      hasRelationship([rel("owns", OBJECT_A, { revokedAt: FAR_FUTURE })], "owns", OBJECT_A),
+    ).toBe(false);
   });
 
   it("revocation cannot be undone by the request time: abac.now before revokedAt still denies", () => {
@@ -419,9 +429,9 @@ describe("Revocation: a revoked relationship authorizes nothing", () => {
   });
 
   it("hasRelationship ignores a revoked relationship (helper-level fail closed)", () => {
-    expect(hasRelationship([rel("owns", OBJECT_A, { revokedAt: FAR_PAST })], "owns", OBJECT_A)).toBe(
-      false,
-    );
+    expect(
+      hasRelationship([rel("owns", OBJECT_A, { revokedAt: FAR_PAST })], "owns", OBJECT_A),
+    ).toBe(false);
   });
 
   it("a revoked relationship cannot be resurrected by stacking a live delegation", () => {
@@ -430,7 +440,10 @@ describe("Revocation: a revoked relationship authorizes nothing", () => {
         { relationships: [rel("owns", OBJECT_A, { revokedAt: FAR_PAST })] },
         { lifecycle: "active" },
       ),
-      opts({ role: "read_only", extraPermissions: [permission("student", "read", null)] }),
+      opts({
+        role: "read_only",
+        extraPermissions: [permission(domainPermissionResource("student"), "read", null)],
+      }),
     );
     // The delegation covers the student:read request; the revoked relationship
     // is simply inert. Either way no authority flows from the revoked grant.
@@ -473,9 +486,9 @@ describe("Expiry: an expired relationship equals a revoked one", () => {
   });
 
   it("DENYs a wall-clock-expired manages relationship (hasRelationship)", () => {
-    expect(hasRelationship([rel("manages", OBJECT_A, { expiresAt: FAR_PAST })], "manages", OBJECT_A)).toBe(
-      false,
-    );
+    expect(
+      hasRelationship([rel("manages", OBJECT_A, { expiresAt: FAR_PAST })], "manages", OBJECT_A),
+    ).toBe(false);
   });
 
   it("an unexpired relationship remains authoritative", () => {
@@ -520,9 +533,9 @@ describe("Expiry: an expired relationship equals a revoked one", () => {
         opts({ role: "read_only" }),
       );
       expect(result.decision, `unparseable expiresAt ${JSON.stringify(badExpiry)}`).toBe("DENY");
-      expect(hasRelationship([rel("owns", OBJECT_A, { expiresAt: badExpiry })], "owns", OBJECT_A)).toBe(
-        false,
-      );
+      expect(
+        hasRelationship([rel("owns", OBJECT_A, { expiresAt: badExpiry })], "owns", OBJECT_A),
+      ).toBe(false);
     }
   });
 
@@ -663,10 +676,7 @@ describe("FINDING F-2: revocation state outside lifecycle+relationships is not a
     // active delegation relationship cannot substitute for a revoked one.
     for (const type of ["delegated_to", "agent_for"] as const) {
       const result = authorize(
-        request(
-          { relationships: [rel(type, OBJECT_A)] },
-          { lifecycle: "active" },
-        ),
+        request({ relationships: [rel(type, OBJECT_A)] }, { lifecycle: "active" }),
         opts({ role: "read_only" }),
       );
       expect(result.decision, `relationship type ${type}`).toBe("DENY");
@@ -685,9 +695,15 @@ describe("Lifecycle transitions: only policy-controlled states reach the gate", 
     // a suspended identity restored to active is usable again; a deleted one
     // can only archive, never reactivate — so deletion is a one-way door and
     // the gate's permanent denial of deleted/archived is consistent.
-    const suspendedToActive: [IdentityLifecycleState, IdentityLifecycleState] = ["suspended", "active"];
+    const suspendedToActive: [IdentityLifecycleState, IdentityLifecycleState] = [
+      "suspended",
+      "active",
+    ];
     const deletedToActive: [IdentityLifecycleState, IdentityLifecycleState] = ["deleted", "active"];
-    const suspendedToDeleted: [IdentityLifecycleState, IdentityLifecycleState] = ["suspended", "deleted"];
+    const suspendedToDeleted: [IdentityLifecycleState, IdentityLifecycleState] = [
+      "suspended",
+      "deleted",
+    ];
 
     expect(suspendedToActive[1]).toBe("active");
     expect(deletedToActive[1]).toBe("active");

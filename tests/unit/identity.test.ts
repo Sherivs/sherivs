@@ -8,10 +8,16 @@
  * - Credential metadata engine (H9 + J3)
  */
 import { describe, expect, it } from "vitest";
+// The Scholar runtime registers its relationship types (parent_of, teaches…)
+// and roles; importing the adapter is the registration path that makes the
+// legacy vocabulary resolvable through the neutral registries.
+import "@/lib/domain-config/scholar-authorization";
+import { domainRole } from "@/lib/rbac/domain-contribution";
 import {
   canTransitionIdentity,
   canTransitionCredential,
   canTransitionAgent,
+  domainPermissionResource,
   identityId,
   isIdentityUsable,
   isAgentGoverned,
@@ -190,25 +196,30 @@ describe("Identity lifecycle state machine (G5)", () => {
 
 describe("Authorization engine (J4–J8)", () => {
   it("ALLOWs a role grant", () => {
-    const req = makeAuthorizationRequest(makeIdentity(), "student", "read", "class-1");
-    const result = authorize(req, { role: "teacher" });
+    const req = makeAuthorizationRequest(
+      makeIdentity(),
+      domainPermissionResource("student"),
+      "read",
+      "class-1",
+    );
+    const result = authorize(req, { role: domainRole("teacher") });
     expect(result.decision).toBe("ALLOW");
   });
 
   it("DENYs by default", () => {
     const req = makeAuthorizationRequest(makeIdentity(), "payments", "manage", "school-1");
-    const result = authorize(req, { role: "teacher" });
+    const result = authorize(req, { role: domainRole("teacher") });
     expect(result.decision).toBe("DENY");
   });
 
   it("DENYs suspended identities", () => {
     const req = makeAuthorizationRequest(
       makeIdentity({ lifecycle: "suspended" }),
-      "student",
+      domainPermissionResource("student"),
       "read",
       "class-1",
     );
-    const result = authorize(req, { role: "teacher" });
+    const result = authorize(req, { role: domainRole("teacher") });
     expect(result.decision).toBe("DENY");
     expect(result.reason).toContain("not usable");
   });
@@ -216,7 +227,7 @@ describe("Authorization engine (J4–J8)", () => {
   it("ALLOWs via extra permissions", () => {
     const req = makeAuthorizationRequest(makeIdentity(), "payments", "manage", "school-1");
     const result = authorize(req, {
-      role: "teacher",
+      role: domainRole("teacher"),
       extraPermissions: [permission("payments", "manage", "school-1")],
     });
     expect(result.decision).toBe("ALLOW");
@@ -234,24 +245,40 @@ describe("Authorization engine (J4–J8)", () => {
       revokedAt: null,
       version: 1,
     };
-    const req = makeAuthorizationRequest(makeIdentity(), "school", "update", "school-1", [rel]);
+    const req = makeAuthorizationRequest(
+      makeIdentity(),
+      domainPermissionResource("school"),
+      "update",
+      "school-1",
+      [rel],
+    );
     const result = authorize(req, { role: "read_only" });
     expect(result.decision).toBe("ALLOW");
   });
 
   it("ESCALATEs high-risk requests via ABAC", () => {
-    const req = makeAuthorizationRequest(makeIdentity(), "student", "read", "class-1");
+    const req = makeAuthorizationRequest(
+      makeIdentity(),
+      domainPermissionResource("student"),
+      "read",
+      "class-1",
+    );
     const result = authorize(req, {
-      role: "teacher",
+      role: domainRole("teacher"),
       abac: { risk: 0.9 },
     });
     expect(result.decision).toBe("ESCALATE");
   });
 
   it("DENYs destructive operations on untrusted devices", () => {
-    const req = makeAuthorizationRequest(makeIdentity(), "student", "delete", "class-1");
+    const req = makeAuthorizationRequest(
+      makeIdentity(),
+      domainPermissionResource("student"),
+      "delete",
+      "class-1",
+    );
     const result = authorize(req, {
-      role: "teacher",
+      role: domainRole("teacher"),
       abac: { deviceTrust: 0.1 },
     });
     expect(result.decision).toBe("DENY");
@@ -268,8 +295,13 @@ describe("Authorization engine (J4–J8)", () => {
         },
       ],
     };
-    const req = makeAuthorizationRequest(makeIdentity(), "student", "delete", "class-1");
-    const result = authorize(req, { role: "teacher", policySet });
+    const req = makeAuthorizationRequest(
+      makeIdentity(),
+      domainPermissionResource("student"),
+      "delete",
+      "class-1",
+    );
+    const result = authorize(req, { role: domainRole("teacher"), policySet });
     expect(result.decision).toBe("REQUIRE_APPROVAL");
   });
 
@@ -297,12 +329,16 @@ describe("Authorization engine (J4–J8)", () => {
   });
 
   it("permissionKey builds canonical keys", () => {
-    expect(permissionKey({ resource: "student", action: "read", scope: null })).toBe(
-      "student:read",
-    );
-    expect(permissionKey({ resource: "student", action: "read", scope: "class-1" })).toBe(
-      "student:read:class-1",
-    );
+    expect(
+      permissionKey({ resource: domainPermissionResource("student"), action: "read", scope: null }),
+    ).toBe("student:read");
+    expect(
+      permissionKey({
+        resource: domainPermissionResource("student"),
+        action: "read",
+        scope: "class-1",
+      }),
+    ).toBe("student:read:class-1");
   });
 });
 
@@ -533,13 +569,17 @@ describe("Agent governance (Invariant 03 + 12)", () => {
     expect(
       isAgentGoverned({
         lifecycle: "deployed",
-        permissions: [{ resource: "student", action: "read", scope: null }],
+        permissions: [
+          { resource: domainPermissionResource("student"), action: "read", scope: null },
+        ],
       }),
     ).toBe(true);
     expect(
       isAgentGoverned({
         lifecycle: "proposed",
-        permissions: [{ resource: "student", action: "read", scope: null }],
+        permissions: [
+          { resource: domainPermissionResource("student"), action: "read", scope: null },
+        ],
       }),
     ).toBe(false);
     expect(isAgentGoverned({ lifecycle: "deployed", permissions: [] })).toBe(false);

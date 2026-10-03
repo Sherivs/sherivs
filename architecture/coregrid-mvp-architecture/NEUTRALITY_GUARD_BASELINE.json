@@ -12,11 +12,11 @@
       "warn": "observed violation group present in baselineEntries (printed every run)",
       "ratchet": "baseline entry no longer observed — removable by the engineer who cleared it"
     },
-    "lastRatchet": "2026-10-01: removed 6 capability-gate entries closed by MISSION-R-120 nav-kind re-keying (shrink-only)"
+    "lastRatchet": "2026-10-03: V1-006 (team SECURITY) neutralized the platform authorization core — removed all 9 frontend/src/lib/authorization.ts and all 13 frontend/src/lib/identity.ts entries (authorization.ts and identity.ts now carry zero education vocabulary; roles/relationship types are contributed via rbac/domain-contribution + domain-config registration) and refreshed the 7 frozen security-role-gate.ts legacy-fallback entries against the live tree (shrink-only, ADR-003/004)."
   },
   "summary": {
-    "entryCount": 434,
-    "totalObservedHits": 1576,
+    "entryCount": 412,
+    "totalObservedHits": 1499,
     "hitsByFile": {
       "database/supabase/migrations/20260907000100_runtime_scholar_workforce_catalog.sql": 114,
       "database/supabase/migrations/20260620122048_50e590c2-5911-4c98-8931-fb46a4b509f3.sql": 84,
@@ -25,22 +25,20 @@
       "database/supabase/migrations/20260907000600_runtime_scholar_workforce_ecosystem_extension.sql": 50,
       "frontend/src/lib/education-institution.ts": 47,
       "database/supabase/migrations/20260725063636_d379b679-904b-4d2a-b9ed-11b463817fda.sql": 45,
-      "frontend/src/lib/security-role-gate.ts": 45,
       "frontend/src/lib/education-core.ts": 42,
       "frontend/src/lib/education-curriculum.ts": 42,
       "database/supabase/migrations/20260626133221_e95464b7-e864-413c-a934-7428cb26da47.sql": 33,
       "frontend/src/lib/attendance-identity.ts": 33,
       "database/supabase/migrations/20260729054314_21b2720c-0c44-46ce-8404-e256ce7cf4ee.sql": 30,
       "frontend/src/lib/academic-curriculum.ts": 30,
-      "frontend/src/lib/authorization.ts": 30,
       "frontend/src/lib/kernel/phase-contracts/phase-11-academic-intelligence.ts": 29,
       "database/supabase/migrations/20260626131711_e05e2ec4-e2d0-4a0e-a905-fe22ea9a3401.sql": 27,
       "frontend/src/lib/subscription-tiers.ts": 24,
       "database/supabase/migrations/20260620150249_aeff3a12-2619-4cc9-aa0f-a7f5a844e8f3.sql": 23,
       "frontend/src/lib/education-assessment.ts": 22,
-      "frontend/src/lib/identity.ts": 22,
       "database/supabase/migrations/20260904010000_coregrid_rls_transport_and_grants.sql": 21,
       "frontend/src/lib/regional-context.ts": 21,
+      "frontend/src/lib/security-role-gate.ts": 20,
       "database/supabase/migrations/20260729052237_75252732-97d3-448f-b082-93517558a096.sql": 19,
       "database/supabase/migrations/20260707223958_421f2364-7989-4069-b78c-fd119f19daeb.sql": 18,
       "frontend/src/lib/financial-splits.ts": 18,
@@ -3071,17 +3069,6 @@
     {
       "file": "frontend/src/lib/audit.ts",
       "kind": "structural",
-      "token": "school_id",
-      "streamIRef": "STREAM H domainContaminationInCode[1]",
-      "occurrences": 1,
-      "lines": [
-        50
-      ],
-      "firstSnippet": "school_id: p.schoolId,"
-    },
-    {
-      "file": "frontend/src/lib/audit.ts",
-      "kind": "structural",
       "token": "schoolId",
       "streamIRef": "STREAM H domainContaminationInCode[1]",
       "occurrences": 4,
@@ -3094,124 +3081,15 @@
       "firstSnippet": "schoolId: string;"
     },
     {
-      "file": "frontend/src/lib/authorization.ts",
-      "kind": "vocabulary",
-      "token": "attendance",
-      "streamIRef": "unmapped",
-      "occurrences": 2,
+      "file": "frontend/src/lib/audit.ts",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "STREAM H domainContaminationInCode[1]",
+      "occurrences": 1,
       "lines": [
-        153,
-        159
+        50
       ],
-      "firstSnippet": "{ resource: \"attendance\", action: \"read\", scope: null },"
-    },
-    {
-      "file": "frontend/src/lib/authorization.ts",
-      "kind": "vocabulary",
-      "token": "bursar",
-      "streamIRef": "unmapped",
-      "occurrences": 3,
-      "lines": [
-        49,
-        76,
-        162
-      ],
-      "firstSnippet": "| \"bursar\""
-    },
-    {
-      "file": "frontend/src/lib/authorization.ts",
-      "kind": "vocabulary",
-      "token": "fees",
-      "streamIRef": "unmapped",
-      "occurrences": 2,
-      "lines": [
-        125,
-        163
-      ],
-      "firstSnippet": "{ resource: \"fees\", action: \"read\", scope: null },"
-    },
-    {
-      "file": "frontend/src/lib/authorization.ts",
-      "kind": "vocabulary",
-      "token": "principal",
-      "streamIRef": "unmapped",
-      "occurrences": 3,
-      "lines": [
-        47,
-        74,
-        149
-      ],
-      "firstSnippet": "| \"principal\""
-    },
-    {
-      "file": "frontend/src/lib/authorization.ts",
-      "kind": "vocabulary",
-      "token": "school",
-      "streamIRef": "unmapped",
-      "occurrences": 5,
-      "lines": [
-        85,
-        91,
-        135,
-        141,
-        150
-      ],
-      "firstSnippet": "{ resource: \"school\", action: \"manage\", scope: null },"
-    },
-    {
-      "file": "frontend/src/lib/authorization.ts",
-      "kind": "vocabulary",
-      "token": "student",
-      "streamIRef": "unmapped",
-      "occurrences": 7,
-      "lines": [
-        51,
-        78,
-        152,
-        158,
-        166,
-        167,
-        168
-      ],
-      "firstSnippet": "| \"student\""
-    },
-    {
-      "file": "frontend/src/lib/authorization.ts",
-      "kind": "vocabulary",
-      "token": "teacher",
-      "streamIRef": "unmapped",
-      "occurrences": 4,
-      "lines": [
-        48,
-        75,
-        151,
-        156
-      ],
-      "firstSnippet": "| \"teacher\""
-    },
-    {
-      "file": "frontend/src/lib/authorization.ts",
-      "kind": "vocabulary-literal",
-      "token": "driver",
-      "streamIRef": "unmapped",
-      "occurrences": 2,
-      "lines": [
-        52,
-        79
-      ],
-      "firstSnippet": "| \"driver\";"
-    },
-    {
-      "file": "frontend/src/lib/authorization.ts",
-      "kind": "vocabulary-literal",
-      "token": "parent",
-      "streamIRef": "unmapped",
-      "occurrences": 2,
-      "lines": [
-        50,
-        77
-      ],
-      "firstSnippet": "| \"parent\""
+      "firstSnippet": "school_id: p.schoolId,"
     },
     {
       "file": "frontend/src/lib/class-levels.ts",
@@ -4338,17 +4216,6 @@
     {
       "file": "frontend/src/lib/identity-actor.ts",
       "kind": "structural",
-      "token": "school_id",
-      "streamIRef": "I-011",
-      "occurrences": 1,
-      "lines": [
-        5
-      ],
-      "firstSnippet": "* `users` row (role, school_id, is_active) into one validated IdentityActor"
-    },
-    {
-      "file": "frontend/src/lib/identity-actor.ts",
-      "kind": "structural",
       "token": "schoolId",
       "streamIRef": "I-011",
       "occurrences": 6,
@@ -4361,6 +4228,17 @@
         100
       ],
       "firstSnippet": "schoolId?: string | null;"
+    },
+    {
+      "file": "frontend/src/lib/identity-actor.ts",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "I-011",
+      "occurrences": 1,
+      "lines": [
+        5
+      ],
+      "firstSnippet": "* `users` row (role, school_id, is_active) into one validated IdentityActor"
     },
     {
       "file": "frontend/src/lib/identity-actor.ts",
@@ -4471,158 +4349,6 @@
         110
       ],
       "firstSnippet": "* contract. Tenant-scoped: the canonical school-admin gate resolves the actor's"
-    },
-    {
-      "file": "frontend/src/lib/identity.ts",
-      "kind": "vocabulary",
-      "token": "attendance",
-      "streamIRef": "unmapped",
-      "occurrences": 1,
-      "lines": [
-        271
-      ],
-      "firstSnippet": "| \"attendance\""
-    },
-    {
-      "file": "frontend/src/lib/identity.ts",
-      "kind": "vocabulary",
-      "token": "discipline",
-      "streamIRef": "unmapped",
-      "occurrences": 1,
-      "lines": [
-        273
-      ],
-      "firstSnippet": "| \"discipline\""
-    },
-    {
-      "file": "frontend/src/lib/identity.ts",
-      "kind": "vocabulary",
-      "token": "fees",
-      "streamIRef": "unmapped",
-      "occurrences": 1,
-      "lines": [
-        268
-      ],
-      "firstSnippet": "| \"fees\""
-    },
-    {
-      "file": "frontend/src/lib/identity.ts",
-      "kind": "vocabulary",
-      "token": "guardian",
-      "streamIRef": "unmapped",
-      "occurrences": 1,
-      "lines": [
-        212
-      ],
-      "firstSnippet": "| \"guardian_of\" // guardian -> student"
-    },
-    {
-      "file": "frontend/src/lib/identity.ts",
-      "kind": "vocabulary",
-      "token": "hostel",
-      "streamIRef": "unmapped",
-      "occurrences": 1,
-      "lines": [
-        275
-      ],
-      "firstSnippet": "| \"hostel\""
-    },
-    {
-      "file": "frontend/src/lib/identity.ts",
-      "kind": "vocabulary",
-      "token": "library",
-      "streamIRef": "unmapped",
-      "occurrences": 1,
-      "lines": [
-        276
-      ],
-      "firstSnippet": "| \"library\""
-    },
-    {
-      "file": "frontend/src/lib/identity.ts",
-      "kind": "vocabulary",
-      "token": "principal",
-      "streamIRef": "unmapped",
-      "occurrences": 1,
-      "lines": [
-        213
-      ],
-      "firstSnippet": "| \"delegated_to\"; // delegation (principal A -> delegate B)"
-    },
-    {
-      "file": "frontend/src/lib/identity.ts",
-      "kind": "vocabulary",
-      "token": "school",
-      "streamIRef": "unmapped",
-      "occurrences": 4,
-      "lines": [
-        202,
-        203,
-        253,
-        299
-      ],
-      "firstSnippet": "| \"member_of\" // user -> school / campus"
-    },
-    {
-      "file": "frontend/src/lib/identity.ts",
-      "kind": "vocabulary",
-      "token": "student",
-      "streamIRef": "unmapped",
-      "occurrences": 5,
-      "lines": [
-        204,
-        205,
-        212,
-        257,
-        299
-      ],
-      "firstSnippet": "| \"enrolled_in\" // student -> class"
-    },
-    {
-      "file": "frontend/src/lib/identity.ts",
-      "kind": "vocabulary",
-      "token": "teacher",
-      "streamIRef": "unmapped",
-      "occurrences": 3,
-      "lines": [
-        203,
-        206,
-        258
-      ],
-      "firstSnippet": "| \"employed_by\" // teacher/staff -> school"
-    },
-    {
-      "file": "frontend/src/lib/identity.ts",
-      "kind": "vocabulary",
-      "token": "timetable",
-      "streamIRef": "unmapped",
-      "occurrences": 1,
-      "lines": [
-        272
-      ],
-      "firstSnippet": "| \"timetable\""
-    },
-    {
-      "file": "frontend/src/lib/identity.ts",
-      "kind": "vocabulary-literal",
-      "token": "parent",
-      "streamIRef": "unmapped",
-      "occurrences": 1,
-      "lines": [
-        260
-      ],
-      "firstSnippet": "| \"parent\""
-    },
-    {
-      "file": "frontend/src/lib/identity.ts",
-      "kind": "vocabulary-literal",
-      "token": "staff",
-      "streamIRef": "unmapped",
-      "occurrences": 1,
-      "lines": [
-        259
-      ],
-      "firstSnippet": "| \"staff\""
     },
     {
       "file": "frontend/src/lib/institution-core.ts",
@@ -5154,17 +4880,6 @@
     {
       "file": "frontend/src/lib/messages-unread.ts",
       "kind": "structural",
-      "token": "school_id",
-      "streamIRef": "unmapped",
-      "occurrences": 1,
-      "lines": [
-        22
-      ],
-      "firstSnippet": ".eq(\"school_id\", schoolId!)"
-    },
-    {
-      "file": "frontend/src/lib/messages-unread.ts",
-      "kind": "structural",
       "token": "schoolId",
       "streamIRef": "unmapped",
       "occurrences": 7,
@@ -5178,6 +4893,17 @@
         45
       ],
       "firstSnippet": "const schoolId = school?.id;"
+    },
+    {
+      "file": "frontend/src/lib/messages-unread.ts",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "unmapped",
+      "occurrences": 1,
+      "lines": [
+        22
+      ],
+      "firstSnippet": ".eq(\"school_id\", schoolId!)"
     },
     {
       "file": "frontend/src/lib/messages-unread.ts",
@@ -5631,8 +5357,8 @@
       "streamIRef": "unmapped",
       "occurrences": 2,
       "lines": [
-        351,
-        390
+        436,
+        485
       ],
       "firstSnippet": "schoolId: string;"
     },
@@ -5641,11 +5367,10 @@
       "kind": "vocabulary",
       "token": "bursar",
       "streamIRef": "unmapped",
-      "occurrences": 3,
+      "occurrences": 2,
       "lines": [
-        261,
-        269,
-        279
+        333,
+        347
       ],
       "firstSnippet": "export type SchoolStaffRole = \"admin\" | \"principal\" | \"teacher\" | \"bursar\";"
     },
@@ -5654,88 +5379,64 @@
       "kind": "vocabulary",
       "token": "get_my_school_id",
       "streamIRef": "unmapped",
-      "occurrences": 3,
+      "occurrences": 2,
       "lines": [
-        20,
-        119,
-        354
+        123,
+        443
       ],
-      "firstSnippet": "* legacy server functions (`is_school_admin`, `get_my_school_id`,"
+      "firstSnippet": "school_admin: { role: \"is_school_admin\", scope: \"get_my_school_id\" },"
     },
     {
       "file": "frontend/src/lib/security-role-gate.ts",
       "kind": "vocabulary",
       "token": "is_school_admin",
       "streamIRef": "unmapped",
-      "occurrences": 3,
+      "occurrences": 1,
       "lines": [
-        20,
-        119,
-        266
+        123
       ],
-      "firstSnippet": "* legacy server functions (`is_school_admin`, `get_my_school_id`,"
+      "firstSnippet": "school_admin: { role: \"is_school_admin\", scope: \"get_my_school_id\" },"
     },
     {
       "file": "frontend/src/lib/security-role-gate.ts",
       "kind": "vocabulary",
       "token": "principal",
       "streamIRef": "unmapped",
-      "occurrences": 9,
+      "occurrences": 4,
       "lines": [
-        166,
-        190,
-        261,
-        266,
-        268,
-        269,
-        276,
-        278,
-        279
+        333,
+        344,
+        346,
+        347
       ],
-      "firstSnippet": "/** Assert a school-admin/principal scope and return the actor's school id. */"
+      "firstSnippet": "export type SchoolStaffRole = \"admin\" | \"principal\" | \"teacher\" | \"bursar\";"
     },
     {
       "file": "frontend/src/lib/security-role-gate.ts",
       "kind": "vocabulary",
       "token": "school",
       "streamIRef": "unmapped",
-      "occurrences": 20,
+      "occurrences": 6,
       "lines": [
-        5,
-        35,
-        53,
-        55,
-        64,
-        166,
-        184,
-        190,
-        192,
-        194,
-        209,
-        224,
-        233,
-        241,
-        249,
-        284,
-        291,
-        309,
-        358,
-        381
+        88,
+        90,
+        294,
+        303,
+        311,
+        352
       ],
-      "firstSnippet": "* role kinds (school-admin and platform super-admin) evaluate through the"
+      "firstSnippet": "institutionAdminRole: \"Forbidden: school admin role required\","
     },
     {
       "file": "frontend/src/lib/security-role-gate.ts",
       "kind": "vocabulary",
       "token": "teacher",
       "streamIRef": "unmapped",
-      "occurrences": 5,
+      "occurrences": 3,
       "lines": [
-        261,
-        267,
-        268,
-        277,
-        278
+        333,
+        345,
+        346
       ],
       "firstSnippet": "export type SchoolStaffRole = \"admin\" | \"principal\" | \"teacher\" | \"bursar\";"
     },

@@ -33,7 +33,7 @@
  * membership is never a source of agent authority. An agent identity
  * receives ALLOW only through explicit delegation — `extraPermissions`
  * granted to it or an explicit `owns`/`manages` relationship — never
- * through `ROLE_PERMISSIONS`. Undelegated agent requests deny with an
+ * through role-derived grants. Undelegated agent requests deny with an
  * agent-specific reason so the enforcement point is observable.
  */
 
@@ -48,157 +48,27 @@ import type {
   PermissionResource,
 } from "./identity";
 import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+import { resolveRoleGrants, type DomainRegisteredRole } from "./rbac/domain-contribution";
+import { NEUTRAL_CORE_ROLES, type NeutralCoreRole } from "./rbac/neutral-roles";
 
 /** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
 const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Role definitions (RBAC layer)
+ *
+ * The platform core defines ONLY the neutral role vocabulary
+ * (`rbac/neutral-roles.ts`). A domain contributes its own roles — with their
+ * neutral-role semantics and capability grants — through the domain
+ * contribution registry (`rbac/domain-contribution.ts`); the engine resolves
+ * both vocabularies uniformly at decision time. Domain role names never
+ * appear in this file (RULING-4 direction: domain -> neutral only).
  * ────────────────────────────────────────────────────────────*/
 
-export type CoreGridRole =
-  | "coregrid_owner"
-  | "platform_admin"
-  | "engineer"
-  | "senior_engineer"
-  | "support_engineer"
-  | "security_engineer"
-  | "sre"
-  | "data_engineer"
-  | "ai_engineer"
-  | "ai_operator"
-  | "product"
-  | "finance"
-  | "compliance"
-  | "auditor"
-  | "support"
-  | "read_only"
-  | "school_super_admin"
-  | "school_admin"
-  | "campus_admin"
-  | "principal"
-  | "teacher"
-  | "bursar"
-  | "parent"
-  | "student"
-  | "driver";
+export type CoreGridRole = NeutralCoreRole | DomainRegisteredRole;
 
-export const COREGRID_ROLES: readonly CoreGridRole[] = [
-  "coregrid_owner",
-  "platform_admin",
-  "engineer",
-  "senior_engineer",
-  "support_engineer",
-  "security_engineer",
-  "sre",
-  "data_engineer",
-  "ai_engineer",
-  "ai_operator",
-  "product",
-  "finance",
-  "compliance",
-  "auditor",
-  "support",
-  "read_only",
-  "school_super_admin",
-  "school_admin",
-  "campus_admin",
-  "principal",
-  "teacher",
-  "bursar",
-  "parent",
-  "student",
-  "driver",
-] as const;
-
-/** Coarse-grained role → permission grants. RBAC alone is never sufficient. */
-const ROLE_PERMISSIONS: Record<CoreGridRole, readonly Permission[]> = {
-  coregrid_owner: [
-    { resource: "school", action: "manage", scope: null },
-    { resource: "identity", action: "manage", scope: null },
-    { resource: "settings", action: "manage", scope: null },
-    { resource: "audit_log", action: "read", scope: null },
-  ],
-  platform_admin: [
-    { resource: "school", action: "manage", scope: null },
-    { resource: "identity", action: "manage", scope: null },
-    { resource: "settings", action: "manage", scope: null },
-  ],
-  engineer: [
-    { resource: "settings", action: "read", scope: null },
-    { resource: "audit_log", action: "read", scope: null },
-  ],
-  senior_engineer: [
-    { resource: "settings", action: "manage", scope: null },
-    { resource: "audit_log", action: "read", scope: null },
-  ],
-  support_engineer: [
-    { resource: "user", action: "read", scope: null },
-    { resource: "identity", action: "read", scope: null },
-  ],
-  security_engineer: [
-    { resource: "identity", action: "read", scope: null },
-    { resource: "audit_log", action: "read", scope: null },
-    { resource: "session", action: "read", scope: null },
-  ],
-  sre: [
-    { resource: "settings", action: "read", scope: null },
-    { resource: "audit_log", action: "read", scope: null },
-  ],
-  data_engineer: [{ resource: "analytics", action: "read", scope: null }],
-  ai_engineer: [{ resource: "ai_agent", action: "manage", scope: null }],
-  ai_operator: [
-    { resource: "ai_agent", action: "read", scope: null },
-    { resource: "ai_agent", action: "execute", scope: null },
-  ],
-  product: [{ resource: "analytics", action: "read", scope: null }],
-  finance: [
-    { resource: "payments", action: "read", scope: null },
-    { resource: "fees", action: "read", scope: null },
-  ],
-  compliance: [
-    { resource: "audit_log", action: "read", scope: null },
-    { resource: "identity", action: "read", scope: null },
-  ],
-  auditor: [{ resource: "audit_log", action: "read", scope: null }],
-  support: [{ resource: "user", action: "read", scope: null }],
-  read_only: [],
-  school_super_admin: [
-    { resource: "school", action: "manage", scope: null },
-    { resource: "user", action: "manage", scope: null },
-    { resource: "identity", action: "manage", scope: null },
-    { resource: "settings", action: "manage", scope: null },
-  ],
-  school_admin: [
-    { resource: "school", action: "update", scope: null },
-    { resource: "user", action: "manage", scope: null },
-    { resource: "settings", action: "update", scope: null },
-  ],
-  campus_admin: [
-    { resource: "campus", action: "manage", scope: null },
-    { resource: "user", action: "manage", scope: null },
-  ],
-  principal: [
-    { resource: "school", action: "read", scope: null },
-    { resource: "teacher", action: "read", scope: null },
-    { resource: "student", action: "read", scope: null },
-    { resource: "attendance", action: "read", scope: null },
-    { resource: "grades", action: "read", scope: null },
-  ],
-  teacher: [
-    { resource: "class", action: "read", scope: null },
-    { resource: "student", action: "read", scope: null },
-    { resource: "attendance", action: "update", scope: null },
-    { resource: "grades", action: "update", scope: null },
-  ],
-  bursar: [
-    { resource: "fees", action: "manage", scope: null },
-    { resource: "payments", action: "manage", scope: null },
-  ],
-  parent: [{ resource: "student", action: "read", scope: null }],
-  student: [{ resource: "student", action: "read", scope: null }],
-  driver: [{ resource: "student", action: "read", scope: null }],
-};
+/** The platform's own role set: neutral core roles only. */
+export const COREGRID_ROLES: readonly CoreGridRole[] = NEUTRAL_CORE_ROLES;
 
 /* ─────────────────────────────────────────────────────────────
  * Policy engine (PBAC layer)
@@ -392,10 +262,9 @@ export function authorize(req: AuthorizationRequest, opts: AuthorizeOptions): Au
   // Invariant 12: role membership is never a source of agent authority.
   // An agent acting under `isAgent` must hold every role-equivalent grant
   // through explicit delegation (extraPermissions) or an explicit
-  // relationship grant below.
-  const roleGrants: readonly Permission[] = opts.isAgent
-    ? []
-    : (ROLE_PERMISSIONS[opts.role] ?? []);
+  // relationship grant below. Role grants resolve uniformly across the
+  // neutral core vocabulary and every registered domain contribution.
+  const roleGrants: readonly Permission[] = opts.isAgent ? [] : resolveRoleGrants(opts.role);
   const allGrants = [...roleGrants, ...(opts.extraPermissions ?? [])];
 
   const hasGrant = allGrants.some(
