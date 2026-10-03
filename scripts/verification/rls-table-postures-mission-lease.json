@@ -1,0 +1,36 @@
+{
+  "artifact": "rls-table-postures-mission-lease",
+  "captured": "2026-10-03",
+  "mission": "V1-003 — mission lease substrate (cg_mission_lease, cg_worker_delegation_grant, cg_worker_quarantine)",
+  "role": "Workforce runtime team",
+  "status": "APPLIED to canonical 2026-10-03 (checksummed apply via scripts/apply-canonical-hardening.mjs, migration 20261003000019); zero-policy deny-by-default by design",
+  "migration": "database/supabase/migrations/20261003000019_coregrid_v1_mission_lease.sql",
+  "rollback": "database/supabase/rollbacks/20261003000019_coregrid_v1_mission_lease.sql",
+  "consumer": "RLS isolation battery steward (scripts/verify-rls-isolation-battery.mjs registry merge) — extends the zero-policy stage with these tables",
+  "authority": [
+    "AGENTS.md §13 multi-tenancy (every request must have tenant context)",
+    "AGENTS.md §17 RLS mandatory; application code is never the only security layer",
+    "AGENTS.md §27/§28 service role reserved for trusted server/control-plane operations; append-only ledgers",
+    "AGENTS.md §31 revoked access fails (delegation revocation takes effect at the gate)"
+  ],
+  "tables": [
+    {
+      "name": "cg_mission_lease",
+      "source": "20261003000019_coregrid_v1_mission_lease.sql",
+      "posture": "zero-policy",
+      "rationale": "lease bookkeeping is execution-state coordination, never a client-consumable row set: the workforce host adapter reaches it exclusively through the service-role client (the same posture as the kernel substrate families), tenant scoping is enforced in the adapter via the composite (tenant_id, execution_id, mission_id) FK into cg_execution_record plus per-operation tenant predicates; zero policies keeps deny-by-default strongest form — anon/authenticated are fully revoked (no table privilege), so even a policy accident exposes nothing"
+    },
+    {
+      "name": "cg_worker_delegation_grant",
+      "source": "20261003000019_coregrid_v1_mission_lease.sql",
+      "posture": "zero-policy",
+      "rationale": "the live revocation surface over the append-only cg_worker_delegation history; delegation grants are authority data (Invariant 12: agent authority flows only through explicit delegation) and must never be readable or writable by client roles — consumed exclusively through the service-role worker-registry adapter which resolves grants into neutral-RBAC extraPermissions at the gate; zero policies + full client revoke is the strongest form"
+    },
+    {
+      "name": "cg_worker_quarantine",
+      "source": "20261003000019_coregrid_v1_mission_lease.sql",
+      "posture": "zero-policy",
+      "rationale": "quarantine ledger for failing workers (§45 bounded self-healing); append-only governance record consumed only by the control-plane adapter under the service role; zero policies + full client revoke keeps the deny-by-default invariant"
+    }
+  ]
+}

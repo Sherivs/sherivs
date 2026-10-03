@@ -5,8 +5,8 @@
   "projectRef": "nwrflbpbhyiqdptmlccm",
   "transport": "supabase-management-api-database-query",
   "exclusiveAccess": "serialized — one canonical operation at a time (campaign canonical lock held by TEAM 3)",
-  "executedAt": "2026-10-03T04:36:30.079Z",
-  "completedAt": "2026-10-03T04:36:41.062Z",
+  "executedAt": "2026-10-03T10:17:52.173Z",
+  "completedAt": "2026-10-03T10:18:04.606Z",
   "declaredVsApplied": [
     {
       "file": "20261002000005_coregrid_v1_reconciliation.sql",
@@ -154,11 +154,22 @@
     {
       "file": "20261003000018_coregrid_v1_idempotency_privilege_revoke.sql",
       "mission": "H3-000 battery-finding correction — restore the declared deny-by-default privilege posture on cg_idempotency_record (anon: zero; authenticated: exactly SELECT/INSERT/UPDATE) that 20261003000017 omitted while the project's ALTER DEFAULT PRIVILEGES grants broad client privileges on new public tables",
-      "state": "APPLIED_AND_VERIFIED",
+      "state": "ALREADY_APPLIED",
       "checksum": "242630a6c791eb423758161fadce185d9b9c3434f2fcfd1966bd4dbc9d3edecc",
       "rollbackChecksum": "68a350f05aefbf47567ddf93203c90b2f9df5e17f525fde7697a786b33413e24",
       "declaredObjectCount": 1,
-      "elapsedMs": 687,
+      "elapsedMs": null,
+      "evidence": "all 1 declared objects present (pre-flight catalog probe)",
+      "error": null
+    },
+    {
+      "file": "20261003000019_coregrid_v1_mission_lease.sql",
+      "mission": "V1-003 — mission lease substrate: cg_mission_lease (composite FK to cg_execution_record, attempt-uniqueness, state-coherence CHECKs, heartbeat/retry bookkeeping), cg_worker_delegation_grant (live revocation surface over the append-only cg_worker_delegation history), cg_worker_quarantine ledger; FORCE-class deny-by-default: RLS enabled, zero policies, anon/authenticated revoked (service-role reserved for the trusted server/control-plane operations, AGENTS §17/§27)",
+      "state": "APPLIED_AND_VERIFIED",
+      "checksum": "77f16b824d21934af045647da5d05806f2291fcd4d75a278316fc8fd05616831",
+      "rollbackChecksum": "1fa3fbd40a7f9c735f6150dca5160cfeac4ada9086d0b8ad113a293aa0fb3518",
+      "declaredObjectCount": 13,
+      "elapsedMs": 889,
       "evidence": null,
       "error": null
     }
@@ -361,6 +372,30 @@
       "ok": true
     },
     {
+      "table": "cg_mission_lease",
+      "posture": "zero-policy (deny-by-default)",
+      "rlsEnabled": true,
+      "rlsForced": false,
+      "policies": 0,
+      "ok": true
+    },
+    {
+      "table": "cg_worker_delegation_grant",
+      "posture": "zero-policy (deny-by-default)",
+      "rlsEnabled": true,
+      "rlsForced": false,
+      "policies": 0,
+      "ok": true
+    },
+    {
+      "table": "cg_worker_quarantine",
+      "posture": "zero-policy (deny-by-default)",
+      "rlsEnabled": true,
+      "rlsForced": false,
+      "policies": 0,
+      "ok": true
+    },
+    {
       "table": "transport_buses",
       "posture": "zero-policy (deny-by-default)",
       "rlsEnabled": true,
@@ -473,6 +508,11 @@
     },
     {
       "file": "20261003000018_coregrid_v1_idempotency_privilege_revoke.sql",
+      "verified": true,
+      "missingCount": 0
+    },
+    {
+      "file": "20261003000019_coregrid_v1_mission_lease.sql",
       "verified": true,
       "missingCount": 0
     }

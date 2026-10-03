@@ -394,6 +394,35 @@ const MIGRATIONS = [
       ],
     },
   },
+  {
+    file: "20261003000019_coregrid_v1_mission_lease.sql",
+    mission:
+      "V1-003 — mission lease substrate: cg_mission_lease (composite FK to cg_execution_record, attempt-uniqueness, state-coherence CHECKs, heartbeat/retry bookkeeping), cg_worker_delegation_grant (live revocation surface over the append-only cg_worker_delegation history), cg_worker_quarantine ledger; FORCE-class deny-by-default: RLS enabled, zero policies, anon/authenticated revoked (service-role reserved for the trusted server/control-plane operations, AGENTS §17/§27)",
+    declared: {
+      columns: [],
+      indexes: [
+        "cg_execution_record_id_tenant_mission_idx",
+        "cg_mission_lease_tenant_state_idx",
+        "cg_mission_lease_execution_idx",
+        "cg_mission_lease_worker_idx",
+        "cg_worker_delegation_grant_tenant_idx",
+        "cg_worker_quarantine_tenant_idx",
+      ],
+      tables: ["cg_mission_lease", "cg_worker_delegation_grant", "cg_worker_quarantine"],
+      functions: [],
+      triggers: ["cg_mission_lease_touch"],
+      policies: [],
+      // Deny-by-default posture is not a catalog "object" presence can probe;
+      // RLS-enabled-with-zero-policies means every role sees zero rows, and the
+      // explicit REVOKE strips the grant set the project's ALTER DEFAULT
+      // PRIVILEGES would otherwise confer. Probed via table_privileges.
+      privilegePostures: [
+        { table: "cg_mission_lease", anon: [], authenticated: [], service_role: ["ALL"] },
+        { table: "cg_worker_delegation_grant", anon: [], authenticated: [], service_role: ["ALL"] },
+        { table: "cg_worker_quarantine", anon: [], authenticated: [], service_role: ["ALL"] },
+      ],
+    },
+  },
 ];
 
 const report = (line, log) => {
