@@ -423,6 +423,19 @@ const MIGRATIONS = [
       ],
     },
   },
+  {
+    file: "20261003000020_coregrid_is_super_admin_definer.sql",
+    mission:
+      "V1 follow-up — is_super_admin() SECURITY DEFINER alignment: completes the 20260620151525 recursion fix (helpers reading public.users) for the one missed helper reading public.super_admins, whose policy re-invokes it — unbounded RLS recursion (PG 54001) on every tenant read whenever a super_admins row exists; observed live by the F-13 vertical slice (T6)",
+    declared: {
+      columns: [],
+      indexes: [],
+      tables: [],
+      functions: ["is_super_admin"],
+      triggers: [],
+      policies: [],
+    },
+  },
 ];
 
 const report = (line, log) => {

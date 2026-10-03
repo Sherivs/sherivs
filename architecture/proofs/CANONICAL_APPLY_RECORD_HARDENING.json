@@ -5,8 +5,8 @@
   "projectRef": "nwrflbpbhyiqdptmlccm",
   "transport": "supabase-management-api-database-query",
   "exclusiveAccess": "serialized — one canonical operation at a time (campaign canonical lock held by TEAM 3)",
-  "executedAt": "2026-10-03T10:17:52.173Z",
-  "completedAt": "2026-10-03T10:18:04.606Z",
+  "executedAt": "2026-10-03T11:36:54.843Z",
+  "completedAt": "2026-10-03T11:37:07.410Z",
   "declaredVsApplied": [
     {
       "file": "20261002000005_coregrid_v1_reconciliation.sql",
@@ -165,12 +165,23 @@
     {
       "file": "20261003000019_coregrid_v1_mission_lease.sql",
       "mission": "V1-003 — mission lease substrate: cg_mission_lease (composite FK to cg_execution_record, attempt-uniqueness, state-coherence CHECKs, heartbeat/retry bookkeeping), cg_worker_delegation_grant (live revocation surface over the append-only cg_worker_delegation history), cg_worker_quarantine ledger; FORCE-class deny-by-default: RLS enabled, zero policies, anon/authenticated revoked (service-role reserved for the trusted server/control-plane operations, AGENTS §17/§27)",
-      "state": "APPLIED_AND_VERIFIED",
+      "state": "ALREADY_APPLIED",
       "checksum": "77f16b824d21934af045647da5d05806f2291fcd4d75a278316fc8fd05616831",
       "rollbackChecksum": "1fa3fbd40a7f9c735f6150dca5160cfeac4ada9086d0b8ad113a293aa0fb3518",
       "declaredObjectCount": 13,
-      "elapsedMs": 889,
-      "evidence": null,
+      "elapsedMs": null,
+      "evidence": "all 13 declared objects present (pre-flight catalog probe)",
+      "error": null
+    },
+    {
+      "file": "20261003000020_coregrid_is_super_admin_definer.sql",
+      "mission": "V1 follow-up — is_super_admin() SECURITY DEFINER alignment: completes the 20260620151525 recursion fix (helpers reading public.users) for the one missed helper reading public.super_admins, whose policy re-invokes it — unbounded RLS recursion (PG 54001) on every tenant read whenever a super_admins row exists; observed live by the F-13 vertical slice (T6)",
+      "state": "ALREADY_APPLIED",
+      "checksum": "48d3a69a46b4eb58eaa0750569573b1355ad4498034d5dc0444affb7be1cbde7",
+      "rollbackChecksum": "9fdf0fc0cd832006a356b3c18aee59392483b8cbe24f2cdad86e3869bd1ffe6e",
+      "declaredObjectCount": 1,
+      "elapsedMs": null,
+      "evidence": "all 1 declared objects present (pre-flight catalog probe)",
       "error": null
     }
   ],
@@ -513,6 +524,11 @@
     },
     {
       "file": "20261003000019_coregrid_v1_mission_lease.sql",
+      "verified": true,
+      "missingCount": 0
+    },
+    {
+      "file": "20261003000020_coregrid_is_super_admin_definer.sql",
       "verified": true,
       "missingCount": 0
     }
