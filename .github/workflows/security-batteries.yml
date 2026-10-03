@@ -4,8 +4,28 @@ name: Security Batteries
 # restore/recovery drill) against the canonical CoreGrid database.
 #
 # These batteries are LIVE-CREDENTIAL-GATED: they touch the canonical database
-# through authorized transports, so they intentionally do NOT run on
-# pull_request. Triggers: manual (workflow_dispatch) + weekly schedule.
+# through authorized transports.
+#
+# Triggers: manual (workflow_dispatch) + weekly schedule, and — since the H3
+# C-024 extension — pull_request, PATH-SCOPED to the RLS battery's own inputs
+# (battery script, shared battery lib, posture scope files, policy migrations,
+# this workflow). The restore/recovery drill remains PR-excluded via `if:`: it
+# writes a drill table to the canonical database and must never run on PRs.
+#
+# RESIDUAL GAP (honest accounting, H3-024): fork pull requests have NO access
+# to repository secrets, so SUPABASE_URL / SUPABASE_ACCESS_TOKEN resolve empty
+# there and the RLS battery exits 2 (BLOCKED_NO_CREDENTIAL — job blocked, NOT
+# failed; no posture claim is made). Same-repo PRs receive the secret store.
+# Canonical posture proof per PR is therefore guaranteed only for same-repo
+# branches; fork PRs stay blocked until the operator credentials a fork-safe
+# read-only channel (e.g. a restricted deploy token via a merge queue).
+#
+# CONCURRENCY NOTE (interaction with A-008 design, architecture/campaigns/h3/
+# recovery-ci-wiring.md): PR runs join the run-level `canonical-db-batteries`
+# group below and queue behind in-flight live battery runs. The sibling A-008
+# design proposes relocating that lock to job level (invariant-preserving) so
+# PR-time work stops holding the canonical lock; reconciliation of both
+# changes into one workflow is the coordinator's call (do not relocate here).
 #
 # CANONICAL EXCLUSIVE ACCESS — coordinator lock mechanism in CI:
 #   Both batteries operate on the canonical database. The `concurrency` group
@@ -13,6 +33,10 @@ name: Security Batteries
 #   across all workflow runs, and `cancel-in-progress: false` guarantees a
 #   running battery is never interrupted mid-drill by a newer trigger — new
 #   runs queue behind it. Do not remove or widen this group without an ADR.
+#   Note (per A-008's ground-truth observation): the run-level group serializes
+#   RUNS, not jobs — within a single run the two battery jobs still execute in
+#   parallel; the A-008 relocation design addresses this. Recorded, not changed
+#   here (C-024 keeps the lock exactly as-is).
 #
 # Secrets come exclusively from the GitHub Actions secret store, mapped into
 # job env below. Values are NEVER printed: the battery scripts redact secret
@@ -26,6 +50,18 @@ on:
   schedule:
     # Weekly, Mondays 06:17 UTC (off the top of the hour to avoid scheduler herds).
     - cron: "17 6 * * 1"
+  pull_request:
+    # C-024 (H3): RLS battery also proves the deny-by-default posture on every
+    # PR that touches the battery's own inputs. Path-scoped so ordinary PRs do
+    # not consume the canonical-db-batteries lock. Only the rls-isolation-battery
+    # job runs here; restore-recovery-drill is PR-excluded by `if:` below.
+    paths:
+      - "scripts/verify-rls-isolation-battery.mjs"
+      - "scripts/restore-recovery-drill.mjs"
+      - "scripts/lib/**"
+      - "scripts/verification/rls-table-postures-*.json"
+      - "database/supabase/migrations/**"
+      - ".github/workflows/security-batteries.yml"
 
 permissions:
   contents: read
@@ -44,6 +80,10 @@ env:
 jobs:
   rls-isolation-battery:
     name: RLS isolation battery (V1CAP-073)
+    # C-024 (H3): runs on every trigger — workflow_dispatch, schedule, and
+    # pull_request (path-scoped; see the trigger block and the header's
+    # residual-gap note on fork PRs). No `if:` guard: this is the only job
+    # intended for pull_request.
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -101,7 +141,7 @@ jobs:
               echo "STATUS=PASS — deny-by-default posture proven against the canonical database (project ref derives from SUPABASE_URL)."
               ;;
             2)
-              echo "STATUS=BLOCKED_NO_CREDENTIAL — SUPABASE_URL and/or SUPABASE_ACCESS_TOKEN are not configured in the GitHub Actions secret store. No posture claim is made either way."
+              echo "STATUS=BLOCKED_NO_CREDENTIAL — SUPABASE_URL and/or SUPABASE_ACCESS_TOKEN are not available in this context (absent from the GitHub Actions secret store, or a fork pull request, which cannot access repository secrets). No posture claim is made either way."
               ;;
             *)
               echo "STATUS=FAIL — RLS isolation battery recorded FINDINGS (see step output and /opt/cursor/artifacts/rls-battery-results.json)."
@@ -117,7 +157,7 @@ jobs:
             echo ""
             echo "Exit code: \`${{ steps.rls.outputs.exit_code || 'no-run' }}\`"
             if [ "${{ steps.rls.outputs.exit_code }}" = "2" ]; then
-              echo "**BLOCKED on credentials** — the job did not fail: the battery could not run because secrets are absent. Configure \`SUPABASE_URL\` and \`SUPABASE_ACCESS_TOKEN\` (optionally \`SUPABASE_ANON_KEY\`) in the repository secret store."
+              echo "**BLOCKED on credentials** — the job did not fail: the battery could not run because secrets are absent. Configure \`SUPABASE_URL\` and \`SUPABASE_ACCESS_TOKEN\` (optionally \`SUPABASE_ANON_KEY\`) in the repository secret store. On fork pull requests this is expected: fork PRs cannot access repository secrets, so the battery stays blocked (no posture claim) rather than passing or failing."
             elif [ "${{ steps.rls.outputs.exit_code }}" = "0" ]; then
               echo "PASS — tenant isolation posture holds (RLS on, zero permissive policies, no client grants, anon REST denied for every cg_* table)."
             else
@@ -137,6 +177,9 @@ jobs:
 
   restore-recovery-drill:
     name: Restore/recovery drill (V1CAP-074)
+    # C-024 (H3): this drill writes to the canonical database, so it must never
+    # run on pull_request. PR runs execute only rls-isolation-battery.
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
