@@ -5,10 +5,20 @@ name: Release
 # "production" environment (approval law, Part 15/28) and FAILS CLOSED
 # until BLK-3 deployment credentials are configured.
 #
+# Deploy path: the deploy job stages the tagged commit's deploy substrate
+# (infrastructure/deploy/deploy.sh + docker-compose.yml) onto the target VM
+# and invokes deploy.sh over SSH — the SAME health-gated, auto-rolling-back
+# path documented in architecture/campaigns/V1-PROGRAM/OPERATIONS.md and
+# infrastructure/deploy/README.md. There is deliberately NO raw `docker run`
+# bypass: every production container swap goes through the deploy.sh health
+# gate (pull first, compose up with fail-closed env_file, poll /health.json,
+# auto-rollback to the previous image on failure, §38).
+#
 # Supply-chain hygiene: all third-party actions pinned to commit SHAs.
 #
 # Secret handling: DOCKER_* / DEPLOY_* values are referenced by name only,
-# passed through env blocks, and never echoed.
+# passed through env blocks, and never echoed. No secret VALUES appear in
+# this file.
 
 on:
   push:
@@ -75,13 +85,18 @@ jobs:
             ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
   deploy:
-    name: Deploy to production (human-approved)
+    name: Deploy to production (human-approved, health-gated)
     needs: build-and-push
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # Two health windows (deploy + possible auto-rollback) plus image pull
+    # and substrate staging fit inside this budget.
+    timeout-minutes: 15
     # Human approval gate — Part 15/28 approval law.
     environment: production
     steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
       - name: Fail closed — deployment credentials not configured (BLK-3)
         env:
           DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
@@ -95,7 +110,14 @@ jobs:
             exit 1
           fi
 
-      - name: Pull and run image on the deployment target
+      # Runs infrastructure/deploy/deploy.sh ON the VM (staged from this
+      # tagged commit): pull before swap, compose up with fail-closed env
+      # file, poll /health.json, auto-rollback to the previous image (§38).
+      # sudo -n keeps the SSH session non-interactive: it fails loudly rather
+      # than hanging the runner if the deploy identity lacks passwordless
+      # sudo. The VM itself must be pre-authorized to pull the image
+      # (registry login done out-of-band by the operator, per OPERATIONS.md).
+      - name: Deploy via health-gated substrate (deploy.sh over SSH)
         env:
           DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
           DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
@@ -104,14 +126,22 @@ jobs:
           DOCKER_NAMESPACE: ${{ secrets.DOCKER_NAMESPACE }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          install -m 600 -d ~/.ssh
+          install -m 700 -d ~/.ssh
           printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H "$DEPLOY_SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh_opts=(-i "$HOME/.ssh/id_ed25519" -o BatchMode=yes -o StrictHostKeyChecking=yes)
           image="${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/coregrid-scholar:${IMAGE_TAG}"
-          ssh -i ~/.ssh/id_ed25519 "${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}" \
-            "docker pull '$image' && docker stop coregrid-scholar 2>/dev/null || true; \
-             docker rm coregrid-scholar 2>/dev/null || true; \
-             docker run -d --name coregrid-scholar --restart unless-stopped \
-               --env-file /opt/coregrid/scholar.env \
-               -p 3000:3000 '$image'"
+          remote="${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}"
+
+          # Stage the deploy substrate from the tagged commit onto the VM so
+          # the health gate/rollback logic matches the code being released.
+          ssh "${ssh_opts[@]}" "$remote" \
+            'sudo -n mkdir -p /opt/coregrid/deploy && sudo -n chown "$(id -u):$(id -g)" /opt/coregrid/deploy'
+          scp "${ssh_opts[@]}" infrastructure/deploy/deploy.sh \
+              infrastructure/deploy/docker-compose.yml "$remote:/opt/coregrid/deploy/"
+
+          # Health-gated deploy: poll /health.json, auto-rollback on failure.
+          ssh "${ssh_opts[@]}" "$remote" \
+            "sudo -n bash /opt/coregrid/deploy/deploy.sh '$image'"
           rm -f ~/.ssh/id_ed25519

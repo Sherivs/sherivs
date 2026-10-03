@@ -84,11 +84,13 @@ with `write:packages`).
 3. `curl -fsS https://<host>/health.json` → `{"status":"ok",...}` (200);
    `curl -fsSI https://<host>/coregrid` → 200 (F-14 smoke parity).
 
-**Known drift (reported, not modified):** the release.yml deploy step issues
-raw `docker run --env-file` commands, while `infrastructure/deploy/deploy.sh`
-runs compose with health-gated auto-rollback. For the first live deploy prefer
-running `deploy.sh` on the VM (or aligning release.yml to it) — flag to the
-release.yml owners; this agent did not touch CI.
+**Known drift — RESOLVED (2026-10-03, post-R-wave):** release.yml now deploys
+through the SAME health-gated substrate — it stages
+`infrastructure/deploy/deploy.sh` + `docker-compose.yml` onto the VM at
+`/opt/coregrid/deploy/` (pinned to the tagged commit) and invokes
+`sudo -n bash /opt/coregrid/deploy/deploy.sh '<image>'` over SSH. There is
+deliberately NO raw `docker run` bypass: every production container swap goes
+through the deploy.sh health gate and auto-rollback.
 
 ## 2. BLK-4 — Paystack live secret key
 
