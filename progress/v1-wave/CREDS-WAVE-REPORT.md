@@ -27,7 +27,16 @@ None structural. All network effects flowed through the declared paths only: the
 
 ## Tests
 
-- `npm run verify` — full gate (typecheck + unit suite + registry + drift + neutrality + secret scan + builds): **exit 0** recorded at close-out (see commit evidence below).
+- `npm run verify` — **exit 0** (2026-10-03 close-out run, log
+  `/opt/cursor/artifacts/creds-wave-verify.log`): typecheck clean; unit suite
+  **8,866 passed | 5 skipped** across 423 passed / 1 skipped test files
+  (exact T-wave baseline parity); registry, drift, and neutrality gates
+  `STATUS=PASS` (neutrality: no new violations beyond the honest quarantine
+  baseline); secret scan pass; client + SSR production builds green.
+  Environment note: this fresh VM required `npm install` (root, to restore
+  the `file:packages/contracts` workspace link) and `mobile && npm install`
+  (mobile workspace deps absent from the snapshot) before verify could run —
+  no lockfile or source changes resulted.
 - `tests/unit/communications/telephony-adapter.test.ts` — **18/18 pass** (Vapi stub law exercised with credential-present semantics).
 
 ## Security Validation
