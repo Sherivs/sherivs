@@ -150,6 +150,7 @@ import { Route as AuthenticatedSuperAdminSupportRouteImport } from './routes/_au
 import { Route as AuthenticatedSuperAdminTenantsRouteImport } from './routes/_authenticated/super-admin/tenants'
 import { Route as AuthenticatedSuperAdminTiersRouteImport } from './routes/_authenticated/super-admin/tiers'
 import { Route as AuthenticatedSuperAdminTrustFabricRouteImport } from './routes/_authenticated/super-admin/trust-fabric'
+import { Route as AuthenticatedSuperAdminWorkerMissionsRouteImport } from './routes/_authenticated/super-admin/worker-missions'
 import { Route as AuthenticatedSuperAdminWorkspaceProjectionRouteImport } from './routes/_authenticated/super-admin/workspace-projection'
 import { Route as AuthenticatedTeacherAiAssistantRouteImport } from './routes/_authenticated/teacher/ai-assistant'
 import { Route as AuthenticatedTeacherAttendanceRouteImport } from './routes/_authenticated/teacher/attendance'
@@ -972,6 +973,12 @@ const AuthenticatedSuperAdminTrustFabricRoute =
     path: '/trust-fabric',
     getParentRoute: () => AuthenticatedSuperAdminRouteRoute,
   } as any)
+const AuthenticatedSuperAdminWorkerMissionsRoute =
+  AuthenticatedSuperAdminWorkerMissionsRouteImport.update({
+    id: '/worker-missions',
+    path: '/worker-missions',
+    getParentRoute: () => AuthenticatedSuperAdminRouteRoute,
+  } as any)
 const AuthenticatedSuperAdminWorkspaceProjectionRoute =
   AuthenticatedSuperAdminWorkspaceProjectionRouteImport.update({
     id: '/workspace-projection',
@@ -1208,6 +1215,7 @@ export interface FileRoutesByFullPath {
   '/super-admin/tenants': typeof AuthenticatedSuperAdminTenantsRoute
   '/super-admin/tiers': typeof AuthenticatedSuperAdminTiersRoute
   '/super-admin/trust-fabric': typeof AuthenticatedSuperAdminTrustFabricRoute
+  '/super-admin/worker-missions': typeof AuthenticatedSuperAdminWorkerMissionsRoute
   '/super-admin/workspace-projection': typeof AuthenticatedSuperAdminWorkspaceProjectionRoute
   '/teacher/ai-assistant': typeof AuthenticatedTeacherAiAssistantRoute
   '/teacher/attendance': typeof AuthenticatedTeacherAttendanceRoute
@@ -1364,6 +1372,7 @@ export interface FileRoutesByTo {
   '/super-admin/tenants': typeof AuthenticatedSuperAdminTenantsRoute
   '/super-admin/tiers': typeof AuthenticatedSuperAdminTiersRoute
   '/super-admin/trust-fabric': typeof AuthenticatedSuperAdminTrustFabricRoute
+  '/super-admin/worker-missions': typeof AuthenticatedSuperAdminWorkerMissionsRoute
   '/super-admin/workspace-projection': typeof AuthenticatedSuperAdminWorkspaceProjectionRoute
   '/teacher/ai-assistant': typeof AuthenticatedTeacherAiAssistantRoute
   '/teacher/attendance': typeof AuthenticatedTeacherAttendanceRoute
@@ -1524,6 +1533,7 @@ export interface FileRoutesById {
   '/_authenticated/super-admin/tenants': typeof AuthenticatedSuperAdminTenantsRoute
   '/_authenticated/super-admin/tiers': typeof AuthenticatedSuperAdminTiersRoute
   '/_authenticated/super-admin/trust-fabric': typeof AuthenticatedSuperAdminTrustFabricRoute
+  '/_authenticated/super-admin/worker-missions': typeof AuthenticatedSuperAdminWorkerMissionsRoute
   '/_authenticated/super-admin/workspace-projection': typeof AuthenticatedSuperAdminWorkspaceProjectionRoute
   '/_authenticated/teacher/ai-assistant': typeof AuthenticatedTeacherAiAssistantRoute
   '/_authenticated/teacher/attendance': typeof AuthenticatedTeacherAttendanceRoute
@@ -1683,6 +1693,7 @@ export interface FileRouteTypes {
     | '/super-admin/tenants'
     | '/super-admin/tiers'
     | '/super-admin/trust-fabric'
+    | '/super-admin/worker-missions'
     | '/super-admin/workspace-projection'
     | '/teacher/ai-assistant'
     | '/teacher/attendance'
@@ -1839,6 +1850,7 @@ export interface FileRouteTypes {
     | '/super-admin/tenants'
     | '/super-admin/tiers'
     | '/super-admin/trust-fabric'
+    | '/super-admin/worker-missions'
     | '/super-admin/workspace-projection'
     | '/teacher/ai-assistant'
     | '/teacher/attendance'
@@ -1998,6 +2010,7 @@ export interface FileRouteTypes {
     | '/_authenticated/super-admin/tenants'
     | '/_authenticated/super-admin/tiers'
     | '/_authenticated/super-admin/trust-fabric'
+    | '/_authenticated/super-admin/worker-missions'
     | '/_authenticated/super-admin/workspace-projection'
     | '/_authenticated/teacher/ai-assistant'
     | '/_authenticated/teacher/attendance'
@@ -3032,6 +3045,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSuperAdminTrustFabricRouteImport
       parentRoute: typeof AuthenticatedSuperAdminRouteRoute
     }
+    '/_authenticated/super-admin/worker-missions': {
+      id: '/_authenticated/super-admin/worker-missions'
+      path: '/worker-missions'
+      fullPath: '/super-admin/worker-missions'
+      preLoaderRoute: typeof AuthenticatedSuperAdminWorkerMissionsRouteImport
+      parentRoute: typeof AuthenticatedSuperAdminRouteRoute
+    }
     '/_authenticated/super-admin/workspace-projection': {
       id: '/_authenticated/super-admin/workspace-projection'
       path: '/workspace-projection'
@@ -3450,6 +3470,7 @@ interface AuthenticatedSuperAdminRouteRouteChildren {
   AuthenticatedSuperAdminTenantsRoute: typeof AuthenticatedSuperAdminTenantsRoute
   AuthenticatedSuperAdminTiersRoute: typeof AuthenticatedSuperAdminTiersRoute
   AuthenticatedSuperAdminTrustFabricRoute: typeof AuthenticatedSuperAdminTrustFabricRoute
+  AuthenticatedSuperAdminWorkerMissionsRoute: typeof AuthenticatedSuperAdminWorkerMissionsRoute
   AuthenticatedSuperAdminWorkspaceProjectionRoute: typeof AuthenticatedSuperAdminWorkspaceProjectionRoute
 }
 
@@ -3480,6 +3501,8 @@ const AuthenticatedSuperAdminRouteRouteChildren: AuthenticatedSuperAdminRouteRou
     AuthenticatedSuperAdminTiersRoute: AuthenticatedSuperAdminTiersRoute,
     AuthenticatedSuperAdminTrustFabricRoute:
       AuthenticatedSuperAdminTrustFabricRoute,
+    AuthenticatedSuperAdminWorkerMissionsRoute:
+      AuthenticatedSuperAdminWorkerMissionsRoute,
     AuthenticatedSuperAdminWorkspaceProjectionRoute:
       AuthenticatedSuperAdminWorkspaceProjectionRoute,
   }
