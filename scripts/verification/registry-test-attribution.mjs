@@ -213,6 +213,82 @@ const PREFIX_MAP = [
   // the explicit per-file SUBJECT_MAP entry above — it wins over this prefix.
   { prefix: "tests/unit/mh-", phase: "01", why: "H2 hardening wave gate/harness suites" },
   { prefix: "tests/failure/mh-", phase: "01", why: "H2 hardening wave gate/harness suites (failure battery)" },
+  // ── H3-082 (H3 wave attribution completion, 2026-10-03): the 100-mission H3
+  // wave lands suites under the tests/{unit,failure}/h3-0NN-*.test.ts pattern
+  // (NN = mission id, H3-WAVE-CAMPAIGN.md). Each mission id is a stable prefix,
+  // mapped to the phase whose registered modules own the tested substrate;
+  // substrates no phase registers are recorded UNATTRIBUTED above, never
+  // guessed. Squad G phase-contract suites attribute to their
+  // architecture-defined phases 34-51 (Squad G mission graph). ──
+  // Squad A/B — recovery groundwork, J-gap closures (context/security/memory/mission):
+  { prefix: "tests/unit/h3-001", phase: "01", why: "H3-001 recovery drill runner — verifies the scripts/verify-recovery-drill.mjs offline rehearsal machinery, matching the phase-01 verification-contract suites (phase-completion-audit precedent)" },
+  { prefix: "tests/unit/h3-010", phase: "08", why: "H3-010 identity lifecycle fail-closed proof over frontend/src/lib/authorization.ts — phase-08 security enforcement (the recorded only authorization authority), matching tests/unit/authorization-exhaustive.test.ts" },
+  { prefix: "tests/unit/h3-012", phase: "26", why: "H3-012 context package completeness checker (frontend/src/lib/context/package-completeness.ts) — phase-26 ai-context substrate, matching tests/unit/context-package-completeness.test.ts" },
+  { prefix: "tests/unit/h3-013", phase: "26", why: "H3-013 tenant/reality switch-safety runtime guard (frontend/src/lib/context/) — phase-26 ai-context substrate, matching tests/unit/context-package-completeness.test.ts" },
+  { prefix: "tests/unit/h3-014", phase: "33", why: "H3-014 event kernel taxonomy/dedup/ordering/significance proof — phase-33 kernel substrate, matching tests/unit/kernel-event-semantics.test.ts" },
+  { prefix: "tests/unit/h3-016", phase: "25", why: "H3-016 worker authority bounds/delegation depth over the workforce worker contracts — phase-25 workforce substrate, matching tests/unit/worker-definition.test.ts" },
+  { prefix: "tests/unit/h3-017", phase: "25", why: "H3-017 delegation-contract matching (frontend/src/lib/agent-runtime/capability-matching.ts, J-028 stream) — phase-25 workforce substrate, matching tests/unit/workforce-capability-registry.test.ts" },
+  { prefix: "tests/unit/h3-018", phase: "36", why: "H3-018 memory scope enforcement, no silent scope expansion — phase-36 memory governance, matching tests/unit/memory-worker-scopes.test.ts" },
+  { prefix: "tests/unit/h3-020", phase: "08", why: "H3-020 approval-chain ESCALATE/REQUIRE_APPROVAL resolution flow (Constitution §16 authorization decision outcomes) — phase-08 security enforcement, the recorded only authorization authority" },
+  { prefix: "tests/unit/h3-022", phase: "26", why: "H3-022 prompt-injection/malicious-artifact defense (J-036 stream) — phase-26 gateway substrate, matching tests/unit/ai-gateway-runtime-defenses.test.ts" },
+  { prefix: "tests/unit/h3-025", phase: "26", why: "H3-025 egress allowlist enforcement at the AI gateway boundary (Constitution §20) — phase-26 AI gateway substrate, matching tests/unit/ai-gateway.test.ts" },
+  { prefix: "tests/unit/h3-029", phase: "36", why: "H3-029 adversarial proof that memory retrieval is authorization-gated — phase-36 memory owner, matching tests/unit/memory-store.test.ts / memory-worker-scopes.test.ts" },
+  // Squad C — threat mitigations:
+  { prefix: "tests/failure/h3-030", phase: "26", why: "H3-030 adversarial context-bleed battery on the switch-safety runtime guard (frontend/src/lib/context/) — phase-26 ai-context substrate" },
+  // Squad D — zero-policy RLS posture adjudication (30 cg_* tables):
+  { prefix: "tests/unit/h3-03", phase: "33", why: "H3-031..039 zero-policy RLS posture adjudication suites — deny-by-default cg_* posture discipline rooted in the phase-33 kernel substrate (rls-isolation-check.sql), matching tests/unit/db-tooling-coherence.test.ts / pg-ssl-tls-policy.test.ts" },
+  { prefix: "tests/unit/h3-040", phase: "33", why: "H3-040 zero-policy RLS posture adjudication (D-040 tables) — same phase-33 rls-isolation posture discipline as the h3-03 prefix" },
+  // Squad E — launch-gate drills (offline gate suites for credential-gated drill scripts):
+  { prefix: "tests/unit/h3-041", phase: "01", why: "H3-041 AI gateway live drill (scripts/verify-ai-gateway-live.drill.mjs) offline gate suite — phase-01 verification-contract machinery, matching the phase-completion-audit precedent" },
+  { prefix: "tests/unit/h3-042", phase: "05", why: "H3-042 deployment serving-URL monitoring gate (frontend/src/lib/observability/) — phase-05 runtime-observability substrate, matching tests/unit/observability-health.test.ts" },
+  { prefix: "tests/unit/h3-043", phase: "01", why: "H3-043 payments live drill (scripts/verify-payments-live.drill.mjs) offline gate suite — phase-01 verification-contract machinery (credential-gated drill harness, not the payments adapter)" },
+  { prefix: "tests/unit/h3-044", phase: "01", why: "H3-044 communication provider probe drill (scripts/verify-communication-live.drill.mjs) offline gate suite — phase-01 verification-contract machinery" },
+  // Squad F — observability & operations:
+  { prefix: "tests/unit/h3-046", phase: "05", why: "H3-046 typed metrics registry (frontend/src/lib/observability/) — phase-05 runtime-observability substrate" },
+  { prefix: "tests/unit/h3-047", phase: "05", why: "H3-047 trace context propagation (frontend/src/lib/observability/) — phase-05 runtime-observability substrate" },
+  { prefix: "tests/unit/h3-049", phase: "05", why: "H3-049 dependency health map (frontend/src/lib/observability/) — phase-05 runtime-observability substrate, matching tests/unit/observability-health.test.ts" },
+  { prefix: "tests/unit/h3-052", phase: "05", why: "H3-052 log redaction sweep (Constitution §29/§30 — no secrets in logs) — phase-05 runtime-observability/structured-log discipline, matching tests/unit/observability-structured-log.test.ts" },
+  { prefix: "tests/unit/h3-053", phase: "01", why: "H3-053 substrate-telemetry adoption deepening of the mh-27 suite — phase-01 hardening-wave gate/harness lineage (mh- prefix)" },
+  // Squad G — architecture-defined phase activations (contract architects + verifiers):
+  { prefix: "tests/unit/h3-054", phase: "34", why: "H3-054 phase-34 cognitive-architecture contract suite (H3 wave Squad G)" },
+  { prefix: "tests/unit/h3-055", phase: "35", why: "H3-055 phase-35 multi-agent-society contract suite (H3 wave Squad G)" },
+  { prefix: "tests/unit/h3-056", phase: "36", why: "H3-056 phase-36 memory-knowledge contract suite (H3 wave Squad G)" },
+  { prefix: "tests/unit/h3-057", phase: "37", why: "H3-057 phase-37 simulation-engine contract suite (H3 wave Squad G)" },
+  { prefix: "tests/unit/h3-058", phase: "38", why: "H3-058 phase-38 evolution-engine contract suite (H3 wave Squad G)" },
+  { prefix: "tests/unit/h3-059", phase: "39", why: "H3-059 phase-39 governance-alignment contract suite (H3 wave Squad G)" },
+  { prefix: "tests/unit/h3-060", phase: "40", why: "H3-060 phase-40 universal-runtime-fabric contract suite (H3 wave Squad G)" },
+  { prefix: "tests/unit/h3-061", phase: "41", why: "H3-061 phase-41 sandbox-runtime contract suite (H3 wave Squad G)" },
+  { prefix: "tests/unit/h3-062", phase: "42", why: "H3-062 phase-42 zero-trust-defense contract suite (H3 wave Squad G)" },
+  { prefix: "tests/unit/h3-063", phase: "43", why: "H3-063 phase-43 universal-interface contract suite (H3 wave Squad G)" },
+  { prefix: "tests/unit/h3-064", phase: "44", why: "H3-064 phase-44 planetary-infrastructure contract suite (H3 wave Squad G)" },
+  { prefix: "tests/unit/h3-065", phase: "45", why: "H3-065 phase-45 ai-compute contract suite (H3 wave Squad G)" },
+  { prefix: "tests/unit/h3-066", phase: "46", why: "H3-066 phase-46 twin-civilization contract suite (H3 wave Squad G)" },
+  { prefix: "tests/unit/h3-067", phase: "47", why: "H3-067 phase-47 self-improvement contract suite (H3 wave Squad G)" },
+  { prefix: "tests/unit/h3-068", phase: "48", why: "H3-068 phase-48 knowledge-graph contract suite (H3 wave Squad G)" },
+  { prefix: "tests/unit/h3-069", phase: "49", why: "H3-069 phase-49 autonomous-economy contract suite (H3 wave Squad G)" },
+  { prefix: "tests/unit/h3-070", phase: "50", why: "H3-070 phase-50 human-interface contract suite (H3 wave Squad G)" },
+  { prefix: "tests/unit/h3-071", phase: "51", why: "H3-071 phase-51 reality-os-kernel contract suite (H3 wave Squad G)" },
+  { prefix: "tests/unit/h3-072", phase: "34", why: "H3-072 phase-34 cognitive-architecture adversarial verification suite (H3 wave Squad G)" },
+  { prefix: "tests/unit/h3-073", phase: "35", why: "H3-073 phase-35 multi-agent-society adversarial verification suite (H3 wave Squad G)" },
+  { prefix: "tests/unit/h3-074", phase: "36", why: "H3-074 phase-36 memory-knowledge adversarial verification suite (H3 wave Squad G)" },
+  { prefix: "tests/unit/h3-075", phase: "37", why: "H3-075 phase-37 simulation-engine adversarial verification suite (H3 wave Squad G)" },
+  { prefix: "tests/unit/h3-076", phase: "39", why: "H3-076 phase-39 governance-alignment adversarial verification suite (H3 wave Squad G)" },
+  { prefix: "tests/unit/h3-077", phase: "40", why: "H3-077 phase-40 universal-runtime-fabric adversarial verification suite (H3 wave Squad G)" },
+  { prefix: "tests/unit/h3-078", phase: "42", why: "H3-078 phase-42 zero-trust-defense adversarial verification suite (H3 wave Squad G)" },
+  { prefix: "tests/unit/h3-079", phase: "44", why: "H3-079 phase-44 planetary-infrastructure adversarial verification suite (H3 wave Squad G)" },
+  { prefix: "tests/unit/h3-080", phase: "46", why: "H3-080 phase-46 twin-civilization adversarial verification suite (H3 wave Squad G)" },
+  // Squad H — quality & CI hardening:
+  { prefix: "tests/unit/h3-085", phase: "01", why: "H3-085 secrets-hygiene static scan (scripts/verify-secrets-hygiene.mjs, Constitution §30) — phase-01 verification-contract machinery" },
+  { prefix: "tests/unit/h3-087", phase: "08", why: "H3-087 §27 per-function invariant expansion over the wave's server-side contract modules — phase-08 security enforcement, matching the scholar-invariant-* suites" },
+  { prefix: "tests/unit/h3-088", phase: "33", why: "H3-088 RLS battery posture-parse validation — phase-33 rls-isolation posture discipline, matching the h3-03 posture prefix" },
+  // Squad I — payments & economics:
+  { prefix: "tests/unit/h3-091", phase: "13", why: "H3-091 legacy subscription-tier entitlement mapping — phase-13 financial-payments, matching tests/unit/subscription-tiers.test.ts" },
+  { prefix: "tests/unit/h3-092", phase: "13", why: "H3-092 Paystack adapter failure semantics — phase-13 financial-payments adapter discipline, matching tests/unit/payments-paystack-adapter.test.ts" },
+  { prefix: "tests/unit/h3-093", phase: "13", why: "H3-093 metering roll-up conservation (J-043 stream) — phase-13 financial metering substrate, matching tests/unit/metering-usage-ledger.test.ts" },
+  // Squad J — governance & documentation:
+  { prefix: "tests/unit/h3-095", phase: "01", why: "H3-095 provenance-metadata verification (scripts/verify-provenance-metadata.mjs, Constitution §12) — phase-01 verification-contract machinery" },
+  { prefix: "tests/unit/h3-096", phase: "16", why: "H3-096 twin governance boundary proof (a Digital Twin is not a permission bypass, Constitution §10) — phase-16 Digital Twin registered modules twin-*" },
+  { prefix: "tests/unit/h3-097", phase: "48", why: "H3-097 knowledge-graph relationship provenance/ownership/authorization/confidence proof — phase-48 Civilization Knowledge Graph, matching the H3-068 phase-48 contract suite" },
 ];
 
 // Suites with no canonical phase owner: recorded unattributed with a TODO —
@@ -241,6 +317,22 @@ const UNATTRIBUTED = {
   "tests/unit/delegation-contract.test.ts": "Delegation object contract (J-025/V1CAP-046, MISSION-R-50) — same unowned-mission basis (CG-GAP-003). TODO: attribute when the owner is ratified.",
   "tests/unit/delegation-enforcement.test.ts": "delegation expiry enforcement in the mission runner (MISSION-R-52/V1CAP-021 mission wiring) — same unowned-mission basis (CG-GAP-003); consumes phase-07 agent-plans/agent-tasks machinery without owning it. TODO: attribute when the owner is ratified.",
   "tests/unit/verification-independence.test.ts": "verification independence over the foundation loop (control-plane/foundation-loop) — same unowned-mission basis (CG-GAP-003), matching tests/unit/foundation-loop.test.ts. TODO: attribute when the owner is ratified.",
+  // ── H3-082 (H3 wave attribution completion, 2026-10-03): h3-0NN suites whose
+  // tested substrate no phase registers — recorded unattributed with a TODO,
+  // never guessed, each matching the precedent already recorded above ──
+  "tests/unit/h3-002-recovery-targets.test.ts": "recovery RTO/RPO target contracts (frontend/src/lib/reliability/recovery-targets.ts) — reliability substrate is not a registered phase module, matching tests/unit/failure-architecture.test.ts. TODO: attribute when the owner is ratified.",
+  "tests/unit/h3-003-backup-manifest.test.ts": "backup manifest schema (frontend/src/lib/reliability/backup-manifest.ts) — reliability substrate is not a registered phase module, matching tests/unit/failure-architecture.test.ts. TODO: attribute when the owner is ratified.",
+  "tests/failure/h3-007-recovery-chaos.test.ts": "recovery tooling failure paths (frontend/src/lib/reliability/) — reliability substrate is not a registered phase module, matching tests/unit/failure-architecture.test.ts. TODO: attribute when the owner is ratified.",
+  "tests/unit/h3-009-credential-broker-depth.test.ts": "per-agent credential-broker scoping depth (frontend/src/lib/security/credential-broker.ts) — no registered phase module owns agent credential machinery, matching tests/unit/credential-broker.test.ts. TODO: attribute when the owner is ratified.",
+  "tests/unit/h3-011-lockdown.test.ts": "emergency revocation/kill-switch path (frontend/src/lib/security/lockdown.ts, J-011) — lib/security agent-safety machinery has no registered phase-module owner, matching tests/unit/credential-broker.test.ts. TODO: attribute when the owner is ratified.",
+  "tests/unit/h3-015-mission-gates.test.ts": "mission gate contracts (frontend/src/lib/mission/gates.ts) — mission machinery has no canonical phase owner (CG-GAP-003), matching tests/unit/mission-contract.test.ts. TODO: attribute when the owner is ratified.",
+  "tests/unit/h3-019-quotas.test.ts": "resource-quota contracts (frontend/src/lib/reliability/quotas.ts) — reliability substrate is not a registered phase module, matching tests/unit/failure-architecture.test.ts. TODO: attribute when the owner is ratified.",
+  "tests/unit/h3-021-independence.test.ts": "worker independence enforcement (frontend/src/lib/assurance/independence-enforcement.ts) — verification-independence machinery has no canonical phase owner (CG-GAP-003), matching tests/unit/verification-independence.test.ts. TODO: attribute when the owner is ratified.",
+  "tests/unit/h3-023-failure-semantics.test.ts": "adapter failure semantics (frontend/src/lib/adapters/failure-semantics.ts) — lib/adapters/ is not a registered phase module, matching tests/unit/adapter-failure-policy.test.ts. TODO: attribute when the owner is ratified.",
+  "tests/unit/h3-027-file-substrate.test.ts": "file substrate migration posture (cg_file_object, AUTHORED NOT APPLIED) — files substrate is not a registered phase module, matching tests/unit/files-contract.test.ts. TODO: attribute when a phase registers the files/storage substrate.",
+  "tests/unit/h3-028-idempotency-store.test.ts": "DB-backed command idempotency store (frontend/src/lib/command/idempotency-store.db.ts) — command-infrastructure substrate is not a registered phase module, matching tests/unit/command-idempotency.test.ts. TODO: attribute when the owner is ratified.",
+  "tests/unit/h3-048-audit-surface.test.ts": "tenant-scoped server-only audit read surface (frontend/src/lib/audit/query-surface.contract.ts) — no registered phase module owns the audit read substrate (phase-09 modules are trust-*; phase-05 modules are runtime-*). TODO: attribute when the owner is ratified.",
+  "tests/failure/h3-089-failure-expansion.test.ts": "quota/lease/approval-chain failure paths — reliability/command substrates are not registered phase modules (the approval-chain unit contract attributes to phase 08; this cross-substrate failure battery records unattributed), matching tests/unit/command-leases.test.ts. TODO: attribute when the owners are ratified.",
 };
 
 // ── 4. attribute every measured unit test file ─────────────────────────────

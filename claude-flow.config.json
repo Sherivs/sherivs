@@ -40,6 +40,6 @@
     "autoExecute": true,
     "hooks": []
   },
-  "NVIDIA_API_KEY": "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",
+  "NVIDIA_API_KEY": "${NVIDIA_API_KEY}",
   "NVIDIA_BASE_URL": "https://integrate.api.nvidia.com/v1"
 }

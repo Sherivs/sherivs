@@ -23,7 +23,15 @@
  */
 import { describe, expect, it } from "vitest";
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import {
+  closeSync,
+  mkdtempSync,
+  openSync,
+  readFileSync,
+  rmSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   UNIVERSAL_ROLES,
@@ -287,40 +295,161 @@ describe("certification: the domain-neutrality guard stays clean on the certifie
    * violation may originate from a certified file — and proves the gate got
    * STRICTLY cleaner (its legacy role list left the universal surface, so its
    * baseline entries become shrink-only ratchet opportunities).
+   *
+   * Deterministic child-process execution (H3-081 deflake):
+   *
+   * The guard subprocess scans the whole universal surface, which makes its
+   * wall-clock sensitive to machine load; the vitest parent also injects
+   * environment (NODE_V8_COVERAGE, shared TMPDIR) that would make the child
+   * contend with sibling test processes for the same files. To keep this
+   * certification deterministic under concurrent load:
+   *
+   *   - the child runs with an ISOLATED environment: a unique per-attempt
+   *     temp directory (no shared /tmp collisions) and, when the parent set
+   *     NODE_V8_COVERAGE, that coverage stream is redirected into the same
+   *     unique directory instead of a shared one;
+   *   - stdin is detached from the vitest parent (the guard never reads it);
+   *   - the spawn is bounded: 60s child timeout (SIGKILL), 32MB output
+   *     buffer (the guard prints one WARN line per baseline hit), and a
+   *     per-test budget of 240s so vitest never tears the test down before
+   *     the bounded spawn reports;
+   *   - stdout/stderr are captured FULLY: the child writes both streams to
+   *     files in the isolated scratch directory and the parent reads them
+   *     back after exit. Pipes are NOT used for capture: empirically (H3-081
+   *     ground-truth repro under artificial CPU contention), `spawnSync`
+   *     with piped stdio intermittently TRUNCATES large child output while
+   *     still reporting `status=0` / `error=undefined` (observed 127-159KB
+   *     captured of a 212,914-byte guard report, tail cut mid-line) — the
+   *     guard's `STATUS=PASS` footer silently vanished, which is exactly the
+   *     historical flake signature of this test under concurrent load. File
+   *     capture removes the pipe from the equation; output is finite
+   *     (bounded by the guard's own report), so no maxBuffer applies.
+   *
+   * RETRY POLICY (documented per campaign law): the spawn is retried at most
+   * twice ONLY when the child produced NO verdict at all — `result.error` is
+   * set with no exit code (fork exhaustion EAGAIN, or the 60s bound elapsed;
+   * a missing runtime ENOENT also lands here and fails deterministically on
+   * every attempt) — cases where zero evidence was generated. A completed
+   * run's exit code is evidence: a non-zero exit or any assertion mismatch
+   * FAILS IMMEDIATELY and is never retried, so this retry cannot mask a real
+   * neutrality failure. Every attempt runs the SAME expectations; assertions
+   * apply to the final verdict-bearing attempt.
    */
-  it("introduces no new domain-neutrality violation from a certified file, and the gate's baseline entries become ratchets", () => {
-    const result = spawnSync("node", ["scripts/verify-domain-neutrality.mjs"], {
-      cwd: REPO_ROOT,
-      encoding: "utf8",
-    });
-    const output = `${result.stdout}\n${result.stderr}`;
-    const failLines = output.split("\n").filter((line) => line.startsWith("FAIL  "));
-    const fromCertifiedFiles = failLines.filter((line) =>
-      CERTIFIED_FILES.some((ref) => line.includes(ref)),
-    );
-    expect(
-      fromCertifiedFiles,
-      `guard output:\n${output}`,
-    ).toEqual([]);
-    // The gate's hand-written role list left the universal surface; the six
-    // stale capability-gate baseline groups were RATCHETED OUT of the
-    // baseline (shrink-only ratchet executed by the guard's owning
-    // coordinator after MISSION-R-120). Assert the post-ratchet state: the
-    // guard reports zero ratchet warnings and a clean pass, and the baseline
-    // file no longer carries any capability-gate.ts entry.
-    expect(output).not.toMatch(/RATCHET/);
-    expect(output).toMatch(/STATUS=PASS/);
-    const baseline = JSON.parse(
-      readFileSync(
-        "architecture/coregrid-mvp-architecture/NEUTRALITY_GUARD_BASELINE.json",
-        "utf8",
-      ),
-    );
-    expect(
-      baseline.baselineEntries.some((entry: { file: string }) =>
-        entry.file.includes("capability-gate.ts"),
-      ),
-      "capability-gate.ts baseline entries must stay removed after the ratchet",
-    ).toBe(false);
-  });
+  const GUARD_SCRIPT = "scripts/verify-domain-neutrality.mjs";
+  const GUARD_TIMEOUT_MS = 60_000;
+  const GUARD_MAX_ATTEMPTS = 3;
+  const TEST_TIMEOUT_MS = 240_000;
+
+  type GuardSpawnResult = ReturnType<typeof spawnSync>;
+
+  /** True when the spawn produced no exit-code verdict (no evidence). */
+  const isRetryableSpawnFailure = (result: GuardSpawnResult): boolean =>
+    result.error !== undefined && result.status === null;
+
+  /** Run the guard once with a fully isolated child environment and file capture. */
+  const runGuardOnce = (): {
+    result: GuardSpawnResult;
+    stdout: string;
+    stderr: string;
+    scratchDir: string;
+  } => {
+    const scratchDir = mkdtempSync(join(tmpdir(), "h3-081-recert-"));
+    try {
+      const stdoutPath = join(scratchDir, "guard-stdout.log");
+      const stderrPath = join(scratchDir, "guard-stderr.log");
+      const stdoutFd = openSync(stdoutPath, "w");
+      const stderrFd = openSync(stderrPath, "w");
+      try {
+        const env: NodeJS.ProcessEnv = { ...process.env, TMPDIR: scratchDir };
+        // Redirect any parent-injected V8 coverage stream into the isolated
+        // scratch dir so the child never writes into a shared coverage folder.
+        if (env.NODE_V8_COVERAGE !== undefined) env.NODE_V8_COVERAGE = scratchDir;
+        const result = spawnSync("node", [GUARD_SCRIPT], {
+          cwd: REPO_ROOT,
+          timeout: GUARD_TIMEOUT_MS,
+          killSignal: "SIGKILL",
+          stdio: ["ignore", stdoutFd, stderrFd],
+          windowsHide: true,
+          env,
+        });
+        return {
+          result,
+          stdout: readFileSync(stdoutPath, "utf8"),
+          stderr: readFileSync(stderrPath, "utf8"),
+          scratchDir,
+        };
+      } finally {
+        closeSync(stdoutFd);
+        closeSync(stderrFd);
+      }
+    } catch (err) {
+      rmSync(scratchDir, { recursive: true, force: true });
+      throw err;
+    }
+  };
+
+  it(
+    "introduces no new domain-neutrality violation from a certified file, and the gate's baseline entries become ratchets",
+    { timeout: TEST_TIMEOUT_MS },
+    () => {
+      let result: GuardSpawnResult | undefined;
+      let stdoutText = "";
+      let stderrText = "";
+      let scratchDir: string | undefined;
+      try {
+        for (let attempt = 1; attempt <= GUARD_MAX_ATTEMPTS; attempt += 1) {
+          const once = runGuardOnce();
+          result = once.result;
+          stdoutText = once.stdout;
+          stderrText = once.stderr;
+          scratchDir = once.scratchDir;
+          if (!isRetryableSpawnFailure(result)) break;
+          rmSync(scratchDir, { recursive: true, force: true });
+          scratchDir = undefined;
+        }
+      } finally {
+        if (scratchDir !== undefined) rmSync(scratchDir, { recursive: true, force: true });
+      }
+
+      const finalResult = result as GuardSpawnResult;
+      expect(
+        finalResult.error,
+        `guard spawn failed after ${GUARD_MAX_ATTEMPTS} attempt(s): ${String(finalResult.error)}`,
+      ).toBeUndefined();
+      expect(
+        finalResult.status,
+        "the guard must complete with an exit code (a timed-out or signaled spawn is not a verdict)",
+      ).toBe(0);
+
+      const output = `${stdoutText}\n${stderrText}`;
+      const failLines = output.split("\n").filter((line) => line.startsWith("FAIL  "));
+      const fromCertifiedFiles = failLines.filter((line) =>
+        CERTIFIED_FILES.some((ref) => line.includes(ref)),
+      );
+      expect(
+        fromCertifiedFiles,
+        `guard output:\n${output}`,
+      ).toEqual([]);
+      // The gate's hand-written role list left the universal surface; the six
+      // stale capability-gate baseline groups were RATCHETED OUT of the
+      // baseline (shrink-only ratchet executed by the guard's owning
+      // coordinator after MISSION-R-120). Assert the post-ratchet state: the
+      // guard reports zero ratchet warnings and a clean pass, and the baseline
+      // file no longer carries any capability-gate.ts entry.
+      expect(output).not.toMatch(/RATCHET/);
+      expect(output).toMatch(/STATUS=PASS/);
+      const baseline = JSON.parse(
+        readFileSync(
+          "architecture/coregrid-mvp-architecture/NEUTRALITY_GUARD_BASELINE.json",
+          "utf8",
+        ),
+      );
+      expect(
+        baseline.baselineEntries.some((entry: { file: string }) =>
+          entry.file.includes("capability-gate.ts"),
+        ),
+        "capability-gate.ts baseline entries must stay removed after the ratchet",
+      ).toBe(false);
+    },
+  );
 });
