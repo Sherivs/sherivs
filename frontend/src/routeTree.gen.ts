@@ -15,7 +15,6 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AdmissionsRouteImport } from './routes/admissions'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BlogRouteImport } from './routes/blog'
-import { Route as CommandCentreRouteImport } from './routes/command-centre'
 import { Route as FoundationLoopRouteImport } from './routes/foundation-loop'
 import { Route as HealthDotjsonRouteImport } from './routes/health[.]json'
 import { Route as LoginRouteImport } from './routes/login'
@@ -31,6 +30,7 @@ import { Route as SuperAdminBootstrapRouteImport } from './routes/super-admin-bo
 import { Route as siteCoregridRouteImport } from './routes/(site)/coregrid'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as AuthenticatedBursarRouteRouteImport } from './routes/_authenticated/bursar/route'
+import { Route as AuthenticatedCommandCentreRouteRouteImport } from './routes/_authenticated/command-centre/route'
 import { Route as AuthenticatedDriverRouteRouteImport } from './routes/_authenticated/driver/route'
 import { Route as AuthenticatedHqRouteRouteImport } from './routes/_authenticated/hq/route'
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
@@ -109,6 +109,7 @@ import { Route as AuthenticatedBursarFinancialIntelligenceRouteImport } from './
 import { Route as AuthenticatedBursarReceiptsRouteImport } from './routes/_authenticated/bursar/receipts'
 import { Route as AuthenticatedBursarReconciliationRouteImport } from './routes/_authenticated/bursar/reconciliation'
 import { Route as AuthenticatedBursarReportsRouteImport } from './routes/_authenticated/bursar/reports'
+import { Route as AuthenticatedCommandCentreIndexRouteImport } from './routes/_authenticated/command-centre/index'
 import { Route as AuthenticatedDriverDashboardRouteImport } from './routes/_authenticated/driver/dashboard'
 import { Route as AuthenticatedDriverStudentsRouteImport } from './routes/_authenticated/driver/students'
 import { Route as AuthenticatedHqDashboardRouteImport } from './routes/_authenticated/hq/dashboard'
@@ -194,11 +195,6 @@ const BlogRoute = BlogRouteImport.update({
   path: '/blog',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CommandCentreRoute = CommandCentreRouteImport.update({
-  id: '/command-centre',
-  path: '/command-centre',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const FoundationLoopRoute = FoundationLoopRouteImport.update({
   id: '/foundation-loop',
   path: '/foundation-loop',
@@ -273,6 +269,12 @@ const AuthenticatedBursarRouteRoute =
   AuthenticatedBursarRouteRouteImport.update({
     id: '/bursar',
     path: '/bursar',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCommandCentreRouteRoute =
+  AuthenticatedCommandCentreRouteRouteImport.update({
+    id: '/command-centre',
+    path: '/command-centre',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedDriverRouteRoute =
@@ -728,6 +730,12 @@ const AuthenticatedBursarReportsRoute =
     path: '/reports',
     getParentRoute: () => AuthenticatedBursarRouteRoute,
   } as any)
+const AuthenticatedCommandCentreIndexRoute =
+  AuthenticatedCommandCentreIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedCommandCentreRouteRoute,
+  } as any)
 const AuthenticatedDriverDashboardRoute =
   AuthenticatedDriverDashboardRouteImport.update({
     id: '/dashboard',
@@ -1066,7 +1074,6 @@ export interface FileRoutesByFullPath {
   '/admissions': typeof AdmissionsRoute
   '/auth': typeof AuthRoute
   '/blog': typeof BlogRouteWithChildren
-  '/command-centre': typeof CommandCentreRoute
   '/foundation-loop': typeof FoundationLoopRoute
   '/health.json': typeof HealthDotjsonRoute
   '/login': typeof LoginRoute
@@ -1081,6 +1088,7 @@ export interface FileRoutesByFullPath {
   '/super-admin-bootstrap': typeof SuperAdminBootstrapRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/bursar': typeof AuthenticatedBursarRouteRouteWithChildren
+  '/command-centre': typeof AuthenticatedCommandCentreRouteRouteWithChildren
   '/driver': typeof AuthenticatedDriverRouteRouteWithChildren
   '/hq': typeof AuthenticatedHqRouteRouteWithChildren
   '/parent': typeof AuthenticatedParentRouteRouteWithChildren
@@ -1214,6 +1222,7 @@ export interface FileRoutesByFullPath {
   '/teacher/news': typeof AuthenticatedTeacherNewsRoute
   '/teacher/sign-in': typeof AuthenticatedTeacherSignInRoute
   '/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
+  '/command-centre/': typeof AuthenticatedCommandCentreIndexRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
 }
@@ -1222,7 +1231,6 @@ export interface FileRoutesByTo {
   '/admissions': typeof AdmissionsRoute
   '/auth': typeof AuthRoute
   '/blog': typeof BlogRouteWithChildren
-  '/command-centre': typeof CommandCentreRoute
   '/foundation-loop': typeof FoundationLoopRoute
   '/health.json': typeof HealthDotjsonRoute
   '/login': typeof LoginRoute
@@ -1370,6 +1378,7 @@ export interface FileRoutesByTo {
   '/teacher/news': typeof AuthenticatedTeacherNewsRoute
   '/teacher/sign-in': typeof AuthenticatedTeacherSignInRoute
   '/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
+  '/command-centre': typeof AuthenticatedCommandCentreIndexRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
 }
@@ -1381,7 +1390,6 @@ export interface FileRoutesById {
   '/admissions': typeof AdmissionsRoute
   '/auth': typeof AuthRoute
   '/blog': typeof BlogRouteWithChildren
-  '/command-centre': typeof CommandCentreRoute
   '/foundation-loop': typeof FoundationLoopRoute
   '/health.json': typeof HealthDotjsonRoute
   '/login': typeof LoginRoute
@@ -1396,6 +1404,7 @@ export interface FileRoutesById {
   '/super-admin-bootstrap': typeof SuperAdminBootstrapRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/_authenticated/bursar': typeof AuthenticatedBursarRouteRouteWithChildren
+  '/_authenticated/command-centre': typeof AuthenticatedCommandCentreRouteRouteWithChildren
   '/_authenticated/driver': typeof AuthenticatedDriverRouteRouteWithChildren
   '/_authenticated/hq': typeof AuthenticatedHqRouteRouteWithChildren
   '/_authenticated/parent': typeof AuthenticatedParentRouteRouteWithChildren
@@ -1529,6 +1538,7 @@ export interface FileRoutesById {
   '/_authenticated/teacher/news': typeof AuthenticatedTeacherNewsRoute
   '/_authenticated/teacher/sign-in': typeof AuthenticatedTeacherSignInRoute
   '/_authenticated/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
+  '/_authenticated/command-centre/': typeof AuthenticatedCommandCentreIndexRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
 }
@@ -1539,7 +1549,6 @@ export interface FileRouteTypes {
     | '/admissions'
     | '/auth'
     | '/blog'
-    | '/command-centre'
     | '/foundation-loop'
     | '/health.json'
     | '/login'
@@ -1554,6 +1563,7 @@ export interface FileRouteTypes {
     | '/super-admin-bootstrap'
     | '/admin'
     | '/bursar'
+    | '/command-centre'
     | '/driver'
     | '/hq'
     | '/parent'
@@ -1687,6 +1697,7 @@ export interface FileRouteTypes {
     | '/teacher/news'
     | '/teacher/sign-in'
     | '/teacher/timetable'
+    | '/command-centre/'
     | '/api/public/audit/password-reset'
     | '/api/public/webhooks/paystack'
   fileRoutesByTo: FileRoutesByTo
@@ -1695,7 +1706,6 @@ export interface FileRouteTypes {
     | '/admissions'
     | '/auth'
     | '/blog'
-    | '/command-centre'
     | '/foundation-loop'
     | '/health.json'
     | '/login'
@@ -1843,6 +1853,7 @@ export interface FileRouteTypes {
     | '/teacher/news'
     | '/teacher/sign-in'
     | '/teacher/timetable'
+    | '/command-centre'
     | '/api/public/audit/password-reset'
     | '/api/public/webhooks/paystack'
   id:
@@ -1853,7 +1864,6 @@ export interface FileRouteTypes {
     | '/admissions'
     | '/auth'
     | '/blog'
-    | '/command-centre'
     | '/foundation-loop'
     | '/health.json'
     | '/login'
@@ -1868,6 +1878,7 @@ export interface FileRouteTypes {
     | '/super-admin-bootstrap'
     | '/_authenticated/admin'
     | '/_authenticated/bursar'
+    | '/_authenticated/command-centre'
     | '/_authenticated/driver'
     | '/_authenticated/hq'
     | '/_authenticated/parent'
@@ -2001,6 +2012,7 @@ export interface FileRouteTypes {
     | '/_authenticated/teacher/news'
     | '/_authenticated/teacher/sign-in'
     | '/_authenticated/teacher/timetable'
+    | '/_authenticated/command-centre/'
     | '/api/public/audit/password-reset'
     | '/api/public/webhooks/paystack'
   fileRoutesById: FileRoutesById
@@ -2012,7 +2024,6 @@ export interface RootRouteChildren {
   AdmissionsRoute: typeof AdmissionsRoute
   AuthRoute: typeof AuthRoute
   BlogRoute: typeof BlogRouteWithChildren
-  CommandCentreRoute: typeof CommandCentreRoute
   FoundationLoopRoute: typeof FoundationLoopRoute
   HealthDotjsonRoute: typeof HealthDotjsonRoute
   LoginRoute: typeof LoginRoute
@@ -2074,13 +2085,6 @@ declare module '@tanstack/react-router' {
       path: '/blog'
       fullPath: '/blog'
       preLoaderRoute: typeof BlogRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/command-centre': {
-      id: '/command-centre'
-      path: '/command-centre'
-      fullPath: '/command-centre'
-      preLoaderRoute: typeof CommandCentreRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/foundation-loop': {
@@ -2186,6 +2190,13 @@ declare module '@tanstack/react-router' {
       path: '/bursar'
       fullPath: '/bursar'
       preLoaderRoute: typeof AuthenticatedBursarRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/command-centre': {
+      id: '/_authenticated/command-centre'
+      path: '/command-centre'
+      fullPath: '/command-centre'
+      preLoaderRoute: typeof AuthenticatedCommandCentreRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/driver': {
@@ -2733,6 +2744,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/bursar/reports'
       preLoaderRoute: typeof AuthenticatedBursarReportsRouteImport
       parentRoute: typeof AuthenticatedBursarRouteRoute
+    }
+    '/_authenticated/command-centre/': {
+      id: '/_authenticated/command-centre/'
+      path: '/'
+      fullPath: '/command-centre/'
+      preLoaderRoute: typeof AuthenticatedCommandCentreIndexRouteImport
+      parentRoute: typeof AuthenticatedCommandCentreRouteRoute
     }
     '/_authenticated/driver/dashboard': {
       id: '/_authenticated/driver/dashboard'
@@ -3308,6 +3326,20 @@ const AuthenticatedBursarRouteRouteWithChildren =
     AuthenticatedBursarRouteRouteChildren,
   )
 
+interface AuthenticatedCommandCentreRouteRouteChildren {
+  AuthenticatedCommandCentreIndexRoute: typeof AuthenticatedCommandCentreIndexRoute
+}
+
+const AuthenticatedCommandCentreRouteRouteChildren: AuthenticatedCommandCentreRouteRouteChildren =
+  {
+    AuthenticatedCommandCentreIndexRoute: AuthenticatedCommandCentreIndexRoute,
+  }
+
+const AuthenticatedCommandCentreRouteRouteWithChildren =
+  AuthenticatedCommandCentreRouteRoute._addFileChildren(
+    AuthenticatedCommandCentreRouteRouteChildren,
+  )
+
 interface AuthenticatedDriverRouteRouteChildren {
   AuthenticatedDriverDashboardRoute: typeof AuthenticatedDriverDashboardRoute
   AuthenticatedDriverStudentsRoute: typeof AuthenticatedDriverStudentsRoute
@@ -3501,6 +3533,7 @@ const AuthenticatedTeacherRouteRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRouteRoute: typeof AuthenticatedAdminRouteRouteWithChildren
   AuthenticatedBursarRouteRoute: typeof AuthenticatedBursarRouteRouteWithChildren
+  AuthenticatedCommandCentreRouteRoute: typeof AuthenticatedCommandCentreRouteRouteWithChildren
   AuthenticatedDriverRouteRoute: typeof AuthenticatedDriverRouteRouteWithChildren
   AuthenticatedHqRouteRoute: typeof AuthenticatedHqRouteRouteWithChildren
   AuthenticatedParentRouteRoute: typeof AuthenticatedParentRouteRouteWithChildren
@@ -3516,6 +3549,8 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRouteRoute: AuthenticatedAdminRouteRouteWithChildren,
   AuthenticatedBursarRouteRoute: AuthenticatedBursarRouteRouteWithChildren,
+  AuthenticatedCommandCentreRouteRoute:
+    AuthenticatedCommandCentreRouteRouteWithChildren,
   AuthenticatedDriverRouteRoute: AuthenticatedDriverRouteRouteWithChildren,
   AuthenticatedHqRouteRoute: AuthenticatedHqRouteRouteWithChildren,
   AuthenticatedParentRouteRoute: AuthenticatedParentRouteRouteWithChildren,
@@ -3561,7 +3596,6 @@ const rootRouteChildren: RootRouteChildren = {
   AdmissionsRoute: AdmissionsRoute,
   AuthRoute: AuthRoute,
   BlogRoute: BlogRouteWithChildren,
-  CommandCentreRoute: CommandCentreRoute,
   FoundationLoopRoute: FoundationLoopRoute,
   HealthDotjsonRoute: HealthDotjsonRoute,
   LoginRoute: LoginRoute,

@@ -34,6 +34,7 @@ const LIB_DIR = join(ROOT, "frontend/src/lib");
  *  Paths are relative to frontend/src/lib — relocated families live in the
  *  Scholar runtime namespace (MISSION-R-121 mechanical relocation). */
 const ADOPTED = [
+  "command-centre.functions.ts",
   "runtime/scholar/attendance.functions.ts",
   "runtime/scholar/digital-twin.functions.ts",
   "runtime/scholar/expense-insights.functions.ts",
