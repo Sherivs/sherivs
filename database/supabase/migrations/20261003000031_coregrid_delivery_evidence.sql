@@ -168,6 +168,8 @@ ALTER TABLE public.cg_delivery_evidence ENABLE ROW LEVEL SECURITY;
 
 REVOKE ALL ON public.cg_delivery_evidence FROM anon, authenticated;
 
+GRANT ALL ON public.cg_delivery_evidence TO service_role;
+
 -- =============================================================================
 -- End of migration. Verification (run after apply authorization):
 --   • the table exists with rowsecurity = true and zero policies in

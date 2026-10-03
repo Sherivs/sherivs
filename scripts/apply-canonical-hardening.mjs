@@ -436,6 +436,47 @@ const MIGRATIONS = [
       policies: [],
     },
   },
+  {
+    file: "20261003000030_coregrid_hermes_observation_substrate.sql",
+    mission:
+      "R-wave R4 — Hermes observation substrate: cg_hermes_observation append-only intelligence ledger with full §12 provenance (source/event_ref/subject_ref, observed_at vs recorded_at, created_by, generated_by_ai), §9 canonical-truth CHECK (AI-generated implies unverified), exactly-once event consumption via partial unique (tenant_id, event_ref), append-only trigger, deny-by-default: RLS enabled, zero policies, anon/authenticated revoked, service_role granted",
+    declared: {
+      columns: [],
+      indexes: [
+        "cg_hermes_observation_tenant_recorded_idx",
+        "cg_hermes_observation_tenant_kind_idx",
+        "cg_hermes_observation_tenant_subject_idx",
+        "cg_hermes_observation_tenant_event_idx",
+      ],
+      tables: ["cg_hermes_observation"],
+      functions: ["cg_hermes_observation_append_only"],
+      triggers: ["cg_hermes_observation_no_rewrite"],
+      policies: [],
+      privilegePostures: [
+        { table: "cg_hermes_observation", anon: [], authenticated: [], service_role: ["ALL"] },
+      ],
+    },
+  },
+  {
+    file: "20261003000031_coregrid_delivery_evidence.sql",
+    mission:
+      "R-wave R6 — delivery-evidence substrate: cg_delivery_evidence append-only attempt ledger over the email/voice channels (one row per outbound ATTEMPT including fail-closed BLOCKED_NO_CREDENTIAL — the block is evidence), redacted recipients, outcome-coherence CHECK (provider-confirmed id only on delivered), append-only trigger, deny-by-default: RLS enabled, zero policies, anon/authenticated revoked, service_role granted",
+    declared: {
+      columns: [],
+      indexes: [
+        "cg_delivery_evidence_tenant_created_idx",
+        "cg_delivery_evidence_tenant_channel_outcome_idx",
+        "cg_delivery_evidence_notification_idx",
+      ],
+      tables: ["cg_delivery_evidence"],
+      functions: ["cg_delivery_evidence_forbid_mutation"],
+      triggers: ["cg_delivery_evidence_append_only"],
+      policies: [],
+      privilegePostures: [
+        { table: "cg_delivery_evidence", anon: [], authenticated: [], service_role: ["ALL"] },
+      ],
+    },
+  },
 ];
 
 const report = (line, log) => {

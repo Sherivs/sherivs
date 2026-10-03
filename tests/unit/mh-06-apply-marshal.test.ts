@@ -51,6 +51,12 @@ const EXPECTED_MIGRATIONS = [
   // — completes the 20260620151525 RLS recursion fix for the one helper left
   // SECURITY INVOKER (unbounded self-recursion once a platform-admin row exists).
   "20261003000020_coregrid_is_super_admin_definer.sql",
+  // R-wave remediation (2026-10-03): R4 Hermes observation substrate (§12
+  // provenance, §9 canonical-truth CHECK, exactly-once event consumption).
+  "20261003000030_coregrid_hermes_observation_substrate.sql",
+  // R-wave remediation (2026-10-03): R6 delivery-evidence attempt ledger
+  // (append-only, blocked sends are evidence too).
+  "20261003000031_coregrid_delivery_evidence.sql",
 ];
 
 interface ManifestMigration {
