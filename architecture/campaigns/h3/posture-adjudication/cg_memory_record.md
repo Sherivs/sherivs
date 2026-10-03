@@ -1,0 +1,48 @@
+# RLS Posture Adjudication — `cg_memory_record`
+
+Team: H3-034 · Squad D (Zero-policy posture adjudication) · Role: Posture Adjudication Engineer (delegation/memory family) · Mission: D-034
+Adjudicated: 2026-10-03 · Status: ADJUDICATED (zero-policy-by-design) · Nothing applied; no posture file, migration, or policy was touched.
+
+## OWNERSHIP
+
+- **Creating migration:** `database/supabase/migrations/20261002000004_coregrid_v1_memory_tier.sql` (MISSION-R-36 / J-016 / V1CAP-034/035/036; D1 ratification via DOSSIER_D1_MEMORY_OWNER.md). Table created at line 105; RLS enabled line 274; `REVOKE ALL ... FROM anon, authenticated` line 278. Rollback: `database/supabase/rollbacks/20261002000004_coregrid_v1_memory_tier.sql`.
+- **Owning server path (contract):** `frontend/src/lib/memory/memory-store.ts` — the durable tier's authorization-gated contract. It owns record write and retrieval semantics: retrieval REQUIRES identity AND tenant AND declared scope (fail-closed before any record is evaluated); NO vector/semantic-similarity surface (G-015 — similarity can never return a record, only an authorized scoped retrieval can); every retrieval — granted, partial, or DENIED — appends one auditable access record with returned ids, exclusion ledger, and denial reason; no silent memory expansion (J-017/E-027 — out-of-scope writes REJECTED, never clamped).
+- **Consuming server path:** `frontend/src/lib/agent-runtime/ephemeral-lifecycle.ts` — worker memory sessions (J-007) write and retrieve strictly within the session's DECLARED memory scope; session termination invalidates live handles; every scope decision is appended to the auditable session decision log.
+- **Data role:** the durable memory records themselves — practical vs organizational class (V1CAP-034), content, canonical CoreObject envelope (V1CAP-002; created_by NOT NULL makes an anonymous memory record unsatisfiable), bi-temporal validity (V1CAP-004), freshness (J-019), sensitivity (context-assembly vocabulary), optional per-record retrieval permission. This is the most tenant-sensitive payload family in the memory tier.
+
+## EVIDENCE
+
+- **Battery scope (READ-ONLY confirmation, 2026-10-03):** `node scripts/verify-rls-isolation-battery.mjs --dry-parse-scope` (offline; no credentials, no network, no database) reports:
+  `cg_memory_record posture=zero-policy forceRls=false policies=0 tenantColumn=n/a source=20261002000004_coregrid_v1_memory_tier.sql postureSource=builtin-canonical`
+- The table is a `BUILTIN_TABLE_POSTURES` entry in `scripts/verify-rls-isolation-battery.mjs` (line 241). Neither `scripts/verification/rls-table-postures-substrate.json` nor `rls-table-postures-transport.json` declares `cg_memory_record`; the resolved registry (`DRY_PARSE_OK tables=37 zero-policy=30 policy-backed=7`) keeps the built-in canonical zero-policy entry as the single source of truth.
+- **Migration posture note (lines 261–270):** "RLS ENABLED with ZERO policies and all anon/authenticated privileges REVOKED ... Zero policies are deliberate: memory is tenant-sensitive platform data (Constitution §17/§35) and no tenant-scoped policy exists yet that provably cannot widen retrieval beyond the declared scope — memory access runs through service-role server functions that enforce the identity AND tenant AND scope AND policy authorization contract (memory-store.ts) and write the access log. Policies may be authored by a follow-up migration under explicit authorization, never silently."
+- **Envelope atomicity (migration lines 54–62 / contract):** created_by NOT NULL makes the all-NULL branch of the atomicity CHECK unsatisfiable — every memory record row is fully stamped or rejected; an anonymous persistent memory record can never exist; object_type pinned to 'memory_record' (write-path gate in the kernel object-type registry).
+- **Non-vector-only law (migration lines 41–47):** deliberately NO embedding/vector/similarity column; semantic-similarity search is a classic authorization bypass; any future ANN index requires its own authorization and an authorization-gated join.
+- **Adversarial enforcement evidence:** `tests/unit/h3-029-memory-retrieval-authz.test.ts` (mission C-029, L-T-015 Memory Retrieval Defender) proves no bypass path; `tests/unit/memory-store.test.ts` pins the contract semantics; `progress/h3-wave/H3-029.report.md` records the L-T-015 verdict.
+
+## DECISION
+
+**ZERO-POLICY-BY-DESIGN — confirmed and upheld.** RLS enabled, zero policies, no anon/authenticated grants. The record payload is reachable only through the service-role server functions that enforce the identity AND tenant AND scope AND policy contract and append the access log. No client-facing policy is proposed in V1.
+
+## RATIONALE
+
+1. **Highest-sensitivity payload, strongest posture.** Memory records are tenant-sensitive platform data (migration's own words, citing Constitution §17/§35): they aggregate institutional knowledge, mission context, and AI-context feedstock. A permissive policy here would be the single largest information-disclosure surface in the platform; zero policies deny every client identity absolutely, which is the only posture commensurate with the payload.
+2. **L-T-015 closure at the data layer.** Threat L-T-015 (memory retrieval authorization bypass: "persisted memory retrieval ... returns records the querier could not have read directly, bypassing tenant, role and scope filters — memory must not be a side door around authorization", J-017; silent scope expansion J-018/J-029) is closed by construction: with zero policies there is no read path for ANY client identity, so retrieval cannot bypass tenant/role/scope filters because it cannot reach the table at all. Retrieval authorization lives entirely in `memory-store.ts`, where every grant AND denial is first-class audited (exclusion ledger).
+3. **AGENTS §19 AI Privacy Law.** The §19 pipeline (Identity -> Authorization -> Classification -> Purpose Check -> Minimization -> Redaction -> AI Context -> Model) is enforced by the server-side gate. Zero-policy RLS guarantees the gateway can only ever be fed records that passed that sequence; a client-facing policy would create an unminimized side channel straight from rows to client contexts.
+4. **Why no client policy is legitimate in V1.** The retrieval contract's authorization is conjunctive (identity AND tenant AND scope AND policy) with sensitivity ceilings, per-record permissions, and bi-temporal validity — a predicate space the SQL policy layer has not been ratified to express without risking widening (the migration's explicit condition). The platform already proves the §31 invariants (Tenant A cannot read Tenant B, User A cannot read User B, revoked/expired access fails, agents cannot exceed permissions) in the battery's strongest form for zero-policy tables; a policy-backed conversion would downgrade that proof to predicate-based reasoning before the conjunct semantics are provably safe.
+5. **Append-only truth posture.** Records carry bi-temporal validity with append-only supersession (a scope change/supersession is a NEW record, never a mutation) — consistent with §28's immutable-record law; zero client privileges make erasure impossible at the data layer.
+
+## CONSTITUTION SECTIONS
+
+- **§17 Database Security** — RLS mandatory and enabled in its strongest form; the memory-store gate is layered on top, never the only layer.
+- **§19 AI Privacy Law** — only the server-side gate that executes the minimization/redaction pipeline can move records into AI context; no client path exists.
+- **§9 Canonical Truth Principle** — bi-temporal, provenance-stamped records are reality-side truth; zero-policy prevents any client mutation or selective client visibility that could distort it.
+- **§26 API Governance** — never trust client identity/tenant/scope; all retrieval inputs are resolved server-side.
+- **§28 Database Law** — append-only supersession, immutable access log (`cg_memory_access_log`), constraints + RLS over application logic.
+- **§35 Realtime Security** — zero policies means zero client-visible realtime events from this table (row visibility follows RLS).
+- **§31 Testing Standard** — the four mandatory invariants are proven mechanically by the battery's zero-policy derivation.
+- **§37 Autonomous Coding Agent Rules** — agents may not expand memory access; declared-scope sessions + zero-policy posture enforce it (J-029).
+
+## PROPOSED-POLICY-IF-ANY
+
+**None for V1.** If a future mission authorizes tenant-scoped client reads of the memory tier (e.g., a tenant-facing memory explorer), the conversion path is a policy-backed migration in the `20261002000013_coregrid_v1_neutral_membership_policies.sql` exemplar pattern: FORCE RLS, SELECT via `tenant_id = public.get_my_tenant_id()` composed with the sensitivity/permission columns only when the conjunct semantics (identity AND tenant AND scope AND policy) have been ratified for the policy layer, INSERT gated by `is_tenant_admin` WITH CHECK plus envelope self-derivation pins, no UPDATE/DELETE ever (supersession is a new record). Any such conversion MUST ship a data-declared §4.4 cross-tenant probe recipe (`probeSeedRows` + `probeInsertPayload` in the posture file) so the battery proves tenant-scoped visibility live, and must satisfy the migration's condition that the policy provably cannot widen retrieval beyond the declared scope. Explicit human authorization and re-adjudication required; deliberately NOT pre-authored here.
