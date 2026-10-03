@@ -352,14 +352,6 @@ defineFamilySuite({
       note: "authorization = bootstrap-closed precondition (only proceeds when zero super admins exist); caller's own auth identity is used; §27.6 closed via the shared write-audit hook (frontend/src/lib/server/write-audit.ts, control-plane-scope fail-closed audit record)",
     },
     {
-      fn: "createSchoolWithAdmin",
-      method: "POST",
-      input: "zod",
-      gate: "platform-super",
-      audit: "explicit-event",
-      auditMarkers: [/super_admin_logs/],
-    },
-    {
       fn: "updateSchoolPlan",
       method: "POST",
       input: "zod",

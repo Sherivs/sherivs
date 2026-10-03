@@ -1,19 +1,61 @@
 /**
  * Add School form — used inside the Super Admin portal.
  *
- * Calls `createSchoolWithAdmin` (server fn, super-admin-gated). On success,
- * surfaces the temp credentials so the operator can hand them to the new
- * school admin.
+ * Calls `provisionOrganization` (V1-008 platform onboarding engine,
+ * super-admin-gated) with `domainId: "scholar"` and one `school_admin`
+ * person — the legacy Scholar-specific creator server fn is retired
+ * (progress/v1-wave/V1-013-report.md).
+ *
+ * Credential contract (§30): the engine generates the admin's initial
+ * password at provisioning time and returns it ONCE, in the response only.
+ * This form surfaces it in the single success panel below; it is never
+ * logged, never persisted, and cannot be retrieved again afterwards.
  */
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
-import { createSchoolWithAdmin, type CreateSchoolResult } from "@/lib/runtime/scholar/provisioning.functions";
+import {
+  provisionOrganization,
+  type ProvisionOrganizationResponse,
+} from "@/lib/onboarding/provision-organization.functions";
 
 const TIERS = ["trial", "starter", "growth", "professional", "enterprise"] as const;
 
-export function AddSchoolForm({ onCreated }: { onCreated?: (r: CreateSchoolResult) => void }) {
-  const create = useServerFn(createSchoolWithAdmin);
+type ProvisionOk = Extract<ProvisionOrganizationResponse, { ok: true }>;
+
+/**
+ * Single-display snapshot of the engine's generated-once credentials. Held
+ * in component state only — never written to storage, a query cache, or a
+ * log.
+ */
+interface CreatedSchoolPanel {
+  readonly organizationId: string;
+  readonly schoolName: string;
+  readonly adminEmail: string;
+  readonly initialPassword: string | null;
+}
+
+/**
+ * Client-side mirror of the Scholar contribution's slug derivation
+ * (`structure.slug ?? slugify(name) || "school"`): the engine response
+ * carries the provisioned organization id but not the derived slug, so the
+ * public-URL rows are computed locally from the same rule. The engine is
+ * insert-only — a colliding slug fails on the substrate unique constraint
+ * and rolls back (V1-008 Known Risk 4), instead of the legacy suffix probe.
+ */
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 48);
+}
+
+export function AddSchoolForm({ onCreated }: { onCreated?: (r: ProvisionOk) => void }) {
+  const provision = useServerFn(provisionOrganization);
   const qc = useQueryClient();
 
   const [schoolName, setSchoolName] = useState("");
@@ -27,26 +69,54 @@ export function AddSchoolForm({ onCreated }: { onCreated?: (r: CreateSchoolResul
 
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [result, setResult] = useState<CreateSchoolResult | null>(null);
+  const [result, setResult] = useState<CreatedSchoolPanel | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setErr(null);
     try {
-      const r = await create({
+      const r = await provision({
         data: {
-          schoolName,
-          schoolEmail: schoolEmail || undefined,
-          phone: phone || undefined,
-          address: address || undefined,
-          adminFullName,
-          adminEmail,
-          subscriptionTier: tier,
-          monthlyFee: monthlyFee === "" ? 0 : monthlyFee,
+          domainId: "scholar",
+          identity: {
+            name: schoolName,
+            contactEmail: schoolEmail || undefined,
+            phone: phone || undefined,
+            address: address || undefined,
+          },
+          structure: {
+            subscriptionTier: tier,
+            monthlyFee: monthlyFee === "" ? 0 : monthlyFee,
+          },
+          people: [
+            {
+              fullName: adminFullName,
+              email: adminEmail,
+              role: "school_admin",
+              createAuthAccount: true,
+            },
+          ],
         },
       });
-      setResult(r);
+      if (!r.ok) {
+        // The server function throws on a non-ok outcome; this branch is the
+        // type-honest guard for the union — surface the failed step and
+        // reason, never treat it as provisioned.
+        throw new Error(
+          `Organization provisioning failed at step "${r.failedStep}": ${r.reason}`,
+        );
+      }
+      const admin = r.memberships[0];
+      if (!admin) {
+        throw new Error("Provisioning returned no membership for the school admin");
+      }
+      setResult({
+        organizationId: r.organization.id,
+        schoolName,
+        adminEmail: admin.email,
+        initialPassword: admin.initialPassword,
+      });
       // reset form
       setSchoolName("");
       setSchoolEmail("");
@@ -68,12 +138,13 @@ export function AddSchoolForm({ onCreated }: { onCreated?: (r: CreateSchoolResul
 
   function copyAll() {
     if (!result) return;
+    const slug = slugify(result.schoolName) || "school";
     const text = [
       `School: ${result.schoolName}`,
-      `Public URL (dev): ${window.location.origin}/${result.publicUrlSuffix}`,
-      `Public URL (prod subdomain): https://${result.schoolSlug}.<your-domain>`,
+      `Public URL (dev): ${window.location.origin}/?school=${slug}`,
+      `Public URL (prod subdomain): https://${slug}.<your-domain>`,
       `Admin email: ${result.adminEmail}`,
-      `Temporary password: ${result.tempPassword}`,
+      `Temporary password: ${result.initialPassword ?? "(none provisioned)"}`,
     ].join("\n");
     navigator.clipboard.writeText(text);
   }
@@ -83,7 +154,8 @@ export function AddSchoolForm({ onCreated }: { onCreated?: (r: CreateSchoolResul
       <header className="mb-5">
         <h2 className="font-display text-lg font-bold">Add a new school</h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          Provisions the tenant, creates the first admin account, and starts a subscription row.
+          Provisions the tenant through the platform onboarding engine, creates the first admin
+          account with a generated one-time password, and starts a subscription row.
         </p>
       </header>
 
@@ -92,17 +164,22 @@ export function AddSchoolForm({ onCreated }: { onCreated?: (r: CreateSchoolResul
           <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-4 text-sm">
             <div className="font-semibold text-green-400">School created</div>
             <p className="mt-1 text-xs text-muted-foreground">
-              Hand these credentials to the school admin. The temporary password cannot be retrieved
-              again from here.
+              Hand these credentials to the school admin. The generated password is returned once
+              and cannot be retrieved again from here.
             </p>
           </div>
           <CredRow label="School name" value={result.schoolName} />
+          <CredRow label="Tenant record" value={result.organizationId} mono />
           <CredRow
             label="Public URL (dev preview)"
-            value={`${window.location.origin}/${result.publicUrlSuffix}`}
+            value={`${window.location.origin}/?school=${slugify(result.schoolName) || "school"}`}
           />
           <CredRow label="Admin email" value={result.adminEmail} />
-          <CredRow label="Temporary password" value={result.tempPassword} mono />
+          <CredRow
+            label="Temporary password"
+            value={result.initialPassword ?? "(no initial password provisioned)"}
+            mono
+          />
           <div className="flex gap-2">
             <button
               onClick={copyAll}
@@ -111,7 +188,7 @@ export function AddSchoolForm({ onCreated }: { onCreated?: (r: CreateSchoolResul
               Copy all
             </button>
             <a
-              href={`/${result.publicUrlSuffix}`}
+              href={`/?school=${slugify(result.schoolName) || "school"}`}
               target="_blank"
               rel="noreferrer"
               className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground"
