@@ -1,13 +1,26 @@
 import { expect, test } from "@playwright/test";
-import { provisionDemo, signIn } from "./helpers";
+import {
+  cleanupLegacyFixture,
+  provisionLegacyFixture,
+  signIn,
+  FIXTURE_SKIP_NO_BACKEND,
+  type FixtureTenant,
+} from "./helpers";
 
 test.describe("Enterprise checklist", () => {
-  test.beforeEach(async ({ page }) => {
-    await provisionDemo(page);
-    await signIn(page, "admin@demo.school");
+  let fixture: FixtureTenant | null = null;
+
+  test.beforeAll(async () => {
+    fixture = await provisionLegacyFixture();
+  });
+  test.afterAll(async () => {
+    await cleanupLegacyFixture(fixture);
+    fixture = null;
   });
 
   test("every module is unlocked and links open the correct page", async ({ page }) => {
+    test.skip(!fixture, FIXTURE_SKIP_NO_BACKEND);
+    await signIn(page, fixture!.credentials.admin);
     await page.goto("/admin/enterprise-checklist");
     await expect(page.getByRole("heading", { name: /enterprise checklist/i })).toBeVisible();
 

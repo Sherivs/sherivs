@@ -1,9 +1,14 @@
 import { expect, test } from "@playwright/test";
 import path from "node:path";
 import fs from "node:fs";
-import { provisionDemo, signIn } from "./helpers";
-
-const SCHOOL_SLUG = "demo-enterprise";
+import {
+  cleanupLegacyFixture,
+  provisionLegacyFixture,
+  schoolMediaBucketExists,
+  signIn,
+  FIXTURE_SKIP_NO_BACKEND,
+  type FixtureTenant,
+} from "./helpers";
 
 // 1x1 red PNG
 const PNG_1x1 = Buffer.from(
@@ -12,16 +17,40 @@ const PNG_1x1 = Buffer.from(
 );
 
 test.describe("Gallery upload → public site", () => {
+  let fixture: FixtureTenant | null = null;
+
+  test.beforeAll(async () => {
+    fixture = await provisionLegacyFixture();
+  });
+  test.afterAll(async () => {
+    await cleanupLegacyFixture(fixture);
+    fixture = null;
+  });
+
   test("uploads image, stores in school-media bucket, renders on public gallery", async ({
     page,
     context,
   }) => {
+    test.skip(!fixture, FIXTURE_SKIP_NO_BACKEND);
+    // External infrastructure dependency (probed, not assumed): the upload
+    // journey requires the school-media storage bucket to exist on the
+    // configured backend. e2e may not create infrastructure (bucket creation
+    // is operator work, not a test-fixture write), so an absent bucket is a
+    // typed skip, never a faked pass.
+    const bucketReady = await schoolMediaBucketExists();
+    test.skip(
+      bucketReady === false,
+      "SKIP: the school-media storage bucket is not provisioned on the configured Supabase backend (storage.listBuckets() has no 'school-media'); the gallery upload journey cannot run and e2e must not create the bucket itself. External dependency: storage bucket provisioning by the infrastructure owner.",
+    );
+    test.skip(
+      bucketReady === null,
+      "SKIP: the storage bucket probe could not run (backend not configured or storage.listBuckets failed) — the gallery upload journey is skipped rather than faked.",
+    );
     const tmpFile = path.join(test.info().outputDir, `gallery-${Date.now()}.png`);
     fs.mkdirSync(path.dirname(tmpFile), { recursive: true });
     fs.writeFileSync(tmpFile, PNG_1x1);
 
-    await provisionDemo(page);
-    await signIn(page, "admin@demo.school");
+    await signIn(page, fixture!.credentials.admin);
 
     // Watch the storage upload request to verify the correct bucket.
     const uploadReq = page.waitForRequest(
@@ -30,7 +59,15 @@ test.describe("Gallery upload → public site", () => {
     );
 
     await page.goto("/admin/cms");
-    await page.getByRole("tab", { name: /gallery/i }).click();
+    // The CMS renders a tab strip on desktop and a <select> on mobile (the
+    // mobile-chromium project); drive whichever surface is present.
+    const galleryTab = page.getByRole("tab", { name: /gallery/i });
+    const cmsSelect = page.locator("select:has(option:has-text('Gallery'))").first();
+    if (await galleryTab.isVisible().catch(() => false)) {
+      await galleryTab.click();
+    } else {
+      await cmsSelect.selectOption({ label: "Gallery" });
+    }
     await page
       .getByRole("button", { name: /add|new/i })
       .first()
@@ -65,7 +102,7 @@ test.describe("Gallery upload → public site", () => {
 
     // Visit public site and confirm the image is rendered in the gallery grid.
     const pub = await context.newPage();
-    await pub.goto(`/?school=${SCHOOL_SLUG}#gallery`);
+    await pub.goto(`/?school=${fixture!.slug}#gallery`);
     const galleryImg = pub
       .locator("section#gallery img[alt]")
       .filter({ has: pub.locator("xpath=.") })
