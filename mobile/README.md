@@ -86,25 +86,29 @@ cached or fabricated content.
 
 ## Shared-contract discipline (AGENTS §23)
 
-`mobile/src/api/contracts/` mirrors the web's authoritative contracts:
+The shared contracts are declared ONCE in `packages/contracts`
+(specifier `@coregrid/contracts`, an npm `file:` dependency consumed as
+TypeScript source by both Vite and Metro — no bundler plugins). This app
+imports them directly; there is no mobile-side mirror to drift:
 
-- **Database row types** — type-only import of the generated
-  `frontend/src/integrations/supabase/types.ts` (erased at build time; a
-  web schema change fails mobile's typecheck).
-- **Execution/identity vocabulary** — literal mirrors pinned to the
-  canonical types from `foundation-mission.ts` / `identity-registry.ts`
-  with two-directional exhaustiveness assertions; vocabulary drift breaks
-  the build.
-- **Server-function request/response contracts** — mirrored from
-  `foundation-loop.functions.ts` and `identity-registry.functions.ts`,
-  responses re-validated with Zod before rendering.
+- **Database row types** — `@coregrid/contracts` (`src/database.ts`, generated
+  types; type-erased at build time; a schema change fails both surfaces'
+  typechecks at once).
+- **Execution/identity vocabulary** — `@coregrid/contracts`
+  (`src/vocabulary.ts`); the web's contract modules re-export the same
+  declarations, so vocabulary drift between web and mobile is impossible by
+  construction (pinned by `tests/unit/contracts-single-source.test.ts`).
+- **Server-function request/response contracts** — row shapes come from
+  `@coregrid/contracts` (`src/foundation-rows.ts`, `src/identity.ts`);
+  responses re-validated with Zod before rendering, and each Zod schema is
+  compile-time-pinned to the shared row type.
 
-**Reported follow-up (not done here — `frontend/src/**` was read-only for
-this mission):** extract the generated Database types and the pure contract
-vocabulary modules into a shared workspace package so web and mobile import
-one physical source. The `cg_*` kernel tables are also absent from the
-generated web schema; a tenant-scoped "missions list" server function
-would let mobile drop its direct RLS-scoped substrate reads.
+**Reported follow-up:** the `cg_*` kernel tables are absent from the
+generated web schema; a tenant-scoped "missions list" server function would
+let mobile drop its direct RLS-scoped substrate reads. The Supabase type
+generator's output path should also be repointed to
+`packages/contracts/src/database.ts` (the generator script belongs to
+another team's scope).
 
 ## Tests
 

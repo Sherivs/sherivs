@@ -12,6 +12,13 @@
  * A live runtime remains unauthorized.
  */
 
+import type {
+  EvidenceLifecycle,
+  ExecutionStatus,
+  ExternalEffect,
+  VerificationDecision,
+} from "@coregrid/contracts";
+
 export const STATUS_SEMANTICS = {
   COMPLETE: "An approved scope has an evidenced outcome for that scope only.",
   VERIFIED:
@@ -29,10 +36,20 @@ export type ClaimStatus = keyof typeof STATUS_SEMANTICS;
 export const MISSION_LIFECYCLES = ["proposed", "authorized", "revoked", "closed"] as const;
 export type MissionLifecycle = (typeof MISSION_LIFECYCLES)[number];
 
-export const EXECUTION_STATUSES = ["admitted", "denied", "rolled_back"] as const;
-export const EXTERNAL_EFFECTS = ["none", "recorded_intent", "compensation_required"] as const;
-export const EVIDENCE_LIFECYCLES = ["active", "superseded", "revoked"] as const;
-export const VERIFICATION_DECISIONS = ["verified", "failed", "inconclusive"] as const;
+// Canonical execution vocabulary — declared ONCE in @coregrid/contracts and
+// re-exported here (§23). The mobile app consumes the same declarations, so
+// contract drift between web and mobile is impossible by construction.
+export {
+  EVIDENCE_LIFECYCLES,
+  EXECUTION_STATUSES,
+  EXTERNAL_EFFECTS,
+  VERIFICATION_DECISIONS,
+} from "@coregrid/contracts";
+export type {
+  EvidenceLifecycle,
+  ExternalEffect,
+  VerificationDecision as VerificationDecisionName,
+} from "@coregrid/contracts";
 export const CONFORMANCE_DECISIONS = ["conformant", "nonconformant", "not_assessed"] as const;
 
 export interface MissionIntent {
@@ -81,11 +98,9 @@ export interface ExecutionAttempt {
 }
 
 export interface ExecutionResult {
-  status: (typeof EXECUTION_STATUSES)[number];
+  status: ExecutionStatus;
   reason: AdmissionDenyReason | "rollback" | null;
 }
-
-export type ExternalEffect = (typeof EXTERNAL_EFFECTS)[number];
 
 export interface ExecutionHistoryEntry {
   at: string;
@@ -104,8 +119,6 @@ export interface ExecutionRecord {
   history: ExecutionHistoryEntry[];
 }
 
-export type EvidenceLifecycle = (typeof EVIDENCE_LIFECYCLES)[number];
-
 export interface EvidenceRecord {
   evidenceId: string;
   producer: string;
@@ -119,13 +132,11 @@ export interface EvidenceRecord {
   lineage: readonly string[];
 }
 
-export type VerificationDecisionName = (typeof VERIFICATION_DECISIONS)[number];
-
 export interface VerificationResult {
   verificationId: string;
   executionId: string;
   evidenceIds: string[];
-  decision: VerificationDecisionName;
+  decision: VerificationDecision;
   reason: string;
 }
 

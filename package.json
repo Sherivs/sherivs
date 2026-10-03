@@ -48,6 +48,7 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@coregrid/contracts": "file:packages/contracts",
     "@ai-sdk/openai-compatible": "^2.0.51",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-accordion": "^1.2.12",

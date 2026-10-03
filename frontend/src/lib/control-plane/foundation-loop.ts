@@ -6,6 +6,19 @@
  * This module does not write to a database.
  */
 import { createHash } from "node:crypto";
+import type {
+  FoundationEvidenceRow,
+  FoundationExecutionRow,
+  FoundationVerificationRow,
+} from "@coregrid/contracts";
+// Row contracts are declared ONCE in @coregrid/contracts and re-exported here
+// (§23) — the mobile app consumes the same declarations, so the persisted row
+// shapes cannot drift between web and mobile.
+export type {
+  FoundationEvidenceRow,
+  FoundationExecutionRow,
+  FoundationVerificationRow,
+} from "@coregrid/contracts";
 import {
   admitExecution,
   decideVerification,
@@ -53,50 +66,12 @@ export interface FoundationMissionRow {
   expires_at: string | null;
 }
 
-export interface FoundationExecutionRow {
-  id: string;
-  idempotency_key: string;
-  mission_id: string;
-  mission_version: string;
-  tenant_id: string;
-  actor_id: string;
-  action: string;
-  reality_ref: string;
-  requested_at: string;
-  attempt_id: string;
-  started_at: string;
-  status: ExecutionRecord["result"]["status"];
-  reason: string | null;
-  external_effect: ExecutionRecord["externalEffect"];
-}
-
 export interface FoundationHistoryRow {
   execution_id: string;
   recorded_at: string;
   status: ExecutionRecord["result"]["status"];
   reason: string | null;
   external_effect: ExecutionRecord["externalEffect"];
-}
-
-export interface FoundationEvidenceRow {
-  evidence_id: string;
-  producer: string;
-  actor_id: string;
-  tenant_id: string;
-  observed_at: string;
-  recorded_at: string;
-  provenance: string;
-  integrity: string;
-  lifecycle: EvidenceRecord["lifecycle"];
-  lineage: string[];
-}
-
-export interface FoundationVerificationRow {
-  verification_id: string;
-  execution_id: string;
-  evidence_ids: string[];
-  decision: VerificationResult["decision"];
-  reason: string;
 }
 
 /**

@@ -1,15 +1,16 @@
 /**
  * CoreGrid Mobile — identity (worker/agent) read contracts.
  *
- * Mirrors `IdentitySummary` / `ListIdentitiesResult` from the web
- * application's identity-registry server functions
- * (frontend/src/lib/identity-registry.functions.ts). The list response is
- * validated fail-closed: tenant scoping is asserted against the resolved
- * tenant id, and unknown identity kinds/states are rejected rather than
- * rendered.
+ * Row shapes are the SINGLE-SOURCE contracts from `@coregrid/contracts`
+ * (formerly mirrored by hand from the web's identity-registry server
+ * functions — that mirror class is retired, Constitution §23). The list
+ * response is validated fail-closed: tenant scoping is asserted against the
+ * resolved tenant id, and unknown identity kinds/states are rejected rather
+ * than rendered.
  */
 import { z } from "zod";
-import { IDENTITY_KINDS, IDENTITY_STATES } from "./vocabulary";
+import type { IdentitySummary as SharedIdentitySummary } from "@coregrid/contracts";
+import { IDENTITY_KINDS, IDENTITY_STATES } from "@coregrid/contracts";
 
 export const identitySummarySchema = z.object({
   id: z.string().uuid(),
@@ -34,3 +35,14 @@ export const listIdentitiesResponseSchema = z
   });
 
 export type ListIdentitiesResponse = z.infer<typeof listIdentitiesResponseSchema>;
+
+/* ── Compile-time pinning to the shared read contract (§23) ──────────────────
+ * Fails mobile's typecheck if this schema and the shared IdentitySummary
+ * (served by the web's listIdentities server function) ever diverge. */
+
+type Identical<A, B> = A extends B ? (B extends A ? true : false) : false;
+
+const identityParityChecks: readonly [true] = [
+  undefined as unknown as Identical<IdentitySummary, SharedIdentitySummary>,
+];
+void identityParityChecks;

@@ -24,6 +24,10 @@ import {
   type IdentityState,
 } from "@/lib/identity-registry";
 import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+import type { IdentitySummary, ListIdentitiesResult } from "@coregrid/contracts";
+// Read contracts are declared ONCE in @coregrid/contracts and re-exported here
+// (§23) — the mobile identity client validates against the same declarations.
+export type { IdentitySummary, ListIdentitiesResult };
 
 /** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
 const timeAuthority = new TimeAuthority(new SystemClock());
@@ -93,23 +97,6 @@ export const registerIdentity = createServerFn({ method: "POST" })
 /* ─────────────────────────────────────────────────────────────
  * Reads — the workspace projection's data path (P02-2)
  * ────────────────────────────────────────────────────────────*/
-
-export type IdentitySummary = {
-  id: string;
-  kind: IdentityKind;
-  display_name: string;
-  state: IdentityState;
-  verified: boolean;
-  tenant_id: string | null;
-  created_at: string;
-};
-
-export type ListIdentitiesResult = {
-  ok: true;
-  /** The tenant boundary the read was scoped to (never client-supplied). */
-  tenant_id: string;
-  identities: IdentitySummary[];
-};
 
 const listIdentitiesSchema = z.object({
   limit: z.number().int().min(1).max(200).optional(),

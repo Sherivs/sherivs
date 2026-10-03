@@ -9,24 +9,13 @@
  * imported by kernel/ contracts (kernel purity list is unchanged).
  */
 
-export const IDENTITY_KINDS = [
-  "human",
-  "organization",
-  "agent",
-  "service",
-  "device",
-  "runtime",
-] as const;
-export type IdentityKind = (typeof IDENTITY_KINDS)[number];
-
-export const IDENTITY_STATES = [
-  "provisioned",
-  "active",
-  "suspended",
-  "archived",
-  "deleted",
-] as const;
-export type IdentityState = (typeof IDENTITY_STATES)[number];
+import {
+  IDENTITY_KINDS,
+  IDENTITY_STATES,
+} from "@coregrid/contracts";
+import type { IdentityKind, IdentityState } from "@coregrid/contracts";
+export { IDENTITY_KINDS, IDENTITY_STATES } from "@coregrid/contracts";
+export type { IdentityKind, IdentityState } from "@coregrid/contracts";
 
 export function isIdentityKind(value: unknown): value is IdentityKind {
   return (IDENTITY_KINDS as readonly unknown[]).includes(value);

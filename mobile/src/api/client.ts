@@ -23,7 +23,7 @@
  * ordinary application storage (Phase 22 §O).
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { CoreGridDatabase } from "./contracts/database";
+import type { CoreGridDatabase } from "@coregrid/contracts";
 import type { MobileEnv } from "./contracts/env";
 
 export type CoreGridSupabaseClient = SupabaseClient<CoreGridDatabase>;
