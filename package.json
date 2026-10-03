@@ -42,6 +42,7 @@
     "preflight:infrastructure": "node scripts/infrastructure/preflight.mjs",
     "bootstrap:infrastructure": "node scripts/infrastructure/bootstrap.mjs",
     "verify:secrets": "node scripts/verification/secret-scan.mjs",
+    "types:generate": "node scripts/generate-database-types.mjs",
     "verify:env": "vitest run tests/unit/env.test.ts",
     "test:e2e": "playwright test",
     "lint": "eslint .",

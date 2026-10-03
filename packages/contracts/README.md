@@ -46,6 +46,30 @@ config/plugin change), and over publishing a build artifact because a compiled
 - Zero runtime dependencies; no I/O; pure types and literal tuples.
 - The web's public contract modules re-export from this package; they must not
   re-declare these values (pinned by `tests/unit/contracts-single-source.test.ts`).
-- `src/database.ts` is generated output (`supabase gen types`) kept verbatim
-  so future regenerations diff cleanly; the generator's output path should be
-  repointed here (tracked follow-up — `scripts/` is another team's scope).
+- `src/database.ts` is generated output (`supabase gen types`). Its OFFICIAL
+  regeneration path is `npm run types:generate`
+  (`scripts/generate-database-types.mjs`), which writes **only**
+  `packages/contracts/src/database.ts` — never the legacy
+  `frontend/src/integrations/supabase/types.ts` re-export.
+
+## Regenerating `src/database.ts`
+
+Requirements: `SUPABASE_ACCESS_TOKEN` in the environment (Supabase
+personal access token) and the `supabase` CLI (resolved via `npx`). The
+project is resolved from `SUPABASE_PROJECT_ID` → the host of `SUPABASE_URL` →
+the canonical ref `nwrflbpbhyiqdptmlccm` (public identifier, not a secret).
+Generation is a read-only schema introspection — no database writes.
+
+```sh
+npm run types:generate -- --check   # probe: report drift, write NOTHING (exit 2 on drift)
+npm run types:generate              # regenerate + write this package file
+```
+
+The script formats the raw generator output with the repo prettier config so
+regenerated files diff cleanly against the committed capture.
+
+Drift policy: if `--check` reports drift against the canonical project,
+committing the regenerated types is a **coordinator decision after review** —
+never a silent commit. The legacy re-export path is structurally pinned by
+`tests/unit/contracts-single-source.test.ts`: any regeneration attempt aimed
+at the old location fails the ratchet loudly.

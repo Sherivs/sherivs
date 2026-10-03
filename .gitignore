@@ -18,6 +18,7 @@ dist-ssr
 
 # Supabase local machine state (project refs, pooler URLs)
 database/supabase/.temp/
+supabase/.temp/
 
 # Environment files (keep .env.example)
 .env

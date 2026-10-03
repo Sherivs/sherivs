@@ -120,3 +120,38 @@ describe("shared contract package is the single source (@coregrid/contracts)", (
     expect(IDENTITY_STATES).toEqual(["provisioned", "active", "suspended", "archived", "deleted"]);
   });
 });
+
+describe("the DB type generator is officially wired into the contracts package (R-wave follow-up)", () => {
+  const LEGACY_PATH = "frontend/src/integrations/supabase/types.ts";
+  const GENERATOR_PATH = "scripts/generate-database-types.mjs";
+
+  it("package.json declares types:generate and points it at the generator script", () => {
+    const pkg = JSON.parse(read("package.json"));
+    expect(pkg.scripts["types:generate"]).toBe("node scripts/generate-database-types.mjs");
+  });
+
+  it("the generator script exists and writes ONLY packages/contracts/src/database.ts", () => {
+    const src = read(GENERATOR_PATH);
+    expect(src.includes('OUTPUT_TARGET = "packages/contracts/src/database.ts"')).toBe(true);
+    expect(src.includes("writeFileSync(targetAbs")).toBe(true);
+    for (const line of src.split("\n").filter((l) => l.includes(LEGACY_PATH))) {
+      const isComment = /^\s*(\*|\/\/)/.test(line);
+      expect(
+        isComment || line.includes("LEGACY_OUTPUT_PATH"),
+        `legacy path may appear only in comments or the write-guard constant: ${line.trim()}`,
+      ).toBe(true);
+    }
+  });
+
+  it("the legacy output path remains a one-line re-export of the package", () => {
+    const legacy = read(LEGACY_PATH).trim();
+    expect(legacy).toBe('export type { Database, Json } from "@coregrid/contracts";');
+    expect(read(LEGACY_PATH).split("\n")).toHaveLength(2);
+  });
+
+  it("the contracts README documents the official regeneration path", () => {
+    const readme = read("packages/contracts/README.md");
+    expect(readme.includes("npm run types:generate")).toBe(true);
+    expect(readme.includes("packages/contracts/src/database.ts")).toBe(true);
+  });
+});
