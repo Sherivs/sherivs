@@ -26,6 +26,7 @@
       "name": "transport_buses",
       "qualifiedName": "public.transport_buses",
       "posture": "zero-policy",
+      "rationale": "adjudicated zero-policy-by-design by H3-040 (architecture/campaigns/h3/posture-adjudication/transport_buses.md): the legacy substrate keys on school_id with no neutral tenant reference, so its only available scoping predicates are the legacy domain helpers the J-005/J-006 predicate law bans from the policy layer (Constitution §13); zero-policy deny-by-default (RULING-2) resolves the queued 2026-09-03 finding in its strongest form, the driver-portal/bus-tracking data-plane denials are a recorded accepted consequence with a defined exemplar conversion path, and zero client-visible realtime events follow by construction (§35)",
       "sourceMigration": "database/supabase/migrations/20260626150625_35a08443-45fd-46ae-807b-3644b44efe26.sql",
       "normalizedBy": "database/supabase/migrations/20261002000014_coregrid_v2_transport_buses_rls.sql",
       "expectedCatalog": {

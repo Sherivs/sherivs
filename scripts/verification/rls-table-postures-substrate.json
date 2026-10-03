@@ -137,13 +137,13 @@
       "name": "cg_reconciliation_verdict",
       "source": "20261002000005_coregrid_v1_reconciliation.sql",
       "posture": "zero-policy",
-      "rationale": "derived verdict records consumed via the service-role adapter; tenant-scoped client access not authorized by H2-04 — unchanged deny-by-default"
+      "rationale": "adjudicated zero-policy-by-design by H3-035 (architecture/campaigns/h3/posture-adjudication/cg_reconciliation_verdict.md): verdicts are derived intelligence, never canonical truth a client consumes (Constitution §9), consumed only through the service-role-only reconciliation adapter that refuses policy-bearing clients; append-only integrity (§28) plus H2-04's recorded decision to grant the input sibling but deliberately exclude verdicts makes unchanged deny-by-default the confirmed V1 posture"
     },
     {
       "name": "cg_event_security",
       "source": "20261002000006_coregrid_v1_event_security.sql",
       "posture": "zero-policy",
-      "rationale": "per-event security contracts are gate inputs, not client surfaces; visibility enforcement belongs to the consumption gate — unchanged deny-by-default"
+      "rationale": "adjudicated zero-policy-by-design by H3-035 (architecture/campaigns/h3/posture-adjudication/cg_event_security.md): per-event security contracts are inputs the consumption gate evaluates, not client surfaces (Constitution §35); digest-chain linkage and authority coordinates are minimization-class data with no declared V1 client purpose (§19), and the service-role-only event-security adapter is the single gate path — unchanged deny-by-default stands"
     },
     {
       "name": "cg_event_security_denial",
@@ -151,7 +151,7 @@
       "posture": "zero-policy",
       "auditAppendOnly": true,
       "clientWritePolicy": "NONE — append-only gate denial audit (Constitution §28): no client INSERT/UPDATE/DELETE policy is ever authored; rows are immutable gate decisions; reads remain service-role only",
-      "rationale": "H2-04 documents the deliberate absence: every denial must remain an unwritable, unerazable audit record"
+      "rationale": "adjudicated zero-policy-by-design by H3-036 (architecture/campaigns/h3/posture-adjudication/cg_event_security_denial.md): every row is a gate DENY decision — audit, not content (Constitution §16); the append-only denial ledger must remain unwritable and unerazable by every client role (§28), delivery is gated before broadcast (§35), and no V1 client requirement exists — the deliberate absence of client policies is the security property, terminal for V1"
     },
     {
       "name": "cg_event_security_redaction",
@@ -159,7 +159,7 @@
       "posture": "zero-policy",
       "auditAppendOnly": true,
       "clientWritePolicy": "NONE — append-only gate redaction audit (Constitution §28/§19): no client INSERT/UPDATE/DELETE policy is ever authored; withheld-field records are immutable; reads remain service-role only",
-      "rationale": "H2-04 documents the deliberate absence: redaction history must be tamper-evident by posture"
+      "rationale": "adjudicated zero-policy-by-design by H3-036 (architecture/campaigns/h3/posture-adjudication/cg_event_security_redaction.md): a redaction record discloses what was withheld and from whom — exposing it through any client policy would defeat the redaction itself (Constitution §19 minimization); the append-only withheld-fields ledger is the tamper-evidence that the original event was never silently altered (§28), REDACT outcomes are gate-owned audit rather than content (§16), and no V1 client path requires it"
     },
     {
       "name": "cg_event_route_subscription",
@@ -217,13 +217,13 @@
       "name": "cg_event_route_queue",
       "source": "20261002000007_coregrid_v1_event_routing.sql",
       "posture": "zero-policy",
-      "rationale": "gated delivery state is routing-plane truth owned by the service-role router; tenant-scoped client access not authorized by H2-04 — unchanged deny-by-default"
+      "rationale": "adjudicated zero-policy-by-design by H3-036 (architecture/campaigns/h3/posture-adjudication/cg_event_route_queue.md): the queue is routing-plane truth — which subscriber has what undelivered, in what order, under which gate decision — not a client surface (Constitution §35); deliveries are gated by the single enforcement point before enqueueing, so a client policy would create a second weaker gate over mutable delivery state, and subscribers observe delivery through their subscription outcomes, never the queue"
     },
     {
       "name": "cg_event_route_cursor",
       "source": "20261002000007_coregrid_v1_event_routing.sql",
       "posture": "zero-policy",
-      "rationale": "one-way delivery frontier is router-owned state; unchanged deny-by-default"
+      "rationale": "adjudicated zero-policy-by-design by H3-037 (architecture/campaigns/h3/posture-adjudication/cg_event_route_cursor.md): the cursor is the router-owned one-way delivery frontier — no tenant actor holds a legitimate direct data-plane privilege in V1; zero policies is the strongest deny-by-default form (no policy expression anywhere can evaluate true), and any permissive policy would either expose tenant-sensitive frontier state or allow client-written rewind of delivery history (Constitution §35, §13)"
     },
     {
       "name": "cg_event_route_outcome",
@@ -231,7 +231,7 @@
       "posture": "zero-policy",
       "auditAppendOnly": true,
       "clientWritePolicy": "NONE — append-only routing outcome audit (Constitution §28): no client INSERT/UPDATE/DELETE policy is ever authored; every evaluation stays an unwritable, unerazable record; reads remain service-role only",
-      "rationale": "H2-04 documents the deliberate absence: nothing silently dropped means nothing client-rewritable either"
+      "rationale": "adjudicated zero-policy-by-design by H3-037 (architecture/campaigns/h3/posture-adjudication/cg_event_route_outcome.md): an append-only routing outcome audit (Constitution §28) — every evaluation must remain an unwritable, unerazable record, so the absence of every client policy IS the security property; nothing silently dropped means nothing client-rewritable either, subscriber delivery is served by the gated queue/subscription surfaces, and forceRls=false is correct by posture law (FORCE cannot strengthen a no-policy posture)"
     },
     {
       "name": "cg_evidence_record",
@@ -317,19 +317,19 @@
       "posture": "zero-policy",
       "auditAppendOnly": true,
       "clientWritePolicy": "NONE — append-only lifecycle act ledger (Constitution §28): no client INSERT/UPDATE/DELETE policy is ever authored; promotion/revocation/assessment acts are immutable records with actor and instant; reads remain service-role only",
-      "rationale": "H2-04 documents the deliberate absence: the act ledger is the tamper-evidence substrate of the evidence lifecycle"
+      "rationale": "adjudicated zero-policy-by-design by H3-037 (architecture/campaigns/h3/posture-adjudication/cg_evidence_lifecycle_act.md): the act ledger is the tamper-evidence substrate of the evidence lifecycle (Constitution §28) — promotion/revocation/assessment acts are immutable records with a human, never AI, actor (§21), and a client policy would let a tenant actor forge validation history or erase a revocation; tenant-visible evidence is served by the policy-backed cg_evidence_record, and forceRls=false is correct by posture law"
     },
     {
       "name": "cg_reasoning_provenance_snapshot",
       "source": "20261002000009_coregrid_v1_reasoning_provenance.sql",
       "posture": "zero-policy",
-      "rationale": "reasoning provenance snapshots are derived-intelligence records consumed server-side; not authorized for tenant-scoped client access by H2-04 — unchanged deny-by-default"
+      "rationale": "adjudicated zero-policy-by-design by H3-038 (architecture/campaigns/h3/posture-adjudication/cg_reasoning_provenance_snapshot.md): a snapshot is a data-provenance integrity surface (Constitution §12/§15) — generated_by_ai pinned true, verified pinned false — where client writability invites forged provenance and client readability widens an AI-provenance ledger before any authorization model for it exists; it is derived intelligence, never canonical truth (§9), and the service-role gateway path is the only consumer"
     },
     {
       "name": "cg_usage_attribution_rollup",
       "source": "20261002000010_coregrid_v1_cost_attribution.sql",
       "posture": "zero-policy",
-      "rationale": "roll-up headers are financial-metering aggregates consumed via the service-role adapter; unchanged deny-by-default"
+      "rationale": "adjudicated zero-policy-by-design by H3-038 (architecture/campaigns/h3/posture-adjudication/cg_usage_attribution_rollup.md): roll-up headers are financial-metering aggregates consumed server-side (quota evaluation, metering) — no authorization model exists for who may read a tenant's money data (Constitution §16); token counts are observed reality while estimated cost is derived intelligence whose recorded integrity verdicts must not be rewritten or selectively read (§9, §28), and the H2-04 bucket/rollup split (bucket policy-backed, header zero-policy) is deliberate, not neglect"
     },
     {
       "name": "cg_usage_attribution_bucket",
@@ -420,37 +420,37 @@
       "name": "cg_knowledge_source",
       "source": "20261002000011_coregrid_v1_knowledge_currency.sql",
       "posture": "zero-policy",
-      "rationale": "knowledge-currency family not authorized for tenant-scoped client access by H2-04 — unchanged deny-by-default"
+      "rationale": "adjudicated zero-policy-by-design by H3-038 (architecture/campaigns/h3/posture-adjudication/cg_knowledge_source.md): the source-reliability registry is epistemic governance, not client content — a client-writable policy would let callers mint or move trust tiers, and every downstream knowledge record inherits its source's current tier at query time (Constitution §9/§11/§12); same-tenant acts are already composite-FK-enforced (§17/§28), so zero-policy deny for all client roles is strictly stronger than any tenant-scoped predicate for a table with no legitimate client consumer"
     },
     {
       "name": "cg_knowledge_freshness_contract",
       "source": "20261002000011_coregrid_v1_knowledge_currency.sql",
       "posture": "zero-policy",
-      "rationale": "knowledge-currency family not authorized for tenant-scoped client access by H2-04 — unchanged deny-by-default"
+      "rationale": "adjudicated zero-policy-by-design by H3-039 (architecture/campaigns/h3/posture-adjudication/cg_knowledge_freshness_contract.md): the freshness contract is the platform-side declaration of when a memory record's currency (fresh/stale) may be asserted — part of the §9 canonical-truth validation substrate, enforced server-side by the pure contract plus the service-role adapter; no V1 API or page consumes the rows, the database itself refuses all client access (§17/§34), and composite FKs make cross-tenant contracts unbindable"
     },
     {
       "name": "cg_knowledge_invalidation",
       "source": "20261002000011_coregrid_v1_knowledge_currency.sql",
       "posture": "zero-policy",
-      "rationale": "knowledge-currency family not authorized for tenant-scoped client access by H2-04 — unchanged deny-by-default"
+      "rationale": "adjudicated zero-policy-by-design by H3-039 (architecture/campaigns/h3/posture-adjudication/cg_knowledge_invalidation.md): the tombstone act ledger removes a knowledge record from current without deleting it (ADR-005, Constitution §9) — if it were client-mutable or client-erasable, stale knowledge could be resurrected or valid knowledge silently killed; substrate-unique one-act-per-record plus the evidence requirement plus zero client privilege make it tamper-evident by posture (§28), and no V1 client surface exists"
     },
     {
       "name": "cg_knowledge_downgrade",
       "source": "20261002000011_coregrid_v1_knowledge_currency.sql",
       "posture": "zero-policy",
-      "rationale": "knowledge-currency family not authorized for tenant-scoped client access by H2-04 — unchanged deny-by-default"
+      "rationale": "adjudicated zero-policy-by-design by H3-039 (architecture/campaigns/h3/posture-adjudication/cg_knowledge_downgrade.md): the downgrade act ledger records who demoted a source's reliability tier, why, and with what evidence — the enforcement record behind trust-never-rises-silently (G-047/G-052); strict-down CHECK, evidence requirement and same-tenant composite FK carry the semantics in the database (Constitution §28), while zero-policy plus privilege revocation ensure no client can write, mutate, or erase a demotion or launder untrusted output provenance (§9/§21)"
     },
     {
       "name": "cg_tool_runtime_tool",
       "source": "20261002000012_coregrid_v1_tool_runtime.sql",
       "posture": "zero-policy",
-      "rationale": "tool-runtime family not authorized for tenant-scoped client access by H2-04 — unchanged deny-by-default"
+      "rationale": "adjudicated zero-policy-by-design by H3-040 (architecture/campaigns/h3/posture-adjudication/cg_tool_runtime_tool.md): the only access path is the service-role tool-runtime adapter (client privileges fully revoked), so a client policy would be dead code or would require widening grants first (Constitution §16/§17); AI-proposal gating (capability gate, credential-lease mediation, delegation bounding) happens upstream of the data plane (§21), and the tenant_id parameterization is unresolved (COND-003) — authoring a tenant-scoped policy on an unstable type risks the exact widening the posture forbids"
     },
     {
       "name": "cg_tool_runtime_invocation",
       "source": "20261002000012_coregrid_v1_tool_runtime.sql",
       "posture": "zero-policy",
-      "rationale": "tool-runtime family not authorized for tenant-scoped client access by H2-04 — unchanged deny-by-default"
+      "rationale": "adjudicated zero-policy-by-design by H3-040 (architecture/campaigns/h3/posture-adjudication/cg_tool_runtime_invocation.md): invocations are the audited output of the Constitution §21 AI-proposal chain — capability gate, delegation bounding, credential-lease mediation — not a client surface; the append-only ledger must stay unwritable and unerazable by any client path (§28), client reads would expose tenant-wide tool-invocation history without purpose/policy context (§19), and COND-003 leaves the tenant_id parameterization unresolved"
     }
   ],
   "batteryExpectations": {
