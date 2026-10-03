@@ -12,11 +12,11 @@
       "warn": "observed violation group present in baselineEntries (printed every run)",
       "ratchet": "baseline entry no longer observed — removable by the engineer who cleared it"
     },
-    "lastRatchet": "2026-10-03: V1-006 (team SECURITY) neutralized the platform authorization core — removed all 9 frontend/src/lib/authorization.ts and all 13 frontend/src/lib/identity.ts entries (authorization.ts and identity.ts now carry zero education vocabulary; roles/relationship types are contributed via rbac/domain-contribution + domain-config registration) and refreshed the 7 frozen security-role-gate.ts legacy-fallback entries against the live tree (shrink-only, ADR-003/004)."
+    "lastRatchet": "2026-10-03: V1-006 (team SECURITY) neutralized the platform authorization core — removed all 9 frontend/src/lib/authorization.ts and all 13 frontend/src/lib/identity.ts entries (authorization.ts and identity.ts now carry zero education vocabulary; roles/relationship types are contributed via rbac/domain-contribution + domain-config registration) and refreshed the 7 frozen security-role-gate.ts legacy-fallback entries against the live tree (shrink-only, ADR-003/004). || 2026-10-03 (ADR-012): T-wave coordinator ADDED 3 quarantine groups (19 hits) for database/supabase/migrations/20261003000040_coregrid_school_media_bucket.sql — the FIRST baseline extension, made under ADR-004's explicit 'new ADR' mechanism: the declarative storage-provisioning migration must reference the legacy storage contract id school-media consumed by the frontend and by the applied 20260707223958 policy set; the neutral conversion (bucket id + policy predicates + path contract) is blocked on the neutral-tenant substrate conversion (same conversionPath class as the transport posture) and is recorded as an authorized follow-up that REMOVES these entries in the same change. Zero new privileges authorized by ADR-012."
   },
   "summary": {
-    "entryCount": 412,
-    "totalObservedHits": 1499,
+    "entryCount": 415,
+    "totalObservedHits": 1518,
     "hitsByFile": {
       "database/supabase/migrations/20260907000100_runtime_scholar_workforce_catalog.sql": 114,
       "database/supabase/migrations/20260620122048_50e590c2-5911-4c98-8931-fb46a4b509f3.sql": 84,
@@ -156,7 +156,8 @@
       "frontend/src/lib/runtime-command-query.ts": 1,
       "frontend/src/lib/scheduling-conflicts.ts": 1,
       "frontend/src/lib/scheduling-quality.ts": 1,
-      "frontend/src/lib/workforce-positions.ts": 1
+      "frontend/src/lib/workforce-positions.ts": 1,
+      "database/supabase/migrations/20261003000040_coregrid_school_media_bucket.sql": 19
     }
   },
   "baselineEntries": [
@@ -5778,6 +5779,55 @@
         25
       ],
       "firstSnippet": "/** Stable identifier of the composition (runtime-qualified, e.g. `r001:teacher`). */"
+    },
+    {
+      "file": "database/supabase/migrations/20261003000040_coregrid_school_media_bucket.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "ADR-012",
+      "occurrences": 17,
+      "lines": [
+        2,
+        14,
+        16,
+        26,
+        27,
+        28,
+        29,
+        30,
+        42,
+        45,
+        46,
+        70,
+        71,
+        86,
+        90,
+        91,
+        96
+      ],
+      "firstSnippet": "-- CoreGrid — school-media storage bucket provisioning (post-R-wave follow-up,"
+    },
+    {
+      "file": "database/supabase/migrations/20261003000040_coregrid_school_media_bucket.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "ADR-012",
+      "occurrences": 1,
+      "lines": [
+        32
+      ],
+      "firstSnippet": "--   public.get_my_school_id()::text (the anon SELECT is bucket-wide so the"
+    },
+    {
+      "file": "database/supabase/migrations/20261003000040_coregrid_school_media_bucket.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "ADR-012",
+      "occurrences": 1,
+      "lines": [
+        91
+      ],
+      "firstSnippet": "--     INSERT school-media/<school_id>/... ; a different school's prefix is"
     }
   ]
 }

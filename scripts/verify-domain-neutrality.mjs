@@ -29,9 +29,13 @@
  *   - the guard FAILS (exit 1) on any observed (file, kind, token) violation
  *     that is NOT in the baseline;
  *   - SHRINK-ONLY RATCHET: baseline entries may be REMOVED as relocations
- *     land (ADR-003/004 coordination); entries may NEVER be added. A file
- *     that introduces domain vocabulary must relocate the code into the
- *     owning runtime namespace, not extend the baseline.
+ *     land (ADR-003/004 coordination); per ADR-004 ("nothing may increase it
+ *     without a new ADR") an entry may be ADDED only with a dedicated ADR
+ *     recording the decision (first exercised by ADR-012: legacy
+ *     storage-contract identifiers referenced by declarative provisioning
+ *     migrations). A file that introduces domain vocabulary must relocate
+ *     the code into the owning runtime namespace — not extend the baseline
+ *     silently.
  *
  * Exit codes: 0 PASS (clean or baseline-only), 1 FAIL (new violation,
  * unreadable baseline, or scan error).

@@ -60,6 +60,7 @@ const CANONICAL_APPLY_RECORD = JSON.parse(
   readFileSync(join(ROOT, CANONICAL_APPLY_RECORD_PATH), "utf8"),
 ) as unknown as {
   rlsPosture?: Array<{ table?: string; posture?: string }>;
+  declaredVsApplied?: Array<{ file?: string; state?: string; evidence?: string }>;
 };
 
 type SubstratePostureFile = {
@@ -222,7 +223,7 @@ describe("D-040 adjudicated tables are battery-scoped zero-policy entries", () =
           "policy-backed (declared policies)",
         );
         const supersededEntry = (CANONICAL_APPLY_RECORD.declaredVsApplied ?? []).find(
-          (m: { file?: string }) => typeof m.file === "string" && m.file.startsWith("20261002000014"),
+          (m) => typeof m.file === "string" && m.file.startsWith("20261002000014"),
         );
         expect(supersededEntry?.state).toBe("SUPERSEDED");
         expect(String(supersededEntry?.evidence ?? "")).toContain("20261003000041");

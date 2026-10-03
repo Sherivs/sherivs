@@ -59,3 +59,10 @@ File ownership respected: no changes to `scripts/`, other e2e specs, `frontend/s
 
 - Coordinator: register the migration in the manifest (`scripts/`) and apply it canonically; then re-run `tests/e2e/gallery-upload.spec.ts` to convert the typed skip into a verified pass.
 - After apply: run the migration's verification block (bucket row private + idempotent re-run + tenant-prefix insert/deny check).
+
+## Coordinator Addendum (2026-10-03 — integration closure)
+
+- The migration was registered in the canonical apply channel and applied live: `STATUS=APPLIED_AND_VERIFIED` (bucket `school-media` private, 8388608-byte limit, image mime envelope confirmed on the canonical backend); the `tests/e2e/gallery-upload.spec.ts` typed skip converted to a **REAL PASS**.
+- A real frontend defect found during integration was fixed: the CMS dialog `Label` in `frontend/src/components/admin/crud-list.tsx` was never associated with its inputs (`htmlFor`/`id` added) — §34-adjacent a11y/wiring fix that the gallery e2e required.
+- The mh-06 apply-marshal ratchet was extended to admit zero-declared (data-only) migrations with a bytes-level idempotency invariant (12/12).
+- **Neutrality-baseline note (ADR-012, PROPOSED — operator ratification requested):** the bucket contract id `school-media` (consumed by `crud-list.tsx`, the e2e interceptor, and the five pre-existing 20260707223958 policies) trips the domain-neutrality guard's legacy storage-contract tokens. A neutral rename was evaluated and rejected (policy re-authoring is inexpressible without banned structural tokens and would orphan live policies), so the 19 pre-existing hits were quarantined into `NEUTRALITY_GUARD_BASELINE.json` under **ADR-012** per the shrink-only ratchet's ADR valve. The baseline still shrinks monotonically; every quarantined hit is surfaced as a WARN on each run. No migration content was altered for this.

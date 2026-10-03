@@ -3,13 +3,21 @@
  * pinning (Database Security Engineer, RLS author role).
  *
  * Covers: authored-integrity pinning for migration 20261002000014 and its
- * genuine inverse rollback, the declared per-table posture (zero-policy
- * deny-by-default — the RLS_ISOLATION_BATTERY.md dual-posture strongest
- * form), the schema-source lineage (legacy definition 20260626150625 +
- * correction 20260904010000), and the battery-steward adoption contract
+ * genuine inverse rollback, the declared per-table posture at its
+ * normalization time (zero-policy deny-by-default — the
+ * RLS_ISOLATION_BATTERY.md dual-posture strongest form), the schema-source
+ * lineage (legacy definition 20260626150625 + correction 20260904010000),
+ * and the battery-steward adoption contract
  * (scripts/verification/rls-table-postures-transport.json). Static pinning
  * only — the migration is AUTHORED, NOT APPLIED: no live battery, no
  * canonical access (the battery script is owned by another mission).
+ *
+ * 2026-10-03 (TEAM T-D, TRANSPORT-POLICY): the posture contract section is
+ * updated to the T-D policy-backed adoption (SELECT-only driver
+ * self-assignment read, 20261003000041) — the posture file is T-D-owned and
+ * this contract follows it; the zero-policy pins for migration
+ * 20261002000014 (sections 1–3) are unchanged and remain the historical
+ * substrate-era baseline, now recorded in the posture file's history block.
  */
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
@@ -36,6 +44,11 @@ const LEGACY_SOURCE = readFileSync(join(ROOT, LEGACY_SOURCE_PATH), "utf8");
 const CORRECTION = readFileSync(join(ROOT, CORRECTION_PATH), "utf8");
 
 const TABLE = "public.transport_buses";
+const TD_MIGRATION_PATH =
+  "database/supabase/migrations/20261003000041_coregrid_transport_bus_reads.sql";
+const TD_ROLLBACK_PATH =
+  "database/supabase/rollbacks/20261003000041_coregrid_transport_bus_reads.sql";
+const TD_POLICY = "transport_buses_select_driver_assigned";
 const DROPPED_POLICIES = [
   "buses_school_rw",
   "buses_school_read",
@@ -49,16 +62,21 @@ interface PostureTable {
   name: string;
   qualifiedName: string;
   posture: "zero-policy" | "policy-backed";
+  policies?: string[];
+  forceRls?: boolean;
+  tenantColumn?: string;
+  policyBackedBy?: string;
   sourceMigration: string;
   normalizedBy: string;
   expectedCatalog: {
     relrowsecurity: boolean;
     relforcerowsecurity: boolean;
+    relforcerowsecurityClassification?: string;
     policies: string[];
     permissivePolicies: number;
   };
   droppedPolicies: string[];
-  expectedPrivileges: {
+  privileges: {
     anon: string[];
     authenticated: string[];
     PUBLIC: string[];
@@ -71,12 +89,17 @@ interface PostureDeclaration {
   status: string;
   migration: string;
   rollback: string;
+  history?: {
+    zeroPolicyEra?: { migration: string; rollback: string; note: string };
+    priorPosture?: string;
+  };
   tables: PostureTable[];
   outOfScope: { name: string; qualifiedName: string; reason: string }[];
   batteryExpectations: {
     zeroPolicyTables: string[];
     policyBackedTables: string[];
-    genuineInverse: string;
+    genuineInverse?: string;
+    probeRecipeNote?: string;
   };
 }
 
@@ -207,47 +230,55 @@ describe("transport RLS rollback — genuine inverse of 20261002000014", () => {
  * 4. Battery-steward adoption contract (declarative posture JSON)
  * ────────────────────────────────────────────────────────────*/
 
-describe("rls-table-postures-transport.json — battery-steward adoption contract", () => {
-  it("is a well-formed declaration naming this mission and its files", () => {
+describe("rls-table-postures-transport.json — battery-steward adoption contract (T-D policy-backed)", () => {
+  it("is a well-formed declaration naming the T-D posture change and its files", () => {
     expect(POSTURES.artifact).toBe("rls-table-postures-transport");
-    expect(POSTURES.status).toContain("AUTHORED, NOT APPLIED");
-    expect(POSTURES.migration).toBe(MIGRATION_PATH);
-    expect(POSTURES.rollback).toBe(ROLLBACK_PATH);
+    expect(POSTURES.status).toContain("APPLIED (2026-10-03, coordinator)");
+    expect(POSTURES.migration).toBe(TD_MIGRATION_PATH);
+    expect(POSTURES.rollback).toBe(TD_ROLLBACK_PATH);
     for (const path of [POSTURES.migration, POSTURES.rollback]) {
       expect(existsSync(join(ROOT, path))).toBe(true);
     }
   });
 
-  it("declares exactly one table — the driver families' bus table — as zero-policy", () => {
+  it("preserves the historical zero-policy era lineage (H2-03 normalization)", () => {
+    expect(POSTURES.history?.zeroPolicyEra?.migration).toBe(MIGRATION_PATH);
+    expect(POSTURES.history?.zeroPolicyEra?.rollback).toBe(ROLLBACK_PATH);
+    expect(POSTURES.history?.priorPosture).toContain("zero-policy");
+  });
+
+  it("declares exactly one table — the driver families' bus table — as policy-backed", () => {
     expect(POSTURES.tables).toHaveLength(1);
     const table = POSTURES.tables[0];
     expect(table.qualifiedName).toBe(TABLE);
-    expect(table.posture).toBe("zero-policy");
+    expect(table.posture).toBe("policy-backed");
+    expect(table.policies).toEqual([TD_POLICY]);
+    expect(table.policyBackedBy).toBe(TD_MIGRATION_PATH);
     expect(table.sourceMigration).toBe(LEGACY_SOURCE_PATH);
     expect(table.normalizedBy).toBe(MIGRATION_PATH);
   });
 
-  it("pins the battery's zero-policy expected catalog state", () => {
+  it("pins the battery's policy-backed expected catalog state (FORCE RLS convention)", () => {
     const table = POSTURES.tables[0];
     expect(table.expectedCatalog.relrowsecurity).toBe(true);
-    expect(table.expectedCatalog.relforcerowsecurity).toBe(false);
-    expect(table.expectedCatalog.policies).toEqual([]);
-    expect(table.expectedCatalog.permissivePolicies).toBe(0);
+    expect(table.expectedCatalog.relforcerowsecurity).toBe(true);
+    expect(table.expectedCatalog.policies).toEqual([TD_POLICY]);
+    expect(table.expectedCatalog.permissivePolicies).toBe(1);
   });
 
-  it("pins zero client privileges and a genuine-deny anon REST expectation", () => {
+  it("pins the least-privilege grant surface (SELECT-only) and a genuine-deny anon REST expectation", () => {
     const table = POSTURES.tables[0];
-    expect(table.expectedPrivileges.anon).toEqual([]);
-    expect(table.expectedPrivileges.authenticated).toEqual([]);
-    expect(table.expectedPrivileges.PUBLIC).toEqual([]);
-    expect(table.expectedPrivileges.service_role).toEqual(["ALL"]);
+    expect(table.privileges.anon).toEqual([]);
+    expect(table.privileges.authenticated).toEqual(["SELECT"]);
+    expect(table.privileges.PUBLIC).toEqual([]);
+    expect(table.privileges.service_role).toEqual(["ALL"]);
     expect(table.expectedAnonRestProbe.denyExpected).toBe(true);
     for (const form of table.expectedAnonRestProbe.acceptableDenialForms) {
       expect(["empty-set-200", "42501-permission-denied"]).toContain(form);
     }
   });
 
-  it("stays consistent with the migration's dropped-policy inventory", () => {
+  it("stays consistent with the normalizing migration's dropped-policy inventory", () => {
     const table = POSTURES.tables[0];
     expect(table.droppedPolicies).toEqual([...DROPPED_POLICIES]);
     for (const policy of table.droppedPolicies) {
@@ -255,19 +286,19 @@ describe("rls-table-postures-transport.json — battery-steward adoption contrac
     }
   });
 
-  it("segregates out-of-scope tables and mirrors the migration's posture wording", () => {
+  it("segregates out-of-scope tables and flips the battery expectations to policy-backed", () => {
     expect(POSTURES.outOfScope.map((t) => t.qualifiedName)).toEqual([
       "public.school_transport",
     ]);
-    expect(POSTURES.batteryExpectations.zeroPolicyTables).toEqual(["transport_buses"]);
-    expect(POSTURES.batteryExpectations.policyBackedTables).toEqual([]);
+    expect(POSTURES.batteryExpectations.zeroPolicyTables).toEqual([]);
+    expect(POSTURES.batteryExpectations.policyBackedTables).toEqual(["transport_buses"]);
+    expect(POSTURES.tables[0].posture).toBe("policy-backed");
+    // The zero-policy wording remains the historical baseline's declaration.
     expect(MIGRATION).toContain("declared posture: ZERO-POLICY");
-    expect(POSTURES.tables[0].posture).toBe("zero-policy");
   });
 
-  it("records the genuine-inverse contract for the rollback", () => {
-    expect(POSTURES.batteryExpectations.genuineInverse).toContain("restores exactly");
-    expect(POSTURES.batteryExpectations.genuineInverse).toContain("20260904010000");
-    expect(POSTURES.batteryExpectations.genuineInverse).toContain("buses_school_rw");
+  it("records the genuine-inverse contract for the T-D rollback and the probe-recipe honesty note", () => {
+    expect(POSTURES.batteryExpectations.genuineInverse).toContain("restores exactly the 20261002000014 zero-policy posture");
+    expect(POSTURES.batteryExpectations.probeRecipeNote).toContain("probeStage=identity-scoped");
   });
 });
