@@ -34,6 +34,17 @@
  * injected `now` clock; the mission path receives caller-supplied
  * parseable instants only.
  *
+ * Governed clock adoption (W3-INT seam, R5 WORKFORCE-CLOCK): an OPTIONAL
+ * `deps.clock` supersedes `now` as the cycle's single time authority and is
+ * threaded into the leased driver as its per-phase `clock`, so lease
+ * acquisition and the outcome report stamp the ACTUAL act instants. When
+ * `clock` is absent (the default — every existing caller), the host is
+ * BYTE-IDENTICAL to the pre-adoption behavior: the driver keeps its
+ * deterministic single-instant semantics (one `now` wake instant stamps
+ * acquisition, completion, failure and the bounded-retry gate — the
+ * denial/audit provenance the V1-003/W3-INT suites pin), while heartbeats,
+ * verification and quarantine keep sampling `now` per act.
+ *
  * Boundary: the host depends ONLY on the V1-004 lease/record ports, the
  * workforce authority port and the quarantine port. No vendor, no direct
  * DB access, no always-on process.
@@ -103,6 +114,16 @@ export interface WorkerHostDeps {
   readonly quarantineThreshold: number;
   /** Injected clock (J-023): every host instant comes from here. */
   readonly now: () => string;
+  /**
+   * Optional governed cycle clock (W3-INT seam adoption). When supplied it
+   * SUPERSEDES `now` as the cycle's single time authority and is threaded
+   * into the leased driver as its per-phase `clock` (lease-acquisition and
+   * outcome-report stamps bind to the act instants). When absent (the
+   * default) the host is byte-identical to the pre-adoption behavior: the
+   * driver keeps its deterministic single-wake-instant provenance and every
+   * other instant still comes from `now`.
+   */
+  readonly clock?: () => string;
 }
 
 export interface WorkerHostCycleInput {
@@ -188,7 +209,9 @@ export async function runWorkerHost(
     throw new Error(`worker host input rejected: ${parsedInput.error.message}`);
   }
   const { tenantId, workerId, executionId } = parsedInput.data;
-  const now = deps.now;
+  // `clock` supersedes `now` when supplied; absent, this reference IS
+  // `deps.now` and the whole cycle is byte-identical to the pre-adoption host.
+  const now = deps.clock ?? deps.now;
   const phases: WorkerHostPhase[] = [];
 
   /* ── WAKE ─────────────────────────────────────────────── */
@@ -224,7 +247,12 @@ export async function runWorkerHost(
     worker: actor,
     tenantId,
     executionId,
+    // Wake instant: the driver's deterministic default when no governed
+    // clock is adopted. `clock` present → per-phase act instants (W3-INT
+    // seam); `clock` absent/undefined → the driver keeps its single-instant
+    // provenance (byte-identical default, pinned by the clock tests).
     now: now(),
+    clock: deps.clock,
     execute: async (grant) => {
       const heartbeat = async (): Promise<
         { ok: true; leaseExpiresAt: string } | { ok: false; reason: string }
@@ -277,15 +305,28 @@ export async function runWorkerHost(
   /* ── PERSIST (evidence on success; failure record + backoff on failure) ── */
   const persisted = await deps.missions.getExecution(tenantId, executionId);
   const evidenceCount = persisted?.evidenceIds.length ?? 0;
-  const persistOk = driverResult.outcome === "evidenced" || driverResult.outcome === "failed";
+  // Under the adopted per-phase clock, the completion ACT can land past the
+  // lease TTL (the store then denies it `lease_expired`, fail-closed, with
+  // ZERO writes — the driver surfaces that as outcome `failed` + denyCode).
+  // The host reports that truthfully: nothing was persisted and the
+  // execution waits for inline orphan recovery. On the DEFAULT single-wake-
+  // instant path a just-acquired lease cannot be expired at the completion
+  // instant, so this branch is unreachable without an adopted clock and the
+  // default provenance is byte-identical (pinned by the clock tests).
+  const completionDenied = driverResult.outcome === "failed" && driverResult.denyCode !== null;
+  const persistOk =
+    !completionDenied &&
+    (driverResult.outcome === "evidenced" || driverResult.outcome === "failed");
   phases.push({
     phase: "PERSIST",
     ok: persistOk,
-    detail: persistOk
-      ? driverResult.outcome === "evidenced"
-        ? `${evidenceCount} evidence record(s) persisted with §12 provenance`
-        : `failure recorded with bounded-retry backoff: ${driverResult.reason}`
-      : "nothing persisted — the execution was not leased",
+    detail: completionDenied
+      ? `completion denied (${driverResult.denyCode}): ${driverResult.reason} — nothing persisted; the expired lease awaits recovery`
+      : persistOk
+        ? driverResult.outcome === "evidenced"
+          ? `${evidenceCount} evidence record(s) persisted with §12 provenance`
+          : `failure recorded with bounded-retry backoff: ${driverResult.reason}`
+        : "nothing persisted — the execution was not leased",
   });
 
   /* ── VERIFY (independent verifier identity — never the executor) ── */
