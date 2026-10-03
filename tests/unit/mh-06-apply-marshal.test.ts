@@ -45,6 +45,8 @@ const EXPECTED_MIGRATIONS = [
   "20261003000016_coregrid_v1_file_substrate.sql",
   "20261003000017_coregrid_v1_idempotency_substrate.sql",
   "20261003000018_coregrid_v1_idempotency_privilege_revoke.sql",
+  // V1-wave (2026-10-03): V1-003 mission lease + worker governance substrate.
+  "20261003000019_coregrid_v1_mission_lease.sql",
 ];
 
 interface ManifestMigration {
@@ -132,7 +134,7 @@ describe("MH-06 — canonical apply path is rehearsal-ready and CI-portable", ()
     expect(manifest.mode).toBe("manifest");
   });
 
-  it("manifest prints the declared migrations in dependency order (20261002000005–18 present today)", () => {
+  it("manifest prints the declared migrations in dependency order (20261002000005–19 present today)", () => {
     expect(manifest.migrations.map((m) => m.file)).toEqual(EXPECTED_MIGRATIONS);
     manifest.migrations.forEach((m, i) => expect(m.order).toBe(i + 1));
     expect(manifestRun.stdout).toContain("20261002000005_coregrid_v1_reconciliation.sql");

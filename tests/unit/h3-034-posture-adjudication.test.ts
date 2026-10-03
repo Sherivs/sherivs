@@ -151,6 +151,7 @@ describe("H3-034 posture adjudication (mission D-034) — internal consistency",
     it("the posture registry resolves offline from the landed posture files plus the built-in canonical posture", () => {
       expect(registry.fallbackUsed).toBe(false);
       expect(registry.files).toEqual([
+        "rls-table-postures-mission-lease.json",
         "rls-table-postures-substrate.json",
         "rls-table-postures-transport.json",
       ]);
