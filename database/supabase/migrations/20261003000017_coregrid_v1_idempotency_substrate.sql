@@ -19,7 +19,7 @@
 --   re-executing.
 --   Exemplars: 20261002000015_coregrid_v1_substrate_policies.sql (the
 --   neutral-primitives-only policy construction, FORCE RLS posture, grant
---   discipline and COMMENT pattern) and 20261002000004_coregrid_v1_memory_
+--   grant rules and COMMENT pattern) and 20261002000004_coregrid_v1_memory_
 --   tier.sql (table-authoring style, COND-003 tenant text parameterization).
 --   AGENTS.md §9 (recorded outcome is canonical truth for its TTL window),
 --   §13 (every request has tenant context), §16 (layered authorization),
@@ -43,7 +43,7 @@
 --               USING tenant-scoped AND expires_at <= now() — an EXPIRED row
 --               is untrusted (== absent) by the contract's fail-safe law and
 --               may be replaced; WITH CHECK re-satisfies the full INSERT
---               discipline. A LIVE recorded outcome can NEVER be rewritten:
+--               rules. A LIVE recorded outcome can NEVER be rewritten:
 --               the USING clause filters to expired rows only.)
 --   zero-policy surfaces: none — but the UPDATE policy admits ONLY
 --               already-expired rows (immutability within TTL, §28); there is
@@ -90,7 +90,7 @@
 --     the substrate additionally refuses to overwrite by construction.
 --     An EXPIRED row is replaceable atomically (it is already untrusted ==
 --     absent, §9 fail-safe), and the replace-expired UPDATE policy re-checks
---     the full INSERT discipline on the new row — nothing else is updatable.
+--     the full INSERT rules on the new row — nothing else is updatable.
 --   - Expired record == absent record (fail-safe, mirroring the contract
 --     layer): the outcome is no longer trusted past expires_at, the key is
 --     freed, and a fresh execution re-records. Expiry is bounded by the TTL
@@ -308,7 +308,7 @@ COMMENT ON POLICY idempotency_record_replace_expired ON public.cg_idempotency_re
   rows that are ALREADY expired (untrusted == absent by the contract's
   fail-safe rule), so a LIVE recorded outcome can never be rewritten through
   any client path (AGENTS §28). The WITH CHECK re-satisfies the full INSERT
-  discipline — neutral ADMINISTRATOR binding in the tenant under test AND
+  rules — neutral ADMINISTRATOR binding in the tenant under test AND
   actor_id = auth.uid()::text — so a replacement carries the same guarantees
   as a first record. The consuming store narrows this further to
   expires_at <= the replacing record's created_at, atomically.$comment$;
