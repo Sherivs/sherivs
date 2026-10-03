@@ -5,8 +5,8 @@
   "projectRef": "nwrflbpbhyiqdptmlccm",
   "transport": "supabase-management-api-database-query",
   "exclusiveAccess": "serialized — one canonical operation at a time (campaign canonical lock held by TEAM 3)",
-  "executedAt": "2026-10-03T11:36:54.843Z",
-  "completedAt": "2026-10-03T11:37:07.410Z",
+  "executedAt": "2026-10-03T11:58:41.756Z",
+  "completedAt": "2026-10-03T11:58:53.066Z",
   "declaredVsApplied": [
     {
       "file": "20261002000005_coregrid_v1_reconciliation.sql",
@@ -177,7 +177,7 @@
       "file": "20261003000020_coregrid_is_super_admin_definer.sql",
       "mission": "V1 follow-up — is_super_admin() SECURITY DEFINER alignment: completes the 20260620151525 recursion fix (helpers reading public.users) for the one missed helper reading public.super_admins, whose policy re-invokes it — unbounded RLS recursion (PG 54001) on every tenant read whenever a super_admins row exists; observed live by the F-13 vertical slice (T6)",
       "state": "ALREADY_APPLIED",
-      "checksum": "48d3a69a46b4eb58eaa0750569573b1355ad4498034d5dc0444affb7be1cbde7",
+      "checksum": "6f8fb46367691f11b57eaa4642a94c2b68a0aa6a7201f0eb02c80b3c3856baa4",
       "rollbackChecksum": "9fdf0fc0cd832006a356b3c18aee59392483b8cbe24f2cdad86e3869bd1ffe6e",
       "declaredObjectCount": 1,
       "elapsedMs": null,

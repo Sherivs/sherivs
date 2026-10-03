@@ -47,6 +47,10 @@ const EXPECTED_MIGRATIONS = [
   "20261003000018_coregrid_v1_idempotency_privilege_revoke.sql",
   // V1-wave (2026-10-03): V1-003 mission lease + worker governance substrate.
   "20261003000019_coregrid_v1_mission_lease.sql",
+  // V1-wave follow-up (2026-10-03): is_super_admin() SECURITY DEFINER alignment
+  // — completes the 20260620151525 RLS recursion fix for the one helper left
+  // SECURITY INVOKER (unbounded self-recursion once a platform-admin row exists).
+  "20261003000020_coregrid_is_super_admin_definer.sql",
 ];
 
 interface ManifestMigration {
@@ -134,7 +138,7 @@ describe("MH-06 — canonical apply path is rehearsal-ready and CI-portable", ()
     expect(manifest.mode).toBe("manifest");
   });
 
-  it("manifest prints the declared migrations in dependency order (20261002000005–19 present today)", () => {
+  it("manifest prints the declared migrations in dependency order (20261002000005–20 present today)", () => {
     expect(manifest.migrations.map((m) => m.file)).toEqual(EXPECTED_MIGRATIONS);
     manifest.migrations.forEach((m, i) => expect(m.order).toBe(i + 1));
     expect(manifestRun.stdout).toContain("20261002000005_coregrid_v1_reconciliation.sql");

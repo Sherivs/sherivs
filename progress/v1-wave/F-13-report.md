@@ -131,3 +131,41 @@ write-audit: audit record rejected for "onboarding.provision_organization"
 3. T8 (AI worker live execution) stays blocked on a real AI-worker surface + `AI_API_KEY`.
 4. Pre-existing 5-spec failures (V1-008 Known Risk 2) — fix `tests/e2e/helpers.ts` demo
    credential handling.
+---
+
+## RESOLUTION ADDENDUM (coordinator, 2026-10-03 11:40Z)
+
+Both blocking defects found by this mission are fixed and the vertical slice re-run:
+
+1. **T5 write-audit FK defect — FIXED** (commit `0fb9b01`): the onboarding engine now resolves
+   the actor's canonical `public.users` row before the success audit and degrades to
+   `actorId: null` + verified email claim for bootstrap-claimed super admins. Regression suite:
+   `tests/unit/onboarding-audit-actor.test.ts`. Proven real: T5 full UI success path
+   (school-created panel + generated-once password) + the engine's §27.6 success audit landed
+   (`onboarding.provision_organization`, table `schools`) in the re-run.
+
+2. **T6 exposed a SECOND, platform-wide defect — FIXED** (commit `459e627`): with a super-admin
+   row present, every tenant read (schools, users, …) failed with PG `54001 stack depth limit
+   exceeded` — `public.is_super_admin()` was the one helper left SECURITY INVOKER after
+   `20260620151525` fixed its three siblings; the `super_admins` SELECT policy re-invokes it for
+   any scanned row that is not the caller → unbounded RLS self-recursion. Reproduced
+   deterministically, fixed by migration `20261003000020_coregrid_is_super_admin_definer.sql`
+   (exact-inverse rollback shipped, canonical-apply manifest bound, applied to the canonical DB,
+   posture ratchet: `tests/unit/rls-helper-definer-posture.test.ts`).
+
+### Final journey outcome (dedicated re-run: 6 passed / 2 typed skips / 0 failed)
+
+| Step | Outcome |
+|---|---|
+| T1 Visitor → public site | REAL |
+| T2 Self-serve signup | SKIP (typed) — Supabase auth signup rate limiter (external) |
+| T3 Bootstrap gate | REAL |
+| T4 Super-admin claim | REAL (admin-seeded via real auth-admin API; rate-limited T2 documented deviation) |
+| T5 Onboard organization | REAL — engine success path + §27.6 audit (fix proven) |
+| T6 Workspace + notification | REAL — engine-provisioned admin on DB-backed tenant dashboard (RLS fix proven) |
+| T7 Reality→mission→…→result | REAL — governed loop + idempotent replay + bound execution |
+| T8 AI worker live | SKIP (typed, permanent for V1) — no live AI-worker surface / `AI_API_KEY` |
+
+Remaining work items 1 (fixed), 2 (rate-limit window — external), 3 (external gate), 4
+(demo-credential rotation in `tests/e2e/helpers.ts`, pre-existing 5-spec failures) unchanged
+except item 1: done. Evidence: `/opt/cursor/artifacts/f13-final-vertical-slice.json`.
