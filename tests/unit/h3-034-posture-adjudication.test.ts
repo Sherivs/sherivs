@@ -152,6 +152,7 @@ describe("H3-034 posture adjudication (mission D-034) — internal consistency",
       expect(registry.fallbackUsed).toBe(false);
       expect(registry.files).toEqual([
         "rls-table-postures-mission-lease.json",
+        "rls-table-postures-r-wave.json",
         "rls-table-postures-substrate.json",
         "rls-table-postures-transport.json",
       ]);
@@ -266,6 +267,68 @@ describe("H3-034 posture adjudication (mission D-034) — internal consistency",
       const contract = readRepoFile(OWNING_SERVER_PATH.cg_worker_delegation);
       expect(contract).toMatch(/recordDelegation/);
       expect(contract).toMatch(/20261002000002_coregrid_v1_worker_definitions\.sql/);
+    });
+  });
+
+  /* ==========================================================================
+   * T-D ratchet extension (post-R-wave, TEAM T-D) — EXTEND-ONLY, appended.
+   *
+   * This mission's three adjudicated tables above stay zero-policy; the
+   * transport posture file (rls-table-postures-transport.json) separately
+   * moved public.transport_buses to a policy-backed SELECT-only posture
+   * (migration 20261003000041, operator-directed). This extension ratchets
+   * the battery's fail-closed posture validation against the NEW transport
+   * entry so the posture change is asserted, never silently tolerated.
+   * ======================================================================== */
+  describe("H3-034 T-D transport posture ratchet extension (policy-backed transport_buses)", () => {
+    const TRANSPORT_FILE = "rls-table-postures-transport.json";
+    const TRANSPORT_POLICY = "transport_buses_select_driver_assigned";
+    const TRANSPORT_POLICY_MIGRATION =
+      "database/supabase/migrations/20261003000041_coregrid_transport_bus_reads.sql";
+
+    type TransportEntry = {
+      name?: string;
+      posture?: string;
+      policies?: string[];
+      tenantColumn?: string;
+      forceRls?: boolean;
+      policyBackedBy?: string;
+      normalizedBy?: string;
+      privileges?: { authenticated?: string[]; anon?: string[]; PUBLIC?: string[] };
+    };
+
+    const transportRaw = JSON.parse(
+      readRepoFile(join("scripts", "verification", TRANSPORT_FILE)),
+    ) as { tables?: TransportEntry[] };
+    const transportEntry = transportRaw.tables?.find((t) => t.name === "transport_buses");
+
+    it("the transport posture file declares transport_buses policy-backed with exactly the T-D driver read policy", () => {
+      expect(transportEntry).toBeDefined();
+      expect(transportEntry?.posture).toBe("policy-backed");
+      expect(transportEntry?.policies).toEqual([TRANSPORT_POLICY]);
+      expect(transportEntry?.policyBackedBy).toBe(TRANSPORT_POLICY_MIGRATION);
+      expect(transportEntry?.normalizedBy).toBe(
+        "database/supabase/migrations/20261002000014_coregrid_v2_transport_buses_rls.sql",
+      );
+    });
+
+    it("the T-D entry passes the battery's fail-closed validation gate (validatePostureEntry)", () => {
+      const validated = batteryMjs.validatePostureEntry(transportEntry, TRANSPORT_FILE);
+      expect(validated.posture).toBe("policy-backed");
+      expect(validated.policies).toEqual([TRANSPORT_POLICY]);
+      expect(validated.forceRls).toBe(true);
+      // The declared least-privilege privilege set must survive validation:
+      // SELECT-only for authenticated, zero anon/PUBLIC.
+      expect(transportEntry?.privileges?.authenticated).toEqual(["SELECT"]);
+      expect(transportEntry?.privileges?.anon ?? []).toEqual([]);
+      expect(transportEntry?.privileges?.PUBLIC ?? []).toEqual([]);
+    });
+
+    it("the transport posture change does not re-declare this mission's adjudicated tables", () => {
+      const declaredNames = (transportRaw.tables ?? []).map((t) => t.name);
+      for (const table of ADJUDICATED_TABLES) {
+        expect(declaredNames).not.toContain(table);
+      }
     });
   });
 });

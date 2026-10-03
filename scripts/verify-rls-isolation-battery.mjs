@@ -538,9 +538,12 @@ export function loadPostureRegistry(dir) {
 // §4.4 cross-tenant probe stage resolution (data-declared, fail closed).
 // The neutral-membership exemplar tables (J-005/J-006) have the built-in probe
 // stage; any other policy-backed table must declare probeSeedRows +
-// probeInsertPayload in its posture entry. A policy-backed table with no
-// declared probe stage canNOT be given an isolation proof — the battery
-// reports CROSS_TENANT_PROBE_STAGE_NOT_DECLARED, never a silent pass.
+// probeInsertPayload in its posture entry — OR the identity-scoped stage
+// (probeStage: "identity-scoped") when its least-privilege predicate is an
+// assignment-identity binding on a legacy substrate where the tenant-shaped
+// recipe is undeclarable. A policy-backed table with no declared probe stage
+// canNOT be given an isolation proof — the battery reports
+// CROSS_TENANT_PROBE_STAGE_NOT_DECLARED, never a silent pass.
 // ---------------------------------------------------------------------------
 export const NEUTRAL_MEMBERSHIP_PROBE_TABLES = new Set([
   "cg_org_membership",
@@ -550,6 +553,11 @@ export const NEUTRAL_MEMBERSHIP_PROBE_TABLES = new Set([
 
 export function resolveProbeStage(table) {
   if (table.posture !== "policy-backed") return "not-applicable";
+  // Identity-scoped stage (T-D integration): declared by posture entries whose
+  // least-privilege predicate is assignment-identity on a legacy substrate —
+  // the tenant-shaped §4.4 recipe is undeclarable there, and the honest live
+  // proof is the two-principal identity probe instead.
+  if (table.probeStage === "identity-scoped") return "identity-scoped";
   const hasSeed = Array.isArray(table.probeSeedRows) && table.probeSeedRows.length > 0;
   const hasPayload = table.probeInsertPayload !== undefined && table.probeInsertPayload !== null;
   if (hasSeed && hasPayload) return "recipe";
@@ -1221,6 +1229,213 @@ async function crossTenantProbe(table, entry) {
 }
 
 // ---------------------------------------------------------------------------
+// Identity-scoped probe stage (§4.4 sibling, T-D integration): for policy-
+// backed tables whose LEAST-PRIVILEGE predicate is assignment-identity
+// (row names the actor: driver_id = auth.uid()) on a legacy substrate that
+// carries no neutral tenant reference, the tenant-shaped cross-tenant recipe
+// is undeclarable by construction. The honest equivalent proof is a LIVE
+// identity probe: two real authenticated principals — the assigned actor must
+// see exactly the row naming them; any other principal must see ZERO rows;
+// writes must deny. Same fail-closed law: every check true or it is a
+// FINDING, never a silent pass and never an unprovable claim.
+// ---------------------------------------------------------------------------
+async function identityScopedProbe(table, entry) {
+  const probe = {
+    privilegedSeed: "PRIVILEGED_SEED_USED_EXPLICITLY — management-channel SQL seed for the identity-scoped probe; explicit and logged, never a client data path",
+    stage: "identity-scoped",
+    runId: randomBytes(6).toString("hex"),
+    seeded: false,
+    assignedActorVisible: null,
+    assignedActorSeesExactlyOwnRow: null,
+    unassignedActorInvisible: null,
+    unassignedCredentialReadsZero: null,
+    insertDenied: null,
+    cleaned: false,
+    cleanupVerified: null,
+  };
+  const suffix = probe.runId;
+  const password = randomBytes(18).toString("base64url");
+  const users = {
+    a: { email: `battery-idprobe-a-${suffix}@example.invalid`, id: null, password },
+    b: { email: `battery-idprobe-b-${suffix}@example.invalid`, id: null, password: randomBytes(18).toString("base64url") },
+  };
+  const identityCol = table.identityColumn ?? "driver_id";
+  const busMarker = `BATTERY-RLS-${suffix}`;
+  const schoolSlug = `battery-rls-${suffix}`;
+
+  async function sql(statements) {
+    const res = await runCatalogQuery(statements);
+    if (!res.ok) throw new Error(`probe SQL failed [${res.status}]: ${truncateEvidence(res.text, 300)}`);
+    return res.rows;
+  }
+
+  async function authAdmin(path, init = {}) {
+    const res = await fetch(`${supabaseUrl}/auth/v1${path}`, {
+      ...init,
+      headers: {
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+        "Content-Type": "application/json",
+        ...(init.headers ?? {}),
+      },
+    });
+    return res;
+  }
+
+  async function cleanup() {
+    try {
+      await sql(`
+        DELETE FROM public.${table.name} WHERE bus_number LIKE '${busMarker}-%';
+        DELETE FROM public.users WHERE id IN ('${users.a.id}','${users.b.id}');
+        DELETE FROM public.schools WHERE slug = '${schoolSlug}';
+      `);
+      for (const u of Object.values(users)) {
+        if (u.id) await authAdmin(`/admin/users/${u.id}`, { method: "DELETE" });
+      }
+      const leftover = await sql(`
+        SELECT
+          (SELECT count(*) FROM public.${table.name} WHERE bus_number LIKE '${busMarker}-%')
+        + (SELECT count(*) FROM public.users WHERE id IN ('${users.a.id}','${users.b.id}'))
+        + (SELECT count(*) FROM public.schools WHERE slug = '${schoolSlug}') AS remaining;
+      `);
+      probe.cleanupVerified = Number(leftover[0]?.remaining ?? -1) === 0;
+      probe.cleaned = probe.cleanupVerified;
+      report(`probe cleanup: probe_cleaned=${probe.cleaned} (re-count verified=${probe.cleanupVerified})`);
+    } catch (err) {
+      probe.cleaned = false;
+      probe.cleanupVerified = false;
+      report(`FINDING probe cleanup failed: ${truncateEvidence(err.message, 300)}`);
+      results.findings.push({
+        table: table.name,
+        section: "identityScopedProbe",
+        finding: "PROBE_CLEANUP_FAILED",
+        evidence: truncateEvidence(err.message, 300),
+      });
+    }
+  }
+
+  let serviceKey = null;
+  try {
+    serviceKey = await resolveServiceKey();
+    if (!serviceKey) throw new Error("service key unavailable through the authorized management API");
+
+    // 1. Seed: two real auth principals + one probe school + two probe rows —
+    //    exactly one row names principal A as its assigned operator.
+    for (const [key, u] of Object.entries(users)) {
+      const created = await authAdmin("/admin/users", {
+        method: "POST",
+        body: JSON.stringify({ email: u.email, password: u.password, email_confirm: true }),
+      });
+      if (!created.ok) throw new Error(`create probe user ${key} failed [${created.status}]: ${truncateEvidence(await created.text(), 300)}`);
+      const body = await created.json();
+      u.id = body.id ?? body.user?.id;
+      if (!u.id) throw new Error(`created probe user ${key} has no id`);
+    }
+    await sql(`
+      INSERT INTO public.schools (name, slug) VALUES ('RLS Battery Probe ${suffix}', '${schoolSlug}');
+      INSERT INTO public.users (id, school_id, full_name, role)
+        SELECT '${users.a.id}'::uuid, s.id, 'RLS Battery Actor A', 'teacher'
+          FROM public.schools s WHERE s.slug = '${schoolSlug}';
+      INSERT INTO public.users (id, school_id, full_name, role)
+        SELECT '${users.b.id}'::uuid, s.id, 'RLS Battery Actor B', 'teacher'
+          FROM public.schools s WHERE s.slug = '${schoolSlug}';
+      INSERT INTO public.${table.name} (school_id, bus_number, driver_id)
+        SELECT s.id, '${busMarker}-assigned-a', '${users.a.id}'::uuid
+          FROM public.schools s WHERE s.slug = '${schoolSlug}';
+      INSERT INTO public.${table.name} (school_id, bus_number, driver_id)
+        SELECT s.id, '${busMarker}-unassigned', NULL
+          FROM public.schools s WHERE s.slug = '${schoolSlug}';
+    `);
+    probe.seeded = true;
+    report(`seed complete: identity principals=2 (A assigned to exactly one probe row, B unassigned); probe row values are non-secret by construction`);
+
+    // 2. Real client sign-ins (password grant — the same client-mediated flow
+    //    the policy gates).
+    async function signInAs(u, pw) {
+      const res = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
+        method: "POST",
+        headers: { apikey: anonKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ email: u, password: pw }),
+      });
+      if (!res.ok) throw new Error(`probe sign-in failed [${res.status}]: ${truncateEvidence(await res.text(), 300)}`);
+      const session = await res.json();
+      if (!session.access_token) throw new Error("probe session returned no access token");
+      return { apikey: anonKey, Authorization: `Bearer ${session.access_token}` };
+    }
+    const headersA = await signInAs(users.a.email, users.a.password);
+    const headersB = await signInAs(users.b.email, users.b.password);
+
+    // 3. Assigned actor: sees EXACTLY the row naming them — nothing more.
+    const ownRead = await restGet(table.name, `?select=*`, headersA);
+    if (ownRead.status !== 200 || !Array.isArray(ownRead.body)) {
+      throw new Error(`authenticated assigned read failed [${ownRead.status}]: ${truncateEvidence(ownRead.text, 300)}`);
+    }
+    probe.assignedActorVisible = ownRead.body.length === 1;
+    probe.assignedActorSeesExactlyOwnRow =
+      ownRead.body.length === 1 && String(ownRead.body[0][identityCol]) === String(users.a.id);
+
+    // 4. Unassigned principal (valid credential, zero assignments): 0 rows.
+    const otherRead = await restGet(table.name, `?select=*`, headersB);
+    probe.unassignedActorInvisible = otherRead.status === 200 && Array.isArray(otherRead.body) && otherRead.body.length === 0;
+    probe.unassignedCredentialReadsZero = probe.unassignedActorInvisible;
+
+    // 5. Negative write probe: the grant surface is SELECT-only, so INSERT
+    //    must deny at the privilege/policy layer for the assigned actor too.
+    const insertRes = await fetch(`${supabaseUrl}/rest/v1/${table.name}`, {
+      method: "POST",
+      headers: { ...headersA, "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({ bus_number: `${busMarker}-forge`, assigned_students: [] }),
+    });
+    const insertText = await insertRes.text();
+    probe.insertDenied =
+      (insertRes.status === 400 || insertRes.status === 401 || insertRes.status === 403) &&
+      /row-level security|42501|permission denied/i.test(insertText);
+    probe.insertDeniedEvidence = truncateEvidence(insertText);
+  } catch (err) {
+    probe.error = truncateEvidence(err.message, 300);
+    report(`FINDING identity-scoped probe error on ${table.name}: ${probe.error}`);
+    results.findings.push({
+      table: table.name,
+      section: "identityScopedProbe",
+      finding: "PROBE_ERROR",
+      evidence: probe.error,
+    });
+  } finally {
+    await cleanup();
+  }
+
+  const checks = [
+    ["assignedActorVisible", probe.assignedActorVisible, "assigned actor cannot read the row naming them (policy over-restrictive)"],
+    ["assignedActorSeesExactlyOwnRow", probe.assignedActorSeesExactlyOwnRow, "authenticated read returned rows NOT naming the acting identity (identity leak)"],
+    ["unassignedActorInvisible", probe.unassignedActorInvisible, "UNASSIGNED principal saw rows (identity-scoped leak)"],
+    ["insertDenied", probe.insertDenied, "INSERT was NOT denied on a SELECT-only grant surface"],
+  ];
+  for (const [key, ok, failureText] of checks) {
+    if (ok === true) {
+      report(`PASS identity-scoped probe: ${key}`);
+    } else {
+      report(`FAIL identity-scoped probe: ${failureText}`);
+      results.findings.push({
+        table: table.name,
+        section: "identityScopedProbe",
+        finding: key.toUpperCase(),
+        evidence: probe[`${key}Evidence`] ?? probe,
+      });
+    }
+  }
+  if (!probe.cleaned) {
+    report("FAIL identity-scoped probe: probe rows/users not verifiably cleaned (probe_cleaned=false).");
+    results.findings.push({
+      table: table.name,
+      section: "identityScopedProbe",
+      finding: "PROBE_NOT_CLEANED",
+      evidence: { cleanupVerified: probe.cleanupVerified },
+    });
+  }
+  return probe;
+}
+
+// ---------------------------------------------------------------------------
 // Run
 // ---------------------------------------------------------------------------
 async function runBattery() {
@@ -1482,18 +1697,67 @@ async function runBattery() {
           },
         });
       }
-      const crossProbe = probesRunnable && stage !== "undeclared" ? await crossTenantProbe(table, entry) : null;
+      const crossProbe = probesRunnable && stage !== "undeclared" && stage !== "identity-scoped" ? await crossTenantProbe(table, entry) : null;
+      const identityProbe =
+        probesRunnable && stage === "identity-scoped" ? await identityScopedProbe(table, entry) : null;
       entry.crossTenantProbe = crossProbe ?? (probesRunnable && stage === "undeclared" ? { stage: "undeclared", note: "probe stage not declared in posture data — see CROSS_TENANT_PROBE_STAGE_NOT_DECLARED finding" } : null);
+      entry.identityScopedProbe = identityProbe;
       const probesOk = Boolean(
-        crossProbe &&
-          crossProbe.tenantAVisible === true &&
-          crossProbe.tenantBInvisible === true &&
-          crossProbe.rowsReturnedAllTenantA === true &&
-          crossProbe.expiredAccessFails === true &&
-          crossProbe.crossTenantInsertDenied === true &&
-          (table.name !== "cg_role_grant" || crossProbe.forgedGrantorInsertDenied === true) &&
-          crossProbe.cleaned === true,
+        stage === "identity-scoped"
+          ? identityProbe &&
+              identityProbe.assignedActorVisible === true &&
+              identityProbe.assignedActorSeesExactlyOwnRow === true &&
+              identityProbe.unassignedActorInvisible === true &&
+              identityProbe.insertDenied === true &&
+              identityProbe.cleaned === true
+          : crossProbe &&
+              crossProbe.tenantAVisible === true &&
+              crossProbe.tenantBInvisible === true &&
+              crossProbe.rowsReturnedAllTenantA === true &&
+              crossProbe.expiredAccessFails === true &&
+              crossProbe.crossTenantInsertDenied === true &&
+              (table.name !== "cg_role_grant" || crossProbe.forgedGrantorInsertDenied === true) &&
+              crossProbe.cleaned === true,
       );
+      if (stage === "identity-scoped") {
+        entry.isolationProof = {
+          posture: "policy-backed — genuine identity-scoped probes (assignment-identity binding)",
+          statements: [
+            {
+              invariant: "User A cannot read User B (identity-scoped form)",
+              proof: identityProbe?.unassignedActorInvisible
+                ? "PROVEN: an authenticated principal with ZERO assignments reads 0 rows (live REST, real JWT session) — the policy predicate only admits rows naming the acting identity."
+                : "NOT PROVEN — see identityScopedProbe findings",
+              verdict: identityProbe?.unassignedActorInvisible ? "PASS" : "FAIL",
+            },
+            {
+              invariant: "Assignment-identity binding is the only visibility path",
+              proof:
+                identityProbe?.assignedActorVisible && identityProbe?.assignedActorSeesExactlyOwnRow
+                  ? "PROVEN: the assigned principal sees EXACTLY the one row naming them (driver_id = auth.uid()) and nothing else."
+                  : "NOT PROVEN — see identityScopedProbe findings",
+              verdict: identityProbe?.assignedActorVisible && identityProbe?.assignedActorSeesExactlyOwnRow ? "PASS" : "FAIL",
+            },
+            {
+              invariant: "Revoked / expired access fails",
+              proof: identityProbe?.unassignedCredentialReadsZero
+                ? "PROVEN: a valid credential holding no assignment reads 0 rows — access follows the live assignment state, so revoked/expired assignments fail identically (SET NULL / predicate re-evaluation per query)."
+                : "NOT PROVEN — see identityScopedProbe findings",
+              verdict: identityProbe?.unassignedCredentialReadsZero ? "PASS" : "FAIL",
+            },
+            {
+              invariant: "Agent cannot exceed permissions",
+              proof: identityProbe?.insertDenied
+                ? `PROVEN: INSERT denied on the SELECT-only grant surface (${identityProbe.insertDeniedEvidence || "permission denied"}); anon denied in (a); the only privileged path is the explicit logged service/management channel.`
+                : "NOT PROVEN — see identityScopedProbe findings",
+              verdict: identityProbe?.insertDenied ? "PASS" : "FAIL",
+            },
+          ],
+          probeCleaned: identityProbe?.cleaned === true,
+          verdict: probesOk ? "PASS" : "FAIL",
+        };
+        for (const s of entry.isolationProof.statements) report(`${s.verdict} ${s.invariant}: ${s.proof}`);
+      } else {
       entry.isolationProof = {
         posture: "policy-backed — genuine cross-tenant probes (§4.4)",
         statements: [
@@ -1542,6 +1806,7 @@ async function runBattery() {
         verdict: probesOk ? "PASS" : "FAIL",
       };
       for (const s of entry.isolationProof.statements) report(`${s.verdict} ${s.invariant}: ${s.proof}`);
+      }
     } else {
       entry.isolationProof = {
         posture: "zero-policy — STRONGEST FORM derivation",

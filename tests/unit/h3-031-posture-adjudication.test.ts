@@ -140,6 +140,7 @@ describe("h3-031 posture adjudication — declarative posture files (fs, read-on
     expect(mergedRegistry.fallbackUsed).toBe(false);
     expect(mergedRegistry.files.sort()).toEqual([
       "rls-table-postures-mission-lease.json",
+      "rls-table-postures-r-wave.json",
       "rls-table-postures-substrate.json",
       "rls-table-postures-transport.json",
     ]);
@@ -237,5 +238,63 @@ describe("h3-031 posture adjudication — decision docs are internally consisten
 
   it("adjudicates exactly the mission's three tables and no others", () => {
     expect([...ADJUDICATED_TABLES].sort()).toEqual(["cg_entity", "cg_event", "cg_relationship"]);
+  });
+});
+
+/* ============================================================================
+ * T-D ratchet extension (post-R-wave, TEAM T-D) — EXTEND-ONLY, appended.
+ *
+ * The transport posture file (rls-table-postures-transport.json) moved
+ * public.transport_buses from the zero-policy substrate era to a policy-backed
+ * SELECT-only posture (migration 20261003000041, operator-directed). This
+ * suite's OWN adjudicated tables above are untouched; this extension ratchets
+ * the merged-registry expectations so the NEW transport posture is asserted
+ * (not merely tolerated), per the mission-lease posture-file pattern.
+ * ========================================================================== */
+describe("h3-031 posture adjudication — T-D transport posture ratchet extension", () => {
+  const TRANSPORT_POLICY = "transport_buses_select_driver_assigned";
+  const TRANSPORT_POLICY_MIGRATION =
+    "database/supabase/migrations/20261003000041_coregrid_transport_bus_reads.sql";
+
+  it("transport_buses is NOT a builtin-canonical entry — the posture file is its single source of truth", () => {
+    expect(battery.BUILTIN_TABLE_POSTURES.some((t) => t.name === "transport_buses")).toBe(false);
+    expect(mergedRegistry.added).toContain("transport_buses");
+  });
+
+  it("transport_buses resolves policy-backed from the transport posture file after the merge", () => {
+    const entry = mergedRegistry.tables.find((t) => t.name === "transport_buses");
+    expect(entry, "transport_buses must be present in the merged registry").toBeDefined();
+    expect(entry?.posture).toBe("policy-backed");
+    expect(entry?.postureSource).toBe("rls-table-postures-transport.json");
+    expect(entry?.source).toBe(
+      "database/supabase/migrations/20260626150625_35a08443-45fd-46ae-807b-3644b44efe26.sql",
+    );
+  });
+
+  it("transport_buses declares exactly the T-D driver read policy with FORCE RLS and the assignment-scope column", () => {
+    const entry = mergedEntry("transport_buses");
+    expect(entry.policies).toEqual([TRANSPORT_POLICY]);
+    expect(entry.forceRls).toBe(true);
+    // The assignment-identity scope column (the legacy users-table FK the
+    // predicate binds) — NOT a neutral tenant ref; the posture file records
+    // the honest scope deviation and its conversion path.
+    expect(entry.tenantColumn).toBe("driver_id");
+    expect(entry.policyBackedBy).toBe(TRANSPORT_POLICY_MIGRATION);
+  });
+
+  it("the transport posture file moves transport_buses out of the zero-policy battery expectation", () => {
+    const file = JSON.parse(
+      readFileSync(join(POSTURE_DIR, "rls-table-postures-transport.json"), "utf8"),
+    ) as { batteryExpectations?: { zeroPolicyTables?: string[]; policyBackedTables?: string[] } };
+    expect(file.batteryExpectations?.zeroPolicyTables ?? []).not.toContain("transport_buses");
+    expect(file.batteryExpectations?.policyBackedTables).toEqual(["transport_buses"]);
+  });
+
+  it("the T-D ratchet does not touch this mission's adjudicated kernel tables", () => {
+    for (const table of ADJUDICATED_TABLES) {
+      expect(builtinEntry(table).posture).toBe("zero-policy");
+      expect(mergedEntry(table).posture).toBe("zero-policy");
+      expect(mergedEntry(table).postureSource).toBe("builtin-canonical");
+    }
   });
 });

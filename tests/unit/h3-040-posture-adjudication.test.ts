@@ -71,8 +71,13 @@ const SUBSTRATE_POSTURES = JSON.parse(
 ) as unknown as SubstratePostureFile;
 
 type TransportPostureFile = {
-  tables?: Array<{ name?: string; posture?: string; normalizedBy?: string }>;
-  batteryExpectations?: { zeroPolicyTables?: string[] };
+  tables?: Array<{
+    name?: string;
+    posture?: string;
+    normalizedBy?: string;
+    policyBackedBy?: string;
+  }>;
+  batteryExpectations?: { zeroPolicyTables?: string[]; policyBackedTables?: string[] };
 };
 const TRANSPORT_POSTURES = JSON.parse(
   readFileSync(join(ROOT, TRANSPORT_POSTURES_PATH), "utf8"),
@@ -180,17 +185,27 @@ describe("D-040 adjudicated tables are battery-scoped zero-policy entries", () =
     );
   });
 
-  it("the transport posture JSON declares transport_buses zero-policy, normalized by the H2-03 migration", () => {
+  it("the transport posture JSON declares transport_buses policy-backed (T-D 20261003000041), superseding the H2-03 zero-policy era", () => {
     const entry = (TRANSPORT_POSTURES.tables ?? []).find((t) => t.name === "transport_buses");
     expect(entry).toBeDefined();
-    expect(entry?.posture).toBe("zero-policy");
+    expect(entry?.posture).toBe("policy-backed");
+    // Provenance chain: the substrate-era zero-policy normalization (H2-03)
+    // and the T-D policy migration that supersedes it for the driver read.
     expect(entry?.normalizedBy).toBe(
       "database/supabase/migrations/20261002000014_coregrid_v2_transport_buses_rls.sql",
     );
-    expect(TRANSPORT_POSTURES.batteryExpectations?.zeroPolicyTables).toEqual(["transport_buses"]);
+    expect(entry?.policyBackedBy).toBe(
+      "database/supabase/migrations/20261003000041_coregrid_transport_bus_reads.sql",
+    );
+    expect(TRANSPORT_POSTURES.batteryExpectations?.policyBackedTables).toEqual([
+      "transport_buses",
+    ]);
+    expect(TRANSPORT_POSTURES.batteryExpectations?.zeroPolicyTables ?? []).not.toContain(
+      "transport_buses",
+    );
   });
 
-  it("the live canonical apply record proves all three tables at zero-policy deny-by-default", () => {
+  it("the live canonical apply record proves the posture history and current state of all three tables (tool pair zero-policy; transport superseded → policy-backed by T-D 20261003000041)", () => {
     const recorded = new Map<string, string>();
     for (const row of CANONICAL_APPLY_RECORD.rlsPosture ?? []) {
       if (typeof row.table === "string" && typeof row.posture === "string") {
@@ -198,9 +213,24 @@ describe("D-040 adjudicated tables are battery-scoped zero-policy entries", () =
       }
     }
     for (const table of ADJUDICATED_TABLES) {
-      expect(recorded.get(table), `canonical apply record for ${table}`).toBe(
-        "zero-policy (deny-by-default)",
-      );
+      if (table === "transport_buses") {
+        // Supersession (2026-10-03, T-D integration): the driver assigned-read
+        // policy is APPLIED, so the live record truthfully shows the
+        // policy-backed posture; the zero-policy era is proven by the
+        // SUPERSEDED state of the normalization migration in the same record.
+        expect(recorded.get(table), `canonical apply record for ${table}`).toBe(
+          "policy-backed (declared policies)",
+        );
+        const supersededEntry = (CANONICAL_APPLY_RECORD.declaredVsApplied ?? []).find(
+          (m: { file?: string }) => typeof m.file === "string" && m.file.startsWith("20261002000014"),
+        );
+        expect(supersededEntry?.state).toBe("SUPERSEDED");
+        expect(String(supersededEntry?.evidence ?? "")).toContain("20261003000041");
+      } else {
+        expect(recorded.get(table), `canonical apply record for ${table}`).toBe(
+          "zero-policy (deny-by-default)",
+        );
+      }
     }
   });
 });

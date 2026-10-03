@@ -285,12 +285,16 @@ const MIGRATIONS = [
       tables: [],
       functions: [],
       triggers: [],
-      // The applied-state signature of a pure NORMALIZATION migration is the
-      // absence it produces, not an object it creates: this migration is
-      // ALREADY_APPLIED iff transport_buses holds ZERO policies. Presence of
-      // the table itself is legacy (20260626150625) and proves nothing about
-      // this migration, so it is deliberately not a declared object here.
-      zeroPolicyTables: ["transport_buses"],
+      // SUPERSEDED (2026-10-03, T-D integration): the applied-state signature
+      // this migration declared — transport_buses holding ZERO policies — was
+      // the interim deny-by-default posture. 20261003000041 legitimately
+      // supersedes it for the driver assigned-read surface with exactly one
+      // least-privilege policy, so the zero-policy signature no longer holds
+      // BY DESIGN. This migration is never re-executed: its own §5 verification
+      // guard would fail loudly (a policy now exists), and its normalization
+      // work is complete. The live invariant owner for transport_buses is
+      // 20261003000041's declared policy posture.
+      supersededBy: "20261003000041_coregrid_transport_bus_reads.sql",
     },
   },
   {
@@ -490,6 +494,19 @@ const MIGRATIONS = [
       policies: [],
     },
   },
+  {
+    file: "20261003000041_coregrid_transport_bus_reads.sql",
+    mission:
+      "Post-R-wave T-D — transport fleet driver bus-read gate: FORCE RLS + GRANT SELECT to authenticated + exactly one least-privilege policy transport_buses_select_driver_assigned (FOR SELECT TO authenticated USING (driver_id = auth.uid()) — the actor is re-derived inside the predicate per §26; the J-005 tenant-equality shape is inexpressible on this legacy substrate — no neutral tenant reference, zero live neutral bindings — recorded in scripts/verification/rls-table-postures-transport.json). Supersedes the 20261002000014 interim zero-policy posture for the driver SELECT surface ONLY: writes for every client role and every other read family remain denied; anon/PUBLIC stay at zero privileges; service_role untouched",
+    declared: {
+      columns: [],
+      indexes: [],
+      tables: [],
+      functions: [],
+      triggers: [],
+      policies: ["transport_buses.transport_buses_select_driver_assigned"],
+    },
+  },
 ];
 
 const report = (line, log) => {
@@ -567,6 +584,7 @@ function printPlan(plan, reportLine) {
       for (const p of m.declared.policies ?? []) reportLine(`  policy:${p}`);
       for (const z of m.declared.zeroPolicyTables ?? []) reportLine(`  zero-policy:${z}`);
       for (const pp of m.declared.privilegePostures ?? []) reportLine(`  privilege-posture:${pp.table}`);
+      if (m.declared.supersededBy) reportLine(`  superseded-by:${m.declared.supersededBy}`);
     }
   }
 }
@@ -832,6 +850,15 @@ for (const m of plan) {
     declaredObjectCount: m.declaredObjectCount,
   };
 
+  // A migration whose declared applied-state signature was superseded by a
+  // later migration in this manifest (e.g. an interim zero-policy posture
+  // legitimately replaced by a least-privilege policy) is never re-derived
+  // from the catalog and never re-executed: its normalization work is
+  // complete and re-running it would violate its own verification guard.
+  // The live invariant it used to declare is owned by the superseding
+  // migration's declaration.
+  const superseded = Boolean(m.declared.supersededBy);
+
   // A migration that declares ZERO catalog objects (pure data/infrastructure
   // statements, e.g. storage bucket provisioning) can never be proven applied
   // by presence-probing — "nothing missing" proves nothing. The skip
@@ -839,7 +866,11 @@ for (const m of plan) {
   // is safe because manifest membership REQUIRES idempotency (manifest law).
   const zeroDeclared = m.declaredObjectCount === 0;
 
-  if (!zeroDeclared && missing.length === 0) {
+  if (superseded) {
+    entry.state = "SUPERSEDED";
+    entry.evidence = `declared signature superseded by ${m.declared.supersededBy} — live posture owned there; never re-executed`;
+    report(`SKIP  ${m.file} — SUPERSEDED by ${m.declared.supersededBy}`, log);
+  } else if (!zeroDeclared && missing.length === 0) {
     entry.state = "ALREADY_APPLIED";
     entry.evidence = `all ${present.length} declared objects present (pre-flight catalog probe)`;
     report(`SKIP  ${m.file} — ALREADY_APPLIED (${present.length}/${present.length} declared objects present)`, log);
@@ -883,6 +914,15 @@ try {
 const verification = [];
 if (catalog2) {
   for (const m of plan) {
+    if (m.declared.supersededBy) {
+      verification.push({
+        file: m.file,
+        verified: true,
+        missingCount: 0,
+        note: `superseded by ${m.declared.supersededBy} — live posture verified there`,
+      });
+      continue;
+    }
     const { missing } = presenceFor({ declared: m.declared }, catalog2);
     const entry = migrations.find((x) => x.file === m.file);
     if (missing.length === 0) {
@@ -950,7 +990,7 @@ try {
     );
     return {
       table: t,
-      posture: policyBacked ? "policy-backed (J-005/J-006 tenant-scoped)" : "zero-policy (deny-by-default)",
+      posture: policyBacked ? "policy-backed (declared policies)" : "zero-policy (deny-by-default)",
       rlsEnabled: rls?.rls_enabled ?? null,
       rlsForced: rls?.rls_forced ?? null,
       policies: policyBacked ? policies : policies.length,
@@ -998,4 +1038,4 @@ if (findings > 0) {
   console.error(`STATUS=FINDINGS (${findings}) — see record. Nothing is claimed applied without catalog verification.`);
   process.exit(1);
 }
-console.log("STATUS=PASS — migrations applied (or already applied) and catalog-verified: zero-policy deny-by-default holds on the Stage-1 substrate tables and the normalized transport fleet table; the policy-backed tables carry RLS FORCED with exactly the declared neutral-primitive policies.");
+console.log("STATUS=PASS — migrations applied (or already applied) and catalog-verified: zero-policy deny-by-default holds on the Stage-1 substrate tables; the policy-backed tables (including the transport fleet driver read gate) carry RLS FORCED with exactly the declared policies.");

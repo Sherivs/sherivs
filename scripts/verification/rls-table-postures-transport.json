@@ -1,40 +1,63 @@
 {
   "artifact": "rls-table-postures-transport",
-  "captured": "2026-10-02",
-  "mission": "H2-03 — resolve the queued transport_buses RLS re-verify; declare the driver-family substrate posture",
-  "role": "Database Security Engineer (RLS author)",
-  "status": "AUTHORED, NOT APPLIED — no canonical access, no battery runs",
-  "migration": "database/supabase/migrations/20261002000014_coregrid_v2_transport_buses_rls.sql",
-  "rollback": "database/supabase/rollbacks/20261002000014_coregrid_v2_transport_buses_rls.sql",
+  "captured": "2026-10-02 (zero-policy era, H2-03) — superseded 2026-10-03 (TEAM T-D, post-R-wave driver bus-read policy)",
+  "mission": "T-D — author the driver bus-read policy migration and register the posture change (zero-policy → policy-backed, SELECT-only)",
+  "role": "TRANSPORT-POLICY (Team T-D), CoreGrid post-R-wave follow-up wave",
+  "status": "APPLIED (2026-10-03, coordinator): migration 20261003000041 applied through the checksummed canonical channel (STATUS=PASS, live catalog verified: RLS FORCED, exactly the one declared policy); the battery identity-scoped probe stage is the live isolation proof",
+  "migration": "database/supabase/migrations/20261003000041_coregrid_transport_bus_reads.sql",
+  "rollback": "database/supabase/rollbacks/20261003000041_coregrid_transport_bus_reads.sql",
+  "history": {
+    "zeroPolicyEra": {
+      "migration": "database/supabase/migrations/20261002000014_coregrid_v2_transport_buses_rls.sql",
+      "rollback": "database/supabase/rollbacks/20261002000014_coregrid_v2_transport_buses_rls.sql",
+      "note": "the H2-03 zero-policy normalization remains the substrate-era baseline; its rollback is superseded for this table by the T-D exact-inverse rollback above, which restores its posture verbatim"
+    },
+    "priorPosture": "zero-policy (deny-by-default strongest form) — correct for its substrate era, but it left the driver assigned-bus surface with no client path (R1 e2e finding, progress/v1-wave/R1-report.md)"
+  },
   "consumer": "RLS isolation battery steward (scripts/verify-rls-isolation-battery.mjs TABLES registry) — adopt these declarative expected states for the transport table; the battery script itself is owned by another mission and is NOT modified here",
   "authority": [
+    "Operator direction (post-R-wave follow-up wave): the remaining credential-free work is authorized, including this posture change under least-privilege conditions",
     "AGENTS.md §17 RLS mandatory; application code is never the only security layer",
+    "AGENTS.md §16/§26 layered authorization; the actor is re-derived from auth.uid(), never a client-supplied value",
     "AGENTS.md §28 database law (RLS, revocable grants over application logic)",
     "AGENTS.md §22 repository discovery (schema source inspected, cited per table)",
     "AGENTS.md §31 testing standard (revoked/expired access fails; agents cannot exceed permissions)",
-    "RULING-2 deny-by-default posture approved",
-    "RLS_ISOLATION_BATTERY.md §7 dual-posture model (zero-policy | policy-backed)"
+    "J-005/J-006 predicate law (20261002000001 + 20261002000013): no legacy domain helper, no domain role name, no client-trusted value in any policy predicate",
+    "RULING-2 deny-by-default default posture",
+    "RLS_ISOLATION_BATTERY.md §2 (force-RLS re-evaluated exactly when policies are authored), §4.4, §7 dual-posture model",
+    "R1 e2e finding: driver assigned-bus surface unreachable under zero-policy (typed-skipped case)"
   ],
   "schemaSource": {
     "definitionMigration": "database/supabase/migrations/20260626150625_35a08443-45fd-46ae-807b-3644b44efe26.sql",
     "correctionMigration": "database/supabase/migrations/20260904010000_coregrid_rls_transport_and_grants.sql",
-    "note": "the legacy definition carried a campus-wide FOR ALL policy (the recorded 2026-09-03 finding); the correction migration replaced it with four scoped policies; this mission normalizes to zero-policy"
+    "note": "the legacy definition carries the campus-scoping uuid key and the assignment column (driver_id uuid REFERENCES users(id) ON DELETE SET NULL); the 2026-09-03 campus-wide FOR ALL policy was corrected to four scoped policies and then normalized to zero-policy by 20261002000014; T-D now authors the least-privilege driver read"
   },
-  "postureSelectionLaw": "zero-policy chosen over tenant-scoped because the legacy table carries no neutral tenant reference and its only available scoping predicates are the legacy domain helpers — the predicate class J-005/J-006 bans from the policy layer; deny-by-default is the approved platform posture (RULING-2) and resolves the queued finding in its strongest form",
+  "postureSelectionLaw": "policy-backed SELECT-only chosen under the operator's least-privilege mandate: the driver read (getMyDriverBus) runs client-mediated through the user's JWT (requireSupabaseAuth builds the publishable-key client with the bearer token), so RLS applies and the honesty valve 'service-role-mediated, no client policy' does NOT fire; the J-005 tenant-equality shape is NOT expressible on this substrate (no neutral tenant reference column, no bridge from the legacy campus uuid key to neutral tenant refs, and the live neutral membership substrate holds ZERO bindings for real sessions — verified read-only 2026-10-03), and the legacy domain helper predicate class is banned from the policy layer by J-005/J-006 and by the shrink-only neutrality guard; the expressible least-privilege predicate that matches the actual flow is the assignment-identity binding driver_id = auth.uid() — the same sanctioned auth.uid() self-derivation the 20261002000013 grantor pin uses",
   "tables": [
     {
       "name": "transport_buses",
       "qualifiedName": "public.transport_buses",
-      "posture": "zero-policy",
-      "rationale": "adjudicated zero-policy-by-design by H3-040 (architecture/campaigns/h3/posture-adjudication/transport_buses.md): the legacy substrate keys on school_id with no neutral tenant reference, so its only available scoping predicates are the legacy domain helpers the J-005/J-006 predicate law bans from the policy layer (Constitution §13); zero-policy deny-by-default (RULING-2) resolves the queued 2026-09-03 finding in its strongest form, the driver-portal/bus-tracking data-plane denials are a recorded accepted consequence with a defined exemplar conversion path, and zero client-visible realtime events follow by construction (§35)",
+      "posture": "policy-backed",
+      "probeStage": "identity-scoped",
+      "identityColumn": "driver_id",
+      "policies": ["transport_buses_select_driver_assigned"],
+      "forceRls": true,
+      "tenantColumn": "driver_id",
+      "rationale": "policy-backed SELECT-only driver self-assignment read (T-D 20261003000041): exactly one policy (transport_buses_select_driver_assigned: FOR SELECT TO authenticated USING (driver_id = auth.uid())) with authenticated granted SELECT and nothing else, FORCE RLS per the battery §2 convention (the table owner holds the sanctioned BYPASSRLS, so definer paths are unaffected), anon/PUBLIC at zero privileges, service_role unchanged as the sanctioned server-only path. The predicate binds the row's own assignment column (the legacy users-table FK) to the server-derived identity: a row is visible only when it names the actor as its assigned operator, so a foreign-campus row cannot become visible unless that campus's own administrators assigned the actor — cross-campus leakage would be a data-integrity defect of the admin surface, not of this read gate. NO write privilege or policy of any kind is granted; every other read family (caregiver tracking, admin fleet surfaces) remains denied pending its own least-privilege authoring",
+      "policyScopeDeviation": {
+        "declared": "assignment-identity scope (driver_id = auth.uid()) instead of the J-005 tenant-equality shape",
+        "reason": "the legacy table carries no neutral tenant reference (the recorded basis of the H3-040 zero-policy adjudication); the live neutral substrate holds zero membership/assignment bindings for real sessions, so a tenant-equality predicate would deny every real session and restore nothing; the legacy domain helper predicate class is banned from the policy layer (J-005/J-006, shrink-only neutrality guard)",
+        "conversionPath": "a full J-005 tenant-scoped conversion must introduce a neutral tenant reference on the substrate plus a campus→tenant bridge and backfill (a substrate conversion owned by a future mission — no schema was invented here); the battery §4.4 data-declared cross-tenant probe recipe CANNOT be declared for this legacy FK-bound table (uuid campus key; probe aux tables are restricted to the cg_ namespace), so the cross-tenant stage is superseded for this entry by the battery's IDENTITY-SCOPED probe stage (declared via probeStage) and the post-apply proof paths are the battery catalog/privilege/anon-deny sections, the live two-principal identity probe, and the driver e2e case"
+      },
       "sourceMigration": "database/supabase/migrations/20260626150625_35a08443-45fd-46ae-807b-3644b44efe26.sql",
       "normalizedBy": "database/supabase/migrations/20261002000014_coregrid_v2_transport_buses_rls.sql",
+      "policyBackedBy": "database/supabase/migrations/20261003000041_coregrid_transport_bus_reads.sql",
       "expectedCatalog": {
         "relrowsecurity": true,
-        "relforcerowsecurity": false,
-        "relforcerowsecurityClassification": "INFO (zero-policy posture: no policy expression exists, so force cannot strengthen the denial — RLS_ISOLATION_BATTERY.md §7 zero-policy convention)",
-        "policies": [],
-        "permissivePolicies": 0
+        "relforcerowsecurity": true,
+        "relforcerowsecurityClassification": "ASSERTED (policy-backed posture: FORCE binds the table owner; the owner postgres holds the sanctioned BYPASSRLS, so the definer path and the management channel are unaffected — RLS_ISOLATION_BATTERY.md §2 + the 20261002000013 exemplar force in the same migration that authors policies)",
+        "policies": ["transport_buses_select_driver_assigned"],
+        "permissivePolicies": 1
       },
       "droppedPolicies": [
         "buses_school_rw",
@@ -43,9 +66,9 @@
         "buses_school_admin_insert",
         "buses_school_admin_delete"
       ],
-      "expectedPrivileges": {
+      "privileges": {
         "anon": [],
-        "authenticated": [],
+        "authenticated": ["SELECT"],
         "PUBLIC": [],
         "service_role": ["ALL"]
       },
@@ -56,10 +79,10 @@
       },
       "realtime": {
         "publication": "supabase_realtime",
-        "expectation": "row visibility follows RLS — zero policies means zero client-visible realtime events for the declared posture"
+        "expectation": "row visibility follows RLS — non-assigned rows stay invisible to every client role; an authenticated assigned driver now receives UPDATE events for the row that names them (the dashboard subscribes by bus id)"
       },
-      "consumerImpact": "driver-family self-scoped reads and caregiver tracking deny at the data plane until the owning mission re-provisions access through neutral tenant-scoped policies (the 20261002000013 J-005/J-006 pattern) or a substrate conversion; service-role server paths unaffected",
-      "conversionPath": "a future policy-backed conversion must introduce a neutral tenant reference on the substrate and author FORCE RLS + declared policies in the same migration (20261002000013 exemplar); this mission deliberately does not pre-author such policies"
+      "consumerImpact": "the driver assigned-bus read surface is restored (getMyDriverBus returns the row naming the signed-in actor); the driver location-push and status UPDATE paths and every other client read family (caregiver tracking, admin fleet surfaces) still deny at the data plane pending their own least-privilege authoring; service-role server paths unaffected",
+      "conversionPath": "full J-005 tenant-scoped conversion (neutral tenant reference + campus→tenant bridge + backfill + a declarable §4.4 recipe) remains a future substrate-conversion mission; the driver location-push/status writes and the remaining read families each need their own least-privilege authorization decisions before any policy is authored"
     }
   ],
   "outOfScope": [
@@ -70,10 +93,11 @@
     }
   ],
   "batteryExpectations": {
-    "zeroPolicyTables": ["transport_buses"],
-    "policyBackedTables": [],
-    "verificationGuard": "the normalization migration itself fails the apply if any permissive policy survives (pg_catalog.pg_policies guard, §5) — the declared zero-policy posture is exact, not assumed",
-    "honestyRule": "denial is the pass condition; only genuine denials (empty set or 42501) count; an invalid-key rejection is INCONCLUSIVE, never a pass",
-    "genuineInverse": "the rollback restores exactly the 20260904010000 corrected legacy posture (four scoped policies re-created verbatim, authenticated = SELECT/INSERT/UPDATE/DELETE, service_role = ALL, anon/PUBLIC = none, RLS enabled, force=false) — and the legacy campus-wide FOR ALL policy (buses_school_rw) stays dropped; note the restored posture is outside the battery's dual-posture model, so a post-rollback battery run reports FINDINGS for this table by design"
+    "zeroPolicyTables": [],
+    "policyBackedTables": ["transport_buses"],
+    "verificationGuard": "the T-D migration's own DO-block guard fails the apply unless exactly one policy (transport_buses_select_driver_assigned, SELECT) lands with authenticated=SELECT-only, zero anon/PUBLIC privileges, and FORCE RLS enabled — the declared posture is exact, not assumed",
+    "honestyRule": "deny is the pass condition for everything not explicitly granted; only genuine denials (empty set or 42501) count; an invalid-key rejection is INCONCLUSIVE, never a pass",
+    "genuineInverse": "the T-D rollback restores exactly the 20261002000014 zero-policy posture (policy dropped, authenticated SELECT revoked, RLS un-forced, zero-policy COMMENT restored verbatim, DO-block guard re-asserting the invariant) — note the posture file declares the policy-backed state, so a post-rollback battery run reports FINDINGS for this table by design",
+    "probeRecipeNote": "no §4.4 probeSeedRows/probeInsertPayload recipe is declared (and none can be): the table's campus key is a uuid FK into a legacy domain table and the battery's aux-table mechanism is restricted to the cg_ namespace, so no data-declared cross-tenant recipe can seed legal rows. Instead the entry declares probeStage=identity-scoped (coordinator integration, 2026-10-03): the battery runs a genuine live two-principal probe — the assigned actor must see exactly the row naming them, an unauthenticated/unassigned principal must see zero rows, INSERT must deny on the SELECT-only surface — the honest battery representation of an identity-scoped policy on a legacy substrate pending the neutral-substrate conversion"
   }
 }

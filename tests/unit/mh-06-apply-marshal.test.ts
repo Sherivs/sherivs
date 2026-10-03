@@ -61,6 +61,11 @@ const EXPECTED_MIGRATIONS = [
   // (idempotent, private, bounded envelope; policy set already owned by
   // 20260707223958 — this migration grants nothing new).
   "20261003000040_coregrid_school_media_bucket.sql",
+  // Post-R-wave (2026-10-03): T-D transport fleet driver bus-read gate —
+  // exactly one least-privilege SELECT policy (driver self-assignment);
+  // supersedes the 20261002000014 interim zero-policy posture for this
+  // surface only.
+  "20261003000041_coregrid_transport_bus_reads.sql",
 ];
 
 interface ManifestMigration {
@@ -79,6 +84,7 @@ interface ManifestMigration {
     policies?: string[];
     zeroPolicyTables?: string[];
     privilegePostures?: Array<{ table: string }>;
+    supersededBy?: string;
   };
 }
 interface Manifest {
@@ -187,14 +193,21 @@ describe("MH-06 — canonical apply path is rehearsal-ready and CI-portable", ()
         (declared.zeroPolicyTables?.length ?? 0) +
         (declared.privilegePostures?.length ?? 0);
       expect(m.declaredObjectCount).toBe(counted);
-      // Zero-declared entries are legitimate only for data-only migrations
-      // (e.g. declarative storage-bucket provisioning) that declare no catalog
-      // signature objects; the apply path executes them unconditionally, so
-      // they must carry the idempotency guarantee in their bytes.
+      // Zero-declared entries are legitimate in exactly two shapes: (a)
+      // idempotent data-only migrations (e.g. declarative storage-bucket
+      // provisioning) that declare no catalog signature objects — the apply
+      // path executes them unconditionally, so they must carry the
+      // idempotency guarantee in their bytes; (b) superseded normalization
+      // migrations whose declared signature was legitimately replaced by a
+      // later manifest entry — they are never re-executed.
       if (m.declaredObjectCount === 0) {
-        expect(m.file, `${m.file}: zero-declared entries must be idempotent data-only migrations`).toMatch(/bucket|backfill|seed|data-only/i);
-        const bytes = readFileSync(join(MIGRATIONS_DIR, m.file), "utf8");
-        expect(bytes, `${m.file}: zero-declared migration must be idempotent`).toMatch(/ON CONFLICT|IF NOT EXISTS|WHERE NOT EXISTS/i);
+        if (m.declared.supersededBy) {
+          expect(m.declared.supersededBy).toMatch(/\.sql$/);
+        } else {
+          expect(m.file, `${m.file}: zero-declared entries must be idempotent data-only migrations`).toMatch(/bucket|backfill|seed|data-only/i);
+          const bytes = readFileSync(join(MIGRATIONS_DIR, m.file), "utf8");
+          expect(bytes, `${m.file}: zero-declared migration must be idempotent`).toMatch(/ON CONFLICT|IF NOT EXISTS|WHERE NOT EXISTS/i);
+        }
         continue;
       }
       expect(m.declaredObjectCount).toBeGreaterThan(0);
@@ -221,12 +234,20 @@ describe("MH-06 — canonical apply path is rehearsal-ready and CI-portable", ()
     expect(stage2?.declared.policies).toContain("cg_org_membership.org_membership_update_tenant_admin");
   });
 
-  it("declares the H2-03 transport normalization by its zero-policy signature (absence, not presence)", () => {
+  it("records the H2-03 transport normalization as superseded by the T-D driver read gate, which owns the live policy posture", () => {
     const transport = manifest.migrations.find((m) => m.file.startsWith("20261002000014"));
     expect(transport).toBeDefined();
-    expect(transport?.declared.tables).toHaveLength(0);
-    expect(transport?.declared.zeroPolicyTables).toEqual(["transport_buses"]);
-    expect(manifestRun.stdout).toContain("  zero-policy:transport_buses");
+    // Supersession (2026-10-03, T-D): the interim zero-policy signature was
+    // legitimately replaced by the least-privilege driver assigned-read
+    // policy; the normalization migration is never re-executed.
+    expect(transport?.declared.zeroPolicyTables).toBeUndefined();
+    expect(transport?.declared.supersededBy).toBe("20261003000041_coregrid_transport_bus_reads.sql");
+    expect(manifestRun.stdout).toContain("  superseded-by:20261003000041_coregrid_transport_bus_reads.sql");
+
+    const driverGate = manifest.migrations.find((m) => m.file.startsWith("20261003000041"));
+    expect(driverGate).toBeDefined();
+    expect(driverGate?.declared.policies).toEqual(["transport_buses.transport_buses_select_driver_assigned"]);
+    expect(manifestRun.stdout).toContain("  policy:transport_buses.transport_buses_select_driver_assigned");
   });
 
   it("declares the H2-04 substrate policy layer as exactly eight neutral-primitive policies", () => {
