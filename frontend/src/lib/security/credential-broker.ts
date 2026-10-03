@@ -43,7 +43,18 @@
  *   is a non-empty tuple and `UnscopedCredentialLease` resolves to `never`,
  *   so a universal master credential cannot be EXPRESSED in this contract —
  *   it fails to typecheck, and fail-closed policy registration rejects the
- *   runtime-shaped attempt.
+ *   runtime-shaped attempt. Master-credential SHAPES (wildcard resource
+ *   scopes or wildcard capability requirements) are likewise rejected at
+ *   registration (B-009 depth).
+ * - Per-agent scoping enforcement depth (B-009 / J-007): an injectable,
+ *   per-agent `AgentScopingPolicy` bounds each agent's concurrent lease
+ *   footprint (per credential and in total), and issuance is LEAST-SCOPE:
+ *   a lease TTL is clamped down to the narrowest bound the agent declared
+ *   (never widened). Active-lease accounting honors expiry and revocation:
+ *   expired and revoked leases release the agent's concurrency budget, an
+ *   exhausted-but-unexpired lease still holds it (conservative, fail
+ *   closed). Agents with no registered policy are unconstrained at this
+ *   layer — the authority intersection above still applies to everyone.
  *
  * Pure in-process implementation: time is supplied by the caller, nothing
  * runs implicitly, nothing is persisted, no I/O. All checks FAIL CLOSED.
@@ -54,6 +65,7 @@
  */
 
 import { AGENT_RISK_CLASSIFICATIONS, type AgentRiskClassification } from "../agent-core";
+import { z } from "zod";
 
 /* ─────────────────────────────────────────────────────────────
  * Branded secret / handle types (non-observability by construction)
@@ -230,6 +242,106 @@ export type UnscopedCredentialLease = never;
 export type BrokeredCredentialPolicyResult =
   | { ok: true }
   | { ok: false; errors: readonly string[] };
+
+/* ─────────────────────────────────────────────────────────────
+ * Per-agent scoping enforcement depth (B-009 / J-007)
+ * ────────────────────────────────────────────────────────────*/
+
+/**
+ * Per-agent scoping enforcement policy. Declares how much concurrent lease
+ * footprint a single agent may accumulate and the tightest TTL it may
+ * request. Registered per identity ref, fail closed on validation; an agent
+ * without a registered policy is unconstrained at THIS layer only — the
+ * authority intersection (capabilities ∧ tenant ∧ risk ∧ scope ∧ TTL bounds)
+ * still applies to every grant.
+ */
+export interface AgentScopingPolicy {
+  readonly identityRef: string;
+  /** Maximum simultaneously active leases this agent may hold per credential. */
+  readonly maxActiveLeasesPerCredential: number;
+  /** Maximum simultaneously active leases across ALL credentials. */
+  readonly maxTotalActiveLeases: number;
+  /**
+   * Tightest TTL any lease for this agent may carry, or null for "no
+   * per-agent TTL bound beyond the broker/credential bounds". Grants are
+   * clamped DOWN to this bound (least-scope issuance) — never widened.
+   */
+  readonly maxLeaseTtlMs: number | null;
+}
+
+export type AgentScopingPolicyResult =
+  | { ok: true }
+  | { ok: false; errors: readonly string[] };
+
+export interface AgentScopingEvaluationInput {
+  /** The agent's registered policy, or null when none is registered. */
+  readonly policy: AgentScopingPolicy | null;
+  readonly requestedTtlMs: number;
+  /** Currently active leases the agent holds on the requested credential. */
+  readonly activeLeasesPerCredential: number;
+  /** Currently active leases the agent holds across all credentials. */
+  readonly activeLeasesTotal: number;
+}
+
+export type AgentScopingVerdict =
+  | { ok: true; effectiveTtlMs: number }
+  | { ok: false; reason: string };
+
+/**
+ * Pure per-agent scoping verdict. Enforces, in order:
+ *  1. per-credential concurrent-lease cap (deny — never clamp away authority);
+ *  2. total concurrent-lease cap across credentials (deny);
+ *  3. TTL clamp DOWN to the per-agent bound (least-scope issuance).
+ * A null policy passes through with the requested TTL untouched.
+ */
+export function evaluateAgentScoping(input: AgentScopingEvaluationInput): AgentScopingVerdict {
+  const { policy } = input;
+  if (policy === null) {
+    return { ok: true, effectiveTtlMs: input.requestedTtlMs };
+  }
+  if (input.activeLeasesPerCredential >= policy.maxActiveLeasesPerCredential) {
+    return {
+      ok: false,
+      reason: `agent_scope_concurrency_denied:${policy.maxActiveLeasesPerCredential}_per_credential`,
+    };
+  }
+  if (input.activeLeasesTotal >= policy.maxTotalActiveLeases) {
+    return {
+      ok: false,
+      reason: `agent_scope_total_leases_denied:${policy.maxTotalActiveLeases}`,
+    };
+  }
+  const effectiveTtlMs =
+    policy.maxLeaseTtlMs !== null && input.requestedTtlMs > policy.maxLeaseTtlMs
+      ? policy.maxLeaseTtlMs
+      : input.requestedTtlMs;
+  return { ok: true, effectiveTtlMs };
+}
+
+/** Zod contract for the per-agent scoping policy (fail-closed registration). */
+const AGENT_SCOPING_POLICY_SCHEMA = z
+  .object({
+    identityRef: z.string(),
+    maxActiveLeasesPerCredential: z.number().int().positive(),
+    maxTotalActiveLeases: z.number().int().positive(),
+    maxLeaseTtlMs: z.number().positive().nullable(),
+  })
+  .refine((policy) => isNonEmptyTrimmed(policy.identityRef, 200), {
+    message: "identityRef must be 1–200 characters",
+  })
+  .refine(
+    (policy) => policy.maxLeaseTtlMs === null || Number.isFinite(policy.maxLeaseTtlMs),
+    { message: "maxLeaseTtlMs must be a finite number or null" },
+  );
+// NOTE: maxTotalActiveLeases < maxActiveLeasesPerCredential is VALID — the
+// caps are a conjunction, and a tight total cap with a loose per-credential
+// cap is a meaningful, enforceable combination (B-009 tests cover it).
+
+function validateAgentScopingPolicy(policy: AgentScopingPolicy): readonly string[] {
+  const parsed = AGENT_SCOPING_POLICY_SCHEMA.safeParse(policy);
+  if (parsed.success) return [];
+  return parsed.error.issues.map((issue) => issue.message);
+}
 
 /* ─────────────────────────────────────────────────────────────
  * Audit events (append-only; never carry secret material)
@@ -481,6 +593,7 @@ export class CredentialBroker {
   private readonly vault: CredentialVault;
   private readonly audit: CredentialAuditSink;
   private readonly policies = new Map<string, BrokeredCredentialPolicy>();
+  private readonly agentScopingPolicies = new Map<string, AgentScopingPolicy>();
   private readonly leases = new Map<string, LeaseRecord>();
   private readonly lockedDownIdentities = new Set<string>();
   private readonly lockedDownTenants = new Set<string>();
@@ -529,6 +642,15 @@ export class CredentialBroker {
       errors.push(
         "requiredCapabilities must be a non-empty array of non-empty strings (a credential requiring no capability is a master credential — denied, no-master invariant)",
       );
+    } else if (policy.requiredCapabilities.some((c) => c.trim() === "*")) {
+      errors.push(
+        "requiredCapabilities wildcard denied (a credential open to any capability is a master credential — denied, no-master invariant)",
+      );
+    }
+    if (typeof policy.resourceScope === "string" && policy.resourceScope.trim() === "*") {
+      errors.push(
+        "resourceScope wildcard denied (a credential scoped to every resource is a master credential — denied, no-master invariant)",
+      );
     }
     if (!(AGENT_RISK_CLASSIFICATION_SET as ReadonlySet<string>).has(policy.riskClass)) {
       errors.push("riskClass must be in the agent risk vocabulary");
@@ -542,6 +664,44 @@ export class CredentialBroker {
     if (errors.length > 0) return { ok: false, errors };
     this.policies.set(policy.credentialRef.trim(), policy);
     return { ok: true };
+  }
+
+  /**
+   * Declare a per-agent scoping enforcement policy (B-009). Fail-closed
+   * validation: an invalid policy is rejected, never partially registered;
+   * re-registering for an identity replaces the previous policy.
+   */
+  registerAgentScopingPolicy(policy: AgentScopingPolicy): AgentScopingPolicyResult {
+    const errors = validateAgentScopingPolicy(policy);
+    if (errors.length > 0) return { ok: false, errors };
+    this.agentScopingPolicies.set(policy.identityRef.trim(), policy);
+    return { ok: true };
+  }
+
+  /** The registered scoping policy for an identity, or null when unconstrained. */
+  agentScopingPolicy(identityRef: string): AgentScopingPolicy | null {
+    return this.agentScopingPolicies.get(identityRef.trim()) ?? null;
+  }
+
+  /**
+   * Count the agent's currently ACTIVE leases. Active = not revoked and not
+   * expired at `nowMs` (expiry and revocation release the concurrency
+   * budget). An exhausted-but-unexpired lease still counts — conservative,
+   * fail closed. Pass a credentialRef to scope the count to one credential,
+   * or null to count across all credentials.
+   */
+  activeLeaseCount(identityRef: string, credentialRef: string | null, nowMs: number): number {
+    if (!Number.isFinite(nowMs)) return 0;
+    let count = 0;
+    for (const record of this.leases.values()) {
+      if (record.identityRef !== identityRef) continue;
+      if (record.issuedAtMs > nowMs) continue;
+      if (record.revoked) continue;
+      if (record.expiresAtMs <= nowMs) continue;
+      if (credentialRef !== null && record.credentialRef !== credentialRef) continue;
+      count += 1;
+    }
+    return count;
   }
 
   /**
@@ -631,6 +791,32 @@ export class CredentialBroker {
       return deny("ttl_exceeds_credential_bound");
     }
 
+    // Per-agent scoping enforcement depth (B-009): concurrency caps deny,
+    // the per-agent TTL bound clamps issuance down to least scope.
+    let effectiveTtlMs = request.ttlMs;
+    const agentPolicy = this.agentScopingPolicies.get(subject.identityRef.trim()) ?? null;
+    let activePerCredential = 0;
+    let activeTotal = 0;
+    for (const record of this.leases.values()) {
+      if (record.identityRef !== subject.identityRef || record.revoked) continue;
+      // Expiry honoured in budget accounting: a lapsed lease releases budget.
+      if (record.expiresAtMs <= request.nowMs) continue;
+      // A lease not yet issued at the request's clock time does not exist yet.
+      if (record.issuedAtMs > request.nowMs) continue;
+      activeTotal += 1;
+      if (record.credentialRef === policy.credentialRef) activePerCredential += 1;
+    }
+    const scoping = evaluateAgentScoping({
+      policy: agentPolicy,
+      requestedTtlMs: request.ttlMs,
+      activeLeasesPerCredential: activePerCredential,
+      activeLeasesTotal: activeTotal,
+    });
+    if (!scoping.ok) {
+      return deny(scoping.reason);
+    }
+    effectiveTtlMs = scoping.effectiveTtlMs;
+
     const version = this.vault.currentVersion(policy.credentialRef);
     if (version === null) {
       // Defense in depth: re-check after the entry probe (rotation races).
@@ -647,7 +833,7 @@ export class CredentialBroker {
       purpose: request.purpose,
       credentialVersion: version,
       issuedAtMs: request.nowMs,
-      expiresAtMs: request.nowMs + request.ttlMs,
+      expiresAtMs: request.nowMs + effectiveTtlMs,
       maxUses: request.maxUses,
       usesUsed: 0,
       revoked: false,
