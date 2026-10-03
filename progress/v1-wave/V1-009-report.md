@@ -1,0 +1,79 @@
+# V1-009 — Communication Adapters (§42 Report)
+
+Mission V1-009 (team COMMS), CoreGrid V1 program. Date: 2026-10-03. Branch: `cursor/p08-foundation-loop-classification-fe86` (work left uncommitted per mission law: no git commands).
+
+## Implemented
+
+**1. Resend-backed `EmailAdapter`** — `frontend/src/lib/communications/resend-email.server.ts`
+- Implements the existing provider-agnostic `EmailAdapter` contract (`frontend/src/lib/notifications/email-adapter-contract.ts`) with `providerId: "resend"`. No new contract was invented; the V5.3 Part 20 contract is consumed as-is.
+- Credentials from environment only: `RESEND_API_KEY` and `RESEND_FROM_ADDRESS` (names exported as constants; never hardcoded, never logged — §30). Environment-derived config via `resendEmailConfigFromEnv(env)`; env-backed registry via `createResendEmailProviderRegistry(env)` (`isProviderConfigured` evaluates the live environment at call time; `credentialReferenceFor` returns the pointer `env://RESEND_API_KEY`, never a value).
+- **Fail-closed no-credential semantics (exit-2 battery discipline):** the credential gate fires FIRST — before any other work and before any network contact — and resolves to the typed blocked result `undeliverable("provider_not_configured")` whose reason names the missing environment variable (`BLOCKED_NO_CREDENTIAL: RESEND_API_KEY is not set; no email was sent and no provider call was attempted`). It never fakes a send, never fabricates a receipt, never throws a silent success. A second adapter-level gate (defense in depth) blocks even when a registry lies about configuration. The missing `RESEND_FROM_ADDRESS` also blocks typed.
+- Zod validation of the outbound message shape (`ResendEmailPayloadSchema`, strictObject: bounded from/to/subject/text, bare-email recipient) runs before any fetch; a rejected payload is a structured `failed("provider_error", retryable: false)` with no provider contact.
+- Untrusted provider output (§21): the response is minimized through `ResendEmailResponseSchema` to the single consumed field `id`; a 2xx without a usable id is a structured failure that explicitly does NOT assert delivery.
+- Retry semantics per contract (J-045): exactly ONE transport attempt (a send is non-idempotent in V1); the pipeline owns retries via the structured `retryable` flag — 408/429/5xx retryable, other 4xx and local-validation failures not. Composed with `withEmailFailurePolicy(DEFAULT_EMAIL_FAILURE_POLICY)` so a hung or throwing transport is contained as a structured failure.
+
+**2. Telephony provider abstraction** — `frontend/src/lib/communications/telephony-adapter-contract.ts`
+- Provider-agnostic `TelephonyAdapter` contract mirroring the email contract's vocabulary: Zod-validated `TelephonyCallCommand` (bounded callKind/tenantRef/recipientName/recipientPhone/script/triggerEvent, mirroring the scholar call-input bounds), `TelephonyCallReceipt | TelephonyCallFailure` results, `TelephonyProviderRegistry` (configuration facts + credential references only), shared `evaluateTelephonyPreCall` fail-closed gate, `DEFAULT_TELEPHONY_FAILURE_POLICY` (single attempt, 12s timeout, breaker/degraded posture) and `withTelephonyFailurePolicy` J-045 composition. Failure codes include the typed `provider_not_configured` blocked result and `provider_not_live` for a declared-but-not-implemented provider. Pure module: no I/O, no vendor imports.
+
+**3. Twilio voice adapter (wraps the existing call site's exact interaction)** — `frontend/src/lib/communications/twilio-voice.server.ts`
+- `createTwilioVoiceAdapter(config)` / `twilioVoiceConfigFromEnv(env)` reproduce the existing `placeTwinCall` gateway interaction bit-for-bit: same credential precedence (`AI_API_KEY` fallback `TWILIO_API_KEY` as gateway bearer, `TWILIO_API_KEY` as connection key, `TWILIO_FROM_NUMBER` required; `TWILIO_GATEWAY_URL` overrides the `https://api.twilio.com/2010-04-01` default), same `POST {gateway}/Calls.json` with `Authorization: Bearer` + `X-Connection-Api-Key` + form-encoded `To/From/Twiml`, same bounded response contract (`TwilioVoiceCallResponseSchema`, shape-identical to the site's `TwilioCallResponse`). One deliberate divergence, tested: TwiML escaping is corrected to escape `&` before `<` (the legacy site double-escapes by escaping `<` first).
+- Missing credentials → `twilioVoiceConfigFromEnv` yields null → the typed BLOCKED_NO_CREDENTIAL result naming the required env variables, zero fetch. Also blocks malformed commands (`invalid_command`) locally. Provider error mapping: structured `failed` with `httpStatus`, retryable per 408/429/5xx; credential values never appear in any reason.
+
+**4. Vapi adapter stub (same contract, same fail-closed semantics)** — `frontend/src/lib/communications/vapi-voice.server.ts`
+- `createVapiVoiceAdapter` implements `TelephonyAdapter` with `providerId: "vapi"` and the env credential gate on `VAPI_API_KEY`: absent → typed `undeliverable("provider_not_configured")` (BLOCKED_NO_CREDENTIAL, zero network); present → `undeliverable("provider_not_live")` (NOT_FOR_LIVE_USE — V1 declares the provider and gates the credential but ships no live call path, so a stub can never mistake itself for a delivery). It contacts NO endpoint in any credential state.
+
+**5. Digital-twin call-site swap — assessed, NOT edited (reported per mission law)**
+- The swap of `placeTwinCall`'s direct fetch for the adapter is blocked by existing invariant suites outside this mission's file ownership: `tests/unit/scholar-invariant-tenant-gated.test.ts` (§27 M-R-121) pins `placeTwinCall`'s function block to `/fetch\(/` and `/TwilioCallResponse/` (`extra: [...]` markers) and pins the family to "external provider reached via env-configured fetch" file-wide; a swap removes both and fails the suite. Accommodating it requires a sanctioned manifest update in that test file plus `tests/unit/mh-02-validation-hardening.test.ts` implications — a change to another mission's invariant artifacts that I was not authorized to make. Per the mission instruction ("if the swap is riskier than expected, report instead of editing"), the call site is untouched and still works unchanged. The adapter is behaviorally proven equivalent (test-verified request shape, headers, response bounds, error mapping), so a sanctioned swap is a small follow-up: construct the adapter from `process.env`, replace the fetch block, and update the §27 manifest markers to `/createTwilioVoiceAdapter/` + `/TwilioVoiceCallResponse/`.
+
+**6. Delivery state + audit/evidence (objective 3 — adapted to what exists, gaps reported)**
+- Telephony: the existing `digital_twin_calls` table IS the delivery-state + evidence record (`call_status`, `call_outcome`, `twilio_call_sid`, `started_at`); the untouched call site keeps persisting every attempt (stub/failed/queued) through the RLS-guarded INSERT path. The adapter preserves the exact site vocabulary (`queued`/`sid`/http-status failure text) so persistence mapping stays 1:1.
+- Email: NO email delivery-state table exists (the `public.notifications` table carries title/message/is_read only — no provider receipt, delivery-state or channel columns). Per "do NOT author migrations", no table was created. The established event/audit fabric convention is respected at the contract layer: the adapter returns provider-confirmed receipts that `notification-contract.ts`'s fail-closed state machine consumes (`markDelivered` requires a genuine, matching receipt — proven in tests), and audit persistence belongs to the notification dispatch pipeline that owns those rows. GAP (reported, not fixed): a delivery-evidence table or audit write for email sends is still missing platform-wide; the adapter emits everything needed (notificationId, channel, providerId, providerMessageId, confirmedAt) to feed it.
+
+## Files Changed
+
+- `frontend/src/lib/communications/telephony-adapter-contract.ts` (new, OWNERSHIP)
+- `frontend/src/lib/communications/resend-email.server.ts` (new, OWNERSHIP)
+- `frontend/src/lib/communications/twilio-voice.server.ts` (new, OWNERSHIP)
+- `frontend/src/lib/communications/vapi-voice.server.ts` (new, OWNERSHIP)
+- `tests/unit/communications/resend-email-adapter.test.ts` (new, OWNERSHIP)
+- `tests/unit/communications/telephony-adapter.test.ts` (new, OWNERSHIP)
+- `progress/v1-wave/V1-009-report.md` (this report, OWNERSHIP)
+
+Not touched (deliberately): `frontend/src/lib/runtime/scholar/digital-twin.functions.ts` (swap blocked — see §5), `frontend/src/lib/notifications/email-adapter-contract.ts` (consumed, not modified), `frontend/src/lib/env.ts` and `.env.example` (outside ownership — GAP: `RESEND_API_KEY`, `RESEND_FROM_ADDRESS`, `VAPI_API_KEY` should be declared there by an authorized follow-up; `TWILIO_*` already are), all migrations, `package.json`, all other teams' tests. No git commands run. No real provider, no real network, no database contacted.
+
+## Tests
+
+`npx vitest run tests/unit/communications/` — **34/34 passed, 2 files passed** (offline, ~0.4s; evidence log at `/opt/cursor/artifacts/v1-009-vitest.log`). Fetch is mocked; no network in any test.
+
+- **Resend contract compliance (16 tests):** declares `providerId: "resend"`; 2xx → provider-confirmed receipt (notificationId/channel/providerMessageId/confirmedAt) with the exact request verified (endpoint `https://api.resend.com/emails`, POST, Bearer header, Zod-valid JSON body); receipt composes with the notification contract (`markDelivered` succeeds on a genuine receipt and refuses a forged/mismatched one); provider output minimized (extra fields stripped).
+- **Resend fail-closed (BLOCKED_NO_CREDENTIAL):** missing `RESEND_API_KEY` → typed `undeliverable("provider_not_configured")` naming the env var with "no provider call was attempted" — fetch spy proves ZERO provider contact; blocks even when a registry lies (defense in depth); blocks when `RESEND_FROM_ADDRESS` is missing; credential REFERENCE is a pointer (`env://RESEND_API_KEY`), never the value; restricted categories (`approval_request`) blocked before any contact.
+- **Outbound shape validation (§26):** malformed recipient address and oversized subject rejected locally (structured `failed`, non-retryable, no fetch).
+- **Retry semantics (J-045):** 429/5xx → `retryable: true`; 402 → `false`; network throw contained as structured retryable failure; 2xx without usable id → non-retryable, delivery NOT asserted; with a policy declaring `maxAttempts: 3`, exactly ONE transport attempt executes (retries belong to the pipeline).
+- **Telephony contract compliance (18 tests):** Twilio env-precedence resolution (all-absent → null; `TWILIO_API_KEY` alone suffices as gateway bearer; `AI_API_KEY` preferred when present; `TWILIO_GATEWAY_URL` honored); the live path reproduces the existing call site's exact request (endpoint, Bearer + `X-Connection-Api-Key` headers, form-encoded `To/From/Twiml` with corrected XML escaping) and returns a receipt with the provider `sid` (null when the gateway queues without one — never fabricated); 5xx → retryable + `httpStatus`; 4xx → non-retryable; unparseable error body → bounded `twilio_502` fallback; malformed commands → `invalid_command` with no fetch; Vapi stub blocks typed on missing `VAPI_API_KEY` and on present credential (`provider_not_live`, NOT_FOR_LIVE_USE) with zero fetch in both states; both adapters expose pointer-only credential references; exactly ONE transport attempt under a 3-attempt policy; a throwing provider is contained as a structured failure, never a rejection.
+
+Regression evidence: `npx vitest run tests/unit/notifications-email-adapter.test.ts tests/unit/communication-core.test.ts tests/unit/communication-providers.test.ts tests/unit/mh-02-validation-hardening.test.ts tests/unit/scholar-invariant-tenant-gated.test.ts` — **156/156 passed** (the untouched digital-twin call site and its invariant pins remain green).
+
+`npm run typecheck` — zero errors in all new files (verified by filtered grep). The remaining repo typecheck errors are pre-existing in `tests/unit/memory-db-adapter.test.ts` (team MEMORY's V1-005 files, untouched by this mission). `npx eslint` on the new directories — clean. `npm run verify` NOT run (per mission law); no other team's tests touched.
+
+## Security Validation
+
+- Fail-closed credential gates fire BEFORE any other work and before any network contact in all three adapters — verified structurally (gate order in code) and behaviorally (fetch-spy assertions: zero calls in every blocked scenario, including hostile registries and malformed commands).
+- The typed blocked result is the adapter equivalent of exit-2 `BLOCKED_NO_CREDENTIAL`: explicit, non-fakeable (no receipt variant reachable), naming environment variables only. No silent success path exists in any credential state; the Vapi stub additionally refuses even WITH a credential (`provider_not_live`).
+- Secret hygiene (§30): credentials are read from the environment by name; values live only in server memory inside the adapter closure; no reason string, log line, receipt, or test artifact contains a credential value (sentinel-asserted in tests); registries expose `env://…` pointers only.
+- Zod validation on every outbound shape before network contact (email payload strictObject; telephony command strictObject; provider responses bounded and minimized — §21/§26/§32). No `any`; no vendor SDK imports (providers reached through one bounded fetch each — §25).
+- Provider-agnostic layering preserved (§24): CoreGrid intent (recipient, tenant, category policy, delivery state, retries) stays in the contracts; Resend/Twilio/Vapi are adapters behind them, composable with the shared J-045 failure policy.
+
+## Known Risks
+
+- The digital-twin call site still performs its own fetch (unchanged). The adapter is proven behaviorally equivalent, but until the sanctioned swap the two paths coexist; the §27 invariant manifest must be updated in the same change as the swap.
+- No live provider run was performed (no credentials, by design): the Resend/Twilio live paths are GOVERNED NOT EXECUTED; unit tests prove contract, gating, and request-shape fidelity only.
+- The TwiML escaping divergence is deliberate (adapter escapes correctly; the legacy site double-escapes `<`-then-`&`). A swap must adopt the adapter's escaping — content with `&` renders slightly differently on the two paths.
+- Email delivery evidence has no persistence substrate (no delivery-state/receipt table exists; `public.notifications` cannot carry provider receipts). Until a migration is sanctioned, email delivery truth lives only in the returned receipts and the notification state machine, not in durable rows.
+- `RESEND_API_KEY` / `RESEND_FROM_ADDRESS` / `VAPI_API_KEY` are not yet declared in `.env.example` or `frontend/src/lib/env.ts` (outside file ownership) — operators following that file won't see the new variable names.
+
+## Remaining Work
+
+- Sanctioned follow-up: swap `placeTwinCall` to `createTwilioVoiceAdapter(twilioVoiceConfigFromEnv(process.env))` together with the §27 manifest update in `tests/unit/scholar-invariant-tenant-gated.test.ts` (markers `/createTwilioVoiceAdapter/` + `/TwilioVoiceCallResponse/`); the adapter is ready and behaviorally verified.
+- Authorized follow-up: declare `RESEND_API_KEY`, `RESEND_FROM_ADDRESS`, `VAPI_API_KEY` in `.env.example` and `frontend/src/lib/env.ts` `SERVER_ONLY_VARS`.
+- Authorized follow-up (V1-002/foundation): an email delivery-evidence table (or `audit_logs` convention) to persist adapter receipts durably; the adapter already emits every field needed.
+- Operators: live-path validation awaits an approved provider window (Resend sandbox, Twilio sandbox) under the existing drill discipline; the adapters never contact a provider without credentials present.
