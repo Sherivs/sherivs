@@ -22,6 +22,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireSchoolAdminScope } from "@/lib/security-role-gate";
+import { SystemClock, TimeAuthority } from "../../kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 /* ─────────────────────────────────────────────────────────────
  * Pure aggregation helpers (unit-tested; no I/O)
@@ -145,9 +149,10 @@ const SECURITY_EVENT_ACTIONS = [
 export const loadAuditOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AuditOverview> => {
-    const schoolId = await requireSchoolAdminScope(context.supabase, gateSignals(context.claims));
+    const lifecycle = gateSignals(context.claims);
+    const schoolId = await requireSchoolAdminScope(context.supabase, lifecycle);
 
-    const today = new Date().toISOString().slice(0, 10);
+    const today = timeAuthority.now().at.slice(0, 10);
     const [total, todayCount, security, last] = await Promise.all([
       context.supabase
         .from("audit_logs")
@@ -197,9 +202,10 @@ export type PayrollOverview = {
 export const loadPayrollOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<PayrollOverview> => {
-    const schoolId = await requireSchoolAdminScope(context.supabase, gateSignals(context.claims));
+    const lifecycle = gateSignals(context.claims);
+    const schoolId = await requireSchoolAdminScope(context.supabase, lifecycle);
 
-    const now = new Date();
+    const now = new Date(timeAuthority.now().atMs);
     const year = now.getFullYear();
     const month = now.getMonth() + 1;
 
@@ -244,7 +250,8 @@ export type FinancialReportsOverview = {
 export const loadFinancialReportsOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<FinancialReportsOverview> => {
-    const schoolId = await requireSchoolAdminScope(context.supabase, gateSignals(context.claims));
+    const lifecycle = gateSignals(context.claims);
+    const schoolId = await requireSchoolAdminScope(context.supabase, lifecycle);
 
     const [feesRes, expensesRes] = await Promise.all([
       context.supabase.from("fees").select("amount, paid_amount, status").eq("school_id", schoolId),
@@ -301,7 +308,8 @@ export function aggregateSportsPrograms(
 export const loadExtracurricularOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ExtracurricularOverview> => {
-    const schoolId = await requireSchoolAdminScope(context.supabase, gateSignals(context.claims));
+    const lifecycle = gateSignals(context.claims);
+    const schoolId = await requireSchoolAdminScope(context.supabase, lifecycle);
 
     const { data, error } = await context.supabase
       .from("school_sports")

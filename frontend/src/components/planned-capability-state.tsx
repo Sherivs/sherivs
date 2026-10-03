@@ -2,7 +2,7 @@
  * CoreGrid — honest planned-capability state (§57 no product theatre).
  *
  * Rendered by pages whose capability is real future scope, classified in the
- * typed disposition registry (`lib/placeholder-dispositions.ts`). The state
+ * typed disposition registry (`lib/runtime/scholar/placeholder-dispositions.ts`). The state
  * says exactly two things: the capability is planned, and it is not in V1.
  * It never renders numbers (a static zero posing as data is a violation) and
  * never renders a disabled action (a control that cannot act is theatre).

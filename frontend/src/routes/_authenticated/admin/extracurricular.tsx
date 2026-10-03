@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Trophy } from "lucide-react";
 import { PortalPage, EmptyCard, SectionGrid, StatCard } from "@/components/portal-shell";
-import { loadExtracurricularOverview } from "@/lib/portal-overview.functions";
+import { loadExtracurricularOverview } from "@/lib/runtime/scholar/portal-overview.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/extracurricular")({
   ssr: false,

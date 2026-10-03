@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { PortalPage, EmptyCard, SectionGrid, StatCard } from "@/components/portal-shell";
-import { loadFinancialReportsOverview } from "@/lib/portal-overview.functions";
+import { loadFinancialReportsOverview } from "@/lib/runtime/scholar/portal-overview.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/financial-reports")({
   ssr: false,

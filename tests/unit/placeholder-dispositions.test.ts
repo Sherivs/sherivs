@@ -18,13 +18,13 @@ import {
   PLACEHOLDER_DISPOSITIONS,
   dispositionCounts,
   validatePlaceholderDispositions,
-} from "@/lib/placeholder-dispositions";
+} from "@/lib/runtime/scholar/placeholder-dispositions";
 import {
   aggregateExpenseRows,
   aggregateFeeRows,
   aggregatePayrollRows,
   aggregateSportsPrograms,
-} from "@/lib/portal-overview.functions";
+} from "@/lib/runtime/scholar/portal-overview.functions";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 

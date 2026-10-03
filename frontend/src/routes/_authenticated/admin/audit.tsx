@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { PortalPage, EmptyCard, SectionGrid, StatCard } from "@/components/portal-shell";
 import { Button } from "@/components/ui/button";
-import { loadAuditOverview } from "@/lib/portal-overview.functions";
+import { loadAuditOverview } from "@/lib/runtime/scholar/portal-overview.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/audit")({
   ssr: false,
