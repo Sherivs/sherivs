@@ -1,0 +1,30 @@
+{
+  "artifact": "rls-table-postures-r-wave",
+  "captured": "2026-10-03",
+  "mission": "R-wave remediation — R4 Hermes observation substrate (cg_hermes_observation), R6 delivery-evidence ledger (cg_delivery_evidence)",
+  "role": "Wave coordinator (postures authored by teams R4/R6, registered canonically by the coordinator)",
+  "status": "APPLIED to canonical 2026-10-03 (checksummed apply via scripts/apply-canonical-hardening.mjs, migrations 20261003000030 + 20261003000031); zero-policy deny-by-default by design",
+  "migration": "database/supabase/migrations/20261003000030_coregrid_hermes_observation_substrate.sql + database/supabase/migrations/20261003000031_coregrid_delivery_evidence.sql",
+  "rollback": "database/supabase/rollbacks/20261003000030_coregrid_hermes_observation_substrate.sql + database/supabase/rollbacks/20261003000031_coregrid_delivery_evidence.sql",
+  "consumer": "RLS isolation battery steward (scripts/verify-rls-isolation-battery.mjs registry merge) — extends the zero-policy stage with these tables",
+  "authority": [
+    "AGENTS.md §12 data provenance (every observation/attempt answers where it came from, who created it, when, AI-generated?)",
+    "AGENTS.md §17 RLS mandatory; application code is never the only security layer",
+    "AGENTS.md §27/§28 service role reserved for trusted server functions; append-only ledgers enforced by trigger, not application logic",
+    "AGENTS.md §19 minimization (recipients stored redacted; full addresses never enter evidence)"
+  ],
+  "tables": [
+    {
+      "name": "cg_hermes_observation",
+      "source": "20261003000030_coregrid_hermes_observation_substrate.sql",
+      "posture": "zero-policy",
+      "rationale": "AI-workforce intelligence records (§9): observations are derived understanding, never canonical truth, and are consumed exclusively through the service-role Hermes observation adapter with tenant-scoped SQL on every query; append-only enforced by trigger with exactly-once event consumption via the partial unique (tenant_id, event_ref); zero policies + full client revoke keeps deny-by-default strongest form"
+    },
+    {
+      "name": "cg_delivery_evidence",
+      "source": "20261003000031_coregrid_delivery_evidence.sql",
+      "posture": "zero-policy",
+      "rationale": "outbound delivery attempt ledger — including fail-closed BLOCKED_NO_CREDENTIAL attempts (the block is evidence); recipient identifiers are stored redacted (§19 minimization), rows are trigger-enforced append-only with an outcome-coherence CHECK, and the only writer is the adapters' service-role evidence sink which degrades non-fatally; zero policies + full client revoke keeps the deny-by-default invariant"
+    }
+  ]
+}
