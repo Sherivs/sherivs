@@ -13,7 +13,7 @@
  *   voice / telephony : Twilio, Africa's Talking, Vonage, Telnyx, Plivo, MessageBird, Exotel
  *   SMS               : the same carriers, plus regional providers behind the same adapter shape
  *   WhatsApp          : Meta WhatsApp Business (Cloud API), Twilio WhatsApp, Africa's Talking
- *   email             : SMTP relay, SendGrid, Postmark, Amazon SES
+ *   email             : SMTP relay, SendGrid, Postmark, Amazon SES, Resend
  *   push              : Firebase Cloud Messaging, Apple Push Notification service, Web Push
  *   meetings          : Google Meet (Calendar API), Zoom
  *   social / status   : Meta (Facebook + Instagram), X, LinkedIn, WhatsApp Status
@@ -313,6 +313,23 @@ export const PROVIDER_CATALOGUE: readonly ProviderAdapter[] = [
     emergencyCapable: false,
     notes:
       "A tenant's own relay, keeping institutional mail on infrastructure the tenant controls.",
+  },
+  {
+    id: "resend",
+    displayName: "Resend",
+    channels: ["email"],
+    regions: ["global"],
+    credentialReference: "env://RESEND_API_KEY",
+    tier: "secondary",
+    costClass: "standard",
+    health: "DISCOVERED",
+    supportsInbound: false,
+    supportsOutbound: true,
+    supportsDeliveryReceipts: false,
+    requiresDataProcessingAgreement: true,
+    emergencyCapable: false,
+    notes:
+      "Developer-focused transactional email API. The platform credential reference is provisioned (env://RESEND_API_KEY) and the concrete adapter lives in resend-email.server.ts behind the EmailAdapter contract with the append-only delivery-evidence ledger; catalogue state stays DISCOVERED because tenant-configured routing is a separate authorization step from a platform credential existing.",
   },
   {
     id: "sendgrid",

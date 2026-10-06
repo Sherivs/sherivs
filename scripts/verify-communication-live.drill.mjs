@@ -251,6 +251,7 @@ const CATALOGUE_FACTS = [
   { id: "exotel", channels: ["voice", "sms"], health: "DISCOVERED", credentialReference: "secret://coregrid/communication/exotel" },
   { id: "meta-whatsapp", channels: ["whatsapp", "status"], health: "DISCOVERED", credentialReference: "secret://coregrid/communication/meta-whatsapp" },
   { id: "smtp-relay", channels: ["email"], health: "DISCOVERED", credentialReference: "secret://coregrid/communication/smtp-relay" },
+  { id: "resend", channels: ["email"], health: "DISCOVERED", credentialReference: "env://RESEND_API_KEY" },
   { id: "sendgrid", channels: ["email"], health: "DISCOVERED", credentialReference: "secret://coregrid/communication/sendgrid" },
   { id: "postmark", channels: ["email"], health: "DISCOVERED", credentialReference: "secret://coregrid/communication/postmark" },
   { id: "amazon-ses", channels: ["email"], health: "DISCOVERED", credentialReference: "secret://coregrid/communication/amazon-ses" },
