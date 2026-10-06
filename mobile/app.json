@@ -35,6 +35,13 @@
         }
       ],
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "3cea9979-47ba-4428-b1e8-67fe0671bac8"
+      }
+    },
+    "owner": "vibeoraai-bit"
   }
 }
