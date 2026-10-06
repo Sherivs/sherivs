@@ -65,6 +65,22 @@ describe("exposedServerOnlyVars", () => {
     expect(exposedServerOnlyVars(env)).toContain("SUPABASE_SERVICE_ROLE_KEY");
   });
 
+  it("detects server-only secrets exposed via NEXT_PUBLIC_ and PUBLIC_ prefixes", () => {
+    expect(
+      exposedServerOnlyVars({ NEXT_PUBLIC_RESEND_API_KEY: "secret" }),
+    ).toContain("RESEND_API_KEY");
+    expect(exposedServerOnlyVars({ PUBLIC_PAYSTACK_SECRET_KEY: "secret" })).toContain(
+      "PAYSTACK_SECRET_KEY",
+    );
+  });
+
+  it("covers registry-managed credentials (Twilio auth token, Vapi key)", () => {
+    expect(exposedServerOnlyVars({ VITE_TWILIO_AUTH_TOKEN: "secret" })).toContain(
+      "TWILIO_AUTH_TOKEN",
+    );
+    expect(exposedServerOnlyVars({ VITE_VAPI_API_KEY: "secret" })).toContain("VAPI_API_KEY");
+  });
+
   it("ignores empty exposed values", () => {
     const env = { VITE_SUPABASE_SERVICE_ROLE_KEY: "" };
     expect(exposedServerOnlyVars(env)).toEqual([]);
