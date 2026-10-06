@@ -355,11 +355,11 @@ export const CRITERIA = [
     id: "AI",
     statement: "Can AI workers perform useful authorized missions?",
     verdictMode: "gated",
-    baseline: "PARTIAL — gateway exists; worker delegation missing; blocked on provider key",
+    baseline: "PARTIAL — gateway exists and live-proven (BLK-2 closed 2026-10-06); worker delegation missing (owned by open gate BLK-6)",
     evidence: [
       "frontend/src/lib/ai-gateway/ (model registry, output-trust pipeline, reasoning provenance, runtime defenses)",
       "tests/unit/ai-gateway.test.ts + ai-gateway-model-registry.test.ts + ai-gateway-output-trust.test.ts",
-      "COREGRID_V1_BLOCKERS.json BLK-2 (AI provider key; fail-closed proofs + dry-run harness recorded)",
+      "COREGRID_V1_BLOCKERS.json BLK-2 (AI provider key — RESOLVED 2026-10-06: live governed inference proven) + BLK-6 (worker delegation implementation, the remaining open gap)",
     ],
     checks: [
       {
@@ -377,30 +377,32 @@ export const CRITERIA = [
         refs: ["tests/unit/ai-gateway.test.ts", "tests/unit/ai-gateway-model-registry.test.ts"],
       },
       {
-        id: "blk2-recorded-open",
-        desc: "BLK-2 recorded and open (never bypassed)",
+        id: "blk2-live-proof-recorded",
+        desc: "BLK-2 live proof recorded (RESOLVED — never bypassed or silently dropped)",
         kind: "json",
         ref: BLOCKERS_JSON,
         assert(json) {
           const entry = (json.blockers ?? []).find((b) => b.id === "BLK-2");
           return {
-            ok: Boolean(entry) && !entry.item.startsWith("RESOLVED"),
-            detail: entry ? "BLK-2 recorded open: " + entry.item.slice(0, 120) : "BLK-2 missing from register",
+            ok: Boolean(entry) && entry.item.startsWith("RESOLVED"),
+            detail: entry
+              ? "BLK-2 recorded resolved: " + entry.item.slice(0, 120)
+              : "BLK-2 missing from register",
           };
         },
       },
     ],
     gate: {
-      id: "BLK-2",
+      id: "BLK-6",
       reason:
-        "Live governed inference requires the AI provider key + gateway decision (recorded blocker BLK-2). Fail-closed proofs and the dry-run harness are the recorded fallback; live calls are never faked.",
+        "AI workers performing authorized missions require the worker-delegation implementation (mission M-R-40), owned by the open recorded gate BLK-6 (DEC-3: workers are governed actors). The gateway live path itself is proven — BLK-2 was closed 2026-10-06 after one governed drill inference; live calls are never faked.",
     },
   },
   {
     id: "EXECUTION",
     statement: "Can agents actually perform actions?",
     verdictMode: "mechanical",
-    baseline: "VERIFIED for governed loop actions; AI-proposed action path pending",
+    baseline: "VERIFIED for governed loop actions; AI-proposed action path pending on worker delegation (BLK-6)",
     evidence: [
       "scripts/exercise-foundation-loop.mjs (governed loop exercise harness)",
       "database/supabase/migrations/20260929000000_coregrid_foundation_mission_001.sql (cg_mission_intent/cg_execution_record/cg_verification_result)",
@@ -422,7 +424,7 @@ export const CRITERIA = [
       { id: "foundation-suite", desc: "foundation suite recorded", ref: "tests/unit/foundation.test.ts" },
     ],
     residualGates: [
-      "BLK-2 — AI-proposed action path pending (live inference); governed loop actions remain the proven scope",
+      "BLK-2 CLOSED 2026-10-06 (live governed inference proven); AI-proposed action path pending on worker delegation (open gate BLK-6)",
     ],
   },
   {
@@ -539,12 +541,12 @@ export const CRITERIA = [
     id: "COMMUNICATION",
     statement: "Can organizations communicate with users?",
     verdictMode: "gated",
-    baseline: "PARTIAL — web push works; email/SMS/voice blocked on provider keys",
+    baseline: "PARTIAL — web push works; email live-proven (BLK-5 email proof 2026-10-06); SMS/voice pending on provider paths",
     evidence: [
       "frontend/src/lib/communication-core.ts + communication-providers.ts + frontend/src/lib/push.server.ts",
-      "frontend/src/lib/notifications/ (contract, dispatch planner, email adapter contract)",
+      "frontend/src/lib/notifications/ (contract, dispatch planner, email adapter contract) + frontend/src/lib/communications/resend-email.server.ts (live adapter + delivery-evidence sink)",
       "tests/unit/communication-core.test.ts + notifications-contract.test.ts + notifications-email-adapter.test.ts",
-      "COREGRID_V1_BLOCKERS.json BLK-5 (communication provider keys; web push VAPID already works)",
+      "COREGRID_V1_BLOCKERS.json BLK-5 (email LIVE-PROVEN 2026-10-06; SMS/voice remain provider-gated; web push VAPID already works)",
     ],
     checks: [
       {
@@ -582,7 +584,7 @@ export const CRITERIA = [
     gate: {
       id: "BLK-5",
       reason:
-        "Live send paths (email/SMS/voice) require communication provider keys (recorded blocker BLK-5). Web push works; the live rails are never faked.",
+        "Live send paths (SMS/voice; further email channels) require communication provider paths (recorded blocker BLK-5 — email itself live-proven 2026-10-06, voice remains the deliberate stub). Web push works; the live rails are never faked.",
     },
   },
   {

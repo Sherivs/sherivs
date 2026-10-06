@@ -71,6 +71,18 @@ Version-target classification: **V1 organizational capability envelope only** (�
   updated in lockstep (required by the h3-044 deep cross-check).
 - `mobile/app.json` — EAS project link (`extra.eas.projectId`, `owner`) written
   by `eas init`; no store metadata changed.
+- `scripts/verify-launch-criteria.mjs` — the AI criterion's gate ownership
+  moved from BLK-2 (now closed) to the open recorded gate BLK-6 that actually
+  owns the remaining gap (worker delegation, mission M-R-40); its substrate
+  check flipped from "BLK-2 recorded open" to "BLK-2 recorded RESOLVED (live
+  proof never bypassed)"; COMMUNICATION baseline/gate reason updated honestly
+  (email live-proven; SMS/voice still provider-gated); EXECUTION residual-gate
+  note updated. The canonical record
+  (`COREGRID_V1_LAUNCH_CRITERIA.json`) `current` fields for AI, EXECUTION and
+  COMMUNICATION were updated to match — statements (questions) untouched,
+  drift-lock unaffected. Harness result: `PASS (exit 0)` — 13 proven, 5
+  blocked, 0 unproven; every blocked criterion owned by an OPEN recorded gate
+  (mh-15 suite 13/13).
 - `architecture/campaigns/V1-PROGRAM/OPERATIONS.md` — wave-2 status block;
   BLK-5 §3 live-proof record + stale `.env.example` drift note corrected
   (all three RESEND/VAPI names ARE declared there since R6); §4 EAS record;
@@ -96,6 +108,10 @@ recording the attempt. §45 respected: V1 communications capability only.
 - Catalogue-pinned suites after the change: `communication-providers` 34/34,
   `h3-044-communication-drill` 18/18 (incl. the mirror deep cross-check),
   `communication-steward-report` 10/10 — 62/62 green.
+- Launch-criteria harness after the BLK-2 closure:
+  `node scripts/verify-launch-criteria.mjs` — `PASS (exit 0)` (13 proven /
+  5 blocked / 0 unproven; AI owned by open gate BLK-6, COMMUNICATION by BLK-5);
+  `tests/unit/mh-15-launch-criteria.test.ts` 13/13.
 - `node scripts/verify-communication-live.drill.mjs --rehearse resend` —
   `STATUS=REHEARSAL_PASS`, exit 0 (22 providers audited).
 - `node scripts/verify-ai-gateway-live.drill.mjs` — `STATUS=DRILL_PASS`, exit 0
