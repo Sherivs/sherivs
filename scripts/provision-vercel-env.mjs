@@ -52,6 +52,12 @@ const ENV_MAPPINGS = [
   { key: "TWILIO_AUTH_TOKEN", source: "TWILIO_AUTH_TOKEN", target: "server" },
   { key: "TWILIO_FROM_NUMBER", source: "TWILIO_FROM_NUMBER", target: "server" },
   { key: "VAPI_API_KEY", source: "VAPI_API_KEY", target: "server" },
+  // Web push (VAPID) — VITE_ mirror feeds the service-worker client
+  { key: "VAPID_PUBLIC_KEY", source: "VAPID_PUBLIC_KEY", target: "server" },
+  { key: "VAPID_PRIVATE_KEY", source: "VAPID_PRIVATE_KEY", target: "server" },
+  { key: "VITE_VAPID_PUBLIC_KEY", source: "VAPID_PUBLIC_KEY", target: "client" },
+  // Product analytics ingest key (client-safe by design; surface gated by §19/§20/§21)
+  { key: "POSTHOG_PROJECT_API_KEY", source: "POSTHOG_PROJECT_API_KEY", target: "server" },
 ];
 
 async function vercelFetch(token, path, init = {}) {

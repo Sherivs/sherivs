@@ -49,6 +49,13 @@ change is needed from you.
 The account SID and auth token are already live-verified. What is missing is
 a sender NUMBER (`TWILIO_FROM_NUMBER`).
 
+**Trials first (your account is a Trial — confirmed via the API):** Twilio
+error 21404 refused the autonomous purchase on 2026-10-06: *"Trial accounts
+must verify a phone number before purchasing a Twilio number."* So step 0 is:
+
+0. In https://console.twilio.com → **Phone Numbers → Manage → Verified
+   Caller IDs → +**, add YOUR mobile number, answer Twilio's call/text, type
+   the code. (Only you can receive that verification code.)
 1. Open https://console.twilio.com and log in.
 2. Left sidebar: **Phone Numbers** → **Manage** → **Buy a number**.
 3. Search for a number in your country. Check the **SMS** capability box
@@ -203,13 +210,23 @@ Cost: **$25 USD one-time** (registration fee).
 
 ## 9. Remaining operator actions (checklist)
 
-- [ ] Buy Twilio number → secret `TWILIO_FROM_NUMBER`
-- [ ] Upstash Redis → secrets `REDIS_REST_URL`, `REDIS_REST_TOKEN` (optional)
+- [ ] Twilio: verify YOUR phone number in the console (Twilio calls/texts you
+      a code — trial accounts must do this before purchasing; API purchase
+      attempt 2026-10-06 was refused with error 21404) → then buy the number
+      → secret `TWILIO_FROM_NUMBER` (E.164, e.g. `+15551234567`)
+- [x] PostHog project key → `POSTHOG_PROJECT_API_KEY` (grabbed autonomously
+      2026-10-06; on Vercel; add to Cursor Secrets from the handover artifact)
+- [x] Push-notification keys (web) → `VAPID_PUBLIC_KEY` + `VAPID_PRIVATE_KEY`
+      (generated 2026-10-06; on Vercel; add to Cursor Secrets)
+- [ ] Upstash Redis → secrets `REDIS_REST_URL`, `REDIS_REST_TOKEN` (optional;
+      requires an account only you can create — §1 above)
 - [ ] Sentry: broader token + DSN → secrets `SENTRY_AUTH_TOKEN` (replace),
-      `SENTRY_DSN`
-- [ ] PostHog project key → secret `POSTHOG_PROJECT_API_KEY`
-- [ ] Push-notification keys (web) → `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`
+      `SENTRY_DSN` (the current token is scope-limited to org:ci and cannot
+      read organizations — only a human with console access can mint a broader
+      token or create a DSN)
 - [ ] Apple: enroll ($99/yr) → secrets `APPLE_API_KEY_ID`,
-      `APPLE_API_ISSUER_ID`, `APPLE_API_PRIVATE_KEY`
+      `APPLE_API_ISSUER_ID`, `APPLE_API_PRIVATE_KEY` (paid enrollment +
+      identity verification are human-only)
 - [ ] Google: register ($25 once) → secret `GOOGLE_SERVICE_ACCOUNT_JSON`
+      (paid registration + identity verification are human-only)
 - [ ] Vapi: top up credits (BYOK DeepSeek already supported)

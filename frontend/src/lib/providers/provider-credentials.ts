@@ -150,8 +150,9 @@ export function containsSecretShape(value: string): boolean {
 }
 
 /* ─────────────────────────────────────────────────────────────
- * The registry — 24 supplied credentials + 4 evidence-derived config entries
- * (region API hosts, Redis REST plane), names only
+ * The registry — supplied credentials + evidence-derived config entries
+ * (region API hosts, Redis REST plane, VAPID pair, PostHog project key),
+ * names only
  * ────────────────────────────────────────────────────────────*/
 
 export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = [
@@ -318,7 +319,7 @@ export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = 
     hasHealthCheck: true,
     status: "BLOCKED",
     verificationLevel: "provider_reachable",
-    note: "Auth live-verified 2026-10-06 (read-only probe 200). SMS/voice SEND capability BLOCKED: no provisioned/verified sender number (TWILIO_FROM_NUMBER) — operator action required in the Twilio console.",
+    note: "Auth live-verified 2026-10-06 (read-only probe 200). SMS/voice SEND capability BLOCKED on sender-number provisioning: the API purchase attempt was refused with Twilio error 21404 (trial accounts must first verify a phone number — operator console action).",
   },
   {
     envVar: "TWILIO_AUTH_TOKEN",
@@ -330,7 +331,58 @@ export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = 
     hasHealthCheck: true,
     status: "BLOCKED",
     verificationLevel: "provider_reachable",
-    note: "SERVER-ONLY. Auth live-verified 2026-10-06. Webhook signature validator implemented; an inbound webhook route activates only once a sender number + console webhook config exist.",
+    note: "SERVER-ONLY. Auth live-verified 2026-10-06. Webhook signature validator implemented; an inbound webhook route activates only once a sender number + console webhook config exist (sender-number purchase currently blocked by Twilio error 21404 — trial verification).",
+  },
+
+  {
+    envVar: "TWILIO_FROM_NUMBER",
+    provider: "twilio",
+    classification: "server_runtime_configuration",
+    runtimeScope: "server",
+    requiredCapability: "E.164 sender identity for outbound SMS/voice via the Twilio adapter",
+    adapterRef: "frontend/src/lib/communications/twilio-sms.server.ts",
+    hasHealthCheck: false,
+    status: "BLOCKED",
+    verificationLevel: "none",
+    note: "Purchase attempted via the Twilio REST API 2026-10-06 — refused with error 21404: 'Trial accounts must verify a phone number before purchasing a Twilio number.' Operator must verify their own phone number in the Twilio console (or upgrade the account), then re-run scripts/provision-vercel-env.mjs with TWILIO_FROM_NUMBER set.",
+  },
+
+  // ── Web push (VAPID pair generated locally 2026-10-06) ──
+  {
+    envVar: "VAPID_PUBLIC_KEY",
+    provider: "web-push",
+    classification: "public_configuration",
+    runtimeScope: "server",
+    requiredCapability: "VAPID application-server key for authenticated web push delivery",
+    adapterRef: "frontend/src/lib/push.server.ts",
+    hasHealthCheck: false,
+    status: "CONFIGURED_BUT_UNVERIFIED",
+    verificationLevel: "credential_present",
+    note: "Generated locally (uncompressed P-256 point, base64url) 2026-10-06; provisioned to Vercel + mirrored as VITE_VAPID_PUBLIC_KEY. Delivery activates once browser subscriptions exist.",
+  },
+  {
+    envVar: "VAPID_PRIVATE_KEY",
+    provider: "web-push",
+    classification: "server_runtime_secret",
+    runtimeScope: "server",
+    requiredCapability: "VAPID signing scalar for ES256 push JWTs",
+    adapterRef: "frontend/src/lib/push.server.ts",
+    hasHealthCheck: false,
+    status: "CONFIGURED_BUT_UNVERIFIED",
+    verificationLevel: "credential_present",
+    note: "SERVER-ONLY. Raw 32-byte scalar, base64url. Guarded by env exposure checks.",
+  },
+  {
+    envVar: "VITE_VAPID_PUBLIC_KEY",
+    provider: "web-push",
+    classification: "public_configuration",
+    runtimeScope: "client",
+    requiredCapability: "Build-time mirror of the VAPID public key for the service-worker client",
+    adapterRef: "frontend/src/lib/push-client.ts",
+    hasHealthCheck: false,
+    status: "CONFIGURED_BUT_UNVERIFIED",
+    verificationLevel: "credential_present",
+    note: "Mirrored from VAPID_PUBLIC_KEY at provisioning; public by design (an application-server key is not a secret).",
   },
 
   // ── Intelligence gateway (provider-neutral, OpenAI-compatible) ──
@@ -383,6 +435,18 @@ export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = 
     status: "CONFIGURED_BUT_UNVERIFIED",
     verificationLevel: "provider_reachable",
     note: "Defaults to https://us.posthog.com (evidence-backed 2026-10-06); EU projects must override to https://eu.posthog.com.",
+  },
+  {
+    envVar: "POSTHOG_PROJECT_API_KEY",
+    provider: "posthog",
+    classification: "client_safe_identifier",
+    runtimeScope: "client",
+    requiredCapability: "PostHog client-side event ingestion (project API key)",
+    adapterRef: null,
+    hasHealthCheck: false,
+    status: "CONFIGURED_BUT_UNVERIFIED",
+    verificationLevel: "capability_tested",
+    note: "Grabbed autonomously via the management API and ingest-verified with ONE synthetic event (http 200, distinct_id control-plane/creds-wave-5) 2026-10-06. Safe in the browser bundle by design (ingest key, not a secret). NO analytics surface may ship until the §19/§20/§21 pipeline (authorization -> classification -> minimization -> redaction) is implemented and tested.",
   },
   {
     envVar: "SENTRY_AUTH_TOKEN",
