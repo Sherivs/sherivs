@@ -261,9 +261,9 @@ export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = 
     requiredCapability: "Outbound email delivery through the provider-agnostic EmailAdapter",
     adapterRef: "frontend/src/lib/communications/resend-email.server.ts",
     hasHealthCheck: true,
-    status: "CONFIGURED_BUT_UNVERIFIED",
-    verificationLevel: "credential_present",
-    note: "Fail-closed adapter; credential gate before any network contact.",
+    status: "OPERATIONAL",
+    verificationLevel: "capability_tested",
+    note: "LIVE-PROVEN 2026-10-06: read-only auth probe 200 + one governed self-addressed send through the adapter returned a provider receipt (artifact resend-capability-probe.json).",
   },
   {
     envVar: "RESEND_FROM_ADDRESS",
@@ -273,9 +273,9 @@ export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = 
     requiredCapability: "Verified sender identity for outbound email",
     adapterRef: "frontend/src/lib/communications/resend-email.server.ts",
     hasHealthCheck: true,
-    status: "CONFIGURED_BUT_UNVERIFIED",
-    verificationLevel: "credential_present",
-    note: "Requires the sending domain to be verified in the provider dashboard.",
+    status: "OPERATIONAL",
+    verificationLevel: "capability_tested",
+    note: "Sending domain verified (read-only GET /domains); the governed probe send was accepted from this identity.",
   },
 
   // ── Payments (Paystack behind PaymentAdapter contract) ──
@@ -287,9 +287,9 @@ export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = 
     requiredCapability: "Payment initialization/verification + webhook signature verification",
     adapterRef: "frontend/src/lib/payments/paystack-adapter.ts",
     hasHealthCheck: true,
-    status: "CONFIGURED_BUT_UNVERIFIED",
-    verificationLevel: "credential_present",
-    note: "Server-side verification is authoritative; the browser never declares success.",
+    status: "OPERATIONAL",
+    verificationLevel: "capability_tested",
+    note: "TEST RAILS ONLY (sk_test_): read-only auth probe 200 + governed drill round (audit, initialize, owned-verify, denied mismatch) PASSED 2026-10-06; live rails parked pending operator business verification (BLK-4).",
   },
 
   // ── Voice / telephony (V1-009 communication fabric) ──
@@ -302,8 +302,8 @@ export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = 
     adapterRef: "frontend/src/lib/communications/vapi-voice.server.ts",
     hasHealthCheck: true,
     status: "CONFIGURED_BUT_UNVERIFIED",
-    verificationLevel: "credential_present",
-    note: "Stub contract: credential gate real, live call path intentionally not implemented.",
+    verificationLevel: "provider_reachable",
+    note: "Auth live-verified 2026-10-06 (read-only probe 200). The adapter remains a deliberate credential-gated stub in V1 — no live call path implemented, none fabricated.",
   },
   {
     envVar: "TWILIO_ACCOUNT_SID",
@@ -313,9 +313,9 @@ export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = 
     requiredCapability: "Twilio account identifier for REST authentication (Basic SID:TOKEN)",
     adapterRef: "frontend/src/lib/communications/twilio-sms.server.ts",
     hasHealthCheck: true,
-    status: "CONFIGURED_BUT_UNVERIFIED",
-    verificationLevel: "credential_present",
-    note: "Identifier paired with TWILIO_AUTH_TOKEN; server-side only.",
+    status: "BLOCKED",
+    verificationLevel: "provider_reachable",
+    note: "Auth live-verified 2026-10-06 (read-only probe 200). SMS/voice SEND capability BLOCKED: no provisioned/verified sender number (TWILIO_FROM_NUMBER) — operator action required in the Twilio console.",
   },
   {
     envVar: "TWILIO_AUTH_TOKEN",
@@ -325,9 +325,9 @@ export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = 
     requiredCapability: "Twilio REST auth + inbound webhook signature verification",
     adapterRef: "frontend/src/lib/communications/twilio-sms.server.ts",
     hasHealthCheck: true,
-    status: "CONFIGURED_BUT_UNVERIFIED",
-    verificationLevel: "credential_present",
-    note: "SERVER-ONLY. Signs/verifies webhooks; never logged.",
+    status: "BLOCKED",
+    verificationLevel: "provider_reachable",
+    note: "SERVER-ONLY. Auth live-verified 2026-10-06. Webhook signature validator implemented; an inbound webhook route activates only once a sender number + console webhook config exist.",
   },
 
   // ── Intelligence gateway (provider-neutral, OpenAI-compatible) ──
@@ -339,9 +339,9 @@ export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = 
     requiredCapability: "Governed model invocation through the CoreGrid intelligence gateway",
     adapterRef: "frontend/src/lib/ai-gateway.server.ts",
     hasHealthCheck: true,
-    status: "CONFIGURED_BUT_UNVERIFIED",
-    verificationLevel: "credential_present",
-    note: "Centralized gateway: budget, rate limits, metering, secret-free logs.",
+    status: "OPERATIONAL",
+    verificationLevel: "capability_tested",
+    note: "LIVE-PROVEN 2026-10-06: read-only /models probe 200 + one governed inference through the gateway path (STATUS=DRILL_PASS, single attempt, digest-only output).",
   },
   {
     envVar: "AI_GATEWAY_URL",
@@ -351,9 +351,9 @@ export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = 
     requiredCapability: "OpenAI-compatible gateway base URL the router resolves models against",
     adapterRef: "frontend/src/lib/ai-gateway.server.ts",
     hasHealthCheck: true,
-    status: "CONFIGURED_BUT_UNVERIFIED",
-    verificationLevel: "credential_present",
-    note: "Operator-declared endpoint; provider-neutral (§25).",
+    status: "OPERATIONAL",
+    verificationLevel: "capability_tested",
+    note: "Operator-declared endpoint (§25); live-verified with the credential on a read-only probe and the governed inference drill.",
   },
 
   // ── V2-DEFERRED vendor integrations (V1CAP-29 — classify only, §45) ──

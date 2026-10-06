@@ -43,7 +43,7 @@
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import { createJiti } from "jiti";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
@@ -67,12 +67,12 @@ if (unknownFlags.length > 0 || positionals.length > 0) {
 }
 
 /** Load the governed TS modules through jiti (read-only, local files only). */
-const jiti = createJiti(pathToFileURL(join(ROOT, "index.js")).href, { root: ROOT });
-const { validateProviderCredentialRegistry, registryClientPrefixExposures } = await jiti.import(
-  "frontend/src/lib/providers/provider-credentials.ts",
+const jiti = createJiti(join(ROOT, "scripts", "verify-provider-auth-live.drill.mjs"));
+const { validateProviderCredentialRegistry, registryClientPrefixExposures } = jiti(
+  join(ROOT, "frontend", "src", "lib", "providers", "provider-credentials.ts"),
 );
-const healthModule = await jiti.import(
-  "frontend/src/lib/observability/provider-health.server.ts",
+const healthModule = jiti(
+  join(ROOT, "frontend", "src", "lib", "observability", "provider-health.server.ts"),
 );
 
 const env = process.env;

@@ -9,6 +9,31 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { createHmac, timingSafeEqual } from "crypto";
+import { z } from "zod";
+
+/**
+ * Bounded event contract (§26): an authenticated-but-malformed payload is
+ * refused, never parsed with a blind cast. Only the fields the handler
+ * consumes survive; anything else is ignored, not trusted.
+ */
+const PaystackEventSchema = z.object({
+  event: z.string().max(64),
+  data: z
+    .object({
+      reference: z.string().min(1).max(200).optional(),
+      amount: z.number().int().nonnegative().max(100_000_000).optional(),
+      status: z.string().max(32).optional(),
+      metadata: z
+        .object({
+          fee_id: z.string().uuid().optional(),
+          school_id: z.string().max(64).optional(),
+        })
+        .partial()
+        .nullish(),
+    })
+    .partial()
+    .nullish(),
+});
 
 export const Route = createFileRoute("/api/public/webhooks/paystack")({
   server: {
@@ -27,20 +52,12 @@ export const Route = createFileRoute("/api/public/webhooks/paystack")({
           return new Response("Invalid signature", { status: 401 });
         }
 
-        type PaystackEvent = {
-          event: string;
-          data: {
-            reference?: string;
-            amount?: number;
-            status?: string;
-            metadata?: { fee_id?: string; school_id?: string };
-          };
-        };
+        type PaystackEvent = z.infer<typeof PaystackEventSchema>;
         let event: PaystackEvent | null = null;
         try {
-          event = JSON.parse(raw) as PaystackEvent;
+          event = PaystackEventSchema.parse(JSON.parse(raw));
         } catch {
-          return new Response("Invalid JSON", { status: 400 });
+          return new Response("Invalid JSON or event shape", { status: 400 });
         }
         if (!event) return new Response("ok");
 
@@ -60,6 +77,9 @@ export const Route = createFileRoute("/api/public/webhooks/paystack")({
         if (event.event === "charge.success" && event.data?.reference) {
           const feeId = event.data.metadata?.fee_id;
           const amount = event.data.amount ? event.data.amount / 100 : null;
+          // Idempotency note: the update is keyed by the provider reference, so
+          // a provider redelivery rewrites the same terminal state — the
+          // financial effect stays exactly-once in substance.
           const upd = {
             status: "paid",
             paid_at: new Date().toISOString(),
