@@ -52,6 +52,17 @@ ST-1: `EXPO_TOKEN` proven, store submission blocked on store accounts (§4);
 BLK-4 **PARKED** in test mode pending business verification (§2); OPS-RL
 operator decision in flight (§6).
 
+**Credential-wave 2 status (2026-10-06):** BLK-2 **CLOSED** —
+`AI_GATEWAY_URL` persisted as a Cursor Secret and the drill re-proven through
+the real DeepSeek endpoint (§5); BLK-5 **EMAIL LIVE-PROVEN** — one governed
+send through `createResendEmailAdapter` delivered with a provider receipt and
+an append-only `cg_delivery_evidence` row; `resend` added to the Phase-10
+provider catalogue + drill mirror (§3); ST-1: EAS project linked (`eas init`)
+and an Android `preview` APK build kicked on EAS; store submission still
+blocked on store accounts (§4); BLK-4 **PARKED** unchanged (§2); OPS-RL
+**STILL OPEN** — direct real signup attempt re-confirmed
+`429 over_email_send_rate_limit` (§6).
+
 ---
 
 ## 1. BLK-3 — Deployment credentials (SSH/host + registry)
@@ -144,10 +155,11 @@ present (NOT_FOR_LIVE_USE) — the credential gates the stub, not a live path.
 | `RESEND_FROM_ADDRESS` | resend-email adapter (`RESEND_FROM_ADDRESS_ENV`) | verified sender on a verified domain |
 | `VAPI_API_KEY` | vapi-voice.server.ts (`VAPI_API_KEY_ENV`) | stub-gated in V1 |
 
-**Drift note:** these three names are **not yet in `.env.example`** (recorded
-V1-009 GAP — outside this agent's file ownership). They ARE declared in
-`infrastructure/deploy/scholar.env.example`. An authorized follow-up should
-declare them in `.env.example` / `frontend/src/lib/env.ts`.
+**Drift note — RESOLVED (verified 2026-10-06):** all three names ARE declared
+in `.env.example` (`RESEND_API_KEY`, `RESEND_FROM_ADDRESS`, `VAPI_API_KEY`,
+server-side-only comments) since the R6 delivery-evidence wave; the earlier
+V1-009 GAP no longer exists. They are also declared in
+`infrastructure/deploy/scholar.env.example`.
 
 **Where obtained:** Resend Dashboard → API Keys + Domains (verify the sending
 domain, SPF/DKIM); Vapi Dashboard → API Keys.
@@ -184,6 +196,35 @@ stored email receipt. Vapi: expect the typed `provider_not_live` result — that
   NOT_FOR_LIVE_USE, zero network contact in any credential state). Live voice
   path = a FUTURE mission with its own least-privilege authoring.
 
+**2026-10-06 — BLK-5 EMAIL LIVE-PROVEN (credential-wave 2):**
+- Operator prerequisites landed: `RESEND_FROM_ADDRESS` stored as a Cursor
+  Secret (domain `sherivs.com`), and the Resend domain `sherivs.com` re-verified
+  — read-only `GET https://api.resend.com/domains` now reports
+  `status=verified` (previously `failed`). Evidence:
+  `/opt/cursor/artifacts/blk5-resend-domains-recheck.json`.
+- ONE governed send executed through the declared adapter path
+  (`createResendEmailAdapter` + `withEmailFailurePolicy` +
+  PostgREST delivery-evidence sink), recipient = the operator-provided
+  `RESEND_FROM_ADDRESS` account (the only operator-controlled address on the
+  verified domain; the value is never printed or logged, §30). Result:
+  provider receipt `01a11034-da89-778a-9bd4-85d7a2344623`, durationMs 1235,
+  invocationCount=1 (no retries). Provider-side read-only
+  `GET https://api.resend.com/emails/<id>` confirms `last_event=sent`.
+- Append-only substrate verified by read-back: `cg_delivery_evidence` row
+  `b65e6545-b41e-40cb-9875-688537cb2757` — `tenant_id=control-plane/creds-wave`
+  (drill convention, §-consistent with the AI drill's `control-plane/drill`),
+  `channel=email`, `adapter=resend`, `outcome=delivered`,
+  `recipient_redacted=n***@sherivs.com` (§19 minimization holds),
+  `provider_message_id` matching the receipt, `ai_generated=false`.
+  Evidence: `/opt/cursor/artifacts/blk5-governed-send.json` (digest only).
+- Catalogue GAP CLOSED: `resend` added to the Phase-10 provider catalogue
+  (`frontend/src/lib/communication-providers.ts`, health DISCOVERED —
+  tenant-configured routing remains a separate authorization step) and to the
+  drill's embedded mirror in lockstep; `--rehearse resend` now runs
+  `STATUS=REHEARSAL_PASS` (exit 0; 22 providers audited). Catalogue-pinned
+  suites: communication-providers 34/34, h3-044 18/18, steward-report 10/10.
+- VOICE unchanged: Vapi remains the deliberate credential-gated stub.
+
 ## 4. Store accounts + Expo (ST-1)
 
 **What it unlocks:** mobile store builds and submission (V1-010 scaffold,
@@ -212,10 +253,19 @@ Store Connect / Play Console. Store metadata itself comes from
 in `mobile/`) exit 0, authenticated as account `vibeoraai-bit` via
 `EXPO_TOKEN` — the token is valid and live. EAS build profiles present in
 `mobile/eas.json`: `development`, `preview`, `production` (a development/
-preview build is now unblocked; none was started in this wave). **ST-1 store
-SUBMISSION remains BLOCKED**: Apple Developer ($99/yr) and Google Play Console
-($25 one-time) accounts are NOT yet provided. Evidence:
+preview build is now unblocked; none was started in this wave). Evidence:
 `/opt/cursor/artifacts/blk4-expo-whoami.txt`.
+
+**2026-10-06 — ST-1 progress (credential-wave 2):** EAS project linked via
+`eas init --account vibeoraai-bit` — `mobile/app.json` now carries
+`extra.eas.projectId` (`3cea9979-47ba-4428-b1e8-67fe0671bac8`, owner
+`vibeoraai-bit`), unblocking EAS builds from the repo. One Android build was
+kicked on the `preview` profile (APK, internal distribution, no store account
+required): build id `de78a81a-4c02-40b9-b13f-d0e5a398044c`, status `in queue`
+at kick time, logs
+`https://expo.dev/accounts/vibeoraai-bit/projects/coregrid-mobile/builds/de78a81a-4c02-40b9-b13f-d0e5a398044c`.
+**ST-1 store SUBMISSION remains BLOCKED**: Apple Developer ($99/yr) and
+Google Play Console ($25 one-time) accounts are NOT yet provided.
 
 ## 5. BLK-2 — AI provider key
 
@@ -246,17 +296,22 @@ budget).
 
 **2026-10-03 — LIVE PROOF OBTAINED (BLK-2 gate PASSED):** one governed drill
 inference through the declared gateway path, `STATUS=DRILL_PASS`, exit 0 —
-`AI_GATEWAY_URL=https://api.deepseek.com/v1`, model `deepseek-chat`,
+`AI_GATEWAY_URL=[REDACTED]`, model `deepseek-chat`,
 invocationCount=1 (no retry), tokensIn=16, tokensOut=2, durationMs=459,
 output sha256 `c2e3ac47f4a32546…` (raw completion withheld, §21). Evidence
 artifact: `/opt/cursor/artifacts/ai-gateway-live-drill.json`.
 
-**OPERATOR ACTION (still open):** the `AI_GATEWAY_URL` secret is NOT stored
-in Cursor Secrets (verified by name-only inventory 2026-10-03). Without it
-the gateway defaults to `https://api.openai.com/v1` and the DeepSeek key
-would hit the wrong host at app runtime. Add to Cursor Secrets:
-`AI_GATEWAY_URL=https://api.deepseek.com/v1` (a URL, not a secret value —
-names are the contract, §30).
+**OPERATOR ACTION (still open 2026-10-03) — RESOLVED 2026-10-06:** the
+`AI_GATEWAY_URL` secret was NOT stored in Cursor Secrets on 2026-10-03. It is
+NOW stored: the name-only inventory on 2026-10-06 shows `AI_GATEWAY_URL`
+present, and the drill re-run through the persisted env resolved
+`endpoint=api.deepseek.com/v1/chat/completions` (the DeepSeek host, not the
+OpenAI default) with `STATUS=DRILL_PASS`, exit 0 — invocationCount=1 (no
+retry), tokensIn=16, tokensOut=2, durationMs=488, output sha256
+`c2e3ac47f4a32546…` (identical digest to the 2026-10-03 proof). BLK-2 is
+**CLOSED**: the app runtime now inherits the correct gateway host from the
+environment (`AI_GATEWAY_URL=[REDACTED]` — a URL, not a
+secret value; names are the contract, §30).
 
 ## 6. Supabase auth rate-limit setting (OPS-RL)
 
@@ -270,7 +325,10 @@ level that supports onboarding volume (and/or add an SMTP provider under
 Auth → SMTP so limits bind to the operator's mail provider).
 
 **Injection:** dashboard-only configuration on the Supabase project
-(`srhmfaoyhpvhdfxmagho`); nothing enters the repo or env files.
+(`nwrflbpbhyiqdptmlccm` — the canonical project every live battery and the
+T2 attempts target; an earlier revision of this section named
+`srhmfaoyhpvhdfxmagho`, which does not match the configured
+`SUPABASE_URL` and is corrected here); nothing enters the repo or env files.
 
 **Validation:** re-run the signup path of
 `tests/e2e/v1-vertical-slice.spec.ts` (T2) against the project, or a manual
@@ -283,9 +341,19 @@ raising the limit via the **Supabase Pro plan**. A cheaper alternative that
 uses credentials already provisioned this wave: configure **Resend as custom
 SMTP** (Supabase Dashboard → Authentication → SMTP, using `RESEND_API_KEY`
 with Resend's SMTP settings) — this lifts the built-in mail cap without the
-plan upgrade, but requires the Resend sending domain to be verified first
-(see §3: `sherivs.com` currently status=failed). When the operator confirms
-either path, re-run the T2 signup case to convert the typed skip.
+plan upgrade; the Resend sending-domain prerequisite is now satisfied (§3:
+`sherivs.com` verified 2026-10-06). When the operator confirms either path,
+re-run the T2 signup case to convert the typed skip.
+
+**2026-10-06 — STILL OPEN (credential-wave 2 re-check):** T2 was re-run; the
+typed skip persists — a direct real signup attempt through
+`POST /auth/v1/signup` (run-unique address, anon key) returned
+`429 over_email_send_rate_limit` ("email rate limit exceeded"), so the
+Dashboard limiter is still closed and neither remedy (Pro raise / Resend SMTP)
+has been applied yet. No auth row was created by the attempt. The cheap
+`/auth/v1/recover` probe reported "open" for an unknown address — recorded as
+a known-weak heuristic signal (GoTrue's recover path does not traverse the
+same limiter); the authoritative signal is the real signup attempt.
 
 **2026-10-03 — Paystack (BLK-4) parked:** `PAYSTACK_SECRET_KEY` (test mode)
 is injected and used for webhook signature verification only. Going LIVE
