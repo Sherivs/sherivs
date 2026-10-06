@@ -3056,3 +3056,20 @@ Owner: CoreGrid Architecture Governance; executing agent: credential-integration
 Consumers: frontend/src/lib/providers/provider-credentials.ts, frontend/src/lib/observability/provider-health.server.ts, frontend/src/lib/rate-limit/redis-rate-limiter.server.ts, scripts/provision-vercel-env.mjs.
 Blast radius: PROVIDER PLANE (no domain behavior, no security-boundary change; the security boundary of every adapter is unchanged — credentials stay server/infra-scoped).
 Status: RATIFIED (2026-10-06) — authority record: this entry + operator chat transcript 2026-10-06.
+
+───
+
+205. PLATFORM-014 — WEST-EU REGION ALIGNMENT FOR ALL V1 VENDOR STACKS
+Decision (RATIFIED 2026-10-06): The operator directed that every region-bearing stack in the V1 platform be aligned to West Europe. The binding anchor is the Supabase production database (already eu-west-1, Ireland); every other region-bearing surface must co-locate or be flagged as a human-only alignment step. Executed autonomously under the operator directive of 2026-10-06 ("I want my stacks to all share the same region west EU"):
+• Vercel project coregrid-scholar-migration (prj_hpufTXbxU9OHM9GthJzI4MPUAeZM): serverlessFunctionRegion changed iad1 → dub1 (Dublin) via PATCH /v9/projects/{id} (HTTP 200, verified in PATCH response). Dublin is Vercel's closest region to Supabase eu-west-1, minimizing function↔database round-trip latency.
+• Supabase CoreGrid`s Kernel (nwrflbpbhyiqdptmlccm): verified eu-west-1 (Ireland), status ACTIVE_HEALTHY — already compliant; no migration performed (AD-114: no unnecessary destruction; the existing project is the canonical production database).
+• New Relic: account confirmed EU-region (api.eu.newrelic.com) — already compliant.
+• PostHog: currently US (us.posthog.com). EU alignment requires a NEW account/org on eu.posthog.com — the US personal API key cannot authenticate against EU PostHog. This is a HUMAN-ONLY step (account creation + new project API key), documented in docs/runbooks/provider-onboarding-guide.md.
+• Sentry: account region undetermined with the current org:ci-scoped token; if the account is US-hosted, EU alignment requires creating the org on an EU Sentry instance — HUMAN-ONLY step, documented in the same runbook.
+• Upstash Redis: when REDIS_REST_URL/REDIS_REST_TOKEN are added (operator grabbed the keys 2026-10-06), the Upstash database must be created in an EU region (eu-west-1/eu-central-1) to stay aligned — HUMAN-ONLY pick during key creation, documented in the same runbook.
+• Twilio, Cloudflare, Expo EAS, Vapi, Resend, Paystack, and the AI gateway (api.deepseek.com): global services with no region setting — N/A by provider design.
+Rationale: data-residency and latency (AD-071 data residency, §17 database security, AD-083 correctness precedes scale); co-locating compute with the canonical database removes cross-Atlantic round trips from every request path. The database was kept and compute was moved — never the reverse — because the database holds canonical truth (§9 Canonical Truth Principle).
+Owner: CoreGrid Architecture Governance; executing agent: credential-integration wave 6.
+Consumers: Vercel project settings, docs/runbooks/provider-onboarding-guide.md, progress/v1-wave/CREDS-WAVE-6-REPORT.md.
+Blast radius: INFRASTRUCTURE CONFIGURATION ONLY (no schema, no code path, no security boundary; existing deployments redeploy unchanged).
+Status: RATIFIED (2026-10-06) — authority record: this entry + operator chat transcript 2026-10-06 ("so now i have grabbed the redis keys ... i want my stacks to all share the same region west EU for all the stacks then upgrade and edit everything for me inside the platforms so everything will be set professionally no any error").

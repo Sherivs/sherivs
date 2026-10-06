@@ -5,7 +5,13 @@ are executed and evidence-backed; remaining steps await operator action.
 Mission: MISSION-V1-017 (deployment track, provider-credential dimension) under
 the DECISIONS.md #204 un-freeze authority (2026-10-06).
 Authority: AGENTS.md §12 (provenance), §30 (secrets — names only, never values),
-§45 (V1 envelope; V2/V3 untouched), DECISIONS.md #204 (PLATFORM-013).
+§45 (V1 envelope; V2/V3 untouched), DECISIONS.md #204 (PLATFORM-013),
+DECISIONS.md #205 (PLATFORM-014 — West-EU region alignment).
+
+Region anchor (DECISIONS.md #205): the production database is Supabase
+`eu-west-1` (Ireland) and Vercel serverless functions run in `dub1`
+(Dublin). Every region-bearing vendor stack must co-locate in West Europe;
+items that require a human console click are flagged below.
 
 Audience: the operator (you). Style: one screen at a time, click-by-click.
 Each section ends with the exact secret NAMES to add to Cursor Cloud Agents →
@@ -26,8 +32,9 @@ Add it when you deploy more than one server instance.
    login works).
 2. Click **Databases** → **Create Database**.
    - Name: `coregrid-scholar`
-   - Region: pick the region closest to your Vercel function region
-     (Vercel default is `iad1` = US East, so pick US East/AWS us-east-1).
+   - **Region: pick a WEST-EU region — AWS `eu-west-1` (Ireland) or
+     `eu-central-1` (Frankfurt). This matches Supabase eu-west-1 and Vercel
+     dub1 (DECISIONS.md #205). Do NOT pick a US region.**
    - Type: **Regional** (free tier). TLS is always on.
 3. Open the database you just created.
 4. Scroll to the **REST API** section. You will see two values:
@@ -36,6 +43,12 @@ Add it when you deploy more than one server instance.
 5. Add both to Cursor Cloud Agent Secrets with these exact names:
    - `REDIS_REST_URL` ← the REST URL
    - `REDIS_REST_TOKEN` ← the REST token
+
+**Already created the database before reading this?** Check its region on
+the Upstash dashboard. If it is NOT an EU region, create a new EU database
+(free tier, takes a minute), grab the NEW REST keys from it, and use those.
+Old US keys can be deleted — nothing in the app has consumed them yet, so
+switching now costs nothing.
 
 What happens automatically after that: the health battery probes the
 endpoint with a single read-only `PING`, and `rateLimiterFromEnv` switches
@@ -104,6 +117,11 @@ same.
 Your current token works (verified) but is narrow (`org:ci` — release
 automation only). For full integration you need two things:
 
+0. **Region check (DECISIONS.md #205)**: when you create/choose the Sentry
+   organization, use an **EU-hosted Sentry org** (sso/instances on
+   `eu.sentry.io`-style hosts, or select Europe during org setup). Sentry
+   asks where data is stored when an organization is created — pick Europe
+   so error data stays in West EU like everything else.
 1. **A broader token** (for release/source-map upload in CI):
    - https://sentry.io → **Settings → Auth Tokens → Create New Token**
    - Scopes: `org:read`, `project:read`, `project:releases`
@@ -117,7 +135,7 @@ Until then the health check honestly reports "auth-verified, scope-limited".
 
 ---
 
-## 5. PostHog — grab the project API key
+## 5. PostHog — grab the project API key (and the EU decision)
 
 Your personal key is verified but CANNOT ingest client events (a known
 PostHog rule). For product analytics you need the PROJECT key:
@@ -128,6 +146,22 @@ PostHog rule). For product analytics you need the PROJECT key:
    not a secret).
 3. Add to Cursor Cloud Agent Secrets:
    - `POSTHOG_PROJECT_API_KEY` ← the `phc_…` value
+
+**EU migration (DECISIONS.md #205 — human-only, your choice of moment):**
+your current PostHog is US-hosted and PostHog does not let an account
+migrate between US and EU cloud via API — EU is a separate signup at
+https://eu.posthog.com (your US personal key cannot authenticate there;
+verified 2026-10-06). To fully align: sign up on eu.posthog.com (same email
+is fine), create the project, then:
+- grab the NEW `phc_…` project API key from the EU project,
+- replace the `POSTHOG_PROJECT_API_KEY` secret with it,
+- (optional) also mint a personal API key on the EU org if you want the
+  agent to keep verifying it — note `us.posthog.com` probes will then stop
+  working; the health battery reads the region from env so nothing in the
+  repo changes.
+Until you migrate, analytics keep flowing to the US project and everything
+else in the stack is already West EU — this is the one step that must be
+done by you in the browser.
 
 Do NOT build any analytics surface until the §19 AI-privacy pipeline
 (authorization → classification → minimization) is wired; the registry note
@@ -196,12 +230,18 @@ Cost: **$25 USD one-time** (registration fee).
 
 - Verified every injected vendor token with one read-only probe
   (Cloudflare, Vercel, PostHog US, Sentry, New Relic EU, Expo).
-- Provisioned 13 environment variables on the Vercel project
+- **Aligned the stack regions to West EU (DECISIONS.md #205, 2026-10-06):**
+  Vercel `coregrid-scholar-migration` serverless function region changed
+  `iad1` → `dub1` (Dublin) via the Vercel API (HTTP 200, verified), matching
+  Supabase `eu-west-1` (Ireland, verified via the Supabase API — the project
+  was already EU, no migration needed) and New Relic EU.
+- Provisioned 17 environment variables on the Vercel project
   `coregrid-scholar-migration` (encrypted, production+preview+development):
   SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_SERVICE_ROLE_KEY,
   VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY, AI_API_KEY,
   AI_GATEWAY_URL, RESEND_API_KEY, RESEND_FROM_ADDRESS, PAYSTACK_SECRET_KEY,
-  TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, VAPI_API_KEY.
+  TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, VAPI_API_KEY, VAPID_PUBLIC_KEY,
+  VAPID_PRIVATE_KEY, VITE_VAPID_PUBLIC_KEY, POSTHOG_PROJECT_API_KEY.
   (Re-run any time with `node scripts/provision-vercel-env.mjs` after adding
   secrets to this environment.)
 - Added an optional Redis-backed rate limiter that activates by itself when
@@ -219,11 +259,19 @@ Cost: **$25 USD one-time** (registration fee).
 - [x] Push-notification keys (web) → `VAPID_PUBLIC_KEY` + `VAPID_PRIVATE_KEY`
       (generated 2026-10-06; on Vercel; add to Cursor Secrets)
 - [ ] Upstash Redis → secrets `REDIS_REST_URL`, `REDIS_REST_TOKEN` (optional;
-      requires an account only you can create — §1 above)
-- [ ] Sentry: broader token + DSN → secrets `SENTRY_AUTH_TOKEN` (replace),
-      `SENTRY_DSN` (the current token is scope-limited to org:ci and cannot
-      read organizations — only a human with console access can mint a broader
-      token or create a DSN)
+      requires an account only you can create — §1 above; **create the
+      database in a WEST-EU region — eu-west-1 or eu-central-1 — per
+      DECISIONS.md #205; if your existing database is US-region, create an
+      EU one and grab the NEW keys instead**)
+- [ ] PostHog EU migration (optional now, required for full West-EU
+      alignment): sign up at https://eu.posthog.com, create the project,
+      replace `POSTHOG_PROJECT_API_KEY` with the EU project key (§5 above —
+      only you can create an EU org; the US key cannot reach it)
+- [ ] Sentry: EU org (when creating/choosing the org, pick Europe as the
+      data-storage region — §4 above) + broader token + DSN → secrets
+      `SENTRY_AUTH_TOKEN` (replace), `SENTRY_DSN` (the current token is
+      scope-limited to org:ci and cannot read organizations — only a human
+      with console access can mint a broader token or create a DSN)
 - [ ] Apple: enroll ($99/yr) → secrets `APPLE_API_KEY_ID`,
       `APPLE_API_ISSUER_ID`, `APPLE_API_PRIVATE_KEY` (paid enrollment +
       identity verification are human-only)
