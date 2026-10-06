@@ -89,13 +89,15 @@ async function probe(
   url: string,
   headers: Record<string, string>,
   fetchImpl: FetchLike,
+  init: { method?: "GET" | "POST"; body?: string } = {},
 ): Promise<ProbeOutcome> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), PROVIDER_HEALTH_TIMEOUT_MS);
   try {
     const response = await fetchImpl(url, {
-      method: "GET",
+      method: init.method ?? "GET",
       headers,
+      body: init.body,
       signal: controller.signal,
       redirect: "error",
     });
@@ -295,29 +297,198 @@ export async function checkAiGatewayHealth(env: ServerEnv, fetchImpl: FetchLike 
 }
 
 /**
- * Providers with no V1 runtime surface (V2-deferred vendors per V1CAP-29,
- * infrastructure planes, unprovisioned capabilities). Declared statically —
- * never probed, never claimed operational.
+ * PostHog — read-only GET {POSTHOG_API_URL}/api/projects/ with the personal
+ * key. The API host is REGION-QUALIFIED: PostHog cloud serves the US region
+ * at us.posthog.com (EU at eu.posthog.com); the bare api.posthog.com host is
+ * NOT guaranteed to resolve from every network. The personal key cannot
+ * ingest client events — that requires a project key (phc_), which remains
+ * an operator action.
+ */
+export async function checkPosthogHealth(env: ServerEnv, fetchImpl: FetchLike = fetch): Promise<ProviderHealthReport> {
+  const startedAt = healthTimeAuthority.now().atMs;
+  if (!isNonBlank(env.POSTHOG_PERSONAL_API_KEY)) return notConfigured("posthog", ["POSTHOG_PERSONAL_API_KEY"]);
+  const rawBase = isNonBlank(env.POSTHOG_API_URL) ? env.POSTHOG_API_URL : "https://us.posthog.com";
+  const base = assertHttpsUrl(rawBase);
+  if (base === null) return configuredBadTarget("posthog", "POSTHOG_API_URL");
+
+  const outcome = await probe(
+    `${base}/api/projects/`,
+    { Authorization: `Bearer ${env.POSTHOG_PERSONAL_API_KEY as string}` },
+    fetchImpl,
+  );
+  return {
+    provider: "posthog",
+    state: outcome.state,
+    detail: outcome.detail,
+    checkedAt: healthTimeAuthority.now().at,
+    httpStatus: outcome.httpStatus,
+    durationMs: healthTimeAuthority.now().atMs - startedAt,
+  };
+}
+
+/**
+ * Sentry — read-only GET https://api.sentry.io/api/0/ (the auth root). The
+ * supplied token may be deliberately narrow (e.g. org:ci for release
+ * automation): the auth root validates the CREDENTIAL without requiring
+ * organization scope, so a valid-but-narrow token authenticates instead of
+ * degrading. A runtime DSN (error reporting) remains a separate operator
+ * action and is never derivable from this token.
+ */
+export async function checkSentryHealth(env: ServerEnv, fetchImpl: FetchLike = fetch): Promise<ProviderHealthReport> {
+  const startedAt = healthTimeAuthority.now().atMs;
+  if (!isNonBlank(env.SENTRY_AUTH_TOKEN)) return notConfigured("sentry", ["SENTRY_AUTH_TOKEN"]);
+
+  const outcome = await probe(
+    "https://api.sentry.io/api/0/",
+    { Authorization: `Bearer ${env.SENTRY_AUTH_TOKEN as string}` },
+    fetchImpl,
+  );
+  return {
+    provider: "sentry",
+    state: outcome.state,
+    detail: outcome.detail,
+    checkedAt: healthTimeAuthority.now().at,
+    httpStatus: outcome.httpStatus,
+    durationMs: healthTimeAuthority.now().atMs - startedAt,
+  };
+}
+
+/**
+ * New Relic — read-only POST graphql actor.user query with the user key.
+ * The GraphQL host is REGION-QUALIFIED: the account evidence is EU-region
+ * (api.eu.newrelic.com); US accounts must override NEW_RELIC_API_URL.
+ */
+export async function checkNewRelicHealth(env: ServerEnv, fetchImpl: FetchLike = fetch): Promise<ProviderHealthReport> {
+  const startedAt = healthTimeAuthority.now().atMs;
+  if (!isNonBlank(env.NEW_RELIC_USER_KEY)) return notConfigured("new-relic", ["NEW_RELIC_USER_KEY"]);
+  const rawBase = isNonBlank(env.NEW_RELIC_API_URL) ? env.NEW_RELIC_API_URL : "https://api.eu.newrelic.com";
+  const base = assertHttpsUrl(rawBase);
+  if (base === null) return configuredBadTarget("new-relic", "NEW_RELIC_API_URL");
+
+  const outcome = await probe(
+    `${base}/graphql`,
+    { "Api-Key": env.NEW_RELIC_USER_KEY as string, "Content-Type": "application/json" },
+    fetchImpl,
+    { method: "POST", body: JSON.stringify({ query: "{ actor { user { email } } }" }) },
+  );
+  return {
+    provider: "new-relic",
+    state: outcome.state,
+    detail: outcome.detail,
+    checkedAt: healthTimeAuthority.now().at,
+    httpStatus: outcome.httpStatus,
+    durationMs: healthTimeAuthority.now().atMs - startedAt,
+  };
+}
+
+/** Cloudflare — read-only GET /client/v4/user/tokens/verify (token self-check). */
+export async function checkCloudflareHealth(env: ServerEnv, fetchImpl: FetchLike = fetch): Promise<ProviderHealthReport> {
+  const startedAt = healthTimeAuthority.now().atMs;
+  if (!isNonBlank(env.CLOUDFLARE_API_TOKEN)) return notConfigured("cloudflare", ["CLOUDFLARE_API_TOKEN"]);
+
+  const outcome = await probe(
+    "https://api.cloudflare.com/client/v4/user/tokens/verify",
+    { Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN as string}` },
+    fetchImpl,
+  );
+  return {
+    provider: "cloudflare",
+    state: outcome.state,
+    detail: outcome.detail,
+    checkedAt: healthTimeAuthority.now().at,
+    httpStatus: outcome.httpStatus,
+    durationMs: healthTimeAuthority.now().atMs - startedAt,
+  };
+}
+
+/** Vercel — read-only GET /v9/projects with the (team-scoped) bearer token. */
+export async function checkVercelHealth(env: ServerEnv, fetchImpl: FetchLike = fetch): Promise<ProviderHealthReport> {
+  const startedAt = healthTimeAuthority.now().atMs;
+  if (!isNonBlank(env.VERCEL_API_TOKEN)) return notConfigured("vercel", ["VERCEL_API_TOKEN"]);
+
+  const outcome = await probe(
+    "https://api.vercel.com/v9/projects",
+    { Authorization: `Bearer ${env.VERCEL_API_TOKEN as string}` },
+    fetchImpl,
+  );
+  return {
+    provider: "vercel",
+    state: outcome.state,
+    detail: outcome.detail,
+    checkedAt: healthTimeAuthority.now().at,
+    httpStatus: outcome.httpStatus,
+    durationMs: healthTimeAuthority.now().atMs - startedAt,
+  };
+}
+
+/** Expo EAS — read-only POST graphql viewer query with the bearer token. */
+export async function checkExpoHealth(env: ServerEnv, fetchImpl: FetchLike = fetch): Promise<ProviderHealthReport> {
+  const startedAt = healthTimeAuthority.now().atMs;
+  if (!isNonBlank(env.EXPO_TOKEN)) return notConfigured("expo-eas", ["EXPO_TOKEN"]);
+
+  const outcome = await probe(
+    "https://api.expo.dev/graphql",
+    { Authorization: `Bearer ${env.EXPO_TOKEN as string}`, "Content-Type": "application/json" },
+    fetchImpl,
+    { method: "POST", body: JSON.stringify({ query: "{ viewer { username } }" }) },
+  );
+  return {
+    provider: "expo-eas",
+    state: outcome.state,
+    detail: outcome.detail,
+    checkedAt: healthTimeAuthority.now().at,
+    httpStatus: outcome.httpStatus,
+    durationMs: healthTimeAuthority.now().atMs - startedAt,
+  };
+}
+
+/**
+ * Redis (Upstash-compatible REST) — optional distributed rate-limit plane.
+ * When no credential is supplied the report is NOT_REQUIRED (the V1 default
+ * is the in-process limiter, Part 31) and the posture stays ok: an absent
+ * OPTIONAL capability must never fail the battery. When supplied, a single
+ * read-only PING verifies the credential.
+ */
+export async function checkRedisHealth(env: ServerEnv, fetchImpl: FetchLike = fetch): Promise<ProviderHealthReport> {
+  const startedAt = healthTimeAuthority.now().atMs;
+  if (!isNonBlank(env.REDIS_REST_URL) || !isNonBlank(env.REDIS_REST_TOKEN)) {
+    return {
+      provider: "redis",
+      state: "NOT_REQUIRED",
+      detail:
+        "no REDIS_REST_URL/REDIS_REST_TOKEN supplied — the in-process rate limiter remains active (Part 31); distributed limiting stays disabled",
+      checkedAt: healthTimeAuthority.now().at,
+      httpStatus: null,
+      durationMs: 0,
+    };
+  }
+  const base = assertHttpsUrl(env.REDIS_REST_URL as string);
+  if (base === null) return configuredBadTarget("redis", "REDIS_REST_URL");
+
+  const outcome = await probe(
+    base,
+    { Authorization: `Bearer ${env.REDIS_REST_TOKEN as string}`, "Content-Type": "application/json" },
+    fetchImpl,
+    { method: "POST", body: JSON.stringify(["PING"]) },
+  );
+  return {
+    provider: "redis",
+    state: outcome.state,
+    detail: outcome.detail,
+    checkedAt: healthTimeAuthority.now().at,
+    httpStatus: outcome.httpStatus,
+    durationMs: healthTimeAuthority.now().atMs - startedAt,
+  };
+}
+
+/**
+ * Providers with NO runtime surface at all. After DECISIONS.md #204 every
+ * supplied vendor credential has a verification probe, so this set is
+ * intentionally empty; it remains as the declared-none escape hatch for any
+ * future capability that must never be probed.
  */
 export function staticNotRequiredProviders(): readonly ProviderHealthReport[] {
-  const at = healthTimeAuthority.now().at;
-  const entries: readonly [string, string][] = [
-    ["posthog", "V2-DEFERRED vendor integration (V1CAP-29); no runtime surface in V1"],
-    ["sentry", "V2-DEFERRED vendor integration (V1CAP-29); no runtime DSN provisioned"],
-    ["new-relic", "infrastructure observability plane; no app-runtime surface in V1"],
-    ["cloudflare", "IaC traffic-layer plane (infrastructure/CREDENTIALS.md); no app-runtime surface"],
-    ["vercel", "deployment platform plane; no app-runtime surface in V1"],
-    ["expo-eas", "mobile build plane; mobile receives client-safe EXPO_PUBLIC_ config only"],
-    ["redis", "no Redis credential supplied and no V1 capability requires one (in-process rate limiting per Part 31)"],
-  ];
-  return entries.map(([provider, detail]) => ({
-    provider,
-    state: "NOT_REQUIRED" as const,
-    detail,
-    checkedAt: at,
-    httpStatus: null,
-    durationMs: 0,
-  }));
+  return [];
 }
 
 /** The complete §18 integration-health battery (read-only probes + statics). */
@@ -332,6 +503,13 @@ export async function runProviderHealthBattery(
     twilio,
     vapi,
     aiGateway,
+    posthog,
+    sentry,
+    newRelic,
+    cloudflare,
+    vercel,
+    expo,
+    redis,
   ] = await Promise.all([
     checkSupabaseHealth(env, fetchImpl),
     checkResendHealth(env, fetchImpl),
@@ -339,8 +517,19 @@ export async function runProviderHealthBattery(
     checkTwilioHealth(env, fetchImpl),
     checkVapiHealth(env, fetchImpl),
     checkAiGatewayHealth(env, fetchImpl),
+    checkPosthogHealth(env, fetchImpl),
+    checkSentryHealth(env, fetchImpl),
+    checkNewRelicHealth(env, fetchImpl),
+    checkCloudflareHealth(env, fetchImpl),
+    checkVercelHealth(env, fetchImpl),
+    checkExpoHealth(env, fetchImpl),
+    checkRedisHealth(env, fetchImpl),
   ]);
-  return [supabase, resend, paystack, twilio, vapi, aiGateway, ...staticNotRequiredProviders()];
+  return [
+    supabase, resend, paystack, twilio, vapi, aiGateway,
+    posthog, sentry, newRelic, cloudflare, vercel, expo, redis,
+    ...staticNotRequiredProviders(),
+  ];
 }
 
 /** Overall battery posture: failing iff any probed provider is NOT_CONFIGURED/DEGRADED... */

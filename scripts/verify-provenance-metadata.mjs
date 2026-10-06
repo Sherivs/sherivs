@@ -131,6 +131,7 @@ const CREATOR_MATCHERS = [
   /\bH3-\d{3}\b/, // wave team id
   /\b[A-Z]-\d{3}\b/, // mission id (A-001, D-040, E-044, H-085, J-042, …)
   /\bMISSION-R-\d+\b/i,
+  /\bMISSION-V1-\d{3}\b/, // V5.3 V1 mission series (MISSION-V1-001..018)
   /\bH2-\d{2,3}\b/,
   /\bmr\d{3}\b/i,
 ];

@@ -88,7 +88,21 @@ export interface RateLimitConfig {
 export type RateLimitDecision = { decision: "allow" } | { decision: "deny"; retryAfterMs: number };
 
 export interface RateLimiter {
-  /** Sliding-window check keyed by an arbitrary ref (e.g. "tenant:actor"). */
+  /**
+   * Windowed check keyed by an arbitrary ref (e.g. "tenant:actor").
+   * Decisions may be returned synchronously (in-process limiter) or as a
+   * promise (distributed limiter over a REST data plane); the gateway awaits
+   * the result, so both satisfy this contract.
+   */
+  check(refKey: string, nowMs?: number): RateLimitDecision | Promise<RateLimitDecision>;
+}
+
+/**
+ * The in-process limiter contract: decisions are always synchronous. Consumers
+ * that call `check` directly (tests, self-report) type against this narrowed
+ * view so they keep sync access to `decision`.
+ */
+export interface SyncRateLimiter extends RateLimiter {
   check(refKey: string, nowMs?: number): RateLimitDecision;
 }
 
@@ -97,7 +111,7 @@ export interface RateLimiter {
  * window) fails closed: every check denies. Keys are isolated — one tenant or
  * actor never consumes another's window.
  */
-export function createRateLimiter(config: RateLimitConfig): RateLimiter {
+export function createRateLimiter(config: RateLimitConfig): SyncRateLimiter {
   const maxRequests = Number.isFinite(config.maxRequests)
     ? Math.max(0, Math.floor(config.maxRequests))
     : 0;
@@ -425,7 +439,7 @@ async function invokeRoutedThroughRegistry<TPayload>(
     }
 
     if (request.rateLimiter) {
-      const limit = request.rateLimiter.check(
+      const limit = await request.rateLimiter.check(
         `${request.tenantRef}:${request.actorRef}`,
         deps.now(),
       );
@@ -628,7 +642,7 @@ export async function invokeAiGateway<TPayload>(
   }
 
   if (request.rateLimiter) {
-    const limit = request.rateLimiter.check(`${request.tenantRef}:${request.actorRef}`, now());
+    const limit = await request.rateLimiter.check(`${request.tenantRef}:${request.actorRef}`, now());
     if (limit.decision === "deny") {
       const reason = `Rate limit exceeded for ${request.tenantRef}:${request.actorRef}; retry after ${limit.retryAfterMs}ms`;
       log("warn", "gateway.decision.deny", {

@@ -24,9 +24,11 @@
  * - server_runtime_secret           server-side only, never VITE_/NEXT_PUBLIC_/PUBLIC_
  * - deployment_infrastructure_secret  CI/CD/infra scope only, never app runtime
  *
- * The `posthog` and `sentry` vendor integrations are V2-DEFERRED by the V1
- * capability matrix (V1CAP-29); this registry classifies their credentials
- * without implementing any vendor surface (Constitution §45).
+ * The PostHog/Sentry/New Relic/Cloudflare/Vercel/Expo-EAS/Redis vendor planes
+ * were UN-FROZEN for V1 by the explicit operator authorization record
+ * DECISIONS.md #204 (PLATFORM-013, 2026-10-06): each supplied credential is
+ * verified through a single read-only health probe; no analytics ingestion
+ * surface may be built without satisfying §19/§20/§21 first.
  */
 
 import { z } from "zod";
@@ -148,7 +150,8 @@ export function containsSecretShape(value: string): boolean {
 }
 
 /* ─────────────────────────────────────────────────────────────
- * The registry — 24 supplied credentials, names only
+ * The registry — 24 supplied credentials + 4 evidence-derived config entries
+ * (region API hosts, Redis REST plane), names only
  * ────────────────────────────────────────────────────────────*/
 
 export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = [
@@ -356,30 +359,42 @@ export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = 
     note: "Operator-declared endpoint (§25); live-verified with the credential on a read-only probe and the governed inference drill.",
   },
 
-  // ── V2-DEFERRED vendor integrations (V1CAP-29 — classify only, §45) ──
+  // ── Observability vendor planes (UN-FROZEN by DECISIONS.md #204) ──
   {
     envVar: "POSTHOG_PERSONAL_API_KEY",
     provider: "posthog",
     classification: "server_runtime_secret",
     runtimeScope: "server",
-    requiredCapability: "Product analytics management API (V2-DEFERRED vendor integration)",
+    requiredCapability: "PostHog management-API verification (personal key; cannot ingest client events)",
     adapterRef: null,
-    hasHealthCheck: false,
-    status: "NOT_REQUIRED",
-    verificationLevel: "credential_present",
-    note: "V1CAP-29 defers Sentry/PostHog vendors to V2; credential classified, no vendor surface implemented. A personal API key cannot ingest client events (needs a project key), so no client analytics is derivable.",
+    hasHealthCheck: true,
+    status: "CONFIGURED_BUT_UNVERIFIED",
+    verificationLevel: "provider_reachable",
+    note: "Auth live-verified 2026-10-06 (GET us.posthog.com/api/projects/ 200, project 532234). api.posthog.com is unreachable from the build VM; the region host is authoritative. Client analytics ingestion still requires a project API key (phc_) — operator action.",
+  },
+  {
+    envVar: "POSTHOG_API_URL",
+    provider: "posthog",
+    classification: "server_runtime_configuration",
+    runtimeScope: "server",
+    requiredCapability: "Region-qualified PostHog API base URL for the health probe",
+    adapterRef: null,
+    hasHealthCheck: true,
+    status: "CONFIGURED_BUT_UNVERIFIED",
+    verificationLevel: "provider_reachable",
+    note: "Defaults to https://us.posthog.com (evidence-backed 2026-10-06); EU projects must override to https://eu.posthog.com.",
   },
   {
     envVar: "SENTRY_AUTH_TOKEN",
     provider: "sentry",
     classification: "deployment_infrastructure_secret",
     runtimeScope: "infrastructure",
-    requiredCapability: "Release/source-map upload in CI (V2-DEFERRED vendor integration)",
+    requiredCapability: "Sentry API token verification (CI scope)",
     adapterRef: null,
-    hasHealthCheck: false,
-    status: "NOT_REQUIRED",
-    verificationLevel: "credential_present",
-    note: "V1CAP-29 defers Sentry to V2; a runtime DSN would be required for error reporting (absent).",
+    hasHealthCheck: true,
+    status: "CONFIGURED_BUT_UNVERIFIED",
+    verificationLevel: "provider_reachable",
+    note: "Token live-verified 2026-10-06 (GET api.sentry.io/api/0/ 200) but scope-limited to org:ci — it cannot read organizations. A runtime DSN is still absent (operator action); release upload needs project + org slugs.",
   },
   {
     envVar: "NEW_RELIC_ACCOUNT_ID",
@@ -389,9 +404,9 @@ export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = 
     requiredCapability: "Infrastructure monitoring account scope identifier",
     adapterRef: null,
     hasHealthCheck: false,
-    status: "NOT_REQUIRED",
+    status: "CONFIGURED_BUT_UNVERIFIED",
     verificationLevel: "credential_present",
-    note: "Infrastructure observability plane; no app-runtime surface in V1.",
+    note: "EU-region account confirmed via the user-key probe (api.eu.newrelic.com) 2026-10-06.",
   },
   {
     envVar: "NEW_RELIC_LICENSE_KEY",
@@ -401,24 +416,36 @@ export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = 
     requiredCapability: "Infrastructure telemetry ingest credential",
     adapterRef: null,
     hasHealthCheck: false,
-    status: "NOT_REQUIRED",
+    status: "CONFIGURED_BUT_UNVERIFIED",
     verificationLevel: "credential_present",
-    note: "Infrastructure observability plane; no app-runtime surface in V1.",
+    note: "Ingest-plane credential; consumed by infrastructure agents, not the app runtime.",
   },
   {
     envVar: "NEW_RELIC_USER_KEY",
     provider: "new-relic",
     classification: "deployment_infrastructure_secret",
     runtimeScope: "infrastructure",
-    requiredCapability: "Infrastructure monitoring management API",
+    requiredCapability: "Infrastructure monitoring management API (GraphQL actor probe)",
     adapterRef: null,
-    hasHealthCheck: false,
-    status: "NOT_REQUIRED",
-    verificationLevel: "credential_present",
-    note: "Infrastructure observability plane; no app-runtime surface in V1.",
+    hasHealthCheck: true,
+    status: "CONFIGURED_BUT_UNVERIFIED",
+    verificationLevel: "provider_reachable",
+    note: "Auth live-verified 2026-10-06 (POST api.eu.newrelic.com/graphql actor.user.email 200).",
+  },
+  {
+    envVar: "NEW_RELIC_API_URL",
+    provider: "new-relic",
+    classification: "server_runtime_configuration",
+    runtimeScope: "server",
+    requiredCapability: "Region-qualified New Relic GraphQL base URL for the health probe",
+    adapterRef: null,
+    hasHealthCheck: true,
+    status: "CONFIGURED_BUT_UNVERIFIED",
+    verificationLevel: "provider_reachable",
+    note: "Defaults to https://api.eu.newrelic.com (evidence-backed 2026-10-06); US accounts must override to https://api.newrelic.com.",
   },
 
-  // ── Deployment / infrastructure planes ──
+  // ── Deployment / infrastructure planes (UN-FROZEN by DECISIONS.md #204) ──
   {
     envVar: "CLOUDFLARE_API_TOKEN",
     provider: "cloudflare",
@@ -426,22 +453,22 @@ export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = 
     runtimeScope: "infrastructure",
     requiredCapability: "DNS/CDN/WAF traffic-layer management (IaC scope)",
     adapterRef: null,
-    hasHealthCheck: false,
-    status: "NOT_REQUIRED",
-    verificationLevel: "credential_present",
-    note: "Scoped per infrastructure/CREDENTIALS.md; never an app runtime variable.",
+    hasHealthCheck: true,
+    status: "CONFIGURED_BUT_UNVERIFIED",
+    verificationLevel: "provider_reachable",
+    note: "Token live-verified 2026-10-06 (GET /client/v4/user/tokens/verify 200, active). IaC scope only; never an app runtime variable.",
   },
   {
     envVar: "VERCEL_API_TOKEN",
     provider: "vercel",
     classification: "deployment_infrastructure_secret",
     runtimeScope: "infrastructure",
-    requiredCapability: "Deployment platform management (CI scope)",
+    requiredCapability: "Deployment platform management + environment provisioning (CI scope)",
     adapterRef: null,
-    hasHealthCheck: false,
-    status: "NOT_REQUIRED",
-    verificationLevel: "credential_present",
-    note: "Deployment plane only; server secrets must be configured in the platform dashboard, not derivable from this token.",
+    hasHealthCheck: true,
+    status: "CONFIGURED_BUT_UNVERIFIED",
+    verificationLevel: "provider_reachable",
+    note: "Token live-verified 2026-10-06 (GET /v9/projects 200, team-scoped). Project coregrid-scholar-migration exists; app runtime env provisioned via scripts/provision-vercel-env.mjs.",
   },
   {
     envVar: "EXPO_TOKEN",
@@ -450,10 +477,36 @@ export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = 
     runtimeScope: "infrastructure",
     requiredCapability: "Mobile (EAS) build submission",
     adapterRef: null,
-    hasHealthCheck: false,
-    status: "NOT_REQUIRED",
-    verificationLevel: "credential_present",
-    note: "Mobile builds receive only EXPO_PUBLIC_ client-safe config (mobile env contract).",
+    hasHealthCheck: true,
+    status: "CONFIGURED_BUT_UNVERIFIED",
+    verificationLevel: "provider_reachable",
+    note: "Token live-verified 2026-10-06 (POST api.expo.dev/graphql viewer 200, user vibeoraai-bit). Mobile builds receive only EXPO_PUBLIC_ client-safe config.",
+  },
+
+  // ── Optional distributed rate-limit plane (Upstash-compatible REST) ──
+  {
+    envVar: "REDIS_REST_URL",
+    provider: "redis",
+    classification: "server_runtime_configuration",
+    runtimeScope: "server",
+    requiredCapability: "Distributed fixed-window rate limiting behind the RateLimiter contract (optional)",
+    adapterRef: "frontend/src/lib/rate-limit/redis-rate-limiter.server.ts",
+    hasHealthCheck: true,
+    status: "NOT_CONFIGURED",
+    verificationLevel: "none",
+    note: "No credential supplied: the adapter falls back to the in-process limiter (Part 31). Provide REDIS_REST_URL + REDIS_REST_TOKEN (Upstash REST) to enable multi-instance limiting.",
+  },
+  {
+    envVar: "REDIS_REST_TOKEN",
+    provider: "redis",
+    classification: "server_runtime_secret",
+    runtimeScope: "server",
+    requiredCapability: "Bearer credential for the Upstash-compatible REST data plane",
+    adapterRef: "frontend/src/lib/rate-limit/redis-rate-limiter.server.ts",
+    hasHealthCheck: true,
+    status: "NOT_CONFIGURED",
+    verificationLevel: "none",
+    note: "SERVER-ONLY when supplied. Absent today — no distributed limiter is active.",
   },
 ];
 

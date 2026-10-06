@@ -9,15 +9,16 @@
  * 3. The exposure audit flags VITE_/NEXT_PUBLIC_/PUBLIC_ leaks of any
  *    server-only credential and ignores client-safe configuration.
  * 4. Secret-shaped material in any field is rejected (defense in depth).
- * 5. V2-deferred vendors (posthog, sentry per V1CAP-29) carry NO adapterRef
- *    — the registry classifies without implementing frozen scope (§45).
+ * 5. Un-frozen observability/infra vendors (DECISIONS #204, 2026-10-06) carry
+ *    verification probes WITHOUT app-runtime adapters, and the optional Redis
+ *    plane stays NOT_CONFIGURED until credentials exist.
  */
 import { describe, expect, it } from "vitest";
 import {
   CLIENT_UNSAFE_CLASSIFICATIONS,
   PROVIDER_CREDENTIAL_REGISTRY,
   containsSecretShape,
-  credentialEntriesForProvider,
+  credentialEntryForEnvVar,
   registryClientPrefixExposures,
   registryServerOnlyEnvVars,
   validateProviderCredentialRegistry,
@@ -78,15 +79,42 @@ describe("provider credential registry", () => {
     expect(exposures).toEqual([]);
   });
 
-  it("classifies V2-deferred vendors without an adapter (§45/V1CAP-29)", () => {
-    for (const provider of ["posthog", "sentry"]) {
-      const entries = credentialEntriesForProvider(provider);
-      expect(entries.length).toBeGreaterThan(0);
-      for (const entry of entries) {
-        expect(entry.adapterRef).toBeNull();
-        expect(entry.hasHealthCheck).toBe(false);
-      }
+  it("classifies un-frozen vendors with probes and no app-runtime adapter (DECISIONS #204)", () => {
+    for (const [provider, envVar] of [
+      ["posthog", "POSTHOG_PERSONAL_API_KEY"],
+      ["sentry", "SENTRY_AUTH_TOKEN"],
+      ["new-relic", "NEW_RELIC_USER_KEY"],
+      ["cloudflare", "CLOUDFLARE_API_TOKEN"],
+      ["vercel", "VERCEL_API_TOKEN"],
+      ["expo-eas", "EXPO_TOKEN"],
+    ] as const) {
+      const entry = credentialEntryForEnvVar(envVar);
+      expect(entry).not.toBeNull();
+      expect(entry?.provider).toBe(provider);
+      expect(entry?.adapterRef).toBeNull();
+      expect(entry?.hasHealthCheck).toBe(true);
+      expect(entry?.status).not.toBe("NOT_REQUIRED");
+      expect(entry?.verificationLevel).toBe("provider_reachable");
     }
+  });
+
+  it("keeps the optional Redis plane NOT_CONFIGURED until credentials exist", () => {
+    for (const envVar of ["REDIS_REST_URL", "REDIS_REST_TOKEN"]) {
+      const entry = credentialEntryForEnvVar(envVar);
+      expect(entry).not.toBeNull();
+      expect(entry?.provider).toBe("redis");
+      expect(entry?.status).toBe("NOT_CONFIGURED");
+      expect(entry?.verificationLevel).toBe("none");
+    }
+    const token = credentialEntryForEnvVar("REDIS_REST_TOKEN");
+    expect(token?.classification).toBe("server_runtime_secret");
+    expect(registryServerOnlyEnvVars()).toContain("REDIS_REST_TOKEN");
+    expect(registryServerOnlyEnvVars()).toContain("POSTHOG_PERSONAL_API_KEY");
+    // The region-host config entries are evidence-backed, never NOT_REQUIRED.
+    const posthogUrl = credentialEntryForEnvVar("POSTHOG_API_URL");
+    expect(posthogUrl?.classification).toBe("server_runtime_configuration");
+    const newRelicUrl = credentialEntryForEnvVar("NEW_RELIC_API_URL");
+    expect(newRelicUrl?.classification).toBe("server_runtime_configuration");
   });
 
   it("refuses a registry entry carrying secret-shaped material", () => {
