@@ -44,14 +44,18 @@ Version-target classification: **V1 organizational capability envelope only** (�
   cross-checks both read-only), and `--rehearse resend` now runs
   `STATUS=REHEARSAL_PASS` exit 0 (22 providers audited; previously typed
   `BLOCKED_USAGE`).
-- **ST-1 progress — EAS project linked + first EAS build kicked.** `eas whoami`
+- **ST-1 progress — EAS project linked + first EAS build FINISHED.** `eas whoami`
   re-proven (authenticated as `vibeoraai-bit` via `EXPO_TOKEN`). `eas init`
   linked the repo to the Expo project: `mobile/app.json` now carries
   `extra.eas.projectId` (`3cea9979-47ba-4428-b1e8-67fe0671bac8`, owner
-  `vibeoraai-bit`). One Android build kicked on the `preview` profile (APK,
-  internal distribution — no store account required): build id
-  `de78a81a-4c02-40b9-b13f-d0e5a398044c` (status `in queue` at kick time;
-  result recorded in OPERATIONS.md when it lands).
+  `vibeoraai-bit`). One Android build on the `preview` profile (APK, internal
+  distribution — no store account required) **finished successfully**:
+  build `de78a81a-4c02-40b9-b13f-d0e5a398044c`, 08:00:33 → 08:20:27 UTC
+  (~20 min), SDK 57, version 0.1.0 (versionCode 1), commit `d82b066`; the
+  archive URL was verified to serve a real Android APK
+  (`file`: "Android package (APK), with gradle app-metadata.properties"). The
+  EAS BUILD dimension of V1-010 is live-proven end-to-end. Store SUBMISSION
+  stays blocked on Apple/Google accounts.
 - **OPS-RL re-checked — STILL OPEN, honestly.** T2 signup e2e re-run: typed
   skip persists. A direct real signup attempt through `POST /auth/v1/signup`
   (run-unique address, anon key) returned `429 over_email_send_rate_limit`
@@ -137,9 +141,9 @@ recording the attempt. §45 respected: V1 communications capability only.
 
 ## Known Risks
 
-1. The EAS preview build was `in queue` at kick time — its completion is
-   external to this VM; the OPERATIONS.md §4 record is updated with the build
-   id and logs URL rather than a claimed pass.
+1. The EAS preview build finished successfully and its APK was verified (see
+   ST-1 record); the remaining ST-1 dimension is store SUBMISSION, blocked on
+   Apple/Google accounts.
 2. The BLK-5 send self-addressed the operator's `RESEND_FROM_ADDRESS` account —
    the only operator-controlled inbox available; a future operator-designated
    sandbox inbox can re-target the verification without code change.
@@ -150,8 +154,9 @@ recording the attempt. §45 respected: V1 communications capability only.
 
 ## Remaining Work
 
-- Record the EAS build outcome (`de78a81a`) when it completes; store submission
-  still blocked on Apple/Google accounts.
+- Store submission (ST-1) still blocked on Apple Developer + Google Play
+  accounts; the EAS build dimension itself is proven (APK produced and
+  verified).
 - Operator: apply the OPS-RL remedy (Supabase Pro raise or Resend-as-SMTP on
   the now-verified domain); then re-run T2 to convert the typed skip.
 - Paystack live swap after business verification; Vapi live-path mission with

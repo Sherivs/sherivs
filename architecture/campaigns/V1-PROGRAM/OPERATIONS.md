@@ -261,9 +261,14 @@ preview build is now unblocked; none was started in this wave). Evidence:
 `extra.eas.projectId` (`3cea9979-47ba-4428-b1e8-67fe0671bac8`, owner
 `vibeoraai-bit`), unblocking EAS builds from the repo. One Android build was
 kicked on the `preview` profile (APK, internal distribution, no store account
-required): build id `de78a81a-4c02-40b9-b13f-d0e5a398044c`, status `in queue`
-at kick time, logs
-`https://expo.dev/accounts/vibeoraai-bit/projects/coregrid-mobile/builds/de78a81a-4c02-40b9-b13f-d0e5a398044c`.
+required): build id `de78a81a-4c02-40b9-b13f-d0e5a398044c` **FINISHED
+successfully** (08:00:33 → 08:20:27 UTC, ~20 min; SDK 57, version 0.1.0,
+versionCode 1, commit d82b066, fingerprint `19b4bfb37…`); artifact verified a
+real Android APK (`/opt/cursor/artifacts/eas-preview-apk-header.bin`):
+`https://expo.dev/artifacts/eas/diNaR9KvlO3nmJH4xZYBZ0zNmoN8cRXxZ1Tk7s9lEXg.apk`
+(logs:
+`https://expo.dev/accounts/vibeoraai-bit/projects/coregrid-mobile/builds/de78a81a-4c02-40b9-b13f-d0e5a398044c`).
+The EAS BUILD dimension of V1-010 is now live-proven end-to-end.
 **ST-1 store SUBMISSION remains BLOCKED**: Apple Developer ($99/yr) and
 Google Play Console ($25 one-time) accounts are NOT yet provided.
 
