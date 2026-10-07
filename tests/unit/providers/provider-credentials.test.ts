@@ -11,7 +11,8 @@
  * 4. Secret-shaped material in any field is rejected (defense in depth).
  * 5. Un-frozen observability/infra vendors (DECISIONS #204, 2026-10-06) carry
  *    verification probes WITHOUT app-runtime adapters, and the optional Redis
- *    plane stays NOT_CONFIGURED until credentials exist.
+ *    plane carries only probe-proven OPERATIONAL status (capability_tested,
+ *    PLATFORM-021 / DECISIONS #212).
  */
 import { describe, expect, it } from "vitest";
 import {
@@ -98,13 +99,14 @@ describe("provider credential registry", () => {
     }
   });
 
-  it("keeps the optional Redis plane NOT_CONFIGURED until credentials exist", () => {
+  it("carries the Redis plane as evidence-backed OPERATIONAL after the PLATFORM-021 probe", () => {
     for (const envVar of ["REDIS_REST_URL", "REDIS_REST_TOKEN"]) {
       const entry = credentialEntryForEnvVar(envVar);
       expect(entry).not.toBeNull();
       expect(entry?.provider).toBe("redis");
-      expect(entry?.status).toBe("NOT_CONFIGURED");
-      expect(entry?.verificationLevel).toBe("none");
+      expect(entry?.status).toBe("OPERATIONAL");
+      expect(entry?.verificationLevel).toBe("capability_tested");
+      expect(entry?.note).toContain("2026-10-07");
     }
     const token = credentialEntryForEnvVar("REDIS_REST_TOKEN");
     expect(token?.classification).toBe("server_runtime_secret");

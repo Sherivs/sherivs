@@ -556,9 +556,9 @@ export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = 
     requiredCapability: "Distributed fixed-window rate limiting behind the RateLimiter contract (optional)",
     adapterRef: "frontend/src/lib/rate-limit/redis-rate-limiter.server.ts",
     hasHealthCheck: true,
-    status: "NOT_CONFIGURED",
-    verificationLevel: "none",
-    note: "No credential supplied: the adapter falls back to the in-process limiter (Part 31). Provide REDIS_REST_URL + REDIS_REST_TOKEN (Upstash REST) to enable multi-instance limiting.",
+    status: "OPERATIONAL",
+    verificationLevel: "capability_tested",
+    note: "LIVE-PROVEN 2026-10-07 (PLATFORM-019): read-only capability probe through the app adapter — PING OK (http 200) plus one governed fixed-window check via rateLimiterFromEnv returned allow. Synced to Vercel the same day.",
   },
   {
     envVar: "REDIS_REST_TOKEN",
@@ -568,9 +568,9 @@ export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = 
     requiredCapability: "Bearer credential for the Upstash-compatible REST data plane",
     adapterRef: "frontend/src/lib/rate-limit/redis-rate-limiter.server.ts",
     hasHealthCheck: true,
-    status: "NOT_CONFIGURED",
-    verificationLevel: "none",
-    note: "SERVER-ONLY when supplied. Absent today — no distributed limiter is active.",
+    status: "OPERATIONAL",
+    verificationLevel: "capability_tested",
+    note: "SERVER-ONLY. LIVE-PROVEN 2026-10-07 (PLATFORM-019): the distributed limiter authenticated and served PING (PONG) + one governed rate-limit check through rateLimiterFromEnv; values never leave process.env (§30).",
   },
 ];
 
