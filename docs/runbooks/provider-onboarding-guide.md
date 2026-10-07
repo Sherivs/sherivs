@@ -28,6 +28,26 @@ frozen; nothing in this guide touches them.
 Redis is OPTIONAL today: the app runs fine with in-process rate limiting.
 Add it when you deploy more than one server instance.
 
+> **Status (2026-10-07, DECISIONS.md #211):** the secrets WERE added to Cursor
+> Secrets, but under the Upstash console names (`UPSTASH_REDIS_REST_URL`,
+> `UPSTASH_REDIS_REST_TOKEN`) instead of the app contract names in step 5 —
+> and the URL value is malformed: its scheme reads `ttps://`, i.e. the leading
+> `h` was lost in the paste. The fail-closed capability probe rejected the
+> connection (adapter contract requires `https://`), so the distributed
+> limiter stays in-process and the registry stays `NOT_CONFIGURED`. A
+> diagnostic re-probe with the single character restored in memory proved the
+> token + data plane fully valid (PING http 200 → PONG, governed rate-limit
+> check → allow), so the ONLY fix needed is on the secret itself:
+>
+> 1. Open Cursor Secrets and fix `UPSTASH_REDIS_REST_URL` (restore the
+>    leading `h`; the value must start with `https://` and end in
+>    `.upstash.io`). Prefer renaming both secrets to the exact step-5 names
+>    (`REDIS_REST_URL`, `REDIS_REST_TOKEN`) so no aliasing is ever needed.
+> 2. In a fresh agent session, run
+>    `node scripts/infrastructure/redis-capability-probe.mjs` (exit 0) and
+>    then `node scripts/provision-vercel-env.mjs` (REDIS_REST_URL +
+>    REDIS_REST_TOKEN upserted). No code change is needed from you.
+
 1. Open https://console.upstash.com and sign up (free plan is fine; GitHub
    login works).
 2. Click **Databases** → **Create Database**.
@@ -286,6 +306,16 @@ Cost: **$25 USD one-time** (registration fee).
   battery-verified) and the CoreGrid API-key substrate (`cg_api_key` +
   issue/verify/revoke service — Supabase-style publishable/secret key
   classes; plaintext never stored, sha256 lookup only).
+- **2026-10-07 (DECISIONS.md #211):** Redis activation attempt ran fail-closed
+  — secrets found injected under the Upstash console names, but the URL value
+  is malformed (scheme truncated to `ttps://`), so the probe rejected the
+  connection and the registry honestly stays `NOT_CONFIGURED`. Diagnostic
+  re-probe with the single character restored in memory proved the token and
+  data plane fully valid (PING http 200 → PONG, governed rate-limit check →
+  allow). Also fixed a probe defect found by that evidence: the PING
+  assertion wrongly expected `OK` — Redis replies `PONG`. §1 status block and
+  §10 checklist carry the exact operator fix (one character; prefer renaming
+  the secrets to the step-5 contract names).
 
 ---
 
@@ -337,7 +367,12 @@ DECISIONS.md #204/#205) and skip AWS/OCI entirely for V1.**
       requires an account only you can create — §1 above; **create the
       database in a WEST-EU region — eu-west-1 or eu-central-1 — per
       DECISIONS.md #205; if your existing database is US-region, create an
-      EU one and grab the NEW keys instead**)
+      EU one and grab the NEW keys instead**). **Finding 2026-10-07
+      (DECISIONS.md #211):** secrets were added under the console names
+      (`UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`) and the URL value
+      lost its leading `h` (`ttps://…`); fix the value and rename both to the
+      step-5 names, then run the probe + provisioning in a fresh session
+      (§1 status block has the exact steps).
 - [ ] PostHog EU migration (optional now, required for full West-EU
       alignment): sign up at https://eu.posthog.com, create the project,
       replace `POSTHOG_PROJECT_API_KEY` with the EU project key (§5 above —

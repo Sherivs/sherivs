@@ -56,8 +56,11 @@ try {
   console.log(`PROBE PING http ${response.status}`);
   if (response.ok) {
     const body = await response.json();
-    pingOk = body?.result === "OK";
-    console.log(`PROBE PING result: ${body?.result === "OK" ? "OK" : "(non-OK payload)"}`);
+    // Redis PING without an argument replies "PONG" ( RESP +PONG ); the
+    // wave-4 draft wrongly asserted "OK" and was never run against a live
+    // endpoint until wave 6 (2026-10-07, DECISIONS #211).
+    pingOk = body?.result === "PONG";
+    console.log(`PROBE PING result: ${body?.result === "PONG" ? "PONG" : "(non-PONG payload)"}`);
   }
 } catch (error) {
   console.error(`FINDING: PING threw (${String(error).slice(0, 120)})`);
