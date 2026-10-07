@@ -339,6 +339,35 @@ Cost: **$25 USD one-time** (registration fee).
   the repo root (§45/Vercel `dub1` alignment, DECISIONS.md #205) — run it
   once the PostHog secret is corrected and re-synced.
 
+- **2026-10-07 (DECISIONS.md #214, PLATFORM-023):** credential round-trip
+  COMPLETED + Vercel deployment pipeline UNBLOCKED + production deployed.
+  (1) All 3 wave-8 credentials verified injected in the fresh session
+  (names only): `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`,
+  `POSTHOG_PROJECT_API_KEY` — #213's PostHog absence was a window-timing
+  gap, resolved. (2) Provisioning re-run: **19 upserted / 0 failed / 1
+  honestly skipped** (TWILIO_FROM_NUMBER deliberate CAC console hold) — the
+  exact 19/1 shape #213 predicted. (3) **Root cause found for the
+  "production deploy withheld" state: every Vercel build since at least
+  wave 5 had been failing** (all auto-deployments `readyState: ERROR`) —
+  Vercel's guard blocks `@tanstack/react-start@1.168.44` (CVE-2026-102989
+  XSS). Fixed by upgrading to 1.168.60 (commit d3f4e33; zod 4.4.3 -> 4.6.5
+  rides along and HARDENS strictObject `__proto__` denial — four
+  recorded-finding tests flipped to refusal assertions per their own
+  reports' documented procedure; no module changed). First build after the
+  fix: READY (preview, 20:25:06Z). (4) Production deploy executed via the
+  documented CLI path: deployment `dpl_BXCb5tTxJjDo3xTdeHrww2sriMvt`
+  READY, target production, built from commit d3f4e33, aliases assigned
+  (`coregrid-scholar-migration.vercel.app`,
+  `coregrid-scholar-migration-vibeora.vercel.app`). HTTP evidence: the
+  `-vibeora` production alias answers HTTP 302 (Vercel SSO deployment
+  protection is ON for the project — `all_except_custom_domains` — so
+  anonymous requests meet the protection layer, not the app); the bare
+  alias still answered HTTP 404 from the edge at 20:32Z (it has never
+  served a READY production deployment before — edge propagation finding,
+  recorded, API proves the assignment). Public HTTP-200 verification
+  requires either disabling the SSO protection (operator call,
+  security-sensitive) or a Protection Bypass for Automation token.
+
 ---
 
 ## 9. AWS and OCI — do you need them? (direct answer: not for V1)
@@ -389,16 +418,13 @@ DECISIONS.md #204/#205) and skip AWS/OCI entirely for V1.**
       Vercel with the derived `VITE_VAPID_PUBLIC_KEY` mirror (PLATFORM-022
       provisioning run). Delivery activates once browser subscriptions exist.
 - [x] PostHog project key → `POSTHOG_PROJECT_API_KEY` (grabbed autonomously
-      2026-10-06; on Vercel). PARTIALLY CLOSED — 2026-10-07 (DECISIONS.md
-      #213): the operator stated the key was added to Cursor Secrets, but
-      this session's environment does NOT carry the name `POSTHOG_PROJECT_API_KEY`
-      (verified against both the VM env and the injected secret-names list —
-      only `POSTHOG_PERSONAL_API_KEY` is present). The value remains live on
-      Vercel from the wave-4/5 sync, so the runtime is unaffected. Operator
-      action: re-check the Cursor Secret spelling — it must be exactly
-      `POSTHOG_PROJECT_API_KEY` (the personal key name is a different
-      credential and is deliberately never synced to Vercel) — then re-run
-      `node scripts/provision-vercel-env.mjs` in a fresh session.
+      2026-10-06; on Vercel). FULLY CLOSED — 2026-10-07 (DECISIONS.md #214):
+      in the fresh session after the operator's re-check, the secret was
+      verified injected (names only) and round-tripped to Vercel in the
+      PLATFORM-023 provisioning run (19 upserted / 0 failed / 1 honestly
+      skipped — `TWILIO_FROM_NUMBER` deliberate CAC console hold). The
+      personal key name remains a different credential and is deliberately
+      never synced to Vercel.
 - [x] Upstash Redis → secrets `REDIS_REST_URL`, `REDIS_REST_TOKEN` — DONE
       2026-10-07 (DECISIONS.md #212): credentials injected under the exact
       contract names, capability probe exit 0 (PING OK + one governed

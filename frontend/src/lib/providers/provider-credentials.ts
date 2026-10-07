@@ -446,7 +446,7 @@ export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = 
     hasHealthCheck: false,
     status: "CONFIGURED_BUT_UNVERIFIED",
     verificationLevel: "capability_tested",
-    note: "Grabbed autonomously via the management API and ingest-verified with ONE synthetic event (http 200, distinct_id control-plane/creds-wave-5) 2026-10-06. Safe in the browser bundle by design (ingest key, not a secret). NO analytics surface may ship until the §19/§20/§21 pipeline (authorization -> classification -> minimization -> redaction) is implemented and tested.",
+    note: "Grabbed autonomously via the management API and ingest-verified with ONE synthetic event (http 200, distinct_id control-plane/creds-wave-5) 2026-10-06. Safe in the browser bundle by design (ingest key, not a secret). NO analytics surface may ship until the §19/§20/§21 pipeline is implemented and tested. Round-trip COMPLETED 2026-10-07 (#214): Cursor Secrets -> Vercel (PLATFORM-023 run).",
   },
   {
     envVar: "SENTRY_AUTH_TOKEN",
