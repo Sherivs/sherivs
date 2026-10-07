@@ -37,14 +37,14 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset?: () => void }) {
+function ErrorComponent({ error, reset }: { error: unknown; reset?: () => void }) {
   console.error(error);
   return (
     <div className="flex min-h-dvh items-center justify-center px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold">Something went wrong</h1>
         <p className="mt-2 text-sm text-muted-foreground break-words">
-          {error?.message ?? "An unexpected error occurred."}
+          {error instanceof Error ? error.message : "An unexpected error occurred."}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           {reset && (

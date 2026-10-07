@@ -50,7 +50,7 @@ export const Route = createFileRoute("/_authenticated")({
   errorComponent: AuthenticatedRouteErrorComponent,
 });
 
-function AuthenticatedRouteErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function AuthenticatedRouteErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   const router = useRouter();
   return (
     <RouteErrorBoundary

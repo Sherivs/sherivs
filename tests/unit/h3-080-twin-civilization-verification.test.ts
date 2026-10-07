@@ -241,19 +241,20 @@ describe("G-080: authority-mirror forgery attempts", () => {
     if (!parsed.ok) expect(parsed.reason).toBe("invalid_shape");
   });
 
-  it("contains prototype-pollution smuggling via a __proto__ own key — no pollution, clean output (KNOWN RISK: strict refusal is evaded)", () => {
-    // zod strictObject silently strips a __proto__ own key instead of refusing
-    // it with invalid_shape. The harmful effect is still contained: nothing
-    // pollutes, and the parsed artifact carries none of the smuggled bytes.
+  it("refuses prototype-pollution smuggling via a __proto__ own key with the typed strict refusal (KR-3 RESOLVED 2026-10-07 by the zod 4.6.5 upgrade, DECISIONS.md #214)", () => {
+    // The wave report recorded KR-3: zod strictObject silently stripped a
+    // __proto__ own key instead of refusing it with invalid_shape. zod
+    // >= 4.5.4 (runtime 4.6.5, pulled by @tanstack/start-plugin-core ^4.5.4
+    // with @tanstack/react-start 1.168.60) hardened the check: the strict
+    // refusal now fires for that key name too. No pollution, and the
+    // artifact fails parsing as the strict-surface law demands.
     const smuggled: unknown = JSON.parse(
       JSON.stringify(envelopeFixture()).replace(/^(\{)/, '$1"__proto__":{"polluted":true},'),
     );
     const parsed = parseSharedStateEnvelope(smuggled);
-    expect(parsed.ok).toBe(true); // strict refusal evaded — see report KNOWN RISK KR-3
-    if (parsed.ok) {
-      expect(Object.getPrototypeOf(parsed.value)).toBe(Object.prototype);
-      expect(Object.getOwnPropertyNames(parsed.value)).not.toContain("__proto__");
-      expect(JSON.stringify(parsed.value)).not.toContain("polluted");
+    expect(parsed.ok).toBe(false); // strict refusal now fires — KR-3 closed
+    if (!parsed.ok) {
+      expect(parsed.reason).toBe("invalid_shape");
     }
     const victim: Record<string, unknown> = {};
     expect(victim.polluted).toBeUndefined(); // no global prototype pollution

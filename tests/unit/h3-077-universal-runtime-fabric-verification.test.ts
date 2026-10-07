@@ -197,7 +197,7 @@ describe("H3-077 attack: client-supplied tenant/context injection", () => {
     expectContained("undefined both", decideRuntimeRegistration(undefined, undefined), "invalid_context");
   });
 
-  it("prototype-pollution keys injected via JSON never influence the decision (tenant/actor derive only from the context)", () => {
+  it("denies a request carrying a JSON-injected own `__proto__` key outright — tenant/actor derive only from the context (zod >= 4.5.4 hardening; previously silently recognized)", () => {
     const forged = clone(installRequest()) as Record<string, unknown>;
     Object.defineProperty(forged, "__proto__", {
       value: { resolvedTenantRef: "tenant_b", actorRef: "role:kernel-supreme" },
@@ -205,14 +205,20 @@ describe("H3-077 attack: client-supplied tenant/context injection", () => {
       writable: true,
       configurable: true,
     });
+    expectContained(
+      "own __proto__ key smuggling (silent-recognition finding resolved 2026-10-07 by the zod 4.6.5 upgrade, DECISIONS.md #214)",
+      decideRuntimeRegistration(forged, context()),
+      "invalid_request_shape",
+    );
+    // Even on the deny path the tenant binding comes from the server-resolved
+    // context, never from the forged request bytes.
     const decision = decideRuntimeRegistration(forged, context());
-    expect(decision.outcome).toBe("allow");
-    if (decision.outcome === "allow") {
+    if (decision.outcome === "deny" && decision.tenantRef !== undefined) {
       expect(decision.tenantRef).toBe("tenant_a");
-      expect(decision.tenantRef).not.toBe("tenant_b");
-      expect(decision.decidedBy).toBe("role:fabric-administrator");
-      expect(decision.decidedBy).not.toBe("role:kernel-supreme");
     }
+    const victim: Record<string, unknown> = {};
+    expect(victim.resolvedTenantRef).toBeUndefined();
+    expect(victim.actorRef).toBeUndefined();
   });
 
   it("the decision tenant ALWAYS equals the server-resolved context tenant — the same request yields different tenants only when the CONTEXT differs", () => {

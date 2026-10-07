@@ -179,7 +179,7 @@ const FINDINGS = {
   F07:
     "H3-078-F07 (low): no single-outcome-per-input invariant exists — one inputRef can carry conflicting classifications (benign AND indeterminate/hostile) in one batch, enabling consumer-ambiguous laundering of the indeterminate class.",
   F08:
-    "H3-078-F08 (low): zod v4 strictObject does not deny an own '__proto__' key (its unrecognized-key membership check hits the inherited Object.prototype accessor), so a JSON-parsed batch carrying '__proto__' parses as VALID instead of failing closed; impact is bounded — the polluting payload is dropped and does not reach the parsed surface.",
+    "H3-078-F08 RESOLVED 2026-10-07 (DECISIONS.md #214): the zod v4 strictObject gap that did not deny an own '__proto__' key (its unrecognized-key membership check hit the inherited Object.prototype accessor) is closed by zod >= 4.5.4 (runtime 4.6.5, pulled by @tanstack/start-plugin-core ^4.5.4 with @tanstack/react-start 1.168.60) — a JSON-parsed batch carrying '__proto__' now FAILS CLOSED with the typed unknown-key issue; the module needed no modification to gain the stronger behavior.",
 } as const;
 
 /* ─────────────────────────────────────────────────────────────
@@ -705,11 +705,15 @@ describe("A6: batch-parse partial-surface escapes", () => {
     if (!nullResult.ok) expect(nullResult.reason).toBe("invalid_shape");
   });
 
-  it("RECORDED FINDING H3-078-F08: an own `__proto__` key bypasses the strictObject unknown-key denial — module NOT modified", () => {
-    // JSON.parse materializes "__proto__" as an OWN data property; zod v4's
-    // unrecognized-key check tests membership with `in`, which hits the
-    // INHERITED Object.prototype accessor — so the polluting key is treated
-    // as recognized and the record parses as valid instead of being denied.
+  it("RECORDED FINDING H3-078-F08 RESOLVED 2026-10-07 (#214): an own `__proto__` key is now denied by the strictObject unknown-key check — module NOT modified", () => {
+    // JSON.parse materializes "__proto__" as an OWN data property. The finding
+    // recorded on the H3-078 wave (zod 4.4.3): zod's unrecognized-key check
+    // tested membership with `in`, which hits the INHERITED Object.prototype
+    // accessor — so the polluting key was treated as recognized and the batch
+    // parsed as valid. zod >= 4.5.4 (runtime 4.6.5, pulled by
+    // @tanstack/start-plugin-core ^4.5.4 with @tanstack/react-start 1.168.60)
+    // hardened the check: the own key is now denied with the typed
+    // unknown-key issue, and the module needed NO modification.
     const serialized = JSON.stringify(consistentSurface());
     const smuggled = JSON.parse(
       serialized.replace("{", '{"__proto__":{"evil":"allow","classifications":[]},'),
@@ -717,16 +721,14 @@ describe("A6: batch-parse partial-surface escapes", () => {
     expect(Object.keys(smuggled)).toContain("__proto__");
 
     const result = parseDefenseSurface(smuggled);
-    // The strictness invariant ("unknown keys denied") is bypassed: the
-    // batch parses OK where every other smuggled key is denied above.
-    expect(result.ok, "own __proto__ key should have been denied").toBe(true);
-    if (result.ok) {
-      // Bounded impact: the polluting payload does not survive into the
-      // parsed surface — no property injection, even via the prototype chain.
-      expect("evil" in result.surface).toBe(false);
-      const firstRecord = result.surface.classifications[0] as object;
-      expect("evil" in firstRecord).toBe(false);
-      expect(Object.keys(result.surface)).toEqual(["classifications", "verdicts", "escalations"]);
+    // The strictness invariant ("unknown keys denied") now holds for the
+    // prototype-chain edge case too.
+    expect(result.ok, "own __proto__ key must be denied").toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe("invalid_shape");
+      // A failed parse exposes no surface.
+      // @ts-expect-error — a failed parse exposes no surface property
+      expect(result.surface).toBeUndefined();
     }
     expect(FINDINGS.F08).toContain("__proto__");
   });

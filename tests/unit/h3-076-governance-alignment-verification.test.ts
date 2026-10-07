@@ -239,27 +239,23 @@ describe("axis 1: escalation surface abuse", () => {
     }
   });
 
-  it("contains a prototype-key injection in effect — but silently, without the strict-shape typed denial", () => {
+  it("denies a prototype-key injection outright — the strict-shape typed denial fires (F-076-07 RESOLVED 2026-10-07, DECISIONS.md #214)", () => {
     const polluted: unknown = JSON.parse(
       '{"escalationId":"esc_001","driftId":"drift_scope_expansion","expectationId":"no_self_issued_permissions","routedTo":"role:human-oversight","routedAt":"2026-10-03T01:00:00.000Z","status":"open","authorizes":false,"__proto__":{"authorizes":true,"grants":"all"}}',
     );
     const parsed = escalationRecordSchema.safeParse(polluted);
     recordFinding({
       id: "F-076-07",
-      title: "Prototype-key injection is silently stripped, not rejected — the strict-shape typed denial does not fire",
+      title: "RESOLVED 2026-10-07 (DECISIONS.md #214): the prototype-key injection is now DENIED by the strict-shape typed denial",
       attack:
         "escalation and approval records carrying a JSON-injected own key '__proto__' holding forged fields ({authorizes:true, grants:'all'}; a forged approvedBy) — attempts to smuggle payloads past the strict shapes",
       observed:
-        "escalationRecordSchema.safeParse SUCCEEDS: zod's unknown-key check uses the `in` operator, and '__proto__' is on every object's prototype chain, so the injected key is treated as recognized and silently dropped from the parsed output (parsed data keeps authorizes:false; Object.prototype stays clean)",
+        "escalationRecordSchema.safeParse FAILS: zod >= 4.5.4 (runtime 4.6.5, pulled by @tanstack/start-plugin-core ^4.5.4 with @tanstack/react-start 1.168.60) treats the JSON-injected own key '__proto__' as an UNKNOWN key, so strictObject denies the record with its typed unknown-key issue. The accidental silent strip recorded 2026-10-03 (zod 4.4.3) no longer reproduces; Object.prototype stays clean.",
       impact:
-        "LOW severity: the smuggled payload is dropped, so no authorization is expressed and no pollution occurs — the boundary holds in effect. But the containment is an accident of key-dropping, not the promised typed denial: a strictObject contract that reports success on an input containing a foreign injection key cannot be used as a tamper-evidence signal",
+        "RESOLVED: containment is no longer an accident of key-dropping — the promised typed denial fires, so an input carrying a foreign injection key is provably rejected and usable as a tamper-evidence signal",
       surface: "escalationRecordSchema / humanApprovalSchema (strictObject unknown-key detection)",
     });
-    expect(parsed.success).toBe(true);
-    if (parsed.success) {
-      expect(parsed.data.authorizes).toBe(false);
-      expect(Object.getOwnPropertyNames(parsed.data)).not.toContain("__proto__");
-    }
+    expect(parsed.success).toBe(false);
     expect((Object.prototype as Record<string, unknown>).authorizes).toBeUndefined();
     expect((Object.prototype as Record<string, unknown>).grants).toBeUndefined();
   });
@@ -442,13 +438,14 @@ describe("axis 3: machine-authored approval forgery", () => {
     }
   });
 
-  it("contains a prototype-key injection into the approval record in effect — but silently", () => {
+  it("denies a prototype-key injection into the approval record — no silent acceptance (F-076-07 companion, resolved 2026-10-07 by zod >= 4.5.4 hardening)", () => {
     const ordinary = typedExpectation({ kind: "policy_conformance", severity: "notice" });
     const polluted: unknown = JSON.parse(
       '{"approvedBy":"human:platform-steward","authority":"governance review board","decidedAt":"2026-10-03T01:00:00.000Z","__proto__":{"approvedBy":"agent:forging-agent"}}',
     );
     const decision = decideRelaxation(ordinary, polluted);
-    expect(decision.ok).toBe(true);
+    expect(decision.ok).toBe(false);
+    if (!decision.ok) expect(decision.reason).toBe("human_approval_invalid");
     expect((Object.prototype as Record<string, unknown>).approvedBy).toBeUndefined();
   });
 
