@@ -366,9 +366,13 @@ DECISIONS.md #204/#205) and skip AWS/OCI entirely for V1.**
       business plan ($20 top-up, 2026-10-07); purchase is a deliberate hold,
       activation is config-only (see §2 — per-org senders now supported).
 - [x] PostHog project key → `POSTHOG_PROJECT_API_KEY` (grabbed autonomously
-      2026-10-06; on Vercel; add to Cursor Secrets from the handover artifact)
+      2026-10-06; on Vercel; add to Cursor Secrets from the handover artifact —
+      **still missing from Cursor Secrets, re-verified 2026-10-07 (DECISIONS.md
+      #212): the value exists only on Vercel**)
 - [x] Push-notification keys (web) → `VAPID_PUBLIC_KEY` + `VAPID_PRIVATE_KEY`
-      (generated 2026-10-06; on Vercel; add to Cursor Secrets)
+      (generated 2026-10-06; on Vercel; add to Cursor Secrets — **still
+      missing from Cursor Secrets, re-verified 2026-10-07 (DECISIONS.md
+      #212): the values exist only on Vercel**)
 - [x] Upstash Redis → secrets `REDIS_REST_URL`, `REDIS_REST_TOKEN` — DONE
       2026-10-07 (DECISIONS.md #212): credentials injected under the exact
       contract names, capability probe exit 0 (PING OK + one governed
