@@ -93,6 +93,64 @@ for (const role of roles) {
 if (typeof loopModule.runExecutiveLoop !== "function") {
   findings.push("executive-loop.ts did not export runExecutiveLoop — Jarvis V1 slice is unwired");
 }
+
+// 6. Workforce performance lens (DECISIONS.md #207 / PLATFORM-016) resolves,
+//    computes deterministically, and never fabricates unobservable metrics.
+const metricsModule = await jiti.import(join(ROOT, "frontend/src/lib/workforce/performance-metrics.ts"));
+if (typeof metricsModule.computeWorkforcePerformance !== "function") {
+  findings.push("performance-metrics.ts did not export computeWorkforcePerformance — §40 lens is unwired");
+} else {
+  const mission = {
+    missionId: "gate-m-1",
+    schemaVersion: "1.0",
+    tenantId: "tenant-gate",
+    objective: "gate probe",
+    nonScope: [],
+    ownerRef: "owner-gate",
+    actorRefs: ["worker-gate"],
+    authorizedActions: ["observe"],
+    tasks: [{ taskId: "gate-t-1", title: "task", authorizedActions: ["observe"], requiredEvidenceKinds: ["test_report"] }],
+    admissionGates: [{ gateId: "gate-g-1", kind: "definition", reason: "gate" }],
+    successCriteria: ["verified"],
+    requiredEvidenceKinds: ["test_report"],
+    lifecycle: "SUCCEEDED",
+    expiresAt: null,
+    provenance: {
+      declaredBy: "jarvis",
+      declaredAt: "2026-10-06T00:00:00.000Z",
+      authorityRef: "DECISIONS.md#207",
+      contextRef: null,
+      sourceRef: null,
+      generatedByAi: true,
+      verified: false,
+    },
+  };
+  try {
+    const gateReport = metricsModule.computeWorkforcePerformance({
+      tenantId: "tenant-gate",
+      now: "2026-10-07T04:00:00.000Z",
+      missions: [mission],
+      evidence: [],
+      transitions: [
+        { missionId: "gate-m-1", actorId: "worker-gate", from: "RUNNING", to: "SUCCEEDED", at: "2026-10-06T02:00:00.000Z" },
+      ],
+    });
+    const m = gateReport.metrics;
+    if (m.missionCompletionRate.status !== "computed" || m.missionCompletionRate.value !== 1) {
+      findings.push("performance lens golden probe: completion rate did not compute to 1");
+    }
+    if (m.meanTimeToCompletionMs.status !== "computed" || m.meanTimeToCompletionMs.value !== 7200000) {
+      findings.push("performance lens golden probe: mean time to completion did not compute to 7200000ms");
+    }
+    for (const key of ["tokenUsage", "computeCost", "toolErrors", "securityViolations"]) {
+      if (m[key].status !== "not_observable" || m[key].value !== null) {
+        findings.push(`performance lens golden probe: ${key} must be not_observable (§65 — never invented)`);
+      }
+    }
+  } catch (error) {
+    findings.push(`performance lens golden probe threw: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
 const histogram = catalogModule.workforceScopeHistogram();
 const expectedTotal = roles.length;
 const histogramTotal = Object.values(histogram).reduce((sum, count) => sum + count, 0);
@@ -110,5 +168,6 @@ console.log(
     `(V1=${histogram.V1}, V2=${histogram.V2}, DEFERRED_BEYOND_V2=${histogram.DEFERRED_BEYOND_V2}, ` +
     `REQUIRES_ARCHITECTURAL_DECISION=${histogram.REQUIRES_ARCHITECTURAL_DECISION}); ` +
     `all V1 substrate refs exist in-repo; executive control plane singular (jarvis, proposal-only); ` +
-    `executive loop wired (${rel(join(ROOT, "frontend/src/lib/jarvis/executive-loop.ts"))}).`,
+    `executive loop wired (${rel(join(ROOT, "frontend/src/lib/jarvis/executive-loop.ts"))}); ` +
+    `performance lens wired and §65-honest (${rel(join(ROOT, "frontend/src/lib/workforce/performance-metrics.ts"))}).`,
 );
