@@ -368,6 +368,23 @@ Cost: **$25 USD one-time** (registration fee).
   requires either disabling the SSO protection (operator call,
   security-sensitive) or a Protection Bypass for Automation token.
 
+- **2026-10-07 (DECISIONS.md #214 addendum, 21:05Z):** operator follow-up
+  "deploy the project … it is showing failed all the time … fix everything"
+  executed: (1) the "failed all the time" state was **82 accumulated ERROR
+  deployment records** from before the CVE fix — all deleted (ERROR records
+  only); the dashboard now shows 4 deployments, ALL READY. (2) Production
+  redeployed from the latest commit b3ba12b (`dpl_J4gLpWxLe58dmdZ5UdLfEv6qzh6P`,
+  READY, target production). (3) The bare alias
+  `coregrid-scholar-migration.vercel.app` still answers edge 404 after a
+  full API-level remediation pass (alias record present, domain delete +
+  re-add, DNS + all edge IPs checked — the team-suffixed
+  `coregrid-scholar-migration-vibeora.vercel.app` serves correctly):
+  hostname-level Vercel edge-route anomaly, escalate to Vercel support.
+  (4) SSO deployment protection stays ON (operator-only setting): anonymous
+  visitors hit the Vercel login wall; the team owner sees the app after
+  Vercel SSO login; disabling it for public access is a dashboard toggle
+  (Settings → Deployment Protection) — deliberately not agent-executed (§7).
+
 ---
 
 ## 9. AWS and OCI — do you need them? (direct answer: not for V1)

@@ -66,3 +66,13 @@ Security-mandated dependency upgrade + deployment-pipeline unblock + first-ever 
 
 - Operator: watch the bare `.vercel.app` alias in the Vercel dashboard (edge propagation finding above); decide on SSO deployment protection for public access; the console steps in runbook §10.
 - Agent-side next window (if directed): re-verify the bare alias; any new capability probes only on operator instruction.
+
+## Addendum — same-session follow-through (2026-10-07T21:05Z, DECISIONS.md #214 addendum)
+
+Operator follow-up: "So now deploy the project into vercel, because it is showing failed all the time. And also fix everything."
+
+1. **"Failed all the time" root cause:** the project carried **82 accumulated ERROR deployment records** (pre-CVE-fix builds back to 2026-10-01). All 82 deleted via API (`readyState: ERROR` only — superseded build artifacts, no data). The project now shows exactly 4 deployments, **all READY**.
+2. **Production redeployed from latest HEAD** (b3ba12b, includes this ledger): `dpl_J4gLpWxLe58dmdZ5UdLfEv6qzh6P` READY, target production, exit 0, build cache reused. Production runs this branch's latest commit.
+3. **Bare-alias 404 elevated to a platform-level finding:** after the full API-side remediation pass (alias assignment record present — `POST /v13/deployments/{uid}/aliases` returned the pre-existing assignment; domain delete + re-add cycle re-verified instantly; DNS resolves to Vercel anycast; ALL edge IPs 404 the bare hostname while serving the team-suffixed alias) the bare hostname `coregrid-scholar-migration.vercel.app` still answers edge-level `NOT_FOUND`. Hostname-level Vercel edge-route anomaly — escalate to Vercel support. Working production URL: `https://coregrid-scholar-migration-vibeora.vercel.app`.
+4. **Runtime health:** build events clean; runtime request logs empty BY DESIGN — the SSO deployment protection wall blocks all anonymous traffic (§7: an auth boundary is not removed agent-side). Team owner access: open the URL in a browser logged into Vercel SSO. Public access = dashboard toggle (Settings → Deployment Protection), operator-only.
+5. No code changes in this addendum (infra + ledger only); no new verify run required (the gate result for b3ba12b stands: exit 0).
