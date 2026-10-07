@@ -323,6 +323,22 @@ Cost: **$25 USD one-time** (registration fee).
   values already on Vercel from wave 4 are untouched). Registry entries
   flipped to OPERATIONAL / capability_tested with dated probe evidence.
 
+- **2026-10-07 (DECISIONS.md #213, PLATFORM-022):** VAPID pair
+  (operator-regenerated) round-tripped Cursor Secrets → Vercel. Provisioning
+  run: **18 upserted / 0 failed / 2 honestly skipped** (`TWILIO_FROM_NUMBER`
+  — deliberate CAC console hold; `POSTHOG_PROJECT_API_KEY` — absent from
+  that session's environment despite the operator having added it to Cursor
+  Secrets; its wave-4 value stays live on Vercel, upsert never deletes).
+  Registry notes rewritten with the dated regeneration evidence; statuses
+  unchanged (`CONFIGURED_BUT_UNVERIFIED` / `credential_present` — a push
+  capability claim still requires a real browser subscription). **Production
+  deployment deliberately WITHHELD this run:** the session rule is to not
+  deploy a runtime missing credentials it could have had, and the PostHog
+  project key is re-checkable by the operator (§10). The documented deploy
+  path is `npx vercel deploy --prod --yes --token "$VERCEL_API_TOKEN"` from
+  the repo root (§45/Vercel `dub1` alignment, DECISIONS.md #205) — run it
+  once the PostHog secret is corrected and re-synced.
+
 ---
 
 ## 9. AWS and OCI — do you need them? (direct answer: not for V1)
@@ -365,14 +381,24 @@ DECISIONS.md #204/#205) and skip AWS/OCI entirely for V1.**
       `node scripts/provision-vercel-env.mjs`. Account is already a funded
       business plan ($20 top-up, 2026-10-07); purchase is a deliberate hold,
       activation is config-only (see §2 — per-org senders now supported).
-- [x] PostHog project key → `POSTHOG_PROJECT_API_KEY` (grabbed autonomously
-      2026-10-06; on Vercel; add to Cursor Secrets from the handover artifact —
-      **still missing from Cursor Secrets, re-verified 2026-10-07 (DECISIONS.md
-      #212): the value exists only on Vercel**)
 - [x] Push-notification keys (web) → `VAPID_PUBLIC_KEY` + `VAPID_PRIVATE_KEY`
-      (generated 2026-10-06; on Vercel; add to Cursor Secrets — **still
-      missing from Cursor Secrets, re-verified 2026-10-07 (DECISIONS.md
-      #212): the values exist only on Vercel**)
+      — FULLY CLOSED 2026-10-07 (DECISIONS.md #213): the pair was REGENERATED
+      by the operator (deliberate — zero push subscriptions existed, the fresh
+      pair is canonical), injected into Cursor Secrets under the exact
+      contract names, verified in the VM (names only), and round-tripped to
+      Vercel with the derived `VITE_VAPID_PUBLIC_KEY` mirror (PLATFORM-022
+      provisioning run). Delivery activates once browser subscriptions exist.
+- [x] PostHog project key → `POSTHOG_PROJECT_API_KEY` (grabbed autonomously
+      2026-10-06; on Vercel). PARTIALLY CLOSED — 2026-10-07 (DECISIONS.md
+      #213): the operator stated the key was added to Cursor Secrets, but
+      this session's environment does NOT carry the name `POSTHOG_PROJECT_API_KEY`
+      (verified against both the VM env and the injected secret-names list —
+      only `POSTHOG_PERSONAL_API_KEY` is present). The value remains live on
+      Vercel from the wave-4/5 sync, so the runtime is unaffected. Operator
+      action: re-check the Cursor Secret spelling — it must be exactly
+      `POSTHOG_PROJECT_API_KEY` (the personal key name is a different
+      credential and is deliberately never synced to Vercel) — then re-run
+      `node scripts/provision-vercel-env.mjs` in a fresh session.
 - [x] Upstash Redis → secrets `REDIS_REST_URL`, `REDIS_REST_TOKEN` — DONE
       2026-10-07 (DECISIONS.md #212): credentials injected under the exact
       contract names, capability probe exit 0 (PING OK + one governed
