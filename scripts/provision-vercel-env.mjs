@@ -58,6 +58,10 @@ const ENV_MAPPINGS = [
   { key: "VITE_VAPID_PUBLIC_KEY", source: "VAPID_PUBLIC_KEY", target: "client" },
   // Product analytics ingest key (client-safe by design; surface gated by §19/§20/§21)
   { key: "POSTHOG_PROJECT_API_KEY", source: "POSTHOG_PROJECT_API_KEY", target: "server" },
+  // Optional distributed rate-limit plane (Upstash-compatible REST; DECISIONS.md #209).
+  // Absent credentials degrade to the in-process limiter (Part 31) — never hard-fail.
+  { key: "REDIS_REST_URL", source: "REDIS_REST_URL", target: "server" },
+  { key: "REDIS_REST_TOKEN", source: "REDIS_REST_TOKEN", target: "server" },
 ];
 
 async function vercelFetch(token, path, init = {}) {

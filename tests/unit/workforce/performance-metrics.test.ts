@@ -9,6 +9,7 @@ import type {
   MissionEvidenceRecord,
   MissionLifecycleState,
 } from "../../../frontend/src/lib/mission/mission-contract";
+import type { UsageRecord } from "../../../frontend/src/lib/metering/usage-ledger";
 
 const TENANT = "tenant-a";
 const NOW = "2026-10-07T04:00:00.000Z";
@@ -76,6 +77,25 @@ function makeTransition(overrides: Partial<MissionTransitionObservation> = {}): 
     actorId: "worker-1",
     from: "RUNNING",
     to: "SUCCEEDED",
+    at: "2026-10-06T02:00:00.000Z",
+    ...overrides,
+  };
+}
+
+function makeUsage(overrides: Partial<UsageRecord> = {}): UsageRecord {
+  seq += 1;
+  return {
+    tenantRef: TENANT,
+    actorRef: "worker-1",
+    agentRef: "sdk_engineer",
+    missionRef: "m-1",
+    model: "coregrid-test-model",
+    provider: "ai-gateway",
+    purpose: "summarization",
+    tokensIn: 100,
+    tokensOut: 50,
+    durationMs: 1200,
+    estimatedCostUsd: 0.0003,
     at: "2026-10-06T02:00:00.000Z",
     ...overrides,
   };
@@ -259,6 +279,82 @@ describe("workforce performance metrics (directive §40)", () => {
     }
   });
 
+  it("computes token usage from supplied metering records only (no records → not observable)", () => {
+    const report = computeWorkforcePerformance({
+      tenantId: TENANT,
+      now: NOW,
+      missions: [makeMission({ missionId: "m-1" })],
+      evidence: [],
+      transitions: [],
+      usage: [makeUsage(), makeUsage({ tokensIn: 40, tokensOut: 10 })],
+    });
+    const metric = report.metrics.tokenUsage;
+    expect(metric.status).toBe("computed");
+    expect(metric.claimClass).toBe("observed");
+    expect(metric.value).toBe(100 + 50 + 40 + 10);
+    expect(metric.sample).toBe(2);
+  });
+
+  it("sums only non-null cost estimates and rounds to micro-dollar precision", () => {
+    const report = computeWorkforcePerformance({
+      tenantId: TENANT,
+      now: NOW,
+      missions: [makeMission({ missionId: "m-1" })],
+      evidence: [],
+      transitions: [],
+      usage: [
+        makeUsage({ estimatedCostUsd: 0.0001 }),
+        makeUsage({ estimatedCostUsd: 0.0002 }),
+        makeUsage({ estimatedCostUsd: null }),
+      ],
+    });
+    const metric = report.metrics.computeCost;
+    expect(metric.status).toBe("computed");
+    expect(metric.value).toBeCloseTo(0.0003, 9);
+    expect(metric.sample).toBe(2);
+  });
+
+  it("never guesses a cost when no usage record carries a rate entry (Part 9)", () => {
+    const report = computeWorkforcePerformance({
+      tenantId: TENANT,
+      now: NOW,
+      missions: [makeMission({ missionId: "m-1" })],
+      evidence: [],
+      transitions: [],
+      usage: [makeUsage({ estimatedCostUsd: null }), makeUsage({ estimatedCostUsd: null })],
+    });
+    expect(report.metrics.computeCost.status).toBe("not_observable");
+    expect(report.metrics.computeCost.value).toBeNull();
+    expect(report.metrics.computeCost.reason).toMatch(/never guessed/);
+    expect(report.metrics.tokenUsage.status).toBe("computed");
+  });
+
+  it("excludes and counts cross-tenant usage records without mixing them", () => {
+    const report = computeWorkforcePerformance({
+      tenantId: TENANT,
+      now: NOW,
+      missions: [makeMission({ missionId: "m-1" })],
+      evidence: [],
+      transitions: [],
+      usage: [makeUsage(), makeUsage({ tenantRef: "tenant-b", tokensIn: 9999 })],
+    });
+    expect(report.excludedCrossTenant.usage).toBe(1);
+    expect(report.metrics.tokenUsage.value).toBe(150);
+  });
+
+  it("fails closed on a usage record that is not attribution-complete", () => {
+    expect(() =>
+      computeWorkforcePerformance({
+        tenantId: TENANT,
+        now: NOW,
+        missions: [makeMission({ missionId: "m-1" })],
+        evidence: [],
+        transitions: [],
+        usage: [makeUsage({ actorRef: "  " })],
+      }),
+    ).toThrow(/usage record: actorRef is required/);
+  });
+
   it("computes the quality score as an inferred composite of observables only", () => {
     const report = computeWorkforcePerformance({
       tenantId: TENANT,
@@ -312,7 +408,7 @@ describe("workforce performance metrics (directive §40)", () => {
         makeTransition({ missionId: "m-unknown" }),
       ],
     });
-    expect(report.excludedCrossTenant).toEqual({ missions: 1, evidence: 1, transitions: 1 });
+    expect(report.excludedCrossTenant).toEqual({ missions: 1, evidence: 1, transitions: 1, usage: 0 });
     expect(report.sampleSize).toBe(1);
     expect(report.metrics.missionCompletionRate.value).toBe(1);
   });

@@ -97,34 +97,35 @@ if (typeof loopModule.runExecutiveLoop !== "function") {
 // 6. Workforce performance lens (DECISIONS.md #207 / PLATFORM-016) resolves,
 //    computes deterministically, and never fabricates unobservable metrics.
 const metricsModule = await jiti.import(join(ROOT, "frontend/src/lib/workforce/performance-metrics.ts"));
+const gateMission = {
+  missionId: "gate-m-1",
+  schemaVersion: "1.0",
+  tenantId: "tenant-gate",
+  objective: "gate probe",
+  nonScope: [],
+  ownerRef: "owner-gate",
+  actorRefs: ["worker-gate"],
+  authorizedActions: ["observe"],
+  tasks: [{ taskId: "gate-t-1", title: "task", authorizedActions: ["observe"], requiredEvidenceKinds: ["test_report"] }],
+  admissionGates: [{ gateId: "gate-g-1", kind: "definition", reason: "gate" }],
+  successCriteria: ["verified"],
+  requiredEvidenceKinds: ["test_report"],
+  lifecycle: "SUCCEEDED",
+  expiresAt: null,
+  provenance: {
+    declaredBy: "jarvis",
+    declaredAt: "2026-10-06T00:00:00.000Z",
+    authorityRef: "DECISIONS.md#207",
+    contextRef: null,
+    sourceRef: null,
+    generatedByAi: true,
+    verified: false,
+  },
+};
 if (typeof metricsModule.computeWorkforcePerformance !== "function") {
   findings.push("performance-metrics.ts did not export computeWorkforcePerformance — §40 lens is unwired");
 } else {
-  const mission = {
-    missionId: "gate-m-1",
-    schemaVersion: "1.0",
-    tenantId: "tenant-gate",
-    objective: "gate probe",
-    nonScope: [],
-    ownerRef: "owner-gate",
-    actorRefs: ["worker-gate"],
-    authorizedActions: ["observe"],
-    tasks: [{ taskId: "gate-t-1", title: "task", authorizedActions: ["observe"], requiredEvidenceKinds: ["test_report"] }],
-    admissionGates: [{ gateId: "gate-g-1", kind: "definition", reason: "gate" }],
-    successCriteria: ["verified"],
-    requiredEvidenceKinds: ["test_report"],
-    lifecycle: "SUCCEEDED",
-    expiresAt: null,
-    provenance: {
-      declaredBy: "jarvis",
-      declaredAt: "2026-10-06T00:00:00.000Z",
-      authorityRef: "DECISIONS.md#207",
-      contextRef: null,
-      sourceRef: null,
-      generatedByAi: true,
-      verified: false,
-    },
-  };
+  const mission = gateMission;
   try {
     const gateReport = metricsModule.computeWorkforcePerformance({
       tenantId: "tenant-gate",
@@ -205,6 +206,95 @@ if (typeof bridgeModule.draftMissionsFromProposals !== "function") {
   }
 }
 
+// 8. Token/cost lens wiring (DECISIONS.md #209): supplied metering records
+//    become observed tokenUsage/computeCost; absent records stay §65-honest;
+//    records without rate entries never yield a guessed cost; the executive
+//    loop passes usage through to the lens.
+const usageRecord = {
+  tenantRef: "tenant-gate",
+  actorRef: "worker-gate",
+  agentRef: "sdk_engineer",
+  missionRef: "gate-m-1",
+  model: "coregrid-gate-model",
+  provider: "ai-gateway",
+  purpose: "summarization",
+  tokensIn: 120,
+  tokensOut: 30,
+  durationMs: 500,
+  estimatedCostUsd: 0.0002,
+  at: "2026-10-06T02:00:00.000Z",
+};
+try {
+  const usageReport = metricsModule.computeWorkforcePerformance({
+    tenantId: "tenant-gate",
+    now: "2026-10-07T04:00:00.000Z",
+    missions: [gateMission],
+    evidence: [],
+    transitions: [
+      { missionId: "gate-m-1", actorId: "worker-gate", from: "RUNNING", to: "SUCCEEDED", at: "2026-10-06T02:00:00.000Z" },
+    ],
+    usage: [usageRecord],
+  });
+  if (
+    usageReport.metrics.tokenUsage.status !== "computed" ||
+    usageReport.metrics.tokenUsage.value !== 150
+  ) {
+    findings.push("usage-lens probe: tokenUsage did not compute to 150 from the supplied metering record");
+  }
+  if (
+    usageReport.metrics.computeCost.status !== "computed" ||
+    usageReport.metrics.computeCost.value !== 0.0002
+  ) {
+    findings.push("usage-lens probe: computeCost did not compute to 0.0002 from the supplied metering record");
+  }
+  const uncosted = metricsModule.computeWorkforcePerformance({
+    tenantId: "tenant-gate",
+    now: "2026-10-07T04:00:00.000Z",
+    missions: [gateMission],
+    evidence: [],
+    transitions: [],
+    usage: [{ ...usageRecord, estimatedCostUsd: null }],
+  });
+  if (
+    uncosted.metrics.computeCost.status !== "not_observable" ||
+    uncosted.metrics.computeCost.value !== null ||
+    !/never guessed/.test(uncosted.metrics.computeCost.reason ?? "")
+  ) {
+    findings.push("usage-lens probe: cost without rate entries must stay not_observable (Part 9 — never guessed)");
+  }
+  let rejectedUsage = false;
+  try {
+    metricsModule.computeWorkforcePerformance({
+      tenantId: "tenant-gate",
+      now: "2026-10-07T04:00:00.000Z",
+      missions: [gateMission],
+      evidence: [],
+      transitions: [],
+      usage: [{ ...usageRecord, actorRef: "  " }],
+    });
+  } catch {
+    rejectedUsage = true;
+  }
+  if (!rejectedUsage) {
+    findings.push("usage-lens probe: a non-attributable usage record must fail closed");
+  }
+  const loopWithUsage = loopModule.runExecutiveLoop({
+    tenantRef: "tenant-gate",
+    objectives: ["gate probe"],
+    observations: [],
+    now: "2026-10-07T04:00:00.000Z",
+    workforce: { missions: [gateMission], evidence: [], transitions: [], usage: [usageRecord] },
+  });
+  if (
+    loopWithUsage.workforcePerformance?.metrics.tokenUsage.status !== "computed" ||
+    loopWithUsage.workforcePerformance?.metrics.tokenUsage.value !== 150
+  ) {
+    findings.push("usage-lens probe: the executive loop did not pass metering records through to the lens");
+  }
+} catch (error) {
+  findings.push(`usage-lens probe threw: ${error instanceof Error ? error.message : String(error)}`);
+}
+
 if (findings.length > 0) {
   fail(`\n  - ${findings.join("\n  - ")}`);
 }
@@ -217,5 +307,6 @@ console.log(
     `all V1 substrate refs exist in-repo; executive control plane singular (jarvis, proposal-only); ` +
     `executive loop wired (${rel(join(ROOT, "frontend/src/lib/jarvis/executive-loop.ts"))}); ` +
     `performance lens wired and §65-honest (${rel(join(ROOT, "frontend/src/lib/workforce/performance-metrics.ts"))}); ` +
+    `token/cost metering lens wired (usage-ledger substrate, §65-honest when no records supplied); ` +
     `mission bridge wired and planning-bounded (${rel(join(ROOT, "frontend/src/lib/jarvis/mission-bridge.ts"))}).`,
 );

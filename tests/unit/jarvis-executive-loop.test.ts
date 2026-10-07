@@ -22,6 +22,7 @@ import type {
   MissionEvidenceRecord,
 } from "../../frontend/src/lib/mission/mission-contract";
 import type { MissionTransitionObservation } from "../../frontend/src/lib/workforce/performance-metrics";
+import type { UsageRecord } from "../../frontend/src/lib/metering/usage-ledger";
 
 const NOW = "2026-10-06T21:00:00.000Z";
 const TENANT = "tenant-a";
@@ -273,8 +274,56 @@ describe("workforce performance lens inside the cycle (§40/§41, DECISIONS #208
     expect(metricItems.length).toBeGreaterThanOrEqual(3);
     for (const item of metricItems) {
       expect(["observed", "inferred"]).toContain(item.claimClass);
-      expect(item.evidenceRef).toMatch(/mission substrate records/);
+      expect(item.evidenceRef).toMatch(/mission substrate \+ metering records/);
     }
+  });
+
+  it("turns supplied metering records into observed token/cost metrics in the briefing", () => {
+    const usage: UsageRecord = {
+      tenantRef: TENANT,
+      actorRef: "backend-engineer",
+      agentRef: "sdk_engineer",
+      missionRef: "m-1",
+      model: "coregrid-test-model",
+      provider: "ai-gateway",
+      purpose: "classification",
+      tokensIn: 220,
+      tokensOut: 90,
+      durationMs: 800,
+      estimatedCostUsd: 0.0007,
+      at: "2026-10-06T02:00:00.000Z",
+    };
+    const result = runExecutiveLoop({
+      tenantRef: TENANT,
+      objectives: ["keep the platform operating"],
+      observations: [],
+      now: NOW,
+      workforce: { missions: [mission], evidence: [evidence], transitions: [transition], usage: [usage] },
+    });
+    const tokenUsage = result.workforcePerformance?.metrics.tokenUsage;
+    const computeCost = result.workforcePerformance?.metrics.computeCost;
+    expect(tokenUsage?.status).toBe("computed");
+    expect(tokenUsage?.value).toBe(310);
+    expect(computeCost?.status).toBe("computed");
+    expect(computeCost?.value).toBeCloseTo(0.0007, 9);
+    const metricSummaries = result.briefing.whatHappened.map((item) => item.summary);
+    expect(metricSummaries.some((s) => s.startsWith("workforce metric tokenUsage"))).toBe(true);
+    expect(metricSummaries.some((s) => s.startsWith("workforce metric computeCost"))).toBe(true);
+  });
+
+  it("keeps token/cost unobservable in the cycle when no usage records are supplied", () => {
+    const result = runExecutiveLoop({
+      tenantRef: TENANT,
+      objectives: [],
+      observations: [],
+      now: NOW,
+      workforce: { missions: [mission], evidence: [evidence], transitions: [transition] },
+    });
+    expect(result.workforcePerformance?.metrics.tokenUsage.status).toBe("not_observable");
+    expect(result.workforcePerformance?.metrics.computeCost.status).toBe("not_observable");
+    const metricSummaries = result.briefing.whatHappened.map((item) => item.summary);
+    expect(metricSummaries.some((s) => s.startsWith("workforce metric tokenUsage"))).toBe(false);
+    expect(metricSummaries.some((s) => s.startsWith("workforce metric computeCost"))).toBe(false);
   });
 
   it("stays observation-only when no workforce inputs are supplied", () => {

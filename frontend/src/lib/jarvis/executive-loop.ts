@@ -30,6 +30,7 @@ import {
   type WorkforcePerformanceReport,
 } from "../workforce/performance-metrics";
 import type { MissionContractCore, MissionEvidenceRecord } from "../mission/mission-contract";
+import type { UsageRecord } from "../metering/usage-ledger";
 
 /* ─────────────────────────────────────────────────────────────
  * Vocabulary
@@ -152,6 +153,12 @@ export interface ExecutiveWorkforceRecords {
   readonly missions: readonly MissionContractCore[];
   readonly evidence: readonly MissionEvidenceRecord[];
   readonly transitions: readonly MissionTransitionObservation[];
+  /**
+   * Optional governed metering records (lib/metering/usage-ledger). When
+   * supplied, the §40 token/cost metrics become observed and join the
+   * briefing; omitted, they stay not_observable (§65).
+   */
+  readonly usage?: readonly UsageRecord[];
 }
 
 export interface ExecutiveLoopInput {
@@ -485,6 +492,7 @@ export function runExecutiveLoop(input: ExecutiveLoopInput): ExecutiveLoopResult
       missions: input.workforce.missions,
       evidence: input.workforce.evidence,
       transitions: input.workforce.transitions,
+      usage: input.workforce.usage,
     });
     const METRIC_LABELS: readonly (keyof WorkforcePerformanceReport["metrics"])[] = [
       "missionCompletionRate",
@@ -494,6 +502,8 @@ export function runExecutiveLoop(input: ExecutiveLoopInput): ExecutiveLoopResult
       "rollbackRate",
       "meanTimeToCompletionMs",
       "meanTimeToRecoveryMs",
+      "tokenUsage",
+      "computeCost",
       "qualityScore",
     ];
     for (const key of METRIC_LABELS) {
@@ -502,7 +512,7 @@ export function runExecutiveLoop(input: ExecutiveLoopInput): ExecutiveLoopResult
       whatHappenedItems.push({
         summary: `workforce metric ${key} = ${metric.value} (sample: ${metric.sample})`,
         claimClass: metric.claimClass,
-        evidenceRef: `mission substrate records: ${workforcePerformance.sampleSize} missions, ${workforcePerformance.resolvedMissions} resolved`,
+        evidenceRef: `mission substrate + metering records: ${workforcePerformance.sampleSize} missions, ${workforcePerformance.resolvedMissions} resolved`,
       });
     }
   }

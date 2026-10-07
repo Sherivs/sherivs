@@ -12,8 +12,12 @@
  * `not_observable` with its reason — never guessed, never defaulted.
  * Directive §40 lists twelve metrics; the mission substrate can observe
  * completion, failure, verification, rework, rollback, and time-based
- * metrics. Token usage, compute cost, tool errors, and security violations
- * have no wired observation substrate yet and are honestly declared
+ * metrics. Token usage and compute cost become observable ONLY when the
+ * caller supplies governed metering records (`usage`, the attribution-
+ * complete UsageRecord substrate from lib/metering/usage-ledger) — absent
+ * records are honestly declared not observable, and records without model
+ * rate entries never produce a guessed cost. Tool errors and security
+ * violations still have no wired observation substrate and remain honestly
  * not observable rather than invented.
  *
  * Claim classes (directive §21): computed rates and durations are
@@ -34,6 +38,7 @@ import {
   type MissionEvidenceRecord,
   type MissionLifecycleState,
 } from "../mission/mission-contract";
+import { validateUsageRecord, type UsageRecord } from "../metering/usage-ledger";
 
 /* ─────────────────────────────────────────────────────────────
  * Observation input: recorded lifecycle transitions
@@ -112,6 +117,7 @@ export interface WorkforcePerformanceReport {
     readonly missions: number;
     readonly evidence: number;
     readonly transitions: number;
+    readonly usage: number;
   };
   readonly metrics: {
     readonly missionCompletionRate: PerformanceMetric;
@@ -172,6 +178,14 @@ export interface WorkforcePerformanceInput {
   readonly missions: readonly MissionContractCore[];
   readonly evidence: readonly MissionEvidenceRecord[];
   readonly transitions: readonly MissionTransitionObservation[];
+  /**
+   * Optional governed metering records (lib/metering/usage-ledger). When
+   * supplied, tokenUsage and computeCost become observed metrics; when
+   * omitted they stay not_observable (§65). Records fail the attribution
+   * validation or belong to another tenant → excluded and counted (never
+   * mixed, never silently dropped).
+   */
+  readonly usage?: readonly UsageRecord[];
 }
 
 /**
@@ -231,6 +245,22 @@ export function computeWorkforcePerformance(input: WorkforcePerformanceInput): W
       continue;
     }
     inScopeTransitions.push(transition);
+  }
+
+  // ---- Metered AI usage (§40 token/cost substrate): fail closed on records
+  // that are not attribution-complete, then tenant-partition. ----
+  const inScopeUsage: UsageRecord[] = [];
+  let excludedUsage = 0;
+  for (const record of input.usage ?? []) {
+    const problems = validateUsageRecord(record);
+    if (problems.length > 0) {
+      throw new Error(`workforce performance lens rejected: usage record: ${problems.join("; ")}`);
+    }
+    if (record.tenantRef !== tenantId) {
+      excludedUsage += 1;
+      continue;
+    }
+    inScopeUsage.push(record);
   }
 
   // ---- Completion / failure rates (§40) ----
@@ -321,9 +351,29 @@ export function computeWorkforcePerformance(input: WorkforcePerformanceInput): W
           recoveryDurations.length,
         );
 
+  // ---- Token usage / compute cost (§40): observed ONLY from supplied
+  // metering records; cost sums non-null estimates and never guesses. ----
+  const tokenUsage =
+    inScopeUsage.length === 0
+      ? notObservable("no AI usage records in scope — token usage has no observed substrate (§65: not invented)")
+      : computed(
+          inScopeUsage.reduce((sum, record) => sum + record.tokensIn + record.tokensOut, 0),
+          "observed",
+          inScopeUsage.length,
+        );
+  const costedUsage = inScopeUsage.filter((record) => record.estimatedCostUsd !== null);
+  const computeCost =
+    inScopeUsage.length === 0
+      ? notObservable("no AI usage records in scope — compute cost has no observed substrate (§65: not invented)")
+      : costedUsage.length === 0
+        ? notObservable("usage records in scope but no model rate entries — estimated cost is not derivable (Part 9: never guessed)")
+        : computed(
+            Math.round(costedUsage.reduce((sum, record) => sum + (record.estimatedCostUsd ?? 0), 0) * 1e6) / 1e6,
+            "observed",
+            costedUsage.length,
+          );
+
   // ---- Honest non-observables (§65): no wired substrate, never invented ----
-  const tokenUsage = notObservable("no model-token observation substrate is wired into the mission contract (§65: not invented)");
-  const computeCost = notObservable("no cost observation substrate is wired into the mission contract (§65: not invented)");
   const toolErrors = notObservable("no tool-error observation substrate is wired into the mission contract (§65: not invented)");
   const securityViolations = notObservable("no security-violation observation substrate is wired into the mission contract (§65: not invented)");
 
@@ -376,6 +426,7 @@ export function computeWorkforcePerformance(input: WorkforcePerformanceInput): W
       missions: excludedMissions,
       evidence: excludedEvidence,
       transitions: excludedTransitions,
+      usage: excludedUsage,
     },
     metrics: {
       missionCompletionRate: completionRate,

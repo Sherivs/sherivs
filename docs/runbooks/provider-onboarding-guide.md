@@ -50,10 +50,13 @@ the Upstash dashboard. If it is NOT an EU region, create a new EU database
 Old US keys can be deleted — nothing in the app has consumed them yet, so
 switching now costs nothing.
 
-What happens automatically after that: the health battery probes the
-endpoint with a single read-only `PING`, and `rateLimiterFromEnv` switches
-the AI gateway from in-process to distributed fixed-window limiting. No code
-change is needed from you.
+What happens automatically after that: run
+`node scripts/infrastructure/redis-capability-probe.mjs` in a fresh agent
+session (secrets inject into new VMs) — it proves a read-only `PING` and one
+governed rate-limit check through the app's own adapter, then re-run
+`node scripts/provision-vercel-env.mjs` to push both variables to Vercel.
+`rateLimiterFromEnv` switches the AI gateway from in-process to distributed
+fixed-window limiting by itself. No code change is needed from you.
 
 ---
 
@@ -235,20 +238,63 @@ Cost: **$25 USD one-time** (registration fee).
   `iad1` → `dub1` (Dublin) via the Vercel API (HTTP 200, verified), matching
   Supabase `eu-west-1` (Ireland, verified via the Supabase API — the project
   was already EU, no migration needed) and New Relic EU.
-- Provisioned 17 environment variables on the Vercel project
-  `coregrid-scholar-migration` (encrypted, production+preview+development):
-  SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_SERVICE_ROLE_KEY,
+- Provisioned the app-runtime environment variables on the Vercel project
+  `coregrid-scholar-migration` (encrypted, production+preview+development);
+  the 2026-10-07 wave-4 sync re-upserted 17 of the 20 mapped variables
+  (SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_SERVICE_ROLE_KEY,
   VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY, AI_API_KEY,
   AI_GATEWAY_URL, RESEND_API_KEY, RESEND_FROM_ADDRESS, PAYSTACK_SECRET_KEY,
   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, VAPI_API_KEY, VAPID_PUBLIC_KEY,
-  VAPID_PRIVATE_KEY, VITE_VAPID_PUBLIC_KEY, POSTHOG_PROJECT_API_KEY.
-  (Re-run any time with `node scripts/provision-vercel-env.mjs` after adding
-  secrets to this environment.)
+  VAPID_PRIVATE_KEY, VITE_VAPID_PUBLIC_KEY, POSTHOG_PROJECT_API_KEY) and
+  honestly reported the 3 absent ones (TWILIO_FROM_NUMBER, REDIS_REST_URL,
+  REDIS_REST_TOKEN). (Re-run any time with
+  `node scripts/provision-vercel-env.mjs` after adding secrets to this
+  environment.)
 - Added an optional Redis-backed rate limiter that activates by itself when
   REDIS_REST_URL/REDIS_REST_TOKEN exist, and an extended 13-provider health
   battery.
+- **2026-10-07 (DECISIONS.md #209):** re-probed Twilio read-only (account
+  active, still Trial, **zero owned phone numbers** — sender number remains
+  blocked on the §2 console step); added
+  `scripts/infrastructure/redis-capability-probe.mjs` — run it after you add
+  the two Redis secrets and it will prove the PING + one governed
+  rate-limit check through the app's own adapter.
 
-## 9. Remaining operator actions (checklist)
+---
+
+## 9. AWS and OCI — do you need them? (direct answer: not for V1)
+
+You asked whether AWS and OCI credentials are still needed. **For the V1
+deployment on the ratified stack: no.** Here is the honest breakdown:
+
+| Layer | What it runs on | AWS/OCI needed? |
+| --- | --- | --- |
+| Web app + serverless functions | Vercel (`dub1`, Dublin) | No |
+| Database / auth / storage | Supabase (`eu-west-1`, Ireland) | No |
+| Email | Resend | No |
+| Payments | Paystack | No |
+| SMS/voice | Twilio + Vapi | No |
+| Rate limiting (optional) | Upstash Redis REST | No |
+| Analytics / errors / monitoring | PostHog, Sentry, New Relic | No |
+| DNS/CDN/WAF | Cloudflare (IaC token verified) | No |
+| Mobile builds | Expo EAS | No |
+
+AWS or OCI would only enter the picture if a named capability requires raw
+compute/storage/queues outside Vercel+Supabase (e.g. a long-running worker
+daemon, self-managed Postgres, GPU inference). Under the CoreGrid V1
+envelope (AGENTS.md §45 + DECISIONS.md #204 vendor set) none is named, no
+adapter exists for them, and §58 forbids duplicate systems. If you ever want
+one: pick the capability first, record an un-freeze decision, and an adapter
+will be built — do not add the credentials speculatively (un-minimized
+secrets are a §19 liability, and unused credentials in a dashboard are an
+audit finding waiting to happen).
+
+**Recommendation: declare the stack as Vercel + Supabase (already done in
+DECISIONS.md #204/#205) and skip AWS/OCI entirely for V1.**
+
+---
+
+## 10. Remaining operator actions (checklist)
 
 - [ ] Twilio: verify YOUR phone number in the console (Twilio calls/texts you
       a code — trial accounts must do this before purchasing; API purchase
