@@ -152,6 +152,7 @@ describe("H3-034 posture adjudication (mission D-034) — internal consistency",
       expect(registry.fallbackUsed).toBe(false);
       expect(registry.files).toEqual([
         "rls-table-postures-mission-lease.json",
+        "rls-table-postures-platform-019.json",
         "rls-table-postures-r-wave.json",
         "rls-table-postures-substrate.json",
         "rls-table-postures-transport.json",

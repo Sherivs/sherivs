@@ -319,7 +319,7 @@ export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = 
     hasHealthCheck: true,
     status: "BLOCKED",
     verificationLevel: "provider_reachable",
-    note: "Auth live-verified 2026-10-06 (read-only probe 200). SMS/voice SEND capability BLOCKED on sender-number provisioning: the API purchase attempt was refused with Twilio error 21404 (trial accounts must first verify a phone number — operator console action).",
+    note: "Auth live-verified 2026-10-06 (read-only probe 200). 2026-10-07: operator upgraded to a funded Twilio business plan ($20 top-up). Sender purchase DEFERRED until CAC business-identity verification clears — then config-only: TWILIO_FROM_NUMBER secret and/or per-org sender rows in cg_org_communication_sender (PLATFORM-019).",
   },
   {
     envVar: "TWILIO_AUTH_TOKEN",
@@ -331,7 +331,7 @@ export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = 
     hasHealthCheck: true,
     status: "BLOCKED",
     verificationLevel: "provider_reachable",
-    note: "SERVER-ONLY. Auth live-verified 2026-10-06. Webhook signature validator implemented; an inbound webhook route activates only once a sender number + console webhook config exist (sender-number purchase currently blocked by Twilio error 21404 — trial verification).",
+    note: "SERVER-ONLY. Auth live-verified 2026-10-06; webhook signature validator implemented; inbound route activates once a sender number + console webhook config exist. 2026-10-07: funded business plan — purchase deferred pending CAC verification (operator decision), then config-only activation.",
   },
 
   {
@@ -344,7 +344,7 @@ export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = 
     hasHealthCheck: false,
     status: "BLOCKED",
     verificationLevel: "none",
-    note: "Purchase attempted via the Twilio REST API 2026-10-06 — refused with error 21404: 'Trial accounts must verify a phone number before purchasing a Twilio number.' Operator must verify their own phone number in the Twilio console (or upgrade the account), then re-run scripts/provision-vercel-env.mjs with TWILIO_FROM_NUMBER set.",
+    note: "Purchase deliberately DEFERRED 2026-10-07 (operator decision): business plan subscribed + funded ($20 top-up), sender provisioning held until CAC business-identity verification clears so the number is issued to a verified business. When it clears: TWILIO_FROM_NUMBER Cursor Secret and/or per-org cg_org_communication_sender rows (PLATFORM-019) — adapter unchanged.",
   },
 
   // ── Web push (VAPID pair generated locally 2026-10-06) ──

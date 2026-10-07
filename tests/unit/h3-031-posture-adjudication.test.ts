@@ -140,6 +140,7 @@ describe("h3-031 posture adjudication — declarative posture files (fs, read-on
     expect(mergedRegistry.fallbackUsed).toBe(false);
     expect(mergedRegistry.files.sort()).toEqual([
       "rls-table-postures-mission-lease.json",
+      "rls-table-postures-platform-019.json",
       "rls-table-postures-r-wave.json",
       "rls-table-postures-substrate.json",
       "rls-table-postures-transport.json",

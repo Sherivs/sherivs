@@ -1,0 +1,33 @@
+{
+  "artifact": "rls-table-postures-platform-019",
+  "captured": "2026-10-07",
+  "mission": "PLATFORM-019 (DECISIONS.md #210) — organization communication sender identity + platform API-key substrate",
+  "role": "RLS Policy Author (authorization specialist)",
+  "status": "AUTHORED for checksummed apply via scripts/db-apply-one.mjs; battery-validated after apply",
+  "migration": "database/supabase/migrations/20261007000050_coregrid_org_communication_sender.sql + database/supabase/migrations/20261007000051_coregrid_api_key_substrate.sql",
+  "rollback": "database/supabase/rollbacks/20261007000050_coregrid_org_communication_sender.sql + database/supabase/rollbacks/20261007000051_coregrid_api_key_substrate.sql",
+  "consumer": "RLS isolation battery steward (scripts/verify-rls-isolation-battery.mjs) — zero-policy posture: anon/authenticated fully revoked",
+  "authority": [
+    "AGENTS.md §13 multi-tenancy (every request must have tenant context)",
+    "AGENTS.md §16 layered authorization — a key is one layer, never the whole decision",
+    "AGENTS.md §17 RLS mandatory; application code is never the only security layer",
+    "AGENTS.md §26 never trust client-supplied identity/tenant/role",
+    "AGENTS.md §28 immutable audit records (revocation provenance is mandatory)",
+    "AGENTS.md §30 the platform never stores a secret VALUE (only sha256 hashes)",
+    "DECISIONS.md #210 (PLATFORM-019, 2026-10-07)"
+  ],
+  "tables": [
+    {
+      "name": "cg_org_communication_sender",
+      "source": "20261007000050_coregrid_org_communication_sender.sql",
+      "posture": "zero-policy",
+      "rationale": "an organization's outbound sender identity determines what identity messages carry org-wide — authority-adjacent configuration, never a client-consumable row set: the communication store reaches it exclusively through the service-role client (org-sender-store.server.ts) with Zod-validated reads and the deterministic pure resolver (org-sender-config.ts) doing precedence; zero policies + full client revoke keeps the deny-by-default strongest form — a policy accident would expose nothing because clients hold no privilege at all"
+    },
+    {
+      "name": "cg_api_key",
+      "source": "20261007000051_coregrid_api_key_substrate.sql",
+      "posture": "zero-policy",
+      "rationale": "platform API keys are authority data (the same posture as cg_worker_delegation_grant: authority flows only through explicit grants) — the plaintext key is never stored (sha256 key_hash only), and issuance/verification/revocation run through the service-role apikey-service.server.ts which Zod-validates every row; publishable-key clients must never enumerate or mutate key rows, so zero policies + full anon/authenticated revoke is the strongest form"
+    }
+  ]
+}

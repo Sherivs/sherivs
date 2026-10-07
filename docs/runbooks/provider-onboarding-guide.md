@@ -60,33 +60,52 @@ fixed-window limiting by itself. No code change is needed from you.
 
 ---
 
-## 2. Twilio — buy the phone number
+## 2. Twilio — sender number (deferred by operator decision, activation is config-only)
 
 The account SID and auth token are already live-verified. What is missing is
-a sender NUMBER (`TWILIO_FROM_NUMBER`).
+a sender NUMBER (`TWILIO_FROM_NUMBER`) — and as of 2026-10-07 that is a
+deliberate operator hold, not a blocker.
 
-**Trials first (your account is a Trial — confirmed via the API):** Twilio
-error 21404 refused the autonomous purchase on 2026-10-06: *"Trial accounts
-must verify a phone number before purchasing a Twilio number."* So step 0 is:
+**Status (2026-10-07):** the operator has **subscribed to a Twilio business
+plan and topped up $20**. The account is funded. Sender-number purchase is
+**deferred until the operator's CAC (business identity) verification clears**,
+so the number is issued to a verified business rather than an individual
+(the earlier error-21404 trial limitation no longer applies — the account is
+no longer Trial). All the code the number will light up already exists; when
+the CAC clears, activation requires **no adapter changes**:
 
-0. In https://console.twilio.com → **Phone Numbers → Manage → Verified
-   Caller IDs → +**, add YOUR mobile number, answer Twilio's call/text, type
-   the code. (Only you can receive that verification code.)
-1. Open https://console.twilio.com and log in.
-2. Left sidebar: **Phone Numbers** → **Manage** → **Buy a number**.
-3. Search for a number in your country. Check the **SMS** capability box
-   (voice optional — Vapi uses its own voice stack, but SMS is what the V1
-   Twilio adapter sends).
-   - If your country has no local numbers, buy a US number: SMS-capable US
-     numbers work worldwide for sending SMS.
-4. Click **Buy** and confirm. Trial accounts: the purchase uses trial credit.
-5. Copy the number in **E.164** format, e.g. `+15551234567`.
-6. Add to Cursor Cloud Agent Secrets:
-   - `TWILIO_FROM_NUMBER` ← e.g. `+15551234567`
-7. (For inbound SMS later, optional) On the number's config page set
-   **Messaging → "A message comes in"** webhook to your deployed webhook URL
-   once the app is live. The inbound route verifies Twilio signatures
-   (HMAC-SHA1) before processing anything.
+1. Wait for CAC verification → complete Twilio Trust Hub business profile
+   (only the operator can submit CAC documents).
+2. Buy the sender number: https://console.twilio.com → **Phone Numbers →
+   Manage → Buy a number** — check the **SMS** capability box (voice is
+   optional; Vapi uses its own voice stack). If your country has no local
+   numbers, a SMS-capable US number works worldwide.
+3. Add the number to Cursor Cloud Agent Secrets:
+   - `TWILIO_FROM_NUMBER` ← E.164, e.g. `+15551234567`
+   - then re-run `node scripts/provision-vercel-env.mjs` to sync it to Vercel.
+
+**Per-organization sender identities (PLATFORM-019, DECISIONS.md #210).**
+Every organization that connects to CoreGrid can carry its OWN sender number
+instead of borrowing the platform default. The substrate:
+
+- table `cg_org_communication_sender` (zero-policy, service-role only): one
+  row per (tenant, org, channel=sms, provider=twilio) with an E.164
+  `from_number` and an `env://` credential reference; only one ACTIVE sender
+  per org+channel+provider (partial unique index enforces it).
+- resolver `frontend/src/lib/communications/org-sender-config.ts`:
+  active org sender wins → falls back to the platform default
+  (`TWILIO_FROM_NUMBER`) → fail-closed "unresolved" otherwise; malformed and
+  cross-tenant rows are excluded and counted, never trusted.
+- store `frontend/src/lib/communications/org-sender-store.server.ts`:
+  `upsertOrgSender` demotes the prior ACTIVE row then inserts (the partial
+  unique index is the final authority), and `twilioConfigForOrg` composes the
+  platform credentials with the resolved sender into the exact
+  `TwilioSmsConfig` the existing adapter consumes.
+
+So after the CAC clears the full menu is: platform-only number (just the
+`TWILIO_FROM_NUMBER` secret), or per-org numbers (insert
+`cg_org_communication_sender` rows through the service — org rows win over
+the platform default). Both work the moment the number exists.
 
 After the number exists, the Twilio SMS adapter moves from BLOCKED to
 capability-tested on the next live drill.
@@ -259,6 +278,14 @@ Cost: **$25 USD one-time** (registration fee).
   `scripts/infrastructure/redis-capability-probe.mjs` — run it after you add
   the two Redis secrets and it will prove the PING + one governed
   rate-limit check through the app's own adapter.
+- **2026-10-07 (DECISIONS.md #210, PLATFORM-019):** operator subscribed to a
+  Twilio **business plan** (funded, $20 top-up) and deferred sender-number
+  purchase until CAC business-identity verification clears — §2 rewritten:
+  activation becomes config-only. Built the per-org sender substrate
+  (`cg_org_communication_sender` + resolver + store, zero-policy posture
+  battery-verified) and the CoreGrid API-key substrate (`cg_api_key` +
+  issue/verify/revoke service — Supabase-style publishable/secret key
+  classes; plaintext never stored, sha256 lookup only).
 
 ---
 
@@ -296,10 +323,12 @@ DECISIONS.md #204/#205) and skip AWS/OCI entirely for V1.**
 
 ## 10. Remaining operator actions (checklist)
 
-- [ ] Twilio: verify YOUR phone number in the console (Twilio calls/texts you
-      a code — trial accounts must do this before purchasing; API purchase
-      attempt 2026-10-06 was refused with error 21404) → then buy the number
-      → secret `TWILIO_FROM_NUMBER` (E.164, e.g. `+15551234567`)
+- [ ] Twilio: when the CAC business-identity verification clears → complete
+      the Trust Hub business profile → buy the sender number → secret
+      `TWILIO_FROM_NUMBER` (E.164, e.g. `+15551234567`) → re-run
+      `node scripts/provision-vercel-env.mjs`. Account is already a funded
+      business plan ($20 top-up, 2026-10-07); purchase is a deliberate hold,
+      activation is config-only (see §2 — per-org senders now supported).
 - [x] PostHog project key → `POSTHOG_PROJECT_API_KEY` (grabbed autonomously
       2026-10-06; on Vercel; add to Cursor Secrets from the handover artifact)
 - [x] Push-notification keys (web) → `VAPID_PUBLIC_KEY` + `VAPID_PRIVATE_KEY`
