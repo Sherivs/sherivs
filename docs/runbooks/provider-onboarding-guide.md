@@ -373,7 +373,7 @@ Cost: **$25 USD one-time** (registration fee).
   executed: (1) the "failed all the time" state was **82 accumulated ERROR
   deployment records** from before the CVE fix — all deleted (ERROR records
   only); the dashboard now shows 4 deployments, ALL READY. (2) Production
-  redeployed from the latest commit b3ba12b (`dpl_J4gLpWxLe58dmdZ5UdLfEv6qzh6P`,
+  redeployed from the latest commit 7b34b8c (`dpl_5XyDfGJzEt8wC8aZ72HxoCj3gdWv`,
   READY, target production). (3) The bare alias
   `coregrid-scholar-migration.vercel.app` still answers edge 404 after a
   full API-level remediation pass (alias record present, domain delete +
