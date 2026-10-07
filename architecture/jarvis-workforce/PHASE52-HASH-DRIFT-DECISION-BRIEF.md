@@ -37,3 +37,7 @@ Conclusion (observed, not inferred): the extraction pipeline that produced the d
 Option A. Rationale: contained risk, zero V1 impact, preserves §39, and keeps the human decision to a single ratification. Any regeneration of Phase-52 analysis (Option B) should happen only if the owner also intends to act on Phase-52 content, which remains frozen (§45).
 
 Decision needed from the owner: pick A, B, or C (or override). One line suffices: e.g. "Phase-52 drift: A".
+
+## Outcome (recorded 2026-10-07)
+
+The owner delegated adjudication to the recommended option ("choose the recommended option and execute toward it"). **Option A is RATIFIED** via DECISIONS.md **#208 (PLATFORM-017)**: the preserved file (`7365DA0E…`/1,728,535 B, commit `2d9621b`) is the canonical Phase-52 corpus; the cited `A69A3E74…` hash stands as stale provenance of a non-preserved byte-sequence. No derived artifact was rewritten.

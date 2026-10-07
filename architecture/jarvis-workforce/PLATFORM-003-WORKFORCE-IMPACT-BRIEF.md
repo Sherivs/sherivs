@@ -43,3 +43,7 @@ Even full ratification of PLATFORM-003 does NOT by itself un-freeze the two role
 Decide PLATFORM-003 now — it is the single longest-open PLATFORM ADR blocking workforce classification rows — and, if the memory systems capability is wanted in V1, pair the ratification with an explicit §45 authorization record per Option B. If the owner prefers minimum movement, Option C with a named revisit date is acceptable; the scope lock remains correct either way.
 
 Decision needed from the owner: pick A, B, or C (or override). One line suffices: e.g. "PLATFORM-003: A" or "PLATFORM-003: B + memory role V1 authorized".
+
+## Outcome (recorded 2026-10-07)
+
+The owner delegated adjudication to the recommended option ("choose the recommended option and execute toward it") and separately authorized un-freezing the V1-required engineers into V1. **Option B is RATIFIED** via DECISIONS.md **#208 (PLATFORM-017)**: PLATFORM-003's ownership ruling (P36 canonical memory/knowledge, P33 ontology kernel, P48 projection, P07/P34/P35 consumers) is RATIFIED as an ownership record — with NO P36/P48 implementation authorized (civilization scope stays frozen per §45) — and `memory_systems_engineer` is reclassified **V1** on the EXISTING governed memory tier (`frontend/src/lib/memory/`), never a second engine. `knowledge_engineer` becomes **DEFERRED_BEYOND_V2** (knowledge semantics remain P36-scoped), still frozen.

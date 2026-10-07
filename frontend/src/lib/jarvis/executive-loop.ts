@@ -24,6 +24,12 @@ import {
   type WorkforceRole,
   WORKFORCE_ROLE_CATALOG_VALIDATED,
 } from "../workforce/role-catalog";
+import {
+  computeWorkforcePerformance,
+  type MissionTransitionObservation,
+  type WorkforcePerformanceReport,
+} from "../workforce/performance-metrics";
+import type { MissionContractCore, MissionEvidenceRecord } from "../mission/mission-contract";
 
 /* ─────────────────────────────────────────────────────────────
  * Vocabulary
@@ -138,6 +144,16 @@ export interface ExecutiveObservation {
   conditionSignals?: readonly ExecutiveConditionCode[];
 }
 
+/**
+ * Caller-supplied workforce record inputs (§40): the loop owns the tenant
+ * and the clock; callers supply only the governed records the lens reads.
+ */
+export interface ExecutiveWorkforceRecords {
+  readonly missions: readonly MissionContractCore[];
+  readonly evidence: readonly MissionEvidenceRecord[];
+  readonly transitions: readonly MissionTransitionObservation[];
+}
+
 export interface ExecutiveLoopInput {
   tenantRef: string;
   objectives: readonly string[];
@@ -145,6 +161,13 @@ export interface ExecutiveLoopInput {
   /** Caller-supplied TimeAuthority instant (ISO). Unparseable instants fail closed. */
   now: string;
   roles?: readonly WorkforceRole[];
+  /**
+   * Optional workforce record inputs (§40): when supplied, the §40
+   * performance lens runs inside the cycle and its metrics join the
+   * briefing with their own claim classes. Omit for a purely
+   * observation-driven cycle.
+   */
+  workforce?: ExecutiveWorkforceRecords;
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -214,6 +237,8 @@ export interface ExecutiveLoopResult {
   missionProposals: readonly ExecutiveMissionProposal[];
   escalations: readonly ExecutiveEscalation[];
   briefing: ExecutiveBriefing;
+  /** Present only when `workforce` inputs were supplied (§40 lens integrated). */
+  workforcePerformance?: WorkforcePerformanceReport;
 }
 
 type AgentRiskClass = AgentRiskClassification;
@@ -442,13 +467,49 @@ export function runExecutiveLoop(input: ExecutiveLoopInput): ExecutiveLoopResult
   }
 
   // 5. REPORT — the §55 executive briefing, every item claim-classed (§21).
+  const whatHappenedItems: ExecutiveBriefingItem[] = acceptedObservations.map((observation) => ({
+    summary: observation.summary,
+    claimClass: observation.claimClass,
+    evidenceRef: observation.evidenceRef,
+  }));
+
+  // 5b. WORKFORCE LENS (§40/§41, DECISIONS #208): when workforce records are
+  // supplied, compute the performance report inside the cycle and join its
+  // metrics into the briefing with their own claim classes (computed metrics
+  // are observed/inferred; unobservables stay silent — never fabricated).
+  let workforcePerformance: WorkforcePerformanceReport | undefined;
+  if (input.workforce) {
+    workforcePerformance = computeWorkforcePerformance({
+      tenantId: input.tenantRef,
+      now: input.now,
+      missions: input.workforce.missions,
+      evidence: input.workforce.evidence,
+      transitions: input.workforce.transitions,
+    });
+    const METRIC_LABELS: readonly (keyof WorkforcePerformanceReport["metrics"])[] = [
+      "missionCompletionRate",
+      "missionFailureRate",
+      "verificationPassRate",
+      "reworkRate",
+      "rollbackRate",
+      "meanTimeToCompletionMs",
+      "meanTimeToRecoveryMs",
+      "qualityScore",
+    ];
+    for (const key of METRIC_LABELS) {
+      const metric = workforcePerformance.metrics[key];
+      if (metric.status !== "computed") continue;
+      whatHappenedItems.push({
+        summary: `workforce metric ${key} = ${metric.value} (sample: ${metric.sample})`,
+        claimClass: metric.claimClass,
+        evidenceRef: `mission substrate records: ${workforcePerformance.sampleSize} missions, ${workforcePerformance.resolvedMissions} resolved`,
+      });
+    }
+  }
+
   const briefing: ExecutiveBriefing = {
     tenantRef: input.tenantRef,
-    whatHappened: acceptedObservations.map((observation) => ({
-      summary: observation.summary,
-      claimClass: observation.claimClass,
-      evidenceRef: observation.evidenceRef,
-    })),
+    whatHappened: whatHappenedItems,
     whatBroke: detectedConditions
       .filter((condition) => condition.severity !== "info")
       .map((condition) => ({
@@ -486,5 +547,6 @@ export function runExecutiveLoop(input: ExecutiveLoopInput): ExecutiveLoopResult
     missionProposals,
     escalations,
     briefing,
+    ...(workforcePerformance !== undefined ? { workforcePerformance } : {}),
   };
 }

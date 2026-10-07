@@ -17,6 +17,11 @@ import {
   type ExecutiveObservation,
 } from "../../frontend/src/lib/jarvis/executive-loop";
 import { WORKFORCE_ROLE_CATALOG_VALIDATED } from "../../frontend/src/lib/workforce/role-catalog";
+import type {
+  MissionContractCore,
+  MissionEvidenceRecord,
+} from "../../frontend/src/lib/mission/mission-contract";
+import type { MissionTransitionObservation } from "../../frontend/src/lib/workforce/performance-metrics";
 
 const NOW = "2026-10-06T21:00:00.000Z";
 const TENANT = "tenant-a";
@@ -201,6 +206,93 @@ describe("executive loop fail-closed construction", () => {
   it("refuses empty objectives", () => {
     expect(() =>
       runExecutiveLoop({ tenantRef: TENANT, objectives: ["  "], observations: [], now: NOW }),
+    ).toThrow(/objective/);
+  });
+});
+
+describe("workforce performance lens inside the cycle (§40/§41, DECISIONS #208)", () => {
+  const mission: MissionContractCore = {
+    missionId: "m-1",
+    schemaVersion: "1.0",
+    tenantId: TENANT,
+    objective: "deliver the declared outcome",
+    nonScope: [],
+    ownerRef: "owner-1",
+    actorRefs: ["backend-engineer"],
+    authorizedActions: ["observe"],
+    tasks: [
+      { taskId: "t-1", title: "task", authorizedActions: ["observe"], requiredEvidenceKinds: ["test_report"] },
+    ],
+    admissionGates: [{ gateId: "g-1", kind: "definition", reason: "gate" }],
+    successCriteria: ["verified"],
+    requiredEvidenceKinds: ["test_report"],
+    lifecycle: "SUCCEEDED",
+    expiresAt: null,
+    provenance: {
+      declaredBy: "jarvis",
+      declaredAt: "2026-10-06T00:00:00.000Z",
+      authorityRef: "DECISIONS.md#208",
+      contextRef: null,
+      sourceRef: null,
+      generatedByAi: true,
+      verified: false,
+    },
+  };
+  const transition: MissionTransitionObservation = {
+    missionId: "m-1",
+    actorId: "backend-engineer",
+    from: "RUNNING",
+    to: "SUCCEEDED",
+    at: "2026-10-06T02:00:00.000Z",
+  };
+  const evidence: MissionEvidenceRecord = {
+    evidenceId: "e-1",
+    missionId: "m-1",
+    taskId: null,
+    evidenceKind: "test_report",
+    producer: "security-verification-agent",
+    actorId: "backend-engineer",
+    tenantId: TENANT,
+    recordedAt: "2026-10-06T01:00:00.000Z",
+    provenance: "unit fixture",
+    integrity: "sha256:fixture",
+    lifecycle: "active",
+  };
+
+  it("computes the performance report inside the cycle and joins metrics into the briefing", () => {
+    const result = runExecutiveLoop({
+      tenantRef: TENANT,
+      objectives: ["keep the platform operating"],
+      observations: [],
+      now: NOW,
+      workforce: { missions: [mission], evidence: [evidence], transitions: [transition] },
+    });
+    expect(result.workforcePerformance).toBeDefined();
+    expect(result.workforcePerformance?.metrics.missionCompletionRate.value).toBe(1);
+    const metricItems = result.briefing.whatHappened.filter((item) => item.summary.startsWith("workforce metric"));
+    expect(metricItems.length).toBeGreaterThanOrEqual(3);
+    for (const item of metricItems) {
+      expect(["observed", "inferred"]).toContain(item.claimClass);
+      expect(item.evidenceRef).toMatch(/mission substrate records/);
+    }
+  });
+
+  it("stays observation-only when no workforce inputs are supplied", () => {
+    const result = runExecutiveLoop({ tenantRef: TENANT, objectives: [], observations: [], now: NOW });
+    expect(result.workforcePerformance).toBeUndefined();
+    expect(result.briefing.whatHappened.some((item) => item.summary.startsWith("workforce metric"))).toBe(false);
+  });
+
+  it("fails closed when workforce records violate the mission contract", () => {
+    const broken: MissionContractCore = { ...mission, objective: "" };
+    expect(() =>
+      runExecutiveLoop({
+        tenantRef: TENANT,
+        objectives: [],
+        observations: [],
+        now: NOW,
+        workforce: { missions: [broken], evidence: [], transitions: [] },
+      }),
     ).toThrow(/objective/);
   });
 });

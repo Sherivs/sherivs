@@ -158,6 +158,53 @@ if (histogramTotal !== expectedTotal) {
   findings.push(`scope histogram total ${histogramTotal} != catalog size ${expectedTotal}`);
 }
 
+// 7. Mission bridge (DECISIONS.md #208) resolves and converts a golden
+//    staffable proposal into a mission-contract-valid draft; an unstaffable
+//    proposal is rejected, never drafted.
+const bridgeModule = await jiti.import(join(ROOT, "frontend/src/lib/jarvis/mission-bridge.ts"));
+if (typeof bridgeModule.draftMissionsFromProposals !== "function") {
+  findings.push("mission-bridge.ts did not export draftMissionsFromProposals — the planning→mission hand-off is unwired");
+} else {
+  const goldenProposal = {
+    missionRef: `jarvis-test_regression-${Date.now()}`,
+    tenantRef: "tenant-gate",
+    objective: "restore stable operation after test regression",
+    reason: "detected from evidence-backed observations: gate-obs-1",
+    priority: "medium",
+    riskClass: "medium",
+    status: "proposed",
+    requiresApproval: false,
+    staffing: {
+      executorRoleIds: ["qa-engineer"],
+      verifierRoleIds: ["security-verification-agent"],
+      unstaffedCapabilities: [],
+    },
+    verificationPlan: "independent verifier validates",
+    evidencePlan: "evidence recorded with provenance",
+    rollbackPlan: "bounded recovery policy",
+    acceptanceCriteria: ["regression no longer reproduces", "independent verification verdict recorded"],
+    basisObservationIds: ["gate-obs-1"],
+    detectedAt: new Date().toISOString(),
+  };
+  try {
+    const bridgeResult = bridgeModule.draftMissionsFromProposals({ now: new Date().toISOString(), proposals: [goldenProposal] });
+    if (bridgeResult.drafts.length !== 1 || bridgeResult.rejected.length !== 0) {
+      findings.push(`mission bridge golden probe: expected 1 draft / 0 rejections, got ${bridgeResult.drafts.length} / ${bridgeResult.rejected.length}`);
+    } else if (bridgeResult.drafts[0].mission.lifecycle !== "DEFINED") {
+      findings.push("mission bridge golden probe: draft lifecycle must be DEFINED (bridge plans, never executes)");
+    } else {
+      const unauthorized = bridgeResult.drafts[0].mission.authorizedActions.filter(
+        (action) => !["observe", "analyze", "propose"].includes(action),
+      );
+      if (unauthorized.length > 0) {
+        findings.push(`mission bridge golden probe: bridge expanded authorization beyond planning bounds: ${unauthorized.join(", ")}`);
+      }
+    }
+  } catch (error) {
+    findings.push(`mission bridge golden probe threw: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
 if (findings.length > 0) {
   fail(`\n  - ${findings.join("\n  - ")}`);
 }
@@ -169,5 +216,6 @@ console.log(
     `REQUIRES_ARCHITECTURAL_DECISION=${histogram.REQUIRES_ARCHITECTURAL_DECISION}); ` +
     `all V1 substrate refs exist in-repo; executive control plane singular (jarvis, proposal-only); ` +
     `executive loop wired (${rel(join(ROOT, "frontend/src/lib/jarvis/executive-loop.ts"))}); ` +
-    `performance lens wired and §65-honest (${rel(join(ROOT, "frontend/src/lib/workforce/performance-metrics.ts"))}).`,
+    `performance lens wired and §65-honest (${rel(join(ROOT, "frontend/src/lib/workforce/performance-metrics.ts"))}); ` +
+    `mission bridge wired and planning-bounded (${rel(join(ROOT, "frontend/src/lib/jarvis/mission-bridge.ts"))}).`,
 );
