@@ -1,6 +1,7 @@
-# Deployment-upload exclusions (git tracking untouched — this only trims
-# what the Vercel CLI uploads for the web build; see DECISIONS.md #214 §s).
-# Agent-infrastructure and non-build content:
+# Deployment-upload exclusions — agent-session junk ONLY (DECISIONS.md #214 §w).
+# Governance corpus (docs/, architecture/, progress/, database/, tests/, root
+# *.md) is deliberately INCLUDED in the upload per operator instruction; these
+# exclusions never touch git tracking.
 .claude
 .claude-flow
 .codex
@@ -8,16 +9,6 @@
 .ag-out.txt
 .aud7.txt
 .b7-out.txt
-agents
-mobile
-tests
-docs
-database
-architecture
-progress
 .tanstack
 .vercel
-# Root-level governance/audit documents (not build inputs):
-/*.md
-*.txt
-!package-lock.json
+mobile
