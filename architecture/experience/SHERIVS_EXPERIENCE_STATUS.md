@@ -13,7 +13,8 @@ Overall: **ARCHITECTURE DEFINED; IMPLEMENTATION NOT STARTED BY THIS PROGRAM**
 | Shared component files | 113 |
 | Public API route files | 2 |
 | Database files | 103 |
-| Test files | 440 |
+| Files under `tests/` | 440 |
+| Vitest test suites discovered | 428 |
 | PWA/public assets | favicon, 3 icons, service worker, robots |
 
 The repository already has TanStack Start, React 19, Tailwind 4, Radix/shadcn primitives, Lucide,
@@ -121,6 +122,14 @@ Specialists are assigned to real workstreams; they are not independent architect
 6. “Complete” architecture registry labels do not prove live, production-connected UX.
 7. Several current routes touch frozen or mixed-version capabilities.
 8. Public capability and pricing copy require claim-by-claim product/legal verification.
+9. Neutral organization/tenant migrations are authored but not applied; existing live flows still
+   rely heavily on Scholar `school_id` vocabulary and helpers.
+10. Service-role writes bypass RLS by design, so every corresponding server function must retain
+    complete authentication, tenant resolution, authorization, validation, and audit gates.
+11. The legacy `universalschoolos.com` host remains in canonical, OpenGraph, sitemap, and tenant
+    resolution paths; the referenced public OpenGraph image is not present in repository assets.
+12. The public legal surface lacks a complete terms route and some organization footer policy
+    labels are not links.
 
 ## Remaining work
 

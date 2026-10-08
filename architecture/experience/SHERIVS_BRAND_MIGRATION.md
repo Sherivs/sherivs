@@ -30,9 +30,15 @@ Version target: ACTIVE-V1 customer-facing brand migration
 Customer-facing CoreGrid remains in `frontend/src/lib/platform.ts`, root metadata/PWA labels,
 `/(site)` marketing routes, `/` command centre metadata, auth copy, shell notifications/profile,
 organization-public fallbacks, generated-site copy, and platform/operator surfaces. The old
-`universalschoolos.com` domain appears in root OpenGraph/canonical metadata. Technical CoreGrid is
+`universalschoolos.com` domain appears in root OpenGraph/canonical metadata, sitemap, and tenant
+host resolution; the referenced `og-image.png` is not present in `public/`. Technical CoreGrid is
 widespread across packages, contracts, types, comments, architecture, tests, SQL migrations, and
 `cg_*` database objects.
+
+Current public copy also describes a “Universal Reality Intelligence Platform,” a “51-phase
+governed platform,” and broad capability availability even though V3 is frozen and many registry
+capabilities are architecture-defined rather than deployed. These are claim-review items, not
+approved Sherivs copy.
 
 Scholar assumptions are widespread in route namespaces (`/admin`, `/teacher`, `/parent`,
 `/student`, `/bursar`, `/driver`), organization-public components, `school` context, and role
@@ -48,9 +54,11 @@ resolution. Those are runtime boundaries, not simple brand strings.
    Scholar contributions.
 5. Move canonical URLs only when `sherivs.com` routing, redirects, certificates, sitemap, robots,
    social images, and analytics are ready.
-6. Update tests by classification; technical compatibility expectations remain CoreGrid.
-7. Measure old-name references and maintain an allowlist with owner/reason.
-8. Remove compatibility aliases only through a separate semver/migration decision.
+6. Complete public legal navigation, including real privacy, terms, cookies, and accessibility
+   destinations; labels without working routes are not sufficient.
+7. Update tests by classification; technical compatibility expectations remain CoreGrid.
+8. Measure old-name references and maintain an allowlist with owner/reason.
+9. Remove compatibility aliases only through a separate semver/migration decision.
 
 ## Safety rules
 
