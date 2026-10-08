@@ -10,29 +10,32 @@ import { type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { AppProvider } from "@/contexts/app-context";
-import { PLATFORM_PAGE_DESCRIPTION, PLATFORM_PAGE_TITLE } from "@/lib/platform";
+import {
+  PLATFORM_NAME,
+  PLATFORM_PAGE_DESCRIPTION,
+  PLATFORM_PAGE_TITLE,
+} from "@/lib/platform";
+import { SystemState } from "@/components/sherivs/system-state";
 import { Toaster } from "@/components/ui/sonner";
 import { RouteProgressBar } from "@/components/route-progress-bar";
 import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-dvh items-center justify-center px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold">404</h1>
-        <h2 className="mt-4 text-xl font-semibold">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist.
-        </p>
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
-          >
-            Go home
-          </Link>
-        </div>
-      </div>
+    <div data-sx="" className="grid min-h-dvh place-items-center px-6">
+      <main id="main-content" tabIndex={-1} className="w-full max-w-xl outline-none">
+        <SystemState
+          kind="not-found"
+          headingLevel="h1"
+          title="This page does not exist"
+          description="The address may be mistyped, or the page may have moved. Nothing was changed."
+          actions={
+            <Link to="/" className="sx-button sx-button-primary">
+              Go to {PLATFORM_NAME}
+            </Link>
+          }
+        />
+      </main>
     </div>
   );
 }
@@ -40,31 +43,33 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset?: () => void }) {
   console.error(error);
   return (
-    <div className="flex min-h-dvh items-center justify-center px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold">Something went wrong</h1>
-        <p className="mt-2 text-sm text-muted-foreground break-words">
-          {error?.message ?? "An unexpected error occurred."}
-        </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          {reset && (
-            <button
-              onClick={() => reset()}
-              className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
-            >
-              Try again
-            </button>
-          )}
-          <button
-            onClick={() => {
-              if (typeof window !== "undefined") window.location.reload();
-            }}
-            className="rounded-md border border-border px-4 py-2 text-sm font-semibold hover:bg-accent"
-          >
-            Reload page
-          </button>
-        </div>
-      </div>
+    <div data-sx="" className="grid min-h-dvh place-items-center px-6">
+      <main id="main-content" tabIndex={-1} className="w-full max-w-xl outline-none">
+        <SystemState
+          kind="error"
+          headingLevel="h1"
+          title="Something went wrong"
+          description="This page could not be displayed. Your data was not changed by this error. Try again, or reload the page."
+          actions={
+            <>
+              {reset && (
+                <button type="button" onClick={() => reset()} className="sx-button sx-button-primary">
+                  Try again
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof window !== "undefined") window.location.reload();
+                }}
+                className="sx-button sx-button-secondary"
+              >
+                Reload page
+              </button>
+            </>
+          }
+        />
+      </main>
     </div>
   );
 }
@@ -78,17 +83,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: PLATFORM_PAGE_DESCRIPTION },
       { property: "og:title", content: PLATFORM_PAGE_TITLE },
       { name: "twitter:title", content: PLATFORM_PAGE_TITLE },
-      { name: "description", content: PLATFORM_PAGE_DESCRIPTION },
+      { property: "og:site_name", content: PLATFORM_NAME },
       { property: "og:description", content: PLATFORM_PAGE_DESCRIPTION },
       { name: "twitter:description", content: PLATFORM_PAGE_DESCRIPTION },
-      { property: "og:image", content: "https://universalschoolos.com/og-image.png" },
-      { name: "twitter:image", content: "https://universalschoolos.com/og-image.png" },
-      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:card", content: "summary" },
       { property: "og:type", content: "website" },
       // Served, generated manifest (see routes/manifest[.]webmanifest.ts).
-      { name: "theme-color", content: "#1d4ed8" },
+      { name: "theme-color", media: "(prefers-color-scheme: light)", content: "#fafaf8" },
+      { name: "theme-color", media: "(prefers-color-scheme: dark)", content: "#07090c" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-title", content: "CoreGrid" },
+      { name: "apple-mobile-web-app-title", content: PLATFORM_NAME },
       { name: "mobile-web-app-capable", content: "yes" },
     ],
     links: [
@@ -96,9 +100,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "apple-touch-icon", href: "/icons/icon-192.png" },
       { rel: "icon", type: "image/png", sizes: "192x192", href: "/icons/icon-192.png" },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@500;600&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap",
       },
     ],
   }),

@@ -1,32 +1,16 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useApp } from "@/contexts/app-context";
-import { scholarWorkspaceHome } from "@/lib/runtime/nav-registry";
+import { resolveMemberWorkspaceHome } from "@/lib/runtime/nav-registry";
 import { PublicSchoolSite } from "@/components/public/site";
-import { CommandCentre } from "@/components/command-centre/command-centre";
-import { PLATFORM_NAME } from "@/lib/platform";
-import { INSTALLED_RUNTIME_DESCRIPTION as SCHOLAR_RUNTIME_DESCRIPTION } from "@/lib/runtime/installed-runtimes";
+import { SherivsPublicShell } from "@/components/sherivs/public-shell";
+import { SherivsHome } from "@/components/sherivs/home";
+import { SystemState } from "@/components/sherivs/system-state";
+import { publicPageHead } from "@/content/sherivs/seo";
 
 export const Route = createFileRoute("/")({
   component: Index,
-  head: () => ({
-    meta: [
-      { title: `CoreGrid Command Centre — ${SCHOLAR_RUNTIME_DESCRIPTION}` },
-      {
-        name: "description",
-        content:
-          "The CoreGrid Command Centre — the platform operating surface. Provision organizations, roles and policies across a 51-phase governed platform.",
-      },
-      { property: "og:title", content: `${PLATFORM_NAME} Command Centre` },
-      {
-        property: "og:description",
-        content: "Provision organizations, roles and policies on the CoreGrid platform.",
-      },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://universalschoolos.com/" },
-    ],
-    links: [{ rel: "canonical", href: "https://universalschoolos.com/" }],
-  }),
+  head: () => publicPageHead("/"),
 });
 
 function Index() {
@@ -36,7 +20,7 @@ function Index() {
   // Signed-in users (on the platform host, not a tenant site) → their dashboard
   useEffect(() => {
     if (!loading && role && !tenantSlug) {
-      navigate({ to: scholarWorkspaceHome(role), replace: true });
+      navigate({ to: resolveMemberWorkspaceHome(role), replace: true });
     }
   }, [loading, role, tenantSlug, navigate]);
 
@@ -73,6 +57,12 @@ function Index() {
     cleanup.push(upsertMeta("property", "og:description", desc));
     cleanup.push(upsertMeta("property", "og:type", "website"));
     cleanup.push(upsertMeta("property", "og:url", window.location.href));
+    const canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    const previousCanonical = canonical?.href ?? null;
+    if (canonical) canonical.href = window.location.href;
+    cleanup.push(() => {
+      if (canonical && previousCanonical) canonical.href = previousCanonical;
+    });
     const logo = (school.logo_url as string | null) ?? null;
     if (logo) {
       cleanup.push(upsertMeta("property", "og:image", logo));
@@ -126,16 +116,21 @@ function Index() {
   }, [school]);
 
   if (loading) {
-    return <div className="min-h-dvh grid place-items-center text-muted-foreground">Loading…</div>;
+    return (
+      <div data-sx="" className="grid min-h-dvh place-items-center px-6">
+        <SystemState kind="loading" title="Opening Sherivs" headingLevel="h1" />
+      </div>
+    );
   }
 
-  // Tenant context (subdomain OR ?school=slug) → render that school's public site
+  // Tenant context (subdomain OR ?school=slug) renders that organization's public site.
   if (school) {
     return <PublicSchoolSite school={school} />;
   }
 
-  // CoreGrid Command Centre — the platform's primary workspace surface for the
-  // African Educational Runtime (Phases 1–51). Dynamic workspace: from here an
-  // authorized operator provisions a school, its role model, and its policies.
-  return <CommandCentre />;
+  return (
+    <SherivsPublicShell>
+      <SherivsHome />
+    </SherivsPublicShell>
+  );
 }
