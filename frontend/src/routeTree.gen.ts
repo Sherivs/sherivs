@@ -28,6 +28,9 @@ import { Route as ScholarFoundationLoopRouteImport } from './routes/scholar-foun
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SuperAdminBootstrapRouteImport } from './routes/super-admin-bootstrap'
 import { Route as siteCoregridRouteImport } from './routes/(site)/coregrid'
+import { Route as sitePricingRouteImport } from './routes/(site)/pricing'
+import { Route as siteSecurityRouteImport } from './routes/(site)/security'
+import { Route as siteStatusRouteImport } from './routes/(site)/status'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as AuthenticatedBursarRouteRouteImport } from './routes/_authenticated/bursar/route'
 import { Route as AuthenticatedCommandCentreRouteRouteImport } from './routes/_authenticated/command-centre/route'
@@ -44,8 +47,11 @@ import { Route as AuthenticatedTeacherRouteRouteImport } from './routes/_authent
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as EventsIdRouteImport } from './routes/events.$id'
 import { Route as NewsIdRouteImport } from './routes/news.$id'
-import { Route as PlatformOrgRouteImport } from './routes/platform.org'
+import { Route as PlatformLayerRouteImport } from './routes/platform_.$layer'
 import { Route as RealityClassRouteImport } from './routes/reality.$class'
+import { Route as siteLegalAccessibilityRouteImport } from './routes/(site)/legal.accessibility'
+import { Route as siteSolutionsIndexRouteImport } from './routes/(site)/solutions.index'
+import { Route as siteSolutionsSegmentRouteImport } from './routes/(site)/solutions.$segment'
 import { Route as AuthenticatedAdminAdmissionsRouteImport } from './routes/_authenticated/admin/admissions'
 import { Route as AuthenticatedAdminAiAssistantRouteImport } from './routes/_authenticated/admin/ai-assistant'
 import { Route as AuthenticatedAdminAnalyticsRouteImport } from './routes/_authenticated/admin/analytics'
@@ -142,6 +148,8 @@ import { Route as AuthenticatedSuperAdminDashboardRouteImport } from './routes/_
 import { Route as AuthenticatedSuperAdminFinancialOperationsRouteImport } from './routes/_authenticated/super-admin/financial-operations'
 import { Route as AuthenticatedSuperAdminLogsRouteImport } from './routes/_authenticated/super-admin/logs'
 import { Route as AuthenticatedSuperAdminPlatformConfigRouteImport } from './routes/_authenticated/super-admin/platform-config'
+import { Route as AuthenticatedSuperAdminPlatformOrgRouteImport } from './routes/_authenticated/super-admin/platform-org'
+import { Route as AuthenticatedSuperAdminProvisioningSimulatorRouteImport } from './routes/_authenticated/super-admin/provisioning-simulator'
 import { Route as AuthenticatedSuperAdminRuntimeContractsRouteImport } from './routes/_authenticated/super-admin/runtime-contracts'
 import { Route as AuthenticatedSuperAdminSchedulingIntelligenceRouteImport } from './routes/_authenticated/super-admin/scheduling-intelligence'
 import { Route as AuthenticatedSuperAdminSchoolsRouteImport } from './routes/_authenticated/super-admin/schools'
@@ -261,6 +269,21 @@ const siteCoregridRoute = siteCoregridRouteImport.update({
   path: '/coregrid',
   getParentRoute: () => siteRouteRoute,
 } as any)
+const sitePricingRoute = sitePricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteSecurityRoute = siteSecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteStatusRoute = siteStatusRouteImport.update({
+  id: '/status',
+  path: '/status',
+  getParentRoute: () => siteRouteRoute,
+} as any)
 const AuthenticatedAdminRouteRoute = AuthenticatedAdminRouteRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -349,15 +372,30 @@ const NewsIdRoute = NewsIdRouteImport.update({
   path: '/news/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PlatformOrgRoute = PlatformOrgRouteImport.update({
-  id: '/org',
-  path: '/org',
-  getParentRoute: () => PlatformRoute,
+const PlatformLayerRoute = PlatformLayerRouteImport.update({
+  id: '/platform_/$layer',
+  path: '/platform/$layer',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RealityClassRoute = RealityClassRouteImport.update({
   id: '/reality/$class',
   path: '/reality/$class',
   getParentRoute: () => rootRouteImport,
+} as any)
+const siteLegalAccessibilityRoute = siteLegalAccessibilityRouteImport.update({
+  id: '/legal/accessibility',
+  path: '/legal/accessibility',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteSolutionsIndexRoute = siteSolutionsIndexRouteImport.update({
+  id: '/solutions/',
+  path: '/solutions/',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteSolutionsSegmentRoute = siteSolutionsSegmentRouteImport.update({
+  id: '/solutions/$segment',
+  path: '/solutions/$segment',
+  getParentRoute: () => siteRouteRoute,
 } as any)
 const AuthenticatedAdminAdmissionsRoute =
   AuthenticatedAdminAdmissionsRouteImport.update({
@@ -925,6 +963,18 @@ const AuthenticatedSuperAdminPlatformConfigRoute =
     path: '/platform-config',
     getParentRoute: () => AuthenticatedSuperAdminRouteRoute,
   } as any)
+const AuthenticatedSuperAdminPlatformOrgRoute =
+  AuthenticatedSuperAdminPlatformOrgRouteImport.update({
+    id: '/platform-org',
+    path: '/platform-org',
+    getParentRoute: () => AuthenticatedSuperAdminRouteRoute,
+  } as any)
+const AuthenticatedSuperAdminProvisioningSimulatorRoute =
+  AuthenticatedSuperAdminProvisioningSimulatorRouteImport.update({
+    id: '/provisioning-simulator',
+    path: '/provisioning-simulator',
+    getParentRoute: () => AuthenticatedSuperAdminRouteRoute,
+  } as any)
 const AuthenticatedSuperAdminRuntimeContractsRoute =
   AuthenticatedSuperAdminRuntimeContractsRouteImport.update({
     id: '/runtime-contracts',
@@ -1086,7 +1136,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
   '/marketplace': typeof MarketplaceRoute
-  '/platform': typeof PlatformRouteWithChildren
+  '/platform': typeof PlatformRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rules': typeof RulesRoute
@@ -1103,6 +1153,9 @@ export interface FileRoutesByFullPath {
   '/super-admin': typeof AuthenticatedSuperAdminRouteRouteWithChildren
   '/teacher': typeof AuthenticatedTeacherRouteRouteWithChildren
   '/coregrid': typeof siteCoregridRoute
+  '/pricing': typeof sitePricingRoute
+  '/security': typeof siteSecurityRoute
+  '/status': typeof siteStatusRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/runtime': typeof AuthenticatedRuntimeRoute
@@ -1110,8 +1163,10 @@ export interface FileRoutesByFullPath {
   '/blog/$slug': typeof BlogSlugRoute
   '/events/$id': typeof EventsIdRoute
   '/news/$id': typeof NewsIdRoute
-  '/platform/org': typeof PlatformOrgRoute
+  '/platform/$layer': typeof PlatformLayerRoute
   '/reality/$class': typeof RealityClassRoute
+  '/legal/accessibility': typeof siteLegalAccessibilityRoute
+  '/solutions/$segment': typeof siteSolutionsSegmentRoute
   '/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
@@ -1207,6 +1262,8 @@ export interface FileRoutesByFullPath {
   '/super-admin/financial-operations': typeof AuthenticatedSuperAdminFinancialOperationsRoute
   '/super-admin/logs': typeof AuthenticatedSuperAdminLogsRoute
   '/super-admin/platform-config': typeof AuthenticatedSuperAdminPlatformConfigRoute
+  '/super-admin/platform-org': typeof AuthenticatedSuperAdminPlatformOrgRoute
+  '/super-admin/provisioning-simulator': typeof AuthenticatedSuperAdminProvisioningSimulatorRoute
   '/super-admin/runtime-contracts': typeof AuthenticatedSuperAdminRuntimeContractsRoute
   '/super-admin/scheduling-intelligence': typeof AuthenticatedSuperAdminSchedulingIntelligenceRoute
   '/super-admin/schools': typeof AuthenticatedSuperAdminSchoolsRoute
@@ -1230,6 +1287,7 @@ export interface FileRoutesByFullPath {
   '/teacher/news': typeof AuthenticatedTeacherNewsRoute
   '/teacher/sign-in': typeof AuthenticatedTeacherSignInRoute
   '/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
+  '/solutions/': typeof siteSolutionsIndexRoute
   '/command-centre/': typeof AuthenticatedCommandCentreIndexRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
@@ -1244,7 +1302,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
   '/marketplace': typeof MarketplaceRoute
-  '/platform': typeof PlatformRouteWithChildren
+  '/platform': typeof PlatformRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rules': typeof RulesRoute
@@ -1260,6 +1318,9 @@ export interface FileRoutesByTo {
   '/super-admin': typeof AuthenticatedSuperAdminRouteRouteWithChildren
   '/teacher': typeof AuthenticatedTeacherRouteRouteWithChildren
   '/coregrid': typeof siteCoregridRoute
+  '/pricing': typeof sitePricingRoute
+  '/security': typeof siteSecurityRoute
+  '/status': typeof siteStatusRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/runtime': typeof AuthenticatedRuntimeRoute
@@ -1267,8 +1328,10 @@ export interface FileRoutesByTo {
   '/blog/$slug': typeof BlogSlugRoute
   '/events/$id': typeof EventsIdRoute
   '/news/$id': typeof NewsIdRoute
-  '/platform/org': typeof PlatformOrgRoute
+  '/platform/$layer': typeof PlatformLayerRoute
   '/reality/$class': typeof RealityClassRoute
+  '/legal/accessibility': typeof siteLegalAccessibilityRoute
+  '/solutions/$segment': typeof siteSolutionsSegmentRoute
   '/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
@@ -1364,6 +1427,8 @@ export interface FileRoutesByTo {
   '/super-admin/financial-operations': typeof AuthenticatedSuperAdminFinancialOperationsRoute
   '/super-admin/logs': typeof AuthenticatedSuperAdminLogsRoute
   '/super-admin/platform-config': typeof AuthenticatedSuperAdminPlatformConfigRoute
+  '/super-admin/platform-org': typeof AuthenticatedSuperAdminPlatformOrgRoute
+  '/super-admin/provisioning-simulator': typeof AuthenticatedSuperAdminProvisioningSimulatorRoute
   '/super-admin/runtime-contracts': typeof AuthenticatedSuperAdminRuntimeContractsRoute
   '/super-admin/scheduling-intelligence': typeof AuthenticatedSuperAdminSchedulingIntelligenceRoute
   '/super-admin/schools': typeof AuthenticatedSuperAdminSchoolsRoute
@@ -1387,6 +1452,7 @@ export interface FileRoutesByTo {
   '/teacher/news': typeof AuthenticatedTeacherNewsRoute
   '/teacher/sign-in': typeof AuthenticatedTeacherSignInRoute
   '/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
+  '/solutions': typeof siteSolutionsIndexRoute
   '/command-centre': typeof AuthenticatedCommandCentreIndexRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
@@ -1404,7 +1470,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
   '/marketplace': typeof MarketplaceRoute
-  '/platform': typeof PlatformRouteWithChildren
+  '/platform': typeof PlatformRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rules': typeof RulesRoute
@@ -1421,6 +1487,9 @@ export interface FileRoutesById {
   '/_authenticated/super-admin': typeof AuthenticatedSuperAdminRouteRouteWithChildren
   '/_authenticated/teacher': typeof AuthenticatedTeacherRouteRouteWithChildren
   '/(site)/coregrid': typeof siteCoregridRoute
+  '/(site)/pricing': typeof sitePricingRoute
+  '/(site)/security': typeof siteSecurityRoute
+  '/(site)/status': typeof siteStatusRoute
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/runtime': typeof AuthenticatedRuntimeRoute
@@ -1428,8 +1497,10 @@ export interface FileRoutesById {
   '/blog/$slug': typeof BlogSlugRoute
   '/events/$id': typeof EventsIdRoute
   '/news/$id': typeof NewsIdRoute
-  '/platform/org': typeof PlatformOrgRoute
+  '/platform_/$layer': typeof PlatformLayerRoute
   '/reality/$class': typeof RealityClassRoute
+  '/(site)/legal/accessibility': typeof siteLegalAccessibilityRoute
+  '/(site)/solutions/$segment': typeof siteSolutionsSegmentRoute
   '/_authenticated/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/_authenticated/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
   '/_authenticated/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
@@ -1525,6 +1596,8 @@ export interface FileRoutesById {
   '/_authenticated/super-admin/financial-operations': typeof AuthenticatedSuperAdminFinancialOperationsRoute
   '/_authenticated/super-admin/logs': typeof AuthenticatedSuperAdminLogsRoute
   '/_authenticated/super-admin/platform-config': typeof AuthenticatedSuperAdminPlatformConfigRoute
+  '/_authenticated/super-admin/platform-org': typeof AuthenticatedSuperAdminPlatformOrgRoute
+  '/_authenticated/super-admin/provisioning-simulator': typeof AuthenticatedSuperAdminProvisioningSimulatorRoute
   '/_authenticated/super-admin/runtime-contracts': typeof AuthenticatedSuperAdminRuntimeContractsRoute
   '/_authenticated/super-admin/scheduling-intelligence': typeof AuthenticatedSuperAdminSchedulingIntelligenceRoute
   '/_authenticated/super-admin/schools': typeof AuthenticatedSuperAdminSchoolsRoute
@@ -1548,6 +1621,7 @@ export interface FileRoutesById {
   '/_authenticated/teacher/news': typeof AuthenticatedTeacherNewsRoute
   '/_authenticated/teacher/sign-in': typeof AuthenticatedTeacherSignInRoute
   '/_authenticated/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
+  '/(site)/solutions/': typeof siteSolutionsIndexRoute
   '/_authenticated/command-centre/': typeof AuthenticatedCommandCentreIndexRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
@@ -1581,6 +1655,9 @@ export interface FileRouteTypes {
     | '/super-admin'
     | '/teacher'
     | '/coregrid'
+    | '/pricing'
+    | '/security'
+    | '/status'
     | '/messages'
     | '/notifications'
     | '/runtime'
@@ -1588,8 +1665,10 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/events/$id'
     | '/news/$id'
-    | '/platform/org'
+    | '/platform/$layer'
     | '/reality/$class'
+    | '/legal/accessibility'
+    | '/solutions/$segment'
     | '/admin/admissions'
     | '/admin/ai-assistant'
     | '/admin/analytics'
@@ -1685,6 +1764,8 @@ export interface FileRouteTypes {
     | '/super-admin/financial-operations'
     | '/super-admin/logs'
     | '/super-admin/platform-config'
+    | '/super-admin/platform-org'
+    | '/super-admin/provisioning-simulator'
     | '/super-admin/runtime-contracts'
     | '/super-admin/scheduling-intelligence'
     | '/super-admin/schools'
@@ -1708,6 +1789,7 @@ export interface FileRouteTypes {
     | '/teacher/news'
     | '/teacher/sign-in'
     | '/teacher/timetable'
+    | '/solutions/'
     | '/command-centre/'
     | '/api/public/audit/password-reset'
     | '/api/public/webhooks/paystack'
@@ -1738,6 +1820,9 @@ export interface FileRouteTypes {
     | '/super-admin'
     | '/teacher'
     | '/coregrid'
+    | '/pricing'
+    | '/security'
+    | '/status'
     | '/messages'
     | '/notifications'
     | '/runtime'
@@ -1745,8 +1830,10 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/events/$id'
     | '/news/$id'
-    | '/platform/org'
+    | '/platform/$layer'
     | '/reality/$class'
+    | '/legal/accessibility'
+    | '/solutions/$segment'
     | '/admin/admissions'
     | '/admin/ai-assistant'
     | '/admin/analytics'
@@ -1842,6 +1929,8 @@ export interface FileRouteTypes {
     | '/super-admin/financial-operations'
     | '/super-admin/logs'
     | '/super-admin/platform-config'
+    | '/super-admin/platform-org'
+    | '/super-admin/provisioning-simulator'
     | '/super-admin/runtime-contracts'
     | '/super-admin/scheduling-intelligence'
     | '/super-admin/schools'
@@ -1865,6 +1954,7 @@ export interface FileRouteTypes {
     | '/teacher/news'
     | '/teacher/sign-in'
     | '/teacher/timetable'
+    | '/solutions'
     | '/command-centre'
     | '/api/public/audit/password-reset'
     | '/api/public/webhooks/paystack'
@@ -1898,6 +1988,9 @@ export interface FileRouteTypes {
     | '/_authenticated/super-admin'
     | '/_authenticated/teacher'
     | '/(site)/coregrid'
+    | '/(site)/pricing'
+    | '/(site)/security'
+    | '/(site)/status'
     | '/_authenticated/messages'
     | '/_authenticated/notifications'
     | '/_authenticated/runtime'
@@ -1905,8 +1998,10 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/events/$id'
     | '/news/$id'
-    | '/platform/org'
+    | '/platform_/$layer'
     | '/reality/$class'
+    | '/(site)/legal/accessibility'
+    | '/(site)/solutions/$segment'
     | '/_authenticated/admin/admissions'
     | '/_authenticated/admin/ai-assistant'
     | '/_authenticated/admin/analytics'
@@ -2002,6 +2097,8 @@ export interface FileRouteTypes {
     | '/_authenticated/super-admin/financial-operations'
     | '/_authenticated/super-admin/logs'
     | '/_authenticated/super-admin/platform-config'
+    | '/_authenticated/super-admin/platform-org'
+    | '/_authenticated/super-admin/provisioning-simulator'
     | '/_authenticated/super-admin/runtime-contracts'
     | '/_authenticated/super-admin/scheduling-intelligence'
     | '/_authenticated/super-admin/schools'
@@ -2025,6 +2122,7 @@ export interface FileRouteTypes {
     | '/_authenticated/teacher/news'
     | '/_authenticated/teacher/sign-in'
     | '/_authenticated/teacher/timetable'
+    | '/(site)/solutions/'
     | '/_authenticated/command-centre/'
     | '/api/public/audit/password-reset'
     | '/api/public/webhooks/paystack'
@@ -2042,7 +2140,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ManifestDotwebmanifestRoute: typeof ManifestDotwebmanifestRoute
   MarketplaceRoute: typeof MarketplaceRoute
-  PlatformRoute: typeof PlatformRouteWithChildren
+  PlatformRoute: typeof PlatformRoute
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   RulesRoute: typeof RulesRoute
@@ -2051,6 +2149,7 @@ export interface RootRouteChildren {
   SuperAdminBootstrapRoute: typeof SuperAdminBootstrapRoute
   EventsIdRoute: typeof EventsIdRoute
   NewsIdRoute: typeof NewsIdRoute
+  PlatformLayerRoute: typeof PlatformLayerRoute
   RealityClassRoute: typeof RealityClassRoute
   ApiPublicAuditPasswordResetRoute: typeof ApiPublicAuditPasswordResetRoute
   ApiPublicWebhooksPaystackRoute: typeof ApiPublicWebhooksPaystackRoute
@@ -2191,6 +2290,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof siteCoregridRouteImport
       parentRoute: typeof siteRouteRoute
     }
+    '/(site)/pricing': {
+      id: '/(site)/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof sitePricingRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/security': {
+      id: '/(site)/security'
+      path: '/security'
+      fullPath: '/security'
+      preLoaderRoute: typeof siteSecurityRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/status': {
+      id: '/(site)/status'
+      path: '/status'
+      fullPath: '/status'
+      preLoaderRoute: typeof siteStatusRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
       path: '/admin'
@@ -2303,12 +2423,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NewsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/platform/org': {
-      id: '/platform/org'
-      path: '/org'
-      fullPath: '/platform/org'
-      preLoaderRoute: typeof PlatformOrgRouteImport
-      parentRoute: typeof PlatformRoute
+    '/platform_/$layer': {
+      id: '/platform_/$layer'
+      path: '/platform/$layer'
+      fullPath: '/platform/$layer'
+      preLoaderRoute: typeof PlatformLayerRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/reality/$class': {
       id: '/reality/$class'
@@ -2316,6 +2436,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/reality/$class'
       preLoaderRoute: typeof RealityClassRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/(site)/legal/accessibility': {
+      id: '/(site)/legal/accessibility'
+      path: '/legal/accessibility'
+      fullPath: '/legal/accessibility'
+      preLoaderRoute: typeof siteLegalAccessibilityRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/solutions/': {
+      id: '/(site)/solutions/'
+      path: '/solutions'
+      fullPath: '/solutions/'
+      preLoaderRoute: typeof siteSolutionsIndexRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/solutions/$segment': {
+      id: '/(site)/solutions/$segment'
+      path: '/solutions/$segment'
+      fullPath: '/solutions/$segment'
+      preLoaderRoute: typeof siteSolutionsSegmentRouteImport
+      parentRoute: typeof siteRouteRoute
     }
     '/_authenticated/admin/admissions': {
       id: '/_authenticated/admin/admissions'
@@ -2989,6 +3130,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSuperAdminPlatformConfigRouteImport
       parentRoute: typeof AuthenticatedSuperAdminRouteRoute
     }
+    '/_authenticated/super-admin/platform-org': {
+      id: '/_authenticated/super-admin/platform-org'
+      path: '/platform-org'
+      fullPath: '/super-admin/platform-org'
+      preLoaderRoute: typeof AuthenticatedSuperAdminPlatformOrgRouteImport
+      parentRoute: typeof AuthenticatedSuperAdminRouteRoute
+    }
+    '/_authenticated/super-admin/provisioning-simulator': {
+      id: '/_authenticated/super-admin/provisioning-simulator'
+      path: '/provisioning-simulator'
+      fullPath: '/super-admin/provisioning-simulator'
+      preLoaderRoute: typeof AuthenticatedSuperAdminProvisioningSimulatorRouteImport
+      parentRoute: typeof AuthenticatedSuperAdminRouteRoute
+    }
     '/_authenticated/super-admin/runtime-contracts': {
       id: '/_authenticated/super-admin/runtime-contracts'
       path: '/runtime-contracts'
@@ -3169,10 +3324,22 @@ declare module '@tanstack/react-router' {
 
 interface siteRouteRouteChildren {
   siteCoregridRoute: typeof siteCoregridRoute
+  sitePricingRoute: typeof sitePricingRoute
+  siteSecurityRoute: typeof siteSecurityRoute
+  siteStatusRoute: typeof siteStatusRoute
+  siteLegalAccessibilityRoute: typeof siteLegalAccessibilityRoute
+  siteSolutionsSegmentRoute: typeof siteSolutionsSegmentRoute
+  siteSolutionsIndexRoute: typeof siteSolutionsIndexRoute
 }
 
 const siteRouteRouteChildren: siteRouteRouteChildren = {
   siteCoregridRoute: siteCoregridRoute,
+  sitePricingRoute: sitePricingRoute,
+  siteSecurityRoute: siteSecurityRoute,
+  siteStatusRoute: siteStatusRoute,
+  siteLegalAccessibilityRoute: siteLegalAccessibilityRoute,
+  siteSolutionsSegmentRoute: siteSolutionsSegmentRoute,
+  siteSolutionsIndexRoute: siteSolutionsIndexRoute,
 }
 
 const siteRouteRouteWithChildren = siteRouteRoute._addFileChildren(
@@ -3462,6 +3629,8 @@ interface AuthenticatedSuperAdminRouteRouteChildren {
   AuthenticatedSuperAdminFinancialOperationsRoute: typeof AuthenticatedSuperAdminFinancialOperationsRoute
   AuthenticatedSuperAdminLogsRoute: typeof AuthenticatedSuperAdminLogsRoute
   AuthenticatedSuperAdminPlatformConfigRoute: typeof AuthenticatedSuperAdminPlatformConfigRoute
+  AuthenticatedSuperAdminPlatformOrgRoute: typeof AuthenticatedSuperAdminPlatformOrgRoute
+  AuthenticatedSuperAdminProvisioningSimulatorRoute: typeof AuthenticatedSuperAdminProvisioningSimulatorRoute
   AuthenticatedSuperAdminRuntimeContractsRoute: typeof AuthenticatedSuperAdminRuntimeContractsRoute
   AuthenticatedSuperAdminSchedulingIntelligenceRoute: typeof AuthenticatedSuperAdminSchedulingIntelligenceRoute
   AuthenticatedSuperAdminSchoolsRoute: typeof AuthenticatedSuperAdminSchoolsRoute
@@ -3490,6 +3659,10 @@ const AuthenticatedSuperAdminRouteRouteChildren: AuthenticatedSuperAdminRouteRou
     AuthenticatedSuperAdminLogsRoute: AuthenticatedSuperAdminLogsRoute,
     AuthenticatedSuperAdminPlatformConfigRoute:
       AuthenticatedSuperAdminPlatformConfigRoute,
+    AuthenticatedSuperAdminPlatformOrgRoute:
+      AuthenticatedSuperAdminPlatformOrgRoute,
+    AuthenticatedSuperAdminProvisioningSimulatorRoute:
+      AuthenticatedSuperAdminProvisioningSimulatorRoute,
     AuthenticatedSuperAdminRuntimeContractsRoute:
       AuthenticatedSuperAdminRuntimeContractsRoute,
     AuthenticatedSuperAdminSchedulingIntelligenceRoute:
@@ -3600,18 +3773,6 @@ const BlogRouteChildren: BlogRouteChildren = {
 
 const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
 
-interface PlatformRouteChildren {
-  PlatformOrgRoute: typeof PlatformOrgRoute
-}
-
-const PlatformRouteChildren: PlatformRouteChildren = {
-  PlatformOrgRoute: PlatformOrgRoute,
-}
-
-const PlatformRouteWithChildren = PlatformRoute._addFileChildren(
-  PlatformRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   siteRouteRoute: siteRouteRouteWithChildren,
@@ -3624,7 +3785,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ManifestDotwebmanifestRoute: ManifestDotwebmanifestRoute,
   MarketplaceRoute: MarketplaceRoute,
-  PlatformRoute: PlatformRouteWithChildren,
+  PlatformRoute: PlatformRoute,
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   RulesRoute: RulesRoute,
@@ -3633,6 +3794,7 @@ const rootRouteChildren: RootRouteChildren = {
   SuperAdminBootstrapRoute: SuperAdminBootstrapRoute,
   EventsIdRoute: EventsIdRoute,
   NewsIdRoute: NewsIdRoute,
+  PlatformLayerRoute: PlatformLayerRoute,
   RealityClassRoute: RealityClassRoute,
   ApiPublicAuditPasswordResetRoute: ApiPublicAuditPasswordResetRoute,
   ApiPublicWebhooksPaystackRoute: ApiPublicWebhooksPaystackRoute,

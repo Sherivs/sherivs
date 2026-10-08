@@ -1,7 +1,10 @@
 /**
- * CoreGrid internal operating workspace surface (WAVE-R41).
+ * Sherivs internal operating workspace surface (WAVE-R41).
  *
- * Renders the PLATFORM organization — the departments CoreGrid staffs, the roles
+ * Internal to the Sherivs control plane: mounted under the super-admin boundary and
+ * never linked from customer navigation.
+ *
+ * Renders the PLATFORM organization — the departments Sherivs staffs, the roles
  * that staff them and the widgets each department renders. It is generated from
  * the COREGRID_INTERNAL role groups by the platform-org engine: this page lists
  * what the engine produced, and shows the structural audit that must be empty.
@@ -19,15 +22,15 @@ import {
   platformOrgSnapshot,
 } from "@/lib/scholar/platform-org/platform-workspace-engine";
 
-export const Route = createFileRoute("/platform/org")({
+export const Route = createFileRoute("/_authenticated/super-admin/platform-org")({
   component: PlatformOrganization,
   head: () => ({
     meta: [
-      { title: "CoreGrid internal operating workspace — generated organization" },
+      { title: "Sherivs internal operating workspace — generated organization" },
       {
         name: "description",
         content:
-          "The CoreGrid platform organization: departments, the roles that staff them and the widgets each department renders — generated from the role engine, audited on every render.",
+          "The Sherivs platform organization: departments, the roles that staff them and the widgets each department renders — generated from the role engine, audited on every render.",
       },
     ],
   }),
@@ -39,18 +42,18 @@ function PlatformOrganization() {
   const issues = useMemo(() => auditPlatformOrg(), []);
 
   return (
-    <div className="min-h-screen bg-[color:var(--background)] text-[color:var(--foreground)]">
+    <div className="bg-[color:var(--background)] text-[color:var(--foreground)]">
       <header className="border-b border-border">
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="font-display text-lg font-bold">CoreGrid organization</p>
+            <p className="font-display text-lg font-bold">Sherivs organization</p>
             <p className="text-[11px] uppercase tracking-widest text-muted-foreground">
               internal operating workspace · generated from role data
             </p>
           </div>
           <nav className="flex flex-wrap gap-4 text-xs">
-            <Link to="/" className="underline">
-              Command Centre
+            <Link to="/super-admin/provisioning-simulator" className="underline">
+              Provisioning simulator
             </Link>
             <Link to="/platform" className="underline">
               The platform
@@ -62,7 +65,7 @@ function PlatformOrganization() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
+      <div className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
         <section className="space-y-2">
           <h1 className="font-display text-2xl font-bold">
             The platform organization staffs {roles.length} roles across{" "}
@@ -164,10 +167,10 @@ function PlatformOrganization() {
         </section>
 
         <p className="text-[11px] text-muted-foreground">
-          Every department renders in the CoreGrid internal workspace and is audited above on every
+          Every department renders in the Sherivs internal workspace and is audited above on every
           render. Departments are provisioned from role data, never configured by hand.
         </p>
-      </main>
+      </div>
     </div>
   );
 }

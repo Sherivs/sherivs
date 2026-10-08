@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
-import { scholarWorkspaceHome } from "@/lib/runtime/nav-registry";
+import { resolveMemberWorkspaceHome } from "@/lib/runtime/nav-registry";
 import { PLATFORM_NAME } from "@/lib/platform";
 import { INSTALLED_RUNTIME_NAME as SCHOLAR_RUNTIME_NAME } from "@/lib/runtime/installed-runtimes";
 import { provisionDemoEnterprise } from "@/lib/runtime/scholar/demo-provision.functions";
@@ -50,7 +50,7 @@ function AuthPage() {
   // If already signed in, redirect to the right dashboard
   useEffect(() => {
     if (!loading && role) {
-      navigate({ to: scholarWorkspaceHome(role), replace: true });
+      navigate({ to: resolveMemberWorkspaceHome(role), replace: true });
     }
   }, [loading, role, navigate]);
 
@@ -273,7 +273,7 @@ function AuthPage() {
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
               One click provisions an Enterprise-tier school so every locked feature (Expenses,
-              Digital Twin, CoreGrid Intelligence, etc.) unlocks.
+              Digital Twin, Sherivs Intelligence, etc.) unlocks.
             </p>
             <button
               type="button"

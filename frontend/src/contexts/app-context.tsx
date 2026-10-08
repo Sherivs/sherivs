@@ -3,7 +3,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveTenantSlug } from "@/lib/tenant";
 import { type AppRole } from "@/lib/roles";
-import { scholarWorkspaceHome } from "@/lib/runtime/nav-registry";
+import { resolveMemberWorkspaceHome } from "@/lib/runtime/nav-registry";
 
 /**
  * UserProfile = row from public.users (tenant member).
@@ -176,7 +176,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (next.role !== profile.role || next.school_id !== profile.school_id) {
             void load(session).then(() => {
               if (typeof window !== "undefined" && next.role) {
-                window.location.assign(scholarWorkspaceHome(next.role as AppRole));
+                window.location.assign(resolveMemberWorkspaceHome(next.role as AppRole));
               }
             });
           }

@@ -8,8 +8,17 @@
  *
  * A runtime's own name belongs here and in the runtime layer, never in the kernel.
  */
-import { RUNTIME_SCHOLAR, SCHOLAR_NAV_CONTRIBUTIONS } from "./scholar-nav-catalog";
-import type { NavContribution } from "@/lib/workspace-engine/navigation";
+import {
+  RUNTIME_SCHOLAR,
+  SCHOLAR_NAV_CONTRIBUTIONS,
+  scholarCapabilitiesForRole,
+} from "./scholar-nav-catalog";
+import {
+  resolveWorkspaceHome,
+  resolveWorkspaceNav,
+  type NavContribution,
+} from "@/lib/workspace-engine/navigation";
+import type { AppRole } from "@/lib/roles";
 
 /** Everything a runtime's own layer exports (capability sets, labels, helpers). */
 export * from "./scholar-nav-catalog";
@@ -45,3 +54,14 @@ export const INSTALLED_NAV_CONTRIBUTION_SETS: readonly InstalledNavContributionS
 /** Every contribution from every installed runtime — what the shell renders. */
 export const ALL_NAV_CONTRIBUTIONS: readonly NavContribution[] =
   INSTALLED_NAV_CONTRIBUTION_SETS.flatMap((set) => set.contributions);
+
+/**
+ * Where a signed-in member lands: the home item of the workspace resolved from every
+ * installed runtime's contributions and the member's authorized capabilities. The
+ * landing is whatever the member is authorized to use first — never a fixed runtime
+ * dashboard — and "/" when nothing resolves.
+ */
+export function resolveMemberWorkspaceHome(role: AppRole): string {
+  const sections = resolveWorkspaceNav(ALL_NAV_CONTRIBUTIONS, scholarCapabilitiesForRole(role));
+  return resolveWorkspaceHome(sections) ?? "/";
+}

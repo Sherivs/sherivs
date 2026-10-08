@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { useApp } from "@/contexts/app-context";
 import type { AppRole } from "@/lib/roles";
-import { scholarWorkspaceHome, scholarWorkspaceLabelForRole } from "@/lib/runtime/nav-registry";
+import { resolveMemberWorkspaceHome, scholarWorkspaceLabelForRole } from "@/lib/runtime/nav-registry";
 
 /**
  * Client-side role guard. Wrap a portal's <Outlet /> with this to ensure
@@ -23,7 +23,7 @@ export function RoleGuard({ allow, children }: { allow: AppRole[]; children: Rea
   if (superAdmin) return <>{children}</>;
 
   if (!role || !allow.includes(role)) {
-    const target = role ? scholarWorkspaceHome(role) : "/auth";
+    const target = role ? resolveMemberWorkspaceHome(role) : "/auth";
     return (
       <div className="min-h-[60vh] grid place-items-center px-4">
         <div className="uos-card p-8 max-w-md text-center">

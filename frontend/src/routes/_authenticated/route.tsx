@@ -26,7 +26,7 @@ import {
   ALL_NAV_CONTRIBUTIONS,
   scholarCapabilitiesForPortal,
   scholarCapabilitiesForRole,
-  scholarWorkspaceHome,
+  resolveMemberWorkspaceHome,
   scholarWorkspaceLabelForRole,
   // The runtime layer names its own portal kinds; the shell speaks of them generically.
   type ScholarPortalKind as RuntimePortalKind,
@@ -93,7 +93,7 @@ function AuthenticatedLayout() {
           <h1 className="font-display text-xl font-bold">Account not yet linked</h1>
           <p className="mt-3 text-sm text-muted-foreground">
             Your sign-in is valid, but your account has not been linked to a school yet. A school
-            administrator (or a CoreGrid platform super admin) needs to assign you a role before you
+            administrator (or a Sherivs platform administrator) needs to assign you a role before you
             can open a portal.
           </p>
           <button
@@ -111,7 +111,7 @@ function AuthenticatedLayout() {
   }
 
   const displayName = profile?.full_name ?? superAdmin?.full_name ?? "User";
-  const dashHref = role ? scholarWorkspaceHome(role) : "/";
+  const dashHref = role ? resolveMemberWorkspaceHome(role) : "/";
   const memberLabel = role
     ? scholarWorkspaceLabelForMember(
         myPosition.data?.kind_code ?? null,
