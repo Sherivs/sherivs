@@ -18,6 +18,7 @@ import { CommandCenterMount } from "@/components/command-center";
 import { ShellHeaderActions } from "@/components/shell/shell-header-actions";
 import { WorkspaceSwitcher } from "@/components/shell/workspace-switcher";
 import { PLATFORM_NAME } from "@/lib/platform";
+import { StateView } from "@/components/sherivs/state-view";
 import { INSTALLED_RUNTIME_NAME as SCHOLAR_RUNTIME_NAME } from "@/lib/runtime/installed-runtimes";
 import { WorkspaceBottomNav } from "@/components/mobile-bottom-nav";
 import { OfflineBanner } from "@/components/offline-banner";
@@ -83,29 +84,34 @@ function AuthenticatedLayout() {
   }, [profile?.id]);
 
   if (loading) {
-    return <div className="min-h-dvh grid place-items-center text-muted-foreground">Loading…</div>;
+    return (
+      <div className="min-h-dvh grid place-items-center">
+        <StateView kind="loading" as="h1" title="Loading your workspace" description="Resolving your account and permissions." />
+      </div>
+    );
   }
 
   if (!profile && !superAdmin) {
     return (
       <div className="min-h-dvh grid place-items-center px-4">
-        <div className="max-w-md uos-card p-8 text-center">
-          <h1 className="font-display text-xl font-bold">Account not yet linked</h1>
-          <p className="mt-3 text-sm text-muted-foreground">
-            Your sign-in is valid, but your account has not been linked to a school yet. A school
-            administrator (or a Sherivs platform super admin) needs to assign you a role before you
-            can open a portal.
-          </p>
-          <button
-            onClick={async () => {
-              await signOut();
-              navigate({ to: "/auth", replace: true });
-            }}
-            className="mt-6 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
-          >
-            Sign out
-          </button>
-        </div>
+        <StateView
+          kind="unauthorized"
+          as="h1"
+          title="Account not yet linked"
+          description="Your sign-in is valid, but your account has not been linked to an organization yet. An organization administrator (or a Sherivs platform super admin) needs to assign you a role before you can open a workspace."
+          actions={
+            <button
+              type="button"
+              onClick={async () => {
+                await signOut();
+                navigate({ to: "/auth", replace: true });
+              }}
+              className="sv-btn sv-btn-primary"
+            >
+              Sign out
+            </button>
+          }
+        />
       </div>
     );
   }

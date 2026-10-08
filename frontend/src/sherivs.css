@@ -1,15 +1,12 @@
-@import "@fontsource-variable/geist";
-@import "@fontsource-variable/geist-mono";
-
 /*
- * Sherivs design system — runtime projection of frontend/src/lib/sherivs/tokens.ts.
+ * Sherivs design system - runtime projection of frontend/src/lib/sherivs/tokens.ts.
  * tests/unit/sherivs-tokens.test.ts fails if any value here diverges from the
- * typed source. Tokens use the --sv-* namespace; legacy --surface-*/--glass-*
+ * typed source. Tokens use the --sv-* namespace; legacy surface and glass
  * variables in styles.css alias these so the whole product inherits one language.
  */
 
 :root {
-  /* colour — dark ("Obsidian") is the structural default */
+  /* colour - dark ("Obsidian") is the structural default */
   --sv-canvas: #07090c;
   --sv-ground: #0b0e13;
   --sv-raised: #10141b;
@@ -156,7 +153,7 @@
   --sv-text-3: #2b3240;
 }
 
-/* ───────── type ───────── */
+/* --------- type --------- */
 .sv-display { font: 600 clamp(2.75rem, 1.6rem + 5.2vw, 6rem)/0.98 var(--sv-font-sans); letter-spacing: -0.045em; text-wrap: balance; }
 .sv-hero    { font: 600 clamp(2.25rem, 1.5rem + 3.4vw, 4.25rem)/1.02 var(--sv-font-sans); letter-spacing: -0.04em; text-wrap: balance; }
 .sv-h1      { font: 600 clamp(1.75rem, 1.35rem + 1.7vw, 2.75rem)/1.08 var(--sv-font-sans); letter-spacing: -0.032em; text-wrap: balance; }
@@ -174,7 +171,7 @@
 .sv-muted   { color: var(--sv-text-2); }
 .sv-faint   { color: var(--sv-text-3); }
 
-/* ───────── surfaces ─────────
+/* --------- surfaces ---------
  * Spatial order: canvas < ground < raised < overlay. Only `overlay` may be
  * translucent/blurred, because only overlays float above content. */
 .sv-canvas  { background: var(--sv-canvas); color: var(--sv-text); }
@@ -214,7 +211,7 @@
   mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 30%, transparent 75%);
 }
 
-/* ───────── interaction ───────── */
+/* --------- interaction --------- */
 .sv-focusable:focus-visible,
 .sv-btn:focus-visible,
 .sv-link:focus-visible {
@@ -244,7 +241,7 @@
   .sv-btn { min-height: 2.75rem; }
 }
 
-/* ───────── epistemic blocks (Observation … Verification) ───────── */
+/* --------- epistemic blocks (Observation ... Verification) --------- */
 .sv-kind {
   --kind: var(--sv-text-2);
   position: relative;
@@ -265,7 +262,7 @@
 .sv-kind[data-kind="verification"] { --kind: var(--sv-kind-verification); }
 .sv-kind-label { color: var(--kind); display: inline-flex; align-items: center; gap: var(--sv-space-2); }
 
-/* ───────── real-state motion ─────────
+/* --------- real-state motion ---------
  * `data-state="processing"` is set only while a request is genuinely in flight.
  * Nothing in Sherivs animates to imply work that is not happening. */
 @keyframes sv-sweep { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
@@ -300,13 +297,13 @@
   html { scroll-behavior: auto !important; }
 }
 
-/* ───────── layout helpers ───────── */
+/* --------- layout helpers --------- */
 .sv-page { width: 100%; max-width: var(--sv-page-max); margin-inline: auto; padding-inline: clamp(1rem, 4vw, 2rem); }
 .sv-page-wide { width: 100%; max-width: 90rem; margin-inline: auto; padding-inline: clamp(1rem, 4vw, 3rem); }
 @media (min-width: 2560px) { .sv-page-wide { max-width: 110rem; } }
 .sv-section { padding-block: clamp(3.5rem, 2rem + 6vw, 8rem); }
 
-/* Plane rail: Reality → Intelligence → Action → Evidence */
+/* Plane rail: Reality -> Intelligence -> Action -> Evidence */
 .sv-plane { --kind: var(--sv-kind-observation); position: relative; padding-left: var(--sv-space-6); }
 .sv-plane::before { content: ""; position: absolute; left: 0; top: 0.35rem; bottom: -2.5rem; width: 1px; background: var(--sv-line-strong); }
 .sv-plane:last-child::before { bottom: auto; height: 0.5rem; }

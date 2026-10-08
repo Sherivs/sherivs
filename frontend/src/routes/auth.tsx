@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
 import { scholarWorkspaceHome } from "@/lib/runtime/nav-registry";
 import { PLATFORM_NAME } from "@/lib/platform";
+import { SherivsLockup } from "@/components/sherivs/brand-mark";
 import { INSTALLED_RUNTIME_NAME as SCHOLAR_RUNTIME_NAME } from "@/lib/runtime/installed-runtimes";
 import { provisionDemoEnterprise } from "@/lib/runtime/scholar/demo-provision.functions";
 
@@ -156,6 +157,11 @@ function AuthPage() {
     <div className="min-h-dvh grid place-items-center px-4">
       <div className="w-full max-w-md uos-card p-8">
         <div className="mb-6">
+          {!school && (
+            <Link to="/" aria-label="Sherivs home" className="sv-focusable mb-6 inline-flex rounded-[var(--sv-radius-sm)]">
+              <SherivsLockup size={26} />
+            </Link>
+          )}
           {school && (
             <div className="mb-4 flex items-center gap-3">
               {school.logo_url ? (
@@ -185,7 +191,9 @@ function AuthPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             {mode === "forgot"
               ? "Enter the email tied to your account and we'll send you a reset link."
-              : `${PLATFORM_NAME} portal access — ${SCHOLAR_RUNTIME_NAME} runtime`}
+              : school
+                ? `${PLATFORM_NAME} · ${SCHOLAR_RUNTIME_NAME}`
+                : "Sign in to your organization's workspace."}
           </p>
         </div>
 

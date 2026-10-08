@@ -1,5 +1,7 @@
 @import "tailwindcss" source(none);
 @import "tw-animate-css";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
 @import "./sherivs.css";
 
 @source "../src";

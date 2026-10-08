@@ -39,7 +39,7 @@ function PricingPage() {
               <p>
                 <span className="sv-metric">{formatTierPrice(tier.monthlyPrice)}</span>
                 {tier.monthlyPrice !== null && tier.monthlyPrice > 0 ? (
-                  <span className="sv-small sv-muted"> / month</span>
+                  <span className="sv-small sv-muted whitespace-nowrap"> /&nbsp;month</span>
                 ) : null}
               </p>
               {tier.annualPrice !== null && tier.annualPrice > 0 ? (

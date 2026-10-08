@@ -186,6 +186,10 @@ function MobileMenu() {
               </li>
             ))}
           </ul>
+          <div className="flex items-center justify-between gap-4">
+            <span className="sv-label sv-faint">Colour mode</span>
+            <ThemeToggle />
+          </div>
           <div className="grid gap-3">
             <Link to="/auth" className="sv-btn sv-btn-primary sv-btn-lg" onClick={close}>
               Get started

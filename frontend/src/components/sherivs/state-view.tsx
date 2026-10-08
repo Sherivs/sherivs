@@ -77,9 +77,11 @@ export interface StateViewProps {
   /** Technical detail, shown for errors only; callers must not pass secrets. */
   detail?: string;
   className?: string;
+  /** Heading level; use "h1" when the state is the whole page. */
+  as?: "h1" | "h2" | "h3";
 }
 
-export function StateView({ kind, title, description, actions, compact, detail, className }: StateViewProps) {
+export function StateView({ kind, title, description, actions, compact, detail, className, as: Heading = "h2" }: StateViewProps) {
   const meta = STATE_META[kind];
   const Icon = meta.icon;
   return (
@@ -100,7 +102,7 @@ export function StateView({ kind, title, description, actions, compact, detail, 
       >
         <Icon aria-hidden className={cn("size-5", kind === "loading" && "motion-safe:animate-spin")} strokeWidth={1.75} />
       </span>
-      <h2 className={cn("sv-h3", compact && "!text-base")}>{title ?? meta.title}</h2>
+      <Heading className={cn("sv-h3", compact && "!text-base")}>{title ?? meta.title}</Heading>
       <p className="sv-small max-w-md text-[color:var(--sv-text-2)]">{description ?? meta.description}</p>
       {kind === "error" && detail ? (
         <p className="sv-code max-w-md break-words rounded-[var(--sv-radius-md)] border border-[color:var(--sv-line)] bg-[color:var(--sv-ground)] px-3 py-2 text-[color:var(--sv-text-3)]">
