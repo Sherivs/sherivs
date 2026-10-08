@@ -143,7 +143,8 @@ export interface RecordSearchHit {
 /**
  * A runtime-declared record search. The shell offers it only when the member's
  * resolved navigation contains one of `navItemKeys`, and opens hits at that
- * authorized destination. Row visibility is enforced by the data layer (RLS).
+ * authorized destination. The provider resolves tenant and authorization on the
+ * server; the shell passes only the search term.
  */
 export interface RecordSearchProvider {
   id: string;
@@ -151,7 +152,7 @@ export interface RecordSearchProvider {
   placeholderNoun: string;
   navItemKeys: readonly string[];
   minQueryLength: number;
-  search: (term: string, scope: { tenantRef: string | null }) => Promise<RecordSearchHit[]>;
+  search: (term: string) => Promise<RecordSearchHit[]>;
 }
 
 export function recordHitHref(destination: string, hit: RecordSearchHit): string {

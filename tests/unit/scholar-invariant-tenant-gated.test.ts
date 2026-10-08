@@ -613,3 +613,18 @@ defineFamilySuite({
     },
   ],
 });
+
+defineFamilySuite({
+  family: "learner-search.functions.ts",
+  functions: [
+    {
+      fn: "searchLearnerRecords",
+      method: "POST",
+      input: "zod",
+      gate: "school-admin",
+      audit: "pure-read",
+      extra: [/\.eq\("school_id", schoolId\)/, /\.limit\(5\)/, /literalLikePattern\(/],
+      note: "command-palette learner lookup under the caller's session (RLS applies), scoped by the gate-resolved tenant, bounded to five hits; no write path",
+    },
+  ],
+});

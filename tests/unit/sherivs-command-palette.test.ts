@@ -38,7 +38,7 @@ const read = (ref: string) => readFileSync(join(ROOT, ref), "utf8");
 
 const ROLES: AppRole[] = ["super_admin", "hq", "admin", "principal", "teacher", "bursar", "parent", "student", "driver"];
 
-function sectionsFor(role: AppRole): WorkspaceNavSection[] {
+function sectionsFor(role: AppRole): readonly WorkspaceNavSection[] {
   return resolveWorkspaceNav(ALL_NAV_CONTRIBUTIONS, scholarCapabilitiesForRole(role));
 }
 
@@ -124,10 +124,15 @@ describe("Record search is gated by authorized navigation", () => {
     expect(recordHitHref("/admin/students", { recordRef: "a b/c", label: "X" })).toBe("/admin/students?id=a%20b%2Fc");
   });
 
-  it("declares the learner search in the runtime layer, scoped to the member's tenant", () => {
+  it("declares the learner search in the runtime layer as an authenticated, tenant-resolving server function", () => {
     const provider = read("frontend/src/lib/runtime/scholar-record-search.ts");
     expect(provider).toContain('navItemKeys: ["r001.org_admin.students"]');
-    expect(provider).toContain('eq("school_id", scope.tenantRef)');
+    const serverFn = read("frontend/src/lib/runtime/scholar/learner-search.functions.ts");
+    expect(serverFn).toContain(".middleware([requireSupabaseAuth])");
+    expect(serverFn).toContain("requireSchoolAdminScope(context.supabase");
+    expect(serverFn).toContain("learnerSearchSchema.parse(input)");
+    expect(serverFn).toContain('.eq("school_id", schoolId)');
+    expect(serverFn).not.toContain("supabaseAdmin");
     const registry = read("frontend/src/lib/runtime/installed-record-search.ts");
     expect(registry).toContain("INSTALLED_RECORD_SEARCH_PROVIDERS");
   });

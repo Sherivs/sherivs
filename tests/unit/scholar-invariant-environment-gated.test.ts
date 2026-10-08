@@ -6,7 +6,7 @@
  * environment gate (ALLOW_DEMO_PROVISIONING, default OFF in every
  * environment). The suite pins that gate and records the gap honestly.
  *
- * Part 2 — the coverage ledger: all 23 Scholar server-function families are
+ * Part 2 — the coverage ledger: all 25 Scholar server-function families are
  * partitioned across exactly the five M-R-121 T2 §27 invariant suites, so a
  * new family cannot silently escape the invariant regime.
  */
@@ -299,7 +299,7 @@ defineFamilySuite({
 
 /* ───────────────────────────────────────────────────────────────────────────
  * Part 2 — the coverage ledger: the five M-R-121 T2 suites partition the
- * 24 Scholar server-function families exhaustively.
+ * 25 Scholar server-function families exhaustively.
  * ─────────────────────────────────────────────────────────────────────────*/
 
 const SUITE_PARTITION: Readonly<Record<string, readonly string[]>> = {
@@ -307,6 +307,7 @@ const SUITE_PARTITION: Readonly<Record<string, readonly string[]>> = {
     "attendance.functions.ts",
     "digital-twin.functions.ts",
     "facilities.functions.ts",
+    "learner-search.functions.ts",
     "notification-digest.functions.ts",
     "notifications-fanout.functions.ts",
     "org-profile.functions.ts",
@@ -342,11 +343,11 @@ describe("§27 invariant coverage ledger — Scholar server-function families", 
     .filter((f) => f.endsWith(".functions.ts"))
     .sort();
 
-  it("all 24 families exist on disk and are partitioned exactly once across the five suites", () => {
-    expect(onDisk).toHaveLength(24);
+  it("all 25 families exist on disk and are partitioned exactly once across the five suites", () => {
+    expect(onDisk).toHaveLength(25);
     const covered = Object.values(SUITE_PARTITION).flat();
-    expect(covered).toHaveLength(24);
-    expect(new Set(covered).size, "no family may be covered twice").toBe(24);
+    expect(covered).toHaveLength(25);
+    expect(new Set(covered).size, "no family may be covered twice").toBe(25);
     expect([...covered].sort()).toEqual(onDisk);
     for (const suite of Object.keys(SUITE_PARTITION)) {
       expect(() => readFileSync(join(ROOT, "tests/unit", suite), "utf8"), suite).not.toThrow();

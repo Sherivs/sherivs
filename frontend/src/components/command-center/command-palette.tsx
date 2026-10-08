@@ -18,7 +18,6 @@ import { Command as CommandPrimitive } from "cmdk";
 import { Clock, CornerDownLeft, Loader2, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { navIconFor } from "@/components/shell/nav-icons";
-import { useApp } from "@/contexts/app-context";
 import {
   authorizedDestinationForKey,
   buildPaletteCommands,
@@ -78,7 +77,7 @@ export function useTrackRecentPage(pathname: string, label: string) {
 
 type RecordResults = { provider: RecordSearchProvider; destination: string; hits: RecordSearchHit[] };
 
-function useRecordSearch(query: string, sections: readonly WorkspaceNavSection[], tenantRef: string | null, open: boolean) {
+function useRecordSearch(query: string, sections: readonly WorkspaceNavSection[], open: boolean) {
   const available = useMemo(
     () =>
       INSTALLED_RECORD_SEARCH_PROVIDERS.flatMap((provider) => {
@@ -105,7 +104,7 @@ function useRecordSearch(query: string, sections: readonly WorkspaceNavSection[]
         eligible.map(async ({ provider, destination }) => ({
           provider,
           destination,
-          hits: await provider.search(term, { tenantRef }),
+          hits: await provider.search(term),
         })),
       );
       if (cancelled) return;
@@ -118,7 +117,7 @@ function useRecordSearch(query: string, sections: readonly WorkspaceNavSection[]
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [query, available, tenantRef, open]);
+  }, [query, available, open]);
 
   return { available, results, searching };
 }
@@ -133,12 +132,11 @@ export function CommandPalette({
   sections: readonly WorkspaceNavSection[];
 }) {
   const navigate = useNavigate();
-  const { profile } = useApp();
   const [query, setQuery] = useState("");
   const [recentPaths, setRecentPaths] = useState<string[]>([]);
 
   const commands = useMemo(() => buildPaletteCommands(sections), [sections]);
-  const { available, results, searching } = useRecordSearch(query, sections, profile?.school_id ?? null, open);
+  const { available, results, searching } = useRecordSearch(query, sections, open);
 
   useEffect(() => {
     if (open) {
