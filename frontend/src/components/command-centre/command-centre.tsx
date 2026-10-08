@@ -47,6 +47,7 @@ import { governExperience } from "@/lib/scholar/experience/experience-governance
 import { realityForOrgType } from "@/lib/scholar/experience/experience-presets";
 import { featureCodesForReality } from "@/lib/scholar/capability-codes";
 import { contributionIndexForCodes } from "@/lib/scholar/dashboards/grid-engine";
+import { PLATFORM_KERNEL_NAME, PLATFORM_NAME } from "@/lib/platform";
 import type { TenantId } from "@/lib/tenant-core";
 
 const DEMO_TENANT = "tenant:coregrid-demo" as TenantId;
@@ -234,10 +235,10 @@ export function CommandCentre() {
             </div>
             <div>
               <h1 className="font-display text-lg font-bold leading-tight">
-                CoreGrid Command Centre
+                {PLATFORM_NAME} operator console
               </h1>
               <p className="text-xs text-muted-foreground">
-                CoreGrid platform · {PHASES_TOTAL} phases
+                {PLATFORM_NAME} · {PLATFORM_KERNEL_NAME} kernel · {PHASES_TOTAL} phases
               </p>
             </div>
           </div>
@@ -429,7 +430,7 @@ function OrganizationStep(props: {
         </CardTitle>
         <CardDescription>
           Validated by the Phase 25 <code>createOrganizationOnboarding</code> pipeline — the same
-          domain-free contracts that govern production provisioning for every CoreGrid runtime.
+          domain-free contracts that govern production provisioning for every installed runtime.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4 sm:grid-cols-2">
@@ -680,7 +681,7 @@ function LaunchStep(props: {
           Runtime provisioned
         </CardTitle>
         <CardDescription>
-          A CoreGrid domain runtime has been provisioned on the platform. The organization, roles
+          A domain runtime has been provisioned on the platform. The organization, roles
           and policy set were validated through the phase contracts.
         </CardDescription>
       </CardHeader>
@@ -1069,7 +1070,7 @@ function GeneratedExperienceCard({ orgType }: { orgType: string }) {
             Served manifest
           </a>
           <a className="underline" href="/platform/org">
-            CoreGrid organization
+            Platform organization
           </a>
         </div>
       </CardContent>
@@ -1091,7 +1092,7 @@ function PhaseRunway() {
           {PHASES_TOTAL}-phase architecture runway
         </CardTitle>
         <CardDescription className="text-xs">
-          The complete CoreGrid build sequence — Phases 01–32 have implemented, tested domain
+          The complete platform build sequence — Phases 01–32 have implemented, tested domain
           contracts (with explicit measured test suites); Phases 33–51 are architecture-defined
           (documents complete, awaiting domain-contract implementation). Every phase below carries a
           complete engineering contract ({CONTRACT_GOVERNANCE.sectionsPerPhase}/

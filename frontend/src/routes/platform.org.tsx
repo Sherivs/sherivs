@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { BadgeCheck, ShieldAlert } from "lucide-react";
+import { PLATFORM_NAME } from "@/lib/platform";
 import { PLATFORM_WIDGET_KEYS } from "@/lib/scholar/platform-org/department-catalog";
 import {
   auditPlatformOrg,
@@ -23,12 +24,13 @@ export const Route = createFileRoute("/platform/org")({
   component: PlatformOrganization,
   head: () => ({
     meta: [
-      { title: "CoreGrid internal operating workspace — generated organization" },
+      { title: `${PLATFORM_NAME} internal organization — generated, not a customer workspace` },
       {
         name: "description",
         content:
-          "The CoreGrid platform organization: departments, the roles that staff them and the widgets each department renders — generated from the role engine, audited on every render.",
+          "The platform organization: departments, the roles that staff them and the widgets each department renders — generated from the role engine, audited on every render. Not linked from customer navigation.",
       },
+      { name: "robots", content: "noindex" },
     ],
   }),
 });
@@ -43,14 +45,14 @@ function PlatformOrganization() {
       <header className="border-b border-border">
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="font-display text-lg font-bold">CoreGrid organization</p>
+            <p className="font-display text-lg font-bold">Platform organization</p>
             <p className="text-[11px] uppercase tracking-widest text-muted-foreground">
               internal operating workspace · generated from role data
             </p>
           </div>
           <nav className="flex flex-wrap gap-4 text-xs">
-            <Link to="/" className="underline">
-              Command Centre
+            <Link to="/operate" className="underline">
+              Operator console
             </Link>
             <Link to="/platform" className="underline">
               The platform

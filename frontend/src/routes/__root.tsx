@@ -10,7 +10,7 @@ import { type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { AppProvider } from "@/contexts/app-context";
-import { PLATFORM_PAGE_DESCRIPTION, PLATFORM_PAGE_TITLE } from "@/lib/platform";
+import { PLATFORM_NAME, PLATFORM_PAGE_DESCRIPTION, PLATFORM_PAGE_TITLE } from "@/lib/platform";
 import { Toaster } from "@/components/ui/sonner";
 import { RouteProgressBar } from "@/components/route-progress-bar";
 import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme";
@@ -81,14 +81,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: PLATFORM_PAGE_DESCRIPTION },
       { property: "og:description", content: PLATFORM_PAGE_DESCRIPTION },
       { name: "twitter:description", content: PLATFORM_PAGE_DESCRIPTION },
-      { property: "og:image", content: "https://universalschoolos.com/og-image.png" },
-      { name: "twitter:image", content: "https://universalschoolos.com/og-image.png" },
-      { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
-      // Served, generated manifest (see routes/manifest[.]webmanifest.ts).
-      { name: "theme-color", content: "#1d4ed8" },
+      { name: "twitter:card", content: "summary" },
+      { name: "theme-color", content: "#1a4f45" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-title", content: "CoreGrid" },
+      { name: "apple-mobile-web-app-title", content: PLATFORM_NAME },
       { name: "mobile-web-app-capable", content: "yes" },
     ],
     links: [

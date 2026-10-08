@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
 import { scholarWorkspaceHome } from "@/lib/runtime/nav-registry";
 import { PLATFORM_NAME } from "@/lib/platform";
-import { INSTALLED_RUNTIME_NAME as SCHOLAR_RUNTIME_NAME } from "@/lib/runtime/installed-runtimes";
 import { provisionDemoEnterprise } from "@/lib/runtime/scholar/demo-provision.functions";
 
 export const Route = createFileRoute("/auth")({
@@ -185,7 +184,7 @@ function AuthPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             {mode === "forgot"
               ? "Enter the email tied to your account and we'll send you a reset link."
-              : `${PLATFORM_NAME} portal access — ${SCHOLAR_RUNTIME_NAME} runtime`}
+              : `${PLATFORM_NAME} account access. Your workspace follows your organization and role.`}
           </p>
         </div>
 
@@ -272,8 +271,8 @@ function AuthPage() {
               <span>★</span> Enterprise demo
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              One click provisions an Enterprise-tier school so every locked feature (Expenses,
-              Digital Twin, CoreGrid Intelligence, etc.) unlocks.
+              One click provisions an enterprise-tier organization for evaluation. It does not
+              bypass authorization. Provisioning is environment-gated and disabled by default.
             </p>
             <button
               type="button"

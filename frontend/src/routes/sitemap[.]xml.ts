@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
+import { PLATFORM_ORIGIN } from "@/lib/platform";
+import { publicSitemapPaths } from "@/lib/experience/public-pages";
 
-const BASE_URL = "https://universalschoolos.com";
+const BASE_URL = PLATFORM_ORIGIN;
 
 interface SitemapEntry {
   path: string;
@@ -15,10 +17,11 @@ export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async () => {
-        const entries: SitemapEntry[] = [
-          { path: "/", changefreq: "weekly", priority: "1.0" },
-          { path: "/auth", changefreq: "monthly", priority: "0.3" },
-        ];
+        const entries: SitemapEntry[] = publicSitemapPaths().map((path) => ({
+          path,
+          changefreq: path === "/" ? "weekly" : "monthly",
+          priority: path === "/" ? "1.0" : "0.6",
+        }));
 
         // Tenant public sites, addressed via ?school=<slug>
         try {

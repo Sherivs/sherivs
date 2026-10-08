@@ -93,7 +93,7 @@ function AuthenticatedLayout() {
           <h1 className="font-display text-xl font-bold">Account not yet linked</h1>
           <p className="mt-3 text-sm text-muted-foreground">
             Your sign-in is valid, but your account has not been linked to a school yet. A school
-            administrator (or a CoreGrid platform super admin) needs to assign you a role before you
+            administrator (or a {PLATFORM_NAME} platform super admin) needs to assign you a role before you
             can open a portal.
           </p>
           <button

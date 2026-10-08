@@ -52,7 +52,7 @@ export const MARKETING_TIERS: readonly MarketingTier[] = [
     name: "Starter",
     monthlyPrice: 15_000,
     annualPrice: 150_000,
-    summary: "Everything a small organization needs to run on CoreGrid.",
+    summary: "Everything a small organization needs to run on Sherivs.",
     featured: false,
     highlights: [
       "Up to 200 members",
@@ -82,11 +82,11 @@ export const MARKETING_TIERS: readonly MarketingTier[] = [
     name: "Professional",
     monthlyPrice: 75_000,
     annualPrice: 750_000,
-    summary: "Full governed autonomy: AI workforce, twins and API access.",
+    summary: "Governed AI workforce, evidence and API access for larger organizations.",
     featured: false,
     highlights: [
       "Up to 1,000 members",
-      "AI workforce and Digital Twin",
+      "AI workforce and evidence",
       "White-label and custom domain",
       "Priority support",
     ],

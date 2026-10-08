@@ -5,9 +5,9 @@
  *   1. `?school=<slug>` query param
  *   2. First subdomain label of the hostname, when not a known platform host
  *
- * Platform hosts (universalschoolos.com, app.universalschoolos.com, localhost)
- * resolve to `null` — meaning the visitor landed on the platform marketing/
- * super-admin site, not a tenant site.
+ * Platform hosts (sherivs.com, universalschoolos.com, localhost)
+ * resolve to `null` — meaning the visitor landed on the platform site,
+ * not a tenant site.
  *
  * NOTE (runtime migration): these platform domains are runtime
  * configuration. Update PLATFORM_HOSTS to the runtime's domains
@@ -16,6 +16,8 @@
 const PLATFORM_HOSTS = [
   "localhost",
   "127.0.0.1",
+  "sherivs.com",
+  "www.sherivs.com",
   "universalschoolos.com",
   "www.universalschoolos.com",
   "app.universalschoolos.com",
