@@ -29,7 +29,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const { loading, school, tenantSlug, role, profile, superAdmin } = useApp();
+  const { loading, school, tenantSlug, role } = useApp();
   const navigate = useNavigate();
 
   // Signed-in users (on the platform host, not a tenant site) → their dashboard
@@ -124,13 +124,20 @@ function Index() {
     };
   }, [school]);
 
-  if (loading) {
+  // Tenant public site waits for school resolution. Platform visitors get the
+  // Sherivs homepage immediately so the marketing surface can SSR.
+  if (school) {
+    return <PublicSchoolSite school={school} />;
+  }
+
+  if (loading && tenantSlug) {
     return <div className="min-h-dvh grid place-items-center text-muted-foreground">Loading…</div>;
   }
 
-  // Tenant context (subdomain OR ?school=slug) → render that school's public site
-  if (school) {
-    return <PublicSchoolSite school={school} />;
+  if (!loading && role && !tenantSlug) {
+    return (
+      <div className="min-h-dvh grid place-items-center text-muted-foreground">Opening workspace…</div>
+    );
   }
 
   return (
