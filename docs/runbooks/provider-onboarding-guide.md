@@ -265,6 +265,16 @@ Cost: **$25 USD one-time** (registration fee).
 
 ## 8. What the agent already did (no action needed from you)
 
+- **Root-caused and fixed the all-hostname 404s + deployed the app LIVE on
+  `sherivs.com` (DECISIONS.md #214 addendum §p–§r, 2026-10-08):** every Vercel
+  deployment since wave 5 was a static shell with zero SSR functions (the
+  Nitro Vite plugin required by TanStack Start's Vercel deployment path was
+  never registered in `vite.config.ts`), so the edge 404'd every hostname
+  once past the SSO wall. Fixed by registering `nitro()` (commit `adb46ad`,
+  verify gate exit 0); production `dpl_3sQMVMhCZrPdyNn9S5urDK1B9KGp` READY;
+  `sherivs.com` / `www.sherivs.com` serve HTTP 200 (7/8 distributed nodes),
+  email DNS records preserved. Custom domains bypass the SSO wall by design —
+  the app is public there; `.vercel.app` hostnames stay behind the wall.
 - Verified every injected vendor token with one read-only probe
   (Cloudflare, Vercel, PostHog US, Sentry, New Relic EU, Expo).
 - **Aligned the stack regions to West EU (DECISIONS.md #205, 2026-10-06):**
