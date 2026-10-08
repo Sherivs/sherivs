@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+// @ts-expect-error — ESM .mjs tooling script without type declarations
 import { buildCss } from "../../scripts/experience/generate-design-tokens.mjs";
 import { contrastRatio } from "@/lib/experience/experience-platform";
 import {

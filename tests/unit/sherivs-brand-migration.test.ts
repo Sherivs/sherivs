@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+// @ts-expect-error — ESM .mjs tooling script without type declarations
 import { classifyBrandLine } from "../../scripts/experience/brand-classifier.mjs";
 import { SHERIVS_BRAND, canonicalUrl, pageTitle } from "@/lib/experience-system/sherivs-brand";
 import { PLATFORM_NAME } from "@/lib/platform";

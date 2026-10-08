@@ -41,7 +41,7 @@ describe("evidence model", () => {
 
 describe("evidence components", () => {
   it.each(STATEMENT_KINDS)("labels a %s statement for assistive technology", (kind) => {
-    const out = html(createElement(AiStatement, { kind }, "Text"));
+    const out = html(createElement(AiStatement, { kind, children: "Text" }));
     expect(out).toContain("<article");
     expect(out).toMatch(/aria-label="[A-Za-z]+: /);
   });
@@ -59,7 +59,7 @@ describe("evidence components", () => {
   });
 
   it("does not claim verification that was not given", () => {
-    const out = html(createElement(AiStatement, { kind: "inference", confidence: 0.4 }, "x"));
+    const out = html(createElement(AiStatement, { kind: "inference", confidence: 0.4, children: "x" }));
     expect(out).not.toMatch(/verified/i);
     const unverified = html(createElement(VerificationState, { state: "unverified" }));
     expect(unverified).toContain("Not verified");
