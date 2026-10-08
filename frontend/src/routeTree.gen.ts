@@ -20,14 +20,17 @@ import { Route as HealthDotjsonRouteImport } from './routes/health[.]json'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ManifestDotwebmanifestRouteImport } from './routes/manifest[.]webmanifest'
 import { Route as MarketplaceRouteImport } from './routes/marketplace'
-import { Route as PlatformRouteImport } from './routes/platform'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as RssDotxmlRouteImport } from './routes/rss[.]xml'
 import { Route as RulesRouteImport } from './routes/rules'
 import { Route as ScholarFoundationLoopRouteImport } from './routes/scholar-foundation-loop'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SuperAdminBootstrapRouteImport } from './routes/super-admin-bootstrap'
 import { Route as siteCoregridRouteImport } from './routes/(site)/coregrid'
+import { Route as sitePricingRouteImport } from './routes/(site)/pricing'
+import { Route as siteSecurityRouteImport } from './routes/(site)/security'
+import { Route as siteStatusRouteImport } from './routes/(site)/status'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as AuthenticatedBursarRouteRouteImport } from './routes/_authenticated/bursar/route'
 import { Route as AuthenticatedCommandCentreRouteRouteImport } from './routes/_authenticated/command-centre/route'
@@ -44,8 +47,14 @@ import { Route as AuthenticatedTeacherRouteRouteImport } from './routes/_authent
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as EventsIdRouteImport } from './routes/events.$id'
 import { Route as NewsIdRouteImport } from './routes/news.$id'
-import { Route as PlatformOrgRouteImport } from './routes/platform.org'
 import { Route as RealityClassRouteImport } from './routes/reality.$class'
+import { Route as siteLegalIndexRouteImport } from './routes/(site)/legal/index'
+import { Route as siteLegalAccessibilityRouteImport } from './routes/(site)/legal/accessibility'
+import { Route as sitePlatformIndexRouteImport } from './routes/(site)/platform/index'
+import { Route as sitePlatformCapabilityRouteImport } from './routes/(site)/platform/$capability'
+import { Route as siteResourcesIndexRouteImport } from './routes/(site)/resources/index'
+import { Route as siteSolutionsIndexRouteImport } from './routes/(site)/solutions/index'
+import { Route as siteSolutionsAudienceRouteImport } from './routes/(site)/solutions/$audience'
 import { Route as AuthenticatedAdminAdmissionsRouteImport } from './routes/_authenticated/admin/admissions'
 import { Route as AuthenticatedAdminAiAssistantRouteImport } from './routes/_authenticated/admin/ai-assistant'
 import { Route as AuthenticatedAdminAnalyticsRouteImport } from './routes/_authenticated/admin/analytics'
@@ -140,7 +149,9 @@ import { Route as AuthenticatedSuperAdminBillingRouteImport } from './routes/_au
 import { Route as AuthenticatedSuperAdminCommunicationStewardRouteImport } from './routes/_authenticated/super-admin/communication-steward'
 import { Route as AuthenticatedSuperAdminDashboardRouteImport } from './routes/_authenticated/super-admin/dashboard'
 import { Route as AuthenticatedSuperAdminFinancialOperationsRouteImport } from './routes/_authenticated/super-admin/financial-operations'
+import { Route as AuthenticatedSuperAdminKernelRouteImport } from './routes/_authenticated/super-admin/kernel'
 import { Route as AuthenticatedSuperAdminLogsRouteImport } from './routes/_authenticated/super-admin/logs'
+import { Route as AuthenticatedSuperAdminOrganizationRouteImport } from './routes/_authenticated/super-admin/organization'
 import { Route as AuthenticatedSuperAdminPlatformConfigRouteImport } from './routes/_authenticated/super-admin/platform-config'
 import { Route as AuthenticatedSuperAdminRuntimeContractsRouteImport } from './routes/_authenticated/super-admin/runtime-contracts'
 import { Route as AuthenticatedSuperAdminSchedulingIntelligenceRouteImport } from './routes/_authenticated/super-admin/scheduling-intelligence'
@@ -165,6 +176,8 @@ import { Route as AuthenticatedTeacherLessonPlansRouteImport } from './routes/_a
 import { Route as AuthenticatedTeacherNewsRouteImport } from './routes/_authenticated/teacher/news'
 import { Route as AuthenticatedTeacherSignInRouteImport } from './routes/_authenticated/teacher/sign-in'
 import { Route as AuthenticatedTeacherTimetableRouteImport } from './routes/_authenticated/teacher/timetable'
+import { Route as siteResourcesSectionIndexRouteImport } from './routes/(site)/resources/$section/index'
+import { Route as siteResourcesSectionSlugRouteImport } from './routes/(site)/resources/$section/$slug'
 import { Route as ApiPublicAuditPasswordResetRouteImport } from './routes/api/public/audit.password-reset'
 import { Route as ApiPublicWebhooksPaystackRouteImport } from './routes/api/public/webhooks/paystack'
 
@@ -221,11 +234,6 @@ const MarketplaceRoute = MarketplaceRouteImport.update({
   path: '/marketplace',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PlatformRoute = PlatformRouteImport.update({
-  id: '/platform',
-  path: '/platform',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
@@ -234,6 +242,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RssDotxmlRoute = RssDotxmlRouteImport.update({
+  id: '/rss.xml',
+  path: '/rss.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RulesRoute = RulesRouteImport.update({
@@ -259,6 +272,21 @@ const SuperAdminBootstrapRoute = SuperAdminBootstrapRouteImport.update({
 const siteCoregridRoute = siteCoregridRouteImport.update({
   id: '/coregrid',
   path: '/coregrid',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const sitePricingRoute = sitePricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteSecurityRoute = siteSecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteStatusRoute = siteStatusRouteImport.update({
+  id: '/status',
+  path: '/status',
   getParentRoute: () => siteRouteRoute,
 } as any)
 const AuthenticatedAdminRouteRoute = AuthenticatedAdminRouteRouteImport.update({
@@ -349,15 +377,45 @@ const NewsIdRoute = NewsIdRouteImport.update({
   path: '/news/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PlatformOrgRoute = PlatformOrgRouteImport.update({
-  id: '/org',
-  path: '/org',
-  getParentRoute: () => PlatformRoute,
-} as any)
 const RealityClassRoute = RealityClassRouteImport.update({
   id: '/reality/$class',
   path: '/reality/$class',
   getParentRoute: () => rootRouteImport,
+} as any)
+const siteLegalIndexRoute = siteLegalIndexRouteImport.update({
+  id: '/legal/',
+  path: '/legal/',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteLegalAccessibilityRoute = siteLegalAccessibilityRouteImport.update({
+  id: '/legal/accessibility',
+  path: '/legal/accessibility',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const sitePlatformIndexRoute = sitePlatformIndexRouteImport.update({
+  id: '/platform/',
+  path: '/platform/',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const sitePlatformCapabilityRoute = sitePlatformCapabilityRouteImport.update({
+  id: '/platform/$capability',
+  path: '/platform/$capability',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteResourcesIndexRoute = siteResourcesIndexRouteImport.update({
+  id: '/resources/',
+  path: '/resources/',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteSolutionsIndexRoute = siteSolutionsIndexRouteImport.update({
+  id: '/solutions/',
+  path: '/solutions/',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteSolutionsAudienceRoute = siteSolutionsAudienceRouteImport.update({
+  id: '/solutions/$audience',
+  path: '/solutions/$audience',
+  getParentRoute: () => siteRouteRoute,
 } as any)
 const AuthenticatedAdminAdmissionsRoute =
   AuthenticatedAdminAdmissionsRouteImport.update({
@@ -913,10 +971,22 @@ const AuthenticatedSuperAdminFinancialOperationsRoute =
     path: '/financial-operations',
     getParentRoute: () => AuthenticatedSuperAdminRouteRoute,
   } as any)
+const AuthenticatedSuperAdminKernelRoute =
+  AuthenticatedSuperAdminKernelRouteImport.update({
+    id: '/kernel',
+    path: '/kernel',
+    getParentRoute: () => AuthenticatedSuperAdminRouteRoute,
+  } as any)
 const AuthenticatedSuperAdminLogsRoute =
   AuthenticatedSuperAdminLogsRouteImport.update({
     id: '/logs',
     path: '/logs',
+    getParentRoute: () => AuthenticatedSuperAdminRouteRoute,
+  } as any)
+const AuthenticatedSuperAdminOrganizationRoute =
+  AuthenticatedSuperAdminOrganizationRouteImport.update({
+    id: '/organization',
+    path: '/organization',
     getParentRoute: () => AuthenticatedSuperAdminRouteRoute,
   } as any)
 const AuthenticatedSuperAdminPlatformConfigRoute =
@@ -1063,6 +1133,18 @@ const AuthenticatedTeacherTimetableRoute =
     path: '/timetable',
     getParentRoute: () => AuthenticatedTeacherRouteRoute,
   } as any)
+const siteResourcesSectionIndexRoute =
+  siteResourcesSectionIndexRouteImport.update({
+    id: '/resources/$section/',
+    path: '/resources/$section/',
+    getParentRoute: () => siteRouteRoute,
+  } as any)
+const siteResourcesSectionSlugRoute =
+  siteResourcesSectionSlugRouteImport.update({
+    id: '/resources/$section/$slug',
+    path: '/resources/$section/$slug',
+    getParentRoute: () => siteRouteRoute,
+  } as any)
 const ApiPublicAuditPasswordResetRoute =
   ApiPublicAuditPasswordResetRouteImport.update({
     id: '/api/public/audit/password-reset',
@@ -1086,9 +1168,9 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
   '/marketplace': typeof MarketplaceRoute
-  '/platform': typeof PlatformRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/rss.xml': typeof RssDotxmlRoute
   '/rules': typeof RulesRoute
   '/scholar-foundation-loop': typeof ScholarFoundationLoopRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -1103,6 +1185,9 @@ export interface FileRoutesByFullPath {
   '/super-admin': typeof AuthenticatedSuperAdminRouteRouteWithChildren
   '/teacher': typeof AuthenticatedTeacherRouteRouteWithChildren
   '/coregrid': typeof siteCoregridRoute
+  '/pricing': typeof sitePricingRoute
+  '/security': typeof siteSecurityRoute
+  '/status': typeof siteStatusRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/runtime': typeof AuthenticatedRuntimeRoute
@@ -1110,8 +1195,10 @@ export interface FileRoutesByFullPath {
   '/blog/$slug': typeof BlogSlugRoute
   '/events/$id': typeof EventsIdRoute
   '/news/$id': typeof NewsIdRoute
-  '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
+  '/legal/accessibility': typeof siteLegalAccessibilityRoute
+  '/platform/$capability': typeof sitePlatformCapabilityRoute
+  '/solutions/$audience': typeof siteSolutionsAudienceRoute
   '/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
@@ -1205,7 +1292,9 @@ export interface FileRoutesByFullPath {
   '/super-admin/communication-steward': typeof AuthenticatedSuperAdminCommunicationStewardRoute
   '/super-admin/dashboard': typeof AuthenticatedSuperAdminDashboardRoute
   '/super-admin/financial-operations': typeof AuthenticatedSuperAdminFinancialOperationsRoute
+  '/super-admin/kernel': typeof AuthenticatedSuperAdminKernelRoute
   '/super-admin/logs': typeof AuthenticatedSuperAdminLogsRoute
+  '/super-admin/organization': typeof AuthenticatedSuperAdminOrganizationRoute
   '/super-admin/platform-config': typeof AuthenticatedSuperAdminPlatformConfigRoute
   '/super-admin/runtime-contracts': typeof AuthenticatedSuperAdminRuntimeContractsRoute
   '/super-admin/scheduling-intelligence': typeof AuthenticatedSuperAdminSchedulingIntelligenceRoute
@@ -1230,9 +1319,15 @@ export interface FileRoutesByFullPath {
   '/teacher/news': typeof AuthenticatedTeacherNewsRoute
   '/teacher/sign-in': typeof AuthenticatedTeacherSignInRoute
   '/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
+  '/legal/': typeof siteLegalIndexRoute
+  '/platform/': typeof sitePlatformIndexRoute
+  '/resources/': typeof siteResourcesIndexRoute
+  '/solutions/': typeof siteSolutionsIndexRoute
   '/command-centre/': typeof AuthenticatedCommandCentreIndexRoute
+  '/resources/$section/$slug': typeof siteResourcesSectionSlugRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
+  '/resources/$section/': typeof siteResourcesSectionIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -1244,9 +1339,9 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
   '/marketplace': typeof MarketplaceRoute
-  '/platform': typeof PlatformRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/rss.xml': typeof RssDotxmlRoute
   '/rules': typeof RulesRoute
   '/scholar-foundation-loop': typeof ScholarFoundationLoopRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -1260,6 +1355,9 @@ export interface FileRoutesByTo {
   '/super-admin': typeof AuthenticatedSuperAdminRouteRouteWithChildren
   '/teacher': typeof AuthenticatedTeacherRouteRouteWithChildren
   '/coregrid': typeof siteCoregridRoute
+  '/pricing': typeof sitePricingRoute
+  '/security': typeof siteSecurityRoute
+  '/status': typeof siteStatusRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/runtime': typeof AuthenticatedRuntimeRoute
@@ -1267,8 +1365,10 @@ export interface FileRoutesByTo {
   '/blog/$slug': typeof BlogSlugRoute
   '/events/$id': typeof EventsIdRoute
   '/news/$id': typeof NewsIdRoute
-  '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
+  '/legal/accessibility': typeof siteLegalAccessibilityRoute
+  '/platform/$capability': typeof sitePlatformCapabilityRoute
+  '/solutions/$audience': typeof siteSolutionsAudienceRoute
   '/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
@@ -1362,7 +1462,9 @@ export interface FileRoutesByTo {
   '/super-admin/communication-steward': typeof AuthenticatedSuperAdminCommunicationStewardRoute
   '/super-admin/dashboard': typeof AuthenticatedSuperAdminDashboardRoute
   '/super-admin/financial-operations': typeof AuthenticatedSuperAdminFinancialOperationsRoute
+  '/super-admin/kernel': typeof AuthenticatedSuperAdminKernelRoute
   '/super-admin/logs': typeof AuthenticatedSuperAdminLogsRoute
+  '/super-admin/organization': typeof AuthenticatedSuperAdminOrganizationRoute
   '/super-admin/platform-config': typeof AuthenticatedSuperAdminPlatformConfigRoute
   '/super-admin/runtime-contracts': typeof AuthenticatedSuperAdminRuntimeContractsRoute
   '/super-admin/scheduling-intelligence': typeof AuthenticatedSuperAdminSchedulingIntelligenceRoute
@@ -1387,9 +1489,15 @@ export interface FileRoutesByTo {
   '/teacher/news': typeof AuthenticatedTeacherNewsRoute
   '/teacher/sign-in': typeof AuthenticatedTeacherSignInRoute
   '/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
+  '/legal': typeof siteLegalIndexRoute
+  '/platform': typeof sitePlatformIndexRoute
+  '/resources': typeof siteResourcesIndexRoute
+  '/solutions': typeof siteSolutionsIndexRoute
   '/command-centre': typeof AuthenticatedCommandCentreIndexRoute
+  '/resources/$section/$slug': typeof siteResourcesSectionSlugRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
+  '/resources/$section': typeof siteResourcesSectionIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -1404,9 +1512,9 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
   '/marketplace': typeof MarketplaceRoute
-  '/platform': typeof PlatformRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/rss.xml': typeof RssDotxmlRoute
   '/rules': typeof RulesRoute
   '/scholar-foundation-loop': typeof ScholarFoundationLoopRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -1421,6 +1529,9 @@ export interface FileRoutesById {
   '/_authenticated/super-admin': typeof AuthenticatedSuperAdminRouteRouteWithChildren
   '/_authenticated/teacher': typeof AuthenticatedTeacherRouteRouteWithChildren
   '/(site)/coregrid': typeof siteCoregridRoute
+  '/(site)/pricing': typeof sitePricingRoute
+  '/(site)/security': typeof siteSecurityRoute
+  '/(site)/status': typeof siteStatusRoute
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/runtime': typeof AuthenticatedRuntimeRoute
@@ -1428,8 +1539,10 @@ export interface FileRoutesById {
   '/blog/$slug': typeof BlogSlugRoute
   '/events/$id': typeof EventsIdRoute
   '/news/$id': typeof NewsIdRoute
-  '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
+  '/(site)/legal/accessibility': typeof siteLegalAccessibilityRoute
+  '/(site)/platform/$capability': typeof sitePlatformCapabilityRoute
+  '/(site)/solutions/$audience': typeof siteSolutionsAudienceRoute
   '/_authenticated/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/_authenticated/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
   '/_authenticated/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
@@ -1523,7 +1636,9 @@ export interface FileRoutesById {
   '/_authenticated/super-admin/communication-steward': typeof AuthenticatedSuperAdminCommunicationStewardRoute
   '/_authenticated/super-admin/dashboard': typeof AuthenticatedSuperAdminDashboardRoute
   '/_authenticated/super-admin/financial-operations': typeof AuthenticatedSuperAdminFinancialOperationsRoute
+  '/_authenticated/super-admin/kernel': typeof AuthenticatedSuperAdminKernelRoute
   '/_authenticated/super-admin/logs': typeof AuthenticatedSuperAdminLogsRoute
+  '/_authenticated/super-admin/organization': typeof AuthenticatedSuperAdminOrganizationRoute
   '/_authenticated/super-admin/platform-config': typeof AuthenticatedSuperAdminPlatformConfigRoute
   '/_authenticated/super-admin/runtime-contracts': typeof AuthenticatedSuperAdminRuntimeContractsRoute
   '/_authenticated/super-admin/scheduling-intelligence': typeof AuthenticatedSuperAdminSchedulingIntelligenceRoute
@@ -1548,9 +1663,15 @@ export interface FileRoutesById {
   '/_authenticated/teacher/news': typeof AuthenticatedTeacherNewsRoute
   '/_authenticated/teacher/sign-in': typeof AuthenticatedTeacherSignInRoute
   '/_authenticated/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
+  '/(site)/legal/': typeof siteLegalIndexRoute
+  '/(site)/platform/': typeof sitePlatformIndexRoute
+  '/(site)/resources/': typeof siteResourcesIndexRoute
+  '/(site)/solutions/': typeof siteSolutionsIndexRoute
   '/_authenticated/command-centre/': typeof AuthenticatedCommandCentreIndexRoute
+  '/(site)/resources/$section/$slug': typeof siteResourcesSectionSlugRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
+  '/(site)/resources/$section/': typeof siteResourcesSectionIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1564,9 +1685,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/manifest.webmanifest'
     | '/marketplace'
-    | '/platform'
     | '/privacy'
     | '/reset-password'
+    | '/rss.xml'
     | '/rules'
     | '/scholar-foundation-loop'
     | '/sitemap.xml'
@@ -1581,6 +1702,9 @@ export interface FileRouteTypes {
     | '/super-admin'
     | '/teacher'
     | '/coregrid'
+    | '/pricing'
+    | '/security'
+    | '/status'
     | '/messages'
     | '/notifications'
     | '/runtime'
@@ -1588,8 +1712,10 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/events/$id'
     | '/news/$id'
-    | '/platform/org'
     | '/reality/$class'
+    | '/legal/accessibility'
+    | '/platform/$capability'
+    | '/solutions/$audience'
     | '/admin/admissions'
     | '/admin/ai-assistant'
     | '/admin/analytics'
@@ -1683,7 +1809,9 @@ export interface FileRouteTypes {
     | '/super-admin/communication-steward'
     | '/super-admin/dashboard'
     | '/super-admin/financial-operations'
+    | '/super-admin/kernel'
     | '/super-admin/logs'
+    | '/super-admin/organization'
     | '/super-admin/platform-config'
     | '/super-admin/runtime-contracts'
     | '/super-admin/scheduling-intelligence'
@@ -1708,9 +1836,15 @@ export interface FileRouteTypes {
     | '/teacher/news'
     | '/teacher/sign-in'
     | '/teacher/timetable'
+    | '/legal/'
+    | '/platform/'
+    | '/resources/'
+    | '/solutions/'
     | '/command-centre/'
+    | '/resources/$section/$slug'
     | '/api/public/audit/password-reset'
     | '/api/public/webhooks/paystack'
+    | '/resources/$section/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1722,9 +1856,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/manifest.webmanifest'
     | '/marketplace'
-    | '/platform'
     | '/privacy'
     | '/reset-password'
+    | '/rss.xml'
     | '/rules'
     | '/scholar-foundation-loop'
     | '/sitemap.xml'
@@ -1738,6 +1872,9 @@ export interface FileRouteTypes {
     | '/super-admin'
     | '/teacher'
     | '/coregrid'
+    | '/pricing'
+    | '/security'
+    | '/status'
     | '/messages'
     | '/notifications'
     | '/runtime'
@@ -1745,8 +1882,10 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/events/$id'
     | '/news/$id'
-    | '/platform/org'
     | '/reality/$class'
+    | '/legal/accessibility'
+    | '/platform/$capability'
+    | '/solutions/$audience'
     | '/admin/admissions'
     | '/admin/ai-assistant'
     | '/admin/analytics'
@@ -1840,7 +1979,9 @@ export interface FileRouteTypes {
     | '/super-admin/communication-steward'
     | '/super-admin/dashboard'
     | '/super-admin/financial-operations'
+    | '/super-admin/kernel'
     | '/super-admin/logs'
+    | '/super-admin/organization'
     | '/super-admin/platform-config'
     | '/super-admin/runtime-contracts'
     | '/super-admin/scheduling-intelligence'
@@ -1865,9 +2006,15 @@ export interface FileRouteTypes {
     | '/teacher/news'
     | '/teacher/sign-in'
     | '/teacher/timetable'
+    | '/legal'
+    | '/platform'
+    | '/resources'
+    | '/solutions'
     | '/command-centre'
+    | '/resources/$section/$slug'
     | '/api/public/audit/password-reset'
     | '/api/public/webhooks/paystack'
+    | '/resources/$section'
   id:
     | '__root__'
     | '/'
@@ -1881,9 +2028,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/manifest.webmanifest'
     | '/marketplace'
-    | '/platform'
     | '/privacy'
     | '/reset-password'
+    | '/rss.xml'
     | '/rules'
     | '/scholar-foundation-loop'
     | '/sitemap.xml'
@@ -1898,6 +2045,9 @@ export interface FileRouteTypes {
     | '/_authenticated/super-admin'
     | '/_authenticated/teacher'
     | '/(site)/coregrid'
+    | '/(site)/pricing'
+    | '/(site)/security'
+    | '/(site)/status'
     | '/_authenticated/messages'
     | '/_authenticated/notifications'
     | '/_authenticated/runtime'
@@ -1905,8 +2055,10 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/events/$id'
     | '/news/$id'
-    | '/platform/org'
     | '/reality/$class'
+    | '/(site)/legal/accessibility'
+    | '/(site)/platform/$capability'
+    | '/(site)/solutions/$audience'
     | '/_authenticated/admin/admissions'
     | '/_authenticated/admin/ai-assistant'
     | '/_authenticated/admin/analytics'
@@ -2000,7 +2152,9 @@ export interface FileRouteTypes {
     | '/_authenticated/super-admin/communication-steward'
     | '/_authenticated/super-admin/dashboard'
     | '/_authenticated/super-admin/financial-operations'
+    | '/_authenticated/super-admin/kernel'
     | '/_authenticated/super-admin/logs'
+    | '/_authenticated/super-admin/organization'
     | '/_authenticated/super-admin/platform-config'
     | '/_authenticated/super-admin/runtime-contracts'
     | '/_authenticated/super-admin/scheduling-intelligence'
@@ -2025,9 +2179,15 @@ export interface FileRouteTypes {
     | '/_authenticated/teacher/news'
     | '/_authenticated/teacher/sign-in'
     | '/_authenticated/teacher/timetable'
+    | '/(site)/legal/'
+    | '/(site)/platform/'
+    | '/(site)/resources/'
+    | '/(site)/solutions/'
     | '/_authenticated/command-centre/'
+    | '/(site)/resources/$section/$slug'
     | '/api/public/audit/password-reset'
     | '/api/public/webhooks/paystack'
+    | '/(site)/resources/$section/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -2042,9 +2202,9 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ManifestDotwebmanifestRoute: typeof ManifestDotwebmanifestRoute
   MarketplaceRoute: typeof MarketplaceRoute
-  PlatformRoute: typeof PlatformRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  RssDotxmlRoute: typeof RssDotxmlRoute
   RulesRoute: typeof RulesRoute
   ScholarFoundationLoopRoute: typeof ScholarFoundationLoopRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -2135,13 +2295,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MarketplaceRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/platform': {
-      id: '/platform'
-      path: '/platform'
-      fullPath: '/platform'
-      preLoaderRoute: typeof PlatformRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/privacy': {
       id: '/privacy'
       path: '/privacy'
@@ -2154,6 +2307,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rss.xml': {
+      id: '/rss.xml'
+      path: '/rss.xml'
+      fullPath: '/rss.xml'
+      preLoaderRoute: typeof RssDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rules': {
@@ -2189,6 +2349,27 @@ declare module '@tanstack/react-router' {
       path: '/coregrid'
       fullPath: '/coregrid'
       preLoaderRoute: typeof siteCoregridRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/pricing': {
+      id: '/(site)/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof sitePricingRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/security': {
+      id: '/(site)/security'
+      path: '/security'
+      fullPath: '/security'
+      preLoaderRoute: typeof siteSecurityRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/status': {
+      id: '/(site)/status'
+      path: '/status'
+      fullPath: '/status'
+      preLoaderRoute: typeof siteStatusRouteImport
       parentRoute: typeof siteRouteRoute
     }
     '/_authenticated/admin': {
@@ -2303,19 +2484,61 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NewsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/platform/org': {
-      id: '/platform/org'
-      path: '/org'
-      fullPath: '/platform/org'
-      preLoaderRoute: typeof PlatformOrgRouteImport
-      parentRoute: typeof PlatformRoute
-    }
     '/reality/$class': {
       id: '/reality/$class'
       path: '/reality/$class'
       fullPath: '/reality/$class'
       preLoaderRoute: typeof RealityClassRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/(site)/legal/': {
+      id: '/(site)/legal/'
+      path: '/legal'
+      fullPath: '/legal/'
+      preLoaderRoute: typeof siteLegalIndexRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/legal/accessibility': {
+      id: '/(site)/legal/accessibility'
+      path: '/legal/accessibility'
+      fullPath: '/legal/accessibility'
+      preLoaderRoute: typeof siteLegalAccessibilityRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/platform/': {
+      id: '/(site)/platform/'
+      path: '/platform'
+      fullPath: '/platform/'
+      preLoaderRoute: typeof sitePlatformIndexRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/platform/$capability': {
+      id: '/(site)/platform/$capability'
+      path: '/platform/$capability'
+      fullPath: '/platform/$capability'
+      preLoaderRoute: typeof sitePlatformCapabilityRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/resources/': {
+      id: '/(site)/resources/'
+      path: '/resources'
+      fullPath: '/resources/'
+      preLoaderRoute: typeof siteResourcesIndexRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/solutions/': {
+      id: '/(site)/solutions/'
+      path: '/solutions'
+      fullPath: '/solutions/'
+      preLoaderRoute: typeof siteSolutionsIndexRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/solutions/$audience': {
+      id: '/(site)/solutions/$audience'
+      path: '/solutions/$audience'
+      fullPath: '/solutions/$audience'
+      preLoaderRoute: typeof siteSolutionsAudienceRouteImport
+      parentRoute: typeof siteRouteRoute
     }
     '/_authenticated/admin/admissions': {
       id: '/_authenticated/admin/admissions'
@@ -2975,11 +3198,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSuperAdminFinancialOperationsRouteImport
       parentRoute: typeof AuthenticatedSuperAdminRouteRoute
     }
+    '/_authenticated/super-admin/kernel': {
+      id: '/_authenticated/super-admin/kernel'
+      path: '/kernel'
+      fullPath: '/super-admin/kernel'
+      preLoaderRoute: typeof AuthenticatedSuperAdminKernelRouteImport
+      parentRoute: typeof AuthenticatedSuperAdminRouteRoute
+    }
     '/_authenticated/super-admin/logs': {
       id: '/_authenticated/super-admin/logs'
       path: '/logs'
       fullPath: '/super-admin/logs'
       preLoaderRoute: typeof AuthenticatedSuperAdminLogsRouteImport
+      parentRoute: typeof AuthenticatedSuperAdminRouteRoute
+    }
+    '/_authenticated/super-admin/organization': {
+      id: '/_authenticated/super-admin/organization'
+      path: '/organization'
+      fullPath: '/super-admin/organization'
+      preLoaderRoute: typeof AuthenticatedSuperAdminOrganizationRouteImport
       parentRoute: typeof AuthenticatedSuperAdminRouteRoute
     }
     '/_authenticated/super-admin/platform-config': {
@@ -3150,6 +3387,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTeacherTimetableRouteImport
       parentRoute: typeof AuthenticatedTeacherRouteRoute
     }
+    '/(site)/resources/$section/': {
+      id: '/(site)/resources/$section/'
+      path: '/resources/$section'
+      fullPath: '/resources/$section/'
+      preLoaderRoute: typeof siteResourcesSectionIndexRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/resources/$section/$slug': {
+      id: '/(site)/resources/$section/$slug'
+      path: '/resources/$section/$slug'
+      fullPath: '/resources/$section/$slug'
+      preLoaderRoute: typeof siteResourcesSectionSlugRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
     '/api/public/audit/password-reset': {
       id: '/api/public/audit/password-reset'
       path: '/api/public/audit/password-reset'
@@ -3169,10 +3420,34 @@ declare module '@tanstack/react-router' {
 
 interface siteRouteRouteChildren {
   siteCoregridRoute: typeof siteCoregridRoute
+  sitePricingRoute: typeof sitePricingRoute
+  siteSecurityRoute: typeof siteSecurityRoute
+  siteStatusRoute: typeof siteStatusRoute
+  siteLegalAccessibilityRoute: typeof siteLegalAccessibilityRoute
+  sitePlatformCapabilityRoute: typeof sitePlatformCapabilityRoute
+  siteSolutionsAudienceRoute: typeof siteSolutionsAudienceRoute
+  siteLegalIndexRoute: typeof siteLegalIndexRoute
+  sitePlatformIndexRoute: typeof sitePlatformIndexRoute
+  siteResourcesIndexRoute: typeof siteResourcesIndexRoute
+  siteSolutionsIndexRoute: typeof siteSolutionsIndexRoute
+  siteResourcesSectionSlugRoute: typeof siteResourcesSectionSlugRoute
+  siteResourcesSectionIndexRoute: typeof siteResourcesSectionIndexRoute
 }
 
 const siteRouteRouteChildren: siteRouteRouteChildren = {
   siteCoregridRoute: siteCoregridRoute,
+  sitePricingRoute: sitePricingRoute,
+  siteSecurityRoute: siteSecurityRoute,
+  siteStatusRoute: siteStatusRoute,
+  siteLegalAccessibilityRoute: siteLegalAccessibilityRoute,
+  sitePlatformCapabilityRoute: sitePlatformCapabilityRoute,
+  siteSolutionsAudienceRoute: siteSolutionsAudienceRoute,
+  siteLegalIndexRoute: siteLegalIndexRoute,
+  sitePlatformIndexRoute: sitePlatformIndexRoute,
+  siteResourcesIndexRoute: siteResourcesIndexRoute,
+  siteSolutionsIndexRoute: siteSolutionsIndexRoute,
+  siteResourcesSectionSlugRoute: siteResourcesSectionSlugRoute,
+  siteResourcesSectionIndexRoute: siteResourcesSectionIndexRoute,
 }
 
 const siteRouteRouteWithChildren = siteRouteRoute._addFileChildren(
@@ -3460,7 +3735,9 @@ interface AuthenticatedSuperAdminRouteRouteChildren {
   AuthenticatedSuperAdminCommunicationStewardRoute: typeof AuthenticatedSuperAdminCommunicationStewardRoute
   AuthenticatedSuperAdminDashboardRoute: typeof AuthenticatedSuperAdminDashboardRoute
   AuthenticatedSuperAdminFinancialOperationsRoute: typeof AuthenticatedSuperAdminFinancialOperationsRoute
+  AuthenticatedSuperAdminKernelRoute: typeof AuthenticatedSuperAdminKernelRoute
   AuthenticatedSuperAdminLogsRoute: typeof AuthenticatedSuperAdminLogsRoute
+  AuthenticatedSuperAdminOrganizationRoute: typeof AuthenticatedSuperAdminOrganizationRoute
   AuthenticatedSuperAdminPlatformConfigRoute: typeof AuthenticatedSuperAdminPlatformConfigRoute
   AuthenticatedSuperAdminRuntimeContractsRoute: typeof AuthenticatedSuperAdminRuntimeContractsRoute
   AuthenticatedSuperAdminSchedulingIntelligenceRoute: typeof AuthenticatedSuperAdminSchedulingIntelligenceRoute
@@ -3487,7 +3764,10 @@ const AuthenticatedSuperAdminRouteRouteChildren: AuthenticatedSuperAdminRouteRou
       AuthenticatedSuperAdminDashboardRoute,
     AuthenticatedSuperAdminFinancialOperationsRoute:
       AuthenticatedSuperAdminFinancialOperationsRoute,
+    AuthenticatedSuperAdminKernelRoute: AuthenticatedSuperAdminKernelRoute,
     AuthenticatedSuperAdminLogsRoute: AuthenticatedSuperAdminLogsRoute,
+    AuthenticatedSuperAdminOrganizationRoute:
+      AuthenticatedSuperAdminOrganizationRoute,
     AuthenticatedSuperAdminPlatformConfigRoute:
       AuthenticatedSuperAdminPlatformConfigRoute,
     AuthenticatedSuperAdminRuntimeContractsRoute:
@@ -3600,18 +3880,6 @@ const BlogRouteChildren: BlogRouteChildren = {
 
 const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
 
-interface PlatformRouteChildren {
-  PlatformOrgRoute: typeof PlatformOrgRoute
-}
-
-const PlatformRouteChildren: PlatformRouteChildren = {
-  PlatformOrgRoute: PlatformOrgRoute,
-}
-
-const PlatformRouteWithChildren = PlatformRoute._addFileChildren(
-  PlatformRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   siteRouteRoute: siteRouteRouteWithChildren,
@@ -3624,9 +3892,9 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ManifestDotwebmanifestRoute: ManifestDotwebmanifestRoute,
   MarketplaceRoute: MarketplaceRoute,
-  PlatformRoute: PlatformRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  RssDotxmlRoute: RssDotxmlRoute,
   RulesRoute: RulesRoute,
   ScholarFoundationLoopRoute: ScholarFoundationLoopRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,

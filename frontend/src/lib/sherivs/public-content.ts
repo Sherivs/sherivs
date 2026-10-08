@@ -256,7 +256,7 @@ export const HOME_NARRATIVE = {
   runtime: {
     index: "08",
     eyebrow: "Domain runtimes",
-    title: "Scholar is the first runtime — not the boundary.",
+    title: "The first runtime installed is Scholar — not the boundary.",
     body: "A runtime is an application installed on the platform. Sherivs Scholar brings the education domain; the platform stays valid without it, and the next runtime inherits the same governed core.",
   },
   governance: {
@@ -288,3 +288,70 @@ export const SECURITY_PRINCIPLES: readonly { id: string; title: string; text: st
   { id: "audit", title: "Immutable audit", text: "Important actions record who, what, when and under which policy.", evidence: ["frontend/src/lib/audit.ts"] },
   { id: "ui", title: "The interface is not the boundary", text: "Hidden controls are cosmetic. Every server function authenticates, resolves tenant, authorizes, validates and audits.", evidence: ["frontend/src/lib/auth-helpers.ts"] },
 ];
+
+/* ───────────── solutions ───────────── */
+
+export type SolutionId = "organizations" | "education";
+
+export interface SolutionContent {
+  readonly id: SolutionId;
+  readonly title: string;
+  readonly lead: string;
+  readonly body: readonly string[];
+  readonly capabilities: readonly { readonly label: string; readonly text: string }[];
+  readonly evidence: readonly string[];
+  readonly boundary: string;
+}
+
+export const SOLUTIONS: readonly SolutionContent[] = [
+  {
+    id: "organizations",
+    title: "For organizations",
+    lead: "A domain-neutral operating environment: identity, tenancy, workspaces, policy and an AI workforce, before any industry vocabulary.",
+    body: [
+      "Every organization on Sherivs is a tenant with its own boundary. Its people receive workspaces projected from the roles and policies the organization defines, and what they see is resolved from authorized capabilities rather than hard-coded menus.",
+      "Industry behavior arrives as a runtime installed on the platform. The platform remains valid without any one runtime, so adopting Sherivs is not a bet on a single vertical.",
+    ],
+    capabilities: [
+      { label: "Tenancy", text: "Each organization is isolated at the database layer." },
+      { label: "Roles and workspaces", text: "Workspaces are projected from role data, not configured by hand per person." },
+      { label: "Governed AI", text: "AI workers act inside declared scope, with approval and audit." },
+      { label: "Organization branding", text: "An organization can present its own identity within accessibility limits; the platform keeps contrast safe." },
+    ],
+    evidence: [
+      "frontend/src/lib/tenant-core.ts",
+      "frontend/src/lib/runtime/installed-runtimes.ts",
+      "frontend/src/lib/workspace-engine/navigation.ts",
+      "frontend/src/lib/sherivs/org-brand.ts",
+    ],
+    boundary: "Sherivs does not ship a catalog of every industry. Only runtimes that are installed and verified are described as available.",
+  },
+  {
+    id: "education",
+    title: "Education — Sherivs Scholar",
+    lead: "The first runtime installed on Sherivs: schools run admissions, academics, attendance, fees and communication on the shared governed core.",
+    body: [
+      "Sherivs Scholar brings the education domain: classes, subjects, assessment and grading, attendance, fees and receipts, and communication with families. Each role — administrator, teacher, bursar, parent, student — has a workspace composed for it.",
+      "The education runtime builds on the platform; it does not own it. Identity, tenancy, security, audit and the AI gateway are the same governed core any other runtime would use.",
+    ],
+    capabilities: [
+      { label: "Admissions", text: "Applications are received and reviewed by staff." },
+      { label: "Academics", text: "Grades, examinations and report cards, with role-appropriate views." },
+      { label: "Attendance", text: "Attendance is recorded as events and visible to authorized staff and families." },
+      { label: "Fees and receipts", text: "Fee plans, payments, receipts and reconciliation for the bursar." },
+      { label: "Communication", text: "Broadcasts and notifications routed through governed channels." },
+    ],
+    evidence: [
+      "frontend/src/routes/_authenticated/admin/admissions.tsx",
+      "frontend/src/routes/_authenticated/admin/grades.tsx",
+      "frontend/src/routes/_authenticated/admin/attendance.tsx",
+      "frontend/src/routes/_authenticated/bursar/fee-plans.tsx",
+      "frontend/src/routes/_authenticated/admin/broadcast.tsx",
+      "frontend/src/lib/scholar/attendance-model.ts",
+      "frontend/src/lib/scholar/grading.ts",
+    ],
+    boundary: "This describes shipped organizational workflows. It makes no claims about adoption, outcomes or results at any school.",
+  },
+];
+
+export const solutionById = (id: string): SolutionContent | undefined => SOLUTIONS.find((s) => s.id === id);

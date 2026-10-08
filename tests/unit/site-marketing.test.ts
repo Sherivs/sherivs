@@ -1,5 +1,5 @@
 /**
- * CoreGrid — V1-007 platform public site (`(site)` route group) tests.
+ * Sherivs — V1-007 platform public site (`(site)` route group) tests.
  *
  * The vitest environment here is `node` (no jsdom/RTL in this repository), so
  * route surfaces are validated the way existing structural tests validate
@@ -109,58 +109,84 @@ describe("Site content view-models", () => {
 
 describe("Route modules — real links, no fake submissions, landmarks", () => {
   const layout = read(SITE_LAYOUT);
-  const page = read(SITE_PAGE);
+  const legacy = read(SITE_PAGE);
+  const shell = read("frontend/src/components/sherivs/public-shell.tsx");
+  const publicPages = [
+    "platform/index.tsx",
+    "platform/$capability.tsx",
+    "solutions/index.tsx",
+    "solutions/$audience.tsx",
+    "security.tsx",
+    "pricing.tsx",
+    "status.tsx",
+    "legal/index.tsx",
+    "legal/accessibility.tsx",
+    "resources/index.tsx",
+    "resources/$section/index.tsx",
+    "resources/$section/$slug.tsx",
+  ].map((ref) => ({ ref, source: read(`frontend/src/routes/(site)/${ref}`) }));
 
-  it("registers the (site) layout group and the /coregrid page in the generated tree", () => {
+  it("registers the (site) layout group and the public pages in the generated tree", () => {
     const tree = read("frontend/src/routeTree.gen.ts");
     expect(tree).toContain("'/(site)'");
-    expect(tree).toContain("'/(site)/coregrid'");
+    for (const id of ["coregrid", "pricing", "security", "status", "platform/", "resources/", "legal/accessibility"]) {
+      expect(tree, id).toContain(`'/(site)/${id}'`);
+    }
   });
 
   it("declares the expected file route ids", () => {
     expect(layout).toContain('createFileRoute("/(site)")');
-    expect(page).toContain('createFileRoute("/(site)/coregrid")');
+    expect(legacy).toContain('createFileRoute("/(site)/coregrid")');
+    expect(read("frontend/src/routes/(site)/pricing.tsx")).toContain('createFileRoute("/(site)/pricing")');
+  });
+
+  it("retires /coregrid as a permanent redirect to the Sherivs home", () => {
+    expect(legacy).toContain("redirect");
+    expect(legacy).toContain("301");
+    expect(legacy).not.toMatch(/PLATFORM_NAME|<main/);
   });
 
   it("links sign-up and sign-in to the real auth surface at /auth", () => {
-    for (const source of [layout, page]) {
-      expect(source).toContain('to="/auth"');
-    }
-    // No dead platform sign-up route is invented.
-    expect(layout).not.toContain('to="/signup"');
-    expect(page).not.toContain('to="/signup"');
-  });
-
-  it("contains no form and no fake submission — every CTA is a route link", () => {
-    for (const source of [layout, page]) {
-      expect(source).not.toMatch(/<form\b/);
-      expect(source).not.toMatch(/onSubmit/);
-      expect(source).not.toMatch(/<button\b/);
+    expect(shell).toContain('to="/auth"');
+    expect(read("frontend/src/routes/(site)/pricing.tsx")).toContain('to="/auth"');
+    for (const source of [shell, layout, ...publicPages.map((p) => p.source)]) {
+      expect(source).not.toContain('to="/signup"');
     }
   });
 
-  it("renders semantic landmarks and the four anchored sections", () => {
-    expect(layout).toContain("<header");
-    expect(layout).toContain("<main");
-    expect(layout).toContain("<footer");
-    expect(layout).toMatch(/aria-label="Site"/);
-    for (const anchor of ["capabilities", "runtimes", "security", "pricing"]) {
-      expect(page).toContain(`id="${anchor}"`);
-      expect(layout).toContain(`"/coregrid#${anchor}"`);
+  it("contains no fake submission — the only form is a real search that navigates", () => {
+    for (const { ref, source } of publicPages) {
+      if (ref === "resources/index.tsx") {
+        expect(source).toContain('role="search"');
+        expect(source).toContain("navigate(");
+        continue;
+      }
+      expect(source, ref).not.toMatch(/<form\b/);
+      expect(source, ref).not.toMatch(/onSubmit/);
     }
+    expect(shell).not.toMatch(/<form\b/);
   });
 
-  it("keeps every heading labelled for assistive technology", () => {
-    expect(page).toMatch(/aria-labelledby="coregrid-hero"/);
-    for (const anchor of ["capabilities", "runtimes", "security", "pricing"]) {
-      expect(page).toMatch(new RegExp(`aria-labelledby="${anchor}-heading"`));
-      expect(page).toContain(`id="${anchor}-heading"`);
-    }
+  it("renders semantic landmarks with labelled navigation and a single main landmark", () => {
+    expect(shell).toContain("<header");
+    expect(shell).toContain("<main");
+    expect(shell).toContain("<footer");
+    expect(shell).toMatch(/aria-label="Primary"/);
+    expect(shell).toMatch(/aria-label="Footer"/);
+    expect(shell).toMatch(/aria-label="Breadcrumb"/);
+    expect(shell).toContain('id="main-content"');
+    expect(layout).not.toContain("<main");
+  });
+
+  it("keeps every section heading labelled for assistive technology", () => {
+    expect(shell).toMatch(/aria-labelledby=\{headingId\}/);
+    expect(shell).toMatch(/id=\{headingId\}/);
   });
 
   it("uses no raster images, so no missing alt text is possible", () => {
-    expect(layout).not.toMatch(/<img\b/);
-    expect(page).not.toMatch(/<img\b/);
+    for (const source of [shell, layout, ...publicPages.map((p) => p.source)]) {
+      expect(source).not.toMatch(/<img\b/);
+    }
   });
 });
 
@@ -169,7 +195,7 @@ describe("Platform narration neutrality (LAW 3 / LAW 5)", () => {
     /CoreGrid Scholar|Scholar's|Scholar is|Scholar consumes|Scholar binds|Scholar resolves|Scholar remains|Scholar-only|Scholar-flavored|Scholar catalog|Scholar runtime \(runtime-001\)/;
   const SELF_IDENTIFICATION = /^\s*(?:\/\*|\*|\/\/)\s*CoreGrid Scholar\b/m;
 
-  const sources = ["-content/pricing-tiers.ts", "-content/site-content.ts", "route.tsx", "coregrid.tsx"].map(
+  const sources = ["-content/pricing-tiers.ts", "-content/site-content.ts", "route.tsx", "coregrid.tsx", "security.tsx", "pricing.tsx", "solutions/$audience.tsx"].map(
     (ref) => read(`frontend/src/routes/(site)/${ref}`),
   );
 

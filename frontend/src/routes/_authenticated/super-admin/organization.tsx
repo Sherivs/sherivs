@@ -6,7 +6,8 @@
  * the COREGRID_INTERNAL role groups by the platform-org engine: this page lists
  * what the engine produced, and shows the structural audit that must be empty.
  */
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { PortalPage } from "@/components/portal-shell";
 import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,16 +20,12 @@ import {
   platformOrgSnapshot,
 } from "@/lib/scholar/platform-org/platform-workspace-engine";
 
-export const Route = createFileRoute("/platform/org")({
+export const Route = createFileRoute("/_authenticated/super-admin/organization")({
   component: PlatformOrganization,
   head: () => ({
     meta: [
-      { title: "Sherivs internal operating workspace — generated organization" },
-      {
-        name: "description",
-        content:
-          "The Sherivs platform organization: departments, the roles that staff them and the widgets each department renders — generated from the role engine, audited on every render.",
-      },
+      { title: "Sherivs organization — Sherivs workspace" },
+      { name: "robots", content: "noindex" },
     ],
   }),
 });
@@ -39,35 +36,17 @@ function PlatformOrganization() {
   const issues = useMemo(() => auditPlatformOrg(), []);
 
   return (
-    <div className="min-h-screen bg-[color:var(--background)] text-[color:var(--foreground)]">
-      <header className="border-b border-border">
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="font-display text-lg font-bold">Sherivs organization</p>
-            <p className="text-[11px] uppercase tracking-widest text-muted-foreground">
-              internal operating workspace · generated from role data
-            </p>
-          </div>
-          <nav className="flex flex-wrap gap-4 text-xs">
-            <Link to="/" className="underline">
-              Command Centre
-            </Link>
-            <Link to="/platform" className="underline">
-              The platform
-            </Link>
-            <Link to="/reality/$class" params={{ class: "company" }} className="underline">
-              Generated environment
-            </Link>
-          </nav>
-        </div>
-      </header>
+    <PortalPage
+      title="Sherivs organization"
+      subtitle="Sherivs workspace · internal operating workspace, generated from role data."
+    >
+      <div className="space-y-6">
 
-      <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
         <section className="space-y-2">
-          <h1 className="font-display text-2xl font-bold">
+          <h2 className="font-display text-xl font-bold">
             The platform organization staffs {roles.length} roles across{" "}
             {snapshot.departments.length} departments
-          </h1>
+          </h2>
           <p className="max-w-3xl text-sm text-muted-foreground">
             No department is drawn by hand: each one exists because roles in the platform role
             groups staff it, and each widget key is rendered by the department that declares it. An
@@ -167,7 +146,7 @@ function PlatformOrganization() {
           Every department renders in the Sherivs internal workspace and is audited above on every
           render. Departments are provisioned from role data, never configured by hand.
         </p>
-      </main>
-    </div>
+      </div>
+    </PortalPage>
   );
 }

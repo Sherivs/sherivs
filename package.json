@@ -39,6 +39,8 @@
     "audit:phase": "node scripts/audit-phase-acceptance.mjs",
     "audit:acceptance-coverage": "node scripts/audit-acceptance-coverage.mjs",
     "generate:icons": "node scripts/generate-pwa-icons.mjs",
+    "generate:brand-assets": "node scripts/experience/generate-brand-assets.mjs",
+    "inventory:experience": "node scripts/experience/inventory-experience.mjs",
     "preflight:infrastructure": "node scripts/infrastructure/preflight.mjs",
     "bootstrap:infrastructure": "node scripts/infrastructure/bootstrap.mjs",
     "verify:secrets": "node scripts/verification/secret-scan.mjs",

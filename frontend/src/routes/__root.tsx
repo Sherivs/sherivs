@@ -14,6 +14,7 @@ import { PLATFORM_PAGE_DESCRIPTION, PLATFORM_PAGE_TITLE } from "@/lib/platform";
 import { Toaster } from "@/components/ui/sonner";
 import { RouteProgressBar } from "@/components/route-progress-bar";
 import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme";
+import { BRAND_NAME, PUBLIC_ORIGIN } from "@/lib/sherivs/brand";
 
 function NotFoundComponent() {
   return (
@@ -81,25 +82,23 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: PLATFORM_PAGE_DESCRIPTION },
       { property: "og:description", content: PLATFORM_PAGE_DESCRIPTION },
       { name: "twitter:description", content: PLATFORM_PAGE_DESCRIPTION },
-      { property: "og:image", content: "https://universalschoolos.com/og-image.png" },
-      { name: "twitter:image", content: "https://universalschoolos.com/og-image.png" },
+      { property: "og:image", content: `${PUBLIC_ORIGIN}/og-image.png` },
+      { property: "og:site_name", content: BRAND_NAME },
+      { name: "twitter:image", content: `${PUBLIC_ORIGIN}/og-image.png` },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
       // Served, generated manifest (see routes/manifest[.]webmanifest.ts).
-      { name: "theme-color", content: "#1d4ed8" },
+      { name: "theme-color", content: "#0b6fa4" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-title", content: "Sherivs" },
+      { name: "apple-mobile-web-app-title", content: BRAND_NAME },
       { name: "mobile-web-app-capable", content: "yes" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "apple-touch-icon", href: "/icons/icon-192.png" },
+      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
       { rel: "icon", type: "image/png", sizes: "192x192", href: "/icons/icon-192.png" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap",
-      },
     ],
   }),
   shellComponent: RootShell,

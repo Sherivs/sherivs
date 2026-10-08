@@ -204,7 +204,7 @@ function GeneratedRuntime() {
         <Link to="/" className="underline">
           Command Centre
         </Link>
-        <a href="/platform/org" className="underline">
+        <a href="/super-admin/organization" className="underline">
           Platform organization
         </a>
         <a href="/marketplace" className="underline">

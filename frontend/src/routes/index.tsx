@@ -3,34 +3,23 @@ import { useEffect } from "react";
 import { useApp } from "@/contexts/app-context";
 import { scholarWorkspaceHome } from "@/lib/runtime/nav-registry";
 import { PublicSchoolSite } from "@/components/public/site";
-import { CommandCentre } from "@/components/command-centre/command-centre";
-import { PLATFORM_NAME } from "@/lib/platform";
-import { INSTALLED_RUNTIME_DESCRIPTION as SCHOLAR_RUNTIME_DESCRIPTION } from "@/lib/runtime/installed-runtimes";
+import { SherivsHome } from "@/components/sherivs/home";
+import { organizationJsonLd } from "@/lib/sherivs/content";
+import { publicHead } from "@/lib/sherivs/page-head";
+import { BRAND_DESCRIPTION } from "@/lib/sherivs/brand";
 
 export const Route = createFileRoute("/")({
   component: Index,
-  head: () => ({
-    meta: [
-      { title: `Sherivs Command Centre — ${SCHOLAR_RUNTIME_DESCRIPTION}` },
-      {
-        name: "description",
-        content:
-          "The Sherivs Command Centre — the platform operating surface. Provision organizations, roles and policies across a 51-phase governed platform.",
-      },
-      { property: "og:title", content: `${PLATFORM_NAME} Command Centre` },
-      {
-        property: "og:description",
-        content: "Provision organizations, roles and policies on the Sherivs platform.",
-      },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://universalschoolos.com/" },
-    ],
-    links: [{ rel: "canonical", href: "https://universalschoolos.com/" }],
-  }),
+  head: () =>
+    publicHead({
+      path: "/",
+      description: BRAND_DESCRIPTION,
+      jsonLd: [organizationJsonLd()],
+    }),
 });
 
 function Index() {
-  const { loading, school, tenantSlug, role, profile, superAdmin } = useApp();
+  const { loading, school, tenantSlug, role } = useApp();
   const navigate = useNavigate();
 
   // Signed-in users (on the platform host, not a tenant site) → their dashboard
@@ -125,8 +114,12 @@ function Index() {
     };
   }, [school]);
 
-  if (loading) {
-    return <div className="min-h-dvh grid place-items-center text-muted-foreground">Loading…</div>;
+  if (loading && (tenantSlug || role)) {
+    return (
+      <div className="min-h-dvh grid place-items-center" role="status" aria-live="polite">
+        <span className="sv-label sv-muted">Loading…</span>
+      </div>
+    );
   }
 
   // Tenant context (subdomain OR ?school=slug) → render that school's public site
@@ -134,8 +127,8 @@ function Index() {
     return <PublicSchoolSite school={school} />;
   }
 
-  // CoreGrid Command Centre — the platform's primary workspace surface for the
-  // African Educational Runtime (Phases 1–51). Dynamic workspace: from here an
-  // authorized operator provisions a school, its role model, and its policies.
-  return <CommandCentre />;
+  // No tenant context: the public Sherivs home. The signed-in Command Centre
+  // lives behind authentication at /command-centre; nothing operator-facing is
+  // served from the public root.
+  return <SherivsHome />;
 }

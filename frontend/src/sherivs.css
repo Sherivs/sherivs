@@ -199,7 +199,13 @@
 }
 
 /* Blueprint grid: institutional-infrastructure motif, hairline, masked to fade. */
-.sv-blueprint {
+.sv-blueprint { position: relative; isolation: isolate; }
+.sv-blueprint::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
   background-image:
     linear-gradient(to right, color-mix(in oklab, var(--sv-line) 70%, transparent) 1px, transparent 1px),
     linear-gradient(to bottom, color-mix(in oklab, var(--sv-line) 70%, transparent) 1px, transparent 1px);
