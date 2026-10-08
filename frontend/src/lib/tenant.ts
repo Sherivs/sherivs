@@ -2,24 +2,17 @@
  * Tenant resolver.
  *
  * Strategy (in order):
- *   1. `?school=<slug>` query param
+ *   1. `?school=<slug>` query param (legacy organization-slug parameter; the
+ *      name is a stored contract shared with the sitemap and manifest routes)
  *   2. First subdomain label of the hostname, when not a known platform host
  *
- * Platform hosts (universalschoolos.com, app.universalschoolos.com, localhost)
- * resolve to `null` — meaning the visitor landed on the platform marketing/
- * super-admin site, not a tenant site.
- *
- * NOTE (runtime migration): these platform domains are runtime
- * configuration. Update PLATFORM_HOSTS to the runtime's domains
- * (e.g. coregridscholar.com) when the platform DNS is cut over.
+ * Platform hosts (sherivs.com, app.sherivs.com, localhost, and the retained
+ * legacy hosts) resolve to `null` — meaning the visitor landed on the
+ * Sherivs platform plane (public site / platform workspaces), not on an
+ * organization's public site. The host list is owned by the brand module
+ * (`@/lib/experience/brand`, SHERIVS_BRAND_MIGRATION.md §4).
  */
-const PLATFORM_HOSTS = [
-  "localhost",
-  "127.0.0.1",
-  "universalschoolos.com",
-  "www.universalschoolos.com",
-  "app.universalschoolos.com",
-];
+import { PLATFORM_HOSTS } from "@/lib/experience/brand";
 
 const RESERVED_SUBS = new Set(["www", "app", "api", "admin", "dashboard"]);
 

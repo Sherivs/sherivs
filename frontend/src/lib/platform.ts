@@ -1,15 +1,19 @@
 /**
- * CoreGrid — platform identity constants (UI chrome).
+ * Sherivs — platform identity constants (UI chrome).
  *
- * Single source for how the platform presents itself: CoreGrid is the PLATFORM
- * (AD-001) — a kernel with governed runtimes installed on it. A runtime's own name,
- * id and description belong to that runtime's layer
- * (`@/lib/runtime/installed-runtimes`), never to the platform's identity module,
- * and UI copy must never imply CoreGrid is built on top of any one runtime.
+ * Single source for how the platform presents itself. The platform is the
+ * governed kernel on which runtimes are installed (AD-001); a runtime's own
+ * name, id and description belong to the runtime layer
+ * (`@/lib/runtime/installed-runtimes`), never here, and UI copy must never
+ * imply the platform is built on top of any one runtime.
+ *
+ * Brand values are owned by `@/lib/experience/brand` (SHERIVS_BRAND_MIGRATION.md);
+ * this module re-exports them under the names existing consumers import.
  */
-export const PLATFORM_NAME = "CoreGrid";
-export const PLATFORM_TAGLINE = "Universal Reality Intelligence Platform";
+import { BRAND, BRAND_PAGE_DESCRIPTION, BRAND_PAGE_TITLE } from "@/lib/experience/brand";
 
-export const PLATFORM_PAGE_TITLE = "CoreGrid — Universal Reality Intelligence Platform";
-export const PLATFORM_PAGE_DESCRIPTION =
-  "CoreGrid is a universal reality intelligence platform — kernel, registries, events, policies and governed runtimes. An installed runtime operates on CoreGrid primitives and brings only its own domain: it is a consumer of the platform, never its boundary.";
+export const PLATFORM_NAME = BRAND.name;
+export const PLATFORM_TAGLINE = BRAND.category;
+
+export const PLATFORM_PAGE_TITLE = BRAND_PAGE_TITLE;
+export const PLATFORM_PAGE_DESCRIPTION = BRAND_PAGE_DESCRIPTION;
