@@ -5,6 +5,9 @@
  * Section bodies live in ./sections.tsx, shared atoms in ./_shared.tsx.
  */
 import type { SchoolRow } from "@/contexts/app-context";
+import { composeOrganizationPublicExperience } from "@/lib/experience/organization-public";
+import { INSTALLED_RUNTIME_ID } from "@/lib/runtime/installed-runtimes";
+import { SCHOLAR_PUBLIC_SECTION_CONTRIBUTION } from "@/lib/scholar/experience/organization-public-scholar";
 import { Navbar, Footer, useSocialLinks } from "./_shared";
 import {
   HeroSection,
@@ -29,6 +32,27 @@ import {
 export function PublicSchoolSite({ school }: { school: SchoolRow }) {
   const socials = useSocialLinks(school);
   const on = (k: keyof SchoolRow) => school[k] !== false;
+  const experience = composeOrganizationPublicExperience({
+    identity: {
+      name: school.name,
+      tagline: (school.motto as string | null) ?? null,
+      logoUrl: (school.logo_url as string | null) ?? null,
+      primaryColor: (school.primary_color as string | null) ?? null,
+      secondaryColor: (school.secondary_color as string | null) ?? null,
+    },
+    runtimeId: INSTALLED_RUNTIME_ID,
+    enabledFlags: {
+      about: on("section_about_enabled" as keyof SchoolRow),
+      services: on("section_programs_enabled" as keyof SchoolRow),
+      people: on("section_faculty_enabled" as keyof SchoolRow),
+      events: on("section_news_enabled" as keyof SchoolRow),
+      news: on("section_news_enabled" as keyof SchoolRow),
+      contact: on("section_contact_enabled" as keyof SchoolRow),
+      admissions: on("section_admissions_enabled" as keyof SchoolRow),
+    },
+    runtimeContributions: [SCHOLAR_PUBLIC_SECTION_CONTRIBUTION],
+  });
+  const scholarRuntime = experience.runtimeId === "runtime:scholar";
   return (
     <div className="relative min-h-dvh bg-[#0a0f1e] text-white">
       <Navbar school={school} socials={socials} />
@@ -52,7 +76,7 @@ export function PublicSchoolSite({ school }: { school: SchoolRow }) {
           <TestimonialsSection school={school} />
         )}
         {on("section_blog_enabled" as keyof SchoolRow) && <BlogSection school={school} />}
-        {on("section_admissions_enabled" as keyof SchoolRow) && (
+        {scholarRuntime && on("section_admissions_enabled" as keyof SchoolRow) && (
           <AdmissionsCtaSection school={school} />
         )}
         {on("section_faqs_enabled" as keyof SchoolRow) && <FaqsSection school={school} />}

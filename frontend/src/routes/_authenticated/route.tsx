@@ -18,7 +18,6 @@ import { CommandCenterMount } from "@/components/command-center";
 import { ShellHeaderActions } from "@/components/shell/shell-header-actions";
 import { WorkspaceSwitcher } from "@/components/shell/workspace-switcher";
 import { PLATFORM_NAME } from "@/lib/platform";
-import { INSTALLED_RUNTIME_NAME as SCHOLAR_RUNTIME_NAME } from "@/lib/runtime/installed-runtimes";
 import { WorkspaceBottomNav } from "@/components/mobile-bottom-nav";
 import { OfflineBanner } from "@/components/offline-banner";
 import { AppFramePreview } from "@/components/app-frame-preview";
@@ -63,6 +62,26 @@ function AuthenticatedRouteErrorComponent({ error, reset }: { error: Error; rese
   );
 }
 
+function intelligenceHrefForSession(
+  role: string | null | undefined,
+  isSuperAdmin: boolean,
+): string | null {
+  if (isSuperAdmin) return "/super-admin/agent-governance";
+  switch (role) {
+    case "admin":
+    case "principal":
+      return "/admin/ai-assistant";
+    case "teacher":
+      return "/teacher/ai-assistant";
+    case "parent":
+      return "/parent/ai-assistant";
+    case "student":
+      return "/student/ai-tutor";
+    default:
+      return null;
+  }
+}
+
 function AuthenticatedLayout() {
   const { profile, superAdmin, school, role, loading, signOut, authUser } = useApp();
   const navigate = useNavigate();
@@ -92,9 +111,9 @@ function AuthenticatedLayout() {
         <div className="max-w-md uos-card p-8 text-center">
           <h1 className="font-display text-xl font-bold">Account not yet linked</h1>
           <p className="mt-3 text-sm text-muted-foreground">
-            Your sign-in is valid, but your account has not been linked to a school yet. A school
-            administrator (or a CoreGrid platform super admin) needs to assign you a role before you
-            can open a portal.
+            Your sign-in is valid, but your account has not been linked to an organization yet. An
+            organization administrator (or a {PLATFORM_NAME} platform operator) needs to assign you a
+            role before you can open a workspace.
           </p>
           <button
             onClick={async () => {
@@ -157,7 +176,7 @@ function AuthenticatedLayout() {
                   </div>
                   <div className="leading-tight min-w-0">
                     <div className="font-display font-bold text-sm truncate">
-                      {school?.name ?? `${PLATFORM_NAME} · ${SCHOLAR_RUNTIME_NAME}`}
+                      {school?.name ?? PLATFORM_NAME}
                     </div>
                     <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
                       {experience.roleTitle}
@@ -175,6 +194,7 @@ function AuthenticatedLayout() {
                   roleTitle={experience.roleTitle}
                   greeting={experience.greeting}
                   workspaceName={school?.name ?? null}
+                  intelligenceHref={intelligenceHrefForSession(role, Boolean(superAdmin))}
                   notificationViewer={
                     school && authUser
                       ? { tenantId: school.id, recipientId: authUser.id }

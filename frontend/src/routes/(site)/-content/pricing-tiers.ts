@@ -52,7 +52,7 @@ export const MARKETING_TIERS: readonly MarketingTier[] = [
     name: "Starter",
     monthlyPrice: 15_000,
     annualPrice: 150_000,
-    summary: "Everything a small organization needs to run on CoreGrid.",
+    summary: "Everything a small organization needs to run on Sherivs.",
     featured: false,
     highlights: [
       "Up to 200 members",

@@ -3,24 +3,23 @@ import { useEffect } from "react";
 import { useApp } from "@/contexts/app-context";
 import { scholarWorkspaceHome } from "@/lib/runtime/nav-registry";
 import { PublicSchoolSite } from "@/components/public/site";
-import { CommandCentre } from "@/components/command-centre/command-centre";
-import { PLATFORM_NAME } from "@/lib/platform";
-import { INSTALLED_RUNTIME_DESCRIPTION as SCHOLAR_RUNTIME_DESCRIPTION } from "@/lib/runtime/installed-runtimes";
+import { SherivsPublicShell } from "@/components/sherivs-public/shell";
+import { SherivsHomePage } from "@/components/sherivs-public/home";
+import { PLATFORM_NAME, PLATFORM_PAGE_DESCRIPTION, PLATFORM_TAGLINE } from "@/lib/platform";
 
 export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: `CoreGrid Command Centre — ${SCHOLAR_RUNTIME_DESCRIPTION}` },
+      { title: `${PLATFORM_NAME} — ${PLATFORM_TAGLINE}` },
       {
         name: "description",
-        content:
-          "The CoreGrid Command Centre — the platform operating surface. Provision organizations, roles and policies across a 51-phase governed platform.",
+        content: PLATFORM_PAGE_DESCRIPTION,
       },
-      { property: "og:title", content: `${PLATFORM_NAME} Command Centre` },
+      { property: "og:title", content: `${PLATFORM_NAME} — ${PLATFORM_TAGLINE}` },
       {
         property: "og:description",
-        content: "Provision organizations, roles and policies on the CoreGrid platform.",
+        content: PLATFORM_PAGE_DESCRIPTION,
       },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://universalschoolos.com/" },
@@ -134,8 +133,9 @@ function Index() {
     return <PublicSchoolSite school={school} />;
   }
 
-  // CoreGrid Command Centre — the platform's primary workspace surface for the
-  // African Educational Runtime (Phases 1–51). Dynamic workspace: from here an
-  // authorized operator provisions a school, its role model, and its policies.
-  return <CommandCentre />;
+  return (
+    <SherivsPublicShell>
+      <SherivsHomePage />
+    </SherivsPublicShell>
+  );
 }

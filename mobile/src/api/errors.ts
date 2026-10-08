@@ -61,7 +61,7 @@ export function fromSupabaseError(error: { message: string; code?: string } | nu
 export function errorHeadline(kind: ApiErrorKind): string {
   switch (kind) {
     case "network":
-      return "CoreGrid could not be reached";
+      return "Sherivs could not be reached";
     case "offline":
       return "You are offline";
     case "timeout":
@@ -75,7 +75,7 @@ export function errorHeadline(kind: ApiErrorKind): string {
     case "not_configured":
       return "This capability is not configured in this environment";
     case "server":
-      return "The CoreGrid server reported an error";
+      return "The Sherivs server reported an error";
     case "unknown":
       return "Something went wrong";
   }

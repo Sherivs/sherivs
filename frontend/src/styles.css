@@ -6,10 +6,10 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * CoreGrid — Apple-inspired glassmorphism design system.
- * Deep navy structural surfaces, frosted glass cards, tenant-tunable
- * primary/secondary read from school.primary_color / secondary_color
- * and injected at runtime onto :root as --tenant-primary / --tenant-secondary.
+ * Sherivs Experience System — institutional intelligence visual language.
+ * Deep neutral foundations, luminous signal accent, precision borders.
+ * Glass is reserved for overlays and sticky chrome — it is not the brand.
+ * Tenant primary/secondary inject onto :root as --tenant-primary / --tenant-secondary.
  */
 
 @theme inline {
@@ -54,10 +54,18 @@
 :root {
   --radius: 0.875rem;
 
-  /* Structural surfaces */
-  --surface-1: #0a0f1e;
-  --surface-2: #0d1424;
-  --surface-3: #111827;
+  /* Structural surfaces — graphite, not navy-glass fashion */
+  --surface-1: #08090c;
+  --surface-2: #101218;
+  --surface-3: #161922;
+  --sv-foundation: #08090c;
+  --sv-surface: #101218;
+  --sv-surface-raised: #161922;
+  --sv-ink: #eceae4;
+  --sv-signal: #8eb4c9;
+  --sv-evidence: #c4a574;
+  --sv-verification: #7d9a78;
+  --sv-danger: #d46a6a;
 
   /* Glass system */
   --glass-bg: rgba(255, 255, 255, 0.04);
@@ -98,14 +106,14 @@
   --accent-foreground: var(--text-primary);
   --border: var(--glass-border);
   --input: rgba(255, 255, 255, 0.10);
-  --ring: rgba(14, 165, 233, 0.55);
+  --ring: color-mix(in oklab, var(--sv-signal) 70%, transparent);
   --destructive: oklch(0.62 0.22 25);
   --destructive-foreground: oklch(0.98 0 0);
 
-  /* Tenant brand — overridden at runtime via JS */
-  --tenant-primary: #0d9488;
-  --tenant-secondary: #f59e0b;
-  --primary-rgb: 13, 148, 136;
+  /* Platform signal is the default; tenant brand overrides at runtime */
+  --tenant-primary: #8eb4c9;
+  --tenant-secondary: #c4a574;
+  --primary-rgb: 142, 180, 201;
   --primary: var(--tenant-primary);
   --primary-foreground: #ffffff;
   --secondary: var(--tenant-secondary);
@@ -117,8 +125,7 @@
   html, body { height: 100%; }
   body {
     background:
-      radial-gradient(1200px 600px at 20% -10%, color-mix(in oklab, var(--tenant-primary) 18%, transparent), transparent 60%),
-      radial-gradient(900px 500px at 100% 10%, color-mix(in oklab, var(--tenant-secondary) 12%, transparent), transparent 55%),
+      radial-gradient(900px 480px at 12% -8%, color-mix(in oklab, var(--sv-signal) 10%, transparent), transparent 58%),
       var(--surface-1);
     color: var(--text-primary);
     font-family: var(--font-sans);
@@ -847,3 +854,160 @@ a:focus-visible,
 
 :root { color-scheme: dark; }
 .light { color-scheme: light; }
+
+.light {
+  --sv-foundation: #f4f1ea;
+  --sv-surface: #fffcf7;
+  --sv-surface-raised: #ffffff;
+  --sv-ink: #161410;
+  --sv-signal: #3f6f88;
+  --sv-evidence: #8a6a3d;
+  --sv-verification: #3f5c45;
+}
+
+/* Glass is chrome, not content */
+.uos-card {
+  background: var(--sv-surface-raised);
+  backdrop-filter: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.sv-public-wrap {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 72rem;
+  padding-inline: 1rem;
+}
+@media (min-width: 640px) {
+  .sv-public-wrap { padding-inline: 1.5rem; }
+}
+
+.sv-public-header {
+  border-bottom: 1px solid var(--glass-border);
+  background: color-mix(in oklab, var(--surface-1) 88%, transparent);
+  backdrop-filter: blur(16px) saturate(140%);
+}
+
+.sv-kicker {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.sv-display {
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 6vw, 4.25rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 0.98;
+}
+
+.sv-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.sv-index {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--sv-signal);
+}
+
+.sv-mark {
+  border: 1px solid color-mix(in oklab, var(--sv-signal) 45%, var(--glass-border));
+  background: color-mix(in oklab, var(--sv-surface-raised) 80%, transparent);
+  color: var(--sv-ink);
+  border-radius: 4px;
+}
+
+.sv-btn-signal {
+  background: var(--sv-signal);
+  color: #0b0d12;
+}
+.sv-btn-signal:hover { filter: brightness(1.06); }
+.light .sv-btn-signal { color: #f7f4ee; }
+
+.sv-plane-stack {
+  display: grid;
+  gap: 0.75rem;
+}
+.sv-plane {
+  border: 1px solid var(--glass-border);
+  background: var(--sv-surface-raised);
+  padding: 1rem 1.1rem;
+}
+.sv-plane-reality { border-left: 2px solid var(--sv-ink); }
+.sv-plane-intelligence { border-left: 2px solid var(--sv-signal); }
+.sv-plane-action { border-left: 2px solid var(--sv-evidence); }
+.sv-plane-evidence { border-left: 2px solid var(--sv-verification); }
+
+.sv-plane-list,
+.sv-guarantee-list,
+.sv-capability-rail {
+  display: grid;
+  gap: 1rem;
+}
+@media (min-width: 768px) {
+  .sv-plane-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sv-capability-rail { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem 2rem; }
+  .sv-guarantee-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1280px) {
+  .sv-capability-rail { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+.sv-plane-list li,
+.sv-runtime-proof,
+.sv-empty-state {
+  border: 1px solid var(--glass-border);
+  background: var(--sv-surface);
+  padding: 0.85rem 1rem;
+}
+
+.sv-mission-path {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.sv-mission-path li {
+  border: 1px solid var(--glass-border);
+  padding: 0.4rem 0.7rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sv-guarantee-list { list-style: none; padding: 0; margin: 0; }
+.sv-guarantee-list li { padding-block: 0.5rem; }
+
+.sv-hero { position: relative; }
+.sv-hero::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--sv-signal) 45%, transparent), transparent);
+}
+
+@media (max-width: 639px) {
+  .sv-display { font-size: clamp(2rem, 11vw, 2.75rem); }
+}

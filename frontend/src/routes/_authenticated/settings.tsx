@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { Save, Shield, User2, Lock, Bot } from "lucide-react";
 
 import { PortalPage, GlassCard, PortalPageSkeleton } from "@/components/portal-shell";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { useApp } from "@/contexts/app-context";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -77,7 +78,8 @@ function SettingsPage() {
   }
 
   return (
-    <PortalPage title="Settings" subtitle="Manage your profile, password, and privacy">
+    <PortalPage title="Settings" subtitle="Manage your profile, appearance, password, and privacy">
+      <AppearanceCard />
       {!superAdmin && profile && (
         <ProfileCard
           profile={profile}
@@ -266,6 +268,19 @@ function PasswordCard() {
           </button>
         </div>
       </form>
+    </GlassCard>
+  );
+}
+
+function AppearanceCard() {
+  return (
+    <GlassCard className="flex flex-col gap-3">
+      <SectionTitle icon={<User2 className="size-4" />} title="Appearance" />
+      <p className="text-sm text-muted-foreground">
+        Light, dark, or follow the device. Organization brand tokens cannot override contrast or
+        focus visibility.
+      </p>
+      <ThemeToggle />
     </GlassCard>
   );
 }

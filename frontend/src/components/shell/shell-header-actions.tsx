@@ -6,7 +6,7 @@
  * from platform contracts (`buildNotificationSurface`, `buildProfileMenu`)
  * over server-resolved session data — the shell imports no domain module.
  */
-import { Search as SearchIcon } from "lucide-react";
+import { Search as SearchIcon, Sparkles } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationBell } from "@/components/shell/notification-bell";
 import { ProfileMenu } from "@/components/shell/profile-menu";
@@ -22,6 +22,8 @@ export interface ShellHeaderActionsProps {
   /** Server-resolved viewer context for the bell; null keeps the bell quiet. */
   readonly notificationViewer: ShellNotificationViewer | null;
   readonly onSignOut: () => void | Promise<void>;
+  /** Authorized intelligence surface for this session; omitted when none. */
+  readonly intelligenceHref?: string | null;
 }
 
 export function ShellHeaderActions({
@@ -31,6 +33,7 @@ export function ShellHeaderActions({
   workspaceName,
   notificationViewer,
   onSignOut,
+  intelligenceHref = null,
 }: ShellHeaderActionsProps) {
   const modKey = useModKeyLabel();
 
@@ -52,6 +55,16 @@ export function ShellHeaderActions({
       >
         <SearchIcon className="size-4" />
       </button>
+      {intelligenceHref ? (
+        <a
+          href={intelligenceHref}
+          className="inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1.5 text-xs text-muted-foreground hover:bg-accent"
+          title="Jarvis"
+        >
+          <Sparkles className="size-3.5" />
+          <span className="hidden sm:inline">Jarvis</span>
+        </a>
+      ) : null}
       <ThemeToggle className="hidden xs:inline-flex" />
       <NotificationBell viewer={notificationViewer} />
       <ProfileMenu

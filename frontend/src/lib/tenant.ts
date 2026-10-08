@@ -19,6 +19,9 @@ const PLATFORM_HOSTS = [
   "universalschoolos.com",
   "www.universalschoolos.com",
   "app.universalschoolos.com",
+  "sherivs.com",
+  "www.sherivs.com",
+  "app.sherivs.com",
 ];
 
 const RESERVED_SUBS = new Set(["www", "app", "api", "admin", "dashboard"]);
