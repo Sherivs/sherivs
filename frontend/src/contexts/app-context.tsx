@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { resolveTenantSlug } from "@/lib/tenant";
 import { type AppRole } from "@/lib/roles";
 import { scholarWorkspaceHome } from "@/lib/runtime/nav-registry";
+import { applyOrganizationBrand } from "@/lib/sherivs/org-brand";
 
 /**
  * UserProfile = row from public.users (tenant member).
@@ -60,13 +61,13 @@ type AppState = {
 
 const AppCtx = createContext<AppState | undefined>(undefined);
 
+/** Organization brand reaches CSS only through the validated, contrast-safe brand layer. */
 function applyBrandColors(school: SchoolRow | null) {
   if (typeof document === "undefined") return;
-  const root = document.documentElement;
-  if (school?.primary_color) root.style.setProperty("--tenant-primary", school.primary_color);
-  else root.style.removeProperty("--tenant-primary");
-  if (school?.secondary_color) root.style.setProperty("--tenant-secondary", school.secondary_color);
-  else root.style.removeProperty("--tenant-secondary");
+  applyOrganizationBrand(document.documentElement, {
+    primaryColor: school?.primary_color ?? null,
+    secondaryColor: school?.secondary_color ?? null,
+  });
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {

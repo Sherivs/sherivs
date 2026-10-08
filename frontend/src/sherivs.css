@@ -1,0 +1,311 @@
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+
+/*
+ * Sherivs design system — runtime projection of frontend/src/lib/sherivs/tokens.ts.
+ * tests/unit/sherivs-tokens.test.ts fails if any value here diverges from the
+ * typed source. Tokens use the --sv-* namespace; legacy --surface-*/--glass-*
+ * variables in styles.css alias these so the whole product inherits one language.
+ */
+
+:root {
+  /* colour — dark ("Obsidian") is the structural default */
+  --sv-canvas: #07090c;
+  --sv-ground: #0b0e13;
+  --sv-raised: #10141b;
+  --sv-overlay: #161b24;
+  --sv-line: #232a36;
+  --sv-line-strong: #323b4b;
+  --sv-text: #e8ecf2;
+  --sv-text-2: #a3adbd;
+  --sv-text-3: #8591a4;
+  --sv-signal: #4cc2ff;
+  --sv-signal-strong: #8bd7ff;
+  --sv-on-signal: #04131c;
+  --sv-success: #3dd68c;
+  --sv-warning: #f2b84b;
+  --sv-danger: #ff7a7a;
+  --sv-info: #7fb0ff;
+  --sv-shadow-1: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 1px 2px rgb(0 0 0 / 0.5);
+  --sv-shadow-2: 0 8px 24px -8px rgb(0 0 0 / 0.6);
+  --sv-shadow-3: 0 24px 64px -16px rgb(0 0 0 / 0.75);
+
+  --sv-kind-observation: #a9b6c9;
+  --sv-kind-inference: #b9a2ff;
+  --sv-kind-recommendation: #f2b84b;
+  --sv-kind-action: #4cc2ff;
+  --sv-kind-evidence: #4fd1c5;
+  --sv-kind-verification: #3dd68c;
+
+  /* shape */
+  --sv-radius-xs: 2px;
+  --sv-radius-sm: 4px;
+  --sv-radius-md: 6px;
+  --sv-radius-lg: 10px;
+  --sv-radius-xl: 14px;
+  --sv-radius-pill: 9999px;
+
+  /* stacking */
+  --sv-z-base: 0;
+  --sv-z-raised: 10;
+  --sv-z-sticky: 100;
+  --sv-z-header: 200;
+  --sv-z-sidebar: 300;
+  --sv-z-dropdown: 400;
+  --sv-z-overlay: 500;
+  --sv-z-modal: 600;
+  --sv-z-toast: 700;
+  --sv-z-command: 800;
+  --sv-z-skipLink: 900;
+
+  /* motion */
+  --sv-dur-instant: 0ms;
+  --sv-dur-fast: 120ms;
+  --sv-dur-base: 200ms;
+  --sv-dur-slow: 320ms;
+  --sv-dur-deliberate: 480ms;
+  --sv-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --sv-ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
+  --sv-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+
+  /* space (4px grid) */
+  --sv-space-0: 0;
+  --sv-space-1: 0.25rem;
+  --sv-space-2: 0.5rem;
+  --sv-space-3: 0.75rem;
+  --sv-space-4: 1rem;
+  --sv-space-5: 1.25rem;
+  --sv-space-6: 1.5rem;
+  --sv-space-8: 2rem;
+  --sv-space-10: 2.5rem;
+  --sv-space-12: 3rem;
+  --sv-space-16: 4rem;
+  --sv-space-20: 5rem;
+  --sv-space-24: 6rem;
+  --sv-space-32: 8rem;
+
+  --sv-blur-overlay: 16px;
+  --sv-font-sans: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --sv-font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* layout */
+  --sv-header-h: 3.5rem;
+  --sv-sidebar-w: 16.5rem;
+  --sv-sidebar-w-collapsed: 4rem;
+  --sv-bottom-nav-h: 4rem;
+  --sv-page-max: 75rem;
+  --sv-read-max: 68ch;
+  --sv-focus-w: 2px;
+  --sv-focus-offset: 2px;
+}
+
+.light {
+  --sv-canvas: #f5f4f0;
+  --sv-ground: #fbfaf8;
+  --sv-raised: #ffffff;
+  --sv-overlay: #ffffff;
+  --sv-line: #e2dfd8;
+  --sv-line-strong: #cfcbc1;
+  --sv-text: #12151b;
+  --sv-text-2: #434c5c;
+  --sv-text-3: #5f6879;
+  --sv-signal: #0b6fa4;
+  --sv-signal-strong: #08577f;
+  --sv-on-signal: #ffffff;
+  --sv-success: #0e7a4b;
+  --sv-warning: #8a5a00;
+  --sv-danger: #b42318;
+  --sv-info: #1d5fc4;
+  --sv-shadow-1: 0 1px 2px rgb(18 21 27 / 0.06);
+  --sv-shadow-2: 0 8px 24px -8px rgb(18 21 27 / 0.14);
+  --sv-shadow-3: 0 24px 64px -16px rgb(18 21 27 / 0.22);
+
+  --sv-kind-observation: #4d586a;
+  --sv-kind-inference: #5b3fb0;
+  --sv-kind-recommendation: #8a5a00;
+  --sv-kind-action: #0b6fa4;
+  --sv-kind-evidence: #0b6b63;
+  --sv-kind-verification: #0e7a4b;
+}
+
+/* High contrast: honoured from the OS or the account's accessibility preference. */
+@media (prefers-contrast: more) {
+  :root {
+    --sv-line: #4a5568;
+    --sv-line-strong: #8591a4;
+    --sv-text-2: #cdd5e1;
+    --sv-text-3: #b4bfcf;
+  }
+  .light {
+    --sv-line: #6b7383;
+    --sv-line-strong: #434c5c;
+    --sv-text-2: #2b3240;
+    --sv-text-3: #3d4658;
+  }
+}
+[data-contrast="high"] {
+  --sv-line: #8591a4;
+  --sv-line-strong: #cdd5e1;
+  --sv-text-2: #e8ecf2;
+  --sv-text-3: #cdd5e1;
+}
+.light[data-contrast="high"] {
+  --sv-line: #434c5c;
+  --sv-line-strong: #12151b;
+  --sv-text-2: #12151b;
+  --sv-text-3: #2b3240;
+}
+
+/* ───────── type ───────── */
+.sv-display { font: 600 clamp(2.75rem, 1.6rem + 5.2vw, 6rem)/0.98 var(--sv-font-sans); letter-spacing: -0.045em; text-wrap: balance; }
+.sv-hero    { font: 600 clamp(2.25rem, 1.5rem + 3.4vw, 4.25rem)/1.02 var(--sv-font-sans); letter-spacing: -0.04em; text-wrap: balance; }
+.sv-h1      { font: 600 clamp(1.75rem, 1.35rem + 1.7vw, 2.75rem)/1.08 var(--sv-font-sans); letter-spacing: -0.032em; text-wrap: balance; }
+.sv-h2      { font: 600 clamp(1.375rem, 1.15rem + 1vw, 2rem)/1.15 var(--sv-font-sans); letter-spacing: -0.026em; text-wrap: balance; }
+.sv-h3      { font: 600 1.25rem/1.25 var(--sv-font-sans); letter-spacing: -0.018em; }
+.sv-h4      { font: 600 1rem/1.35 var(--sv-font-sans); letter-spacing: -0.01em; }
+.sv-body    { font: 400 1rem/1.6 var(--sv-font-sans); letter-spacing: -0.003em; }
+.sv-small   { font: 400 0.875rem/1.5 var(--sv-font-sans); }
+.sv-caption { font: 400 0.75rem/1.45 var(--sv-font-sans); letter-spacing: 0.005em; }
+.sv-label   { font: 500 0.6875rem/1.2 var(--sv-font-mono); letter-spacing: 0.12em; text-transform: uppercase; }
+.sv-code    { font: 400 0.8125rem/1.6 var(--sv-font-mono); }
+.sv-data    { font: 450 0.875rem/1.4 var(--sv-font-mono); font-feature-settings: "tnum" 1, "zero" 1; }
+.sv-metric  { font: 600 clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem)/1 var(--sv-font-sans); letter-spacing: -0.03em; font-feature-settings: "tnum" 1; }
+.sv-prose   { max-width: var(--sv-read-max); }
+.sv-muted   { color: var(--sv-text-2); }
+.sv-faint   { color: var(--sv-text-3); }
+
+/* ───────── surfaces ─────────
+ * Spatial order: canvas < ground < raised < overlay. Only `overlay` may be
+ * translucent/blurred, because only overlays float above content. */
+.sv-canvas  { background: var(--sv-canvas); color: var(--sv-text); }
+.sv-ground  { background: var(--sv-ground); }
+.sv-raised  { background: var(--sv-raised); border: 1px solid var(--sv-line); border-radius: var(--sv-radius-lg); box-shadow: var(--sv-shadow-1); }
+.sv-inset   { background: color-mix(in oklab, var(--sv-canvas) 60%, var(--sv-ground)); border: 1px solid var(--sv-line); border-radius: var(--sv-radius-md); }
+.sv-overlay {
+  background: color-mix(in oklab, var(--sv-overlay) 88%, transparent);
+  backdrop-filter: blur(var(--sv-blur-overlay)) saturate(140%);
+  border: 1px solid var(--sv-line-strong);
+  border-radius: var(--sv-radius-lg);
+  box-shadow: var(--sv-shadow-3);
+}
+.sv-rule      { border-top: 1px solid var(--sv-line); }
+.sv-rule-vert { border-left: 1px solid var(--sv-line); }
+
+/* The Lumen line: one hairline of light. Static; never animated decoratively. */
+.sv-lumen {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--sv-signal) 35%, var(--sv-signal-strong) 50%, var(--sv-signal) 65%, transparent);
+  opacity: 0.7;
+}
+
+/* Blueprint grid: institutional-infrastructure motif, hairline, masked to fade. */
+.sv-blueprint {
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--sv-line) 70%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--sv-line) 70%, transparent) 1px, transparent 1px);
+  background-size: 64px 64px;
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 30%, transparent 75%);
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 30%, transparent 75%);
+}
+
+/* ───────── interaction ───────── */
+.sv-focusable:focus-visible,
+.sv-btn:focus-visible,
+.sv-link:focus-visible {
+  outline: var(--sv-focus-w) solid var(--sv-signal);
+  outline-offset: var(--sv-focus-offset);
+  border-radius: var(--sv-radius-sm);
+}
+
+.sv-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--sv-space-2);
+  min-height: 2.5rem; padding: 0 var(--sv-space-4);
+  border-radius: var(--sv-radius-md); border: 1px solid var(--sv-line-strong);
+  background: transparent; color: var(--sv-text);
+  font: 500 0.875rem/1 var(--sv-font-sans); letter-spacing: -0.005em; white-space: nowrap;
+  transition: background var(--sv-dur-fast) var(--sv-ease-standard), border-color var(--sv-dur-fast) var(--sv-ease-standard), transform var(--sv-dur-fast) var(--sv-ease-standard);
+}
+.sv-btn:hover { background: color-mix(in oklab, var(--sv-text) 6%, transparent); border-color: var(--sv-text-3); }
+.sv-btn:active { transform: translateY(0.5px); }
+.sv-btn[aria-disabled="true"], .sv-btn:disabled { opacity: 0.45; pointer-events: none; }
+.sv-btn-primary { background: var(--sv-signal); border-color: var(--sv-signal); color: var(--sv-on-signal); }
+.sv-btn-primary:hover { background: var(--sv-signal-strong); border-color: var(--sv-signal-strong); }
+.sv-btn-lg { min-height: 3rem; padding: 0 var(--sv-space-6); font-size: 0.9375rem; }
+.sv-link { color: var(--sv-text); text-decoration: underline; text-decoration-color: var(--sv-line-strong); text-underline-offset: 0.2em; transition: text-decoration-color var(--sv-dur-fast) var(--sv-ease-standard); }
+.sv-link:hover { text-decoration-color: var(--sv-signal); }
+
+@media (hover: none) and (pointer: coarse) {
+  .sv-btn { min-height: 2.75rem; }
+}
+
+/* ───────── epistemic blocks (Observation … Verification) ───────── */
+.sv-kind {
+  --kind: var(--sv-text-2);
+  position: relative;
+  padding: var(--sv-space-3) var(--sv-space-4) var(--sv-space-3) var(--sv-space-5);
+  background: var(--sv-raised);
+  border: 1px solid var(--sv-line);
+  border-radius: var(--sv-radius-md);
+}
+.sv-kind::before {
+  content: ""; position: absolute; inset: 0 auto 0 0; width: 3px;
+  background: var(--kind); border-radius: var(--sv-radius-md) 0 0 var(--sv-radius-md);
+}
+.sv-kind[data-kind="observation"] { --kind: var(--sv-kind-observation); }
+.sv-kind[data-kind="inference"] { --kind: var(--sv-kind-inference); }
+.sv-kind[data-kind="recommendation"] { --kind: var(--sv-kind-recommendation); }
+.sv-kind[data-kind="action"] { --kind: var(--sv-kind-action); }
+.sv-kind[data-kind="evidence"] { --kind: var(--sv-kind-evidence); }
+.sv-kind[data-kind="verification"] { --kind: var(--sv-kind-verification); }
+.sv-kind-label { color: var(--kind); display: inline-flex; align-items: center; gap: var(--sv-space-2); }
+
+/* ───────── real-state motion ─────────
+ * `data-state="processing"` is set only while a request is genuinely in flight.
+ * Nothing in Sherivs animates to imply work that is not happening. */
+@keyframes sv-sweep { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+@keyframes sv-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes sv-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sv-settle { 0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--sv-success) 55%, transparent); } 100% { box-shadow: 0 0 0 8px transparent; } }
+
+.sv-progress { position: relative; height: 2px; overflow: hidden; background: var(--sv-line); border-radius: var(--sv-radius-pill); }
+.sv-progress > span { position: absolute; inset: 0 auto 0 0; background: var(--sv-signal); border-radius: inherit; transition: width var(--sv-dur-slow) var(--sv-ease-standard); }
+.sv-progress[data-state="processing"]:not([data-determinate])::after {
+  content: ""; position: absolute; inset: 0; width: 40%;
+  background: linear-gradient(90deg, transparent, var(--sv-signal), transparent);
+  animation: sv-sweep 1.4s var(--sv-ease-standard) infinite;
+}
+.sv-enter { animation: sv-rise var(--sv-dur-slow) var(--sv-ease-emphasized) both; }
+.sv-enter-fade { animation: sv-fade var(--sv-dur-base) var(--sv-ease-standard) both; }
+.sv-settled { animation: sv-settle var(--sv-dur-deliberate) var(--sv-ease-standard) 1; }
+
+.sv-skeleton { background: linear-gradient(90deg, var(--sv-raised), color-mix(in oklab, var(--sv-line) 80%, var(--sv-raised)), var(--sv-raised)); background-size: 200% 100%; border-radius: var(--sv-radius-sm); animation: sv-shimmer 1.6s linear infinite; }
+@keyframes sv-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+/* Sticky on-scroll reveals for the public narrative (CSS only; no JS observers). */
+@supports (animation-timeline: view()) {
+  .sv-reveal { animation: sv-rise linear both; animation-timeline: view(); animation-range: entry 0% entry 35%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sv-enter, .sv-enter-fade, .sv-settled, .sv-reveal { animation: none !important; }
+  .sv-btn, .sv-link, .sv-progress > span { transition: none !important; }
+  .sv-progress[data-state="processing"]::after { animation: none !important; width: 100%; opacity: 0.35; }
+  .sv-skeleton { animation: none !important; }
+  html { scroll-behavior: auto !important; }
+}
+
+/* ───────── layout helpers ───────── */
+.sv-page { width: 100%; max-width: var(--sv-page-max); margin-inline: auto; padding-inline: clamp(1rem, 4vw, 2rem); }
+.sv-page-wide { width: 100%; max-width: 90rem; margin-inline: auto; padding-inline: clamp(1rem, 4vw, 3rem); }
+@media (min-width: 2560px) { .sv-page-wide { max-width: 110rem; } }
+.sv-section { padding-block: clamp(3.5rem, 2rem + 6vw, 8rem); }
+
+/* Plane rail: Reality → Intelligence → Action → Evidence */
+.sv-plane { --kind: var(--sv-kind-observation); position: relative; padding-left: var(--sv-space-6); }
+.sv-plane::before { content: ""; position: absolute; left: 0; top: 0.35rem; bottom: -2.5rem; width: 1px; background: var(--sv-line-strong); }
+.sv-plane:last-child::before { bottom: auto; height: 0.5rem; }
+.sv-plane::after { content: ""; position: absolute; left: -3px; top: 0.4rem; width: 7px; height: 7px; border-radius: 50%; background: var(--kind); box-shadow: 0 0 0 3px var(--sv-ground); }
+.sv-plane[data-plane="reality"] { --kind: var(--sv-kind-observation); }
+.sv-plane[data-plane="intelligence"] { --kind: var(--sv-kind-inference); }
+.sv-plane[data-plane="action"] { --kind: var(--sv-kind-action); }
+.sv-plane[data-plane="evidence"] { --kind: var(--sv-kind-evidence); }
