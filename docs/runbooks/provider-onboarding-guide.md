@@ -275,6 +275,14 @@ Cost: **$25 USD one-time** (registration fee).
   `sherivs.com` / `www.sherivs.com` serve HTTP 200 (7/8 distributed nodes),
   email DNS records preserved. Custom domains bypass the SSO wall by design —
   the app is public there; `.vercel.app` hostnames stay behind the wall.
+- **Closed the remaining follow-ups (DECISIONS.md #214 addendum §s–§v,
+  2026-10-08):** the bare alias `coregrid-scholar-migration.vercel.app` HEALED
+  once real routes existed (HTTP 200 from 8/8 distributed nodes — the support
+  ticket is no longer needed; the earlier "claimed globally" theory is
+  retired); deployment upload trimmed 4,244 → 2,397 files (−43%) via
+  `.vercelignore` (production `dpl_77J7Ln5onboyVABfYfwxn3bEB9oY` READY, all
+  four hostnames re-verified 200); nitro 3.x has no stable release, so the
+  verified beta pin stays until one ships.
 - Verified every injected vendor token with one read-only probe
   (Cloudflare, Vercel, PostHog US, Sentry, New Relic EU, Expo).
 - **Aligned the stack regions to West EU (DECISIONS.md #205, 2026-10-06):**

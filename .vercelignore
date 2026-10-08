@@ -1,0 +1,23 @@
+# Deployment-upload exclusions (git tracking untouched — this only trims
+# what the Vercel CLI uploads for the web build; see DECISIONS.md #214 §s).
+# Agent-infrastructure and non-build content:
+.claude
+.claude-flow
+.codex
+.swarm
+.ag-out.txt
+.aud7.txt
+.b7-out.txt
+agents
+mobile
+tests
+docs
+database
+architecture
+progress
+.tanstack
+.vercel
+# Root-level governance/audit documents (not build inputs):
+/*.md
+*.txt
+!package-lock.json
