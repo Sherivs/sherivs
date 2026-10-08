@@ -139,14 +139,33 @@ describe("Route modules — real links, no fake submissions, landmarks", () => {
     }
   });
 
-  it("renders semantic landmarks and the four anchored sections", () => {
+  it("renders semantic landmarks and links the Sherivs public IA", () => {
     expect(layout).toContain("<header");
     expect(layout).toContain("<main");
     expect(layout).toContain("<footer");
     expect(layout).toMatch(/aria-label="Site"/);
-    for (const anchor of ["capabilities", "runtimes", "security", "pricing"]) {
-      expect(page).toContain(`id="${anchor}"`);
-      expect(layout).toContain(`"/coregrid#${anchor}"`);
+    // Sherivs experience IA: the layout renders the registry-driven public
+    // surfaces, and deep anchors live on /platform (see
+    // docs/experience/SHERIVS_ROUTE_ARCHITECTURE.md). Destination
+    // resolvability is proven in tests/unit/sherivs-brand.test.ts.
+    expect(layout).toContain("SHERIVS_PRIMARY_NAV");
+    expect(layout).toContain("SHERIVS_FOOTER_COLUMNS");
+    const registry = read("frontend/src/components/sherivs/public-registry.ts");
+    for (const destination of [
+      "/sherivs",
+      "/platform",
+      "/solutions/education",
+      "/security",
+      "/enterprise",
+      "/pricing",
+      "/resources",
+    ]) {
+      expect(registry).toContain(`"${destination}"`);
+    }
+    const platform = read("frontend/src/routes/platform.tsx");
+    for (const anchor of ["capabilities", "runtimes"]) {
+      expect(platform).toContain(`id="${anchor}"`);
+      expect(registry).toContain(`/platform#${anchor}`);
     }
   });
 
@@ -169,9 +188,12 @@ describe("Platform narration neutrality (LAW 3 / LAW 5)", () => {
     /CoreGrid Scholar|Scholar's|Scholar is|Scholar consumes|Scholar binds|Scholar resolves|Scholar remains|Scholar-only|Scholar-flavored|Scholar catalog|Scholar runtime \(runtime-001\)/;
   const SELF_IDENTIFICATION = /^\s*(?:\/\*|\*|\/\/)\s*CoreGrid Scholar\b/m;
 
-  const sources = ["-content/pricing-tiers.ts", "-content/site-content.ts", "route.tsx", "coregrid.tsx"].map(
-    (ref) => read(`frontend/src/routes/(site)/${ref}`),
-  );
+  const sources = [
+    "-content/pricing-tiers.ts",
+    "-content/site-content.ts",
+    "route.tsx",
+    "coregrid.tsx",
+  ].map((ref) => read(`frontend/src/routes/(site)/${ref}`));
 
   it("never narrates a runtime as the platform", () => {
     for (const source of sources) {
