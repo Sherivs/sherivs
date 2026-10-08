@@ -4,23 +4,22 @@ import { useApp } from "@/contexts/app-context";
 import { scholarWorkspaceHome } from "@/lib/runtime/nav-registry";
 import { PublicSchoolSite } from "@/components/public/site";
 import { CommandCentre } from "@/components/command-centre/command-centre";
-import { PLATFORM_NAME } from "@/lib/platform";
+import { SHERIVS_PAGE_DESCRIPTION } from "@/lib/brand/sherivs";
 import { INSTALLED_RUNTIME_DESCRIPTION as SCHOLAR_RUNTIME_DESCRIPTION } from "@/lib/runtime/installed-runtimes";
 
 export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: `CoreGrid Command Centre — ${SCHOLAR_RUNTIME_DESCRIPTION}` },
+      { title: `Sherivs Command Centre — ${SCHOLAR_RUNTIME_DESCRIPTION}` },
       {
         name: "description",
-        content:
-          "The CoreGrid Command Centre — the platform operating surface. Provision organizations, roles and policies across a 51-phase governed platform.",
+        content: SHERIVS_PAGE_DESCRIPTION,
       },
-      { property: "og:title", content: `${PLATFORM_NAME} Command Centre` },
+      { property: "og:title", content: "Sherivs Command Centre" },
       {
         property: "og:description",
-        content: "Provision organizations, roles and policies on the CoreGrid platform.",
+        content: "Provision organizations, roles and policies on the Sherivs platform.",
       },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://universalschoolos.com/" },

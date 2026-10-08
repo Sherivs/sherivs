@@ -1,5 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { PLATFORM_NAME, PLATFORM_TAGLINE } from "@/lib/platform";
+import {
+  SHERIVS_PAGE_DESCRIPTION,
+  SHERIVS_PAGE_TITLE,
+  SHERIVS_TAGLINE,
+  resolveCustomerBrandName,
+} from "@/lib/brand/sherivs";
 import {
   INSTALLED_RUNTIME_PROOFS,
   SECURITY_GUARANTEES,
@@ -7,28 +12,32 @@ import {
 } from "./-content/site-content";
 import { MARKETING_TIERS, formatTierPrice } from "./-content/pricing-tiers";
 
+const CUSTOMER_BRAND = resolveCustomerBrandName("public-site");
+
 /**
- * CoreGrid platform public site — landing page at /coregrid.
+ * Sherivs public site — landing page at /coregrid.
  *
- * Static marketing presentation of the platform: what CoreGrid is, its
- * capabilities, installed runtimes, security posture and commercial tiers.
- * All content is typed and database-free; every interactive element links to
- * a real route (/auth for sign up and sign in, /platform for kernel detail).
- * Sign-up and sign-in resolve to the platform's single auth surface at /auth,
- * where account creation is the "Create account" mode.
+ * Static marketing presentation of Sherivs (the customer-facing brand): what
+ * Sherivs is, its capabilities, installed runtimes, security posture and
+ * commercial tiers. All content is typed and database-free; every interactive
+ * element links to a real route (/auth for sign up and sign in, /platform
+ * for kernel detail). Sign-up and sign-in resolve to the single auth surface
+ * at /auth, where account creation is the "Create account" mode.
+ *
+ * Route path `/coregrid` is preserved for compatibility; the rendered brand
+ * is Sherivs (CUSTOMER_FACING family `public-site-copy`).
  */
 
 export const Route = createFileRoute("/(site)/coregrid")({
   component: CoreGridSitePage,
   head: () => ({
     meta: [
-      { title: `${PLATFORM_NAME} — ${PLATFORM_TAGLINE}` },
+      { title: `${CUSTOMER_BRAND} — ${SHERIVS_TAGLINE}` },
       {
         name: "description",
-        content:
-          "CoreGrid is the AI-native institutional operating system: a governed kernel with reality models, missions, an AI workforce, evidence and policy — plus the domain runtimes organizations install on it.",
+        content: SHERIVS_PAGE_DESCRIPTION,
       },
-      { property: "og:title", content: `${PLATFORM_NAME} — ${PLATFORM_TAGLINE}` },
+      { property: "og:title", content: SHERIVS_PAGE_TITLE },
       {
         property: "og:description",
         content:
@@ -66,11 +75,11 @@ function SectionHeading({
 function CoreGridSitePage() {
   return (
     <>
-      {/* Hero — what CoreGrid is */}
+      {/* Hero — what Sherivs is */}
       <section aria-labelledby="coregrid-hero" className="border-b border-border">
         <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            {PLATFORM_TAGLINE}
+            {SHERIVS_TAGLINE}
           </p>
           <h1
             id="coregrid-hero"
@@ -79,10 +88,10 @@ function CoreGridSitePage() {
             The AI-native institutional operating system
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            CoreGrid unifies organizations, people, places, devices, workflows, knowledge,
-            payments and automation into one governed ecosystem — a kernel with registries,
-            events, policies and evidence, on which institutions install the domain runtimes
-            they actually need.
+            {CUSTOMER_BRAND} unifies organizations, people, places, devices, workflows, knowledge,
+            payments and automation into one governed ecosystem — a kernel with registries, events,
+            policies and evidence, on which institutions install the domain runtimes they actually
+            need.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link

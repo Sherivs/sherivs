@@ -1,15 +1,23 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
-import { PLATFORM_NAME, PLATFORM_TAGLINE } from "@/lib/platform";
+import { SHERIVS_TAGLINE } from "@/lib/brand/sherivs";
+import { resolveCustomerBrandName } from "@/lib/brand/sherivs";
+import { SherivsWordmark } from "@/components/sherivs/brand-mark";
 
 /**
- * CoreGrid platform public site — pathless layout group `(site)`.
+ * Sherivs public site — pathless layout group `(site)`.
  *
- * Presents the platform itself to visitors: what CoreGrid is, its
- * capabilities, security posture, pricing, and real routes into the product
- * (sign up / sign in at /auth). Presentation only — no tenant context, no
- * database reads, no fake submissions; every interactive element links to a
- * real route.
+ * Presents Sherivs (the customer-facing brand) to visitors: capabilities,
+ * security posture, pricing, and real routes into the product (sign up /
+ * sign in at /auth). Presentation only — no tenant context, no database
+ * reads, no fake submissions; every interactive element links to a real
+ * route.
+ *
+ * Brand law: this surface is CUSTOMER_FACING (see
+ * SHERIVS_BRAND_MIGRATION.md) and renders the Sherivs brand. The technical
+ * platform identity lives in `@/lib/platform` and is never rendered here.
  */
+
+const CUSTOMER_BRAND = resolveCustomerBrandName("public-site");
 
 export const Route = createFileRoute("/(site)")({
   component: SiteLayout,
@@ -29,9 +37,10 @@ function SiteLayout() {
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <Link
             to="/coregrid"
-            className="font-display text-lg font-bold tracking-tight focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            className="inline-flex items-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            aria-label={`${CUSTOMER_BRAND} home`}
           >
-            {PLATFORM_NAME}
+            <SherivsWordmark compact />
           </Link>
 
           <nav aria-label="Site" className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
@@ -79,8 +88,8 @@ function SiteLayout() {
       <footer className="border-t border-border">
         <div className="mx-auto grid w-full max-w-6xl gap-6 px-4 py-10 text-sm sm:grid-cols-2 sm:px-6 lg:grid-cols-3">
           <div>
-            <p className="font-display font-bold">{PLATFORM_NAME}</p>
-            <p className="mt-1 text-muted-foreground">{PLATFORM_TAGLINE}</p>
+            <p className="font-display font-bold">{CUSTOMER_BRAND}</p>
+            <p className="mt-1 text-muted-foreground">{SHERIVS_TAGLINE}</p>
           </div>
           <nav aria-label="Platform" className="grid gap-2">
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
@@ -118,7 +127,7 @@ function SiteLayout() {
           </nav>
         </div>
         <div className="border-t border-border py-4 text-center text-xs text-muted-foreground">
-          {PLATFORM_NAME} · every runtime is a tenant of the kernel, never its owner.
+          {CUSTOMER_BRAND} · every runtime is a tenant of the platform, never its owner.
         </div>
       </footer>
     </div>

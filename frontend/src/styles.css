@@ -847,3 +847,182 @@ a:focus-visible,
 
 :root { color-scheme: dark; }
 .light { color-scheme: light; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   SHERIVS EXPERIENCE TOKENS v1.0 (V1 envelope)
+   Canonical customer-facing design language. Additive only: every rule
+   below references the structural tokens above and never overrides them.
+   Full specification: SHERIVS_DESIGN_SYSTEM.md (repo root).
+   Glass is a spatial tool, not the brand: translucent treatments apply
+   only to overlay/navigation layers (shell header, drawers, palettes).
+═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Sherivs brand voice — restrained luminous accents on deep neutrals */
+  --sherivs-accent: #38e1c6;
+  --sherivs-accent-deep: #0d9488;
+  --sherivs-accent-ink: #062e2b;
+  --sherivs-gold: #f5b544;
+  --sherivs-depth-0: #070b16;
+  --sherivs-depth-1: #0a0f1e;
+  --sherivs-depth-2: #0e1628;
+
+  /* Intelligence states — AI output trust made visible */
+  --sherivs-observation: #7dd3fc;
+  --sherivs-inference: #c4b5fd;
+  --sherivs-recommendation: #f5b544;
+  --sherivs-action: #38e1c6;
+  --sherivs-evidence: #34d399;
+  --sherivs-verified: #34d399;
+  --sherivs-unverified: #f59e0b;
+  --sherivs-denied: #f87171;
+
+  /* Narrative rhythm (public experience) */
+  --sherivs-narrative-gap: clamp(1rem, 3vw, 2.5rem);
+  --sherivs-measure: 68ch;
+  --sherivs-eyebrow-tracking: 0.22em;
+
+  /* Motion — calm physics, state-communicating only */
+  --sherivs-duration-instant: 80ms;
+  --sherivs-duration-fast: 160ms;
+  --sherivs-duration-rise: 420ms;
+  --sherivs-ease-rise: cubic-bezier(0.16, 1, 0.3, 1);
+  --sherivs-ease-settle: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@layer components {
+  /* Eyebrow — numbered narrative chapters on public surfaces */
+  .sherivs-eyebrow {
+    font-size: var(--text-label);
+    font-weight: 700;
+    letter-spacing: var(--sherivs-eyebrow-tracking);
+    text-transform: uppercase;
+    color: var(--sherivs-accent);
+  }
+
+  /* Narrative block — constrained measure for long-form public copy */
+  .sherivs-narrative {
+    max-width: var(--sherivs-measure);
+  }
+
+  /* Evidence primitives — trust made visible */
+  .sherivs-evidence-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full);
+    background: var(--sherivs-unverified);
+    flex-shrink: 0;
+  }
+  .sherivs-evidence-dot[data-state="verified"] {
+    background: var(--sherivs-verified);
+  }
+  .sherivs-evidence-dot[data-state="denied"] {
+    background: var(--sherivs-denied);
+  }
+
+  .sherivs-evidence-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 10px;
+    border-radius: var(--radius-full);
+    font-size: var(--text-caption);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    border: 1px solid var(--glass-border);
+    background: color-mix(in oklab, var(--sherivs-evidence) 12%, transparent);
+    color: var(--sherivs-evidence);
+  }
+
+  /* AI-state marks — observation / inference / recommendation / action */
+  .sherivs-ai-mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--text-caption);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .sherivs-ai-mark::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full);
+    background: currentColor;
+  }
+  .sherivs-ai-mark[data-kind="observation"] {
+    color: var(--sherivs-observation);
+  }
+  .sherivs-ai-mark[data-kind="inference"] {
+    color: var(--sherivs-inference);
+  }
+  .sherivs-ai-mark[data-kind="recommendation"] {
+    color: var(--sherivs-recommendation);
+  }
+  .sherivs-ai-mark[data-kind="action"] {
+    color: var(--sherivs-action);
+  }
+
+  /* Overlay glass — the ONLY sanctioned translucent treatment for
+     floating layers (shell header, command palette, drawers) */
+  .sherivs-overlay-glass {
+    background: color-mix(in oklab, var(--surface-1) 82%, transparent);
+    backdrop-filter: blur(20px) saturate(160%);
+    border-bottom: 1px solid var(--glass-border);
+  }
+
+  /* Rise transition — page/section arrival */
+  .sherivs-rise {
+    animation: sherivs-rise var(--sherivs-duration-rise)
+      var(--sherivs-ease-rise) both;
+  }
+}
+
+@keyframes sherivs-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Intelligence pulse — represents LIVE worker/mission state only.
+   Never decorate static content with it. */
+.sherivs-live-pulse {
+  animation: sherivs-live-pulse 2.4s ease-in-out infinite;
+}
+@keyframes sherivs-live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* Reduced motion — intelligence motion degrades to instant state */
+@media (prefers-reduced-motion: reduce) {
+  .sherivs-rise,
+  .sherivs-live-pulse,
+  .uos-stagger > *,
+  .animate-fade-up {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* Light-mode Sherivs accents */
+.light {
+  --sherivs-accent: #0d9488;
+  --sherivs-accent-deep: #0f766e;
+  --sherivs-depth-0: #f6f6f4;
+  --sherivs-depth-1: #ffffff;
+  --sherivs-depth-2: #f1f1ee;
+}

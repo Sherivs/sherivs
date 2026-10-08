@@ -17,7 +17,7 @@ import { MobileSwipeToOpen } from "@/components/mobile-swipe-to-open";
 import { CommandCenterMount } from "@/components/command-center";
 import { ShellHeaderActions } from "@/components/shell/shell-header-actions";
 import { WorkspaceSwitcher } from "@/components/shell/workspace-switcher";
-import { PLATFORM_NAME } from "@/lib/platform";
+import { SHERIVS_NAME } from "@/lib/brand/sherivs";
 import { INSTALLED_RUNTIME_NAME as SCHOLAR_RUNTIME_NAME } from "@/lib/runtime/installed-runtimes";
 import { WorkspaceBottomNav } from "@/components/mobile-bottom-nav";
 import { OfflineBanner } from "@/components/offline-banner";
@@ -157,7 +157,7 @@ function AuthenticatedLayout() {
                   </div>
                   <div className="leading-tight min-w-0">
                     <div className="font-display font-bold text-sm truncate">
-                      {school?.name ?? `${PLATFORM_NAME} · ${SCHOLAR_RUNTIME_NAME}`}
+                      {school?.name ?? `${SHERIVS_NAME} · ${SCHOLAR_RUNTIME_NAME}`}
                     </div>
                     <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
                       {experience.roleTitle}
