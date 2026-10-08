@@ -1,0 +1,195 @@
+{
+  "schema": "sherivs.experience.brand-reference-audit/v1",
+  "total": 12598,
+  "byClass": {
+    "CODE_COMMENT": 707,
+    "FOLLOW_TEST_FIXTURE": 937,
+    "GENERATED": 17,
+    "PRESERVE_DATABASE": 164,
+    "PRESERVE_GOVERNANCE_RECORD": 9743,
+    "PRESERVE_INFRASTRUCTURE": 218,
+    "PRESERVE_OTHER": 11,
+    "PRESERVE_PACKAGE_IDENTITY": 27,
+    "PRESERVE_STABLE_IDENTIFIER": 4,
+    "PRESERVE_TECHNICAL_IDENTIFIER": 232,
+    "PRESERVE_TOOLING": 538
+  },
+  "actionable": [],
+  "topFiles": [
+    {
+      "file": "architecture/COREGRID_PHASE_52_SECTION_INVENTORY.json",
+      "total": 487,
+      "classes": {
+        "PRESERVE_GOVERNANCE_RECORD": 487
+      }
+    },
+    {
+      "file": "architecture/phase-52-extracts/block-01-occurrence-026.md",
+      "total": 441,
+      "classes": {
+        "PRESERVE_GOVERNANCE_RECORD": 441
+      }
+    },
+    {
+      "file": "architecture/COREGRID_PHASE_52_DECOMPOSITION_MAP.json",
+      "total": 309,
+      "classes": {
+        "PRESERVE_GOVERNANCE_RECORD": 309
+      }
+    },
+    {
+      "file": "architecture/phase-52-extracts/block-06-occurrence-186.md",
+      "total": 190,
+      "classes": {
+        "PRESERVE_GOVERNANCE_RECORD": 190
+      }
+    },
+    {
+      "file": "BOUNDARIES.md",
+      "total": 169,
+      "classes": {
+        "PRESERVE_GOVERNANCE_RECORD": 169
+      }
+    },
+    {
+      "file": "CONSTITUTION.md",
+      "total": 169,
+      "classes": {
+        "PRESERVE_GOVERNANCE_RECORD": 169
+      }
+    },
+    {
+      "file": "architecture/phase-52-extracts/block-06-occurrence-313.md",
+      "total": 147,
+      "classes": {
+        "PRESERVE_GOVERNANCE_RECORD": 147
+      }
+    },
+    {
+      "file": "REALITY.md",
+      "total": 136,
+      "classes": {
+        "PRESERVE_GOVERNANCE_RECORD": 136
+      }
+    },
+    {
+      "file": "REGISTRY.md",
+      "total": 134,
+      "classes": {
+        "PRESERVE_GOVERNANCE_RECORD": 134
+      }
+    },
+    {
+      "file": "architecture/phase-52-extracts/block-09-occurrence-207.md",
+      "total": 132,
+      "classes": {
+        "PRESERVE_GOVERNANCE_RECORD": 132
+      }
+    },
+    {
+      "file": "architecture/phase-52-extracts/block-06-occurrence-063.md",
+      "total": 127,
+      "classes": {
+        "PRESERVE_GOVERNANCE_RECORD": 127
+      }
+    },
+    {
+      "file": "COREGRID.md",
+      "total": 126,
+      "classes": {
+        "PRESERVE_GOVERNANCE_RECORD": 126
+      }
+    },
+    {
+      "file": "DECISIONS.md",
+      "total": 123,
+      "classes": {
+        "PRESERVE_GOVERNANCE_RECORD": 123
+      }
+    },
+    {
+      "file": "architecture/phase-52-extracts/block-05-occurrence-058.md",
+      "total": 119,
+      "classes": {
+        "PRESERVE_GOVERNANCE_RECORD": 119
+      }
+    },
+    {
+      "file": "PRINCIPLES.md",
+      "total": 114,
+      "classes": {
+        "PRESERVE_GOVERNANCE_RECORD": 114
+      }
+    },
+    {
+      "file": "DEPENDENCY.md",
+      "total": 111,
+      "classes": {
+        "PRESERVE_GOVERNANCE_RECORD": 111
+      }
+    },
+    {
+      "file": "PROGRESS.md",
+      "total": 108,
+      "classes": {
+        "PRESERVE_GOVERNANCE_RECORD": 108
+      }
+    },
+    {
+      "file": "ECOSYSTEM.md",
+      "total": 102,
+      "classes": {
+        "PRESERVE_GOVERNANCE_RECORD": 102
+      }
+    },
+    {
+      "file": "architecture/phase-52-extracts/block-40-occurrence-119.md",
+      "total": 97,
+      "classes": {
+        "PRESERVE_GOVERNANCE_RECORD": 97
+      }
+    },
+    {
+      "file": "GOVERNANCE.md",
+      "total": 95,
+      "classes": {
+        "PRESERVE_GOVERNANCE_RECORD": 95
+      }
+    },
+    {
+      "file": "README.md",
+      "total": 92,
+      "classes": {
+        "PRESERVE_GOVERNANCE_RECORD": 92
+      }
+    },
+    {
+      "file": "architecture/phase-52-extracts/block-06-occurrence-072.md",
+      "total": 91,
+      "classes": {
+        "PRESERVE_GOVERNANCE_RECORD": 91
+      }
+    },
+    {
+      "file": "architecture/phase-52-extracts/block-01-occurrence-025.md",
+      "total": 88,
+      "classes": {
+        "PRESERVE_GOVERNANCE_RECORD": 88
+      }
+    },
+    {
+      "file": "architecture/phase-52-extracts/block-01-occurrence-048.md",
+      "total": 85,
+      "classes": {
+        "PRESERVE_GOVERNANCE_RECORD": 85
+      }
+    },
+    {
+      "file": "architecture-map.md",
+      "total": 84,
+      "classes": {
+        "PRESERVE_GOVERNANCE_RECORD": 84
+      }
+    }
+  ]
+}
