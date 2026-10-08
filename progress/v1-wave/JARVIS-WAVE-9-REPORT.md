@@ -113,3 +113,10 @@ Operator instruction: "build the entire remaining."
 2. **Deployment upload trimmed 4,244 → 2,397 files (−43%)** via a new `.vercelignore` (git tracking untouched — the agent-infrastructure dirs stay versioned). Production `dpl_77J7Ln5onboyVABfYfwxn3bEB9oY` READY from HEAD; all four hostnames re-verified 200 post-trim; `npm run verify` exit 0.
 3. **Nitro version finding:** nitro 3.x has no stable release (latest tag = `3.0.260903-beta`); the verified-working `3.0.260603-beta` pin is retained deliberately; revisit when stable ships.
 4. **Remaining-work ledger state:** everything agent-actionable is closed. What remains is operator-only by nature: `TWILIO_FROM_NUMBER` (CAC console hold), optional Sentry DSN, PostHog EU migration, Apple/Google paid enrollments, Upstash West-EU confirmation.
+
+## Addendum 6 — known risks executed: nitro upgraded to newest beta, governance corpus re-included (2026-10-08T08:2xZ, DECISIONS.md #214 addendum §w)
+
+Operator instruction: "redeploy it on the sherivs.com … execute and build the Known risks."
+
+1. **Nitro upgraded** `3.0.260603-beta` → `3.0.260903-beta` (newest release; still no stable 3.x). Gate exit 0; production `dpl_AMprfjp1DoEAkEgVWCViwd2qch6w` READY from `b657bb9`; all hostnames 200; **8/8 distributed nodes 200** on www.
+2. **Governance corpus re-included in the upload** per operator instruction — `.vercelignore` now excludes only agent-session junk; upload 2,397 → 3,818 files (still below the 4,244 pre-trim baseline). Git tracking untouched throughout.
