@@ -246,6 +246,7 @@ export function routeFileCandidates(path: string): readonly string[] {
   return [
     `${dotted}.tsx`,
     `${dotted}.ts`,
+    `${dotted}.index.tsx`,
     `${nested}.tsx`,
     `${nested}/index.tsx`,
     `${nested}/route.tsx`,

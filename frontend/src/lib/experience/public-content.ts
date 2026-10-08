@@ -148,7 +148,7 @@ export const PLATFORM_PILLARS: readonly PlatformPillar[] = [
       { title: "Delivery evidence", detail: "Each governed send appends an evidence row with a redacted recipient and outcome." },
       { title: "Payments", detail: "Server-side signature verification is authoritative; the client never asserts payment state." },
     ],
-    backedBy: ["frontend/src/lib/integration-adapters.ts", "frontend/src/lib/communication-providers.ts", "frontend/src/lib/security/credential-broker.ts", "frontend/src/lib/payments"],
+    backedBy: ["frontend/src/lib/integration-core.ts", "frontend/src/lib/adapters", "frontend/src/lib/communication-providers.ts", "frontend/src/lib/security/credential-broker.ts", "frontend/src/lib/payments"],
   },
 ];
 

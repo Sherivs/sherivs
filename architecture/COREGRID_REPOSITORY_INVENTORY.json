@@ -862,7 +862,7 @@
       "frontend/src/routes/marketplace.tsx",
       "frontend/src/routes/news.$id.tsx",
       "frontend/src/routes/platform.org.tsx",
-      "frontend/src/routes/platform.tsx",
+      "frontend/src/routes/(site)/platform.kernel.tsx",
       "frontend/src/routes/privacy.tsx",
       "frontend/src/routes/reality.$class.tsx",
       "frontend/src/routes/reset-password.tsx",

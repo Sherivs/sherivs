@@ -8,8 +8,17 @@
  *
  * A runtime's own name belongs here and in the runtime layer, never in the kernel.
  */
-import { RUNTIME_SCHOLAR, SCHOLAR_NAV_CONTRIBUTIONS } from "./scholar-nav-catalog";
+import {
+  RUNTIME_SCHOLAR,
+  SCHOLAR_NAV_CONTRIBUTIONS,
+  scholarCapabilitiesForRole,
+} from "./scholar-nav-catalog";
 import type { NavContribution } from "@/lib/workspace-engine/navigation";
+import {
+  resolveAuthenticatedDestination,
+  type AuthenticatedDestination,
+} from "@/lib/experience/destination";
+import type { AppRole } from "@/lib/roles";
 
 /** Everything a runtime's own layer exports (capability sets, labels, helpers). */
 export * from "./scholar-nav-catalog";
@@ -45,3 +54,36 @@ export const INSTALLED_NAV_CONTRIBUTION_SETS: readonly InstalledNavContributionS
 /** Every contribution from every installed runtime — what the shell renders. */
 export const ALL_NAV_CONTRIBUTIONS: readonly NavContribution[] =
   INSTALLED_NAV_CONTRIBUTION_SETS.flatMap((set) => set.contributions);
+
+/**
+ * The viewer's authorized capability set, aggregated across installed
+ * runtimes. Each runtime declares which of its capabilities a membership kind
+ * holds; the platform never hand-writes that mapping.
+ */
+export function installedCapabilitiesForRole(role: AppRole): ReadonlySet<string> {
+  return scholarCapabilitiesForRole(role);
+}
+
+/**
+ * Where an authenticated person lands. Resolved from EVERY installed
+ * runtime's contributions against the viewer's authorized capabilities —
+ * never a hardcoded runtime surface. A linked identity whose capabilities
+ * resolve to no chrome is reported as `unlinked`, so the shell can render an
+ * honest state instead of guessing a destination.
+ */
+export function authenticatedDestinationForRole(
+  role: AppRole | null | undefined,
+): AuthenticatedDestination {
+  return resolveAuthenticatedDestination({
+    authenticated: true,
+    linked: Boolean(role),
+    contributions: ALL_NAV_CONTRIBUTIONS,
+    capabilities: role ? installedCapabilitiesForRole(role) : new Set<string>(),
+  });
+}
+
+/** Convenience for callers that only need a path (falls back to the platform root). */
+export function authenticatedHomeForRole(role: AppRole | null | undefined): string {
+  const destination = authenticatedDestinationForRole(role);
+  return destination.kind === "workspace" ? destination.path : "/";
+}

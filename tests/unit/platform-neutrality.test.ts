@@ -58,7 +58,7 @@ const NEUTRAL_MODULES = [
 
 /** Platform/super-admin surfaces: control-plane UI, never a vertical's portal. */
 const PLATFORM_SURFACES = [
-  "frontend/src/routes/platform.tsx",
+  "frontend/src/routes/(site)/platform.kernel.tsx",
   "frontend/src/routes/_authenticated/super-admin/runtime-contracts.tsx",
   "frontend/src/routes/_authenticated/super-admin/agent-governance.tsx",
   "frontend/src/routes/_authenticated/super-admin/workspace-projection.tsx",

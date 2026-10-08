@@ -91,7 +91,7 @@ describe("phase-contract coverage snapshot (platform surface data)", () => {
   });
 
   it("binds the /platform surface to the snapshot, not to hardcoded totals", () => {
-    const surface = readFileSync(join(ROOT, "frontend/src/routes/platform.tsx"), "utf8");
+    const surface = readFileSync(join(ROOT, "frontend/src/routes/(site)/platform.kernel.tsx"), "utf8");
     expect(surface).toContain("phaseContractCoverageSnapshot");
     expect(surface).toContain("coverage.total");
     expect(surface).toContain("coverage.rows.map");

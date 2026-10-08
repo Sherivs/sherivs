@@ -3,9 +3,9 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
-import { scholarWorkspaceHome } from "@/lib/runtime/nav-registry";
+import { authenticatedDestinationForRole } from "@/lib/runtime/nav-registry";
 import { PLATFORM_NAME } from "@/lib/platform";
-import { INSTALLED_RUNTIME_NAME as SCHOLAR_RUNTIME_NAME } from "@/lib/runtime/installed-runtimes";
+import { SherivsLockup } from "@/components/sherivs/mark";
 import { provisionDemoEnterprise } from "@/lib/runtime/scholar/demo-provision.functions";
 
 export const Route = createFileRoute("/auth")({
@@ -47,10 +47,14 @@ function AuthPage() {
     }
   }
 
-  // If already signed in, redirect to the right dashboard
+  // Already signed in → land in the person's resolved context. The
+  // destination is derived from installed runtimes × authorized capabilities;
+  // it is never a default runtime surface.
   useEffect(() => {
-    if (!loading && role) {
-      navigate({ to: scholarWorkspaceHome(role), replace: true });
+    if (loading || !role) return;
+    const destination = authenticatedDestinationForRole(role);
+    if (destination.kind === "workspace") {
+      navigate({ to: destination.path, replace: true });
     }
   }, [loading, role, navigate]);
 
@@ -116,7 +120,7 @@ function AuthPage() {
         });
         if (error) throw error;
         setInfo(
-          "Account created. A school admin must link your account to a school before you can access a portal.",
+          "Account created. An administrator of your organization must link your account before a workspace is available.",
         );
       } else {
         // forgot password — call audit FIRST so the server can enforce rate-limit.
@@ -181,11 +185,18 @@ function AuthPage() {
               </div>
             </div>
           )}
+          {!school && (
+            <div className="mb-5">
+              <SherivsLockup />
+            </div>
+          )}
           <h1 className="font-display text-2xl font-bold">{title}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {mode === "forgot"
               ? "Enter the email tied to your account and we'll send you a reset link."
-              : `${PLATFORM_NAME} portal access — ${SCHOLAR_RUNTIME_NAME} runtime`}
+              : school
+                ? `Access to ${school.name} on ${PLATFORM_NAME}.`
+                : `Your workspace is resolved from your organization and role after you sign in.`}
           </p>
         </div>
 
@@ -272,8 +283,8 @@ function AuthPage() {
               <span>★</span> Enterprise demo
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              One click provisions an Enterprise-tier school so every locked feature (Expenses,
-              Digital Twin, CoreGrid Intelligence, etc.) unlocks.
+              One click provisions an Enterprise-tier organization on the education runtime so
+              every tier-gated feature (expenses, Digital Twin, intelligence, etc.) unlocks.
             </p>
             <button
               type="button"
@@ -330,7 +341,6 @@ function AuthPage() {
         </div>
       </div>
 
-      <style>{`.uos-input{display:block;width:100%;border-radius:.5rem;background:var(--color-surface-2);border:1px solid var(--color-border);padding:.55rem .75rem;color:var(--color-foreground);outline:none}.uos-input:focus{box-shadow:0 0 0 2px var(--color-ring)}`}</style>
     </div>
   );
 }

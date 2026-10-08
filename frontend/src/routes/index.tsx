@@ -1,44 +1,56 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useApp } from "@/contexts/app-context";
-import { scholarWorkspaceHome } from "@/lib/runtime/nav-registry";
+import { authenticatedDestinationForRole } from "@/lib/runtime/nav-registry";
 import { PublicSchoolSite } from "@/components/public/site";
-import { CommandCentre } from "@/components/command-centre/command-centre";
-import { PLATFORM_NAME } from "@/lib/platform";
-import { INSTALLED_RUNTIME_DESCRIPTION as SCHOLAR_RUNTIME_DESCRIPTION } from "@/lib/runtime/installed-runtimes";
+import { SherivsHome } from "@/components/sherivs/public/home";
+import { PublicShell } from "@/components/sherivs/public/public-shell";
+import { StateBlock } from "@/components/sherivs/primitives";
+import { BRAND, BRAND_PAGE_DESCRIPTION, BRAND_PAGE_TITLE, canonicalUrl } from "@/lib/experience/brand";
+import { resolveLandingPlane } from "@/lib/experience/landing.functions";
 
+/**
+ * `/` — context dispatcher.
+ *
+ *   tenant context (host or ?school=slug)  → that organization's public site
+ *   signed in, linked, on the platform host → the person's resolved workspace
+ *   anyone else                             → the Sherivs public homepage
+ *
+ * The post-auth destination is resolved from installed runtimes × authorized
+ * capabilities (never a hardcoded runtime). Tenant context is resolved by
+ * the app context, never trusted from the client beyond the slug lookup.
+ */
 export const Route = createFileRoute("/")({
   component: Index,
+  // Resolved on the server from the request URL so the public homepage is
+  // server-rendered for anonymous platform visitors (SEO) and organization
+  // sites keep their loading state until tenant data arrives.
+  loader: () => resolveLandingPlane(),
   head: () => ({
     meta: [
-      { title: `CoreGrid Command Centre — ${SCHOLAR_RUNTIME_DESCRIPTION}` },
-      {
-        name: "description",
-        content:
-          "The CoreGrid Command Centre — the platform operating surface. Provision organizations, roles and policies across a 51-phase governed platform.",
-      },
-      { property: "og:title", content: `${PLATFORM_NAME} Command Centre` },
-      {
-        property: "og:description",
-        content: "Provision organizations, roles and policies on the CoreGrid platform.",
-      },
+      { title: BRAND_PAGE_TITLE },
+      { name: "description", content: BRAND_PAGE_DESCRIPTION },
+      { property: "og:title", content: BRAND_PAGE_TITLE },
+      { property: "og:description", content: BRAND_PAGE_DESCRIPTION },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://universalschoolos.com/" },
+      { property: "og:url", content: canonicalUrl("/") },
     ],
-    links: [{ rel: "canonical", href: "https://universalschoolos.com/" }],
+    links: [{ rel: "canonical", href: canonicalUrl("/") }],
   }),
 });
 
 function Index() {
-  const { loading, school, tenantSlug, role, profile, superAdmin } = useApp();
+  const { loading, school, tenantSlug, role } = useApp();
+  const landing = Route.useLoaderData();
   const navigate = useNavigate();
 
-  // Signed-in users (on the platform host, not a tenant site) → their dashboard
+  const destination = !loading && role && !tenantSlug ? authenticatedDestinationForRole(role) : null;
+
   useEffect(() => {
-    if (!loading && role && !tenantSlug) {
-      navigate({ to: scholarWorkspaceHome(role), replace: true });
+    if (destination?.kind === "workspace") {
+      navigate({ to: destination.path, replace: true });
     }
-  }, [loading, role, tenantSlug, navigate]);
+  }, [destination, navigate]);
 
   // Per-tenant document title + meta description + OG image + JSON-LD
   useEffect(() => {
@@ -47,7 +59,7 @@ function Index() {
     const tagline =
       (school.hero_subheadline as string | null) ??
       (school.motto as string | null) ??
-      "Official school website";
+      "Official website";
     document.title = `${school.name} — ${tagline}`;
     const desc = ((school.about as string | null) ?? tagline).slice(0, 300);
 
@@ -125,17 +137,44 @@ function Index() {
     };
   }, [school]);
 
-  if (loading) {
-    return <div className="min-h-dvh grid place-items-center text-muted-foreground">Loading…</div>;
+  // Organization context is known from the URL but its data has not loaded:
+  // hold an honest loading state. On the platform plane the public homepage
+  // renders immediately (server-side too); a signed-in visitor is redirected
+  // by the effect above once their session resolves.
+  if (loading && landing.tenantSlug) {
+    return (
+      <div className="grid min-h-dvh place-items-center bg-plane-0 px-4">
+        <StateBlock kind="loading" title={`Resolving your ${BRAND.name} context`} compact />
+      </div>
+    );
   }
 
-  // Tenant context (subdomain OR ?school=slug) → render that school's public site
+  // Tenant context (subdomain OR ?school=slug) → render that organization's public site
   if (school) {
     return <PublicSchoolSite school={school} />;
   }
 
-  // CoreGrid Command Centre — the platform's primary workspace surface for the
-  // African Educational Runtime (Phases 1–51). Dynamic workspace: from here an
-  // authorized operator provisions a school, its role model, and its policies.
-  return <CommandCentre />;
+  // Signed in and linked, but the authorized capability set resolves to no
+  // workspace chrome: say so honestly instead of guessing a destination.
+  if (destination?.kind === "unlinked") {
+    return (
+      <PublicShell>
+        <div className="sh-container sh-section">
+          <StateBlock
+            kind="forbidden"
+            title="No workspace is projected for this account yet"
+            description="Your identity is signed in, but no installed runtime contributes a workspace for your current authorization. An administrator of your organization needs to assign you a role."
+          />
+        </div>
+      </PublicShell>
+    );
+  }
+
+  // Signed-in users are redirected by the effect above; render the public
+  // homepage for everyone else (and briefly while the redirect commits).
+  return (
+    <PublicShell>
+      <SherivsHome />
+    </PublicShell>
+  );
 }

@@ -11,27 +11,29 @@ import { type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { AppProvider } from "@/contexts/app-context";
 import { PLATFORM_PAGE_DESCRIPTION, PLATFORM_PAGE_TITLE } from "@/lib/platform";
+import { BRAND, canonicalUrl } from "@/lib/experience/brand";
+import { StateBlock } from "@/components/sherivs/primitives";
 import { Toaster } from "@/components/ui/sonner";
 import { RouteProgressBar } from "@/components/route-progress-bar";
 import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-dvh items-center justify-center px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold">404</h1>
-        <h2 className="mt-4 text-xl font-semibold">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist.
-        </p>
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
-          >
-            Go home
-          </Link>
-        </div>
+    <div className="grid min-h-dvh place-items-center bg-plane-0 px-4 text-ink-1">
+      <div className="w-full max-w-md">
+        <StateBlock
+          kind="not-found"
+          title="Page not found"
+          description="The address does not match any surface on this platform."
+          action={
+            <Link
+              to="/"
+              className="sh-interactive sh-focus sh-small inline-flex h-10 items-center rounded-[var(--sh-radius-md)] bg-signal px-4 font-semibold text-signal-on hover:bg-signal-strong"
+            >
+              Go home
+            </Link>
+          }
+        />
       </div>
     </div>
   );
@@ -40,30 +42,35 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset?: () => void }) {
   console.error(error);
   return (
-    <div className="flex min-h-dvh items-center justify-center px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold">Something went wrong</h1>
-        <p className="mt-2 text-sm text-muted-foreground break-words">
-          {error?.message ?? "An unexpected error occurred."}
-        </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          {reset && (
-            <button
-              onClick={() => reset()}
-              className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
-            >
-              Try again
-            </button>
-          )}
-          <button
-            onClick={() => {
-              if (typeof window !== "undefined") window.location.reload();
-            }}
-            className="rounded-md border border-border px-4 py-2 text-sm font-semibold hover:bg-accent"
-          >
-            Reload page
-          </button>
-        </div>
+    <div className="grid min-h-dvh place-items-center bg-plane-0 px-4 text-ink-1">
+      <div className="w-full max-w-md">
+        <StateBlock
+          kind="error"
+          title="Something went wrong"
+          description={error?.message ?? "An unexpected error occurred."}
+          action={
+            <>
+              {reset && (
+                <button
+                  type="button"
+                  onClick={() => reset()}
+                  className="sh-interactive sh-focus sh-small inline-flex h-10 items-center rounded-[var(--sh-radius-md)] bg-signal px-4 font-semibold text-signal-on hover:bg-signal-strong"
+                >
+                  Try again
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof window !== "undefined") window.location.reload();
+                }}
+                className="sh-interactive sh-focus sh-small inline-flex h-10 items-center rounded-[var(--sh-radius-md)] border border-line-2 bg-plane-2 px-4 font-semibold text-ink-1"
+              >
+                Reload page
+              </button>
+            </>
+          }
+        />
       </div>
     </div>
   );
@@ -81,14 +88,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: PLATFORM_PAGE_DESCRIPTION },
       { property: "og:description", content: PLATFORM_PAGE_DESCRIPTION },
       { name: "twitter:description", content: PLATFORM_PAGE_DESCRIPTION },
-      { property: "og:image", content: "https://universalschoolos.com/og-image.png" },
-      { name: "twitter:image", content: "https://universalschoolos.com/og-image.png" },
-      { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:site_name", content: BRAND.name },
+      { property: "og:image", content: canonicalUrl("/icons/icon-512.png") },
+      { name: "twitter:image", content: canonicalUrl("/icons/icon-512.png") },
+      { name: "twitter:card", content: "summary" },
       { property: "og:type", content: "website" },
       // Served, generated manifest (see routes/manifest[.]webmanifest.ts).
-      { name: "theme-color", content: "#1d4ed8" },
+      // Theme colour mirrors --sh-plane-0 (dark) / --sh-plane-0 (light) in sherivs-tokens.css.
+      { name: "theme-color", media: "(prefers-color-scheme: dark)", content: "#0b0d12" },
+      { name: "theme-color", media: "(prefers-color-scheme: light)", content: "#f9fafb" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-title", content: "CoreGrid" },
+      { name: "apple-mobile-web-app-title", content: BRAND.name },
       { name: "mobile-web-app-capable", content: "yes" },
     ],
     links: [
@@ -98,7 +108,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", type: "image/png", sizes: "192x192", href: "/icons/icon-192.png" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap",
       },
     ],
   }),
@@ -116,10 +126,7 @@ function RootShell({ children }: { children: ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
       </head>
       <body>
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-white focus:text-black focus:rounded-lg focus:font-semibold"
-        >
+        <a href="#main-content" className="sh-skip-link">
           Skip to main content
         </a>
         {children}

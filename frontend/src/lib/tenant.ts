@@ -16,10 +16,8 @@ import { PLATFORM_HOSTS } from "@/lib/experience/brand";
 
 const RESERVED_SUBS = new Set(["www", "app", "api", "admin", "dashboard"]);
 
-export function resolveTenantSlug(): string | null {
-  if (typeof window === "undefined") return null;
-
-  const url = new URL(window.location.href);
+/** Pure resolver — usable on the server (request URL) and the client (window). */
+export function tenantSlugFromUrl(url: URL): string | null {
   const qp = url.searchParams.get("school");
   if (qp) return qp.toLowerCase();
 
@@ -31,4 +29,9 @@ export function resolveTenantSlug(): string | null {
   const first = parts[0].toLowerCase();
   if (RESERVED_SUBS.has(first)) return null;
   return first;
+}
+
+export function resolveTenantSlug(): string | null {
+  if (typeof window === "undefined") return null;
+  return tenantSlugFromUrl(new URL(window.location.href));
 }

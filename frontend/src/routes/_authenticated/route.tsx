@@ -18,7 +18,7 @@ import { CommandCenterMount } from "@/components/command-center";
 import { ShellHeaderActions } from "@/components/shell/shell-header-actions";
 import { WorkspaceSwitcher } from "@/components/shell/workspace-switcher";
 import { PLATFORM_NAME } from "@/lib/platform";
-import { INSTALLED_RUNTIME_NAME as SCHOLAR_RUNTIME_NAME } from "@/lib/runtime/installed-runtimes";
+import { SherivsLockup } from "@/components/sherivs/mark";
 import { WorkspaceBottomNav } from "@/components/mobile-bottom-nav";
 import { OfflineBanner } from "@/components/offline-banner";
 import { AppFramePreview } from "@/components/app-frame-preview";
@@ -26,7 +26,7 @@ import {
   ALL_NAV_CONTRIBUTIONS,
   scholarCapabilitiesForPortal,
   scholarCapabilitiesForRole,
-  scholarWorkspaceHome,
+  authenticatedHomeForRole,
   scholarWorkspaceLabelForRole,
   // The runtime layer names its own portal kinds; the shell speaks of them generically.
   type ScholarPortalKind as RuntimePortalKind,
@@ -92,9 +92,9 @@ function AuthenticatedLayout() {
         <div className="max-w-md uos-card p-8 text-center">
           <h1 className="font-display text-xl font-bold">Account not yet linked</h1>
           <p className="mt-3 text-sm text-muted-foreground">
-            Your sign-in is valid, but your account has not been linked to a school yet. A school
-            administrator (or a CoreGrid platform super admin) needs to assign you a role before you
-            can open a portal.
+            Your sign-in is valid, but your account has not been linked to an organization yet. An
+            administrator of your organization (or a {PLATFORM_NAME} platform operator) needs to
+            assign you a role before a workspace can be projected for you.
           </p>
           <button
             onClick={async () => {
@@ -111,7 +111,7 @@ function AuthenticatedLayout() {
   }
 
   const displayName = profile?.full_name ?? superAdmin?.full_name ?? "User";
-  const dashHref = role ? scholarWorkspaceHome(role) : "/";
+  const dashHref = role ? authenticatedHomeForRole(role) : "/";
   const memberLabel = role
     ? scholarWorkspaceLabelForMember(
         myPosition.data?.kind_code ?? null,
@@ -152,17 +152,21 @@ function AuthenticatedLayout() {
               <div className="flex items-center gap-2 min-w-0">
                 {role && <SidebarTrigger />}
                 <Link to={dashHref} className="flex items-center gap-2 min-w-0">
-                  <div className="size-8 rounded-lg uos-tenant-bg grid place-items-center font-bold shrink-0">
-                    {(school?.name?.[0] ?? "U") as string}
-                  </div>
-                  <div className="leading-tight min-w-0">
-                    <div className="font-display font-bold text-sm truncate">
-                      {school?.name ?? `${PLATFORM_NAME} · ${SCHOLAR_RUNTIME_NAME}`}
-                    </div>
-                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                      {experience.roleTitle}
-                    </div>
-                  </div>
+                  {school ? (
+                    <>
+                      <div className="size-8 rounded-lg uos-tenant-bg grid place-items-center font-bold shrink-0">
+                        {(school.name?.[0] ?? "O") as string}
+                      </div>
+                      <div className="leading-tight min-w-0">
+                        <div className="font-display font-bold text-sm truncate">{school.name}</div>
+                        <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                          {experience.roleTitle}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <SherivsLockup secondary={experience.roleTitle} />
+                  )}
                 </Link>
                 <WorkspaceSwitcher
                   options={school ? [{ id: school.id, label: school.name ?? "Workspace" }] : []}
