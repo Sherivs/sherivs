@@ -82,11 +82,11 @@ export const MARKETING_TIERS: readonly MarketingTier[] = [
     name: "Professional",
     monthlyPrice: 75_000,
     annualPrice: 750_000,
-    summary: "Full governed autonomy: AI workforce, twins and API access.",
+    summary: "Governed AI workforce, white-label and priority support.",
     featured: false,
     highlights: [
       "Up to 1,000 members",
-      "AI workforce and Digital Twin",
+      "Governed AI workforce",
       "White-label and custom domain",
       "Priority support",
     ],
@@ -105,6 +105,6 @@ export const MARKETING_TIERS: readonly MarketingTier[] = [
       "Full API and webhook surface",
       "Fleet and branch management",
     ],
-    ctaLabel: "Talk to sales",
+    ctaLabel: "Create account",
   },
 ];

@@ -149,7 +149,7 @@ export const PUBLIC_ROUTES: readonly PublicRouteEntry[] = [
   live(
     "/solutions/education",
     "Education — Sherivs Scholar",
-    "Sherivs Scholar is the education runtime on the Sherivs kernel.",
+    "Sherivs Scholar, the education runtime installed on the Sherivs kernel.",
     "solutions",
     0.7,
   ),

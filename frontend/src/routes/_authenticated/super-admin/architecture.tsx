@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { PortalPage } from "@/components/portal-shell";
 import {
   KERNEL_CAPABILITIES,
   type KernelCapability,
@@ -7,19 +8,9 @@ import { phaseContractCoverageSnapshot } from "@/lib/kernel/phase-contracts";
 import { foundationStandardsSnapshot } from "@/lib/foundation-standards";
 import { scholarConsumedKernelCapabilities } from "@/lib/runtime/scholar-consumption";
 
-export const Route = createFileRoute("/platform")({
+export const Route = createFileRoute("/_authenticated/super-admin/architecture")({
   component: Platform,
-  head: () => ({
-    meta: [
-      { title: "Sherivs — the platform that powers any organization" },
-      {
-        name: "description",
-        content:
-          "One governed platform: identity, tenancy, workspaces, AI, security, analytics and 50 kernel capabilities any organization — whatever their domain — can consume.",
-      },
-      { property: "og:type", content: "website" },
-    ],
-  }),
+  head: () => ({ meta: [{ title: "Platform architecture — Sherivs" }] }),
 });
 
 function groupByPhase(capabilities: readonly KernelCapability[]): Array<{
@@ -44,26 +35,15 @@ function Platform() {
   const coverage = phaseContractCoverageSnapshot();
 
   return (
-    <div className="min-h-screen bg-[color:var(--background)] text-[color:var(--foreground)]">
-      <header className="border-b border-border">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4">
-          <div className="font-display text-lg font-bold">Sherivs</div>
-          <nav className="flex items-center gap-4 text-sm">
-            <Link to="/" className="text-muted-foreground hover:text-foreground">
-              Command Centre
-            </Link>
-            <a href="/auth" className="text-muted-foreground hover:text-foreground">
-              Sign in
-            </a>
-          </nav>
-        </div>
-      </header>
-
-      <main className="mx-auto w-full max-w-6xl px-4 py-10">
+    <PortalPage
+      title="Platform architecture"
+      subtitle="Internal view of kernel capabilities and phase contracts. Operators only; never exposed on the public site."
+    >
+      <div>
         <section className="mb-10">
-          <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
+          <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
             One platform. Every organization. Their rules.
-          </h1>
+          </h2>
           <p className="mt-4 max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
             Sherivs is a governed intelligence platform. Whatever an organization runs — a school,
             a ministry, a company — Sherivs adapts: identity and tenancy first, then the workspace
@@ -229,12 +209,7 @@ function Platform() {
             canonical registry.
           </p>
         </section>
-      </main>
-
-      <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
-        Sherivs · governed intelligence platform · every runtime is a tenant of the kernel, never
-        its owner.
-      </footer>
-    </div>
+      </div>
+    </PortalPage>
   );
 }

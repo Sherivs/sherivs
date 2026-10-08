@@ -3,34 +3,22 @@ import { useEffect } from "react";
 import { useApp } from "@/contexts/app-context";
 import { scholarWorkspaceHome } from "@/lib/runtime/nav-registry";
 import { PublicSchoolSite } from "@/components/public/site";
-import { CommandCentre } from "@/components/command-centre/command-centre";
-import { PLATFORM_NAME } from "@/lib/platform";
-import { INSTALLED_RUNTIME_DESCRIPTION as SCHOLAR_RUNTIME_DESCRIPTION } from "@/lib/runtime/installed-runtimes";
+import { PublicShell } from "@/components/sherivs/public-shell";
+import { HomePage } from "@/components/sherivs/home-page";
+import { publicHead } from "@/lib/experience-system/seo";
+import {
+  organizationJsonLd,
+  serializeJsonLd,
+  websiteJsonLd,
+} from "@/lib/experience-system/content";
 
 export const Route = createFileRoute("/")({
   component: Index,
-  head: () => ({
-    meta: [
-      { title: `Sherivs Command Centre — ${SCHOLAR_RUNTIME_DESCRIPTION}` },
-      {
-        name: "description",
-        content:
-          "The Sherivs Command Centre — the platform operating surface. Provision organizations, roles and policies across a 51-phase governed platform.",
-      },
-      { property: "og:title", content: `${PLATFORM_NAME} Command Centre` },
-      {
-        property: "og:description",
-        content: "Provision organizations, roles and policies on the Sherivs platform.",
-      },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://universalschoolos.com/" },
-    ],
-    links: [{ rel: "canonical", href: "https://universalschoolos.com/" }],
-  }),
+  head: () => publicHead({ path: "/" }),
 });
 
 function Index() {
-  const { loading, school, tenantSlug, role, profile, superAdmin } = useApp();
+  const { loading, school, tenantSlug, role } = useApp();
   const navigate = useNavigate();
 
   // Signed-in users (on the platform host, not a tenant site) → their dashboard
@@ -134,8 +122,18 @@ function Index() {
     return <PublicSchoolSite school={school} />;
   }
 
-  // CoreGrid Command Centre — the platform's primary workspace surface for the
-  // African Educational Runtime (Phases 1–51). Dynamic workspace: from here an
-  // authorized operator provisions a school, its role model, and its policies.
-  return <CommandCentre />;
+  // Platform host, no tenant: the public Sherivs home. Operator surfaces live
+  // behind authentication (/command-centre, /super-admin) and are never
+  // reachable from here without a gated session.
+  return (
+    <PublicShell>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: serializeJsonLd([organizationJsonLd(), websiteJsonLd()]),
+        }}
+      />
+      <HomePage />
+    </PublicShell>
+  );
 }

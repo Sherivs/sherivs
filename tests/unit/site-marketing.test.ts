@@ -1,5 +1,5 @@
 /**
- * CoreGrid — V1-007 platform public site (`(site)` route group) tests.
+ * Sherivs — V1-007 platform public site (`(site)` route group) tests.
  *
  * The vitest environment here is `node` (no jsdom/RTL in this repository), so
  * route surfaces are validated the way existing structural tests validate
@@ -28,7 +28,6 @@ const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const read = (ref: string) => readFileSync(join(ROOT, ref), "utf8");
 
 const SITE_LAYOUT = "frontend/src/routes/(site)/route.tsx";
-const SITE_PAGE = "frontend/src/routes/(site)/coregrid.tsx";
 
 describe("Pricing tier catalog (typed module)", () => {
   it("exposes the five commercial tiers by stable id", () => {
@@ -109,58 +108,71 @@ describe("Site content view-models", () => {
 
 describe("Route modules — real links, no fake submissions, landmarks", () => {
   const layout = read(SITE_LAYOUT);
-  const page = read(SITE_PAGE);
+  const PAGES = [
+    "pricing.tsx",
+    "security.tsx",
+    "solutions.index.tsx",
+    "solutions.organizations.tsx",
+    "solutions.education.tsx",
+    "platform.index.tsx",
+    "platform.$slug.tsx",
+    "status.tsx",
+    "legal.accessibility.tsx",
+    "resources.index.tsx",
+  ].map((f) => ({ f, source: read(`frontend/src/routes/(site)/${f}`) }));
 
-  it("registers the (site) layout group and the /coregrid page in the generated tree", () => {
+  it("registers the (site) layout group and the public pages in the generated tree", () => {
     const tree = read("frontend/src/routeTree.gen.ts");
     expect(tree).toContain("'/(site)'");
-    expect(tree).toContain("'/(site)/coregrid'");
+    for (const path of ["/(site)/pricing", "/(site)/security", "/(site)/status", "/(site)/platform/$slug"]) {
+      expect(tree).toContain(`'${path}'`);
+    }
   });
 
-  it("declares the expected file route ids", () => {
+  it("wraps every public page in the Sherivs public shell", () => {
     expect(layout).toContain('createFileRoute("/(site)")');
-    expect(page).toContain('createFileRoute("/(site)/coregrid")');
+    expect(layout).toContain("PublicShell");
+    expect(layout).toContain("<Outlet");
   });
 
-  it("links sign-up and sign-in to the real auth surface at /auth", () => {
-    for (const source of [layout, page]) {
-      expect(source).toContain('to="/auth"');
-    }
-    // No dead platform sign-up route is invented.
-    expect(layout).not.toContain('to="/signup"');
-    expect(page).not.toContain('to="/signup"');
+  it("keeps the legacy /coregrid path as a permanent redirect to the home page", () => {
+    const legacy = read("frontend/src/routes/(site)/coregrid.tsx");
+    expect(legacy).toContain("redirect");
+    expect(legacy).toContain("301");
   });
 
-  it("contains no form and no fake submission — every CTA is a route link", () => {
-    for (const source of [layout, page]) {
-      expect(source).not.toMatch(/<form\b/);
-      expect(source).not.toMatch(/onSubmit/);
-      expect(source).not.toMatch(/<button\b/);
+  it("contains no form and no fake submission anywhere on the public site", () => {
+    for (const { f, source } of [{ f: "route.tsx", source: layout }, ...PAGES]) {
+      expect(source, f).not.toMatch(/<form\b/);
+      expect(source, f).not.toMatch(/onSubmit/);
     }
   });
 
-  it("renders semantic landmarks and the four anchored sections", () => {
-    expect(layout).toContain("<header");
-    expect(layout).toContain("<main");
-    expect(layout).toContain("<footer");
-    expect(layout).toMatch(/aria-label="Site"/);
-    for (const anchor of ["capabilities", "runtimes", "security", "pricing"]) {
-      expect(page).toContain(`id="${anchor}"`);
-      expect(layout).toContain(`"/coregrid#${anchor}"`);
-    }
+  it("links sign-up to the real auth surface and never invents a signup route", () => {
+    const pricing = PAGES.find((p) => p.f === "pricing.tsx")?.source ?? "";
+    expect(pricing).toContain('to="/auth"');
+    for (const { source } of PAGES) expect(source).not.toContain('to="/signup"');
   });
 
-  it("keeps every heading labelled for assistive technology", () => {
-    expect(page).toMatch(/aria-labelledby="coregrid-hero"/);
-    for (const anchor of ["capabilities", "runtimes", "security", "pricing"]) {
-      expect(page).toMatch(new RegExp(`aria-labelledby="${anchor}-heading"`));
-      expect(page).toContain(`id="${anchor}-heading"`);
+  it("gives every page exactly one h1 through the shared page title", () => {
+    for (const { f, source } of PAGES) {
+      expect(source, f).toContain("PageTitle");
+      expect(source, f).not.toMatch(/<h1\b/);
     }
+    expect(read("frontend/src/components/sherivs/page-chrome.tsx")).toMatch(/<h1\b/);
   });
 
-  it("uses no raster images, so no missing alt text is possible", () => {
-    expect(layout).not.toMatch(/<img\b/);
-    expect(page).not.toMatch(/<img\b/);
+  it("renders semantic landmarks in the shell", () => {
+    const shell = read("frontend/src/components/sherivs/public-shell.tsx");
+    expect(shell).toContain("<header");
+    expect(shell).toContain("<main");
+    expect(shell).toContain("<footer");
+    expect(shell).toMatch(/aria-label="Primary"/);
+  });
+
+  it("shows no pricing claim about frozen capability", () => {
+    const text = JSON.stringify(MARKETING_TIERS);
+    expect(text).not.toMatch(/digital twin|twin|iot|device/i);
   });
 });
 

@@ -97,7 +97,7 @@ function RealityPreview() {
               ))}
             </div>
             <nav className="mt-3 flex flex-wrap gap-4 text-xs">
-              <Link to="/" className="underline">
+              <Link to="/command-centre/provision" className="underline">
                 Command Centre
               </Link>
               <Link to="/platform" className="underline">

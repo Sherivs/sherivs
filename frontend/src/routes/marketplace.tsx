@@ -74,7 +74,7 @@ function MarketplacePage() {
             </p>
           </div>
           <nav className="flex flex-wrap gap-4 text-xs">
-            <Link to="/" className="underline">
+            <Link to="/command-centre/provision" className="underline">
               Command Centre
             </Link>
             <Link to="/reality/$class" params={{ class: orgType }} className="underline">

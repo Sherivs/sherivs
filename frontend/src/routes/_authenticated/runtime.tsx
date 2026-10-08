@@ -201,10 +201,10 @@ function GeneratedRuntime() {
       </section>
 
       <nav className="flex flex-wrap gap-4 pt-2 text-xs">
-        <Link to="/" className="underline">
+        <Link to="/command-centre/provision" className="underline">
           Command Centre
         </Link>
-        <a href="/platform/org" className="underline">
+        <a href="/super-admin/organization" className="underline">
           Platform organization
         </a>
         <a href="/marketplace" className="underline">

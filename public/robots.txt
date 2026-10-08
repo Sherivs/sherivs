@@ -1,4 +1,7 @@
 User-agent: *
 Allow: /
+Disallow: /super-admin/
+Disallow: /command-centre/
+Disallow: /api/
 
-# Sitemap: set to the CoreGrid Scholar production domain at DNS cutover
+Sitemap: https://sherivs.com/sitemap.xml

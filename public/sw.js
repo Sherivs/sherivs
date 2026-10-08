@@ -1,4 +1,4 @@
-/* CoreGrid Scholar — service worker for web push notifications + offline shell. */
+/* Sherivs Scholar — service worker for web push notifications + offline shell. */
 
 /* The offline shell is the smallest useful offline surface: precache the app's
  * root document at install, then serve navigations network-first (caching every

@@ -81,8 +81,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: PLATFORM_PAGE_DESCRIPTION },
       { property: "og:description", content: PLATFORM_PAGE_DESCRIPTION },
       { name: "twitter:description", content: PLATFORM_PAGE_DESCRIPTION },
-      { property: "og:image", content: "https://universalschoolos.com/og-image.png" },
-      { name: "twitter:image", content: "https://universalschoolos.com/og-image.png" },
+      { property: "og:image", content: "https://sherivs.com/og-image.png" },
+      { name: "twitter:image", content: "https://sherivs.com/og-image.png" },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
       // Served, generated manifest (see routes/manifest[.]webmanifest.ts).
@@ -96,10 +96,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "apple-touch-icon", href: "/icons/icon-192.png" },
       { rel: "icon", type: "image/png", sizes: "192x192", href: "/icons/icon-192.png" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap",
-      },
+      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
     ],
   }),
   shellComponent: RootShell,
@@ -118,7 +115,7 @@ function RootShell({ children }: { children: ReactNode }) {
       <body>
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-white focus:text-black focus:rounded-lg focus:font-semibold"
+          className="sv-skip"
         >
           Skip to main content
         </a>

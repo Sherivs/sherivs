@@ -163,7 +163,7 @@ export function PublicFooter() {
             <SherivsLockup />
             <p className="sv-small mt-4 text-sv-text-muted">{SHERIVS_BRAND.category}.</p>
             <p className="sv-caption mt-3 text-sv-text-subtle">
-              Sherivs Scholar is the education runtime on the Sherivs platform.
+              The education runtime on the Sherivs platform: Sherivs Scholar.
             </p>
           </div>
           {FOOTER_COLUMNS.map((col) => {

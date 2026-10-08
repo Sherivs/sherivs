@@ -1068,7 +1068,7 @@ function GeneratedExperienceCard({ orgType }: { orgType: string }) {
           >
             Served manifest
           </a>
-          <a className="underline" href="/platform/org">
+          <a className="underline" href="/super-admin/organization">
             Sherivs organization
           </a>
         </div>

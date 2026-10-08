@@ -2,7 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 
-const BASE_URL = "https://universalschoolos.com";
+import { SHERIVS_BRAND } from "@/lib/experience-system/sherivs-brand";
+import { PUBLISHED_CONTENT } from "@/lib/experience-system/content";
+import { buildPublicSitemapEntries } from "@/lib/experience-system/sitemap";
+
+const BASE_URL = SHERIVS_BRAND.canonicalOrigin;
 
 interface SitemapEntry {
   path: string;
@@ -16,7 +20,7 @@ export const Route = createFileRoute("/sitemap.xml")({
     handlers: {
       GET: async () => {
         const entries: SitemapEntry[] = [
-          { path: "/", changefreq: "weekly", priority: "1.0" },
+          ...buildPublicSitemapEntries(PUBLISHED_CONTENT, new Date()),
           { path: "/auth", changefreq: "monthly", priority: "0.3" },
         ];
 
