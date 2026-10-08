@@ -20,6 +20,9 @@ test.describe("Enterprise checklist", () => {
 
   test("every module is unlocked and links open the correct page", async ({ page }) => {
     test.skip(!fixture, FIXTURE_SKIP_NO_BACKEND);
+    // 24 real page navigations over a dev server in mobile emulation — the
+    // default 60s budget only barely fits when run standalone.
+    test.setTimeout(180_000);
     await signIn(page, fixture!.credentials.admin);
     await page.goto("/admin/enterprise-checklist");
     await expect(page.getByRole("heading", { name: /enterprise checklist/i })).toBeVisible();

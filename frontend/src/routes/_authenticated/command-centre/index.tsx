@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_authenticated/command-centre/")({
   component: CommandCentreOperations,
   head: () => ({
     meta: [
-      { title: "CoreGrid — Command centre operations projection" },
+      { title: "Sherivs Control — Operations projection" },
       {
         name: "description",
         content:

@@ -79,7 +79,7 @@ export interface MarketplaceView {
 }
 
 /** A verified vendor publishes the runtime's catalog (no anonymous publishing). */
-export const DEFAULT_RUNTIME_VENDOR = "coregrid-verified";
+export const DEFAULT_RUNTIME_VENDOR = "sherivs-verified";
 
 export function buildMarketplaceView(input: MarketplaceViewInput): MarketplaceView {
   const reality = realityForOrgType(input.orgType);

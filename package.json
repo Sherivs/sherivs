@@ -13,6 +13,7 @@
     "test": "npm run typecheck && npm run test:unit",
     "verify": "npm run typecheck && npm run test:unit && npm run verify:registry && npm run verify:drift && npm run verify:neutrality && npm run verify:secrets && npm run build",
     "verify:neutrality": "node scripts/verify-domain-neutrality.mjs",
+    "verify:critical-flows": "node scripts/verify-critical-flows.mjs",
     "verify:registry": "node scripts/verification/registry-validate.mjs",
     "verify:drift": "node scripts/verify-registry-drift.mjs",
     "verify:reconciliation": "node scripts/verify-reconciliation-artifacts.mjs",
@@ -49,8 +50,8 @@
     "format": "prettier --write ."
   },
   "dependencies": {
-    "@coregrid/contracts": "file:packages/contracts",
     "@ai-sdk/openai-compatible": "^2.0.51",
+    "@coregrid/contracts": "file:packages/contracts",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -81,10 +82,10 @@
     "@supabase/supabase-js": "^2.108.2",
     "@tailwindcss/vite": "^4.2.1",
     "@tanstack/react-query": "^5.83.0",
-    "@tanstack/react-router": "^1.168.25",
-    "@tanstack/react-start": "^1.167.50",
+    "@tanstack/react-router": "^1.170.41",
+    "@tanstack/react-start": "^1.168.60",
     "@tanstack/react-table": "^8.21.3",
-    "@tanstack/router-plugin": "^1.167.28",
+    "@tanstack/router-plugin": "^1.168.42",
     "ai": "^6.0.208",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -107,7 +108,7 @@
     "tw-animate-css": "^1.3.4",
     "vaul": "^1.1.2",
     "vite-tsconfig-paths": "^6.0.2",
-    "zod": "^4.4.3"
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",

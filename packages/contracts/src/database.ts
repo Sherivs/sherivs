@@ -683,6 +683,3152 @@ export type Database = {
           },
         ];
       };
+      cg_api_key: {
+        Row: {
+          api_key_ref: string;
+          created_at: string;
+          created_by: string;
+          expires_at: string | null;
+          fingerprint: string;
+          key_hash: string;
+          key_preview: string;
+          note: string | null;
+          revoke_reason: string | null;
+          revoked_at: string | null;
+          revoked_by: string | null;
+          scopes: string[];
+          status: string;
+          tenant_id: string;
+          type: string;
+        };
+        Insert: {
+          api_key_ref: string;
+          created_at?: string;
+          created_by: string;
+          expires_at?: string | null;
+          fingerprint: string;
+          key_hash: string;
+          key_preview: string;
+          note?: string | null;
+          revoke_reason?: string | null;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          scopes: string[];
+          status: string;
+          tenant_id: string;
+          type: string;
+        };
+        Update: {
+          api_key_ref?: string;
+          created_at?: string;
+          created_by?: string;
+          expires_at?: string | null;
+          fingerprint?: string;
+          key_hash?: string;
+          key_preview?: string;
+          note?: string | null;
+          revoke_reason?: string | null;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          scopes?: string[];
+          status?: string;
+          tenant_id?: string;
+          type?: string;
+        };
+        Relationships: [];
+      };
+      cg_conformance_assessment: {
+        Row: {
+          assessment_id: string;
+          created_at: string;
+          decision: string;
+          declared_contract_id: string;
+          declared_version: string;
+          observed_contract_id: string;
+          observed_version: string;
+          reason: string;
+          verification_id: string;
+        };
+        Insert: {
+          assessment_id: string;
+          created_at?: string;
+          decision: string;
+          declared_contract_id: string;
+          declared_version: string;
+          observed_contract_id: string;
+          observed_version: string;
+          reason: string;
+          verification_id: string;
+        };
+        Update: {
+          assessment_id?: string;
+          created_at?: string;
+          decision?: string;
+          declared_contract_id?: string;
+          declared_version?: string;
+          observed_contract_id?: string;
+          observed_version?: string;
+          reason?: string;
+          verification_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_conformance_assessment_verification_id_fkey";
+            columns: ["verification_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_verification_result";
+            referencedColumns: ["verification_id"];
+          },
+        ];
+      };
+      cg_delivery_evidence: {
+        Row: {
+          adapter: string;
+          ai_generated: boolean;
+          channel: string;
+          created_at: string;
+          id: string;
+          notification_ref: string | null;
+          outcome: string;
+          outcome_code: string;
+          provider_message_id: string | null;
+          reason: string;
+          recipient_redacted: string;
+          tenant_id: string;
+          trigger_source: string;
+          triggered_by: string;
+        };
+        Insert: {
+          adapter: string;
+          ai_generated?: boolean;
+          channel: string;
+          created_at?: string;
+          id: string;
+          notification_ref?: string | null;
+          outcome: string;
+          outcome_code: string;
+          provider_message_id?: string | null;
+          reason: string;
+          recipient_redacted: string;
+          tenant_id: string;
+          trigger_source: string;
+          triggered_by: string;
+        };
+        Update: {
+          adapter?: string;
+          ai_generated?: boolean;
+          channel?: string;
+          created_at?: string;
+          id?: string;
+          notification_ref?: string | null;
+          outcome?: string;
+          outcome_code?: string;
+          provider_message_id?: string | null;
+          reason?: string;
+          recipient_redacted?: string;
+          tenant_id?: string;
+          trigger_source?: string;
+          triggered_by?: string;
+        };
+        Relationships: [];
+      };
+      cg_domain_runtime: {
+        Row: {
+          created_at: string;
+          id: string;
+          manifest: Json;
+          name: string;
+          status: string;
+          updated_at: string;
+          version: string;
+        };
+        Insert: {
+          created_at?: string;
+          id: string;
+          manifest?: Json;
+          name: string;
+          status?: string;
+          updated_at?: string;
+          version: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          manifest?: Json;
+          name?: string;
+          status?: string;
+          updated_at?: string;
+          version?: string;
+        };
+        Relationships: [];
+      };
+      cg_entity: {
+        Row: {
+          attributes: Json;
+          causation_id: string | null;
+          classification: string;
+          confidence: number | null;
+          correlation_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          declared_origin: string | null;
+          entity_type: string;
+          id: string;
+          object_type: string | null;
+          observed_at: string | null;
+          parent_event_id: string | null;
+          policy_context: Json | null;
+          provenance: Json | null;
+          recorded_at: string;
+          schema_version: string | null;
+          source_ref: string | null;
+          source_type: string | null;
+          state: string | null;
+          status: string | null;
+          superseded_by: string | null;
+          supersedes: string | null;
+          tenant_id: string | null;
+          trace_id: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          valid_from: string | null;
+          valid_time_known: boolean | null;
+          valid_to: string | null;
+        };
+        Insert: {
+          attributes?: Json;
+          causation_id?: string | null;
+          classification?: string;
+          confidence?: number | null;
+          correlation_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          declared_origin?: string | null;
+          entity_type: string;
+          id?: string;
+          object_type?: string | null;
+          observed_at?: string | null;
+          parent_event_id?: string | null;
+          policy_context?: Json | null;
+          provenance?: Json | null;
+          recorded_at?: string;
+          schema_version?: string | null;
+          source_ref?: string | null;
+          source_type?: string | null;
+          state?: string | null;
+          status?: string | null;
+          superseded_by?: string | null;
+          supersedes?: string | null;
+          tenant_id?: string | null;
+          trace_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          valid_from?: string | null;
+          valid_time_known?: boolean | null;
+          valid_to?: string | null;
+        };
+        Update: {
+          attributes?: Json;
+          causation_id?: string | null;
+          classification?: string;
+          confidence?: number | null;
+          correlation_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          declared_origin?: string | null;
+          entity_type?: string;
+          id?: string;
+          object_type?: string | null;
+          observed_at?: string | null;
+          parent_event_id?: string | null;
+          policy_context?: Json | null;
+          provenance?: Json | null;
+          recorded_at?: string;
+          schema_version?: string | null;
+          source_ref?: string | null;
+          source_type?: string | null;
+          state?: string | null;
+          status?: string | null;
+          superseded_by?: string | null;
+          supersedes?: string | null;
+          tenant_id?: string | null;
+          trace_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          valid_from?: string | null;
+          valid_time_known?: boolean | null;
+          valid_to?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_entity_superseded_by_fkey";
+            columns: ["superseded_by"];
+            isOneToOne: false;
+            referencedRelation: "cg_entity";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "cg_entity_supersedes_fkey";
+            columns: ["supersedes"];
+            isOneToOne: false;
+            referencedRelation: "cg_entity";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      cg_event: {
+        Row: {
+          actor_identity: string | null;
+          aggregate_id: string;
+          aggregate_type: string;
+          attempts: number;
+          causation_id: string | null;
+          correlation_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          declared_origin: string | null;
+          event_type: string;
+          id: string;
+          idempotency_key: string | null;
+          last_error: string | null;
+          object_type: string | null;
+          occurred_at: string;
+          parent_event_id: string | null;
+          payload: Json;
+          payload_version: number;
+          policy_context: Json | null;
+          provenance: Json | null;
+          recorded_at: string;
+          schema_version: string | null;
+          state: string;
+          status: string | null;
+          supersedes: string | null;
+          tenant_id: string | null;
+          trace_id: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          valid_from: string | null;
+          valid_time_known: boolean | null;
+          valid_until: string | null;
+        };
+        Insert: {
+          actor_identity?: string | null;
+          aggregate_id: string;
+          aggregate_type: string;
+          attempts?: number;
+          causation_id?: string | null;
+          correlation_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          declared_origin?: string | null;
+          event_type: string;
+          id?: string;
+          idempotency_key?: string | null;
+          last_error?: string | null;
+          object_type?: string | null;
+          occurred_at?: string;
+          parent_event_id?: string | null;
+          payload?: Json;
+          payload_version?: number;
+          policy_context?: Json | null;
+          provenance?: Json | null;
+          recorded_at?: string;
+          schema_version?: string | null;
+          state?: string;
+          status?: string | null;
+          supersedes?: string | null;
+          tenant_id?: string | null;
+          trace_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          valid_from?: string | null;
+          valid_time_known?: boolean | null;
+          valid_until?: string | null;
+        };
+        Update: {
+          actor_identity?: string | null;
+          aggregate_id?: string;
+          aggregate_type?: string;
+          attempts?: number;
+          causation_id?: string | null;
+          correlation_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          declared_origin?: string | null;
+          event_type?: string;
+          id?: string;
+          idempotency_key?: string | null;
+          last_error?: string | null;
+          object_type?: string | null;
+          occurred_at?: string;
+          parent_event_id?: string | null;
+          payload?: Json;
+          payload_version?: number;
+          policy_context?: Json | null;
+          provenance?: Json | null;
+          recorded_at?: string;
+          schema_version?: string | null;
+          state?: string;
+          status?: string | null;
+          supersedes?: string | null;
+          tenant_id?: string | null;
+          trace_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          valid_from?: string | null;
+          valid_time_known?: boolean | null;
+          valid_until?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_event_supersedes_fkey";
+            columns: ["supersedes"];
+            isOneToOne: false;
+            referencedRelation: "cg_event";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      cg_event_route_cursor: {
+        Row: {
+          delivered_count: number;
+          last_event_ref: string | null;
+          subscription_id: string;
+          tenant_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          delivered_count?: number;
+          last_event_ref?: string | null;
+          subscription_id: string;
+          tenant_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          delivered_count?: number;
+          last_event_ref?: string | null;
+          subscription_id?: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_event_route_cursor_subscription_fk";
+            columns: ["subscription_id", "tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_event_route_subscription";
+            referencedColumns: ["id", "tenant_id"];
+          },
+        ];
+      };
+      cg_event_route_outcome: {
+        Row: {
+          backpressure: Json | null;
+          delivery: Json | null;
+          denial_reason: string | null;
+          detail: string;
+          event_ref: string;
+          id: string;
+          kind: string;
+          recorded_at: string;
+          subscriber_id: string;
+          subscription_id: string;
+          tenant_id: string | null;
+        };
+        Insert: {
+          backpressure?: Json | null;
+          delivery?: Json | null;
+          denial_reason?: string | null;
+          detail?: string;
+          event_ref: string;
+          id: string;
+          kind: string;
+          recorded_at?: string;
+          subscriber_id: string;
+          subscription_id: string;
+          tenant_id?: string | null;
+        };
+        Update: {
+          backpressure?: Json | null;
+          delivery?: Json | null;
+          denial_reason?: string | null;
+          detail?: string;
+          event_ref?: string;
+          id?: string;
+          kind?: string;
+          recorded_at?: string;
+          subscriber_id?: string;
+          subscription_id?: string;
+          tenant_id?: string | null;
+        };
+        Relationships: [];
+      };
+      cg_event_route_queue: {
+        Row: {
+          delivered_at: string | null;
+          delivery: Json;
+          delivery_decision: string;
+          enqueued_at: string;
+          event_digest: string;
+          event_ref: string;
+          state: string;
+          subscription_id: string;
+          tenant_id: string;
+        };
+        Insert: {
+          delivered_at?: string | null;
+          delivery: Json;
+          delivery_decision: string;
+          enqueued_at?: string;
+          event_digest: string;
+          event_ref: string;
+          state?: string;
+          subscription_id: string;
+          tenant_id: string;
+        };
+        Update: {
+          delivered_at?: string | null;
+          delivery?: Json;
+          delivery_decision?: string;
+          enqueued_at?: string;
+          event_digest?: string;
+          event_ref?: string;
+          state?: string;
+          subscription_id?: string;
+          tenant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_event_route_queue_subscription_fk";
+            columns: ["subscription_id", "tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_event_route_subscription";
+            referencedColumns: ["id", "tenant_id"];
+          },
+        ];
+      };
+      cg_event_route_subscription: {
+        Row: {
+          declared_at: string;
+          dedup: string;
+          event_types: Json;
+          id: string;
+          max_sensitivity: string;
+          max_undelivered: number;
+          ordering: string;
+          status: string;
+          subscriber_id: string;
+          tenant_id: string;
+          visibility_scopes: Json;
+        };
+        Insert: {
+          declared_at?: string;
+          dedup: string;
+          event_types?: Json;
+          id: string;
+          max_sensitivity: string;
+          max_undelivered: number;
+          ordering: string;
+          status?: string;
+          subscriber_id: string;
+          tenant_id: string;
+          visibility_scopes?: Json;
+        };
+        Update: {
+          declared_at?: string;
+          dedup?: string;
+          event_types?: Json;
+          id?: string;
+          max_sensitivity?: string;
+          max_undelivered?: number;
+          ordering?: string;
+          status?: string;
+          subscriber_id?: string;
+          tenant_id?: string;
+          visibility_scopes?: Json;
+        };
+        Relationships: [];
+      };
+      cg_event_security: {
+        Row: {
+          digest: string;
+          emission_authority: string;
+          event_ref: string;
+          evidence_class: string;
+          id: string;
+          issuance_at: string;
+          issuance_at_ms: number;
+          issuance_issuer: string;
+          issuance_sequence: number;
+          issuer_id: string;
+          previous_digest: string | null;
+          recorded_at: string;
+          redactable_fields: Json;
+          sensitivity: string;
+          source: string;
+          subject_refs: Json;
+          tenant_id: string;
+          visibility: string;
+        };
+        Insert: {
+          digest: string;
+          emission_authority: string;
+          event_ref: string;
+          evidence_class: string;
+          id: string;
+          issuance_at: string;
+          issuance_at_ms: number;
+          issuance_issuer: string;
+          issuance_sequence: number;
+          issuer_id: string;
+          previous_digest?: string | null;
+          recorded_at?: string;
+          redactable_fields?: Json;
+          sensitivity: string;
+          source: string;
+          subject_refs?: Json;
+          tenant_id: string;
+          visibility: string;
+        };
+        Update: {
+          digest?: string;
+          emission_authority?: string;
+          event_ref?: string;
+          evidence_class?: string;
+          id?: string;
+          issuance_at?: string;
+          issuance_at_ms?: number;
+          issuance_issuer?: string;
+          issuance_sequence?: number;
+          issuer_id?: string;
+          previous_digest?: string | null;
+          recorded_at?: string;
+          redactable_fields?: Json;
+          sensitivity?: string;
+          source?: string;
+          subject_refs?: Json;
+          tenant_id?: string;
+          visibility?: string;
+        };
+        Relationships: [];
+      };
+      cg_event_security_denial: {
+        Row: {
+          detail: string;
+          event_ref: string;
+          id: string;
+          reason: string;
+          recorded_at: string;
+          subscriber_id: string | null;
+          tenant_id: string | null;
+        };
+        Insert: {
+          detail?: string;
+          event_ref: string;
+          id: string;
+          reason: string;
+          recorded_at?: string;
+          subscriber_id?: string | null;
+          tenant_id?: string | null;
+        };
+        Update: {
+          detail?: string;
+          event_ref?: string;
+          id?: string;
+          reason?: string;
+          recorded_at?: string;
+          subscriber_id?: string | null;
+          tenant_id?: string | null;
+        };
+        Relationships: [];
+      };
+      cg_event_security_redaction: {
+        Row: {
+          detail: string;
+          event_ref: string;
+          id: string;
+          reason: string;
+          recorded_at: string;
+          subscriber_id: string;
+          tenant_id: string;
+          withheld_fields: Json;
+          withheld_subject_refs: Json;
+        };
+        Insert: {
+          detail?: string;
+          event_ref: string;
+          id: string;
+          reason: string;
+          recorded_at?: string;
+          subscriber_id: string;
+          tenant_id: string;
+          withheld_fields?: Json;
+          withheld_subject_refs?: Json;
+        };
+        Update: {
+          detail?: string;
+          event_ref?: string;
+          id?: string;
+          reason?: string;
+          recorded_at?: string;
+          subscriber_id?: string;
+          tenant_id?: string;
+          withheld_fields?: Json;
+          withheld_subject_refs?: Json;
+        };
+        Relationships: [];
+      };
+      cg_evidence_lifecycle_act: {
+        Row: {
+          act: Json;
+          act_evidence_id: string | null;
+          act_kind: string;
+          actor_id: string;
+          id: string;
+          recorded_at: string;
+          target_evidence_id: string;
+          tenant_id: string;
+        };
+        Insert: {
+          act: Json;
+          act_evidence_id?: string | null;
+          act_kind: string;
+          actor_id: string;
+          id: string;
+          recorded_at?: string;
+          target_evidence_id: string;
+          tenant_id: string;
+        };
+        Update: {
+          act?: Json;
+          act_evidence_id?: string | null;
+          act_kind?: string;
+          actor_id?: string;
+          id?: string;
+          recorded_at?: string;
+          target_evidence_id?: string;
+          tenant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_evidence_lifecycle_act_target_fk";
+            columns: ["target_evidence_id", "tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_evidence_record";
+            referencedColumns: ["id", "tenant_id"];
+          },
+        ];
+      };
+      cg_evidence_record: {
+        Row: {
+          canonical_truth_eligible: boolean;
+          captured_at: string;
+          captured_by: string;
+          causation_id: string | null;
+          claim: Json;
+          confidence: number | null;
+          confidence_basis: string | null;
+          correlation_id: string;
+          created_by: string;
+          declared_origin: string | null;
+          evidence_class: string;
+          evidence_type: string;
+          id: string;
+          lineage: Json;
+          object_type: string;
+          observed_at: string | null;
+          parent_event_id: string | null;
+          policy_context: Json;
+          prior_class: string | null;
+          promotion: Json | null;
+          provenance: Json;
+          recorded_at: string;
+          retention_policy_id: string;
+          revocation: Json | null;
+          revokes: string | null;
+          schema_version: string;
+          source_ref: string | null;
+          status: string;
+          sufficiency: Json | null;
+          supersedes: string | null;
+          tenant_id: string;
+          trace_id: string;
+          updated_by: string;
+          valid_from: string | null;
+          valid_until: string | null;
+        };
+        Insert: {
+          canonical_truth_eligible?: boolean;
+          captured_at: string;
+          captured_by: string;
+          causation_id?: string | null;
+          claim: Json;
+          confidence?: number | null;
+          confidence_basis?: string | null;
+          correlation_id: string;
+          created_by: string;
+          declared_origin?: string | null;
+          evidence_class: string;
+          evidence_type: string;
+          id: string;
+          lineage?: Json;
+          object_type: string;
+          observed_at?: string | null;
+          parent_event_id?: string | null;
+          policy_context: Json;
+          prior_class?: string | null;
+          promotion?: Json | null;
+          provenance: Json;
+          recorded_at: string;
+          retention_policy_id: string;
+          revocation?: Json | null;
+          revokes?: string | null;
+          schema_version: string;
+          source_ref?: string | null;
+          status: string;
+          sufficiency?: Json | null;
+          supersedes?: string | null;
+          tenant_id: string;
+          trace_id: string;
+          updated_by: string;
+          valid_from?: string | null;
+          valid_until?: string | null;
+        };
+        Update: {
+          canonical_truth_eligible?: boolean;
+          captured_at?: string;
+          captured_by?: string;
+          causation_id?: string | null;
+          claim?: Json;
+          confidence?: number | null;
+          confidence_basis?: string | null;
+          correlation_id?: string;
+          created_by?: string;
+          declared_origin?: string | null;
+          evidence_class?: string;
+          evidence_type?: string;
+          id?: string;
+          lineage?: Json;
+          object_type?: string;
+          observed_at?: string | null;
+          parent_event_id?: string | null;
+          policy_context?: Json;
+          prior_class?: string | null;
+          promotion?: Json | null;
+          provenance?: Json;
+          recorded_at?: string;
+          retention_policy_id?: string;
+          revocation?: Json | null;
+          revokes?: string | null;
+          schema_version?: string;
+          source_ref?: string | null;
+          status?: string;
+          sufficiency?: Json | null;
+          supersedes?: string | null;
+          tenant_id?: string;
+          trace_id?: string;
+          updated_by?: string;
+          valid_from?: string | null;
+          valid_until?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_evidence_record_revokes_fk";
+            columns: ["revokes", "tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_evidence_record";
+            referencedColumns: ["id", "tenant_id"];
+          },
+          {
+            foreignKeyName: "cg_evidence_record_supersedes_fk";
+            columns: ["supersedes", "tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_evidence_record";
+            referencedColumns: ["id", "tenant_id"];
+          },
+        ];
+      };
+      cg_execution_history: {
+        Row: {
+          execution_id: string;
+          external_effect: string;
+          id: string;
+          reason: string | null;
+          recorded_at: string;
+          status: string;
+        };
+        Insert: {
+          execution_id: string;
+          external_effect: string;
+          id?: string;
+          reason?: string | null;
+          recorded_at?: string;
+          status: string;
+        };
+        Update: {
+          execution_id?: string;
+          external_effect?: string;
+          id?: string;
+          reason?: string | null;
+          recorded_at?: string;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_execution_history_execution_id_fkey";
+            columns: ["execution_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_execution_record";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      cg_execution_record: {
+        Row: {
+          action: string;
+          actor_id: string;
+          attempt_id: string;
+          created_at: string;
+          external_effect: string;
+          id: string;
+          idempotency_key: string;
+          mission_id: string;
+          mission_version: string;
+          reality_ref: string;
+          reason: string | null;
+          requested_at: string;
+          started_at: string;
+          status: string;
+          tenant_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          action: string;
+          actor_id: string;
+          attempt_id: string;
+          created_at?: string;
+          external_effect: string;
+          id: string;
+          idempotency_key: string;
+          mission_id: string;
+          mission_version: string;
+          reality_ref: string;
+          reason?: string | null;
+          requested_at: string;
+          started_at: string;
+          status: string;
+          tenant_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          action?: string;
+          actor_id?: string;
+          attempt_id?: string;
+          created_at?: string;
+          external_effect?: string;
+          id?: string;
+          idempotency_key?: string;
+          mission_id?: string;
+          mission_version?: string;
+          reality_ref?: string;
+          reason?: string | null;
+          requested_at?: string;
+          started_at?: string;
+          status?: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_execution_record_tenant_id_mission_id_mission_version_fkey";
+            columns: ["tenant_id", "mission_id", "mission_version"];
+            isOneToOne: false;
+            referencedRelation: "cg_mission_intent";
+            referencedColumns: ["tenant_id", "mission_id", "version"];
+          },
+        ];
+      };
+      cg_file_object: {
+        Row: {
+          content_ref: string;
+          content_type: string;
+          created_at: string;
+          deleted_at: string | null;
+          filename: string;
+          grant_refs: Json;
+          id: string;
+          owner_ref: string;
+          purpose: string;
+          size_bytes: number;
+          tenant_id: string;
+          updated_at: string;
+          visibility: string;
+        };
+        Insert: {
+          content_ref: string;
+          content_type: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          filename: string;
+          grant_refs?: Json;
+          id: string;
+          owner_ref: string;
+          purpose: string;
+          size_bytes: number;
+          tenant_id: string;
+          updated_at?: string;
+          visibility: string;
+        };
+        Update: {
+          content_ref?: string;
+          content_type?: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          filename?: string;
+          grant_refs?: Json;
+          id?: string;
+          owner_ref?: string;
+          purpose?: string;
+          size_bytes?: number;
+          tenant_id?: string;
+          updated_at?: string;
+          visibility?: string;
+        };
+        Relationships: [];
+      };
+      cg_foundation_evidence: {
+        Row: {
+          actor_id: string;
+          created_at: string;
+          evidence_id: string;
+          integrity: string;
+          lifecycle: string;
+          lineage: string[];
+          observed_at: string;
+          producer: string;
+          provenance: string;
+          recorded_at: string;
+          tenant_id: string;
+        };
+        Insert: {
+          actor_id: string;
+          created_at?: string;
+          evidence_id: string;
+          integrity: string;
+          lifecycle: string;
+          lineage?: string[];
+          observed_at: string;
+          producer: string;
+          provenance: string;
+          recorded_at: string;
+          tenant_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          created_at?: string;
+          evidence_id?: string;
+          integrity?: string;
+          lifecycle?: string;
+          lineage?: string[];
+          observed_at?: string;
+          producer?: string;
+          provenance?: string;
+          recorded_at?: string;
+          tenant_id?: string;
+        };
+        Relationships: [];
+      };
+      cg_hermes_observation: {
+        Row: {
+          correlation_id: string | null;
+          created_at: string;
+          created_by: string;
+          declared_origin: string;
+          event_ref: string | null;
+          generated_by_ai: boolean;
+          id: string;
+          kind: string;
+          observed_at: string;
+          recorded_at: string;
+          source: string;
+          statement: Json;
+          subject_ref: string;
+          tenant_id: string;
+          trace_id: string | null;
+          updated_at: string;
+          verified: boolean;
+        };
+        Insert: {
+          correlation_id?: string | null;
+          created_at?: string;
+          created_by: string;
+          declared_origin: string;
+          event_ref?: string | null;
+          generated_by_ai?: boolean;
+          id: string;
+          kind: string;
+          observed_at: string;
+          recorded_at?: string;
+          source: string;
+          statement?: Json;
+          subject_ref: string;
+          tenant_id: string;
+          trace_id?: string | null;
+          updated_at?: string;
+          verified?: boolean;
+        };
+        Update: {
+          correlation_id?: string | null;
+          created_at?: string;
+          created_by?: string;
+          declared_origin?: string;
+          event_ref?: string | null;
+          generated_by_ai?: boolean;
+          id?: string;
+          kind?: string;
+          observed_at?: string;
+          recorded_at?: string;
+          source?: string;
+          statement?: Json;
+          subject_ref?: string;
+          tenant_id?: string;
+          trace_id?: string | null;
+          updated_at?: string;
+          verified?: boolean;
+        };
+        Relationships: [];
+      };
+      cg_idempotency_record: {
+        Row: {
+          actor_id: string;
+          created_at: string;
+          expires_at: string;
+          external_effect: string;
+          id: string;
+          idempotency_key: string;
+          intent: string;
+          payload_digest: string;
+          reason: string | null;
+          response_ref: string;
+          scope: string;
+          status: string;
+          tenant_id: string;
+        };
+        Insert: {
+          actor_id: string;
+          created_at?: string;
+          expires_at: string;
+          external_effect: string;
+          id?: string;
+          idempotency_key: string;
+          intent: string;
+          payload_digest: string;
+          reason?: string | null;
+          response_ref: string;
+          scope: string;
+          status: string;
+          tenant_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          created_at?: string;
+          expires_at?: string;
+          external_effect?: string;
+          id?: string;
+          idempotency_key?: string;
+          intent?: string;
+          payload_digest?: string;
+          reason?: string | null;
+          response_ref?: string;
+          scope?: string;
+          status?: string;
+          tenant_id?: string;
+        };
+        Relationships: [];
+      };
+      cg_identity: {
+        Row: {
+          created_at: string;
+          display_name: string;
+          entity_id: string | null;
+          external_subject: string | null;
+          id: string;
+          kind: string;
+          state: string;
+          tenant_id: string | null;
+          updated_at: string;
+          verified: boolean;
+        };
+        Insert: {
+          created_at?: string;
+          display_name: string;
+          entity_id?: string | null;
+          external_subject?: string | null;
+          id?: string;
+          kind: string;
+          state?: string;
+          tenant_id?: string | null;
+          updated_at?: string;
+          verified?: boolean;
+        };
+        Update: {
+          created_at?: string;
+          display_name?: string;
+          entity_id?: string | null;
+          external_subject?: string | null;
+          id?: string;
+          kind?: string;
+          state?: string;
+          tenant_id?: string | null;
+          updated_at?: string;
+          verified?: boolean;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_identity_entity_id_fkey";
+            columns: ["entity_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_entity";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      cg_knowledge_downgrade: {
+        Row: {
+          downgraded_at: string;
+          downgraded_by: string;
+          evidence_ref: string;
+          from_tier: string;
+          id: string;
+          reason: string;
+          source_id: string;
+          tenant_id: string;
+          to_tier: string;
+        };
+        Insert: {
+          downgraded_at: string;
+          downgraded_by: string;
+          evidence_ref: string;
+          from_tier: string;
+          id: string;
+          reason: string;
+          source_id: string;
+          tenant_id: string;
+          to_tier: string;
+        };
+        Update: {
+          downgraded_at?: string;
+          downgraded_by?: string;
+          evidence_ref?: string;
+          from_tier?: string;
+          id?: string;
+          reason?: string;
+          source_id?: string;
+          tenant_id?: string;
+          to_tier?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_knowledge_downgrade_source_fk";
+            columns: ["source_id", "tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_knowledge_source";
+            referencedColumns: ["id", "tenant_id"];
+          },
+        ];
+      };
+      cg_knowledge_freshness_contract: {
+        Row: {
+          fresh_until: string;
+          record_id: string;
+          registered_at: string;
+          revalidate_after_seconds: number | null;
+          revalidation: string;
+          source_id: string;
+          tenant_id: string;
+          tier_at_registration: string;
+        };
+        Insert: {
+          fresh_until: string;
+          record_id: string;
+          registered_at: string;
+          revalidate_after_seconds?: number | null;
+          revalidation: string;
+          source_id: string;
+          tenant_id: string;
+          tier_at_registration: string;
+        };
+        Update: {
+          fresh_until?: string;
+          record_id?: string;
+          registered_at?: string;
+          revalidate_after_seconds?: number | null;
+          revalidation?: string;
+          source_id?: string;
+          tenant_id?: string;
+          tier_at_registration?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_knowledge_freshness_contract_source_fk";
+            columns: ["source_id", "tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_knowledge_source";
+            referencedColumns: ["id", "tenant_id"];
+          },
+        ];
+      };
+      cg_knowledge_invalidation: {
+        Row: {
+          evidence_ref: string;
+          id: string;
+          invalidated_at: string;
+          invalidated_by: string;
+          reason: string;
+          record_id: string;
+          tenant_id: string;
+        };
+        Insert: {
+          evidence_ref: string;
+          id: string;
+          invalidated_at: string;
+          invalidated_by: string;
+          reason: string;
+          record_id: string;
+          tenant_id: string;
+        };
+        Update: {
+          evidence_ref?: string;
+          id?: string;
+          invalidated_at?: string;
+          invalidated_by?: string;
+          reason?: string;
+          record_id?: string;
+          tenant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_knowledge_invalidation_contract_fk";
+            columns: ["record_id", "tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_knowledge_freshness_contract";
+            referencedColumns: ["record_id", "tenant_id"];
+          },
+        ];
+      };
+      cg_knowledge_source: {
+        Row: {
+          declared_at: string;
+          declared_by: string;
+          description: string;
+          evidence_ref: string | null;
+          id: string;
+          tenant_id: string;
+          tier: string;
+        };
+        Insert: {
+          declared_at: string;
+          declared_by: string;
+          description: string;
+          evidence_ref?: string | null;
+          id: string;
+          tenant_id: string;
+          tier: string;
+        };
+        Update: {
+          declared_at?: string;
+          declared_by?: string;
+          description?: string;
+          evidence_ref?: string | null;
+          id?: string;
+          tenant_id?: string;
+          tier?: string;
+        };
+        Relationships: [];
+      };
+      cg_memory_access_log: {
+        Row: {
+          denial_reason: string | null;
+          exclusions: Json;
+          id: string;
+          identity_ref: string | null;
+          outcome: string;
+          purpose: string;
+          recorded_at: string;
+          returned_record_ids: Json;
+          scope_id: string | null;
+          tenant_id: string | null;
+        };
+        Insert: {
+          denial_reason?: string | null;
+          exclusions?: Json;
+          id: string;
+          identity_ref?: string | null;
+          outcome: string;
+          purpose?: string;
+          recorded_at?: string;
+          returned_record_ids?: Json;
+          scope_id?: string | null;
+          tenant_id?: string | null;
+        };
+        Update: {
+          denial_reason?: string | null;
+          exclusions?: Json;
+          id?: string;
+          identity_ref?: string | null;
+          outcome?: string;
+          purpose?: string;
+          recorded_at?: string;
+          returned_record_ids?: Json;
+          scope_id?: string | null;
+          tenant_id?: string | null;
+        };
+        Relationships: [];
+      };
+      cg_memory_record: {
+        Row: {
+          causation_id: string | null;
+          content: string;
+          correlation_id: string | null;
+          created_by: string;
+          declared_origin: string | null;
+          domain: string;
+          freshness_at: string;
+          id: string;
+          memory_class: string;
+          mission_ref: string | null;
+          object_type: string | null;
+          parent_event_id: string | null;
+          policy_context: Json | null;
+          provenance: Json | null;
+          recorded_at: string;
+          required_permission: string | null;
+          schema_version: string | null;
+          scope_id: string;
+          sensitivity: string;
+          status: string | null;
+          supersedes: string | null;
+          tenant_id: string;
+          trace_id: string | null;
+          updated_by: string | null;
+          valid_from: string | null;
+          valid_time_known: boolean;
+          valid_until: string | null;
+        };
+        Insert: {
+          causation_id?: string | null;
+          content: string;
+          correlation_id?: string | null;
+          created_by: string;
+          declared_origin?: string | null;
+          domain: string;
+          freshness_at: string;
+          id: string;
+          memory_class: string;
+          mission_ref?: string | null;
+          object_type?: string | null;
+          parent_event_id?: string | null;
+          policy_context?: Json | null;
+          provenance?: Json | null;
+          recorded_at?: string;
+          required_permission?: string | null;
+          schema_version?: string | null;
+          scope_id: string;
+          sensitivity: string;
+          status?: string | null;
+          supersedes?: string | null;
+          tenant_id: string;
+          trace_id?: string | null;
+          updated_by?: string | null;
+          valid_from?: string | null;
+          valid_time_known?: boolean;
+          valid_until?: string | null;
+        };
+        Update: {
+          causation_id?: string | null;
+          content?: string;
+          correlation_id?: string | null;
+          created_by?: string;
+          declared_origin?: string | null;
+          domain?: string;
+          freshness_at?: string;
+          id?: string;
+          memory_class?: string;
+          mission_ref?: string | null;
+          object_type?: string | null;
+          parent_event_id?: string | null;
+          policy_context?: Json | null;
+          provenance?: Json | null;
+          recorded_at?: string;
+          required_permission?: string | null;
+          schema_version?: string | null;
+          scope_id?: string;
+          sensitivity?: string;
+          status?: string | null;
+          supersedes?: string | null;
+          tenant_id?: string;
+          trace_id?: string | null;
+          updated_by?: string | null;
+          valid_from?: string | null;
+          valid_time_known?: boolean;
+          valid_until?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_memory_record_scope_fk";
+            columns: ["scope_id", "tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_memory_scope";
+            referencedColumns: ["id", "tenant_id"];
+          },
+          {
+            foreignKeyName: "cg_memory_record_supersedes_fk";
+            columns: ["supersedes", "tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_memory_record";
+            referencedColumns: ["id", "tenant_id"];
+          },
+        ];
+      };
+      cg_memory_scope: {
+        Row: {
+          actor_scope: Json;
+          declared_at: string;
+          declared_by: string;
+          domains: Json;
+          id: string;
+          max_sensitivity: string;
+          mission_ref: string | null;
+          tenant_id: string;
+        };
+        Insert: {
+          actor_scope?: Json;
+          declared_at?: string;
+          declared_by: string;
+          domains?: Json;
+          id: string;
+          max_sensitivity: string;
+          mission_ref?: string | null;
+          tenant_id: string;
+        };
+        Update: {
+          actor_scope?: Json;
+          declared_at?: string;
+          declared_by?: string;
+          domains?: Json;
+          id?: string;
+          max_sensitivity?: string;
+          mission_ref?: string | null;
+          tenant_id?: string;
+        };
+        Relationships: [];
+      };
+      cg_mission_intent: {
+        Row: {
+          authority_ref: string;
+          authorized_actions: string[];
+          context_ref: string;
+          created_at: string;
+          expires_at: string | null;
+          id: string;
+          lifecycle: string;
+          mission_id: string;
+          non_scope: string[];
+          owner_ref: string;
+          purpose: string;
+          tenant_id: string;
+          updated_at: string;
+          version: string;
+        };
+        Insert: {
+          authority_ref: string;
+          authorized_actions?: string[];
+          context_ref: string;
+          created_at?: string;
+          expires_at?: string | null;
+          id?: string;
+          lifecycle: string;
+          mission_id: string;
+          non_scope?: string[];
+          owner_ref: string;
+          purpose: string;
+          tenant_id: string;
+          updated_at?: string;
+          version: string;
+        };
+        Update: {
+          authority_ref?: string;
+          authorized_actions?: string[];
+          context_ref?: string;
+          created_at?: string;
+          expires_at?: string | null;
+          id?: string;
+          lifecycle?: string;
+          mission_id?: string;
+          non_scope?: string[];
+          owner_ref?: string;
+          purpose?: string;
+          tenant_id?: string;
+          updated_at?: string;
+          version?: string;
+        };
+        Relationships: [];
+      };
+      cg_mission_lease: {
+        Row: {
+          acquired_at: string;
+          attempt: number;
+          completed_at: string | null;
+          execution_id: string;
+          expires_at: string;
+          heartbeat_at: string;
+          lease_id: string;
+          mission_id: string;
+          outcome: string | null;
+          retry_not_before: string | null;
+          state: string;
+          tenant_id: string;
+          updated_at: string;
+          worker_id: string;
+        };
+        Insert: {
+          acquired_at: string;
+          attempt: number;
+          completed_at?: string | null;
+          execution_id: string;
+          expires_at: string;
+          heartbeat_at: string;
+          lease_id: string;
+          mission_id: string;
+          outcome?: string | null;
+          retry_not_before?: string | null;
+          state: string;
+          tenant_id: string;
+          updated_at?: string;
+          worker_id: string;
+        };
+        Update: {
+          acquired_at?: string;
+          attempt?: number;
+          completed_at?: string | null;
+          execution_id?: string;
+          expires_at?: string;
+          heartbeat_at?: string;
+          lease_id?: string;
+          mission_id?: string;
+          outcome?: string | null;
+          retry_not_before?: string | null;
+          state?: string;
+          tenant_id?: string;
+          updated_at?: string;
+          worker_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_mission_lease_execution_fk";
+            columns: ["execution_id", "tenant_id", "mission_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_execution_record";
+            referencedColumns: ["id", "tenant_id", "mission_id"];
+          },
+        ];
+      };
+      cg_observation: {
+        Row: {
+          causation_id: string | null;
+          confidence: number | null;
+          correlation_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          declared_origin: string | null;
+          evidence_entity_ids: string[];
+          id: string;
+          kind: string;
+          object_type: string | null;
+          observed_at: string | null;
+          observer_identity: string | null;
+          parent_event_id: string | null;
+          policy_context: Json | null;
+          provenance: Json | null;
+          recorded_at: string;
+          schema_version: string | null;
+          source_ref: string | null;
+          source_type: string | null;
+          statement: Json;
+          status: string | null;
+          subject_entity_id: string;
+          superseded_by: string | null;
+          supersedes: string | null;
+          tenant_id: string | null;
+          trace_id: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          valid_from: string | null;
+          valid_time_known: boolean | null;
+          valid_until: string | null;
+        };
+        Insert: {
+          causation_id?: string | null;
+          confidence?: number | null;
+          correlation_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          declared_origin?: string | null;
+          evidence_entity_ids?: string[];
+          id?: string;
+          kind: string;
+          object_type?: string | null;
+          observed_at?: string | null;
+          observer_identity?: string | null;
+          parent_event_id?: string | null;
+          policy_context?: Json | null;
+          provenance?: Json | null;
+          recorded_at?: string;
+          schema_version?: string | null;
+          source_ref?: string | null;
+          source_type?: string | null;
+          statement?: Json;
+          status?: string | null;
+          subject_entity_id: string;
+          superseded_by?: string | null;
+          supersedes?: string | null;
+          tenant_id?: string | null;
+          trace_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          valid_from?: string | null;
+          valid_time_known?: boolean | null;
+          valid_until?: string | null;
+        };
+        Update: {
+          causation_id?: string | null;
+          confidence?: number | null;
+          correlation_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          declared_origin?: string | null;
+          evidence_entity_ids?: string[];
+          id?: string;
+          kind?: string;
+          object_type?: string | null;
+          observed_at?: string | null;
+          observer_identity?: string | null;
+          parent_event_id?: string | null;
+          policy_context?: Json | null;
+          provenance?: Json | null;
+          recorded_at?: string;
+          schema_version?: string | null;
+          source_ref?: string | null;
+          source_type?: string | null;
+          statement?: Json;
+          status?: string | null;
+          subject_entity_id?: string;
+          superseded_by?: string | null;
+          supersedes?: string | null;
+          tenant_id?: string | null;
+          trace_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          valid_from?: string | null;
+          valid_time_known?: boolean | null;
+          valid_until?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_observation_subject_entity_id_fkey";
+            columns: ["subject_entity_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_entity";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "cg_observation_superseded_by_fkey";
+            columns: ["superseded_by"];
+            isOneToOne: false;
+            referencedRelation: "cg_observation";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "cg_observation_supersedes_fkey";
+            columns: ["supersedes"];
+            isOneToOne: false;
+            referencedRelation: "cg_observation";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      cg_org_communication_sender: {
+        Row: {
+          channel: string;
+          created_at: string;
+          credential_ref: string;
+          from_number: string;
+          org_ref: string;
+          provenance: Json;
+          provider: string;
+          sender_ref: string;
+          status: string;
+          tenant_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          channel: string;
+          created_at?: string;
+          credential_ref: string;
+          from_number: string;
+          org_ref: string;
+          provenance: Json;
+          provider: string;
+          sender_ref: string;
+          status: string;
+          tenant_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          channel?: string;
+          created_at?: string;
+          credential_ref?: string;
+          from_number?: string;
+          org_ref?: string;
+          provenance?: Json;
+          provider?: string;
+          sender_ref?: string;
+          status?: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      cg_org_membership: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          org_unit_id: string;
+          principal_ref: string;
+          role_ref: string;
+          state: string;
+          tenant_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id: string;
+          org_unit_id: string;
+          principal_ref: string;
+          role_ref: string;
+          state?: string;
+          tenant_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          org_unit_id?: string;
+          principal_ref?: string;
+          role_ref?: string;
+          state?: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_org_membership_org_unit_id_fkey";
+            columns: ["org_unit_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_org_unit";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      cg_org_profile: {
+        Row: {
+          created_at: string;
+          id: string;
+          payload: Json;
+          profile_key: string;
+          runtime_ref: string;
+          tenant_ref: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          payload?: Json;
+          profile_key: string;
+          runtime_ref: string;
+          tenant_ref: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          payload?: Json;
+          profile_key?: string;
+          runtime_ref?: string;
+          tenant_ref?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      cg_org_unit: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          id: string;
+          kind: string;
+          lifecycle_state: string;
+          parent_org_unit_id: string | null;
+          profile: Json;
+          tenant_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by: string;
+          id: string;
+          kind: string;
+          lifecycle_state?: string;
+          parent_org_unit_id?: string | null;
+          profile?: Json;
+          tenant_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          id?: string;
+          kind?: string;
+          lifecycle_state?: string;
+          parent_org_unit_id?: string | null;
+          profile?: Json;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_org_unit_parent_org_unit_id_fkey";
+            columns: ["parent_org_unit_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_org_unit";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "cg_org_unit_parent_same_tenant_fk";
+            columns: ["parent_org_unit_id", "tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_org_unit";
+            referencedColumns: ["id", "tenant_id"];
+          },
+        ];
+      };
+      cg_reasoning_provenance_snapshot: {
+        Row: {
+          actor_ref: string;
+          agent_ref: string | null;
+          causation_id: string | null;
+          context_content_digest: string | null;
+          context_trace_id: string | null;
+          correlation_id: string | null;
+          created_by: string;
+          declared_origin: string | null;
+          estimated_cost_usd: number | null;
+          evidence_class: string;
+          generated_by_ai: boolean;
+          id: string;
+          mission_ref: string | null;
+          model_id: string;
+          model_provider_class: string | null;
+          object_type: string | null;
+          origin_tenant_id: string;
+          output_digest: string;
+          parent_event_id: string | null;
+          policy_context: Json | null;
+          provenance: Json | null;
+          provenance_source: string;
+          provenance_source_ref: string | null;
+          purpose: string;
+          recorded_at: string;
+          recorded_by: string | null;
+          routed_via_registry: boolean;
+          routing_rationale: Json;
+          schema_version: string;
+          snapshot_id: string;
+          status: string | null;
+          tenant_id: string;
+          tokens_in: number;
+          tokens_out: number;
+          trace_id: string | null;
+          updated_by: string | null;
+          verified: boolean;
+        };
+        Insert: {
+          actor_ref: string;
+          agent_ref?: string | null;
+          causation_id?: string | null;
+          context_content_digest?: string | null;
+          context_trace_id?: string | null;
+          correlation_id?: string | null;
+          created_by: string;
+          declared_origin?: string | null;
+          estimated_cost_usd?: number | null;
+          evidence_class: string;
+          generated_by_ai: boolean;
+          id: string;
+          mission_ref?: string | null;
+          model_id: string;
+          model_provider_class?: string | null;
+          object_type?: string | null;
+          origin_tenant_id: string;
+          output_digest: string;
+          parent_event_id?: string | null;
+          policy_context?: Json | null;
+          provenance?: Json | null;
+          provenance_source: string;
+          provenance_source_ref?: string | null;
+          purpose: string;
+          recorded_at: string;
+          recorded_by?: string | null;
+          routed_via_registry: boolean;
+          routing_rationale?: Json;
+          schema_version: string;
+          snapshot_id: string;
+          status?: string | null;
+          tenant_id: string;
+          tokens_in: number;
+          tokens_out: number;
+          trace_id?: string | null;
+          updated_by?: string | null;
+          verified: boolean;
+        };
+        Update: {
+          actor_ref?: string;
+          agent_ref?: string | null;
+          causation_id?: string | null;
+          context_content_digest?: string | null;
+          context_trace_id?: string | null;
+          correlation_id?: string | null;
+          created_by?: string;
+          declared_origin?: string | null;
+          estimated_cost_usd?: number | null;
+          evidence_class?: string;
+          generated_by_ai?: boolean;
+          id?: string;
+          mission_ref?: string | null;
+          model_id?: string;
+          model_provider_class?: string | null;
+          object_type?: string | null;
+          origin_tenant_id?: string;
+          output_digest?: string;
+          parent_event_id?: string | null;
+          policy_context?: Json | null;
+          provenance?: Json | null;
+          provenance_source?: string;
+          provenance_source_ref?: string | null;
+          purpose?: string;
+          recorded_at?: string;
+          recorded_by?: string | null;
+          routed_via_registry?: boolean;
+          routing_rationale?: Json;
+          schema_version?: string;
+          snapshot_id?: string;
+          status?: string | null;
+          tenant_id?: string;
+          tokens_in?: number;
+          tokens_out?: number;
+          trace_id?: string | null;
+          updated_by?: string | null;
+          verified?: boolean;
+        };
+        Relationships: [];
+      };
+      cg_reconciliation_input: {
+        Row: {
+          attribute: string;
+          confidence: number | null;
+          evidence_class: string;
+          kind: string;
+          observation_id: string;
+          observed_at: string | null;
+          recorded_at: string;
+          reliability: string;
+          subject_entity_id: string;
+          supersedes: string | null;
+          tenant_id: string;
+          valid_from: string | null;
+          valid_time_known: boolean;
+          valid_until: string | null;
+          verdict_row_id: string;
+        };
+        Insert: {
+          attribute: string;
+          confidence?: number | null;
+          evidence_class: string;
+          kind: string;
+          observation_id: string;
+          observed_at?: string | null;
+          recorded_at: string;
+          reliability: string;
+          subject_entity_id: string;
+          supersedes?: string | null;
+          tenant_id: string;
+          valid_from?: string | null;
+          valid_time_known?: boolean;
+          valid_until?: string | null;
+          verdict_row_id: string;
+        };
+        Update: {
+          attribute?: string;
+          confidence?: number | null;
+          evidence_class?: string;
+          kind?: string;
+          observation_id?: string;
+          observed_at?: string | null;
+          recorded_at?: string;
+          reliability?: string;
+          subject_entity_id?: string;
+          supersedes?: string | null;
+          tenant_id?: string;
+          valid_from?: string | null;
+          valid_time_known?: boolean;
+          valid_until?: string | null;
+          verdict_row_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_reconciliation_input_verdict_fk";
+            columns: ["verdict_row_id", "tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_reconciliation_verdict";
+            referencedColumns: ["id", "tenant_id"];
+          },
+        ];
+      };
+      cg_reconciliation_verdict: {
+        Row: {
+          applied_rules: Json;
+          attribute: string;
+          causation_id: string | null;
+          correlation_id: string | null;
+          created_by: string;
+          declared_origin: string | null;
+          duplicates: Json;
+          id: string;
+          inputs: Json;
+          object_type: string | null;
+          outcome: string;
+          parent_event_id: string | null;
+          policy_context: Json | null;
+          provenance: Json | null;
+          recorded_at: string;
+          residual_uncertainty: Json;
+          resolution_trace: Json;
+          rule_applied: string | null;
+          schema_version: string | null;
+          status: string | null;
+          subject_entity_id: string;
+          superseded: Json;
+          tenant_id: string;
+          trace_id: string | null;
+          updated_by: string | null;
+          valid_from: string | null;
+          valid_time_known: boolean;
+          valid_until: string | null;
+          value: Json | null;
+          verdict_id: string;
+          verdict_provenance: Json;
+          winner_id: string | null;
+        };
+        Insert: {
+          applied_rules?: Json;
+          attribute: string;
+          causation_id?: string | null;
+          correlation_id?: string | null;
+          created_by: string;
+          declared_origin?: string | null;
+          duplicates?: Json;
+          id: string;
+          inputs?: Json;
+          object_type?: string | null;
+          outcome: string;
+          parent_event_id?: string | null;
+          policy_context?: Json | null;
+          provenance?: Json | null;
+          recorded_at: string;
+          residual_uncertainty: Json;
+          resolution_trace?: Json;
+          rule_applied?: string | null;
+          schema_version?: string | null;
+          status?: string | null;
+          subject_entity_id: string;
+          superseded?: Json;
+          tenant_id: string;
+          trace_id?: string | null;
+          updated_by?: string | null;
+          valid_from?: string | null;
+          valid_time_known?: boolean;
+          valid_until?: string | null;
+          value?: Json | null;
+          verdict_id: string;
+          verdict_provenance: Json;
+          winner_id?: string | null;
+        };
+        Update: {
+          applied_rules?: Json;
+          attribute?: string;
+          causation_id?: string | null;
+          correlation_id?: string | null;
+          created_by?: string;
+          declared_origin?: string | null;
+          duplicates?: Json;
+          id?: string;
+          inputs?: Json;
+          object_type?: string | null;
+          outcome?: string;
+          parent_event_id?: string | null;
+          policy_context?: Json | null;
+          provenance?: Json | null;
+          recorded_at?: string;
+          residual_uncertainty?: Json;
+          resolution_trace?: Json;
+          rule_applied?: string | null;
+          schema_version?: string | null;
+          status?: string | null;
+          subject_entity_id?: string;
+          superseded?: Json;
+          tenant_id?: string;
+          trace_id?: string | null;
+          updated_by?: string | null;
+          valid_from?: string | null;
+          valid_time_known?: boolean;
+          valid_until?: string | null;
+          value?: Json | null;
+          verdict_id?: string;
+          verdict_provenance?: Json;
+          winner_id?: string | null;
+        };
+        Relationships: [];
+      };
+      cg_relationship: {
+        Row: {
+          attributes: Json;
+          causation_id: string | null;
+          confidence: number | null;
+          correlation_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          declared_origin: string | null;
+          id: string;
+          object_type: string | null;
+          observed_at: string | null;
+          parent_event_id: string | null;
+          policy_context: Json | null;
+          provenance: Json | null;
+          recorded_at: string;
+          relation_type: string;
+          schema_version: string | null;
+          source_entity_id: string;
+          source_ref: string | null;
+          status: string | null;
+          target_entity_id: string;
+          tenant_id: string | null;
+          trace_id: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          valid_from: string | null;
+          valid_to: string | null;
+        };
+        Insert: {
+          attributes?: Json;
+          causation_id?: string | null;
+          confidence?: number | null;
+          correlation_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          declared_origin?: string | null;
+          id?: string;
+          object_type?: string | null;
+          observed_at?: string | null;
+          parent_event_id?: string | null;
+          policy_context?: Json | null;
+          provenance?: Json | null;
+          recorded_at?: string;
+          relation_type: string;
+          schema_version?: string | null;
+          source_entity_id: string;
+          source_ref?: string | null;
+          status?: string | null;
+          target_entity_id: string;
+          tenant_id?: string | null;
+          trace_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          valid_from?: string | null;
+          valid_to?: string | null;
+        };
+        Update: {
+          attributes?: Json;
+          causation_id?: string | null;
+          confidence?: number | null;
+          correlation_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          declared_origin?: string | null;
+          id?: string;
+          object_type?: string | null;
+          observed_at?: string | null;
+          parent_event_id?: string | null;
+          policy_context?: Json | null;
+          provenance?: Json | null;
+          recorded_at?: string;
+          relation_type?: string;
+          schema_version?: string | null;
+          source_entity_id?: string;
+          source_ref?: string | null;
+          status?: string | null;
+          target_entity_id?: string;
+          tenant_id?: string | null;
+          trace_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          valid_from?: string | null;
+          valid_to?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_relationship_source_entity_id_fkey";
+            columns: ["source_entity_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_entity";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "cg_relationship_target_entity_id_fkey";
+            columns: ["target_entity_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_entity";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      cg_role_assignment: {
+        Row: {
+          created_at: string;
+          ended_on: string | null;
+          id: string;
+          identity_ref: string;
+          role_id: string;
+          started_on: string;
+          status: string;
+          tenant_ref: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          ended_on?: string | null;
+          id?: string;
+          identity_ref: string;
+          role_id: string;
+          started_on?: string;
+          status?: string;
+          tenant_ref: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          ended_on?: string | null;
+          id?: string;
+          identity_ref?: string;
+          role_id?: string;
+          started_on?: string;
+          status?: string;
+          tenant_ref?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      cg_role_grant: {
+        Row: {
+          capability: string;
+          granted_by: string;
+          granted_on: string;
+          id: string;
+          revoked_on: string | null;
+          role_id: string;
+          tenant_ref: string;
+        };
+        Insert: {
+          capability: string;
+          granted_by: string;
+          granted_on?: string;
+          id?: string;
+          revoked_on?: string | null;
+          role_id: string;
+          tenant_ref: string;
+        };
+        Update: {
+          capability?: string;
+          granted_by?: string;
+          granted_on?: string;
+          id?: string;
+          revoked_on?: string | null;
+          role_id?: string;
+          tenant_ref?: string;
+        };
+        Relationships: [];
+      };
+      cg_tenant: {
+        Row: {
+          created_at: string;
+          environment: string;
+          id: string;
+          name: string;
+          parent_tenant_id: string | null;
+          region: string | null;
+          slug: string;
+          status: string;
+          tenant_type: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          environment?: string;
+          id?: string;
+          name: string;
+          parent_tenant_id?: string | null;
+          region?: string | null;
+          slug: string;
+          status?: string;
+          tenant_type: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          environment?: string;
+          id?: string;
+          name?: string;
+          parent_tenant_id?: string | null;
+          region?: string | null;
+          slug?: string;
+          status?: string;
+          tenant_type?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_tenant_parent_tenant_id_fkey";
+            columns: ["parent_tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_tenant";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      cg_tool_runtime_invocation: {
+        Row: {
+          at: string;
+          at_ms: number;
+          delegation_ref: string | null;
+          evidence_ref: string | null;
+          lease_handle_refs: Json;
+          lease_invalidated: boolean;
+          outcome: string;
+          reason_code: string | null;
+          reason_detail: string | null;
+          record_id: string;
+          redacted_params: Json;
+          required_capability_ids: Json;
+          result_summary: string | null;
+          tenant_id: string;
+          tool_id: string;
+          worker_id: string | null;
+          worker_identity_ref: string | null;
+        };
+        Insert: {
+          at: string;
+          at_ms: number;
+          delegation_ref?: string | null;
+          evidence_ref?: string | null;
+          lease_handle_refs?: Json;
+          lease_invalidated?: boolean;
+          outcome: string;
+          reason_code?: string | null;
+          reason_detail?: string | null;
+          record_id: string;
+          redacted_params: Json;
+          required_capability_ids?: Json;
+          result_summary?: string | null;
+          tenant_id: string;
+          tool_id: string;
+          worker_id?: string | null;
+          worker_identity_ref?: string | null;
+        };
+        Update: {
+          at?: string;
+          at_ms?: number;
+          delegation_ref?: string | null;
+          evidence_ref?: string | null;
+          lease_handle_refs?: Json;
+          lease_invalidated?: boolean;
+          outcome?: string;
+          reason_code?: string | null;
+          reason_detail?: string | null;
+          record_id?: string;
+          redacted_params?: Json;
+          required_capability_ids?: Json;
+          result_summary?: string | null;
+          tenant_id?: string;
+          tool_id?: string;
+          worker_id?: string | null;
+          worker_identity_ref?: string | null;
+        };
+        Relationships: [];
+      };
+      cg_tool_runtime_tool: {
+        Row: {
+          budget_guard: Json | null;
+          contract: string;
+          credential_requirements: Json;
+          id: string;
+          rate_guard: Json | null;
+          registered_at: string;
+          registered_at_ms: number;
+          required_capability_ids: Json;
+          risk_class: string;
+          sensitive_param_keys: Json;
+          tenant_id: string;
+          tool_id: string;
+        };
+        Insert: {
+          budget_guard?: Json | null;
+          contract: string;
+          credential_requirements?: Json;
+          id: string;
+          rate_guard?: Json | null;
+          registered_at: string;
+          registered_at_ms: number;
+          required_capability_ids?: Json;
+          risk_class: string;
+          sensitive_param_keys?: Json;
+          tenant_id: string;
+          tool_id: string;
+        };
+        Update: {
+          budget_guard?: Json | null;
+          contract?: string;
+          credential_requirements?: Json;
+          id?: string;
+          rate_guard?: Json | null;
+          registered_at?: string;
+          registered_at_ms?: number;
+          required_capability_ids?: Json;
+          risk_class?: string;
+          sensitive_param_keys?: Json;
+          tenant_id?: string;
+          tool_id?: string;
+        };
+        Relationships: [];
+      };
+      cg_usage_attribution_bucket: {
+        Row: {
+          bucket_key: string;
+          dimension: string;
+          rollup_row_id: string;
+          tenant_id: string;
+          totals: Json;
+        };
+        Insert: {
+          bucket_key: string;
+          dimension: string;
+          rollup_row_id: string;
+          tenant_id: string;
+          totals: Json;
+        };
+        Update: {
+          bucket_key?: string;
+          dimension?: string;
+          rollup_row_id?: string;
+          tenant_id?: string;
+          totals?: Json;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_usage_attribution_bucket_rollup_fk";
+            columns: ["rollup_row_id", "tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_usage_attribution_rollup";
+            referencedColumns: ["id", "tenant_id"];
+          },
+        ];
+      };
+      cg_usage_attribution_rollup: {
+        Row: {
+          grand_total: Json;
+          id: string;
+          integrity_conserves: boolean;
+          integrity_defects: Json;
+          integrity_ok: boolean;
+          integrity_problems: Json;
+          period_from: string | null;
+          period_to: string | null;
+          recorded_at: string;
+          recorded_from: string | null;
+          recorded_to: string | null;
+          tenant_id: string;
+        };
+        Insert: {
+          grand_total: Json;
+          id: string;
+          integrity_conserves: boolean;
+          integrity_defects?: Json;
+          integrity_ok: boolean;
+          integrity_problems?: Json;
+          period_from?: string | null;
+          period_to?: string | null;
+          recorded_at: string;
+          recorded_from?: string | null;
+          recorded_to?: string | null;
+          tenant_id: string;
+        };
+        Update: {
+          grand_total?: Json;
+          id?: string;
+          integrity_conserves?: boolean;
+          integrity_defects?: Json;
+          integrity_ok?: boolean;
+          integrity_problems?: Json;
+          period_from?: string | null;
+          period_to?: string | null;
+          recorded_at?: string;
+          recorded_from?: string | null;
+          recorded_to?: string | null;
+          tenant_id?: string;
+        };
+        Relationships: [];
+      };
+      cg_verification_result: {
+        Row: {
+          created_at: string;
+          decision: string;
+          evidence_ids: string[];
+          execution_id: string;
+          reason: string;
+          verification_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          decision: string;
+          evidence_ids?: string[];
+          execution_id: string;
+          reason: string;
+          verification_id: string;
+        };
+        Update: {
+          created_at?: string;
+          decision?: string;
+          evidence_ids?: string[];
+          execution_id?: string;
+          reason?: string;
+          verification_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_verification_result_execution_id_fkey";
+            columns: ["execution_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_execution_record";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      cg_worker_capability: {
+        Row: {
+          capability_id: string;
+          definition_id: string;
+          description: string;
+          tenant_id: string;
+        };
+        Insert: {
+          capability_id: string;
+          definition_id: string;
+          description: string;
+          tenant_id: string;
+        };
+        Update: {
+          capability_id?: string;
+          definition_id?: string;
+          description?: string;
+          tenant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_worker_capability_definition_fk";
+            columns: ["definition_id", "tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_worker_definition";
+            referencedColumns: ["id", "tenant_id"];
+          },
+        ];
+      };
+      cg_worker_definition: {
+        Row: {
+          causation_id: string | null;
+          classification: string;
+          correlation_id: string | null;
+          created_at: string;
+          created_by: string;
+          declared_origin: string | null;
+          delegation_history_refs: Json;
+          id: string;
+          identity_id: string;
+          lifecycle_state: string;
+          max_risk_class: string;
+          object_type: string | null;
+          parent_event_id: string | null;
+          policy_context: Json | null;
+          provenance: Json | null;
+          resource_scopes: Json;
+          schema_version: string | null;
+          status: string | null;
+          tenant_id: string;
+          trace_id: string | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          causation_id?: string | null;
+          classification: string;
+          correlation_id?: string | null;
+          created_at?: string;
+          created_by: string;
+          declared_origin?: string | null;
+          delegation_history_refs?: Json;
+          id: string;
+          identity_id: string;
+          lifecycle_state?: string;
+          max_risk_class: string;
+          object_type?: string | null;
+          parent_event_id?: string | null;
+          policy_context?: Json | null;
+          provenance?: Json | null;
+          resource_scopes?: Json;
+          schema_version?: string | null;
+          status?: string | null;
+          tenant_id: string;
+          trace_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          causation_id?: string | null;
+          classification?: string;
+          correlation_id?: string | null;
+          created_at?: string;
+          created_by?: string;
+          declared_origin?: string | null;
+          delegation_history_refs?: Json;
+          id?: string;
+          identity_id?: string;
+          lifecycle_state?: string;
+          max_risk_class?: string;
+          object_type?: string | null;
+          parent_event_id?: string | null;
+          policy_context?: Json | null;
+          provenance?: Json | null;
+          resource_scopes?: Json;
+          schema_version?: string | null;
+          status?: string | null;
+          tenant_id?: string;
+          trace_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_worker_definition_identity_id_fkey";
+            columns: ["identity_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_identity";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      cg_worker_delegation: {
+        Row: {
+          definition_id: string;
+          delegated_capabilities: Json;
+          delegation_ref: string;
+          id: string;
+          max_granted_risk_class: string;
+          recorded_at: string;
+          recorded_by: string;
+          tenant_id: string;
+        };
+        Insert: {
+          definition_id: string;
+          delegated_capabilities?: Json;
+          delegation_ref: string;
+          id: string;
+          max_granted_risk_class: string;
+          recorded_at?: string;
+          recorded_by: string;
+          tenant_id: string;
+        };
+        Update: {
+          definition_id?: string;
+          delegated_capabilities?: Json;
+          delegation_ref?: string;
+          id?: string;
+          max_granted_risk_class?: string;
+          recorded_at?: string;
+          recorded_by?: string;
+          tenant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_worker_delegation_definition_fk";
+            columns: ["definition_id", "tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_worker_definition";
+            referencedColumns: ["id", "tenant_id"];
+          },
+        ];
+      };
+      cg_worker_delegation_grant: {
+        Row: {
+          definition_id: string;
+          delegated_capabilities: Json;
+          delegation_ref: string;
+          granted_at: string;
+          granted_by: string;
+          id: string;
+          max_granted_risk_class: string;
+          revoked_at: string | null;
+          revoked_by: string | null;
+          revoked_reason: string | null;
+          state: string;
+          tenant_id: string;
+        };
+        Insert: {
+          definition_id: string;
+          delegated_capabilities?: Json;
+          delegation_ref: string;
+          granted_at?: string;
+          granted_by: string;
+          id: string;
+          max_granted_risk_class: string;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          revoked_reason?: string | null;
+          state: string;
+          tenant_id: string;
+        };
+        Update: {
+          definition_id?: string;
+          delegated_capabilities?: Json;
+          delegation_ref?: string;
+          granted_at?: string;
+          granted_by?: string;
+          id?: string;
+          max_granted_risk_class?: string;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          revoked_reason?: string | null;
+          state?: string;
+          tenant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_worker_delegation_grant_definition_fk";
+            columns: ["definition_id", "tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_worker_definition";
+            referencedColumns: ["id", "tenant_id"];
+          },
+        ];
+      };
+      cg_worker_quarantine: {
+        Row: {
+          definition_id: string;
+          failure_count: number;
+          failure_threshold: number;
+          id: string;
+          quarantined_at: string;
+          quarantined_by: string;
+          reason: string;
+          released_at: string | null;
+          released_by: string | null;
+          state: string;
+          tenant_id: string;
+        };
+        Insert: {
+          definition_id: string;
+          failure_count: number;
+          failure_threshold: number;
+          id: string;
+          quarantined_at?: string;
+          quarantined_by: string;
+          reason: string;
+          released_at?: string | null;
+          released_by?: string | null;
+          state: string;
+          tenant_id: string;
+        };
+        Update: {
+          definition_id?: string;
+          failure_count?: number;
+          failure_threshold?: number;
+          id?: string;
+          quarantined_at?: string;
+          quarantined_by?: string;
+          reason?: string;
+          released_at?: string | null;
+          released_by?: string | null;
+          state?: string;
+          tenant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_worker_quarantine_definition_fk";
+            columns: ["definition_id", "tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_worker_definition";
+            referencedColumns: ["id", "tenant_id"];
+          },
+        ];
+      };
+      cg_workforce_kind: {
+        Row: {
+          aliases: string[];
+          authority_group: string;
+          created_at: string;
+          description: string;
+          employment_class: string;
+          family: string;
+          is_leadership: boolean;
+          is_teaching: boolean;
+          kind_code: string;
+          runtime_ref: string;
+          status: string;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          aliases?: string[];
+          authority_group: string;
+          created_at?: string;
+          description?: string;
+          employment_class: string;
+          family: string;
+          is_leadership?: boolean;
+          is_teaching?: boolean;
+          kind_code: string;
+          runtime_ref: string;
+          status?: string;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          aliases?: string[];
+          authority_group?: string;
+          created_at?: string;
+          description?: string;
+          employment_class?: string;
+          family?: string;
+          is_leadership?: boolean;
+          is_teaching?: boolean;
+          kind_code?: string;
+          runtime_ref?: string;
+          status?: string;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_workforce_kind_runtime_ref_fkey";
+            columns: ["runtime_ref"];
+            isOneToOne: false;
+            referencedRelation: "cg_domain_runtime";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      cg_workforce_position: {
+        Row: {
+          attributes: Json;
+          created_at: string;
+          employment_type: string;
+          ended_on: string | null;
+          id: string;
+          identity_ref: string;
+          is_primary: boolean;
+          kind_code: string;
+          runtime_ref: string;
+          started_on: string;
+          status: string;
+          tenant_ref: string;
+          updated_at: string;
+        };
+        Insert: {
+          attributes?: Json;
+          created_at?: string;
+          employment_type?: string;
+          ended_on?: string | null;
+          id?: string;
+          identity_ref: string;
+          is_primary?: boolean;
+          kind_code: string;
+          runtime_ref: string;
+          started_on: string;
+          status?: string;
+          tenant_ref: string;
+          updated_at?: string;
+        };
+        Update: {
+          attributes?: Json;
+          created_at?: string;
+          employment_type?: string;
+          ended_on?: string | null;
+          id?: string;
+          identity_ref?: string;
+          is_primary?: boolean;
+          kind_code?: string;
+          runtime_ref?: string;
+          started_on?: string;
+          status?: string;
+          tenant_ref?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_workforce_position_runtime_ref_kind_code_fkey";
+            columns: ["runtime_ref", "kind_code"];
+            isOneToOne: false;
+            referencedRelation: "cg_workforce_kind";
+            referencedColumns: ["runtime_ref", "kind_code"];
+          },
+        ];
+      };
+      cg_workspace: {
+        Row: {
+          archive_reason: string | null;
+          code: string;
+          config_version: number;
+          created_at: string;
+          created_by: string;
+          default_page_id: string | null;
+          id: string;
+          is_discoverable: boolean;
+          lifecycle_state: string;
+          locale: string | null;
+          module_ids: string[];
+          name: string;
+          parent_workspace_id: string | null;
+          region: string | null;
+          suspension_reason: string | null;
+          tenant_id: string;
+          timezone: string | null;
+          type: string;
+          updated_at: string;
+        };
+        Insert: {
+          archive_reason?: string | null;
+          code: string;
+          config_version?: number;
+          created_at?: string;
+          created_by: string;
+          default_page_id?: string | null;
+          id: string;
+          is_discoverable?: boolean;
+          lifecycle_state?: string;
+          locale?: string | null;
+          module_ids?: string[];
+          name: string;
+          parent_workspace_id?: string | null;
+          region?: string | null;
+          suspension_reason?: string | null;
+          tenant_id: string;
+          timezone?: string | null;
+          type: string;
+          updated_at?: string;
+        };
+        Update: {
+          archive_reason?: string | null;
+          code?: string;
+          config_version?: number;
+          created_at?: string;
+          created_by?: string;
+          default_page_id?: string | null;
+          id?: string;
+          is_discoverable?: boolean;
+          lifecycle_state?: string;
+          locale?: string | null;
+          module_ids?: string[];
+          name?: string;
+          parent_workspace_id?: string | null;
+          region?: string | null;
+          suspension_reason?: string | null;
+          tenant_id?: string;
+          timezone?: string | null;
+          type?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_workspace_parent_workspace_id_fkey";
+            columns: ["parent_workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_workspace";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      cg_workspace_member: {
+        Row: {
+          actor_id: string;
+          created_at: string;
+          id: string;
+          invited_by: string | null;
+          member_role: string;
+          state: string;
+          tenant_id: string;
+          updated_at: string;
+          workspace_id: string;
+        };
+        Insert: {
+          actor_id: string;
+          created_at?: string;
+          id: string;
+          invited_by?: string | null;
+          member_role: string;
+          state?: string;
+          tenant_id: string;
+          updated_at?: string;
+          workspace_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          created_at?: string;
+          id?: string;
+          invited_by?: string | null;
+          member_role?: string;
+          state?: string;
+          tenant_id?: string;
+          updated_at?: string;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cg_workspace_member_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "cg_workspace";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       classes: {
         Row: {
           academic_year: string | null;
@@ -2057,6 +5203,47 @@ export type Database = {
             columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      organization_memberships: {
+        Row: {
+          created_at: string;
+          id: string;
+          is_active: boolean;
+          is_primary: boolean;
+          role: string;
+          school_id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          is_primary?: boolean;
+          role: string;
+          school_id: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          is_primary?: boolean;
+          role?: string;
+          school_id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "organization_memberships_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
             referencedColumns: ["id"];
           },
         ];
@@ -4368,10 +7555,133 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      assign_role: {
+        Args: {
+          p_ended_on?: string;
+          p_identity: string;
+          p_role_id: string;
+          p_started_on?: string;
+          p_tenant: string;
+        };
+        Returns: string;
+      };
+      assign_workforce_position: {
+        Args: {
+          p_employment_type?: string;
+          p_identity: string;
+          p_kind_code: string;
+          p_primary?: boolean;
+          p_runtime?: string;
+          p_started_on?: string;
+          p_tenant: string;
+        };
+        Returns: string;
+      };
+      cg_prune_expired_idempotency_records: {
+        Args: { p_batch_limit?: number; p_before: string };
+        Returns: number;
+      };
+      create_organization_with_founder: {
+        Args: {
+          p_full_name: string;
+          p_org_name: string;
+          p_org_slug: string;
+          p_runtime?: string;
+        };
+        Returns: string;
+      };
+      end_role_assignment: {
+        Args: { p_assignment_id: string };
+        Returns: boolean;
+      };
+      end_workforce_position: {
+        Args: { p_ended_on?: string; p_position_id: string };
+        Returns: boolean;
+      };
+      get_my_memberships: {
+        Args: never;
+        Returns: {
+          is_primary: boolean;
+          role: string;
+          school_id: string;
+        }[];
+      };
+      get_my_primary_workforce_position: {
+        Args: never;
+        Returns: {
+          authority_group: string;
+          employment_type: string;
+          ended_on: string;
+          family: string;
+          id: string;
+          identity_ref: string;
+          is_primary: boolean;
+          kind_code: string;
+          kind_title: string;
+          started_on: string;
+          status: string;
+        }[];
+      };
       get_my_role: { Args: never; Returns: string };
       get_my_school_id: { Args: never; Returns: string };
+      get_my_tenant_id: { Args: never; Returns: string };
+      get_org_profile: {
+        Args: { p_profile_key: string; p_runtime: string; p_tenant: string };
+        Returns: {
+          id: string;
+          payload: Json;
+          updated_at: string;
+        }[];
+      };
+      grant_role_capability: {
+        Args: { p_capability: string; p_role_id: string; p_tenant: string };
+        Returns: string;
+      };
+      holds_tenant_role: {
+        Args: { p_role_ref: string; p_tenant: string };
+        Returns: boolean;
+      };
       is_school_admin: { Args: never; Returns: boolean };
       is_super_admin: { Args: never; Returns: boolean };
+      is_tenant_admin: { Args: { p_tenant: string }; Returns: boolean };
+      list_role_assignments: {
+        Args: { p_tenant: string };
+        Returns: {
+          ended_on: string;
+          id: string;
+          identity_ref: string;
+          role_id: string;
+          started_on: string;
+          status: string;
+        }[];
+      };
+      list_role_grants: {
+        Args: { p_tenant: string };
+        Returns: {
+          capability: string;
+          granted_by: string;
+          granted_on: string;
+          id: string;
+          revoked_on: string;
+          role_id: string;
+        }[];
+      };
+      list_workforce_positions: {
+        Args: { p_tenant: string };
+        Returns: {
+          authority_group: string;
+          employment_type: string;
+          ended_on: string;
+          family: string;
+          id: string;
+          identity_ref: string;
+          is_primary: boolean;
+          kind_code: string;
+          kind_title: string;
+          started_on: string;
+          status: string;
+        }[];
+      };
       public_school_stats: {
         Args: { _slug: string };
         Returns: {
@@ -4390,9 +7700,19 @@ export type Database = {
           subject_specialty: string;
         }[];
       };
+      revoke_role_capability: { Args: { p_grant_id: string }; Returns: boolean };
       seed_default_staff_types: {
         Args: { _school_id: string };
         Returns: undefined;
+      };
+      upsert_org_profile: {
+        Args: {
+          p_payload: Json;
+          p_profile_key: string;
+          p_runtime: string;
+          p_tenant: string;
+        };
+        Returns: string;
       };
     };
     Enums: {

@@ -1,31 +1,38 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useApp } from "@/contexts/app-context";
-import { scholarWorkspaceHome } from "@/lib/runtime/nav-registry";
 import { PublicSchoolSite } from "@/components/public/site";
-import { CommandCentre } from "@/components/command-centre/command-centre";
-import { PLATFORM_NAME } from "@/lib/platform";
-import { INSTALLED_RUNTIME_DESCRIPTION as SCHOLAR_RUNTIME_DESCRIPTION } from "@/lib/runtime/installed-runtimes";
+import { SherivsHome } from "@/components/public/sherivs-home";
+import { identityFromAppState } from "@/lib/identity/context";
+import { resolveTenantDomain, resolveTenantSlug } from "@/lib/tenant";
+import { PLATFORM_NAME, PLATFORM_URL } from "@/lib/platform";
 
 export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: `CoreGrid Command Centre — ${SCHOLAR_RUNTIME_DESCRIPTION}` },
+      {
+        title: `${PLATFORM_NAME} — The operating intelligence for modern organizations`,
+      },
       {
         name: "description",
         content:
-          "The CoreGrid Command Centre — the platform operating surface. Provision organizations, roles and policies across a 51-phase governed platform.",
+          "Sherivs connects your organization's people, knowledge, workflows, communications, data, and AI workforce into one intelligent operating environment.",
       },
-      { property: "og:title", content: `${PLATFORM_NAME} Command Centre` },
+      {
+        property: "og:title",
+        content: `${PLATFORM_NAME} — Intelligent operating infrastructure for organizations`,
+      },
       {
         property: "og:description",
-        content: "Provision organizations, roles and policies on the CoreGrid platform.",
+        content:
+          "One intelligent operating environment for organizations: people, knowledge, workflows, AI workforce, and operations — governed by design.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://universalschoolos.com/" },
+      { property: "og:url", content: `${PLATFORM_URL}/` },
+      { name: "twitter:card", content: "summary" },
     ],
-    links: [{ rel: "canonical", href: "https://universalschoolos.com/" }],
+    links: [{ rel: "canonical", href: `${PLATFORM_URL}/` }],
   }),
 });
 
@@ -33,12 +40,16 @@ function Index() {
   const { loading, school, tenantSlug, role, profile, superAdmin } = useApp();
   const navigate = useNavigate();
 
-  // Signed-in users (on the platform host, not a tenant site) → their dashboard
+  // Identity-based routing (§11): signed-in users on the platform host (not a
+  // tenant site) go to their resolved identity destination — internal
+  // workforce → /internal, organization member → their workspace home,
+  // multiple memberships → the selector, unlinked → /welcome.
+  const identity = identityFromAppState({ superAdmin, profile, school });
   useEffect(() => {
-    if (!loading && role && !tenantSlug) {
-      navigate({ to: scholarWorkspaceHome(role), replace: true });
+    if (!loading && (role || profile || superAdmin) && !tenantSlug) {
+      navigate({ to: identity.destination, replace: true });
     }
-  }, [loading, role, tenantSlug, navigate]);
+  }, [loading, role, profile, superAdmin, tenantSlug, identity.destination, navigate]);
 
   // Per-tenant document title + meta description + OG image + JSON-LD
   useEffect(() => {
@@ -126,6 +137,14 @@ function Index() {
   }, [school]);
 
   if (loading) {
+    // Platform context (sherivs.com host, server render, or no tenant
+    // signal): render the public homepage immediately so crawlers and
+    // browser previews receive the real hero/CTA markup instead of a
+    // loading shell (§27 SEO, §28 performance). Tenant hosts keep the
+    // loading state — their site content resolves asynchronously.
+    if (resolveTenantSlug() === null && resolveTenantDomain() === null) {
+      return <SherivsHome />;
+    }
     return <div className="min-h-dvh grid place-items-center text-muted-foreground">Loading…</div>;
   }
 
@@ -134,8 +153,8 @@ function Index() {
     return <PublicSchoolSite school={school} />;
   }
 
-  // CoreGrid Command Centre — the platform's primary workspace surface for the
-  // African Educational Runtime (Phases 1–51). Dynamic workspace: from here an
-  // authorized operator provisions a school, its role model, and its policies.
-  return <CommandCentre />;
+  // Sherivs public company homepage — PLANE 1. The platform's internal
+  // operating surface (Sherivs Control) lives behind authentication, never
+  // on the public company site.
+  return <SherivsHome />;
 }

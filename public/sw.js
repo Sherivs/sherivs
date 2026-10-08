@@ -1,4 +1,4 @@
-/* CoreGrid Scholar — service worker for web push notifications + offline shell. */
+/* Sherivs — service worker for web push notifications + offline shell. */
 
 /* The offline shell is the smallest useful offline surface: precache the app's
  * root document at install, then serve navigations network-first (caching every
@@ -34,9 +34,9 @@ self.addEventListener("push", (event) => {
     payload = { body: event.data ? event.data.text() : "" };
   }
 
-  const title = payload.title || "CoreGrid Scholar";
+  const title = payload.title || "Sherivs";
   const options = {
-    body: payload.body || "You have a new update from your school.",
+    body: payload.body || "You have a new notification.",
     icon: "/favicon.ico",
     badge: "/favicon.ico",
     tag: payload.tag || "vibeora-notification",
@@ -82,7 +82,7 @@ self.addEventListener("fetch", (event) => {
           (await cache.match(request, { ignoreSearch: true })) ||
           (await cache.match(APP_SHELL_URL));
         if (cached) return cached;
-        return new Response("Offline — CoreGrid Scholar is unavailable until you reconnect.", {
+        return new Response("Offline — Sherivs is unavailable until you reconnect.", {
           status: 503,
           headers: { "Content-Type": "text/plain; charset=utf-8" },
         });

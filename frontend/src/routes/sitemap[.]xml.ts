@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 
-const BASE_URL = "https://universalschoolos.com";
+const BASE_URL = "https://sherivs.com";
 
 interface SitemapEntry {
   path: string;
@@ -17,6 +17,12 @@ export const Route = createFileRoute("/sitemap.xml")({
       GET: async () => {
         const entries: SitemapEntry[] = [
           { path: "/", changefreq: "weekly", priority: "1.0" },
+          { path: "/coregrid", changefreq: "weekly", priority: "0.8" },
+          { path: "/request-demo", changefreq: "monthly", priority: "0.9" },
+          { path: "/about", changefreq: "monthly", priority: "0.5" },
+          { path: "/contact", changefreq: "monthly", priority: "0.5" },
+          { path: "/privacy-policy", changefreq: "yearly", priority: "0.2" },
+          { path: "/terms", changefreq: "yearly", priority: "0.2" },
           { path: "/auth", changefreq: "monthly", priority: "0.3" },
         ];
 

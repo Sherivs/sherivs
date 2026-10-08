@@ -14,11 +14,11 @@ export const Route = createFileRoute("/reality/$class")({
   component: RealityPreview,
   head: () => ({
     meta: [
-      { title: "Generated environment — CoreGrid" },
+      { title: "Generated environment — Sherivs" },
       {
         name: "description",
         content:
-          "Every CoreGrid organization class generates its own digital environment: sections, brand, navigation, manifest and internal workspaces derived from the organization's reality.",
+          "Every Sherivs organization class generates its own digital environment: sections, brand, navigation, manifest and internal workspaces derived from the organization's reality.",
       },
     ],
   }),
@@ -36,7 +36,7 @@ function RealityPreview() {
 
   useEffect(() => {
     const previous = document.title;
-    document.title = `${organizationClassLabel(orgType)} — generated environment — CoreGrid`;
+    document.title = `${organizationClassLabel(orgType)} — generated environment — Sherivs`;
     return () => {
       document.title = previous;
     };
@@ -98,7 +98,7 @@ function RealityPreview() {
             </div>
             <nav className="mt-3 flex flex-wrap gap-4 text-xs">
               <Link to="/" className="underline">
-                Command Centre
+                Sherivs Control
               </Link>
               <Link to="/platform" className="underline">
                 The platform

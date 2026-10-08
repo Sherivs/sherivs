@@ -241,20 +241,16 @@ describe("G-080: authority-mirror forgery attempts", () => {
     if (!parsed.ok) expect(parsed.reason).toBe("invalid_shape");
   });
 
-  it("contains prototype-pollution smuggling via a __proto__ own key — no pollution, clean output (KNOWN RISK: strict refusal is evaded)", () => {
-    // zod strictObject silently strips a __proto__ own key instead of refusing
-    // it with invalid_shape. The harmful effect is still contained: nothing
-    // pollutes, and the parsed artifact carries none of the smuggled bytes.
+  it("denies prototype-pollution smuggling via a __proto__ own key with the strict denial (REMEDIATED — closes KR-3)", () => {
+    // Remediated by zod 4.6.5: strictObject now REFUSES a __proto__ own key
+    // with invalid_shape (the typed denial) instead of silently stripping it.
+    // No pollution, and the envelope is never parsed from the smuggled bytes.
     const smuggled: unknown = JSON.parse(
       JSON.stringify(envelopeFixture()).replace(/^(\{)/, '$1"__proto__":{"polluted":true},'),
     );
     const parsed = parseSharedStateEnvelope(smuggled);
-    expect(parsed.ok).toBe(true); // strict refusal evaded — see report KNOWN RISK KR-3
-    if (parsed.ok) {
-      expect(Object.getPrototypeOf(parsed.value)).toBe(Object.prototype);
-      expect(Object.getOwnPropertyNames(parsed.value)).not.toContain("__proto__");
-      expect(JSON.stringify(parsed.value)).not.toContain("polluted");
-    }
+    expect(parsed.ok).toBe(false);
+    if (!parsed.ok) expect(parsed.reason).toBe("invalid_shape");
     const victim: Record<string, unknown> = {};
     expect(victim.polluted).toBeUndefined(); // no global prototype pollution
   });

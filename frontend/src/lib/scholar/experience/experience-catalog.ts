@@ -107,6 +107,7 @@ export const SECTION_TEMPLATES: readonly SectionTemplate[] = [
     label: "Admissions",
     order: 40,
     components: ["admission_form", "application_portal"],
+    featureKeys: ["curriculum.core"],
     audiences: PUBLIC,
     requiresApproval: true,
   },
@@ -115,6 +116,7 @@ export const SECTION_TEMPLATES: readonly SectionTemplate[] = [
     label: "Programmes",
     order: 50,
     components: ["programme_display"],
+    featureKeys: ["curriculum.core"],
     audiences: PUBLIC,
   },
   {
@@ -122,6 +124,7 @@ export const SECTION_TEMPLATES: readonly SectionTemplate[] = [
     label: "Curriculum",
     order: 60,
     components: ["curriculum_display"],
+    featureKeys: ["curriculum.core"],
     audiences: PUBLIC,
   },
   {
@@ -129,6 +132,7 @@ export const SECTION_TEMPLATES: readonly SectionTemplate[] = [
     label: "Departments",
     order: 70,
     components: ["staff_directory"],
+    featureKeys: ["curriculum.core"],
     audiences: PUBLIC,
   },
   {
@@ -136,6 +140,7 @@ export const SECTION_TEMPLATES: readonly SectionTemplate[] = [
     label: "Campus",
     order: 80,
     components: ["campus_display"],
+    featureKeys: ["curriculum.core", "site.multi_campus"],
     audiences: PUBLIC,
   },
   {
@@ -150,6 +155,7 @@ export const SECTION_TEMPLATES: readonly SectionTemplate[] = [
     label: "Student life",
     order: 100,
     components: ["gallery", "news_feed"],
+    featureKeys: ["curriculum.core"],
     audiences: PUBLIC,
   },
   {

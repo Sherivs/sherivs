@@ -46,7 +46,7 @@ export function PublicSchoolSite({ school }: { school: SchoolRow }) {
           <TransportSection school={school} />
         )}
         {on("section_faculty_enabled" as keyof SchoolRow) && <StaffSection school={school} />}
-        <GallerySection school={school} />
+        {on("section_gallery_enabled" as keyof SchoolRow) && <GallerySection school={school} />}
         {on("section_news_enabled" as keyof SchoolRow) && <NewsEventsSection school={school} />}
         {on("section_testimonials_enabled" as keyof SchoolRow) && (
           <TestimonialsSection school={school} />

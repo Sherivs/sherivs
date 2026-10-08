@@ -92,6 +92,40 @@ describe("R40 — generated site view (one source for site + manifest)", () => {
       expect(block.rationale).toEqual(["universal-section"]);
     }
     expect(company.experience.reality.featureKeys).toEqual([]);
+    // Education sections NEVER render for a non-education class — the generated
+    // site is organization reality, not Scholar's site wearing another label.
+    const sections = company.blocks.map((block) => block.section);
+    for (const educationSection of [
+      "admissions",
+      "programs",
+      "curriculum",
+      "departments",
+      "student_life",
+    ]) {
+      expect(sections).not.toContain(educationSection);
+    }
+    // Genuinely universal sections still serve every organization.
+    for (const universalSection of ["home", "about", "leadership", "news", "contact"]) {
+      expect(sections).toContain(universalSection);
+    }
+  });
+
+  it("education sections render from education reality, never from the class label", () => {
+    const school = buildGeneratedSiteView({ orgType: "school" });
+    const sections = school.blocks.map((block) => block.section);
+    for (const educationSection of ["admissions", "programs", "curriculum", "student_life"]) {
+      expect(sections).toContain(educationSection);
+      expect(
+        school.blocks.find((block) => block.section === educationSection)?.rationale,
+      ).toContain("feature:curriculum.core");
+    }
+
+    // An unknown class key gets the NEUTRAL site — identical to a declared
+    // non-education class, never the school site.
+    const unknown = buildGeneratedSiteView({ orgType: "not-a-known-class" });
+    expect(unknown.blocks.map((block) => block.section)).toEqual(
+      buildGeneratedSiteView({ orgType: "company" }).blocks.map((block) => block.section),
+    );
   });
 
   it("maps audiences back to the role categories that produce them", () => {

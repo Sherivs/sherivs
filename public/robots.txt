@@ -1,4 +1,14 @@
 User-agent: *
 Allow: /
+Disallow: /auth
+Disallow: /platform
+Disallow: /platform/org
+Disallow: /command-centre
+Disallow: /admin
+Disallow: /super-admin
+Disallow: /runtime
+Disallow: /marketplace
+Disallow: /reality
 
-# Sitemap: set to the CoreGrid Scholar production domain at DNS cutover
+# Sitemap: sherivs.com production domain (also served dynamically at /sitemap.xml)
+Sitemap: https://sherivs.com/sitemap.xml

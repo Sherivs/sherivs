@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import { nitro } from "nitro/vite";
 
 const isVitest = process.env.VITEST === "true";
 
@@ -33,6 +34,11 @@ export default defineConfig({
               },
             },
           }),
+          // Nitro compiles the SSR server into the Vercel Build Output API
+          // (functions + routes). Without this plugin `vite build` emits only
+          // static bundles and every deployment serves edge 404s (Vercel's
+          // official TanStack Start deployment guide requires this plugin).
+          nitro(),
         ]),
     react(),
     tailwindcss(),

@@ -1,4 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
+import { PLATFORM_NAME } from "@/lib/platform";
 import {
   KERNEL_CAPABILITIES,
   type KernelCapability,
@@ -8,15 +10,23 @@ import { foundationStandardsSnapshot } from "@/lib/foundation-standards";
 import { scholarConsumedKernelCapabilities } from "@/lib/runtime/scholar-consumption";
 
 export const Route = createFileRoute("/platform")({
+  ssr: false,
   component: Platform,
+  // Internal engineering surface: kernel capabilities, phase contracts and
+  // coverage are internal architecture, never public product navigation.
+  // Server-side session check keeps it off the public surface.
+  beforeLoad: async () => {
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) throw redirect({ to: "/auth" });
+  },
   head: () => ({
     meta: [
-      { title: "CoreGrid — the platform that powers any organization" },
+      { title: `${PLATFORM_NAME} internal — architecture & kernel contracts` },
       {
         name: "description",
-        content:
-          "One governed platform: identity, tenancy, workspaces, AI, security, analytics and 50 kernel capabilities any organization — whatever their domain — can consume.",
+        content: "Internal Sherivs engineering surface — for authorized Sherivs operators only.",
       },
+      { name: "robots", content: "noindex, nofollow" },
       { property: "og:type", content: "website" },
     ],
   }),
@@ -47,10 +57,10 @@ function Platform() {
     <div className="min-h-screen bg-[color:var(--background)] text-[color:var(--foreground)]">
       <header className="border-b border-border">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4">
-          <div className="font-display text-lg font-bold">CoreGrid</div>
+          <div className="font-display text-lg font-bold">{PLATFORM_NAME} · Internal</div>
           <nav className="flex items-center gap-4 text-sm">
             <Link to="/" className="text-muted-foreground hover:text-foreground">
-              Command Centre
+              Sherivs Control
             </Link>
             <a href="/auth" className="text-muted-foreground hover:text-foreground">
               Sign in
@@ -65,9 +75,9 @@ function Platform() {
             One platform. Every organization. Their rules.
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-            CoreGrid is a governed intelligence platform. Whatever an organization runs — a school,
-            a ministry, a company — CoreGrid adapts: identity and tenancy first, then the workspace
-            and domain surfaces the organization actually uses. Nothing is forced on anyone.
+            Sherivs is a governed intelligence platform. Whatever an organization runs — a school, a
+            ministry, a company — Sherivs adapts: identity and tenancy first, then the workspace and
+            domain surfaces the organization actually uses. Nothing is forced on anyone.
           </p>
         </section>
 
@@ -232,8 +242,8 @@ function Platform() {
       </main>
 
       <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
-        CoreGrid · governed intelligence platform · every runtime is a tenant of the kernel, never
-        its owner.
+        {PLATFORM_NAME} internal engineering · governed intelligence platform · every runtime is a
+        tenant of the kernel, never its owner.
       </footer>
     </div>
   );

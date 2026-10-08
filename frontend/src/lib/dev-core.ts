@@ -309,7 +309,7 @@ export function createProjectManifest(input: {
     return { ok: false, error: "Manifest version is required" };
   }
   if (!input.compatibleCoreGridVersion && input.environments?.includes("production")) {
-    return { ok: false, error: "Production manifests must declare CoreGrid compatibility" };
+    return { ok: false, error: "Production manifests must declare Sherivs compatibility" };
   }
   return {
     ok: true,

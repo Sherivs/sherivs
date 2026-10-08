@@ -13,7 +13,7 @@ import { agentGovernanceReport } from "@/lib/agent-governance-report";
  */
 export const Route = createFileRoute("/_authenticated/super-admin/agent-governance")({
   component: AgentGovernancePage,
-  head: () => ({ meta: [{ title: "Agent governance — CoreGrid" }] }),
+  head: () => ({ meta: [{ title: "Agent governance — Sherivs" }] }),
 });
 
 function AgentGovernancePage() {

@@ -197,7 +197,11 @@ describe("H3-077 attack: client-supplied tenant/context injection", () => {
     expectContained("undefined both", decideRuntimeRegistration(undefined, undefined), "invalid_context");
   });
 
-  it("prototype-pollution keys injected via JSON never influence the decision (tenant/actor derive only from the context)", () => {
+  it("denies prototype-pollution keys injected via JSON with the strict request denial (REMEDIATED)", () => {
+    // Remediated by zod 4.6.5: the strict request shape now REJECTS a
+    // JSON-injected own '__proto__' key (invalid_request_shape) instead of
+    // silently stripping it. The decision derives nothing from the injection
+    // — tenant/actor still derive only from the server-resolved context.
     const forged = clone(installRequest()) as Record<string, unknown>;
     Object.defineProperty(forged, "__proto__", {
       value: { resolvedTenantRef: "tenant_b", actorRef: "role:kernel-supreme" },
@@ -205,14 +209,11 @@ describe("H3-077 attack: client-supplied tenant/context injection", () => {
       writable: true,
       configurable: true,
     });
-    const decision = decideRuntimeRegistration(forged, context());
-    expect(decision.outcome).toBe("allow");
-    if (decision.outcome === "allow") {
-      expect(decision.tenantRef).toBe("tenant_a");
-      expect(decision.tenantRef).not.toBe("tenant_b");
-      expect(decision.decidedBy).toBe("role:fabric-administrator");
-      expect(decision.decidedBy).not.toBe("role:kernel-supreme");
-    }
+    expectContained(
+      "prototype-key injection at request root",
+      decideRuntimeRegistration(forged, context()),
+      "invalid_request_shape",
+    );
   });
 
   it("the decision tenant ALWAYS equals the server-resolved context tenant — the same request yields different tenants only when the CONTEXT differs", () => {

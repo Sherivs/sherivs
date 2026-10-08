@@ -230,14 +230,14 @@ export function CommandCentre() {
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
           <div className="flex items-center gap-3">
             <div className="grid size-9 place-items-center rounded-lg bg-primary font-display text-sm font-bold text-primary-foreground">
-              CG
+              S
             </div>
             <div>
               <h1 className="font-display text-lg font-bold leading-tight">
-                CoreGrid Command Centre
+                Sherivs Control
               </h1>
               <p className="text-xs text-muted-foreground">
-                CoreGrid platform · {PHASES_TOTAL} phases
+                Sherivs internal operating environment · {PHASES_TOTAL} architecture phases
               </p>
             </div>
           </div>
@@ -429,7 +429,7 @@ function OrganizationStep(props: {
         </CardTitle>
         <CardDescription>
           Validated by the Phase 25 <code>createOrganizationOnboarding</code> pipeline — the same
-          domain-free contracts that govern production provisioning for every CoreGrid runtime.
+          domain-free contracts that govern production provisioning for every Sherivs runtime.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4 sm:grid-cols-2">
@@ -680,7 +680,7 @@ function LaunchStep(props: {
           Runtime provisioned
         </CardTitle>
         <CardDescription>
-          A CoreGrid domain runtime has been provisioned on the platform. The organization, roles
+          A Sherivs domain runtime has been provisioned on the platform. The organization, roles
           and policy set were validated through the phase contracts.
         </CardDescription>
       </CardHeader>
@@ -1069,7 +1069,7 @@ function GeneratedExperienceCard({ orgType }: { orgType: string }) {
             Served manifest
           </a>
           <a className="underline" href="/platform/org">
-            CoreGrid organization
+            Sherivs internal organization
           </a>
         </div>
       </CardContent>
@@ -1091,7 +1091,7 @@ function PhaseRunway() {
           {PHASES_TOTAL}-phase architecture runway
         </CardTitle>
         <CardDescription className="text-xs">
-          The complete CoreGrid build sequence — Phases 01–32 have implemented, tested domain
+          The complete Sherivs build sequence — Phases 01–32 have implemented, tested domain
           contracts (with explicit measured test suites); Phases 33–51 are architecture-defined
           (documents complete, awaiting domain-contract implementation). Every phase below carries a
           complete engineering contract ({CONTRACT_GOVERNANCE.sectionsPerPhase}/

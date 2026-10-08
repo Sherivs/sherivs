@@ -29,6 +29,7 @@ const read = (ref: string) => readFileSync(join(ROOT, ref), "utf8");
 
 const SITE_LAYOUT = "frontend/src/routes/(site)/route.tsx";
 const SITE_PAGE = "frontend/src/routes/(site)/coregrid.tsx";
+const SITE_HEADER = "frontend/src/components/public/site-header.tsx";
 
 describe("Pricing tier catalog (typed module)", () => {
   it("exposes the five commercial tiers by stable id", () => {
@@ -110,6 +111,9 @@ describe("Site content view-models", () => {
 describe("Route modules — real links, no fake submissions, landmarks", () => {
   const layout = read(SITE_LAYOUT);
   const page = read(SITE_PAGE);
+  // The header is a shared component (used by the (site) layout AND the
+  // homepage component, which renders outside the layout group).
+  const header = read(SITE_HEADER);
 
   it("registers the (site) layout group and the /coregrid page in the generated tree", () => {
     const tree = read("frontend/src/routeTree.gen.ts");
@@ -139,14 +143,20 @@ describe("Route modules — real links, no fake submissions, landmarks", () => {
     }
   });
 
-  it("renders semantic landmarks and the four anchored sections", () => {
-    expect(layout).toContain("<header");
+  it("renders semantic landmarks; sections anchor between layout and pages", () => {
+    // Header landmarks live in the shared SiteHeader component.
+    expect(header).toContain("<header");
+    expect(header).toMatch(/aria-label="Site"/);
+    // The header's section navigation anchors into the public homepage
+    // (the company experience at /), not into this page.
+    for (const anchor of ["platform", "ai-workforce", "solutions", "enterprise", "security"]) {
+      expect(header).toContain(`"/#${anchor}"`);
+    }
+    expect(layout).toContain("<SiteHeader />");
     expect(layout).toContain("<main");
     expect(layout).toContain("<footer");
-    expect(layout).toMatch(/aria-label="Site"/);
     for (const anchor of ["capabilities", "runtimes", "security", "pricing"]) {
       expect(page).toContain(`id="${anchor}"`);
-      expect(layout).toContain(`"/coregrid#${anchor}"`);
     }
   });
 
@@ -169,9 +179,12 @@ describe("Platform narration neutrality (LAW 3 / LAW 5)", () => {
     /CoreGrid Scholar|Scholar's|Scholar is|Scholar consumes|Scholar binds|Scholar resolves|Scholar remains|Scholar-only|Scholar-flavored|Scholar catalog|Scholar runtime \(runtime-001\)/;
   const SELF_IDENTIFICATION = /^\s*(?:\/\*|\*|\/\/)\s*CoreGrid Scholar\b/m;
 
-  const sources = ["-content/pricing-tiers.ts", "-content/site-content.ts", "route.tsx", "coregrid.tsx"].map(
-    (ref) => read(`frontend/src/routes/(site)/${ref}`),
-  );
+  const sources = [
+    "-content/pricing-tiers.ts",
+    "-content/site-content.ts",
+    "route.tsx",
+    "coregrid.tsx",
+  ].map((ref) => read(`frontend/src/routes/(site)/${ref}`));
 
   it("never narrates a runtime as the platform", () => {
     for (const source of sources) {

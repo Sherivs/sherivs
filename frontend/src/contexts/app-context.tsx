@@ -1,9 +1,9 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { resolveTenantSlug } from "@/lib/tenant";
+import { resolveTenantDomain, resolveTenantSlug } from "@/lib/tenant";
 import { type AppRole } from "@/lib/roles";
-import { scholarWorkspaceHome } from "@/lib/runtime/nav-registry";
+import { runtimeWorkspaceHome } from "@/lib/runtime/nav-registry";
 
 /**
  * UserProfile = row from public.users (tenant member).
@@ -123,6 +123,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (sch) nextSchool = sch as SchoolRow;
     }
 
+    // Plane B: custom-domain lookup — an organization's own registered
+    // domain (schools.domain) serves its public site when the visitor
+    // lands on it. Subdomain and platform hosts never reach this branch.
+    const tenantDomain = resolveTenantDomain();
+    if (!nextSchool && !slug && tenantDomain) {
+      const { data: sch } = await supabase
+        .from("schools")
+        .select("*")
+        .eq("domain", tenantDomain)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (sch) nextSchool = sch as SchoolRow;
+    }
+
     setProfile(nextProfile);
     setSuperAdmin(nextSuperAdmin);
     setSchool(nextSchool);
@@ -176,7 +190,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (next.role !== profile.role || next.school_id !== profile.school_id) {
             void load(session).then(() => {
               if (typeof window !== "undefined" && next.role) {
-                window.location.assign(scholarWorkspaceHome(next.role as AppRole));
+                window.location.assign(runtimeWorkspaceHome(next.role as AppRole));
               }
             });
           }

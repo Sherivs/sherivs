@@ -51,15 +51,18 @@ describe("(a) no constant credentials on production surfaces", () => {
     expect(source).not.toMatch(/DEMO_CREDENTIALS/);
   });
 
-  it("the public /auth route renders no credentials of any kind", () => {
+  it("the public /auth route renders no credentials and no demo entry point", () => {
     const source = read("frontend/src/routes/auth.tsx");
     expect(source).not.toMatch(/DEMO_CREDENTIALS|DEMO_ACCOUNTS/);
     expect(source).not.toMatch(/Demo@2026/);
     expect(source).not.toMatch(/admin@demo\.school/);
     expect(source).not.toMatch(/ADMIN_DEMO/);
-    // The demo flow signs in from the server-returned, generated-once result.
-    expect(source).toMatch(/provisionDemoEnterprise/);
-    expect(source).toMatch(/creds\.password/);
+    // Sherivs refoundation (§12): the public authentication surface carries no
+    // demo provisioning flow at all — sign-in only. Demo provisioning remains
+    // an environment-gated, server-side developer fixture, never a public UI.
+    expect(source).not.toMatch(/provisionDemoEnterprise/);
+    expect(source).not.toMatch(/creds\.password/);
+    expect(source).not.toMatch(/Enterprise demo|Sign in as Enterprise demo/i);
   });
 
   it("no file under frontend/src carries the historical fixed credential", () => {

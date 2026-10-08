@@ -31,6 +31,22 @@ export {
   SCHOLAR_NEUTRAL_ROLE_MAPPINGS as RUNTIME_DECLARED_LEGACY_ROLE_MAPPINGS,
 } from "./scholar-role-mappings";
 
+/**
+ * Neutral workspace-home resolution (Milestone 6 composition contract).
+ *
+ * The identity layer, switchers and wizards ask "where does a member with
+ * this role land in the installed runtime?" — they never name a runtime's
+ * symbols. With one installed runtime this delegates to the installed
+ * runtime's own resolution; installing a second runtime composes here
+ * without editing the platform layer.
+ */
+import { scholarWorkspaceHome } from "./scholar-nav-catalog";
+import type { AppRole } from "@/lib/roles";
+
+export function runtimeWorkspaceHome(role: AppRole): string {
+  return scholarWorkspaceHome(role);
+}
+
 export interface InstalledNavContributionSet {
   /** Manifest identifier of the installed runtime, e.g. runtime:scholar. */
   runtimeId: string;

@@ -20,6 +20,7 @@ import {
   AUDIENCE_ROLE_CATEGORIES,
   audiencesForRoles,
 } from "@/lib/scholar/experience/experience-personalization";
+import { roleCategoryLabel } from "@/lib/scholar/roles/role-categories";
 import {
   generateExperience,
   type GeneratedExperience,
@@ -180,7 +181,7 @@ export function classAudienceIndex(orgType: string): readonly {
   );
   return audiencesForRoles(roleIds).map((audience) => ({
     audience,
-    roleCategories: AUDIENCE_ROLE_CATEGORIES[audience].map((category) => String(category)),
+    roleCategories: AUDIENCE_ROLE_CATEGORIES[audience].map(roleCategoryLabel),
   }));
 }
 

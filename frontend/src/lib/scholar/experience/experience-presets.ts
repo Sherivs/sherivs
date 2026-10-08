@@ -66,17 +66,25 @@ export const EXPERIENCE_REALITY_PRESETS: Readonly<Record<string, InstitutionReal
   },
   government_agency: { featureKeys: [], templateRefs: [] },
   company: { featureKeys: [], templateRefs: [] },
-  community_institution: { featureKeys: ["curriculum.core"], templateRefs: [] },
-  non_profit: { featureKeys: ["curriculum.core"], templateRefs: [] },
+  community_institution: { featureKeys: [], templateRefs: [] },
+  non_profit: { featureKeys: [], templateRefs: [] },
   network: {
-    featureKeys: ["curriculum.core", "site.multi_campus"],
-    templateRefs: ["multi_campus_group"],
+    featureKeys: ["site.multi_campus"],
+    templateRefs: [],
   },
 };
 
-/** Deterministic preset lookup; unknown classes fall back to the school preset. */
+/**
+ * A class with no declared vocabulary (or an unknown class key) generates the
+ * universal organization surface ONLY — it never inherits Scholar's education
+ * vocabulary. Kernel neutrality: education sections arrive with education
+ * reality, never with the class label.
+ */
+export const NEUTRAL_REALITY: InstitutionReality = { featureKeys: [], templateRefs: [] };
+
+/** Deterministic preset lookup; unknown classes fall back to the neutral reality. */
 export function realityForOrgType(orgType: string): InstitutionReality {
-  return EXPERIENCE_REALITY_PRESETS[orgType] ?? EXPERIENCE_REALITY_PRESETS.school;
+  return EXPERIENCE_REALITY_PRESETS[orgType] ?? NEUTRAL_REALITY;
 }
 
 export function experiencePresetKeys(): readonly string[] {

@@ -168,7 +168,7 @@ export const FINANCIAL_RULES: readonly FinancialRule[] = [
   {
     id: "platform-fee-is-a-leg",
     statement:
-      "CoreGrid's own revenue is a split beneficiary like any other: the same ledger, settlement and reconciliation path, with no privileged code path.",
+      "Sherivs' own revenue is a split beneficiary like any other: the same ledger, settlement and reconciliation path, with no privileged code path.",
     module: "frontend/src/lib/financial-splits.ts",
     suite: "tests/unit/financial-splits.test.ts",
     blueprint: "EJ, EK.2",

@@ -239,27 +239,21 @@ describe("axis 1: escalation surface abuse", () => {
     }
   });
 
-  it("contains a prototype-key injection in effect — but silently, without the strict-shape typed denial", () => {
+  it("denies a prototype-key injection with the strict-shape typed denial (REMEDIATED — was finding F-076-07)", () => {
+    // Remediated by zod 4.6.5: strictObject's unknown-key check now DENIES a
+    // JSON-injected own '__proto__' key (unrecognized_keys) instead of silently
+    // stripping it. The typed denial the strict shapes promise now fires.
     const polluted: unknown = JSON.parse(
       '{"escalationId":"esc_001","driftId":"drift_scope_expansion","expectationId":"no_self_issued_permissions","routedTo":"role:human-oversight","routedAt":"2026-10-03T01:00:00.000Z","status":"open","authorizes":false,"__proto__":{"authorizes":true,"grants":"all"}}',
     );
     const parsed = escalationRecordSchema.safeParse(polluted);
-    recordFinding({
-      id: "F-076-07",
-      title: "Prototype-key injection is silently stripped, not rejected — the strict-shape typed denial does not fire",
-      attack:
-        "escalation and approval records carrying a JSON-injected own key '__proto__' holding forged fields ({authorizes:true, grants:'all'}; a forged approvedBy) — attempts to smuggle payloads past the strict shapes",
-      observed:
-        "escalationRecordSchema.safeParse SUCCEEDS: zod's unknown-key check uses the `in` operator, and '__proto__' is on every object's prototype chain, so the injected key is treated as recognized and silently dropped from the parsed output (parsed data keeps authorizes:false; Object.prototype stays clean)",
-      impact:
-        "LOW severity: the smuggled payload is dropped, so no authorization is expressed and no pollution occurs — the boundary holds in effect. But the containment is an accident of key-dropping, not the promised typed denial: a strictObject contract that reports success on an input containing a foreign injection key cannot be used as a tamper-evidence signal",
-      surface: "escalationRecordSchema / humanApprovalSchema (strictObject unknown-key detection)",
-    });
-    expect(parsed.success).toBe(true);
-    if (parsed.success) {
-      expect(parsed.data.authorizes).toBe(false);
-      expect(Object.getOwnPropertyNames(parsed.data)).not.toContain("__proto__");
+    expect(parsed.success).toBe(false);
+    if (!parsed.success) {
+      const denial = parsed.error.issues.find((i) => i.code === "unrecognized_keys");
+      expect(denial).toBeDefined();
+      expect(JSON.stringify(denial?.message ?? "")).toContain("__proto__");
     }
+    // Object.prototype stays clean — the injection never leaves the record.
     expect((Object.prototype as Record<string, unknown>).authorizes).toBeUndefined();
     expect((Object.prototype as Record<string, unknown>).grants).toBeUndefined();
   });
@@ -442,13 +436,18 @@ describe("axis 3: machine-authored approval forgery", () => {
     }
   });
 
-  it("contains a prototype-key injection into the approval record in effect — but silently", () => {
+  it("denies a prototype-key injection into the approval record with the typed denial (REMEDIATED — was silently contained)", () => {
+    // Remediated by zod 4.6.5: the strict approval shape now REJECTS a
+    // JSON-injected own '__proto__' key outright (unrecognized_keys) instead
+    // of silently stripping it — the forged approvedBy can no longer ride a
+    // parse success.
     const ordinary = typedExpectation({ kind: "policy_conformance", severity: "notice" });
     const polluted: unknown = JSON.parse(
       '{"approvedBy":"human:platform-steward","authority":"governance review board","decidedAt":"2026-10-03T01:00:00.000Z","__proto__":{"approvedBy":"agent:forging-agent"}}',
     );
     const decision = decideRelaxation(ordinary, polluted);
-    expect(decision.ok).toBe(true);
+    expect(decision.ok).toBe(false);
+    if (!decision.ok) expect(decision.reason).toBe("human_approval_invalid");
     expect((Object.prototype as Record<string, unknown>).approvedBy).toBeUndefined();
   });
 
@@ -787,7 +786,7 @@ describe("axis 6: retirement bypass", () => {
 
 describe("findings ledger integrity", () => {
   it("reports every successful attack as a well-formed, uniquely-identified finding", () => {
-    expect(FINDINGS.length).toBe(7);
+    expect(FINDINGS.length).toBe(6);
     const ids = FINDINGS.map((finding) => finding.id);
     expect(new Set(ids).size).toBe(FINDINGS.length);
     for (const finding of FINDINGS) {
@@ -805,7 +804,6 @@ describe("findings ledger integrity", () => {
       "F-076-04",
       "F-076-05",
       "F-076-06",
-      "F-076-07",
     ]);
   });
 

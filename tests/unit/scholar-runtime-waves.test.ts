@@ -44,6 +44,7 @@ import { defaultBrand } from "@/lib/scholar/experience/experience-brand";
 import { generateExperience } from "@/lib/scholar/experience/experience-engine";
 import {
   EXPERIENCE_REALITY_PRESETS,
+  NEUTRAL_REALITY,
   realityForOrgType,
 } from "@/lib/scholar/experience/experience-presets";
 
@@ -207,7 +208,9 @@ describe("R36 — generated experiences rendered on the operator surface", () =>
     // Non-education classes declare no education features (their runtime brings them).
     expect(realityForOrgType("company").featureKeys).toEqual([]);
     expect(realityForOrgType("government_agency").featureKeys).toEqual([]);
-    expect(realityForOrgType("unknown-class")).toEqual(EXPERIENCE_REALITY_PRESETS.school);
+    // Unknown classes get the NEUTRAL reality — never Scholar's education vocabulary.
+    expect(realityForOrgType("unknown-class")).toEqual(NEUTRAL_REALITY);
+    expect(realityForOrgType("unknown-class")).not.toEqual(EXPERIENCE_REALITY_PRESETS.school);
   });
 
   it("an Islamic boarding class generates boarding + faith sections and workspaces", () => {

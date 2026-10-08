@@ -179,7 +179,7 @@ const FINDINGS = {
   F07:
     "H3-078-F07 (low): no single-outcome-per-input invariant exists — one inputRef can carry conflicting classifications (benign AND indeterminate/hostile) in one batch, enabling consumer-ambiguous laundering of the indeterminate class.",
   F08:
-    "H3-078-F08 (low): zod v4 strictObject does not deny an own '__proto__' key (its unrecognized-key membership check hits the inherited Object.prototype accessor), so a JSON-parsed batch carrying '__proto__' parses as VALID instead of failing closed; impact is bounded — the polluting payload is dropped and does not reach the parsed surface.",
+    "H3-078-F08 (low, REMEDIATED 2026-10-08): zod v4 (< 4.6.5) strictObject did not deny an own '__proto__' key (its unrecognized-key membership check hit the inherited Object.prototype accessor), so a JSON-parsed batch carrying '__proto__' parsed as VALID instead of failing closed; impact was bounded — the polluting payload was dropped and did not reach the parsed surface. REMEDIATED by the zod 4.6.5 upgrade: the unrecognized-keys denial now fires and the batch fails closed with invalid_shape.",
 } as const;
 
 /* ─────────────────────────────────────────────────────────────
@@ -705,11 +705,10 @@ describe("A6: batch-parse partial-surface escapes", () => {
     if (!nullResult.ok) expect(nullResult.reason).toBe("invalid_shape");
   });
 
-  it("RECORDED FINDING H3-078-F08: an own `__proto__` key bypasses the strictObject unknown-key denial — module NOT modified", () => {
-    // JSON.parse materializes "__proto__" as an OWN data property; zod v4's
-    // unrecognized-key check tests membership with `in`, which hits the
-    // INHERITED Object.prototype accessor — so the polluting key is treated
-    // as recognized and the record parses as valid instead of being denied.
+  it("H3-078-F08 REMEDIATED: an own `__proto__` key now fails the strictObject unknown-key denial (zod 4.6.5)", () => {
+    // REMEDIATION of recorded finding H3-078-F08: zod 4.6.5's unrecognized-key
+    // check now DENIES a JSON-injected own '__proto__' key outright — the
+    // batch fails closed with invalid_shape instead of parsing as valid.
     const serialized = JSON.stringify(consistentSurface());
     const smuggled = JSON.parse(
       serialized.replace("{", '{"__proto__":{"evil":"allow","classifications":[]},'),
@@ -717,18 +716,12 @@ describe("A6: batch-parse partial-surface escapes", () => {
     expect(Object.keys(smuggled)).toContain("__proto__");
 
     const result = parseDefenseSurface(smuggled);
-    // The strictness invariant ("unknown keys denied") is bypassed: the
-    // batch parses OK where every other smuggled key is denied above.
-    expect(result.ok, "own __proto__ key should have been denied").toBe(true);
-    if (result.ok) {
-      // Bounded impact: the polluting payload does not survive into the
-      // parsed surface — no property injection, even via the prototype chain.
-      expect("evil" in result.surface).toBe(false);
-      const firstRecord = result.surface.classifications[0] as object;
-      expect("evil" in firstRecord).toBe(false);
-      expect(Object.keys(result.surface)).toEqual(["classifications", "verdicts", "escalations"]);
-    }
+    expect(result.ok, "own __proto__ key must be denied").toBe(false);
+    if (!result.ok) expect(result.reason).toBe("invalid_shape");
+    // FINDINGS.F08 is amended to record the remediation (kept for ledger
+    // continuity — the finding text now states the fixed behavior).
     expect(FINDINGS.F08).toContain("__proto__");
+    expect(FINDINGS.F08).toContain("REMEDIATED");
   });
 
   it("a batch mixing valid and invalid records fails WHOLESALE — no surface leaks", () => {

@@ -3,6 +3,7 @@ import {
   Outlet,
   redirect,
   Link,
+  useLocation,
   useNavigate,
   useRouter,
 } from "@tanstack/react-router";
@@ -18,7 +19,6 @@ import { CommandCenterMount } from "@/components/command-center";
 import { ShellHeaderActions } from "@/components/shell/shell-header-actions";
 import { WorkspaceSwitcher } from "@/components/shell/workspace-switcher";
 import { PLATFORM_NAME } from "@/lib/platform";
-import { INSTALLED_RUNTIME_NAME as SCHOLAR_RUNTIME_NAME } from "@/lib/runtime/installed-runtimes";
 import { WorkspaceBottomNav } from "@/components/mobile-bottom-nav";
 import { OfflineBanner } from "@/components/offline-banner";
 import { AppFramePreview } from "@/components/app-frame-preview";
@@ -26,15 +26,17 @@ import {
   ALL_NAV_CONTRIBUTIONS,
   scholarCapabilitiesForPortal,
   scholarCapabilitiesForRole,
-  scholarWorkspaceHome,
   scholarWorkspaceLabelForRole,
   // The runtime layer names its own portal kinds; the shell speaks of them generically.
   type ScholarPortalKind as RuntimePortalKind,
+  runtimeWorkspaceHome,
 } from "@/lib/runtime/nav-registry";
 import { hasNavDestinations, resolveWorkspaceNav } from "@/lib/workspace-engine/navigation";
 import { resolveMemberWorkspaceExperience } from "@/lib/experience/workspace-experience";
 import { scholarWorkspaceLabelForMember } from "@/lib/runtime/scholar-workforce-nav";
 import { getMyPrimaryWorkforcePosition } from "@/lib/runtime/scholar/workforce-positions.functions";
+import { identityFromAppState } from "@/lib/identity/context";
+import { switchActiveOrganization } from "@/lib/identity/memberships.functions";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 
@@ -50,11 +52,15 @@ export const Route = createFileRoute("/_authenticated")({
   errorComponent: AuthenticatedRouteErrorComponent,
 });
 
-function AuthenticatedRouteErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function AuthenticatedRouteErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   const router = useRouter();
+  const normalized =
+    error instanceof Error
+      ? error
+      : new Error(typeof error === "string" ? error : "Unexpected route error");
   return (
     <RouteErrorBoundary
-      error={error}
+      error={normalized}
       reset={() => {
         reset();
         router.invalidate();
@@ -64,9 +70,14 @@ function AuthenticatedRouteErrorComponent({ error, reset }: { error: Error; rese
 }
 
 function AuthenticatedLayout() {
-  const { profile, superAdmin, school, role, loading, signOut, authUser } = useApp();
+  const { profile, superAdmin, school, role, loading, signOut, authUser, refresh } = useApp();
   const navigate = useNavigate();
+  const location = useLocation();
   const getMyPrimaryPosition = useServerFn(getMyPrimaryWorkforcePosition);
+  const switchActiveOrg = useServerFn(switchActiveOrganization);
+  // The resolved identity chain (§11): drives the switcher's cross-organization
+  // options and the active-context destination.
+  const identity = identityFromAppState({ superAdmin, profile, school });
 
   const myPosition = useQuery({
     queryKey: ["my-primary-position", profile?.id, role],
@@ -87,14 +98,23 @@ function AuthenticatedLayout() {
   }
 
   if (!profile && !superAdmin) {
+    // Unlinked account (§11 — new/pending customer). The FOUNDER pipeline
+    // surfaces (/welcome, /onboarding §21) are exactly for this persona and
+    // their server function re-verifies authorization, so those children
+    // render. Everywhere else the shell states the linking state — a
+    // workspace cannot open without a verified organization link.
+    const pathname = location.pathname.replace(/\/+$/, "") || "/";
+    if (pathname === "/welcome" || pathname.startsWith("/onboarding")) {
+      return <Outlet />;
+    }
     return (
       <div className="min-h-dvh grid place-items-center px-4">
         <div className="max-w-md uos-card p-8 text-center">
           <h1 className="font-display text-xl font-bold">Account not yet linked</h1>
           <p className="mt-3 text-sm text-muted-foreground">
-            Your sign-in is valid, but your account has not been linked to a school yet. A school
-            administrator (or a CoreGrid platform super admin) needs to assign you a role before you
-            can open a portal.
+            Your sign-in is valid, but your account has not been linked to an organization yet. An
+            organization administrator (or a {PLATFORM_NAME} platform administrator) needs to assign
+            you a role before your workspace can open.
           </p>
           <button
             onClick={async () => {
@@ -111,7 +131,9 @@ function AuthenticatedLayout() {
   }
 
   const displayName = profile?.full_name ?? superAdmin?.full_name ?? "User";
-  const dashHref = role ? scholarWorkspaceHome(role) : "/";
+  // Internal workforce home is the internal environment (plane 4); members
+  // home to their resolved organization workspace.
+  const dashHref = superAdmin && !profile ? "/internal" : role ? runtimeWorkspaceHome(role) : "/";
   const memberLabel = role
     ? scholarWorkspaceLabelForMember(
         myPosition.data?.kind_code ?? null,
@@ -157,7 +179,7 @@ function AuthenticatedLayout() {
                   </div>
                   <div className="leading-tight min-w-0">
                     <div className="font-display font-bold text-sm truncate">
-                      {school?.name ?? `${PLATFORM_NAME} · ${SCHOLAR_RUNTIME_NAME}`}
+                      {school?.name ?? `${PLATFORM_NAME} HQ`}
                     </div>
                     <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
                       {experience.roleTitle}
@@ -165,8 +187,39 @@ function AuthenticatedLayout() {
                   </div>
                 </Link>
                 <WorkspaceSwitcher
-                  options={school ? [{ id: school.id, label: school.name ?? "Workspace" }] : []}
+                  options={
+                    school
+                      ? [
+                          {
+                            id: school.id,
+                            label: school.name ?? "Workspace",
+                          },
+                          // Multi-membership members can switch to any other
+                          // organization they verifiably belong to (resolved
+                          // from identity, never client storage).
+                          ...identity.organizations
+                            .filter((org) => org.organizationId !== school.id)
+                            .map((org) => ({ id: org.organizationId, label: org.name })),
+                        ]
+                      : []
+                  }
                   currentId={school?.id ?? null}
+                  onSwitch={
+                    identity.organizations.length > 1
+                      ? async ({ workspaceId }) => {
+                          try {
+                            const result = await switchActiveOrg({
+                              data: { organizationId: workspaceId },
+                            });
+                            await refresh();
+                            await navigate({ to: result.destination, replace: true });
+                          } catch {
+                            // The switcher stays on the current context; the
+                            // failure is server-raised and audited there.
+                          }
+                        }
+                      : undefined
+                  }
                 />
               </div>
               <div className="flex items-center gap-2 text-sm sm:gap-3">
@@ -176,9 +229,7 @@ function AuthenticatedLayout() {
                   greeting={experience.greeting}
                   workspaceName={school?.name ?? null}
                   notificationViewer={
-                    school && authUser
-                      ? { tenantId: school.id, recipientId: authUser.id }
-                      : null
+                    school && authUser ? { tenantId: school.id, recipientId: authUser.id } : null
                   }
                   onSignOut={async () => {
                     await signOut();

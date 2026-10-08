@@ -228,7 +228,11 @@ async function authSignIn(page: Page, email: string, password: string) {
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: /^sign in$/i }).click();
-  await page.waitForURL(/\/dashboard/, { timeout: 30_000 });
+  // Identity-based routing (§11) resolves the destination server-side:
+  // internal workforce → /internal, member → their workspace home, several
+  // memberships → the selector, unlinked → /welcome. Wait for the resolved
+  // destination — any route off the auth surface.
+  await page.waitForURL((url) => !url.pathname.startsWith("/auth"), { timeout: 30_000 });
 }
 
 /* ── The journey (serial: each step feeds the next) ──────────────────── */
@@ -357,8 +361,10 @@ test.describe("V1 vertical slice — longest fully-real journey", () => {
 
   test("T1 visitor lands on the public site and follows real navigation", async ({ page }) => {
     await page.goto("/coregrid");
+    // Refoundation copy (post-migration): the compat surface narrates the
+    // intelligent operating platform for organizations.
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-      /The AI-native institutional operating system/i,
+      /The intelligent operating platform for organizations/i,
     );
     for (const anchor of ["#capabilities", "#security", "#pricing"]) {
       await page.goto(`/coregrid${anchor}`);

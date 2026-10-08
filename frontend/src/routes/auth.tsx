@@ -5,8 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
 import { scholarWorkspaceHome } from "@/lib/runtime/nav-registry";
 import { PLATFORM_NAME } from "@/lib/platform";
-import { INSTALLED_RUNTIME_NAME as SCHOLAR_RUNTIME_NAME } from "@/lib/runtime/installed-runtimes";
-import { provisionDemoEnterprise } from "@/lib/runtime/scholar/demo-provision.functions";
+import { resolveSherivsIdentity } from "@/lib/identity/resolve-identity.functions";
+import { identityFromAppState } from "@/lib/identity/context";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -17,7 +17,7 @@ type Mode = "signin" | "signup" | "forgot";
 
 function AuthPage() {
   const navigate = useNavigate();
-  const { loading, role, refresh, school, tenantSlug } = useApp();
+  const { loading, role, refresh, school, tenantSlug, profile, superAdmin } = useApp();
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,34 +25,18 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
-  const [demoBusy, setDemoBusy] = useState(false);
-  const provisionDemo = useServerFn(provisionDemoEnterprise);
+  const resolveIdentity = useServerFn(resolveSherivsIdentity);
 
-  async function handleDemoLogin() {
-    setDemoBusy(true);
-    setError(null);
-    setInfo(null);
-    try {
-      const creds = await provisionDemo();
-      const { error } = await supabase.auth.signInWithPassword({
-        email: creds.email,
-        password: creds.password,
-      });
-      if (error) throw error;
-      await refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Demo login failed");
-    } finally {
-      setDemoBusy(false);
-    }
-  }
-
-  // If already signed in, redirect to the right dashboard
+  // Identity-based post-auth routing (§11): signed-in users are routed by the
+  // resolved identity chain — internal workforce → /internal, one membership
+  // → its workspace, several → the organization selector, none → /welcome —
+  // never unconditionally into a runtime workspace.
+  const contextIdentity = identityFromAppState({ superAdmin, profile, school });
   useEffect(() => {
     if (!loading && role) {
-      navigate({ to: scholarWorkspaceHome(role), replace: true });
+      navigate({ to: contextIdentity.destination, replace: true });
     }
-  }, [loading, role, navigate]);
+  }, [loading, role, contextIdentity.destination, navigate]);
 
   function reset() {
     setError(null);
@@ -105,6 +89,17 @@ function AuthPage() {
         }).catch(() => {});
 
         await refresh();
+
+        // Server-authoritative identity resolution (§11): resolve the full
+        // chain — memberships → organizations → roles → runtime → workspace
+        // — and route to its destination. The context effect above is the
+        // fallback if the server round-trip fails.
+        try {
+          const identity = await resolveIdentity();
+          await navigate({ to: identity.destination, replace: true });
+        } catch {
+          // context effect handles routing — never block sign-in on resolution
+        }
       } else if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
           email,
@@ -116,7 +111,7 @@ function AuthPage() {
         });
         if (error) throw error;
         setInfo(
-          "Account created. A school admin must link your account to a school before you can access a portal.",
+          "Account created. An organization admin must link your account to an organization before you can access a workspace.",
         );
       } else {
         // forgot password — call audit FIRST so the server can enforce rate-limit.
@@ -185,7 +180,7 @@ function AuthPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             {mode === "forgot"
               ? "Enter the email tied to your account and we'll send you a reset link."
-              : `${PLATFORM_NAME} portal access — ${SCHOLAR_RUNTIME_NAME} runtime`}
+              : `Sign in to ${PLATFORM_NAME} — your organization's operating environment.`}
           </p>
         </div>
 
@@ -267,27 +262,6 @@ function AuthPage() {
         </form>
 
         <div className="mt-6 space-y-2 text-center text-sm">
-          <div className="mb-4 rounded-xl border border-amber-500/40 bg-amber-500/5 p-4 text-left">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-amber-500">
-              <span>★</span> Enterprise demo
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              One click provisions an Enterprise-tier school so every locked feature (Expenses,
-              Digital Twin, CoreGrid Intelligence, etc.) unlocks.
-            </p>
-            <button
-              type="button"
-              onClick={handleDemoLogin}
-              disabled={demoBusy || busy}
-              className="mt-3 w-full rounded-md bg-amber-500 px-3 py-2 text-sm font-semibold text-black disabled:opacity-60"
-            >
-              {demoBusy ? "Provisioning…" : "Sign in as Enterprise demo"}
-            </button>
-            <p className="mt-3 text-[11px] text-muted-foreground">
-              Demo credentials are generated at provisioning time and are never displayed or stored
-              on this page (V1-008). Provisioning is environment-gated and disabled by default.
-            </p>
-          </div>
           {mode === "signin" && (
             <button
               type="button"

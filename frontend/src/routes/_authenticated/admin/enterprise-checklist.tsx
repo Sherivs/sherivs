@@ -31,7 +31,7 @@ const CHECKS: Item[] = [
   { key: "expense_tracking", label: "Expenses", url: "/admin/expenses" },
   { key: "transport_basic", label: "Bus management", url: "/admin/bus-management" },
   { key: "bus_live_tracking", label: "Live bus tracking", url: "/admin/buses" },
-  { key: "vibeora_intelligence", label: "CoreGrid Intelligence", url: "/admin/intelligence" },
+  { key: "vibeora_intelligence", label: "Sherivs Intelligence", url: "/admin/intelligence" },
   {
     key: "teacher_performance_ai",
     label: "Teacher Intelligence",

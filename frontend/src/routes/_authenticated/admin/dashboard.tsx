@@ -7,6 +7,7 @@ import { useApp } from "@/contexts/app-context";
 import { PortalPage, StatCard, EmptyState } from "@/components/portal-shell";
 import { PreviewPublicSiteCard } from "@/components/preview-public-site";
 import { SchoolEconomyScore } from "@/components/school-economy-score";
+import { OrganizationRealityCard } from "@/components/reality/organization-reality-card";
 import { useSchoolEconomyScore } from "@/hooks/use-school-economy-score";
 import {
   Sheet,
@@ -634,6 +635,12 @@ export default function AdminDashboard() {
       </div>
 
       <PreviewPublicSiteCard />
+
+      {/* Universal organization reality (Milestone 9 read-model) — platform
+          truth rendered inside the runtime workspace. */}
+      <div className="mt-6">
+        <OrganizationRealityCard />
+      </div>
 
       {/* 2 — Stats row */}
       <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-6">

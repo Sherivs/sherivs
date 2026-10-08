@@ -65,7 +65,7 @@ export const ROLE_CATEGORY_LABELS: Record<RoleCategory, string> = {
   RESEARCH: "Research & Innovation",
   EXAMINATION: "Examination & Assessment Bodies",
   QUALITY_ASSURANCE: "Accreditation & Quality Assurance",
-  COREGRID_INTERNAL: "CoreGrid Platform Organization",
+  COREGRID_INTERNAL: "Sherivs Platform Organization",
 };
 
 /**
