@@ -141,6 +141,12 @@ describe("Organization public experience engine", () => {
 });
 
 describe("Public homepage narrative", () => {
+  it("renders the public narrative without waiting on session lookup on the platform host", () => {
+    const index = read("frontend/src/routes/index.tsx");
+    expect(index).toContain("loading && hostSlug");
+    expect(read("frontend/src/contexts/app-context.tsx")).toContain("remainPublicVisitor");
+  });
+
   it("introduces Sherivs as the brand and keeps mission/capability anchors", () => {
     const home = read("frontend/src/components/experience/public-home.tsx");
     expect(home).toContain("id=\"sherivs-hero\"");

@@ -6,6 +6,7 @@ import { PublicSchoolSite } from "@/components/public/site";
 import { PublicShell } from "@/components/experience/public-shell";
 import { PublicHome } from "@/components/experience/public-home";
 import { PLATFORM_NAME, PLATFORM_PAGE_DESCRIPTION, PLATFORM_PUBLIC_ORIGIN } from "@/lib/platform";
+import { resolveTenantSlug } from "@/lib/tenant";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -108,12 +109,15 @@ function Index() {
     };
   }, [school]);
 
-  if (loading) {
-    return <div className="min-h-dvh grid place-items-center text-muted-foreground">Loading…</div>;
-  }
-
   if (school) {
     return <PublicSchoolSite school={school} />;
+  }
+
+  // Platform host: render the public narrative immediately. Do not block the
+  // marketing plane on session lookup. Tenant hosts still wait for org lookup.
+  const hostSlug = tenantSlug ?? resolveTenantSlug();
+  if (loading && hostSlug) {
+    return <div className="min-h-dvh grid place-items-center text-muted-foreground">Loading…</div>;
   }
 
   return (

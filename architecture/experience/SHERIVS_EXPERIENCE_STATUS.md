@@ -8,9 +8,10 @@ This is not a claim that every surface in the original 58-section program is com
 **Gates (Wave 1):**
 - `npm run verify:neutrality` — STATUS=PASS, 0 new hits (`platform.ts` no longer names the education runtime)
 - `npx tsc --noEmit` — pass
-- `tests/unit/sherivs-experience.test.ts` — 10/10
+- `tests/unit/sherivs-experience.test.ts`
 - `tests/unit/mh-15-launch-criteria.test.ts` — 13/13, live tree 18 criteria, 0 unproven, exit 0
 - Runtime product lockup lives in `frontend/src/lib/runtime/installed-runtimes.ts` (`INSTALLED_RUNTIME_PRODUCT`)
+- Public plane fail-soft: missing Supabase credentials do not error-boundary the marketing site; session lookup does not blank `/` on the platform host
 
 ## Implementation inventory (Wave 1)
 

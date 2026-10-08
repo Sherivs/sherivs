@@ -132,19 +132,44 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    supabase.auth.getSession().then(({ data }) => {
+    let subscription: { unsubscribe: () => void } | undefined;
+
+    function remainPublicVisitor() {
       if (cancelled) return;
-      setSession(data.session);
-      void load(data.session);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
-      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      setSession(sess);
-      void load(sess);
-    });
+      setSession(null);
+      setProfile(null);
+      setSuperAdmin(null);
+      setSchool(null);
+      setTenantSlug(resolveTenantSlug());
+      applyBrandColors(null);
+      setLoading(false);
+    }
+
+    try {
+      supabase.auth
+        .getSession()
+        .then(({ data }) => {
+          if (cancelled) return;
+          setSession(data.session);
+          void load(data.session);
+        })
+        .catch(() => {
+          remainPublicVisitor();
+        });
+      const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
+        if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+        setSession(sess);
+        void load(sess);
+      });
+      subscription = sub.subscription;
+    } catch {
+      // Missing backend credentials must not take down the public experience.
+      remainPublicVisitor();
+    }
+
     return () => {
       cancelled = true;
-      sub.subscription.unsubscribe();
+      subscription?.unsubscribe();
     };
   }, []);
 
