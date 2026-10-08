@@ -1,78 +1,68 @@
 /**
- * CommandPalette — enterprise-grade global ⌘K / Ctrl+K command palette.
+ * Global ⌘K / Ctrl+K command palette (platform shell).
  *
- * Fullscreen backdrop-blurred overlay with a centered panel. Sections:
- *   - Recent pages (localStorage, last 5) — shown when the query is empty
- *   - Pages (role-filtered navigation)
- *   - Quick actions (role-filtered)
- *   - Students (admin / principal / teacher only, live school-scoped search)
+ * Commands are derived from the member's resolved workspace navigation (installed
+ * runtime contributions x authorized capabilities) plus platform destinations and
+ * preferences — see `@/lib/platform/command-registry`. The palette holds no role list
+ * and no runtime route. Record search is offered only when a runtime's search
+ * destination is part of the member's authorized navigation.
  *
- * Keyboard: ↑/↓ move, Enter execute, Esc close, Tab jump to next section.
+ * A command never grants access: route guards, server functions and RLS still decide.
+ *
+ * Keyboard: ↑/↓ move, Enter run, Esc close (combobox semantics from cmdk, focus trap
+ * and restore from Radix Dialog).
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import {
-  ArrowRight,
-  Clock,
-  GraduationCap,
-  Megaphone,
-  Users,
-  Wallet,
-  CalendarDays,
-  BookOpen,
-  Bus,
-  Activity,
-  ClipboardCheck,
-  Sparkles,
-  Settings,
-  LayoutDashboard,
-  Building2,
-  Newspaper,
-  MessageSquare,
-  Search,
-  CornerDownLeft,
-} from "lucide-react";
-import type { AppRole } from "@/lib/roles";
-import { supabase } from "@/integrations/supabase/client";
+import { Command as CommandPrimitive } from "cmdk";
+import { Clock, CornerDownLeft, Loader2, Search } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { navIconFor } from "@/components/shell/nav-icons";
 import { useApp } from "@/contexts/app-context";
+import {
+  authorizedDestinationForKey,
+  buildPaletteCommands,
+  groupCommands,
+  recordHitHref,
+  searchCommands,
+  type PaletteCommand,
+  type RecordSearchHit,
+  type RecordSearchProvider,
+} from "@/lib/platform/command-registry";
+import { INSTALLED_RECORD_SEARCH_PROVIDERS } from "@/lib/runtime/installed-record-search";
+import { setThemeMode, type ThemeMode } from "@/lib/theme";
+import type { WorkspaceNavSection } from "@/lib/workspace-engine/navigation";
 
 export const COMMAND_CENTER_EVENT = "open-command-center";
 
+const GROUP_CLASS =
+  "[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pb-1.5 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:font-mono [&_[cmdk-group-heading]]:text-[0.6875rem] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.12em] [&_[cmdk-group-heading]]:text-sx-muted";
+
 const RECENT_KEY = "uos:cc:recent";
 const RECENT_MAX = 5;
-
-type IconType = React.ComponentType<{ className?: string }>;
-
-type Row = {
-  id: string;
-  label: string;
-  hint?: string;
-  shortcut?: string;
-  icon?: IconType;
-  initials?: string;
-  onSelect: () => void;
-};
-
-type Section = { key: string; heading: string; rows: Row[] };
 
 function pushRecent(path: string, label: string) {
   if (typeof window === "undefined") return;
   try {
     const raw = window.localStorage.getItem(RECENT_KEY);
-    const arr: Array<{ path: string; label: string }> = raw ? JSON.parse(raw) : [];
-    const next = [{ path, label }, ...arr.filter((r) => r.path !== path)].slice(0, RECENT_MAX);
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    const previous = Array.isArray(parsed) ? (parsed as Array<{ path: string; label: string }>) : [];
+    const next = [{ path, label }, ...previous.filter((entry) => entry.path !== path)].slice(0, RECENT_MAX);
     window.localStorage.setItem(RECENT_KEY, JSON.stringify(next));
   } catch {
-    /* ignore */
+    /* storage unavailable: recents are a convenience, not state */
   }
 }
 
-function readRecent(): Array<{ path: string; label: string }> {
+function readRecentPaths(): string[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = window.localStorage.getItem(RECENT_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((entry) => (typeof entry === "object" && entry && "path" in entry ? String(entry.path) : ""))
+      .filter(Boolean);
   } catch {
     return [];
   }
@@ -86,779 +76,216 @@ export function useTrackRecentPage(pathname: string, label: string) {
   }, [pathname, label]);
 }
 
-type NavEntry = {
-  path: string;
-  label: string;
-  description?: string;
-  icon: IconType;
-  shortcut?: string;
-};
+type RecordResults = { provider: RecordSearchProvider; destination: string; hits: RecordSearchHit[] };
 
-function navFor(role: AppRole | null): NavEntry[] {
-  switch (role) {
-    case "admin":
-    case "principal":
-      return [
-        {
-          path: "/admin/dashboard",
-          label: "Dashboard",
-          description: "Executive command center",
-          icon: LayoutDashboard,
-          shortcut: "G D",
-        },
-        {
-          path: "/admin/student-intelligence",
-          label: "Student Intelligence",
-          description: "Risk and performance signals",
-          icon: Sparkles,
-        },
-        {
-          path: "/admin/teacher-intelligence",
-          label: "Teacher Intelligence",
-          description: "Staff performance signals",
-          icon: Sparkles,
-        },
-        {
-          path: "/admin/students",
-          label: "Students",
-          description: "Enrollment records",
-          icon: GraduationCap,
-          shortcut: "G S",
-        },
-        { path: "/admin/teachers", label: "Teachers", description: "Staff directory", icon: Users },
-        {
-          path: "/admin/fees",
-          label: "Fees",
-          description: "Invoices and payments",
-          icon: Wallet,
-          shortcut: "G F",
-        },
-        {
-          path: "/admin/attendance",
-          label: "Attendance",
-          description: "Daily attendance registers",
-          icon: ClipboardCheck,
-        },
-        {
-          path: "/admin/calendar",
-          label: "Calendar",
-          description: "School calendar & events",
-          icon: CalendarDays,
-        },
-        {
-          path: "/admin/news",
-          label: "News",
-          description: "Announcements and posts",
-          icon: Newspaper,
-        },
-        {
-          path: "/admin/operations",
-          label: "Operations",
-          description: "Day-to-day operations",
-          icon: Activity,
-        },
-        {
-          path: "/admin/cms",
-          label: "Public site CMS",
-          description: "Website content",
-          icon: Building2,
-        },
-        {
-          path: "/admin/settings",
-          label: "Settings",
-          description: "School configuration",
-          icon: Settings,
-        },
-      ];
-    case "teacher":
-      return [
-        {
-          path: "/teacher/dashboard",
-          label: "Dashboard",
-          description: "Your teaching overview",
-          icon: LayoutDashboard,
-        },
-        {
-          path: "/teacher/attendance",
-          label: "Mark Attendance",
-          description: "Register for your classes",
-          icon: ClipboardCheck,
-        },
-        {
-          path: "/teacher/grades",
-          label: "Enter Grades",
-          description: "Score entry",
-          icon: GraduationCap,
-        },
-        {
-          path: "/teacher/gradebook",
-          label: "Gradebook",
-          description: "Full class gradebook",
-          icon: BookOpen,
-        },
-        {
-          path: "/teacher/lesson-plans",
-          label: "Lesson Plans",
-          description: "Plan and submit lessons",
-          icon: BookOpen,
-        },
-        {
-          path: "/teacher/class-intelligence",
-          label: "Class Intelligence",
-          description: "Class analytics",
-          icon: Sparkles,
-        },
-        {
-          path: "/teacher/ai-assistant",
-          label: "AI Assistant",
-          description: "Ask about your classes",
-          icon: Sparkles,
-        },
-        {
-          path: "/teacher/calendar",
-          label: "Calendar",
-          description: "Your schedule",
-          icon: CalendarDays,
-        },
-      ];
-    case "parent":
-      return [
-        {
-          path: "/parent/dashboard",
-          label: "Dashboard",
-          description: "Family overview",
-          icon: LayoutDashboard,
-        },
-        {
-          path: "/parent/children",
-          label: "My Children",
-          description: "Child profiles",
-          icon: Users,
-        },
-        {
-          path: "/parent/grades",
-          label: "Grades",
-          description: "Academic results",
-          icon: GraduationCap,
-        },
-        {
-          path: "/parent/attendance",
-          label: "Attendance",
-          description: "Presence history",
-          icon: ClipboardCheck,
-        },
-        {
-          path: "/parent/fees",
-          label: "Pay Fees",
-          description: "Outstanding invoices",
-          icon: Wallet,
-        },
-        {
-          path: "/parent/bus-tracking",
-          label: "Bus Tracking",
-          description: "Live transport status",
-          icon: Bus,
-        },
-        {
-          path: "/parent/ai-assistant",
-          label: "AI Assistant",
-          description: "Ask about your child",
-          icon: Sparkles,
-        },
-      ];
-    case "student":
-      return [
-        {
-          path: "/student/dashboard",
-          label: "Dashboard",
-          description: "Your overview",
-          icon: LayoutDashboard,
-        },
-        {
-          path: "/student/grades",
-          label: "Grades",
-          description: "Your results",
-          icon: GraduationCap,
-        },
-        {
-          path: "/student/attendance",
-          label: "Attendance",
-          description: "Your attendance",
-          icon: ClipboardCheck,
-        },
-        {
-          path: "/student/timetable",
-          label: "Timetable",
-          description: "Your weekly schedule",
-          icon: CalendarDays,
-        },
-        {
-          path: "/student/report-card",
-          label: "Report card",
-          description: "Term report",
-          icon: BookOpen,
-        },
-      ];
-    case "bursar":
-      return [
-        {
-          path: "/bursar/dashboard",
-          label: "Dashboard",
-          description: "Finance overview",
-          icon: LayoutDashboard,
-        },
-        {
-          path: "/bursar/receipts",
-          label: "Receipts",
-          description: "Issue and view receipts",
-          icon: Wallet,
-        },
-        {
-          path: "/bursar/reconciliation",
-          label: "Reconciliation",
-          description: "Match payments",
-          icon: Activity,
-        },
-        {
-          path: "/bursar/reports",
-          label: "Reports",
-          description: "Financial reports",
-          icon: BookOpen,
-        },
-      ];
-    case "driver":
-      return [
-        {
-          path: "/driver/dashboard",
-          label: "Dashboard",
-          description: "Route overview",
-          icon: LayoutDashboard,
-        },
-        {
-          path: "/driver/students",
-          label: "My Students",
-          description: "Riders on your route",
-          icon: Users,
-        },
-      ];
-    case "hq":
-      return [
-        {
-          path: "/hq/dashboard",
-          label: "Dashboard",
-          description: "Group overview",
-          icon: LayoutDashboard,
-        },
-        { path: "/hq/finance", label: "Finance", description: "Group finance", icon: Wallet },
-        { path: "/hq/reports", label: "Reports", description: "Group reports", icon: BookOpen },
-      ];
-    case "super_admin":
-      return [
-        {
-          path: "/super-admin/dashboard",
-          label: "Dashboard",
-          description: "Platform overview",
-          icon: LayoutDashboard,
-        },
-        {
-          path: "/super-admin/schools",
-          label: "Schools",
-          description: "Tenant management",
-          icon: Building2,
-        },
-        {
-          path: "/super-admin/billing",
-          label: "Billing",
-          description: "Subscriptions & invoices",
-          icon: Wallet,
-        },
-        {
-          path: "/super-admin/support",
-          label: "Support",
-          description: "Complaints & tickets",
-          icon: MessageSquare,
-        },
-      ];
-    default:
-      return [];
-  }
+function useRecordSearch(query: string, sections: readonly WorkspaceNavSection[], tenantRef: string | null, open: boolean) {
+  const available = useMemo(
+    () =>
+      INSTALLED_RECORD_SEARCH_PROVIDERS.flatMap((provider) => {
+        const destination = authorizedDestinationForKey(sections, provider.navItemKeys);
+        return destination ? [{ provider, destination }] : [];
+      }),
+    [sections],
+  );
+  const [results, setResults] = useState<RecordResults[]>([]);
+  const [searching, setSearching] = useState(false);
+
+  useEffect(() => {
+    const term = query.trim();
+    const eligible = available.filter(({ provider }) => term.length >= provider.minQueryLength);
+    if (!open || eligible.length === 0) {
+      setResults([]);
+      setSearching(false);
+      return;
+    }
+    let cancelled = false;
+    setSearching(true);
+    const timer = window.setTimeout(async () => {
+      const settled = await Promise.allSettled(
+        eligible.map(async ({ provider, destination }) => ({
+          provider,
+          destination,
+          hits: await provider.search(term, { tenantRef }),
+        })),
+      );
+      if (cancelled) return;
+      setResults(
+        settled.flatMap((outcome) => (outcome.status === "fulfilled" && outcome.value.hits.length > 0 ? [outcome.value] : [])),
+      );
+      setSearching(false);
+    }, 180);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [query, available, tenantRef, open]);
+
+  return { available, results, searching };
 }
 
-type ActionEntry = { id: string; label: string; description: string; icon: IconType; path: string };
-
-function quickActionsFor(role: AppRole | null): ActionEntry[] {
-  switch (role) {
-    case "admin":
-    case "principal":
-      return [
-        {
-          id: "qa-add-student",
-          label: "Add Student",
-          description: "Enroll a new student record",
-          icon: GraduationCap,
-          path: "/admin/students",
-        },
-        {
-          id: "qa-record-fee",
-          label: "Record Payment",
-          description: "Log a fee payment",
-          icon: Wallet,
-          path: "/admin/fees",
-        },
-        {
-          id: "qa-attendance",
-          label: "Mark Attendance",
-          description: "Open the attendance register",
-          icon: ClipboardCheck,
-          path: "/admin/attendance",
-        },
-        {
-          id: "qa-announcement",
-          label: "Send Announcement",
-          description: "Broadcast to the school",
-          icon: Megaphone,
-          path: "/admin/broadcast",
-        },
-      ];
-    case "teacher":
-      return [
-        {
-          id: "qa-start-class",
-          label: "Start Class",
-          description: "Open today's class register",
-          icon: ClipboardCheck,
-          path: "/teacher/attendance",
-        },
-        {
-          id: "qa-enter-grades",
-          label: "Enter Grades",
-          description: "Record assessment scores",
-          icon: GraduationCap,
-          path: "/teacher/grades",
-        },
-        {
-          id: "qa-lesson-plan",
-          label: "Submit Lesson Plan",
-          description: "Create or submit a plan",
-          icon: BookOpen,
-          path: "/teacher/lesson-plans",
-        },
-      ];
-    case "parent":
-      return [
-        {
-          id: "qa-pay-fees",
-          label: "Pay Fees",
-          description: "Settle outstanding invoices",
-          icon: Wallet,
-          path: "/parent/fees",
-        },
-        {
-          id: "qa-report-card",
-          label: "View Report Card",
-          description: "Latest term results",
-          icon: BookOpen,
-          path: "/parent/grades",
-        },
-      ];
-    case "bursar":
-      return [
-        {
-          id: "qa-receipts",
-          label: "New Receipt",
-          description: "Issue a payment receipt",
-          icon: Wallet,
-          path: "/bursar/receipts",
-        },
-        {
-          id: "qa-reconcile",
-          label: "Reconcile",
-          description: "Match bank payments",
-          icon: Activity,
-          path: "/bursar/reconciliation",
-        },
-      ];
-    case "super_admin":
-      return [
-        {
-          id: "qa-onboard",
-          label: "Onboard School",
-          description: "Create a new tenant",
-          icon: Building2,
-          path: "/super-admin/schools",
-        },
-      ];
-    default:
-      return [];
-  }
-}
-
-type StudentHit = {
-  id: string;
-  full_name: string;
-  admission_number: string | null;
-  class_name: string | null;
-};
-
-function initialsOf(name: string) {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? "")
-    .join("");
-}
-
-export function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function CommandPalette({
+  open,
+  onClose,
+  sections,
+}: {
+  open: boolean;
+  onClose: () => void;
+  sections: readonly WorkspaceNavSection[];
+}) {
   const navigate = useNavigate();
-  const { role, profile } = useApp();
+  const { profile } = useApp();
   const [query, setQuery] = useState("");
-  const [active, setActive] = useState(0);
-  const [students, setStudents] = useState<StudentHit[]>([]);
-  const [recent, setRecent] = useState<Array<{ path: string; label: string }>>([]);
-  const listRef = useRef<HTMLDivElement | null>(null);
-  const debounceRef = useRef<number | null>(null);
+  const [recentPaths, setRecentPaths] = useState<string[]>([]);
 
-  const schoolId = profile?.school_id ?? null;
-  const canSearchStudents = role === "admin" || role === "principal" || role === "teacher";
+  const commands = useMemo(() => buildPaletteCommands(sections), [sections]);
+  const { available, results, searching } = useRecordSearch(query, sections, profile?.school_id ?? null, open);
 
   useEffect(() => {
     if (open) {
-      setRecent(readRecent());
       setQuery("");
-      setActive(0);
+      setRecentPaths(readRecentPaths());
     }
   }, [open]);
 
-  const go = useCallback(
-    (path: string) => {
+  const run = useCallback(
+    (command: PaletteCommand) => {
       onClose();
-      navigate({ to: path });
+      if (command.kind === "preference") {
+        const mode = command.id.replace("preference:theme-", "") as ThemeMode;
+        setThemeMode(mode);
+        return;
+      }
+      if (command.href) navigate({ to: command.href });
     },
     [navigate, onClose],
   );
 
-  // Live student search (school-scoped).
-  useEffect(() => {
-    if (!open || !canSearchStudents || query.trim().length <= 2) {
-      setStudents([]);
-      return;
-    }
-    if (debounceRef.current) window.clearTimeout(debounceRef.current);
-    debounceRef.current = window.setTimeout(async () => {
-      const term = query.trim();
-      let uq = supabase
-        .from("users")
-        .select("id, full_name")
-        .eq("role", "student")
-        .ilike("full_name", `%${term}%`)
-        .limit(5);
-      if (schoolId) uq = uq.eq("school_id", schoolId);
-      const { data: users } = await uq;
-      const list = (users ?? []) as Array<{ id: string; full_name: string | null }>;
-      if (list.length === 0) {
-        setStudents([]);
-        return;
-      }
-      let sq = supabase
-        .from("students")
-        .select("id, user_id, admission_number, class_id")
-        .in(
-          "user_id",
-          list.map((u) => u.id),
-        );
-      if (schoolId) sq = sq.eq("school_id", schoolId);
-      const { data: srows } = await sq;
-      const rows = (srows ?? []) as Array<{
-        id: string;
-        user_id: string;
-        admission_number: string | null;
-        class_id: string | null;
-      }>;
-      const classIds = Array.from(new Set(rows.map((r) => r.class_id).filter(Boolean))) as string[];
-      const classNames = new Map<string, string>();
-      if (classIds.length > 0) {
-        const { data: crows } = await supabase
-          .from("classes")
-          .select("id, name")
-          .in("id", classIds);
-        for (const c of (crows ?? []) as Array<{ id: string; name: string | null }>) {
-          if (c.name) classNames.set(c.id, c.name);
-        }
-      }
-      const byUser = new Map(rows.map((r) => [r.user_id, r]));
-      setStudents(
-        list.map((u) => {
-          const s = byUser.get(u.id);
-          return {
-            id: s?.id ?? u.id,
-            full_name: u.full_name ?? "(unnamed)",
-            admission_number: s?.admission_number ?? null,
-            class_name: s?.class_id ? (classNames.get(s.class_id) ?? null) : null,
-          };
-        }),
-      );
-    }, 180);
-    return () => {
-      if (debounceRef.current) window.clearTimeout(debounceRef.current);
-    };
-  }, [query, open, canSearchStudents, schoolId]);
+  const recentCommands = useMemo(() => {
+    if (query.trim()) return [];
+    const byHref = new Map(commands.filter((command) => command.href).map((command) => [command.href, command]));
+    // Only recents that are still authorized destinations are shown.
+    return recentPaths.flatMap((path) => {
+      const command = byHref.get(path);
+      return command ? [command] : [];
+    });
+  }, [commands, recentPaths, query]);
 
-  const sections = useMemo<Section[]>(() => {
-    const q = query.trim().toLowerCase();
-    const out: Section[] = [];
-
-    if (!q) {
-      const pages = navFor(role).slice(0, 6);
-      const quick = pages.map((n) => ({
-        id: `page-${n.path}`,
-        label: n.label,
-        hint: n.description,
-        shortcut: n.shortcut,
-        icon: n.icon,
-        onSelect: () => go(n.path),
-      }));
-
-      if (quick.length > 0) {
-        out.push({
-          key: "quick-access",
-          heading: "Quick access",
-          rows: quick,
-        });
-      }
-      return out;
-    }
-
-    const pages = navFor(role).filter(
-      (n) => n.label.toLowerCase().includes(q) || (n.description ?? "").toLowerCase().includes(q),
-    );
-    if (pages.length > 0) {
-      out.push({
-        key: "pages",
-        heading: "Pages",
-        rows: pages.map((n) => ({
-          id: `page-${n.path}`,
-          label: n.label,
-          hint: n.description,
-          shortcut: n.shortcut,
-          icon: n.icon,
-          onSelect: () => go(n.path),
-        })),
-      });
-    }
-
-    const actions = quickActionsFor(role).filter(
-      (a) => a.label.toLowerCase().includes(q) || a.description.toLowerCase().includes(q),
-    );
-    if (actions.length > 0) {
-      out.push({
-        key: "actions",
-        heading: "Quick Actions",
-        rows: actions.map((a) => ({
-          id: a.id,
-          label: a.label,
-          hint: a.description,
-          icon: a.icon,
-          onSelect: () => go(a.path),
-        })),
-      });
-    }
-
-    if (canSearchStudents && students.length > 0) {
-      out.push({
-        key: "students",
-        heading: "Students",
-        rows: students.map((s) => ({
-          id: `student-${s.id}`,
-          label: s.full_name,
-          hint: [s.class_name, s.admission_number].filter(Boolean).join(" · ") || undefined,
-          initials: initialsOf(s.full_name),
-          onSelect: () =>
-            go(role === "teacher" ? `/teacher/students?id=${s.id}` : `/admin/students?id=${s.id}`),
-        })),
-      });
-    }
-
-    return out;
-  }, [query, recent, role, students, canSearchStudents, go]);
-
-  const flat = useMemo(() => sections.flatMap((s) => s.rows), [sections]);
-
-  useEffect(() => {
-    setActive(0);
-  }, [query, sections.length]);
-
-  useEffect(() => {
-    if (!open) return;
-    const el = listRef.current?.querySelector<HTMLElement>('[data-active="true"]');
-    el?.scrollIntoView({ block: "nearest" });
-  }, [active, open, sections]);
-
-  if (!open) return null;
-
-  const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      onClose();
-      return;
-    }
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setActive((i) => (flat.length ? (i + 1) % flat.length : 0));
-      return;
-    }
-    if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setActive((i) => (flat.length ? (i - 1 + flat.length) % flat.length : 0));
-      return;
-    }
-    if (e.key === "Tab") {
-      e.preventDefault();
-      // Jump to the first row of the next section.
-      let offset = 0;
-      let next = 0;
-      for (const s of sections) {
-        if (active < offset + s.rows.length) {
-          next = offset + s.rows.length;
-          break;
-        }
-        offset += s.rows.length;
-      }
-      setActive(flat.length ? next % flat.length : 0);
-      return;
-    }
-    if (e.key === "Enter") {
-      e.preventDefault();
-      flat[active]?.onSelect();
-    }
-  };
-
-  let cursor = -1;
+  const grouped = useMemo(() => groupCommands(searchCommands(commands, query)), [commands, query]);
+  const searchNouns = available.map(({ provider }) => provider.placeholderNoun);
+  const placeholder = searchNouns.length > 0 ? `Go to a page, run a command or find ${searchNouns.join(", ")}…` : "Go to a page or run a command…";
+  const hasResults = grouped.length > 0 || results.length > 0;
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-start justify-center px-4 pt-[12vh] backdrop-blur-xl"
-      style={{ background: "rgba(4, 7, 16, 0.6)" }}
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-      role="presentation"
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label="Command palette"
-        className="w-full max-w-2xl overflow-hidden"
-        style={{
-          background: "rgba(10, 15, 30, 0.95)",
-          border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: "var(--radius-2xl, 20px)",
-          boxShadow: "var(--shadow-xl, 0 24px 64px rgba(0,0,0,0.55))",
-        }}
-        onKeyDown={onKeyDown}
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent
+        data-sx=""
+        className="top-[12vh] max-w-[min(42rem,calc(100vw-2rem))] translate-y-0 gap-0 overflow-hidden border-sx-line-strong bg-sx-surface-1 p-0 shadow-[0_32px_80px_-32px_rgb(7_9_12/0.5)] sm:rounded-[6px] [&>button:last-child]:hidden"
       >
-        <div className="flex items-center gap-3 border-b border-white/10 px-4">
-          <Search className="size-4 shrink-0 text-white/40" />
-          <input
-            autoFocus
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search pages, students, actions..."
-            aria-label="Search pages, students and actions"
-            className="w-full bg-transparent p-4 pl-0 text-lg text-white outline-none placeholder:text-white/35"
-          />
-          <kbd className="hidden shrink-0 rounded bg-white/10 px-1.5 py-0.5 font-mono text-[10px] text-white/60 sm:block">
-            ESC
-          </kbd>
-        </div>
-
-        <div className="flex items-center gap-4 border-b border-white/10 bg-white/[0.02] px-4 py-3">
-          <div className="grid size-12 place-items-center rounded-2xl bg-gradient-to-br from-primary/30 via-primary/10 to-white/5 text-2xl font-black text-white shadow-lg shadow-primary/20">
-            {query ? query.trim().charAt(0).toUpperCase() : "A"}
+        <DialogTitle className="sr-only">Command palette</DialogTitle>
+        <DialogDescription className="sr-only">
+          Lists only the pages and commands available in your workspace.
+        </DialogDescription>
+        <CommandPrimitive shouldFilter={false} loop label="Command palette" className="flex flex-col">
+          <div className="flex items-center gap-3 border-b border-sx-line px-4">
+            <Search aria-hidden="true" className="size-4 shrink-0 text-sx-muted" />
+            <CommandPrimitive.Input
+              value={query}
+              onValueChange={setQuery}
+              placeholder={placeholder}
+              className="h-14 w-full bg-transparent text-base text-sx-strong outline-none placeholder:text-sx-muted"
+            />
+            {searching && <Loader2 aria-label="Searching records" className="size-4 shrink-0 animate-spin text-sx-muted" />}
+            <kbd className="sx-label hidden shrink-0 border border-sx-line px-1.5 py-0.5 text-[0.625rem] sm:block">Esc</kbd>
           </div>
-          <div>
-            <div className="text-[10px] uppercase tracking-[0.28em] text-white/35">
-              Quick access
-            </div>
-            <div className="text-sm font-medium text-white/75">
-              {query ? `Results for “${query}”` : "Start from a section"}
-            </div>
-          </div>
-        </div>
 
-        <div ref={listRef} className="max-h-96 overflow-y-auto overscroll-contain py-2">
-          {flat.length === 0 && (
-            <div className="px-4 py-10 text-center text-sm text-white/45">
-              No results for “{query}”.
-            </div>
-          )}
+          <CommandPrimitive.List className="max-h-[min(26rem,60vh)] overflow-y-auto overscroll-contain p-2">
+            {!hasResults && !searching && (
+              <p className="px-3 py-10 text-center text-sm text-sx-muted">
+                Nothing in your workspace matches “{query.trim()}”.
+              </p>
+            )}
 
-          {sections.map((section) => (
-            <div key={section.key} className="mb-1">
-              <div className="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/35">
-                {section.heading}
-              </div>
-              {section.rows.map((row) => {
-                cursor += 1;
-                const index = cursor;
-                const isActive = index === active;
-                const Icon = row.icon;
-                return (
-                  <button
-                    key={row.id}
-                    type="button"
-                    data-active={isActive}
-                    onMouseEnter={() => setActive(index)}
-                    onClick={row.onSelect}
-                    className="flex h-12 w-full items-center gap-3 border-l-2 px-4 text-left transition-colors"
-                    style={{
-                      borderLeftColor: isActive ? "var(--tenant-primary, #0d9488)" : "transparent",
-                      background: isActive ? "rgba(13,148,136,0.15)" : "transparent",
+            {recentCommands.length > 0 && (
+              <CommandPrimitive.Group heading="Recent" className={GROUP_CLASS}>
+                {recentCommands.map((command) => (
+                  <PaletteItem key={`recent-${command.id}`} value={`recent-${command.id}`} command={command} recent onRun={run} />
+                ))}
+              </CommandPrimitive.Group>
+            )}
+
+            {grouped.map(({ group, commands: groupCommandsList }) => (
+              <CommandPrimitive.Group key={group} heading={group} className={GROUP_CLASS}>
+                {groupCommandsList.map((command) => (
+                  <PaletteItem key={command.id} value={command.id} command={command} onRun={run} />
+                ))}
+              </CommandPrimitive.Group>
+            ))}
+
+            {results.map(({ provider, destination, hits }) => (
+              <CommandPrimitive.Group key={provider.id} heading={provider.groupLabel} className={GROUP_CLASS}>
+                {hits.map((hit) => (
+                  <CommandPrimitive.Item
+                    key={`${provider.id}-${hit.recordRef}`}
+                    value={`${provider.id}-${hit.recordRef}`}
+                    onSelect={() => {
+                      onClose();
+                      navigate({ to: recordHitHref(destination, hit) });
                     }}
-                    onMouseOver={(e) => {
-                      if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.06)";
-                    }}
-                    onMouseOut={(e) => {
-                      if (!isActive) e.currentTarget.style.background = "transparent";
-                    }}
+                    className="flex min-h-11 cursor-pointer items-center gap-3 rounded-[4px] px-3 py-2 text-sx-text data-[selected=true]:bg-sx-surface-2 data-[selected=true]:text-sx-strong"
                   >
-                    {row.initials ? (
-                      <span className="grid size-7 shrink-0 place-items-center rounded-full bg-white/10 text-[11px] font-semibold text-white/80">
-                        {row.initials}
-                      </span>
-                    ) : Icon ? (
-                      <Icon className="size-4 shrink-0 text-white/60" />
-                    ) : null}
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm text-white">{row.label}</span>
-                      {row.hint && (
-                        <span className="block truncate text-[11px] text-white/40">{row.hint}</span>
-                      )}
+                    <span aria-hidden="true" className="sx-data grid size-7 shrink-0 place-items-center border border-sx-line text-[0.6875rem]">
+                      {hit.label
+                        .split(/\s+/u)
+                        .filter(Boolean)
+                        .slice(0, 2)
+                        .map((part) => part[0]?.toUpperCase() ?? "")
+                        .join("")}
                     </span>
-                    {row.shortcut ? (
-                      <kbd className="shrink-0 rounded bg-white/10 px-1.5 py-0.5 font-mono text-[10px] text-white/60">
-                        {row.shortcut}
-                      </kbd>
-                    ) : isActive ? (
-                      <CornerDownLeft className="size-3.5 shrink-0 text-white/50" />
-                    ) : (
-                      <ArrowRight className="size-3.5 shrink-0 text-white/20" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          ))}
-        </div>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm">{hit.label}</span>
+                      {hit.hint && <span className="block truncate text-xs text-sx-muted">{hit.hint}</span>}
+                    </span>
+                  </CommandPrimitive.Item>
+                ))}
+              </CommandPrimitive.Group>
+            ))}
+          </CommandPrimitive.List>
 
-        <div className="flex items-center gap-4 border-t border-white/10 px-4 py-2 text-[10px] text-white/40">
-          <span>↑↓ navigate</span>
-          <span>↵ select</span>
-          <span>Tab next section</span>
-          <span>Esc close</span>
-        </div>
-      </div>
-    </div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-sx-line bg-sx-surface-2 px-4 py-2 text-[0.6875rem] text-sx-muted">
+            <span>↑↓ move</span>
+            <span>↵ open</span>
+            <span>Esc close</span>
+            <span className="ml-auto">Only what your role can open is listed</span>
+          </div>
+        </CommandPrimitive>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function PaletteItem({
+  command,
+  value,
+  recent = false,
+  onRun,
+}: {
+  command: PaletteCommand;
+  value: string;
+  recent?: boolean;
+  onRun: (command: PaletteCommand) => void;
+}) {
+  const Icon = recent ? Clock : navIconFor(command.iconKey);
+  return (
+    <CommandPrimitive.Item
+      value={value}
+      onSelect={() => onRun(command)}
+      className="group flex min-h-11 cursor-pointer items-center gap-3 rounded-[4px] px-3 py-2 text-sx-text data-[selected=true]:bg-sx-surface-2 data-[selected=true]:text-sx-strong"
+    >
+      <Icon aria-hidden="true" className="size-4 shrink-0 text-sx-muted group-data-[selected=true]:text-sx-signal" />
+      <span className="min-w-0 flex-1 truncate text-sm">{command.label}</span>
+      {recent && <span className="sx-caption hidden sm:inline">{command.group}</span>}
+      <CornerDownLeft aria-hidden="true" className="size-3.5 shrink-0 opacity-0 group-data-[selected=true]:opacity-60" />
+    </CommandPrimitive.Item>
   );
 }
 
@@ -866,29 +293,29 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
 export const CommandCenter = CommandPalette;
 
 /**
- * Mount + shortcut wiring for the authenticated layout. Owns the open state,
- * listens for ⌘K / Ctrl+K and the `open-command-center` window event, and
- * records visited routes for the Recent Pages section.
+ * Mount + shortcut wiring for the authenticated layout. Owns the open state, listens
+ * for ⌘K / Ctrl+K and the `open-command-center` window event, and records visited
+ * routes for the Recent group.
  */
-export function CommandCenterMount() {
+export function CommandCenterMount({ sections }: { sections: readonly WorkspaceNavSection[] }) {
   const [open, setOpen] = useState(false);
   const pathname = useRouterState({ select: (r) => r.location.pathname });
 
   useEffect(() => {
     if (!pathname || pathname === "/") return;
-    const segs = pathname.split("/").filter(Boolean);
-    const label = segs
+    const segments = pathname.split("/").filter(Boolean);
+    const label = segments
       .slice(-2)
-      .map((s) => s.replace(/-/g, " ").replace(/^\w/, (c) => c.toUpperCase()))
+      .map((segment) => segment.replace(/-/g, " ").replace(/^\w/, (c) => c.toUpperCase()))
       .join(" · ");
     pushRecent(pathname, label || pathname);
   }, [pathname]);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.key === "k" || e.key === "K") && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        setOpen((v) => !v);
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.key === "k" || event.key === "K") && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault();
+        setOpen((value) => !value);
       }
     };
     const onEvent = () => setOpen(true);
@@ -900,7 +327,7 @@ export function CommandCenterMount() {
     };
   }, []);
 
-  return <CommandPalette open={open} onClose={() => setOpen(false)} />;
+  return <CommandPalette open={open} onClose={() => setOpen(false)} sections={sections} />;
 }
 
 /** Fire from anywhere in the app to open the command palette. */

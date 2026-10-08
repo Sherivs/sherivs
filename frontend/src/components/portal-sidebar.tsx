@@ -13,41 +13,10 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useState, type ElementType } from "react";
 import {
-  Activity,
-  Award,
-  Bell,
-  BookOpen,
-  Brain,
-  Building2,
-  Bus,
-  CalendarCheck,
-  CalendarDays,
   ChevronDown,
-  FileText,
-  Globe,
-  GraduationCap,
-  HeartPulse,
-  Home,
-  KeyRound,
-  Layers,
-  LayoutDashboard,
-  Link2,
-  MapPin,
-  Megaphone,
-  MessageSquare,
-  Newspaper,
-  Receipt,
-  ScanFace,
-  ScrollText,
   Search as SearchIcon,
-  Settings,
-  ShieldCheck,
-  Sliders,
-  Sparkles,
-  UserCog,
-  Users,
-  Wallet,
 } from "lucide-react";
+import { navIconFor } from "@/components/shell/nav-icons";
 import {
   Sidebar,
   SidebarContent,
@@ -69,50 +38,8 @@ import { ROUTE_PROGRESS_EVENT } from "@/components/route-progress-bar";
 import { cn } from "@/lib/utils";
 import type { WorkspaceNavItem, WorkspaceNavSection } from "@/lib/workspace-engine/navigation";
 
-/** Icon registry: data uses keys; this is the ONLY place keys meet components. */
-const ICON_REGISTRY: Record<string, ElementType> = {
-  dashboard: LayoutDashboard,
-  users: Users,
-  teachers: GraduationCap,
-  children: Users,
-  grades: Award,
-  fees: Wallet,
-  report: FileText,
-  lessons: FileText,
-  attendance: CalendarCheck,
-  timetable: CalendarDays,
-  calendar: CalendarDays,
-  news: Newspaper,
-  messages: MessageSquare,
-  notifications: Bell,
-  settings: Settings,
-  ai: Sparkles,
-  bus: Bus,
-  signin: MapPin,
-  biometric: ScanFace,
-  broadcast: Megaphone,
-  receipts: Receipt,
-  reports: ScrollText,
-  shield: ShieldCheck,
-  activity: Activity,
-  tiers: Layers,
-  config: Sliders,
-  schools: Building2,
-  security: KeyRound,
-  home: Home,
-  globe: Globe,
-  intelligence: Brain,
-  academic: BookOpen,
-  finance: Wallet,
-  services: HeartPulse,
-  communication: MessageSquare,
-  administration: UserCog,
-  platform: Globe,
-  group: Layers,
-};
-
 function iconFor(key: string): ElementType {
-  return ICON_REGISTRY[key] ?? Link2;
+  return navIconFor(key);
 }
 
 function normalizePath(path: string): string {

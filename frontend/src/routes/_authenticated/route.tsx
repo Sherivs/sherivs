@@ -92,9 +92,9 @@ function AuthenticatedLayout() {
         <div className="max-w-md uos-card p-8 text-center">
           <h1 className="font-display text-xl font-bold">Account not yet linked</h1>
           <p className="mt-3 text-sm text-muted-foreground">
-            Your sign-in is valid, but your account has not been linked to a school yet. A school
-            administrator (or a Sherivs platform administrator) needs to assign you a role before you
-            can open a portal.
+            Your sign-in is valid, but your account is not a member of an organization yet. An
+            administrator of your organization (or a Sherivs platform administrator) needs to
+            assign you a role before a workspace can open.
           </p>
           <button
             onClick={async () => {
@@ -153,7 +153,7 @@ function AuthenticatedLayout() {
                 {role && <SidebarTrigger />}
                 <Link to={dashHref} className="flex items-center gap-2 min-w-0">
                   <div className="size-8 rounded-lg uos-tenant-bg grid place-items-center font-bold shrink-0">
-                    {(school?.name?.[0] ?? "U") as string}
+                    {(school?.name?.[0] ?? PLATFORM_NAME[0]) as string}
                   </div>
                   <div className="leading-tight min-w-0">
                     <div className="font-display font-bold text-sm truncate">
@@ -197,7 +197,7 @@ function AuthenticatedLayout() {
         </div>
         {hasBottomNav && <WorkspaceBottomNav sections={bottomNavSections} />}
 
-        <CommandCenterMount />
+        <CommandCenterMount sections={sidebarSections} />
       </div>
     </SidebarProvider>
   );
