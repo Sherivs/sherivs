@@ -11,6 +11,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationBell } from "@/components/shell/notification-bell";
 import { ProfileMenu } from "@/components/shell/profile-menu";
 import { openCommandCenter } from "@/components/command-center";
+import { JarvisGlyph } from "@/components/sherivs/brand";
 import { useModKeyLabel } from "@/lib/kbd";
 import type { ShellNotificationViewer } from "@/lib/shell-notifications";
 
@@ -36,6 +37,15 @@ export function ShellHeaderActions({
 
   return (
     <div className="flex items-center gap-2 text-sm sm:gap-3">
+      <button
+        onClick={openCommandCenter}
+        className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 text-xs font-medium transition-colors"
+        title="Jarvis Executive Intelligence"
+      >
+        <JarvisGlyph size={14} />
+        <span>Jarvis</span>
+      </button>
+
       <button
         onClick={openCommandCenter}
         className="hidden sm:inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent"

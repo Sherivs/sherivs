@@ -19,6 +19,7 @@ import { ShellHeaderActions } from "@/components/shell/shell-header-actions";
 import { WorkspaceSwitcher } from "@/components/shell/workspace-switcher";
 import { PLATFORM_NAME } from "@/lib/platform";
 import { INSTALLED_RUNTIME_NAME as SCHOLAR_RUNTIME_NAME } from "@/lib/runtime/installed-runtimes";
+import { SherivsSymbol } from "@/components/sherivs";
 import { WorkspaceBottomNav } from "@/components/mobile-bottom-nav";
 import { OfflineBanner } from "@/components/offline-banner";
 import { AppFramePreview } from "@/components/app-frame-preview";
@@ -153,7 +154,7 @@ function AuthenticatedLayout() {
                 {role && <SidebarTrigger />}
                 <Link to={dashHref} className="flex items-center gap-2 min-w-0">
                   <div className="size-8 rounded-lg uos-tenant-bg grid place-items-center font-bold shrink-0">
-                    {(school?.name?.[0] ?? "U") as string}
+                    {school?.name ? (school.name[0] as string) : <SherivsSymbol size={20} />}
                   </div>
                   <div className="leading-tight min-w-0">
                     <div className="font-display font-bold text-sm truncate">
