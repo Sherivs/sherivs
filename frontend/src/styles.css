@@ -1,15 +1,28 @@
 @import "tailwindcss" source(none);
 @import "tw-animate-css";
+@import "./styles/sherivs-tokens.css";
+@import "./styles/sherivs-primitives.css";
 
 @source "../src";
 
 @custom-variant dark (&:is(.dark *));
 
 /*
- * CoreGrid — Apple-inspired glassmorphism design system.
- * Deep navy structural surfaces, frosted glass cards, tenant-tunable
- * primary/secondary read from school.primary_color / secondary_color
- * and injected at runtime onto :root as --tenant-primary / --tenant-secondary.
+ * Sherivs Experience System — stylesheet entry.
+ *
+ * Layering (SHERIVS_DESIGN_SYSTEM.md §1):
+ *   1. styles/sherivs-tokens.css      canonical `--sh-*` tokens (dark default, .light)
+ *   2. styles/sherivs-primitives.css  type scale, planes, motion, states
+ *   3. this file                      Tailwind theme bridge + LEGACY COMPATIBILITY LAYER
+ *
+ * The legacy `uos-*` / shadcn variables below are ALIASES onto the Sherivs
+ * tokens so every pre-existing surface inherits the Sherivs foundation. New
+ * surfaces must use `--sh-*` tokens / `.sh-*` primitives / components in
+ * frontend/src/components/sherivs — never new one-off values here.
+ *
+ * Organization brand (primary/secondary) is injected at runtime onto :root
+ * as --tenant-primary / --tenant-secondary and enters the system ONLY via
+ * the brand layer (--sh-org-*).
  */
 
 @theme inline {
@@ -17,6 +30,52 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* Sherivs semantic palette → Tailwind utilities (bg-plane-2, text-signal …) */
+  --color-plane-0: var(--sh-plane-0);
+  --color-plane-1: var(--sh-plane-1);
+  --color-plane-2: var(--sh-plane-2);
+  --color-plane-3: var(--sh-plane-3);
+  --color-plane-4: var(--sh-plane-4);
+  --color-ink-1: var(--sh-text-1);
+  --color-ink-2: var(--sh-text-2);
+  --color-ink-3: var(--sh-text-3);
+  --color-ink-4: var(--sh-text-4);
+  --color-line-1: var(--sh-border-1);
+  --color-line-2: var(--sh-border-2);
+  --color-line-3: var(--sh-border-3);
+  --color-signal: var(--sh-signal);
+  --color-signal-strong: var(--sh-signal-strong);
+  --color-signal-soft: var(--sh-signal-soft);
+  --color-signal-on: var(--sh-signal-on);
+  --color-reality: var(--sh-reality);
+  --color-reality-soft: var(--sh-reality-soft);
+  --color-intel: var(--sh-intel);
+  --color-intel-soft: var(--sh-intel-soft);
+  --color-action: var(--sh-action);
+  --color-action-soft: var(--sh-action-soft);
+  --color-evidence: var(--sh-evidence);
+  --color-evidence-soft: var(--sh-evidence-soft);
+  --color-success: var(--sh-success);
+  --color-success-soft: var(--sh-success-soft);
+  --color-warning: var(--sh-warning);
+  --color-warning-soft: var(--sh-warning-soft);
+  --color-danger: var(--sh-danger);
+  --color-danger-soft: var(--sh-danger-soft);
+  --color-info: var(--sh-info);
+  --color-info-soft: var(--sh-info-soft);
+  --color-org: var(--sh-org-primary);
+  --color-org-2: var(--sh-org-secondary);
+  --color-org-soft: var(--sh-org-primary-soft);
+  --font-mono: var(--sh-font-mono);
+  --breakpoint-2xl: 1440px;
+  --breakpoint-3xl: 1600px;
+  --breakpoint-4xl: 1920px;
+  --breakpoint-5xl: 2560px;
+  --ease-standard: var(--sh-ease-standard);
+  --ease-emphasized: var(--sh-ease-emphasized);
+  --ease-exit: var(--sh-ease-exit);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -52,80 +111,83 @@
 }
 
 :root {
-  --radius: 0.875rem;
+  --radius: 0.75rem;
 
+  /* ── LEGACY COMPATIBILITY LAYER — aliases onto Sherivs tokens ────── */
   /* Structural surfaces */
-  --surface-1: #0a0f1e;
-  --surface-2: #0d1424;
-  --surface-3: #111827;
+  --surface-1: var(--sh-plane-0);
+  --surface-2: var(--sh-plane-2);
+  --surface-3: var(--sh-plane-3);
 
-  /* Glass system */
-  --glass-bg: rgba(255, 255, 255, 0.04);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-hover: rgba(255, 255, 255, 0.08);
-  --glass-active: rgba(255, 255, 255, 0.12);
-  --glass-blur: blur(24px) saturate(180%);
+  /* Glass system (retuned: translucency is for floating chrome only) */
+  --glass-bg: color-mix(in oklab, var(--sh-plane-2) 92%, transparent);
+  --glass-border: var(--sh-border-1);
+  --glass-hover: var(--sh-plane-3);
+  --glass-active: var(--sh-plane-4);
+  --glass-blur: blur(var(--sh-blur-md)) saturate(140%);
 
   /* Sidebar + overlay */
-  --sidebar-bg: rgba(10, 15, 30, 0.97);
-  --sidebar-border: rgba(255, 255, 255, 0.08);
-  --overlay-bg: rgba(0, 0, 0, 0.72);
-  --overlay-blur: blur(12px);
+  --sidebar-bg: var(--sh-plane-1);
+  --sidebar-border: var(--sh-border-1);
+  --overlay-bg: oklch(0 0 0 / var(--sh-opacity-overlay));
+  --overlay-blur: blur(var(--sh-blur-sm));
 
   /* Radii, transitions, shadows */
-  --radius-card: 20px;
-  --radius-btn: 12px;
-  --transition-smooth: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  --transition-fast: all 0.15s ease;
-  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
-  --shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.5);
+  --radius-card: var(--sh-radius-lg);
+  --radius-btn: var(--sh-radius-md);
+  --transition-smooth: all var(--sh-duration-slow) var(--sh-ease-emphasized);
+  --transition-fast: all var(--sh-duration-fast) var(--sh-ease-standard);
+  --shadow-card: var(--sh-shadow-1);
+  --shadow-hover: var(--sh-shadow-3);
 
   /* Text */
-  --text-primary: rgba(255, 255, 255, 0.95);
-  --text-secondary: rgba(255, 255, 255, 0.60);
-  --text-muted: rgba(255, 255, 255, 0.35);
+  --text-primary: var(--sh-text-1);
+  --text-secondary: var(--sh-text-2);
+  --text-muted: var(--sh-text-3);
 
-  /* shadcn tokens mapped to the navy palette */
-  --background: var(--surface-1);
-  --foreground: var(--text-primary);
-  --card: var(--surface-2);
-  --card-foreground: var(--text-primary);
-  --popover: var(--surface-3);
-  --popover-foreground: var(--text-primary);
-  --muted: rgba(255, 255, 255, 0.06);
-  --muted-foreground: var(--text-secondary);
-  --accent: rgba(255, 255, 255, 0.08);
-  --accent-foreground: var(--text-primary);
-  --border: var(--glass-border);
-  --input: rgba(255, 255, 255, 0.10);
-  --ring: rgba(14, 165, 233, 0.55);
-  --destructive: oklch(0.62 0.22 25);
+  /* shadcn tokens mapped onto the Sherivs planes */
+  --background: var(--sh-plane-0);
+  --foreground: var(--sh-text-1);
+  --card: var(--sh-plane-2);
+  --card-foreground: var(--sh-text-1);
+  --popover: var(--sh-plane-4);
+  --popover-foreground: var(--sh-text-1);
+  --muted: var(--sh-neutral-soft);
+  --muted-foreground: var(--sh-text-3);
+  --accent: var(--sh-plane-3);
+  --accent-foreground: var(--sh-text-1);
+  --border: var(--sh-border-1);
+  --input: var(--sh-border-2);
+  --ring: var(--sh-signal);
+  --destructive: var(--sh-danger);
   --destructive-foreground: oklch(0.98 0 0);
 
-  /* Tenant brand — overridden at runtime via JS */
-  --tenant-primary: #0d9488;
-  --tenant-secondary: #f59e0b;
-  --primary-rgb: 13, 148, 136;
-  --primary: var(--tenant-primary);
-  --primary-foreground: #ffffff;
-  --secondary: var(--tenant-secondary);
-  --secondary-foreground: #0a0f1e;
+  /* Organization brand — written at runtime by the app context (brand layer).
+     On the Sherivs public plane no organization is in scope, so the default
+     brand IS the Sherivs signal. */
+  --tenant-primary: var(--sh-signal);
+  --tenant-secondary: var(--sh-evidence);
+  --primary-rgb: 96, 196, 218;
+  --primary: var(--sh-org-primary);
+  --primary-foreground: var(--sh-signal-on);
+  --secondary: var(--sh-org-secondary);
+  --secondary-foreground: var(--sh-text-inverse);
 }
 
 @layer base {
   * { border-color: var(--color-border); }
   html, body { height: 100%; }
   body {
-    background:
-      radial-gradient(1200px 600px at 20% -10%, color-mix(in oklab, var(--tenant-primary) 18%, transparent), transparent 60%),
-      radial-gradient(900px 500px at 100% 10%, color-mix(in oklab, var(--tenant-secondary) 12%, transparent), transparent 55%),
-      var(--surface-1);
-    color: var(--text-primary);
-    font-family: var(--font-sans);
-    font-feature-settings: "cv02", "cv03", "cv04";
+    background: var(--sh-plane-0);
+    color: var(--sh-text-1);
+    font-family: var(--sh-font-sans);
+    font-feature-settings: "cv02", "cv03", "cv04", "ss01";
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
-  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
+  h1, h2, h3, h4 { font-family: var(--sh-font-display); letter-spacing: -0.02em; text-wrap: balance; }
+  code, kbd, pre, samp { font-family: var(--sh-font-mono); }
+  ::selection { background: var(--sh-signal-soft); color: var(--sh-text-1); }
   *, *::before, *::after { box-sizing: border-box; }
   html, body { overflow-x: hidden; max-width: 100vw; }
   .portal-content { min-width: 0; overflow-x: hidden; }
@@ -203,130 +265,135 @@
 }
 
 @layer components {
-  /* Frosted glass card — the core surface */
+  /* ── Legacy surfaces, retuned to Sherivs planes (compat layer) ──────
+     Glass is reserved for floating chrome; bounded content surfaces are
+     opaque planes with hairline borders. Hover lift is removed system-wide
+     (SHERIVS_MOTION_SYSTEM §2: motion communicates state, not decoration). */
   .uos-glass {
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    border-radius: 20px;
-    backdrop-filter: blur(20px) saturate(180%);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--sh-plane-2);
+    border: 1px solid var(--sh-border-1);
+    border-radius: var(--sh-radius-lg);
+    box-shadow: var(--sh-shadow-1);
+    transition: border-color var(--sh-duration-base) var(--sh-ease-standard),
+                background var(--sh-duration-base) var(--sh-ease-standard);
   }
   .uos-glass:hover {
-    background: var(--glass-hover);
-    border-color: color-mix(in oklab, var(--tenant-primary) 30%, transparent);
-    transform: translateY(-2px);
-    box-shadow:
-      0 20px 40px rgba(0, 0, 0, 0.4),
-      0 0 0 1px color-mix(in oklab, var(--tenant-primary) 10%, transparent);
+    border-color: var(--sh-border-2);
   }
 
   .uos-card {
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    border-radius: 20px;
-    backdrop-filter: blur(20px) saturate(180%);
+    background: var(--sh-plane-2);
+    border: 1px solid var(--sh-border-1);
+    border-radius: var(--sh-radius-lg);
+    box-shadow: var(--sh-shadow-1);
   }
 
   .uos-empty {
-    border: 1.5px dashed color-mix(in oklab, var(--text-muted) 60%, transparent);
-    border-radius: 20px;
-    background: color-mix(in oklab, var(--surface-2) 50%, transparent);
-    backdrop-filter: blur(16px);
+    border: 1px dashed var(--sh-border-2);
+    border-radius: var(--sh-radius-lg);
+    background: var(--sh-plane-1);
   }
 
-  /* Gradient-border stat card */
+  /* Metric tile — leading-edge org rail instead of a gradient border */
   .uos-stat {
-    border-radius: 20px;
-    border: 1px solid transparent;
-    background:
-      linear-gradient(var(--surface-2), var(--surface-2)) padding-box,
-      linear-gradient(135deg, color-mix(in oklab, var(--tenant-primary) 40%, transparent), transparent) border-box;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    border-radius: var(--sh-radius-lg);
+    border: 1px solid var(--sh-border-1);
+    background: var(--sh-plane-2);
+    box-shadow: var(--sh-shadow-1);
+    transition: border-color var(--sh-duration-base) var(--sh-ease-standard);
   }
-  .uos-stat:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+  .uos-stat::before {
+    content: "";
+    position: absolute;
+    inset-block: 0.875rem;
+    inset-inline-start: 0;
+    width: 2px;
+    border-radius: 9999px;
+    background: var(--sh-org-primary);
   }
+  .uos-stat:hover { border-color: var(--sh-border-2); }
 
-  .uos-tenant-bg { background: var(--tenant-primary); color: var(--primary-foreground); }
-  .uos-tenant-ring { box-shadow: 0 0 0 1px color-mix(in oklab, var(--tenant-primary) 50%, transparent); }
+  .uos-tenant-bg { background: var(--sh-org-primary); color: var(--primary-foreground); }
+  .uos-tenant-ring { box-shadow: 0 0 0 1px color-mix(in oklab, var(--sh-org-primary) 50%, transparent); }
 
   .uos-input {
     width: 100%;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid var(--glass-border);
-    border-radius: 12px;
+    background: var(--sh-plane-1);
+    border: 1px solid var(--sh-border-2);
+    border-radius: var(--sh-radius-md);
     padding: 0.6rem 0.85rem;
-    color: var(--text-primary);
+    color: var(--sh-text-1);
     font-size: 0.875rem;
-    transition: border-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
-                background 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition: border-color var(--sh-duration-fast) var(--sh-ease-standard),
+                background var(--sh-duration-fast) var(--sh-ease-standard),
+                box-shadow var(--sh-duration-fast) var(--sh-ease-standard);
   }
+  .uos-input::placeholder { color: var(--sh-text-4); }
   .uos-input:focus {
     outline: none;
-    background: rgba(255, 255, 255, 0.06);
-    border-color: color-mix(in oklab, var(--tenant-primary) 60%, transparent);
+    background: var(--sh-plane-2);
+    border-color: var(--sh-signal);
+    box-shadow: 0 0 0 3px var(--sh-signal-soft);
   }
 
-  /* Primary gradient button */
+  /* Primary button — solid signal, no gradient */
   .uos-btn-primary {
-    background: linear-gradient(135deg,
-      var(--tenant-primary),
-      color-mix(in oklab, var(--tenant-primary) 75%, black));
+    background: var(--sh-org-primary);
     color: var(--primary-foreground);
-    border-radius: 12px;
+    border-radius: var(--sh-radius-md);
     font-weight: 600;
     letter-spacing: 0.01em;
     padding: 0.6rem 1.1rem;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: filter var(--sh-duration-fast) var(--sh-ease-standard),
+                box-shadow var(--sh-duration-fast) var(--sh-ease-standard);
   }
-  .uos-btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
-  .uos-btn-primary:active { transform: translateY(0); filter: brightness(0.95); }
+  .uos-btn-primary:hover { filter: brightness(1.08); box-shadow: var(--sh-shadow-2); }
+  .uos-btn-primary:active { filter: brightness(0.96); }
 
   /* Stagger helpers — use data-stagger="N" or .uos-stagger > * */
   .uos-stagger > * {
     opacity: 0;
-    animation: slide-up 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    animation: slide-up var(--sh-duration-slow) var(--sh-ease-emphasized) forwards;
   }
   .uos-stagger > *:nth-child(1) { animation-delay: 0ms; }
-  .uos-stagger > *:nth-child(2) { animation-delay: 60ms; }
-  .uos-stagger > *:nth-child(3) { animation-delay: 120ms; }
-  .uos-stagger > *:nth-child(4) { animation-delay: 180ms; }
-  .uos-stagger > *:nth-child(5) { animation-delay: 240ms; }
-  .uos-stagger > *:nth-child(6) { animation-delay: 300ms; }
-  .uos-stagger > *:nth-child(7) { animation-delay: 360ms; }
-  .uos-stagger > *:nth-child(8) { animation-delay: 420ms; }
-  .uos-stagger > *:nth-child(n+9) { animation-delay: 480ms; }
+  .uos-stagger > *:nth-child(2) { animation-delay: 40ms; }
+  .uos-stagger > *:nth-child(3) { animation-delay: 80ms; }
+  .uos-stagger > *:nth-child(4) { animation-delay: 120ms; }
+  .uos-stagger > *:nth-child(5) { animation-delay: 160ms; }
+  .uos-stagger > *:nth-child(6) { animation-delay: 200ms; }
+  .uos-stagger > *:nth-child(7) { animation-delay: 240ms; }
+  .uos-stagger > *:nth-child(8) { animation-delay: 280ms; }
+  .uos-stagger > *:nth-child(n+9) { animation-delay: 320ms; }
+  @media (prefers-reduced-motion: reduce) {
+    .uos-stagger > * { opacity: 1; animation: none; }
+  }
 
   /* Shimmer skeleton */
   .uos-shimmer {
-    background: linear-gradient(90deg,
-      rgba(255,255,255,0.04) 0%,
-      rgba(255,255,255,0.10) 50%,
-      rgba(255,255,255,0.04) 100%);
+    background: linear-gradient(90deg, var(--sh-plane-2) 0%, var(--sh-plane-3) 50%, var(--sh-plane-2) 100%);
     background-size: 200% 100%;
     animation: shimmer 1.6s linear infinite;
   }
 
-  /* Sidebar (mobile) — opaque, blurred panel; never let page text show through. */
+  /* Sidebar (mobile) — opaque panel; never let page text show through. */
   [data-sidebar="sidebar"][data-mobile="true"] {
-    background: var(--sidebar-bg) !important;
-    color: var(--text-primary);
-    backdrop-filter: blur(40px) saturate(200%);
-    border-right: 1px solid var(--sidebar-border);
+    background: var(--sh-plane-1) !important;
+    color: var(--sh-text-1);
+    border-right: 1px solid var(--sh-border-1);
   }
   /* Darken & blur the overlay that sits behind it */
   [data-slot="sheet-overlay"] {
-    background: rgba(0, 0, 0, 0.6) !important;
-    backdrop-filter: blur(8px);
+    background: var(--overlay-bg) !important;
+    backdrop-filter: var(--overlay-blur);
   }
 
-  /* Diagonal stripe fill used by calendar non-school-day cells */
+  /* Diagonal stripe fill used by calendar non-working-day cells */
   .bg-stripes {
     background-image: repeating-linear-gradient(
       45deg,
-      rgba(255, 255, 255, 0.04) 0,
-      rgba(255, 255, 255, 0.04) 4px,
+      var(--sh-border-1) 0,
+      var(--sh-border-1) 4px,
       transparent 4px,
       transparent 8px
     );
@@ -346,7 +413,7 @@
   }
   .uos-scroll-x::-webkit-scrollbar { height: 6px; }
   .uos-scroll-x::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.12);
+    background: var(--sh-border-3);
     border-radius: 999px;
   }
 
@@ -462,18 +529,18 @@ button, a, [role="button"], input, select, textarea {
 .uos-tabs-scroll::-webkit-scrollbar { display: none; }
 .uos-tabs-scroll > * { flex-shrink: 0; white-space: nowrap; }
 
-/* Global focus-visible — accessibility */
+/* Global focus-visible — accessibility (SHERIVS_ACCESSIBILITY_SYSTEM §3) */
 :focus-visible {
-  outline: 2px solid #0d9488;
-  outline-offset: 2px;
-  border-radius: 4px;
+  outline: var(--sh-focus-outline);
+  outline-offset: var(--sh-focus-offset);
+  border-radius: var(--sh-radius-xs);
 }
 
 button:focus-visible,
 a:focus-visible,
 [role="button"]:focus-visible {
-  outline: 2px solid #0d9488;
-  outline-offset: 2px;
+  outline: var(--sh-focus-outline);
+  outline-offset: var(--sh-focus-offset);
 }
 
 /* ---------------------------------------------------------------
@@ -493,17 +560,10 @@ a:focus-visible,
   margin-block: 1rem;
   padding-block: 2.5rem !important;
   padding-inline: 1rem;
-  border-radius: 24px;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.045) 0%,
-    rgba(255, 255, 255, 0.02) 100%
-  );
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  backdrop-filter: blur(18px) saturate(160%);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.05) inset,
-    0 10px 30px -18px rgba(0, 0, 0, 0.6);
+  border-radius: var(--sh-radius-xl);
+  background: var(--sh-plane-1);
+  border: 1px solid var(--sh-border-1);
+  box-shadow: var(--sh-shadow-1);
 }
 
 /* Final section gets extra bottom space so it lifts off the footer */
@@ -518,7 +578,6 @@ a:focus-visible,
   border-radius: 0;
   background: transparent;
   border: 0;
-  backdrop-filter: none;
   box-shadow: none;
 }
 
@@ -528,7 +587,7 @@ a:focus-visible,
     margin-block: 1.5rem;
     padding-block: 5rem !important;
     padding-inline: 2rem;
-    border-radius: 32px;
+    border-radius: var(--sh-radius-2xl);
   }
   .public-sections > section:last-of-type {
     margin-bottom: 4rem;
@@ -536,108 +595,89 @@ a:focus-visible,
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   COREGRID SCHOLAR DESIGN SYSTEM v2.0
-   Built on top of the existing system — never replacing it.
-   Adds a structured type/space/radius scale, status colors,
-   enterprise cards, AI chat bubbles, risk badges, and light-mode
-   variants.
+   LEGACY v2 TOKEN ALIASES (pre-Sherivs "design system v2.0")
+   Kept so existing `.enterprise-card`, `.status-*`, `.page-*`, `.ai-*`
+   classes keep resolving — every value now derives from `--sh-*`.
+   New code: use `--sh-*` directly.
 ═══════════════════════════════════════════════════════════════════ */
 
 :root {
   /* Typography scale */
-  --text-display: clamp(2rem, 5vw, 3.5rem);
-  --text-h1: clamp(1.5rem, 3vw, 2.25rem);
-  --text-h2: clamp(1.25rem, 2.5vw, 1.875rem);
-  --text-h3: clamp(1.125rem, 2vw, 1.5rem);
-  --text-h4: clamp(1rem, 1.5vw, 1.25rem);
-  --text-body-lg: 1.125rem;
-  --text-body: 0.9375rem;
-  --text-body-sm: 0.875rem;
-  --text-caption: 0.75rem;
-  --text-label: 0.6875rem;
+  --text-display: var(--sh-type-display-size);
+  --text-h1: var(--sh-type-h1-size);
+  --text-h2: var(--sh-type-h2-size);
+  --text-h3: var(--sh-type-h3-size);
+  --text-h4: var(--sh-type-h4-size);
+  --text-body-lg: var(--sh-type-body-lg-size);
+  --text-body: var(--sh-type-body-size);
+  --text-body-sm: var(--sh-type-small-size);
+  --text-caption: var(--sh-type-caption-size);
+  --text-label: var(--sh-type-label-size);
 
   /* Spacing system (4px base) */
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-5: 1.25rem;
-  --space-6: 1.5rem;
-  --space-8: 2rem;
-  --space-10: 2.5rem;
-  --space-12: 3rem;
-  --space-16: 4rem;
-  --space-20: 5rem;
-  --space-24: 6rem;
+  --space-1: var(--sh-space-1);
+  --space-2: var(--sh-space-2);
+  --space-3: var(--sh-space-3);
+  --space-4: var(--sh-space-4);
+  --space-5: var(--sh-space-5);
+  --space-6: var(--sh-space-6);
+  --space-8: var(--sh-space-8);
+  --space-10: var(--sh-space-10);
+  --space-12: var(--sh-space-12);
+  --space-16: var(--sh-space-16);
+  --space-20: var(--sh-space-20);
+  --space-24: var(--sh-space-24);
 
   /* Radius system */
-  --radius-xs: 4px;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
-  --radius-2xl: 24px;
-  --radius-full: 9999px;
+  --radius-xs: var(--sh-radius-xs);
+  --radius-sm: var(--sh-radius-sm);
+  --radius-md: var(--sh-radius-md);
+  --radius-lg: var(--sh-radius-lg);
+  --radius-xl: var(--sh-radius-xl);
+  --radius-2xl: var(--sh-radius-2xl);
+  --radius-full: var(--sh-radius-full);
 
   /* Animation tokens */
-  --duration-instant: 50ms;
-  --duration-fast: 100ms;
-  --duration-normal: 200ms;
-  --duration-slow: 300ms;
-  --duration-slower: 500ms;
-  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease-out: cubic-bezier(0, 0, 0.2, 1);
-  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --duration-instant: var(--sh-duration-instant);
+  --duration-fast: var(--sh-duration-fast);
+  --duration-normal: var(--sh-duration-base);
+  --duration-slow: var(--sh-duration-slow);
+  --duration-slower: var(--sh-duration-deliberate);
+  --ease-default: var(--sh-ease-standard);
+  --ease-spring: var(--sh-ease-soft-spring);
+  --ease-out: var(--sh-ease-emphasized);
+  --ease-in: var(--sh-ease-exit);
 
-  /* Status colors (dark mode defaults) */
-  --color-success: #10b981;
-  --color-success-bg: rgba(16, 185, 129, 0.1);
-  --color-warning: #f59e0b;
-  --color-warning-bg: rgba(245, 158, 11, 0.1);
-  --color-danger: #ef4444;
-  --color-danger-bg: rgba(239, 68, 68, 0.1);
-  --color-info: #3b82f6;
-  --color-info-bg: rgba(59, 130, 246, 0.1);
+  /* Status colors */
+  --color-success: var(--sh-success);
+  --color-success-bg: var(--sh-success-soft);
+  --color-warning: var(--sh-warning);
+  --color-warning-bg: var(--sh-warning-soft);
+  --color-danger: var(--sh-danger);
+  --color-danger-bg: var(--sh-danger-soft);
+  --color-info: var(--sh-info);
+  --color-info-bg: var(--sh-info-soft);
 
-  /* Elevation/shadow (dark mode defaults) */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
-  --shadow-xl: 0 16px 64px rgba(0, 0, 0, 0.6);
-  --shadow-glow: 0 0 24px rgba(13, 148, 136, 0.3);
+  /* Elevation/shadow */
+  --shadow-sm: var(--sh-shadow-1);
+  --shadow-md: var(--sh-shadow-2);
+  --shadow-lg: var(--sh-shadow-3);
+  --shadow-xl: var(--sh-shadow-4);
+  --shadow-glow: var(--sh-shadow-signal);
 }
 
-/* Light mode variant overrides */
-.light,
-.light ::backdrop {
-  --color-success: #059669;
-  --color-success-bg: rgba(16, 185, 129, 0.12);
-  --color-warning: #d97706;
-  --color-warning-bg: rgba(217, 119, 6, 0.12);
-  --color-danger: #dc2626;
-  --color-danger-bg: rgba(220, 38, 38, 0.12);
-  --color-info: #2563eb;
-  --color-info-bg: rgba(37, 99, 235, 0.12);
-
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
-  --shadow-xl: 0 16px 64px rgba(0, 0, 0, 0.14);
-  --shadow-glow: 0 0 24px rgba(13, 148, 136, 0.15);
-}
-
-/* New utility classes — dark mode defaults */
+/* Legacy utility classes — now token-derived (theme-neutral; no .light forks needed) */
 .enterprise-card {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-xl);
-  transition: border-color var(--duration-normal) var(--ease-default),
-              background var(--duration-normal) var(--ease-default);
+  background: var(--sh-plane-2);
+  border: 1px solid var(--sh-border-1);
+  border-radius: var(--sh-radius-lg);
+  box-shadow: var(--sh-shadow-1);
+  transition: border-color var(--sh-duration-base) var(--sh-ease-standard),
+              background var(--sh-duration-base) var(--sh-ease-standard);
 }
 .enterprise-card:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.12);
+  background: var(--sh-plane-3);
+  border-color: var(--sh-border-2);
 }
 
 .status-badge {
@@ -645,62 +685,62 @@ a:focus-visible,
   align-items: center;
   gap: 4px;
   padding: 2px 8px;
-  border-radius: var(--radius-full);
-  font-size: var(--text-caption);
+  border-radius: var(--sh-radius-full);
+  font-size: var(--sh-type-caption-size);
   font-weight: 600;
   letter-spacing: 0.02em;
 }
-.status-success { background: var(--color-success-bg); color: var(--color-success); }
-.status-warning { background: var(--color-warning-bg); color: var(--color-warning); }
-.status-danger  { background: var(--color-danger-bg);  color: var(--color-danger);  }
-.status-info    { background: var(--color-info-bg);    color: var(--color-info);    }
+.status-success { background: var(--sh-success-soft); color: var(--sh-success); }
+.status-warning { background: var(--sh-warning-soft); color: var(--sh-warning); }
+.status-danger  { background: var(--sh-danger-soft);  color: var(--sh-danger);  }
+.status-info    { background: var(--sh-info-soft);    color: var(--sh-info);    }
 
 .page-header {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
-  padding-bottom: var(--space-6);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  margin-bottom: var(--space-6);
+  gap: var(--sh-space-1);
+  padding-bottom: var(--sh-space-6);
+  border-bottom: 1px solid var(--sh-border-1);
+  margin-bottom: var(--sh-space-6);
 }
 .page-title {
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: var(--text-h2);
+  font-family: var(--sh-font-display);
+  font-size: var(--sh-type-h2-size);
   font-weight: 700;
-  color: #ffffff;
-  line-height: 1.2;
+  color: var(--sh-text-1);
+  line-height: var(--sh-type-h2-lh);
 }
 .page-subtitle {
-  font-size: var(--text-body-sm);
-  color: rgba(255, 255, 255, 0.5);
+  font-size: var(--sh-type-small-size);
+  color: var(--sh-text-3);
   line-height: 1.5;
 }
 
-/* AI Chat components */
+/* AI Chat components (legacy bubbles; new AI surfaces use components/sherivs/intelligence) */
 .ai-bubble-user {
-  background: var(--tenant-primary, #0d9488);
-  color: white;
+  background: var(--sh-org-primary);
+  color: var(--sh-signal-on);
   border-radius: 18px 18px 4px 18px;
   padding: 10px 16px;
   max-width: 80%;
   margin-left: auto;
-  font-size: var(--text-body-sm);
+  font-size: var(--sh-type-small-size);
   line-height: 1.5;
 }
 .ai-bubble-assistant {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.9);
+  background: var(--sh-plane-3);
+  border: 1px solid var(--sh-border-1);
+  color: var(--sh-text-1);
   border-radius: 18px 18px 18px 4px;
   padding: 10px 16px;
   max-width: 85%;
-  font-size: var(--text-body-sm);
+  font-size: var(--sh-type-small-size);
   line-height: 1.5;
 }
 .ai-typing-dot {
   width: 6px; height: 6px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.4);
+  background: var(--sh-text-3);
   animation: ai-bounce 1.2s ease-in-out infinite;
 }
 .ai-typing-dot:nth-child(2) { animation-delay: 0.2s; }
@@ -711,14 +751,14 @@ a:focus-visible,
 }
 
 /* Risk score colors */
-.risk-critical { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
-.risk-high     { color: #f97316; background: rgba(249, 115, 22, 0.1); }
-.risk-medium   { color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
-.risk-low      { color: #10b981; background: rgba(16, 185, 129, 0.1); }
+.risk-critical { color: var(--sh-danger); background: var(--sh-danger-soft); }
+.risk-high     { color: oklch(0.72 0.17 50); background: oklch(0.72 0.17 50 / 0.12); }
+.risk-medium   { color: var(--sh-warning); background: var(--sh-warning-soft); }
+.risk-low      { color: var(--sh-success); background: var(--sh-success-soft); }
 
 /* Mobile touch optimization */
 @media (max-width: 640px) {
-  .touch-target { min-height: 44px; min-width: 44px; }
+  .touch-target { min-height: var(--sh-touch-target); min-width: var(--sh-touch-target); }
   .mobile-card-list { display: flex; flex-direction: column; gap: 8px; }
   .hide-mobile { display: none !important; }
   .portal-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -736,113 +776,27 @@ a:focus-visible,
   .stat-grid-2, .stat-grid-3, .stat-grid-4 { grid-template-columns: 1fr; }
 }
 
-/* ── Light mode overrides for the new enterprise classes ── */
-.light .enterprise-card {
-  background: rgba(255, 255, 255, 0.85);
-  border-color: rgba(0, 0, 0, 0.08);
-  box-shadow: var(--shadow-md);
-}
-.light .enterprise-card:hover {
-  background: rgba(255, 255, 255, 0.95);
-  border-color: rgba(0, 0, 0, 0.12);
-}
-
-.light .page-header {
-  border-bottom-color: rgba(0, 0, 0, 0.06);
-}
-.light .page-title {
-  color: #0f172a;
-}
-.light .page-subtitle {
-  color: rgba(15, 23, 42, 0.6);
-}
-
-.light .ai-bubble-assistant {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(0, 0, 0, 0.08);
-  color: rgba(15, 23, 42, 0.9);
-}
-.light .ai-bubble-user {
-  color: white;
-}
-.light .ai-typing-dot {
-  background: rgba(15, 23, 42, 0.3);
-}
-
-.light .risk-critical { color: #dc2626; background: rgba(220, 38, 38, 0.1); }
-.light .risk-high     { color: #ea580c; background: rgba(234, 88, 12, 0.1); }
-.light .risk-medium   { color: #d97706; background: rgba(217, 119, 6, 0.1); }
-.light .risk-low      { color: #059669; background: rgba(5, 150, 105, 0.1); }
-
-.light .status-badge {
-  color: var(--color-success);
-}
-.light .status-success { background: var(--color-success-bg); color: var(--color-success); }
-.light .status-warning { background: var(--color-warning-bg); color: var(--color-warning); }
-.light .status-danger  { background: var(--color-danger-bg);  color: var(--color-danger);  }
-.light .status-info    { background: var(--color-info-bg);    color: var(--color-info);    }
-
 .light .public-sections > section {
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.6) 0%,
-    rgba(241, 245, 249, 0.6) 100%
-  );
-  border-color: rgba(0, 0, 0, 0.06);
-}
-
-/* Light mode focus-visible — keep accessible */
-.light :focus-visible {
-  outline-color: var(--tenant-primary, #0d9488);
+  background: var(--sh-plane-2);
+  border-color: var(--sh-border-1);
 }
 
 /* ---------------------------------------------------------------
- * Light ("off-white") mode — full structural token override.
- * Applied by adding `light` to <html>; `dark` keeps the navy defaults.
+ * Light mode — the legacy structural aliases follow the Sherivs light
+ * tokens automatically; only the alpha-based legacy values need a fork.
  * --------------------------------------------------------------- */
 .light {
-  --surface-1: #f6f6f4;
-  --surface-2: #ffffff;
-  --surface-3: #f1f1ee;
-
-  --glass-bg: rgba(255, 255, 255, 0.72);
-  --glass-border: rgba(15, 23, 42, 0.09);
-  --glass-hover: rgba(15, 23, 42, 0.04);
-  --glass-active: rgba(15, 23, 42, 0.07);
-  --glass-blur: blur(20px) saturate(160%);
-
-  --sidebar-bg: rgba(250, 250, 248, 0.96);
-  --sidebar-border: rgba(15, 23, 42, 0.09);
-  --overlay-bg: rgba(15, 23, 42, 0.35);
-
-  --shadow-card: 0 4px 20px rgba(15, 23, 42, 0.07);
-  --shadow-hover: 0 16px 40px rgba(15, 23, 42, 0.12);
-
-  --text-primary: rgba(17, 24, 39, 0.95);
-  --text-secondary: rgba(17, 24, 39, 0.62);
-  --text-muted: rgba(17, 24, 39, 0.42);
-
-  --muted: rgba(15, 23, 42, 0.05);
-  --accent: rgba(15, 23, 42, 0.06);
-  --input: rgba(15, 23, 42, 0.14);
-  --secondary-foreground: #1f2937;
-}
-
-.light body {
-  background:
-    radial-gradient(1200px 600px at 20% -10%, color-mix(in oklab, var(--tenant-primary) 8%, transparent), transparent 60%),
-    radial-gradient(900px 500px at 100% 10%, color-mix(in oklab, var(--tenant-secondary) 6%, transparent), transparent 55%),
-    var(--surface-1);
-  color: var(--text-primary);
+  --glass-bg: color-mix(in oklab, var(--sh-plane-2) 94%, transparent);
+  --primary-rgb: 30, 120, 160;
 }
 
 .light .uos-glass,
 .light .uos-card,
 .light .uos-stat,
 .light .uos-empty {
-  background: var(--surface-2);
-  border-color: var(--glass-border);
-  box-shadow: var(--shadow-card);
+  background: var(--sh-plane-2);
+  border-color: var(--sh-border-1);
+  box-shadow: var(--sh-shadow-1);
 }
 
 :root { color-scheme: dark; }

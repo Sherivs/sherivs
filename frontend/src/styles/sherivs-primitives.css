@@ -1,0 +1,322 @@
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * SHERIVS PRIMITIVES — type scale, planes, motion, states (CSS layer)
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Class-level primitives that consume ONLY `--sh-*` tokens. React components
+ * in frontend/src/components/sherivs/ compose these; routes should prefer
+ * the components. Every primitive here has a documented purpose in
+ * SHERIVS_COMPONENT_CATALOG.md.
+ *
+ * Naming: `.sh-<family>-<variant>`.
+ */
+
+/* ── Type scale ─────────────────────────────────────────────────────── */
+.sh-display {
+  font-family: var(--sh-font-display);
+  font-size: var(--sh-type-display-size);
+  line-height: var(--sh-type-display-lh);
+  letter-spacing: var(--sh-type-display-ls);
+  font-weight: 700;
+  text-wrap: balance;
+}
+.sh-hero {
+  font-family: var(--sh-font-display);
+  font-size: var(--sh-type-hero-size);
+  line-height: var(--sh-type-hero-lh);
+  letter-spacing: var(--sh-type-hero-ls);
+  font-weight: 700;
+  text-wrap: balance;
+}
+.sh-h1 {
+  font-family: var(--sh-font-display);
+  font-size: var(--sh-type-h1-size);
+  line-height: var(--sh-type-h1-lh);
+  letter-spacing: var(--sh-type-h1-ls);
+  font-weight: 700;
+  text-wrap: balance;
+}
+.sh-h2 {
+  font-family: var(--sh-font-display);
+  font-size: var(--sh-type-h2-size);
+  line-height: var(--sh-type-h2-lh);
+  letter-spacing: var(--sh-type-h2-ls);
+  font-weight: 650;
+  text-wrap: balance;
+}
+.sh-h3 {
+  font-family: var(--sh-font-display);
+  font-size: var(--sh-type-h3-size);
+  line-height: var(--sh-type-h3-lh);
+  letter-spacing: var(--sh-type-h3-ls);
+  font-weight: 600;
+}
+.sh-h4 {
+  font-family: var(--sh-font-sans);
+  font-size: var(--sh-type-h4-size);
+  line-height: var(--sh-type-h4-lh);
+  letter-spacing: var(--sh-type-h4-ls);
+  font-weight: 600;
+}
+.sh-body-lg { font-size: var(--sh-type-body-lg-size); line-height: var(--sh-type-body-lg-lh); }
+.sh-body { font-size: var(--sh-type-body-size); line-height: var(--sh-type-body-lh); }
+.sh-small { font-size: var(--sh-type-small-size); line-height: var(--sh-type-small-lh); }
+.sh-caption { font-size: var(--sh-type-caption-size); line-height: var(--sh-type-caption-lh); color: var(--sh-text-3); }
+.sh-label {
+  font-size: var(--sh-type-label-size);
+  line-height: var(--sh-type-label-lh);
+  letter-spacing: var(--sh-type-label-ls);
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--sh-text-3);
+}
+.sh-code {
+  font-family: var(--sh-font-mono);
+  font-size: var(--sh-type-code-size);
+  line-height: var(--sh-type-code-lh);
+  font-variant-ligatures: none;
+}
+.sh-data {
+  font-family: var(--sh-font-sans);
+  font-size: var(--sh-type-data-size);
+  line-height: var(--sh-type-data-lh);
+  font-variant-numeric: tabular-nums;
+}
+.sh-metric {
+  font-family: var(--sh-font-display);
+  font-size: var(--sh-type-metric-size);
+  line-height: var(--sh-type-metric-lh);
+  letter-spacing: var(--sh-type-metric-ls);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.sh-prose { max-width: var(--sh-layout-prose); text-wrap: pretty; }
+
+/* ── Planes (spatial surfaces) ──────────────────────────────────────── */
+.sh-plane-0 { background: var(--sh-plane-0); color: var(--sh-text-1); }
+.sh-plane-1 { background: var(--sh-plane-1); color: var(--sh-text-1); }
+.sh-plane-2 { background: var(--sh-plane-2); color: var(--sh-text-1); }
+.sh-plane-3 { background: var(--sh-plane-3); color: var(--sh-text-1); }
+.sh-plane-4 { background: var(--sh-plane-4); color: var(--sh-text-1); }
+
+/* Panel: the default bounded surface. Hairline border, no glass, no lift. */
+.sh-panel {
+  background: var(--sh-plane-2);
+  border: 1px solid var(--sh-border-1);
+  border-radius: var(--sh-radius-lg);
+  box-shadow: var(--sh-shadow-1);
+}
+.sh-panel-raised {
+  background: var(--sh-plane-3);
+  border: 1px solid var(--sh-border-2);
+  border-radius: var(--sh-radius-lg);
+  box-shadow: var(--sh-shadow-2);
+}
+/* Glass: ONLY for chrome that floats over content (header, command, drawer). */
+.sh-glass {
+  background: color-mix(in oklab, var(--sh-plane-1) calc(var(--sh-opacity-glass) * 100%), transparent);
+  border: 1px solid var(--sh-border-1);
+  backdrop-filter: blur(var(--sh-blur-md)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--sh-blur-md)) saturate(140%);
+}
+/* Inset: a recessed region inside a panel (code, data wells, quiet lists). */
+.sh-inset {
+  background: var(--sh-plane-1);
+  border: 1px solid var(--sh-border-1);
+  border-radius: var(--sh-radius-md);
+}
+/* Hairline dividers */
+.sh-rule { border-color: var(--sh-border-1); }
+.sh-rule-2 { border-color: var(--sh-border-2); }
+
+/* Atmosphere: one restrained gradient field per page, never per card. */
+.sh-atmosphere {
+  background-image:
+    radial-gradient(60rem 30rem at 15% -10%, var(--sh-atmosphere-a), transparent 60%),
+    radial-gradient(48rem 26rem at 100% 8%, var(--sh-atmosphere-b), transparent 55%);
+}
+/* Grid field: faint precision grid used behind architecture/hero planes. */
+.sh-gridfield {
+  background-image:
+    linear-gradient(var(--sh-border-1) 1px, transparent 1px),
+    linear-gradient(90deg, var(--sh-border-1) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse at center, black 40%, transparent 78%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 78%);
+}
+
+/* ── Planes of meaning (semantic accents) ───────────────────────────── */
+.sh-tone-reality { --sh-tone: var(--sh-reality); --sh-tone-soft: var(--sh-reality-soft); }
+.sh-tone-intel { --sh-tone: var(--sh-intel); --sh-tone-soft: var(--sh-intel-soft); }
+.sh-tone-action { --sh-tone: var(--sh-action); --sh-tone-soft: var(--sh-action-soft); }
+.sh-tone-evidence { --sh-tone: var(--sh-evidence); --sh-tone-soft: var(--sh-evidence-soft); }
+.sh-tone-success { --sh-tone: var(--sh-success); --sh-tone-soft: var(--sh-success-soft); }
+.sh-tone-warning { --sh-tone: var(--sh-warning); --sh-tone-soft: var(--sh-warning-soft); }
+.sh-tone-danger { --sh-tone: var(--sh-danger); --sh-tone-soft: var(--sh-danger-soft); }
+.sh-tone-info { --sh-tone: var(--sh-info); --sh-tone-soft: var(--sh-info-soft); }
+.sh-tone-neutral { --sh-tone: var(--sh-neutral); --sh-tone-soft: var(--sh-neutral-soft); }
+
+/* Chip: compact semantic indicator (status, confidence, plane). */
+.sh-chip {
+  --sh-tone: var(--sh-neutral);
+  --sh-tone-soft: var(--sh-neutral-soft);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--sh-radius-full);
+  background: var(--sh-tone-soft);
+  color: var(--sh-tone);
+  font-size: var(--sh-type-caption-size);
+  line-height: 1.4;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  border: 1px solid color-mix(in oklab, var(--sh-tone) 22%, transparent);
+}
+.sh-chip-dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 9999px;
+  background: var(--sh-tone);
+  flex-shrink: 0;
+}
+
+/* Rail: a 2px plane-of-meaning accent along a panel's leading edge. */
+.sh-rail {
+  position: relative;
+}
+.sh-rail::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.75rem;
+  inset-inline-start: 0;
+  width: 2px;
+  border-radius: 9999px;
+  background: var(--sh-tone, var(--sh-signal));
+}
+
+/* ── Focus ──────────────────────────────────────────────────────────── */
+.sh-focus:focus-visible,
+.sh-focus-within:focus-within {
+  outline: var(--sh-focus-outline);
+  outline-offset: var(--sh-focus-offset);
+}
+
+/* ── Interactive surfaces ───────────────────────────────────────────── */
+.sh-interactive {
+  transition:
+    background-color var(--sh-duration-fast) var(--sh-ease-standard),
+    border-color var(--sh-duration-fast) var(--sh-ease-standard),
+    color var(--sh-duration-fast) var(--sh-ease-standard),
+    box-shadow var(--sh-duration-fast) var(--sh-ease-standard),
+    transform var(--sh-duration-fast) var(--sh-ease-standard);
+}
+.sh-interactive:hover { border-color: var(--sh-border-2); }
+.sh-interactive:active { transform: translateY(0.5px); }
+.sh-interactive[aria-disabled="true"],
+.sh-interactive:disabled { opacity: var(--sh-opacity-disabled); pointer-events: none; }
+
+/* ── Motion ─────────────────────────────────────────────────────────── */
+@keyframes sh-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes sh-enter-scale {
+  from { opacity: 0; transform: translateY(4px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes sh-reveal {
+  from { opacity: 0; clip-path: inset(0 0 100% 0); }
+  to { opacity: 1; clip-path: inset(0 0 0 0); }
+}
+@keyframes sh-signal-sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+@keyframes sh-pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+@keyframes sh-shimmer {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
+}
+
+.sh-enter { animation: sh-enter var(--sh-duration-slow) var(--sh-ease-emphasized) both; }
+.sh-enter-scale { animation: sh-enter-scale var(--sh-duration-slow) var(--sh-ease-emphasized) both; }
+.sh-stagger > * { animation: sh-enter var(--sh-duration-slow) var(--sh-ease-emphasized) both; }
+.sh-stagger > *:nth-child(1) { animation-delay: 0s; }
+.sh-stagger > *:nth-child(2) { animation-delay: var(--sh-stagger-step); }
+.sh-stagger > *:nth-child(3) { animation-delay: calc(var(--sh-stagger-step) * 2); }
+.sh-stagger > *:nth-child(4) { animation-delay: calc(var(--sh-stagger-step) * 3); }
+.sh-stagger > *:nth-child(5) { animation-delay: calc(var(--sh-stagger-step) * 4); }
+.sh-stagger > *:nth-child(6) { animation-delay: calc(var(--sh-stagger-step) * 5); }
+.sh-stagger > *:nth-child(n + 7) { animation-delay: calc(var(--sh-stagger-step) * 6); }
+
+/* Live indicator — ONLY bind to real system state (SHERIVS_MOTION_SYSTEM §4). */
+.sh-live { animation: sh-pulse-soft 2.4s var(--sh-ease-standard) infinite; }
+
+/* Skeleton: honest loading placeholder. */
+.sh-skeleton {
+  background: linear-gradient(90deg, var(--sh-plane-2) 0%, var(--sh-plane-3) 50%, var(--sh-plane-2) 100%);
+  background-size: 200% 100%;
+  animation: sh-shimmer 1.6s linear infinite;
+  border-radius: var(--sh-radius-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sh-enter,
+  .sh-enter-scale,
+  .sh-stagger > *,
+  .sh-live,
+  .sh-skeleton {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    clip-path: none !important;
+  }
+  .sh-interactive { transition: none; }
+}
+
+/* ── Layout containers ──────────────────────────────────────────────── */
+.sh-container {
+  width: 100%;
+  max-width: var(--sh-layout-content);
+  margin-inline: auto;
+  padding-inline: var(--sh-layout-gutter);
+}
+.sh-container-wide {
+  width: 100%;
+  max-width: var(--sh-layout-wide);
+  margin-inline: auto;
+  padding-inline: var(--sh-layout-gutter);
+}
+.sh-section { padding-block: clamp(3.5rem, 8vw, 7.5rem); }
+.sh-section-tight { padding-block: clamp(2.5rem, 5vw, 4.5rem); }
+
+/* Numbered section index — the editorial spine of the public narrative. */
+.sh-index {
+  font-family: var(--sh-font-mono);
+  font-size: var(--sh-type-caption-size);
+  letter-spacing: 0.12em;
+  color: var(--sh-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Accessibility helpers ──────────────────────────────────────────── */
+.sh-touch { min-height: var(--sh-touch-target); min-width: var(--sh-touch-target); }
+.sh-skip-link {
+  position: absolute;
+  inset-inline-start: var(--sh-space-4);
+  top: var(--sh-space-4);
+  z-index: var(--sh-z-max);
+  padding: var(--sh-space-2) var(--sh-space-4);
+  border-radius: var(--sh-radius-md);
+  background: var(--sh-plane-inverse);
+  color: var(--sh-text-inverse);
+  font-weight: 600;
+  transform: translateY(-200%);
+  transition: transform var(--sh-duration-fast) var(--sh-ease-standard);
+}
+.sh-skip-link:focus-visible { transform: translateY(0); outline: var(--sh-focus-outline); outline-offset: var(--sh-focus-offset); }

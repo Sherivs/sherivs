@@ -1,0 +1,313 @@
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * SHERIVS DESIGN TOKENS — canonical token layer (SHERIVS_DESIGN_SYSTEM.md §2)
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Every visual decision on a Sherivs surface resolves to a token declared in
+ * this file. Tokens are namespaced `--sh-*`. The legacy shadcn / `uos-*`
+ * variables in styles.css are ALIASED onto these tokens so every existing
+ * surface inherits the Sherivs foundation without a rewrite.
+ *
+ * Families (mirrors frontend/src/lib/experience/design-tokens.ts — the typed
+ * contract that tests/unit/sherivs-design-tokens.test.ts verifies against
+ * this file):
+ *   color · plane · text · border · signal · semantic · spacing · typography
+ *   radius · shadow · blur · opacity · z-index · motion · breakpoints
+ *   density · layout · focus · brand layer
+ *
+ * The four "planes of meaning" are a proprietary Sherivs motif. They colour
+ * the Reality → Intelligence → Action → Evidence progression consistently on
+ * every surface (public, workspace, AI, mission, developer):
+ *   reality      cold silver   — verified system truth
+ *   intel        luminous blue — derived understanding
+ *   action       indigo-violet — governed execution
+ *   evidence     electrum gold — proof, verification, audit
+ *
+ * Dark is the structural default (color-scheme dark); `.light` on <html>
+ * overrides the colour families only — spacing, type, motion never change
+ * with theme.
+ */
+
+:root {
+  /* ── Plane (surface elevation) ─────────────────────────────────────── */
+  --sh-plane-0: oklch(0.125 0.012 258);   /* canvas */
+  --sh-plane-1: oklch(0.155 0.013 258);   /* page sections, sidebar */
+  --sh-plane-2: oklch(0.19 0.014 258);    /* cards, panels */
+  --sh-plane-3: oklch(0.23 0.015 258);    /* raised controls, inputs */
+  --sh-plane-4: oklch(0.275 0.016 258);   /* popovers, menus */
+  --sh-plane-inverse: oklch(0.97 0.004 258);
+
+  /* ── Text ──────────────────────────────────────────────────────────── */
+  --sh-text-1: oklch(0.965 0.005 258);    /* primary */
+  --sh-text-2: oklch(0.80 0.008 258);     /* secondary */
+  --sh-text-3: oklch(0.63 0.010 258);     /* tertiary / muted */
+  --sh-text-4: oklch(0.47 0.010 258);     /* disabled / placeholder */
+  --sh-text-inverse: oklch(0.14 0.012 258);
+
+  /* ── Border (precision hairlines) ──────────────────────────────────── */
+  --sh-border-1: oklch(1 0 0 / 0.07);
+  --sh-border-2: oklch(1 0 0 / 0.12);
+  --sh-border-3: oklch(1 0 0 / 0.20);
+  --sh-border-inverse: oklch(0 0 0 / 0.12);
+
+  /* ── Signal — the single luminous interactive accent ───────────────── */
+  --sh-signal: oklch(0.78 0.115 215);
+  --sh-signal-strong: oklch(0.86 0.10 210);
+  --sh-signal-soft: oklch(0.78 0.115 215 / 0.14);
+  --sh-signal-on: oklch(0.14 0.02 240);
+
+  /* ── Planes of meaning ─────────────────────────────────────────────── */
+  --sh-reality: oklch(0.86 0.018 250);
+  --sh-reality-soft: oklch(0.86 0.018 250 / 0.12);
+  --sh-intel: oklch(0.78 0.115 215);
+  --sh-intel-soft: oklch(0.78 0.115 215 / 0.14);
+  --sh-action: oklch(0.72 0.15 285);
+  --sh-action-soft: oklch(0.72 0.15 285 / 0.16);
+  --sh-evidence: oklch(0.83 0.12 85);
+  --sh-evidence-soft: oklch(0.83 0.12 85 / 0.14);
+
+  /* ── Semantic status ───────────────────────────────────────────────── */
+  --sh-success: oklch(0.76 0.14 160);
+  --sh-success-soft: oklch(0.76 0.14 160 / 0.14);
+  --sh-warning: oklch(0.80 0.15 75);
+  --sh-warning-soft: oklch(0.80 0.15 75 / 0.14);
+  --sh-danger: oklch(0.68 0.19 25);
+  --sh-danger-soft: oklch(0.68 0.19 25 / 0.14);
+  --sh-info: oklch(0.78 0.115 215);
+  --sh-info-soft: oklch(0.78 0.115 215 / 0.14);
+  --sh-neutral: oklch(0.63 0.010 258);
+  --sh-neutral-soft: oklch(1 0 0 / 0.07);
+
+  /* ── Atmosphere (restrained, never rainbow) ───────────────────────── */
+  --sh-atmosphere-a: oklch(0.78 0.115 215 / 0.10);
+  --sh-atmosphere-b: oklch(0.72 0.15 285 / 0.08);
+
+  /* ── Spacing (4px base) ────────────────────────────────────────────── */
+  --sh-space-0: 0;
+  --sh-space-1: 0.25rem;
+  --sh-space-2: 0.5rem;
+  --sh-space-3: 0.75rem;
+  --sh-space-4: 1rem;
+  --sh-space-5: 1.25rem;
+  --sh-space-6: 1.5rem;
+  --sh-space-8: 2rem;
+  --sh-space-10: 2.5rem;
+  --sh-space-12: 3rem;
+  --sh-space-16: 4rem;
+  --sh-space-20: 5rem;
+  --sh-space-24: 6rem;
+  --sh-space-32: 8rem;
+
+  /* ── Typography ────────────────────────────────────────────────────── */
+  --sh-font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --sh-font-display: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --sh-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --sh-type-display-size: clamp(3rem, 2.1rem + 4.2vw, 6.25rem);
+  --sh-type-display-lh: 0.94;
+  --sh-type-display-ls: -0.035em;
+  --sh-type-hero-size: clamp(2.25rem, 1.6rem + 3vw, 4.25rem);
+  --sh-type-hero-lh: 1;
+  --sh-type-hero-ls: -0.03em;
+  --sh-type-h1-size: clamp(1.75rem, 1.4rem + 1.5vw, 2.5rem);
+  --sh-type-h1-lh: 1.1;
+  --sh-type-h1-ls: -0.025em;
+  --sh-type-h2-size: clamp(1.375rem, 1.2rem + 0.9vw, 1.875rem);
+  --sh-type-h2-lh: 1.15;
+  --sh-type-h2-ls: -0.02em;
+  --sh-type-h3-size: 1.25rem;
+  --sh-type-h3-lh: 1.25;
+  --sh-type-h3-ls: -0.015em;
+  --sh-type-h4-size: 1.0625rem;
+  --sh-type-h4-lh: 1.35;
+  --sh-type-h4-ls: -0.01em;
+  --sh-type-body-lg-size: 1.0625rem;
+  --sh-type-body-lg-lh: 1.6;
+  --sh-type-body-size: 0.9375rem;
+  --sh-type-body-lh: 1.6;
+  --sh-type-small-size: 0.8125rem;
+  --sh-type-small-lh: 1.5;
+  --sh-type-caption-size: 0.75rem;
+  --sh-type-caption-lh: 1.4;
+  --sh-type-label-size: 0.6875rem;
+  --sh-type-label-lh: 1.2;
+  --sh-type-label-ls: 0.08em;
+  --sh-type-code-size: 0.8125rem;
+  --sh-type-code-lh: 1.55;
+  --sh-type-data-size: 0.875rem;
+  --sh-type-data-lh: 1.4;
+  --sh-type-metric-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.5rem);
+  --sh-type-metric-lh: 1;
+  --sh-type-metric-ls: -0.03em;
+
+  /* ── Radius (precision, not pillows) ───────────────────────────────── */
+  --sh-radius-xs: 4px;
+  --sh-radius-sm: 6px;
+  --sh-radius-md: 10px;
+  --sh-radius-lg: 14px;
+  --sh-radius-xl: 20px;
+  --sh-radius-2xl: 28px;
+  --sh-radius-full: 9999px;
+
+  /* ── Shadow (elevation) ────────────────────────────────────────────── */
+  --sh-shadow-1: 0 1px 2px oklch(0 0 0 / 0.35), 0 0 0 1px oklch(1 0 0 / 0.03);
+  --sh-shadow-2: 0 4px 14px -4px oklch(0 0 0 / 0.5), 0 0 0 1px oklch(1 0 0 / 0.04);
+  --sh-shadow-3: 0 12px 32px -12px oklch(0 0 0 / 0.6), 0 0 0 1px oklch(1 0 0 / 0.05);
+  --sh-shadow-4: 0 28px 64px -20px oklch(0 0 0 / 0.7), 0 0 0 1px oklch(1 0 0 / 0.06);
+  --sh-shadow-signal: 0 0 0 1px oklch(0.78 0.115 215 / 0.35), 0 8px 28px -10px oklch(0.78 0.115 215 / 0.35);
+
+  /* ── Blur (controlled translucency) ────────────────────────────────── */
+  --sh-blur-sm: 8px;
+  --sh-blur-md: 16px;
+  --sh-blur-lg: 28px;
+
+  /* ── Opacity ───────────────────────────────────────────────────────── */
+  --sh-opacity-disabled: 0.45;
+  --sh-opacity-muted: 0.7;
+  --sh-opacity-overlay: 0.72;
+  --sh-opacity-glass: 0.78;
+
+  /* ── Z-index ladder ────────────────────────────────────────────────── */
+  --sh-z-base: 0;
+  --sh-z-raised: 10;
+  --sh-z-sticky: 20;
+  --sh-z-header: 30;
+  --sh-z-sidebar: 35;
+  --sh-z-overlay: 40;
+  --sh-z-drawer: 45;
+  --sh-z-modal: 50;
+  --sh-z-popover: 60;
+  --sh-z-toast: 70;
+  --sh-z-command: 80;
+  --sh-z-max: 100;
+
+  /* ── Motion ────────────────────────────────────────────────────────── */
+  --sh-duration-instant: 80ms;
+  --sh-duration-fast: 140ms;
+  --sh-duration-base: 220ms;
+  --sh-duration-slow: 320ms;
+  --sh-duration-deliberate: 480ms;
+  --sh-stagger-step: 40ms;
+  --sh-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --sh-ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
+  --sh-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --sh-ease-soft-spring: cubic-bezier(0.34, 1.2, 0.64, 1);
+
+  /* ── Breakpoints (documentary; Tailwind variants map in @theme) ────── */
+  --sh-bp-xs: 360px;
+  --sh-bp-sm: 640px;
+  --sh-bp-md: 768px;
+  --sh-bp-lg: 1024px;
+  --sh-bp-xl: 1280px;
+  --sh-bp-2xl: 1440px;
+  --sh-bp-3xl: 1600px;
+  --sh-bp-4xl: 1920px;
+  --sh-bp-5xl: 2560px;
+
+  /* ── Density ───────────────────────────────────────────────────────── */
+  --sh-density: 1;                       /* 0.85 compact · 1 comfortable · 1.15 spacious */
+  --sh-control-h-sm: calc(2rem * var(--sh-density));
+  --sh-control-h-md: calc(2.5rem * var(--sh-density));
+  --sh-control-h-lg: calc(3rem * var(--sh-density));
+  --sh-touch-target: 44px;
+
+  /* ── Layout ────────────────────────────────────────────────────────── */
+  --sh-layout-prose: 68ch;
+  --sh-layout-content: 72rem;
+  --sh-layout-wide: 90rem;
+  --sh-layout-max: 120rem;
+  --sh-layout-gutter: clamp(1rem, 4vw, 2.5rem);
+  --sh-layout-header-h: 3.5rem;
+  --sh-layout-sidebar-w: 16.5rem;
+  --sh-layout-sidebar-w-collapsed: 3.5rem;
+  --sh-layout-bottom-nav-h: 4rem;
+
+  /* ── Focus ─────────────────────────────────────────────────────────── */
+  --sh-focus-ring: 0 0 0 2px var(--sh-plane-0), 0 0 0 4px var(--sh-signal);
+  --sh-focus-outline: 2px solid var(--sh-signal);
+  --sh-focus-offset: 2px;
+
+  /* ── Organization brand layer (controlled; never overrides chrome) ─── */
+  /* `--tenant-primary/--tenant-secondary` are written at runtime by the
+     app context from the organization's stored brand. The brand layer is
+     the ONLY place they enter the Sherivs system. */
+  --sh-org-primary: var(--tenant-primary, var(--sh-signal));
+  --sh-org-secondary: var(--tenant-secondary, var(--sh-evidence));
+  --sh-org-primary-soft: color-mix(in oklab, var(--sh-org-primary) 14%, transparent);
+}
+
+/* ── Light theme — colour families only ─────────────────────────────── */
+.light {
+  --sh-plane-0: oklch(0.985 0.003 258);
+  --sh-plane-1: oklch(0.965 0.004 258);
+  --sh-plane-2: oklch(1 0 0);
+  --sh-plane-3: oklch(0.975 0.004 258);
+  --sh-plane-4: oklch(1 0 0);
+  --sh-plane-inverse: oklch(0.15 0.012 258);
+
+  --sh-text-1: oklch(0.17 0.014 258);
+  --sh-text-2: oklch(0.36 0.014 258);
+  --sh-text-3: oklch(0.52 0.012 258);
+  --sh-text-4: oklch(0.68 0.010 258);
+  --sh-text-inverse: oklch(0.97 0.004 258);
+
+  --sh-border-1: oklch(0 0 0 / 0.07);
+  --sh-border-2: oklch(0 0 0 / 0.11);
+  --sh-border-3: oklch(0 0 0 / 0.20);
+  --sh-border-inverse: oklch(1 0 0 / 0.14);
+
+  --sh-signal: oklch(0.52 0.12 220);
+  --sh-signal-strong: oklch(0.44 0.12 222);
+  --sh-signal-soft: oklch(0.52 0.12 220 / 0.12);
+  --sh-signal-on: oklch(0.99 0 0);
+
+  --sh-reality: oklch(0.40 0.02 250);
+  --sh-reality-soft: oklch(0.40 0.02 250 / 0.10);
+  --sh-intel: oklch(0.52 0.12 220);
+  --sh-intel-soft: oklch(0.52 0.12 220 / 0.12);
+  --sh-action: oklch(0.50 0.17 285);
+  --sh-action-soft: oklch(0.50 0.17 285 / 0.12);
+  --sh-evidence: oklch(0.60 0.13 80);
+  --sh-evidence-soft: oklch(0.60 0.13 80 / 0.14);
+
+  --sh-success: oklch(0.55 0.14 160);
+  --sh-success-soft: oklch(0.55 0.14 160 / 0.12);
+  --sh-warning: oklch(0.62 0.15 70);
+  --sh-warning-soft: oklch(0.62 0.15 70 / 0.14);
+  --sh-danger: oklch(0.55 0.20 25);
+  --sh-danger-soft: oklch(0.55 0.20 25 / 0.12);
+  --sh-info: oklch(0.52 0.12 220);
+  --sh-info-soft: oklch(0.52 0.12 220 / 0.12);
+  --sh-neutral: oklch(0.52 0.012 258);
+  --sh-neutral-soft: oklch(0 0 0 / 0.05);
+
+  --sh-atmosphere-a: oklch(0.52 0.12 220 / 0.07);
+  --sh-atmosphere-b: oklch(0.50 0.17 285 / 0.05);
+
+  --sh-shadow-1: 0 1px 2px oklch(0 0 0 / 0.06), 0 0 0 1px oklch(0 0 0 / 0.04);
+  --sh-shadow-2: 0 4px 14px -4px oklch(0 0 0 / 0.10), 0 0 0 1px oklch(0 0 0 / 0.05);
+  --sh-shadow-3: 0 12px 32px -12px oklch(0 0 0 / 0.14), 0 0 0 1px oklch(0 0 0 / 0.05);
+  --sh-shadow-4: 0 28px 64px -20px oklch(0 0 0 / 0.18), 0 0 0 1px oklch(0 0 0 / 0.06);
+  --sh-shadow-signal: 0 0 0 1px oklch(0.52 0.12 220 / 0.35), 0 8px 28px -10px oklch(0.52 0.12 220 / 0.30);
+
+  --sh-opacity-overlay: 0.4;
+}
+
+/* ── Density presets (data-density on any ancestor) ─────────────────── */
+[data-density="compact"] { --sh-density: 0.85; }
+[data-density="comfortable"] { --sh-density: 1; }
+[data-density="spacious"] { --sh-density: 1.15; }
+
+/* ── High-contrast assist (forced-colors / user preference) ─────────── */
+@media (prefers-contrast: more) {
+  :root {
+    --sh-border-1: oklch(1 0 0 / 0.22);
+    --sh-border-2: oklch(1 0 0 / 0.32);
+    --sh-text-3: oklch(0.78 0.008 258);
+  }
+  .light {
+    --sh-border-1: oklch(0 0 0 / 0.26);
+    --sh-border-2: oklch(0 0 0 / 0.36);
+    --sh-text-3: oklch(0.36 0.014 258);
+  }
+}
