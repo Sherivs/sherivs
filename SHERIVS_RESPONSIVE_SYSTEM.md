@@ -9,13 +9,13 @@ The system explicitly reviews 360, 390, 430, 768, 1024, 1280, 1440, 1600, 1920, 
 
 ## Composition modes
 
-| Width | Primary composition |
-|---:|---|
-| 360–430 | Single task column, compact header, bottom destinations, contextual sheets |
-| 768 | Single or master-detail layout; persistent controls only when space permits |
-| 1024 | Collapsible workspace navigation, main content, optional transient context |
-| 1280–1600 | Persistent navigation, bounded main content, optional secondary panel |
-| 1920–2560+ | Multi-pane operational layout with bounded reading/data measures |
+|      Width | Primary composition                                                         |
+| ---------: | --------------------------------------------------------------------------- |
+|    360–430 | Single task column, compact header, bottom destinations, contextual sheets  |
+|        768 | Single or master-detail layout; persistent controls only when space permits |
+|       1024 | Collapsible workspace navigation, main content, optional transient context  |
+|  1280–1600 | Persistent navigation, bounded main content, optional secondary panel       |
+| 1920–2560+ | Multi-pane operational layout with bounded reading/data measures            |
 
 ## Rules
 

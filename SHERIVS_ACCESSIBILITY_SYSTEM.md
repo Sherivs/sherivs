@@ -50,15 +50,15 @@ Gaps: no automated axe suite, no React component accessibility tests, reduced-mo
 
 ## Verification matrix
 
-| Gate | Evidence |
-|---|---|
-| Static | semantic lint and invalid ARIA checks |
-| Component | keyboard, name/role/state, focus, axe |
-| Route | skip link, landmarks, heading, zoom/reflow |
-| Workflow | screen reader and keyboard completion |
-| Themes | contrast in light, dark, high contrast, organization brand |
-| Mobile | touch target, orientation, screen-reader order |
-| Motion | reduced-motion capture |
+| Gate      | Evidence                                                   |
+| --------- | ---------------------------------------------------------- |
+| Static    | semantic lint and invalid ARIA checks                      |
+| Component | keyboard, name/role/state, focus, axe                      |
+| Route     | skip link, landmarks, heading, zoom/reflow                 |
+| Workflow  | screen reader and keyboard completion                      |
+| Themes    | contrast in light, dark, high contrast, organization brand |
+| Mobile    | touch target, orientation, screen-reader order             |
+| Motion    | reduced-motion capture                                     |
 
 Automated tools cannot establish conformance alone. Major workflows require human keyboard and screen-reader review.
 

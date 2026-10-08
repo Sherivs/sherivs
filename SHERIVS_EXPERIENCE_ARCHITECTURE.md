@@ -32,19 +32,19 @@ This is not yet a unified Sherivs Experience System. Presence in code is not pro
 
 ## 3. Experience planes
 
-| Plane | Audience | Boundary | V1 disposition |
-|---|---|---|---|
-| Sherivs Public | Anonymous prospects, partners, applicants | Public content only; no tenant data | Active where claims are evidenced |
-| Organization Public | Anonymous organization visitors | Published, organization-authorized content | Active; generic engine required |
-| Universal Application Shell | Authenticated actors | Session + selected organization + capabilities | Active architecture; registry gate required before replacement |
-| Organization Workspace | Organization members | Tenant, membership, role, relationship, policy, RLS | Active |
-| Sherivs Internal Workspace | Sherivs operators | Separate platform identity and authorization boundary | Active only for verified control-plane capabilities |
-| Scholar Runtime | Authorized education actors | Runtime capability mapping over universal contracts | Active runtime; must not define platform ontology |
-| Mobile/PWA | Authenticated and public contexts | Same policy decisions as web; offline data minimized | Active foundation |
-| Embedded/Contextual | Authorized host surfaces | Signed context and explicit embedding policy | Contract only until host exists |
-| AI/Conversational | Authorized actors | AI gateway, minimization, evidence, approval | V1 practical subset only |
-| Developer/API | Authorized developers | Keys/scopes/rate limits/audit | Only capabilities that exist |
-| System/Operational | Operators/support | Platform boundary; never tenant navigation | Verified operational surfaces only |
+| Plane                       | Audience                                  | Boundary                                              | V1 disposition                                                 |
+| --------------------------- | ----------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------------- |
+| Sherivs Public              | Anonymous prospects, partners, applicants | Public content only; no tenant data                   | Active where claims are evidenced                              |
+| Organization Public         | Anonymous organization visitors           | Published, organization-authorized content            | Active; generic engine required                                |
+| Universal Application Shell | Authenticated actors                      | Session + selected organization + capabilities        | Active architecture; registry gate required before replacement |
+| Organization Workspace      | Organization members                      | Tenant, membership, role, relationship, policy, RLS   | Active                                                         |
+| Sherivs Internal Workspace  | Sherivs operators                         | Separate platform identity and authorization boundary | Active only for verified control-plane capabilities            |
+| Scholar Runtime             | Authorized education actors               | Runtime capability mapping over universal contracts   | Active runtime; must not define platform ontology              |
+| Mobile/PWA                  | Authenticated and public contexts         | Same policy decisions as web; offline data minimized  | Active foundation                                              |
+| Embedded/Contextual         | Authorized host surfaces                  | Signed context and explicit embedding policy          | Contract only until host exists                                |
+| AI/Conversational           | Authorized actors                         | AI gateway, minimization, evidence, approval          | V1 practical subset only                                       |
+| Developer/API               | Authorized developers                     | Keys/scopes/rate limits/audit                         | Only capabilities that exist                                   |
+| System/Operational          | Operators/support                         | Platform boundary; never tenant navigation            | Verified operational surfaces only                             |
 
 ## 4. Shell hierarchy
 
@@ -81,20 +81,20 @@ Required contract fields:
 
 ```ts
 type ExperienceConfiguration = {
-  schemaVersion: string
-  organization: { id: string; displayName: string }
-  workspace: { id: string; kind: string }
-  runtime: { id: string; capabilities: string[] } | null
-  actor: { id: string; displayName: string }
+  schemaVersion: string;
+  organization: { id: string; displayName: string };
+  workspace: { id: string; kind: string };
+  runtime: { id: string; capabilities: string[] } | null;
+  actor: { id: string; displayName: string };
   authorization: {
-    decisionId: string
-    allowedNavigation: string[]
-    allowedActions: string[]
-  }
-  locale: { language: string; timeZone: string }
-  theme: { mode: "light" | "dark" | "system"; brandTokens: Record<string, string> }
-  features: Record<string, boolean>
-}
+    decisionId: string;
+    allowedNavigation: string[];
+    allowedActions: string[];
+  };
+  locale: { language: string; timeZone: string };
+  theme: { mode: "light" | "dark" | "system"; brandTokens: Record<string, string> };
+  features: Record<string, boolean>;
+};
 ```
 
 The server must authenticate, resolve tenant, authorize, validate, audit, and return only permitted fields. Client role names, tenant IDs, hidden navigation, and command-palette filtering are not authorization.

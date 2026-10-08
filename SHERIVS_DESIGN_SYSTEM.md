@@ -25,19 +25,19 @@ Tokens are organized as:
 
 Required canonical token groups:
 
-| Group | Required tokens |
-|---|---|
-| Color | canvas, surface-1..4, text-primary/secondary/muted/inverse, border, action, semantic states |
-| Type | display, hero, h1–h4, body, small, caption, label, code, data, metric |
-| Space | 0, 1–12 with documented density mapping |
-| Shape | control, panel, dialog, pill; avoid indiscriminate rounding |
-| Elevation | inset, raised, overlay, modal |
-| Motion | instant, fast, standard, deliberate; enter/exit/emphasize easings |
-| Layout | content measure, page gutters, sidebar, secondary panel, reading width |
-| Focus | color, width, offset, high-contrast variant |
-| Breakpoints | 360, 390, 430, 768, 1024, 1280, 1440, 1600, 1920, 2560 |
-| Density | comfortable, compact, data-dense |
-| Z-index | base, sticky, navigation, popover, overlay, modal, toast |
+| Group       | Required tokens                                                                             |
+| ----------- | ------------------------------------------------------------------------------------------- |
+| Color       | canvas, surface-1..4, text-primary/secondary/muted/inverse, border, action, semantic states |
+| Type        | display, hero, h1–h4, body, small, caption, label, code, data, metric                       |
+| Space       | 0, 1–12 with documented density mapping                                                     |
+| Shape       | control, panel, dialog, pill; avoid indiscriminate rounding                                 |
+| Elevation   | inset, raised, overlay, modal                                                               |
+| Motion      | instant, fast, standard, deliberate; enter/exit/emphasize easings                           |
+| Layout      | content measure, page gutters, sidebar, secondary panel, reading width                      |
+| Focus       | color, width, offset, high-contrast variant                                                 |
+| Breakpoints | 360, 390, 430, 768, 1024, 1280, 1440, 1600, 1920, 2560                                      |
+| Density     | comfortable, compact, data-dense                                                            |
+| Z-index     | base, sticky, navigation, popover, overlay, modal, toast                                    |
 
 No component may accept arbitrary organization CSS. Branding is limited to validated accent, logo, imagery, and selected typography roles.
 

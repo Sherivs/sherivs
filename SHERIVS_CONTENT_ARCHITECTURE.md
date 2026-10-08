@@ -5,35 +5,35 @@ Version target: `ACTIVE-V1`
 
 ## Content domains
 
-| Domain | Types | Publication boundary |
-|---|---|---|
-| Sherivs public | page, article, guide, changelog, documentation, FAQ, glossary | Sherivs publisher approval |
+| Domain              | Types                                                             | Publication boundary            |
+| ------------------- | ----------------------------------------------------------------- | ------------------------------- |
+| Sherivs public      | page, article, guide, changelog, documentation, FAQ, glossary     | Sherivs publisher approval      |
 | Organization public | page, announcement, event, program, resource, policy, form, media | Organization publication policy |
-| Platform help | help article, release note, system message | Platform operations approval |
-| Runtime | runtime help and terminology | Runtime owner, capability gated |
+| Platform help       | help article, release note, system message                        | Platform operations approval    |
+| Runtime             | runtime help and terminology                                      | Runtime owner, capability gated |
 
 ## Canonical schema
 
 ```ts
 type PublishedContent = {
-  id: string
-  organizationId: string | null
-  locale: string
-  type: string
-  slug: string
-  title: string
-  description: string
-  body: unknown
-  author: { id: string; displayName: string }
-  status: "draft" | "review" | "scheduled" | "published" | "archived"
-  publishedAt: string | null
-  updatedAt: string
-  canonicalUrl: string | null
-  seo: { title?: string; description?: string; image?: string }
-  taxonomy: { tags: string[]; categories: string[] }
-  access: "public" | "authenticated" | "restricted"
-  provenance: { source: string; aiGenerated: boolean; verifiedAt?: string }
-}
+  id: string;
+  organizationId: string | null;
+  locale: string;
+  type: string;
+  slug: string;
+  title: string;
+  description: string;
+  body: unknown;
+  author: { id: string; displayName: string };
+  status: "draft" | "review" | "scheduled" | "published" | "archived";
+  publishedAt: string | null;
+  updatedAt: string;
+  canonicalUrl: string | null;
+  seo: { title?: string; description?: string; image?: string };
+  taxonomy: { tags: string[]; categories: string[] };
+  access: "public" | "authenticated" | "restricted";
+  provenance: { source: string; aiGenerated: boolean; verifiedAt?: string };
+};
 ```
 
 Schema validation, publication authorization, tenant scoping, and HTML sanitization are mandatory.

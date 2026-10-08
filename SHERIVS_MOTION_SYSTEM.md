@@ -9,12 +9,12 @@ Motion communicates relationship, state change, progress, arrival, and verificat
 
 ## Tokens
 
-| Token | Range | Use |
-|---|---:|---|
-| instant | 0–80 ms | pressed/selected feedback |
-| fast | 120–160 ms | hover, focus, small disclosure |
-| standard | 180–240 ms | panel and navigation transition |
-| deliberate | 280–400 ms | modal or major spatial change |
+| Token      |      Range | Use                             |
+| ---------- | ---------: | ------------------------------- |
+| instant    |    0–80 ms | pressed/selected feedback       |
+| fast       | 120–160 ms | hover, focus, small disclosure  |
+| standard   | 180–240 ms | panel and navigation transition |
+| deliberate | 280–400 ms | modal or major spatial change   |
 
 Easing families: enter decelerates, exit accelerates, movement uses restrained spring only when spatial continuity benefits. Repeated bounce and constant ambient animation are prohibited.
 

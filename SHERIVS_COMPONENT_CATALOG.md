@@ -5,16 +5,16 @@ Version target: `ACTIVE-V1`
 
 ## Existing canonical candidates
 
-| Family | Existing source | Disposition |
-|---|---|---|
-| Primitives | `frontend/src/components/ui/` | Adopt; preserve Radix semantics |
-| Shell/page | `portal-shell.tsx`, `portal-sidebar.tsx`, `shell/*` | Reconcile into platform-neutral shell patterns |
-| System states | `planned-capability-state.tsx`, `offline-banner.tsx`, error boundaries | Adopt; consolidate duplicate skeletons |
-| Responsive | `responsive-table.tsx`, mobile navigation/sidebar | Expand adoption |
-| Public | `components/public/*` | Generalize organization assumptions |
-| Command | `command-center/command-palette.tsx` | Retain discovery; enforce actions server-side |
-| AI | `components/ai/*` | Reframe by trust state; no generic chatbot default |
-| Data | `ui/table.tsx`, `ui/chart.tsx`, calendar/timetable components | Define question-led visualization contracts |
+| Family        | Existing source                                                        | Disposition                                        |
+| ------------- | ---------------------------------------------------------------------- | -------------------------------------------------- |
+| Primitives    | `frontend/src/components/ui/`                                          | Adopt; preserve Radix semantics                    |
+| Shell/page    | `portal-shell.tsx`, `portal-sidebar.tsx`, `shell/*`                    | Reconcile into platform-neutral shell patterns     |
+| System states | `planned-capability-state.tsx`, `offline-banner.tsx`, error boundaries | Adopt; consolidate duplicate skeletons             |
+| Responsive    | `responsive-table.tsx`, mobile navigation/sidebar                      | Expand adoption                                    |
+| Public        | `components/public/*`                                                  | Generalize organization assumptions                |
+| Command       | `command-center/command-palette.tsx`                                   | Retain discovery; enforce actions server-side      |
+| AI            | `components/ai/*`                                                      | Reframe by trust state; no generic chatbot default |
+| Data          | `ui/table.tsx`, `ui/chart.tsx`, calendar/timetable components          | Define question-led visualization contracts        |
 
 ## Catalog
 

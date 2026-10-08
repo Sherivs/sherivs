@@ -83,15 +83,15 @@ These must move behind the Sherivs internal boundary only after platform-identit
 
 ## Current shell ownership
 
-| Group | Current shell | Risk |
-|---|---|---|
-| Document | `routes/__root.tsx` | Shared metadata still legacy-domain dependent |
-| Public marketing | `routes/(site)/route.tsx` | Only `/coregrid` participates |
-| Organization public | `routes/index.tsx` + `components/public/site.tsx` | Root route overload; Scholar assumptions |
-| Authentication | `routes/auth.tsx` | Scholar runtime copy |
-| Authenticated | `routes/_authenticated/route.tsx` | Session gate plus client role guards |
-| Role portals | each `route.tsx` | Domain-specific route ontology |
-| Internal | super-admin/command-centre | Not yet a clean separate platform boundary |
+| Group               | Current shell                                     | Risk                                          |
+| ------------------- | ------------------------------------------------- | --------------------------------------------- |
+| Document            | `routes/__root.tsx`                               | Shared metadata still legacy-domain dependent |
+| Public marketing    | `routes/(site)/route.tsx`                         | Only `/coregrid` participates                 |
+| Organization public | `routes/index.tsx` + `components/public/site.tsx` | Root route overload; Scholar assumptions      |
+| Authentication      | `routes/auth.tsx`                                 | Scholar runtime copy                          |
+| Authenticated       | `routes/_authenticated/route.tsx`                 | Session gate plus client role guards          |
+| Role portals        | each `route.tsx`                                  | Domain-specific route ontology                |
+| Internal            | super-admin/command-centre                        | Not yet a clean separate platform boundary    |
 
 ## Target route policy
 
