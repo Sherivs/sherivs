@@ -200,7 +200,7 @@ describe("R40 — surfaces carry no per-organization or per-role branch", () => 
     join(ROOT, "frontend/src/routes/reality.$class.tsx"),
     join(ROOT, "frontend/src/routes/_authenticated/runtime.tsx"),
     join(ROOT, "frontend/src/routes/marketplace.tsx"),
-    join(ROOT, "frontend/src/routes/platform.org.tsx"),
+    join(ROOT, "frontend/src/routes/_authenticated/super-admin/platform-org.tsx"),
     join(ROOT, "frontend/src/routes/manifest[.]webmanifest.ts"),
   ];
 
@@ -233,7 +233,7 @@ describe("R40 — surfaces carry no per-organization or per-role branch", () => 
     expect(runtime).toContain("getMyRealityRoles");
     expect(runtime).not.toMatch(/roleIds\s*:\s*\["/); // never a client-side role list
 
-    const platformOrg = readFileSync(join(ROOT, "frontend/src/routes/platform.org.tsx"), "utf8");
+    const platformOrg = readFileSync(join(ROOT, "frontend/src/routes/_authenticated/super-admin/platform-org.tsx"), "utf8");
     expect(platformOrg).toContain("platformOrgSnapshot");
     expect(platformOrg).toContain("auditPlatformOrg");
 

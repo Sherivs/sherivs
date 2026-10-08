@@ -133,9 +133,12 @@ describe("R41 — CoreGrid internal workspace surface", () => {
     }
   });
 
-  it("renders the engine snapshot on /platform/org and the marketplace route exists", () => {
-    const platformOrg = readFileSync(join(ROOT, "frontend/src/routes/platform.org.tsx"), "utf8");
-    expect(platformOrg).toContain('createFileRoute("/platform/org")');
+  it("renders the engine snapshot on the internal platform-org surface and the marketplace route exists", () => {
+    const platformOrg = readFileSync(
+      join(ROOT, "frontend/src/routes/_authenticated/super-admin/platform-org.tsx"),
+      "utf8",
+    );
+    expect(platformOrg).toContain('createFileRoute("/_authenticated/super-admin/platform-org")');
 
     const marketplace = readFileSync(join(ROOT, "frontend/src/routes/marketplace.tsx"), "utf8");
     expect(marketplace).toContain('createFileRoute("/marketplace")');
