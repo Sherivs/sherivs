@@ -26,7 +26,8 @@ export const searchLearnerRecords = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<RecordSearchHit[]> => {
     const schoolId = await requireSchoolAdminScope(context.supabase, {
       lifecycle: null,
-      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+      sessionValid:
+        typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
     });
 
     const { data: users } = await context.supabase
@@ -54,7 +55,9 @@ export const searchLearnerRecords = createServerFn({ method: "POST" })
       class_id: string | null;
     }>;
 
-    const classIds = [...new Set(learners.map((row) => row.class_id).filter((id): id is string => Boolean(id)))];
+    const classIds = [
+      ...new Set(learners.map((row) => row.class_id).filter((id): id is string => Boolean(id))),
+    ];
     const classNames = new Map<string, string>();
     if (classIds.length > 0) {
       const { data: classRows } = await context.supabase

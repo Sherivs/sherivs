@@ -113,15 +113,28 @@ describe("Public page registry", () => {
   it("links navigation and footer only to registered pages", () => {
     const registered = new Set(PUBLIC_PAGES.map((page) => page.path));
     const hrefs = [
-      ...PRIMARY_NAV.flatMap((group) => [group.href, ...(group.links ?? []).map((link) => link.href)]),
+      ...PRIMARY_NAV.flatMap((group) => [
+        group.href,
+        ...(group.links ?? []).map((link) => link.href),
+      ]),
       ...FOOTER_COLUMNS.flatMap((column) => column.links.map((link) => link.href)),
     ];
     expect(hrefs.filter((href) => !registered.has(href))).toEqual([]);
   });
 
   it("does not register pages the platform cannot back yet", () => {
-    for (const absent of ["/contact", "/request-demo", "/blog", "/customers", "/legal/privacy", "/legal/terms"]) {
-      expect(PUBLIC_PAGES.some((page) => page.path === absent), absent).toBe(false);
+    for (const absent of [
+      "/contact",
+      "/request-demo",
+      "/blog",
+      "/customers",
+      "/legal/privacy",
+      "/legal/terms",
+    ]) {
+      expect(
+        PUBLIC_PAGES.some((page) => page.path === absent),
+        absent,
+      ).toBe(false);
     }
   });
 
@@ -143,7 +156,15 @@ describe("Public page registry", () => {
 
 describe("Platform layers and solutions are traceable to the system", () => {
   it("has seven layers, numbered 01..07, each with capabilities and guarantees", () => {
-    expect(PLATFORM_LAYERS.map((layer) => layer.index)).toEqual(["01", "02", "03", "04", "05", "06", "07"]);
+    expect(PLATFORM_LAYERS.map((layer) => layer.index)).toEqual([
+      "01",
+      "02",
+      "03",
+      "04",
+      "05",
+      "06",
+      "07",
+    ]);
     for (const layer of PLATFORM_LAYERS) {
       expect(layer.capabilities.length).toBeGreaterThan(0);
       expect(layer.guarantees.length).toBeGreaterThan(0);
@@ -152,7 +173,9 @@ describe("Platform layers and solutions are traceable to the system", () => {
 
   it("names repository evidence that exists for every layer claim", () => {
     const missing = PLATFORM_LAYERS.flatMap((layer) =>
-      layer.evidence.filter((ref) => !existsSync(join(ROOT, ref))).map((ref) => `${layer.slug}: ${ref}`),
+      layer.evidence
+        .filter((ref) => !existsSync(join(ROOT, ref)))
+        .map((ref) => `${layer.slug}: ${ref}`),
     );
     expect(missing).toEqual([]);
   });
@@ -194,9 +217,18 @@ describe("Homepage narrative", () => {
 describe("No fabricated proof on public surfaces", () => {
   const FABRICATION = [
     { name: "percentage metric", pattern: />[^<{]*\b\d{1,3}(?:\.\d+)?%/u },
-    { name: "inflated count", pattern: /\b\d[\d,]*\+\s+(?:schools|users|customers|organizations|institutions)/iu },
-    { name: "social proof", pattern: /\btrusted by|testimonial|case stud|customers love|as seen in/iu },
-    { name: "social profile", pattern: /(?:twitter|x|linkedin|facebook|instagram|youtube|tiktok)\.com\//iu },
+    {
+      name: "inflated count",
+      pattern: /\b\d[\d,]*\+\s+(?:schools|users|customers|organizations|institutions)/iu,
+    },
+    {
+      name: "social proof",
+      pattern: /\btrusted by|testimonial|case stud|customers love|as seen in/iu,
+    },
+    {
+      name: "social profile",
+      pattern: /(?:twitter|x|linkedin|facebook|instagram|youtube|tiktok)\.com\//iu,
+    },
     { name: "raster image", pattern: /<img\b/u },
     { name: "fake activity", pattern: /AI is thinking|live activity|real-time feed/iu },
   ];
@@ -241,7 +273,11 @@ describe("SEO artifacts", () => {
   });
 
   it("uses no legacy domain in public metadata", () => {
-    for (const file of ["frontend/src/routes/__root.tsx", "frontend/src/routes/index.tsx", "frontend/src/routes/sitemap[.]xml.ts"]) {
+    for (const file of [
+      "frontend/src/routes/__root.tsx",
+      "frontend/src/routes/index.tsx",
+      "frontend/src/routes/sitemap[.]xml.ts",
+    ]) {
       expect(read(file), file).not.toMatch(/universalschoolos/u);
     }
   });

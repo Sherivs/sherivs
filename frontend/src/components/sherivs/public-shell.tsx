@@ -124,7 +124,11 @@ function MobileNav() {
             <span className="sx-label text-sx-strong">Navigation</span>
           </SheetTitle>
           <SheetClose asChild>
-            <button type="button" className="sx-button sx-button-quiet min-h-11 min-w-11 px-0" aria-label="Close navigation">
+            <button
+              type="button"
+              className="sx-button sx-button-quiet min-h-11 min-w-11 px-0"
+              aria-label="Close navigation"
+            >
               <X aria-hidden="true" className="size-5" />
             </button>
           </SheetClose>
@@ -184,10 +188,16 @@ export function SherivsPublicHeader() {
           <DesktopNav pathname={pathname} />
         </div>
         <div className="flex items-center gap-1 sm:gap-2">
-          <Link to="/auth" className="sx-button sx-button-quiet hidden min-h-9 px-3 text-[0.9375rem] sm:inline-flex">
+          <Link
+            to="/auth"
+            className="sx-button sx-button-quiet hidden min-h-9 px-3 text-[0.9375rem] sm:inline-flex"
+          >
             Sign in
           </Link>
-          <Link to="/auth" className="sx-button sx-button-primary hidden min-h-9 px-4 text-[0.9375rem] sm:inline-flex">
+          <Link
+            to="/auth"
+            className="sx-button sx-button-primary hidden min-h-9 px-4 text-[0.9375rem] sm:inline-flex"
+          >
             Create an account
           </Link>
           <MobileNav />

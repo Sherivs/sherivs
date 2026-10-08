@@ -3,7 +3,13 @@ import { publicPageHead } from "@/content/sherivs/seo";
 import { findSolutionSegment } from "@/content/sherivs/solutions";
 import { findPlatformLayer, LAYER_AVAILABILITY_LABEL } from "@/content/sherivs/platform-layers";
 import { INSTALLED_RUNTIMES } from "@/lib/runtime/installed-runtimes";
-import { ActionLink, PageHero, Plane, RuledList, SectionHeading } from "@/components/sherivs/primitives";
+import {
+  ActionLink,
+  PageHero,
+  Plane,
+  RuledList,
+  SectionHeading,
+} from "@/components/sherivs/primitives";
 import { SystemState } from "@/components/sherivs/system-state";
 
 /** One solution segment at /solutions/<slug>; unknown slugs are a real 404. */
@@ -100,7 +106,9 @@ function SegmentPage() {
             </div>
             <div className="border-b border-sx-line py-4 pr-6">
               <dt className="sx-label">Relationship to the core</dt>
-              <dd className="mt-1 text-sx-strong">Installed on the platform; the core stays valid without it</dd>
+              <dd className="mt-1 text-sx-strong">
+                Installed on the platform; the core stays valid without it
+              </dd>
             </div>
           </dl>
         </Plane>
@@ -122,10 +130,14 @@ function SegmentPage() {
                 className="group flex flex-wrap items-baseline justify-between gap-4 py-5"
               >
                 <span>
-                  <span className="font-medium text-sx-strong group-hover:text-sx-signal">{layer.name}</span>
+                  <span className="font-medium text-sx-strong group-hover:text-sx-signal">
+                    {layer.name}
+                  </span>
                   <span className="sx-small ml-3 text-sx-muted">{layer.statement}</span>
                 </span>
-                <span className="sx-label text-[0.625rem]">{LAYER_AVAILABILITY_LABEL[layer.availability]}</span>
+                <span className="sx-label text-[0.625rem]">
+                  {LAYER_AVAILABILITY_LABEL[layer.availability]}
+                </span>
               </Link>
             </li>
           ))}

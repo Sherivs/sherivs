@@ -30,7 +30,10 @@ const STATUS_TONE: Record<PublicHealthStatus, "verification" | "action" | "dange
 };
 
 async function readHealth(): Promise<HealthReading> {
-  const response = await fetch("/health.json", { cache: "no-store", headers: { accept: "application/json" } });
+  const response = await fetch("/health.json", {
+    cache: "no-store",
+    headers: { accept: "application/json" },
+  });
   // A failing instance answers 503 with a valid report; anything else non-JSON is unreadable.
   const body: unknown = await response.json();
   return parseHealthPayload(body);
@@ -79,7 +82,10 @@ function StatusPage() {
             disabled={health.isFetching}
             className="sx-button sx-button-secondary"
           >
-            <RefreshCw aria-hidden="true" className={health.isFetching ? "size-4 animate-spin" : "size-4"} />
+            <RefreshCw
+              aria-hidden="true"
+              className={health.isFetching ? "size-4 animate-spin" : "size-4"}
+            />
             {health.isFetching ? "Reading…" : "Read again"}
           </button>
         </div>
@@ -97,11 +103,15 @@ function StatusPage() {
               </div>
               <div className="border-b border-sx-line py-4 pr-6">
                 <dt className="sx-label">Instance uptime</dt>
-                <dd className="sx-data mt-1 text-sx-strong">{formatUptime(health.data.payload.uptime_s)}</dd>
+                <dd className="sx-data mt-1 text-sx-strong">
+                  {formatUptime(health.data.payload.uptime_s)}
+                </dd>
               </div>
               <div className="border-b border-sx-line py-4 pr-6">
                 <dt className="sx-label">Version</dt>
-                <dd className="sx-data mt-1 text-sx-strong">{health.data.payload.version ?? "Not reported"}</dd>
+                <dd className="sx-data mt-1 text-sx-strong">
+                  {health.data.payload.version ?? "Not reported"}
+                </dd>
               </div>
             </dl>
 
@@ -116,9 +126,15 @@ function StatusPage() {
               ) : (
                 <ul className="mt-4 border-t border-sx-line">
                   {health.data.payload.checks.map((check) => (
-                    <li key={check.name} className="flex flex-wrap items-baseline justify-between gap-3 border-b border-sx-line py-3">
+                    <li
+                      key={check.name}
+                      className="flex flex-wrap items-baseline justify-between gap-3 border-b border-sx-line py-3"
+                    >
                       <span className="text-sm text-sx-strong">{check.name}</span>
-                      <StatusDot tone={STATUS_TONE[check.status]} label={HEALTH_STATUS_COPY[check.status].label} />
+                      <StatusDot
+                        tone={STATUS_TONE[check.status]}
+                        label={HEALTH_STATUS_COPY[check.status].label}
+                      />
                     </li>
                   ))}
                 </ul>

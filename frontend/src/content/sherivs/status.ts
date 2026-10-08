@@ -26,9 +26,7 @@ export const HealthPayloadSchema = z.object({
 });
 export type PublicHealthPayload = z.infer<typeof HealthPayloadSchema>;
 
-export type HealthReading =
-  | { kind: "reading"; payload: PublicHealthPayload }
-  | { kind: "invalid" };
+export type HealthReading = { kind: "reading"; payload: PublicHealthPayload } | { kind: "invalid" };
 
 export function parseHealthPayload(raw: unknown): HealthReading {
   const result = HealthPayloadSchema.safeParse(raw);

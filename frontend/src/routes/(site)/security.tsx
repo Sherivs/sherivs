@@ -33,13 +33,28 @@ const AUTHORIZATION_INPUTS = [
 ] as const;
 
 const SERVER_FUNCTION_ORDER = [
-  { title: "Authenticate", detail: "Establish who is calling from a verified session, never from a client claim." },
-  { title: "Resolve tenant", detail: "Derive the tenant from the member's record, never from a request parameter." },
-  { title: "Authorize", detail: "Resolve the decision from role, relationship, policy and context." },
+  {
+    title: "Authenticate",
+    detail: "Establish who is calling from a verified session, never from a client claim.",
+  },
+  {
+    title: "Resolve tenant",
+    detail: "Derive the tenant from the member's record, never from a request parameter.",
+  },
+  {
+    title: "Authorize",
+    detail: "Resolve the decision from role, relationship, policy and context.",
+  },
   { title: "Validate", detail: "Parse the input against a typed schema before any work is done." },
-  { title: "Execute", detail: "Run under database Row Level Security, so the database enforces the tenant too." },
+  {
+    title: "Execute",
+    detail: "Run under database Row Level Security, so the database enforces the tenant too.",
+  },
   { title: "Audit", detail: "Record who did what, when and under which policy." },
-  { title: "Return permitted data", detail: "Respond with only what the caller may see — redacted where policy says so." },
+  {
+    title: "Return permitted data",
+    detail: "Respond with only what the caller may see — redacted where policy says so.",
+  },
 ] as const;
 
 function SecurityPage() {
@@ -84,10 +99,15 @@ function SecurityPage() {
           title="Every request resolves to one decision"
           lead="Nine inputs are evaluated together. The answer is one of five outcomes — never an implicit yes."
         />
-        <ol className="mt-14 flex flex-wrap items-center gap-2 lg:ml-[33.333%]" aria-label="Decision inputs">
+        <ol
+          className="mt-14 flex flex-wrap items-center gap-2 lg:ml-[33.333%]"
+          aria-label="Decision inputs"
+        >
           {AUTHORIZATION_INPUTS.map((input, position) => (
             <li key={input} className="flex items-center gap-2">
-              <span className="sx-data border border-sx-line bg-sx-surface-1 px-3 py-1.5 text-sx-text">{input}</span>
+              <span className="sx-data border border-sx-line bg-sx-surface-1 px-3 py-1.5 text-sx-text">
+                {input}
+              </span>
               <span aria-hidden="true" className="sx-data text-sx-muted">
                 {position < AUTHORIZATION_INPUTS.length - 1 ? "+" : "="}
               </span>
@@ -108,7 +128,10 @@ function SecurityPage() {
         />
         <ol className="mt-14 border-t border-sx-line-strong lg:ml-[33.333%]">
           {SERVER_FUNCTION_ORDER.map((step, position) => (
-            <li key={step.title} className="grid gap-2 border-b border-sx-line py-5 sm:grid-cols-[3rem_12rem_1fr] sm:gap-6">
+            <li
+              key={step.title}
+              className="grid gap-2 border-b border-sx-line py-5 sm:grid-cols-[3rem_12rem_1fr] sm:gap-6"
+            >
               <span className="sx-data text-sx-muted">{String(position + 1).padStart(2, "0")}</span>
               <span className="font-medium text-sx-strong">{step.title}</span>
               <span className="sx-small text-sx-muted">{step.detail}</span>
@@ -129,7 +152,9 @@ function SecurityPage() {
           <KindBlock kind="observation">What the system recorded, with its source.</KindBlock>
           <KindBlock kind="inference">What a model concluded, labelled as a conclusion.</KindBlock>
           <KindBlock kind="recommendation">What a model suggests a person consider.</KindBlock>
-          <KindBlock kind="action">What will change if approved — never executed silently.</KindBlock>
+          <KindBlock kind="action">
+            What will change if approved — never executed silently.
+          </KindBlock>
         </div>
       </Plane>
 

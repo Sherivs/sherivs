@@ -60,7 +60,12 @@ export function SystemState({
   const meta = STATE_META[kind];
   const Icon = meta.icon;
   const Heading = headingLevel;
-  const live = kind === "loading" ? "polite" : kind === "error" || kind === "offline" ? "assertive" : undefined;
+  const live =
+    kind === "loading"
+      ? "polite"
+      : kind === "error" || kind === "offline"
+        ? "assertive"
+        : undefined;
   return (
     <div
       role={kind === "error" ? "alert" : "status"}

@@ -109,7 +109,10 @@ function Reality() {
       />
       <dl className="mt-16 grid grid-cols-2 border-t border-sx-line-strong md:grid-cols-4">
         {REALITY_ENTITIES.map((entity) => (
-          <div key={entity.name} className="border-b border-sx-line bg-sx-surface-2/80 py-6 pr-4 md:pr-8">
+          <div
+            key={entity.name}
+            className="border-b border-sx-line bg-sx-surface-2/80 py-6 pr-4 md:pr-8"
+          >
             <dt className="font-[family-name:var(--font-sx-display)] text-lg font-semibold text-sx-strong">
               {entity.name}
             </dt>
@@ -133,7 +136,9 @@ function Intelligence() {
       />
       <div className="mt-16 grid gap-16 lg:grid-cols-12 lg:gap-10">
         <div className="lg:col-span-5">
-          <RuledList items={INTELLIGENCE_COMPONENTS.map((c) => ({ title: c.name, detail: c.detail }))} />
+          <RuledList
+            items={INTELLIGENCE_COMPONENTS.map((c) => ({ title: c.name, detail: c.detail }))}
+          />
         </div>
         <div className="lg:col-span-7">
           <p className="sx-label mb-6">Every response is separated into six kinds</p>
@@ -157,18 +162,26 @@ function Workforce() {
       <div className="mt-16 grid gap-12 lg:grid-cols-12 lg:gap-10">
         <div className="lg:col-span-4">
           <ol className="grid gap-0 border-l border-sx-line-strong">
-            {["Proposed", "Reviewed", "Approved", "Deployed", "Monitored", "Suspended", "Retired"].map(
-              (state, position) => (
-                <li key={state} className="relative py-2.5 pl-6">
-                  <span
-                    aria-hidden="true"
-                    className="absolute left-[-4.5px] top-1/2 size-2 -translate-y-1/2 rounded-full border border-sx-line-strong bg-sx-surface-0"
-                  />
-                  <span className="sx-data text-sx-muted">{String(position + 1).padStart(2, "0")}</span>
-                  <span className="ml-3 text-sm text-sx-text">{state}</span>
-                </li>
-              ),
-            )}
+            {[
+              "Proposed",
+              "Reviewed",
+              "Approved",
+              "Deployed",
+              "Monitored",
+              "Suspended",
+              "Retired",
+            ].map((state, position) => (
+              <li key={state} className="relative py-2.5 pl-6">
+                <span
+                  aria-hidden="true"
+                  className="absolute left-[-4.5px] top-1/2 size-2 -translate-y-1/2 rounded-full border border-sx-line-strong bg-sx-surface-0"
+                />
+                <span className="sx-data text-sx-muted">
+                  {String(position + 1).padStart(2, "0")}
+                </span>
+                <span className="ml-3 text-sm text-sx-text">{state}</span>
+              </li>
+            ))}
           </ol>
           <p className="sx-caption mt-6 max-w-xs">
             Workers cannot move themselves between states. Every transition is a human decision on
@@ -212,13 +225,17 @@ function Experiences() {
         <div className="flex flex-wrap items-center gap-2">
           {EXPERIENCE_INPUTS.map((input, position) => (
             <span key={input} className="flex items-center gap-2">
-              <span className="sx-data border border-sx-line bg-sx-surface-1 px-3 py-1.5 text-sx-text">{input}</span>
+              <span className="sx-data border border-sx-line bg-sx-surface-1 px-3 py-1.5 text-sx-text">
+                {input}
+              </span>
               <span aria-hidden="true" className="sx-data text-sx-muted">
                 {position < EXPERIENCE_INPUTS.length - 1 ? "+" : "="}
               </span>
             </span>
           ))}
-          <span className="sx-data border border-sx-signal px-3 py-1.5 text-sx-signal">Experience configuration</span>
+          <span className="sx-data border border-sx-signal px-3 py-1.5 text-sx-signal">
+            Experience configuration
+          </span>
         </div>
         <p className="sx-label mt-4 text-[0.6875rem]">Schematic · how a workspace is composed</p>
       </figure>
@@ -244,22 +261,25 @@ function Runtimes() {
         {INSTALLED_RUNTIMES.map((runtime) => {
           const segment = SOLUTION_SEGMENTS.find((candidate) => candidate.runtimeId === runtime.id);
           return (
-          <article key={runtime.id} className="grid gap-3 bg-sx-surface-1 p-6 sm:grid-cols-[1fr_auto] sm:items-start">
-            <div>
-              <p className="sx-label">Installed runtime · {runtime.description}</p>
-              <h3 className="sx-h3 mt-2">{runtime.brandName}</h3>
-              <p className="sx-small mt-3 max-w-prose text-sx-muted">{runtime.summary}</p>
-            </div>
-            {segment && (
-              <Link
-                to="/solutions/$segment"
-                params={{ segment: segment.slug }}
-                className="sx-link text-sm font-medium"
-              >
-                {segment.name} solutions
-              </Link>
-            )}
-          </article>
+            <article
+              key={runtime.id}
+              className="grid gap-3 bg-sx-surface-1 p-6 sm:grid-cols-[1fr_auto] sm:items-start"
+            >
+              <div>
+                <p className="sx-label">Installed runtime · {runtime.description}</p>
+                <h3 className="sx-h3 mt-2">{runtime.brandName}</h3>
+                <p className="sx-small mt-3 max-w-prose text-sx-muted">{runtime.summary}</p>
+              </div>
+              {segment && (
+                <Link
+                  to="/solutions/$segment"
+                  params={{ segment: segment.slug }}
+                  className="sx-link text-sm font-medium"
+                >
+                  {segment.name} solutions
+                </Link>
+              )}
+            </article>
           );
         })}
       </div>
@@ -297,7 +317,10 @@ function Architecture() {
         lead={M.architecture.lead}
       />
       <div className="mt-16 lg:ml-[33.333%]">
-        <RuledList columns={2} items={ARCHITECTURE_PRINCIPLES.map((p) => ({ title: p.title, detail: p.detail }))} />
+        <RuledList
+          columns={2}
+          items={ARCHITECTURE_PRINCIPLES.map((p) => ({ title: p.title, detail: p.detail }))}
+        />
         <ul className="mt-12 grid border-t border-sx-line-strong sm:grid-cols-2">
           {PLATFORM_LAYERS.map((layer) => (
             <li key={layer.slug} className="border-b border-sx-line">
@@ -308,11 +331,18 @@ function Architecture() {
               >
                 <span className="flex items-baseline gap-3">
                   <span className="sx-data text-sx-muted">{layer.index}</span>
-                  <span className="font-medium text-sx-strong group-hover:text-sx-signal">{layer.name}</span>
+                  <span className="font-medium text-sx-strong group-hover:text-sx-signal">
+                    {layer.name}
+                  </span>
                 </span>
                 <span className="flex items-center gap-3">
-                  <span className="sx-label text-[0.625rem]">{LAYER_AVAILABILITY_LABEL[layer.availability]}</span>
-                  <ArrowUpRight aria-hidden="true" className="size-4 text-sx-muted group-hover:text-sx-signal" />
+                  <span className="sx-label text-[0.625rem]">
+                    {LAYER_AVAILABILITY_LABEL[layer.availability]}
+                  </span>
+                  <ArrowUpRight
+                    aria-hidden="true"
+                    className="size-4 text-sx-muted group-hover:text-sx-signal"
+                  />
                 </span>
               </Link>
             </li>
@@ -370,7 +400,10 @@ function Begin() {
 export function SherivsHome() {
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: organizationJsonLd() }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: organizationJsonLd() }}
+      />
       <Introduction />
       <Category />
       <Reality />

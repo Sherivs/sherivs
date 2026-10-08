@@ -54,7 +54,9 @@ function PricingPage() {
               <div className="md:col-span-3">
                 <p className="sx-metric">
                   {formatTierPrice(tier.monthlyPrice)}
-                  {tier.monthlyPrice !== null && <span className="sx-small ml-1 text-sx-muted">/ month</span>}
+                  {tier.monthlyPrice !== null && (
+                    <span className="sx-small ml-1 text-sx-muted">/ month</span>
+                  )}
                 </p>
                 <p className="sx-caption mt-2">
                   {tier.annualPrice === null
@@ -76,7 +78,9 @@ function PricingPage() {
                 <Link
                   to="/auth"
                   aria-label={`${tier.ctaLabel} — ${tier.name} plan`}
-                  className={tier.featured ? "sx-button sx-button-primary" : "sx-button sx-button-secondary"}
+                  className={
+                    tier.featured ? "sx-button sx-button-primary" : "sx-button sx-button-secondary"
+                  }
                 >
                   {tier.ctaLabel}
                 </Link>

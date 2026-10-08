@@ -63,7 +63,10 @@ export const ContentEntrySchema = z.object({
   seo: ContentSeoSchema,
   tags: z.array(slug).default([]),
   categories: z.array(slug).default([]),
-  locale: z.string().regex(/^[a-z]{2}(?:-[A-Z]{2})?$/u).default("en"),
+  locale: z
+    .string()
+    .regex(/^[a-z]{2}(?:-[A-Z]{2})?$/u)
+    .default("en"),
   access: ContentAccessSchema,
   /** Organization that owns the record; absent only for platform (Sherivs) content. */
   organizationRef: z.string().min(1).optional(),

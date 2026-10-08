@@ -114,10 +114,24 @@ export const REALITY_ENTITIES: readonly { name: string; detail: string }[] = [
 
 /** Intelligence components (movement 04). */
 export const INTELLIGENCE_COMPONENTS: readonly { name: string; detail: string }[] = [
-  { name: "Context", detail: "Assembled per request from what the asker may see — minimized and redacted before any model sees it." },
-  { name: "Memory", detail: "Scoped to tenant and purpose, dated, attributed, and labelled when AI-generated." },
-  { name: "Knowledge", detail: "Relationships carry provenance, ownership, authorization and confidence." },
-  { name: "AI", detail: "Every model call routes through one gateway for authentication, cost, safety, rate limits and logs." },
+  {
+    name: "Context",
+    detail:
+      "Assembled per request from what the asker may see — minimized and redacted before any model sees it.",
+  },
+  {
+    name: "Memory",
+    detail: "Scoped to tenant and purpose, dated, attributed, and labelled when AI-generated.",
+  },
+  {
+    name: "Knowledge",
+    detail: "Relationships carry provenance, ownership, authorization and confidence.",
+  },
+  {
+    name: "AI",
+    detail:
+      "Every model call routes through one gateway for authentication, cost, safety, rate limits and logs.",
+  },
 ];
 
 /** Experience composition inputs (movement 07). */
@@ -144,10 +158,12 @@ export const ARCHITECTURE_PRINCIPLES: readonly { title: string; detail: string }
   },
   {
     title: "Provider-agnostic by adapter",
-    detail: "Database, AI, payments, messaging and storage are replaceable behind declared contracts.",
+    detail:
+      "Database, AI, payments, messaging and storage are replaceable behind declared contracts.",
   },
   {
     title: "Server functions are APIs",
-    detail: "Each one authenticates, resolves tenancy, authorizes, validates, executes and audits — in that order.",
+    detail:
+      "Each one authenticates, resolves tenancy, authorizes, validates, executes and audits — in that order.",
   },
 ];

@@ -65,7 +65,11 @@ export const PLATFORM_LAYERS: readonly PlatformLayer[] = [
       "AI inference never overwrites verified truth without validation.",
     ],
     availability: "in_service",
-    evidence: ["frontend/src/lib/kernel", "frontend/src/lib/identity-registry.ts", "database/supabase/migrations"],
+    evidence: [
+      "frontend/src/lib/kernel",
+      "frontend/src/lib/identity-registry.ts",
+      "database/supabase/migrations",
+    ],
   },
   {
     slug: "memory",
@@ -96,7 +100,11 @@ export const PLATFORM_LAYERS: readonly PlatformLayer[] = [
       "AI-generated memory is labelled as such.",
     ],
     availability: "foundation",
-    evidence: ["frontend/src/lib/memory", "frontend/src/lib/agent-memory.ts", "frontend/src/lib/memory-knowledge"],
+    evidence: [
+      "frontend/src/lib/memory",
+      "frontend/src/lib/agent-memory.ts",
+      "frontend/src/lib/memory-knowledge",
+    ],
   },
   {
     slug: "ai-workforce",
@@ -127,7 +135,11 @@ export const PLATFORM_LAYERS: readonly PlatformLayer[] = [
       "A worker cannot increase its own permissions or deploy itself.",
     ],
     availability: "foundation",
-    evidence: ["frontend/src/lib/workforce", "frontend/src/lib/agent-runtime", "frontend/src/lib/missions/mission-lease-db.server.ts"],
+    evidence: [
+      "frontend/src/lib/workforce",
+      "frontend/src/lib/agent-runtime",
+      "frontend/src/lib/missions/mission-lease-db.server.ts",
+    ],
   },
   {
     slug: "missions",
@@ -158,7 +170,11 @@ export const PLATFORM_LAYERS: readonly PlatformLayer[] = [
       "Every mission leaves an auditable trail.",
     ],
     availability: "foundation",
-    evidence: ["frontend/src/lib/mission", "frontend/src/lib/missions", "frontend/src/lib/evidence/capture.ts"],
+    evidence: [
+      "frontend/src/lib/mission",
+      "frontend/src/lib/missions",
+      "frontend/src/lib/evidence/capture.ts",
+    ],
   },
   {
     slug: "intelligence",
@@ -189,7 +205,11 @@ export const PLATFORM_LAYERS: readonly PlatformLayer[] = [
       "Models receive only authorized, minimized information.",
     ],
     availability: "in_service",
-    evidence: ["frontend/src/lib/ai-gateway", "frontend/src/lib/ai-context.ts", "frontend/src/components/ai"],
+    evidence: [
+      "frontend/src/lib/ai-gateway",
+      "frontend/src/lib/ai-context.ts",
+      "frontend/src/components/ai",
+    ],
   },
   {
     slug: "governance",
@@ -215,12 +235,13 @@ export const PLATFORM_LAYERS: readonly PlatformLayer[] = [
           "Important actions are recorded with actor, time, resource and policy — without secrets or unnecessary personal data.",
       },
     ],
-    guarantees: [
-      "The interface is never the security boundary.",
-      "Tenant A cannot read Tenant B.",
-    ],
+    guarantees: ["The interface is never the security boundary.", "Tenant A cannot read Tenant B."],
     availability: "in_service",
-    evidence: ["frontend/src/lib/authorization.ts", "frontend/src/lib/audit", "database/supabase/migrations"],
+    evidence: [
+      "frontend/src/lib/authorization.ts",
+      "frontend/src/lib/audit",
+      "database/supabase/migrations",
+    ],
   },
   {
     slug: "integrations",
@@ -237,8 +258,7 @@ export const PLATFORM_LAYERS: readonly PlatformLayer[] = [
       },
       {
         title: "Verified inbound events",
-        detail:
-          "Inbound webhooks are signature-verified before they can change any record.",
+        detail: "Inbound webhooks are signature-verified before they can change any record.",
       },
       {
         title: "Failure policy",
@@ -251,7 +271,11 @@ export const PLATFORM_LAYERS: readonly PlatformLayer[] = [
       "Payment state is never taken from the browser.",
     ],
     availability: "in_service",
-    evidence: ["frontend/src/lib/adapters", "frontend/src/lib/providers", "frontend/src/routes/api/public/webhooks/paystack.ts"],
+    evidence: [
+      "frontend/src/lib/adapters",
+      "frontend/src/lib/providers",
+      "frontend/src/routes/api/public/webhooks/paystack.ts",
+    ],
   },
 ];
 

@@ -110,7 +110,10 @@ export function PageHero({
       data-sx-plane="ink"
       className="sx-atmosphere relative overflow-hidden border-b border-sx-line"
     >
-      <div aria-hidden="true" className="sx-field absolute inset-0 opacity-40 [mask-image:linear-gradient(to_bottom,black,transparent_85%)]" />
+      <div
+        aria-hidden="true"
+        className="sx-field absolute inset-0 opacity-40 [mask-image:linear-gradient(to_bottom,black,transparent_85%)]"
+      />
       <div className="sx-container relative grid gap-12 pt-20 pb-16 sm:pt-28 sm:pb-24 lg:grid-cols-12 lg:pt-36">
         <div className="lg:col-span-8">
           <div className="sx-label">{label}</div>
@@ -171,12 +174,7 @@ export function RuledList({
 }
 
 export type IntelligenceKind =
-  | "observation"
-  | "inference"
-  | "recommendation"
-  | "action"
-  | "evidence"
-  | "verification";
+  "observation" | "inference" | "recommendation" | "action" | "evidence" | "verification";
 
 export const INTELLIGENCE_KIND_LABEL: Record<IntelligenceKind, string> = {
   observation: "Observation",
@@ -216,7 +214,11 @@ export function StatusDot({
 }) {
   return (
     <span className="inline-flex items-center gap-2">
-      <span aria-hidden="true" className="size-2 rounded-full" style={{ background: `var(--sx-${tone})` }} />
+      <span
+        aria-hidden="true"
+        className="size-2 rounded-full"
+        style={{ background: `var(--sx-${tone})` }}
+      />
       <span className="sx-label" style={{ color: `var(--sx-${tone})` }}>
         {label}
       </span>

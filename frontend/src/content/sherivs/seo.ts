@@ -8,9 +8,7 @@ import { PLATFORM_NAME, PLATFORM_PAGE_DESCRIPTION, platformUrl } from "@/lib/pla
 import { findPublicPage } from "./site-map";
 
 type MetaTag =
-  | { title: string }
-  | { name: string; content: string }
-  | { property: string; content: string };
+  { title: string } | { name: string; content: string } | { property: string; content: string };
 
 export interface PublicHead {
   meta: MetaTag[];

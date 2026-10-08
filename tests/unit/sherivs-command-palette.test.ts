@@ -36,7 +36,17 @@ import { resolveWorkspaceNav, type WorkspaceNavSection } from "@/lib/workspace-e
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const read = (ref: string) => readFileSync(join(ROOT, ref), "utf8");
 
-const ROLES: AppRole[] = ["super_admin", "hq", "admin", "principal", "teacher", "bursar", "parent", "student", "driver"];
+const ROLES: AppRole[] = [
+  "super_admin",
+  "hq",
+  "admin",
+  "principal",
+  "teacher",
+  "bursar",
+  "parent",
+  "student",
+  "driver",
+];
 
 function sectionsFor(role: AppRole): readonly WorkspaceNavSection[] {
   return resolveWorkspaceNav(ALL_NAV_CONTRIBUTIONS, scholarCapabilitiesForRole(role));
@@ -71,9 +81,9 @@ describe("Palette commands are the authorized navigation, nothing more", () => {
   it("offers no navigation commands to a member with no resolved workspace", () => {
     const commands = buildPaletteCommands([]);
     expect(commands.filter((command) => command.source !== "platform")).toEqual([]);
-    expect(commands.filter((command) => command.kind === "navigate").map((command) => command.href)).toEqual(
-      PLATFORM_DESTINATIONS.map((destination) => destination.href),
-    );
+    expect(
+      commands.filter((command) => command.kind === "navigate").map((command) => command.href),
+    ).toEqual(PLATFORM_DESTINATIONS.map((destination) => destination.href));
   });
 
   it("deduplicates platform destinations already present in the workspace", () => {
@@ -85,8 +95,22 @@ describe("Palette commands are the authorized navigation, nothing more", () => {
         iconKey: "home",
         collapsible: false,
         items: [
-          { key: "a", label: "Inbox", iconKey: "messages", url: "/messages", orderHint: 0, runtimeRef: "runtime:test" },
-          { key: "b", label: "Inbox again", iconKey: "messages", url: "/messages/", orderHint: 1, runtimeRef: "runtime:test" },
+          {
+            key: "a",
+            label: "Inbox",
+            iconKey: "messages",
+            url: "/messages",
+            orderHint: 0,
+            runtimeRef: "runtime:test",
+          },
+          {
+            key: "b",
+            label: "Inbox again",
+            iconKey: "messages",
+            url: "/messages/",
+            orderHint: 1,
+            runtimeRef: "runtime:test",
+          },
         ],
       },
     ];
@@ -121,7 +145,9 @@ describe("Record search is gated by authorized navigation", () => {
   });
 
   it("opens hits at the authorized destination with an encoded record reference", () => {
-    expect(recordHitHref("/admin/students", { recordRef: "a b/c", label: "X" })).toBe("/admin/students?id=a%20b%2Fc");
+    expect(recordHitHref("/admin/students", { recordRef: "a b/c", label: "X" })).toBe(
+      "/admin/students?id=a%20b%2Fc",
+    );
   });
 
   it("declares the learner search in the runtime layer as an authenticated, tenant-resolving server function", () => {
@@ -146,8 +172,12 @@ describe("The palette component holds no role list or runtime route", () => {
     for (const source of [palette, registry]) {
       expect(source).not.toMatch(/switch\s*\(\s*role\s*\)/u);
       expect(source).not.toMatch(/role\s*===/u);
-      expect(source).not.toMatch(/"(admin|principal|teacher|parent|student|bursar|driver|hq|super_admin)"/u);
-      expect(source).not.toMatch(/"\/(admin|teacher|parent|student|bursar|driver|hq|super-admin)\//u);
+      expect(source).not.toMatch(
+        /"(admin|principal|teacher|parent|student|bursar|driver|hq|super_admin)"/u,
+      );
+      expect(source).not.toMatch(
+        /"\/(admin|teacher|parent|student|bursar|driver|hq|super-admin)\//u,
+      );
     }
   });
 
@@ -190,7 +220,9 @@ describe("Internal Sherivs surfaces sit behind the control-plane boundary", () =
     expect(routeTreeContains("'/super-admin/platform-org'")).toBe(true);
     expect(routeTreeContains("'/super-admin/provisioning-simulator'")).toBe(true);
     expect(routeTreeContains("'/platform/org'")).toBe(false);
-    expect(read("frontend/src/routes/_authenticated/super-admin/route.tsx")).toContain('allow={["super_admin"]}');
+    expect(read("frontend/src/routes/_authenticated/super-admin/route.tsx")).toContain(
+      'allow={["super_admin"]}',
+    );
   });
 
   it("never links internal surfaces from public navigation", () => {

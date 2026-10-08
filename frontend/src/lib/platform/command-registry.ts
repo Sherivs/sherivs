@@ -34,15 +34,57 @@ export interface PaletteCommand {
 
 /** Destinations every signed-in member has in the authenticated shell. */
 export const PLATFORM_DESTINATIONS: readonly Omit<PaletteCommand, "group" | "source" | "kind">[] = [
-  { id: "platform:notifications", label: "Notifications", href: "/notifications", iconKey: "notifications", keywords: ["alerts", "inbox"] },
-  { id: "platform:messages", label: "Messages", href: "/messages", iconKey: "messages", keywords: ["chat", "conversation"] },
-  { id: "platform:settings", label: "Account settings", href: "/settings", iconKey: "settings", keywords: ["profile", "preferences", "password"] },
+  {
+    id: "platform:notifications",
+    label: "Notifications",
+    href: "/notifications",
+    iconKey: "notifications",
+    keywords: ["alerts", "inbox"],
+  },
+  {
+    id: "platform:messages",
+    label: "Messages",
+    href: "/messages",
+    iconKey: "messages",
+    keywords: ["chat", "conversation"],
+  },
+  {
+    id: "platform:settings",
+    label: "Account settings",
+    href: "/settings",
+    iconKey: "settings",
+    keywords: ["profile", "preferences", "password"],
+  },
 ];
 
 export const PREFERENCE_COMMANDS: readonly PaletteCommand[] = [
-  { id: "preference:theme-light", kind: "preference", label: "Use light theme", group: "Preferences", iconKey: "theme-light", keywords: ["appearance", "mode"], source: "platform" },
-  { id: "preference:theme-dark", kind: "preference", label: "Use dark theme", group: "Preferences", iconKey: "theme-dark", keywords: ["appearance", "mode", "night"], source: "platform" },
-  { id: "preference:theme-system", kind: "preference", label: "Match system theme", group: "Preferences", iconKey: "theme-system", keywords: ["appearance", "mode", "auto"], source: "platform" },
+  {
+    id: "preference:theme-light",
+    kind: "preference",
+    label: "Use light theme",
+    group: "Preferences",
+    iconKey: "theme-light",
+    keywords: ["appearance", "mode"],
+    source: "platform",
+  },
+  {
+    id: "preference:theme-dark",
+    kind: "preference",
+    label: "Use dark theme",
+    group: "Preferences",
+    iconKey: "theme-dark",
+    keywords: ["appearance", "mode", "night"],
+    source: "platform",
+  },
+  {
+    id: "preference:theme-system",
+    kind: "preference",
+    label: "Match system theme",
+    group: "Preferences",
+    iconKey: "theme-system",
+    keywords: ["appearance", "mode", "auto"],
+    source: "platform",
+  },
 ];
 
 function normalizePath(path: string): string {
@@ -78,9 +120,14 @@ export function navigationCommands(sections: readonly WorkspaceNavSection[]): Pa
 export function buildPaletteCommands(sections: readonly WorkspaceNavSection[]): PaletteCommand[] {
   const navigation = navigationCommands(sections);
   const destinations = new Set(navigation.map((command) => normalizePath(command.href ?? "")));
-  const platform = PLATFORM_DESTINATIONS.filter((command) => !destinations.has(normalizePath(command.href ?? ""))).map<PaletteCommand>(
-    (command) => ({ ...command, kind: "navigate", group: "Platform", source: "platform" }),
-  );
+  const platform = PLATFORM_DESTINATIONS.filter(
+    (command) => !destinations.has(normalizePath(command.href ?? "")),
+  ).map<PaletteCommand>((command) => ({
+    ...command,
+    kind: "navigate",
+    group: "Platform",
+    source: "platform",
+  }));
   return [...navigation, ...platform, ...PREFERENCE_COMMANDS];
 }
 
@@ -95,7 +142,10 @@ function scoreCommand(command: PaletteCommand, query: string): number {
 }
 
 /** Filter and rank commands for a query; empty query returns commands in registry order. */
-export function searchCommands(commands: readonly PaletteCommand[], query: string): PaletteCommand[] {
+export function searchCommands(
+  commands: readonly PaletteCommand[],
+  query: string,
+): PaletteCommand[] {
   const normalized = query.trim().toLowerCase();
   if (!normalized) return [...commands];
   return commands
@@ -106,7 +156,9 @@ export function searchCommands(commands: readonly PaletteCommand[], query: strin
 }
 
 /** Group commands by heading, preserving first-seen group order. */
-export function groupCommands(commands: readonly PaletteCommand[]): { group: string; commands: PaletteCommand[] }[] {
+export function groupCommands(
+  commands: readonly PaletteCommand[],
+): { group: string; commands: PaletteCommand[] }[] {
   const groups = new Map<string, PaletteCommand[]>();
   for (const command of commands) {
     const list = groups.get(command.group) ?? [];

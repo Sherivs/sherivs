@@ -40,7 +40,10 @@ const STRATA: readonly { name: string; detail: string; tone: string }[] = [
 export function RealityStrata({ className }: { className?: string }) {
   return (
     <figure className={cn("w-full", className)}>
-      <ol className="grid gap-2" aria-label="Platform planes, from evidence at the top to reality at the base">
+      <ol
+        className="grid gap-2"
+        aria-label="Platform planes, from evidence at the top to reality at the base"
+      >
         {STRATA.map((stratum, position) => (
           <li
             key={stratum.name}
@@ -119,7 +122,10 @@ export function AuthorizationDecision({ className }: { className?: string }) {
       <div className="grid gap-8 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
         <ul className="flex flex-wrap gap-2" aria-label="Decision inputs">
           {DECISION_INPUTS.map((input) => (
-            <li key={input} className="sx-data border border-sx-line bg-sx-surface-1 px-3 py-1.5 text-sx-text">
+            <li
+              key={input}
+              className="sx-data border border-sx-line bg-sx-surface-1 px-3 py-1.5 text-sx-text"
+            >
               {input}
             </li>
           ))}
@@ -131,7 +137,10 @@ export function AuthorizationDecision({ className }: { className?: string }) {
         </div>
         <ul className="grid gap-2" aria-label="Possible decisions">
           {AUTHORIZATION_OUTCOMES.map((outcome) => (
-            <li key={outcome.name} className="grid grid-cols-[auto_1fr] items-baseline gap-4 border-b border-sx-line pb-2">
+            <li
+              key={outcome.name}
+              className="grid grid-cols-[auto_1fr] items-baseline gap-4 border-b border-sx-line pb-2"
+            >
               <span className="sx-data font-semibold" style={{ color: outcome.tone }}>
                 {outcome.name}
               </span>

@@ -11,9 +11,6 @@ export const Route = createFileRoute("/_authenticated/super-admin/provisioning-s
   ssr: false,
   component: CommandCentre,
   head: () => ({
-    meta: [
-      { title: "Provisioning simulator — Sherivs" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Provisioning simulator — Sherivs" }, { name: "robots", content: "noindex" }],
   }),
 });

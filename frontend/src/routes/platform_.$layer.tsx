@@ -8,7 +8,14 @@ import {
 } from "@/content/sherivs/platform-layers";
 import { publicPageHead } from "@/content/sherivs/seo";
 import { SherivsPublicShell } from "@/components/sherivs/public-shell";
-import { ActionLink, PageHero, Plane, RuledList, SectionHeading, StatusDot } from "@/components/sherivs/primitives";
+import {
+  ActionLink,
+  PageHero,
+  Plane,
+  RuledList,
+  SectionHeading,
+  StatusDot,
+} from "@/components/sherivs/primitives";
 import { SystemState } from "@/components/sherivs/system-state";
 
 /**
@@ -22,7 +29,9 @@ export const Route = createFileRoute("/platform_/$layer")({
     return { slug: layer.slug };
   },
   head: ({ params }) =>
-    findPlatformLayer(params.layer) ? publicPageHead(`/platform/${params.layer}`) : { meta: [{ title: "Not found — Sherivs" }] },
+    findPlatformLayer(params.layer)
+      ? publicPageHead(`/platform/${params.layer}`)
+      : { meta: [{ title: "Not found — Sherivs" }] },
   component: LayerPage,
   notFoundComponent: LayerNotFound,
 });
@@ -72,7 +81,9 @@ function LayerPage() {
               tone={layer.availability === "in_service" ? "verification" : "observation"}
               label={LAYER_AVAILABILITY_LABEL[layer.availability]}
             />
-            <p className="sx-small mt-3 text-sx-muted">{LAYER_AVAILABILITY_DETAIL[layer.availability]}</p>
+            <p className="sx-small mt-3 text-sx-muted">
+              {LAYER_AVAILABILITY_DETAIL[layer.availability]}
+            </p>
           </div>
         }
       />
@@ -82,14 +93,29 @@ function LayerPage() {
       </Plane>
 
       <Plane tone="raised" labelledBy="capabilities-heading">
-        <SectionHeading id="capabilities-heading" index="02" label="What the layer does" title={`${layer.name}, in practice`} />
+        <SectionHeading
+          id="capabilities-heading"
+          index="02"
+          label="What the layer does"
+          title={`${layer.name}, in practice`}
+        />
         <div className="mt-14 lg:ml-[33.333%]">
-          <RuledList items={layer.capabilities.map((capability) => ({ title: capability.title, detail: capability.detail }))} />
+          <RuledList
+            items={layer.capabilities.map((capability) => ({
+              title: capability.title,
+              detail: capability.detail,
+            }))}
+          />
         </div>
       </Plane>
 
       <Plane tone="ink" labelledBy="guarantees-heading">
-        <SectionHeading id="guarantees-heading" index="03" label="Guarantees" title="Rules this layer will not break" />
+        <SectionHeading
+          id="guarantees-heading"
+          index="03"
+          label="Guarantees"
+          title="Rules this layer will not break"
+        />
         <ul className="mt-14 grid gap-px border border-sx-line bg-sx-line lg:ml-[33.333%]">
           {layer.guarantees.map((guarantee) => (
             <li key={guarantee} className="bg-sx-surface-1 px-6 py-5 text-sx-strong">
@@ -132,7 +158,10 @@ function LayerPage() {
               <span className="sx-h3 group-hover:text-sx-signal">{next.name}</span>
             </Link>
           ) : (
-            <Link to="/security" className="group flex flex-col items-end gap-2 bg-sx-surface-0 py-10 pl-6 text-right">
+            <Link
+              to="/security"
+              className="group flex flex-col items-end gap-2 bg-sx-surface-0 py-10 pl-6 text-right"
+            >
               <span className="sx-label flex items-center gap-2">
                 Continue to <ArrowRight aria-hidden="true" className="size-3.5" />
               </span>

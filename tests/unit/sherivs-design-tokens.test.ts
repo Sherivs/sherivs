@@ -44,7 +44,9 @@ describe("Sherivs color tokens — TypeScript source and CSS layer agree", () =>
   }
 
   it("both themes declare the same token names", () => {
-    expect(Object.keys(SX_COLOR_TOKENS.dark).sort()).toEqual(Object.keys(SX_COLOR_TOKENS.light).sort());
+    expect(Object.keys(SX_COLOR_TOKENS.dark).sort()).toEqual(
+      Object.keys(SX_COLOR_TOKENS.light).sort(),
+    );
   });
 });
 
@@ -67,9 +69,18 @@ describe("Sherivs contrast — WCAG 2.2 AA in both themes", () => {
   }
 
   it("checks every intelligence-kind color against the page surface", () => {
-    const kinds = ["observation", "inference", "recommendation", "action", "evidence", "verification", "danger"];
+    const kinds = [
+      "observation",
+      "inference",
+      "recommendation",
+      "action",
+      "evidence",
+      "verification",
+      "danger",
+    ];
     const checked = new Set(SX_CONTRAST_PAIRS.map((pair) => pair.foreground));
-    for (const kind of kinds) expect(checked.has(kind), `${kind} must have a contrast pair`).toBe(true);
+    for (const kind of kinds)
+      expect(checked.has(kind), `${kind} must have a contrast pair`).toBe(true);
   });
 });
 

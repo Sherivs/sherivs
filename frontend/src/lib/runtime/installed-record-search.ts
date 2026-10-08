@@ -6,4 +6,6 @@
 import type { RecordSearchProvider } from "@/lib/platform/command-registry";
 import { SCHOLAR_LEARNER_SEARCH } from "./scholar-record-search";
 
-export const INSTALLED_RECORD_SEARCH_PROVIDERS: readonly RecordSearchProvider[] = [SCHOLAR_LEARNER_SEARCH];
+export const INSTALLED_RECORD_SEARCH_PROVIDERS: readonly RecordSearchProvider[] = [
+  SCHOLAR_LEARNER_SEARCH,
+];
