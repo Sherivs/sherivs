@@ -13,7 +13,7 @@ import { runtimeSelfReport } from "@/lib/runtime-self-report";
  */
 export const Route = createFileRoute("/_authenticated/super-admin/runtime-contracts")({
   component: RuntimeContractsPage,
-  head: () => ({ meta: [{ title: "Runtime contracts — CoreGrid" }] }),
+  head: () => ({ meta: [{ title: "Runtime contracts — Sherivs" }] }),
 });
 
 function RuntimeContractsPage() {

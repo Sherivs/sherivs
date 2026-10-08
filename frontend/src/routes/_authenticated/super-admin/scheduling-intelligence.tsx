@@ -13,7 +13,7 @@ import { buildSchedulingIntelligenceReport } from "@/lib/scheduling-intelligence
  */
 export const Route = createFileRoute("/_authenticated/super-admin/scheduling-intelligence")({
   component: SchedulingIntelligencePage,
-  head: () => ({ meta: [{ title: "Scheduling intelligence — CoreGrid" }] }),
+  head: () => ({ meta: [{ title: "Scheduling intelligence — Sherivs" }] }),
 });
 
 /** How each kind of organization names the same scheduling concepts — supplied as data. */

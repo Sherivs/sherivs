@@ -36,9 +36,9 @@ export default function SignInScreen() {
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.root}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.heading}>
-          <Text style={typography.title}>CoreGrid</Text>
+          <Text style={typography.title}>Sherivs</Text>
           <Text style={typography.muted}>
-            Sign in with your CoreGrid account. Authentication is handled by the shared Supabase identity
+            Sign in with your Sherivs account. Authentication is handled by the shared Supabase identity
             service — the same one the web application uses.
           </Text>
         </View>
@@ -63,7 +63,7 @@ export default function SignInScreen() {
           />
           <PrimaryButton label="Sign in" onPress={() => void submit()} busy={busy} disabled={offline} />
           {offline ? (
-            <UIText>You are offline — sign-in requires a connection to CoreGrid.</UIText>
+            <UIText>You are offline — sign-in requires a connection to Sherivs.</UIText>
           ) : null}
         </Card>
 

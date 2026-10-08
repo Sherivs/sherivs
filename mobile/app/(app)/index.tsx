@@ -12,7 +12,7 @@ export default function HomeScreen() {
     return (
       <ScreenShell>
         <View style={styles.container}>
-          <LoadingState message="Restoring your CoreGrid session…" />
+          <LoadingState message="Restoring your Sherivs session…" />
         </View>
       </ScreenShell>
     );
@@ -34,7 +34,7 @@ export default function HomeScreen() {
         <View style={styles.container}>
           <ErrorState
             headline="Identity not yet provisioned"
-            detail="Your account is authenticated but no CoreGrid actor record is visible to you yet. Contact your organization administrator."
+            detail="Your account is authenticated but no Sherivs actor record is visible to you yet. Contact your organization administrator."
           />
         </View>
       </ScreenShell>

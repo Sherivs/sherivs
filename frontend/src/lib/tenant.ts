@@ -5,17 +5,20 @@
  *   1. `?school=<slug>` query param
  *   2. First subdomain label of the hostname, when not a known platform host
  *
- * Platform hosts (universalschoolos.com, app.universalschoolos.com, localhost)
- * resolve to `null` — meaning the visitor landed on the platform marketing/
- * super-admin site, not a tenant site.
+ * Platform hosts (sherivs.com, www./app.sherivs.com, localhost) resolve to
+ * `null` — meaning the visitor landed on the Sherivs public site or the
+ * platform workspace, not an organization's site.
  *
- * NOTE (runtime migration): these platform domains are runtime
- * configuration. Update PLATFORM_HOSTS to the runtime's domains
- * (e.g. coregridscholar.com) when the platform DNS is cut over.
+ * The universalschoolos.com hosts are kept so existing links and DNS keep
+ * resolving to the platform during the brand migration; they must not be
+ * removed until the redirect plan in SHERIVS_BRAND_MIGRATION.md is executed.
  */
-const PLATFORM_HOSTS = [
+export const PLATFORM_HOSTS: readonly string[] = [
   "localhost",
   "127.0.0.1",
+  "sherivs.com",
+  "www.sherivs.com",
+  "app.sherivs.com",
   "universalschoolos.com",
   "www.universalschoolos.com",
   "app.universalschoolos.com",

@@ -18,7 +18,7 @@ import { trustFabricReport } from "@/lib/trust-fabric-report";
  */
 export const Route = createFileRoute("/_authenticated/super-admin/trust-fabric")({
   component: TrustFabricPage,
-  head: () => ({ meta: [{ title: "Trust fabric — CoreGrid" }] }),
+  head: () => ({ meta: [{ title: "Trust fabric — Sherivs" }] }),
 });
 
 function TrustFabricPage() {
