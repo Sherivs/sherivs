@@ -140,9 +140,13 @@ describe("Route modules — real links, no fake submissions, landmarks", () => {
     expect(shell).toContain("<main");
     expect(shell).toContain("<footer");
     expect(shell).toMatch(/aria-label="Site"/);
-    for (const anchor of ["capabilities", "runtimes", "security", "pricing"]) {
+    expect(home).toContain("id={beat.id}");
+    for (const anchor of ["capabilities", "security", "pricing"]) {
       expect(home).toContain(`id="${anchor}"`);
     }
+    expect(read("frontend/src/routes/(site)/-content/narrative.ts")).toContain(
+      'id: "runtimes"',
+    );
   });
 
   it("keeps every homepage heading labelled for assistive technology", () => {
