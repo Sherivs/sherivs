@@ -76,3 +76,12 @@ Operator follow-up: "So now deploy the project into vercel, because it is showin
 3. **Bare-alias 404 elevated to a platform-level finding:** after the full API-side remediation pass (alias assignment record present — `POST /v13/deployments/{uid}/aliases` returned the pre-existing assignment; domain delete + re-add cycle re-verified instantly; DNS resolves to Vercel anycast; ALL edge IPs 404 the bare hostname while serving the team-suffixed alias) the bare hostname `coregrid-scholar-migration.vercel.app` still answers edge-level `NOT_FOUND`. Hostname-level Vercel edge-route anomaly — escalate to Vercel support. Working production URL: `https://coregrid-scholar-migration-vibeora.vercel.app`.
 4. **Runtime health:** build events clean; runtime request logs empty BY DESIGN — the SSO deployment protection wall blocks all anonymous traffic (§7: an auth boundary is not removed agent-side). Team owner access: open the URL in a browser logged into Vercel SSO. Public access = dashboard toggle (Settings → Deployment Protection), operator-only.
 5. No code changes in this addendum (infra + ledger only); no new verify run required (the gate result for b3ba12b stands: exit 0).
+
+## Addendum 2 — fra1 stale-route diagnosis (2026-10-08T05:05Z, DECISIONS.md #214 addendum §k–§m)
+
+Operator screenshot: 404 NOT_FOUND from Vercel edge PoP `fra1` on the `-vibeora` production link at 04:53Z.
+
+1. **Diagnosis:** from this VM (cle1) the alias served 302 10/10; distributed multi-vantage checks (check-host.net) then proved the route healthy from **10/10 European and global nodes** (Germany ×2, Netherlands, Poland, Bulgaria, Cyprus, etc.) after a 4th production deploy. The fra1 404 was a stale edge route left over from the deletion of the 82 failed deployments (routes pinned to deleted deployments 404 until they expire) — self-healed.
+2. **Fresh-hostname experiment (added then removed):** `coregrid-scholar.vercel.app` could not gain an edge route from ANY PoP despite being verified, alias-assigned, and covered by a fresh production deploy — confirming bare-style `.vercel.app` hostnames for this project cannot route (claimed globally outside this team; only `-vibeora`-suffixed hostnames route). Experimental domain deleted; domain set restored to the two original names.
+3. **Current production:** `dpl_4EuLsthtmrmpqLkxkpeUfuRrocpB` READY, built from bcf3a8a; dashboard shows 8 deployments, ALL READY.
+4. No code changes (infra diagnosis + ledger only).
