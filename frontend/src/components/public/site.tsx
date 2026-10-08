@@ -6,6 +6,7 @@
  */
 import type { SchoolRow } from "@/contexts/app-context";
 import { Navbar, Footer, useSocialLinks } from "./_shared";
+import { resolveOrgPublicExperience } from "@/lib/experience/org-public-experience";
 import {
   HeroSection,
   AboutSection,
@@ -28,6 +29,12 @@ import {
 
 export function PublicSchoolSite({ school }: { school: SchoolRow }) {
   const socials = useSocialLinks(school);
+  const experience = resolveOrgPublicExperience({
+    orgName: school.name,
+    runtime: "scholar",
+    flags: school as unknown as Record<string, boolean | undefined>,
+  });
+  const enabled = new Set(experience.sections.map((section) => section.id));
   const on = (k: keyof SchoolRow) => school[k] !== false;
   return (
     <div className="relative min-h-dvh bg-[#0a0f1e] text-white">
@@ -37,22 +44,28 @@ export function PublicSchoolSite({ school }: { school: SchoolRow }) {
         {on("section_about_enabled" as keyof SchoolRow) && <AboutSection school={school} />}
         {on("section_why_us_enabled" as keyof SchoolRow) && <WhyUsSection school={school} />}
         {on("section_programs_enabled" as keyof SchoolRow) && <ProgramsSection school={school} />}
-        {on("section_facilities_enabled" as keyof SchoolRow) && (
+        {enabled.has("facilities") && on("section_facilities_enabled" as keyof SchoolRow) && (
           <FacilitiesSection school={school} />
         )}
-        {on("section_facilities_enabled" as keyof SchoolRow) && <SportsSection school={school} />}
-        {on("section_facilities_enabled" as keyof SchoolRow) && <MealsSection school={school} />}
-        {on("section_facilities_enabled" as keyof SchoolRow) && (
+        {enabled.has("facilities") && on("section_facilities_enabled" as keyof SchoolRow) && (
+          <SportsSection school={school} />
+        )}
+        {enabled.has("facilities") && on("section_facilities_enabled" as keyof SchoolRow) && (
+          <MealsSection school={school} />
+        )}
+        {enabled.has("facilities") && on("section_facilities_enabled" as keyof SchoolRow) && (
           <TransportSection school={school} />
         )}
-        {on("section_faculty_enabled" as keyof SchoolRow) && <StaffSection school={school} />}
+        {enabled.has("faculty") && on("section_faculty_enabled" as keyof SchoolRow) && (
+          <StaffSection school={school} />
+        )}
         <GallerySection school={school} />
         {on("section_news_enabled" as keyof SchoolRow) && <NewsEventsSection school={school} />}
         {on("section_testimonials_enabled" as keyof SchoolRow) && (
           <TestimonialsSection school={school} />
         )}
         {on("section_blog_enabled" as keyof SchoolRow) && <BlogSection school={school} />}
-        {on("section_admissions_enabled" as keyof SchoolRow) && (
+        {enabled.has("admissions") && on("section_admissions_enabled" as keyof SchoolRow) && (
           <AdmissionsCtaSection school={school} />
         )}
         {on("section_faqs_enabled" as keyof SchoolRow) && <FaqsSection school={school} />}

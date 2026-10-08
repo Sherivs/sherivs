@@ -10,7 +10,8 @@ import { type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { AppProvider } from "@/contexts/app-context";
-import { PLATFORM_PAGE_DESCRIPTION, PLATFORM_PAGE_TITLE } from "@/lib/platform";
+import { PLATFORM_NAME, PLATFORM_PAGE_DESCRIPTION, PLATFORM_PAGE_TITLE } from "@/lib/platform";
+import { EXPERIENCE_PREFERENCE_BOOTSTRAP_SCRIPT } from "@/lib/experience/account-preferences";
 import { Toaster } from "@/components/ui/sonner";
 import { RouteProgressBar } from "@/components/route-progress-bar";
 import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme";
@@ -81,14 +82,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: PLATFORM_PAGE_DESCRIPTION },
       { property: "og:description", content: PLATFORM_PAGE_DESCRIPTION },
       { name: "twitter:description", content: PLATFORM_PAGE_DESCRIPTION },
-      { property: "og:image", content: "https://universalschoolos.com/og-image.png" },
-      { name: "twitter:image", content: "https://universalschoolos.com/og-image.png" },
-      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:card", content: "summary" },
       { property: "og:type", content: "website" },
       // Served, generated manifest (see routes/manifest[.]webmanifest.ts).
-      { name: "theme-color", content: "#1d4ed8" },
+      { name: "theme-color", content: "#0c0e12" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-title", content: "CoreGrid" },
+      { name: "apple-mobile-web-app-title", content: PLATFORM_NAME },
       { name: "mobile-web-app-capable", content: "yes" },
     ],
     links: [
@@ -98,7 +97,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", type: "image/png", sizes: "192x192", href: "/icons/icon-192.png" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap",
       },
     ],
   }),
@@ -114,6 +113,7 @@ function RootShell({ children }: { children: ReactNode }) {
       <head>
         <HeadContent />
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: EXPERIENCE_PREFERENCE_BOOTSTRAP_SCRIPT }} />
       </head>
       <body>
         <a

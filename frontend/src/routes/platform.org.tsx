@@ -6,7 +6,9 @@
  * the COREGRID_INTERNAL role groups by the platform-org engine: this page lists
  * what the engine produced, and shows the structural audit that must be empty.
  */
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { PublicShell } from "@/components/experience/public-shell";
+import { PLATFORM_NAME } from "@/lib/platform";
 import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,11 +25,11 @@ export const Route = createFileRoute("/platform/org")({
   component: PlatformOrganization,
   head: () => ({
     meta: [
-      { title: "CoreGrid internal operating workspace — generated organization" },
+      { title: `${PLATFORM_NAME} internal operating workspace — generated organization` },
       {
         name: "description",
         content:
-          "The CoreGrid platform organization: departments, the roles that staff them and the widgets each department renders — generated from the role engine, audited on every render.",
+          "The Sherivs platform organization: departments, the roles that staff them and the widgets each department renders — generated from the role engine, audited on every render.",
       },
     ],
   }),
@@ -39,30 +41,12 @@ function PlatformOrganization() {
   const issues = useMemo(() => auditPlatformOrg(), []);
 
   return (
-    <div className="min-h-screen bg-[color:var(--background)] text-[color:var(--foreground)]">
-      <header className="border-b border-border">
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="font-display text-lg font-bold">CoreGrid organization</p>
-            <p className="text-[11px] uppercase tracking-widest text-muted-foreground">
-              internal operating workspace · generated from role data
-            </p>
-          </div>
-          <nav className="flex flex-wrap gap-4 text-xs">
-            <Link to="/" className="underline">
-              Command Centre
-            </Link>
-            <Link to="/platform" className="underline">
-              The platform
-            </Link>
-            <Link to="/reality/$class" params={{ class: "company" }} className="underline">
-              Generated environment
-            </Link>
-          </nav>
-        </div>
-      </header>
-
-      <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
+    <PublicShell>
+    <div className="bg-[color:var(--background)] text-[color:var(--foreground)]">
+      <div className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
+        <p className="text-[11px] uppercase tracking-widest text-muted-foreground">
+          {PLATFORM_NAME} internal operating workspace · generated from role data
+        </p>
         <section className="space-y-2">
           <h1 className="font-display text-2xl font-bold">
             The platform organization staffs {roles.length} roles across{" "}
@@ -164,10 +148,12 @@ function PlatformOrganization() {
         </section>
 
         <p className="text-[11px] text-muted-foreground">
-          Every department renders in the CoreGrid internal workspace and is audited above on every
-          render. Departments are provisioned from role data, never configured by hand.
+          Every department renders in the Sherivs internal workspace catalog and is audited above on every
+          render. Departments are provisioned from role data, never configured by hand. Live internal
+          operations remain on the super-admin security boundary.
         </p>
-      </main>
+      </div>
     </div>
+    </PublicShell>
   );
 }

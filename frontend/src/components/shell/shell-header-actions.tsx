@@ -6,7 +6,7 @@
  * from platform contracts (`buildNotificationSurface`, `buildProfileMenu`)
  * over server-resolved session data — the shell imports no domain module.
  */
-import { Search as SearchIcon } from "lucide-react";
+import { CircleHelp, Search as SearchIcon } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationBell } from "@/components/shell/notification-bell";
 import { ProfileMenu } from "@/components/shell/profile-menu";
@@ -53,6 +53,14 @@ export function ShellHeaderActions({
         <SearchIcon className="size-4" />
       </button>
       <ThemeToggle className="hidden xs:inline-flex" />
+      <a
+        href="/resources/docs"
+        className="hidden sm:inline-flex size-8 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent"
+        aria-label="Help and documentation"
+        title="Help"
+      >
+        <CircleHelp className="size-3.5" />
+      </a>
       <NotificationBell viewer={notificationViewer} />
       <ProfileMenu
         displayName={displayName}

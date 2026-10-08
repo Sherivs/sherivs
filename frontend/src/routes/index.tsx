@@ -3,51 +3,44 @@ import { useEffect } from "react";
 import { useApp } from "@/contexts/app-context";
 import { scholarWorkspaceHome } from "@/lib/runtime/nav-registry";
 import { PublicSchoolSite } from "@/components/public/site";
-import { CommandCentre } from "@/components/command-centre/command-centre";
-import { PLATFORM_NAME } from "@/lib/platform";
-import { INSTALLED_RUNTIME_DESCRIPTION as SCHOLAR_RUNTIME_DESCRIPTION } from "@/lib/runtime/installed-runtimes";
+import { PublicShell } from "@/components/experience/public-shell";
+import { PublicHome } from "@/components/experience/public-home";
+import { PLATFORM_NAME, PLATFORM_PAGE_DESCRIPTION, PLATFORM_PUBLIC_ORIGIN } from "@/lib/platform";
 
 export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: `CoreGrid Command Centre — ${SCHOLAR_RUNTIME_DESCRIPTION}` },
-      {
-        name: "description",
-        content:
-          "The CoreGrid Command Centre — the platform operating surface. Provision organizations, roles and policies across a 51-phase governed platform.",
-      },
-      { property: "og:title", content: `${PLATFORM_NAME} Command Centre` },
-      {
-        property: "og:description",
-        content: "Provision organizations, roles and policies on the CoreGrid platform.",
-      },
+      { title: `${PLATFORM_NAME} — Institutional Intelligence Infrastructure` },
+      { name: "description", content: PLATFORM_PAGE_DESCRIPTION },
+      { property: "og:title", content: PLATFORM_NAME },
+      { property: "og:description", content: PLATFORM_PAGE_DESCRIPTION },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://universalschoolos.com/" },
+      { property: "og:url", content: `${PLATFORM_PUBLIC_ORIGIN}/` },
     ],
-    links: [{ rel: "canonical", href: "https://universalschoolos.com/" }],
+    links: [{ rel: "canonical", href: `${PLATFORM_PUBLIC_ORIGIN}/` }],
   }),
 });
 
 function Index() {
-  const { loading, school, tenantSlug, role, profile, superAdmin } = useApp();
+  const { loading, school, tenantSlug, role } = useApp();
   const navigate = useNavigate();
 
-  // Signed-in users (on the platform host, not a tenant site) → their dashboard
+  // Signed-in users on the platform host (not a tenant site) → their workspace.
+  // Never force LOGIN → Scholar; home is resolved from the session role.
   useEffect(() => {
     if (!loading && role && !tenantSlug) {
       navigate({ to: scholarWorkspaceHome(role), replace: true });
     }
   }, [loading, role, tenantSlug, navigate]);
 
-  // Per-tenant document title + meta description + OG image + JSON-LD
   useEffect(() => {
     if (!school) return;
     const prevTitle = document.title;
     const tagline =
       (school.hero_subheadline as string | null) ??
       (school.motto as string | null) ??
-      "Official school website";
+      "Official website";
     document.title = `${school.name} — ${tagline}`;
     const desc = ((school.about as string | null) ?? tagline).slice(0, 300);
 
@@ -80,7 +73,6 @@ function Index() {
     }
     cleanup.push(upsertMeta("name", "twitter:card", logo ? "summary_large_image" : "summary"));
 
-    // JSON-LD: EducationalOrganization + BreadcrumbList
     const ld = document.createElement("script");
     ld.type = "application/ld+json";
     const phone = (school.phone as string | null) ?? undefined;
@@ -88,7 +80,7 @@ function Index() {
     ld.text = JSON.stringify([
       {
         "@context": "https://schema.org",
-        "@type": "EducationalOrganization",
+        "@type": "Organization",
         name: school.name,
         description: desc,
         url: window.location.href,
@@ -98,15 +90,6 @@ function Index() {
         address: (school.address as string | null)
           ? { "@type": "PostalAddress", streetAddress: school.address as string }
           : undefined,
-        contactPoint:
-          phone || email
-            ? {
-                "@type": "ContactPoint",
-                contactType: "admissions",
-                telephone: phone,
-                email,
-              }
-            : undefined,
       },
       {
         "@context": "https://schema.org",
@@ -129,13 +112,13 @@ function Index() {
     return <div className="min-h-dvh grid place-items-center text-muted-foreground">Loading…</div>;
   }
 
-  // Tenant context (subdomain OR ?school=slug) → render that school's public site
   if (school) {
     return <PublicSchoolSite school={school} />;
   }
 
-  // CoreGrid Command Centre — the platform's primary workspace surface for the
-  // African Educational Runtime (Phases 1–51). Dynamic workspace: from here an
-  // authorized operator provisions a school, its role model, and its policies.
-  return <CommandCentre />;
+  return (
+    <PublicShell>
+      <PublicHome />
+    </PublicShell>
+  );
 }

@@ -13,7 +13,7 @@ import { buildRuntimeView } from "@/lib/surfaces/runtime-view";
 export const Route = createFileRoute("/_authenticated/runtime")({
   component: GeneratedRuntime,
   head: () => ({
-    meta: [{ title: "Generated runtime — CoreGrid" }],
+    meta: [{ title: "Generated runtime — Sherivs" }],
   }),
 });
 
@@ -168,13 +168,13 @@ function GeneratedRuntime() {
 
       <section className="space-y-3">
         <h2 className="flex items-center gap-2 font-display text-lg font-semibold">
-          <Building2 className="size-4 text-muted-foreground" /> CoreGrid departments you staff (
+          <Building2 className="size-4 text-muted-foreground" /> Sherivs departments you staff (
           {view.platformDepartments.length})
         </h2>
         {view.platformDepartments.length === 0 ? (
           <p className="rounded-lg border border-border p-4 text-xs text-muted-foreground">
             None. The platform organization generates a department only for the roles that staff it
-            — this is the CoreGrid internal workspace, not a tenant workspace.
+            — this is the Sherivs internal workspace, not a tenant workspace.
           </p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">

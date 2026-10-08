@@ -230,7 +230,7 @@ describe("offline shell service worker", () => {
     loadServiceWorker();
     dispatch("install", {});
     await drained();
-    const shell = cachesStore.get("coregrid-app-shell-v1");
+    const shell = cachesStore.get("sherivs-app-shell-v1");
     expect(shell).toBeDefined();
     expect(shell?.entries.has("/")).toBe(true);
   });
@@ -241,7 +241,7 @@ describe("offline shell service worker", () => {
     loadServiceWorker();
     dispatch("fetch", { request: { mode: "navigate", method: "GET", url: "/timetable" } });
     await drained();
-    const shell = cachesStore.get("coregrid-app-shell-v1");
+    const shell = cachesStore.get("sherivs-app-shell-v1");
     expect(await shell?.entries.has("/timetable")).toBe(true);
     const response = await firstResponse();
     expect(response).toBeInstanceOf(Response);
@@ -252,13 +252,13 @@ describe("offline shell service worker", () => {
     loadServiceWorker();
     dispatch("fetch", { request: { mode: "navigate", method: "GET", url: "/login" } });
     await drained();
-    const shell = cachesStore.get("coregrid-app-shell-v1");
+    const shell = cachesStore.get("sherivs-app-shell-v1");
     expect(await shell?.entries.has("/login")).toBe(false);
   });
 
   it("falls back to the cached navigation when offline", async () => {
     loadServiceWorker();
-    const shell = await sandbox.caches.open("coregrid-app-shell-v1");
+    const shell = await sandbox.caches.open("sherivs-app-shell-v1");
     await shell.put({ url: "/timetable" }, new Response("<html>cached page</html>"));
     fetchImpl = () => Promise.reject(new TypeError("Failed to fetch"));
 

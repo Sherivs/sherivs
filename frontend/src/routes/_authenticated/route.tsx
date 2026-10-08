@@ -18,7 +18,7 @@ import { CommandCenterMount } from "@/components/command-center";
 import { ShellHeaderActions } from "@/components/shell/shell-header-actions";
 import { WorkspaceSwitcher } from "@/components/shell/workspace-switcher";
 import { PLATFORM_NAME } from "@/lib/platform";
-import { INSTALLED_RUNTIME_NAME as SCHOLAR_RUNTIME_NAME } from "@/lib/runtime/installed-runtimes";
+import { SherivsMark } from "@/components/experience/sherivs-mark";
 import { WorkspaceBottomNav } from "@/components/mobile-bottom-nav";
 import { OfflineBanner } from "@/components/offline-banner";
 import { AppFramePreview } from "@/components/app-frame-preview";
@@ -92,9 +92,9 @@ function AuthenticatedLayout() {
         <div className="max-w-md uos-card p-8 text-center">
           <h1 className="font-display text-xl font-bold">Account not yet linked</h1>
           <p className="mt-3 text-sm text-muted-foreground">
-            Your sign-in is valid, but your account has not been linked to a school yet. A school
-            administrator (or a CoreGrid platform super admin) needs to assign you a role before you
-            can open a portal.
+            Your sign-in is valid, but your account has not been linked to an organization yet. An
+            organization administrator (or a Sherivs platform super admin) needs to assign you a
+            role before you can open a workspace.
           </p>
           <button
             onClick={async () => {
@@ -152,15 +152,21 @@ function AuthenticatedLayout() {
               <div className="flex items-center gap-2 min-w-0">
                 {role && <SidebarTrigger />}
                 <Link to={dashHref} className="flex items-center gap-2 min-w-0">
-                  <div className="size-8 rounded-lg uos-tenant-bg grid place-items-center font-bold shrink-0">
-                    {(school?.name?.[0] ?? "U") as string}
-                  </div>
+                  {school ? (
+                    <div className="size-8 rounded-lg uos-tenant-bg grid place-items-center font-bold shrink-0">
+                      {(school.name?.[0] ?? PLATFORM_NAME[0]) as string}
+                    </div>
+                  ) : (
+                    <span className="shrink-0">
+                      <SherivsMark size={32} />
+                    </span>
+                  )}
                   <div className="leading-tight min-w-0">
                     <div className="font-display font-bold text-sm truncate">
-                      {school?.name ?? `${PLATFORM_NAME} · ${SCHOLAR_RUNTIME_NAME}`}
+                      {school?.name ?? (superAdmin ? `${PLATFORM_NAME} internal` : PLATFORM_NAME)}
                     </div>
                     <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                      {experience.roleTitle}
+                      {superAdmin && !school ? "Internal boundary" : experience.roleTitle}
                     </div>
                   </div>
                 </Link>

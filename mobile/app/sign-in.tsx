@@ -36,7 +36,7 @@ export default function SignInScreen() {
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.root}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.heading}>
-          <Text style={typography.title}>CoreGrid</Text>
+          <Text style={typography.title}>Sherivs</Text>
           <Text style={typography.muted}>
             Sign in with your CoreGrid account. Authentication is handled by the shared Supabase identity
             service — the same one the web application uses.

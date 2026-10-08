@@ -29,6 +29,8 @@ const read = (ref: string) => readFileSync(join(ROOT, ref), "utf8");
 
 const SITE_LAYOUT = "frontend/src/routes/(site)/route.tsx";
 const SITE_PAGE = "frontend/src/routes/(site)/coregrid.tsx";
+const PUBLIC_SHELL = "frontend/src/components/experience/public-shell.tsx";
+const PUBLIC_HOME = "frontend/src/components/experience/public-home.tsx";
 
 describe("Pricing tier catalog (typed module)", () => {
   it("exposes the five commercial tiers by stable id", () => {
@@ -110,6 +112,8 @@ describe("Site content view-models", () => {
 describe("Route modules — real links, no fake submissions, landmarks", () => {
   const layout = read(SITE_LAYOUT);
   const page = read(SITE_PAGE);
+  const shell = read(PUBLIC_SHELL);
+  const home = read(PUBLIC_HOME);
 
   it("registers the (site) layout group and the /coregrid page in the generated tree", () => {
     const tree = read("frontend/src/routeTree.gen.ts");
@@ -122,45 +126,42 @@ describe("Route modules — real links, no fake submissions, landmarks", () => {
     expect(page).toContain('createFileRoute("/(site)/coregrid")');
   });
 
-  it("links sign-up and sign-in to the real auth surface at /auth", () => {
-    for (const source of [layout, page]) {
-      expect(source).toContain('to="/auth"');
-    }
-    // No dead platform sign-up route is invented.
-    expect(layout).not.toContain('to="/signup"');
-    expect(page).not.toContain('to="/signup"');
+  it("links sign-in to the real auth surface at /auth", () => {
+    expect(shell).toContain('to="/auth"');
+    expect(home).toContain('to="/auth"');
+    expect(shell).not.toContain('to="/signup"');
+    expect(home).not.toContain('to="/signup"');
   });
 
-  it("contains no form and no fake submission — every CTA is a route link", () => {
-    for (const source of [layout, page]) {
+  it("contains no form and no fake submission", () => {
+    for (const source of [layout, page, shell, home]) {
       expect(source).not.toMatch(/<form\b/);
       expect(source).not.toMatch(/onSubmit/);
-      expect(source).not.toMatch(/<button\b/);
     }
+    expect(home).not.toMatch(/<button\b/);
   });
 
   it("renders semantic landmarks and the four anchored sections", () => {
-    expect(layout).toContain("<header");
-    expect(layout).toContain("<main");
-    expect(layout).toContain("<footer");
-    expect(layout).toMatch(/aria-label="Site"/);
+    expect(shell).toContain("<header");
+    expect(shell).toContain("<main");
+    expect(shell).toContain("<footer");
+    expect(shell).toMatch(/aria-label="Site"/);
     for (const anchor of ["capabilities", "runtimes", "security", "pricing"]) {
-      expect(page).toContain(`id="${anchor}"`);
-      expect(layout).toContain(`"/coregrid#${anchor}"`);
+      expect(home).toContain(`id="${anchor}"`);
     }
   });
 
   it("keeps every heading labelled for assistive technology", () => {
-    expect(page).toMatch(/aria-labelledby="coregrid-hero"/);
+    expect(home).toMatch(/aria-labelledby="sherivs-hero"/);
     for (const anchor of ["capabilities", "runtimes", "security", "pricing"]) {
-      expect(page).toMatch(new RegExp(`aria-labelledby="${anchor}-heading"`));
-      expect(page).toContain(`id="${anchor}-heading"`);
+      expect(home).toMatch(new RegExp(`aria-labelledby="${anchor}-heading"`));
+      expect(home).toContain(`id="${anchor}-heading"`);
     }
   });
 
   it("uses no raster images, so no missing alt text is possible", () => {
-    expect(layout).not.toMatch(/<img\b/);
-    expect(page).not.toMatch(/<img\b/);
+    expect(shell).not.toMatch(/<img\b/);
+    expect(home).not.toMatch(/<img\b/);
   });
 });
 
@@ -169,9 +170,12 @@ describe("Platform narration neutrality (LAW 3 / LAW 5)", () => {
     /CoreGrid Scholar|Scholar's|Scholar is|Scholar consumes|Scholar binds|Scholar resolves|Scholar remains|Scholar-only|Scholar-flavored|Scholar catalog|Scholar runtime \(runtime-001\)/;
   const SELF_IDENTIFICATION = /^\s*(?:\/\*|\*|\/\/)\s*CoreGrid Scholar\b/m;
 
-  const sources = ["-content/pricing-tiers.ts", "-content/site-content.ts", "route.tsx", "coregrid.tsx"].map(
-    (ref) => read(`frontend/src/routes/(site)/${ref}`),
-  );
+  const sources = [
+    "frontend/src/routes/(site)/-content/pricing-tiers.ts",
+    "frontend/src/routes/(site)/-content/site-content.ts",
+    "frontend/src/routes/(site)/route.tsx",
+    "frontend/src/routes/(site)/coregrid.tsx",
+  ].map((ref) => read(ref));
 
   it("never narrates a runtime as the platform", () => {
     for (const source of sources) {

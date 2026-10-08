@@ -6,10 +6,10 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * CoreGrid — Apple-inspired glassmorphism design system.
- * Deep navy structural surfaces, frosted glass cards, tenant-tunable
- * primary/secondary read from school.primary_color / secondary_color
- * and injected at runtime onto :root as --tenant-primary / --tenant-secondary.
+ * Sherivs design tokens.
+ * Deep neutral structural surfaces, restrained signal accents, and a
+ * controlled tenant brand overlay (--tenant-primary / --tenant-secondary).
+ * Glass is a layering tool, not the brand.
  */
 
 @theme inline {
@@ -48,11 +48,27 @@
   --color-sidebar-ring: var(--ring);
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
   --breakpoint-xs: 380px;
+  --breakpoint-sm: 768px;
+  --breakpoint-md: 1024px;
+  --breakpoint-lg: 1280px;
+  --breakpoint-xl: 1440px;
+  --breakpoint-2xl: 1600px;
+  --breakpoint-uw: 1920px;
 }
 
 :root {
-  --radius: 0.875rem;
+  /* Sherivs identity tokens — brand, not tenant fashion. */
+  --sherivs-ink: #0c0e12;
+  --sherivs-fog: #151821;
+  --sherivs-paper: #f3f1ec;
+  --sherivs-rule: rgba(12, 14, 18, 0.12);
+  --sherivs-signal: #7a9bff;
+  --sherivs-signal-soft: #c9d7ff;
+  --sherivs-evidence: #2f9e73;
+  --radius: 0.625rem;
 
   /* Structural surfaces */
   --surface-1: #0a0f1e;
@@ -98,7 +114,7 @@
   --accent-foreground: var(--text-primary);
   --border: var(--glass-border);
   --input: rgba(255, 255, 255, 0.10);
-  --ring: rgba(14, 165, 233, 0.55);
+  --ring: var(--sherivs-signal);
   --destructive: oklch(0.62 0.22 25);
   --destructive-foreground: oklch(0.98 0 0);
 
@@ -464,7 +480,7 @@ button, a, [role="button"], input, select, textarea {
 
 /* Global focus-visible — accessibility */
 :focus-visible {
-  outline: 2px solid #0d9488;
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -472,7 +488,7 @@ button, a, [role="button"], input, select, textarea {
 button:focus-visible,
 a:focus-visible,
 [role="button"]:focus-visible {
-  outline: 2px solid #0d9488;
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
 
@@ -847,3 +863,75 @@ a:focus-visible,
 
 :root { color-scheme: dark; }
 .light { color-scheme: light; }
+
+.font-serif, .sherivs-public h1 { font-family: var(--font-serif); }
+.font-mono { font-family: var(--font-mono); }
+
+.sherivs-public {
+  --surface-1: var(--sherivs-paper);
+  --surface-2: #fffcf7;
+  --surface-3: #ebe8e2;
+  --background: var(--sherivs-paper);
+  --foreground: var(--sherivs-ink);
+  --text-primary: var(--sherivs-ink);
+  --text-secondary: color-mix(in oklab, var(--sherivs-ink) 64%, transparent);
+  --text-muted: color-mix(in oklab, var(--sherivs-ink) 46%, transparent);
+  --muted-foreground: var(--text-secondary);
+  --card: #fffcf7;
+  --card-foreground: var(--sherivs-ink);
+  --popover: #fffcf7;
+  --popover-foreground: var(--sherivs-ink);
+  --muted: color-mix(in oklab, var(--sherivs-ink) 5%, transparent);
+  --accent: color-mix(in oklab, var(--sherivs-ink) 6%, transparent);
+  --accent-foreground: var(--sherivs-ink);
+  --border: var(--sherivs-rule);
+  --input: color-mix(in oklab, var(--sherivs-ink) 14%, transparent);
+  --ring: var(--sherivs-ink);
+  --glass-border: var(--sherivs-rule);
+  --tenant-primary: var(--sherivs-ink);
+  --tenant-secondary: var(--sherivs-signal);
+  --primary: var(--sherivs-ink);
+  --primary-foreground: var(--sherivs-paper);
+  color: var(--sherivs-ink);
+  background: var(--sherivs-paper);
+  color-scheme: light;
+}
+.light .sherivs-public {
+  background: var(--sherivs-paper);
+  color: var(--sherivs-ink);
+}
+.sherivs-signal-plane {
+  background:
+    linear-gradient(180deg, color-mix(in oklab, var(--sherivs-signal) 8%, transparent), transparent 70%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+html.sherivs-reduced-motion *,
+html.sherivs-reduced-motion *::before,
+html.sherivs-reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+html.sherivs-high-contrast {
+  --text-primary: #000000;
+  --text-secondary: #111111;
+  --border: #000000;
+  --ring: #000000;
+}
+html.sherivs-high-contrast.dark {
+  --text-primary: #ffffff;
+  --text-secondary: #f5f5f5;
+  --border: #ffffff;
+  --ring: #ffffff;
+}
+html.sherivs-compact .portal-content { font-size: 0.925rem; }

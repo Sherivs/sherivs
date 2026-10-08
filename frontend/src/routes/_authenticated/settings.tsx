@@ -14,7 +14,21 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Save, Shield, User2, Lock, Bot } from "lucide-react";
+import { Save, Shield, User2, Lock, Bot, Contrast, Moon } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
+import {
+  applyExperiencePreferences,
+  readContrastPreference,
+  readDensityPreference,
+  readMotionPreference,
+  setContrastPreference,
+  setDensityPreference,
+  setMotionPreference,
+  type ContrastPreference,
+  type DensityPreference,
+  type MotionPreference,
+} from "@/lib/experience/account-preferences";
+import { SUPPORTED_LOCALES, DEFAULT_LOCALE } from "@/lib/locale";
 
 import { PortalPage, GlassCard, PortalPageSkeleton } from "@/components/portal-shell";
 import { useApp } from "@/contexts/app-context";
@@ -77,7 +91,7 @@ function SettingsPage() {
   }
 
   return (
-    <PortalPage title="Settings" subtitle="Manage your profile, password, and privacy">
+    <PortalPage title="Settings" subtitle="Profile, appearance, accessibility, security, and privacy">
       {!superAdmin && profile && (
         <ProfileCard
           profile={profile}
@@ -85,6 +99,8 @@ function SettingsPage() {
           onSave={(p) => saveProfile.mutate(p)}
         />
       )}
+      <AppearanceCard />
+      <AccessibilityCard />
       {!superAdmin && profile && (
         <PrivacyCard
           optedOut={!!profile.digital_twin_opt_out}
@@ -93,6 +109,7 @@ function SettingsPage() {
         />
       )}
       <PasswordCard />
+      <SecurityHonestyCard />
     </PortalPage>
   );
 }
@@ -195,9 +212,9 @@ function PrivacyCard({
     <GlassCard className="flex flex-col gap-4">
       <SectionTitle icon={<Bot className="size-4" />} title="AI & privacy" />
       <p className="text-sm text-[color:var(--text-secondary)]">
-        The platform may use a Digital Twin to draft AI-assisted summaries and parent calls based on
-        your linked data. Opting out blocks the school from including you in any AI-generated
-        communication.
+        Where a runtime offers AI assistance over your linked records, opting out blocks those
+        generations. This control does not replace authorization: the model still only receives
+        data the session is allowed to see.
       </p>
       <label className="flex items-center justify-between gap-4 rounded-xl border border-[color:var(--glass-border)] bg-[color:var(--glass-bg)] px-4 py-3">
         <span className="text-sm font-medium">Opt out of Digital Twin AI calls</span>
@@ -276,6 +293,94 @@ function SectionTitle({ icon, title }: { icon: React.ReactNode; title: string })
       {icon}
       {title}
     </div>
+  );
+}
+
+function AppearanceCard() {
+  return (
+    <GlassCard className="flex flex-col gap-4">
+      <SectionTitle icon={<Moon className="size-4" />} title="Appearance" />
+      <p className="text-sm text-[color:var(--text-secondary)]">
+        Light, dark, or system. Organization brand color is an overlay and cannot remove Sherivs
+        contrast or focus.
+      </p>
+      <ThemeToggle />
+      <p className="text-xs text-[color:var(--text-muted)]">
+        Language: {SUPPORTED_LOCALES.join(", ")} (default {DEFAULT_LOCALE}). Additional locales are
+        not shipped in V1 UI.
+      </p>
+    </GlassCard>
+  );
+}
+
+function AccessibilityCard() {
+  const [motion, setMotion] = useState<MotionPreference>(() => readMotionPreference());
+  const [density, setDensity] = useState<DensityPreference>(() => readDensityPreference());
+  const [contrast, setContrast] = useState<ContrastPreference>(() => readContrastPreference());
+
+  useEffect(() => {
+    applyExperiencePreferences({ motion, density, contrast });
+  }, [motion, density, contrast]);
+
+  return (
+    <GlassCard className="flex flex-col gap-4">
+      <SectionTitle icon={<Contrast className="size-4" />} title="Accessibility" />
+      <Field label="Motion">
+        <select
+          className="uos-input"
+          value={motion}
+          onChange={(e) => {
+            const value = e.target.value as MotionPreference;
+            setMotion(value);
+            setMotionPreference(value);
+          }}
+        >
+          <option value="system">Follow system</option>
+          <option value="full">Full motion</option>
+          <option value="reduced">Reduced motion</option>
+        </select>
+      </Field>
+      <Field label="Density">
+        <select
+          className="uos-input"
+          value={density}
+          onChange={(e) => {
+            const value = e.target.value as DensityPreference;
+            setDensity(value);
+            setDensityPreference(value);
+          }}
+        >
+          <option value="comfortable">Comfortable</option>
+          <option value="compact">Compact</option>
+        </select>
+      </Field>
+      <Field label="Contrast">
+        <select
+          className="uos-input"
+          value={contrast}
+          onChange={(e) => {
+            const value = e.target.value as ContrastPreference;
+            setContrast(value);
+            setContrastPreference(value);
+          }}
+        >
+          <option value="standard">Standard</option>
+          <option value="high">High contrast</option>
+        </select>
+      </Field>
+    </GlassCard>
+  );
+}
+
+function SecurityHonestyCard() {
+  return (
+    <GlassCard className="flex flex-col gap-3">
+      <SectionTitle icon={<Shield className="size-4" />} title="Authentication methods" />
+      <p className="text-sm text-[color:var(--text-secondary)]">
+        Password authentication is available. Passkeys, SSO, and MFA enrollment are not enabled on
+        this account surface yet — this page will not pretend they are.
+      </p>
+    </GlassCard>
   );
 }
 

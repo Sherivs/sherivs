@@ -22,3 +22,6 @@ export const FIRST_INSTALLED_RUNTIME = INSTALLED_RUNTIMES[0];
 export const INSTALLED_RUNTIME_ID = FIRST_INSTALLED_RUNTIME.id;
 export const INSTALLED_RUNTIME_NAME = FIRST_INSTALLED_RUNTIME.name;
 export const INSTALLED_RUNTIME_DESCRIPTION = FIRST_INSTALLED_RUNTIME.description;
+
+/** Customer-facing product lockup: platform + installed runtime name. */
+export const INSTALLED_RUNTIME_PRODUCT = `Sherivs ${INSTALLED_RUNTIME_NAME}`;

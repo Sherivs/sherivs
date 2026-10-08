@@ -357,9 +357,7 @@ test.describe("V1 vertical slice — longest fully-real journey", () => {
 
   test("T1 visitor lands on the public site and follows real navigation", async ({ page }) => {
     await page.goto("/coregrid");
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-      /The AI-native institutional operating system/i,
-    );
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Sherivs/i);
     for (const anchor of ["#capabilities", "#security", "#pricing"]) {
       await page.goto(`/coregrid${anchor}`);
       await expect(page.locator(anchor)).toBeVisible();

@@ -27,7 +27,19 @@ import { Route as RulesRouteImport } from './routes/rules'
 import { Route as ScholarFoundationLoopRouteImport } from './routes/scholar-foundation-loop'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SuperAdminBootstrapRouteImport } from './routes/super-admin-bootstrap'
+import { Route as siteAboutRouteImport } from './routes/(site)/about'
+import { Route as siteCareersRouteImport } from './routes/(site)/careers'
+import { Route as siteCompanyRouteImport } from './routes/(site)/company'
+import { Route as siteContactRouteImport } from './routes/(site)/contact'
 import { Route as siteCoregridRouteImport } from './routes/(site)/coregrid'
+import { Route as siteEnterpriseRouteImport } from './routes/(site)/enterprise'
+import { Route as sitePricingRouteImport } from './routes/(site)/pricing'
+import { Route as siteProvisionRouteImport } from './routes/(site)/provision'
+import { Route as siteRequestDemoRouteImport } from './routes/(site)/request-demo'
+import { Route as siteResourcesRouteImport } from './routes/(site)/resources'
+import { Route as siteSecurityRouteImport } from './routes/(site)/security'
+import { Route as siteSolutionsRouteImport } from './routes/(site)/solutions'
+import { Route as siteStatusRouteImport } from './routes/(site)/status'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as AuthenticatedBursarRouteRouteImport } from './routes/_authenticated/bursar/route'
 import { Route as AuthenticatedCommandCentreRouteRouteImport } from './routes/_authenticated/command-centre/route'
@@ -46,6 +58,16 @@ import { Route as EventsIdRouteImport } from './routes/events.$id'
 import { Route as NewsIdRouteImport } from './routes/news.$id'
 import { Route as PlatformOrgRouteImport } from './routes/platform.org'
 import { Route as RealityClassRouteImport } from './routes/reality.$class'
+import { Route as siteLegalSlugRouteImport } from './routes/(site)/legal.$slug'
+import { Route as sitePlatformAiWorkforceRouteImport } from './routes/(site)/platform.ai-workforce'
+import { Route as sitePlatformGovernanceRouteImport } from './routes/(site)/platform.governance'
+import { Route as sitePlatformIntegrationsRouteImport } from './routes/(site)/platform.integrations'
+import { Route as sitePlatformIntelligenceRouteImport } from './routes/(site)/platform.intelligence'
+import { Route as sitePlatformMemoryRouteImport } from './routes/(site)/platform.memory'
+import { Route as sitePlatformMissionsRouteImport } from './routes/(site)/platform.missions'
+import { Route as sitePlatformRealityRouteImport } from './routes/(site)/platform.reality'
+import { Route as siteResourcesSlugRouteImport } from './routes/(site)/resources.$slug'
+import { Route as siteSolutionsSlugRouteImport } from './routes/(site)/solutions.$slug'
 import { Route as AuthenticatedAdminAdmissionsRouteImport } from './routes/_authenticated/admin/admissions'
 import { Route as AuthenticatedAdminAiAssistantRouteImport } from './routes/_authenticated/admin/ai-assistant'
 import { Route as AuthenticatedAdminAnalyticsRouteImport } from './routes/_authenticated/admin/analytics'
@@ -256,9 +278,69 @@ const SuperAdminBootstrapRoute = SuperAdminBootstrapRouteImport.update({
   path: '/super-admin-bootstrap',
   getParentRoute: () => rootRouteImport,
 } as any)
+const siteAboutRoute = siteAboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteCareersRoute = siteCareersRouteImport.update({
+  id: '/careers',
+  path: '/careers',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteCompanyRoute = siteCompanyRouteImport.update({
+  id: '/company',
+  path: '/company',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteContactRoute = siteContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => siteRouteRoute,
+} as any)
 const siteCoregridRoute = siteCoregridRouteImport.update({
   id: '/coregrid',
   path: '/coregrid',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteEnterpriseRoute = siteEnterpriseRouteImport.update({
+  id: '/enterprise',
+  path: '/enterprise',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const sitePricingRoute = sitePricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteProvisionRoute = siteProvisionRouteImport.update({
+  id: '/provision',
+  path: '/provision',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteRequestDemoRoute = siteRequestDemoRouteImport.update({
+  id: '/request-demo',
+  path: '/request-demo',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteResourcesRoute = siteResourcesRouteImport.update({
+  id: '/resources',
+  path: '/resources',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteSecurityRoute = siteSecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteSolutionsRoute = siteSolutionsRouteImport.update({
+  id: '/solutions',
+  path: '/solutions',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteStatusRoute = siteStatusRouteImport.update({
+  id: '/status',
+  path: '/status',
   getParentRoute: () => siteRouteRoute,
 } as any)
 const AuthenticatedAdminRouteRoute = AuthenticatedAdminRouteRouteImport.update({
@@ -358,6 +440,58 @@ const RealityClassRoute = RealityClassRouteImport.update({
   id: '/reality/$class',
   path: '/reality/$class',
   getParentRoute: () => rootRouteImport,
+} as any)
+const siteLegalSlugRoute = siteLegalSlugRouteImport.update({
+  id: '/legal/$slug',
+  path: '/legal/$slug',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const sitePlatformAiWorkforceRoute = sitePlatformAiWorkforceRouteImport.update({
+  id: '/platform/ai-workforce',
+  path: '/platform/ai-workforce',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const sitePlatformGovernanceRoute = sitePlatformGovernanceRouteImport.update({
+  id: '/platform/governance',
+  path: '/platform/governance',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const sitePlatformIntegrationsRoute =
+  sitePlatformIntegrationsRouteImport.update({
+    id: '/platform/integrations',
+    path: '/platform/integrations',
+    getParentRoute: () => siteRouteRoute,
+  } as any)
+const sitePlatformIntelligenceRoute =
+  sitePlatformIntelligenceRouteImport.update({
+    id: '/platform/intelligence',
+    path: '/platform/intelligence',
+    getParentRoute: () => siteRouteRoute,
+  } as any)
+const sitePlatformMemoryRoute = sitePlatformMemoryRouteImport.update({
+  id: '/platform/memory',
+  path: '/platform/memory',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const sitePlatformMissionsRoute = sitePlatformMissionsRouteImport.update({
+  id: '/platform/missions',
+  path: '/platform/missions',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const sitePlatformRealityRoute = sitePlatformRealityRouteImport.update({
+  id: '/platform/reality',
+  path: '/platform/reality',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteResourcesSlugRoute = siteResourcesSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => siteResourcesRoute,
+} as any)
+const siteSolutionsSlugRoute = siteSolutionsSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => siteSolutionsRoute,
 } as any)
 const AuthenticatedAdminAdmissionsRoute =
   AuthenticatedAdminAdmissionsRouteImport.update({
@@ -1102,7 +1236,19 @@ export interface FileRoutesByFullPath {
   '/student': typeof AuthenticatedStudentRouteRouteWithChildren
   '/super-admin': typeof AuthenticatedSuperAdminRouteRouteWithChildren
   '/teacher': typeof AuthenticatedTeacherRouteRouteWithChildren
+  '/about': typeof siteAboutRoute
+  '/careers': typeof siteCareersRoute
+  '/company': typeof siteCompanyRoute
+  '/contact': typeof siteContactRoute
   '/coregrid': typeof siteCoregridRoute
+  '/enterprise': typeof siteEnterpriseRoute
+  '/pricing': typeof sitePricingRoute
+  '/provision': typeof siteProvisionRoute
+  '/request-demo': typeof siteRequestDemoRoute
+  '/resources': typeof siteResourcesRouteWithChildren
+  '/security': typeof siteSecurityRoute
+  '/solutions': typeof siteSolutionsRouteWithChildren
+  '/status': typeof siteStatusRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/runtime': typeof AuthenticatedRuntimeRoute
@@ -1112,6 +1258,16 @@ export interface FileRoutesByFullPath {
   '/news/$id': typeof NewsIdRoute
   '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
+  '/legal/$slug': typeof siteLegalSlugRoute
+  '/platform/ai-workforce': typeof sitePlatformAiWorkforceRoute
+  '/platform/governance': typeof sitePlatformGovernanceRoute
+  '/platform/integrations': typeof sitePlatformIntegrationsRoute
+  '/platform/intelligence': typeof sitePlatformIntelligenceRoute
+  '/platform/memory': typeof sitePlatformMemoryRoute
+  '/platform/missions': typeof sitePlatformMissionsRoute
+  '/platform/reality': typeof sitePlatformRealityRoute
+  '/resources/$slug': typeof siteResourcesSlugRoute
+  '/solutions/$slug': typeof siteSolutionsSlugRoute
   '/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
@@ -1259,7 +1415,19 @@ export interface FileRoutesByTo {
   '/student': typeof AuthenticatedStudentRouteRouteWithChildren
   '/super-admin': typeof AuthenticatedSuperAdminRouteRouteWithChildren
   '/teacher': typeof AuthenticatedTeacherRouteRouteWithChildren
+  '/about': typeof siteAboutRoute
+  '/careers': typeof siteCareersRoute
+  '/company': typeof siteCompanyRoute
+  '/contact': typeof siteContactRoute
   '/coregrid': typeof siteCoregridRoute
+  '/enterprise': typeof siteEnterpriseRoute
+  '/pricing': typeof sitePricingRoute
+  '/provision': typeof siteProvisionRoute
+  '/request-demo': typeof siteRequestDemoRoute
+  '/resources': typeof siteResourcesRouteWithChildren
+  '/security': typeof siteSecurityRoute
+  '/solutions': typeof siteSolutionsRouteWithChildren
+  '/status': typeof siteStatusRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/runtime': typeof AuthenticatedRuntimeRoute
@@ -1269,6 +1437,16 @@ export interface FileRoutesByTo {
   '/news/$id': typeof NewsIdRoute
   '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
+  '/legal/$slug': typeof siteLegalSlugRoute
+  '/platform/ai-workforce': typeof sitePlatformAiWorkforceRoute
+  '/platform/governance': typeof sitePlatformGovernanceRoute
+  '/platform/integrations': typeof sitePlatformIntegrationsRoute
+  '/platform/intelligence': typeof sitePlatformIntelligenceRoute
+  '/platform/memory': typeof sitePlatformMemoryRoute
+  '/platform/missions': typeof sitePlatformMissionsRoute
+  '/platform/reality': typeof sitePlatformRealityRoute
+  '/resources/$slug': typeof siteResourcesSlugRoute
+  '/solutions/$slug': typeof siteSolutionsSlugRoute
   '/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
@@ -1420,7 +1598,19 @@ export interface FileRoutesById {
   '/_authenticated/student': typeof AuthenticatedStudentRouteRouteWithChildren
   '/_authenticated/super-admin': typeof AuthenticatedSuperAdminRouteRouteWithChildren
   '/_authenticated/teacher': typeof AuthenticatedTeacherRouteRouteWithChildren
+  '/(site)/about': typeof siteAboutRoute
+  '/(site)/careers': typeof siteCareersRoute
+  '/(site)/company': typeof siteCompanyRoute
+  '/(site)/contact': typeof siteContactRoute
   '/(site)/coregrid': typeof siteCoregridRoute
+  '/(site)/enterprise': typeof siteEnterpriseRoute
+  '/(site)/pricing': typeof sitePricingRoute
+  '/(site)/provision': typeof siteProvisionRoute
+  '/(site)/request-demo': typeof siteRequestDemoRoute
+  '/(site)/resources': typeof siteResourcesRouteWithChildren
+  '/(site)/security': typeof siteSecurityRoute
+  '/(site)/solutions': typeof siteSolutionsRouteWithChildren
+  '/(site)/status': typeof siteStatusRoute
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/runtime': typeof AuthenticatedRuntimeRoute
@@ -1430,6 +1620,16 @@ export interface FileRoutesById {
   '/news/$id': typeof NewsIdRoute
   '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
+  '/(site)/legal/$slug': typeof siteLegalSlugRoute
+  '/(site)/platform/ai-workforce': typeof sitePlatformAiWorkforceRoute
+  '/(site)/platform/governance': typeof sitePlatformGovernanceRoute
+  '/(site)/platform/integrations': typeof sitePlatformIntegrationsRoute
+  '/(site)/platform/intelligence': typeof sitePlatformIntelligenceRoute
+  '/(site)/platform/memory': typeof sitePlatformMemoryRoute
+  '/(site)/platform/missions': typeof sitePlatformMissionsRoute
+  '/(site)/platform/reality': typeof sitePlatformRealityRoute
+  '/(site)/resources/$slug': typeof siteResourcesSlugRoute
+  '/(site)/solutions/$slug': typeof siteSolutionsSlugRoute
   '/_authenticated/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/_authenticated/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
   '/_authenticated/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
@@ -1580,7 +1780,19 @@ export interface FileRouteTypes {
     | '/student'
     | '/super-admin'
     | '/teacher'
+    | '/about'
+    | '/careers'
+    | '/company'
+    | '/contact'
     | '/coregrid'
+    | '/enterprise'
+    | '/pricing'
+    | '/provision'
+    | '/request-demo'
+    | '/resources'
+    | '/security'
+    | '/solutions'
+    | '/status'
     | '/messages'
     | '/notifications'
     | '/runtime'
@@ -1590,6 +1802,16 @@ export interface FileRouteTypes {
     | '/news/$id'
     | '/platform/org'
     | '/reality/$class'
+    | '/legal/$slug'
+    | '/platform/ai-workforce'
+    | '/platform/governance'
+    | '/platform/integrations'
+    | '/platform/intelligence'
+    | '/platform/memory'
+    | '/platform/missions'
+    | '/platform/reality'
+    | '/resources/$slug'
+    | '/solutions/$slug'
     | '/admin/admissions'
     | '/admin/ai-assistant'
     | '/admin/analytics'
@@ -1737,7 +1959,19 @@ export interface FileRouteTypes {
     | '/student'
     | '/super-admin'
     | '/teacher'
+    | '/about'
+    | '/careers'
+    | '/company'
+    | '/contact'
     | '/coregrid'
+    | '/enterprise'
+    | '/pricing'
+    | '/provision'
+    | '/request-demo'
+    | '/resources'
+    | '/security'
+    | '/solutions'
+    | '/status'
     | '/messages'
     | '/notifications'
     | '/runtime'
@@ -1747,6 +1981,16 @@ export interface FileRouteTypes {
     | '/news/$id'
     | '/platform/org'
     | '/reality/$class'
+    | '/legal/$slug'
+    | '/platform/ai-workforce'
+    | '/platform/governance'
+    | '/platform/integrations'
+    | '/platform/intelligence'
+    | '/platform/memory'
+    | '/platform/missions'
+    | '/platform/reality'
+    | '/resources/$slug'
+    | '/solutions/$slug'
     | '/admin/admissions'
     | '/admin/ai-assistant'
     | '/admin/analytics'
@@ -1897,7 +2141,19 @@ export interface FileRouteTypes {
     | '/_authenticated/student'
     | '/_authenticated/super-admin'
     | '/_authenticated/teacher'
+    | '/(site)/about'
+    | '/(site)/careers'
+    | '/(site)/company'
+    | '/(site)/contact'
     | '/(site)/coregrid'
+    | '/(site)/enterprise'
+    | '/(site)/pricing'
+    | '/(site)/provision'
+    | '/(site)/request-demo'
+    | '/(site)/resources'
+    | '/(site)/security'
+    | '/(site)/solutions'
+    | '/(site)/status'
     | '/_authenticated/messages'
     | '/_authenticated/notifications'
     | '/_authenticated/runtime'
@@ -1907,6 +2163,16 @@ export interface FileRouteTypes {
     | '/news/$id'
     | '/platform/org'
     | '/reality/$class'
+    | '/(site)/legal/$slug'
+    | '/(site)/platform/ai-workforce'
+    | '/(site)/platform/governance'
+    | '/(site)/platform/integrations'
+    | '/(site)/platform/intelligence'
+    | '/(site)/platform/memory'
+    | '/(site)/platform/missions'
+    | '/(site)/platform/reality'
+    | '/(site)/resources/$slug'
+    | '/(site)/solutions/$slug'
     | '/_authenticated/admin/admissions'
     | '/_authenticated/admin/ai-assistant'
     | '/_authenticated/admin/analytics'
@@ -2184,11 +2450,95 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SuperAdminBootstrapRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/(site)/about': {
+      id: '/(site)/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof siteAboutRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/careers': {
+      id: '/(site)/careers'
+      path: '/careers'
+      fullPath: '/careers'
+      preLoaderRoute: typeof siteCareersRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/company': {
+      id: '/(site)/company'
+      path: '/company'
+      fullPath: '/company'
+      preLoaderRoute: typeof siteCompanyRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/contact': {
+      id: '/(site)/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof siteContactRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
     '/(site)/coregrid': {
       id: '/(site)/coregrid'
       path: '/coregrid'
       fullPath: '/coregrid'
       preLoaderRoute: typeof siteCoregridRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/enterprise': {
+      id: '/(site)/enterprise'
+      path: '/enterprise'
+      fullPath: '/enterprise'
+      preLoaderRoute: typeof siteEnterpriseRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/pricing': {
+      id: '/(site)/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof sitePricingRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/provision': {
+      id: '/(site)/provision'
+      path: '/provision'
+      fullPath: '/provision'
+      preLoaderRoute: typeof siteProvisionRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/request-demo': {
+      id: '/(site)/request-demo'
+      path: '/request-demo'
+      fullPath: '/request-demo'
+      preLoaderRoute: typeof siteRequestDemoRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/resources': {
+      id: '/(site)/resources'
+      path: '/resources'
+      fullPath: '/resources'
+      preLoaderRoute: typeof siteResourcesRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/security': {
+      id: '/(site)/security'
+      path: '/security'
+      fullPath: '/security'
+      preLoaderRoute: typeof siteSecurityRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/solutions': {
+      id: '/(site)/solutions'
+      path: '/solutions'
+      fullPath: '/solutions'
+      preLoaderRoute: typeof siteSolutionsRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/status': {
+      id: '/(site)/status'
+      path: '/status'
+      fullPath: '/status'
+      preLoaderRoute: typeof siteStatusRouteImport
       parentRoute: typeof siteRouteRoute
     }
     '/_authenticated/admin': {
@@ -2316,6 +2666,76 @@ declare module '@tanstack/react-router' {
       fullPath: '/reality/$class'
       preLoaderRoute: typeof RealityClassRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/(site)/legal/$slug': {
+      id: '/(site)/legal/$slug'
+      path: '/legal/$slug'
+      fullPath: '/legal/$slug'
+      preLoaderRoute: typeof siteLegalSlugRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/platform/ai-workforce': {
+      id: '/(site)/platform/ai-workforce'
+      path: '/platform/ai-workforce'
+      fullPath: '/platform/ai-workforce'
+      preLoaderRoute: typeof sitePlatformAiWorkforceRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/platform/governance': {
+      id: '/(site)/platform/governance'
+      path: '/platform/governance'
+      fullPath: '/platform/governance'
+      preLoaderRoute: typeof sitePlatformGovernanceRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/platform/integrations': {
+      id: '/(site)/platform/integrations'
+      path: '/platform/integrations'
+      fullPath: '/platform/integrations'
+      preLoaderRoute: typeof sitePlatformIntegrationsRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/platform/intelligence': {
+      id: '/(site)/platform/intelligence'
+      path: '/platform/intelligence'
+      fullPath: '/platform/intelligence'
+      preLoaderRoute: typeof sitePlatformIntelligenceRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/platform/memory': {
+      id: '/(site)/platform/memory'
+      path: '/platform/memory'
+      fullPath: '/platform/memory'
+      preLoaderRoute: typeof sitePlatformMemoryRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/platform/missions': {
+      id: '/(site)/platform/missions'
+      path: '/platform/missions'
+      fullPath: '/platform/missions'
+      preLoaderRoute: typeof sitePlatformMissionsRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/platform/reality': {
+      id: '/(site)/platform/reality'
+      path: '/platform/reality'
+      fullPath: '/platform/reality'
+      preLoaderRoute: typeof sitePlatformRealityRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/resources/$slug': {
+      id: '/(site)/resources/$slug'
+      path: '/$slug'
+      fullPath: '/resources/$slug'
+      preLoaderRoute: typeof siteResourcesSlugRouteImport
+      parentRoute: typeof siteResourcesRoute
+    }
+    '/(site)/solutions/$slug': {
+      id: '/(site)/solutions/$slug'
+      path: '/$slug'
+      fullPath: '/solutions/$slug'
+      preLoaderRoute: typeof siteSolutionsSlugRouteImport
+      parentRoute: typeof siteSolutionsRoute
     }
     '/_authenticated/admin/admissions': {
       id: '/_authenticated/admin/admissions'
@@ -3167,12 +3587,76 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface siteResourcesRouteChildren {
+  siteResourcesSlugRoute: typeof siteResourcesSlugRoute
+}
+
+const siteResourcesRouteChildren: siteResourcesRouteChildren = {
+  siteResourcesSlugRoute: siteResourcesSlugRoute,
+}
+
+const siteResourcesRouteWithChildren = siteResourcesRoute._addFileChildren(
+  siteResourcesRouteChildren,
+)
+
+interface siteSolutionsRouteChildren {
+  siteSolutionsSlugRoute: typeof siteSolutionsSlugRoute
+}
+
+const siteSolutionsRouteChildren: siteSolutionsRouteChildren = {
+  siteSolutionsSlugRoute: siteSolutionsSlugRoute,
+}
+
+const siteSolutionsRouteWithChildren = siteSolutionsRoute._addFileChildren(
+  siteSolutionsRouteChildren,
+)
+
 interface siteRouteRouteChildren {
+  siteAboutRoute: typeof siteAboutRoute
+  siteCareersRoute: typeof siteCareersRoute
+  siteCompanyRoute: typeof siteCompanyRoute
+  siteContactRoute: typeof siteContactRoute
   siteCoregridRoute: typeof siteCoregridRoute
+  siteEnterpriseRoute: typeof siteEnterpriseRoute
+  sitePricingRoute: typeof sitePricingRoute
+  siteProvisionRoute: typeof siteProvisionRoute
+  siteRequestDemoRoute: typeof siteRequestDemoRoute
+  siteResourcesRoute: typeof siteResourcesRouteWithChildren
+  siteSecurityRoute: typeof siteSecurityRoute
+  siteSolutionsRoute: typeof siteSolutionsRouteWithChildren
+  siteStatusRoute: typeof siteStatusRoute
+  siteLegalSlugRoute: typeof siteLegalSlugRoute
+  sitePlatformAiWorkforceRoute: typeof sitePlatformAiWorkforceRoute
+  sitePlatformGovernanceRoute: typeof sitePlatformGovernanceRoute
+  sitePlatformIntegrationsRoute: typeof sitePlatformIntegrationsRoute
+  sitePlatformIntelligenceRoute: typeof sitePlatformIntelligenceRoute
+  sitePlatformMemoryRoute: typeof sitePlatformMemoryRoute
+  sitePlatformMissionsRoute: typeof sitePlatformMissionsRoute
+  sitePlatformRealityRoute: typeof sitePlatformRealityRoute
 }
 
 const siteRouteRouteChildren: siteRouteRouteChildren = {
+  siteAboutRoute: siteAboutRoute,
+  siteCareersRoute: siteCareersRoute,
+  siteCompanyRoute: siteCompanyRoute,
+  siteContactRoute: siteContactRoute,
   siteCoregridRoute: siteCoregridRoute,
+  siteEnterpriseRoute: siteEnterpriseRoute,
+  sitePricingRoute: sitePricingRoute,
+  siteProvisionRoute: siteProvisionRoute,
+  siteRequestDemoRoute: siteRequestDemoRoute,
+  siteResourcesRoute: siteResourcesRouteWithChildren,
+  siteSecurityRoute: siteSecurityRoute,
+  siteSolutionsRoute: siteSolutionsRouteWithChildren,
+  siteStatusRoute: siteStatusRoute,
+  siteLegalSlugRoute: siteLegalSlugRoute,
+  sitePlatformAiWorkforceRoute: sitePlatformAiWorkforceRoute,
+  sitePlatformGovernanceRoute: sitePlatformGovernanceRoute,
+  sitePlatformIntegrationsRoute: sitePlatformIntegrationsRoute,
+  sitePlatformIntelligenceRoute: sitePlatformIntelligenceRoute,
+  sitePlatformMemoryRoute: sitePlatformMemoryRoute,
+  sitePlatformMissionsRoute: sitePlatformMissionsRoute,
+  sitePlatformRealityRoute: sitePlatformRealityRoute,
 }
 
 const siteRouteRouteWithChildren = siteRouteRoute._addFileChildren(
@@ -3640,13 +4124,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
