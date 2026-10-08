@@ -44,7 +44,7 @@ function PlatformMenu() {
       <PopoverContent
         align="start"
         sideOffset={10}
-        className="sv-root sv-glass w-[min(46rem,calc(100vw-2rem))] border-sv-border p-3 text-sv-text shadow-sv-lg"
+        className="sv-root w-[min(46rem,calc(100vw-2rem))] border-sv-border bg-sv-surface-1 p-3 text-sv-text shadow-sv-lg"
       >
         <ul className="grid gap-1 sm:grid-cols-2">
           {items.map((item) => (
@@ -117,7 +117,7 @@ function MobileNav() {
 export function PublicHeader() {
   return (
     <header className="sticky top-0 z-[var(--sv-z-sticky)] border-b border-sv-border bg-sv-canvas/90 backdrop-blur supports-[backdrop-filter]:bg-sv-canvas/75">
-      <Container wide className="flex h-[var(--sv-layout-header)] items-center justify-between gap-4">
+      <Container className="flex h-[var(--sv-layout-header)] items-center justify-between gap-4">
         <SvLink to="/" aria-label="Sherivs home" className="no-underline text-sv-text">
           <SherivsLockup />
         </SvLink>
@@ -157,7 +157,7 @@ const FOOTER_COLUMNS: ReadonlyArray<{ title: string; group: PublicNavGroup; skip
 export function PublicFooter() {
   return (
     <footer className="border-t border-sv-border bg-sv-surface-sunken">
-      <Container wide className="py-14">
+      <Container className="py-14">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1.2fr)_repeat(5,minmax(0,1fr))]">
           <div className="max-w-xs">
             <SherivsLockup />

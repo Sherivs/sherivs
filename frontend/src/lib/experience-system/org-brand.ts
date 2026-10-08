@@ -34,6 +34,7 @@ export interface OrgBrandTokens {
 const HEX = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
 const INK = "#0b1118";
 const WHITE = "#ffffff";
+const BLACK = "#000000";
 const AA = 4.5;
 
 /** Normalise `#rgb` / `#rrggbb` to lower-case `#rrggbb`; null when invalid. */
@@ -68,7 +69,10 @@ export function deriveOrgBrandTokens(input: OrgBrandInput): OrgBrandTokens | nul
   const text = normalizeHex(input.text);
   if (!accent || !surface || !text) return null;
 
-  const accentFg = contrastRatio(WHITE, accent) >= contrastRatio(INK, accent) ? WHITE : INK;
+  let accentFg = contrastRatio(WHITE, accent) >= contrastRatio(INK, accent) ? WHITE : INK;
+  // Mid-luminance accents can fall just short of AA with both white and the
+  // brand ink; pure black is the last resort that always clears it.
+  if (contrastRatio(accentFg, accent) < AA) accentFg = BLACK;
 
   let accentText = accent;
   let adjusted = false;

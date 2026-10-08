@@ -21,7 +21,7 @@ import { Container, DefinitionRows, LinkButton, PlaneMarker, Section, SvLink } f
 function Hero() {
   return (
     <section aria-labelledby="home-title" className="border-b border-sv-border">
-      <Container wide className="grid items-center gap-12 py-16 sm:py-24 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+      <Container className="grid items-center gap-12 py-16 sm:py-24 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
         <div>
           <p className="sv-label mb-5 text-sv-text-muted">{SHERIVS_BRAND.category}</p>
           <h1 id="home-title" className="sv-hero">

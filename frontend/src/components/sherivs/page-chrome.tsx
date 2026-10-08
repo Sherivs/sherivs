@@ -82,7 +82,7 @@ export function PageTitle({
               )}
             </p>
           )}
-          <h1 className="sv-display">{title}</h1>
+          <h1 className="sv-hero text-balance">{title}</h1>
           {lead && <p className="sv-body mt-5 text-sv-text-muted">{lead}</p>}
         </div>
         {children && <div className="mt-8">{children}</div>}

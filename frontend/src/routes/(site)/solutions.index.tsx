@@ -18,6 +18,7 @@ function SolutionsOverview() {
         lead="Sherivs does not ship a different product per industry. It adapts one platform to your organization's reality, and installs a domain runtime where one exists."
       />
       <Container className="py-12 sm:py-16">
+        <h2 className="sv-h2 mb-6">Where Sherivs applies today</h2>
         <DefinitionRows
           rows={[
             {
