@@ -3,18 +3,18 @@
   "generatedBy": "scripts/experience/inventory-experience.mjs",
   "versionTarget": "V1",
   "totals": {
-    "routeFiles": 159,
-    "pages": 142,
+    "routeFiles": 174,
+    "pages": 156,
     "layouts": 12,
-    "apiRoutes": 5,
+    "apiRoutes": 6,
     "pagesByGroup": {
-      "public-site": 1,
-      "authenticated": 123,
-      "public": 18
+      "public-site": 14,
+      "authenticated": 126,
+      "public": 16
     },
-    "pagesWithHeadMeta": 19,
-    "pagesWithCanonical": 1,
-    "components": 113,
+    "pagesWithHeadMeta": 31,
+    "pagesWithCanonical": 0,
+    "components": 121,
     "componentFamilies": {
       "admin": 3,
       "ai": 5,
@@ -24,6 +24,7 @@
       "generated": 1,
       "public": 19,
       "shell": 4,
+      "sherivs": 8,
       "super-admin": 1,
       "ui": 48
     },
@@ -31,7 +32,7 @@
     "mobileScreens": 11
   },
   "tokens": {
-    "cssCustomProperties": 127,
+    "cssCustomProperties": 128,
     "names": [
       "--accent",
       "--accent-foreground",
@@ -89,6 +90,7 @@
       "--ease-out",
       "--ease-spring",
       "--font-display",
+      "--font-mono",
       "--font-sans",
       "--foreground",
       "--glass-active",
@@ -164,20 +166,20 @@
     "hardcodedHexInTsx": 98
   },
   "accessibility": {
-    "ariaAttributes": 105,
-    "roleAttributes": 22,
-    "srOnlyUses": 12,
-    "focusVisibleUtilities": 90,
-    "motionSafeReduceUtilities": 0,
+    "ariaAttributes": 145,
+    "roleAttributes": 34,
+    "srOnlyUses": 13,
+    "focusVisibleUtilities": 45,
+    "motionSafeReduceUtilities": 1,
     "reducedMotionMediaQueriesInCss": 0
   },
   "responsive": {
     "tailwindPrefixUsage": {
       "xs": 1,
-      "sm": 284,
-      "md": 153,
-      "lg": 111,
-      "xl": 3,
+      "sm": 293,
+      "md": 160,
+      "lg": 117,
+      "xl": 4,
       "2xl": 0
     }
   },
@@ -211,8 +213,8 @@
   "scholarAssumptions": {
     "routeGroups": {
       "scholarPortals": 100,
-      "platformInternal": 18,
-      "commandCentre": 1
+      "platformInternal": 20,
+      "commandCentre": 2
     },
     "topFiles": [
       {
@@ -376,48 +378,47 @@
   ],
   "brand": {
     "byClass": {
-      "COMMENT": 714,
-      "TECHNICAL_IDENTIFIER": 195,
-      "CUSTOMER_FACING": 90,
-      "PERSISTED_VALUE": 36,
+      "COMMENT": 703,
+      "TECHNICAL_IDENTIFIER": 189,
+      "PERSISTED_VALUE": 28,
+      "CUSTOMER_FACING": 1,
+      "REGISTRY_BOUND": 10,
       "AI_PROMPT": 1,
-      "TOOLING": 497,
-      "TEST": 937,
+      "PACKAGE_METADATA": 2,
+      "TOOLING": 500,
+      "TEST": 949,
       "INFRASTRUCTURE_OR_DB": 469
     },
     "byZone": {
       "frontend/src": {
-        "COMMENT": 684,
-        "TECHNICAL_IDENTIFIER": 163,
-        "CUSTOMER_FACING": 76,
-        "PERSISTED_VALUE": 33,
+        "COMMENT": 675,
+        "TECHNICAL_IDENTIFIER": 158,
+        "PERSISTED_VALUE": 25,
+        "CUSTOMER_FACING": 1,
+        "REGISTRY_BOUND": 10,
         "AI_PROMPT": 1
       },
       "mobile/src": {
         "COMMENT": 23,
         "TECHNICAL_IDENTIFIER": 28,
-        "PERSISTED_VALUE": 3,
-        "CUSTOMER_FACING": 3
+        "PERSISTED_VALUE": 3
       },
       "mobile/app": {
-        "CUSTOMER_FACING": 8,
         "TECHNICAL_IDENTIFIER": 1
       },
       "public": {
-        "COMMENT": 2,
-        "TECHNICAL_IDENTIFIER": 1,
-        "CUSTOMER_FACING": 2
+        "TECHNICAL_IDENTIFIER": 1
       },
       "packages": {
-        "TECHNICAL_IDENTIFIER": 2,
-        "CUSTOMER_FACING": 1,
-        "COMMENT": 5
+        "PACKAGE_METADATA": 2,
+        "COMMENT": 5,
+        "TECHNICAL_IDENTIFIER": 1
       },
       "scripts": {
-        "TOOLING": 497
+        "TOOLING": 500
       },
       "tests": {
-        "TEST": 937
+        "TEST": 949
       },
       "database": {
         "INFRASTRUCTURE_OR_DB": 164
@@ -430,61 +431,7 @@
       }
     },
     "customerFacingFiles": {
-      "frontend/src/components/command-centre/command-centre.tsx": 6,
-      "frontend/src/lib/communication-providers.ts": 1,
-      "frontend/src/lib/dev-core.ts": 1,
-      "frontend/src/lib/domain-config/restaurant.ts": 1,
-      "frontend/src/lib/financial-intelligence-report.ts": 1,
-      "frontend/src/lib/guidance/page-tips.ts": 2,
-      "frontend/src/lib/integration-transform.ts": 1,
-      "frontend/src/lib/kernel/engineering-sections.ts": 1,
-      "frontend/src/lib/kernel/phase-contracts/phase-01-foundation.ts": 1,
-      "frontend/src/lib/kernel/phase-contracts/phase-29-integration.ts": 2,
-      "frontend/src/lib/marketplace-package.ts": 1,
-      "frontend/src/lib/phase-catalog.ts": 1,
-      "frontend/src/lib/platform.ts": 3,
-      "frontend/src/lib/providers/provider-credentials.ts": 1,
-      "frontend/src/lib/runtime/scholar-nav-catalog.ts": 1,
-      "frontend/src/lib/scheduling-intelligence-report.ts": 1,
-      "frontend/src/lib/scholar/pwa/manifest-engine.ts": 1,
-      "frontend/src/lib/scholar/roles/role-categories.ts": 1,
-      "frontend/src/lib/scholar/roles/role-workspaces.ts": 1,
-      "frontend/src/routes/(site)/-content/pricing-tiers.ts": 1,
-      "frontend/src/routes/(site)/coregrid.tsx": 2,
-      "frontend/src/routes/__root.tsx": 1,
-      "frontend/src/routes/_authenticated/admin/enterprise-checklist.tsx": 1,
-      "frontend/src/routes/_authenticated/admin/facilities.tsx": 1,
-      "frontend/src/routes/_authenticated/admin/intelligence.tsx": 3,
-      "frontend/src/routes/_authenticated/admin/school-profile.tsx": 3,
-      "frontend/src/routes/_authenticated/admin/support.tsx": 2,
-      "frontend/src/routes/_authenticated/command-centre/index.tsx": 1,
-      "frontend/src/routes/_authenticated/route.tsx": 1,
-      "frontend/src/routes/_authenticated/runtime.tsx": 3,
-      "frontend/src/routes/_authenticated/super-admin/academic-intelligence.tsx": 1,
-      "frontend/src/routes/_authenticated/super-admin/agent-governance.tsx": 1,
-      "frontend/src/routes/_authenticated/super-admin/communication-steward.tsx": 2,
-      "frontend/src/routes/_authenticated/super-admin/financial-operations.tsx": 1,
-      "frontend/src/routes/_authenticated/super-admin/runtime-contracts.tsx": 1,
-      "frontend/src/routes/_authenticated/super-admin/scheduling-intelligence.tsx": 1,
-      "frontend/src/routes/_authenticated/super-admin/tenants.tsx": 1,
-      "frontend/src/routes/_authenticated/super-admin/trust-fabric.tsx": 1,
-      "frontend/src/routes/_authenticated/super-admin/worker-missions.tsx": 1,
-      "frontend/src/routes/_authenticated/super-admin/workspace-projection.tsx": 1,
-      "frontend/src/routes/auth.tsx": 1,
-      "frontend/src/routes/index.tsx": 3,
-      "frontend/src/routes/marketplace.tsx": 2,
-      "frontend/src/routes/platform.org.tsx": 4,
-      "frontend/src/routes/platform.tsx": 5,
-      "frontend/src/routes/reality.$class.tsx": 3,
-      "mobile/src/api/errors.ts": 2,
-      "mobile/src/ui/components.tsx": 1,
-      "mobile/app/(app)/_layout.tsx": 1,
-      "mobile/app/(app)/agents.tsx": 1,
-      "mobile/app/(app)/index.tsx": 2,
-      "mobile/app/(app)/organization.tsx": 1,
-      "mobile/app/sign-in.tsx": 3,
-      "public/sw.js": 2,
-      "packages/contracts/package.json": 1
+      "frontend/src/lib/experience-system/sherivs-brand.ts": 1
     }
   },
   "routes": [
@@ -497,7 +444,7 @@
       "hasHeadMeta": true,
       "hasCanonical": false,
       "ssrDisabled": false,
-      "lines": 144
+      "lines": 141
     },
     {
       "file": "frontend/src/routes/_authenticated/admin/admissions.tsx",
@@ -1226,6 +1173,17 @@
       "lines": 207
     },
     {
+      "file": "frontend/src/routes/_authenticated/command-centre/provision.tsx",
+      "url": "/command-centre/provision",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 16
+    },
+    {
       "file": "frontend/src/routes/_authenticated/command-centre/route.tsx",
       "url": "/command-centre",
       "kind": "layout",
@@ -1622,6 +1580,17 @@
       "lines": 85
     },
     {
+      "file": "frontend/src/routes/_authenticated/super-admin/architecture.tsx",
+      "url": "/super-admin/architecture",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 216
+    },
+    {
       "file": "frontend/src/routes/_authenticated/super-admin/billing.tsx",
       "url": "/super-admin/billing",
       "kind": "page",
@@ -1675,6 +1644,17 @@
       "hasCanonical": false,
       "ssrDisabled": true,
       "lines": 197
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/super-admin/organization.tsx",
+      "url": "/super-admin/organization",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 147
     },
     {
       "file": "frontend/src/routes/_authenticated/super-admin/platform-config.tsx",
@@ -1968,10 +1948,109 @@
       "kind": "page",
       "group": "public-site",
       "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 12
+    },
+    {
+      "file": "frontend/src/routes/(site)/legal.accessibility.tsx",
+      "url": "/legal/accessibility",
+      "kind": "page",
+      "group": "public-site",
+      "roleGuard": null,
       "hasHeadMeta": true,
       "hasCanonical": false,
       "ssrDisabled": false,
-      "lines": 285
+      "lines": 67
+    },
+    {
+      "file": "frontend/src/routes/(site)/platform.$slug.tsx",
+      "url": "/platform/:slug",
+      "kind": "page",
+      "group": "public-site",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 81
+    },
+    {
+      "file": "frontend/src/routes/(site)/platform.index.tsx",
+      "url": "/platform",
+      "kind": "page",
+      "group": "public-site",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 52
+    },
+    {
+      "file": "frontend/src/routes/(site)/pricing.tsx",
+      "url": "/pricing",
+      "kind": "page",
+      "group": "public-site",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 72
+    },
+    {
+      "file": "frontend/src/routes/(site)/resources.$kind.$slug.tsx",
+      "url": "/resources/:kind/:slug",
+      "kind": "page",
+      "group": "public-site",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 82
+    },
+    {
+      "file": "frontend/src/routes/(site)/resources.$kind.index.tsx",
+      "url": "/resources/:kind",
+      "kind": "page",
+      "group": "public-site",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 95
+    },
+    {
+      "file": "frontend/src/routes/(site)/resources.$kind.tsx",
+      "url": "/resources/:kind",
+      "kind": "page",
+      "group": "public-site",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 14
+    },
+    {
+      "file": "frontend/src/routes/(site)/resources.index.tsx",
+      "url": "/resources",
+      "kind": "page",
+      "group": "public-site",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 69
+    },
+    {
+      "file": "frontend/src/routes/(site)/resources.rss[.]xml.ts",
+      "url": "/resources/rss[/]xml",
+      "kind": "api",
+      "group": "public-site",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 18
     },
     {
       "file": "frontend/src/routes/(site)/route.tsx",
@@ -1982,7 +2061,62 @@
       "hasHeadMeta": false,
       "hasCanonical": false,
       "ssrDisabled": false,
-      "lines": 126
+      "lines": 22
+    },
+    {
+      "file": "frontend/src/routes/(site)/security.tsx",
+      "url": "/security",
+      "kind": "page",
+      "group": "public-site",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 50
+    },
+    {
+      "file": "frontend/src/routes/(site)/solutions.education.tsx",
+      "url": "/solutions/education",
+      "kind": "page",
+      "group": "public-site",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 63
+    },
+    {
+      "file": "frontend/src/routes/(site)/solutions.index.tsx",
+      "url": "/solutions",
+      "kind": "page",
+      "group": "public-site",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 56
+    },
+    {
+      "file": "frontend/src/routes/(site)/solutions.organizations.tsx",
+      "url": "/solutions/organizations",
+      "kind": "page",
+      "group": "public-site",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 69
+    },
+    {
+      "file": "frontend/src/routes/(site)/status.tsx",
+      "url": "/status",
+      "kind": "page",
+      "group": "public-site",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 110
     },
     {
       "file": "frontend/src/routes/admissions.tsx",
@@ -2090,9 +2224,9 @@
       "group": "public",
       "roleGuard": null,
       "hasHeadMeta": true,
-      "hasCanonical": true,
+      "hasCanonical": false,
       "ssrDisabled": false,
-      "lines": 142
+      "lines": 140
     },
     {
       "file": "frontend/src/routes/login.tsx",
@@ -2137,28 +2271,6 @@
       "hasCanonical": false,
       "ssrDisabled": false,
       "lines": 144
-    },
-    {
-      "file": "frontend/src/routes/platform.org.tsx",
-      "url": "/platform/org",
-      "kind": "page",
-      "group": "public",
-      "roleGuard": null,
-      "hasHeadMeta": true,
-      "hasCanonical": false,
-      "ssrDisabled": false,
-      "lines": 174
-    },
-    {
-      "file": "frontend/src/routes/platform.tsx",
-      "url": "/platform",
-      "kind": "page",
-      "group": "public",
-      "roleGuard": null,
-      "hasHeadMeta": true,
-      "hasCanonical": false,
-      "ssrDisabled": false,
-      "lines": 241
     },
     {
       "file": "frontend/src/routes/privacy.tsx",
@@ -2224,7 +2336,7 @@
       "hasHeadMeta": false,
       "hasCanonical": false,
       "ssrDisabled": false,
-      "lines": 76
+      "lines": 80
     },
     {
       "file": "frontend/src/routes/super-admin-bootstrap.tsx",
@@ -2538,6 +2650,46 @@
       "file": "frontend/src/components/shell/workspace-switcher.tsx",
       "family": "shell",
       "lines": 79
+    },
+    {
+      "file": "frontend/src/components/sherivs/brand.tsx",
+      "family": "sherivs",
+      "lines": 118
+    },
+    {
+      "file": "frontend/src/components/sherivs/diagrams.tsx",
+      "family": "sherivs",
+      "lines": 161
+    },
+    {
+      "file": "frontend/src/components/sherivs/evidence.tsx",
+      "family": "sherivs",
+      "lines": 188
+    },
+    {
+      "file": "frontend/src/components/sherivs/home-page.tsx",
+      "family": "sherivs",
+      "lines": 212
+    },
+    {
+      "file": "frontend/src/components/sherivs/page-chrome.tsx",
+      "family": "sherivs",
+      "lines": 102
+    },
+    {
+      "file": "frontend/src/components/sherivs/primitives.tsx",
+      "family": "sherivs",
+      "lines": 230
+    },
+    {
+      "file": "frontend/src/components/sherivs/public-shell.tsx",
+      "family": "sherivs",
+      "lines": 217
+    },
+    {
+      "file": "frontend/src/components/sherivs/states.tsx",
+      "family": "sherivs",
+      "lines": 115
     },
     {
       "file": "frontend/src/components/skeleton.tsx",
