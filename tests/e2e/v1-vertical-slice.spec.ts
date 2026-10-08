@@ -6,7 +6,7 @@
  * typed reason naming the missing external dependency. No step is faked.
  *
  * Journey map (§37 vocabulary, adjusted to what is real today):
- *   1. Visitor → /coregrid public site → real nav → /auth          [T1]
+ *   1. Visitor → Sherivs public site (/) → real nav → /auth          [T1]
  *   2. Self-serve signup through the REAL auth surface             [T2]
  *   3. Platform bootstrap gate observed (fail-closed)              [T3]
  *   4. First super admin claimed through the real auth flow        [T4]
@@ -356,14 +356,19 @@ test.describe("V1 vertical slice — longest fully-real journey", () => {
   });
 
   test("T1 visitor lands on the public site and follows real navigation", async ({ page }) => {
-    await page.goto("/coregrid");
+    await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-      /The AI-native institutional operating system/i,
+      /Run your institution on a governed model of its own reality/i,
     );
-    for (const anchor of ["#capabilities", "#security", "#pricing"]) {
-      await page.goto(`/coregrid${anchor}`);
-      await expect(page.locator(anchor)).toBeVisible();
+    for (const [path, heading] of [
+      ["/platform", /one governed platform/i],
+      ["/security", /security enforced below the interface/i],
+      ["/pricing", /plans that scale/i],
+    ] as const) {
+      await page.goto(path);
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(heading);
     }
+    await page.goto("/");
     // Every account CTA links the REAL auth surface (V1-007 contract).
     const signIn = page.getByRole("link", { name: /^sign in$/i }).first();
     await expect(signIn).toHaveAttribute("href", "/auth");

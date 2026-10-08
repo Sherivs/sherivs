@@ -14,6 +14,11 @@ export default defineConfig({
       name: "mobile-chromium",
       use: { ...devices["Pixel 5"] },
     },
+    {
+      name: "desktop-chromium",
+      testMatch: /sherivs-public\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"] },
+    },
   ],
   // E2E convention (tests/README.md): specs run against a locally-started dev
   // server on PLAYWRIGHT_BASE_URL. Boot it automatically unless one already
@@ -23,7 +28,7 @@ export default defineConfig({
     ? undefined
     : {
         command: "npm run dev -- --port 8080 --strictPort",
-        url: "http://localhost:8080/coregrid",
+        url: "http://localhost:8080/",
         reuseExistingServer: true,
         timeout: 180_000,
         env: {
