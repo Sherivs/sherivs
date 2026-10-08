@@ -365,7 +365,7 @@ export const MARKETING_TIERS: readonly MarketingTier[] = [
     summary: "Unlimited scale for groups of institutions and multi-branch operations.",
     featured: false,
     highlights: ["Unlimited members", "Dedicated database", "Full API and webhook surface", "Fleet and branch management"],
-    ctaLabel: "Talk to sales",
+    ctaLabel: "Create account",
   },
 ];
 

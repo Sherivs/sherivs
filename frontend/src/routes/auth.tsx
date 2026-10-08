@@ -157,8 +157,11 @@ function AuthPage() {
     mode === "signin" ? "Sign in" : mode === "signup" ? "Create account" : "Reset your password";
 
   return (
-    <div className="min-h-dvh grid place-items-center px-4">
-      <div className="w-full max-w-md uos-card p-8">
+    <main
+      id="main-content"
+      className="sh-atmosphere grid min-h-dvh place-items-center bg-plane-0 px-4 py-10 text-ink-1"
+    >
+      <div className="sh-panel-raised w-full max-w-md p-8">
         <div className="mb-6">
           {school && (
             <div className="mb-4 flex items-center gap-3">
@@ -190,8 +193,8 @@ function AuthPage() {
               <SherivsLockup />
             </div>
           )}
-          <h1 className="font-display text-2xl font-bold">{title}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h1 className="sh-h2">{title}</h1>
+          <p className="sh-small mt-2 text-ink-2">
             {mode === "forgot"
               ? "Enter the email tied to your account and we'll send you a reset link."
               : school
@@ -252,12 +255,12 @@ function AuthPage() {
           )}
 
           {error && (
-            <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive-foreground">
+            <div role="alert" className="sh-inset sh-rail sh-tone-danger sh-small px-3 py-2 text-ink-1">
               {error}
             </div>
           )}
           {info && (
-            <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+            <div role="status" className="sh-inset sh-rail sh-tone-info sh-small px-3 py-2 text-ink-2">
               {info}
             </div>
           )}
@@ -265,7 +268,8 @@ function AuthPage() {
           <button
             type="submit"
             disabled={busy}
-            className="w-full rounded-md bg-primary px-4 py-2.5 font-semibold text-primary-foreground disabled:opacity-60"
+            aria-busy={busy || undefined}
+            className="sh-interactive sh-focus sh-small inline-flex h-11 w-full items-center justify-center rounded-[var(--sh-radius-md)] bg-signal px-4 font-semibold text-signal-on hover:bg-signal-strong"
           >
             {busy
               ? "Please wait…"
@@ -278,8 +282,8 @@ function AuthPage() {
         </form>
 
         <div className="mt-6 space-y-2 text-center text-sm">
-          <div className="mb-4 rounded-xl border border-amber-500/40 bg-amber-500/5 p-4 text-left">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-amber-500">
+          <div className="sh-inset sh-rail sh-tone-warning mb-4 p-4 text-left">
+            <div className="sh-label flex items-center gap-2 text-warning">
               <span>★</span> Enterprise demo
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -290,7 +294,7 @@ function AuthPage() {
               type="button"
               onClick={handleDemoLogin}
               disabled={demoBusy || busy}
-              className="mt-3 w-full rounded-md bg-amber-500 px-3 py-2 text-sm font-semibold text-black disabled:opacity-60"
+              className="sh-interactive sh-focus sh-small mt-3 inline-flex h-10 w-full items-center justify-center rounded-[var(--sh-radius-md)] bg-warning px-3 font-semibold text-signal-on"
             >
               {demoBusy ? "Provisioning…" : "Sign in as Enterprise demo"}
             </button>
@@ -340,17 +344,14 @@ function AuthPage() {
           </Link>
         </div>
       </div>
-
-    </div>
+    </main>
   );
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="block text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1.5">
-        {label}
-      </span>
+      <span className="sh-label mb-1.5 block">{label}</span>
       {children}
     </label>
   );

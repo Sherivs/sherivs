@@ -370,9 +370,9 @@ const NewsIdRoute = NewsIdRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const PlatformOrgRoute = PlatformOrgRouteImport.update({
-  id: '/org',
-  path: '/org',
-  getParentRoute: () => PlatformRoute,
+  id: '/platform/org',
+  path: '/platform/org',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RealityClassRoute = RealityClassRouteImport.update({
   id: '/reality/$class',
@@ -2171,6 +2171,7 @@ export interface RootRouteChildren {
   SuperAdminBootstrapRoute: typeof SuperAdminBootstrapRoute
   EventsIdRoute: typeof EventsIdRoute
   NewsIdRoute: typeof NewsIdRoute
+  PlatformOrgRoute: typeof PlatformOrgRoute
   RealityClassRoute: typeof RealityClassRoute
   ApiPublicAuditPasswordResetRoute: typeof ApiPublicAuditPasswordResetRoute
   ApiPublicWebhooksPaystackRoute: typeof ApiPublicWebhooksPaystackRoute
@@ -2439,10 +2440,10 @@ declare module '@tanstack/react-router' {
     }
     '/platform/org': {
       id: '/platform/org'
-      path: '/org'
+      path: '/platform/org'
       fullPath: '/platform/org'
       preLoaderRoute: typeof PlatformOrgRouteImport
-      parentRoute: typeof PlatformRoute
+      parentRoute: typeof rootRouteImport
     }
     '/reality/$class': {
       id: '/reality/$class'
@@ -3833,6 +3834,7 @@ const rootRouteChildren: RootRouteChildren = {
   SuperAdminBootstrapRoute: SuperAdminBootstrapRoute,
   EventsIdRoute: EventsIdRoute,
   NewsIdRoute: NewsIdRoute,
+  PlatformOrgRoute: PlatformOrgRoute,
   RealityClassRoute: RealityClassRoute,
   ApiPublicAuditPasswordResetRoute: ApiPublicAuditPasswordResetRoute,
   ApiPublicWebhooksPaystackRoute: ApiPublicWebhooksPaystackRoute,

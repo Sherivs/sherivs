@@ -9,7 +9,7 @@
  */
 import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { Chip, Eyebrow, Panel, PlaneLabel, SectionHeading, SectionIndex } from "@/components/sherivs/primitives";
 import { CtaLink } from "@/components/sherivs/public/public-shell";
 import { PLANES_OF_MEANING, type PlaneOfMeaning } from "@/lib/experience/design-tokens";
@@ -152,11 +152,11 @@ function PlanesDiagram() {
           <li
             key={plane}
             className={cn(
-              "sh-panel sh-rail flex items-start gap-4 p-5",
+              "sh-panel sh-rail flex items-start gap-4 p-5 sm:ms-(--plane-offset)",
               `sh-tone-${plane}`,
               i === PLANES_OF_MEANING.length - 1 && "sh-panel-raised",
             )}
-            style={{ marginInlineStart: `${(PLANES_OF_MEANING.length - 1 - i) * 0.75}rem` }}
+            style={{ "--plane-offset": `${(PLANES_OF_MEANING.length - 1 - i) * 0.75}rem` } as CSSProperties}
           >
             <span className="sh-index mt-1">{String(PLANES_OF_MEANING.length - i).padStart(2, "0")}</span>
             <div>

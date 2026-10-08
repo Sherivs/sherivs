@@ -56,7 +56,7 @@ function PricingPage() {
                       : `per month · ${formatTierPrice(tier.annualPrice)} per year`}
                 </p>
                 <p className="sh-small mt-4 text-ink-2">{tier.summary}</p>
-                <ul className="sh-small mt-5 grid gap-2 text-ink-2">
+                <ul className="sh-small mt-5 mb-6 grid gap-2 text-ink-2">
                   {tier.highlights.map((highlight) => (
                     <li key={highlight} className="flex items-start gap-2">
                       <Check className="mt-0.5 size-3.5 shrink-0 text-signal" aria-hidden="true" />
@@ -67,7 +67,7 @@ function PricingPage() {
                 <Link
                   to="/auth"
                   className={cn(
-                    "sh-interactive sh-focus sh-small mt-6 inline-flex h-10 items-center justify-center rounded-[var(--sh-radius-md)] px-4 font-semibold",
+                    "sh-interactive sh-focus sh-small mt-auto pt-0 inline-flex h-10 items-center justify-center rounded-[var(--sh-radius-md)] px-4 font-semibold",
                     tier.featured
                       ? "bg-signal text-signal-on hover:bg-signal-strong"
                       : "border border-line-2 bg-plane-2 text-ink-1",

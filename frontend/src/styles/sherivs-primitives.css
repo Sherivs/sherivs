@@ -136,7 +136,14 @@
     radial-gradient(48rem 26rem at 100% 8%, var(--sh-atmosphere-b), transparent 55%);
 }
 /* Grid field: faint precision grid used behind architecture/hero planes. */
-.sh-gridfield {
+.sh-gridfield { position: relative; }
+/* The grid lives on a pseudo-element so the radial mask fades the FIELD, never the content. */
+.sh-gridfield::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
   background-image:
     linear-gradient(var(--sh-border-1) 1px, transparent 1px),
     linear-gradient(90deg, var(--sh-border-1) 1px, transparent 1px);
@@ -144,6 +151,7 @@
   mask-image: radial-gradient(ellipse at center, black 40%, transparent 78%);
   -webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 78%);
 }
+.sh-gridfield > * { position: relative; z-index: 1; }
 
 /* ── Planes of meaning (semantic accents) ───────────────────────────── */
 .sh-tone-reality { --sh-tone: var(--sh-reality); --sh-tone-soft: var(--sh-reality-soft); }

@@ -176,7 +176,11 @@
 
 @layer base {
   * { border-color: var(--color-border); }
-  html, body { height: 100%; }
+  /* min-height (not height): a fixed body height turns <body> into the scroll
+     container, which breaks viewport scrolling, scroll restoration and
+     full-page capture. Layouts size themselves with dvh. */
+  html { min-height: 100%; }
+  body { min-height: 100%; }
   body {
     background: var(--sh-plane-0);
     color: var(--sh-text-1);
@@ -189,7 +193,8 @@
   code, kbd, pre, samp { font-family: var(--sh-font-mono); }
   ::selection { background: var(--sh-signal-soft); color: var(--sh-text-1); }
   *, *::before, *::after { box-sizing: border-box; }
-  html, body { overflow-x: hidden; max-width: 100vw; }
+  html { overflow-x: clip; }
+  body { overflow-x: clip; max-width: 100vw; }
   .portal-content { min-width: 0; overflow-x: hidden; }
 }
 
