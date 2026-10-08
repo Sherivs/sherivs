@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PlannedCapabilityState } from "@/components/planned-capability-state";
+import { PLATFORM_NAME } from "@/lib/platform";
 import {
   launchWorkerMission,
   WORKER_LAUNCH_AUDIT_ACTION,
@@ -18,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/super-admin/worker-mission
   component: WorkerMissionsPage,
   head: () => ({
     meta: [
-      { title: "CoreGrid — Worker mission launch" },
+      { title: `${PLATFORM_NAME} — Worker mission launch` },
       {
         name: "description",
         content:

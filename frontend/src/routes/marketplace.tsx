@@ -14,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { ShieldAlert, ShieldCheck, Store } from "lucide-react";
+import { PLATFORM_NAME } from "@/lib/platform";
 import { experiencePresetKeys } from "@/lib/scholar/experience/experience-presets";
 import { organizationClassLabel } from "@/lib/surfaces/generated-site-view";
 import {
@@ -31,11 +32,11 @@ export const Route = createFileRoute("/marketplace")({
   component: MarketplacePage,
   head: () => ({
     meta: [
-      { title: "Marketplace — published from reality — CoreGrid" },
+      { title: `Marketplace — published from reality — ${PLATFORM_NAME}` },
       {
         name: "description",
         content:
-          "CoreGrid publishes a marketplace catalog from each organization's own reality: one listing per installed feature code, entitlement-gated installation, and no self-asserted trust.",
+          `${PLATFORM_NAME} publishes a marketplace catalog from each organization's own reality: one listing per installed feature code, entitlement-gated installation, and no self-asserted trust.`,
       },
     ],
   }),

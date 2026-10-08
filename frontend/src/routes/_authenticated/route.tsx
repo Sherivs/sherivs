@@ -15,6 +15,7 @@ import { PortalSidebar } from "@/components/portal-sidebar";
 import { PortalPageSkeleton, RouteErrorBoundary } from "@/components/portal-shell";
 import { MobileSwipeToOpen } from "@/components/mobile-swipe-to-open";
 import { CommandCenterMount } from "@/components/command-center";
+import { JarvisSheet } from "@/components/jarvis/jarvis-sheet";
 import { ShellHeaderActions } from "@/components/shell/shell-header-actions";
 import { WorkspaceSwitcher } from "@/components/shell/workspace-switcher";
 import { PLATFORM_NAME } from "@/lib/platform";
@@ -92,9 +93,9 @@ function AuthenticatedLayout() {
         <div className="max-w-md uos-card p-8 text-center">
           <h1 className="font-display text-xl font-bold">Account not yet linked</h1>
           <p className="mt-3 text-sm text-muted-foreground">
-            Your sign-in is valid, but your account has not been linked to a school yet. A school
-            administrator (or a CoreGrid platform super admin) needs to assign you a role before you
-            can open a portal.
+            Your sign-in is valid, but your account has not been linked to an organization yet. An
+            administrator (or a Sherivs platform super admin) needs to assign you a role before you
+            can open a workspace.
           </p>
           <button
             onClick={async () => {
@@ -198,6 +199,7 @@ function AuthenticatedLayout() {
         {hasBottomNav && <WorkspaceBottomNav sections={bottomNavSections} />}
 
         <CommandCenterMount />
+        <JarvisSheet />
       </div>
     </SidebarProvider>
   );

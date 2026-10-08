@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { PortalPage, EmptyCard, SectionGrid, StatCard } from "@/components/portal-shell";
 import { Button } from "@/components/ui/button";
 import { PlannedCapabilityState } from "@/components/planned-capability-state";
+import { PLATFORM_NAME } from "@/lib/platform";
 import {
   KERNEL_EVENT_STATES,
   loadKernelEventOutboxState,
@@ -17,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/command-centre/")({
   component: CommandCentreOperations,
   head: () => ({
     meta: [
-      { title: "CoreGrid — Command centre operations projection" },
+      { title: `${PLATFORM_NAME} — Command centre operations projection` },
       {
         name: "description",
         content:

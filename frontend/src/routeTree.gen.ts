@@ -12,20 +12,31 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as siteRouteRouteImport } from './routes/(site)/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as AdmissionsRouteImport } from './routes/admissions'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BlogRouteImport } from './routes/blog'
+import { Route as CareersRouteImport } from './routes/careers'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as EnterpriseRouteImport } from './routes/enterprise'
 import { Route as FoundationLoopRouteImport } from './routes/foundation-loop'
 import { Route as HealthDotjsonRouteImport } from './routes/health[.]json'
+import { Route as LegalRouteImport } from './routes/legal'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ManifestDotwebmanifestRouteImport } from './routes/manifest[.]webmanifest'
 import { Route as MarketplaceRouteImport } from './routes/marketplace'
 import { Route as PlatformRouteImport } from './routes/platform'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as RequestDemoRouteImport } from './routes/request-demo'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as RulesRouteImport } from './routes/rules'
 import { Route as ScholarFoundationLoopRouteImport } from './routes/scholar-foundation-loop'
+import { Route as SecurityRouteImport } from './routes/security'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as SolutionsRouteImport } from './routes/solutions'
+import { Route as StatusRouteImport } from './routes/status'
 import { Route as SuperAdminBootstrapRouteImport } from './routes/super-admin-bootstrap'
 import { Route as siteCoregridRouteImport } from './routes/(site)/coregrid'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
@@ -43,9 +54,30 @@ import { Route as AuthenticatedSuperAdminRouteRouteImport } from './routes/_auth
 import { Route as AuthenticatedTeacherRouteRouteImport } from './routes/_authenticated/teacher/route'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as EventsIdRouteImport } from './routes/events.$id'
+import { Route as LegalAccessibilityRouteImport } from './routes/legal.accessibility'
+import { Route as LegalCookiesRouteImport } from './routes/legal.cookies'
+import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
+import { Route as LegalTermsRouteImport } from './routes/legal.terms'
 import { Route as NewsIdRouteImport } from './routes/news.$id'
+import { Route as PlatformAiWorkforceRouteImport } from './routes/platform.ai-workforce'
+import { Route as PlatformGovernanceRouteImport } from './routes/platform.governance'
+import { Route as PlatformIntegrationsRouteImport } from './routes/platform.integrations'
+import { Route as PlatformIntelligenceRouteImport } from './routes/platform.intelligence'
+import { Route as PlatformMemoryRouteImport } from './routes/platform.memory'
+import { Route as PlatformMissionsRouteImport } from './routes/platform.missions'
 import { Route as PlatformOrgRouteImport } from './routes/platform.org'
+import { Route as PlatformRealityRouteImport } from './routes/platform.reality'
 import { Route as RealityClassRouteImport } from './routes/reality.$class'
+import { Route as ResourcesBlogRouteImport } from './routes/resources.blog'
+import { Route as ResourcesCaseStudiesRouteImport } from './routes/resources.case-studies'
+import { Route as ResourcesChangelogRouteImport } from './routes/resources.changelog'
+import { Route as ResourcesDocsRouteImport } from './routes/resources.docs'
+import { Route as ResourcesGuidesRouteImport } from './routes/resources.guides'
+import { Route as SolutionsAiWorkforceRouteImport } from './routes/solutions.ai-workforce'
+import { Route as SolutionsEducationRouteImport } from './routes/solutions.education'
+import { Route as SolutionsEnterpriseRouteImport } from './routes/solutions.enterprise'
+import { Route as SolutionsOperationsRouteImport } from './routes/solutions.operations'
+import { Route as SolutionsOrganizationsRouteImport } from './routes/solutions.organizations'
 import { Route as AuthenticatedAdminAdmissionsRouteImport } from './routes/_authenticated/admin/admissions'
 import { Route as AuthenticatedAdminAiAssistantRouteImport } from './routes/_authenticated/admin/ai-assistant'
 import { Route as AuthenticatedAdminAnalyticsRouteImport } from './routes/_authenticated/admin/analytics'
@@ -181,6 +213,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdmissionsRoute = AdmissionsRouteImport.update({
   id: '/admissions',
   path: '/admissions',
@@ -196,6 +233,21 @@ const BlogRoute = BlogRouteImport.update({
   path: '/blog',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CareersRoute = CareersRouteImport.update({
+  id: '/careers',
+  path: '/careers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnterpriseRoute = EnterpriseRouteImport.update({
+  id: '/enterprise',
+  path: '/enterprise',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FoundationLoopRoute = FoundationLoopRouteImport.update({
   id: '/foundation-loop',
   path: '/foundation-loop',
@@ -204,6 +256,11 @@ const FoundationLoopRoute = FoundationLoopRouteImport.update({
 const HealthDotjsonRoute = HealthDotjsonRouteImport.update({
   id: '/health.json',
   path: '/health.json',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalRoute = LegalRouteImport.update({
+  id: '/legal',
+  path: '/legal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -226,14 +283,29 @@ const PlatformRoute = PlatformRouteImport.update({
   path: '/platform',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RequestDemoRoute = RequestDemoRouteImport.update({
+  id: '/request-demo',
+  path: '/request-demo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResourcesRoute = ResourcesRouteImport.update({
+  id: '/resources',
+  path: '/resources',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RulesRoute = RulesRouteImport.update({
@@ -246,9 +318,24 @@ const ScholarFoundationLoopRoute = ScholarFoundationLoopRouteImport.update({
   path: '/scholar-foundation-loop',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SecurityRoute = SecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SolutionsRoute = SolutionsRouteImport.update({
+  id: '/solutions',
+  path: '/solutions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StatusRoute = StatusRouteImport.update({
+  id: '/status',
+  path: '/status',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SuperAdminBootstrapRoute = SuperAdminBootstrapRouteImport.update({
@@ -344,20 +431,125 @@ const EventsIdRoute = EventsIdRouteImport.update({
   path: '/events/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LegalAccessibilityRoute = LegalAccessibilityRouteImport.update({
+  id: '/accessibility',
+  path: '/accessibility',
+  getParentRoute: () => LegalRoute,
+} as any)
+const LegalCookiesRoute = LegalCookiesRouteImport.update({
+  id: '/cookies',
+  path: '/cookies',
+  getParentRoute: () => LegalRoute,
+} as any)
+const LegalPrivacyRoute = LegalPrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => LegalRoute,
+} as any)
+const LegalTermsRoute = LegalTermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => LegalRoute,
+} as any)
 const NewsIdRoute = NewsIdRouteImport.update({
   id: '/news/$id',
   path: '/news/$id',
   getParentRoute: () => rootRouteImport,
+} as any)
+const PlatformAiWorkforceRoute = PlatformAiWorkforceRouteImport.update({
+  id: '/ai-workforce',
+  path: '/ai-workforce',
+  getParentRoute: () => PlatformRoute,
+} as any)
+const PlatformGovernanceRoute = PlatformGovernanceRouteImport.update({
+  id: '/governance',
+  path: '/governance',
+  getParentRoute: () => PlatformRoute,
+} as any)
+const PlatformIntegrationsRoute = PlatformIntegrationsRouteImport.update({
+  id: '/integrations',
+  path: '/integrations',
+  getParentRoute: () => PlatformRoute,
+} as any)
+const PlatformIntelligenceRoute = PlatformIntelligenceRouteImport.update({
+  id: '/intelligence',
+  path: '/intelligence',
+  getParentRoute: () => PlatformRoute,
+} as any)
+const PlatformMemoryRoute = PlatformMemoryRouteImport.update({
+  id: '/memory',
+  path: '/memory',
+  getParentRoute: () => PlatformRoute,
+} as any)
+const PlatformMissionsRoute = PlatformMissionsRouteImport.update({
+  id: '/missions',
+  path: '/missions',
+  getParentRoute: () => PlatformRoute,
 } as any)
 const PlatformOrgRoute = PlatformOrgRouteImport.update({
   id: '/org',
   path: '/org',
   getParentRoute: () => PlatformRoute,
 } as any)
+const PlatformRealityRoute = PlatformRealityRouteImport.update({
+  id: '/reality',
+  path: '/reality',
+  getParentRoute: () => PlatformRoute,
+} as any)
 const RealityClassRoute = RealityClassRouteImport.update({
   id: '/reality/$class',
   path: '/reality/$class',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ResourcesBlogRoute = ResourcesBlogRouteImport.update({
+  id: '/blog',
+  path: '/blog',
+  getParentRoute: () => ResourcesRoute,
+} as any)
+const ResourcesCaseStudiesRoute = ResourcesCaseStudiesRouteImport.update({
+  id: '/case-studies',
+  path: '/case-studies',
+  getParentRoute: () => ResourcesRoute,
+} as any)
+const ResourcesChangelogRoute = ResourcesChangelogRouteImport.update({
+  id: '/changelog',
+  path: '/changelog',
+  getParentRoute: () => ResourcesRoute,
+} as any)
+const ResourcesDocsRoute = ResourcesDocsRouteImport.update({
+  id: '/docs',
+  path: '/docs',
+  getParentRoute: () => ResourcesRoute,
+} as any)
+const ResourcesGuidesRoute = ResourcesGuidesRouteImport.update({
+  id: '/guides',
+  path: '/guides',
+  getParentRoute: () => ResourcesRoute,
+} as any)
+const SolutionsAiWorkforceRoute = SolutionsAiWorkforceRouteImport.update({
+  id: '/ai-workforce',
+  path: '/ai-workforce',
+  getParentRoute: () => SolutionsRoute,
+} as any)
+const SolutionsEducationRoute = SolutionsEducationRouteImport.update({
+  id: '/education',
+  path: '/education',
+  getParentRoute: () => SolutionsRoute,
+} as any)
+const SolutionsEnterpriseRoute = SolutionsEnterpriseRouteImport.update({
+  id: '/enterprise',
+  path: '/enterprise',
+  getParentRoute: () => SolutionsRoute,
+} as any)
+const SolutionsOperationsRoute = SolutionsOperationsRouteImport.update({
+  id: '/operations',
+  path: '/operations',
+  getParentRoute: () => SolutionsRoute,
+} as any)
+const SolutionsOrganizationsRoute = SolutionsOrganizationsRouteImport.update({
+  id: '/organizations',
+  path: '/organizations',
+  getParentRoute: () => SolutionsRoute,
 } as any)
 const AuthenticatedAdminAdmissionsRoute =
   AuthenticatedAdminAdmissionsRouteImport.update({
@@ -1078,20 +1270,31 @@ const ApiPublicWebhooksPaystackRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/admissions': typeof AdmissionsRoute
   '/auth': typeof AuthRoute
   '/blog': typeof BlogRouteWithChildren
+  '/careers': typeof CareersRoute
+  '/contact': typeof ContactRoute
+  '/enterprise': typeof EnterpriseRoute
   '/foundation-loop': typeof FoundationLoopRoute
   '/health.json': typeof HealthDotjsonRoute
+  '/legal': typeof LegalRouteWithChildren
   '/login': typeof LoginRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
   '/marketplace': typeof MarketplaceRoute
   '/platform': typeof PlatformRouteWithChildren
+  '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/request-demo': typeof RequestDemoRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/resources': typeof ResourcesRouteWithChildren
   '/rules': typeof RulesRoute
   '/scholar-foundation-loop': typeof ScholarFoundationLoopRoute
+  '/security': typeof SecurityRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/solutions': typeof SolutionsRouteWithChildren
+  '/status': typeof StatusRoute
   '/super-admin-bootstrap': typeof SuperAdminBootstrapRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/bursar': typeof AuthenticatedBursarRouteRouteWithChildren
@@ -1109,9 +1312,30 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/events/$id': typeof EventsIdRoute
+  '/legal/accessibility': typeof LegalAccessibilityRoute
+  '/legal/cookies': typeof LegalCookiesRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/terms': typeof LegalTermsRoute
   '/news/$id': typeof NewsIdRoute
+  '/platform/ai-workforce': typeof PlatformAiWorkforceRoute
+  '/platform/governance': typeof PlatformGovernanceRoute
+  '/platform/integrations': typeof PlatformIntegrationsRoute
+  '/platform/intelligence': typeof PlatformIntelligenceRoute
+  '/platform/memory': typeof PlatformMemoryRoute
+  '/platform/missions': typeof PlatformMissionsRoute
   '/platform/org': typeof PlatformOrgRoute
+  '/platform/reality': typeof PlatformRealityRoute
   '/reality/$class': typeof RealityClassRoute
+  '/resources/blog': typeof ResourcesBlogRoute
+  '/resources/case-studies': typeof ResourcesCaseStudiesRoute
+  '/resources/changelog': typeof ResourcesChangelogRoute
+  '/resources/docs': typeof ResourcesDocsRoute
+  '/resources/guides': typeof ResourcesGuidesRoute
+  '/solutions/ai-workforce': typeof SolutionsAiWorkforceRoute
+  '/solutions/education': typeof SolutionsEducationRoute
+  '/solutions/enterprise': typeof SolutionsEnterpriseRoute
+  '/solutions/operations': typeof SolutionsOperationsRoute
+  '/solutions/organizations': typeof SolutionsOrganizationsRoute
   '/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
@@ -1236,20 +1460,31 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/admissions': typeof AdmissionsRoute
   '/auth': typeof AuthRoute
   '/blog': typeof BlogRouteWithChildren
+  '/careers': typeof CareersRoute
+  '/contact': typeof ContactRoute
+  '/enterprise': typeof EnterpriseRoute
   '/foundation-loop': typeof FoundationLoopRoute
   '/health.json': typeof HealthDotjsonRoute
+  '/legal': typeof LegalRouteWithChildren
   '/login': typeof LoginRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
   '/marketplace': typeof MarketplaceRoute
   '/platform': typeof PlatformRouteWithChildren
+  '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/request-demo': typeof RequestDemoRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/resources': typeof ResourcesRouteWithChildren
   '/rules': typeof RulesRoute
   '/scholar-foundation-loop': typeof ScholarFoundationLoopRoute
+  '/security': typeof SecurityRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/solutions': typeof SolutionsRouteWithChildren
+  '/status': typeof StatusRoute
   '/super-admin-bootstrap': typeof SuperAdminBootstrapRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/bursar': typeof AuthenticatedBursarRouteRouteWithChildren
@@ -1266,9 +1501,30 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/events/$id': typeof EventsIdRoute
+  '/legal/accessibility': typeof LegalAccessibilityRoute
+  '/legal/cookies': typeof LegalCookiesRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/terms': typeof LegalTermsRoute
   '/news/$id': typeof NewsIdRoute
+  '/platform/ai-workforce': typeof PlatformAiWorkforceRoute
+  '/platform/governance': typeof PlatformGovernanceRoute
+  '/platform/integrations': typeof PlatformIntegrationsRoute
+  '/platform/intelligence': typeof PlatformIntelligenceRoute
+  '/platform/memory': typeof PlatformMemoryRoute
+  '/platform/missions': typeof PlatformMissionsRoute
   '/platform/org': typeof PlatformOrgRoute
+  '/platform/reality': typeof PlatformRealityRoute
   '/reality/$class': typeof RealityClassRoute
+  '/resources/blog': typeof ResourcesBlogRoute
+  '/resources/case-studies': typeof ResourcesCaseStudiesRoute
+  '/resources/changelog': typeof ResourcesChangelogRoute
+  '/resources/docs': typeof ResourcesDocsRoute
+  '/resources/guides': typeof ResourcesGuidesRoute
+  '/solutions/ai-workforce': typeof SolutionsAiWorkforceRoute
+  '/solutions/education': typeof SolutionsEducationRoute
+  '/solutions/enterprise': typeof SolutionsEnterpriseRoute
+  '/solutions/operations': typeof SolutionsOperationsRoute
+  '/solutions/organizations': typeof SolutionsOrganizationsRoute
   '/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
@@ -1396,20 +1652,31 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/(site)': typeof siteRouteRouteWithChildren
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/about': typeof AboutRoute
   '/admissions': typeof AdmissionsRoute
   '/auth': typeof AuthRoute
   '/blog': typeof BlogRouteWithChildren
+  '/careers': typeof CareersRoute
+  '/contact': typeof ContactRoute
+  '/enterprise': typeof EnterpriseRoute
   '/foundation-loop': typeof FoundationLoopRoute
   '/health.json': typeof HealthDotjsonRoute
+  '/legal': typeof LegalRouteWithChildren
   '/login': typeof LoginRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
   '/marketplace': typeof MarketplaceRoute
   '/platform': typeof PlatformRouteWithChildren
+  '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/request-demo': typeof RequestDemoRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/resources': typeof ResourcesRouteWithChildren
   '/rules': typeof RulesRoute
   '/scholar-foundation-loop': typeof ScholarFoundationLoopRoute
+  '/security': typeof SecurityRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/solutions': typeof SolutionsRouteWithChildren
+  '/status': typeof StatusRoute
   '/super-admin-bootstrap': typeof SuperAdminBootstrapRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/_authenticated/bursar': typeof AuthenticatedBursarRouteRouteWithChildren
@@ -1427,9 +1694,30 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/events/$id': typeof EventsIdRoute
+  '/legal/accessibility': typeof LegalAccessibilityRoute
+  '/legal/cookies': typeof LegalCookiesRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/terms': typeof LegalTermsRoute
   '/news/$id': typeof NewsIdRoute
+  '/platform/ai-workforce': typeof PlatformAiWorkforceRoute
+  '/platform/governance': typeof PlatformGovernanceRoute
+  '/platform/integrations': typeof PlatformIntegrationsRoute
+  '/platform/intelligence': typeof PlatformIntelligenceRoute
+  '/platform/memory': typeof PlatformMemoryRoute
+  '/platform/missions': typeof PlatformMissionsRoute
   '/platform/org': typeof PlatformOrgRoute
+  '/platform/reality': typeof PlatformRealityRoute
   '/reality/$class': typeof RealityClassRoute
+  '/resources/blog': typeof ResourcesBlogRoute
+  '/resources/case-studies': typeof ResourcesCaseStudiesRoute
+  '/resources/changelog': typeof ResourcesChangelogRoute
+  '/resources/docs': typeof ResourcesDocsRoute
+  '/resources/guides': typeof ResourcesGuidesRoute
+  '/solutions/ai-workforce': typeof SolutionsAiWorkforceRoute
+  '/solutions/education': typeof SolutionsEducationRoute
+  '/solutions/enterprise': typeof SolutionsEnterpriseRoute
+  '/solutions/operations': typeof SolutionsOperationsRoute
+  '/solutions/organizations': typeof SolutionsOrganizationsRoute
   '/_authenticated/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/_authenticated/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
   '/_authenticated/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
@@ -1556,20 +1844,31 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
     | '/admissions'
     | '/auth'
     | '/blog'
+    | '/careers'
+    | '/contact'
+    | '/enterprise'
     | '/foundation-loop'
     | '/health.json'
+    | '/legal'
     | '/login'
     | '/manifest.webmanifest'
     | '/marketplace'
     | '/platform'
+    | '/pricing'
     | '/privacy'
+    | '/request-demo'
     | '/reset-password'
+    | '/resources'
     | '/rules'
     | '/scholar-foundation-loop'
+    | '/security'
     | '/sitemap.xml'
+    | '/solutions'
+    | '/status'
     | '/super-admin-bootstrap'
     | '/admin'
     | '/bursar'
@@ -1587,9 +1886,30 @@ export interface FileRouteTypes {
     | '/settings'
     | '/blog/$slug'
     | '/events/$id'
+    | '/legal/accessibility'
+    | '/legal/cookies'
+    | '/legal/privacy'
+    | '/legal/terms'
     | '/news/$id'
+    | '/platform/ai-workforce'
+    | '/platform/governance'
+    | '/platform/integrations'
+    | '/platform/intelligence'
+    | '/platform/memory'
+    | '/platform/missions'
     | '/platform/org'
+    | '/platform/reality'
     | '/reality/$class'
+    | '/resources/blog'
+    | '/resources/case-studies'
+    | '/resources/changelog'
+    | '/resources/docs'
+    | '/resources/guides'
+    | '/solutions/ai-workforce'
+    | '/solutions/education'
+    | '/solutions/enterprise'
+    | '/solutions/operations'
+    | '/solutions/organizations'
     | '/admin/admissions'
     | '/admin/ai-assistant'
     | '/admin/analytics'
@@ -1714,20 +2034,31 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
     | '/admissions'
     | '/auth'
     | '/blog'
+    | '/careers'
+    | '/contact'
+    | '/enterprise'
     | '/foundation-loop'
     | '/health.json'
+    | '/legal'
     | '/login'
     | '/manifest.webmanifest'
     | '/marketplace'
     | '/platform'
+    | '/pricing'
     | '/privacy'
+    | '/request-demo'
     | '/reset-password'
+    | '/resources'
     | '/rules'
     | '/scholar-foundation-loop'
+    | '/security'
     | '/sitemap.xml'
+    | '/solutions'
+    | '/status'
     | '/super-admin-bootstrap'
     | '/admin'
     | '/bursar'
@@ -1744,9 +2075,30 @@ export interface FileRouteTypes {
     | '/settings'
     | '/blog/$slug'
     | '/events/$id'
+    | '/legal/accessibility'
+    | '/legal/cookies'
+    | '/legal/privacy'
+    | '/legal/terms'
     | '/news/$id'
+    | '/platform/ai-workforce'
+    | '/platform/governance'
+    | '/platform/integrations'
+    | '/platform/intelligence'
+    | '/platform/memory'
+    | '/platform/missions'
     | '/platform/org'
+    | '/platform/reality'
     | '/reality/$class'
+    | '/resources/blog'
+    | '/resources/case-studies'
+    | '/resources/changelog'
+    | '/resources/docs'
+    | '/resources/guides'
+    | '/solutions/ai-workforce'
+    | '/solutions/education'
+    | '/solutions/enterprise'
+    | '/solutions/operations'
+    | '/solutions/organizations'
     | '/admin/admissions'
     | '/admin/ai-assistant'
     | '/admin/analytics'
@@ -1873,20 +2225,31 @@ export interface FileRouteTypes {
     | '/'
     | '/(site)'
     | '/_authenticated'
+    | '/about'
     | '/admissions'
     | '/auth'
     | '/blog'
+    | '/careers'
+    | '/contact'
+    | '/enterprise'
     | '/foundation-loop'
     | '/health.json'
+    | '/legal'
     | '/login'
     | '/manifest.webmanifest'
     | '/marketplace'
     | '/platform'
+    | '/pricing'
     | '/privacy'
+    | '/request-demo'
     | '/reset-password'
+    | '/resources'
     | '/rules'
     | '/scholar-foundation-loop'
+    | '/security'
     | '/sitemap.xml'
+    | '/solutions'
+    | '/status'
     | '/super-admin-bootstrap'
     | '/_authenticated/admin'
     | '/_authenticated/bursar'
@@ -1904,9 +2267,30 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/blog/$slug'
     | '/events/$id'
+    | '/legal/accessibility'
+    | '/legal/cookies'
+    | '/legal/privacy'
+    | '/legal/terms'
     | '/news/$id'
+    | '/platform/ai-workforce'
+    | '/platform/governance'
+    | '/platform/integrations'
+    | '/platform/intelligence'
+    | '/platform/memory'
+    | '/platform/missions'
     | '/platform/org'
+    | '/platform/reality'
     | '/reality/$class'
+    | '/resources/blog'
+    | '/resources/case-studies'
+    | '/resources/changelog'
+    | '/resources/docs'
+    | '/resources/guides'
+    | '/solutions/ai-workforce'
+    | '/solutions/education'
+    | '/solutions/enterprise'
+    | '/solutions/operations'
+    | '/solutions/organizations'
     | '/_authenticated/admin/admissions'
     | '/_authenticated/admin/ai-assistant'
     | '/_authenticated/admin/analytics'
@@ -2034,20 +2418,31 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   siteRouteRoute: typeof siteRouteRouteWithChildren
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AboutRoute: typeof AboutRoute
   AdmissionsRoute: typeof AdmissionsRoute
   AuthRoute: typeof AuthRoute
   BlogRoute: typeof BlogRouteWithChildren
+  CareersRoute: typeof CareersRoute
+  ContactRoute: typeof ContactRoute
+  EnterpriseRoute: typeof EnterpriseRoute
   FoundationLoopRoute: typeof FoundationLoopRoute
   HealthDotjsonRoute: typeof HealthDotjsonRoute
+  LegalRoute: typeof LegalRouteWithChildren
   LoginRoute: typeof LoginRoute
   ManifestDotwebmanifestRoute: typeof ManifestDotwebmanifestRoute
   MarketplaceRoute: typeof MarketplaceRoute
   PlatformRoute: typeof PlatformRouteWithChildren
+  PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
+  RequestDemoRoute: typeof RequestDemoRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ResourcesRoute: typeof ResourcesRouteWithChildren
   RulesRoute: typeof RulesRoute
   ScholarFoundationLoopRoute: typeof ScholarFoundationLoopRoute
+  SecurityRoute: typeof SecurityRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  SolutionsRoute: typeof SolutionsRouteWithChildren
+  StatusRoute: typeof StatusRoute
   SuperAdminBootstrapRoute: typeof SuperAdminBootstrapRoute
   EventsIdRoute: typeof EventsIdRoute
   NewsIdRoute: typeof NewsIdRoute
@@ -2079,6 +2474,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admissions': {
       id: '/admissions'
       path: '/admissions'
@@ -2100,6 +2502,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/careers': {
+      id: '/careers'
+      path: '/careers'
+      fullPath: '/careers'
+      preLoaderRoute: typeof CareersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/enterprise': {
+      id: '/enterprise'
+      path: '/enterprise'
+      fullPath: '/enterprise'
+      preLoaderRoute: typeof EnterpriseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/foundation-loop': {
       id: '/foundation-loop'
       path: '/foundation-loop'
@@ -2112,6 +2535,13 @@ declare module '@tanstack/react-router' {
       path: '/health.json'
       fullPath: '/health.json'
       preLoaderRoute: typeof HealthDotjsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal': {
+      id: '/legal'
+      path: '/legal'
+      fullPath: '/legal'
+      preLoaderRoute: typeof LegalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -2142,6 +2572,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlatformRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacy': {
       id: '/privacy'
       path: '/privacy'
@@ -2149,11 +2586,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/request-demo': {
+      id: '/request-demo'
+      path: '/request-demo'
+      fullPath: '/request-demo'
+      preLoaderRoute: typeof RequestDemoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resources': {
+      id: '/resources'
+      path: '/resources'
+      fullPath: '/resources'
+      preLoaderRoute: typeof ResourcesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rules': {
@@ -2170,11 +2621,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ScholarFoundationLoopRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/security': {
+      id: '/security'
+      path: '/security'
+      fullPath: '/security'
+      preLoaderRoute: typeof SecurityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/solutions': {
+      id: '/solutions'
+      path: '/solutions'
+      fullPath: '/solutions'
+      preLoaderRoute: typeof SolutionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/status': {
+      id: '/status'
+      path: '/status'
+      fullPath: '/status'
+      preLoaderRoute: typeof StatusRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/super-admin-bootstrap': {
@@ -2296,12 +2768,82 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EventsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/legal/accessibility': {
+      id: '/legal/accessibility'
+      path: '/accessibility'
+      fullPath: '/legal/accessibility'
+      preLoaderRoute: typeof LegalAccessibilityRouteImport
+      parentRoute: typeof LegalRoute
+    }
+    '/legal/cookies': {
+      id: '/legal/cookies'
+      path: '/cookies'
+      fullPath: '/legal/cookies'
+      preLoaderRoute: typeof LegalCookiesRouteImport
+      parentRoute: typeof LegalRoute
+    }
+    '/legal/privacy': {
+      id: '/legal/privacy'
+      path: '/privacy'
+      fullPath: '/legal/privacy'
+      preLoaderRoute: typeof LegalPrivacyRouteImport
+      parentRoute: typeof LegalRoute
+    }
+    '/legal/terms': {
+      id: '/legal/terms'
+      path: '/terms'
+      fullPath: '/legal/terms'
+      preLoaderRoute: typeof LegalTermsRouteImport
+      parentRoute: typeof LegalRoute
+    }
     '/news/$id': {
       id: '/news/$id'
       path: '/news/$id'
       fullPath: '/news/$id'
       preLoaderRoute: typeof NewsIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/platform/ai-workforce': {
+      id: '/platform/ai-workforce'
+      path: '/ai-workforce'
+      fullPath: '/platform/ai-workforce'
+      preLoaderRoute: typeof PlatformAiWorkforceRouteImport
+      parentRoute: typeof PlatformRoute
+    }
+    '/platform/governance': {
+      id: '/platform/governance'
+      path: '/governance'
+      fullPath: '/platform/governance'
+      preLoaderRoute: typeof PlatformGovernanceRouteImport
+      parentRoute: typeof PlatformRoute
+    }
+    '/platform/integrations': {
+      id: '/platform/integrations'
+      path: '/integrations'
+      fullPath: '/platform/integrations'
+      preLoaderRoute: typeof PlatformIntegrationsRouteImport
+      parentRoute: typeof PlatformRoute
+    }
+    '/platform/intelligence': {
+      id: '/platform/intelligence'
+      path: '/intelligence'
+      fullPath: '/platform/intelligence'
+      preLoaderRoute: typeof PlatformIntelligenceRouteImport
+      parentRoute: typeof PlatformRoute
+    }
+    '/platform/memory': {
+      id: '/platform/memory'
+      path: '/memory'
+      fullPath: '/platform/memory'
+      preLoaderRoute: typeof PlatformMemoryRouteImport
+      parentRoute: typeof PlatformRoute
+    }
+    '/platform/missions': {
+      id: '/platform/missions'
+      path: '/missions'
+      fullPath: '/platform/missions'
+      preLoaderRoute: typeof PlatformMissionsRouteImport
+      parentRoute: typeof PlatformRoute
     }
     '/platform/org': {
       id: '/platform/org'
@@ -2310,12 +2852,89 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlatformOrgRouteImport
       parentRoute: typeof PlatformRoute
     }
+    '/platform/reality': {
+      id: '/platform/reality'
+      path: '/reality'
+      fullPath: '/platform/reality'
+      preLoaderRoute: typeof PlatformRealityRouteImport
+      parentRoute: typeof PlatformRoute
+    }
     '/reality/$class': {
       id: '/reality/$class'
       path: '/reality/$class'
       fullPath: '/reality/$class'
       preLoaderRoute: typeof RealityClassRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/resources/blog': {
+      id: '/resources/blog'
+      path: '/blog'
+      fullPath: '/resources/blog'
+      preLoaderRoute: typeof ResourcesBlogRouteImport
+      parentRoute: typeof ResourcesRoute
+    }
+    '/resources/case-studies': {
+      id: '/resources/case-studies'
+      path: '/case-studies'
+      fullPath: '/resources/case-studies'
+      preLoaderRoute: typeof ResourcesCaseStudiesRouteImport
+      parentRoute: typeof ResourcesRoute
+    }
+    '/resources/changelog': {
+      id: '/resources/changelog'
+      path: '/changelog'
+      fullPath: '/resources/changelog'
+      preLoaderRoute: typeof ResourcesChangelogRouteImport
+      parentRoute: typeof ResourcesRoute
+    }
+    '/resources/docs': {
+      id: '/resources/docs'
+      path: '/docs'
+      fullPath: '/resources/docs'
+      preLoaderRoute: typeof ResourcesDocsRouteImport
+      parentRoute: typeof ResourcesRoute
+    }
+    '/resources/guides': {
+      id: '/resources/guides'
+      path: '/guides'
+      fullPath: '/resources/guides'
+      preLoaderRoute: typeof ResourcesGuidesRouteImport
+      parentRoute: typeof ResourcesRoute
+    }
+    '/solutions/ai-workforce': {
+      id: '/solutions/ai-workforce'
+      path: '/ai-workforce'
+      fullPath: '/solutions/ai-workforce'
+      preLoaderRoute: typeof SolutionsAiWorkforceRouteImport
+      parentRoute: typeof SolutionsRoute
+    }
+    '/solutions/education': {
+      id: '/solutions/education'
+      path: '/education'
+      fullPath: '/solutions/education'
+      preLoaderRoute: typeof SolutionsEducationRouteImport
+      parentRoute: typeof SolutionsRoute
+    }
+    '/solutions/enterprise': {
+      id: '/solutions/enterprise'
+      path: '/enterprise'
+      fullPath: '/solutions/enterprise'
+      preLoaderRoute: typeof SolutionsEnterpriseRouteImport
+      parentRoute: typeof SolutionsRoute
+    }
+    '/solutions/operations': {
+      id: '/solutions/operations'
+      path: '/operations'
+      fullPath: '/solutions/operations'
+      preLoaderRoute: typeof SolutionsOperationsRouteImport
+      parentRoute: typeof SolutionsRoute
+    }
+    '/solutions/organizations': {
+      id: '/solutions/organizations'
+      path: '/organizations'
+      fullPath: '/solutions/organizations'
+      preLoaderRoute: typeof SolutionsOrganizationsRouteImport
+      parentRoute: typeof SolutionsRoute
     }
     '/_authenticated/admin/admissions': {
       id: '/_authenticated/admin/admissions'
@@ -3600,36 +4219,117 @@ const BlogRouteChildren: BlogRouteChildren = {
 
 const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
 
+interface LegalRouteChildren {
+  LegalAccessibilityRoute: typeof LegalAccessibilityRoute
+  LegalCookiesRoute: typeof LegalCookiesRoute
+  LegalPrivacyRoute: typeof LegalPrivacyRoute
+  LegalTermsRoute: typeof LegalTermsRoute
+}
+
+const LegalRouteChildren: LegalRouteChildren = {
+  LegalAccessibilityRoute: LegalAccessibilityRoute,
+  LegalCookiesRoute: LegalCookiesRoute,
+  LegalPrivacyRoute: LegalPrivacyRoute,
+  LegalTermsRoute: LegalTermsRoute,
+}
+
+const LegalRouteWithChildren = LegalRoute._addFileChildren(LegalRouteChildren)
+
 interface PlatformRouteChildren {
+  PlatformAiWorkforceRoute: typeof PlatformAiWorkforceRoute
+  PlatformGovernanceRoute: typeof PlatformGovernanceRoute
+  PlatformIntegrationsRoute: typeof PlatformIntegrationsRoute
+  PlatformIntelligenceRoute: typeof PlatformIntelligenceRoute
+  PlatformMemoryRoute: typeof PlatformMemoryRoute
+  PlatformMissionsRoute: typeof PlatformMissionsRoute
   PlatformOrgRoute: typeof PlatformOrgRoute
+  PlatformRealityRoute: typeof PlatformRealityRoute
 }
 
 const PlatformRouteChildren: PlatformRouteChildren = {
+  PlatformAiWorkforceRoute: PlatformAiWorkforceRoute,
+  PlatformGovernanceRoute: PlatformGovernanceRoute,
+  PlatformIntegrationsRoute: PlatformIntegrationsRoute,
+  PlatformIntelligenceRoute: PlatformIntelligenceRoute,
+  PlatformMemoryRoute: PlatformMemoryRoute,
+  PlatformMissionsRoute: PlatformMissionsRoute,
   PlatformOrgRoute: PlatformOrgRoute,
+  PlatformRealityRoute: PlatformRealityRoute,
 }
 
 const PlatformRouteWithChildren = PlatformRoute._addFileChildren(
   PlatformRouteChildren,
 )
 
+interface ResourcesRouteChildren {
+  ResourcesBlogRoute: typeof ResourcesBlogRoute
+  ResourcesCaseStudiesRoute: typeof ResourcesCaseStudiesRoute
+  ResourcesChangelogRoute: typeof ResourcesChangelogRoute
+  ResourcesDocsRoute: typeof ResourcesDocsRoute
+  ResourcesGuidesRoute: typeof ResourcesGuidesRoute
+}
+
+const ResourcesRouteChildren: ResourcesRouteChildren = {
+  ResourcesBlogRoute: ResourcesBlogRoute,
+  ResourcesCaseStudiesRoute: ResourcesCaseStudiesRoute,
+  ResourcesChangelogRoute: ResourcesChangelogRoute,
+  ResourcesDocsRoute: ResourcesDocsRoute,
+  ResourcesGuidesRoute: ResourcesGuidesRoute,
+}
+
+const ResourcesRouteWithChildren = ResourcesRoute._addFileChildren(
+  ResourcesRouteChildren,
+)
+
+interface SolutionsRouteChildren {
+  SolutionsAiWorkforceRoute: typeof SolutionsAiWorkforceRoute
+  SolutionsEducationRoute: typeof SolutionsEducationRoute
+  SolutionsEnterpriseRoute: typeof SolutionsEnterpriseRoute
+  SolutionsOperationsRoute: typeof SolutionsOperationsRoute
+  SolutionsOrganizationsRoute: typeof SolutionsOrganizationsRoute
+}
+
+const SolutionsRouteChildren: SolutionsRouteChildren = {
+  SolutionsAiWorkforceRoute: SolutionsAiWorkforceRoute,
+  SolutionsEducationRoute: SolutionsEducationRoute,
+  SolutionsEnterpriseRoute: SolutionsEnterpriseRoute,
+  SolutionsOperationsRoute: SolutionsOperationsRoute,
+  SolutionsOrganizationsRoute: SolutionsOrganizationsRoute,
+}
+
+const SolutionsRouteWithChildren = SolutionsRoute._addFileChildren(
+  SolutionsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   siteRouteRoute: siteRouteRouteWithChildren,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AboutRoute: AboutRoute,
   AdmissionsRoute: AdmissionsRoute,
   AuthRoute: AuthRoute,
   BlogRoute: BlogRouteWithChildren,
+  CareersRoute: CareersRoute,
+  ContactRoute: ContactRoute,
+  EnterpriseRoute: EnterpriseRoute,
   FoundationLoopRoute: FoundationLoopRoute,
   HealthDotjsonRoute: HealthDotjsonRoute,
+  LegalRoute: LegalRouteWithChildren,
   LoginRoute: LoginRoute,
   ManifestDotwebmanifestRoute: ManifestDotwebmanifestRoute,
   MarketplaceRoute: MarketplaceRoute,
   PlatformRoute: PlatformRouteWithChildren,
+  PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
+  RequestDemoRoute: RequestDemoRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ResourcesRoute: ResourcesRouteWithChildren,
   RulesRoute: RulesRoute,
   ScholarFoundationLoopRoute: ScholarFoundationLoopRoute,
+  SecurityRoute: SecurityRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  SolutionsRoute: SolutionsRouteWithChildren,
+  StatusRoute: StatusRoute,
   SuperAdminBootstrapRoute: SuperAdminBootstrapRoute,
   EventsIdRoute: EventsIdRoute,
   NewsIdRoute: NewsIdRoute,

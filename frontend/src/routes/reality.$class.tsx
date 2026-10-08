@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { GeneratedSite } from "@/components/generated/generated-site";
 import { featureCodesForReality } from "@/lib/scholar/capability-codes";
 import { experiencePresetKeys } from "@/lib/scholar/experience/experience-presets";
+import { PLATFORM_NAME } from "@/lib/platform";
 import {
   buildGeneratedSiteView,
   classAudienceIndex,
@@ -14,11 +15,11 @@ export const Route = createFileRoute("/reality/$class")({
   component: RealityPreview,
   head: () => ({
     meta: [
-      { title: "Generated environment — CoreGrid" },
+      { title: `Generated environment — ${PLATFORM_NAME}` },
       {
         name: "description",
         content:
-          "Every CoreGrid organization class generates its own digital environment: sections, brand, navigation, manifest and internal workspaces derived from the organization's reality.",
+          `Every ${PLATFORM_NAME} organization class generates its own digital environment: sections, brand, navigation, manifest and internal workspaces derived from the organization's reality.`,
       },
     ],
   }),
@@ -36,7 +37,7 @@ function RealityPreview() {
 
   useEffect(() => {
     const previous = document.title;
-    document.title = `${organizationClassLabel(orgType)} — generated environment — CoreGrid`;
+    document.title = `${organizationClassLabel(orgType)} — generated environment — ${PLATFORM_NAME}`;
     return () => {
       document.title = previous;
     };
