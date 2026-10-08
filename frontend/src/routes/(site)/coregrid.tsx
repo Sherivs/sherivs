@@ -26,7 +26,7 @@ export const Route = createFileRoute("/(site)/coregrid")({
       {
         name: "description",
         content:
-          "CoreGrid is the AI-native institutional operating system: a governed kernel with reality models, missions, an AI workforce, evidence and policy — plus the domain runtimes organizations install on it.",
+          "Sherivs is the AI-native institutional operating system: a governed kernel with reality models, missions, an AI workforce, evidence and policy — plus the domain runtimes organizations install on it.",
       },
       { property: "og:title", content: `${PLATFORM_NAME} — ${PLATFORM_TAGLINE}` },
       {
@@ -79,7 +79,7 @@ function CoreGridSitePage() {
             The AI-native institutional operating system
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            CoreGrid unifies organizations, people, places, devices, workflows, knowledge,
+            Sherivs unifies organizations, people, places, devices, workflows, knowledge,
             payments and automation into one governed ecosystem — a kernel with registries,
             events, policies and evidence, on which institutions install the domain runtimes
             they actually need.

@@ -31,11 +31,11 @@ export const Route = createFileRoute("/marketplace")({
   component: MarketplacePage,
   head: () => ({
     meta: [
-      { title: "Marketplace — published from reality — CoreGrid" },
+      { title: "Marketplace — published from reality — Sherivs" },
       {
         name: "description",
         content:
-          "CoreGrid publishes a marketplace catalog from each organization's own reality: one listing per installed feature code, entitlement-gated installation, and no self-asserted trust.",
+          "Sherivs publishes a marketplace catalog from each organization's own reality: one listing per installed feature code, entitlement-gated installation, and no self-asserted trust.",
       },
     ],
   }),

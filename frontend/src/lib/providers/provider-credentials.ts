@@ -391,7 +391,7 @@ export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = 
     provider: "ai-gateway",
     classification: "server_runtime_secret",
     runtimeScope: "server",
-    requiredCapability: "Governed model invocation through the CoreGrid intelligence gateway",
+    requiredCapability: "Governed model invocation through the Sherivs intelligence gateway",
     adapterRef: "frontend/src/lib/ai-gateway.server.ts",
     hasHealthCheck: true,
     status: "OPERATIONAL",

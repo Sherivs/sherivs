@@ -7,9 +7,9 @@
  * (`@/lib/runtime/installed-runtimes`), never to the platform's identity module,
  * and UI copy must never imply CoreGrid is built on top of any one runtime.
  */
-export const PLATFORM_NAME = "CoreGrid";
+export const PLATFORM_NAME = "Sherivs";
 export const PLATFORM_TAGLINE = "Universal Reality Intelligence Platform";
 
-export const PLATFORM_PAGE_TITLE = "CoreGrid — Universal Reality Intelligence Platform";
+export const PLATFORM_PAGE_TITLE = "Sherivs — Universal Reality Intelligence Platform";
 export const PLATFORM_PAGE_DESCRIPTION =
-  "CoreGrid is a universal reality intelligence platform — kernel, registries, events, policies and governed runtimes. An installed runtime operates on CoreGrid primitives and brings only its own domain: it is a consumer of the platform, never its boundary.";
+  "Sherivs is a universal reality intelligence platform — kernel, registries, events, policies and governed runtimes. An installed runtime operates on Sherivs primitives and brings only its own domain: it is a consumer of the platform, never its boundary.";

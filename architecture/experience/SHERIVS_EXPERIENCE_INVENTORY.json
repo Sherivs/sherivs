@@ -1,0 +1,2808 @@
+{
+  "artifact": "SHERIVS_EXPERIENCE_INVENTORY",
+  "generatedBy": "scripts/experience/inventory-experience.mjs",
+  "versionTarget": "V1",
+  "totals": {
+    "routeFiles": 159,
+    "pages": 142,
+    "layouts": 12,
+    "apiRoutes": 5,
+    "pagesByGroup": {
+      "public-site": 1,
+      "authenticated": 123,
+      "public": 18
+    },
+    "pagesWithHeadMeta": 19,
+    "pagesWithCanonical": 1,
+    "components": 113,
+    "componentFamilies": {
+      "admin": 3,
+      "ai": 5,
+      "root": 29,
+      "command-center": 2,
+      "command-centre": 1,
+      "generated": 1,
+      "public": 19,
+      "shell": 4,
+      "super-admin": 1,
+      "ui": 48
+    },
+    "serverFunctionFiles": 55,
+    "mobileScreens": 11
+  },
+  "tokens": {
+    "cssCustomProperties": 127,
+    "names": [
+      "--accent",
+      "--accent-foreground",
+      "--background",
+      "--border",
+      "--breakpoint-xs",
+      "--card",
+      "--card-foreground",
+      "--color-accent",
+      "--color-accent-foreground",
+      "--color-background",
+      "--color-border",
+      "--color-card",
+      "--color-card-foreground",
+      "--color-danger",
+      "--color-danger-bg",
+      "--color-destructive",
+      "--color-destructive-foreground",
+      "--color-foreground",
+      "--color-info",
+      "--color-info-bg",
+      "--color-input",
+      "--color-muted",
+      "--color-muted-foreground",
+      "--color-popover",
+      "--color-popover-foreground",
+      "--color-primary",
+      "--color-primary-foreground",
+      "--color-ring",
+      "--color-secondary",
+      "--color-secondary-foreground",
+      "--color-sidebar",
+      "--color-sidebar-accent",
+      "--color-sidebar-accent-foreground",
+      "--color-sidebar-border",
+      "--color-sidebar-foreground",
+      "--color-sidebar-ring",
+      "--color-success",
+      "--color-success-bg",
+      "--color-surface",
+      "--color-surface-2",
+      "--color-tenant",
+      "--color-tenant-2",
+      "--color-warning",
+      "--color-warning-bg",
+      "--destructive",
+      "--destructive-foreground",
+      "--duration-fast",
+      "--duration-instant",
+      "--duration-normal",
+      "--duration-slow",
+      "--duration-slower",
+      "--ease-default",
+      "--ease-in",
+      "--ease-out",
+      "--ease-spring",
+      "--font-display",
+      "--font-sans",
+      "--foreground",
+      "--glass-active",
+      "--glass-bg",
+      "--glass-blur",
+      "--glass-border",
+      "--glass-hover",
+      "--input",
+      "--muted",
+      "--muted-foreground",
+      "--overlay-bg",
+      "--overlay-blur",
+      "--popover",
+      "--popover-foreground",
+      "--primary",
+      "--primary-foreground",
+      "--primary-rgb",
+      "--radius",
+      "--radius-2xl",
+      "--radius-btn",
+      "--radius-card",
+      "--radius-full",
+      "--radius-lg",
+      "--radius-md",
+      "--radius-sm",
+      "--radius-xl",
+      "--radius-xs",
+      "--ring",
+      "--secondary",
+      "--secondary-foreground",
+      "--shadow-card",
+      "--shadow-glow",
+      "--shadow-hover",
+      "--shadow-lg",
+      "--shadow-md",
+      "--shadow-sm",
+      "--shadow-xl",
+      "--sidebar-bg",
+      "--sidebar-border",
+      "--space-1",
+      "--space-10",
+      "--space-12",
+      "--space-16",
+      "--space-2",
+      "--space-20",
+      "--space-24",
+      "--space-3",
+      "--space-4",
+      "--space-5",
+      "--space-6",
+      "--space-8",
+      "--surface-1",
+      "--surface-2",
+      "--surface-3",
+      "--tenant-primary",
+      "--tenant-secondary",
+      "--text-body",
+      "--text-body-lg",
+      "--text-body-sm",
+      "--text-caption",
+      "--text-display",
+      "--text-h1",
+      "--text-h2",
+      "--text-h3",
+      "--text-h4",
+      "--text-label",
+      "--text-muted",
+      "--text-primary",
+      "--text-secondary",
+      "--transition-fast",
+      "--transition-smooth"
+    ],
+    "hardcodedHexInTsx": 98
+  },
+  "accessibility": {
+    "ariaAttributes": 105,
+    "roleAttributes": 22,
+    "srOnlyUses": 12,
+    "focusVisibleUtilities": 90,
+    "motionSafeReduceUtilities": 0,
+    "reducedMotionMediaQueriesInCss": 0
+  },
+  "responsive": {
+    "tailwindPrefixUsage": {
+      "xs": 1,
+      "sm": 284,
+      "md": 153,
+      "lg": 111,
+      "xl": 3,
+      "2xl": 0
+    }
+  },
+  "pwa": {
+    "serviceWorker": true,
+    "serviceWorkerCaches": [
+      "coregrid-app-shell-v1"
+    ],
+    "manifestRoute": true,
+    "icons": [
+      "icon-192.png",
+      "icon-512.png",
+      "maskable-512.png"
+    ]
+  },
+  "mobile": {
+    "screens": [
+      "mobile/app/(app)/_layout.tsx",
+      "mobile/app/(app)/agents.tsx",
+      "mobile/app/(app)/evidence.tsx",
+      "mobile/app/(app)/index.tsx",
+      "mobile/app/(app)/missions/[id].tsx",
+      "mobile/app/(app)/missions/index.tsx",
+      "mobile/app/(app)/organization.tsx",
+      "mobile/app/(app)/settings.tsx",
+      "mobile/app/_layout.tsx",
+      "mobile/app/index.tsx",
+      "mobile/app/sign-in.tsx"
+    ]
+  },
+  "scholarAssumptions": {
+    "routeGroups": {
+      "scholarPortals": 100,
+      "platformInternal": 18,
+      "commandCentre": 1
+    },
+    "topFiles": [
+      {
+        "file": "frontend/src/components/public/sections.tsx",
+        "mentions": 109
+      },
+      {
+        "file": "frontend/src/routes/_authenticated/admin/dashboard.tsx",
+        "mentions": 101
+      },
+      {
+        "file": "frontend/src/routes/_authenticated/admin/operations.tsx",
+        "mentions": 82
+      },
+      {
+        "file": "frontend/src/components/command-center/command-palette.tsx",
+        "mentions": 81
+      },
+      {
+        "file": "frontend/src/routes/_authenticated/admin/bus-management.tsx",
+        "mentions": 69
+      },
+      {
+        "file": "frontend/src/routes/_authenticated/admin/intelligence.tsx",
+        "mentions": 64
+      },
+      {
+        "file": "frontend/src/routes/_authenticated/super-admin/dashboard.tsx",
+        "mentions": 63
+      },
+      {
+        "file": "frontend/src/routes/_authenticated/admin/student-intelligence.tsx",
+        "mentions": 61
+      },
+      {
+        "file": "frontend/src/routes/admissions.tsx",
+        "mentions": 61
+      },
+      {
+        "file": "frontend/src/routes/_authenticated/teacher/dashboard.tsx",
+        "mentions": 52
+      },
+      {
+        "file": "frontend/src/routes/_authenticated/super-admin/billing.tsx",
+        "mentions": 51
+      },
+      {
+        "file": "frontend/src/routes/_authenticated/admin/hostel.tsx",
+        "mentions": 49
+      },
+      {
+        "file": "frontend/src/routes/_authenticated/admin/geofence-settings.tsx",
+        "mentions": 46
+      },
+      {
+        "file": "frontend/src/components/public/_shared.tsx",
+        "mentions": 45
+      },
+      {
+        "file": "frontend/src/routes/_authenticated/admin/health-certificate.tsx",
+        "mentions": 45
+      },
+      {
+        "file": "frontend/src/components/public/site.tsx",
+        "mentions": 43
+      },
+      {
+        "file": "frontend/src/components/ai/ai-assistant-shell.tsx",
+        "mentions": 42
+      },
+      {
+        "file": "frontend/src/routes/_authenticated/admin/hr.tsx",
+        "mentions": 40
+      },
+      {
+        "file": "frontend/src/routes/_authenticated/admin/teacher-intelligence.tsx",
+        "mentions": 40
+      },
+      {
+        "file": "frontend/src/routes/_authenticated/student/dashboard.tsx",
+        "mentions": 39
+      },
+      {
+        "file": "frontend/src/routes/_authenticated/teacher/attendance.tsx",
+        "mentions": 38
+      },
+      {
+        "file": "frontend/src/routes/_authenticated/super-admin/schools.tsx",
+        "mentions": 37
+      },
+      {
+        "file": "frontend/src/routes/_authenticated/bursar/dashboard.tsx",
+        "mentions": 35
+      },
+      {
+        "file": "frontend/src/routes/_authenticated/admin/library.tsx",
+        "mentions": 34
+      },
+      {
+        "file": "frontend/src/routes/_authenticated/hq/dashboard.tsx",
+        "mentions": 34
+      }
+    ]
+  },
+  "serverFunctionFiles": [
+    "frontend/src/integrations/supabase/client.server.ts",
+    "frontend/src/lib/ai-gateway.server.ts",
+    "frontend/src/lib/command-centre.functions.ts",
+    "frontend/src/lib/communications/delivery-evidence.server.ts",
+    "frontend/src/lib/communications/resend-email.server.ts",
+    "frontend/src/lib/communications/twilio-sms.server.ts",
+    "frontend/src/lib/communications/twilio-voice.server.ts",
+    "frontend/src/lib/communications/vapi-voice.server.ts",
+    "frontend/src/lib/files/storage-adapter.server.ts",
+    "frontend/src/lib/files/storage-service.server.ts",
+    "frontend/src/lib/foundation-loop.functions.ts",
+    "frontend/src/lib/hermes/hermes-event-source-db.server.ts",
+    "frontend/src/lib/hermes/hermes-observation-db.server.ts",
+    "frontend/src/lib/hermes/hermes-observation-trigger.server.ts",
+    "frontend/src/lib/identity-registry.functions.ts",
+    "frontend/src/lib/kernel-reality.functions.ts",
+    "frontend/src/lib/memory/memory-db-adapter.server.ts",
+    "frontend/src/lib/missions/mission-execution-db.server.ts",
+    "frontend/src/lib/missions/mission-lease-db.server.ts",
+    "frontend/src/lib/observability/provider-health.server.ts",
+    "frontend/src/lib/onboarding/provision-organization.functions.ts",
+    "frontend/src/lib/payments/paystack-testmode.server.ts",
+    "frontend/src/lib/profile.functions.ts",
+    "frontend/src/lib/push.functions.ts",
+    "frontend/src/lib/push.server.ts",
+    "frontend/src/lib/rate-limit/redis-rate-limiter.server.ts",
+    "frontend/src/lib/register-runtime.functions.ts",
+    "frontend/src/lib/runtime/scholar/attendance.functions.ts",
+    "frontend/src/lib/runtime/scholar/bus-tracking.functions.ts",
+    "frontend/src/lib/runtime/scholar/demo-provision.functions.ts",
+    "frontend/src/lib/runtime/scholar/digital-twin.functions.ts",
+    "frontend/src/lib/runtime/scholar/driver-portal.functions.ts",
+    "frontend/src/lib/runtime/scholar/expense-insights.functions.ts",
+    "frontend/src/lib/runtime/scholar/facilities.functions.ts",
+    "frontend/src/lib/runtime/scholar/lesson-plan-ai.functions.ts",
+    "frontend/src/lib/runtime/scholar/messages-broadcast.functions.ts",
+    "frontend/src/lib/runtime/scholar/notification-digest.functions.ts",
+    "frontend/src/lib/runtime/scholar/notifications-fanout.functions.ts",
+    "frontend/src/lib/runtime/scholar/org-profile.functions.ts",
+    "frontend/src/lib/runtime/scholar/paystack.functions.ts",
+    "frontend/src/lib/runtime/scholar/portal-overview.functions.ts",
+    "frontend/src/lib/runtime/scholar/provisioning.functions.ts",
+    "frontend/src/lib/runtime/scholar/scholar-feature-access.functions.ts",
+    "frontend/src/lib/runtime/scholar/scholar-foundation-loop.functions.ts",
+    "frontend/src/lib/runtime/scholar/scholar-institution-config.functions.ts",
+    "frontend/src/lib/runtime/scholar/scholar-role-assignments.functions.ts",
+    "frontend/src/lib/runtime/scholar/school-settings.functions.ts",
+    "frontend/src/lib/runtime/scholar/staff-accounts.functions.ts",
+    "frontend/src/lib/runtime/scholar/teachers.functions.ts",
+    "frontend/src/lib/runtime/scholar/timetable.functions.ts",
+    "frontend/src/lib/runtime/scholar/workforce-positions.functions.ts",
+    "frontend/src/lib/tenant-registry.functions.ts",
+    "frontend/src/lib/workforce/worker-launch-runtime.server.ts",
+    "frontend/src/lib/workforce/worker-launch.functions.ts",
+    "frontend/src/lib/workforce/worker-registry-db.server.ts"
+  ],
+  "brand": {
+    "byClass": {
+      "COMMENT": 714,
+      "TECHNICAL_IDENTIFIER": 195,
+      "CUSTOMER_FACING": 90,
+      "PERSISTED_VALUE": 36,
+      "AI_PROMPT": 1,
+      "TOOLING": 497,
+      "TEST": 937,
+      "INFRASTRUCTURE_OR_DB": 469
+    },
+    "byZone": {
+      "frontend/src": {
+        "COMMENT": 684,
+        "TECHNICAL_IDENTIFIER": 163,
+        "CUSTOMER_FACING": 76,
+        "PERSISTED_VALUE": 33,
+        "AI_PROMPT": 1
+      },
+      "mobile/src": {
+        "COMMENT": 23,
+        "TECHNICAL_IDENTIFIER": 28,
+        "PERSISTED_VALUE": 3,
+        "CUSTOMER_FACING": 3
+      },
+      "mobile/app": {
+        "CUSTOMER_FACING": 8,
+        "TECHNICAL_IDENTIFIER": 1
+      },
+      "public": {
+        "COMMENT": 2,
+        "TECHNICAL_IDENTIFIER": 1,
+        "CUSTOMER_FACING": 2
+      },
+      "packages": {
+        "TECHNICAL_IDENTIFIER": 2,
+        "CUSTOMER_FACING": 1,
+        "COMMENT": 5
+      },
+      "scripts": {
+        "TOOLING": 497
+      },
+      "tests": {
+        "TEST": 937
+      },
+      "database": {
+        "INFRASTRUCTURE_OR_DB": 164
+      },
+      "infrastructure": {
+        "INFRASTRUCTURE_OR_DB": 305
+      },
+      "repository-root-docs": {
+        "GOVERNANCE_DOC": 2271
+      }
+    },
+    "customerFacingFiles": {
+      "frontend/src/components/command-centre/command-centre.tsx": 6,
+      "frontend/src/lib/communication-providers.ts": 1,
+      "frontend/src/lib/dev-core.ts": 1,
+      "frontend/src/lib/domain-config/restaurant.ts": 1,
+      "frontend/src/lib/financial-intelligence-report.ts": 1,
+      "frontend/src/lib/guidance/page-tips.ts": 2,
+      "frontend/src/lib/integration-transform.ts": 1,
+      "frontend/src/lib/kernel/engineering-sections.ts": 1,
+      "frontend/src/lib/kernel/phase-contracts/phase-01-foundation.ts": 1,
+      "frontend/src/lib/kernel/phase-contracts/phase-29-integration.ts": 2,
+      "frontend/src/lib/marketplace-package.ts": 1,
+      "frontend/src/lib/phase-catalog.ts": 1,
+      "frontend/src/lib/platform.ts": 3,
+      "frontend/src/lib/providers/provider-credentials.ts": 1,
+      "frontend/src/lib/runtime/scholar-nav-catalog.ts": 1,
+      "frontend/src/lib/scheduling-intelligence-report.ts": 1,
+      "frontend/src/lib/scholar/pwa/manifest-engine.ts": 1,
+      "frontend/src/lib/scholar/roles/role-categories.ts": 1,
+      "frontend/src/lib/scholar/roles/role-workspaces.ts": 1,
+      "frontend/src/routes/(site)/-content/pricing-tiers.ts": 1,
+      "frontend/src/routes/(site)/coregrid.tsx": 2,
+      "frontend/src/routes/__root.tsx": 1,
+      "frontend/src/routes/_authenticated/admin/enterprise-checklist.tsx": 1,
+      "frontend/src/routes/_authenticated/admin/facilities.tsx": 1,
+      "frontend/src/routes/_authenticated/admin/intelligence.tsx": 3,
+      "frontend/src/routes/_authenticated/admin/school-profile.tsx": 3,
+      "frontend/src/routes/_authenticated/admin/support.tsx": 2,
+      "frontend/src/routes/_authenticated/command-centre/index.tsx": 1,
+      "frontend/src/routes/_authenticated/route.tsx": 1,
+      "frontend/src/routes/_authenticated/runtime.tsx": 3,
+      "frontend/src/routes/_authenticated/super-admin/academic-intelligence.tsx": 1,
+      "frontend/src/routes/_authenticated/super-admin/agent-governance.tsx": 1,
+      "frontend/src/routes/_authenticated/super-admin/communication-steward.tsx": 2,
+      "frontend/src/routes/_authenticated/super-admin/financial-operations.tsx": 1,
+      "frontend/src/routes/_authenticated/super-admin/runtime-contracts.tsx": 1,
+      "frontend/src/routes/_authenticated/super-admin/scheduling-intelligence.tsx": 1,
+      "frontend/src/routes/_authenticated/super-admin/tenants.tsx": 1,
+      "frontend/src/routes/_authenticated/super-admin/trust-fabric.tsx": 1,
+      "frontend/src/routes/_authenticated/super-admin/worker-missions.tsx": 1,
+      "frontend/src/routes/_authenticated/super-admin/workspace-projection.tsx": 1,
+      "frontend/src/routes/auth.tsx": 1,
+      "frontend/src/routes/index.tsx": 3,
+      "frontend/src/routes/marketplace.tsx": 2,
+      "frontend/src/routes/platform.org.tsx": 4,
+      "frontend/src/routes/platform.tsx": 5,
+      "frontend/src/routes/reality.$class.tsx": 3,
+      "mobile/src/api/errors.ts": 2,
+      "mobile/src/ui/components.tsx": 1,
+      "mobile/app/(app)/_layout.tsx": 1,
+      "mobile/app/(app)/agents.tsx": 1,
+      "mobile/app/(app)/index.tsx": 2,
+      "mobile/app/(app)/organization.tsx": 1,
+      "mobile/app/sign-in.tsx": 3,
+      "public/sw.js": 2,
+      "packages/contracts/package.json": 1
+    }
+  },
+  "routes": [
+    {
+      "file": "frontend/src/routes/__root.tsx",
+      "url": "/",
+      "kind": "layout",
+      "group": "public",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 144
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/admissions.tsx",
+      "url": "/admin/admissions",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 926
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/ai-assistant.tsx",
+      "url": "/admin/ai-assistant",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 20
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/analytics.tsx",
+      "url": "/admin/analytics",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 250
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/api-keys.tsx",
+      "url": "/admin/api-keys",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 318
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/attendance.tsx",
+      "url": "/admin/attendance",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 253
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/audit-logs.tsx",
+      "url": "/admin/audit-logs",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 294
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/audit.tsx",
+      "url": "/admin/audit",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 78
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/broadcast.tsx",
+      "url": "/admin/broadcast",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 247
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/bus-management.tsx",
+      "url": "/admin/bus-management",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 677
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/buses.tsx",
+      "url": "/admin/buses",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 412
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/calendar.tsx",
+      "url": "/admin/calendar",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 130
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/classes.tsx",
+      "url": "/admin/classes",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 320
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/cms.tsx",
+      "url": "/admin/cms",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 725
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/dashboard.tsx",
+      "url": "/admin/dashboard",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 1249
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/digital-twin.tsx",
+      "url": "/admin/digital-twin",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 392
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/discipline.tsx",
+      "url": "/admin/discipline",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 545
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/education-reality.tsx",
+      "url": "/admin/education-reality",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 96
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/enterprise-checklist.tsx",
+      "url": "/admin/enterprise-checklist",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 104
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/examinations.tsx",
+      "url": "/admin/examinations",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 27
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/expenses.tsx",
+      "url": "/admin/expenses",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 997
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/extracurricular.tsx",
+      "url": "/admin/extracurricular",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 98
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/facilities.tsx",
+      "url": "/admin/facilities",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": "admin,principal",
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 119
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/features.tsx",
+      "url": "/admin/features",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 231
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/fees-defaulters.tsx",
+      "url": "/admin/fees-defaulters",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 285
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/fees.tsx",
+      "url": "/admin/fees",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 214
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/financial-reports.tsx",
+      "url": "/admin/financial-reports",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 69
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/geofence-settings.tsx",
+      "url": "/admin/geofence-settings",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 455
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/grades.tsx",
+      "url": "/admin/grades",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 108
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/health-certificate.tsx",
+      "url": "/admin/health-certificate",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 384
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/health.tsx",
+      "url": "/admin/health",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 603
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/hostel.tsx",
+      "url": "/admin/hostel",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 676
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/hr.tsx",
+      "url": "/admin/hr",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 1251
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/identities.tsx",
+      "url": "/admin/identities",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 170
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/intelligence-ai.tsx",
+      "url": "/admin/intelligence-ai",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 23
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/intelligence-operations.tsx",
+      "url": "/admin/intelligence-operations",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 28
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/intelligence-parents.tsx",
+      "url": "/admin/intelligence-parents",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 27
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/intelligence-students.tsx",
+      "url": "/admin/intelligence-students",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 24
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/intelligence-teachers.tsx",
+      "url": "/admin/intelligence-teachers",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 24
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/intelligence.tsx",
+      "url": "/admin/intelligence",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 753
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/inventory.tsx",
+      "url": "/admin/inventory",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 23
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/lesson-plans.tsx",
+      "url": "/admin/lesson-plans",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 214
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/library.tsx",
+      "url": "/admin/library",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 609
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/locked-accounts.tsx",
+      "url": "/admin/locked-accounts",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 123
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/news.tsx",
+      "url": "/admin/news",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 108
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/operations.tsx",
+      "url": "/admin/operations",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 811
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/payroll.tsx",
+      "url": "/admin/payroll",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 91
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/report-cards.tsx",
+      "url": "/admin/report-cards",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 320
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/route.tsx",
+      "url": "/admin",
+      "kind": "layout",
+      "group": "authenticated",
+      "roleGuard": "admin,principal",
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 11
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/school-profile.tsx",
+      "url": "/admin/school-profile",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": "admin,principal",
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 292
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/settings.tsx",
+      "url": "/admin/settings",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 705
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/staff-accounts.tsx",
+      "url": "/admin/staff-accounts",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": "admin,principal",
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 483
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/student-intelligence.tsx",
+      "url": "/admin/student-intelligence",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 918
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/students.tsx",
+      "url": "/admin/students",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 128
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/support.tsx",
+      "url": "/admin/support",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 413
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/teacher-intelligence.tsx",
+      "url": "/admin/teacher-intelligence",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 801
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/teachers.tsx",
+      "url": "/admin/teachers",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 435
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/timetable.tsx",
+      "url": "/admin/timetable",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 292
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/admin/visitors.tsx",
+      "url": "/admin/visitors",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 23
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/bursar/dashboard.tsx",
+      "url": "/bursar/dashboard",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 474
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/bursar/fee-plans.tsx",
+      "url": "/bursar/fee-plans",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 276
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/bursar/financial-intelligence.tsx",
+      "url": "/bursar/financial-intelligence",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 278
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/bursar/receipts.tsx",
+      "url": "/bursar/receipts",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 388
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/bursar/reconciliation.tsx",
+      "url": "/bursar/reconciliation",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 242
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/bursar/reports.tsx",
+      "url": "/bursar/reports",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 210
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/bursar/route.tsx",
+      "url": "/bursar",
+      "kind": "layout",
+      "group": "authenticated",
+      "roleGuard": "bursar",
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 11
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/command-centre/index.tsx",
+      "url": "/command-centre",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 207
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/command-centre/route.tsx",
+      "url": "/command-centre",
+      "kind": "layout",
+      "group": "authenticated",
+      "roleGuard": "super_admin",
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 10
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/driver/dashboard.tsx",
+      "url": "/driver/dashboard",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 591
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/driver/route.tsx",
+      "url": "/driver",
+      "kind": "layout",
+      "group": "authenticated",
+      "roleGuard": "driver",
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 11
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/driver/students.tsx",
+      "url": "/driver/students",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 139
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/hq/dashboard.tsx",
+      "url": "/hq/dashboard",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 154
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/hq/finance.tsx",
+      "url": "/hq/finance",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 148
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/hq/reports.tsx",
+      "url": "/hq/reports",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 106
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/hq/route.tsx",
+      "url": "/hq",
+      "kind": "layout",
+      "group": "authenticated",
+      "roleGuard": "hq",
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 11
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/messages.tsx",
+      "url": "/messages",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 746
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/notifications.tsx",
+      "url": "/notifications",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 415
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/parent/ai-assistant.tsx",
+      "url": "/parent/ai-assistant",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 20
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/parent/attendance.tsx",
+      "url": "/parent/attendance",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 194
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/parent/bus-tracking.tsx",
+      "url": "/parent/bus-tracking",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 315
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/parent/calendar.tsx",
+      "url": "/parent/calendar",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 17
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/parent/children.tsx",
+      "url": "/parent/children",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 101
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/parent/dashboard.tsx",
+      "url": "/parent/dashboard",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 695
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/parent/fees.tsx",
+      "url": "/parent/fees",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 232
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/parent/grades.tsx",
+      "url": "/parent/grades",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 141
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/parent/news.tsx",
+      "url": "/parent/news",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 12
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/parent/report-cards.tsx",
+      "url": "/parent/report-cards",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 110
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/parent/route.tsx",
+      "url": "/parent",
+      "kind": "layout",
+      "group": "authenticated",
+      "roleGuard": "parent",
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 11
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/route.tsx",
+      "url": "/",
+      "kind": "layout",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 205
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/runtime.tsx",
+      "url": "/runtime",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 217
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/settings.tsx",
+      "url": "/settings",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 300
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/student/ai-tutor.tsx",
+      "url": "/student/ai-tutor",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 196
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/student/attendance.tsx",
+      "url": "/student/attendance",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 266
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/student/calendar.tsx",
+      "url": "/student/calendar",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 17
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/student/dashboard.tsx",
+      "url": "/student/dashboard",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 540
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/student/fees.tsx",
+      "url": "/student/fees",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 118
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/student/grades.tsx",
+      "url": "/student/grades",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 127
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/student/news.tsx",
+      "url": "/student/news",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 12
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/student/report-card.tsx",
+      "url": "/student/report-card",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 67
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/student/route.tsx",
+      "url": "/student",
+      "kind": "layout",
+      "group": "authenticated",
+      "roleGuard": "student",
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 11
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/student/timetable.tsx",
+      "url": "/student/timetable",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 74
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/super-admin/academic-intelligence.tsx",
+      "url": "/super-admin/academic-intelligence",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 117
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/super-admin/agent-governance.tsx",
+      "url": "/super-admin/agent-governance",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 85
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/super-admin/billing.tsx",
+      "url": "/super-admin/billing",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 518
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/super-admin/communication-steward.tsx",
+      "url": "/super-admin/communication-steward",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 151
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/super-admin/dashboard.tsx",
+      "url": "/super-admin/dashboard",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 438
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/super-admin/financial-operations.tsx",
+      "url": "/super-admin/financial-operations",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 154
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/super-admin/logs.tsx",
+      "url": "/super-admin/logs",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 197
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/super-admin/platform-config.tsx",
+      "url": "/super-admin/platform-config",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 191
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/super-admin/route.tsx",
+      "url": "/super-admin",
+      "kind": "layout",
+      "group": "authenticated",
+      "roleGuard": "super_admin",
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 11
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/super-admin/runtime-contracts.tsx",
+      "url": "/super-admin/runtime-contracts",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 78
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/super-admin/scheduling-intelligence.tsx",
+      "url": "/super-admin/scheduling-intelligence",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 152
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/super-admin/schools.tsx",
+      "url": "/super-admin/schools",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 458
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/super-admin/settings.tsx",
+      "url": "/super-admin/settings",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 151
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/super-admin/support.tsx",
+      "url": "/super-admin/support",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 385
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/super-admin/tenants.tsx",
+      "url": "/super-admin/tenants",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 181
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/super-admin/tiers.tsx",
+      "url": "/super-admin/tiers",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 146
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/super-admin/trust-fabric.tsx",
+      "url": "/super-admin/trust-fabric",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 142
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/super-admin/worker-missions.tsx",
+      "url": "/super-admin/worker-missions",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 210
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/super-admin/workspace-projection.tsx",
+      "url": "/super-admin/workspace-projection",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 152
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/teacher/ai-assistant.tsx",
+      "url": "/teacher/ai-assistant",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 17
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/teacher/attendance-week.tsx",
+      "url": "/teacher/attendance-week",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 345
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/teacher/attendance.tsx",
+      "url": "/teacher/attendance",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 414
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/teacher/biometric-enrollment.tsx",
+      "url": "/teacher/biometric-enrollment",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 236
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/teacher/calendar.tsx",
+      "url": "/teacher/calendar",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 17
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/teacher/class-intelligence.tsx",
+      "url": "/teacher/class-intelligence",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 272
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/teacher/dashboard.tsx",
+      "url": "/teacher/dashboard",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 574
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/teacher/gradebook.tsx",
+      "url": "/teacher/gradebook",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 424
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/teacher/grades.tsx",
+      "url": "/teacher/grades",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 103
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/teacher/lesson-plans.tsx",
+      "url": "/teacher/lesson-plans",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 376
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/teacher/news.tsx",
+      "url": "/teacher/news",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 12
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/teacher/route.tsx",
+      "url": "/teacher",
+      "kind": "layout",
+      "group": "authenticated",
+      "roleGuard": "teacher",
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 11
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/teacher/sign-in.tsx",
+      "url": "/teacher/sign-in",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 420
+    },
+    {
+      "file": "frontend/src/routes/_authenticated/teacher/timetable.tsx",
+      "url": "/teacher/timetable",
+      "kind": "page",
+      "group": "authenticated",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 46
+    },
+    {
+      "file": "frontend/src/routes/(site)/coregrid.tsx",
+      "url": "/coregrid",
+      "kind": "page",
+      "group": "public-site",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 285
+    },
+    {
+      "file": "frontend/src/routes/(site)/route.tsx",
+      "url": "/",
+      "kind": "layout",
+      "group": "public-site",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 126
+    },
+    {
+      "file": "frontend/src/routes/admissions.tsx",
+      "url": "/admissions",
+      "kind": "page",
+      "group": "public",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 1322
+    },
+    {
+      "file": "frontend/src/routes/api/public/audit.password-reset.ts",
+      "url": "/api/public/audit/password-reset",
+      "kind": "api",
+      "group": "public",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 136
+    },
+    {
+      "file": "frontend/src/routes/api/public/webhooks/paystack.ts",
+      "url": "/api/public/webhooks/paystack",
+      "kind": "api",
+      "group": "public",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 102
+    },
+    {
+      "file": "frontend/src/routes/auth.tsx",
+      "url": "/auth",
+      "kind": "page",
+      "group": "public",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 348
+    },
+    {
+      "file": "frontend/src/routes/blog.$slug.tsx",
+      "url": "/blog/:slug",
+      "kind": "page",
+      "group": "public",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 149
+    },
+    {
+      "file": "frontend/src/routes/blog.tsx",
+      "url": "/blog",
+      "kind": "page",
+      "group": "public",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 175
+    },
+    {
+      "file": "frontend/src/routes/events.$id.tsx",
+      "url": "/events/:id",
+      "kind": "page",
+      "group": "public",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 162
+    },
+    {
+      "file": "frontend/src/routes/foundation-loop.tsx",
+      "url": "/foundation-loop",
+      "kind": "page",
+      "group": "public",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 33
+    },
+    {
+      "file": "frontend/src/routes/health[.]json.ts",
+      "url": "/health[/]json",
+      "kind": "api",
+      "group": "public",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 44
+    },
+    {
+      "file": "frontend/src/routes/index.tsx",
+      "url": "/",
+      "kind": "page",
+      "group": "public",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": true,
+      "ssrDisabled": false,
+      "lines": 142
+    },
+    {
+      "file": "frontend/src/routes/login.tsx",
+      "url": "/login",
+      "kind": "page",
+      "group": "public",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 9
+    },
+    {
+      "file": "frontend/src/routes/manifest[.]webmanifest.ts",
+      "url": "/manifest[/]webmanifest",
+      "kind": "api",
+      "group": "public",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 88
+    },
+    {
+      "file": "frontend/src/routes/marketplace.tsx",
+      "url": "/marketplace",
+      "kind": "page",
+      "group": "public",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 241
+    },
+    {
+      "file": "frontend/src/routes/news.$id.tsx",
+      "url": "/news/:id",
+      "kind": "page",
+      "group": "public",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 144
+    },
+    {
+      "file": "frontend/src/routes/platform.org.tsx",
+      "url": "/platform/org",
+      "kind": "page",
+      "group": "public",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 174
+    },
+    {
+      "file": "frontend/src/routes/platform.tsx",
+      "url": "/platform",
+      "kind": "page",
+      "group": "public",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 241
+    },
+    {
+      "file": "frontend/src/routes/privacy.tsx",
+      "url": "/privacy",
+      "kind": "page",
+      "group": "public",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 39
+    },
+    {
+      "file": "frontend/src/routes/reality.$class.tsx",
+      "url": "/reality/:class",
+      "kind": "page",
+      "group": "public",
+      "roleGuard": null,
+      "hasHeadMeta": true,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 126
+    },
+    {
+      "file": "frontend/src/routes/reset-password.tsx",
+      "url": "/reset-password",
+      "kind": "page",
+      "group": "public",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 183
+    },
+    {
+      "file": "frontend/src/routes/rules.tsx",
+      "url": "/rules",
+      "kind": "page",
+      "group": "public",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 39
+    },
+    {
+      "file": "frontend/src/routes/scholar-foundation-loop.tsx",
+      "url": "/scholar-foundation-loop",
+      "kind": "page",
+      "group": "public",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 36
+    },
+    {
+      "file": "frontend/src/routes/sitemap[.]xml.ts",
+      "url": "/sitemap[/]xml",
+      "kind": "api",
+      "group": "public",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": false,
+      "lines": 76
+    },
+    {
+      "file": "frontend/src/routes/super-admin-bootstrap.tsx",
+      "url": "/super-admin-bootstrap",
+      "kind": "page",
+      "group": "public",
+      "roleGuard": null,
+      "hasHeadMeta": false,
+      "hasCanonical": false,
+      "ssrDisabled": true,
+      "lines": 199
+    }
+  ],
+  "components": [
+    {
+      "file": "frontend/src/components/admin/crud-list.tsx",
+      "family": "admin",
+      "lines": 578
+    },
+    {
+      "file": "frontend/src/components/admin/facilities-forms.tsx",
+      "family": "admin",
+      "lines": 653
+    },
+    {
+      "file": "frontend/src/components/admin/student-select.tsx",
+      "family": "admin",
+      "lines": 142
+    },
+    {
+      "file": "frontend/src/components/ai/admin-ai-assistant.tsx",
+      "family": "ai",
+      "lines": 33
+    },
+    {
+      "file": "frontend/src/components/ai/ai-assistant-shell.tsx",
+      "family": "ai",
+      "lines": 750
+    },
+    {
+      "file": "frontend/src/components/ai/parent-ai-assistant.tsx",
+      "family": "ai",
+      "lines": 76
+    },
+    {
+      "file": "frontend/src/components/ai/student-ai-tutor.tsx",
+      "family": "ai",
+      "lines": 90
+    },
+    {
+      "file": "frontend/src/components/ai/teacher-ai-assistant.tsx",
+      "family": "ai",
+      "lines": 61
+    },
+    {
+      "file": "frontend/src/components/announcements-feed.tsx",
+      "family": "root",
+      "lines": 107
+    },
+    {
+      "file": "frontend/src/components/app-frame-preview.tsx",
+      "family": "root",
+      "lines": 92
+    },
+    {
+      "file": "frontend/src/components/avatar-initials.tsx",
+      "family": "root",
+      "lines": 76
+    },
+    {
+      "file": "frontend/src/components/calendar-list.tsx",
+      "family": "root",
+      "lines": 168
+    },
+    {
+      "file": "frontend/src/components/calendar-month.tsx",
+      "family": "root",
+      "lines": 236
+    },
+    {
+      "file": "frontend/src/components/coming-soon-page.tsx",
+      "family": "root",
+      "lines": 31
+    },
+    {
+      "file": "frontend/src/components/command-center/command-palette.tsx",
+      "family": "command-center",
+      "lines": 911
+    },
+    {
+      "file": "frontend/src/components/command-center/index.ts",
+      "family": "command-center",
+      "lines": 9
+    },
+    {
+      "file": "frontend/src/components/command-centre/command-centre.tsx",
+      "family": "command-centre",
+      "lines": 1132
+    },
+    {
+      "file": "frontend/src/components/error-boundary.tsx",
+      "family": "root",
+      "lines": 149
+    },
+    {
+      "file": "frontend/src/components/generated/generated-site.tsx",
+      "family": "generated",
+      "lines": 213
+    },
+    {
+      "file": "frontend/src/components/intelligence-center.tsx",
+      "family": "root",
+      "lines": 140
+    },
+    {
+      "file": "frontend/src/components/mobile-bottom-nav.tsx",
+      "family": "root",
+      "lines": 93
+    },
+    {
+      "file": "frontend/src/components/mobile-swipe-to-open.tsx",
+      "family": "root",
+      "lines": 26
+    },
+    {
+      "file": "frontend/src/components/news-list.tsx",
+      "family": "root",
+      "lines": 130
+    },
+    {
+      "file": "frontend/src/components/offline-banner.tsx",
+      "family": "root",
+      "lines": 28
+    },
+    {
+      "file": "frontend/src/components/page-header.tsx",
+      "family": "root",
+      "lines": 39
+    },
+    {
+      "file": "frontend/src/components/page-tips.tsx",
+      "family": "root",
+      "lines": 34
+    },
+    {
+      "file": "frontend/src/components/pagination-bar.tsx",
+      "family": "root",
+      "lines": 93
+    },
+    {
+      "file": "frontend/src/components/planned-capability-state.tsx",
+      "family": "root",
+      "lines": 54
+    },
+    {
+      "file": "frontend/src/components/portal-shell.tsx",
+      "family": "root",
+      "lines": 652
+    },
+    {
+      "file": "frontend/src/components/portal-sidebar.tsx",
+      "family": "root",
+      "lines": 371
+    },
+    {
+      "file": "frontend/src/components/preview-public-site.tsx",
+      "family": "root",
+      "lines": 30
+    },
+    {
+      "file": "frontend/src/components/public/_shared.tsx",
+      "family": "public",
+      "lines": 497
+    },
+    {
+      "file": "frontend/src/components/public/policy-shell.tsx",
+      "family": "public",
+      "lines": 47
+    },
+    {
+      "file": "frontend/src/components/public/sections.tsx",
+      "family": "public",
+      "lines": 1552
+    },
+    {
+      "file": "frontend/src/components/public/sections/index.ts",
+      "family": "public",
+      "lines": 21
+    },
+    {
+      "file": "frontend/src/components/public/sections/site-about.tsx",
+      "family": "public",
+      "lines": 2
+    },
+    {
+      "file": "frontend/src/components/public/sections/site-admissions.tsx",
+      "family": "public",
+      "lines": 2
+    },
+    {
+      "file": "frontend/src/components/public/sections/site-blog.tsx",
+      "family": "public",
+      "lines": 2
+    },
+    {
+      "file": "frontend/src/components/public/sections/site-contact.tsx",
+      "family": "public",
+      "lines": 2
+    },
+    {
+      "file": "frontend/src/components/public/sections/site-facilities.tsx",
+      "family": "public",
+      "lines": 8
+    },
+    {
+      "file": "frontend/src/components/public/sections/site-faqs.tsx",
+      "family": "public",
+      "lines": 2
+    },
+    {
+      "file": "frontend/src/components/public/sections/site-footer.tsx",
+      "family": "public",
+      "lines": 2
+    },
+    {
+      "file": "frontend/src/components/public/sections/site-hero.tsx",
+      "family": "public",
+      "lines": 2
+    },
+    {
+      "file": "frontend/src/components/public/sections/site-navbar.tsx",
+      "family": "public",
+      "lines": 2
+    },
+    {
+      "file": "frontend/src/components/public/sections/site-news.tsx",
+      "family": "public",
+      "lines": 2
+    },
+    {
+      "file": "frontend/src/components/public/sections/site-programs.tsx",
+      "family": "public",
+      "lines": 2
+    },
+    {
+      "file": "frontend/src/components/public/sections/site-staff.tsx",
+      "family": "public",
+      "lines": 2
+    },
+    {
+      "file": "frontend/src/components/public/sections/site-testimonials.tsx",
+      "family": "public",
+      "lines": 2
+    },
+    {
+      "file": "frontend/src/components/public/sections/site-why-us.tsx",
+      "family": "public",
+      "lines": 2
+    },
+    {
+      "file": "frontend/src/components/public/site.tsx",
+      "family": "public",
+      "lines": 66
+    },
+    {
+      "file": "frontend/src/components/push-notification-card.tsx",
+      "family": "root",
+      "lines": 133
+    },
+    {
+      "file": "frontend/src/components/report-card.tsx",
+      "family": "root",
+      "lines": 292
+    },
+    {
+      "file": "frontend/src/components/responsive-table.tsx",
+      "family": "root",
+      "lines": 115
+    },
+    {
+      "file": "frontend/src/components/role-guard.tsx",
+      "family": "root",
+      "lines": 54
+    },
+    {
+      "file": "frontend/src/components/route-progress-bar.tsx",
+      "family": "root",
+      "lines": 92
+    },
+    {
+      "file": "frontend/src/components/school-economy-score.tsx",
+      "family": "root",
+      "lines": 136
+    },
+    {
+      "file": "frontend/src/components/shell/notification-bell.tsx",
+      "family": "shell",
+      "lines": 182
+    },
+    {
+      "file": "frontend/src/components/shell/profile-menu.tsx",
+      "family": "shell",
+      "lines": 87
+    },
+    {
+      "file": "frontend/src/components/shell/shell-header-actions.tsx",
+      "family": "shell",
+      "lines": 67
+    },
+    {
+      "file": "frontend/src/components/shell/workspace-switcher.tsx",
+      "family": "shell",
+      "lines": 79
+    },
+    {
+      "file": "frontend/src/components/skeleton.tsx",
+      "family": "root",
+      "lines": 120
+    },
+    {
+      "file": "frontend/src/components/study-history.tsx",
+      "family": "root",
+      "lines": 109
+    },
+    {
+      "file": "frontend/src/components/super-admin/add-school-form.tsx",
+      "family": "super-admin",
+      "lines": 338
+    },
+    {
+      "file": "frontend/src/components/theme-toggle.tsx",
+      "family": "root",
+      "lines": 65
+    },
+    {
+      "file": "frontend/src/components/timetable-grid.tsx",
+      "family": "root",
+      "lines": 100
+    },
+    {
+      "file": "frontend/src/components/ui/accordion.tsx",
+      "family": "ui",
+      "lines": 52
+    },
+    {
+      "file": "frontend/src/components/ui/alert-dialog.tsx",
+      "family": "ui",
+      "lines": 116
+    },
+    {
+      "file": "frontend/src/components/ui/alert.tsx",
+      "family": "ui",
+      "lines": 50
+    },
+    {
+      "file": "frontend/src/components/ui/aspect-ratio.tsx",
+      "family": "ui",
+      "lines": 6
+    },
+    {
+      "file": "frontend/src/components/ui/avatar.tsx",
+      "family": "ui",
+      "lines": 48
+    },
+    {
+      "file": "frontend/src/components/ui/badge.tsx",
+      "family": "ui",
+      "lines": 33
+    },
+    {
+      "file": "frontend/src/components/ui/breadcrumb.tsx",
+      "family": "ui",
+      "lines": 102
+    },
+    {
+      "file": "frontend/src/components/ui/button.tsx",
+      "family": "ui",
+      "lines": 50
+    },
+    {
+      "file": "frontend/src/components/ui/calendar.tsx",
+      "family": "ui",
+      "lines": 178
+    },
+    {
+      "file": "frontend/src/components/ui/card.tsx",
+      "family": "ui",
+      "lines": 56
+    },
+    {
+      "file": "frontend/src/components/ui/carousel.tsx",
+      "family": "ui",
+      "lines": 241
+    },
+    {
+      "file": "frontend/src/components/ui/chart.tsx",
+      "family": "ui",
+      "lines": 332
+    },
+    {
+      "file": "frontend/src/components/ui/checkbox.tsx",
+      "family": "ui",
+      "lines": 27
+    },
+    {
+      "file": "frontend/src/components/ui/collapsible.tsx",
+      "family": "ui",
+      "lines": 12
+    },
+    {
+      "file": "frontend/src/components/ui/command.tsx",
+      "family": "ui",
+      "lines": 144
+    },
+    {
+      "file": "frontend/src/components/ui/context-menu.tsx",
+      "family": "ui",
+      "lines": 188
+    },
+    {
+      "file": "frontend/src/components/ui/dialog.tsx",
+      "family": "ui",
+      "lines": 105
+    },
+    {
+      "file": "frontend/src/components/ui/drawer.tsx",
+      "family": "ui",
+      "lines": 99
+    },
+    {
+      "file": "frontend/src/components/ui/dropdown-menu.tsx",
+      "family": "ui",
+      "lines": 189
+    },
+    {
+      "file": "frontend/src/components/ui/enterprise-badge.tsx",
+      "family": "ui",
+      "lines": 25
+    },
+    {
+      "file": "frontend/src/components/ui/form.tsx",
+      "family": "ui",
+      "lines": 172
+    },
+    {
+      "file": "frontend/src/components/ui/hover-card.tsx",
+      "family": "ui",
+      "lines": 28
+    },
+    {
+      "file": "frontend/src/components/ui/input-otp.tsx",
+      "family": "ui",
+      "lines": 70
+    },
+    {
+      "file": "frontend/src/components/ui/input.tsx",
+      "family": "ui",
+      "lines": 23
+    },
+    {
+      "file": "frontend/src/components/ui/label.tsx",
+      "family": "ui",
+      "lines": 22
+    },
+    {
+      "file": "frontend/src/components/ui/menubar.tsx",
+      "family": "ui",
+      "lines": 230
+    },
+    {
+      "file": "frontend/src/components/ui/navigation-menu.tsx",
+      "family": "ui",
+      "lines": 121
+    },
+    {
+      "file": "frontend/src/components/ui/pagination.tsx",
+      "family": "ui",
+      "lines": 99
+    },
+    {
+      "file": "frontend/src/components/ui/popover.tsx",
+      "family": "ui",
+      "lines": 32
+    },
+    {
+      "file": "frontend/src/components/ui/progress.tsx",
+      "family": "ui",
+      "lines": 26
+    },
+    {
+      "file": "frontend/src/components/ui/radio-group.tsx",
+      "family": "ui",
+      "lines": 37
+    },
+    {
+      "file": "frontend/src/components/ui/resizable.tsx",
+      "family": "ui",
+      "lines": 38
+    },
+    {
+      "file": "frontend/src/components/ui/risk-badge.tsx",
+      "family": "ui",
+      "lines": 21
+    },
+    {
+      "file": "frontend/src/components/ui/scroll-area.tsx",
+      "family": "ui",
+      "lines": 45
+    },
+    {
+      "file": "frontend/src/components/ui/select.tsx",
+      "family": "ui",
+      "lines": 153
+    },
+    {
+      "file": "frontend/src/components/ui/separator.tsx",
+      "family": "ui",
+      "lines": 25
+    },
+    {
+      "file": "frontend/src/components/ui/sheet.tsx",
+      "family": "ui",
+      "lines": 124
+    },
+    {
+      "file": "frontend/src/components/ui/sidebar.tsx",
+      "family": "ui",
+      "lines": 745
+    },
+    {
+      "file": "frontend/src/components/ui/skeleton.tsx",
+      "family": "ui",
+      "lines": 8
+    },
+    {
+      "file": "frontend/src/components/ui/slider.tsx",
+      "family": "ui",
+      "lines": 24
+    },
+    {
+      "file": "frontend/src/components/ui/sonner.tsx",
+      "family": "ui",
+      "lines": 24
+    },
+    {
+      "file": "frontend/src/components/ui/switch.tsx",
+      "family": "ui",
+      "lines": 28
+    },
+    {
+      "file": "frontend/src/components/ui/table.tsx",
+      "family": "ui",
+      "lines": 95
+    },
+    {
+      "file": "frontend/src/components/ui/tabs.tsx",
+      "family": "ui",
+      "lines": 54
+    },
+    {
+      "file": "frontend/src/components/ui/textarea.tsx",
+      "family": "ui",
+      "lines": 22
+    },
+    {
+      "file": "frontend/src/components/ui/toggle-group.tsx",
+      "family": "ui",
+      "lines": 58
+    },
+    {
+      "file": "frontend/src/components/ui/toggle.tsx",
+      "family": "ui",
+      "lines": 43
+    },
+    {
+      "file": "frontend/src/components/ui/tooltip.tsx",
+      "family": "ui",
+      "lines": 33
+    }
+  ]
+}

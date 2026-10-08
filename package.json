@@ -49,8 +49,10 @@
     "format": "prettier --write ."
   },
   "dependencies": {
-    "@coregrid/contracts": "file:packages/contracts",
     "@ai-sdk/openai-compatible": "^2.0.51",
+    "@coregrid/contracts": "file:packages/contracts",
+    "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource-variable/geist-mono": "^5.3.0",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",

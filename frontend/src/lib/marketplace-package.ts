@@ -220,7 +220,7 @@ export function evaluateCompatibility(input: CompatibilityInput): CompatibilityR
   const reasons: string[] = [];
   if (!isCoreGridVersionCompatible(input.requiredCoreGridVersion, input.currentCoreGridVersion)) {
     reasons.push(
-      `Requires CoreGrid >= ${input.requiredCoreGridVersion}, found ${input.currentCoreGridVersion}`,
+      `Requires Sherivs >= ${input.requiredCoreGridVersion}, found ${input.currentCoreGridVersion}`,
     );
   }
   for (const api of input.requiredApis) {

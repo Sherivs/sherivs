@@ -11,16 +11,16 @@ export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: `CoreGrid Command Centre — ${SCHOLAR_RUNTIME_DESCRIPTION}` },
+      { title: `Sherivs Command Centre — ${SCHOLAR_RUNTIME_DESCRIPTION}` },
       {
         name: "description",
         content:
-          "The CoreGrid Command Centre — the platform operating surface. Provision organizations, roles and policies across a 51-phase governed platform.",
+          "The Sherivs Command Centre — the platform operating surface. Provision organizations, roles and policies across a 51-phase governed platform.",
       },
       { property: "og:title", content: `${PLATFORM_NAME} Command Centre` },
       {
         property: "og:description",
-        content: "Provision organizations, roles and policies on the CoreGrid platform.",
+        content: "Provision organizations, roles and policies on the Sherivs platform.",
       },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://universalschoolos.com/" },

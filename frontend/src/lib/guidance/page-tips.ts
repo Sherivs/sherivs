@@ -65,7 +65,7 @@ export const PAGE_TIPS: ReadonlyArray<PageTips> = [
     patterns: ["/admin/school-profile"],
     title: "School profile & templates",
     tips: [
-      "Tick what your school ACTUALLY runs — CoreGrid recommends matching templates but never forces any feature on you.",
+      "Tick what your school ACTUALLY runs — Sherivs recommends matching templates but never forces any feature on you.",
       "A template is only a starting point; every choice stays reversible and your own mix is always supported.",
     ],
   },
@@ -73,7 +73,7 @@ export const PAGE_TIPS: ReadonlyArray<PageTips> = [
     patterns: ["/admin/facilities"],
     title: "Facilities & twin estate",
     tips: [
-      "Each facility is bound to a CoreGrid twin kind — sensors, inspections and occupancy reports attach to that binding.",
+      "Each facility is bound to a Sherivs twin kind — sensors, inspections and occupancy reports attach to that binding.",
       "The metric chips show which observation attributes the facility can publish (occupancy, temperature, power, water, maintenance, availability).",
     ],
   },

@@ -39,7 +39,7 @@ export default function AgentsScreen() {
     return (
       <ScreenShell>
         <View style={styles.container}>
-          <ErrorState headline="Identity not yet provisioned" detail="No CoreGrid actor record is visible to this account." />
+          <ErrorState headline="Identity not yet provisioned" detail="No Sherivs actor record is visible to this account." />
         </View>
       </ScreenShell>
     );

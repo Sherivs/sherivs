@@ -23,7 +23,7 @@ export default function OrganizationScreen() {
     return (
       <ScreenShell>
         <View style={styles.container}>
-          <ErrorState headline="No actor context" detail="Sign in with a provisioned CoreGrid identity." />
+          <ErrorState headline="No actor context" detail="Sign in with a provisioned Sherivs identity." />
         </View>
       </ScreenShell>
     );
