@@ -104,7 +104,7 @@ ROLLBACK_PLAN, STATUS, VERSION_TARGET
 | Performance              | requirements only; measurements absent              |
 | Security                 | risks inventoried; shell/internal decisions pending |
 | Implementation           | not started                                         |
-| Automated testing        | documentation validation pending                    |
+| Automated testing        | architecture validation passed; UI suites deferred  |
 | Human visual review      | not applicable yet                                  |
 | Architecture conformance | draft pending authority review                      |
 
