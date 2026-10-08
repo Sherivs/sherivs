@@ -1,12 +1,17 @@
 @import "tailwindcss" source(none);
 @import "tw-animate-css";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+@import "./design/sherivs-tokens.css";
+@import "./design/sherivs.css";
 
 @source "../src";
 
 @custom-variant dark (&:is(.dark *));
 
 /*
- * CoreGrid — Apple-inspired glassmorphism design system.
+ * Sherivs — application chrome design system (legacy glass layer).
+ * New surfaces consume the canonical tokens in design/sherivs-tokens.css.
  * Deep navy structural surfaces, frosted glass cards, tenant-tunable
  * primary/secondary read from school.primary_color / secondary_color
  * and injected at runtime onto :root as --tenant-primary / --tenant-secondary.
@@ -46,8 +51,9 @@
   --color-sidebar-accent: var(--glass-hover);
   --color-sidebar-accent-foreground: var(--text-primary);
   --color-sidebar-ring: var(--ring);
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, monospace;
   --breakpoint-xs: 380px;
 }
 

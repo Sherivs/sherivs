@@ -1,0 +1,163 @@
+/*
+ * Sherivs experience layer — motifs, motion, and accessibility primitives.
+ * Consumes ONLY --sv-* tokens (see sherivs-tokens.css). No one-off values
+ * except where a comment justifies them.
+ */
+
+/* ── Root scope ─────────────────────────────────────────────────────────── */
+.sv-root {
+  background: var(--sv-canvas);
+  color: var(--sv-text);
+  font-family: var(--sv-font-sans);
+  font-size: var(--sv-type-body);
+  line-height: var(--sv-leading-normal);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.sv-root :where(h1, h2, h3, h4) {
+  font-family: var(--sv-font-sans);
+  font-weight: var(--sv-weight-semibold);
+  letter-spacing: var(--sv-tracking-heading);
+  text-wrap: balance;
+}
+.sv-root :where(p) { text-wrap: pretty; }
+.sv-root :focus-visible {
+  outline: var(--sv-focus-width) solid var(--sv-focus);
+  outline-offset: var(--sv-focus-offset);
+  border-radius: var(--sv-radius-sm);
+}
+
+/* ── Type roles ─────────────────────────────────────────────────────────── */
+.sv-display { font-size: var(--sv-type-display); line-height: var(--sv-leading-tight); letter-spacing: var(--sv-tracking-display); font-weight: var(--sv-weight-semibold); }
+.sv-hero    { font-size: var(--sv-type-hero);    line-height: var(--sv-leading-tight); letter-spacing: var(--sv-tracking-display); font-weight: var(--sv-weight-semibold); }
+.sv-h1      { font-size: var(--sv-type-h1);      line-height: var(--sv-leading-snug); }
+.sv-h2      { font-size: var(--sv-type-h2);      line-height: var(--sv-leading-snug); }
+.sv-h3      { font-size: var(--sv-type-h3);      line-height: var(--sv-leading-snug); }
+.sv-h4      { font-size: var(--sv-type-h4);      line-height: var(--sv-leading-snug); }
+.sv-body    { font-size: var(--sv-type-body);    line-height: var(--sv-leading-relaxed); }
+.sv-small   { font-size: var(--sv-type-small);   line-height: var(--sv-leading-normal); }
+.sv-caption { font-size: var(--sv-type-caption); line-height: var(--sv-leading-normal); }
+.sv-label   { font-size: var(--sv-type-label); font-weight: var(--sv-weight-medium); letter-spacing: var(--sv-tracking-label); text-transform: uppercase; }
+.sv-code    { font-family: var(--sv-font-mono); font-size: var(--sv-type-code); }
+.sv-data    { font-family: var(--sv-font-mono); font-size: var(--sv-type-data); font-variant-numeric: tabular-nums; }
+.sv-metric  { font-family: var(--sv-font-mono); font-size: var(--sv-type-metric); font-variant-numeric: tabular-nums; letter-spacing: var(--sv-tracking-heading); font-weight: var(--sv-weight-medium); }
+
+/* ── Layout ─────────────────────────────────────────────────────────────── */
+.sv-container { width: 100%; max-width: var(--sv-layout-content); margin-inline: auto; padding-inline: var(--sv-layout-gutter); }
+.sv-container-wide { max-width: var(--sv-layout-wide); }
+.sv-reading { max-width: var(--sv-layout-reading); }
+@media (min-width: 2560px) { .sv-container-wide { max-width: var(--sv-layout-ultra); } }
+
+/* ── Skip link (first focusable element in every shell) ─────────────────── */
+.sv-skip {
+  position: fixed; inset-block-start: var(--sv-space-3); inset-inline-start: var(--sv-space-3);
+  z-index: var(--sv-z-skip);
+  padding: var(--sv-space-3) var(--sv-space-4);
+  background: var(--sv-accent); color: var(--sv-accent-fg);
+  border-radius: var(--sv-radius-md); font-weight: var(--sv-weight-semibold);
+  transform: translateY(-200%);
+}
+.sv-skip:focus { transform: translateY(0); }
+
+/* ── Surfaces: planes, not cards ────────────────────────────────────────── */
+.sv-plane-surface { background: var(--sv-surface-1); border: var(--sv-border-width) solid var(--sv-border); }
+.sv-plane-raised  { background: var(--sv-surface-2); border: var(--sv-border-width) solid var(--sv-border); box-shadow: var(--sv-shadow-sm); }
+/* Glass is reserved for layers that float above content (header on scroll, popovers, command). */
+.sv-glass {
+  background: var(--sv-glass);
+  -webkit-backdrop-filter: blur(var(--sv-blur-glass)) saturate(140%);
+  backdrop-filter: blur(var(--sv-blur-glass)) saturate(140%);
+  border: var(--sv-border-width) solid var(--sv-border);
+}
+@supports not (backdrop-filter: blur(1px)) { .sv-glass { background: var(--sv-surface-3); } }
+
+/* Ink canvas: an always-dark atmospheric zone for the brand's deep foundation. */
+.sv-ink {
+  background:
+    radial-gradient(70rem 36rem at 12% -12%, color-mix(in oklab, var(--sv-accent) 16%, transparent), transparent 62%),
+    radial-gradient(48rem 28rem at 108% 8%, color-mix(in oklab, var(--sv-plane-reality) 14%, transparent), transparent 60%),
+    var(--sv-canvas);
+  color: var(--sv-text);
+}
+
+/* ── Plane motif: Reality → Intelligence → Action → Evidence ────────────── */
+.sv-plane-marker {
+  --plane: var(--sv-plane-reality);
+  display: inline-flex; align-items: center; gap: var(--sv-space-2);
+}
+.sv-plane-marker::before {
+  content: ""; width: 0.5rem; height: 0.5rem; background: var(--plane);
+  transform: rotate(45deg); flex: none;
+}
+[data-plane="reality"]      { --plane: var(--sv-plane-reality); }
+[data-plane="intelligence"] { --plane: var(--sv-plane-intelligence); }
+[data-plane="action"]       { --plane: var(--sv-plane-action); }
+[data-plane="evidence"]     { --plane: var(--sv-plane-evidence); }
+.sv-plane-rail { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; height: 3px; }
+.sv-plane-rail > span { background: var(--plane); }
+
+/* Trace line: the visible chain of provenance (source → actor → outcome). */
+.sv-trace { position: relative; padding-inline-start: var(--sv-space-6); }
+.sv-trace::before { content: ""; position: absolute; inset-block: 0.35rem; inset-inline-start: 0.4rem; width: 1px; background: var(--sv-border-strong); }
+.sv-trace > li { position: relative; padding-block: var(--sv-space-2); }
+.sv-trace > li::before {
+  content: ""; position: absolute; inset-inline-start: calc(-1 * var(--sv-space-6) + 0.2rem); inset-block-start: 0.85rem;
+  width: 0.5rem; height: 0.5rem; border-radius: var(--sv-radius-pill);
+  background: var(--sv-surface-1); border: 2px solid var(--plane, var(--sv-border-strong));
+}
+
+/* ── State indicator (status communicates real state only) ──────────────── */
+.sv-state { --state: var(--sv-text-subtle); display: inline-flex; align-items: center; gap: var(--sv-space-2); font-size: var(--sv-type-caption); }
+.sv-state::before { content: ""; width: 0.5rem; height: 0.5rem; border-radius: var(--sv-radius-pill); background: var(--state); flex: none; }
+.sv-state[data-state="success"], .sv-state[data-state="verified"] { --state: var(--sv-success); }
+.sv-state[data-state="warning"], .sv-state[data-state="stale"], .sv-state[data-state="partial"] { --state: var(--sv-warning); }
+.sv-state[data-state="danger"], .sv-state[data-state="error"], .sv-state[data-state="forbidden"] { --state: var(--sv-danger); }
+.sv-state[data-state="info"], .sv-state[data-state="loading"] { --state: var(--sv-info); }
+/* Pulse only when the backend is genuinely working (data-live="true" is set from real state). */
+.sv-state[data-live="true"]::before { animation: sv-live var(--sv-duration-deliberate) var(--sv-ease-standard) infinite alternate; }
+
+/* ── Motion ─────────────────────────────────────────────────────────────── */
+@keyframes sv-rise { from { opacity: 0; transform: translateY(0.75rem); } to { opacity: 1; transform: none; } }
+@keyframes sv-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sv-live { from { opacity: 0.45; } to { opacity: 1; } }
+@keyframes sv-sweep { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+@keyframes sv-draw { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.sv-rise { animation: sv-rise var(--sv-duration-slow) var(--sv-ease-emphasized) both; animation-delay: calc(var(--i, 0) * 60ms); }
+.sv-fade { animation: sv-fade var(--sv-duration-base) var(--sv-ease-standard) both; }
+.sv-draw { transform-origin: top; animation: sv-draw var(--sv-duration-deliberate) var(--sv-ease-emphasized) both; animation-delay: calc(var(--i, 0) * 90ms); }
+.sv-progress { position: relative; overflow: hidden; height: 2px; background: var(--sv-border); }
+.sv-progress[data-active="true"]::after { content: ""; position: absolute; inset: 0; width: 40%; background: var(--sv-accent); animation: sv-sweep 1.2s var(--sv-ease-standard) infinite; }
+.sv-pressable { transition: transform var(--sv-duration-fast) var(--sv-ease-standard), background-color var(--sv-duration-fast) var(--sv-ease-standard), border-color var(--sv-duration-fast) var(--sv-ease-standard); }
+.sv-pressable:active { transform: translateY(1px); }
+
+/* Scroll-linked reveal is progressive enhancement; falls back to static content. */
+@supports (animation-timeline: view()) {
+  .sv-reveal { animation: sv-rise linear both; animation-timeline: view(); animation-range: entry 0% entry 35%; }
+}
+
+/* Reduced motion: user OS preference OR explicit Sherivs setting. */
+@media (prefers-reduced-motion: reduce) {
+  .sv-root *, .sv-root *::before, .sv-root *::after {
+    animation-duration: 0.001ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important; scroll-behavior: auto !important;
+  }
+  .sv-reveal { animation: none; }
+}
+[data-sv-motion="reduced"] *, [data-sv-motion="reduced"] *::before, [data-sv-motion="reduced"] *::after {
+  animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important;
+}
+
+/* ── Organization brand layer (controlled; see lib/experience-system/org-brand.ts) ── */
+:root, .light { --sv-org-accent-text: var(--sv-org-accent-text-light, var(--sv-accent-text)); }
+.dark { --sv-org-accent-text: var(--sv-org-accent-text-dark, var(--sv-accent-text)); }
+.sv-org-accent-fill { background: var(--sv-org-accent, var(--sv-accent)); color: var(--sv-org-accent-fg, var(--sv-accent-fg)); }
+.sv-org-accent-text { color: var(--sv-org-accent-text, var(--sv-accent-text)); }
+
+/* ── Forced colours (Windows High Contrast) ─────────────────────────────── */
+@media (forced-colors: active) {
+  .sv-plane-marker::before, .sv-state::before { forced-color-adjust: none; }
+  .sv-glass { background: Canvas; backdrop-filter: none; }
+}
+
+/* ── Touch targets ──────────────────────────────────────────────────────── */
+@media (pointer: coarse) { .sv-touch { min-height: var(--sv-layout-touch); min-width: var(--sv-layout-touch); } }

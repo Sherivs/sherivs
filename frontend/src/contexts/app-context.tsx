@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { resolveTenantSlug } from "@/lib/tenant";
 import { type AppRole } from "@/lib/roles";
 import { scholarWorkspaceHome } from "@/lib/runtime/nav-registry";
+import { normalizeHex, orgBrandVariables } from "@/lib/experience-system/org-brand";
 
 /**
  * UserProfile = row from public.users (tenant member).
@@ -60,13 +61,32 @@ type AppState = {
 
 const AppCtx = createContext<AppState | undefined>(undefined);
 
+const ORG_BRAND_VARIABLES = [
+  "--sv-org-accent",
+  "--sv-org-accent-fg",
+  "--sv-org-accent-text-light",
+  "--sv-org-accent-text-dark",
+] as const;
+
+/**
+ * Apply the organization's controlled brand layer. Colours are accepted only
+ * as validated hex (see `org-brand.ts`), so an arbitrary stored value can
+ * never become CSS, and the derived accent text always reaches WCAG AA.
+ */
 function applyBrandColors(school: SchoolRow | null) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
-  if (school?.primary_color) root.style.setProperty("--tenant-primary", school.primary_color);
+  const primary = normalizeHex(school?.primary_color);
+  const secondary = normalizeHex(school?.secondary_color);
+  if (primary) root.style.setProperty("--tenant-primary", primary);
   else root.style.removeProperty("--tenant-primary");
-  if (school?.secondary_color) root.style.setProperty("--tenant-secondary", school.secondary_color);
+  if (secondary) root.style.setProperty("--tenant-secondary", secondary);
   else root.style.removeProperty("--tenant-secondary");
+
+  for (const name of ORG_BRAND_VARIABLES) root.style.removeProperty(name);
+  for (const [name, value] of Object.entries(orgBrandVariables(primary))) {
+    root.style.setProperty(name, value);
+  }
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
