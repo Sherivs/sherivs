@@ -34,9 +34,9 @@ self.addEventListener("push", (event) => {
     payload = { body: event.data ? event.data.text() : "" };
   }
 
-  const title = payload.title || "CoreGrid Scholar";
+  const title = payload.title || "Sherivs";
   const options = {
-    body: payload.body || "You have a new update from your school.",
+    body: payload.body || "You have a new update.",
     icon: "/favicon.ico",
     badge: "/favicon.ico",
     tag: payload.tag || "vibeora-notification",

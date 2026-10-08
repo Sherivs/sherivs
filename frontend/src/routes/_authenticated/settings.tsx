@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { Save, Shield, User2, Lock, Bot } from "lucide-react";
 
 import { PortalPage, GlassCard, PortalPageSkeleton } from "@/components/portal-shell";
+import { AccountMap } from "@/components/sherivs/account-map";
 import { useApp } from "@/contexts/app-context";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -77,7 +78,11 @@ function SettingsPage() {
   }
 
   return (
-    <PortalPage title="Settings" subtitle="Manage your profile, password, and privacy">
+    <PortalPage
+      title="Account"
+      subtitle="Profile, password, and privacy. Security methods that are not offered are named so they are not implied."
+    >
+      <AccountMap />
       {!superAdmin && profile && (
         <ProfileCard
           profile={profile}

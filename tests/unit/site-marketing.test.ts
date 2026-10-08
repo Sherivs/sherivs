@@ -28,6 +28,8 @@ const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const read = (ref: string) => readFileSync(join(ROOT, ref), "utf8");
 
 const SITE_LAYOUT = "frontend/src/routes/(site)/route.tsx";
+const SITE_SHELL = "frontend/src/components/sherivs/public-shell.tsx";
+const SITE_NAV = "frontend/src/lib/sherivs/navigation.ts";
 const SITE_PAGE = "frontend/src/routes/(site)/coregrid.tsx";
 
 describe("Pricing tier catalog (typed module)", () => {
@@ -109,6 +111,8 @@ describe("Site content view-models", () => {
 
 describe("Route modules — real links, no fake submissions, landmarks", () => {
   const layout = read(SITE_LAYOUT);
+  const shell = read(SITE_SHELL);
+  const nav = read(SITE_NAV);
   const page = read(SITE_PAGE);
 
   it("registers the (site) layout group and the /coregrid page in the generated tree", () => {
@@ -119,20 +123,21 @@ describe("Route modules — real links, no fake submissions, landmarks", () => {
 
   it("declares the expected file route ids", () => {
     expect(layout).toContain('createFileRoute("/(site)")');
+    expect(layout).toContain("<PublicShell>");
     expect(page).toContain('createFileRoute("/(site)/coregrid")');
   });
 
   it("links sign-up and sign-in to the real auth surface at /auth", () => {
-    for (const source of [layout, page]) {
+    for (const source of [shell, page]) {
       expect(source).toContain('to="/auth"');
     }
     // No dead platform sign-up route is invented.
-    expect(layout).not.toContain('to="/signup"');
+    expect(shell).not.toContain('to="/signup"');
     expect(page).not.toContain('to="/signup"');
   });
 
   it("contains no form and no fake submission — every CTA is a route link", () => {
-    for (const source of [layout, page]) {
+    for (const source of [layout, shell, page]) {
       expect(source).not.toMatch(/<form\b/);
       expect(source).not.toMatch(/onSubmit/);
       expect(source).not.toMatch(/<button\b/);
@@ -140,13 +145,14 @@ describe("Route modules — real links, no fake submissions, landmarks", () => {
   });
 
   it("renders semantic landmarks and the four anchored sections", () => {
-    expect(layout).toContain("<header");
-    expect(layout).toContain("<main");
-    expect(layout).toContain("<footer");
-    expect(layout).toMatch(/aria-label="Site"/);
+    expect(shell).toContain("<header");
+    expect(shell).toContain("<main");
+    expect(shell).toContain("<footer");
+    expect(shell).toMatch(/aria-label="Site"/);
+    expect(shell).toContain("PROOF_ANCHORS");
     for (const anchor of ["capabilities", "runtimes", "security", "pricing"]) {
       expect(page).toContain(`id="${anchor}"`);
-      expect(layout).toContain(`"/coregrid#${anchor}"`);
+      expect(nav).toContain(`"/coregrid#${anchor}"`);
     }
   });
 
@@ -160,6 +166,7 @@ describe("Route modules — real links, no fake submissions, landmarks", () => {
 
   it("uses no raster images, so no missing alt text is possible", () => {
     expect(layout).not.toMatch(/<img\b/);
+    expect(shell).not.toMatch(/<img\b/);
     expect(page).not.toMatch(/<img\b/);
   });
 });

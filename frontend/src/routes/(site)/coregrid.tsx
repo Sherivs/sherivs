@@ -25,14 +25,13 @@ export const Route = createFileRoute("/(site)/coregrid")({
       { title: `${PLATFORM_NAME} — ${PLATFORM_TAGLINE}` },
       {
         name: "description",
-        content:
-          "CoreGrid is the AI-native institutional operating system: a governed kernel with reality models, missions, an AI workforce, evidence and policy — plus the domain runtimes organizations install on it.",
+        content: `${PLATFORM_NAME} is institutional intelligence infrastructure: a governed kernel with reality models, missions, an AI workforce, evidence and policy — plus the domain runtimes organizations install on it.`,
       },
       { property: "og:title", content: `${PLATFORM_NAME} — ${PLATFORM_TAGLINE}` },
       {
         property: "og:description",
         content:
-          "One governed platform for institutions: reality model, missions, AI workforce, evidence, governance and workspace.",
+          "Institutional intelligence infrastructure: reality, missions, an AI workforce, evidence, governance, and workspace.",
       },
       { property: "og:type", content: "website" },
     ],
@@ -58,7 +57,9 @@ function SectionHeading({
       <h2 id={id} className="mt-2 font-display text-2xl font-bold tracking-tight sm:text-3xl">
         {title}
       </h2>
-      {lead && <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">{lead}</p>}
+      {lead && (
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">{lead}</p>
+      )}
     </div>
   );
 }
@@ -79,10 +80,9 @@ function CoreGridSitePage() {
             The AI-native institutional operating system
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            CoreGrid unifies organizations, people, places, devices, workflows, knowledge,
-            payments and automation into one governed ecosystem — a kernel with registries,
-            events, policies and evidence, on which institutions install the domain runtimes
-            they actually need.
+            {PLATFORM_NAME} is the governed layer for organizations, people, workflows, knowledge,
+            payments, and automation — a kernel with registries, events, policies, and evidence, on
+            which institutions install the domain runtimes they actually need.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link
@@ -108,7 +108,11 @@ function CoreGridSitePage() {
       </section>
 
       {/* Platform capabilities */}
-      <section id="capabilities" aria-labelledby="capabilities-heading" className="border-b border-border">
+      <section
+        id="capabilities"
+        aria-labelledby="capabilities-heading"
+        className="border-b border-border"
+      >
         <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
           <SectionHeading
             id="capabilities-heading"
@@ -133,7 +137,11 @@ function CoreGridSitePage() {
       </section>
 
       {/* Domain runtimes */}
-      <section id="runtimes" aria-labelledby="runtimes-heading" className="border-b border-border bg-muted/20">
+      <section
+        id="runtimes"
+        aria-labelledby="runtimes-heading"
+        className="border-b border-border bg-muted/20"
+      >
         <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
           <SectionHeading
             id="runtimes-heading"
@@ -143,7 +151,10 @@ function CoreGridSitePage() {
           />
           <div className="mt-10 grid gap-4 lg:grid-cols-2">
             {INSTALLED_RUNTIME_PROOFS.map((runtime) => (
-              <article key={runtime.manifestId} className="rounded-xl border border-border bg-background p-6">
+              <article
+                key={runtime.manifestId}
+                className="rounded-xl border border-border bg-background p-6"
+              >
                 <div className="flex items-center justify-between gap-3">
                   <h3 className="font-display text-lg font-semibold">{runtime.name}</h3>
                   <span className="rounded-full border border-border bg-muted/30 px-2.5 py-1 font-mono text-[10px] text-muted-foreground">
@@ -151,7 +162,9 @@ function CoreGridSitePage() {
                   </span>
                 </div>
                 <p className="mt-1 text-sm font-medium">{runtime.description}</p>
-                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{runtime.proof}</p>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                  {runtime.proof}
+                </p>
               </article>
             ))}
           </div>
@@ -189,7 +202,11 @@ function CoreGridSitePage() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" aria-labelledby="pricing-heading" className="border-b border-border bg-muted/20">
+      <section
+        id="pricing"
+        aria-labelledby="pricing-heading"
+        className="border-b border-border bg-muted/20"
+      >
         <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
           <SectionHeading
             id="pricing-heading"
@@ -202,7 +219,9 @@ function CoreGridSitePage() {
               <li
                 key={tier.id}
                 className={`flex flex-col rounded-xl border p-6 ${
-                  tier.featured ? "border-primary bg-background shadow-sm" : "border-border bg-background"
+                  tier.featured
+                    ? "border-primary bg-background shadow-sm"
+                    : "border-border bg-background"
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
@@ -219,11 +238,13 @@ function CoreGridSitePage() {
                     <span className="text-sm font-medium text-muted-foreground">/month</span>
                   )}
                 </p>
-                {tier.monthlyPrice !== null && tier.annualPrice !== null && tier.monthlyPrice > 0 && (
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    or {formatTierPrice(tier.annualPrice)}/year
-                  </p>
-                )}
+                {tier.monthlyPrice !== null &&
+                  tier.annualPrice !== null &&
+                  tier.monthlyPrice > 0 && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      or {formatTierPrice(tier.annualPrice)}/year
+                    </p>
+                  )}
                 <p className="mt-3 text-sm text-muted-foreground">{tier.summary}</p>
                 <ul className="mt-4 flex-1 space-y-1.5 text-sm">
                   {tier.highlights.map((highlight) => (
@@ -255,13 +276,16 @@ function CoreGridSitePage() {
       <section aria-labelledby="cta-heading">
         <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <div className="rounded-2xl border border-border bg-muted/20 p-8 text-center sm:p-12">
-            <h2 id="cta-heading" className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
+            <h2
+              id="cta-heading"
+              className="font-display text-2xl font-bold tracking-tight sm:text-3xl"
+            >
               Put your institution on governed rails
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Create an account on the platform's real auth surface, and an administrator links
-              your identity to your organization's tenant — with roles, policies and workspaces
-              projected from the governed core.
+              Create an account on the platform's real auth surface, and an administrator links your
+              identity to your organization's tenant — with roles, policies and workspaces projected
+              from the governed core.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link

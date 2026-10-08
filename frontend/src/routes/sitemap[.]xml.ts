@@ -2,7 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 
-const BASE_URL = "https://universalschoolos.com";
+import { PLATFORM_ORIGIN } from "@/lib/platform";
+import { publicSitemapPaths } from "@/lib/sherivs/pages";
+
+const BASE_URL = PLATFORM_ORIGIN;
 
 interface SitemapEntry {
   path: string;
@@ -41,6 +44,12 @@ export const Route = createFileRoute("/sitemap.xml")({
           }
         } catch {
           // sitemap should never fail the build — fall back to static entries
+        }
+
+        for (const path of publicSitemapPaths()) {
+          if (!entries.some((entry) => entry.path === path)) {
+            entries.push({ path, changefreq: "weekly", priority: "0.6" });
+          }
         }
 
         const urls = entries.map((e) =>

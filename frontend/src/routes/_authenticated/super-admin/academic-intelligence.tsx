@@ -16,7 +16,7 @@ import {
  */
 export const Route = createFileRoute("/_authenticated/super-admin/academic-intelligence")({
   component: AcademicIntelligencePage,
-  head: () => ({ meta: [{ title: "Academic intelligence — CoreGrid" }] }),
+  head: () => ({ meta: [{ title: "Academic intelligence — Sherivs" }] }),
 });
 
 function AcademicIntelligencePage() {

@@ -11,7 +11,7 @@ export default function AppLayout() {
         headerTitleAlign: "left",
       }}
     >
-      <Stack.Screen name="index" options={{ title: "CoreGrid" }} />
+      <Stack.Screen name="index" options={{ title: "Sherivs" }} />
       <Stack.Screen name="organization" options={{ title: "Organization" }} />
       <Stack.Screen name="missions/index" options={{ title: "Missions" }} />
       <Stack.Screen name="missions/[id]" options={{ title: "Mission" }} />

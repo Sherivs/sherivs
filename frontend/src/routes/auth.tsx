@@ -272,8 +272,8 @@ function AuthPage() {
               <span>★</span> Enterprise demo
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              One click provisions an Enterprise-tier school so every locked feature (Expenses,
-              Digital Twin, CoreGrid Intelligence, etc.) unlocks.
+              One click provisions an Enterprise-tier organization so every locked feature (Expenses,
+              Digital Twin, Sherivs Intelligence, etc.) unlocks.
             </p>
             <button
               type="button"

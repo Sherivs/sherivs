@@ -27,7 +27,18 @@ import { Route as RulesRouteImport } from './routes/rules'
 import { Route as ScholarFoundationLoopRouteImport } from './routes/scholar-foundation-loop'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SuperAdminBootstrapRouteImport } from './routes/super-admin-bootstrap'
+import { Route as siteAboutRouteImport } from './routes/(site)/about'
+import { Route as siteCareersRouteImport } from './routes/(site)/careers'
+import { Route as siteCompanyRouteImport } from './routes/(site)/company'
+import { Route as siteContactRouteImport } from './routes/(site)/contact'
 import { Route as siteCoregridRouteImport } from './routes/(site)/coregrid'
+import { Route as siteEnterpriseRouteImport } from './routes/(site)/enterprise'
+import { Route as sitePricingRouteImport } from './routes/(site)/pricing'
+import { Route as siteRequestDemoRouteImport } from './routes/(site)/request-demo'
+import { Route as siteResourcesRouteImport } from './routes/(site)/resources'
+import { Route as siteSecurityRouteImport } from './routes/(site)/security'
+import { Route as siteSolutionsRouteImport } from './routes/(site)/solutions'
+import { Route as siteStatusRouteImport } from './routes/(site)/status'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as AuthenticatedBursarRouteRouteImport } from './routes/_authenticated/bursar/route'
 import { Route as AuthenticatedCommandCentreRouteRouteImport } from './routes/_authenticated/command-centre/route'
@@ -44,8 +55,29 @@ import { Route as AuthenticatedTeacherRouteRouteImport } from './routes/_authent
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as EventsIdRouteImport } from './routes/events.$id'
 import { Route as NewsIdRouteImport } from './routes/news.$id'
+import { Route as PlatformAiWorkforceRouteImport } from './routes/platform.ai-workforce'
+import { Route as PlatformGovernanceRouteImport } from './routes/platform.governance'
+import { Route as PlatformIntegrationsRouteImport } from './routes/platform.integrations'
+import { Route as PlatformIntelligenceRouteImport } from './routes/platform.intelligence'
+import { Route as PlatformMemoryRouteImport } from './routes/platform.memory'
+import { Route as PlatformMissionsRouteImport } from './routes/platform.missions'
 import { Route as PlatformOrgRouteImport } from './routes/platform.org'
+import { Route as PlatformRealityRouteImport } from './routes/platform.reality'
 import { Route as RealityClassRouteImport } from './routes/reality.$class'
+import { Route as siteLegalAccessibilityRouteImport } from './routes/(site)/legal.accessibility'
+import { Route as siteLegalCookiesRouteImport } from './routes/(site)/legal.cookies'
+import { Route as siteLegalPrivacyRouteImport } from './routes/(site)/legal.privacy'
+import { Route as siteLegalTermsRouteImport } from './routes/(site)/legal.terms'
+import { Route as siteResourcesBlogRouteImport } from './routes/(site)/resources.blog'
+import { Route as siteResourcesCaseStudiesRouteImport } from './routes/(site)/resources.case-studies'
+import { Route as siteResourcesChangelogRouteImport } from './routes/(site)/resources.changelog'
+import { Route as siteResourcesDocsRouteImport } from './routes/(site)/resources.docs'
+import { Route as siteResourcesGuidesRouteImport } from './routes/(site)/resources.guides'
+import { Route as siteSolutionsAiWorkforceRouteImport } from './routes/(site)/solutions.ai-workforce'
+import { Route as siteSolutionsEducationRouteImport } from './routes/(site)/solutions.education'
+import { Route as siteSolutionsEnterpriseRouteImport } from './routes/(site)/solutions.enterprise'
+import { Route as siteSolutionsOperationsRouteImport } from './routes/(site)/solutions.operations'
+import { Route as siteSolutionsOrganizationsRouteImport } from './routes/(site)/solutions.organizations'
 import { Route as AuthenticatedAdminAdmissionsRouteImport } from './routes/_authenticated/admin/admissions'
 import { Route as AuthenticatedAdminAiAssistantRouteImport } from './routes/_authenticated/admin/ai-assistant'
 import { Route as AuthenticatedAdminAnalyticsRouteImport } from './routes/_authenticated/admin/analytics'
@@ -110,6 +142,7 @@ import { Route as AuthenticatedBursarReceiptsRouteImport } from './routes/_authe
 import { Route as AuthenticatedBursarReconciliationRouteImport } from './routes/_authenticated/bursar/reconciliation'
 import { Route as AuthenticatedBursarReportsRouteImport } from './routes/_authenticated/bursar/reports'
 import { Route as AuthenticatedCommandCentreIndexRouteImport } from './routes/_authenticated/command-centre/index'
+import { Route as AuthenticatedCommandCentreProvisionRouteImport } from './routes/_authenticated/command-centre/provision'
 import { Route as AuthenticatedDriverDashboardRouteImport } from './routes/_authenticated/driver/dashboard'
 import { Route as AuthenticatedDriverStudentsRouteImport } from './routes/_authenticated/driver/students'
 import { Route as AuthenticatedHqDashboardRouteImport } from './routes/_authenticated/hq/dashboard'
@@ -165,6 +198,7 @@ import { Route as AuthenticatedTeacherLessonPlansRouteImport } from './routes/_a
 import { Route as AuthenticatedTeacherNewsRouteImport } from './routes/_authenticated/teacher/news'
 import { Route as AuthenticatedTeacherSignInRouteImport } from './routes/_authenticated/teacher/sign-in'
 import { Route as AuthenticatedTeacherTimetableRouteImport } from './routes/_authenticated/teacher/timetable'
+import { Route as siteResourcesDocsSlugRouteImport } from './routes/(site)/resources.docs.$slug'
 import { Route as ApiPublicAuditPasswordResetRouteImport } from './routes/api/public/audit.password-reset'
 import { Route as ApiPublicWebhooksPaystackRouteImport } from './routes/api/public/webhooks/paystack'
 
@@ -256,9 +290,64 @@ const SuperAdminBootstrapRoute = SuperAdminBootstrapRouteImport.update({
   path: '/super-admin-bootstrap',
   getParentRoute: () => rootRouteImport,
 } as any)
+const siteAboutRoute = siteAboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteCareersRoute = siteCareersRouteImport.update({
+  id: '/careers',
+  path: '/careers',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteCompanyRoute = siteCompanyRouteImport.update({
+  id: '/company',
+  path: '/company',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteContactRoute = siteContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => siteRouteRoute,
+} as any)
 const siteCoregridRoute = siteCoregridRouteImport.update({
   id: '/coregrid',
   path: '/coregrid',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteEnterpriseRoute = siteEnterpriseRouteImport.update({
+  id: '/enterprise',
+  path: '/enterprise',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const sitePricingRoute = sitePricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteRequestDemoRoute = siteRequestDemoRouteImport.update({
+  id: '/request-demo',
+  path: '/request-demo',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteResourcesRoute = siteResourcesRouteImport.update({
+  id: '/resources',
+  path: '/resources',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteSecurityRoute = siteSecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteSolutionsRoute = siteSolutionsRouteImport.update({
+  id: '/solutions',
+  path: '/solutions',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteStatusRoute = siteStatusRouteImport.update({
+  id: '/status',
+  path: '/status',
   getParentRoute: () => siteRouteRoute,
 } as any)
 const AuthenticatedAdminRouteRoute = AuthenticatedAdminRouteRouteImport.update({
@@ -349,9 +438,44 @@ const NewsIdRoute = NewsIdRouteImport.update({
   path: '/news/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PlatformAiWorkforceRoute = PlatformAiWorkforceRouteImport.update({
+  id: '/ai-workforce',
+  path: '/ai-workforce',
+  getParentRoute: () => PlatformRoute,
+} as any)
+const PlatformGovernanceRoute = PlatformGovernanceRouteImport.update({
+  id: '/governance',
+  path: '/governance',
+  getParentRoute: () => PlatformRoute,
+} as any)
+const PlatformIntegrationsRoute = PlatformIntegrationsRouteImport.update({
+  id: '/integrations',
+  path: '/integrations',
+  getParentRoute: () => PlatformRoute,
+} as any)
+const PlatformIntelligenceRoute = PlatformIntelligenceRouteImport.update({
+  id: '/intelligence',
+  path: '/intelligence',
+  getParentRoute: () => PlatformRoute,
+} as any)
+const PlatformMemoryRoute = PlatformMemoryRouteImport.update({
+  id: '/memory',
+  path: '/memory',
+  getParentRoute: () => PlatformRoute,
+} as any)
+const PlatformMissionsRoute = PlatformMissionsRouteImport.update({
+  id: '/missions',
+  path: '/missions',
+  getParentRoute: () => PlatformRoute,
+} as any)
 const PlatformOrgRoute = PlatformOrgRouteImport.update({
   id: '/org',
   path: '/org',
+  getParentRoute: () => PlatformRoute,
+} as any)
+const PlatformRealityRoute = PlatformRealityRouteImport.update({
+  id: '/reality',
+  path: '/reality',
   getParentRoute: () => PlatformRoute,
 } as any)
 const RealityClassRoute = RealityClassRouteImport.update({
@@ -359,6 +483,79 @@ const RealityClassRoute = RealityClassRouteImport.update({
   path: '/reality/$class',
   getParentRoute: () => rootRouteImport,
 } as any)
+const siteLegalAccessibilityRoute = siteLegalAccessibilityRouteImport.update({
+  id: '/legal/accessibility',
+  path: '/legal/accessibility',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteLegalCookiesRoute = siteLegalCookiesRouteImport.update({
+  id: '/legal/cookies',
+  path: '/legal/cookies',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteLegalPrivacyRoute = siteLegalPrivacyRouteImport.update({
+  id: '/legal/privacy',
+  path: '/legal/privacy',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteLegalTermsRoute = siteLegalTermsRouteImport.update({
+  id: '/legal/terms',
+  path: '/legal/terms',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteResourcesBlogRoute = siteResourcesBlogRouteImport.update({
+  id: '/blog',
+  path: '/blog',
+  getParentRoute: () => siteResourcesRoute,
+} as any)
+const siteResourcesCaseStudiesRoute =
+  siteResourcesCaseStudiesRouteImport.update({
+    id: '/case-studies',
+    path: '/case-studies',
+    getParentRoute: () => siteResourcesRoute,
+  } as any)
+const siteResourcesChangelogRoute = siteResourcesChangelogRouteImport.update({
+  id: '/changelog',
+  path: '/changelog',
+  getParentRoute: () => siteResourcesRoute,
+} as any)
+const siteResourcesDocsRoute = siteResourcesDocsRouteImport.update({
+  id: '/docs',
+  path: '/docs',
+  getParentRoute: () => siteResourcesRoute,
+} as any)
+const siteResourcesGuidesRoute = siteResourcesGuidesRouteImport.update({
+  id: '/guides',
+  path: '/guides',
+  getParentRoute: () => siteResourcesRoute,
+} as any)
+const siteSolutionsAiWorkforceRoute =
+  siteSolutionsAiWorkforceRouteImport.update({
+    id: '/ai-workforce',
+    path: '/ai-workforce',
+    getParentRoute: () => siteSolutionsRoute,
+  } as any)
+const siteSolutionsEducationRoute = siteSolutionsEducationRouteImport.update({
+  id: '/education',
+  path: '/education',
+  getParentRoute: () => siteSolutionsRoute,
+} as any)
+const siteSolutionsEnterpriseRoute = siteSolutionsEnterpriseRouteImport.update({
+  id: '/enterprise',
+  path: '/enterprise',
+  getParentRoute: () => siteSolutionsRoute,
+} as any)
+const siteSolutionsOperationsRoute = siteSolutionsOperationsRouteImport.update({
+  id: '/operations',
+  path: '/operations',
+  getParentRoute: () => siteSolutionsRoute,
+} as any)
+const siteSolutionsOrganizationsRoute =
+  siteSolutionsOrganizationsRouteImport.update({
+    id: '/organizations',
+    path: '/organizations',
+    getParentRoute: () => siteSolutionsRoute,
+  } as any)
 const AuthenticatedAdminAdmissionsRoute =
   AuthenticatedAdminAdmissionsRouteImport.update({
     id: '/admissions',
@@ -737,6 +934,12 @@ const AuthenticatedCommandCentreIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedCommandCentreRouteRoute,
   } as any)
+const AuthenticatedCommandCentreProvisionRoute =
+  AuthenticatedCommandCentreProvisionRouteImport.update({
+    id: '/provision',
+    path: '/provision',
+    getParentRoute: () => AuthenticatedCommandCentreRouteRoute,
+  } as any)
 const AuthenticatedDriverDashboardRoute =
   AuthenticatedDriverDashboardRouteImport.update({
     id: '/dashboard',
@@ -1063,6 +1266,11 @@ const AuthenticatedTeacherTimetableRoute =
     path: '/timetable',
     getParentRoute: () => AuthenticatedTeacherRouteRoute,
   } as any)
+const siteResourcesDocsSlugRoute = siteResourcesDocsSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => siteResourcesDocsRoute,
+} as any)
 const ApiPublicAuditPasswordResetRoute =
   ApiPublicAuditPasswordResetRouteImport.update({
     id: '/api/public/audit/password-reset',
@@ -1102,7 +1310,18 @@ export interface FileRoutesByFullPath {
   '/student': typeof AuthenticatedStudentRouteRouteWithChildren
   '/super-admin': typeof AuthenticatedSuperAdminRouteRouteWithChildren
   '/teacher': typeof AuthenticatedTeacherRouteRouteWithChildren
+  '/about': typeof siteAboutRoute
+  '/careers': typeof siteCareersRoute
+  '/company': typeof siteCompanyRoute
+  '/contact': typeof siteContactRoute
   '/coregrid': typeof siteCoregridRoute
+  '/enterprise': typeof siteEnterpriseRoute
+  '/pricing': typeof sitePricingRoute
+  '/request-demo': typeof siteRequestDemoRoute
+  '/resources': typeof siteResourcesRouteWithChildren
+  '/security': typeof siteSecurityRoute
+  '/solutions': typeof siteSolutionsRouteWithChildren
+  '/status': typeof siteStatusRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/runtime': typeof AuthenticatedRuntimeRoute
@@ -1110,8 +1329,29 @@ export interface FileRoutesByFullPath {
   '/blog/$slug': typeof BlogSlugRoute
   '/events/$id': typeof EventsIdRoute
   '/news/$id': typeof NewsIdRoute
+  '/platform/ai-workforce': typeof PlatformAiWorkforceRoute
+  '/platform/governance': typeof PlatformGovernanceRoute
+  '/platform/integrations': typeof PlatformIntegrationsRoute
+  '/platform/intelligence': typeof PlatformIntelligenceRoute
+  '/platform/memory': typeof PlatformMemoryRoute
+  '/platform/missions': typeof PlatformMissionsRoute
   '/platform/org': typeof PlatformOrgRoute
+  '/platform/reality': typeof PlatformRealityRoute
   '/reality/$class': typeof RealityClassRoute
+  '/legal/accessibility': typeof siteLegalAccessibilityRoute
+  '/legal/cookies': typeof siteLegalCookiesRoute
+  '/legal/privacy': typeof siteLegalPrivacyRoute
+  '/legal/terms': typeof siteLegalTermsRoute
+  '/resources/blog': typeof siteResourcesBlogRoute
+  '/resources/case-studies': typeof siteResourcesCaseStudiesRoute
+  '/resources/changelog': typeof siteResourcesChangelogRoute
+  '/resources/docs': typeof siteResourcesDocsRouteWithChildren
+  '/resources/guides': typeof siteResourcesGuidesRoute
+  '/solutions/ai-workforce': typeof siteSolutionsAiWorkforceRoute
+  '/solutions/education': typeof siteSolutionsEducationRoute
+  '/solutions/enterprise': typeof siteSolutionsEnterpriseRoute
+  '/solutions/operations': typeof siteSolutionsOperationsRoute
+  '/solutions/organizations': typeof siteSolutionsOrganizationsRoute
   '/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
@@ -1175,6 +1415,7 @@ export interface FileRoutesByFullPath {
   '/bursar/receipts': typeof AuthenticatedBursarReceiptsRoute
   '/bursar/reconciliation': typeof AuthenticatedBursarReconciliationRoute
   '/bursar/reports': typeof AuthenticatedBursarReportsRoute
+  '/command-centre/provision': typeof AuthenticatedCommandCentreProvisionRoute
   '/driver/dashboard': typeof AuthenticatedDriverDashboardRoute
   '/driver/students': typeof AuthenticatedDriverStudentsRoute
   '/hq/dashboard': typeof AuthenticatedHqDashboardRoute
@@ -1231,6 +1472,7 @@ export interface FileRoutesByFullPath {
   '/teacher/sign-in': typeof AuthenticatedTeacherSignInRoute
   '/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
   '/command-centre/': typeof AuthenticatedCommandCentreIndexRoute
+  '/resources/docs/$slug': typeof siteResourcesDocsSlugRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
 }
@@ -1259,7 +1501,18 @@ export interface FileRoutesByTo {
   '/student': typeof AuthenticatedStudentRouteRouteWithChildren
   '/super-admin': typeof AuthenticatedSuperAdminRouteRouteWithChildren
   '/teacher': typeof AuthenticatedTeacherRouteRouteWithChildren
+  '/about': typeof siteAboutRoute
+  '/careers': typeof siteCareersRoute
+  '/company': typeof siteCompanyRoute
+  '/contact': typeof siteContactRoute
   '/coregrid': typeof siteCoregridRoute
+  '/enterprise': typeof siteEnterpriseRoute
+  '/pricing': typeof sitePricingRoute
+  '/request-demo': typeof siteRequestDemoRoute
+  '/resources': typeof siteResourcesRouteWithChildren
+  '/security': typeof siteSecurityRoute
+  '/solutions': typeof siteSolutionsRouteWithChildren
+  '/status': typeof siteStatusRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/runtime': typeof AuthenticatedRuntimeRoute
@@ -1267,8 +1520,29 @@ export interface FileRoutesByTo {
   '/blog/$slug': typeof BlogSlugRoute
   '/events/$id': typeof EventsIdRoute
   '/news/$id': typeof NewsIdRoute
+  '/platform/ai-workforce': typeof PlatformAiWorkforceRoute
+  '/platform/governance': typeof PlatformGovernanceRoute
+  '/platform/integrations': typeof PlatformIntegrationsRoute
+  '/platform/intelligence': typeof PlatformIntelligenceRoute
+  '/platform/memory': typeof PlatformMemoryRoute
+  '/platform/missions': typeof PlatformMissionsRoute
   '/platform/org': typeof PlatformOrgRoute
+  '/platform/reality': typeof PlatformRealityRoute
   '/reality/$class': typeof RealityClassRoute
+  '/legal/accessibility': typeof siteLegalAccessibilityRoute
+  '/legal/cookies': typeof siteLegalCookiesRoute
+  '/legal/privacy': typeof siteLegalPrivacyRoute
+  '/legal/terms': typeof siteLegalTermsRoute
+  '/resources/blog': typeof siteResourcesBlogRoute
+  '/resources/case-studies': typeof siteResourcesCaseStudiesRoute
+  '/resources/changelog': typeof siteResourcesChangelogRoute
+  '/resources/docs': typeof siteResourcesDocsRouteWithChildren
+  '/resources/guides': typeof siteResourcesGuidesRoute
+  '/solutions/ai-workforce': typeof siteSolutionsAiWorkforceRoute
+  '/solutions/education': typeof siteSolutionsEducationRoute
+  '/solutions/enterprise': typeof siteSolutionsEnterpriseRoute
+  '/solutions/operations': typeof siteSolutionsOperationsRoute
+  '/solutions/organizations': typeof siteSolutionsOrganizationsRoute
   '/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
@@ -1332,6 +1606,7 @@ export interface FileRoutesByTo {
   '/bursar/receipts': typeof AuthenticatedBursarReceiptsRoute
   '/bursar/reconciliation': typeof AuthenticatedBursarReconciliationRoute
   '/bursar/reports': typeof AuthenticatedBursarReportsRoute
+  '/command-centre/provision': typeof AuthenticatedCommandCentreProvisionRoute
   '/driver/dashboard': typeof AuthenticatedDriverDashboardRoute
   '/driver/students': typeof AuthenticatedDriverStudentsRoute
   '/hq/dashboard': typeof AuthenticatedHqDashboardRoute
@@ -1388,6 +1663,7 @@ export interface FileRoutesByTo {
   '/teacher/sign-in': typeof AuthenticatedTeacherSignInRoute
   '/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
   '/command-centre': typeof AuthenticatedCommandCentreIndexRoute
+  '/resources/docs/$slug': typeof siteResourcesDocsSlugRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
 }
@@ -1420,7 +1696,18 @@ export interface FileRoutesById {
   '/_authenticated/student': typeof AuthenticatedStudentRouteRouteWithChildren
   '/_authenticated/super-admin': typeof AuthenticatedSuperAdminRouteRouteWithChildren
   '/_authenticated/teacher': typeof AuthenticatedTeacherRouteRouteWithChildren
+  '/(site)/about': typeof siteAboutRoute
+  '/(site)/careers': typeof siteCareersRoute
+  '/(site)/company': typeof siteCompanyRoute
+  '/(site)/contact': typeof siteContactRoute
   '/(site)/coregrid': typeof siteCoregridRoute
+  '/(site)/enterprise': typeof siteEnterpriseRoute
+  '/(site)/pricing': typeof sitePricingRoute
+  '/(site)/request-demo': typeof siteRequestDemoRoute
+  '/(site)/resources': typeof siteResourcesRouteWithChildren
+  '/(site)/security': typeof siteSecurityRoute
+  '/(site)/solutions': typeof siteSolutionsRouteWithChildren
+  '/(site)/status': typeof siteStatusRoute
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/runtime': typeof AuthenticatedRuntimeRoute
@@ -1428,8 +1715,29 @@ export interface FileRoutesById {
   '/blog/$slug': typeof BlogSlugRoute
   '/events/$id': typeof EventsIdRoute
   '/news/$id': typeof NewsIdRoute
+  '/platform/ai-workforce': typeof PlatformAiWorkforceRoute
+  '/platform/governance': typeof PlatformGovernanceRoute
+  '/platform/integrations': typeof PlatformIntegrationsRoute
+  '/platform/intelligence': typeof PlatformIntelligenceRoute
+  '/platform/memory': typeof PlatformMemoryRoute
+  '/platform/missions': typeof PlatformMissionsRoute
   '/platform/org': typeof PlatformOrgRoute
+  '/platform/reality': typeof PlatformRealityRoute
   '/reality/$class': typeof RealityClassRoute
+  '/(site)/legal/accessibility': typeof siteLegalAccessibilityRoute
+  '/(site)/legal/cookies': typeof siteLegalCookiesRoute
+  '/(site)/legal/privacy': typeof siteLegalPrivacyRoute
+  '/(site)/legal/terms': typeof siteLegalTermsRoute
+  '/(site)/resources/blog': typeof siteResourcesBlogRoute
+  '/(site)/resources/case-studies': typeof siteResourcesCaseStudiesRoute
+  '/(site)/resources/changelog': typeof siteResourcesChangelogRoute
+  '/(site)/resources/docs': typeof siteResourcesDocsRouteWithChildren
+  '/(site)/resources/guides': typeof siteResourcesGuidesRoute
+  '/(site)/solutions/ai-workforce': typeof siteSolutionsAiWorkforceRoute
+  '/(site)/solutions/education': typeof siteSolutionsEducationRoute
+  '/(site)/solutions/enterprise': typeof siteSolutionsEnterpriseRoute
+  '/(site)/solutions/operations': typeof siteSolutionsOperationsRoute
+  '/(site)/solutions/organizations': typeof siteSolutionsOrganizationsRoute
   '/_authenticated/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/_authenticated/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
   '/_authenticated/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
@@ -1493,6 +1801,7 @@ export interface FileRoutesById {
   '/_authenticated/bursar/receipts': typeof AuthenticatedBursarReceiptsRoute
   '/_authenticated/bursar/reconciliation': typeof AuthenticatedBursarReconciliationRoute
   '/_authenticated/bursar/reports': typeof AuthenticatedBursarReportsRoute
+  '/_authenticated/command-centre/provision': typeof AuthenticatedCommandCentreProvisionRoute
   '/_authenticated/driver/dashboard': typeof AuthenticatedDriverDashboardRoute
   '/_authenticated/driver/students': typeof AuthenticatedDriverStudentsRoute
   '/_authenticated/hq/dashboard': typeof AuthenticatedHqDashboardRoute
@@ -1549,6 +1858,7 @@ export interface FileRoutesById {
   '/_authenticated/teacher/sign-in': typeof AuthenticatedTeacherSignInRoute
   '/_authenticated/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
   '/_authenticated/command-centre/': typeof AuthenticatedCommandCentreIndexRoute
+  '/(site)/resources/docs/$slug': typeof siteResourcesDocsSlugRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
 }
@@ -1580,7 +1890,18 @@ export interface FileRouteTypes {
     | '/student'
     | '/super-admin'
     | '/teacher'
+    | '/about'
+    | '/careers'
+    | '/company'
+    | '/contact'
     | '/coregrid'
+    | '/enterprise'
+    | '/pricing'
+    | '/request-demo'
+    | '/resources'
+    | '/security'
+    | '/solutions'
+    | '/status'
     | '/messages'
     | '/notifications'
     | '/runtime'
@@ -1588,8 +1909,29 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/events/$id'
     | '/news/$id'
+    | '/platform/ai-workforce'
+    | '/platform/governance'
+    | '/platform/integrations'
+    | '/platform/intelligence'
+    | '/platform/memory'
+    | '/platform/missions'
     | '/platform/org'
+    | '/platform/reality'
     | '/reality/$class'
+    | '/legal/accessibility'
+    | '/legal/cookies'
+    | '/legal/privacy'
+    | '/legal/terms'
+    | '/resources/blog'
+    | '/resources/case-studies'
+    | '/resources/changelog'
+    | '/resources/docs'
+    | '/resources/guides'
+    | '/solutions/ai-workforce'
+    | '/solutions/education'
+    | '/solutions/enterprise'
+    | '/solutions/operations'
+    | '/solutions/organizations'
     | '/admin/admissions'
     | '/admin/ai-assistant'
     | '/admin/analytics'
@@ -1653,6 +1995,7 @@ export interface FileRouteTypes {
     | '/bursar/receipts'
     | '/bursar/reconciliation'
     | '/bursar/reports'
+    | '/command-centre/provision'
     | '/driver/dashboard'
     | '/driver/students'
     | '/hq/dashboard'
@@ -1709,6 +2052,7 @@ export interface FileRouteTypes {
     | '/teacher/sign-in'
     | '/teacher/timetable'
     | '/command-centre/'
+    | '/resources/docs/$slug'
     | '/api/public/audit/password-reset'
     | '/api/public/webhooks/paystack'
   fileRoutesByTo: FileRoutesByTo
@@ -1737,7 +2081,18 @@ export interface FileRouteTypes {
     | '/student'
     | '/super-admin'
     | '/teacher'
+    | '/about'
+    | '/careers'
+    | '/company'
+    | '/contact'
     | '/coregrid'
+    | '/enterprise'
+    | '/pricing'
+    | '/request-demo'
+    | '/resources'
+    | '/security'
+    | '/solutions'
+    | '/status'
     | '/messages'
     | '/notifications'
     | '/runtime'
@@ -1745,8 +2100,29 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/events/$id'
     | '/news/$id'
+    | '/platform/ai-workforce'
+    | '/platform/governance'
+    | '/platform/integrations'
+    | '/platform/intelligence'
+    | '/platform/memory'
+    | '/platform/missions'
     | '/platform/org'
+    | '/platform/reality'
     | '/reality/$class'
+    | '/legal/accessibility'
+    | '/legal/cookies'
+    | '/legal/privacy'
+    | '/legal/terms'
+    | '/resources/blog'
+    | '/resources/case-studies'
+    | '/resources/changelog'
+    | '/resources/docs'
+    | '/resources/guides'
+    | '/solutions/ai-workforce'
+    | '/solutions/education'
+    | '/solutions/enterprise'
+    | '/solutions/operations'
+    | '/solutions/organizations'
     | '/admin/admissions'
     | '/admin/ai-assistant'
     | '/admin/analytics'
@@ -1810,6 +2186,7 @@ export interface FileRouteTypes {
     | '/bursar/receipts'
     | '/bursar/reconciliation'
     | '/bursar/reports'
+    | '/command-centre/provision'
     | '/driver/dashboard'
     | '/driver/students'
     | '/hq/dashboard'
@@ -1866,6 +2243,7 @@ export interface FileRouteTypes {
     | '/teacher/sign-in'
     | '/teacher/timetable'
     | '/command-centre'
+    | '/resources/docs/$slug'
     | '/api/public/audit/password-reset'
     | '/api/public/webhooks/paystack'
   id:
@@ -1897,7 +2275,18 @@ export interface FileRouteTypes {
     | '/_authenticated/student'
     | '/_authenticated/super-admin'
     | '/_authenticated/teacher'
+    | '/(site)/about'
+    | '/(site)/careers'
+    | '/(site)/company'
+    | '/(site)/contact'
     | '/(site)/coregrid'
+    | '/(site)/enterprise'
+    | '/(site)/pricing'
+    | '/(site)/request-demo'
+    | '/(site)/resources'
+    | '/(site)/security'
+    | '/(site)/solutions'
+    | '/(site)/status'
     | '/_authenticated/messages'
     | '/_authenticated/notifications'
     | '/_authenticated/runtime'
@@ -1905,8 +2294,29 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/events/$id'
     | '/news/$id'
+    | '/platform/ai-workforce'
+    | '/platform/governance'
+    | '/platform/integrations'
+    | '/platform/intelligence'
+    | '/platform/memory'
+    | '/platform/missions'
     | '/platform/org'
+    | '/platform/reality'
     | '/reality/$class'
+    | '/(site)/legal/accessibility'
+    | '/(site)/legal/cookies'
+    | '/(site)/legal/privacy'
+    | '/(site)/legal/terms'
+    | '/(site)/resources/blog'
+    | '/(site)/resources/case-studies'
+    | '/(site)/resources/changelog'
+    | '/(site)/resources/docs'
+    | '/(site)/resources/guides'
+    | '/(site)/solutions/ai-workforce'
+    | '/(site)/solutions/education'
+    | '/(site)/solutions/enterprise'
+    | '/(site)/solutions/operations'
+    | '/(site)/solutions/organizations'
     | '/_authenticated/admin/admissions'
     | '/_authenticated/admin/ai-assistant'
     | '/_authenticated/admin/analytics'
@@ -1970,6 +2380,7 @@ export interface FileRouteTypes {
     | '/_authenticated/bursar/receipts'
     | '/_authenticated/bursar/reconciliation'
     | '/_authenticated/bursar/reports'
+    | '/_authenticated/command-centre/provision'
     | '/_authenticated/driver/dashboard'
     | '/_authenticated/driver/students'
     | '/_authenticated/hq/dashboard'
@@ -2026,6 +2437,7 @@ export interface FileRouteTypes {
     | '/_authenticated/teacher/sign-in'
     | '/_authenticated/teacher/timetable'
     | '/_authenticated/command-centre/'
+    | '/(site)/resources/docs/$slug'
     | '/api/public/audit/password-reset'
     | '/api/public/webhooks/paystack'
   fileRoutesById: FileRoutesById
@@ -2184,11 +2596,88 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SuperAdminBootstrapRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/(site)/about': {
+      id: '/(site)/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof siteAboutRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/careers': {
+      id: '/(site)/careers'
+      path: '/careers'
+      fullPath: '/careers'
+      preLoaderRoute: typeof siteCareersRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/company': {
+      id: '/(site)/company'
+      path: '/company'
+      fullPath: '/company'
+      preLoaderRoute: typeof siteCompanyRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/contact': {
+      id: '/(site)/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof siteContactRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
     '/(site)/coregrid': {
       id: '/(site)/coregrid'
       path: '/coregrid'
       fullPath: '/coregrid'
       preLoaderRoute: typeof siteCoregridRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/enterprise': {
+      id: '/(site)/enterprise'
+      path: '/enterprise'
+      fullPath: '/enterprise'
+      preLoaderRoute: typeof siteEnterpriseRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/pricing': {
+      id: '/(site)/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof sitePricingRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/request-demo': {
+      id: '/(site)/request-demo'
+      path: '/request-demo'
+      fullPath: '/request-demo'
+      preLoaderRoute: typeof siteRequestDemoRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/resources': {
+      id: '/(site)/resources'
+      path: '/resources'
+      fullPath: '/resources'
+      preLoaderRoute: typeof siteResourcesRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/security': {
+      id: '/(site)/security'
+      path: '/security'
+      fullPath: '/security'
+      preLoaderRoute: typeof siteSecurityRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/solutions': {
+      id: '/(site)/solutions'
+      path: '/solutions'
+      fullPath: '/solutions'
+      preLoaderRoute: typeof siteSolutionsRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/status': {
+      id: '/(site)/status'
+      path: '/status'
+      fullPath: '/status'
+      preLoaderRoute: typeof siteStatusRouteImport
       parentRoute: typeof siteRouteRoute
     }
     '/_authenticated/admin': {
@@ -2303,11 +2792,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NewsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/platform/ai-workforce': {
+      id: '/platform/ai-workforce'
+      path: '/ai-workforce'
+      fullPath: '/platform/ai-workforce'
+      preLoaderRoute: typeof PlatformAiWorkforceRouteImport
+      parentRoute: typeof PlatformRoute
+    }
+    '/platform/governance': {
+      id: '/platform/governance'
+      path: '/governance'
+      fullPath: '/platform/governance'
+      preLoaderRoute: typeof PlatformGovernanceRouteImport
+      parentRoute: typeof PlatformRoute
+    }
+    '/platform/integrations': {
+      id: '/platform/integrations'
+      path: '/integrations'
+      fullPath: '/platform/integrations'
+      preLoaderRoute: typeof PlatformIntegrationsRouteImport
+      parentRoute: typeof PlatformRoute
+    }
+    '/platform/intelligence': {
+      id: '/platform/intelligence'
+      path: '/intelligence'
+      fullPath: '/platform/intelligence'
+      preLoaderRoute: typeof PlatformIntelligenceRouteImport
+      parentRoute: typeof PlatformRoute
+    }
+    '/platform/memory': {
+      id: '/platform/memory'
+      path: '/memory'
+      fullPath: '/platform/memory'
+      preLoaderRoute: typeof PlatformMemoryRouteImport
+      parentRoute: typeof PlatformRoute
+    }
+    '/platform/missions': {
+      id: '/platform/missions'
+      path: '/missions'
+      fullPath: '/platform/missions'
+      preLoaderRoute: typeof PlatformMissionsRouteImport
+      parentRoute: typeof PlatformRoute
+    }
     '/platform/org': {
       id: '/platform/org'
       path: '/org'
       fullPath: '/platform/org'
       preLoaderRoute: typeof PlatformOrgRouteImport
+      parentRoute: typeof PlatformRoute
+    }
+    '/platform/reality': {
+      id: '/platform/reality'
+      path: '/reality'
+      fullPath: '/platform/reality'
+      preLoaderRoute: typeof PlatformRealityRouteImport
       parentRoute: typeof PlatformRoute
     }
     '/reality/$class': {
@@ -2316,6 +2854,104 @@ declare module '@tanstack/react-router' {
       fullPath: '/reality/$class'
       preLoaderRoute: typeof RealityClassRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/(site)/legal/accessibility': {
+      id: '/(site)/legal/accessibility'
+      path: '/legal/accessibility'
+      fullPath: '/legal/accessibility'
+      preLoaderRoute: typeof siteLegalAccessibilityRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/legal/cookies': {
+      id: '/(site)/legal/cookies'
+      path: '/legal/cookies'
+      fullPath: '/legal/cookies'
+      preLoaderRoute: typeof siteLegalCookiesRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/legal/privacy': {
+      id: '/(site)/legal/privacy'
+      path: '/legal/privacy'
+      fullPath: '/legal/privacy'
+      preLoaderRoute: typeof siteLegalPrivacyRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/legal/terms': {
+      id: '/(site)/legal/terms'
+      path: '/legal/terms'
+      fullPath: '/legal/terms'
+      preLoaderRoute: typeof siteLegalTermsRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/resources/blog': {
+      id: '/(site)/resources/blog'
+      path: '/blog'
+      fullPath: '/resources/blog'
+      preLoaderRoute: typeof siteResourcesBlogRouteImport
+      parentRoute: typeof siteResourcesRoute
+    }
+    '/(site)/resources/case-studies': {
+      id: '/(site)/resources/case-studies'
+      path: '/case-studies'
+      fullPath: '/resources/case-studies'
+      preLoaderRoute: typeof siteResourcesCaseStudiesRouteImport
+      parentRoute: typeof siteResourcesRoute
+    }
+    '/(site)/resources/changelog': {
+      id: '/(site)/resources/changelog'
+      path: '/changelog'
+      fullPath: '/resources/changelog'
+      preLoaderRoute: typeof siteResourcesChangelogRouteImport
+      parentRoute: typeof siteResourcesRoute
+    }
+    '/(site)/resources/docs': {
+      id: '/(site)/resources/docs'
+      path: '/docs'
+      fullPath: '/resources/docs'
+      preLoaderRoute: typeof siteResourcesDocsRouteImport
+      parentRoute: typeof siteResourcesRoute
+    }
+    '/(site)/resources/guides': {
+      id: '/(site)/resources/guides'
+      path: '/guides'
+      fullPath: '/resources/guides'
+      preLoaderRoute: typeof siteResourcesGuidesRouteImport
+      parentRoute: typeof siteResourcesRoute
+    }
+    '/(site)/solutions/ai-workforce': {
+      id: '/(site)/solutions/ai-workforce'
+      path: '/ai-workforce'
+      fullPath: '/solutions/ai-workforce'
+      preLoaderRoute: typeof siteSolutionsAiWorkforceRouteImport
+      parentRoute: typeof siteSolutionsRoute
+    }
+    '/(site)/solutions/education': {
+      id: '/(site)/solutions/education'
+      path: '/education'
+      fullPath: '/solutions/education'
+      preLoaderRoute: typeof siteSolutionsEducationRouteImport
+      parentRoute: typeof siteSolutionsRoute
+    }
+    '/(site)/solutions/enterprise': {
+      id: '/(site)/solutions/enterprise'
+      path: '/enterprise'
+      fullPath: '/solutions/enterprise'
+      preLoaderRoute: typeof siteSolutionsEnterpriseRouteImport
+      parentRoute: typeof siteSolutionsRoute
+    }
+    '/(site)/solutions/operations': {
+      id: '/(site)/solutions/operations'
+      path: '/operations'
+      fullPath: '/solutions/operations'
+      preLoaderRoute: typeof siteSolutionsOperationsRouteImport
+      parentRoute: typeof siteSolutionsRoute
+    }
+    '/(site)/solutions/organizations': {
+      id: '/(site)/solutions/organizations'
+      path: '/organizations'
+      fullPath: '/solutions/organizations'
+      preLoaderRoute: typeof siteSolutionsOrganizationsRouteImport
+      parentRoute: typeof siteSolutionsRoute
     }
     '/_authenticated/admin/admissions': {
       id: '/_authenticated/admin/admissions'
@@ -2765,6 +3401,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCommandCentreIndexRouteImport
       parentRoute: typeof AuthenticatedCommandCentreRouteRoute
     }
+    '/_authenticated/command-centre/provision': {
+      id: '/_authenticated/command-centre/provision'
+      path: '/provision'
+      fullPath: '/command-centre/provision'
+      preLoaderRoute: typeof AuthenticatedCommandCentreProvisionRouteImport
+      parentRoute: typeof AuthenticatedCommandCentreRouteRoute
+    }
     '/_authenticated/driver/dashboard': {
       id: '/_authenticated/driver/dashboard'
       path: '/dashboard'
@@ -3150,6 +3793,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTeacherTimetableRouteImport
       parentRoute: typeof AuthenticatedTeacherRouteRoute
     }
+    '/(site)/resources/docs/$slug': {
+      id: '/(site)/resources/docs/$slug'
+      path: '/$slug'
+      fullPath: '/resources/docs/$slug'
+      preLoaderRoute: typeof siteResourcesDocsSlugRouteImport
+      parentRoute: typeof siteResourcesDocsRoute
+    }
     '/api/public/audit/password-reset': {
       id: '/api/public/audit/password-reset'
       path: '/api/public/audit/password-reset'
@@ -3167,12 +3817,93 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface siteResourcesDocsRouteChildren {
+  siteResourcesDocsSlugRoute: typeof siteResourcesDocsSlugRoute
+}
+
+const siteResourcesDocsRouteChildren: siteResourcesDocsRouteChildren = {
+  siteResourcesDocsSlugRoute: siteResourcesDocsSlugRoute,
+}
+
+const siteResourcesDocsRouteWithChildren =
+  siteResourcesDocsRoute._addFileChildren(siteResourcesDocsRouteChildren)
+
+interface siteResourcesRouteChildren {
+  siteResourcesBlogRoute: typeof siteResourcesBlogRoute
+  siteResourcesCaseStudiesRoute: typeof siteResourcesCaseStudiesRoute
+  siteResourcesChangelogRoute: typeof siteResourcesChangelogRoute
+  siteResourcesDocsRoute: typeof siteResourcesDocsRouteWithChildren
+  siteResourcesGuidesRoute: typeof siteResourcesGuidesRoute
+}
+
+const siteResourcesRouteChildren: siteResourcesRouteChildren = {
+  siteResourcesBlogRoute: siteResourcesBlogRoute,
+  siteResourcesCaseStudiesRoute: siteResourcesCaseStudiesRoute,
+  siteResourcesChangelogRoute: siteResourcesChangelogRoute,
+  siteResourcesDocsRoute: siteResourcesDocsRouteWithChildren,
+  siteResourcesGuidesRoute: siteResourcesGuidesRoute,
+}
+
+const siteResourcesRouteWithChildren = siteResourcesRoute._addFileChildren(
+  siteResourcesRouteChildren,
+)
+
+interface siteSolutionsRouteChildren {
+  siteSolutionsAiWorkforceRoute: typeof siteSolutionsAiWorkforceRoute
+  siteSolutionsEducationRoute: typeof siteSolutionsEducationRoute
+  siteSolutionsEnterpriseRoute: typeof siteSolutionsEnterpriseRoute
+  siteSolutionsOperationsRoute: typeof siteSolutionsOperationsRoute
+  siteSolutionsOrganizationsRoute: typeof siteSolutionsOrganizationsRoute
+}
+
+const siteSolutionsRouteChildren: siteSolutionsRouteChildren = {
+  siteSolutionsAiWorkforceRoute: siteSolutionsAiWorkforceRoute,
+  siteSolutionsEducationRoute: siteSolutionsEducationRoute,
+  siteSolutionsEnterpriseRoute: siteSolutionsEnterpriseRoute,
+  siteSolutionsOperationsRoute: siteSolutionsOperationsRoute,
+  siteSolutionsOrganizationsRoute: siteSolutionsOrganizationsRoute,
+}
+
+const siteSolutionsRouteWithChildren = siteSolutionsRoute._addFileChildren(
+  siteSolutionsRouteChildren,
+)
+
 interface siteRouteRouteChildren {
+  siteAboutRoute: typeof siteAboutRoute
+  siteCareersRoute: typeof siteCareersRoute
+  siteCompanyRoute: typeof siteCompanyRoute
+  siteContactRoute: typeof siteContactRoute
   siteCoregridRoute: typeof siteCoregridRoute
+  siteEnterpriseRoute: typeof siteEnterpriseRoute
+  sitePricingRoute: typeof sitePricingRoute
+  siteRequestDemoRoute: typeof siteRequestDemoRoute
+  siteResourcesRoute: typeof siteResourcesRouteWithChildren
+  siteSecurityRoute: typeof siteSecurityRoute
+  siteSolutionsRoute: typeof siteSolutionsRouteWithChildren
+  siteStatusRoute: typeof siteStatusRoute
+  siteLegalAccessibilityRoute: typeof siteLegalAccessibilityRoute
+  siteLegalCookiesRoute: typeof siteLegalCookiesRoute
+  siteLegalPrivacyRoute: typeof siteLegalPrivacyRoute
+  siteLegalTermsRoute: typeof siteLegalTermsRoute
 }
 
 const siteRouteRouteChildren: siteRouteRouteChildren = {
+  siteAboutRoute: siteAboutRoute,
+  siteCareersRoute: siteCareersRoute,
+  siteCompanyRoute: siteCompanyRoute,
+  siteContactRoute: siteContactRoute,
   siteCoregridRoute: siteCoregridRoute,
+  siteEnterpriseRoute: siteEnterpriseRoute,
+  sitePricingRoute: sitePricingRoute,
+  siteRequestDemoRoute: siteRequestDemoRoute,
+  siteResourcesRoute: siteResourcesRouteWithChildren,
+  siteSecurityRoute: siteSecurityRoute,
+  siteSolutionsRoute: siteSolutionsRouteWithChildren,
+  siteStatusRoute: siteStatusRoute,
+  siteLegalAccessibilityRoute: siteLegalAccessibilityRoute,
+  siteLegalCookiesRoute: siteLegalCookiesRoute,
+  siteLegalPrivacyRoute: siteLegalPrivacyRoute,
+  siteLegalTermsRoute: siteLegalTermsRoute,
 }
 
 const siteRouteRouteWithChildren = siteRouteRoute._addFileChildren(
@@ -3347,11 +4078,14 @@ const AuthenticatedBursarRouteRouteWithChildren =
   )
 
 interface AuthenticatedCommandCentreRouteRouteChildren {
+  AuthenticatedCommandCentreProvisionRoute: typeof AuthenticatedCommandCentreProvisionRoute
   AuthenticatedCommandCentreIndexRoute: typeof AuthenticatedCommandCentreIndexRoute
 }
 
 const AuthenticatedCommandCentreRouteRouteChildren: AuthenticatedCommandCentreRouteRouteChildren =
   {
+    AuthenticatedCommandCentreProvisionRoute:
+      AuthenticatedCommandCentreProvisionRoute,
     AuthenticatedCommandCentreIndexRoute: AuthenticatedCommandCentreIndexRoute,
   }
 
@@ -3601,11 +4335,25 @@ const BlogRouteChildren: BlogRouteChildren = {
 const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
 
 interface PlatformRouteChildren {
+  PlatformAiWorkforceRoute: typeof PlatformAiWorkforceRoute
+  PlatformGovernanceRoute: typeof PlatformGovernanceRoute
+  PlatformIntegrationsRoute: typeof PlatformIntegrationsRoute
+  PlatformIntelligenceRoute: typeof PlatformIntelligenceRoute
+  PlatformMemoryRoute: typeof PlatformMemoryRoute
+  PlatformMissionsRoute: typeof PlatformMissionsRoute
   PlatformOrgRoute: typeof PlatformOrgRoute
+  PlatformRealityRoute: typeof PlatformRealityRoute
 }
 
 const PlatformRouteChildren: PlatformRouteChildren = {
+  PlatformAiWorkforceRoute: PlatformAiWorkforceRoute,
+  PlatformGovernanceRoute: PlatformGovernanceRoute,
+  PlatformIntegrationsRoute: PlatformIntegrationsRoute,
+  PlatformIntelligenceRoute: PlatformIntelligenceRoute,
+  PlatformMemoryRoute: PlatformMemoryRoute,
+  PlatformMissionsRoute: PlatformMissionsRoute,
   PlatformOrgRoute: PlatformOrgRoute,
+  PlatformRealityRoute: PlatformRealityRoute,
 }
 
 const PlatformRouteWithChildren = PlatformRoute._addFileChildren(

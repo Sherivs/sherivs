@@ -92,9 +92,9 @@ function AuthenticatedLayout() {
         <div className="max-w-md uos-card p-8 text-center">
           <h1 className="font-display text-xl font-bold">Account not yet linked</h1>
           <p className="mt-3 text-sm text-muted-foreground">
-            Your sign-in is valid, but your account has not been linked to a school yet. A school
-            administrator (or a CoreGrid platform super admin) needs to assign you a role before you
-            can open a portal.
+            Your sign-in is valid, but your account has not been linked to an organization yet. An
+            organization administrator (or a Sherivs platform super administrator) needs to assign
+            you a role before you can open a workspace.
           </p>
           <button
             onClick={async () => {
@@ -151,6 +151,13 @@ function AuthenticatedLayout() {
             <div className="flex items-center justify-between px-4 py-2 gap-3">
               <div className="flex items-center gap-2 min-w-0">
                 {role && <SidebarTrigger />}
+                <Link
+                  to={dashHref}
+                  className="hidden sm:inline text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground"
+                  aria-label={PLATFORM_NAME}
+                >
+                  {PLATFORM_NAME}
+                </Link>
                 <Link to={dashHref} className="flex items-center gap-2 min-w-0">
                   <div className="size-8 rounded-lg uos-tenant-bg grid place-items-center font-bold shrink-0">
                     {(school?.name?.[0] ?? "U") as string}
@@ -176,9 +183,7 @@ function AuthenticatedLayout() {
                   greeting={experience.greeting}
                   workspaceName={school?.name ?? null}
                   notificationViewer={
-                    school && authUser
-                      ? { tenantId: school.id, recipientId: authUser.id }
-                      : null
+                    school && authUser ? { tenantId: school.id, recipientId: authUser.id } : null
                   }
                   onSignOut={async () => {
                     await signOut();

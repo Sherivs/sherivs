@@ -9,7 +9,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { PLATFORM_NAME } from "@/lib/platform";
-import { INSTALLED_RUNTIME_NAME as SCHOLAR_RUNTIME_NAME } from "@/lib/runtime/installed-runtimes";
+import {
+  INSTALLED_RUNTIME_NAME as SCHOLAR_RUNTIME_NAME,
+  INSTALLED_RUNTIMES,
+} from "@/lib/runtime/installed-runtimes";
+import { filterOrganizationPublicSections } from "@/lib/sherivs/organization-public";
 import { Menu, X, Facebook, Twitter, Instagram, Youtube, Linkedin } from "lucide-react";
 import type { SchoolRow } from "@/contexts/app-context";
 
@@ -213,7 +217,10 @@ export function Navbar({ school, socials }: { school: SchoolRow; socials: Social
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const links = NAV_SECTIONS.filter((n) => n.id === "home" || school[n.flag] !== false);
+  const educationRuntime = INSTALLED_RUNTIMES.some((runtime) => runtime.id === "runtime:scholar");
+  const links = filterOrganizationPublicSections(NAV_SECTIONS, { educationRuntime }).filter(
+    (n) => n.id === "home" || school[n.flag] !== false,
+  );
 
   return (
     <header
@@ -404,7 +411,10 @@ export function SectionHeader({
 
 export function Footer({ school, socials }: { school: SchoolRow; socials: SocialLink[] }) {
   const year = new Date().getFullYear();
-  const enabledLinks = NAV_SECTIONS.filter((n) => n.id === "home" || school[n.flag] !== false);
+  const educationRuntime = INSTALLED_RUNTIMES.some((runtime) => runtime.id === "runtime:scholar");
+  const enabledLinks = filterOrganizationPublicSections(NAV_SECTIONS, { educationRuntime }).filter(
+    (n) => n.id === "home" || school[n.flag] !== false,
+  );
   return (
     <footer className="relative border-t border-white/[0.06] bg-[rgba(8,12,24,0.6)] py-20">
       <div className="mx-auto grid max-w-7xl gap-10 px-6 md:px-8 lg:grid-cols-4">
@@ -427,7 +437,9 @@ export function Footer({ school, socials }: { school: SchoolRow; socials: Social
             )}
           </p>
           <SocialRow links={socials} className="mt-5" />
-          <p className="mt-6 text-[10px] uppercase tracking-widest text-white/30">School portal</p>
+          <p className="mt-6 text-[10px] uppercase tracking-widest text-white/30">
+            Organization access
+          </p>
         </div>
         <div>
           <div className="mb-4 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">

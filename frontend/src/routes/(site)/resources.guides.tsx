@@ -1,0 +1,9 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { EditorialPage, editorialHead } from "@/components/sherivs/editorial-page";
+
+export const Route = createFileRoute("/(site)/resources/guides")({
+  component: function SherivsPage() {
+    return <EditorialPage id="guides" framed={false} />;
+  },
+  head: () => editorialHead("guides"),
+});

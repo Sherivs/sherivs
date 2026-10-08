@@ -108,7 +108,7 @@ export function OfflineBanner({ visible, onRetry }: { visible: boolean; onRetry:
   if (!visible) return null;
   return (
     <View style={styles.offlineBanner}>
-      <Text style={styles.offlineText}>Offline — CoreGrid cannot be reached. Data is not shown from cache.</Text>
+      <Text style={styles.offlineText}>Offline — Sherivs cannot be reached. Data is not shown from cache.</Text>
       <Pressable accessibilityRole="button" onPress={onRetry} hitSlop={8}>
         <Text style={[styles.offlineText, { textDecorationLine: "underline" }]}>Retry</Text>
       </Pressable>
