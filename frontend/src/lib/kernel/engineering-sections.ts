@@ -52,7 +52,7 @@ export interface EngineeringSectionSpec {
 
 export const ENGINEERING_SECTIONS: readonly EngineeringSectionSpec[] = [
   { key: "identity", term: "Identity", intent: "Which registry identity this phase owns." },
-  { key: "purpose", term: "Purpose", intent: "Why the capability exists in CoreGrid." },
+  { key: "purpose", term: "Purpose", intent: "Why the capability exists in Sherivs." },
   {
     key: "ownership",
     term: "Ownership",

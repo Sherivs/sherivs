@@ -17,7 +17,7 @@ import { buildFinancialIntelligenceReport } from "@/lib/financial-intelligence-r
  */
 export const Route = createFileRoute("/_authenticated/super-admin/financial-operations")({
   component: FinancialOperationsPage,
-  head: () => ({ meta: [{ title: "Financial operations — CoreGrid" }] }),
+  head: () => ({ meta: [{ title: "Financial operations — Sherivs" }] }),
 });
 
 function FinancialOperationsPage() {

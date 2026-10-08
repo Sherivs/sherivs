@@ -125,13 +125,13 @@ function SchoolProfilePage() {
   return (
     <PortalPage
       title="School profile & templates"
-      subtitle="Tell CoreGrid what your school actually does — nothing is forced. Matching templates are suggested and you keep full control of every feature."
+      subtitle="Tell Sherivs what your school actually does — nothing is forced. Matching templates are suggested and you keep full control of every feature."
     >
       <div className="grid gap-5 lg:grid-cols-2">
         <section className="uos-card p-5">
           <h2 className="mb-1 font-display text-base font-semibold">What does your school run?</h2>
           <p className="mb-4 text-xs text-muted-foreground">
-            Tick every box that applies. CoreGrid adapts to you — religious, vocational, boarding,
+            Tick every box that applies. Sherivs adapts to you — religious, vocational, boarding,
             double-shift, multi-campus and everything between.
           </p>
           {groups.map(([group, features]) => (
@@ -178,7 +178,7 @@ function SchoolProfilePage() {
             <p className="rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
               {selected.size === 0
                 ? "Select at least one feature above to see template suggestions."
-                : "No template matches those choices — that is fine. CoreGrid still supports your school; you simply keep your own mix."}
+                : "No template matches those choices — that is fine. Sherivs still supports your school; you simply keep your own mix."}
             </p>
           ) : (
             <ul className="space-y-2">

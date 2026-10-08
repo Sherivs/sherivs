@@ -71,7 +71,7 @@ export const RESTAURANT_DOMAIN_DEFINITION: DomainDefinition = {
   domainId: RESTAURANT_DOMAIN_ID,
   displayName: "Restaurant operations",
   description:
-    "Front-of-house and kitchen operations configuration over the universal CoreGrid substrate.",
+    "Front-of-house and kitchen operations configuration over the universal Sherivs substrate.",
   entityTypes: [
     {
       name: "restaurant.menu_item",

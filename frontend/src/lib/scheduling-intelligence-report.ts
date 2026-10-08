@@ -611,7 +611,7 @@ export function buildSchedulingIntelligenceReport(
   };
 
   const summary = [
-    `CoreGrid scheduling intelligence is exercised by ${totals.rules} rule(s) and ${checks.length} executed check(s).`,
+    `Sherivs scheduling intelligence is exercised by ${totals.rules} rule(s) and ${checks.length} executed check(s).`,
     `${enforced} check(s) observed the enforced behaviour, ${failed} failed, ${declared} are declared only.`,
     `The conflict engine distinguishes ${totals.conflictTypes} conflict types and offers ${totals.resolutionStrategies} resolution strategies.`,
     `A plan is scored on ${totals.scoreDimensions} independent dimensions, with feasibility never traded for quality.`,

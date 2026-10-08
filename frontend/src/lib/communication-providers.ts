@@ -520,7 +520,7 @@ export const PROVIDER_CATALOGUE: readonly ProviderAdapter[] = [
   },
   {
     id: "platform-presence",
-    displayName: "CoreGrid platform presence",
+    displayName: "Sherivs platform presence",
     channels: ["presence", "in_app"],
     regions: ["global"],
     credentialReference: "internal://coregrid/presence",

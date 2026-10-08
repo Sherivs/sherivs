@@ -27,7 +27,7 @@ export const PHASE_01_FOUNDATION: PhaseEngineeringContract = {
   status: "implementing",
   owner: "all",
   purpose:
-    "Give every CoreGrid phase one set of verified foundations — repository standards, configuration, secrets discipline, migration rules, typing, API boundary rules and mechanical verification — so no phase invents its own conventions.",
+    "Give every Sherivs phase one set of verified foundations — repository standards, configuration, secrets discipline, migration rules, typing, API boundary rules and mechanical verification — so no phase invents its own conventions.",
   boundary: {
     statement:
       "The foundation owns conventions, verification contracts and repository hygiene. It never embeds a domain ontology, a tenant's business logic or a vendor SDK; those belong to the consuming runtime behind an adapter.",

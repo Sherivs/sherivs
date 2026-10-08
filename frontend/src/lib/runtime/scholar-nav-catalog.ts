@@ -727,7 +727,7 @@ export const SCHOLAR_NAV_CONTRIBUTIONS: readonly NavContribution[] = [
       },
       {
         key: "r001.org_admin.coregrid_intelligence",
-        label: "CoreGrid Intelligence",
+        label: "Sherivs Intelligence",
         iconKey: "intelligence",
         url: "/admin/intelligence",
         activePrefixes: ["/admin/intelligence-"],

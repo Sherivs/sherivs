@@ -62,7 +62,7 @@ function FacilitiesPage() {
   return (
     <PortalPage
       title="Facilities & twin estate"
-      subtitle="Every facility is bound to a CoreGrid twin kind so sensors, inspections and occupancy can report against it. An installed runtime consumes the kernel twin vocabulary; it never redefines it."
+      subtitle="Every facility is bound to a Sherivs twin kind so sensors, inspections and occupancy can report against it. An installed runtime consumes the kernel twin vocabulary; it never redefines it."
     >
       {estate.counts.length > 0 && (
         <div className="mb-5 flex flex-wrap gap-2">

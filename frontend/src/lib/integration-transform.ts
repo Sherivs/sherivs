@@ -105,7 +105,7 @@ export function createIntegrationMapping(input: {
   expression?: string | null;
 }): { ok: true; mapping: IntegrationMapping } | { ok: false; error: string } {
   if (!input.externalField.trim() || !input.coregridField.trim()) {
-    return { ok: false, error: "Mapping requires both external and CoreGrid fields" };
+    return { ok: false, error: "Mapping requires both external and Sherivs fields" };
   }
   if ((input.kind === "conditional" || input.kind === "calculated") && !input.expression) {
     return { ok: false, error: `${input.kind} mapping requires an expression` };

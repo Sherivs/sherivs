@@ -34,7 +34,7 @@ self.addEventListener("push", (event) => {
     payload = { body: event.data ? event.data.text() : "" };
   }
 
-  const title = payload.title || "CoreGrid Scholar";
+  const title = payload.title || "Sherivs Scholar";
   const options = {
     body: payload.body || "You have a new update from your school.",
     icon: "/favicon.ico",
@@ -82,7 +82,7 @@ self.addEventListener("fetch", (event) => {
           (await cache.match(request, { ignoreSearch: true })) ||
           (await cache.match(APP_SHELL_URL));
         if (cached) return cached;
-        return new Response("Offline — CoreGrid Scholar is unavailable until you reconnect.", {
+        return new Response("Offline — Sherivs Scholar is unavailable until you reconnect.", {
           status: 503,
           headers: { "Content-Type": "text/plain; charset=utf-8" },
         });

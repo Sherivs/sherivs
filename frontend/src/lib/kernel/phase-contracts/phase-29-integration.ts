@@ -24,7 +24,7 @@ export const PHASE_29_INTEGRATION = definePhaseContractFromSeed({
     "security-enforcement",
   ],
   purpose:
-    "Own interoperability: declare external systems, transform payloads between their model and CoreGrid contracts, operate connections with retry and backoff, and govern exchange.",
+    "Own interoperability: declare external systems, transform payloads between their model and Sherivs contracts, operate connections with retry and backoff, and govern exchange.",
   ownership:
     "Single owner of adapter registrations, transformation maps, connection records and integration operations policy.",
   boundaryStatement:

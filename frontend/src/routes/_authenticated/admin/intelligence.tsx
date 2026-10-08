@@ -245,9 +245,9 @@ function IntelligencePage() {
 
   if (!canIntelligence) {
     return (
-      <PortalPage title="CoreGrid Intelligence" subtitle="Opportunities and economy score">
+      <PortalPage title="Sherivs Intelligence" subtitle="Opportunities and economy score">
         <FeatureLockedCard
-          featureName="CoreGrid Intelligence"
+          featureName="Sherivs Intelligence"
           requiredTier="Professional"
           description="Detect missed opportunities, see your School Economy Score, and request managed ad campaigns."
         />
@@ -259,7 +259,7 @@ function IntelligencePage() {
 
   return (
     <PortalPage
-      title="CoreGrid Intelligence"
+      title="Sherivs Intelligence"
       subtitle="Your School Economy Score, opportunities, and ad campaigns"
     >
       <EconomyScoreSection data={q.data} />
