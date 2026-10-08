@@ -49,6 +49,36 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --breakpoint-xs: 380px;
+
+  /* Sherivs experience tokens (see frontend/src/design/tokens.ts) */
+  --font-sx-display: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sx-text: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --color-sx-surface-0: var(--sx-surface-0);
+  --color-sx-surface-1: var(--sx-surface-1);
+  --color-sx-surface-2: var(--sx-surface-2);
+  --color-sx-inverse: var(--sx-surface-inverse);
+  --color-sx-strong: var(--sx-text-strong);
+  --color-sx-text: var(--sx-text-default);
+  --color-sx-muted: var(--sx-text-muted);
+  --color-sx-on-inverse: var(--sx-text-inverse);
+  --color-sx-line: var(--sx-line-subtle);
+  --color-sx-line-strong: var(--sx-line-strong);
+  --color-sx-signal: var(--sx-signal);
+  --color-sx-signal-strong: var(--sx-signal-strong);
+  --color-sx-on-signal: var(--sx-signal-contrast);
+  --color-sx-focus: var(--sx-focus);
+  --color-sx-observation: var(--sx-observation);
+  --color-sx-inference: var(--sx-inference);
+  --color-sx-recommendation: var(--sx-recommendation);
+  --color-sx-action: var(--sx-action);
+  --color-sx-evidence: var(--sx-evidence);
+  --color-sx-verification: var(--sx-verification);
+  --color-sx-danger: var(--sx-danger);
+  --radius-sx-xs: 2px;
+  --radius-sx-sm: 4px;
+  --radius-sx-md: 6px;
+  --radius-sx-lg: 10px;
 }
 
 :root {
@@ -847,3 +877,280 @@ a:focus-visible,
 
 :root { color-scheme: dark; }
 .light { color-scheme: light; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   SHERIVS EXPERIENCE SYSTEM — tokens, planes, type, motion
+   Source of truth: frontend/src/design/tokens.ts (conformance-tested).
+   Scope: any subtree marked [data-sx]. Organization (tenant) brand
+   tokens never reach this scope; they live in the --tenant-* layer.
+═══════════════════════════════════════════════════════════════════ */
+
+/* sx:light */
+[data-sx] {
+  --sx-surface-0: #fafaf8;
+  --sx-surface-1: #ffffff;
+  --sx-surface-2: #f2f2ee;
+  --sx-surface-inverse: #0c1016;
+  --sx-text-strong: #07090c;
+  --sx-text-default: #171d27;
+  --sx-text-muted: #4b5668;
+  --sx-text-inverse: #f3f4f6;
+  --sx-line-subtle: #e3e3de;
+  --sx-line-strong: #c9c9c2;
+  --sx-signal: #0b5f9c;
+  --sx-signal-strong: #084a7a;
+  --sx-signal-contrast: #ffffff;
+  --sx-focus: #1286d6;
+  --sx-observation: #4b5668;
+  --sx-inference: #5b3fc4;
+  --sx-recommendation: #0b5f9c;
+  --sx-action: #8a4b00;
+  --sx-evidence: #0b6b62;
+  --sx-verification: #16703a;
+  --sx-danger: #b42323;
+}
+/* sx:end */
+
+/* sx:dark */
+.dark [data-sx],
+[data-sx-plane="ink"] {
+  --sx-surface-0: #07090c;
+  --sx-surface-1: #0c1016;
+  --sx-surface-2: #11161e;
+  --sx-surface-inverse: #fafaf8;
+  --sx-text-strong: #f5f6f8;
+  --sx-text-default: #e4e7eb;
+  --sx-text-muted: #9aa3b0;
+  --sx-text-inverse: #07090c;
+  --sx-line-subtle: #1d2430;
+  --sx-line-strong: #2c3543;
+  --sx-signal: #5cbfff;
+  --sx-signal-strong: #8fd3ff;
+  --sx-signal-contrast: #07090c;
+  --sx-focus: #5cbfff;
+  --sx-observation: #9aa3b0;
+  --sx-inference: #b9a3ff;
+  --sx-recommendation: #5cbfff;
+  --sx-action: #f2b65a;
+  --sx-evidence: #4fd1c0;
+  --sx-verification: #5ad08b;
+  --sx-danger: #ff7a7a;
+}
+/* sx:end */
+
+[data-sx] {
+  --sx-dur-instant: 80ms;
+  --sx-dur-quick: 140ms;
+  --sx-dur-base: 200ms;
+  --sx-dur-deliberate: 320ms;
+  --sx-dur-narrative: 560ms;
+  --sx-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --sx-ease-enter: cubic-bezier(0, 0, 0, 1);
+  --sx-ease-exit: cubic-bezier(0.3, 0, 1, 1);
+  --sx-gutter: clamp(1.25rem, 0.6rem + 2.6vw, 3.5rem);
+  --sx-measure: 68ch;
+  --sx-z-header: 40;
+  --sx-z-overlay: 90;
+  --sx-z-dialog: 100;
+}
+
+/* Bridge shadcn primitives rendered inside a Sherivs surface onto Sherivs tokens,
+   so dialogs, menus and inputs never pick up an organization's brand colors here.
+   Re-declared on ink planes because custom properties inherit resolved values. */
+[data-sx],
+[data-sx-plane="ink"] {
+  --background: var(--sx-surface-0);
+  --foreground: var(--sx-text-default);
+  --card: var(--sx-surface-1);
+  --card-foreground: var(--sx-text-default);
+  --popover: var(--sx-surface-1);
+  --popover-foreground: var(--sx-text-default);
+  --muted: var(--sx-surface-2);
+  --muted-foreground: var(--sx-text-muted);
+  --accent: var(--sx-surface-2);
+  --accent-foreground: var(--sx-text-strong);
+  --border: var(--sx-line-subtle);
+  --input: var(--sx-line-strong);
+  --ring: var(--sx-focus);
+  --primary: var(--sx-signal);
+  --primary-foreground: var(--sx-signal-contrast);
+
+  background: var(--sx-surface-0);
+  color: var(--sx-text-default);
+  font-family: var(--font-sx-text);
+  font-feature-settings: "cv11", "ss01", "ss03";
+}
+
+[data-sx-plane="ink"] {
+  color-scheme: dark;
+}
+
+[data-sx] :focus-visible {
+  outline: 2px solid var(--sx-focus);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+[data-sx] ::selection {
+  background: color-mix(in oklab, var(--sx-signal) 28%, transparent);
+  color: var(--sx-text-strong);
+}
+
+@layer components {
+  [data-sx] h1, [data-sx] h2, [data-sx] h3, [data-sx] h4 {
+    font-family: var(--font-sx-display);
+    color: var(--sx-text-strong);
+  }
+
+  .sx-display, .sx-hero, .sx-h1, .sx-h2, .sx-h3, .sx-h4 {
+    font-family: var(--font-sx-display);
+    font-weight: 600;
+    color: var(--sx-text-strong);
+    text-wrap: balance;
+  }
+  .sx-display { font-size: clamp(2.75rem, 1.6rem + 5.2vw, 6rem); line-height: 0.98; letter-spacing: -0.04em; }
+  .sx-hero { font-size: clamp(2.25rem, 1.5rem + 3.4vw, 4.5rem); line-height: 1.02; letter-spacing: -0.035em; }
+  .sx-h1 { font-size: clamp(2rem, 1.5rem + 2.2vw, 3.25rem); line-height: 1.06; letter-spacing: -0.03em; }
+  .sx-h2 { font-size: clamp(1.625rem, 1.3rem + 1.4vw, 2.5rem); line-height: 1.1; letter-spacing: -0.025em; }
+  .sx-h3 { font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.625rem); line-height: 1.2; letter-spacing: -0.015em; }
+  .sx-h4 { font-size: 1.125rem; line-height: 1.3; letter-spacing: -0.01em; }
+  .sx-body-lg { font-size: 1.1875rem; line-height: 1.6; letter-spacing: -0.005em; color: var(--sx-text-muted); text-wrap: pretty; }
+  .sx-body { font-size: 1rem; line-height: 1.6; text-wrap: pretty; }
+  .sx-small { font-size: 0.875rem; line-height: 1.55; }
+  .sx-caption { font-size: 0.8125rem; line-height: 1.45; color: var(--sx-text-muted); }
+  .sx-label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.3;
+    letter-spacing: 0.08em;
+    font-weight: 500;
+    text-transform: uppercase;
+    color: var(--sx-text-muted);
+  }
+  .sx-code { font-family: var(--font-mono); font-size: 0.8125rem; line-height: 1.6; }
+  .sx-data { font-family: var(--font-mono); font-size: 0.875rem; font-variant-numeric: tabular-nums; }
+  .sx-metric {
+    font-family: var(--font-sx-display);
+    font-size: clamp(1.75rem, 1.4rem + 1.4vw, 2.75rem);
+    line-height: 1;
+    letter-spacing: -0.03em;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--sx-text-strong);
+  }
+  .sx-measure { max-width: var(--sx-measure); }
+
+  .sx-container {
+    width: 100%;
+    max-width: 92rem;
+    margin-inline: auto;
+    padding-inline: var(--sx-gutter);
+  }
+
+  /* Precision rule — the hairline that separates planes */
+  .sx-rule { border-top: 1px solid var(--sx-line-subtle); }
+
+  /* The field: a faint measurement grid used only on planes that carry structure */
+  .sx-field {
+    background-image:
+      linear-gradient(to right, color-mix(in oklab, var(--sx-line-subtle) 70%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklab, var(--sx-line-subtle) 70%, transparent) 1px, transparent 1px);
+    background-size: 64px 64px;
+    background-position: -1px -1px;
+  }
+
+  /* Atmosphere: one restrained light source, never a rainbow */
+  .sx-atmosphere {
+    background:
+      radial-gradient(60rem 28rem at 78% -8%, color-mix(in oklab, var(--sx-signal) 16%, transparent), transparent 70%),
+      var(--sx-surface-0);
+  }
+
+  .sx-link {
+    color: var(--sx-signal);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+    transition: color var(--sx-dur-quick) var(--sx-ease-standard);
+  }
+  .sx-link:hover { color: var(--sx-signal-strong); }
+
+  .sx-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0 1.125rem;
+    border-radius: 4px;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    white-space: nowrap;
+    border: 1px solid transparent;
+    transition:
+      background-color var(--sx-dur-quick) var(--sx-ease-standard),
+      border-color var(--sx-dur-quick) var(--sx-ease-standard),
+      color var(--sx-dur-quick) var(--sx-ease-standard),
+      transform var(--sx-dur-instant) var(--sx-ease-standard);
+  }
+  .sx-button:active { transform: translateY(1px); }
+  .sx-button[aria-disabled="true"], .sx-button:disabled { opacity: 0.45; pointer-events: none; }
+  .sx-button-primary { background: var(--sx-text-strong); color: var(--sx-surface-0); }
+  .sx-button-primary:hover { background: var(--sx-signal); color: var(--sx-signal-contrast); }
+  .sx-button-secondary { border-color: var(--sx-line-strong); color: var(--sx-text-strong); background: transparent; }
+  .sx-button-secondary:hover { border-color: var(--sx-text-strong); }
+  .sx-button-quiet { color: var(--sx-text-default); padding-inline: 0.5rem; }
+  .sx-button-quiet:hover { color: var(--sx-text-strong); background: var(--sx-surface-2); }
+
+  /* Controlled translucency: only for layers that float above content */
+  .sx-veil {
+    background: color-mix(in oklab, var(--sx-surface-0) 82%, transparent);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+  }
+
+  /* Intelligence kind marker: a 2px leading bar keyed to the semantic token */
+  .sx-kind { border-left: 2px solid var(--sx-kind, var(--sx-observation)); padding-left: 0.875rem; }
+  .sx-kind[data-kind="observation"] { --sx-kind: var(--sx-observation); }
+  .sx-kind[data-kind="inference"] { --sx-kind: var(--sx-inference); }
+  .sx-kind[data-kind="recommendation"] { --sx-kind: var(--sx-recommendation); }
+  .sx-kind[data-kind="action"] { --sx-kind: var(--sx-action); }
+  .sx-kind[data-kind="evidence"] { --sx-kind: var(--sx-evidence); }
+  .sx-kind[data-kind="verification"] { --sx-kind: var(--sx-verification); }
+}
+
+/* Motion: entrance on scroll, progressive enhancement only (no JS, no layout shift) */
+@keyframes sx-enter {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes sx-trace {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@supports (animation-timeline: view()) {
+  [data-sx] .sx-reveal {
+    animation: sx-enter linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 40%;
+  }
+}
+
+/* Reduced motion: honored platform-wide, not only inside Sherivs surfaces */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  [data-sx] .sx-reveal { animation: none !important; opacity: 1 !important; transform: none !important; }
+}
+
+/* Forced colors (Windows high contrast): keep structure visible */
+@media (forced-colors: active) {
+  [data-sx] .sx-kind { border-left-color: CanvasText; }
+  [data-sx] .sx-button { border-color: ButtonText; }
+}
