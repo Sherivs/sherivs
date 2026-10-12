@@ -6,16 +6,18 @@ import {
 import { phaseContractCoverageSnapshot } from "@/lib/kernel/phase-contracts";
 import { foundationStandardsSnapshot } from "@/lib/foundation-standards";
 import { scholarConsumedKernelCapabilities } from "@/lib/runtime/scholar-consumption";
+import { PLATFORM_NAME, PLATFORM_TAGLINE } from "@/lib/platform";
+import { SherivsLogo } from "@/components/brand/sherivs-logo";
 
 export const Route = createFileRoute("/platform")({
   component: Platform,
   head: () => ({
     meta: [
-      { title: "CoreGrid — the platform that powers any organization" },
+      { title: `${PLATFORM_NAME} — Platform Kernel Specification & Architecture` },
       {
         name: "description",
         content:
-          "One governed platform: identity, tenancy, workspaces, AI, security, analytics and 50 kernel capabilities any organization — whatever their domain — can consume.",
+          "Explore the 51-phase Sherivs institutional intelligence kernel: identity, tenancy, workspaces, autonomous memory, missions, and verified capabilities.",
       },
       { property: "og:type", content: "website" },
     ],
@@ -45,28 +47,40 @@ function Platform() {
 
   return (
     <div className="min-h-screen bg-[color:var(--background)] text-[color:var(--foreground)]">
-      <header className="border-b border-border">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4">
-          <div className="font-display text-lg font-bold">CoreGrid</div>
-          <nav className="flex items-center gap-4 text-sm">
-            <Link to="/" className="text-muted-foreground hover:text-foreground">
-              Command Centre
+      <header className="border-b border-border bg-[color:var(--surface-1)]/90 backdrop-blur-md sticky top-0 z-40">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3">
+          <SherivsLogo size="sm" href="/" />
+          <nav className="flex items-center gap-5 text-xs font-semibold">
+            <Link to="/platform/reality" className="text-muted-foreground hover:text-foreground">
+              Reality
             </Link>
-            <a href="/auth" className="text-muted-foreground hover:text-foreground">
+            <Link to="/platform/memory" className="text-muted-foreground hover:text-foreground">
+              Memory
+            </Link>
+            <Link to="/platform/ai-workforce" className="text-muted-foreground hover:text-foreground">
+              Workforce
+            </Link>
+            <Link to="/platform/missions" className="text-muted-foreground hover:text-foreground">
+              Missions
+            </Link>
+            <Link to="/platform/governance" className="text-muted-foreground hover:text-foreground">
+              Governance
+            </Link>
+            <Link to="/auth" className="rounded-md bg-cyan-500 hover:bg-cyan-400 text-black px-3 py-1 font-semibold transition-all">
               Sign in
-            </a>
+            </Link>
           </nav>
         </div>
       </header>
 
       <main className="mx-auto w-full max-w-6xl px-4 py-10">
         <section className="mb-10">
-          <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
-            One platform. Every organization. Their rules.
+          <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl text-foreground">
+            Sovereign Kernel Substrate. Installed Domain Runtimes.
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-            CoreGrid is a governed intelligence platform. Whatever an organization runs — a school,
-            a ministry, a company — CoreGrid adapts: identity and tenancy first, then the workspace
+            {PLATFORM_NAME} is a governed institutional intelligence platform. Whatever an organization runs — a university,
+            a hospital, a ministry, a corporation — {PLATFORM_NAME} adapts: identity and tenancy first, then the workspace
             and domain surfaces the organization actually uses. Nothing is forced on anyone.
           </p>
         </section>
@@ -232,7 +246,7 @@ function Platform() {
       </main>
 
       <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
-        CoreGrid · governed intelligence platform · every runtime is a tenant of the kernel, never
+        {PLATFORM_NAME} · governed intelligence platform · every runtime is a tenant of the kernel, never
         its owner.
       </footer>
     </div>

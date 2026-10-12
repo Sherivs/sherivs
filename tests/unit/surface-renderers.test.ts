@@ -165,7 +165,7 @@ describe("R40 — generated runtime view (server-derived, fail-closed)", () => {
     expect(view.notices.join(" ")).toContain("not in the reality catalog");
   });
 
-  it("derives CoreGrid departments from platform roles only", () => {
+  it("derives platform departments from platform roles only", () => {
     const platformRole = platformOrgRoles()[0];
     expect(platformRole).toBeDefined();
     if (!platformRole) return;

@@ -1,5 +1,5 @@
 /**
- * CoreGrid Mobile — missions client (foundation-loop read path).
+ * Sherivs Mobile — missions client (foundation-loop read path).
  *
  * The canonical mission substrate is the governed `cg_*` kernel tables the
  * web's foundation loop persists (frontend/src/lib/control-plane/

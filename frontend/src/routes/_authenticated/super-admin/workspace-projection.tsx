@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { PLATFORM_NAME } from "@/lib/platform";
 
 import { PortalPage } from "@/components/portal-shell";
 import { composeWorkspaces } from "@/lib/workspace-projection";
@@ -24,7 +25,7 @@ import {
  */
 export const Route = createFileRoute("/_authenticated/super-admin/workspace-projection")({
   component: WorkspaceProjectionPage,
-  head: () => ({ meta: [{ title: "Workspace projection — CoreGrid" }] }),
+  head: () => ({ meta: [{ title: `Workspace projection — ${PLATFORM_NAME}` }] }),
 });
 
 function WorkspaceProjectionPage() {

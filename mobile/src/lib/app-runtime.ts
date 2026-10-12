@@ -1,5 +1,5 @@
 /**
- * CoreGrid Mobile — application runtime composition root.
+ * Sherivs Mobile — application runtime composition root.
  *
  * Owns the single instances of: the parsed environment contract, the
  * session-secure storage adapter (expo-secure-store → iOS Keychain /

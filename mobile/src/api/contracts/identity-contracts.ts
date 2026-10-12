@@ -1,5 +1,5 @@
 /**
- * CoreGrid Mobile — identity (worker/agent) read contracts.
+ * Sherivs Mobile — identity (worker/agent) read contracts.
  *
  * Row shapes are the SINGLE-SOURCE contracts from `@coregrid/contracts`
  * (formerly mirrored by hand from the web's identity-registry server

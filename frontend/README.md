@@ -1,6 +1,6 @@
 # Frontend
 
-The CoreGrid Scholar web platform (TanStack Start full-stack application).
+The Sherivs Scholar web platform (TanStack Start full-stack application).
 
 ```
 frontend/

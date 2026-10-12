@@ -1,5 +1,5 @@
 /**
- * CoreGrid Mobile — Supabase client factories (mirror the web app's
+ * Sherivs Mobile — Supabase client factories (mirror the web app's
  * `frontend/src/integrations/supabase/client.ts` conventions, §23).
  *
  * Mirrored conventions:

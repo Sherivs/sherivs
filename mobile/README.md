@@ -1,9 +1,9 @@
-# CoreGrid Mobile
+# Sherivs Mobile
 
-The CoreGrid mobile client (V1-010, Wave 3 — mission team MOBILE). An Expo /
+The Sherivs mobile client (V1-010, Wave 3 — mission team MOBILE). An Expo /
 React Native application sharing the web platform's identity service, API
 contracts, and governed mission substrate. Phase 22 ownership applies
-(`architecture/phase-22-mobile-platform.md`): **CoreGrid services own truth;
+(`architecture/phase-22-mobile-platform.md`): **Sherivs services own truth;
 this client owns interaction.**
 
 Status: **foundation implemented, store submission is an EXTERNAL GATE**

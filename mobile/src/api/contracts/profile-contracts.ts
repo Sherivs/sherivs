@@ -1,5 +1,5 @@
 /**
- * CoreGrid Mobile — authentication + organization selection contracts.
+ * Sherivs Mobile — authentication + organization selection contracts.
  *
  * Authentication semantics mirror the web app exactly (§23): Supabase
  * email/password sign-in over the shared project, session persisted by the

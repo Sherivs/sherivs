@@ -8,9 +8,9 @@ import {
 import { MARKETING_TIERS, formatTierPrice } from "./-content/pricing-tiers";
 
 /**
- * CoreGrid platform public site — landing page at /coregrid.
+ * Sherivs platform public site — compatibility landing page at /coregrid.
  *
- * Static marketing presentation of the platform: what CoreGrid is, its
+ * Static marketing presentation of the platform: what Sherivs is, its
  * capabilities, installed runtimes, security posture and commercial tiers.
  * All content is typed and database-free; every interactive element links to
  * a real route (/auth for sign up and sign in, /platform for kernel detail).
@@ -19,14 +19,14 @@ import { MARKETING_TIERS, formatTierPrice } from "./-content/pricing-tiers";
  */
 
 export const Route = createFileRoute("/(site)/coregrid")({
-  component: CoreGridSitePage,
+  component: SherivsSitePage,
   head: () => ({
     meta: [
       { title: `${PLATFORM_NAME} — ${PLATFORM_TAGLINE}` },
       {
         name: "description",
         content:
-          "CoreGrid is the AI-native institutional operating system: a governed kernel with reality models, missions, an AI workforce, evidence and policy — plus the domain runtimes organizations install on it.",
+          `${PLATFORM_NAME} is the AI-native institutional operating system: a governed kernel with reality models, missions, an AI workforce, evidence and policy — plus the domain runtimes organizations install on it.`,
       },
       { property: "og:title", content: `${PLATFORM_NAME} — ${PLATFORM_TAGLINE}` },
       {
@@ -63,10 +63,10 @@ function SectionHeading({
   );
 }
 
-function CoreGridSitePage() {
+function SherivsSitePage() {
   return (
     <>
-      {/* Hero — what CoreGrid is */}
+      {/* Hero — what the platform is */}
       <section aria-labelledby="coregrid-hero" className="border-b border-border">
         <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
@@ -79,7 +79,7 @@ function CoreGridSitePage() {
             The AI-native institutional operating system
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            CoreGrid unifies organizations, people, places, devices, workflows, knowledge,
+            {PLATFORM_NAME} unifies organizations, people, places, devices, workflows, knowledge,
             payments and automation into one governed ecosystem — a kernel with registries,
             events, policies and evidence, on which institutions install the domain runtimes
             they actually need.

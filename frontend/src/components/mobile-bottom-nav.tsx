@@ -1,5 +1,5 @@
 /**
- * CoreGrid — Phase 06 Workspace Engine: workspace-dynamic mobile bottom nav.
+ * Sherivs — Phase 06 Workspace Engine: workspace-dynamic mobile bottom nav.
  *
  * This component has NO hard-coded portals, roles, or labels. It renders
  * whatever chrome resolution the workspace produced (see

@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { PLATFORM_NAME } from "@/lib/platform";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -13,7 +14,7 @@ import { buildRuntimeView } from "@/lib/surfaces/runtime-view";
 export const Route = createFileRoute("/_authenticated/runtime")({
   component: GeneratedRuntime,
   head: () => ({
-    meta: [{ title: "Generated runtime — CoreGrid" }],
+    meta: [{ title: `Generated runtime — ${PLATFORM_NAME}` }],
   }),
 });
 
@@ -24,7 +25,7 @@ function errorText(error: unknown): string | null {
 
 /**
  * The internal surface every person receives: workspaces, dashboards and (when
- * they staff the platform organization) CoreGrid departments. Everything is
+ * they staff the platform organization) platform departments. Everything is
  * composed from the roles the SERVER resolved — this page never asserts a role,
  * a feature code or a tenant, and it states an empty result instead of filling it.
  */
@@ -168,13 +169,13 @@ function GeneratedRuntime() {
 
       <section className="space-y-3">
         <h2 className="flex items-center gap-2 font-display text-lg font-semibold">
-          <Building2 className="size-4 text-muted-foreground" /> CoreGrid departments you staff (
+          <Building2 className="size-4 text-muted-foreground" /> {PLATFORM_NAME} departments you staff (
           {view.platformDepartments.length})
         </h2>
         {view.platformDepartments.length === 0 ? (
           <p className="rounded-lg border border-border p-4 text-xs text-muted-foreground">
             None. The platform organization generates a department only for the roles that staff it
-            — this is the CoreGrid internal workspace, not a tenant workspace.
+            — this is the {PLATFORM_NAME} internal workspace, not a tenant workspace.
           </p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">

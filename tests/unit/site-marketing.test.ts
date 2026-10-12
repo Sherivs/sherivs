@@ -1,5 +1,5 @@
 /**
- * CoreGrid — V1-007 platform public site (`(site)` route group) tests.
+ * Sherivs — V1-007 platform public site (`(site)` route group) tests.
  *
  * The vitest environment here is `node` (no jsdom/RTL in this repository), so
  * route surfaces are validated the way existing structural tests validate

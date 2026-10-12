@@ -1,5 +1,5 @@
 /**
- * CoreGrid — honest planned-capability state (§57 no product theatre).
+ * Sherivs — honest planned-capability state (§57 no product theatre).
  *
  * Rendered by pages whose capability is real future scope, classified in the
  * typed disposition registry (`lib/runtime/scholar/placeholder-dispositions.ts`). The state

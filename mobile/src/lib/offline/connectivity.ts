@@ -1,5 +1,5 @@
 /**
- * CoreGrid Mobile — offline/reconnection controller (Phase 22 §M/§N/§AF).
+ * Sherivs Mobile — offline/reconnection controller (Phase 22 §M/§N/§AF).
  *
  * Pure state machine: connectivity probing, exponential-backoff retry
  * scheduling, and subscription notification. The transport probe is

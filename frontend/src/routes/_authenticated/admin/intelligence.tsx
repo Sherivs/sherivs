@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { isFeatureActive, type TierName } from "@/lib/subscription-tiers";
+import { PLATFORM_NAME } from "@/lib/platform";
 
 export const Route = createFileRoute("/_authenticated/admin/intelligence")({
   ssr: false,
@@ -245,9 +246,9 @@ function IntelligencePage() {
 
   if (!canIntelligence) {
     return (
-      <PortalPage title="CoreGrid Intelligence" subtitle="Opportunities and economy score">
+      <PortalPage title={`${PLATFORM_NAME} Intelligence`} subtitle="Opportunities and economy score">
         <FeatureLockedCard
-          featureName="CoreGrid Intelligence"
+          featureName={`${PLATFORM_NAME} Intelligence`}
           requiredTier="Professional"
           description="Detect missed opportunities, see your School Economy Score, and request managed ad campaigns."
         />
@@ -259,7 +260,7 @@ function IntelligencePage() {
 
   return (
     <PortalPage
-      title="CoreGrid Intelligence"
+      title={`${PLATFORM_NAME} Intelligence`}
       subtitle="Your School Economy Score, opportunities, and ad campaigns"
     >
       <EconomyScoreSection data={q.data} />

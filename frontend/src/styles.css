@@ -6,7 +6,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * CoreGrid — Apple-inspired glassmorphism design system.
+ * Sherivs — institutional glassmorphism design system.
  * Deep navy structural surfaces, frosted glass cards, tenant-tunable
  * primary/secondary read from school.primary_color / secondary_color
  * and injected at runtime onto :root as --tenant-primary / --tenant-secondary.
@@ -110,6 +110,21 @@
   --primary-foreground: #ffffff;
   --secondary: var(--tenant-secondary);
   --secondary-foreground: #0a0f1e;
+
+  /* Sherivs Institutional Depth Hierarchy Tokens */
+  --sherivs-surface-0: #030508;
+  --sherivs-surface-1: #07090e;
+  --sherivs-surface-2: #0c1019;
+  --sherivs-surface-3: #111726;
+  --sherivs-surface-4: #182033;
+  --sherivs-surface-5: #1f2a42;
+
+  --sherivs-cyan: #00f0ff;
+  --sherivs-cyan-dim: #0284c7;
+  --sherivs-violet: #8b5cf6;
+  --sherivs-emerald: #10b981;
+  --sherivs-amber: #f59e0b;
+  --sherivs-rose: #f43f5e;
 }
 
 @layer base {
@@ -536,7 +551,7 @@ a:focus-visible,
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   COREGRID SCHOLAR DESIGN SYSTEM v2.0
+   SHERIVS SCHOLAR DESIGN SYSTEM v2.0
    Built on top of the existing system — never replacing it.
    Adds a structured type/space/radius scale, status colors,
    enterprise cards, AI chat bubbles, risk badges, and light-mode
@@ -847,3 +862,97 @@ a:focus-visible,
 
 :root { color-scheme: dark; }
 .light { color-scheme: light; }
+
+/* ---------------------------------------------------------------
+ * Sherivs Proprietary Interaction & Spatial Utilities
+ * --------------------------------------------------------------- */
+.sherivs-glass {
+  background: rgba(12, 16, 25, 0.75);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.light .sherivs-glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.sherivs-surface-0 { background-color: var(--sherivs-surface-0); }
+.sherivs-surface-1 { background-color: var(--sherivs-surface-1); }
+.sherivs-surface-2 { background-color: var(--sherivs-surface-2); }
+.sherivs-surface-3 { background-color: var(--sherivs-surface-3); }
+.sherivs-surface-4 { background-color: var(--sherivs-surface-4); }
+
+.sherivs-card {
+  background: var(--sherivs-surface-3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.light .sherivs-card {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.08);
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.05);
+}
+.sherivs-card:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
+}
+.light .sherivs-card:hover {
+  border-color: rgba(15, 23, 42, 0.16);
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
+}
+
+/* Categorized AI Output Styling */
+.sherivs-ai-observation {
+  border-left: 3px solid var(--sherivs-cyan);
+  background: rgba(0, 240, 255, 0.03);
+  padding: 0.75rem 1rem;
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+.sherivs-ai-inference {
+  border-left: 3px solid var(--sherivs-violet);
+  background: rgba(139, 92, 246, 0.03);
+  padding: 0.75rem 1rem;
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+.sherivs-ai-recommendation {
+  border-left: 3px solid var(--sherivs-amber);
+  background: rgba(245, 158, 11, 0.03);
+  padding: 0.75rem 1rem;
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+.sherivs-ai-action {
+  border-left: 3px solid var(--sherivs-emerald);
+  background: rgba(16, 185, 129, 0.03);
+  padding: 0.75rem 1rem;
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+/* Verification State Badges */
+.sherivs-badge-verified {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+.sherivs-badge-pending {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+.sherivs-badge-dual-control {
+  background: rgba(139, 92, 246, 0.12);
+  color: #a78bfa;
+  border: 1px solid rgba(139, 92, 246, 0.25);
+}
+
+/* Prefers reduced motion standard */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+

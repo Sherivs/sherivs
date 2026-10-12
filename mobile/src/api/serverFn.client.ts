@@ -1,5 +1,5 @@
 /**
- * CoreGrid Mobile — TanStack Start server-function URL contract client.
+ * Sherivs Mobile — TanStack Start server-function URL contract client.
  *
  * Contract (verified against the live exerciser
  * `scripts/exercise-foundation-loop.mjs`, the repository's HTTP evidence
