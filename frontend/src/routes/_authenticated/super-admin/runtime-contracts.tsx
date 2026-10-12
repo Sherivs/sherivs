@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { PLATFORM_NAME } from "@/lib/platform";
 
 import { PortalPage } from "@/components/portal-shell";
 import { runtimeSelfReport } from "@/lib/runtime-self-report";
@@ -13,7 +14,7 @@ import { runtimeSelfReport } from "@/lib/runtime-self-report";
  */
 export const Route = createFileRoute("/_authenticated/super-admin/runtime-contracts")({
   component: RuntimeContractsPage,
-  head: () => ({ meta: [{ title: "Runtime contracts — CoreGrid" }] }),
+  head: () => ({ meta: [{ title: `Runtime contracts — ${PLATFORM_NAME}` }] }),
 });
 
 function RuntimeContractsPage() {

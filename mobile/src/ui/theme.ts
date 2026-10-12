@@ -1,6 +1,6 @@
 /**
- * CoreGrid Mobile — design tokens (Phase 22 §J: shared design tokens).
- * Minimal token set for the mobile foundation; a fuller CoreGrid design
+ * Sherivs Mobile — design tokens (Phase 22 §J: shared design tokens).
+ * Minimal token set for the mobile foundation; a fuller Sherivs design
  * system shared with web is a reported follow-up (§23).
  */
 export const palette = {

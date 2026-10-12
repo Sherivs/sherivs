@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { PLATFORM_NAME } from "@/lib/platform";
 
 import { PortalPage } from "@/components/portal-shell";
 import { buildFinancialIntelligenceReport } from "@/lib/financial-intelligence-report";
@@ -17,7 +18,7 @@ import { buildFinancialIntelligenceReport } from "@/lib/financial-intelligence-r
  */
 export const Route = createFileRoute("/_authenticated/super-admin/financial-operations")({
   component: FinancialOperationsPage,
-  head: () => ({ meta: [{ title: "Financial operations — CoreGrid" }] }),
+  head: () => ({ meta: [{ title: `Financial operations — ${PLATFORM_NAME}` }] }),
 });
 
 function FinancialOperationsPage() {

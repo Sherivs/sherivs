@@ -1,5 +1,5 @@
 /**
- * CoreGrid — platform shell: notifications bell (ADR-003 Option 1).
+ * Sherivs — platform shell: notifications bell (ADR-003 Option 1).
  *
  * Renders the notifications surface contract (`buildNotificationSurface`)
  * over records the session's server-resolved viewer context scopes. The bell

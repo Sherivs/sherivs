@@ -1,5 +1,5 @@
 /**
- * CoreGrid Mobile — environment contract (Phase 22 CC/CD: environment
+ * Sherivs Mobile — environment contract (Phase 22 CC/CD: environment
  * separation, fail-closed configuration loading).
  *
  * Pure module: reads nothing itself; `parseMobileEnv` consumes an injected
@@ -17,7 +17,7 @@ export interface MobileEnv {
   readonly supabaseUrl: string;
   /** Publishable (anon) key — public by design; authorization stays server-side (RLS). */
   readonly supabasePublishableKey: string;
-  /** Base URL of the deployed CoreGrid web app hosting the server functions. */
+  /** Base URL of the deployed Sherivs web app hosting the server functions. */
   readonly coregridWebBaseUrl: string;
   /**
    * TanStack Start server-function ids are build-generated content hashes of

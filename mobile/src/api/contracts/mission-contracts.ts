@@ -1,5 +1,5 @@
 /**
- * CoreGrid Mobile — mission execution read contracts.
+ * Sherivs Mobile — mission execution read contracts.
  *
  * Row shapes are the SINGLE-SOURCE contracts from `@coregrid/contracts`
  * (formerly mirrored by hand from the web's foundation-loop module — that

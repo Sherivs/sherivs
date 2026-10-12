@@ -1,4 +1,4 @@
-# CoreGrid repository line-ending & diff policy.
+# Sherivs repository line-ending & diff policy.
 # LF is canonical for every text file: Prettier/ESLint and the CI gates expect
 # LF; this file prevents CRLF churn on Windows checkouts and editors.
 * text=auto

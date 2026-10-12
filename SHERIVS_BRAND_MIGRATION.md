@@ -65,3 +65,33 @@ In strict compliance with **Section 1 of the Program Directive**, blind global f
 | Application Shell | `frontend/src/routes/_authenticated/route.tsx`| CoreGrid Shell | Sherivs Universal Shell | Verified |
 | Web App Manifest | `frontend/src/routes/manifest[.]webmanifest.ts`| CoreGrid Manifest | Sherivs Institutional PWA | Verified |
 | Public Footer | `frontend/src/components/public/sections/site-footer.tsx`| CoreGrid Footer | Sherivs Sovereign Ecosystem | Verified |
+| Authenticated page titles | `frontend/src/routes/_authenticated/**` | `— CoreGrid` document titles | `{PLATFORM_NAME}` | Verified |
+| Admin copy | school profile, facilities, support | Hardcoded CoreGrid sentences | `{PLATFORM_NAME}` | Verified |
+| Command centre | `frontend/src/components/command-centre/command-centre.tsx` | CoreGrid Command Centre / CG mark | `{PLATFORM_NAME}` + Sherivs symbol | Verified |
+| Mobile screens | `mobile/app/**`, `mobile/src/ui`, `mobile/src/api/errors.ts` | CoreGrid sign-in and errors | Sherivs | Verified |
+| Push notification fallback | `public/sw.js` | CoreGrid Scholar | Sherivs Scholar | Verified |
+| Mobile display name | `mobile/app.json` `expo.name` | CoreGrid | Sherivs | Verified |
+| Pricing, tips, nav labels, role labels | see §4 | Customer-facing CoreGrid phrases | Sherivs | Verified |
+
+---
+
+## 4. Intentional remainder register
+
+Blind replacement is still prohibited. A repository search for `CoreGrid`, `coregrid`, or `COREGRID` will continue to match the identifiers below. They are retained on purpose.
+
+| Remainder | Why it stays |
+|---|---|
+| `AGENTS.md` engineering constitution | Governance document. Renaming it is a constitution amendment, not a brand edit. |
+| `architecture/**`, `COREGRID.md`, phase proofs, campaign ledgers | Historical architecture records and acceptance evidence. |
+| Root `README.md` and other pre-migration engineering narratives | Historical platform narrative. Customer surfaces do not read them. |
+| Package scope `@coregrid/contracts` and package names `coregrid-scholar`, `coregrid-mobile` | Import and lockfile compatibility. |
+| SQL prefixes `cg_`, migration filenames, and `COREGRID_*` environment variables (`COREGRID_DB_CA_CERT`, `EXPO_PUBLIC_COREGRID_WEB_BASE_URL`) | Deployed schema and runtime configuration. |
+| Type and field names such as `CoreGridDatabase`, `compatibleCoreGridVersion`, `coregridField` | Generated contracts and persisted API fields. |
+| Capability and role keys `COREGRID_INTERNAL`, `r001.org_admin.coregrid_intelligence` | Authorization identifiers. Display labels now say Sherivs. |
+| Public compatibility route `/coregrid` and anchor id `coregrid-hero` | Stable URL exercised by `tests/e2e/v1-vertical-slice.spec.ts` and `tests/unit/site-marketing.test.ts`. Copy on the page uses `PLATFORM_NAME`. |
+| Service-worker cache name `coregrid-app-shell-v1` | Cache key. The notification title is Sherivs Scholar. |
+| Credential references such as `secret://coregrid/...` and `internal://coregrid/presence` | Secret locators. The presence provider display name is Sherivs. |
+| Mobile bundle id `com.coregrid.app`, URL scheme `coregrid`, slug `coregrid-mobile` | Store identity. The on-device name is Sherivs. |
+| Domain-neutrality baselines under `architecture/coregrid-mvp-architecture/` | Guard baselines named by path. |
+| Negative test patterns that look for the legacy phrase `CoreGrid Scholar` | They fail the build if that phrase returns to the public site. |
+| Module file banners under `frontend/src/lib/**` (`CoreGrid —`, `CoreGrid Scholar —`) | Historical module frames. Kernel neutrality forbids relocating runtime vocabulary into the kernel; these comments are not customer copy. `tests/unit/sherivs-brand-surface.test.ts` locks the surfaces a person can read. |

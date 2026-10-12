@@ -1,5 +1,5 @@
 /**
- * CoreGrid — platform shell header actions (ADR-003 Option 1, GAP-008).
+ * Sherivs — platform shell header actions (ADR-003 Option 1, GAP-008).
  *
  * The composed right-hand chrome of the platform-owned shell: search trigger,
  * colour-mode toggle, notifications bell, profile menu. All surfaces render

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { PLATFORM_NAME } from "@/lib/platform";
 
 import { PortalPage } from "@/components/portal-shell";
 import {
@@ -16,7 +17,7 @@ import {
  */
 export const Route = createFileRoute("/_authenticated/super-admin/academic-intelligence")({
   component: AcademicIntelligencePage,
-  head: () => ({ meta: [{ title: "Academic intelligence — CoreGrid" }] }),
+  head: () => ({ meta: [{ title: `Academic intelligence — ${PLATFORM_NAME}` }] }),
 });
 
 function AcademicIntelligencePage() {

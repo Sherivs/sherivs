@@ -1,5 +1,5 @@
 /**
- * CoreGrid — platform shell: workspace switcher (ADR-003 Option 1).
+ * Sherivs — platform shell: workspace switcher (ADR-003 Option 1).
  *
  * The switcher is presentation only (AGENTS §34): it renders server-derived
  * directory options and SUBMITS a choice — a workspace reference and nothing

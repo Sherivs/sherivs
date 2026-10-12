@@ -1,5 +1,5 @@
 /**
- * CoreGrid Mobile — authentication client (mirrors the web app's auth
+ * Sherivs Mobile — authentication client (mirrors the web app's auth
  * semantics, §23 / Phase 22 §P).
  *
  * - sign-in: Supabase `signInWithPassword` over the shared project

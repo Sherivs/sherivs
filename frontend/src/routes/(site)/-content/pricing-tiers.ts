@@ -1,5 +1,5 @@
 /**
- * CoreGrid platform public site — marketing pricing tier catalog.
+ * Sherivs platform public site — marketing pricing tier catalog.
  *
  * Presentation-only data for the (site) public route group. Values mirror the
  * platform's commercial tier catalog (frontend/src/lib/subscription-tiers.ts),
@@ -52,7 +52,7 @@ export const MARKETING_TIERS: readonly MarketingTier[] = [
     name: "Starter",
     monthlyPrice: 15_000,
     annualPrice: 150_000,
-    summary: "Everything a small organization needs to run on CoreGrid.",
+    summary: "Everything a small organization needs to run on Sherivs.",
     featured: false,
     highlights: [
       "Up to 200 members",

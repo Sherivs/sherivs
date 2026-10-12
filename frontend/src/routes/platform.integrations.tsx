@@ -48,7 +48,7 @@ function PlatformIntegrationsPage() {
             Provider-Agnostic Adapters
           </h1>
           <p className="mt-4 text-base text-muted-foreground leading-relaxed">
-            In compliance with CoreGrid Constitution §25, {PLATFORM_NAME} remains completely provider-agnostic. All external vendors connect through clean boundary adapters, allowing seamless migration between cloud infrastructure providers.
+            In compliance with the engineering constitution §25, {PLATFORM_NAME} remains completely provider-agnostic. All external vendors connect through clean boundary adapters, allowing seamless migration between cloud infrastructure providers.
           </p>
         </div>
 

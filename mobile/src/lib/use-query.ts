@@ -1,5 +1,5 @@
 /**
- * CoreGrid Mobile — minimal query hook for screens.
+ * Sherivs Mobile — minimal query hook for screens.
  *
  * Server state is held separately from session/tenant state (Phase 22 §L).
  * Every screen renders the exact states the backend returned: loading,

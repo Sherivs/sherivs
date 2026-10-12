@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { PLATFORM_NAME } from "@/lib/platform";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/super-admin/tenants")({
   // server-side, by `requirePlatformSuperAdmin` inside every function this page
   // calls (fail closed) — no role list is declared here.
   component: TenantsPage,
-  head: () => ({ meta: [{ title: "Tenants — CoreGrid" }] }),
+  head: () => ({ meta: [{ title: `Tenants — ${PLATFORM_NAME}` }] }),
 });
 
 function TenantsPage() {

@@ -1025,7 +1025,7 @@ export const INSTITUTION_TYPE_GROUPS: readonly RoleGroup[] = [
 ];
 
 /* ─────────────────────────────────────────────────────────────
- * CoreGrid platform organization (the platform is a living organization)
+ * Sherivs platform organization (the platform is a living organization)
  * ────────────────────────────────────────────────────────────*/
 
 export const COREGRID_INTERNAL_GROUPS: readonly RoleGroup[] = [

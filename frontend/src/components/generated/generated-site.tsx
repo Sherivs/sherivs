@@ -1,5 +1,5 @@
 /**
- * CoreGrid — generated site renderer components (WAVE-R40).
+ * Sherivs — generated site renderer components (WAVE-R40).
  *
  * Renders a `GeneratedSiteView`. Every block comes from the view-model, which
  * comes from the experience engine: no organization name, section or colour is

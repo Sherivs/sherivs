@@ -165,7 +165,7 @@ Sherivs abandons flat card-soup layouts in favor of an **Elevation & Depth Hiera
 
 ## 5. Security & Isolation Boundaries
 
-In strict compliance with **CoreGrid Constitution §13–§17**:
+In strict compliance with **the engineering constitution §13–§17**:
 1. **Tenant Isolation:** Every data request and RPC must carry explicit tenant context derived from the actor's session. Client-supplied tenant IDs are untrusted.
 2. **Layered Authorization:** All mutations pass through RBAC + ABAC + PBAC + RLS. The UI is never the security boundary.
 3. **AI Sovereignty:** AI models and agents never possess independent authority to bypass security invariants, modify database schemas, or claim higher credentials.

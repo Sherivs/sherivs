@@ -1,5 +1,5 @@
 /**
- * CoreGrid Mobile — worker/agent status client (read-only).
+ * Sherivs Mobile — worker/agent status client (read-only).
  *
  * The sanctioned tenant-scoped read path in the web app is the
  * `listIdentities` server function (frontend/src/lib/identity-registry

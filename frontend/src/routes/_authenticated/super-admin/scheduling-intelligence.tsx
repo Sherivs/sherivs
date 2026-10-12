@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { PLATFORM_NAME } from "@/lib/platform";
 
 import { PortalPage } from "@/components/portal-shell";
 import { buildSchedulingIntelligenceReport } from "@/lib/scheduling-intelligence-report";
@@ -13,7 +14,7 @@ import { buildSchedulingIntelligenceReport } from "@/lib/scheduling-intelligence
  */
 export const Route = createFileRoute("/_authenticated/super-admin/scheduling-intelligence")({
   component: SchedulingIntelligencePage,
-  head: () => ({ meta: [{ title: "Scheduling intelligence — CoreGrid" }] }),
+  head: () => ({ meta: [{ title: `Scheduling intelligence — ${PLATFORM_NAME}` }] }),
 });
 
 /** How each kind of organization names the same scheduling concepts — supplied as data. */

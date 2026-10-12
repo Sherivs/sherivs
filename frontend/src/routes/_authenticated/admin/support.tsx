@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { PLATFORM_NAME } from "@/lib/platform";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
@@ -121,7 +122,7 @@ function SupportPage() {
   return (
     <PortalPage
       title="Support"
-      subtitle="Contact the CoreGrid team directly"
+      subtitle={`Contact the ${PLATFORM_NAME} team directly`}
       actions={
         <NewTicketSheet
           schoolId={schoolId}
@@ -229,7 +230,7 @@ function TicketCard({ ticket }: { ticket: Complaint }) {
               className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
             >
               {open ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
-              {open ? "Hide" : "View"} CoreGrid response
+              {open ? "Hide" : "View"} {PLATFORM_NAME} response
             </button>
             {open && (
               <blockquote className="mt-2 border-l-2 border-primary/50 bg-primary/5 px-3 py-2 rounded-r">

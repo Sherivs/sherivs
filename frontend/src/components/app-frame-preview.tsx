@@ -1,5 +1,5 @@
 /**
- * CoreGrid — app-frame preview (dev/QA surface).
+ * Sherivs — app-frame preview (dev/QA surface).
  *
  * A floating "phone-sized" side popup so the R-001 workspace UI can be tested
  * at app proportions while working on a desktop browser. Opens a right-side

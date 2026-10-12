@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { PLATFORM_NAME } from "@/lib/platform";
 
 import { PortalPage } from "@/components/portal-shell";
 import { trustFabricReport } from "@/lib/trust-fabric-report";
@@ -18,7 +19,7 @@ import { trustFabricReport } from "@/lib/trust-fabric-report";
  */
 export const Route = createFileRoute("/_authenticated/super-admin/trust-fabric")({
   component: TrustFabricPage,
-  head: () => ({ meta: [{ title: "Trust fabric — CoreGrid" }] }),
+  head: () => ({ meta: [{ title: `Trust fabric — ${PLATFORM_NAME}` }] }),
 });
 
 function TrustFabricPage() {

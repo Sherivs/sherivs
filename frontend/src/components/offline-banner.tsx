@@ -1,5 +1,5 @@
 /**
- * CoreGrid — offline status banner (Phase 22 platform wiring).
+ * Sherivs — offline status banner (Phase 22 platform wiring).
  *
  * First live consumer of the Phase 22/23 platform contracts: renders only
  * while the runtime is offline (or back-online for a moment), driven by the

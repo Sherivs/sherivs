@@ -8,9 +8,9 @@ import {
 import { MARKETING_TIERS, formatTierPrice } from "./-content/pricing-tiers";
 
 /**
- * CoreGrid platform public site — landing page at /coregrid.
+ * Sherivs platform public site — compatibility landing page at /coregrid.
  *
- * Static marketing presentation of the platform: what CoreGrid is, its
+ * Static marketing presentation of the platform: what Sherivs is, its
  * capabilities, installed runtimes, security posture and commercial tiers.
  * All content is typed and database-free; every interactive element links to
  * a real route (/auth for sign up and sign in, /platform for kernel detail).
@@ -19,7 +19,7 @@ import { MARKETING_TIERS, formatTierPrice } from "./-content/pricing-tiers";
  */
 
 export const Route = createFileRoute("/(site)/coregrid")({
-  component: CoreGridSitePage,
+  component: SherivsSitePage,
   head: () => ({
     meta: [
       { title: `${PLATFORM_NAME} — ${PLATFORM_TAGLINE}` },
@@ -63,7 +63,7 @@ function SectionHeading({
   );
 }
 
-function CoreGridSitePage() {
+function SherivsSitePage() {
   return (
     <>
       {/* Hero — what the platform is */}

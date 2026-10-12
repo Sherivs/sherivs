@@ -74,7 +74,7 @@ export const ROLE_WORKSPACE_LABELS: Record<RoleWorkspaceKey, string> = {
   religious: "Religious education workspace",
   government: "Government education workspace",
   regulatory: "Regulatory & inspectorate workspace",
-  platform: "CoreGrid platform workspace",
+  platform: "Sherivs platform workspace",
 };
 
 /** Which workspaces a role of this category participates in (data, not logic). */

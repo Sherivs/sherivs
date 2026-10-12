@@ -1,7 +1,7 @@
 /**
- * CoreGrid internal operating workspace surface (WAVE-R41).
+ * Sherivs internal operating workspace surface (WAVE-R41).
  *
- * Renders the PLATFORM organization — the departments CoreGrid staffs, the roles
+ * Renders the PLATFORM organization — the departments Sherivs staffs, the roles
  * that staff them and the widgets each department renders. It is generated from
  * the COREGRID_INTERNAL role groups by the platform-org engine: this page lists
  * what the engine produced, and shows the structural audit that must be empty.

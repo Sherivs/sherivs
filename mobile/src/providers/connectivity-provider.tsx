@@ -1,5 +1,5 @@
 /**
- * CoreGrid Mobile — connectivity context (Phase 22 §N offline experience).
+ * Sherivs Mobile — connectivity context (Phase 22 §N offline experience).
  * Wraps the pure connectivity controller with the Supabase health probe
  * and exposes the snapshot plus a manual retry to screens. The banner is
  * honest by construction: no cached content is presented while offline.

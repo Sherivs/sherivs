@@ -1,5 +1,5 @@
 /**
- * CoreGrid — per-page tips (guide surface).
+ * Sherivs — per-page tips (guide surface).
  *
  * Renders a collapsible guidance card inside PortalPage whenever guidance
  * exists for the current route. Content-only: never changes behavior,

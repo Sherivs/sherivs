@@ -57,7 +57,7 @@ Every experience surface must pass all 10 review gates before being merged into 
 - **Gate 7: Security & Tenant Isolation:** Zero client-side tenant spoofing, no sensitive keys in client bundles, server-side authorization enforcement on all actions.
 - **Gate 8: Code Quality & Types:** Strict TypeScript, Zod schema validation on all inputs/outputs, zero `any` types, clean separation of presentation and server functions.
 - **Gate 9: Automated Test Coverage:** Unit test for state machine, snapshot/integration test for contract rendering, isolation tests.
-- **Gate 10: Architectural Conformance:** Zero domain-contamination of the universal kernel, adherence to the CoreGrid ASI Constitution and V1 Execution Boundary.
+- **Gate 10: Architectural Conformance:** Zero domain-contamination of the universal kernel, adherence to the engineering constitution (AGENTS.md) and V1 Execution Boundary.
 
 ---
 

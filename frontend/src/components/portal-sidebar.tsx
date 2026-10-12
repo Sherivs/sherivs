@@ -1,5 +1,5 @@
 /**
- * CoreGrid — Phase 06 Workspace Engine: workspace-dynamic sidebar.
+ * Sherivs — Phase 06 Workspace Engine: workspace-dynamic sidebar.
  *
  * This component contains NO hard-coded portals, role maps, or labels. It
  * renders whatever chrome the workspace resolution produced (contributions ×

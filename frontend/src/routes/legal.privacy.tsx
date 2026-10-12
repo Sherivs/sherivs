@@ -58,7 +58,7 @@ function LegalPrivacyPage() {
         <section>
           <h2 className="text-base font-bold text-foreground">2. Canonical Truth vs. Intelligence Isolation</h2>
           <p className="mt-2">
-            Under the CoreGrid ASI Constitution and Sherivs Experience Architecture, reality records (attendance, transcripts, financial ledgers, physical telemetry) are partitioned from AI inference. AI outputs are categorized as transient intelligence and cannot overwrite canonical records without explicit, audited human-in-the-loop authorization.
+            Under the engineering constitution and Sherivs Experience Architecture, reality records (attendance, transcripts, financial ledgers, physical telemetry) are partitioned from AI inference. AI outputs are categorized as transient intelligence and cannot overwrite canonical records without explicit, audited human-in-the-loop authorization.
           </p>
         </section>
 

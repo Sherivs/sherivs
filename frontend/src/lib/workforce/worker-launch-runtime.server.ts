@@ -140,7 +140,7 @@ export function buildAiGatewayExecutor(input: {
       return { outcome: "failed", reason: `lease_lost_before_inference: ${beat.reason}` };
     }
     const prompt = [
-      "You are executing one governed CoreGrid worker mission.",
+      "You are executing one governed Sherivs worker mission.",
       `Mission: ${execution.missionId}`,
       `Action: ${execution.action}`,
       `Execution: ${execution.executionId}`,

@@ -1,5 +1,5 @@
 /**
- * CoreGrid — platform shell: profile menu (ADR-003 Option 1).
+ * Sherivs — platform shell: profile menu (ADR-003 Option 1).
  *
  * Identity and destinations come from the profile menu contract
  * (`buildProfileMenu`) over server-resolved session data. Sign-out is an

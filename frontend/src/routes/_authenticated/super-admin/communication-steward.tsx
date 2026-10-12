@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { PLATFORM_NAME } from "@/lib/platform";
 
 import { PortalPage } from "@/components/portal-shell";
 import {
@@ -17,7 +18,7 @@ import {
  */
 export const Route = createFileRoute("/_authenticated/super-admin/communication-steward")({
   component: CommunicationStewardPage,
-  head: () => ({ meta: [{ title: "Communication steward — CoreGrid" }] }),
+  head: () => ({ meta: [{ title: `Communication steward — ${PLATFORM_NAME}` }] }),
 });
 
 function CommunicationStewardPage() {
@@ -26,7 +27,7 @@ function CommunicationStewardPage() {
   return (
     <PortalPage
       title="Communication steward"
-      subtitle="Every organization subscribed to CoreGrid communication receives an autonomous steward. This page states the authority it holds, the checks that prove the authority is bounded, and what the platform cannot yet do."
+      subtitle={`Every organization subscribed to ${PLATFORM_NAME} communication receives an autonomous steward. This page states the authority it holds, the checks that prove the authority is bounded, and what the platform cannot yet do.`}
     >
       <section className="uos-card p-6">
         <h2 className="font-display text-lg font-bold">

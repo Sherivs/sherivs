@@ -1,5 +1,5 @@
 /**
- * CoreGrid Mobile — session + tenant context (Phase 22 §L: session and
+ * Sherivs Mobile — session + tenant context (Phase 22 §L: session and
  * tenant state are distinct domains and are never mixed with server-state
  * caches). Mirrors the web app's bootstrap: restore session, subscribe to
  * auth changes, resolve the actor (and the RLS-resolved organization) from
