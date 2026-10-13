@@ -1,0 +1,110 @@
+name: Jarvis Enterprise Cycle
+
+# WAKE trigger for one Jarvis library cycle, then SLEEP.
+#
+# This workflow is NOT a resident process. Hermes and Jarvis remain
+# libraries. Provider health is never invented: the rehearsal path runs the
+# empty-observation library cycle with no network, and the live path only
+# runs when COREGRID_CYCLE_TENANT_ID is present in the secret store. Missing
+# credentials exit 2 BLOCKED_NO_CREDENTIAL — the job is blocked, not failed.
+# Phase 52 is not authorized by this wake (ACTIVE-V1, AGENTS.md §45).
+#
+# This wake does not join the canonical database battery lock group and
+# does not claim exclusive canonical-database access.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Daily 05:41 UTC (off the top of the hour to avoid scheduler herds).
+    - cron: "41 5 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  jarvis-enterprise-cycle:
+    name: Wake Jarvis enterprise cycle (library, then sleep)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Prepare cycle artifacts directory
+        run: |
+          sudo mkdir -p /opt/cursor/artifacts
+          sudo chown "$(id -u):$(id -g)" /opt/cursor/artifacts
+          mkdir -p artifacts
+
+      - name: Rehearse Jarvis enterprise cycle (offline)
+        run: node scripts/run-jarvis-enterprise-cycle.mjs --rehearse
+
+      - name: Live Jarvis enterprise cycle (credential-gated)
+        id: live
+        env:
+          COREGRID_CYCLE_TENANT_ID: ${{ secrets.COREGRID_CYCLE_TENANT_ID }}
+        run: |
+          # Exit-code contract (scripts/run-jarvis-enterprise-cycle.mjs):
+          #   0 = library cycle completed (including zero detections)
+          #   1 = unexpected library throw — FAILS the build
+          #   2 = BLOCKED_NO_CREDENTIAL / BLOCKED_USAGE — job is marked
+          #       blocked, NOT failed (COREGRID_CYCLE_TENANT_ID absent from
+          #       the GitHub Actions secret store, or a fork pull request).
+          # Do not invent provider credentials. AI_API_KEY is not required.
+          if [ -z "${COREGRID_CYCLE_TENANT_ID}" ]; then
+            echo "BLOCKED_NO_CREDENTIAL COREGRID_CYCLE_TENANT_ID is not available in this context. No live cycle was attempted."
+            echo "exit_code=2" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          set +e
+          node scripts/run-jarvis-enterprise-cycle.mjs
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          case "$code" in
+            0)
+              echo "STATUS=PASS — Jarvis library cycle completed (wake then sleep)."
+              ;;
+            2)
+              echo "STATUS=BLOCKED_NO_CREDENTIAL — COREGRID_CYCLE_TENANT_ID is not available in this context. No live cycle claim is made either way."
+              ;;
+            *)
+              echo "STATUS=FAIL — Jarvis enterprise cycle threw unexpectedly (see step output and /opt/cursor/artifacts/jarvis-enterprise-cycle-live.json)."
+              exit "$code"
+              ;;
+          esac
+
+      - name: Record cycle outcome
+        if: always()
+        run: |
+          {
+            echo "### Jarvis enterprise cycle"
+            echo ""
+            echo "Rehearsal: \`--rehearse\` (offline library cycle, no network)."
+            echo "Live exit code: \`${{ steps.live.outputs.exit_code || 'no-run' }}\`"
+            if [ "${{ steps.live.outputs.exit_code }}" = "2" ]; then
+              echo "**BLOCKED on credentials** — the job did not fail: the live wake could not run because \`COREGRID_CYCLE_TENANT_ID\` is absent. Hermes and Jarvis remain libraries; no resident process was started."
+            elif [ "${{ steps.live.outputs.exit_code }}" = "0" ]; then
+              echo "PASS — one Jarvis library cycle ran and slept."
+            else
+              echo "**FINDINGS recorded** — see the run step output; result JSON at /opt/cursor/artifacts/."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload cycle artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jarvis-enterprise-cycle
+          path: |
+            /opt/cursor/artifacts/jarvis-enterprise-cycle-rehearsal.json
+            /opt/cursor/artifacts/jarvis-enterprise-cycle-live.json
+          if-no-files-found: ignore
