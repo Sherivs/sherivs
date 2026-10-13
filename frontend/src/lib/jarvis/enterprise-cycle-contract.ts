@@ -224,7 +224,9 @@ export interface EnterpriseCycleDeps {
    * (`stampHermesFindings`); this port only lists already-stamped findings.
    * FINDINGS are mapped into `JarvisObservation` only when this port returns
    * them. Missing port → typed skip, never fabricated findings. Production
-   * leaves this undefined (no invented findings substrate). Tests inject it.
+   * NOW wires a read-only substrate via createHermesFindingsListPort. Tests
+   * may still inject a stub. Missing/throwing port remains a typed skip
+   * (already implemented in runEnterpriseCycleLibrary).
    */
   readonly listHermesFindings?: (input: {
     tenantId: string;

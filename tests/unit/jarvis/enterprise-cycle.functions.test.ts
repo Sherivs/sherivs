@@ -558,6 +558,28 @@ describe("§27 server-function invariants — enterprise-cycle.functions.ts", ()
     expect(contract).toMatch(/findingsSkipReason/);
   });
 
+  it("buildEnterpriseCycleDeps wires production listHermesFindings via hermes-findings-list.server", () => {
+    const depsFn = runtime.match(
+      /export async function buildEnterpriseCycleDeps[\s\S]*?\nexport interface EnterpriseCycleLibraryResult/,
+    );
+    expect(depsFn, "buildEnterpriseCycleDeps must remain in the runtime module").toBeTruthy();
+    const body = depsFn![0];
+    expect(body).toMatch(/listHermesFindings/);
+    expect(body).toMatch(/hermes-findings-list\.server/);
+    expect(body).toMatch(/createHermesFindingsListPort/);
+    expect(body).toMatch(
+      /await import\(\s*["']@\/lib\/hermes\/hermes-findings-list\.server["']\s*\)/,
+    );
+    expect(runtime).not.toMatch(/^import\s+(?!type\b).*hermes-findings-list\.server/m);
+    expect(runtime).not.toMatch(/\brunHermesCycle\b/);
+    expect(runtime).not.toMatch(/from\s+["'][^"']*hermes-cycle["']/);
+    expect(runtime).not.toMatch(/import\(\s*["'][^"']*hermes-cycle["']\s*\)/);
+    expect(contract).toMatch(/createHermesFindingsListPort/);
+    for (const pattern of RESIDENT_PROCESS) {
+      expect(body).not.toMatch(pattern);
+    }
+  });
+
   it("6 AUDIT: every attempt writes a fail-closed audit record; no secrets logged", () => {
     expect(runtime).toMatch(/writeAuditRecord/);
     expect(contract).toMatch(/ENTERPRISE_CYCLE_AUDIT_ACTION = "jarvis\.enterprise_cycle"/);
@@ -588,6 +610,24 @@ describe("script source pin — run-jarvis-enterprise-cycle.mjs", () => {
     expect(script).toMatch(/runEnterpriseCycleLibrary/);
     expect(script).toMatch(/Does NOT import provider-health\.server/);
     expect(script).toMatch(/if \(REHEARSE\)/);
+    for (const pattern of RESIDENT_PROCESS) {
+      expect(script).not.toMatch(pattern);
+    }
+  });
+
+  it("live path jitis hermes-findings-list.server; rehearsal does not", () => {
+    expect(script).toMatch(/hermes-findings-list\.server/);
+    expect(script).toMatch(/createHermesFindingsListPort/);
+    expect(script).toMatch(/listHermesFindings/);
+    const rehearseStart = script.indexOf("if (REHEARSE)");
+    const liveStart = script.indexOf("const tenantId = process.env[TENANT_ENV_NAME]");
+    expect(rehearseStart).toBeGreaterThan(-1);
+    expect(liveStart).toBeGreaterThan(rehearseStart);
+    const rehearse = script.slice(rehearseStart, liveStart);
+    expect(rehearse).not.toMatch(/hermes-findings-list/);
+    expect(rehearse).not.toMatch(/createHermesFindingsListPort/);
+    expect(rehearse).not.toMatch(/listHermesFindings/);
+    expect(script).not.toMatch(/\brunHermesCycle\b/);
     for (const pattern of RESIDENT_PROCESS) {
       expect(script).not.toMatch(pattern);
     }

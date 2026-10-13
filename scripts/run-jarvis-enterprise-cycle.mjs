@@ -10,16 +10,26 @@
  *   --rehearse   fully OFFLINE rehearsal: loads `enterprise-loop.ts` via
  *                jiti, runs `runJarvisEnterpriseCycle` with empty
  *                observations and tenant "rehearsal-tenant". NO network.
- *                Does NOT import provider-health.server. Exit 0.
+ *                Does NOT import provider-health.server and does NOT jiti
+ *                hermes-findings-list.server (no findings-list DB calls).
+ *                Exit 0.
  *   --night      night-mode cycle (MONITOR / MAINTAIN / ANALYZE / PREPARE).
  *   (default)    live library wake. Requires COREGRID_CYCLE_TENANT_ID
  *                (non-blank) else exit 2 BLOCKED_NO_CREDENTIAL. Calls
  *                `runEnterpriseCycleLibrary` only (no session). Script wake
  *                is observation+cycle; §27 audit is the server-function
  *                path. Live health uses `runProviderHealthBattery(process.env)`.
- *                Live Hermes is skipped unless HERMES_OBSERVATION_BACKEND=db
- *                AND a supabase admin env exists; this script does not invent
- *                a client. AI_API_KEY is NOT required (no model call).
+ *                Live Hermes ingest is skipped unless
+ *                HERMES_OBSERVATION_BACKEND=db AND a supabase admin env
+ *                exists; this script does not invent a client. Live findings
+ *                list is injected only when SUPABASE_URL and
+ *                SUPABASE_SERVICE_ROLE_KEY are non-blank: jiti
+ *                `hermes-findings-list.server.ts` plus `supabaseAdmin` from
+ *                `client.server.ts`, catch failure and leave the port unset
+ *                (typed skip). --rehearse does NOT jiti the findings-list
+ *                server module and makes no findings-list DB calls.
+ *                AI_API_KEY is NOT required (no model call). The list port
+ *                OBSERVES/ASSESSES only; it does not ACT.
  *
  * Credential law (AGENTS §30): secret NAMES are declared; secret VALUES are
  * never printed, logged, or written to any artifact — including error paths.
@@ -194,6 +204,26 @@ try {
       const result = await hermesModule.runHermesEventObservationStep(step);
       return { ok: result.ok, consumed: result.consumed, reason: result.reason };
     };
+  }
+
+  /* Read-only findings list: OBSERVE/ASSESS only. Never invent credentials.
+   * Construction failure leaves the port unset → typed skip. Secret values
+   * are never printed. Rehearsal never reaches this path. */
+  if (supabaseAdminEnvPresent) {
+    try {
+      const clientModule = jiti(
+        join(ROOT, "frontend", "src", "integrations", "supabase", "client.server.ts"),
+      );
+      const findingsListModule = jiti(
+        join(ROOT, "frontend", "src", "lib", "hermes", "hermes-findings-list.server.ts"),
+      );
+      const port = findingsListModule.createHermesFindingsListPort(clientModule.supabaseAdmin);
+      deps.listHermesFindings = async ({ tenantId, now }) => {
+        return port.listHermesFindings({ tenantId, now });
+      };
+    } catch {
+      /* leave unset — runEnterpriseCycleLibrary types a skip */
+    }
   }
 
   const library = await runtime.runEnterpriseCycleLibrary(

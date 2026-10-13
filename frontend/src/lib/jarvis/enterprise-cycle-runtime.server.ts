@@ -18,9 +18,11 @@
  * Hermes and Jarvis remain libraries. This runtime does not start a
  * resident process. Provider health is never invented: Observability owns
  * `stampProviderHealthObservations`. Hermes findings are never invented:
- * Observability owns `stampHermesFindings`. This wake lists already-stamped
- * findings; it does not execute Hermes repair as a side effect of Jarvis.
- * Phase 52 is not authorized.
+ * Observability owns `stampHermesFindings`. Production wires a read-only
+ * list port (`createHermesFindingsListPort`): it OBSERVES/ASSESSES only;
+ * it does not ACT. This wake lists already-stamped findings; it does not
+ * execute Hermes repair as a side effect of Jarvis. Phase 52 is not
+ * authorized.
  *
  * Version-target classification: ACTIVE-V1 (AGENTS.md §45).
  */
@@ -88,10 +90,12 @@ export type EnterpriseCycleAdminClient = WriteAuditClient & {
  * one exists, otherwise the verified email claim with a null actor id — the
  * audit is never unattributed and never silently rewritten (§27.6).
  *
- * Default provider-health and Hermes observation ports are dynamic-imported
- * HERE (never from the functions module) so the client graph cannot reach
- * them. `listHermesFindings` is left undefined: production does not invent
- * a findings substrate. Tests inject the port.
+ * Default provider-health, Hermes observation, and Hermes findings-list
+ * ports are dynamic-imported HERE (never from the functions module) so the
+ * client graph cannot reach them. Production `listHermesFindings` wires
+ * `createHermesFindingsListPort` over the sanctioned admin client: it
+ * OBSERVES/ASSESSES only and does not ACT. Tests may still inject a stub.
+ * Missing/throwing port remains a typed skip in `runEnterpriseCycleLibrary`.
  */
 export async function buildEnterpriseCycleDeps(input: {
   admin: EnterpriseCycleAdminClient;
@@ -129,6 +133,15 @@ export async function buildEnterpriseCycleDeps(input: {
         return { ok: false, consumed: "failed", reason };
       }
     },
+    listHermesFindings: async ({ tenantId, now }) => {
+      const { createHermesFindingsListPort } = await import(
+        "@/lib/hermes/hermes-findings-list.server"
+      );
+      const port = createHermesFindingsListPort(
+        input.admin as Parameters<typeof createHermesFindingsListPort>[0],
+      );
+      return port.listHermesFindings({ tenantId, now });
+    },
   };
 }
 
@@ -143,11 +156,13 @@ export interface EnterpriseCycleLibraryResult {
  * One library-form cycle: stamp honest provider-health observations (when
  * requested), optionally ingest Hermes `cg_event` rows into the Hermes
  * substrate, optionally stamp already-listed Hermes FINDINGS into
- * JarvisObservation (when `listHermesFindings` is injected), then run
- * `runJarvisEnterpriseCycle` over the merged stamped observations.
- * Hermes event-observations stay in the Hermes substrate for ingest;
- * FINDINGS are mapped only via `stampHermesFindings`. Throws are converted
- * to typed skips; nothing is fabricated. Listing findings is not repair.
+ * JarvisObservation (when `listHermesFindings` is present — production
+ * read-only port or test stub), then run `runJarvisEnterpriseCycle` over
+ * the merged stamped observations. Hermes event-observations stay in the
+ * Hermes substrate for ingest; FINDINGS are mapped only via
+ * `stampHermesFindings`. Throws are converted to typed skips; nothing is
+ * fabricated. Listing findings OBSERVES/ASSESSES only; it does not ACT
+ * and is not repair.
  *
  * The script path calls this function (no session, no §27 audit). The
  * server-function path wraps it in `executeEnterpriseCycle`.
