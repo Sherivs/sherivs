@@ -1,0 +1,47 @@
+# CoreGrid — Hermes resident supervisor Deployment (ACTIVE-V1).
+#
+# Governed supervisor, not a god-agent; each tick is one library cycle
+# (WAKE → runHermesCycle → SLEEP). Replicas stay at 1.
+# Credentials arrive by secret NAME via envFrom; this file contains no secret VALUES.
+#
+# HUMAN AUTHORIZATION 2026-10-13: apply resident for Hermes and Jarvis.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hermes-resident
+  namespace: coregrid-agents
+  labels:
+    app: hermes-resident
+    coregrid.io/component: hermes-resident
+    coregrid.io/role: governed-supervisor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hermes-resident
+  template:
+    metadata:
+      labels:
+        app: hermes-resident
+        coregrid.io/component: hermes-resident
+        coregrid.io/role: governed-supervisor
+    spec:
+      containers:
+        - name: hermes-resident
+          image: coregrid/scholar:resident
+          command: ["node", "scripts/run-hermes-resident.mjs"]
+          envFrom:
+            - secretRef:
+                name: coregrid-cycle
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true

@@ -16,7 +16,10 @@
  *     The §27 server function path.
  *
  * Hermes and Jarvis remain libraries. This runtime does not start a
- * resident process. Provider health is never invented: Observability owns
+ * resident process. The library is not the resident; process supervisors
+ * live in `scripts/run-jarvis-resident.mjs` and `scripts/run-hermes-resident.mjs`.
+ * Do not add a loop here. Each call is one WAKE → cycle → SLEEP.
+ * Provider health is never invented: Observability owns
  * `stampProviderHealthObservations`. Hermes findings are never invented:
  * Observability owns `stampHermesFindings`. Production wires a read-only
  * list port (`createHermesFindingsListPort`): it OBSERVES/ASSESSES only;
