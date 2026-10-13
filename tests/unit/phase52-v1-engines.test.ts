@@ -93,21 +93,25 @@ describe("Phase 52 V1 engine registry", () => {
       }).ok,
     ).toBe(false);
 
-    expect(
-      invokePhase52Engine({
-        requirementId: "G-014",
-        tenantId: "  ",
-        actorId: "jarvis",
-      }).reason,
-    ).toBe("missing_tenant");
+    const missingTenant = invokePhase52Engine({
+      requirementId: "G-014",
+      tenantId: "  ",
+      actorId: "jarvis",
+    });
+    expect(missingTenant.ok).toBe(false);
+    if (!missingTenant.ok) {
+      expect(missingTenant.reason).toBe("missing_tenant");
+    }
 
-    expect(
-      invokePhase52Engine({
-        requirementId: "G-014",
-        tenantId: "tenant-a",
-        actorId: "",
-      }).reason,
-    ).toBe("missing_actor");
+    const missingActor = invokePhase52Engine({
+      requirementId: "G-014",
+      tenantId: "tenant-a",
+      actorId: "",
+    });
+    expect(missingActor.ok).toBe(false);
+    if (!missingActor.ok) {
+      expect(missingActor.reason).toBe("missing_actor");
+    }
   });
 
   it("G-058 attaches to the V1 tool sandbox, not Phase 41 civilization sandbox", () => {

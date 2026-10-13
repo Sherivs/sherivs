@@ -335,10 +335,10 @@ export function invokePhase52Engine(input: Phase52EngineInvokeInput): Phase52Eng
   if (PHASE52_V1_ENGINE_IMPLEMENTATION_AUTHORIZED !== true) {
     return { ok: false, requirementId: input.requirementId, reason: "v1_engines_unauthorized" };
   }
-  if (PHASE52_V2_ENGINE_IMPLEMENTATION_AUTHORIZED === true) {
+  if (PHASE52_V2_ENGINE_IMPLEMENTATION_AUTHORIZED !== false) {
     return { ok: false, requirementId: input.requirementId, reason: "frozen_v2" };
   }
-  if (PHASE52_V3_ENGINE_IMPLEMENTATION_AUTHORIZED === true) {
+  if (PHASE52_V3_ENGINE_IMPLEMENTATION_AUTHORIZED !== false) {
     return { ok: false, requirementId: input.requirementId, reason: "frozen_v3" };
   }
 
