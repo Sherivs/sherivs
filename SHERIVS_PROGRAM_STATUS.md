@@ -48,7 +48,7 @@ Executable lock: `frontend/src/lib/experience/experience-planes.ts`.
 | Org public | tenant host or `?organization=` (`?school=` LEGACY) | `{org}.sherivs.com` | PARTIAL (query + subdomain exist; DNS BLOCKED_EXTERNAL) |
 | Org workspace | `/o/{org}` | `app.sherivs.com/o/{org}` | IMPLEMENTED in-app; host DNS BLOCKED_EXTERNAL |
 | Scholar runtime | `/o/{org}/scholar{leaf}` | `/o/{org}/scholar` | IMPLEMENTED (splat + LEGACY redirect) |
-| Internal | `/super-admin`, `/command-centre` | internal.sherivs.com | PARTIAL (host classified in-app; DNS BLOCKED_EXTERNAL) |
+| Internal | `/super-admin`, `/command-centre` | console.sherivs.com | IMPLEMENTED in-app (`internal.sherivs.com` LEGACY exact-match); production deploy BLOCKED until merge |
 
 ## 5. Brand migration status
 
@@ -167,7 +167,7 @@ V1 envelope for **experience boundary + identity gateway + public brand + org-pr
 V1 still missing for a coherent launch (not claimed done):
 
 - Applied domain-neutral org membership tables (live path is still `public.schools` + facade)
-- Production hosts (sherivs.com / app. / internal.) — BLOCKED_EXTERNAL
+- Production hosts (sherivs.com / www. / app. / console.) — DNS OBSERVED; application dispatch not on production branch until merge
 - Package/DB identifier rename (optional if LEGACY is sealed)
 
 ## 25. V2 status
@@ -178,8 +178,8 @@ V1 still missing for a coherent launch (not claimed done):
 
 | Item | Horizon | Reason |
 |------|---------|--------|
-| Production `app.sherivs.com` DNS | Human / infra | BLOCKED_EXTERNAL — in-app routes exist |
-| Host split internal.sherivs.com | Human / infra | DNS; in-app host classification exists |
+| Production `app.sherivs.com` dispatch | Human / merge | Host exists; feature branch not production |
+| Host split `console.sherivs.com` | Human / merge | Canonical console host; do not add internal.sherivs.com |
 | Package `@sherivs/contracts` | V1 later | Import graph |
 | Mobile bundle id | Store submission | BLOCKED_EXTERNAL |
 | Phase 52 full corpus | Neutral extract only | Not a canonical phase |

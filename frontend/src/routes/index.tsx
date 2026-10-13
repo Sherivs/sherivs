@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useApp } from "@/contexts/app-context";
 import { PublicSchoolSite } from "@/components/public/site";
@@ -8,10 +8,28 @@ import {
 } from "@/components/public/sherivs-public-home";
 import { PLATFORM_PAGE_DESCRIPTION, PLATFORM_PAGE_TITLE } from "@/lib/platform";
 import { resolveIdentityGateway } from "@/lib/identity/identity-gateway";
-import { currentExperienceHostKind } from "@/lib/experience/experience-host";
+import {
+  resolveExperienceHost,
+  shouldRedirectCanonicalRootToAuth,
+} from "@/lib/experience/experience-host";
+import { readRequestHostname } from "@/lib/experience/experience-host.functions";
 import { INSTALLED_RUNTIME_ID } from "@/lib/runtime/installed-runtimes";
 
+async function loaderHostname(): Promise<string> {
+  if (typeof window !== "undefined") return window.location.hostname;
+  return readRequestHostname();
+}
+
 export const Route = createFileRoute("/")({
+  loader: async () => {
+    const hostname = await loaderHostname();
+    const hostKind = resolveExperienceHost(hostname);
+    // App and console must not SSR the public marketing homepage.
+    if (shouldRedirectCanonicalRootToAuth(hostKind)) {
+      throw redirect({ to: "/auth" });
+    }
+    return { hostname, hostKind };
+  },
   component: Index,
   head: () => ({
     meta: [
@@ -25,6 +43,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const { hostKind: loaderHostKind } = Route.useLoaderData();
   const { loading, school, tenantSlug, role, profile, superAdmin, session } = useApp();
   const navigate = useNavigate();
 
@@ -38,12 +57,22 @@ function Index() {
       organizationSlug: school?.slug ?? null,
       hasOrganizationMembership: Boolean(profile && role),
       installedRuntimeId: INSTALLED_RUNTIME_ID,
-      hostKind: currentExperienceHostKind(),
+      hostKind: loaderHostKind,
     });
     if (decision.destination && decision.destination !== "/") {
       navigate({ to: decision.destination as never, replace: true });
     }
-  }, [loading, session, role, superAdmin, profile, tenantSlug, school?.slug, navigate]);
+  }, [
+    loading,
+    session,
+    role,
+    superAdmin,
+    profile,
+    tenantSlug,
+    school?.slug,
+    loaderHostKind,
+    navigate,
+  ]);
 
   useEffect(() => {
     if (!school) return;

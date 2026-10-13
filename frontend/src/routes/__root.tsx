@@ -11,7 +11,7 @@ import { type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { AppProvider } from "@/contexts/app-context";
 import {
-  PLATFORM_OG_IMAGE_PATH,
+  PLATFORM_OG_IMAGE_URL,
   PLATFORM_PAGE_DESCRIPTION,
   PLATFORM_PAGE_TITLE,
 } from "@/lib/platform";
@@ -85,8 +85,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: PLATFORM_PAGE_DESCRIPTION },
       { property: "og:description", content: PLATFORM_PAGE_DESCRIPTION },
       { name: "twitter:description", content: PLATFORM_PAGE_DESCRIPTION },
-      { property: "og:image", content: PLATFORM_OG_IMAGE_PATH },
-      { name: "twitter:image", content: PLATFORM_OG_IMAGE_PATH },
+      { property: "og:image", content: PLATFORM_OG_IMAGE_URL },
+      { name: "twitter:image", content: PLATFORM_OG_IMAGE_URL },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
       // Served, generated manifest (see routes/manifest[.]webmanifest.ts).

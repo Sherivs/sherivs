@@ -86,9 +86,11 @@ describe("organization membership facade", () => {
 });
 
 describe("experience hosts", () => {
-  it("classifies intended Sherivs hosts before DNS cutover", () => {
+  it("classifies the four canonical Sherivs hosts", () => {
     expect(resolveExperienceHost("sherivs.com")).toBe("public_platform");
+    expect(resolveExperienceHost("www.sherivs.com")).toBe("public_platform");
     expect(resolveExperienceHost("app.sherivs.com")).toBe("app");
+    expect(resolveExperienceHost("console.sherivs.com")).toBe("internal");
     expect(resolveExperienceHost("internal.sherivs.com")).toBe("internal");
     expect(resolveExperienceHost("northwind.sherivs.com")).toBe("tenant");
     expect(resolveExperienceHost("localhost")).toBe("local");
