@@ -8,7 +8,7 @@
  * actually has that installed runtime and the actor holds a matching membership role.
  *
  * Super-admins route to the Sherivs internal workspace (Plane D), never a
- * school portal. Unlinked identities stay on the auth surface.
+ * school portal. Unlinked identities go to organization onboarding.
  *
  * Boundary: pure data + pure functions. No I/O, no vendor, no secrets.
  */
@@ -21,6 +21,10 @@ import {
   EXPERIENCE_PLANE_D,
   type ExperiencePlane,
 } from "../experience/experience-planes";
+import {
+  bindOrganizationPath,
+  organizationWorkspacePath,
+} from "../experience/organization-routes";
 import { scholarWorkspaceHome } from "../runtime/nav-registry";
 
 export const IDENTITY_GATEWAY_VERSION_TARGET = "ACTIVE-V1" as const;
@@ -40,13 +44,18 @@ export const SCHOLAR_MEMBER_ROLES: readonly AppRole[] = [
 
 const SCHOLAR_MEMBER_ROLE_SET: ReadonlySet<string> = new Set(SCHOLAR_MEMBER_ROLES);
 
+export type IdentityHostKind = "public_platform" | "app" | "internal" | "tenant" | "local";
+
 export interface IdentityGatewayInput {
   readonly authenticated: boolean;
   readonly role: AppRole | null;
   readonly superAdmin: boolean;
   readonly tenantSlug: string | null;
+  /** Organization slug when membership (or public tenant) has resolved one. */
+  readonly organizationSlug?: string | null;
   readonly hasOrganizationMembership: boolean;
   readonly installedRuntimeId: string | null;
+  readonly hostKind?: IdentityHostKind;
 }
 
 export interface IdentityGatewayDecision {
@@ -57,9 +66,12 @@ export interface IdentityGatewayDecision {
     | "sherivs_public"
     | "organization_public"
     | "internal_operator"
+    | "internal_signin"
+    | "app_signin"
     | "unlinked_identity"
     | "scholar_runtime"
-    | "domain_neutral_workspace";
+    | "domain_neutral_workspace"
+    | "unauthorized_internal";
 }
 
 function isScholarMemberRole(role: AppRole | null): role is AppRole {
@@ -71,7 +83,15 @@ function isScholarMemberRole(role: AppRole | null): role is AppRole {
  * workspace unless installed-runtime id and membership both resolve to it.
  */
 export function resolveIdentityGateway(input: IdentityGatewayInput): IdentityGatewayDecision {
+  const hostKind = input.hostKind ?? "local";
+
   if (!input.authenticated) {
+    if (hostKind === "internal") {
+      return { plane: EXPERIENCE_PLANE_D, destination: "/auth", reason: "internal_signin" };
+    }
+    if (hostKind === "app") {
+      return { plane: EXPERIENCE_PLANE_C, destination: "/auth", reason: "app_signin" };
+    }
     if (input.tenantSlug) {
       return {
         plane: EXPERIENCE_PLANE_B,
@@ -94,25 +114,36 @@ export function resolveIdentityGateway(input: IdentityGatewayInput): IdentityGat
     };
   }
 
+  if (hostKind === "internal") {
+    return {
+      plane: EXPERIENCE_PLANE_D,
+      destination: "/auth",
+      reason: "unauthorized_internal",
+    };
+  }
+
   if (!input.hasOrganizationMembership || !input.role) {
     return {
       plane: EXPERIENCE_PLANE_A,
-      destination: "/auth",
+      destination: "/onboarding",
       reason: "unlinked_identity",
     };
   }
 
+  const organizationSlug = input.organizationSlug;
+
   if (input.installedRuntimeId === SCHOLAR_RUNTIME_ID && isScholarMemberRole(input.role)) {
+    const leaf = scholarWorkspaceHome(input.role);
     return {
       plane: EXPERIENCE_PLANE_C,
-      destination: scholarWorkspaceHome(input.role),
+      destination: organizationSlug ? bindOrganizationPath(organizationSlug, leaf) : leaf,
       reason: "scholar_runtime",
     };
   }
 
   return {
     plane: EXPERIENCE_PLANE_C,
-    destination: "/runtime",
+    destination: organizationSlug ? organizationWorkspacePath(organizationSlug) : "/runtime",
     reason: "domain_neutral_workspace",
   };
 }

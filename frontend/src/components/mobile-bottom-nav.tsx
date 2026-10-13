@@ -23,6 +23,7 @@ import {
   type WorkspaceNavItem,
   type WorkspaceNavSection,
 } from "@/lib/workspace-engine/navigation";
+import { workspaceLeafPath } from "@/lib/experience/organization-routes";
 
 type IconComponent = React.ElementType;
 
@@ -52,12 +53,12 @@ function BottomNav({ items, label }: { items: readonly WorkspaceNavItem[]; label
     >
       <div className="flex h-16 items-center justify-around px-2">
         {items.map((item) => {
-          const active = pathname.startsWith(item.url);
+          const active = workspaceLeafPath(pathname).startsWith(workspaceLeafPath(item.url));
           const Icon = iconFor(item);
           return (
             <Link
               key={item.key}
-              to={item.url}
+              to={item.url as never}
               aria-current={active ? "page" : undefined}
               aria-label={item.label}
               className={`flex min-w-[48px] flex-col items-center gap-0.5 rounded-xl px-3 py-2 transition-colors duration-150 ${

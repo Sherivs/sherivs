@@ -57,7 +57,7 @@ describe("identity gateway", () => {
       hasOrganizationMembership: false,
       installedRuntimeId: "runtime:scholar",
     });
-    expect(decision.destination).toBe("/auth");
+    expect(decision.destination).toBe("/onboarding");
     expect(decision.reason).toBe("unlinked_identity");
   });
 
@@ -75,7 +75,21 @@ describe("identity gateway", () => {
     expect(decision.reason).toBe("scholar_runtime");
   });
 
-  it("uses the domain-neutral workspace when the org runtime is not Scholar", () => {
+  it("binds Scholar destinations onto /o/{org}/scholar when a slug is known", () => {
+    const decision = resolveIdentityGateway({
+      authenticated: true,
+      role: "teacher",
+      superAdmin: false,
+      tenantSlug: null,
+      organizationSlug: "northwind",
+      hasOrganizationMembership: true,
+      installedRuntimeId: "runtime:scholar",
+    });
+    expect(decision.destination).toBe("/o/northwind/scholar/teacher/dashboard");
+    expect(decision.reason).toBe("scholar_runtime");
+  });
+
+  it("falls back to /runtime when the org runtime is not Scholar and no slug is known", () => {
     const decision = resolveIdentityGateway({
       authenticated: true,
       role: "teacher",
@@ -86,6 +100,61 @@ describe("identity gateway", () => {
     });
     expect(decision.destination).toBe("/runtime");
     expect(decision.reason).toBe("domain_neutral_workspace");
+  });
+
+  it("uses the domain-neutral workspace when the org runtime is not Scholar", () => {
+    const decision = resolveIdentityGateway({
+      authenticated: true,
+      role: "teacher",
+      superAdmin: false,
+      tenantSlug: null,
+      organizationSlug: "acme",
+      hasOrganizationMembership: true,
+      installedRuntimeId: "runtime:future",
+    });
+    expect(decision.destination).toBe("/o/acme");
+    expect(decision.reason).toBe("domain_neutral_workspace");
+  });
+
+  it("sends unsigned app hosts to sign-in instead of the public home", () => {
+    const decision = resolveIdentityGateway({
+      authenticated: false,
+      role: null,
+      superAdmin: false,
+      tenantSlug: null,
+      hasOrganizationMembership: false,
+      installedRuntimeId: null,
+      hostKind: "app",
+    });
+    expect(decision.destination).toBe("/auth");
+    expect(decision.reason).toBe("app_signin");
+  });
+
+  it("keeps internal hosts off member workspaces", () => {
+    const unsigned = resolveIdentityGateway({
+      authenticated: false,
+      role: null,
+      superAdmin: false,
+      tenantSlug: null,
+      hasOrganizationMembership: false,
+      installedRuntimeId: null,
+      hostKind: "internal",
+    });
+    expect(unsigned.destination).toBe("/auth");
+    expect(unsigned.reason).toBe("internal_signin");
+
+    const member = resolveIdentityGateway({
+      authenticated: true,
+      role: "teacher",
+      superAdmin: false,
+      tenantSlug: null,
+      organizationSlug: "northwind",
+      hasOrganizationMembership: true,
+      installedRuntimeId: "runtime:scholar",
+      hostKind: "internal",
+    });
+    expect(member.destination).toBe("/auth");
+    expect(member.reason).toBe("unauthorized_internal");
   });
 });
 
@@ -101,6 +170,14 @@ describe("experience planes", () => {
     expect(classifyExperiencePath("/platform/org").plane).toBe("sherivs_internal");
     expect(classifyExperiencePath("/foundation-loop").plane).toBe("sherivs_internal");
     expect(classifyExperiencePath("/signin").plane).toBe("public_sherivs");
+    expect(classifyExperiencePath("/onboarding").plane).toBe("public_sherivs");
+    expect(classifyExperiencePath("/o/northwind").plane).toBe("organization_workspace");
+    expect(classifyExperiencePath("/o/northwind").runtime).toBe("platform");
+    expect(classifyExperiencePath("/o/northwind/scholar/teacher/dashboard").plane).toBe(
+      "organization_workspace",
+    );
+    expect(classifyExperiencePath("/o/northwind/scholar/teacher/dashboard").runtime).toBe("scholar");
+    expect(classifyExperiencePath("/teacher/dashboard").legacyPath).toBe("/teacher");
   });
 });
 

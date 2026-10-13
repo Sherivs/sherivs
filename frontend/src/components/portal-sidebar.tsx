@@ -68,6 +68,7 @@ import { useUnreadMessagesCount } from "@/lib/messages-unread";
 import { ROUTE_PROGRESS_EVENT } from "@/components/route-progress-bar";
 import { cn } from "@/lib/utils";
 import type { WorkspaceNavItem, WorkspaceNavSection } from "@/lib/workspace-engine/navigation";
+import { workspaceLeafPath } from "@/lib/experience/organization-routes";
 
 /** Icon registry: data uses keys; this is the ONLY place keys meet components. */
 const ICON_REGISTRY: Record<string, ElementType> = {
@@ -120,8 +121,8 @@ function normalizePath(path: string): string {
 }
 
 function getActiveScore(item: WorkspaceNavItem, pathname: string): number {
-  const current = normalizePath(pathname);
-  const paths = [item.url, ...(item.activeUrls ?? [])].map(normalizePath);
+  const current = workspaceLeafPath(pathname);
+  const paths = [item.url, ...(item.activeUrls ?? [])].map((url) => workspaceLeafPath(url));
   let score = 0;
   for (const path of paths) {
     if (current === path) score = Math.max(score, 10_000 + path.length);
@@ -153,7 +154,7 @@ function SidebarItemLink({
 }: ItemRenderProps) {
   const Icon = iconFor(item.iconKey);
   const isNews = item.url.endsWith("/news");
-  const isMessages = item.url === "/messages";
+  const isMessages = item.url === "/messages" || item.url.endsWith("/messages");
   const badge =
     isNews && unreadNews > 0
       ? unreadNews
@@ -174,7 +175,7 @@ function SidebarItemLink({
         }
       >
         <Link
-          to={item.url}
+          to={item.url as never}
           onClick={onNavClick}
           aria-label={item.label}
           className="flex items-center gap-2"

@@ -5,7 +5,7 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "coregrid",
+    "scheme": "sherivs",
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.coregrid.app",
@@ -40,7 +40,9 @@
       "router": {},
       "eas": {
         "projectId": "3cea9979-47ba-4428-b1e8-67fe0671bac8"
-      }
+      },
+      "legacyScheme": "coregrid",
+      "legacyBundleIdentifier": "com.coregrid.app"
     },
     "owner": "vibeoraai-bit"
   }

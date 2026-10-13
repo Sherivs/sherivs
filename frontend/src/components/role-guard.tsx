@@ -3,13 +3,14 @@ import { Link } from "@tanstack/react-router";
 import { useApp } from "@/contexts/app-context";
 import type { AppRole } from "@/lib/roles";
 import { scholarWorkspaceHome, scholarWorkspaceLabelForRole } from "@/lib/runtime/nav-registry";
+import { scholarBoundHome } from "@/lib/experience/organization-routes";
 
 /**
  * Client-side role guard. Wrap a portal's <Outlet /> with this to ensure
  * the signed-in user has one of the allowed roles. Super admins always pass.
  */
 export function RoleGuard({ allow, children }: { allow: AppRole[]; children: ReactNode }) {
-  const { role, superAdmin, loading } = useApp();
+  const { role, superAdmin, loading, school } = useApp();
 
   if (loading) {
     return (
@@ -23,7 +24,8 @@ export function RoleGuard({ allow, children }: { allow: AppRole[]; children: Rea
   if (superAdmin) return <>{children}</>;
 
   if (!role || !allow.includes(role)) {
-    const target = role ? scholarWorkspaceHome(role) : "/auth";
+    const home = role ? scholarWorkspaceHome(role) : "/auth";
+    const target = role && school?.slug ? scholarBoundHome(school.slug, home) : home;
     return (
       <div className="min-h-[60vh] grid place-items-center px-4">
         <div className="uos-card p-8 max-w-md text-center">
@@ -39,7 +41,7 @@ export function RoleGuard({ allow, children }: { allow: AppRole[]; children: Rea
             )}
           </p>
           <Link
-            to={target}
+            to={target as never}
             className="mt-6 inline-block rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
           >
             Go to your dashboard

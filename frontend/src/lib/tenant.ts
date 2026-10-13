@@ -21,13 +21,13 @@ const PLATFORM_HOSTS = [
   "app.universalschoolos.com",
 ];
 
-const RESERVED_SUBS = new Set(["www", "app", "api", "admin", "dashboard"]);
+const RESERVED_SUBS = new Set(["www", "app", "api", "admin", "dashboard", "internal"]);
 
 export function resolveTenantSlug(): string | null {
   if (typeof window === "undefined") return null;
 
   const url = new URL(window.location.href);
-  const qp = url.searchParams.get("school");
+  const qp = url.searchParams.get("organization") ?? url.searchParams.get("school");
   if (qp) return qp.toLowerCase();
 
   const host = url.hostname;

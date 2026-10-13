@@ -11,6 +11,10 @@
 export const PLATFORM_NAME = "Sherivs";
 export const PLATFORM_TAGLINE = "Institutional Intelligence Infrastructure";
 export const PLATFORM_PUBLIC_DOMAIN = "sherivs.com";
+/** Canonical origin for Open Graph and sitemap. DNS cutover is external. */
+export const PLATFORM_PUBLIC_ORIGIN = `https://${PLATFORM_PUBLIC_DOMAIN}`;
+export const PLATFORM_OG_IMAGE_PATH = "/og-image.png";
+export const PLATFORM_OG_IMAGE_URL = `${PLATFORM_PUBLIC_ORIGIN}${PLATFORM_OG_IMAGE_PATH}`;
 export const PLATFORM_CATEGORY = "Institutional Intelligence Infrastructure";
 
 export const PLATFORM_PAGE_TITLE = "Sherivs — Institutional Intelligence Infrastructure";

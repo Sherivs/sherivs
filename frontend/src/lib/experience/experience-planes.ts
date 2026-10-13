@@ -53,6 +53,8 @@ const PREFIX_RULES: readonly {
   { prefix: "/notifications", plane: "organization_workspace", runtime: "platform", public: false },
   { prefix: "/settings", plane: "organization_workspace", runtime: "platform", public: false },
   { prefix: "/runtime", plane: "organization_workspace", runtime: "platform", public: false },
+  { prefix: "/onboarding", plane: "public_sherivs", runtime: "none", public: true },
+  { prefix: "/internal", plane: "sherivs_internal", runtime: "platform", public: false },
   { prefix: "/platform/org", plane: "sherivs_internal", runtime: "platform", public: true },
   { prefix: "/foundation-loop", plane: "sherivs_internal", runtime: "platform", public: false },
   { prefix: "/scholar-foundation-loop", plane: "organization_workspace", runtime: "scholar", public: false },
@@ -119,6 +121,17 @@ export function classifyExperiencePath(
   }
   const exact = EXACT_RULES[normalized];
   if (exact) return exact;
+  const orgBound = normalized.match(/^\/o\/[a-z0-9][a-z0-9-]{1,47}(?:\/(.*))?$/);
+  if (orgBound) {
+    const rest = orgBound[1] ?? "";
+    const scholar = rest === "scholar" || rest.startsWith("scholar/");
+    return {
+      path: normalized,
+      plane: "organization_workspace",
+      runtime: scholar ? "scholar" : "platform",
+      public: false,
+    };
+  }
   for (const rule of PREFIX_RULES) {
     if (normalized === rule.prefix || normalized.startsWith(`${rule.prefix}/`)) {
       return {
@@ -126,7 +139,19 @@ export function classifyExperiencePath(
         plane: rule.plane,
         runtime: rule.runtime,
         public: rule.public,
-        legacyPath: rule.prefix === "/coregrid" ? "/coregrid" : undefined,
+        legacyPath:
+          rule.prefix === "/coregrid" ||
+          [
+            "/admin",
+            "/teacher",
+            "/student",
+            "/parent",
+            "/bursar",
+            "/hq",
+            "/driver",
+          ].includes(rule.prefix)
+            ? rule.prefix
+            : undefined,
       };
     }
   }

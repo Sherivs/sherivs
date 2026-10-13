@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
+import { PLATFORM_PUBLIC_ORIGIN } from "@/lib/platform";
 
-const BASE_URL = "https://universalschoolos.com";
+const BASE_URL = PLATFORM_PUBLIC_ORIGIN;
 
 interface SitemapEntry {
   path: string;
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/sitemap.xml")({
           { path: "/auth", changefreq: "monthly", priority: "0.3" },
         ];
 
-        // Tenant public sites, addressed via ?school=<slug>
+        // Tenant public sites. Canonical query is ?organization=; ?school= remains LEGACY.
         try {
           const url = process.env.SUPABASE_URL;
           const key = process.env.SUPABASE_PUBLISHABLE_KEY;
@@ -32,7 +33,7 @@ export const Route = createFileRoute("/sitemap.xml")({
               .eq("is_active", true);
             for (const row of (data ?? []) as Array<{ slug: string; updated_at: string | null }>) {
               entries.push({
-                path: `/?school=${encodeURIComponent(row.slug)}`,
+                path: `/?organization=${encodeURIComponent(row.slug)}`,
                 lastmod: row.updated_at ?? undefined,
                 changefreq: "weekly",
                 priority: "0.8",

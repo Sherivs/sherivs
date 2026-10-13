@@ -18,14 +18,15 @@ import { Route as BlogRouteImport } from './routes/blog'
 import { Route as FoundationLoopRouteImport } from './routes/foundation-loop'
 import { Route as HealthDotjsonRouteImport } from './routes/health[.]json'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as SigninRouteImport } from './routes/signin'
 import { Route as ManifestDotwebmanifestRouteImport } from './routes/manifest[.]webmanifest'
 import { Route as MarketplaceRouteImport } from './routes/marketplace'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as PlatformRouteImport } from './routes/platform'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RulesRouteImport } from './routes/rules'
 import { Route as ScholarFoundationLoopRouteImport } from './routes/scholar-foundation-loop'
+import { Route as SigninRouteImport } from './routes/signin'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SuperAdminBootstrapRouteImport } from './routes/super-admin-bootstrap'
 import { Route as siteCoregridRouteImport } from './routes/(site)/coregrid'
@@ -116,6 +117,7 @@ import { Route as AuthenticatedDriverStudentsRouteImport } from './routes/_authe
 import { Route as AuthenticatedHqDashboardRouteImport } from './routes/_authenticated/hq/dashboard'
 import { Route as AuthenticatedHqFinanceRouteImport } from './routes/_authenticated/hq/finance'
 import { Route as AuthenticatedHqReportsRouteImport } from './routes/_authenticated/hq/reports'
+import { Route as AuthenticatedOOrganizationRouteRouteImport } from './routes/_authenticated/o.$organization/route'
 import { Route as AuthenticatedParentAiAssistantRouteImport } from './routes/_authenticated/parent/ai-assistant'
 import { Route as AuthenticatedParentAttendanceRouteImport } from './routes/_authenticated/parent/attendance'
 import { Route as AuthenticatedParentBusTrackingRouteImport } from './routes/_authenticated/parent/bus-tracking'
@@ -166,8 +168,12 @@ import { Route as AuthenticatedTeacherLessonPlansRouteImport } from './routes/_a
 import { Route as AuthenticatedTeacherNewsRouteImport } from './routes/_authenticated/teacher/news'
 import { Route as AuthenticatedTeacherSignInRouteImport } from './routes/_authenticated/teacher/sign-in'
 import { Route as AuthenticatedTeacherTimetableRouteImport } from './routes/_authenticated/teacher/timetable'
+import { Route as AuthenticatedOOrganizationIndexRouteImport } from './routes/_authenticated/o.$organization/index'
+import { Route as AuthenticatedOOrganizationScholarRouteRouteImport } from './routes/_authenticated/o.$organization/scholar/route'
 import { Route as ApiPublicAuditPasswordResetRouteImport } from './routes/api/public/audit.password-reset'
 import { Route as ApiPublicWebhooksPaystackRouteImport } from './routes/api/public/webhooks/paystack'
+import { Route as AuthenticatedOOrganizationScholarIndexRouteImport } from './routes/_authenticated/o.$organization/scholar/index'
+import { Route as AuthenticatedOOrganizationScholarSplatRouteImport } from './routes/_authenticated/o.$organization/scholar/$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -212,11 +218,6 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SigninRoute = SigninRouteImport.update({
-  id: '/signin',
-  path: '/signin',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ManifestDotwebmanifestRoute = ManifestDotwebmanifestRouteImport.update({
   id: '/manifest.webmanifest',
   path: '/manifest.webmanifest',
@@ -225,6 +226,11 @@ const ManifestDotwebmanifestRoute = ManifestDotwebmanifestRouteImport.update({
 const MarketplaceRoute = MarketplaceRouteImport.update({
   id: '/marketplace',
   path: '/marketplace',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PlatformRoute = PlatformRouteImport.update({
@@ -250,6 +256,11 @@ const RulesRoute = RulesRouteImport.update({
 const ScholarFoundationLoopRoute = ScholarFoundationLoopRouteImport.update({
   id: '/scholar-foundation-loop',
   path: '/scholar-foundation-loop',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SigninRoute = SigninRouteImport.update({
+  id: '/signin',
+  path: '/signin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -771,6 +782,12 @@ const AuthenticatedHqReportsRoute = AuthenticatedHqReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => AuthenticatedHqRouteRoute,
 } as any)
+const AuthenticatedOOrganizationRouteRoute =
+  AuthenticatedOOrganizationRouteRouteImport.update({
+    id: '/o/$organization',
+    path: '/o/$organization',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedParentAiAssistantRoute =
   AuthenticatedParentAiAssistantRouteImport.update({
     id: '/ai-assistant',
@@ -1069,6 +1086,18 @@ const AuthenticatedTeacherTimetableRoute =
     path: '/timetable',
     getParentRoute: () => AuthenticatedTeacherRouteRoute,
   } as any)
+const AuthenticatedOOrganizationIndexRoute =
+  AuthenticatedOOrganizationIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedOOrganizationRouteRoute,
+  } as any)
+const AuthenticatedOOrganizationScholarRouteRoute =
+  AuthenticatedOOrganizationScholarRouteRouteImport.update({
+    id: '/scholar',
+    path: '/scholar',
+    getParentRoute: () => AuthenticatedOOrganizationRouteRoute,
+  } as any)
 const ApiPublicAuditPasswordResetRoute =
   ApiPublicAuditPasswordResetRouteImport.update({
     id: '/api/public/audit/password-reset',
@@ -1081,6 +1110,18 @@ const ApiPublicWebhooksPaystackRoute =
     path: '/api/public/webhooks/paystack',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedOOrganizationScholarIndexRoute =
+  AuthenticatedOOrganizationScholarIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedOOrganizationScholarRouteRoute,
+  } as any)
+const AuthenticatedOOrganizationScholarSplatRoute =
+  AuthenticatedOOrganizationScholarSplatRouteImport.update({
+    id: '/$',
+    path: '/$',
+    getParentRoute: () => AuthenticatedOOrganizationScholarRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -1090,14 +1131,15 @@ export interface FileRoutesByFullPath {
   '/foundation-loop': typeof FoundationLoopRoute
   '/health.json': typeof HealthDotjsonRoute
   '/login': typeof LoginRoute
-  '/signin': typeof SigninRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
   '/marketplace': typeof MarketplaceRoute
+  '/onboarding': typeof OnboardingRoute
   '/platform': typeof PlatformRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rules': typeof RulesRoute
   '/scholar-foundation-loop': typeof ScholarFoundationLoopRoute
+  '/signin': typeof SigninRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/super-admin-bootstrap': typeof SuperAdminBootstrapRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
@@ -1119,6 +1161,7 @@ export interface FileRoutesByFullPath {
   '/news/$id': typeof NewsIdRoute
   '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
+  '/o/$organization': typeof AuthenticatedOOrganizationRouteRouteWithChildren
   '/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
@@ -1238,8 +1281,12 @@ export interface FileRoutesByFullPath {
   '/teacher/sign-in': typeof AuthenticatedTeacherSignInRoute
   '/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
   '/command-centre/': typeof AuthenticatedCommandCentreIndexRoute
+  '/o/$organization/scholar': typeof AuthenticatedOOrganizationScholarRouteRouteWithChildren
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
+  '/o/$organization/': typeof AuthenticatedOOrganizationIndexRoute
+  '/o/$organization/scholar/$': typeof AuthenticatedOOrganizationScholarSplatRoute
+  '/o/$organization/scholar/': typeof AuthenticatedOOrganizationScholarIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -1249,14 +1296,15 @@ export interface FileRoutesByTo {
   '/foundation-loop': typeof FoundationLoopRoute
   '/health.json': typeof HealthDotjsonRoute
   '/login': typeof LoginRoute
-  '/signin': typeof SigninRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
   '/marketplace': typeof MarketplaceRoute
+  '/onboarding': typeof OnboardingRoute
   '/platform': typeof PlatformRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rules': typeof RulesRoute
   '/scholar-foundation-loop': typeof ScholarFoundationLoopRoute
+  '/signin': typeof SigninRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/super-admin-bootstrap': typeof SuperAdminBootstrapRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
@@ -1398,6 +1446,9 @@ export interface FileRoutesByTo {
   '/command-centre': typeof AuthenticatedCommandCentreIndexRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
+  '/o/$organization': typeof AuthenticatedOOrganizationIndexRoute
+  '/o/$organization/scholar/$': typeof AuthenticatedOOrganizationScholarSplatRoute
+  '/o/$organization/scholar': typeof AuthenticatedOOrganizationScholarIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -1410,14 +1461,15 @@ export interface FileRoutesById {
   '/foundation-loop': typeof FoundationLoopRoute
   '/health.json': typeof HealthDotjsonRoute
   '/login': typeof LoginRoute
-  '/signin': typeof SigninRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
   '/marketplace': typeof MarketplaceRoute
+  '/onboarding': typeof OnboardingRoute
   '/platform': typeof PlatformRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rules': typeof RulesRoute
   '/scholar-foundation-loop': typeof ScholarFoundationLoopRoute
+  '/signin': typeof SigninRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/super-admin-bootstrap': typeof SuperAdminBootstrapRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
@@ -1439,6 +1491,7 @@ export interface FileRoutesById {
   '/news/$id': typeof NewsIdRoute
   '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
+  '/_authenticated/o/$organization': typeof AuthenticatedOOrganizationRouteRouteWithChildren
   '/_authenticated/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/_authenticated/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
   '/_authenticated/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
@@ -1558,8 +1611,12 @@ export interface FileRoutesById {
   '/_authenticated/teacher/sign-in': typeof AuthenticatedTeacherSignInRoute
   '/_authenticated/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
   '/_authenticated/command-centre/': typeof AuthenticatedCommandCentreIndexRoute
+  '/_authenticated/o/$organization/scholar': typeof AuthenticatedOOrganizationScholarRouteRouteWithChildren
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
+  '/_authenticated/o/$organization/': typeof AuthenticatedOOrganizationIndexRoute
+  '/_authenticated/o/$organization/scholar/$': typeof AuthenticatedOOrganizationScholarSplatRoute
+  '/_authenticated/o/$organization/scholar/': typeof AuthenticatedOOrganizationScholarIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1571,14 +1628,15 @@ export interface FileRouteTypes {
     | '/foundation-loop'
     | '/health.json'
     | '/login'
-    | '/signin'
     | '/manifest.webmanifest'
     | '/marketplace'
+    | '/onboarding'
     | '/platform'
     | '/privacy'
     | '/reset-password'
     | '/rules'
     | '/scholar-foundation-loop'
+    | '/signin'
     | '/sitemap.xml'
     | '/super-admin-bootstrap'
     | '/admin'
@@ -1600,6 +1658,7 @@ export interface FileRouteTypes {
     | '/news/$id'
     | '/platform/org'
     | '/reality/$class'
+    | '/o/$organization'
     | '/admin/admissions'
     | '/admin/ai-assistant'
     | '/admin/analytics'
@@ -1719,8 +1778,12 @@ export interface FileRouteTypes {
     | '/teacher/sign-in'
     | '/teacher/timetable'
     | '/command-centre/'
+    | '/o/$organization/scholar'
     | '/api/public/audit/password-reset'
     | '/api/public/webhooks/paystack'
+    | '/o/$organization/'
+    | '/o/$organization/scholar/$'
+    | '/o/$organization/scholar/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1730,14 +1793,15 @@ export interface FileRouteTypes {
     | '/foundation-loop'
     | '/health.json'
     | '/login'
-    | '/signin'
     | '/manifest.webmanifest'
     | '/marketplace'
+    | '/onboarding'
     | '/platform'
     | '/privacy'
     | '/reset-password'
     | '/rules'
     | '/scholar-foundation-loop'
+    | '/signin'
     | '/sitemap.xml'
     | '/super-admin-bootstrap'
     | '/admin'
@@ -1879,6 +1943,9 @@ export interface FileRouteTypes {
     | '/command-centre'
     | '/api/public/audit/password-reset'
     | '/api/public/webhooks/paystack'
+    | '/o/$organization'
+    | '/o/$organization/scholar/$'
+    | '/o/$organization/scholar'
   id:
     | '__root__'
     | '/'
@@ -1890,14 +1957,15 @@ export interface FileRouteTypes {
     | '/foundation-loop'
     | '/health.json'
     | '/login'
-    | '/signin'
     | '/manifest.webmanifest'
     | '/marketplace'
+    | '/onboarding'
     | '/platform'
     | '/privacy'
     | '/reset-password'
     | '/rules'
     | '/scholar-foundation-loop'
+    | '/signin'
     | '/sitemap.xml'
     | '/super-admin-bootstrap'
     | '/_authenticated/admin'
@@ -1919,6 +1987,7 @@ export interface FileRouteTypes {
     | '/news/$id'
     | '/platform/org'
     | '/reality/$class'
+    | '/_authenticated/o/$organization'
     | '/_authenticated/admin/admissions'
     | '/_authenticated/admin/ai-assistant'
     | '/_authenticated/admin/analytics'
@@ -2038,8 +2107,12 @@ export interface FileRouteTypes {
     | '/_authenticated/teacher/sign-in'
     | '/_authenticated/teacher/timetable'
     | '/_authenticated/command-centre/'
+    | '/_authenticated/o/$organization/scholar'
     | '/api/public/audit/password-reset'
     | '/api/public/webhooks/paystack'
+    | '/_authenticated/o/$organization/'
+    | '/_authenticated/o/$organization/scholar/$'
+    | '/_authenticated/o/$organization/scholar/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -2052,14 +2125,15 @@ export interface RootRouteChildren {
   FoundationLoopRoute: typeof FoundationLoopRoute
   HealthDotjsonRoute: typeof HealthDotjsonRoute
   LoginRoute: typeof LoginRoute
-  SigninRoute: typeof SigninRoute
   ManifestDotwebmanifestRoute: typeof ManifestDotwebmanifestRoute
   MarketplaceRoute: typeof MarketplaceRoute
+  OnboardingRoute: typeof OnboardingRoute
   PlatformRoute: typeof PlatformRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   RulesRoute: typeof RulesRoute
   ScholarFoundationLoopRoute: typeof ScholarFoundationLoopRoute
+  SigninRoute: typeof SigninRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SuperAdminBootstrapRoute: typeof SuperAdminBootstrapRoute
   EventsIdRoute: typeof EventsIdRoute
@@ -2134,13 +2208,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/signin': {
-      id: '/signin'
-      path: '/signin'
-      fullPath: '/signin'
-      preLoaderRoute: typeof SigninRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/manifest.webmanifest': {
       id: '/manifest.webmanifest'
       path: '/manifest.webmanifest'
@@ -2153,6 +2220,13 @@ declare module '@tanstack/react-router' {
       path: '/marketplace'
       fullPath: '/marketplace'
       preLoaderRoute: typeof MarketplaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/platform': {
@@ -2188,6 +2262,13 @@ declare module '@tanstack/react-router' {
       path: '/scholar-foundation-loop'
       fullPath: '/scholar-foundation-loop'
       preLoaderRoute: typeof ScholarFoundationLoopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signin': {
+      id: '/signin'
+      path: '/signin'
+      fullPath: '/signin'
+      preLoaderRoute: typeof SigninRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -2820,6 +2901,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHqReportsRouteImport
       parentRoute: typeof AuthenticatedHqRouteRoute
     }
+    '/_authenticated/o/$organization': {
+      id: '/_authenticated/o/$organization'
+      path: '/o/$organization'
+      fullPath: '/o/$organization'
+      preLoaderRoute: typeof AuthenticatedOOrganizationRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/parent/ai-assistant': {
       id: '/_authenticated/parent/ai-assistant'
       path: '/ai-assistant'
@@ -3170,6 +3258,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTeacherTimetableRouteImport
       parentRoute: typeof AuthenticatedTeacherRouteRoute
     }
+    '/_authenticated/o/$organization/': {
+      id: '/_authenticated/o/$organization/'
+      path: '/'
+      fullPath: '/o/$organization/'
+      preLoaderRoute: typeof AuthenticatedOOrganizationIndexRouteImport
+      parentRoute: typeof AuthenticatedOOrganizationRouteRoute
+    }
+    '/_authenticated/o/$organization/scholar': {
+      id: '/_authenticated/o/$organization/scholar'
+      path: '/scholar'
+      fullPath: '/o/$organization/scholar'
+      preLoaderRoute: typeof AuthenticatedOOrganizationScholarRouteRouteImport
+      parentRoute: typeof AuthenticatedOOrganizationRouteRoute
+    }
     '/api/public/audit/password-reset': {
       id: '/api/public/audit/password-reset'
       path: '/api/public/audit/password-reset'
@@ -3183,6 +3285,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/public/webhooks/paystack'
       preLoaderRoute: typeof ApiPublicWebhooksPaystackRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/o/$organization/scholar/': {
+      id: '/_authenticated/o/$organization/scholar/'
+      path: '/'
+      fullPath: '/o/$organization/scholar/'
+      preLoaderRoute: typeof AuthenticatedOOrganizationScholarIndexRouteImport
+      parentRoute: typeof AuthenticatedOOrganizationScholarRouteRoute
+    }
+    '/_authenticated/o/$organization/scholar/$': {
+      id: '/_authenticated/o/$organization/scholar/$'
+      path: '/$'
+      fullPath: '/o/$organization/scholar/$'
+      preLoaderRoute: typeof AuthenticatedOOrganizationScholarSplatRouteImport
+      parentRoute: typeof AuthenticatedOOrganizationScholarRouteRoute
     }
   }
 }
@@ -3573,6 +3689,41 @@ const AuthenticatedTeacherRouteRouteWithChildren =
     AuthenticatedTeacherRouteRouteChildren,
   )
 
+interface AuthenticatedOOrganizationScholarRouteRouteChildren {
+  AuthenticatedOOrganizationScholarSplatRoute: typeof AuthenticatedOOrganizationScholarSplatRoute
+  AuthenticatedOOrganizationScholarIndexRoute: typeof AuthenticatedOOrganizationScholarIndexRoute
+}
+
+const AuthenticatedOOrganizationScholarRouteRouteChildren: AuthenticatedOOrganizationScholarRouteRouteChildren =
+  {
+    AuthenticatedOOrganizationScholarSplatRoute:
+      AuthenticatedOOrganizationScholarSplatRoute,
+    AuthenticatedOOrganizationScholarIndexRoute:
+      AuthenticatedOOrganizationScholarIndexRoute,
+  }
+
+const AuthenticatedOOrganizationScholarRouteRouteWithChildren =
+  AuthenticatedOOrganizationScholarRouteRoute._addFileChildren(
+    AuthenticatedOOrganizationScholarRouteRouteChildren,
+  )
+
+interface AuthenticatedOOrganizationRouteRouteChildren {
+  AuthenticatedOOrganizationScholarRouteRoute: typeof AuthenticatedOOrganizationScholarRouteRouteWithChildren
+  AuthenticatedOOrganizationIndexRoute: typeof AuthenticatedOOrganizationIndexRoute
+}
+
+const AuthenticatedOOrganizationRouteRouteChildren: AuthenticatedOOrganizationRouteRouteChildren =
+  {
+    AuthenticatedOOrganizationScholarRouteRoute:
+      AuthenticatedOOrganizationScholarRouteRouteWithChildren,
+    AuthenticatedOOrganizationIndexRoute: AuthenticatedOOrganizationIndexRoute,
+  }
+
+const AuthenticatedOOrganizationRouteRouteWithChildren =
+  AuthenticatedOOrganizationRouteRoute._addFileChildren(
+    AuthenticatedOOrganizationRouteRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRouteRoute: typeof AuthenticatedAdminRouteRouteWithChildren
   AuthenticatedBursarRouteRoute: typeof AuthenticatedBursarRouteRouteWithChildren
@@ -3587,6 +3738,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedRuntimeRoute: typeof AuthenticatedRuntimeRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedOOrganizationRouteRoute: typeof AuthenticatedOOrganizationRouteRouteWithChildren
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -3605,6 +3757,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedRuntimeRoute: AuthenticatedRuntimeRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedOOrganizationRouteRoute:
+    AuthenticatedOOrganizationRouteRouteWithChildren,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -3642,14 +3796,15 @@ const rootRouteChildren: RootRouteChildren = {
   FoundationLoopRoute: FoundationLoopRoute,
   HealthDotjsonRoute: HealthDotjsonRoute,
   LoginRoute: LoginRoute,
-  SigninRoute: SigninRoute,
   ManifestDotwebmanifestRoute: ManifestDotwebmanifestRoute,
   MarketplaceRoute: MarketplaceRoute,
+  OnboardingRoute: OnboardingRoute,
   PlatformRoute: PlatformRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   RulesRoute: RulesRoute,
   ScholarFoundationLoopRoute: ScholarFoundationLoopRoute,
+  SigninRoute: SigninRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SuperAdminBootstrapRoute: SuperAdminBootstrapRoute,
   EventsIdRoute: EventsIdRoute,
@@ -3661,13 +3816,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

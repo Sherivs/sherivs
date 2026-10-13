@@ -21,7 +21,7 @@ export const Route = createFileRoute("/manifest.webmanifest")({
       GET: async ({ request }) => {
         const url = new URL(request.url);
         const orgType = url.searchParams.get("class") ?? "school";
-        const slug = url.searchParams.get("school");
+        const slug = url.searchParams.get("organization") ?? url.searchParams.get("school");
 
         let brand: { name?: string; primaryColor?: string; secondaryColor?: string } = {};
         if (slug) {
@@ -68,6 +68,7 @@ export const Route = createFileRoute("/manifest.webmanifest")({
               "Content-Type": "application/manifest+json; charset=utf-8",
               "Cache-Control": CACHE,
               "x-coregrid-manifest": "fallback",
+              "x-sherivs-manifest": "fallback",
             },
           });
         }
@@ -79,6 +80,8 @@ export const Route = createFileRoute("/manifest.webmanifest")({
             "Cache-Control": CACHE,
             "x-coregrid-manifest": "generated",
             "x-coregrid-org-class": orgType,
+            "x-sherivs-manifest": "generated",
+            "x-sherivs-org-class": orgType,
           },
         });
       },

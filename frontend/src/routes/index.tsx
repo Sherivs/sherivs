@@ -8,6 +8,7 @@ import {
 } from "@/components/public/sherivs-public-home";
 import { PLATFORM_PAGE_DESCRIPTION, PLATFORM_PAGE_TITLE } from "@/lib/platform";
 import { resolveIdentityGateway } from "@/lib/identity/identity-gateway";
+import { currentExperienceHostKind } from "@/lib/experience/experience-host";
 import { INSTALLED_RUNTIME_ID } from "@/lib/runtime/installed-runtimes";
 
 export const Route = createFileRoute("/")({
@@ -34,13 +35,15 @@ function Index() {
       role,
       superAdmin: Boolean(superAdmin),
       tenantSlug,
+      organizationSlug: school?.slug ?? null,
       hasOrganizationMembership: Boolean(profile && role),
       installedRuntimeId: INSTALLED_RUNTIME_ID,
+      hostKind: currentExperienceHostKind(),
     });
     if (decision.destination && decision.destination !== "/") {
-      navigate({ to: decision.destination, replace: true });
+      navigate({ to: decision.destination as never, replace: true });
     }
-  }, [loading, session, role, superAdmin, profile, tenantSlug, navigate]);
+  }, [loading, session, role, superAdmin, profile, tenantSlug, school?.slug, navigate]);
 
   useEffect(() => {
     if (!school) return;

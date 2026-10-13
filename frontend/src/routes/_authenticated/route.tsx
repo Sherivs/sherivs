@@ -5,6 +5,7 @@ import {
   Link,
   useNavigate,
   useRouter,
+  useRouterState,
 } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { refreshPushTokenIfGranted } from "@/lib/push-client";
@@ -33,6 +34,12 @@ import {
 } from "@/lib/runtime/nav-registry";
 import { hasNavDestinations, resolveWorkspaceNav } from "@/lib/workspace-engine/navigation";
 import { resolveMemberWorkspaceExperience } from "@/lib/experience/workspace-experience";
+import {
+  bindNavUrl,
+  isLegacyScholarPath,
+  scholarBoundHome,
+} from "@/lib/experience/organization-routes";
+import type { NavResolution } from "@/lib/workspace-engine/navigation";
 import { scholarWorkspaceLabelForMember } from "@/lib/runtime/scholar-workforce-nav";
 import { getMyPrimaryWorkforcePosition } from "@/lib/runtime/scholar/workforce-positions.functions";
 import { useQuery } from "@tanstack/react-query";
@@ -63,9 +70,23 @@ function AuthenticatedRouteErrorComponent({ error, reset }: { error: Error; rese
   );
 }
 
+function bindNavSections(organizationSlug: string | null, sections: NavResolution): NavResolution {
+  if (!organizationSlug) return sections;
+  return sections.map((section) => ({
+    ...section,
+    items: section.items.map((item) => ({
+      ...item,
+      url: bindNavUrl(organizationSlug, item.url),
+      activeUrls: item.activeUrls?.map((url) => bindNavUrl(organizationSlug, url)),
+      activePrefixes: item.activePrefixes?.map((url) => bindNavUrl(organizationSlug, url)),
+    })),
+  }));
+}
+
 function AuthenticatedLayout() {
   const { profile, superAdmin, school, role, loading, signOut, authUser } = useApp();
   const navigate = useNavigate();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const getMyPrimaryPosition = useServerFn(getMyPrimaryWorkforcePosition);
 
   const myPosition = useQuery({
@@ -82,6 +103,22 @@ function AuthenticatedLayout() {
     void refreshPushTokenIfGranted(profile.id);
   }, [profile?.id]);
 
+  useEffect(() => {
+    if (loading) return;
+    if (!profile && !superAdmin) {
+      void navigate({ to: "/onboarding", replace: true });
+    }
+  }, [loading, profile, superAdmin, navigate]);
+
+  useEffect(() => {
+    if (loading || !school?.slug) return;
+    if (!isLegacyScholarPath(pathname)) return;
+    const bound = bindNavUrl(school.slug, pathname);
+    if (bound !== pathname) {
+      void navigate({ to: bound as never, replace: true });
+    }
+  }, [loading, school?.slug, pathname, navigate]);
+
   if (loading) {
     return <div className="min-h-dvh grid place-items-center text-muted-foreground">Loading…</div>;
   }
@@ -92,26 +129,26 @@ function AuthenticatedLayout() {
         <div className="max-w-md uos-card p-8 text-center">
           <h1 className="font-display text-xl font-bold">Account not yet linked</h1>
           <p className="mt-3 text-sm text-muted-foreground">
-            Your sign-in is valid, but your account has not been linked to an organization yet. An
-            organization administrator (or a Sherivs platform operator) needs to assign you a role
-            before you can open a workspace.
+            Your sign-in is valid, but your account has not been linked to an organization yet.
+            Continue organization onboarding, or ask an administrator to assign a role.
           </p>
-          <button
-            onClick={async () => {
-              await signOut();
-              navigate({ to: "/auth", replace: true });
-            }}
-            className="mt-6 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+          <Link
+            to="/onboarding"
+            className="mt-6 inline-block rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
           >
-            Sign out
-          </button>
+            Continue onboarding
+          </Link>
         </div>
       </div>
     );
   }
 
   const displayName = profile?.full_name ?? superAdmin?.full_name ?? "User";
-  const dashHref = role ? scholarWorkspaceHome(role) : "/";
+  const dashHref = role
+    ? school?.slug
+      ? scholarBoundHome(school.slug, scholarWorkspaceHome(role))
+      : scholarWorkspaceHome(role)
+    : "/";
   const memberLabel = role
     ? scholarWorkspaceLabelForMember(
         myPosition.data?.kind_code ?? null,
@@ -128,16 +165,20 @@ function AuthenticatedLayout() {
   // fixed portal bars, one per installed runtime that declares a portal chrome.
   const scholarPortalKind: RuntimePortalKind | null =
     role === "parent" ? "parent" : role === "student" ? "student" : null;
-  const bottomNavSections = scholarPortalKind
-    ? resolveWorkspaceNav(ALL_NAV_CONTRIBUTIONS, scholarCapabilitiesForPortal(scholarPortalKind))
-    : [];
+  const bottomNavSections = bindNavSections(
+    school?.slug ?? null,
+    scholarPortalKind
+      ? resolveWorkspaceNav(ALL_NAV_CONTRIBUTIONS, scholarCapabilitiesForPortal(scholarPortalKind))
+      : [],
+  );
   const hasBottomNav = hasNavDestinations(bottomNavSections);
 
   // Sidebar chrome is resolved the same way: installed runtime contributions x the
   // viewer's authorized capabilities (org_admin collapsible groups, flat member workspaces).
-  const sidebarSections = role
-    ? resolveWorkspaceNav(ALL_NAV_CONTRIBUTIONS, scholarCapabilitiesForRole(role))
-    : [];
+  const sidebarSections = bindNavSections(
+    school?.slug ?? null,
+    role ? resolveWorkspaceNav(ALL_NAV_CONTRIBUTIONS, scholarCapabilitiesForRole(role)) : [],
+  );
 
   return (
     <SidebarProvider>
@@ -151,7 +192,7 @@ function AuthenticatedLayout() {
             <div className="flex items-center justify-between px-4 py-2 gap-3">
               <div className="flex items-center gap-2 min-w-0">
                 {role && <SidebarTrigger />}
-                <Link to={dashHref} className="flex items-center gap-2 min-w-0">
+                <Link to={dashHref as never} className="flex items-center gap-2 min-w-0">
                   <div className="size-8 rounded-lg uos-tenant-bg grid place-items-center font-bold shrink-0">
                     {(school?.name?.[0] ?? "U") as string}
                   </div>

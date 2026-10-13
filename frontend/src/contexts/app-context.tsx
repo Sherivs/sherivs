@@ -4,6 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { resolveTenantSlug } from "@/lib/tenant";
 import { type AppRole } from "@/lib/roles";
 import { resolveIdentityGateway } from "@/lib/identity/identity-gateway";
+import { currentExperienceHostKind } from "@/lib/experience/experience-host";
+import {
+  membershipFromLegacyProfile,
+  organizationFromSchoolRow,
+  type OrganizationRecord,
+} from "@/lib/identity/organization-membership";
 import { INSTALLED_RUNTIME_ID } from "@/lib/runtime/installed-runtimes";
 
 /**
@@ -52,6 +58,11 @@ type AppState = {
    *   - otherwise: null (platform context)
    */
   school: SchoolRow | null;
+  /**
+   * Domain-neutral organization view over the live `public.schools` row.
+   * Source remains LEGACY (`legacy_schools_table`) until org-model SQL is applied.
+   */
+  organization: OrganizationRecord | null;
   /** True when the URL points at a tenant site (regardless of auth). */
   tenantSlug: string | null;
   role: AppRole | null;
@@ -182,8 +193,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 role: next.role as AppRole,
                 superAdmin: false,
                 tenantSlug: tenantSlug,
+                organizationSlug: school?.slug ?? null,
                 hasOrganizationMembership: true,
                 installedRuntimeId: INSTALLED_RUNTIME_ID,
+                hostKind: currentExperienceHostKind(),
               });
               if (decision.destination) {
                 window.location.assign(decision.destination);
@@ -200,6 +213,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [profile?.id, profile?.role, profile?.school_id]);
 
   const role: AppRole | null = superAdmin ? "super_admin" : (profile?.role ?? null);
+  const membership = membershipFromLegacyProfile(profile, school, INSTALLED_RUNTIME_ID);
+  const organization: OrganizationRecord | null =
+    membership?.organization ??
+    (school ? organizationFromSchoolRow(school, INSTALLED_RUNTIME_ID) : null);
 
   const value: AppState = {
     loading,
@@ -208,6 +225,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     profile,
     superAdmin,
     school,
+    organization,
     tenantSlug,
     role,
     refresh: async () => {

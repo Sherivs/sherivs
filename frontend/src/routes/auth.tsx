@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
 import { PLATFORM_NAME } from "@/lib/platform";
 import { resolveIdentityGateway } from "@/lib/identity/identity-gateway";
+import { currentExperienceHostKind } from "@/lib/experience/experience-host";
 import { INSTALLED_RUNTIME_ID } from "@/lib/runtime/installed-runtimes";
 import { provisionDemoEnterprise } from "@/lib/runtime/scholar/demo-provision.functions";
 
@@ -54,13 +55,15 @@ function AuthPage() {
       role,
       superAdmin: Boolean(superAdmin),
       tenantSlug,
+      organizationSlug: school?.slug ?? null,
       hasOrganizationMembership: Boolean(profile && role),
       installedRuntimeId: INSTALLED_RUNTIME_ID,
+      hostKind: currentExperienceHostKind(),
     });
     if (decision.destination && decision.destination !== "/auth") {
-      navigate({ to: decision.destination, replace: true });
+      navigate({ to: decision.destination as never, replace: true });
     }
-  }, [loading, session, role, superAdmin, profile, tenantSlug, navigate]);
+  }, [loading, session, role, superAdmin, profile, tenantSlug, school?.slug, navigate]);
 
   function reset() {
     setError(null);

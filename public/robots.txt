@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
 
-# Sitemap: set to the CoreGrid Scholar production domain at DNS cutover
+# Canonical sitemap. Production DNS for sherivs.com is BLOCKED_EXTERNAL_ACTION.
+Sitemap: https://sherivs.com/sitemap.xml
