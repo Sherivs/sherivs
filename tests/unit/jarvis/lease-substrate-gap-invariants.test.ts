@@ -1,24 +1,37 @@
 /**
  * CoreGrid — four-eyes SECURITY+QUALITY invariants for the lease-substrate
- * schema gap (ACTIVE-V1). This suite VERIFIES; it does not implement the
- * lock module or the Jarvis runtime.
+ * remaining-work after HUMAN AUTHORIZATION 2026-10-13 applied
+ * `20261003000019_coregrid_v1_mission_lease.sql` (ACTIVE-V1).
  *
- * Proof style: readFileSync source pins against the paths other teams land,
- * plus behavioral imports when those modules load cleanly. Missing production
- * files fail closed (`mustExist`). A violating mapping is never accommodated:
- * if Runtime still omits `assertLeaseSubstrateGapRemainsUnauthorized`, that
- * pin MUST fail until they wire it. Closing the gap (apply 20261003000019,
- * invent `cg_mission_lease` into Jarvis/Hermes, treat assigned+lease-null as
- * `mission_stuck`) is NOT authorized.
+ * This suite VERIFIES; it does not implement the projector or the Jarvis
+ * runtime. Proof style: readFileSync source pins against the paths other
+ * teams land, plus behavioral imports when those modules load cleanly.
+ * Missing production files fail closed (`mustExist`). A violating mapping
+ * is never accommodated.
+ *
+ * Authorized-apply remaining-work honesty:
+ *   LEASE_SUBSTRATE_APPLY_AUTHORIZED true
+ *   LEASE_SUBSTRATE_GAP_CLOSE_AUTHORIZED true
+ *   LEASE_SUBSTRATE_IMPLEMENTATION_AUTHORIZED false
+ *   EXECUTION_STATUS_WIDEN_AUTHORIZED false
+ *   Findings-list SERVER MAY/MUST query cg_mission_lease (tenant-scoped).
+ *   Assigned + lease null MUST still NOT produce mission_stuck.
+ *   Leased + expired lease MUST be allowed to produce mission_stuck (real orphan).
+ *   Jarvis runtime still MUST NOT import mission-lease-db or call runHermesCycle.
+ *   V1-004 mission-execution-db still contains lease_substrate_missing.
+ *   SQL file 20261003000019 is NOT modified (canonical hardening checksum).
+ *   Header MAY still say AUTHORED NOT APPLIED — do not require a header rewrite.
+ *   Phase 52 tokens remain false. No resident process. No 20261013/20261014 migrations.
  *
  * Version-target classification: ACTIVE-V1 (AGENTS.md §45).
  */
+import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import type { HermesWorkerPosture } from "@/lib/hermes/hermes-contract";
-import type { MissionExecutionState } from "@/lib/missions/mission-execution";
+import type { MissionExecutionState, MissionLease } from "@/lib/missions/mission-execution";
 import { isWorkerActivatable } from "@/lib/workforce/v1-workforce-lock";
 
 const ROOT = fileURLToPath(new URL("../../..", import.meta.url));
@@ -38,7 +51,10 @@ const PATHS = {
   authoredLeaseMigration:
     "database/supabase/migrations/20261003000019_coregrid_v1_mission_lease.sql",
   migrationsDir: "database/supabase/migrations",
+  hardeningJson: "architecture/proofs/CANONICAL_APPLY_RECORD_HARDENING.json",
 } as const;
+
+const LEASE_MIGRATION_FILE = "20261003000019_coregrid_v1_mission_lease.sql";
 
 const FROZEN_WORKER_IDS = [
   "sdk_engineer",
@@ -50,8 +66,10 @@ const FROZEN_WORKER_IDS = [
 ] as const;
 
 const TENANT = "tenant-alpha";
+const FOREIGN_TENANT = "tenant-bravo";
 const NOW = "2026-10-13T08:00:00.000Z";
 const STALE_ASSIGNED_AT = "2026-01-01T00:00:00.000Z";
+const EXPIRED_LEASE_AT = "2026-01-01T00:00:30.000Z";
 
 const SECRET_VALUE =
   /(?:sk_live_|sk_test_|whsec_|phc_|xox[baprs]-)[A-Za-z0-9]+|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|AKIA[0-9A-Z]{16}/;
@@ -63,7 +81,7 @@ const RESIDENT_PROCESS = [
   /\bkind:\s*Deployment\b/,
 ] as const;
 
-const FORBIDDEN_CLOSE_THE_GAP_ON_RUNTIME = [
+const FORBIDDEN_ON_RUNTIME = [
   "mission-lease-db",
   "createDbMissionLeasePort",
   "cg_mission_lease",
@@ -91,6 +109,10 @@ function mustExist(rel: string): string {
 
 function mustRead(rel: string): string {
   return readFileSync(mustExist(rel), "utf8");
+}
+
+function mustReadBytes(rel: string): Buffer {
+  return readFileSync(mustExist(rel));
 }
 
 /** Strip comments so a documented ban on resident-process tokens is not a false finding. */
@@ -143,6 +165,36 @@ function assignedAdmittedNoLease(executionId: string): MissionExecutionState {
   };
 }
 
+function expiredLease(executionId: string): MissionLease {
+  return {
+    leaseId: `lease-${executionId}`,
+    workerId: "worker-1",
+    acquiredAt: STALE_ASSIGNED_AT,
+    heartbeatAt: STALE_ASSIGNED_AT,
+    leaseExpiresAt: EXPIRED_LEASE_AT,
+  };
+}
+
+function leasedExpiredOrphan(executionId: string): MissionExecutionState {
+  return {
+    ...assignedAdmittedNoLease(executionId),
+    stage: "leased",
+    lastWorkerId: "worker-1",
+    lease: expiredLease(executionId),
+  };
+}
+
+function quarantinedWorker(workerId: string, tenantId = TENANT): HermesWorkerPosture {
+  return {
+    workerId,
+    tenantId,
+    lifecycle: "active",
+    quarantined: true,
+    failureCount: 1,
+    observedAt: NOW,
+  };
+}
+
 async function callList(
   fn: ListHermesFindingsFromState,
   input: {
@@ -166,6 +218,17 @@ async function callList(
   );
 }
 
+async function loadList(): Promise<ListHermesFindingsFromState> {
+  mustExist(PATHS.findingsList);
+  const mod = (await import("@/lib/hermes/hermes-findings-list")) as {
+    listHermesFindingsFromState?: ListHermesFindingsFromState;
+  };
+  expect(mod.listHermesFindingsFromState, "list module must export listHermesFindingsFromState").toEqual(
+    expect.any(Function),
+  );
+  return mod.listHermesFindingsFromState as ListHermesFindingsFromState;
+}
+
 /** Glob dated migration prefixes via readdir (existsSync of each hit must also be false). */
 function globDatedMigrations(prefix: string): string[] {
   const dir = abs(PATHS.migrationsDir);
@@ -173,8 +236,28 @@ function globDatedMigrations(prefix: string): string[] {
   return readdirSync(dir).filter((name) => name.startsWith(prefix));
 }
 
+function canonicalLeaseMigrationChecksum(): string {
+  const hardening = JSON.parse(mustRead(PATHS.hardeningJson)) as {
+    declaredVsApplied?: ReadonlyArray<{ file?: unknown; checksum?: unknown }>;
+  };
+  const entry = (hardening.declaredVsApplied ?? []).find(
+    (row) => row.file === LEASE_MIGRATION_FILE,
+  );
+  expect(entry, `hardening record must include ${LEASE_MIGRATION_FILE}`).toBeTruthy();
+  expect(typeof entry?.checksum, "hardening checksum must be a sha256 hex string").toBe("string");
+  expect(entry?.checksum, "hardening checksum shape").toMatch(/^[0-9a-f]{64}$/);
+  return entry!.checksum as string;
+}
+
+function widenAuthorizedToken(source: Record<string, unknown>): unknown {
+  return (
+    source.LEASE_SUBSTRATE_EXECUTION_STATUS_WIDEN_AUTHORIZED ??
+    source.EXECUTION_STATUS_WIDEN_AUTHORIZED
+  );
+}
+
 /* ─────────────────────────────────────────────────────────────
- * A. No resident process
+ * A. No resident process (daemon pin — do not weaken)
  * ───────────────────────────────────────────────────────────── */
 
 describe("A. no resident Jarvis/Hermes/lock process", () => {
@@ -197,14 +280,20 @@ describe("A. no resident Jarvis/Hermes/lock process", () => {
 });
 
 /* ─────────────────────────────────────────────────────────────
- * B. Lease-gap honesty (classified, not closed)
+ * B. Authorized-apply remaining-work honesty
  * ───────────────────────────────────────────────────────────── */
 
-describe("B. lease-substrate gap remains classified not-authorized", () => {
-  it("LEASE_SUBSTRATE_GAP_CLOSE_AUTHORIZED === false in the lock TypeScript module", () => {
+describe("B. lease-substrate remaining-work after authorized apply", () => {
+  it("LEASE_SUBSTRATE_APPLY_AUTHORIZED === true in the lock TypeScript module", () => {
+    const ts = mustRead(PATHS.lockTs);
+    expect(ts).toMatch(/LEASE_SUBSTRATE_APPLY_AUTHORIZED/);
+    expect(ts).toMatch(/LEASE_SUBSTRATE_APPLY_AUTHORIZED\s*=\s*true/);
+  });
+
+  it("LEASE_SUBSTRATE_GAP_CLOSE_AUTHORIZED === true in the lock TypeScript module", () => {
     const ts = mustRead(PATHS.lockTs);
     expect(ts).toMatch(/LEASE_SUBSTRATE_GAP_CLOSE_AUTHORIZED/);
-    expect(ts).toMatch(/LEASE_SUBSTRATE_GAP_CLOSE_AUTHORIZED\s*=\s*false/);
+    expect(ts).toMatch(/LEASE_SUBSTRATE_GAP_CLOSE_AUTHORIZED\s*=\s*true/);
   });
 
   it("LEASE_SUBSTRATE_IMPLEMENTATION_AUTHORIZED === false in the lock TypeScript module", () => {
@@ -213,18 +302,24 @@ describe("B. lease-substrate gap remains classified not-authorized", () => {
     expect(ts).toMatch(/LEASE_SUBSTRATE_IMPLEMENTATION_AUTHORIZED\s*=\s*false/);
   });
 
-  it("LEASE_SUBSTRATE_GAP_CLOSE_AUTHORIZED === false and implementationAuthorized false in the classification JSON", () => {
+  it("EXECUTION_STATUS_WIDEN_AUTHORIZED === false in the lock TypeScript module", () => {
+    const ts = mustRead(PATHS.lockTs);
+    expect(ts).toMatch(/(?:LEASE_SUBSTRATE_)?EXECUTION_STATUS_WIDEN_AUTHORIZED/);
+    expect(ts).toMatch(/(?:LEASE_SUBSTRATE_)?EXECUTION_STATUS_WIDEN_AUTHORIZED\s*=\s*false/);
+  });
+
+  it("authorized-apply tokens in the classification JSON", () => {
     const jsonText = mustRead(PATHS.lockJson);
+    expect(jsonText).toMatch(/LEASE_SUBSTRATE_APPLY_AUTHORIZED/);
     expect(jsonText).toMatch(/LEASE_SUBSTRATE_GAP_CLOSE_AUTHORIZED/);
     expect(jsonText).toMatch(/LEASE_SUBSTRATE_IMPLEMENTATION_AUTHORIZED/);
-    const json = JSON.parse(jsonText) as {
-      LEASE_SUBSTRATE_GAP_CLOSE_AUTHORIZED?: unknown;
-      LEASE_SUBSTRATE_IMPLEMENTATION_AUTHORIZED?: unknown;
-      implementationAuthorized?: unknown;
-    };
-    expect(json.LEASE_SUBSTRATE_GAP_CLOSE_AUTHORIZED).toBe(false);
+    expect(jsonText).toMatch(/(?:LEASE_SUBSTRATE_)?EXECUTION_STATUS_WIDEN_AUTHORIZED/);
+    const json = JSON.parse(jsonText) as Record<string, unknown>;
+    expect(json.LEASE_SUBSTRATE_APPLY_AUTHORIZED).toBe(true);
+    expect(json.LEASE_SUBSTRATE_GAP_CLOSE_AUTHORIZED).toBe(true);
     expect(json.LEASE_SUBSTRATE_IMPLEMENTATION_AUTHORIZED).toBe(false);
     expect(json.implementationAuthorized).toBe(false);
+    expect(widenAuthorizedToken(json)).toBe(false);
   });
 
   it("mission-execution-db.server.ts still contains lease_substrate_missing", () => {
@@ -232,20 +327,35 @@ describe("B. lease-substrate gap remains classified not-authorized", () => {
     expect(source).toMatch(/lease_substrate_missing/);
   });
 
-  it("hermes-findings-list.ts and hermes-findings-list.server.ts MUST NOT contain cg_mission_lease", () => {
-    for (const rel of [PATHS.findingsList, PATHS.findingsListServer] as const) {
-      const stripped = stripComments(mustRead(rel), "code");
-      expect(stripped, `${rel} executable source MUST NOT contain cg_mission_lease`).not.toMatch(
-        /cg_mission_lease/,
-      );
-    }
+  it("pure hermes-findings-list.ts must not query cg_mission_lease", () => {
+    const stripped = stripComments(mustRead(PATHS.findingsList), "code");
+    expect(
+      stripped,
+      "pure findings-list.ts must not query cg_mission_lease (projection is the server adapter)",
+    ).not.toMatch(/cg_mission_lease/);
   });
 
-  it("enterprise-cycle-runtime.server.ts MUST NOT contain mission-lease-db, createDbMissionLeasePort, cg_mission_lease, runHermesCycle", () => {
+  it("hermes-findings-list.server.ts MUST contain cg_mission_lease AND tenant_id", () => {
+    const stripped = stripComments(mustRead(PATHS.findingsListServer), "code");
+    expect(
+      stripped,
+      "findings-list SERVER MUST query cg_mission_lease after HUMAN AUTHORIZATION 2026-10-13 apply",
+    ).toMatch(/cg_mission_lease/);
+    expect(
+      stripped,
+      "findings-list SERVER MUST keep tenant_id (lease query is tenant-scoped)",
+    ).toMatch(/\btenant_id\b/);
+    const tenantEq =
+      /\.eq\(\s*["']tenant_id["']/.test(stripped) ||
+      /\[["']tenant_id["']\s*,\s*tenantId\]/.test(stripped);
+    expect(tenantEq, "server queries must eq tenant_id (source pin tenant_id)").toBe(true);
+  });
+
+  it("enterprise-cycle-runtime.server.ts MUST NOT import mission-lease-db, query cg_mission_lease, or call runHermesCycle", () => {
     // Strip comments so a documented ban ("does not query cg_mission_lease")
     // is not a false finding. Executable code still MUST NOT contain the tokens.
     const stripped = stripComments(mustRead(PATHS.cycleRuntime), "code");
-    for (const token of FORBIDDEN_CLOSE_THE_GAP_ON_RUNTIME) {
+    for (const token of FORBIDDEN_ON_RUNTIME) {
       expect(stripped, `runtime executable source MUST NOT contain ${token}`).not.toMatch(
         new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
       );
@@ -255,29 +365,8 @@ describe("B. lease-substrate gap remains classified not-authorized", () => {
     expect(stripped).not.toMatch(/\brunHermesCycle\s*\(/);
   });
 
-  it("runtime MUST contain assertLeaseSubstrateGapRemainsUnauthorized and lease-substrate-gap-lock (must fail until Runtime wires it)", () => {
-    const source = mustRead(PATHS.cycleRuntime);
-    const stripped = stripComments(source, "code");
-    expect(
-      /lease-substrate-gap-lock/.test(source),
-      "enterprise-cycle-runtime.server.ts MUST contain lease-substrate-gap-lock — do not weaken this pin while Runtime has not imported the assert",
-    ).toBe(true);
-    expect(
-      /\bassertLeaseSubstrateGapRemainsUnauthorized\s*\(/.test(stripped),
-      "enterprise-cycle-runtime.server.ts MUST call assertLeaseSubstrateGapRemainsUnauthorized( — do not weaken this pin while Runtime has not imported the assert",
-    ).toBe(true);
-  });
-
   it("behavioral: listHermesFindingsFromState assigned + lease null MUST NOT produce mission_stuck", async () => {
-    mustExist(PATHS.findingsList);
-    const mod = (await import("@/lib/hermes/hermes-findings-list")) as {
-      listHermesFindingsFromState?: ListHermesFindingsFromState;
-    };
-    expect(mod.listHermesFindingsFromState, "list module must export listHermesFindingsFromState").toEqual(
-      expect.any(Function),
-    );
-    const list = mod.listHermesFindingsFromState as ListHermesFindingsFromState;
-
+    const list = await loadList();
     const leaseGap = await callList(list, {
       tenantId: TENANT,
       executions: [assignedAdmittedNoLease("exec-assigned-no-lease")],
@@ -285,13 +374,26 @@ describe("B. lease-substrate gap remains classified not-authorized", () => {
     });
     expect(
       findingKinds(leaseGap),
-      "admitted assigned + lease null MUST NOT produce mission_stuck (lease-gap; would invent timeouts)",
+      "admitted assigned + lease null MUST NOT produce mission_stuck (would invent timeouts)",
     ).not.toContain("mission_stuck");
     for (const record of findingRecords(leaseGap)) {
-      expect(record.kind, "lease-gap must not be stamped as a stuck/timeout finding").not.toBe(
+      expect(record.kind, "assigned+lease-null must not be stamped as a stuck/timeout finding").not.toBe(
         "mission_stuck",
       );
     }
+  });
+
+  it("behavioral: leased + expired lease MUST be allowed to produce mission_stuck (real orphan)", async () => {
+    const list = await loadList();
+    const orphan = await callList(list, {
+      tenantId: TENANT,
+      executions: [leasedExpiredOrphan("exec-leased-expired")],
+      workers: [],
+    });
+    expect(
+      findingKinds(orphan),
+      "leased + expired lease is a real orphan and MUST be allowed to produce mission_stuck",
+    ).toContain("mission_stuck");
   });
 
   it("no new file matching database/supabase/migrations/20261013* or 20261014* (glob + existsSync are false)", () => {
@@ -302,7 +404,7 @@ describe("B. lease-substrate gap remains classified not-authorized", () => {
       const globbed = globDatedMigrations(prefix);
       expect(
         globbed,
-        `glob database/supabase/migrations/${prefix}* must be empty — this mission does not author a close-the-gap migration`,
+        `glob database/supabase/migrations/${prefix}* must be empty — this remaining-work does not author a new migration`,
       ).toEqual([]);
       expect(globbed.length === 0, `glob of dated prefix ${prefix}* is false`).toBe(true);
       expect(existsSync(join(dir, prefix)), `existsSync(${prefix}) is false`).toBe(false);
@@ -314,31 +416,31 @@ describe("B. lease-substrate gap remains classified not-authorized", () => {
     }
   });
 
-  it("20261003000019 remains AUTHORED NOT APPLIED in its header comment", () => {
-    const source = mustRead(PATHS.authoredLeaseMigration);
-    const header = source.slice(0, 4000);
-    expect(header).toMatch(/AUTHORED[,\s]+NOT APPLIED/i);
-    expect(header).toMatch(/Status:\s*AUTHORED,\s*NOT APPLIED/);
+  it("20261003000019 SQL bytes match the canonical hardening checksum (header rewrite not required)", () => {
+    const expected = canonicalLeaseMigrationChecksum();
+    const digest = createHash("sha256").update(mustReadBytes(PATHS.authoredLeaseMigration)).digest("hex");
+    expect(
+      digest,
+      "on-disk 20261003000019 bytes must equal architecture/proofs/CANONICAL_APPLY_RECORD_HARDENING.json checksum — do not rewrite the SQL; header MAY still say AUTHORED NOT APPLIED",
+    ).toBe(expected);
   });
 
-  it("behavioral: lock module refuses gap-close and implementation authorization", async () => {
+  it("behavioral: lock module exports authorized-apply tokens", async () => {
     mustExist(PATHS.lockTs);
     const mod = (await import("@/lib/missions/lease-substrate-gap-lock")) as Record<string, unknown>;
-    expect(mod.LEASE_SUBSTRATE_GAP_CLOSE_AUTHORIZED).toBe(false);
+    expect(mod.LEASE_SUBSTRATE_APPLY_AUTHORIZED).toBe(true);
+    expect(mod.LEASE_SUBSTRATE_GAP_CLOSE_AUTHORIZED).toBe(true);
     expect(mod.LEASE_SUBSTRATE_IMPLEMENTATION_AUTHORIZED).toBe(false);
+    expect(widenAuthorizedToken(mod)).toBe(false);
     if ("implementationAuthorized" in mod) {
       expect(mod.implementationAuthorized).toBe(false);
     }
-    expect(
-      mod.assertLeaseSubstrateGapRemainsUnauthorized,
-      "lock module must export assertLeaseSubstrateGapRemainsUnauthorized",
-    ).toEqual(expect.any(Function));
-    expect(() => (mod.assertLeaseSubstrateGapRemainsUnauthorized as () => void)()).not.toThrow();
   });
 });
 
 /* ─────────────────────────────────────────────────────────────
  * C. Phase 52 classified attachment — not implementation authorization
+ *    (do not weaken)
  * ───────────────────────────────────────────────────────────── */
 
 describe("C. Phase 52 attachment is locked, not authorized", () => {
@@ -379,5 +481,66 @@ describe("D. secrets hygiene on the lease-substrate gap lock", () => {
     expect(source, `${PATHS.lockTs} must not embed private keys`).not.toMatch(
       /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,
     );
+  });
+});
+
+/* ─────────────────────────────────────────────────────────────
+ * E. Tenant isolation (do not weaken)
+ * ───────────────────────────────────────────────────────────── */
+
+describe("E. tenant isolation on the findings list", () => {
+  it("list functions require tenantId (source pin)", () => {
+    const listTs = mustRead(PATHS.findingsList);
+    expect(listTs).toMatch(/tenantId/);
+    expect(listTs).toMatch(/listHermesFindingsFromState/);
+
+    const listServer = mustRead(PATHS.findingsListServer);
+    expect(listServer).toMatch(/tenantId/);
+    expect(listServer).toMatch(/listHermesFindings/);
+    expect(listServer).toMatch(/\btenant_id\b/);
+  });
+
+  it("server cg_mission_lease query is tenant-scoped", () => {
+    const stripped = stripComments(mustRead(PATHS.findingsListServer), "code");
+    expect(stripped, "server MUST name cg_mission_lease").toMatch(/["']cg_mission_lease["']/);
+    const tenantEq =
+      /\.eq\(\s*["']tenant_id["']/.test(stripped) ||
+      /\[["']tenant_id["']\s*,\s*tenantId\]/.test(stripped);
+    expect(tenantEq, "server queries must eq tenant_id on tenant-scoped tables including cg_mission_lease").toBe(
+      true,
+    );
+  });
+
+  it("behavioral: listHermesFindingsFromState requires tenantId and does not emit cross-tenant findings", async () => {
+    const list = await loadList();
+
+    let blank: unknown;
+    try {
+      blank = await callList(list, {
+        tenantId: "",
+        executions: [leasedExpiredOrphan("exec-blank-tenant")],
+        workers: [quarantinedWorker("worker-blank-tenant")],
+      });
+    } catch {
+      blank = [];
+    }
+    expect(findingKinds(blank), "blank tenantId must not invent findings").toEqual([]);
+
+    const scoped = await callList(list, {
+      tenantId: TENANT,
+      executions: [{ ...leasedExpiredOrphan("exec-foreign"), tenantId: FOREIGN_TENANT }],
+      workers: [quarantinedWorker("worker-foreign", FOREIGN_TENANT)],
+    });
+    for (const record of findingRecords(scoped)) {
+      expect(record.tenantId, "must not leak a foreign tenant onto listed findings").not.toBe(
+        FOREIGN_TENANT,
+      );
+      expect(record.subjectRef, "must not list a foreign-tenant execution as a finding").not.toBe(
+        "exec-foreign",
+      );
+      expect(record.subjectRef, "must not list a foreign-tenant worker as a finding").not.toBe(
+        "worker-foreign",
+      );
+    }
   });
 });

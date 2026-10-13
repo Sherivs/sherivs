@@ -123,6 +123,7 @@ const SUBJECT_MAP = {
   "tests/unit/jarvis/hermes-findings-list-invariants.test.ts": { phase: "07", why: "four-eyes for production listHermesFindings substrate (phase-07)" },
   "tests/unit/missions/lease-substrate-gap-lock.test.ts": { phase: "07", why: "lease-substrate schema gap remains classified not-authorized (phase-07 mission substrate)" },
   "tests/unit/jarvis/lease-substrate-gap-invariants.test.ts": { phase: "07", why: "four-eyes: Jarvis does not close or invent the lease-substrate gap (phase-07)" },
+  "tests/unit/missions/mission-lease-projection.test.ts": { phase: "07", why: "tenant-scoped cg_mission_lease projection into Hermes findings (phase-07 mission substrate); assigned+lease-null stays honest, expired leased orphans may be mission_stuck" },
   "tests/unit/v1-workforce-lock.test.ts": { phase: "25", why: "V1 AI workforce scope lock (capability definitions, not standing processes) — phase-25 workforce substrate" },
   "tests/unit/phase52-attachment.test.ts": { phase: "25", why: "Phase 52 classified attachment lock over V1 workforce (phase-25 workforce substrate); not implementation authorization" },
   "tests/unit/mission-staffing.test.ts": { phase: "25", why: "dynamic mission staffing / four-eyes workforce graph — phase-25 workforce substrate" },
