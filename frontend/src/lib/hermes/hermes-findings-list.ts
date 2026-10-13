@@ -9,14 +9,15 @@
  *
  * Honesty law — lease-substrate gap (MISSION V1-004):
  *   `cg_execution_record.status` admits only admitted | denied | rolled_back.
- *   The DB projection maps admitted → assigned with lease === null (there is
- *   no worker-lease substrate). `assessExecutions` would treat an assigned
- *   row unupdated past 60s as `mission_stuck`, which the observation
- *   translator stamps as DETECTABLE `mission_timeout`. That timeout would be
- *   INVENTED from a schema gap, not from an orphaned lease. This module
- *   DROPS `mission_stuck` findings whose matching execution has
- *   `lease === null` AND `stage === "assigned"`. Denied / failed-verification
- *   / quarantined / suspended findings stay.
+ *   The DB record projection maps admitted → assigned with lease === null.
+ *   `assessExecutions` would treat an assigned row unupdated past 60s as
+ *   `mission_stuck`, which would be INVENTED from the status vocabulary, not
+ *   from an orphaned lease. This module DROPS `mission_stuck` findings whose
+ *   matching execution has `lease === null` AND `stage === "assigned"`.
+ *   Applied lease rows are projected by the caller (server) into
+ *   `stage: "leased"` with the real lease object; an expired
+ *   `leaseExpiresAt` is a REAL orphan and `mission_stuck` is KEPT.
+ *   Denied / failed-verification / quarantined / suspended findings stay.
  *
  * Boundary: pure functions over caller-supplied state. No I/O, no vendor,
  * no `.server` imports, no wall-clock sampling (time is always supplied).
@@ -25,7 +26,7 @@
  */
 
 import type { MissionExecutionState } from "../missions/mission-execution";
-import { assertLeaseSubstrateGapRemainsUnauthorized } from "../missions/lease-substrate-gap-lock";
+import { assertLeaseSubstrateGovernance } from "../missions/lease-substrate-gap-lock";
 import { assessExecutions, assessWorkers } from "./hermes-cycle";
 import type { HermesFinding, HermesWorkerPosture } from "./hermes-contract";
 import type { HermesFindingObservationSource } from "./hermes-finding-observation";
@@ -130,7 +131,7 @@ export function listHermesFindingsFromState(input: {
   return [...honestExecutionFindings, ...recovered, ...workerFindings].map(toObservationSource);
 }
 
-// Classified lock (ACTIVE-V1): closing the lease-substrate schema gap is not
-// authorized. Load-time assert only — no close-the-gap branch.
-assertLeaseSubstrateGapRemainsUnauthorized();
+// Governance lock (ACTIVE-V1): observe applied leases; do not widen status
+// and do not rewrite V1-004. Load-time assert only — no write branch.
+assertLeaseSubstrateGovernance();
 

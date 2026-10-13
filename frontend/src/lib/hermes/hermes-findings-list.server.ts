@@ -14,10 +14,17 @@
  *   rolled_back  → denied
  *   updatedAt / assignedAt from started_at
  *
+ * After loading tenant-scoped executions, this adapter ALSO selects
+ * `cg_mission_lease` where `tenant_id` matches (Zod-validated; timestamptz
+ * Date values coerced to ISO strings) and projects each execution through
+ * `projectExecutionWithLeases`. Empty executions skip the lease query.
+ * Query errors THROW — runtime converts throws to a typed skip; this
+ * adapter does not fake [] and does not invent leases.
+ *
  * The lease-gap honesty filter in the pure module then drops `mission_stuck`
- * on assigned + lease-null rows so a missing lease substrate cannot invent
- * `mission_timeout`. Query errors (including a missing table) THROW —
- * runtime converts throws to a typed skip; this adapter does not fake [].
+ * on assigned + lease-null rows so a missing lease row cannot invent
+ * `mission_timeout`. A projected `stage: "leased"` with expired
+ * `leaseExpiresAt` is a REAL orphan and stays `mission_stuck`.
  *
  * Security: service-role client, tenant-scoped SQL, Zod-validated untrusted
  * rows (fail-closed throw). `cg_verification_result` has no tenant_id — it
@@ -28,6 +35,10 @@
 
 import { z } from "zod";
 import type { MissionExecutionState } from "../missions/mission-execution";
+import {
+  projectExecutionWithLeases,
+  type MissionLeaseProjectionRow,
+} from "../missions/mission-lease-projection";
 import type { HermesWorkerPosture } from "./hermes-contract";
 import type { HermesFindingObservationSource } from "./hermes-finding-observation";
 import { listHermesFindingsFromState } from "./hermes-findings-list";
@@ -62,7 +73,8 @@ type FindingsTable =
   | "cg_execution_record"
   | "cg_verification_result"
   | "cg_worker_definition"
-  | "cg_worker_quarantine";
+  | "cg_worker_quarantine"
+  | "cg_mission_lease";
 
 function loadFailed(table: FindingsTable, error: { message: string }): Error {
   return new Error(`hermes findings load failed for ${table}: ${error.message}`);
@@ -117,6 +129,30 @@ const quarantineRowSchema = z.object({
   state: z.enum(["quarantined", "released"]),
   // Insert writes failure_count; the registry's parse schema omits it.
   failure_count: z.number().int().min(0).max(1_000_000).nullish(),
+});
+
+const isoTimestamp = z
+  .union([z.string().min(1), z.date()])
+  .transform((value) => (value instanceof Date ? value.toISOString() : value));
+
+const isoTimestampNullable = z
+  .union([z.string().min(1), z.date(), z.null()])
+  .transform((value) => (value instanceof Date ? value.toISOString() : value));
+
+const leaseRowSchema = z.object({
+  lease_id: z.string().min(1).max(160),
+  execution_id: z.string().min(1).max(160),
+  tenant_id: z.string().min(1).max(128),
+  mission_id: z.string().min(1).max(160),
+  worker_id: z.string().min(1).max(160),
+  acquired_at: isoTimestamp,
+  heartbeat_at: isoTimestamp,
+  expires_at: isoTimestamp,
+  attempt: z.number().int().min(1),
+  state: z.enum(["active", "released", "recovered"]),
+  outcome: z.enum(["succeeded", "failed"]).nullable(),
+  completed_at: isoTimestampNullable,
+  retry_not_before: isoTimestampNullable,
 });
 
 function parseOrThrow<T extends z.ZodTypeAny>(
@@ -202,12 +238,20 @@ export function createHermesFindingsListPort(client: HermesFindingsListClient): 
         executionFromRow(parseOrThrow("cg_execution_record", executionRowSchema, row)),
       );
 
-      let verificationRecords: { executionId: string; decision: string; reason: string }[] = [];
+      let verificationRecords: {
+        executionId: string;
+        decision: "verified" | "failed" | "inconclusive";
+        reason: string;
+      }[] = [];
+      let projectedExecutions = executions;
       if (executions.length > 0) {
-        const verificationRows = await selectRows("cg_verification_result", [], {
-          column: "execution_id",
-          values: executions.map((execution) => execution.executionId),
-        });
+        const [verificationRows, leaseRows] = await Promise.all([
+          selectRows("cg_verification_result", [], {
+            column: "execution_id",
+            values: executions.map((execution) => execution.executionId),
+          }),
+          selectRows("cg_mission_lease", [["tenant_id", tenantId]]),
+        ]);
         verificationRecords = verificationRows.map((row) => {
           const parsed = parseOrThrow("cg_verification_result", verificationRowSchema, row);
           return {
@@ -216,6 +260,36 @@ export function createHermesFindingsListPort(client: HermesFindingsListClient): 
             reason: parsed.reason,
           };
         });
+        const verificationByExecution = new Map(
+          verificationRecords.map((record) => [record.executionId, record.decision] as const),
+        );
+        const leasesByExecution = new Map<string, MissionLeaseProjectionRow[]>();
+        for (const row of leaseRows) {
+          const parsed = parseOrThrow("cg_mission_lease", leaseRowSchema, row);
+          const list = leasesByExecution.get(parsed.execution_id) ?? [];
+          list.push({
+            leaseId: parsed.lease_id,
+            executionId: parsed.execution_id,
+            tenantId: parsed.tenant_id,
+            workerId: parsed.worker_id,
+            acquiredAt: parsed.acquired_at,
+            heartbeatAt: parsed.heartbeat_at,
+            expiresAt: parsed.expires_at,
+            attempt: parsed.attempt,
+            state: parsed.state,
+            outcome: parsed.outcome,
+            completedAt: parsed.completed_at,
+            retryNotBefore: parsed.retry_not_before,
+          });
+          leasesByExecution.set(parsed.execution_id, list);
+        }
+        projectedExecutions = executions.map((execution) =>
+          projectExecutionWithLeases({
+            base: execution,
+            leases: leasesByExecution.get(execution.executionId) ?? [],
+            verificationDecision: verificationByExecution.get(execution.executionId) ?? null,
+          }),
+        );
       }
 
       const quarantinedByDefinition = new Map<
@@ -247,7 +321,7 @@ export function createHermesFindingsListPort(client: HermesFindingsListClient): 
       return listHermesFindingsFromState({
         tenantId,
         now,
-        executions,
+        executions: projectedExecutions,
         workerPostures,
         verificationRecords,
       });

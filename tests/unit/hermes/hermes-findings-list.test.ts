@@ -186,6 +186,25 @@ function quarantineRow(overrides: Row = {}): Row {
   };
 }
 
+function leaseRow(overrides: Row = {}): Row {
+  return {
+    lease_id: "exec-1:lease:1",
+    execution_id: "exec-1",
+    tenant_id: TENANT,
+    mission_id: "MISSION-exec-1",
+    worker_id: "worker-1",
+    acquired_at: T0,
+    heartbeat_at: T0,
+    expires_at: T0,
+    attempt: 1,
+    state: "active",
+    outcome: null,
+    completed_at: null,
+    retry_not_before: null,
+    ...overrides,
+  };
+}
+
 function port(specs: Record<string, TableSpec> = {}) {
   return createHermesFindingsListPort(fakeSupabaseClient(specs));
 }
@@ -380,6 +399,30 @@ describe("listHermesFindingsFromState — honesty over recorded state", () => {
     expect(findings[0]?.kind).toBe("mission_stuck");
     expect(findings[0]?.findingId).toBe("mission_stuck:exec-leased");
   });
+
+  it("stage leased + expired leaseExpiresAt → mission_stuck KEPT (real orphan, not invented)", () => {
+    const findings = list({
+      executions: [
+        execution({
+          executionId: "exec-orphan-lease",
+          stage: "leased",
+          lastWorkerId: "worker-1",
+          attempt: 1,
+          lease: {
+            leaseId: "exec-orphan-lease:lease:1",
+            workerId: "worker-1",
+            acquiredAt: T0,
+            heartbeatAt: T0,
+            leaseExpiresAt: T0,
+          },
+        }),
+      ],
+    });
+    const stuck = findings.filter((finding) => finding.kind === "mission_stuck");
+    expect(stuck).toHaveLength(1);
+    expect(stuck[0]?.subjectRef).toBe("exec-orphan-lease");
+    expect(stuck[0]?.summary).toMatch(/lease expired/);
+  });
 });
 
 /* ─────────────────────────────────────────────────────────────
@@ -423,6 +466,41 @@ describe("createHermesFindingsListPort — fake client, no live DB", () => {
     }).listHermesFindings({ tenantId: TENANT, now: NOW });
     expect(findings.filter((finding) => finding.kind === "mission_stuck")).toEqual([]);
     expect(findings).toEqual([]);
+  });
+
+  it("fake client: no lease rows → still not stuck", async () => {
+    const findings = await port({
+      cg_execution_record: {
+        rows: [executionRow({ id: "exec-admitted", status: "admitted", started_at: T0 })],
+      },
+      cg_mission_lease: { rows: [] },
+    }).listHermesFindings({ tenantId: TENANT, now: NOW });
+    expect(findings.filter((finding) => finding.kind === "mission_stuck")).toEqual([]);
+    expect(findings).toEqual([]);
+  });
+
+  it("fake client: lease row on admitted execution → leased projection → expired lease yields mission_stuck", async () => {
+    const findings = await port({
+      cg_execution_record: {
+        rows: [executionRow({ id: "exec-leased", status: "admitted", started_at: T0 })],
+      },
+      cg_mission_lease: {
+        rows: [
+          leaseRow({
+            lease_id: "exec-leased:lease:1",
+            execution_id: "exec-leased",
+            mission_id: "MISSION-exec-1",
+            acquired_at: new Date(T0),
+            heartbeat_at: new Date(T0),
+            expires_at: new Date(T0),
+          }),
+        ],
+      },
+    }).listHermesFindings({ tenantId: TENANT, now: NOW });
+    expect(findings).toHaveLength(1);
+    expect(findings[0]?.kind).toBe("mission_stuck");
+    expect(findings[0]?.findingId).toBe("mission_stuck:exec-leased");
+    expect(findings[0]?.summary).toMatch(/lease expired/);
   });
 
   it("failed verification row on a non-stale admitted execution → mission_failed", async () => {
@@ -501,6 +579,9 @@ describe("Hermes findings list — source pins", () => {
     expect(source).not.toMatch(/enterprise-cycle-runtime/);
     expect(source).not.toMatch(/setInterval/);
     expect(source).toMatch(/listHermesFindingsFromState/);
+    expect(source).toMatch(/cg_mission_lease/);
+    expect(source).toMatch(/tenant_id/);
+    expect(source).toMatch(/projectExecutionWithLeases/);
     expect(source).not.toMatch(/from\s+["'][^"']*hermes-cycle["']/);
   });
 
