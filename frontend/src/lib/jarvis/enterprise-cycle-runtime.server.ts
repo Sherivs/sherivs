@@ -22,7 +22,9 @@
  * list port (`createHermesFindingsListPort`): it OBSERVES/ASSESSES only;
  * it does not ACT. This wake lists already-stamped findings; it does not
  * execute Hermes repair as a side effect of Jarvis. Phase 52 is not
- * authorized.
+ * authorized. This wake does not close MISSION_LEASE_SUBSTRATE_GAP, does
+ * not persist leases, does not query cg_mission_lease, and does not apply
+ * the V1-003 unapplied migration.
  *
  * Version-target classification: ACTIVE-V1 (AGENTS.md §45).
  */
@@ -38,6 +40,7 @@ import {
   stampHermesFindings,
   HERMES_FINDING_OBSERVATION_SOURCE,
 } from "@/lib/hermes/hermes-finding-observation";
+import { assertLeaseSubstrateGapRemainsUnauthorized } from "@/lib/missions/lease-substrate-gap-lock";
 import { morningExecutiveReport, runJarvisEnterpriseCycle } from "./enterprise-loop";
 import type { JarvisObservation } from "./enterprise-loop";
 import {
@@ -64,6 +67,8 @@ const HERMES_PORT_MISSING = "hermes observation port not injected";
 const HERMES_FINDINGS_PORT_MISSING = "hermes findings port not injected";
 const HEALTH_OPTED_OUT = "includeProviderHealth=false";
 const HERMES_OPTED_OUT = "includeHermesObservation=false";
+
+assertLeaseSubstrateGapRemainsUnauthorized();
 
 /**
  * Production substrate client: the sanctioned service-role adapter used for

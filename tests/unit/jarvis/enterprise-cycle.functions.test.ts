@@ -558,6 +558,27 @@ describe("§27 server-function invariants — enterprise-cycle.functions.ts", ()
     expect(contract).toMatch(/findingsSkipReason/);
   });
 
+  it("runtime load-time lock: lease-substrate gap remains unauthorized; no lease-db import; no daemon", () => {
+    expect(runtime).toMatch(/assertLeaseSubstrateGapRemainsUnauthorized/);
+    expect(runtime).toMatch(/lease-substrate-gap-lock/);
+    expect(runtime).toMatch(
+      /from\s+["']@\/lib\/missions\/lease-substrate-gap-lock["']/,
+    );
+    expect(runtime).toMatch(/assertLeaseSubstrateGapRemainsUnauthorized\s*\(\s*\)/);
+    const stripped = runtime
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/(^|[^:])\/\/.*$/gm, "$1");
+    expect(stripped).not.toMatch(/mission-lease-db/);
+    expect(stripped).not.toMatch(/createDbMissionLeasePort/);
+    expect(stripped).not.toMatch(/cg_mission_lease/);
+    expect(stripped).not.toMatch(/\brunHermesCycle\b/);
+    expect(stripped).not.toMatch(/from\s+["'][^"']*hermes-cycle["']/);
+    expect(stripped).not.toMatch(/import\(\s*["'][^"']*hermes-cycle["']\s*\)/);
+    expect(stripped).not.toMatch(/\bsetInterval\s*\(/);
+    expect(stripped).not.toMatch(/\bwhile\s*\(\s*true\s*\)/);
+    expect(stripped).not.toMatch(/\bnew\s+Worker\s*\(/);
+  });
+
   it("buildEnterpriseCycleDeps wires production listHermesFindings via hermes-findings-list.server", () => {
     const depsFn = runtime.match(
       /export async function buildEnterpriseCycleDeps[\s\S]*?\nexport interface EnterpriseCycleLibraryResult/,
