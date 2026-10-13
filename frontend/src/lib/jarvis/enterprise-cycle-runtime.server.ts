@@ -22,9 +22,16 @@
  * list port (`createHermesFindingsListPort`): it OBSERVES/ASSESSES only;
  * it does not ACT. This wake lists already-stamped findings; it does not
  * execute Hermes repair as a side effect of Jarvis. Phase 52 is not
- * authorized. This wake does not close MISSION_LEASE_SUBSTRATE_GAP, does
- * not persist leases, does not query cg_mission_lease, and does not apply
- * the V1-003 unapplied migration.
+ * authorized.
+ *
+ * HUMAN AUTHORIZATION 2026-10-13 applied V1-003. This wake OBSERVES applied
+ * leases only through `createHermesFindingsListPort`; it does not persist
+ * leases, does not import mission-lease-db, does not apply migrations
+ * itself, and does not start a daemon. The findings-list `.server` module
+ * does the lease read. This file must NOT import mission-lease-db, must
+ * NOT call `createDbMissionLeasePort`, must NOT query `cg_mission_lease`,
+ * must NOT call `runHermesCycle`, must NOT start a resident process, must
+ * NOT un-freeze Phase 52, and must NOT widen `cg_execution_record.status`.
  *
  * Version-target classification: ACTIVE-V1 (AGENTS.md §45).
  */
@@ -40,7 +47,10 @@ import {
   stampHermesFindings,
   HERMES_FINDING_OBSERVATION_SOURCE,
 } from "@/lib/hermes/hermes-finding-observation";
-import { assertLeaseSubstrateGapRemainsUnauthorized } from "@/lib/missions/lease-substrate-gap-lock";
+import {
+  assertLeaseSubstrateGovernance,
+  assertLeaseSubstrateGapRemainsUnauthorized,
+} from "@/lib/missions/lease-substrate-gap-lock";
 import { morningExecutiveReport, runJarvisEnterpriseCycle } from "./enterprise-loop";
 import type { JarvisObservation } from "./enterprise-loop";
 import {
@@ -68,6 +78,7 @@ const HERMES_FINDINGS_PORT_MISSING = "hermes findings port not injected";
 const HEALTH_OPTED_OUT = "includeProviderHealth=false";
 const HERMES_OPTED_OUT = "includeHermesObservation=false";
 
+assertLeaseSubstrateGovernance();
 assertLeaseSubstrateGapRemainsUnauthorized();
 
 /**
@@ -99,8 +110,10 @@ export type EnterpriseCycleAdminClient = WriteAuditClient & {
  * ports are dynamic-imported HERE (never from the functions module) so the
  * client graph cannot reach them. Production `listHermesFindings` wires
  * `createHermesFindingsListPort` over the sanctioned admin client: it
- * OBSERVES/ASSESSES only and does not ACT. Tests may still inject a stub.
- * Missing/throwing port remains a typed skip in `runEnterpriseCycleLibrary`.
+ * OBSERVES applied leases (and other already-recorded findings) and
+ * ASSESSES only; it does not ACT, persist leases, or import mission-lease-db.
+ * Tests may still inject a stub. Missing/throwing port remains a typed skip
+ * in `runEnterpriseCycleLibrary`.
  */
 export async function buildEnterpriseCycleDeps(input: {
   admin: EnterpriseCycleAdminClient;

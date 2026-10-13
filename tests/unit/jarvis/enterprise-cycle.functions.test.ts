@@ -509,6 +509,9 @@ describe("§27 server-function invariants — enterprise-cycle.functions.ts", ()
   const src = readFileSync(FAMILY_SRC, "utf8");
   const runtime = readFileSync(RUNTIME_SRC, "utf8");
   const contract = readFileSync(CONTRACT_SRC, "utf8");
+  const strippedRuntime = runtime
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/(^|[^:])\/\/.*$/gm, "$1");
 
   it("1 AUTHENTICATE: requireSupabaseAuth middleware on the server function", () => {
     expect(src).toMatch(/\.middleware\(\[\s*requireSupabaseAuth\s*\]\)/);
@@ -540,43 +543,47 @@ describe("§27 server-function invariants — enterprise-cycle.functions.ts", ()
     expect(runtime).toMatch(/runHermesEventObservationStep/);
     expect(runtime).toMatch(/stampHermesFindings/);
     expect(runtime).toMatch(/hermes-finding-observation/);
-    expect(runtime).not.toMatch(/\brunHermesCycle\b/);
+    expect(strippedRuntime).not.toMatch(/\brunHermesCycle\b/);
     expect(src).toMatch(/runJarvisEnterpriseCycleWake/);
   });
 
   it("runtime imports stampHermesFindings; no runHermesCycle call; no setInterval", () => {
     expect(runtime).toMatch(/stampHermesFindings/);
     expect(runtime).toMatch(/from\s+["']@\/lib\/hermes\/hermes-finding-observation["']/);
-    expect(runtime).not.toMatch(/\brunHermesCycle\b/);
-    expect(runtime).not.toMatch(/from\s+["'][^"']*hermes-cycle["']/);
-    expect(runtime).not.toMatch(/\bsetInterval\s*\(/);
-    expect(runtime).not.toMatch(/\bwhile\s*\(\s*true\s*\)/);
-    expect(runtime).not.toMatch(/\bnew\s+Worker\s*\(/);
+    expect(strippedRuntime).not.toMatch(/\brunHermesCycle\b/);
+    expect(strippedRuntime).not.toMatch(/from\s+["'][^"']*hermes-cycle["']/);
+    expect(strippedRuntime).not.toMatch(/\bsetInterval\s*\(/);
+    expect(strippedRuntime).not.toMatch(/\bwhile\s*\(\s*true\s*\)/);
+    expect(strippedRuntime).not.toMatch(/\bnew\s+Worker\s*\(/);
     expect(contract).toMatch(/listHermesFindings/);
     expect(contract).toMatch(/HermesFindingObservationSource/);
     expect(contract).toMatch(/findingsStamped/);
     expect(contract).toMatch(/findingsSkipReason/);
   });
 
-  it("runtime load-time lock: lease-substrate gap remains unauthorized; no lease-db import; no daemon", () => {
-    expect(runtime).toMatch(/assertLeaseSubstrateGapRemainsUnauthorized/);
+  it("runtime load-time lock: lease-substrate governance (observe applied leases); no lease-db import; no daemon", () => {
     expect(runtime).toMatch(/lease-substrate-gap-lock/);
     expect(runtime).toMatch(
       /from\s+["']@\/lib\/missions\/lease-substrate-gap-lock["']/,
     );
-    expect(runtime).toMatch(/assertLeaseSubstrateGapRemainsUnauthorized\s*\(\s*\)/);
-    const stripped = runtime
-      .replace(/\/\*[\s\S]*?\*\//g, "")
-      .replace(/(^|[^:])\/\/.*$/gm, "$1");
-    expect(stripped).not.toMatch(/mission-lease-db/);
-    expect(stripped).not.toMatch(/createDbMissionLeasePort/);
-    expect(stripped).not.toMatch(/cg_mission_lease/);
-    expect(stripped).not.toMatch(/\brunHermesCycle\b/);
-    expect(stripped).not.toMatch(/from\s+["'][^"']*hermes-cycle["']/);
-    expect(stripped).not.toMatch(/import\(\s*["'][^"']*hermes-cycle["']\s*\)/);
-    expect(stripped).not.toMatch(/\bsetInterval\s*\(/);
-    expect(stripped).not.toMatch(/\bwhile\s*\(\s*true\s*\)/);
-    expect(stripped).not.toMatch(/\bnew\s+Worker\s*\(/);
+    expect(runtime).toMatch(/assertLeaseSubstrateGovernance/);
+    expect(runtime).toMatch(/assertLeaseSubstrateGovernance\s*\(\s*\)/);
+    // Dual asserts are OK while the old widen/implementation guard remains exported.
+    const hasGovernance = /assertLeaseSubstrateGovernance\s*\(\s*\)/.test(strippedRuntime);
+    const hasWidenGuard = /assertLeaseSubstrateGapRemainsUnauthorized\s*\(\s*\)/.test(
+      strippedRuntime,
+    );
+    expect(hasGovernance).toBe(true);
+    expect(hasGovernance && hasWidenGuard).toBe(true);
+    expect(strippedRuntime).not.toMatch(/mission-lease-db/);
+    expect(strippedRuntime).not.toMatch(/createDbMissionLeasePort/);
+    expect(strippedRuntime).not.toMatch(/cg_mission_lease/);
+    expect(strippedRuntime).not.toMatch(/\brunHermesCycle\b/);
+    expect(strippedRuntime).not.toMatch(/from\s+["'][^"']*hermes-cycle["']/);
+    expect(strippedRuntime).not.toMatch(/import\(\s*["'][^"']*hermes-cycle["']\s*\)/);
+    expect(strippedRuntime).not.toMatch(/\bsetInterval\s*\(/);
+    expect(strippedRuntime).not.toMatch(/\bwhile\s*\(\s*true\s*\)/);
+    expect(strippedRuntime).not.toMatch(/\bnew\s+Worker\s*\(/);
   });
 
   it("buildEnterpriseCycleDeps wires production listHermesFindings via hermes-findings-list.server", () => {
@@ -592,9 +599,9 @@ describe("§27 server-function invariants — enterprise-cycle.functions.ts", ()
       /await import\(\s*["']@\/lib\/hermes\/hermes-findings-list\.server["']\s*\)/,
     );
     expect(runtime).not.toMatch(/^import\s+(?!type\b).*hermes-findings-list\.server/m);
-    expect(runtime).not.toMatch(/\brunHermesCycle\b/);
-    expect(runtime).not.toMatch(/from\s+["'][^"']*hermes-cycle["']/);
-    expect(runtime).not.toMatch(/import\(\s*["'][^"']*hermes-cycle["']\s*\)/);
+    expect(strippedRuntime).not.toMatch(/\brunHermesCycle\b/);
+    expect(strippedRuntime).not.toMatch(/from\s+["'][^"']*hermes-cycle["']/);
+    expect(strippedRuntime).not.toMatch(/import\(\s*["'][^"']*hermes-cycle["']\s*\)/);
     expect(contract).toMatch(/createHermesFindingsListPort/);
     for (const pattern of RESIDENT_PROCESS) {
       expect(body).not.toMatch(pattern);
