@@ -2,10 +2,7 @@ import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useApp } from "@/contexts/app-context";
 import { PublicSchoolSite } from "@/components/public/site";
-import {
-  SherivsPublicChrome,
-  SherivsPublicHome,
-} from "@/components/public/sherivs-public-home";
+import { SherivsPublicChrome, SherivsPublicHome } from "@/components/public/sherivs-public-home";
 import { PLATFORM_PAGE_DESCRIPTION, PLATFORM_PAGE_TITLE } from "@/lib/platform";
 import { resolveIdentityGateway } from "@/lib/identity/identity-gateway";
 import {
@@ -157,7 +154,11 @@ function Index() {
   }
 
   if (school && (role || superAdmin)) {
-    return <div className="min-h-dvh grid place-items-center text-muted-foreground">Opening workspace…</div>;
+    return (
+      <div className="min-h-dvh grid place-items-center text-muted-foreground">
+        Opening workspace…
+      </div>
+    );
   }
 
   return (

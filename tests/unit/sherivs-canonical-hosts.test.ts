@@ -21,7 +21,11 @@ import {
 } from "@/lib/experience/experience-host";
 import { resolveIdentityGateway } from "@/lib/identity/identity-gateway";
 import { tenantSlugFromHostname } from "@/lib/tenant";
-import { PLATFORM_OG_IMAGE_PATH, PLATFORM_OG_IMAGE_URL, PLATFORM_PUBLIC_ORIGIN } from "@/lib/platform";
+import {
+  PLATFORM_OG_IMAGE_PATH,
+  PLATFORM_OG_IMAGE_URL,
+  PLATFORM_PUBLIC_ORIGIN,
+} from "@/lib/platform";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const read = (ref: string) => readFileSync(join(ROOT, ref), "utf8");
