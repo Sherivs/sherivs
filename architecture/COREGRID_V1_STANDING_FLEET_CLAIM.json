@@ -1,0 +1,35 @@
+{
+  "artifact": "COREGRID_V1_STANDING_FLEET_CLAIM",
+  "status": "CLAIMED",
+  "captured": "2026-10-13",
+  "updated": "2026-10-13",
+  "versionTarget": "ACTIVE-V1",
+  "STANDING_FLEET_CLAIM_AUTHORIZED": true,
+  "STANDING_FLEET_CLAIMED": true,
+  "computeModel": "ephemeral_cycle",
+  "identityStatus": "standing_identity_claimed",
+  "processStatus": "no_standing_process",
+  "concurrentStandingProcesses": 0,
+  "humanAuthorization": "Claim all the standing fleet of the agents, Implement the phase 52 engines and keep the V2/ V3 frozen.",
+  "humanAuthorizationAt": "2026-10-13",
+  "rule": "Persistent identity does not require persistent compute. Standing fleet is standing identity: ACTIVE-V1 workers are claimed; leases stay ephemeral_cycle; concurrent standing processes remain 0. Frozen workers are not claimed.",
+  "claimedFrom": "frontend/src/lib/workforce/v1-workforce-lock.ts ACTIVE-V1 attach/create workers",
+  "executableLock": "frontend/src/lib/workforce/standing-fleet-claim.ts",
+  "workforceLock": "frontend/src/lib/workforce/v1-workforce-lock.ts",
+  "expectedClaimedCount": 58,
+  "expectedFrozenUnclaimedCount": 6,
+  "frozenUnclaimedWorkerIds": [
+    "sdk_engineer",
+    "ml_engineer",
+    "knowledge_engineer",
+    "intelligence_research_agent",
+    "growth_intelligence_agent",
+    "customer_success_agent"
+  ],
+  "notDone": [
+    "No concurrent standing processes",
+    "Frozen workers remain unclaimed and not activatable",
+    "V2/V3 remain frozen",
+    "Libraries remain WAKE/SLEEP and are not god-agents"
+  ]
+}
