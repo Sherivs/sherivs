@@ -131,13 +131,23 @@ See §21. Unit tests for gateway + public site are the verification for M0–M4.
 
 ## 21. Testing
 
-| Suite | Status |
+**VERIFIED** (vitest, this slice):
+
+| Suite | Result |
 |-------|--------|
-| `tests/unit/identity-gateway.test.ts` | ADDED — run in this PR |
-| `tests/unit/identity-gateway-invariants.test.ts` | ADDED — run in this PR |
-| `tests/unit/site-marketing.test.ts` | UPDATED — run in this PR |
-| E2E login → workspace | NOT RUN this slice |
-| RLS / tenant isolation | UNCHANGED prior suite |
+| `tests/unit/identity-gateway.test.ts` | 8 passed |
+| `tests/unit/identity-gateway-invariants.test.ts` | 3 passed |
+| `tests/unit/site-marketing.test.ts` | 16 passed |
+| `tests/unit/platform-neutrality.test.ts` | 49 passed (after gateway comment rewrite so it does not narrate Scholar as the platform) |
+| `tests/unit/roles.test.ts` | 12 passed |
+| `tests/unit/pwa-offline-shell.test.ts` | 13 passed |
+| `tests/unit/scholar-runtime-waves.test.ts` | 15 passed |
+| `tests/unit/scholar-vertical-bindings.test.ts` | 19 passed |
+| `tests/unit/command-centre-contract-governance.test.ts` | 10 passed |
+| `tests/unit/marketplace-surface.test.ts` | 9 passed |
+
+E2E login → workspace: **NOT RUN** this slice (no production/demo credentials in this environment).
+RLS / tenant isolation: unchanged prior suite.
 
 ## 22. Performance
 
@@ -212,7 +222,9 @@ V1 still missing for a coherent launch (not claimed done):
 
 ## 31. Git commits
 
-Recorded after commit on this branch. Ancestor already contains Jarvis standing-fleet + Phase 52 V1 engines (`d4e3fcc`, `19ea488`, `5f02e31`).
+- `77fd5e0` Lock Sherivs experience planes and stop Scholar-first login.
+- Follow-up commit(s) on this branch for neutrality fix + verification notes.
+- Ancestors: Jarvis standing-fleet + Phase 52 V1 engines (`d4e3fcc`, `19ea488`, `5f02e31`).
 
 ## 32. Deployment identifiers
 

@@ -4,8 +4,8 @@
  * Authentication is not routing. After a session exists, this module resolves:
  *   identity → membership → organization → runtime → experience plane → destination
  *
- * LOGIN → Scholar is forbidden unless the resolved organization actually has
- * the Scholar runtime and the actor holds a Scholar membership role.
+ * LOGIN must not open an education workspace unless the resolved organization
+ * actually has that installed runtime and the actor holds a matching membership role.
  *
  * Super-admins route to the Sherivs internal workspace (Plane D), never a
  * school portal. Unlinked identities stay on the auth surface.
@@ -67,8 +67,8 @@ function isScholarMemberRole(role: AppRole | null): role is AppRole {
 }
 
 /**
- * Resolve the post-auth (or public) destination. Never returns a Scholar
- * workspace unless runtime + membership both resolve to Scholar.
+ * Resolve the post-auth (or public) destination. Never returns an education
+ * workspace unless installed-runtime id and membership both resolve to it.
  */
 export function resolveIdentityGateway(input: IdentityGatewayInput): IdentityGatewayDecision {
   if (!input.authenticated) {
