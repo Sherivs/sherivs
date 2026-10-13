@@ -11,7 +11,7 @@ export const Route = createFileRoute("/platform")({
   component: Platform,
   head: () => ({
     meta: [
-      { title: "CoreGrid — the platform that powers any organization" },
+      { title: "Sherivs — the platform that powers any organization" },
       {
         name: "description",
         content:
@@ -47,10 +47,10 @@ function Platform() {
     <div className="min-h-screen bg-[color:var(--background)] text-[color:var(--foreground)]">
       <header className="border-b border-border">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4">
-          <div className="font-display text-lg font-bold">CoreGrid</div>
+          <div className="font-display text-lg font-bold">Sherivs</div>
           <nav className="flex items-center gap-4 text-sm">
             <Link to="/" className="text-muted-foreground hover:text-foreground">
-              Command Centre
+              Home
             </Link>
             <a href="/auth" className="text-muted-foreground hover:text-foreground">
               Sign in
@@ -65,8 +65,8 @@ function Platform() {
             One platform. Every organization. Their rules.
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-            CoreGrid is a governed intelligence platform. Whatever an organization runs — a school,
-            a ministry, a company — CoreGrid adapts: identity and tenancy first, then the workspace
+            Sherivs is a governed intelligence platform. Whatever an organization runs — a school,
+            a ministry, a company — Sherivs adapts: identity and tenancy first, then the workspace
             and domain surfaces the organization actually uses. Nothing is forced on anyone.
           </p>
         </section>
@@ -232,7 +232,7 @@ function Platform() {
       </main>
 
       <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
-        CoreGrid · governed intelligence platform · every runtime is a tenant of the kernel, never
+        Sherivs · governed intelligence platform · every runtime is a tenant of the kernel, never
         its owner.
       </footer>
     </div>

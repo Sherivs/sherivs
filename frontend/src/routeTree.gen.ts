@@ -18,6 +18,7 @@ import { Route as BlogRouteImport } from './routes/blog'
 import { Route as FoundationLoopRouteImport } from './routes/foundation-loop'
 import { Route as HealthDotjsonRouteImport } from './routes/health[.]json'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as SigninRouteImport } from './routes/signin'
 import { Route as ManifestDotwebmanifestRouteImport } from './routes/manifest[.]webmanifest'
 import { Route as MarketplaceRouteImport } from './routes/marketplace'
 import { Route as PlatformRouteImport } from './routes/platform'
@@ -209,6 +210,11 @@ const HealthDotjsonRoute = HealthDotjsonRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SigninRoute = SigninRouteImport.update({
+  id: '/signin',
+  path: '/signin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ManifestDotwebmanifestRoute = ManifestDotwebmanifestRouteImport.update({
@@ -1084,6 +1090,7 @@ export interface FileRoutesByFullPath {
   '/foundation-loop': typeof FoundationLoopRoute
   '/health.json': typeof HealthDotjsonRoute
   '/login': typeof LoginRoute
+  '/signin': typeof SigninRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
   '/marketplace': typeof MarketplaceRoute
   '/platform': typeof PlatformRouteWithChildren
@@ -1242,6 +1249,7 @@ export interface FileRoutesByTo {
   '/foundation-loop': typeof FoundationLoopRoute
   '/health.json': typeof HealthDotjsonRoute
   '/login': typeof LoginRoute
+  '/signin': typeof SigninRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
   '/marketplace': typeof MarketplaceRoute
   '/platform': typeof PlatformRouteWithChildren
@@ -1402,6 +1410,7 @@ export interface FileRoutesById {
   '/foundation-loop': typeof FoundationLoopRoute
   '/health.json': typeof HealthDotjsonRoute
   '/login': typeof LoginRoute
+  '/signin': typeof SigninRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
   '/marketplace': typeof MarketplaceRoute
   '/platform': typeof PlatformRouteWithChildren
@@ -1562,6 +1571,7 @@ export interface FileRouteTypes {
     | '/foundation-loop'
     | '/health.json'
     | '/login'
+    | '/signin'
     | '/manifest.webmanifest'
     | '/marketplace'
     | '/platform'
@@ -1720,6 +1730,7 @@ export interface FileRouteTypes {
     | '/foundation-loop'
     | '/health.json'
     | '/login'
+    | '/signin'
     | '/manifest.webmanifest'
     | '/marketplace'
     | '/platform'
@@ -1879,6 +1890,7 @@ export interface FileRouteTypes {
     | '/foundation-loop'
     | '/health.json'
     | '/login'
+    | '/signin'
     | '/manifest.webmanifest'
     | '/marketplace'
     | '/platform'
@@ -2040,6 +2052,7 @@ export interface RootRouteChildren {
   FoundationLoopRoute: typeof FoundationLoopRoute
   HealthDotjsonRoute: typeof HealthDotjsonRoute
   LoginRoute: typeof LoginRoute
+  SigninRoute: typeof SigninRoute
   ManifestDotwebmanifestRoute: typeof ManifestDotwebmanifestRoute
   MarketplaceRoute: typeof MarketplaceRoute
   PlatformRoute: typeof PlatformRouteWithChildren
@@ -2119,6 +2132,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signin': {
+      id: '/signin'
+      path: '/signin'
+      fullPath: '/signin'
+      preLoaderRoute: typeof SigninRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/manifest.webmanifest': {
@@ -3622,6 +3642,7 @@ const rootRouteChildren: RootRouteChildren = {
   FoundationLoopRoute: FoundationLoopRoute,
   HealthDotjsonRoute: HealthDotjsonRoute,
   LoginRoute: LoginRoute,
+  SigninRoute: SigninRoute,
   ManifestDotwebmanifestRoute: ManifestDotwebmanifestRoute,
   MarketplaceRoute: MarketplaceRoute,
   PlatformRoute: PlatformRouteWithChildren,

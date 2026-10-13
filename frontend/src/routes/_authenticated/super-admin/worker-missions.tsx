@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/super-admin/worker-mission
   component: WorkerMissionsPage,
   head: () => ({
     meta: [
-      { title: "CoreGrid — Worker mission launch" },
+      { title: "Sherivs — Worker mission launch" },
       {
         name: "description",
         content:

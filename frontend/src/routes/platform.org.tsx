@@ -1,7 +1,7 @@
 /**
- * CoreGrid internal operating workspace surface (WAVE-R41).
+ * Sherivs internal operating workspace surface (WAVE-R41).
  *
- * Renders the PLATFORM organization — the departments CoreGrid staffs, the roles
+ * Renders the PLATFORM organization — the departments Sherivs staffs, the roles
  * that staff them and the widgets each department renders. It is generated from
  * the COREGRID_INTERNAL role groups by the platform-org engine: this page lists
  * what the engine produced, and shows the structural audit that must be empty.
@@ -23,11 +23,11 @@ export const Route = createFileRoute("/platform/org")({
   component: PlatformOrganization,
   head: () => ({
     meta: [
-      { title: "CoreGrid internal operating workspace — generated organization" },
+      { title: "Sherivs internal operating workspace — generated organization" },
       {
         name: "description",
         content:
-          "The CoreGrid platform organization: departments, the roles that staff them and the widgets each department renders — generated from the role engine, audited on every render.",
+          "The Sherivs platform organization: departments, the roles that staff them and the widgets each department renders — generated from the role engine, audited on every render.",
       },
     ],
   }),
@@ -43,7 +43,7 @@ function PlatformOrganization() {
       <header className="border-b border-border">
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="font-display text-lg font-bold">CoreGrid organization</p>
+            <p className="font-display text-lg font-bold">Sherivs organization</p>
             <p className="text-[11px] uppercase tracking-widest text-muted-foreground">
               internal operating workspace · generated from role data
             </p>
@@ -164,7 +164,7 @@ function PlatformOrganization() {
         </section>
 
         <p className="text-[11px] text-muted-foreground">
-          Every department renders in the CoreGrid internal workspace and is audited above on every
+          Every department renders in the Sherivs internal workspace and is audited above on every
           render. Departments are provisioned from role data, never configured by hand.
         </p>
       </main>

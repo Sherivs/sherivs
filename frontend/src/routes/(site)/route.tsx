@@ -2,13 +2,11 @@ import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { PLATFORM_NAME, PLATFORM_TAGLINE } from "@/lib/platform";
 
 /**
- * CoreGrid platform public site — pathless layout group `(site)`.
+ * Sherivs platform public site — pathless layout group `(site)`.
  *
- * Presents the platform itself to visitors: what CoreGrid is, its
- * capabilities, security posture, pricing, and real routes into the product
- * (sign up / sign in at /auth). Presentation only — no tenant context, no
- * database reads, no fake submissions; every interactive element links to a
- * real route.
+ * LEGACY wrapper around `/coregrid`. Canonical Plane A home is `/`.
+ * Presentation only — no tenant context, no database reads, no fake
+ * submissions; every interactive element links to a real route.
  */
 
 export const Route = createFileRoute("/(site)")({

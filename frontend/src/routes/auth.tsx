@@ -3,9 +3,9 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
-import { scholarWorkspaceHome } from "@/lib/runtime/nav-registry";
 import { PLATFORM_NAME } from "@/lib/platform";
-import { INSTALLED_RUNTIME_NAME as SCHOLAR_RUNTIME_NAME } from "@/lib/runtime/installed-runtimes";
+import { resolveIdentityGateway } from "@/lib/identity/identity-gateway";
+import { INSTALLED_RUNTIME_ID } from "@/lib/runtime/installed-runtimes";
 import { provisionDemoEnterprise } from "@/lib/runtime/scholar/demo-provision.functions";
 
 export const Route = createFileRoute("/auth")({
@@ -17,7 +17,7 @@ type Mode = "signin" | "signup" | "forgot";
 
 function AuthPage() {
   const navigate = useNavigate();
-  const { loading, role, refresh, school, tenantSlug } = useApp();
+  const { loading, role, refresh, school, tenantSlug, profile, superAdmin, session } = useApp();
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,12 +47,20 @@ function AuthPage() {
     }
   }
 
-  // If already signed in, redirect to the right dashboard
   useEffect(() => {
-    if (!loading && role) {
-      navigate({ to: scholarWorkspaceHome(role), replace: true });
+    if (loading) return;
+    const decision = resolveIdentityGateway({
+      authenticated: Boolean(session),
+      role,
+      superAdmin: Boolean(superAdmin),
+      tenantSlug,
+      hasOrganizationMembership: Boolean(profile && role),
+      installedRuntimeId: INSTALLED_RUNTIME_ID,
+    });
+    if (decision.destination && decision.destination !== "/auth") {
+      navigate({ to: decision.destination, replace: true });
     }
-  }, [loading, role, navigate]);
+  }, [loading, session, role, superAdmin, profile, tenantSlug, navigate]);
 
   function reset() {
     setError(null);
@@ -116,7 +124,7 @@ function AuthPage() {
         });
         if (error) throw error;
         setInfo(
-          "Account created. A school admin must link your account to a school before you can access a portal.",
+          "Account created. An organization administrator must link your account before you can open a workspace.",
         );
       } else {
         // forgot password — call audit FIRST so the server can enforce rate-limit.
@@ -185,7 +193,9 @@ function AuthPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             {mode === "forgot"
               ? "Enter the email tied to your account and we'll send you a reset link."
-              : `${PLATFORM_NAME} portal access — ${SCHOLAR_RUNTIME_NAME} runtime`}
+              : school
+                ? `Sign in to ${school.name}`
+                : `${PLATFORM_NAME} identity gateway`}
           </p>
         </div>
 
@@ -272,8 +282,8 @@ function AuthPage() {
               <span>★</span> Enterprise demo
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              One click provisions an Enterprise-tier school so every locked feature (Expenses,
-              Digital Twin, CoreGrid Intelligence, etc.) unlocks.
+              One click provisions an Enterprise-tier organization so every locked feature (Expenses,
+              Digital Twin, Sherivs Intelligence, etc.) unlocks.
             </p>
             <button
               type="button"

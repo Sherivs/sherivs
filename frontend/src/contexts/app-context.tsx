@@ -3,7 +3,8 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveTenantSlug } from "@/lib/tenant";
 import { type AppRole } from "@/lib/roles";
-import { scholarWorkspaceHome } from "@/lib/runtime/nav-registry";
+import { resolveIdentityGateway } from "@/lib/identity/identity-gateway";
+import { INSTALLED_RUNTIME_ID } from "@/lib/runtime/installed-runtimes";
 
 /**
  * UserProfile = row from public.users (tenant member).
@@ -175,8 +176,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
           // Role or school changed → reload profile and bounce to the right dashboard
           if (next.role !== profile.role || next.school_id !== profile.school_id) {
             void load(session).then(() => {
-              if (typeof window !== "undefined" && next.role) {
-                window.location.assign(scholarWorkspaceHome(next.role as AppRole));
+              if (typeof window === "undefined" || !next.role) return;
+              const decision = resolveIdentityGateway({
+                authenticated: true,
+                role: next.role as AppRole,
+                superAdmin: false,
+                tenantSlug: tenantSlug,
+                hasOrganizationMembership: true,
+                installedRuntimeId: INSTALLED_RUNTIME_ID,
+              });
+              if (decision.destination) {
+                window.location.assign(decision.destination);
               }
             });
           }

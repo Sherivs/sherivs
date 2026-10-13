@@ -24,7 +24,7 @@ import {
  */
 export const Route = createFileRoute("/_authenticated/super-admin/workspace-projection")({
   component: WorkspaceProjectionPage,
-  head: () => ({ meta: [{ title: "Workspace projection — CoreGrid" }] }),
+  head: () => ({ meta: [{ title: "Workspace projection — Sherivs" }] }),
 });
 
 function WorkspaceProjectionPage() {

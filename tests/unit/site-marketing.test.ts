@@ -1,5 +1,5 @@
 /**
- * CoreGrid — V1-007 platform public site (`(site)` route group) tests.
+ * Sherivs — V1-007 platform public site (`(site)` route group) tests.
  *
  * The vitest environment here is `node` (no jsdom/RTL in this repository), so
  * route surfaces are validated the way existing structural tests validate
@@ -29,6 +29,7 @@ const read = (ref: string) => readFileSync(join(ROOT, ref), "utf8");
 
 const SITE_LAYOUT = "frontend/src/routes/(site)/route.tsx";
 const SITE_PAGE = "frontend/src/routes/(site)/coregrid.tsx";
+const PUBLIC_HOME = "frontend/src/components/public/sherivs-public-home.tsx";
 
 describe("Pricing tier catalog (typed module)", () => {
   it("exposes the five commercial tiers by stable id", () => {
@@ -110,6 +111,7 @@ describe("Site content view-models", () => {
 describe("Route modules — real links, no fake submissions, landmarks", () => {
   const layout = read(SITE_LAYOUT);
   const page = read(SITE_PAGE);
+  const home = read(PUBLIC_HOME);
 
   it("registers the (site) layout group and the /coregrid page in the generated tree", () => {
     const tree = read("frontend/src/routeTree.gen.ts");
@@ -123,16 +125,14 @@ describe("Route modules — real links, no fake submissions, landmarks", () => {
   });
 
   it("links sign-up and sign-in to the real auth surface at /auth", () => {
-    for (const source of [layout, page]) {
-      expect(source).toContain('to="/auth"');
-    }
-    // No dead platform sign-up route is invented.
+    expect(layout).toContain('to="/auth"');
+    expect(home).toContain('to="/auth"');
     expect(layout).not.toContain('to="/signup"');
     expect(page).not.toContain('to="/signup"');
   });
 
   it("contains no form and no fake submission — every CTA is a route link", () => {
-    for (const source of [layout, page]) {
+    for (const source of [layout, page, home]) {
       expect(source).not.toMatch(/<form\b/);
       expect(source).not.toMatch(/onSubmit/);
       expect(source).not.toMatch(/<button\b/);
@@ -145,22 +145,23 @@ describe("Route modules — real links, no fake submissions, landmarks", () => {
     expect(layout).toContain("<footer");
     expect(layout).toMatch(/aria-label="Site"/);
     for (const anchor of ["capabilities", "runtimes", "security", "pricing"]) {
-      expect(page).toContain(`id="${anchor}"`);
+      expect(home).toContain(`id="${anchor}"`);
       expect(layout).toContain(`"/coregrid#${anchor}"`);
     }
   });
 
   it("keeps every heading labelled for assistive technology", () => {
-    expect(page).toMatch(/aria-labelledby="coregrid-hero"/);
+    expect(home).toMatch(/aria-labelledby="sherivs-hero"/);
     for (const anchor of ["capabilities", "runtimes", "security", "pricing"]) {
-      expect(page).toMatch(new RegExp(`aria-labelledby="${anchor}-heading"`));
-      expect(page).toContain(`id="${anchor}-heading"`);
+      expect(home).toMatch(new RegExp(`aria-labelledby="${anchor}-heading"`));
+      expect(home).toContain(`id="${anchor}-heading"`);
     }
   });
 
   it("uses no raster images, so no missing alt text is possible", () => {
     expect(layout).not.toMatch(/<img\b/);
     expect(page).not.toMatch(/<img\b/);
+    expect(home).not.toMatch(/<img\b/);
   });
 });
 
@@ -169,9 +170,12 @@ describe("Platform narration neutrality (LAW 3 / LAW 5)", () => {
     /CoreGrid Scholar|Scholar's|Scholar is|Scholar consumes|Scholar binds|Scholar resolves|Scholar remains|Scholar-only|Scholar-flavored|Scholar catalog|Scholar runtime \(runtime-001\)/;
   const SELF_IDENTIFICATION = /^\s*(?:\/\*|\*|\/\/)\s*CoreGrid Scholar\b/m;
 
-  const sources = ["-content/pricing-tiers.ts", "-content/site-content.ts", "route.tsx", "coregrid.tsx"].map(
-    (ref) => read(`frontend/src/routes/(site)/${ref}`),
-  );
+  const sources = [
+    ...["-content/pricing-tiers.ts", "-content/site-content.ts", "route.tsx", "coregrid.tsx"].map(
+      (ref) => read(`frontend/src/routes/(site)/${ref}`),
+    ),
+    read(PUBLIC_HOME),
+  ];
 
   it("never narrates a runtime as the platform", () => {
     for (const source of sources) {

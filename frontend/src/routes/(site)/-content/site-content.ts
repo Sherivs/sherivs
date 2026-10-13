@@ -1,5 +1,5 @@
 /**
- * CoreGrid platform public site — marketing content view-models.
+ * Sherivs platform public site — marketing content view-models.
  *
  * Presentation-only copy for the (site) public route group. Every string here
  * is static marketing presentation: no backend call, no form, no fake state.
@@ -112,7 +112,7 @@ export const SECURITY_GUARANTEES: readonly GovernanceGuarantee[] = [
 
 /**
  * Domain runtimes installed on the kernel, as the public site presents them.
- * A runtime is an application installed on CoreGrid — a consumer of the
+ * A runtime is an application installed on Sherivs — a consumer of the
  * platform, never its identity.
  */
 export const INSTALLED_RUNTIME_PROOFS: readonly RuntimeProof[] = [

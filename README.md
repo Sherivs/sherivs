@@ -1,18 +1,18 @@
-CoreGrid
-AI-Native Institutional Computing Platform
-CoreGrid is an AI-native institutional computing platform designed to represent reality, understand complex organizations, coordinate intelligence, execute workflows, operate autonomous agents, simulate change, and continuously evolve across domains.
-CoreGrid is not fundamentally a school application.
-It is a programmable institutional intelligence runtime.
-The platform provides universal computational infrastructure from which domain-specific realities, organizations, workflows, intelligence systems, agents, and applications can be instantiated.
+Sherivs
+Institutional Intelligence Infrastructure
+Sherivs is Institutional Intelligence Infrastructure: a persistent, machine-readable model of organizational reality that lets humans and AI workers understand, coordinate, execute, verify, and continuously improve that reality under explicit authority.
+Sherivs is not a school application.
+Sherivs Scholar is the first domain runtime. It is not the definition of Sherivs.
+CoreGrid remains a LEGACY internal architecture identifier in migrations, packages, and historical records. It must not appear in new customer-facing copy.
 text
-COREGRID
+SHERIVS
                                   │
-              AI-NATIVE INSTITUTIONAL COMPUTING PLATFORM
+         INSTITUTIONAL INTELLIGENCE INFRASTRUCTURE
                                   │
           ┌───────────────────────┼───────────────────────┐
           │                       │                       │
           ▼                       ▼                       ▼
-   COREGRID SCHOLAR        ENTERPRISE RUNTIME       FUTURE DOMAINS
+   SHERIVS SCHOLAR         ENTERPRISE RUNTIME       FUTURE DOMAINS
    EDUCATION RUNTIME        BUSINESS RUNTIME        HEALTHCARE
                                                      GOVERNMENT
                                                      FINANCE
@@ -21,8 +21,8 @@ COREGRID
                                                      SCIENCE
                                                      INFRASTRUCTURE
 
-CoreGrid Scholar is the first major production runtime built on CoreGrid.
-It is not the architectural boundary of CoreGrid.
+Sherivs Scholar is the first major production runtime built on Sherivs.
+It is not the architectural boundary of Sherivs.
 
 ───
 

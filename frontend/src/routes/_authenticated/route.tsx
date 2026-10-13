@@ -92,9 +92,9 @@ function AuthenticatedLayout() {
         <div className="max-w-md uos-card p-8 text-center">
           <h1 className="font-display text-xl font-bold">Account not yet linked</h1>
           <p className="mt-3 text-sm text-muted-foreground">
-            Your sign-in is valid, but your account has not been linked to a school yet. A school
-            administrator (or a CoreGrid platform super admin) needs to assign you a role before you
-            can open a portal.
+            Your sign-in is valid, but your account has not been linked to an organization yet. An
+            organization administrator (or a Sherivs platform operator) needs to assign you a role
+            before you can open a workspace.
           </p>
           <button
             onClick={async () => {
