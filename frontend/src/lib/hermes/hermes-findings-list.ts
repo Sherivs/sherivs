@@ -25,6 +25,7 @@
  */
 
 import type { MissionExecutionState } from "../missions/mission-execution";
+import { assertLeaseSubstrateGapRemainsUnauthorized } from "../missions/lease-substrate-gap-lock";
 import { assessExecutions, assessWorkers } from "./hermes-cycle";
 import type { HermesFinding, HermesWorkerPosture } from "./hermes-contract";
 import type { HermesFindingObservationSource } from "./hermes-finding-observation";
@@ -128,3 +129,8 @@ export function listHermesFindingsFromState(input: {
 
   return [...honestExecutionFindings, ...recovered, ...workerFindings].map(toObservationSource);
 }
+
+// Classified lock (ACTIVE-V1): closing the lease-substrate schema gap is not
+// authorized. Load-time assert only — no close-the-gap branch.
+assertLeaseSubstrateGapRemainsUnauthorized();
+
