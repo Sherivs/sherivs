@@ -20,13 +20,13 @@ Tenant host `/` is Plane B at runtime (`classifyExperiencePath(path, { tenantPub
 
 ## Classification counts (this lock)
 
-- A public_sherivs: **15** surfaces
+- A public_sherivs: **16** surfaces
 - B public_organization: **7** surfaces
-- C organization_workspace: **113** surfaces
+- C organization_workspace: **118** surfaces
 - D sherivs_internal: **24** surfaces
 - DOCUMENT_SHELL: **1** surfaces
 
-Total classified file routes: **160**
+Total classified file routes: **166**
 
 ## Canonical routing (V1 closest-safe)
 
@@ -36,12 +36,15 @@ Total classified file routes: **160**
 | Sign in | `/auth` (`/login`, `/signin` aliases) | Identity gateway |
 | Platform detail | `/platform` | Plane A |
 | LEGACY public URL | `/coregrid` | Compatibility alias → same public home |
-| Org public | tenant host `/` or `?school=` | Plane B `PublicSchoolSite` |
-| Org workspace | role paths `/admin`, `/teacher`, … | Plane C; Scholar until org-prefixed rebind |
-| Domain-neutral workspace | `/runtime` | Plane C when runtime ≠ Scholar |
-| Sherivs internal | `/super-admin/*`, `/command-centre` | Plane D |
+| Org public | tenant host `/` or `?organization=` (`?school=` LEGACY) | Plane B `PublicSchoolSite` |
+| Org workspace | `/o/{organization}` | Plane C domain-neutral shell |
+| Scholar runtime | `/o/{organization}/scholar{leaf}` | Plane C installed runtime |
+| Scholar LEGACY aliases | `/admin`, `/teacher`, … | Redirect to bound path when slug is known |
+| Domain-neutral workspace | `/o/{organization}` or `/runtime` | Plane C when runtime ≠ Scholar |
+| Organization onboarding | `/onboarding` | Plane A; education questions only if that runtime is chosen |
+| Sherivs internal | `/super-admin/*`, `/command-centre` | Plane D; `internal.sherivs.com` classified in-app |
 
-Target `app.sherivs.com/o/{organization}/scholar` is **DEFINED**, not yet implemented. Current Scholar paths remain top-level under Plane C.
+Canonical `app.sherivs.com/o/{organization}/scholar` is **IMPLEMENTED** in-app. Production DNS for `app.sherivs.com` remains BLOCKED_EXTERNAL_ACTION.
 
 ## Contradictions locked (must not regress)
 
@@ -69,6 +72,7 @@ Target `app.sherivs.com/o/{organization}/scholar` is **DEFINED**, not yet implem
 | page | `/reality/$class` | `frontend/src/routes/reality.$class.tsx` | Generated environment — Sherivs | Prospective orgs, executives, visitors (Plane A) | A public_sherivs | platform | public | PUBLIC | Public platform catalog | Remain Plane A; no Scholar-as-platform narration | LOCKED | TEAM 04 PUBLIC WEB | IMPLEMENTED |
 | page | `/reset-password` | `frontend/src/routes/reset-password.tsx` | Set a new password | Prospective orgs, executives, visitors (Plane A) | A public_sherivs | none | public | PUBLIC | Identity gateway surface | Canonical /signin → /auth | LOCKED | TEAM 04 PUBLIC WEB | IMPLEMENTED |
 | page | `/signin` | `frontend/src/routes/signin.tsx` | Canonical sign-in alias. The identity gateway surface lives at `/auth`. | Prospective orgs, executives, visitors (Plane A) | A public_sherivs | none | public | PUBLIC | Identity gateway surface | Canonical /signin → /auth | LOCKED | TEAM 04 PUBLIC WEB | IMPLEMENTED |
+| page | `/onboarding` | `frontend/src/routes/onboarding.tsx` | Organization-first onboarding. Education questions only when the education runtime is chosen. | Prospective orgs (authenticated, unlinked) | A public_sherivs | none | public | PUBLIC | Org-first form; live tenant still needs `provisionOrganization` | Remain Plane A until membership exists | IMPLEMENTED | TEAM 08 IDENTITY | IMPLEMENTED |
 | api | `/sitemap.xml` | `frontend/src/routes/sitemap[.]xml.ts` | Route surface (see component) | Prospective orgs, executives, visitors (Plane A) | A public_sherivs | platform | public | PUBLIC | Existing file route | A public_sherivs | CLASSIFIED | TEAM 04 PUBLIC WEB | OBSERVED |
 | page | `/admissions` | `frontend/src/routes/admissions.tsx` | Public multi-step admissions form. No auth required. | Organization public visitors (Plane B) | B public_organization | scholar | public | PUBLIC | Existing file route | B public_organization | CLASSIFIED | TEAM 05 ORG PUBLIC | OBSERVED |
 | page | `/blog` | `frontend/src/routes/blog.tsx` | Public blog index. Lists published blog_posts for the tenant in | Organization public visitors (Plane B) | B public_organization | scholar | public | PUBLIC | Existing file route | B public_organization | CLASSIFIED | TEAM 05 ORG PUBLIC | OBSERVED |
@@ -77,7 +81,12 @@ Target `app.sherivs.com/o/{organization}/scholar` is **DEFINED**, not yet implem
 | page | `/news/$id` | `frontend/src/routes/news.$id.tsx` | Article not found | Organization public visitors (Plane B) | B public_organization | scholar | public | PUBLIC | Existing file route | B public_organization | CLASSIFIED | TEAM 05 ORG PUBLIC | OBSERVED |
 | page | `/privacy` | `frontend/src/routes/privacy.tsx` | Public privacy policy page. Reads schools.privacy_policy for the | Organization public visitors (Plane B) | B public_organization | scholar | public | PUBLIC | Existing file route | B public_organization | CLASSIFIED | TEAM 05 ORG PUBLIC | OBSERVED |
 | page | `/rules` | `frontend/src/routes/rules.tsx` | Public school rules page. Reads schools.school_rules for the | Organization public visitors (Plane B) | B public_organization | scholar | public | PUBLIC | Existing file route | B public_organization | CLASSIFIED | TEAM 05 ORG PUBLIC | OBSERVED |
-| layout | `/_authenticated` | `frontend/src/routes/_authenticated/route.tsx` | Account not yet linked | Authorized organization members (Plane C) | C organization_workspace | platform | authenticated + role/capability | PRIVATE | Shared authenticated chrome for Plane C and Plane D children | Remain shared shell; child routes keep a single primary plane | DUAL_SHELL_JUSTIFIED | TEAM 02 APPLICATION SHELL | LOCKED |
+| layout | `/_authenticated` | `frontend/src/routes/_authenticated/route.tsx` | Account not yet linked | Authorized organization members (Plane C) | C organization_workspace | platform | authenticated + role/capability | PRIVATE | Shared authenticated chrome; LEGACY Scholar paths redirect when slug known | Remain shared shell; child routes keep a single primary plane | DUAL_SHELL_JUSTIFIED | TEAM 02 APPLICATION SHELL | LOCKED |
+| layout | `/o/$organization` | `frontend/src/routes/_authenticated/o.$organization/route.tsx` | Organization workspace shell. Slug must match membership. | Authorized organization members (Plane C) | C organization_workspace | platform | authenticated + membership | PRIVATE | Canonical Plane C prefix | Remain org-prefixed | IMPLEMENTED | TEAM 06 ORG WORKSPACE | IMPLEMENTED |
+| page | `/o/$organization/` | `frontend/src/routes/_authenticated/o.$organization/index.tsx` | Domain-neutral organization home | Authorized organization members (Plane C) | C organization_workspace | platform | authenticated + membership | PRIVATE | Runtime listed as installed capability, not the platform | Remain org home | IMPLEMENTED | TEAM 06 ORG WORKSPACE | IMPLEMENTED |
+| layout | `/o/$organization/scholar` | `frontend/src/routes/_authenticated/o.$organization/scholar/route.tsx` | Installed education runtime shell | Authorized organization members (Plane C) | C organization_workspace | scholar | authenticated + scholar role | PRIVATE | Runtime bound under org | Remain under /scholar | IMPLEMENTED | TEAM 07 SCHOLAR REBIND | IMPLEMENTED |
+| page | `/o/$organization/scholar/` | `frontend/src/routes/_authenticated/o.$organization/scholar/index.tsx` | Bounces to the member's bound Scholar home | Authorized organization members (Plane C) | C organization_workspace | scholar | authenticated + scholar role | PRIVATE | Gateway destination prefix | Remain bounce | IMPLEMENTED | TEAM 07 SCHOLAR REBIND | IMPLEMENTED |
+| page | `/o/$organization/scholar/$` | `frontend/src/routes/_authenticated/o.$organization/scholar/$.tsx` | Splat that lazy-loads existing Scholar role surfaces | Authorized organization members (Plane C) | C organization_workspace | scholar | RoleGuard on leaf | PRIVATE | 100 bound leaves; LEGACY files stay | Keep splat; do not move Scholar files | IMPLEMENTED | TEAM 07 SCHOLAR REBIND | IMPLEMENTED |
 | layout | `/admin` | `frontend/src/routes/_authenticated/admin/route.tsx` | Route surface (see component) | Authorized organization members (Plane C) | C organization_workspace | scholar | authenticated + role/capability | PRIVATE | Scholar role workspace at top-level path | app.sherivs.com/o/{org}/scholar{path} | REBIND_UNDER_ORG | TEAM 07 SCHOLAR REBIND | PARTIAL |
 | page | `/admin/admissions` | `frontend/src/routes/_authenticated/admin/admissions.tsx` | Admin: admissions inbox + decision flow. | Authorized organization members (Plane C) | C organization_workspace | scholar | authenticated + role/capability | PRIVATE | Scholar role workspace at top-level path | app.sherivs.com/o/{org}/scholar{path} | REBIND_UNDER_ORG | TEAM 07 SCHOLAR REBIND | PARTIAL |
 | page | `/admin/ai-assistant` | `frontend/src/routes/_authenticated/admin/ai-assistant.tsx` | Vibeora Command AI | Authorized organization members (Plane C) | C organization_workspace | scholar | authenticated + role/capability | PRIVATE | Scholar role workspace at top-level path | app.sherivs.com/o/{org}/scholar{path} | REBIND_UNDER_ORG | TEAM 07 SCHOLAR REBIND | PARTIAL |

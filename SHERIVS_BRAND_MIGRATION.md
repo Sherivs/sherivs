@@ -39,7 +39,7 @@ New CoreGrid-branded customer-facing routes, UI, metadata, emails, titles, or on
 | same | `LEGACY_PLATFORM_IDENTIFIER = "CoreGrid"` | LEGACY keep. Removal criteria: no remaining DB, package, or migration objects require the string. |
 | `frontend/src/lib/tenant.ts` | `sherivs.com`, `www`, `app`, `internal` platform hosts | IMPLEMENTED. LEGACY `universalschoolos.com` hosts retained. |
 | `frontend/src/routes/__root.tsx` | `apple-mobile-web-app-title` = Sherivs | IMPLEMENTED |
-| `mobile/app.json` | display `name`: Sherivs | IMPLEMENTED. `slug`, `scheme`, iOS/Android ids remain `coregrid*` — BLOCKED_EXTERNAL_ACTION (store). |
+| `mobile/app.json` | display `name`: Sherivs; `scheme`: sherivs | IMPLEMENTED in-repo. iOS/Android bundle ids remain `com.coregrid.app` — store cutover BLOCKED_EXTERNAL_ACTION. |
 
 ## Migrated this mission (customer-facing)
 
@@ -83,14 +83,14 @@ New CoreGrid-branded customer-facing routes, UI, metadata, emails, titles, or on
 | `tenant:coregrid-demo` | TEST_FIXTURE | Command Centre demo tenant id | Local demo only | Demo tenant re-seed | TEAM 07 | LEGACY |
 | `compatibleCoreGridVersion` | API_IDENTIFIER | Dev platform manifest field | Existing manifests | Schema version bump | TEAM 48 | LEGACY |
 | `x-coregrid-manifest` headers | API_IDENTIFIER | PWA debug headers | Clients may ignore | Header alias `x-sherivs-*` | TEAM 32 | LEGACY |
-| `mobile` scheme `coregrid`, bundle `com.coregrid.app` | PUBLIC_METADATA | Store + installed clients | Deep links | Apple/Google listing + migration | TEAM 33 | BLOCKED_EXTERNAL_ACTION |
+| `mobile` bundle `com.coregrid.app` (scheme now `sherivs` in source) | PUBLIC_METADATA | Store + installed clients still on LEGACY bundle | Deep links | Apple/Google listing + bundle migration | TEAM 33 | BLOCKED_EXTERNAL_ACTION |
 | `COREGRID_*` env vars / secret URIs | ENVIRONMENT_VARIABLE | Runtime config | Deployed envs | Env alias + cutover | TEAM 23 | LEGACY |
 | Database types `coregrid-scholar.ts` | DATABASE_IDENTIFIER | Generated/shared table aliases | App types | Schema rename + migration | TEAM 28 | LEGACY |
 | Branch `coregrid-scholar-migration` | MIGRATION_IDENTIFIER | Current default branch name | Git | After production cutover | TEAM 49 | LEGACY |
 | `architecture/` corpus | HISTORICAL_REFERENCE | Phase 01–52 source of record | Read-only | Never blindly rewrite | TEAM 50 | LEGACY |
 | `AGENTS.md` CoreGrid constitution | ARCHITECTURAL_IDENTIFIER | Governance text still uses historical name | Binding | Human constitution revision | ARCHITECTURE | LEGACY |
 | File-header `* CoreGrid —` in `frontend/src/lib/**` | ARCHITECTURAL_IDENTIFIER | Not customer-visible | n/a | Optional comment pass | TEAM 03 | LEGACY |
-| `universalschoolos.com` hosts + og:image URL | COMPATIBILITY_ALIAS / PUBLIC_METADATA | Prior public domain | DNS | Host sherivs.com OG asset | TEAM 04 | PARTIAL |
+| `universalschoolos.com` hosts | COMPATIBILITY_ALIAS | Prior public domain | DNS | Retire after sherivs.com cutover | TEAM 04 | LEGACY |
 
 ## Restaurant contamination
 
@@ -105,11 +105,12 @@ New CoreGrid-branded customer-facing routes, UI, metadata, emails, titles, or on
 
 1. `README.md` body still contains historical CoreGrid narrative below the new header — PARTIAL.
 2. Canonical docs (`ARCHITECTURE.md`, `CONSTITUTION.md`, `REGISTRY.md`) remain CoreGrid-named — HISTORICAL_REFERENCE; rewrite is a documentation mission, not this lock.
-3. `__root.tsx` `og:image` still points at `https://universalschoolos.com/og-image.png` — BLOCKED_EXTERNAL_ACTION until `sherivs.com` hosts the asset.
-4. Scholar workspace copy still says “school” in many Plane C pages — expected until runtime rebind (Milestone 7). Not a CoreGrid brand leak.
+3. `__root.tsx` `og:image` is same-origin `/og-image.png`. Production `https://sherivs.com/og-image.png` still needs DNS — BLOCKED_EXTERNAL_ACTION.
+4. Scholar workspace copy still says “school” in many Plane C pages — expected for the education runtime. Not a CoreGrid brand leak.
 
 ## Tests that govern this migration
 
 - `tests/unit/identity-gateway.test.ts` — `PLATFORM_NAME === "Sherivs"`, CoreGrid is LEGACY
 - `tests/unit/identity-gateway-invariants.test.ts` — four-eyes: public home is not Command Centre
 - `tests/unit/site-marketing.test.ts` — public site CTAs are real `/auth` links; runtime is not narrated as the platform
+- `tests/unit/sherivs-organization-workspace.test.ts` — `/o/{org}/scholar` path contract + membership facade

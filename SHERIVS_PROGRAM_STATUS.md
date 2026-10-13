@@ -13,7 +13,7 @@ AGENTS.md §45 remains binding: V2 (device/IoT) and V3 (Reality Intelligence) ar
 
 Sherivs is locked as the public company/platform brand. Experience planes A–D are classified for every file route. Login no longer implies Scholar: `resolveIdentityGateway` requires identity, membership, and `runtime:scholar` before a Scholar workspace. Plane A `/` is the Sherivs public home, not Command Centre.
 
-This is **not** a completed category-formation program. Milestones 0–4 are EXECUTED (verification in this PR’s unit tests). Milestones 5–20 remain DEFINED / PARTIAL / FROZEN as listed.
+This is **not** a completed category-formation program. Milestones 0–4 plus in-app M6/M7 (org path + Scholar rebind) and organization-first onboarding are EXECUTED. Live membership remains `public.schools` (facade only). DNS / store publish remain BLOCKED_EXTERNAL_ACTION.
 
 ## 2. Category definition
 
@@ -31,7 +31,7 @@ Sherivs Scholar is installed as `runtime:scholar` — the first domain runtime, 
 |-------|------------------------|-------|
 | A public_sherivs | 15 | LOCKED |
 | B public_organization | 7 | LOCKED (still Scholar-shaped CMS) |
-| C organization_workspace | 113 | CLASSIFIED; Scholar paths still top-level |
+| C organization_workspace | 118 | Canonical `/o/{org}` + `/o/{org}/scholar`; LEGACY role paths redirect |
 | D sherivs_internal | 24 | CLASSIFIED; same app, RoleGuard |
 | DOCUMENT_SHELL | 1 | LOCKED |
 
@@ -45,10 +45,10 @@ Executable lock: `frontend/src/lib/experience/experience-planes.ts`.
 |--------|---------|--------|--------|
 | Public company | `/` | sherivs.com/ | IMPLEMENTED |
 | Sign-in | `/auth`, `/login`, `/signin` | /signin | IMPLEMENTED |
-| Org public | tenant host or `?school=` | `{org}.sherivs.com` | PARTIAL (query + subdomain exist; DNS BLOCKED_EXTERNAL) |
-| Org workspace | `/admin`, `/teacher`, … | `app.sherivs.com/o/{org}` | DEFINED, not implemented |
-| Scholar runtime | same top-level role paths | `/o/{org}/scholar` | DEFINED, not implemented |
-| Internal | `/super-admin`, `/command-centre` | internal.sherivs.com | PARTIAL (authz exists; host split later) |
+| Org public | tenant host or `?organization=` (`?school=` LEGACY) | `{org}.sherivs.com` | PARTIAL (query + subdomain exist; DNS BLOCKED_EXTERNAL) |
+| Org workspace | `/o/{org}` | `app.sherivs.com/o/{org}` | IMPLEMENTED in-app; host DNS BLOCKED_EXTERNAL |
+| Scholar runtime | `/o/{org}/scholar{leaf}` | `/o/{org}/scholar` | IMPLEMENTED (splat + LEGACY redirect) |
+| Internal | `/super-admin`, `/command-centre` | internal.sherivs.com | PARTIAL (host classified in-app; DNS BLOCKED_EXTERNAL) |
 
 ## 5. Brand migration status
 
@@ -67,15 +67,17 @@ Flow: authenticate → membership → authority → organization (via existing `
 | Unsigned platform | Plane A, stay | IMPLEMENTED |
 | Unsigned tenant | Plane B, stay | IMPLEMENTED |
 | Super-admin | `/super-admin/dashboard` Plane D | IMPLEMENTED |
-| Unlinked identity | `/auth` | IMPLEMENTED |
-| Scholar member + scholar runtime | `scholarWorkspaceHome(role)` | IMPLEMENTED |
-| Other runtime | `/runtime` | IMPLEMENTED (only scholar is installed today) |
+| Unlinked identity | `/onboarding` | IMPLEMENTED |
+| Scholar member + scholar runtime | `/o/{slug}/scholar{home}` (LEGACY leaf if no slug) | IMPLEMENTED |
+| Other runtime | `/o/{slug}` or `/runtime` | IMPLEMENTED (only scholar is installed today) |
+| Unsigned app host | `/auth` | IMPLEMENTED |
+| Unsigned / non-operator internal host | `/auth` | IMPLEMENTED |
 
-**NOT done:** replacing `public.users.school_id` with a domain-neutral membership table. LEGACY live path. Rewrite is a data-architecture mission with migration risk.
+**NOT done:** replacing `public.users.school_id` / `public.schools` with applied `cg_org_*` tables. Facade: `organization-membership.ts` (`legacy_schools_table`). Rewrite is a data-architecture mission with migration risk. Do not apply unapplied `20261001000000_coregrid_v1_org_model.sql` from this program.
 
 ## 7. Organization architecture
 
-**PARTIAL.** Live tenant model is still `public.schools`. Organization classes exist in Command Centre provisioning data. Universal onboarding (non-school questions) is **DEFINED**, not implemented as the default signup path.
+**PARTIAL.** Live tenant model is still `public.schools`. A domain-neutral facade (`organizationFromSchoolRow` / `membershipFromLegacyProfile`) is what Plane C and the gateway consume. Organization-first onboarding is **IMPLEMENTED** as `/onboarding`; creating a live tenant still requires authorized `provisionOrganization`.
 
 ## 8. Runtime architecture
 
@@ -123,11 +125,11 @@ See §21. Unit tests for gateway + public site are the verification for M0–M4.
 
 ## 19. Web/PWA
 
-**PARTIAL.** Public home rebuilt. PWA description now says Sherivs. Manifest debug headers still `x-coregrid-*`. OG image still universalschoolos.com.
+**PARTIAL.** Public home rebuilt. Same-origin `/og-image.png` is shipped and referenced. Sitemap/robots point at sherivs.com. Manifest adds `x-sherivs-*` headers and keeps LEGACY `x-coregrid-*`. Hosting those URLs on production DNS remains BLOCKED_EXTERNAL.
 
 ## 20. Mobile
 
-**PARTIAL.** Display name Sherivs. Bundle id / scheme LEGACY. Store rename is BLOCKED_EXTERNAL_ACTION.
+**PARTIAL.** Display name Sherivs. In-repo `scheme` is `sherivs`. iOS/Android bundle ids remain `com.coregrid.app` (LEGACY). Store listing / bundle-id cutover is BLOCKED_EXTERNAL_ACTION.
 
 ## 21. Testing
 
@@ -135,8 +137,9 @@ See §21. Unit tests for gateway + public site are the verification for M0–M4.
 
 | Suite | Result |
 |-------|--------|
-| `tests/unit/identity-gateway.test.ts` | 8 passed |
-| `tests/unit/identity-gateway-invariants.test.ts` | 3 passed |
+| `tests/unit/identity-gateway.test.ts` | extended this slice (bound `/o/{org}/scholar`, `/onboarding`, hosts) |
+| `tests/unit/identity-gateway-invariants.test.ts` | extended this slice |
+| `tests/unit/sherivs-organization-workspace.test.ts` | added this slice |
 | `tests/unit/site-marketing.test.ts` | 16 passed |
 | `tests/unit/platform-neutrality.test.ts` | 49 passed (after gateway comment rewrite so it does not narrate Scholar as the platform) |
 | `tests/unit/roles.test.ts` | 12 passed |
@@ -159,15 +162,12 @@ RLS / tenant isolation: unchanged prior suite.
 
 ## 24. V1 status
 
-V1 envelope for **experience boundary + identity gateway + public brand** is EXECUTED.
+V1 envelope for **experience boundary + identity gateway + public brand + org-prefixed Plane C** is EXECUTED in-app.
 
 V1 still missing for a coherent launch (not claimed done):
 
-- Domain-neutral org membership (not `schools`)
-- `/o/{org}` workspace shell
-- Scholar rebind under org
-- Organization onboarding without school-first questions
-- Dedicated internal host
+- Applied domain-neutral org membership tables (live path is still `public.schools` + facade)
+- Production hosts (sherivs.com / app. / internal.) — BLOCKED_EXTERNAL
 - Package/DB identifier rename (optional if LEGACY is sealed)
 
 ## 25. V2 status
@@ -178,8 +178,8 @@ V1 still missing for a coherent launch (not claimed done):
 
 | Item | Horizon | Reason |
 |------|---------|--------|
-| `app.sherivs.com/o/{org}/scholar` | V1 later milestone | Routing rewrite, high blast radius |
-| Host split internal.sherivs.com | V1 later | DNS + authz |
+| Production `app.sherivs.com` DNS | Human / infra | BLOCKED_EXTERNAL — in-app routes exist |
+| Host split internal.sherivs.com | Human / infra | DNS; in-app host classification exists |
 | Package `@sherivs/contracts` | V1 later | Import graph |
 | Mobile bundle id | Store submission | BLOCKED_EXTERNAL |
 | Phase 52 full corpus | Neutral extract only | Not a canonical phase |
@@ -189,7 +189,7 @@ V1 still missing for a coherent launch (not claimed done):
 
 1. Identity gateway runs in the browser after session load. A crafted URL to `/teacher/dashboard` still depends on `_authenticated` + RoleGuard + RLS — correct, but deep links can flash unauthorized chrome.
 2. `INSTALLED_RUNTIME_ID` is a compile-time constant, not per-organization runtime binding.
-3. Plane C still assumes Scholar role names (`teacher`, `parent`, …) in the URL.
+3. Plane C canonical URLs are org-prefixed; Scholar role names remain in the *leaf* (`/scholar/teacher/…`). LEGACY top-level role URLs still exist as aliases.
 4. Remaining CoreGrid in architecture docs can leak into agent-generated customer copy if agents treat those docs as product copy.
 
 ## 28. Known blockers
@@ -213,12 +213,17 @@ V1 still missing for a coherent launch (not claimed done):
 - `SHERIVS_EXPERIENCE_BOUNDARY.md`
 - `SHERIVS_BRAND_MIGRATION.md`
 - `frontend/src/lib/identity/identity-gateway.ts`
+- `frontend/src/lib/identity/organization-membership.ts`
 - `frontend/src/lib/experience/experience-planes.ts`
+- `frontend/src/lib/experience/organization-routes.ts`
+- `frontend/src/lib/experience/experience-host.ts`
 - `frontend/src/lib/platform.ts`
 - `frontend/src/components/public/sherivs-public-home.tsx`
-- `frontend/src/routes/index.tsx`, `auth.tsx`, `signin.tsx`
+- `frontend/src/routes/index.tsx`, `auth.tsx`, `signin.tsx`, `onboarding.tsx`
+- `frontend/src/routes/_authenticated/o.$organization/**`
 - `tests/unit/identity-gateway.test.ts`
 - `tests/unit/identity-gateway-invariants.test.ts`
+- `tests/unit/sherivs-organization-workspace.test.ts`
 
 ## 31. Git commits
 
@@ -235,7 +240,7 @@ None for this slice.
 1. Point production DNS at Sherivs hosts.
 2. Host OG/favicon assets on sherivs.com.
 3. Decide store-id migration window for mobile.
-4. Authorize later milestones (org path rebind, membership schema) before agents implement them.
+4. Authorize applying `cg_org_unit` / `cg_org_membership` (unapplied migration) before treating those tables as the live login path.
 5. Constitution/AGENTS.md human revision if CoreGrid must leave governance documents.
 
 ## Milestone board
@@ -248,9 +253,9 @@ None for this slice.
 | 3 | Routing & identity gateway | EXECUTED (in-app); host model PARTIAL |
 | 4 | Public Sherivs experience | EXECUTED (no large visual system rewrite) |
 | 5 | Organization public experience | OBSERVED / PARTIAL (still school CMS) |
-| 6 | Organization workspace shell | DEFINED |
-| 7 | Scholar runtime rebind | DEFINED |
+| 6 | Organization workspace shell | EXECUTED (in-app `/o/{org}`) |
+| 7 | Scholar runtime rebind | EXECUTED (in-app `/o/{org}/scholar` + LEGACY redirect) |
 | 8 | Sherivs internal OS | PARTIAL (super-admin + command-centre) |
 | 9–12 | Intelligence / missions / Jarvis / gateway | OBSERVED from prior work; not expanded here |
 | 13–19 | Comms, security, ops, API, mobile, perf, deploy | UNCHANGED / PARTIAL |
-| 20 | Category conformance | NOT PASSED — platform still behaves like Scholar modules behind a new public home |
+| 20 | Category conformance | PARTIAL — Plane C is org-prefixed; live membership is still `public.schools`; Plane B is still education CMS; production DNS BLOCKED_EXTERNAL |
