@@ -112,6 +112,7 @@
   "workforceLock": "architecture/COREGRID_V1_AI_WORKFORCE_REGISTRY.json",
   "executableLock": "frontend/src/lib/workforce/v1-workforce-lock.ts",
   "executableAttachmentLock": "frontend/src/lib/workforce/phase52-attachment.ts",
+  "relatedExtract": "architecture/COREGRID_PHASE52_JARVIS_HERMES_LEASE_EXTRACT.json",
   "notDone": [
     "No new canonical phase was created.",
     "Phase 52 remains unregistered and not implementation-authorized.",
@@ -121,6 +122,7 @@
     "Hermes finding stamps do not authorize Phase 52 implementation.",
     "Production Hermes findings list does not authorize Phase 52 implementation.",
     "Closing the lease-substrate schema gap does not authorize Phase 52 implementation.",
-    "Applying the V1-003 lease migration does not authorize Phase 52 implementation."
+    "Applying the V1-003 lease migration does not authorize Phase 52 implementation.",
+    "Related corpus extract does not authorize Phase 52 engine implementation."
   ]
 }

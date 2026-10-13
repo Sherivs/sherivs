@@ -1,0 +1,168 @@
+{
+  "artifact": "COREGRID_PHASE52_JARVIS_HERMES_LEASE_EXTRACT",
+  "captured": "2026-10-13",
+  "versionTarget": "ACTIVE-V1",
+  "humanAuthorization": "HUMAN AUTHORIZATION 2026-10-13: extract the Phase 52 corpus RELATED to this Jarvis/Hermes/lease/execution remaining-work, AND status widen + V1-004 lease writes + governed residents are authorized.",
+  "extractionKind": "RELATED_CORPUS_EXTRACT",
+  "phase52ImplementationAuthorized": false,
+  "phase52Registered": false,
+  "PHASE52_IMPLEMENTATION_AUTHORIZED": false,
+  "sourceCorpus": "architecture/coregrid-mvp-architecture/reconstruction/STREAM_G_PHASE52_EXTRACTION.json",
+  "extractionNote": "EXTRACT only. Does not implement Phase 52 engines, does not register Phase 52 as a canonical phase, does not un-freeze V2/V3 device/IoT, and does not claim 50 standing agents. Prompt labels named STREAM_G concepts; relatedRequirementIds are the STREAM_G ids of those named records (prompt shorthand was off-by-one for several labels).",
+  "streamGIdAlignment": {
+    "G-014": "G-014 Agent as first-class governed actor",
+    "G-018": "prompt G-019 Workflow fabric → STREAM_G G-018",
+    "G-019": "prompt G-020 Action lifecycle → STREAM_G G-019",
+    "G-020": "prompt G-021 Evidence object → STREAM_G G-020",
+    "G-029": "prompt G-032 AI safety boundary thought->proposal->authorization->execution → STREAM_G G-029",
+    "G-032": "prompt G-033 Delegation → STREAM_G G-032",
+    "G-057": "G-057 Agent runtime / dormancy",
+    "G-058": "G-058 Agent sandbox",
+    "G-059": "G-059 Agent observability",
+    "G-063": "prompt G-064 Workflow/tool/action execution substrate → STREAM_G G-063",
+    "G-085": "prompt G-086 CoreGrid autonomous company OS (related to Jarvis; EXTRACT, do not implement engines) → STREAM_G G-085",
+    "G-092": "G-092 Mission and objective representation",
+    "G-093": "G-093 Outcome measurement",
+    "G-104": "G-104 Reality loop present; extracted"
+  },
+  "relatedRequirementIds": [
+    "G-014",
+    "G-018",
+    "G-019",
+    "G-020",
+    "G-029",
+    "G-032",
+    "G-057",
+    "G-058",
+    "G-059",
+    "G-063",
+    "G-085",
+    "G-092",
+    "G-093",
+    "G-104"
+  ],
+  "requirements": [
+    {
+      "id": "G-014",
+      "name": "Agent as first-class governed actor",
+      "bucket": "V1",
+      "what": "Agent = identity + role + skills + memory + context + tools + policies + objectives + authority + evaluation; registered agent identity survives worker process termination; autonomy_level, risk_class, budget, supervisor, lifecycle_state, version.",
+      "previouslyClassified": "ACTIVE-V1"
+    },
+    {
+      "id": "G-018",
+      "name": "Workflow fabric with trigger -> plan -> policy -> approval -> execute -> verify -> event",
+      "bucket": "V1",
+      "what": "Workflows are structured executions with triggers, steps, policies, required authority, timeouts, retry and compensation policies; may be deterministic, AI-generated, human-authored or hybrid.",
+      "previouslyClassified": "ACTIVE-V1"
+    },
+    {
+      "id": "G-019",
+      "name": "Action lifecycle from PROPOSED to VERIFIED",
+      "bucket": "V1",
+      "what": "Action carries actor, target, operation, authority_context, risk_level, policy_decision, approval_state, execution_state, verification; lifecycle PROPOSED -> POLICY_CHECK -> APPROVAL -> EXECUTING -> VERIFYING -> COMPLETED, with REJECTED/FAILED/ROLLED_BACK/ESCALATED alternatives.",
+      "previouslyClassified": "ACTIVE-V1"
+    },
+    {
+      "id": "G-020",
+      "name": "Evidence object and claim-evidence-observation-source graph",
+      "bucket": "V1",
+      "what": "Evidence distinguishes data/knowledge/claim/hypothesis/prediction/decision; graph CLAIM -supported_by-> EVIDENCE -derived_from-> OBSERVATION -collected_from-> SOURCE; contradictions representable; evidence has identity, type, confidence, provenance.",
+      "previouslyClassified": "ACTIVE-V1"
+    },
+    {
+      "id": "G-029",
+      "name": "AI safety boundary: thought -> proposal -> authorization -> execution",
+      "bucket": "V1",
+      "what": "A model can never jump from thought to production action; full pipeline identity resolution -> tenant resolution -> context construction -> policy evaluation -> model routing -> inference -> output validation -> action proposal -> authority check -> execution -> verification -> event -> memory/knowledge update; grounding and hallucination detection on outputs.",
+      "previouslyClassified": "ACTIVE-V1"
+    },
+    {
+      "id": "G-032",
+      "name": "Delegation, acting-on-behalf-of, and impersonation with revocation and non-escalation",
+      "bucket": "V1",
+      "what": "Human/agent/service delegation with time limits, revocation, non-escalation; delegation object carries grantor, grantee, scope, expiry; authority propagation cannot exceed grantor authority; impersonation is privileged and audited.",
+      "previouslyClassified": "ACTIVE-V1"
+    },
+    {
+      "id": "G-057",
+      "name": "Agent runtime: sessions, coordination, delegation, conflict resolution, priority, concurrency, dormancy",
+      "bucket": "V1",
+      "what": "Agent execution loop with plan, action gate, action result, verification, failure recovery, compensating actions, escalation, human escalation; agent sessions, coordination, consensus, negotiation, multiplexer functions, dormancy/activation, priority queues, concurrency control, resource locks, state machine, versioning, deployment.",
+      "previouslyClassified": "ACTIVE-V1"
+    },
+    {
+      "id": "G-058",
+      "name": "Agent sandbox, shadow mode, and rollout safety",
+      "bucket": "V1",
+      "what": "Agents execute in sandboxes; shadow mode and canary rollout; agent evaluation and simulation before production; agent safety boundaries; agent supervision tree constraining autonomy.",
+      "previouslyClassified": "ACTIVE-V1"
+    },
+    {
+      "id": "G-059",
+      "name": "Agent observability, explanation and activity graphs",
+      "bucket": "V1",
+      "what": "Every agent action is observable (activity graph), explainable (agent explanation), provenance-tracked, and security-monitored; agent identity security integrates with the identity fabric.",
+      "previouslyClassified": "ACTIVE-V1"
+    },
+    {
+      "id": "G-063",
+      "name": "Workflow/tool/action execution substrate with verification and compensation",
+      "bucket": "V1",
+      "what": "Execution substrate that turns policy-approved intentions into reliable multi-step work across internal services, external systems, APIs, humans, agents, transactions, communications; idempotency keys on consequential commands; rollback and compensation paths.",
+      "previouslyClassified": "ACTIVE-V1"
+    },
+    {
+      "id": "G-085",
+      "name": "CoreGrid autonomous company operating system (internal AI departments, CEO agent, self-operating company)",
+      "bucket": "DEFERRED_CORPUS",
+      "what": "CoreGrid operating itself as the first autonomous organization: internal reality model, CEO intelligence agent, AI departments (engineering, research, sales, marketing, legal), internal sandbox civilization, autonomous improvement loops, internal command center.",
+      "previouslyClassified": "UNKNOWN",
+      "extractOnly": "Related to Jarvis; EXTRACT, do not implement engines. G-057 carries the structurally necessary V1 share."
+    },
+    {
+      "id": "G-092",
+      "name": "Mission and objective representation for delegated work",
+      "bucket": "V1",
+      "what": "Goals/objectives and constraints are representable objects bound to agents, workflows and policies; delegated work carries an objective, constraints and success criteria the verification stage can measure.",
+      "previouslyClassified": "ACTIVE-V1"
+    },
+    {
+      "id": "G-093",
+      "name": "Outcome measurement and learning without rewriting truth",
+      "bucket": "V1",
+      "what": "Executed actions produce measured outcomes; operational memory records them; learning improves future operation without silently rewriting truth or governance; knowledge changes propagate impact to affected decisions.",
+      "previouslyClassified": "ACTIVE-V1"
+    },
+    {
+      "id": "G-104",
+      "name": "Reality loop as the platform invariant",
+      "bucket": "V1",
+      "what": "The closed loop reality -> observation/events -> knowledge -> intelligence -> agents -> workflows -> experience -> action -> new reality, with governance, identity, security, memory, context, observability surrounding the entire structure; every stage grounded in evidence, governed by policy, verified afterward.",
+      "previouslyClassified": "MIXED"
+    }
+  ],
+  "completenessLoop": {
+    "stages": ["Mission", "Delegation", "Worker Execution", "Evidence", "Verification", "Outcome"],
+    "mapsOntoExtractedIds": {
+      "Mission": ["G-092"],
+      "Delegation": ["G-032"],
+      "Worker Execution": ["G-014", "G-057", "G-058"],
+      "Evidence": ["G-020"],
+      "Verification": ["G-019", "G-029", "G-063"],
+      "Outcome": ["G-093", "G-104"]
+    }
+  },
+  "mapsOntoThisExecution": {
+    "statusWiden": "cg_execution_record status vocab",
+    "v1004LeaseWrite": "compose createDbMissionLeasePort",
+    "jarvisResident": "scripts/run-jarvis-resident.mjs supervisor",
+    "hermesResident": "scripts/run-hermes-resident.mjs supervisor",
+    "librariesRemainWakeSleep": true
+  },
+  "notDone": [
+    "Phase 52 engines are not implemented",
+    "V2/V3 remain frozen",
+    "No 50 standing agents"
+  ]
+}
