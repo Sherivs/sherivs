@@ -120,6 +120,7 @@
     "This attachment does not implement Phase 52 engines.",
     "Hermes finding stamps do not authorize Phase 52 implementation.",
     "Production Hermes findings list does not authorize Phase 52 implementation.",
-    "Closing the lease-substrate schema gap does not authorize Phase 52 implementation."
+    "Closing the lease-substrate schema gap does not authorize Phase 52 implementation.",
+    "Applying the V1-003 lease migration does not authorize Phase 52 implementation."
   ]
 }

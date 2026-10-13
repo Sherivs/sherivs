@@ -5,21 +5,22 @@
   "updated": "2026-10-13",
   "versionTarget": "ACTIVE-V1",
   "implementationAuthorized": false,
-  "LEASE_SUBSTRATE_GAP_CLOSE_AUTHORIZED": false,
+  "APPLY_AUTHORIZED": true,
+  "LEASE_SUBSTRATE_APPLY_AUTHORIZED": true,
+  "LEASE_SUBSTRATE_GAP_CLOSE_AUTHORIZED": true,
   "LEASE_SUBSTRATE_IMPLEMENTATION_AUTHORIZED": false,
+  "LEASE_SUBSTRATE_EXECUTION_STATUS_WIDEN_AUTHORIZED": false,
   "classification": "CLASSIFIED_NOT_IMPLEMENTATION_AUTHORIZED",
-  "migrationStatus": "AUTHORED_NOT_APPLIED",
+  "migrationStatus": "APPLIED",
   "migrationPath": "database/supabase/migrations/20261003000019_coregrid_v1_mission_lease.sql",
+  "applyRecord": "architecture/proofs/JARVIS_LEASE_MIGRATION_APPLY_RECORD.json",
   "v1_004FailClosed": "frontend/src/lib/missions/mission-execution-db.server.ts leaseOperation → lease_substrate_missing",
   "executableLock": "frontend/src/lib/missions/lease-substrate-gap-lock.ts",
-  "honestyConsumer": "frontend/src/lib/hermes/hermes-findings-list.ts drops assigned+lease-null as mission_stuck",
-  "preservedSibling": "frontend/src/lib/missions/mission-lease-db.server.ts remains; worker-launch may compose it; this Jarvis remaining-work does not apply the migration or treat cg_execution_record as leased/evidenced/verified",
-  "humanUnfreezeRequirement": "Closing the lease-substrate schema gap (apply the V1-003 migration as live, widen cg_execution_record.status, persist leases into Jarvis observations) requires an explicit human authorization record. Agents cannot close this gap.",
+  "honestyConsumer": "frontend/src/lib/hermes/hermes-findings-list.server.ts reads tenant-scoped cg_mission_lease and projects via frontend/src/lib/missions/mission-lease-projection.ts; assigned-without-lease is still not mission_stuck; expired active leases ARE mission_stuck",
+  "preservedSibling": "frontend/src/lib/missions/mission-lease-db.server.ts remains; worker-launch may compose it; remaining-work after apply is OBSERVE leases in Jarvis findings — not replacing V1-004, not treating cg_execution_record as leased/evidenced/verified, not a resident process",
+  "humanAuthorization": "Apply the lease migration and then execute the remaining works professionally.",
+  "humanUnfreezeRequirement": "Apply of V1-003 is authorized and recorded. Widening cg_execution_record.status beyond admitted|denied|rolled_back, replacing V1-004 leaseOperation fail-closed, starting a resident Jarvis process, and Phase 52 implementation still require an explicit human authorization record. Agents cannot authorize those.",
   "notDone": [
-    "The V1-003 mission-lease migration is not applied by this mission.",
-    "cg_execution_record.status is not widened beyond admitted|denied|rolled_back.",
-    "Assigned-without-lease is not treated as mission_stuck.",
-    "Jarvis/Hermes remain library-form; no resident process.",
-    "Phase 52 remains classified and not implementation-authorized."
+    "V1-003 applied under human authorization; status vocabulary still not widened; Phase 52 still classified; no resident process; V1-004 leaseOperation still fail-closed"
   ]
 }
