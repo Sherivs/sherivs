@@ -1,0 +1,21 @@
+{
+  "artifact": "JARVIS_EXECUTION_RECORD_STATUS_APPLY_RECORD",
+  "captured": "2026-10-13",
+  "versionTarget": "ACTIVE-V1",
+  "humanAuthorization": "Authorize the CoreGrid execution records status, and execute the v1 004 lease write also, and then extract the phase 52 corpus that related to this execution we are doing and then also apply resident for Hermes and the jarvis.",
+  "file": "20261013000050_coregrid_v1_execution_record_status.sql",
+  "outcome": "APPLIED_OR_IDEMPOTENT",
+  "namedVocabPresent": true,
+  "leasedAllowed": true,
+  "statusChecks": [
+    {
+      "table": "cg_execution_history",
+      "conname": "cg_execution_history_status_vocab_check"
+    },
+    {
+      "table": "cg_execution_record",
+      "conname": "cg_execution_record_status_vocab_check"
+    }
+  ],
+  "note": "Status vocabulary widened to admitted|denied|rolled_back|assigned|leased|evidenced|verified|requeued|exhausted. 20261003000019 SQL bytes unchanged."
+}
