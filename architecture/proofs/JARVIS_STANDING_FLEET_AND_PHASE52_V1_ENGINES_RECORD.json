@@ -1,0 +1,36 @@
+{
+  "artifact": "JARVIS_STANDING_FLEET_AND_PHASE52_V1_ENGINES_RECORD",
+  "captured": "2026-10-13",
+  "versionTarget": "ACTIVE-V1",
+  "humanAuthorization": "Claim all the standing fleet of the agents, Implement the phase 52 engines and keep the V2/ V3 frozen.",
+  "standingFleet": {
+    "claimed": true,
+    "identityStatus": "standing_identity_claimed",
+    "computeModel": "ephemeral_cycle",
+    "concurrentStandingProcesses": 0,
+    "executableLock": "frontend/src/lib/workforce/standing-fleet-claim.ts"
+  },
+  "phase52V1Engines": {
+    "authorized": true,
+    "registeredCanonicalPhase": false,
+    "fullCorpusAuthorized": false,
+    "v2Authorized": false,
+    "v3Authorized": false,
+    "g085Authorized": false,
+    "executableLock": "frontend/src/lib/workforce/phase52-v1-engines.ts"
+  },
+  "frozen": {
+    "v2": "Device/IoT/hardware control",
+    "v3": "Reality observation / civilization engines",
+    "deferredBeyondV2Workers": [
+      "sdk_engineer",
+      "ml_engineer",
+      "knowledge_engineer",
+      "intelligence_research_agent",
+      "growth_intelligence_agent",
+      "customer_success_agent"
+    ],
+    "g085": "DEFERRED_CORPUS extract-only"
+  },
+  "note": "V1 standing identities claimed. V1 extracted engines attached to existing modules. Libraries remain WAKE/SLEEP. V2/V3 stay frozen."
+}

@@ -1,0 +1,49 @@
+{
+  "artifact": "COREGRID_PHASE52_V1_ENGINE_REGISTRY",
+  "status": "V1_ENGINES_ATTACHED_V2_V3_FROZEN",
+  "captured": "2026-10-13",
+  "updated": "2026-10-13",
+  "versionTarget": "ACTIVE-V1",
+  "PHASE52_V1_ENGINE_IMPLEMENTATION_AUTHORIZED": true,
+  "PHASE52_IMPLEMENTATION_AUTHORIZED": false,
+  "PHASE52_REGISTERED": false,
+  "PHASE52_V2_ENGINE_IMPLEMENTATION_AUTHORIZED": false,
+  "PHASE52_V3_ENGINE_IMPLEMENTATION_AUTHORIZED": false,
+  "PHASE52_G085_ENGINE_IMPLEMENTATION_AUTHORIZED": false,
+  "humanAuthorization": "Claim all the standing fleet of the agents, Implement the phase 52 engines and keep the V2/ V3 frozen.",
+  "humanAuthorizationAt": "2026-10-13",
+  "rule": "Implement extracted STREAM_G V1 engines by attaching them to existing governed modules. Do not register Phase 52 as a canonical phase. Do not un-freeze V2/V3. Do not implement G-085. Do not attach G-058 to Phase 41 civilization sandbox.",
+  "executableLock": "frontend/src/lib/workforce/phase52-v1-engines.ts",
+  "attachmentLock": "frontend/src/lib/workforce/phase52-attachment.ts",
+  "relatedExtract": "architecture/COREGRID_PHASE52_JARVIS_HERMES_LEASE_EXTRACT.json",
+  "v1RequirementIds": [
+    "G-014",
+    "G-018",
+    "G-019",
+    "G-020",
+    "G-029",
+    "G-032",
+    "G-057",
+    "G-058",
+    "G-059",
+    "G-063",
+    "G-092",
+    "G-093",
+    "G-104"
+  ],
+  "frozenRequirementIds": ["G-085"],
+  "frozenV3PhaseIds": ["37", "41", "44", "46"],
+  "g058AttachesTo": "frontend/src/lib/workforce/tool-runtime.ts",
+  "g058DoesNotAttachTo": [
+    "frontend/src/lib/kernel/phase-contracts/phase-41-sandbox-engine.ts",
+    "frontend/src/lib/sandbox-runtime/contracts.ts"
+  ],
+  "completenessLoop": ["Mission", "Delegation", "Worker Execution", "Evidence", "Verification", "Outcome"],
+  "notDone": [
+    "Phase 52 is not a registered canonical phase",
+    "Full-corpus PHASE52_IMPLEMENTATION_AUTHORIZED remains false",
+    "V2 device/IoT remains frozen",
+    "V3 Reality Intelligence remains frozen",
+    "G-085 autonomous company OS remains deferred"
+  ]
+}

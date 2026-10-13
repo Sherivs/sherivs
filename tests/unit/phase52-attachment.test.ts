@@ -1,9 +1,10 @@
 /**
  * Phase 52 classified attachment lock — Architecture Council.
  *
- * Proves Phase 52 remains unregistered and not implementation-authorized,
- * V1 attach/create workers can be attached as capability mappings only,
- * and frozen workers are not implementable. Does not re-extract the corpus.
+ * Proves Phase 52 remains unregistered and not implementation-authorized as a
+ * full corpus (V2/V3/G-085), V1 attach/create workers can be attached, and
+ * frozen workers are not implementable. V1 engines live in the sibling
+ * phase52-v1-engines module. Does not re-extract the corpus.
  */
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -124,6 +125,10 @@ describe("Phase 52 classified attachment lock", () => {
         "Frozen material is preserved, not deleted.",
       ]),
     );
+    expect(
+      (json as { phase52V1EngineImplementationAuthorized?: unknown })
+        .phase52V1EngineImplementationAuthorized,
+    ).toBe(true);
   });
 
   it("routing decomposition JSON summary.implementationAuthorized is false", () => {

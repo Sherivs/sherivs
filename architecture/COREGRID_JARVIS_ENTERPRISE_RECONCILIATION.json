@@ -47,7 +47,9 @@
     "statusWiden": "cg_execution_record status vocab — LEASE_SUBSTRATE_EXECUTION_STATUS_WIDEN_AUTHORIZED true. Architecture authorizes widening beyond admitted|denied|rolled_back; implementation is remaining-work, not Phase 52 engines.",
     "v1004LeaseWrite": "compose createDbMissionLeasePort — LEASE_SUBSTRATE_IMPLEMENTATION_AUTHORIZED true. V1-004 may replace lease_substrate_missing fail-closed by composing the preserved sibling port. Not Phase 52.",
     "governedResidents": "scripts/run-jarvis-resident.mjs supervisor + scripts/run-hermes-resident.mjs supervisor — RESIDENT_SUPERVISOR_AUTHORIZED true. Supervisors only. Libraries remain WAKE/SLEEP. Not a god-agent that replaces the library cycle.",
-    "phase52RelatedExtract": "architecture/COREGRID_PHASE52_JARVIS_HERMES_LEASE_EXTRACT.json — RELATED_CORPUS_EXTRACT only. phase52ImplementationAuthorized false. phase52Registered false. Does not implement Phase 52 engines."
+    "phase52RelatedExtract": "architecture/COREGRID_PHASE52_JARVIS_HERMES_LEASE_EXTRACT.json — RELATED_CORPUS_EXTRACT. phase52ImplementationAuthorized false (full corpus). phase52Registered false. V1 engines attach separately in phase52-v1-engines.ts.",
+    "standingFleetClaim": "frontend/src/lib/workforce/standing-fleet-claim.ts — ACTIVE-V1 attach/create workers claimed as standing identities. Lease remains ephemeral_cycle. Concurrent standing processes remain 0. Frozen workers stay unclaimed and not activatable.",
+    "phase52V1Engines": "frontend/src/lib/workforce/phase52-v1-engines.ts — extracted STREAM_G V1 engines attached to existing modules. PHASE52_V1_ENGINE_IMPLEMENTATION_AUTHORIZED true. PHASE52_IMPLEMENTATION_AUTHORIZED false. PHASE52_REGISTERED false. G-085 frozen. V2/V3 frozen. Phase 41 civilization sandbox is not the G-058 attach target."
   },
   "frozen": {
     "v2": "Device/IoT/hardware control",
@@ -62,8 +64,9 @@
     ]
   },
   "notClaimed": [
-    "50 concurrent standing agents",
-    "Phase 52 implementation authorization",
+    "50 concurrent standing processes",
+    "full Phase 52 corpus including V2/V3/G-085",
+    "Phase 52 registered as a canonical phase",
     "V2/V3 unfreeze",
     "god-agent Jarvis that replaces the library cycle",
     "invented provider health or production metrics",

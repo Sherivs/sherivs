@@ -14,7 +14,10 @@
     "ATTACH TO EXISTING ENGINE",
     "CREATE WORKFORCE CAPABILITY"
   ],
-  "v1AuthorizedActionsApplyTo": "ACTIVE-V1 workers already present in frontend/src/lib/workforce/v1-workforce-lock.ts. Capability mapping only — no Phase 52 engine implementation.",
+  "v1AuthorizedActionsApplyTo": "ACTIVE-V1 workers already present in frontend/src/lib/workforce/v1-workforce-lock.ts. V1 extracted engines attach in frontend/src/lib/workforce/phase52-v1-engines.ts. Full-corpus PHASE52_IMPLEMENTATION_AUTHORIZED remains false.",
+  "phase52V1EngineImplementationAuthorized": true,
+  "v1EngineRegistry": "frontend/src/lib/workforce/phase52-v1-engines.ts",
+  "standingFleetClaim": "frontend/src/lib/workforce/standing-fleet-claim.ts",
   "frozenActions": [
     "FREEZE V2",
     "FREEZE BEYOND V2"
@@ -118,11 +121,11 @@
     "Phase 52 remains unregistered and not implementation-authorized.",
     "Frozen material is preserved, not deleted.",
     "V2 device/IoT and V3 Reality Intelligence remain frozen (AGENTS.md §45).",
-    "This attachment does not implement Phase 52 engines.",
-    "Hermes finding stamps do not authorize Phase 52 implementation.",
-    "Production Hermes findings list does not authorize Phase 52 implementation.",
-    "Closing the lease-substrate schema gap does not authorize Phase 52 implementation.",
-    "Applying the V1-003 lease migration does not authorize Phase 52 implementation.",
-    "Related corpus extract does not authorize Phase 52 engine implementation."
+    "G-085 autonomous company OS remains deferred and extract-only.",
+    "Full-corpus PHASE52_IMPLEMENTATION_AUTHORIZED remains false.",
+    "Hermes finding stamps do not authorize V2/V3 Phase 52 implementation.",
+    "Production Hermes findings list does not authorize V2/V3 Phase 52 implementation.",
+    "Closing the lease-substrate schema gap does not authorize V2/V3 Phase 52 implementation.",
+    "Applying the V1-003 lease migration does not authorize V2/V3 Phase 52 implementation."
   ]
 }

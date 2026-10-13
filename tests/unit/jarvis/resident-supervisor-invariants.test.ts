@@ -41,6 +41,8 @@ const PATHS = {
   phase52Ts: "frontend/src/lib/workforce/phase52-attachment.ts",
   phase52Json: "architecture/COREGRID_V1_WORKFORCE_PHASE52_ATTACHMENT.json",
   phase52Extract: "architecture/COREGRID_PHASE52_JARVIS_HERMES_LEASE_EXTRACT.json",
+  standingFleetTs: "frontend/src/lib/workforce/standing-fleet-claim.ts",
+  phase52EnginesTs: "frontend/src/lib/workforce/phase52-v1-engines.ts",
 } as const;
 
 const LIBRARY_NO_DAEMON = [
@@ -49,6 +51,8 @@ const LIBRARY_NO_DAEMON = [
   PATHS.enterpriseLoop,
   PATHS.findingsList,
   PATHS.lockTs,
+  PATHS.standingFleetTs,
+  PATHS.phase52EnginesTs,
 ] as const;
 
 const SUPERVISOR_SCRIPTS = [PATHS.jarvisResident, PATHS.hermesResident] as const;

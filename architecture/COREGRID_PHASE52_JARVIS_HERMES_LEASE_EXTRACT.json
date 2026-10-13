@@ -8,7 +8,7 @@
   "phase52Registered": false,
   "PHASE52_IMPLEMENTATION_AUTHORIZED": false,
   "sourceCorpus": "architecture/coregrid-mvp-architecture/reconstruction/STREAM_G_PHASE52_EXTRACTION.json",
-  "extractionNote": "EXTRACT only. Does not implement Phase 52 engines, does not register Phase 52 as a canonical phase, does not un-freeze V2/V3 device/IoT, and does not claim 50 standing agents. Prompt labels named STREAM_G concepts; relatedRequirementIds are the STREAM_G ids of those named records (prompt shorthand was off-by-one for several labels).",
+  "extractionNote": "RELATED_CORPUS_EXTRACT. Human authorization 2026-10-13 later implements V1 engines via attach-to-existing (phase52-v1-engines.ts) and claims the V1 standing fleet as identities (standing-fleet-claim.ts). This extract artifact still does not register Phase 52 as a canonical phase, does not un-freeze V2/V3, and does not claim concurrent standing processes. Prompt labels named STREAM_G concepts; relatedRequirementIds are the STREAM_G ids of those named records (prompt shorthand was off-by-one for several labels).",
   "streamGIdAlignment": {
     "G-014": "G-014 Agent as first-class governed actor",
     "G-018": "prompt G-019 Workflow fabric → STREAM_G G-018",
@@ -158,11 +158,15 @@
     "v1004LeaseWrite": "compose createDbMissionLeasePort",
     "jarvisResident": "scripts/run-jarvis-resident.mjs supervisor",
     "hermesResident": "scripts/run-hermes-resident.mjs supervisor",
-    "librariesRemainWakeSleep": true
+    "librariesRemainWakeSleep": true,
+    "standingFleetClaim": "frontend/src/lib/workforce/standing-fleet-claim.ts",
+    "phase52V1Engines": "frontend/src/lib/workforce/phase52-v1-engines.ts"
   },
   "notDone": [
-    "Phase 52 engines are not implemented",
+    "Full Phase 52 corpus (V2/V3/G-085) remains unauthorized",
     "V2/V3 remain frozen",
-    "No 50 standing agents"
+    "G-085 autonomous company OS remains extract-only",
+    "Phase 52 is not a registered canonical phase",
+    "No 50 concurrent standing processes"
   ]
 }
