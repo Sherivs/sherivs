@@ -20,7 +20,8 @@
     "verificationIndependence": "frontend/src/lib/assurance/verification-independence.ts",
     "hermesFindingStamp": "frontend/src/lib/hermes/hermes-finding-observation.ts",
     "hermesFindingsList": "frontend/src/lib/hermes/hermes-findings-list.ts",
-    "hermesFindingsListServer": "frontend/src/lib/hermes/hermes-findings-list.server.ts"
+    "hermesFindingsListServer": "frontend/src/lib/hermes/hermes-findings-list.server.ts",
+    "leaseSubstrateGapLock": "frontend/src/lib/missions/lease-substrate-gap-lock.ts"
   },
   "partial": {
     "hermesRuntimeWiring": "Hermes findings are consumed by Jarvis only via stampHermesFindings over already-stamped findings (injected port). Jarvis does not run Hermes repair, does not invent findings, and is not a resident process. This is attach/consume remaining-work closure over existing Hermes cycle output — not a new engine, not Phase 52 implementation, and not a standing process.",
@@ -39,7 +40,8 @@
     "enterpriseCycleWakeTrigger": "Library-form remaining-work closure: AGENTS.md §27 authenticated server-function wake plus schedule/workflow_dispatch cron. Runtime-owned surface (enterprise-cycle contract/functions/runtime + scripts/run-jarvis-enterprise-cycle.mjs + workflow). Architecture does not claim a resident process or always-on Jarvis.",
     "phase52ClassifiedLock": "architecture/COREGRID_V1_WORKFORCE_PHASE52_ATTACHMENT.json + frontend/src/lib/workforce/phase52-attachment.ts. Phase 52 remains classified, unregistered, and not implementation-authorized. V1 attach/create mappings only; frozen workers stay frozen. No new canonical phase.",
     "hermesFindingObservationTranslator": "frontend/src/lib/hermes/hermes-finding-observation.ts — Observability-owned attach/consume mapper over already-stamped Hermes findings. mission_stuck maps to mission_timeout; worker_quarantined maps to worker_failure. Other finding kinds are brief-only (not DETECTABLE). Empty evidence is not stamped. Jarvis consumes via stampHermesFindings (injected port); it does not run Hermes repair, does not invent findings, and is not a resident process. Architecture records remaining-work closure; this is not a new engine and does not authorize Phase 52 implementation. Production listing of findings is classified separately as hermesFindingsListSubstrate (OBSERVE/ASSESS attach over existing cg_* tables).",
-    "hermesFindingsListSubstrate": "frontend/src/lib/hermes/hermes-findings-list.ts + frontend/src/lib/hermes/hermes-findings-list.server.ts — OBSERVE/ASSESS attach over existing tenant-scoped cg_* tables, not a new engine and not Phase 52 implementation. Production listHermesFindings reads tenant-scoped cg_execution_record, cg_verification_result, cg_worker_definition, cg_worker_quarantine, then reuses assessExecutions/assessWorkers. Assigned-without-lease is NOT treated as mission_stuck (MISSION_LEASE_SUBSTRATE_GAP honesty). Does not call runHermesCycle. Does not invent findings. Library-form wake only. Phase 52 stays CLASSIFIED and not implementation-authorized. No resident process. No V2/V3 un-freeze."
+    "hermesFindingsListSubstrate": "frontend/src/lib/hermes/hermes-findings-list.ts + frontend/src/lib/hermes/hermes-findings-list.server.ts — OBSERVE/ASSESS attach over existing tenant-scoped cg_* tables, not a new engine and not Phase 52 implementation. Production listHermesFindings reads tenant-scoped cg_execution_record, cg_verification_result, cg_worker_definition, cg_worker_quarantine, then reuses assessExecutions/assessWorkers. Assigned-without-lease is NOT treated as mission_stuck (MISSION_LEASE_SUBSTRATE_GAP honesty). Does not call runHermesCycle. Does not invent findings. Library-form wake only. Phase 52 stays CLASSIFIED and not implementation-authorized. No resident process. No V2/V3 un-freeze.",
+    "leaseSubstrateGapClassification": "architecture/COREGRID_LEASE_SUBSTRATE_GAP_CLASSIFICATION.json — remaining-work closure is the CLASSIFIED lock, NOT closing the schema gap. The V1-003 migration remains AUTHORED_NOT_APPLIED and is not claimed live. Agents cannot apply it, cannot widen cg_execution_record.status beyond admitted|denied|rolled_back, cannot persist leases into Jarvis observations, and cannot treat assigned-without-lease as mission_stuck. Jarvis/Hermes remain library-form; no resident process. Phase 52 stays CLASSIFIED and not implementation-authorized."
   },
   "frozen": {
     "v2": "Device/IoT/hardware control",
@@ -59,6 +61,7 @@
     "Phase 52 implementation authorization",
     "invented provider health or production metrics",
     "invented Hermes findings",
-    "Hermes replaced"
+    "Hermes replaced",
+    "closed lease-substrate schema gap"
   ]
 }

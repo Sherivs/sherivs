@@ -1,0 +1,25 @@
+{
+  "artifact": "COREGRID_LEASE_SUBSTRATE_GAP_CLASSIFICATION",
+  "status": "CLASSIFIED_NOT_IMPLEMENTATION_AUTHORIZED",
+  "captured": "2026-10-13",
+  "updated": "2026-10-13",
+  "versionTarget": "ACTIVE-V1",
+  "implementationAuthorized": false,
+  "LEASE_SUBSTRATE_GAP_CLOSE_AUTHORIZED": false,
+  "LEASE_SUBSTRATE_IMPLEMENTATION_AUTHORIZED": false,
+  "classification": "CLASSIFIED_NOT_IMPLEMENTATION_AUTHORIZED",
+  "migrationStatus": "AUTHORED_NOT_APPLIED",
+  "migrationPath": "database/supabase/migrations/20261003000019_coregrid_v1_mission_lease.sql",
+  "v1_004FailClosed": "frontend/src/lib/missions/mission-execution-db.server.ts leaseOperation → lease_substrate_missing",
+  "executableLock": "frontend/src/lib/missions/lease-substrate-gap-lock.ts",
+  "honestyConsumer": "frontend/src/lib/hermes/hermes-findings-list.ts drops assigned+lease-null as mission_stuck",
+  "preservedSibling": "frontend/src/lib/missions/mission-lease-db.server.ts remains; worker-launch may compose it; this Jarvis remaining-work does not apply the migration or treat cg_execution_record as leased/evidenced/verified",
+  "humanUnfreezeRequirement": "Closing the lease-substrate schema gap (apply the V1-003 migration as live, widen cg_execution_record.status, persist leases into Jarvis observations) requires an explicit human authorization record. Agents cannot close this gap.",
+  "notDone": [
+    "The V1-003 mission-lease migration is not applied by this mission.",
+    "cg_execution_record.status is not widened beyond admitted|denied|rolled_back.",
+    "Assigned-without-lease is not treated as mission_stuck.",
+    "Jarvis/Hermes remain library-form; no resident process.",
+    "Phase 52 remains classified and not implementation-authorized."
+  ]
+}
