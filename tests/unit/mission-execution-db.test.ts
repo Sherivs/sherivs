@@ -13,10 +13,14 @@
  *     persists the independent decision into cg_verification_result
  *     (replay-protected);
  *  5. cross-tenant reads fail closed (unknown == foreign, one signal);
- *  6. the KNOWN lease-substrate gap is FAIL-CLOSED: every lease operation
- *     returns the typed lease_substrate_missing result and writes NOTHING;
+ *  6. adapter.lease is the real MissionLeasePort: acquireLease is a function;
+ *     missing execution fail-closes as cross_tenant and does not invent a
+ *     lease; after assignExecution (admitted → assigned) acquireLease against
+ *     a fake that supports insert/select/update/eq on cg_mission_lease can
+ *     succeed (or fail closed on a denying worker gate);
  *  7. untrusted rows are Zod-validated: a malformed cg_execution_record row
- *     fails closed instead of entering contract state.
+ *     (status "somehow-verified") fails closed instead of entering contract
+ *     state. admitted still maps to assigned when no lease exists.
  */
 
 import { describe, expect, it } from "vitest";
@@ -107,7 +111,7 @@ type Row = Record<string, unknown>;
 interface FakeDb {
   client: MissionDbClient;
   tables: Map<string, Row[]>;
-  writes: Array<{ table: string; op: "insert" | "upsert"; row: Row }>;
+  writes: Array<{ table: string; op: "insert" | "upsert" | "update"; row: Row }>;
 }
 
 function fakeSupabaseDb(
@@ -158,6 +162,26 @@ function fakeSupabaseDb(
           const rows = tables.get(table) ?? tables.set(table, []).get(table)!;
           rows.push(row);
           return Promise.resolve({ data: row, error: null });
+        },
+        update(patch: Row) {
+          const makeUpdate = (filters: Array<[string, string]>) => ({
+            eq(column: string, value: string) {
+              return makeUpdate([...filters, [column, value]]);
+            },
+            then(
+              onFulfilled?: (value: { data: Row[]; error: null }) => unknown,
+              onRejected?: (reason: unknown) => unknown,
+            ) {
+              writes.push({ table, op: "update", row: patch });
+              for (const row of rowsFor()) {
+                if (filters.every(([column, value]) => row[column] === value)) {
+                  Object.assign(row, patch);
+                }
+              }
+              return Promise.resolve({ data: rowsFor(), error: null }).then(onFulfilled, onRejected);
+            },
+          });
+          return makeUpdate([]);
         },
       };
     },
@@ -482,22 +506,109 @@ describe("db mission adapter — cross-tenant denial", () => {
 });
 
 /* ─────────────────────────────────────────────────────────────
- * 6. The lease-substrate gap is fail-closed (no writes, ever)
+ * 6. adapter.lease is the real MissionLeasePort (V1-004 compose)
  * ────────────────────────────────────────────────────────────*/
 
-describe("db mission adapter — lease substrate gap (fail-closed)", () => {
-  it("fails every lease operation with the typed gap and writes nothing", async () => {
+describe("db mission adapter — lease port (real writes)", () => {
+  it("adapter.lease.acquireLease is a function; MISSION_LEASE_SUBSTRATE_GAP remains exported", () => {
     const db = fakeSupabaseDb();
     const adapter = createDbMissionExecutionPorts(db.client);
+    expect(adapter.backend).toBe("db");
+    expect(typeof adapter.lease.acquireLease).toBe("function");
+    expect(typeof adapter.lease.heartbeatLease).toBe("function");
+    expect(typeof adapter.lease.completeExecution).toBe("function");
+    expect(typeof adapter.lease.failExecution).toBe("function");
+    expect(typeof adapter.lease.recoverOrphanedLeases).toBe("function");
+    expect(MISSION_LEASE_SUBSTRATE_GAP).toContain("follow-up migration");
+  });
 
-    const gap = adapter.leaseOperation();
-    expect(gap.ok).toBe(false);
-    expect(gap.code).toBe("lease_substrate_missing");
-    expect(gap.reason).toBe(MISSION_LEASE_SUBSTRATE_GAP);
-    expect(adapter.leaseGap).toBe(MISSION_LEASE_SUBSTRATE_GAP);
-    expect(db.writes).toHaveLength(0);
-    expect(gap.reason).toContain("no lease-owner, heartbeat or lease-expiry columns");
-    expect(gap.reason).toContain("follow-up migration");
+  it("acquireLease with a missing execution returns cross_tenant and does not invent a lease", async () => {
+    const db = fakeSupabaseDb();
+    const adapter = createDbMissionExecutionPorts(db.client);
+    expectDeny(
+      await adapter.lease.acquireLease({
+        actor: operator(),
+        request: {
+          tenantId: TENANT_A,
+          executionId: "no-such-exec",
+          workerId: "worker-1",
+          now: T0,
+        },
+      }),
+      "cross_tenant",
+    );
+    expect(db.writes.filter((w) => w.table === "cg_mission_lease")).toHaveLength(0);
+    expect(db.tables.get("cg_mission_lease") ?? []).toHaveLength(0);
+  });
+
+  it("admitted still maps to assigned when no lease exists", async () => {
+    const db = fakeSupabaseDb({ cg_mission_intent: [MISSION_ROW] });
+    const { records } = ports(db);
+    const assigned = expectOk(
+      await records.assignExecution({ actor: operator(), assignment: assignmentInput() }),
+    );
+    expect(assigned.execution.stage).toBe("assigned");
+    expect(assigned.execution.lease).toBeNull();
+    const loaded = await records.getExecution(TENANT_A, EXECUTION_ID);
+    expect(loaded?.stage).toBe("assigned");
+    expect(loaded?.lease).toBeNull();
+  });
+
+  it("after assignExecution admitted, acquireLease persists cg_mission_lease (or fail-closes on denying worker gate)", async () => {
+    const db = fakeSupabaseDb({ cg_mission_intent: [MISSION_ROW] });
+    const adapter = createDbMissionExecutionPorts(db.client);
+    expectOk(await adapter.records.assignExecution({ actor: operator(), assignment: assignmentInput() }));
+
+    const grant = expectOk(
+      await adapter.lease.acquireLease({
+        actor: operator(),
+        request: {
+          tenantId: TENANT_A,
+          executionId: EXECUTION_ID,
+          workerId: "worker-1",
+          now: T0,
+        },
+      }),
+    );
+    expect(grant.leaseId).toBe(`${EXECUTION_ID}:lease:1`);
+    expect(grant.workerId).toBe("worker-1");
+    const leaseInserts = db.writes.filter((w) => w.table === "cg_mission_lease" && w.op === "insert");
+    expect(leaseInserts).toHaveLength(1);
+    expect(leaseInserts[0].row.state).toBe("active");
+    expect(leaseInserts[0].row.execution_id).toBe(EXECUTION_ID);
+    expect(leaseInserts[0].row.tenant_id).toBe(TENANT_A);
+
+    const statusMirrors = db.writes.filter(
+      (w) => w.table === "cg_execution_record" && w.op === "update",
+    );
+    expect(statusMirrors.length).toBeGreaterThanOrEqual(1);
+    expect(statusMirrors[statusMirrors.length - 1].row.status).toBe("leased");
+    const historyAfterLease = db.writes.filter(
+      (w) => w.table === "cg_execution_history" && w.row.status === "leased",
+    );
+    expect(historyAfterLease.length).toBeGreaterThanOrEqual(1);
+    expect(historyAfterLease[0].row.external_effect).toBe("recorded_intent");
+
+    const gatedDb = fakeSupabaseDb({ cg_mission_intent: [MISSION_ROW] });
+    const gated = createDbMissionExecutionPorts(gatedDb.client, {
+      workerGate: async () => ({ ok: false, reason: "worker quarantined" }),
+    });
+    expectOk(
+      await gated.records.assignExecution({ actor: operator(), assignment: assignmentInput() }),
+    );
+    expectDeny(
+      await gated.lease.acquireLease({
+        actor: operator(),
+        request: {
+          tenantId: TENANT_A,
+          executionId: EXECUTION_ID,
+          workerId: "worker-1",
+          now: T0,
+        },
+      }),
+      "unauthorized",
+    );
+    expect(gatedDb.writes.filter((w) => w.table === "cg_mission_lease")).toHaveLength(0);
   });
 });
 

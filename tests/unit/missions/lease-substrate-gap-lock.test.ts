@@ -1,12 +1,11 @@
 /**
  * Classified lease-substrate governance lock — MISSIONS / OBSERVABILITY.
  *
- * Proves apply + observe-applied-leases are authorized after the 2026-10-13
- * human directive, the sibling is APPLIED, V1-004 still fail-closes with
- * lease_substrate_missing, status widen stays unauthorized, and Hermes does
- * not invent assigned-without-lease as mission_stuck. Does not edit the
- * checksum-bound SQL file, does not rewrite V1-004, does not tear down
- * worker-launch's lease port.
+ * Proves apply + observe-applied-leases + status-widen + V1-004 lease
+ * composition are authorized after the 2026-10-13 human directive, the
+ * sibling is APPLIED, and Hermes does not invent assigned-without-lease as
+ * mission_stuck. Does not edit the checksum-bound SQL file, does not tear
+ * down worker-launch's lease port, does not un-freeze Phase 52.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -37,6 +36,10 @@ const FINDINGS_SRC = join(ROOT, "frontend/src/lib/hermes/hermes-findings-list.ts
 const FINDINGS_SERVER_SRC = join(ROOT, "frontend/src/lib/hermes/hermes-findings-list.server.ts");
 const PHASE52_SRC = join(ROOT, "frontend/src/lib/workforce/phase52-attachment.ts");
 const SIBLING_MIGRATION = join(ROOT, LEASE_SUBSTRATE_MIGRATION_PATH);
+const STATUS_WIDEN_MIGRATION = join(
+  ROOT,
+  "database/supabase/migrations/20261013000050_coregrid_v1_execution_record_status.sql",
+);
 
 const TENANT = "tenant-alpha";
 const T0 = "2026-10-01T12:00:00.000Z";
@@ -75,19 +78,15 @@ describe("lease-substrate governance lock — tokens", () => {
     );
     expect(LEASE_SUBSTRATE_MIGRATION_STATUS).toBe("APPLIED");
     expect(LEASE_SUBSTRATE_GAP_CLOSE_AUTHORIZED).toBe(true);
-    expect(LEASE_SUBSTRATE_EXECUTION_STATUS_WIDEN_AUTHORIZED).toBe(false);
-    expect(LEASE_SUBSTRATE_IMPLEMENTATION_AUTHORIZED).toBe(false);
+    expect(LEASE_SUBSTRATE_EXECUTION_STATUS_WIDEN_AUTHORIZED).toBe(true);
+    expect(LEASE_SUBSTRATE_IMPLEMENTATION_AUTHORIZED).toBe(true);
   });
 
   it("assertLeaseSubstrateGovernance does not throw on the shipped constants", () => {
     expect(() => assertLeaseSubstrateGovernance()).not.toThrow();
-    // Fail-closed: if LEASE_SUBSTRATE_APPLY_AUTHORIZED were not true (or
-    // GAP_CLOSE were not true, MIGRATION_STATUS were not APPLIED, or
-    // WIDEN/IMPLEMENTATION were true), assertLeaseSubstrateGovernance would
-    // throw. This suite does not mutate exported tokens to prove that branch.
   });
 
-  it("assertLeaseSubstrateGapRemainsUnauthorized does not throw (widen + implementation stay false)", () => {
+  it("assertLeaseSubstrateGapRemainsUnauthorized does not throw (authorization was used)", () => {
     expect(() => assertLeaseSubstrateGapRemainsUnauthorized()).not.toThrow();
   });
 
@@ -96,7 +95,7 @@ describe("lease-substrate governance lock — tokens", () => {
   });
 
   it("classification, version target, APPLIED, and migration path", () => {
-    expect(LEASE_SUBSTRATE_GAP_CLASSIFICATION).toBe("CLASSIFIED_NOT_IMPLEMENTATION_AUTHORIZED");
+    expect(LEASE_SUBSTRATE_GAP_CLASSIFICATION).toBe("CLASSIFIED_IMPLEMENTATION_AUTHORIZED");
     expect(LEASE_SUBSTRATE_GAP_VERSION_TARGET).toBe("ACTIVE-V1");
     expect(LEASE_SUBSTRATE_MIGRATION_STATUS).toBe("APPLIED");
     expect(LEASE_SUBSTRATE_MIGRATION_PATH).toBe(
@@ -112,10 +111,24 @@ describe("lease-substrate governance lock — source pins", () => {
     expect(source).toMatch(/cg_mission_lease/);
   });
 
-  it("mission-execution-db.server.ts still contains lease_substrate_missing and MISSION_LEASE_SUBSTRATE_GAP", () => {
+  it("status-widen migration exists and does not rewrite 20261003000019", () => {
+    expect(existsSync(STATUS_WIDEN_MIGRATION)).toBe(true);
+    const source = readFileSync(STATUS_WIDEN_MIGRATION, "utf8");
+    expect(source).toMatch(/HUMAN AUTHORIZED 2026-10-13/);
+    expect(source).toMatch(/ACTIVE-V1/);
+    expect(source).toMatch(/does not edit 20261003000019/);
+    expect(source).toMatch(/cg_execution_record_status_vocab_check/);
+    expect(source).toMatch(/cg_execution_history_status_vocab_check/);
+    expect(source).not.toMatch(/CREATE TABLE/);
+  });
+
+  it("mission-execution-db.server.ts composes createDbMissionLeasePort and keeps MISSION_LEASE_SUBSTRATE_GAP", () => {
     const source = readFileSync(EXECUTION_DB_SRC, "utf8");
-    expect(source).toMatch(/lease_substrate_missing/);
     expect(source).toMatch(/MISSION_LEASE_SUBSTRATE_GAP/);
+    expect(source).toMatch(/lease_substrate_missing/);
+    expect(source).toMatch(/createDbMissionLeasePort/);
+    expect(source).toMatch(/adapter\.lease|readonly lease:/);
+    expect(source).not.toMatch(/leaseOperation\s*\(/);
   });
 
   it("hermes-findings-list.ts still drops assigned+lease-null mission_stuck", () => {
@@ -157,8 +170,8 @@ describe("lease-substrate governance lock — source pins", () => {
     expect(source).toMatch(/LEASE_SUBSTRATE_APPLY_AUTHORIZED !== true/);
     expect(source).toMatch(/LEASE_SUBSTRATE_GAP_CLOSE_AUTHORIZED !== true/);
     expect(source).toMatch(/LEASE_SUBSTRATE_MIGRATION_STATUS !== "APPLIED"/);
-    expect(source).toMatch(/LEASE_SUBSTRATE_EXECUTION_STATUS_WIDEN_AUTHORIZED !== false/);
-    expect(source).toMatch(/LEASE_SUBSTRATE_IMPLEMENTATION_AUTHORIZED !== false/);
+    expect(source).toMatch(/LEASE_SUBSTRATE_EXECUTION_STATUS_WIDEN_AUTHORIZED !== true/);
+    expect(source).toMatch(/LEASE_SUBSTRATE_IMPLEMENTATION_AUTHORIZED !== true/);
   });
 
   it("Phase 52 attachment lock is not edited by this remaining-work", () => {

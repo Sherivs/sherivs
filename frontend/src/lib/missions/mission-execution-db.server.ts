@@ -5,27 +5,28 @@
  * tables authored by
  * `database/supabase/migrations/20260929000000_coregrid_foundation_mission_001.sql`
  * (the applied foundation persistence layer the foundation loop already runs
- * on). No migration is authored or required by this module:
+ * on), plus the HUMAN AUTHORIZED 2026-10-13 status-vocabulary widen
+ * `database/supabase/migrations/20261013000050_coregrid_v1_execution_record_status.sql`.
+ * This module does not edit checksum-bound
+ * `database/supabase/migrations/20261003000019_coregrid_v1_mission_lease.sql`.
  *
  *   recordIntent       → cg_mission_intent       (upsert, idempotent)
  *   assignExecution    → cg_execution_record     (admitted | denied) +
  *                        cg_execution_history    (append-only transition)
  *   recordEvidence     → cg_foundation_evidence  (§12 who/when/source)
  *   recordVerification → cg_verification_result  (independent decision)
+ *   lease              → createDbMissionLeasePort over cg_mission_lease
+ *                        (V1-003 sibling). After a successful acquire /
+ *                        heartbeat / complete / fail / recover, THIS adapter
+ *                        (V1-004 owns cg_execution_record) mirrors the
+ *                        enriched stage onto cg_execution_record.status and
+ *                        appends cg_execution_history.
  *
- * KNOWN SCHEMA GAP — fail-closed (MISSION V1-004 law, AGENTS §10/§28/§31):
- *   the existing `cg_*` mission tables author NO worker-lease substrate.
- *   `cg_execution_record.status` admits only ('admitted','denied',
- *   'rolled_back') — there is no leased/evidenced/verified projection — and
- *   no lease-owner / heartbeat / lease-expiry columns exist on any `cg_*`
- *   mission table (the worker-definition substrate deliberately excludes
- *   "runtime leases"; no lease table is authored). Faking lease persistence
- *   in application code would defeat exactly-once and orphan-recovery
- *   semantics (§28: records are never rewritten), so every `MissionLeasePort`
- *   operation on this adapter FAILS CLOSED with the typed
- *   `lease_substrate_missing` result, writing NOTHING. The full lease
- *   semantics live in the pure store (`mission-execution-store.ts`); closing
- *   this gap requires a follow-up migration under explicit authorization.
+ * HISTORICAL GAP (closed 2026-10-13): V1-004 previously fail-closed every
+ * MissionLeasePort operation with typed `lease_substrate_missing` because
+ * cg_execution_record.status admitted only ('admitted','denied','rolled_back')
+ * and no lease table existed. The V1-003 sibling authored cg_mission_lease;
+ * this adapter now COMPOSES that port. See deprecated MISSION_LEASE_SUBSTRATE_GAP.
  *
  * Security posture (the migration's own law): RLS on every `cg_*` mission
  * table is deny-by-default (enabled, zero policies, anon/authenticated
@@ -34,9 +35,11 @@
  * — is enforced by the neutral RBAC core (`mission-authorization.ts`) BEFORE
  * any row is read or written, plus tenant-scoped SQL on every query. Rows
  * read back are Zod-validated (untrusted reads fail closed). The executor of
- * record on the DB path is the execution's `actor_id` (the lease substrate
- * that would refine it does not exist — see the gap above), and verification
- * independence is enforced against that executor.
+ * record on the DB path is the execution's `actor_id` until a lease row
+ * refines it (the composed lease port's enriched getExecution).
+ *
+ * Version-target classification: ACTIVE-V1 (AGENTS.md §45). Does not
+ * implement Phase 52 engines. Does not start a resident process.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -51,13 +54,18 @@ import {
   assignmentInputSchema,
   missionEvidenceInputSchema,
   verifyExecutionInputSchema,
+  type ExecutionPathStage,
   type MissionEvidenceInput,
   type MissionExecutionState,
   type MissionIntentInput,
   type MissionVerifyInput,
 } from "./mission-execution";
 import { missionActorContextSchema } from "./mission-authorization";
-import type { MissionRecordPort } from "./mission-execution-store";
+import type { MissionLeasePort, MissionRecordPort } from "./mission-execution-store";
+import {
+  createDbMissionLeasePort,
+  type WorkerLeaseGate,
+} from "./mission-lease-db.server";
 
 /**
  * The db adapter runs on the service-role client. Typed as the bare
@@ -69,9 +77,15 @@ import type { MissionRecordPort } from "./mission-execution-store";
 export type MissionDbClient = SupabaseClient;
 
 /* ─────────────────────────────────────────────────────────────
- * The fail-closed lease-substrate gap (typed, observable)
+ * Historical fail-closed lease-substrate gap (deprecated export)
  * ────────────────────────────────────────────────────────────*/
 
+/**
+ * @deprecated Historical fail-closed token. The former typed denial was
+ * `lease_substrate_missing` from the removed leaseOperation stub. Adapter.lease
+ * is now the real `MissionLeasePort` composed from `createDbMissionLeasePort`.
+ * Kept so existing imports compile. Do not use this string as a live denial.
+ */
 export const MISSION_LEASE_SUBSTRATE_GAP =
   "cg_* mission tables author no worker-lease substrate: " +
   "cg_execution_record.status admits only ('admitted','denied','rolled_back') " +
@@ -81,9 +95,19 @@ export const MISSION_LEASE_SUBSTRATE_GAP =
   "Lease persistence requires a follow-up migration under explicit " +
   "authorization; until then lease operations fail closed and write nothing.";
 
-function leaseGap(): { ok: false; code: "lease_substrate_missing"; reason: string } {
-  return { ok: false, code: "lease_substrate_missing", reason: MISSION_LEASE_SUBSTRATE_GAP };
-}
+const EXECUTION_RECORD_STATUS = [
+  "admitted",
+  "denied",
+  "rolled_back",
+  "assigned",
+  "leased",
+  "evidenced",
+  "verified",
+  "requeued",
+  "exhausted",
+] as const;
+
+type ExecutionRecordStatus = (typeof EXECUTION_RECORD_STATUS)[number];
 
 /* ─────────────────────────────────────────────────────────────
  * Row schemas — the untrusted read boundary (Zod, fail-closed)
@@ -115,7 +139,7 @@ const executionRowSchema = z.object({
   requested_at: z.string().min(1),
   attempt_id: z.string().min(1).max(180),
   started_at: z.string().min(1),
-  status: z.enum(["admitted", "denied", "rolled_back"]),
+  status: z.enum(EXECUTION_RECORD_STATUS),
   reason: z.string().nullable(),
   external_effect: z.enum(["none", "recorded_intent", "compensation_required"]),
 });
@@ -127,6 +151,32 @@ const verificationRowSchema = z.object({
   decision: z.enum(["verified", "failed", "inconclusive"]),
   reason: z.string().min(1).max(200),
 });
+
+/**
+ * Map a persisted cg_execution_record.status onto the execution-path stage.
+ * admitted|assigned → assigned; denied|rolled_back → denied; the remaining
+ * widened values pass through. Unknown statuses never reach here (Zod).
+ */
+function stageFromRecordStatus(status: ExecutionRecordStatus): ExecutionPathStage {
+  switch (status) {
+    case "admitted":
+    case "assigned":
+      return "assigned";
+    case "leased":
+      return "leased";
+    case "evidenced":
+      return "evidenced";
+    case "verified":
+      return "verified";
+    case "requeued":
+      return "requeued";
+    case "exhausted":
+      return "exhausted";
+    case "denied":
+    case "rolled_back":
+      return "denied";
+  }
+}
 
 /* ─────────────────────────────────────────────────────────────
  * Adapter
@@ -156,14 +206,19 @@ export interface CreateDbMissionExecutionPortsInput {
   readonly identityRegistry?: IdentityEquivalenceRegistry;
   /** Criticality used for verification independence checks (default "minor"). */
   readonly defaultWorkCriticality?: WorkCriticality;
+  /**
+   * Optional read-time worker gate forwarded to `createDbMissionLeasePort`.
+   * When omitted, the lease port allows the acquire (same as the V1-003
+   * sibling). Worker-launch wires the live gate; this adapter does not.
+   */
+  readonly workerGate?: WorkerLeaseGate;
 }
 
 export interface DbMissionExecutionPorts {
   readonly backend: "db";
   readonly records: MissionRecordPort;
-  /** Every lease operation fails closed — see MISSION_LEASE_SUBSTRATE_GAP. */
-  readonly leaseGap: typeof MISSION_LEASE_SUBSTRATE_GAP;
-  leaseOperation(): { ok: false; code: "lease_substrate_missing"; reason: string };
+  /** Real MissionLeasePort over cg_mission_lease (V1-003 sibling composed here). */
+  readonly lease: MissionLeasePort & Pick<MissionRecordPort, "getExecution">;
 }
 
 export function createDbMissionExecutionPorts(
@@ -208,6 +263,19 @@ export function createDbMissionExecutionPorts(
     return { ok: true };
   }
 
+  async function updateExecutionStatus(
+    tenantId: string,
+    executionId: string,
+    patch: Record<string, unknown>,
+  ): Promise<void> {
+    const result = await client
+      .from("cg_execution_record")
+      .update(patch)
+      .eq("id", executionId)
+      .eq("tenant_id", tenantId);
+    if (result.error) throw persistenceFailed("cg_execution_record", result.error);
+  }
+
   function executionFromRow(parsed: z.infer<typeof executionRowSchema>): MissionExecutionState {
     return {
       executionId: parsed.id,
@@ -219,7 +287,7 @@ export function createDbMissionExecutionPorts(
       action: parsed.action,
       idempotencyKey: parsed.idempotency_key,
       realityRef: parsed.reality_ref,
-      stage: parsed.status === "admitted" ? "assigned" : "denied",
+      stage: stageFromRecordStatus(parsed.status),
       attempt: 0,
       failureCount: 0,
       retryScheduledAt: null,
@@ -595,8 +663,8 @@ export function createDbMissionExecutionPorts(
       // execution_id column, so the tenant-scoped rows are filtered by the
       // §12 provenance binding (worker:<id>|execution:<id>|source:<ref>).
       // Filtering by actor_id would be wrong: the executor of record is the
-      // assignment's actor (no lease substrate exists to refine it), while
-      // evidence is recorded by the lease-holding worker.
+      // assignment's actor until a lease row refines it, while evidence is
+      // recorded by the lease-holding worker.
       const evidenceRows = await selectRows("cg_foundation_evidence", [["tenant_id", tenantId]]);
       const executionEvidence = evidenceRows
         .filter((row) => String(row.provenance ?? "").includes(`execution:${executionId}`))
@@ -649,10 +717,104 @@ export function createDbMissionExecutionPorts(
     },
   };
 
+  const innerLease = createDbMissionLeasePort(client, {
+    records,
+    workerGate: adapterInput.workerGate,
+  });
+
+  /**
+   * Mirror the lease port's enriched stage onto cg_execution_record.status
+   * and append cg_execution_history. V1-004 owns the execution record;
+   * the V1-003 sibling writes only cg_mission_lease. History status is the
+   * enriched execution-path stage (in the widened vocab). external_effect:
+   * keep recorded_intent if the current row is recorded_intent, else none
+   * — leased/evidenced/verified/requeued/exhausted are not
+   * admitted/denied/rolled_back, so the remaining coupling CHECKs pass.
+   */
+  async function mirrorEnrichedStage(
+    tenantId: string,
+    executionId: string,
+    now: string,
+  ): Promise<void> {
+    const enriched = await innerLease.getExecution(tenantId, executionId);
+    if (enriched === null) return;
+    const status: ExecutionPathStage = enriched.stage;
+    const current = await selectMaybeRow("cg_execution_record", [
+      ["tenant_id", tenantId],
+      ["id", executionId],
+    ]);
+    if (current === null) return;
+    const parsed = executionRowSchema.safeParse(current);
+    if (!parsed.success) {
+      throw new Error(
+        `mission execution load failed for cg_execution_record: row validation rejected — ${parsed.error.message}`,
+      );
+    }
+    if (parsed.data.status === status) return;
+    const externalEffect =
+      parsed.data.external_effect === "recorded_intent" ? "recorded_intent" : "none";
+    await updateExecutionStatus(tenantId, executionId, { status });
+    const historyInsert = await insertRow("cg_execution_history", {
+      execution_id: executionId,
+      recorded_at: now,
+      status,
+      reason: enriched.denyReason,
+      external_effect: externalEffect,
+    });
+    if (!historyInsert.ok) {
+      throw persistenceFailed("cg_execution_history", { message: historyInsert.message });
+    }
+  }
+
+  const lease: MissionLeasePort & Pick<MissionRecordPort, "getExecution"> = {
+    getExecution: (tenantId, executionId) => innerLease.getExecution(tenantId, executionId),
+
+    async acquireLease(input) {
+      const result = await innerLease.acquireLease(input);
+      if (result.ok) {
+        await mirrorEnrichedStage(input.request.tenantId, input.request.executionId, input.request.now);
+      }
+      return result;
+    },
+
+    async heartbeatLease(input) {
+      const result = await innerLease.heartbeatLease(input);
+      if (result.ok) {
+        await mirrorEnrichedStage(input.request.tenantId, input.request.executionId, input.request.now);
+      }
+      return result;
+    },
+
+    async completeExecution(input) {
+      const result = await innerLease.completeExecution(input);
+      if (result.ok) {
+        await mirrorEnrichedStage(input.request.tenantId, input.request.executionId, input.request.now);
+      }
+      return result;
+    },
+
+    async failExecution(input) {
+      const result = await innerLease.failExecution(input);
+      if (result.ok) {
+        await mirrorEnrichedStage(input.tenantId, input.executionId, input.now);
+      }
+      return result;
+    },
+
+    async recoverOrphanedLeases(input) {
+      const result = await innerLease.recoverOrphanedLeases(input);
+      if (result.ok) {
+        for (const recovered of result.value) {
+          await mirrorEnrichedStage(input.request.tenantId, recovered.executionId, input.request.now);
+        }
+      }
+      return result;
+    },
+  };
+
   return {
     backend: "db",
     records,
-    leaseGap: MISSION_LEASE_SUBSTRATE_GAP,
-    leaseOperation: () => leaseGap(),
+    lease,
   };
 }

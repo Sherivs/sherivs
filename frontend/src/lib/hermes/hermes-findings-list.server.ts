@@ -9,9 +9,13 @@
  * never un-freezes Phase 52.
  *
  * Projection (same as `executionFromRow` in mission-execution-db.server.ts):
- *   admitted     → assigned, lease null, evidenceIds []
- *   denied /
- *   rolled_back  → denied
+ *   admitted | assigned → assigned, lease null, evidenceIds []
+ *   leased              → leased
+ *   evidenced           → evidenced
+ *   verified            → verified
+ *   requeued            → requeued
+ *   exhausted           → exhausted
+ *   denied | rolled_back → denied
  *   updatedAt / assignedAt from started_at
  *
  * After loading tenant-scoped executions, this adapter ALSO selects
@@ -91,6 +95,18 @@ function isUsableListInput(tenantId: string, now: string): boolean {
  * Keep aligned with mission-execution-db.server.ts / worker-registry-db.
  * ────────────────────────────────────────────────────────────*/
 
+const EXECUTION_RECORD_STATUS = [
+  "admitted",
+  "denied",
+  "rolled_back",
+  "assigned",
+  "leased",
+  "evidenced",
+  "verified",
+  "requeued",
+  "exhausted",
+] as const;
+
 const executionRowSchema = z.object({
   id: z.string().min(1).max(160),
   idempotency_key: z.string().min(1).max(200),
@@ -103,7 +119,7 @@ const executionRowSchema = z.object({
   requested_at: z.string().min(1),
   attempt_id: z.string().min(1).max(180),
   started_at: z.string().min(1),
-  status: z.enum(["admitted", "denied", "rolled_back"]),
+  status: z.enum(EXECUTION_RECORD_STATUS),
   reason: z.string().nullable(),
   external_effect: z.enum(["none", "recorded_intent", "compensation_required"]),
 });
@@ -170,6 +186,29 @@ function parseOrThrow<T extends z.ZodTypeAny>(
 }
 
 /** Same projection as `executionFromRow` in mission-execution-db.server.ts. */
+function stageFromRecordStatus(
+  status: z.infer<typeof executionRowSchema>["status"],
+): MissionExecutionState["stage"] {
+  switch (status) {
+    case "admitted":
+    case "assigned":
+      return "assigned";
+    case "leased":
+      return "leased";
+    case "evidenced":
+      return "evidenced";
+    case "verified":
+      return "verified";
+    case "requeued":
+      return "requeued";
+    case "exhausted":
+      return "exhausted";
+    case "denied":
+    case "rolled_back":
+      return "denied";
+  }
+}
+
 function executionFromRow(parsed: z.infer<typeof executionRowSchema>): MissionExecutionState {
   return {
     executionId: parsed.id,
@@ -181,7 +220,7 @@ function executionFromRow(parsed: z.infer<typeof executionRowSchema>): MissionEx
     action: parsed.action,
     idempotencyKey: parsed.idempotency_key,
     realityRef: parsed.reality_ref,
-    stage: parsed.status === "admitted" ? "assigned" : "denied",
+    stage: stageFromRecordStatus(parsed.status),
     attempt: 0,
     failureCount: 0,
     retryScheduledAt: null,
@@ -194,136 +233,164 @@ function executionFromRow(parsed: z.infer<typeof executionRowSchema>): MissionEx
   };
 }
 
+export interface HermesObservationSnapshot {
+  readonly executions: readonly MissionExecutionState[];
+  readonly workerPostures: readonly HermesWorkerPosture[];
+  readonly verificationRecords: readonly {
+    readonly executionId: string;
+    readonly decision: "verified" | "failed" | "inconclusive";
+    readonly reason: string;
+  }[];
+}
+
+const EMPTY_OBSERVATION_SNAPSHOT: HermesObservationSnapshot = {
+  executions: [],
+  workerPostures: [],
+  verificationRecords: [],
+};
+
+async function selectRows(
+  client: HermesFindingsListClient,
+  table: FindingsTable,
+  filters: ReadonlyArray<readonly [string, string]>,
+  inFilter?: { readonly column: string; readonly values: readonly string[] },
+): Promise<unknown[]> {
+  let query = client.from(table).select("*");
+  for (const [column, value] of filters) {
+    query = query.eq(column, value);
+  }
+  if (inFilter !== undefined) {
+    query = query.in(inFilter.column, inFilter.values);
+  }
+  const result = await query;
+  if (result.error) throw loadFailed(table, result.error);
+  return (result.data ?? []) as unknown[];
+}
+
+/**
+ * Tenant-scoped observation snapshot for the Hermes resident (Runtime team).
+ * Invalid tenantId / now returns empty arrays (does not throw). Query errors throw.
+ * Does not call runHermesCycle. Does not start a resident process.
+ */
+export async function loadHermesObservationSnapshot(
+  client: HermesFindingsListClient,
+  tenantId: string,
+  now: string,
+): Promise<HermesObservationSnapshot> {
+  if (!isUsableListInput(tenantId, now)) return EMPTY_OBSERVATION_SNAPSHOT;
+  tenantId = tenantId.trim();
+
+  const [executionRows, definitionRows, quarantineRows] = await Promise.all([
+    selectRows(client, "cg_execution_record", [["tenant_id", tenantId]]),
+    selectRows(client, "cg_worker_definition", [["tenant_id", tenantId]]),
+    selectRows(client, "cg_worker_quarantine", [
+      ["tenant_id", tenantId],
+      ["state", "quarantined"],
+    ]),
+  ]);
+
+  const executions = executionRows.map((row) =>
+    executionFromRow(parseOrThrow("cg_execution_record", executionRowSchema, row)),
+  );
+
+  let verificationRecords: HermesObservationSnapshot["verificationRecords"] = [];
+  let projectedExecutions = executions;
+  if (executions.length > 0) {
+    const [verificationRows, leaseRows] = await Promise.all([
+      selectRows(client, "cg_verification_result", [], {
+        column: "execution_id",
+        values: executions.map((execution) => execution.executionId),
+      }),
+      selectRows(client, "cg_mission_lease", [["tenant_id", tenantId]]),
+    ]);
+    verificationRecords = verificationRows.map((row) => {
+      const parsed = parseOrThrow("cg_verification_result", verificationRowSchema, row);
+      return {
+        executionId: parsed.execution_id,
+        decision: parsed.decision,
+        reason: parsed.reason,
+      };
+    });
+    const verificationByExecution = new Map(
+      verificationRecords.map((record) => [record.executionId, record.decision] as const),
+    );
+    const leasesByExecution = new Map<string, MissionLeaseProjectionRow[]>();
+    for (const row of leaseRows) {
+      const parsed = parseOrThrow("cg_mission_lease", leaseRowSchema, row);
+      const list = leasesByExecution.get(parsed.execution_id) ?? [];
+      list.push({
+        leaseId: parsed.lease_id,
+        executionId: parsed.execution_id,
+        tenantId: parsed.tenant_id,
+        workerId: parsed.worker_id,
+        acquiredAt: parsed.acquired_at,
+        heartbeatAt: parsed.heartbeat_at,
+        expiresAt: parsed.expires_at,
+        attempt: parsed.attempt,
+        state: parsed.state,
+        outcome: parsed.outcome,
+        completedAt: parsed.completed_at,
+        retryNotBefore: parsed.retry_not_before,
+      });
+      leasesByExecution.set(parsed.execution_id, list);
+    }
+    projectedExecutions = executions.map((execution) =>
+      projectExecutionWithLeases({
+        base: execution,
+        leases: leasesByExecution.get(execution.executionId) ?? [],
+        verificationDecision: verificationByExecution.get(execution.executionId) ?? null,
+      }),
+    );
+  }
+
+  const quarantinedByDefinition = new Map<string, { readonly failureCount: number }>();
+  for (const row of quarantineRows) {
+    const parsed = parseOrThrow("cg_worker_quarantine", quarantineRowSchema, row);
+    if (parsed.state !== "quarantined") continue;
+    if (quarantinedByDefinition.has(parsed.definition_id)) continue;
+    quarantinedByDefinition.set(parsed.definition_id, {
+      failureCount: parsed.failure_count ?? 0,
+    });
+  }
+
+  const workerPostures: HermesWorkerPosture[] = definitionRows.map((row) => {
+    const parsed = parseOrThrow("cg_worker_definition", workerDefinitionRowSchema, row);
+    const quarantine = quarantinedByDefinition.get(parsed.id);
+    return {
+      workerId: parsed.id,
+      tenantId: parsed.tenant_id,
+      lifecycle: parsed.lifecycle_state,
+      quarantined: quarantine !== undefined,
+      failureCount: quarantine?.failureCount ?? 0,
+      observedAt: now,
+    };
+  });
+
+  return {
+    executions: projectedExecutions,
+    workerPostures,
+    verificationRecords,
+  };
+}
+
 /**
  * Build the production findings-list port over a service-role client.
  * Invalid tenantId / now returns [] (does not throw). Query errors throw.
  */
 export function createHermesFindingsListPort(client: HermesFindingsListClient): HermesFindingsListPort {
-  async function selectRows(
-    table: FindingsTable,
-    filters: ReadonlyArray<readonly [string, string]>,
-    inFilter?: { readonly column: string; readonly values: readonly string[] },
-  ): Promise<unknown[]> {
-    let query = client.from(table).select("*");
-    for (const [column, value] of filters) {
-      query = query.eq(column, value);
-    }
-    if (inFilter !== undefined) {
-      query = query.in(inFilter.column, inFilter.values);
-    }
-    const result = await query;
-    if (result.error) throw loadFailed(table, result.error);
-    return (result.data ?? []) as unknown[];
-  }
-
   return {
     async listHermesFindings(input: {
       tenantId: string;
       now: string;
     }): Promise<readonly HermesFindingObservationSource[]> {
       if (!isUsableListInput(input.tenantId, input.now)) return [];
-      const tenantId = input.tenantId.trim();
-      const now = input.now;
-
-      const [executionRows, definitionRows, quarantineRows] = await Promise.all([
-        selectRows("cg_execution_record", [["tenant_id", tenantId]]),
-        selectRows("cg_worker_definition", [["tenant_id", tenantId]]),
-        selectRows("cg_worker_quarantine", [
-          ["tenant_id", tenantId],
-          ["state", "quarantined"],
-        ]),
-      ]);
-
-      const executions = executionRows.map((row) =>
-        executionFromRow(parseOrThrow("cg_execution_record", executionRowSchema, row)),
-      );
-
-      let verificationRecords: {
-        executionId: string;
-        decision: "verified" | "failed" | "inconclusive";
-        reason: string;
-      }[] = [];
-      let projectedExecutions = executions;
-      if (executions.length > 0) {
-        const [verificationRows, leaseRows] = await Promise.all([
-          selectRows("cg_verification_result", [], {
-            column: "execution_id",
-            values: executions.map((execution) => execution.executionId),
-          }),
-          selectRows("cg_mission_lease", [["tenant_id", tenantId]]),
-        ]);
-        verificationRecords = verificationRows.map((row) => {
-          const parsed = parseOrThrow("cg_verification_result", verificationRowSchema, row);
-          return {
-            executionId: parsed.execution_id,
-            decision: parsed.decision,
-            reason: parsed.reason,
-          };
-        });
-        const verificationByExecution = new Map(
-          verificationRecords.map((record) => [record.executionId, record.decision] as const),
-        );
-        const leasesByExecution = new Map<string, MissionLeaseProjectionRow[]>();
-        for (const row of leaseRows) {
-          const parsed = parseOrThrow("cg_mission_lease", leaseRowSchema, row);
-          const list = leasesByExecution.get(parsed.execution_id) ?? [];
-          list.push({
-            leaseId: parsed.lease_id,
-            executionId: parsed.execution_id,
-            tenantId: parsed.tenant_id,
-            workerId: parsed.worker_id,
-            acquiredAt: parsed.acquired_at,
-            heartbeatAt: parsed.heartbeat_at,
-            expiresAt: parsed.expires_at,
-            attempt: parsed.attempt,
-            state: parsed.state,
-            outcome: parsed.outcome,
-            completedAt: parsed.completed_at,
-            retryNotBefore: parsed.retry_not_before,
-          });
-          leasesByExecution.set(parsed.execution_id, list);
-        }
-        projectedExecutions = executions.map((execution) =>
-          projectExecutionWithLeases({
-            base: execution,
-            leases: leasesByExecution.get(execution.executionId) ?? [],
-            verificationDecision: verificationByExecution.get(execution.executionId) ?? null,
-          }),
-        );
-      }
-
-      const quarantinedByDefinition = new Map<
-        string,
-        { readonly failureCount: number }
-      >();
-      for (const row of quarantineRows) {
-        const parsed = parseOrThrow("cg_worker_quarantine", quarantineRowSchema, row);
-        if (parsed.state !== "quarantined") continue;
-        if (quarantinedByDefinition.has(parsed.definition_id)) continue;
-        quarantinedByDefinition.set(parsed.definition_id, {
-          failureCount: parsed.failure_count ?? 0,
-        });
-      }
-
-      const workerPostures: HermesWorkerPosture[] = definitionRows.map((row) => {
-        const parsed = parseOrThrow("cg_worker_definition", workerDefinitionRowSchema, row);
-        const quarantine = quarantinedByDefinition.get(parsed.id);
-        return {
-          workerId: parsed.id,
-          tenantId: parsed.tenant_id,
-          lifecycle: parsed.lifecycle_state,
-          quarantined: quarantine !== undefined,
-          failureCount: quarantine?.failureCount ?? 0,
-          observedAt: now,
-        };
-      });
-
+      const snapshot = await loadHermesObservationSnapshot(client, input.tenantId, input.now);
       return listHermesFindingsFromState({
-        tenantId,
-        now,
-        executions: projectedExecutions,
-        workerPostures,
-        verificationRecords,
+        tenantId: input.tenantId.trim(),
+        now: input.now,
+        executions: snapshot.executions,
+        workerPostures: snapshot.workerPostures,
+        verificationRecords: snapshot.verificationRecords,
       });
     },
   };
