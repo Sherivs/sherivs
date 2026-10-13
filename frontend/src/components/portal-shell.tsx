@@ -176,11 +176,12 @@ export function EmptyCard({
  * RouteErrorBoundary — render-friendly error fallback that pairs with
  * TanStack Router's `errorComponent`. Logs the error and offers retry.
  */
-export function RouteErrorBoundary({ error, reset }: { error: Error; reset?: () => void }) {
+export function RouteErrorBoundary({ error, reset }: { error: unknown; reset?: () => void }) {
   // Useful in the browser console for diagnosis.
 
   console.error("[route error]", error);
-  const message = error?.message ?? "An unexpected error occurred.";
+  const message =
+    error instanceof Error && error.message ? error.message : "An unexpected error occurred.";
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
       <div className="uos-card p-8 text-center">

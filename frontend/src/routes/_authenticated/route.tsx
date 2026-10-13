@@ -6,6 +6,7 @@ import {
   useNavigate,
   useRouter,
   useRouterState,
+  type ErrorComponentProps,
 } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { refreshPushTokenIfGranted } from "@/lib/push-client";
@@ -57,7 +58,7 @@ export const Route = createFileRoute("/_authenticated")({
   errorComponent: AuthenticatedRouteErrorComponent,
 });
 
-function AuthenticatedRouteErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function AuthenticatedRouteErrorComponent({ error, reset }: ErrorComponentProps) {
   const router = useRouter();
   return (
     <RouteErrorBoundary
@@ -217,9 +218,7 @@ function AuthenticatedLayout() {
                   greeting={experience.greeting}
                   workspaceName={school?.name ?? null}
                   notificationViewer={
-                    school && authUser
-                      ? { tenantId: school.id, recipientId: authUser.id }
-                      : null
+                    school && authUser ? { tenantId: school.id, recipientId: authUser.id } : null
                   }
                   onSignOut={async () => {
                     await signOut();
