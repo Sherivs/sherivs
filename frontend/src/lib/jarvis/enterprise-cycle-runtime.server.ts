@@ -17,7 +17,10 @@
  *
  * Hermes and Jarvis remain libraries. This runtime does not start a
  * resident process. Provider health is never invented: Observability owns
- * `stampProviderHealthObservations`. Phase 52 is not authorized.
+ * `stampProviderHealthObservations`. Hermes findings are never invented:
+ * Observability owns `stampHermesFindings`. This wake lists already-stamped
+ * findings; it does not execute Hermes repair as a side effect of Jarvis.
+ * Phase 52 is not authorized.
  *
  * Version-target classification: ACTIVE-V1 (AGENTS.md §45).
  */
@@ -29,6 +32,10 @@ import {
   stampProviderHealthObservations,
   PROVIDER_HEALTH_OBSERVATION_SOURCE,
 } from "@/lib/observability/provider-health-observation";
+import {
+  stampHermesFindings,
+  HERMES_FINDING_OBSERVATION_SOURCE,
+} from "@/lib/hermes/hermes-finding-observation";
 import { morningExecutiveReport, runJarvisEnterpriseCycle } from "./enterprise-loop";
 import type { JarvisObservation } from "./enterprise-loop";
 import {
@@ -52,6 +59,7 @@ const DEFAULT_HERMES_ID = "hermes";
 
 const HEALTH_PORT_MISSING = "provider health port not injected";
 const HERMES_PORT_MISSING = "hermes observation port not injected";
+const HERMES_FINDINGS_PORT_MISSING = "hermes findings port not injected";
 const HEALTH_OPTED_OUT = "includeProviderHealth=false";
 const HERMES_OPTED_OUT = "includeHermesObservation=false";
 
@@ -80,8 +88,10 @@ export type EnterpriseCycleAdminClient = WriteAuditClient & {
  * one exists, otherwise the verified email claim with a null actor id — the
  * audit is never unattributed and never silently rewritten (§27.6).
  *
- * Default provider-health and Hermes ports are dynamic-imported HERE (never
- * from the functions module) so the client graph cannot reach them.
+ * Default provider-health and Hermes observation ports are dynamic-imported
+ * HERE (never from the functions module) so the client graph cannot reach
+ * them. `listHermesFindings` is left undefined: production does not invent
+ * a findings substrate. Tests inject the port.
  */
 export async function buildEnterpriseCycleDeps(input: {
   admin: EnterpriseCycleAdminClient;
@@ -132,9 +142,12 @@ export interface EnterpriseCycleLibraryResult {
 /**
  * One library-form cycle: stamp honest provider-health observations (when
  * requested), optionally ingest Hermes `cg_event` rows into the Hermes
- * substrate, then run `runJarvisEnterpriseCycle` over the stamped health
- * observations only. Hermes observations are never mapped into Jarvis.
- * Throws are converted to typed skips; nothing is fabricated.
+ * substrate, optionally stamp already-listed Hermes FINDINGS into
+ * JarvisObservation (when `listHermesFindings` is injected), then run
+ * `runJarvisEnterpriseCycle` over the merged stamped observations.
+ * Hermes event-observations stay in the Hermes substrate for ingest;
+ * FINDINGS are mapped only via `stampHermesFindings`. Throws are converted
+ * to typed skips; nothing is fabricated. Listing findings is not repair.
  *
  * The script path calls this function (no session, no §27 audit). The
  * server-function path wraps it in `executeEnterpriseCycle`.
@@ -154,7 +167,7 @@ export async function runEnterpriseCycleLibrary(
     reportCount: 0,
     skipReason: HEALTH_PORT_MISSING,
   };
-  let hermes: EnterpriseCycleHermesTrace = {
+  let hermesIngest: Pick<EnterpriseCycleHermesTrace, "ran" | "consumed" | "skipReason"> = {
     ran: false,
     consumed: "skipped",
     skipReason: HERMES_PORT_MISSING,
@@ -183,9 +196,9 @@ export async function runEnterpriseCycleLibrary(
   }
 
   if (request.includeHermesObservation === false) {
-    hermes = { ran: false, consumed: "skipped", skipReason: HERMES_OPTED_OUT };
+    hermesIngest = { ran: false, consumed: "skipped", skipReason: HERMES_OPTED_OUT };
   } else if (deps.runHermesObservation === undefined) {
-    hermes = { ran: false, consumed: "skipped", skipReason: HERMES_PORT_MISSING };
+    hermesIngest = { ran: false, consumed: "skipped", skipReason: HERMES_PORT_MISSING };
   } else {
     const hermesId = (deps.readEnv("HERMES_WORKER_ID") ?? "").trim() || DEFAULT_HERMES_ID;
     try {
@@ -194,13 +207,13 @@ export async function runEnterpriseCycleLibrary(
         hermesId,
         now: deps.now(),
       });
-      hermes = {
+      hermesIngest = {
         ran: true,
         consumed: result.consumed,
         skipReason: result.ok ? result.reason : (result.reason ?? "hermes observation failed"),
       };
       if (!result.ok) {
-        hermes = {
+        hermesIngest = {
           ran: false,
           consumed: result.consumed,
           skipReason: result.reason ?? "hermes observation failed",
@@ -208,9 +221,44 @@ export async function runEnterpriseCycleLibrary(
       }
     } catch (error) {
       const reason = error instanceof Error ? error.message : "hermes observation failed";
-      hermes = { ran: false, consumed: "failed", skipReason: reason };
+      hermesIngest = { ran: false, consumed: "failed", skipReason: reason };
     }
   }
+
+  /* FINDINGS: list already-stamped Hermes findings; listing is not repair. */
+  let findingsStamped = 0;
+  let findingsSkipReason: string | null = HERMES_FINDINGS_PORT_MISSING;
+  if (request.includeHermesObservation === false) {
+    findingsSkipReason = HERMES_OPTED_OUT;
+  } else if (deps.listHermesFindings === undefined) {
+    findingsSkipReason = HERMES_FINDINGS_PORT_MISSING;
+  } else {
+    try {
+      const findings = await deps.listHermesFindings({
+        tenantId: request.tenantId,
+        now: deps.now(),
+      });
+      const stamped = await Promise.resolve(
+        stampHermesFindings({
+          tenantRef: request.tenantId,
+          findings,
+        }),
+      );
+      observations = [...observations, ...stamped];
+      findingsStamped = stamped.length;
+      findingsSkipReason = null;
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "hermes findings failed";
+      findingsSkipReason = reason;
+      findingsStamped = 0;
+    }
+  }
+
+  const hermes: EnterpriseCycleHermesTrace = {
+    ...hermesIngest,
+    findingsStamped,
+    findingsSkipReason,
+  };
 
   const cycle = runJarvisEnterpriseCycle({
     tenantRef: request.tenantId,
@@ -297,9 +345,12 @@ export async function executeEnterpriseCycle(
       hermes_ran: library.hermes.ran,
       hermes_consumed: library.hermes.consumed,
       hermes_skip_reason: library.hermes.skipReason,
+      hermes_findings_stamped: library.hermes.findingsStamped,
+      hermes_findings_skip_reason: library.hermes.findingsSkipReason,
       night_mode: data.nightMode === true,
       observation_count: library.observations.length,
       health_source: PROVIDER_HEALTH_OBSERVATION_SOURCE,
+      hermes_finding_source: HERMES_FINDING_OBSERVATION_SOURCE,
       briefing_header: briefing.header,
     },
   });

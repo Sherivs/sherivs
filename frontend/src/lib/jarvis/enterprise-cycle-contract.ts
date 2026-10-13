@@ -17,6 +17,7 @@
 import { z } from "zod";
 import type { WriteAuditEntry } from "@/lib/server/write-audit";
 import type { ProviderHealthObservationSource } from "@/lib/observability/provider-health-observation";
+import type { HermesFindingObservationSource } from "@/lib/hermes/hermes-finding-observation";
 import { JarvisCapability } from "./jarvis-contract";
 import type { JarvisEnterpriseLoopResult, JarvisObservation } from "./enterprise-loop";
 
@@ -100,6 +101,14 @@ export interface EnterpriseCycleHermesTrace {
   readonly ran: boolean;
   readonly consumed: string;
   readonly skipReason: string | null;
+  /** Count of Jarvis observations produced by `stampHermesFindings` this wake. */
+  readonly findingsStamped: number;
+  /**
+   * Typed skip when the findings port was not used. `null` when the port ran
+   * (reportCount-style: `findingsStamped` may still be 0). Callers never see
+   * `undefined`.
+   */
+  readonly findingsSkipReason: string | null;
 }
 
 /**
@@ -202,14 +211,30 @@ export interface EnterpriseCycleDeps {
   ) => Promise<readonly ProviderHealthObservationSource[]>;
   /**
    * Hermes event-observation port over the existing `cg_event` queue.
-   * Hermes observations stay in the Hermes substrate — they are never
-   * mapped into `JarvisObservation`. Missing/failing port → typed skip.
+   * Hermes observations stay in the Hermes substrate for ingest; they are
+   * never mapped into `JarvisObservation`. Missing/failing port → typed skip.
    */
   readonly runHermesObservation?: (step: {
     tenantId: string;
     hermesId: string;
     now: string;
   }) => Promise<EnterpriseCycleHermesStepResult>;
+  /**
+   * Hermes FINDING port. Observability owns the translator
+   * (`stampHermesFindings`); this port only lists already-stamped findings.
+   * FINDINGS are mapped into `JarvisObservation` only when this port returns
+   * them. Missing port → typed skip, never fabricated findings. Production
+   * leaves this undefined (no invented findings substrate). Tests inject it.
+   */
+  readonly listHermesFindings?: (input: {
+    tenantId: string;
+    now: string;
+  }) => Promise<readonly HermesFindingObservationSource[]>;
 }
 
-export type { JarvisEnterpriseLoopResult, JarvisObservation, ProviderHealthObservationSource };
+export type {
+  JarvisEnterpriseLoopResult,
+  JarvisObservation,
+  ProviderHealthObservationSource,
+  HermesFindingObservationSource,
+};

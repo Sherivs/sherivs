@@ -15,9 +15,11 @@
  *   6. OPERATIONAL-only reports → zero detections.
  *   7. includeProviderHealth false → health port not called.
  *   8. Hermes port failure → hermes skipped with reason, cycle still completes.
- *   9. §27 static invariants — functions/runtime/contract source pins.
- *  10. Script source pin: rehearsal, exit 2, jiti, no daemon.
- *  11. Workflow source pin: schedule, --rehearse, BLOCKED_NO_CREDENTIAL.
+ *   9. Injected Hermes FINDINGS (mission_stuck / worker_quarantined /
+ *      mission_failed / empty / opted-out / missing port / throw / gate).
+ *  10. §27 static invariants — functions/runtime/contract source pins.
+ *  11. Script source pin: rehearsal, exit 2, jiti, no daemon.
+ *  12. Workflow source pin: schedule, --rehearse, BLOCKED_NO_CREDENTIAL.
  *
  * No network or DB: ports are injected. Version-target: ACTIVE-V1.
  */
@@ -34,6 +36,7 @@ import { executeEnterpriseCycle } from "@/lib/jarvis/enterprise-cycle-runtime.se
 import type { WriteAuditEntry } from "@/lib/server/write-audit";
 import { requirePlatformSuperAdmin } from "@/lib/security-role-gate";
 import type { ProviderHealthObservationSource } from "@/lib/observability/provider-health-observation";
+import type { HermesFindingObservationSource } from "@/lib/hermes/hermes-finding-observation";
 import { JarvisCapability } from "@/lib/jarvis/jarvis-contract";
 
 const ROOT = fileURLToPath(new URL("../../..", import.meta.url));
@@ -68,19 +71,48 @@ function healthReport(
   } as ProviderHealthObservationSource;
 }
 
+function hermesFinding(
+  partial: Pick<HermesFindingObservationSource, "kind"> &
+    Partial<HermesFindingObservationSource>,
+): HermesFindingObservationSource {
+  const kind = partial.kind;
+  return {
+    findingId: `${kind}:subject-1`,
+    tenantId: TENANT,
+    subjectRef: "subject-1",
+    severity: "warning",
+    summary: `${kind} observed`,
+    evidenceRefs: ["ev-1"],
+    observedAt: T0,
+    claim: {
+      source: "mission_record_port",
+      sourceRef: "cg_mission_execution:subject-1",
+      observedAt: T0,
+      verified: true,
+      confidence: "canonical",
+      claim: "state of record",
+    },
+    ...partial,
+    kind,
+  };
+}
+
 function cycleDeps(overrides?: {
   env?: Record<string, string | undefined>;
   runProviderHealth?: EnterpriseCycleDeps["runProviderHealth"];
   runHermesObservation?: EnterpriseCycleDeps["runHermesObservation"];
+  listHermesFindings?: EnterpriseCycleDeps["listHermesFindings"];
   grantedCapabilities?: readonly string[];
 }): EnterpriseCycleDeps & {
   audits: WriteAuditEntry[];
   healthCalls: number;
   hermesCalls: number;
+  findingsCalls: number;
 } {
   const audits: WriteAuditEntry[] = [];
   let healthCalls = 0;
   let hermesCalls = 0;
+  let findingsCalls = 0;
   const defaultHealth: EnterpriseCycleDeps["runProviderHealth"] = async () => {
     healthCalls += 1;
     return [];
@@ -106,12 +138,22 @@ function cycleDeps(overrides?: {
             hermesCalls += 1;
             return overrides.runHermesObservation!(step);
           },
+    listHermesFindings:
+      overrides?.listHermesFindings === undefined
+        ? undefined
+        : async (input) => {
+            findingsCalls += 1;
+            return overrides.listHermesFindings!(input);
+          },
     audits,
     get healthCalls() {
       return healthCalls;
     },
     get hermesCalls() {
       return hermesCalls;
+    },
+    get findingsCalls() {
+      return findingsCalls;
     },
   };
 }
@@ -160,6 +202,7 @@ describe("enterprise cycle gating (§27 authorize before anything)", () => {
     expect(outcome.reason).toBe("Forbidden: platform super admin role required");
 
     expect(deps.healthCalls).toBe(0);
+    expect(deps.findingsCalls).toBe(0);
 
     expect(deps.audits).toHaveLength(1);
     const entry = deps.audits[0];
@@ -182,7 +225,18 @@ describe("enterprise cycle gating (§27 authorize before anything)", () => {
     if (outcome.outcome !== "denied") return;
     expect(outcome.code).toBe("gate_denied");
     expect(deps.healthCalls).toBe(0);
+    expect(deps.findingsCalls).toBe(0);
     expect(deps.audits[0].outcome).toBe("failed");
+  });
+
+  it("gate denied still does not call listHermesFindings", async () => {
+    const deps = cycleDeps({
+      listHermesFindings: async () => [hermesFinding({ kind: "mission_stuck" })],
+    });
+    const outcome = await wake(deps, { role: false });
+    expect(outcome.outcome).toBe("denied");
+    expect(deps.findingsCalls).toBe(0);
+    expect(deps.healthCalls).toBe(0);
   });
 });
 
@@ -312,6 +366,138 @@ describe("completed path (library cycle over injected ports)", () => {
     expect(outcome.hermes.consumed).toBe("failed");
     expect(outcome.hermes.skipReason).toContain("hermes substrate unavailable");
     expect(outcome.cycle.phases.map((phase) => phase.phase)).toContain("SLEEP");
+    expect(outcome.hermes.findingsStamped).toBe(0);
+    expect(outcome.hermes.findingsSkipReason).toMatch(/not injected/);
+  });
+});
+
+/* ─────────────────────────────────────────────────────────────
+ * 9. HERMES FINDINGS — stamp already-listed findings; never invent
+ * ────────────────────────────────────────────────────────────*/
+
+describe("Hermes findings consumption (injected port, Observability stamp)", () => {
+  it("injected mission_stuck finding with evidence → cycle detects mission_timeout", async () => {
+    const deps = cycleDeps({
+      listHermesFindings: async () => [
+        hermesFinding({
+          kind: "mission_stuck",
+          findingId: "mission_stuck:exec-stuck",
+          subjectRef: "exec-stuck",
+          summary: "assigned execution exec-stuck is stale",
+          evidenceRefs: ["cg_foundation_evidence:exec-stuck"],
+        }),
+      ],
+    });
+    const outcome = await wake(deps);
+    expect(outcome.outcome).toBe("completed");
+    if (outcome.outcome !== "completed") return;
+    expect(deps.findingsCalls).toBe(1);
+    expect(outcome.hermes.findingsStamped).toBe(1);
+    expect(outcome.hermes.findingsSkipReason).toBeNull();
+    expect(outcome.cycle.detections.map((d) => d.condition)).toContain("mission_timeout");
+    expect(deps.audits[0].details).toMatchObject({ hermes_findings_stamped: 1 });
+  });
+
+  it("injected worker_quarantined finding → cycle detects worker_failure", async () => {
+    const deps = cycleDeps({
+      listHermesFindings: async () => [
+        hermesFinding({
+          kind: "worker_quarantined",
+          findingId: "worker_quarantined:worker-7",
+          subjectRef: "worker-7",
+          summary: "worker worker-7 quarantined after repeated failures",
+          severity: "critical",
+        }),
+      ],
+    });
+    const outcome = await wake(deps);
+    expect(outcome.outcome).toBe("completed");
+    if (outcome.outcome !== "completed") return;
+    expect(outcome.hermes.findingsStamped).toBe(1);
+    expect(outcome.hermes.findingsSkipReason).toBeNull();
+    expect(outcome.cycle.detections.map((d) => d.condition)).toContain("worker_failure");
+  });
+
+  it("injected mission_failed finding → NO detection from that kind (Hermes owns repair)", async () => {
+    const deps = cycleDeps({
+      listHermesFindings: async () => [
+        hermesFinding({
+          kind: "mission_failed",
+          findingId: "mission_failed:exec-4",
+          subjectRef: "exec-4",
+          summary: "mission exec-4 failed its lawful path",
+        }),
+      ],
+    });
+    const outcome = await wake(deps);
+    expect(outcome.outcome).toBe("completed");
+    if (outcome.outcome !== "completed") return;
+    expect(outcome.hermes.findingsStamped).toBe(1);
+    expect(outcome.hermes.findingsSkipReason).toBeNull();
+    expect(outcome.cycle.detections.map((d) => d.condition)).not.toContain("mission_timeout");
+    expect(outcome.cycle.detections.map((d) => d.condition)).not.toContain("worker_failure");
+    expect(outcome.cycle.detections).toEqual([]);
+  });
+
+  it("empty findings array from the port → zero hermes detections, cycle still completes, findingsStamped 0", async () => {
+    const deps = cycleDeps({
+      listHermesFindings: async () => [],
+    });
+    const outcome = await wake(deps);
+    expect(outcome.outcome).toBe("completed");
+    if (outcome.outcome !== "completed") return;
+    expect(deps.findingsCalls).toBe(1);
+    expect(outcome.hermes.findingsStamped).toBe(0);
+    expect(outcome.hermes.findingsSkipReason).toBeNull();
+    expect(outcome.cycle.detections).toEqual([]);
+    expect(outcome.cycle.phases.map((phase) => phase.phase)).toContain("SLEEP");
+  });
+
+  it("includeHermesObservation false → listHermesFindings not called", async () => {
+    const deps = cycleDeps({
+      listHermesFindings: async () => [hermesFinding({ kind: "mission_stuck" })],
+    });
+    const outcome = await wake(deps, {
+      data: { tenantId: TENANT, includeHermesObservation: false },
+    });
+    expect(outcome.outcome).toBe("completed");
+    if (outcome.outcome !== "completed") return;
+    expect(deps.findingsCalls).toBe(0);
+    expect(outcome.hermes.findingsStamped).toBe(0);
+    expect(outcome.hermes.findingsSkipReason).toMatch(/includeHermesObservation=false/);
+    expect(outcome.cycle.detections).toEqual([]);
+  });
+
+  it("missing listHermesFindings port → findingsSkipReason mentions not injected; nothing invented", async () => {
+    const deps = cycleDeps();
+    const outcome = await wake(deps);
+    expect(outcome.outcome).toBe("completed");
+    if (outcome.outcome !== "completed") return;
+    expect(deps.findingsCalls).toBe(0);
+    expect(outcome.hermes.findingsStamped).toBe(0);
+    expect(outcome.hermes.findingsSkipReason).toMatch(/not injected/);
+    expect(outcome.cycle.detections).toEqual([]);
+  });
+
+  it("listHermesFindings throw → cycle still completes; health stamps still flow if present", async () => {
+    const deps = cycleDeps({
+      runProviderHealth: async () => [
+        healthReport({ provider: "redis", state: "DEGRADED", httpStatus: 503, durationMs: 41 }),
+      ],
+      listHermesFindings: async () => {
+        throw new Error("findings substrate unavailable");
+      },
+    });
+    const outcome = await wake(deps);
+    expect(outcome.outcome).toBe("completed");
+    if (outcome.outcome !== "completed") return;
+    expect(outcome.attempted).toBe(true);
+    expect(deps.findingsCalls).toBe(1);
+    expect(outcome.hermes.findingsStamped).toBe(0);
+    expect(outcome.hermes.findingsSkipReason).toContain("findings substrate unavailable");
+    expect(outcome.health.ran).toBe(true);
+    expect(outcome.cycle.detections.map((d) => d.condition)).toContain("redis_failure");
+    expect(outcome.cycle.phases.map((phase) => phase.phase)).toContain("SLEEP");
   });
 });
 
@@ -352,7 +538,24 @@ describe("§27 server-function invariants — enterprise-cycle.functions.ts", ()
     expect(runtime).toMatch(/tenantRef\s*:\s*(?:[A-Za-z_][\w.]*\.)?tenantId\b/);
     expect(runtime).toMatch(/stampProviderHealthObservations/);
     expect(runtime).toMatch(/runHermesEventObservationStep/);
+    expect(runtime).toMatch(/stampHermesFindings/);
+    expect(runtime).toMatch(/hermes-finding-observation/);
+    expect(runtime).not.toMatch(/\brunHermesCycle\b/);
     expect(src).toMatch(/runJarvisEnterpriseCycleWake/);
+  });
+
+  it("runtime imports stampHermesFindings; no runHermesCycle call; no setInterval", () => {
+    expect(runtime).toMatch(/stampHermesFindings/);
+    expect(runtime).toMatch(/from\s+["']@\/lib\/hermes\/hermes-finding-observation["']/);
+    expect(runtime).not.toMatch(/\brunHermesCycle\b/);
+    expect(runtime).not.toMatch(/from\s+["'][^"']*hermes-cycle["']/);
+    expect(runtime).not.toMatch(/\bsetInterval\s*\(/);
+    expect(runtime).not.toMatch(/\bwhile\s*\(\s*true\s*\)/);
+    expect(runtime).not.toMatch(/\bnew\s+Worker\s*\(/);
+    expect(contract).toMatch(/listHermesFindings/);
+    expect(contract).toMatch(/HermesFindingObservationSource/);
+    expect(contract).toMatch(/findingsStamped/);
+    expect(contract).toMatch(/findingsSkipReason/);
   });
 
   it("6 AUDIT: every attempt writes a fail-closed audit record; no secrets logged", () => {
