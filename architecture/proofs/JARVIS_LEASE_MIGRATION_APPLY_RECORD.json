@@ -1,0 +1,31 @@
+{
+  "artifact": "JARVIS_LEASE_MIGRATION_APPLY_RECORD",
+  "captured": "2026-10-13",
+  "versionTarget": "ACTIVE-V1",
+  "humanAuthorization": "Apply the lease migration and then execute the remaining works professionally.",
+  "file": "20261003000019_coregrid_v1_mission_lease.sql",
+  "outcome": "APPLIED_OR_IDEMPOTENT",
+  "catalog": [
+    {
+      "table": "cg_mission_lease",
+      "rowsecurity": true,
+      "policy_count": 0
+    },
+    {
+      "table": "cg_worker_delegation_grant",
+      "rowsecurity": true,
+      "policy_count": 0
+    },
+    {
+      "table": "cg_worker_quarantine",
+      "rowsecurity": true,
+      "policy_count": 0
+    }
+  ],
+  "compositeFkPresent": true,
+  "zeroPolicies": true,
+  "noClientGrants": true,
+  "sqlFileUnchanged": true,
+  "sqlChecksumSha256": "77f16b824d21934af045647da5d05806f2291fcd4d75a278316fc8fd05616831",
+  "note": "SQL header may still say AUTHORED NOT APPLIED to preserve checksums; live catalog + this record are environment-state truth."
+}
