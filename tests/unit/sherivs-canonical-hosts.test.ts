@@ -16,6 +16,7 @@ import {
   CANONICAL_CONSOLE_HOST,
   CANONICAL_PUBLIC_HOSTS,
   hostnameFromHostHeader,
+  isVercelPlatformHostname,
   resolveExperienceHost,
   shouldRedirectCanonicalRootToAuth,
 } from "@/lib/experience/experience-host";
@@ -89,6 +90,28 @@ describe("resolveExperienceHost — four canonical hosts", () => {
   it("treats a genuine organization subdomain as tenant, not console", () => {
     expect(resolveExperienceHost("northwind.sherivs.com")).toBe("tenant");
     expect(tenantSlugFromHostname("northwind.sherivs.com")).toBe("northwind");
+  });
+
+  it("classifies generated Vercel preview hosts as local, never as tenant slugs", () => {
+    const unique = "coregrid-scholar-migration-cepnexfsm-vibeora.vercel.app";
+    const gitAlias = "coregrid-scholar-migration-git-cursor-sherivs-ca-130d21-vibeora.vercel.app";
+    for (const host of [unique, gitAlias, "preview.vercel.sh"]) {
+      expect(isVercelPlatformHostname(host)).toBe(true);
+      expect(resolveExperienceHost(host)).toBe("local");
+      expect(tenantSlugFromHostname(host)).toBeNull();
+      expect(shouldRedirectCanonicalRootToAuth(resolveExperienceHost(host))).toBe(false);
+    }
+    expect(isVercelPlatformHostname("northwind.sherivs.com")).toBe(false);
+    expect(isVercelPlatformHostname("sherivs.com")).toBe(false);
+    expect(isVercelPlatformHostname("vercel.app.attacker.example")).toBe(false);
+  });
+});
+
+describe("Vercel SSR output wiring", () => {
+  it("registers the Nitro Vite plugin required for .vercel/output/functions", () => {
+    const vite = read("vite.config.ts");
+    expect(vite).toContain('from "nitro/vite"');
+    expect(vite).toMatch(/\bnitro\s*\(/);
   });
 });
 

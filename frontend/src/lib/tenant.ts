@@ -8,7 +8,12 @@
  * Platform hosts (sherivs.com, www, app, console, localhost, plus LEGACY
  * universalschoolos.com) resolve to `null` — the visitor landed on a Sherivs
  * platform host, not a tenant organization site.
+ *
+ * Generated Vercel preview hosts (`*.vercel.app`, `*.vercel.sh`) are also
+ * never tenants.
  */
+import { isVercelPlatformHostname } from "./experience/experience-host";
+
 const PLATFORM_HOSTS = [
   "localhost",
   "127.0.0.1",
@@ -34,6 +39,7 @@ export function tenantSlugFromHostname(hostname: string): string | null {
   const host = normalizeHostname(hostname);
   if (!host) return null;
   if (PLATFORM_HOSTS.includes(host)) return null;
+  if (isVercelPlatformHostname(host)) return null;
   const parts = host.split(".");
   if (parts.length < 3) return null;
   const first = parts[0] ?? "";

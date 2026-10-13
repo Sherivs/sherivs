@@ -38,6 +38,9 @@ const INTERNAL_HOSTS = new Set<string>([CANONICAL_CONSOLE_HOST, "internal.sheriv
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1"]);
 
+/** Vercel generated hosts. Not production, not tenant slugs. */
+const VERCEL_PLATFORM_HOST_SUFFIXES = [".vercel.app", ".vercel.sh"] as const;
+
 const RESERVED_SUBS = new Set(["www", "app", "api", "admin", "dashboard", "internal", "console"]);
 
 /** Strip port and multi-value forwarded hosts. Exact hostname only. */
@@ -47,10 +50,17 @@ export function hostnameFromHostHeader(hostHeader: string | null | undefined): s
   return first.split("/")[0]?.split(":")[0]?.trim().toLowerCase() ?? "";
 }
 
+/** Generated Vercel preview / deployment hosts are not tenants and not production. */
+export function isVercelPlatformHostname(hostname: string): boolean {
+  const host = hostnameFromHostHeader(hostname);
+  return VERCEL_PLATFORM_HOST_SUFFIXES.some((suffix) => host.endsWith(suffix));
+}
+
 export function resolveExperienceHost(hostname: string): ExperienceHostKind {
   const host = hostnameFromHostHeader(hostname);
   if (!host) return "public_platform";
   if (LOCAL_HOSTS.has(host)) return "local";
+  if (isVercelPlatformHostname(host)) return "local";
   if (INTERNAL_HOSTS.has(host)) return "internal";
   if (APP_HOSTS.has(host)) return "app";
   if (PUBLIC_PLATFORM_HOSTS.has(host)) return "public_platform";
