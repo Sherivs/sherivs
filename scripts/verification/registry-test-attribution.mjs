@@ -117,6 +117,8 @@ const SUBJECT_MAP = {
   "tests/unit/jarvis-enterprise-loop.test.ts": { phase: "07", why: "Jarvis executive enterprise loop over the Part 15 orchestrator + V1 workforce staffing (phase-07 agent governance)" },
   "tests/unit/jarvis/enterprise-cycle.functions.test.ts": { phase: "07", why: "Jarvis enterprise cycle §27 wake surface (phase-07 agent governance)" },
   "tests/unit/jarvis/enterprise-cycle-invariants.test.ts": { phase: "07", why: "four-eyes invariants for Jarvis enterprise wake (phase-07 agent governance)" },
+  "tests/unit/hermes/hermes-finding-observation.test.ts": { phase: "07", why: "Hermes finding → JarvisObservation translator (phase-07 agent governance); stamped findings only" },
+  "tests/unit/jarvis/hermes-finding-invariants.test.ts": { phase: "07", why: "four-eyes invariants for Hermes finding stamps into Jarvis (phase-07)" },
   "tests/unit/v1-workforce-lock.test.ts": { phase: "25", why: "V1 AI workforce scope lock (capability definitions, not standing processes) — phase-25 workforce substrate" },
   "tests/unit/phase52-attachment.test.ts": { phase: "25", why: "Phase 52 classified attachment lock over V1 workforce (phase-25 workforce substrate); not implementation authorization" },
   "tests/unit/mission-staffing.test.ts": { phase: "25", why: "dynamic mission staffing / four-eyes workforce graph — phase-25 workforce substrate" },
