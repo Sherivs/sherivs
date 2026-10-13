@@ -1,0 +1,30 @@
+{
+  "artifact": "COREGRID_V1_WORKFORCE_PHASE52_ATTACHMENT",
+  "status": "ATTACHED_NOT_REIMPLEMENTED",
+  "captured": "2026-10-13",
+  "versionTarget": "ACTIVE-V1",
+  "rule": "Do not blindly copy Phase 52 into production. Do not create a new canonical phase to avoid deciding ownership.",
+  "existingCorpus": {
+    "source": "architecture/phase-52-cross domain and engineering sections",
+    "extracts": "architecture/phase-52-extracts/",
+    "sectionInventory": "architecture/COREGRID_PHASE_52_SECTION_INVENTORY.json",
+    "decomposition": "architecture/COREGRID_PHASE_52_DECOMPOSITION_MAP.json",
+    "v1FutureClassification": "architecture/COREGRID_PHASE_52_V1_FUTURE_CLASSIFICATION.json",
+    "capabilityCatalog": "architecture/COREGRID_PHASE_52_CAPABILITY_CATALOG.json",
+    "routing": "architecture/COREGRID_PHASE_52_ROUTING_DECOMPOSITION.json",
+    "note": "Occurrence-level V1/V2/V3/UNASSIGNED classification already exists. This mission attaches workforce roles to that classification instead of re-extracting the corpus."
+  },
+  "actionsUsed": [
+    "ATTACH TO EXISTING ENGINE",
+    "CREATE WORKFORCE CAPABILITY",
+    "FREEZE V2",
+    "FREEZE BEYOND V2"
+  ],
+  "workforceLock": "architecture/COREGRID_V1_AI_WORKFORCE_REGISTRY.json",
+  "executableLock": "frontend/src/lib/workforce/v1-workforce-lock.ts",
+  "notDone": [
+    "No new canonical phase was created.",
+    "Phase 52 remains unregistered and not implementation-authorized.",
+    "Frozen material is preserved, not deleted."
+  ]
+}

@@ -1,0 +1,2294 @@
+{
+  "artifact": "COREGRID_V1_AI_WORKFORCE_REGISTRY",
+  "status": "SCOPE_LOCKED",
+  "versionTarget": "ACTIVE-V1",
+  "captured": "2026-10-13",
+  "authority": "JARVIS AUTONOMOUS ENTERPRISE DIRECTIVE + AGENTS.md §45 + existing Jarvis/Hermes/workforce substrate",
+  "workerCount": 64,
+  "rule": "Persistent identity does not require persistent compute.",
+  "jarvisRule": "Jarvis commands the organization. The organization performs the work.",
+  "fourEyes": "Implementer cannot verify, approve, or deploy the same high-risk change.",
+  "reuse": [
+    "frontend/src/lib/jarvis/jarvis-contract.ts",
+    "frontend/src/lib/hermes/hermes-cycle.ts",
+    "frontend/src/lib/workforce/worker-definition.ts",
+    "frontend/src/lib/workforce/worker-host.ts",
+    "frontend/src/lib/workforce/capability-registry.ts",
+    "frontend/src/lib/mission/mission-contract.ts"
+  ],
+  "integrity": {
+    "ok": true,
+    "errors": [],
+    "workerCount": 64,
+    "v1Count": 58,
+    "frozenCount": 6
+  },
+  "workers": [
+    {
+      "workerId": "jarvis",
+      "workerName": "Jarvis",
+      "role": "executive_intelligence",
+      "command": "executive_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "CEO / executive intelligence: observe, staff, coordinate, escalate, brief. Never implement, verify, deploy, or grant itself authority.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "implement_mission_work",
+        "verify_mission_work",
+        "deploy",
+        "approve",
+        "access_secrets",
+        "self_authority_grant"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/jarvis/jarvis-contract.ts",
+        "frontend/src/lib/jarvis/briefing.ts",
+        "frontend/src/lib/jarvis/escalation.ts",
+        "frontend/src/lib/hermes/hermes-cycle.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "chief_architect",
+      "workerName": "Chief Architect Agent",
+      "role": "chief_architect",
+      "command": "architecture_council",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Owns boundaries, dependency topology, ADRs, and architectural consistency.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "execute",
+        "deploy",
+        "implement"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "architecture/registry.json",
+        "DECISIONS.md"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "reality_architect",
+      "workerName": "Reality Architect",
+      "role": "reality_architect",
+      "command": "architecture_council",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Owns the V1 entity/state/event/relationship substrate — not V3 reality observation.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "execute",
+        "deploy",
+        "v3_reality_observation"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/kernel/reality.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "runtime_architect",
+      "workerName": "Runtime Architect",
+      "role": "runtime_architect",
+      "command": "architecture_council",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Owns mission/worker/lifecycle orchestration contracts — not omnipotent execution.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "execute",
+        "deploy",
+        "run_as_jarvis"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/workforce/worker-host.ts",
+        "frontend/src/lib/missions/mission-execution.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "backend_engineer",
+      "workerName": "Backend Engineer",
+      "role": "backend_engineer",
+      "command": "engineering_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Implements server-side V1 contracts in isolated workspaces.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose",
+        "execute"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "deploy",
+        "approve",
+        "verify_own_work",
+        "production_mutate"
+      ],
+      "phase52Action": "CREATE WORKFORCE CAPABILITY",
+      "existingImplementation": [
+        "frontend/src/lib/workforce/worker-definition.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "frontend_engineer",
+      "workerName": "Frontend Engineer",
+      "role": "frontend_engineer",
+      "command": "engineering_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Implements V1 web surfaces; UI is not security.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose",
+        "execute"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "deploy",
+        "approve",
+        "verify_own_work",
+        "production_mutate"
+      ],
+      "phase52Action": "CREATE WORKFORCE CAPABILITY",
+      "existingImplementation": [
+        "frontend/src/lib/workforce/worker-definition.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "full_stack_engineer",
+      "workerName": "Full-Stack Engineer",
+      "role": "full_stack_engineer",
+      "command": "engineering_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Cross-layer V1 implementation with the same isolation and four-eyes rules.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose",
+        "execute"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "deploy",
+        "approve",
+        "verify_own_work",
+        "production_mutate"
+      ],
+      "phase52Action": "CREATE WORKFORCE CAPABILITY",
+      "existingImplementation": [
+        "frontend/src/lib/workforce/worker-definition.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "api_engineer",
+      "workerName": "API Engineer",
+      "role": "api_engineer",
+      "command": "engineering_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Implements authenticated, tenant-scoped API contracts.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose",
+        "execute"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "deploy",
+        "approve",
+        "verify_own_work",
+        "production_mutate"
+      ],
+      "phase52Action": "CREATE WORKFORCE CAPABILITY",
+      "existingImplementation": [
+        "frontend/src/lib/workforce/worker-definition.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "database_engineer",
+      "workerName": "Database Engineer",
+      "role": "database_engineer",
+      "command": "engineering_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Authors migrations and constraints; cannot weaken RLS.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose",
+        "execute"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "deploy",
+        "approve",
+        "verify_own_work",
+        "production_mutate",
+        "weaken_rls"
+      ],
+      "phase52Action": "CREATE WORKFORCE CAPABILITY",
+      "existingImplementation": [
+        "database/supabase/migrations"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "supabase_engineer",
+      "workerName": "Supabase Engineer",
+      "role": "supabase_engineer",
+      "command": "engineering_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Provider adapter work only — CoreGrid remains vendor-neutral.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose",
+        "execute"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "deploy",
+        "approve",
+        "verify_own_work",
+        "production_mutate",
+        "embed_vendor_in_domain"
+      ],
+      "phase52Action": "CREATE WORKFORCE CAPABILITY",
+      "existingImplementation": [
+        "frontend/src/integrations/supabase"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "distributed_systems_engineer",
+      "workerName": "Distributed Systems Engineer",
+      "role": "distributed_systems_engineer",
+      "command": "engineering_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Queues, leases, idempotency, and bounded retry — V1 mission path.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose",
+        "execute"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "deploy",
+        "approve",
+        "verify_own_work",
+        "production_mutate"
+      ],
+      "phase52Action": "CREATE WORKFORCE CAPABILITY",
+      "existingImplementation": [
+        "frontend/src/lib/workforce/worker-definition.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "integration_engineer",
+      "workerName": "Integration Engineer",
+      "role": "integration_engineer",
+      "command": "engineering_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Provider fabric adapters with fail-closed semantics.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose",
+        "execute"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "deploy",
+        "approve",
+        "verify_own_work",
+        "production_mutate"
+      ],
+      "phase52Action": "CREATE WORKFORCE CAPABILITY",
+      "existingImplementation": [
+        "frontend/src/lib/workforce/worker-definition.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "sdk_engineer",
+      "workerName": "SDK Engineer",
+      "role": "sdk_engineer",
+      "command": "engineering_command",
+      "versionTarget": "DEFERRED-BEYOND-V2",
+      "purpose": "External developer SDK is MIXED/frozen (phase 28). Preserved, not staffed in V1.",
+      "authorityVerbs": [
+        "observe",
+        "analyze"
+      ],
+      "maxRiskClass": "low",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "execute",
+        "deploy",
+        "staff",
+        "instantiate"
+      ],
+      "phase52Action": "FREEZE BEYOND V2",
+      "existingImplementation": [],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "mobile_engineer",
+      "workerName": "Mobile Engineer",
+      "role": "mobile_engineer",
+      "command": "engineering_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "V1 mobile client contracts (phase 22 ACTIVE-V1).",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose",
+        "execute"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "deploy",
+        "approve",
+        "verify_own_work",
+        "production_mutate"
+      ],
+      "phase52Action": "CREATE WORKFORCE CAPABILITY",
+      "existingImplementation": [
+        "mobile/"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "pwa_engineer",
+      "workerName": "PWA Engineer",
+      "role": "pwa_engineer",
+      "command": "engineering_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Progressive web runtime within the V1 web platform.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose",
+        "execute"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "deploy",
+        "approve",
+        "verify_own_work",
+        "production_mutate"
+      ],
+      "phase52Action": "CREATE WORKFORCE CAPABILITY",
+      "existingImplementation": [
+        "frontend/src/lib/workforce/worker-definition.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "developer_experience_engineer",
+      "workerName": "Developer Experience Engineer",
+      "role": "developer_experience_engineer",
+      "command": "engineering_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Tooling and verification DX; no production mutation.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose",
+        "execute"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "deploy",
+        "approve",
+        "verify_own_work",
+        "production_mutate"
+      ],
+      "phase52Action": "CREATE WORKFORCE CAPABILITY",
+      "existingImplementation": [
+        "frontend/src/lib/workforce/worker-definition.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "platform_engineer",
+      "workerName": "Platform Engineer",
+      "role": "platform_engineer",
+      "command": "infrastructure_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Platform substrate and environment contracts.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose",
+        "execute"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "production_destructive_without_policy"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/reliability/failure-architecture.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "devops_engineer",
+      "workerName": "DevOps Engineer",
+      "role": "devops_engineer",
+      "command": "infrastructure_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "CI/CD pipelines and governed promotion.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose",
+        "execute"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "direct_production_write"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/reliability/failure-architecture.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "sre",
+      "workerName": "SRE Agent",
+      "role": "sre",
+      "command": "infrastructure_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Reliability, bounded recovery, and error budgets.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose",
+        "emergency"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "unrestricted_self_heal"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/reliability/failure-architecture.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "cloud_infrastructure_engineer",
+      "workerName": "Cloud Infrastructure Engineer",
+      "role": "cloud_infrastructure_engineer",
+      "command": "infrastructure_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Declared cloud fabric within V1 — no invented providers.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "invent_infrastructure"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/reliability/failure-architecture.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "deployment_engineer",
+      "workerName": "Deployment Engineer",
+      "role": "deployment_engineer",
+      "command": "infrastructure_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Deployment only under explicit policy and independent verification.",
+      "authorityVerbs": [
+        "observe",
+        "propose",
+        "deploy"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "deploy_without_verification",
+        "deploy_at_night_unattended_high_risk"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/reliability/failure-architecture.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "release_engineer",
+      "workerName": "Release Engineer",
+      "role": "release_engineer",
+      "command": "infrastructure_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Release coordination; cannot also be the sole verifier.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "self_verify_release"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/reliability/failure-architecture.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "disaster_recovery_engineer",
+      "workerName": "Disaster Recovery Engineer",
+      "role": "disaster_recovery_engineer",
+      "command": "infrastructure_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "RTO/RPO contracts and recovery drills — not autonomous destruction.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose",
+        "emergency"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "unapproved_destructive_recovery"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/reliability/failure-architecture.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "performance_engineer",
+      "workerName": "Performance Engineer",
+      "role": "performance_engineer",
+      "command": "infrastructure_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Performance evidence over invented load numbers.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "invent_benchmarks"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/reliability/failure-architecture.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "networking_engineer",
+      "workerName": "Networking Engineer",
+      "role": "networking_engineer",
+      "command": "infrastructure_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Capability-scoped network policy. Device/IoT networking is V2 frozen.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "v2_device_network"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/reliability/failure-architecture.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "observability_engineer",
+      "workerName": "Observability Engineer",
+      "role": "observability_engineer",
+      "command": "infrastructure_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Logs, metrics, traces, health — never secrets.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "log_secrets"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/reliability/failure-architecture.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "security_architect",
+      "workerName": "Security Architect",
+      "role": "security_architect",
+      "command": "security_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Security boundaries and policy design.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose",
+        "verify"
+      ],
+      "maxRiskClass": "critical",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "weaken_security",
+        "disable_rls",
+        "reveal_secrets",
+        "execute_product_code"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/authorization.ts",
+        "frontend/src/lib/security/credential-broker.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "application_security_engineer",
+      "workerName": "Application Security Engineer",
+      "role": "application_security_engineer",
+      "command": "security_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Inspects and blocks unsafe application changes.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "verify"
+      ],
+      "maxRiskClass": "critical",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "weaken_security",
+        "disable_rls",
+        "reveal_secrets",
+        "execute_product_code"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/authorization.ts",
+        "frontend/src/lib/security/credential-broker.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "cloud_security_engineer",
+      "workerName": "Cloud Security Engineer",
+      "role": "cloud_security_engineer",
+      "command": "security_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Cloud posture inspection — no silent control weakening.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "verify"
+      ],
+      "maxRiskClass": "critical",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "weaken_security",
+        "disable_rls",
+        "reveal_secrets",
+        "execute_product_code"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/authorization.ts",
+        "frontend/src/lib/security/credential-broker.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "identity_access_engineer",
+      "workerName": "Identity & Access Engineer",
+      "role": "identity_access_engineer",
+      "command": "security_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Identity, membership, and delegation contracts.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose",
+        "verify"
+      ],
+      "maxRiskClass": "critical",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "weaken_security",
+        "disable_rls",
+        "reveal_secrets",
+        "execute_product_code"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/authorization.ts",
+        "frontend/src/lib/security/credential-broker.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "secrets_security_engineer",
+      "workerName": "Secrets Security Engineer",
+      "role": "secrets_security_engineer",
+      "command": "security_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Credential-broker policy. Workers receive scoped capabilities, never env dumps.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "verify"
+      ],
+      "maxRiskClass": "critical",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "weaken_security",
+        "disable_rls",
+        "reveal_secrets",
+        "execute_product_code"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/authorization.ts",
+        "frontend/src/lib/security/credential-broker.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "threat_detection_agent",
+      "workerName": "Threat Detection Agent",
+      "role": "threat_detection_agent",
+      "command": "security_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Detect and report. Cannot disable security.",
+      "authorityVerbs": [
+        "observe",
+        "analyze"
+      ],
+      "maxRiskClass": "critical",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "weaken_security",
+        "disable_rls",
+        "reveal_secrets",
+        "execute_product_code"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/authorization.ts",
+        "frontend/src/lib/security/credential-broker.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "security_verification_agent",
+      "workerName": "Security Verification Agent",
+      "role": "security_verification_agent",
+      "command": "security_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Independent security verification of another worker's change.",
+      "authorityVerbs": [
+        "observe",
+        "verify"
+      ],
+      "maxRiskClass": "critical",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "weaken_security",
+        "disable_rls",
+        "reveal_secrets",
+        "execute_product_code"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/authorization.ts",
+        "frontend/src/lib/security/credential-broker.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "compliance_governance_agent",
+      "workerName": "Compliance/Governance Agent",
+      "role": "compliance_governance_agent",
+      "command": "security_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Policy and audit conformance. Cannot rewrite governance.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "verify"
+      ],
+      "maxRiskClass": "critical",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "weaken_security",
+        "disable_rls",
+        "reveal_secrets",
+        "execute_product_code"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/authorization.ts",
+        "frontend/src/lib/security/credential-broker.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "qa_engineer",
+      "workerName": "QA Engineer",
+      "role": "qa_engineer",
+      "command": "quality_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Independent verification of implementation claims.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "verify"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "implement",
+        "deploy",
+        "approve",
+        "self_verify_own_implementation"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/assurance/verification-independence.ts",
+        "frontend/src/lib/workforce/worker-host.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "test_automation_engineer",
+      "workerName": "Test Automation Engineer",
+      "role": "test_automation_engineer",
+      "command": "quality_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Automated evidence; cannot declare the implementer's success.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "verify"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "implement",
+        "deploy",
+        "approve",
+        "self_verify_own_implementation"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/assurance/verification-independence.ts",
+        "frontend/src/lib/workforce/worker-host.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "integration_test_engineer",
+      "workerName": "Integration Test Engineer",
+      "role": "integration_test_engineer",
+      "command": "quality_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Cross-module verification with tenant isolation evidence.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "verify"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "implement",
+        "deploy",
+        "approve",
+        "self_verify_own_implementation"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/assurance/verification-independence.ts",
+        "frontend/src/lib/workforce/worker-host.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "reliability_verification_engineer",
+      "workerName": "Reliability Verification Engineer",
+      "role": "reliability_verification_engineer",
+      "command": "quality_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Recovery and failure-path evidence.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "verify"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "implement",
+        "deploy",
+        "approve",
+        "self_verify_own_implementation"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/assurance/verification-independence.ts",
+        "frontend/src/lib/workforce/worker-host.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "regression_engineer",
+      "workerName": "Regression Engineer",
+      "role": "regression_engineer",
+      "command": "quality_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Regression evidence against the existing suite.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "verify"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "implement",
+        "deploy",
+        "approve",
+        "self_verify_own_implementation"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/assurance/verification-independence.ts",
+        "frontend/src/lib/workforce/worker-host.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "release_verification_engineer",
+      "workerName": "Release Verification Engineer",
+      "role": "release_verification_engineer",
+      "command": "quality_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Independent release gate. Never the deploying worker.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "verify"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "implement",
+        "deploy",
+        "approve",
+        "self_verify_own_implementation"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/assurance/verification-independence.ts",
+        "frontend/src/lib/workforce/worker-host.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "data_engineer",
+      "workerName": "Data Engineer",
+      "role": "data_engineer",
+      "command": "data_intelligence_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Phase 14 data contracts (ingestion/jobs/reconciliation) — libraries today, not invented warehouses.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose",
+        "execute"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "invent_warehouse",
+        "deploy"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/data-ingestion.ts",
+        "frontend/src/lib/data-jobs.ts",
+        "frontend/src/lib/data-reconciliation.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "data_governance_engineer",
+      "workerName": "Data Governance Engineer",
+      "role": "data_governance_engineer",
+      "command": "data_intelligence_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Classification, retention declarations, and purpose limitation.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose",
+        "verify"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "execute_erasure_without_policy"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/data-governance.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "ai_engineer",
+      "workerName": "AI Engineer",
+      "role": "ai_engineer",
+      "command": "data_intelligence_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "AI platform work through the centralized gateway only.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose",
+        "execute"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "scatter_direct_model_calls",
+        "deploy"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/ai-gateway.server.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "ml_engineer",
+      "workerName": "ML Engineer",
+      "role": "ml_engineer",
+      "command": "data_intelligence_command",
+      "versionTarget": "DEFERRED-BEYOND-V2",
+      "purpose": "Model training / civilization compute is frozen. Gateway inference remains V1 via ai_engineer.",
+      "authorityVerbs": [
+        "observe",
+        "analyze"
+      ],
+      "maxRiskClass": "low",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "execute",
+        "deploy",
+        "staff",
+        "instantiate"
+      ],
+      "phase52Action": "FREEZE BEYOND V2",
+      "existingImplementation": [],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "model_evaluation_engineer",
+      "workerName": "Model Evaluation Engineer",
+      "role": "model_evaluation_engineer",
+      "command": "data_intelligence_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Evaluates model output trust. Cannot promote an unauthorized provider.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "verify"
+      ],
+      "maxRiskClass": "medium",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "route_sensitive_data_to_unauthorized_provider"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/ai-gateway/output-trust-pipeline.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "ai_gateway_engineer",
+      "workerName": "AI Gateway Engineer",
+      "role": "ai_gateway_engineer",
+      "command": "data_intelligence_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Owns gateway routing, metering, and fail-closed provider abstraction.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose",
+        "execute"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "bypass_gateway",
+        "deploy"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/ai-gateway.server.ts",
+        "frontend/src/lib/ai-gateway/model-registry.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "knowledge_engineer",
+      "workerName": "Knowledge Engineer",
+      "role": "knowledge_engineer",
+      "command": "data_intelligence_command",
+      "versionTarget": "DEFERRED-BEYOND-V2",
+      "purpose": "Deferred by prior V1 un-freeze record. Corpus preserved; not staffed.",
+      "authorityVerbs": [
+        "observe",
+        "analyze"
+      ],
+      "maxRiskClass": "low",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "execute",
+        "deploy",
+        "staff",
+        "instantiate"
+      ],
+      "phase52Action": "FREEZE BEYOND V2",
+      "existingImplementation": [],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "memory_systems_engineer",
+      "workerName": "Memory Systems Engineer",
+      "role": "memory_systems_engineer",
+      "command": "data_intelligence_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Canonical memory tier. No prompt-resident permanent memories.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose",
+        "execute"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "treat_ai_memory_as_truth",
+        "deploy"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/memory/memory-store.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "intelligence_research_agent",
+      "workerName": "Intelligence Research Agent",
+      "role": "intelligence_research_agent",
+      "command": "data_intelligence_command",
+      "versionTarget": "DEFERRED-BEYOND-V2",
+      "purpose": "Open-ended research beyond V1 organizational envelope is frozen.",
+      "authorityVerbs": [
+        "observe",
+        "analyze"
+      ],
+      "maxRiskClass": "low",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "execute",
+        "deploy",
+        "staff",
+        "instantiate"
+      ],
+      "phase52Action": "FREEZE BEYOND V2",
+      "existingImplementation": [],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "context_engineering_agent",
+      "workerName": "Context Engineering Agent",
+      "role": "context_engineering_agent",
+      "command": "data_intelligence_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Assembles minimized, purpose-limited context. Workers must not ingest the whole repository.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose",
+        "execute"
+      ],
+      "maxRiskClass": "medium",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "dump_full_repository",
+        "deploy"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/context-assembly.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "product_strategist",
+      "workerName": "Product Strategist",
+      "role": "product_strategist",
+      "command": "product_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Outcome-oriented product proposals from real contracts — no fake dashboards.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose"
+      ],
+      "maxRiskClass": "medium",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "execute",
+        "deploy"
+      ],
+      "phase52Action": "CREATE WORKFORCE CAPABILITY",
+      "existingImplementation": [],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "ux_architect",
+      "workerName": "UX Architect",
+      "role": "ux_architect",
+      "command": "product_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Experience architecture within the existing design system.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose"
+      ],
+      "maxRiskClass": "medium",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "execute",
+        "deploy",
+        "introduce_random_ui_framework"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/theme.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "ui_engineer",
+      "workerName": "UI Engineer",
+      "role": "ui_engineer",
+      "command": "engineering_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Implements UI with Tailwind/shadcn/Radix/Lucide only.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose",
+        "execute"
+      ],
+      "maxRiskClass": "high",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "deploy",
+        "approve",
+        "verify_own_work",
+        "production_mutate"
+      ],
+      "phase52Action": "CREATE WORKFORCE CAPABILITY",
+      "existingImplementation": [
+        "frontend/src/lib/workforce/worker-definition.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "design_systems_engineer",
+      "workerName": "Design Systems Engineer",
+      "role": "design_systems_engineer",
+      "command": "product_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Maintains the existing design system. No new UI frameworks.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose",
+        "execute"
+      ],
+      "maxRiskClass": "medium",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "introduce_random_ui_framework",
+        "deploy"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "components.json"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "accessibility_engineer",
+      "workerName": "Accessibility Engineer",
+      "role": "accessibility_engineer",
+      "command": "product_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Accessibility verification and remediation proposals.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose",
+        "verify"
+      ],
+      "maxRiskClass": "medium",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "deploy"
+      ],
+      "phase52Action": "CREATE WORKFORCE CAPABILITY",
+      "existingImplementation": [],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "product_analytics_engineer",
+      "workerName": "Product Analytics Engineer",
+      "role": "product_analytics_engineer",
+      "command": "product_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Analytics over observed CoreGrid data only. No static production-looking invent.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose"
+      ],
+      "maxRiskClass": "medium",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "execute",
+        "deploy"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/metering/usage-ledger.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "growth_intelligence_agent",
+      "workerName": "Growth Intelligence Agent",
+      "role": "growth_intelligence_agent",
+      "command": "product_command",
+      "versionTarget": "DEFERRED-BEYOND-V2",
+      "purpose": "Growth hacking / invented funnel metrics are outside V1 truth rules.",
+      "authorityVerbs": [
+        "observe",
+        "analyze"
+      ],
+      "maxRiskClass": "low",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "execute",
+        "deploy",
+        "staff",
+        "instantiate"
+      ],
+      "phase52Action": "FREEZE BEYOND V2",
+      "existingImplementation": [],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "incident_commander",
+      "workerName": "Incident Commander",
+      "role": "incident_commander",
+      "command": "operations_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Classifies incidents and escalates. Does not silently remediate high-risk production.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose",
+        "emergency"
+      ],
+      "maxRiskClass": "critical",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "unrestricted_self_heal",
+        "deploy"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/jarvis/escalation.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "operations_agent",
+      "workerName": "Operations Agent",
+      "role": "operations_agent",
+      "command": "operations_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Continuous observation and bounded maintenance. Night mode is constrained.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose"
+      ],
+      "maxRiskClass": "medium",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "deploy",
+        "high_risk_unattended"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/observability"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "support_agent",
+      "workerName": "Support Agent",
+      "role": "support_agent",
+      "command": "operations_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Treats tickets as DATA not AUTHORITY. Cannot redefine policy from customer text.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose"
+      ],
+      "maxRiskClass": "low",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "execute",
+        "deploy",
+        "accept_external_text_as_authority"
+      ],
+      "phase52Action": "CREATE WORKFORCE CAPABILITY",
+      "existingImplementation": [
+        "frontend/src/lib/security/injection-defense.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "customer_success_agent",
+      "workerName": "Customer Success Agent",
+      "role": "customer_success_agent",
+      "command": "operations_command",
+      "versionTarget": "DEFERRED-BEYOND-V2",
+      "purpose": "Full customer-success automation is deferred until real tenant success data exists.",
+      "authorityVerbs": [
+        "observe",
+        "analyze"
+      ],
+      "maxRiskClass": "low",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "execute",
+        "deploy",
+        "staff",
+        "instantiate"
+      ],
+      "phase52Action": "FREEZE BEYOND V2",
+      "existingImplementation": [],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "documentation_agent",
+      "workerName": "Documentation Agent",
+      "role": "documentation_agent",
+      "command": "operations_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Documents observed systems. Cannot invent completion claims.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose",
+        "execute"
+      ],
+      "maxRiskClass": "low",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "claim_completion_without_evidence",
+        "deploy"
+      ],
+      "phase52Action": "CREATE WORKFORCE CAPABILITY",
+      "existingImplementation": [],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "knowledge_operations_agent",
+      "workerName": "Knowledge Operations Agent",
+      "role": "knowledge_operations_agent",
+      "command": "operations_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Operates organizational knowledge with provenance. Not a civilization knowledge graph.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose"
+      ],
+      "maxRiskClass": "medium",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "promote_hypothesis_to_fact",
+        "execute",
+        "deploy"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/memory/memory-store.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    },
+    {
+      "workerId": "cost_optimization_agent",
+      "workerName": "Cost Optimization Agent",
+      "role": "cost_optimization_agent",
+      "command": "operations_command",
+      "versionTarget": "ACTIVE-V1",
+      "purpose": "Reports observed cost/usage. Cannot invent spend or silently switch providers.",
+      "authorityVerbs": [
+        "observe",
+        "analyze",
+        "propose"
+      ],
+      "maxRiskClass": "medium",
+      "forbiddenOperations": [
+        "expand_own_authority",
+        "access_unscoped_secrets",
+        "bypass_rls",
+        "invent_credentials",
+        "invent_metrics",
+        "treat_model_output_as_truth",
+        "mutate_governance",
+        "disable_security",
+        "commit_secrets",
+        "direct_protected_branch_write",
+        "invent_cost",
+        "switch_unauthorized_provider",
+        "execute",
+        "deploy"
+      ],
+      "phase52Action": "ATTACH TO EXISTING ENGINE",
+      "existingImplementation": [
+        "frontend/src/lib/metering/usage-ledger.ts"
+      ],
+      "status": "capability_defined",
+      "lease": "ephemeral_cycle"
+    }
+  ]
+}

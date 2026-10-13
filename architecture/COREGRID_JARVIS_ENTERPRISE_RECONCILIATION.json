@@ -1,0 +1,54 @@
+{
+  "artifact": "COREGRID_JARVIS_ENTERPRISE_RECONCILIATION",
+  "captured": "2026-10-13",
+  "versionTarget": "ACTIVE-V1",
+  "directive": "JARVIS AUTONOMOUS ENTERPRISE / AI WORKFORCE COMMAND",
+  "existsAndReuse": {
+    "jarvisBoundary": "frontend/src/lib/jarvis/jarvis-contract.ts",
+    "jarvisBriefing": "frontend/src/lib/jarvis/briefing.ts",
+    "jarvisEscalation": "frontend/src/lib/jarvis/escalation.ts",
+    "hermesCycle": "frontend/src/lib/hermes/hermes-cycle.ts",
+    "workerDefinition": "frontend/src/lib/workforce/worker-definition.ts",
+    "workerHost": "frontend/src/lib/workforce/worker-host.ts",
+    "capabilityMatching": "frontend/src/lib/workforce/capability-registry.ts",
+    "missionContract": "frontend/src/lib/mission/mission-contract.ts",
+    "missionExecution": "frontend/src/lib/missions/mission-execution.ts",
+    "contextAssembly": "frontend/src/lib/context-assembly.ts",
+    "aiGateway": "frontend/src/lib/ai-gateway.server.ts",
+    "credentialBroker": "frontend/src/lib/security/credential-broker.ts",
+    "verificationIndependence": "frontend/src/lib/assurance/verification-independence.ts"
+  },
+  "partial": {
+    "hermesRuntimeWiring": "Library + observation trigger exist; not an always-on process (correct cost discipline).",
+    "missionStaffingState": "RULING-5 forbids forking the 15-state lifecycle. Staffing is a PLAN mapped onto existing states, not new enum values PLANNED/STAFFING/DEPLOYING.",
+    "providerHealth": "Provider credential registry exists. This loop consumes stamped observations and does not invent provider health."
+  },
+  "duplicatedAndNotRebuilt": {
+    "jarvisVsHermes": "Intentional layering: Part 15 policy (Jarvis) then operational cycle (Hermes). Enterprise loop coordinates; Hermes is not replaced.",
+    "institutionalWorkforceVsAiWorkers": "workforce-core.ts is HR catalog. AI workers are worker-definition.ts. Kept separate."
+  },
+  "missingClosedThisMission": {
+    "v1WorkforceScopeLock": "frontend/src/lib/workforce/v1-workforce-lock.ts + architecture/COREGRID_V1_AI_WORKFORCE_REGISTRY.json",
+    "dynamicStaffing": "frontend/src/lib/workforce/mission-staffing.ts",
+    "jarvisEnterpriseLoop": "frontend/src/lib/jarvis/enterprise-loop.ts"
+  },
+  "frozen": {
+    "v2": "Device/IoT/hardware control",
+    "v3": "Reality observation / civilization engines",
+    "deferredBeyondV2Workers": [
+      "sdk_engineer",
+      "ml_engineer",
+      "knowledge_engineer",
+      "intelligence_research_agent",
+      "growth_intelligence_agent",
+      "customer_success_agent"
+    ]
+  },
+  "notClaimed": [
+    "50 concurrent standing agents",
+    "always-on Jarvis process",
+    "Phase 52 implementation authorization",
+    "invented provider health or production metrics",
+    "Hermes replaced"
+  ]
+}
