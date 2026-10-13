@@ -1,6 +1,7 @@
 {
   "artifact": "COREGRID_JARVIS_ENTERPRISE_RECONCILIATION",
   "captured": "2026-10-13",
+  "updated": "2026-10-13",
   "versionTarget": "ACTIVE-V1",
   "directive": "JARVIS AUTONOMOUS ENTERPRISE / AI WORKFORCE COMMAND",
   "existsAndReuse": {
@@ -19,9 +20,9 @@
     "verificationIndependence": "frontend/src/lib/assurance/verification-independence.ts"
   },
   "partial": {
-    "hermesRuntimeWiring": "Library + observation trigger exist; not an always-on process (correct cost discipline).",
+    "hermesRuntimeWiring": "Remaining-work closure recorded as library-form wake, not a resident process: Hermes stays the operational cycle library (frontend/src/lib/hermes/hermes-cycle.ts). The enterprise cycle is a WAKE → SLEEP library invoked by an AGENTS.md §27 authenticated server function plus schedule/workflow_dispatch cron. No always-on Jarvis or Hermes process is claimed, and no standing agent farm is claimed.",
     "missionStaffingState": "RULING-5 forbids forking the 15-state lifecycle. Staffing is a PLAN mapped onto existing states, not new enum values PLANNED/STAFFING/DEPLOYING.",
-    "providerHealth": "Provider credential registry exists. This loop consumes stamped observations and does not invent provider health."
+    "providerHealth": "Remaining-work closure recorded as an observation translator over existing provider-health reports (frontend/src/lib/observability/provider-health.server.ts → frontend/src/lib/observability/provider-health-observation.ts). Credential presence is not health. NOT_CONFIGURED stamps as provider_not_configured, never as an invented outage. This loop consumes stamped observations and does not invent provider health or production metrics."
   },
   "duplicatedAndNotRebuilt": {
     "jarvisVsHermes": "Intentional layering: Part 15 policy (Jarvis) then operational cycle (Hermes). Enterprise loop coordinates; Hermes is not replaced.",
@@ -30,7 +31,10 @@
   "missingClosedThisMission": {
     "v1WorkforceScopeLock": "frontend/src/lib/workforce/v1-workforce-lock.ts + architecture/COREGRID_V1_AI_WORKFORCE_REGISTRY.json",
     "dynamicStaffing": "frontend/src/lib/workforce/mission-staffing.ts",
-    "jarvisEnterpriseLoop": "frontend/src/lib/jarvis/enterprise-loop.ts"
+    "jarvisEnterpriseLoop": "frontend/src/lib/jarvis/enterprise-loop.ts",
+    "providerHealthObservationTranslator": "frontend/src/lib/observability/provider-health-observation.ts — Observability-owned pure translator. Architecture records the remaining-work closure; does not invent provider health, does not claim a resident probe loop, and does not treat credential presence as health.",
+    "enterpriseCycleWakeTrigger": "Library-form remaining-work closure: AGENTS.md §27 authenticated server-function wake plus schedule/workflow_dispatch cron. Runtime-owned surface (enterprise-cycle contract/functions/runtime + scripts/run-jarvis-enterprise-cycle.mjs + workflow). Architecture does not claim a resident process or always-on Jarvis.",
+    "phase52ClassifiedLock": "architecture/COREGRID_V1_WORKFORCE_PHASE52_ATTACHMENT.json + frontend/src/lib/workforce/phase52-attachment.ts. Phase 52 remains classified, unregistered, and not implementation-authorized. V1 attach/create mappings only; frozen workers stay frozen. No new canonical phase."
   },
   "frozen": {
     "v2": "Device/IoT/hardware control",
