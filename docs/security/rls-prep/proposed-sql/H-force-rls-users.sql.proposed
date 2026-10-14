@@ -1,0 +1,16 @@
+-- CHANGE SET H — Independent database-policy verification + optional FORCE RLS
+-- Catalog proofs live in scripts/staging/sherivs-rls-prep/catalog-verify.sql
+-- Suggested later migration (LAST, after A–G proven on staging):
+--   20261015000100_sherivs_users_force_rls.sql
+-- Staging only until GATE 6.
+
+-- FORCE RLS binds the table owner. service_role remains BYPASSRLS.
+-- Do not apply until synthetic JWT tests prove A–G without it.
+
+ALTER TABLE public.users FORCE ROW LEVEL SECURITY;
+
+-- Independent verification is not DDL. After each staging apply:
+--   1. Run catalog-verify.sql (read-only).
+--   2. Run the synthetic JWT matrix in STAGING-TEST-HARNESS.md.
+--   3. Confirm hostname-routing files are untouched (d195ba8).
+--   4. Record pg_policies / column_privileges / pg_trigger hashes.

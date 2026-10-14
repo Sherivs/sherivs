@@ -1,0 +1,138 @@
+-- CHANGE SET C — Replacement HR read/write paths
+-- CHANGE SET F — Sensitive-column access restrictions
+-- Suggested later migrations (keep split):
+--   20261015000030_sherivs_users_sensitive_column_revoke.sql
+--   20261015000040_sherivs_admin_hr_rpcs.sql
+-- App must land in the same release train:
+--   frontend/src/lib/runtime/scholar/hr.functions.ts (new, service_role after gate)
+--   frontend/src/routes/_authenticated/admin/hr.tsx (stop JWT users.update of role/salary)
+--   frontend/src/contexts/app-context.tsx (stop select("*"))
+-- Staging only until GATE 6.
+
+-- F: PostgREST omits revoked columns from select=*. Same pattern as
+-- schools.paystack_secret_key (20260819000000).
+REVOKE SELECT, UPDATE (
+  salary, nin, bank_name, account_number, account_name, face_biometric
+) ON public.users FROM PUBLIC, anon, authenticated;
+
+-- service_role retains table ALL (BYPASSRLS + grants). Do not GRANT the
+-- sensitive columns back to authenticated for "own row" — B6: no self
+-- salary/bank on the normal profile endpoint.
+
+-- C: HR list/read as SECURITY DEFINER so salary is readable after the
+-- column revoke. Actor checks use committed users/super_admins rows.
+-- No p_school_id, no p_is_admin, no client role argument.
+
+CREATE OR REPLACE FUNCTION public.admin_hr_staff_list()
+RETURNS TABLE (
+  id uuid,
+  full_name text,
+  email text,
+  phone text,
+  role text,
+  subject_specialty text,
+  employment_type text,
+  salary numeric,
+  date_enrolled date,
+  is_active boolean,
+  avatar_url text
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+DECLARE
+  actor_school uuid;
+BEGIN
+  IF pg_catalog.auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'not_authenticated' USING ERRCODE = '28000';
+  END IF;
+  IF NOT (public.is_school_admin() OR public.is_super_admin()) THEN
+    RAISE EXCEPTION 'not_authorized' USING ERRCODE = '42501';
+  END IF;
+  actor_school := public.get_my_school_id();
+  IF actor_school IS NULL AND NOT public.is_super_admin() THEN
+    RAISE EXCEPTION 'not_authorized' USING ERRCODE = '42501';
+  END IF;
+
+  RETURN QUERY
+  SELECT u.id, u.full_name, u.email, u.phone, u.role,
+         u.subject_specialty, u.employment_type, u.salary,
+         u.date_enrolled, u.is_active, u.avatar_url
+  FROM public.users u
+  WHERE (public.is_super_admin() OR u.school_id = actor_school)
+    AND u.role IN ('teacher','admin','principal','bursar','driver','librarian','nurse');
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.admin_hr_staff_write(
+  p_user_id uuid,
+  p_full_name text DEFAULT NULL,
+  p_email text DEFAULT NULL,
+  p_phone text DEFAULT NULL,
+  p_role text DEFAULT NULL,
+  p_subject_specialty text DEFAULT NULL,
+  p_employment_type text DEFAULT NULL,
+  p_salary numeric DEFAULT NULL
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+DECLARE
+  actor_school uuid;
+  target public.users%ROWTYPE;
+BEGIN
+  IF pg_catalog.auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'not_authenticated' USING ERRCODE = '28000';
+  END IF;
+  IF NOT (public.is_school_admin() OR public.is_super_admin()) THEN
+    RAISE EXCEPTION 'not_authorized' USING ERRCODE = '42501';
+  END IF;
+  actor_school := public.get_my_school_id();
+
+  SELECT * INTO target FROM public.users WHERE id = p_user_id;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'not_found' USING ERRCODE = 'P0002';
+  END IF;
+  IF NOT public.is_super_admin() THEN
+    IF actor_school IS NULL OR target.school_id <> actor_school THEN
+      RAISE EXCEPTION 'not_authorized' USING ERRCODE = '42501';
+    END IF;
+  END IF;
+  -- B5: this RPC never changes school_id.
+  IF p_role IS NOT NULL AND p_role NOT IN
+     ('teacher','admin','principal','bursar','driver','librarian','nurse','parent','student','hq','alumni') THEN
+    RAISE EXCEPTION 'invalid_role' USING ERRCODE = '22023';
+  END IF;
+
+  -- Role changes cannot be performed as the user JWT because of change set A.
+  -- This DEFINER function still sees auth.role() = 'authenticated', so it
+  -- must NOT UPDATE users.role here. The accompanying TanStack server
+  -- function (hr.functions.ts) uses supabaseAdmin (service_role) for role
+  -- writes after duplicating these actor checks. This SQL RPC therefore
+  -- updates only HR profile/salary columns.
+  UPDATE public.users u
+  SET full_name = COALESCE(p_full_name, u.full_name),
+      email = COALESCE(p_email, u.email),
+      phone = COALESCE(p_phone, u.phone),
+      subject_specialty = COALESCE(p_subject_specialty, u.subject_specialty),
+      employment_type = COALESCE(p_employment_type, u.employment_type),
+      salary = COALESCE(p_salary, u.salary)
+  WHERE u.id = p_user_id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.admin_hr_staff_list() FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.admin_hr_staff_write(uuid, text, text, text, text, text, text, numeric) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.admin_hr_staff_list() TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.admin_hr_staff_write(uuid, text, text, text, text, text, text, numeric) TO authenticated, service_role;
+
+-- Preferred production path (application, not this SQL):
+--   requireSchoolAdminScope -> supabaseAdmin.update users
+--   including role, never school_id (B5), never self-promotion to
+--   super_admin, audit write. Keep this RPC as a salary/profile fallback
+--   after column revoke so PostgREST HR forms can read salary without
+--   opening SELECT grants.

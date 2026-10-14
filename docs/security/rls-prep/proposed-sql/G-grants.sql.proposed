@@ -1,0 +1,51 @@
+-- CHANGE SET G — Grants and function execution privileges
+-- Suggested later migration: 20261015000090_sherivs_rls_grant_hygiene.sql
+-- Can apply alongside E. Staging only until GATE 6.
+-- Live catalog (SHERIVS-RLS-VERIFY-001): anon holds TRUNCATE on
+-- students/fees/attendance/grades. RLS does not govern TRUNCATE.
+
+REVOKE TRUNCATE, TRIGGER, REFERENCES ON
+  public.users,
+  public.students,
+  public.fees,
+  public.attendance,
+  public.attendance_logs,
+  public.classes,
+  public.parent_student_map,
+  public.lesson_plans,
+  public.timetables,
+  public.timetable_slots,
+  public.school_calendar,
+  public.fraud_attempts,
+  public.subscriptions,
+  public.grades,
+  public.organization_memberships
+FROM anon, authenticated;
+
+REVOKE ALL ON TABLE public.users FROM anon;
+REVOKE ALL ON TABLE public.students FROM anon;
+REVOKE ALL ON TABLE public.fees FROM anon;
+REVOKE ALL ON TABLE public.attendance FROM anon;
+REVOKE ALL ON TABLE public.parent_student_map FROM anon;
+REVOKE ALL ON TABLE public.fraud_attempts FROM anon;
+
+-- Re-assert intended DML (policies still gate rows). Do not re-grant
+-- UPDATE on frozen columns; those were column-revoked in A/D/F.
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.users TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.students TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.fees TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.attendance TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.attendance_logs TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.classes TO authenticated;
+GRANT SELECT ON TABLE public.parent_student_map TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.lesson_plans TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.timetables TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.timetable_slots TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.school_calendar TO authenticated;
+GRANT SELECT ON TABLE public.fraud_attempts TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.subscriptions TO authenticated;
+
+GRANT ALL ON TABLE public.users TO service_role;
+GRANT ALL ON TABLE public.parent_student_map TO service_role;
+GRANT ALL ON TABLE public.fees TO service_role;
+GRANT ALL ON TABLE public.fraud_attempts TO service_role;

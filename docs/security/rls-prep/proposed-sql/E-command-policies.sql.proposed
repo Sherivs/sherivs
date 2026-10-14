@@ -1,0 +1,474 @@
+-- CHANGE SET E — Command-specific policies for named tenant_all_* tables
+-- Split at implementation time into at least three forward migrations:
+--   20261015000060_sherivs_rls_wave_a_classes_calendar_timetable.sql
+--   20261015000070_sherivs_rls_wave_b_students_map_plans_attendance.sql
+--   20261015000080_sherivs_rls_wave_c_fees_fraud_subscriptions.sql
+-- Do not ship as one file. This review copy is concatenated on purpose.
+-- Pattern: DROP tenant_all_* ; CREATE command policies TO authenticated.
+-- Permissive policies OR together — do not leave a residual FOR ALL.
+-- Staging only until GATE 6.
+
+-- Shared predicates (inlined, not SQL functions, so policy bodies remain
+-- auditable): school_id = public.get_my_school_id() OR public.is_super_admin()
+-- After change set B, get_my_school_id() is NULL for inactive users.
+
+-- ---------------------------------------------------------------------------
+-- classes
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS tenant_all_classes ON public.classes;
+
+CREATE POLICY classes_select_same_school ON public.classes
+  FOR SELECT TO authenticated
+  USING (school_id = public.get_my_school_id() OR public.is_super_admin());
+
+CREATE POLICY classes_write_admin ON public.classes
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+CREATE POLICY classes_update_admin ON public.classes
+  FOR UPDATE TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  )
+  WITH CHECK (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+CREATE POLICY classes_delete_admin ON public.classes
+  FOR DELETE TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+-- ---------------------------------------------------------------------------
+-- school_calendar
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS tenant_all_school_calendar ON public.school_calendar;
+
+CREATE POLICY school_calendar_select_same_school ON public.school_calendar
+  FOR SELECT TO authenticated
+  USING (school_id = public.get_my_school_id() OR public.is_super_admin());
+
+CREATE POLICY school_calendar_write_admin ON public.school_calendar
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+CREATE POLICY school_calendar_update_admin ON public.school_calendar
+  FOR UPDATE TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  )
+  WITH CHECK (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+CREATE POLICY school_calendar_delete_admin ON public.school_calendar
+  FOR DELETE TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+-- ---------------------------------------------------------------------------
+-- timetables / timetable_slots
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS tenant_all_timetables ON public.timetables;
+DROP POLICY IF EXISTS tenant_all_timetable_slots ON public.timetable_slots;
+
+CREATE POLICY timetables_select_same_school ON public.timetables
+  FOR SELECT TO authenticated
+  USING (school_id = public.get_my_school_id() OR public.is_super_admin());
+
+CREATE POLICY timetables_write_admin ON public.timetables
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+CREATE POLICY timetables_update_admin ON public.timetables
+  FOR UPDATE TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  )
+  WITH CHECK (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+CREATE POLICY timetables_delete_admin ON public.timetables
+  FOR DELETE TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+CREATE POLICY timetable_slots_select_same_school ON public.timetable_slots
+  FOR SELECT TO authenticated
+  USING (school_id = public.get_my_school_id() OR public.is_super_admin());
+
+CREATE POLICY timetable_slots_write_admin ON public.timetable_slots
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+CREATE POLICY timetable_slots_update_admin ON public.timetable_slots
+  FOR UPDATE TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  )
+  WITH CHECK (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+CREATE POLICY timetable_slots_delete_admin ON public.timetable_slots
+  FOR DELETE TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+-- ---------------------------------------------------------------------------
+-- students  (B2: teachers retain same-school SELECT)
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS tenant_all_students ON public.students;
+
+CREATE POLICY students_select_staff_same_school ON public.students
+  FOR SELECT TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (
+      school_id = public.get_my_school_id()
+      AND public.get_my_role() IN ('admin','principal','teacher','bursar','hq','driver')
+    )
+  );
+
+CREATE POLICY students_select_self ON public.students
+  FOR SELECT TO authenticated
+  USING (user_id = pg_catalog.auth.uid());
+
+CREATE POLICY students_select_mapped_parent ON public.students
+  FOR SELECT TO authenticated
+  USING (
+    id IN (
+      SELECT m.student_id
+      FROM public.parent_student_map m
+      WHERE m.parent_id = pg_catalog.auth.uid()
+    )
+  );
+
+CREATE POLICY students_write_admin ON public.students
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+CREATE POLICY students_update_admin ON public.students
+  FOR UPDATE TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  )
+  WITH CHECK (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+CREATE POLICY students_delete_admin ON public.students
+  FOR DELETE TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+-- ---------------------------------------------------------------------------
+-- parent_student_map  (B1: deny authenticated writes)
+-- SELECT kept for parent portals, teacher class-parent broadcast,
+-- admin fanout, and driver milestone notify.
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS tenant_all_parent_student_map ON public.parent_student_map;
+
+CREATE POLICY parent_student_map_select_own ON public.parent_student_map
+  FOR SELECT TO authenticated
+  USING (parent_id = pg_catalog.auth.uid() OR public.is_super_admin());
+
+CREATE POLICY parent_student_map_select_school_staff ON public.parent_student_map
+  FOR SELECT TO authenticated
+  USING (
+    school_id = public.get_my_school_id()
+    AND public.get_my_role() IN ('admin','principal','teacher','driver','bursar','hq')
+  );
+
+-- No INSERT/UPDATE/DELETE policies for authenticated. service_role remains
+-- the only writer (demo-provision today; future admin RPC is a product decision).
+
+-- ---------------------------------------------------------------------------
+-- lesson_plans  (B3: students/parents SELECT approved only — schema supports
+-- status IN ('draft','submitted','approved','needs_revision'))
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS tenant_all_lesson_plans ON public.lesson_plans;
+
+CREATE POLICY lesson_plans_select_teacher_own ON public.lesson_plans
+  FOR SELECT TO authenticated
+  USING (
+    public.is_super_admin()
+    OR teacher_id = pg_catalog.auth.uid()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+CREATE POLICY lesson_plans_select_approved_class ON public.lesson_plans
+  FOR SELECT TO authenticated
+  USING (
+    status = 'approved'
+    AND school_id = public.get_my_school_id()
+    AND (
+      class_id IN (SELECT s.class_id FROM public.students s WHERE s.user_id = pg_catalog.auth.uid())
+      OR class_id IN (
+        SELECT s.class_id
+        FROM public.students s
+        JOIN public.parent_student_map m ON m.student_id = s.id
+        WHERE m.parent_id = pg_catalog.auth.uid()
+      )
+    )
+  );
+
+CREATE POLICY lesson_plans_insert_teacher ON public.lesson_plans
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    public.is_super_admin()
+    OR (
+      school_id = public.get_my_school_id()
+      AND teacher_id = pg_catalog.auth.uid()
+      AND public.get_my_role() IN ('teacher','admin','principal')
+    )
+  );
+
+CREATE POLICY lesson_plans_update_owner_or_admin ON public.lesson_plans
+  FOR UPDATE TO authenticated
+  USING (
+    public.is_super_admin()
+    OR teacher_id = pg_catalog.auth.uid()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  )
+  WITH CHECK (
+    public.is_super_admin()
+    OR (
+      school_id = public.get_my_school_id()
+      AND (
+        teacher_id = pg_catalog.auth.uid()
+        OR public.is_school_admin()
+      )
+    )
+  );
+
+CREATE POLICY lesson_plans_delete_owner_or_admin ON public.lesson_plans
+  FOR DELETE TO authenticated
+  USING (
+    public.is_super_admin()
+    OR teacher_id = pg_catalog.auth.uid()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+-- ---------------------------------------------------------------------------
+-- attendance  (B4: deny ordinary DELETE)
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS tenant_all_attendance ON public.attendance;
+
+CREATE POLICY attendance_select_staff ON public.attendance
+  FOR SELECT TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (
+      school_id = public.get_my_school_id()
+      AND public.get_my_role() IN ('admin','principal','teacher','hq')
+    )
+  );
+
+CREATE POLICY attendance_select_self ON public.attendance
+  FOR SELECT TO authenticated
+  USING (
+    student_id IN (SELECT s.id FROM public.students s WHERE s.user_id = pg_catalog.auth.uid())
+  );
+
+CREATE POLICY attendance_select_mapped_parent ON public.attendance
+  FOR SELECT TO authenticated
+  USING (
+    student_id IN (
+      SELECT m.student_id FROM public.parent_student_map m
+      WHERE m.parent_id = pg_catalog.auth.uid()
+    )
+  );
+
+CREATE POLICY attendance_write_teaching_staff ON public.attendance
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    public.is_super_admin()
+    OR (
+      school_id = public.get_my_school_id()
+      AND public.get_my_role() IN ('admin','principal','teacher')
+      AND marked_by = pg_catalog.auth.uid()
+    )
+  );
+
+CREATE POLICY attendance_update_teaching_staff ON public.attendance
+  FOR UPDATE TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (
+      school_id = public.get_my_school_id()
+      AND public.get_my_role() IN ('admin','principal','teacher')
+    )
+  )
+  WITH CHECK (
+    public.is_super_admin()
+    OR (
+      school_id = public.get_my_school_id()
+      AND public.get_my_role() IN ('admin','principal','teacher')
+    )
+  );
+
+-- No DELETE policy for authenticated.
+
+-- ---------------------------------------------------------------------------
+-- attendance_logs
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS tenant_all_attendance_logs ON public.attendance_logs;
+
+CREATE POLICY attendance_logs_select_own_or_admin ON public.attendance_logs
+  FOR SELECT TO authenticated
+  USING (
+    public.is_super_admin()
+    OR teacher_id = pg_catalog.auth.uid()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+CREATE POLICY attendance_logs_insert_self ON public.attendance_logs
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    public.is_super_admin()
+    OR (
+      school_id = public.get_my_school_id()
+      AND teacher_id = pg_catalog.auth.uid()
+      AND public.get_my_role() IN ('teacher','admin','principal')
+    )
+  );
+
+CREATE POLICY attendance_logs_update_admin ON public.attendance_logs
+  FOR UPDATE TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  )
+  WITH CHECK (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+CREATE POLICY attendance_logs_delete_admin ON public.attendance_logs
+  FOR DELETE TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+-- ---------------------------------------------------------------------------
+-- fees  (B4: deny DELETE; D freezes settlement columns)
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS tenant_all_fees ON public.fees;
+
+CREATE POLICY fees_select_finance_staff ON public.fees
+  FOR SELECT TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (
+      school_id = public.get_my_school_id()
+      AND public.get_my_role() IN ('admin','principal','bursar','hq')
+    )
+  );
+
+CREATE POLICY fees_select_self ON public.fees
+  FOR SELECT TO authenticated
+  USING (
+    student_id IN (SELECT s.id FROM public.students s WHERE s.user_id = pg_catalog.auth.uid())
+  );
+
+CREATE POLICY fees_select_mapped_parent ON public.fees
+  FOR SELECT TO authenticated
+  USING (
+    student_id IN (
+      SELECT m.student_id FROM public.parent_student_map m
+      WHERE m.parent_id = pg_catalog.auth.uid()
+    )
+  );
+
+CREATE POLICY fees_insert_finance ON public.fees
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    public.is_super_admin()
+    OR (
+      school_id = public.get_my_school_id()
+      AND public.get_my_role() IN ('admin','principal','bursar')
+      AND status IN ('unpaid','partial')
+    )
+  );
+
+CREATE POLICY fees_update_finance_non_settlement ON public.fees
+  FOR UPDATE TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (
+      school_id = public.get_my_school_id()
+      AND public.get_my_role() IN ('admin','principal','bursar')
+    )
+  )
+  WITH CHECK (
+    public.is_super_admin()
+    OR (
+      school_id = public.get_my_school_id()
+      AND public.get_my_role() IN ('admin','principal','bursar')
+    )
+  );
+
+-- No DELETE policy. Settlement column writes denied by change set D trigger
+-- unless service_role.
+
+-- ---------------------------------------------------------------------------
+-- fraud_attempts  (B7: deny authenticated writes)
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS tenant_all_fraud_attempts ON public.fraud_attempts;
+
+CREATE POLICY fraud_attempts_select_admin ON public.fraud_attempts
+  FOR SELECT TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+-- No INSERT/UPDATE/DELETE for authenticated.
+
+-- ---------------------------------------------------------------------------
+-- subscriptions
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS tenant_all_subscriptions ON public.subscriptions;
+
+CREATE POLICY subscriptions_all_super_admin ON public.subscriptions
+  FOR ALL TO authenticated
+  USING (public.is_super_admin())
+  WITH CHECK (public.is_super_admin());
