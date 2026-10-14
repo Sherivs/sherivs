@@ -240,6 +240,8 @@ describe("SHERIVS-RLS-IMPLEMENTATION-PREP-001 plan integrity", () => {
       "docs/security/rls-prep/GATE3-CORRECTIONS.md",
       "docs/security/rls-prep/GATE3-CORRECTIONS-002.md",
       "docs/security/rls-prep/GATE3-INDEPENDENT-REVIEW-002.md",
+      "docs/security/rls-prep/GATE3-INDEPENDENT-REVIEW-003.md",
+      "docs/security/rls-prep/GATE4-STAGING-PROVISION-001.md",
       "docs/security/rls-prep/IDENTITY-PROVISIONING.md",
       "docs/security/rls-prep/HR-RPC-CONTRACT.md",
       "docs/security/rls-prep/PAYMENT-INVARIANTS.md",
