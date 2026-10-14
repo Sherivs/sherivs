@@ -1,92 +1,111 @@
-# Change sets A–H
+# Change sets A–H (post GATE 3 corrections)
 
 Companion to `docs/security/SHERIVS-RLS-IMPLEMENTATION-PREP-001.md`.
-Proposed SQL: `docs/security/rls-prep/proposed-sql/`.
+Proposed SQL: `docs/security/rls-prep/proposed-sql/` (lexicographic H1).
 
-## A — Trusted identity-column enforcement
+GATE 3 remains **PASS WITH CONDITIONS**. Findings remain **OPEN**.
+Provisioning compatibility is a design claim, **NOT VERIFIED** on staging
+(H7). Do not copy these files into `database/supabase/migrations/`.
+
+Apply order (filenames sort this way):
+
+1. B helpers `00010`
+2. C HR RPCs `00020`
+3. A identity freeze `00030`
+4. F sensitive columns `00040`
+5. E-A `00050`
+6. E-B `00060`
+7. D + E-C `00070`
+8. G grants `00080`
+9. H FORCE RLS `00090` optional last
+
+## B — Inactive-user helpers (`00010`)
 
 | Field | Value |
 |-------|-------|
-| Files (later) | `database/supabase/migrations/20261015000010_sherivs_users_identity_freeze.sql` + rollback; `frontend/src/lib/runtime/scholar/hr.functions.ts` (role writes) |
-| DB objects | `freeze_users_identity_columns()`, trigger `users_identity_freeze`; `freeze_membership_identity_columns()`, trigger `memberships_identity_freeze`; column UPDATE revoke on `users(role, school_id)`; `sync_organization_membership_on_user_write()` search_path tighten |
-| Preconditions | GATE 1 baseline; C HR path ready in the same release train; switcher already service_role |
-| Invariant | An authenticated JWT cannot change `users.role` / `users.school_id` or membership identity columns. `auth.role() = 'service_role'` is the only UPDATE/INSERT identity path. Never NEW.* |
-| Compatibility | Profile edits OK. Org switch OK. Provisioning OK. `saveStaff` role **breaks** unless C is live |
-| Tests | R001, R002, R016, R017, R022 |
-| Rollback | Drop the two freeze triggers. Do not re-GRANT identity columns to `authenticated` |
-
-## B — Inactive-user helpers
-
-| Field | Value |
-|-------|-------|
-| Files (later) | `20261015000020_sherivs_authz_helpers_active.sql` + rollback; unit ratchet extending `tests/unit/rls-helper-definer-posture.test.ts` |
+| Files (later) | `database/supabase/migrations/20261015000010_sherivs_authz_helpers_active.sql` + rollback |
 | DB objects | `get_my_school_id`, `get_my_role`, `is_school_admin`, `is_super_admin`, `get_my_memberships` |
 | Preconditions | Memberships table exists (`20261008000050`) |
 | Invariant | Helpers read the **committed active `users` row**. Inactive callers get NULL / false. Memberships are the SET via `get_my_memberships` only |
-| Compatibility | Deactivated admins lose portal writes — intended. Active membership switch still writes `users` then helpers follow |
-| Tests | R019; helper source contains `is_active IS TRUE` and does not SELECT memberships for `get_my_school_id` |
-| Rollback | Restore `20261008000050` helper bodies only if staging proves a switcher break; prefer fixing the switcher |
+| C1 | `auth.uid()` two-part; `search_path = pg_catalog, public`; `auth` not on search_path |
+| Compatibility | Deactivated admins lose portal writes — intended |
+| Tests | R019; N6 |
+| Rollback | Restore `20261008000050` helper bodies only if staging proves a switcher break |
 
-## C — Replacement HR paths
+## C — Replacement HR paths (`00020` + future app)
 
 | Field | Value |
 |-------|-------|
-| Files | `hr.functions.ts` (new); `admin/hr.tsx`; optional SQL `admin_hr_staff_list` / `admin_hr_staff_write` |
-| Preconditions | B for inactive-admin deny; A for role freeze |
-| Invariant | Salary/role HR reads/writes require `is_school_admin()` or `is_super_admin()` from committed rows. No client `school_id`. Role UPDATE uses service_role. Never writes `school_id` (B5) |
-| Compatibility | Required for current HR form |
-| Tests | R014, R015; HR cannot read other-school salary |
+| Files | SQL RPCs now; `hr.functions.ts` **not in this mission** — see `HR-RPC-CONTRACT.md` |
+| Preconditions | B for inactive-admin deny |
+| Invariant | List/write require active school admin or super-admin. Target must be staff-role set. SQL RPC has **no** `p_role` and never writes `school_id` / `is_active` |
+| Compatibility | Current `admin/hr.tsx` JWT `saveStaff` **breaks** under A+F until the TanStack function exists |
+| Tests | R014, R015; HR-01..HR-04 |
 | Rollback | Disable HR tab |
 
-## D — Fee-payment reference path
+## A — Trusted identity-column enforcement (`00030`)
 
 | Field | Value |
 |-------|-------|
-| Files | `paystack.functions.ts`; `20261015000050_sherivs_fees_settlement_freeze.sql` |
-| Preconditions | Visibility SELECT still works under E fees policies |
-| Invariant | JWT cannot write `status`, `paid_amount`, `paid_at`, `paystack_reference`, `paystack_access_code` |
-| Compatibility | Init/verify must use service_role after JWT SELECT. Webhook already compatible. Manual paid is B8 |
-| Tests | R004; bursar INSERT unpaid allowed (R012); cross-school denied (R013) |
-| Rollback | Pause Paystack buttons; do not re-GRANT settlement columns |
+| Files (later) | `20261015000030_sherivs_users_identity_freeze.sql` + rollback |
+| DB objects | `freeze_users_identity_columns`, `users_identity_freeze`; `freeze_membership_identity_columns`, `memberships_identity_freeze`; column REVOKE UPDATE(`role`,`school_id`); sync search_path tighten |
+| Preconditions | B; C SQL RPC; **app role path in the same release train** |
+| Invariant | User JWT cannot change `users.role` / `users.school_id`. Self cannot change `users.is_active` (C4). Membership identity writes: `service_role` OR `pg_trigger_depth() > 1` (C2). No GUC latch. Never NEW.* |
+| Compatibility | Profile edits OK. Org switch **design-compatible** (service_role). Founder INSERT **design-compatible** (nested sync). **NOT VERIFIED** until staging (H7). `saveStaff` role breaks unless C app is live |
+| Tests | R001, R002, R016, R017, R022, C4 self-reactivation |
+| Rollback | Drop freeze triggers. Do not re-GRANT identity columns to `authenticated` |
 
-## E — Command-specific policies
-
-| Field | Value |
-|-------|-------|
-| Files | three forward migrations, not one; `student/dashboard.tsx` add `status = 'approved'` for lesson plans |
-| Preconditions | B so inactive users fail closed |
-| Invariant | No `tenant_all_*` remains on the named tables. No overlapping FOR ALL. Permissive OR-set is only the command policies in the proposed file |
-| Compatibility | See per-table matrix |
-| Tests | R005–R013, overlap test (student cannot ride a second permissive policy) |
-| Rollback | Do not restore `tenant_all_*`. Re-apply last good command policies |
-
-## F — Sensitive columns
+## F — Sensitive columns (`00040`)
 
 | Field | Value |
 |-------|-------|
-| Files | `20261015000030_sherivs_users_sensitive_column_revoke.sql`; `app-context.tsx` explicit select |
-| Preconditions | C live so HR can still display salary |
+| Files | later `20261015000040_sherivs_users_sensitive_column_revoke.sql`; `app-context.tsx` explicit select **not in this mission** |
+| Preconditions | C SQL RPC so HR can still display salary |
 | Invariant | `authenticated` cannot SELECT/UPDATE salary, nin, bank_*, face_biometric, including own row via PostgREST |
-| Compatibility | `getMyProfile` already omits them (B6) |
+| Compatibility | `getMyProfile` already omits them (B6). `select("*")` **breaks** until app-context is updated |
 | Tests | R003 |
 | Rollback | Keep revoke; fix HR RPC rather than re-GRANT |
 
-## G — Grants
+## E-A — First RLS policy wave (`00050`)
 
 | Field | Value |
 |-------|-------|
-| Files | `20261015000090_sherivs_rls_grant_hygiene.sql` |
-| Preconditions | E policies exist so tightening table grants cannot surprise writes that still expected FOR ALL |
-| Invariant | No anon/authenticated TRUNCATE/TRIGGER/REFERENCES on named tables. `parent_student_map` authenticated SELECT only. `fraud_attempts` authenticated SELECT only |
-| Tests | catalog-verify.sql privilege queries |
-| Rollback | Re-assert the G GRANT list, never TRUNCATE |
+| Tables | `classes`, `school_calendar`, `timetables`, `timetable_slots` |
+| Invariant | No `tenant_all_*`. Command policies TO authenticated |
+| Tests | R005, overlap |
 
-## H — Independent verification
+## E-B — Second RLS policy wave (`00060`)
 
 | Field | Value |
 |-------|-------|
-| Files | `scripts/staging/sherivs-rls-prep/catalog-verify.sql`; optional `FORCE RLS` last |
-| Preconditions | A–G applied on staging; production-ref assert passed |
-| Invariant | Catalog matches the matrix. Helper ACL: EXECUTE for authenticated+service_role, not PUBLIC/anon. `users.relforcerowsecurity` true only after the optional last migration |
-| Tests | GATE 5 queries + JWT matrix |
-| Rollback | `ALTER TABLE public.users NO FORCE ROW LEVEL SECURITY` if FORCE blocks owner maintenance |
+| Tables | `students`, `parent_student_map`, `lesson_plans`, `attendance`, `attendance_logs` |
+| H2 | Owner UPDATE cannot set `approved`. Trigger + admin review policy |
+| B1 | Map writes denied (BLOCKED product writer) |
+| Tests | R007–R011, LP-01 teacher self-approve denied |
+
+## D + E-C — Payment compatibility and fee policy wave (`00070`)
+
+| Field | Value |
+|-------|-------|
+| Files | later combined migration; `paystack.functions.ts` **not in this mission** — see `PAYMENT-INVARIANTS.md` |
+| Invariant | JWT cannot write settlement columns. `tenant_all_fees` / fraud / subscriptions replaced |
+| Compatibility | Init/verify **must** move to service_role with amount/reference/ownership checks in the same release. Webhook must refuse missing identifiers. Manual paid is B8 BLOCKED |
+| Tests | R004, R012, R013, PAY-01..PAY-11 |
+| Rollback | Pause Paystack buttons; do not re-GRANT settlement columns |
+
+## G — Grants (`00080`)
+
+| Field | Value |
+|-------|-------|
+| Invariant | No anon/authenticated TRUNCATE/TRIGGER/REFERENCES on named tables. Least-privilege table grants. **After** table GRANT, re-REVOKE A/D/F columns (C3). Memberships: authenticated SELECT only |
+| Tests | catalog-verify.sql privilege queries including `users.role`, `school_id`, `is_active`, HR columns, fee settlement columns |
+| Rollback | Re-assert the G GRANT list plus column REVOKEs, never TRUNCATE |
+
+## H — Independent verification (`00090` optional)
+
+| Field | Value |
+|-------|-------|
+| Files | `scripts/staging/sherivs-rls-prep/catalog-verify.sql`; optional FORCE RLS last |
+| Preconditions | 00010–00080 proven on staging |
+| Tests | GATE 5 + JWT matrix |
+| Rollback | `NO FORCE ROW LEVEL SECURITY` if FORCE blocks owner maintenance |

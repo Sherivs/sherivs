@@ -1,0 +1,23 @@
+-- CHANGE SET F — Sensitive-column access restrictions
+-- Lexicographic step 4 / 9.
+-- Depends on: C HR salary RPC live so admin forms can still display salary.
+-- App in the same release (not this mission):
+--   frontend/src/contexts/app-context.tsx users select must become an
+--   explicit column list that omits salary, nin, bank_*, face_biometric.
+-- Pattern matches schools.paystack_secret_key (20260819000000).
+-- C1: no auth.uid() in this file.
+-- C3: G must re-REVOKE these columns after any table-level GRANT UPDATE.
+
+REVOKE SELECT, UPDATE (
+  salary, nin, bank_name, account_number, account_name, face_biometric
+) ON public.users FROM PUBLIC, anon, authenticated;
+
+-- service_role retains table ALL. Do not GRANT the sensitive columns back
+-- to authenticated for "own row" — B6: no self salary/bank on the profile
+-- endpoint. PostgREST omits revoked columns from select=*.
+
+-- Expected catalog after this file (before G):
+--   authenticated: no SELECT/UPDATE on the six columns
+--   anon / PUBLIC: no SELECT/UPDATE on the six columns
+--   service_role: table ALL still includes them
+-- G (00080) re-asserts this after table GRANT UPDATE on users.

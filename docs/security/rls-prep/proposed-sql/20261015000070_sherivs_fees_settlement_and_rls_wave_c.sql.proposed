@@ -1,0 +1,148 @@
+-- CHANGE SET D + E wave C — settlement freeze then fees/fraud/subscriptions
+-- Lexicographic step 7 / 9. Payment compatibility and fee policy wave (H1).
+-- D lands in the same file as E-C so JWT UPDATE of fees cannot write
+-- settlement columns after tenant_all_fees is dropped.
+-- App in the same future release (NOT this mission):
+--   paystack.functions.ts and webhooks/paystack.ts must satisfy
+--   docs/security/rls-prep/PAYMENT-INVARIANTS.md.
+-- C1: auth.role() two-part. No pg_catalog.auth.*.
+
+-- ---------------------------------------------------------------------------
+-- D — freeze settlement columns for user JWTs
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.freeze_fees_settlement_columns()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+  IF NEW.status IS NOT DISTINCT FROM OLD.status
+     AND NEW.paid_amount IS NOT DISTINCT FROM OLD.paid_amount
+     AND NEW.paid_at IS NOT DISTINCT FROM OLD.paid_at
+     AND NEW.paystack_reference IS NOT DISTINCT FROM OLD.paystack_reference
+     AND NEW.paystack_access_code IS NOT DISTINCT FROM OLD.paystack_access_code THEN
+    RETURN NEW;
+  END IF;
+
+  -- JWT claim. User-JWT SECURITY DEFINER RPCs remain 'authenticated'.
+  -- This trigger is NOT authorization of the intended fee. service_role
+  -- writers must still bind id + paystack_reference + verified amount
+  -- (PAYMENT-INVARIANTS.md). RLS visibility is not payer authorization.
+  IF auth.role() IS DISTINCT FROM 'service_role' THEN
+    RAISE EXCEPTION 'fee_settlement_frozen'
+      USING ERRCODE = '42501',
+            MESSAGE = 'fee settlement columns are not writable with a user JWT';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.freeze_fees_settlement_columns() FROM PUBLIC, anon, authenticated;
+
+DROP TRIGGER IF EXISTS fees_settlement_freeze ON public.fees;
+CREATE TRIGGER fees_settlement_freeze
+  BEFORE UPDATE OF status, paid_amount, paid_at, paystack_reference, paystack_access_code
+  ON public.fees
+  FOR EACH ROW
+  EXECUTE FUNCTION public.freeze_fees_settlement_columns();
+
+REVOKE UPDATE (
+  status, paid_amount, paid_at, paystack_reference, paystack_access_code
+) ON public.fees FROM PUBLIC, anon, authenticated;
+GRANT UPDATE (
+  status, paid_amount, paid_at, paystack_reference, paystack_access_code
+) ON public.fees TO service_role;
+
+-- ---------------------------------------------------------------------------
+-- fees  (B4 deny DELETE; B8 manual paid remains BLOCKED)
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS tenant_all_fees ON public.fees;
+
+CREATE POLICY fees_select_finance_staff ON public.fees
+  FOR SELECT TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (
+      school_id = public.get_my_school_id()
+      AND public.get_my_role() IN ('admin','principal','bursar','hq')
+    )
+  );
+
+CREATE POLICY fees_select_self ON public.fees
+  FOR SELECT TO authenticated
+  USING (
+    student_id IN (SELECT s.id FROM public.students s WHERE s.user_id = auth.uid())
+  );
+
+CREATE POLICY fees_select_mapped_parent ON public.fees
+  FOR SELECT TO authenticated
+  USING (
+    student_id IN (
+      SELECT m.student_id FROM public.parent_student_map m
+      WHERE m.parent_id = auth.uid()
+    )
+  );
+
+CREATE POLICY fees_insert_finance ON public.fees
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    public.is_super_admin()
+    OR (
+      school_id = public.get_my_school_id()
+      AND public.get_my_role() IN ('admin','principal','bursar')
+      AND status IN ('unpaid','partial')
+    )
+  );
+
+CREATE POLICY fees_update_finance_non_settlement ON public.fees
+  FOR UPDATE TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (
+      school_id = public.get_my_school_id()
+      AND public.get_my_role() IN ('admin','principal','bursar')
+    )
+  )
+  WITH CHECK (
+    public.is_super_admin()
+    OR (
+      school_id = public.get_my_school_id()
+      AND public.get_my_role() IN ('admin','principal','bursar')
+    )
+  );
+
+-- ---------------------------------------------------------------------------
+-- fraud_attempts  (B7: deny authenticated writes)
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS tenant_all_fraud_attempts ON public.fraud_attempts;
+
+CREATE POLICY fraud_attempts_select_admin ON public.fraud_attempts
+  FOR SELECT TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+-- ---------------------------------------------------------------------------
+-- subscriptions
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS tenant_all_subscriptions ON public.subscriptions;
+
+CREATE POLICY subscriptions_select_super_admin ON public.subscriptions
+  FOR SELECT TO authenticated
+  USING (public.is_super_admin());
+
+CREATE POLICY subscriptions_insert_super_admin ON public.subscriptions
+  FOR INSERT TO authenticated
+  WITH CHECK (public.is_super_admin());
+
+CREATE POLICY subscriptions_update_super_admin ON public.subscriptions
+  FOR UPDATE TO authenticated
+  USING (public.is_super_admin())
+  WITH CHECK (public.is_super_admin());
+
+CREATE POLICY subscriptions_delete_super_admin ON public.subscriptions
+  FOR DELETE TO authenticated
+  USING (public.is_super_admin());

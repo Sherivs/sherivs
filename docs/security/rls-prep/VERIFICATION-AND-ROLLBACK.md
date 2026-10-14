@@ -7,9 +7,9 @@ Run `scripts/staging/sherivs-rls-prep/catalog-verify.sql` on staging after each 
 Pass when:
 
 1. Helper definitions are SECURITY DEFINER, `search_path` includes `pg_catalog`, bodies require `users.is_active`, and `get_my_school_id` / `get_my_role` / `is_school_admin` do **not** SELECT `organization_memberships`.
-2. Triggers `users_identity_freeze` and `fees_settlement_freeze` exist and are enabled.
+2. Triggers `users_identity_freeze`, `memberships_identity_freeze`, `fees_settlement_freeze`, and `lesson_plans_approval_freeze` exist and are enabled.
 3. Zero rows for `polname LIKE 'tenant_all_%'` on the named Scholar tables.
-4. `authenticated`/`anon`/`PUBLIC` have no UPDATE on `users.role`/`school_id` and no SELECT/UPDATE on the six sensitive columns.
+4. `authenticated`/`anon`/`PUBLIC` have no UPDATE on `users.role`/`school_id` and no SELECT/UPDATE on the six sensitive columns. `users.is_active` UPDATE may remain for `authenticated`; self-change is trigger-denied. Fee settlement columns have no UPDATE for `authenticated`. After G, `organization_memberships` has no INSERT/UPDATE/DELETE for `authenticated`.
 5. `authenticated`/`anon` have no TRUNCATE/TRIGGER/REFERENCES on named tables.
 6. EXECUTE on helpers is granted to `authenticated` and `service_role` only.
 7. After H: `users.relforcerowsecurity` is true.
@@ -21,8 +21,10 @@ Pass when:
 - Teacher attendance mark.
 - Parent child fees.
 - Paystack init writes reference only as service_role (assert via DB after init).
-- Org switch.
-- Founder provisioning.
+- Org switch (**NOT VERIFIED** until GATE 4).
+- Founder provisioning (**NOT VERIFIED** until GATE 4).
+- Teacher self-approve lesson plan denied.
+- Self-reactivation denied; `setTeacherActive` on another teacher allowed.
 
 ## Rollback / failure containment
 

@@ -1,0 +1,295 @@
+-- CHANGE SET E wave B — students, parent_student_map, lesson_plans, attendance*
+-- Lexicographic step 6 / 9. Second RLS policy wave (H1).
+-- H2: lesson-plan owner UPDATE cannot approve. Approval is a separate
+--     admin transition plus a BEFORE UPDATE trigger.
+-- C1: auth.uid() two-part. No pg_catalog.auth.*.
+-- Student dashboard homework widget must add status = 'approved' in the
+-- same future release (not this mission).
+
+-- ---------------------------------------------------------------------------
+-- students  (B2: teachers retain same-school SELECT)
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS tenant_all_students ON public.students;
+
+CREATE POLICY students_select_staff_same_school ON public.students
+  FOR SELECT TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (
+      school_id = public.get_my_school_id()
+      AND public.get_my_role() IN ('admin','principal','teacher','bursar','hq','driver')
+    )
+  );
+
+CREATE POLICY students_select_self ON public.students
+  FOR SELECT TO authenticated
+  USING (user_id = auth.uid());
+
+CREATE POLICY students_select_mapped_parent ON public.students
+  FOR SELECT TO authenticated
+  USING (
+    id IN (
+      SELECT m.student_id
+      FROM public.parent_student_map m
+      WHERE m.parent_id = auth.uid()
+    )
+  );
+
+CREATE POLICY students_write_admin ON public.students
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+CREATE POLICY students_update_admin ON public.students
+  FOR UPDATE TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  )
+  WITH CHECK (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+CREATE POLICY students_delete_admin ON public.students
+  FOR DELETE TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+-- ---------------------------------------------------------------------------
+-- parent_student_map  (B1: deny authenticated writes — BLOCKED product writer)
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS tenant_all_parent_student_map ON public.parent_student_map;
+
+CREATE POLICY parent_student_map_select_own ON public.parent_student_map
+  FOR SELECT TO authenticated
+  USING (parent_id = auth.uid() OR public.is_super_admin());
+
+CREATE POLICY parent_student_map_select_school_staff ON public.parent_student_map
+  FOR SELECT TO authenticated
+  USING (
+    school_id = public.get_my_school_id()
+    AND public.get_my_role() IN ('admin','principal','teacher','driver','bursar','hq')
+  );
+
+-- No INSERT/UPDATE/DELETE policies for authenticated.
+
+-- ---------------------------------------------------------------------------
+-- lesson_plans (B3 approved-only student/parent SELECT; H2 split approval)
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS tenant_all_lesson_plans ON public.lesson_plans;
+DROP POLICY IF EXISTS lesson_plans_update_owner_or_admin ON public.lesson_plans;
+
+CREATE POLICY lesson_plans_select_teacher_own ON public.lesson_plans
+  FOR SELECT TO authenticated
+  USING (
+    public.is_super_admin()
+    OR teacher_id = auth.uid()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+CREATE POLICY lesson_plans_select_approved_class ON public.lesson_plans
+  FOR SELECT TO authenticated
+  USING (
+    status = 'approved'
+    AND school_id = public.get_my_school_id()
+    AND (
+      class_id IN (SELECT s.class_id FROM public.students s WHERE s.user_id = auth.uid())
+      OR class_id IN (
+        SELECT s.class_id
+        FROM public.students s
+        JOIN public.parent_student_map m ON m.student_id = s.id
+        WHERE m.parent_id = auth.uid()
+      )
+    )
+  );
+
+CREATE POLICY lesson_plans_insert_teacher ON public.lesson_plans
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    public.is_super_admin()
+    OR (
+      school_id = public.get_my_school_id()
+      AND teacher_id = auth.uid()
+      AND public.get_my_role() IN ('teacher','admin','principal')
+      AND status IN ('draft','submitted')
+    )
+  );
+
+-- Owner content path: draft/submitted/needs_revision -> draft or submitted.
+-- WITH CHECK forbids status = 'approved' on this policy.
+CREATE POLICY lesson_plans_update_owner_content ON public.lesson_plans
+  FOR UPDATE TO authenticated
+  USING (
+    teacher_id = auth.uid()
+    AND school_id = public.get_my_school_id()
+    AND status IN ('draft','submitted','needs_revision')
+  )
+  WITH CHECK (
+    teacher_id = auth.uid()
+    AND school_id = public.get_my_school_id()
+    AND status IN ('draft','submitted')
+  );
+
+-- School administrator / principal (is_school_admin) or super-admin.
+-- Self-approval of a plan the actor also owns is still denied by the trigger.
+CREATE POLICY lesson_plans_update_admin_review ON public.lesson_plans
+  FOR UPDATE TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  )
+  WITH CHECK (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+CREATE POLICY lesson_plans_delete_owner_or_admin ON public.lesson_plans
+  FOR DELETE TO authenticated
+  USING (
+    public.is_super_admin()
+    OR teacher_id = auth.uid()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+-- H2 hard stop: status -> approved requires a school administrator who is
+-- not the plan owner (super-admin may approve any row).
+CREATE OR REPLACE FUNCTION public.freeze_lesson_plan_self_approval()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+  IF NEW.status IS NOT DISTINCT FROM OLD.status THEN
+    RETURN NEW;
+  END IF;
+  IF NEW.status = 'approved' AND OLD.status IS DISTINCT FROM 'approved' THEN
+    IF auth.role() = 'service_role' THEN
+      RETURN NEW;
+    END IF;
+    IF NOT (public.is_school_admin() OR public.is_super_admin()) THEN
+      RAISE EXCEPTION 'lesson_plan_approval_unauthorized'
+        USING ERRCODE = '42501',
+              MESSAGE = 'lesson_plans.status=approved requires a school administrator';
+    END IF;
+    IF NEW.teacher_id IS NOT DISTINCT FROM auth.uid()
+       AND NOT public.is_super_admin() THEN
+      RAISE EXCEPTION 'lesson_plan_self_approval_denied'
+        USING ERRCODE = '42501',
+              MESSAGE = 'a teacher cannot approve their own lesson plan';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.freeze_lesson_plan_self_approval() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.freeze_lesson_plan_self_approval() FROM anon, authenticated;
+
+DROP TRIGGER IF EXISTS lesson_plans_approval_freeze ON public.lesson_plans;
+CREATE TRIGGER lesson_plans_approval_freeze
+  BEFORE UPDATE OF status ON public.lesson_plans
+  FOR EACH ROW
+  EXECUTE FUNCTION public.freeze_lesson_plan_self_approval();
+
+-- ---------------------------------------------------------------------------
+-- attendance  (B4: deny ordinary DELETE)
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS tenant_all_attendance ON public.attendance;
+
+CREATE POLICY attendance_select_staff ON public.attendance
+  FOR SELECT TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (
+      school_id = public.get_my_school_id()
+      AND public.get_my_role() IN ('admin','principal','teacher','hq')
+    )
+  );
+
+CREATE POLICY attendance_select_self ON public.attendance
+  FOR SELECT TO authenticated
+  USING (
+    student_id IN (SELECT s.id FROM public.students s WHERE s.user_id = auth.uid())
+  );
+
+CREATE POLICY attendance_select_mapped_parent ON public.attendance
+  FOR SELECT TO authenticated
+  USING (
+    student_id IN (
+      SELECT m.student_id FROM public.parent_student_map m
+      WHERE m.parent_id = auth.uid()
+    )
+  );
+
+CREATE POLICY attendance_write_teaching_staff ON public.attendance
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    public.is_super_admin()
+    OR (
+      school_id = public.get_my_school_id()
+      AND public.get_my_role() IN ('admin','principal','teacher')
+      AND marked_by = auth.uid()
+    )
+  );
+
+CREATE POLICY attendance_update_teaching_staff ON public.attendance
+  FOR UPDATE TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (
+      school_id = public.get_my_school_id()
+      AND public.get_my_role() IN ('admin','principal','teacher')
+    )
+  )
+  WITH CHECK (
+    public.is_super_admin()
+    OR (
+      school_id = public.get_my_school_id()
+      AND public.get_my_role() IN ('admin','principal','teacher')
+    )
+  );
+
+DROP POLICY IF EXISTS tenant_all_attendance_logs ON public.attendance_logs;
+
+CREATE POLICY attendance_logs_select_own_or_admin ON public.attendance_logs
+  FOR SELECT TO authenticated
+  USING (
+    public.is_super_admin()
+    OR teacher_id = auth.uid()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+CREATE POLICY attendance_logs_insert_self ON public.attendance_logs
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    public.is_super_admin()
+    OR (
+      school_id = public.get_my_school_id()
+      AND teacher_id = auth.uid()
+      AND public.get_my_role() IN ('teacher','admin','principal')
+    )
+  );
+
+CREATE POLICY attendance_logs_update_admin ON public.attendance_logs
+  FOR UPDATE TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  )
+  WITH CHECK (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );
+
+CREATE POLICY attendance_logs_delete_admin ON public.attendance_logs
+  FOR DELETE TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (public.is_school_admin() AND school_id = public.get_my_school_id())
+  );

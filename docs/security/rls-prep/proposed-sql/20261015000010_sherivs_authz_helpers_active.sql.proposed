@@ -1,16 +1,11 @@
--- CHANGE SET B — Inactive-user and membership-aware authorization helpers
--- Suggested later migration: 20261015000020_sherivs_authz_helpers_active.sql
--- Depends on: A (identity freeze) recommended, not strictly required.
--- Staging only until GATE 6.
-
--- Documented model in 20261008000050: users.school_id/role is the ACTIVE
--- CONTEXT; organization_memberships is the SET; membership rows do not grant
--- authorization. Live helpers currently prefer memberships, which disagrees
--- with is_school_admin() (still reads users.role) and lets a memberships
--- UPDATE escalate get_my_role() without touching users.
+-- CHANGE SET B — Inactive-user authorization helpers
+-- Lexicographic step 1 / 9. Suggested later migration name = this filename
+-- without .proposed, only after GATE 6 authorization.
+-- Staging only. Not loaded by db-apply*.mjs.
 --
--- Restore users as the authorization source, and fail closed when the
--- caller is inactive.
+-- C1: auth.uid() is schema-qualified. search_path = pg_catalog, public.
+-- Helpers read the committed active public.users row (ACTIVE CONTEXT).
+-- organization_memberships is the SET via get_my_memberships() only.
 
 CREATE OR REPLACE FUNCTION public.get_my_school_id()
 RETURNS uuid
@@ -21,7 +16,7 @@ SET search_path = pg_catalog, public
 AS $$
   SELECT u.school_id
   FROM public.users u
-  WHERE u.id = pg_catalog.auth.uid()
+  WHERE u.id = auth.uid()
     AND u.is_active IS TRUE;
 $$;
 
@@ -34,7 +29,7 @@ SET search_path = pg_catalog, public
 AS $$
   SELECT u.role
   FROM public.users u
-  WHERE u.id = pg_catalog.auth.uid()
+  WHERE u.id = auth.uid()
     AND u.is_active IS TRUE;
 $$;
 
@@ -48,14 +43,12 @@ AS $$
   SELECT EXISTS (
     SELECT 1
     FROM public.users u
-    WHERE u.id = pg_catalog.auth.uid()
+    WHERE u.id = auth.uid()
       AND u.is_active IS TRUE
       AND u.role IN ('admin', 'principal')
   );
 $$;
 
--- is_super_admin() already checks super_admins.is_active (20261003000020).
--- Re-assert search_path hygiene without changing semantics.
 CREATE OR REPLACE FUNCTION public.is_super_admin()
 RETURNS boolean
 LANGUAGE sql
@@ -66,12 +59,11 @@ AS $$
   SELECT EXISTS (
     SELECT 1
     FROM public.super_admins s
-    WHERE s.id = pg_catalog.auth.uid()
+    WHERE s.id = auth.uid()
       AND s.is_active = true
   );
 $$;
 
--- Membership SET reader: active memberships only. Unchanged contract.
 CREATE OR REPLACE FUNCTION public.get_my_memberships()
 RETURNS TABLE (school_id uuid, role text, is_primary boolean)
 LANGUAGE sql
@@ -82,7 +74,7 @@ AS $$
   SELECT m.school_id, m.role, m.is_primary
   FROM public.organization_memberships m
   JOIN public.users u ON u.id = m.user_id
-  WHERE m.user_id = pg_catalog.auth.uid()
+  WHERE m.user_id = auth.uid()
     AND m.is_active = true
     AND u.is_active IS TRUE
   ORDER BY m.is_primary DESC, m.created_at ASC;

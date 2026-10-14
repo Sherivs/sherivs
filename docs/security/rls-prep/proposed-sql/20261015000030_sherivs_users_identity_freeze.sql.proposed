@@ -1,0 +1,137 @@
+-- CHANGE SET A — Trusted identity-column and self-reactivation freeze
+-- Lexicographic step 3 / 9.
+-- Depends on: B (helpers); C HR salary RPC live; hr.functions.ts role path
+--   specified in HR-RPC-CONTRACT.md must exist in the same release as A.
+-- C1: auth.uid() / auth.role() schema-qualified.
+-- C2: memberships identity writes allowed only for service_role OR nested
+--   trigger depth from the users sync trigger (founder / switcher).
+-- C4: deny authenticated self-updates of users.is_active.
+-- H7: founder provisioning is compatible because users INSERT is not
+--   frozen and memberships sync runs at pg_trigger_depth() > 1.
+-- NOT VERIFIED until staging JWT + founder RPC tests.
+
+CREATE OR REPLACE FUNCTION public.freeze_users_identity_columns()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+  IF NEW.school_id IS DISTINCT FROM OLD.school_id
+     OR NEW.role IS DISTINCT FROM OLD.role THEN
+    -- JWT claim, not function owner. User-JWT DEFINER RPCs stay authenticated.
+    IF auth.role() IS DISTINCT FROM 'service_role' THEN
+      RAISE EXCEPTION 'identity_column_frozen'
+        USING ERRCODE = '42501',
+              MESSAGE = 'users.role and users.school_id are not writable with a user JWT';
+    END IF;
+  END IF;
+
+  -- C4: ordinary users cannot reactivate (or deactivate) themselves.
+  -- setTeacherActive updates a *different* id with a school-admin JWT and
+  -- remains allowed here; RLS still requires School admin manages users.
+  IF NEW.is_active IS DISTINCT FROM OLD.is_active THEN
+    IF auth.role() IS DISTINCT FROM 'service_role'
+       AND NEW.id IS NOT DISTINCT FROM auth.uid() THEN
+      RAISE EXCEPTION 'self_activation_frozen'
+        USING ERRCODE = '42501',
+              MESSAGE = 'users.is_active cannot be changed on the caller''s own row with a user JWT';
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.freeze_users_identity_columns() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.freeze_users_identity_columns() FROM anon, authenticated;
+
+DROP TRIGGER IF EXISTS users_identity_freeze ON public.users;
+CREATE TRIGGER users_identity_freeze
+  BEFORE UPDATE OF school_id, role, is_active ON public.users
+  FOR EACH ROW
+  EXECUTE FUNCTION public.freeze_users_identity_columns();
+
+REVOKE UPDATE (role, school_id) ON public.users FROM PUBLIC, anon, authenticated;
+GRANT UPDATE (role, school_id) ON public.users TO service_role;
+-- is_active column UPDATE remains granted to authenticated so setTeacherActive
+-- (JWT, other user id) works. Self-change is trigger-denied.
+
+-- ---------------------------------------------------------------------------
+-- C2 membership freeze
+-- ---------------------------------------------------------------------------
+-- pg_trigger_depth() (PostgreSQL):
+--   0 outside triggers.
+--   1 in the first trigger fired by a client/RPC DML statement on that table.
+--   2+ when that trigger performs DML that fires another trigger.
+-- Direct INSERT/UPDATE on organization_memberships => depth 1 => deny unless
+--   auth.role() = 'service_role' (switcher/provisioning admin client).
+-- users AFTER sync performing INSERT/UPDATE memberships => depth 2 => allow.
+-- That covers:
+--   * create_organization_with_founder (authenticated JWT, DEFINER INSERT
+--     users) — sync nested write
+--   * switchActiveOrganization / inviteTeacher / createStaffAccount
+--     (service_role users write) — also allowed via auth.role()
+-- Direct authenticated PostgREST INSERT into memberships remains depth 1
+--   and is denied even if the actor is a school admin.
+-- Residual risk (NOT VERIFIED / must stay empty): any *future* trigger on
+--   another table that writes organization_memberships would also see
+--   depth > 1. origin/master has only organization_memberships_sync as
+--   that writer. Do not add a client-settable GUC.
+
+CREATE OR REPLACE FUNCTION public.freeze_membership_identity_columns()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+  IF pg_catalog.pg_trigger_depth() > 1 THEN
+    RETURN NEW;
+  END IF;
+  IF auth.role() = 'service_role' THEN
+    RETURN NEW;
+  END IF;
+  RAISE EXCEPTION 'membership_identity_frozen'
+    USING ERRCODE = '42501',
+          MESSAGE = 'organization_memberships identity writes require service_role or users-sync trigger';
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.freeze_membership_identity_columns() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.freeze_membership_identity_columns() FROM anon, authenticated;
+
+DROP TRIGGER IF EXISTS memberships_identity_freeze ON public.organization_memberships;
+CREATE TRIGGER memberships_identity_freeze
+  BEFORE INSERT OR UPDATE OF user_id, school_id, role ON public.organization_memberships
+  FOR EACH ROW
+  EXECUTE FUNCTION public.freeze_membership_identity_columns();
+
+CREATE OR REPLACE FUNCTION public.sync_organization_membership_on_user_write()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+  IF TG_OP = 'INSERT' OR NEW.school_id IS DISTINCT FROM OLD.school_id
+     OR NEW.role IS DISTINCT FROM OLD.role
+     OR NEW.is_active IS DISTINCT FROM OLD.is_active THEN
+    IF TG_OP = 'UPDATE' AND NEW.school_id IS DISTINCT FROM OLD.school_id THEN
+      UPDATE public.organization_memberships
+      SET is_primary = false, updated_at = now()
+      WHERE user_id = NEW.id AND is_primary = true
+        AND school_id <> NEW.school_id;
+    END IF;
+    INSERT INTO public.organization_memberships
+      (user_id, school_id, role, is_primary, is_active)
+    VALUES
+      (NEW.id, NEW.school_id, NEW.role, true, COALESCE(NEW.is_active, true))
+    ON CONFLICT (user_id, school_id) DO UPDATE
+      SET role       = EXCLUDED.role,
+          is_active  = EXCLUDED.is_active,
+          is_primary = true;
+  END IF;
+  RETURN NEW;
+END;
+$$;

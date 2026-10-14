@@ -1,12 +1,11 @@
--- CHANGE SET H — Independent database-policy verification + optional FORCE RLS
+-- CHANGE SET H — optional FORCE RLS on users (LAST)
+-- Lexicographic step 9 / 9.
 -- Catalog proofs live in scripts/staging/sherivs-rls-prep/catalog-verify.sql
--- Suggested later migration (LAST, after A–G proven on staging):
---   20261015000100_sherivs_users_force_rls.sql
--- Staging only until GATE 6.
+-- Do not apply until synthetic JWT tests prove 00010–00080 on staging.
+-- Staging only until GATE 6. Never copy into database/supabase/migrations/
+-- during this mission.
 
 -- FORCE RLS binds the table owner. service_role remains BYPASSRLS.
--- Do not apply until synthetic JWT tests prove A–G without it.
-
 ALTER TABLE public.users FORCE ROW LEVEL SECURITY;
 
 -- Independent verification is not DDL. After each staging apply:
