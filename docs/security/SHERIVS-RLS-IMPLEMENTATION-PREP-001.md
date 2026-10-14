@@ -9,9 +9,11 @@
 **Status of findings:** OPEN. This mission does not declare any finding remediated.
 
 **GATE 3:** **PASS WITH CONDITIONS** after SHERIVS-RLS-GATE3-CORRECTIONS-001.
-Corrected artifacts are in `docs/security/rls-prep/` for **another independent
-review**. This document does **not** declare Gate 3 fully passed. Proposed SQL
-is **not safe to apply** until that re-review and GATE 4/5 staging proofs.
+Independent re-review (`GATE3-INDEPENDENT-REVIEW-002.md`) of `149a87d` did
+**not** fully pass Gate 3. SHERIVS-RLS-GATE3-CORRECTIONS-002 answers those
+conditions in `docs/security/rls-prep/` for **another independent review**.
+This document does **not** declare Gate 3 fully passed. Proposed SQL is
+**not safe to apply** until that re-review and GATE 4/5 staging proofs.
 
 **Production SQL:** none applied. No GRANT, REVOKE, CREATE, ALTER, DROP, INSERT, UPDATE, DELETE, or TRUNCATE was executed against production. No Supabase, DNS, Vercel, or hostname-routing change.
 
@@ -80,7 +82,7 @@ Full path table: `docs/security/rls-prep/APPLICATION-INVENTORY.md`.
 | `setTeacherActive` | JWT-srv | `is_active` of **another** teacher | Keep column grant. C4 trigger denies self-reactivation. |
 | `switchActiveOrganization` | JWT-srv read + **service_role** write | `school_id`, `role` | **Design-compatible** with A (service_role). **NOT VERIFIED** on staging (H7). |
 | `createStaffAccount` / `inviteTeacher` / `provisionOrganization` | service_role | insert identity | **Design-compatible**. **NOT VERIFIED** on staging (H7). |
-| `create_organization_with_founder` | DEFINER RPC | INSERT founder admin | **Design-compatible** with A (INSERT, not UPDATE) and C2 (`pg_trigger_depth() > 1` on memberships sync). **NOT VERIFIED** on staging (H7). |
+| `create_organization_with_founder` | DEFINER RPC | INSERT founder admin | Authenticated has **no** users INSERT GRANT (C3). Nested memberships write is allowed only when the row **mirrors** `public.users` or the session is `service_role` (C2; **no** trigger-depth latch). **NOT VERIFIED** on staging (H7). |
 | `demo-provision` | service_role | seed | Environment-gated; must stay off in production. |
 
 ### Fees / payment references
@@ -120,8 +122,9 @@ Proposed SQL is **review-only** under `docs/security/rls-prep/proposed-sql/` (`.
 |-----|--------|---------|--------------|----------------------|
 | **B** `00010` | Helpers read **active** `users` row; EXECUTE hygiene | `get_my_school_id`, `get_my_role`, `is_school_admin`, `is_super_admin`, `get_my_memberships` | Inactive admins lose privilege — intended | Restore previous helper bodies from `20261008000050` / `20260620151525` only as last resort |
 | **C** `00020` | HR list/write SQL RPCs (no `p_role`; staff-target pin) | `admin_hr_staff_list` / `admin_hr_staff_write`; `hr.functions.ts` **not in this mission** | `admin/hr.tsx` JWT `saveStaff` **breaks** until the TanStack function exists | Feature-flag HR form off rather than re-opening JWT role UPDATE |
-| **A** `00030` | Freeze `users.role`/`school_id`; C4 self `is_active`; C2 memberships depth>1 or service_role | triggers + column REVOKE UPDATE(`role`,`school_id`) | HR role field **must** use service_role in the same release | Drop triggers; do **not** re-GRANT identity columns to `authenticated` |
+| **A** `00030` | Freeze `users.role`/`school_id`; C4 self `is_active`; C3 users INSERT/DELETE revoke; C2 memberships **mirror** (no trigger depth) | triggers + policy split + REVOKE INSERT/DELETE | HR role field **must** use service_role in the same release | Drop triggers; do **not** re-GRANT identity columns or users INSERT to `authenticated` |
 | **F** `00040` | Sensitive column revoke | SELECT/UPDATE revoke on six `users` columns | `app-context` explicit select **not in this mission** | Same as C |
+| **E-HR** `00045` | Payroll / biometrics command policies | drop FOR ALL; finance/own-row commands | `admin/hr.tsx` payroll JWT depends on finance SELECT | Pause payroll/biometric UI; **do not restore school_isolation FOR ALL** |
 | **E-A** `00050` | First RLS wave | classes, calendar, timetables | low | Pause UI; **do not restore `tenant_all_*`** |
 | **E-B** `00060` | Second RLS wave + H2 lesson approval split | students, map, lesson_plans, attendance* | student lesson-plan filter; teacher cannot self-approve | Pause UI; do not restore `tenant_all_*` |
 | **D+E-C** `00070` | Fee settlement freeze + fee/fraud/subscription policies | `fees_settlement_freeze`; command policies | `paystack.functions.ts` **not in this mission** — `PAYMENT-INVARIANTS.md` | Pause Paystack buttons; do not re-GRANT settlement columns |
@@ -148,29 +151,35 @@ S0 catalog pin (read-only)
    F sensitive columns 00040
         │
         ▼
+   E-HR payroll/biometrics 00045
+        │
+        ▼
    E-A 00050  →  E-B 00060 (H2 lesson approval)
         │
         ▼
-   D + E-C 00070 (settlement freeze with fee policies)
+   D + E-C 00070 (RELEASE BLOCKER until Paystack app)
         │
         ▼
-   G grants + C3 column re-REVOKE 00080
+   G grants: REVOKE ALL then allowlist then column re-REVOKE 00080
         │
         ▼
-   H optional FORCE RLS 00090
+   H optional FORCE RLS 00090 (NOT ELIGIBLE until founder/DEFINER staging)
 ```
 
-Lexicographic filenames **are** this graph (H1). C SQL lands before A.
-`hr.functions.ts` (role writes) and Paystack app invariants and
-`app-context` column lists must land in the **same production release**
-as A/F/D — they are **not** implemented in this corrections mission.
+Lexicographic filenames **are** this graph (H1), including `00045`.
+C SQL lands before A. `hr.functions.ts` (role writes) and Paystack app
+invariants and `app-context` column lists must land in the **same
+production release** as A/F/D — they are **not** implemented in this
+corrections mission. `00070` is not eligible to apply ahead of Paystack.
+`00090` is not eligible until founder/DEFINER staging.
 
 ---
 
 ## 4. Per-table RLS implementation plan
 
 See `docs/security/rls-prep/PER-TABLE-RLS-MATRIX.md` and proposed SQL
-`00050`/`00060`/`00070`. Related isolation tables: `RELATED-POLICIES.md`.
+`00045`/`00050`/`00060`/`00070`. Related isolation tables:
+`RELATED-POLICIES.md`.
 
 ACTIVE-V1 defaults applied:
 
@@ -230,8 +239,9 @@ Harness pieces already in this PR:
 Synthetic identities (create on staging, never production): School A, School B; student, teacher, parent (mapped child), bursar, admin, inactive admin, super-admin. Password material stays in staging secrets, not git.
 
 Required negatives and positives are listed in `STAGING-TEST-HARNESS.md`
-(R001–R022 plus C4/C2/H2/H3/H5 cases ID-01..ID-14). Hostname-routing tests
-must remain unchanged.
+(FND-01, SW-01, MEM-01/02, INS-01, DEL-01, ID-01/02, C4-01, ACT-01, HR,
+PAYR, BIO, LP, PAY, INACT, HOST-01). Hostname-routing tests must remain
+unchanged. **None of those JWT cases were executed in this mission.**
 
 ---
 
@@ -243,11 +253,12 @@ must remain unchanged.
 | 2 | `20261015000020_sherivs_admin_hr_rpcs.sql` | C SQL | **yes** when A/F land; `hr.functions.ts` still required |
 | 3 | `20261015000030_sherivs_users_identity_freeze.sql` | A | **yes** (HR role + C4) |
 | 4 | `20261015000040_sherivs_users_sensitive_column_revoke.sql` | F | **yes** (app-context select list) |
+| 4b | `20261015000045_sherivs_rls_payroll_biometrics.sql` | E-HR | payroll JWT in `admin/hr.tsx` |
 | 5 | `20261015000050_sherivs_rls_wave_a_classes_calendar_timetable.sql` | E-A | low |
 | 6 | `20261015000060_sherivs_rls_wave_b_students_map_plans_attendance.sql` | E-B | student lesson-plan filter (B3); H2 |
-| 7 | `20261015000070_sherivs_fees_settlement_and_rls_wave_c.sql` | D+E-C | **yes** (Paystack invariants) |
+| 7 | `20261015000070_sherivs_fees_settlement_and_rls_wave_c.sql` | D+E-C | **blocked** until Paystack app |
 | 8 | `20261015000080_sherivs_rls_grant_hygiene.sql` | G | none |
-| 9 | `20261015000090_sherivs_users_force_rls.sql` | H optional | none |
+| 9 | `20261015000090_sherivs_users_force_rls.sql` | H optional | **not eligible** until founder/DEFINER staging |
 
 The `db-apply*.mjs` runners sort `database/supabase/migrations/*.sql`
 lexicographically. These names **must** keep this order. They currently live
@@ -281,7 +292,7 @@ Hostname routing (`d195ba8`) is not in the rollback surface.
 | B7 | `fraud_attempts` writer | Deny authenticated | Yes, if a trusted server workflow appears |
 | **B8** | Manual mark-fee-paid without Paystack | Deny JWT; webhook/verify only | **Yes** — `admin/fees.tsx` currently offers it |
 | **B9** | Student medical columns (`blood_group`, `genotype`, `medical_conditions`, `disability_notes`) | Out of SHERIVS-003 named scope; follow-on after E student SELECT split | Yes |
-| **B10** | Related FOR ALL tables (`staff_payroll`, `teacher_biometrics`, hostel/clinic/library, …) | Follow-on SQL **required before SHERIVS-003 can close** for payroll/biometrics. Other tables BLOCKED per `RELATED-POLICIES.md`. Not in this P0 SQL | Yes |
+| **B10** | Related FOR ALL tables (`staff_payroll`, `teacher_biometrics`, hostel/clinic/library, …) | Payroll/biometrics command-split is proposed in `00045` (still **OPEN** until applied). Hostel/clinic/library/… remain BLOCKED per `RELATED-POLICIES.md` — do not invent permissions | Yes |
 | **B11** | Isolated staging project | Required for GATE 4/5 | **Yes — missing prerequisite** |
 
 ---
@@ -292,7 +303,7 @@ Hostname routing (`d195ba8`) is not in the rollback surface.
 |------|---------|--------------|
 | **GATE 1** | Correct master baseline | **PASS** — `origin/master` @ `d195ba8` with memberships |
 | **GATE 2** | HR and fee-payment compatibility paths designed | **PASS** — §5 |
-| **GATE 3** | SQL and application changes independently reviewed | **PASS WITH CONDITIONS** — corrections in this PR. **Not fully passed.** Not approved to apply. Independent re-review required |
+| **GATE 3** | SQL and application changes independently reviewed | **PASS WITH CONDITIONS** — corrections-002 ready for another independent review. **Not fully passed.** Not approved to apply |
 | **GATE 4** | Synthetic staging tests pass | **BLOCKED** — no staging project |
 | **GATE 5** | Staging catalog proves policies/grants/triggers/ACLs | **BLOCKED** — depends on GATE 4 |
 | **GATE 6** | Separate production-apply mission explicitly authorized | **NOT ENTERED** |

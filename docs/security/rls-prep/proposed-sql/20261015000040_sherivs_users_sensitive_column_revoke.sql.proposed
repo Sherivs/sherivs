@@ -1,5 +1,5 @@
 -- CHANGE SET F — Sensitive-column access restrictions
--- Lexicographic step 4 / 9.
+-- Lexicographic step 4 / 10. Payroll/biometric row policies follow in 00045.
 -- Depends on: C HR salary RPC live so admin forms can still display salary.
 -- App in the same release (not this mission):
 --   frontend/src/contexts/app-context.tsx users select must become an

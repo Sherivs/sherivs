@@ -1,41 +1,29 @@
 -- CHANGE SET G — Grants hygiene
--- Lexicographic step 8 / 9.
--- C3: table-level GRANT UPDATE restores ALL columns in PostgreSQL catalogs.
--- After every table GRANT, re-REVOKE identity, sensitive HR, and settlement
--- columns. Prefer least-privilege table grants (no INSERT/DELETE on users
--- for authenticated; no DELETE on fees/attendance; memberships SELECT only).
--- Live catalog (SHERIVS-RLS-VERIFY-001): anon holds TRUNCATE on some tenant
--- tables. RLS does not govern TRUNCATE.
+-- Lexicographic step 8 / 10.
+-- C3: PostgreSQL GRANT is additive. Withdraw obsolete table privileges with
+-- REVOKE ALL (or explicit command REVOKEs) BEFORE granting the allowlist.
+-- After every table GRANT UPDATE, re-REVOKE identity, HR, and settlement
+-- columns. Do not treat RLS as making leftover INSERT/DELETE harmless.
 
-REVOKE TRUNCATE, TRIGGER, REFERENCES ON
-  public.users,
-  public.students,
-  public.fees,
-  public.attendance,
-  public.attendance_logs,
-  public.classes,
-  public.parent_student_map,
-  public.lesson_plans,
-  public.timetables,
-  public.timetable_slots,
-  public.school_calendar,
-  public.fraud_attempts,
-  public.subscriptions,
-  public.grades,
-  public.organization_memberships
-FROM anon, authenticated;
+REVOKE ALL ON TABLE public.users FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE public.students FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE public.fees FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE public.attendance FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE public.attendance_logs FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE public.classes FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE public.parent_student_map FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE public.lesson_plans FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE public.timetables FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE public.timetable_slots FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE public.school_calendar FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE public.fraud_attempts FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE public.subscriptions FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE public.grades FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE public.organization_memberships FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE public.staff_payroll FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE public.teacher_biometrics FROM PUBLIC, anon, authenticated;
 
-REVOKE ALL ON TABLE public.users FROM anon;
-REVOKE ALL ON TABLE public.students FROM anon;
-REVOKE ALL ON TABLE public.fees FROM anon;
-REVOKE ALL ON TABLE public.attendance FROM anon;
-REVOKE ALL ON TABLE public.parent_student_map FROM anon;
-REVOKE ALL ON TABLE public.fraud_attempts FROM anon;
-REVOKE ALL ON TABLE public.organization_memberships FROM anon;
-
--- Least-privilege DML. Policies still gate rows.
--- users: authenticated may SELECT/UPDATE profile rows. INSERT of founder
---   and staff is DEFINER / service_role (H7). No authenticated DELETE.
+-- Intended authenticated allowlist (RLS still gates rows).
 GRANT SELECT, UPDATE ON TABLE public.users TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.students TO authenticated;
 GRANT SELECT, INSERT, UPDATE ON TABLE public.fees TO authenticated;
@@ -49,35 +37,50 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.timetable_slots TO authenti
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.school_calendar TO authenticated;
 GRANT SELECT ON TABLE public.fraud_attempts TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.subscriptions TO authenticated;
-
--- C2: no direct authenticated membership write path. Nested DEFINER sync
--- and service_role remain the writers.
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.grades TO authenticated;
 GRANT SELECT ON TABLE public.organization_memberships TO authenticated;
-REVOKE INSERT, UPDATE, DELETE ON TABLE public.organization_memberships
-  FROM PUBLIC, anon, authenticated;
+GRANT SELECT, INSERT, UPDATE ON TABLE public.staff_payroll TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON TABLE public.teacher_biometrics TO authenticated;
 
 GRANT ALL ON TABLE public.users TO service_role;
 GRANT ALL ON TABLE public.parent_student_map TO service_role;
 GRANT ALL ON TABLE public.fees TO service_role;
 GRANT ALL ON TABLE public.fraud_attempts TO service_role;
 GRANT ALL ON TABLE public.organization_memberships TO service_role;
+GRANT ALL ON TABLE public.staff_payroll TO service_role;
+GRANT ALL ON TABLE public.teacher_biometrics TO service_role;
 
--- ---------------------------------------------------------------------------
--- C3 restore column restrictions AFTER table GRANT
--- GRANT UPDATE ON TABLE restores every column, including those A/D/F revoked.
--- ---------------------------------------------------------------------------
+-- Explicitly re-withdraw users INSERT/DELETE after GRANT SELECT, UPDATE
+-- (documentation + belt: GRANT SELECT, UPDATE must not be read as restoring
+-- INSERT/DELETE, and this pair is the catalog assertion).
+REVOKE INSERT, DELETE ON TABLE public.users FROM PUBLIC, anon, authenticated;
+REVOKE INSERT, UPDATE, DELETE ON TABLE public.organization_memberships
+  FROM PUBLIC, anon, authenticated;
+REVOKE INSERT, UPDATE, DELETE ON TABLE public.parent_student_map
+  FROM PUBLIC, anon, authenticated;
+REVOKE INSERT, UPDATE, DELETE ON TABLE public.fraud_attempts
+  FROM PUBLIC, anon, authenticated;
+REVOKE DELETE ON TABLE public.fees FROM PUBLIC, anon, authenticated;
+REVOKE DELETE ON TABLE public.attendance FROM PUBLIC, anon, authenticated;
+REVOKE DELETE ON TABLE public.staff_payroll FROM PUBLIC, anon, authenticated;
+REVOKE DELETE ON TABLE public.teacher_biometrics FROM PUBLIC, anon, authenticated;
+REVOKE TRUNCATE, TRIGGER, REFERENCES ON TABLE public.users,
+  public.students, public.fees, public.attendance, public.attendance_logs,
+  public.classes, public.parent_student_map, public.lesson_plans,
+  public.timetables, public.timetable_slots, public.school_calendar,
+  public.fraud_attempts, public.subscriptions, public.grades,
+  public.organization_memberships, public.staff_payroll,
+  public.teacher_biometrics
+  FROM anon, authenticated;
 
--- Identity columns (A). is_active UPDATE stays granted for setTeacherActive
--- (JWT, other user id). Self-change is trigger-denied (C4).
+-- Column restrictions AFTER the final table GRANT UPDATE.
 REVOKE UPDATE (role, school_id) ON public.users FROM PUBLIC, anon, authenticated;
 GRANT UPDATE (role, school_id) ON public.users TO service_role;
 
--- Sensitive HR / biometric columns (F).
 REVOKE SELECT, UPDATE (
   salary, nin, bank_name, account_number, account_name, face_biometric
 ) ON public.users FROM PUBLIC, anon, authenticated;
 
--- Fee settlement columns (D).
 REVOKE UPDATE (
   status, paid_amount, paid_at, paystack_reference, paystack_access_code
 ) ON public.fees FROM PUBLIC, anon, authenticated;
@@ -85,20 +88,13 @@ GRANT UPDATE (
   status, paid_amount, paid_at, paystack_reference, paystack_access_code
 ) ON public.fees TO service_role;
 
--- Expected information_schema.column_privileges after this file
--- (grantee authenticated / anon / PUBLIC):
---   users.role              UPDATE: none
---   users.school_id         UPDATE: none
---   users.is_active         UPDATE: authenticated yes (self-change trigger-denied)
---   users.salary            SELECT/UPDATE: none
---   users.nin               SELECT/UPDATE: none
---   users.bank_name         SELECT/UPDATE: none
---   users.account_number    SELECT/UPDATE: none
---   users.account_name      SELECT/UPDATE: none
---   users.face_biometric    SELECT/UPDATE: none
---   fees.status             UPDATE: none
---   fees.paid_amount        UPDATE: none
---   fees.paid_at            UPDATE: none
---   fees.paystack_reference UPDATE: none
---   fees.paystack_access_code UPDATE: none
--- service_role retains table ALL on users and fees (BYPASSRLS + grants).
+-- STATICALLY DERIVED expected catalogs (NOT VERIFIED until staging):
+-- authenticated users: SELECT, UPDATE table; NO INSERT, NO DELETE
+--   UPDATE(role), UPDATE(school_id): none
+--   UPDATE(is_active): yes (self-change trigger-denied)
+--   SELECT/UPDATE salary,nin,bank_*,face_biometric: none
+-- authenticated fees: SELECT, INSERT, UPDATE; NO DELETE
+--   UPDATE settlement columns: none
+-- authenticated organization_memberships: SELECT only
+-- anon: none of the tables above
+-- service_role: table ALL on users, fees, memberships, payroll, biometrics

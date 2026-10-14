@@ -1,5 +1,5 @@
 -- CHANGE SET E wave B — students, parent_student_map, lesson_plans, attendance*
--- Lexicographic step 6 / 9. Second RLS policy wave (H1).
+-- Lexicographic step 6 / 10. Second RLS policy wave (H1).
 -- H2: lesson-plan owner UPDATE cannot approve. Approval is a separate
 --     admin transition plus a BEFORE UPDATE trigger.
 -- C1: auth.uid() two-part. No pg_catalog.auth.*.

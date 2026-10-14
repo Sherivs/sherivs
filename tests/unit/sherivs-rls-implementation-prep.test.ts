@@ -3,8 +3,10 @@
  *
  * Pins that this mission authored a reviewable plan without placing SQL
  * on the production apply path, and that the staging harness refuses the
- * canonical production project. After GATE3-CORRECTIONS-001, also pins
- * C1 (no pg_catalog.auth.*) and H1 (lexicographic 00010–00090).
+ * canonical production project. After GATE3-CORRECTIONS-002, also pins
+ * C1 (no pg_catalog.auth.*), C2 (no trigger-depth authorization),
+ * C3 (REVOKE ALL then allowlist), and H1 (lexicographic 00010–00090
+ * including 00045).
  *
  * READ-ONLY: no database access, no network, no secrets.
  */
@@ -28,6 +30,7 @@ const EXPECTED_PROPOSED = [
   "20261015000020_sherivs_admin_hr_rpcs.sql.proposed",
   "20261015000030_sherivs_users_identity_freeze.sql.proposed",
   "20261015000040_sherivs_users_sensitive_column_revoke.sql.proposed",
+  "20261015000045_sherivs_rls_payroll_biometrics.sql.proposed",
   "20261015000050_sherivs_rls_wave_a_classes_calendar_timetable.sql.proposed",
   "20261015000060_sherivs_rls_wave_b_students_map_plans_attendance.sql.proposed",
   "20261015000070_sherivs_fees_settlement_and_rls_wave_c.sql.proposed",
@@ -63,11 +66,12 @@ describe("SHERIVS-RLS-IMPLEMENTATION-PREP-001 plan integrity", () => {
     expect(proposed[1]).toMatch(/00020_.*admin_hr_rpcs/);
     expect(proposed[2]).toMatch(/00030_.*identity_freeze/);
     expect(proposed[3]).toMatch(/00040_.*sensitive_column/);
-    expect(proposed[4]).toMatch(/00050_.*wave_a/);
-    expect(proposed[5]).toMatch(/00060_.*wave_b/);
-    expect(proposed[6]).toMatch(/00070_.*fees_settlement/);
-    expect(proposed[7]).toMatch(/00080_.*grant_hygiene/);
-    expect(proposed[8]).toMatch(/00090_.*force_rls/);
+    expect(proposed[4]).toMatch(/00045_.*payroll_biometrics/);
+    expect(proposed[5]).toMatch(/00050_.*wave_a/);
+    expect(proposed[6]).toMatch(/00060_.*wave_b/);
+    expect(proposed[7]).toMatch(/00070_.*fees_settlement/);
+    expect(proposed[8]).toMatch(/00080_.*grant_hygiene/);
+    expect(proposed[9]).toMatch(/00090_.*force_rls/);
   });
 
   it("does not use invalid pg_catalog.auth.* three-part names (C1)", () => {
@@ -88,29 +92,69 @@ describe("SHERIVS-RLS-IMPLEMENTATION-PREP-001 plan integrity", () => {
     expect(helpers).toMatch(/auth\.uid\(\)/);
   });
 
-  it("pins C2 memberships freeze to trigger depth or service_role, not a GUC", () => {
+  it("pins C2 memberships freeze to users-row mirror or service_role, not trigger depth or a GUC", () => {
     const freeze = readFileSync(
       join(PROPOSED_DIR, "20261015000030_sherivs_users_identity_freeze.sql.proposed"),
       "utf8",
     );
-    expect(freeze).toMatch(/pg_catalog\.pg_trigger_depth\(\) > 1/);
+    expect(freeze).not.toMatch(/pg_catalog\.pg_trigger_depth\s*\(/);
+    expect(freeze).not.toMatch(/IF pg_trigger_depth/);
     expect(freeze).toMatch(/auth\.role\(\) = 'service_role'/);
+    expect(freeze).toMatch(/FROM public\.users u/);
+    expect(freeze).toMatch(/u\.school_id IS NOT DISTINCT FROM NEW\.school_id/);
+    expect(freeze).toMatch(/DROP POLICY IF EXISTS organization_memberships_insert/);
+    expect(freeze).toMatch(/REVOKE INSERT, DELETE ON public\.users/);
     expect(freeze).not.toMatch(/set_config|current_setting|sherivs\.allow/);
     expect(freeze).toMatch(/self_activation_frozen/);
+    expect(freeze).toMatch(/users_school_admin_update_staff/);
+    expect(freeze).not.toMatch(/CREATE POLICY "School admin manages users"/);
   });
 
-  it("re-revokes identity, HR, and settlement columns after table GRANT (C3)", () => {
+  it("withdraws obsolete table privileges before the allowlist, then re-revokes columns (C3)", () => {
     const grants = readFileSync(
       join(PROPOSED_DIR, "20261015000080_sherivs_rls_grant_hygiene.sql.proposed"),
       "utf8",
     );
-    const revokeRoleAt = grants.lastIndexOf("REVOKE UPDATE (role, school_id)");
+    const revokeAllUsersAt = grants.indexOf("REVOKE ALL ON TABLE public.users FROM PUBLIC, anon, authenticated");
     const grantUsersAt = grants.lastIndexOf("GRANT SELECT, UPDATE ON TABLE public.users");
-    expect(grantUsersAt).toBeGreaterThan(-1);
+    const revokeInsertAfter = grants.lastIndexOf("REVOKE INSERT, DELETE ON TABLE public.users");
+    const revokeRoleAt = grants.lastIndexOf("REVOKE UPDATE (role, school_id)");
+    expect(revokeAllUsersAt).toBeGreaterThan(-1);
+    expect(grantUsersAt).toBeGreaterThan(revokeAllUsersAt);
+    expect(revokeInsertAfter).toBeGreaterThan(grantUsersAt);
     expect(revokeRoleAt).toBeGreaterThan(grantUsersAt);
+    expect(grants).not.toMatch(/GRANT SELECT, INSERT.*ON TABLE public\.users TO authenticated/);
+    expect(grants).not.toMatch(/GRANT ALL ON TABLE public\.users TO authenticated/);
     expect(grants).toMatch(/REVOKE SELECT, UPDATE \(\s*salary, nin, bank_name/);
     expect(grants).toMatch(/REVOKE UPDATE \(\s*status, paid_amount, paid_at, paystack_reference/);
     expect(grants).toMatch(/users\.is_active/);
+    expect(grants).toMatch(/GRANT SELECT ON TABLE public\.organization_memberships TO authenticated/);
+  });
+
+  it("splits payroll and biometrics FOR ALL into command policies (H6)", () => {
+    const hrWave = readFileSync(
+      join(PROPOSED_DIR, "20261015000045_sherivs_rls_payroll_biometrics.sql.proposed"),
+      "utf8",
+    );
+    expect(hrWave).toMatch(/DROP POLICY IF EXISTS staff_payroll_school_isolation/);
+    expect(hrWave).toMatch(/DROP POLICY IF EXISTS biometrics_school_isolation/);
+    expect(hrWave).toMatch(/DROP POLICY IF EXISTS school_isolation ON public\.teacher_biometrics/);
+    expect(hrWave).toMatch(/staff_payroll_select_finance/);
+    expect(hrWave).toMatch(/teacher_biometrics_select_own/);
+    expect(hrWave).not.toMatch(/CREATE POLICY[\s\S]{0,200}FOR ALL/);
+  });
+
+  it("marks settlement SQL and FORCE RLS as not eligible to apply", () => {
+    const settlement = readFileSync(
+      join(PROPOSED_DIR, "20261015000070_sherivs_fees_settlement_and_rls_wave_c.sql.proposed"),
+      "utf8",
+    );
+    const force = readFileSync(
+      join(PROPOSED_DIR, "20261015000090_sherivs_users_force_rls.sql.proposed"),
+      "utf8",
+    );
+    expect(settlement).toMatch(/RELEASE BLOCKER/);
+    expect(force).toMatch(/NOT ELIGIBLE/);
   });
 
   it("separates lesson-plan owner edits from approval (H2)", () => {
@@ -177,6 +221,15 @@ describe("SHERIVS-RLS-IMPLEMENTATION-PREP-001 plan integrity", () => {
     expect(assertNotProductionTarget("")).toEqual({ ok: false, reason: "empty_target" });
   });
 
+  it("catalog-verify requires empty users INSERT/DELETE and no payroll FOR ALL", () => {
+    const sql = readFileSync(join(ROOT, "scripts/staging/sherivs-rls-prep/catalog-verify.sql"), "utf8");
+    expect(sql).toMatch(/authenticated must not hold users INSERT or DELETE/);
+    expect(sql).toMatch(/privilege_type IN \('INSERT', 'DELETE', 'TRUNCATE'/);
+    expect(sql).toMatch(/staff_payroll', 'teacher_biometrics'/);
+    expect(sql).toMatch(/polcmd = '\*'/);
+    expect(sql).toMatch(/must not contain\n-- pg_trigger_depth/);
+  });
+
   it("ships companion plan files including Gate 3 corrections", () => {
     for (const rel of [
       "docs/security/rls-prep/CHANGE-SETS.md",
@@ -185,6 +238,9 @@ describe("SHERIVS-RLS-IMPLEMENTATION-PREP-001 plan integrity", () => {
       "docs/security/rls-prep/STAGING-TEST-HARNESS.md",
       "docs/security/rls-prep/VERIFICATION-AND-ROLLBACK.md",
       "docs/security/rls-prep/GATE3-CORRECTIONS.md",
+      "docs/security/rls-prep/GATE3-CORRECTIONS-002.md",
+      "docs/security/rls-prep/GATE3-INDEPENDENT-REVIEW-002.md",
+      "docs/security/rls-prep/IDENTITY-PROVISIONING.md",
       "docs/security/rls-prep/HR-RPC-CONTRACT.md",
       "docs/security/rls-prep/PAYMENT-INVARIANTS.md",
       "docs/security/rls-prep/RELATED-POLICIES.md",

@@ -1,0 +1,74 @@
+-- CHANGE SET E-HR — staff_payroll and teacher_biometrics command policies
+-- Lexicographic step 4b / 10. After F (column revoke), before E-A.
+-- Required before SHERIVS-003 can be considered closed (design). Finding
+-- remains OPEN until applied and staging-tested.
+-- Drops school-wide FOR ALL isolation (and the duplicate school_isolation
+-- on teacher_biometrics). Does not invent hostel/clinic/library permissions.
+
+DROP POLICY IF EXISTS staff_payroll_school_isolation ON public.staff_payroll;
+
+CREATE POLICY staff_payroll_select_finance ON public.staff_payroll
+  FOR SELECT TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (
+      school_id = public.get_my_school_id()
+      AND public.get_my_role() IN ('admin','principal','bursar','hq')
+    )
+  );
+
+CREATE POLICY staff_payroll_insert_finance ON public.staff_payroll
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    public.is_super_admin()
+    OR (
+      school_id = public.get_my_school_id()
+      AND public.get_my_role() IN ('admin','principal','bursar')
+    )
+  );
+
+CREATE POLICY staff_payroll_update_finance ON public.staff_payroll
+  FOR UPDATE TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (
+      school_id = public.get_my_school_id()
+      AND public.get_my_role() IN ('admin','principal','bursar')
+    )
+  )
+  WITH CHECK (
+    public.is_super_admin()
+    OR (
+      school_id = public.get_my_school_id()
+      AND public.get_my_role() IN ('admin','principal','bursar')
+    )
+  );
+
+-- No DELETE policy for authenticated.
+
+DROP POLICY IF EXISTS biometrics_school_isolation ON public.teacher_biometrics;
+DROP POLICY IF EXISTS school_isolation ON public.teacher_biometrics;
+
+CREATE POLICY teacher_biometrics_select_own ON public.teacher_biometrics
+  FOR SELECT TO authenticated
+  USING (user_id = auth.uid() OR public.is_super_admin());
+
+CREATE POLICY teacher_biometrics_select_admin ON public.teacher_biometrics
+  FOR SELECT TO authenticated
+  USING (public.is_school_admin() AND school_id = public.get_my_school_id());
+
+CREATE POLICY teacher_biometrics_insert_own ON public.teacher_biometrics
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    user_id = auth.uid()
+    AND school_id = public.get_my_school_id()
+    AND public.get_my_role() IN ('teacher','admin','principal')
+  );
+
+CREATE POLICY teacher_biometrics_update_own ON public.teacher_biometrics
+  FOR UPDATE TO authenticated
+  USING (user_id = auth.uid() AND school_id = public.get_my_school_id())
+  WITH CHECK (user_id = auth.uid() AND school_id = public.get_my_school_id());
+
+-- No DELETE policy. Admin enrollment-status suspension is BLOCKED until a
+-- dedicated RPC exists (geofence-settings today only SELECTs).

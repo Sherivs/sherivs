@@ -1,5 +1,5 @@
 -- CHANGE SET E wave A — classes, school_calendar, timetables, timetable_slots
--- Lexicographic step 5 / 9. First RLS policy wave (H1).
+-- Lexicographic step 5 / 10. First RLS policy wave (H1). After 00045.
 -- Depends on: B (inactive helpers fail closed).
 -- Pattern: DROP tenant_all_* ; CREATE command policies TO authenticated.
 -- Permissive policies OR together — do not leave a residual FOR ALL.

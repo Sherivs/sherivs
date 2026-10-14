@@ -1,10 +1,10 @@
 -- CHANGE SET D + E wave C — settlement freeze then fees/fraud/subscriptions
--- Lexicographic step 7 / 9. Payment compatibility and fee policy wave (H1).
--- D lands in the same file as E-C so JWT UPDATE of fees cannot write
--- settlement columns after tenant_all_fees is dropped.
--- App in the same future release (NOT this mission):
---   paystack.functions.ts and webhooks/paystack.ts must satisfy
---   docs/security/rls-prep/PAYMENT-INVARIANTS.md.
+-- Lexicographic step 7 / 10. Payment compatibility and fee policy wave (H1).
+-- RELEASE BLOCKER: not eligible to apply until paystack.functions.ts and
+-- webhooks/paystack.ts implement PAYMENT-INVARIANTS.md (amount, currency,
+-- fee-id+reference bind, payer authz, webhook refusal, idempotency,
+-- concurrency, narrow service_role UPDATE). Shipping D alone breaks
+-- live JWT init/verify. B8 manual mark-paid remains BLOCKED.
 -- C1: auth.role() two-part. No pg_catalog.auth.*.
 
 -- ---------------------------------------------------------------------------

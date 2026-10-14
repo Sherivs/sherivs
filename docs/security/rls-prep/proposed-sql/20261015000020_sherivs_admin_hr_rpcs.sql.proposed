@@ -1,5 +1,5 @@
 -- CHANGE SET C — HR read/write SQL RPCs (salary/profile only)
--- Lexicographic step 2 / 9.
+-- Lexicographic step 2 / 10.
 -- Role changes are NOT performed here. See docs/security/rls-prep/HR-RPC-CONTRACT.md
 -- for the TanStack hr.functions.ts service_role contract (not implemented
 -- in this mission).

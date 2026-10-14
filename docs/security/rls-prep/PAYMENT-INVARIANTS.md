@@ -1,7 +1,11 @@
 # Payment-security invariant matrix (H3 / H4)
 
-**Status:** design only. `paystack.functions.ts` and
-`webhooks/paystack.ts` are **not modified** in this mission.
+**Status:** design only. Payment security is **not corrected**.
+`paystack.functions.ts` and `webhooks/paystack.ts` are **not modified**.
+
+**RELEASE BLOCKER:** proposed `00070` (D settlement freeze) is **not
+eligible to apply** until the companion work below is implemented in the
+same release. Applying D first breaks live JWT init/verify.
 
 **Version target:** ACTIVE-V1.
 
@@ -100,3 +104,21 @@ invariants. They are NOT VERIFIED until implemented and staging-tested.
 | PAY-11 | Hostname-routing tests | unchanged (`d195ba8`) |
 
 Manual mark-paid from `admin/fees.tsx` is **B8 BLOCKED**.
+
+## Mandatory companion work (same release as `00070`)
+
+| Item | Init | Verify | Webhook |
+|------|------|--------|---------|
+| Expected amount (kobo vs outstanding or documented full amount) | send + store | reject mismatch | reject mismatch |
+| Currency (`NGN` or school currency) | send | reject mismatch | require field; reject mismatch |
+| Bind `fees.id` + `paystack_reference` | write both on the loaded fee | UPDATE WHERE id AND reference AND school_id | refuse if either missing; UPDATE both |
+| Payer authorization beyond RLS | parent map / student self / finance same school | same | HMAC is not payer authz; bind stored fee |
+| Missing identifiers | n/a | refuse | HTTP 4xx, **no UPDATE** |
+| Unique reference | `fees_paystack_reference_uniq` already exists | use it | use it |
+| Idempotent settlement | n/a | already-paid + same ref+amount → success, no rewrite | same |
+| Concurrency | n/a | `UPDATE … WHERE status IN ('unpaid','partial')` or `SELECT FOR UPDATE` | same statement shape |
+| Client manual paid | n/a | n/a | B8 BLOCKED; D trigger denies JWT |
+| Narrow service_role | UPDATE reference/access_code only WHERE id+school_id | UPDATE settlement WHERE id+reference+school_id | never `.eq("id")` alone |
+
+Initialization, verification, and webhook must use the **same** amount
+rule, currency, and identity pair. SQL freeze is not that control.

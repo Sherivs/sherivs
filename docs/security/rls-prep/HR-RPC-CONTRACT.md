@@ -1,8 +1,12 @@
 # HR RPC and application contract (H5)
 
-**Status:** design only. `frontend/src/lib/runtime/scholar/hr.functions.ts` is
+**Status:** design only. **MANDATORY COMPANION / RELEASE BLOCKER** for
+change sets A and F. `frontend/src/lib/runtime/scholar/hr.functions.ts` is
 **not implemented** in this mission. `admin/hr.tsx` `saveStaff` still does
 `supabase.from("users").update(rest)` with the user JWT.
+
+A/F proposed SQL is **not eligible to ship** until this companion exists
+in the same release.
 
 **Version target:** ACTIVE-V1.
 
@@ -93,6 +97,21 @@ Required sequence:
    changed fields (not raw salary unless already in audit policy), outcome.
 9. `admin/hr.tsx` `saveStaff` must call this server function. JWT
    `users.update(rest)` is incompatible with A+F.
+
+### Errors (do not leak cross-tenant existence)
+
+| Condition | Client error |
+|-----------|--------------|
+| No JWT | 401 `not_authenticated` |
+| Inactive or non-admin caller | 403 `not_authorized` |
+| Target missing, wrong school, or not staff | 404 `not_found` (do not distinguish) |
+| Role not in staff set | 400 `invalid_role` |
+| Self role change | 403 `not_authorized` |
+| Unknown Zod keys (`school_id`, `is_active`, nin/bank/biometric) | 400 `invalid_patch` |
+| Audit write failure | fail closed; do not keep the users write without audit |
+
+Payroll INSERT/UPDATE in `admin/hr.tsx` remains JWT against `staff_payroll`
+and depends on `00045` finance policies, not this RPC.
 
 ## `setTeacherActive` (existing, keep)
 

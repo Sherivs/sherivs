@@ -1,15 +1,17 @@
 -- CHANGE SET H — optional FORCE RLS on users (LAST)
--- Lexicographic step 9 / 9.
--- Catalog proofs live in scripts/staging/sherivs-rls-prep/catalog-verify.sql
--- Do not apply until synthetic JWT tests prove 00010–00080 on staging.
--- Staging only until GATE 6. Never copy into database/supabase/migrations/
--- during this mission.
+-- Lexicographic step 10 / 10.
+-- NOT ELIGIBLE TO APPLY until isolated staging proves:
+--   * create_organization_with_founder INSERT under FORCE RLS
+--   * DEFINER owner / BYPASSRLS of founder + sync + freeze functions
+--   * switchActiveOrganization, createStaffAccount, inviteTeacher
+--   * setTeacherActive and User updates self
+-- Do not copy into database/supabase/migrations/ during this mission.
+-- GATE 6 remains BLOCKED.
 
 -- FORCE RLS binds the table owner. service_role remains BYPASSRLS.
-ALTER TABLE public.users FORCE ROW LEVEL SECURITY;
+-- Founder is SECURITY DEFINER with search_path = public (live). If the
+-- function owner lacks BYPASSRLS, INSERT has no matching INSERT policy
+-- after A splits School admin FOR ALL. Staging must prove this path
+-- before anyone runs the statement below.
 
--- Independent verification is not DDL. After each staging apply:
---   1. Run catalog-verify.sql (read-only).
---   2. Run the synthetic JWT matrix in STAGING-TEST-HARNESS.md.
---   3. Confirm hostname-routing files are untouched (d195ba8).
---   4. Record pg_policies / column_privileges / pg_trigger hashes.
+ALTER TABLE public.users FORCE ROW LEVEL SECURITY;

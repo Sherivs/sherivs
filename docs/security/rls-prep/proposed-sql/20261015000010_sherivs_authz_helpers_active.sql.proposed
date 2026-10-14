@@ -1,5 +1,5 @@
 -- CHANGE SET B — Inactive-user authorization helpers
--- Lexicographic step 1 / 9. Suggested later migration name = this filename
+-- Lexicographic step 1 / 10. Suggested later migration name = this filename
 -- without .proposed, only after GATE 6 authorization.
 -- Staging only. Not loaded by db-apply*.mjs.
 --
