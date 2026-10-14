@@ -91,7 +91,7 @@ GRANT UPDATE (
 -- STATICALLY DERIVED expected catalogs (NOT VERIFIED until staging):
 -- authenticated users: SELECT, UPDATE table; NO INSERT, NO DELETE
 --   UPDATE(role), UPDATE(school_id): none
---   UPDATE(is_active): yes (self-change trigger-denied)
+--   users.is_active UPDATE: yes (self-change trigger-denied)
 --   SELECT/UPDATE salary,nin,bank_*,face_biometric: none
 -- authenticated fees: SELECT, INSERT, UPDATE; NO DELETE
 --   UPDATE settlement columns: none
