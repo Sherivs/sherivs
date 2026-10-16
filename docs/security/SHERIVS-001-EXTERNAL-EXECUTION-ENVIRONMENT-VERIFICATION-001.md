@@ -26,6 +26,7 @@ Contexts A–D were **planned, not executed**. Offline unit tests are not Postgr
 | Inspection (parent) HEAD | `daba88666e07618405c332903403451195f9a3d4` (confirmed) |
 | This mission branch | `cursor/sherivs-001-external-exec-env-verify-d80b` |
 | Report commit | `c6613b84e5cac8af1aa75fa2f689517a20c61b30` |
+| Offline-results commit | `0befce1f03ae12f58ceac35bd42c7c98f2773343` |
 | Working tree at inspection | clean |
 | Uncommitted user work | none |
 | Node | v22.14.0 |
