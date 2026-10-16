@@ -25,6 +25,7 @@ Contexts A–D were **planned, not executed**. Offline unit tests are not Postgr
 | Inspection (parent) branch | `cursor/sherivs-001-operator-env-handoff-local-stack-d80b` |
 | Inspection (parent) HEAD | `daba88666e07618405c332903403451195f9a3d4` (confirmed) |
 | This mission branch | `cursor/sherivs-001-external-exec-env-verify-d80b` |
+| Report commit | `c6613b84e5cac8af1aa75fa2f689517a20c61b30` |
 | Working tree at inspection | clean |
 | Uncommitted user work | none |
 | Node | v22.14.0 |
@@ -222,7 +223,18 @@ npx vitest run \
   tests/unit/security-role-gate.test.ts
 ```
 
-Results are recorded after the command runs.
+| File | Passed | Failed |
+|---|---|---|
+| `sherivs-disposable-pg.test.ts` | 28 | 0 |
+| `sherivs-disposable-exec.test.ts` | 16 | 0 |
+| `sherivs-sql-comment-strip.test.ts` | 10 | 0 |
+| `sherivs-001-identity-privilege.test.ts` | 54 | 0 |
+| `sherivs-db-target.test.ts` | 23 | 0 |
+| `sherivs-staging-migration-runner.test.ts` | 108 | 0 |
+| `security-role-gate.test.ts` | 27 | 0 |
+| **Total** | **266** | **0** |
+
+`VITEST_EXIT:0`. These are **not** PostgreSQL or PostgREST results. Qualifier/harness inspect outcomes are in §2.
 
 ---
 
