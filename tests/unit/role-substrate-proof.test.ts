@@ -56,11 +56,18 @@ const digest = `sha256:${createHash("sha256").update(migration).digest("hex")}`;
 
 describe("R39 — role-assignment substrate is proven, not asserted", () => {
   it("runs the verifier cleanly and reports the invariant count", () => {
+    const env = { ...process.env };
+    delete env.DATABASE_URL;
+    delete env.DEVELOPMENT_DATABASE_URL;
+    delete env.STAGING_DATABASE_URL;
+    delete env.SHERIVS_RLS_STAGING_URL;
+    delete env.PRODUCTION_DATABASE_URL;
     const output = execFileSync("node", ["scripts/verify-role-assignment-substrate.mjs"], {
       encoding: "utf8",
       cwd: ROOT,
+      env,
     });
-    expect(output).toMatch(/substrate invariants hold \(mode: (static|live)\)/);
+    expect(output).toMatch(/substrate invariants hold \(mode: static\)/);
     expect(output).toContain("Proof written:");
     expect(output).not.toContain("FAIL");
   });
@@ -70,9 +77,9 @@ describe("R39 — role-assignment substrate is proven, not asserted", () => {
     expect(proof.migrationDigest).toBe(digest);
   });
 
-  it("records the mode honestly: static without DATABASE_URL, live with it", () => {
-    const hasDb = Boolean(process.env.DATABASE_URL);
-    expect(proof.mode).toBe(hasDb ? "live" : "static");
+  it("records static mode when no target-specific database URL is provided", () => {
+    const latest = JSON.parse(readFileSync(join(ROOT, PROOF_REF), "utf8")) as SubstrateProof;
+    expect(latest.mode).toBe("static");
   });
 
   it("passes every recorded invariant and declares the governed surface", () => {

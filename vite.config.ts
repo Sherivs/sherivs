@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import { nitro } from "nitro/vite";
 
 const isVitest = process.env.VITEST === "true";
 
@@ -33,6 +34,10 @@ export default defineConfig({
               },
             },
           }),
+          // Vercel deploy adapter: emits the Build Output API (SSR function +
+          // catch-all route). Without it the build is static-only and every
+          // Vercel deployment fails / serves 404.
+          nitro(),
         ]),
     react(),
     tailwindcss(),
