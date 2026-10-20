@@ -9,6 +9,7 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
+    "pretest:unit": "node scripts/ensure-mobile-deps.mjs",
     "test:unit": "vitest run",
     "test": "npm run typecheck && npm run test:unit",
     "verify": "npm run typecheck && npm run test:unit && npm run verify:registry && npm run verify:drift && npm run verify:neutrality && npm run verify:secrets && npm run build",
