@@ -5,6 +5,7 @@ import {
   createRootRouteWithContext,
   HeadContent,
   Scripts,
+  type ErrorComponentProps,
 } from "@tanstack/react-router";
 import { type ReactNode } from "react";
 
@@ -37,7 +38,9 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset?: () => void }) {
+function ErrorComponent({ error: thrown, reset }: ErrorComponentProps) {
+  // TanStack Router types route errors as `unknown`; normalise before rendering.
+  const error = thrown instanceof Error ? thrown : new Error(String(thrown));
   console.error(error);
   return (
     <div className="flex min-h-dvh items-center justify-center px-4">

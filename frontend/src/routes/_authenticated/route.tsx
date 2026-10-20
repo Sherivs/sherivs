@@ -5,6 +5,7 @@ import {
   Link,
   useNavigate,
   useRouter,
+  type ErrorComponentProps,
 } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { refreshPushTokenIfGranted } from "@/lib/push-client";
@@ -50,7 +51,9 @@ export const Route = createFileRoute("/_authenticated")({
   errorComponent: AuthenticatedRouteErrorComponent,
 });
 
-function AuthenticatedRouteErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function AuthenticatedRouteErrorComponent({ error: thrown, reset }: ErrorComponentProps) {
+  // TanStack Router types route errors as `unknown`; normalise before rendering.
+  const error = thrown instanceof Error ? thrown : new Error(String(thrown));
   const router = useRouter();
   return (
     <RouteErrorBoundary

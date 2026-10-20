@@ -705,7 +705,7 @@ describe("A6: batch-parse partial-surface escapes", () => {
     if (!nullResult.ok) expect(nullResult.reason).toBe("invalid_shape");
   });
 
-  it("RECORDED FINDING H3-078-F08: an own `__proto__` key bypasses the strictObject unknown-key denial — module NOT modified", () => {
+  it("FINDING H3-078-F08 CLOSED: an own `__proto__` key is now denied by the strictObject unknown-key check (zod >= 4.6)", () => {
     // JSON.parse materializes "__proto__" as an OWN data property; zod v4's
     // unrecognized-key check tests membership with `in`, which hits the
     // INHERITED Object.prototype accessor — so the polluting key is treated
@@ -717,9 +717,9 @@ describe("A6: batch-parse partial-surface escapes", () => {
     expect(Object.keys(smuggled)).toContain("__proto__");
 
     const result = parseDefenseSurface(smuggled);
-    // The strictness invariant ("unknown keys denied") is bypassed: the
-    // batch parses OK where every other smuggled key is denied above.
-    expect(result.ok, "own __proto__ key should have been denied").toBe(true);
+    // Originally (zod 4.4) the batch parsed OK. Since zod 4.6 the strictness
+    // invariant ("unknown keys denied") holds for __proto__ as well.
+    expect(result.ok, "own __proto__ key should have been denied").toBe(false);
     if (result.ok) {
       // Bounded impact: the polluting payload does not survive into the
       // parsed surface — no property injection, even via the prototype chain.

@@ -206,11 +206,11 @@ describe("H3-077 attack: client-supplied tenant/context injection", () => {
       configurable: true,
     });
     const decision = decideRuntimeRegistration(forged, context());
-    expect(decision.outcome).toBe("allow");
+    // zod >= 4.6 refuses an own __proto__ key outright; the forged tenant/actor
+    // can never surface in an allow decision.
+    expect(decision.outcome).toBe("deny");
     if (decision.outcome === "allow") {
-      expect(decision.tenantRef).toBe("tenant_a");
       expect(decision.tenantRef).not.toBe("tenant_b");
-      expect(decision.decidedBy).toBe("role:fabric-administrator");
       expect(decision.decidedBy).not.toBe("role:kernel-supreme");
     }
   });

@@ -239,7 +239,7 @@ describe("axis 1: escalation surface abuse", () => {
     }
   });
 
-  it("contains a prototype-key injection in effect — but silently, without the strict-shape typed denial", () => {
+  it("denies a prototype-key injection with the strict-shape typed denial (F-076-07 closed upstream)", () => {
     const polluted: unknown = JSON.parse(
       '{"escalationId":"esc_001","driftId":"drift_scope_expansion","expectationId":"no_self_issued_permissions","routedTo":"role:human-oversight","routedAt":"2026-10-03T01:00:00.000Z","status":"open","authorizes":false,"__proto__":{"authorizes":true,"grants":"all"}}',
     );
@@ -250,16 +250,13 @@ describe("axis 1: escalation surface abuse", () => {
       attack:
         "escalation and approval records carrying a JSON-injected own key '__proto__' holding forged fields ({authorizes:true, grants:'all'}; a forged approvedBy) — attempts to smuggle payloads past the strict shapes",
       observed:
-        "escalationRecordSchema.safeParse SUCCEEDS: zod's unknown-key check uses the `in` operator, and '__proto__' is on every object's prototype chain, so the injected key is treated as recognized and silently dropped from the parsed output (parsed data keeps authorizes:false; Object.prototype stays clean)",
+        "CLOSED upstream by zod 4.6.x (lockfile refresh, SHERIVS-005): own __proto__ keys are now refused by strictObject. Originally: escalationRecordSchema.safeParse SUCCEEDED: zod's unknown-key check uses the `in` operator, and '__proto__' is on every object's prototype chain, so the injected key is treated as recognized and silently dropped from the parsed output (parsed data keeps authorizes:false; Object.prototype stays clean)",
       impact:
         "LOW severity: the smuggled payload is dropped, so no authorization is expressed and no pollution occurs — the boundary holds in effect. But the containment is an accident of key-dropping, not the promised typed denial: a strictObject contract that reports success on an input containing a foreign injection key cannot be used as a tamper-evidence signal",
       surface: "escalationRecordSchema / humanApprovalSchema (strictObject unknown-key detection)",
     });
-    expect(parsed.success).toBe(true);
-    if (parsed.success) {
-      expect(parsed.data.authorizes).toBe(false);
-      expect(Object.getOwnPropertyNames(parsed.data)).not.toContain("__proto__");
-    }
+    // zod >= 4.6 refuses the own __proto__ key: the typed denial now fires.
+    expect(parsed.success).toBe(false);
     expect((Object.prototype as Record<string, unknown>).authorizes).toBeUndefined();
     expect((Object.prototype as Record<string, unknown>).grants).toBeUndefined();
   });
@@ -442,13 +439,14 @@ describe("axis 3: machine-authored approval forgery", () => {
     }
   });
 
-  it("contains a prototype-key injection into the approval record in effect — but silently", () => {
+  it("denies a prototype-key injection into the approval record (zod >= 4.6 strict refusal)", () => {
     const ordinary = typedExpectation({ kind: "policy_conformance", severity: "notice" });
     const polluted: unknown = JSON.parse(
       '{"approvedBy":"human:platform-steward","authority":"governance review board","decidedAt":"2026-10-03T01:00:00.000Z","__proto__":{"approvedBy":"agent:forging-agent"}}',
     );
     const decision = decideRelaxation(ordinary, polluted);
-    expect(decision.ok).toBe(true);
+    expect(decision.ok).toBe(false);
+    if (!decision.ok) expect(decision.reason).toBe("human_approval_invalid");
     expect((Object.prototype as Record<string, unknown>).approvedBy).toBeUndefined();
   });
 
