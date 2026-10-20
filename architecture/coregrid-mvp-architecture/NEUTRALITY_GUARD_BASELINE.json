@@ -15,8 +15,8 @@
     "lastRatchet": "2026-10-03: V1-006 (team SECURITY) neutralized the platform authorization core — removed all 9 frontend/src/lib/authorization.ts and all 13 frontend/src/lib/identity.ts entries (authorization.ts and identity.ts now carry zero education vocabulary; roles/relationship types are contributed via rbac/domain-contribution + domain-config registration) and refreshed the 7 frozen security-role-gate.ts legacy-fallback entries against the live tree (shrink-only, ADR-003/004). || 2026-10-03 (ADR-012): T-wave coordinator ADDED 3 quarantine groups (19 hits) for database/supabase/migrations/20261003000040_coregrid_school_media_bucket.sql — the FIRST baseline extension, made under ADR-004's explicit 'new ADR' mechanism: the declarative storage-provisioning migration must reference the legacy storage contract id school-media consumed by the frontend and by the applied 20260707223958 policy set; the neutral conversion (bucket id + policy predicates + path contract) is blocked on the neutral-tenant substrate conversion (same conversionPath class as the transport posture) and is recorded as an authorized follow-up that REMOVES these entries in the same change. Zero new privileges authorized by ADR-012."
   },
   "summary": {
-    "entryCount": 415,
-    "totalObservedHits": 1518,
+    "entryCount": 427,
+    "totalObservedHits": 1564,
     "hitsByFile": {
       "database/supabase/migrations/20260907000100_runtime_scholar_workforce_catalog.sql": 114,
       "database/supabase/migrations/20260620122048_50e590c2-5911-4c98-8931-fb46a4b509f3.sql": 84,
@@ -25,6 +25,7 @@
       "database/supabase/migrations/20260907000600_runtime_scholar_workforce_ecosystem_extension.sql": 50,
       "frontend/src/lib/education-institution.ts": 47,
       "database/supabase/migrations/20260725063636_d379b679-904b-4d2a-b9ed-11b463817fda.sql": 45,
+      "database/supabase/migrations/20261003000042_platform_capture_out_of_band_tables.sql": 45,
       "frontend/src/lib/education-core.ts": 42,
       "frontend/src/lib/education-curriculum.ts": 42,
       "database/supabase/migrations/20260626133221_e95464b7-e864-413c-a934-7428cb26da47.sql": 33,
@@ -40,6 +41,7 @@
       "frontend/src/lib/regional-context.ts": 21,
       "frontend/src/lib/security-role-gate.ts": 20,
       "database/supabase/migrations/20260729052237_75252732-97d3-448f-b082-93517558a096.sql": 19,
+      "database/supabase/migrations/20261003000040_coregrid_school_media_bucket.sql": 19,
       "database/supabase/migrations/20260707223958_421f2364-7989-4069-b78c-fd119f19daeb.sql": 18,
       "frontend/src/lib/financial-splits.ts": 18,
       "database/supabase/migrations/20260907000800_coregrid_role_assignment_substrate.sql": 17,
@@ -157,7 +159,7 @@
       "frontend/src/lib/scheduling-conflicts.ts": 1,
       "frontend/src/lib/scheduling-quality.ts": 1,
       "frontend/src/lib/workforce-positions.ts": 1,
-      "database/supabase/migrations/20261003000040_coregrid_school_media_bucket.sql": 19
+      "database/supabase/migrations/20261015000005_sherivs_002_secret_column_privilege.sql": 1
     }
   },
   "baselineEntries": [
@@ -5828,6 +5830,172 @@
         91
       ],
       "firstSnippet": "--     INSERT school-media/<school_id>/... ; a different school's prefix is"
+    },
+    {
+      "file": "database/supabase/migrations/20261003000042_platform_capture_out_of_band_tables.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-CAPTURE-001",
+      "occurrences": 23,
+      "lines": [
+        72,
+        80,
+        81,
+        104,
+        112,
+        128,
+        132,
+        136,
+        140,
+        181,
+        185,
+        226,
+        232,
+        276,
+        279,
+        282,
+        286,
+        291,
+        293,
+        294,
+        350,
+        360,
+        416
+      ],
+      "firstSnippet": "school_id uuid NOT NULL,"
+    },
+    {
+      "file": "database/supabase/migrations/20261003000042_platform_capture_out_of_band_tables.sql",
+      "kind": "vocabulary",
+      "token": "student",
+      "streamIRef": "SHERIVS-CAPTURE-001",
+      "occurrences": 1,
+      "lines": [
+        78
+      ],
+      "firstSnippet": "CONSTRAINT organization_memberships_role_check CHECK ((role = ANY (ARRAY['admin'::text, 'principal'::text, 'teacher'::text, 'parent'::text, 'student'::text, 'bu"
+    },
+    {
+      "file": "database/supabase/migrations/20261003000042_platform_capture_out_of_band_tables.sql",
+      "kind": "vocabulary",
+      "token": "teacher",
+      "streamIRef": "SHERIVS-CAPTURE-001",
+      "occurrences": 1,
+      "lines": [
+        78
+      ],
+      "firstSnippet": "CONSTRAINT organization_memberships_role_check CHECK ((role = ANY (ARRAY['admin'::text, 'principal'::text, 'teacher'::text, 'parent'::text, 'student'::text, 'bu"
+    },
+    {
+      "file": "database/supabase/migrations/20261003000042_platform_capture_out_of_band_tables.sql",
+      "kind": "vocabulary",
+      "token": "bursar",
+      "streamIRef": "SHERIVS-CAPTURE-001",
+      "occurrences": 1,
+      "lines": [
+        78
+      ],
+      "firstSnippet": "CONSTRAINT organization_memberships_role_check CHECK ((role = ANY (ARRAY['admin'::text, 'principal'::text, 'teacher'::text, 'parent'::text, 'student'::text, 'bu"
+    },
+    {
+      "file": "database/supabase/migrations/20261003000042_platform_capture_out_of_band_tables.sql",
+      "kind": "vocabulary",
+      "token": "principal",
+      "streamIRef": "SHERIVS-CAPTURE-001",
+      "occurrences": 2,
+      "lines": [
+        78,
+        432
+      ],
+      "firstSnippet": "CONSTRAINT organization_memberships_role_check CHECK ((role = ANY (ARRAY['admin'::text, 'principal'::text, 'teacher'::text, 'parent'::text, 'student'::text, 'bu"
+    },
+    {
+      "file": "database/supabase/migrations/20261003000042_platform_capture_out_of_band_tables.sql",
+      "kind": "vocabulary-literal",
+      "token": "parent",
+      "streamIRef": "SHERIVS-CAPTURE-001",
+      "occurrences": 1,
+      "lines": [
+        78
+      ],
+      "firstSnippet": "CONSTRAINT organization_memberships_role_check CHECK ((role = ANY (ARRAY['admin'::text, 'principal'::text, 'teacher'::text, 'parent'::text, 'student'::text, 'bu"
+    },
+    {
+      "file": "database/supabase/migrations/20261003000042_platform_capture_out_of_band_tables.sql",
+      "kind": "vocabulary-literal",
+      "token": "driver",
+      "streamIRef": "SHERIVS-CAPTURE-001",
+      "occurrences": 1,
+      "lines": [
+        78
+      ],
+      "firstSnippet": "CONSTRAINT organization_memberships_role_check CHECK ((role = ANY (ARRAY['admin'::text, 'principal'::text, 'teacher'::text, 'parent'::text, 'student'::text, 'bu"
+    },
+    {
+      "file": "database/supabase/migrations/20261003000042_platform_capture_out_of_band_tables.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "SHERIVS-CAPTURE-001",
+      "occurrences": 8,
+      "lines": [
+        128,
+        132,
+        136,
+        140,
+        220,
+        236,
+        238,
+        240
+      ],
+      "firstSnippet": "CREATE POLICY organization_memberships_delete ON public.organization_memberships FOR DELETE USING ((public.is_super_admin() OR (public.is_school_admin() AND (sc"
+    },
+    {
+      "file": "database/supabase/migrations/20261003000042_platform_capture_out_of_band_tables.sql",
+      "kind": "vocabulary",
+      "token": "is_school_admin",
+      "streamIRef": "SHERIVS-CAPTURE-001",
+      "occurrences": 4,
+      "lines": [
+        128,
+        132,
+        136,
+        140
+      ],
+      "firstSnippet": "CREATE POLICY organization_memberships_delete ON public.organization_memberships FOR DELETE USING ((public.is_super_admin() OR (public.is_school_admin() AND (sc"
+    },
+    {
+      "file": "database/supabase/migrations/20261003000042_platform_capture_out_of_band_tables.sql",
+      "kind": "vocabulary",
+      "token": "scholar",
+      "streamIRef": "SHERIVS-CAPTURE-001",
+      "occurrences": 2,
+      "lines": [
+        309,
+        331
+      ],
+      "firstSnippet": "CREATE OR REPLACE FUNCTION public.create_organization_with_founder(p_org_name text, p_org_slug text, p_full_name text, p_runtime text DEFAULT 'scholar'::text) R"
+    },
+    {
+      "file": "database/supabase/migrations/20261003000042_platform_capture_out_of_band_tables.sql",
+      "kind": "vocabulary",
+      "token": "admission",
+      "streamIRef": "SHERIVS-CAPTURE-001",
+      "occurrences": 1,
+      "lines": [
+        428
+      ],
+      "firstSnippet": "COMMENT ON CONSTRAINT cg_execution_record_status_vocab_check ON public.cg_execution_record IS 'HUMAN AUTHORIZED 2026-10-13 ACTIVE-V1: execution-path stages plus"
+    },
+    {
+      "file": "database/supabase/migrations/20261015000005_sherivs_002_secret_column_privilege.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "SHERIVS-RLS-001",
+      "occurrences": 1,
+      "lines": [
+        16
+      ],
+      "firstSnippet": "-- anon and authenticated read EVERY column of every active school, including"
     }
   ]
 }
