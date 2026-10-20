@@ -15,8 +15,8 @@
     "lastRatchet": "2026-10-03: V1-006 (team SECURITY) neutralized the platform authorization core — removed all 9 frontend/src/lib/authorization.ts and all 13 frontend/src/lib/identity.ts entries (authorization.ts and identity.ts now carry zero education vocabulary; roles/relationship types are contributed via rbac/domain-contribution + domain-config registration) and refreshed the 7 frozen security-role-gate.ts legacy-fallback entries against the live tree (shrink-only, ADR-003/004). || 2026-10-03 (ADR-012): T-wave coordinator ADDED 3 quarantine groups (19 hits) for database/supabase/migrations/20261003000040_coregrid_school_media_bucket.sql — the FIRST baseline extension, made under ADR-004's explicit 'new ADR' mechanism: the declarative storage-provisioning migration must reference the legacy storage contract id school-media consumed by the frontend and by the applied 20260707223958 policy set; the neutral conversion (bucket id + policy predicates + path contract) is blocked on the neutral-tenant substrate conversion (same conversionPath class as the transport posture) and is recorded as an authorized follow-up that REMOVES these entries in the same change. Zero new privileges authorized by ADR-012."
   },
   "summary": {
-    "entryCount": 489,
-    "totalObservedHits": 1881,
+    "entryCount": 494,
+    "totalObservedHits": 1900,
     "hitsByFile": {
       "database/supabase/migrations/20260907000100_runtime_scholar_workforce_catalog.sql": 114,
       "database/supabase/migrations/20261020000100_sherivs_004_in_school_write_roles.sql": 88,
@@ -48,6 +48,7 @@
       "frontend/src/lib/security-role-gate.ts": 20,
       "database/supabase/migrations/20260729052237_75252732-97d3-448f-b082-93517558a096.sql": 19,
       "database/supabase/migrations/20261003000040_coregrid_school_media_bucket.sql": 19,
+      "database/supabase/migrations/20261020000120_sherivs_006_membership_identity_freeze.sql": 19,
       "database/supabase/migrations/20260707223958_421f2364-7989-4069-b78c-fd119f19daeb.sql": 18,
       "frontend/src/lib/financial-splits.ts": 18,
       "database/supabase/migrations/20260907000800_coregrid_role_assignment_substrate.sql": 17,
@@ -6941,6 +6942,75 @@
         16
       ],
       "firstSnippet": "-- anon and authenticated read EVERY column of every active school, including"
+    },
+    {
+      "file": "database/supabase/migrations/20261020000120_sherivs_006_membership_identity_freeze.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "SHERIVS-006",
+      "occurrences": 2,
+      "lines": [
+        5,
+        42
+      ],
+      "firstSnippet": "-- school and role through public.organization_memberships. That stays, but two"
+    },
+    {
+      "file": "database/supabase/migrations/20261020000120_sherivs_006_membership_identity_freeze.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-006",
+      "occurrences": 8,
+      "lines": [
+        7,
+        15,
+        32,
+        37,
+        43,
+        101,
+        103,
+        110
+      ],
+      "firstSnippet": "--   1. any signed-in user could UPDATE their own users.school_id / role /"
+    },
+    {
+      "file": "database/supabase/migrations/20261020000120_sherivs_006_membership_identity_freeze.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "SHERIVS-006",
+      "occurrences": 4,
+      "lines": [
+        12,
+        26,
+        41,
+        62
+      ],
+      "firstSnippet": "--   * get_my_school_id / get_my_role / my_active_role / is_school_admin all"
+    },
+    {
+      "file": "database/supabase/migrations/20261020000120_sherivs_006_membership_identity_freeze.sql",
+      "kind": "vocabulary",
+      "token": "is_school_admin",
+      "streamIRef": "SHERIVS-006",
+      "occurrences": 3,
+      "lines": [
+        12,
+        73,
+        78
+      ],
+      "firstSnippet": "--   * get_my_school_id / get_my_role / my_active_role / is_school_admin all"
+    },
+    {
+      "file": "database/supabase/migrations/20261020000120_sherivs_006_membership_identity_freeze.sql",
+      "kind": "vocabulary",
+      "token": "principal",
+      "streamIRef": "SHERIVS-006",
+      "occurrences": 2,
+      "lines": [
+        77,
+        80
+      ],
+      "firstSnippet": "AS $$ SELECT COALESCE(public.get_my_role() IN ('admin', 'principal'), false) $$;"
     }
   ]
 }
