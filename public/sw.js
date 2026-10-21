@@ -5,7 +5,9 @@
  * successful navigation) and fall back to the cache — the visited URL first,
  * the precached shell second — only when the network is unreachable. Push
  * notification behaviour is unchanged. */
-const APP_SHELL_CACHE = "coregrid-app-shell-v1";
+const APP_SHELL_CACHE = "sherivs-app-shell-v1";
+// Former cache names (CoreGrid was the former platform name), removed on activate.
+const LEGACY_CACHE_PREFIXES = ["coregrid-app-shell-"];
 const APP_SHELL_URL = "/";
 
 function precacheAppShell() {
@@ -23,7 +25,19 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    Promise.resolve()
+      .then(() => caches.keys())
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter((key) => LEGACY_CACHE_PREFIXES.some((prefix) => key.startsWith(prefix)))
+            .map((key) => caches.delete(key)),
+        ),
+      )
+      .catch(() => undefined)
+      .then(() => self.clients.claim()),
+  );
 });
 
 self.addEventListener("push", (event) => {

@@ -2,7 +2,7 @@
  * Sherivs Scholar — Sherivs internal operating workspace (WAVE-R32).
  *
  * Generates the platform organization's workspaces from the roles an actor
- * actually holds (COREGRID_INTERNAL groups). No fixed dashboards: a CTO sees
+ * actually holds (SHERIVS_INTERNAL groups). No fixed dashboards: a CTO sees
  * the executive + engineering departments because those are the groups their
  * roles belong to; an AI engineer sees the AI department.
  */

@@ -147,7 +147,7 @@ const CATEGORY_SECURITY_LEVEL: Record<RoleCategory, RoleSecurityLevel> = {
   TRADITIONAL: "internal",
   RESEARCH: "internal",
   QUALITY_ASSURANCE: "sensitive",
-  COREGRID_INTERNAL: "restricted",
+  SHERIVS_INTERNAL: "restricted",
 };
 
 const SOVEREIGN_CATEGORIES: readonly RoleCategory[] = [
@@ -232,7 +232,7 @@ export function defineRole(spec: RoleSpec): EducationRealityRole {
     securityLevel: spec.securityLevel ?? CATEGORY_SECURITY_LEVEL[category] ?? "internal",
     tenantScope:
       spec.tenantScope ??
-      (category === "COREGRID_INTERNAL"
+      (category === "SHERIVS_INTERNAL"
         ? "platform"
         : SOVEREIGN_CATEGORIES.includes(category)
           ? "jurisdiction"

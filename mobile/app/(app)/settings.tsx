@@ -44,7 +44,7 @@ export default function SettingsScreen() {
         <Card>
           <KeyValue label="Environment" value={env.appEnv} />
           <KeyValue label="Supabase project" value={env.supabaseUrl} />
-          <KeyValue label="Web API base" value={env.coregridWebBaseUrl} />
+          <KeyValue label="Web API base" value={env.sherivsWebBaseUrl} />
           <KeyValue
             label="Server fn: recordFoundationLoop"
             value={env.serverFnIds.recordFoundationLoop ? env.serverFnIds.recordFoundationLoop : "not configured"}

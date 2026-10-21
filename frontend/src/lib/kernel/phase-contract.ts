@@ -213,7 +213,7 @@ export type PhaseContractValidation =
   { ok: true; coverage: EngineeringSectionCoverage } | { ok: false; issues: string[] };
 
 /** Connection refs that are legal without being a declared phase id. */
-const PRINCIPAL_REFS = new Set(["all", "control-plane", "coregrid"]);
+const PRINCIPAL_REFS = new Set(["all", "control-plane", "sherivs", "coregrid" /* former name */]);
 
 export function isLegalConnectionRef(ref: string, knownPhaseIds?: readonly string[]): boolean {
   if (PRINCIPAL_REFS.has(ref)) return true;

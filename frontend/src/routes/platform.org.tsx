@@ -3,7 +3,7 @@
  *
  * Renders the PLATFORM organization — the departments Sherivs staffs, the roles
  * that staff them and the widgets each department renders. It is generated from
- * the COREGRID_INTERNAL role groups by the platform-org engine: this page lists
+ * the SHERIVS_INTERNAL role groups by the platform-org engine: this page lists
  * what the engine produced, and shows the structural audit that must be empty.
  */
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";

@@ -12,7 +12,7 @@ export type BYOCDeploymentId = string & { __brand: "BYOCDeploymentId" };
 
 // ─── DA–DC. BYOC Principle & Supported Models ────────────────────────
 export type BYOCModel =
-  "customer_managed" | "coregrid_managed" | "shared_management" | "air_gapped" | "hybrid";
+  "customer_managed" | "sherivs_managed" | "shared_management" | "air_gapped" | "hybrid";
 
 export interface BYOCDeployment {
   readonly id: BYOCDeploymentId;
@@ -59,7 +59,7 @@ export interface BYOCNetworkConfig {
   readonly vpcId: string;
   readonly subnetIds: string[];
   readonly cidrBlocks: string[];
-  readonly networkType: "customer_managed" | "coregrid_managed" | "shared";
+  readonly networkType: "customer_managed" | "sherivs_managed" | "shared";
   readonly privateOnly: boolean;
   readonly encryptionRequired: boolean;
 }
@@ -84,7 +84,7 @@ export interface BYOCCustomerKey {
 // ─── DS–DW. BYOC Observability ──────────────────────────────────────
 export interface BYOCObservabilityConfig {
   readonly deploymentId: BYOCDeploymentId;
-  readonly logDelivery: "customer" | "coregrid" | "both";
+  readonly logDelivery: "customer" | "sherivs" | "both";
   readonly monitoringRole: string | null;
   readonly metricsEnabled: boolean;
   readonly alertsEnabled: boolean;

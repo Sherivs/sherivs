@@ -2,7 +2,7 @@
  * Sherivs Scholar — runtime waves R32/R34/R35/R36 laws.
  *
  * R32: Sherivs is a living organization — its departments are generated from the
- *      COREGRID_INTERNAL roles and its widgets are data.
+ *      SHERIVS_INTERNAL roles and its widgets are data.
  * R34: dashboards come from enabled feature codes + authorized role categories;
  *      no widget exists without the feature that owns it.
  * R35: the PWA manifest and the native shell adapters are generated from the

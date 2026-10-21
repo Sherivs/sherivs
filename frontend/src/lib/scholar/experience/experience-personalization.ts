@@ -36,7 +36,7 @@ export const AUDIENCE_ROLE_CATEGORIES: Record<ExperienceAudience, readonly RoleC
     "COMMUNITY",
     "TRADITIONAL",
     "RESEARCH",
-    "COREGRID_INTERNAL",
+    "SHERIVS_INTERNAL",
   ],
   regulator: ["GOVERNMENT", "REGULATORY", "EXAMINATION", "QUALITY_ASSURANCE"],
 };

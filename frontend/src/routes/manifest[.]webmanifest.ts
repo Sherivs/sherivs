@@ -68,6 +68,8 @@ export const Route = createFileRoute("/manifest.webmanifest")({
             headers: {
               "Content-Type": "application/manifest+json; charset=utf-8",
               "Cache-Control": CACHE,
+              "x-sherivs-manifest": "fallback",
+              // Former header name, kept for one release.
               "x-coregrid-manifest": "fallback",
             },
           });
@@ -78,6 +80,9 @@ export const Route = createFileRoute("/manifest.webmanifest")({
           headers: {
             "Content-Type": "application/manifest+json; charset=utf-8",
             "Cache-Control": CACHE,
+            "x-sherivs-manifest": "generated",
+            "x-sherivs-org-class": orgType,
+            // Former header names, kept for one release.
             "x-coregrid-manifest": "generated",
             "x-coregrid-org-class": orgType,
           },

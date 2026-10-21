@@ -344,7 +344,7 @@ export function normalizeCurrency(input: { amountMinorUnits: number; currency: s
 export interface ExternalIdMapping {
   id: ExternalIdMappingId;
   tenantId: TenantId;
-  coregridId: string;
+  sherivsId: string;
   externalId: string;
   provider: string;
   entityType: string;
@@ -353,7 +353,7 @@ export interface ExternalIdMapping {
 export function createExternalIdMapping(input: {
   id: ExternalIdMappingId;
   tenantId: TenantId;
-  coregridId: string;
+  sherivsId: string;
   externalId: string;
   provider: string;
   entityType: string;
@@ -361,7 +361,7 @@ export function createExternalIdMapping(input: {
   return {
     id: input.id,
     tenantId: input.tenantId,
-    coregridId: input.coregridId,
+    sherivsId: input.sherivsId,
     externalId: input.externalId,
     provider: input.provider,
     entityType: input.entityType,

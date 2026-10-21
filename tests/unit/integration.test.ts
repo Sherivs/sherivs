@@ -181,7 +181,7 @@ describe("integration-transform — Mapping, Validation, Idempotency (U, V, W, X
       id: integrationMappingId("m1"),
       integrationRef: INTG,
       externalField: "student_name",
-      coregridField: "name",
+      sherivsField: "name",
       kind: "direct",
     });
     expect(r.ok).toBe(true);
@@ -192,7 +192,7 @@ describe("integration-transform — Mapping, Validation, Idempotency (U, V, W, X
         id: integrationMappingId("m2"),
         integrationRef: INTG,
         externalField: "a",
-        coregridField: "b",
+        sherivsField: "b",
         kind: "calculated",
       }).ok,
     ).toBe(false);
@@ -202,7 +202,7 @@ describe("integration-transform — Mapping, Validation, Idempotency (U, V, W, X
       id: integrationMappingId("m3"),
       integrationRef: INTG,
       externalField: "student_name",
-      coregridField: "name",
+      sherivsField: "name",
       kind: "direct",
     });
     if (!m.ok) throw new Error("expected ok");
@@ -287,14 +287,14 @@ describe("integration-transform — Sync, Authority, Conflicts, Reconciliation (
     expect(
       resolveFieldAuthority({
         field: "payroll_id",
-        coregridAuthoritative: false,
+        sherivsAuthoritative: false,
         externalAuthoritative: true,
       }).unambiguous,
     ).toBe(true);
     expect(
       resolveFieldAuthority({
         field: "x",
-        coregridAuthoritative: true,
+        sherivsAuthoritative: true,
         externalAuthoritative: true,
       }).unambiguous,
     ).toBe(false);
@@ -303,21 +303,21 @@ describe("integration-transform — Sync, Authority, Conflicts, Reconciliation (
     expect(
       resolveConflict({
         policy: "coregrid_wins",
-        coregridTimestamp: "2026-01-01",
+        sherivsTimestamp: "2026-01-01",
         externalTimestamp: "2026-06-01",
       }),
-    ).toBe("coregrid");
+    ).toBe("sherivs");
     expect(
       resolveConflict({
         policy: "latest_timestamp",
-        coregridTimestamp: "2026-01-01",
+        sherivsTimestamp: "2026-01-01",
         externalTimestamp: "2026-06-01",
       }),
     ).toBe("external");
     expect(
       resolveConflict({
         policy: "manual_resolution",
-        coregridTimestamp: "2026-01-01",
+        sherivsTimestamp: "2026-01-01",
         externalTimestamp: "2026-06-01",
       }),
     ).toBe("manual");
@@ -326,7 +326,7 @@ describe("integration-transform — Sync, Authority, Conflicts, Reconciliation (
     const r = reconcile({
       id: reconciliationRunId("rec-1"),
       integrationRef: INTG,
-      coregridRefs: ["c1", "c2"],
+      sherivsRefs: ["c1", "c2"],
       externalRefs: ["c1", "c3"],
     });
     expect(r.missingInCoregrid).toEqual(["c3"]);
@@ -350,7 +350,7 @@ describe("integration-connect — Protocol, AI, Testing, Security (BU, BV, BY, B
     expect(canTranslateLosslessly("csv", "json")).toBe(false);
   });
   it("AI mapping proposals require approval in production", () => {
-    const p = { externalField: "full_name", coregridField: "name", confidence: 0.9 };
+    const p = { externalField: "full_name", sherivsField: "name", confidence: 0.9 };
     expect(
       isMappingProposalApplicable({
         proposal: p,
@@ -701,7 +701,7 @@ describe("integration-governance — Normalization, ID Mapping, Events (DR, DS, 
     const m = createExternalIdMapping({
       id: externalIdMappingId("em-1"),
       tenantId: TENANT,
-      coregridId: "cg-1",
+      sherivsId: "cg-1",
       externalId: "ext-1",
       provider: "provider-1",
       entityType: "student",

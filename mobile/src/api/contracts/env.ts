@@ -18,7 +18,7 @@ export interface MobileEnv {
   /** Publishable (anon) key — public by design; authorization stays server-side (RLS). */
   readonly supabasePublishableKey: string;
   /** Base URL of the deployed Sherivs web app hosting the server functions. */
-  readonly coregridWebBaseUrl: string;
+  readonly sherivsWebBaseUrl: string;
   /**
    * TanStack Start server-function ids are build-generated content hashes of
    * the deployed web build. An id may legitimately be absent for an
@@ -111,7 +111,7 @@ export function parseMobileEnv(source: Record<string, string | undefined>): Mobi
     appEnv: appEnv as MobileAppEnvironment,
     supabaseUrl: unwrap(supabaseUrlField),
     supabasePublishableKey: unwrap(publishableField),
-    coregridWebBaseUrl: unwrap(webBaseField).replace(/\/+$/, ""),
+    sherivsWebBaseUrl: unwrap(webBaseField).replace(/\/+$/, ""),
     serverFnIds: {
       recordFoundationLoop: unwrap(fnRecordField).length > 0 ? unwrap(fnRecordField) : null,
       listIdentities: unwrap(fnIdentitiesField).length > 0 ? unwrap(fnIdentitiesField) : null,

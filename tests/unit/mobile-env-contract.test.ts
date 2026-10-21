@@ -24,7 +24,7 @@ describe("mobile environment contract", () => {
     expect(env.appEnv).toBe("development");
     expect(env.supabaseUrl).toBe("https://probe.supabase.co");
     expect(env.supabasePublishableKey).toBe("sb_publishable_abc123");
-    expect(env.coregridWebBaseUrl).toBe("https://app.coregrid.example");
+    expect(env.sherivsWebBaseUrl).toBe("https://app.coregrid.example");
     expect(env.serverFnIds.recordFoundationLoop).toBeNull();
     expect(env.serverFnIds.listIdentities).toBeNull();
   });

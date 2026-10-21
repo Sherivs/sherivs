@@ -102,7 +102,7 @@ export const CATEGORY_WORKSPACES: Record<RoleCategory, readonly RoleWorkspaceKey
   RESEARCH: ["research", "library"],
   EXAMINATION: ["examination", "quality"],
   QUALITY_ASSURANCE: ["quality", "regulatory"],
-  COREGRID_INTERNAL: ["platform"],
+  SHERIVS_INTERNAL: ["platform"],
 };
 
 export function isRoleWorkspaceKey(value: string): value is RoleWorkspaceKey {

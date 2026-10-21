@@ -667,18 +667,18 @@ describe("dev-governance — AI, Dependency, Exit, Compatibility (CP, CQ, EQ, ER
   });
   it("compatibility matrix validates versions", () => {
     const cell = {
-      coregridVersion: "2.0.0",
+      sherivsVersion: "2.0.0",
       sdkVersion: "1.0.0",
       apiVersion: "v1",
       schemaVersion: "1",
       runtimeVersion: "r1",
       productVersion: "1.0.0",
     };
-    expect(isCompatibilityCellValid(cell, { coregridVersion: ["2.0.0", "2.1.0"] })).toBe(true);
+    expect(isCompatibilityCellValid(cell, { sherivsVersion: ["2.0.0", "2.1.0"] })).toBe(true);
     expect(
       isCompatibilityCellValid(
-        { ...cell, coregridVersion: "3.0.0" },
-        { coregridVersion: ["2.0.0"] },
+        { ...cell, sherivsVersion: "3.0.0" },
+        { sherivsVersion: ["2.0.0"] },
       ),
     ).toBe(false);
   });

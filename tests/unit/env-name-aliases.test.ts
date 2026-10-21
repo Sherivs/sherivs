@@ -48,10 +48,10 @@ describe("mobile web base URL env name", () => {
       EXPO_PUBLIC_SHERIVS_WEB_BASE_URL: "https://new.example",
       EXPO_PUBLIC_COREGRID_WEB_BASE_URL: "https://old.example",
     });
-    expect(env.coregridWebBaseUrl).toBe("https://new.example");
+    expect(env.sherivsWebBaseUrl).toBe("https://new.example");
   });
   it("falls back to EXPO_PUBLIC_COREGRID_WEB_BASE_URL", () => {
     const env = parseMobileEnv({ ...base, EXPO_PUBLIC_COREGRID_WEB_BASE_URL: "https://old.example" });
-    expect(env.coregridWebBaseUrl).toBe("https://old.example");
+    expect(env.sherivsWebBaseUrl).toBe("https://old.example");
   });
 });

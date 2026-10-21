@@ -64,7 +64,7 @@ export function ratingId(raw: string): RatingId {
  * ────────────────────────────────────────────────────────────*/
 
 export type VendorType =
-  | "coregrid"
+  | "sherivs"
   | "school"
   | "university"
   | "education_company"
@@ -80,7 +80,7 @@ export type VendorType =
   | "custom";
 
 export const VENDOR_TYPES: readonly VendorType[] = [
-  "coregrid",
+  "sherivs",
   "school",
   "university",
   "education_company",

@@ -109,7 +109,7 @@ describe("role catalog — safety boundaries", () => {
       "QUALITY_ASSURANCE",
     ];
     for (const role of EDUCATION_REALITY_ROLES) {
-      if (role.category === "COREGRID_INTERNAL") {
+      if (role.category === "SHERIVS_INTERNAL") {
         expect(role.tenantScope, `${role.id} is a platform role`).toBe("platform");
       } else if (sovereign.includes(role.category)) {
         expect(role.tenantScope, `${role.id} is jurisdiction-scoped`).toBe("jurisdiction");
@@ -175,10 +175,10 @@ describe("role catalog — directive coverage spot checks", () => {
     ["Chief Financial Officer", "FINANCE"],
     ["Learning Scientist", "RESEARCH"],
     ["Security Director", "SAFETY"],
-    ["Chief Technology Officer", "COREGRID_INTERNAL"],
-    ["AI Safety Engineer", "COREGRID_INTERNAL"],
-    ["Education Reality Architect", "COREGRID_INTERNAL"],
-    ["Customer Success Manager", "COREGRID_INTERNAL"],
+    ["Chief Technology Officer", "SHERIVS_INTERNAL"],
+    ["AI Safety Engineer", "SHERIVS_INTERNAL"],
+    ["Education Reality Architect", "SHERIVS_INTERNAL"],
+    ["Customer Success Manager", "SHERIVS_INTERNAL"],
   ];
 
   it("contains the directive's roles in their reality categories", () => {

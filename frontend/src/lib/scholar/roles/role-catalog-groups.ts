@@ -1028,10 +1028,10 @@ export const INSTITUTION_TYPE_GROUPS: readonly RoleGroup[] = [
  * Sherivs platform organization (the platform is a living organization)
  * ────────────────────────────────────────────────────────────*/
 
-export const COREGRID_INTERNAL_GROUPS: readonly RoleGroup[] = [
+export const SHERIVS_INTERNAL_GROUPS: readonly RoleGroup[] = [
   {
     group: "coregrid_executive",
-    category: "COREGRID_INTERNAL",
+    category: "SHERIVS_INTERNAL",
     basePriority: "PRIMARY",
     staffing: "platform_workforce",
     jurisdictions: ["*"],
@@ -1049,7 +1049,7 @@ export const COREGRID_INTERNAL_GROUPS: readonly RoleGroup[] = [
   },
   {
     group: "coregrid_engineering",
-    category: "COREGRID_INTERNAL",
+    category: "SHERIVS_INTERNAL",
     basePriority: "PRIMARY",
     staffing: "platform_workforce",
     jurisdictions: ["*"],
@@ -1073,7 +1073,7 @@ export const COREGRID_INTERNAL_GROUPS: readonly RoleGroup[] = [
   },
   {
     group: "coregrid_ai",
-    category: "COREGRID_INTERNAL",
+    category: "SHERIVS_INTERNAL",
     basePriority: "SECONDARY",
     staffing: "platform_workforce",
     jurisdictions: ["*"],
@@ -1091,7 +1091,7 @@ export const COREGRID_INTERNAL_GROUPS: readonly RoleGroup[] = [
   },
   {
     group: "coregrid_product",
-    category: "COREGRID_INTERNAL",
+    category: "SHERIVS_INTERNAL",
     basePriority: "SECONDARY",
     staffing: "platform_workforce",
     jurisdictions: ["*"],
@@ -1107,7 +1107,7 @@ export const COREGRID_INTERNAL_GROUPS: readonly RoleGroup[] = [
   },
   {
     group: "coregrid_education_domain",
-    category: "COREGRID_INTERNAL",
+    category: "SHERIVS_INTERNAL",
     basePriority: "SECONDARY",
     staffing: "platform_workforce",
     jurisdictions: ["*"],
@@ -1124,7 +1124,7 @@ export const COREGRID_INTERNAL_GROUPS: readonly RoleGroup[] = [
   },
   {
     group: "coregrid_customer_implementation",
-    category: "COREGRID_INTERNAL",
+    category: "SHERIVS_INTERNAL",
     basePriority: "OPTIONAL",
     staffing: "platform_workforce",
     jurisdictions: ["*"],
@@ -1151,5 +1151,5 @@ export const ALL_ROLE_GROUPS: readonly RoleGroup[] = [
   ...ESTATE_AND_DIGITAL_GROUPS,
   ...BUSINESS_OPERATIONS_GROUPS,
   ...INSTITUTION_TYPE_GROUPS,
-  ...COREGRID_INTERNAL_GROUPS,
+  ...SHERIVS_INTERNAL_GROUPS,
 ];

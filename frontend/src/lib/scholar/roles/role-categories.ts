@@ -36,7 +36,7 @@ export const ROLE_CATEGORIES = [
   "RESEARCH",
   "EXAMINATION",
   "QUALITY_ASSURANCE",
-  "COREGRID_INTERNAL",
+  "SHERIVS_INTERNAL",
 ] as const;
 
 export type RoleCategory = (typeof ROLE_CATEGORIES)[number];
@@ -65,7 +65,7 @@ export const ROLE_CATEGORY_LABELS: Record<RoleCategory, string> = {
   RESEARCH: "Research & Innovation",
   EXAMINATION: "Examination & Assessment Bodies",
   QUALITY_ASSURANCE: "Accreditation & Quality Assurance",
-  COREGRID_INTERNAL: "Sherivs Platform Organization",
+  SHERIVS_INTERNAL: "Sherivs Platform Organization",
 };
 
 /**
@@ -97,7 +97,7 @@ export const ROLE_CATEGORY_WORKFORCE_FAMILY: Record<RoleCategory, WorkforceFamil
   RESEARCH: "learning_support",
   EXAMINATION: "governance",
   QUALITY_ASSURANCE: "governance",
-  COREGRID_INTERNAL: null,
+  SHERIVS_INTERNAL: null,
 };
 
 export function isRoleCategory(value: string): value is RoleCategory {

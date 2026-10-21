@@ -90,7 +90,7 @@ export interface IntegrationMapping {
   /** External field path. */
   externalField: string;
   /** Sherivs canonical field path. */
-  coregridField: string;
+  sherivsField: string;
   kind: MappingKind;
   /** Mapping expression for conditional/calculated kinds. */
   expression: string | null;
@@ -100,11 +100,11 @@ export function createIntegrationMapping(input: {
   id: IntegrationMappingId;
   integrationRef: string;
   externalField: string;
-  coregridField: string;
+  sherivsField: string;
   kind: MappingKind;
   expression?: string | null;
 }): { ok: true; mapping: IntegrationMapping } | { ok: false; error: string } {
-  if (!input.externalField.trim() || !input.coregridField.trim()) {
+  if (!input.externalField.trim() || !input.sherivsField.trim()) {
     return { ok: false, error: "Mapping requires both external and Sherivs fields" };
   }
   if ((input.kind === "conditional" || input.kind === "calculated") && !input.expression) {
@@ -116,7 +116,7 @@ export function createIntegrationMapping(input: {
       id: input.id,
       integrationRef: input.integrationRef,
       externalField: input.externalField,
-      coregridField: input.coregridField,
+      sherivsField: input.sherivsField,
       kind: input.kind,
       expression: input.expression ?? null,
     },
@@ -134,9 +134,9 @@ export function applyMapping(
     const value = payload[m.externalField];
     if (value === undefined) continue;
     if (m.kind === "type_conversion") {
-      out[m.coregridField] = String(value);
+      out[m.sherivsField] = String(value);
     } else {
-      out[m.coregridField] = value;
+      out[m.sherivsField] = value;
     }
   }
   return out;
@@ -367,13 +367,13 @@ export function createSyncJob(input: {
  */
 export function resolveFieldAuthority(input: {
   field: string;
-  coregridAuthoritative: boolean;
+  sherivsAuthoritative: boolean;
   externalAuthoritative: boolean;
-}): { owner: "coregrid" | "external"; unambiguous: boolean } {
-  if (input.coregridAuthoritative === input.externalAuthoritative) {
-    return { owner: input.coregridAuthoritative ? "coregrid" : "external", unambiguous: false };
+}): { owner: "sherivs" | "external"; unambiguous: boolean } {
+  if (input.sherivsAuthoritative === input.externalAuthoritative) {
+    return { owner: input.sherivsAuthoritative ? "sherivs" : "external", unambiguous: false };
   }
-  return { owner: input.coregridAuthoritative ? "coregrid" : "external", unambiguous: true };
+  return { owner: input.sherivsAuthoritative ? "sherivs" : "external", unambiguous: true };
 }
 
 export type ConflictPolicy =
@@ -389,18 +389,18 @@ export const CONFLICT_POLICIES: readonly ConflictPolicy[] = [
 
 export function resolveConflict(input: {
   policy: ConflictPolicy;
-  coregridTimestamp: string;
+  sherivsTimestamp: string;
   externalTimestamp: string;
-}): "coregrid" | "external" | "manual" {
+}): "sherivs" | "external" | "manual" {
   switch (input.policy) {
     case "coregrid_wins":
-      return "coregrid";
+      return "sherivs";
     case "external_wins":
       return "external";
     case "latest_timestamp":
-      return input.coregridTimestamp >= input.externalTimestamp ? "coregrid" : "external";
+      return input.sherivsTimestamp >= input.externalTimestamp ? "sherivs" : "external";
     case "source_priority":
-      return "coregrid";
+      return "sherivs";
     case "manual_resolution":
       return "manual";
   }
@@ -411,7 +411,7 @@ export function resolveConflict(input: {
  * ────────────────────────────────────────────────────────────*/
 
 export interface ReconciliationComparison {
-  coregridRefs: string[];
+  sherivsRefs: string[];
   externalRefs: string[];
 }
 
@@ -436,17 +436,17 @@ export interface ReconciliationResult {
 export function reconcile(input: {
   id: ReconciliationRunId;
   integrationRef: string;
-  coregridRefs: string[];
+  sherivsRefs: string[];
   externalRefs: string[];
   lastSuccessfulSyncAt?: string | null;
   failureRate?: number;
   now?: string;
 }): ReconciliationResult {
-  const coreSet = new Set(input.coregridRefs);
+  const coreSet = new Set(input.sherivsRefs);
   const externalSet = new Set(input.externalRefs);
   const missingInCoregrid = input.externalRefs.filter((r) => !coreSet.has(r));
-  const missingInExternal = input.coregridRefs.filter((r) => !externalSet.has(r));
-  const duplicateCore = input.coregridRefs.filter((r, i) => input.coregridRefs.indexOf(r) !== i);
+  const missingInExternal = input.sherivsRefs.filter((r) => !externalSet.has(r));
+  const duplicateCore = input.sherivsRefs.filter((r, i) => input.sherivsRefs.indexOf(r) !== i);
   const duplicateExternal = input.externalRefs.filter(
     (r, i) => input.externalRefs.indexOf(r) !== i,
   );

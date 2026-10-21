@@ -18,7 +18,8 @@ import { createAdapterFailurePolicy, type AdapterFailurePolicy } from "../adapte
 import { sanitizeFilename } from "./file-contract";
 
 /** Single V1 bucket; objects are always `tenant_id/purpose/filename`. */
-export const FILE_BUCKET = "coregrid-files";
+/** Private file bucket (migration 20261021000180). Formerly "coregrid-files". */
+export const FILE_BUCKET = "sherivs-files";
 
 /**
  * Declared failure-semantics policy for the storage adapter (J-045). Reads

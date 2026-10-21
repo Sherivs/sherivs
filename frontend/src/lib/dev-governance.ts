@@ -411,7 +411,7 @@ export function isDeveloperExitPermitted(input: {
  * ────────────────────────────────────────────────────────────*/
 
 export interface CompatibilityCell {
-  coregridVersion: string;
+  sherivsVersion: string;
   sdkVersion: string;
   apiVersion: string;
   schemaVersion: string;

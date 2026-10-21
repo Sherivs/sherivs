@@ -4,7 +4,7 @@
  * Sherivs itself is a living organization: the platform teams (executive,
  * engineering, AI, product, education domain, customer implementation) are
  * reality roles like any other — they come from the role engine's
- * COREGRID_INTERNAL groups, and their workspaces are generated, never drawn by
+ * SHERIVS_INTERNAL groups, and their workspaces are generated, never drawn by
  * hand.
  */
 
@@ -13,7 +13,7 @@ import type { RoleWorkspaceKey } from "../roles/role-workspaces";
 export interface PlatformDepartment {
   key: string;
   label: string;
-  /** Role-engine groups that staff the department (COREGRID_INTERNAL). */
+  /** Role-engine groups that staff the department (SHERIVS_INTERNAL). */
   groups: readonly string[];
   workspace: RoleWorkspaceKey;
   /** Widgets the generated department workspace renders (data). */

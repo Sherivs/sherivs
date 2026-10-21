@@ -45,7 +45,7 @@ export interface ServerFnCaller {
 }
 
 export function serverFnUrl(env: MobileEnv, id: string): string {
-  return `${env.coregridWebBaseUrl}${SERVER_FN_URL_CONTRACT.routePrefix}/${id}`;
+  return `${env.sherivsWebBaseUrl}${SERVER_FN_URL_CONTRACT.routePrefix}/${id}`;
 }
 
 export function serverFnIdFor(env: MobileEnv, name: ServerFnName): string {

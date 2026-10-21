@@ -117,7 +117,7 @@ export function canTranslateLosslessly(from: ProtocolKind, to: ProtocolKind): bo
 
 export interface AiMappingProposal {
   externalField: string;
-  coregridField: string;
+  sherivsField: string;
   confidence: number;
 }
 
