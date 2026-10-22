@@ -17,4 +17,12 @@ Before apply: (1) org SCP currently denies `iam:*OpenIDConnectProvider*` for thi
 
 ## Applied 2026-10-22
 23 added / 0 changed / 0 destroyed. GitHub/Vercel OIDC excluded (`enable_github_oidc`/`enable_vercel_oidc` = false, SCP block).
-State: s3://sherivs-tfstate-508575763030/aws-vault/terraform.tfstate (bootstrapped by CLI: private, versioned, SSE-S3, TLS-only, public access blocked). No state locking on TF 1.9 — run applies serially (or use TF >= 1.10 `use_lockfile = true`).
+State: s3://sherivs-tfstate-508575763030/aws-vault/terraform.tfstate (bootstrapped by CLI: private, versioned, SSE-S3, TLS-only, public access blocked). State locking: S3 native lockfile (`use_lockfile = true`, Terraform >= 1.10; verified with 1.13.4, plan = no changes).
+
+## Vault contents (names only, loaded 2026-10-22, SecureString / alias/sherivs-platform)
+- /sherivs/n8n/: n8n-encryption-key, postgres-password, backup-passphrase, n8n-sandbox-version, sandbox-api-keys, sandbox-api-runner-registration-token, sandbox-api-runner-api-key, n8n-sandbox-url, n8n-sandbox-api-key, sentry-dsn, posthog-project-api-key, twilio-account-sid, twilio-api-key, twilio-api-secret, redis-rest-url, redis-rest-token, vapi-api-key, vapid-public-key, vapid-private-key, vapid-subject
+- /sherivs/ops/: betterstack-api-token, supabase-access-token
+- /sherivs/ci/: backup-passphrase
+- Secrets Manager: sherivs/prod/database-url (filled); sherivs/prod/paystack-secret-key, sherivs/prod/supabase-service-role-key (empty — owner to load via secure box)
+
+Source .env files on the server and box are intentionally left in place; services still read them.
