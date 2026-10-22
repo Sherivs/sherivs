@@ -17,7 +17,9 @@ export type Meter = "ai_requests_per_member_day" | "code_generations" | "sms" | 
 export type Period = "day" | "month" | "none";
 export interface Quota { meter: Meter; limit: number; period: Period }
 export interface Plan { id: string; features: string[]; quotas: Quota[] }
-export interface Override { meter: Meter; extra: number; reason: string; approvedBy: string; expiresAt: Date }
+/** Decision 2026-10-22: limit overrides are super-admin only (no school-admin overrides). */
+export type OverrideApproverRole = "super_admin";
+export interface Override { meter: Meter; extra: number; reason: string; approvedBy: string; approverRole: OverrideApproverRole; expiresAt: Date }
 
 export interface UsageStore {
   used(orgId: string, meter: Meter, periodKey: string, subjectId?: string): Promise<number>;
@@ -91,6 +93,7 @@ export class EntitlementService {
 
   /** Admin override: temporary extra quota, reason + expiry required, always audited. */
   async grantOverride(orgId: string, o: Override, ctx: { ip?: string; device?: string } = {}): Promise<void> {
+    if ((o as { approverRole?: string }).approverRole !== "super_admin") throw new Error("entitlements: overrides require super_admin");
     if (o.reason.trim().length < 10) throw new Error("entitlements: override needs a reason");
     if (!(o.extra > 0) || o.expiresAt <= this.now()) throw new Error("entitlements: invalid override");
     if (o.expiresAt.getTime() - this.now().getTime() > 31 * 86_400_000) throw new Error("entitlements: override longer than 31 days");
@@ -98,7 +101,7 @@ export class EntitlementService {
     this.overrides.set(orgId, [...(this.overrides.get(orgId) ?? []), o]);
     await this.deps.audit.record({ orgId, actorKind: "user", actorId: o.approvedBy, action: "entitlement.override",
       targetType: "meter", targetId: o.meter, ip: ctx.ip, device: ctx.device,
-      before: { limit: before }, after: { limit: before + o.extra, reason: o.reason, expiresAt: o.expiresAt.toISOString() } });
+      before: { limit: before }, after: { limit: before + o.extra, reason: o.reason, approverRole: o.approverRole, expiresAt: o.expiresAt.toISOString() } });
   }
 }
 

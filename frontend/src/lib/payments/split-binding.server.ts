@@ -22,6 +22,11 @@ import { SystemClock, TimeAuthority } from "../kernel/time-authority";
 const timeAuthority = new TimeAuthority(new SystemClock());
 const systemNowMs = (): number => timeAuthority.now().atMs;
 
+/**
+ * Decisions 2026-10-22: Sherivs takes a FLAT platform fee per payment (amount set
+ * by the owner, configured per subaccount in kobo — never hard-coded), and the
+ * school bears the Paystack processing fee (`bearer: "subaccount"`).
+ */
 export interface Subaccount { orgId: string; subaccountCode: string; active: boolean; platformChargeKobo: number }
 export interface BindingStore {
   orgOfBeneficiary(beneficiaryId: string): Promise<string | null>;

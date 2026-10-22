@@ -110,8 +110,9 @@ describe("entitlements and metering", () => {
     const s2 = new EntitlementService({ store: new InMemoryUsageStore(), planOf: async () => ({ id: "t", features: [], quotas: [{ meter: "sms", limit: 1, period: "month" }] }), audit: new AuditChain(audit), alerter: { notify: async () => {} }, now: () => new Date("2026-10-22T09:00:00Z") });
     await s2.commit(ORG_A, "sms");
     expect((await s2.authorize(ORG_A, "sms")).allowed).toBe(false);
-    await expect(s2.grantOverride(ORG_A, { meter: "sms", extra: 100, reason: "x", approvedBy: "admin", expiresAt: new Date("2026-10-30") })).rejects.toThrow();
-    await s2.grantOverride(ORG_A, { meter: "sms", extra: 100, reason: "Exam-week reminders", approvedBy: "admin-1", expiresAt: new Date("2026-10-30") }, { ip: "1.2.3.4" });
+    await expect(s2.grantOverride(ORG_A, { meter: "sms", extra: 100, reason: "x", approvedBy: "admin", approverRole: "super_admin", expiresAt: new Date("2026-10-30") })).rejects.toThrow();
+    await s2.grantOverride(ORG_A, { meter: "sms", extra: 100, reason: "Exam-week reminders", approvedBy: "admin-1", approverRole: "super_admin", expiresAt: new Date("2026-10-30") }, { ip: "1.2.3.4" });
+    await expect(s2.grantOverride(ORG_A, { meter: "sms", extra: 5, reason: "School admin attempt", approvedBy: "sa-1", approverRole: "school_admin" as never, expiresAt: new Date("2026-10-30") })).rejects.toThrow(/super_admin/);
     expect((await s2.authorize(ORG_A, "sms")).allowed).toBe(true);
     const log = await audit.list(ORG_A);
     expect(log[0]).toMatchObject({ action: "entitlement.override", actorId: "admin-1", ip: "1.2.3.4" });
