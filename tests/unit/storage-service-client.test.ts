@@ -22,6 +22,17 @@ import {
   type AdapterClock,
 } from "../../frontend/src/lib/adapters/failure-policy";
 
+// supabase-js constructs a RealtimeClient eagerly and requires a native
+// WebSocket (Node 22+). These tests never open a socket, so on older runtimes
+// provide an inert constructor instead of failing composition. No-op on Node 22.
+if (typeof (globalThis as { WebSocket?: unknown }).WebSocket === "undefined") {
+  (globalThis as { WebSocket?: unknown }).WebSocket = class InertWebSocket {
+    constructor() {
+      throw new Error("network disabled in unit tests");
+    }
+  };
+}
+
 const SERVICE_KEY = "sb_secret_service_key_fixture_not_a_real_credential";
 const PROD_URL = "https://nwrflbpbhyiqdptmlccm.supabase.co";
 

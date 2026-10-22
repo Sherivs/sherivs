@@ -46,7 +46,10 @@ vi.mock("@/lib/security-role-gate", () => ({
   requireStaffContext: vi.fn(async () => ({ role: "teacher", schoolId: "school-333" })),
 }));
 
-vi.mock("@/lib/ai-gateway.server", () => ({
+vi.mock("@/lib/ai-gateway.server", async (importOriginal) => ({
+  // Keep real non-invocation exports (e.g. createRateLimiter used by the
+  // rate-limit composition root); only the provider/invocation seam is mocked.
+  ...(await importOriginal<typeof import("@/lib/ai-gateway.server")>()),
   createAiGatewayProvider: vi.fn(() => {
     throw new Error("provider factory must not be constructed directly by call sites");
   }),
