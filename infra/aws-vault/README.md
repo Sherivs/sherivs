@@ -1,4 +1,4 @@
-# Sherivs AWS vault (phase 2) — PLAN ONLY
+# Sherivs AWS vault (phase 2)
 
 Account 508575763030, region eu-north-1. **Not applied.** Plan: 28 add / 0 change / 0 destroy.
 
@@ -14,3 +14,7 @@ SSM SecureString values are written out of band (`aws ssm put-parameter --type S
 Before apply: (1) org SCP currently denies `iam:*OpenIDConnectProvider*` for this account — needs an exception;
 (2) confirm `vercel_team_slug` and the Vercel thumbprint; (3) set `tf_state_bucket` and a remote backend;
 (4) set `alarm_email`; (5) break-glass password + MFA set manually after apply.
+
+## Applied 2026-10-22
+23 added / 0 changed / 0 destroyed. GitHub/Vercel OIDC excluded (`enable_github_oidc`/`enable_vercel_oidc` = false, SCP block).
+State: s3://sherivs-tfstate-508575763030/aws-vault/terraform.tfstate (bootstrapped by CLI: private, versioned, SSE-S3, TLS-only, public access blocked). No state locking on TF 1.9 — run applies serially (or use TF >= 1.10 `use_lockfile = true`).

@@ -3,8 +3,13 @@ terraform {
   required_providers {
     aws = { source = "hashicorp/aws", version = "~> 5.70" }
   }
-  # Plan-only for now: local state. Before apply, move to a remote, versioned
-  # S3 backend (see README) — local state is a defect per infrastructure/terraform/README.
+  # Remote state: bootstrapped out of band (private, versioned, SSE-S3, TLS-only, public access blocked).
+  backend "s3" {
+    bucket  = "sherivs-tfstate-508575763030"
+    key     = "aws-vault/terraform.tfstate"
+    region  = "eu-north-1"
+    encrypt = true
+  }
 }
 
 provider "aws" {

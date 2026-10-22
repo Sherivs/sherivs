@@ -36,9 +36,19 @@ variable "enable_cloudtrail" {
 variable "alarm_email" {
   description = "Email subscribed to the break-glass alarm topic (confirmation required). Empty = topic only."
   type        = string
-  default     = ""
+  default     = "Info@sherivs.com"
 }
 variable "breakglass_user_name" {
   type    = string
   default = "sherivs-breakglass"
+}
+variable "enable_github_oidc" {
+  description = "GitHub OIDC provider + sherivs-gha role. Off: org SCP p-wnxmh4dc denies iam:*OpenIDConnectProvider*."
+  type        = bool
+  default     = false
+}
+variable "enable_vercel_oidc" {
+  description = "Vercel OIDC provider + sherivs-vercel role. Off: blocked by org SCP."
+  type        = bool
+  default     = false
 }

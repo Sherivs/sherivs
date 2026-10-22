@@ -4,17 +4,19 @@ locals {
 }
 
 resource "aws_iam_openid_connect_provider" "vercel" {
+  count           = var.enable_vercel_oidc ? 1 : 0
   url             = "https://${local.vercel_host}"
   client_id_list  = ["https://vercel.com/${var.vercel_team_slug}"]
   thumbprint_list = ["9e99a48a9960b14926bb7f3b02e22da2b0ab7280"] # verify before apply
 }
 
 data "aws_iam_policy_document" "vercel_trust" {
+  count = var.enable_vercel_oidc ? 1 : 0
   statement {
     actions = ["sts:AssumeRoleWithWebIdentity"]
     principals {
       type        = "Federated"
-      identifiers = [aws_iam_openid_connect_provider.vercel.arn]
+      identifiers = [aws_iam_openid_connect_provider.vercel[0].arn]
     }
     condition {
       test     = "StringEquals"
@@ -30,12 +32,14 @@ data "aws_iam_policy_document" "vercel_trust" {
 }
 
 resource "aws_iam_role" "vercel" {
+  count                = var.enable_vercel_oidc ? 1 : 0
   name                 = "sherivs-vercel"
-  assume_role_policy   = data.aws_iam_policy_document.vercel_trust.json
+  assume_role_policy   = data.aws_iam_policy_document.vercel_trust[0].json
   max_session_duration = 3600
 }
 
 data "aws_iam_policy_document" "vercel" {
+  count = var.enable_vercel_oidc ? 1 : 0
   statement {
     sid       = "ReadProdParams"
     actions   = ["ssm:GetParameter", "ssm:GetParameters", "ssm:GetParametersByPath"]
@@ -54,7 +58,8 @@ data "aws_iam_policy_document" "vercel" {
 }
 
 resource "aws_iam_role_policy" "vercel" {
+  count  = var.enable_vercel_oidc ? 1 : 0
   name   = "sherivs-vercel-read"
-  role   = aws_iam_role.vercel.id
-  policy = data.aws_iam_policy_document.vercel.json
+  role   = aws_iam_role.vercel[0].id
+  policy = data.aws_iam_policy_document.vercel[0].json
 }
