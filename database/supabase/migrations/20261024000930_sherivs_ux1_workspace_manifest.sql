@@ -6,7 +6,7 @@
 -- features and enabled modules; and finally the user's own personalisation, which can only reference
 -- items they are allowed to see. Hiding an item is presentation only: every data RPC/RLS policy keeps
 -- enforcing the permission. workspace_item_allowed() is exported for data RPCs that want the same rule.
--- Rollback: database/supabase/rollbacks/20261024000500_sherivs_ux1_workspace_manifest.sql
+-- Rollback: database/supabase/rollbacks/20261024000930_sherivs_ux1_workspace_manifest.sql
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS public.workspace_item_catalog (
@@ -44,6 +44,11 @@ ALTER TABLE public.workspace_item_catalog ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.workspace_family_layouts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.org_workspace_features ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_workspace_prefs ENABLE ROW LEVEL SECURITY;
+-- Track E posture (#120): RLS is FORCED on every public table.
+ALTER TABLE public.workspace_item_catalog FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.workspace_family_layouts FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.org_workspace_features FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.user_workspace_prefs FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS workspace_item_catalog_read ON public.workspace_item_catalog;
 CREATE POLICY workspace_item_catalog_read ON public.workspace_item_catalog FOR SELECT TO authenticated USING (true);
 DROP POLICY IF EXISTS workspace_family_layouts_read ON public.workspace_family_layouts;

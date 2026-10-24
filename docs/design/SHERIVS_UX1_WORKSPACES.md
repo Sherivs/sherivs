@@ -20,7 +20,7 @@ neutral greys; type scale 12/14/16/20/24/32; spacing 4/8/12/16/24/32; radius 8/1
 
 ## Engine
 - Catalog: `tools/workspace/catalog_src.py` (single source) generates `frontend/src/lib/sherivs-ws/catalog.data.ts` and the
-  SQL seed inside `20261024000500_sherivs_ux1_workspace_manifest.sql`. 101 items: 28 nav, 44 widgets, 24 quick actions, 5 inbox streams.
+  SQL seed inside `20261024000930_sherivs_ux1_workspace_manifest.sql`. 101 items: 28 nav, 44 widgets, 24 quick actions, 5 inbox streams.
   Each item has any-of / all-of permissions, an optional plan feature or school module, and size.
 - 18 role families map the 56 role templates (and so all 572 catalog roles) to a default layout and priority.
   Multi-role users get the union, ordered by family priority (for example form teacher before subject teacher).
@@ -46,7 +46,7 @@ neutral greys; type scale 12/14/16/20/24/32; spacing 4/8/12/16/24/32; radius 8/1
 - Screens: `docs/design/ux1-screens/` (captured by `tools/workspace/screenshots.mjs`).
 
 ## SHERIVS-UX2: scope- and policy-aware workspaces
-Migration `20261024000600_sherivs_ux2_scope_policy_workspace.sql` (rollback included, not applied to prod) adds two inputs:
+Migration `20261024000940_sherivs_ux2_scope_policy_workspace.sql` (rollback included, not applied to prod) adds two inputs:
 
 - **Assigned scopes.** Catalog items can declare `scope_dims` (campus, shift, section, level, class, subject, house, hostel). Five new cards (`w.campus_overview`, `w.shift_overview`, `w.section_overview`, `w.level_overview`, `w.house_overview`) show only for people the admin scoped on that dimension, right after their lead card. A whole-school principal does not get them; a campus head does. The manifest returns `scope_options` and the shell shows a **scope switcher** (e.g. "shift: Morning"). Picking one narrows the scope cards and adds `?scope=dim:ref` to card and action links. This is presentation only.
 - **School policies.** `workspace_policy_catalog` (7 policies, generated from `catalog_src.py`) and `org_workspace_policies`. A policy can only hide items. `workspace.personalise=off` locks everyone's layout except users with `settings.manage`: saved prefs are ignored, and `workspace_prefs_save` keeps only language and density. Admins manage modules and policies at `/workspace/settings` (`workspace_policy_list`, `workspace_policy_set`, `workspace_feature_set`, all checking `settings.manage`).

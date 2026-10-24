@@ -1,4 +1,4 @@
--- Rollback for 20261024000500_sherivs_ux1_workspace_manifest.sql (drops only objects it created).
+-- Rollback for 20261024000930_sherivs_ux1_workspace_manifest.sql (drops only objects it created).
 BEGIN;
 DROP FUNCTION IF EXISTS public.workspace_feature_set(uuid, text, boolean);
 DROP FUNCTION IF EXISTS public.workspace_prefs_save(uuid, jsonb);

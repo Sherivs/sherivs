@@ -1,34 +1,170 @@
 name: Verify
+# Track E: one fast PR/master pipeline. Jobs run in parallel and cancel superseded runs.
+# Note: GitHub Actions billing is currently failing for this account, so runs are queued/blocked until billing is fixed;
+# nothing here needs changing when it is. Preview deploys only run when the VERCEL_TOKEN secret exists.
 
 on:
   pull_request:
   push:
-    branches:
-      - main
+    branches: [master]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: 22
+
 jobs:
-  verify:
-    name: Typecheck, unit tests, and production build
+  typecheck:
+    name: Typecheck
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Check out source
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "${{ env.NODE_VERSION }}", cache: npm }
+      - run: npm ci --ignore-scripts --no-audit --fund=false
+      - run: npx tsc --noEmit
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+  lint:
+    # master carries ~8k pre-existing (mostly Prettier) findings, so lint gates only the files a PR changes.
+    name: Lint (changed files)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: "${{ env.NODE_VERSION }}", cache: npm }
+      - run: npm ci --ignore-scripts --no-audit --fund=false
+      - name: ESLint on changed TS/JS files
+        run: |
+          files=$(git diff --name-only --diff-filter=ACMR "origin/${{ github.base_ref }}...HEAD" -- '*.ts' '*.tsx' '*.js' '*.mjs' | grep -v '^mobile/' || true)
+          if [ -z "$files" ]; then echo "no lintable changes"; exit 0; fi
+          echo "$files" | xargs npx eslint --no-warn-ignored
+
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "${{ env.NODE_VERSION }}", cache: npm }
+      - run: npm ci --no-audit --fund=false
+      - run: npm run test:unit
+
+  repo-guards:
+    name: Registry, drift, neutrality, secrets guards + build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "${{ env.NODE_VERSION }}", cache: npm }
+      - run: npm ci --no-audit --fund=false
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npm run verify:registry && npm run verify:drift && npm run verify:neutrality && npm run verify:secrets
+      - run: npm run build
+
+  gitleaks:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: gitleaks (commits new to this PR / push; history audit is in docs/security/track-e-findings.md)
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz | tar xz gitleaks
+          if [ "${{ github.event_name }}" = "pull_request" ]; then range="origin/${{ github.base_ref }}..HEAD"; else range="${{ github.event.before }}..HEAD"; fi
+          case "$range" in 0000000*) range="HEAD~1..HEAD";; ..HEAD) range="HEAD~1..HEAD";; esac
+          ./gitleaks git --redact --no-banner -c .gitleaks.toml ${range:+--log-opts="$range"} .
+
+  migrations-sim:
+    # Migration dry-run: every migration applied in order to a throwaway local Postgres 17 + Supabase bootstrap,
+    # then the sim scenarios, the Track E RLS leak check and a ~30 s k6 smoke through PostgREST. Never touches prod.
+    name: Migration dry-run + sim smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "${{ env.NODE_VERSION }}" }
+      - uses: actions/cache@v4
         with:
-          node-version: 22
-          cache: npm
+          path: tools/sim-lab/bin
+          key: sim-lab-bin-pg17.2-pgrst12.2.3-k6v0.54.0
+      - name: Apply all migrations (fresh DB)
+        run: bash tools/sim-lab/up.sh
+      - name: Seed synthetic schools (10% scale)
+        working-directory: tools/sim-lab
+        run: SIM_SCALE=0.1 node sim/gen.mjs && node sim/seed-flows.mjs
+      - name: Scenarios
+        working-directory: tools/sim-lab
+        run: node sim/scenarios.mjs
+      - name: Database security audit + RLS leak regression
+        working-directory: tools/sim-lab
+        run: |
+          node sim/security-audit.mjs > security-audit.json
+          node -e "const a=require('./security-audit.json'); const bad=a.rls_disabled.length+a.rls_not_forced.length+a.secdef_no_search_path.length; if(bad){console.error(a);process.exit(1)}"
+          node sim/rls-e-check.mjs
+      - name: k6 smoke (50 VUs, key flows)
+        working-directory: tools/sim-lab
+        run: |
+          node load/tokens.mjs
+          (bin/postgrest load/postgrest.conf > postgrest.log 2>&1 &) ; sleep 3
+          cd load && SMOKE=1 PEAK=50 ../bin/k6 run --quiet flows.js
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sim-lab-results
+          path: |
+            tools/sim-lab/sim/scenario-results.json
+            tools/sim-lab/security-audit.json
+          if-no-files-found: ignore
 
-      - name: Install locked dependencies
-        run: npm ci
+  mobile:
+    name: Mobile typecheck (Expo)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults: { run: { working-directory: mobile } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "${{ env.NODE_VERSION }}", cache: npm, cache-dependency-path: mobile/package-lock.json }
+      - run: npm ci --no-audit --fund=false
+      - run: npm run typecheck
 
-      - name: Audit production dependencies (fail on high/critical)
-        run: npm audit --omit=dev --audit-level=high
-
-      - name: Verify
-        run: npm run verify
+  preview:
+    name: Vercel preview deploy
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    needs: [typecheck, unit]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions: { contents: read, pull-requests: write }
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "${{ env.NODE_VERSION }}", cache: npm }
+      - name: Skip when Vercel secrets are not configured
+        id: gate
+        run: '[ -n "$VERCEL_TOKEN" ] && echo "ok=1" >> "$GITHUB_OUTPUT" || echo "::notice::VERCEL_TOKEN not set; skipping preview"'
+      - if: steps.gate.outputs.ok == '1'
+        name: Build + deploy preview (never --prod)
+        run: |
+          npm i -g vercel@latest
+          vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
+          vercel build --token="$VERCEL_TOKEN"
+          url=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")
+          echo "Preview: $url" >> "$GITHUB_STEP_SUMMARY"

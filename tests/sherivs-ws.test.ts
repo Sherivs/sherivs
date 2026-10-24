@@ -7,7 +7,7 @@ import { LOCALES, t } from "@/lib/sherivs-ws/i18n";
 
 const MIG = "database/supabase/migrations/";
 const s017 = fs.readFileSync(MIG + fs.readdirSync(MIG).find((f) => f.includes("sherivs_017_role_permission_catalog"))!, "utf8");
-const ux1 = fs.readFileSync(MIG + "20261024000500_sherivs_ux1_workspace_manifest.sql", "utf8");
+const ux1 = fs.readFileSync(MIG + "20261024000930_sherivs_ux1_workspace_manifest.sql", "utf8");
 const PERMS = new Set([...s017.matchAll(/^\s*\('([a-z_]+\.[a-z_]+)','[a-z_]+','/gm)].map((m) => m[1]));
 const TEMPLATES = new Set([...s017.slice(s017.indexOf("INSERT INTO public.role_templates")).matchAll(/^\s*\('([a-z_]+)','(org|campus|faculty|department|class|self)'/gm)].map((m) => m[1]));
 
@@ -102,7 +102,7 @@ describe("design tokens meet WCAG AA", () => {
 
 // ---- SHERIVS-UX2: scope- and policy-aware workspaces -------------------------------------------------
 import { POLICIES, focusScope, scopeFocusOptions } from "@/lib/sherivs-ws/engine";
-const ux2 = fs.readFileSync(MIG + "20261024000600_sherivs_ux2_scope_policy_workspace.sql", "utf8");
+const ux2 = fs.readFileSync(MIG + "20261024000940_sherivs_ux2_scope_policy_workspace.sql", "utf8");
 const DIMS = ["campus", "shift", "section", "gender", "level", "class", "subject", "house", "hostel"];
 describe("UX2 scope and policy layer", () => {
   it("UX2 SQL block matches the generator and every gate is real", () => {

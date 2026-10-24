@@ -8,7 +8,7 @@
 --      items (never grant). workspace.personalise=off makes the home read-only for everyone but admins.
 -- The manifest also returns scope_options (every dimension -> refs the caller holds) and policies (on keys),
 -- so the UI can offer a scope switcher. Hidden != secure: RLS / scholar_can / authz_check still enforce.
--- Not applied to production. Rollback: database/supabase/rollbacks/20261024000600_sherivs_ux2_scope_policy_workspace.sql
+-- Not applied to production. Rollback: database/supabase/rollbacks/20261024000940_sherivs_ux2_scope_policy_workspace.sql
 BEGIN;
 
 ALTER TABLE public.workspace_item_catalog ADD COLUMN IF NOT EXISTS scope_dims text[] NOT NULL DEFAULT '{}';
@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS public.org_workspace_policies (
   PRIMARY KEY (org_id, policy));
 ALTER TABLE public.workspace_policy_catalog ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.org_workspace_policies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.workspace_policy_catalog FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.org_workspace_policies FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS workspace_policy_catalog_read ON public.workspace_policy_catalog;
 CREATE POLICY workspace_policy_catalog_read ON public.workspace_policy_catalog FOR SELECT TO authenticated USING (true);
 DROP POLICY IF EXISTS org_workspace_policies_read ON public.org_workspace_policies;
