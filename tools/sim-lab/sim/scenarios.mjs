@@ -1484,6 +1484,85 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
     v.removed === true && v.anonRemoved === null && !!v.bReclaim?.id && JSON.stringify(v.audit) === JSON.stringify(["add", "check", "set_primary", "remove"]) && !v.auditEdit?.ok && v.resolveMs < 20,
     `audit ${JSON.stringify(v.audit)}; resolve ${v.resolveMs} ms avg over 2,000 domains`, "high");
 }
+// ---------- 26. Gov console realm (<label>.gov.sherivs.com) + invite-only officers with MFA and expiry (SHERIVS-B02) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+    const as = (u, aal = "aal1") => c.query("select set_config('request.jwt.claims', $1, true)", [JSON.stringify({ sub: u, role: "authenticated", aal })]);
+    const anon = async (sql, p = []) => { await c.query("SET LOCAL ROLE anon"); await c.query("select set_config('request.jwt.claims', '{\"role\":\"anon\"}', true)");
+      try { return await t(sql, p); } finally { await c.query("SET LOCAL ROLE authenticated"); } };
+    const PA = crypto.randomUUID(), SUP = crypto.randomUUID(), OFF = crypto.randomUUID(), OTHER = crypto.randomUUID();
+    const tag = PA.slice(0, 6), em = "officer-" + OFF.slice(0, 8) + "@moe.sim", label = "simb" + tag;
+    await asOwner("insert into auth.users (id, email) values ($1,$5),($2,$6),($3,$7),($4,$8)",
+      [PA, SUP, OFF, OTHER, "pab" + tag + "@sim.local", "supb" + tag + "@sim.local", em, "other-" + tag + "@moe.sim"]);
+    await asOwner("insert into platform_staff (id, email, full_name, status) values ($1,$2,'Sim PA B02','active'),($3,$4,'Sim Support B02','active')", [PA, "pab" + tag + "@sim.local", SUP, "supb" + tag + "@sim.local"]);
+    await asOwner("insert into platform_staff_roles (staff_id, role_code) values ($1,'platform_admin'),($2,'support')", [PA, SUP]);
+    await as(PA, "aal2");
+    const j = (await t("select public.gov_jurisdiction_create('Sim Borno MoE','Borno') id")).row?.id; out.j = j;
+    await as(PA, "aal1"); out.hostNoMfa = await t("select public.gov_jurisdiction_set_host($1,$2)", [j, label]);
+    out.inviteNoMfa = await t("select public.gov_officer_invite_create($1,$2,'director')", [em, j]);
+    await as(PA, "aal2");
+    out.reserved = await t("select public.gov_jurisdiction_set_host($1,'console')", [j]);
+    out.host = (await t("select public.gov_jurisdiction_set_host($1,$2) r", [j, label.toUpperCase()])).row?.r;
+    out.anonHost = (await anon("select public.gov_jurisdiction_by_host($1) r", [label])).row?.r;
+    out.anonInvites = await anon("select count(*) from gov_officer_invites");
+    await as(PA, "aal2");
+    const schoolEmail = (await asOwner("select au.email from auth.users au join users u on u.id=au.id where au.email is not null limit 1")).row?.email;
+    out.schoolInvite = schoolEmail ? await t("select public.gov_officer_invite_create($1,$2,'viewer')", [schoolEmail, j]) : { ok: false, skipped: true };
+    out.longInvite = await t("select public.gov_officer_invite_create($1,$2,'viewer',30)", [em, j]);
+    out.badRole = await t("select public.gov_officer_invite_create($1,$2,'king')", [em, j]);
+    const inv = (await t("select public.gov_officer_invite_create($1,$2,'director',7,90) r", [em.toUpperCase(), j])).row?.r; out.inv = inv;
+    out.dupOpen = await t("select public.gov_officer_invite_create($1,$2,'viewer')", [em, j]);
+    out.stored = (await t("select token_hash, email from gov_officer_invites where id=$1", [inv?.id])).row;
+    await as(SUP, "aal2"); out.supInvite = await t("select public.gov_officer_invite_create($1,$2,'viewer')", ["x-" + em, j]);
+    await as(A.admin, "aal2"); out.schoolAdminInvite = await t("select public.gov_officer_invite_create($1,$2,'viewer')", ["y-" + em, j]);
+    out.schoolAdminRead = (await t("select count(*)::int n from gov_officer_invites where jurisdiction_id=$1", [j])).row?.n;
+    await as(OTHER, "aal2"); out.wrongEmail = await t("select public.gov_officer_invite_accept($1)", [inv?.token]);
+    await as(OFF); out.badToken = await t("select public.gov_officer_invite_accept('deadbeef')");
+    out.sessBefore = (await t("select public.gov_console_session($1) r", [label])).row?.r?.status;
+    out.accept = (await t("select public.gov_officer_invite_accept($1) r", [inv?.token])).row?.r;
+    out.reuse = await t("select public.gov_officer_invite_accept($1)", [inv?.token]);
+    out.sessAal1 = (await t("select public.gov_console_session($1) r", [label])).row?.r?.status;
+    out.ovAal1 = await t("select public.gov_overview($1)", [j]);
+    await as(OFF, "aal2");
+    out.sess = (await t("select public.gov_console_session($1) r", [label])).row?.r;
+    out.ov = await t("select public.gov_overview($1)", [j]);
+    out.unknown = (await t("select public.gov_console_session('nowhere') r")).row?.r?.status;
+    // revoke + expiry
+    await as(PA, "aal2");
+    const inv2 = (await t("select public.gov_officer_invite_create($1,$2,'inspector') r", [OTHER.slice(0, 8) + "-insp@moe.sim", j])).row?.r;
+    out.revoke = (await t("select public.gov_officer_invite_revoke($1) r", [inv2?.id])).row?.r;
+    out.revokeAgain = (await t("select public.gov_officer_invite_revoke($1) r", [inv2?.id])).row?.r;
+    const inv3 = (await t("select public.gov_officer_invite_create($1,$2,'viewer') r", ["other-" + tag + "@moe.sim", j])).row?.r;
+    await asOwner("update gov_officer_invites set expires_at = now() - interval '1 minute' where id=$1", [inv3?.id]);
+    out.list = (await t("select public.gov_officer_invites_list($1) r", [j])).row?.r;
+    await as(OTHER, "aal2"); out.expiredInvite = await t("select public.gov_officer_invite_accept($1)", [inv3?.token]);
+    await asOwner("update gov_viewers set expires_at = now() - interval '1 minute' where user_id=$1 and jurisdiction_id=$2", [OFF, j]);
+    await as(OFF, "aal2");
+    out.mineExpired = (await t("select public.gov_my_jurisdictions() r")).row?.r;
+    out.ovExpired = await t("select public.gov_overview($1)", [j]);
+    out.sessExpired = (await t("select public.gov_console_session($1) r", [label])).row?.r?.status;
+    out.audit = (await asOwner("select array_agg(action order by id) a from gov_admin_audit where jurisdiction_id=$1", [j])).row?.a;
+    out.auditEdit = await asOwner("delete from gov_admin_audit where jurisdiction_id=$1", [j]);
+    Object.assign(out, { label, em });
+  });
+  rec("gov_officer_invite", "Only platform.gov.manage staff signed in with MFA set the host label and invite; support staff, school admins, no-MFA, reserved labels, tenant emails, >14-day or unknown-role invites are refused",
+    !v.hostNoMfa?.ok && !v.inviteNoMfa?.ok && !v.reserved?.ok && v.host === v.label && !v.supInvite?.ok && !v.schoolAdminInvite?.ok && v.schoolAdminRead === 0
+      && (v.schoolInvite?.skipped || !v.schoolInvite?.ok) && !v.longInvite?.ok && !v.badRole?.ok && !v.dupOpen?.ok,
+    JSON.stringify({ host: v.host, sup: v.supInvite?.err, noMfa: v.inviteNoMfa?.err }), "critical");
+  rec("gov_officer_invite", "Host label resolves publicly to the jurisdiction name only; the raw token is returned once and only its sha256 is stored; anon cannot read invites",
+    v.anonHost?.id === v.j && v.anonHost?.name === "Sim Borno MoE" && !("viewers" in (v.anonHost ?? {})) && !v.anonInvites?.ok
+      && /^[0-9a-f]{48}$/.test(v.inv?.token ?? "") && v.stored?.token_hash?.length === 64 && v.stored?.token_hash !== v.inv?.token && v.stored?.email === v.em,
+    JSON.stringify({ anonHost: v.anonHost?.name, stored: v.stored?.email }), "critical");
+  rec("gov_officer_invite", "Accept needs the same signed-in email and a valid single-use token; then the console demands MFA (server-side) before any read",
+    !v.wrongEmail?.ok && !v.badToken?.ok && v.sessBefore === "not_an_officer" && v.accept?.agency_role === "director" && !v.reuse?.ok
+      && v.sessAal1 === "mfa_required" && !v.ovAal1?.ok && v.sess?.status === "ok" && v.sess?.agency_role === "director" && v.ov?.ok && v.unknown === "unknown_jurisdiction",
+    JSON.stringify({ sessBefore: v.sessBefore, aal1: v.sessAal1, ovAal1: v.ovAal1?.err, sess: v.sess?.status, ov: v.ov?.err }), "critical");
+  rec("gov_officer_invite", "Revoked and expired invites cannot be used; an expired officer seat loses the console; every action is in the append-only audit",
+    v.revoke === true && v.revokeAgain === false && !v.expiredInvite?.ok && Array.isArray(v.mineExpired) && v.mineExpired.length === 0 && !v.ovExpired?.ok && v.sessExpired === "not_an_officer"
+      && v.list?.some((x) => x.status === "accepted") && v.list?.some((x) => x.status === "revoked") && v.list?.some((x) => x.status === "expired") && !JSON.stringify(v.list).includes("token")
+      && JSON.stringify(v.audit) === JSON.stringify(["jurisdiction_create", "host_set", "invite_create", "invite_accept", "invite_create", "invite_revoke", "invite_create"]) && !v.auditEdit?.ok,
+    `audit ${JSON.stringify(v.audit)}`, "high");
+}
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
 await pool.end();
