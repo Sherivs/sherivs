@@ -109,9 +109,11 @@ import { Route as AuthenticatedAdminLockedAccountsRouteImport } from './routes/_
 import { Route as AuthenticatedAdminMessagesLogRouteImport } from './routes/_authenticated/admin/messages-log'
 import { Route as AuthenticatedAdminNdpaRouteImport } from './routes/_authenticated/admin/ndpa'
 import { Route as AuthenticatedAdminNewsRouteImport } from './routes/_authenticated/admin/news'
+import { Route as AuthenticatedAdminOnboardingInterviewRouteImport } from './routes/_authenticated/admin/onboarding-interview'
 import { Route as AuthenticatedAdminOperationsRouteImport } from './routes/_authenticated/admin/operations'
 import { Route as AuthenticatedAdminPayrollRouteImport } from './routes/_authenticated/admin/payroll'
 import { Route as AuthenticatedAdminReportCardsRouteImport } from './routes/_authenticated/admin/report-cards'
+import { Route as AuthenticatedAdminRoleScopesRouteImport } from './routes/_authenticated/admin/role-scopes'
 import { Route as AuthenticatedAdminRolesRouteImport } from './routes/_authenticated/admin/roles'
 import { Route as AuthenticatedAdminSchoolProfileRouteImport } from './routes/_authenticated/admin/school-profile'
 import { Route as AuthenticatedAdminSessionRolloverRouteImport } from './routes/_authenticated/admin/session-rollover'
@@ -741,6 +743,12 @@ const AuthenticatedAdminNewsRoute = AuthenticatedAdminNewsRouteImport.update({
   path: '/news',
   getParentRoute: () => AuthenticatedAdminRouteRoute,
 } as any)
+const AuthenticatedAdminOnboardingInterviewRoute =
+  AuthenticatedAdminOnboardingInterviewRouteImport.update({
+    id: '/onboarding-interview',
+    path: '/onboarding-interview',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminOperationsRoute =
   AuthenticatedAdminOperationsRouteImport.update({
     id: '/operations',
@@ -757,6 +765,12 @@ const AuthenticatedAdminReportCardsRoute =
   AuthenticatedAdminReportCardsRouteImport.update({
     id: '/report-cards',
     path: '/report-cards',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminRoleScopesRoute =
+  AuthenticatedAdminRoleScopesRouteImport.update({
+    id: '/role-scopes',
+    path: '/role-scopes',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminRolesRoute = AuthenticatedAdminRolesRouteImport.update({
@@ -1334,9 +1348,11 @@ export interface FileRoutesByFullPath {
   '/admin/messages-log': typeof AuthenticatedAdminMessagesLogRoute
   '/admin/ndpa': typeof AuthenticatedAdminNdpaRoute
   '/admin/news': typeof AuthenticatedAdminNewsRoute
+  '/admin/onboarding-interview': typeof AuthenticatedAdminOnboardingInterviewRoute
   '/admin/operations': typeof AuthenticatedAdminOperationsRoute
   '/admin/payroll': typeof AuthenticatedAdminPayrollRoute
   '/admin/report-cards': typeof AuthenticatedAdminReportCardsRoute
+  '/admin/role-scopes': typeof AuthenticatedAdminRoleScopesRoute
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/admin/school-profile': typeof AuthenticatedAdminSchoolProfileRoute
   '/admin/session-rollover': typeof AuthenticatedAdminSessionRolloverRoute
@@ -1516,9 +1532,11 @@ export interface FileRoutesByTo {
   '/admin/messages-log': typeof AuthenticatedAdminMessagesLogRoute
   '/admin/ndpa': typeof AuthenticatedAdminNdpaRoute
   '/admin/news': typeof AuthenticatedAdminNewsRoute
+  '/admin/onboarding-interview': typeof AuthenticatedAdminOnboardingInterviewRoute
   '/admin/operations': typeof AuthenticatedAdminOperationsRoute
   '/admin/payroll': typeof AuthenticatedAdminPayrollRoute
   '/admin/report-cards': typeof AuthenticatedAdminReportCardsRoute
+  '/admin/role-scopes': typeof AuthenticatedAdminRoleScopesRoute
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/admin/school-profile': typeof AuthenticatedAdminSchoolProfileRoute
   '/admin/session-rollover': typeof AuthenticatedAdminSessionRolloverRoute
@@ -1702,9 +1720,11 @@ export interface FileRoutesById {
   '/_authenticated/admin/messages-log': typeof AuthenticatedAdminMessagesLogRoute
   '/_authenticated/admin/ndpa': typeof AuthenticatedAdminNdpaRoute
   '/_authenticated/admin/news': typeof AuthenticatedAdminNewsRoute
+  '/_authenticated/admin/onboarding-interview': typeof AuthenticatedAdminOnboardingInterviewRoute
   '/_authenticated/admin/operations': typeof AuthenticatedAdminOperationsRoute
   '/_authenticated/admin/payroll': typeof AuthenticatedAdminPayrollRoute
   '/_authenticated/admin/report-cards': typeof AuthenticatedAdminReportCardsRoute
+  '/_authenticated/admin/role-scopes': typeof AuthenticatedAdminRoleScopesRoute
   '/_authenticated/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/_authenticated/admin/school-profile': typeof AuthenticatedAdminSchoolProfileRoute
   '/_authenticated/admin/session-rollover': typeof AuthenticatedAdminSessionRolloverRoute
@@ -1887,9 +1907,11 @@ export interface FileRouteTypes {
     | '/admin/messages-log'
     | '/admin/ndpa'
     | '/admin/news'
+    | '/admin/onboarding-interview'
     | '/admin/operations'
     | '/admin/payroll'
     | '/admin/report-cards'
+    | '/admin/role-scopes'
     | '/admin/roles'
     | '/admin/school-profile'
     | '/admin/session-rollover'
@@ -2069,9 +2091,11 @@ export interface FileRouteTypes {
     | '/admin/messages-log'
     | '/admin/ndpa'
     | '/admin/news'
+    | '/admin/onboarding-interview'
     | '/admin/operations'
     | '/admin/payroll'
     | '/admin/report-cards'
+    | '/admin/role-scopes'
     | '/admin/roles'
     | '/admin/school-profile'
     | '/admin/session-rollover'
@@ -2254,9 +2278,11 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/messages-log'
     | '/_authenticated/admin/ndpa'
     | '/_authenticated/admin/news'
+    | '/_authenticated/admin/onboarding-interview'
     | '/_authenticated/admin/operations'
     | '/_authenticated/admin/payroll'
     | '/_authenticated/admin/report-cards'
+    | '/_authenticated/admin/role-scopes'
     | '/_authenticated/admin/roles'
     | '/_authenticated/admin/school-profile'
     | '/_authenticated/admin/session-rollover'
@@ -3069,6 +3095,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminNewsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/onboarding-interview': {
+      id: '/_authenticated/admin/onboarding-interview'
+      path: '/onboarding-interview'
+      fullPath: '/admin/onboarding-interview'
+      preLoaderRoute: typeof AuthenticatedAdminOnboardingInterviewRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/operations': {
       id: '/_authenticated/admin/operations'
       path: '/operations'
@@ -3088,6 +3121,13 @@ declare module '@tanstack/react-router' {
       path: '/report-cards'
       fullPath: '/admin/report-cards'
       preLoaderRoute: typeof AuthenticatedAdminReportCardsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/role-scopes': {
+      id: '/_authenticated/admin/role-scopes'
+      path: '/role-scopes'
+      fullPath: '/admin/role-scopes'
+      preLoaderRoute: typeof AuthenticatedAdminRoleScopesRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/roles': {
@@ -3732,9 +3772,11 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminMessagesLogRoute: typeof AuthenticatedAdminMessagesLogRoute
   AuthenticatedAdminNdpaRoute: typeof AuthenticatedAdminNdpaRoute
   AuthenticatedAdminNewsRoute: typeof AuthenticatedAdminNewsRoute
+  AuthenticatedAdminOnboardingInterviewRoute: typeof AuthenticatedAdminOnboardingInterviewRoute
   AuthenticatedAdminOperationsRoute: typeof AuthenticatedAdminOperationsRoute
   AuthenticatedAdminPayrollRoute: typeof AuthenticatedAdminPayrollRoute
   AuthenticatedAdminReportCardsRoute: typeof AuthenticatedAdminReportCardsRoute
+  AuthenticatedAdminRoleScopesRoute: typeof AuthenticatedAdminRoleScopesRoute
   AuthenticatedAdminRolesRoute: typeof AuthenticatedAdminRolesRoute
   AuthenticatedAdminSchoolProfileRoute: typeof AuthenticatedAdminSchoolProfileRoute
   AuthenticatedAdminSessionRolloverRoute: typeof AuthenticatedAdminSessionRolloverRoute
@@ -3814,9 +3856,12 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminMessagesLogRoute: AuthenticatedAdminMessagesLogRoute,
     AuthenticatedAdminNdpaRoute: AuthenticatedAdminNdpaRoute,
     AuthenticatedAdminNewsRoute: AuthenticatedAdminNewsRoute,
+    AuthenticatedAdminOnboardingInterviewRoute:
+      AuthenticatedAdminOnboardingInterviewRoute,
     AuthenticatedAdminOperationsRoute: AuthenticatedAdminOperationsRoute,
     AuthenticatedAdminPayrollRoute: AuthenticatedAdminPayrollRoute,
     AuthenticatedAdminReportCardsRoute: AuthenticatedAdminReportCardsRoute,
+    AuthenticatedAdminRoleScopesRoute: AuthenticatedAdminRoleScopesRoute,
     AuthenticatedAdminRolesRoute: AuthenticatedAdminRolesRoute,
     AuthenticatedAdminSchoolProfileRoute: AuthenticatedAdminSchoolProfileRoute,
     AuthenticatedAdminSessionRolloverRoute:

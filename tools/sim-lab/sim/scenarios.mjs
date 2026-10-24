@@ -711,6 +711,156 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
   rec("admissions", "Another school cannot read the funnel", !v.bFunnel?.ok, W_ERR(v.bFunnel), "critical");
   rec("audit", "Comms, PIN, transcript and admission changes are audited", v.audit >= 5, `${v.audit} audit rows`, "high");
 }
+// ---------- 16. Scope sets, unified access check (shadow), onboarding interview (SHERIVS-021) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+    const id = async (sql, p) => (await t(sql, p)).row?.id;
+    const c1 = (await t("select public.campus_upsert($1,'Sim North') id", [A.schoolId])).row?.id;
+    const c2 = (await t("select public.campus_upsert($1,'Sim South') id", [A.schoolId])).row?.id;
+    const cls = (await asOwner("select id from classes where school_id=$1 order by name limit 2", [A.schoolId])).r.rows.map((r) => r.id);
+    await asOwner("update classes set campus_id=$1 where id=$2", [c1, cls[0]]); await asOwner("update classes set campus_id=$1 where id=$2", [c2, cls[1]]);
+    const s1 = (await asOwner("select id from students where class_id=$1 limit 1", [cls[0]])).row?.id;
+    const s2 = (await asOwner("select id from students where class_id=$1 limit 1", [cls[1]])).row?.id;
+    const nonTeacher = (await asOwner("select id from users where school_id=$1 and role='teacher' and id<>$2 and id not in (select teacher_id from classes where teacher_id is not null) and id not in (select teacher_id from timetable_slots where teacher_id is not null) limit 1", [A.schoolId, A.teacher])).row?.id ?? A.teacher;
+    // a year-head assignment for a staff user, with a scope set: campus North AND (class 0)
+    const ra = await id("select public.role_assign($1,$2,'ng.year_head_year_tutor','org',null) id", [A.schoolId, nonTeacher]);
+    out.ra = ra;
+    out.setOk = await t("select public.role_scope_set_add($1, jsonb_build_object('campus', jsonb_build_array($2::text)), 'North only') id", [ra, c1]);
+    out.badRef = await t("select public.role_scope_set_add($1, jsonb_build_object('campus', jsonb_build_array($2::text)))", [ra, crypto.randomUUID()]);
+    out.badDim = await t("select public.role_scope_set_add($1, '{\"planet\":[\"x\"]}')", [ra]);
+    out.empty = await t("select public.role_scope_set_add($1, '{}')", [ra]);
+    out.chkInRaw = await t("select public.authz_check($1,'students.view','student',$2) r", [nonTeacher, s1]);
+    out.chkIn = (await t("select public.authz_check($1,'students.view','student',$2) r", [nonTeacher, s1])).row?.r;
+    out.chkOut = (await t("select public.authz_check($1,'students.view','student',$2) r", [nonTeacher, s2])).row?.r;
+    // multi-select: OR within dimension
+    out.multi = await t("select public.role_scope_set_add($1, jsonb_build_object('campus', jsonb_build_array($2::text,$3::text), 'gender', '[\"girls\"]'::jsonb))", [ra, c1, c2]);
+    out.chkGenderMiss = (await t("select public.authz_check($1,'students.view','student',$2) r", [nonTeacher, s2])).row?.r;
+    const sec = (await t("select public.section_upsert($1,$2,'Sim Girls Sec','senior_secondary') id", [A.schoolId, c2])).row?.id;
+    await asOwner("update school_sections set gender='girls' where id=$1", [sec]); await asOwner("update classes set section_id=$1 where id=$2", [sec, cls[1]]);
+
+    out.chkGenderHit = (await t("select public.authz_check($1,'students.view','student',$2) r", [nonTeacher, s2])).row?.r;
+    // expiry
+    await asOwner("update user_role_assignments set valid_until = now() - interval '1 minute' where id=$1", [ra]);
+    out.chkExpired = (await t("select public.authz_check($1,'students.view','student',$2) r", [nonTeacher, s1])).row?.r;
+    await asOwner("update user_role_assignments set valid_until = null where id=$1", [ra]);
+    // assigner never wider than own scope: a proprietor assignment restricted to North
+    const prop = await id("select public.role_assign($1,$2,'ng.proprietor','org',null) id", [A.schoolId, A.bursar]);
+    await t("select public.role_scope_set_add($1, jsonb_build_object('campus', jsonb_build_array($2::text)))", [prop, c1]);
+    await act(A.bursar);
+    out.widen = await t("select public.role_scope_set_add($1, jsonb_build_object('campus', jsonb_build_array($2::text)))", [ra, c2]);
+    out.open = await t("select public.role_scope_set_add($1, '{\"gender\":[\"boys\"]}')", [ra]);
+    out.within = await t("select public.role_scope_set_add($1, jsonb_build_object('campus', jsonb_build_array($2::text)))", [ra, c1]);
+    out.selfWiden = await t("select public.role_scope_set_add($1, jsonb_build_object('campus', jsonb_build_array($2::text)))", [prop, c1]);
+    out.directScope = await t("insert into role_assignment_scopes (set_id, org_id, dim, ref) select id, org_id, 'campus', 'x' from role_assignment_scope_sets limit 1");
+    // tenant gate, ReBAC, consent, break-glass
+    await act(A.admin);
+    await act(B.admin); out.cross = (await t("select public.authz_check($1,'students.view','student',$2) r", [B.admin, s1])).row?.r; await act(A.admin);
+    await act(A.teacher); out.spoof = await t("select public.authz_check($1,'students.view','student',$2) r", [A.principal, s1]); await act(A.admin);
+    const kid = (await asOwner("select student_id from parent_student_map where parent_id=$1 limit 1", [A.sampleParent])).row?.student_id
+      ?? (await asOwner("select id student_id from students where parent_id=$1 limit 1", [A.sampleParent])).row?.student_id;
+    const notKid = (await asOwner("select id from students where school_id=$1 and id<>$2 and coalesce(parent_id::text,'')<>$3 and id not in (select student_id from parent_student_map where parent_id=$3) limit 1", [A.schoolId, kid, A.sampleParent])).row?.id;
+    await act(A.sampleParent);
+    out.parentKid = (await t("select public.authz_check($1,'grades.view','student',$2) r", [A.sampleParent, kid])).row?.r;
+    out.parentOther = (await t("select public.authz_check($1,'grades.view','student',$2) r", [A.sampleParent, notKid])).row?.r;
+    await act(A.admin);
+    await asOwner("delete from consent_records where student_id=$1 and purpose='ai_processing'", [kid]);
+    out.noConsent = (await t("select public.authz_check($1,'ai_tutor.use','student',$2) r", [A.admin, kid])).row?.r;
+    await act(A.teacher);
+    out.bgShort = await t("select public.break_glass_open($1,'urgent')", [s1]);
+    out.bg = await t("select public.break_glass_open($1,'Asthma attack on the field; need allergy record now') id", [s1]);
+    out.bgAllow = (await t("select public.authz_check($1,'health.records_view','student',$2) r", [A.teacher, s1])).row?.r;
+    out.bgAlerts = (await asOwner("select count(*)::int n from notifications where school_id=$1 and title='Break-glass access opened'", [A.schoolId])).row?.n;
+    await asOwner("update break_glass_grants set expires_at = now() - interval '1 second' where id=$1", [out.bg?.row?.id]);
+    out.bgExpired = (await t("select public.authz_check($1,'health.records_view','student',$2) r", [A.teacher, s1])).row?.r;
+    out.bgDelete = await asOwner("delete from break_glass_grants where id=$1", [out.bg?.row?.id]);
+    // shadow mode: attendance insert logs a comparison but never blocks
+    await asOwner("select set_config('sherivs.authz_shadow_rate','1',true)");
+    const tc = (await asOwner("select c.id, (select id from students s where s.class_id=c.id limit 1) sid from classes c where c.teacher_id=$1 limit 1", [A.teacher])).row;
+    await asOwner("delete from attendance where student_id=$1 and date=current_date", [tc?.sid]);
+    out.att = await t("insert into attendance (school_id, student_id, class_id, date, status, marked_by) values ($1,$2,$3,current_date,'present',$4)", [A.schoolId, tc?.sid, tc?.id, A.teacher]);
+    out.shadowRows = (await asOwner("select count(*)::int n, bool_and(agree) a from authz_shadow_log where resource_id=$1", [tc?.sid])).row;
+    await act(A.admin);
+    out.report = (await t("select public.authz_shadow_report($1) r", [A.schoolId])).row?.r;
+    await act(A.teacher); out.teacherReport = await t("select public.authz_shadow_report($1)", [A.schoolId]);
+    out.shadowForge = await t("insert into authz_shadow_log (action, new_allow) values ('x', true)");
+    // onboarding interview
+    await act(A.teacher); out.teacherOnb = await t("select public.onboarding_start($1)", [A.schoolId]);
+    await act(A.admin);
+    const ses = (await t("select public.onboarding_start($1) id", [A.schoolId])).row?.id;
+    const ans = (st, a) => t("select public.onboarding_answer($1,$2,$3::jsonb) r", [ses, st, JSON.stringify(a)]);
+    out.n1 = (await ans("organisation", { name: "Sim Academy", has_shifts: true, is_group: false })).row?.r;
+    out.earlyPlan = await t("select public.onboarding_plan($1)", [ses]);
+    await ans("institution", { bands: ["nursery", "primary", "jss", "sss"] });
+    await ans("campuses", { items: [{ name: "Sim Onb Main" }, { name: "Sim Onb Annex" }] });
+    out.n2 = (await ans("sections", { items: [{ name: "Onb Nursery", campus: "Sim Onb Main", kind: "nursery", gender: "mixed", residency: "day" },
+      { name: "Onb Secondary", campus: "Sim Onb Main", kind: "junior_secondary", gender: "mixed", residency: "both" }], houses: ["Onb Red House", "Onb Blue House"] })).row?.r;
+    await ans("shifts", { items: [{ name: "Morning", campus: "Sim Onb Main", kind: "morning" }, { name: "Afternoon", campus: "Sim Onb Annex", kind: "afternoon" }] });
+    await ans("curriculum", { primary: "nerdc_2025_primary" });
+    await ans("levels", { items: [
+      { name: "Onb Nursery 1", band: "nursery", ordinal: 1, arms: 1, section: "Onb Nursery", campus: "Sim Onb Main", shift: "Morning" },
+      { name: "Onb Primary 1", band: "primary", ordinal: 3, arms: 2, campus: "Sim Onb Main", shift: "Morning" },
+      { name: "Onb JSS 1", band: "jss", ordinal: 9, arms: 3, arm_names: ["Gold", "Diamond", "Silver"], section: "Onb Secondary", campus: "Sim Onb Main" },
+      { name: "Onb SSS 1", band: "sss", ordinal: 12, arms: 2, section: "Onb Secondary", campus: "Sim Onb Main", stream: "science" }] });
+    for (const st of ["calendar", "assessment", "fees", "people"]) await ans(st, {});
+    out.n3 = (await ans("comms", { consent: ["core_education", "messaging_sms_whatsapp"] })).row?.r;
+    out.plan = (await t("select public.onboarding_plan($1) p", [ses])).row?.p;
+    out.badHash = await t("select public.onboarding_apply($1,'deadbeef')", [ses]);
+    out.applyRaw = await t("select public.onboarding_apply($1,$2) r", [ses, out.plan?.plan_hash]); out.apply = out.applyRaw.row?.r;
+    out.replay = (await t("select public.onboarding_apply($1,$2) r", [ses, out.plan?.plan_hash])).row?.r;
+    out.made = (await asOwner(`select (select count(*) from classes where school_id=$1 and grade_level like 'Onb %')::int classes,
+        (select count(*) from classes where school_id=$1 and grade_level='Onb JSS 1' and name ~ 'Gold|Diamond|Silver')::int named,
+        (select count(*) from classes where school_id=$1 and grade_level like 'Onb %' and level_id is not null)::int leveled,
+        (select count(*) from school_shifts where school_id=$1)::int shifts, (select count(*) from school_levels where school_id=$1)::int levels,
+        (select count(*) from class_curriculum cc join classes c on c.id=cc.class_id where c.grade_level='Onb Primary 1')::int cur,
+        (select count(*) from student_groups where school_id=$1 and name like 'Onb %')::int houses,
+        (select residency from school_sections where school_id=$1 and name='Onb Secondary') res`, [A.schoolId])).row;
+    // a second session re-applying the same structure creates nothing new (idempotent upserts)
+    const ses2 = (await t("select public.onboarding_start($1) id", [A.schoolId])).row?.id;
+    await asOwner("update onboarding_sessions set answers=(select answers from onboarding_sessions where id=$1) where id=$2", [ses, ses2]);
+    const p2 = (await t("select public.onboarding_plan($1) p", [ses2])).row?.p;
+    await t("select public.onboarding_apply($1,$2)", [ses2, p2?.plan_hash]);
+    out.after2 = (await asOwner("select count(*)::int n from classes where school_id=$1 and grade_level like 'Onb %'", [A.schoolId])).row?.n;
+    const ses3 = (await t("select public.onboarding_start($1) id", [A.schoolId])).row?.id;
+    await asOwner("update onboarding_sessions set answers=(select answers from onboarding_sessions where id=$1) || '{\"institution\":{\"bands\":[\"tertiary\"]}}' where id=$2", [ses, ses3]);
+    out.tertiary = await t("select public.onboarding_plan($1)", [ses3]);
+    await act(B.admin); out.bOnb = await t("select public.onboarding_plan($1)", [ses]);
+    out.audit = (await asOwner("select count(*)::int n from audit_logs where school_id=$1 and action ~ '^scholar\\.(role_assignment_scope|school_shifts|school_levels|break_glass|onboarding)'", [A.schoolId])).row?.n;
+  });
+  const al = (r) => r?.allow === true, dl = (r) => r?.deciding_layer;
+  rec("scopes", "Scope set limits a role to its campus: same role allowed in North, refused in South (decided by scope layer)",
+    v.setOk?.ok && al(v.chkIn) && !al(v.chkOut) && dl(v.chkOut) === "scope", `in ${dl(v.chkIn) ?? W_ERR(v.chkInRaw)}; out ${dl(v.chkOut)}`, "critical");
+  rec("scopes", "Scope refs must belong to the school; unknown dimension and empty sets refused", !v.badRef?.ok && !v.badDim?.ok && !v.empty?.ok,
+    `${W_ERR(v.badRef)} | ${W_ERR(v.badDim)} | ${W_ERR(v.empty)}`, "high");
+  rec("scopes", "Multi-select: OR within a dimension, AND across dimensions (campus North|South AND girls section)",
+    !al(v.chkGenderMiss) && al(v.chkGenderHit), `before girls section ${al(v.chkGenderMiss)}; after ${al(v.chkGenderHit)} ${al(v.chkGenderHit) ? "" : W_ERR(v.multi)}`, "critical");
+  rec("scopes", "Time-bound assignment stops granting after valid_until", !al(v.chkExpired), dl(v.chkExpired), "high");
+  rec("scopes", "Assigner can never grant wider than own scope, cannot leave their restricted dimension open, cannot widen self",
+    !v.widen?.ok && !v.open?.ok && v.within?.ok && !v.selfWiden?.ok && !v.directScope?.ok,
+    `widen ${W_ERR(v.widen)}; open ${W_ERR(v.open)}; self ${W_ERR(v.selfWiden)}; direct ${W_ERR(v.directScope)}`, "critical");
+  rec("authz", "Tenant gate: another school's admin is refused; users cannot evaluate for someone else",
+    !al(v.cross) && dl(v.cross) === "tenant" && !v.spoof?.ok, `cross ${dl(v.cross)}; spoof ${W_ERR(v.spoof)}`, "critical");
+  rec("authz", "ReBAC: parent sees own child, not another child", al(v.parentKid) && dl(v.parentKid) === "rebac" && !al(v.parentOther),
+    `kid ${dl(v.parentKid)}; other ${dl(v.parentOther)}`, "critical");
+  rec("authz", "Consent gate: AI tutor refused without ai_processing consent", !al(v.noConsent) && dl(v.noConsent) === "consent", dl(v.noConsent), "critical");
+  rec("authz", "Break-glass: needs a real reason, alerts principal/DPO, grants sensitive read for 1 hour only, cannot be deleted",
+    !v.bgShort?.ok && v.bg?.ok && al(v.bgAllow) && dl(v.bgAllow) === "break_glass" && v.bgAlerts >= 1 && !al(v.bgExpired) && !v.bgDelete?.ok,
+    `short ${W_ERR(v.bgShort)}; alerts ${v.bgAlerts}; expired ${dl(v.bgExpired)}; delete ${W_ERR(v.bgDelete)}`, "critical");
+  rec("shadow", "Shadow mode logs new vs legacy decisions next to live attendance writes without blocking them",
+    v.att?.ok && v.shadowRows?.n >= 1 && v.report?.checks >= 1, `insert ${W_ERR(v.att)}; logged ${v.shadowRows?.n}; agree ${v.shadowRows?.a}; report ${JSON.stringify(v.report)}`, "high");
+  rec("shadow", "Shadow report is admin/audit only; shadow log cannot be forged", !v.teacherReport?.ok && !v.shadowForge?.ok,
+    `${W_ERR(v.teacherReport)} | ${W_ERR(v.shadowForge)}`, "high");
+  rec("onboarding", "Interview is adaptive (shifts asked because has_shifts; boarding + SSS follow-ups) and plan refuses an incomplete interview",
+    (v.n1?.remaining ?? []).includes("shifts") && (v.n2?.follow_ups ?? []).some((x) => /Boarding/.test(x)) && (v.n3?.remaining ?? []).length === 0 && !v.earlyPlan?.ok,
+    `follow-ups ${JSON.stringify(v.n2?.follow_ups)}; early ${W_ERR(v.earlyPlan)}`, "high");
+  rec("onboarding", "Dry-run then apply provisions campuses, sections, shifts, levels, arms (named + lettered), houses, NERDC curriculum",
+    v.apply && v.made?.classes === 8 && v.made?.named === 3 && v.made?.leveled === 8 && v.made?.shifts >= 2 && v.made?.levels >= 4 && v.made?.cur === 2 && v.made?.houses === 2 && v.made?.res === "both",
+    `plan ${v.plan?.new_items} items; apply ${W_ERR(v.applyRaw)}; made ${JSON.stringify(v.made)}`, "critical");
+  rec("onboarding", "Apply needs the reviewed plan hash; replay and a second session create no duplicates",
+    !v.badHash?.ok && v.replay?.replay === true && v.after2 === 8, `bad hash ${W_ERR(v.badHash)}; after re-run ${v.after2} classes`, "critical");
+  rec("onboarding", "Tertiary refused in v1 (nursery to SSS first); teacher and other schools cannot run it",
+    !v.tertiary?.ok && !v.teacherOnb?.ok && !v.bOnb?.ok, `${W_ERR(v.tertiary)} | ${W_ERR(v.teacherOnb)} | ${W_ERR(v.bOnb)}`, "critical");
+  rec("audit", "Scope sets, structure, break-glass and onboarding are audited", v.audit >= 6, `${v.audit} audit rows`, "high");
+}
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
 await pool.end();
