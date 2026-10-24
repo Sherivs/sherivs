@@ -165,6 +165,18 @@ DROP TRIGGER IF EXISTS integration_audit_no_truncate ON public.integration_audit
 CREATE TRIGGER integration_audit_no_truncate BEFORE TRUNCATE ON public.integration_audit
   FOR EACH STATEMENT EXECUTE FUNCTION public._integration_audit_immutable();
 
+-- Schools the caller administers, computed ONCE per statement (initplan), not per row.
+-- (A per-row scholar_can() in the policy took minutes on 100k sync_runs in the sim lab.)
+CREATE OR REPLACE FUNCTION public._integration_admin_schools() RETURNS uuid[]
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
+  SELECT coalesce(array_agg(DISTINCT s), '{}') FROM (
+    SELECT public.get_my_school_id() AS s
+    UNION SELECT m.school_id FROM public.organization_memberships m WHERE m.user_id = auth.uid() AND m.is_active
+  ) x WHERE s IS NOT NULL AND public.scholar_can(s, 'settings.manage');
+$$;
+REVOKE ALL ON FUNCTION public._integration_admin_schools() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public._integration_admin_schools() TO authenticated;
+
 -- RLS: school admins READ their own school's rows; no direct client writes anywhere.
 DO $$ DECLARE t text; BEGIN
   FOREACH t IN ARRAY ARRAY['integrations','field_mappings','sync_jobs','sync_runs','external_id_map','integration_records','integration_audit'] LOOP
@@ -174,7 +186,7 @@ DO $$ DECLARE t text; BEGIN
     EXECUTE format('GRANT SELECT ON public.%I TO authenticated', t);
     EXECUTE format('GRANT ALL ON public.%I TO service_role', t);
     EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', t || '_school_read', t);
-    EXECUTE format('CREATE POLICY %I ON public.%I FOR SELECT TO authenticated USING ((SELECT public.scholar_can(school_id, ''settings.manage'')))', t || '_school_read', t);
+    EXECUTE format('CREATE POLICY %I ON public.%I FOR SELECT TO authenticated USING (school_id = ANY ((SELECT public._integration_admin_schools())::uuid[]) OR (SELECT public.is_super_admin()))', t || '_school_read', t);
   END LOOP;
 END $$;
 -- Records may contain personal data: hide raw staging rows from everyone but service_role.

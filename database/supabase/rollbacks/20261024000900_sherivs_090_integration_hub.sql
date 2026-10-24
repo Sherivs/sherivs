@@ -7,5 +7,5 @@ DROP FUNCTION IF EXISTS public.integration_claim_due_jobs(integer), public.integ
   public._integration_audit(uuid, uuid, text, jsonb);
 DROP TABLE IF EXISTS public.integration_audit, public.integration_records, public.external_id_map, public.sync_runs,
   public.sync_jobs, public.field_mappings, public.integrations, public.connector_manifests;
-DROP FUNCTION IF EXISTS public._integration_audit_immutable();
+DROP FUNCTION IF EXISTS public._integration_audit_immutable(), public._integration_admin_schools();
 COMMIT;

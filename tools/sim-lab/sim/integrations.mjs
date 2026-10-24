@@ -151,7 +151,9 @@ await check("webhook target lookup is service_role only", async () => {
   assert(t.school_id === w.A.sid, "target");
 });
 await check("scheduler claims due jobs once (SKIP LOCKED / next_run_at advance)", async () => {
-  const w = await world(); const idA = await connect(w, "A"); await ingest(idA, recs(1), "sched-000001"); await svc();
+  const w = await world(); const idA = await connect(w, "A"); await ingest(idA, recs(1), "sched-000001");
+  await owner(); await c.query("update sync_jobs set next_run_at = now() + interval '1 day' where integration_id <> $1", [idA]); // isolate from other data in the DB
+  await svc();
   const a = (await c.query("select * from public.integration_claim_due_jobs(500)")).rows.filter((j) => j.integration_id === idA).length;
   const b = (await c.query("select * from public.integration_claim_due_jobs(500)")).rows.filter((j) => j.integration_id === idA).length;
   assert(a === 7 && b === 0, `first=${a} second=${b}`);
