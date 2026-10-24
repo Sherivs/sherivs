@@ -110,3 +110,23 @@ Deleted: `components/public/site.tsx`, `components/public/sections.tsx`, the pro
 
 ## 12. Verification
 Unit: catalog/SQL parity, validator, generator per org kind (no empty blocks, deterministic), guards, theme contrast, safe URLs/rich text, i18n completeness. Sim: RLS + RPC scenarios incl. cross-tenant draft/publish denial, unverified-domain non-resolution, published-only reads, opt-in staff, rollback, concurrency conflict. k6: 1,000 VUs of anonymous `website_public` across 1,000 schools with cross-tenant probes. Migration rollback twice + re-apply. Screenshots of three generated sites via headless Chromium.
+
+## 13. Delivery (3 phases) and measured results
+| Phase | Branch | Contents |
+|---|---|---|
+| 1 | `sherivs/website-engine-1` | Migration `20261024001000_sherivs_100_website_engine` + rollback, catalog/generator/validator/theme/i18n libs, 17 unit tests, sim (9 scenarios), k6 data path, neutrality baseline entries (W9/029 precedent) |
+| 2 | `sherivs/website-engine-2` | SSR renderer (30 block components), host-based tenant loader with edge caching, `/` + `/pages/$slug`, per-host sitemap, SEO/JSON-LD/hreflang, prototype deleted, 16 renderer tests |
+| 3 | `sherivs/website-engine-3` | `/admin/website` builder, pure editor ops (7 tests), onboarding bootstrap, nav entry, demo seed, SSR k6 |
+
+Measured on the local sim (Postgres 17 + PostgREST, app built with `vite build`, served by Node 22 as in the Dockerfile):
+- Data path (`website_public` via PostgREST), 1,000 VUs over 1,000 schools: 0 % errors, p95 896 ms, 1,790 req/s, 0 cross-tenant leaks, 0 cross-tenant writes.
+- SSR origin (one Node process, no CDN), 1,000 VUs for 60 s across 3 tenants by Host header: 0 server errors, 0 cross-tenant leaks, 203 req/s, median 1.17 s, p95 2.74 s; 3.8 % client-side timeouts at saturation. Production relies on the `s-maxage=60, stale-while-revalidate=600` edge cache plus horizontal instances, so the origin sees roughly one render per URL per minute per edge.
+- Headless Chromium against the running app: 3 generated sites (custom domain, subdomain, custom domain + Hausa inner page), 3 mobile views; no page errors, no horizontal overflow. `www.littlepearls.sch.ng/?school=fu-arewa` renders Little Pearls byte-for-byte: a query parameter can never switch tenant on a tenant host.
+
+Known limits / follow-ups:
+- `public/robots.txt` (static) shadows the dynamic robots route, so tenant hosts advertise the platform sitemap. Each tenant host does serve its own `/sitemap.xml`. Removing the static file is a platform decision (left untouched).
+- The root layout still loads Google Fonts for the app shell; site pages use system font stacks and add no font downloads.
+- Hausa/Yorùbá/Igbo/Naijá UI strings need native-speaker review; school-entered text is never machine-copied into other locales.
+- Website tokens mirror SDS v1; Track D can restyle `website.css` without touching block code.
+- `schools.section_*_enabled` and the hero columns are kept (no destructive migration) but no longer read.
+- The builder was verified by unit tests and the RPC sim; it was not screenshotted, because the sim has no auth server for an admin session.

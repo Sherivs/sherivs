@@ -6,6 +6,7 @@ import { useApp } from "@/contexts/app-context";
 import { PortalPage } from "@/components/portal-shell";
 import { Button } from "@/components/ui/button";
 import { rpc } from "@/lib/scholar/rpc";
+import { ensureWebsite } from "@/lib/website/bootstrap";
 
 export const Route = createFileRoute("/_authenticated/admin/onboarding-interview")({ ssr: false, component: InterviewPage });
 type Next = { remaining: string[]; next: string | null; follow_ups: string[] };
@@ -36,7 +37,9 @@ function InterviewPage() {
   }
   async function dryRun() { try { setPlan(await rpc<Plan>("onboarding_plan", { p_session: session })); } catch (e) { toast.error((e as Error).message); } }
   async function apply() {
-    try { const r = await rpc<Record<string, number>>("onboarding_apply", { p_session: session, p_plan_hash: plan?.plan_hash }); toast.success(`Workspace ready: ${r.classes_created ?? 0} classes`); }
+    try { const r = await rpc<Record<string, number>>("onboarding_apply", { p_session: session, p_plan_hash: plan?.plan_hash }); toast.success(`Workspace ready: ${r.classes_created ?? 0} classes`);
+      // SHERIVS-100: first-time website from the answers (no-op when a website already exists).
+      ensureWebsite(org).then((w) => { if (w === "created") toast.success("Your website is live. Edit it under Website."); }).catch(() => toast.message("Website not created automatically: open Website to build it.")); }
     catch (e) { toast.error((e as Error).message); }
   }
   return (

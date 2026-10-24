@@ -80,7 +80,11 @@ export function SiteView({ site, slug, lang, preview, documentOverride, jsonLd }
       <a href="#sw-main" className="sw-skip">
         Skip to content
       </a>
-      <header className="sw-header" data-long={nav.length > 6 ? "" : undefined}>
+      <header
+        className="sw-header"
+        data-long={nav.length > 6 ? "" : undefined}
+        data-menu={nav.reduce((n, x) => n + x.label.length, 0) > 95 ? "" : undefined}
+      >
         <div className="sw-wrap sw-header-row">
           <a className="sw-brand" href={home}>
             {logo ? (

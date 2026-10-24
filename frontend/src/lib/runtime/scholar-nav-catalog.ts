@@ -1186,6 +1186,14 @@ export const SCHOLAR_NAV_CONTRIBUTIONS: readonly NavContribution[] = [
         orderHint: 2,
       },
       {
+        key: "r001.org_admin.website",
+        label: "Website",
+        iconKey: "settings",
+        url: "/admin/website",
+        capabilities: ["r001:org_admin.website"],
+        orderHint: 2,
+      },
+      {
         key: "r001.org_admin.wallet",
         label: "School wallet",
         iconKey: "finance",

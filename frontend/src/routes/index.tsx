@@ -46,6 +46,8 @@ export const Route = createFileRoute("/")({
       const h = siteHead(loaderData.site, "home", loaderData.lang, loaderData.preview);
       return { meta: h.meta, links: h.links };
     }
+    if (loaderData?.tenant)
+      return { meta: [{ title: "Site not available" }, { name: "robots", content: "noindex" }] };
     return platformHead();
   },
 });

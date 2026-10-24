@@ -123,3 +123,17 @@
 .sw .sw-header[data-long] .sw-nav { display: none; }
 .sw .sw-header[data-long] .sw-menu { display: block; }
 @media (min-width: 1200px) { .sw .sw-header[data-long] .sw-nav { display: flex; } .sw .sw-header[data-long] .sw-menu { display: none; } }
+/* Inside the app shell: the site's own theme font and list styles win over app/Tailwind globals. */
+.sw h1, .sw h2, .sw h3, .sw h4 { font-family: var(--sw-font); letter-spacing: -0.01em; }
+.sw .sw-prose ul, .sw .sw-bullets { list-style: disc; }
+.sw .sw-bullets { margin: 0; padding-left: 1.1em; color: var(--sw-text-2); }
+.sw .sw-brand { flex: 0 1 auto; min-width: 0; }
+.sw .sw-brand span { min-width: 0; }
+.sw .sw-menu, .sw .sw-nav { flex-shrink: 0; }
+.sw .sw-pagehead h1 { font-weight: 800; }
+/* Menus whose labels are long (e.g. Hausa or many pages) always use the compact menu. */
+.sw .sw-header[data-menu] .sw-nav { display: none; }
+.sw .sw-header[data-menu] .sw-menu { display: block; }
+/* Language links inside the mobile menu: inline pills, not a second dropdown. */
+.sw .sw-menu nav.sw-langs { position: static; display: flex; flex-wrap: wrap; gap: 8px; border: 0; padding: 12px 0 4px; background: none; }
+.sw .sw-menu nav.sw-langs a { border: 1px solid var(--sw-border); border-radius: 999px; padding: 6px 12px; min-height: 0; font-weight: 600; }

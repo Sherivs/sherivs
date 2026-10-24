@@ -292,7 +292,7 @@ function Departments({ b, c }: P) {
         {g.map((x, i) => (
           <div key={i} className="sw-card">
             <h3 className="sw-h3">{T(c, x.name)}</h3>
-            <ul style={{ margin: 0, paddingLeft: "1.1em", color: "var(--sw-text-2)" }}>
+            <ul className="sw-bullets">
               {T(c, x.items)
                 .split("\n")
                 .filter(Boolean)
