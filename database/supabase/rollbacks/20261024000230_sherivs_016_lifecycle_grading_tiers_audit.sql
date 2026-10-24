@@ -31,7 +31,7 @@ DROP FUNCTION IF EXISTS public.session_rollover(uuid, text, text, boolean, jsonb
 DROP FUNCTION IF EXISTS public.configure_academic_defaults(uuid, text, jsonb);
 DROP TABLE IF EXISTS public.member_lifecycle_events;
 DROP TABLE IF EXISTS public.session_rollovers;
-DROP TABLE IF EXISTS public.progression_rules;
+DROP TABLE IF EXISTS public.progression_rules;  -- includes max_carryover_courses / probation_cgpa (7+ carry-over repeat rule)
 DROP FUNCTION IF EXISTS public.forbid_mutation_append_only() CASCADE;
 DROP INDEX IF EXISTS public.idx_students_school_status;
 ALTER TABLE public.students DROP COLUMN IF EXISTS status, DROP COLUMN IF EXISTS current_level, DROP COLUMN IF EXISTS programme,

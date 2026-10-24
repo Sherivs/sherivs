@@ -31,7 +31,7 @@
   "area": "enrollment",
   "name": "Bulk intake of 2,000 polytechnic students",
   "pass": true,
-  "detail": "30 ms",
+  "detail": "31 ms",
   "severity": "medium"
  },
  {
@@ -52,7 +52,7 @@
   "area": "rollover",
   "name": "Admin promotes 12,000 university students in one statement",
   "pass": true,
-  "detail": "11000 rows in 296 ms (ad-hoc SQL, no app routine)",
+  "detail": "11000 rows in 316 ms (ad-hoc SQL, no app routine)",
   "severity": "medium"
  },
  {
@@ -435,9 +435,9 @@
  },
  {
   "area": "lifecycle",
-  "name": "University: CGPA below 1.00 repeats; only final-level students graduate",
+  "name": "University: 7+ carry-over courses repeats (CGPA < 1.00 = probation flag only); only final-level students graduate",
   "pass": true,
-  "detail": "11000 promoted, 661 repeated (probation), 339 graduated, 2000 need a new class arm",
+  "detail": "11000 promoted, 661 repeated (7+ carry-overs or final-level outstanding), 0 on probation, 339 graduated, 2000 need a new class arm",
   "severity": "high"
  },
  {

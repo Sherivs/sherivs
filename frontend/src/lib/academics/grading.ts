@@ -195,6 +195,8 @@ export interface RolloverSummary {
   withdrawn: number;
   transferred: number;
   skipped: number;
+  /** Students below the probation CGPA (flag only; universities repeat on 7+ carry-over courses). */
+  probation?: number;
   promoted_without_class: number;
   by_level: Record<string, number>;
   sample: Array<{
@@ -204,6 +206,8 @@ export interface RolloverSummary {
     to_level: string | null;
     cgpa: number | null;
     carry_units: number;
+    carry_courses?: number;
+    probation?: boolean;
     reason: string | null;
   }>;
   already_applied: boolean;

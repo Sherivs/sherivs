@@ -223,8 +223,10 @@ CREATE TABLE IF NOT EXISTS public.progression_rules (
   programme              text,          -- NULL = applies to every programme
   from_level             text NOT NULL,
   to_level               text,          -- NULL = final level: graduate
-  min_cgpa               numeric(4,2),  -- below this: repeat (probation)
+  min_cgpa               numeric(4,2),  -- below this: repeat (polytechnic defaults; NULL for universities)
   max_carryover_units    int,           -- more outstanding units than this: repeat
+  max_carryover_courses  int,           -- this many or more outstanding carry-over COURSES: repeat the year (NG universities: 7)
+  probation_cgpa         numeric(4,2),  -- below this: flagged probation/withdrawal review, NOT an automatic repeat
   created_at             timestamptz NOT NULL DEFAULT now()
 );
 CREATE UNIQUE INDEX IF NOT EXISTS progression_rules_uniq ON public.progression_rules (school_id, coalesce(programme, ''), from_level);
@@ -284,9 +286,11 @@ BEGIN
     FOR v_prog IN SELECT NULL UNION ALL SELECT jsonb_object_keys(p_final_levels) LOOP
       v_final := coalesce(nullif(regexp_replace(CASE WHEN v_prog IS NULL THEN coalesce(p_final_levels->>'*', '400L') ELSE p_final_levels->>v_prog END, '\D', '', 'g'), '')::int, 400);
       FOR i IN 1 .. v_final / 100 LOOP
-        INSERT INTO public.progression_rules (school_id, programme, from_level, to_level, min_cgpa, max_carryover_units)
+        -- Nigerian university practice: 7+ outstanding carry-over courses repeats the year; CGPA < 1.00 is
+        -- only a probation/withdrawal flag. Final level cannot graduate with any outstanding carry-over.
+        INSERT INTO public.progression_rules (school_id, programme, from_level, to_level, min_cgpa, max_carryover_units, max_carryover_courses, probation_cgpa)
         VALUES (p_school, v_prog, (i * 100) || 'L', CASE WHEN i * 100 < v_final THEN ((i + 1) * 100) || 'L' END,
-                1.00, CASE WHEN i * 100 < v_final THEN 15 ELSE 0 END)
+                NULL, CASE WHEN i * 100 < v_final THEN NULL ELSE 0 END, CASE WHEN i * 100 < v_final THEN 7 END, 1.00)
         ON CONFLICT DO NOTHING;
         v_n := v_n + 1;
       END LOOP;
@@ -314,7 +318,7 @@ BEGIN
   END IF;
 
   CREATE TEMP TABLE IF NOT EXISTS _rollover_plan (student_id uuid PRIMARY KEY, from_status text, from_level text, programme text,
-    decision text, to_level text, to_class uuid, cgpa numeric, carry_units int, reason text) ON COMMIT DROP;
+    decision text, to_level text, to_class uuid, cgpa numeric, carry_units int, carry_courses int, probation boolean, reason text) ON COMMIT DROP;
   TRUNCATE _rollover_plan;
 
   INSERT INTO _rollover_plan
@@ -331,9 +335,10 @@ BEGIN
       FROM public.grades g JOIN s ON s.id = g.student_id
      WHERE g.credit_units > 0 AND g.grade_point IS NOT NULL
      ORDER BY g.student_id, g.subject, g.academic_year DESC, g.attempt DESC, g.created_at DESC),
-  co AS (SELECT student_id, sum(credit_units)::int units FROM last_attempt WHERE grade_point = 0 GROUP BY student_id),
+  co AS (SELECT student_id, sum(credit_units)::int units, count(*)::int courses FROM last_attempt WHERE grade_point = 0 GROUP BY student_id),
   r AS (
-    SELECT s.*, rule.id rule_id, rule.to_level, rule.min_cgpa, rule.max_carryover_units, gp.cgpa, coalesce(co.units, 0) carry_units,
+    SELECT s.*, rule.id rule_id, rule.to_level, rule.min_cgpa, rule.max_carryover_units, rule.max_carryover_courses, rule.probation_cgpa,
+           gp.cgpa, coalesce(co.units, 0) carry_units, coalesce(co.courses, 0) carry_courses,
            p_overrides->>s.id::text ovr
       FROM s
       LEFT JOIN LATERAL (SELECT * FROM public.progression_rules pr
@@ -346,6 +351,7 @@ BEGIN
         WHEN r.ovr IN ('repeat', 'promote', 'graduate', 'withdraw', 'transfer') THEN r.ovr
         WHEN r.rule_id IS NULL THEN 'skip'
         WHEN r.min_cgpa IS NOT NULL AND r.cgpa IS NOT NULL AND r.cgpa < r.min_cgpa THEN 'repeat'
+        WHEN r.max_carryover_courses IS NOT NULL AND r.carry_courses >= r.max_carryover_courses THEN 'repeat'
         WHEN r.max_carryover_units IS NOT NULL AND r.carry_units > r.max_carryover_units THEN 'repeat'
         WHEN r.to_level IS NULL THEN 'graduate'
         ELSE 'promote' END decision,
@@ -353,15 +359,18 @@ BEGIN
         WHEN r.ovr IS NOT NULL THEN 'override'
         WHEN r.rule_id IS NULL THEN 'no progression rule for level ' || coalesce(r.current_level, '(none)')
         WHEN r.min_cgpa IS NOT NULL AND r.cgpa IS NOT NULL AND r.cgpa < r.min_cgpa THEN 'CGPA ' || r.cgpa || ' below ' || r.min_cgpa
+        WHEN r.max_carryover_courses IS NOT NULL AND r.carry_courses >= r.max_carryover_courses THEN r.carry_courses || ' carry-over courses outstanding (repeat at ' || r.max_carryover_courses || '+)'
         WHEN r.max_carryover_units IS NOT NULL AND r.carry_units > r.max_carryover_units THEN r.carry_units || ' carry-over units outstanding'
-        ELSE NULL END reason
+        WHEN r.probation_cgpa IS NOT NULL AND r.cgpa IS NOT NULL AND r.cgpa < r.probation_cgpa THEN 'probation: CGPA ' || r.cgpa || ' below ' || r.probation_cgpa
+        ELSE NULL END reason,
+      (r.probation_cgpa IS NOT NULL AND r.cgpa IS NOT NULL AND r.cgpa < r.probation_cgpa) probation
       FROM r)
   SELECT d.id, d.status, d.current_level, d.programme, d.decision,
          CASE WHEN d.decision = 'promote' THEN d.to_level ELSE d.current_level END,
          CASE WHEN d.decision = 'promote' THEN (
            SELECT c.id FROM public.classes c WHERE c.school_id = p_school AND c.grade_level = d.to_level
               AND coalesce(c.programme, '') = coalesce(d.programme, '') ORDER BY c.name LIMIT 1) END,
-         d.cgpa, d.carry_units, d.reason
+         d.cgpa, d.carry_units, d.carry_courses, d.probation, d.reason
     FROM d;
 
   SELECT jsonb_build_object(
@@ -373,10 +382,11 @@ BEGIN
       'withdrawn', count(*) FILTER (WHERE decision = 'withdraw'),
       'transferred', count(*) FILTER (WHERE decision = 'transfer'),
       'skipped', count(*) FILTER (WHERE decision = 'skip'),
+      'probation', count(*) FILTER (WHERE probation),
       'promoted_without_class', count(*) FILTER (WHERE decision = 'promote' AND to_class IS NULL),
       'by_level', coalesce((SELECT jsonb_object_agg(k, v) FROM (SELECT coalesce(from_level, '(none)') || ' -> ' || decision k, count(*) v
                      FROM _rollover_plan GROUP BY 1) x), '{}'::jsonb),
-      'sample', coalesce((SELECT jsonb_agg(to_jsonb(p) - 'programme') FROM (SELECT * FROM _rollover_plan WHERE decision <> 'promote' ORDER BY decision, student_id LIMIT 25) p), '[]'::jsonb))
+      'sample', coalesce((SELECT jsonb_agg(to_jsonb(p) - 'programme') FROM (SELECT * FROM _rollover_plan WHERE decision <> 'promote' OR probation ORDER BY decision, student_id LIMIT 25) p), '[]'::jsonb))
     INTO v_summary FROM _rollover_plan;
 
   IF p_dry_run THEN RETURN v_summary || jsonb_build_object('already_applied', false); END IF;

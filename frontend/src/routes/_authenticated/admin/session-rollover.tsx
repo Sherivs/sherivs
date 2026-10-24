@@ -147,6 +147,7 @@ function SessionRolloverPage() {
             <StatCard label="Students" value={preview.total} />
             <StatCard label="Promoted" value={preview.promoted} />
             <StatCard label="Repeating" value={preview.repeated} />
+            <StatCard label="On probation" value={preview.probation ?? 0} />
             <StatCard label="Graduating" value={preview.graduated} />
             <StatCard label="Skipped" value={preview.skipped} />
           </SectionGrid>
@@ -191,7 +192,8 @@ function SessionRolloverPage() {
                   <li key={s.student_id}>
                     {DECISION_LABEL[s.decision] ?? s.decision}: {s.from_level ?? "—"}
                     {s.cgpa != null ? ` · CGPA ${s.cgpa}` : ""}
-                    {s.carry_units ? ` · ${s.carry_units} carry-over units` : ""}
+                    {s.carry_courses ? ` · ${s.carry_courses} carry-over courses` : s.carry_units ? ` · ${s.carry_units} carry-over units` : ""}
+                    {s.probation ? " · probation" : ""}
                     {s.reason ? ` · ${s.reason}` : ""}
                   </li>
                 ))}

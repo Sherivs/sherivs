@@ -219,13 +219,15 @@ const inTx = async (uid, fn, role = "authenticated") => { try { return { ok: tru
   rec("lifecycle", "Admin cannot roll over another school", !x.ok, x.ok ? "cross-school rollover allowed" : "denied", "critical");
   const uni = await inTx(E.admin, async (c) => {
     const r = (await c.query("select public.session_rollover($1,'2025/2026','2026/2027',false) r", [E.schoolId])).rows[0].r;
-    const badRepeat = (await c.query(`select count(*)::int n from member_lifecycle_events e where e.school_id=$1 and e.to_status='promoted'
-       and (select sum(g.credit_units*g.grade_point)/nullif(sum(g.credit_units),0) from grades g where g.student_id=e.student_id and g.credit_units>0) < 1.0`, [E.schoolId])).rows[0].n;
-    const gradWrong = (await c.query("select count(*)::int n from member_lifecycle_events e where e.school_id=$1 and e.to_status='graduated' and e.from_level not in ('500L','600L')", [E.schoolId])).rows[0].n;
-    return { r, badRepeat, gradWrong };
+    const co = `(select count(*) from (select distinct on (g.subject) g.grade_point from grades g where g.student_id=e.student_id and g.credit_units>0 and g.grade_point is not null
+       order by g.subject, g.academic_year desc, g.attempt desc, g.created_at desc) la where la.grade_point=0)`;
+    const badPromote = (await c.query(`select count(*)::int n from member_lifecycle_events e where e.school_id=$1 and e.to_status='promoted' and ${co} >= 7`, [E.schoolId])).rows[0].n;
+    const badRepeat = (await c.query(`select count(*)::int n from member_lifecycle_events e where e.school_id=$1 and e.to_status='repeated' and e.from_level not in ('400L','500L','600L') and ${co} < 7`, [E.schoolId])).rows[0].n;
+    const gradWrong = (await c.query("select count(*)::int n from member_lifecycle_events e where e.school_id=$1 and e.to_status='graduated' and e.from_level not in ('400L','500L','600L')", [E.schoolId])).rows[0].n;
+    return { r, badPromote, badRepeat, gradWrong };
   });
-  rec("lifecycle", "University: CGPA below 1.00 repeats; only final-level students graduate", uni.ok && uni.v.badRepeat === 0 && uni.v.gradWrong === 0,
-    uni.ok ? `${uni.v.r.promoted} promoted, ${uni.v.r.repeated} repeated (probation), ${uni.v.r.graduated} graduated, ${uni.v.r.promoted_without_class} need a new class arm` : uni.err, "high");
+  rec("lifecycle", "University: 7+ carry-over courses repeats (CGPA < 1.00 = probation flag only); only final-level students graduate", uni.ok && uni.v.badPromote === 0 && uni.v.badRepeat === 0 && uni.v.gradWrong === 0,
+    uni.ok ? `${uni.v.r.promoted} promoted, ${uni.v.r.repeated} repeated (7+ carry-overs or final-level outstanding), ${uni.v.r.probation} on probation, ${uni.v.r.graduated} graduated, ${uni.v.r.promoted_without_class} need a new class arm` : uni.err, "high");
   const poly = await inTx(D.admin, async (c) => {
     const s = (await c.query("select id from students where school_id=$1 and current_level='ND2' limit 1", [D.schoolId])).rows[0].id;
     await c.query("update grades set ca_score=5, exam_score=10 where student_id=$1", [s]);

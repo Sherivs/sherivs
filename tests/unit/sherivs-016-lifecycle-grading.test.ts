@@ -107,6 +107,14 @@ describe("SHERIVS-016 GPA / CGPA / carry-overs", () => {
 });
 
 describe("SHERIVS-016 migration guarantees", () => {
+  it("universities repeat on 7+ carry-over courses; CGPA < 1.00 is only a probation flag", () => {
+    expect(MIG).toMatch(/max_carryover_courses\s+int/);
+    expect(MIG).toMatch(/probation_cgpa\s+numeric\(4,2\)/);
+    expect(MIG).toContain("NULL, CASE WHEN i * 100 < v_final THEN NULL ELSE 0 END, CASE WHEN i * 100 < v_final THEN 7 END, 1.00)");
+    expect(MIG).toContain("r.carry_courses >= r.max_carryover_courses THEN 'repeat'");
+    expect(MIG).toContain("'probation', count(*) FILTER (WHERE probation)");
+    expect(MIG).not.toMatch(/1\.00, CASE WHEN i \* 100 < v_final THEN 15 ELSE 0 END/);
+  });
   it("rollover is admin-gated, locked, idempotent and audited", () => {
     expect(MIG).toMatch(
       /IF NOT public\.can_administer_org\(p_school\) THEN RAISE EXCEPTION 'not allowed'/,
