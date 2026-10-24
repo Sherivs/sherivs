@@ -1542,6 +1542,37 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
     !v.direct?.ok && !v.bList?.ok && v.bRead === 0 && !v.bResolve?.ok, `${W_ERR(v.direct)} | ${W_ERR(v.bList)} | ${W_ERR(v.bResolve)}`, "critical");
 }
 
+// ---------- A7b. Teacher screen offline flow end to end (SHERIVS-A07b) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+    const cls = (await asOwner("select c.id, c.teacher_id from classes c where c.school_id=$1 and c.teacher_id is not null and exists (select 1 from students s where s.class_id=c.id and s.is_active) order by c.id desc limit 1", [A.schoolId])).row;
+    const kids = (await asOwner("select id from students where class_id=$1 and is_active order by id desc limit 4", [cls.id])).r.rows.map((r) => r.id);
+    const today = (await asOwner("select current_date::text d")).row.d;
+    await asOwner("delete from attendance where student_id = any($1) and date=$2", [kids, today]);
+    // what the teacher screen queues while offline (same shape as lib/offline/attendance-queue.ts)
+    const cap = new Date().toISOString();
+    const items = kids.map((s, i) => ({ id: `q-${i}-${s.slice(0, 8)}`, student_id: s, date: today, status: i === 0 ? "absent" : "present", captured_at: cap }));
+    const batch = `b-${items[0].id}-${items.length}`;
+    // meanwhile the form teacher's colleague (admin) marks kid 0 present at school
+    await asOwner("insert into attendance (school_id, student_id, class_id, date, status, marked_by) values ($1,$2,$3,$4,'present',$5)", [A.schoolId, kids[0], cls.id, today, A.admin]);
+    await act(cls.teacher_id);
+    out.first = (await t("select public.offline_attendance_sync_v2($1,$2::jsonb,now()) r", [batch, JSON.stringify(items)])).row?.r;
+    // response lost: the queue retries the same batch
+    out.retry = (await t("select public.offline_attendance_sync_v2($1,$2::jsonb,now()) r", [batch, JSON.stringify(items)])).row?.r;
+    // a later batch that still contains already-synced items (e.g. two tabs) adds nothing
+    out.later = (await t("select public.offline_attendance_sync_v2($1,$2::jsonb,now()) r", [`b-${items[1].id}-2`, JSON.stringify(items.slice(1, 3))])).row?.r;
+    out.mine = (await t("select count(*)::int n from attendance_sync_conflicts where user_id=$1 and date=$2", [cls.teacher_id, today])).row?.n;
+    out.rows = (await asOwner("select count(*)::int n, count(*) filter (where note like 'offline:%')::int o from attendance where student_id = any($1) and date=$2", [kids, today])).row;
+    await act(A.admin);
+    out.adminSees = ((await t("select * from public.attendance_conflicts_list($1)", [A.schoolId])).r?.rows ?? []).filter((x) => x.batch === batch).length;
+  });
+  rec("attendance_offline", "Teacher screen offline flow: queued marks sync once, a lost-response retry is a replay, overlapping batches add nothing",
+    v.first?.applied === 3 && v.retry?.replay === true && v.later?.applied === 0 && v.later?.duplicates === 2 && v.rows?.n === 4 && v.rows?.o === 3,
+    `first ${JSON.stringify(v.first?.applied)}; retry ${v.retry?.replay}; later ${JSON.stringify(v.later)}; rows ${JSON.stringify(v.rows)}`, "critical");
+  rec("attendance_offline", "A queued mark that disagrees with one saved at school is shown to the teacher and lands in the admin conflict queue",
+    v.mine === 1 && v.adminSees === 1 && v.first?.conflicts?.[0]?.queued === true, `teacher ${v.mine}; admin ${v.adminSees}`, "high");
+}
+
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
 await pool.end();
