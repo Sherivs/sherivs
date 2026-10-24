@@ -1281,6 +1281,39 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
     v.ha?.["nav.fees"] === "Kuɗin makaranta" && v.fr?.["nav.fees"] === "Fees" && v.loc?.ok && !v.locBad?.ok && v.locRow === "yo", `${v.ha?.["nav.fees"]} / ${v.fr?.["nav.fees"]}`, "medium");
   rec("audit", "IVR, alumni, donation and data-sharing changes are audited", v.audit >= 4, `${v.audit} audit rows`, "high");
 }
+// ---------- 21. Wallet top-up initiation + settlement, Igbo label (SHERIVS-026) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+    const svc = async (sql, p = []) => { await c.query("SET LOCAL ROLE service_role"); await c.query("select set_config('request.jwt.claims', '{\"role\":\"service_role\"}', true)");
+      try { return await t(sql, p); } finally { await c.query("SET LOCAL ROLE authenticated"); } };
+    const bal = async () => Number((await asOwner("select balance from school_wallets where school_id=$1", [A.schoolId])).row?.balance ?? 0);
+    const b0 = await bal();
+    const i1 = (await t("select public.wallet_topup_intent_create($1, 25000, 'bursar@sim.local') r", [A.schoolId])).row?.r;
+    out.i1 = i1;
+    out.tooSmall = await t("select public.wallet_topup_intent_create($1, 50, 'bursar@sim.local')", [A.schoolId]);
+    out.badEmail = await t("select public.wallet_topup_intent_create($1, 500, 'nope')", [A.schoolId]);
+    out.otherSchool = await t("select public.wallet_topup_intent_create($1, 500, 'x@sim.local')", [B.schoolId]);
+    out.userSettle = await t("select public.wallet_topup_settle($1,'success',2500000,'NGN')", [i1?.reference]);
+    out.mismatch = (await svc("select public.wallet_topup_settle($1,'success',100,'NGN') r", [(await t("select public.wallet_topup_intent_create($1, 1000, 'b@sim.local') r", [A.schoolId])).row?.r?.reference])).row?.r;
+    out.failed = (await svc("select public.wallet_topup_settle($1,'failed',2500000,'NGN') r", [i1?.reference])).row?.r;
+    out.ok = (await svc("select public.wallet_topup_settle($1,'success',2500000,'NGN') r", [i1?.reference])).row?.r;
+    out.replay = (await svc("select public.wallet_topup_settle($1,'success',2500000,'NGN') r", [i1?.reference])).row?.r;
+    out.unknown = (await svc("select public.wallet_topup_settle('wtp_nope','success',100,'NGN') r")).row?.r;
+    out.delta = (await bal()) - b0;
+    out.intentRow = (await t("select status from wallet_topup_intents where reference=$1", [i1?.reference])).row?.status;
+    await act(A.teacher);
+    out.teacherInit = await t("select public.wallet_topup_intent_create($1, 500, 't@sim.local')", [A.schoolId]);
+    out.teacherSees = (await t("select count(*)::int n from wallet_topup_intents")).row?.n;
+    out.ig = (await t("select public.ui_strings('ig') s")).row?.s;
+  });
+  rec("wallet_topup", "Staff with wallet.topup create a Paystack intent (NGN100–10m, valid email, own school only); users cannot settle",
+    /^wtp_[0-9a-f]{32}$/.test(v.i1?.reference ?? "") && v.i1?.amount_kobo === 2500000 && !v.tooSmall?.ok && !v.badEmail?.ok && !v.otherSchool?.ok && !v.userSettle?.ok && !v.teacherInit?.ok && v.teacherSees === 0,
+    JSON.stringify(v.i1), "high");
+  rec("wallet_topup", "Settlement credits the wallet only on success + exact NGN amount; replays are no-ops; mismatches are rejected",
+    v.mismatch?.outcome === "rejected" && v.failed?.outcome === "ignored" && v.ok?.outcome === "settled" && v.replay?.outcome === "duplicate" && v.unknown?.outcome === "ignored" && v.delta === 25000 && v.intentRow === "paid",
+    `delta ${v.delta}; ${v.ok?.outcome}/${v.replay?.outcome}/${v.mismatch?.outcome}`, "high");
+  rec("i18n", "Igbo dashboard label is no longer English", v.ig?.["nav.dashboard"] && v.ig["nav.dashboard"] !== "Dashboard", String(v.ig?.["nav.dashboard"]), "low");
+}
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
 await pool.end();

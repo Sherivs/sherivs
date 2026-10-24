@@ -16,6 +16,7 @@ import { SystemClock, TimeAuthority } from "@/lib/kernel/time-authority";
 import { settlePaystackCharge, type SettlementDb } from "@/lib/payments/paystack-settlement";
 import { clientIpFromHeaders } from "@/lib/security/request-safety";
 import { verifyHmacHexSignature } from "@/lib/security/webhook-signature.server";
+import { settleWalletTopup, WALLET_TOPUP_PREFIX } from "@/lib/runtime/scholar/wallet-topup.functions";
 
 /**
  * Bounded event contract (§26): an authenticated-but-malformed payload is
@@ -87,7 +88,22 @@ export const Route = createFileRoute("/api/public/webhooks/paystack")({
         let processingStatus = "ignored";
         let errorMessage: string | null = null;
 
-        if (event.event === "charge.success" && event.data?.reference) {
+        if (event.event === "charge.success" && event.data?.reference?.startsWith(WALLET_TOPUP_PREFIX)) {
+          // SHERIVS-026: school wallet top-up. Settlement checks amount/currency against the DB intent.
+          try {
+            const r = await settleWalletTopup(supabaseAdmin, {
+              reference: event.data.reference,
+              status: event.data.status,
+              amountKobo: event.data.amount,
+              currency: event.data.currency,
+            });
+            schoolId = r.school_id ?? null;
+            processingStatus = r.outcome;
+            errorMessage = r.reason ?? null;
+          } catch {
+            return new Response("Processing error", { status: 500 });
+          }
+        } else if (event.event === "charge.success" && event.data?.reference) {
           try {
             const result = await settlePaystackCharge(supabaseAdmin as unknown as SettlementDb, {
               reference: event.data.reference,

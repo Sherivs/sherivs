@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { naira, rows, rpc, sdb } from "@/lib/scholar/rpc";
+import { initWalletTopup } from "@/lib/runtime/scholar/wallet-topup.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/wallet")({ ssr: false, component: WalletPage });
 
@@ -29,6 +30,14 @@ function WalletPage() {
   const [student, setStudent] = useState("");
   const [amount, setAmount] = useState("");
   const [receipt, setReceipt] = useState("");
+  const [topAmount, setTopAmount] = useState("");
+  const [topEmail, setTopEmail] = useState("");
+  async function topUp() {
+    try {
+      const r = await initWalletTopup({ data: { school_id: org, amount: Number(topAmount), email: topEmail } });
+      window.location.assign(r.authorization_url);
+    } catch (e) { toast.error((e as Error).message); }
+  }
   const wallet = useQuery({ queryKey: ["wallet", org], enabled: !!org, queryFn: () => rows<{ balance: number; low_balance_pct: number }>(sdb.from("school_wallets").select("balance,low_balance_pct").eq("school_id", org)) });
   const ledger = useQuery({ queryKey: ["ledger", org], enabled: !!org, queryFn: () => rows<Ledger>(sdb.from("wallet_ledger").select("*").eq("school_id", org).order("created_at", { ascending: false }).limit(50)) });
   const pools = useQuery({ queryKey: ["pools", org], enabled: !!org, queryFn: () => rows<Pool>(sdb.from("term_usage_pools").select("*").eq("school_id", org)) });
@@ -45,7 +54,10 @@ function WalletPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-lg border p-4"><div className="text-sm text-muted-foreground">Balance</div>
           <div className={`text-3xl font-semibold ${bal < 0 ? "text-red-600" : ""}`}>{naira(bal)}</div>
-          <p className="mt-2 text-xs text-muted-foreground">Top up through Paystack (test mode). Safety messages and OTPs still go out at zero.</p></div>
+          <div className="mt-2 flex gap-2"><Input value={topAmount} onChange={(e) => setTopAmount(e.target.value)} placeholder="Amount (₦)" aria-label="Top-up amount" inputMode="numeric" />
+            <Input value={topEmail} onChange={(e) => setTopEmail(e.target.value)} placeholder="Receipt email" aria-label="Receipt email" type="email" /></div>
+          <Button size="sm" className="mt-2" disabled={!org || Number(topAmount) < 100 || !topEmail} onClick={topUp}>Top up with Paystack</Button>
+          <p className="mt-2 text-xs text-muted-foreground">Paystack test mode. The wallet is credited only after Paystack confirms. Safety messages and OTPs still go out at zero.</p></div>
         <div className="rounded-lg border p-4"><div className="text-sm text-muted-foreground">Leakage this term</div>
           <div className="text-3xl font-semibold">{leak.data?.gap ?? 0}</div>
           <p className="text-xs text-muted-foreground">{leak.data?.students_paid ?? 0} paid · {leak.data?.shares_collected ?? 0} Sherivs shares</p></div>
