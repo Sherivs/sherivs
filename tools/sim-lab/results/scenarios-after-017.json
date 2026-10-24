@@ -1,0 +1,422 @@
+{
+ "migration": "017",
+ "summary": "104/104 passed",
+ "results": [
+  {
+   "status": "PASS",
+   "check": "enrollment :: Admin enrolls a student in own school :: inserted"
+  },
+  {
+   "status": "PASS",
+   "check": "enrollment :: Admin cannot enroll into another school :: rejected by RLS"
+  },
+  {
+   "status": "PASS",
+   "check": "enrollment :: Teacher cannot enroll students :: rejected"
+  },
+  {
+   "status": "PASS",
+   "check": "enrollment :: Duplicate admission number rejected :: unique constraint"
+  },
+  {
+   "status": "PASS",
+   "check": "enrollment :: Bulk intake of 2,000 polytechnic students :: 35 ms"
+  },
+  {
+   "status": "PASS",
+   "check": "rollover :: Database has a session rollover / promotion routine :: 1 matching functions"
+  },
+  {
+   "status": "PASS",
+   "check": "rollover :: Students table can represent graduation / level history :: 3 of status/graduated_at/current_session/level present"
+  },
+  {
+   "status": "PASS",
+   "check": "rollover :: Admin promotes 12,000 university students in one statement :: 11000 rows in 316 ms (ad-hoc SQL, no app routine)"
+  },
+  {
+   "status": "PASS",
+   "check": "rollover :: Admin rollover cannot touch another school :: 0 rows affected"
+  },
+  {
+   "status": "PASS",
+   "check": "results :: Grade letter auto-calculation present :: grades_autocalc, grades_points_fill"
+  },
+  {
+   "status": "PASS",
+   "check": "results :: Grade bands match the common Nigerian 70/60/50/45/40 scale :: A:70-100 B:60-69 C:50-59 D:45-49 E:40-44 F:20-39"
+  },
+  {
+   "status": "PASS",
+   "check": "results :: Scores above 100 (CA 40 + exam 95) are rejected :: rejected"
+  },
+  {
+   "status": "PASS",
+   "check": "results :: Schema supports credit units / grade points for CGPA :: 2 unit/point columns on grades"
+  },
+  {
+   "status": "PASS",
+   "check": "results :: CGPA computed for 12,000 university students (sim-side, 5-point scale) :: 12000 students; mean 3.17; first class 83"
+  },
+  {
+   "status": "PASS",
+   "check": "results :: Student sees only own published results :: 6 own rows, 0 others"
+  },
+  {
+   "status": "PASS",
+   "check": "results :: Parent sees only their children's results :: 2 children visible"
+  },
+  {
+   "status": "PASS",
+   "check": "results :: Teacher cannot change another teacher's scores :: 0 rows changed"
+  },
+  {
+   "status": "PASS",
+   "check": "results :: Published results are locked against teacher edits :: 0 published rows edited by teacher"
+  },
+  {
+   "status": "PASS",
+   "check": "payments :: Intent bound to the school's own subaccount accepted :: accepted"
+  },
+  {
+   "status": "PASS",
+   "check": "payments :: Payment for school A routed to school B's subaccount is rejected :: payment intent subaccount is not the active subaccount of its organization"
+  },
+  {
+   "status": "PASS",
+   "check": "payments :: Existing intent cannot be re-pointed to another school :: payment intent subaccount is not the active subaccount of its organization"
+  },
+  {
+   "status": "PASS",
+   "check": "payments :: Parent cannot mark fees as paid :: 0 rows changed"
+  },
+  {
+   "status": "PASS",
+   "check": "payments :: Bursar cannot edit another school's fees :: 0 rows"
+  },
+  {
+   "status": "PASS",
+   "check": "payments :: Legacy schools.paystack_secret_key column not readable by anon :: column privilege denied"
+  },
+  {
+   "status": "PASS",
+   "check": "payments :: Legacy plaintext per-school Paystack secret column removed :: gone"
+  },
+  {
+   "status": "PASS",
+   "check": "rls :: No user sees another school's rows (5 schools x 4 roles x 10 tables) :: 0 leaking role/table pairs"
+  },
+  {
+   "status": "PASS",
+   "check": "rls :: Anonymous visitor sees no students, results or users :: {\"s\":0,\"g\":0,\"u\":0}"
+  },
+  {
+   "status": "PASS",
+   "check": "rls :: A student cannot read other users' NIN, bank account, salary, phone or face data :: column privileges withheld"
+  },
+  {
+   "status": "PASS",
+   "check": "rls :: A student cannot list classmates' records (medical, address, parent phone) :: 0 other student rows visible"
+  },
+  {
+   "status": "PASS",
+   "check": "privacy :: Teacher cannot SELECT users.nin directly (column privilege) :: permission denied"
+  },
+  {
+   "status": "PASS",
+   "check": "privacy :: SELECT * on users is refused (app must list safe columns) :: denied as expected"
+  },
+  {
+   "status": "PASS",
+   "check": "privacy :: User sees own NIN, account number and salary :: own fields returned"
+  },
+  {
+   "status": "PASS",
+   "check": "privacy :: Teacher sees no colleague phone/NIN/account/salary :: [] visible"
+  },
+  {
+   "status": "PASS",
+   "check": "privacy :: Student sees no staff sensitive fields :: nothing returned"
+  },
+  {
+   "status": "PASS",
+   "check": "privacy :: Bursar sees staff account number + phone, not salary or NIN :: as designed"
+  },
+  {
+   "status": "PASS",
+   "check": "privacy :: Admin sees salary + account + phone, never NIN or face data :: as designed"
+  },
+  {
+   "status": "PASS",
+   "check": "privacy :: Admin gets nothing for another school's staff :: 0 rows"
+  },
+  {
+   "status": "PASS",
+   "check": "privacy :: Anonymous cannot call users_private_fields :: denied"
+  },
+  {
+   "status": "PASS",
+   "check": "limits :: 50 concurrent SMS sends against a 30 quota: exactly 30 allowed :: 30 allowed, counter 30"
+  },
+  {
+   "status": "PASS",
+   "check": "limits :: Negative quantities cannot refund quota :: returned false"
+  },
+  {
+   "status": "PASS",
+   "check": "limits :: School users cannot call the metering function directly :: permission denied"
+  },
+  {
+   "status": "PASS",
+   "check": "limits :: Override longer than 31 days is rejected :: rejected"
+  },
+  {
+   "status": "PASS",
+   "check": "limits :: Schools' subscription tier is linked to entitlement plans :: 5 schools have a tier, 5 have entitlement rows (synced from tier)"
+  },
+  {
+   "status": "PASS",
+   "check": "audit :: 200 linked entries appended :: all accepted"
+  },
+  {
+   "status": "PASS",
+   "check": "audit :: Entry with a wrong previous hash is rejected :: rejected"
+  },
+  {
+   "status": "PASS",
+   "check": "audit :: Entry skipping sequence numbers is rejected :: rejected"
+  },
+  {
+   "status": "PASS",
+   "check": "audit :: Audit entries cannot be edited, deleted or truncated (even by the DB owner) :: update rejected, delete rejected, truncate rejected"
+  },
+  {
+   "status": "PASS",
+   "check": "audit :: Racing writers cannot fork the chain :: 1 of 40 racers won, chain length 1 (losers must retry)"
+  },
+  {
+   "status": "PASS",
+   "check": "audit :: Legacy audit_logs table is append-only :: 2 update/delete guard triggers on audit_logs"
+  },
+  {
+   "status": "PASS",
+   "check": "vault :: Grant valid for 5 minutes accepted :: ttl 300 s"
+  },
+  {
+   "status": "PASS",
+   "check": "vault :: Grant longer than 5 minutes rejected :: ttl 3600 s"
+  },
+  {
+   "status": "PASS",
+   "check": "vault :: Grant whose expiry exceeds issue + 5 min rejected :: expires_at +10 min"
+  },
+  {
+   "status": "PASS",
+   "check": "vault :: Critical grant cannot be approved without a named approver :: rejected"
+  },
+  {
+   "status": "PASS",
+   "check": "vault :: Credential access log is append-only :: rejected"
+  },
+  {
+   "status": "PASS",
+   "check": "vault :: School users cannot read encrypted credential rows :: permission denied"
+  },
+  {
+   "status": "PASS",
+   "check": "vault :: School admin can read own credential access log (product promise) :: 1 rows visible (legacy admin mapped to role:administrator)"
+  },
+  {
+   "status": "PASS",
+   "check": "lifecycle :: Dry-run preview for 12,000 university students changes nothing :: preview: 11000 promote, 661 repeat, 339 graduate, 0 skip"
+  },
+  {
+   "status": "PASS",
+   "check": "lifecycle :: K-12 rollover: SS3 graduates, JSS1 moves into a JSS2 class :: 85 SS3 -> 85 graduated; 86 JSS1 -> 86 in JSS2 classes"
+  },
+  {
+   "status": "PASS",
+   "check": "lifecycle :: Re-running the same rollover is a no-op (idempotent) :: second run already_applied=true"
+  },
+  {
+   "status": "PASS",
+   "check": "lifecycle :: Every change leaves a lifecycle event and an audit entry :: 1200 lifecycle events, 1 audit entry"
+  },
+  {
+   "status": "PASS",
+   "check": "lifecycle :: Teacher cannot run a rollover :: denied"
+  },
+  {
+   "status": "PASS",
+   "check": "lifecycle :: Admin cannot roll over another school :: denied"
+  },
+  {
+   "status": "PASS",
+   "check": "lifecycle :: University: 7+ carry-over courses repeats (CGPA < 1.00 = probation flag only); only final-level students graduate :: 11000 promoted, 661 repeated (7+ carry-overs or final-level outstanding), 0 on probation, 339 graduated, 2000 need a new class arm"
+  },
+  {
+   "status": "PASS",
+   "check": "lifecycle :: Polytechnic: ND2 with failed courses repeats; manual withdraw override honoured :: ND2 student -> repeated; 1 withdrawn by override; 872 ND2/HND2 graduated"
+  },
+  {
+   "status": "PASS",
+   "check": "lifecycle :: Lifecycle history is append-only :: rejected"
+  },
+  {
+   "status": "PASS",
+   "check": "grading :: University results carry 5-point grade points (A=5 ... F=0) :: A=5 B=4 C=3 D=2 E=1 F=0"
+  },
+  {
+   "status": "PASS",
+   "check": "grading :: Polytechnic uses the 4-point NBTE scale (A, AB, B, BC ... F) :: letters A,AB,B,BC,C,CD,D,E,F; max 4.00"
+  },
+  {
+   "status": "PASS",
+   "check": "grading :: K-12 stays on percentage grading (no grade points) :: 0 of 7200 rows have points"
+  },
+  {
+   "status": "PASS",
+   "check": "grading :: SQL GPA equals independent JS computation :: SQL 2.65 over 20 units, JS 2.65"
+  },
+  {
+   "status": "PASS",
+   "check": "grading :: Failed course becomes a carry-over; passing the retake clears it (both attempts count) :: outstanding 3 -> 2; units counted 23"
+  },
+  {
+   "status": "PASS",
+   "check": "grading :: Degree classes follow NUC 4.50/3.50/2.40/1.50 and NBTE 3.50/3.00/2.50/2.00 :: First Class | Second Class Lower | Third Class | Distinction | Pass"
+  },
+  {
+   "status": "PASS",
+   "check": "grading :: Student transcript shows own published results only :: own 8 rows, classmate 0"
+  },
+  {
+   "status": "PASS",
+   "check": "tiers :: Every school's tier maps to an entitlement plan :: enterprise->enterprise growth->growth professional->growth professional->growth starter->starter"
+  },
+  {
+   "status": "PASS",
+   "check": "tiers :: Upgrading a school's tier switches its plan automatically :: starter -> enterprise"
+  },
+  {
+   "status": "PASS",
+   "check": "tiers :: Starter SMS quota (500/month placeholder) enforced from the plan :: 5 of 6 x100 sends allowed"
+  },
+  {
+   "status": "PASS",
+   "check": "tiers :: School users cannot call plan metering directly :: denied"
+  },
+  {
+   "status": "PASS",
+   "check": "audit :: Legacy audit_logs entries are bridged into the hash chain (verifiable by the TS verifier) :: 2 chain entries verified"
+  },
+  {
+   "status": "PASS",
+   "check": "audit :: audit_logs rejects UPDATE and DELETE (even by the DB owner) :: update rejected, delete rejected"
+  },
+  {
+   "status": "PASS",
+   "check": "roles :: School admin cannot read another school's credential log :: 0 rows"
+  },
+  {
+   "status": "PASS",
+   "check": "roles :: Teacher cannot read the credential log :: 0 rows"
+  },
+  {
+   "status": "PASS",
+   "check": "roles :: Demoting a principal ends their administrator assignment :: 0 active assignments after demotion"
+  },
+  {
+   "status": "PASS",
+   "check": "roles :: Every admin/principal is mapped to role:administrator :: 10 active assignments for 10 admins/principals"
+  },
+  {
+   "status": "PASS",
+   "check": "roles :: Nigerian role catalog loaded; every template has mandatory permissions :: 572 roles in 39 categories; 394 mandatory + 165 optional template permissions"
+  },
+  {
+   "status": "PASS",
+   "check": "roles :: Admin assigns a catalog role with class scope :: assigned"
+  },
+  {
+   "status": "PASS",
+   "check": "roles :: One person holds 2 roles; effective permissions are the union :: 15 effective permissions"
+  },
+  {
+   "status": "PASS",
+   "check": "roles :: Admin cannot assign a role to themselves :: no_self_role_grant: you cannot assign a role to yourself"
+  },
+  {
+   "status": "PASS",
+   "check": "roles :: Cannot assign a role to another school's user :: denied / denied"
+  },
+  {
+   "status": "PASS",
+   "check": "roles :: Mandatory permission cannot be switched off :: permission grades.enter is mandatory for role ng.subject_teacher and cannot be toggled"
+  },
+  {
+   "status": "PASS",
+   "check": "roles :: Optional permission toggle applies to holders :: comms.send_class now still granted (via 2nd role)"
+  },
+  {
+   "status": "PASS",
+   "check": "roles :: A role cannot be edited to carry a permission it does not declare :: permission payroll.approve is not an optional permission of role ng.subject_teacher"
+  },
+  {
+   "status": "PASS",
+   "check": "roles :: Protected permission cannot be added as a custom grant :: protected permission payroll.approve can only be held through a catalog role that carries it"
+  },
+  {
+   "status": "PASS",
+   "check": "roles :: Admin can add a custom permission/context to a role :: custom.lab_rota added"
+  },
+  {
+   "status": "PASS",
+   "check": "roles :: Custom role inherits every mandatory permission and guardrail of its base role :: 9 mandatory, 5 guardrails inherited"
+  },
+  {
+   "status": "PASS",
+   "check": "roles :: Role context lists locked mandatory + optional toggles + guardrails :: 9 mandatory / 5 optional / 5 guardrails"
+  },
+  {
+   "status": "PASS",
+   "check": "roles :: Separation of duties: Bursar cannot also be Internal Auditor :: separation of duties: Internal Auditor conflicts with the existing role Bursar"
+  },
+  {
+   "status": "PASS",
+   "check": "roles :: Direct table writes by API roles are refused :: denied / denied / denied"
+  },
+  {
+   "status": "PASS",
+   "check": "roles :: Even the DB owner cannot remove mandatory permissions or guardrails :: denied / denied / denied"
+  },
+  {
+   "status": "PASS",
+   "check": "roles :: Teacher scope: own class yes, other class no :: own=true other=false"
+  },
+  {
+   "status": "PASS",
+   "check": "roles :: Teacher cannot assign roles or read another user's permissions :: assign denied; peek 0"
+  },
+  {
+   "status": "PASS",
+   "check": "roles :: Role context of another school is not visible :: null"
+  },
+  {
+   "status": "PASS",
+   "check": "roles :: A role holder cannot change permissions of their own role :: no_self_role_grant: you cannot change permissions of a role you hold"
+  },
+  {
+   "status": "PASS",
+   "check": "roles :: Payroll: preparer and payee cannot approve; a third person can :: preparer denied, payee denied, principal approved"
+  },
+  {
+   "status": "PASS",
+   "check": "roles :: Expenses: no self-approval; approval limit enforced (bursar \u20a62,000,000) :: self denied, \u20a63m denied, \u20a6500k approved"
+  },
+  {
+   "status": "PASS",
+   "check": "roles :: Every role/permission change is audited and chained :: 7 audit_logs rows, 7 audit_chain rows (actor + before/after recorded)"
+  }
+ ]
+}

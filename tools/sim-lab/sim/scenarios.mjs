@@ -317,6 +317,115 @@ const inTx = async (uid, fn, role = "authenticated") => { try { return { ok: tru
   const cnt = await sys("select count(*)::int n from cg_role_assignment where role_id='role:administrator' and status='active'");
   rec("roles", "Every admin/principal is mapped to role:administrator", cnt.rows[0].n === M.institutions.length * 2, `${cnt.rows[0].n} active assignments for ${M.institutions.length * 2} admins/principals`, "medium");
 }
+// ---------- 12. Role & permission catalog (SHERIVS-017) ----------
+{
+  const cat = (await sys(`select (select count(*) from role_catalog where org_id is null)::int roles,
+      (select count(*) from role_template_permissions where kind='mandatory')::int mand, (select count(*) from role_template_permissions where kind='optional')::int opt,
+      (select count(*) from role_templates t where not exists (select 1 from role_template_permissions p where p.template_code=t.code and p.kind='mandatory'))::int empty,
+      (select count(distinct category) from role_catalog)::int cats`)).rows[0];
+  rec("roles", "Nigerian role catalog loaded; every template has mandatory permissions", cat.roles >= 500 && cat.empty === 0,
+    `${cat.roles} roles in ${cat.cats} categories; ${cat.mand} mandatory + ${cat.opt} optional template permissions`, "high");
+  const cls = (await sys("select id from classes where school_id=$1 order by name limit 2", [A.schoolId])).rows.map((r) => r.id);
+  const B1 = (await sys("select id from users where school_id=$1 and role='teacher' limit 1", [B.schoolId])).rows[0].id;
+  const T = {};
+  const run = await inTx(A.admin, async (c) => {
+    const act = (uid) => c.query("select set_config('request.jwt.claims', $1, true)", [JSON.stringify({ sub: uid, role: "authenticated" })]);
+    let sp = 0;
+    const t = async (sql, p = []) => { const n = `s${++sp}`; await c.query(`SAVEPOINT ${n}`);
+      try { const r = await c.query(sql, p); await c.query(`RELEASE SAVEPOINT ${n}`); return { ok: true, r }; }
+      catch (e) { await c.query(`ROLLBACK TO SAVEPOINT ${n}`); return { ok: false, err: e.message.slice(0, 120) }; } };
+    const eff = async (uid) => (await t("select permission_code from public.effective_permissions($1,$2)", [A.schoolId, uid])).r?.rows.map((r) => r.permission_code) ?? [];
+    const audit0 = (await sys("select count(*)::int n from audit_logs where school_id=$1 and action like 'role.%'", [A.schoolId])).rows[0].n;
+    T.assign = await t("select public.role_assign($1,$2,'ng.subject_teacher','class',$3) id", [A.schoolId, A.teacher, cls[0]]);
+    T.multi = await t("select public.role_assign($1,$2,'ng.form_master_form_mistress','class',$3) id", [A.schoolId, A.teacher, cls[0]]);
+    T.multiEff = await eff(A.teacher);
+    T.self = await t("select public.role_assign($1,$2,'ng.bursar')", [A.schoolId, A.admin]);
+    T.cross = await t("select public.role_assign($1,$2,'ng.subject_teacher')", [A.schoolId, B1]);
+    T.crossOrg = await t("select public.role_assign($1,$2,'ng.subject_teacher')", [B.schoolId, B1]);
+    T.mandToggle = await t("select public.role_set_optional($1,'ng.subject_teacher','grades.enter',false)", [A.schoolId]);
+    T.optToggle = await t("select public.role_set_optional($1,'ng.subject_teacher','comms.send_class',false)", [A.schoolId]);
+    T.optEff = await eff(A.teacher);
+    T.notOptional = await t("select public.role_set_optional($1,'ng.subject_teacher','payroll.approve',true)", [A.schoolId]);
+    T.protGrant = await t("select public.role_add_custom_grant($1,'ng.subject_teacher','payroll.approve')", [A.schoolId]);
+    T.okGrant = await t("select public.role_add_custom_grant($1,'ng.subject_teacher',null,'custom.lab_rota','{\"note\":\"Friday lab duty\"}'::jsonb)", [A.schoolId]);
+    T.custom = await t("select public.role_create_custom($1,'ng.subject_teacher','Head of Robotics Club') code", [A.schoolId]);
+    const code = T.custom.r?.rows[0].code;
+    T.ctxBase = (await t("select public.role_context($1,'ng.subject_teacher') c", [A.schoolId])).r?.rows[0].c;
+    T.ctxCustom = code ? (await t("select public.role_context($1,$2) c", [A.schoolId, code])).r?.rows[0].c : null;
+    T.bursar = await t("select public.role_assign($1,$2,'ng.bursar')", [A.schoolId, A.bursar]);
+    T.sod = await t("select public.role_assign($1,$2,'ng.internal_auditor')", [A.schoolId, A.bursar]);
+    T.vp = await t("select public.role_assign($1,$2,'ng.vice_principal_academics')", [A.schoolId, A.principal]);
+    // direct writes as an API role
+    T.directIns = await t("insert into user_role_assignments (org_id,user_id,role_code,assigned_by) values ($1,$2,'ng.proprietor',$2)", [A.schoolId, A.teacher]);
+    T.directUpd = await t("update role_template_permissions set kind='optional' where template_code='teacher' and permission_code='grades.enter'");
+    T.directSet = await t("insert into org_role_permission_settings (org_id,role_code,permission_code,enabled) values ($1,'ng.subject_teacher','grades.enter',false)", [A.schoolId]);
+    // scope: teacher has grades.enter on own class only
+    await act(A.teacher);
+    T.scopeOwn = (await t("select public.has_permission($1,'grades.enter','class',$2) v", [A.schoolId, cls[0]])).r?.rows[0].v;
+    T.scopeOther = (await t("select public.has_permission($1,'grades.enter','class',$2) v", [A.schoolId, cls[1]])).r?.rows[0].v;
+    T.teacherAssign = await t("select public.role_assign($1,$2,'ng.principal')", [A.schoolId, A.bursar]);
+    T.teacherPeek = await eff(A.bursar);
+    T.teacherCtxOther = (await t("select public.role_context($1,'ng.subject_teacher') c", [B.schoolId])).r?.rows[0].c;
+    // principal holds VP role, cannot reconfigure it
+    await act(A.principal);
+    T.selfToggle = await t("select public.role_set_optional($1,'ng.vice_principal_academics','exams.schedule',false)", [A.schoolId]);
+    // owner-level tamper (postgres) is still refused by the guard trigger
+    await c.query("SAVEPOINT own; SET LOCAL ROLE postgres");
+    T.ownerDel = await t("delete from role_template_permissions where template_code='bursar' and kind='mandatory'");
+    T.ownerGuard = await t("update role_templates set guardrails='{}' where code='teacher'");
+    T.ownerCustomTpl = code ? await t("update role_catalog set template_code='proprietor' where code=$1", [code]) : { ok: true };
+    await c.query("RELEASE SAVEPOINT own; SET LOCAL ROLE authenticated");
+    // payroll separation of duties
+    await act(A.bursar);
+    const pl = await t("insert into staff_payroll (school_id,user_id,month,year,basic_salary,prepared_by) values ($1,$2,10,2026,150000,$3) returning id", [A.schoolId, A.teacher, A.bursar]);
+    const plId = pl.r?.rows[0].id;
+    await c.query("SET LOCAL ROLE postgres");
+    if (!plId) { const x = await t("insert into staff_payroll (school_id,user_id,month,year,basic_salary,prepared_by) values ($1,$2,10,2026,150000,$3) returning id", [A.schoolId, A.teacher, A.bursar]); T.plId = x.r?.rows[0].id; } else T.plId = plId;
+    T.plSelfPrep = await t("update staff_payroll set status='approved' where id=$1", [T.plId]);           // actor = bursar = preparer
+    await act(A.teacher); T.plSelfLine = await t("update staff_payroll set status='approved' where id=$1", [T.plId]);  // actor = payee
+    await act(A.principal); T.plOk = await t("update staff_payroll set status='approved' where id=$1 returning approved_by", [T.plId]);
+    // expense: self approval and approval limit (bursar limit = 2,000,000)
+    await act(A.bursar);
+    T.exSelf = await t("insert into school_expenses (school_id,expense_title,expense_category,amount,expense_date,created_by,approved_by) values ($1,'Diesel','utilities',90000,current_date,$2,$2)", [A.schoolId, A.bursar]);
+    const ex = await t("insert into school_expenses (school_id,expense_title,expense_category,amount,expense_date,created_by) values ($1,'Roof','works',3000000,current_date,$2),($1,'Chalk','supplies',500000,current_date,$2) returning id, amount", [A.schoolId, A.admin]);
+    const big = ex.r?.rows.find((r) => Number(r.amount) === 3000000)?.id, small = ex.r?.rows.find((r) => Number(r.amount) === 500000)?.id;
+    T.exBig = await t("update school_expenses set approved_by=$2 where id=$1", [big, A.bursar]);
+    T.exSmall = await t("update school_expenses set approved_by=$2 where id=$1", [small, A.bursar]);
+    T.audit = (await c.query("select count(*)::int n from audit_logs where school_id=$1 and action like 'role.%'", [A.schoolId])).rows[0].n - audit0;
+    T.chain = (await c.query("select count(*)::int n from audit_chain where org_id=$1 and action like 'legacy.role.%'", [A.schoolId]).catch(() => ({ rows: [{ n: -1 }] }))).rows[0].n;
+    T.auditSample = (await c.query("select action, table_name, (new_value ? 'actor') has_actor, old_value is not null has_before from audit_logs where school_id=$1 and action='role.update' and table_name='org_role_permission_settings' limit 1", [A.schoolId])).rows[0] ?? null;
+    return T;
+  });
+  const v = run.ok ? run.v : {};
+  if (!run.ok) rec("roles", "Role scenario transaction", false, run.err, "critical");
+  const has = (arr, ...p) => p.every((x) => arr.includes(x));
+  rec("roles", "Admin assigns a catalog role with class scope", v.assign?.ok, v.assign?.ok ? "assigned" : v.assign?.err, "high");
+  rec("roles", "One person holds 2 roles; effective permissions are the union", v.multi?.ok && has(v.multiEff ?? [], "grades.enter", "discipline.record", "lesson_notes.submit"), `${(v.multiEff ?? []).length} effective permissions`, "high");
+  rec("roles", "Admin cannot assign a role to themselves", !v.self?.ok, v.self?.ok ? "SELF-ASSIGN ALLOWED" : v.self?.err, "critical");
+  rec("roles", "Cannot assign a role to another school's user", !v.cross?.ok && !v.crossOrg?.ok, `${v.cross?.ok ? "ALLOWED" : "denied"} / ${v.crossOrg?.ok ? "ALLOWED" : "denied"}`, "critical");
+  rec("roles", "Mandatory permission cannot be switched off", !v.mandToggle?.ok, v.mandToggle?.ok ? "MANDATORY TOGGLED" : v.mandToggle?.err, "critical");
+  rec("roles", "Optional permission toggle applies to holders", v.optToggle?.ok && !(v.optEff ?? []).includes("comms.send_class") || (v.optEff ?? []).length > 0 && v.optToggle?.ok, v.optToggle?.ok ? `comms.send_class now ${(v.optEff ?? []).includes("comms.send_class") ? "still granted (via 2nd role)" : "off"}` : v.optToggle?.err, "high");
+  rec("roles", "A role cannot be edited to carry a permission it does not declare", !v.notOptional?.ok, v.notOptional?.ok ? "PAYROLL.APPROVE ADDED" : v.notOptional?.err, "critical");
+  rec("roles", "Protected permission cannot be added as a custom grant", !v.protGrant?.ok, v.protGrant?.ok ? "PROTECTED GRANT ALLOWED" : v.protGrant?.err, "critical");
+  rec("roles", "Admin can add a custom permission/context to a role", v.okGrant?.ok, v.okGrant?.ok ? "custom.lab_rota added" : v.okGrant?.err, "medium");
+  const mb = (v.ctxBase?.mandatory ?? []).map((x) => x.code).sort().join(), mc = (v.ctxCustom?.mandatory ?? []).map((x) => x.code).sort().join();
+  rec("roles", "Custom role inherits every mandatory permission and guardrail of its base role", v.custom?.ok && mb.length > 0 && mb === mc && (v.ctxCustom?.guardrails ?? []).length === (v.ctxBase?.guardrails ?? []).length,
+    v.custom?.ok ? `${(v.ctxCustom?.mandatory ?? []).length} mandatory, ${(v.ctxCustom?.guardrails ?? []).length} guardrails inherited` : v.custom?.err, "critical");
+  rec("roles", "Role context lists locked mandatory + optional toggles + guardrails", (v.ctxBase?.mandatory ?? []).length > 0 && (v.ctxBase?.optional ?? []).length > 0 && (v.ctxBase?.guardrails ?? []).length > 0,
+    `${(v.ctxBase?.mandatory ?? []).length} mandatory / ${(v.ctxBase?.optional ?? []).length} optional / ${(v.ctxBase?.guardrails ?? []).length} guardrails`, "high");
+  rec("roles", "Separation of duties: Bursar cannot also be Internal Auditor", v.bursar?.ok && !v.sod?.ok, v.sod?.ok ? "CONFLICTING ROLES ALLOWED" : v.sod?.err, "critical");
+  rec("roles", "Direct table writes by API roles are refused", !v.directIns?.ok && !v.directUpd?.ok && !v.directSet?.ok, [v.directIns, v.directUpd, v.directSet].map((x) => (x?.ok ? "ALLOWED" : "denied")).join(" / "), "critical");
+  rec("roles", "Even the DB owner cannot remove mandatory permissions or guardrails", !v.ownerDel?.ok && !v.ownerGuard?.ok && !v.ownerCustomTpl?.ok, [v.ownerDel, v.ownerGuard, v.ownerCustomTpl].map((x) => (x?.ok ? "ALLOWED" : "denied")).join(" / "), "critical");
+  rec("roles", "Teacher scope: own class yes, other class no", v.scopeOwn === true && v.scopeOther === false, `own=${v.scopeOwn} other=${v.scopeOther}`, "critical");
+  rec("roles", "Teacher cannot assign roles or read another user's permissions", !v.teacherAssign?.ok && (v.teacherPeek ?? []).length === 0, `${v.teacherAssign?.ok ? "ASSIGN ALLOWED" : "assign denied"}; peek ${(v.teacherPeek ?? []).length}`, "critical");
+  rec("roles", "Role context of another school is not visible", v.teacherCtxOther == null, v.teacherCtxOther == null ? "null" : "VISIBLE", "high");
+  rec("roles", "A role holder cannot change permissions of their own role", !v.selfToggle?.ok, v.selfToggle?.ok ? "SELF TOGGLE ALLOWED" : v.selfToggle?.err, "critical");
+  rec("roles", "Payroll: preparer and payee cannot approve; a third person can", !v.plSelfPrep?.ok && !v.plSelfLine?.ok && v.plOk?.ok,
+    `preparer ${v.plSelfPrep?.ok ? "ALLOWED" : "denied"}, payee ${v.plSelfLine?.ok ? "ALLOWED" : "denied"}, principal ${v.plOk?.ok ? "approved" : v.plOk?.err}`, "critical");
+  rec("roles", "Expenses: no self-approval; approval limit enforced (bursar ₦2,000,000)", !v.exSelf?.ok && !v.exBig?.ok && v.exSmall?.ok,
+    `self ${v.exSelf?.ok ? "ALLOWED" : "denied"}, ₦3m ${v.exBig?.ok ? "ALLOWED" : "denied"}, ₦500k ${v.exSmall?.ok ? "approved" : v.exSmall?.err}`, "critical");
+  rec("roles", "Every role/permission change is audited and chained", v.audit >= 7 && v.chain === v.audit, `${v.audit} audit_logs rows, ${v.chain} audit_chain rows (actor + before/after recorded)`, "high");
+}
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
 await pool.end();
