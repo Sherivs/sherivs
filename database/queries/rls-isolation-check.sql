@@ -96,6 +96,16 @@ WHERE c.table_schema = 'public'
   AND c.grantee IN ('anon', 'authenticated')
   AND c.privilege_type = 'SELECT';
 
+-- 6b. SHERIVS-015: sensitive user columns are never directly readable by
+--     anon/authenticated (served only via users_private_fields()).
+SELECT format('FAIL: %I.%I column %I is readable by %I', c.table_schema, c.table_name, c.column_name, c.grantee) AS issue
+FROM information_schema.column_privileges c
+WHERE c.table_schema = 'public'
+  AND c.table_name = 'users'
+  AND c.column_name IN ('nin', 'account_number', 'salary', 'face_biometric', 'phone')
+  AND c.grantee IN ('anon', 'authenticated')
+  AND c.privilege_type = 'SELECT';
+
 -- 7. Realtime: every table the application subscribes to must be in the
 --    supabase_realtime publication (otherwise channels silently never fire).
 SELECT format('FAIL: %s missing from supabase_realtime publication', t) AS issue

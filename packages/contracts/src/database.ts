@@ -6290,7 +6290,6 @@ export type Database = {
           office_hours: string | null;
           onboarding_completed: boolean | null;
           paystack_public_key: string | null;
-          paystack_secret_key: string | null;
           phone: string | null;
           primary_color: string | null;
           privacy_policy: string | null;
@@ -6362,7 +6361,6 @@ export type Database = {
           office_hours?: string | null;
           onboarding_completed?: boolean | null;
           paystack_public_key?: string | null;
-          paystack_secret_key?: string | null;
           phone?: string | null;
           primary_color?: string | null;
           privacy_policy?: string | null;
@@ -6434,7 +6432,6 @@ export type Database = {
           office_hours?: string | null;
           onboarding_completed?: boolean | null;
           paystack_public_key?: string | null;
-          paystack_secret_key?: string | null;
           phone?: string | null;
           primary_color?: string | null;
           privacy_policy?: string | null;
@@ -7765,6 +7762,17 @@ export type Database = {
       };
       get_my_role: { Args: never; Returns: string };
       get_my_school_id: { Args: never; Returns: string };
+      users_private_fields: {
+        Args: { p_ids: string[] };
+        Returns: {
+          account_number: string | null;
+          face_biometric: Json | null;
+          id: string;
+          nin: string | null;
+          phone: string | null;
+          salary: number | null;
+        }[];
+      };
       get_my_tenant_id: { Args: never; Returns: string };
       get_org_profile: {
         Args: { p_profile_key: string; p_runtime: string; p_tenant: string };

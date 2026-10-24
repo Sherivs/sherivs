@@ -7179,6 +7179,158 @@
         80
       ],
       "firstSnippet": "AS $$ SELECT COALESCE(public.get_my_role() IN ('admin', 'principal'), false) $$;"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000220_sherivs_015_privacy_lockdown_rls_speed.sql",
+      "kind": "vocabulary",
+      "token": "exam",
+      "streamIRef": "SHERIVS-015",
+      "occurrences": 1,
+      "lines": [
+        8
+      ],
+      "firstSnippet": "--  3. Score sanity: CA + exam within 0..100 (NOT VALID: existing rows are not"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000220_sherivs_015_privacy_lockdown_rls_speed.sql",
+      "kind": "vocabulary",
+      "token": "principal",
+      "streamIRef": "SHERIVS-015",
+      "occurrences": 10,
+      "lines": [
+        15,
+        76,
+        80,
+        81,
+        85,
+        89,
+        90,
+        117,
+        119,
+        120
+      ],
+      "firstSnippet": "--       same-tenant admin/principal ... phone, account_number, salary"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000220_sherivs_015_privacy_lockdown_rls_speed.sql",
+      "kind": "vocabulary",
+      "token": "bursar",
+      "streamIRef": "SHERIVS-015",
+      "occurrences": 7,
+      "lines": [
+        16,
+        76,
+        85,
+        89,
+        90,
+        117,
+        119
+      ],
+      "firstSnippet": "--       same-tenant bursar ............ phone, account_number"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000220_sherivs_015_privacy_lockdown_rls_speed.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-015",
+      "occurrences": 18,
+      "lines": [
+        34,
+        39,
+        40,
+        44,
+        48,
+        53,
+        54,
+        58,
+        76,
+        80,
+        81,
+        85,
+        89,
+        90,
+        117,
+        119,
+        120,
+        125
+      ],
+      "firstSnippet": "CREATE INDEX IF NOT EXISTS idx_grades_school_published ON public.grades (school_id, is_published);"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000220_sherivs_015_privacy_lockdown_rls_speed.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "SHERIVS-015",
+      "occurrences": 14,
+      "lines": [
+        39,
+        40,
+        44,
+        48,
+        53,
+        54,
+        58,
+        76,
+        80,
+        81,
+        85,
+        89,
+        90,
+        112
+      ],
+      "firstSnippet": "USING ((school_id = (SELECT public.get_my_school_id()) AND (SELECT public.is_school_admin())) OR (SELECT public.is_super_admin()))"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000220_sherivs_015_privacy_lockdown_rls_speed.sql",
+      "kind": "vocabulary",
+      "token": "is_school_admin",
+      "streamIRef": "SHERIVS-015",
+      "occurrences": 2,
+      "lines": [
+        39,
+        40
+      ],
+      "firstSnippet": "USING ((school_id = (SELECT public.get_my_school_id()) AND (SELECT public.is_school_admin())) OR (SELECT public.is_super_admin()))"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000220_sherivs_015_privacy_lockdown_rls_speed.sql",
+      "kind": "vocabulary",
+      "token": "teacher",
+      "streamIRef": "SHERIVS-015",
+      "occurrences": 4,
+      "lines": [
+        44,
+        48,
+        76,
+        85
+      ],
+      "firstSnippet": "USING (school_id = (SELECT public.get_my_school_id()) AND (SELECT public.get_my_role()) = 'teacher');"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000220_sherivs_015_privacy_lockdown_rls_speed.sql",
+      "kind": "vocabulary",
+      "token": "fees",
+      "streamIRef": "SHERIVS-015",
+      "occurrences": 5,
+      "lines": [
+        73,
+        83,
+        84,
+        87,
+        88
+      ],
+      "firstSnippet": "-- students / fees policies: same logic, helpers wrapped as initplans (generated from the live policy text)."
+    },
+    {
+      "file": "database/supabase/migrations/20261024000220_sherivs_015_privacy_lockdown_rls_speed.sql",
+      "kind": "vocabulary-literal",
+      "token": "driver",
+      "streamIRef": "SHERIVS-015",
+      "occurrences": 1,
+      "lines": [
+        76
+      ],
+      "firstSnippet": "USING (((SELECT public.is_super_admin()) OR ((school_id = (SELECT public.get_my_school_id())) AND (((SELECT public.my_active_role()) = ANY (ARRAY['admin'::text,"
     }
   ]
 }

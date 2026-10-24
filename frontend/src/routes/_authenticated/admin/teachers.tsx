@@ -7,6 +7,7 @@ import { z } from "zod";
 import { Plus, Power } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { withUserPrivateFields } from "@/lib/identity/user-private-fields";
 import { useApp } from "@/contexts/app-context";
 import { PortalPage } from "@/components/portal-shell";
 import { PaginationBar } from "@/components/pagination-bar";
@@ -67,7 +68,7 @@ function TeachersPage() {
       const { data, error, count } = await supabase
         .from("users")
         .select(
-          "id, full_name, email, phone, subject_specialty, qualification, years_experience, is_active",
+          "id, full_name, email, subject_specialty, qualification, years_experience, is_active",
           { count: "exact" },
         )
         .eq("school_id", school!.id)
@@ -75,7 +76,9 @@ function TeachersPage() {
         .order("full_name")
         .range(from, to);
       if (error) throw new Error(error.message);
-      return { rows: (data ?? []) as TeacherRow[], count: count ?? 0 };
+      // SHERIVS-015: phone comes from the role-checked RPC.
+      const rows = await withUserPrivateFields(supabase, data ?? [], ["phone"]);
+      return { rows: rows as TeacherRow[], count: count ?? 0 };
     },
   });
 

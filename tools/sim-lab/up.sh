@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Sherivs Simulation Lab — isolated LOCAL Postgres 17 + PostgREST. Never prod, never `supabase link`.
-# Usage: tools/sim-lab/up.sh [--with-proposed]   (run from repo root or anywhere)
+# Usage: tools/sim-lab/up.sh   (run from repo root or anywhere)
 set -euo pipefail
 cd "$(dirname "$0")"; mkdir -p bin load
 PORT=54329
@@ -17,6 +17,6 @@ rm -rf data && $B/initdb -D data -U postgres -A trust -E UTF8 >/dev/null
 $B/pg_ctl -D data -o "-p $PORT -k /tmp -c listen_addresses=127.0.0.1 -c max_connections=500 -c shared_buffers=1GB" -l pg.log start >/dev/null
 sleep 2
 node -e "const pg=require('pg');(async()=>{const c=new pg.Client({host:'127.0.0.1',port:$PORT,user:'postgres'});await c.connect();await c.query(require('fs').readFileSync('bootstrap.sql','utf8'));await c.end()})()"
-if [ "${1:-}" = "--with-proposed" ]; then node migrate.mjs "" ../../database/supabase/migrations/*sim_lab_fixes.sql.proposed; else node migrate.mjs; fi
+node migrate.mjs
 [ -f load/.jwt-secret ] || (umask 077; node -e "require('fs').writeFileSync('load/.jwt-secret', require('crypto').randomBytes(48).toString('base64url'))")
 echo "sim DB up on 127.0.0.1:$PORT. Next: node sim/gen.mjs && node sim/scenarios.mjs"

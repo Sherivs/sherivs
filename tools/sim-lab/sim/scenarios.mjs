@@ -110,6 +110,27 @@ const [A, B, C, D, E] = M.institutions;
   rec("rls", "A student cannot read other users' NIN, bank account, salary, phone or face data", !colPriv.rows[0].c, colPriv.rows[0].c ? `authenticated can SELECT users.(${colPriv.rows[0].c}); same-school policy exposes them (${pii.r?.rows[0].n ?? "?"} rows with phone in sim)` : "column privileges withheld", "critical");
   const studentsPII = await tryq(A.sampleStudentUser, "select count(*)::int n from students where user_id <> $1", [A.sampleStudentUser]);
   rec("rls", "A student cannot list classmates' records (medical, address, parent phone)", studentsPII.ok && studentsPII.r.rows[0].n === 0, studentsPII.ok ? `${studentsPII.r.rows[0].n} other student rows visible` : "denied", "high");
+  // SHERIVS-015 lockdown: who may see which sensitive field via users_private_fields()
+  const pf = (uid, target) => tryq(uid, "select * from public.users_private_fields($1::uuid[])", [[target]]);
+  const field = (r, k) => (r.ok && r.r.rows[0] ? r.r.rows[0][k] : null);
+  const direct = await tryq(A.teacher, "select nin from users where id = $1", [A.bursar]);
+  rec("privacy", "Teacher cannot SELECT users.nin directly (column privilege)", !direct.ok, direct.ok ? "column readable" : "permission denied", "critical");
+  const star = await tryq(A.admin, "select * from users where id = $1", [A.admin]);
+  rec("privacy", "SELECT * on users is refused (app must list safe columns)", !star.ok, star.ok ? "star select allowed" : "denied as expected", "medium");
+  const own = await pf(A.teacher, A.teacher);
+  rec("privacy", "User sees own NIN, account number and salary", !!field(own, "nin") && !!field(own, "account_number") && field(own, "salary") != null, own.ok ? "own fields returned" : own.err, "high");
+  const t2b = await pf(A.teacher, A.bursar);
+  rec("privacy", "Teacher sees no colleague phone/NIN/account/salary", t2b.ok && ["phone","nin","account_number","salary","face_biometric"].every((k) => field(t2b, k) == null), t2b.ok ? JSON.stringify(Object.keys(t2b.r.rows[0] ?? {}).filter((k) => k !== "id" && t2b.r.rows[0][k] != null)) + " visible" : t2b.err, "critical");
+  const s2t = await pf(A.sampleStudentUser, A.teacher);
+  rec("privacy", "Student sees no staff sensitive fields", s2t.ok && ["phone","nin","account_number","salary"].every((k) => field(s2t, k) == null), s2t.ok ? "nothing returned" : s2t.err, "critical");
+  const b2t = await pf(A.bursar, A.teacher);
+  rec("privacy", "Bursar sees staff account number + phone, not salary or NIN", !!field(b2t, "account_number") && !!field(b2t, "phone") && field(b2t, "salary") == null && field(b2t, "nin") == null, b2t.ok ? "as designed" : b2t.err, "high");
+  const a2t = await pf(A.admin, A.teacher);
+  rec("privacy", "Admin sees salary + account + phone, never NIN or face data", field(a2t, "salary") != null && !!field(a2t, "account_number") && field(a2t, "nin") == null && field(a2t, "face_biometric") == null, a2t.ok ? "as designed" : a2t.err, "high");
+  const x = await pf(A.admin, B.teacher);
+  rec("privacy", "Admin gets nothing for another school's staff", x.ok && x.r.rowCount === 0, x.ok ? `${x.r.rowCount} rows` : x.err, "critical");
+  const an = await tryq(null, "select * from public.users_private_fields($1::uuid[])", [[A.admin]], "anon");
+  rec("privacy", "Anonymous cannot call users_private_fields", !an.ok, an.ok ? "anon allowed" : "denied", "critical");
 }
 // ---------- 6. Plan limits (atomic metering) ----------
 {

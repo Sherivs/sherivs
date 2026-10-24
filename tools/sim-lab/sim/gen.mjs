@@ -67,6 +67,9 @@ for (const a of ARCHETYPES) {
 }
 await c.query("SET session_replication_role = origin");
 await c.query("UPDATE grades SET ca_score = ca_score"); // fire grade autocalc trigger skipped during bulk load
+await c.query(`UPDATE users SET nin = lpad((abs(hashtext(id::text)) % 100000000000)::text, 11, '0'),
+  account_number = CASE WHEN role IN ('admin','principal','bursar','teacher') THEN lpad((abs(hashtext('a'||id)) % 10000000000)::text, 10, '0') END,
+  salary = CASE WHEN role IN ('admin','principal','bursar','teacher') THEN 150000 + (abs(hashtext('s'||id)) % 400000) END`); // synthetic sensitive fields
 await c.query("ANALYZE");
 fs.writeFileSync("sim/manifest.json", JSON.stringify(manifest, null, 1));
 await c.end();

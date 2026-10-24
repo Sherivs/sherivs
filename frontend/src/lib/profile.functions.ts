@@ -11,6 +11,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { parseSelfProfilePatch } from "@/lib/runtime/identity-privilege";
+import { fetchUserPrivateFields } from "@/lib/identity/user-private-fields";
 
 export { parseSelfProfilePatch } from "@/lib/runtime/identity-privilege";
 
@@ -34,12 +35,15 @@ export const getMyProfile = createServerFn({ method: "GET" })
     const { data, error } = await supabase
       .from("users")
       .select(
-        "id, full_name, email, role, phone, address, avatar_url, emergency_contact_name, emergency_contact, digital_twin_opt_out",
+        "id, full_name, email, role, address, avatar_url, emergency_contact_name, emergency_contact, digital_twin_opt_out",
       )
       .eq("id", userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return (data as MyProfile) ?? null;
+    if (!data) return null;
+    // SHERIVS-015: phone is no longer directly selectable; the RPC returns own fields.
+    const priv = await fetchUserPrivateFields(supabase, [userId]);
+    return { ...(data as Omit<MyProfile, "phone">), phone: priv.get(userId)?.phone ?? null };
   });
 
 export const updateMyProfile = createServerFn({ method: "POST" })

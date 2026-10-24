@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { USER_SAFE_COLUMNS } from "@/lib/identity/user-private-fields";
 import { SCHOOL_CLIENT_COLUMNS } from "@/lib/runtime/scholar/school-columns";
 import { resolveTenantDomain, resolveTenantSlug } from "@/lib/tenant";
 import { type AppRole } from "@/lib/roles";
@@ -133,14 +134,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     if (currentSession?.user) {
       // Try tenant profile first
-      const { data: prof } = await supabase
+      const { data: profRow } = await supabase
         .from("users")
-        .select("*")
+        .select(USER_SAFE_COLUMNS)
         .eq("id", currentSession.user.id)
         .maybeSingle();
+      const prof = profRow as unknown as UserProfile | null;
 
       if (prof) {
-        nextProfile = prof as UserProfile;
+        nextProfile = prof;
         const { data: sch } = await supabase
           .from("schools")
           .select(SCHOOL_CLIENT_COLUMNS)

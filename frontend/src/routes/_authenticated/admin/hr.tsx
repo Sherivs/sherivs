@@ -15,6 +15,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { withUserPrivateFields } from "@/lib/identity/user-private-fields";
 import { useApp } from "@/contexts/app-context";
 import {
   PortalPage,
@@ -150,13 +151,17 @@ function HRPage() {
       const { data, error } = await supabase
         .from("users")
         .select(
-          "id, full_name, email, phone, role, subject_specialty, employment_type, salary, date_enrolled, is_active, avatar_url",
+          "id, full_name, email, role, subject_specialty, employment_type, date_enrolled, is_active, avatar_url",
         )
         .eq("school_id", schoolId)
         .in("role", STAFF_ROLES)
         .order("full_name");
       if (error) throw error;
-      return (data ?? []) as StaffUser[];
+      // SHERIVS-015: phone/salary come from the role-checked RPC.
+      return (await withUserPrivateFields(supabase, data ?? [], [
+        "phone",
+        "salary",
+      ])) as StaffUser[];
     },
   });
 
