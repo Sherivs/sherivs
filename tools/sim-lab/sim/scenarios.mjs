@@ -146,7 +146,7 @@ const [A, B, C, D, E] = M.institutions;
   rec("limits", "Override longer than 31 days is rejected", ovr === "rejected", ovr, "medium");
   const subscriptionTiers = await sys("select count(*)::int n from schools where subscription_tier is not null");
   const linked = await sys("select count(*)::int n from org_entitlements");
-  rec("limits", "Schools' subscription tier is linked to entitlement plans", linked.rows[0].n > 0, `${subscriptionTiers.rows[0].n} schools have a tier, ${linked.rows[0].n} have entitlement rows (no sync yet)`, "medium");
+  rec("limits", "Schools' subscription tier is linked to entitlement plans", linked.rows[0].n > 0, `${subscriptionTiers.rows[0].n} schools have a tier, ${linked.rows[0].n} have entitlement rows (synced from tier)`, "medium");
 }
 // ---------- 7. Audit chain ----------
 {

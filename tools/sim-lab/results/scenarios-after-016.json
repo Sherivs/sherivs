@@ -297,7 +297,7 @@
   "area": "limits",
   "name": "Schools' subscription tier is linked to entitlement plans",
   "pass": true,
-  "detail": "5 schools have a tier, 5 have entitlement rows (no sync yet)",
+  "detail": "5 schools have a tier, 5 have entitlement rows (synced from tier)",
   "severity": "medium"
  },
  {
