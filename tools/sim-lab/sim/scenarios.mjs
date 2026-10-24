@@ -861,6 +861,136 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
     !v.tertiary?.ok && !v.teacherOnb?.ok && !v.bOnb?.ok, `${W_ERR(v.tertiary)} | ${W_ERR(v.teacherOnb)} | ${W_ERR(v.bOnb)}`, "critical");
   rec("audit", "Scope sets, structure, break-glass and onboarding are audited", v.audit >= 6, `${v.audit} audit rows`, "high");
 }
+// ---------- 17. Exams, CBT, attendance devices, offline sync (SHERIVS-022) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+    const svc = async (sql, p = []) => { await c.query("SET LOCAL ROLE service_role"); await c.query("select set_config('request.jwt.claims', '{\"role\":\"service_role\"}', true)");
+      try { return await t(sql, p); } finally { await c.query("SET LOCAL ROLE authenticated"); } };
+    const tc = (await asOwner("select id from classes where teacher_id=$1 limit 1", [A.teacher])).row?.id;
+    const other = (await asOwner("select c.id from classes c where c.school_id=$1 and c.id<>$2 and c.teacher_id is distinct from $3 and not exists (select 1 from timetables tt join timetable_slots ts on ts.timetable_id=tt.id where tt.class_id=c.id and ts.teacher_id=$3) and exists (select 1 from students s where s.class_id=c.id) limit 1", [A.schoolId, tc, A.teacher])).row?.id;
+    const staff = (await asOwner("select id from users where school_id=$1 and role='teacher' and id<>$2 limit 2", [A.schoolId, A.teacher])).r.rows.map((r) => r.id);
+    const studs = (await asOwner("select id, user_id from students where class_id=$1 and user_id is not null order by admission_number limit 3", [tc])).r.rows;
+    const day = "date_trunc('day', now()) + interval '30 days'";
+    const sess = (await t("select public.exam_session_create($1,'Sim First Term Exams','2025/2026','First Term',current_date, current_date + 40) id", [A.schoolId])).row?.id;
+    out.teacherSess = await (async () => { await act(A.teacher); const r = await t("select public.exam_session_create($1,'x','2025/2026','First Term',current_date,current_date)", [A.schoolId]); await act(A.admin); return r; })();
+    const p1 = (await t(`select public.exam_paper_add($1,$2,'Mathematics', ${day} + interval '9 hours', ${day} + interval '11 hours','Hall A') id`, [sess, tc])).row?.id;
+    out.clash = await t(`select public.exam_paper_add($1,$2,'English', ${day} + interval '10 hours', ${day} + interval '12 hours')`, [sess, tc]);
+    const p2 = (await t(`select public.exam_paper_add($1,$2,'Biology', ${day} + interval '10 hours', ${day} + interval '12 hours','Hall B') id`, [sess, other])).row?.id;
+    out.outside = await t(`select public.exam_paper_add($1,$2,'Chemistry', now() + interval '90 days', now() + interval '90 days 2 hours')`, [sess, tc]);
+    out.seats = (await t("select public.exam_generate_seating($1) n", [p1])).row?.n;
+    out.seats2 = (await t("select public.exam_generate_seating($1) n", [p1])).row?.n;
+    out.classSize = (await asOwner("select count(*)::int n from students where class_id=$1", [tc])).row?.n;
+    out.inv1 = await t("select public.exam_assign_invigilator($1,$2)", [p1, staff[0]]);
+    out.double = await t("select public.exam_assign_invigilator($1,$2)", [p2, staff[0]]);
+    out.inv2 = await t("select public.exam_assign_invigilator($1,$2)", [p2, staff[1]]);
+    await act(staff[0]); out.rep = await t("select public.malpractice_report($1,$2,'Found notes under the desk during the paper') id", [p1, studs[0].id]);
+    await act(staff[1]); out.repOther = await t("select public.malpractice_report($1,$2,'x')", [p1, studs[0].id]);
+    // decider: chief invigilator role (holds malpractice.decide); the reporter also gets it to prove SoD
+    await act(A.admin);
+    const chief = staff[1];
+    await asOwner("insert into org_role_permission_settings (org_id, role_code, permission_code, enabled) values ($1,'ng.chief_invigilator','malpractice.decide',true) on conflict (org_id, role_code, permission_code) do update set enabled = true", [A.schoolId]);
+    await t("select public.role_assign($1,$2,'ng.chief_invigilator','org',null)", [A.schoolId, chief]);
+    await t("select public.role_assign($1,$2,'ng.chief_invigilator','org',null)", [A.schoolId, staff[0]]);
+    out.adminDecide = await t("select public.malpractice_decide($1,'upheld')", [out.rep?.row?.id]);
+    await act(staff[0]); out.selfDecide = await t("select public.malpractice_decide($1,'dismissed')", [out.rep?.row?.id]);
+    await act(chief); out.decide = await t("select public.malpractice_decide($1,'upheld','Paper cancelled')", [out.rep?.row?.id]);
+    out.redecide = await t("select public.malpractice_decide($1,'dismissed')", [out.rep?.row?.id]);
+    // CBT
+    await act(A.teacher);
+    const qs = [];
+    for (let i = 0; i < 4; i++) qs.push((await t("select public.cbt_question_add($1,'Mathematics',$2,'[\"1\",\"2\",\"3\",\"4\"]'::jsonb,$3) id", [A.schoolId, `What is ${i}+1?`, i])).row?.id);
+    out.badKey = await t("select public.cbt_question_add($1,'Mathematics','x','[\"a\",\"b\"]'::jsonb,5)", [A.schoolId]);
+    const test = (await t("select public.cbt_test_create($1,'Sim CBT',$2,30,now() - interval '1 minute', now() + interval '2 hours',$3::uuid[],10) id", [A.schoolId, tc, qs])).row?.id;
+    out.list = (await t("select * from public.cbt_question_list($1)", [A.schoolId])).r?.rows?.[0];
+    out.directKeys = await t("select answer_key from cbt_questions limit 1");
+    await act(studs[0].user_id);
+    const st = (await t("select public.cbt_start($1) r", [test])).row?.r;
+    out.stHasKey = JSON.stringify(st ?? {}).includes("answer_key");
+    out.qCount = (st?.questions ?? []).length;
+    const ans = Object.fromEntries(qs.map((q, i) => [q, i]));
+    out.sync1 = (await t("select public.cbt_sync($1,$2,2) r", [st?.attempt_id, JSON.stringify({ [qs[0]]: 0, [qs[1]]: 1 })])).row?.r;
+    out.stale = (await t("select public.cbt_sync($1,$2,1) r", [st?.attempt_id, JSON.stringify({ [qs[0]]: 3 })])).row?.r;
+    out.restart = (await t("select public.cbt_start($1) r", [test])).row?.r;
+    out.sub = (await t("select public.cbt_submit($1,$2,3) r", [st?.attempt_id, JSON.stringify(ans)])).row?.r;
+    out.resub = (await t("select public.cbt_submit($1,$2,4) r", [st?.attempt_id, '{}'])).row?.r;
+    await act(studs[1].user_id);
+    out.peek = await t("select public.cbt_sync($1,'{}',9) r", [st?.attempt_id]);
+    const st2 = (await t("select public.cbt_start($1) r", [test])).row?.r;
+    await asOwner("update cbt_attempts set deadline = now() - interval '5 minutes' where id=$1", [st2?.attempt_id]);
+    out.grace = (await t("select public.cbt_submit($1,$2,1, now() - interval '6 minutes') r", [st2?.attempt_id, JSON.stringify(ans)])).row?.r;
+    await act(studs[2].user_id);
+    const st3 = (await t("select public.cbt_start($1) r", [test])).row?.r;
+    await asOwner("update cbt_attempts set deadline = now() - interval '5 minutes' where id=$1", [st3?.attempt_id]);
+    out.lateCapture = (await t("select public.cbt_submit($1,$2,1, now()) r", [st3?.attempt_id, JSON.stringify(ans)])).row?.r;
+    await act(B.admin); out.bStart = await t("select public.cbt_start($1)", [test]);
+    // Attendance: QR + geofence
+    await act(A.admin);
+    await asOwner("insert into school_geofence (school_id, campus_name, latitude, longitude, radius_meters, is_active) values ($1,'Sim Main',6.4474,3.4720,150,true)", [A.schoolId]);
+    const tok = (await t("select public.qr_attendance_token($1,2) k", [A.schoolId])).row?.k;
+    await act(A.teacher); out.teacherTok = await t("select public.qr_attendance_token($1)", [A.schoolId]);
+    out.qrIn = (await t("select public.staff_qr_checkin($1, 6.4476, 3.4721) r", [tok])).row?.r;
+    out.qrFar = (await t("select public.staff_qr_checkin($1, 6.4600, 3.4720) r", [tok])).row?.r;
+    out.qrBad = (await t("select public.staff_qr_checkin('nope', 6.4476, 3.4721) r")).row?.r;
+    await asOwner("update qr_tokens set expires_at = now() - interval '1 second' where token=$1", [tok]);
+    out.qrExp = (await t("select public.staff_qr_checkin($1, 6.4476, 3.4721) r", [tok])).row?.r;
+    out.logged = (await asOwner("select count(*)::int n from attendance_check_ins where user_id=$1", [A.teacher])).row?.n;
+    out.forgeCheck = await t("insert into attendance_check_ins (school_id, user_id, method, accepted) values ($1,$2,'qr',true)", [A.schoolId, A.teacher]);
+    out.editCheck = await asOwner("update attendance_check_ins set accepted = true where user_id=$1", [A.teacher]);
+    await act(A.sampleParent); out.parentQr = await t("select public.staff_qr_checkin($1,6.4476,3.4721)", [tok]);
+    // biometric with consent
+    const dev = (await asOwner("insert into attendance_devices (school_id, kind, label) values ($1,'biometric','Gate 1') returning id", [A.schoolId])).row?.id;
+    out.bioNoConsent = (await svc("select public.biometric_checkin($1,$2,0.95) r", [dev, A.teacher])).row?.r;
+    await act(A.teacher); await t("select public.staff_biometric_consent(true)");
+    out.bioOk = (await svc("select public.biometric_checkin($1,$2,0.95) r", [dev, A.teacher])).row?.r;
+    out.bioLow = (await svc("select public.biometric_checkin($1,$2,0.5) r", [dev, A.teacher])).row?.r;
+    await act(A.teacher); await t("select public.staff_biometric_consent(false)");
+    out.bioWithdrawn = (await svc("select public.biometric_checkin($1,$2,0.95) r", [dev, A.teacher])).row?.r;
+    await act(A.teacher); out.bioUser = await t("select public.biometric_checkin($1,$2,0.99)", [dev, A.teacher]);
+    out.consentPurpose = await asOwner("insert into consent_records (school_id, student_id, purpose, status, policy_version, granted_at, capture_method) values ($1,$2,'biometric_attendance','granted','v1',now(),'paper_signed')", [A.schoolId, studs[0].id]);
+    // offline sync
+    const otherStud = (await asOwner("select id from students where class_id=$1 limit 1", [other])).row?.id;
+    await asOwner("delete from attendance where student_id = any($1::uuid[]) and date >= current_date - 10", [[...studs.map((s) => s.id), otherStud]]);
+    await asOwner("insert into attendance (school_id, student_id, class_id, date, status, marked_by) values ($1,$2,$3,current_date - 1,'absent',$4)", [A.schoolId, studs[2].id, tc, A.admin]);
+    const items = [{ student_id: studs[0].id, date: "CUR", status: "present" }, { student_id: studs[1].id, date: "CUR", status: "late" },
+      { student_id: studs[2].id, date: "Y", status: "present" }, { student_id: otherStud, date: "CUR", status: "present" },
+      { student_id: studs[0].id, date: "OLD", status: "present" }, { student_id: studs[1].id, date: "FUT", status: "present" }];
+    const today = (await asOwner("select current_date::text d, (current_date-1)::text y, (current_date-20)::text o, (current_date+1)::text f")).row;
+    for (const i of items) i.date = { CUR: today.d, Y: today.y, OLD: today.o, FUT: today.f }[i.date];
+    await act(A.teacher);
+    out.sync = (await t("select public.offline_attendance_sync('sim-batch-1',$1) r", [JSON.stringify(items)])).row?.r;
+    out.syncReplay = (await t("select public.offline_attendance_sync('sim-batch-1',$1) r", [JSON.stringify(items)])).row?.r;
+    out.rows = (await asOwner("select count(*)::int n from attendance where student_id = any($1::uuid[]) and date = current_date", [studs.map((s) => s.id)])).row?.n;
+    await act(A.sampleParent); out.parentSync = await t("select public.offline_attendance_sync('p',$1)", [JSON.stringify(items)]);
+    out.audit = (await asOwner("select count(*)::int n from audit_logs where school_id=$1 and action ~ '^scholar\\.(exam|malpractice|cbt|attendance_check|offline)'", [A.schoolId])).row?.n;
+  });
+  const why = (r) => (r?.conflicts ?? []).map((x) => x.why).sort().join(",");
+  rec("exams", "Exam timetable: only schedulers create; class clash and out-of-session papers refused", !v.teacherSess?.ok && /clash/.test(v.clash?.err ?? "") && !v.outside?.ok,
+    `teacher ${W_ERR(v.teacherSess)}; clash ${W_ERR(v.clash)}; outside ${W_ERR(v.outside)}`, "high");
+  rec("exams", "Seating plan seats every student once and regenerates idempotently", v.seats === v.classSize && v.seats2 === v.classSize, `${v.seats}/${v.classSize}`, "high");
+  rec("exams", "Invigilator cannot be double-booked across overlapping papers", v.inv1?.ok && /double_booked/.test(v.double?.err ?? "") && v.inv2?.ok, W_ERR(v.double), "critical");
+  rec("exams", "Malpractice: only that paper's invigilator reports; admin, principal-bridge and reporter cannot decide; decided once",
+    v.rep?.ok && !v.repOther?.ok && !v.adminDecide?.ok && /sod/.test(v.selfDecide?.err ?? "") && v.decide?.ok && !v.redecide?.ok,
+    `other ${W_ERR(v.repOther)}; admin ${W_ERR(v.adminDecide)}; self ${W_ERR(v.selfDecide)}; again ${W_ERR(v.redecide)}`, "critical");
+  rec("cbt", "Answer keys never leave the server (table unreadable, list and start omit keys); bad keys refused",
+    !v.directKeys?.ok && v.list && !("answer_key" in v.list) && v.stHasKey === false && v.qCount === 4 && !v.badKey?.ok, `direct ${W_ERR(v.directKeys)}`, "critical");
+  rec("cbt", "Offline sync: stale sequence ignored, restart resumes same attempt, submit scores once", v.sync1?.ok && v.stale?.stale && v.restart?.attempt_id && v.sub?.score === 4 && v.resub?.replay,
+    `score ${v.sub?.score}/${v.sub?.max}; restart answers ${JSON.stringify(v.restart?.answers ?? {}).length > 2}`, "critical");
+  rec("cbt", "Grace window: answers captured before deadline accepted after reconnect; answers captured after deadline ignored",
+    v.grace?.score === 4 && v.lateCapture?.late_answers_ignored === true && v.lateCapture?.score === 0, `grace ${v.grace?.score}; late ${v.lateCapture?.score}`, "critical");
+  rec("cbt", "Students cannot touch another student's attempt; other schools cannot start the test", !v.peek?.ok && !v.bStart?.ok, `${W_ERR(v.peek)} | ${W_ERR(v.bStart)}`, "critical");
+  rec("attendance", "Staff QR check-in: inside geofence accepted; outside, invalid and expired refused; every attempt logged",
+    v.qrIn?.ok && v.qrFar?.error === "outside_geofence" && v.qrBad?.error === "invalid_code" && v.qrExp?.error === "expired_code" && v.logged >= 4,
+    `in ${v.qrIn?.distance_m}m; far ${v.qrFar?.distance_m}m; logged ${v.logged}`, "critical");
+  rec("attendance", "Check-in log is append-only and cannot be forged; only managers mint codes; parents cannot check in",
+    !v.forgeCheck?.ok && !v.editCheck?.ok && !v.teacherTok?.ok && !v.parentQr?.ok, `${W_ERR(v.forgeCheck)} | ${W_ERR(v.editCheck)}`, "critical");
+  rec("attendance", "Biometric: refused without consent, works with consent, low match refused, withdrawal stops it; device gateway only",
+    v.bioNoConsent?.error === "no_biometric_consent" && v.bioOk?.ok && v.bioLow?.error === "low_match" && v.bioWithdrawn?.error === "no_biometric_consent" && !v.bioUser?.ok && v.consentPurpose?.ok,
+    `${v.bioNoConsent?.error} → ok → ${v.bioWithdrawn?.error}; user ${W_ERR(v.bioUser)}`, "critical");
+  rec("offline", "Offline attendance batch: applies own-class marks, reports conflicts (other mark, not your class, date range), idempotent replay",
+    v.sync?.applied === 2 && why(v.sync) === "date_out_of_range,date_out_of_range,not_your_class,server_has_other_mark" && v.syncReplay?.replay && v.rows === 2 && !v.parentSync?.ok,
+    `applied ${v.sync?.applied}; conflicts ${why(v.sync)}`, "critical");
+  rec("audit", "Exam, malpractice, CBT, check-in and offline changes are audited", v.audit >= 10, `${v.audit} audit rows`, "high");
+}
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
 await pool.end();

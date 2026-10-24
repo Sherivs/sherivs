@@ -82,6 +82,7 @@ import { Route as AuthenticatedAdminDisciplineRouteImport } from './routes/_auth
 import { Route as AuthenticatedAdminEducationRealityRouteImport } from './routes/_authenticated/admin/education-reality'
 import { Route as AuthenticatedAdminEnterpriseChecklistRouteImport } from './routes/_authenticated/admin/enterprise-checklist'
 import { Route as AuthenticatedAdminExaminationsRouteImport } from './routes/_authenticated/admin/examinations'
+import { Route as AuthenticatedAdminExamsRouteImport } from './routes/_authenticated/admin/exams'
 import { Route as AuthenticatedAdminExpensesRouteImport } from './routes/_authenticated/admin/expenses'
 import { Route as AuthenticatedAdminExtracurricularRouteImport } from './routes/_authenticated/admin/extracurricular'
 import { Route as AuthenticatedAdminFacilitiesRouteImport } from './routes/_authenticated/admin/facilities'
@@ -154,6 +155,7 @@ import { Route as AuthenticatedParentReportCardsRouteImport } from './routes/_au
 import { Route as AuthenticatedStudentAiTutorRouteImport } from './routes/_authenticated/student/ai-tutor'
 import { Route as AuthenticatedStudentAttendanceRouteImport } from './routes/_authenticated/student/attendance'
 import { Route as AuthenticatedStudentCalendarRouteImport } from './routes/_authenticated/student/calendar'
+import { Route as AuthenticatedStudentCbtRouteImport } from './routes/_authenticated/student/cbt'
 import { Route as AuthenticatedStudentDashboardRouteImport } from './routes/_authenticated/student/dashboard'
 import { Route as AuthenticatedStudentFeesRouteImport } from './routes/_authenticated/student/fees'
 import { Route as AuthenticatedStudentGradesRouteImport } from './routes/_authenticated/student/grades'
@@ -585,6 +587,11 @@ const AuthenticatedAdminExaminationsRoute =
     path: '/examinations',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminExamsRoute = AuthenticatedAdminExamsRouteImport.update({
+  id: '/exams',
+  path: '/exams',
+  getParentRoute: () => AuthenticatedAdminRouteRoute,
+} as any)
 const AuthenticatedAdminExpensesRoute =
   AuthenticatedAdminExpensesRouteImport.update({
     id: '/expenses',
@@ -1008,6 +1015,11 @@ const AuthenticatedStudentCalendarRoute =
     path: '/calendar',
     getParentRoute: () => AuthenticatedStudentRouteRoute,
   } as any)
+const AuthenticatedStudentCbtRoute = AuthenticatedStudentCbtRouteImport.update({
+  id: '/cbt',
+  path: '/cbt',
+  getParentRoute: () => AuthenticatedStudentRouteRoute,
+} as any)
 const AuthenticatedStudentDashboardRoute =
   AuthenticatedStudentDashboardRouteImport.update({
     id: '/dashboard',
@@ -1321,6 +1333,7 @@ export interface FileRoutesByFullPath {
   '/admin/education-reality': typeof AuthenticatedAdminEducationRealityRoute
   '/admin/enterprise-checklist': typeof AuthenticatedAdminEnterpriseChecklistRoute
   '/admin/examinations': typeof AuthenticatedAdminExaminationsRoute
+  '/admin/exams': typeof AuthenticatedAdminExamsRoute
   '/admin/expenses': typeof AuthenticatedAdminExpensesRoute
   '/admin/extracurricular': typeof AuthenticatedAdminExtracurricularRoute
   '/admin/facilities': typeof AuthenticatedAdminFacilitiesRoute
@@ -1392,6 +1405,7 @@ export interface FileRoutesByFullPath {
   '/student/ai-tutor': typeof AuthenticatedStudentAiTutorRoute
   '/student/attendance': typeof AuthenticatedStudentAttendanceRoute
   '/student/calendar': typeof AuthenticatedStudentCalendarRoute
+  '/student/cbt': typeof AuthenticatedStudentCbtRoute
   '/student/dashboard': typeof AuthenticatedStudentDashboardRoute
   '/student/fees': typeof AuthenticatedStudentFeesRoute
   '/student/grades': typeof AuthenticatedStudentGradesRoute
@@ -1505,6 +1519,7 @@ export interface FileRoutesByTo {
   '/admin/education-reality': typeof AuthenticatedAdminEducationRealityRoute
   '/admin/enterprise-checklist': typeof AuthenticatedAdminEnterpriseChecklistRoute
   '/admin/examinations': typeof AuthenticatedAdminExaminationsRoute
+  '/admin/exams': typeof AuthenticatedAdminExamsRoute
   '/admin/expenses': typeof AuthenticatedAdminExpensesRoute
   '/admin/extracurricular': typeof AuthenticatedAdminExtracurricularRoute
   '/admin/facilities': typeof AuthenticatedAdminFacilitiesRoute
@@ -1576,6 +1591,7 @@ export interface FileRoutesByTo {
   '/student/ai-tutor': typeof AuthenticatedStudentAiTutorRoute
   '/student/attendance': typeof AuthenticatedStudentAttendanceRoute
   '/student/calendar': typeof AuthenticatedStudentCalendarRoute
+  '/student/cbt': typeof AuthenticatedStudentCbtRoute
   '/student/dashboard': typeof AuthenticatedStudentDashboardRoute
   '/student/fees': typeof AuthenticatedStudentFeesRoute
   '/student/grades': typeof AuthenticatedStudentGradesRoute
@@ -1693,6 +1709,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/education-reality': typeof AuthenticatedAdminEducationRealityRoute
   '/_authenticated/admin/enterprise-checklist': typeof AuthenticatedAdminEnterpriseChecklistRoute
   '/_authenticated/admin/examinations': typeof AuthenticatedAdminExaminationsRoute
+  '/_authenticated/admin/exams': typeof AuthenticatedAdminExamsRoute
   '/_authenticated/admin/expenses': typeof AuthenticatedAdminExpensesRoute
   '/_authenticated/admin/extracurricular': typeof AuthenticatedAdminExtracurricularRoute
   '/_authenticated/admin/facilities': typeof AuthenticatedAdminFacilitiesRoute
@@ -1764,6 +1781,7 @@ export interface FileRoutesById {
   '/_authenticated/student/ai-tutor': typeof AuthenticatedStudentAiTutorRoute
   '/_authenticated/student/attendance': typeof AuthenticatedStudentAttendanceRoute
   '/_authenticated/student/calendar': typeof AuthenticatedStudentCalendarRoute
+  '/_authenticated/student/cbt': typeof AuthenticatedStudentCbtRoute
   '/_authenticated/student/dashboard': typeof AuthenticatedStudentDashboardRoute
   '/_authenticated/student/fees': typeof AuthenticatedStudentFeesRoute
   '/_authenticated/student/grades': typeof AuthenticatedStudentGradesRoute
@@ -1880,6 +1898,7 @@ export interface FileRouteTypes {
     | '/admin/education-reality'
     | '/admin/enterprise-checklist'
     | '/admin/examinations'
+    | '/admin/exams'
     | '/admin/expenses'
     | '/admin/extracurricular'
     | '/admin/facilities'
@@ -1951,6 +1970,7 @@ export interface FileRouteTypes {
     | '/student/ai-tutor'
     | '/student/attendance'
     | '/student/calendar'
+    | '/student/cbt'
     | '/student/dashboard'
     | '/student/fees'
     | '/student/grades'
@@ -2064,6 +2084,7 @@ export interface FileRouteTypes {
     | '/admin/education-reality'
     | '/admin/enterprise-checklist'
     | '/admin/examinations'
+    | '/admin/exams'
     | '/admin/expenses'
     | '/admin/extracurricular'
     | '/admin/facilities'
@@ -2135,6 +2156,7 @@ export interface FileRouteTypes {
     | '/student/ai-tutor'
     | '/student/attendance'
     | '/student/calendar'
+    | '/student/cbt'
     | '/student/dashboard'
     | '/student/fees'
     | '/student/grades'
@@ -2251,6 +2273,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/education-reality'
     | '/_authenticated/admin/enterprise-checklist'
     | '/_authenticated/admin/examinations'
+    | '/_authenticated/admin/exams'
     | '/_authenticated/admin/expenses'
     | '/_authenticated/admin/extracurricular'
     | '/_authenticated/admin/facilities'
@@ -2322,6 +2345,7 @@ export interface FileRouteTypes {
     | '/_authenticated/student/ai-tutor'
     | '/_authenticated/student/attendance'
     | '/_authenticated/student/calendar'
+    | '/_authenticated/student/cbt'
     | '/_authenticated/student/dashboard'
     | '/_authenticated/student/fees'
     | '/_authenticated/student/grades'
@@ -2906,6 +2930,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminExaminationsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/exams': {
+      id: '/_authenticated/admin/exams'
+      path: '/exams'
+      fullPath: '/admin/exams'
+      preLoaderRoute: typeof AuthenticatedAdminExamsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/expenses': {
       id: '/_authenticated/admin/expenses'
       path: '/expenses'
@@ -3410,6 +3441,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudentCalendarRouteImport
       parentRoute: typeof AuthenticatedStudentRouteRoute
     }
+    '/_authenticated/student/cbt': {
+      id: '/_authenticated/student/cbt'
+      path: '/cbt'
+      fullPath: '/student/cbt'
+      preLoaderRoute: typeof AuthenticatedStudentCbtRouteImport
+      parentRoute: typeof AuthenticatedStudentRouteRoute
+    }
     '/_authenticated/student/dashboard': {
       id: '/_authenticated/student/dashboard'
       path: '/dashboard'
@@ -3745,6 +3783,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminEducationRealityRoute: typeof AuthenticatedAdminEducationRealityRoute
   AuthenticatedAdminEnterpriseChecklistRoute: typeof AuthenticatedAdminEnterpriseChecklistRoute
   AuthenticatedAdminExaminationsRoute: typeof AuthenticatedAdminExaminationsRoute
+  AuthenticatedAdminExamsRoute: typeof AuthenticatedAdminExamsRoute
   AuthenticatedAdminExpensesRoute: typeof AuthenticatedAdminExpensesRoute
   AuthenticatedAdminExtracurricularRoute: typeof AuthenticatedAdminExtracurricularRoute
   AuthenticatedAdminFacilitiesRoute: typeof AuthenticatedAdminFacilitiesRoute
@@ -3818,6 +3857,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminEnterpriseChecklistRoute:
       AuthenticatedAdminEnterpriseChecklistRoute,
     AuthenticatedAdminExaminationsRoute: AuthenticatedAdminExaminationsRoute,
+    AuthenticatedAdminExamsRoute: AuthenticatedAdminExamsRoute,
     AuthenticatedAdminExpensesRoute: AuthenticatedAdminExpensesRoute,
     AuthenticatedAdminExtracurricularRoute:
       AuthenticatedAdminExtracurricularRoute,
@@ -3992,6 +4032,7 @@ interface AuthenticatedStudentRouteRouteChildren {
   AuthenticatedStudentAiTutorRoute: typeof AuthenticatedStudentAiTutorRoute
   AuthenticatedStudentAttendanceRoute: typeof AuthenticatedStudentAttendanceRoute
   AuthenticatedStudentCalendarRoute: typeof AuthenticatedStudentCalendarRoute
+  AuthenticatedStudentCbtRoute: typeof AuthenticatedStudentCbtRoute
   AuthenticatedStudentDashboardRoute: typeof AuthenticatedStudentDashboardRoute
   AuthenticatedStudentFeesRoute: typeof AuthenticatedStudentFeesRoute
   AuthenticatedStudentGradesRoute: typeof AuthenticatedStudentGradesRoute
@@ -4005,6 +4046,7 @@ const AuthenticatedStudentRouteRouteChildren: AuthenticatedStudentRouteRouteChil
     AuthenticatedStudentAiTutorRoute: AuthenticatedStudentAiTutorRoute,
     AuthenticatedStudentAttendanceRoute: AuthenticatedStudentAttendanceRoute,
     AuthenticatedStudentCalendarRoute: AuthenticatedStudentCalendarRoute,
+    AuthenticatedStudentCbtRoute: AuthenticatedStudentCbtRoute,
     AuthenticatedStudentDashboardRoute: AuthenticatedStudentDashboardRoute,
     AuthenticatedStudentFeesRoute: AuthenticatedStudentFeesRoute,
     AuthenticatedStudentGradesRoute: AuthenticatedStudentGradesRoute,
