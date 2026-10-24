@@ -1,5 +1,5 @@
 {
- "at": "2026-10-24T21:15:18.288Z",
+ "at": "2026-10-24T21:30:50.715Z",
  "passed": 22,
  "total": 22,
  "results": [
@@ -133,7 +133,7 @@
    "area": "workspace",
    "name": "manifest p95 < 50 ms",
    "pass": true,
-   "detail": "p50 3.6 ms, p95 6.7 ms"
+   "detail": "p50 3.9 ms, p95 5.1 ms"
   }
  ],
  "sample": {

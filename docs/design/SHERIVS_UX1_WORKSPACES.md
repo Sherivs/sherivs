@@ -34,3 +34,13 @@ neutral greys; type scale 12/14/16/20/24/32; spacing 4/8/12/16/24/32; radius 8/1
   family defaults, the two-teacher example, personalisation limits, five-language labels, WCAG contrast.
 - `tools/sim-lab/sim/workspace-scenarios.mjs`: 22 checks on the sim DB; `tools/sim-lab/load/workspace.js`: k6 burst.
 - `tools/workspace/screenshots.mjs`: Playwright captures of the UX lab.
+
+## Results (24 Oct 2026, local sim lab, SIM_SCALE=0.05, 8-core box shared by k6 + PostgREST + Postgres)
+- Fresh DB, all 107 migrations: workspace scenarios 22/22; existing suite 215/216 (the one failure is the lifecycle
+  check that expects 12,000 university students, which a 0.05-scale dataset does not have; it does not touch these tables).
+- `workspace_manifest` p50 3.6 ms, p95 6.7 ms in SQL. k6 burst (all roles, 500 VUs through PostgREST/RLS): 0% errors,
+  903 to 1,405 req/s, p95 395 to 712 ms across two runs. At 1,000 VUs: 0% errors, p95 2.1 s (box-bound).
+- First version called `scholar_can()` once per permission for legacy users (55 ms per manifest; 18% errors at 500 VUs);
+  replaced by a set-based mirror with a parity scenario.
+- Rollback drops every object; migration re-applies twice cleanly.
+- Screens: `docs/design/ux1-screens/` (captured by `tools/workspace/screenshots.mjs`).
