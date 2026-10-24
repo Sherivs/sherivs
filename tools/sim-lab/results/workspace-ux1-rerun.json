@@ -1,0 +1,553 @@
+{
+ "at": "2026-10-24T22:00:44.468Z",
+ "passed": 22,
+ "total": 22,
+ "results": [
+  {
+   "area": "workspace",
+   "name": "teacher A manifest computed",
+   "pass": true,
+   "detail": "{\"families\":[\"teacher\"],\"widgets\":[\"w.today_classes\",\"w.level_overview\",\"w.attendance_todo\",\"w.grading_queue\",\"w.lesson_note_status\",\"w.cbt_sessions\",\"w.ai_lesson_helper\",\"w.announcements\"]}"
+  },
+  {
+   "area": "workspace",
+   "name": "teacher B manifest computed (multi-role)",
+   "pass": true,
+   "detail": "{\"families\":[\"form_teacher\",\"teacher\"],\"widgets\":[\"w.form_class\",\"w.attendance_todo\",\"w.today_classes\",\"w.grading_queue\",\"w.lesson_note_status\",\"w.announcements\"]}"
+  },
+  {
+   "area": "workspace",
+   "name": "same role, different school -> different workspace",
+   "pass": true,
+   "detail": "A vs B widget lists differ"
+  },
+  {
+   "area": "workspace",
+   "name": "plan feature: AI helper only on growth plan",
+   "pass": true,
+   "detail": "ai in growth, not in starter"
+  },
+  {
+   "area": "workspace",
+   "name": "optional permission toggled off hides CBT",
+   "pass": true,
+   "detail": "cbt.manage off at Ikeja"
+  },
+  {
+   "area": "workspace",
+   "name": "form teacher role adds form-class widget",
+   "pass": true,
+   "detail": "w.form_class"
+  },
+  {
+   "area": "workspace",
+   "name": "scope set carried into manifest",
+   "pass": true,
+   "detail": "[{\"ref\":null,\"role\":\"ng.mathematics_teacher\",\"sets\":[{\"level\":[\"JSS2\"],\"subject\":[\"Mathematics\"]}],\"type\":\"org\"}]"
+  },
+  {
+   "area": "workspace",
+   "name": "no finance widgets for teachers",
+   "pass": true,
+   "detail": "bursar items hidden"
+  },
+  {
+   "area": "workspace",
+   "name": "workspace_item_allowed enforces the same rule",
+   "pass": true,
+   "detail": "{\"a\":false,\"b\":true}"
+  },
+  {
+   "area": "workspace",
+   "name": "legacy teacher gets teacher workspace",
+   "pass": true,
+   "detail": "{\"fam\":[\"teacher\"],\"widgets\":[\"w.today_classes\",\"w.attendance_todo\",\"w.grading_queue\",\"w.lesson_note_status\",\"w.cbt_sessions\",\"w.announcements\"]}"
+  },
+  {
+   "area": "workspace",
+   "name": "parent gets parent workspace",
+   "pass": true,
+   "detail": "{\"fam\":[\"parent\"],\"widgets\":[\"w.children_summary\",\"w.child_fees\",\"w.child_bus\",\"w.announcements\"]}"
+  },
+  {
+   "area": "workspace",
+   "name": "student gets student workspace",
+   "pass": true,
+   "detail": "{\"fam\":[\"student\"],\"widgets\":[\"w.my_timetable\",\"w.my_results\",\"w.my_cbt\",\"w.announcements\"]}"
+  },
+  {
+   "area": "workspace",
+   "name": "school admin gets principal workspace",
+   "pass": true,
+   "detail": "{\"fam\":[\"principal\"],\"widgets\":[\"w.school_health\",\"w.results_pipeline\",\"w.lesson_note_approvals\",\"w.at_risk\",\"w.staff_attendance\",\"w.fee_collection\"]}"
+  },
+  {
+   "area": "workspace",
+   "name": "prefs strip items outside the allowed set",
+   "pass": true,
+   "detail": "{\"added\":[\"w.announcements\"],\"order\":[\"w.form_class\"],\"hidden\":[\"w.today_classes\"],\"locale\":\"ha\",\"actions\":[\"a.take_attendance\"]}"
+  },
+  {
+   "area": "workspace",
+   "name": "prefs applied (hide + order + locale)",
+   "pass": true,
+   "detail": "[\"w.form_class\",\"w.attendance_todo\",\"w.grading_queue\",\"w.lesson_note_status\",\"w.announcements\"]"
+  },
+  {
+   "area": "workspace",
+   "name": "cross-school manifest denied",
+   "pass": true,
+   "detail": "teacher A asking for Ikeja"
+  },
+  {
+   "area": "workspace",
+   "name": "anon cannot call manifest",
+   "pass": true,
+   "detail": "anon"
+  },
+  {
+   "area": "workspace",
+   "name": "teacher cannot toggle school modules",
+   "pass": true,
+   "detail": "settings.manage required"
+  },
+  {
+   "area": "workspace",
+   "name": "admin toggles a module",
+   "pass": true,
+   "detail": "[\"cbt\",\"core\",\"health\",\"hostel\",\"payroll\",\"sms\",\"wallet\"]"
+  },
+  {
+   "area": "workspace",
+   "name": "prefs table not directly writable",
+   "pass": true,
+   "detail": "RLS/grants"
+  },
+  {
+   "area": "workspace",
+   "name": "legacy bridge parity with scholar_can()",
+   "pass": true,
+   "detail": "teacher/parent/student/admin identical"
+  },
+  {
+   "area": "workspace",
+   "name": "manifest p95 < 50 ms",
+   "pass": true,
+   "detail": "p50 14.2 ms, p95 16.5 ms"
+  }
+ ],
+ "sample": {
+  "teacherA": {
+   "nav": [
+    {
+     "to": "/workspace",
+     "key": "nav.home",
+     "label": "Home"
+    },
+    {
+     "to": "/admin/students",
+     "key": "nav.students",
+     "label": "Students"
+    },
+    {
+     "to": "/teacher/dashboard",
+     "key": "nav.my_classes",
+     "label": "My classes"
+    },
+    {
+     "to": "/teacher/attendance",
+     "key": "nav.attendance",
+     "label": "Attendance"
+    },
+    {
+     "to": "/teacher/gradebook",
+     "key": "nav.gradebook",
+     "label": "Gradebook"
+    },
+    {
+     "to": "/teacher/lesson-notes",
+     "key": "nav.lesson_notes",
+     "label": "Lesson notes"
+    },
+    {
+     "to": "/admin/exams",
+     "key": "nav.cbt",
+     "label": "CBT"
+    },
+    {
+     "to": "/settings",
+     "key": "nav.my_pay",
+     "label": "My payslips"
+    },
+    {
+     "to": "/admin/hr",
+     "key": "nav.staff",
+     "label": "Staff"
+    },
+    {
+     "to": "/student/ai-tutor",
+     "key": "nav.ai_tutor",
+     "label": "AI tutor"
+    },
+    {
+     "to": "/messages",
+     "key": "nav.messages",
+     "label": "Messages"
+    }
+   ],
+   "inbox": [
+    {
+     "to": "/messages",
+     "key": "i.messages",
+     "label": "Messages"
+    },
+    {
+     "to": "/notifications",
+     "key": "i.alerts",
+     "label": "Alerts"
+    }
+   ],
+   "locale": "en",
+   "org_id": "5f6ca13c-ed03-4ca1-ad78-088d6aa75a88",
+   "scopes": [
+    {
+     "ref": null,
+     "role": "ng.mathematics_teacher",
+     "sets": [
+      {
+       "level": [
+        "JSS2"
+       ],
+       "subject": [
+        "Mathematics"
+       ]
+      }
+     ],
+     "type": "org"
+    }
+   ],
+   "actions": [
+    {
+     "to": "/teacher/attendance",
+     "key": "a.take_attendance",
+     "label": "Take attendance"
+    },
+    {
+     "to": "/teacher/gradebook",
+     "key": "a.enter_scores",
+     "label": "Enter scores"
+    },
+    {
+     "to": "/teacher/lesson-notes",
+     "key": "a.submit_note",
+     "label": "Submit lesson note"
+    },
+    {
+     "to": "/admin/exams",
+     "key": "a.new_cbt",
+     "label": "New CBT test"
+    },
+    {
+     "to": "/settings",
+     "key": "a.request_leave",
+     "label": "Request leave"
+    }
+   ],
+   "density": "comfortable",
+   "version": 2,
+   "widgets": [
+    {
+     "to": "/teacher/timetable",
+     "key": "w.today_classes",
+     "size": "m",
+     "label": "Today's lessons",
+     "scope": {}
+    },
+    {
+     "to": "/teacher/gradebook",
+     "key": "w.level_overview",
+     "size": "m",
+     "label": "My levels, classes & subjects",
+     "scope": {
+      "level": [
+       "JSS2"
+      ],
+      "subject": [
+       "Mathematics"
+      ]
+     }
+    },
+    {
+     "to": "/teacher/attendance",
+     "key": "w.attendance_todo",
+     "size": "s",
+     "label": "Registers to mark",
+     "scope": {}
+    },
+    {
+     "to": "/teacher/gradebook",
+     "key": "w.grading_queue",
+     "size": "s",
+     "label": "Scores to enter",
+     "scope": {}
+    },
+    {
+     "to": "/teacher/lesson-notes",
+     "key": "w.lesson_note_status",
+     "size": "s",
+     "label": "Lesson note status",
+     "scope": {}
+    },
+    {
+     "to": "/admin/exams",
+     "key": "w.cbt_sessions",
+     "size": "m",
+     "label": "CBT sessions",
+     "scope": {}
+    },
+    {
+     "to": "/teacher/ai-assistant",
+     "key": "w.ai_lesson_helper",
+     "size": "s",
+     "label": "AI lesson helper",
+     "scope": {}
+    },
+    {
+     "to": "/messages",
+     "key": "w.announcements",
+     "size": "m",
+     "label": "Announcements",
+     "scope": {}
+    }
+   ],
+   "families": [
+    "teacher"
+   ],
+   "features": [
+    "ai",
+    "cbt",
+    "core",
+    "health",
+    "hostel",
+    "library",
+    "payroll",
+    "sms",
+    "transport",
+    "wallet",
+    "whatsapp"
+   ],
+   "policies": [
+    "workspace.personalise",
+    "students.ai_tutor",
+    "students.results_online",
+    "staff.ai_helper",
+    "staff.message_parents",
+    "parents.fees_online",
+    "parents.bus_tracking"
+   ],
+   "available": [
+    "w.form_class",
+    "w.staff_attendance",
+    "w.ai_tutor"
+   ],
+   "scope_options": {
+    "level": [
+     "JSS2"
+    ],
+    "subject": [
+     "Mathematics"
+    ]
+   },
+   "primary_family": "teacher",
+   "can_personalise": true,
+   "hidden_by_policy": 76
+  },
+  "teacherB": {
+   "nav": [
+    {
+     "to": "/workspace",
+     "key": "nav.home",
+     "label": "Home"
+    },
+    {
+     "to": "/admin/students",
+     "key": "nav.students",
+     "label": "Students"
+    },
+    {
+     "to": "/teacher/dashboard",
+     "key": "nav.my_classes",
+     "label": "My classes"
+    },
+    {
+     "to": "/teacher/attendance",
+     "key": "nav.attendance",
+     "label": "Attendance"
+    },
+    {
+     "to": "/teacher/gradebook",
+     "key": "nav.gradebook",
+     "label": "Gradebook"
+    },
+    {
+     "to": "/teacher/lesson-notes",
+     "key": "nav.lesson_notes",
+     "label": "Lesson notes"
+    },
+    {
+     "to": "/bursar/dashboard",
+     "key": "nav.fees",
+     "label": "Fees & payments"
+    },
+    {
+     "to": "/settings",
+     "key": "nav.my_pay",
+     "label": "My payslips"
+    },
+    {
+     "to": "/admin/hr",
+     "key": "nav.staff",
+     "label": "Staff"
+    },
+    {
+     "to": "/messages",
+     "key": "nav.messages",
+     "label": "Messages"
+    }
+   ],
+   "inbox": [
+    {
+     "to": "/messages",
+     "key": "i.messages",
+     "label": "Messages"
+    },
+    {
+     "to": "/notifications",
+     "key": "i.alerts",
+     "label": "Alerts"
+    }
+   ],
+   "locale": "en",
+   "org_id": "fd44bd97-4028-45c1-a985-d4072451cb1d",
+   "scopes": [
+    {
+     "ref": null,
+     "role": "ng.mathematics_teacher",
+     "sets": [],
+     "type": "org"
+    },
+    {
+     "ref": null,
+     "role": "ng.class_coordinator",
+     "sets": [],
+     "type": "org"
+    }
+   ],
+   "actions": [
+    {
+     "to": "/teacher/attendance",
+     "key": "a.take_attendance",
+     "label": "Take attendance"
+    },
+    {
+     "to": "/messages",
+     "key": "a.message_parents",
+     "label": "Message parents"
+    },
+    {
+     "to": "/teacher/gradebook",
+     "key": "a.enter_scores",
+     "label": "Enter scores"
+    },
+    {
+     "to": "/teacher/lesson-notes",
+     "key": "a.submit_note",
+     "label": "Submit lesson note"
+    },
+    {
+     "to": "/settings",
+     "key": "a.request_leave",
+     "label": "Request leave"
+    }
+   ],
+   "density": "comfortable",
+   "version": 2,
+   "widgets": [
+    {
+     "to": "/teacher/class-intelligence",
+     "key": "w.form_class",
+     "size": "l",
+     "label": "My form class",
+     "scope": {}
+    },
+    {
+     "to": "/teacher/attendance",
+     "key": "w.attendance_todo",
+     "size": "s",
+     "label": "Registers to mark",
+     "scope": {}
+    },
+    {
+     "to": "/teacher/timetable",
+     "key": "w.today_classes",
+     "size": "m",
+     "label": "Today's lessons",
+     "scope": {}
+    },
+    {
+     "to": "/teacher/gradebook",
+     "key": "w.grading_queue",
+     "size": "s",
+     "label": "Scores to enter",
+     "scope": {}
+    },
+    {
+     "to": "/teacher/lesson-notes",
+     "key": "w.lesson_note_status",
+     "size": "s",
+     "label": "Lesson note status",
+     "scope": {}
+    },
+    {
+     "to": "/messages",
+     "key": "w.announcements",
+     "size": "m",
+     "label": "Announcements",
+     "scope": {}
+    }
+   ],
+   "families": [
+    "form_teacher",
+    "teacher"
+   ],
+   "features": [
+    "cbt",
+    "core",
+    "health",
+    "hostel",
+    "payroll",
+    "sms",
+    "transport",
+    "wallet"
+   ],
+   "policies": [
+    "workspace.personalise",
+    "students.ai_tutor",
+    "students.results_online",
+    "staff.ai_helper",
+    "staff.message_parents",
+    "parents.fees_online",
+    "parents.bus_tracking"
+   ],
+   "available": [
+    "w.fee_collection",
+    "w.defaulters",
+    "w.staff_attendance"
+   ],
+   "scope_options": {},
+   "primary_family": "form_teacher",
+   "can_personalise": true,
+   "hidden_by_policy": 81
+  }
+ }
+}

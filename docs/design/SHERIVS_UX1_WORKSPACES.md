@@ -58,3 +58,32 @@ Verified locally (sim-lab Postgres, inside a rolled-back transaction):
 - Turning personalisation off made `can_personalise=false` and stripped saved prefs.
 - `workspace_policy_set` was refused without `settings.manage`.
 - Rollback followed by re-applying UX1 and UX2 succeeded.
+
+## SHERIVS-UX3: live card data and `?scope=` on target pages
+The migrations are renumbered so they sort after Track E (#120): UX1 is `…0930`, UX2 is `…0940`, UX3 is `…0950`. The six workspace tables are `FORCE ROW LEVEL SECURITY`, matching the Track E posture.
+
+**Card data.** `workspace_widget_data(org, keys, scope)` is SECURITY INVOKER, so every number is computed under the caller's own RLS.
+- It covers 29 card keys: lessons, registers, scores, lesson notes, CBT, form/level/campus/shift/section/school attendance, at-risk, fees and defaulters, children, results, timetable, expenses, leave, admissions, enrolment, sick bay, library, gate and announcements.
+- Results are narrowed to the caller's assigned scope, or to one focused scope they actually hold.
+- A key the caller may not see is skipped.
+- If the caller can't read a card's table, the card comes back as `{unavailable:true}`.
+
+**Scope resolution.** `workspace_scope_resolve(org, focus)` validates `?scope=dim:ref` and returns the classes it covers plus human labels (`workspace_scope_labels`).
+
+**Pages that honour `?scope=`.** They do it through `useScopeFilter()` and `<ScopeBanner>`, which has a "Show all" button:
+- `/teacher/attendance`
+- `/teacher/gradebook`
+- `/teacher/class-intelligence`
+- `/admin/report-cards`
+- `/admin/students` (new `CrudList.selectIn`)
+
+The campus and section cards now link to `/admin/students`; the shift card links to `/teacher/attendance`; the level card links to `/teacher/gradebook`.
+
+**Sim lab** (`tools/sim-lab/sim/workspace-ux3-scenarios.mjs`, results in `tools/sim-lab/results/workspace-ux3.json`): 18/18 pass.
+- The fixture is two maths teachers at one school: one scoped to JSS 2 + Mathematics, one scoped to Ajah Annex + Afternoon. They get different homes.
+- Each card's live counts equal the true counts for that scope.
+- A student gets no finance cards. A parent sees only their own children.
+- Anon and cross-school requests get nothing.
+- p95 is 4.8 ms for a full home.
+
+**Screens.** `docs/design/ux3-screens/` is rendered by `/ux-lab?replay=X|Y` from the real server output captured in that run (`tools/workspace/replay.mjs`, `tools/workspace/screenshots-ux3.mjs`).

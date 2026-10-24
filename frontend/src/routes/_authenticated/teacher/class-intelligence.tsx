@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, AlertTriangle, Trophy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
+import { ScopeBanner, useScopeFilter } from "@/components/sds/scope-filter";
 import { PortalPage } from "@/components/portal-shell";
 import { attendanceRate, studentRiskFromAvailable } from "@/lib/runtime/scholar/honest-scores";
 
@@ -19,6 +20,7 @@ function ClassIntelligence() {
   const teacherId = profile?.id;
   const schoolId = school?.id;
   const [selected, setSelected] = useState<string | null>(null);
+  const scope = useScopeFilter();
 
   const myClasses = useQuery<Klass[]>({
     queryKey: ["teacher-ci-classes", teacherId, schoolId],
@@ -85,7 +87,7 @@ function ClassIntelligence() {
 
   const classStats = useMemo(() => {
     if (!bulk.data) return [];
-    return (myClasses.data ?? []).map((c) => {
+    return scope.filterClasses(myClasses.data).map((c) => {
       const st = bulk.data.students.filter((s) => s.class_id === c.id);
       const g = bulk.data.grades.filter((r) => r.class_id === c.id);
       const avg = g.length
@@ -115,12 +117,13 @@ function ClassIntelligence() {
         .slice(0, 3);
       return { ...c, studentCount: st.length, avg, rate: roundedRate, atRisk, top, studentRisk };
     });
-  }, [bulk.data, myClasses.data]);
+  }, [bulk.data, myClasses.data, scope.classIds]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const selectedClass = classStats.find((c) => c.id === selected);
 
   return (
     <PortalPage title="My Classes" subtitle="Student analytics for every class you teach">
+      <ScopeBanner scope={scope} />
       {selectedClass ? (
         <>
           <button

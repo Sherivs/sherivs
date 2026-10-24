@@ -5,9 +5,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
+import { ScopeBanner, useScopeFilter } from "@/components/sds/scope-filter";
 import { PortalPage } from "@/components/portal-shell";
 import { Button } from "@/components/ui/button";
-import { markClassAttendance, teacherCheckWithQr } from "@/lib/runtime/scholar/attendance.functions";
+import {
+  markClassAttendance,
+  teacherCheckWithQr,
+} from "@/lib/runtime/scholar/attendance.functions";
 import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/_authenticated/teacher/attendance")({
@@ -43,6 +47,7 @@ function TeacherAttendancePage() {
   const today = todayStr();
 
   const [classId, setClassId] = useState<string | null>(null);
+  const scope = useScopeFilter();
   const [marks, setMarks] = useState<Record<string, Status>>({});
   const [saving, setSaving] = useState(false);
 
@@ -208,6 +213,7 @@ function TeacherAttendancePage() {
         </Link>
       </div>
 
+      <ScopeBanner scope={scope} />
       <div className="uos-card p-5">
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex-1 min-w-[220px]">
@@ -220,7 +226,7 @@ function TeacherAttendancePage() {
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
             >
               <option value="">— Select a class —</option>
-              {(classes.data ?? []).map((c) => (
+              {scope.filterClasses(classes.data).map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>

@@ -85,9 +85,9 @@ W("w.gov_overview","landmark","/gov-dashboard",["regulator.read_aggregate"],size
 W("w.gov_compliance","clipboard-check","/gov-dashboard",["regulator.read_aggregate"],size="m",en="Compliance & inspections",pcm="Compliance")
 # scope-bound widgets: appear only for people the admin scoped to that dimension, so two people with the same
 # role see different homes (a campus head vs a whole-school principal; a morning-shift vs afternoon-shift supervisor).
-W("w.campus_overview","building","/admin/analytics",["students.view","attendance.view","analytics.institution"],size="l",scope=["campus"],en="My campus today",ha="Harabata yau",yo="Ọgbà mi lónìí",ig="Ogige m taa",pcm="My campus today")
+W("w.campus_overview","building","/admin/students",["students.view","attendance.view","analytics.institution"],size="l",scope=["campus"],en="My campus today",ha="Harabata yau",yo="Ọgbà mi lónìí",ig="Ogige m taa",pcm="My campus today")
 W("w.shift_overview","clock","/teacher/attendance",["attendance.view","attendance.take"],size="m",scope=["shift"],en="My shift",ha="Lokacin aikina",yo="Ìyípadà iṣẹ́ mi",ig="Oge ọrụ m",pcm="My shift")
-W("w.section_overview","layers","/admin/analytics",["students.view","reports.academic","welfare.pastoral"],size="m",scope=["section"],en="My section",ha="Sashena",yo="Ẹ̀ka mi",ig="Ngalaba m",pcm="My section")
+W("w.section_overview","layers","/admin/students",["students.view","reports.academic","welfare.pastoral"],size="m",scope=["section"],en="My section",ha="Sashena",yo="Ẹ̀ka mi",ig="Ngalaba m",pcm="My section")
 W("w.level_overview","graduation-cap","/teacher/gradebook",["grades.enter","grades.view","grades.approve","reports.academic"],size="m",scope=["level","class","subject"],en="My levels, classes & subjects",ha="Matakaina",yo="Ìpele mi",ig="Ọkwa m",pcm="My level dem")
 W("w.house_overview","flag","/admin/discipline",["welfare.pastoral","discipline.decide","hostel.roll_call"],size="s",scope=["house","hostel"],en="My house / hostel",ha="Gidana",yo="Ilé mi",ig="Ụlọ m",pcm="My house")
 W("w.announcements","megaphone","/messages",[],size="m",en="Announcements",ha="Sanarwa",yo="Ìkéde",ig="Ọkwa",pcm="Announcement")

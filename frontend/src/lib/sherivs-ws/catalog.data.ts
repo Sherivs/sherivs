@@ -1604,7 +1604,7 @@ const data = {
    "key": "w.campus_overview",
    "kind": "widget",
    "icon": "building",
-   "to": "/admin/analytics",
+   "to": "/admin/students",
    "any": [
     "students.view",
     "attendance.view",
@@ -1655,7 +1655,7 @@ const data = {
    "key": "w.section_overview",
    "kind": "widget",
    "icon": "layers",
-   "to": "/admin/analytics",
+   "to": "/admin/students",
    "any": [
     "students.view",
     "reports.academic",
