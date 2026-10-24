@@ -90,6 +90,7 @@ import { Route as AuthenticatedAdminDomainsRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminEarlyWarningRouteImport } from './routes/_authenticated/admin/early-warning'
 import { Route as AuthenticatedAdminEducationRealityRouteImport } from './routes/_authenticated/admin/education-reality'
 import { Route as AuthenticatedAdminEnterpriseChecklistRouteImport } from './routes/_authenticated/admin/enterprise-checklist'
+import { Route as AuthenticatedAdminExamBodiesRouteImport } from './routes/_authenticated/admin/exam-bodies'
 import { Route as AuthenticatedAdminExaminationsRouteImport } from './routes/_authenticated/admin/examinations'
 import { Route as AuthenticatedAdminExamsRouteImport } from './routes/_authenticated/admin/exams'
 import { Route as AuthenticatedAdminExpensesRouteImport } from './routes/_authenticated/admin/expenses'
@@ -643,6 +644,12 @@ const AuthenticatedAdminEnterpriseChecklistRoute =
   AuthenticatedAdminEnterpriseChecklistRouteImport.update({
     id: '/enterprise-checklist',
     path: '/enterprise-checklist',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminExamBodiesRoute =
+  AuthenticatedAdminExamBodiesRouteImport.update({
+    id: '/exam-bodies',
+    path: '/exam-bodies',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminExaminationsRoute =
@@ -1446,6 +1453,7 @@ export interface FileRoutesByFullPath {
   '/admin/early-warning': typeof AuthenticatedAdminEarlyWarningRoute
   '/admin/education-reality': typeof AuthenticatedAdminEducationRealityRoute
   '/admin/enterprise-checklist': typeof AuthenticatedAdminEnterpriseChecklistRoute
+  '/admin/exam-bodies': typeof AuthenticatedAdminExamBodiesRoute
   '/admin/examinations': typeof AuthenticatedAdminExaminationsRoute
   '/admin/exams': typeof AuthenticatedAdminExamsRoute
   '/admin/expenses': typeof AuthenticatedAdminExpensesRoute
@@ -1647,6 +1655,7 @@ export interface FileRoutesByTo {
   '/admin/early-warning': typeof AuthenticatedAdminEarlyWarningRoute
   '/admin/education-reality': typeof AuthenticatedAdminEducationRealityRoute
   '/admin/enterprise-checklist': typeof AuthenticatedAdminEnterpriseChecklistRoute
+  '/admin/exam-bodies': typeof AuthenticatedAdminExamBodiesRoute
   '/admin/examinations': typeof AuthenticatedAdminExaminationsRoute
   '/admin/exams': typeof AuthenticatedAdminExamsRoute
   '/admin/expenses': typeof AuthenticatedAdminExpensesRoute
@@ -1853,6 +1862,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/early-warning': typeof AuthenticatedAdminEarlyWarningRoute
   '/_authenticated/admin/education-reality': typeof AuthenticatedAdminEducationRealityRoute
   '/_authenticated/admin/enterprise-checklist': typeof AuthenticatedAdminEnterpriseChecklistRoute
+  '/_authenticated/admin/exam-bodies': typeof AuthenticatedAdminExamBodiesRoute
   '/_authenticated/admin/examinations': typeof AuthenticatedAdminExaminationsRoute
   '/_authenticated/admin/exams': typeof AuthenticatedAdminExamsRoute
   '/_authenticated/admin/expenses': typeof AuthenticatedAdminExpensesRoute
@@ -2058,6 +2068,7 @@ export interface FileRouteTypes {
     | '/admin/early-warning'
     | '/admin/education-reality'
     | '/admin/enterprise-checklist'
+    | '/admin/exam-bodies'
     | '/admin/examinations'
     | '/admin/exams'
     | '/admin/expenses'
@@ -2259,6 +2270,7 @@ export interface FileRouteTypes {
     | '/admin/early-warning'
     | '/admin/education-reality'
     | '/admin/enterprise-checklist'
+    | '/admin/exam-bodies'
     | '/admin/examinations'
     | '/admin/exams'
     | '/admin/expenses'
@@ -2464,6 +2476,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/early-warning'
     | '/_authenticated/admin/education-reality'
     | '/_authenticated/admin/enterprise-checklist'
+    | '/_authenticated/admin/exam-bodies'
     | '/_authenticated/admin/examinations'
     | '/_authenticated/admin/exams'
     | '/_authenticated/admin/expenses'
@@ -3186,6 +3199,13 @@ declare module '@tanstack/react-router' {
       path: '/enterprise-checklist'
       fullPath: '/admin/enterprise-checklist'
       preLoaderRoute: typeof AuthenticatedAdminEnterpriseChecklistRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/exam-bodies': {
+      id: '/_authenticated/admin/exam-bodies'
+      path: '/exam-bodies'
+      fullPath: '/admin/exam-bodies'
+      preLoaderRoute: typeof AuthenticatedAdminExamBodiesRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/examinations': {
@@ -4100,6 +4120,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminEarlyWarningRoute: typeof AuthenticatedAdminEarlyWarningRoute
   AuthenticatedAdminEducationRealityRoute: typeof AuthenticatedAdminEducationRealityRoute
   AuthenticatedAdminEnterpriseChecklistRoute: typeof AuthenticatedAdminEnterpriseChecklistRoute
+  AuthenticatedAdminExamBodiesRoute: typeof AuthenticatedAdminExamBodiesRoute
   AuthenticatedAdminExaminationsRoute: typeof AuthenticatedAdminExaminationsRoute
   AuthenticatedAdminExamsRoute: typeof AuthenticatedAdminExamsRoute
   AuthenticatedAdminExpensesRoute: typeof AuthenticatedAdminExpensesRoute
@@ -4178,6 +4199,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
       AuthenticatedAdminEducationRealityRoute,
     AuthenticatedAdminEnterpriseChecklistRoute:
       AuthenticatedAdminEnterpriseChecklistRoute,
+    AuthenticatedAdminExamBodiesRoute: AuthenticatedAdminExamBodiesRoute,
     AuthenticatedAdminExaminationsRoute: AuthenticatedAdminExaminationsRoute,
     AuthenticatedAdminExamsRoute: AuthenticatedAdminExamsRoute,
     AuthenticatedAdminExpensesRoute: AuthenticatedAdminExpensesRoute,

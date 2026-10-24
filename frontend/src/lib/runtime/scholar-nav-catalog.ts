@@ -1178,6 +1178,14 @@ export const SCHOLAR_NAV_CONTRIBUTIONS: readonly NavContribution[] = [
         orderHint: 2,
       },
       {
+        key: "r001.org_admin.exam_bodies",
+        label: "External exams (WAEC, NECO…)",
+        iconKey: "grades",
+        url: "/admin/exam-bodies",
+        capabilities: ["r001:org_admin.exam_bodies"],
+        orderHint: 2,
+      },
+      {
         key: "r001.org_admin.domains",
         label: "School domains",
         iconKey: "settings",

@@ -1484,6 +1484,61 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
     v.removed === true && v.anonRemoved === null && !!v.bReclaim?.id && JSON.stringify(v.audit) === JSON.stringify(["add", "check", "set_primary", "remove"]) && !v.auditEdit?.ok && v.resolveMs < 20,
     `audit ${JSON.stringify(v.audit)}; resolve ${v.resolveMs} ms avg over 2,000 domains`, "high");
 }
+// ---------- A4. Exam-body registration windows: WAEC / NECO / BECE / NCEE / UTME (SHERIVS-A04) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+    const st = async (lvl) => (await asOwner("select s.id, s.parent_id from students s join classes c on c.id=s.class_id where s.school_id=$1 and c.grade_level=$2 order by s.admission_number limit 1", [A.schoolId, lvl])).row;
+    const ss3 = await st("SS3"), jss1 = await st("JSS1"), jss3 = await st("JSS3");
+    const bStudent = (await asOwner("select id from students where school_id=$1 limit 1", [B.schoolId])).row?.id;
+    const W = (body, yr, o, c, l, fee = 25000, late = 5000) => t(`select public.exam_window_upsert($1,$2,$3,current_date + ${o},current_date + ${c},${l === null ? "null" : `current_date + ${l}`},$4,$5) id`, [A.schoolId, body, yr, fee, late]);
+    await act(A.teacher); out.teacherWin = await W("WAEC_WASSCE", 2031, -1, 10, 20); await act(A.admin);
+    const open = (await W("WAEC_WASSCE", 2031, -1, 10, 20)).row?.id;
+    const subj8 = ["English Language", "General Mathematics", "Biology", "Chemistry", "Physics", "Civic Education", "Economics", "Agricultural Science"];
+    out.reg = (await t("select public.exam_candidate_register($1,$2,$3) r", [open, ss3.id, subj8])).row?.r;
+    out.rereg = (await t("select public.exam_candidate_register($1,$2,$3) r", [open, ss3.id, [...subj8, "Further Mathematics"]])).row?.r;
+    out.rows = (await asOwner("select count(*)::int n from exam_body_candidates where window_id=$1", [open])).row?.n;
+    out.notElig = await t("select public.exam_candidate_register($1,$2,$3)", [open, jss1.id, subj8]);
+    out.few = await t("select public.exam_candidate_register($1,$2,$3)", [open, ss3.id, subj8.slice(0, 5)]);
+    out.dupSubj = await t("select public.exam_candidate_register($1,$2,$3)", [open, ss3.id, [...subj8.slice(0, 6), "biology ", "Biology"]]);
+    out.foreign = await t("select public.exam_candidate_register($1,$2,$3)", [open, bStudent, subj8]);
+    const late = (await W("NECO_SSCE", 2031, -20, -1, 5)).row?.id;
+    out.late = (await t("select public.exam_candidate_register($1,$2,$3) r", [late, ss3.id, subj8])).row?.r;
+    const closed = (await W("BECE", 2031, -30, -10, -2)).row?.id;
+    const bece = ["English Studies", "Mathematics", "Basic Science", "Basic Technology", "Social Studies", "Civic Education", "CRS", "Agriculture", "Business Studies"];
+    out.closed = await t("select public.exam_candidate_register($1,$2,$3)", [closed, jss3.id, bece]);
+    const future = (await W("JAMB_UTME", 2031, 5, 30, null)).row?.id;
+    out.future = await t("select public.exam_candidate_register($1,$2,$3)", [future, ss3.id, ["Use of English", "Mathematics", "Physics", "Chemistry"]]);
+    // freeze: move the open window's dates into the past, then try to withdraw
+    const cand = out.reg?.id;
+    await asOwner("update exam_body_windows set opens_on=current_date-40, closes_on=current_date-20, late_closes_on=current_date-10 where id=$1", [late]);
+    const lateCand = (await asOwner("select id from exam_body_candidates where window_id=$1", [late])).row?.id;
+    out.frozenWithdraw = await t("select public.exam_candidate_withdraw($1)", [lateCand]);
+    out.withdraw = await t("select public.exam_candidate_withdraw($1)", [cand]);
+    out.reRegRaw = await t("select public.exam_candidate_register($1,$2,$3) r", [open, ss3.id, subj8]); out.reRegAfterWithdraw = out.reRegRaw.row?.r;
+    out.summary = (await t("select public.exam_window_summary($1) r", [open])).row?.r;
+    out.direct = await t("insert into exam_body_candidates (window_id, school_id, student_id, subjects) values ($1,$2,$3,'{x}')", [open, A.schoolId, jss1.id]);
+    if (ss3.parent_id) { await act(ss3.parent_id); out.parentSees = (await t("select count(*)::int n from exam_body_candidates where student_id=$1", [ss3.id])).row?.n; }
+    await act(B.admin); out.bSummary = await t("select public.exam_window_summary($1)", [open]);
+    out.bRows = (await t("select count(*)::int n from exam_body_candidates where window_id=$1", [open])).row?.n;
+    out.bReg = await t("select public.exam_candidate_register($1,$2,$3)", [open, ss3.id, subj8]); await act(A.admin);
+    out.hasParent = !!ss3.parent_id;
+  });
+  rec("exam_bodies", "Only exams officers open windows; an eligible SS3 candidate registers once and can change subjects",
+    !v.teacherWin?.ok && v.reg?.fee_due == 25000 && v.reg?.late === false && v.rereg?.subjects?.length === 9 && v.rows === 1,
+    `teacher ${W_ERR(v.teacherWin)}; fee ${v.reg?.fee_due}; rows ${v.rows}; ${JSON.stringify(v.reg)} ${JSON.stringify(v.rereg)}`, "high");
+  rec("exam_bodies", "Wrong level, too few subjects, duplicate subjects and another school's student are refused",
+    /not_eligible/.test(v.notElig?.err ?? "") && /subject_count/.test(v.few?.err ?? "") && /subject_count/.test(v.dupSubj?.err ?? "") && !v.foreign?.ok,
+    `${W_ERR(v.notElig)} | ${W_ERR(v.few)} | ${W_ERR(v.dupSubj)} | ${W_ERR(v.foreign)}`, "high");
+  rec("exam_bodies", "Late window charges the late fee; before opening and after the final close registration is refused; closed entries are frozen",
+    v.late?.late === true && v.late?.fee_due == 30000 && /window_closed/.test(v.closed?.err ?? "") && /window_not_open/.test(v.future?.err ?? "") && /frozen/.test(v.frozenWithdraw?.err ?? ""),
+    `late ${JSON.stringify(v.late)}; closed ${W_ERR(v.closed)}; future ${W_ERR(v.future)}; frozen ${W_ERR(v.frozenWithdraw)}`, "high");
+  rec("exam_bodies", "Withdraw then re-register while open; summary counts entries, fees and per-subject numbers",
+    v.withdraw?.ok && v.reRegAfterWithdraw?.id && v.summary?.candidates === 1 && Number(v.summary?.fees_due) === 25000 && v.summary?.by_subject?.["Biology"] === 1 && v.summary?.state === "open",
+    JSON.stringify(v.summary) + " rereg " + W_ERR(v.reRegRaw) + " w " + W_ERR(v.withdraw), "medium");
+  rec("exam_bodies", "No direct writes; parents see their own child's entry; another school sees nothing and cannot register",
+    !v.direct?.ok && (!v.hasParent || v.parentSees === 2) && !v.bSummary?.ok && v.bRows === 0 && !v.bReg?.ok,
+    `direct ${W_ERR(v.direct)}; parent ${v.parentSees}; B ${W_ERR(v.bSummary)} rows ${v.bRows}`, "critical");
+}
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
 await pool.end();
