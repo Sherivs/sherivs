@@ -29,6 +29,7 @@ import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as RulesRouteImport } from './routes/rules'
 import { Route as ScholarFoundationLoopRouteImport } from './routes/scholar-foundation-loop'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as UxLabRouteImport } from './routes/ux-lab'
 import { Route as siteAboutRouteImport } from './routes/(site)/about'
 import { Route as siteCheckResultRouteImport } from './routes/(site)/check-result'
 import { Route as siteContactRouteImport } from './routes/(site)/contact'
@@ -59,6 +60,7 @@ import { Route as AuthenticatedStudentRouteRouteImport } from './routes/_authent
 import { Route as AuthenticatedSuperAdminRouteRouteImport } from './routes/_authenticated/super-admin/route'
 import { Route as AuthenticatedTeacherRouteRouteImport } from './routes/_authenticated/teacher/route'
 import { Route as AuthenticatedWelcomeRouteImport } from './routes/_authenticated/welcome'
+import { Route as AuthenticatedWorkspaceRouteImport } from './routes/_authenticated/workspace'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as EventsIdRouteImport } from './routes/events.$id'
 import { Route as GovIndexRouteImport } from './routes/gov/index'
@@ -311,6 +313,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UxLabRoute = UxLabRouteImport.update({
+  id: '/ux-lab',
+  path: '/ux-lab',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const siteAboutRoute = siteAboutRouteImport.update({
   id: '/about',
   path: '/about',
@@ -469,6 +476,11 @@ const AuthenticatedTeacherRouteRoute =
 const AuthenticatedWelcomeRoute = AuthenticatedWelcomeRouteImport.update({
   id: '/welcome',
   path: '/welcome',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedWorkspaceRoute = AuthenticatedWorkspaceRouteImport.update({
+  id: '/workspace',
+  path: '/workspace',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const BlogSlugRoute = BlogSlugRouteImport.update({
@@ -1385,6 +1397,7 @@ export interface FileRoutesByFullPath {
   '/rules': typeof RulesRoute
   '/scholar-foundation-loop': typeof ScholarFoundationLoopRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/ux-lab': typeof UxLabRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/bursar': typeof AuthenticatedBursarRouteRouteWithChildren
   '/command-centre': typeof AuthenticatedCommandCentreRouteRouteWithChildren
@@ -1415,6 +1428,7 @@ export interface FileRoutesByFullPath {
   '/runtime': typeof AuthenticatedRuntimeRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
+  '/workspace': typeof AuthenticatedWorkspaceRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/events/$id': typeof EventsIdRoute
   '/gov/about': typeof GovAboutRoute
@@ -1587,6 +1601,7 @@ export interface FileRoutesByTo {
   '/rules': typeof RulesRoute
   '/scholar-foundation-loop': typeof ScholarFoundationLoopRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/ux-lab': typeof UxLabRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/bursar': typeof AuthenticatedBursarRouteRouteWithChildren
   '/driver': typeof AuthenticatedDriverRouteRouteWithChildren
@@ -1616,6 +1631,7 @@ export interface FileRoutesByTo {
   '/runtime': typeof AuthenticatedRuntimeRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
+  '/workspace': typeof AuthenticatedWorkspaceRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/events/$id': typeof EventsIdRoute
   '/gov/about': typeof GovAboutRoute
@@ -1792,6 +1808,7 @@ export interface FileRoutesById {
   '/rules': typeof RulesRoute
   '/scholar-foundation-loop': typeof ScholarFoundationLoopRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/ux-lab': typeof UxLabRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/_authenticated/bursar': typeof AuthenticatedBursarRouteRouteWithChildren
   '/_authenticated/command-centre': typeof AuthenticatedCommandCentreRouteRouteWithChildren
@@ -1822,6 +1839,7 @@ export interface FileRoutesById {
   '/_authenticated/runtime': typeof AuthenticatedRuntimeRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/welcome': typeof AuthenticatedWelcomeRoute
+  '/_authenticated/workspace': typeof AuthenticatedWorkspaceRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/events/$id': typeof EventsIdRoute
   '/gov/about': typeof GovAboutRoute
@@ -1997,6 +2015,7 @@ export interface FileRouteTypes {
     | '/rules'
     | '/scholar-foundation-loop'
     | '/sitemap.xml'
+    | '/ux-lab'
     | '/admin'
     | '/bursar'
     | '/command-centre'
@@ -2027,6 +2046,7 @@ export interface FileRouteTypes {
     | '/runtime'
     | '/settings'
     | '/welcome'
+    | '/workspace'
     | '/blog/$slug'
     | '/events/$id'
     | '/gov/about'
@@ -2199,6 +2219,7 @@ export interface FileRouteTypes {
     | '/rules'
     | '/scholar-foundation-loop'
     | '/sitemap.xml'
+    | '/ux-lab'
     | '/admin'
     | '/bursar'
     | '/driver'
@@ -2228,6 +2249,7 @@ export interface FileRouteTypes {
     | '/runtime'
     | '/settings'
     | '/welcome'
+    | '/workspace'
     | '/blog/$slug'
     | '/events/$id'
     | '/gov/about'
@@ -2403,6 +2425,7 @@ export interface FileRouteTypes {
     | '/rules'
     | '/scholar-foundation-loop'
     | '/sitemap.xml'
+    | '/ux-lab'
     | '/_authenticated/admin'
     | '/_authenticated/bursar'
     | '/_authenticated/command-centre'
@@ -2433,6 +2456,7 @@ export interface FileRouteTypes {
     | '/_authenticated/runtime'
     | '/_authenticated/settings'
     | '/_authenticated/welcome'
+    | '/_authenticated/workspace'
     | '/blog/$slug'
     | '/events/$id'
     | '/gov/about'
@@ -2609,6 +2633,7 @@ export interface RootRouteChildren {
   RulesRoute: typeof RulesRoute
   ScholarFoundationLoopRoute: typeof ScholarFoundationLoopRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  UxLabRoute: typeof UxLabRoute
   EventsIdRoute: typeof EventsIdRoute
   NewsIdRoute: typeof NewsIdRoute
   RealityClassRoute: typeof RealityClassRoute
@@ -2759,6 +2784,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ux-lab': {
+      id: '/ux-lab'
+      path: '/ux-lab'
+      fullPath: '/ux-lab'
+      preLoaderRoute: typeof UxLabRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(site)/about': {
@@ -2969,6 +3001,13 @@ declare module '@tanstack/react-router' {
       path: '/welcome'
       fullPath: '/welcome'
       preLoaderRoute: typeof AuthenticatedWelcomeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/workspace': {
+      id: '/_authenticated/workspace'
+      path: '/workspace'
+      fullPath: '/workspace'
+      preLoaderRoute: typeof AuthenticatedWorkspaceRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/blog/$slug': {
@@ -4508,6 +4547,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRuntimeRoute: typeof AuthenticatedRuntimeRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedWelcomeRoute: typeof AuthenticatedWelcomeRoute
+  AuthenticatedWorkspaceRoute: typeof AuthenticatedWorkspaceRoute
   AuthenticatedInternalAccessReviewRoute: typeof AuthenticatedInternalAccessReviewRoute
   AuthenticatedInternalGovAccessRoute: typeof AuthenticatedInternalGovAccessRoute
   AuthenticatedInternalSupportRoute: typeof AuthenticatedInternalSupportRoute
@@ -4535,6 +4575,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRuntimeRoute: AuthenticatedRuntimeRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedWelcomeRoute: AuthenticatedWelcomeRoute,
+  AuthenticatedWorkspaceRoute: AuthenticatedWorkspaceRoute,
   AuthenticatedInternalAccessReviewRoute:
     AuthenticatedInternalAccessReviewRoute,
   AuthenticatedInternalGovAccessRoute: AuthenticatedInternalGovAccessRoute,
@@ -4605,6 +4646,7 @@ const rootRouteChildren: RootRouteChildren = {
   RulesRoute: RulesRoute,
   ScholarFoundationLoopRoute: ScholarFoundationLoopRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  UxLabRoute: UxLabRoute,
   EventsIdRoute: EventsIdRoute,
   NewsIdRoute: NewsIdRoute,
   RealityClassRoute: RealityClassRoute,
