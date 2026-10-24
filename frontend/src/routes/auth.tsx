@@ -20,6 +20,8 @@ import {
   newPasswordServerMessage,
 } from "@/lib/security/auth-feedback";
 import { SherivsLogo } from "@/components/brand/sherivs-logo";
+import { resolveTenantDomain } from "@/lib/tenant";
+import { schoolDomainLoginAllowed } from "@/lib/domains/school-domains";
 import { currentEffectiveHostKind } from "@/lib/experience/console-host-routing";
 import { authPageExperience, effectiveAuthMode } from "@/lib/experience/auth-page-experience";
 
@@ -139,6 +141,20 @@ function AuthPage() {
               `This account does not belong to ${school.name}. Please sign in on your own school portal.`,
             );
           }
+        }
+
+        // SHERIVS-029: on a school's own domain only that school's members may sign in.
+        const customHost = resolveTenantDomain();
+        if (customHost && data.user && !(await schoolDomainLoginAllowed(customHost))) {
+          await supabase.auth.signOut();
+          void fetch("/api/public/audit/password-reset", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ event: "login_failed", email, user_id: data.user.id }),
+          }).catch(() => {});
+          throw new Error(
+            `This account does not belong to ${school?.name ?? "this school"}. Please sign in on your own school's address or at app.sherivs.com.`,
+          );
         }
 
         void fetch("/api/public/audit/password-reset", {

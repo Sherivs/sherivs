@@ -41,14 +41,16 @@ describe("classifyTenantHost", () => {
     expect(classifyTenantHost("[::1]")).toEqual({ kind: "platform" });
   });
 
-  it("classifies reserved subdomains as platform", () => {
-    expect(classifyTenantHost("www.example.com")).toEqual({ kind: "platform" });
-    expect(classifyTenantHost("app.example.com")).toEqual({ kind: "platform" });
-    expect(classifyTenantHost("api.example.com")).toEqual({ kind: "platform" });
-    expect(classifyTenantHost("admin.example.com")).toEqual({ kind: "platform" });
-    expect(classifyTenantHost("dashboard.example.com")).toEqual({ kind: "platform" });
-    expect(classifyTenantHost("console.example.com")).toEqual({ kind: "platform" });
-    expect(classifyTenantHost("internal.example.com")).toEqual({ kind: "platform" });
+  it("classifies reserved subdomains of platform roots as platform", () => {
+    for (const sub of ["www", "app", "api", "admin", "dashboard", "console", "internal", "gov"]) {
+      expect(classifyTenantHost(`${sub}.sherivs.com`)).toEqual({ kind: "platform" });
+    }
+  });
+
+  it("never treats government console hosts as school tenants (SHERIVS-029)", () => {
+    expect(classifyTenantHost("gov.sherivs.com")).toEqual({ kind: "platform" });
+    expect(classifyTenantHost("borno.gov.sherivs.com")).toEqual({ kind: "platform" });
+    expect(classifyTenantHost("console.unimaid.sherivs.com")).toEqual({ kind: "platform" });
   });
 
   it("does not treat generated Vercel hosts as organization slugs", () => {
@@ -64,7 +66,17 @@ describe("classifyTenantHost", () => {
       kind: "subdomain",
       slug: "lincoln",
     });
-    expect(classifyTenantHost("acme.example.com")).toEqual({ kind: "subdomain", slug: "acme" });
+    // Outside the platform roots a multi-label host is the school's own domain, not a slug.
+    expect(classifyTenantHost("acme.example.com")).toEqual({ kind: "custom-domain", domain: "acme.example.com" });
+  });
+
+  it("classifies Nigerian school domains as custom domains, never as bogus slugs (SHERIVS-029)", () => {
+    expect(classifyTenantHost("portal.kingsschool.sch.ng")).toEqual({ kind: "custom-domain", domain: "portal.kingsschool.sch.ng" });
+    expect(classifyTenantHost("kingsschool.sch.ng")).toEqual({ kind: "custom-domain", domain: "kingsschool.sch.ng" });
+    expect(classifyTenantHost("unimaid.edu.ng")).toEqual({ kind: "custom-domain", domain: "unimaid.edu.ng" });
+    expect(classifyTenantHost("portal.unimaid.edu.ng")).toEqual({ kind: "custom-domain", domain: "portal.unimaid.edu.ng" });
+    expect(classifyTenantHost("www.kingsschool.com.ng")).toEqual({ kind: "custom-domain", domain: "www.kingsschool.com.ng" });
+    expect(classifyTenantHost("PORTAL.KingsSchool.SCH.NG")).toEqual({ kind: "custom-domain", domain: "portal.kingsschool.sch.ng" });
   });
 
   it("classifies non-subdomain hostnames as tenant custom domains", () => {

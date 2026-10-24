@@ -39,7 +39,18 @@ const PLATFORM_HOSTS = [
   "app.universalschoolos.com",
 ];
 
-const RESERVED_SUBS = new Set(["www", "app", "api", "admin", "dashboard", "internal", "console"]);
+const RESERVED_SUBS = new Set(["www", "app", "api", "admin", "dashboard", "internal", "console", "gov"]);
+
+/**
+ * Root domains under which the first label is a Sherivs organization slug
+ * (acme.sherivs.com). Any other hostname is a school's own registered domain
+ * (SHERIVS-029: portal.school.sch.ng, school.edu.ng, school.com.ng), resolved
+ * through `resolve_school_by_host` (verified domains only). Multi-label public
+ * suffixes such as .sch.ng / .edu.ng therefore never yield a bogus slug.
+ */
+const PLATFORM_ROOT_DOMAINS = ["sherivs.com", "universalschoolos.com"];
+/** Government console hosts (<state>.gov.sherivs.com) are never school tenants. */
+const GOV_ROOT = "gov.sherivs.com";
 
 export type TenantHostClassification =
   | { kind: "platform" }
@@ -55,11 +66,19 @@ export function classifyTenantHost(hostname: string): TenantHostClassification {
   // Bare IP addresses (dev tunnels) are never tenants.
   if (/^(\d{1,3}\.){3}\d{1,3}$/.test(host) || host === "[::1]") return { kind: "platform" };
 
-  const parts = host.split(".");
-  if (parts.length < 3) return { kind: "custom-domain", domain: host }; // organization-domain.com
-  const first = parts[0] ?? "";
-  if (RESERVED_SUBS.has(first)) return { kind: "platform" };
-  return { kind: "subdomain", slug: first };
+  if (host === GOV_ROOT || host.endsWith(`.${GOV_ROOT}`)) return { kind: "platform" };
+  const root = PLATFORM_ROOT_DOMAINS.find((r) => host.endsWith(`.${r}`));
+  if (root) {
+    const labels = host.slice(0, -(root.length + 1)).split(".");
+    // Only a single label directly under the platform root is a slug.
+    if (labels.length !== 1) return { kind: "platform" };
+    const first = labels[0] ?? "";
+    if (!first || RESERVED_SUBS.has(first)) return { kind: "platform" };
+    return { kind: "subdomain", slug: first };
+  }
+  if (!host.includes(".")) return { kind: "platform" };
+  // Anything else is a school's own domain (looked up; unknown hosts resolve to nothing).
+  return { kind: "custom-domain", domain: host.replace(/\.$/, "") };
 }
 
 /** Hostname → organization slug. Platform hosts and reserved labels are never tenants. */

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { USER_SAFE_COLUMNS } from "@/lib/identity/user-private-fields";
 import { SCHOOL_CLIENT_COLUMNS } from "@/lib/runtime/scholar/school-columns";
 import { resolveTenantDomain, resolveTenantSlug } from "@/lib/tenant";
+import { resolveSchoolByHost, schoolDomainLoginAllowed } from "@/lib/domains/school-domains";
 import { type AppRole } from "@/lib/roles";
 import { runtimeWorkspaceHome } from "@/lib/runtime/nav-registry";
 import { customTenantColors } from "@/lib/brand/tenant-colors";
@@ -174,7 +175,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Plane B: custom-domain lookup — an organization's own registered
     // domain (schools.domain) serves its public site when the visitor
     // lands on it. Subdomain and platform hosts never reach this branch.
+    // SHERIVS-029: verified rows in school_domains win; legacy schools.domain is the fallback.
     const tenantDomain = resolveTenantDomain();
+    if (tenantDomain && !slug) {
+      const resolved = await resolveSchoolByHost(tenantDomain);
+      // A session that does not belong to this school's domain is ended here (host-scoped login).
+      if (currentSession && resolved && !(await schoolDomainLoginAllowed(tenantDomain))) {
+        await supabase.auth.signOut();
+        nextProfile = null;
+        nextSuperAdmin = null;
+        nextPlatformStaff = null;
+        nextSchool = null;
+      }
+      if (resolved && (!nextSchool || nextSchool.id !== resolved.school_id)) {
+        const { data: sch } = await supabase
+          .from("schools")
+          .select(SCHOOL_CLIENT_COLUMNS)
+          .eq("id", resolved.school_id)
+          .eq("is_active", true)
+          .maybeSingle();
+        nextSchool = sch ? (sch as unknown as SchoolRow) : null;
+      }
+    }
     if (!nextSchool && !slug && tenantDomain) {
       const { data: sch } = await supabase
         .from("schools")

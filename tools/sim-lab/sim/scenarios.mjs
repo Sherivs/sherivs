@@ -1419,6 +1419,71 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
     !v.badExpiry?.ok && v.expired >= 1 && v.expiredAgain === 0 && v.stale?.status === "failed" && /expired/.test(v.stale?.failure_reason ?? "") && v.late?.outcome === "settled" && v.delta === 3000,
     `expired ${v.expired}/${v.expiredAgain}; bad ${v.badExpiry?.ok}; stale ${JSON.stringify(v.stale)}; late ${v.late?.outcome}; delta ${v.delta}`, "high");
 }
+// ---------- 24. School custom domains (.sch.ng / .edu.ng) + host-scoped login (SHERIVS-029) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+    const svc = async (sql, p = []) => { await c.query("SET LOCAL ROLE service_role"); await c.query("select set_config('request.jwt.claims', '{\"role\":\"service_role\"}', true)");
+      try { return await t(sql, p); } finally { await c.query("SET LOCAL ROLE authenticated"); } };
+    const anon = async (sql, p = []) => { await c.query("SET LOCAL ROLE anon"); await c.query("select set_config('request.jwt.claims', '{\"role\":\"anon\"}', true)");
+      try { return await t(sql, p); } finally { await c.query("SET LOCAL ROLE authenticated"); } };
+    const host = "portal.sim-" + crypto.randomUUID().slice(0, 8) + ".sch.ng";
+    out.add = (await t("select public.school_domain_add($1,'app') r", ["HTTPS://" + host.toUpperCase() + "/login"])).row?.r;
+    out.reserved = await t("select public.school_domain_add('evil.sherivs.com')");
+    out.bareSld = await t("select public.school_domain_add('edu.ng')");
+    out.junk = await t("select public.school_domain_add('not a domain')");
+    await act(A.teacher); out.teacherAdd = await t("select public.school_domain_add($1)", ["x." + host]);
+    await act(B.admin);
+    out.bSteal = await t("select public.school_domain_add($1)", [host]);
+    out.bSees = (await t("select count(*)::int n from school_domains where hostname=$1", [host])).row?.n;
+    out.bRemove = (await t("select public.school_domain_remove($1) r", [out.add?.id])).row?.r;
+    out.bPrimary = await t("select public.school_domain_set_primary($1)", [out.add?.id]);
+    out.bDirect = await t("update school_domains set school_id=$2 where hostname=$1", [host, B.schoolId]);
+    await act(A.admin);
+    out.aSees = (await t("select count(*)::int n from school_domains where hostname=$1", [host])).row?.n;
+    out.primaryPending = await t("select public.school_domain_set_primary($1)", [out.add?.id]);
+    out.anonBefore = (await anon("select public.resolve_school_by_host($1) r", [host])).row?.r ?? null;
+    await act(A.admin);
+    out.userVerify = await t("select public.school_domain_record_check($1, true)", [out.add?.id]);
+    out.userForCheck = await t("select public.school_domain_for_check($1)", [out.add?.id]);
+    out.forCheck = (await svc("select public.school_domain_for_check($1) r", [out.add?.id])).row?.r;
+    out.verify = (await svc("select public.school_domain_record_check($1, true, 'stubbed') r", [out.add?.id])).row?.r;
+    out.anonAfter = (await anon("select public.resolve_school_by_host($1) r", [host.toUpperCase() + "."])).row?.r;
+    out.anonTable = await anon("select count(*) from school_domains");
+    await act(A.admin); // the svc/anon helpers leave service/anon claims behind
+    out.primary = (await t("select public.school_domain_set_primary($1) r", [out.add?.id])).row?.r;
+    out.loginA = (await t("select public.school_domain_login_allowed($1) r", [host])).row?.r;
+    await act(A.teacher); out.loginATeacher = (await t("select public.school_domain_login_allowed($1) r", [host])).row?.r;
+    await act(B.admin); out.loginB = (await t("select public.school_domain_login_allowed($1) r", [host])).row?.r;
+    out.loginBPlatform = (await t("select public.school_domain_login_allowed('app.sherivs.com') r")).row?.r;
+    await act(A.admin);
+    out.removed = (await t("select public.school_domain_remove($1) r", [out.add?.id])).row?.r;
+    out.anonRemoved = (await anon("select public.resolve_school_by_host($1) r", [host])).row?.r ?? null;
+    await act(B.admin); out.bReclaim = (await t("select public.school_domain_add($1) r", [host])).row?.r;
+    out.audit = (await asOwner("select array_agg(action order by id) a from school_domain_audit where domain_id=$1", [out.add?.id])).row?.a;
+    out.auditEdit = await asOwner("delete from school_domain_audit where domain_id=$1", [out.add?.id]);
+    // resolver cost with 2,000 verified domains
+    await asOwner("insert into school_domains (school_id, hostname, status) select $1, 'h'||g||'.load.sch.ng', 'verified' from generate_series(1,2000) g", [E.schoolId]);
+    const t0 = Date.now(); for (let i = 0; i < 200; i++) await anon("select public.resolve_school_by_host($1)", ["h" + (i * 7 + 1) + ".load.sch.ng"]);
+    out.resolveMs = (Date.now() - t0) / 200;
+    Object.assign(out, { host });
+  });
+  rec("custom_domain", "School admin adds a normalised domain and gets TXT + CNAME instructions; teachers, reserved Sherivs hosts, bare SLDs and junk are refused",
+    v.add?.hostname === v.host && v.add?.status === "pending" && /^sherivs-verify=/.test(v.add?.txt_value ?? "") && !v.reserved?.ok && !v.bareSld?.ok && !v.junk?.ok && !v.teacherAdd?.ok,
+    JSON.stringify({ add: v.add?.hostname, reserved: v.reserved?.err }), "high");
+  rec("custom_domain", "Tenant isolation: school B cannot claim, see, remove, make primary or rewrite school A's domain",
+    !v.bSteal?.ok && v.bSees === 0 && v.bRemove === false && !v.bPrimary?.ok && (!v.bDirect?.ok || v.bDirect?.r?.rowCount === 0) && v.aSees === 1,
+    JSON.stringify({ bSees: v.bSees, bRemove: v.bRemove, bDirect: v.bDirect?.ok ? v.bDirect.r.rowCount : v.bDirect?.err }), "critical");
+  rec("custom_domain", "Unverified domains never resolve; only the service role can verify; anon resolves a verified host (case/trailing-dot insensitive) to school A only, never reads the table",
+    v.anonBefore === null && !v.primaryPending?.ok && !v.userVerify?.ok && !v.userForCheck?.ok && v.forCheck?.txt_value === v.add?.txt_value && v.verify === "verified"
+      && v.anonAfter?.school_id === A.schoolId && !v.anonTable?.ok && v.primary === true,
+    JSON.stringify({ anonAfter: v.anonAfter?.school_id === A.schoolId, anonTable: v.anonTable?.err }), "critical");
+  rec("custom_domain", "Host-scoped login: school A members allowed on A's domain, a school B user is refused there; platform hosts unaffected",
+    v.loginA === true && v.loginATeacher === true && v.loginB === false && v.loginBPlatform === true,
+    JSON.stringify({ a: v.loginA, t: v.loginATeacher, b: v.loginB, plat: v.loginBPlatform }), "critical");
+  rec("custom_domain", "Removed domain stops resolving and can be claimed afresh; every action is in the append-only audit; resolver stays fast",
+    v.removed === true && v.anonRemoved === null && !!v.bReclaim?.id && JSON.stringify(v.audit) === JSON.stringify(["add", "check", "set_primary", "remove"]) && !v.auditEdit?.ok && v.resolveMs < 20,
+    `audit ${JSON.stringify(v.audit)}; resolve ${v.resolveMs} ms avg over 2,000 domains`, "high");
+}
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
 await pool.end();

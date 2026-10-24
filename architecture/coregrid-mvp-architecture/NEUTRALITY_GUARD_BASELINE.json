@@ -15,8 +15,8 @@
     "lastRatchet": "2026-10-03: V1-006 (team SECURITY) neutralized the platform authorization core — removed all 9 frontend/src/lib/authorization.ts and all 13 frontend/src/lib/identity.ts entries (authorization.ts and identity.ts now carry zero education vocabulary; roles/relationship types are contributed via rbac/domain-contribution + domain-config registration) and refreshed the 7 frozen security-role-gate.ts legacy-fallback entries against the live tree (shrink-only, ADR-003/004). || 2026-10-03 (ADR-012): T-wave coordinator ADDED 3 quarantine groups (19 hits) for database/supabase/migrations/20261003000040_coregrid_school_media_bucket.sql — the FIRST baseline extension, made under ADR-004's explicit 'new ADR' mechanism: the declarative storage-provisioning migration must reference the legacy storage contract id school-media consumed by the frontend and by the applied 20260707223958 policy set; the neutral conversion (bucket id + policy predicates + path contract) is blocked on the neutral-tenant substrate conversion (same conversionPath class as the transport posture) and is recorded as an authorized follow-up that REMOVES these entries in the same change. Zero new privileges authorized by ADR-012. || 2026-10-08 (ADR-013): Sherivs refoundation ADDED 9 quarantine groups (47 hits) for database/supabase/migrations/20261008000050_coregrid_organization_memberships.sql — the SECOND baseline extension, made under ADR-004's explicit 'new ADR' mechanism (ADR-012 precedent): the multi-membership migration extends the LIVE legacy identity store in place (users.school_id stays the ACTIVE-CONTEXT binding; every tenant RLS predicate resolves through get_my_school_id()/get_my_role()), so its SQL necessarily carries the same legacy vocabulary class its owners are quarantined for (school_id, is_school_admin, get_my_school_id, tenant role names). It introduces NO new domain code on the universal surface — the table is additive, RLS-FORCED, and mirrors the legacy store. Zero new privileges beyond the policy-gated DML posture it declares. The neutral-tenant substrate conversion (COND-003 / ADR-012 conversionPath) removes these entries in the same change when it lands. || 2026-10-08 (ADR-013 amendment, same ADR authority): pre-apply verification against the LIVE users_role_check exposed two roles the migration's original CHECK omitted (alumni, driver) — the dual-write trigger must be able to mirror EVERY role the identity store legally holds, so the CHECK was corrected to mirror users_role_check exactly and the migration APPLIED under explicit operator authorization. This adds 1 quarantine group (vocabulary-literal:driver) to the ten now recorded for this migration."
   },
   "summary": {
-    "entryCount": 626,
-    "totalObservedHits": 2843,
+    "entryCount": 630,
+    "totalObservedHits": 2879,
     "hitsByFile": {
       "database/supabase/migrations/20260907000100_runtime_scholar_workforce_catalog.sql": 114,
       "database/supabase/migrations/20260620122048_50e590c2-5911-4c98-8931-fb46a4b509f3.sql": 84,
@@ -172,7 +172,8 @@
       "database/supabase/migrations/20261024000310_sherivs_024_lessons_hr_payroll_stores_visitors.sql": 98,
       "database/supabase/migrations/20261024000320_sherivs_025_ussd_ivr_alumni_gov_i18n.sql": 55,
       "database/supabase/migrations/20261024000330_sherivs_026_wallet_topup_init_i18n_fix.sql": 11,
-      "database/supabase/migrations/20261024000340_sherivs_027_gov_portal.sql": 19
+      "database/supabase/migrations/20261024000340_sherivs_027_gov_portal.sql": 19,
+      "database/supabase/migrations/20261024000360_sherivs_029_school_custom_domains.sql": 36
     },
     "baselineGroups": 427
   },
@@ -9744,6 +9745,82 @@
         72
       ],
       "firstSnippet": "(SELECT count(*) FILTER (WHERE status IN ('present','late')) FROM public.attendance a WHERE a.school_id = s.school_id AND a.date >= current_date - 30) att_p,"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000360_sherivs_029_school_custom_domains.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "SHERIVS-029",
+      "occurrences": 9,
+      "lines": [
+        1,
+        2,
+        3,
+        4,
+        41,
+        52,
+        60,
+        75,
+        128
+      ],
+      "firstSnippet": "-- SHERIVS-029 (W11): per-school custom domains (.sch.ng / .edu.ng / own domain)."
+    },
+    {
+      "file": "database/supabase/migrations/20261024000360_sherivs_029_school_custom_domains.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-029",
+      "occurrences": 19,
+      "lines": [
+        8,
+        19,
+        20,
+        28,
+        31,
+        59,
+        61,
+        63,
+        74,
+        76,
+        78,
+        87,
+        89,
+        107,
+        116,
+        123,
+        124,
+        136,
+        137
+      ],
+      "firstSnippet": "school_id uuid NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000360_sherivs_029_school_custom_domains.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "SHERIVS-029",
+      "occurrences": 4,
+      "lines": [
+        28,
+        49,
+        71,
+        84
+      ],
+      "firstSnippet": "USING ((school_id = (SELECT public.get_my_school_id()) AND (SELECT public.is_school_admin())) OR (SELECT public.is_super_admin()));"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000360_sherivs_029_school_custom_domains.sql",
+      "kind": "vocabulary",
+      "token": "is_school_admin",
+      "streamIRef": "SHERIVS-029",
+      "occurrences": 4,
+      "lines": [
+        28,
+        51,
+        73,
+        86
+      ],
+      "firstSnippet": "USING ((school_id = (SELECT public.get_my_school_id()) AND (SELECT public.is_school_admin())) OR (SELECT public.is_super_admin()));"
     }
   ]
 }

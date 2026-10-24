@@ -86,6 +86,7 @@ import { Route as AuthenticatedAdminCmsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAdminDashboardRouteImport } from './routes/_authenticated/admin/dashboard'
 import { Route as AuthenticatedAdminDigitalTwinRouteImport } from './routes/_authenticated/admin/digital-twin'
 import { Route as AuthenticatedAdminDisciplineRouteImport } from './routes/_authenticated/admin/discipline'
+import { Route as AuthenticatedAdminDomainsRouteImport } from './routes/_authenticated/admin/domains'
 import { Route as AuthenticatedAdminEarlyWarningRouteImport } from './routes/_authenticated/admin/early-warning'
 import { Route as AuthenticatedAdminEducationRealityRouteImport } from './routes/_authenticated/admin/education-reality'
 import { Route as AuthenticatedAdminEnterpriseChecklistRouteImport } from './routes/_authenticated/admin/enterprise-checklist'
@@ -618,6 +619,12 @@ const AuthenticatedAdminDisciplineRoute =
   AuthenticatedAdminDisciplineRouteImport.update({
     id: '/discipline',
     path: '/discipline',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminDomainsRoute =
+  AuthenticatedAdminDomainsRouteImport.update({
+    id: '/domains',
+    path: '/domains',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminEarlyWarningRoute =
@@ -1435,6 +1442,7 @@ export interface FileRoutesByFullPath {
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/admin/digital-twin': typeof AuthenticatedAdminDigitalTwinRoute
   '/admin/discipline': typeof AuthenticatedAdminDisciplineRoute
+  '/admin/domains': typeof AuthenticatedAdminDomainsRoute
   '/admin/early-warning': typeof AuthenticatedAdminEarlyWarningRoute
   '/admin/education-reality': typeof AuthenticatedAdminEducationRealityRoute
   '/admin/enterprise-checklist': typeof AuthenticatedAdminEnterpriseChecklistRoute
@@ -1635,6 +1643,7 @@ export interface FileRoutesByTo {
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/admin/digital-twin': typeof AuthenticatedAdminDigitalTwinRoute
   '/admin/discipline': typeof AuthenticatedAdminDisciplineRoute
+  '/admin/domains': typeof AuthenticatedAdminDomainsRoute
   '/admin/early-warning': typeof AuthenticatedAdminEarlyWarningRoute
   '/admin/education-reality': typeof AuthenticatedAdminEducationRealityRoute
   '/admin/enterprise-checklist': typeof AuthenticatedAdminEnterpriseChecklistRoute
@@ -1840,6 +1849,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/_authenticated/admin/digital-twin': typeof AuthenticatedAdminDigitalTwinRoute
   '/_authenticated/admin/discipline': typeof AuthenticatedAdminDisciplineRoute
+  '/_authenticated/admin/domains': typeof AuthenticatedAdminDomainsRoute
   '/_authenticated/admin/early-warning': typeof AuthenticatedAdminEarlyWarningRoute
   '/_authenticated/admin/education-reality': typeof AuthenticatedAdminEducationRealityRoute
   '/_authenticated/admin/enterprise-checklist': typeof AuthenticatedAdminEnterpriseChecklistRoute
@@ -2044,6 +2054,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/digital-twin'
     | '/admin/discipline'
+    | '/admin/domains'
     | '/admin/early-warning'
     | '/admin/education-reality'
     | '/admin/enterprise-checklist'
@@ -2244,6 +2255,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/digital-twin'
     | '/admin/discipline'
+    | '/admin/domains'
     | '/admin/early-warning'
     | '/admin/education-reality'
     | '/admin/enterprise-checklist'
@@ -2448,6 +2460,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/dashboard'
     | '/_authenticated/admin/digital-twin'
     | '/_authenticated/admin/discipline'
+    | '/_authenticated/admin/domains'
     | '/_authenticated/admin/early-warning'
     | '/_authenticated/admin/education-reality'
     | '/_authenticated/admin/enterprise-checklist'
@@ -3145,6 +3158,13 @@ declare module '@tanstack/react-router' {
       path: '/discipline'
       fullPath: '/admin/discipline'
       preLoaderRoute: typeof AuthenticatedAdminDisciplineRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/domains': {
+      id: '/_authenticated/admin/domains'
+      path: '/domains'
+      fullPath: '/admin/domains'
+      preLoaderRoute: typeof AuthenticatedAdminDomainsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/early-warning': {
@@ -4076,6 +4096,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminDashboardRoute: typeof AuthenticatedAdminDashboardRoute
   AuthenticatedAdminDigitalTwinRoute: typeof AuthenticatedAdminDigitalTwinRoute
   AuthenticatedAdminDisciplineRoute: typeof AuthenticatedAdminDisciplineRoute
+  AuthenticatedAdminDomainsRoute: typeof AuthenticatedAdminDomainsRoute
   AuthenticatedAdminEarlyWarningRoute: typeof AuthenticatedAdminEarlyWarningRoute
   AuthenticatedAdminEducationRealityRoute: typeof AuthenticatedAdminEducationRealityRoute
   AuthenticatedAdminEnterpriseChecklistRoute: typeof AuthenticatedAdminEnterpriseChecklistRoute
@@ -4151,6 +4172,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminDashboardRoute: AuthenticatedAdminDashboardRoute,
     AuthenticatedAdminDigitalTwinRoute: AuthenticatedAdminDigitalTwinRoute,
     AuthenticatedAdminDisciplineRoute: AuthenticatedAdminDisciplineRoute,
+    AuthenticatedAdminDomainsRoute: AuthenticatedAdminDomainsRoute,
     AuthenticatedAdminEarlyWarningRoute: AuthenticatedAdminEarlyWarningRoute,
     AuthenticatedAdminEducationRealityRoute:
       AuthenticatedAdminEducationRealityRoute,
