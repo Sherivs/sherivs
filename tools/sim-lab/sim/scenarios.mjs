@@ -426,6 +426,70 @@ const inTx = async (uid, fn, role = "authenticated") => { try { return { ok: tru
     `self ${v.exSelf?.ok ? "ALLOWED" : "denied"}, ₦3m ${v.exBig?.ok ? "ALLOWED" : "denied"}, ₦500k ${v.exSmall?.ok ? "approved" : v.exSmall?.err}`, "critical");
   rec("roles", "Every role/permission change is audited and chained", v.audit >= 7 && v.chain === v.audit, `${v.audit} audit_logs rows, ${v.chain} audit_chain rows (actor + before/after recorded)`, "high");
 }
+// ---------- 13. Fee config, flags, onboarding rate limit (SHERIVS-018) ----------
+// Shared helper for wave checks: one rolled-back tx, savepoint per statement, act() switches the JWT subject.
+const wave = async (uid, fn) => {
+  const c = await pool.connect(); const out = {};
+  try {
+    await c.query("BEGIN"); await c.query("SET LOCAL ROLE authenticated");
+    const act = (u) => c.query("select set_config('request.jwt.claims', $1, true)", [JSON.stringify({ sub: u, role: "authenticated" })]);
+    let sp = 0;
+    const t = async (sql, p = []) => { const n = `w${++sp}`; await c.query(`SAVEPOINT ${n}`);
+      try { const r = await c.query(sql, p); await c.query(`RELEASE SAVEPOINT ${n}`); return { ok: true, r, row: r.rows[0] }; }
+      catch (e) { await c.query(`ROLLBACK TO SAVEPOINT ${n}`); return { ok: false, err: e.message.slice(0, 140) }; } };
+    const asOwner = async (sql, p = []) => { await c.query("RESET ROLE"); try { return await t(sql, p); } finally { await c.query("SET LOCAL ROLE authenticated"); } };
+    await act(uid); await fn({ t, act, asOwner, c, out });
+  } finally { await c.query("ROLLBACK").catch(() => {}); c.release(); }
+  return out;
+};
+const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
+{
+  const SA = crypto.randomUUID();
+  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+    const fee = async (amt, ch) => Number((await t("select public.paystack_fee($1,$2,$3) f", [A.schoolId, amt, ch])).row?.f);
+    out.card150 = await fee(152000, "card"); out.card1m = await fee(1000000, "card"); out.xfer = await fee(152000, "bank_transfer");
+    out.adminSet = await t("select public.set_payment_fee_config($1, '{\"mode\":\"standard\"}')", [A.schoolId]);
+    out.adminDirect = await t("update payment_fee_config set edu_card_pct = 0");
+    await asOwner("insert into auth.users (id) values ($1) on conflict do nothing", [SA]);
+    await asOwner("insert into super_admins (id, full_name, email, is_active) values ($1,'Sim SA','sa@sim.local',true)", [SA]);
+    await act(SA);
+    out.saSet = await t("select public.set_payment_fee_config($1, '{\"mode\":\"standard\"}')", [A.schoolId]);
+    await act(A.admin);
+    out.std = await fee(152000, "card"); out.stdSmall = await fee(2000, "card");
+    out.audit = (await asOwner("select count(*)::int n from audit_logs where school_id=$1 and action like 'scholar.payment_fee_config.%'", [A.schoolId])).row?.n;
+    await act(SA);
+    out.saLive = await t("select public.flag_set('paystack_live', null, true)");
+    out.saLiveOrg = await t("select public.flag_set('paystack_live', $1, true)", [A.schoolId]);
+    out.ownerLive = await asOwner("update feature_flags set enabled = true where key='paystack_live'");
+    out.saWa = await t("select public.flag_set('whatsapp_live', $1, true)", [A.schoolId]);
+    await act(A.admin);
+    out.adminFlag = await t("select public.flag_set('whatsapp_live', $1, true)", [A.schoolId]);
+    out.flagOn = (await t("select public.flag_on('whatsapp_live', $1) f", [A.schoolId])).row?.f;
+    out.paystackLive = (await t("select public.flag_on('paystack_live', $1) f", [A.schoolId])).row?.f;
+    out.rlDirect = await t("select public.rate_limit_take('onboarding.user','x',100,'1 day')");
+    const founder = async () => { const u = crypto.randomUUID(); await asOwner("insert into auth.users (id) values ($1)", [u]); return u; };
+    const create = (u, i) => t("select public.create_organization_with_founder($1,$2,'Sim Founder') id", [`Sim Spam School ${i}`, `sim-spam-${i}-${u.slice(0, 8)}`]);
+    const f1 = await founder(); await act(f1); out.f1 = await create(f1, 1);
+    const f2 = await founder(); out.ins = await asOwner("insert into rate_limit_events (bucket, subject, at) select 'onboarding.user', $1, now() from generate_series(1,3)", [f2]);
+    await act(f2); out.f2 = await create(f2, 2);
+    await asOwner("insert into rate_limit_events (bucket, subject, at) select 'onboarding.global', 'all', now() from generate_series(1,60)");
+    const f3 = await founder(); await act(f3); out.f3 = await create(f3, 3);
+    await act(SA); out.saCreate = await t("insert into schools (name, slug) values ('Staff-made school', $1)", [`staff-${SA.slice(0, 8)}`]);
+  });
+  rec("fees", "Paystack education rate (default): ₦152k card = ₦1,064; ₦1m card capped at ₦1,500; transfer ₦300", v.card150 === 1064 && v.card1m === 1500 && v.xfer === 300,
+    `card152k=${v.card150} card1m=${v.card1m} transfer=${v.xfer}`, "high");
+  rec("fees", "Fee model is configurable (standard 1.5% + ₦100 cap ₦2,000; ₦100 waived under ₦2,500)", v.saSet?.ok && v.std === 2000 && v.stdSmall === 30,
+    `std152k=${v.std} std2k=${v.stdSmall}`, "high");
+  rec("fees", "Only Sherivs staff can change the fee model (school admin and direct writes refused)", !v.adminSet?.ok && !v.adminDirect?.ok,
+    `rpc ${W_ERR(v.adminSet)}; direct ${W_ERR(v.adminDirect)}`, "critical");
+  rec("fees", "Fee model change is audited", v.audit >= 1, `${v.audit} audit rows`, "high");
+  rec("flags", "Paystack live is locked: platform staff, per-school override and DB owner all refused", !v.saLive?.ok && !v.saLiveOrg?.ok && !v.ownerLive?.ok && v.paystackLive === false,
+    `global ${W_ERR(v.saLive)}; org ${W_ERR(v.saLiveOrg)}; owner ${W_ERR(v.ownerLive)}`, "critical");
+  rec("flags", "Provider flags: staff can enable per school, school admin cannot", v.saWa?.ok && !v.adminFlag?.ok && v.flagOn === true, `admin ${W_ERR(v.adminFlag)}`, "high");
+  rec("ratelimit", "Onboarding rate limit: per-account (3/day) and global (50/hour) caps refuse new schools", v.f1?.ok && /rate_limited/.test(v.f2?.err ?? "") && /rate_limited/.test(v.f3?.err ?? ""),
+    `first ${v.f1?.ok ? "created" : v.f1?.err}; account cap ${W_ERR(v.f2)}; global cap ${W_ERR(v.f3)}`, "high");
+  rec("ratelimit", "Rate-limit counter cannot be called directly by users", !v.rlDirect?.ok, W_ERR(v.rlDirect), "medium");
+}
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
 await pool.end();

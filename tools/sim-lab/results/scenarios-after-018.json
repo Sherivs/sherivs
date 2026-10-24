@@ -1,0 +1,786 @@
+[
+ {
+  "area": "enrollment",
+  "name": "Admin enrolls a student in own school",
+  "pass": true,
+  "detail": "inserted",
+  "severity": "high"
+ },
+ {
+  "area": "enrollment",
+  "name": "Admin cannot enroll into another school",
+  "pass": true,
+  "detail": "rejected by RLS",
+  "severity": "critical"
+ },
+ {
+  "area": "enrollment",
+  "name": "Teacher cannot enroll students",
+  "pass": true,
+  "detail": "rejected",
+  "severity": "high"
+ },
+ {
+  "area": "enrollment",
+  "name": "Duplicate admission number rejected",
+  "pass": true,
+  "detail": "unique constraint",
+  "severity": "high"
+ },
+ {
+  "area": "enrollment",
+  "name": "Bulk intake of 2,000 polytechnic students",
+  "pass": true,
+  "detail": "33 ms",
+  "severity": "medium"
+ },
+ {
+  "area": "rollover",
+  "name": "Database has a session rollover / promotion routine",
+  "pass": true,
+  "detail": "1 matching functions",
+  "severity": "medium"
+ },
+ {
+  "area": "rollover",
+  "name": "Students table can represent graduation / level history",
+  "pass": true,
+  "detail": "3 of status/graduated_at/current_session/level present",
+  "severity": "medium"
+ },
+ {
+  "area": "rollover",
+  "name": "Admin promotes 12,000 university students in one statement",
+  "pass": true,
+  "detail": "11000 rows in 308 ms (ad-hoc SQL, no app routine)",
+  "severity": "medium"
+ },
+ {
+  "area": "rollover",
+  "name": "Admin rollover cannot touch another school",
+  "pass": true,
+  "detail": "0 rows affected",
+  "severity": "critical"
+ },
+ {
+  "area": "results",
+  "name": "Grade letter auto-calculation present",
+  "pass": true,
+  "detail": "grades_autocalc, grades_points_fill",
+  "severity": "low"
+ },
+ {
+  "area": "results",
+  "name": "Grade bands match the common Nigerian 70/60/50/45/40 scale",
+  "pass": true,
+  "detail": "A:70-100 B:60-69 C:50-59 D:45-49 E:40-44 F:20-39",
+  "severity": "medium"
+ },
+ {
+  "area": "results",
+  "name": "Scores above 100 (CA 40 + exam 95) are rejected",
+  "pass": true,
+  "detail": "rejected",
+  "severity": "high"
+ },
+ {
+  "area": "results",
+  "name": "Schema supports credit units / grade points for CGPA",
+  "pass": true,
+  "detail": "2 unit/point columns on grades",
+  "severity": "high"
+ },
+ {
+  "area": "results",
+  "name": "CGPA computed for 12,000 university students (sim-side, 5-point scale)",
+  "pass": true,
+  "detail": "12000 students; mean 3.17; first class 83",
+  "severity": "low"
+ },
+ {
+  "area": "results",
+  "name": "Student sees only own published results",
+  "pass": true,
+  "detail": "6 own rows, 0 others",
+  "severity": "critical"
+ },
+ {
+  "area": "results",
+  "name": "Parent sees only their children's results",
+  "pass": true,
+  "detail": "2 children visible",
+  "severity": "critical"
+ },
+ {
+  "area": "results",
+  "name": "Teacher cannot change another teacher's scores",
+  "pass": true,
+  "detail": "0 rows changed",
+  "severity": "high"
+ },
+ {
+  "area": "results",
+  "name": "Published results are locked against teacher edits",
+  "pass": true,
+  "detail": "0 published rows edited by teacher",
+  "severity": "high"
+ },
+ {
+  "area": "payments",
+  "name": "Intent bound to the school's own subaccount accepted",
+  "pass": true,
+  "detail": "accepted",
+  "severity": "critical"
+ },
+ {
+  "area": "payments",
+  "name": "Payment for school A routed to school B's subaccount is rejected",
+  "pass": true,
+  "detail": "payment intent subaccount is not the active subaccount of its organization",
+  "severity": "critical"
+ },
+ {
+  "area": "payments",
+  "name": "Existing intent cannot be re-pointed to another school",
+  "pass": true,
+  "detail": "payment intent subaccount is not the active subaccount of its organization",
+  "severity": "critical"
+ },
+ {
+  "area": "payments",
+  "name": "Parent cannot mark fees as paid",
+  "pass": true,
+  "detail": "0 rows changed",
+  "severity": "critical"
+ },
+ {
+  "area": "payments",
+  "name": "Bursar cannot edit another school's fees",
+  "pass": true,
+  "detail": "0 rows",
+  "severity": "critical"
+ },
+ {
+  "area": "payments",
+  "name": "Legacy schools.paystack_secret_key column not readable by anon",
+  "pass": true,
+  "detail": "column privilege denied",
+  "severity": "critical"
+ },
+ {
+  "area": "payments",
+  "name": "Legacy plaintext per-school Paystack secret column removed",
+  "pass": true,
+  "detail": "gone",
+  "severity": "high"
+ },
+ {
+  "area": "rls",
+  "name": "No user sees another school's rows (5 schools x 4 roles x 10 tables)",
+  "pass": true,
+  "detail": "0 leaking role/table pairs",
+  "severity": "critical"
+ },
+ {
+  "area": "rls",
+  "name": "Anonymous visitor sees no students, results or users",
+  "pass": true,
+  "detail": "{\"s\":0,\"g\":0,\"u\":0}",
+  "severity": "critical"
+ },
+ {
+  "area": "rls",
+  "name": "A student cannot read other users' NIN, bank account, salary, phone or face data",
+  "pass": true,
+  "detail": "column privileges withheld",
+  "severity": "critical"
+ },
+ {
+  "area": "rls",
+  "name": "A student cannot list classmates' records (medical, address, parent phone)",
+  "pass": true,
+  "detail": "0 other student rows visible",
+  "severity": "high"
+ },
+ {
+  "area": "privacy",
+  "name": "Teacher cannot SELECT users.nin directly (column privilege)",
+  "pass": true,
+  "detail": "permission denied",
+  "severity": "critical"
+ },
+ {
+  "area": "privacy",
+  "name": "SELECT * on users is refused (app must list safe columns)",
+  "pass": true,
+  "detail": "denied as expected",
+  "severity": "medium"
+ },
+ {
+  "area": "privacy",
+  "name": "User sees own NIN, account number and salary",
+  "pass": true,
+  "detail": "own fields returned",
+  "severity": "high"
+ },
+ {
+  "area": "privacy",
+  "name": "Teacher sees no colleague phone/NIN/account/salary",
+  "pass": true,
+  "detail": "[] visible",
+  "severity": "critical"
+ },
+ {
+  "area": "privacy",
+  "name": "Student sees no staff sensitive fields",
+  "pass": true,
+  "detail": "nothing returned",
+  "severity": "critical"
+ },
+ {
+  "area": "privacy",
+  "name": "Bursar sees staff account number + phone, not salary or NIN",
+  "pass": true,
+  "detail": "as designed",
+  "severity": "high"
+ },
+ {
+  "area": "privacy",
+  "name": "Admin sees salary + account + phone, never NIN or face data",
+  "pass": true,
+  "detail": "as designed",
+  "severity": "high"
+ },
+ {
+  "area": "privacy",
+  "name": "Admin gets nothing for another school's staff",
+  "pass": true,
+  "detail": "0 rows",
+  "severity": "critical"
+ },
+ {
+  "area": "privacy",
+  "name": "Anonymous cannot call users_private_fields",
+  "pass": true,
+  "detail": "denied",
+  "severity": "critical"
+ },
+ {
+  "area": "limits",
+  "name": "50 concurrent SMS sends against a 30 quota: exactly 30 allowed",
+  "pass": true,
+  "detail": "30 allowed, counter 30",
+  "severity": "high"
+ },
+ {
+  "area": "limits",
+  "name": "Negative quantities cannot refund quota",
+  "pass": true,
+  "detail": "returned false",
+  "severity": "high"
+ },
+ {
+  "area": "limits",
+  "name": "School users cannot call the metering function directly",
+  "pass": true,
+  "detail": "permission denied",
+  "severity": "high"
+ },
+ {
+  "area": "limits",
+  "name": "Override longer than 31 days is rejected",
+  "pass": true,
+  "detail": "rejected",
+  "severity": "medium"
+ },
+ {
+  "area": "limits",
+  "name": "Schools' subscription tier is linked to entitlement plans",
+  "pass": true,
+  "detail": "5 schools have a tier, 5 have entitlement rows (synced from tier)",
+  "severity": "medium"
+ },
+ {
+  "area": "audit",
+  "name": "200 linked entries appended",
+  "pass": true,
+  "detail": "all accepted",
+  "severity": "high"
+ },
+ {
+  "area": "audit",
+  "name": "Entry with a wrong previous hash is rejected",
+  "pass": true,
+  "detail": "rejected",
+  "severity": "critical"
+ },
+ {
+  "area": "audit",
+  "name": "Entry skipping sequence numbers is rejected",
+  "pass": true,
+  "detail": "rejected",
+  "severity": "critical"
+ },
+ {
+  "area": "audit",
+  "name": "Audit entries cannot be edited, deleted or truncated (even by the DB owner)",
+  "pass": true,
+  "detail": "update rejected, delete rejected, truncate rejected",
+  "severity": "critical"
+ },
+ {
+  "area": "audit",
+  "name": "Racing writers cannot fork the chain",
+  "pass": true,
+  "detail": "1 of 40 racers won, chain length 1 (losers must retry)",
+  "severity": "high"
+ },
+ {
+  "area": "audit",
+  "name": "Legacy audit_logs table is append-only",
+  "pass": true,
+  "detail": "2 update/delete guard triggers on audit_logs",
+  "severity": "medium"
+ },
+ {
+  "area": "vault",
+  "name": "Grant valid for 5 minutes accepted",
+  "pass": true,
+  "detail": "ttl 300 s",
+  "severity": "high"
+ },
+ {
+  "area": "vault",
+  "name": "Grant longer than 5 minutes rejected",
+  "pass": true,
+  "detail": "ttl 3600 s",
+  "severity": "critical"
+ },
+ {
+  "area": "vault",
+  "name": "Grant whose expiry exceeds issue + 5 min rejected",
+  "pass": true,
+  "detail": "expires_at +10 min",
+  "severity": "critical"
+ },
+ {
+  "area": "vault",
+  "name": "Critical grant cannot be approved without a named approver",
+  "pass": true,
+  "detail": "rejected",
+  "severity": "critical"
+ },
+ {
+  "area": "vault",
+  "name": "Credential access log is append-only",
+  "pass": true,
+  "detail": "rejected",
+  "severity": "critical"
+ },
+ {
+  "area": "vault",
+  "name": "School users cannot read encrypted credential rows",
+  "pass": true,
+  "detail": "permission denied",
+  "severity": "high"
+ },
+ {
+  "area": "vault",
+  "name": "School admin can read own credential access log (product promise)",
+  "pass": true,
+  "detail": "1 rows visible (legacy admin mapped to role:administrator)",
+  "severity": "medium"
+ },
+ {
+  "area": "lifecycle",
+  "name": "Dry-run preview for 12,000 university students changes nothing",
+  "pass": true,
+  "detail": "preview: 11000 promote, 661 repeat, 339 graduate, 0 skip",
+  "severity": "high"
+ },
+ {
+  "area": "lifecycle",
+  "name": "K-12 rollover: SS3 graduates, JSS1 moves into a JSS2 class",
+  "pass": true,
+  "detail": "85 SS3 -> 85 graduated; 86 JSS1 -> 86 in JSS2 classes",
+  "severity": "high"
+ },
+ {
+  "area": "lifecycle",
+  "name": "Re-running the same rollover is a no-op (idempotent)",
+  "pass": true,
+  "detail": "second run already_applied=true",
+  "severity": "critical"
+ },
+ {
+  "area": "lifecycle",
+  "name": "Every change leaves a lifecycle event and an audit entry",
+  "pass": true,
+  "detail": "1200 lifecycle events, 1 audit entry",
+  "severity": "high"
+ },
+ {
+  "area": "lifecycle",
+  "name": "Teacher cannot run a rollover",
+  "pass": true,
+  "detail": "denied",
+  "severity": "critical"
+ },
+ {
+  "area": "lifecycle",
+  "name": "Admin cannot roll over another school",
+  "pass": true,
+  "detail": "denied",
+  "severity": "critical"
+ },
+ {
+  "area": "lifecycle",
+  "name": "University: 7+ carry-over courses repeats (CGPA < 1.00 = probation flag only); only final-level students graduate",
+  "pass": true,
+  "detail": "11000 promoted, 661 repeated (7+ carry-overs or final-level outstanding), 0 on probation, 339 graduated, 2000 need a new class arm",
+  "severity": "high"
+ },
+ {
+  "area": "lifecycle",
+  "name": "Polytechnic: ND2 with failed courses repeats; manual withdraw override honoured",
+  "pass": true,
+  "detail": "ND2 student -> repeated; 1 withdrawn by override; 872 ND2/HND2 graduated",
+  "severity": "high"
+ },
+ {
+  "area": "lifecycle",
+  "name": "Lifecycle history is append-only",
+  "pass": true,
+  "detail": "rejected",
+  "severity": "high"
+ },
+ {
+  "area": "grading",
+  "name": "University results carry 5-point grade points (A=5 ... F=0)",
+  "pass": true,
+  "detail": "A=5 B=4 C=3 D=2 E=1 F=0",
+  "severity": "high"
+ },
+ {
+  "area": "grading",
+  "name": "Polytechnic uses the 4-point NBTE scale (A, AB, B, BC ... F)",
+  "pass": true,
+  "detail": "letters A,AB,B,BC,C,CD,D,E,F; max 4.00",
+  "severity": "medium"
+ },
+ {
+  "area": "grading",
+  "name": "K-12 stays on percentage grading (no grade points)",
+  "pass": true,
+  "detail": "0 of 7200 rows have points",
+  "severity": "medium"
+ },
+ {
+  "area": "grading",
+  "name": "SQL GPA equals independent JS computation",
+  "pass": true,
+  "detail": "SQL 2.65 over 20 units, JS 2.65",
+  "severity": "high"
+ },
+ {
+  "area": "grading",
+  "name": "Failed course becomes a carry-over; passing the retake clears it (both attempts count)",
+  "pass": true,
+  "detail": "outstanding 3 -> 2; units counted 23",
+  "severity": "high"
+ },
+ {
+  "area": "grading",
+  "name": "Degree classes follow NUC 4.50/3.50/2.40/1.50 and NBTE 3.50/3.00/2.50/2.00",
+  "pass": true,
+  "detail": "First Class | Second Class Lower | Third Class | Distinction | Pass",
+  "severity": "medium"
+ },
+ {
+  "area": "grading",
+  "name": "Student transcript shows own published results only",
+  "pass": true,
+  "detail": "own 8 rows, classmate 0",
+  "severity": "critical"
+ },
+ {
+  "area": "tiers",
+  "name": "Every school's tier maps to an entitlement plan",
+  "pass": true,
+  "detail": "enterprise->enterprise growth->growth professional->growth professional->growth starter->starter",
+  "severity": "high"
+ },
+ {
+  "area": "tiers",
+  "name": "Upgrading a school's tier switches its plan automatically",
+  "pass": true,
+  "detail": "starter -> enterprise",
+  "severity": "high"
+ },
+ {
+  "area": "tiers",
+  "name": "Starter SMS quota (500/month placeholder) enforced from the plan",
+  "pass": true,
+  "detail": "5 of 6 x100 sends allowed",
+  "severity": "high"
+ },
+ {
+  "area": "tiers",
+  "name": "School users cannot call plan metering directly",
+  "pass": true,
+  "detail": "denied",
+  "severity": "high"
+ },
+ {
+  "area": "audit",
+  "name": "Legacy audit_logs entries are bridged into the hash chain (verifiable by the TS verifier)",
+  "pass": true,
+  "detail": "2 chain entries verified",
+  "severity": "high"
+ },
+ {
+  "area": "audit",
+  "name": "audit_logs rejects UPDATE and DELETE (even by the DB owner)",
+  "pass": true,
+  "detail": "update rejected, delete rejected",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "School admin cannot read another school's credential log",
+  "pass": true,
+  "detail": "0 rows",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Teacher cannot read the credential log",
+  "pass": true,
+  "detail": "0 rows",
+  "severity": "high"
+ },
+ {
+  "area": "roles",
+  "name": "Demoting a principal ends their administrator assignment",
+  "pass": true,
+  "detail": "0 active assignments after demotion",
+  "severity": "high"
+ },
+ {
+  "area": "roles",
+  "name": "Every admin/principal is mapped to role:administrator",
+  "pass": true,
+  "detail": "10 active assignments for 10 admins/principals",
+  "severity": "medium"
+ },
+ {
+  "area": "roles",
+  "name": "Nigerian role catalog loaded; every template has mandatory permissions",
+  "pass": true,
+  "detail": "572 roles in 39 categories; 394 mandatory + 165 optional template permissions",
+  "severity": "high"
+ },
+ {
+  "area": "roles",
+  "name": "Admin assigns a catalog role with class scope",
+  "pass": true,
+  "detail": "assigned",
+  "severity": "high"
+ },
+ {
+  "area": "roles",
+  "name": "One person holds 2 roles; effective permissions are the union",
+  "pass": true,
+  "detail": "15 effective permissions",
+  "severity": "high"
+ },
+ {
+  "area": "roles",
+  "name": "Admin cannot assign a role to themselves",
+  "pass": true,
+  "detail": "no_self_role_grant: you cannot assign a role to yourself",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Cannot assign a role to another school's user",
+  "pass": true,
+  "detail": "denied / denied",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Mandatory permission cannot be switched off",
+  "pass": true,
+  "detail": "permission grades.enter is mandatory for role ng.subject_teacher and cannot be toggled",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Optional permission toggle applies to holders",
+  "pass": true,
+  "detail": "comms.send_class now still granted (via 2nd role)",
+  "severity": "high"
+ },
+ {
+  "area": "roles",
+  "name": "A role cannot be edited to carry a permission it does not declare",
+  "pass": true,
+  "detail": "permission payroll.approve is not an optional permission of role ng.subject_teacher",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Protected permission cannot be added as a custom grant",
+  "pass": true,
+  "detail": "protected permission payroll.approve can only be held through a catalog role that carries it",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Admin can add a custom permission/context to a role",
+  "pass": true,
+  "detail": "custom.lab_rota added",
+  "severity": "medium"
+ },
+ {
+  "area": "roles",
+  "name": "Custom role inherits every mandatory permission and guardrail of its base role",
+  "pass": true,
+  "detail": "9 mandatory, 5 guardrails inherited",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Role context lists locked mandatory + optional toggles + guardrails",
+  "pass": true,
+  "detail": "9 mandatory / 5 optional / 5 guardrails",
+  "severity": "high"
+ },
+ {
+  "area": "roles",
+  "name": "Separation of duties: Bursar cannot also be Internal Auditor",
+  "pass": true,
+  "detail": "separation of duties: Internal Auditor conflicts with the existing role Bursar",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Direct table writes by API roles are refused",
+  "pass": true,
+  "detail": "denied / denied / denied",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Even the DB owner cannot remove mandatory permissions or guardrails",
+  "pass": true,
+  "detail": "denied / denied / denied",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Teacher scope: own class yes, other class no",
+  "pass": true,
+  "detail": "own=true other=false",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Teacher cannot assign roles or read another user's permissions",
+  "pass": true,
+  "detail": "assign denied; peek 0",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Role context of another school is not visible",
+  "pass": true,
+  "detail": "null",
+  "severity": "high"
+ },
+ {
+  "area": "roles",
+  "name": "A role holder cannot change permissions of their own role",
+  "pass": true,
+  "detail": "no_self_role_grant: you cannot change permissions of a role you hold",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Payroll: preparer and payee cannot approve; a third person can",
+  "pass": true,
+  "detail": "preparer denied, payee denied, principal approved",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Expenses: no self-approval; approval limit enforced (bursar ₦2,000,000)",
+  "pass": true,
+  "detail": "self denied, ₦3m denied, ₦500k approved",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Every role/permission change is audited and chained",
+  "pass": true,
+  "detail": "7 audit_logs rows, 7 audit_chain rows (actor + before/after recorded)",
+  "severity": "high"
+ },
+ {
+  "area": "fees",
+  "name": "Paystack education rate (default): ₦152k card = ₦1,064; ₦1m card capped at ₦1,500; transfer ₦300",
+  "pass": true,
+  "detail": "card152k=1064 card1m=1500 transfer=300",
+  "severity": "high"
+ },
+ {
+  "area": "fees",
+  "name": "Fee model is configurable (standard 1.5% + ₦100 cap ₦2,000; ₦100 waived under ₦2,500)",
+  "pass": true,
+  "detail": "std152k=2000 std2k=30",
+  "severity": "high"
+ },
+ {
+  "area": "fees",
+  "name": "Only Sherivs staff can change the fee model (school admin and direct writes refused)",
+  "pass": true,
+  "detail": "rpc not allowed: only Sherivs platform staff set payment fees; direct permission denied for table payment_fee_config",
+  "severity": "critical"
+ },
+ {
+  "area": "fees",
+  "name": "Fee model change is audited",
+  "pass": true,
+  "detail": "1 audit rows",
+  "severity": "high"
+ },
+ {
+  "area": "flags",
+  "name": "Paystack live is locked: platform staff, per-school override and DB owner all refused",
+  "pass": true,
+  "detail": "global flag paystack_live is locked; org flag paystack_live is locked; owner flag paystack_live is locked",
+  "severity": "critical"
+ },
+ {
+  "area": "flags",
+  "name": "Provider flags: staff can enable per school, school admin cannot",
+  "pass": true,
+  "detail": "admin not allowed",
+  "severity": "high"
+ },
+ {
+  "area": "ratelimit",
+  "name": "Onboarding rate limit: per-account (3/day) and global (50/hour) caps refuse new schools",
+  "pass": true,
+  "detail": "first created; account cap rate_limited: at most 3 schools per account per day; global cap rate_limited: onboarding is busy, try again shortly",
+  "severity": "high"
+ },
+ {
+  "area": "ratelimit",
+  "name": "Rate-limit counter cannot be called directly by users",
+  "pass": true,
+  "detail": "permission denied for function rate_limit_take",
+  "severity": "medium"
+ }
+]
