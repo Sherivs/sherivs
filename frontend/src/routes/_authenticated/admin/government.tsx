@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { PortalPage } from "@/components/portal-shell";
 import { Button } from "@/components/ui/button";
 import { rpc } from "@/lib/scholar/rpc";
+import { nextSchoolStep, type Posting } from "@/lib/gov/deployment";
 import { INSPECTION_DOMAINS, averageScore, type Circular, type Inspection } from "@/lib/gov/modules";
 
 export const Route = createFileRoute("/_authenticated/admin/government")({ ssr: false, component: GovernmentPage });
@@ -14,6 +15,7 @@ function GovernmentPage() {
   const qc = useQueryClient();
   const circ = useQuery({ queryKey: ["school-circ"], queryFn: () => rpc<Circular[]>("school_circulars_mine") });
   const insp = useQuery({ queryKey: ["school-insp"], queryFn: () => rpc<Inspection[]>("school_inspections_mine") });
+  const posts = useQuery({ queryKey: ["school-posts"], queryFn: () => rpc<Posting[]>("school_postings_mine") });
   const [reply, setReply] = useState<Record<string, string>>({});
   const go = async (fn: string, args: Record<string, unknown>, ok: string, key: string) => {
     try { await rpc(fn, args); toast.success(ok); await qc.invalidateQueries({ queryKey: [key] }); } catch (e) { toast.error((e as Error).message); }
@@ -47,6 +49,20 @@ function GovernmentPage() {
                 </div>)}
             </>)}
           </li>))}
+      </ul>
+      <h2 className="mt-6 font-semibold">Teacher postings</h2>
+      <ul className="mt-2 space-y-2">
+        {(posts.data ?? []).map((p) => {
+          const step = nextSchoolStep(p);
+          return (
+            <li key={p.id} className="rounded-lg border p-3 text-sm">
+              <div className="font-medium">{p.direction === "incoming" ? "Incoming" : "Outgoing"}: {p.teacher_name} ({p.teacher_ref}) · {p.other_school ?? "new appointment"} · from {p.effective_date}</div>
+              {step === "release" && <Button size="sm" className="mt-2" onClick={() => go("school_posting_ack", { p_id: p.id }, "Teacher released", "school-posts")}>Release teacher</Button>}
+              {step === "receive" && <Button size="sm" className="mt-2" onClick={() => go("school_posting_ack", { p_id: p.id }, "Arrival confirmed", "school-posts")}>Confirm arrival</Button>}
+              {step === "wait" && <p className="mt-1 text-muted-foreground">Waiting for the current school to release this teacher.</p>}
+              {p.received && <p className="mt-1 text-muted-foreground">Completed.</p>}
+            </li>);
+        })}
       </ul>
     </PortalPage>
   );

@@ -1639,6 +1639,81 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
       && JSON.stringify(v.audit) === JSON.stringify(["inspection_schedule", "inspection_record", "inspection_school_response", "circular_publish", "circular_publish", "circular_publish", "circular_ack", "circular_withdraw"]) && !v.auditEdit?.ok,
     `audit ${JSON.stringify(v.audit)}`, "high");
 }
+// ---------- 29. Teacher deployment (staffing + two-person postings) and CSV exports (SHERIVS-B05) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+    const as = (u, aal = "aal2") => c.query("select set_config('request.jwt.claims', $1, true)", [JSON.stringify({ sub: u, role: "authenticated", aal })]);
+    const PLAN = crypto.randomUUID(), DIR = crypto.randomUUID(), DIR2 = crypto.randomUUID(), DATA = crypto.randomUUID(), VIEW = crypto.randomUUID();
+    await asOwner("insert into auth.users (id, email) select x, 'b05-'||left(x::text,8)||'@moe.sim' from unnest($1::uuid[]) x", [[PLAN, DIR, DIR2, DATA, VIEW]]);
+    const j = (await asOwner("insert into gov_jurisdictions (name, state) values ('Sim B05 SUBEB','B05-' || left(gen_random_uuid()::text,6)) returning id")).row?.id;
+    await asOwner(`insert into gov_viewers (user_id, jurisdiction_id, agency_role, expires_at, mfa_required) values
+      ($1,$6,'planning_officer',now()+interval '1 year',true),($2,$6,'director',now()+interval '1 year',true),($3,$6,'director',now()+interval '1 year',true),
+      ($4,$6,'data_officer',now()+interval '1 year',true),($5,$6,'viewer',now()+interval '1 year',true)`, [PLAN, DIR, DIR2, DATA, VIEW, j]);
+    for (const [adm, sid, own] of [[A.admin, A.schoolId, "public"], [B.admin, B.schoolId, "public"], [C.admin, C.schoolId, "private"]]) {
+      await asOwner("insert into school_locations (school_id, state, lga, ownership) values ($1,'Borno','Maiduguri',$2) on conflict (school_id) do update set ownership=excluded.ownership", [sid, own]);
+      await as(adm, "aal1"); await t("select public.gov_sharing_set($1,$2,true)", [sid, j]);
+    }
+    // staffing
+    await as(VIEW); out.staffing = (await t("select public.gov_staffing($1) r", [j])).row?.r ?? [];
+    out.badThreshold = await t("select public.gov_staffing($1, 5)", [j]);
+    // postings
+    await as(VIEW); out.viewerPropose = await t("select public.gov_posting_propose($1,'Aisha Bello','TRCN-12345',$2,$3,current_date+7,'Mathematics shortage at receiving school')", [j, A.schoolId, B.schoolId]);
+    await as(PLAN);
+    out.toPrivate = await t("select public.gov_posting_propose($1,'Aisha Bello','TRCN-12345',$2,$3,current_date+7,'Mathematics shortage at receiving school')", [j, A.schoolId, C.schoolId]);
+    out.badRef = await t("select public.gov_posting_propose($1,'Aisha Bello','<script>',$2,$3,current_date+7,'Mathematics shortage at receiving school')", [j, A.schoolId, B.schoolId]);
+    out.pastDate = await t("select public.gov_posting_propose($1,'Aisha Bello','TRCN-12345',$2,$3,current_date-1,'Mathematics shortage at receiving school')", [j, A.schoolId, B.schoolId]);
+    const p1 = (await t("select public.gov_posting_propose($1,'Aisha Bello','trcn-12345',$2,$3,current_date+7,'Mathematics shortage at receiving school','Mathematics') id", [j, A.schoolId, B.schoolId])).row?.id; out.p1 = p1;
+    out.dup = await t("select public.gov_posting_propose($1,'Aisha Bello','TRCN-12345',$2,$3,current_date+9,'Second posting while one is open')", [j, A.schoolId, B.schoolId]);
+    await as(PLAN); out.planDecide = await t("select public.gov_posting_decide($1,true)", [p1]);
+    await as(DIR, "aal1"); out.noMfaDecide = await t("select public.gov_posting_decide($1,true)", [p1]);
+    await as(B.admin, "aal1"); out.bBefore = (await t("select public.school_postings_mine() r")).row?.r ?? [];
+    await as(DIR); out.approve = (await t("select public.gov_posting_decide($1,true,'Approved for next term') r", [p1])).row?.r;
+    out.approveAgain = await t("select public.gov_posting_decide($1,true)", [p1]);
+    await as(B.admin, "aal1");
+    out.bIncoming = (await t("select public.school_postings_mine() r")).row?.r ?? [];
+    out.receiveEarly = await t("select public.school_posting_ack($1)", [p1]);
+    await as(C.admin, "aal1"); out.cAck = await t("select public.school_posting_ack($1)", [p1]); out.cSees = (await t("select public.school_postings_mine() r")).row?.r ?? [];
+    await as(A.admin, "aal1"); out.release = (await t("select public.school_posting_ack($1) r", [p1])).row?.r;
+    await as(B.admin, "aal1"); out.receive = (await t("select public.school_posting_ack($1) r", [p1])).row?.r; out.receiveAgain = (await t("select public.school_posting_ack($1) r", [p1])).row?.r;
+    await as(DIR); out.cancelDone = (await t("select public.gov_posting_cancel($1,'Changed plans entirely') r", [p1])).row?.r;
+    await as(PLAN); const p2 = (await t("select public.gov_posting_propose($1,'Musa Ali','STAFF-777',null,$2,current_date+3,'New graduate teacher first posting') id", [j, B.schoolId])).row?.id;
+    await as(DIR2); out.reject = await t("select public.gov_posting_decide($1,false)", [p2]); out.rejectWithNote = (await t("select public.gov_posting_decide($1,false,'Budget not approved yet') r", [p2])).row?.r;
+    out.list = (await t("select public.gov_postings_list($1) r", [j])).row?.r ?? [];
+    out.directTable = await t("select count(*) from gov_teacher_postings");
+    // exports
+    await as(VIEW); out.viewerExport = await t("select public.gov_export($1,'schools')", [j]);
+    await as(DATA, "aal1"); out.noMfaExport = await t("select public.gov_export($1,'schools')", [j]);
+    await as(DATA);
+    out.exports = {};
+    for (const k of ["schools", "staffing", "inspections", "circulars", "postings"]) out.exports[k] = (await t("select public.gov_export($1,$2) r", [j, k])).row?.r;
+    out.badKind = await t("select public.gov_export($1,'learners')", [j]);
+    await asOwner("update schools set name = '=HYPERLINK(\"x\")' || name where id=$1", [B.schoolId]);
+    out.injection = (await t("select public.gov_export($1,'staffing') r", [j])).row?.r?.csv ?? "";
+    await as(A.teacher, "aal2"); out.teacherExport = await t("select public.gov_export($1,'schools')", [j]);
+    out.audit = (await asOwner("select array_agg(action order by id) a from gov_console_audit where jurisdiction_id=$1", [j])).row?.a ?? [];
+    Object.assign(out, { j });
+  });
+  const ex = v.exports ?? {};
+  rec("gov_deployment", "Staffing view gives teachers, learners and pupil-teacher ratio per sharing school, suppressed under 10 learners, with an understaffed flag",
+    v.staffing.length === 3 && v.staffing.every((r) => r.suppressed ? r.ptr === null && r.teachers === null : typeof r.learners === "number") && v.staffing.some((r) => typeof r.understaffed === "boolean") && !v.badThreshold?.ok,
+    JSON.stringify(v.staffing.map((r) => [r.ptr, r.understaffed])), "high");
+  rec("gov_deployment", "Postings: planning officers propose only between public sharing schools; another director approves with MFA (never the proposer); one open posting per teacher",
+    !v.viewerPropose?.ok && !v.toPrivate?.ok && !v.badRef?.ok && !v.pastDate?.ok && !!v.p1 && !v.dup?.ok && !v.planDecide?.ok && !v.noMfaDecide?.ok && v.approve === "approved" && !v.approveAgain?.ok
+      && !v.reject?.ok && v.rejectWithNote === "rejected",
+    JSON.stringify({ priv: v.toPrivate?.err, plan: v.planDecide?.err }), "critical");
+  rec("gov_deployment", "Schools see only approved postings that involve them; the releasing school releases before the receiving school receives; other schools cannot act; tables are RPC-only",
+    v.bBefore.length === 0 && v.bIncoming.some((x) => x.id === v.p1 && x.direction === "incoming") && !v.receiveEarly?.ok && !v.cAck?.ok && !v.cSees.some((x) => x.id === v.p1)
+      && v.release === "released" && v.receive === "received" && v.receiveAgain === "already_done" && v.cancelDone === false && !v.directTable?.ok
+      && v.list.find((x) => x.id === v.p1)?.teacher_ref === "TRCN-12345",
+    JSON.stringify({ early: v.receiveEarly?.err, rel: v.release, rec: v.receive }), "critical");
+  rec("gov_export", "Exports (schools, staffing, inspections, circulars, postings) need a data/planning/director role with MFA; viewers, teachers and unknown kinds are refused; suppression and formula-injection guards hold; each export is audited",
+    !v.viewerExport?.ok && !v.noMfaExport?.ok && !v.badKind?.ok && !v.teacherExport?.ok
+      && ["schools", "staffing", "inspections", "circulars", "postings"].every((k) => typeof ex[k]?.csv === "string" && ex[k].filename.endsWith(".csv"))
+      && ex.schools.csv.split("\n")[0].startsWith("school,lga") && ex.postings.csv.includes("TRCN-12345")
+      && !/(^|,)"=HYPERLINK/m.test(v.injection) && v.injection.includes("'=HYPERLINK")
+      && v.audit.filter((a) => a === "export").length === 6,
+    JSON.stringify({ exports: v.audit.filter((a) => a === "export").length }), "critical");
+}
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
 await pool.end();

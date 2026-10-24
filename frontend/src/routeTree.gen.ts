@@ -67,7 +67,9 @@ import { Route as GovAboutRouteImport } from './routes/gov/about'
 import { Route as GovAttendanceRouteImport } from './routes/gov/attendance'
 import { Route as GovCircularsRouteImport } from './routes/gov/circulars'
 import { Route as GovInspectionsRouteImport } from './routes/gov/inspections'
+import { Route as GovPostingsRouteImport } from './routes/gov/postings'
 import { Route as GovSchoolsRouteImport } from './routes/gov/schools'
+import { Route as GovStaffingRouteImport } from './routes/gov/staffing'
 import { Route as NewsIdRouteImport } from './routes/news.$id'
 import { Route as PlatformOrgRouteImport } from './routes/platform.org'
 import { Route as RealityClassRouteImport } from './routes/reality.$class'
@@ -515,9 +517,19 @@ const GovInspectionsRoute = GovInspectionsRouteImport.update({
   path: '/inspections',
   getParentRoute: () => GovRouteRoute,
 } as any)
+const GovPostingsRoute = GovPostingsRouteImport.update({
+  id: '/postings',
+  path: '/postings',
+  getParentRoute: () => GovRouteRoute,
+} as any)
 const GovSchoolsRoute = GovSchoolsRouteImport.update({
   id: '/schools',
   path: '/schools',
+  getParentRoute: () => GovRouteRoute,
+} as any)
+const GovStaffingRoute = GovStaffingRouteImport.update({
+  id: '/staffing',
+  path: '/staffing',
   getParentRoute: () => GovRouteRoute,
 } as any)
 const NewsIdRoute = NewsIdRouteImport.update({
@@ -1447,7 +1459,9 @@ export interface FileRoutesByFullPath {
   '/gov/attendance': typeof GovAttendanceRoute
   '/gov/circulars': typeof GovCircularsRoute
   '/gov/inspections': typeof GovInspectionsRoute
+  '/gov/postings': typeof GovPostingsRoute
   '/gov/schools': typeof GovSchoolsRoute
+  '/gov/staffing': typeof GovStaffingRoute
   '/news/$id': typeof NewsIdRoute
   '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
@@ -1652,7 +1666,9 @@ export interface FileRoutesByTo {
   '/gov/attendance': typeof GovAttendanceRoute
   '/gov/circulars': typeof GovCircularsRoute
   '/gov/inspections': typeof GovInspectionsRoute
+  '/gov/postings': typeof GovPostingsRoute
   '/gov/schools': typeof GovSchoolsRoute
+  '/gov/staffing': typeof GovStaffingRoute
   '/news/$id': typeof NewsIdRoute
   '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
@@ -1862,7 +1878,9 @@ export interface FileRoutesById {
   '/gov/attendance': typeof GovAttendanceRoute
   '/gov/circulars': typeof GovCircularsRoute
   '/gov/inspections': typeof GovInspectionsRoute
+  '/gov/postings': typeof GovPostingsRoute
   '/gov/schools': typeof GovSchoolsRoute
+  '/gov/staffing': typeof GovStaffingRoute
   '/news/$id': typeof NewsIdRoute
   '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
@@ -2071,7 +2089,9 @@ export interface FileRouteTypes {
     | '/gov/attendance'
     | '/gov/circulars'
     | '/gov/inspections'
+    | '/gov/postings'
     | '/gov/schools'
+    | '/gov/staffing'
     | '/news/$id'
     | '/platform/org'
     | '/reality/$class'
@@ -2276,7 +2296,9 @@ export interface FileRouteTypes {
     | '/gov/attendance'
     | '/gov/circulars'
     | '/gov/inspections'
+    | '/gov/postings'
     | '/gov/schools'
+    | '/gov/staffing'
     | '/news/$id'
     | '/platform/org'
     | '/reality/$class'
@@ -2485,7 +2507,9 @@ export interface FileRouteTypes {
     | '/gov/attendance'
     | '/gov/circulars'
     | '/gov/inspections'
+    | '/gov/postings'
     | '/gov/schools'
+    | '/gov/staffing'
     | '/news/$id'
     | '/platform/org'
     | '/reality/$class'
@@ -3077,11 +3101,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GovInspectionsRouteImport
       parentRoute: typeof GovRouteRoute
     }
+    '/gov/postings': {
+      id: '/gov/postings'
+      path: '/postings'
+      fullPath: '/gov/postings'
+      preLoaderRoute: typeof GovPostingsRouteImport
+      parentRoute: typeof GovRouteRoute
+    }
     '/gov/schools': {
       id: '/gov/schools'
       path: '/schools'
       fullPath: '/gov/schools'
       preLoaderRoute: typeof GovSchoolsRouteImport
+      parentRoute: typeof GovRouteRoute
+    }
+    '/gov/staffing': {
+      id: '/gov/staffing'
+      path: '/staffing'
+      fullPath: '/gov/staffing'
+      preLoaderRoute: typeof GovStaffingRouteImport
       parentRoute: typeof GovRouteRoute
     }
     '/news/$id': {
@@ -4629,7 +4667,9 @@ interface GovRouteRouteChildren {
   GovAttendanceRoute: typeof GovAttendanceRoute
   GovCircularsRoute: typeof GovCircularsRoute
   GovInspectionsRoute: typeof GovInspectionsRoute
+  GovPostingsRoute: typeof GovPostingsRoute
   GovSchoolsRoute: typeof GovSchoolsRoute
+  GovStaffingRoute: typeof GovStaffingRoute
   GovIndexRoute: typeof GovIndexRoute
 }
 
@@ -4638,7 +4678,9 @@ const GovRouteRouteChildren: GovRouteRouteChildren = {
   GovAttendanceRoute: GovAttendanceRoute,
   GovCircularsRoute: GovCircularsRoute,
   GovInspectionsRoute: GovInspectionsRoute,
+  GovPostingsRoute: GovPostingsRoute,
   GovSchoolsRoute: GovSchoolsRoute,
+  GovStaffingRoute: GovStaffingRoute,
   GovIndexRoute: GovIndexRoute,
 }
 
