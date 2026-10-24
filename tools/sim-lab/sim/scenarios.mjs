@@ -1484,6 +1484,74 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
     v.removed === true && v.anonRemoved === null && !!v.bReclaim?.id && JSON.stringify(v.audit) === JSON.stringify(["add", "check", "set_primary", "remove"]) && !v.auditEdit?.ok && v.resolveMs < 20,
     `audit ${JSON.stringify(v.audit)}; resolve ${v.resolveMs} ms avg over 2,000 domains`, "high");
 }
+// ---------- A2. Structure: shifts, levels, gender sections, class placement, academic periods (SHERIVS-A02) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+    const camp = (await t("select public.campus_upsert($1,'A2 Main') id", [A.schoolId])).row?.id;
+    const bCamp = (await asOwner("insert into campuses (school_id, name) values ($1,'A2 B campus') returning id", [B.schoolId])).row?.id;
+    await act(A.teacher); out.teacherShift = await t("select public.shift_upsert($1,null,'A2 Morning','morning')", [A.schoolId]); await act(A.admin);
+    const sh = (await t("select public.shift_upsert($1,$2,'A2 Morning','morning','07:30','12:30') id", [A.schoolId, camp])).row?.id;
+    out.same = (await t("select public.shift_upsert($1,$2,'a2 morning','morning','07:45','12:30') id", [A.schoolId, camp])).row?.id === sh;
+    out.badTime = await t("select public.shift_upsert($1,null,'A2 Bad','evening','18:00','17:00')", [A.schoolId]);
+    out.foreignCamp = await t("select public.shift_upsert($1,$2,'A2 X','morning')", [A.schoolId, bCamp]);
+    const lv = (await t("select public.level_upsert($1,'A2 JSS 1','jss',7) id", [A.schoolId])).row?.id;
+    const cls = (await asOwner("select id from classes where school_id=$1 order by name limit 1", [A.schoolId])).row?.id;
+    const sec = (await t("select public.section_upsert($1,$2,'A2 Girls College','junior_secondary') id", [A.schoolId, camp])).row?.id;
+    out.place = await t("select public.class_set_structure($1,$2,$3,$4)", [cls, sh, lv, sec]);
+    out.placed = (await asOwner("select shift_id=$2 and level_id=$3 and section_id=$4 ok from classes where id=$1", [cls, sh, lv, sec])).row?.ok;
+    const bShift = (await asOwner("insert into school_shifts (school_id, name, kind) values ($1,'A2 B shift','morning') returning id", [B.schoolId])).row?.id;
+    out.foreignShift = await t("select public.class_set_structure($1,$2,null)", [cls, bShift]);
+    out.profile = await t("select public.section_set_profile($1,'girls','boarding')", [sec]);
+    out.dims = (await asOwner("select public.resource_dims('class',$1) r", [cls])).row?.r;
+    await act(B.admin); out.bPlace = await t("select public.class_set_structure($1,null,null)", [cls]); out.bDel = await t("select public.shift_delete($1)", [sh]); await act(A.admin);
+    out.delUsed = await t("select public.shift_delete($1)", [sh]);
+    // a level referenced by a role operating area cannot be deleted
+    const lv2 = (await t("select public.level_upsert($1,'A2 SSS 3','sss',12) id", [A.schoolId])).row?.id;
+    const staff = (await asOwner("select id from users where school_id=$1 and role='teacher' and id<>$2 order by id limit 1", [A.schoolId, A.teacher])).row?.id;
+    const ra = (await t("select public.role_assign($1,$2,'ng.year_head_year_tutor','org',null) id", [A.schoolId, staff])).row?.id;
+    await t("select public.role_scope_set_add($1, jsonb_build_object('level', jsonb_build_array($2::text)))", [ra, lv2]);
+    out.delScoped = await t("select public.level_delete($1)", [lv2]);
+    await t("select public.class_set_structure($1,null,null)", [cls]);
+    out.delFree = await t("select public.shift_delete($1)", [sh]);
+    // academic periods
+    const P = (o, n, a, b, k = "term") => t("select public.academic_period_upsert($1,'2031/2032',$2,$3,$4,$5::date,$6::date) id", [A.schoolId, k, o, n, a, b]);
+    const p1 = (await P(1, "First term", "2031-09-08", "2031-12-12")).row?.id;
+    const p2 = (await P(2, "Second term", "2032-01-05", "2032-04-02")).row?.id;
+    out.overlap = await P(3, "Third term", "2032-03-30", "2032-07-20");
+    out.mixKind = await t("select public.academic_period_upsert($1,'2031/2032','semester',3,'S',  '2032-05-01','2032-07-01')", [A.schoolId]);
+    out.badSession = await t("select public.academic_period_upsert($1,'2031/2035','term',1,'X','2035-01-01','2035-02-01')", [A.schoolId]);
+    await t("select public.academic_period_set_current($1)", [p1]);
+    await t("select public.academic_period_set_current($1)", [p2]);
+    out.currents = (await asOwner("select count(*)::int n, max(id::text) id from academic_periods where school_id=$1 and is_current", [A.schoolId])).row;
+    await t("select public.academic_period_close($1)", [p1]);
+    out.reopen = await t("select public.academic_period_set_current($1)", [p1]);
+    out.editClosed = await P(1, "First term (edited)", "2031-09-08", "2031-12-12");
+    await act(A.teacher); out.teacherCur = (await t("select public.current_academic_period($1) r", [A.schoolId])).row?.r;
+    out.teacherPeriod = await t("select public.academic_period_upsert($1,'2033/2034','term',1,'X','2033-09-01','2033-12-01')", [A.schoolId]);
+    out.direct = await t("insert into academic_periods (school_id, session, kind, ordinal, name, starts_on, ends_on) values ($1,'2040/2041','term',1,'x','2040-09-01','2040-12-01')", [A.schoolId]);
+    await act(B.admin); out.bCur = (await t("select public.current_academic_period($1) r", [A.schoolId])).row?.r;
+    out.bRead = (await t("select count(*)::int n from academic_periods where school_id=$1", [A.schoolId])).row?.n; await act(A.admin);
+    out.audit = (await asOwner("select count(*)::int n from audit_logs where school_id=$1 and action in ('shift_upsert','shift_delete','level_upsert','section_profile','class_structure','period_upsert','period_current','period_close') and created_at > now() - interval '5 minutes'", [A.schoolId])).row?.n;
+    Object.assign(out, { p2 });
+  });
+  rec("structure", "Only settings managers create shifts; same name updates in place; bad times and other schools' campuses refused",
+    !v.teacherShift?.ok && v.same && !v.badTime?.ok && !v.foreignCamp?.ok, `teacher ${W_ERR(v.teacherShift)}; time ${W_ERR(v.badTime)}; campus ${W_ERR(v.foreignCamp)}`, "high");
+  rec("structure", "Class placement (shift, level, section) stays inside the school; another school cannot place or delete",
+    v.place?.ok && v.placed && !v.foreignShift?.ok && !v.bPlace?.ok && !v.bDel?.ok, `foreign ${W_ERR(v.foreignShift)}; B ${W_ERR(v.bPlace)} / ${W_ERR(v.bDel)}`, "critical");
+  rec("structure", "Gender/residency section profile flows into access dimensions", v.profile?.ok && JSON.stringify(v.dims?.gender) === '["girls"]',
+    JSON.stringify(v.dims?.gender), "high");
+  rec("structure", "Deletes are refused while classes or a role operating area use the item; allowed once free",
+    !v.delUsed?.ok && /in_use/.test(v.delUsed?.err ?? "") && !v.delScoped?.ok && /operating area/.test(v.delScoped?.err ?? "") && v.delFree?.ok,
+    `used ${W_ERR(v.delUsed)}; scoped ${W_ERR(v.delScoped)}; free ${W_ERR(v.delFree)}`, "high");
+  rec("periods", "Academic periods: no overlaps, one kind per session, valid session names, exactly one current",
+    !v.overlap?.ok && !v.mixKind?.ok && !v.badSession?.ok && v.currents?.n === 1 && v.currents?.id === v.p2,
+    `overlap ${W_ERR(v.overlap)}; kind ${W_ERR(v.mixKind)}; session ${W_ERR(v.badSession)}; current ${JSON.stringify(v.currents)}`, "high");
+  rec("periods", "Closed periods cannot be reopened or edited; teachers read the current period but cannot change periods",
+    !v.reopen?.ok && !v.editClosed?.ok && v.teacherCur?.id === v.p2 && !v.teacherPeriod?.ok && !v.direct?.ok,
+    `reopen ${W_ERR(v.reopen)}; edit ${W_ERR(v.editClosed)}; teacher ${W_ERR(v.teacherPeriod)}; direct ${W_ERR(v.direct)}`, "high");
+  rec("periods", "Another school sees neither the periods nor the current period; every change is audited",
+    v.bCur == null && v.bRead === 0 && v.audit >= 10, `B current ${JSON.stringify(v.bCur)}; B rows ${v.bRead}; audit ${v.audit}`, "critical");
+}
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
 await pool.end();

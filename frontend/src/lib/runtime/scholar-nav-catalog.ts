@@ -1178,6 +1178,14 @@ export const SCHOLAR_NAV_CONTRIBUTIONS: readonly NavContribution[] = [
         orderHint: 2,
       },
       {
+        key: "r001.org_admin.structure",
+        label: "Shifts, levels & terms",
+        iconKey: "schools",
+        url: "/admin/structure",
+        capabilities: ["r001:org_admin.structure"],
+        orderHint: 2,
+      },
+      {
         key: "r001.org_admin.domains",
         label: "School domains",
         iconKey: "settings",
