@@ -1,0 +1,43 @@
+{
+ "at": "2026-10-24T21:48:50.660Z",
+ "ok": 9,
+ "total": 9,
+ "results": [
+  {
+   "name": "unpublished school: public read returns live data, no document (renderer generates)",
+   "ok": true
+  },
+  {
+   "name": "admin saves and publishes; drafts never leak to the public",
+   "ok": true
+  },
+  {
+   "name": "tenant isolation: other school's admin, teachers and anon cannot read or write a site",
+   "ok": true
+  },
+  {
+   "name": "validator rejects script URLs, unknown blocks, bad variants, missing home, duplicates, oversize",
+   "ok": true
+  },
+  {
+   "name": "optimistic concurrency: a stale editor cannot overwrite a newer draft",
+   "ok": true
+  },
+  {
+   "name": "rollback republishes an old version as a new version; history is immutable",
+   "ok": true
+  },
+  {
+   "name": "custom domains: only verified hostnames resolve; host never falls back to a slug",
+   "ok": true
+  },
+  {
+   "name": "opt-in personal data: staff only with a visible staff block; hostels and alumni only as totals",
+   "ok": true
+  },
+  {
+   "name": "publish needs a draft and the catalog; website.manage permission is registered",
+   "ok": true
+  }
+ ]
+}
