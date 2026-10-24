@@ -74,6 +74,7 @@ import { Route as AuthenticatedAdminAiAssistantRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminAnalyticsRouteImport } from './routes/_authenticated/admin/analytics'
 import { Route as AuthenticatedAdminApiKeysRouteImport } from './routes/_authenticated/admin/api-keys'
 import { Route as AuthenticatedAdminAttendanceRouteImport } from './routes/_authenticated/admin/attendance'
+import { Route as AuthenticatedAdminAttendanceConflictsRouteImport } from './routes/_authenticated/admin/attendance-conflicts'
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin/audit'
 import { Route as AuthenticatedAdminAuditLogsRouteImport } from './routes/_authenticated/admin/audit-logs'
 import { Route as AuthenticatedAdminBroadcastRouteImport } from './routes/_authenticated/admin/broadcast'
@@ -550,6 +551,12 @@ const AuthenticatedAdminAttendanceRoute =
   AuthenticatedAdminAttendanceRouteImport.update({
     id: '/attendance',
     path: '/attendance',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminAttendanceConflictsRoute =
+  AuthenticatedAdminAttendanceConflictsRouteImport.update({
+    id: '/attendance-conflicts',
+    path: '/attendance-conflicts',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminAuditRoute = AuthenticatedAdminAuditRouteImport.update({
@@ -1430,6 +1437,7 @@ export interface FileRoutesByFullPath {
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/api-keys': typeof AuthenticatedAdminApiKeysRoute
   '/admin/attendance': typeof AuthenticatedAdminAttendanceRoute
+  '/admin/attendance-conflicts': typeof AuthenticatedAdminAttendanceConflictsRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/admin/broadcast': typeof AuthenticatedAdminBroadcastRoute
@@ -1631,6 +1639,7 @@ export interface FileRoutesByTo {
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/api-keys': typeof AuthenticatedAdminApiKeysRoute
   '/admin/attendance': typeof AuthenticatedAdminAttendanceRoute
+  '/admin/attendance-conflicts': typeof AuthenticatedAdminAttendanceConflictsRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/admin/broadcast': typeof AuthenticatedAdminBroadcastRoute
@@ -1837,6 +1846,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/_authenticated/admin/api-keys': typeof AuthenticatedAdminApiKeysRoute
   '/_authenticated/admin/attendance': typeof AuthenticatedAdminAttendanceRoute
+  '/_authenticated/admin/attendance-conflicts': typeof AuthenticatedAdminAttendanceConflictsRoute
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/_authenticated/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/_authenticated/admin/broadcast': typeof AuthenticatedAdminBroadcastRoute
@@ -2042,6 +2052,7 @@ export interface FileRouteTypes {
     | '/admin/analytics'
     | '/admin/api-keys'
     | '/admin/attendance'
+    | '/admin/attendance-conflicts'
     | '/admin/audit'
     | '/admin/audit-logs'
     | '/admin/broadcast'
@@ -2243,6 +2254,7 @@ export interface FileRouteTypes {
     | '/admin/analytics'
     | '/admin/api-keys'
     | '/admin/attendance'
+    | '/admin/attendance-conflicts'
     | '/admin/audit'
     | '/admin/audit-logs'
     | '/admin/broadcast'
@@ -2448,6 +2460,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/analytics'
     | '/_authenticated/admin/api-keys'
     | '/_authenticated/admin/attendance'
+    | '/_authenticated/admin/attendance-conflicts'
     | '/_authenticated/admin/audit'
     | '/_authenticated/admin/audit-logs'
     | '/_authenticated/admin/broadcast'
@@ -3074,6 +3087,13 @@ declare module '@tanstack/react-router' {
       path: '/attendance'
       fullPath: '/admin/attendance'
       preLoaderRoute: typeof AuthenticatedAdminAttendanceRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/attendance-conflicts': {
+      id: '/_authenticated/admin/attendance-conflicts'
+      path: '/attendance-conflicts'
+      fullPath: '/admin/attendance-conflicts'
+      preLoaderRoute: typeof AuthenticatedAdminAttendanceConflictsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/audit': {
@@ -4084,6 +4104,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminAnalyticsRoute: typeof AuthenticatedAdminAnalyticsRoute
   AuthenticatedAdminApiKeysRoute: typeof AuthenticatedAdminApiKeysRoute
   AuthenticatedAdminAttendanceRoute: typeof AuthenticatedAdminAttendanceRoute
+  AuthenticatedAdminAttendanceConflictsRoute: typeof AuthenticatedAdminAttendanceConflictsRoute
   AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
   AuthenticatedAdminAuditLogsRoute: typeof AuthenticatedAdminAuditLogsRoute
   AuthenticatedAdminBroadcastRoute: typeof AuthenticatedAdminBroadcastRoute
@@ -4160,6 +4181,8 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminAnalyticsRoute: AuthenticatedAdminAnalyticsRoute,
     AuthenticatedAdminApiKeysRoute: AuthenticatedAdminApiKeysRoute,
     AuthenticatedAdminAttendanceRoute: AuthenticatedAdminAttendanceRoute,
+    AuthenticatedAdminAttendanceConflictsRoute:
+      AuthenticatedAdminAttendanceConflictsRoute,
     AuthenticatedAdminAuditRoute: AuthenticatedAdminAuditRoute,
     AuthenticatedAdminAuditLogsRoute: AuthenticatedAdminAuditLogsRoute,
     AuthenticatedAdminBroadcastRoute: AuthenticatedAdminBroadcastRoute,

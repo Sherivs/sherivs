@@ -1178,6 +1178,14 @@ export const SCHOLAR_NAV_CONTRIBUTIONS: readonly NavContribution[] = [
         orderHint: 2,
       },
       {
+        key: "r001.org_admin.attendance_conflicts",
+        label: "Offline attendance conflicts",
+        iconKey: "attendance",
+        url: "/admin/attendance-conflicts",
+        capabilities: ["r001:org_admin.attendance_conflicts"],
+        orderHint: 2,
+      },
+      {
         key: "r001.org_admin.domains",
         label: "School domains",
         iconKey: "settings",

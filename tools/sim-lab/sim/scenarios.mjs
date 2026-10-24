@@ -1484,6 +1484,64 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
     v.removed === true && v.anonRemoved === null && !!v.bReclaim?.id && JSON.stringify(v.audit) === JSON.stringify(["add", "check", "set_primary", "remove"]) && !v.auditEdit?.ok && v.resolveMs < 20,
     `audit ${JSON.stringify(v.audit)}; resolve ${v.resolveMs} ms avg over 2,000 domains`, "high");
 }
+// ---------- A7. Offline attendance v2: per-item idempotency, clock skew, conflict queue (SHERIVS-A07) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+    const cls = (await asOwner("select c.id, c.teacher_id from classes c where c.school_id=$1 and c.teacher_id is not null and exists (select 1 from students s where s.class_id=c.id and s.is_active) limit 1", [A.schoolId])).row;
+    const kids = (await asOwner("select id from students where class_id=$1 and is_active order by id limit 3", [cls.id])).r.rows.map((r) => r.id);
+    const tch = cls.teacher_id; const today = (await asOwner("select current_date::text d")).row.d;
+    await asOwner("delete from attendance where student_id = any($1) and date=$2", [kids, today]);
+    const nowIso = new Date().toISOString();
+    const item = (id, s, st, cap = nowIso) => ({ id, student_id: s, date: today, status: st, captured_at: cap });
+    await act(tch);
+    out.skew = await t("select public.offline_attendance_sync_v2('a7-skew', $1::jsonb, now() + interval '3 days')", [JSON.stringify([item("k0", kids[0], "present")])]);
+    out.b1 = (await t("select public.offline_attendance_sync_v2('a7-b1', $1::jsonb, now()) r", [JSON.stringify([item("k1", kids[0], "present"), item("k2", kids[1], "absent"), { student_id: kids[2], date: today, status: "late" }])])).row?.r;
+    out.replay = (await t("select public.offline_attendance_sync_v2('a7-b1', '[]'::jsonb, now()) r")).row?.r;
+    out.b2 = (await t("select public.offline_attendance_sync_v2('a7-b2', $1::jsonb, now()) r", [JSON.stringify([item("k1", kids[0], "present"), item("k2", kids[1], "absent")])])).row?.r;
+    out.rows = (await asOwner("select count(*)::int n from attendance where student_id = any($1) and date=$2", [kids, today])).row?.n;
+    // device 2h fast: captured time is skew-corrected, not "in the future"
+    const fast = new Date(Date.now() + 2 * 3600e3).toISOString();
+    out.fast = (await t("select public.offline_attendance_sync_v2('a7-fast', $1::jsonb, now() + interval '2 hours') r", [JSON.stringify([item("k3", kids[2], "late", fast)])])).row?.r;
+    out.future = (await t("select public.offline_attendance_sync_v2('a7-fut', $1::jsonb, now()) r", [JSON.stringify([item("k4", kids[2], "late", new Date(Date.now() + 3 * 3600e3).toISOString())])])).row?.r;
+    // conflict: admin marks kid0 absent, teacher device says present -> queued
+    await act(A.admin); await t("update attendance set status='absent', marked_by=$2 where student_id=$1 and date=current_date", [kids[0], A.admin]);
+    await asOwner("update attendance set status='absent', marked_by=$2 where student_id=$1 and date=current_date", [kids[0], A.admin]);
+    await act(tch);
+    out.b3 = (await t("select public.offline_attendance_sync_v2('a7-b3', $1::jsonb, now()) r", [JSON.stringify([item("k5", kids[0], "present")])])).row?.r;
+    out.tList = await t("select * from public.attendance_conflicts_list($1)", [A.schoolId]);
+    out.tOwn = (await t("select count(*)::int n from attendance_sync_conflicts where user_id=$1", [tch])).row?.n;
+    out.tResolve = await t("select public.attendance_conflict_resolve(id,'accept_device') from attendance_sync_conflicts where user_id=$1 limit 1", [tch]);
+    await act(A.admin);
+    const list = (await t("select * from public.attendance_conflicts_list($1)", [A.schoolId])).r?.rows ?? [];
+    out.listN = list.filter((x) => x.client_item_id === "k5").length;
+    const cid = list.find((x) => x.client_item_id === "k5")?.id;
+    out.bad = await t("select public.attendance_conflict_resolve($1,'overwrite')", [cid]);
+    out.res = (await t("select public.attendance_conflict_resolve($1,'accept_device','Teacher was in class') r", [cid])).row?.r;
+    out.again = await t("select public.attendance_conflict_resolve($1,'dismiss')", [cid]);
+    out.final = (await asOwner("select status, marked_by from attendance where student_id=$1 and date=current_date", [kids[0]])).row;
+    out.direct = await t("insert into attendance_sync_conflicts (school_id,user_id,batch,client_item_id,student_id,date,yours) values ($1,$2,'x','x',$3,current_date,'present')", [A.schoolId, A.admin, kids[0]]);
+    await act(B.admin); out.bList = await t("select * from public.attendance_conflicts_list($1)", [A.schoolId]);
+    out.bRead = (await t("select count(*)::int n from attendance_sync_conflicts where school_id=$1", [A.schoolId])).row?.n;
+    out.bResolve = await t("select public.attendance_conflict_resolve($1,'dismiss')", [cid]);
+    Object.assign(out, { tch, admin: A.admin });
+  });
+  rec("attendance_offline", "Devices with a clock more than a day off are refused with a clear message",
+    /clock_skew/.test(v.skew?.err ?? ""), W_ERR(v.skew), "high");
+  rec("attendance_offline", "Per-item idempotency: items without ids are rejected; resent items in a new batch are skipped, never double-applied; batch replays return the first answer",
+    v.b1?.applied === 2 && v.b1?.conflicts?.some((c) => c.why === "missing_item_id") && v.replay?.replay === true && v.b2?.applied === 0 && v.b2?.duplicates === 2 && v.rows === 2,
+    `b1 ${JSON.stringify(v.b1)}; b2 ${JSON.stringify(v.b2)}; rows ${v.rows}`, "critical");
+  rec("attendance_offline", "Captured times are corrected for device skew; marks captured in the future are refused",
+    v.fast?.applied === 1 && Math.abs(v.fast?.skew_seconds - 7200) < 120 && v.future?.conflicts?.[0]?.why === "captured_in_future",
+    `fast ${JSON.stringify(v.fast)}; future ${JSON.stringify(v.future?.conflicts)}`, "high");
+  rec("attendance_offline", "A different existing mark goes to the conflict queue; teachers see their own items but cannot list or resolve the school queue",
+    v.b3?.conflicts?.[0]?.queued === true && !v.tList?.ok && v.tOwn >= 1 && (!v.tResolve?.ok || v.tResolve?.r?.rowCount === 0), `${JSON.stringify(v.b3)}; ${W_ERR(v.tList)}`, "critical");
+  rec("attendance_offline", "Admins resolve each conflict once with a valid action; accepting the device mark updates attendance",
+    v.listN === 1 && !v.bad?.ok && v.res === "accepted_device" && /already/.test(v.again?.err ?? "") && v.final?.status === "present" && v.final?.marked_by === v.tch,
+    `${v.res}; final ${JSON.stringify(v.final)}`, "high");
+  rec("attendance_offline", "No direct writes; another school cannot list, read or resolve",
+    !v.direct?.ok && !v.bList?.ok && v.bRead === 0 && !v.bResolve?.ok, `${W_ERR(v.direct)} | ${W_ERR(v.bList)} | ${W_ERR(v.bResolve)}`, "critical");
+}
+
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
 await pool.end();
