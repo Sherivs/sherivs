@@ -43,6 +43,7 @@ import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authentic
 import { Route as AuthenticatedBursarRouteRouteImport } from './routes/_authenticated/bursar/route'
 import { Route as AuthenticatedCommandCentreRouteRouteImport } from './routes/_authenticated/command-centre/route'
 import { Route as AuthenticatedDriverRouteRouteImport } from './routes/_authenticated/driver/route'
+import { Route as AuthenticatedGovDashboardRouteImport } from './routes/_authenticated/gov-dashboard'
 import { Route as AuthenticatedHqRouteRouteImport } from './routes/_authenticated/hq/route'
 import { Route as AuthenticatedInternalRouteImport } from './routes/_authenticated/internal'
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
@@ -201,6 +202,7 @@ import { Route as AuthenticatedTeacherSignInRouteImport } from './routes/_authen
 import { Route as AuthenticatedTeacherTimetableRouteImport } from './routes/_authenticated/teacher/timetable'
 import { Route as ApiPublicAuditPasswordResetRouteImport } from './routes/api/public/audit.password-reset'
 import { Route as ApiPublicWebhooksPaystackRouteImport } from './routes/api/public/webhooks/paystack'
+import { Route as ApiPublicWebhooksUssdRouteImport } from './routes/api/public/webhooks/ussd'
 import { Route as ApiPublicWebhooksWhatsappRouteImport } from './routes/api/public/webhooks/whatsapp'
 
 const IndexRoute = IndexRouteImport.update({
@@ -372,6 +374,12 @@ const AuthenticatedDriverRouteRoute =
   AuthenticatedDriverRouteRouteImport.update({
     id: '/driver',
     path: '/driver',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedGovDashboardRoute =
+  AuthenticatedGovDashboardRouteImport.update({
+    id: '/gov-dashboard',
+    path: '/gov-dashboard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedHqRouteRoute = AuthenticatedHqRouteRouteImport.update({
@@ -1295,6 +1303,11 @@ const ApiPublicWebhooksPaystackRoute =
     path: '/api/public/webhooks/paystack',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicWebhooksUssdRoute = ApiPublicWebhooksUssdRouteImport.update({
+  id: '/api/public/webhooks/ussd',
+  path: '/api/public/webhooks/ussd',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicWebhooksWhatsappRoute =
   ApiPublicWebhooksWhatsappRouteImport.update({
     id: '/api/public/webhooks/whatsapp',
@@ -1340,6 +1353,7 @@ export interface FileRoutesByFullPath {
   '/status': typeof siteStatusRoute
   '/terms': typeof siteTermsRoute
   '/verify-transcript': typeof siteVerifyTranscriptRoute
+  '/gov-dashboard': typeof AuthenticatedGovDashboardRoute
   '/internal': typeof AuthenticatedInternalRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/mfa': typeof AuthenticatedMfaRoute
@@ -1493,6 +1507,7 @@ export interface FileRoutesByFullPath {
   '/command-centre/': typeof AuthenticatedCommandCentreIndexRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
+  '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
   '/api/public/webhooks/whatsapp': typeof ApiPublicWebhooksWhatsappRoute
 }
 export interface FileRoutesByTo {
@@ -1532,6 +1547,7 @@ export interface FileRoutesByTo {
   '/status': typeof siteStatusRoute
   '/terms': typeof siteTermsRoute
   '/verify-transcript': typeof siteVerifyTranscriptRoute
+  '/gov-dashboard': typeof AuthenticatedGovDashboardRoute
   '/internal': typeof AuthenticatedInternalRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/mfa': typeof AuthenticatedMfaRoute
@@ -1685,6 +1701,7 @@ export interface FileRoutesByTo {
   '/command-centre': typeof AuthenticatedCommandCentreIndexRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
+  '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
   '/api/public/webhooks/whatsapp': typeof ApiPublicWebhooksWhatsappRoute
 }
 export interface FileRoutesById {
@@ -1728,6 +1745,7 @@ export interface FileRoutesById {
   '/(site)/status': typeof siteStatusRoute
   '/(site)/terms': typeof siteTermsRoute
   '/(site)/verify-transcript': typeof siteVerifyTranscriptRoute
+  '/_authenticated/gov-dashboard': typeof AuthenticatedGovDashboardRoute
   '/_authenticated/internal': typeof AuthenticatedInternalRoute
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/mfa': typeof AuthenticatedMfaRoute
@@ -1881,6 +1899,7 @@ export interface FileRoutesById {
   '/_authenticated/command-centre/': typeof AuthenticatedCommandCentreIndexRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
+  '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
   '/api/public/webhooks/whatsapp': typeof ApiPublicWebhooksWhatsappRoute
 }
 export interface FileRouteTypes {
@@ -1923,6 +1942,7 @@ export interface FileRouteTypes {
     | '/status'
     | '/terms'
     | '/verify-transcript'
+    | '/gov-dashboard'
     | '/internal'
     | '/messages'
     | '/mfa'
@@ -2076,6 +2096,7 @@ export interface FileRouteTypes {
     | '/command-centre/'
     | '/api/public/audit/password-reset'
     | '/api/public/webhooks/paystack'
+    | '/api/public/webhooks/ussd'
     | '/api/public/webhooks/whatsapp'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -2115,6 +2136,7 @@ export interface FileRouteTypes {
     | '/status'
     | '/terms'
     | '/verify-transcript'
+    | '/gov-dashboard'
     | '/internal'
     | '/messages'
     | '/mfa'
@@ -2268,6 +2290,7 @@ export interface FileRouteTypes {
     | '/command-centre'
     | '/api/public/audit/password-reset'
     | '/api/public/webhooks/paystack'
+    | '/api/public/webhooks/ussd'
     | '/api/public/webhooks/whatsapp'
   id:
     | '__root__'
@@ -2310,6 +2333,7 @@ export interface FileRouteTypes {
     | '/(site)/status'
     | '/(site)/terms'
     | '/(site)/verify-transcript'
+    | '/_authenticated/gov-dashboard'
     | '/_authenticated/internal'
     | '/_authenticated/messages'
     | '/_authenticated/mfa'
@@ -2463,6 +2487,7 @@ export interface FileRouteTypes {
     | '/_authenticated/command-centre/'
     | '/api/public/audit/password-reset'
     | '/api/public/webhooks/paystack'
+    | '/api/public/webhooks/ussd'
     | '/api/public/webhooks/whatsapp'
   fileRoutesById: FileRoutesById
 }
@@ -2491,6 +2516,7 @@ export interface RootRouteChildren {
   RealityClassRoute: typeof RealityClassRoute
   ApiPublicAuditPasswordResetRoute: typeof ApiPublicAuditPasswordResetRoute
   ApiPublicWebhooksPaystackRoute: typeof ApiPublicWebhooksPaystackRoute
+  ApiPublicWebhooksUssdRoute: typeof ApiPublicWebhooksUssdRoute
   ApiPublicWebhooksWhatsappRoute: typeof ApiPublicWebhooksWhatsappRoute
 }
 
@@ -2732,6 +2758,13 @@ declare module '@tanstack/react-router' {
       path: '/driver'
       fullPath: '/driver'
       preLoaderRoute: typeof AuthenticatedDriverRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/gov-dashboard': {
+      id: '/_authenticated/gov-dashboard'
+      path: '/gov-dashboard'
+      fullPath: '/gov-dashboard'
+      preLoaderRoute: typeof AuthenticatedGovDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/hq': {
@@ -3840,6 +3873,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWebhooksPaystackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/webhooks/ussd': {
+      id: '/api/public/webhooks/ussd'
+      path: '/api/public/webhooks/ussd'
+      fullPath: '/api/public/webhooks/ussd'
+      preLoaderRoute: typeof ApiPublicWebhooksUssdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/webhooks/whatsapp': {
       id: '/api/public/webhooks/whatsapp'
       path: '/api/public/webhooks/whatsapp'
@@ -4301,6 +4341,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedStudentRouteRoute: typeof AuthenticatedStudentRouteRouteWithChildren
   AuthenticatedSuperAdminRouteRoute: typeof AuthenticatedSuperAdminRouteRouteWithChildren
   AuthenticatedTeacherRouteRoute: typeof AuthenticatedTeacherRouteRouteWithChildren
+  AuthenticatedGovDashboardRoute: typeof AuthenticatedGovDashboardRoute
   AuthenticatedInternalRoute: typeof AuthenticatedInternalRoute
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
   AuthenticatedMfaRoute: typeof AuthenticatedMfaRoute
@@ -4326,6 +4367,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSuperAdminRouteRoute:
     AuthenticatedSuperAdminRouteRouteWithChildren,
   AuthenticatedTeacherRouteRoute: AuthenticatedTeacherRouteRouteWithChildren,
+  AuthenticatedGovDashboardRoute: AuthenticatedGovDashboardRoute,
   AuthenticatedInternalRoute: AuthenticatedInternalRoute,
   AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
   AuthenticatedMfaRoute: AuthenticatedMfaRoute,
@@ -4390,6 +4432,7 @@ const rootRouteChildren: RootRouteChildren = {
   RealityClassRoute: RealityClassRoute,
   ApiPublicAuditPasswordResetRoute: ApiPublicAuditPasswordResetRoute,
   ApiPublicWebhooksPaystackRoute: ApiPublicWebhooksPaystackRoute,
+  ApiPublicWebhooksUssdRoute: ApiPublicWebhooksUssdRoute,
   ApiPublicWebhooksWhatsappRoute: ApiPublicWebhooksWhatsappRoute,
 }
 export const routeTree = rootRouteImport

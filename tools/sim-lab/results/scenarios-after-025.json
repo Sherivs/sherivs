@@ -31,7 +31,7 @@
   "area": "enrollment",
   "name": "Bulk intake of 2,000 polytechnic students",
   "pass": true,
-  "detail": "35 ms",
+  "detail": "49 ms",
   "severity": "medium"
  },
  {
@@ -52,7 +52,7 @@
   "area": "rollover",
   "name": "Admin promotes 12,000 university students in one statement",
   "pass": true,
-  "detail": "11000 rows in 327 ms (ad-hoc SQL, no app routine)",
+  "detail": "11000 rows in 474 ms (ad-hoc SQL, no app routine)",
   "severity": "medium"
  },
  {
@@ -842,7 +842,7 @@
  {
   "area": "cash",
   "name": "Cash tracker: teacher refused, receipt required, bursar records with receipt",
-  "pass": "8b90f279-2554-4f8b-86c3-c0c7bb2ec466",
+  "pass": "57e1507e-e5c7-4bbf-a26e-19f5f5f38e30",
   "detail": "teacher not allowed; no receipt receipt photo or receipt number required",
   "severity": "critical"
  },
@@ -878,7 +878,7 @@
   "area": "plan",
   "name": "Upgrade charges the registration difference, effective next term, no refund",
   "pass": true,
-  "detail": "{\"id\":\"18e6f1bc-6775-43f8-8d21-38aa92d7c957\",\"refund\":0,\"effective\":\"next_term\",\"registration_difference\":750000}",
+  "detail": "{\"id\":\"72aab11d-7024-4f76-bc54-f2e341c4aa6a\",\"refund\":0,\"effective\":\"next_term\",\"registration_difference\":750000}",
   "severity": "medium"
  },
  {
@@ -1032,7 +1032,7 @@
   "area": "scopes",
   "name": "Scope refs must belong to the school; unknown dimension and empty sets refused",
   "pass": true,
-  "detail": "scope campus d8948872-c0c5-4d26-9aad-b55ba09570c8 is not in this organisation | scope planet x is not in this organisation | scope set needs at least one dimension",
+  "detail": "scope campus b321d02b-d62f-4269-997c-9194546758b0 is not in this organisation | scope planet x is not in this organisation | scope set needs at least one dimension",
   "severity": "high"
  },
  {
@@ -1053,7 +1053,7 @@
   "area": "scopes",
   "name": "Assigner can never grant wider than own scope, cannot leave their restricted dimension open, cannot widen self",
   "pass": true,
-  "detail": "widen scope_wider_than_assigner: campus 0f32be9e-a6f1-45eb-9b5e-d892978a4b63 is outside your own operating area; open scope_wider_than_assigner: you must restrict campus like your own scope; self no_self_role_grant: you cannot widen your own operating area; direct permission denied for table role_assignment_scopes",
+  "detail": "widen scope_wider_than_assigner: campus 2d7c16b3-4646-4971-baaf-e340a0bc99d9 is outside your own operating area; open scope_wider_than_assigner: you must restrict campus like your own scope; self no_self_role_grant: you cannot widen your own operating area; direct permission denied for table role_assignment_scopes",
   "severity": "critical"
  },
  {
