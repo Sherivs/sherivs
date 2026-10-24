@@ -39,7 +39,18 @@ type Manifest = {
   entities: string[];
   status: string;
 };
+type Invite = {
+  id: string;
+  entity: string;
+  full_name: string | null;
+  email: string | null;
+  phone: string | null;
+  role: string;
+  status: string;
+};
 type Integration = {
+  outbound_enabled?: boolean;
+  config?: { outbound_url?: string };
   id: string;
   connector_key: string;
   display_name: string;
@@ -233,6 +244,11 @@ function IntegrationsPage() {
           </div>
         ))}
       </section>
+
+      {current && current.connector_key !== "csv" && (
+        <OutboundPanel integration={current} onDone={refresh} />
+      )}
+      <InvitesPanel org={org} />
 
       {current?.connector_key === "csv" && (
         <CsvWizard integrationId={current.id} onDone={refresh} />
@@ -457,6 +473,100 @@ function CsvWizard({
           )}
         </>
       )}
+    </section>
+  );
+}
+
+/** Write-back: when Sherivs owns an entity, changes are sent to the school's old system (SHERIVS-092). */
+function OutboundPanel({
+  integration,
+  onDone,
+}: {
+  integration: Integration;
+  onDone: () => Promise<unknown>;
+}) {
+  const [url, setUrl] = useState(integration.config?.outbound_url ?? "");
+  const save = (enabled: boolean) =>
+    rpc("integration_set_outbound", {
+      p_integration: integration.id,
+      p_enabled: enabled,
+      p_config: url ? { outbound_url: url } : null,
+    })
+      .then(() => {
+        toast.success(enabled ? "Write-back on" : "Write-back off");
+        return onDone();
+      })
+      .catch((e: Error) => toast.error(e.message));
+  return (
+    <section className="mt-6 space-y-2 rounded-lg border p-3">
+      <h3 className="font-medium">Write-back to {integration.display_name}</h3>
+      <p className="text-sm text-muted-foreground">
+        For entities where Sherivs is the system of record, student, result and fee changes are
+        queued and delivered to your old system, signed with the same secret.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <Input
+          className="max-w-md"
+          placeholder="https://portal.yourschool.sch.ng/sherivs-hook"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          aria-label="Write-back URL"
+        />
+        <Button size="sm" onClick={() => save(true)}>
+          {integration.outbound_enabled ? "Save" : "Turn on"}
+        </Button>
+        {integration.outbound_enabled && (
+          <Button size="sm" variant="outline" onClick={() => save(false)}>
+            Turn off
+          </Button>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/** Staff and guardians from the old system without a Sherivs account yet; invite them from Staff accounts / Parents. */
+function InvitesPanel({ org }: { org: string }) {
+  const invites = useQuery({
+    queryKey: ["integration-invites", org],
+    enabled: !!org,
+    queryFn: () =>
+      rows<Invite>(
+        sdb
+          .from("integration_account_invites")
+          .select("*")
+          .eq("school_id", org)
+          .order("created_at", { ascending: false })
+          .limit(200),
+      ),
+  });
+  const pending = (invites.data ?? []).filter((i) => i.status === "pending");
+  if (pending.length === 0) return null;
+  return (
+    <section className="mt-6 space-y-2">
+      <h3 className="font-medium">People waiting for a Sherivs account ({pending.length})</h3>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-left text-muted-foreground">
+            <th>Name</th>
+            <th>Type</th>
+            <th>Role</th>
+            <th>Email</th>
+            <th>Phone</th>
+          </tr>
+        </thead>
+        <tbody>
+          {pending.map((i) => (
+            <tr key={i.id} className="border-t">
+              <td>{i.full_name ?? "-"}</td>
+              <td>{i.entity}</td>
+              <td>{i.role}</td>
+              <td>{i.email ?? "-"}</td>
+              <td>{i.phone ?? "-"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </section>
   );
 }

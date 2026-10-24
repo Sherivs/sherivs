@@ -156,7 +156,8 @@ await check("scheduler claims due jobs once (SKIP LOCKED / next_run_at advance)"
   await svc();
   const a = (await c.query("select * from public.integration_claim_due_jobs(500)")).rows.filter((j) => j.integration_id === idA).length;
   const b = (await c.query("select * from public.integration_claim_due_jobs(500)")).rows.filter((j) => j.integration_id === idA).length;
-  assert(a === 7 && b === 0, `first=${a} second=${b}`);
+  const want = (await c.query("select cardinality(entities) n from connector_manifests where key='rest-webhook'")).rows[0].n;
+  assert(a === want && b === 0, `first=${a} want=${want} second=${b}`);
 });
 
 const ok = results.filter((r) => r.ok).length;

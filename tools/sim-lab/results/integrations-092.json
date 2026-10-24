@@ -1,0 +1,59 @@
+{
+ "at": "2026-10-24T21:08:47.725Z",
+ "ok": 13,
+ "total": 13,
+ "results": [
+  {
+   "name": "class + student + enrollment (class) are written in gradual mode",
+   "ok": true
+  },
+  {
+   "name": "tertiary enrollment -> approved course registration",
+   "ok": true
+  },
+  {
+   "name": "results upsert into grades UNPUBLISHED; re-sync is a no-op; change updates in place",
+   "ok": true
+  },
+  {
+   "name": "fee invoice + payment: offline_payments row, fee becomes paid; payment replay never double-counts",
+   "ok": true
+  },
+  {
+   "name": "staff: existing account linked by email; unknown staff becomes an invite, never an auth account",
+   "ok": true
+  },
+  {
+   "name": "guardian: existing parent (by phone) linked to the student via parent_student_map",
+   "ok": true
+  },
+  {
+   "name": "tenant isolation: references never resolve across schools (B's student/parent/course/staff invisible to A)",
+   "ok": true
+  },
+  {
+   "name": "one bad row does not fail the batch (per-record subtransaction)",
+   "ok": true
+  },
+  {
+   "name": "outbound: Sherivs-owned edits are queued once (coalesced); ingest writes are not echoed",
+   "ok": true
+  },
+  {
+   "name": "outbound: config rejects secrets and non-https; teacher cannot enable outbound",
+   "ok": true
+  },
+  {
+   "name": "outbound worker: claim leases (SKIP LOCKED), ack records external id, failures back off then dead-letter",
+   "ok": true
+  },
+  {
+   "name": "outbound worker functions are service_role only; RLS hides other schools' outbox/invites",
+   "ok": true
+  },
+  {
+   "name": "mirror mode still writes nothing to core for every entity",
+   "ok": true
+  }
+ ]
+}
