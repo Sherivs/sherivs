@@ -1484,6 +1484,99 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
     v.removed === true && v.anonRemoved === null && !!v.bReclaim?.id && JSON.stringify(v.audit) === JSON.stringify(["add", "check", "set_primary", "remove"]) && !v.auditEdit?.ok && v.resolveMs < 20,
     `audit ${JSON.stringify(v.audit)}; resolve ${v.resolveMs} ms avg over 2,000 domains`, "high");
 }
+// ---------- 28. Minors' consent, break-glass review, time-limited delegation, shadow v2 (SHERIVS-B04) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+    const as = (u, aal = "aal1") => c.query("select set_config('request.jwt.claims', $1, true)", [JSON.stringify({ sub: u, role: "authenticated", aal })]);
+    const kid = (await asOwner("select student_id from parent_student_map where parent_id=$1 limit 1", [A.sampleParent])).row?.student_id
+      ?? (await asOwner("select id student_id from students where parent_id=$1 limit 1", [A.sampleParent])).row?.student_id;
+    const other = (await asOwner("select id from students where school_id=$1 and id<>$2 and coalesce(parent_id::text,'')<>$3::text and id not in (select student_id from parent_student_map where parent_id=$3::uuid) and coalesce(user_id::text,'')<>$4::text limit 1", [A.schoolId, kid, A.sampleParent, A.sampleStudentUser])).row?.id;
+    const self = (await asOwner("select id from students where user_id=$1 limit 1", [A.sampleStudentUser])).row?.id;
+    await asOwner("update students set date_of_birth = current_date - interval '12 years' where id=$1", [kid]);
+    if (self) await asOwner("update students set date_of_birth = current_date - interval '15 years' where id=$1", [self]);
+    await asOwner("delete from consent_records where student_id = any($1::uuid[])", [[kid, other, self].filter(Boolean)]);
+    // consent
+    await as(A.sampleParent);
+    out.gateBefore = (await t("select public.consent_gate($1,'ai_processing') r", [kid])).row?.r;
+    out.pGrant = (await t("select public.consent_set($1,'ai_processing',true) r", [kid])).row?.r;
+    out.pOther = await t("select public.consent_set($1,'ai_processing',true)", [other]);
+    out.pCore = await t("select public.consent_set($1,'core_education',false)", [kid]);
+    out.status = (await t("select public.consent_status($1) r", [kid])).row?.r;
+    out.gateAfter = (await t("select public.consent_gate($1,'ai_processing') r", [kid])).row?.r;
+    out.myLearners = (await t("select public.consent_my_learners() r")).row?.r ?? [];
+    if (self) { await as(A.sampleStudentUser); out.minorSelf = await t("select public.consent_set($1,'photos_media',true)", [self]);
+      await asOwner("update students set date_of_birth = current_date - interval '19 years' where id=$1", [self]);
+      out.adultSelf = (await t("select public.consent_set($1,'photos_media',true) r", [self])).row?.r; }
+    await as(A.teacher); out.teacherSet = await t("select public.consent_set($1,'photos_media',true,'admin_entered','form 12')", [other]);
+    await as(A.admin);
+    out.adminNoEvidence = await t("select public.consent_set($1,'photos_media',true,'web_form')", [other]);
+    out.adminPaper = (await t("select public.consent_set($1,'photos_media',true,'paper_signed','Form P-0042 on file') r", [other])).row?.r;
+    out.pWithdraw = null; await as(A.sampleParent); out.pWithdraw = (await t("select public.consent_set($1,'ai_processing',false) r", [kid])).row?.r;
+    out.gateWithdrawn = (await t("select public.consent_gate($1,'ai_processing') r", [kid])).row?.r;
+    await as(B.admin); out.bStatus = await t("select public.consent_status($1)", [kid]); out.bSet = await t("select public.consent_set($1,'photos_media',true,'paper_signed','Form X-1')", [kid]);
+    await as(A.admin); out.overview = (await t("select public.consent_overview() r")).row?.r;
+    out.events = (await asOwner("select array_agg(action order by at, action) a from consent_events where student_id=$1", [kid])).row?.a;
+    // break-glass review
+    await as(A.teacher);
+    const bg = (await t("select public.break_glass_open($1,'Seizure in class; need emergency contact and medical notes') id", [kid])).row?.id; out.bg = bg;
+    out.selfReview = await t("select public.break_glass_review($1,'justified','I needed it urgently')", [bg]);
+    out.teacherList = await t("select public.break_glass_list()");
+    await as(A.admin, "aal1"); out.reviewNoMfa = await t("select public.break_glass_review($1,'justified','Confirmed with nurse log')", [bg]);
+    await as(A.admin, "aal2");
+    out.listOpen = (await t("select public.break_glass_list() r")).row?.r?.find((x) => x.id === bg)?.state;
+    out.review = (await t("select public.break_glass_review($1,'justified','Confirmed with nurse log and parent call') r", [bg])).row?.r;
+    out.reviewAgain = await t("select public.break_glass_review($1,'unjustified','Changing my mind later')", [bg]);
+    out.listAfter = (await t("select public.break_glass_list() r")).row?.r?.find((x) => x.id === bg);
+    await as(B.admin, "aal2"); out.bReview = await t("select public.break_glass_review($1,'unjustified','Not my school at all')", [bg]);
+    // delegation
+    await as(A.admin, "aal2");
+    out.v2Before = (await t("select public.authz_check_v2($1,'fees.view','student',$2) r", [A.teacher, kid])).row?.r;
+    await as(A.admin, "aal1"); out.dNoMfa = await t("select public.delegation_grant($1, array['fees.view'], now()+interval '3 days','Bursar on leave this week')", [A.teacher]);
+    await as(A.admin, "aal2");
+    out.dSelf = await t("select public.delegation_grant($1, array['fees.view'], now()+interval '3 days','Bursar on leave this week')", [A.admin]);
+    out.dProtected = await t("select public.delegation_grant($1, array['results.publish'], now()+interval '3 days','Bursar on leave this week')", [A.teacher]);
+    out.dLong = await t("select public.delegation_grant($1, array['fees.view'], now()+interval '40 days','Bursar on leave this week')", [A.teacher]);
+    out.dParent = await t("select public.delegation_grant($1, array['fees.view'], now()+interval '3 days','Bursar on leave this week')", [A.sampleParent]);
+    out.dCross = await t("select public.delegation_grant($1, array['fees.view'], now()+interval '3 days','Bursar on leave this week')", [B.admin]);
+    const d = (await t("select public.delegation_grant($1, array['fees.view'], now()+interval '3 days','Bursar on leave this week') id", [A.teacher])).row?.id; out.d = d;
+    await as(A.teacher, "aal2"); out.tDelegatesUp = await t("select public.delegation_grant($1, array['payroll.approve'], now()+interval '3 days','Trying to escalate privileges')", [A.bursar]);
+    out.v2During = (await t("select public.authz_check_v2($1,'fees.view','student',$2) r", [A.teacher, kid])).row?.r;
+    out.v2Other = (await t("select public.authz_check_v2($1,'expenses.approve','student',$2) r", [A.teacher, kid])).row?.r;
+    out.v1During = (await t("select public.authz_check($1,'fees.view','student',$2) r", [A.teacher, kid])).row?.r;
+    out.mine = (await t("select public.delegations_mine() r")).row?.r;
+    await asOwner("select set_config('sherivs.authz_shadow_rate','1',true)");
+    out.shadow = (await t("select public.authz_shadow_v2('fees.view','student',$1,false) r", [kid])).row?.r;
+    out.shadowRow = (await asOwner("select new_allow, legacy_allow, deciding_layer from authz_shadow_log where user_id=$1 and action='fees.view' order by id desc limit 1", [A.teacher])).row;
+    out.shadowBad = (await t("select public.authz_shadow_v2('fees.view','nonsense',$1,true) r", [kid])).row?.r;
+    await as(A.admin, "aal2"); out.revoke = (await t("select public.delegation_revoke($1) r", [d])).row?.r;
+    await as(A.teacher); out.v2After = (await t("select public.authz_check_v2($1,'fees.view','student',$2) r", [A.teacher, kid])).row?.r;
+    out.directTable = await t("select count(*) from authority_delegations");
+    out.audit = (await asOwner("select array_agg(distinct action) a from safeguard_audit where school_id=$1", [A.schoolId])).row?.a ?? [];
+    out.auditEdit = await asOwner("delete from safeguard_audit where school_id=$1", [A.schoolId]);
+    Object.assign(out, { hasSelf: !!self, kid, other });
+  });
+  rec("consent", "A linked guardian grants and withdraws optional consent for a minor (gate follows); other parents, teachers, school B and minors themselves are refused; core education cannot be withdrawn",
+    v.gateBefore === false && v.pGrant === "granted" && !v.pOther?.ok && !v.pCore?.ok && v.status?.purposes?.ai_processing?.status === "granted" && v.status?.adult === false && v.gateAfter === true
+      && v.myLearners.some((x) => x.student_id === v.kid && x.purposes.ai_processing === "granted") && !v.myLearners.some((x) => x.student_id === v.other)
+      && (!v.hasSelf || (!v.minorSelf?.ok && v.adultSelf === "granted")) && !v.teacherSet?.ok && v.pWithdraw === "withdrawn" && v.gateWithdrawn === false && !v.bStatus?.ok && !v.bSet?.ok,
+    JSON.stringify({ minor: v.minorSelf?.err, other: v.pOther?.err }), "critical");
+  rec("consent", "A school admin records paper consent only with an evidence note; every change is an append-only consent event; overview counts by purpose",
+    !v.adminNoEvidence?.ok && v.adminPaper === "granted" && JSON.stringify(v.events) === JSON.stringify(["grant", "withdraw"]) && typeof v.overview?.photos_media?.granted === "number",
+    JSON.stringify({ events: v.events }), "high");
+  rec("break_glass", "Break-glass must be reviewed by someone else (admin/principal/DPO) with MFA, once; school B cannot; the list shows open then reviewed",
+    !!v.bg && !v.selfReview?.ok && !v.teacherList?.ok && !v.reviewNoMfa?.ok && v.listOpen === "open" && v.review === true && !v.reviewAgain?.ok
+      && v.listAfter?.state === "reviewed" && v.listAfter?.review_outcome === "justified" && !v.bReview?.ok,
+    JSON.stringify({ open: v.listOpen, after: v.listAfter?.state }), "critical");
+  rec("delegation", "Delegation needs MFA, a staff delegate in the same school, at most 30 days, non-protected permissions the delegator holds; never to self or upward",
+    !v.dNoMfa?.ok && !v.dSelf?.ok && !v.dProtected?.ok && !v.dLong?.ok && !v.dParent?.ok && !v.dCross?.ok && !!v.d && !v.tDelegatesUp?.ok && !v.directTable?.ok,
+    JSON.stringify({ prot: v.dProtected?.err, up: v.tDelegatesUp?.err }), "critical");
+  rec("delegation", "Shadow v2 allows only the delegated action during the window (live check unchanged), logs the disagreement, never throws; revocation ends it; all audited append-only",
+    v.v2Before?.allow === false && v.v2During?.allow === true && v.v2During?.deciding_layer === "delegation" && v.v2Other?.allow === false && v.v1During?.allow === false
+      && v.mine?.some((x) => x.id === v.d && x.state === "active") && v.shadow === false && v.shadowRow?.new_allow === true && v.shadowRow?.legacy_allow === false
+      && v.shadowRow?.deciding_layer === "delegation" && v.shadowBad === true && v.revoke === true && v.v2After?.allow === false
+      && ["consent_grant", "consent_withdraw", "break_glass_review", "delegation_grant", "delegation_revoke"].every((a) => v.audit.includes(a)) && !v.auditEdit?.ok,
+    JSON.stringify({ during: v.v2During?.deciding_layer, row: v.shadowRow, audit: v.audit }), "critical");
+}
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
 await pool.end();

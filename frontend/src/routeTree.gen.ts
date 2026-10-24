@@ -43,6 +43,7 @@ import { Route as siteVerifyTranscriptRouteImport } from './routes/(site)/verify
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as AuthenticatedBursarRouteRouteImport } from './routes/_authenticated/bursar/route'
 import { Route as AuthenticatedCommandCentreRouteRouteImport } from './routes/_authenticated/command-centre/route'
+import { Route as AuthenticatedConsentRouteImport } from './routes/_authenticated/consent'
 import { Route as AuthenticatedDriverRouteRouteImport } from './routes/_authenticated/driver/route'
 import { Route as AuthenticatedGovDashboardRouteImport } from './routes/_authenticated/gov-dashboard'
 import { Route as AuthenticatedHqRouteRouteImport } from './routes/_authenticated/hq/route'
@@ -126,6 +127,7 @@ import { Route as AuthenticatedAdminPayrollRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminReportCardsRouteImport } from './routes/_authenticated/admin/report-cards'
 import { Route as AuthenticatedAdminRoleScopesRouteImport } from './routes/_authenticated/admin/role-scopes'
 import { Route as AuthenticatedAdminRolesRouteImport } from './routes/_authenticated/admin/roles'
+import { Route as AuthenticatedAdminSafeguardsRouteImport } from './routes/_authenticated/admin/safeguards'
 import { Route as AuthenticatedAdminSchoolProfileRouteImport } from './routes/_authenticated/admin/school-profile'
 import { Route as AuthenticatedAdminSessionRolloverRouteImport } from './routes/_authenticated/admin/session-rollover'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
@@ -383,6 +385,11 @@ const AuthenticatedCommandCentreRouteRoute =
     path: '/command-centre',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedConsentRoute = AuthenticatedConsentRouteImport.update({
+  id: '/consent',
+  path: '/consent',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDriverRouteRoute =
   AuthenticatedDriverRouteRouteImport.update({
     id: '/driver',
@@ -855,6 +862,12 @@ const AuthenticatedAdminRolesRoute = AuthenticatedAdminRolesRouteImport.update({
   path: '/roles',
   getParentRoute: () => AuthenticatedAdminRouteRoute,
 } as any)
+const AuthenticatedAdminSafeguardsRoute =
+  AuthenticatedAdminSafeguardsRouteImport.update({
+    id: '/safeguards',
+    path: '/safeguards',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminSchoolProfileRoute =
   AuthenticatedAdminSchoolProfileRouteImport.update({
     id: '/school-profile',
@@ -1405,6 +1418,7 @@ export interface FileRoutesByFullPath {
   '/status': typeof siteStatusRoute
   '/terms': typeof siteTermsRoute
   '/verify-transcript': typeof siteVerifyTranscriptRoute
+  '/consent': typeof AuthenticatedConsentRoute
   '/gov-dashboard': typeof AuthenticatedGovDashboardRoute
   '/internal': typeof AuthenticatedInternalRoute
   '/messages': typeof AuthenticatedMessagesRoute
@@ -1482,6 +1496,7 @@ export interface FileRoutesByFullPath {
   '/admin/report-cards': typeof AuthenticatedAdminReportCardsRoute
   '/admin/role-scopes': typeof AuthenticatedAdminRoleScopesRoute
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
+  '/admin/safeguards': typeof AuthenticatedAdminSafeguardsRoute
   '/admin/school-profile': typeof AuthenticatedAdminSchoolProfileRoute
   '/admin/session-rollover': typeof AuthenticatedAdminSessionRolloverRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
@@ -1606,6 +1621,7 @@ export interface FileRoutesByTo {
   '/status': typeof siteStatusRoute
   '/terms': typeof siteTermsRoute
   '/verify-transcript': typeof siteVerifyTranscriptRoute
+  '/consent': typeof AuthenticatedConsentRoute
   '/gov-dashboard': typeof AuthenticatedGovDashboardRoute
   '/internal': typeof AuthenticatedInternalRoute
   '/messages': typeof AuthenticatedMessagesRoute
@@ -1683,6 +1699,7 @@ export interface FileRoutesByTo {
   '/admin/report-cards': typeof AuthenticatedAdminReportCardsRoute
   '/admin/role-scopes': typeof AuthenticatedAdminRoleScopesRoute
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
+  '/admin/safeguards': typeof AuthenticatedAdminSafeguardsRoute
   '/admin/school-profile': typeof AuthenticatedAdminSchoolProfileRoute
   '/admin/session-rollover': typeof AuthenticatedAdminSessionRolloverRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
@@ -1812,6 +1829,7 @@ export interface FileRoutesById {
   '/(site)/status': typeof siteStatusRoute
   '/(site)/terms': typeof siteTermsRoute
   '/(site)/verify-transcript': typeof siteVerifyTranscriptRoute
+  '/_authenticated/consent': typeof AuthenticatedConsentRoute
   '/_authenticated/gov-dashboard': typeof AuthenticatedGovDashboardRoute
   '/_authenticated/internal': typeof AuthenticatedInternalRoute
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
@@ -1889,6 +1907,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/report-cards': typeof AuthenticatedAdminReportCardsRoute
   '/_authenticated/admin/role-scopes': typeof AuthenticatedAdminRoleScopesRoute
   '/_authenticated/admin/roles': typeof AuthenticatedAdminRolesRoute
+  '/_authenticated/admin/safeguards': typeof AuthenticatedAdminSafeguardsRoute
   '/_authenticated/admin/school-profile': typeof AuthenticatedAdminSchoolProfileRoute
   '/_authenticated/admin/session-rollover': typeof AuthenticatedAdminSessionRolloverRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
@@ -2017,6 +2036,7 @@ export interface FileRouteTypes {
     | '/status'
     | '/terms'
     | '/verify-transcript'
+    | '/consent'
     | '/gov-dashboard'
     | '/internal'
     | '/messages'
@@ -2094,6 +2114,7 @@ export interface FileRouteTypes {
     | '/admin/report-cards'
     | '/admin/role-scopes'
     | '/admin/roles'
+    | '/admin/safeguards'
     | '/admin/school-profile'
     | '/admin/session-rollover'
     | '/admin/settings'
@@ -2218,6 +2239,7 @@ export interface FileRouteTypes {
     | '/status'
     | '/terms'
     | '/verify-transcript'
+    | '/consent'
     | '/gov-dashboard'
     | '/internal'
     | '/messages'
@@ -2295,6 +2317,7 @@ export interface FileRouteTypes {
     | '/admin/report-cards'
     | '/admin/role-scopes'
     | '/admin/roles'
+    | '/admin/safeguards'
     | '/admin/school-profile'
     | '/admin/session-rollover'
     | '/admin/settings'
@@ -2423,6 +2446,7 @@ export interface FileRouteTypes {
     | '/(site)/status'
     | '/(site)/terms'
     | '/(site)/verify-transcript'
+    | '/_authenticated/consent'
     | '/_authenticated/gov-dashboard'
     | '/_authenticated/internal'
     | '/_authenticated/messages'
@@ -2500,6 +2524,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/report-cards'
     | '/_authenticated/admin/role-scopes'
     | '/_authenticated/admin/roles'
+    | '/_authenticated/admin/safeguards'
     | '/_authenticated/admin/school-profile'
     | '/_authenticated/admin/session-rollover'
     | '/_authenticated/admin/settings'
@@ -2857,6 +2882,13 @@ declare module '@tanstack/react-router' {
       path: '/command-centre'
       fullPath: '/command-centre'
       preLoaderRoute: typeof AuthenticatedCommandCentreRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/consent': {
+      id: '/_authenticated/consent'
+      path: '/consent'
+      fullPath: '/consent'
+      preLoaderRoute: typeof AuthenticatedConsentRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/driver': {
@@ -3438,6 +3470,13 @@ declare module '@tanstack/react-router' {
       path: '/roles'
       fullPath: '/admin/roles'
       preLoaderRoute: typeof AuthenticatedAdminRolesRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/safeguards': {
+      id: '/_authenticated/admin/safeguards'
+      path: '/safeguards'
+      fullPath: '/admin/safeguards'
+      preLoaderRoute: typeof AuthenticatedAdminSafeguardsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/school-profile': {
@@ -4136,6 +4175,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminReportCardsRoute: typeof AuthenticatedAdminReportCardsRoute
   AuthenticatedAdminRoleScopesRoute: typeof AuthenticatedAdminRoleScopesRoute
   AuthenticatedAdminRolesRoute: typeof AuthenticatedAdminRolesRoute
+  AuthenticatedAdminSafeguardsRoute: typeof AuthenticatedAdminSafeguardsRoute
   AuthenticatedAdminSchoolProfileRoute: typeof AuthenticatedAdminSchoolProfileRoute
   AuthenticatedAdminSessionRolloverRoute: typeof AuthenticatedAdminSessionRolloverRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
@@ -4226,6 +4266,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminReportCardsRoute: AuthenticatedAdminReportCardsRoute,
     AuthenticatedAdminRoleScopesRoute: AuthenticatedAdminRoleScopesRoute,
     AuthenticatedAdminRolesRoute: AuthenticatedAdminRolesRoute,
+    AuthenticatedAdminSafeguardsRoute: AuthenticatedAdminSafeguardsRoute,
     AuthenticatedAdminSchoolProfileRoute: AuthenticatedAdminSchoolProfileRoute,
     AuthenticatedAdminSessionRolloverRoute:
       AuthenticatedAdminSessionRolloverRoute,
@@ -4498,6 +4539,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedStudentRouteRoute: typeof AuthenticatedStudentRouteRouteWithChildren
   AuthenticatedSuperAdminRouteRoute: typeof AuthenticatedSuperAdminRouteRouteWithChildren
   AuthenticatedTeacherRouteRoute: typeof AuthenticatedTeacherRouteRouteWithChildren
+  AuthenticatedConsentRoute: typeof AuthenticatedConsentRoute
   AuthenticatedGovDashboardRoute: typeof AuthenticatedGovDashboardRoute
   AuthenticatedInternalRoute: typeof AuthenticatedInternalRoute
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
@@ -4525,6 +4567,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSuperAdminRouteRoute:
     AuthenticatedSuperAdminRouteRouteWithChildren,
   AuthenticatedTeacherRouteRoute: AuthenticatedTeacherRouteRouteWithChildren,
+  AuthenticatedConsentRoute: AuthenticatedConsentRoute,
   AuthenticatedGovDashboardRoute: AuthenticatedGovDashboardRoute,
   AuthenticatedInternalRoute: AuthenticatedInternalRoute,
   AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,

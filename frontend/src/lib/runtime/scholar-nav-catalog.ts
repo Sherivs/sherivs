@@ -1194,6 +1194,14 @@ export const SCHOLAR_NAV_CONTRIBUTIONS: readonly NavContribution[] = [
         orderHint: 3,
       },
       {
+        key: "r001.org_admin.safeguards",
+        label: "Safeguards",
+        iconKey: "settings",
+        url: "/admin/safeguards",
+        capabilities: ["r001:org_admin.safeguards"],
+        orderHint: 4,
+      },
+      {
         key: "r001.org_admin.ndpa",
         label: "Data protection (NDPA)",
         iconKey: "shield",
