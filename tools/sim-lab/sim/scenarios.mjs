@@ -1,7 +1,7 @@
 // Scenario suite against the isolated sim DB. Each check records pass/fail + detail. No secrets involved.
 import pg from "pg"; import fs from "node:fs"; import crypto from "node:crypto";
 const M = JSON.parse(fs.readFileSync("sim/manifest.json", "utf8"));
-const pool = new pg.Pool({ host: "127.0.0.1", port: 54329, user: "postgres", max: 60 });
+const pool = new pg.Pool({ host: "127.0.0.1", port: Number(process.env.SIM_PG_PORT ?? 54329), user: "postgres", max: 60 });
 const results = [];
 const rec = (area, name, pass, detail, severity = "high") => { results.push({ area, name, pass, detail, severity }); console.log(pass ? "PASS" : "FAIL", area, "::", name, "::", detail); };
 async function as(uid, fn, role = "authenticated") {

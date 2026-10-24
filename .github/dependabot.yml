@@ -1,0 +1,28 @@
+# Track E: grouped weekly dependency updates (keeps PR noise low; security updates still open immediately).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule: { interval: weekly, day: monday, time: "05:00", timezone: "Africa/Lagos" }
+    open-pull-requests-limit: 5
+    groups:
+      dev-tooling: { dependency-type: development, update-types: [minor, patch] }
+      runtime-minor: { dependency-type: production, update-types: [minor, patch] }
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+  - package-ecosystem: npm
+    directory: "/mobile"
+    schedule: { interval: weekly, day: monday, time: "05:00", timezone: "Africa/Lagos" }
+    open-pull-requests-limit: 3
+    groups:
+      expo: { patterns: ["expo", "expo-*", "react-native", "react-native-*", "react", "react-dom"] }
+    ignore:
+      # Expo SDK bumps must be done together with `npx expo install --fix`, not piecemeal.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule: { interval: weekly }
+    groups:
+      actions: { patterns: ["*"] }
