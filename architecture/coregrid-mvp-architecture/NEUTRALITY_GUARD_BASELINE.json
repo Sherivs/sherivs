@@ -15,8 +15,8 @@
     "lastRatchet": "2026-10-03: V1-006 (team SECURITY) neutralized the platform authorization core — removed all 9 frontend/src/lib/authorization.ts and all 13 frontend/src/lib/identity.ts entries (authorization.ts and identity.ts now carry zero education vocabulary; roles/relationship types are contributed via rbac/domain-contribution + domain-config registration) and refreshed the 7 frozen security-role-gate.ts legacy-fallback entries against the live tree (shrink-only, ADR-003/004). || 2026-10-03 (ADR-012): T-wave coordinator ADDED 3 quarantine groups (19 hits) for database/supabase/migrations/20261003000040_coregrid_school_media_bucket.sql — the FIRST baseline extension, made under ADR-004's explicit 'new ADR' mechanism: the declarative storage-provisioning migration must reference the legacy storage contract id school-media consumed by the frontend and by the applied 20260707223958 policy set; the neutral conversion (bucket id + policy predicates + path contract) is blocked on the neutral-tenant substrate conversion (same conversionPath class as the transport posture) and is recorded as an authorized follow-up that REMOVES these entries in the same change. Zero new privileges authorized by ADR-012. || 2026-10-08 (ADR-013): Sherivs refoundation ADDED 9 quarantine groups (47 hits) for database/supabase/migrations/20261008000050_coregrid_organization_memberships.sql — the SECOND baseline extension, made under ADR-004's explicit 'new ADR' mechanism (ADR-012 precedent): the multi-membership migration extends the LIVE legacy identity store in place (users.school_id stays the ACTIVE-CONTEXT binding; every tenant RLS predicate resolves through get_my_school_id()/get_my_role()), so its SQL necessarily carries the same legacy vocabulary class its owners are quarantined for (school_id, is_school_admin, get_my_school_id, tenant role names). It introduces NO new domain code on the universal surface — the table is additive, RLS-FORCED, and mirrors the legacy store. Zero new privileges beyond the policy-gated DML posture it declares. The neutral-tenant substrate conversion (COND-003 / ADR-012 conversionPath) removes these entries in the same change when it lands. || 2026-10-08 (ADR-013 amendment, same ADR authority): pre-apply verification against the LIVE users_role_check exposed two roles the migration's original CHECK omitted (alumni, driver) — the dual-write trigger must be able to mirror EVERY role the identity store legally holds, so the CHECK was corrected to mirror users_role_check exactly and the migration APPLIED under explicit operator authorization. This adds 1 quarantine group (vocabulary-literal:driver) to the ten now recorded for this migration."
   },
   "summary": {
-    "entryCount": 636,
-    "totalObservedHits": 3408,
+    "entryCount": 642,
+    "totalObservedHits": 3429,
     "hitsByFile": {
       "database/supabase/migrations/20260907000100_runtime_scholar_workforce_catalog.sql": 114,
       "database/supabase/migrations/20260620122048_50e590c2-5911-4c98-8931-fb46a4b509f3.sql": 84,
@@ -185,7 +185,8 @@
       "database/supabase/migrations/20261020000130_sherivs_006_membership_identity_freeze.sql": 19,
       "database/supabase/migrations/20261024000220_sherivs_015_privacy_lockdown_rls_speed.sql": 62,
       "database/supabase/migrations/20261024000230_sherivs_016_lifecycle_grading_tiers_audit.sql": 67,
-      "database/supabase/migrations/20261025100050_sherivs_a05_fee_relief_levies.sql": 64
+      "database/supabase/migrations/20261025100050_sherivs_a05_fee_relief_levies.sql": 64,
+      "database/supabase/migrations/20261025100055_sherivs_a05b_checkout_net_amount.sql": 21
     },
     "baselineGroups": 427
   },
@@ -9957,6 +9958,87 @@
         148
       ],
       "firstSnippet": "USING ((school_id = public.get_my_school_id() AND public.scholar_can(school_id, 'fees.view'))"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100055_sherivs_a05b_checkout_net_amount.sql",
+      "kind": "vocabulary",
+      "token": "fee",
+      "streamIRef": "SHERIVS-A05b",
+      "occurrences": 6,
+      "lines": [
+        2,
+        3,
+        4,
+        6,
+        57,
+        63
+      ],
+      "firstSnippet": "--   * relief from approved discounts/scholarships/waivers (incl. sibling rule) is allocated to individual fee rows"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100055_sherivs_a05b_checkout_net_amount.sql",
+      "kind": "vocabulary",
+      "token": "fees",
+      "streamIRef": "SHERIVS-A05b",
+      "occurrences": 9,
+      "lines": [
+        18,
+        26,
+        34,
+        38,
+        48,
+        54,
+        60,
+        62,
+        94
+      ],
+      "firstSnippet": "FROM public.fees f WHERE f.student_id = p_student AND f.term = p_term AND f.academic_year = p_year AND (a.fee_type IS NULL OR f.fee_type = a.fee_type);"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100055_sherivs_a05b_checkout_net_amount.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-A05b",
+      "occurrences": 2,
+      "lines": [
+        53,
+        54
+      ],
+      "firstSnippet": "SELECT s.id IS NOT NULL AND (s.user_id = auth.uid() OR s.parent_id = auth.uid() OR public.is_guardian_of_student(s.id, s.school_id)"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100055_sherivs_a05b_checkout_net_amount.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "SHERIVS-A05b",
+      "occurrences": 1,
+      "lines": [
+        54
+      ],
+      "firstSnippet": "OR (s.school_id = public.get_my_school_id() AND public.scholar_can(s.school_id, 'fees.view')) OR coalesce(public.is_super_admin(), false))"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100055_sherivs_a05b_checkout_net_amount.sql",
+      "kind": "vocabulary",
+      "token": "student",
+      "streamIRef": "SHERIVS-A05b",
+      "occurrences": 2,
+      "lines": [
+        57,
+        92
+      ],
+      "firstSnippet": "-- Amount to charge now for one fee row. Callable by people who can see the student, and by the server (service_role) for settlement."
+    },
+    {
+      "file": "database/supabase/migrations/20261025100055_sherivs_a05b_checkout_net_amount.sql",
+      "kind": "vocabulary",
+      "token": "bursar",
+      "streamIRef": "SHERIVS-A05b",
+      "occurrences": 1,
+      "lines": [
+        71
+      ],
+      "firstSnippet": "-- Per-row view for the parent/bursar screens."
     }
   ]
 }

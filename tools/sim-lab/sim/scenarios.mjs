@@ -1541,8 +1541,8 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
     !v.teacherReq?.ok && !v.short?.ok && /sponsor/.test(v.noSponsor?.err ?? "") && !v.over?.ok, `${W_ERR(v.teacherReq)} | ${W_ERR(v.short)} | ${W_ERR(v.noSponsor)} | ${W_ERR(v.over)}`, "high");
   rec("fees_relief", "Maker-checker: the requester cannot approve their own relief; a second manager decides once",
     /separation_of_duties/.test(v.selfApprove?.err ?? "") && v.approve?.row?.r === "approved" && /already/.test(v.twice?.err ?? ""), `${W_ERR(v.selfApprove)} | ${W_ERR(v.twice)}`, "critical");
-  rec("fees_relief", "Statement: 10% + ₦50,000 tuition scholarship + uniform waiver = ₦82,000 relief; relief never exceeds the bill; revoking restores it",
-    Number(v.st1?.gross) === 120000 && Number(v.st1?.relief) === 82000 && Number(v.st1?.net) === 38000 && Number(v.st2?.net) === 0 && Number(v.st2?.relief) === 120000 && Number(v.st3?.net) === 38000,
+  rec("fees_relief", "Statement: 10% + ₦50,000 tuition scholarship + uniform waiver = ₦80,000 relief (the waiver covers only what is left of the uniform); relief never exceeds the bill; revoking restores it",
+    Number(v.st1?.gross) === 120000 && Number(v.st1?.relief) === 80000 && Number(v.st1?.net) === 40000 && Number(v.st2?.net) === 0 && Number(v.st2?.relief) === 120000 && Number(v.st3?.net) === 40000,
     `st1 ${v.st1?.relief}/${v.st1?.net}; st2 ${v.st2?.relief}/${v.st2?.net}; st3 ${v.st3?.net}`, "critical");
   rec("fees_levies", "A levy charges each student in scope once; re-running never double-charges; amount changes and other schools' classes are refused",
     v.levy?.charged_now === v.inClass && v.levyAgain?.charged_now === 0 && !v.levyAmt?.ok && !v.levyForeign?.ok && Number(v.st4?.gross) === 125000,
@@ -1551,6 +1551,54 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
     v.kids < 2 || (v.sib >= 1 && v.sibAgain === 0 && v.sibFirstKid === 0 && v.sibSecondKid === 1), `applied ${v.sib}, again ${v.sibAgain}; first ${v.sibFirstKid} second ${v.sibSecondKid}`, "high");
   rec("fees_relief", "No direct writes; the parent reads their child's statement; another school can neither read nor request",
     !v.direct?.ok && (!v.parent || Number(v.parentSt?.net) >= 0) && !v.bSt?.ok && !v.bReq?.ok && v.bRows === 0, `direct ${W_ERR(v.direct)}; B ${W_ERR(v.bSt)} / ${W_ERR(v.bReq)}`, "critical");
+}
+
+// ---------- A5b. Checkout charges the amount after relief (SHERIVS-A05b) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+    const Y = "2032/2033", T = "first";
+    const sid = (await asOwner("select id from students where school_id=$1 and is_active and parent_id is not null order by admission_number offset 11 limit 1", [A.schoolId])).row?.id;
+    const parent = (await asOwner("select parent_id from students where id=$1", [sid])).row?.parent_id;
+    const other = (await asOwner("select id from users where school_id=$1 and role='parent' and id <> $2 and not exists (select 1 from students s where s.parent_id = users.id and s.id=$3) limit 1", [A.schoolId, parent, sid])).row?.id;
+    await asOwner("delete from fees where student_id=$1 and academic_year=$2", [sid, Y]);
+    const ins = (ft, amt) => asOwner("insert into fees (school_id, student_id, fee_type, amount, term, academic_year, status, paid_amount) values ($1,$2,$3,$4,$5,$6,'unpaid',0) returning id", [A.schoolId, sid, ft, amt, T, Y]);
+    const tu = (await ins("tuition", 100000)).row.id, un = (await ins("uniform", 20000)).row.id, lv = (await ins("levy:A5b PTA", 5000)).row.id;
+    const checker = (await asOwner("select id from users where school_id=$1 and role='principal' limit 1", [A.schoolId])).row?.id ?? A.principal;
+    const req = async (k, m, val, reason, ft = null, sp = null) => (await t("select public.fee_relief_request($1,$2,$3,$4,$5,$6,$7,$8,$9) id", [sid, k, m, val, T, Y, reason, ft, sp])).row?.id;
+    const due = async (id) => Number((await t("select public.fee_amount_due($1) d", [id])).row?.d);
+    out.before = { tu: await due(tu), un: await due(un), lv: await due(lv) };
+    const d1 = await req("discount", "percent", 10, "Early payment discount");
+    const s1 = await req("scholarship", "fixed", 30000, "Merit scholarship", "tuition", "Borno Education Trust");
+    out.pendingIgnored = await due(tu);
+    await act(checker); for (const id of [d1, s1]) await t("select public.fee_relief_decide($1,true)", [id]); await act(A.admin);
+    out.after = { tu: await due(tu), un: await due(un), lv: await due(lv) };
+    out.st = (await t("select public.fee_statement($1,$2,$3) r", [sid, T, Y])).row?.r;
+    out.rowsSum = Number((await t("select sum(due) s from public.fee_dues($1,$2,$3)", [sid, T, Y])).row?.s);
+    await asOwner("update fees set paid_amount=8000, status='partial' where id=$1", [un]);
+    out.partial = await due(un);
+    const w = await req("waiver", "percent", 100, "Uniform waiver (hardship)", "uniform");
+    await act(checker); await t("select public.fee_relief_decide($1,true)", [w]); await act(A.admin);
+    out.waived = await due(un);
+    // settlement runs as the server (service_role): it can read the amount due for any row
+    await c.query("select set_config('request.jwt.claims', $1, true)", [JSON.stringify({ role: "service_role" })]);
+    out.server = Number((await t("select public.fee_amount_due($1) d", [tu])).row?.d);
+    if (parent) { await act(parent); out.parent = Number((await t("select public.fee_amount_due($1) d", [tu])).row?.d); out.parentRows = (await t("select count(*)::int n from public.fee_dues($1,$2,$3)", [sid, T, Y])).row?.n; }
+    if (other) { await act(other); out.otherParent = await t("select public.fee_amount_due($1)", [tu]); }
+    await act(B.admin); out.bDue = await t("select public.fee_amount_due($1)", [tu]); out.bRows = await t("select * from public.fee_dues($1,$2,$3)", [sid, T, Y]);
+    await act(A.admin); out.internal = await t("select * from public._fee_row_dues($1,$2,$3)", [sid, T, Y]);
+    await asOwner("update fees set status='paid' where id=$1", [lv]); out.paidRow = await due(lv);
+  });
+  rec("fees_checkout", "Before relief the checkout amount is the full row; pending (unapproved) relief changes nothing",
+    v.before?.tu === 100000 && v.before?.un === 20000 && v.before?.lv === 5000 && v.pendingIgnored === 100000, JSON.stringify(v.before), "critical");
+  rec("fees_checkout", "After approval: 10% across all rows + ₦30,000 tuition scholarship → tuition ₦60,000, uniform ₦18,000, levy ₦4,500",
+    v.after?.tu === 60000 && v.after?.un === 18000 && v.after?.lv === 4500, JSON.stringify(v.after), "critical");
+  rec("fees_checkout", "Per-row checkout amounts add up exactly to the statement balance (₦82,500)",
+    v.rowsSum === 82500 && Number(v.st?.balance) === 82500 && Number(v.st?.relief) === 42500, `rows ${v.rowsSum}; statement ${v.st?.balance}/${v.st?.relief}`, "critical");
+  rec("fees_checkout", "Part-payments are subtracted; a fully waived row has nothing to pay; paid rows are 0",
+    v.partial === 10000 && v.waived === 0 && v.paidRow === 0, `partial ${v.partial}; waived ${v.waived}; paid ${v.paidRow}`, "high");
+  rec("fees_checkout", "Settlement (service role) and the child's parent read the same amount; other parents, other schools and direct calls to the allocator are refused",
+    v.server === 60000 && (v.parent === undefined || v.parent === 60000) && (!v.otherParent || !v.otherParent.ok) && !v.bDue?.ok && !v.bRows?.ok && !v.internal?.ok,
+    `server ${v.server}; parent ${v.parent}; other ${W_ERR(v.otherParent)}; B ${W_ERR(v.bDue)}; internal ${W_ERR(v.internal)}`, "critical");
 }
 
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
