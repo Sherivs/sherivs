@@ -21,8 +21,9 @@ describe("public root no longer mounts in-memory Command Centre", () => {
     expect(home).toContain("<SherivsMark");
     const logo = readFileSync(join(ROOT, "frontend/src/components/brand/sherivs-logo.tsx"), "utf8");
     expect(logo).toContain("/brand/sherivs-mark-");
-    for (const px of [64, 128, 256]) expect(existsSync(join(ROOT, `public/brand/sherivs-mark-${px}.png`))).toBe(true);
-    expect(logo).toContain('`${PLATFORM_NAME} logo`');
+    for (const px of [64, 128, 256])
+      expect(existsSync(join(ROOT, `public/brand/sherivs-mark-${px}.png`))).toBe(true);
+    expect(logo).toContain("`${PLATFORM_NAME} logo`");
     expect(home).toContain('to="/auth"');
     expect(home).toContain('to="/sherivs"');
     expect(home).not.toContain("tenant:coregrid-demo");
@@ -31,7 +32,7 @@ describe("public root no longer mounts in-memory Command Centre", () => {
   });
 
   it("preserves tenant public sites and authenticated workspace routing", () => {
-    expect(index).toContain("PublicSchoolSite");
+    expect(index).toContain("<SiteView"); // dynamic website engine (SHERIVS-100)
     // master routes signed-in users via the resolved identity chain.
     expect(index).toContain("identityFromAppState");
     expect(index).toContain('createFileRoute("/")');
@@ -53,7 +54,9 @@ describe("hard-coded metric placeholders removed from production portal paths", 
   it("does not treat empty fees as 100% collection", () => {
     expect(intelligence).toContain("feeCollectionRate(");
     expect(health).toContain("feeCollectionRate(");
-    expect(intelligence).not.toMatch(/totalBilled > 0 \? \(totalCollected \/ totalBilled\) \* 100 : 100/);
+    expect(intelligence).not.toMatch(
+      /totalBilled > 0 \? \(totalCollected \/ totalBilled\) \* 100 : 100/,
+    );
     expect(health).not.toMatch(/totalBilled > 0 \? \(totalCollected \/ totalBilled\) \* 100 : 100/);
   });
 

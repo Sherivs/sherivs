@@ -66,6 +66,7 @@ import { Route as GovAboutRouteImport } from './routes/gov/about'
 import { Route as GovAttendanceRouteImport } from './routes/gov/attendance'
 import { Route as GovSchoolsRouteImport } from './routes/gov/schools'
 import { Route as NewsIdRouteImport } from './routes/news.$id'
+import { Route as PagesSlugRouteImport } from './routes/pages.$slug'
 import { Route as PlatformOrgRouteImport } from './routes/platform.org'
 import { Route as RealityClassRouteImport } from './routes/reality.$class'
 import { Route as AuthenticatedAdminAdmissionsRouteImport } from './routes/_authenticated/admin/admissions'
@@ -504,6 +505,11 @@ const GovSchoolsRoute = GovSchoolsRouteImport.update({
 const NewsIdRoute = NewsIdRouteImport.update({
   id: '/news/$id',
   path: '/news/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PagesSlugRoute = PagesSlugRouteImport.update({
+  id: '/pages/$slug',
+  path: '/pages/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PlatformOrgRoute = PlatformOrgRouteImport.update({
@@ -1421,6 +1427,7 @@ export interface FileRoutesByFullPath {
   '/gov/attendance': typeof GovAttendanceRoute
   '/gov/schools': typeof GovSchoolsRoute
   '/news/$id': typeof NewsIdRoute
+  '/pages/$slug': typeof PagesSlugRoute
   '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
   '/gov/': typeof GovIndexRoute
@@ -1622,6 +1629,7 @@ export interface FileRoutesByTo {
   '/gov/attendance': typeof GovAttendanceRoute
   '/gov/schools': typeof GovSchoolsRoute
   '/news/$id': typeof NewsIdRoute
+  '/pages/$slug': typeof PagesSlugRoute
   '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
   '/gov': typeof GovIndexRoute
@@ -1828,6 +1836,7 @@ export interface FileRoutesById {
   '/gov/attendance': typeof GovAttendanceRoute
   '/gov/schools': typeof GovSchoolsRoute
   '/news/$id': typeof NewsIdRoute
+  '/pages/$slug': typeof PagesSlugRoute
   '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
   '/gov/': typeof GovIndexRoute
@@ -2033,6 +2042,7 @@ export interface FileRouteTypes {
     | '/gov/attendance'
     | '/gov/schools'
     | '/news/$id'
+    | '/pages/$slug'
     | '/platform/org'
     | '/reality/$class'
     | '/gov/'
@@ -2234,6 +2244,7 @@ export interface FileRouteTypes {
     | '/gov/attendance'
     | '/gov/schools'
     | '/news/$id'
+    | '/pages/$slug'
     | '/platform/org'
     | '/reality/$class'
     | '/gov'
@@ -2439,6 +2450,7 @@ export interface FileRouteTypes {
     | '/gov/attendance'
     | '/gov/schools'
     | '/news/$id'
+    | '/pages/$slug'
     | '/platform/org'
     | '/reality/$class'
     | '/gov/'
@@ -2611,6 +2623,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   EventsIdRoute: typeof EventsIdRoute
   NewsIdRoute: typeof NewsIdRoute
+  PagesSlugRoute: typeof PagesSlugRoute
   RealityClassRoute: typeof RealityClassRoute
   ApiPublicAuditPasswordResetRoute: typeof ApiPublicAuditPasswordResetRoute
   ApiPublicCronWalletTopupReconcileRoute: typeof ApiPublicCronWalletTopupReconcileRoute
@@ -3018,6 +3031,13 @@ declare module '@tanstack/react-router' {
       path: '/news/$id'
       fullPath: '/news/$id'
       preLoaderRoute: typeof NewsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pages/$slug': {
+      id: '/pages/$slug'
+      path: '/pages/$slug'
+      fullPath: '/pages/$slug'
+      preLoaderRoute: typeof PagesSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/platform/org': {
@@ -4607,6 +4627,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   EventsIdRoute: EventsIdRoute,
   NewsIdRoute: NewsIdRoute,
+  PagesSlugRoute: PagesSlugRoute,
   RealityClassRoute: RealityClassRoute,
   ApiPublicAuditPasswordResetRoute: ApiPublicAuditPasswordResetRoute,
   ApiPublicCronWalletTopupReconcileRoute:

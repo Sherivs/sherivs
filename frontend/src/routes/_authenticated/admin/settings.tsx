@@ -15,7 +15,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import {
-  SECTION_FLAG_KEYS,
   updateSchoolSettings,
   type SchoolSettingsTab,
 } from "@/lib/runtime/scholar/school-settings.functions";
@@ -73,7 +72,11 @@ function SchoolSettingsPage() {
 
   const onSaved = async () => {
     await refresh();
-    const { data } = await supabase.from("schools").select(SCHOOL_CLIENT_COLUMNS).eq("id", school.id).maybeSingle();
+    const { data } = await supabase
+      .from("schools")
+      .select(SCHOOL_CLIENT_COLUMNS)
+      .eq("id", school.id)
+      .maybeSingle();
     setFresh((data as unknown as SchoolRow | null) ?? null);
   };
 
@@ -100,14 +103,13 @@ function SchoolSettingsPage() {
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-7">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-6">
           <TabsTrigger value="profile">1. Profile</TabsTrigger>
           <TabsTrigger value="branding">2. Branding</TabsTrigger>
-          <TabsTrigger value="sections">3. Sections</TabsTrigger>
-          <TabsTrigger value="hero">4. Hero</TabsTrigger>
-          <TabsTrigger value="about">5. About</TabsTrigger>
-          <TabsTrigger value="location">6. Location</TabsTrigger>
-          <TabsTrigger value="payments">7. Payments</TabsTrigger>
+          <TabsTrigger value="website">3. Website</TabsTrigger>
+          <TabsTrigger value="about">4. About</TabsTrigger>
+          <TabsTrigger value="location">5. Location</TabsTrigger>
+          <TabsTrigger value="payments">6. Payments</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="mt-6">
@@ -116,11 +118,21 @@ function SchoolSettingsPage() {
         <TabsContent value="branding" className="mt-6">
           <BrandingTab row={fresh} onSaved={onSaved} />
         </TabsContent>
-        <TabsContent value="sections" className="mt-6">
-          <SectionsTab row={fresh} onSaved={onSaved} />
-        </TabsContent>
-        <TabsContent value="hero" className="mt-6">
-          <HeroTab row={fresh} onSaved={onSaved} />
+        <TabsContent value="website" className="mt-6">
+          <div className="uos-card p-6 space-y-3">
+            <h2 className="text-base font-semibold">Website</h2>
+            <p className="text-sm text-muted-foreground">
+              Pages, sections and blocks of your public website are managed in the website builder.
+              Blocks bound to live data (programmes, news, results, contact) update automatically
+              and hide when empty.
+            </p>
+            <a
+              href="/admin/website"
+              className="inline-flex rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+            >
+              Open the website builder
+            </a>
+          </div>
         </TabsContent>
         <TabsContent value="about" className="mt-6">
           <AboutTab row={fresh} onSaved={onSaved} />
@@ -345,107 +357,6 @@ function BrandingTab({ row, onSaved }: { row: SchoolRow; onSaved: () => Promise<
 }
 
 /* ---------------- Tab 3: Section toggles ---------------- */
-
-const SECTION_LABELS: Record<(typeof SECTION_FLAG_KEYS)[number], string> = {
-  section_hero_enabled: "Hero",
-  section_about_enabled: "About",
-  section_programs_enabled: "Programs",
-  section_facilities_enabled: "Facilities",
-  section_faculty_enabled: "Faculty",
-  section_news_enabled: "News",
-  section_testimonials_enabled: "Testimonials",
-  section_faqs_enabled: "FAQs",
-  section_contact_enabled: "Contact",
-  section_why_us_enabled: "Why us",
-  section_blog_enabled: "Blog",
-  section_admissions_enabled: "Admissions",
-  section_rules_enabled: "School rules",
-  section_privacy_enabled: "Privacy policy",
-};
-
-function SectionsTab({ row, onSaved }: { row: SchoolRow; onSaved: () => Promise<void> }) {
-  const { save, saving } = useSaveTab("sections");
-  const initial = useMemo(
-    () =>
-      Object.fromEntries(SECTION_FLAG_KEYS.map((k) => [k, Boolean(row[k] ?? true)])) as Record<
-        (typeof SECTION_FLAG_KEYS)[number],
-        boolean
-      >,
-    [row],
-  );
-  const [form, setForm] = useState(initial);
-  useEffect(() => setForm(initial), [initial]);
-
-  return (
-    <FormCard
-      saving={saving}
-      onSubmit={(e) => {
-        e.preventDefault();
-        save(form, onSaved);
-      }}
-    >
-      <p className="text-sm text-muted-foreground">
-        Turn public-site sections on or off. Sections without content already render a placeholder —
-        disable the toggle to hide them entirely.
-      </p>
-      <div className="grid gap-3 md:grid-cols-2">
-        {SECTION_FLAG_KEYS.map((key) => (
-          <label
-            key={key}
-            className="flex items-center justify-between gap-4 rounded-md border border-border bg-background/40 px-4 py-3"
-          >
-            <span className="text-sm">{SECTION_LABELS[key]}</span>
-            <Switch
-              checked={form[key]}
-              onCheckedChange={(v) => setForm((s) => ({ ...s, [key]: Boolean(v) }))}
-            />
-          </label>
-        ))}
-      </div>
-    </FormCard>
-  );
-}
-
-/* ---------------- Tab 4: Hero ---------------- */
-
-function HeroTab({ row, onSaved }: { row: SchoolRow; onSaved: () => Promise<void> }) {
-  const { save, saving } = useSaveTab("hero");
-  const [form, setForm] = useState({
-    hero_headline: str(row.hero_headline),
-    hero_subheadline: str(row.hero_subheadline),
-    hero_cta_text: str(row.hero_cta_text),
-  });
-  const set =
-    (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-      setForm((s) => ({ ...s, [k]: e.target.value }));
-
-  return (
-    <FormCard
-      saving={saving}
-      onSubmit={(e) => {
-        e.preventDefault();
-        save(form, onSaved);
-      }}
-    >
-      <Field label="Headline" hint="Big sentence at the top of the public site.">
-        <Input value={form.hero_headline} onChange={set("hero_headline")} maxLength={160} />
-      </Field>
-      <Field label="Subheadline">
-        <Textarea
-          value={form.hero_subheadline}
-          onChange={set("hero_subheadline")}
-          rows={3}
-          maxLength={320}
-        />
-      </Field>
-      <Field label="Call-to-action button text" hint="Leave blank to hide the button.">
-        <Input value={form.hero_cta_text} onChange={set("hero_cta_text")} maxLength={40} />
-      </Field>
-    </FormCard>
-  );
-}
-
-/* ---------------- Tab 5: About / Mission ---------------- */
 
 function AboutTab({ row, onSaved }: { row: SchoolRow; onSaved: () => Promise<void> }) {
   const { save, saving } = useSaveTab("about");

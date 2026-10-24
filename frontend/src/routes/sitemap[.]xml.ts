@@ -1,6 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
+import { hostnameFromHostHeader } from "@/lib/experience/experience-host";
+import { fetchPublicSite, siteTarget } from "@/lib/website/public-site.functions";
+import { siteSitemapUrls } from "@/lib/website/seo";
+
+const xmlEscape = (s: string) =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 const BASE_URL = "https://sherivs.com";
 
@@ -14,7 +20,34 @@ interface SitemapEntry {
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
-      GET: async () => {
+      GET: async ({ request }) => {
+        // Organization website host (custom domain or <slug>.sherivs.com): that site's own pages only.
+        const host = hostnameFromHostHeader(
+          request.headers.get("x-forwarded-host") ?? request.headers.get("host"),
+        );
+        const { target, preview } = siteTarget(host, null);
+        if (target && !preview) {
+          let locs: string[] = [];
+          try {
+            const site = await fetchPublicSite(target);
+            if (site) locs = siteSitemapUrls(site);
+          } catch {
+            locs = [];
+          }
+          const body = [
+            `<?xml version="1.0" encoding="UTF-8"?>`,
+            `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`,
+            ...locs.map((l) => `  <url><loc>${xmlEscape(l)}</loc></url>`),
+            `</urlset>`,
+          ].join("\n");
+          return new Response(body, {
+            headers: {
+              "Content-Type": "application/xml",
+              "Cache-Control": "public, max-age=600",
+              Vary: "Host",
+            },
+          });
+        }
         const entries: SitemapEntry[] = [
           { path: "/", changefreq: "weekly", priority: "1.0" },
           { path: "/sherivs", changefreq: "weekly", priority: "0.8" },
@@ -26,7 +59,7 @@ export const Route = createFileRoute("/sitemap.xml")({
           { path: "/auth", changefreq: "monthly", priority: "0.3" },
         ];
 
-        // Tenant public sites, addressed via ?school=<slug>
+        // Organization sites live on their own hosts (each serves its own sitemap); list their roots here.
         try {
           const url = process.env.SUPABASE_URL;
           const key = process.env.SUPABASE_PUBLISHABLE_KEY;
@@ -38,7 +71,7 @@ export const Route = createFileRoute("/sitemap.xml")({
               .eq("is_active", true);
             for (const row of (data ?? []) as Array<{ slug: string; updated_at: string | null }>) {
               entries.push({
-                path: `/?school=${encodeURIComponent(row.slug)}`,
+                path: `https://${encodeURIComponent(row.slug)}.sherivs.com/`,
                 lastmod: row.updated_at ?? undefined,
                 changefreq: "weekly",
                 priority: "0.8",
@@ -52,7 +85,7 @@ export const Route = createFileRoute("/sitemap.xml")({
         const urls = entries.map((e) =>
           [
             `  <url>`,
-            `    <loc>${BASE_URL}${e.path}</loc>`,
+            `    <loc>${xmlEscape(e.path.startsWith("https://") ? e.path : BASE_URL + e.path)}</loc>`,
             e.lastmod ? `    <lastmod>${e.lastmod}</lastmod>` : null,
             e.changefreq ? `    <changefreq>${e.changefreq}</changefreq>` : null,
             e.priority ? `    <priority>${e.priority}</priority>` : null,

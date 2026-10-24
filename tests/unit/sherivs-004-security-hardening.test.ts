@@ -48,7 +48,9 @@ describe("SHERIVS-004 input safety", () => {
     expect(safeMapEmbedSrc(ok)).toBe(ok);
     expect(safeMapEmbedSrc(`<iframe src="${ok}" width="600"></iframe>`)).toBe(ok);
     expect(safeMapEmbedSrc("javascript:alert(1)")).toBeNull();
-    expect(safeMapEmbedSrc('<iframe src="https://evil.com/x"></iframe> google.com/maps/embed')).toBeNull();
+    expect(
+      safeMapEmbedSrc('<iframe src="https://evil.com/x"></iframe> google.com/maps/embed'),
+    ).toBeNull();
     expect(safeMapEmbedSrc("https://google.com.evil.com/maps/embed")).toBeNull();
     expect(safeMapEmbedSrc("http://www.google.com/maps/embed")).toBeNull();
     expect(safeMapEmbedSrc(null)).toBeNull();
@@ -74,9 +76,10 @@ describe("SHERIVS-004 input safety", () => {
   });
 
   it("the public map components never feed raw stored markup to an iframe", () => {
-    const src = read("frontend/src/components/public/sections.tsx");
-    expect(src).toContain("safeMapEmbedSrc(");
-    expect(src).not.toMatch(/rawEmbed\.match|raw\.match\(\/src=/);
+    // Website engine (SHERIVS-100): maps are outbound links only, never an iframe of stored markup.
+    const src = read("frontend/src/components/website/blocks.tsx");
+    expect(src).toContain("safeUrl(");
+    expect(src).not.toMatch(/output=embed|maps\/embed|rawEmbed|dangerouslySetInnerHTML/);
   });
 });
 
@@ -246,23 +249,39 @@ describe("SHERIVS-004 fee payment initiation ownership", () => {
 
   it("allows finance staff of the same school", async () => {
     expect(
-      await canInitiateFeePayment(accessDb({ actor: { role: "bursar", school_id: "A" } }), "u", fee),
+      await canInitiateFeePayment(
+        accessDb({ actor: { role: "bursar", school_id: "A" } }),
+        "u",
+        fee,
+      ),
     ).toBe(true);
   });
   it("denies finance staff of another school (tenant isolation)", async () => {
     expect(
-      await canInitiateFeePayment(accessDb({ actor: { role: "bursar", school_id: "B" } }), "u", fee),
+      await canInitiateFeePayment(
+        accessDb({ actor: { role: "bursar", school_id: "B" } }),
+        "u",
+        fee,
+      ),
     ).toBe(false);
   });
   it("allows the mapped parent and the student, denies unrelated members and inactive users", async () => {
     const actor = { role: "parent", school_id: "A" };
     expect(await canInitiateFeePayment(accessDb({ actor, parentLink: true }), "u", fee)).toBe(true);
     expect(
-      await canInitiateFeePayment(accessDb({ actor: { role: "student", school_id: "A" }, self: true }), "u", fee),
+      await canInitiateFeePayment(
+        accessDb({ actor: { role: "student", school_id: "A" }, self: true }),
+        "u",
+        fee,
+      ),
     ).toBe(true);
     expect(await canInitiateFeePayment(accessDb({ actor }), "u", fee)).toBe(false);
     expect(
-      await canInitiateFeePayment(accessDb({ actor: { role: "admin", school_id: "A", is_active: false } }), "u", fee),
+      await canInitiateFeePayment(
+        accessDb({ actor: { role: "admin", school_id: "A", is_active: false } }),
+        "u",
+        fee,
+      ),
     ).toBe(false);
     expect(await canInitiateFeePayment(accessDb({ actor: null }), "u", fee)).toBe(false);
   });

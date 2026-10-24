@@ -186,6 +186,34 @@ const S = {
     pcm: "Play video",
   },
   per_month: { en: "per month", ha: "a wata", yo: "lóṣù", ig: "kwa ọnwa", pcm: "every month" },
+  school_bus: {
+    en: "School bus",
+    ha: "Motar makaranta",
+    yo: "Bọ́ọ̀sì ilé-ìwé",
+    ig: "Ụgbọ ala ụlọ akwụkwọ",
+    pcm: "School bus",
+  },
+  faqs: {
+    en: "Frequently asked questions",
+    ha: "Tambayoyin da ake yawan yi",
+    yo: "Àwọn ìbéèrè tí a sábà ń béèrè",
+    ig: "Ajụjụ a na-ajụkarị",
+    pcm: "Questions wey people dey ask",
+  },
+  not_found: {
+    en: "This page is not available",
+    ha: "Babu wannan shafin",
+    yo: "Ojú-ìwé yìí kò sí",
+    ig: "Ibe a adịghị",
+    pcm: "Dis page no dey",
+  },
+  back_home: {
+    en: "Back to the home page",
+    ha: "Koma shafin farko",
+    yo: "Padà sí ojú-ìwé àkọ́kọ́",
+    ig: "Laghachi n'ibe mbụ",
+    pcm: "Go back to home page",
+  },
   mission: { en: "Our mission", ha: "Manufarmu", yo: "Iṣẹ́ wa", ig: "Ozi anyị", pcm: "Our mission" },
   vision: {
     en: "Our vision",
@@ -221,3 +249,107 @@ export function tx(v: unknown, locale: Locale, fallback: Locale = "en"): string 
 export function isLocale(v: unknown): v is Locale {
   return typeof v === "string" && (LOCALES as readonly string[]).includes(v);
 }
+
+/** Default section headings per block type, used when a block has no heading of its own. */
+export const BLOCK_HEADINGS: Partial<Record<string, Record<Locale, string>>> = {
+  leadership: {
+    en: "Our leadership",
+    ha: "Shugabanninmu",
+    yo: "Àwọn adarí wa",
+    ig: "Ndị ndu anyị",
+    pcm: "Our leaders",
+  },
+  sections_offered: {
+    en: "What we offer",
+    ha: "Abin da muke bayarwa",
+    yo: "Ohun tí a ń pèsè",
+    ig: "Ihe anyị na-enye",
+    pcm: "Wetin we dey offer",
+  },
+  programmes: {
+    en: "Programmes",
+    ha: "Shirye-shiryen karatu",
+    yo: "Àwọn ètò ẹ̀kọ́",
+    ig: "Mmemme ọmụmụ",
+    pcm: "Programmes",
+  },
+  departments: {
+    en: "Faculties and departments",
+    ha: "Tsangayoyi da sassa",
+    yo: "Àwọn ẹ̀ka ẹ̀kọ́",
+    ig: "Ngalaba na ngalaba nta",
+    pcm: "Faculties and departments",
+  },
+  accreditation: {
+    en: "Accreditation",
+    ha: "Amincewa",
+    yo: "Ìfọwọ́sí",
+    ig: "Nnabata",
+    pcm: "Accreditation",
+  },
+  campuses: {
+    en: "Our campuses",
+    ha: "Harabobinmu",
+    yo: "Àwọn ọgbà wa",
+    ig: "Ogige anyị",
+    pcm: "Our campuses",
+  },
+  facilities: {
+    en: "Facilities",
+    ha: "Kayayyakin more rayuwa",
+    yo: "Ohun èlò",
+    ig: "Ngwa ọrụ",
+    pcm: "Facilities",
+  },
+  boarding: {
+    en: "Boarding",
+    ha: "Makarantar kwana",
+    yo: "Ilé gbígbé",
+    ig: "Ụlọ obibi",
+    pcm: "Boarding",
+  },
+  gallery: { en: "Gallery", ha: "Hotuna", yo: "Àwòrán", ig: "Foto", pcm: "Pictures" },
+  testimonials: {
+    en: "What families say",
+    ha: "Abin da iyaye ke cewa",
+    yo: "Ohun tí àwọn òbí ń sọ",
+    ig: "Ihe ezinụlọ na-ekwu",
+    pcm: "Wetin families talk",
+  },
+  alumni: {
+    en: "Alumni",
+    ha: "Tsofaffin dalibai",
+    yo: "Àwọn akẹ́kọ̀ọ́ àtijọ́",
+    ig: "Ụmụ akwụkwọ mbụ",
+    pcm: "Old students",
+  },
+  donations: {
+    en: "Support us",
+    ha: "Tallafa mana",
+    yo: "Ṣe àtìlẹ́yìn fún wa",
+    ig: "Kwado anyị",
+    pcm: "Support us",
+  },
+  map: {
+    en: "Find us",
+    ha: "Inda muke",
+    yo: "Ibi tí a wà",
+    ig: "Ebe anyị nọ",
+    pcm: "Where we dey",
+  },
+  agencies: { en: "Services", ha: "Ayyuka", yo: "Iṣẹ́", ig: "Ọrụ", pcm: "Services" },
+  staff_directory: {
+    en: "Our staff",
+    ha: "Ma'aikatanmu",
+    yo: "Òṣìṣẹ́ wa",
+    ig: "Ndị ọrụ anyị",
+    pcm: "Our staff",
+  },
+  fees: {
+    en: "Fees",
+    ha: "Kudin makaranta",
+    yo: "Owó ilé-ìwé",
+    ig: "Ụgwọ akwụkwọ",
+    pcm: "School fees",
+  },
+};
