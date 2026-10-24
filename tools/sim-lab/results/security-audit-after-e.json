@@ -1,0 +1,181 @@
+{
+  "tables": 251,
+  "rls_disabled": [],
+  "rls_not_forced": [],
+  "rls_without_policies": [
+    "audit_chain_anchors",
+    "cg_api_key",
+    "cg_conformance_assessment",
+    "cg_delivery_evidence",
+    "cg_domain_runtime",
+    "cg_entity",
+    "cg_event",
+    "cg_event_route_cursor",
+    "cg_event_route_outcome",
+    "cg_event_route_queue",
+    "cg_event_security",
+    "cg_event_security_denial",
+    "cg_event_security_redaction",
+    "cg_evidence_lifecycle_act",
+    "cg_execution_history",
+    "cg_execution_record",
+    "cg_foundation_evidence",
+    "cg_hermes_observation",
+    "cg_identity",
+    "cg_knowledge_downgrade",
+    "cg_knowledge_freshness_contract",
+    "cg_knowledge_invalidation",
+    "cg_knowledge_source",
+    "cg_memory_access_log",
+    "cg_memory_record",
+    "cg_memory_scope",
+    "cg_mission_intent",
+    "cg_mission_lease",
+    "cg_observation",
+    "cg_org_communication_sender",
+    "cg_org_profile",
+    "cg_org_unit",
+    "cg_reasoning_provenance_snapshot",
+    "cg_reconciliation_verdict",
+    "cg_relationship",
+    "cg_tenant",
+    "cg_tool_runtime_invocation",
+    "cg_tool_runtime_tool",
+    "cg_usage_attribution_rollup",
+    "cg_verification_result",
+    "cg_worker_capability",
+    "cg_worker_definition",
+    "cg_worker_delegation",
+    "cg_worker_delegation_grant",
+    "cg_worker_quarantine",
+    "cg_workforce_kind",
+    "cg_workforce_position",
+    "cg_workspace",
+    "cg_workspace_member",
+    "credential_grants",
+    "entitlement_plan_quotas",
+    "entitlement_plans",
+    "org_credentials",
+    "org_payment_subaccounts",
+    "rate_limit_events",
+    "result_pins",
+    "school_domain_audit",
+    "ussd_sessions"
+  ],
+  "anon_table_grants_no_rls": [],
+  "permissive_true_policies": [],
+  "roles": [
+    {
+      "rolname": "authenticator",
+      "rolbypassrls": false,
+      "rolsuper": false
+    },
+    {
+      "rolname": "postgres",
+      "rolbypassrls": true,
+      "rolsuper": true
+    },
+    {
+      "rolname": "service_role",
+      "rolbypassrls": true,
+      "rolsuper": false
+    }
+  ],
+  "public_read_true_policies": [
+    {
+      "tablename": "ui_translations",
+      "policyname": "ui_translations_read",
+      "roles": "{anon,authenticated}"
+    }
+  ],
+  "secdef_no_search_path": [],
+  "secdef_mutable_search_path": [
+    {
+      "proname": "rls_auto_enable",
+      "x": "search_path=pg_catalog"
+    }
+  ],
+  "secdef_anon_execute": [
+    "check_result",
+    "donation_campaign_progress",
+    "get_my_school_id",
+    "is_school_admin",
+    "is_super_admin",
+    "public_school_stats",
+    "public_teachers",
+    "resolve_school_by_host",
+    "siwes_supervisor_verify",
+    "ui_strings",
+    "verify_transcript"
+  ],
+  "secdef_total": 213,
+  "views_definer": [
+    "org_credential_inventory"
+  ],
+  "buckets": [
+    {
+      "id": "school-media",
+      "public": false
+    },
+    {
+      "id": "sherivs-files",
+      "public": false
+    }
+  ],
+  "storage_policies": [
+    {
+      "policyname": "admins read student documents",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "expr": "((bucket_id = 'student-documents'::text) AND (is_super_admin() OR (((storage.foldername(name))[2] = (get_my_school_id())::text) AND can_manage_admissions())))"
+    },
+    {
+      "policyname": "anon can upload admission docs",
+      "cmd": "INSERT",
+      "roles": "{anon,authenticated}",
+      "expr": "((bucket_id = 'student-documents'::text) AND ((storage.foldername(name))[1] = 'admissions'::text))"
+    },
+    {
+      "policyname": "msg_attach_delete_own",
+      "cmd": "DELETE",
+      "roles": "{authenticated}",
+      "expr": "((bucket_id = 'message-attachments'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))"
+    },
+    {
+      "policyname": "msg_attach_read_participants",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "expr": "((bucket_id = 'message-attachments'::text) AND (EXISTS ( SELECT 1\n   FROM messages m\n  WHERE ((m.attachment_url = objects.name) AND ((m.sender_id = auth.uid()) "
+    },
+    {
+      "policyname": "msg_attach_upload_own",
+      "cmd": "INSERT",
+      "roles": "{authenticated}",
+      "expr": "((bucket_id = 'message-attachments'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))"
+    },
+    {
+      "policyname": "school-media delete own school",
+      "cmd": "DELETE",
+      "roles": "{authenticated}",
+      "expr": "((bucket_id = 'school-media'::text) AND ((storage.foldername(name))[1] = (get_my_school_id())::text) AND (COALESCE(lower((storage.foldername(name))[2]), ''::tex"
+    },
+    {
+      "policyname": "school-media insert own school",
+      "cmd": "INSERT",
+      "roles": "{authenticated}",
+      "expr": "((bucket_id = 'school-media'::text) AND ((storage.foldername(name))[1] = (get_my_school_id())::text) AND (COALESCE(lower((storage.foldername(name))[2]), ''::tex"
+    },
+    {
+      "policyname": "school-media read own school",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "expr": "((bucket_id = 'school-media'::text) AND ((storage.foldername(name))[1] = (get_my_school_id())::text))"
+    },
+    {
+      "policyname": "school-media update own school",
+      "cmd": "UPDATE",
+      "roles": "{authenticated}",
+      "expr": "((bucket_id = 'school-media'::text) AND ((storage.foldername(name))[1] = (get_my_school_id())::text) AND (COALESCE(lower((storage.foldername(name))[2]), ''::tex"
+    }
+  ]
+}

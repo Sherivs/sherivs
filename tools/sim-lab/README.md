@@ -39,3 +39,11 @@ Migration `20261024000230_sherivs_016_lifecycle_grading_tiers_audit.sql` (not ap
 82/82 scenarios pass (the 56 earlier ones, including the 6 previous failures, plus 26 new for
 rollover/lifecycle, grading/CGPA, tier entitlements, append-only audit bridge, admin role mapping).
 k6 1,000 VUs: 0% errors, p95 213 ms, 331 req/s (`results/k6-016-smoke-1000.json`).
+
+## Track E run (24 Oct 2026): key flows at 3,000 / 5,000 VUs
+`SIM_PG_PORT` now sets the Postgres port for every script (default 54329), and `BASE` sets the PostgREST URL for k6, so parallel labs don't collide.
+New: `sim/seed-flows.mjs` (attendance + CBT seed), `load/flows.js` (login/results/CBT/fees/attendance mix, `SMOKE=1` for CI),
+`sim/security-audit.mjs` (RLS/definer/grant/storage audit; `AUDIT_DB_URL` = read-only audit of another DB), `sim/rls-e-check.mjs`
+(cross-student leak regression), `sim/explain-flows.mjs` (per-flow EXPLAIN as real users).
+3,000 VUs: 49.7% errors / p95 13.97 s before, 0% / p95 581 ms after (1,416 req/s). 5,000 VUs after: 0.02% / p95 3.10 s (CPU-bound shared box).
+216/216 scenarios pass with the three `sherivs_e_*` migrations. See `docs/security/track-e-findings.md`.
