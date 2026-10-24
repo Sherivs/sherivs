@@ -27,7 +27,7 @@ async function bulk(c, table, cols, rows, chunk = 2000) {
     await c.query(`INSERT INTO ${table} (${cols.join(",")}) VALUES ${vals.join(",")}`, params);
   }
 }
-const c = new pg.Client({ host: "127.0.0.1", port: 54329, user: "postgres" }); await c.connect();
+const c = new pg.Client({ host: "127.0.0.1", port: Number(process.env.SIM_PG_PORT ?? 54329), user: "postgres" }); await c.connect();
 await c.query("SET session_replication_role = replica"); // skip triggers during bulk load (memberships inserted explicitly)
 const manifest = { generatedAt: new Date().toISOString(), institutions: [] };
 const SCALE = Number(process.env.SIM_SCALE ?? 1);
