@@ -29,6 +29,7 @@ import { Route as RulesRouteImport } from './routes/rules'
 import { Route as ScholarFoundationLoopRouteImport } from './routes/scholar-foundation-loop'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as siteAboutRouteImport } from './routes/(site)/about'
+import { Route as siteCheckResultRouteImport } from './routes/(site)/check-result'
 import { Route as siteContactRouteImport } from './routes/(site)/contact'
 import { Route as siteCoregridRouteImport } from './routes/(site)/coregrid'
 import { Route as sitePrivacyPolicyRouteImport } from './routes/(site)/privacy-policy'
@@ -36,6 +37,7 @@ import { Route as siteRequestDemoRouteImport } from './routes/(site)/request-dem
 import { Route as siteSherivsRouteImport } from './routes/(site)/sherivs'
 import { Route as siteStatusRouteImport } from './routes/(site)/status'
 import { Route as siteTermsRouteImport } from './routes/(site)/terms'
+import { Route as siteVerifyTranscriptRouteImport } from './routes/(site)/verify-transcript'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as AuthenticatedBursarRouteRouteImport } from './routes/_authenticated/bursar/route'
 import { Route as AuthenticatedCommandCentreRouteRouteImport } from './routes/_authenticated/command-centre/route'
@@ -60,6 +62,7 @@ import { Route as NewsIdRouteImport } from './routes/news.$id'
 import { Route as PlatformOrgRouteImport } from './routes/platform.org'
 import { Route as RealityClassRouteImport } from './routes/reality.$class'
 import { Route as AuthenticatedAdminAdmissionsRouteImport } from './routes/_authenticated/admin/admissions'
+import { Route as AuthenticatedAdminAdmissionsFunnelRouteImport } from './routes/_authenticated/admin/admissions-funnel'
 import { Route as AuthenticatedAdminAiAssistantRouteImport } from './routes/_authenticated/admin/ai-assistant'
 import { Route as AuthenticatedAdminAnalyticsRouteImport } from './routes/_authenticated/admin/analytics'
 import { Route as AuthenticatedAdminApiKeysRouteImport } from './routes/_authenticated/admin/api-keys'
@@ -103,6 +106,7 @@ import { Route as AuthenticatedAdminInventoryRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminLessonPlansRouteImport } from './routes/_authenticated/admin/lesson-plans'
 import { Route as AuthenticatedAdminLibraryRouteImport } from './routes/_authenticated/admin/library'
 import { Route as AuthenticatedAdminLockedAccountsRouteImport } from './routes/_authenticated/admin/locked-accounts'
+import { Route as AuthenticatedAdminMessagesLogRouteImport } from './routes/_authenticated/admin/messages-log'
 import { Route as AuthenticatedAdminNdpaRouteImport } from './routes/_authenticated/admin/ndpa'
 import { Route as AuthenticatedAdminNewsRouteImport } from './routes/_authenticated/admin/news'
 import { Route as AuthenticatedAdminOperationsRouteImport } from './routes/_authenticated/admin/operations'
@@ -187,6 +191,7 @@ import { Route as AuthenticatedTeacherSignInRouteImport } from './routes/_authen
 import { Route as AuthenticatedTeacherTimetableRouteImport } from './routes/_authenticated/teacher/timetable'
 import { Route as ApiPublicAuditPasswordResetRouteImport } from './routes/api/public/audit.password-reset'
 import { Route as ApiPublicWebhooksPaystackRouteImport } from './routes/api/public/webhooks/paystack'
+import { Route as ApiPublicWebhooksWhatsappRouteImport } from './routes/api/public/webhooks/whatsapp'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -286,6 +291,11 @@ const siteAboutRoute = siteAboutRouteImport.update({
   path: '/about',
   getParentRoute: () => siteRouteRoute,
 } as any)
+const siteCheckResultRoute = siteCheckResultRouteImport.update({
+  id: '/check-result',
+  path: '/check-result',
+  getParentRoute: () => siteRouteRoute,
+} as any)
 const siteContactRoute = siteContactRouteImport.update({
   id: '/contact',
   path: '/contact',
@@ -319,6 +329,11 @@ const siteStatusRoute = siteStatusRouteImport.update({
 const siteTermsRoute = siteTermsRouteImport.update({
   id: '/terms',
   path: '/terms',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteVerifyTranscriptRoute = siteVerifyTranscriptRouteImport.update({
+  id: '/verify-transcript',
+  path: '/verify-transcript',
   getParentRoute: () => siteRouteRoute,
 } as any)
 const AuthenticatedAdminRouteRoute = AuthenticatedAdminRouteRouteImport.update({
@@ -449,6 +464,12 @@ const AuthenticatedAdminAdmissionsRoute =
   AuthenticatedAdminAdmissionsRouteImport.update({
     id: '/admissions',
     path: '/admissions',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminAdmissionsFunnelRoute =
+  AuthenticatedAdminAdmissionsFunnelRouteImport.update({
+    id: '/admissions-funnel',
+    path: '/admissions-funnel',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminAiAssistantRoute =
@@ -702,6 +723,12 @@ const AuthenticatedAdminLockedAccountsRoute =
   AuthenticatedAdminLockedAccountsRouteImport.update({
     id: '/locked-accounts',
     path: '/locked-accounts',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminMessagesLogRoute =
+  AuthenticatedAdminMessagesLogRouteImport.update({
+    id: '/messages-log',
+    path: '/messages-log',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminNdpaRoute = AuthenticatedAdminNdpaRouteImport.update({
@@ -1201,6 +1228,12 @@ const ApiPublicWebhooksPaystackRoute =
     path: '/api/public/webhooks/paystack',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicWebhooksWhatsappRoute =
+  ApiPublicWebhooksWhatsappRouteImport.update({
+    id: '/api/public/webhooks/whatsapp',
+    path: '/api/public/webhooks/whatsapp',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -1230,6 +1263,7 @@ export interface FileRoutesByFullPath {
   '/super-admin': typeof AuthenticatedSuperAdminRouteRouteWithChildren
   '/teacher': typeof AuthenticatedTeacherRouteRouteWithChildren
   '/about': typeof siteAboutRoute
+  '/check-result': typeof siteCheckResultRoute
   '/contact': typeof siteContactRoute
   '/coregrid': typeof siteCoregridRoute
   '/privacy-policy': typeof sitePrivacyPolicyRoute
@@ -1237,6 +1271,7 @@ export interface FileRoutesByFullPath {
   '/sherivs': typeof siteSherivsRoute
   '/status': typeof siteStatusRoute
   '/terms': typeof siteTermsRoute
+  '/verify-transcript': typeof siteVerifyTranscriptRoute
   '/internal': typeof AuthenticatedInternalRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/mfa': typeof AuthenticatedMfaRoute
@@ -1252,6 +1287,7 @@ export interface FileRoutesByFullPath {
   '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
   '/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
+  '/admin/admissions-funnel': typeof AuthenticatedAdminAdmissionsFunnelRoute
   '/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/api-keys': typeof AuthenticatedAdminApiKeysRoute
@@ -1295,6 +1331,7 @@ export interface FileRoutesByFullPath {
   '/admin/lesson-plans': typeof AuthenticatedAdminLessonPlansRoute
   '/admin/library': typeof AuthenticatedAdminLibraryRoute
   '/admin/locked-accounts': typeof AuthenticatedAdminLockedAccountsRoute
+  '/admin/messages-log': typeof AuthenticatedAdminMessagesLogRoute
   '/admin/ndpa': typeof AuthenticatedAdminNdpaRoute
   '/admin/news': typeof AuthenticatedAdminNewsRoute
   '/admin/operations': typeof AuthenticatedAdminOperationsRoute
@@ -1379,6 +1416,7 @@ export interface FileRoutesByFullPath {
   '/command-centre/': typeof AuthenticatedCommandCentreIndexRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
+  '/api/public/webhooks/whatsapp': typeof ApiPublicWebhooksWhatsappRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -1407,6 +1445,7 @@ export interface FileRoutesByTo {
   '/super-admin': typeof AuthenticatedSuperAdminRouteRouteWithChildren
   '/teacher': typeof AuthenticatedTeacherRouteRouteWithChildren
   '/about': typeof siteAboutRoute
+  '/check-result': typeof siteCheckResultRoute
   '/contact': typeof siteContactRoute
   '/coregrid': typeof siteCoregridRoute
   '/privacy-policy': typeof sitePrivacyPolicyRoute
@@ -1414,6 +1453,7 @@ export interface FileRoutesByTo {
   '/sherivs': typeof siteSherivsRoute
   '/status': typeof siteStatusRoute
   '/terms': typeof siteTermsRoute
+  '/verify-transcript': typeof siteVerifyTranscriptRoute
   '/internal': typeof AuthenticatedInternalRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/mfa': typeof AuthenticatedMfaRoute
@@ -1429,6 +1469,7 @@ export interface FileRoutesByTo {
   '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
   '/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
+  '/admin/admissions-funnel': typeof AuthenticatedAdminAdmissionsFunnelRoute
   '/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/api-keys': typeof AuthenticatedAdminApiKeysRoute
@@ -1472,6 +1513,7 @@ export interface FileRoutesByTo {
   '/admin/lesson-plans': typeof AuthenticatedAdminLessonPlansRoute
   '/admin/library': typeof AuthenticatedAdminLibraryRoute
   '/admin/locked-accounts': typeof AuthenticatedAdminLockedAccountsRoute
+  '/admin/messages-log': typeof AuthenticatedAdminMessagesLogRoute
   '/admin/ndpa': typeof AuthenticatedAdminNdpaRoute
   '/admin/news': typeof AuthenticatedAdminNewsRoute
   '/admin/operations': typeof AuthenticatedAdminOperationsRoute
@@ -1556,6 +1598,7 @@ export interface FileRoutesByTo {
   '/command-centre': typeof AuthenticatedCommandCentreIndexRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
+  '/api/public/webhooks/whatsapp': typeof ApiPublicWebhooksWhatsappRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -1588,6 +1631,7 @@ export interface FileRoutesById {
   '/_authenticated/super-admin': typeof AuthenticatedSuperAdminRouteRouteWithChildren
   '/_authenticated/teacher': typeof AuthenticatedTeacherRouteRouteWithChildren
   '/(site)/about': typeof siteAboutRoute
+  '/(site)/check-result': typeof siteCheckResultRoute
   '/(site)/contact': typeof siteContactRoute
   '/(site)/coregrid': typeof siteCoregridRoute
   '/(site)/privacy-policy': typeof sitePrivacyPolicyRoute
@@ -1595,6 +1639,7 @@ export interface FileRoutesById {
   '/(site)/sherivs': typeof siteSherivsRoute
   '/(site)/status': typeof siteStatusRoute
   '/(site)/terms': typeof siteTermsRoute
+  '/(site)/verify-transcript': typeof siteVerifyTranscriptRoute
   '/_authenticated/internal': typeof AuthenticatedInternalRoute
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/mfa': typeof AuthenticatedMfaRoute
@@ -1610,6 +1655,7 @@ export interface FileRoutesById {
   '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
   '/_authenticated/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
+  '/_authenticated/admin/admissions-funnel': typeof AuthenticatedAdminAdmissionsFunnelRoute
   '/_authenticated/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
   '/_authenticated/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/_authenticated/admin/api-keys': typeof AuthenticatedAdminApiKeysRoute
@@ -1653,6 +1699,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/lesson-plans': typeof AuthenticatedAdminLessonPlansRoute
   '/_authenticated/admin/library': typeof AuthenticatedAdminLibraryRoute
   '/_authenticated/admin/locked-accounts': typeof AuthenticatedAdminLockedAccountsRoute
+  '/_authenticated/admin/messages-log': typeof AuthenticatedAdminMessagesLogRoute
   '/_authenticated/admin/ndpa': typeof AuthenticatedAdminNdpaRoute
   '/_authenticated/admin/news': typeof AuthenticatedAdminNewsRoute
   '/_authenticated/admin/operations': typeof AuthenticatedAdminOperationsRoute
@@ -1737,6 +1784,7 @@ export interface FileRoutesById {
   '/_authenticated/command-centre/': typeof AuthenticatedCommandCentreIndexRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
+  '/api/public/webhooks/whatsapp': typeof ApiPublicWebhooksWhatsappRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1768,6 +1816,7 @@ export interface FileRouteTypes {
     | '/super-admin'
     | '/teacher'
     | '/about'
+    | '/check-result'
     | '/contact'
     | '/coregrid'
     | '/privacy-policy'
@@ -1775,6 +1824,7 @@ export interface FileRouteTypes {
     | '/sherivs'
     | '/status'
     | '/terms'
+    | '/verify-transcript'
     | '/internal'
     | '/messages'
     | '/mfa'
@@ -1790,6 +1840,7 @@ export interface FileRouteTypes {
     | '/platform/org'
     | '/reality/$class'
     | '/admin/admissions'
+    | '/admin/admissions-funnel'
     | '/admin/ai-assistant'
     | '/admin/analytics'
     | '/admin/api-keys'
@@ -1833,6 +1884,7 @@ export interface FileRouteTypes {
     | '/admin/lesson-plans'
     | '/admin/library'
     | '/admin/locked-accounts'
+    | '/admin/messages-log'
     | '/admin/ndpa'
     | '/admin/news'
     | '/admin/operations'
@@ -1917,6 +1969,7 @@ export interface FileRouteTypes {
     | '/command-centre/'
     | '/api/public/audit/password-reset'
     | '/api/public/webhooks/paystack'
+    | '/api/public/webhooks/whatsapp'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1945,6 +1998,7 @@ export interface FileRouteTypes {
     | '/super-admin'
     | '/teacher'
     | '/about'
+    | '/check-result'
     | '/contact'
     | '/coregrid'
     | '/privacy-policy'
@@ -1952,6 +2006,7 @@ export interface FileRouteTypes {
     | '/sherivs'
     | '/status'
     | '/terms'
+    | '/verify-transcript'
     | '/internal'
     | '/messages'
     | '/mfa'
@@ -1967,6 +2022,7 @@ export interface FileRouteTypes {
     | '/platform/org'
     | '/reality/$class'
     | '/admin/admissions'
+    | '/admin/admissions-funnel'
     | '/admin/ai-assistant'
     | '/admin/analytics'
     | '/admin/api-keys'
@@ -2010,6 +2066,7 @@ export interface FileRouteTypes {
     | '/admin/lesson-plans'
     | '/admin/library'
     | '/admin/locked-accounts'
+    | '/admin/messages-log'
     | '/admin/ndpa'
     | '/admin/news'
     | '/admin/operations'
@@ -2094,6 +2151,7 @@ export interface FileRouteTypes {
     | '/command-centre'
     | '/api/public/audit/password-reset'
     | '/api/public/webhooks/paystack'
+    | '/api/public/webhooks/whatsapp'
   id:
     | '__root__'
     | '/'
@@ -2125,6 +2183,7 @@ export interface FileRouteTypes {
     | '/_authenticated/super-admin'
     | '/_authenticated/teacher'
     | '/(site)/about'
+    | '/(site)/check-result'
     | '/(site)/contact'
     | '/(site)/coregrid'
     | '/(site)/privacy-policy'
@@ -2132,6 +2191,7 @@ export interface FileRouteTypes {
     | '/(site)/sherivs'
     | '/(site)/status'
     | '/(site)/terms'
+    | '/(site)/verify-transcript'
     | '/_authenticated/internal'
     | '/_authenticated/messages'
     | '/_authenticated/mfa'
@@ -2147,6 +2207,7 @@ export interface FileRouteTypes {
     | '/platform/org'
     | '/reality/$class'
     | '/_authenticated/admin/admissions'
+    | '/_authenticated/admin/admissions-funnel'
     | '/_authenticated/admin/ai-assistant'
     | '/_authenticated/admin/analytics'
     | '/_authenticated/admin/api-keys'
@@ -2190,6 +2251,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/lesson-plans'
     | '/_authenticated/admin/library'
     | '/_authenticated/admin/locked-accounts'
+    | '/_authenticated/admin/messages-log'
     | '/_authenticated/admin/ndpa'
     | '/_authenticated/admin/news'
     | '/_authenticated/admin/operations'
@@ -2274,6 +2336,7 @@ export interface FileRouteTypes {
     | '/_authenticated/command-centre/'
     | '/api/public/audit/password-reset'
     | '/api/public/webhooks/paystack'
+    | '/api/public/webhooks/whatsapp'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -2301,6 +2364,7 @@ export interface RootRouteChildren {
   RealityClassRoute: typeof RealityClassRoute
   ApiPublicAuditPasswordResetRoute: typeof ApiPublicAuditPasswordResetRoute
   ApiPublicWebhooksPaystackRoute: typeof ApiPublicWebhooksPaystackRoute
+  ApiPublicWebhooksWhatsappRoute: typeof ApiPublicWebhooksWhatsappRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -2445,6 +2509,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof siteAboutRouteImport
       parentRoute: typeof siteRouteRoute
     }
+    '/(site)/check-result': {
+      id: '/(site)/check-result'
+      path: '/check-result'
+      fullPath: '/check-result'
+      preLoaderRoute: typeof siteCheckResultRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
     '/(site)/contact': {
       id: '/(site)/contact'
       path: '/contact'
@@ -2492,6 +2563,13 @@ declare module '@tanstack/react-router' {
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof siteTermsRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/verify-transcript': {
+      id: '/(site)/verify-transcript'
+      path: '/verify-transcript'
+      fullPath: '/verify-transcript'
+      preLoaderRoute: typeof siteVerifyTranscriptRouteImport
       parentRoute: typeof siteRouteRoute
     }
     '/_authenticated/admin': {
@@ -2660,6 +2738,13 @@ declare module '@tanstack/react-router' {
       path: '/admissions'
       fullPath: '/admin/admissions'
       preLoaderRoute: typeof AuthenticatedAdminAdmissionsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/admissions-funnel': {
+      id: '/_authenticated/admin/admissions-funnel'
+      path: '/admissions-funnel'
+      fullPath: '/admin/admissions-funnel'
+      preLoaderRoute: typeof AuthenticatedAdminAdmissionsFunnelRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/ai-assistant': {
@@ -2961,6 +3046,13 @@ declare module '@tanstack/react-router' {
       path: '/locked-accounts'
       fullPath: '/admin/locked-accounts'
       preLoaderRoute: typeof AuthenticatedAdminLockedAccountsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/messages-log': {
+      id: '/_authenticated/admin/messages-log'
+      path: '/messages-log'
+      fullPath: '/admin/messages-log'
+      preLoaderRoute: typeof AuthenticatedAdminMessagesLogRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/ndpa': {
@@ -3551,11 +3643,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWebhooksPaystackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/webhooks/whatsapp': {
+      id: '/api/public/webhooks/whatsapp'
+      path: '/api/public/webhooks/whatsapp'
+      fullPath: '/api/public/webhooks/whatsapp'
+      preLoaderRoute: typeof ApiPublicWebhooksWhatsappRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface siteRouteRouteChildren {
   siteAboutRoute: typeof siteAboutRoute
+  siteCheckResultRoute: typeof siteCheckResultRoute
   siteContactRoute: typeof siteContactRoute
   siteCoregridRoute: typeof siteCoregridRoute
   sitePrivacyPolicyRoute: typeof sitePrivacyPolicyRoute
@@ -3563,10 +3663,12 @@ interface siteRouteRouteChildren {
   siteSherivsRoute: typeof siteSherivsRoute
   siteStatusRoute: typeof siteStatusRoute
   siteTermsRoute: typeof siteTermsRoute
+  siteVerifyTranscriptRoute: typeof siteVerifyTranscriptRoute
 }
 
 const siteRouteRouteChildren: siteRouteRouteChildren = {
   siteAboutRoute: siteAboutRoute,
+  siteCheckResultRoute: siteCheckResultRoute,
   siteContactRoute: siteContactRoute,
   siteCoregridRoute: siteCoregridRoute,
   sitePrivacyPolicyRoute: sitePrivacyPolicyRoute,
@@ -3574,6 +3676,7 @@ const siteRouteRouteChildren: siteRouteRouteChildren = {
   siteSherivsRoute: siteSherivsRoute,
   siteStatusRoute: siteStatusRoute,
   siteTermsRoute: siteTermsRoute,
+  siteVerifyTranscriptRoute: siteVerifyTranscriptRoute,
 }
 
 const siteRouteRouteWithChildren = siteRouteRoute._addFileChildren(
@@ -3582,6 +3685,7 @@ const siteRouteRouteWithChildren = siteRouteRoute._addFileChildren(
 
 interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminAdmissionsRoute: typeof AuthenticatedAdminAdmissionsRoute
+  AuthenticatedAdminAdmissionsFunnelRoute: typeof AuthenticatedAdminAdmissionsFunnelRoute
   AuthenticatedAdminAiAssistantRoute: typeof AuthenticatedAdminAiAssistantRoute
   AuthenticatedAdminAnalyticsRoute: typeof AuthenticatedAdminAnalyticsRoute
   AuthenticatedAdminApiKeysRoute: typeof AuthenticatedAdminApiKeysRoute
@@ -3625,6 +3729,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminLessonPlansRoute: typeof AuthenticatedAdminLessonPlansRoute
   AuthenticatedAdminLibraryRoute: typeof AuthenticatedAdminLibraryRoute
   AuthenticatedAdminLockedAccountsRoute: typeof AuthenticatedAdminLockedAccountsRoute
+  AuthenticatedAdminMessagesLogRoute: typeof AuthenticatedAdminMessagesLogRoute
   AuthenticatedAdminNdpaRoute: typeof AuthenticatedAdminNdpaRoute
   AuthenticatedAdminNewsRoute: typeof AuthenticatedAdminNewsRoute
   AuthenticatedAdminOperationsRoute: typeof AuthenticatedAdminOperationsRoute
@@ -3648,6 +3753,8 @@ interface AuthenticatedAdminRouteRouteChildren {
 const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
   {
     AuthenticatedAdminAdmissionsRoute: AuthenticatedAdminAdmissionsRoute,
+    AuthenticatedAdminAdmissionsFunnelRoute:
+      AuthenticatedAdminAdmissionsFunnelRoute,
     AuthenticatedAdminAiAssistantRoute: AuthenticatedAdminAiAssistantRoute,
     AuthenticatedAdminAnalyticsRoute: AuthenticatedAdminAnalyticsRoute,
     AuthenticatedAdminApiKeysRoute: AuthenticatedAdminApiKeysRoute,
@@ -3704,6 +3811,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminLibraryRoute: AuthenticatedAdminLibraryRoute,
     AuthenticatedAdminLockedAccountsRoute:
       AuthenticatedAdminLockedAccountsRoute,
+    AuthenticatedAdminMessagesLogRoute: AuthenticatedAdminMessagesLogRoute,
     AuthenticatedAdminNdpaRoute: AuthenticatedAdminNdpaRoute,
     AuthenticatedAdminNewsRoute: AuthenticatedAdminNewsRoute,
     AuthenticatedAdminOperationsRoute: AuthenticatedAdminOperationsRoute,
@@ -4063,6 +4171,7 @@ const rootRouteChildren: RootRouteChildren = {
   RealityClassRoute: RealityClassRoute,
   ApiPublicAuditPasswordResetRoute: ApiPublicAuditPasswordResetRoute,
   ApiPublicWebhooksPaystackRoute: ApiPublicWebhooksPaystackRoute,
+  ApiPublicWebhooksWhatsappRoute: ApiPublicWebhooksWhatsappRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -612,6 +612,105 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
     `teacher ${W_ERR(v.armsTeacher)}; cross ${W_ERR(v.campusCross)}; cross read ${v.bCampusRead}`, "critical");
   rec("audit", "Wallet, cash, NDPA and campus changes are audited and chained", v.audit >= 10 && v.chain >= 10, `${v.audit} audit rows, ${v.chain} chain rows`, "high");
 }
+// ---------- 15. Comms adapters, result checker, transcripts, admissions (SHERIVS-020) ----------
+{
+  const studs = (await sys("select id, admission_number from students where school_id=$1 order by admission_number limit 3", [A.schoolId])).rows;
+  const SA = crypto.randomUUID();
+  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+    const svc = async (sql, p = []) => { await c.query("SET LOCAL ROLE service_role"); await c.query("select set_config('request.jwt.claims', '{\"role\":\"service_role\"}', true)");
+      try { return await t(sql, p); } finally { await c.query("SET LOCAL ROLE authenticated"); } };
+    const anon = async (sql, p = []) => { await c.query("SET LOCAL ROLE anon"); await c.query("select set_config('request.jwt.claims', '{\"role\":\"anon\"}', true)");
+      try { return await t(sql, p); } finally { await c.query("SET LOCAL ROLE authenticated"); } };
+    await asOwner("insert into auth.users (id) values ($1) on conflict do nothing", [SA]);
+    await asOwner("insert into super_admins (id, full_name, email, is_active) values ($1,'Sim SA3','sa3@sim.local',true)", [SA]);
+    await asOwner("insert into school_wallets (school_id, balance) values ($1, 1000) on conflict (school_id) do update set balance = 1000", [A.schoolId]);
+    await act(A.admin);
+    await t("select public.open_term_pools($1,'2025/2026','first')", [A.schoolId]);
+    const P1 = "2348030000001", P2 = "2348030000002";
+    out.waNoOptin = (await t("select public.comms_send($1,'whatsapp',$2,'fee_reminder','{\"student\":\"Ada\",\"amount\":\"N50,000\"}') r", [A.schoolId, P1])).row?.r;
+    await t("select public.comms_set_optin($1,$2,'whatsapp','opted_in','paper_signed')", [A.schoolId, P1]);
+    out.waOptin = (await t("select public.comms_send($1,'whatsapp',$2,'fee_reminder','{\"student\":\"Ada\",\"amount\":\"N50,000\"}',null,'normal','ref-wa-1') r", [A.schoolId, P1])).row?.r;
+    out.smsHa = (await t("select public.comms_send($1,'sms',$2,'absence_alert','{\"student\":\"Musa\",\"date\":\"24/10\"}',null,'normal','ref-sms-ha',$3) r", [A.schoolId, P2, "ha"])).row?.r;
+    out.body = (await t("select body from outbound_messages where reference='ref-wa-1'")).row?.body;
+    // STOP via verified webhook, then normal send is blocked, safety still goes out
+    out.userInbound = await t("select public.comms_inbound($1,'sms',$2,'STOP','prov-1')", [A.schoolId, P2]);
+    out.stop = (await svc("select public.comms_inbound($1,'sms',$2,'stop','prov-1') a", [A.schoolId, P2])).row?.a;
+    await act(A.admin);
+    out.afterStop = (await t("select public.comms_send($1,'sms',$2,'result_ready','{}',null,'normal','ref-sms-2') r", [A.schoolId, P2])).row?.r;
+    out.safety = (await t("select public.comms_send($1,'sms',$2,'emergency','{\"message\":\"Early closure 12pm\"}',null,'normal','ref-sms-3') r", [A.schoolId, P2])).row?.r;
+    out.fakeSafety = (await t("select public.comms_send($1,'sms',$2,'result_ready','{}',null,'safety','ref-sms-4') r", [A.schoolId, P2])).row?.r;
+    out.teacherMkt = await (async () => { await act(A.teacher); const r = await t("select public.comms_send($1,'whatsapp',$2,'open_day','{}')", [A.schoolId, P1]); await act(A.admin); return r; })();
+    out.liveRow = (await t("select provider, status from outbound_messages where reference='ref-wa-1'")).row;
+    out.directOut = await t("insert into outbound_messages (school_id, channel, to_address, category, body, status, reference) values ($1,'sms','2348000000000','utility','x','sent','forged')", [A.schoolId]);
+    // result checker
+    await asOwner("update grades set is_published = true where student_id = $1 and term = 'First Term'", [studs[0].id]);
+    const pins = (await t("select * from public.generate_result_pins($1,'2025/2026','First Term',3,2)", [A.schoolId])).r?.rows ?? [];
+    out.pinCount = pins.length;
+    await act(A.teacher); out.teacherPins = await t("select * from public.generate_result_pins($1,'2025/2026','first',1)", [A.schoolId]);
+    out.readPins = (await asOwner("select count(*)::int n from result_pins where school_id=$1", [A.schoolId])).row?.n;
+    out.apiReadPins = await t("select count(*) from result_pins");
+    out.chk1 = await anon("select public.check_result($1,$2,$3) r", [pins[0]?.serial, pins[0]?.pin, studs[0].admission_number]);
+    out.chkWrongPin = await anon("select public.check_result($1,'000000000000',$2) r", [pins[0]?.serial, studs[0].admission_number]);
+    out.chkOther = await anon("select public.check_result($1,$2,$3) r", [pins[0]?.serial, pins[0]?.pin, studs[1].admission_number]);
+    out.chk2 = await anon("select public.check_result($1,$2,$3) r", [pins[0]?.serial, pins[0]?.pin, studs[0].admission_number]);
+    out.chk3 = await anon("select public.check_result($1,$2,$3) r", [pins[0]?.serial, pins[0]?.pin, studs[0].admission_number]);
+    let brute = 0; for (let i = 0; i < 12; i++) { const x = await anon("select public.check_result($1,$2,$3) r", [pins[1]?.serial, String(100000000000 + i), studs[2].admission_number]); if (/rate_limited/.test(x.err ?? "") || x.row?.r?.error === "rate_limited") brute++; }
+    out.brute = brute;
+    // transcripts
+    await act(A.sampleParent);
+    const parentKid = (await asOwner("select student_id from parent_student_map where parent_id=$1 limit 1", [A.sampleParent])).row?.student_id
+      ?? (await asOwner("select id student_id from students where parent_id=$1 limit 1", [A.sampleParent])).row?.student_id;
+    out.parentReq = await t("select public.request_transcript($1,$2,'University of Lagos admissions',2) id", [A.schoolId, parentKid]);
+    out.parentReqOther = await t("select public.request_transcript($1,$2,'X')", [A.schoolId, studs[2].id]);
+    await act(A.admin); const selfReq = (await t("select public.request_transcript($1,$2,'Self') id", [A.schoolId, studs[1].id])).row?.id;
+    out.selfIssue = await t("select public.issue_transcript($1)", [selfReq]);
+    await act(A.teacher); out.teacherIssue = await t("select public.issue_transcript($1)", [out.parentReq?.row?.id]);
+    await act(A.principal); out.issue = await t("select public.issue_transcript($1) code", [out.parentReq?.row?.id]);
+    out.verify = (await anon("select public.verify_transcript($1) v", [out.issue?.row?.code])).row?.v;
+    out.verifyBad = (await anon("select public.verify_transcript('NOPE') v")).row?.v;
+    // admissions funnel
+    await act(A.admin);
+    const app = (await asOwner(`insert into admission_applications (school_id, application_number, student_first_name, student_last_name, student_date_of_birth, applying_for_class, academic_year_applying, parent_one_name, parent_one_relationship, parent_one_phone, parent_one_email)
+      values ($1, 'SIM-ADM-'||substr(md5(random()::text),1,8), 'Chioma', 'Okafor', '2014-03-02', 'JSS1', '2026/2027', 'Mrs Okafor', 'mother', '2348031111111', 'okafor@sim.local') returning id`, [A.schoolId])).row?.id;
+    out.a1 = await t("select public.admissions_schedule_exam($1, now() + interval '7 days')", [app]);
+    out.skip = await t("select public.admissions_enroll($1,'SIM/ADM/001')", [app]);
+    out.a2 = await t("select public.admissions_record_score($1, 78)", [app]);
+    out.selfOffer = await t("select public.admissions_offer($1, 25000, now() + interval '14 days')", [app]);
+    await act(A.principal); out.a3 = await t("select public.admissions_offer($1, 25000, now() + interval '14 days')", [app]);
+    await act(A.teacher); out.teacherAccept = await t("select public.admissions_record_acceptance($1,'CASH-1')", [app]);
+    out.a4 = await svc("select public.admissions_record_acceptance($1,'PSK_ACCEPT_1')", [app]);
+    await act(A.admin); out.a5 = await t("select public.admissions_enroll($1,'SIM/ADM/001') id", [app]);
+    out.funnel = (await t("select public.admissions_funnel($1,'2026/2027') f", [A.schoolId])).row?.f;
+    await act(B.admin); out.bFunnel = await t("select public.admissions_funnel($1)", [A.schoolId]);
+    out.audit = (await asOwner("select count(*)::int n from audit_logs where school_id=$1 and action ~ '^scholar\\.(comms|result_pin|transcript|admission)'", [A.schoolId])).row?.n;
+  });
+  rec("comms", "WhatsApp needs an explicit opt-in; with opt-in it goes through the stub adapter (live flag off)",
+    v.waNoOptin?.status === "blocked_optout" && v.waOptin?.status === "sent_stub" && v.liveRow?.provider === "stub", `${v.waNoOptin?.status} → ${v.waOptin?.status} via ${v.liveRow?.provider}`, "critical");
+  rec("comms", "Templates render with school name and variables; Hausa template chosen when asked", /Ada/.test(v.body ?? "") && /N50,000/.test(v.body ?? "") && !/\{\{/.test(v.body ?? "") && v.smsHa?.language === "ha",
+    `${(v.body ?? "").slice(0, 80)}… | lang ${v.smsHa?.language}`, "high");
+  rec("comms", "Inbound STOP only via the verified webhook; afterwards normal sends are blocked but safety still goes out",
+    !v.userInbound?.ok && v.stop === "opted_out" && v.afterStop?.status === "blocked_optout" && v.safety?.status === "sent_stub" && v.fakeSafety?.status === "blocked_optout",
+    `user ${W_ERR(v.userInbound)}; after STOP ${v.afterStop?.status}; safety ${v.safety?.status}; forged safety ${v.fakeSafety?.status}`, "critical");
+  rec("comms", "Marketing needs comms.broadcast (teacher refused); delivery log cannot be forged", !v.teacherMkt?.ok && !v.directOut?.ok, `${W_ERR(v.teacherMkt)} | ${W_ERR(v.directOut)}`, "high");
+  rec("results", "Scratch-card PINs: generated hashed, unreadable by API roles, teacher cannot mint", v.pinCount === 3 && v.readPins >= 3 && !v.apiReadPins?.ok && !v.teacherPins?.ok,
+    `${v.pinCount} cards; api read ${W_ERR(v.apiReadPins)}; teacher ${W_ERR(v.teacherPins)}`, "critical");
+  rec("results", "Result checker: correct card shows published results; wrong PIN refused; card binds to first student; use limit",
+    v.chk1?.ok && (v.chk1.row?.r?.subjects ?? []).length > 0 && v.chkWrongPin?.row?.r?.ok === false && !v.chkOther?.ok && v.chk2?.ok && /exhausted/.test(v.chk3?.err ?? ""),
+    `subjects ${(v.chk1?.row?.r?.subjects ?? []).length}; wrong ${v.chkWrongPin?.row?.r?.error ?? W_ERR(v.chkWrongPin)}; other ${W_ERR(v.chkOther)}; 3rd ${W_ERR(v.chk3)}`, "critical");
+  rec("results", "PIN brute force is rate limited per card", v.brute >= 2, `${v.brute} of 12 guesses rate-limited`, "critical");
+  rec("transcripts", "Parent requests own child's transcript only; requester cannot issue; teacher cannot issue; principal issues",
+    v.parentReq?.ok && !v.parentReqOther?.ok && !v.selfIssue?.ok && !v.teacherIssue?.ok && !!v.issue?.row?.code,
+    `other child ${W_ERR(v.parentReqOther)}; self ${W_ERR(v.selfIssue)}; teacher ${W_ERR(v.teacherIssue)}`, "critical");
+  rec("transcripts", "Public verification code confirms a real transcript and reveals no grades", v.verify?.valid === true && !("subjects" in (v.verify ?? {})) && v.verifyBad?.valid === false,
+    JSON.stringify(v.verify), "high");
+  rec("admissions", "Funnel: exam → score → offer → acceptance fee (webhook) → enrol; stages cannot be skipped",
+    v.a1?.ok && !v.skip?.ok && v.a2?.ok && v.a3?.ok && v.a4?.ok && !!v.a5?.row?.id && v.funnel?.enrolled >= 1,
+    `skip ${W_ERR(v.skip)}; funnel ${JSON.stringify(v.funnel)}`, "high");
+  rec("admissions", "Separation of duties: exam scorer cannot make the offer; teacher cannot confirm acceptance fee", !v.selfOffer?.ok && !v.teacherAccept?.ok,
+    `${W_ERR(v.selfOffer)} | ${W_ERR(v.teacherAccept)}`, "critical");
+  rec("admissions", "Another school cannot read the funnel", !v.bFunnel?.ok, W_ERR(v.bFunnel), "critical");
+  rec("audit", "Comms, PIN, transcript and admission changes are audited", v.audit >= 5, `${v.audit} audit rows`, "high");
+}
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
 await pool.end();
