@@ -1484,6 +1484,67 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
     v.removed === true && v.anonRemoved === null && !!v.bReclaim?.id && JSON.stringify(v.audit) === JSON.stringify(["add", "check", "set_primary", "remove"]) && !v.auditEdit?.ok && v.resolveMs < 20,
     `audit ${JSON.stringify(v.audit)}; resolve ${v.resolveMs} ms avg over 2,000 domains`, "high");
 }
+// ---------- A1. Scope sets complete: audit, no widening on remove, subject dim, caller area (SHERIVS-A01) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+    const cN = (await t("select public.campus_upsert($1,'A1 North') id", [A.schoolId])).row?.id;
+    const cS = (await t("select public.campus_upsert($1,'A1 South') id", [A.schoolId])).row?.id;
+    const [cls, other] = (await asOwner("select id from classes where school_id=$1 and exists (select 1 from students s where s.class_id=classes.id) order by name desc limit 2", [A.schoolId])).r.rows.map((r) => r.id);
+    const tt = (await asOwner("insert into timetables (school_id, class_id, academic_year, term) values ($1,$2,'2026/2027','first') returning id", [A.schoolId, cls])).row?.id;
+    await asOwner("insert into timetable_slots (timetable_id, school_id, day_of_week, period_number, start_time, end_time, subject) values ($1,$2,1,1,'08:00','08:40','A1 Further Mathematics')", [tt, A.schoolId]);
+    await asOwner("update classes set campus_id=$1 where id=$2", [cN, cls]); await asOwner("update classes set campus_id=$1 where id=$2", [cS, other]);
+    const subj = (await asOwner("select ts.subject from timetables tt join timetable_slots ts on ts.timetable_id=tt.id where tt.class_id=$1 and ts.subject is not null limit 1", [cls])).row?.subject;
+    const sIn = (await asOwner("select id from students where class_id=$1 limit 1", [cls])).row?.id;
+    const sOut = (await asOwner("select id from students where class_id=$1 limit 1", [other])).row?.id;
+    const staff = (await asOwner("select id from users where school_id=$1 and role='teacher' and id<>$2 and id not in (select teacher_id from classes where teacher_id is not null) and id not in (select teacher_id from timetable_slots where teacher_id is not null) order by id desc limit 1", [A.schoolId, A.teacher])).row?.id;
+    const ra = (await t("select public.role_assign($1,$2,'ng.year_head_year_tutor','org',null) id", [A.schoolId, staff])).row?.id;
+    const setN = (await t("select public.role_scope_set_add($1, jsonb_build_object('campus', jsonb_build_array($2::text)), 'A1 North') id", [ra, cN])).row?.id;
+    out.auditAdd = (await asOwner("select count(*)::int n from role_scope_audit where set_id=$1 and action='set_add'", [setN])).row?.n;
+    // restricted assigner (proprietor limited to North)
+    const prop = (await t("select public.role_assign($1,$2,'ng.proprietor','org',null) id", [A.schoolId, A.bursar])).row?.id;
+    await t("select public.role_scope_set_add($1, jsonb_build_object('campus', jsonb_build_array($2::text)))", [prop, cN]);
+    await act(A.bursar);
+    out.removeLast = await t("select public.role_scope_set_remove($1)", [setN]);
+    await act(A.admin);
+    const setS = (await t("select public.role_scope_set_add($1, jsonb_build_object('campus', jsonb_build_array($2::text)), 'A1 South') id", [ra, cS])).row?.id;
+    await act(A.bursar);
+    out.removeOutside = await t("select public.role_scope_set_remove($1)", [setS]);
+    out.removeInside = await t("select public.role_scope_set_remove($1)", [setN]);
+    await act(A.admin);
+    out.auditRemove = (await asOwner("select count(*)::int n from role_scope_audit where set_id=$1 and action='set_remove' and actor=$2", [setN, A.bursar])).row?.n;
+    out.auditEdit = await asOwner("delete from role_scope_audit where set_id=$1", [setN]);
+    // subject dimension: South set gone? keep South; add a subject-only set and check a subject match on the North class
+    await t("select public.role_scope_set_remove($1)", [setS]);
+    await t("select public.role_scope_set_add($1, jsonb_build_object('subject', jsonb_build_array($2::text)), 'A1 subject')", [ra, subj]);
+    out.subjIn = (await t("select public.authz_check($1,'students.view','student',$2) r", [staff, sIn])).row?.r;
+    out.subjNoTt = (await asOwner("select count(*)::int n from timetables tt join timetable_slots ts on ts.timetable_id=tt.id where tt.class_id=$1 and ts.subject=$2", [other, subj])).row?.n;
+    out.subjOut = (await t("select public.authz_check($1,'students.view','student',$2) r", [staff, sOut])).row?.r;
+    // caller's own area + class filter
+    await act(staff);
+    out.area = (await t("select public.my_operating_area($1) r", [A.schoolId])).row?.r;
+    out.ids = (await t("select public.scope_class_ids($1) r", [A.schoolId])).row?.r;
+    out.staffList = await t("select public.role_scope_sets_list($1)", [A.schoolId]);
+    await act(A.admin);
+    out.adminIds = (await t("select public.scope_class_ids($1) r", [A.schoolId])).row;
+    out.list = (await t("select public.role_scope_sets_list($1) r", [A.schoolId])).row?.r;
+    await act(B.admin); out.crossList = await t("select public.role_scope_sets_list($1)", [A.schoolId]);
+    out.crossAudit = (await t("select count(*)::int n from role_scope_audit where org_id=$1", [A.schoolId])).row?.n;
+    await act(A.admin);
+    Object.assign(out, { cls, other, ra, subj });
+  });
+  rec("scope_sets", "Every scope-set add/remove is written to an append-only audit", v.auditAdd === 1 && v.auditRemove === 1 && !v.auditEdit?.ok,
+    `add ${v.auditAdd}; remove ${v.auditRemove}; edit ${W_ERR(v.auditEdit)}`, "high");
+  rec("scope_sets", "A restricted assigner cannot widen by removing: not the last set, not a set outside their area; inside is fine",
+    !v.removeLast?.ok && !v.removeOutside?.ok && v.removeInside?.ok, `last ${W_ERR(v.removeLast)}; outside ${W_ERR(v.removeOutside)}; inside ${W_ERR(v.removeInside)}`, "critical");
+  rec("scope_sets", "Subject dimension matches the class timetable", v.subjIn?.allow === true && (v.subjNoTt > 0 || v.subjOut?.allow === false),
+    `in ${v.subjIn?.deciding_layer}; out ${v.subjOut?.deciding_layer} (other class teaches it: ${v.subjNoTt})`, "high");
+  rec("scope_sets", "Caller sees own area; class filter returns only in-area classes; admins get all (NULL)",
+    v.area?.unrestricted === false && v.area?.sets?.length === 1 && Array.isArray(v.ids) && v.ids.includes(v.cls) && (v.subjNoTt > 0 || !v.ids.includes(v.other)) && v.adminIds?.r === null,
+    `sets ${v.area?.sets?.length}; ids ${v.ids?.length}; admin ${JSON.stringify(v.adminIds?.r)}`, "high");
+  rec("scope_sets", "Only role managers list scope sets; other schools see neither sets nor audit",
+    Array.isArray(v.list) && v.list.some((s) => s.assignment_id === v.ra) && !v.staffList?.ok && !v.crossList?.ok && v.crossAudit === 0,
+    `staff ${W_ERR(v.staffList)}; cross ${W_ERR(v.crossList)}; cross audit ${v.crossAudit}`, "critical");
+}
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
 await pool.end();

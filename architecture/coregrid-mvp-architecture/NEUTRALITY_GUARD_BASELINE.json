@@ -15,8 +15,8 @@
     "lastRatchet": "2026-10-03: V1-006 (team SECURITY) neutralized the platform authorization core — removed all 9 frontend/src/lib/authorization.ts and all 13 frontend/src/lib/identity.ts entries (authorization.ts and identity.ts now carry zero education vocabulary; roles/relationship types are contributed via rbac/domain-contribution + domain-config registration) and refreshed the 7 frozen security-role-gate.ts legacy-fallback entries against the live tree (shrink-only, ADR-003/004). || 2026-10-03 (ADR-012): T-wave coordinator ADDED 3 quarantine groups (19 hits) for database/supabase/migrations/20261003000040_coregrid_school_media_bucket.sql — the FIRST baseline extension, made under ADR-004's explicit 'new ADR' mechanism: the declarative storage-provisioning migration must reference the legacy storage contract id school-media consumed by the frontend and by the applied 20260707223958 policy set; the neutral conversion (bucket id + policy predicates + path contract) is blocked on the neutral-tenant substrate conversion (same conversionPath class as the transport posture) and is recorded as an authorized follow-up that REMOVES these entries in the same change. Zero new privileges authorized by ADR-012. || 2026-10-08 (ADR-013): Sherivs refoundation ADDED 9 quarantine groups (47 hits) for database/supabase/migrations/20261008000050_coregrid_organization_memberships.sql — the SECOND baseline extension, made under ADR-004's explicit 'new ADR' mechanism (ADR-012 precedent): the multi-membership migration extends the LIVE legacy identity store in place (users.school_id stays the ACTIVE-CONTEXT binding; every tenant RLS predicate resolves through get_my_school_id()/get_my_role()), so its SQL necessarily carries the same legacy vocabulary class its owners are quarantined for (school_id, is_school_admin, get_my_school_id, tenant role names). It introduces NO new domain code on the universal surface — the table is additive, RLS-FORCED, and mirrors the legacy store. Zero new privileges beyond the policy-gated DML posture it declares. The neutral-tenant substrate conversion (COND-003 / ADR-012 conversionPath) removes these entries in the same change when it lands. || 2026-10-08 (ADR-013 amendment, same ADR authority): pre-apply verification against the LIVE users_role_check exposed two roles the migration's original CHECK omitted (alumni, driver) — the dual-write trigger must be able to mirror EVERY role the identity store legally holds, so the CHECK was corrected to mirror users_role_check exactly and the migration APPLIED under explicit operator authorization. This adds 1 quarantine group (vocabulary-literal:driver) to the ten now recorded for this migration."
   },
   "summary": {
-    "entryCount": 630,
-    "totalObservedHits": 2879,
+    "entryCount": 634,
+    "totalObservedHits": 3353,
     "hitsByFile": {
       "database/supabase/migrations/20260907000100_runtime_scholar_workforce_catalog.sql": 114,
       "database/supabase/migrations/20260620122048_50e590c2-5911-4c98-8931-fb46a4b509f3.sql": 84,
@@ -173,7 +173,19 @@
       "database/supabase/migrations/20261024000320_sherivs_025_ussd_ivr_alumni_gov_i18n.sql": 55,
       "database/supabase/migrations/20261024000330_sherivs_026_wallet_topup_init_i18n_fix.sql": 11,
       "database/supabase/migrations/20261024000340_sherivs_027_gov_portal.sql": 19,
-      "database/supabase/migrations/20261024000360_sherivs_029_school_custom_domains.sql": 36
+      "database/supabase/migrations/20261024000360_sherivs_029_school_custom_domains.sql": 36,
+      "database/supabase/migrations/20261020000030_sherivs_002_admission_insert_check.sql": 5,
+      "database/supabase/migrations/20261020000040_sherivs_002_admissions_and_media_privacy.sql": 36,
+      "database/supabase/migrations/20261020000050_sherivs_002_seed_staff_types_guard.sql": 21,
+      "database/supabase/migrations/20261020000060_sherivs_003_ndpa_foundations.sql": 59,
+      "database/supabase/migrations/20261020000070_sherivs_003b_ndpa_completion.sql": 40,
+      "database/supabase/migrations/20261020000090_sherivs_004_in_school_role_rls.sql": 64,
+      "database/supabase/migrations/20261020000100_sherivs_004_in_school_write_roles.sql": 88,
+      "database/supabase/migrations/20261020000110_sherivs_004_privilege_hardening.sql": 4,
+      "database/supabase/migrations/20261020000130_sherivs_006_membership_identity_freeze.sql": 19,
+      "database/supabase/migrations/20261024000220_sherivs_015_privacy_lockdown_rls_speed.sql": 62,
+      "database/supabase/migrations/20261024000230_sherivs_016_lifecycle_grading_tiers_audit.sql": 67,
+      "database/supabase/migrations/20261025100010_sherivs_a01_scope_sets_complete.sql": 9
     },
     "baselineGroups": 427
   },
@@ -9821,6 +9833,55 @@
         86
       ],
       "firstSnippet": "USING ((school_id = (SELECT public.get_my_school_id()) AND (SELECT public.is_school_admin())) OR (SELECT public.is_super_admin()));"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100010_sherivs_a01_scope_sets_complete.sql",
+      "kind": "vocabulary",
+      "token": "timetable",
+      "streamIRef": "SHERIVS-A01",
+      "occurrences": 1,
+      "lines": [
+        4
+      ],
+      "firstSnippet": "--  * the subject dimension now matches real data (timetable subjects of the class)"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100010_sherivs_a01_scope_sets_complete.sql",
+      "kind": "vocabulary",
+      "token": "student",
+      "streamIRef": "SHERIVS-A01",
+      "occurrences": 3,
+      "lines": [
+        79,
+        80,
+        117
+      ],
+      "firstSnippet": "IF p_kind = 'student' THEN SELECT * INTO s FROM public.students WHERE id = p_id; v_class := s.class_id;"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100010_sherivs_a01_scope_sets_complete.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-A01",
+      "occurrences": 3,
+      "lines": [
+        80,
+        89,
+        124
+      ],
+      "firstSnippet": "out := jsonb_build_object('org', s.school_id, 'student', s.id,"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100010_sherivs_a01_scope_sets_complete.sql",
+      "kind": "vocabulary",
+      "token": "hostel",
+      "streamIRef": "SHERIVS-A01",
+      "occurrences": 2,
+      "lines": [
+        82,
+        117
+      ],
+      "firstSnippet": "'hostel', coalesce((SELECT jsonb_agg(DISTINCT x) FROM public.hostel_allocations ha JOIN public.hostel_rooms hr ON hr.id = ha.room_id,"
     }
   ]
 }
