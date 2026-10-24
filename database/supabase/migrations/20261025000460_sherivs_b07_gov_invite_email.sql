@@ -1,6 +1,9 @@
 -- SHERIVS-B07: automatic officer-invite email (delivery status tracking). The raw token is never stored;
 -- the server function re-presents the one-time token it just received, the DB re-verifies it by hash.
 BEGIN;
+ALTER TABLE public.gov_admin_audit DROP CONSTRAINT IF EXISTS gov_admin_audit_action_check;
+ALTER TABLE public.gov_admin_audit ADD CONSTRAINT gov_admin_audit_action_check CHECK (action IN
+  ('jurisdiction_create','viewer_grant','viewer_revoke','host_set','invite_create','invite_revoke','invite_accept','invite_email'));
 ALTER TABLE public.gov_officer_invites
   ADD COLUMN IF NOT EXISTS email_status text NOT NULL DEFAULT 'not_sent' CHECK (email_status IN ('not_sent','sent','stubbed','failed')),
   ADD COLUMN IF NOT EXISTS email_attempts int NOT NULL DEFAULT 0,
