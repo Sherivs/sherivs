@@ -136,11 +136,13 @@ export function applyTransform(v: unknown, t: Transform = "none"): unknown {
     }
     case "date_dmy": {
       // Nigerian DD/MM/YYYY
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s.trim())) return s.trim(); // already ISO (Excel date cells)
       const m = s.trim().match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/);
       return m ? `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}` : null;
     }
     case "phone_ng": {
-      const d = s.replace(/\D/g, "");
+      let d = s.replace(/\D/g, "");
+      if (/^[789][01]\d{8}$/.test(d)) d = "0" + d; // Excel numeric cells drop the leading 0
       if (/^0[789]\d{9}$/.test(d)) return "+234" + d.slice(1);
       if (/^234[789]\d{9}$/.test(d)) return "+" + d;
       return null;

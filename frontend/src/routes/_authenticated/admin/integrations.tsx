@@ -23,6 +23,7 @@ import {
   type Transform,
 } from "@/lib/integrations-hub/sdk";
 import { chunk, parseDelimited, previewImport } from "@/lib/integrations-hub/connectors/csv";
+import { readWorkbook, type WorkbookSheet } from "@/lib/integrations-hub/connectors/xlsx";
 import { issueWebhookSecret } from "@/lib/integrations-hub/integrations.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/integrations")({
@@ -293,15 +294,25 @@ function CsvWizard({
     [parsed, mappings],
   );
 
+  const [sheets, setSheets] = useState<WorkbookSheet[]>([]);
+  function pickSheet(p: { headers: string[]; rows: Record<string, string>[] }) {
+    setParsed(p);
+    setMappings(suggestMappings(p.headers, entity));
+  }
   async function onFile(f: File) {
-    if (/\.xlsx?$/i.test(f.name)) {
-      toast.error("Open the workbook and use Save As > CSV UTF-8, then upload the CSV.");
+    if (/\.xls$/i.test(f.name)) {
+      toast.error("Old .xls workbooks are not supported: save it as .xlsx or CSV UTF-8.");
       return;
     }
     try {
-      const p = parseDelimited(await f.text());
-      setParsed(p);
-      setMappings(suggestMappings(p.headers, entity));
+      if (/\.xlsx$/i.test(f.name)) {
+        const wb = await readWorkbook(f);
+        setSheets(wb);
+        if (wb[0]) pickSheet(wb[0]);
+        return;
+      }
+      setSheets([]);
+      pickSheet(parseDelimited(await f.text()));
     } catch (e) {
       toast.error((e as Error).message);
     }
@@ -374,6 +385,19 @@ function CsvWizard({
           className="max-w-xs"
           onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
         />
+        {sheets.length > 1 && (
+          <select
+            className="rounded border bg-background p-2 text-sm"
+            aria-label="Sheet"
+            onChange={(e) => pickSheet(sheets[Number(e.target.value)])}
+          >
+            {sheets.map((sh, i) => (
+              <option key={sh.name} value={i}>
+                {sh.name} ({sh.rows.length} rows)
+              </option>
+            ))}
+          </select>
+        )}
       </div>
       {parsed && (
         <>

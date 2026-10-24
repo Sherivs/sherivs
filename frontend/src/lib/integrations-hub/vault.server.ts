@@ -1,8 +1,9 @@
 /**
  * Integration secrets live in the Sherivs Vault (org_credentials, SHERIVS-012) only.
  * This store reads/writes ciphertext rows with the service role; plaintext never touches a table.
- * KMS: production needs a managed KMS adapter (not in the repo yet), so in production this
- * returns null and the callers answer 503 instead of falling back to anything weaker.
+ * KMS: AWS KMS (alias/sherivs-tenant) when SHERIVS_VAULT_KMS=aws; LocalKms only outside
+ * production with SHERIVS_VAULT_DEV_MASTER_KEY. Otherwise null, and callers answer 503
+ * instead of falling back to anything weaker.
  */
 import {
   CredentialVault,
