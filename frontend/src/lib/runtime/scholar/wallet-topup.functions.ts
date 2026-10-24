@@ -24,7 +24,6 @@ function testSecret(): string {
 }
 
 const initSchema = z.object({
-  school_id: z.string().uuid(),
   amount: z.number().min(100).max(10_000_000),
   email: z.string().email().max(200),
 });
@@ -34,9 +33,14 @@ export const initWalletTopup = createServerFn({ method: "POST" })
   .validator((i: unknown) => initSchema.parse(i))
   .handler(async ({ data, context }) => {
     const secret = testSecret();
+    // Tenant comes from the caller's own membership row, never from client input.
+    const { data: me, error: meErr } = await context.supabase.from("users").select("school_id").eq("id", context.userId).maybeSingle();
+    if (meErr) throw new Error(meErr.message);
+    const schoolId = (me as { school_id: string | null } | null)?.school_id;
+    if (!schoolId) throw new Error("No school workspace on this account");
     const { data: intent, error } = await (context.supabase as unknown as {
       rpc: (fn: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
-    }).rpc("wallet_topup_intent_create", { p_school: data.school_id, p_amount: data.amount, p_email: data.email });
+    }).rpc("wallet_topup_intent_create", { p_school: schoolId, p_amount: data.amount, p_email: data.email });
     if (error) throw new Error(error.message);
     const it = intent as { reference: string; amount_kobo: number; school_id: string };
     const res = await fetch("https://api.paystack.co/transaction/initialize", {

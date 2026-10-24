@@ -42,8 +42,8 @@ describe("disposition registry — audit law", () => {
   it("classifies every entry exactly once and cites evidence", () => {
     const counts = dispositionCounts();
     expect(counts.V1_BUILD).toBe(4);
-    expect(counts.V2_CLASSIFIED).toBe(8);
-    expect(counts.AUDITED_REAL).toBe(17);
+    expect(counts.V2_CLASSIFIED).toBe(7);
+    expect(counts.AUDITED_REAL).toBe(18);
     expect(PLACEHOLDER_DISPOSITIONS.length).toBe(
       counts.V1_BUILD + counts.V2_CLASSIFIED + counts.AUDITED_REAL,
     );

@@ -1314,6 +1314,51 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
     `delta ${v.delta}; ${v.ok?.outcome}/${v.replay?.outcome}/${v.mismatch?.outcome}`, "high");
   rec("i18n", "Igbo dashboard label is no longer English", v.ig?.["nav.dashboard"] && v.ig["nav.dashboard"] !== "Dashboard", String(v.ig?.["nav.dashboard"]), "low");
 }
+// ---------- 22. Government portal: own login type, aggregates only, small groups suppressed, views logged (SHERIVS-027) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+    const SA = crypto.randomUUID(), OFF = crypto.randomUUID();
+    await asOwner("insert into auth.users (id) values ($1),($2) on conflict do nothing", [SA, OFF]);
+    await asOwner("insert into super_admins (id, full_name, email, is_active) values ($1,'Sim SA6','sa6@sim.local',true)", [SA]);
+    const j = (await asOwner("insert into gov_jurisdictions (name, state, lga) values ('Sim FCT UBEB','FCT','AMAC') returning id")).row?.id;
+    const j2 = (await asOwner("insert into gov_jurisdictions (name, state, lga) values ('Sim Kano SUBEB','Kano','Nassarawa') returning id")).row?.id;
+    await act(OFF); out.noneMine = (await t("select public.gov_my_jurisdictions() r")).row?.r; out.noAccess = await t("select public.gov_overview($1)", [j]);
+    await act(SA); out.grant = await t("select public.gov_viewer_grant($1,$2)", [OFF, j]);   // officer has NO public.users row (own login type)
+    await asOwner("insert into school_locations (school_id, state, lga, ownership) values ($1,'FCT','AMAC','private') on conflict (school_id) do update set lga='AMAC', ownership='private'", [A.schoolId]);
+    await act(A.admin); await t("select public.gov_sharing_set($1,$2,true)", [A.schoolId, j]);
+    const tiny = (await asOwner("insert into schools (name, slug) values ('Sim Tiny School', 'sim-tiny-' || substr(md5(random()::text),1,6)) returning id")).row?.id;
+    await asOwner("insert into students (school_id, gender) select $1, 'female' from generate_series(1,3)", [tiny]);
+    await asOwner("insert into school_locations (school_id, state, lga, ownership) values ($1,'FCT','Bwari','community')", [tiny]);
+    await asOwner("insert into gov_data_sharing (school_id, jurisdiction_id, consented_by) values ($1,$2,$3)", [tiny, j, A.admin]);
+    await act(OFF);
+    out.mine = (await t("select public.gov_my_jurisdictions() r")).row?.r;
+    out.ov = (await t("select public.gov_overview($1) r", [j])).row?.r;
+    out.trend = (await t("select public.gov_attendance_trend($1, 8) r", [j])).row?.r;
+    out.badWeeks = await t("select public.gov_attendance_trend($1, 99)", [j]);
+    out.otherJ = await t("select public.gov_overview($1)", [j2]);
+    out.rows = await t("select count(*) from students");
+    out.log = (await t("select count(*)::int n from gov_view_log where user_id=$1", [OFF])).row?.n;
+    out.logEdit = await t("delete from gov_view_log where user_id=$1", [OFF]);
+    // only tiny school shared to j2 -> whole jurisdiction suppressed
+    await asOwner("insert into gov_data_sharing (school_id, jurisdiction_id, consented_by) values ($1,$2,$3)", [tiny, j2, A.admin]);
+    await act(SA); await t("select public.gov_viewer_grant($1,$2)", [OFF, j2]);
+    await act(OFF); out.ov2 = (await t("select public.gov_overview($1) r", [j2])).row?.r;
+    await act(A.teacher); out.teacherOv = await t("select public.gov_overview($1)", [j]);
+  });
+  const big = v.ov?.per_school?.find((s) => !s.suppressed), small = v.ov?.per_school?.find((s) => s.suppressed);
+  rec("gov_portal", "Gov officer with no school account gets a portal only after Sherivs grants a jurisdiction; others (teacher, other jurisdiction) are refused",
+    Array.isArray(v.noneMine) && v.noneMine.length === 0 && !v.noAccess?.ok && v.grant?.ok && v.mine?.length === 1 && v.mine[0].state === "FCT" && !v.otherJ?.ok && !v.teacherOv?.ok,
+    `mine ${JSON.stringify(v.mine)}`, "high");
+  rec("gov_portal", "Aggregates only: no row access; a school with under 10 students shows no numbers; ownership/LGA groups under 10 are suppressed",
+    v.ov?.schools === 2 && v.ov?.suppressed === false && v.ov?.enrolled > 10 && big?.enrolled > 10 && small && small.enrolled == null && small.girls_pct == null && small.attendance_pct == null
+      && v.ov?.by_lga?.find((g) => g.lga === "Bwari")?.suppressed === true && v.ov?.by_lga?.find((g) => g.lga === "Bwari")?.enrolled == null
+      && v.ov?.by_ownership?.find((g) => g.ownership === "community")?.suppressed === true && !(v.rows?.ok && Number(v.rows.row?.count) > 0),
+    `schools ${v.ov?.schools}; small ${JSON.stringify(small)}`, "high");
+  rec("gov_portal", "A jurisdiction whose shared schools total under 10 students is fully suppressed; trend weeks are bounded; every view is logged append-only",
+    v.ov2?.suppressed === true && v.ov2?.enrolled == null && v.ov2?.girls_pct == null && Array.isArray(v.trend) && v.trend.every((w) => w.suppressed || w.attendance_pct != null)
+      && !v.badWeeks?.ok && v.log >= 2 && !v.logEdit?.ok,
+    `ov2 ${JSON.stringify(v.ov2)}; log ${v.log}`, "high");
+}
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
 await pool.end();

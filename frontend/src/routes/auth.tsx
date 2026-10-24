@@ -153,6 +153,17 @@ function AuthPage() {
         // chain — memberships → organizations → roles → runtime → workspace
         // — and route to its destination. The context effect above is the
         // fallback if the server round-trip fails.
+        // SHERIVS-027: government officers have no school membership; send them to their own portal.
+        if (data.user) {
+          const [{ data: member }, { data: gov }] = await Promise.all([
+            supabase.from("users").select("id").eq("id", data.user.id).maybeSingle(),
+            (supabase as unknown as { rpc: (f: string) => PromiseLike<{ data: unknown }> }).rpc("gov_my_jurisdictions"),
+          ]);
+          if (!member && Array.isArray(gov) && gov.length > 0) {
+            await navigate({ to: "/gov", replace: true });
+            return;
+          }
+        }
         try {
           const identity = await resolveIdentity();
           await navigate({ to: identity.destination, replace: true });

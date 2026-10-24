@@ -123,14 +123,10 @@ export const PLACEHOLDER_DISPOSITIONS: readonly PlaceholderDispositionEntry[] = 
     route: "/admin/visitors",
     file: "frontend/src/routes/_authenticated/admin/visitors.tsx",
     title: "Visitor Management & Gate Control",
-    disposition: "V2_CLASSIFIED",
+    disposition: "AUDITED_REAL",
     evidence:
-      "No visitor/pass table exists in any migration. Page rendered static zeros, a fabricated " +
-      "'Security Status: Secure' stat and disabled 'Check In Visitor'/'Issue Pass' buttons.",
-    plannedCapability:
-      "Visitor check-in, pass issuance and gate logs — requires a visitors schema before any " +
-      "real surface can exist.",
-    versionTargetNote: "Not launch-critical for V1; dispositioned V2 per the capability matrix.",
+      "Rebuilt on real tables by SHERIVS-024 (visitor_passes, authorised_pickups; RLS-forced, " +
+      "hashed pass codes, check-in/out RPCs). The former static zeros and fake buttons are gone.",
   },
   {
     route: "/admin/intelligence-ai",

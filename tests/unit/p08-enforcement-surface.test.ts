@@ -76,6 +76,8 @@ const DOCUMENTED_EXEMPT: Readonly<Record<string, string>> = {
     "driver self-scope only (own bus reads/writes by driver_id = auth.uid()); same transport_buses RLS finding as bus-tracking",
   "runtime/scholar/paystack.functions.ts":
     "payment flow: fee rows are RLS-scoped on the authenticated client; webhook signature verification is the source of truth; parent/bursar roles are outside the school-admin gate by design",
+  "runtime/scholar/wallet-topup.functions.ts":
+    "wallet top-up: school comes from the caller's own users row; wallet_topup_intent_create enforces wallet.topup in the DB; crediting is service-role only via the signed webhook / verify (SHERIVS-026)",
   "profile.functions.ts":
     "self-scope only (own users row by id = auth.uid()); super-admins have no tenant profile (no-op)",
   "push.functions.ts":

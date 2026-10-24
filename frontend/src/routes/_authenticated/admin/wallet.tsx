@@ -14,11 +14,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { naira, rows, rpc, sdb } from "@/lib/scholar/rpc";
-import { initWalletTopup } from "@/lib/runtime/scholar/wallet-topup.functions";
+import { initWalletTopup, verifyWalletTopup } from "@/lib/runtime/scholar/wallet-topup.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/wallet")({ ssr: false, component: WalletPage });
 
 type Ledger = { id: string; kind: string; amount: number; balance_after: number; reference: string; item: string | null; created_at: string };
+type Topup = { reference: string; amount: number; status: "pending" | "paid" | "failed"; email: string; created_at: string; paid_at: string | null; failure_reason: string | null };
 type Pool = { item: string; allowance: number; used: number; term: string; academic_year: string };
 
 function WalletPage() {
@@ -34,11 +35,16 @@ function WalletPage() {
   const [topEmail, setTopEmail] = useState("");
   async function topUp() {
     try {
-      const r = await initWalletTopup({ data: { school_id: org, amount: Number(topAmount), email: topEmail } });
+      const r = await initWalletTopup({ data: { amount: Number(topAmount), email: topEmail } });
       window.location.assign(r.authorization_url);
     } catch (e) { toast.error((e as Error).message); }
   }
   const wallet = useQuery({ queryKey: ["wallet", org], enabled: !!org, queryFn: () => rows<{ balance: number; low_balance_pct: number }>(sdb.from("school_wallets").select("balance,low_balance_pct").eq("school_id", org)) });
+  const topups = useQuery({ queryKey: ["topups", org], enabled: !!org, queryFn: () => rows<Topup>(sdb.from("wallet_topup_intents").select("reference,amount,status,email,created_at,paid_at,failure_reason").eq("school_id", org).order("created_at", { ascending: false }).limit(25)) });
+  async function recheck(reference: string) {
+    try { const r = await verifyWalletTopup({ data: { reference } }); toast[r.paid ? "success" : "message"](r.paid ? "Payment confirmed" : `Not paid yet (${r.outcome})`); await qc.invalidateQueries(); }
+    catch (e) { toast.error((e as Error).message); }
+  }
   const ledger = useQuery({ queryKey: ["ledger", org], enabled: !!org, queryFn: () => rows<Ledger>(sdb.from("wallet_ledger").select("*").eq("school_id", org).order("created_at", { ascending: false }).limit(50)) });
   const pools = useQuery({ queryKey: ["pools", org], enabled: !!org, queryFn: () => rows<Pool>(sdb.from("term_usage_pools").select("*").eq("school_id", org)) });
   const prices = useQuery({ queryKey: ["prices"], queryFn: () => rows<{ item: string; unit: string; price: number }>(sdb.from("usage_price_book").select("item,unit,price")) });
@@ -79,6 +85,14 @@ function WalletPage() {
         <Button onClick={() => go("record_cash_payment", { p_school: org, p_student: student, p_year: year, p_term: term, p_amount: Number(amount),
           p_receipt_url: receipt.startsWith("http") ? receipt : null, p_receipt_no: receipt.startsWith("http") ? null : receipt }, "Payment recorded")}>Record</Button>
       </div>
+      <h3 className="mt-6 font-medium">Top-up history</h3>
+      <table className="mt-2 w-full text-sm"><thead><tr className="text-left text-muted-foreground"><th>Started</th><th>Amount</th><th>Status</th><th>Receipt email</th><th>Reference</th><th /></tr></thead>
+        <tbody>{(topups.data ?? []).map((t) => (
+          <tr key={t.reference} className="border-t"><td>{new Date(t.created_at).toLocaleString()}</td><td>{naira(t.amount)}</td>
+            <td><Badge variant={t.status === "paid" ? "default" : t.status === "failed" ? "destructive" : "outline"}>{t.status}</Badge>{t.failure_reason ? <span className="ml-1 text-xs text-muted-foreground">{t.failure_reason}</span> : null}</td>
+            <td>{t.email}</td><td className="font-mono text-xs">{t.reference.slice(0, 14)}…</td>
+            <td>{t.status === "pending" ? <Button size="sm" variant="outline" onClick={() => recheck(t.reference)}>Check payment</Button> : null}</td></tr>))}
+          {!topups.data?.length && <tr><td colSpan={6} className="py-2 text-muted-foreground">No top-ups yet.</td></tr>}</tbody></table>
       <h3 className="mt-6 font-medium">Ledger</h3>
       <table className="mt-2 w-full text-sm"><thead><tr className="text-left text-muted-foreground"><th>When</th><th>Kind</th><th>Item</th><th>Amount</th><th>Balance</th></tr></thead>
         <tbody>{(ledger.data ?? []).map((l) => (

@@ -41,7 +41,7 @@ export class BulkSmsNigeriaAdapter implements CommsAdapter {
       body: JSON.stringify({ from: this.sender, to, body, gateway: "direct-refund" }),
     });
     const j = (await res.json().catch(() => ({}))) as { data?: { message_id?: string }; message?: string };
-    return res.ok ? { ok: true, providerRef: j.data?.message_id ?? `bsn-${Date.now()}` } : { ok: false, error: j.message ?? `http ${res.status}` };
+    return res.ok ? { ok: true, providerRef: j.data?.message_id ?? `bsn-${crypto.randomUUID()}` } : { ok: false, error: j.message ?? `http ${res.status}` };
   }
 }
 

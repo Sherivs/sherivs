@@ -383,3 +383,37 @@ defineFamilySuite({
     "§27.6 note: payment-state audit lives in the fees row (paystack_reference/paid_amount/paid_at) and the signature-verified webhook path (§36); the family itself writes no separate audit event. Recorded, not accommodated.",
   ],
 });
+
+defineFamilySuite({
+  family: "wallet-topup.functions.ts",
+  externalProvider: "Paystack api.paystack.co (PAYSTACK_SECRET_KEY, test key only, server-side only)",
+  functions: [
+    {
+      fn: "initWalletTopup",
+      method: "POST",
+      input: "zod",
+      gate: "rls-scoped",
+      audit: "write-through",
+      auditMarkers: [/wallet_topup_intent_create/],
+      gateMarker: /\.eq\("id", context\.userId\)/,
+      extra: [/testSecret\(\)/],
+      note: "school derives from the caller's own users row; the DB RPC enforces wallet.topup and writes the audited intent; live keys are refused",
+    },
+    {
+      fn: "verifyWalletTopup",
+      method: "POST",
+      input: "zod",
+      gate: "rls-scoped",
+      audit: "write-through",
+      auditMarkers: [/settleWalletTopup\(/],
+      gateMarker: /\.from\("wallet_topup_intents" as never\)/,
+      auditSource: "file",
+      extra: [/\.eq\("reference", data\.reference\)/],
+      note: "caller must see the intent under RLS (wallet.view) before service-role settlement; settlement matches amount/currency against the DB intent",
+    },
+  ],
+  helpers: { settleWalletTopup: [/\.rpc\("wallet_topup_settle"/], testSecret: [/startsWith\("sk_test_"\)/] },
+  findings: [
+    "§27.6 note: the intent row is audited by the scholar_audit trigger; settlement is idempotent on the reference. Recorded, not accommodated.",
+  ],
+});

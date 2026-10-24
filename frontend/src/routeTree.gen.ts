@@ -17,6 +17,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FoundationLoopRouteImport } from './routes/foundation-loop'
+import { Route as GovRouteRouteImport } from './routes/gov/route'
 import { Route as HealthDotjsonRouteImport } from './routes/health[.]json'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ManifestDotwebmanifestRouteImport } from './routes/manifest[.]webmanifest'
@@ -60,6 +61,10 @@ import { Route as AuthenticatedTeacherRouteRouteImport } from './routes/_authent
 import { Route as AuthenticatedWelcomeRouteImport } from './routes/_authenticated/welcome'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as EventsIdRouteImport } from './routes/events.$id'
+import { Route as GovIndexRouteImport } from './routes/gov/index'
+import { Route as GovAboutRouteImport } from './routes/gov/about'
+import { Route as GovAttendanceRouteImport } from './routes/gov/attendance'
+import { Route as GovSchoolsRouteImport } from './routes/gov/schools'
 import { Route as NewsIdRouteImport } from './routes/news.$id'
 import { Route as PlatformOrgRouteImport } from './routes/platform.org'
 import { Route as RealityClassRouteImport } from './routes/reality.$class'
@@ -241,6 +246,11 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
 const FoundationLoopRoute = FoundationLoopRouteImport.update({
   id: '/foundation-loop',
   path: '/foundation-loop',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GovRouteRoute = GovRouteRouteImport.update({
+  id: '/gov',
+  path: '/gov',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HealthDotjsonRoute = HealthDotjsonRouteImport.update({
@@ -467,6 +477,26 @@ const EventsIdRoute = EventsIdRouteImport.update({
   id: '/events/$id',
   path: '/events/$id',
   getParentRoute: () => rootRouteImport,
+} as any)
+const GovIndexRoute = GovIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => GovRouteRoute,
+} as any)
+const GovAboutRoute = GovAboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => GovRouteRoute,
+} as any)
+const GovAttendanceRoute = GovAttendanceRouteImport.update({
+  id: '/attendance',
+  path: '/attendance',
+  getParentRoute: () => GovRouteRoute,
+} as any)
+const GovSchoolsRoute = GovSchoolsRouteImport.update({
+  id: '/schools',
+  path: '/schools',
+  getParentRoute: () => GovRouteRoute,
 } as any)
 const NewsIdRoute = NewsIdRouteImport.update({
   id: '/news/$id',
@@ -1317,6 +1347,7 @@ const ApiPublicWebhooksWhatsappRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/gov': typeof GovRouteRouteWithChildren
   '/admissions': typeof AdmissionsRoute
   '/auth': typeof AuthRoute
   '/blog': typeof BlogRouteWithChildren
@@ -1365,9 +1396,13 @@ export interface FileRoutesByFullPath {
   '/welcome': typeof AuthenticatedWelcomeRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/events/$id': typeof EventsIdRoute
+  '/gov/about': typeof GovAboutRoute
+  '/gov/attendance': typeof GovAttendanceRoute
+  '/gov/schools': typeof GovSchoolsRoute
   '/news/$id': typeof NewsIdRoute
   '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
+  '/gov/': typeof GovIndexRoute
   '/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/admin/admissions-funnel': typeof AuthenticatedAdminAdmissionsFunnelRoute
   '/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
@@ -1559,9 +1594,13 @@ export interface FileRoutesByTo {
   '/welcome': typeof AuthenticatedWelcomeRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/events/$id': typeof EventsIdRoute
+  '/gov/about': typeof GovAboutRoute
+  '/gov/attendance': typeof GovAttendanceRoute
+  '/gov/schools': typeof GovSchoolsRoute
   '/news/$id': typeof NewsIdRoute
   '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
+  '/gov': typeof GovIndexRoute
   '/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/admin/admissions-funnel': typeof AuthenticatedAdminAdmissionsFunnelRoute
   '/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
@@ -1709,6 +1748,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/(site)': typeof siteRouteRouteWithChildren
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/gov': typeof GovRouteRouteWithChildren
   '/admissions': typeof AdmissionsRoute
   '/auth': typeof AuthRoute
   '/blog': typeof BlogRouteWithChildren
@@ -1757,9 +1797,13 @@ export interface FileRoutesById {
   '/_authenticated/welcome': typeof AuthenticatedWelcomeRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/events/$id': typeof EventsIdRoute
+  '/gov/about': typeof GovAboutRoute
+  '/gov/attendance': typeof GovAttendanceRoute
+  '/gov/schools': typeof GovSchoolsRoute
   '/news/$id': typeof NewsIdRoute
   '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
+  '/gov/': typeof GovIndexRoute
   '/_authenticated/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/_authenticated/admin/admissions-funnel': typeof AuthenticatedAdminAdmissionsFunnelRoute
   '/_authenticated/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
@@ -1906,6 +1950,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/gov'
     | '/admissions'
     | '/auth'
     | '/blog'
@@ -1954,9 +1999,13 @@ export interface FileRouteTypes {
     | '/welcome'
     | '/blog/$slug'
     | '/events/$id'
+    | '/gov/about'
+    | '/gov/attendance'
+    | '/gov/schools'
     | '/news/$id'
     | '/platform/org'
     | '/reality/$class'
+    | '/gov/'
     | '/admin/admissions'
     | '/admin/admissions-funnel'
     | '/admin/ai-assistant'
@@ -2148,9 +2197,13 @@ export interface FileRouteTypes {
     | '/welcome'
     | '/blog/$slug'
     | '/events/$id'
+    | '/gov/about'
+    | '/gov/attendance'
+    | '/gov/schools'
     | '/news/$id'
     | '/platform/org'
     | '/reality/$class'
+    | '/gov'
     | '/admin/admissions'
     | '/admin/admissions-funnel'
     | '/admin/ai-assistant'
@@ -2297,6 +2350,7 @@ export interface FileRouteTypes {
     | '/'
     | '/(site)'
     | '/_authenticated'
+    | '/gov'
     | '/admissions'
     | '/auth'
     | '/blog'
@@ -2345,9 +2399,13 @@ export interface FileRouteTypes {
     | '/_authenticated/welcome'
     | '/blog/$slug'
     | '/events/$id'
+    | '/gov/about'
+    | '/gov/attendance'
+    | '/gov/schools'
     | '/news/$id'
     | '/platform/org'
     | '/reality/$class'
+    | '/gov/'
     | '/_authenticated/admin/admissions'
     | '/_authenticated/admin/admissions-funnel'
     | '/_authenticated/admin/ai-assistant'
@@ -2495,6 +2553,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   siteRouteRoute: typeof siteRouteRouteWithChildren
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  GovRouteRoute: typeof GovRouteRouteWithChildren
   AdmissionsRoute: typeof AdmissionsRoute
   AuthRoute: typeof AuthRoute
   BlogRoute: typeof BlogRouteWithChildren
@@ -2576,6 +2635,13 @@ declare module '@tanstack/react-router' {
       path: '/foundation-loop'
       fullPath: '/foundation-loop'
       preLoaderRoute: typeof FoundationLoopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gov': {
+      id: '/gov'
+      path: '/gov'
+      fullPath: '/gov'
+      preLoaderRoute: typeof GovRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/health.json': {
@@ -2878,6 +2944,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/events/$id'
       preLoaderRoute: typeof EventsIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/gov/': {
+      id: '/gov/'
+      path: '/'
+      fullPath: '/gov/'
+      preLoaderRoute: typeof GovIndexRouteImport
+      parentRoute: typeof GovRouteRoute
+    }
+    '/gov/about': {
+      id: '/gov/about'
+      path: '/about'
+      fullPath: '/gov/about'
+      preLoaderRoute: typeof GovAboutRouteImport
+      parentRoute: typeof GovRouteRoute
+    }
+    '/gov/attendance': {
+      id: '/gov/attendance'
+      path: '/attendance'
+      fullPath: '/gov/attendance'
+      preLoaderRoute: typeof GovAttendanceRouteImport
+      parentRoute: typeof GovRouteRoute
+    }
+    '/gov/schools': {
+      id: '/gov/schools'
+      path: '/schools'
+      fullPath: '/gov/schools'
+      preLoaderRoute: typeof GovSchoolsRouteImport
+      parentRoute: typeof GovRouteRoute
     }
     '/news/$id': {
       id: '/news/$id'
@@ -4385,6 +4479,24 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface GovRouteRouteChildren {
+  GovAboutRoute: typeof GovAboutRoute
+  GovAttendanceRoute: typeof GovAttendanceRoute
+  GovSchoolsRoute: typeof GovSchoolsRoute
+  GovIndexRoute: typeof GovIndexRoute
+}
+
+const GovRouteRouteChildren: GovRouteRouteChildren = {
+  GovAboutRoute: GovAboutRoute,
+  GovAttendanceRoute: GovAttendanceRoute,
+  GovSchoolsRoute: GovSchoolsRoute,
+  GovIndexRoute: GovIndexRoute,
+}
+
+const GovRouteRouteWithChildren = GovRouteRoute._addFileChildren(
+  GovRouteRouteChildren,
+)
+
 interface BlogRouteChildren {
   BlogSlugRoute: typeof BlogSlugRoute
 }
@@ -4411,6 +4523,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   siteRouteRoute: siteRouteRouteWithChildren,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  GovRouteRoute: GovRouteRouteWithChildren,
   AdmissionsRoute: AdmissionsRoute,
   AuthRoute: AuthRoute,
   BlogRoute: BlogRouteWithChildren,
