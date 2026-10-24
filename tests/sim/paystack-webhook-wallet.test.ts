@@ -13,16 +13,19 @@ let client: pg.Client | null = null;
 let simUp = false;
 
 async function asService<T>(sql: string, params: unknown[]): Promise<T> {
+  // Runs inside the run-wide transaction (rolled back in afterAll) so the sim DB keeps no residue.
   const c = client!;
-  await c.query("BEGIN");
+  await c.query("SAVEPOINT svc");
   try {
     await c.query("SET LOCAL ROLE service_role");
     await c.query("select set_config('request.jwt.claims', '{\"role\":\"service_role\"}', true)");
     const r = await c.query(sql, params);
-    await c.query("COMMIT");
+    await c.query("RESET ROLE");
+    await c.query("RELEASE SAVEPOINT svc");
     return r.rows[0] as T;
   } catch (e) {
-    await c.query("ROLLBACK");
+    await c.query("ROLLBACK TO SAVEPOINT svc");
+    await c.query("RESET ROLE");
     throw e;
   }
 }
@@ -56,6 +59,7 @@ beforeAll(async () => {
     client = new pg.Client(SIM);
     await client.connect();
     simUp = true;
+    await client.query("BEGIN");
   } catch {
     simUp = false;
     return;
@@ -71,9 +75,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (client) {
-    if (simUp) {
-      await client.query("delete from wallet_topup_intents where reference=$1", [reference]).catch(() => {});
-    }
+    if (simUp) await client.query("ROLLBACK").catch(() => {});
     await client.end().catch(() => {});
   }
 });
@@ -101,7 +103,6 @@ describe("Paystack webhook → wallet top-up (signed test payloads, sim DB)", ()
     expect((await post(req(body, sign(body)))).status).toBe(200);
     expect(await balance()).toBe(b0);
     expect((await client!.query("select status from wallet_topup_intents where reference=$1", [other])).rows[0].status).toBe("failed");
-    await client!.query("delete from wallet_topup_intents where reference=$1", [other]);
   });
 
   it("credits exactly once for a valid signed charge.success, and replays are no-ops", async ({ skip }) => {

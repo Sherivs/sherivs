@@ -151,6 +151,7 @@ import { Route as AuthenticatedHqDashboardRouteImport } from './routes/_authenti
 import { Route as AuthenticatedHqFinanceRouteImport } from './routes/_authenticated/hq/finance'
 import { Route as AuthenticatedHqReportsRouteImport } from './routes/_authenticated/hq/reports'
 import { Route as AuthenticatedInternalAccessReviewRouteImport } from './routes/_authenticated/internal_.access-review'
+import { Route as AuthenticatedInternalGovAccessRouteImport } from './routes/_authenticated/internal_.gov-access'
 import { Route as AuthenticatedInternalSupportRouteImport } from './routes/_authenticated/internal_.support'
 import { Route as AuthenticatedParentAiAssistantRouteImport } from './routes/_authenticated/parent/ai-assistant'
 import { Route as AuthenticatedParentAttendanceRouteImport } from './routes/_authenticated/parent/attendance'
@@ -206,6 +207,7 @@ import { Route as AuthenticatedTeacherNewsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedTeacherSignInRouteImport } from './routes/_authenticated/teacher/sign-in'
 import { Route as AuthenticatedTeacherTimetableRouteImport } from './routes/_authenticated/teacher/timetable'
 import { Route as ApiPublicAuditPasswordResetRouteImport } from './routes/api/public/audit.password-reset'
+import { Route as ApiPublicCronWalletTopupReconcileRouteImport } from './routes/api/public/cron/wallet-topup-reconcile'
 import { Route as ApiPublicWebhooksPaystackRouteImport } from './routes/api/public/webhooks/paystack'
 import { Route as ApiPublicWebhooksUssdRouteImport } from './routes/api/public/webhooks/ussd'
 import { Route as ApiPublicWebhooksWhatsappRouteImport } from './routes/api/public/webhooks/whatsapp'
@@ -1000,6 +1002,12 @@ const AuthenticatedInternalAccessReviewRoute =
     path: '/internal/access-review',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedInternalGovAccessRoute =
+  AuthenticatedInternalGovAccessRouteImport.update({
+    id: '/internal_/gov-access',
+    path: '/internal/gov-access',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedInternalSupportRoute =
   AuthenticatedInternalSupportRouteImport.update({
     id: '/internal_/support',
@@ -1327,6 +1335,12 @@ const ApiPublicAuditPasswordResetRoute =
     path: '/api/public/audit/password-reset',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronWalletTopupReconcileRoute =
+  ApiPublicCronWalletTopupReconcileRouteImport.update({
+    id: '/api/public/cron/wallet-topup-reconcile',
+    path: '/api/public/cron/wallet-topup-reconcile',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicWebhooksPaystackRoute =
   ApiPublicWebhooksPaystackRouteImport.update({
     id: '/api/public/webhooks/paystack',
@@ -1485,6 +1499,7 @@ export interface FileRoutesByFullPath {
   '/hq/finance': typeof AuthenticatedHqFinanceRoute
   '/hq/reports': typeof AuthenticatedHqReportsRoute
   '/internal/access-review': typeof AuthenticatedInternalAccessReviewRoute
+  '/internal/gov-access': typeof AuthenticatedInternalGovAccessRoute
   '/internal/support': typeof AuthenticatedInternalSupportRoute
   '/parent/ai-assistant': typeof AuthenticatedParentAiAssistantRoute
   '/parent/attendance': typeof AuthenticatedParentAttendanceRoute
@@ -1541,6 +1556,7 @@ export interface FileRoutesByFullPath {
   '/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
   '/command-centre/': typeof AuthenticatedCommandCentreIndexRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
+  '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
   '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
   '/api/public/webhooks/whatsapp': typeof ApiPublicWebhooksWhatsappRoute
@@ -1683,6 +1699,7 @@ export interface FileRoutesByTo {
   '/hq/finance': typeof AuthenticatedHqFinanceRoute
   '/hq/reports': typeof AuthenticatedHqReportsRoute
   '/internal/access-review': typeof AuthenticatedInternalAccessReviewRoute
+  '/internal/gov-access': typeof AuthenticatedInternalGovAccessRoute
   '/internal/support': typeof AuthenticatedInternalSupportRoute
   '/parent/ai-assistant': typeof AuthenticatedParentAiAssistantRoute
   '/parent/attendance': typeof AuthenticatedParentAttendanceRoute
@@ -1739,6 +1756,7 @@ export interface FileRoutesByTo {
   '/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
   '/command-centre': typeof AuthenticatedCommandCentreIndexRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
+  '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
   '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
   '/api/public/webhooks/whatsapp': typeof ApiPublicWebhooksWhatsappRoute
@@ -1886,6 +1904,7 @@ export interface FileRoutesById {
   '/_authenticated/hq/finance': typeof AuthenticatedHqFinanceRoute
   '/_authenticated/hq/reports': typeof AuthenticatedHqReportsRoute
   '/_authenticated/internal_/access-review': typeof AuthenticatedInternalAccessReviewRoute
+  '/_authenticated/internal_/gov-access': typeof AuthenticatedInternalGovAccessRoute
   '/_authenticated/internal_/support': typeof AuthenticatedInternalSupportRoute
   '/_authenticated/parent/ai-assistant': typeof AuthenticatedParentAiAssistantRoute
   '/_authenticated/parent/attendance': typeof AuthenticatedParentAttendanceRoute
@@ -1942,6 +1961,7 @@ export interface FileRoutesById {
   '/_authenticated/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
   '/_authenticated/command-centre/': typeof AuthenticatedCommandCentreIndexRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
+  '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
   '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
   '/api/public/webhooks/whatsapp': typeof ApiPublicWebhooksWhatsappRoute
@@ -2088,6 +2108,7 @@ export interface FileRouteTypes {
     | '/hq/finance'
     | '/hq/reports'
     | '/internal/access-review'
+    | '/internal/gov-access'
     | '/internal/support'
     | '/parent/ai-assistant'
     | '/parent/attendance'
@@ -2144,6 +2165,7 @@ export interface FileRouteTypes {
     | '/teacher/timetable'
     | '/command-centre/'
     | '/api/public/audit/password-reset'
+    | '/api/public/cron/wallet-topup-reconcile'
     | '/api/public/webhooks/paystack'
     | '/api/public/webhooks/ussd'
     | '/api/public/webhooks/whatsapp'
@@ -2286,6 +2308,7 @@ export interface FileRouteTypes {
     | '/hq/finance'
     | '/hq/reports'
     | '/internal/access-review'
+    | '/internal/gov-access'
     | '/internal/support'
     | '/parent/ai-assistant'
     | '/parent/attendance'
@@ -2342,6 +2365,7 @@ export interface FileRouteTypes {
     | '/teacher/timetable'
     | '/command-centre'
     | '/api/public/audit/password-reset'
+    | '/api/public/cron/wallet-topup-reconcile'
     | '/api/public/webhooks/paystack'
     | '/api/public/webhooks/ussd'
     | '/api/public/webhooks/whatsapp'
@@ -2488,6 +2512,7 @@ export interface FileRouteTypes {
     | '/_authenticated/hq/finance'
     | '/_authenticated/hq/reports'
     | '/_authenticated/internal_/access-review'
+    | '/_authenticated/internal_/gov-access'
     | '/_authenticated/internal_/support'
     | '/_authenticated/parent/ai-assistant'
     | '/_authenticated/parent/attendance'
@@ -2544,6 +2569,7 @@ export interface FileRouteTypes {
     | '/_authenticated/teacher/timetable'
     | '/_authenticated/command-centre/'
     | '/api/public/audit/password-reset'
+    | '/api/public/cron/wallet-topup-reconcile'
     | '/api/public/webhooks/paystack'
     | '/api/public/webhooks/ussd'
     | '/api/public/webhooks/whatsapp'
@@ -2574,6 +2600,7 @@ export interface RootRouteChildren {
   NewsIdRoute: typeof NewsIdRoute
   RealityClassRoute: typeof RealityClassRoute
   ApiPublicAuditPasswordResetRoute: typeof ApiPublicAuditPasswordResetRoute
+  ApiPublicCronWalletTopupReconcileRoute: typeof ApiPublicCronWalletTopupReconcileRoute
   ApiPublicWebhooksPaystackRoute: typeof ApiPublicWebhooksPaystackRoute
   ApiPublicWebhooksUssdRoute: typeof ApiPublicWebhooksUssdRoute
   ApiPublicWebhooksWhatsappRoute: typeof ApiPublicWebhooksWhatsappRoute
@@ -3575,6 +3602,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInternalAccessReviewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/internal_/gov-access': {
+      id: '/_authenticated/internal_/gov-access'
+      path: '/internal/gov-access'
+      fullPath: '/internal/gov-access'
+      preLoaderRoute: typeof AuthenticatedInternalGovAccessRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/internal_/support': {
       id: '/_authenticated/internal_/support'
       path: '/internal/support'
@@ -3958,6 +3992,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/audit/password-reset'
       fullPath: '/api/public/audit/password-reset'
       preLoaderRoute: typeof ApiPublicAuditPasswordResetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/wallet-topup-reconcile': {
+      id: '/api/public/cron/wallet-topup-reconcile'
+      path: '/api/public/cron/wallet-topup-reconcile'
+      fullPath: '/api/public/cron/wallet-topup-reconcile'
+      preLoaderRoute: typeof ApiPublicCronWalletTopupReconcileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/webhooks/paystack': {
@@ -4446,6 +4487,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedWelcomeRoute: typeof AuthenticatedWelcomeRoute
   AuthenticatedInternalAccessReviewRoute: typeof AuthenticatedInternalAccessReviewRoute
+  AuthenticatedInternalGovAccessRoute: typeof AuthenticatedInternalGovAccessRoute
   AuthenticatedInternalSupportRoute: typeof AuthenticatedInternalSupportRoute
 }
 
@@ -4473,6 +4515,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedWelcomeRoute: AuthenticatedWelcomeRoute,
   AuthenticatedInternalAccessReviewRoute:
     AuthenticatedInternalAccessReviewRoute,
+  AuthenticatedInternalGovAccessRoute: AuthenticatedInternalGovAccessRoute,
   AuthenticatedInternalSupportRoute: AuthenticatedInternalSupportRoute,
 }
 
@@ -4544,6 +4587,8 @@ const rootRouteChildren: RootRouteChildren = {
   NewsIdRoute: NewsIdRoute,
   RealityClassRoute: RealityClassRoute,
   ApiPublicAuditPasswordResetRoute: ApiPublicAuditPasswordResetRoute,
+  ApiPublicCronWalletTopupReconcileRoute:
+    ApiPublicCronWalletTopupReconcileRoute,
   ApiPublicWebhooksPaystackRoute: ApiPublicWebhooksPaystackRoute,
   ApiPublicWebhooksUssdRoute: ApiPublicWebhooksUssdRoute,
   ApiPublicWebhooksWhatsappRoute: ApiPublicWebhooksWhatsappRoute,

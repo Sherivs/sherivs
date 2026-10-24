@@ -82,6 +82,15 @@ const SECTIONS: InternalSection[] = [
     icon: Users,
   },
   {
+    title: "Government access",
+    description: "Create jurisdictions and grant or revoke government officer accounts (audited).",
+    href: "/internal/gov-access",
+    capability: "platform.gov.manage",
+    superAdminOnly: false,
+    internal: true,
+    icon: Shield,
+  },
+  {
     title: "Access review",
     description: "Who holds platform access, live support grants, and the staff audit trail.",
     href: "/internal/access-review",

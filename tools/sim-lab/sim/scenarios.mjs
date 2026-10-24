@@ -1359,6 +1359,66 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
       && !v.badWeeks?.ok && v.log >= 2 && !v.logEdit?.ok,
     `ov2 ${JSON.stringify(v.ov2)}; log ${v.log}`, "high");
 }
+// ---------- 23. Gov access console (platform.gov.manage) + wallet top-up reconciliation (SHERIVS-028) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+    const svc = async (sql, p = []) => { await c.query("SET LOCAL ROLE service_role"); await c.query("select set_config('request.jwt.claims', '{\"role\":\"service_role\"}', true)");
+      try { return await t(sql, p); } finally { await c.query("SET LOCAL ROLE authenticated"); } };
+    const PA = crypto.randomUUID(), SUP = crypto.randomUUID(), OFF = crypto.randomUUID();
+    const em = "officer-" + OFF.slice(0, 8) + "@ubec.sim";
+    await asOwner("insert into auth.users (id, email) values ($1,$4),($2,$5),($3,$6)", [PA, SUP, OFF, "pa@sim.local".replace("pa", "pa" + PA.slice(0, 6)), "sup" + SUP.slice(0, 6) + "@sim.local", em]);
+    await asOwner("insert into platform_staff (id, email, full_name, status) values ($1,$2,'Sim Platform Admin','active'),($3,$4,'Sim Support','active')", [PA, "pa" + PA.slice(0, 6) + "@sim.local", SUP, "sup" + SUP.slice(0, 6) + "@sim.local"]);
+    await asOwner("insert into platform_staff_roles (staff_id, role_code) values ($1,'platform_admin'),($2,'support')", [PA, SUP]);
+    await act(SUP); out.supCreate = await t("select public.gov_jurisdiction_create('Sim Oyo SUBEB','Oyo','Ibadan North')");
+    await act(A.admin); out.schoolAdminCreate = await t("select public.gov_jurisdiction_create('Sim Oyo SUBEB','Oyo','Ibadan North')");
+    await act(PA);
+    const j = (await t("select public.gov_jurisdiction_create('Sim Oyo SUBEB','Oyo','Ibadan North') id")).row?.id; out.j = j;
+    out.badName = await t("select public.gov_jurisdiction_create('x','Oyo')");
+    out.noAcct = await t("select public.gov_viewer_grant_email('nobody@nowhere.sim',$1)", [j]);
+    const schoolEmail = (await asOwner("select au.email from auth.users au join users u on u.id=au.id where au.email is not null limit 1")).row?.email;
+    out.schoolAcct = schoolEmail ? await t("select public.gov_viewer_grant_email($1,$2)", [schoolEmail, j]) : { ok: false, skipped: true };
+    out.grant = (await t("select public.gov_viewer_grant_email($1,$2) u", [em.toUpperCase(), j])).row?.u;
+    out.ov = (await t("select public.gov_admin_overview() r")).row?.r;
+    await act(OFF); out.offSees = (await t("select public.gov_my_jurisdictions() r")).row?.r;
+    await act(SUP); out.supRevoke = await t("select public.gov_viewer_revoke($1,$2)", [OFF, j]); out.supOverview = await t("select public.gov_admin_overview()");
+    await act(PA); out.revoke = (await t("select public.gov_viewer_revoke($1,$2) r", [OFF, j])).row?.r;
+    await act(OFF); out.offAfter = (await t("select public.gov_my_jurisdictions() r")).row?.r;
+    out.audit = (await asOwner("select array_agg(action order by id) a from gov_admin_audit where jurisdiction_id=$1", [j])).row?.a;
+    out.auditEdit = await asOwner("delete from gov_admin_audit where jurisdiction_id=$1", [j]);
+    // ---- reconciliation ----
+    await act(A.admin);
+    const mk = async (amt, age) => { const r = (await t("select public.wallet_topup_intent_create($1,$2,'bursar@sim.local') r", [A.schoolId, amt])).row?.r?.reference;
+      await asOwner(`update wallet_topup_intents set created_at = now() - interval '${age}' where reference=$1`, [r]); return r; };
+    const fresh = await mk(1000, "1 minute"), due = await mk(2000, "10 minutes"), stale = await mk(3000, "30 hours");
+    out.userList = await t("select * from public.wallet_topup_pending_for_check()");
+    out.list1 = (await svc("select array_agg(r) a from public.wallet_topup_pending_for_check() r")).row?.a ?? [];
+    await svc("select public.wallet_topup_mark_checked($1)", [due]);
+    out.list2 = (await svc("select array_agg(r) a from public.wallet_topup_pending_for_check() r")).row?.a ?? [];
+    out.badExpiry = await svc("select public.wallet_topup_expire_stale(interval '5 minutes')");
+    out.expired = (await svc("select public.wallet_topup_expire_stale() n")).row?.n;
+    out.expiredAgain = (await svc("select public.wallet_topup_expire_stale() n")).row?.n;
+    out.stale = (await asOwner("select status, failure_reason from wallet_topup_intents where reference=$1", [stale])).row;
+    const b0 = Number((await asOwner("select balance from school_wallets where school_id=$1", [A.schoolId])).row?.balance ?? 0);
+    out.late = (await svc("select public.wallet_topup_settle($1,'success',300000,'NGN') r", [stale])).row?.r;
+    out.delta = Number((await asOwner("select balance from school_wallets where school_id=$1", [A.schoolId])).row?.balance ?? 0) - b0;
+    out.checked = (await asOwner("select check_count from wallet_topup_intents where reference=$1", [due])).row?.check_count;
+    Object.assign(out, { fresh, due, staleRef: stale });
+  });
+  rec("gov_admin", "Only platform staff with platform.gov.manage create jurisdictions and grant/revoke officers (support staff and school admins refused)",
+    !v.supCreate?.ok && !v.schoolAdminCreate?.ok && !!v.j && !v.badName?.ok && !v.supRevoke?.ok && !v.supOverview?.ok, JSON.stringify({ sup: v.supCreate?.err }), "high");
+  rec("gov_admin", "Grant by email (case-insensitive) only for existing non-school accounts; the officer then sees the jurisdiction; revoke removes it",
+    !v.noAcct?.ok && (v.schoolAcct?.skipped || !v.schoolAcct?.ok) && !!v.grant && v.offSees?.length === 1 && v.revoke === true && Array.isArray(v.offAfter) && v.offAfter.length === 0
+      && v.ov?.jurisdictions?.some((x) => x.id === v.j && x.viewers.length === 1),
+    `grant ${v.grant}; after ${JSON.stringify(v.offAfter)}`, "high");
+  rec("gov_admin", "Every create/grant/revoke is in the append-only gov_admin_audit",
+    JSON.stringify(v.audit) === JSON.stringify(["jurisdiction_create", "viewer_grant", "viewer_revoke"]) && !v.auditEdit?.ok, JSON.stringify(v.audit), "high");
+  rec("wallet_reconcile", "Reconciler lists only pending intents older than 5 min and not just checked (service role only); checks are counted",
+    !v.userList?.ok && v.list1.includes(v.due) && v.list1.includes(v.staleRef) && !v.list1.includes(v.fresh) && !v.list2.includes(v.due) && v.checked === 1,
+    `list1 ${v.list1.length}; list2 ${v.list2.length}`, "high");
+  rec("wallet_reconcile", "Stale pending top-ups (>24h) are marked failed exactly once (expiry floor 1h); a late confirmed payment still credits once",
+    !v.badExpiry?.ok && v.expired >= 1 && v.expiredAgain === 0 && v.stale?.status === "failed" && /expired/.test(v.stale?.failure_reason ?? "") && v.late?.outcome === "settled" && v.delta === 3000,
+    `expired ${v.expired}/${v.expiredAgain}; bad ${v.badExpiry?.ok}; stale ${JSON.stringify(v.stale)}; late ${v.late?.outcome}; delta ${v.delta}`, "high");
+}
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
 await pool.end();

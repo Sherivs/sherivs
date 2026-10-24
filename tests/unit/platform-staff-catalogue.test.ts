@@ -14,6 +14,10 @@ const migration = readFileSync(
   "database/supabase/migrations/20261020000150_sherivs_008_platform_staff.sql",
   "utf8",
 );
+// Capabilities added to a seeded role by a later migration (append-only to the array).
+const LATER_GRANTS: Record<string, { file: string; caps: string[] }> = {
+  platform_admin: { file: "database/supabase/migrations/20261024000350_sherivs_028_gov_admin_topup_reconcile.sql", caps: ["platform.gov.manage"] },
+};
 const fns = readFileSync("frontend/src/lib/platform-staff/staff.functions.ts", "utf8");
 
 describe("platform role catalogue mirrors the migration seed", () => {
@@ -24,7 +28,13 @@ describe("platform role catalogue mirrors the migration seed", () => {
       .split("\n")
       .slice(line, line + 3)
       .join("\n");
-    for (const cap of PLATFORM_ROLE_CAPABILITIES[code]) expect(block).toContain(`'${cap}'`);
+    const later = LATER_GRANTS[code];
+    for (const cap of PLATFORM_ROLE_CAPABILITIES[code]) {
+      if (later?.caps.includes(cap)) {
+        const sql = readFileSync(later.file, "utf8");
+        expect(sql).toMatch(new RegExp(`array_append\\(capabilities, '${cap.replace(/\./g, "\\.")}'\\)[\\s\\S]*code = '${code}'`));
+      } else expect(block).toContain(`'${cap}'`);
+    }
   });
 });
 

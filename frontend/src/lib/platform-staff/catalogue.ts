@@ -25,6 +25,7 @@ export const PLATFORM_ROLE_CAPABILITIES: Record<PlatformRoleCode, readonly strin
     "platform.tenants.read",
     "platform.config.read",
     "platform.audit.read",
+    "platform.gov.manage",
   ],
   support: ["platform.tenants.read", "platform.support.handle"],
   engineering: ["platform.engineering.read", "platform.config.read"],
