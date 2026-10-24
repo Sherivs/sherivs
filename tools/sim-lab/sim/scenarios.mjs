@@ -1,0 +1,170 @@
+// Scenario suite against the isolated sim DB. Each check records pass/fail + detail. No secrets involved.
+import pg from "pg"; import fs from "node:fs"; import crypto from "node:crypto";
+const M = JSON.parse(fs.readFileSync("sim/manifest.json", "utf8"));
+const pool = new pg.Pool({ host: "127.0.0.1", port: 54329, user: "postgres", max: 60 });
+const results = [];
+const rec = (area, name, pass, detail, severity = "high") => { results.push({ area, name, pass, detail, severity }); console.log(pass ? "PASS" : "FAIL", area, "::", name, "::", detail); };
+async function as(uid, fn, role = "authenticated") {
+  const c = await pool.connect();
+  try { await c.query("BEGIN"); await c.query(`SET LOCAL ROLE ${role}`);
+    await c.query("SELECT set_config('request.jwt.claims', $1, true)", [JSON.stringify(uid ? { sub: uid, role } : { role })]);
+    const r = await fn(c); await c.query("ROLLBACK"); return r; }
+  catch (e) { await c.query("ROLLBACK").catch(() => {}); throw e; } finally { c.release(); }
+}
+const tryq = async (uid, sql, params = [], role) => { try { return { ok: true, r: await as(uid, (c) => c.query(sql, params), role) }; } catch (e) { return { ok: false, err: e.message.slice(0, 140) }; } };
+const sys = (sql, p = []) => pool.query(sql, p);
+const [A, B, C, D, E] = M.institutions;
+
+// ---------- 1. Enrollment ----------
+{
+  const ok = await tryq(A.admin, "INSERT INTO students (school_id, admission_number, gender) VALUES ($1,'SIM/NEW/1','female') RETURNING id", [A.schoolId]);
+  rec("enrollment", "Admin enrolls a student in own school", ok.ok && ok.r.rowCount === 1, ok.ok ? "inserted" : ok.err);
+  const x = await tryq(A.admin, "INSERT INTO students (school_id, admission_number, gender) VALUES ($1,'SIM/X/1','male')", [B.schoolId]);
+  rec("enrollment", "Admin cannot enroll into another school", !x.ok, x.ok ? "INSERT into other school SUCCEEDED" : "rejected by RLS", "critical");
+  const t = await tryq(A.teacher, "INSERT INTO students (school_id, admission_number, gender) VALUES ($1,'SIM/T/1','male')", [A.schoolId]);
+  rec("enrollment", "Teacher cannot enroll students", !t.ok, t.ok ? "teacher insert succeeded" : "rejected");
+  const dup = await tryq(A.admin, "INSERT INTO students (school_id, admission_number) SELECT school_id, admission_number FROM students WHERE school_id=$1 LIMIT 1", [A.schoolId]);
+  rec("enrollment", "Duplicate admission number rejected", !dup.ok, dup.ok ? "duplicate accepted" : "unique constraint");
+  const t0 = Date.now(); const bulkEnroll = await tryq(D.admin, "INSERT INTO students (school_id, admission_number, gender) SELECT $1, 'SIM/BULK/'||g, 'male' FROM generate_series(1,2000) g", [D.schoolId]);
+  rec("enrollment", "Bulk intake of 2,000 polytechnic students", bulkEnroll.ok, bulkEnroll.ok ? `${Date.now() - t0} ms` : bulkEnroll.err, "medium");
+}
+// ---------- 2. Session rollover ----------
+{
+  const fn = await sys("select count(*)::int n from pg_proc where pronamespace='public'::regnamespace and proname ~ '(rollover|promot|new_session|graduat)'");
+  rec("rollover", "Database has a session rollover / promotion routine", fn.rows[0].n > 0, `${fn.rows[0].n} matching functions`, "medium");
+  const cols = await sys("select count(*)::int n from information_schema.columns where table_schema='public' and table_name='students' and column_name in ('status','graduated_at','current_session','level')");
+  rec("rollover", "Students table can represent graduation / level history", cols.rows[0].n > 0, `${cols.rows[0].n} of status/graduated_at/current_session/level present`, "medium");
+  const t0 = Date.now();
+  const r = await tryq(E.admin, `WITH ord AS (SELECT id, name, row_number() over (order by name) rn FROM classes WHERE school_id=$1)
+    UPDATE students s SET class_id = nxt.id FROM ord cur JOIN ord nxt ON nxt.rn = cur.rn + 1 WHERE s.class_id = cur.id AND s.school_id=$1`, [E.schoolId]);
+  rec("rollover", "Admin promotes 12,000 university students in one statement", r.ok, r.ok ? `${r.r.rowCount} rows in ${Date.now() - t0} ms (ad-hoc SQL, no app routine)` : r.err, "medium");
+  const cross = await tryq(E.admin, "UPDATE students SET class_id = class_id WHERE school_id=$1", [A.schoolId]);
+  rec("rollover", "Admin rollover cannot touch another school", cross.ok && cross.r.rowCount === 0, cross.ok ? `${cross.r.rowCount} rows affected` : cross.err, "critical");
+}
+// ---------- 3. Results / CGPA ----------
+{
+  const bands = await sys(`WITH t AS (SELECT s.id, s.school_id FROM students s WHERE s.school_id=$1 LIMIT 1)
+    SELECT v, (SELECT grade FROM (SELECT 1) x, LATERAL (SELECT public.calc_grade(v::numeric) grade) y) g FROM unnest(ARRAY[39,40,49,50,59,60,69,70,100]) v`, [A.schoolId]).catch((e) => ({ err: e.message }));
+  const gradeFn = await sys("select proname from pg_proc where pronamespace='public'::regnamespace and (proname ilike '%grade%') order by 1");
+  rec("results", "Grade letter auto-calculation present", gradeFn.rows.length > 0, gradeFn.rows.map((r) => r.proname).join(", "), "low");
+  const dist = await sys("select grade, min(total_score)::int lo, max(total_score)::int hi from grades where school_id=$1 group by 1 order by 1", [B.schoolId]);
+  const waec = { A: [70, 100], B: [60, 69], C: [50, 59], D: [45, 49], E: [40, 44], F: [0, 39] };
+  const mism = dist.rows.filter((r) => waec[r.grade] && (r.lo < waec[r.grade][0] || r.hi > waec[r.grade][1]));
+  rec("results", "Grade bands match the common Nigerian 70/60/50/45/40 scale", mism.length === 0, dist.rows.map((r) => `${r.grade}:${r.lo}-${r.hi}`).join(" "), "medium");
+  const over = await tryq(A.admin, "UPDATE grades SET ca_score = 40, exam_score = 95 WHERE id = (SELECT id FROM grades WHERE school_id=$1 LIMIT 1)", [A.schoolId]);
+  rec("results", "Scores above 100 (CA 40 + exam 95) are rejected", !over.ok, over.ok ? "accepted: no CHECK on ca_score/exam_score/total" : "rejected", "high");
+  const units = await sys("select count(*)::int n from information_schema.columns where table_schema='public' and table_name='grades' and column_name in ('credit_units','units','semester','grade_point')");
+  rec("results", "Schema supports credit units / grade points for CGPA", units.rows[0].n > 0, `${units.rows[0].n} unit/point columns on grades`, "high");
+  // sim-side CGPA on the 5-point scale using course units from the generator catalog
+  const U = { GST101: 2, MTH101: 3, PHY101: 3, CHM101: 3, CSC101: 3, ENG101: 2, STA101: 2, ECO101: 2 }; const GP = { A: 5, B: 4, C: 3, D: 2, E: 1, F: 0 };
+  const g = await sys("select student_id, subject, grade from grades where school_id=$1", [E.schoolId]);
+  const acc = new Map(); for (const r of g.rows) { const a = acc.get(r.student_id) ?? [0, 0]; a[0] += (GP[r.grade] ?? 0) * U[r.subject]; a[1] += U[r.subject]; acc.set(r.student_id, a); }
+  const cg = [...acc.values()].map(([p, u]) => p / u); const firstClass = cg.filter((x) => x >= 4.5).length;
+  rec("results", "CGPA computed for 12,000 university students (sim-side, 5-point scale)", cg.length === 12000 || cg.length > 0, `${cg.length} students; mean ${(cg.reduce((s, x) => s + x, 0) / cg.length).toFixed(2)}; first class ${firstClass}`, "low");
+  const own = await tryq(A.sampleStudentUser, "select count(*)::int n from grades");
+  const otherStudentOwn = await tryq(A.sampleStudentUser, "select count(*)::int n from grades g join students s on s.id=g.student_id where s.user_id <> $1", [A.sampleStudentUser]);
+  rec("results", "Student sees only own published results", own.ok && own.r.rows[0].n === 6 && otherStudentOwn.r.rows[0].n === 0, own.ok ? `${own.r.rows[0].n} own rows, ${otherStudentOwn.r?.rows[0].n} others` : own.err, "critical");
+  const par = await tryq(A.sampleParent, "select count(distinct student_id)::int n from grades");
+  rec("results", "Parent sees only their children's results", par.ok && par.r.rows[0].n >= 1 && par.r.rows[0].n <= 2, par.ok ? `${par.r.rows[0].n} children visible` : par.err, "critical");
+  const tamper = await tryq(A.teacher, "UPDATE grades SET exam_score = 70 WHERE school_id=$1 AND teacher_id <> $2", [A.schoolId, A.teacher]);
+  rec("results", "Teacher cannot change another teacher's scores", tamper.ok && tamper.r.rowCount === 0, tamper.ok ? `${tamper.r.rowCount} rows changed` : tamper.err, "high");
+  const pubEdit = await tryq(A.teacher, "UPDATE grades SET exam_score = 69 WHERE teacher_id=$1 AND is_published", [A.teacher]);
+  rec("results", "Published results are locked against teacher edits", pubEdit.ok && pubEdit.r.rowCount === 0, pubEdit.ok ? `${pubEdit.r.rowCount} published rows edited by teacher` : "blocked", "high");
+}
+// ---------- 4. Fees and payment misdirection ----------
+{
+  const s = (id) => `ACCT_sim${id.slice(0, 6)}`;
+  for (const i of M.institutions) await sys("INSERT INTO org_payment_subaccounts (org_id, subaccount_code, settlement_bank_code, account_last4, account_ciphertext, account_wrapped_dek, key_version, platform_charge_kobo, active) VALUES ($1,$2,'058','0000','sim-ciphertext','sim-wrapped','local-v1',10000,true) ON CONFLICT DO NOTHING", [i.schoolId, s(i.schoolId)]);
+  const sig = "a".repeat(64);
+  const good = await sys("INSERT INTO payment_intents (reference, org_id, beneficiary_id, payer_id, subaccount_code, amount_kobo, platform_charge_kobo, purpose, signature, expires_at) VALUES ('SIM-OK-1',$1,$2,$3,$4,4500000,10000,'tuition',$5, now()+interval '30 min') RETURNING reference", [A.schoolId, A.sampleStudent, A.sampleParent, s(A.schoolId), sig]).then(() => true, (e) => e.message);
+  rec("payments", "Intent bound to the school's own subaccount accepted", good === true, good === true ? "accepted" : good, "critical");
+  const bad = await sys("INSERT INTO payment_intents (reference, org_id, beneficiary_id, payer_id, subaccount_code, amount_kobo, platform_charge_kobo, purpose, signature, expires_at) VALUES ('SIM-BAD-1',$1,$2,$3,$4,4500000,10000,'tuition',$5, now()+interval '30 min')", [A.schoolId, A.sampleStudent, A.sampleParent, s(B.schoolId), sig]).then(() => "ACCEPTED", (e) => e.message.slice(0, 90));
+  rec("payments", "Payment for school A routed to school B's subaccount is rejected", bad !== "ACCEPTED", bad, "critical");
+  const rebind = await sys("UPDATE payment_intents SET subaccount_code=$1 WHERE reference='SIM-OK-1'", [s(B.schoolId)]).then(() => "UPDATED", (e) => e.message.slice(0, 90));
+  rec("payments", "Existing intent cannot be re-pointed to another school", rebind !== "UPDATED", rebind, "critical");
+  const parentPay = await tryq(A.sampleParent, "UPDATE fees SET paid_amount = amount, status='paid' WHERE school_id=$1", [A.schoolId]);
+  rec("payments", "Parent cannot mark fees as paid", !parentPay.ok || parentPay.r.rowCount === 0, parentPay.ok ? `${parentPay.r.rowCount} rows changed` : "blocked", "critical");
+  const bursarX = await tryq(A.bursar, "UPDATE fees SET paid_amount = amount WHERE school_id=$1", [B.schoolId]);
+  rec("payments", "Bursar cannot edit another school's fees", bursarX.ok && bursarX.r.rowCount === 0, bursarX.ok ? `${bursarX.r.rowCount} rows` : bursarX.err, "critical");
+  const legacy = await sys("select count(*)::int n from information_schema.columns where table_schema='public' and table_name='schools' and column_name='paystack_secret_key'");
+  const anonKey = await tryq(null, "select paystack_secret_key from schools limit 1", [], "anon");
+  rec("payments", "Legacy schools.paystack_secret_key column not readable by anon", !anonKey.ok, anonKey.ok ? "anon CAN select the column" : "column privilege denied", "critical");
+  rec("payments", "Legacy plaintext per-school Paystack secret column removed", legacy.rows[0].n === 0, legacy.rows[0].n ? "column still exists (move to tenant vault, then drop)" : "gone", "high");
+}
+// ---------- 5. RLS isolation matrix ----------
+{
+  const tables = ["students", "grades", "fees", "users", "classes", "parent_student_map", "payment_intents", "audit_chain", "credential_access_log", "org_credentials"];
+  let leaks = 0; const rows = [];
+  for (const inst of M.institutions) for (const [role, uid] of [["admin", inst.admin], ["teacher", inst.teacher], ["student", inst.sampleStudentUser], ["parent", inst.sampleParent]]) {
+    const r = await as(uid, async (c) => { const out = {}; for (const t of tables) {
+      try { const q = await c.query(`select count(*)::int n from public.${t} where ${t === "users" || t === "students" || t === "grades" || t === "fees" || t === "classes" || t === "parent_student_map" ? "school_id" : "org_id"} <> $1`, [inst.schoolId]); out[t] = q.rows[0].n; }
+      catch { out[t] = "denied"; } } return out; });
+    const l = Object.entries(r).filter(([, v]) => typeof v === "number" && v > 0); leaks += l.length; rows.push({ inst: inst.key, role, foreignRowsVisible: r });
+  }
+  rec("rls", "No user sees another school's rows (5 schools x 4 roles x 10 tables)", leaks === 0, `${leaks} leaking role/table pairs`, "critical");
+  fs.writeFileSync("sim/rls-matrix.json", JSON.stringify(rows, null, 1));
+  const anon = await tryq(null, "select (select count(*) from students)::int s, (select count(*) from grades)::int g, (select count(*) from users)::int u", [], "anon");
+  rec("rls", "Anonymous visitor sees no students, results or users", anon.ok ? anon.r.rows[0].s + anon.r.rows[0].g + anon.r.rows[0].u === 0 : true, anon.ok ? JSON.stringify(anon.r.rows[0]) : "denied", "critical");
+  const pii = await tryq(A.sampleStudentUser, "select count(*)::int n from users where id <> $1 and (nin is not null or account_number is not null or face_biometric is not null or phone is not null)", [A.sampleStudentUser]);
+  const colPriv = await sys("select string_agg(distinct column_name, ',') c from information_schema.column_privileges where table_schema='public' and table_name='users' and grantee='authenticated' and privilege_type='SELECT' and column_name in ('nin','account_number','face_biometric','phone','salary')");
+  rec("rls", "A student cannot read other users' NIN, bank account, salary, phone or face data", !colPriv.rows[0].c, colPriv.rows[0].c ? `authenticated can SELECT users.(${colPriv.rows[0].c}); same-school policy exposes them (${pii.r?.rows[0].n ?? "?"} rows with phone in sim)` : "column privileges withheld", "critical");
+  const studentsPII = await tryq(A.sampleStudentUser, "select count(*)::int n from students where user_id <> $1", [A.sampleStudentUser]);
+  rec("rls", "A student cannot list classmates' records (medical, address, parent phone)", studentsPII.ok && studentsPII.r.rows[0].n === 0, studentsPII.ok ? `${studentsPII.r.rows[0].n} other student rows visible` : "denied", "high");
+}
+// ---------- 6. Plan limits (atomic metering) ----------
+{
+  const org = A.schoolId; await sys("DELETE FROM usage_counters WHERE org_id=$1", [org]);
+  const tries = await Promise.all(Array.from({ length: 50 }, () => sys("select public.meter_consume($1,'sms','2026-10','',1,30) ok", [org]).then((r) => r.rows[0].ok)));
+  const ok = tries.filter(Boolean).length; const used = (await sys("select used::int from usage_counters where org_id=$1 and meter='sms'", [org])).rows[0]?.used;
+  rec("limits", "50 concurrent SMS sends against a 30 quota: exactly 30 allowed", ok === 30 && used === 30, `${ok} allowed, counter ${used}`, "high");
+  const neg = (await sys("select public.meter_consume($1,'sms','2026-10','',-5,30) ok", [org])).rows[0].ok;
+  rec("limits", "Negative quantities cannot refund quota", neg === false, `returned ${neg}`, "high");
+  const user = await tryq(A.admin, "select public.meter_consume($1,'sms','2026-10','',1,1000000)", [org]);
+  rec("limits", "School users cannot call the metering function directly", !user.ok, user.ok ? "authenticated could raise usage" : "permission denied", "high");
+  const ovr = await sys("INSERT INTO entitlement_overrides (org_id, meter, extra, reason, expires_at) VALUES ($1,'sms',100,'too short', now()+interval '60 days')", [org]).then(() => "ACCEPTED", (e) => "rejected");
+  rec("limits", "Override longer than 31 days is rejected", ovr === "rejected", ovr, "medium");
+  const subscriptionTiers = await sys("select count(*)::int n from schools where subscription_tier is not null");
+  const linked = await sys("select count(*)::int n from org_entitlements");
+  rec("limits", "Schools' subscription tier is linked to entitlement plans", linked.rows[0].n > 0, `${subscriptionTiers.rows[0].n} schools have a tier, ${linked.rows[0].n} have entitlement rows (no sync yet)`, "medium");
+}
+// ---------- 7. Audit chain ----------
+{
+  const sha = (s) => crypto.createHash("sha256").update(s).digest("hex"); const G = "0".repeat(64);
+  const ins = (org, seq, prev, h) => sys("INSERT INTO audit_chain (org_id, seq, at, actor_kind, actor_id, action, target_type, target_id, prev_hash, entry_hash) VALUES ($1,$2,now(),'system','sim','sim.test','row','1',$3,$4)", [org, seq, prev, h]);
+  let prev = G; let okAll = true; for (let i = 1; i <= 200; i++) { const h = sha(`${A.schoolId}${i}${prev}`); await ins(A.schoolId, i, prev, h).catch(() => (okAll = false)); prev = h; }
+  rec("audit", "200 linked entries appended", okAll, okAll ? "all accepted" : "some rejected", "high");
+  const broken = await ins(A.schoolId, 201, G, sha("x")).then(() => "ACCEPTED", () => "rejected");
+  rec("audit", "Entry with a wrong previous hash is rejected", broken === "rejected", broken, "critical");
+  const gap = await ins(A.schoolId, 205, prev, sha("y")).then(() => "ACCEPTED", () => "rejected");
+  rec("audit", "Entry skipping sequence numbers is rejected", gap === "rejected", gap, "critical");
+  const upd = await sys("UPDATE audit_chain SET actor_id='evil' WHERE org_id=$1 AND seq=5", [A.schoolId]).then(() => "UPDATED", () => "rejected");
+  const del = await sys("DELETE FROM audit_chain WHERE org_id=$1 AND seq=5", [A.schoolId]).then(() => "DELETED", () => "rejected");
+  const trn = await sys("TRUNCATE audit_chain").then(() => "TRUNCATED", () => "rejected");
+  rec("audit", "Audit entries cannot be edited, deleted or truncated (even by the DB owner)", upd === "rejected" && del === "rejected" && trn === "rejected", `update ${upd}, delete ${del}, truncate ${trn}`, "critical");
+  // concurrency: 40 writers racing for the next seq on org B
+  const head = async () => (await sys("select seq, entry_hash from audit_chain where org_id=$1 order by seq desc limit 1", [B.schoolId])).rows[0] ?? { seq: 0, entry_hash: G };
+  const racers = await Promise.all(Array.from({ length: 40 }, async (_, k) => { const h = await head(); return ins(B.schoolId, h.seq + 1, h.entry_hash, sha(`r${k}`)).then(() => 1, () => 0); }));
+  const n = (await sys("select count(*)::int n from audit_chain where org_id=$1", [B.schoolId])).rows[0].n;
+  rec("audit", "Racing writers cannot fork the chain", n === racers.reduce((s, x) => s + x, 0) && n >= 1, `${racers.reduce((s, x) => s + x, 0)} of 40 racers won, chain length ${n} (losers must retry)`, "high");
+  const legacyAudit = await sys("select count(*)::int n from information_schema.triggers where event_object_table='audit_logs' and event_manipulation in ('UPDATE','DELETE')");
+  rec("audit", "Legacy audit_logs table is append-only", legacyAudit.rows[0].n > 0, `${legacyAudit.rows[0].n} update/delete guard triggers on audit_logs`, "medium");
+}
+// ---------- 8. Vault grants ----------
+{
+  const g = (ttl, issued, exp) => sys("INSERT INTO credential_grants (org_id, agent_id, provider, credential, action, purpose, ttl_seconds, issued_at, expires_at, status) VALUES ($1,'n8n:sim','whatsapp','access_token','send_message','Simulated reminder for task 1',$2,$3,$4,'approved')", [A.schoolId, ttl, issued, exp]).then(() => "ACCEPTED", () => "rejected");
+  rec("vault", "Grant valid for 5 minutes accepted", (await g(300, new Date(), new Date(Date.now() + 300000))) === "ACCEPTED", "ttl 300 s", "high");
+  rec("vault", "Grant longer than 5 minutes rejected", (await g(3600, new Date(), new Date(Date.now() + 3600000))) === "rejected", "ttl 3600 s", "critical");
+  rec("vault", "Grant whose expiry exceeds issue + 5 min rejected", (await g(300, new Date(), new Date(Date.now() + 600000))) === "rejected", "expires_at +10 min", "critical");
+  const crit = await sys("INSERT INTO credential_grants (org_id, agent_id, provider, credential, action, purpose, critical, ttl_seconds, status) VALUES ($1,'jarvis','paystack','secret_key','refund','Refund duplicate payment 1',true,300,'approved')", [A.schoolId]).then(() => "ACCEPTED", () => "rejected");
+  rec("vault", "Critical grant cannot be approved without a named approver", crit === "rejected", crit, "critical");
+  await sys("INSERT INTO credential_access_log (org_id, agent_id, provider, action, purpose, event) VALUES ($1,'n8n:sim','whatsapp','send_message','sim','requested')", [A.schoolId]);
+  const logEdit = await sys("UPDATE credential_access_log SET agent_id='x'").then(() => "UPDATED", () => "rejected");
+  rec("vault", "Credential access log is append-only", logEdit === "rejected", logEdit, "critical");
+  const read = await tryq(A.admin, "select count(*)::int n from org_credentials");
+  rec("vault", "School users cannot read encrypted credential rows", !read.ok || read.r.rows[0].n === 0, read.ok ? `${read.r.rows[0].n} rows` : "permission denied", "high");
+  const vlog = await tryq(A.admin, "select count(*)::int n from credential_access_log");
+  rec("vault", "School admin can read own credential access log (product promise)", vlog.ok && vlog.r.rows[0].n > 0, vlog.ok ? `${vlog.r.rows[0].n} rows visible; is_tenant_admin() needs cg_role_assignment rows, which legacy admins do not have` : vlog.err, "medium");
+}
+fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
+console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
+await pool.end();

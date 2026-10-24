@@ -1,0 +1,322 @@
+[
+ {
+  "inst": "lagos_k12",
+  "role": "admin",
+  "foreignRowsVisible": {
+   "students": 0,
+   "grades": 0,
+   "fees": 0,
+   "users": 0,
+   "classes": 0,
+   "parent_student_map": 0,
+   "payment_intents": 0,
+   "audit_chain": 0,
+   "credential_access_log": 0,
+   "org_credentials": "denied"
+  }
+ },
+ {
+  "inst": "lagos_k12",
+  "role": "teacher",
+  "foreignRowsVisible": {
+   "students": 0,
+   "grades": 0,
+   "fees": 0,
+   "users": 0,
+   "classes": 0,
+   "parent_student_map": 0,
+   "payment_intents": 0,
+   "audit_chain": 0,
+   "credential_access_log": 0,
+   "org_credentials": "denied"
+  }
+ },
+ {
+  "inst": "lagos_k12",
+  "role": "student",
+  "foreignRowsVisible": {
+   "students": 0,
+   "grades": 0,
+   "fees": 0,
+   "users": 0,
+   "classes": 0,
+   "parent_student_map": 0,
+   "payment_intents": 0,
+   "audit_chain": 0,
+   "credential_access_log": 0,
+   "org_credentials": "denied"
+  }
+ },
+ {
+  "inst": "lagos_k12",
+  "role": "parent",
+  "foreignRowsVisible": {
+   "students": 0,
+   "grades": 0,
+   "fees": 0,
+   "users": 0,
+   "classes": 0,
+   "parent_student_map": 0,
+   "payment_intents": 0,
+   "audit_chain": 0,
+   "credential_access_log": 0,
+   "org_credentials": "denied"
+  }
+ },
+ {
+  "inst": "public_secondary",
+  "role": "admin",
+  "foreignRowsVisible": {
+   "students": 0,
+   "grades": 0,
+   "fees": 0,
+   "users": 0,
+   "classes": 0,
+   "parent_student_map": 0,
+   "payment_intents": 0,
+   "audit_chain": 0,
+   "credential_access_log": 0,
+   "org_credentials": "denied"
+  }
+ },
+ {
+  "inst": "public_secondary",
+  "role": "teacher",
+  "foreignRowsVisible": {
+   "students": 0,
+   "grades": 0,
+   "fees": 0,
+   "users": 0,
+   "classes": 0,
+   "parent_student_map": 0,
+   "payment_intents": 0,
+   "audit_chain": 0,
+   "credential_access_log": 0,
+   "org_credentials": "denied"
+  }
+ },
+ {
+  "inst": "public_secondary",
+  "role": "student",
+  "foreignRowsVisible": {
+   "students": 0,
+   "grades": 0,
+   "fees": 0,
+   "users": 0,
+   "classes": 0,
+   "parent_student_map": 0,
+   "payment_intents": 0,
+   "audit_chain": 0,
+   "credential_access_log": 0,
+   "org_credentials": "denied"
+  }
+ },
+ {
+  "inst": "public_secondary",
+  "role": "parent",
+  "foreignRowsVisible": {
+   "students": 0,
+   "grades": 0,
+   "fees": 0,
+   "users": 0,
+   "classes": 0,
+   "parent_student_map": 0,
+   "payment_intents": 0,
+   "audit_chain": 0,
+   "credential_access_log": 0,
+   "org_credentials": "denied"
+  }
+ },
+ {
+  "inst": "faith_boarding",
+  "role": "admin",
+  "foreignRowsVisible": {
+   "students": 0,
+   "grades": 0,
+   "fees": 0,
+   "users": 0,
+   "classes": 0,
+   "parent_student_map": 0,
+   "payment_intents": 0,
+   "audit_chain": 0,
+   "credential_access_log": 0,
+   "org_credentials": "denied"
+  }
+ },
+ {
+  "inst": "faith_boarding",
+  "role": "teacher",
+  "foreignRowsVisible": {
+   "students": 0,
+   "grades": 0,
+   "fees": 0,
+   "users": 0,
+   "classes": 0,
+   "parent_student_map": 0,
+   "payment_intents": 0,
+   "audit_chain": 0,
+   "credential_access_log": 0,
+   "org_credentials": "denied"
+  }
+ },
+ {
+  "inst": "faith_boarding",
+  "role": "student",
+  "foreignRowsVisible": {
+   "students": 0,
+   "grades": 0,
+   "fees": 0,
+   "users": 0,
+   "classes": 0,
+   "parent_student_map": 0,
+   "payment_intents": 0,
+   "audit_chain": 0,
+   "credential_access_log": 0,
+   "org_credentials": "denied"
+  }
+ },
+ {
+  "inst": "faith_boarding",
+  "role": "parent",
+  "foreignRowsVisible": {
+   "students": 0,
+   "grades": 0,
+   "fees": 0,
+   "users": 0,
+   "classes": 0,
+   "parent_student_map": 0,
+   "payment_intents": 0,
+   "audit_chain": 0,
+   "credential_access_log": 0,
+   "org_credentials": "denied"
+  }
+ },
+ {
+  "inst": "polytechnic",
+  "role": "admin",
+  "foreignRowsVisible": {
+   "students": 0,
+   "grades": 0,
+   "fees": 0,
+   "users": 0,
+   "classes": 0,
+   "parent_student_map": 0,
+   "payment_intents": 0,
+   "audit_chain": 0,
+   "credential_access_log": 0,
+   "org_credentials": "denied"
+  }
+ },
+ {
+  "inst": "polytechnic",
+  "role": "teacher",
+  "foreignRowsVisible": {
+   "students": 0,
+   "grades": 0,
+   "fees": 0,
+   "users": 0,
+   "classes": 0,
+   "parent_student_map": 0,
+   "payment_intents": 0,
+   "audit_chain": 0,
+   "credential_access_log": 0,
+   "org_credentials": "denied"
+  }
+ },
+ {
+  "inst": "polytechnic",
+  "role": "student",
+  "foreignRowsVisible": {
+   "students": 0,
+   "grades": 0,
+   "fees": 0,
+   "users": 0,
+   "classes": 0,
+   "parent_student_map": 0,
+   "payment_intents": 0,
+   "audit_chain": 0,
+   "credential_access_log": 0,
+   "org_credentials": "denied"
+  }
+ },
+ {
+  "inst": "polytechnic",
+  "role": "parent",
+  "foreignRowsVisible": {
+   "students": 0,
+   "grades": 0,
+   "fees": 0,
+   "users": 0,
+   "classes": 0,
+   "parent_student_map": 0,
+   "payment_intents": 0,
+   "audit_chain": 0,
+   "credential_access_log": 0,
+   "org_credentials": "denied"
+  }
+ },
+ {
+  "inst": "federal_university",
+  "role": "admin",
+  "foreignRowsVisible": {
+   "students": 0,
+   "grades": 0,
+   "fees": 0,
+   "users": 0,
+   "classes": 0,
+   "parent_student_map": 0,
+   "payment_intents": 0,
+   "audit_chain": 0,
+   "credential_access_log": 0,
+   "org_credentials": "denied"
+  }
+ },
+ {
+  "inst": "federal_university",
+  "role": "teacher",
+  "foreignRowsVisible": {
+   "students": 0,
+   "grades": 0,
+   "fees": 0,
+   "users": 0,
+   "classes": 0,
+   "parent_student_map": 0,
+   "payment_intents": 0,
+   "audit_chain": 0,
+   "credential_access_log": 0,
+   "org_credentials": "denied"
+  }
+ },
+ {
+  "inst": "federal_university",
+  "role": "student",
+  "foreignRowsVisible": {
+   "students": 0,
+   "grades": 0,
+   "fees": 0,
+   "users": 0,
+   "classes": 0,
+   "parent_student_map": 0,
+   "payment_intents": 0,
+   "audit_chain": 0,
+   "credential_access_log": 0,
+   "org_credentials": "denied"
+  }
+ },
+ {
+  "inst": "federal_university",
+  "role": "parent",
+  "foreignRowsVisible": {
+   "students": 0,
+   "grades": 0,
+   "fees": 0,
+   "users": 0,
+   "classes": 0,
+   "parent_student_map": 0,
+   "payment_intents": 0,
+   "audit_chain": 0,
+   "credential_access_log": 0,
+   "org_credentials": "denied"
+  }
+ }
+]

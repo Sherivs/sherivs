@@ -1,0 +1,115 @@
+{
+ "generatedAt": "2026-10-24T10:41:23.965Z",
+ "institutions": [
+  {
+   "key": "lagos_k12",
+   "name": "Sim Lekki Heritage Academy",
+   "schoolId": "5f6ca13c-ed03-4ca1-ad78-088d6aa75a88",
+   "tier": "growth",
+   "kind": "k12",
+   "admin": "28bab473-000e-4b6d-a2cd-5cb06c790d41",
+   "principal": "46826e98-5a8f-4a0d-a51e-95e49a8af3e5",
+   "bursar": "3a9cf609-f717-46e0-a2eb-17b5fda761d3",
+   "teacher": "29ed9868-99af-4d4b-a27b-b2837333b9e2",
+   "sampleStudentUser": "02c9f164-c36c-47bb-a652-795928a6bd7f",
+   "sampleStudent": "28677510-1381-4226-ae96-bb9f0abcadb0",
+   "sampleParent": "a8d3630c-fbc1-4a69-a411-7dfa80f43d61",
+   "counts": {
+    "users": 1851,
+    "students": 1200,
+    "teachers": 48,
+    "classes": 14,
+    "grades": 7200,
+    "fees": 1200
+   }
+  },
+  {
+   "key": "public_secondary",
+   "name": "Sim Government Secondary School Ikeja",
+   "schoolId": "d65b1fc2-d87f-4cda-ab50-eb329462b553",
+   "tier": "starter",
+   "kind": "k12",
+   "admin": "f6ee94cd-a807-47ee-a185-b15b0590738a",
+   "principal": "45470eb0-3bc8-4fd8-ab20-555bed959054",
+   "bursar": "f762beee-42a2-484d-a9d6-7e26920e1f83",
+   "teacher": "1c9364aa-7beb-4585-a4ff-087f0d7f7fa2",
+   "sampleStudentUser": "73539eb3-f238-4bf5-aab0-97a24904b5a4",
+   "sampleStudent": "75d70315-c98d-47f6-a7d6-d7a559ac2a18",
+   "sampleParent": "d03d66da-934f-4672-ae82-42bc57f2ca16",
+   "counts": {
+    "users": 3853,
+    "students": 2500,
+    "teachers": 100,
+    "classes": 6,
+    "grades": 15000,
+    "fees": 2500
+   }
+  },
+  {
+   "key": "faith_boarding",
+   "name": "Sim St. Gregory's Boarding College",
+   "schoolId": "9404eb34-7004-4785-ac7b-d14b518768f3",
+   "tier": "professional",
+   "kind": "k12",
+   "admin": "46788da5-c727-4a0b-a328-12d1f0b198b4",
+   "principal": "612effc7-ca73-4d1e-aed1-5708fe5c100d",
+   "bursar": "3cea55d2-4024-4453-ad22-b7d8b4f4a8c5",
+   "teacher": "93b877ea-6bb5-4f7b-a6e9-888234d6ddc4",
+   "sampleStudentUser": "3d2437d6-2e72-49ce-a708-de1e75c838c2",
+   "sampleStudent": "145ad38d-ded3-4fbe-a770-d555188de5dd",
+   "sampleParent": "93cebd71-b7ca-4d25-ad39-45528ddf76a7",
+   "counts": {
+    "users": 1081,
+    "students": 700,
+    "teachers": 28,
+    "classes": 6,
+    "grades": 4200,
+    "fees": 700
+   }
+  },
+  {
+   "key": "polytechnic",
+   "name": "Sim Federal Polytechnic Ilaro-East",
+   "schoolId": "c7ab9538-026b-4e9d-a9b7-9a9d1a8fe37d",
+   "tier": "professional",
+   "kind": "tertiary",
+   "admin": "e6bd4e5a-3af4-4dc1-a6be-d950f51b98ef",
+   "principal": "e21a731f-837f-4831-a5fa-b912500620db",
+   "bursar": "b0b35ca4-a710-4f97-a41b-7aa50c02edb7",
+   "teacher": "a8341a11-8903-4057-ae51-0e534a7dfaba",
+   "sampleStudentUser": "37685240-43e0-4a25-ae42-fa97bf19539e",
+   "sampleStudent": "49d97e23-d35c-41d5-a594-c4cf67c440ad",
+   "sampleParent": "4d47561c-9c0d-4b29-ad98-53ef37e37889",
+   "counts": {
+    "users": 7703,
+    "students": 5000,
+    "teachers": 200,
+    "classes": 8,
+    "grades": 40000,
+    "fees": 5000
+   }
+  },
+  {
+   "key": "federal_university",
+   "name": "Sim Federal University of the Savannah",
+   "schoolId": "4add662b-be38-4e5d-a49e-c699af20d6de",
+   "tier": "enterprise",
+   "kind": "tertiary",
+   "admin": "77f04e36-b014-4ad7-a24c-e502bc476ec3",
+   "principal": "a65949ea-5d41-42ab-a76f-ff087daea319",
+   "bursar": "9f697367-5a16-4de2-afbf-f7113c56c2b7",
+   "teacher": "50de2c9e-716b-4f39-ad57-6f7e7f58b610",
+   "sampleStudentUser": "89767f9c-1bc1-4ba9-a679-156105956241",
+   "sampleStudent": "d00537f5-0594-4fe5-a997-7a89aac2293a",
+   "sampleParent": "00031f47-cdb5-4dcb-ae15-8d7a78157951",
+   "counts": {
+    "users": 18483,
+    "students": 12000,
+    "teachers": 480,
+    "classes": 12,
+    "grades": 96000,
+    "fees": 12000
+   }
+  }
+ ]
+}
