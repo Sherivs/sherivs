@@ -65,6 +65,8 @@ import { Route as EventsIdRouteImport } from './routes/events.$id'
 import { Route as GovIndexRouteImport } from './routes/gov/index'
 import { Route as GovAboutRouteImport } from './routes/gov/about'
 import { Route as GovAttendanceRouteImport } from './routes/gov/attendance'
+import { Route as GovCircularsRouteImport } from './routes/gov/circulars'
+import { Route as GovInspectionsRouteImport } from './routes/gov/inspections'
 import { Route as GovSchoolsRouteImport } from './routes/gov/schools'
 import { Route as NewsIdRouteImport } from './routes/news.$id'
 import { Route as PlatformOrgRouteImport } from './routes/platform.org'
@@ -101,6 +103,7 @@ import { Route as AuthenticatedAdminFeesRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAdminFeesDefaultersRouteImport } from './routes/_authenticated/admin/fees-defaulters'
 import { Route as AuthenticatedAdminFinancialReportsRouteImport } from './routes/_authenticated/admin/financial-reports'
 import { Route as AuthenticatedAdminGeofenceSettingsRouteImport } from './routes/_authenticated/admin/geofence-settings'
+import { Route as AuthenticatedAdminGovernmentRouteImport } from './routes/_authenticated/admin/government'
 import { Route as AuthenticatedAdminGradesRouteImport } from './routes/_authenticated/admin/grades'
 import { Route as AuthenticatedAdminHealthRouteImport } from './routes/_authenticated/admin/health'
 import { Route as AuthenticatedAdminHealthCertificateRouteImport } from './routes/_authenticated/admin/health-certificate'
@@ -502,6 +505,16 @@ const GovAttendanceRoute = GovAttendanceRouteImport.update({
   path: '/attendance',
   getParentRoute: () => GovRouteRoute,
 } as any)
+const GovCircularsRoute = GovCircularsRouteImport.update({
+  id: '/circulars',
+  path: '/circulars',
+  getParentRoute: () => GovRouteRoute,
+} as any)
+const GovInspectionsRoute = GovInspectionsRouteImport.update({
+  id: '/inspections',
+  path: '/inspections',
+  getParentRoute: () => GovRouteRoute,
+} as any)
 const GovSchoolsRoute = GovSchoolsRouteImport.update({
   id: '/schools',
   path: '/schools',
@@ -707,6 +720,12 @@ const AuthenticatedAdminGeofenceSettingsRoute =
   AuthenticatedAdminGeofenceSettingsRouteImport.update({
     id: '/geofence-settings',
     path: '/geofence-settings',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminGovernmentRoute =
+  AuthenticatedAdminGovernmentRouteImport.update({
+    id: '/government',
+    path: '/government',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminGradesRoute =
@@ -1426,6 +1445,8 @@ export interface FileRoutesByFullPath {
   '/events/$id': typeof EventsIdRoute
   '/gov/about': typeof GovAboutRoute
   '/gov/attendance': typeof GovAttendanceRoute
+  '/gov/circulars': typeof GovCircularsRoute
+  '/gov/inspections': typeof GovInspectionsRoute
   '/gov/schools': typeof GovSchoolsRoute
   '/news/$id': typeof NewsIdRoute
   '/platform/org': typeof PlatformOrgRoute
@@ -1463,6 +1484,7 @@ export interface FileRoutesByFullPath {
   '/admin/fees-defaulters': typeof AuthenticatedAdminFeesDefaultersRoute
   '/admin/financial-reports': typeof AuthenticatedAdminFinancialReportsRoute
   '/admin/geofence-settings': typeof AuthenticatedAdminGeofenceSettingsRoute
+  '/admin/government': typeof AuthenticatedAdminGovernmentRoute
   '/admin/grades': typeof AuthenticatedAdminGradesRoute
   '/admin/health': typeof AuthenticatedAdminHealthRoute
   '/admin/health-certificate': typeof AuthenticatedAdminHealthCertificateRoute
@@ -1628,6 +1650,8 @@ export interface FileRoutesByTo {
   '/events/$id': typeof EventsIdRoute
   '/gov/about': typeof GovAboutRoute
   '/gov/attendance': typeof GovAttendanceRoute
+  '/gov/circulars': typeof GovCircularsRoute
+  '/gov/inspections': typeof GovInspectionsRoute
   '/gov/schools': typeof GovSchoolsRoute
   '/news/$id': typeof NewsIdRoute
   '/platform/org': typeof PlatformOrgRoute
@@ -1665,6 +1689,7 @@ export interface FileRoutesByTo {
   '/admin/fees-defaulters': typeof AuthenticatedAdminFeesDefaultersRoute
   '/admin/financial-reports': typeof AuthenticatedAdminFinancialReportsRoute
   '/admin/geofence-settings': typeof AuthenticatedAdminGeofenceSettingsRoute
+  '/admin/government': typeof AuthenticatedAdminGovernmentRoute
   '/admin/grades': typeof AuthenticatedAdminGradesRoute
   '/admin/health': typeof AuthenticatedAdminHealthRoute
   '/admin/health-certificate': typeof AuthenticatedAdminHealthCertificateRoute
@@ -1835,6 +1860,8 @@ export interface FileRoutesById {
   '/events/$id': typeof EventsIdRoute
   '/gov/about': typeof GovAboutRoute
   '/gov/attendance': typeof GovAttendanceRoute
+  '/gov/circulars': typeof GovCircularsRoute
+  '/gov/inspections': typeof GovInspectionsRoute
   '/gov/schools': typeof GovSchoolsRoute
   '/news/$id': typeof NewsIdRoute
   '/platform/org': typeof PlatformOrgRoute
@@ -1872,6 +1899,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/fees-defaulters': typeof AuthenticatedAdminFeesDefaultersRoute
   '/_authenticated/admin/financial-reports': typeof AuthenticatedAdminFinancialReportsRoute
   '/_authenticated/admin/geofence-settings': typeof AuthenticatedAdminGeofenceSettingsRoute
+  '/_authenticated/admin/government': typeof AuthenticatedAdminGovernmentRoute
   '/_authenticated/admin/grades': typeof AuthenticatedAdminGradesRoute
   '/_authenticated/admin/health': typeof AuthenticatedAdminHealthRoute
   '/_authenticated/admin/health-certificate': typeof AuthenticatedAdminHealthCertificateRoute
@@ -2041,6 +2069,8 @@ export interface FileRouteTypes {
     | '/events/$id'
     | '/gov/about'
     | '/gov/attendance'
+    | '/gov/circulars'
+    | '/gov/inspections'
     | '/gov/schools'
     | '/news/$id'
     | '/platform/org'
@@ -2078,6 +2108,7 @@ export interface FileRouteTypes {
     | '/admin/fees-defaulters'
     | '/admin/financial-reports'
     | '/admin/geofence-settings'
+    | '/admin/government'
     | '/admin/grades'
     | '/admin/health'
     | '/admin/health-certificate'
@@ -2243,6 +2274,8 @@ export interface FileRouteTypes {
     | '/events/$id'
     | '/gov/about'
     | '/gov/attendance'
+    | '/gov/circulars'
+    | '/gov/inspections'
     | '/gov/schools'
     | '/news/$id'
     | '/platform/org'
@@ -2280,6 +2313,7 @@ export interface FileRouteTypes {
     | '/admin/fees-defaulters'
     | '/admin/financial-reports'
     | '/admin/geofence-settings'
+    | '/admin/government'
     | '/admin/grades'
     | '/admin/health'
     | '/admin/health-certificate'
@@ -2449,6 +2483,8 @@ export interface FileRouteTypes {
     | '/events/$id'
     | '/gov/about'
     | '/gov/attendance'
+    | '/gov/circulars'
+    | '/gov/inspections'
     | '/gov/schools'
     | '/news/$id'
     | '/platform/org'
@@ -2486,6 +2522,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/fees-defaulters'
     | '/_authenticated/admin/financial-reports'
     | '/_authenticated/admin/geofence-settings'
+    | '/_authenticated/admin/government'
     | '/_authenticated/admin/grades'
     | '/_authenticated/admin/health'
     | '/_authenticated/admin/health-certificate'
@@ -3026,6 +3063,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GovAttendanceRouteImport
       parentRoute: typeof GovRouteRoute
     }
+    '/gov/circulars': {
+      id: '/gov/circulars'
+      path: '/circulars'
+      fullPath: '/gov/circulars'
+      preLoaderRoute: typeof GovCircularsRouteImport
+      parentRoute: typeof GovRouteRoute
+    }
+    '/gov/inspections': {
+      id: '/gov/inspections'
+      path: '/inspections'
+      fullPath: '/gov/inspections'
+      preLoaderRoute: typeof GovInspectionsRouteImport
+      parentRoute: typeof GovRouteRoute
+    }
     '/gov/schools': {
       id: '/gov/schools'
       path: '/schools'
@@ -3276,6 +3327,13 @@ declare module '@tanstack/react-router' {
       path: '/geofence-settings'
       fullPath: '/admin/geofence-settings'
       preLoaderRoute: typeof AuthenticatedAdminGeofenceSettingsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/government': {
+      id: '/_authenticated/admin/government'
+      path: '/government'
+      fullPath: '/admin/government'
+      preLoaderRoute: typeof AuthenticatedAdminGovernmentRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/grades': {
@@ -4130,6 +4188,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminFeesDefaultersRoute: typeof AuthenticatedAdminFeesDefaultersRoute
   AuthenticatedAdminFinancialReportsRoute: typeof AuthenticatedAdminFinancialReportsRoute
   AuthenticatedAdminGeofenceSettingsRoute: typeof AuthenticatedAdminGeofenceSettingsRoute
+  AuthenticatedAdminGovernmentRoute: typeof AuthenticatedAdminGovernmentRoute
   AuthenticatedAdminGradesRoute: typeof AuthenticatedAdminGradesRoute
   AuthenticatedAdminHealthRoute: typeof AuthenticatedAdminHealthRoute
   AuthenticatedAdminHealthCertificateRoute: typeof AuthenticatedAdminHealthCertificateRoute
@@ -4212,6 +4271,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
       AuthenticatedAdminFinancialReportsRoute,
     AuthenticatedAdminGeofenceSettingsRoute:
       AuthenticatedAdminGeofenceSettingsRoute,
+    AuthenticatedAdminGovernmentRoute: AuthenticatedAdminGovernmentRoute,
     AuthenticatedAdminGradesRoute: AuthenticatedAdminGradesRoute,
     AuthenticatedAdminHealthRoute: AuthenticatedAdminHealthRoute,
     AuthenticatedAdminHealthCertificateRoute:
@@ -4567,6 +4627,8 @@ const AuthenticatedRouteRouteWithChildren =
 interface GovRouteRouteChildren {
   GovAboutRoute: typeof GovAboutRoute
   GovAttendanceRoute: typeof GovAttendanceRoute
+  GovCircularsRoute: typeof GovCircularsRoute
+  GovInspectionsRoute: typeof GovInspectionsRoute
   GovSchoolsRoute: typeof GovSchoolsRoute
   GovIndexRoute: typeof GovIndexRoute
 }
@@ -4574,6 +4636,8 @@ interface GovRouteRouteChildren {
 const GovRouteRouteChildren: GovRouteRouteChildren = {
   GovAboutRoute: GovAboutRoute,
   GovAttendanceRoute: GovAttendanceRoute,
+  GovCircularsRoute: GovCircularsRoute,
+  GovInspectionsRoute: GovInspectionsRoute,
   GovSchoolsRoute: GovSchoolsRoute,
   GovIndexRoute: GovIndexRoute,
 }

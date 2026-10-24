@@ -21,6 +21,8 @@ export const GOV_NAV = [
   { to: "/gov", label: "Overview" },
   { to: "/gov/schools", label: "Schools" },
   { to: "/gov/attendance", label: "Attendance trend" },
+  { to: "/gov/inspections", label: "Inspections" },
+  { to: "/gov/circulars", label: "Circulars" },
   { to: "/gov/about", label: "About this data" },
 ] as const;
 

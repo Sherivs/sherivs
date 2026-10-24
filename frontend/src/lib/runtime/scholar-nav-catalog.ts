@@ -1194,6 +1194,14 @@ export const SCHOLAR_NAV_CONTRIBUTIONS: readonly NavContribution[] = [
         orderHint: 3,
       },
       {
+        key: "r001.org_admin.government",
+        label: "Government",
+        iconKey: "settings",
+        url: "/admin/government",
+        capabilities: ["r001:org_admin.government"],
+        orderHint: 3,
+      },
+      {
         key: "r001.org_admin.ndpa",
         label: "Data protection (NDPA)",
         iconKey: "shield",

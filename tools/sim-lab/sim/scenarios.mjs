@@ -1563,6 +1563,82 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
       && JSON.stringify(v.audit) === JSON.stringify(["jurisdiction_create", "host_set", "invite_create", "invite_accept", "invite_create", "invite_revoke", "invite_create"]) && !v.auditEdit?.ok,
     `audit ${JSON.stringify(v.audit)}`, "high");
 }
+// ---------- 27. Gov console modules: inspections + circulars (SHERIVS-B03) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+    const as = (u, aal = "aal2") => c.query("select set_config('request.jwt.claims', $1, true)", [JSON.stringify({ sub: u, role: "authenticated", aal })]);
+    const INSP = crypto.randomUUID(), INSP2 = crypto.randomUUID(), DIR = crypto.randomUUID(), VIEW = crypto.randomUUID(), OLD = crypto.randomUUID();
+    await asOwner("insert into auth.users (id, email) select x, 'b03-'||left(x::text,8)||'@moe.sim' from unnest($1::uuid[]) x", [[INSP, INSP2, DIR, VIEW, OLD]]);
+    const j = (await asOwner("insert into gov_jurisdictions (name, state) values ('Sim B03 MoE','B03-' || left(gen_random_uuid()::text,6)) returning id")).row?.id;
+    await asOwner(`insert into gov_viewers (user_id, jurisdiction_id, agency_role, expires_at, mfa_required) values
+      ($1,$6,'inspector',now()+interval '1 year',true),($2,$6,'inspector',now()+interval '1 year',true),($3,$6,'director',now()+interval '1 year',true),
+      ($4,$6,'viewer',now()+interval '1 year',true),($5,$6,'director',now()-interval '1 day',true)`, [INSP, INSP2, DIR, VIEW, OLD, j]);
+    await act(A.admin); await t("select public.gov_sharing_set($1,$2,true)", [A.schoolId, j]);
+    const lga = (await asOwner("select lga from school_locations where school_id=$1", [A.schoolId])).row?.lga
+      ?? (await asOwner("insert into school_locations (school_id, state, lga) values ($1,'Borno','Maiduguri') returning lga", [A.schoolId])).row?.lga;
+    // inspections
+    await as(VIEW); out.viewerSched = await t("select public.gov_inspection_schedule($1,$2,current_date+7)", [j, A.schoolId]);
+    await as(OLD); out.expiredSched = await t("select public.gov_inspection_schedule($1,$2,current_date+7)", [j, A.schoolId]);
+    await as(INSP, "aal1"); out.noMfa = await t("select public.gov_inspection_schedule($1,$2,current_date+7)", [j, A.schoolId]);
+    await as(INSP);
+    out.notSharing = await t("select public.gov_inspection_schedule($1,$2,current_date+7)", [j, B.schoolId]);
+    out.badDate = await t("select public.gov_inspection_schedule($1,$2,current_date+800)", [j, A.schoolId]);
+    const ins = (await t("select public.gov_inspection_schedule($1,$2,current_date+7) id", [j, A.schoolId])).row?.id; out.ins = ins;
+    await as(INSP2); out.otherInspRecord = await t("select public.gov_inspection_record($1,'{\"teaching\":4,\"records\":3,\"leadership\":4}'::jsonb,'Lessons observed in JSS1-3; records mostly up to date.')", [ins]);
+    await as(INSP);
+    out.badScore = await t("select public.gov_inspection_record($1,'{\"teaching\":9,\"records\":3,\"leadership\":4}'::jsonb,'Lessons observed in JSS1-3; records mostly up to date.')", [ins]);
+    out.badDomain = await t("select public.gov_inspection_record($1,'{\"vibes\":4,\"records\":3,\"leadership\":4}'::jsonb,'Lessons observed in JSS1-3; records mostly up to date.')", [ins]);
+    out.record = (await t("select public.gov_inspection_record($1,'{\"teaching\":4,\"records\":3,\"leadership\":4,\"safety_welfare\":5}'::jsonb,'Lessons observed in JSS1-3; records mostly up to date.','Update fire drill log', current_date+30) r", [ins])).row?.r;
+    out.recordAgain = await t("select public.gov_inspection_record($1,'{\"teaching\":1,\"records\":1,\"leadership\":1}'::jsonb,'Trying to rewrite a final inspection report.')", [ins]);
+    await as(B.admin); out.bSees = (await t("select public.school_inspections_mine() r")).row?.r;
+    out.bRespond = await t("select public.school_inspection_respond($1,'We object to everything here.')", [ins]);
+    await as(A.teacher); out.teacherSees = await t("select public.school_inspections_mine()");
+    await as(A.admin); out.aSees = (await t("select public.school_inspections_mine() r")).row?.r;
+    out.respond = (await t("select public.school_inspection_respond($1,'Fire drill log updated on Monday.') r", [ins])).row?.r;
+    out.respondAgain = await t("select public.school_inspection_respond($1,'Second response attempt here.')", [ins]);
+    out.directTable = await t("select count(*) from gov_inspections");
+    await as(VIEW); out.viewerList = (await t("select public.gov_inspections_list($1) r", [j])).row?.r;
+    out.picker = (await t("select public.gov_sharing_schools($1) r", [j])).row?.r ?? [];
+    await as(VIEW, "aal1"); out.viewerListNoMfa = await t("select public.gov_inspections_list($1)", [j]);
+    // circulars
+    await as(INSP); out.inspPublish = await t("select public.gov_circular_publish($1,'Resumption date','Schools resume on Monday 12 January for second term.')", [j]);
+    await as(DIR);
+    const c1 = (await t("select public.gov_circular_publish($1,'Second term resumption','All schools resume on Monday 12 January for the second term.',null,true,'MOE/2026/01') id", [j])).row?.id;
+    const c2 = (await t("select public.gov_circular_publish($1,'LGA-only notice','This notice concerns schools in a different local government area.',array['Nowhere LGA']) id", [j])).row?.id;
+    const c3 = (await t("select public.gov_circular_publish($1,'Local notice','This notice concerns schools in this local government area only.',array[$2]) id", [j, lga.toUpperCase()])).row?.id;
+    await as(A.admin);
+    out.aCirc = (await t("select public.school_circulars_mine() r")).row?.r ?? [];
+    out.ack = (await t("select public.school_circular_ack($1) r", [c1])).row?.r;
+    out.ackAgain = (await t("select public.school_circular_ack($1) r", [c1])).row?.r;
+    out.ackOther = await t("select public.school_circular_ack($1)", [c2]);
+    await as(B.admin); out.bCirc = (await t("select public.school_circulars_mine() r")).row?.r ?? [];
+    out.bAck = await t("select public.school_circular_ack($1)", [c1]);
+    await as(DIR); out.list = (await t("select public.gov_circulars_list($1) r", [j])).row?.r;
+    out.withdraw = (await t("select public.gov_circular_withdraw($1) r", [c3])).row?.r;
+    await as(A.admin); out.aCircAfter = (await t("select public.school_circulars_mine() r")).row?.r ?? [];
+    out.audit = (await asOwner("select array_agg(action order by id) a from gov_console_audit where jurisdiction_id=$1", [j])).row?.a;
+    out.auditEdit = await asOwner("delete from gov_console_audit where jurisdiction_id=$1", [j]);
+    Object.assign(out, { c1, c2, c3 });
+  });
+  const ids = (l) => (l ?? []).map((x) => x.id);
+  rec("gov_inspection", "Only active inspectors/directors with MFA schedule inspections, only at schools sharing with the jurisdiction; viewers, expired seats and no-MFA are refused",
+    !v.viewerSched?.ok && !v.expiredSched?.ok && !v.noMfa?.ok && !v.notSharing?.ok && !v.badDate?.ok && !!v.ins, JSON.stringify({ viewer: v.viewerSched?.err, nm: v.noMfa?.err }), "critical");
+  rec("gov_inspection", "Only the assigned inspector records findings (fixed domains, scores 1-5, once); the report is then final",
+    !v.otherInspRecord?.ok && !v.badScore?.ok && !v.badDomain?.ok && v.record === true && !v.recordAgain?.ok, JSON.stringify({ other: v.otherInspRecord?.err }), "critical");
+  rec("gov_inspection", "School A's admin sees and answers its own report once; school B and teachers see nothing; tables are RPC-only; viewers read only with MFA",
+    v.aSees?.length === 1 && v.aSees[0].status === "completed" && v.respond === true && !v.respondAgain?.ok && Array.isArray(v.bSees) && v.bSees.length === 0 && !v.bRespond?.ok
+      && !v.teacherSees?.ok && !v.directTable?.ok && v.picker.length === 1 && v.picker[0].id === A.schoolId && v.viewerList?.[0]?.school_response?.startsWith("Fire") && !v.viewerListNoMfa?.ok,
+    JSON.stringify({ a: v.aSees?.length, b: v.bSees?.length }), "critical");
+  rec("gov_circular", "Directors publish circulars (inspectors cannot); schools see only circulars addressed to them (sharing + LGA match, case-insensitive) and acknowledge once",
+    !v.inspPublish?.ok && ids(v.aCirc).includes(v.c1) && ids(v.aCirc).includes(v.c3) && !ids(v.aCirc).includes(v.c2) && v.ack === true && v.ackAgain === false && !v.ackOther?.ok
+      && v.bCirc.length === 0 && !v.bAck?.ok,
+    JSON.stringify({ a: v.aCirc.length, b: v.bCirc.length }), "critical");
+  rec("gov_circular", "Gov sees recipients and acknowledgement counts; withdrawn circulars disappear for schools; every action is in the append-only audit",
+    v.list?.find((x) => x.id === v.c1)?.acked === 1 && v.list?.find((x) => x.id === v.c1)?.recipients >= 1 && v.list?.find((x) => x.id === v.c2)?.recipients === 0
+      && v.withdraw === true && !ids(v.aCircAfter).includes(v.c3)
+      && JSON.stringify(v.audit) === JSON.stringify(["inspection_schedule", "inspection_record", "inspection_school_response", "circular_publish", "circular_publish", "circular_publish", "circular_ack", "circular_withdraw"]) && !v.auditEdit?.ok,
+    `audit ${JSON.stringify(v.audit)}`, "high");
+}
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
 await pool.end();
