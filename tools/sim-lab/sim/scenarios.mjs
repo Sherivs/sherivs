@@ -1201,6 +1201,86 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
     `stranger ${v.unauth?.error}; again ${v.again?.error}; revoked ${v.revoked?.error}`, "critical");
   rec("audit", "Lesson, HR, payroll, inventory, asset and visitor changes are audited", v.audit >= 10, `${v.audit} audit rows`, "high");
 }
+// ---------- 20. USSD/IVR stubs, alumni + donations, government dashboards, i18n (SHERIVS-025) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+    const svc = async (sql, p = []) => { await c.query("SET LOCAL ROLE service_role"); await c.query("select set_config('request.jwt.claims', '{\"role\":\"service_role\"}', true)");
+      try { return await t(sql, p); } finally { await c.query("SET LOCAL ROLE authenticated"); } };
+    const anon = async (sql, p = []) => { await c.query("SET LOCAL ROLE anon"); await c.query("select set_config('request.jwt.claims', '{\"role\":\"anon\"}', true)");
+      try { return await t(sql, p); } finally { await c.query("SET LOCAL ROLE authenticated"); } };
+    const kid = (await asOwner("select s.id, s.parent_id from students s where s.school_id=$1 and s.parent_id is not null order by s.admission_number limit 1", [A.schoolId])).row;
+    await asOwner("update users set phone='08035550101' where id=$1", [kid.parent_id]);
+    await asOwner("update users set phone=null where phone in ('2348035550101','+2348035550101') and id<>$1", [kid.parent_id]);
+    await asOwner("delete from fees where student_id=$1", [kid.id]);
+    await asOwner("insert into fees (school_id, student_id, fee_type, amount, paid_amount, status, term, academic_year) values ($1,$2,'tuition',150000,50000,'partial','First Term','2025/2026')", [A.schoolId, kid.id]);
+    const ss = "sim-ussd-" + crypto.randomUUID().slice(0, 8);
+    out.uUser = await t("select public.ussd_handle($1,'+2348035550101','')", [ss]);
+    out.u0 = (await svc("select public.ussd_handle($1,'+2348035550101','') r", [ss])).row?.r;
+    out.u1 = (await svc("select public.ussd_handle($1,'+2348035550101','1') r", [ss])).row?.r;
+    out.u2 = (await svc("select public.ussd_handle($1,'+2348035550101','1*1') r", [ss])).row?.r;
+    out.u3 = (await svc("select public.ussd_handle($1,'+2348035550101','2*1') r", [ss])).row?.r;
+    out.uStranger = (await svc("select public.ussd_handle($1,'08000000000','1*1') r", [ss + "x"])).row?.r;
+    out.uBad = (await svc("select public.ussd_handle($1,'+2348035550101','1*9') r", [ss])).row?.r;
+    // IVR
+    await act(A.admin);
+    await asOwner("delete from attendance where student_id=$1 and date=current_date", [kid.id]);
+    await asOwner("insert into attendance (school_id, student_id, class_id, date, status) values ($1,$2,(select class_id from students where id=$2),current_date,'absent')", [A.schoolId, kid.id]);
+    out.ivr = (await t("select public.ivr_queue_absence_calls($1,current_date,'ha') r", [A.schoolId])).row?.r;
+    out.ivr2 = (await t("select public.ivr_queue_absence_calls($1,current_date,'ha') r", [A.schoolId])).row?.r;
+    out.ivrRow = (await asOwner("select status, provider, script from ivr_calls where student_id=$1", [kid.id])).row;
+    await act(A.teacher); out.teacherIvr = await t("select public.ivr_queue_absence_calls($1)", [A.schoolId]);
+    // alumni + donations
+    await act(A.admin);
+    const al = (await t("select public.alumni_register($1,'Ada Obi',2015,'ada@sim.local','08030001111',true) id", [A.schoolId])).row?.id;
+    const camp = (await t("select public.donation_campaign_create($1,'New science lab',5000000) id", [A.schoolId])).row?.id;
+    await act(A.teacher); out.teacherCamp = await t("select public.donation_campaign_create($1,'x',1)", [A.schoolId]);
+    out.userOnline = await t("select public.donation_confirm_online($1,100000,'PSK_DON_1')", [camp]);
+    out.d1 = (await svc("select public.donation_confirm_online($1,250000,'PSK_DON_1','Ada Obi',$2) r", [camp, al])).row?.r;
+    out.d1r = (await svc("select public.donation_confirm_online($1,250000,'PSK_DON_1','Ada Obi',$2) r", [camp, al])).row?.r;
+    await svc("select public.donation_confirm_online($1,50000,'PSK_DON_2',null,null,true)", [camp]);
+    await act(A.bursar); out.off = await t("select public.donation_record_offline($1,100000,'transfer','TRF-1','PTA')", [camp]);
+    out.offOnline = await t("select public.donation_record_offline($1,1,'paystack','x')", [camp]);
+    out.prog = (await anon("select public.donation_campaign_progress($1) p", [camp])).row?.p;
+    out.editDon = await asOwner("update donations set amount = 1 where campaign_id=$1", [camp]);
+    // government dashboard
+    const SA = crypto.randomUUID();
+    await asOwner("insert into auth.users (id) values ($1) on conflict do nothing", [SA]);
+    await asOwner("insert into super_admins (id, full_name, email, is_active) values ($1,'Sim SA4','sa4@sim.local',true)", [SA]);
+    const j = (await asOwner("insert into gov_jurisdictions (name, state, lga) values ('Sim Lagos SUBEB','Lagos','Eti-Osa') returning id")).row?.id;
+    const off = (await asOwner("select id from users where school_id=$1 and role='teacher' limit 1", [B.schoolId])).row?.id;   // stands in for a ministry officer account
+    await act(A.admin); out.adminGrant = await t("select public.gov_viewer_grant($1,$2)", [off, j]);
+    await act(SA); out.grant = await t("select public.gov_viewer_grant($1,$2)", [off, j]);
+    await act(off); out.before = (await t("select public.gov_dashboard($1) r", [j])).row?.r;
+    await act(B.admin); out.bShareA = await t("select public.gov_sharing_set($1,$2,true)", [A.schoolId, j]);
+    await act(A.admin); out.share = await t("select public.gov_sharing_set($1,$2,true)", [A.schoolId, j]);
+    await act(off); out.after = (await t("select public.gov_dashboard($1) r", [j])).row?.r;
+    out.offRaw = (await t("select count(*)::int n from students where school_id=$1", [A.schoolId])).row?.n;
+    await act(A.teacher); out.teacherDash = await t("select public.gov_dashboard($1)", [j]);
+    await act(A.admin); await t("select public.gov_sharing_set($1,$2,false)", [A.schoolId, j]);
+    await act(off); out.withdrawn = (await t("select public.gov_dashboard($1) r", [j])).row?.r;
+    // i18n
+    out.ha = (await anon("select public.ui_strings('ha') s")).row?.s;
+    out.fr = (await anon("select public.ui_strings('fr') s")).row?.s;
+    await act(A.teacher); out.loc = await t("select public.set_my_locale('yo')"); out.locBad = await t("select public.set_my_locale('fr')");
+    out.locRow = (await t("select locale from user_locales where user_id=$1", [A.teacher])).row?.locale;
+    out.audit = (await asOwner("select count(*)::int n from audit_logs where school_id=$1 and action ~ '^scholar\\.(ivr|alumni|donation|gov_data)'", [A.schoolId])).row?.n;
+  });
+  rec("ussd", "USSD menu via provider webhook only: menu → child → fee balance (₦100,000) and attendance; unknown numbers and bad choices end politely",
+    !v.uUser?.ok && /^CON/.test(v.u0 ?? "") && /^CON Choose child/.test(v.u1 ?? "") && /100,000/.test(v.u2 ?? "") && /^END Present/.test(v.u3 ?? "")
+      && /not registered/.test(v.uStranger ?? "") && /Invalid/.test(v.uBad ?? ""), `${v.u2} | ${v.u3}`, "high");
+  rec("ivr", "IVR absence calls queue once per child per day in the chosen language; stubbed while voice_live is off; staff only",
+    v.ivr?.queued >= 1 && v.ivr2?.queued === 0 && v.ivrRow?.status === "sent_stub" && v.ivrRow?.provider === "stub" && /makaranta/.test(v.ivrRow?.script ?? "") && !v.teacherIvr?.ok,
+    `queued ${v.ivr?.queued}; replay ${v.ivr2?.queued}; ${v.ivrRow?.script}`, "high");
+  rec("donations", "Online gifts only via the payment webhook (idempotent); bursar records transfers; progress hides anonymous donors; ledger append-only",
+    !v.userOnline?.ok && v.d1?.ok && v.d1r?.replay && v.off?.ok && !v.offOnline?.ok && Number(v.prog?.raised) === 400000 && (v.prog?.recent ?? []).some((x) => x.nm === "Anonymous") && !v.editDon?.ok && !v.teacherCamp?.ok,
+    `raised ${v.prog?.raised} of ${v.prog?.goal}; user ${W_ERR(v.userOnline)}`, "critical");
+  rec("gov", "Government dashboard: Sherivs staff grant viewers; only schools that opt in appear; aggregates only (no row access); withdrawal removes the school",
+    !v.adminGrant?.ok && v.grant?.ok && Number(v.before?.schools) === 0 && !v.bShareA?.ok && v.share?.ok && Number(v.after?.schools) === 1 && Number(v.after?.enrolled) > 0 && v.offRaw === 0
+      && !v.teacherDash?.ok && Number(v.withdrawn?.schools) === 0, `after ${JSON.stringify({ s: v.after?.schools, e: v.after?.enrolled, att: v.after?.attendance_pct_30d })}; raw rows ${v.offRaw}`, "critical");
+  rec("i18n", "UI strings in Hausa, Yoruba, Igbo, Pidgin with English fallback; locale preference validated",
+    v.ha?.["nav.fees"] === "Kuɗin makaranta" && v.fr?.["nav.fees"] === "Fees" && v.loc?.ok && !v.locBad?.ok && v.locRow === "yo", `${v.ha?.["nav.fees"]} / ${v.fr?.["nav.fees"]}`, "medium");
+  rec("audit", "IVR, alumni, donation and data-sharing changes are audited", v.audit >= 4, `${v.audit} audit rows`, "high");
+}
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
 await pool.end();
