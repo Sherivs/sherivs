@@ -35,6 +35,7 @@ import { Route as siteCoregridRouteImport } from './routes/(site)/coregrid'
 import { Route as sitePrivacyPolicyRouteImport } from './routes/(site)/privacy-policy'
 import { Route as siteRequestDemoRouteImport } from './routes/(site)/request-demo'
 import { Route as siteSherivsRouteImport } from './routes/(site)/sherivs'
+import { Route as siteSiwesVerifyRouteImport } from './routes/(site)/siwes-verify'
 import { Route as siteStatusRouteImport } from './routes/(site)/status'
 import { Route as siteTermsRouteImport } from './routes/(site)/terms'
 import { Route as siteVerifyTranscriptRouteImport } from './routes/(site)/verify-transcript'
@@ -79,6 +80,7 @@ import { Route as AuthenticatedAdminCmsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAdminDashboardRouteImport } from './routes/_authenticated/admin/dashboard'
 import { Route as AuthenticatedAdminDigitalTwinRouteImport } from './routes/_authenticated/admin/digital-twin'
 import { Route as AuthenticatedAdminDisciplineRouteImport } from './routes/_authenticated/admin/discipline'
+import { Route as AuthenticatedAdminEarlyWarningRouteImport } from './routes/_authenticated/admin/early-warning'
 import { Route as AuthenticatedAdminEducationRealityRouteImport } from './routes/_authenticated/admin/education-reality'
 import { Route as AuthenticatedAdminEnterpriseChecklistRouteImport } from './routes/_authenticated/admin/enterprise-checklist'
 import { Route as AuthenticatedAdminExaminationsRouteImport } from './routes/_authenticated/admin/examinations'
@@ -156,6 +158,7 @@ import { Route as AuthenticatedStudentAiTutorRouteImport } from './routes/_authe
 import { Route as AuthenticatedStudentAttendanceRouteImport } from './routes/_authenticated/student/attendance'
 import { Route as AuthenticatedStudentCalendarRouteImport } from './routes/_authenticated/student/calendar'
 import { Route as AuthenticatedStudentCbtRouteImport } from './routes/_authenticated/student/cbt'
+import { Route as AuthenticatedStudentCourseRegistrationRouteImport } from './routes/_authenticated/student/course-registration'
 import { Route as AuthenticatedStudentDashboardRouteImport } from './routes/_authenticated/student/dashboard'
 import { Route as AuthenticatedStudentFeesRouteImport } from './routes/_authenticated/student/fees'
 import { Route as AuthenticatedStudentGradesRouteImport } from './routes/_authenticated/student/grades'
@@ -323,6 +326,11 @@ const siteRequestDemoRoute = siteRequestDemoRouteImport.update({
 const siteSherivsRoute = siteSherivsRouteImport.update({
   id: '/sherivs',
   path: '/sherivs',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteSiwesVerifyRoute = siteSiwesVerifyRouteImport.update({
+  id: '/siwes-verify',
+  path: '/siwes-verify',
   getParentRoute: () => siteRouteRoute,
 } as any)
 const siteStatusRoute = siteStatusRouteImport.update({
@@ -567,6 +575,12 @@ const AuthenticatedAdminDisciplineRoute =
   AuthenticatedAdminDisciplineRouteImport.update({
     id: '/discipline',
     path: '/discipline',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminEarlyWarningRoute =
+  AuthenticatedAdminEarlyWarningRouteImport.update({
+    id: '/early-warning',
+    path: '/early-warning',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminEducationRealityRoute =
@@ -1020,6 +1034,12 @@ const AuthenticatedStudentCbtRoute = AuthenticatedStudentCbtRouteImport.update({
   path: '/cbt',
   getParentRoute: () => AuthenticatedStudentRouteRoute,
 } as any)
+const AuthenticatedStudentCourseRegistrationRoute =
+  AuthenticatedStudentCourseRegistrationRouteImport.update({
+    id: '/course-registration',
+    path: '/course-registration',
+    getParentRoute: () => AuthenticatedStudentRouteRoute,
+  } as any)
 const AuthenticatedStudentDashboardRoute =
   AuthenticatedStudentDashboardRouteImport.update({
     id: '/dashboard',
@@ -1295,6 +1315,7 @@ export interface FileRoutesByFullPath {
   '/privacy-policy': typeof sitePrivacyPolicyRoute
   '/request-demo': typeof siteRequestDemoRoute
   '/sherivs': typeof siteSherivsRoute
+  '/siwes-verify': typeof siteSiwesVerifyRoute
   '/status': typeof siteStatusRoute
   '/terms': typeof siteTermsRoute
   '/verify-transcript': typeof siteVerifyTranscriptRoute
@@ -1330,6 +1351,7 @@ export interface FileRoutesByFullPath {
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/admin/digital-twin': typeof AuthenticatedAdminDigitalTwinRoute
   '/admin/discipline': typeof AuthenticatedAdminDisciplineRoute
+  '/admin/early-warning': typeof AuthenticatedAdminEarlyWarningRoute
   '/admin/education-reality': typeof AuthenticatedAdminEducationRealityRoute
   '/admin/enterprise-checklist': typeof AuthenticatedAdminEnterpriseChecklistRoute
   '/admin/examinations': typeof AuthenticatedAdminExaminationsRoute
@@ -1406,6 +1428,7 @@ export interface FileRoutesByFullPath {
   '/student/attendance': typeof AuthenticatedStudentAttendanceRoute
   '/student/calendar': typeof AuthenticatedStudentCalendarRoute
   '/student/cbt': typeof AuthenticatedStudentCbtRoute
+  '/student/course-registration': typeof AuthenticatedStudentCourseRegistrationRoute
   '/student/dashboard': typeof AuthenticatedStudentDashboardRoute
   '/student/fees': typeof AuthenticatedStudentFeesRoute
   '/student/grades': typeof AuthenticatedStudentGradesRoute
@@ -1481,6 +1504,7 @@ export interface FileRoutesByTo {
   '/privacy-policy': typeof sitePrivacyPolicyRoute
   '/request-demo': typeof siteRequestDemoRoute
   '/sherivs': typeof siteSherivsRoute
+  '/siwes-verify': typeof siteSiwesVerifyRoute
   '/status': typeof siteStatusRoute
   '/terms': typeof siteTermsRoute
   '/verify-transcript': typeof siteVerifyTranscriptRoute
@@ -1516,6 +1540,7 @@ export interface FileRoutesByTo {
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/admin/digital-twin': typeof AuthenticatedAdminDigitalTwinRoute
   '/admin/discipline': typeof AuthenticatedAdminDisciplineRoute
+  '/admin/early-warning': typeof AuthenticatedAdminEarlyWarningRoute
   '/admin/education-reality': typeof AuthenticatedAdminEducationRealityRoute
   '/admin/enterprise-checklist': typeof AuthenticatedAdminEnterpriseChecklistRoute
   '/admin/examinations': typeof AuthenticatedAdminExaminationsRoute
@@ -1592,6 +1617,7 @@ export interface FileRoutesByTo {
   '/student/attendance': typeof AuthenticatedStudentAttendanceRoute
   '/student/calendar': typeof AuthenticatedStudentCalendarRoute
   '/student/cbt': typeof AuthenticatedStudentCbtRoute
+  '/student/course-registration': typeof AuthenticatedStudentCourseRegistrationRoute
   '/student/dashboard': typeof AuthenticatedStudentDashboardRoute
   '/student/fees': typeof AuthenticatedStudentFeesRoute
   '/student/grades': typeof AuthenticatedStudentGradesRoute
@@ -1671,6 +1697,7 @@ export interface FileRoutesById {
   '/(site)/privacy-policy': typeof sitePrivacyPolicyRoute
   '/(site)/request-demo': typeof siteRequestDemoRoute
   '/(site)/sherivs': typeof siteSherivsRoute
+  '/(site)/siwes-verify': typeof siteSiwesVerifyRoute
   '/(site)/status': typeof siteStatusRoute
   '/(site)/terms': typeof siteTermsRoute
   '/(site)/verify-transcript': typeof siteVerifyTranscriptRoute
@@ -1706,6 +1733,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/_authenticated/admin/digital-twin': typeof AuthenticatedAdminDigitalTwinRoute
   '/_authenticated/admin/discipline': typeof AuthenticatedAdminDisciplineRoute
+  '/_authenticated/admin/early-warning': typeof AuthenticatedAdminEarlyWarningRoute
   '/_authenticated/admin/education-reality': typeof AuthenticatedAdminEducationRealityRoute
   '/_authenticated/admin/enterprise-checklist': typeof AuthenticatedAdminEnterpriseChecklistRoute
   '/_authenticated/admin/examinations': typeof AuthenticatedAdminExaminationsRoute
@@ -1782,6 +1810,7 @@ export interface FileRoutesById {
   '/_authenticated/student/attendance': typeof AuthenticatedStudentAttendanceRoute
   '/_authenticated/student/calendar': typeof AuthenticatedStudentCalendarRoute
   '/_authenticated/student/cbt': typeof AuthenticatedStudentCbtRoute
+  '/_authenticated/student/course-registration': typeof AuthenticatedStudentCourseRegistrationRoute
   '/_authenticated/student/dashboard': typeof AuthenticatedStudentDashboardRoute
   '/_authenticated/student/fees': typeof AuthenticatedStudentFeesRoute
   '/_authenticated/student/grades': typeof AuthenticatedStudentGradesRoute
@@ -1860,6 +1889,7 @@ export interface FileRouteTypes {
     | '/privacy-policy'
     | '/request-demo'
     | '/sherivs'
+    | '/siwes-verify'
     | '/status'
     | '/terms'
     | '/verify-transcript'
@@ -1895,6 +1925,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/digital-twin'
     | '/admin/discipline'
+    | '/admin/early-warning'
     | '/admin/education-reality'
     | '/admin/enterprise-checklist'
     | '/admin/examinations'
@@ -1971,6 +2002,7 @@ export interface FileRouteTypes {
     | '/student/attendance'
     | '/student/calendar'
     | '/student/cbt'
+    | '/student/course-registration'
     | '/student/dashboard'
     | '/student/fees'
     | '/student/grades'
@@ -2046,6 +2078,7 @@ export interface FileRouteTypes {
     | '/privacy-policy'
     | '/request-demo'
     | '/sherivs'
+    | '/siwes-verify'
     | '/status'
     | '/terms'
     | '/verify-transcript'
@@ -2081,6 +2114,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/digital-twin'
     | '/admin/discipline'
+    | '/admin/early-warning'
     | '/admin/education-reality'
     | '/admin/enterprise-checklist'
     | '/admin/examinations'
@@ -2157,6 +2191,7 @@ export interface FileRouteTypes {
     | '/student/attendance'
     | '/student/calendar'
     | '/student/cbt'
+    | '/student/course-registration'
     | '/student/dashboard'
     | '/student/fees'
     | '/student/grades'
@@ -2235,6 +2270,7 @@ export interface FileRouteTypes {
     | '/(site)/privacy-policy'
     | '/(site)/request-demo'
     | '/(site)/sherivs'
+    | '/(site)/siwes-verify'
     | '/(site)/status'
     | '/(site)/terms'
     | '/(site)/verify-transcript'
@@ -2270,6 +2306,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/dashboard'
     | '/_authenticated/admin/digital-twin'
     | '/_authenticated/admin/discipline'
+    | '/_authenticated/admin/early-warning'
     | '/_authenticated/admin/education-reality'
     | '/_authenticated/admin/enterprise-checklist'
     | '/_authenticated/admin/examinations'
@@ -2346,6 +2383,7 @@ export interface FileRouteTypes {
     | '/_authenticated/student/attendance'
     | '/_authenticated/student/calendar'
     | '/_authenticated/student/cbt'
+    | '/_authenticated/student/course-registration'
     | '/_authenticated/student/dashboard'
     | '/_authenticated/student/fees'
     | '/_authenticated/student/grades'
@@ -2599,6 +2637,13 @@ declare module '@tanstack/react-router' {
       path: '/sherivs'
       fullPath: '/sherivs'
       preLoaderRoute: typeof siteSherivsRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/siwes-verify': {
+      id: '/(site)/siwes-verify'
+      path: '/siwes-verify'
+      fullPath: '/siwes-verify'
+      preLoaderRoute: typeof siteSiwesVerifyRouteImport
       parentRoute: typeof siteRouteRoute
     }
     '/(site)/status': {
@@ -2907,6 +2952,13 @@ declare module '@tanstack/react-router' {
       path: '/discipline'
       fullPath: '/admin/discipline'
       preLoaderRoute: typeof AuthenticatedAdminDisciplineRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/early-warning': {
+      id: '/_authenticated/admin/early-warning'
+      path: '/early-warning'
+      fullPath: '/admin/early-warning'
+      preLoaderRoute: typeof AuthenticatedAdminEarlyWarningRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/education-reality': {
@@ -3448,6 +3500,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudentCbtRouteImport
       parentRoute: typeof AuthenticatedStudentRouteRoute
     }
+    '/_authenticated/student/course-registration': {
+      id: '/_authenticated/student/course-registration'
+      path: '/course-registration'
+      fullPath: '/student/course-registration'
+      preLoaderRoute: typeof AuthenticatedStudentCourseRegistrationRouteImport
+      parentRoute: typeof AuthenticatedStudentRouteRoute
+    }
     '/_authenticated/student/dashboard': {
       id: '/_authenticated/student/dashboard'
       path: '/dashboard'
@@ -3739,6 +3798,7 @@ interface siteRouteRouteChildren {
   sitePrivacyPolicyRoute: typeof sitePrivacyPolicyRoute
   siteRequestDemoRoute: typeof siteRequestDemoRoute
   siteSherivsRoute: typeof siteSherivsRoute
+  siteSiwesVerifyRoute: typeof siteSiwesVerifyRoute
   siteStatusRoute: typeof siteStatusRoute
   siteTermsRoute: typeof siteTermsRoute
   siteVerifyTranscriptRoute: typeof siteVerifyTranscriptRoute
@@ -3752,6 +3812,7 @@ const siteRouteRouteChildren: siteRouteRouteChildren = {
   sitePrivacyPolicyRoute: sitePrivacyPolicyRoute,
   siteRequestDemoRoute: siteRequestDemoRoute,
   siteSherivsRoute: siteSherivsRoute,
+  siteSiwesVerifyRoute: siteSiwesVerifyRoute,
   siteStatusRoute: siteStatusRoute,
   siteTermsRoute: siteTermsRoute,
   siteVerifyTranscriptRoute: siteVerifyTranscriptRoute,
@@ -3780,6 +3841,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminDashboardRoute: typeof AuthenticatedAdminDashboardRoute
   AuthenticatedAdminDigitalTwinRoute: typeof AuthenticatedAdminDigitalTwinRoute
   AuthenticatedAdminDisciplineRoute: typeof AuthenticatedAdminDisciplineRoute
+  AuthenticatedAdminEarlyWarningRoute: typeof AuthenticatedAdminEarlyWarningRoute
   AuthenticatedAdminEducationRealityRoute: typeof AuthenticatedAdminEducationRealityRoute
   AuthenticatedAdminEnterpriseChecklistRoute: typeof AuthenticatedAdminEnterpriseChecklistRoute
   AuthenticatedAdminExaminationsRoute: typeof AuthenticatedAdminExaminationsRoute
@@ -3852,6 +3914,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminDashboardRoute: AuthenticatedAdminDashboardRoute,
     AuthenticatedAdminDigitalTwinRoute: AuthenticatedAdminDigitalTwinRoute,
     AuthenticatedAdminDisciplineRoute: AuthenticatedAdminDisciplineRoute,
+    AuthenticatedAdminEarlyWarningRoute: AuthenticatedAdminEarlyWarningRoute,
     AuthenticatedAdminEducationRealityRoute:
       AuthenticatedAdminEducationRealityRoute,
     AuthenticatedAdminEnterpriseChecklistRoute:
@@ -4033,6 +4096,7 @@ interface AuthenticatedStudentRouteRouteChildren {
   AuthenticatedStudentAttendanceRoute: typeof AuthenticatedStudentAttendanceRoute
   AuthenticatedStudentCalendarRoute: typeof AuthenticatedStudentCalendarRoute
   AuthenticatedStudentCbtRoute: typeof AuthenticatedStudentCbtRoute
+  AuthenticatedStudentCourseRegistrationRoute: typeof AuthenticatedStudentCourseRegistrationRoute
   AuthenticatedStudentDashboardRoute: typeof AuthenticatedStudentDashboardRoute
   AuthenticatedStudentFeesRoute: typeof AuthenticatedStudentFeesRoute
   AuthenticatedStudentGradesRoute: typeof AuthenticatedStudentGradesRoute
@@ -4047,6 +4111,8 @@ const AuthenticatedStudentRouteRouteChildren: AuthenticatedStudentRouteRouteChil
     AuthenticatedStudentAttendanceRoute: AuthenticatedStudentAttendanceRoute,
     AuthenticatedStudentCalendarRoute: AuthenticatedStudentCalendarRoute,
     AuthenticatedStudentCbtRoute: AuthenticatedStudentCbtRoute,
+    AuthenticatedStudentCourseRegistrationRoute:
+      AuthenticatedStudentCourseRegistrationRoute,
     AuthenticatedStudentDashboardRoute: AuthenticatedStudentDashboardRoute,
     AuthenticatedStudentFeesRoute: AuthenticatedStudentFeesRoute,
     AuthenticatedStudentGradesRoute: AuthenticatedStudentGradesRoute,

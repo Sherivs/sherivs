@@ -991,6 +991,101 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
     `applied ${v.sync?.applied}; conflicts ${why(v.sync)}`, "critical");
   rec("audit", "Exam, malpractice, CBT, check-in and offline changes are audited", v.audit >= 10, `${v.audit} audit rows`, "high");
 }
+// ---------- 18. Course registration, SIWES, early warning (SHERIVS-023) ----------
+{
+  const v = await wave(E.admin, async ({ t, act, asOwner, c, out }) => {
+    const anon = async (sql, p = []) => { await c.query("SET LOCAL ROLE anon"); await c.query("select set_config('request.jwt.claims', '{\"role\":\"anon\"}', true)");
+      try { return await t(sql, p); } finally { await c.query("SET LOCAL ROLE authenticated"); } };
+    const cid = async (code) => (await asOwner("select id from courses where school_id=$1 and code=$2", [E.schoolId, code])).row?.id;
+    const st = (await asOwner(`select s.id, s.user_id from students s where s.school_id=$1 and s.user_id is not null
+        and exists (select 1 from grades g where g.student_id=s.id and g.course_id is not null) limit 2`, [E.schoolId])).r.rows;
+    const [s1, s2] = st;
+    const mk = async (code, title, units) => (await asOwner("insert into courses (school_id, code, title, credit_units, level, semester, programme, is_core) values ($1,$2,$3,$4,'200L','First','Computer Science',true) returning id", [E.schoolId, code, title, units])).row?.id;
+    const csc201 = await mk("CSC201", "Data Structures", 3), mth201 = await mk("MTH201", "Linear Algebra", 3), big = await mk("PRJ299", "Mega Project", 20);
+    const csc101 = await cid("CSC101"), mth101 = await cid("MTH101"), phy101 = await cid("PHY101");
+    // scores drive grade points through the grades triggers: pass everything, then fail MTH101
+    await asOwner("update grades set ca_score = 30, exam_score = 40 where student_id=$1", [s1.id]);
+    await asOwner("update grades set ca_score = 5, exam_score = 10 where student_id=$1 and course_id=$2", [s1.id, mth101]);
+    out.gpDbg = (await asOwner("select string_agg(c.code||'='||g.grade_point, ',') x from grades g join courses c on c.id=g.course_id where g.student_id=$1", [s1.id])).row?.x;
+    out.prereq = await t("select public.course_prereq_set($1,$2,1)", [csc201, csc101]);
+    await t("select public.course_prereq_set($1,$2,1)", [mth201, mth101]);
+    out.cycle = await t("select public.course_prereq_set($1,$2,1)", [csc101, csc201]);
+    await act(E.teacher); out.teacherWin = await t("select public.registration_window_set($1,'2026/2027','First',now(),now()+interval '1 day')", [E.schoolId]);
+    await act(E.admin);
+    out.closed = await (async () => { await act(s1.user_id); const r = (await t("select public.course_register($1,'2026/2027','First') r", [csc201])).row?.r; await act(E.admin); return r; })();
+    await t("select public.registration_window_set($1,'2026/2027','First',now()-interval '1 hour',now()+interval '7 days',6,24)", [E.schoolId]);
+    await act(s1.user_id);
+    const reg = (code) => t("select public.course_register($1,'2026/2027','First') r", [code]);
+    out.missing = (await reg(mth201)).row?.r;
+    out.owedFirst = (await reg(csc201)).row?.r;
+    out.carry = (await reg(mth101)).row?.r;
+    out.ok = (await reg(csc201)).row?.r;
+    out.cap = (await reg(big)).row?.r;
+    out.carryId = (await asOwner("select id from course_registrations where student_id=$1 and course_id=$2", [s1.id, mth101])).row?.id;
+    out.regId = (await asOwner("select id from course_registrations where student_id=$1 and course_id=$2", [s1.id, csc201])).row?.id;
+    out.dropCarry = await t("select public.course_drop($1)", [out.carryId]);
+    await act(s2.user_id); out.otherDrop = await t("select public.course_drop($1)", [out.regId]);
+    out.studentApprove = await t("select public.course_reg_decide($1,true)", [out.regId]);
+    await act(E.admin);
+    const adv = (await asOwner("select id from users where school_id=$1 and role='teacher' and id<>$2 limit 1", [E.schoolId, E.teacher])).row?.id;
+    await t("select public.role_assign($1,$2,'ng.academic_adviser','org',null)", [E.schoolId, adv]);
+    await asOwner("insert into org_role_permission_settings (org_id, role_code, permission_code, enabled) values ($1,'ng.academic_adviser','course_reg.approve',true) on conflict (org_id, role_code, permission_code) do update set enabled=true", [E.schoolId]);
+    await act(adv); out.approve = await t("select public.course_reg_decide($1,true,'Fine')", [out.regId]); out.again = await t("select public.course_reg_decide($1,false)", [out.regId]);
+    await act(s2.user_id); out.peek = (await t("select count(*)::int n from course_registrations where student_id=$1", [s1.id])).row?.n;
+    // SIWES
+    await act(E.admin);
+    const pl = (await t("select public.siwes_place($1,'Sim Tech Ltd','Engr. Bello','2348030000009',current_date - 7, current_date + 77) r", [s1.id])).row?.r;
+    out.code = pl?.supervisor_code;
+    await act(s1.user_id);
+    out.hashRead = await t("select verify_code_hash from siwes_placements limit 1");
+    out.rowRead = await t("select employer from siwes_placements where id=$1", [pl?.placement_id]);
+    out.log1 = await t("select public.siwes_log($1,1,'Week 1: set up dev environment and shadowed the backend team') id", [pl?.placement_id]);
+    out.shortLog = await t("select public.siwes_log($1,2,'too short')", [pl?.placement_id]);
+    out.farWeek = await t("select public.siwes_log($1,40,'Week 40 entry that is far outside the placement window')", [pl?.placement_id]);
+    await act(s2.user_id); out.otherLog = await t("select public.siwes_log($1,3,'Writing into somebody else logbook entry here')", [pl?.placement_id]);
+    out.badCode = (await anon("select public.siwes_supervisor_verify($1,'WRONGCODE',1) r", [pl?.placement_id])).row?.r;
+    out.verify = (await anon("select public.siwes_supervisor_verify($1,$2,1,'Good work') r", [pl?.placement_id, out.code])).row?.r;
+    await act(s1.user_id); out.editLocked = await t("select public.siwes_log($1,1,'Trying to rewrite a verified week after the fact')", [pl?.placement_id]);
+    let rl = 0; for (let i = 0; i < 12; i++) { const r = (await anon("select public.siwes_supervisor_verify($1,'X',1) r", [pl?.placement_id])).row?.r; if (r?.error === "rate_limited") rl++; }
+    out.rl = rl;
+    // early warning (school A, secondary)
+  });
+  const w = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+    const kid = (await asOwner("select id, parent_id from students where school_id=$1 and parent_id is not null order by admission_number limit 1", [A.schoolId])).row;
+    await asOwner("delete from attendance where student_id=$1 and date >= current_date - 30", [kid.id]);
+    await asOwner("insert into attendance (school_id, student_id, class_id, date, status) select $1, $2, (select class_id from students where id=$2), current_date - g, case when g % 2 = 0 then 'absent' else 'present' end from generate_series(1,10) g", [A.schoolId, kid.id]);
+    await asOwner("update grades set ca_score = 10, exam_score = 20 where student_id=$1 and term='First Term'", [kid.id]);
+    out.run = (await t("select public.compute_early_warnings($1,'2025/2026','First Term') r", [A.schoolId])).row?.r;
+    out.run2 = (await t("select public.compute_early_warnings($1,'2025/2026','First Term') r", [A.schoolId])).row?.r;
+    out.flags = (await asOwner("select string_agg(kind||':'||severity, ',' order by kind) k from learning_gap_flags where student_id=$1", [kid.id])).row?.k;
+    out.dupes = (await asOwner("select count(*)::int n from (select student_id, kind, period, count(*) from learning_gap_flags group by 1,2,3 having count(*)>1) x")).row?.n;
+    await act(kid.parent_id); out.parentSees = (await t("select count(*)::int n from learning_gap_flags")).row?.n;
+    out.parentRun = await t("select public.compute_early_warnings($1,'2025/2026','First Term')", [A.schoolId]);
+    await act(B.admin); out.bSees = (await t("select count(*)::int n from learning_gap_flags where school_id=$1", [A.schoolId])).row?.n;
+    await act(A.admin);
+    const f = (await asOwner("select id from learning_gap_flags where student_id=$1 limit 1", [kid.id])).row?.id;
+    out.shortResolve = await t("select public.early_warning_resolve($1,'ok')", [f]);
+    out.resolve = await t("select public.early_warning_resolve($1,'Met parents; extra lessons twice a week')", [f]);
+    out.audit = (await asOwner("select count(*)::int n from audit_logs where school_id=$1 and action ~ '^scholar\\.learning_gap'", [A.schoolId])).row?.n;
+  });
+  rec("courses", "Prerequisites: cycle refused; course needing a failed prerequisite refused with the missing code", v.prereq?.ok && !v.cycle?.ok && v.missing?.error === "prerequisite_missing" && v.missing?.missing === "MTH101",
+    `cycle ${W_ERR(v.cycle)}; ${JSON.stringify(v.missing)} ${v.missing?.ok === false && v.missing?.error === "prerequisite_missing" ? "" : v.gpDbg}`, "critical");
+  rec("courses", "Registration window enforced; only admins set it", v.closed?.error === "registration_closed" && !v.teacherWin?.ok, `${v.closed?.error}; teacher ${W_ERR(v.teacherWin)}`, "high");
+  rec("courses", "Carry-overs first: new courses blocked until failed courses are re-registered; carry-overs cannot be dropped",
+    v.owedFirst?.error === "register_carryovers_first" && v.carry?.ok && v.carry?.carryover && v.ok?.ok && !v.dropCarry?.ok, `${v.owedFirst?.error} → carry ok → ${v.ok?.units} units; drop ${W_ERR(v.dropCarry)}`, "critical");
+  rec("courses", "Unit limit (max 24) refuses an over-load", v.cap?.error === "unit_limit", JSON.stringify(v.cap), "high");
+  rec("courses", "Adviser approves once; students cannot approve or drop others' courses or read them", v.approve?.ok && !v.again?.ok && !v.studentApprove?.ok && !v.otherDrop?.ok && v.peek === 0,
+    `student ${W_ERR(v.studentApprove)}; other drop ${W_ERR(v.otherDrop)}; again ${W_ERR(v.again)}`, "critical");
+  rec("siwes", "Placement issues a one-time supervisor code that is never readable back", !!v.code && !v.hashRead?.ok && v.rowRead?.ok, `hash ${W_ERR(v.hashRead)}`, "critical");
+  rec("siwes", "Logbook: own placement only, meaningful entries, weeks inside placement", v.log1?.ok && !v.shortLog?.ok && !v.farWeek?.ok && !v.otherLog?.ok,
+    `short ${W_ERR(v.shortLog)}; far ${W_ERR(v.farWeek)}; other ${W_ERR(v.otherLog)}`, "high");
+  rec("siwes", "Industry supervisor verifies with the code (wrong code refused); verified weeks lock; brute force rate limited",
+    v.badCode?.error === "invalid_code" && v.verify?.ok && !v.editLocked?.ok && v.rl >= 2, `verify ${JSON.stringify(v.verify)}; locked ${W_ERR(v.editLocked)}; rl ${v.rl}/12`, "critical");
+  rec("warning", "Early warning flags low attendance, low average and failing core subjects; re-runs never duplicate",
+    /low_attendance/.test(w.flags ?? "") && /low_average:act/.test(w.flags ?? "") && /failing_core/.test(w.flags ?? "") && w.dupes === 0, `${w.flags}; run ${JSON.stringify(w.run)}`, "high");
+  rec("warning", "Parents see only their child's flags; other schools see none; only staff run it; resolution needs a note",
+    w.parentSees >= 1 && w.bSees === 0 && !w.parentRun?.ok && !w.shortResolve?.ok && w.resolve?.ok && w.audit >= 1, `parent ${w.parentSees}; B ${w.bSees}; short ${W_ERR(w.shortResolve)}`, "high");
+}
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
 await pool.end();
