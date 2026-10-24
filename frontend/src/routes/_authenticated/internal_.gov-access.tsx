@@ -5,6 +5,7 @@ import { useApp } from "@/contexts/app-context";
 import { capabilitiesForRoles, isPlatformRoleCode } from "@/lib/platform-staff/catalogue";
 import { rpc } from "@/lib/scholar/rpc";
 import { AGENCY_ROLES } from "@/lib/gov/host";
+import { sendGovInviteEmail } from "@/lib/gov/invite-email.functions";
 
 /**
  * Internal console — government access (SHERIVS-028). Sherivs staff with platform.gov.manage
@@ -22,7 +23,7 @@ export const Route = createFileRoute("/_authenticated/internal_/gov-access")({
 
 type Viewer = { user_id: string; email: string; granted_at: string };
 type Jur = { id: string; name: string; state: string; lga: string | null; schools_sharing: number; viewers: Viewer[] };
-type Invite = { id: string; email: string; agency_role: string; created_at: string; expires_at: string; status: "open" | "accepted" | "revoked" | "expired" };
+type Invite = { id: string; email: string; agency_role: string; created_at: string; expires_at: string; status: "open" | "accepted" | "revoked" | "expired"; email_status?: string };
 type Audit = { action: string; at: string; actor: string | null; jurisdiction_id: string | null; detail: Record<string, unknown> | null };
 type Overview = { jurisdictions: Jur[]; audit: Audit[] };
 
@@ -38,6 +39,7 @@ function GovAccessPage() {
   const [invites, setInvites] = useState<Record<string, Invite[]>>({});
   const [inv, setInv] = useState<Record<string, { email: string; role: string; label: string }>>({});
   const [link, setLink] = useState<string | null>(null);
+  const [mailStatus, setMailStatus] = useState<string | null>(null);
   const upd = (id: string, patch: Partial<{ email: string; role: string; label: string }>) =>
     setInv((cur) => ({ ...cur, [id]: Object.assign({ email: "", role: "viewer", label: "" }, cur[id], patch) }));
 
@@ -63,6 +65,9 @@ function GovAccessPage() {
       <h1 className="font-display text-2xl font-bold">Government access</h1>
       <p className="text-muted-foreground">Officers see only aggregate, small-group-suppressed figures for schools that opted in to share with their jurisdiction.</p>
       {msg && <p className={msg.ok ? "text-emerald-600" : "text-destructive"} role="status">{msg.text}</p>}
+      {mailStatus && (
+        <p className="mt-2 text-sm" role="status">{mailStatus === "sent" ? "Invitation emailed to the officer." : mailStatus === "stubbed" ? "Email is not configured yet (no mail provider); copy the link below and send it yourself." : "The email could not be sent; copy the link below and send it yourself."}</p>
+      )}
       {link && (
         <div className="uos-card p-3">
           <p className="font-medium">Invitation link (shown once; send it to the officer's official email)</p>
@@ -98,7 +103,13 @@ function GovAccessPage() {
             <h3 className="font-medium">Invite an officer (MFA required, invite valid 7 days, access 1 year)</h3>
             <form className="mt-2 flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); const f = inv[j.id] ?? { email: "", role: "viewer", label: "" };
               void act(() => rpc<{ token: string }>("gov_officer_invite_create", { p_email: f.email, p_jurisdiction: j.id, p_agency_role: f.role || "viewer" })
-                .then((r) => { setLink(`${window.location.origin}/gov-invite?token=${r.token}`); setInv({ ...inv, [j.id]: { ...f, email: "" } }); }), `Invitation created for ${f.email}`); }}>
+                .then(async (r) => {
+                  setInv({ ...inv, [j.id]: { ...f, email: "" } });
+                  let st = "failed";
+                  try { st = (await sendGovInviteEmail({ data: { token: r.token, origin: window.location.origin } })).status; } catch { /* fall back to copy-link */ }
+                  setMailStatus(st);
+                  setLink(st === "sent" ? null : `${window.location.origin}/gov-invite?token=${r.token}`);
+                }), `Invitation created for ${f.email}`); }}>
               <input aria-label={`Invite email for ${j.name}`} type="email" required placeholder="officer@ministry.gov.ng" className="flex-1 rounded border px-2 py-1"
                 value={inv[j.id]?.email ?? ""} onChange={(e) => upd(j.id, { email: e.target.value })} />
               <select aria-label="Agency role" className="rounded border px-2 py-1" value={inv[j.id]?.role ?? "viewer"}
@@ -110,7 +121,7 @@ function GovAccessPage() {
             <ul className="mt-2 space-y-1">
               {(invites[j.id] ?? []).map((i) => (
                 <li key={i.id} className="flex items-center justify-between gap-2">
-                  <span>{i.email} · {i.agency_role} · <span className="text-muted-foreground">{i.status}{i.status === "open" ? ` until ${i.expires_at.slice(0, 10)}` : ""}</span></span>
+                  <span>{i.email} · {i.agency_role} · <span className="text-muted-foreground">{i.status}{i.status === "open" ? ` until ${i.expires_at.slice(0, 10)}` : ""}{i.email_status && i.email_status !== "not_sent" ? ` · email ${i.email_status}` : ""}</span></span>
                   {i.status === "open" && <button disabled={busy} className="text-destructive underline disabled:opacity-50" onClick={() => void act(() => rpc("gov_officer_invite_revoke", { p_id: i.id }), "Invitation revoked")}>Revoke</button>}
                 </li>))}
             </ul>

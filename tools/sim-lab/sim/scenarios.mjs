@@ -1563,6 +1563,45 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
       && JSON.stringify(v.audit) === JSON.stringify(["jurisdiction_create", "host_set", "invite_create", "invite_accept", "invite_create", "invite_revoke", "invite_create"]) && !v.auditEdit?.ok,
     `audit ${JSON.stringify(v.audit)}`, "high");
 }
+// ---------- 30. Officer-invite email delivery status (SHERIVS-B07) ----------
+{
+  const v = await wave(A.admin, async ({ t, asOwner, c, out }) => {
+    const as = (u, aal = "aal2") => c.query("select set_config('request.jwt.claims', $1, true)", [JSON.stringify({ sub: u, role: "authenticated", aal })]);
+    const PA = crypto.randomUUID(), tag = PA.slice(0, 6);
+    await asOwner("insert into auth.users (id, email) values ($1,$2)", [PA, "pa7" + tag + "@sim.local"]);
+    await asOwner("insert into platform_staff (id, email, full_name, status) values ($1,$2,'Sim PA B07','active')", [PA, "pa7" + tag + "@sim.local"]);
+    await asOwner("insert into platform_staff_roles (staff_id, role_code) values ($1,'platform_admin')", [PA]);
+    await as(PA);
+    const j = (await t("select public.gov_jurisdiction_create('Sim B07 MoE','B07-' || left(gen_random_uuid()::text,6)) id")).row?.id;
+    const inv = (await t("select public.gov_officer_invite_create($1,$2,'viewer') r", ["b07-" + tag + "@moe.sim", j])).row?.r;
+    await as(PA, "aal1"); out.ctxNoMfa = await t("select public.gov_officer_invite_mail_context($1)", [inv?.token]);
+    await as(A.admin); out.ctxSchoolAdmin = await t("select public.gov_officer_invite_mail_context($1)", [inv?.token]);
+    out.markSchoolAdmin = await t("select public.gov_officer_invite_mark_email($1,'sent')", [inv?.id]);
+    await as(PA);
+    out.ctxBad = await t("select public.gov_officer_invite_mail_context($1)", ["0".repeat(48)]);
+    out.ctxInject = await t("select public.gov_officer_invite_mail_context($1)", ["x' or 1=1 --"]);
+    out.ctx = (await t("select public.gov_officer_invite_mail_context($1) r", [inv?.token])).row?.r;
+    out.badStatus = await t("select public.gov_officer_invite_mark_email($1,'delivered')", [inv?.id]);
+    out.stub = (await t("select public.gov_officer_invite_mark_email($1,'stubbed','provider_not_configured') r", [inv?.id])).row?.r;
+    out.list = (await t("select public.gov_officer_invites_list($1) r", [j])).row?.r ?? [];
+    for (let k = 0; k < 4; k++) await t("select public.gov_officer_invite_mark_email($1,'failed','provider_error')", [inv?.id]);
+    out.sixth = await t("select public.gov_officer_invite_mark_email($1,'sent')", [inv?.id]);
+    out.ctxCapped = await t("select public.gov_officer_invite_mail_context($1)", [inv?.token]);
+    const inv2 = (await t("select public.gov_officer_invite_create($1,$2,'viewer') r", ["b07b-" + tag + "@moe.sim", j])).row?.r;
+    await t("select public.gov_officer_invite_revoke($1)", [inv2?.id]);
+    out.ctxRevoked = await t("select public.gov_officer_invite_mail_context($1)", [inv2?.token]);
+    out.markRevoked = await t("select public.gov_officer_invite_mark_email($1,'sent')", [inv2?.id]);
+    out.audit = (await asOwner("select count(*)::int n from gov_admin_audit where action='invite_email' and jurisdiction_id=$1", [j])).row?.n;
+    out.plain = (await asOwner("select count(*)::int n from gov_officer_invites where token_hash=$1", [inv?.token])).row?.n;
+  });
+  rec("gov_invite_email", "Invite mail context needs a gov admin with MFA plus the exact one-time token of a pending invite; school admins, bad, revoked and over-limit tokens are refused",
+    !v.ctxNoMfa?.ok && !v.ctxSchoolAdmin?.ok && !v.ctxBad?.ok && !v.ctxInject?.ok && !v.ctxRevoked?.ok && !v.ctxCapped?.ok
+      && v.ctx?.email?.startsWith("b07-") && v.ctx?.jurisdiction === "Sim B07 MoE" && !("token" in (v.ctx ?? {})) && v.plain === 0,
+    JSON.stringify({ ctx: !!v.ctx, capped: v.ctxCapped?.err }), "critical");
+  rec("gov_invite_email", "Delivery status (sent/stubbed/failed) is recorded and audited by gov admins only, capped at 5 attempts, and shown in the invite list",
+    !v.markSchoolAdmin?.ok && !v.badStatus?.ok && v.stub === "stubbed" && v.list.some((x) => x.email_status === "stubbed") && !v.sixth?.ok && !v.markRevoked?.ok && v.audit === 5,
+    JSON.stringify({ audit: v.audit, sixth: v.sixth?.err }), "high");
+}
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
 await pool.end();
