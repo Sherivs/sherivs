@@ -1086,6 +1086,121 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
   rec("warning", "Parents see only their child's flags; other schools see none; only staff run it; resolution needs a note",
     w.parentSees >= 1 && w.bSees === 0 && !w.parentRun?.ok && !w.shortResolve?.ok && w.resolve?.ok && w.audit >= 1, `parent ${w.parentSees}; B ${w.bSees}; short ${W_ERR(w.shortResolve)}`, "high");
 }
+// ---------- 19. Lesson notes, HR appraisal/loans/PAYE, inventory, assets, visitors (SHERIVS-024) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+    const staff = (await asOwner("select id from users where school_id=$1 and role='teacher' and id<>$2 order by id limit 3", [A.schoolId, A.teacher])).r.rows.map((r) => r.id);
+    const tc = (await asOwner("select id from classes where teacher_id=$1 limit 1", [A.teacher])).row?.id;
+    // scheme + lesson notes
+    const wk = (await t("select public.scheme_week_upsert($1,'Mathematics','JSS 1','First Term',3,'Fractions',array['add fractions'],'nerdc_2025_jss') id", [A.schoolId])).row?.id;
+    await act(A.teacher); out.teacherScheme = await t("select public.scheme_week_upsert($1,'Mathematics','JSS 1','First Term',4,'x')", [A.schoolId]);
+    const lp = (await asOwner("insert into lesson_plans (school_id, teacher_id, class_id, title, subject, topic, status) values ($1,$2,$3,'Fractions wk3','Mathematics','Fractions','draft') returning id", [A.schoolId, A.teacher, tc])).row?.id;
+    const lpOther = (await asOwner("insert into lesson_plans (school_id, teacher_id, class_id, title, subject, topic, status) values ($1,$2,$3,'Other','Mathematics','x','draft') returning id", [A.schoolId, staff[0], tc])).row?.id;
+    out.sub = await t("select public.lesson_note_submit($1,$2) id", [lp, wk]);
+    out.subOther = await t("select public.lesson_note_submit($1)", [lpOther]);
+    out.dup = await t("select public.lesson_note_submit($1)", [lp]);
+    out.teacherReview = await t("select public.lesson_note_review($1,true)", [out.sub?.row?.id]);
+    await act(A.admin);
+    out.returnNoNote = await t("select public.lesson_note_review($1,false,'')", [out.sub?.row?.id]);
+    out.review = await t("select public.lesson_note_review($1,true,'Good')", [out.sub?.row?.id]);
+    out.planStatus = (await asOwner("select status from lesson_plans where id=$1", [lp])).row?.status;
+    // appraisal
+    const cyc = (await asOwner("insert into appraisal_cycles (school_id, name, starts_on, ends_on) values ($1,'Sim 2026 appraisal',current_date,current_date+30) returning id", [A.schoolId])).row?.id;
+    out.selfAppr = await t("select public.appraisal_open($1,$2,$2)", [cyc, staff[0]]);
+    const ap = (await t("select public.appraisal_open($1,$2,$3) id", [cyc, staff[0], staff[1]])).row?.id;
+    const sc = JSON.stringify({ "Lesson delivery": 4, Punctuality: 5, "Student outcomes": 3, Teamwork: 4, "Professional development": 4 });
+    await act(staff[1]); out.earlyReview = await t("select public.appraisal_review($1,$2)", [ap, sc]);
+    await act(staff[0]); out.badSelf = await t("select public.appraisal_self($1,'{\"Punctuality\":9}')", [ap]);
+    out.self = await t("select public.appraisal_self($1,$2)", [ap, sc]);
+    out.selfReview = await t("select public.appraisal_review($1,$2)", [ap, sc]);
+    await act(staff[1]); out.review2 = (await t("select public.appraisal_review($1,$2) o", [ap, sc])).row?.o;
+    await act(staff[2]); out.peekAppr = (await t("select count(*)::int n from appraisals where id=$1", [ap])).row?.n;
+    await act(staff[0]); out.ack = await t("select public.appraisal_acknowledge($1,'Thanks')", [ap]);
+    // payroll: profile, loan, PAYE (Nigeria Tax Act 2025 bands), approval SoD
+    await act(A.admin);
+    out.selfSalary = await t("select public.salary_profile_set($1,1000000)", [A.admin]);
+    out.prof = await t("select public.salary_profile_set($1,300000,100000,50000,50000,1200000,false)", [staff[0]]);
+    await act(A.teacher); out.teacherSalary = await t("select public.salary_profile_set($1,999999)", [staff[0]]);
+    await act(staff[0]);
+    out.bigLoan = await t("select public.loan_request(1000000, 400000, 'Rent')");
+    const loan = (await t("select public.loan_request(100000, 40000, 'School fees') id")).row?.id;
+    out.secondLoan = await t("select public.loan_request(50000, 10000, 'x')");
+    await act(A.admin); out.adminLoan = await t("select public.loan_decide($1,true)", [loan]);
+    const appr = staff[2];
+    await t("select public.role_assign($1,$2,'ng.acting_provost','org',null)", [A.schoolId, appr]);
+    await asOwner("insert into org_role_permission_settings (org_id, role_code, permission_code, enabled) values ($1,'ng.acting_provost','payroll.approve',true) on conflict (org_id, role_code, permission_code) do update set enabled=true", [A.schoolId]);
+    await act(appr); out.loanOk = await t("select public.loan_decide($1,true)", [loan]);
+    await act(A.admin);
+    out.paye = Number((await t("select public.paye_annual(6000000, 432000, 0, 1200000) p")).row?.p);
+    out.compRaw = await t("select public.payroll_compute($1,11,2026) r", [A.schoolId]); out.comp = out.compRaw.row?.r;
+    out.line = (await asOwner("select tax_deduction, pension_deduction, loan_deduction, net_salary from staff_payroll where user_id=$1 and month=11 and year=2026", [staff[0]])).row;
+    out.adminApprove = await t("select public.payroll_approve($1,11,2026)", [A.schoolId]);
+    await act(appr); out.approve = await t("select public.payroll_approve($1,11,2026) n", [A.schoolId]);
+    out.loanBal = Number((await asOwner("select balance from staff_loans where id=$1", [loan])).row?.balance);
+    await act(staff[1]); out.peekPay = (await t("select count(*)::int n from staff_salary_profiles where user_id=$1", [staff[0]])).row?.n;
+    // inventory
+    await act(A.admin);
+    const it = (await t("select public.inventory_item_upsert($1,'CHALK-W','White chalk','box',5,1500) id", [A.schoolId])).row?.id;
+    out.buy = (await t("select public.inventory_move($1,20,'purchase','PO-1') r", [it])).row?.r;
+    out.issue = (await t("select public.inventory_move($1,-16,'issue','REQ-1','JSS1 A') r", [it])).row?.r;
+    out.over = await t("select public.inventory_move($1,-10,'issue')", [it]);
+    out.wrongSign = await t("select public.inventory_move($1,5,'issue')", [it]);
+    out.directQty = await t("update inventory_items set qty = 999 where id=$1", [it]);
+    out.editMove = await asOwner("update inventory_moves set delta = 1 where item_id=$1", [it]);
+    await act(A.teacher); out.teacherInv = await t("select public.inventory_move($1,-1,'issue')", [it]);
+    // assets
+    await act(A.admin);
+    const as = (await t("select public.asset_register($1,'SIM-LAP-001','Staff laptop','ICT',600000,current_date - 365,4) id", [A.schoolId])).row?.id;
+    out.bv = Number((await t("select public.asset_book_value($1) v", [as])).row?.v);
+    out.dupTag = await t("select public.asset_register($1,'SIM-LAP-001','dup','ICT',1,current_date)", [A.schoolId]);
+    out.dispose = await t("select public.asset_update($1,'disposed')", [as]);
+    out.redispose = await t("select public.asset_update($1,'in_use')", [as]);
+    out.events = (await asOwner("select count(*)::int n from asset_events where asset_id=$1", [as])).row?.n;
+    // visitors + pick-ups
+    const kid = (await asOwner("select id, parent_id from students where school_id=$1 and parent_id is not null order by admission_number limit 1", [A.schoolId])).row;
+    const other = (await asOwner("select id from students where school_id=$1 and parent_id is distinct from $2 and id not in (select student_id from parent_student_map where parent_id=$2) limit 1", [A.schoolId, kid.parent_id])).row?.id;
+    await act(kid.parent_id);
+    out.authOther = await t("select public.pickup_authorise($1,'Uncle Tunde','08031234567','uncle')", [other]);
+    out.auth = await t("select public.pickup_authorise($1,'Uncle Tunde','0803 123 4567','uncle')", [kid.id]);
+    out.unauth = (await t("select public.visitor_preregister('Stranger','08099999999','pickup',$1) r", [kid.id])).row?.r;
+    out.parentMeeting = await t("select public.visitor_preregister('x','080','meeting')");
+    const pass = (await t("select public.visitor_preregister('Uncle Tunde','08031234567','pickup',$1) r", [kid.id])).row?.r;
+    out.codeRead = await t("select code_hash from visitor_passes limit 1");
+    await act(A.teacher); out.teacherGate = await t("select public.visitor_check_in($1,$2)", [pass?.pass_id, pass?.code]);
+    await act(A.admin);
+    out.wrong = (await t("select public.visitor_check_in($1,'000000') r", [pass?.pass_id])).row?.r;
+    out.in = (await t("select public.visitor_check_in($1,$2) r", [pass?.pass_id, pass?.code])).row?.r;
+    out.again = (await t("select public.visitor_check_in($1,$2) r", [pass?.pass_id, pass?.code])).row?.r;
+    out.out = await t("select public.visitor_check_out($1)", [pass?.pass_id]);
+    await act(kid.parent_id); const p2 = (await t("select public.visitor_preregister('Uncle Tunde','08031234567','pickup',$1) r", [kid.id])).row?.r;
+    await asOwner("update authorised_pickups set active=false where student_id=$1", [kid.id]);
+    await act(A.admin); out.revoked = (await t("select public.visitor_check_in($1,$2) r", [p2?.pass_id, p2?.code])).row?.r;
+    out.audit = (await asOwner("select count(*)::int n from audit_logs where school_id=$1 and action ~ '^scholar\\.(lesson_note|appraisal|staff_loans|staff_salary|inventory|fixed_assets|visitor|authorised)'", [A.schoolId])).row?.n;
+  });
+  rec("lessons", "Lesson notes: teacher submits own notes once; reviewer is never the author; returning needs a reason; scheme set by HoD/admin only",
+    v.sub?.ok && !v.subOther?.ok && !v.dup?.ok && !v.teacherReview?.ok && !v.returnNoNote?.ok && v.review?.ok && v.planStatus === "approved" && !v.teacherScheme?.ok,
+    `other ${W_ERR(v.subOther)}; dup ${W_ERR(v.dup)}; teacher review ${W_ERR(v.teacherReview)}; scheme ${W_ERR(v.teacherScheme)}`, "high");
+  rec("hr", "Appraisal: no self-appraiser; self-review first, all criteria 1–5; only the assigned appraiser reviews; private to the three parties",
+    !v.selfAppr?.ok && !v.earlyReview?.ok && !v.badSelf?.ok && v.self?.ok && !v.selfReview?.ok && Number(v.review2) === 4 && v.peekAppr === 0 && v.ack?.ok,
+    `overall ${v.review2}; early ${W_ERR(v.earlyReview)}; self ${W_ERR(v.selfReview)}`, "high");
+  rec("payroll", "PAYE uses Nigeria Tax Act 2025 bands with rent relief and pension: ₦6m gross → ₦749,040/yr", v.paye === 749040, `paye ${v.paye}`, "critical");
+  rec("payroll", "Payroll line: PAYE ₦62,420, pension 8% ₦36,000, loan ₦40,000 deducted; net ₦361,580",
+    Number(v.line?.tax_deduction) === 62420 && Number(v.line?.pension_deduction) === 36000 && Number(v.line?.loan_deduction) === 40000 && Number(v.line?.net_salary) === 361580,
+    JSON.stringify(v.line), "critical");
+  rec("payroll", "SoD: no own salary, no self or admin loan approval, approver ≠ preparer; approval reduces loan balance",
+    !v.selfSalary?.ok && !v.teacherSalary?.ok && !v.adminLoan?.ok && v.loanOk?.ok && !v.adminApprove?.ok && v.approve?.ok && v.loanBal === 60000 && !v.bigLoan?.ok && !v.secondLoan?.ok && v.peekPay === 0,
+    `admin loan ${W_ERR(v.adminLoan)}; admin approve ${W_ERR(v.adminApprove)}; balance ${v.loanBal}; big ${W_ERR(v.bigLoan)}`, "critical");
+  rec("inventory", "Stock never goes negative; moves append-only; reorder alert; direct edits and teachers refused",
+    v.buy?.qty === 20 && v.issue?.reorder === true && !v.over?.ok && !v.wrongSign?.ok && !v.directQty?.ok && !v.editMove?.ok && !v.teacherInv?.ok,
+    `over ${W_ERR(v.over)}; direct ${W_ERR(v.directQty)}`, "high");
+  rec("assets", "Asset register: unique tags, straight-line book value (₦600k over 4y, 1y old ≈ ₦450k), disposal final, history kept",
+    Math.abs(v.bv - 450000) < 1000 && !v.dupTag?.ok && v.dispose?.ok && !v.redispose?.ok && v.events === 2, `bv ${v.bv}; events ${v.events}`, "high");
+  rec("visitors", "Pick-ups: only the parent authorises; strangers refused; gate code hashed and checked once; revoked authorisation denied at the gate",
+    !v.authOther?.ok && v.auth?.ok && v.unauth?.error === "not_an_authorised_pickup" && !v.parentMeeting?.ok && !v.codeRead?.ok && !v.teacherGate?.ok
+      && v.wrong?.error === "wrong_code" && v.in?.ok && v.again?.error === "already_in" && v.out?.ok && v.revoked?.error === "pickup_authorisation_revoked",
+    `stranger ${v.unauth?.error}; again ${v.again?.error}; revoked ${v.revoked?.error}`, "critical");
+  rec("audit", "Lesson, HR, payroll, inventory, asset and visitor changes are audited", v.audit >= 10, `${v.audit} audit rows`, "high");
+}
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
 await pool.end();

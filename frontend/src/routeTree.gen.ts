@@ -98,6 +98,7 @@ import { Route as AuthenticatedAdminHealthRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminHealthCertificateRouteImport } from './routes/_authenticated/admin/health-certificate'
 import { Route as AuthenticatedAdminHostelRouteImport } from './routes/_authenticated/admin/hostel'
 import { Route as AuthenticatedAdminHrRouteImport } from './routes/_authenticated/admin/hr'
+import { Route as AuthenticatedAdminHrPayrollRouteImport } from './routes/_authenticated/admin/hr-payroll'
 import { Route as AuthenticatedAdminIdentitiesRouteImport } from './routes/_authenticated/admin/identities'
 import { Route as AuthenticatedAdminIntelligenceRouteImport } from './routes/_authenticated/admin/intelligence'
 import { Route as AuthenticatedAdminIntelligenceAiRouteImport } from './routes/_authenticated/admin/intelligence-ai'
@@ -122,6 +123,7 @@ import { Route as AuthenticatedAdminSchoolProfileRouteImport } from './routes/_a
 import { Route as AuthenticatedAdminSessionRolloverRouteImport } from './routes/_authenticated/admin/session-rollover'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
 import { Route as AuthenticatedAdminStaffAccountsRouteImport } from './routes/_authenticated/admin/staff-accounts'
+import { Route as AuthenticatedAdminStoresAssetsRouteImport } from './routes/_authenticated/admin/stores-assets'
 import { Route as AuthenticatedAdminStudentIntelligenceRouteImport } from './routes/_authenticated/admin/student-intelligence'
 import { Route as AuthenticatedAdminStudentsRouteImport } from './routes/_authenticated/admin/students'
 import { Route as AuthenticatedAdminSupportRouteImport } from './routes/_authenticated/admin/support'
@@ -192,6 +194,7 @@ import { Route as AuthenticatedTeacherClassIntelligenceRouteImport } from './rou
 import { Route as AuthenticatedTeacherDashboardRouteImport } from './routes/_authenticated/teacher/dashboard'
 import { Route as AuthenticatedTeacherGradebookRouteImport } from './routes/_authenticated/teacher/gradebook'
 import { Route as AuthenticatedTeacherGradesRouteImport } from './routes/_authenticated/teacher/grades'
+import { Route as AuthenticatedTeacherLessonNotesRouteImport } from './routes/_authenticated/teacher/lesson-notes'
 import { Route as AuthenticatedTeacherLessonPlansRouteImport } from './routes/_authenticated/teacher/lesson-plans'
 import { Route as AuthenticatedTeacherNewsRouteImport } from './routes/_authenticated/teacher/news'
 import { Route as AuthenticatedTeacherSignInRouteImport } from './routes/_authenticated/teacher/sign-in'
@@ -682,6 +685,12 @@ const AuthenticatedAdminHrRoute = AuthenticatedAdminHrRouteImport.update({
   path: '/hr',
   getParentRoute: () => AuthenticatedAdminRouteRoute,
 } as any)
+const AuthenticatedAdminHrPayrollRoute =
+  AuthenticatedAdminHrPayrollRouteImport.update({
+    id: '/hr-payroll',
+    path: '/hr-payroll',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminIdentitiesRoute =
   AuthenticatedAdminIdentitiesRouteImport.update({
     id: '/identities',
@@ -821,6 +830,12 @@ const AuthenticatedAdminStaffAccountsRoute =
   AuthenticatedAdminStaffAccountsRouteImport.update({
     id: '/staff-accounts',
     path: '/staff-accounts',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminStoresAssetsRoute =
+  AuthenticatedAdminStoresAssetsRouteImport.update({
+    id: '/stores-assets',
+    path: '/stores-assets',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminStudentIntelligenceRoute =
@@ -1238,6 +1253,12 @@ const AuthenticatedTeacherGradesRoute =
     path: '/grades',
     getParentRoute: () => AuthenticatedTeacherRouteRoute,
   } as any)
+const AuthenticatedTeacherLessonNotesRoute =
+  AuthenticatedTeacherLessonNotesRouteImport.update({
+    id: '/lesson-notes',
+    path: '/lesson-notes',
+    getParentRoute: () => AuthenticatedTeacherRouteRoute,
+  } as any)
 const AuthenticatedTeacherLessonPlansRoute =
   AuthenticatedTeacherLessonPlansRouteImport.update({
     id: '/lesson-plans',
@@ -1369,6 +1390,7 @@ export interface FileRoutesByFullPath {
   '/admin/health-certificate': typeof AuthenticatedAdminHealthCertificateRoute
   '/admin/hostel': typeof AuthenticatedAdminHostelRoute
   '/admin/hr': typeof AuthenticatedAdminHrRoute
+  '/admin/hr-payroll': typeof AuthenticatedAdminHrPayrollRoute
   '/admin/identities': typeof AuthenticatedAdminIdentitiesRoute
   '/admin/intelligence': typeof AuthenticatedAdminIntelligenceRoute
   '/admin/intelligence-ai': typeof AuthenticatedAdminIntelligenceAiRoute
@@ -1393,6 +1415,7 @@ export interface FileRoutesByFullPath {
   '/admin/session-rollover': typeof AuthenticatedAdminSessionRolloverRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/staff-accounts': typeof AuthenticatedAdminStaffAccountsRoute
+  '/admin/stores-assets': typeof AuthenticatedAdminStoresAssetsRoute
   '/admin/student-intelligence': typeof AuthenticatedAdminStudentIntelligenceRoute
   '/admin/students': typeof AuthenticatedAdminStudentsRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
@@ -1462,6 +1485,7 @@ export interface FileRoutesByFullPath {
   '/teacher/dashboard': typeof AuthenticatedTeacherDashboardRoute
   '/teacher/gradebook': typeof AuthenticatedTeacherGradebookRoute
   '/teacher/grades': typeof AuthenticatedTeacherGradesRoute
+  '/teacher/lesson-notes': typeof AuthenticatedTeacherLessonNotesRoute
   '/teacher/lesson-plans': typeof AuthenticatedTeacherLessonPlansRoute
   '/teacher/news': typeof AuthenticatedTeacherNewsRoute
   '/teacher/sign-in': typeof AuthenticatedTeacherSignInRoute
@@ -1558,6 +1582,7 @@ export interface FileRoutesByTo {
   '/admin/health-certificate': typeof AuthenticatedAdminHealthCertificateRoute
   '/admin/hostel': typeof AuthenticatedAdminHostelRoute
   '/admin/hr': typeof AuthenticatedAdminHrRoute
+  '/admin/hr-payroll': typeof AuthenticatedAdminHrPayrollRoute
   '/admin/identities': typeof AuthenticatedAdminIdentitiesRoute
   '/admin/intelligence': typeof AuthenticatedAdminIntelligenceRoute
   '/admin/intelligence-ai': typeof AuthenticatedAdminIntelligenceAiRoute
@@ -1582,6 +1607,7 @@ export interface FileRoutesByTo {
   '/admin/session-rollover': typeof AuthenticatedAdminSessionRolloverRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/staff-accounts': typeof AuthenticatedAdminStaffAccountsRoute
+  '/admin/stores-assets': typeof AuthenticatedAdminStoresAssetsRoute
   '/admin/student-intelligence': typeof AuthenticatedAdminStudentIntelligenceRoute
   '/admin/students': typeof AuthenticatedAdminStudentsRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
@@ -1651,6 +1677,7 @@ export interface FileRoutesByTo {
   '/teacher/dashboard': typeof AuthenticatedTeacherDashboardRoute
   '/teacher/gradebook': typeof AuthenticatedTeacherGradebookRoute
   '/teacher/grades': typeof AuthenticatedTeacherGradesRoute
+  '/teacher/lesson-notes': typeof AuthenticatedTeacherLessonNotesRoute
   '/teacher/lesson-plans': typeof AuthenticatedTeacherLessonPlansRoute
   '/teacher/news': typeof AuthenticatedTeacherNewsRoute
   '/teacher/sign-in': typeof AuthenticatedTeacherSignInRoute
@@ -1751,6 +1778,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/health-certificate': typeof AuthenticatedAdminHealthCertificateRoute
   '/_authenticated/admin/hostel': typeof AuthenticatedAdminHostelRoute
   '/_authenticated/admin/hr': typeof AuthenticatedAdminHrRoute
+  '/_authenticated/admin/hr-payroll': typeof AuthenticatedAdminHrPayrollRoute
   '/_authenticated/admin/identities': typeof AuthenticatedAdminIdentitiesRoute
   '/_authenticated/admin/intelligence': typeof AuthenticatedAdminIntelligenceRoute
   '/_authenticated/admin/intelligence-ai': typeof AuthenticatedAdminIntelligenceAiRoute
@@ -1775,6 +1803,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/session-rollover': typeof AuthenticatedAdminSessionRolloverRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/staff-accounts': typeof AuthenticatedAdminStaffAccountsRoute
+  '/_authenticated/admin/stores-assets': typeof AuthenticatedAdminStoresAssetsRoute
   '/_authenticated/admin/student-intelligence': typeof AuthenticatedAdminStudentIntelligenceRoute
   '/_authenticated/admin/students': typeof AuthenticatedAdminStudentsRoute
   '/_authenticated/admin/support': typeof AuthenticatedAdminSupportRoute
@@ -1844,6 +1873,7 @@ export interface FileRoutesById {
   '/_authenticated/teacher/dashboard': typeof AuthenticatedTeacherDashboardRoute
   '/_authenticated/teacher/gradebook': typeof AuthenticatedTeacherGradebookRoute
   '/_authenticated/teacher/grades': typeof AuthenticatedTeacherGradesRoute
+  '/_authenticated/teacher/lesson-notes': typeof AuthenticatedTeacherLessonNotesRoute
   '/_authenticated/teacher/lesson-plans': typeof AuthenticatedTeacherLessonPlansRoute
   '/_authenticated/teacher/news': typeof AuthenticatedTeacherNewsRoute
   '/_authenticated/teacher/sign-in': typeof AuthenticatedTeacherSignInRoute
@@ -1943,6 +1973,7 @@ export interface FileRouteTypes {
     | '/admin/health-certificate'
     | '/admin/hostel'
     | '/admin/hr'
+    | '/admin/hr-payroll'
     | '/admin/identities'
     | '/admin/intelligence'
     | '/admin/intelligence-ai'
@@ -1967,6 +1998,7 @@ export interface FileRouteTypes {
     | '/admin/session-rollover'
     | '/admin/settings'
     | '/admin/staff-accounts'
+    | '/admin/stores-assets'
     | '/admin/student-intelligence'
     | '/admin/students'
     | '/admin/support'
@@ -2036,6 +2068,7 @@ export interface FileRouteTypes {
     | '/teacher/dashboard'
     | '/teacher/gradebook'
     | '/teacher/grades'
+    | '/teacher/lesson-notes'
     | '/teacher/lesson-plans'
     | '/teacher/news'
     | '/teacher/sign-in'
@@ -2132,6 +2165,7 @@ export interface FileRouteTypes {
     | '/admin/health-certificate'
     | '/admin/hostel'
     | '/admin/hr'
+    | '/admin/hr-payroll'
     | '/admin/identities'
     | '/admin/intelligence'
     | '/admin/intelligence-ai'
@@ -2156,6 +2190,7 @@ export interface FileRouteTypes {
     | '/admin/session-rollover'
     | '/admin/settings'
     | '/admin/staff-accounts'
+    | '/admin/stores-assets'
     | '/admin/student-intelligence'
     | '/admin/students'
     | '/admin/support'
@@ -2225,6 +2260,7 @@ export interface FileRouteTypes {
     | '/teacher/dashboard'
     | '/teacher/gradebook'
     | '/teacher/grades'
+    | '/teacher/lesson-notes'
     | '/teacher/lesson-plans'
     | '/teacher/news'
     | '/teacher/sign-in'
@@ -2324,6 +2360,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/health-certificate'
     | '/_authenticated/admin/hostel'
     | '/_authenticated/admin/hr'
+    | '/_authenticated/admin/hr-payroll'
     | '/_authenticated/admin/identities'
     | '/_authenticated/admin/intelligence'
     | '/_authenticated/admin/intelligence-ai'
@@ -2348,6 +2385,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/session-rollover'
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/staff-accounts'
+    | '/_authenticated/admin/stores-assets'
     | '/_authenticated/admin/student-intelligence'
     | '/_authenticated/admin/students'
     | '/_authenticated/admin/support'
@@ -2417,6 +2455,7 @@ export interface FileRouteTypes {
     | '/_authenticated/teacher/dashboard'
     | '/_authenticated/teacher/gradebook'
     | '/_authenticated/teacher/grades'
+    | '/_authenticated/teacher/lesson-notes'
     | '/_authenticated/teacher/lesson-plans'
     | '/_authenticated/teacher/news'
     | '/_authenticated/teacher/sign-in'
@@ -3080,6 +3119,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminHrRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/hr-payroll': {
+      id: '/_authenticated/admin/hr-payroll'
+      path: '/hr-payroll'
+      fullPath: '/admin/hr-payroll'
+      preLoaderRoute: typeof AuthenticatedAdminHrPayrollRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/identities': {
       id: '/_authenticated/admin/identities'
       path: '/identities'
@@ -3246,6 +3292,13 @@ declare module '@tanstack/react-router' {
       path: '/staff-accounts'
       fullPath: '/admin/staff-accounts'
       preLoaderRoute: typeof AuthenticatedAdminStaffAccountsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/stores-assets': {
+      id: '/_authenticated/admin/stores-assets'
+      path: '/stores-assets'
+      fullPath: '/admin/stores-assets'
+      preLoaderRoute: typeof AuthenticatedAdminStoresAssetsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/student-intelligence': {
@@ -3738,6 +3791,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTeacherGradesRouteImport
       parentRoute: typeof AuthenticatedTeacherRouteRoute
     }
+    '/_authenticated/teacher/lesson-notes': {
+      id: '/_authenticated/teacher/lesson-notes'
+      path: '/lesson-notes'
+      fullPath: '/teacher/lesson-notes'
+      preLoaderRoute: typeof AuthenticatedTeacherLessonNotesRouteImport
+      parentRoute: typeof AuthenticatedTeacherRouteRoute
+    }
     '/_authenticated/teacher/lesson-plans': {
       id: '/_authenticated/teacher/lesson-plans'
       path: '/lesson-plans'
@@ -3859,6 +3919,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminHealthCertificateRoute: typeof AuthenticatedAdminHealthCertificateRoute
   AuthenticatedAdminHostelRoute: typeof AuthenticatedAdminHostelRoute
   AuthenticatedAdminHrRoute: typeof AuthenticatedAdminHrRoute
+  AuthenticatedAdminHrPayrollRoute: typeof AuthenticatedAdminHrPayrollRoute
   AuthenticatedAdminIdentitiesRoute: typeof AuthenticatedAdminIdentitiesRoute
   AuthenticatedAdminIntelligenceRoute: typeof AuthenticatedAdminIntelligenceRoute
   AuthenticatedAdminIntelligenceAiRoute: typeof AuthenticatedAdminIntelligenceAiRoute
@@ -3883,6 +3944,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminSessionRolloverRoute: typeof AuthenticatedAdminSessionRolloverRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminStaffAccountsRoute: typeof AuthenticatedAdminStaffAccountsRoute
+  AuthenticatedAdminStoresAssetsRoute: typeof AuthenticatedAdminStoresAssetsRoute
   AuthenticatedAdminStudentIntelligenceRoute: typeof AuthenticatedAdminStudentIntelligenceRoute
   AuthenticatedAdminStudentsRoute: typeof AuthenticatedAdminStudentsRoute
   AuthenticatedAdminSupportRoute: typeof AuthenticatedAdminSupportRoute
@@ -3939,6 +4001,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
       AuthenticatedAdminHealthCertificateRoute,
     AuthenticatedAdminHostelRoute: AuthenticatedAdminHostelRoute,
     AuthenticatedAdminHrRoute: AuthenticatedAdminHrRoute,
+    AuthenticatedAdminHrPayrollRoute: AuthenticatedAdminHrPayrollRoute,
     AuthenticatedAdminIdentitiesRoute: AuthenticatedAdminIdentitiesRoute,
     AuthenticatedAdminIntelligenceRoute: AuthenticatedAdminIntelligenceRoute,
     AuthenticatedAdminIntelligenceAiRoute:
@@ -3971,6 +4034,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
       AuthenticatedAdminSessionRolloverRoute,
     AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
     AuthenticatedAdminStaffAccountsRoute: AuthenticatedAdminStaffAccountsRoute,
+    AuthenticatedAdminStoresAssetsRoute: AuthenticatedAdminStoresAssetsRoute,
     AuthenticatedAdminStudentIntelligenceRoute:
       AuthenticatedAdminStudentIntelligenceRoute,
     AuthenticatedAdminStudentsRoute: AuthenticatedAdminStudentsRoute,
@@ -4196,6 +4260,7 @@ interface AuthenticatedTeacherRouteRouteChildren {
   AuthenticatedTeacherDashboardRoute: typeof AuthenticatedTeacherDashboardRoute
   AuthenticatedTeacherGradebookRoute: typeof AuthenticatedTeacherGradebookRoute
   AuthenticatedTeacherGradesRoute: typeof AuthenticatedTeacherGradesRoute
+  AuthenticatedTeacherLessonNotesRoute: typeof AuthenticatedTeacherLessonNotesRoute
   AuthenticatedTeacherLessonPlansRoute: typeof AuthenticatedTeacherLessonPlansRoute
   AuthenticatedTeacherNewsRoute: typeof AuthenticatedTeacherNewsRoute
   AuthenticatedTeacherSignInRoute: typeof AuthenticatedTeacherSignInRoute
@@ -4214,6 +4279,7 @@ const AuthenticatedTeacherRouteRouteChildren: AuthenticatedTeacherRouteRouteChil
     AuthenticatedTeacherDashboardRoute: AuthenticatedTeacherDashboardRoute,
     AuthenticatedTeacherGradebookRoute: AuthenticatedTeacherGradebookRoute,
     AuthenticatedTeacherGradesRoute: AuthenticatedTeacherGradesRoute,
+    AuthenticatedTeacherLessonNotesRoute: AuthenticatedTeacherLessonNotesRoute,
     AuthenticatedTeacherLessonPlansRoute: AuthenticatedTeacherLessonPlansRoute,
     AuthenticatedTeacherNewsRoute: AuthenticatedTeacherNewsRoute,
     AuthenticatedTeacherSignInRoute: AuthenticatedTeacherSignInRoute,
