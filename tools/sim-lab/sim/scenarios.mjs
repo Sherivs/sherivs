@@ -1484,6 +1484,75 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
     v.removed === true && v.anonRemoved === null && !!v.bReclaim?.id && JSON.stringify(v.audit) === JSON.stringify(["add", "check", "set_primary", "remove"]) && !v.auditEdit?.ok && v.resolveMs < 20,
     `audit ${JSON.stringify(v.audit)}; resolve ${v.resolveMs} ms avg over 2,000 domains`, "high");
 }
+// ---------- A5. Fee relief (discounts, scholarships, waivers) with maker-checker, sibling rule, levies, statements (SHERIVS-A05) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+    const Y = "2031/2032", T = "first";
+    const fam = (await asOwner("select parent_id from students where school_id=$1 and is_active and parent_id is not null group by parent_id having count(*) >= 2 limit 1", [A.schoolId])).row?.parent_id;
+    const kids = fam ? (await asOwner("select id from students where parent_id=$1 and is_active order by coalesce(enrollment_date, created_at::date), created_at, id", [fam])).r.rows.map((r) => r.id) : [];
+    const sid = (await asOwner("select id from students where school_id=$1 and is_active and parent_id is not null order by admission_number limit 1", [A.schoolId])).row?.id;
+    const parent = (await asOwner("select parent_id from students where id=$1", [sid])).row?.parent_id;
+    await asOwner("delete from fees where student_id=$1 and academic_year=$2", [sid, Y]);
+    await asOwner("insert into fees (school_id, student_id, fee_type, amount, term, academic_year, status, paid_amount) values ($1,$2,'tuition',100000,$3,$4,'unpaid',0),($1,$2,'uniform',20000,$3,$4,'unpaid',0)", [A.schoolId, sid, T, Y]);
+    const checker = (await asOwner("select id from users where school_id=$1 and role='principal' limit 1", [A.schoolId])).row?.id ?? A.principal;
+    const req = (k, m, val, reason, ft = null, sp = null) => t("select public.fee_relief_request($1,$2,$3,$4,$5,$6,$7,$8,$9) id", [sid, k, m, val, T, Y, reason, ft, sp]);
+    await act(A.teacher); out.teacherReq = await req("discount", "percent", 10, "Staff child discount"); await act(A.admin);
+    out.short = await req("discount", "percent", 10, "x");
+    out.noSponsor = await req("scholarship", "fixed", 50000, "Merit award 2031");
+    out.over = await req("discount", "percent", 150, "Too generous");
+    const d1 = (await req("discount", "percent", 10, "Staff child discount")).row?.id;
+    const sc = (await req("scholarship", "fixed", 50000, "Merit award 2031", "tuition", "Borno Education Trust")).row?.id;
+    const wv = (await req("waiver", "percent", 100, "Uniform waiver (hardship)", "uniform")).row?.id;
+    const big = (await req("waiver", "fixed", 999999, "Full hardship waiver")).row?.id;
+    out.selfApprove = await t("select public.fee_relief_decide($1,true)", [d1]);
+    await act(checker);
+    out.approve = await t("select public.fee_relief_decide($1,true) r", [d1]);
+    for (const id of [sc, wv]) await t("select public.fee_relief_decide($1,true)", [id]);
+    out.twice = await t("select public.fee_relief_decide($1,false)", [d1]);
+    await act(A.admin);
+    out.st1 = (await t("select public.fee_statement($1,$2,$3) r", [sid, T, Y])).row?.r;
+    await act(checker); await t("select public.fee_relief_decide($1,true)", [big]); await act(A.admin);
+    out.st2 = (await t("select public.fee_statement($1,$2,$3) r", [sid, T, Y])).row?.r;
+    await t("select public.fee_relief_revoke($1)", [big]);
+    out.st3 = (await t("select public.fee_statement($1,$2,$3) r", [sid, T, Y])).row?.r;
+    // levies
+    const cls = (await asOwner("select class_id from students where id=$1", [sid])).row?.class_id;
+    const inClass = Number((await asOwner("select count(*) n from students where class_id=$1 and is_active", [cls])).row?.n);
+    out.levy = (await t("select public.fee_levy_create($1,'A5 Excursion levy',5000,$2,$3,$4) r", [A.schoolId, T, Y, [cls]])).row?.r;
+    out.levyAgain = (await t("select public.fee_levy_create($1,'A5 Excursion levy',5000,$2,$3,$4) r", [A.schoolId, T, Y, [cls]])).row?.r;
+    out.levyAmt = await t("select public.fee_levy_create($1,'A5 Excursion levy',7000,$2,$3,$4)", [A.schoolId, T, Y, [cls]]);
+    const bCls = (await asOwner("select id from classes where school_id=$1 limit 1", [B.schoolId])).row?.id;
+    out.levyForeign = await t("select public.fee_levy_create($1,'A5 Bad levy',1000,$2,$3,$4)", [A.schoolId, T, Y, [bCls]]);
+    out.st4 = (await t("select public.fee_statement($1,$2,$3) r", [sid, T, Y])).row?.r;
+    // sibling rule
+    await t("select public.fee_sibling_rule_set($1,2,25)", [A.schoolId]);
+    out.sib = (await t("select public.fee_sibling_apply($1,'second',$2) n", [A.schoolId, Y])).row?.n;
+    out.sibAgain = (await t("select public.fee_sibling_apply($1,'second',$2) n", [A.schoolId, Y])).row?.n;
+    out.sibFirstKid = kids.length ? (await asOwner("select count(*)::int n from fee_adjustments where student_id=$1 and rule='sibling' and term='second'", [kids[0]])).row?.n : null;
+    out.sibSecondKid = kids.length > 1 ? (await asOwner("select count(*)::int n from fee_adjustments where student_id=$1 and rule='sibling' and term='second'", [kids[1]])).row?.n : null;
+    // access
+    out.direct = await t("insert into fee_adjustments (school_id, student_id, kind, mode, value, term, academic_year, reason, status) values ($1,$2,'waiver','percent',100,$3,$4,'sneaky','approved')", [A.schoolId, sid, T, Y]);
+    if (parent) { await act(parent); out.parentSt = (await t("select public.fee_statement($1,$2,$3) r", [sid, T, Y])).row?.r; }
+    await act(B.admin); out.bSt = await t("select public.fee_statement($1,$2,$3)", [sid, T, Y]); out.bReq = await req("waiver", "percent", 100, "Cross-school waiver");
+    out.bRows = (await t("select count(*)::int n from fee_adjustments where student_id=$1", [sid])).row?.n; await act(A.admin);
+    Object.assign(out, { inClass, kids: kids.length, parent: !!parent });
+  });
+  rec("fees_relief", "Only fee managers request relief; reasons, sponsors and limits are enforced",
+    !v.teacherReq?.ok && !v.short?.ok && /sponsor/.test(v.noSponsor?.err ?? "") && !v.over?.ok, `${W_ERR(v.teacherReq)} | ${W_ERR(v.short)} | ${W_ERR(v.noSponsor)} | ${W_ERR(v.over)}`, "high");
+  rec("fees_relief", "Maker-checker: the requester cannot approve their own relief; a second manager decides once",
+    /separation_of_duties/.test(v.selfApprove?.err ?? "") && v.approve?.row?.r === "approved" && /already/.test(v.twice?.err ?? ""), `${W_ERR(v.selfApprove)} | ${W_ERR(v.twice)}`, "critical");
+  rec("fees_relief", "Statement: 10% + ₦50,000 tuition scholarship + uniform waiver = ₦82,000 relief; relief never exceeds the bill; revoking restores it",
+    Number(v.st1?.gross) === 120000 && Number(v.st1?.relief) === 82000 && Number(v.st1?.net) === 38000 && Number(v.st2?.net) === 0 && Number(v.st2?.relief) === 120000 && Number(v.st3?.net) === 38000,
+    `st1 ${v.st1?.relief}/${v.st1?.net}; st2 ${v.st2?.relief}/${v.st2?.net}; st3 ${v.st3?.net}`, "critical");
+  rec("fees_levies", "A levy charges each student in scope once; re-running never double-charges; amount changes and other schools' classes are refused",
+    v.levy?.charged_now === v.inClass && v.levyAgain?.charged_now === 0 && !v.levyAmt?.ok && !v.levyForeign?.ok && Number(v.st4?.gross) === 125000,
+    `charged ${v.levy?.charged_now}/${v.inClass}; again ${v.levyAgain?.charged_now}; gross ${v.st4?.gross}`, "high");
+  rec("fees_relief", "Sibling rule: second and later children get the discount, the first does not; applying twice adds nothing",
+    v.kids < 2 || (v.sib >= 1 && v.sibAgain === 0 && v.sibFirstKid === 0 && v.sibSecondKid === 1), `applied ${v.sib}, again ${v.sibAgain}; first ${v.sibFirstKid} second ${v.sibSecondKid}`, "high");
+  rec("fees_relief", "No direct writes; the parent reads their child's statement; another school can neither read nor request",
+    !v.direct?.ok && (!v.parent || Number(v.parentSt?.net) >= 0) && !v.bSt?.ok && !v.bReq?.ok && v.bRows === 0, `direct ${W_ERR(v.direct)}; B ${W_ERR(v.bSt)} / ${W_ERR(v.bReq)}`, "critical");
+}
+
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
 await pool.end();
