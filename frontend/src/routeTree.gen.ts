@@ -70,6 +70,7 @@ import { Route as AuthenticatedAdminBroadcastRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminBusManagementRouteImport } from './routes/_authenticated/admin/bus-management'
 import { Route as AuthenticatedAdminBusesRouteImport } from './routes/_authenticated/admin/buses'
 import { Route as AuthenticatedAdminCalendarRouteImport } from './routes/_authenticated/admin/calendar'
+import { Route as AuthenticatedAdminCampusesRouteImport } from './routes/_authenticated/admin/campuses'
 import { Route as AuthenticatedAdminClassesRouteImport } from './routes/_authenticated/admin/classes'
 import { Route as AuthenticatedAdminCmsRouteImport } from './routes/_authenticated/admin/cms'
 import { Route as AuthenticatedAdminDashboardRouteImport } from './routes/_authenticated/admin/dashboard'
@@ -102,6 +103,7 @@ import { Route as AuthenticatedAdminInventoryRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminLessonPlansRouteImport } from './routes/_authenticated/admin/lesson-plans'
 import { Route as AuthenticatedAdminLibraryRouteImport } from './routes/_authenticated/admin/library'
 import { Route as AuthenticatedAdminLockedAccountsRouteImport } from './routes/_authenticated/admin/locked-accounts'
+import { Route as AuthenticatedAdminNdpaRouteImport } from './routes/_authenticated/admin/ndpa'
 import { Route as AuthenticatedAdminNewsRouteImport } from './routes/_authenticated/admin/news'
 import { Route as AuthenticatedAdminOperationsRouteImport } from './routes/_authenticated/admin/operations'
 import { Route as AuthenticatedAdminPayrollRouteImport } from './routes/_authenticated/admin/payroll'
@@ -118,6 +120,7 @@ import { Route as AuthenticatedAdminTeacherIntelligenceRouteImport } from './rou
 import { Route as AuthenticatedAdminTeachersRouteImport } from './routes/_authenticated/admin/teachers'
 import { Route as AuthenticatedAdminTimetableRouteImport } from './routes/_authenticated/admin/timetable'
 import { Route as AuthenticatedAdminVisitorsRouteImport } from './routes/_authenticated/admin/visitors'
+import { Route as AuthenticatedAdminWalletRouteImport } from './routes/_authenticated/admin/wallet'
 import { Route as AuthenticatedBursarDashboardRouteImport } from './routes/_authenticated/bursar/dashboard'
 import { Route as AuthenticatedBursarFeePlansRouteImport } from './routes/_authenticated/bursar/fee-plans'
 import { Route as AuthenticatedBursarFinancialIntelligenceRouteImport } from './routes/_authenticated/bursar/financial-intelligence'
@@ -506,6 +509,12 @@ const AuthenticatedAdminCalendarRoute =
     path: '/calendar',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminCampusesRoute =
+  AuthenticatedAdminCampusesRouteImport.update({
+    id: '/campuses',
+    path: '/campuses',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminClassesRoute =
   AuthenticatedAdminClassesRouteImport.update({
     id: '/classes',
@@ -695,6 +704,11 @@ const AuthenticatedAdminLockedAccountsRoute =
     path: '/locked-accounts',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminNdpaRoute = AuthenticatedAdminNdpaRouteImport.update({
+  id: '/ndpa',
+  path: '/ndpa',
+  getParentRoute: () => AuthenticatedAdminRouteRoute,
+} as any)
 const AuthenticatedAdminNewsRoute = AuthenticatedAdminNewsRouteImport.update({
   id: '/news',
   path: '/news',
@@ -787,6 +801,12 @@ const AuthenticatedAdminVisitorsRoute =
   AuthenticatedAdminVisitorsRouteImport.update({
     id: '/visitors',
     path: '/visitors',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminWalletRoute =
+  AuthenticatedAdminWalletRouteImport.update({
+    id: '/wallet',
+    path: '/wallet',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedBursarDashboardRoute =
@@ -1242,6 +1262,7 @@ export interface FileRoutesByFullPath {
   '/admin/bus-management': typeof AuthenticatedAdminBusManagementRoute
   '/admin/buses': typeof AuthenticatedAdminBusesRoute
   '/admin/calendar': typeof AuthenticatedAdminCalendarRoute
+  '/admin/campuses': typeof AuthenticatedAdminCampusesRoute
   '/admin/classes': typeof AuthenticatedAdminClassesRoute
   '/admin/cms': typeof AuthenticatedAdminCmsRoute
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
@@ -1274,6 +1295,7 @@ export interface FileRoutesByFullPath {
   '/admin/lesson-plans': typeof AuthenticatedAdminLessonPlansRoute
   '/admin/library': typeof AuthenticatedAdminLibraryRoute
   '/admin/locked-accounts': typeof AuthenticatedAdminLockedAccountsRoute
+  '/admin/ndpa': typeof AuthenticatedAdminNdpaRoute
   '/admin/news': typeof AuthenticatedAdminNewsRoute
   '/admin/operations': typeof AuthenticatedAdminOperationsRoute
   '/admin/payroll': typeof AuthenticatedAdminPayrollRoute
@@ -1290,6 +1312,7 @@ export interface FileRoutesByFullPath {
   '/admin/teachers': typeof AuthenticatedAdminTeachersRoute
   '/admin/timetable': typeof AuthenticatedAdminTimetableRoute
   '/admin/visitors': typeof AuthenticatedAdminVisitorsRoute
+  '/admin/wallet': typeof AuthenticatedAdminWalletRoute
   '/bursar/dashboard': typeof AuthenticatedBursarDashboardRoute
   '/bursar/fee-plans': typeof AuthenticatedBursarFeePlansRoute
   '/bursar/financial-intelligence': typeof AuthenticatedBursarFinancialIntelligenceRoute
@@ -1416,6 +1439,7 @@ export interface FileRoutesByTo {
   '/admin/bus-management': typeof AuthenticatedAdminBusManagementRoute
   '/admin/buses': typeof AuthenticatedAdminBusesRoute
   '/admin/calendar': typeof AuthenticatedAdminCalendarRoute
+  '/admin/campuses': typeof AuthenticatedAdminCampusesRoute
   '/admin/classes': typeof AuthenticatedAdminClassesRoute
   '/admin/cms': typeof AuthenticatedAdminCmsRoute
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
@@ -1448,6 +1472,7 @@ export interface FileRoutesByTo {
   '/admin/lesson-plans': typeof AuthenticatedAdminLessonPlansRoute
   '/admin/library': typeof AuthenticatedAdminLibraryRoute
   '/admin/locked-accounts': typeof AuthenticatedAdminLockedAccountsRoute
+  '/admin/ndpa': typeof AuthenticatedAdminNdpaRoute
   '/admin/news': typeof AuthenticatedAdminNewsRoute
   '/admin/operations': typeof AuthenticatedAdminOperationsRoute
   '/admin/payroll': typeof AuthenticatedAdminPayrollRoute
@@ -1464,6 +1489,7 @@ export interface FileRoutesByTo {
   '/admin/teachers': typeof AuthenticatedAdminTeachersRoute
   '/admin/timetable': typeof AuthenticatedAdminTimetableRoute
   '/admin/visitors': typeof AuthenticatedAdminVisitorsRoute
+  '/admin/wallet': typeof AuthenticatedAdminWalletRoute
   '/bursar/dashboard': typeof AuthenticatedBursarDashboardRoute
   '/bursar/fee-plans': typeof AuthenticatedBursarFeePlansRoute
   '/bursar/financial-intelligence': typeof AuthenticatedBursarFinancialIntelligenceRoute
@@ -1594,6 +1620,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/bus-management': typeof AuthenticatedAdminBusManagementRoute
   '/_authenticated/admin/buses': typeof AuthenticatedAdminBusesRoute
   '/_authenticated/admin/calendar': typeof AuthenticatedAdminCalendarRoute
+  '/_authenticated/admin/campuses': typeof AuthenticatedAdminCampusesRoute
   '/_authenticated/admin/classes': typeof AuthenticatedAdminClassesRoute
   '/_authenticated/admin/cms': typeof AuthenticatedAdminCmsRoute
   '/_authenticated/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
@@ -1626,6 +1653,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/lesson-plans': typeof AuthenticatedAdminLessonPlansRoute
   '/_authenticated/admin/library': typeof AuthenticatedAdminLibraryRoute
   '/_authenticated/admin/locked-accounts': typeof AuthenticatedAdminLockedAccountsRoute
+  '/_authenticated/admin/ndpa': typeof AuthenticatedAdminNdpaRoute
   '/_authenticated/admin/news': typeof AuthenticatedAdminNewsRoute
   '/_authenticated/admin/operations': typeof AuthenticatedAdminOperationsRoute
   '/_authenticated/admin/payroll': typeof AuthenticatedAdminPayrollRoute
@@ -1642,6 +1670,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/teachers': typeof AuthenticatedAdminTeachersRoute
   '/_authenticated/admin/timetable': typeof AuthenticatedAdminTimetableRoute
   '/_authenticated/admin/visitors': typeof AuthenticatedAdminVisitorsRoute
+  '/_authenticated/admin/wallet': typeof AuthenticatedAdminWalletRoute
   '/_authenticated/bursar/dashboard': typeof AuthenticatedBursarDashboardRoute
   '/_authenticated/bursar/fee-plans': typeof AuthenticatedBursarFeePlansRoute
   '/_authenticated/bursar/financial-intelligence': typeof AuthenticatedBursarFinancialIntelligenceRoute
@@ -1771,6 +1800,7 @@ export interface FileRouteTypes {
     | '/admin/bus-management'
     | '/admin/buses'
     | '/admin/calendar'
+    | '/admin/campuses'
     | '/admin/classes'
     | '/admin/cms'
     | '/admin/dashboard'
@@ -1803,6 +1833,7 @@ export interface FileRouteTypes {
     | '/admin/lesson-plans'
     | '/admin/library'
     | '/admin/locked-accounts'
+    | '/admin/ndpa'
     | '/admin/news'
     | '/admin/operations'
     | '/admin/payroll'
@@ -1819,6 +1850,7 @@ export interface FileRouteTypes {
     | '/admin/teachers'
     | '/admin/timetable'
     | '/admin/visitors'
+    | '/admin/wallet'
     | '/bursar/dashboard'
     | '/bursar/fee-plans'
     | '/bursar/financial-intelligence'
@@ -1945,6 +1977,7 @@ export interface FileRouteTypes {
     | '/admin/bus-management'
     | '/admin/buses'
     | '/admin/calendar'
+    | '/admin/campuses'
     | '/admin/classes'
     | '/admin/cms'
     | '/admin/dashboard'
@@ -1977,6 +2010,7 @@ export interface FileRouteTypes {
     | '/admin/lesson-plans'
     | '/admin/library'
     | '/admin/locked-accounts'
+    | '/admin/ndpa'
     | '/admin/news'
     | '/admin/operations'
     | '/admin/payroll'
@@ -1993,6 +2027,7 @@ export interface FileRouteTypes {
     | '/admin/teachers'
     | '/admin/timetable'
     | '/admin/visitors'
+    | '/admin/wallet'
     | '/bursar/dashboard'
     | '/bursar/fee-plans'
     | '/bursar/financial-intelligence'
@@ -2122,6 +2157,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/bus-management'
     | '/_authenticated/admin/buses'
     | '/_authenticated/admin/calendar'
+    | '/_authenticated/admin/campuses'
     | '/_authenticated/admin/classes'
     | '/_authenticated/admin/cms'
     | '/_authenticated/admin/dashboard'
@@ -2154,6 +2190,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/lesson-plans'
     | '/_authenticated/admin/library'
     | '/_authenticated/admin/locked-accounts'
+    | '/_authenticated/admin/ndpa'
     | '/_authenticated/admin/news'
     | '/_authenticated/admin/operations'
     | '/_authenticated/admin/payroll'
@@ -2170,6 +2207,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/teachers'
     | '/_authenticated/admin/timetable'
     | '/_authenticated/admin/visitors'
+    | '/_authenticated/admin/wallet'
     | '/_authenticated/bursar/dashboard'
     | '/_authenticated/bursar/fee-plans'
     | '/_authenticated/bursar/financial-intelligence'
@@ -2694,6 +2732,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCalendarRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/campuses': {
+      id: '/_authenticated/admin/campuses'
+      path: '/campuses'
+      fullPath: '/admin/campuses'
+      preLoaderRoute: typeof AuthenticatedAdminCampusesRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/classes': {
       id: '/_authenticated/admin/classes'
       path: '/classes'
@@ -2918,6 +2963,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminLockedAccountsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/ndpa': {
+      id: '/_authenticated/admin/ndpa'
+      path: '/ndpa'
+      fullPath: '/admin/ndpa'
+      preLoaderRoute: typeof AuthenticatedAdminNdpaRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/news': {
       id: '/_authenticated/admin/news'
       path: '/news'
@@ -3028,6 +3080,13 @@ declare module '@tanstack/react-router' {
       path: '/visitors'
       fullPath: '/admin/visitors'
       preLoaderRoute: typeof AuthenticatedAdminVisitorsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/wallet': {
+      id: '/_authenticated/admin/wallet'
+      path: '/wallet'
+      fullPath: '/admin/wallet'
+      preLoaderRoute: typeof AuthenticatedAdminWalletRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/bursar/dashboard': {
@@ -3533,6 +3592,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminBusManagementRoute: typeof AuthenticatedAdminBusManagementRoute
   AuthenticatedAdminBusesRoute: typeof AuthenticatedAdminBusesRoute
   AuthenticatedAdminCalendarRoute: typeof AuthenticatedAdminCalendarRoute
+  AuthenticatedAdminCampusesRoute: typeof AuthenticatedAdminCampusesRoute
   AuthenticatedAdminClassesRoute: typeof AuthenticatedAdminClassesRoute
   AuthenticatedAdminCmsRoute: typeof AuthenticatedAdminCmsRoute
   AuthenticatedAdminDashboardRoute: typeof AuthenticatedAdminDashboardRoute
@@ -3565,6 +3625,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminLessonPlansRoute: typeof AuthenticatedAdminLessonPlansRoute
   AuthenticatedAdminLibraryRoute: typeof AuthenticatedAdminLibraryRoute
   AuthenticatedAdminLockedAccountsRoute: typeof AuthenticatedAdminLockedAccountsRoute
+  AuthenticatedAdminNdpaRoute: typeof AuthenticatedAdminNdpaRoute
   AuthenticatedAdminNewsRoute: typeof AuthenticatedAdminNewsRoute
   AuthenticatedAdminOperationsRoute: typeof AuthenticatedAdminOperationsRoute
   AuthenticatedAdminPayrollRoute: typeof AuthenticatedAdminPayrollRoute
@@ -3581,6 +3642,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminTeachersRoute: typeof AuthenticatedAdminTeachersRoute
   AuthenticatedAdminTimetableRoute: typeof AuthenticatedAdminTimetableRoute
   AuthenticatedAdminVisitorsRoute: typeof AuthenticatedAdminVisitorsRoute
+  AuthenticatedAdminWalletRoute: typeof AuthenticatedAdminWalletRoute
 }
 
 const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
@@ -3596,6 +3658,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminBusManagementRoute: AuthenticatedAdminBusManagementRoute,
     AuthenticatedAdminBusesRoute: AuthenticatedAdminBusesRoute,
     AuthenticatedAdminCalendarRoute: AuthenticatedAdminCalendarRoute,
+    AuthenticatedAdminCampusesRoute: AuthenticatedAdminCampusesRoute,
     AuthenticatedAdminClassesRoute: AuthenticatedAdminClassesRoute,
     AuthenticatedAdminCmsRoute: AuthenticatedAdminCmsRoute,
     AuthenticatedAdminDashboardRoute: AuthenticatedAdminDashboardRoute,
@@ -3641,6 +3704,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminLibraryRoute: AuthenticatedAdminLibraryRoute,
     AuthenticatedAdminLockedAccountsRoute:
       AuthenticatedAdminLockedAccountsRoute,
+    AuthenticatedAdminNdpaRoute: AuthenticatedAdminNdpaRoute,
     AuthenticatedAdminNewsRoute: AuthenticatedAdminNewsRoute,
     AuthenticatedAdminOperationsRoute: AuthenticatedAdminOperationsRoute,
     AuthenticatedAdminPayrollRoute: AuthenticatedAdminPayrollRoute,
@@ -3660,6 +3724,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminTeachersRoute: AuthenticatedAdminTeachersRoute,
     AuthenticatedAdminTimetableRoute: AuthenticatedAdminTimetableRoute,
     AuthenticatedAdminVisitorsRoute: AuthenticatedAdminVisitorsRoute,
+    AuthenticatedAdminWalletRoute: AuthenticatedAdminWalletRoute,
   }
 
 const AuthenticatedAdminRouteRouteWithChildren =

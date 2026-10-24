@@ -490,6 +490,128 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
     `first ${v.f1?.ok ? "created" : v.f1?.err}; account cap ${W_ERR(v.f2)}; global cap ${W_ERR(v.f3)}`, "high");
   rec("ratelimit", "Rate-limit counter cannot be called directly by users", !v.rlDirect?.ok, W_ERR(v.rlDirect), "medium");
 }
+// ---------- 14. Wallet, PAYG metering, cash tracker, NDPA, campus model (SHERIVS-019) ----------
+{
+  const SA = crypto.randomUUID();
+  const studs = (await sys("select id from students where school_id=$1 order by admission_number limit 4", [A.schoolId])).rows.map((r) => r.id);
+  const otherStud = (await sys("select id from students where school_id=$1 limit 1", [B.schoolId])).rows[0].id;
+  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+    const svc = async (sql, p = []) => { await c.query("SET LOCAL ROLE service_role"); await c.query("select set_config('request.jwt.claims', '{\"role\":\"service_role\"}', true)");
+      try { return await t(sql, p); } finally { await c.query("SET LOCAL ROLE authenticated"); } };
+    const bal = async () => Number((await asOwner("select balance from school_wallets where school_id=$1", [A.schoolId])).row?.balance ?? 0);
+    await asOwner("insert into auth.users (id) values ($1) on conflict do nothing", [SA]);
+    await asOwner("insert into super_admins (id, full_name, email, is_active) values ($1,'Sim SA2','sa2@sim.local',true)", [SA]);
+    // top-up
+    out.adminTop = await t("select public.wallet_credit_topup($1, 50000, 'PSK_SIM_0001')", [A.schoolId]);
+    out.svcTop = await svc("select public.wallet_credit_topup($1, 50000, 'PSK_SIM_0001') b", [A.schoolId]);
+    out.svcReplay = await svc("select public.wallet_credit_topup($1, 50000, 'PSK_SIM_0001') b", [A.schoolId]);
+    await act(A.admin); out.bal1 = await bal();
+    // pools
+    out.pools = (await t("select public.open_term_pools($1,'2025/2026','first') p", [A.schoolId])).row?.p;
+    out.fromPool = (await t("select public.meter_usage($1,'sms',5,'sim-sms-1',null,'normal','2025/2026','first') r", [A.schoolId])).row?.r;
+    await asOwner("update term_usage_pools set used = allowance where school_id=$1", [A.schoolId]);
+    out.overage = (await t("select public.meter_usage($1,'sms',10,'sim-sms-2',null,'normal','2025/2026','first') r", [A.schoolId])).row?.r;
+    out.replay = (await t("select public.meter_usage($1,'sms',10,'sim-sms-2',null,'normal','2025/2026','first') r", [A.schoolId])).row?.r;
+    out.bal2 = await bal();
+    // daily cap per student (growth: 1 SMS/student/day)
+    out.cap1 = await t("select public.meter_usage($1,'sms',1,'sim-cap-1',$2,'normal','2025/2026','first') r", [A.schoolId, studs[0]]);
+    out.cap2 = await t("select public.meter_usage($1,'sms',1,'sim-cap-2',$2,'normal','2025/2026','first') r", [A.schoolId, studs[0]]);
+    // hard stop vs safety
+    out.bigNormal = await t("select public.meter_usage($1,'voice_min',200,'sim-voice-1',null,'normal','2025/2026','first') r", [A.schoolId]);
+    out.bigSafety = await t("select public.meter_usage($1,'voice_min',200,'sim-voice-2',null,'safety','2025/2026','first') r", [A.schoolId]);
+    out.bal3 = await bal();
+    out.alerts = (await asOwner("select string_agg(distinct kind, ',' order by kind) k from wallet_alerts where school_id=$1", [A.schoolId])).row?.k ?? "";
+    // direct writes / append-only
+    out.directLedger = await t("insert into wallet_ledger (school_id, kind, amount, balance_after, reference) values ($1,'topup',1000000,1000000,'free-money')", [A.schoolId]);
+    out.directWallet = await t("update school_wallets set balance = 9999999 where school_id=$1", [A.schoolId]);
+    out.ownerEdit = await asOwner("update wallet_ledger set amount = 1 where school_id=$1", [A.schoolId]);
+    await act(A.sampleParent); out.parentLedger = (await t("select count(*)::int n from wallet_ledger")).row?.n;
+    await act(A.teacher); out.teacherLedger = (await t("select count(*)::int n from wallet_ledger")).row?.n;
+    // cash tracker
+    await asOwner("update school_wallets set balance = balance + 100000 where school_id=$1", [A.schoolId]);
+    await act(A.teacher); out.cashTeacher = await t("select public.record_cash_payment($1,$2,'2025/2026','first',150000,'cash',null,'RC-1')", [A.schoolId, studs[1]]);
+    await act(A.bursar);
+    const b0 = await bal();
+    out.cashNoReceipt = await t("select public.record_cash_payment($1,$2,'2025/2026','first',150000)", [A.schoolId, studs[1]]);
+    out.cash1 = (await t("select public.record_cash_payment($1,$2,'2025/2026','first',100000,'cash','https://r/1.jpg','RC-1') r", [A.schoolId, studs[1]])).row?.r;
+    out.cash2 = (await t("select public.record_cash_payment($1,$2,'2025/2026','first',50000,'cash',null,'RC-2') r", [A.schoolId, studs[1]])).row?.r;
+    out.cashDebit = b0 - await bal();
+    out.cashCross = await t("select public.record_cash_payment($1,$2,'2025/2026','first',1000,'cash',null,'RC-X')", [A.schoolId, otherStud]);
+    out.badge = (await t("select public.student_paid_offline($1,$2,'2025/2026','first') b", [A.schoolId, studs[1]])).row?.b;
+    // leakage: a paid fee without a share
+    await asOwner("insert into fees (school_id, student_id, fee_type, amount, paid_amount, status, term, academic_year) values ($1,$2,'tuition',150000,150000,'paid','first','2025/2026')", [A.schoolId, studs[2]]);
+    await act(A.admin); out.leak = (await t("select public.platform_fee_leakage($1,'2025/2026','first') l", [A.schoolId])).row?.l;
+    await asOwner("insert into grades (school_id, student_id, subject, term, academic_year, ca_score, exam_score, is_published) values ($1,$2,'SIM-LEAK','first','2025/2026',20,50,false) on conflict do nothing", [A.schoolId, studs[2]]);
+    out.pubOff = await asOwner("update grades set is_published = true where school_id=$1 and subject='SIM-LEAK'", [A.schoolId]);
+    await asOwner("update grades set is_published = false where school_id=$1 and subject='SIM-LEAK'", [A.schoolId]);
+    await act(SA); await t("select public.flag_set('leakage_blocks_results', $1, true)", [A.schoolId]); await act(A.admin);
+    out.pubOn = await asOwner("update grades set is_published = true where school_id=$1 and subject='SIM-LEAK'", [A.schoolId]);
+    // plan change
+    out.plan = (await t("select public.request_plan_change($1,'professional') r", [A.schoolId])).row?.r;
+    // NDPA
+    out.ndpaProfile = await t("select public.ndpa_upsert_profile($1, '{\"dpo_name\":\"Sim DPO\",\"dpo_email\":\"dpo@sim.local\",\"ndpc_registration_no\":\"NDPC-SIM-1\",\"privacy_notice_url\":\"https://sim/privacy\"}')", [A.schoolId]);
+    out.retention = (await t("select public.ndpa_seed_retention($1) n", [A.schoolId])).row?.n;
+    const dp = (await t("select public.dpia_save($1,'AI tutor','AI tutoring for SS students','{academic,usage}','medium','Pseudonymised prompts') id", [A.schoolId])).row?.id;
+    out.dpiaSelf = await t("select public.dpia_approve($1)", [dp]);
+    await act(A.principal); out.dpiaOk = await t("select public.dpia_approve($1)", [dp]);
+    out.ndpa = (await t("select public.ndpa_compliance_status($1) s", [A.schoolId])).row?.s;
+    await act(A.teacher); out.ndpaTeacher = await t("select public.ndpa_compliance_status($1)", [A.schoolId]);
+    out.ndpaTeacherRead = (await t("select count(*)::int n from ndpa_controller_profiles")).row?.n;
+    // campus model
+    await act(A.admin);
+    const camp = (await t("select public.campus_upsert($1,'Lekki Campus','LKC') id", [A.schoolId])).row?.id;
+    const sec = (await t("select public.section_upsert($1,$2,'Senior Secondary','senior_secondary') id", [A.schoolId, camp])).row?.id;
+    out.arms = (await t("select public.generate_class_arms($1,'SS1','A','F',null,$2,$3,'science','2025/2026') n", [A.schoolId, sec, camp])).row?.n;
+    out.armsAgain = (await t("select public.generate_class_arms($1,'SS1','A','F',null,$2,$3,'science','2025/2026') n", [A.schoolId, sec, camp])).row?.n;
+    out.named = (await t("select public.generate_class_arms($1,'Nursery 1','A','A',array['Gold','Diamond'],null,$2) n", [A.schoolId, camp])).row?.n;
+    out.badRange = await t("select public.generate_class_arms($1,'JSS1','F','A')", [A.schoolId]);
+    const h = (await t("select public.group_upsert($1,'Blue House','house','blue') id", [A.schoolId])).row?.id;
+    const club = (await t("select public.group_upsert($1,'Robotics Club','club') id", [A.schoolId])).row?.id;
+    out.h1 = (await t("select public.group_add_students($1,$2) n", [h, studs])).row?.n;
+    out.h2 = (await t("select public.group_add_students($1,$2) n", [club, studs.slice(0, 2)])).row?.n;
+    out.hCross = await t("select public.group_add_students($1,$2)", [h, [otherStud]]);
+    await act(A.teacher); out.armsTeacher = await t("select public.generate_class_arms($1,'JSS3','A','B')", [A.schoolId]);
+    await act(B.admin); out.campusCross = await t("select public.campus_upsert($1,'Hijack')", [A.schoolId]);
+    out.bCampusRead = (await t("select count(*)::int n from campuses where school_id=$1", [A.schoolId])).row?.n;
+    out.audit = (await asOwner("select count(*)::int n from audit_logs where school_id=$1 and action like 'scholar.%'", [A.schoolId])).row?.n;
+    out.chain = (await asOwner("select count(*)::int n from audit_chain where action like 'legacy.scholar.%'")).row?.n;
+  });
+  const fp = v.fromPool ?? {}, ov = v.overage ?? {};
+  rec("wallet", "Top-up credited only by the verified webhook (service role), idempotent on the Paystack reference", !v.adminTop?.ok && v.svcTop?.ok && v.bal1 === 50000,
+    `admin ${W_ERR(v.adminTop)}; balance after replay ${v.bal1}`, "critical");
+  rec("wallet", "Term pools come from plan allowances x students (Growth: 8 SMS, 25 WA, 0.25 voice min)", v.pools?.sms === v.pools?.students * 8 && v.pools?.whatsapp === v.pools?.students * 25,
+    JSON.stringify(v.pools), "high");
+  rec("wallet", "Pool first, then wallet at the price book (SMS ₦10); replay is not charged twice", Number(fp.charged) === 0 && Number(ov.charged) === 100 && v.replay?.replay === true && v.bal2 === 49900,
+    `pool send charged ${fp.charged}; overage ${ov.charged}; balance ${v.bal2}`, "critical");
+  rec("wallet", "Per-student daily cap enforced (Growth: 1 SMS per student per day)", v.cap1?.ok && /daily_cap/.test(v.cap2?.err ?? ""), `second ${W_ERR(v.cap2)}`, "high");
+  rec("wallet", "Hard stop at zero for optional sends; safety messages still go out (wallet may go negative)", /insufficient_wallet/.test(v.bigNormal?.err ?? "") && v.bigSafety?.ok && v.bal3 < 0,
+    `normal ${W_ERR(v.bigNormal)}; safety ${v.bigSafety?.ok ? "sent" : v.bigSafety?.err}; balance ${v.bal3}`, "critical");
+  rec("wallet", "Low-balance (20%) and negative-balance alerts raised", /low_balance/.test(v.alerts) && /negative_balance/.test(v.alerts), v.alerts, "medium");
+  rec("wallet", "Wallet cannot be minted: direct ledger/balance writes refused and the ledger is append-only even for the DB owner",
+    !v.directLedger?.ok && !v.directWallet?.ok && !v.ownerEdit?.ok, [v.directLedger, v.directWallet, v.ownerEdit].map(W_ERR).join(" | "), "critical");
+  rec("wallet", "Parents and teachers cannot read the wallet ledger", v.parentLedger === 0 && v.teacherLedger === 0, `parent ${v.parentLedger}, teacher ${v.teacherLedger}`, "high");
+  rec("cash", "Cash tracker: teacher refused, receipt required, bursar records with receipt", !v.cashTeacher?.ok && !v.cashNoReceipt?.ok && v.cash1?.offline_payment,
+    `teacher ${W_ERR(v.cashTeacher)}; no receipt ${W_ERR(v.cashNoReceipt)}`, "critical");
+  rec("cash", "Sherivs share debited once per student per term (₦3,000 on Growth), not per instalment", v.cash1?.share_debited === true && v.cash2?.share_debited === false && v.cashDebit === 3000,
+    `first ${v.cash1?.share}, second ${v.cash2?.share}, wallet moved ${v.cashDebit}`, "critical");
+  rec("cash", "Cash for another school's student refused; paid-offline badge shows", !v.cashCross?.ok && v.badge === true, `cross ${W_ERR(v.cashCross)}; badge ${v.badge}`, "critical");
+  rec("leakage", "Leakage check finds students paid without a Sherivs share", v.leak?.gap >= 1, JSON.stringify(v.leak), "high");
+  rec("leakage", "With the contract flag on, results cannot be published until leakage is settled", v.pubOff?.ok && /results_blocked/.test(v.pubOn?.err ?? ""),
+    `flag off ${v.pubOff?.ok ? "published" : v.pubOff?.err}; flag on ${W_ERR(v.pubOn)}`, "high");
+  rec("plan", "Upgrade charges the registration difference, effective next term, no refund", Number(v.plan?.registration_difference) === 750000 && v.plan?.effective === "next_term",
+    JSON.stringify(v.plan), "medium");
+  const nd = v.ndpa ?? [];
+  rec("ndpa", "NDPA pack: DPO, NDPC registration, retention schedule, DPIA recorded", v.ndpaProfile?.ok && v.retention === 8 && nd.length === 8,
+    nd.map((x) => `${x.item}:${x.ok ? "ok" : "todo"}`).join("; "), "high");
+  rec("ndpa", "DPIA preparer cannot approve their own DPIA; another officer can", !v.dpiaSelf?.ok && v.dpiaOk?.ok, `self ${W_ERR(v.dpiaSelf)}`, "critical");
+  rec("ndpa", "Teachers cannot see the NDPA compliance file", !v.ndpaTeacher?.ok && v.ndpaTeacherRead === 0, W_ERR(v.ndpaTeacher), "high");
+  rec("campus", "A–Z arm generator creates SS1 A–F (Science) once; named arms supported; bad range refused",
+    v.arms === 6 && v.armsAgain === 0 && v.named === 2 && !v.badRange?.ok, `arms ${v.arms}, rerun ${v.armsAgain}, named ${v.named}, bad ${W_ERR(v.badRange)}`, "high");
+  rec("campus", "Students can sit in several groups (house + club); other-school students refused", v.h1 === 4 && v.h2 === 2 && !v.hCross?.ok, `house ${v.h1}, club ${v.h2}, cross ${W_ERR(v.hCross)}`, "high");
+  rec("campus", "Teacher cannot restructure classes; another school cannot add or read campuses", !v.armsTeacher?.ok && !v.campusCross?.ok && v.bCampusRead === 0,
+    `teacher ${W_ERR(v.armsTeacher)}; cross ${W_ERR(v.campusCross)}; cross read ${v.bCampusRead}`, "critical");
+  rec("audit", "Wallet, cash, NDPA and campus changes are audited and chained", v.audit >= 10 && v.chain >= 10, `${v.audit} audit rows, ${v.chain} chain rows`, "high");
+}
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
 await pool.end();
