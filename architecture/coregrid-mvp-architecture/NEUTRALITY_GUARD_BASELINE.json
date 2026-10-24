@@ -12,11 +12,11 @@
       "warn": "observed violation group present in baselineEntries (printed every run)",
       "ratchet": "baseline entry no longer observed — removable by the engineer who cleared it"
     },
-    "lastRatchet": "2026-10-03: V1-006 (team SECURITY) neutralized the platform authorization core — removed all 9 frontend/src/lib/authorization.ts and all 13 frontend/src/lib/identity.ts entries (authorization.ts and identity.ts now carry zero education vocabulary; roles/relationship types are contributed via rbac/domain-contribution + domain-config registration) and refreshed the 7 frozen security-role-gate.ts legacy-fallback entries against the live tree (shrink-only, ADR-003/004). || 2026-10-03 (ADR-012): T-wave coordinator ADDED 3 quarantine groups (19 hits) for database/supabase/migrations/20261003000040_coregrid_school_media_bucket.sql — the FIRST baseline extension, made under ADR-004's explicit 'new ADR' mechanism: the declarative storage-provisioning migration must reference the legacy storage contract id school-media consumed by the frontend and by the applied 20260707223958 policy set; the neutral conversion (bucket id + policy predicates + path contract) is blocked on the neutral-tenant substrate conversion (same conversionPath class as the transport posture) and is recorded as an authorized follow-up that REMOVES these entries in the same change. Zero new privileges authorized by ADR-012. || 2026-10-08 (ADR-013): Sherivs refoundation ADDED 9 quarantine groups (47 hits) for database/supabase/migrations/20261008000050_coregrid_organization_memberships.sql — the SECOND baseline extension, made under ADR-004's explicit 'new ADR' mechanism (ADR-012 precedent): the multi-membership migration extends the LIVE legacy identity store in place (users.school_id stays the ACTIVE-CONTEXT binding; every tenant RLS predicate resolves through get_my_school_id()/get_my_role()), so its SQL necessarily carries the same legacy vocabulary class its owners are quarantined for (school_id, is_school_admin, get_my_school_id, tenant role names). It introduces NO new domain code on the universal surface — the table is additive, RLS-FORCED, and mirrors the legacy store. Zero new privileges beyond the policy-gated DML posture it declares. The neutral-tenant substrate conversion (COND-003 / ADR-012 conversionPath) removes these entries in the same change when it lands. || 2026-10-08 (ADR-013 amendment, same ADR authority): pre-apply verification against the LIVE users_role_check exposed two roles the migration's original CHECK omitted (alumni, driver) — the dual-write trigger must be able to mirror EVERY role the identity store legally holds, so the CHECK was corrected to mirror users_role_check exactly and the migration APPLIED under explicit operator authorization. This adds 1 quarantine group (vocabulary-literal:driver) to the ten now recorded for this migration. || 2026-10-24 (SHERIVS-UX1, W9/W11 precedent): ADDED 21 quarantine groups (119 hits) for database/supabase/migrations/20261024000500_sherivs_ux1_workspace_manifest.sql — the workspace manifest resolves the caller through the legacy tenant helpers (get_my_school_id/get_my_role) and names school modules and legacy role codes; no new privileges (all functions SECURITY DEFINER with explicit membership checks)."
+    "lastRatchet": "2026-10-03: V1-006 (team SECURITY) neutralized the platform authorization core — removed all 9 frontend/src/lib/authorization.ts and all 13 frontend/src/lib/identity.ts entries (authorization.ts and identity.ts now carry zero education vocabulary; roles/relationship types are contributed via rbac/domain-contribution + domain-config registration) and refreshed the 7 frozen security-role-gate.ts legacy-fallback entries against the live tree (shrink-only, ADR-003/004). || 2026-10-03 (ADR-012): T-wave coordinator ADDED 3 quarantine groups (19 hits) for database/supabase/migrations/20261003000040_coregrid_school_media_bucket.sql — the FIRST baseline extension, made under ADR-004's explicit 'new ADR' mechanism: the declarative storage-provisioning migration must reference the legacy storage contract id school-media consumed by the frontend and by the applied 20260707223958 policy set; the neutral conversion (bucket id + policy predicates + path contract) is blocked on the neutral-tenant substrate conversion (same conversionPath class as the transport posture) and is recorded as an authorized follow-up that REMOVES these entries in the same change. Zero new privileges authorized by ADR-012. || 2026-10-08 (ADR-013): Sherivs refoundation ADDED 9 quarantine groups (47 hits) for database/supabase/migrations/20261008000050_coregrid_organization_memberships.sql — the SECOND baseline extension, made under ADR-004's explicit 'new ADR' mechanism (ADR-012 precedent): the multi-membership migration extends the LIVE legacy identity store in place (users.school_id stays the ACTIVE-CONTEXT binding; every tenant RLS predicate resolves through get_my_school_id()/get_my_role()), so its SQL necessarily carries the same legacy vocabulary class its owners are quarantined for (school_id, is_school_admin, get_my_school_id, tenant role names). It introduces NO new domain code on the universal surface — the table is additive, RLS-FORCED, and mirrors the legacy store. Zero new privileges beyond the policy-gated DML posture it declares. The neutral-tenant substrate conversion (COND-003 / ADR-012 conversionPath) removes these entries in the same change when it lands. || 2026-10-08 (ADR-013 amendment, same ADR authority): pre-apply verification against the LIVE users_role_check exposed two roles the migration's original CHECK omitted (alumni, driver) — the dual-write trigger must be able to mirror EVERY role the identity store legally holds, so the CHECK was corrected to mirror users_role_check exactly and the migration APPLIED under explicit operator authorization. This adds 1 quarantine group (vocabulary-literal:driver) to the ten now recorded for this migration. || 2026-10-24 (SHERIVS-UX1, W9/W11 precedent): ADDED 21 quarantine groups (119 hits) for database/supabase/migrations/20261024000500_sherivs_ux1_workspace_manifest.sql — the workspace manifest resolves the caller through the legacy tenant helpers (get_my_school_id/get_my_role) and names school modules and legacy role codes; no new privileges (all functions SECURITY DEFINER with explicit membership checks). || 2026-10-24 (SHERIVS-UX2, UX1/W9/W11 precedent): ADDED 13 quarantine groups (25 hits) for database/supabase/migrations/20261024000600_sherivs_ux2_scope_policy_workspace.sql — the scope/policy-aware workspace manifest replaces the UX1 function bodies and so carries the same legacy tenant helpers (get_my_school_id/get_my_role), legacy role codes and module names; no new privileges (all functions SECURITY DEFINER with explicit membership / settings.manage checks)."
   },
   "summary": {
-    "entryCount": 651,
-    "totalObservedHits": 2998,
+    "entryCount": 664,
+    "totalObservedHits": 3023,
     "hitsByFile": {
       "database/supabase/migrations/20260907000100_runtime_scholar_workforce_catalog.sql": 114,
       "database/supabase/migrations/20260620122048_50e590c2-5911-4c98-8931-fb46a4b509f3.sql": 84,
@@ -174,9 +174,10 @@
       "database/supabase/migrations/20261024000330_sherivs_026_wallet_topup_init_i18n_fix.sql": 11,
       "database/supabase/migrations/20261024000340_sherivs_027_gov_portal.sql": 19,
       "database/supabase/migrations/20261024000360_sherivs_029_school_custom_domains.sql": 36,
-      "database/supabase/migrations/20261024000500_sherivs_ux1_workspace_manifest.sql": 119
+      "database/supabase/migrations/20261024000500_sherivs_ux1_workspace_manifest.sql": 119,
+      "database/supabase/migrations/20261024000600_sherivs_ux2_scope_policy_workspace.sql": 25
     },
-    "baselineGroups": 427
+    "baselineGroups": 440
   },
   "baselineEntries": [
     {
@@ -10151,6 +10152,161 @@
         268
       ],
       "firstSnippet": "('parent',ARRAY['parent','pta']::text[],90,ARRAY['w.children_summary','w.child_fees','w.child_bus','w.announcements']::text[],ARRAY['a.pay_fees']::text[]),"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000600_sherivs_ux2_scope_policy_workspace.sql",
+      "kind": "vocabulary",
+      "token": "hostel",
+      "streamIRef": "SHERIVS-UX2",
+      "occurrences": 3,
+      "lines": [
+        4,
+        52,
+        221
+      ],
+      "firstSnippet": "--      house, hostel...). Such an item appears only for a person whose active role assignment carries a scope"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000600_sherivs_ux2_scope_policy_workspace.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "SHERIVS-UX2",
+      "occurrences": 7,
+      "lines": [
+        5,
+        7,
+        64,
+        68,
+        137,
+        187,
+        211
+      ],
+      "firstSnippet": "--      set on one of those dimensions, and it is placed right after their primary family's lead card. So a campus head and a whole-school"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000600_sherivs_ux2_scope_policy_workspace.sql",
+      "kind": "vocabulary",
+      "token": "principal",
+      "streamIRef": "SHERIVS-UX2",
+      "occurrences": 2,
+      "lines": [
+        6,
+        129
+      ],
+      "firstSnippet": "--      principal with the same role template get different homes, and so do two shift supervisors."
+    },
+    {
+      "file": "database/supabase/migrations/20261024000600_sherivs_ux2_scope_policy_workspace.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "SHERIVS-UX2",
+      "occurrences": 3,
+      "lines": [
+        34,
+        107,
+        115
+      ],
+      "firstSnippet": "USING (org_id = (SELECT public.get_my_school_id()) OR (SELECT public.can_administer_org(org_id)));"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000600_sherivs_ux2_scope_policy_workspace.sql",
+      "kind": "vocabulary",
+      "token": "lesson",
+      "streamIRef": "SHERIVS-UX2",
+      "occurrences": 1,
+      "lines": [
+        61
+      ],
+      "firstSnippet": "('staff.ai_helper',true,'Teachers can use the AI lesson helper',3),"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000600_sherivs_ux2_scope_policy_workspace.sql",
+      "kind": "vocabulary",
+      "token": "fees",
+      "streamIRef": "SHERIVS-UX2",
+      "occurrences": 1,
+      "lines": [
+        63
+      ],
+      "firstSnippet": "('parents.fees_online',true,'Parents see fees due and can pay in the app',5),"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000600_sherivs_ux2_scope_policy_workspace.sql",
+      "kind": "vocabulary",
+      "token": "student",
+      "streamIRef": "SHERIVS-UX2",
+      "occurrences": 1,
+      "lines": [
+        130
+      ],
+      "firstSnippet": "WHEN 'bursar' THEN 'bursar' WHEN 'teacher' THEN 'teacher' WHEN 'parent' THEN 'parent' WHEN 'student' THEN 'student' ELSE 'support_staff' END];"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000600_sherivs_ux2_scope_policy_workspace.sql",
+      "kind": "vocabulary",
+      "token": "teacher",
+      "streamIRef": "SHERIVS-UX2",
+      "occurrences": 1,
+      "lines": [
+        130
+      ],
+      "firstSnippet": "WHEN 'bursar' THEN 'bursar' WHEN 'teacher' THEN 'teacher' WHEN 'parent' THEN 'parent' WHEN 'student' THEN 'student' ELSE 'support_staff' END];"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000600_sherivs_ux2_scope_policy_workspace.sql",
+      "kind": "vocabulary",
+      "token": "bursar",
+      "streamIRef": "SHERIVS-UX2",
+      "occurrences": 1,
+      "lines": [
+        130
+      ],
+      "firstSnippet": "WHEN 'bursar' THEN 'bursar' WHEN 'teacher' THEN 'teacher' WHEN 'parent' THEN 'parent' WHEN 'student' THEN 'student' ELSE 'support_staff' END];"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000600_sherivs_ux2_scope_policy_workspace.sql",
+      "kind": "vocabulary-literal",
+      "token": "parent",
+      "streamIRef": "SHERIVS-UX2",
+      "occurrences": 1,
+      "lines": [
+        130
+      ],
+      "firstSnippet": "WHEN 'bursar' THEN 'bursar' WHEN 'teacher' THEN 'teacher' WHEN 'parent' THEN 'parent' WHEN 'student' THEN 'student' ELSE 'support_staff' END];"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000600_sherivs_ux2_scope_policy_workspace.sql",
+      "kind": "vocabulary-literal",
+      "token": "staff",
+      "streamIRef": "SHERIVS-UX2",
+      "occurrences": 2,
+      "lines": [
+        132,
+        134
+      ],
+      "firstSnippet": "SELECT coalesce(jsonb_agg(f.family ORDER BY f.priority), '[\"staff\"]') INTO v_fams"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000600_sherivs_ux2_scope_policy_workspace.sql",
+      "kind": "vocabulary",
+      "token": "library",
+      "streamIRef": "SHERIVS-UX2",
+      "occurrences": 1,
+      "lines": [
+        221
+      ],
+      "firstSnippet": "FROM unnest(ARRAY['cbt','wallet','payroll','library','hostel','health','transport']) m"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000600_sherivs_ux2_scope_policy_workspace.sql",
+      "kind": "vocabulary",
+      "token": "payroll",
+      "streamIRef": "SHERIVS-UX2",
+      "occurrences": 1,
+      "lines": [
+        221
+      ],
+      "firstSnippet": "FROM unnest(ARRAY['cbt','wallet','payroll','library','hostel','health','transport']) m"
     }
   ]
 }

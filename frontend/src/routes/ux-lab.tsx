@@ -3,7 +3,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { PERSONAS, manifestFor, persona } from "@/lib/sherivs-ws/personas";
-import type { Locale, WorkspacePrefs } from "@/lib/sherivs-ws/engine";
+import type { Locale, ScopeFocus, WorkspacePrefs } from "@/lib/sherivs-ws/engine";
 import { WorkspaceShell } from "@/components/sds/workspace-shell";
 
 const ENABLED = import.meta.env.DEV || import.meta.env.VITE_UX_LAB === "1";
@@ -20,6 +20,7 @@ function UxLab() {
   const search = Route.useSearch();
   const per = persona(search.p ?? "teacher-a");
   const [prefs, setPrefs] = useState<WorkspacePrefs>({ locale: search.lang ?? "en" });
+  const [scope, setScope] = useState<ScopeFocus | null>(null);
   const [theme, setTheme] = useState<"light" | "dark">(search.theme ?? "light");
   if (!ENABLED) return <p style={{ padding: 24 }}>Not found.</p>;
   const m = manifestFor(per, prefs);
@@ -33,7 +34,7 @@ function UxLab() {
         </select>
         <span>families: {m.families.join(" + ")} · plan {per.org.plan} · {m.hiddenByPolicy.length} items hidden by policy</span>
       </div>
-      <WorkspaceShell manifest={m} prefs={prefs} onPrefs={setPrefs} sample theme={theme} onTheme={setTheme} currentPath="/workspace"
+      <WorkspaceShell manifest={m} scope={scope} onScope={setScope} prefs={prefs} onPrefs={setPrefs} sample theme={theme} onTheme={setTheme} currentPath="/workspace"
         user={{ name: per.name, title: per.title, roles: per.roles.map((r) => r.name) }}
         inboxCounts={{ "i.approvals": m.inbox.some((i) => i.key === "i.approvals") ? 7 : 0, "i.messages": 3, "i.alerts": 1 }} />
     </>

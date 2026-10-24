@@ -44,3 +44,17 @@ neutral greys; type scale 12/14/16/20/24/32; spacing 4/8/12/16/24/32; radius 8/1
   replaced by a set-based mirror with a parity scenario.
 - Rollback drops every object; migration re-applies twice cleanly.
 - Screens: `docs/design/ux1-screens/` (captured by `tools/workspace/screenshots.mjs`).
+
+## SHERIVS-UX2: scope- and policy-aware workspaces
+Migration `20261024000600_sherivs_ux2_scope_policy_workspace.sql` (rollback included, not applied to prod) adds two inputs:
+
+- **Assigned scopes.** Catalog items can declare `scope_dims` (campus, shift, section, level, class, subject, house, hostel). Five new cards (`w.campus_overview`, `w.shift_overview`, `w.section_overview`, `w.level_overview`, `w.house_overview`) show only for people the admin scoped on that dimension, right after their lead card. A whole-school principal does not get them; a campus head does. The manifest returns `scope_options` and the shell shows a **scope switcher** (e.g. "shift: Morning"). Picking one narrows the scope cards and adds `?scope=dim:ref` to card and action links. This is presentation only.
+- **School policies.** `workspace_policy_catalog` (7 policies, generated from `catalog_src.py`) and `org_workspace_policies`. A policy can only hide items. `workspace.personalise=off` locks everyone's layout except users with `settings.manage`: saved prefs are ignored, and `workspace_prefs_save` keeps only language and density. Admins manage modules and policies at `/workspace/settings` (`workspace_policy_list`, `workspace_policy_set`, `workspace_feature_set`, all checking `settings.manage`).
+- The TS engine mirrors the rules (`denialReason` adds `policy` and `scope`; `focusScope`, `scopeFocusOptions`). `server-adapter` maps manifest v2.
+
+Verified locally (sim-lab Postgres, inside a rolled-back transaction):
+- Two real `ng.mathematics_teacher` assignments gave different homes. The one scoped `level: JSS2, subject: Mathematics` got `w.level_overview` second. The unscoped one did not.
+- Turning `staff.message_parents` off removed `a.message_parents` and made `workspace_item_allowed` false.
+- Turning personalisation off made `can_personalise=false` and stripped saved prefs.
+- `workspace_policy_set` was refused without `settings.manage`.
+- Rollback followed by re-applying UX1 and UX2 succeeded.

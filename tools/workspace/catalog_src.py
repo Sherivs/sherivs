@@ -2,8 +2,11 @@
 # Emits frontend/src/lib/sherivs-ws/catalog.data.ts (UI + tests) and the SQL seed block in the migration.
 import json, re, pathlib
 I = []
-def add(kind, k, icon, to, any_=(), all_=(), feature=None, size="m", en="", ha="", yo="", ig="", pcm="", families=()):
+def add(kind, k, icon, to, any_=(), all_=(), feature=None, size="m", en="", ha="", yo="", ig="", pcm="", families=(), scope=(), policy=None):
+    # scope: assigned-scope dimensions that unlock the item (campus/shift/section/level...); empty = not scope-bound.
+    # policy: a school workspace policy (POLICIES below) that must be on for the item to appear.
     I.append(dict(key=k, kind=kind, icon=icon, to=to, any=list(any_), all=list(all_), feature=feature, size=size, families=list(families),
+                  scopeDims=list(scope), policy=policy,
                   label=dict(en=en, ha=ha or en, yo=yo or en, ig=ig or en, pcm=pcm or en)))
 # ---- navigation ----
 N = lambda *a, **kw: add("nav", *a, **kw)
@@ -29,9 +32,10 @@ N("nav.staff","id-card","/admin/hr",["hr.staff_view","hr.staff_manage"],en="Staf
 N("nav.reports","bar-chart","/admin/analytics",["analytics.institution","reports.academic","reports.financial"],en="Reports",ha="Rahotanni",yo="Ìjábọ̀",ig="Akụkọ",pcm="Report")
 N("nav.roles","key","/admin/roles",["roles.assign","roles.configure"],en="Roles & access",ha="Matsayi",yo="Ipa",ig="Ọrụ",pcm="Roles")
 N("nav.settings","settings","/admin/settings",["settings.manage"],en="School settings",ha="Saituna",yo="Ètò",ig="Ntọala",pcm="Settings")
+N("nav.workspace_policies","sliders","/workspace/settings",["settings.manage"],en="Workspace rules",ha="Dokokin wurin aiki",yo="Òfin ibi iṣẹ́",ig="Iwu ebe ọrụ",pcm="Workspace rules")
 N("nav.children","baby","/parent/children",["children.view"],en="My children",ha="'Ya'yana",yo="Àwọn ọmọ mi",ig="Ụmụ m",pcm="My pikin dem")
-N("nav.my_results","star","/student/grades",["self.view_own"],en="My results",ha="Sakamakona",yo="Èsì mi",ig="Nsonaazụ m",pcm="My result",families=["student"])
-N("nav.ai_tutor","sparkles","/student/ai-tutor",["ai_tutor.use"],feature="ai",en="AI tutor",ha="Malamin AI",yo="Olùkọ́ AI",ig="Onye nkuzi AI",pcm="AI teacher")
+N("nav.my_results","star","/student/grades",["self.view_own"],en="My results",ha="Sakamakona",yo="Èsì mi",ig="Nsonaazụ m",pcm="My result",families=["student"],policy="students.results_online")
+N("nav.ai_tutor","sparkles","/student/ai-tutor",["ai_tutor.use"],feature="ai",en="AI tutor",ha="Malamin AI",yo="Olùkọ́ AI",ig="Onye nkuzi AI",pcm="AI teacher",policy="students.ai_tutor")
 N("nav.messages","message","/messages",[],en="Messages",ha="Saƙonni",yo="Ìfiránṣẹ́",ig="Ozi",pcm="Message")
 N("nav.gov","landmark","/gov-dashboard",["regulator.read_aggregate"],en="Oversight",ha="Sa ido",yo="Àbojútó",ig="Nlekọta",pcm="Oversight")
 # ---- home widgets ----
@@ -70,22 +74,29 @@ W("w.my_trip","navigation","/driver",["transport.driver_trip"],feature="transpor
 W("w.gate_log","shield","/admin/visitors",["security.gate_log","visitors.manage"],size="m",en="Gate today",ha="Kofa yau",yo="Ẹnu ọ̀nà òní",ig="Ọnụ ụzọ taa",pcm="Gate today")
 W("w.incidents","siren","/admin/visitors",["security.incident"],size="s",en="Open incidents",pcm="Wahala wey open")
 W("w.children_summary","baby","/parent/children",["children.view"],size="l",en="My children",ha="'Ya'yana",yo="Àwọn ọmọ mi",ig="Ụmụ m",pcm="My pikin dem")
-W("w.child_fees","banknote","/parent/fees",["children.view"],size="m",en="Fees due",ha="Kuɗin da ake bi",yo="Owó tó yẹ",ig="Ụgwọ ruru",pcm="Fees wey due")
-W("w.child_bus","bus","/parent/bus-tracking",["children.view"],feature="transport",size="s",en="School bus",pcm="School bus")
+W("w.child_fees","banknote","/parent/fees",["children.view"],size="m",en="Fees due",ha="Kuɗin da ake bi",yo="Owó tó yẹ",ig="Ụgwọ ruru",pcm="Fees wey due",policy="parents.fees_online")
+W("w.child_bus","bus","/parent/bus-tracking",["children.view"],feature="transport",size="s",en="School bus",pcm="School bus",policy="parents.bus_tracking")
 W("w.my_timetable","calendar","/student/timetable",["self.view_own"],size="m",en="My timetable",ha="Jadawalina",yo="Àtòjọ mi",ig="Usoro m",pcm="My timetable",families=["student"])
-W("w.my_results","star","/student/grades",["self.view_own"],size="m",en="My results",ha="Sakamakona",yo="Èsì mi",ig="Nsonaazụ m",pcm="My result",families=["student"])
+W("w.my_results","star","/student/grades",["self.view_own"],size="m",en="My results",ha="Sakamakona",yo="Èsì mi",ig="Nsonaazụ m",pcm="My result",families=["student"],policy="students.results_online")
 W("w.my_cbt","monitor","/student/cbt",["self.view_own"],feature="cbt",size="s",en="Upcoming tests",pcm="Test wey dey come",families=["student"])
-W("w.ai_tutor","sparkles","/student/ai-tutor",["ai_tutor.use"],feature="ai",size="m",en="Ask the AI tutor",pcm="Ask AI teacher")
-W("w.ai_lesson_helper","sparkles","/teacher/ai-assistant",["lesson_notes.submit"],all_=["lesson_notes.submit"],feature="ai",size="s",en="AI lesson helper",pcm="AI lesson helper")
+W("w.ai_tutor","sparkles","/student/ai-tutor",["ai_tutor.use"],feature="ai",size="m",en="Ask the AI tutor",pcm="Ask AI teacher",policy="students.ai_tutor")
+W("w.ai_lesson_helper","sparkles","/teacher/ai-assistant",["lesson_notes.submit"],all_=["lesson_notes.submit"],feature="ai",size="s",en="AI lesson helper",pcm="AI lesson helper",policy="staff.ai_helper")
 W("w.gov_overview","landmark","/gov-dashboard",["regulator.read_aggregate"],size="l",en="Schools overview",ha="Taƙaitaccen makarantu",yo="Àkópọ̀ ilé-ìwé",ig="Nchịkọta ụlọ akwụkwọ",pcm="Schools overview")
 W("w.gov_compliance","clipboard-check","/gov-dashboard",["regulator.read_aggregate"],size="m",en="Compliance & inspections",pcm="Compliance")
+# scope-bound widgets: appear only for people the admin scoped to that dimension, so two people with the same
+# role see different homes (a campus head vs a whole-school principal; a morning-shift vs afternoon-shift supervisor).
+W("w.campus_overview","building","/admin/analytics",["students.view","attendance.view","analytics.institution"],size="l",scope=["campus"],en="My campus today",ha="Harabata yau",yo="Ọgbà mi lónìí",ig="Ogige m taa",pcm="My campus today")
+W("w.shift_overview","clock","/teacher/attendance",["attendance.view","attendance.take"],size="m",scope=["shift"],en="My shift",ha="Lokacin aikina",yo="Ìyípadà iṣẹ́ mi",ig="Oge ọrụ m",pcm="My shift")
+W("w.section_overview","layers","/admin/analytics",["students.view","reports.academic","welfare.pastoral"],size="m",scope=["section"],en="My section",ha="Sashena",yo="Ẹ̀ka mi",ig="Ngalaba m",pcm="My section")
+W("w.level_overview","graduation-cap","/teacher/gradebook",["grades.enter","grades.view","grades.approve","reports.academic"],size="m",scope=["level","class","subject"],en="My levels, classes & subjects",ha="Matakaina",yo="Ìpele mi",ig="Ọkwa m",pcm="My level dem")
+W("w.house_overview","flag","/admin/discipline",["welfare.pastoral","discipline.decide","hostel.roll_call"],size="s",scope=["house","hostel"],en="My house / hostel",ha="Gidana",yo="Ilé mi",ig="Ụlọ m",pcm="My house")
 W("w.announcements","megaphone","/messages",[],size="m",en="Announcements",ha="Sanarwa",yo="Ìkéde",ig="Ọkwa",pcm="Announcement")
 # ---- quick actions ----
 A = lambda *a, **kw: add("action", *a, **kw)
 A("a.take_attendance","check-square","/teacher/attendance",["attendance.take"],en="Take attendance",ha="Ɗauki halarta",yo="Pe orúkọ",ig="Were ọbịbịa",pcm="Mark register")
 A("a.enter_scores","clipboard","/teacher/gradebook",["grades.enter"],en="Enter scores",ha="Shigar da maki",yo="Tẹ máàkì",ig="Tinye akara",pcm="Enter score")
 A("a.submit_note","file-text","/teacher/lesson-notes",["lesson_notes.submit"],en="Submit lesson note",pcm="Submit lesson note")
-A("a.message_parents","message","/messages",["comms.send_class"],feature="sms",en="Message parents",ha="Aika saƙo ga iyaye",yo="Fi ọ̀rọ̀ ránṣẹ́ sí òbí",ig="Zigara ndị nne na nna ozi",pcm="Message parents")
+A("a.message_parents","message","/messages",["comms.send_class"],feature="sms",en="Message parents",ha="Aika saƙo ga iyaye",yo="Fi ọ̀rọ̀ ránṣẹ́ sí òbí",ig="Zigara ndị nne na nna ozi",pcm="Message parents",policy="staff.message_parents")
 A("a.broadcast","megaphone","/admin/broadcast",["comms.broadcast"],feature="sms",en="Broadcast",pcm="Broadcast")
 A("a.record_cash","banknote","/bursar/receipts",["payments.record_cash"],en="Record cash payment",ha="Rubuta biyan kuɗi",yo="Kọ owó tí a san",ig="Dee ego akwụrụ",pcm="Record cash")
 A("a.issue_receipt","receipt","/bursar/receipts",["fees.view"],all_=["payments.record_cash"],en="Issue receipt",pcm="Give receipt")
@@ -102,10 +113,10 @@ A("a.log_visit","heart-pulse","/admin/health",["health.records_edit"],feature="h
 A("a.start_trip","navigation","/driver",["transport.driver_trip"],feature="transport",en="Start trip",pcm="Start trip")
 A("a.sign_in_visitor","shield","/admin/visitors",["visitors.manage","security.gate_log"],en="Sign in visitor",ha="Shigar da baƙo",yo="Forúkọ àlejò",ig="Debanye ọbịa",pcm="Sign in visitor")
 A("a.report_incident","siren","/admin/visitors",["security.incident"],en="Report incident",pcm="Report wahala")
-A("a.pay_fees","banknote","/parent/fees",["children.view"],en="Pay school fees",ha="Biya kuɗin makaranta",yo="San owó ilé-ìwé",ig="Kwụọ ụgwọ akwụkwọ",pcm="Pay school fees")
+A("a.pay_fees","banknote","/parent/fees",["children.view"],en="Pay school fees",ha="Biya kuɗin makaranta",yo="San owó ilé-ìwé",ig="Kwụọ ụgwọ akwụkwọ",pcm="Pay school fees",policy="parents.fees_online")
 A("a.topup_wallet","wallet","/admin/wallet",["wallet.topup"],feature="wallet",en="Top up wallet",pcm="Top up wallet")
 A("a.assign_role","key","/admin/roles",["roles.assign"],en="Assign a role",pcm="Assign role")
-A("a.ask_tutor","sparkles","/student/ai-tutor",["ai_tutor.use"],feature="ai",en="Ask AI tutor",pcm="Ask AI teacher")
+A("a.ask_tutor","sparkles","/student/ai-tutor",["ai_tutor.use"],feature="ai",en="Ask AI tutor",pcm="Ask AI teacher",policy="students.ai_tutor")
 A("a.gov_inspect","clipboard-check","/gov-dashboard",["regulator.read_aggregate"],en="Plan inspection",pcm="Plan inspection")
 # ---- inbox streams ----
 X = lambda *a, **kw: add("inbox", *a, **kw)
@@ -115,6 +126,16 @@ X("i.alerts","bell","/notifications",[],en="Alerts",ha="Faɗakarwa",yo="Ìkìl�
 X("i.payments","banknote","/bursar/reconciliation",["payments.reconcile"],en="Payment exceptions",pcm="Payment wahala")
 X("i.safeguarding","shield-alert","/admin/discipline",["welfare.pastoral","discipline.decide"],en="Safeguarding",pcm="Safeguarding")
 
+# School workspace policies: the admin decides; defaults below. A policy can only HIDE items (never grant).
+POLICIES = [
+ ("workspace.personalise", True, "Staff, parents and students can personalise their home screen"),
+ ("students.ai_tutor", True, "Students can use the AI tutor"),
+ ("students.results_online", True, "Students see their results in the app once published"),
+ ("staff.ai_helper", True, "Teachers can use the AI lesson helper"),
+ ("staff.message_parents", True, "Teachers can message parents of their classes"),
+ ("parents.fees_online", True, "Parents see fees due and can pay in the app"),
+ ("parents.bus_tracking", True, "Parents can see live school bus location"),
+]
 FAM = {  # family -> (template codes, priority, default widget order, default actions)
  "proprietor": (["proprietor","governance_board"],10,["w.school_health","w.fee_collection","w.cashflow","w.enrolment","w.payroll_run","w.governance","w.at_risk","w.announcements"],["a.approve_payroll","a.broadcast","a.assign_role"]),
  "principal": (["head_of_institution","deputy_academic","deputy_admin","student_affairs"],20,["w.school_health","w.results_pipeline","w.lesson_note_approvals","w.at_risk","w.staff_attendance","w.fee_collection","w.leave_requests","w.gate_log","w.announcements"],["a.publish_results","a.broadcast","a.enrol_student","a.assign_role"]),
@@ -136,11 +157,12 @@ FAM = {  # family -> (template codes, priority, default widget order, default ac
  "staff": ([],99,["w.announcements"],["a.request_leave"]),
 }
 keys={i["key"] for i in I}
+assert all(i["policy"] in {p[0] for p in POLICIES} for i in I if i["policy"]),"unknown policy"
 for f,(t,p,w,a) in FAM.items():
     for k in w+a: assert k in keys,(f,k)
 fam=[dict(family=f,templates=t,priority=p,widgets=w,actions=a) for f,(t,p,w,a) in FAM.items()]
 root=pathlib.Path(__file__).resolve().parents[2]
-(root/"frontend/src/lib/sherivs-ws/catalog.data.ts").write_text("// generated by tools/workspace/catalog_src.py (do not hand-edit)\nconst data = "+json.dumps(dict(items=I,families=fam),ensure_ascii=False,indent=1)+";\nexport default data;\n")
+(root/"frontend/src/lib/sherivs-ws/catalog.data.ts").write_text("// generated by tools/workspace/catalog_src.py (do not hand-edit)\nconst data = "+json.dumps(dict(items=I,families=fam,policies=[dict(key=k,default=d,label=l) for k,d,l in POLICIES]),ensure_ascii=False,indent=1)+";\nexport default data;\n")
 q=lambda s:"NULL" if s is None else "'"+s.replace("'","''")+"'"
 arr=lambda l:"ARRAY["+",".join(q(x) for x in l)+"]::text[]"
 rows=",\n".join(f"  ({q(i['key'])},{q(i['kind'])},{q(i['to'])},{arr(i['any'])},{arr(i['all'])},{q(i['feature'])},{q(i['size'])},{q(i['label']['en'])},{arr(i['families'])},{n})" for n,i in enumerate(I))
@@ -158,6 +180,22 @@ mig=next((root/"database/supabase/migrations").glob("*_sherivs_ux1_workspace_man
 if mig:
     s=mig.read_text(); s=re.sub(r"-- >>> generated by tools/workspace.*?-- <<< generated <<<",lambda m:seed,s,flags=re.S); mig.write_text(s)
 (root/"tools/workspace/seed.generated.sql").write_text(seed+"\n")
+# UX2 block: scope dimensions, policy gates and the policy catalog.
+upd=",\n".join(f"  ({q(i['key'])},{arr(i['scopeDims'])},{q(i['policy'])})" for i in I if i['scopeDims'] or i['policy'])
+prow=",\n".join(f"  ({q(k)},{'true' if d else 'false'},{q(l)},{n})" for n,(k,d,l) in enumerate(POLICIES))
+seed2=f"""-- >>> generated ux2 by tools/workspace/catalog_src.py (do not hand-edit) >>>
+UPDATE public.workspace_item_catalog c SET scope_dims = '{{}}', policy = NULL WHERE cardinality(c.scope_dims) > 0 OR c.policy IS NOT NULL;
+UPDATE public.workspace_item_catalog c SET scope_dims = v.d, policy = v.p FROM (VALUES
+{upd}
+) v(k, d, p) WHERE c.key = v.k;
+INSERT INTO public.workspace_policy_catalog (key, default_on, label_en, sort) VALUES
+{prow}
+ON CONFLICT (key) DO UPDATE SET default_on=EXCLUDED.default_on, label_en=EXCLUDED.label_en, sort=EXCLUDED.sort;
+-- <<< generated ux2 <<<"""
+mig2=next((root/"database/supabase/migrations").glob("*_sherivs_ux2_scope_policy_workspace.sql"),None)
+if mig2:
+    s2=mig2.read_text(); s2=re.sub(r"-- >>> generated ux2 by tools/workspace.*?-- <<< generated ux2 <<<",lambda m:seed2,s2,flags=re.S); mig2.write_text(s2)
+(root/"tools/workspace/seed-ux2.generated.sql").write_text(seed2+"\n")
 print(len(I),"items",len(fam),"families")
 
 # Role template permissions (mandatory/optional/default_on) extracted from the SHERIVS-017 seed, for previews/tests.

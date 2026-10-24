@@ -209,6 +209,7 @@ import { Route as AuthenticatedTeacherLessonPlansRouteImport } from './routes/_a
 import { Route as AuthenticatedTeacherNewsRouteImport } from './routes/_authenticated/teacher/news'
 import { Route as AuthenticatedTeacherSignInRouteImport } from './routes/_authenticated/teacher/sign-in'
 import { Route as AuthenticatedTeacherTimetableRouteImport } from './routes/_authenticated/teacher/timetable'
+import { Route as AuthenticatedWorkspaceSettingsRouteImport } from './routes/_authenticated/workspace_.settings'
 import { Route as ApiPublicAuditPasswordResetRouteImport } from './routes/api/public/audit.password-reset'
 import { Route as ApiPublicCronWalletTopupReconcileRouteImport } from './routes/api/public/cron/wallet-topup-reconcile'
 import { Route as ApiPublicWebhooksPaystackRouteImport } from './routes/api/public/webhooks/paystack'
@@ -1348,6 +1349,12 @@ const AuthenticatedTeacherTimetableRoute =
     path: '/timetable',
     getParentRoute: () => AuthenticatedTeacherRouteRoute,
   } as any)
+const AuthenticatedWorkspaceSettingsRoute =
+  AuthenticatedWorkspaceSettingsRouteImport.update({
+    id: '/workspace_/settings',
+    path: '/workspace/settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiPublicAuditPasswordResetRoute =
   ApiPublicAuditPasswordResetRouteImport.update({
     id: '/api/public/audit/password-reset',
@@ -1576,6 +1583,7 @@ export interface FileRoutesByFullPath {
   '/teacher/news': typeof AuthenticatedTeacherNewsRoute
   '/teacher/sign-in': typeof AuthenticatedTeacherSignInRoute
   '/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
+  '/workspace/settings': typeof AuthenticatedWorkspaceSettingsRoute
   '/command-centre/': typeof AuthenticatedCommandCentreIndexRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
@@ -1779,6 +1787,7 @@ export interface FileRoutesByTo {
   '/teacher/news': typeof AuthenticatedTeacherNewsRoute
   '/teacher/sign-in': typeof AuthenticatedTeacherSignInRoute
   '/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
+  '/workspace/settings': typeof AuthenticatedWorkspaceSettingsRoute
   '/command-centre': typeof AuthenticatedCommandCentreIndexRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
@@ -1987,6 +1996,7 @@ export interface FileRoutesById {
   '/_authenticated/teacher/news': typeof AuthenticatedTeacherNewsRoute
   '/_authenticated/teacher/sign-in': typeof AuthenticatedTeacherSignInRoute
   '/_authenticated/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
+  '/_authenticated/workspace_/settings': typeof AuthenticatedWorkspaceSettingsRoute
   '/_authenticated/command-centre/': typeof AuthenticatedCommandCentreIndexRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
@@ -2194,6 +2204,7 @@ export interface FileRouteTypes {
     | '/teacher/news'
     | '/teacher/sign-in'
     | '/teacher/timetable'
+    | '/workspace/settings'
     | '/command-centre/'
     | '/api/public/audit/password-reset'
     | '/api/public/cron/wallet-topup-reconcile'
@@ -2397,6 +2408,7 @@ export interface FileRouteTypes {
     | '/teacher/news'
     | '/teacher/sign-in'
     | '/teacher/timetable'
+    | '/workspace/settings'
     | '/command-centre'
     | '/api/public/audit/password-reset'
     | '/api/public/cron/wallet-topup-reconcile'
@@ -2604,6 +2616,7 @@ export interface FileRouteTypes {
     | '/_authenticated/teacher/news'
     | '/_authenticated/teacher/sign-in'
     | '/_authenticated/teacher/timetable'
+    | '/_authenticated/workspace_/settings'
     | '/_authenticated/command-centre/'
     | '/api/public/audit/password-reset'
     | '/api/public/cron/wallet-topup-reconcile'
@@ -4046,6 +4059,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTeacherTimetableRouteImport
       parentRoute: typeof AuthenticatedTeacherRouteRoute
     }
+    '/_authenticated/workspace_/settings': {
+      id: '/_authenticated/workspace_/settings'
+      path: '/workspace/settings'
+      fullPath: '/workspace/settings'
+      preLoaderRoute: typeof AuthenticatedWorkspaceSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/public/audit/password-reset': {
       id: '/api/public/audit/password-reset'
       path: '/api/public/audit/password-reset'
@@ -4551,6 +4571,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedInternalAccessReviewRoute: typeof AuthenticatedInternalAccessReviewRoute
   AuthenticatedInternalGovAccessRoute: typeof AuthenticatedInternalGovAccessRoute
   AuthenticatedInternalSupportRoute: typeof AuthenticatedInternalSupportRoute
+  AuthenticatedWorkspaceSettingsRoute: typeof AuthenticatedWorkspaceSettingsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -4580,6 +4601,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedInternalAccessReviewRoute,
   AuthenticatedInternalGovAccessRoute: AuthenticatedInternalGovAccessRoute,
   AuthenticatedInternalSupportRoute: AuthenticatedInternalSupportRoute,
+  AuthenticatedWorkspaceSettingsRoute: AuthenticatedWorkspaceSettingsRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

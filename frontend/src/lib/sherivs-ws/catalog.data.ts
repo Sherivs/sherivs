@@ -11,6 +11,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Home",
     "ha": "Gida",
@@ -31,6 +33,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Students",
     "ha": "Ɗalibai",
@@ -52,6 +56,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "My classes",
     "ha": "Ajujuwana",
@@ -73,6 +79,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Attendance",
     "ha": "Halarta",
@@ -94,6 +102,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Gradebook",
     "ha": "Littafin maki",
@@ -115,6 +125,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Lesson notes",
     "ha": "Bayanan darasi",
@@ -137,6 +149,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Exams & results",
     "ha": "Jarrabawa",
@@ -157,6 +171,8 @@ const data = {
    "feature": "cbt",
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "CBT",
     "ha": "CBT",
@@ -178,6 +194,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Admissions",
     "ha": "Shiga makaranta",
@@ -200,6 +218,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Fees & payments",
     "ha": "Kuɗin makaranta",
@@ -220,6 +240,8 @@ const data = {
    "feature": "wallet",
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Wallet",
     "ha": "Walat",
@@ -242,6 +264,8 @@ const data = {
    "feature": "payroll",
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "HR & payroll",
     "ha": "Albashi",
@@ -262,6 +286,8 @@ const data = {
    "feature": "payroll",
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "My payslips",
     "ha": "Takardar albashi",
@@ -283,6 +309,8 @@ const data = {
    "feature": "library",
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Library",
     "ha": "Ɗakin karatu",
@@ -304,6 +332,8 @@ const data = {
    "feature": "hostel",
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Hostel",
     "ha": "Masauki",
@@ -324,6 +354,8 @@ const data = {
    "feature": "health",
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Sick bay",
     "ha": "Asibiti",
@@ -346,6 +378,8 @@ const data = {
    "feature": "transport",
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Transport",
     "ha": "Sufuri",
@@ -367,6 +401,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Gate & visitors",
     "ha": "Baƙi",
@@ -388,6 +424,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Staff",
     "ha": "Ma'aikata",
@@ -410,6 +448,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Reports",
     "ha": "Rahotanni",
@@ -431,6 +471,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Roles & access",
     "ha": "Matsayi",
@@ -451,12 +493,36 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "School settings",
     "ha": "Saituna",
     "yo": "Ètò",
     "ig": "Ntọala",
     "pcm": "Settings"
+   }
+  },
+  {
+   "key": "nav.workspace_policies",
+   "kind": "nav",
+   "icon": "sliders",
+   "to": "/workspace/settings",
+   "any": [
+    "settings.manage"
+   ],
+   "all": [],
+   "feature": null,
+   "size": "m",
+   "families": [],
+   "scopeDims": [],
+   "policy": null,
+   "label": {
+    "en": "Workspace rules",
+    "ha": "Dokokin wurin aiki",
+    "yo": "Òfin ibi iṣẹ́",
+    "ig": "Iwu ebe ọrụ",
+    "pcm": "Workspace rules"
    }
   },
   {
@@ -471,6 +537,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "My children",
     "ha": "'Ya'yana",
@@ -493,6 +561,8 @@ const data = {
    "families": [
     "student"
    ],
+   "scopeDims": [],
+   "policy": "students.results_online",
    "label": {
     "en": "My results",
     "ha": "Sakamakona",
@@ -513,6 +583,8 @@ const data = {
    "feature": "ai",
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": "students.ai_tutor",
    "label": {
     "en": "AI tutor",
     "ha": "Malamin AI",
@@ -531,6 +603,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Messages",
     "ha": "Saƙonni",
@@ -551,6 +625,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Oversight",
     "ha": "Sa ido",
@@ -571,6 +647,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Today's lessons",
     "ha": "Darussan yau",
@@ -591,6 +669,8 @@ const data = {
    "feature": null,
    "size": "s",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Registers to mark",
     "ha": "Rajistar halarta",
@@ -611,6 +691,8 @@ const data = {
    "feature": null,
    "size": "s",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Scores to enter",
     "ha": "Maki da za a shigar",
@@ -631,6 +713,8 @@ const data = {
    "feature": null,
    "size": "s",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Lesson note status",
     "ha": "Lesson note status",
@@ -651,6 +735,8 @@ const data = {
    "feature": null,
    "size": "s",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Notes awaiting approval",
     "ha": "Notes awaiting approval",
@@ -671,6 +757,8 @@ const data = {
    "feature": "cbt",
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "CBT sessions",
     "ha": "CBT sessions",
@@ -692,6 +780,8 @@ const data = {
    "feature": null,
    "size": "l",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "My form class",
     "ha": "Ajina",
@@ -713,6 +803,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Students at risk",
     "ha": "Ɗalibai cikin haɗari",
@@ -733,6 +825,8 @@ const data = {
    "feature": null,
    "size": "l",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Department performance",
     "ha": "Department performance",
@@ -754,6 +848,8 @@ const data = {
    "feature": null,
    "size": "l",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Results pipeline",
     "ha": "Sakamakon jarrabawa",
@@ -774,6 +870,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Exam timetable",
     "ha": "Exam timetable",
@@ -794,6 +892,8 @@ const data = {
    "feature": null,
    "size": "s",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Malpractice cases",
     "ha": "Malpractice cases",
@@ -815,6 +915,8 @@ const data = {
    "feature": null,
    "size": "l",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Fee collection",
     "ha": "Karɓar kuɗi",
@@ -835,6 +937,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "To reconcile",
     "ha": "To reconcile",
@@ -855,6 +959,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Outstanding fees",
     "ha": "Bashin kuɗi",
@@ -875,6 +981,8 @@ const data = {
    "feature": null,
    "size": "s",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Expenses to approve",
     "ha": "Expenses to approve",
@@ -895,6 +1003,8 @@ const data = {
    "feature": "wallet",
    "size": "s",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Wallet balance",
     "ha": "Ragowar walat",
@@ -916,6 +1026,8 @@ const data = {
    "feature": "payroll",
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Payroll run",
     "ha": "Albashin wata",
@@ -936,6 +1048,8 @@ const data = {
    "feature": null,
    "size": "s",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Leave requests",
     "ha": "Leave requests",
@@ -956,6 +1070,8 @@ const data = {
    "feature": null,
    "size": "s",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Staff present",
     "ha": "Staff present",
@@ -976,6 +1092,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Admissions funnel",
     "ha": "Admissions funnel",
@@ -999,6 +1117,8 @@ const data = {
    "feature": null,
    "size": "s",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Enrolment",
     "ha": "Yawan ɗalibai",
@@ -1019,6 +1139,8 @@ const data = {
    "feature": null,
    "size": "l",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "School at a glance",
     "ha": "Makaranta a taƙaice",
@@ -1039,6 +1161,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Cash flow",
     "ha": "Cash flow",
@@ -1060,6 +1184,8 @@ const data = {
    "feature": null,
    "size": "s",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Board & audit",
     "ha": "Board & audit",
@@ -1080,6 +1206,8 @@ const data = {
    "feature": "library",
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Loans due",
     "ha": "Loans due",
@@ -1100,6 +1228,8 @@ const data = {
    "feature": "hostel",
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Tonight's roll call",
     "ha": "Kiran suna na dare",
@@ -1120,6 +1250,8 @@ const data = {
    "feature": "hostel",
    "size": "s",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Bed space",
     "ha": "Bed space",
@@ -1140,6 +1272,8 @@ const data = {
    "feature": "health",
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Sick bay today",
     "ha": "Marasa lafiya yau",
@@ -1161,6 +1295,8 @@ const data = {
    "feature": "transport",
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Buses on route",
     "ha": "Motoci a hanya",
@@ -1181,6 +1317,8 @@ const data = {
    "feature": "transport",
    "size": "l",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "My trip",
     "ha": "My trip",
@@ -1202,6 +1340,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Gate today",
     "ha": "Kofa yau",
@@ -1222,6 +1362,8 @@ const data = {
    "feature": null,
    "size": "s",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Open incidents",
     "ha": "Open incidents",
@@ -1242,6 +1384,8 @@ const data = {
    "feature": null,
    "size": "l",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "My children",
     "ha": "'Ya'yana",
@@ -1262,6 +1406,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": "parents.fees_online",
    "label": {
     "en": "Fees due",
     "ha": "Kuɗin da ake bi",
@@ -1282,6 +1428,8 @@ const data = {
    "feature": "transport",
    "size": "s",
    "families": [],
+   "scopeDims": [],
+   "policy": "parents.bus_tracking",
    "label": {
     "en": "School bus",
     "ha": "School bus",
@@ -1304,6 +1452,8 @@ const data = {
    "families": [
     "student"
    ],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "My timetable",
     "ha": "Jadawalina",
@@ -1326,6 +1476,8 @@ const data = {
    "families": [
     "student"
    ],
+   "scopeDims": [],
+   "policy": "students.results_online",
    "label": {
     "en": "My results",
     "ha": "Sakamakona",
@@ -1348,6 +1500,8 @@ const data = {
    "families": [
     "student"
    ],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Upcoming tests",
     "ha": "Upcoming tests",
@@ -1368,6 +1522,8 @@ const data = {
    "feature": "ai",
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": "students.ai_tutor",
    "label": {
     "en": "Ask the AI tutor",
     "ha": "Ask the AI tutor",
@@ -1390,6 +1546,8 @@ const data = {
    "feature": "ai",
    "size": "s",
    "families": [],
+   "scopeDims": [],
+   "policy": "staff.ai_helper",
    "label": {
     "en": "AI lesson helper",
     "ha": "AI lesson helper",
@@ -1410,6 +1568,8 @@ const data = {
    "feature": null,
    "size": "l",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Schools overview",
     "ha": "Taƙaitaccen makarantu",
@@ -1430,12 +1590,147 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Compliance & inspections",
     "ha": "Compliance & inspections",
     "yo": "Compliance & inspections",
     "ig": "Compliance & inspections",
     "pcm": "Compliance"
+   }
+  },
+  {
+   "key": "w.campus_overview",
+   "kind": "widget",
+   "icon": "building",
+   "to": "/admin/analytics",
+   "any": [
+    "students.view",
+    "attendance.view",
+    "analytics.institution"
+   ],
+   "all": [],
+   "feature": null,
+   "size": "l",
+   "families": [],
+   "scopeDims": [
+    "campus"
+   ],
+   "policy": null,
+   "label": {
+    "en": "My campus today",
+    "ha": "Harabata yau",
+    "yo": "Ọgbà mi lónìí",
+    "ig": "Ogige m taa",
+    "pcm": "My campus today"
+   }
+  },
+  {
+   "key": "w.shift_overview",
+   "kind": "widget",
+   "icon": "clock",
+   "to": "/teacher/attendance",
+   "any": [
+    "attendance.view",
+    "attendance.take"
+   ],
+   "all": [],
+   "feature": null,
+   "size": "m",
+   "families": [],
+   "scopeDims": [
+    "shift"
+   ],
+   "policy": null,
+   "label": {
+    "en": "My shift",
+    "ha": "Lokacin aikina",
+    "yo": "Ìyípadà iṣẹ́ mi",
+    "ig": "Oge ọrụ m",
+    "pcm": "My shift"
+   }
+  },
+  {
+   "key": "w.section_overview",
+   "kind": "widget",
+   "icon": "layers",
+   "to": "/admin/analytics",
+   "any": [
+    "students.view",
+    "reports.academic",
+    "welfare.pastoral"
+   ],
+   "all": [],
+   "feature": null,
+   "size": "m",
+   "families": [],
+   "scopeDims": [
+    "section"
+   ],
+   "policy": null,
+   "label": {
+    "en": "My section",
+    "ha": "Sashena",
+    "yo": "Ẹ̀ka mi",
+    "ig": "Ngalaba m",
+    "pcm": "My section"
+   }
+  },
+  {
+   "key": "w.level_overview",
+   "kind": "widget",
+   "icon": "graduation-cap",
+   "to": "/teacher/gradebook",
+   "any": [
+    "grades.enter",
+    "grades.view",
+    "grades.approve",
+    "reports.academic"
+   ],
+   "all": [],
+   "feature": null,
+   "size": "m",
+   "families": [],
+   "scopeDims": [
+    "level",
+    "class",
+    "subject"
+   ],
+   "policy": null,
+   "label": {
+    "en": "My levels, classes & subjects",
+    "ha": "Matakaina",
+    "yo": "Ìpele mi",
+    "ig": "Ọkwa m",
+    "pcm": "My level dem"
+   }
+  },
+  {
+   "key": "w.house_overview",
+   "kind": "widget",
+   "icon": "flag",
+   "to": "/admin/discipline",
+   "any": [
+    "welfare.pastoral",
+    "discipline.decide",
+    "hostel.roll_call"
+   ],
+   "all": [],
+   "feature": null,
+   "size": "s",
+   "families": [],
+   "scopeDims": [
+    "house",
+    "hostel"
+   ],
+   "policy": null,
+   "label": {
+    "en": "My house / hostel",
+    "ha": "Gidana",
+    "yo": "Ilé mi",
+    "ig": "Ụlọ m",
+    "pcm": "My house"
    }
   },
   {
@@ -1448,6 +1743,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Announcements",
     "ha": "Sanarwa",
@@ -1468,6 +1765,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Take attendance",
     "ha": "Ɗauki halarta",
@@ -1488,6 +1787,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Enter scores",
     "ha": "Shigar da maki",
@@ -1508,6 +1809,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Submit lesson note",
     "ha": "Submit lesson note",
@@ -1528,6 +1831,8 @@ const data = {
    "feature": "sms",
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": "staff.message_parents",
    "label": {
     "en": "Message parents",
     "ha": "Aika saƙo ga iyaye",
@@ -1548,6 +1853,8 @@ const data = {
    "feature": "sms",
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Broadcast",
     "ha": "Broadcast",
@@ -1568,6 +1875,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Record cash payment",
     "ha": "Rubuta biyan kuɗi",
@@ -1590,6 +1899,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Issue receipt",
     "ha": "Issue receipt",
@@ -1610,6 +1921,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Enrol student",
     "ha": "Yi rajistar ɗalibi",
@@ -1630,6 +1943,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Publish results",
     "ha": "Fitar da sakamako",
@@ -1650,6 +1965,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Schedule exam",
     "ha": "Schedule exam",
@@ -1670,6 +1987,8 @@ const data = {
    "feature": "cbt",
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "New CBT test",
     "ha": "New CBT test",
@@ -1690,6 +2009,8 @@ const data = {
    "feature": "payroll",
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Approve payroll",
     "ha": "Approve payroll",
@@ -1710,6 +2031,8 @@ const data = {
    "feature": "payroll",
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Prepare payroll",
     "ha": "Prepare payroll",
@@ -1730,6 +2053,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Request leave",
     "ha": "Nemi hutu",
@@ -1750,6 +2075,8 @@ const data = {
    "feature": "library",
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Issue a book",
     "ha": "Issue a book",
@@ -1770,6 +2097,8 @@ const data = {
    "feature": "hostel",
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Start roll call",
     "ha": "Start roll call",
@@ -1790,6 +2119,8 @@ const data = {
    "feature": "health",
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Log sick-bay visit",
     "ha": "Log sick-bay visit",
@@ -1810,6 +2141,8 @@ const data = {
    "feature": "transport",
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Start trip",
     "ha": "Start trip",
@@ -1831,6 +2164,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Sign in visitor",
     "ha": "Shigar da baƙo",
@@ -1851,6 +2186,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Report incident",
     "ha": "Report incident",
@@ -1871,6 +2208,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": "parents.fees_online",
    "label": {
     "en": "Pay school fees",
     "ha": "Biya kuɗin makaranta",
@@ -1891,6 +2230,8 @@ const data = {
    "feature": "wallet",
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Top up wallet",
     "ha": "Top up wallet",
@@ -1911,6 +2252,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Assign a role",
     "ha": "Assign a role",
@@ -1931,6 +2274,8 @@ const data = {
    "feature": "ai",
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": "students.ai_tutor",
    "label": {
     "en": "Ask AI tutor",
     "ha": "Ask AI tutor",
@@ -1951,6 +2296,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Plan inspection",
     "ha": "Plan inspection",
@@ -1976,6 +2323,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Approvals",
     "ha": "Amincewa",
@@ -1994,6 +2343,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Messages",
     "ha": "Saƙonni",
@@ -2012,6 +2363,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Alerts",
     "ha": "Faɗakarwa",
@@ -2032,6 +2385,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Payment exceptions",
     "ha": "Payment exceptions",
@@ -2053,6 +2408,8 @@ const data = {
    "feature": null,
    "size": "m",
    "families": [],
+   "scopeDims": [],
+   "policy": null,
    "label": {
     "en": "Safeguarding",
     "ha": "Safeguarding",
@@ -2403,6 +2760,43 @@ const data = {
    "actions": [
     "a.request_leave"
    ]
+  }
+ ],
+ "policies": [
+  {
+   "key": "workspace.personalise",
+   "default": true,
+   "label": "Staff, parents and students can personalise their home screen"
+  },
+  {
+   "key": "students.ai_tutor",
+   "default": true,
+   "label": "Students can use the AI tutor"
+  },
+  {
+   "key": "students.results_online",
+   "default": true,
+   "label": "Students see their results in the app once published"
+  },
+  {
+   "key": "staff.ai_helper",
+   "default": true,
+   "label": "Teachers can use the AI lesson helper"
+  },
+  {
+   "key": "staff.message_parents",
+   "default": true,
+   "label": "Teachers can message parents of their classes"
+  },
+  {
+   "key": "parents.fees_online",
+   "default": true,
+   "label": "Parents see fees due and can pay in the app"
+  },
+  {
+   "key": "parents.bus_tracking",
+   "default": true,
+   "label": "Parents can see live school bus location"
   }
  ]
 };

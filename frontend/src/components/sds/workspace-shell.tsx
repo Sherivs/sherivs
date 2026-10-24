@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Bell, ChevronDown, ChevronUp, EyeOff, Menu, Moon, Plus, Sun, WifiOff } from "lucide-react";
-import type { Locale, ManifestItem, WorkspaceManifest, WorkspacePrefs } from "@/lib/sherivs-ws/engine";
+import { focusScope, scopeFocusOptions, type Locale, type ManifestItem, type ScopeFocus, type WorkspaceManifest, type WorkspacePrefs } from "@/lib/sherivs-ws/engine";
 import { LOCALES, greeting, t } from "@/lib/sherivs-ws/i18n";
 import { SdsIcon } from "./icons";
 import { WidgetBody } from "./widget-body";
@@ -12,9 +12,13 @@ export interface ShellProps {
   manifest: WorkspaceManifest; user: { name: string; title: string; roles: string[] };
   prefs: WorkspacePrefs; onPrefs: (p: WorkspacePrefs) => void; sample?: boolean; Link?: LinkComp;
   theme: "light" | "dark"; onTheme: (t: "light" | "dark") => void; inboxCounts?: Record<string, number>; currentPath?: string;
+  /** active scope focus (campus/shift/section/level...), presentation only */
+  scope?: ScopeFocus | null; onScope?: (s: ScopeFocus | null) => void;
 }
 
-export function WorkspaceShell({ manifest: m, user, prefs, onPrefs, sample = false, Link = A, theme, onTheme, inboxCounts = {}, currentPath = "/workspace" }: ShellProps) {
+export function WorkspaceShell({ manifest: full, scope = null, onScope, user, prefs, onPrefs, sample = false, Link = A, theme, onTheme, inboxCounts = {}, currentPath = "/workspace" }: ShellProps) {
+  const m = useMemo(() => focusScope(full, scope), [full, scope]);
+  const focusOpts = useMemo(() => scopeFocusOptions(full), [full]);
   const L = m.locale;
   const [editing, setEditing] = useState(false);
   const [more, setMore] = useState(false);
@@ -67,6 +71,15 @@ export function WorkspaceShell({ manifest: m, user, prefs, onPrefs, sample = fal
           {user.roles.map((r) => <span key={r} className="sds-chip">{r}</span>)}
         </div>
 
+        {focusOpts.length > 1 && onScope && (
+          <div className="sds-scopebar" role="group" aria-label={t(L, "viewing")}>
+            <span className="sds-muted">{t(L, "viewing")}:</span>
+            <button type="button" className="sds-chip sds-chip-btn" aria-pressed={!scope} onClick={() => onScope(null)}>{t(L, "all_scopes")}</button>
+            {focusOpts.map((o) => { const on = scope?.dim === o.dim && scope.ref === o.ref;
+              return <button key={`${o.dim}:${o.ref}`} type="button" className="sds-chip sds-chip-btn" aria-pressed={on} onClick={() => onScope(on ? null : o)}>{o.dim}: {o.ref}</button>; })}
+          </div>
+        )}
+
         {m.actions.length > 0 && (
           <section className="sds-section" aria-labelledby="qa-h">
             <div className="sds-section-h"><h2 id="qa-h" className="sds-h2">{t(L, "quick_actions")}</h2></div>
@@ -88,7 +101,9 @@ export function WorkspaceShell({ manifest: m, user, prefs, onPrefs, sample = fal
         <section className="sds-section" aria-labelledby="w-h">
           <div className="sds-section-h">
             <h2 id="w-h" className="sds-h2">{t(L, "your_workspace")}</h2>
-            <button type="button" className={`sds-btn${editing ? " is-primary" : ""}`} onClick={() => setEditing(!editing)} aria-pressed={editing}>{editing ? t(L, "done") : t(L, "customise")}</button>
+            {m.canPersonalise
+              ? <button type="button" className={`sds-btn${editing ? " is-primary" : ""}`} onClick={() => setEditing(!editing)} aria-pressed={editing}>{editing ? t(L, "done") : t(L, "customise")}</button>
+              : <span className="sds-muted" style={{ fontSize: 13 }}>{t(L, "locked")}</span>}
           </div>
           {m.widgets.length === 0 && <p className="sds-sub">{t(L, "nothing_here")}</p>}
           <div className="sds-grid">
@@ -130,7 +145,8 @@ function Widget({ w, L, sample, Link, editing, onUp, onDown, onHide }: { w: Mani
         {!editing && <Link to={w.to} className="sds-card-link">{t(L, "open")}<span className="sds-sr"> {w.label}</span></Link>}
       </div>
       <WidgetBody item={w} sample={sample} />
-      {w.scope.length > 0 && <div className="sds-chips" aria-label={t(L, "scope")}>{w.scope.map((s) => <span key={s} className="sds-chip">{s}</span>)}</div>}
+      {(() => { const chips = [...w.scope, ...Object.entries(w.scopeDims ?? {}).map(([d, v]) => `${d}: ${v.join(", ")}`)];
+        return chips.length > 0 && <div className="sds-chips" aria-label={t(L, "scope")}>{[...new Set(chips)].map((s) => <span key={s} className="sds-chip">{s}</span>)}</div>; })()}
       {editing && (
         <div className="sds-edit">
           <button type="button" className="sds-btn" onClick={onUp} disabled={!onUp} aria-label={`${t(L, "move_up")}: ${w.label}`}><ChevronUp size={16} aria-hidden /></button>

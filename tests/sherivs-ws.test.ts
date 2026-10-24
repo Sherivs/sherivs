@@ -99,3 +99,64 @@ describe("design tokens meet WCAG AA", () => {
     });
   }
 });
+
+// ---- SHERIVS-UX2: scope- and policy-aware workspaces -------------------------------------------------
+import { POLICIES, focusScope, scopeFocusOptions } from "@/lib/sherivs-ws/engine";
+const ux2 = fs.readFileSync(MIG + "20261024000600_sherivs_ux2_scope_policy_workspace.sql", "utf8");
+const DIMS = ["campus", "shift", "section", "gender", "level", "class", "subject", "house", "hostel"];
+describe("UX2 scope and policy layer", () => {
+  it("UX2 SQL block matches the generator and every gate is real", () => {
+    expect(ux2).toContain(fs.readFileSync("tools/workspace/seed-ux2.generated.sql", "utf8").trim());
+    const pol = new Set(POLICIES.map((p) => p.key));
+    for (const i of CATALOG) {
+      if (i.policy) expect(pol.has(i.policy), i.key).toBe(true);
+      for (const d of i.scopeDims) expect(DIMS, i.key).toContain(d);
+    }
+  });
+  it("same role, different scopes -> different homes, scope cards right after the lead card", () => {
+    const a = manifestFor(persona("teacher-a")); // level + subject
+    const b = manifestFor(persona("teacher-b")); // level + subject + shift + class
+    expect(a.widgets[1].key).toBe("w.level_overview");
+    expect(b.widgets.map((w) => w.key)).toContain("w.shift_overview");
+    expect(a.widgets.map((w) => w.key)).not.toContain("w.shift_overview");
+    expect(b.scopeOptions.shift).toEqual(["Morning"]);
+    const principal = manifestFor(persona("principal")); // whole-school, no scope sets
+    expect(principal.widgets.some((w) => CATALOG.find((c) => c.key === w.key)!.scopeDims.length > 0)).toBe(false);
+    expect(principal.hiddenByPolicy.find((h) => h.key === "w.campus_overview")?.reason).toBe("scope");
+  });
+  it("school policies hide items (never grant) and can lock personalisation", () => {
+    const p = persona("student");
+    const on = computeWorkspace(inputFor(p));
+    expect(on.widgets.map((w) => w.key)).toContain("w.ai_tutor");
+    const inp = inputFor(p);
+    const off = computeWorkspace({ ...inp, org: { ...inp.org, policies: POLICIES.filter((x) => x.key !== "students.ai_tutor" && x.key !== "workspace.personalise").map((x) => x.key) },
+      prefs: { hidden: ["w.announcements"], locale: "yo" } });
+    expect([...off.widgets, ...off.nav, ...off.actions, ...off.available].some((w) => w.key.includes("ai_tutor") || w.key === "a.ask_tutor")).toBe(false);
+    expect(off.hiddenByPolicy.find((h) => h.key === "w.ai_tutor")?.reason).toBe("policy");
+    expect(off.canPersonalise).toBe(false);
+    expect(off.widgets.map((w) => w.key)).toContain("w.announcements"); // stored "hide" ignored when locked
+    expect(off.locale).toBe("yo");
+    expect(sanitizePrefs({ hidden: ["w.my_cbt"], locale: "ha" }, off)).toEqual({ locale: "ha", density: undefined });
+    // a policy can never add something the permissions do not allow
+    const teacher = computeWorkspace(inputFor(persona("teacher-a")));
+    expect(teacher.widgets.map((w) => w.key)).not.toContain("w.ai_tutor");
+  });
+  it("scope focus narrows scope cards and tags links, ignores scopes the user does not hold", () => {
+    const m = manifestFor(persona("teacher-b"));
+    const opts = scopeFocusOptions(m);
+    expect(opts).toContainEqual({ dim: "shift", ref: "Morning" });
+    const f = focusScope(m, { dim: "shift", ref: "Morning" });
+    expect(f.widgets.some((w) => w.key === "w.level_overview")).toBe(false);
+    expect(f.widgets.find((w) => w.key === "w.shift_overview")!.to).toContain("scope=shift%3AMorning");
+    expect(focusScope(m, { dim: "campus", ref: "Elsewhere" })).toBe(m);
+  });
+  it("server v2 manifest maps scope, policies and lock flag", () => {
+    const s: ServerManifest = { version: 2, org_id: "o", families: ["teacher"], primary_family: "teacher", features: [], locale: "en", density: "comfortable",
+      scopes: [], nav: [{ key: "nav.home" }], widgets: [{ key: "w.level_overview", scope: { level: ["JSS2"] } }, { key: "w.today_classes" }], available: [], actions: [], inbox: [],
+      hidden_by_policy: 0, policies: ["staff.ai_helper"], can_personalise: false, scope_options: { level: ["JSS2"] } };
+    const m = fromServer(s, { name: "X", plan: "starter" });
+    expect(m.widgets[0].scopeDims).toEqual({ level: ["JSS2"] });
+    expect(m.canPersonalise).toBe(false);
+    expect(m.scopeOptions).toEqual({ level: ["JSS2"] });
+  });
+});

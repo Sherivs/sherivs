@@ -93,3 +93,8 @@
 @keyframes sds-sh { to { background-position: -200% 0; } }
 .sds-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .sds-skip { position: absolute; left: -999px; } .sds-skip:focus { left: 8px; top: 8px; z-index: 50; background: var(--sds-surface); padding: 8px; }
+/* SHERIVS-UX2: scope switcher (horizontal scroll on phones, 48 px targets) */
+.sds .sds-scopebar { display: flex; gap: 8px; align-items: center; overflow-x: auto; margin-top: 12px; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+.sds .sds-chip-btn { min-height: var(--sds-touch); padding: 0 14px; cursor: pointer; border: 1px solid var(--sds-border); background: transparent; color: inherit; white-space: nowrap; font: inherit; }
+.sds .sds-chip-btn[aria-pressed="true"] { background: var(--sds-primary); color: var(--sds-primary-text); border-color: transparent; }
+.sds .sds-chip-btn:focus-visible { outline: 3px solid var(--sds-focus); outline-offset: 2px; }

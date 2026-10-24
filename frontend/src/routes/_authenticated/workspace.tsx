@@ -5,17 +5,21 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useApp } from "@/contexts/app-context";
 import { rpc } from "@/lib/scholar/rpc";
 import { fromServer, scopeChips, type ServerManifest } from "@/lib/sherivs-ws/server-adapter";
-import type { WorkspacePrefs } from "@/lib/sherivs-ws/engine";
+import type { ScopeFocus, WorkspacePrefs } from "@/lib/sherivs-ws/engine";
 import { WorkspaceShell, type LinkComp } from "@/components/sds/workspace-shell";
 
 export const Route = createFileRoute("/_authenticated/workspace")({ ssr: false, component: WorkspacePage });
 const RouterLink: LinkComp = ({ to, children, ...rest }) => <Link to={to as never} {...rest}>{children}</Link>;
-const CACHE = "sherivs.ws.manifest.v1";
+const CACHE = "sherivs.ws.manifest.v2";
+const SCOPE = "sherivs.ws.scope";
 
 function WorkspacePage() {
   const { school, profile } = useApp();
   const qc = useQueryClient();
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [scope, setScope] = useState<ScopeFocus | null>(null);
+  useEffect(() => { try { setScope(JSON.parse(localStorage.getItem(SCOPE) ?? "null")); } catch { /* ignore */ } }, []);
+  const onScope = (f: ScopeFocus | null) => { setScope(f); if (f) localStorage.setItem(SCOPE, JSON.stringify(f)); else localStorage.removeItem(SCOPE); };
   useEffect(() => { const v = localStorage.getItem("sherivs.theme"); setTheme(v === "dark" || (!v && matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light"); }, []);
   const q = useQuery({
     queryKey: ["workspace-manifest", school?.id],
@@ -30,7 +34,7 @@ function WorkspacePage() {
   const prefs: WorkspacePrefs = { locale: s.locale, density: s.density === "compact" ? "compact" : "comfortable" };
   const save = async (p: WorkspacePrefs) => { await rpc("workspace_prefs_save", { p_org: school.id, p_prefs: p }); await qc.invalidateQueries({ queryKey: ["workspace-manifest", school.id] }); };
   return (
-    <WorkspaceShell manifest={fromServer(s, { name: school.name, plan: school.subscription_tier ?? "starter" })} prefs={prefs} onPrefs={save} Link={RouterLink}
+    <WorkspaceShell manifest={fromServer(s, { name: school.name, plan: school.subscription_tier ?? "starter" })} scope={scope} onScope={onScope} prefs={prefs} onPrefs={save} Link={RouterLink}
       user={{ name: profile?.full_name ?? "", title: s.families.join(" · "), roles: scopeChips(s) }}
       theme={theme} onTheme={(t) => { localStorage.setItem("sherivs.theme", t); setTheme(t); }} />
   );
