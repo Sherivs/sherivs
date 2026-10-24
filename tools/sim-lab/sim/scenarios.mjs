@@ -1484,6 +1484,89 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
     v.removed === true && v.anonRemoved === null && !!v.bReclaim?.id && JSON.stringify(v.audit) === JSON.stringify(["add", "check", "set_primary", "remove"]) && !v.auditEdit?.ok && v.resolveMs < 20,
     `audit ${JSON.stringify(v.audit)}; resolve ${v.resolveMs} ms avg over 2,000 domains`, "high");
 }
+// ---------- A6. Class moves, transfers with consent, guardian rights, custody orders, safe pickup (SHERIVS-A06) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+    const sid = (await asOwner("select id from students where school_id=$1 and is_active and parent_id is not null order by admission_number offset 3 limit 1", [A.schoolId])).row?.id;
+    const st = (await asOwner("select class_id, parent_id from students where id=$1", [sid])).row;
+    const other = (await asOwner("select id from classes where school_id=$1 and id <> $2 limit 1", [A.schoolId, st.class_id])).row?.id;
+    const bCls = (await asOwner("select id from classes where school_id=$1 limit 1", [B.schoolId])).row?.id;
+    // class moves
+    await act(A.teacher); out.tMove = await t("select public.student_move_class($1,$2,'Teacher tries')", [sid, other]); await act(A.admin);
+    out.noReason = await t("select public.student_move_class($1,$2,'x')", [sid, other]);
+    out.foreign = await t("select public.student_move_class($1,$2,'Wrong school class')", [sid, bCls]);
+    out.move = await t("select public.student_move_class($1,$2,'Parent requested a stream change')", [sid, other]);
+    out.hist = (await t("select count(*)::int n from student_class_history where student_id=$1", [sid])).row?.n;
+    out.nowCls = (await asOwner("select class_id from students where id=$1", [sid])).row?.class_id === other;
+    // transfers
+    out.noConsent = await t("select public.transfer_out_issue($1,'Govt Sec School Maiduguri','Family relocating',false)", [sid]);
+    const iss = (await t("select public.transfer_out_issue($1,'Govt Sec School Maiduguri','Family relocating',true) r", [sid])).row?.r;
+    out.twice = await t("select public.transfer_out_issue($1,'Other School','Second attempt',true)", [sid]);
+    out.inactive = (await asOwner("select status, is_active from students where id=$1", [sid])).row;
+    out.ownClaim = await t("select public.transfer_in_claim($1)", [iss?.code]);
+    await act(B.admin);
+    out.bad = await t("select public.transfer_in_claim('NOTACODE00')");
+    out.claim = (await t("select public.transfer_in_claim($1) r", [iss?.code])).row?.r;
+    out.reclaim = await t("select public.transfer_in_claim($1)", [iss?.code]);
+    await act(A.admin);
+    // cancel flow on a second student
+    const sid2 = (await asOwner("select id from students where school_id=$1 and is_active order by admission_number offset 5 limit 1", [A.schoolId])).row?.id;
+    const cls2 = (await asOwner("select class_id from students where id=$1", [sid2])).row?.class_id;
+    const iss2 = (await t("select public.transfer_out_issue($1,'Some Academy','Considering a move',true) r", [sid2])).row?.r;
+    out.cancel = await t("select public.transfer_cancel($1)", [iss2?.id]);
+    out.restored = (await asOwner("select is_active, status, class_id from students where id=$1", [sid2])).row;
+    out.cls2ok = out.restored?.class_id === cls2;
+    // guardians, custody, pickup (on a third student)
+    const sid3 = (await asOwner("select id from students where school_id=$1 and is_active and parent_id is not null order by admission_number offset 7 limit 1", [A.schoolId])).row?.id;
+    const p1 = (await asOwner("select parent_id from students where id=$1", [sid3])).row?.parent_id;
+    const p2 = (await asOwner("select id from users where school_id=$1 and role='parent' and id <> $2 limit 1", [A.schoolId, p1])).row?.id;
+    await asOwner("update users set phone='+234 803 555 0101' where id=$1", [p1]);
+    await asOwner("insert into parent_student_map (school_id, parent_id, student_id, relationship) values ($1,$2,$3,'father'),($1,$4,$3,'mother') on conflict do nothing", [A.schoolId, p1, sid3, p2]);
+    await act(A.teacher);
+    out.gOk = (await t("select public.pickup_verify($1,'Parent One','08035550101') r", [sid3])).row?.r;
+    out.stranger = (await t("select public.pickup_verify($1,'Unknown Person','0700 000 0000') r", [sid3])).row?.r;
+    out.tOrder = await t("select public.custody_order_add($1,'X','1',null,'no_pickup','REF')", [sid3]);
+    out.tRead = (await t("select count(*)::int n from custody_orders where student_id=$1", [sid3])).row?.n;
+    await act(A.admin);
+    out.rights = await t("select public.guardian_rights_set($1,$2,true,false)", [sid3, p2]);
+    const ord = (await t("select public.custody_order_add($1,'Parent One','0803-555-0101',$2,'no_pickup','HC/MAI/123/2026') id", [sid3, p1])).row?.id;
+    await act(A.teacher);
+    out.blocked = (await t("select public.pickup_verify($1,'Parent One','+2348035550101') r", [sid3])).row?.r;
+    out.byName = (await t("select public.pickup_verify($1,'  parent one ',null) r", [sid3])).row?.r;
+    out.noRights = (await t("select public.pickup_verify($1,'Parent Two',null,$2) r", [sid3, p2])).row?.r;
+    out.events = (await t("select count(*)::int n, count(*) filter (where allowed)::int a from pickup_events where student_id=$1", [sid3])).row;
+    out.tamper = await t("update pickup_events set allowed=true where student_id=$1", [sid3]);
+    out.ownerTamper = await asOwner("delete from pickup_events where student_id=$1", [sid3]);
+    await act(A.admin); await t("select public.custody_order_revoke($1)", [ord]);
+    await t("select public.guardian_rights_set($1,$2,true,true)", [sid3, p1]);
+    await act(A.teacher); out.after = (await t("select public.pickup_verify($1,'Parent One','08035550101') r", [sid3])).row?.r;
+    // isolation + parents
+    await act(p1); out.pRead = (await t("select count(*)::int n from custody_orders where student_id=$1", [sid3])).row?.n;
+    out.pVerify = await t("select public.pickup_verify($1,'Me',null)", [sid3]);
+    await act(B.admin); out.bVerify = await t("select public.pickup_verify($1,'B',null)", [sid3]); out.bOrder = await t("select public.custody_order_add($1,'Z Z',null,null,'no_pickup','REF1')", [sid3]);
+    out.bHist = (await t("select count(*)::int n from student_class_history where student_id=$1", [sid])).row?.n;
+    out.direct = await t("insert into custody_orders (school_id, student_id, restricted_name, reference) values ($1,$2,'x','y')", [B.schoolId, sid3]);
+  });
+  rec("students_transfer", "Class moves need students.transfer, a reason and a same-school class; history is kept",
+    !v.tMove?.ok && !v.noReason?.ok && !v.foreign?.ok && v.move?.ok && v.hist === 1 && v.nowCls, `${W_ERR(v.tMove)} | ${W_ERR(v.noReason)} | ${W_ERR(v.foreign)} | hist ${v.hist}`, "high");
+  rec("students_transfer", "Transfer out requires parent consent, one open transfer per student, and marks the learner transferred",
+    /consent/.test(v.noConsent?.err ?? "") && !v.twice?.ok && v.inactive?.status === "transferred" && v.inactive?.is_active === false, `${W_ERR(v.noConsent)} | ${W_ERR(v.twice)} | ${JSON.stringify(v.inactive)}`, "critical");
+  rec("students_transfer", "Receiving school claims once with the code and gets a summary only (no medical/address/guardian data)",
+    !v.ownClaim?.ok && !v.bad?.ok && !!v.claim?.admission_number && !("medical_conditions" in (v.claim ?? {})) && !("home_address" in (v.claim ?? {})) && !("parent_phone" in (v.claim ?? {})) && !v.reclaim?.ok,
+    `keys ${Object.keys(v.claim ?? {}).join(",")}; reclaim ${W_ERR(v.reclaim)}`, "critical");
+  rec("students_transfer", "Cancelling an unclaimed transfer restores the learner to their class",
+    v.cancel?.ok && v.restored?.is_active === true && v.cls2ok, JSON.stringify(v.restored), "high");
+  rec("custody_pickup", "Guardians with pickup rights are allowed; strangers are refused; teachers cannot add or read custody orders",
+    v.gOk?.allowed === true && v.stranger?.allowed === false && !v.tOrder?.ok && v.tRead === 0, `${JSON.stringify(v.gOk)} ${JSON.stringify(v.stranger)} ${W_ERR(v.tOrder)}`, "critical");
+  rec("custody_pickup", "A court order blocks the named person by phone (any format) or name, overriding guardianship; guardians without pickup rights are refused",
+    v.blocked?.allowed === false && v.blocked?.reason === "restricted_by_order" && v.byName?.allowed === false && v.noRights?.allowed === false && v.noRights?.reason === "guardian_without_pickup_rights",
+    `${JSON.stringify(v.blocked)} ${JSON.stringify(v.byName)} ${JSON.stringify(v.noRights)}`, "critical");
+  rec("custody_pickup", "Every pickup check is logged append-only; revoking the order restores access",
+    v.events?.n >= 5 && !v.tamper?.ok && !v.ownerTamper?.ok && v.after?.allowed === true, `events ${JSON.stringify(v.events)}; ${W_ERR(v.ownerTamper)}; after ${JSON.stringify(v.after)}`, "high");
+  rec("custody_pickup", "Parents never see custody orders or run gate checks; another school can do nothing",
+    v.pRead === 0 && !v.pVerify?.ok && !v.bVerify?.ok && !v.bOrder?.ok && v.bHist === 0 && !v.direct?.ok, `${W_ERR(v.pVerify)} | ${W_ERR(v.bVerify)} | ${W_ERR(v.direct)}`, "critical");
+}
+
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
 await pool.end();

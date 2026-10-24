@@ -1178,6 +1178,14 @@ export const SCHOLAR_NAV_CONTRIBUTIONS: readonly NavContribution[] = [
         orderHint: 2,
       },
       {
+        key: "r001.org_admin.transfers_custody",
+        label: "Transfers, guardians & pickup",
+        iconKey: "users",
+        url: "/admin/transfers-custody",
+        capabilities: ["r001:org_admin.transfers_custody"],
+        orderHint: 2,
+      },
+      {
         key: "r001.org_admin.domains",
         label: "School domains",
         iconKey: "settings",

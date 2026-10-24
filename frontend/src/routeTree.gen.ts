@@ -137,6 +137,7 @@ import { Route as AuthenticatedAdminSupportRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminTeacherIntelligenceRouteImport } from './routes/_authenticated/admin/teacher-intelligence'
 import { Route as AuthenticatedAdminTeachersRouteImport } from './routes/_authenticated/admin/teachers'
 import { Route as AuthenticatedAdminTimetableRouteImport } from './routes/_authenticated/admin/timetable'
+import { Route as AuthenticatedAdminTransfersCustodyRouteImport } from './routes/_authenticated/admin/transfers-custody'
 import { Route as AuthenticatedAdminVisitorsRouteImport } from './routes/_authenticated/admin/visitors'
 import { Route as AuthenticatedAdminWalletRouteImport } from './routes/_authenticated/admin/wallet'
 import { Route as AuthenticatedBursarDashboardRouteImport } from './routes/_authenticated/bursar/dashboard'
@@ -921,6 +922,12 @@ const AuthenticatedAdminTimetableRoute =
     path: '/timetable',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminTransfersCustodyRoute =
+  AuthenticatedAdminTransfersCustodyRouteImport.update({
+    id: '/transfers-custody',
+    path: '/transfers-custody',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminVisitorsRoute =
   AuthenticatedAdminVisitorsRouteImport.update({
     id: '/visitors',
@@ -1493,6 +1500,7 @@ export interface FileRoutesByFullPath {
   '/admin/teacher-intelligence': typeof AuthenticatedAdminTeacherIntelligenceRoute
   '/admin/teachers': typeof AuthenticatedAdminTeachersRoute
   '/admin/timetable': typeof AuthenticatedAdminTimetableRoute
+  '/admin/transfers-custody': typeof AuthenticatedAdminTransfersCustodyRoute
   '/admin/visitors': typeof AuthenticatedAdminVisitorsRoute
   '/admin/wallet': typeof AuthenticatedAdminWalletRoute
   '/bursar/dashboard': typeof AuthenticatedBursarDashboardRoute
@@ -1694,6 +1702,7 @@ export interface FileRoutesByTo {
   '/admin/teacher-intelligence': typeof AuthenticatedAdminTeacherIntelligenceRoute
   '/admin/teachers': typeof AuthenticatedAdminTeachersRoute
   '/admin/timetable': typeof AuthenticatedAdminTimetableRoute
+  '/admin/transfers-custody': typeof AuthenticatedAdminTransfersCustodyRoute
   '/admin/visitors': typeof AuthenticatedAdminVisitorsRoute
   '/admin/wallet': typeof AuthenticatedAdminWalletRoute
   '/bursar/dashboard': typeof AuthenticatedBursarDashboardRoute
@@ -1900,6 +1909,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/teacher-intelligence': typeof AuthenticatedAdminTeacherIntelligenceRoute
   '/_authenticated/admin/teachers': typeof AuthenticatedAdminTeachersRoute
   '/_authenticated/admin/timetable': typeof AuthenticatedAdminTimetableRoute
+  '/_authenticated/admin/transfers-custody': typeof AuthenticatedAdminTransfersCustodyRoute
   '/_authenticated/admin/visitors': typeof AuthenticatedAdminVisitorsRoute
   '/_authenticated/admin/wallet': typeof AuthenticatedAdminWalletRoute
   '/_authenticated/bursar/dashboard': typeof AuthenticatedBursarDashboardRoute
@@ -2105,6 +2115,7 @@ export interface FileRouteTypes {
     | '/admin/teacher-intelligence'
     | '/admin/teachers'
     | '/admin/timetable'
+    | '/admin/transfers-custody'
     | '/admin/visitors'
     | '/admin/wallet'
     | '/bursar/dashboard'
@@ -2306,6 +2317,7 @@ export interface FileRouteTypes {
     | '/admin/teacher-intelligence'
     | '/admin/teachers'
     | '/admin/timetable'
+    | '/admin/transfers-custody'
     | '/admin/visitors'
     | '/admin/wallet'
     | '/bursar/dashboard'
@@ -2511,6 +2523,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/teacher-intelligence'
     | '/_authenticated/admin/teachers'
     | '/_authenticated/admin/timetable'
+    | '/_authenticated/admin/transfers-custody'
     | '/_authenticated/admin/visitors'
     | '/_authenticated/admin/wallet'
     | '/_authenticated/bursar/dashboard'
@@ -3517,6 +3530,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminTimetableRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/transfers-custody': {
+      id: '/_authenticated/admin/transfers-custody'
+      path: '/transfers-custody'
+      fullPath: '/admin/transfers-custody'
+      preLoaderRoute: typeof AuthenticatedAdminTransfersCustodyRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/visitors': {
       id: '/_authenticated/admin/visitors'
       path: '/visitors'
@@ -4147,6 +4167,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminTeacherIntelligenceRoute: typeof AuthenticatedAdminTeacherIntelligenceRoute
   AuthenticatedAdminTeachersRoute: typeof AuthenticatedAdminTeachersRoute
   AuthenticatedAdminTimetableRoute: typeof AuthenticatedAdminTimetableRoute
+  AuthenticatedAdminTransfersCustodyRoute: typeof AuthenticatedAdminTransfersCustodyRoute
   AuthenticatedAdminVisitorsRoute: typeof AuthenticatedAdminVisitorsRoute
   AuthenticatedAdminWalletRoute: typeof AuthenticatedAdminWalletRoute
 }
@@ -4240,6 +4261,8 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
       AuthenticatedAdminTeacherIntelligenceRoute,
     AuthenticatedAdminTeachersRoute: AuthenticatedAdminTeachersRoute,
     AuthenticatedAdminTimetableRoute: AuthenticatedAdminTimetableRoute,
+    AuthenticatedAdminTransfersCustodyRoute:
+      AuthenticatedAdminTransfersCustodyRoute,
     AuthenticatedAdminVisitorsRoute: AuthenticatedAdminVisitorsRoute,
     AuthenticatedAdminWalletRoute: AuthenticatedAdminWalletRoute,
   }
