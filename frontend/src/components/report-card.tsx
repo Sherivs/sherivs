@@ -16,6 +16,7 @@ import { useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
+import { computeGpa } from "@/lib/academics/grading";
 
 type Grade = {
   id: string;
@@ -27,6 +28,8 @@ type Grade = {
   grade_remark: string | null;
   term: string | null;
   academic_year: string | null;
+  credit_units: number | null;
+  grade_point: number | null;
 };
 
 type Student = {
@@ -84,7 +87,7 @@ export function ReportCard({
       let q = supabase
         .from("grades")
         .select(
-          "id, subject, ca_score, exam_score, total_score, grade, grade_remark, term, academic_year",
+          "id, subject, ca_score, exam_score, total_score, grade, grade_remark, term, academic_year, credit_units, grade_point",
         )
         .eq("student_id", studentId)
         .eq("is_published", true)
@@ -115,7 +118,15 @@ export function ReportCard({
     const scored = rows.filter((r) => r.total_score != null);
     const total = scored.reduce((a, r) => a + Number(r.total_score), 0);
     const avg = scored.length ? total / scored.length : 0;
-    return { count: rows.length, total, avg };
+    // SHERIVS-016: tertiary results carry credit units + grade points -> GPA.
+    const gpa = computeGpa(
+      rows.map((r) => ({
+        courseCode: r.subject,
+        creditUnits: r.credit_units,
+        gradePoint: r.grade_point,
+      })),
+    );
+    return { count: rows.length, total, avg, gpa };
   }, [grades.data]);
 
   const attendanceStats = useMemo(() => {
@@ -242,8 +253,14 @@ export function ReportCard({
               <p className="font-display text-lg font-bold">{summary.total.toFixed(1)}</p>
             </div>
             <div className="rounded-md border border-border p-3">
-              <p className="text-xs text-muted-foreground">Average</p>
-              <p className="font-display text-lg font-bold">{summary.avg.toFixed(1)}</p>
+              <p className="text-xs text-muted-foreground">
+                {summary.gpa.gpa != null ? "GPA" : "Average"}
+              </p>
+              <p className="font-display text-lg font-bold">
+                {summary.gpa.gpa != null
+                  ? `${summary.gpa.gpa.toFixed(2)} (${summary.gpa.units} units)`
+                  : summary.avg.toFixed(1)}
+              </p>
             </div>
           </div>
         </>

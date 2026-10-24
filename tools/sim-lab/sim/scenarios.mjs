@@ -184,7 +184,136 @@ const [A, B, C, D, E] = M.institutions;
   const read = await tryq(A.admin, "select count(*)::int n from org_credentials");
   rec("vault", "School users cannot read encrypted credential rows", !read.ok || read.r.rows[0].n === 0, read.ok ? `${read.r.rows[0].n} rows` : "permission denied", "high");
   const vlog = await tryq(A.admin, "select count(*)::int n from credential_access_log");
-  rec("vault", "School admin can read own credential access log (product promise)", vlog.ok && vlog.r.rows[0].n > 0, vlog.ok ? `${vlog.r.rows[0].n} rows visible; is_tenant_admin() needs cg_role_assignment rows, which legacy admins do not have` : vlog.err, "medium");
+  rec("vault", "School admin can read own credential access log (product promise)", vlog.ok && vlog.r.rows[0].n > 0, vlog.ok ? `${vlog.r.rows[0].n} rows visible (legacy admin mapped to role:administrator)` : vlog.err, "medium");
+}
+
+// ================= SHERIVS-016 features =================
+const inTx = async (uid, fn, role = "authenticated") => { try { return { ok: true, v: await as(uid, fn, role) } } catch (e) { return { ok: false, err: e.message.slice(0, 160) } } };
+// ---------- 7. Lifecycle / rollover ----------
+{
+  const before = await sys("select status, count(*)::int n from students where school_id=$1 group by 1", [E.schoolId]);
+  const dry = await inTx(E.admin, async (c) => (await c.query("select public.session_rollover($1,'2025/2026','2026/2027',true) r", [E.schoolId])).rows[0].r);
+  const after = await sys("select status, count(*)::int n from students where school_id=$1 group by 1", [E.schoolId]);
+  rec("lifecycle", "Dry-run preview for 12,000 university students changes nothing", dry.ok && dry.v.total === 12000 && JSON.stringify(before.rows) === JSON.stringify(after.rows),
+    dry.ok ? `preview: ${dry.v.promoted} promote, ${dry.v.repeated} repeat, ${dry.v.graduated} graduate, ${dry.v.skipped} skip` : dry.err, "high");
+  const k12 = await inTx(A.admin, async (c) => {
+    const ss3 = (await c.query("select count(*)::int n from students where school_id=$1 and current_level='SS3'", [A.schoolId])).rows[0].n;
+    const jss1 = (await c.query("select count(*)::int n from students where school_id=$1 and current_level='JSS1'", [A.schoolId])).rows[0].n;
+    const r1 = (await c.query("select public.session_rollover($1,'2025/2026','2026/2027',false) r", [A.schoolId])).rows[0].r;
+    const r2 = (await c.query("select public.session_rollover($1,'2025/2026','2026/2027',false) r", [A.schoolId])).rows[0].r;
+    const grad = (await c.query("select count(*)::int n from students where school_id=$1 and status='graduated' and is_active=false", [A.schoolId])).rows[0].n;
+    const jss2 = (await c.query("select count(*)::int n from students s join classes c on c.id=s.class_id where s.school_id=$1 and s.current_level='JSS2' and c.grade_level='JSS2' and s.current_session='2026/2027'", [A.schoolId])).rows[0].n;
+    const ev = (await c.query("select count(*)::int n from member_lifecycle_events where school_id=$1", [A.schoolId])).rows[0].n;
+    const au = (await c.query("select count(*)::int n from audit_logs where school_id=$1 and action='session_rollover'", [A.schoolId])).rows[0].n;
+    return { ss3, jss1, r1, r2, grad, jss2, ev, au };
+  });
+  rec("lifecycle", "K-12 rollover: SS3 graduates, JSS1 moves into a JSS2 class", k12.ok && k12.v.grad === k12.v.ss3 && k12.v.jss2 >= k12.v.jss1 && k12.v.ss3 > 0,
+    k12.ok ? `${k12.v.ss3} SS3 -> ${k12.v.grad} graduated; ${k12.v.jss1} JSS1 -> ${k12.v.jss2} in JSS2 classes` : k12.err, "high");
+  rec("lifecycle", "Re-running the same rollover is a no-op (idempotent)", k12.ok && k12.v.r2.already_applied === true && k12.v.r2.promoted === k12.v.r1.promoted,
+    k12.ok ? `second run already_applied=${k12.v.r2.already_applied}` : k12.err, "critical");
+  rec("lifecycle", "Every change leaves a lifecycle event and an audit entry", k12.ok && k12.v.ev === k12.v.r1.total - k12.v.r1.skipped && k12.v.au === 1,
+    k12.ok ? `${k12.v.ev} lifecycle events, ${k12.v.au} audit entry` : k12.err, "high");
+  const t = await inTx(A.teacher, (c) => c.query("select public.session_rollover($1,'2025/2026','2026/2027',true)", [A.schoolId]));
+  rec("lifecycle", "Teacher cannot run a rollover", !t.ok, t.ok ? "teacher allowed" : "denied", "critical");
+  const x = await inTx(A.admin, (c) => c.query("select public.session_rollover($1,'2025/2026','2026/2027',false)", [B.schoolId]));
+  rec("lifecycle", "Admin cannot roll over another school", !x.ok, x.ok ? "cross-school rollover allowed" : "denied", "critical");
+  const uni = await inTx(E.admin, async (c) => {
+    const r = (await c.query("select public.session_rollover($1,'2025/2026','2026/2027',false) r", [E.schoolId])).rows[0].r;
+    const badRepeat = (await c.query(`select count(*)::int n from member_lifecycle_events e where e.school_id=$1 and e.to_status='promoted'
+       and (select sum(g.credit_units*g.grade_point)/nullif(sum(g.credit_units),0) from grades g where g.student_id=e.student_id and g.credit_units>0) < 1.0`, [E.schoolId])).rows[0].n;
+    const gradWrong = (await c.query("select count(*)::int n from member_lifecycle_events e where e.school_id=$1 and e.to_status='graduated' and e.from_level not in ('500L','600L')", [E.schoolId])).rows[0].n;
+    return { r, badRepeat, gradWrong };
+  });
+  rec("lifecycle", "University: CGPA below 1.00 repeats; only final-level students graduate", uni.ok && uni.v.badRepeat === 0 && uni.v.gradWrong === 0,
+    uni.ok ? `${uni.v.r.promoted} promoted, ${uni.v.r.repeated} repeated (probation), ${uni.v.r.graduated} graduated, ${uni.v.r.promoted_without_class} need a new class arm` : uni.err, "high");
+  const poly = await inTx(D.admin, async (c) => {
+    const s = (await c.query("select id from students where school_id=$1 and current_level='ND2' limit 1", [D.schoolId])).rows[0].id;
+    await c.query("update grades set ca_score=5, exam_score=10 where student_id=$1", [s]);
+    const r = (await c.query("select public.session_rollover($1,'2025/2026','2026/2027',false, jsonb_build_object($2::text,'withdraw')) r", [D.schoolId, (await c.query("select id from students where school_id=$1 and current_level='ND1' limit 1", [D.schoolId])).rows[0].id])).rows[0].r;
+    const st = (await c.query("select status, current_level from students where id=$1", [s])).rows[0];
+    return { r, st };
+  });
+  rec("lifecycle", "Polytechnic: ND2 with failed courses repeats; manual withdraw override honoured", poly.ok && poly.v.st.status === "repeated" && poly.v.r.withdrawn === 1,
+    poly.ok ? `ND2 student -> ${poly.v.st.status}; ${poly.v.r.withdrawn} withdrawn by override; ${poly.v.r.graduated} ND2/HND2 graduated` : poly.err, "high");
+  const st0 = (await sys("select id from students where school_id=$1 limit 1", [C.schoolId])).rows[0].id;
+  const ev = await inTx(null, async (c) => { await c.query("insert into member_lifecycle_events (school_id, student_id, from_status, to_status, reason) values ($1,$2,'active','active','sim probe')", [C.schoolId, st0]);
+    await c.query("UPDATE member_lifecycle_events SET reason='x'"); }, "postgres").then((r) => r.ok ? "UPDATED" : "rejected");
+  rec("lifecycle", "Lifecycle history is append-only", ev === "rejected", ev, "high");
+}
+// ---------- 8. Grading scales / CGPA ----------
+{
+  const uniPts = await sys("select grade, min(grade_point) gp from grades where school_id=$1 group by 1 order by 1", [E.schoolId]);
+  const okUni = uniPts.rows.every((r) => ({ A: 5, B: 4, C: 3, D: 2, E: 1, F: 0 })[r.grade] === Number(r.gp));
+  rec("grading", "University results carry 5-point grade points (A=5 ... F=0)", okUni && uniPts.rows.length > 0, uniPts.rows.map((r) => `${r.grade}=${Number(r.gp)}`).join(" "), "high");
+  const poly = await sys("select string_agg(distinct grade, ',' order by grade) g, max(grade_point) mx from grades where school_id=$1", [D.schoolId]);
+  rec("grading", "Polytechnic uses the 4-point NBTE scale (A, AB, B, BC ... F)", Number(poly.rows[0].mx) === 4 && /AB/.test(poly.rows[0].g), `letters ${poly.rows[0].g}; max ${poly.rows[0].mx}`, "medium");
+  const k12 = await sys("select count(*) filter (where grade_point is not null)::int p, count(*)::int n from grades where school_id=$1", [A.schoolId]);
+  rec("grading", "K-12 stays on percentage grading (no grade points)", k12.rows[0].p === 0 && k12.rows[0].n > 0, `${k12.rows[0].p} of ${k12.rows[0].n} rows have points`, "medium");
+  const stu = (await sys("select id, user_id from students where school_id=$1 and user_id is not null limit 1", [E.schoolId])).rows[0];
+  const rows = (await sys("select credit_units u, grade_point p from grades where student_id=$1", [stu.id])).rows;
+  const jsGpa = Math.round((rows.reduce((s, r) => s + r.u * r.p, 0) / rows.reduce((s, r) => s + r.u, 0)) * 100) / 100;
+  const sqlGpa = await inTx(stu.user_id, (c) => c.query("select gpa, units from public.member_gpa($1)", [stu.id]));
+  rec("grading", "SQL GPA equals independent JS computation", sqlGpa.ok && Number(sqlGpa.v.rows[0].gpa) === jsGpa, sqlGpa.ok ? `SQL ${sqlGpa.v.rows[0].gpa} over ${sqlGpa.v.rows[0].units} units, JS ${jsGpa}` : sqlGpa.err, "high");
+  const co = await inTx(E.admin, async (c) => {
+    await c.query("update grades set ca_score=5, exam_score=10 where student_id=$1 and subject='MTH101'", [stu.id]);
+    const failed = (await c.query("select count(*)::int n from public.member_outstanding_carryovers($1)", [stu.id])).rows[0].n;
+    await c.query("insert into grades (school_id, student_id, subject, ca_score, exam_score, term, academic_year, attempt, is_carryover, is_published) values ($1,$2,'MTH101',30,40,'First Semester','2026/2027',2,true,true)", [E.schoolId, stu.id]);
+    const cleared = (await c.query("select count(*)::int n from public.member_outstanding_carryovers($1)", [stu.id])).rows[0].n;
+    const units = (await c.query("select units from public.member_gpa($1)", [stu.id])).rows[0].units;
+    return { failed, cleared, units };
+  });
+  rec("grading", "Failed course becomes a carry-over; passing the retake clears it (both attempts count)", co.ok && co.v.failed >= 1 && co.v.cleared === co.v.failed - 1,
+    co.ok ? `outstanding ${co.v.failed} -> ${co.v.cleared}; units counted ${co.v.units}` : co.err, "high");
+  const dc = await sys("select public.degree_class(4.52,5) a, public.degree_class(3.49,5) b, public.degree_class(2.39,5) c, public.degree_class(3.5,4) d, public.degree_class(2.4,4) e");
+  const d = dc.rows[0];
+  rec("grading", "Degree classes follow NUC 4.50/3.50/2.40/1.50 and NBTE 3.50/3.00/2.50/2.00", d.a === "First Class" && d.b === "Second Class Lower" && d.c === "Third Class" && d.d === "Distinction" && d.e === "Pass", Object.values(d).join(" | "), "medium");
+  const other = (await sys("select id from students where school_id=$1 and id<>$2 limit 1", [E.schoolId, stu.id])).rows[0].id;
+  const tr = await inTx(stu.user_id, async (c) => ({ own: (await c.query("select count(*)::int n from public.member_transcript($1)", [stu.id])).rows[0].n, other: (await c.query("select count(*)::int n from public.member_transcript($1)", [other])).rows[0].n }));
+  rec("grading", "Student transcript shows own published results only", tr.ok && tr.v.own > 0 && tr.v.other === 0, tr.ok ? `own ${tr.v.own} rows, classmate ${tr.v.other}` : tr.err, "critical");
+}
+// ---------- 9. Plan tier -> entitlements ----------
+{
+  const m = await sys("select s.subscription_tier t, e.plan_id p from schools s left join org_entitlements e on e.org_id=s.id order by 1");
+  const want = { starter: "starter", growth: "growth", professional: "growth", enterprise: "enterprise" };
+  rec("tiers", "Every school's tier maps to an entitlement plan", m.rows.every((r) => want[r.t] === r.p), m.rows.map((r) => `${r.t}->${r.p}`).join(" "), "high");
+  const up = await inTx(null, async (c) => { await c.query("update schools set subscription_tier='enterprise' where id=$1", [B.schoolId]); return (await c.query("select plan_id from org_entitlements where org_id=$1", [B.schoolId])).rows[0].plan_id; }, "postgres");
+  rec("tiers", "Upgrading a school's tier switches its plan automatically", up.ok && up.v === "enterprise", up.ok ? `starter -> ${up.v}` : up.err, "high");
+  const q = await inTx(null, async (c) => { let ok = 0; for (let i = 0; i < 6; i++) if ((await c.query("select public.meter_consume_for_plan($1,'sms','2026-10',null,100) r", [B.schoolId])).rows[0].r) ok++; return ok; }, "postgres");
+  rec("tiers", "Starter SMS quota (500/month placeholder) enforced from the plan", q.ok && q.v === 5, q.ok ? `${q.v} of 6 x100 sends allowed` : q.err, "high");
+  const u = await inTx(A.admin, (c) => c.query("select public.meter_consume_for_plan($1,'sms','2026-10',null,1)", [A.schoolId]));
+  rec("tiers", "School users cannot call plan metering directly", !u.ok, u.ok ? "allowed" : "denied", "high");
+}
+// ---------- 10. Legacy audit_logs ----------
+{
+  const ins = await inTx(null, async (c) => {
+    await c.query("insert into audit_logs (school_id, user_id, action, table_name, new_value) values ($1,$2,'fee_waiver','fees','{\"amount\":5000}')", [C.schoolId, C.admin]);
+    await c.query("insert into audit_logs (school_id, user_id, action, table_name, new_value) values ($1,$2,'grade_publish','grades','{\"n\":1}')", [C.schoolId, C.admin]);
+    return (await c.query("select seq, at, org_id, actor_kind, actor_id, action, target_type, target_id, ip, device, before_hash, after_hash, prev_hash, entry_hash from audit_chain where org_id=$1 order by seq", [C.schoolId])).rows;
+  }, "postgres");
+  const sha = (x) => crypto.createHash("sha256").update(x, "utf8").digest("hex");
+  const ss = (v) => v === null || typeof v !== "object" ? JSON.stringify(v ?? null) : Array.isArray(v) ? `[${v.map(ss).join(",")}]` : `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${ss(v[k])}`).join(",")}}`;
+  let prev = "0".repeat(64), valid = ins.ok && ins.v.length >= 2;
+  for (const e of ins.ok ? ins.v : []) { const body = ss([Number(e.seq), new Date(e.at).toISOString(), e.org_id, e.actor_kind, e.actor_id, e.action, e.target_type, e.target_id, e.ip, e.device, e.before_hash, e.after_hash, e.prev_hash]);
+    if (e.prev_hash !== prev || sha(prev + body) !== e.entry_hash) valid = false; prev = e.entry_hash; }
+  rec("audit", "Legacy audit_logs entries are bridged into the hash chain (verifiable by the TS verifier)", valid, ins.ok ? `${ins.v.length} chain entries verified` : ins.err, "high");
+  const probe = (stmt) => inTx(null, async (c) => { await c.query("insert into audit_logs (school_id, action, table_name) values ($1,'sim_probe','sim')", [D.schoolId]); await c.query(stmt); }, "postgres").then((r) => r.ok ? "ALLOWED" : "rejected");
+  const upd = await probe("UPDATE audit_logs SET action='x'");
+  const del = await probe("DELETE FROM audit_logs");
+  rec("audit", "audit_logs rejects UPDATE and DELETE (even by the DB owner)", upd === "rejected" && del === "rejected", `update ${upd}, delete ${del}`, "critical");
+}
+// ---------- 11. Admin role mapping ----------
+{
+  const other = await tryq(A.admin, "select count(*)::int n from credential_access_log where org_id=$1", [B.schoolId]);
+  await sys("INSERT INTO credential_access_log (org_id, agent_id, provider, action, purpose, event) VALUES ($1,'n8n:sim','sms','send','sim','requested')", [B.schoolId]);
+  const other2 = await tryq(A.admin, "select count(*)::int n from credential_access_log where org_id=$1", [B.schoolId]);
+  rec("roles", "School admin cannot read another school's credential log", other2.ok && other2.r.rows[0].n === 0, other2.ok ? `${other2.r.rows[0].n} rows` : other2.err, "critical");
+  const tch = await tryq(A.teacher, "select count(*)::int n from credential_access_log");
+  rec("roles", "Teacher cannot read the credential log", tch.ok && tch.r.rows[0].n === 0, tch.ok ? `${tch.r.rows[0].n} rows` : tch.err, "high");
+  const dem = await inTx(null, async (c) => { await c.query("update users set role='teacher' where id=$1", [A.principal]);
+    return (await c.query("select count(*)::int n from cg_role_assignment where identity_ref=$1 and role_id='role:administrator' and status='active'", [A.principal])).rows[0].n; }, "service_role");
+  rec("roles", "Demoting a principal ends their administrator assignment", dem.ok && dem.v === 0, dem.ok ? `${dem.v} active assignments after demotion` : dem.err, "high");
+  const cnt = await sys("select count(*)::int n from cg_role_assignment where role_id='role:administrator' and status='active'");
+  rec("roles", "Every admin/principal is mapped to role:administrator", cnt.rows[0].n === M.institutions.length * 2, `${cnt.rows[0].n} active assignments for ${M.institutions.length * 2} admins/principals`, "medium");
 }
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);

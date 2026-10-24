@@ -40,7 +40,7 @@ for (const a of ARCHETYPES) {
   const admin = mkUser("admin"), principal = mkUser("principal"), bursar = mkUser("bursar");
   const teachers = Array.from({ length: Math.max(5, Math.round(nStudents / 25)) }, () => mkUser("teacher"));
   const classIds = a.classes.map(() => uuid());
-  const classRows = a.classes.map((n, i) => [classIds[i], schoolId, n, n.split(" ")[0], teachers[i % teachers.length], a.kind === "k12" ? "2025/2026" : "2025/2026", Math.ceil(nStudents / a.classes.length) + 10]);
+  const classRows = a.classes.map((n, i) => [classIds[i], schoolId, n, a.kind === "k12" ? n : n.split(" ")[0], teachers[i % teachers.length], a.kind === "k12" ? "2025/2026" : "2025/2026", Math.ceil(nStudents / a.classes.length) + 10]);
   let lastParent = null; const studentRows = [], parentMap = [], gradeRows = [], feeRows = [];
   for (let s = 0; s < nStudents; s++) {
     const uid = mkUser("student"); if (s % 2 === 0) lastParent = mkUser("parent"); const parent = lastParent;
@@ -65,6 +65,18 @@ for (const a of ARCHETYPES) {
     sampleStudentUser: studentRows[0][2], sampleStudent: studentRows[0][0], sampleParent: studentRows[0][7], counts: { users: userRows.length, students: studentRows.length, teachers: teachers.length, classes: classRows.length, grades: gradeRows.length, fees: feeRows.length } });
   console.log(a.key, JSON.stringify(manifest.institutions.at(-1).counts));
 }
+// SHERIVS-016: academic configuration, as an institution would set it up
+const CATEGORY = { lagos_k12: "k12", public_secondary: "k12", faith_boarding: "k12", polytechnic: "polytechnic", federal_university: "university" };
+for (const inst of manifest.institutions) {
+  await c.query("SELECT public.configure_academic_defaults($1, $2, $3)", [inst.schoolId, CATEGORY[inst.key],
+    JSON.stringify(inst.key === "federal_university" ? { Medicine: "600L", Law: "500L", Engineering: "500L" } : {})]);
+  if (inst.kind === "tertiary") for (const [code, units] of COURSES)
+    await c.query("INSERT INTO courses (school_id, code, title, credit_units, level, semester) VALUES ($1,$2,$2,$3,'100L','First') ON CONFLICT DO NOTHING", [inst.schoolId, code, units]);
+}
+await c.query(`UPDATE classes SET programme = nullif(btrim(substr(name, length(grade_level) + 1)), '') WHERE name LIKE grade_level || '%'`);
+await c.query("UPDATE students s SET current_level = c.grade_level, programme = c.programme, current_session = '2025/2026' FROM classes c WHERE c.id = s.class_id");
+await c.query("SELECT public.sync_org_entitlements_from_tier(NULL)");
+await c.query("SELECT public.sync_admin_role_assignments(NULL)");
 await c.query("SET session_replication_role = origin");
 await c.query("UPDATE grades SET ca_score = ca_score"); // fire grade autocalc trigger skipped during bulk load
 await c.query(`UPDATE users SET nin = lpad((abs(hashtext(id::text)) % 100000000000)::text, 11, '0'),

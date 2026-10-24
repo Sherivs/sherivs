@@ -7331,6 +7331,133 @@
         76
       ],
       "firstSnippet": "USING (((SELECT public.is_super_admin()) OR ((school_id = (SELECT public.get_my_school_id())) AND (((SELECT public.my_active_role()) = ANY (ARRAY['admin'::text,"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000230_sherivs_016_lifecycle_grading_tiers_audit.sql",
+      "kind": "vocabulary",
+      "token": "student",
+      "streamIRef": "SHERIVS-016",
+      "occurrences": 2,
+      "lines": [
+        4,
+        302
+      ],
+      "firstSnippet": "--  1. Session rollover + student lifecycle (status, level, programme, rules"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000230_sherivs_016_lifecycle_grading_tiers_audit.sql",
+      "kind": "vocabulary",
+      "token": "grade",
+      "streamIRef": "SHERIVS-016",
+      "occurrences": 4,
+      "lines": [
+        7,
+        110,
+        135,
+        192
+      ],
+      "firstSnippet": "--  2. Credit units, configurable grading scales, grade points, GPA/CGPA,"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000230_sherivs_016_lifecycle_grading_tiers_audit.sql",
+      "kind": "vocabulary",
+      "token": "grading",
+      "streamIRef": "SHERIVS-016",
+      "occurrences": 2,
+      "lines": [
+        7,
+        38
+      ],
+      "firstSnippet": "--  2. Credit units, configurable grading scales, grade points, GPA/CGPA,"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000230_sherivs_016_lifecycle_grading_tiers_audit.sql",
+      "kind": "vocabulary",
+      "token": "principal",
+      "streamIRef": "SHERIVS-016",
+      "occurrences": 5,
+      "lines": [
+        11,
+        20,
+        32,
+        613,
+        618
+      ],
+      "firstSnippet": "--  5. Legacy organisation admins (admin/principal) mapped to the canonical"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000230_sherivs_016_lifecycle_grading_tiers_audit.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "SHERIVS-016",
+      "occurrences": 5,
+      "lines": [
+        32,
+        423,
+        429,
+        434,
+        438
+      ],
+      "firstSnippet": "RETURN public.get_my_school_id() = p_org AND public.get_my_role() IN ('admin', 'principal');"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000230_sherivs_016_lifecycle_grading_tiers_audit.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-016",
+      "occurrences": 49,
+      "lines": [
+        41,
+        49,
+        60,
+        81,
+        90,
+        99,
+        119,
+        121,
+        128,
+        209,
+        222,
+        230,
+        234,
+        240,
+        245,
+        268,
+        272,
+        277,
+        287,
+        311,
+        323,
+        340,
+        362,
+        368,
+        384,
+        398,
+        405,
+        423,
+        425,
+        426,
+        429,
+        431,
+        432,
+        434,
+        436,
+        438,
+        440,
+        442,
+        444,
+        569,
+        570,
+        571,
+        581,
+        583,
+        612,
+        616,
+        618,
+        620,
+        634
+      ],
+      "firstSnippet": "school_id   uuid REFERENCES public.schools(id) ON DELETE CASCADE, -- NULL = platform template"
     }
   ]
 }

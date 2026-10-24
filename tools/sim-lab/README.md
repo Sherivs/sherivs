@@ -33,3 +33,9 @@ About 33,000 users, 21,400 students and 162,000 results in total.
   After: 1,000 VUs, 0% errors, p95 282 ms, 329 req/s; 2,000 VUs p95 2.9 s; 3,000 VUs p95 5.1 s, 0% errors
   (k6, PostgREST and Postgres were sharing one 8-core box, so the box itself is the ceiling).
 See `results/` for raw JSON.
+
+## SHERIVS-016 run (24 Oct 2026)
+Migration `20261024000230_sherivs_016_lifecycle_grading_tiers_audit.sql` (not applied to prod):
+82/82 scenarios pass (the 56 earlier ones, including the 6 previous failures, plus 26 new for
+rollover/lifecycle, grading/CGPA, tier entitlements, append-only audit bridge, admin role mapping).
+k6 1,000 VUs: 0% errors, p95 213 ms, 331 req/s (`results/k6-016-smoke-1000.json`).

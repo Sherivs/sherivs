@@ -4434,6 +4434,11 @@ export type Database = {
           teacher_id: string | null;
           term: string;
           total_score: number | null;
+          attempt: number;
+          course_id: string | null;
+          credit_units: number | null;
+          grade_point: number | null;
+          is_carryover: boolean;
         };
         Insert: {
           academic_year: string;
@@ -4451,6 +4456,11 @@ export type Database = {
           teacher_id?: string | null;
           term: string;
           total_score?: number | null;
+          attempt?: number;
+          course_id?: string | null;
+          credit_units?: number | null;
+          grade_point?: number | null;
+          is_carryover?: boolean;
         };
         Update: {
           academic_year?: string;
@@ -4468,6 +4478,11 @@ export type Database = {
           teacher_id?: string | null;
           term?: string;
           total_score?: number | null;
+          attempt?: number;
+          course_id?: string | null;
+          credit_units?: number | null;
+          grade_point?: number | null;
+          is_carryover?: boolean;
         };
         Relationships: [
           {
@@ -7762,6 +7777,38 @@ export type Database = {
       };
       get_my_role: { Args: never; Returns: string };
       get_my_school_id: { Args: never; Returns: string };
+      session_rollover: {
+        Args: { p_school: string; p_from: string; p_to: string; p_dry_run?: boolean; p_overrides?: Json };
+        Returns: Json;
+      };
+      configure_academic_defaults: {
+        Args: { p_school: string; p_category: string; p_final_levels?: Json };
+        Returns: number;
+      };
+      member_gpa: {
+        Args: { p_student: string; p_academic_year?: string; p_term?: string };
+        Returns: { units: number; quality_points: number; gpa: number | null }[];
+      };
+      member_outstanding_carryovers: {
+        Args: { p_student: string };
+        Returns: { course_code: string; credit_units: number; last_academic_year: string; attempts: number }[];
+      };
+      member_transcript: {
+        Args: { p_student: string };
+        Returns: {
+          academic_year: string;
+          term: string;
+          course_code: string;
+          course_title: string | null;
+          credit_units: number | null;
+          total_score: number | null;
+          letter: string | null;
+          grade_point: number | null;
+          attempt: number;
+          is_carryover: boolean;
+        }[];
+      };
+      degree_class: { Args: { p_cgpa: number; p_max_point: number }; Returns: string | null };
       users_private_fields: {
         Args: { p_ids: string[] };
         Returns: {
