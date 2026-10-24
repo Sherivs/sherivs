@@ -1484,6 +1484,72 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
     v.removed === true && v.anonRemoved === null && !!v.bReclaim?.id && JSON.stringify(v.audit) === JSON.stringify(["add", "check", "set_primary", "remove"]) && !v.auditEdit?.ok && v.resolveMs < 20,
     `audit ${JSON.stringify(v.audit)}; resolve ${v.resolveMs} ms avg over 2,000 domains`, "high");
 }
+// ---------- 31. Group console (console.<label>.sherivs.com) for multi-school proprietors (SHERIVS-B06) ----------
+{
+  const v = await wave(A.admin, async ({ t, asOwner, c, out }) => {
+    const as = (u, aal = "aal2") => c.query("select set_config('request.jwt.claims', $1, true)", [JSON.stringify({ sub: u, role: "authenticated", aal })]);
+    const anon = async (sql, p = []) => { await c.query("SET LOCAL ROLE anon"); await c.query("select set_config('request.jwt.claims', '{\"role\":\"anon\"}', true)");
+      try { return await t(sql, p); } finally { await c.query("SET LOCAL ROLE authenticated"); } };
+    const PA = crypto.randomUUID(), OWN = crypto.randomUUID(), ADM = crypto.randomUUID(), VIEW = crypto.randomUUID(), tag = PA.slice(0, 6), label = "grp" + tag;
+    await asOwner("insert into auth.users (id, email) select x, 'b06-'||left(x::text,8)||'@sim.local' from unnest($1::uuid[]) x", [[PA, OWN, ADM, VIEW]]);
+    await asOwner("insert into platform_staff (id, email, full_name, status) values ($1,$2,'Sim PA B06','active')", [PA, "b06-" + PA.slice(0, 8) + "@sim.local"]);
+    await asOwner("insert into platform_staff_roles (staff_id, role_code) values ($1,'platform_admin')", [PA]);
+    await asOwner("delete from org_group_members where school_id = any($1::uuid[])", [[A.schoolId, B.schoolId]]);
+    await as(OWN); out.ownerCreate = await t("select public.group_create('Sim Group','x'||$1,$2)", [label, OWN]);
+    await as(PA, "aal1"); out.noMfaCreate = await t("select public.group_create('Sim Group',$1,$2)", [label, OWN]);
+    await as(PA); out.reserved = await t("select public.group_create('Sim Group','console',$1)", [OWN]);
+    out.badLabel = await t("select public.group_create('Sim Group','A b',$1)", [OWN]);
+    const g = (await t("select public.group_create('Sim Group',$1,$2) id", [label.toUpperCase(), OWN])).row?.id; out.g = g;
+    await as(OWN);
+    out.selfDemote = await t("select public.group_admin_set($1,$2,'viewer')", [g, OWN]);
+    out.addAdm = (await t("select public.group_admin_set($1,$2,'admin') r", [g, ADM])).row?.r;
+    out.addView = (await t("select public.group_admin_set($1,$2,'viewer') r", [g, VIEW])).row?.r;
+    await as(ADM); out.admAddAdmin = await t("select public.group_admin_set($1,$2,'admin')", [g, VIEW]);
+    await as(VIEW); out.viewRequest = await t("select public.group_join_request($1,$2)", [g, A.schoolId]);
+    await as(ADM, "aal1"); out.noMfaRequest = await t("select public.group_join_request($1,$2)", [g, A.schoolId]);
+    await as(ADM);
+    const rA = (await t("select public.group_join_request($1,$2) id", [g, A.schoolId])).row?.id;
+    const rB = (await t("select public.group_join_request($1,$2) id", [g, B.schoolId])).row?.id;
+    out.dupReq = await t("select public.group_join_request($1,$2)", [g, A.schoolId]);
+    out.admDecide = await t("select public.school_group_decide($1,true)", [rA]);
+    await as(B.admin); out.wrongSchool = await t("select public.school_group_decide($1,true)", [rA]);
+    await as(A.admin, "aal1"); out.reqsA = (await t("select public.school_group_requests() r")).row?.r; out.noMfaDecide = await t("select public.school_group_decide($1,true)", [rA]);
+    await as(A.admin); out.acceptA = (await t("select public.school_group_decide($1,true) r", [rA])).row?.r;
+    await as(B.admin); out.declineB = (await t("select public.school_group_decide($1,false) r", [rB])).row?.r;
+    await as(A.teacher); out.teacherReqs = await t("select public.school_group_requests()");
+    // sessions + overview
+    out.anonSess = await anon("select public.group_console_session($1)", [label]);
+    await as(VIEW, "aal1"); out.sessAal1 = (await t("select public.group_console_session($1) r", [label])).row?.r?.status;
+    out.ovAal1 = await t("select public.group_overview($1)", [g]);
+    await as(VIEW); out.sess = (await t("select public.group_console_session($1) r", [label])).row?.r;
+    out.ov = (await t("select public.group_overview($1) r", [g])).row?.r;
+    out.viewAdmins = await t("select public.group_admins_list($1)", [g]);
+    out.unknown = (await t("select public.group_console_session('nowhere') r")).row?.r?.status;
+    await as(B.admin); out.outsider = (await t("select public.group_console_session($1) r", [label])).row?.r?.status; out.outsiderOv = await t("select public.group_overview($1)", [g]);
+    out.directMembers = await t("select count(*) from org_group_admins");
+    out.directAudit = await t("update org_group_audit set action='x'");
+    // leave + revoke
+    await as(OWN); out.revokeView = (await t("select public.group_admin_set($1,$2,null) r", [g, VIEW])).row?.r;
+    await as(VIEW); out.afterRevoke = (await t("select public.group_console_session($1) r", [label])).row?.r?.status;
+    await as(A.admin); out.leave = (await t("select public.group_school_leave($1) r", [A.schoolId])).row?.r;
+    await as(OWN); out.ov2 = (await t("select public.group_overview($1) r", [g])).row?.r;
+    out.audit = (await asOwner("select array_agg(distinct action) a from org_group_audit where group_id=$1", [g])).row?.a ?? [];
+  });
+  rec("group_console", "Only a platform admin with MFA creates a group with a valid, non-reserved console label; owners manage admins (not themselves), admins and viewers cannot",
+    !v.ownerCreate?.ok && !v.noMfaCreate?.ok && !v.reserved?.ok && !v.badLabel?.ok && !!v.g && !v.selfDemote?.ok && v.addAdm === "admin" && v.addView === "viewer" && !v.admAddAdmin?.ok,
+    JSON.stringify({ g: !!v.g }), "critical");
+  rec("group_console", "Schools join only when their own admin accepts with MFA; one group per school; teachers, other schools and group staff cannot accept",
+    !v.viewRequest?.ok && !v.noMfaRequest?.ok && !v.dupReq?.ok && !v.admDecide?.ok && !v.wrongSchool?.ok && !v.noMfaDecide?.ok
+      && (v.reqsA?.pending ?? []).length === 1 && v.acceptA === "accepted" && v.declineB === "declined" && !v.teacherReqs?.ok,
+    JSON.stringify({ accept: v.acceptA, decline: v.declineB }), "critical");
+  rec("group_console", "Group console needs an active seat plus MFA; overview is aggregate-only with small-group suppression; outsiders, anon and revoked staff get nothing; tables are RPC-only and audit is append-only",
+    !v.anonSess?.ok && v.sessAal1 === "mfa_required" && !v.ovAal1?.ok && v.sess?.status === "ok" && v.sess?.role === "viewer" && v.unknown === "unknown"
+      && v.ov?.schools === 1 && (v.ov?.per_school ?? []).every((p) => p.suppressed ? p.enrolled === null : typeof p.enrolled === "number") && !JSON.stringify(v.ov).includes("admission")
+      && !v.viewAdmins?.ok && v.outsider === "no_access" && !v.outsiderOv?.ok && !v.directMembers?.ok && !v.directAudit?.ok
+      && v.revokeView === "revoked" && v.afterRevoke === "no_access" && v.leave === true && v.ov2?.schools === 0
+      && ["group_create", "join_accept", "join_decline", "overview_view", "leave", "admin_set"].every((a) => v.audit.includes(a)),
+    JSON.stringify({ sess: v.sess?.status, schools: v.ov?.schools, anon: v.anonSess?.ok, a1: v.sessAal1, ovA1: v.ovAal1?.ok, un: v.unknown, va: v.viewAdmins?.ok, out: v.outsider, oo: v.outsiderOv?.ok, dm: v.directMembers?.ok, da: v.directAudit?.ok, rv: v.revokeView, ar: v.afterRevoke, lv: v.leave, ov2: v.ov2?.schools, audit: v.audit }), "critical");
+}
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
 await pool.end();

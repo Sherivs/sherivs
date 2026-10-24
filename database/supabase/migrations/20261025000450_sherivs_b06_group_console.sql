@@ -100,7 +100,7 @@ CREATE OR REPLACE FUNCTION public.school_group_requests() RETURNS jsonb LANGUAGE
 DECLARE s uuid := (SELECT school_id FROM public.users WHERE id = auth.uid());
 BEGIN
   IF s IS NULL OR NOT public._grp_school_admin(s) THEN RAISE EXCEPTION 'school admin only' USING ERRCODE = '42501'; END IF;
-  RETURN jsonb_build_object(
+  RETURN jsonb_build_object('school_id', s,
     'membership', (SELECT jsonb_build_object('group_id', g.id, 'group', g.name, 'since', m.added_at) FROM public.org_group_members m JOIN public.org_groups g ON g.id = m.group_id WHERE m.school_id = s),
     'pending', coalesce((SELECT jsonb_agg(jsonb_build_object('id', r.id, 'group', g.name, 'requested_at', r.created_at) ORDER BY r.created_at)
       FROM public.org_group_join_requests r JOIN public.org_groups g ON g.id = r.group_id WHERE r.school_id = s AND r.status = 'pending'), '[]'::jsonb));
@@ -151,7 +151,7 @@ END $$;
 
 -- Aggregate overview across member schools (no learner-level rows). Suppressed under 10 learners.
 CREATE OR REPLACE FUNCTION public.group_overview(p_group uuid) RETURNS jsonb
-LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = '' AS $$
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
 DECLARE res jsonb;
 BEGIN
   PERFORM public._grp_guard(p_group);
