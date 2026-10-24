@@ -68,6 +68,7 @@ import { Route as GovSchoolsRouteImport } from './routes/gov/schools'
 import { Route as NewsIdRouteImport } from './routes/news.$id'
 import { Route as PlatformOrgRouteImport } from './routes/platform.org'
 import { Route as RealityClassRouteImport } from './routes/reality.$class'
+import { Route as AuthenticatedAdminAcademicStandingRouteImport } from './routes/_authenticated/admin/academic-standing'
 import { Route as AuthenticatedAdminAdmissionsRouteImport } from './routes/_authenticated/admin/admissions'
 import { Route as AuthenticatedAdminAdmissionsFunnelRouteImport } from './routes/_authenticated/admin/admissions-funnel'
 import { Route as AuthenticatedAdminAiAssistantRouteImport } from './routes/_authenticated/admin/ai-assistant'
@@ -516,6 +517,12 @@ const RealityClassRoute = RealityClassRouteImport.update({
   path: '/reality/$class',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminAcademicStandingRoute =
+  AuthenticatedAdminAcademicStandingRouteImport.update({
+    id: '/academic-standing',
+    path: '/academic-standing',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminAdmissionsRoute =
   AuthenticatedAdminAdmissionsRouteImport.update({
     id: '/admissions',
@@ -1424,6 +1431,7 @@ export interface FileRoutesByFullPath {
   '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
   '/gov/': typeof GovIndexRoute
+  '/admin/academic-standing': typeof AuthenticatedAdminAcademicStandingRoute
   '/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/admin/admissions-funnel': typeof AuthenticatedAdminAdmissionsFunnelRoute
   '/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
@@ -1625,6 +1633,7 @@ export interface FileRoutesByTo {
   '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
   '/gov': typeof GovIndexRoute
+  '/admin/academic-standing': typeof AuthenticatedAdminAcademicStandingRoute
   '/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/admin/admissions-funnel': typeof AuthenticatedAdminAdmissionsFunnelRoute
   '/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
@@ -1831,6 +1840,7 @@ export interface FileRoutesById {
   '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
   '/gov/': typeof GovIndexRoute
+  '/_authenticated/admin/academic-standing': typeof AuthenticatedAdminAcademicStandingRoute
   '/_authenticated/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/_authenticated/admin/admissions-funnel': typeof AuthenticatedAdminAdmissionsFunnelRoute
   '/_authenticated/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
@@ -2036,6 +2046,7 @@ export interface FileRouteTypes {
     | '/platform/org'
     | '/reality/$class'
     | '/gov/'
+    | '/admin/academic-standing'
     | '/admin/admissions'
     | '/admin/admissions-funnel'
     | '/admin/ai-assistant'
@@ -2237,6 +2248,7 @@ export interface FileRouteTypes {
     | '/platform/org'
     | '/reality/$class'
     | '/gov'
+    | '/admin/academic-standing'
     | '/admin/admissions'
     | '/admin/admissions-funnel'
     | '/admin/ai-assistant'
@@ -2442,6 +2454,7 @@ export interface FileRouteTypes {
     | '/platform/org'
     | '/reality/$class'
     | '/gov/'
+    | '/_authenticated/admin/academic-standing'
     | '/_authenticated/admin/admissions'
     | '/_authenticated/admin/admissions-funnel'
     | '/_authenticated/admin/ai-assistant'
@@ -3033,6 +3046,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/reality/$class'
       preLoaderRoute: typeof RealityClassRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/admin/academic-standing': {
+      id: '/_authenticated/admin/academic-standing'
+      path: '/academic-standing'
+      fullPath: '/admin/academic-standing'
+      preLoaderRoute: typeof AuthenticatedAdminAcademicStandingRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/admissions': {
       id: '/_authenticated/admin/admissions'
@@ -4078,6 +4098,7 @@ const siteRouteRouteWithChildren = siteRouteRoute._addFileChildren(
 )
 
 interface AuthenticatedAdminRouteRouteChildren {
+  AuthenticatedAdminAcademicStandingRoute: typeof AuthenticatedAdminAcademicStandingRoute
   AuthenticatedAdminAdmissionsRoute: typeof AuthenticatedAdminAdmissionsRoute
   AuthenticatedAdminAdmissionsFunnelRoute: typeof AuthenticatedAdminAdmissionsFunnelRoute
   AuthenticatedAdminAiAssistantRoute: typeof AuthenticatedAdminAiAssistantRoute
@@ -4153,6 +4174,8 @@ interface AuthenticatedAdminRouteRouteChildren {
 
 const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
   {
+    AuthenticatedAdminAcademicStandingRoute:
+      AuthenticatedAdminAcademicStandingRoute,
     AuthenticatedAdminAdmissionsRoute: AuthenticatedAdminAdmissionsRoute,
     AuthenticatedAdminAdmissionsFunnelRoute:
       AuthenticatedAdminAdmissionsFunnelRoute,

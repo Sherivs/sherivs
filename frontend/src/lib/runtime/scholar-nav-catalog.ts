@@ -1178,6 +1178,14 @@ export const SCHOLAR_NAV_CONTRIBUTIONS: readonly NavContribution[] = [
         orderHint: 2,
       },
       {
+        key: "r001.org_admin.academic_standing",
+        label: "Results & standing",
+        iconKey: "reports",
+        url: "/admin/academic-standing",
+        capabilities: ["r001:org_admin.academic_standing"],
+        orderHint: 2,
+      },
+      {
         key: "r001.org_admin.domains",
         label: "School domains",
         iconKey: "settings",

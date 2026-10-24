@@ -1484,6 +1484,51 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
     v.removed === true && v.anonRemoved === null && !!v.bReclaim?.id && JSON.stringify(v.audit) === JSON.stringify(["add", "check", "set_primary", "remove"]) && !v.auditEdit?.ok && v.resolveMs < 20,
     `audit ${JSON.stringify(v.audit)}; resolve ${v.resolveMs} ms avg over 2,000 domains`, "high");
 }
+// ---------- A3. Tertiary results: published-only GPA/CGPA, degree class, academic standing (SHERIVS-A03) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+    const [s1, s2] = (await asOwner("select id, user_id from students where school_id=$1 and user_id is not null order by admission_number desc limit 2", [A.schoolId])).r.rows;
+    const cls = (await asOwner("select class_id from students where id=$1", [s1.id])).row?.class_id;
+    const prevScale = (await asOwner("select grading_scale_id from schools where id=$1", [A.schoolId])).row?.grading_scale_id ?? null;
+    await asOwner("update schools set grading_scale_id=(select id from grading_scales where code='NG-UNI-5' and school_id is null) where id=$1", [A.schoolId]);
+    const SCORE = { 5: 75, 3: 55, 0: 20 };
+    const g = (sid, yr, term, subj, u, p, pub = true, attempt = 1) => asOwner("insert into grades (school_id, student_id, class_id, subject, term, academic_year, credit_units, ca_score, exam_score, is_published, attempt) values ($1,$2,$3,$4,$5,$6,$7,0,$8,$9,$10)", [A.schoolId, sid, cls, subj, term, yr, u, SCORE[p], pub, attempt]);
+    await asOwner("delete from grades where student_id = any($1) and credit_units > 0", [[s1.id, s2.id]]);
+    await g(s1.id, "2030/2031", "first", "A3 MTH101", 3, 5); await g(s1.id, "2030/2031", "first", "A3 PHY101", 3, 0); await g(s1.id, "2030/2031", "first", "A3 CHM101", 2, 3);
+    await g(s1.id, "2030/2031", "first", "A3 CHM101", 2, 3); // duplicate edit of the same attempt: counted once
+    await g(s1.id, "2030/2031", "first", "A3 GST101", 10, 5, false); // unpublished: never counted
+    await g(s1.id, "2030/2031", "second", "A3 MTH102", 3, 0); await g(s1.id, "2030/2031", "second", "A3 PHY102", 3, 0);
+    await g(s2.id, "2030/2031", "first", "A3 MTH101", 3, 0); await g(s2.id, "2031/2032", "first", "A3 MTH101", 3, 0, true, 2);
+    out.r1 = (await t("select public.semester_results($1) r", [s1.id])).row?.r;
+    out.r2 = (await t("select public.semester_results($1) r", [s2.id])).row?.r;
+    await act(s1.user_id); out.self = await t("select public.semester_results($1) r", [s1.id]); out.otherStudent = await t("select public.semester_results($1)", [s2.id]);
+    out.studentBands = await t("select public.degree_class_bands_set($1,'[{\"label\":\"X\",\"min_cgpa\":0}]')", [A.schoolId]);
+    await act(B.admin); out.cross = await t("select public.semester_results($1)", [s1.id]); out.crossReport = await t("select public.academic_standing_report($1)", [A.schoolId]);
+    await act(A.admin);
+    out.report = (await t("select public.academic_standing_report($1) r", [A.schoolId])).row?.r;
+    await t("select public.degree_class_bands_set($1,'[{\"label\":\"Distinction\",\"min_cgpa\":4.0},{\"label\":\"Merit\",\"min_cgpa\":1.2}]')", [A.schoolId]);
+    out.custom = (await t("select public.semester_results($1) r", [s1.id])).row?.r?.class;
+    await t("select public.academic_standing_rules_set($1, 2.0, 2)", [A.schoolId]);
+    out.strict = (await t("select public.semester_results($1) r", [s1.id])).row?.r?.standing?.status;
+    await asOwner("update schools set grading_scale_id=$2 where id=$1", [A.schoolId, prevScale]);
+    out.points = (await asOwner("select array_agg(distinct grade_point order by grade_point) a from grades where student_id=$1 and credit_units>0", [s1.id])).row?.a;
+    await asOwner("delete from degree_class_bands where school_id=$1", [A.schoolId]); await asOwner("delete from academic_standing_rules where school_id=$1", [A.schoolId]);
+    Object.assign(out, { s2: s2.id });
+  });
+  const sem = v.r1?.semesters ?? [];
+  rec("tertiary", "Semester GPA and running CGPA use published grades only, one row per course attempt",
+    sem.length === 2 && sem[0].tcu === 8 && Number(sem[0].gpa) === 2.63 && sem[0].tce === 5 && Number(sem[1].gpa) === 0 && Number(sem[1].cgpa) === 1.5 && Number(v.r1?.cgpa) === 1.5,
+    JSON.stringify(sem.map((s) => [s.tcu, s.gpa, s.cgpa])) + " points " + JSON.stringify(v.points), "critical");
+  rec("tertiary", "Degree class follows NUC defaults, or the school's own bands when set", v.r1?.class === "Third Class" && v.custom === "Merit", `${v.r1?.class} / custom ${v.custom}`, "high");
+  rec("tertiary", "Academic standing: two consecutive probation sessions advise withdrawal; a stricter floor puts a student on probation",
+    v.r2?.standing?.status === "withdrawal_advised" && v.r1?.standing?.status === "good_standing" && v.strict === "probation",
+    `${v.r2?.standing?.status}; ${v.r1?.standing?.status}; strict ${v.strict}`, "high");
+  rec("tertiary", "Results readable by the student themself, not by another student or another school; students cannot change bands",
+    v.self?.ok && !v.otherStudent?.ok && !v.cross?.ok && !v.crossReport?.ok && !v.studentBands?.ok,
+    `other ${W_ERR(v.otherStudent)}; cross ${W_ERR(v.cross)}; bands ${W_ERR(v.studentBands)}`, "critical");
+  rec("tertiary", "Standing report lists students needing attention", Array.isArray(v.report) && v.report.some((r) => r.student_id === v.s2 && r.standing === "withdrawal_advised"),
+    `${v.report?.length} flagged`, "medium");
+}
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
 await pool.end();
