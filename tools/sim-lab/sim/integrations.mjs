@@ -37,7 +37,7 @@ const ingest = async (id, records, key, trig = "manual") => (await c.query("sele
 await check("catalog seeded with csv, rest-webhook, google-classroom", async () => {
   const w = await world(); await as(w.A.admin);
   const k = (await c.query("select key from connector_manifests order by key")).rows.map((r) => r.key).join(",");
-  assert(k === "csv,google-classroom,rest-webhook", k);
+  assert(["csv", "google-classroom", "rest-webhook"].every((x) => k.split(",").includes(x)), k);
 });
 await check("connect stores a vault reference, never a secret", async () => {
   const w = await world(); const id = await connect(w, "A"); await owner();
@@ -151,13 +151,17 @@ await check("webhook target lookup is service_role only", async () => {
   assert(t.school_id === w.A.sid, "target");
 });
 await check("scheduler claims due jobs once (SKIP LOCKED / next_run_at advance)", async () => {
-  const w = await world(); const idA = await connect(w, "A"); await ingest(idA, recs(1), "sched-000001");
-  await owner(); await c.query("update sync_jobs set next_run_at = now() + interval '1 day' where integration_id <> $1", [idA]); // isolate from other data in the DB
-  await svc();
-  const a = (await c.query("select * from public.integration_claim_due_jobs(500)")).rows.filter((j) => j.integration_id === idA).length;
-  const b = (await c.query("select * from public.integration_claim_due_jobs(500)")).rows.filter((j) => j.integration_id === idA).length;
-  const want = (await c.query("select cardinality(entities) n from connector_manifests where key='rest-webhook'")).rows[0].n;
-  assert(a === want && b === 0, `first=${a} want=${want} second=${b}`);
+  const w = await world(); await owner();
+  const pullable = (await c.query("select key from connector_manifests where key in ('moodle')")).rows.length > 0; // SHERIVS-093+
+  const conn = pullable ? "moodle" : "rest-webhook";
+  await as(w.A.admin); const idA = (await c.query("select public.integration_connect($1,$2,'x','gradual') id", [w.A.sid, conn])).rows[0].id;
+  await owner(); await c.query("update integrations set status='active' where id=$1", [idA]);
+  await c.query("update sync_jobs set next_run_at = now() + interval '1 day' where integration_id <> $1", [idA]); // isolate from other data in the DB
+  const want = (await c.query("select cardinality(entities) n from connector_manifests where key=$1", [conn])).rows[0].n;
+  await svc(); let total = 0; const seen = new Set();
+  for (let k = 0; k < want + 2; k++) { const got = (await c.query("select * from public.integration_claim_due_jobs(500)")).rows.filter((j) => j.integration_id === idA);
+    if (pullable && got.length > 1) throw new Error("more than one job per integration per claim"); for (const j of got) { if (seen.has(j.id)) throw new Error("job claimed twice"); seen.add(j.id); } total += got.length; }
+  assert(total === want, `claimed=${total} want=${want}`);
 });
 
 const ok = results.filter((r) => r.ok).length;

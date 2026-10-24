@@ -209,6 +209,7 @@ import { Route as AuthenticatedTeacherNewsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedTeacherSignInRouteImport } from './routes/_authenticated/teacher/sign-in'
 import { Route as AuthenticatedTeacherTimetableRouteImport } from './routes/_authenticated/teacher/timetable'
 import { Route as ApiPublicAuditPasswordResetRouteImport } from './routes/api/public/audit.password-reset'
+import { Route as ApiPublicCronIntegrationsSyncRouteImport } from './routes/api/public/cron/integrations-sync'
 import { Route as ApiPublicCronWalletTopupReconcileRouteImport } from './routes/api/public/cron/wallet-topup-reconcile'
 import { Route as ApiPublicWebhooksPaystackRouteImport } from './routes/api/public/webhooks/paystack'
 import { Route as ApiPublicWebhooksUssdRouteImport } from './routes/api/public/webhooks/ussd'
@@ -1350,6 +1351,12 @@ const ApiPublicAuditPasswordResetRoute =
     path: '/api/public/audit/password-reset',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronIntegrationsSyncRoute =
+  ApiPublicCronIntegrationsSyncRouteImport.update({
+    id: '/api/public/cron/integrations-sync',
+    path: '/api/public/cron/integrations-sync',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronWalletTopupReconcileRoute =
   ApiPublicCronWalletTopupReconcileRouteImport.update({
     id: '/api/public/cron/wallet-topup-reconcile',
@@ -1579,6 +1586,7 @@ export interface FileRoutesByFullPath {
   '/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
   '/command-centre/': typeof AuthenticatedCommandCentreIndexRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
+  '/api/public/cron/integrations-sync': typeof ApiPublicCronIntegrationsSyncRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
   '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
@@ -1782,6 +1790,7 @@ export interface FileRoutesByTo {
   '/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
   '/command-centre': typeof AuthenticatedCommandCentreIndexRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
+  '/api/public/cron/integrations-sync': typeof ApiPublicCronIntegrationsSyncRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
   '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
@@ -1990,6 +1999,7 @@ export interface FileRoutesById {
   '/_authenticated/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
   '/_authenticated/command-centre/': typeof AuthenticatedCommandCentreIndexRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
+  '/api/public/cron/integrations-sync': typeof ApiPublicCronIntegrationsSyncRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
   '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
@@ -2197,6 +2207,7 @@ export interface FileRouteTypes {
     | '/teacher/timetable'
     | '/command-centre/'
     | '/api/public/audit/password-reset'
+    | '/api/public/cron/integrations-sync'
     | '/api/public/cron/wallet-topup-reconcile'
     | '/api/public/webhooks/paystack'
     | '/api/public/webhooks/ussd'
@@ -2400,6 +2411,7 @@ export interface FileRouteTypes {
     | '/teacher/timetable'
     | '/command-centre'
     | '/api/public/audit/password-reset'
+    | '/api/public/cron/integrations-sync'
     | '/api/public/cron/wallet-topup-reconcile'
     | '/api/public/webhooks/paystack'
     | '/api/public/webhooks/ussd'
@@ -2607,6 +2619,7 @@ export interface FileRouteTypes {
     | '/_authenticated/teacher/timetable'
     | '/_authenticated/command-centre/'
     | '/api/public/audit/password-reset'
+    | '/api/public/cron/integrations-sync'
     | '/api/public/cron/wallet-topup-reconcile'
     | '/api/public/webhooks/paystack'
     | '/api/public/webhooks/ussd'
@@ -2639,6 +2652,7 @@ export interface RootRouteChildren {
   NewsIdRoute: typeof NewsIdRoute
   RealityClassRoute: typeof RealityClassRoute
   ApiPublicAuditPasswordResetRoute: typeof ApiPublicAuditPasswordResetRoute
+  ApiPublicCronIntegrationsSyncRoute: typeof ApiPublicCronIntegrationsSyncRoute
   ApiPublicCronWalletTopupReconcileRoute: typeof ApiPublicCronWalletTopupReconcileRoute
   ApiPublicWebhooksPaystackRoute: typeof ApiPublicWebhooksPaystackRoute
   ApiPublicWebhooksUssdRoute: typeof ApiPublicWebhooksUssdRoute
@@ -4048,6 +4062,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAuditPasswordResetRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/integrations-sync': {
+      id: '/api/public/cron/integrations-sync'
+      path: '/api/public/cron/integrations-sync'
+      fullPath: '/api/public/cron/integrations-sync'
+      preLoaderRoute: typeof ApiPublicCronIntegrationsSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/wallet-topup-reconcile': {
       id: '/api/public/cron/wallet-topup-reconcile'
       path: '/api/public/cron/wallet-topup-reconcile'
@@ -4652,6 +4673,7 @@ const rootRouteChildren: RootRouteChildren = {
   NewsIdRoute: NewsIdRoute,
   RealityClassRoute: RealityClassRoute,
   ApiPublicAuditPasswordResetRoute: ApiPublicAuditPasswordResetRoute,
+  ApiPublicCronIntegrationsSyncRoute: ApiPublicCronIntegrationsSyncRoute,
   ApiPublicCronWalletTopupReconcileRoute:
     ApiPublicCronWalletTopupReconcileRoute,
   ApiPublicWebhooksPaystackRoute: ApiPublicWebhooksPaystackRoute,

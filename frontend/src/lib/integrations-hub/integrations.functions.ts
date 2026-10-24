@@ -48,3 +48,58 @@ export const issueWebhookSecret = createServerFn({ method: "POST" })
     });
     return { secret, webhookPath: `/api/public/webhooks/integrations/${i.webhook_id}` };
   });
+
+const CREDENTIAL_FIELDS: Record<string, string[]> = {
+  fedena: ["client_id", "client_secret", "username", "password", "redirect_uri"],
+  moodle: ["token"],
+  oneroster: ["client_id", "client_secret"],
+};
+
+/** Store a pull connector's credentials (Fedena, Moodle, OneRoster) in the vault. Never returned again. */
+export const saveConnectorCredentials = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((i: unknown) => {
+    const v = i as { id?: unknown; fields?: unknown };
+    if (typeof v?.id !== "string" || !/^[0-9a-f-]{36}$/i.test(v.id))
+      throw new Error("invalid integration id");
+    if (!v.fields || typeof v.fields !== "object") throw new Error("missing credentials");
+    const fields: Record<string, string> = {};
+    for (const [k, val] of Object.entries(v.fields as Record<string, unknown>)) {
+      if (typeof val !== "string" || val.length > 2000 || !/^[a-z_]{2,30}$/.test(k))
+        throw new Error("invalid credential field");
+      fields[k] = val;
+    }
+    return { id: v.id, fields };
+  })
+  .handler(async ({ data, context }) => {
+    const user = context.supabase as unknown as Loose;
+    const { data: row } = await user
+      .from("integrations")
+      .select("id, school_id, connector_key, credential_provider, credential_name")
+      .eq("id", data.id)
+      .maybeSingle();
+    const i = row as {
+      id: string;
+      school_id: string;
+      connector_key: string;
+      credential_provider: string | null;
+      credential_name: string | null;
+    } | null;
+    if (!i) throw new Error("not allowed");
+    const allowed = CREDENTIAL_FIELDS[i.connector_key];
+    if (!allowed || !i.credential_provider || !i.credential_name)
+      throw new Error("this connector does not take credentials here");
+    const clean = Object.fromEntries(
+      allowed.filter((k) => data.fields[k]).map((k) => [k, data.fields[k]]),
+    );
+    const vault = await getIntegrationVault();
+    if (!vault) throw new Error("The Sherivs Vault is not configured on this deployment yet");
+    await vault.put({
+      orgId: i.school_id,
+      provider: i.credential_provider,
+      name: i.credential_name,
+      secret: JSON.stringify(clean),
+      actor: String(context.userId ?? ""),
+    });
+    return { saved: Object.keys(clean) };
+  });

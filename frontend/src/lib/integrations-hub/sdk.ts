@@ -124,11 +124,47 @@ export interface FieldMapping {
 export interface PullResult {
   records: CanonicalRecord[];
   cursor?: string | null;
+  done?: boolean;
+}
+export interface PullContext {
+  entity: CanonicalEntity;
+  /** Opaque incremental cursor from the previous page/run (sync_jobs.cursor). */
+  cursor: string | null;
+  /** Decrypted connector secret from the vault (JSON string for multi-field credentials); memory only. */
+  secret: string | null;
+  /** Non-secret integration config (base_url, token_url, ...). */
+  config: Record<string, unknown>;
+  /** SSRF-guarded fetch (http.server.ts); injected so connectors stay unit-testable. */
+  fetch: (url: string, init?: RequestInit) => Promise<Response>;
 }
 export interface ConnectorRuntime {
   manifest: ConnectorManifest;
-  /** Pull one page of records for an entity since `cursor`. `secret` comes from the vault, in memory only. */
-  pull?(entity: CanonicalEntity, cursor: string | null, secret: string | null): Promise<PullResult>;
+  /** Pull one page of canonical records. Return done=true when the entity is fully read for this run. */
+  pull?(ctx: PullContext): Promise<PullResult>;
+}
+
+/** Parse a multi-field credential stored in the vault as JSON. */
+export function parseSecret<T extends Record<string, string>>(
+  secret: string | null,
+  keys: (keyof T)[],
+): T {
+  if (!secret) throw new Error("connector is not connected (no credential in the vault)");
+  let o: unknown;
+  try {
+    o = JSON.parse(secret);
+  } catch {
+    throw new Error("connector credential is malformed");
+  }
+  for (const k of keys)
+    if (typeof (o as Record<string, unknown>)[k as string] !== "string")
+      throw new Error(`connector credential is missing ${String(k)}`);
+  return o as T;
+}
+export function baseUrl(config: Record<string, unknown>): string {
+  const b = config.base_url;
+  if (typeof b !== "string" || !/^https:\/\/[^\s/]+/.test(b))
+    throw new Error("set the connector base URL (https) first");
+  return b.replace(/\/+$/, "");
 }
 
 export function applyTransform(v: unknown, t: Transform = "none"): unknown {

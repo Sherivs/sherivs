@@ -24,7 +24,10 @@ import {
 } from "@/lib/integrations-hub/sdk";
 import { chunk, parseDelimited, previewImport } from "@/lib/integrations-hub/connectors/csv";
 import { readWorkbook, type WorkbookSheet } from "@/lib/integrations-hub/connectors/xlsx";
-import { issueWebhookSecret } from "@/lib/integrations-hub/integrations.functions";
+import {
+  issueWebhookSecret,
+  saveConnectorCredentials,
+} from "@/lib/integrations-hub/integrations.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/integrations")({
   ssr: false,
@@ -50,7 +53,13 @@ type Invite = {
 };
 type Integration = {
   outbound_enabled?: boolean;
-  config?: { outbound_url?: string };
+  config?: {
+    outbound_url?: string;
+    base_url?: string;
+    token_url?: string;
+    term?: string;
+    academic_year?: string;
+  };
   id: string;
   connector_key: string;
   display_name: string;
@@ -245,7 +254,10 @@ function IntegrationsPage() {
         ))}
       </section>
 
-      {current && current.connector_key !== "csv" && (
+      {current && current.connector_key in PULL_SETUP && (
+        <PullSetupPanel integration={current} onDone={refresh} />
+      )}
+      {current?.connector_key === "rest-webhook" && (
         <OutboundPanel integration={current} onDone={refresh} />
       )}
       <InvitesPanel org={org} />
@@ -478,6 +490,104 @@ function CsvWizard({
 }
 
 /** Write-back: when Sherivs owns an entity, changes are sent to the school's old system (SHERIVS-092). */
+const PULL_SETUP: Record<string, { config: string[]; credentials: string[]; help: string }> = {
+  fedena: {
+    config: ["base_url"],
+    credentials: ["client_id", "client_secret", "username", "password", "redirect_uri"],
+    help: "Create an OAuth app in Fedena (Settings, API) and use a read-only API user.",
+  },
+  moodle: {
+    config: ["base_url", "term", "academic_year"],
+    credentials: ["token"],
+    help: "Site admin, Web services: create a token for a service with core_course_get_courses, core_enrol_get_enrolled_users and gradereport_user_get_grade_items.",
+  },
+  oneroster: {
+    config: ["base_url", "token_url"],
+    credentials: ["client_id", "client_secret"],
+    help: "Use the OneRoster 1.1 client credentials your SIS vendor issues.",
+  },
+};
+const SECRET_FIELDS = new Set(["client_secret", "password", "token"]);
+
+/** Fedena / Moodle / OneRoster: non-secret settings go to integrations.config; credentials go straight to the vault. */
+function PullSetupPanel({
+  integration,
+  onDone,
+}: {
+  integration: Integration;
+  onDone: () => Promise<unknown>;
+}) {
+  const spec = PULL_SETUP[integration.connector_key];
+  const saveCreds = useServerFn(saveConnectorCredentials);
+  const [cfg, setCfg] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      spec.config.map((k) => [
+        k,
+        String((integration.config as Record<string, unknown> | undefined)?.[k] ?? ""),
+      ]),
+    ),
+  );
+  const [creds, setCreds] = useState<Record<string, string>>({});
+  const saveConfig = () =>
+    rpc("integration_set_config", {
+      p_integration: integration.id,
+      p_config: Object.fromEntries(Object.entries(cfg).filter(([, v]) => v)),
+    })
+      .then(() => {
+        toast.success("Settings saved");
+        return onDone();
+      })
+      .catch((e: Error) => toast.error(e.message));
+  const storeCreds = () =>
+    saveCreds({ data: { id: integration.id, fields: creds } })
+      .then(() => {
+        setCreds({});
+        toast.success("Credentials stored in the Sherivs Vault");
+      })
+      .catch((e: Error) => toast.error(e.message));
+  return (
+    <section className="mt-6 space-y-3 rounded-lg border p-3">
+      <h3 className="font-medium">Connect {integration.display_name}</h3>
+      <p className="text-sm text-muted-foreground">
+        {spec.help} Sherivs pulls changes on a schedule.
+      </p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {spec.config.map((k) => (
+          <Input
+            key={k}
+            placeholder={k === "base_url" ? "https://sis.yourschool.sch.ng" : k}
+            aria-label={k}
+            value={cfg[k] ?? ""}
+            onChange={(e) => setCfg({ ...cfg, [k]: e.target.value })}
+          />
+        ))}
+      </div>
+      <Button size="sm" onClick={saveConfig}>
+        Save settings
+      </Button>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {spec.credentials.map((k) => (
+          <Input
+            key={k}
+            placeholder={k}
+            aria-label={k}
+            autoComplete="off"
+            type={SECRET_FIELDS.has(k) ? "password" : "text"}
+            value={creds[k] ?? ""}
+            onChange={(e) => setCreds({ ...creds, [k]: e.target.value })}
+          />
+        ))}
+      </div>
+      <Button size="sm" variant="outline" onClick={storeCreds}>
+        Store credentials
+      </Button>
+      <p className="text-xs text-muted-foreground">
+        Credentials are encrypted in the vault and never shown again; re-enter them to rotate.
+      </p>
+    </section>
+  );
+}
+
 function OutboundPanel({
   integration,
   onDone,

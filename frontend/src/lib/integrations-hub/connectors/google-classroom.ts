@@ -47,7 +47,7 @@ export const mapStudent = (s: Student): CanonicalRecord => ({
 
 export const googleClassroom: ConnectorRuntime = {
   manifest: googleClassroomManifest,
-  async pull(entity, cursor, accessToken): Promise<PullResult> {
+  async pull({ entity, cursor, secret: accessToken, fetch }): Promise<PullResult> {
     if (!accessToken) throw new Error("google-classroom: not connected");
     if (entity !== "class")
       throw new Error(`google-classroom: ${entity} pull not implemented yet (stub)`);
@@ -55,9 +55,13 @@ export const googleClassroom: ConnectorRuntime = {
     u.searchParams.set("pageSize", "100");
     u.searchParams.set("courseStates", "ACTIVE");
     if (cursor) u.searchParams.set("pageToken", cursor);
-    const r = await fetch(u, { headers: { Authorization: `Bearer ${accessToken}` } });
+    const r = await fetch(u.toString(), { headers: { Authorization: `Bearer ${accessToken}` } });
     if (!r.ok) throw new Error(`google-classroom: HTTP ${r.status}`);
     const j = (await r.json()) as { courses?: Course[]; nextPageToken?: string };
-    return { records: (j.courses ?? []).map(mapCourse), cursor: j.nextPageToken ?? null };
+    return {
+      records: (j.courses ?? []).map(mapCourse),
+      cursor: j.nextPageToken ?? null,
+      done: !j.nextPageToken,
+    };
   },
 };
