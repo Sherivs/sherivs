@@ -1484,6 +1484,54 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
     v.removed === true && v.anonRemoved === null && !!v.bReclaim?.id && JSON.stringify(v.audit) === JSON.stringify(["add", "check", "set_primary", "remove"]) && !v.auditEdit?.ok && v.resolveMs < 20,
     `audit ${JSON.stringify(v.audit)}; resolve ${v.resolveMs} ms avg over 2,000 domains`, "high");
 }
+// ---------- 25. Institution head console: head role + step-up MFA (SHERIVS-B01) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+    const claims = (u, aal) => c.query("select set_config('request.jwt.claims', $1, true)", [JSON.stringify({ sub: u, role: "authenticated", aal })]);
+    const slug = (await asOwner("select slug from schools where id=$1", [A.schoolId])).row?.slug;
+    await claims(A.admin, "aal1"); out.noMfa = await t("select public.head_role_grant($1,'vc')", [A.teacher]);
+    await claims(A.admin, "aal2");
+    out.self = await t("select public.head_role_grant($1,'vc')", [A.admin]);
+    out.foreign = await t("select public.head_role_grant($1,'vc')", [B.admin]);
+    out.badRole = await t("select public.head_role_grant($1,'king')", [A.teacher]);
+    out.past = await t("select public.head_role_grant($1,'vc',null, now() - interval '1 day')", [A.teacher]);
+    out.gid = (await t("select public.head_role_grant($1,'vc') id", [A.teacher])).row?.id;
+    out.hodId = (await t("select public.head_role_grant($1,'hod','Mathematics', now() + interval '30 days') id", [A.teacher])).row?.id;
+    await claims(B.admin, "aal2"); out.bGrant = await t("select public.head_role_grant($1,'vc')", [A.teacher]);
+    out.bRevoke = (await t("select public.head_role_revoke($1) r", [out.gid])).row?.r;
+    out.bSession = (await t("select public.head_console_session($1) r", [slug])).row?.r;
+    out.bOverview = await t("select public.head_console_overview($1)", [slug]);
+    await claims(A.teacher, "aal1");
+    out.tAal1 = (await t("select public.head_console_session($1) r", [slug])).row?.r;
+    out.tAal1Ov = await t("select public.head_console_overview($1)", [slug]);
+    out.tInsert = await t("insert into institution_heads (school_id, user_id, head_role) values ($1,$2,'vc')", [A.schoolId, A.teacher]);
+    await claims(A.teacher, "aal2");
+    out.tOk = (await t("select public.head_console_session($1) r", [slug])).row?.r;
+    out.tOv = (await t("select public.head_console_overview($1) r", [slug])).row?.r;
+    out.tSelfGrant = await t("select public.head_role_grant($1,'registrar')", [A.principal]);
+    out.unknown = (await t("select public.head_console_session('no-such-inst') r")).row?.r;
+    await claims(A.admin, "aal2"); out.revoke = (await t("select public.head_role_revoke($1) r", [out.gid])).row?.r;
+    await claims(A.teacher, "aal2");
+    out.afterRevoke = (await t("select public.head_console_session($1) r", [slug])).row?.r;
+    out.hodOv = (await t("select public.head_console_overview($1) r", [slug])).row?.r;
+    await asOwner("update institution_heads set ends_at = now() - interval '1 minute', starts_at = now() - interval '2 days' where id=$1", [out.hodId]);
+    await claims(A.teacher, "aal2");
+    out.expired = (await t("select public.head_console_session($1) r", [slug])).row?.r;
+    out.audit = (await asOwner("select array_agg(action order by id) a from head_console_audit where school_id=$1", [A.schoolId])).row?.a;
+    out.auditEdit = await asOwner("delete from head_console_audit where school_id=$1", [A.schoolId]);
+  });
+  rec("head_console", "Head roles are granted only by an institution admin with MFA, never to self, only to own members, valid roles and future end dates",
+    !v.noMfa?.ok && !v.self?.ok && !v.foreign?.ok && !v.badRole?.ok && !v.past?.ok && !!v.gid && !!v.hodId && !v.bGrant?.ok && v.bRevoke === false && !v.tInsert?.ok && !v.tSelfGrant?.ok,
+    JSON.stringify({ noMfa: v.noMfa?.err, self: v.self?.err }), "critical");
+  rec("head_console", "Console entry needs a head role AND aal2: same account without MFA is told to step up; other institutions' admins are refused",
+    v.tAal1?.status === "mfa_required" && !v.tAal1Ov?.ok && v.tOk?.status === "ok" && JSON.stringify(v.tOk?.roles) === JSON.stringify(["hod", "vc"])
+      && v.bSession?.status === "not_a_head" && !v.bOverview?.ok && v.unknown?.status === "unknown_institution",
+    JSON.stringify({ aal1: v.tAal1?.status, ok: v.tOk?.status, b: v.bSession?.status }), "critical");
+  rec("head_console", "Overview: VC sees finance, an HOD alone does not; revoked and expired roles lose access; audit is append-only",
+    v.tOv?.finance != null && v.tOv?.students > 0 && v.revoke === true && JSON.stringify(v.afterRevoke?.roles) === JSON.stringify(["hod"]) && v.hodOv?.finance === null
+      && v.expired?.status === "not_a_head" && v.audit?.includes("grant") && v.audit?.includes("revoke") && v.audit?.includes("view_overview") && !v.auditEdit?.ok,
+    JSON.stringify({ fin: !!v.tOv?.finance, hodFin: v.hodOv?.finance, expired: v.expired?.status, audit: v.audit }), "high");
+}
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
 await pool.end();

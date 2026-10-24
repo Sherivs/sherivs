@@ -18,6 +18,7 @@ import { Route as BlogRouteImport } from './routes/blog'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FoundationLoopRouteImport } from './routes/foundation-loop'
 import { Route as GovRouteRouteImport } from './routes/gov/route'
+import { Route as HeadRouteImport } from './routes/head'
 import { Route as HealthDotjsonRouteImport } from './routes/health[.]json'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ManifestDotwebmanifestRouteImport } from './routes/manifest[.]webmanifest'
@@ -101,6 +102,7 @@ import { Route as AuthenticatedAdminFeesDefaultersRouteImport } from './routes/_
 import { Route as AuthenticatedAdminFinancialReportsRouteImport } from './routes/_authenticated/admin/financial-reports'
 import { Route as AuthenticatedAdminGeofenceSettingsRouteImport } from './routes/_authenticated/admin/geofence-settings'
 import { Route as AuthenticatedAdminGradesRouteImport } from './routes/_authenticated/admin/grades'
+import { Route as AuthenticatedAdminHeadsRouteImport } from './routes/_authenticated/admin/heads'
 import { Route as AuthenticatedAdminHealthRouteImport } from './routes/_authenticated/admin/health'
 import { Route as AuthenticatedAdminHealthCertificateRouteImport } from './routes/_authenticated/admin/health-certificate'
 import { Route as AuthenticatedAdminHostelRouteImport } from './routes/_authenticated/admin/hostel'
@@ -254,6 +256,11 @@ const FoundationLoopRoute = FoundationLoopRouteImport.update({
 const GovRouteRoute = GovRouteRouteImport.update({
   id: '/gov',
   path: '/gov',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HeadRoute = HeadRouteImport.update({
+  id: '/head',
+  path: '/head',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HealthDotjsonRoute = HealthDotjsonRouteImport.update({
@@ -709,6 +716,11 @@ const AuthenticatedAdminGradesRoute =
     path: '/grades',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminHeadsRoute = AuthenticatedAdminHeadsRouteImport.update({
+  id: '/heads',
+  path: '/heads',
+  getParentRoute: () => AuthenticatedAdminRouteRoute,
+} as any)
 const AuthenticatedAdminHealthRoute =
   AuthenticatedAdminHealthRouteImport.update({
     id: '/health',
@@ -1374,6 +1386,7 @@ export interface FileRoutesByFullPath {
   '/blog': typeof BlogRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/foundation-loop': typeof FoundationLoopRoute
+  '/head': typeof HeadRoute
   '/health.json': typeof HealthDotjsonRoute
   '/login': typeof LoginRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
@@ -1457,6 +1470,7 @@ export interface FileRoutesByFullPath {
   '/admin/financial-reports': typeof AuthenticatedAdminFinancialReportsRoute
   '/admin/geofence-settings': typeof AuthenticatedAdminGeofenceSettingsRoute
   '/admin/grades': typeof AuthenticatedAdminGradesRoute
+  '/admin/heads': typeof AuthenticatedAdminHeadsRoute
   '/admin/health': typeof AuthenticatedAdminHealthRoute
   '/admin/health-certificate': typeof AuthenticatedAdminHealthCertificateRoute
   '/admin/hostel': typeof AuthenticatedAdminHostelRoute
@@ -1576,6 +1590,7 @@ export interface FileRoutesByTo {
   '/blog': typeof BlogRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/foundation-loop': typeof FoundationLoopRoute
+  '/head': typeof HeadRoute
   '/health.json': typeof HealthDotjsonRoute
   '/login': typeof LoginRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
@@ -1658,6 +1673,7 @@ export interface FileRoutesByTo {
   '/admin/financial-reports': typeof AuthenticatedAdminFinancialReportsRoute
   '/admin/geofence-settings': typeof AuthenticatedAdminGeofenceSettingsRoute
   '/admin/grades': typeof AuthenticatedAdminGradesRoute
+  '/admin/heads': typeof AuthenticatedAdminHeadsRoute
   '/admin/health': typeof AuthenticatedAdminHealthRoute
   '/admin/health-certificate': typeof AuthenticatedAdminHealthCertificateRoute
   '/admin/hostel': typeof AuthenticatedAdminHostelRoute
@@ -1781,6 +1797,7 @@ export interface FileRoutesById {
   '/blog': typeof BlogRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/foundation-loop': typeof FoundationLoopRoute
+  '/head': typeof HeadRoute
   '/health.json': typeof HealthDotjsonRoute
   '/login': typeof LoginRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
@@ -1864,6 +1881,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/financial-reports': typeof AuthenticatedAdminFinancialReportsRoute
   '/_authenticated/admin/geofence-settings': typeof AuthenticatedAdminGeofenceSettingsRoute
   '/_authenticated/admin/grades': typeof AuthenticatedAdminGradesRoute
+  '/_authenticated/admin/heads': typeof AuthenticatedAdminHeadsRoute
   '/_authenticated/admin/health': typeof AuthenticatedAdminHealthRoute
   '/_authenticated/admin/health-certificate': typeof AuthenticatedAdminHealthCertificateRoute
   '/_authenticated/admin/hostel': typeof AuthenticatedAdminHostelRoute
@@ -1986,6 +2004,7 @@ export interface FileRouteTypes {
     | '/blog'
     | '/forgot-password'
     | '/foundation-loop'
+    | '/head'
     | '/health.json'
     | '/login'
     | '/manifest.webmanifest'
@@ -2069,6 +2088,7 @@ export interface FileRouteTypes {
     | '/admin/financial-reports'
     | '/admin/geofence-settings'
     | '/admin/grades'
+    | '/admin/heads'
     | '/admin/health'
     | '/admin/health-certificate'
     | '/admin/hostel'
@@ -2188,6 +2208,7 @@ export interface FileRouteTypes {
     | '/blog'
     | '/forgot-password'
     | '/foundation-loop'
+    | '/head'
     | '/health.json'
     | '/login'
     | '/manifest.webmanifest'
@@ -2270,6 +2291,7 @@ export interface FileRouteTypes {
     | '/admin/financial-reports'
     | '/admin/geofence-settings'
     | '/admin/grades'
+    | '/admin/heads'
     | '/admin/health'
     | '/admin/health-certificate'
     | '/admin/hostel'
@@ -2392,6 +2414,7 @@ export interface FileRouteTypes {
     | '/blog'
     | '/forgot-password'
     | '/foundation-loop'
+    | '/head'
     | '/health.json'
     | '/login'
     | '/manifest.webmanifest'
@@ -2475,6 +2498,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/financial-reports'
     | '/_authenticated/admin/geofence-settings'
     | '/_authenticated/admin/grades'
+    | '/_authenticated/admin/heads'
     | '/_authenticated/admin/health'
     | '/_authenticated/admin/health-certificate'
     | '/_authenticated/admin/hostel'
@@ -2598,6 +2622,7 @@ export interface RootRouteChildren {
   BlogRoute: typeof BlogRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   FoundationLoopRoute: typeof FoundationLoopRoute
+  HeadRoute: typeof HeadRoute
   HealthDotjsonRoute: typeof HealthDotjsonRoute
   LoginRoute: typeof LoginRoute
   ManifestDotwebmanifestRoute: typeof ManifestDotwebmanifestRoute
@@ -2682,6 +2707,13 @@ declare module '@tanstack/react-router' {
       path: '/gov'
       fullPath: '/gov'
       preLoaderRoute: typeof GovRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/head': {
+      id: '/head'
+      path: '/head'
+      fullPath: '/head'
+      preLoaderRoute: typeof HeadRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/health.json': {
@@ -3263,6 +3295,13 @@ declare module '@tanstack/react-router' {
       path: '/grades'
       fullPath: '/admin/grades'
       preLoaderRoute: typeof AuthenticatedAdminGradesRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/heads': {
+      id: '/_authenticated/admin/heads'
+      path: '/heads'
+      fullPath: '/admin/heads'
+      preLoaderRoute: typeof AuthenticatedAdminHeadsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/health': {
@@ -4111,6 +4150,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminFinancialReportsRoute: typeof AuthenticatedAdminFinancialReportsRoute
   AuthenticatedAdminGeofenceSettingsRoute: typeof AuthenticatedAdminGeofenceSettingsRoute
   AuthenticatedAdminGradesRoute: typeof AuthenticatedAdminGradesRoute
+  AuthenticatedAdminHeadsRoute: typeof AuthenticatedAdminHeadsRoute
   AuthenticatedAdminHealthRoute: typeof AuthenticatedAdminHealthRoute
   AuthenticatedAdminHealthCertificateRoute: typeof AuthenticatedAdminHealthCertificateRoute
   AuthenticatedAdminHostelRoute: typeof AuthenticatedAdminHostelRoute
@@ -4193,6 +4233,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminGeofenceSettingsRoute:
       AuthenticatedAdminGeofenceSettingsRoute,
     AuthenticatedAdminGradesRoute: AuthenticatedAdminGradesRoute,
+    AuthenticatedAdminHeadsRoute: AuthenticatedAdminHeadsRoute,
     AuthenticatedAdminHealthRoute: AuthenticatedAdminHealthRoute,
     AuthenticatedAdminHealthCertificateRoute:
       AuthenticatedAdminHealthCertificateRoute,
@@ -4594,6 +4635,7 @@ const rootRouteChildren: RootRouteChildren = {
   BlogRoute: BlogRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
   FoundationLoopRoute: FoundationLoopRoute,
+  HeadRoute: HeadRoute,
   HealthDotjsonRoute: HealthDotjsonRoute,
   LoginRoute: LoginRoute,
   ManifestDotwebmanifestRoute: ManifestDotwebmanifestRoute,

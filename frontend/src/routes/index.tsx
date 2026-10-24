@@ -10,6 +10,7 @@ import {
   resolveExperienceHost,
   shouldRedirectCanonicalRootToAuth,
 } from "@/lib/experience/experience-host";
+import { headConsoleSlugFromHost } from "@/lib/head-console/host";
 import { readRequestHostname } from "@/lib/experience/experience-host.functions";
 
 async function loaderHostname(): Promise<string> {
@@ -20,6 +21,8 @@ async function loaderHostname(): Promise<string> {
 export const Route = createFileRoute("/")({
   loader: async () => {
     const hostname = await loaderHostname();
+    // SHERIVS-B01: console.<inst>.sherivs.com is the institution head console.
+    if (headConsoleSlugFromHost(hostname)) throw redirect({ to: "/head" });
     const hostKind = resolveExperienceHost(hostname);
     // App and console must not SSR the public marketing homepage.
     if (shouldRedirectCanonicalRootToAuth(hostKind)) {

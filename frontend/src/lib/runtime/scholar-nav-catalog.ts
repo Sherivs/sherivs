@@ -1186,6 +1186,14 @@ export const SCHOLAR_NAV_CONTRIBUTIONS: readonly NavContribution[] = [
         orderHint: 2,
       },
       {
+        key: "r001.org_admin.heads",
+        label: "Institution heads",
+        iconKey: "settings",
+        url: "/admin/heads",
+        capabilities: ["r001:org_admin.heads"],
+        orderHint: 2,
+      },
+      {
         key: "r001.org_admin.wallet",
         label: "School wallet",
         iconKey: "finance",
