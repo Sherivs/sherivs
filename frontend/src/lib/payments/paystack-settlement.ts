@@ -31,6 +31,11 @@ export type SettlementOutcome =
 type DbResult<T> = PromiseLike<{ data: T | null; error: { message: string } | null }>;
 
 export interface SettlementDb {
+  /**
+   * SHERIVS-A05b: when present, `fee_amount_due` is the authority for what is owed on the row
+   * after approved discounts/scholarships/waivers. The real Supabase client always has it.
+   */
+  rpc?(fn: "fee_amount_due", args: { p_fee: string }): DbResult<number | string>;
   from(table: "fees"): {
     select(cols: string): {
       eq(col: string, value: string): { maybeSingle(): DbResult<FeeRow> };
@@ -56,7 +61,7 @@ type FeeRow = {
   paystack_reference: string | null;
 };
 
-/** Expected charge in kobo, derived only from the fee row. */
+/** Expected charge in kobo from the fee row alone (no relief). Settlement prefers `fee_amount_due`. */
 export function expectedChargeKobo(fee: Pick<FeeRow, "amount" | "paid_amount">): number {
   return Math.round((Number(fee.amount) - Number(fee.paid_amount ?? 0)) * 100);
 }
@@ -87,7 +92,12 @@ export async function settlePaystackCharge(
   if ((facts.currency ?? "").toUpperCase() !== PAYSTACK_CURRENCY) {
     return { outcome: "rejected", reason: "currency_mismatch", ...ref };
   }
-  const expected = expectedChargeKobo(fee);
+  let expected = expectedChargeKobo(fee);
+  if (db.rpc) {
+    const { data: due, error: dueErr } = await db.rpc("fee_amount_due", { p_fee: fee.id });
+    if (dueErr) throw new Error(`amount due lookup failed: ${dueErr.message}`);
+    expected = Math.round(Number(due ?? 0) * 100);
+  }
   if (expected <= 0 || facts.amountKobo !== expected) {
     return { outcome: "rejected", reason: "amount_mismatch", ...ref };
   }
@@ -96,7 +106,8 @@ export async function settlePaystackCharge(
     .from("fees")
     .update({
       status: "paid",
-      paid_amount: Number(fee.amount),
+      // Record what was actually paid; relief makes up the rest of the row.
+      paid_amount: Math.round((Number(fee.paid_amount ?? 0) + expected / 100) * 100) / 100,
       paid_at: timeAuthority.now().at,
     })
     .eq("id", fee.id)

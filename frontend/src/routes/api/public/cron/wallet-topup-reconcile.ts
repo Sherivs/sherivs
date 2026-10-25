@@ -16,14 +16,19 @@ function authorized(header: string | null, secret: string): boolean {
 async function run(request: Request): Promise<Response> {
   const cron = process.env.CRON_SECRET;
   const key = process.env.PAYSTACK_SECRET_KEY;
-  if (!cron || !key || !key.startsWith("sk_test_")) return new Response("Reconciliation not configured", { status: 503 });
-  if (!authorized(request.headers.get("authorization"), cron)) return new Response("Unauthorized", { status: 401 });
+  if (!cron || !key || !key.startsWith("sk_test_"))
+    return new Response("Reconciliation not configured", { status: 503 });
+  if (!authorized(request.headers.get("authorization"), cron))
+    return new Response("Unauthorized", { status: 401 });
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   try {
     const report = await reconcileWalletTopups({ admin: supabaseAdmin as never, secret: key });
     return Response.json({ ok: true, ...report });
   } catch (e) {
-    return Response.json({ ok: false, error: e instanceof Error ? e.message.slice(0, 200) : "failed" }, { status: 500 });
+    return Response.json(
+      { ok: false, error: e instanceof Error ? e.message.slice(0, 200) : "failed" },
+      { status: 500 },
+    );
   }
 }
 

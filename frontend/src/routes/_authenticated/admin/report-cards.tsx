@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
+import { ScopeBanner, useScopeFilter } from "@/components/sds/scope-filter";
 import { PortalPage, StatCard, SectionGrid } from "@/components/portal-shell";
 import { Button } from "@/components/ui/button";
 import { notifyGradesPublished } from "@/lib/runtime/scholar/notifications-fanout.functions";
@@ -51,6 +52,7 @@ function AdminReportCardsPage() {
   const schoolId = school?.id;
 
   const [classId, setClassId] = useState<string | null>(null);
+  const scope = useScopeFilter();
   const [term, setTerm] = useState<string>(TERMS[0]);
   const [year, setYear] = useState<string>(currentAcademicYear());
   const [busy, setBusy] = useState(false);
@@ -69,8 +71,10 @@ function AdminReportCardsPage() {
   });
 
   useEffect(() => {
-    if (!classId && classes.data?.[0]) setClassId(classes.data[0].id);
-  }, [classes.data, classId]);
+    const first = scope.filterClasses(classes.data)[0];
+    if (first && (!classId || !scope.filterClasses(classes.data).some((c) => c.id === classId)))
+      setClassId(first.id);
+  }, [classes.data, classId, scope.classIds]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const students = useQuery<StudentRow[]>({
     queryKey: ["admin-rc-students", schoolId, classId],
@@ -168,6 +172,7 @@ function AdminReportCardsPage() {
       title="Report cards"
       subtitle="Bulk-publish report-card grades for a class and term. Published rows become visible to students and parents."
     >
+      <ScopeBanner scope={scope} />
       <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
         <Link
           to="/admin/grades"
@@ -186,7 +191,7 @@ function AdminReportCardsPage() {
           <option value="" disabled>
             Class…
           </option>
-          {(classes.data ?? []).map((c) => (
+          {scope.filterClasses(classes.data).map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
             </option>

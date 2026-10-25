@@ -1,0 +1,31 @@
+{
+ "at": "2026-10-24T21:19:09.142Z",
+ "ok": 6,
+ "total": 6,
+ "results": [
+  {
+   "name": "catalog lists fedena, moodle, oneroster with vault credential refs",
+   "ok": true
+  },
+  {
+   "name": "config: https only, known keys only, never secrets; other school's admin denied",
+   "ok": true
+  },
+  {
+   "name": "fair scheduler: one job per integration per claim; csv/webhook never claimed; leases not double-claimed",
+   "ok": true
+  },
+  {
+   "name": "pull ingest (service role) writes only the integration's school; same page twice is a replay",
+   "ok": true
+  },
+  {
+   "name": "job_done stores the cursor and audits failures; clients cannot call it",
+   "ok": true
+  },
+  {
+   "name": "pull connectors cannot enable outbound write-back",
+   "ok": true
+  }
+ ]
+}

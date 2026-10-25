@@ -27,6 +27,9 @@ type Fee = {
   term: string | null;
   academic_year: string | null;
   student_id: string;
+  /** SHERIVS-A05b: approved discounts/scholarships/waivers allocated to this row, and what is left to pay. */
+  relief?: number;
+  due?: number;
 };
 
 function badge(status: string | null) {
@@ -83,7 +86,16 @@ function ParentFeesPage() {
         )
         .eq("student_id", activeChild)
         .order("due_date", { ascending: true, nullsFirst: false });
-      return (data ?? []) as Fee[];
+      const list = (data ?? []) as Fee[];
+      // Amount owed after approved relief, per term/session (same server function checkout charges).
+      const groups = [...new Set(list.filter((f) => f.term && f.academic_year).map((f) => `${f.term}|${f.academic_year}`))];
+      const dues = new Map<string, { relief: number; due: number }>();
+      for (const g of groups) {
+        const [term, year] = g.split("|");
+        const { data: d } = await supabase.rpc("fee_dues" as never, { p_student: activeChild, p_term: term, p_year: year } as never);
+        for (const r of (d ?? []) as { fee_id: string; relief: number; due: number }[]) dues.set(r.fee_id, { relief: Number(r.relief), due: Number(r.due) });
+      }
+      return list.map((f) => ({ ...f, ...(dues.get(f.id) ?? {}) }));
     },
   });
 
@@ -130,7 +142,8 @@ function ParentFeesPage() {
   const rows = fees.data ?? [];
   const billed = rows.reduce((a, r) => a + Number(r.amount), 0);
   const paid = rows.reduce((a, r) => a + Number(r.paid_amount ?? 0), 0);
-  const outstanding = billed - paid;
+  const relief = rows.reduce((a, r) => a + Number(r.relief ?? 0), 0);
+  const outstanding = rows.reduce((a, r) => a + (r.due ?? Math.max(Number(r.amount) - Number(r.paid_amount ?? 0), 0)), 0);
 
   if ((children.data ?? []).length === 0 && !children.isLoading) {
     return (
@@ -172,6 +185,7 @@ function ParentFeesPage() {
         <StatCard label="Billed (₦)" value={billed.toLocaleString()} />
         <StatCard label="Paid (₦)" value={paid.toLocaleString()} />
         <StatCard label="Outstanding (₦)" value={outstanding.toLocaleString()} />
+        <StatCard label="Relief (₦)" value={relief.toLocaleString()} />
         <StatCard label="Invoices" value={rows.length} />
       </SectionGrid>
 
@@ -185,7 +199,7 @@ function ParentFeesPage() {
         ) : (
           <ul className="divide-y divide-border">
             {rows.map((f) => {
-              const due = Number(f.amount) - Number(f.paid_amount ?? 0);
+              const due = f.due ?? Number(f.amount) - Number(f.paid_amount ?? 0);
               const canPay = f.status !== "paid" && due > 0;
               return (
                 <li key={f.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
@@ -200,6 +214,11 @@ function ParentFeesPage() {
                   <div className="flex items-center gap-3">
                     <div className="text-right">
                       <p className="font-mono text-sm">₦{Number(f.amount).toLocaleString()}</p>
+                      {Number(f.relief ?? 0) > 0 && (
+                        <p className="text-xs text-emerald-400">
+                          −₦{Number(f.relief).toLocaleString()} relief · pay ₦{due.toLocaleString()}
+                        </p>
+                      )}
                       <span
                         className={
                           "mt-1 inline-block rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wide " +

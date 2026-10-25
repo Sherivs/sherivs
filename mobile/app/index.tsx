@@ -13,5 +13,6 @@ export default function EntryRoute() {
     );
   }
   if (status === "signedOut") return <Redirect href="/sign-in" />;
-  return <Redirect href="/(app)" />;
+  // Track E: everyone lands in their role-based school workspace; the platform console stays at /(app).
+  return <Redirect href="/(school)/home" />;
 }

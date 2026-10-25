@@ -93,6 +93,8 @@ export type CrudConfig<Row extends { id: string }> = {
   extraInsertPayload?: Record<string, unknown>;
   /** Optional filter (e.g. teacher_id=me) added to the SELECT query. */
   selectFilter?: { column: string; value: string };
+  /** Optional IN-filter (e.g. class_id in the workspace ?scope= classes). */
+  selectIn?: { column: string; values: string[] } | null;
   /** Optional callback fired after a successful CREATE with the inserted row. */
   onAfterCreate?: (row: Record<string, unknown>) => void | Promise<void>;
 };
@@ -111,6 +113,8 @@ export function CrudList<Row extends { id: string }>({ config }: { config: CrudC
     school?.id,
     config.selectFilter?.column,
     config.selectFilter?.value,
+    config.selectIn?.column,
+    config.selectIn?.values.join(","),
     page,
   ];
   const list = useQuery<{ rows: Row[]; count: number }>({
@@ -122,6 +126,13 @@ export function CrudList<Row extends { id: string }>({ config }: { config: CrudC
         .select("*", { count: "exact" })
         .eq("school_id", school!.id);
       if (config.selectFilter) q = q.eq(config.selectFilter.column, config.selectFilter.value);
+      if (config.selectIn)
+        q = (q as unknown as { in: (c: string, v: string[]) => typeof q }).in(
+          config.selectIn.column,
+          config.selectIn.values.length
+            ? config.selectIn.values
+            : ["00000000-0000-0000-0000-000000000000"],
+        );
       if (config.orderBy)
         q = q.order(config.orderBy.column, { ascending: config.orderBy.ascending });
       q = q.range(from, to);
@@ -421,7 +432,10 @@ function CrudFormDialog<Row extends { id: string }>({
         <form onSubmit={onSubmit} className="space-y-4">
           {config.fields.map((f) => (
             <div key={f.key} className="space-y-1.5">
-              <Label htmlFor={f.key} className="text-xs uppercase tracking-wide text-muted-foreground">
+              <Label
+                htmlFor={f.key}
+                className="text-xs uppercase tracking-wide text-muted-foreground"
+              >
                 {f.label}
               </Label>
               {f.type === "textarea" ? (

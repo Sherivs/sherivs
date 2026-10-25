@@ -12,11 +12,11 @@
       "warn": "observed violation group present in baselineEntries (printed every run)",
       "ratchet": "baseline entry no longer observed — removable by the engineer who cleared it"
     },
-    "lastRatchet": "2026-10-03: V1-006 (team SECURITY) neutralized the platform authorization core — removed all 9 frontend/src/lib/authorization.ts and all 13 frontend/src/lib/identity.ts entries (authorization.ts and identity.ts now carry zero education vocabulary; roles/relationship types are contributed via rbac/domain-contribution + domain-config registration) and refreshed the 7 frozen security-role-gate.ts legacy-fallback entries against the live tree (shrink-only, ADR-003/004). || 2026-10-03 (ADR-012): T-wave coordinator ADDED 3 quarantine groups (19 hits) for database/supabase/migrations/20261003000040_coregrid_school_media_bucket.sql — the FIRST baseline extension, made under ADR-004's explicit 'new ADR' mechanism: the declarative storage-provisioning migration must reference the legacy storage contract id school-media consumed by the frontend and by the applied 20260707223958 policy set; the neutral conversion (bucket id + policy predicates + path contract) is blocked on the neutral-tenant substrate conversion (same conversionPath class as the transport posture) and is recorded as an authorized follow-up that REMOVES these entries in the same change. Zero new privileges authorized by ADR-012. || 2026-10-08 (ADR-013): Sherivs refoundation ADDED 9 quarantine groups (47 hits) for database/supabase/migrations/20261008000050_coregrid_organization_memberships.sql — the SECOND baseline extension, made under ADR-004's explicit 'new ADR' mechanism (ADR-012 precedent): the multi-membership migration extends the LIVE legacy identity store in place (users.school_id stays the ACTIVE-CONTEXT binding; every tenant RLS predicate resolves through get_my_school_id()/get_my_role()), so its SQL necessarily carries the same legacy vocabulary class its owners are quarantined for (school_id, is_school_admin, get_my_school_id, tenant role names). It introduces NO new domain code on the universal surface — the table is additive, RLS-FORCED, and mirrors the legacy store. Zero new privileges beyond the policy-gated DML posture it declares. The neutral-tenant substrate conversion (COND-003 / ADR-012 conversionPath) removes these entries in the same change when it lands. || 2026-10-08 (ADR-013 amendment, same ADR authority): pre-apply verification against the LIVE users_role_check exposed two roles the migration's original CHECK omitted (alumni, driver) — the dual-write trigger must be able to mirror EVERY role the identity store legally holds, so the CHECK was corrected to mirror users_role_check exactly and the migration APPLIED under explicit operator authorization. This adds 1 quarantine group (vocabulary-literal:driver) to the ten now recorded for this migration. || 2026-10-24 (W9/029 precedent): Track E ADDED 25 quarantine groups (58 hits) for the three sherivs_e_* migrations (RLS FORCE + read scoping, load-test indexes/policy initplans). They alter policies on the live legacy tenant store, so they necessarily name school_id / get_my_school_id / tenant role names; no new domain code on the universal surface."
+    "lastRatchet": "2026-10-03: V1-006 (team SECURITY) neutralized the platform authorization core — removed all 9 frontend/src/lib/authorization.ts and all 13 frontend/src/lib/identity.ts entries (authorization.ts and identity.ts now carry zero education vocabulary; roles/relationship types are contributed via rbac/domain-contribution + domain-config registration) and refreshed the 7 frozen security-role-gate.ts legacy-fallback entries against the live tree (shrink-only, ADR-003/004). || 2026-10-03 (ADR-012): T-wave coordinator ADDED 3 quarantine groups (19 hits) for database/supabase/migrations/20261003000040_coregrid_school_media_bucket.sql — the FIRST baseline extension, made under ADR-004's explicit 'new ADR' mechanism: the declarative storage-provisioning migration must reference the legacy storage contract id school-media consumed by the frontend and by the applied 20260707223958 policy set; the neutral conversion (bucket id + policy predicates + path contract) is blocked on the neutral-tenant substrate conversion (same conversionPath class as the transport posture) and is recorded as an authorized follow-up that REMOVES these entries in the same change. Zero new privileges authorized by ADR-012. || 2026-10-08 (ADR-013): Sherivs refoundation ADDED 9 quarantine groups (47 hits) for database/supabase/migrations/20261008000050_coregrid_organization_memberships.sql — the SECOND baseline extension, made under ADR-004's explicit 'new ADR' mechanism (ADR-012 precedent): the multi-membership migration extends the LIVE legacy identity store in place (users.school_id stays the ACTIVE-CONTEXT binding; every tenant RLS predicate resolves through get_my_school_id()/get_my_role()), so its SQL necessarily carries the same legacy vocabulary class its owners are quarantined for (school_id, is_school_admin, get_my_school_id, tenant role names). It introduces NO new domain code on the universal surface — the table is additive, RLS-FORCED, and mirrors the legacy store. Zero new privileges beyond the policy-gated DML posture it declares. The neutral-tenant substrate conversion (COND-003 / ADR-012 conversionPath) removes these entries in the same change when it lands. || 2026-10-08 (ADR-013 amendment, same ADR authority): pre-apply verification against the LIVE users_role_check exposed two roles the migration's original CHECK omitted (alumni, driver) — the dual-write trigger must be able to mirror EVERY role the identity store legally holds, so the CHECK was corrected to mirror users_role_check exactly and the migration APPLIED under explicit operator authorization. This adds 1 quarantine group (vocabulary-literal:driver) to the ten now recorded for this migration. || 2026-10-24 (W9/029 precedent): Track E ADDED 25 quarantine groups (58 hits) for the three sherivs_e_* migrations (RLS FORCE + read scoping, load-test indexes/policy initplans). They alter policies on the live legacy tenant store, so they necessarily name school_id / get_my_school_id / tenant role names; no new domain code on the universal surface. || 2026-10-25 (W9/029 precedent): merge train ADDED 8 quarantine groups for 20261025100180_sherivs_090_integration_hub.sql (Integration Hub tables are tenant-scoped on the live legacy store, so they name school_id and school vocabulary); no new domain code on the universal surface. || 2026-10-25 (W9/029 precedent): merge train quarantined 20261025100190_sherivs_092_integration_entities_outbound.sql (tenant-scoped migration on the live legacy store; names school_id/school vocabulary); no new domain code on the universal surface. || 2026-10-25 (W9/029 precedent): merge train quarantined 20261025100200_sherivs_093_integration_connectors.sql (tenant-scoped migration on the live legacy store; names school_id/school vocabulary); no new domain code on the universal surface. || 2026-10-24 (SHERIVS-UX1, W9/W11 precedent): ADDED 21 quarantine groups (119 hits) for database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql — the workspace manifest resolves the caller through the legacy tenant helpers (get_my_school_id/get_my_role) and names school modules and legacy role codes; no new privileges (all functions SECURITY DEFINER with explicit membership checks). || 2026-10-24 (SHERIVS-UX2, UX1/W9/W11 precedent): ADDED 13 quarantine groups (25 hits) for database/supabase/migrations/20261025100220_sherivs_ux2_scope_policy_workspace.sql — the scope/policy-aware workspace manifest replaces the UX1 function bodies and so carries the same legacy tenant helpers (get_my_school_id/get_my_role), legacy role codes and module names; no new privileges (all functions SECURITY DEFINER with explicit membership / settings.manage checks). || 2026-10-24 (SHERIVS-UX3, UX1/UX2 precedent): ADDED 8 quarantine groups (43 hits) for database/supabase/migrations/20261025100230_sherivs_ux3_workspace_live_data.sql — live workspace card data reads the legacy school tables (students, classes, fees, attendance...) by their existing names under the caller's own RLS (SECURITY INVOKER); no new privileges, no anon grants."
   },
   "summary": {
-    "entryCount": 660,
-    "totalObservedHits": 3014,
+    "entryCount": 810,
+    "totalObservedHits": 4335,
     "hitsByFile": {
       "database/supabase/migrations/20260907000100_runtime_scholar_workforce_catalog.sql": 114,
       "database/supabase/migrations/20260620122048_50e590c2-5911-4c98-8931-fb46a4b509f3.sql": 84,
@@ -176,9 +176,40 @@
       "database/supabase/migrations/20261024000360_sherivs_029_school_custom_domains.sql": 36,
       "database/supabase/migrations/20261024000910_sherivs_e_rls_read_scoping.sql": 26,
       "database/supabase/migrations/20261024000920_sherivs_e_load_indexes.sql": 32,
+      "database/supabase/migrations/20261020000030_sherivs_002_admission_insert_check.sql": 5,
+      "database/supabase/migrations/20261020000040_sherivs_002_admissions_and_media_privacy.sql": 36,
+      "database/supabase/migrations/20261020000050_sherivs_002_seed_staff_types_guard.sql": 21,
+      "database/supabase/migrations/20261020000060_sherivs_003_ndpa_foundations.sql": 59,
+      "database/supabase/migrations/20261020000070_sherivs_003b_ndpa_completion.sql": 40,
+      "database/supabase/migrations/20261020000090_sherivs_004_in_school_role_rls.sql": 64,
+      "database/supabase/migrations/20261020000100_sherivs_004_in_school_write_roles.sql": 88,
+      "database/supabase/migrations/20261020000110_sherivs_004_privilege_hardening.sql": 4,
+      "database/supabase/migrations/20261020000130_sherivs_006_membership_identity_freeze.sql": 19,
+      "database/supabase/migrations/20261024000220_sherivs_015_privacy_lockdown_rls_speed.sql": 62,
+      "database/supabase/migrations/20261024000230_sherivs_016_lifecycle_grading_tiers_audit.sql": 67,
+      "database/supabase/migrations/20261025100010_sherivs_a01_scope_sets_complete.sql": 9,
+      "database/supabase/migrations/20261025100020_sherivs_a02_structure_periods.sql": 33,
+      "database/supabase/migrations/20261025100030_sherivs_a03_tertiary_cgpa.sql": 25,
+      "database/supabase/migrations/20261025100040_sherivs_a04_exam_body_windows.sql": 34,
+      "database/supabase/migrations/20261025100050_sherivs_a05_fee_relief_levies.sql": 64,
+      "database/supabase/migrations/20261025100055_sherivs_a05b_checkout_net_amount.sql": 21,
+      "database/supabase/migrations/20261025100060_sherivs_a06_transfers_guardians_custody.sql": 53,
+      "database/supabase/migrations/20261025100070_sherivs_a07_offline_attendance_v2.sql": 30,
+      "database/supabase/migrations/20261025100080_sherivs_b01_head_console.sql": 37,
+      "database/supabase/migrations/20261025100090_sherivs_b02_gov_officer_invites.sql": 2,
+      "database/supabase/migrations/20261025100110_sherivs_b03_gov_inspections_circulars.sql": 35,
+      "database/supabase/migrations/20261025100140_sherivs_b05_gov_deployment_exports.sql": 26,
+      "database/supabase/migrations/20261025100160_sherivs_b04_consent_breakglass_delegation.sql": 65,
+      "database/supabase/migrations/20261025100170_sherivs_b06_group_console.sql": 43,
+      "database/supabase/migrations/20261025100180_sherivs_090_integration_hub.sql": 67,
+      "database/supabase/migrations/20261025100190_sherivs_092_integration_entities_outbound.sql": 113,
+      "database/supabase/migrations/20261025100200_sherivs_093_integration_connectors.sql": 12,
+      "database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql": 119,
+      "database/supabase/migrations/20261025100220_sherivs_ux2_scope_policy_workspace.sql": 25,
+      "database/supabase/migrations/20261025100230_sherivs_ux3_workspace_live_data.sql": 43,
       "database/supabase/migrations/20261024001000_sherivs_100_website_engine.sql": 77
     },
-    "baselineGroups": 660
+    "baselineGroups": 427
   },
   "baselineEntries": [
     {
@@ -10132,6 +10163,2362 @@
         51
       ],
       "firstSnippet": "-- 3) Attendance: class register (class_id, date) and per-student history; school/day roll-ups."
+    },
+    {
+      "file": "database/supabase/migrations/20261025100010_sherivs_a01_scope_sets_complete.sql",
+      "kind": "vocabulary",
+      "token": "timetable",
+      "streamIRef": "SHERIVS-A01",
+      "occurrences": 1,
+      "lines": [
+        4
+      ],
+      "firstSnippet": "--  * the subject dimension now matches real data (timetable subjects of the class)"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100010_sherivs_a01_scope_sets_complete.sql",
+      "kind": "vocabulary",
+      "token": "student",
+      "streamIRef": "SHERIVS-A01",
+      "occurrences": 3,
+      "lines": [
+        79,
+        80,
+        117
+      ],
+      "firstSnippet": "IF p_kind = 'student' THEN SELECT * INTO s FROM public.students WHERE id = p_id; v_class := s.class_id;"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100010_sherivs_a01_scope_sets_complete.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-A01",
+      "occurrences": 3,
+      "lines": [
+        80,
+        89,
+        124
+      ],
+      "firstSnippet": "out := jsonb_build_object('org', s.school_id, 'student', s.id,"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100010_sherivs_a01_scope_sets_complete.sql",
+      "kind": "vocabulary",
+      "token": "hostel",
+      "streamIRef": "SHERIVS-A01",
+      "occurrences": 2,
+      "lines": [
+        82,
+        117
+      ],
+      "firstSnippet": "'hostel', coalesce((SELECT jsonb_agg(DISTINCT x) FROM public.hostel_allocations ha JOIN public.hostel_rooms hr ON hr.id = ha.room_id,"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100020_sherivs_a02_structure_periods.sql",
+      "kind": "vocabulary",
+      "token": "academic",
+      "streamIRef": "SHERIVS-A02",
+      "occurrences": 2,
+      "lines": [
+        1,
+        127
+      ],
+      "firstSnippet": "-- SHERIVS-A02 (Track A, day 2): shifts, gender/residency sections, levels and academic periods, manageable end to end."
+    },
+    {
+      "file": "database/supabase/migrations/20261025100020_sherivs_a02_structure_periods.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "SHERIVS-A02",
+      "occurrences": 1,
+      "lines": [
+        3
+      ],
+      "firstSnippet": "--  * academic_periods (terms, semesters or trimesters per session) with one current period per school"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100020_sherivs_a02_structure_periods.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-A02",
+      "occurrences": 28,
+      "lines": [
+        10,
+        21,
+        22,
+        29,
+        33,
+        43,
+        45,
+        47,
+        69,
+        85,
+        86,
+        95,
+        108,
+        118,
+        120,
+        121,
+        122,
+        134,
+        136,
+        138,
+        140,
+        141,
+        151,
+        153,
+        155,
+        163,
+        166,
+        172
+      ],
+      "firstSnippet": "school_id uuid NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100020_sherivs_a02_structure_periods.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "SHERIVS-A02",
+      "occurrences": 2,
+      "lines": [
+        29,
+        171
+      ],
+      "firstSnippet": "USING (school_id = public.get_my_school_id() OR coalesce(public.is_super_admin(), false));"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100030_sherivs_a03_tertiary_cgpa.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "SHERIVS-A03",
+      "occurrences": 3,
+      "lines": [
+        3,
+        5,
+        124
+      ],
+      "firstSnippet": "--  * configurable degree-class bands per school (NUC 5-point defaults when none are set)"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100030_sherivs_a03_tertiary_cgpa.sql",
+      "kind": "vocabulary",
+      "token": "academic",
+      "streamIRef": "SHERIVS-A03",
+      "occurrences": 1,
+      "lines": [
+        4
+      ],
+      "firstSnippet": "--  * academic standing per session: good standing / probation / withdrawal advised (two consecutive probations)"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100030_sherivs_a03_tertiary_cgpa.sql",
+      "kind": "vocabulary",
+      "token": "student",
+      "streamIRef": "SHERIVS-A03",
+      "occurrences": 1,
+      "lines": [
+        5
+      ],
+      "firstSnippet": "--  * readers: the student, a linked guardian, or staff with grades.view in that school"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100030_sherivs_a03_tertiary_cgpa.sql",
+      "kind": "vocabulary",
+      "token": "guardian",
+      "streamIRef": "SHERIVS-A03",
+      "occurrences": 1,
+      "lines": [
+        5
+      ],
+      "firstSnippet": "--  * readers: the student, a linked guardian, or staff with grades.view in that school"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100030_sherivs_a03_tertiary_cgpa.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-A03",
+      "occurrences": 16,
+      "lines": [
+        11,
+        13,
+        15,
+        23,
+        34,
+        35,
+        36,
+        71,
+        73,
+        84,
+        85,
+        110,
+        111,
+        120,
+        121,
+        131
+      ],
+      "firstSnippet": "school_id uuid NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100030_sherivs_a03_tertiary_cgpa.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "SHERIVS-A03",
+      "occurrences": 3,
+      "lines": [
+        23,
+        35,
+        129
+      ],
+      "firstSnippet": "EXECUTE format('CREATE POLICY %1$s_read ON public.%1$I FOR SELECT TO authenticated USING (school_id = public.get_my_school_id() OR coalesce(public.is_super_admi"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100040_sherivs_a04_exam_body_windows.sql",
+      "kind": "vocabulary",
+      "token": "exam",
+      "streamIRef": "SHERIVS-A04",
+      "occurrences": 3,
+      "lines": [
+        1,
+        65,
+        118
+      ],
+      "firstSnippet": "-- SHERIVS-A04 (Track A, day 5): external exam-body registration windows (WAEC, NECO, NABTEB, BECE, NCEE, JAMB UTME)."
+    },
+    {
+      "file": "database/supabase/migrations/20261025100040_sherivs_a04_exam_body_windows.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "SHERIVS-A04",
+      "occurrences": 3,
+      "lines": [
+        2,
+        12,
+        81
+      ],
+      "firstSnippet": "--  * exam_bodies catalogue with subject-count rules; per-school windows (normal close + optional late close with late fee)"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100040_sherivs_a04_exam_body_windows.sql",
+      "kind": "vocabulary",
+      "token": "fee",
+      "streamIRef": "SHERIVS-A04",
+      "occurrences": 7,
+      "lines": [
+        2,
+        26,
+        66,
+        69,
+        73,
+        97,
+        101
+      ],
+      "firstSnippet": "--  * exam_bodies catalogue with subject-count rules; per-school windows (normal close + optional late close with late fee)"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100040_sherivs_a04_exam_body_windows.sql",
+      "kind": "vocabulary",
+      "token": "examination",
+      "streamIRef": "SHERIVS-A04",
+      "occurrences": 1,
+      "lines": [
+        15
+      ],
+      "firstSnippet": "('BECE','Basic Education Certificate Examination (state / NECO)',9,13,ARRAY['JSS3'],'State or NECO-run; confirm the state list'),"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100040_sherivs_a04_exam_body_windows.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-A04",
+      "occurrences": 14,
+      "lines": [
+        22,
+        29,
+        33,
+        52,
+        55,
+        57,
+        66,
+        68,
+        79,
+        81,
+        96,
+        97,
+        113,
+        124
+      ],
+      "firstSnippet": "school_id uuid NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100040_sherivs_a04_exam_body_windows.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "SHERIVS-A04",
+      "occurrences": 3,
+      "lines": [
+        52,
+        55,
+        124
+      ],
+      "firstSnippet": "USING (school_id = public.get_my_school_id() OR coalesce(public.is_super_admin(), false));"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100040_sherivs_a04_exam_body_windows.sql",
+      "kind": "vocabulary",
+      "token": "student",
+      "streamIRef": "SHERIVS-A04",
+      "occurrences": 2,
+      "lines": [
+        81,
+        91
+      ],
+      "firstSnippet": "IF s.id IS NULL OR s.school_id <> w.school_id THEN RAISE EXCEPTION 'student is not in this school' USING ERRCODE = '42501'; END IF;"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100040_sherivs_a04_exam_body_windows.sql",
+      "kind": "vocabulary",
+      "token": "fees",
+      "streamIRef": "SHERIVS-A04",
+      "occurrences": 1,
+      "lines": [
+        118
+      ],
+      "firstSnippet": "-- Summary for the exams officer: counts, fees due, late entries and per-subject entries (exam bodies ask for these)."
+    },
+    {
+      "file": "database/supabase/migrations/20261025100050_sherivs_a05_fee_relief_levies.sql",
+      "kind": "vocabulary",
+      "token": "fee",
+      "streamIRef": "SHERIVS-A05",
+      "occurrences": 5,
+      "lines": [
+        1,
+        2,
+        7,
+        91,
+        141
+      ],
+      "firstSnippet": "-- SHERIVS-A05 (Track A, day 3): fee relief and levies."
+    },
+    {
+      "file": "database/supabase/migrations/20261025100050_sherivs_a05_fee_relief_levies.sql",
+      "kind": "vocabulary",
+      "token": "student",
+      "streamIRef": "SHERIVS-A05",
+      "occurrences": 5,
+      "lines": [
+        2,
+        5,
+        6,
+        91,
+        158
+      ],
+      "firstSnippet": "--  * discounts, scholarships and waivers per student (percent or fixed, per term, optional fee type), maker-checker approval:"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100050_sherivs_a05_fee_relief_levies.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "SHERIVS-A05",
+      "occurrences": 3,
+      "lines": [
+        5,
+        91,
+        99
+      ],
+      "firstSnippet": "--  * levies: one-off charges for the whole school or chosen classes, created once per student (idempotent)"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100050_sherivs_a05_fee_relief_levies.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-A05",
+      "occurrences": 26,
+      "lines": [
+        12,
+        25,
+        28,
+        30,
+        43,
+        45,
+        47,
+        49,
+        57,
+        61,
+        62,
+        72,
+        85,
+        98,
+        100,
+        102,
+        104,
+        107,
+        118,
+        119,
+        129,
+        130,
+        133,
+        134,
+        147,
+        148
+      ],
+      "firstSnippet": "school_id uuid NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100050_sherivs_a05_fee_relief_levies.sql",
+      "kind": "vocabulary",
+      "token": "fees",
+      "streamIRef": "SHERIVS-A05",
+      "occurrences": 15,
+      "lines": [
+        43,
+        57,
+        66,
+        72,
+        85,
+        96,
+        104,
+        108,
+        117,
+        128,
+        148,
+        150,
+        152,
+        160,
+        161
+      ],
+      "firstSnippet": "USING ((school_id = public.get_my_school_id() AND public.scholar_can(school_id, 'fees.view'))"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100050_sherivs_a05_fee_relief_levies.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "SHERIVS-A05",
+      "occurrences": 10,
+      "lines": [
+        43,
+        47,
+        49,
+        57,
+        72,
+        85,
+        96,
+        117,
+        128,
+        148
+      ],
+      "firstSnippet": "USING ((school_id = public.get_my_school_id() AND public.scholar_can(school_id, 'fees.view'))"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100055_sherivs_a05b_checkout_net_amount.sql",
+      "kind": "vocabulary",
+      "token": "fee",
+      "streamIRef": "SHERIVS-A05b",
+      "occurrences": 6,
+      "lines": [
+        2,
+        3,
+        4,
+        6,
+        57,
+        63
+      ],
+      "firstSnippet": "--   * relief from approved discounts/scholarships/waivers (incl. sibling rule) is allocated to individual fee rows"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100055_sherivs_a05b_checkout_net_amount.sql",
+      "kind": "vocabulary",
+      "token": "fees",
+      "streamIRef": "SHERIVS-A05b",
+      "occurrences": 9,
+      "lines": [
+        18,
+        26,
+        34,
+        38,
+        48,
+        54,
+        60,
+        62,
+        94
+      ],
+      "firstSnippet": "FROM public.fees f WHERE f.student_id = p_student AND f.term = p_term AND f.academic_year = p_year AND (a.fee_type IS NULL OR f.fee_type = a.fee_type);"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100055_sherivs_a05b_checkout_net_amount.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-A05b",
+      "occurrences": 2,
+      "lines": [
+        53,
+        54
+      ],
+      "firstSnippet": "SELECT s.id IS NOT NULL AND (s.user_id = auth.uid() OR s.parent_id = auth.uid() OR public.is_guardian_of_student(s.id, s.school_id)"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100055_sherivs_a05b_checkout_net_amount.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "SHERIVS-A05b",
+      "occurrences": 1,
+      "lines": [
+        54
+      ],
+      "firstSnippet": "OR (s.school_id = public.get_my_school_id() AND public.scholar_can(s.school_id, 'fees.view')) OR coalesce(public.is_super_admin(), false))"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100055_sherivs_a05b_checkout_net_amount.sql",
+      "kind": "vocabulary",
+      "token": "student",
+      "streamIRef": "SHERIVS-A05b",
+      "occurrences": 2,
+      "lines": [
+        57,
+        92
+      ],
+      "firstSnippet": "-- Amount to charge now for one fee row. Callable by people who can see the student, and by the server (service_role) for settlement."
+    },
+    {
+      "file": "database/supabase/migrations/20261025100055_sherivs_a05b_checkout_net_amount.sql",
+      "kind": "vocabulary",
+      "token": "bursar",
+      "streamIRef": "SHERIVS-A05b",
+      "occurrences": 1,
+      "lines": [
+        71
+      ],
+      "firstSnippet": "-- Per-row view for the parent/bursar screens."
+    },
+    {
+      "file": "database/supabase/migrations/20261025100060_sherivs_a06_transfers_guardians_custody.sql",
+      "kind": "vocabulary",
+      "token": "student",
+      "streamIRef": "SHERIVS-A06",
+      "occurrences": 6,
+      "lines": [
+        1,
+        2,
+        82,
+        84,
+        99,
+        145
+      ],
+      "firstSnippet": "-- SHERIVS-A06: student moves and transfers, guardian rights, custody orders and safe pickup."
+    },
+    {
+      "file": "database/supabase/migrations/20261025100060_sherivs_a06_transfers_guardians_custody.sql",
+      "kind": "vocabulary",
+      "token": "guardian",
+      "streamIRef": "SHERIVS-A06",
+      "occurrences": 6,
+      "lines": [
+        1,
+        119,
+        145,
+        156,
+        191,
+        193
+      ],
+      "firstSnippet": "-- SHERIVS-A06: student moves and transfers, guardian rights, custody orders and safe pickup."
+    },
+    {
+      "file": "database/supabase/migrations/20261025100060_sherivs_a06_transfers_guardians_custody.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "SHERIVS-A06",
+      "occurrences": 5,
+      "lines": [
+        2,
+        83,
+        98,
+        119,
+        127
+      ],
+      "firstSnippet": "--   * moving a student between classes keeps a history; transfers out issue a one-time code another school claims"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100060_sherivs_a06_transfers_guardians_custody.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-A06",
+      "occurrences": 25,
+      "lines": [
+        11,
+        16,
+        27,
+        35,
+        52,
+        55,
+        59,
+        62,
+        72,
+        83,
+        87,
+        88,
+        101,
+        102,
+        112,
+        127,
+        131,
+        135,
+        154,
+        155,
+        166,
+        178,
+        179,
+        197,
+        198
+      ],
+      "firstSnippet": "school_id uuid NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100060_sherivs_a06_transfers_guardians_custody.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "SHERIVS-A06",
+      "occurrences": 9,
+      "lines": [
+        52,
+        55,
+        59,
+        62,
+        72,
+        112,
+        122,
+        166,
+        178
+      ],
+      "firstSnippet": "USING (school_id = public.get_my_school_id() AND public.scholar_can(school_id, 'students.view') OR coalesce(public.is_super_admin(), false));"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100060_sherivs_a06_transfers_guardians_custody.sql",
+      "kind": "vocabulary",
+      "token": "academic",
+      "streamIRef": "SHERIVS-A06",
+      "occurrences": 1,
+      "lines": [
+        136
+      ],
+      "firstSnippet": "'last_class', (SELECT name FROM public.classes WHERE id = t.prev_class), 'current_level', s.current_level, 'academic', r);"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100060_sherivs_a06_transfers_guardians_custody.sql",
+      "kind": "vocabulary",
+      "token": "attendance",
+      "streamIRef": "SHERIVS-A06",
+      "occurrences": 1,
+      "lines": [
+        179
+      ],
+      "firstSnippet": "OR NOT (public.scholar_can(s.school_id, 'attendance.take') OR public.scholar_can(s.school_id, 'students.view')) THEN"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100070_sherivs_a07_offline_attendance_v2.sql",
+      "kind": "vocabulary",
+      "token": "attendance",
+      "streamIRef": "SHERIVS-A07",
+      "occurrences": 12,
+      "lines": [
+        1,
+        32,
+        37,
+        39,
+        47,
+        68,
+        70,
+        73,
+        91,
+        100,
+        105,
+        107
+      ],
+      "firstSnippet": "-- SHERIVS-A07: offline attendance v2 — per-item idempotency, device clock-skew checks, and an admin conflict queue."
+    },
+    {
+      "file": "database/supabase/migrations/20261025100070_sherivs_a07_offline_attendance_v2.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-A07",
+      "occurrences": 13,
+      "lines": [
+        7,
+        12,
+        18,
+        32,
+        55,
+        70,
+        75,
+        81,
+        83,
+        92,
+        100,
+        107,
+        108
+      ],
+      "firstSnippet": "user_id uuid NOT NULL, client_item_id text NOT NULL, school_id uuid NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100070_sherivs_a07_offline_attendance_v2.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "SHERIVS-A07",
+      "occurrences": 4,
+      "lines": [
+        32,
+        36,
+        91,
+        100
+      ],
+      "firstSnippet": "USING (user_id = auth.uid() OR (school_id = public.get_my_school_id() AND public.scholar_can(school_id, 'attendance.edit_past')) OR coalesce(public.is_super_adm"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100070_sherivs_a07_offline_attendance_v2.sql",
+      "kind": "vocabulary",
+      "token": "teacher",
+      "streamIRef": "SHERIVS-A07",
+      "occurrences": 1,
+      "lines": [
+        57
+      ],
+      "firstSnippet": "ELSIF public.get_my_role() = 'teacher' AND NOT EXISTS (SELECT 1 FROM public.classes WHERE id = cls AND teacher_id = auth.uid())"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100080_sherivs_b01_head_console.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-B01",
+      "occurrences": 16,
+      "lines": [
+        7,
+        15,
+        24,
+        27,
+        48,
+        49,
+        52,
+        54,
+        64,
+        66,
+        73,
+        98,
+        99,
+        100,
+        101,
+        102
+      ],
+      "firstSnippet": "school_id uuid NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100080_sherivs_b01_head_console.sql",
+      "kind": "vocabulary",
+      "token": "bursar",
+      "streamIRef": "SHERIVS-B01",
+      "occurrences": 3,
+      "lines": [
+        10,
+        96,
+        99
+      ],
+      "firstSnippet": "'registrar','bursar','librarian','dean','hod','principal','vice_principal','head_teacher')),"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100080_sherivs_b01_head_console.sql",
+      "kind": "vocabulary",
+      "token": "principal",
+      "streamIRef": "SHERIVS-B01",
+      "occurrences": 3,
+      "lines": [
+        10,
+        96,
+        99
+      ],
+      "firstSnippet": "'registrar','bursar','librarian','dean','hod','principal','vice_principal','head_teacher')),"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100080_sherivs_b01_head_console.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "SHERIVS-B01",
+      "occurrences": 3,
+      "lines": [
+        24,
+        43,
+        60
+      ],
+      "firstSnippet": "USING (user_id = (SELECT auth.uid()) OR (school_id = (SELECT public.get_my_school_id()) AND (SELECT public.is_school_admin())) OR (SELECT public.is_super_admin("
+    },
+    {
+      "file": "database/supabase/migrations/20261025100080_sherivs_b01_head_console.sql",
+      "kind": "vocabulary",
+      "token": "is_school_admin",
+      "streamIRef": "SHERIVS-B01",
+      "occurrences": 3,
+      "lines": [
+        24,
+        45,
+        62
+      ],
+      "firstSnippet": "USING (user_id = (SELECT auth.uid()) OR (school_id = (SELECT public.get_my_school_id()) AND (SELECT public.is_school_admin())) OR (SELECT public.is_super_admin("
+    },
+    {
+      "file": "database/supabase/migrations/20261025100080_sherivs_b01_head_console.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "SHERIVS-B01",
+      "occurrences": 6,
+      "lines": [
+        75,
+        84,
+        85,
+        86,
+        95,
+        97
+      ],
+      "firstSnippet": "-- Console entry: {status: ok|mfa_required|not_a_head|unknown_institution, school, roles}"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100080_sherivs_b01_head_console.sql",
+      "kind": "vocabulary",
+      "token": "teacher",
+      "streamIRef": "SHERIVS-B01",
+      "occurrences": 1,
+      "lines": [
+        99
+      ],
+      "firstSnippet": "'staff', (SELECT count(*) FROM public.users WHERE school_id = sid AND role IN ('teacher','admin','principal','bursar') AND coalesce(is_active, true)),"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100080_sherivs_b01_head_console.sql",
+      "kind": "vocabulary-literal",
+      "token": "staff",
+      "streamIRef": "SHERIVS-B01",
+      "occurrences": 1,
+      "lines": [
+        99
+      ],
+      "firstSnippet": "'staff', (SELECT count(*) FROM public.users WHERE school_id = sid AND role IN ('teacher','admin','principal','bursar') AND coalesce(is_active, true)),"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100080_sherivs_b01_head_console.sql",
+      "kind": "vocabulary",
+      "token": "fees",
+      "streamIRef": "SHERIVS-B01",
+      "occurrences": 1,
+      "lines": [
+        101
+      ],
+      "firstSnippet": "'finance', CASE WHEN fin THEN (SELECT jsonb_build_object('billed', coalesce(sum(amount), 0), 'paid', coalesce(sum(paid_amount), 0)) FROM public.fees WHERE schoo"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100090_sherivs_b02_gov_officer_invites.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "SHERIVS-B02",
+      "occurrences": 2,
+      "lines": [
+        6,
+        85
+      ],
+      "firstSnippet": "-- * Officers stay separate from tenant accounts (SHERIVS-028 rule): a school account cannot accept an invite."
+    },
+    {
+      "file": "database/supabase/migrations/20261025100110_sherivs_b03_gov_inspections_circulars.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-B03",
+      "occurrences": 22,
+      "lines": [
+        9,
+        32,
+        38,
+        47,
+        61,
+        63,
+        89,
+        90,
+        104,
+        112,
+        115,
+        125,
+        137,
+        145,
+        150,
+        163,
+        164,
+        172,
+        204,
+        214,
+        226,
+        228
+      ],
+      "firstSnippet": "id bigserial PRIMARY KEY, jurisdiction_id uuid NOT NULL, actor uuid, action text NOT NULL, ref_id uuid, school_id uuid,"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100110_sherivs_b03_gov_inspections_circulars.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "SHERIVS-B03",
+      "occurrences": 5,
+      "lines": [
+        56,
+        112,
+        124,
+        129,
+        169
+      ],
+      "firstSnippet": "IF NOT public._gov_school_shares(p_jurisdiction, p_school) THEN RAISE EXCEPTION 'school is not sharing with this jurisdiction'; END IF;"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100110_sherivs_b03_gov_inspections_circulars.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "SHERIVS-B03",
+      "occurrences": 4,
+      "lines": [
+        131,
+        142,
+        210,
+        221
+      ],
+      "firstSnippet": "DECLARE s uuid := public.get_my_school_id();"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100110_sherivs_b03_gov_inspections_circulars.sql",
+      "kind": "vocabulary",
+      "token": "is_school_admin",
+      "streamIRef": "SHERIVS-B03",
+      "occurrences": 4,
+      "lines": [
+        133,
+        144,
+        212,
+        223
+      ],
+      "firstSnippet": "IF auth.uid() IS NULL OR s IS NULL OR NOT coalesce(public.is_school_admin(), false) THEN RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501'; END IF;"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100140_sherivs_b05_gov_deployment_exports.sql",
+      "kind": "vocabulary",
+      "token": "teacher",
+      "streamIRef": "SHERIVS-B05",
+      "occurrences": 5,
+      "lines": [
+        1,
+        3,
+        6,
+        20,
+        125
+      ],
+      "firstSnippet": "-- SHERIVS-B05 (Track B, Day 5): teacher deployment (staffing view + two-person posting workflow) and CSV exports."
+    },
+    {
+      "file": "database/supabase/migrations/20261025100140_sherivs_b05_gov_deployment_exports.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "SHERIVS-B05",
+      "occurrences": 8,
+      "lines": [
+        6,
+        13,
+        102,
+        125,
+        143,
+        148,
+        153,
+        154
+      ],
+      "firstSnippet": "-- ===== Staffing: teachers, learners, pupil-teacher ratio per sharing school ====="
+    },
+    {
+      "file": "database/supabase/migrations/20261025100140_sherivs_b05_gov_deployment_exports.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-B05",
+      "occurrences": 9,
+      "lines": [
+        13,
+        18,
+        19,
+        20,
+        43,
+        56,
+        73,
+        87,
+        128
+      ],
+      "firstSnippet": "SELECT jsonb_build_object('school_id', s.id, 'school', s.name, 'lga', coalesce(l.lga, 'unknown'), 'ownership', coalesce(l.ownership, 'unknown'),"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100140_sherivs_b05_gov_deployment_exports.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "SHERIVS-B05",
+      "occurrences": 2,
+      "lines": [
+        104,
+        117
+      ],
+      "firstSnippet": "DECLARE s uuid := public.get_my_school_id();"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100140_sherivs_b05_gov_deployment_exports.sql",
+      "kind": "vocabulary",
+      "token": "is_school_admin",
+      "streamIRef": "SHERIVS-B05",
+      "occurrences": 2,
+      "lines": [
+        106,
+        119
+      ],
+      "firstSnippet": "IF auth.uid() IS NULL OR s IS NULL OR NOT coalesce(public.is_school_admin(), false) THEN RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501'; END IF;"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100160_sherivs_b04_consent_breakglass_delegation.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-B04",
+      "occurrences": 28,
+      "lines": [
+        10,
+        12,
+        29,
+        33,
+        44,
+        52,
+        54,
+        66,
+        93,
+        94,
+        95,
+        108,
+        115,
+        119,
+        129,
+        130,
+        138,
+        152,
+        157,
+        162,
+        173,
+        182,
+        184,
+        194,
+        198,
+        210,
+        215,
+        216
+      ],
+      "firstSnippet": "id bigserial PRIMARY KEY, school_id uuid NOT NULL, actor uuid, action text NOT NULL, ref_id uuid, student_id uuid,"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100160_sherivs_b04_consent_breakglass_delegation.sql",
+      "kind": "vocabulary",
+      "token": "guardian",
+      "streamIRef": "SHERIVS-B04",
+      "occurrences": 6,
+      "lines": [
+        18,
+        22,
+        35,
+        37,
+        45,
+        75
+      ],
+      "firstSnippet": "-- ===== 1. Minors' consent (NDPA s.31: a parent/guardian consents for a child under 18) ====="
+    },
+    {
+      "file": "database/supabase/migrations/20261025100160_sherivs_b04_consent_breakglass_delegation.sql",
+      "kind": "vocabulary",
+      "token": "student",
+      "streamIRef": "SHERIVS-B04",
+      "occurrences": 4,
+      "lines": [
+        22,
+        147,
+        173,
+        247
+      ],
+      "firstSnippet": "-- Who may set consent: a linked guardian (web form), an adult student for themselves, or a school admin recording"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100160_sherivs_b04_consent_breakglass_delegation.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "SHERIVS-B04",
+      "occurrences": 4,
+      "lines": [
+        22,
+        32,
+        42,
+        174
+      ],
+      "firstSnippet": "-- Who may set consent: a linked guardian (web form), an adult student for themselves, or a school admin recording"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100160_sherivs_b04_consent_breakglass_delegation.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "SHERIVS-B04",
+      "occurrences": 9,
+      "lines": [
+        39,
+        69,
+        89,
+        115,
+        129,
+        143,
+        168,
+        194,
+        203
+      ],
+      "firstSnippet": "ELSIF s = public.get_my_school_id() AND coalesce(public.is_school_admin(), false) THEN"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100160_sherivs_b04_consent_breakglass_delegation.sql",
+      "kind": "vocabulary",
+      "token": "is_school_admin",
+      "streamIRef": "SHERIVS-B04",
+      "occurrences": 8,
+      "lines": [
+        39,
+        69,
+        91,
+        115,
+        130,
+        145,
+        194,
+        203
+      ],
+      "firstSnippet": "ELSIF s = public.get_my_school_id() AND coalesce(public.is_school_admin(), false) THEN"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100160_sherivs_b04_consent_breakglass_delegation.sql",
+      "kind": "vocabulary",
+      "token": "principal",
+      "streamIRef": "SHERIVS-B04",
+      "occurrences": 3,
+      "lines": [
+        123,
+        130,
+        145
+      ],
+      "firstSnippet": "-- Review by the principal, an admin or the DPO, never the person who opened it; MFA required."
+    },
+    {
+      "file": "database/supabase/migrations/20261025100160_sherivs_b04_consent_breakglass_delegation.sql",
+      "kind": "vocabulary-literal",
+      "token": "parent",
+      "streamIRef": "SHERIVS-B04",
+      "occurrences": 1,
+      "lines": [
+        173
+      ],
+      "firstSnippet": "IF NOT EXISTS (SELECT 1 FROM public.users u WHERE u.id = p_delegate AND u.school_id = s AND coalesce(u.is_active, true) AND u.role NOT IN ('parent','student')) "
+    },
+    {
+      "file": "database/supabase/migrations/20261025100160_sherivs_b04_consent_breakglass_delegation.sql",
+      "kind": "vocabulary",
+      "token": "grade",
+      "streamIRef": "SHERIVS-B04",
+      "occurrences": 1,
+      "lines": [
+        243
+      ],
+      "firstSnippet": "-- Shadow wiring on grade entry (sampled like attendance; sherivs.authz_shadow_rate, default 10%)."
+    },
+    {
+      "file": "database/supabase/migrations/20261025100160_sherivs_b04_consent_breakglass_delegation.sql",
+      "kind": "vocabulary",
+      "token": "attendance",
+      "streamIRef": "SHERIVS-B04",
+      "occurrences": 1,
+      "lines": [
+        243
+      ],
+      "firstSnippet": "-- Shadow wiring on grade entry (sampled like attendance; sherivs.authz_shadow_rate, default 10%)."
+    },
+    {
+      "file": "database/supabase/migrations/20261025100170_sherivs_b06_group_console.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "SHERIVS-B06",
+      "occurrences": 12,
+      "lines": [
+        2,
+        47,
+        87,
+        93,
+        102,
+        115,
+        118,
+        126,
+        159,
+        172,
+        176,
+        188
+      ],
+      "firstSnippet": "-- Builds on 021 org_groups/org_group_members. A school joins only with its own admin's consent (MFA);"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100170_sherivs_b06_group_console.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-B06",
+      "occurrences": 27,
+      "lines": [
+        20,
+        23,
+        25,
+        53,
+        93,
+        94,
+        95,
+        100,
+        103,
+        104,
+        106,
+        115,
+        118,
+        119,
+        122,
+        129,
+        134,
+        135,
+        159,
+        160,
+        161,
+        162,
+        163,
+        164,
+        165,
+        172,
+        189
+      ],
+      "firstSnippet": "school_id uuid NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE, requested_by uuid NOT NULL,"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100170_sherivs_b06_group_console.sql",
+      "kind": "vocabulary",
+      "token": "principal",
+      "streamIRef": "SHERIVS-B06",
+      "occurrences": 1,
+      "lines": [
+        53
+      ],
+      "firstSnippet": "SELECT EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND school_id = p_school AND role IN ('admin','principal')) $$;"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100170_sherivs_b06_group_console.sql",
+      "kind": "vocabulary",
+      "token": "teacher",
+      "streamIRef": "SHERIVS-B06",
+      "occurrences": 1,
+      "lines": [
+        161
+      ],
+      "firstSnippet": "(SELECT count(*) FROM public.users u WHERE u.school_id = m.school_id AND u.role = 'teacher') teachers,"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100170_sherivs_b06_group_console.sql",
+      "kind": "vocabulary",
+      "token": "attendance",
+      "streamIRef": "SHERIVS-B06",
+      "occurrences": 2,
+      "lines": [
+        162,
+        163
+      ],
+      "firstSnippet": "(SELECT count(*) FILTER (WHERE status IN ('present','late')) FROM public.attendance a WHERE a.school_id = m.school_id AND a.date >= current_date - 30) att_p,"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100180_sherivs_090_integration_hub.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "SHERIVS-090",
+      "occurrences": 5,
+      "lines": [
+        2,
+        8,
+        180,
+        275,
+        302
+      ],
+      "firstSnippet": "-- SHERIVS-090 — Integration Hub: connect a school's existing software (SIS, result/fee"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100180_sherivs_090_integration_hub.sql",
+      "kind": "vocabulary",
+      "token": "fee",
+      "streamIRef": "SHERIVS-090",
+      "occurrences": 1,
+      "lines": [
+        2
+      ],
+      "firstSnippet": "-- SHERIVS-090 — Integration Hub: connect a school's existing software (SIS, result/fee"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100180_sherivs_090_integration_hub.sql",
+      "kind": "vocabulary",
+      "token": "classroom",
+      "streamIRef": "SHERIVS-090",
+      "occurrences": 3,
+      "lines": [
+        7,
+        48,
+        49
+      ],
+      "firstSnippet": "-- connector_manifests  platform catalog (CSV, REST/webhook, Google Classroom, ...)."
+    },
+    {
+      "file": "database/supabase/migrations/20261025100180_sherivs_090_integration_hub.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-090",
+      "occurrences": 46,
+      "lines": [
+        19,
+        54,
+        68,
+        70,
+        74,
+        80,
+        86,
+        94,
+        101,
+        116,
+        123,
+        132,
+        135,
+        138,
+        145,
+        151,
+        158,
+        174,
+        189,
+        198,
+        211,
+        218,
+        229,
+        234,
+        242,
+        244,
+        245,
+        248,
+        254,
+        264,
+        277,
+        278,
+        279,
+        283,
+        284,
+        295,
+        296,
+        303,
+        310,
+        311,
+        319,
+        324,
+        325,
+        336,
+        343,
+        345
+      ],
+      "firstSnippet": "-- school_id from the integration row, never from the caller or the payload."
+    },
+    {
+      "file": "database/supabase/migrations/20261025100180_sherivs_090_integration_hub.sql",
+      "kind": "vocabulary",
+      "token": "student",
+      "streamIRef": "SHERIVS-090",
+      "occurrences": 6,
+      "lines": [
+        44,
+        46,
+        48,
+        59,
+        300,
+        305
+      ],
+      "firstSnippet": "('csv', 'CSV / Excel import', 'file', 'none', ARRAY['student','staff','guardian','class','result','fee_invoice','payment'], ARRAY['inbound'], 'beta',"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100180_sherivs_090_integration_hub.sql",
+      "kind": "vocabulary",
+      "token": "guardian",
+      "streamIRef": "SHERIVS-090",
+      "occurrences": 2,
+      "lines": [
+        44,
+        46
+      ],
+      "firstSnippet": "('csv', 'CSV / Excel import', 'file', 'none', ARRAY['student','staff','guardian','class','result','fee_invoice','payment'], ARRAY['inbound'], 'beta',"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100180_sherivs_090_integration_hub.sql",
+      "kind": "vocabulary-literal",
+      "token": "staff",
+      "streamIRef": "SHERIVS-090",
+      "occurrences": 3,
+      "lines": [
+        44,
+        46,
+        48
+      ],
+      "firstSnippet": "('csv', 'CSV / Excel import', 'file', 'none', ARRAY['student','staff','guardian','class','result','fee_invoice','payment'], ARRAY['inbound'], 'beta',"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100180_sherivs_090_integration_hub.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "SHERIVS-090",
+      "occurrences": 1,
+      "lines": [
+        173
+      ],
+      "firstSnippet": "SELECT public.get_my_school_id() AS s"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100190_sherivs_092_integration_entities_outbound.sql",
+      "kind": "vocabulary",
+      "token": "student",
+      "streamIRef": "SHERIVS-092",
+      "occurrences": 11,
+      "lines": [
+        7,
+        12,
+        99,
+        128,
+        133,
+        193,
+        210,
+        221,
+        273,
+        346,
+        446
+      ],
+      "firstSnippet": "--   student      students (+ class by class_name)"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100190_sherivs_092_integration_entities_outbound.sql",
+      "kind": "vocabulary",
+      "token": "guardian",
+      "streamIRef": "SHERIVS-092",
+      "occurrences": 8,
+      "lines": [
+        9,
+        40,
+        163,
+        164,
+        168,
+        174,
+        273,
+        446
+      ],
+      "firstSnippet": "--   guardian     links an existing parent account + parent_student_map; otherwise an invite"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100190_sherivs_092_integration_entities_outbound.sql",
+      "kind": "vocabulary",
+      "token": "enrollment",
+      "streamIRef": "SHERIVS-092",
+      "occurrences": 5,
+      "lines": [
+        11,
+        191,
+        273,
+        445,
+        446
+      ],
+      "firstSnippet": "--   enrollment   students.class_id (K-12) or course_registrations (tertiary, approved)"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100190_sherivs_092_integration_entities_outbound.sql",
+      "kind": "vocabulary",
+      "token": "fees",
+      "streamIRef": "SHERIVS-092",
+      "occurrences": 11,
+      "lines": [
+        13,
+        14,
+        17,
+        126,
+        225,
+        229,
+        237,
+        247,
+        346,
+        376,
+        377
+      ],
+      "firstSnippet": "--   fee_invoice  fees"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100190_sherivs_092_integration_entities_outbound.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-092",
+      "occurrences": 52,
+      "lines": [
+        30,
+        38,
+        50,
+        56,
+        69,
+        83,
+        91,
+        99,
+        102,
+        112,
+        115,
+        125,
+        131,
+        138,
+        145,
+        150,
+        156,
+        160,
+        168,
+        176,
+        184,
+        186,
+        188,
+        195,
+        197,
+        204,
+        213,
+        225,
+        231,
+        237,
+        242,
+        271,
+        284,
+        285,
+        286,
+        290,
+        291,
+        313,
+        314,
+        316,
+        317,
+        332,
+        345,
+        361,
+        363,
+        364,
+        385,
+        391,
+        412,
+        413,
+        420,
+        433
+      ],
+      "firstSnippet": "CREATE INDEX IF NOT EXISTS integrations_outbound_idx ON public.integrations (school_id) WHERE outbound_enabled AND status = 'active';"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100190_sherivs_092_integration_entities_outbound.sql",
+      "kind": "vocabulary-literal",
+      "token": "staff",
+      "streamIRef": "SHERIVS-092",
+      "occurrences": 5,
+      "lines": [
+        40,
+        163,
+        182,
+        273,
+        446
+      ],
+      "firstSnippet": "entity         text NOT NULL CHECK (entity IN ('staff','guardian')),"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100190_sherivs_092_integration_entities_outbound.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "SHERIVS-092",
+      "occurrences": 2,
+      "lines": [
+        87,
+        344
+      ],
+      "firstSnippet": "-- Reference resolution inside ONE integration and ONE school. ------------------------"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100190_sherivs_092_integration_entities_outbound.sql",
+      "kind": "vocabulary",
+      "token": "fee",
+      "streamIRef": "SHERIVS-092",
+      "occurrences": 5,
+      "lines": [
+        126,
+        237,
+        238,
+        243,
+        250
+      ],
+      "firstSnippet": "st uuid; cl uuid; fee public.fees; amt numeric; crs uuid; uid uuid; role text;"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100190_sherivs_092_integration_entities_outbound.sql",
+      "kind": "vocabulary",
+      "token": "teacher",
+      "streamIRef": "SHERIVS-092",
+      "occurrences": 3,
+      "lines": [
+        164,
+        165,
+        168
+      ],
+      "firstSnippet": "role := CASE WHEN p_entity = 'guardian' THEN 'parent' ELSE coalesce(nullif(lower(d->>'role'),''), 'teacher') END;"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100190_sherivs_092_integration_entities_outbound.sql",
+      "kind": "vocabulary-literal",
+      "token": "parent",
+      "streamIRef": "SHERIVS-092",
+      "occurrences": 3,
+      "lines": [
+        164,
+        165,
+        168
+      ],
+      "firstSnippet": "role := CASE WHEN p_entity = 'guardian' THEN 'parent' ELSE coalesce(nullif(lower(d->>'role'),''), 'teacher') END;"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100190_sherivs_092_integration_entities_outbound.sql",
+      "kind": "vocabulary",
+      "token": "bursar",
+      "streamIRef": "SHERIVS-092",
+      "occurrences": 2,
+      "lines": [
+        165,
+        168
+      ],
+      "firstSnippet": "IF role NOT IN ('admin','principal','teacher','bursar','driver','parent') THEN role := 'teacher'; END IF;"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100190_sherivs_092_integration_entities_outbound.sql",
+      "kind": "vocabulary",
+      "token": "principal",
+      "streamIRef": "SHERIVS-092",
+      "occurrences": 2,
+      "lines": [
+        165,
+        168
+      ],
+      "firstSnippet": "IF role NOT IN ('admin','principal','teacher','bursar','driver','parent') THEN role := 'teacher'; END IF;"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100190_sherivs_092_integration_entities_outbound.sql",
+      "kind": "vocabulary-literal",
+      "token": "driver",
+      "streamIRef": "SHERIVS-092",
+      "occurrences": 2,
+      "lines": [
+        165,
+        168
+      ],
+      "firstSnippet": "IF role NOT IN ('admin','principal','teacher','bursar','driver','parent') THEN role := 'teacher'; END IF;"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100190_sherivs_092_integration_entities_outbound.sql",
+      "kind": "vocabulary",
+      "token": "tuition",
+      "streamIRef": "SHERIVS-092",
+      "occurrences": 1,
+      "lines": [
+        226
+      ],
+      "firstSnippet": "VALUES (s, st, coalesce(d->>'fee_type','Tuition'), amt, d->>'term', d->>'academic_year', nullif(d->>'due_date','')::date, 'unpaid', 0)"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100190_sherivs_092_integration_entities_outbound.sql",
+      "kind": "vocabulary",
+      "token": "grade",
+      "streamIRef": "SHERIVS-092",
+      "occurrences": 1,
+      "lines": [
+        354
+      ],
+      "firstSnippet": "'grade', r->>'grade', 'term', r->>'term', 'academic_year', r->>'academic_year', 'is_published', r->'is_published');"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100200_sherivs_093_integration_connectors.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "SHERIVS-093",
+      "occurrences": 1,
+      "lines": [
+        9
+      ],
+      "firstSnippet": "--                      per claim so one school cannot starve the others."
+    },
+    {
+      "file": "database/supabase/migrations/20261025100200_sherivs_093_integration_connectors.sql",
+      "kind": "vocabulary",
+      "token": "student",
+      "streamIRef": "SHERIVS-093",
+      "occurrences": 3,
+      "lines": [
+        15,
+        17,
+        19
+      ],
+      "firstSnippet": "('fedena', 'Fedena', '0.9.0', 'sis', 'oauth2', ARRAY['student','staff','class'], ARRAY['inbound'], 'beta',"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100200_sherivs_093_integration_connectors.sql",
+      "kind": "vocabulary-literal",
+      "token": "staff",
+      "streamIRef": "SHERIVS-093",
+      "occurrences": 3,
+      "lines": [
+        15,
+        17,
+        19
+      ],
+      "firstSnippet": "('fedena', 'Fedena', '0.9.0', 'sis', 'oauth2', ARRAY['student','staff','class'], ARRAY['inbound'], 'beta',"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100200_sherivs_093_integration_connectors.sql",
+      "kind": "vocabulary",
+      "token": "enrollment",
+      "streamIRef": "SHERIVS-093",
+      "occurrences": 2,
+      "lines": [
+        17,
+        19
+      ],
+      "firstSnippet": "('moodle', 'Moodle', '1.0.0', 'lms', 'api_key', ARRAY['class','student','staff','enrollment','result'], ARRAY['inbound'], 'beta',"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100200_sherivs_093_integration_connectors.sql",
+      "kind": "vocabulary",
+      "token": "guardian",
+      "streamIRef": "SHERIVS-093",
+      "occurrences": 1,
+      "lines": [
+        19
+      ],
+      "firstSnippet": "('oneroster', 'OneRoster 1.1 (Classter and other SIS)', '1.0.0', 'sis', 'oauth2', ARRAY['class','student','staff','guardian','enrollment'], ARRAY['inbound'], 'b"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100200_sherivs_093_integration_connectors.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-093",
+      "occurrences": 2,
+      "lines": [
+        29,
+        36
+      ],
+      "firstSnippet": "IF i.id IS NULL OR NOT public.scholar_can(i.school_id, 'settings.manage') THEN RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501'; END IF;"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "SHERIVS-UX1",
+      "occurrences": 8,
+      "lines": [
+        5,
+        18,
+        29,
+        84,
+        112,
+        125,
+        154,
+        188
+      ],
+      "firstSnippet": "-- scope sets (shown as chips, enforced by authz_check / RLS on the data itself); the school's plan"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "SHERIVS-UX1",
+      "occurrences": 4,
+      "lines": [
+        53,
+        226,
+        250,
+        257
+      ],
+      "firstSnippet": "USING (org_id = (SELECT public.get_my_school_id()) OR (SELECT public.can_administer_org(org_id)));"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql",
+      "kind": "vocabulary",
+      "token": "teacher",
+      "streamIRef": "SHERIVS-UX1",
+      "occurrences": 16,
+      "lines": [
+        65,
+        66,
+        67,
+        68,
+        90,
+        91,
+        92,
+        93,
+        96,
+        130,
+        134,
+        135,
+        136,
+        174,
+        213,
+        268
+      ],
+      "firstSnippet": "('nav.my_classes','nav','/teacher/dashboard',ARRAY['attendance.take','grades.enter']::text[],ARRAY[]::text[],NULL,'m','My classes',ARRAY[]::text[],2),"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql",
+      "kind": "vocabulary",
+      "token": "attendance",
+      "streamIRef": "SHERIVS-UX1",
+      "occurrences": 6,
+      "lines": [
+        65,
+        66,
+        91,
+        96,
+        134,
+        213
+      ],
+      "firstSnippet": "('nav.my_classes','nav','/teacher/dashboard',ARRAY['attendance.take','grades.enter']::text[],ARRAY[]::text[],NULL,'m','My classes',ARRAY[]::text[],2),"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql",
+      "kind": "vocabulary",
+      "token": "lesson",
+      "streamIRef": "SHERIVS-UX1",
+      "occurrences": 5,
+      "lines": [
+        68,
+        93,
+        94,
+        130,
+        136
+      ],
+      "firstSnippet": "('nav.lesson_notes','nav','/teacher/lesson-notes',ARRAY['lesson_notes.submit','lesson_notes.approve']::text[],ARRAY[]::text[],NULL,'m','Lesson notes',ARRAY[]::t"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql",
+      "kind": "vocabulary",
+      "token": "fees",
+      "streamIRef": "SHERIVS-UX1",
+      "occurrences": 7,
+      "lines": [
+        72,
+        102,
+        104,
+        124,
+        140,
+        154,
+        212
+      ],
+      "firstSnippet": "('nav.fees','nav','/bursar/dashboard',ARRAY['fees.view','payments.reconcile','payments.record_cash']::text[],ARRAY[]::text[],NULL,'m','Fees & payments',ARRAY[]:"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql",
+      "kind": "vocabulary",
+      "token": "bursar",
+      "streamIRef": "SHERIVS-UX1",
+      "occurrences": 9,
+      "lines": [
+        72,
+        102,
+        103,
+        139,
+        140,
+        162,
+        169,
+        212,
+        268
+      ],
+      "firstSnippet": "('nav.fees','nav','/bursar/dashboard',ARRAY['fees.view','payments.reconcile','payments.record_cash']::text[],ARRAY[]::text[],NULL,'m','Fees & payments',ARRAY[]:"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql",
+      "kind": "vocabulary",
+      "token": "payroll",
+      "streamIRef": "SHERIVS-UX1",
+      "occurrences": 13,
+      "lines": [
+        74,
+        75,
+        107,
+        145,
+        146,
+        159,
+        175,
+        194,
+        200,
+        209,
+        212,
+        214,
+        347
+      ],
+      "firstSnippet": "('nav.payroll','nav','/admin/hr-payroll',ARRAY['payroll.prepare','payroll.approve','payroll.view_all']::text[],ARRAY[]::text[],'payroll','m','HR & payroll',ARRA"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql",
+      "kind": "vocabulary",
+      "token": "library",
+      "streamIRef": "SHERIVS-UX1",
+      "occurrences": 6,
+      "lines": [
+        76,
+        115,
+        148,
+        194,
+        200,
+        347
+      ],
+      "firstSnippet": "('nav.library','nav','/admin/library',ARRAY['library.circulate','library.catalog']::text[],ARRAY[]::text[],'library','m','Library',ARRAY[]::text[],13),"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql",
+      "kind": "vocabulary",
+      "token": "hostel",
+      "streamIRef": "SHERIVS-UX1",
+      "occurrences": 8,
+      "lines": [
+        77,
+        116,
+        117,
+        149,
+        178,
+        194,
+        200,
+        347
+      ],
+      "firstSnippet": "('nav.hostel','nav','/admin/hostel',ARRAY['hostel.allocate','hostel.roll_call']::text[],ARRAY[]::text[],'hostel','m','Hostel',ARRAY[]::text[],14),"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql",
+      "kind": "vocabulary-literal",
+      "token": "staff",
+      "streamIRef": "SHERIVS-UX1",
+      "occurrences": 4,
+      "lines": [
+        81,
+        184,
+        270,
+        272
+      ],
+      "firstSnippet": "('nav.staff','nav','/admin/hr',ARRAY['hr.staff_view','hr.staff_manage']::text[],ARRAY[]::text[],NULL,'m','Staff',ARRAY[]::text[],18),"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql",
+      "kind": "vocabulary",
+      "token": "academic",
+      "streamIRef": "SHERIVS-UX1",
+      "occurrences": 3,
+      "lines": [
+        82,
+        97,
+        98
+      ],
+      "firstSnippet": "('nav.reports','nav','/admin/analytics',ARRAY['analytics.institution','reports.academic','reports.financial']::text[],ARRAY[]::text[],NULL,'m','Reports',ARRAY[]"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql",
+      "kind": "vocabulary",
+      "token": "student",
+      "streamIRef": "SHERIVS-UX1",
+      "occurrences": 11,
+      "lines": [
+        86,
+        87,
+        126,
+        127,
+        128,
+        129,
+        141,
+        157,
+        182,
+        215,
+        268
+      ],
+      "firstSnippet": "('nav.my_results','nav','/student/grades',ARRAY['self.view_own']::text[],ARRAY[]::text[],NULL,'m','My results',ARRAY['student']::text[],23),"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql",
+      "kind": "vocabulary",
+      "token": "timetable",
+      "streamIRef": "SHERIVS-UX1",
+      "occurrences": 5,
+      "lines": [
+        90,
+        100,
+        126,
+        214,
+        215
+      ],
+      "firstSnippet": "('w.today_classes','widget','/teacher/timetable',ARRAY['timetable.view']::text[],ARRAY[]::text[],NULL,'m','Today''s lessons',ARRAY[]::text[],27),"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql",
+      "kind": "vocabulary",
+      "token": "exam",
+      "streamIRef": "SHERIVS-UX1",
+      "occurrences": 2,
+      "lines": [
+        100,
+        143
+      ],
+      "firstSnippet": "('w.exam_timetable','widget','/admin/examinations',ARRAY['exams.schedule']::text[],ARRAY[]::text[],NULL,'m','Exam timetable',ARRAY[]::text[],37),"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql",
+      "kind": "vocabulary",
+      "token": "fee",
+      "streamIRef": "SHERIVS-UX1",
+      "occurrences": 1,
+      "lines": [
+        102
+      ],
+      "firstSnippet": "('w.fee_collection','widget','/bursar/dashboard',ARRAY['fees.view','reports.financial']::text[],ARRAY[]::text[],NULL,'l','Fee collection',ARRAY[]::text[],39),"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql",
+      "kind": "vocabulary",
+      "token": "enrolment",
+      "streamIRef": "SHERIVS-UX1",
+      "occurrences": 3,
+      "lines": [
+        111,
+        167,
+        170
+      ],
+      "firstSnippet": "('w.enrolment','widget','/admin/students',ARRAY['students.view','analytics.institution']::text[],ARRAY['analytics.institution']::text[],NULL,'s','Enrolment',ARR"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql",
+      "kind": "vocabulary",
+      "token": "discipline",
+      "streamIRef": "SHERIVS-UX1",
+      "occurrences": 1,
+      "lines": [
+        163
+      ],
+      "firstSnippet": "('i.safeguarding','inbox','/admin/discipline',ARRAY['welfare.pastoral','discipline.decide']::text[],ARRAY[]::text[],NULL,'m','Safeguarding',ARRAY[]::text[],100)"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql",
+      "kind": "vocabulary",
+      "token": "principal",
+      "streamIRef": "SHERIVS-UX1",
+      "occurrences": 3,
+      "lines": [
+        168,
+        211,
+        267
+      ],
+      "firstSnippet": "('principal',ARRAY['head_of_institution','deputy_academic','deputy_admin','student_affairs']::text[],20,ARRAY['w.school_health','w.results_pipeline','w.lesson_n"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql",
+      "kind": "vocabulary-literal",
+      "token": "driver",
+      "streamIRef": "SHERIVS-UX1",
+      "occurrences": 1,
+      "lines": [
+        179
+      ],
+      "firstSnippet": "('transport',ARRAY['transport_head','driver']::text[],76,ARRAY['w.my_trip','w.bus_live','w.announcements']::text[],ARRAY['a.start_trip']::text[]),"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql",
+      "kind": "vocabulary-literal",
+      "token": "parent",
+      "streamIRef": "SHERIVS-UX1",
+      "occurrences": 3,
+      "lines": [
+        181,
+        215,
+        268
+      ],
+      "firstSnippet": "('parent',ARRAY['parent','pta']::text[],90,ARRAY['w.children_summary','w.child_fees','w.child_bus','w.announcements']::text[],ARRAY['a.pay_fees']::text[]),"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100220_sherivs_ux2_scope_policy_workspace.sql",
+      "kind": "vocabulary",
+      "token": "hostel",
+      "streamIRef": "SHERIVS-UX2",
+      "occurrences": 3,
+      "lines": [
+        4,
+        52,
+        221
+      ],
+      "firstSnippet": "--      house, hostel...). Such an item appears only for a person whose active role assignment carries a scope"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100220_sherivs_ux2_scope_policy_workspace.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "SHERIVS-UX2",
+      "occurrences": 7,
+      "lines": [
+        5,
+        7,
+        64,
+        68,
+        137,
+        187,
+        211
+      ],
+      "firstSnippet": "--      set on one of those dimensions, and it is placed right after their primary family's lead card. So a campus head and a whole-school"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100220_sherivs_ux2_scope_policy_workspace.sql",
+      "kind": "vocabulary",
+      "token": "principal",
+      "streamIRef": "SHERIVS-UX2",
+      "occurrences": 2,
+      "lines": [
+        6,
+        129
+      ],
+      "firstSnippet": "--      principal with the same role template get different homes, and so do two shift supervisors."
+    },
+    {
+      "file": "database/supabase/migrations/20261025100220_sherivs_ux2_scope_policy_workspace.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "SHERIVS-UX2",
+      "occurrences": 3,
+      "lines": [
+        34,
+        107,
+        115
+      ],
+      "firstSnippet": "USING (org_id = (SELECT public.get_my_school_id()) OR (SELECT public.can_administer_org(org_id)));"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100220_sherivs_ux2_scope_policy_workspace.sql",
+      "kind": "vocabulary",
+      "token": "lesson",
+      "streamIRef": "SHERIVS-UX2",
+      "occurrences": 1,
+      "lines": [
+        61
+      ],
+      "firstSnippet": "('staff.ai_helper',true,'Teachers can use the AI lesson helper',3),"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100220_sherivs_ux2_scope_policy_workspace.sql",
+      "kind": "vocabulary",
+      "token": "fees",
+      "streamIRef": "SHERIVS-UX2",
+      "occurrences": 1,
+      "lines": [
+        63
+      ],
+      "firstSnippet": "('parents.fees_online',true,'Parents see fees due and can pay in the app',5),"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100220_sherivs_ux2_scope_policy_workspace.sql",
+      "kind": "vocabulary",
+      "token": "student",
+      "streamIRef": "SHERIVS-UX2",
+      "occurrences": 1,
+      "lines": [
+        130
+      ],
+      "firstSnippet": "WHEN 'bursar' THEN 'bursar' WHEN 'teacher' THEN 'teacher' WHEN 'parent' THEN 'parent' WHEN 'student' THEN 'student' ELSE 'support_staff' END];"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100220_sherivs_ux2_scope_policy_workspace.sql",
+      "kind": "vocabulary",
+      "token": "teacher",
+      "streamIRef": "SHERIVS-UX2",
+      "occurrences": 1,
+      "lines": [
+        130
+      ],
+      "firstSnippet": "WHEN 'bursar' THEN 'bursar' WHEN 'teacher' THEN 'teacher' WHEN 'parent' THEN 'parent' WHEN 'student' THEN 'student' ELSE 'support_staff' END];"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100220_sherivs_ux2_scope_policy_workspace.sql",
+      "kind": "vocabulary",
+      "token": "bursar",
+      "streamIRef": "SHERIVS-UX2",
+      "occurrences": 1,
+      "lines": [
+        130
+      ],
+      "firstSnippet": "WHEN 'bursar' THEN 'bursar' WHEN 'teacher' THEN 'teacher' WHEN 'parent' THEN 'parent' WHEN 'student' THEN 'student' ELSE 'support_staff' END];"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100220_sherivs_ux2_scope_policy_workspace.sql",
+      "kind": "vocabulary-literal",
+      "token": "parent",
+      "streamIRef": "SHERIVS-UX2",
+      "occurrences": 1,
+      "lines": [
+        130
+      ],
+      "firstSnippet": "WHEN 'bursar' THEN 'bursar' WHEN 'teacher' THEN 'teacher' WHEN 'parent' THEN 'parent' WHEN 'student' THEN 'student' ELSE 'support_staff' END];"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100220_sherivs_ux2_scope_policy_workspace.sql",
+      "kind": "vocabulary-literal",
+      "token": "staff",
+      "streamIRef": "SHERIVS-UX2",
+      "occurrences": 2,
+      "lines": [
+        132,
+        134
+      ],
+      "firstSnippet": "SELECT coalesce(jsonb_agg(f.family ORDER BY f.priority), '[\"staff\"]') INTO v_fams"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100220_sherivs_ux2_scope_policy_workspace.sql",
+      "kind": "vocabulary",
+      "token": "library",
+      "streamIRef": "SHERIVS-UX2",
+      "occurrences": 1,
+      "lines": [
+        221
+      ],
+      "firstSnippet": "FROM unnest(ARRAY['cbt','wallet','payroll','library','hostel','health','transport']) m"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100220_sherivs_ux2_scope_policy_workspace.sql",
+      "kind": "vocabulary",
+      "token": "payroll",
+      "streamIRef": "SHERIVS-UX2",
+      "occurrences": 1,
+      "lines": [
+        221
+      ],
+      "firstSnippet": "FROM unnest(ARRAY['cbt','wallet','payroll','library','hostel','health','transport']) m"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100230_sherivs_ux3_workspace_live_data.sql",
+      "kind": "vocabulary",
+      "token": "hostel",
+      "streamIRef": "SHERIVS-UX3",
+      "occurrences": 1,
+      "lines": [
+        11
+      ],
+      "firstSnippet": "-- Human labels for scope refs (refs are ids for campus/shift/section/level/class/house/hostel) ---------------"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100230_sherivs_ux3_workspace_live_data.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-UX3",
+      "occurrences": 30,
+      "lines": [
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        38,
+        82,
+        88,
+        91,
+        97,
+        100,
+        105,
+        110,
+        111,
+        116,
+        120,
+        125,
+        129,
+        137,
+        139,
+        145,
+        148,
+        151,
+        155,
+        157,
+        160,
+        164,
+        168,
+        171
+      ],
+      "firstSnippet": "WHEN 'campus'  THEN (SELECT name FROM public.campuses WHERE id::text = x.ref AND school_id = p_org)"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100230_sherivs_ux3_workspace_live_data.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "SHERIVS-UX3",
+      "occurrences": 1,
+      "lines": [
+        34
+      ],
+      "firstSnippet": "-- Classes inside a scope (NULL = no class-type dimension, i.e. whole school as far as RLS allows) -------------"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100230_sherivs_ux3_workspace_live_data.sql",
+      "kind": "vocabulary",
+      "token": "timetable",
+      "streamIRef": "SHERIVS-UX3",
+      "occurrences": 1,
+      "lines": [
+        65
+      ],
+      "firstSnippet": "-- timetable_slots.day_of_week is text: lowercase day names in the app (timetable-grid), ISO numbers tolerated"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100230_sherivs_ux3_workspace_live_data.sql",
+      "kind": "vocabulary",
+      "token": "attendance",
+      "streamIRef": "SHERIVS-UX3",
+      "occurrences": 4,
+      "lines": [
+        84,
+        109,
+        116,
+        136
+      ],
+      "firstSnippet": "AND NOT EXISTS (SELECT 1 FROM public.attendance a WHERE a.class_id = c.id AND a.date = v_today);"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100230_sherivs_ux3_workspace_live_data.sql",
+      "kind": "vocabulary",
+      "token": "lesson",
+      "streamIRef": "SHERIVS-UX3",
+      "occurrences": 2,
+      "lines": [
+        98,
+        102
+      ],
+      "firstSnippet": "v_r := coalesce(v_r, jsonb_build_object('note', 'no lesson notes yet'));"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100230_sherivs_ux3_workspace_live_data.sql",
+      "kind": "vocabulary",
+      "token": "fees",
+      "streamIRef": "SHERIVS-UX3",
+      "occurrences": 3,
+      "lines": [
+        120,
+        124,
+        128
+      ],
+      "firstSnippet": "SELECT coalesce(sum(paid_amount), 0), coalesce(sum(amount), 0) INTO n1, n2 FROM public.fees f WHERE f.school_id = p_org"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100230_sherivs_ux3_workspace_live_data.sql",
+      "kind": "vocabulary",
+      "token": "enrolment",
+      "streamIRef": "SHERIVS-UX3",
+      "occurrences": 1,
+      "lines": [
+        156
+      ],
+      "firstSnippet": "WHEN 'w.enrolment' THEN"
     },
     {
       "file": "database/supabase/migrations/20261024001000_sherivs_100_website_engine.sql",
