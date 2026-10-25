@@ -32,8 +32,14 @@ describe("editor operations", () => {
 
   it("every catalog block can be added, edited, toggled and still validates", () => {
     let d = base();
-    const pid = d.pages[0].id;
-    for (const t of BLOCK_TYPES) {
+    let pid = d.pages[0].id;
+    for (const [i, t] of BLOCK_TYPES.entries()) {
+      if (i === 30) {
+        // pages hold at most 40 sections; v2 blocks go on a second page
+        const np = ed.addPage(d, "More", "en");
+        d = np.doc;
+        pid = np.pageId;
+      }
       const r = ed.addBlock(d, pid, t);
       d = ed.toggleBlock(ed.toggleBlock(r.doc, r.blockId), r.blockId);
       expect(ed.findBlock(d, r.blockId)!.block.hidden).toBeUndefined();

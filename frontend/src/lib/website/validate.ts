@@ -1,5 +1,6 @@
 /** Mirror of SQL public._website_validate (the database is authoritative); used for instant editor feedback. */
 import { BLOCK_MAP } from "./catalog";
+import { PAIRING_KEYS } from "./theme";
 import { LOCALES, type SiteDocument } from "./types";
 
 export const LIMITS = {
@@ -30,6 +31,12 @@ export function validateDocument(doc: unknown): string[] {
     e.push("locales must be en, ha, yo, ig or pcm");
   if (!d.theme || !HEX.test(d.theme.primary) || !HEX.test(d.theme.secondary))
     e.push("theme colours must be #rrggbb");
+  if (d.theme?.pairing && !PAIRING_KEYS.includes(d.theme.pairing)) e.push("unknown font pairing");
+  if (d.theme?.dark && !["auto", "light", "dark"].includes(d.theme.dark))
+    e.push("invalid dark mode");
+  for (const u of [d.theme?.logo, d.theme?.crest, d.seo?.favicon, d.seo?.og_image])
+    if (u && !/^(https:\/\/|\/)[^\s"<>]{0,500}$/.test(u))
+      e.push("image links must start with https:// or /");
   if (!Array.isArray(d.pages) || d.pages.length < 1 || d.pages.length > LIMITS.pages)
     return [...e, `1 to ${LIMITS.pages} pages`];
   const slugs = new Set<string>();

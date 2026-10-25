@@ -27,6 +27,7 @@ export type BlockCategory =
   | "community"
   | "updates"
   | "contact"
+  | "policies"
   | "content";
 export interface BlockDef {
   type: string;
@@ -60,6 +61,14 @@ const intro: FieldDef = {
 const txt = (b: Block, k: string, l: Locale) => tx(b.props[k], l).length > 0;
 const list = (b: Block, k: string) => (Array.isArray(b.props[k]) ? (b.props[k] as unknown[]) : []);
 const n = (a: unknown[] | null | undefined) => (Array.isArray(a) ? a.length : 0);
+/** Vacancies still open today (no closing date, or closing today or later; UTC calendar day). */
+export function openVacancies(b: Block, l: Locale, today = new Date().toISOString().slice(0, 10)) {
+  return list(b, "items").filter((x) => {
+    const v = x as Record<string, unknown>;
+    const closes = String(v.closes ?? "");
+    return tx(v.title, l).length > 0 && (!/^\d{4}-\d{2}-\d{2}$/.test(closes) || closes >= today);
+  });
+}
 
 export const BLOCKS: BlockDef[] = [
   {
@@ -67,7 +76,7 @@ export const BLOCKS: BlockDef[] = [
     label: "Hero",
     category: "identity",
     dataSource: "school",
-    variants: ["centered", "split", "minimal"],
+    variants: ["centered", "split", "minimal", "banner", "crest"],
     description: "School name, motto or tagline, a photo and the main call to action.",
     fields: [
       heading,
@@ -83,7 +92,7 @@ export const BLOCKS: BlockDef[] = [
     label: "About",
     category: "identity",
     dataSource: "school",
-    variants: ["prose", "pillars"],
+    variants: ["prose", "pillars", "split"],
     description:
       "Who you are: story, mission, vision and motto from your school profile, plus your own text.",
     fields: [
@@ -123,7 +132,7 @@ export const BLOCKS: BlockDef[] = [
     label: "At a glance",
     category: "identity",
     dataSource: "stats",
-    variants: ["band"],
+    variants: ["band", "cards"],
     description: "Live counts: students, teachers, programmes, campuses, year founded.",
     fields: [heading],
     hasContent: (_b, d) =>
@@ -140,7 +149,7 @@ export const BLOCKS: BlockDef[] = [
     label: "Schools & sections",
     category: "academics",
     dataSource: "school_sections",
-    variants: ["cards", "list"],
+    variants: ["cards", "list", "tiles"],
     description:
       "Nursery, primary, JSS, SSS, technical: live from your school structure, with day/boarding and gender.",
     fields: [heading, intro],
@@ -229,7 +238,7 @@ export const BLOCKS: BlockDef[] = [
     label: "Facilities",
     category: "campus_life",
     dataSource: "school_facilities",
-    variants: ["grid", "list"],
+    variants: ["grid", "list", "feature"],
     description: "Labs, library, sports, ICT and more: published facilities.",
     fields: [heading, intro],
     hasContent: (_b, d) => n(d.facilities) > 0,
@@ -284,7 +293,7 @@ export const BLOCKS: BlockDef[] = [
     label: "Gallery",
     category: "campus_life",
     dataSource: "school_gallery",
-    variants: ["grid", "strip"],
+    variants: ["grid", "strip", "mosaic"],
     description: "Published photos (lazy-loaded for slow networks).",
     fields: [heading, { key: "limit", label: "How many", type: "number" }],
     hasContent: (_b, d) => n(d.gallery) > 0,
@@ -376,7 +385,7 @@ export const BLOCKS: BlockDef[] = [
     label: "FAQs",
     category: "contact",
     dataSource: "faqs",
-    variants: ["accordion"],
+    variants: ["accordion", "columns"],
     description: "Published frequently asked questions.",
     fields: [heading],
     hasContent: (_b, d) => n(d.faqs) > 0,
@@ -501,6 +510,215 @@ export const BLOCKS: BlockDef[] = [
     hasContent: (b) =>
       typeof b.props.url === "string" &&
       /^https:\/\/(www\.)?(youtube\.com|youtu\.be|vimeo\.com)\//.test(b.props.url),
+  },
+  /* ---------- v2 content types (SHERIVS-101) ---------- */
+  {
+    type: "blog",
+    label: "Blog & news posts",
+    category: "updates",
+    dataSource: "website_posts",
+    variants: ["featured", "grid", "list"],
+    description:
+      "Posts written in Website > Posts: author, date, category, cover image. Scheduled posts appear on their date.",
+    fields: [
+      heading,
+      intro,
+      { key: "limit", label: "How many", type: "number" },
+      { key: "category", label: "Only this category (optional)", type: "text", max: 40 },
+    ],
+    hasContent: (b, d) =>
+      (d.posts ?? []).some(
+        (p) =>
+          !b.props.category ||
+          (p.category ?? "").toLowerCase() === String(b.props.category).toLowerCase(),
+      ),
+  },
+  {
+    type: "policies",
+    label: "Policies",
+    category: "policies",
+    dataSource: null,
+    variants: ["accordion", "cards"],
+    description:
+      "Admissions, anti-bullying, safeguarding, privacy (NDPA), fees & refund, uniform, ICT and other policies, each with an optional PDF.",
+    fields: [
+      heading,
+      intro,
+      {
+        key: "items",
+        label: "Policies",
+        type: "list",
+        max: 30,
+        item: [
+          { key: "title", label: "Title", type: "text", localized: true, max: 120 },
+          {
+            key: "kind",
+            label: "Type",
+            type: "select",
+            options: [
+              "admissions",
+              "anti_bullying",
+              "safeguarding",
+              "privacy",
+              "fees_refund",
+              "uniform",
+              "ict",
+              "health",
+              "assessment",
+              "attendance",
+              "complaints",
+              "other",
+            ],
+          },
+          { key: "summary", label: "Summary", type: "textarea", localized: true, max: 600 },
+          { key: "body", label: "Full text", type: "richtext", localized: true, max: 20000 },
+          { key: "file", label: "PDF link", type: "url" },
+          { key: "reviewed", label: "Last reviewed (e.g. September 2026)", type: "text", max: 40 },
+        ],
+      },
+    ],
+    hasContent: (b, _d, l) =>
+      list(b, "items").some((x) => tx((x as Record<string, unknown>).title, l).length > 0),
+  },
+  {
+    type: "rules",
+    label: "School rules & code of conduct",
+    category: "policies",
+    dataSource: null,
+    variants: ["grouped", "numbered"],
+    description:
+      "Rules grouped by theme (punctuality, uniform, conduct, devices, hostel), one rule per line.",
+    fields: [
+      heading,
+      intro,
+      {
+        key: "groups",
+        label: "Groups",
+        type: "list",
+        max: 20,
+        item: [
+          { key: "title", label: "Group", type: "text", localized: true, max: 80 },
+          {
+            key: "rules",
+            label: "Rules (one per line)",
+            type: "textarea",
+            localized: true,
+            max: 4000,
+          },
+        ],
+      },
+    ],
+    hasContent: (b, _d, l) =>
+      list(b, "groups").some((g) => tx((g as Record<string, unknown>).rules, l).trim().length > 0),
+  },
+  {
+    type: "calendar",
+    label: "Term dates & calendar",
+    category: "updates",
+    dataSource: null,
+    variants: ["table", "timeline"],
+    description: "Session and term dates, mid-term breaks, exams and holidays.",
+    fields: [
+      heading,
+      intro,
+      {
+        key: "items",
+        label: "Dates",
+        type: "list",
+        max: 40,
+        item: [
+          { key: "label", label: "What", type: "text", localized: true, max: 120 },
+          { key: "starts", label: "Starts (YYYY-MM-DD)", type: "text", max: 10 },
+          { key: "ends", label: "Ends (YYYY-MM-DD, optional)", type: "text", max: 10 },
+          { key: "note", label: "Note", type: "text", localized: true, max: 200 },
+        ],
+      },
+    ],
+    hasContent: (b) =>
+      list(b, "items").some((x) =>
+        /^\d{4}-\d{2}-\d{2}$/.test(String((x as Record<string, unknown>).starts ?? "")),
+      ),
+  },
+  {
+    type: "downloads",
+    label: "Downloads & forms",
+    category: "content",
+    dataSource: null,
+    variants: ["list", "grid"],
+    description: "Admission forms, prospectus, booklists, handbooks and newsletters (PDF links).",
+    fields: [
+      heading,
+      {
+        key: "items",
+        label: "Files",
+        type: "list",
+        max: 60,
+        item: [
+          { key: "label", label: "Name", type: "text", localized: true, max: 120 },
+          { key: "href", label: "File link", type: "url" },
+          { key: "group", label: "Group (e.g. Admissions, Booklists)", type: "text", max: 40 },
+          { key: "detail", label: "Detail (e.g. PDF, 2 pages)", type: "text", max: 60 },
+        ],
+      },
+    ],
+    hasContent: (b) =>
+      list(b, "items").some(
+        (x) =>
+          typeof (x as Record<string, unknown>).href === "string" &&
+          String((x as Record<string, unknown>).href).length > 0,
+      ),
+  },
+  {
+    type: "careers",
+    label: "Careers & vacancies",
+    category: "community",
+    dataSource: null,
+    variants: ["list", "cards"],
+    description: "Open teaching and staff positions. Vacancies disappear after their closing date.",
+    fields: [
+      heading,
+      intro,
+      {
+        key: "items",
+        label: "Vacancies",
+        type: "list",
+        max: 30,
+        item: [
+          { key: "title", label: "Role", type: "text", localized: true, max: 120 },
+          { key: "type", label: "Type (e.g. Full-time)", type: "text", max: 40 },
+          { key: "closes", label: "Closing date (YYYY-MM-DD)", type: "text", max: 10 },
+          { key: "summary", label: "Summary", type: "textarea", localized: true, max: 1200 },
+          { key: "apply_href", label: "How to apply (link or mailto:)", type: "url" },
+        ],
+      },
+    ],
+    hasContent: (b, _d, l) => openVacancies(b, l).length > 0,
+  },
+  {
+    type: "pta",
+    label: "Parents (PTA)",
+    category: "community",
+    dataSource: null,
+    variants: ["panel", "split"],
+    description:
+      "Parent-Teacher Association: what it does, executives, meetings and how to get involved.",
+    fields: [
+      heading,
+      intro,
+      { key: "meetings", label: "Meetings", type: "textarea", localized: true, max: 600 },
+      {
+        key: "executives",
+        label: "Executives",
+        type: "list",
+        max: 20,
+        item: [
+          { key: "name", label: "Name", type: "text", max: 80 },
+          { key: "role", label: "Role", type: "text", localized: true, max: 80 },
+        ],
+      },
+      { key: "contact", label: "PTA contact (email or link)", type: "url" },
+    ],
+    hasContent: (b, _d, l) => txt(b, "intro", l) || list(b, "executives").length > 0,
   },
 ];
 

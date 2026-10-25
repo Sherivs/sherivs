@@ -9,6 +9,21 @@ export interface Theme {
   font: "system" | "serif" | "rounded";
   radius: "square" | "soft" | "round";
   logo?: string;
+  /** v2: curated self-hosted font pairing (lib/website/theme.ts PAIRINGS). */
+  pairing?: "classic" | "scholarly" | "modern" | "friendly" | "civic" | "heritage";
+  /** v2: dark scheme follows the visitor's device ("auto"), or is off/forced. */
+  dark?: "auto" | "light" | "dark";
+  /** v2: small "Website by Sherivs" credit in the footer; the school can hide it. */
+  credit?: boolean;
+  /** v2: crest/emblem image shown in the hero "crest" style and footer (falls back to the logo). */
+  crest?: string;
+}
+/** v2: per-site head metadata. */
+export interface SiteSeo {
+  favicon?: string;
+  og_image?: string;
+  description?: Localized;
+  title_suffix?: string;
 }
 
 export interface Block {
@@ -37,6 +52,7 @@ export interface SiteDocument {
   locales: Locale[];
   theme: Theme;
   pages: Page[];
+  seo?: SiteSeo;
 }
 
 /** Public data bundle returned by website_public / website_facts (only public columns). */
@@ -131,6 +147,24 @@ export interface SiteData {
     campuses?: number | null;
     founded_year?: number | null;
   } | null;
+  /** v2: published blog posts (newest first, no body). */
+  posts?: PostSummary[];
+}
+
+/** v2 blog post (website_posts). Localized title/excerpt/body; body is the safe rich-text subset. */
+export interface PostSummary {
+  id: string;
+  slug: string;
+  title: Localized;
+  excerpt?: Localized | null;
+  category?: string | null;
+  cover_url?: string | null;
+  author_name?: string | null;
+  published_at: string;
+}
+export interface Post extends PostSummary {
+  body?: Localized | null;
+  seo?: { title?: string | null; description?: string | null } | null;
 }
 
 export interface PublicSite {
@@ -139,4 +173,6 @@ export interface PublicSite {
   canonical_host: string | null;
   document: SiteDocument | null;
   data: SiteData;
+  /** v2: present on website_public_post responses. */
+  post?: Post | null;
 }

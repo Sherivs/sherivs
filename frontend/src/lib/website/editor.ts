@@ -217,6 +217,7 @@ export function setProp(
 export function setTheme(doc: SiteDocument, patch: Partial<Theme>): SiteDocument {
   const theme = { ...doc.theme, ...patch };
   if (!theme.logo) delete theme.logo;
+  if (!theme.crest) delete theme.crest;
   return { ...doc, theme };
 }
 /** First locale is the default; at least one stays. */
@@ -234,3 +235,15 @@ export function findBlock(
   return null;
 }
 export const cloneDoc = clone;
+
+/** v2: per-site head metadata (favicon, OG image, description). Empty values are removed. */
+export function setSeo(
+  doc: SiteDocument,
+  patch: Partial<NonNullable<SiteDocument["seo"]>>,
+): SiteDocument {
+  const seo: Record<string, unknown> = { ...(doc.seo ?? {}), ...patch };
+  for (const k of Object.keys(seo)) if (seo[k] === "" || seo[k] == null) delete seo[k];
+  const out = { ...doc, seo: seo as SiteDocument["seo"] };
+  if (!Object.keys(seo).length) delete out.seo;
+  return out;
+}

@@ -6,6 +6,14 @@
 import { BLOCK_MAP } from "./catalog";
 import { UI_STRINGS } from "./i18n";
 import { themeFromBrand } from "./theme";
+import {
+  seedCalendar,
+  seedCareers,
+  seedDownloads,
+  seedPolicies,
+  seedPta,
+  seedRules,
+} from "./seed-content";
 import type { Block, Locale, Localized, Page, Section, SiteData, SiteDocument } from "./types";
 
 export type OrgKind =
@@ -91,6 +99,22 @@ const PAGE_TITLES: Record<string, Record<Locale, string>> = {
     pcm: "Old students & giving",
   },
   contact: { en: "Contact", ha: "Tuntuɓa", yo: "Ìkànsí", ig: "Kpọtụrụ", pcm: "Contact" },
+  policies: {
+    en: "Rules & policies",
+    ha: "Dokoki da manufofi",
+    yo: "Òfin àti ìlànà",
+    ig: "Iwu na usoro",
+    pcm: "Rules & policies",
+  },
+  parents: { en: "Parents", ha: "Iyaye", yo: "Òbí", ig: "Ndị nne na nna", pcm: "Parents" },
+  resources: {
+    en: "Resources",
+    ha: "Albarkatu",
+    yo: "Àwọn ohun èlò",
+    ig: "Akụrụngwa",
+    pcm: "Resources",
+  },
+  careers: { en: "Careers", ha: "Ayyuka", yo: "Iṣẹ́", ig: "Ọrụ", pcm: "Work with us" },
 };
 const KIND_LABEL: Record<OrgKind, Localized> = {
   nursery_primary: {
@@ -274,6 +298,9 @@ export function generateSite(f: Facts): SiteDocument {
   let bg = 0;
 
   const ok = (b: Block) => BLOCK_MAP[b.type]?.hasContent(b, d, locales[0]) ?? false;
+  // Blog blocks are kept before the first post (posts are written after onboarding; the block stays hidden
+  // until one is published), but only on a page that has other real content, so no empty page is created.
+  const KEEP_EMPTY = new Set(["blog"]);
   function page(
     slug: string,
     titleKey: string,
@@ -281,14 +308,15 @@ export function generateSite(f: Facts): SiteDocument {
     opts: { nav?: boolean; description?: Localized } = {},
   ) {
     const sections: Section[] = [];
+    const real = specs.some((spec, i) => ok({ id: `${slug}-${spec.type}-${i}`, ...spec }));
     specs.forEach((spec, i) => {
       const b: Block = { id: `${slug}-${spec.type}-${i}`, ...spec };
-      if (!ok(b)) return;
+      if (!ok(b) && !(real && KEEP_EMPTY.has(b.type))) return;
       const background =
         b.type === "stats" || b.type === "cta" ? "brand" : bg++ % 2 ? "muted" : "default";
       sections.push({ id: `${slug}-s${i}`, background, layout: "stack", blocks: [b] });
     });
-    if (sections.length)
+    if (real)
       pages.push({
         id: `p-${slug}`,
         slug,
@@ -304,7 +332,13 @@ export function generateSite(f: Facts): SiteDocument {
   const contactable = !!(d.school.phone || d.school.email || d.school.address);
   const hero: Omit<Block, "id"> = {
     type: "hero",
-    variant: d.gallery?.length ? "split" : "centered",
+    variant: d.gallery?.length
+      ? kind === "university" || kind === "polytechnic" || kind === "government"
+        ? "banner"
+        : "split"
+      : d.school.logo_url
+        ? "crest"
+        : "centered",
     props: {
       heading: own(d.school.name),
       tagline: d.school.motto ? own(d.school.motto as string) : summary,
@@ -363,6 +397,16 @@ export function generateSite(f: Facts): SiteDocument {
         }
       : null;
 
+  const residency = new Set((d.sections ?? []).map((x) => x.residency));
+  const boardingSchool =
+    residency.has("boarding") || residency.has("both") || obj(ob.organisation).boarding === true;
+  const rules = seedRules(kind, own, boardingSchool);
+  const policies = seedPolicies(d, kind, own, ob);
+  const calendar = seedCalendar(ob, own);
+  const pta = seedPta(ob, own);
+  const downloads = seedDownloads(ob, own);
+  const careers = seedCareers(ob, own);
+
   const academicsKey =
     kind === "university" || kind === "polytechnic"
       ? "faculties"
@@ -399,6 +443,14 @@ export function generateSite(f: Facts): SiteDocument {
       { type: "map", props: {} },
       { type: "faqs", props: {} },
     ]);
+    page(
+      "policies",
+      "policies",
+      [{ type: "policies", variant: "accordion", props: { items: policies } }],
+      {
+        nav: false,
+      },
+    );
   } else {
     page("home", "home", [
       hero,
@@ -407,6 +459,7 @@ export function generateSite(f: Facts): SiteDocument {
         ? { type: "programmes", variant: "cards", props: {} }
         : { type: "sections_offered", variant: "cards", props: {} },
       { type: "admissions", variant: "banner", props: {} },
+      { type: "blog", variant: "featured", props: { limit: 3 } },
       { type: "news", variant: "cards", props: { limit: 3 } },
       { type: "events", variant: "list", props: { limit: 4 } },
       { type: "testimonials", variant: "quotes", props: {} },
@@ -440,9 +493,30 @@ export function generateSite(f: Facts): SiteDocument {
       { type: "gallery", variant: "grid", props: { limit: 12 } },
     ]);
     page("news", "news", [
+      { type: "blog", variant: "grid", props: { limit: 12 } },
       { type: "news", variant: "list", props: { limit: 12 } },
       { type: "events", variant: "cards", props: { limit: 12 } },
+      { type: "calendar", variant: "table", props: { items: calendar } },
     ]);
+    const tert = kind === "university" || kind === "polytechnic";
+    page(tert ? "resources" : "parents", tert ? "resources" : "parents", [
+      { type: "pta", variant: "split", props: pta },
+      { type: "calendar", variant: "timeline", props: { items: calendar } },
+      { type: "downloads", variant: "list", props: { items: downloads } },
+      { type: "faqs", variant: "columns", props: {} },
+    ]);
+    page(
+      "policies",
+      "policies",
+      [
+        { type: "rules", variant: "grouped", props: { groups: rules } },
+        { type: "policies", variant: "accordion", props: { items: policies } },
+      ],
+      { nav: false },
+    );
+    page("careers", "careers", [{ type: "careers", variant: "list", props: { items: careers } }], {
+      nav: false,
+    });
     page("community", "community", [
       { type: "alumni", props: {} },
       { type: "donations", props: {} },
@@ -471,5 +545,5 @@ export function generateSite(f: Facts): SiteDocument {
       ],
     });
 
-  return { schema: 1, locales, theme: themeFromBrand(d.school), pages };
+  return { schema: 1, locales, theme: themeFromBrand(d.school, kind), pages };
 }

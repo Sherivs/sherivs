@@ -37,13 +37,16 @@ function publicClient() {
 
 export async function fetchPublicSite(
   target: Exclude<SiteTarget, null>,
+  post?: string | null,
 ): Promise<PublicSite | null> {
-  const key = JSON.stringify(target);
+  const key = JSON.stringify([target, post ?? null]);
   const hit = cache.get(key);
   if (hit && performance.now() - hit.at < TTL_MS) return hit.value;
   const sb = publicClient();
   if (!sb) return null;
-  const { data, error } = await sb.rpc("website_public", target);
+  const { data, error } = post
+    ? await sb.rpc("website_public_post", { p_host: null, p_slug: null, ...target, p_post: post })
+    : await sb.rpc("website_public", target);
   if (error) throw new Error("website unavailable");
   const value = (data ?? null) as PublicSite | null;
   if (cache.size >= MAX_ENTRIES) cache.delete(cache.keys().next().value as string);
@@ -53,8 +56,11 @@ export async function fetchPublicSite(
 
 export const loadPublicSite = createServerFn({ method: "GET" })
   .validator((i: unknown) => {
-    const v = (i ?? {}) as { school?: unknown };
-    return { school: typeof v.school === "string" ? v.school.slice(0, 63) : null };
+    const v = (i ?? {}) as { school?: unknown; post?: unknown };
+    return {
+      school: typeof v.school === "string" ? v.school.slice(0, 63) : null,
+      post: typeof v.post === "string" && /^[a-z0-9-]{1,80}$/.test(v.post) ? v.post : null,
+    };
   })
   .handler(async ({ data }) => {
     let host = "";
@@ -69,7 +75,7 @@ export const loadPublicSite = createServerFn({ method: "GET" })
     const { target, preview } = siteTarget(host, data.school);
     if (!target)
       return { siteJson: null as string | null, preview: null as string | null, tenant: false };
-    const site = await fetchPublicSite(target);
+    const site = await fetchPublicSite(target, data.post);
     try {
       setResponseHeader(
         "Cache-Control",
@@ -86,8 +92,8 @@ export const loadPublicSite = createServerFn({ method: "GET" })
   });
 
 /** Typed loader used by the public routes. */
-export async function getPublicSite(school: string | null | undefined) {
-  const r = await loadPublicSite({ data: { school: school ?? null } });
+export async function getPublicSite(school: string | null | undefined, post?: string | null) {
+  const r = await loadPublicSite({ data: { school: school ?? null, post: post ?? null } });
   return {
     site: r.siteJson ? (JSON.parse(r.siteJson) as PublicSite) : null,
     preview: r.preview,

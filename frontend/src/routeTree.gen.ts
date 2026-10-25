@@ -28,8 +28,10 @@ import { Route as PlatformRouteImport } from './routes/platform'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
+import { Route as RssDotxmlRouteImport } from './routes/rss[.]xml'
 import { Route as RulesRouteImport } from './routes/rules'
 import { Route as ScholarFoundationLoopRouteImport } from './routes/scholar-foundation-loop'
+import { Route as SiteIconDotsvgRouteImport } from './routes/site-icon[.]svg'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as UxLabRouteImport } from './routes/ux-lab'
 import { Route as siteAboutRouteImport } from './routes/(site)/about'
@@ -78,6 +80,7 @@ import { Route as GroupIndexRouteImport } from './routes/group/index'
 import { Route as NewsIdRouteImport } from './routes/news.$id'
 import { Route as PagesSlugRouteImport } from './routes/pages.$slug'
 import { Route as PlatformOrgRouteImport } from './routes/platform.org'
+import { Route as PostsPostRouteImport } from './routes/posts.$post'
 import { Route as RealityClassRouteImport } from './routes/reality.$class'
 import { Route as AuthenticatedAdminAcademicStandingRouteImport } from './routes/_authenticated/admin/academic-standing'
 import { Route as AuthenticatedAdminAdmissionsRouteImport } from './routes/_authenticated/admin/admissions'
@@ -332,6 +335,11 @@ const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
   path: '/robots.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RssDotxmlRoute = RssDotxmlRouteImport.update({
+  id: '/rss.xml',
+  path: '/rss.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RulesRoute = RulesRouteImport.update({
   id: '/rules',
   path: '/rules',
@@ -340,6 +348,11 @@ const RulesRoute = RulesRouteImport.update({
 const ScholarFoundationLoopRoute = ScholarFoundationLoopRouteImport.update({
   id: '/scholar-foundation-loop',
   path: '/scholar-foundation-loop',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SiteIconDotsvgRoute = SiteIconDotsvgRouteImport.update({
+  id: '/site-icon.svg',
+  path: '/site-icon.svg',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -591,6 +604,11 @@ const PlatformOrgRoute = PlatformOrgRouteImport.update({
   id: '/org',
   path: '/org',
   getParentRoute: () => PlatformRoute,
+} as any)
+const PostsPostRoute = PostsPostRouteImport.update({
+  id: '/posts/$post',
+  path: '/posts/$post',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RealityClassRoute = RealityClassRouteImport.update({
   id: '/reality/$class',
@@ -1554,8 +1572,10 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/rss.xml': typeof RssDotxmlRoute
   '/rules': typeof RulesRoute
   '/scholar-foundation-loop': typeof ScholarFoundationLoopRoute
+  '/site-icon.svg': typeof SiteIconDotsvgRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/ux-lab': typeof UxLabRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
@@ -1602,6 +1622,7 @@ export interface FileRoutesByFullPath {
   '/news/$id': typeof NewsIdRoute
   '/pages/$slug': typeof PagesSlugRoute
   '/platform/org': typeof PlatformOrgRoute
+  '/posts/$post': typeof PostsPostRoute
   '/reality/$class': typeof RealityClassRoute
   '/gov/': typeof GovIndexRoute
   '/group/': typeof GroupIndexRoute
@@ -1782,8 +1803,10 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/rss.xml': typeof RssDotxmlRoute
   '/rules': typeof RulesRoute
   '/scholar-foundation-loop': typeof ScholarFoundationLoopRoute
+  '/site-icon.svg': typeof SiteIconDotsvgRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/ux-lab': typeof UxLabRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
@@ -1829,6 +1852,7 @@ export interface FileRoutesByTo {
   '/news/$id': typeof NewsIdRoute
   '/pages/$slug': typeof PagesSlugRoute
   '/platform/org': typeof PlatformOrgRoute
+  '/posts/$post': typeof PostsPostRoute
   '/reality/$class': typeof RealityClassRoute
   '/gov': typeof GovIndexRoute
   '/group': typeof GroupIndexRoute
@@ -2013,8 +2037,10 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/rss.xml': typeof RssDotxmlRoute
   '/rules': typeof RulesRoute
   '/scholar-foundation-loop': typeof ScholarFoundationLoopRoute
+  '/site-icon.svg': typeof SiteIconDotsvgRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/ux-lab': typeof UxLabRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
@@ -2061,6 +2087,7 @@ export interface FileRoutesById {
   '/news/$id': typeof NewsIdRoute
   '/pages/$slug': typeof PagesSlugRoute
   '/platform/org': typeof PlatformOrgRoute
+  '/posts/$post': typeof PostsPostRoute
   '/reality/$class': typeof RealityClassRoute
   '/gov/': typeof GovIndexRoute
   '/group/': typeof GroupIndexRoute
@@ -2244,8 +2271,10 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/robots.txt'
+    | '/rss.xml'
     | '/rules'
     | '/scholar-foundation-loop'
+    | '/site-icon.svg'
     | '/sitemap.xml'
     | '/ux-lab'
     | '/admin'
@@ -2292,6 +2321,7 @@ export interface FileRouteTypes {
     | '/news/$id'
     | '/pages/$slug'
     | '/platform/org'
+    | '/posts/$post'
     | '/reality/$class'
     | '/gov/'
     | '/group/'
@@ -2472,8 +2502,10 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/robots.txt'
+    | '/rss.xml'
     | '/rules'
     | '/scholar-foundation-loop'
+    | '/site-icon.svg'
     | '/sitemap.xml'
     | '/ux-lab'
     | '/admin'
@@ -2519,6 +2551,7 @@ export interface FileRouteTypes {
     | '/news/$id'
     | '/pages/$slug'
     | '/platform/org'
+    | '/posts/$post'
     | '/reality/$class'
     | '/gov'
     | '/group'
@@ -2702,8 +2735,10 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/robots.txt'
+    | '/rss.xml'
     | '/rules'
     | '/scholar-foundation-loop'
+    | '/site-icon.svg'
     | '/sitemap.xml'
     | '/ux-lab'
     | '/_authenticated/admin'
@@ -2750,6 +2785,7 @@ export interface FileRouteTypes {
     | '/news/$id'
     | '/pages/$slug'
     | '/platform/org'
+    | '/posts/$post'
     | '/reality/$class'
     | '/gov/'
     | '/group/'
@@ -2934,13 +2970,16 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
+  RssDotxmlRoute: typeof RssDotxmlRoute
   RulesRoute: typeof RulesRoute
   ScholarFoundationLoopRoute: typeof ScholarFoundationLoopRoute
+  SiteIconDotsvgRoute: typeof SiteIconDotsvgRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   UxLabRoute: typeof UxLabRoute
   EventsIdRoute: typeof EventsIdRoute
   NewsIdRoute: typeof NewsIdRoute
   PagesSlugRoute: typeof PagesSlugRoute
+  PostsPostRoute: typeof PostsPostRoute
   RealityClassRoute: typeof RealityClassRoute
   GroupIndexRoute: typeof GroupIndexRoute
   ApiPublicAuditPasswordResetRoute: typeof ApiPublicAuditPasswordResetRoute
@@ -3087,6 +3126,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RobotsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/rss.xml': {
+      id: '/rss.xml'
+      path: '/rss.xml'
+      fullPath: '/rss.xml'
+      preLoaderRoute: typeof RssDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rules': {
       id: '/rules'
       path: '/rules'
@@ -3099,6 +3145,13 @@ declare module '@tanstack/react-router' {
       path: '/scholar-foundation-loop'
       fullPath: '/scholar-foundation-loop'
       preLoaderRoute: typeof ScholarFoundationLoopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/site-icon.svg': {
+      id: '/site-icon.svg'
+      path: '/site-icon.svg'
+      fullPath: '/site-icon.svg'
+      preLoaderRoute: typeof SiteIconDotsvgRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -3436,6 +3489,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/platform/org'
       preLoaderRoute: typeof PlatformOrgRouteImport
       parentRoute: typeof PlatformRoute
+    }
+    '/posts/$post': {
+      id: '/posts/$post'
+      path: '/posts/$post'
+      fullPath: '/posts/$post'
+      preLoaderRoute: typeof PostsPostRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/reality/$class': {
       id: '/reality/$class'
@@ -5160,13 +5220,16 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
+  RssDotxmlRoute: RssDotxmlRoute,
   RulesRoute: RulesRoute,
   ScholarFoundationLoopRoute: ScholarFoundationLoopRoute,
+  SiteIconDotsvgRoute: SiteIconDotsvgRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   UxLabRoute: UxLabRoute,
   EventsIdRoute: EventsIdRoute,
   NewsIdRoute: NewsIdRoute,
   PagesSlugRoute: PagesSlugRoute,
+  PostsPostRoute: PostsPostRoute,
   RealityClassRoute: RealityClassRoute,
   GroupIndexRoute: GroupIndexRoute,
   ApiPublicAuditPasswordResetRoute: ApiPublicAuditPasswordResetRoute,

@@ -1,7 +1,7 @@
 // SHERIVS-100 website engine sim: RLS + RPC scenarios incl. tenant isolation. Local only.
 // Usage: PGPORT=54329 node sim/website.mjs
 import pg from "pg"; import fs from "node:fs"; import { randomUUID as uuid } from "node:crypto";
-const c = new pg.Client({ host: "127.0.0.1", port: +(process.env.PGPORT || 54329), user: "postgres" });
+const c = new pg.Client({ host: "127.0.0.1", port: +(process.env.PGPORT || 54329), user: "postgres", database: process.env.PGDATABASE || "postgres" });
 await c.connect();
 const results = [];
 async function check(name, fn) { await c.query("BEGIN"); try { await fn(); results.push({ name, ok: true }); } catch (e) { results.push({ name, ok: false, err: String(e.message).slice(0, 300) }); } finally { await c.query("ROLLBACK"); } }
@@ -119,7 +119,7 @@ await check("publish needs a draft and the catalog; website.manage permission is
   const w = await world(); await as(w.A.admin);
   assert(await err("select public.website_publish($1,null)", [w.A.sid]) === "22023", "publish without draft");
   await owner(); const n = (await c.query("select count(*)::int n from role_template_permissions where permission_code='website.manage'")).rows[0].n;
-  assert(n === 3, `grants ${n}`);
+  assert(n >= 3, `grants ${n}`); // 3 in v1; SHERIVS-101 adds the PR role (4)
   await anon(); assert((await c.query("select count(*)::int n from website_block_types")).rows[0].n >= 25, "catalog not public");
 });
 

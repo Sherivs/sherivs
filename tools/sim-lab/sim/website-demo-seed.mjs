@@ -9,6 +9,7 @@ const c = new pg.Client({
   host: "127.0.0.1",
   port: +(process.env.PGPORT || 54329),
   user: "postgres",
+  database: process.env.PGDATABASE || "postgres",
 });
 await c.connect();
 const q = (s, p) => c.query(s, p);
