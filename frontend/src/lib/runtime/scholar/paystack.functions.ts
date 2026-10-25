@@ -66,7 +66,11 @@ export const initFeePayment = createServerFn({ method: "POST" })
       throw new Error("Not allowed to pay this invoice");
     }
 
-    const outstanding = Number(fee.amount) - Number(fee.paid_amount ?? 0);
+    // SHERIVS-A05b: charge what is owed after approved discounts, scholarships and waivers
+    // (the same server function settlement checks against), never the gross row amount.
+    const { data: due, error: dueErr } = await supabase.rpc("fee_amount_due" as never, { p_fee: fee.id } as never);
+    if (dueErr) throw new Error(dueErr.message);
+    const outstanding = Number(due ?? 0);
     if (outstanding <= 0) throw new Error("Nothing to pay on this invoice");
 
     const reference = `uos_${fee.id.replace(/-/g, "").slice(0, 16)}_${timeAuthority.now().atMs}`;
