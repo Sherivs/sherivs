@@ -1,5 +1,6 @@
 @import "tailwindcss" source(none);
 @import "tw-animate-css";
+@import "./components/sds/sds.css";
 
 @source "../src";
 

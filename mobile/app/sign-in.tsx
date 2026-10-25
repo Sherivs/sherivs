@@ -24,7 +24,7 @@ export default function SignInScreen() {
     setBusy(true);
     try {
       await signInWithPassword(client, email.trim(), password);
-      router.replace("/(app)");
+      router.replace("/");
     } catch (cause) {
       setError(cause instanceof ApiError ? cause : new ApiError("unknown", "sign-in failed"));
     } finally {

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
+import { ScopeBanner, useScopeFilter } from "@/components/sds/scope-filter";
 import { PortalPage, EmptyCard } from "@/components/portal-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +47,7 @@ function GradebookPage() {
   const { profile, school } = useApp();
   const qc = useQueryClient();
   const [classId, setClassId] = useState<string>("");
+  const scope = useScopeFilter();
   const [subject, setSubject] = useState<string>("");
   const [term, setTerm] = useState<string>("1st");
   const [year, setYear] = useState<string>(() => {
@@ -198,6 +200,7 @@ function GradebookPage() {
         </Button>
       }
     >
+      <ScopeBanner scope={scope} />
       <div className="mb-2 flex flex-wrap gap-2 text-xs">
         <Link
           to="/teacher/grades"
@@ -215,7 +218,7 @@ function GradebookPage() {
             onChange={(e) => setClassId(e.target.value)}
           >
             <option value="">Select class…</option>
-            {(classes.data ?? []).map((c) => (
+            {scope.filterClasses(classes.data).map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
               </option>
