@@ -1,0 +1,104 @@
+[
+ {
+  "area": "split",
+  "name": "Amount charged is fee_amount_due; Growth share ₦3,000 to Sherivs; bearer = main account; school subaccount",
+  "pass": true,
+  "detail": "{\"due1\":60000,\"term\":\"first\",\"split\":true,\"bearer\":\"account\",\"school_id\":\"5f6ca13c-ed03-4ca1-ad78-088d6aa75a88\",\"share_kobo\":300000,\"student_id\":\"000673a1-9b63-4a7b-a761-f09f91cd4cef\",\"amount_kobo\":6000000,\"academic_year\":\"2031/2032\",\"subaccount_code\":\"ACCT_simschool1\"}"
+ },
+ {
+  "area": "split",
+  "name": "School receives its fee minus the platform fee, with no Paystack deduction (Sherivs bears it)",
+  "pass": true,
+  "detail": "school gets 57000"
+ },
+ {
+  "area": "once",
+  "name": "A second checkout in the same term carries no share while the first holds it",
+  "pass": true,
+  "detail": "{\"term\":\"first\",\"split\":true,\"bearer\":\"account\",\"school_id\":\"5f6ca13c-ed03-4ca1-ad78-088d6aa75a88\",\"share_kobo\":0,\"student_id\":\"000673a1-9b63-4a7b-a761-f09f91cd4cef\",\"amount_kobo\":1800000,\"academic_year\":\"2031/2032\",\"subaccount_code\":\"ACCT_simschool1\"}"
+ },
+ {
+  "area": "once",
+  "name": "After settlement the share is collected once; later payments that term carry no share",
+  "pass": true,
+  "detail": "{\"s1\":{\"ok\":true,\"share_collected\":true,\"wallet_refunded\":false},\"l1\":{\"status\":\"collected\",\"payment_reference\":\"paystack:uos_sim_1\",\"amount\":\"3000.0000000000000000\"},\"p1c\":0}"
+ },
+ {
+  "area": "once",
+  "name": "Replayed settlement is a no-op",
+  "pass": true,
+  "detail": "{\"ok\":true,\"duplicate\":true,\"share_collected\":true}"
+ },
+ {
+  "area": "once",
+  "name": "An abandoned checkout's hold expires and the next checkout takes the share",
+  "pass": true,
+  "detail": "{\"term\":\"first\",\"split\":true,\"bearer\":\"account\",\"school_id\":\"5f6ca13c-ed03-4ca1-ad78-088d6aa75a88\",\"share_kobo\":300000,\"student_id\":\"000c59cb-884e-4c4c-aeda-368698c0eb66\",\"amount_kobo\":2000000,\"academic_year\":\"2031/2032\",\"subaccount_code\":\"ACCT_simschool1\"}"
+ },
+ {
+  "area": "once",
+  "name": "If two checkouts both carried the share (late completion), the school is credited back the extra",
+  "pass": true,
+  "detail": "{\"s2\":{\"ok\":true,\"reason\":\"share_already_collected\",\"share_collected\":false,\"wallet_refunded\":true},\"credit\":3000}"
+ },
+ {
+  "area": "cash",
+  "name": "Cash payments debit the school wallet ₦3,000 once per student per term",
+  "pass": true,
+  "detail": "{\"c1\":{\"share\":3000,\"balance\":0,\"share_debited\":true,\"offline_payment\":\"189f7ca1-6ed8-4392-8a7b-fcec33b033ae\"},\"c2\":{\"share\":0,\"balance\":null,\"share_debited\":false,\"offline_payment\":\"4106c1b4-4a56-4f3a-9c31-d02b89a6df74\"},\"debit\":3000}"
+ },
+ {
+  "area": "cash",
+  "name": "After a cash payment took the term share, online checkout carries none",
+  "pass": true,
+  "detail": "{\"term\":\"first\",\"split\":true,\"bearer\":\"account\",\"school_id\":\"5f6ca13c-ed03-4ca1-ad78-088d6aa75a88\",\"share_kobo\":0,\"student_id\":\"004fe0b9-59ff-4a0c-a5d1-0c5c72fa165b\",\"amount_kobo\":4000000,\"academic_year\":\"2031/2032\",\"subaccount_code\":\"ACCT_simschool1\"}"
+ },
+ {
+  "area": "cash",
+  "name": "Cash during a pending online checkout: the wallet debit is refunded when the split share settles (never twice)",
+  "pass": true,
+  "detail": "{\"s4\":{\"ok\":true,\"share_collected\":true,\"wallet_refunded\":true},\"net\":0,\"l4\":{\"status\":\"collected\",\"payment_reference\":\"paystack:uos_sim_4\",\"amount\":\"3000.0000000000000000\"}}"
+ },
+ {
+  "area": "split",
+  "name": "A payment smaller than the share is not split (school must receive money); share stays owed",
+  "pass": true,
+  "detail": "{\"term\":\"first\",\"split\":true,\"bearer\":\"account\",\"school_id\":\"5f6ca13c-ed03-4ca1-ad78-088d6aa75a88\",\"share_kobo\":0,\"student_id\":\"0117ab66-7d26-407d-a655-f35b4a37adef\",\"amount_kobo\":250000,\"academic_year\":\"2031/2032\",\"subaccount_code\":\"ACCT_simschool1\"}"
+ },
+ {
+  "area": "tiers",
+  "name": "Starter ₦2k, Growth ₦3k, Professional ₦5k, Trial 0; Enterprise uses the negotiated price",
+  "pass": true,
+  "detail": "{\"starter\":2000,\"growth\":3000,\"professional\":5000,\"trial\":0,\"ent\":4500}"
+ },
+ {
+  "area": "split",
+  "name": "School without an active subaccount gets a plain (non-split) checkout",
+  "pass": true,
+  "detail": "{\"split\":false,\"school_id\":\"d65b1fc2-d87f-4cda-ab50-eb329462b553\",\"share_kobo\":0,\"student_id\":\"000206b7-4c62-4d7f-a9aa-305c5caa79d8\",\"amount_kobo\":3000000}"
+ },
+ {
+  "area": "tiers",
+  "name": "Enterprise negotiated ₦4,500 flows into the split",
+  "pass": true,
+  "detail": "{\"term\":\"first\",\"split\":true,\"bearer\":\"account\",\"school_id\":\"d65b1fc2-d87f-4cda-ab50-eb329462b553\",\"share_kobo\":450000,\"student_id\":\"000206b7-4c62-4d7f-a9aa-305c5caa79d8\",\"amount_kobo\":3000000,\"academic_year\":\"2031/2032\",\"subaccount_code\":\"ACCT_simschool2\"}"
+ },
+ {
+  "area": "security",
+  "name": "Wrong subaccount refused; anon/authenticated cannot plan, settle, or set prices",
+  "pass": true,
+  "detail": "mismatch subaccount_mismatch; anon permission denied for function fee_check; auth permission denied for function fee_check; settle permission denied for function fee_split; price not allowed"
+ },
+ {
+  "area": "once",
+  "name": "20 checkouts for one student in a term: exactly one carries the share",
+  "pass": true,
+  "detail": "carried 1"
+ },
+ {
+  "area": "leakage",
+  "name": "Leakage check counts split-collected and wallet-collected shares",
+  "pass": true,
+  "detail": "{\"gap\":0,\"students_paid\":4,\"shares_collected\":4}"
+ }
+]

@@ -38,9 +38,12 @@ const PaystackEventSchema = z.object({
         .object({
           fee_id: z.string().uuid().optional(),
           school_id: z.string().max(64).optional(),
+          sherivs_share_kobo: z.number().int().nonnegative().max(100_000_000).optional(),
+          sherivs_split: z.boolean().optional(),
         })
         .partial()
         .nullish(),
+      subaccount: z.object({ subaccount_code: z.string().max(64).optional() }).partial().nullish(),
     })
     .partial()
     .nullish(),
@@ -111,12 +114,15 @@ export const Route = createFileRoute("/api/public/webhooks/paystack")({
               amountKobo: event.data.amount,
               currency: event.data.currency,
               metadata: event.data.metadata,
+              subaccountCode: event.data.subaccount?.subaccount_code ?? null,
             });
             // School id comes from the matched fee row, never from the payload.
             schoolId = "schoolId" in result ? (result.schoolId ?? null) : null;
             processingStatus = result.outcome;
             if (result.outcome === "rejected" || result.outcome === "ignored") {
               errorMessage = result.reason;
+            } else if (result.outcome === "settled" && result.splitError) {
+              errorMessage = `split: ${result.splitError}`;
             }
           } catch (err) {
             await supabaseAdmin.from("webhook_logs").insert({

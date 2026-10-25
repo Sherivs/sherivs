@@ -12,11 +12,11 @@
       "warn": "observed violation group present in baselineEntries (printed every run)",
       "ratchet": "baseline entry no longer observed — removable by the engineer who cleared it"
     },
-    "lastRatchet": "2026-10-03: V1-006 (team SECURITY) neutralized the platform authorization core — removed all 9 frontend/src/lib/authorization.ts and all 13 frontend/src/lib/identity.ts entries (authorization.ts and identity.ts now carry zero education vocabulary; roles/relationship types are contributed via rbac/domain-contribution + domain-config registration) and refreshed the 7 frozen security-role-gate.ts legacy-fallback entries against the live tree (shrink-only, ADR-003/004). || 2026-10-03 (ADR-012): T-wave coordinator ADDED 3 quarantine groups (19 hits) for database/supabase/migrations/20261003000040_coregrid_school_media_bucket.sql — the FIRST baseline extension, made under ADR-004's explicit 'new ADR' mechanism: the declarative storage-provisioning migration must reference the legacy storage contract id school-media consumed by the frontend and by the applied 20260707223958 policy set; the neutral conversion (bucket id + policy predicates + path contract) is blocked on the neutral-tenant substrate conversion (same conversionPath class as the transport posture) and is recorded as an authorized follow-up that REMOVES these entries in the same change. Zero new privileges authorized by ADR-012. || 2026-10-08 (ADR-013): Sherivs refoundation ADDED 9 quarantine groups (47 hits) for database/supabase/migrations/20261008000050_coregrid_organization_memberships.sql — the SECOND baseline extension, made under ADR-004's explicit 'new ADR' mechanism (ADR-012 precedent): the multi-membership migration extends the LIVE legacy identity store in place (users.school_id stays the ACTIVE-CONTEXT binding; every tenant RLS predicate resolves through get_my_school_id()/get_my_role()), so its SQL necessarily carries the same legacy vocabulary class its owners are quarantined for (school_id, is_school_admin, get_my_school_id, tenant role names). It introduces NO new domain code on the universal surface — the table is additive, RLS-FORCED, and mirrors the legacy store. Zero new privileges beyond the policy-gated DML posture it declares. The neutral-tenant substrate conversion (COND-003 / ADR-012 conversionPath) removes these entries in the same change when it lands. || 2026-10-08 (ADR-013 amendment, same ADR authority): pre-apply verification against the LIVE users_role_check exposed two roles the migration's original CHECK omitted (alumni, driver) — the dual-write trigger must be able to mirror EVERY role the identity store legally holds, so the CHECK was corrected to mirror users_role_check exactly and the migration APPLIED under explicit operator authorization. This adds 1 quarantine group (vocabulary-literal:driver) to the ten now recorded for this migration. || 2026-10-24 (W9/029 precedent): Track E ADDED 25 quarantine groups (58 hits) for the three sherivs_e_* migrations (RLS FORCE + read scoping, load-test indexes/policy initplans). They alter policies on the live legacy tenant store, so they necessarily name school_id / get_my_school_id / tenant role names; no new domain code on the universal surface. || 2026-10-25 (W9/029 precedent): merge train ADDED 8 quarantine groups for 20261025100180_sherivs_090_integration_hub.sql (Integration Hub tables are tenant-scoped on the live legacy store, so they name school_id and school vocabulary); no new domain code on the universal surface. || 2026-10-25 (W9/029 precedent): merge train quarantined 20261025100190_sherivs_092_integration_entities_outbound.sql (tenant-scoped migration on the live legacy store; names school_id/school vocabulary); no new domain code on the universal surface. || 2026-10-25 (W9/029 precedent): merge train quarantined 20261025100200_sherivs_093_integration_connectors.sql (tenant-scoped migration on the live legacy store; names school_id/school vocabulary); no new domain code on the universal surface. || 2026-10-24 (SHERIVS-UX1, W9/W11 precedent): ADDED 21 quarantine groups (119 hits) for database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql — the workspace manifest resolves the caller through the legacy tenant helpers (get_my_school_id/get_my_role) and names school modules and legacy role codes; no new privileges (all functions SECURITY DEFINER with explicit membership checks). || 2026-10-24 (SHERIVS-UX2, UX1/W9/W11 precedent): ADDED 13 quarantine groups (25 hits) for database/supabase/migrations/20261025100220_sherivs_ux2_scope_policy_workspace.sql — the scope/policy-aware workspace manifest replaces the UX1 function bodies and so carries the same legacy tenant helpers (get_my_school_id/get_my_role), legacy role codes and module names; no new privileges (all functions SECURITY DEFINER with explicit membership / settings.manage checks). || 2026-10-24 (SHERIVS-UX3, UX1/UX2 precedent): ADDED 8 quarantine groups (43 hits) for database/supabase/migrations/20261025100230_sherivs_ux3_workspace_live_data.sql — live workspace card data reads the legacy school tables (students, classes, fees, attendance...) by their existing names under the caller's own RLS (SECURITY INVOKER); no new privileges, no anon grants."
+    "lastRatchet": "2026-10-03: V1-006 (team SECURITY) neutralized the platform authorization core — removed all 9 frontend/src/lib/authorization.ts and all 13 frontend/src/lib/identity.ts entries (authorization.ts and identity.ts now carry zero education vocabulary; roles/relationship types are contributed via rbac/domain-contribution + domain-config registration) and refreshed the 7 frozen security-role-gate.ts legacy-fallback entries against the live tree (shrink-only, ADR-003/004). || 2026-10-03 (ADR-012): T-wave coordinator ADDED 3 quarantine groups (19 hits) for database/supabase/migrations/20261003000040_coregrid_school_media_bucket.sql — the FIRST baseline extension, made under ADR-004's explicit 'new ADR' mechanism: the declarative storage-provisioning migration must reference the legacy storage contract id school-media consumed by the frontend and by the applied 20260707223958 policy set; the neutral conversion (bucket id + policy predicates + path contract) is blocked on the neutral-tenant substrate conversion (same conversionPath class as the transport posture) and is recorded as an authorized follow-up that REMOVES these entries in the same change. Zero new privileges authorized by ADR-012. || 2026-10-08 (ADR-013): Sherivs refoundation ADDED 9 quarantine groups (47 hits) for database/supabase/migrations/20261008000050_coregrid_organization_memberships.sql — the SECOND baseline extension, made under ADR-004's explicit 'new ADR' mechanism (ADR-012 precedent): the multi-membership migration extends the LIVE legacy identity store in place (users.school_id stays the ACTIVE-CONTEXT binding; every tenant RLS predicate resolves through get_my_school_id()/get_my_role()), so its SQL necessarily carries the same legacy vocabulary class its owners are quarantined for (school_id, is_school_admin, get_my_school_id, tenant role names). It introduces NO new domain code on the universal surface — the table is additive, RLS-FORCED, and mirrors the legacy store. Zero new privileges beyond the policy-gated DML posture it declares. The neutral-tenant substrate conversion (COND-003 / ADR-012 conversionPath) removes these entries in the same change when it lands. || 2026-10-08 (ADR-013 amendment, same ADR authority): pre-apply verification against the LIVE users_role_check exposed two roles the migration's original CHECK omitted (alumni, driver) — the dual-write trigger must be able to mirror EVERY role the identity store legally holds, so the CHECK was corrected to mirror users_role_check exactly and the migration APPLIED under explicit operator authorization. This adds 1 quarantine group (vocabulary-literal:driver) to the ten now recorded for this migration. || 2026-10-24 (W9/029 precedent): Track E ADDED 25 quarantine groups (58 hits) for the three sherivs_e_* migrations (RLS FORCE + read scoping, load-test indexes/policy initplans). They alter policies on the live legacy tenant store, so they necessarily name school_id / get_my_school_id / tenant role names; no new domain code on the universal surface. || 2026-10-25 (W9/029 precedent): merge train ADDED 8 quarantine groups for 20261025100180_sherivs_090_integration_hub.sql (Integration Hub tables are tenant-scoped on the live legacy store, so they name school_id and school vocabulary); no new domain code on the universal surface. || 2026-10-25 (W9/029 precedent): merge train quarantined 20261025100190_sherivs_092_integration_entities_outbound.sql (tenant-scoped migration on the live legacy store; names school_id/school vocabulary); no new domain code on the universal surface. || 2026-10-25 (W9/029 precedent): merge train quarantined 20261025100200_sherivs_093_integration_connectors.sql (tenant-scoped migration on the live legacy store; names school_id/school vocabulary); no new domain code on the universal surface. || 2026-10-24 (SHERIVS-UX1, W9/W11 precedent): ADDED 21 quarantine groups (119 hits) for database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql — the workspace manifest resolves the caller through the legacy tenant helpers (get_my_school_id/get_my_role) and names school modules and legacy role codes; no new privileges (all functions SECURITY DEFINER with explicit membership checks). || 2026-10-24 (SHERIVS-UX2, UX1/W9/W11 precedent): ADDED 13 quarantine groups (25 hits) for database/supabase/migrations/20261025100220_sherivs_ux2_scope_policy_workspace.sql — the scope/policy-aware workspace manifest replaces the UX1 function bodies and so carries the same legacy tenant helpers (get_my_school_id/get_my_role), legacy role codes and module names; no new privileges (all functions SECURITY DEFINER with explicit membership / settings.manage checks). || 2026-10-24 (SHERIVS-UX3, UX1/UX2 precedent): ADDED 8 quarantine groups (43 hits) for database/supabase/migrations/20261025100230_sherivs_ux3_workspace_live_data.sql — live workspace card data reads the legacy school tables (students, classes, fees, attendance...) by their existing names under the caller's own RLS (SECURITY INVOKER); no new privileges, no anon grants. || 2026-10-25 (W9/029 precedent): SHERIVS-PAY-SPLIT quarantined 20261025100250_sherivs_paystack_split_fee.sql (fee checkout split + term share on the live legacy fee/wallet store; names school_id/student/fee vocabulary); no new domain code on the universal surface."
   },
   "summary": {
-    "entryCount": 810,
-    "totalObservedHits": 4335,
+    "entryCount": 815,
+    "totalObservedHits": 4390,
     "hitsByFile": {
       "database/supabase/migrations/20260907000100_runtime_scholar_workforce_catalog.sql": 114,
       "database/supabase/migrations/20260620122048_50e590c2-5911-4c98-8931-fb46a4b509f3.sql": 84,
@@ -207,7 +207,8 @@
       "database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql": 119,
       "database/supabase/migrations/20261025100220_sherivs_ux2_scope_policy_workspace.sql": 25,
       "database/supabase/migrations/20261025100230_sherivs_ux3_workspace_live_data.sql": 43,
-      "database/supabase/migrations/20261025100240_sherivs_100_website_engine.sql": 77
+      "database/supabase/migrations/20261025100240_sherivs_100_website_engine.sql": 77,
+      "database/supabase/migrations/20261025100250_sherivs_paystack_split_fee.sql": 55
     },
     "baselineGroups": 427
   },
@@ -12646,6 +12647,111 @@
         297
       ],
       "firstSnippet": "'teachers', (SELECT count(*) FROM public.users WHERE school_id = p_school AND role = 'teacher' AND coalesce(is_active, true)),"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100250_sherivs_paystack_split_fee.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "SHERIVS-PAY-SPLIT",
+      "occurrences": 6,
+      "lines": [
+        1,
+        7,
+        8,
+        73,
+        106,
+        131
+      ],
+      "firstSnippet": "-- SHERIVS-PAY-SPLIT: fee checkout through Paystack split (school subaccount + Sherivs main account)."
+    },
+    {
+      "file": "database/supabase/migrations/20261025100250_sherivs_paystack_split_fee.sql",
+      "kind": "vocabulary",
+      "token": "fee",
+      "streamIRef": "SHERIVS-PAY-SPLIT",
+      "occurrences": 11,
+      "lines": [
+        1,
+        2,
+        3,
+        6,
+        7,
+        26,
+        33,
+        44,
+        54,
+        86,
+        132
+      ],
+      "firstSnippet": "-- SHERIVS-PAY-SPLIT: fee checkout through Paystack split (school subaccount + Sherivs main account)."
+    },
+    {
+      "file": "database/supabase/migrations/20261025100250_sherivs_paystack_split_fee.sql",
+      "kind": "vocabulary",
+      "token": "student",
+      "streamIRef": "SHERIVS-PAY-SPLIT",
+      "occurrences": 10,
+      "lines": [
+        3,
+        5,
+        8,
+        9,
+        33,
+        46,
+        64,
+        123,
+        131,
+        132
+      ],
+      "firstSnippet": "--   * Sherivs' per-student per-term fee (plan tier: starter 2000, growth 3000, professional 5000,"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100250_sherivs_paystack_split_fee.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-PAY-SPLIT",
+      "occurrences": 22,
+      "lines": [
+        14,
+        27,
+        28,
+        37,
+        58,
+        60,
+        62,
+        65,
+        66,
+        67,
+        69,
+        80,
+        97,
+        102,
+        107,
+        112,
+        131,
+        132,
+        134,
+        143,
+        146,
+        148
+      ],
+      "firstSnippet": "school_id uuid PRIMARY KEY REFERENCES public.schools(id) ON DELETE CASCADE,"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100250_sherivs_paystack_split_fee.sql",
+      "kind": "vocabulary",
+      "token": "fees",
+      "streamIRef": "SHERIVS-PAY-SPLIT",
+      "occurrences": 6,
+      "lines": [
+        49,
+        53,
+        91,
+        94,
+        132,
+        137
+      ],
+      "firstSnippet": "DECLARE f public.fees; sub public.org_payment_subaccounts; due numeric; share numeric; amt_k bigint; share_k bigint := 0; l public.student_platform_fee_ledger;"
     }
   ]
 }

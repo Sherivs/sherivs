@@ -22,6 +22,7 @@ import {
   type SettlementDb,
 } from "../../payments/paystack-settlement";
 import { canInitiateFeePayment } from "../../payments/fee-payment-access";
+import { assertSplitTestKey, buildFeeInitializeBody, type FeeCheckoutPlan } from "../../payments/fee-split";
 
 /** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
 const timeAuthority = new TimeAuthority(new SystemClock());
@@ -74,26 +75,35 @@ export const initFeePayment = createServerFn({ method: "POST" })
     if (outstanding <= 0) throw new Error("Nothing to pay on this invoice");
 
     const reference = `uos_${fee.id.replace(/-/g, "").slice(0, 16)}_${timeAuthority.now().atMs}`;
+    // SHERIVS-PAY-SPLIT: the server plans the split (school subaccount, Sherivs term share once per
+    // student per term, bearer = main account). Amount is fee_amount_due again, checked against `outstanding`.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: plan, error: planErr } = await (supabaseAdmin as unknown as {
+      rpc(fn: string, args: Record<string, unknown>): PromiseLike<{ data: FeeCheckoutPlan | null; error: { message: string } | null }>;
+    }).rpc("fee_checkout_split", { p_fee: fee.id, p_reference: reference });
+    if (planErr || !plan) throw new Error(planErr?.message ?? "Could not plan the payment");
+    const secret = paystackSecret();
+    if (plan.split) assertSplitTestKey(secret);
+    const initBody = buildFeeInitializeBody(plan, {
+      email: data.email,
+      reference,
+      expectedKobo: Math.round(outstanding * 100),
+      metadata: {
+        fee_id: fee.id,
+        student_id: fee.student_id,
+        school_id: fee.school_id,
+        initiated_by: userId,
+        fee_type: fee.fee_type,
+        term: fee.term,
+      },
+    });
     const res = await fetch("https://api.paystack.co/transaction/initialize", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${paystackSecret()}`,
+        Authorization: `Bearer ${secret}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        email: data.email,
-        amount: Math.round(outstanding * 100), // kobo
-        reference,
-        currency: PAYSTACK_CURRENCY,
-        metadata: {
-          fee_id: fee.id,
-          student_id: fee.student_id,
-          school_id: fee.school_id,
-          initiated_by: userId,
-          fee_type: fee.fee_type,
-          term: fee.term,
-        },
-      }),
+      body: JSON.stringify(initBody),
     });
 
     const body = (await res.json()) as PaystackInitResponse;
@@ -138,7 +148,8 @@ export const verifyFeePayment = createServerFn({ method: "POST" })
         amount: number;
         currency?: string;
         reference?: string;
-        metadata?: { fee_id?: string; school_id?: string } | null;
+        metadata?: { fee_id?: string; school_id?: string; sherivs_share_kobo?: number; sherivs_split?: boolean } | null;
+        subaccount?: { subaccount_code?: string } | null;
       };
       message?: string;
     };
@@ -162,6 +173,7 @@ export const verifyFeePayment = createServerFn({ method: "POST" })
       amountKobo: body.data.amount,
       currency: body.data.currency,
       metadata: body.data.metadata,
+      subaccountCode: body.data.subaccount?.subaccount_code ?? null,
     });
     if (result.outcome === "rejected") throw new Error("Payment verification failed");
     const paid = result.outcome === "settled" || result.outcome === "duplicate";
