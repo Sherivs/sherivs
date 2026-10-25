@@ -1,7 +1,7 @@
 // k6 mix: results-day traffic across 5 sim institutions via PostgREST (RLS enforced per JWT).
 import http from "k6/http"; import { check, sleep } from "k6"; import { Trend } from "k6/metrics";
 const T = JSON.parse(open("./tokens.json")); T.parent = T.parent.filter((u) => u.sid); T.teacher = T.teacher.filter((u) => u.cid);
-const BASE = "http://127.0.0.1:3300";
+const BASE = __ENV.BASE || "http://127.0.0.1:3300";
 const tr = { student: new Trend("t_student_results", true), parent: new Trend("t_parent_results", true), teacher: new Trend("t_teacher_class", true), bursar: new Trend("t_bursar_fees", true), admin: new Trend("t_admin_dash", true), domain: new Trend("t_domain_resolve", true) };
 const PEAK = Number(__ENV.PEAK || 3000);
 export const options = {

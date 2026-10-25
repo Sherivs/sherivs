@@ -22,6 +22,19 @@ export const CONTENT_SECURITY_POLICY_REPORT_ONLY = [
   "worker-src 'self' blob:",
 ].join("; ");
 
+/**
+ * Track E: the directives below cannot break inline bootstrap scripts, styles, Paystack or Supabase, so they are
+ * ENFORCED now (clickjacking, <base> hijack, plugin/object injection, off-site form posts, mixed content).
+ * The full script/style/connect policy stays report-only until a violation baseline exists.
+ */
+export const CONTENT_SECURITY_POLICY_ENFORCED = [
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "form-action 'self'",
+  "upgrade-insecure-requests",
+].join("; ");
+
 export const SECURITY_HEADERS: Readonly<Record<string, string>> = {
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
   "X-Content-Type-Options": "nosniff",
@@ -29,6 +42,10 @@ export const SECURITY_HEADERS: Readonly<Record<string, string>> = {
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy": "camera=(self), microphone=(self), geolocation=(self), payment=(self)",
   "Content-Security-Policy-Report-Only": CONTENT_SECURITY_POLICY_REPORT_ONLY,
+  "Content-Security-Policy": CONTENT_SECURITY_POLICY_ENFORCED,
+  // Paystack inline checkout opens popups, so allow-popups keeps it working while isolating the opener.
+  "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
+  "X-Permitted-Cross-Domain-Policies": "none",
 };
 
 /** Returns a response with the baseline headers set (existing explicit values win). */

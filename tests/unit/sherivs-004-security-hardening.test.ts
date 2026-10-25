@@ -280,11 +280,16 @@ describe("SHERIVS-004 security headers", () => {
     expect(res.headers.get("X-Frame-Options")).toBe("SAMEORIGIN");
     expect(await res.text()).toBe("x");
   });
-  it("CSP is report-only, forbids framing and objects", () => {
+  it("full CSP is report-only; the non-breaking framing/object/base/form subset is enforced (Track E)", () => {
     const csp = SECURITY_HEADERS["Content-Security-Policy-Report-Only"];
     expect(csp).toContain("frame-ancestors 'none'");
     expect(csp).toContain("object-src 'none'");
-    expect(SECURITY_HEADERS["Content-Security-Policy"]).toBeUndefined();
+    const enforced = SECURITY_HEADERS["Content-Security-Policy"];
+    expect(enforced).toContain("frame-ancestors 'none'");
+    expect(enforced).toContain("object-src 'none'");
+    expect(enforced).toContain("base-uri 'self'");
+    expect(enforced).not.toContain("script-src");
+    expect(SECURITY_HEADERS["Cross-Origin-Opener-Policy"]).toBe("same-origin-allow-popups");
   });
   it("server.ts applies the headers to every response path", () => {
     const src = read("frontend/src/server.ts");
