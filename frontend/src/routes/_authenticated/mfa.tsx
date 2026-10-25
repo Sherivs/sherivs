@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SherivsLogo } from "@/components/brand/sherivs-logo";
+import { takeMfaReturn } from "@/lib/head-console/host";
 import { pickEnrolment, pickVerifiedFactorId, runMfaStep } from "@/lib/security/mfa-flow";
 
 /**
@@ -37,7 +38,7 @@ function MfaPage() {
       );
       if (cancelled) return;
       if (aal.ok && aal.value.currentLevel === "aal2") {
-        navigate({ to: "/internal", replace: true });
+        navigate({ to: takeMfaReturn("/internal") as "/internal", replace: true });
         return;
       }
       const factors = await runMfaStep(
@@ -79,7 +80,7 @@ function MfaPage() {
       setCode("");
       return setError(result.message);
     }
-    navigate({ to: "/internal", replace: true });
+    navigate({ to: takeMfaReturn("/internal") as "/internal", replace: true });
   }
 
   return (

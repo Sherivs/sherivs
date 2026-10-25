@@ -1,7 +1,7 @@
 // Scenario suite against the isolated sim DB. Each check records pass/fail + detail. No secrets involved.
 import pg from "pg"; import fs from "node:fs"; import crypto from "node:crypto";
 const M = JSON.parse(fs.readFileSync("sim/manifest.json", "utf8"));
-const pool = new pg.Pool({ host: "127.0.0.1", port: 54329, user: "postgres", max: 60 });
+const pool = new pg.Pool({ host: "127.0.0.1", port: Number(process.env.SIM_PG_PORT ?? 54329), user: "postgres", max: 60 });
 const results = [];
 const rec = (area, name, pass, detail, severity = "high") => { results.push({ area, name, pass, detail, severity }); console.log(pass ? "PASS" : "FAIL", area, "::", name, "::", detail); };
 async function as(uid, fn, role = "authenticated") {
@@ -1483,6 +1483,998 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
   rec("custom_domain", "Removed domain stops resolving and can be claimed afresh; every action is in the append-only audit; resolver stays fast",
     v.removed === true && v.anonRemoved === null && !!v.bReclaim?.id && JSON.stringify(v.audit) === JSON.stringify(["add", "check", "set_primary", "remove"]) && !v.auditEdit?.ok && v.resolveMs < 20,
     `audit ${JSON.stringify(v.audit)}; resolve ${v.resolveMs} ms avg over 2,000 domains`, "high");
+}
+// ---------- A1. Scope sets complete: audit, no widening on remove, subject dim, caller area (SHERIVS-A01) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+    const cN = (await t("select public.campus_upsert($1,'A1 North') id", [A.schoolId])).row?.id;
+    const cS = (await t("select public.campus_upsert($1,'A1 South') id", [A.schoolId])).row?.id;
+    const [cls, other] = (await asOwner("select id from classes where school_id=$1 and exists (select 1 from students s where s.class_id=classes.id) order by name desc limit 2", [A.schoolId])).r.rows.map((r) => r.id);
+    const tt = (await asOwner("insert into timetables (school_id, class_id, academic_year, term) values ($1,$2,'2026/2027','first') returning id", [A.schoolId, cls])).row?.id;
+    await asOwner("insert into timetable_slots (timetable_id, school_id, day_of_week, period_number, start_time, end_time, subject) values ($1,$2,1,1,'08:00','08:40','A1 Further Mathematics')", [tt, A.schoolId]);
+    await asOwner("update classes set campus_id=$1 where id=$2", [cN, cls]); await asOwner("update classes set campus_id=$1 where id=$2", [cS, other]);
+    const subj = (await asOwner("select ts.subject from timetables tt join timetable_slots ts on ts.timetable_id=tt.id where tt.class_id=$1 and ts.subject is not null limit 1", [cls])).row?.subject;
+    const sIn = (await asOwner("select id from students where class_id=$1 limit 1", [cls])).row?.id;
+    const sOut = (await asOwner("select id from students where class_id=$1 limit 1", [other])).row?.id;
+    const staff = (await asOwner("select id from users where school_id=$1 and role='teacher' and id<>$2 and id not in (select teacher_id from classes where teacher_id is not null) and id not in (select teacher_id from timetable_slots where teacher_id is not null) order by id desc limit 1", [A.schoolId, A.teacher])).row?.id;
+    const ra = (await t("select public.role_assign($1,$2,'ng.year_head_year_tutor','org',null) id", [A.schoolId, staff])).row?.id;
+    const setN = (await t("select public.role_scope_set_add($1, jsonb_build_object('campus', jsonb_build_array($2::text)), 'A1 North') id", [ra, cN])).row?.id;
+    out.auditAdd = (await asOwner("select count(*)::int n from role_scope_audit where set_id=$1 and action='set_add'", [setN])).row?.n;
+    // restricted assigner (proprietor limited to North)
+    const prop = (await t("select public.role_assign($1,$2,'ng.proprietor','org',null) id", [A.schoolId, A.bursar])).row?.id;
+    await t("select public.role_scope_set_add($1, jsonb_build_object('campus', jsonb_build_array($2::text)))", [prop, cN]);
+    await act(A.bursar);
+    out.removeLast = await t("select public.role_scope_set_remove($1)", [setN]);
+    await act(A.admin);
+    const setS = (await t("select public.role_scope_set_add($1, jsonb_build_object('campus', jsonb_build_array($2::text)), 'A1 South') id", [ra, cS])).row?.id;
+    await act(A.bursar);
+    out.removeOutside = await t("select public.role_scope_set_remove($1)", [setS]);
+    out.removeInside = await t("select public.role_scope_set_remove($1)", [setN]);
+    await act(A.admin);
+    out.auditRemove = (await asOwner("select count(*)::int n from role_scope_audit where set_id=$1 and action='set_remove' and actor=$2", [setN, A.bursar])).row?.n;
+    out.auditEdit = await asOwner("delete from role_scope_audit where set_id=$1", [setN]);
+    // subject dimension: South set gone? keep South; add a subject-only set and check a subject match on the North class
+    await t("select public.role_scope_set_remove($1)", [setS]);
+    await t("select public.role_scope_set_add($1, jsonb_build_object('subject', jsonb_build_array($2::text)), 'A1 subject')", [ra, subj]);
+    out.subjIn = (await t("select public.authz_check($1,'students.view','student',$2) r", [staff, sIn])).row?.r;
+    out.subjNoTt = (await asOwner("select count(*)::int n from timetables tt join timetable_slots ts on ts.timetable_id=tt.id where tt.class_id=$1 and ts.subject=$2", [other, subj])).row?.n;
+    out.subjOut = (await t("select public.authz_check($1,'students.view','student',$2) r", [staff, sOut])).row?.r;
+    // caller's own area + class filter
+    await act(staff);
+    out.area = (await t("select public.my_operating_area($1) r", [A.schoolId])).row?.r;
+    out.ids = (await t("select public.scope_class_ids($1) r", [A.schoolId])).row?.r;
+    out.staffList = await t("select public.role_scope_sets_list($1)", [A.schoolId]);
+    await act(A.admin);
+    out.adminIds = (await t("select public.scope_class_ids($1) r", [A.schoolId])).row;
+    out.list = (await t("select public.role_scope_sets_list($1) r", [A.schoolId])).row?.r;
+    await act(B.admin); out.crossList = await t("select public.role_scope_sets_list($1)", [A.schoolId]);
+    out.crossAudit = (await t("select count(*)::int n from role_scope_audit where org_id=$1", [A.schoolId])).row?.n;
+    await act(A.admin);
+    Object.assign(out, { cls, other, ra, subj });
+  });
+  rec("scope_sets", "Every scope-set add/remove is written to an append-only audit", v.auditAdd === 1 && v.auditRemove === 1 && !v.auditEdit?.ok,
+    `add ${v.auditAdd}; remove ${v.auditRemove}; edit ${W_ERR(v.auditEdit)}`, "high");
+  rec("scope_sets", "A restricted assigner cannot widen by removing: not the last set, not a set outside their area; inside is fine",
+    !v.removeLast?.ok && !v.removeOutside?.ok && v.removeInside?.ok, `last ${W_ERR(v.removeLast)}; outside ${W_ERR(v.removeOutside)}; inside ${W_ERR(v.removeInside)}`, "critical");
+  rec("scope_sets", "Subject dimension matches the class timetable", v.subjIn?.allow === true && (v.subjNoTt > 0 || v.subjOut?.allow === false),
+    `in ${v.subjIn?.deciding_layer}; out ${v.subjOut?.deciding_layer} (other class teaches it: ${v.subjNoTt})`, "high");
+  rec("scope_sets", "Caller sees own area; class filter returns only in-area classes; admins get all (NULL)",
+    v.area?.unrestricted === false && v.area?.sets?.length === 1 && Array.isArray(v.ids) && v.ids.includes(v.cls) && (v.subjNoTt > 0 || !v.ids.includes(v.other)) && v.adminIds?.r === null,
+    `sets ${v.area?.sets?.length}; ids ${v.ids?.length}; admin ${JSON.stringify(v.adminIds?.r)}`, "high");
+  rec("scope_sets", "Only role managers list scope sets; other schools see neither sets nor audit",
+    Array.isArray(v.list) && v.list.some((s) => s.assignment_id === v.ra) && !v.staffList?.ok && !v.crossList?.ok && v.crossAudit === 0,
+    `staff ${W_ERR(v.staffList)}; cross ${W_ERR(v.crossList)}; cross audit ${v.crossAudit}`, "critical");
+}
+// ---------- A2. Structure: shifts, levels, gender sections, class placement, academic periods (SHERIVS-A02) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+    const camp = (await t("select public.campus_upsert($1,'A2 Main') id", [A.schoolId])).row?.id;
+    const bCamp = (await asOwner("insert into campuses (school_id, name) values ($1,'A2 B campus') returning id", [B.schoolId])).row?.id;
+    await act(A.teacher); out.teacherShift = await t("select public.shift_upsert($1,null,'A2 Morning','morning')", [A.schoolId]); await act(A.admin);
+    const sh = (await t("select public.shift_upsert($1,$2,'A2 Morning','morning','07:30','12:30') id", [A.schoolId, camp])).row?.id;
+    out.same = (await t("select public.shift_upsert($1,$2,'a2 morning','morning','07:45','12:30') id", [A.schoolId, camp])).row?.id === sh;
+    out.badTime = await t("select public.shift_upsert($1,null,'A2 Bad','evening','18:00','17:00')", [A.schoolId]);
+    out.foreignCamp = await t("select public.shift_upsert($1,$2,'A2 X','morning')", [A.schoolId, bCamp]);
+    const lv = (await t("select public.level_upsert($1,'A2 JSS 1','jss',7) id", [A.schoolId])).row?.id;
+    const cls = (await asOwner("select id from classes where school_id=$1 order by name limit 1", [A.schoolId])).row?.id;
+    const sec = (await t("select public.section_upsert($1,$2,'A2 Girls College','junior_secondary') id", [A.schoolId, camp])).row?.id;
+    out.place = await t("select public.class_set_structure($1,$2,$3,$4)", [cls, sh, lv, sec]);
+    out.placed = (await asOwner("select shift_id=$2 and level_id=$3 and section_id=$4 ok from classes where id=$1", [cls, sh, lv, sec])).row?.ok;
+    const bShift = (await asOwner("insert into school_shifts (school_id, name, kind) values ($1,'A2 B shift','morning') returning id", [B.schoolId])).row?.id;
+    out.foreignShift = await t("select public.class_set_structure($1,$2,null)", [cls, bShift]);
+    out.profile = await t("select public.section_set_profile($1,'girls','boarding')", [sec]);
+    out.dims = (await asOwner("select public.resource_dims('class',$1) r", [cls])).row?.r;
+    await act(B.admin); out.bPlace = await t("select public.class_set_structure($1,null,null)", [cls]); out.bDel = await t("select public.shift_delete($1)", [sh]); await act(A.admin);
+    out.delUsed = await t("select public.shift_delete($1)", [sh]);
+    // a level referenced by a role operating area cannot be deleted
+    const lv2 = (await t("select public.level_upsert($1,'A2 SSS 3','sss',12) id", [A.schoolId])).row?.id;
+    const staff = (await asOwner("select id from users where school_id=$1 and role='teacher' and id<>$2 order by id limit 1", [A.schoolId, A.teacher])).row?.id;
+    const ra = (await t("select public.role_assign($1,$2,'ng.year_head_year_tutor','org',null) id", [A.schoolId, staff])).row?.id;
+    await t("select public.role_scope_set_add($1, jsonb_build_object('level', jsonb_build_array($2::text)))", [ra, lv2]);
+    out.delScoped = await t("select public.level_delete($1)", [lv2]);
+    await t("select public.class_set_structure($1,null,null)", [cls]);
+    out.delFree = await t("select public.shift_delete($1)", [sh]);
+    // academic periods
+    const P = (o, n, a, b, k = "term") => t("select public.academic_period_upsert($1,'2031/2032',$2,$3,$4,$5::date,$6::date) id", [A.schoolId, k, o, n, a, b]);
+    const p1 = (await P(1, "First term", "2031-09-08", "2031-12-12")).row?.id;
+    const p2 = (await P(2, "Second term", "2032-01-05", "2032-04-02")).row?.id;
+    out.overlap = await P(3, "Third term", "2032-03-30", "2032-07-20");
+    out.mixKind = await t("select public.academic_period_upsert($1,'2031/2032','semester',3,'S',  '2032-05-01','2032-07-01')", [A.schoolId]);
+    out.badSession = await t("select public.academic_period_upsert($1,'2031/2035','term',1,'X','2035-01-01','2035-02-01')", [A.schoolId]);
+    await t("select public.academic_period_set_current($1)", [p1]);
+    await t("select public.academic_period_set_current($1)", [p2]);
+    out.currents = (await asOwner("select count(*)::int n, max(id::text) id from academic_periods where school_id=$1 and is_current", [A.schoolId])).row;
+    await t("select public.academic_period_close($1)", [p1]);
+    out.reopen = await t("select public.academic_period_set_current($1)", [p1]);
+    out.editClosed = await P(1, "First term (edited)", "2031-09-08", "2031-12-12");
+    await act(A.teacher); out.teacherCur = (await t("select public.current_academic_period($1) r", [A.schoolId])).row?.r;
+    out.teacherPeriod = await t("select public.academic_period_upsert($1,'2033/2034','term',1,'X','2033-09-01','2033-12-01')", [A.schoolId]);
+    out.direct = await t("insert into academic_periods (school_id, session, kind, ordinal, name, starts_on, ends_on) values ($1,'2040/2041','term',1,'x','2040-09-01','2040-12-01')", [A.schoolId]);
+    await act(B.admin); out.bCur = (await t("select public.current_academic_period($1) r", [A.schoolId])).row?.r;
+    out.bRead = (await t("select count(*)::int n from academic_periods where school_id=$1", [A.schoolId])).row?.n; await act(A.admin);
+    out.audit = (await asOwner("select count(*)::int n from audit_logs where school_id=$1 and action in ('shift_upsert','shift_delete','level_upsert','section_profile','class_structure','period_upsert','period_current','period_close') and created_at > now() - interval '5 minutes'", [A.schoolId])).row?.n;
+    Object.assign(out, { p2 });
+  });
+  rec("structure", "Only settings managers create shifts; same name updates in place; bad times and other schools' campuses refused",
+    !v.teacherShift?.ok && v.same && !v.badTime?.ok && !v.foreignCamp?.ok, `teacher ${W_ERR(v.teacherShift)}; time ${W_ERR(v.badTime)}; campus ${W_ERR(v.foreignCamp)}`, "high");
+  rec("structure", "Class placement (shift, level, section) stays inside the school; another school cannot place or delete",
+    v.place?.ok && v.placed && !v.foreignShift?.ok && !v.bPlace?.ok && !v.bDel?.ok, `foreign ${W_ERR(v.foreignShift)}; B ${W_ERR(v.bPlace)} / ${W_ERR(v.bDel)}`, "critical");
+  rec("structure", "Gender/residency section profile flows into access dimensions", v.profile?.ok && JSON.stringify(v.dims?.gender) === '["girls"]',
+    JSON.stringify(v.dims?.gender), "high");
+  rec("structure", "Deletes are refused while classes or a role operating area use the item; allowed once free",
+    !v.delUsed?.ok && /in_use/.test(v.delUsed?.err ?? "") && !v.delScoped?.ok && /operating area/.test(v.delScoped?.err ?? "") && v.delFree?.ok,
+    `used ${W_ERR(v.delUsed)}; scoped ${W_ERR(v.delScoped)}; free ${W_ERR(v.delFree)}`, "high");
+  rec("periods", "Academic periods: no overlaps, one kind per session, valid session names, exactly one current",
+    !v.overlap?.ok && !v.mixKind?.ok && !v.badSession?.ok && v.currents?.n === 1 && v.currents?.id === v.p2,
+    `overlap ${W_ERR(v.overlap)}; kind ${W_ERR(v.mixKind)}; session ${W_ERR(v.badSession)}; current ${JSON.stringify(v.currents)}`, "high");
+  rec("periods", "Closed periods cannot be reopened or edited; teachers read the current period but cannot change periods",
+    !v.reopen?.ok && !v.editClosed?.ok && v.teacherCur?.id === v.p2 && !v.teacherPeriod?.ok && !v.direct?.ok,
+    `reopen ${W_ERR(v.reopen)}; edit ${W_ERR(v.editClosed)}; teacher ${W_ERR(v.teacherPeriod)}; direct ${W_ERR(v.direct)}`, "high");
+  rec("periods", "Another school sees neither the periods nor the current period; every change is audited",
+    v.bCur == null && v.bRead === 0 && v.audit >= 10, `B current ${JSON.stringify(v.bCur)}; B rows ${v.bRead}; audit ${v.audit}`, "critical");
+}
+// ---------- A3. Tertiary results: published-only GPA/CGPA, degree class, academic standing (SHERIVS-A03) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+    const [s1, s2] = (await asOwner("select id, user_id from students where school_id=$1 and user_id is not null order by admission_number desc limit 2", [A.schoolId])).r.rows;
+    const cls = (await asOwner("select class_id from students where id=$1", [s1.id])).row?.class_id;
+    const prevScale = (await asOwner("select grading_scale_id from schools where id=$1", [A.schoolId])).row?.grading_scale_id ?? null;
+    await asOwner("update schools set grading_scale_id=(select id from grading_scales where code='NG-UNI-5' and school_id is null) where id=$1", [A.schoolId]);
+    const SCORE = { 5: 75, 3: 55, 0: 20 };
+    const g = (sid, yr, term, subj, u, p, pub = true, attempt = 1) => asOwner("insert into grades (school_id, student_id, class_id, subject, term, academic_year, credit_units, ca_score, exam_score, is_published, attempt) values ($1,$2,$3,$4,$5,$6,$7,0,$8,$9,$10)", [A.schoolId, sid, cls, subj, term, yr, u, SCORE[p], pub, attempt]);
+    await asOwner("delete from grades where student_id = any($1) and credit_units > 0", [[s1.id, s2.id]]);
+    await g(s1.id, "2030/2031", "first", "A3 MTH101", 3, 5); await g(s1.id, "2030/2031", "first", "A3 PHY101", 3, 0); await g(s1.id, "2030/2031", "first", "A3 CHM101", 2, 3);
+    await g(s1.id, "2030/2031", "first", "A3 CHM101", 2, 3); // duplicate edit of the same attempt: counted once
+    await g(s1.id, "2030/2031", "first", "A3 GST101", 10, 5, false); // unpublished: never counted
+    await g(s1.id, "2030/2031", "second", "A3 MTH102", 3, 0); await g(s1.id, "2030/2031", "second", "A3 PHY102", 3, 0);
+    await g(s2.id, "2030/2031", "first", "A3 MTH101", 3, 0); await g(s2.id, "2031/2032", "first", "A3 MTH101", 3, 0, true, 2);
+    out.r1 = (await t("select public.semester_results($1) r", [s1.id])).row?.r;
+    out.r2 = (await t("select public.semester_results($1) r", [s2.id])).row?.r;
+    await act(s1.user_id); out.self = await t("select public.semester_results($1) r", [s1.id]); out.otherStudent = await t("select public.semester_results($1)", [s2.id]);
+    out.studentBands = await t("select public.degree_class_bands_set($1,'[{\"label\":\"X\",\"min_cgpa\":0}]')", [A.schoolId]);
+    await act(B.admin); out.cross = await t("select public.semester_results($1)", [s1.id]); out.crossReport = await t("select public.academic_standing_report($1)", [A.schoolId]);
+    await act(A.admin);
+    out.report = (await t("select public.academic_standing_report($1) r", [A.schoolId])).row?.r;
+    await t("select public.degree_class_bands_set($1,'[{\"label\":\"Distinction\",\"min_cgpa\":4.0},{\"label\":\"Merit\",\"min_cgpa\":1.2}]')", [A.schoolId]);
+    out.custom = (await t("select public.semester_results($1) r", [s1.id])).row?.r?.class;
+    await t("select public.academic_standing_rules_set($1, 2.0, 2)", [A.schoolId]);
+    out.strict = (await t("select public.semester_results($1) r", [s1.id])).row?.r?.standing?.status;
+    await asOwner("update schools set grading_scale_id=$2 where id=$1", [A.schoolId, prevScale]);
+    out.points = (await asOwner("select array_agg(distinct grade_point order by grade_point) a from grades where student_id=$1 and credit_units>0", [s1.id])).row?.a;
+    await asOwner("delete from degree_class_bands where school_id=$1", [A.schoolId]); await asOwner("delete from academic_standing_rules where school_id=$1", [A.schoolId]);
+    Object.assign(out, { s2: s2.id });
+  });
+  const sem = v.r1?.semesters ?? [];
+  rec("tertiary", "Semester GPA and running CGPA use published grades only, one row per course attempt",
+    sem.length === 2 && sem[0].tcu === 8 && Number(sem[0].gpa) === 2.63 && sem[0].tce === 5 && Number(sem[1].gpa) === 0 && Number(sem[1].cgpa) === 1.5 && Number(v.r1?.cgpa) === 1.5,
+    JSON.stringify(sem.map((s) => [s.tcu, s.gpa, s.cgpa])) + " points " + JSON.stringify(v.points), "critical");
+  rec("tertiary", "Degree class follows NUC defaults, or the school's own bands when set", v.r1?.class === "Third Class" && v.custom === "Merit", `${v.r1?.class} / custom ${v.custom}`, "high");
+  rec("tertiary", "Academic standing: two consecutive probation sessions advise withdrawal; a stricter floor puts a student on probation",
+    v.r2?.standing?.status === "withdrawal_advised" && v.r1?.standing?.status === "good_standing" && v.strict === "probation",
+    `${v.r2?.standing?.status}; ${v.r1?.standing?.status}; strict ${v.strict}`, "high");
+  rec("tertiary", "Results readable by the student themself, not by another student or another school; students cannot change bands",
+    v.self?.ok && !v.otherStudent?.ok && !v.cross?.ok && !v.crossReport?.ok && !v.studentBands?.ok,
+    `other ${W_ERR(v.otherStudent)}; cross ${W_ERR(v.cross)}; bands ${W_ERR(v.studentBands)}`, "critical");
+  rec("tertiary", "Standing report lists students needing attention", Array.isArray(v.report) && v.report.some((r) => r.student_id === v.s2 && r.standing === "withdrawal_advised"),
+    `${v.report?.length} flagged`, "medium");
+}
+// ---------- A4. Exam-body registration windows: WAEC / NECO / BECE / NCEE / UTME (SHERIVS-A04) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+    const st = async (lvl) => (await asOwner("select s.id, s.parent_id from students s join classes c on c.id=s.class_id where s.school_id=$1 and c.grade_level=$2 order by s.admission_number limit 1", [A.schoolId, lvl])).row;
+    const ss3 = await st("SS3"), jss1 = await st("JSS1"), jss3 = await st("JSS3");
+    const bStudent = (await asOwner("select id from students where school_id=$1 limit 1", [B.schoolId])).row?.id;
+    const W = (body, yr, o, c, l, fee = 25000, late = 5000) => t(`select public.exam_window_upsert($1,$2,$3,current_date + ${o},current_date + ${c},${l === null ? "null" : `current_date + ${l}`},$4,$5) id`, [A.schoolId, body, yr, fee, late]);
+    await act(A.teacher); out.teacherWin = await W("WAEC_WASSCE", 2031, -1, 10, 20); await act(A.admin);
+    const open = (await W("WAEC_WASSCE", 2031, -1, 10, 20)).row?.id;
+    const subj8 = ["English Language", "General Mathematics", "Biology", "Chemistry", "Physics", "Civic Education", "Economics", "Agricultural Science"];
+    out.reg = (await t("select public.exam_candidate_register($1,$2,$3) r", [open, ss3.id, subj8])).row?.r;
+    out.rereg = (await t("select public.exam_candidate_register($1,$2,$3) r", [open, ss3.id, [...subj8, "Further Mathematics"]])).row?.r;
+    out.rows = (await asOwner("select count(*)::int n from exam_body_candidates where window_id=$1", [open])).row?.n;
+    out.notElig = await t("select public.exam_candidate_register($1,$2,$3)", [open, jss1.id, subj8]);
+    out.few = await t("select public.exam_candidate_register($1,$2,$3)", [open, ss3.id, subj8.slice(0, 5)]);
+    out.dupSubj = await t("select public.exam_candidate_register($1,$2,$3)", [open, ss3.id, [...subj8.slice(0, 6), "biology ", "Biology"]]);
+    out.foreign = await t("select public.exam_candidate_register($1,$2,$3)", [open, bStudent, subj8]);
+    const late = (await W("NECO_SSCE", 2031, -20, -1, 5)).row?.id;
+    out.late = (await t("select public.exam_candidate_register($1,$2,$3) r", [late, ss3.id, subj8])).row?.r;
+    const closed = (await W("BECE", 2031, -30, -10, -2)).row?.id;
+    const bece = ["English Studies", "Mathematics", "Basic Science", "Basic Technology", "Social Studies", "Civic Education", "CRS", "Agriculture", "Business Studies"];
+    out.closed = await t("select public.exam_candidate_register($1,$2,$3)", [closed, jss3.id, bece]);
+    const future = (await W("JAMB_UTME", 2031, 5, 30, null)).row?.id;
+    out.future = await t("select public.exam_candidate_register($1,$2,$3)", [future, ss3.id, ["Use of English", "Mathematics", "Physics", "Chemistry"]]);
+    // freeze: move the open window's dates into the past, then try to withdraw
+    const cand = out.reg?.id;
+    await asOwner("update exam_body_windows set opens_on=current_date-40, closes_on=current_date-20, late_closes_on=current_date-10 where id=$1", [late]);
+    const lateCand = (await asOwner("select id from exam_body_candidates where window_id=$1", [late])).row?.id;
+    out.frozenWithdraw = await t("select public.exam_candidate_withdraw($1)", [lateCand]);
+    out.withdraw = await t("select public.exam_candidate_withdraw($1)", [cand]);
+    out.reRegRaw = await t("select public.exam_candidate_register($1,$2,$3) r", [open, ss3.id, subj8]); out.reRegAfterWithdraw = out.reRegRaw.row?.r;
+    out.summary = (await t("select public.exam_window_summary($1) r", [open])).row?.r;
+    out.direct = await t("insert into exam_body_candidates (window_id, school_id, student_id, subjects) values ($1,$2,$3,'{x}')", [open, A.schoolId, jss1.id]);
+    if (ss3.parent_id) { await act(ss3.parent_id); out.parentSees = (await t("select count(*)::int n from exam_body_candidates where student_id=$1", [ss3.id])).row?.n; }
+    await act(B.admin); out.bSummary = await t("select public.exam_window_summary($1)", [open]);
+    out.bRows = (await t("select count(*)::int n from exam_body_candidates where window_id=$1", [open])).row?.n;
+    out.bReg = await t("select public.exam_candidate_register($1,$2,$3)", [open, ss3.id, subj8]); await act(A.admin);
+    out.hasParent = !!ss3.parent_id;
+  });
+  rec("exam_bodies", "Only exams officers open windows; an eligible SS3 candidate registers once and can change subjects",
+    !v.teacherWin?.ok && v.reg?.fee_due == 25000 && v.reg?.late === false && v.rereg?.subjects?.length === 9 && v.rows === 1,
+    `teacher ${W_ERR(v.teacherWin)}; fee ${v.reg?.fee_due}; rows ${v.rows}; ${JSON.stringify(v.reg)} ${JSON.stringify(v.rereg)}`, "high");
+  rec("exam_bodies", "Wrong level, too few subjects, duplicate subjects and another school's student are refused",
+    /not_eligible/.test(v.notElig?.err ?? "") && /subject_count/.test(v.few?.err ?? "") && /subject_count/.test(v.dupSubj?.err ?? "") && !v.foreign?.ok,
+    `${W_ERR(v.notElig)} | ${W_ERR(v.few)} | ${W_ERR(v.dupSubj)} | ${W_ERR(v.foreign)}`, "high");
+  rec("exam_bodies", "Late window charges the late fee; before opening and after the final close registration is refused; closed entries are frozen",
+    v.late?.late === true && v.late?.fee_due == 30000 && /window_closed/.test(v.closed?.err ?? "") && /window_not_open/.test(v.future?.err ?? "") && /frozen/.test(v.frozenWithdraw?.err ?? ""),
+    `late ${JSON.stringify(v.late)}; closed ${W_ERR(v.closed)}; future ${W_ERR(v.future)}; frozen ${W_ERR(v.frozenWithdraw)}`, "high");
+  rec("exam_bodies", "Withdraw then re-register while open; summary counts entries, fees and per-subject numbers",
+    v.withdraw?.ok && v.reRegAfterWithdraw?.id && v.summary?.candidates === 1 && Number(v.summary?.fees_due) === 25000 && v.summary?.by_subject?.["Biology"] === 1 && v.summary?.state === "open",
+    JSON.stringify(v.summary) + " rereg " + W_ERR(v.reRegRaw) + " w " + W_ERR(v.withdraw), "medium");
+  rec("exam_bodies", "No direct writes; parents see their own child's entry; another school sees nothing and cannot register",
+    !v.direct?.ok && (!v.hasParent || v.parentSees === 2) && !v.bSummary?.ok && v.bRows === 0 && !v.bReg?.ok,
+    `direct ${W_ERR(v.direct)}; parent ${v.parentSees}; B ${W_ERR(v.bSummary)} rows ${v.bRows}`, "critical");
+}
+// ---------- A5. Fee relief (discounts, scholarships, waivers) with maker-checker, sibling rule, levies, statements (SHERIVS-A05) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+    const Y = "2031/2032", T = "first";
+    const fam = (await asOwner("select parent_id from students where school_id=$1 and is_active and parent_id is not null group by parent_id having count(*) >= 2 limit 1", [A.schoolId])).row?.parent_id;
+    const kids = fam ? (await asOwner("select id from students where parent_id=$1 and is_active order by coalesce(enrollment_date, created_at::date), created_at, id", [fam])).r.rows.map((r) => r.id) : [];
+    const sid = (await asOwner("select id from students where school_id=$1 and is_active and parent_id is not null order by admission_number limit 1", [A.schoolId])).row?.id;
+    const parent = (await asOwner("select parent_id from students where id=$1", [sid])).row?.parent_id;
+    await asOwner("delete from fees where student_id=$1 and academic_year=$2", [sid, Y]);
+    await asOwner("insert into fees (school_id, student_id, fee_type, amount, term, academic_year, status, paid_amount) values ($1,$2,'tuition',100000,$3,$4,'unpaid',0),($1,$2,'uniform',20000,$3,$4,'unpaid',0)", [A.schoolId, sid, T, Y]);
+    const checker = (await asOwner("select id from users where school_id=$1 and role='principal' limit 1", [A.schoolId])).row?.id ?? A.principal;
+    const req = (k, m, val, reason, ft = null, sp = null) => t("select public.fee_relief_request($1,$2,$3,$4,$5,$6,$7,$8,$9) id", [sid, k, m, val, T, Y, reason, ft, sp]);
+    await act(A.teacher); out.teacherReq = await req("discount", "percent", 10, "Staff child discount"); await act(A.admin);
+    out.short = await req("discount", "percent", 10, "x");
+    out.noSponsor = await req("scholarship", "fixed", 50000, "Merit award 2031");
+    out.over = await req("discount", "percent", 150, "Too generous");
+    const d1 = (await req("discount", "percent", 10, "Staff child discount")).row?.id;
+    const sc = (await req("scholarship", "fixed", 50000, "Merit award 2031", "tuition", "Borno Education Trust")).row?.id;
+    const wv = (await req("waiver", "percent", 100, "Uniform waiver (hardship)", "uniform")).row?.id;
+    const big = (await req("waiver", "fixed", 999999, "Full hardship waiver")).row?.id;
+    out.selfApprove = await t("select public.fee_relief_decide($1,true)", [d1]);
+    await act(checker);
+    out.approve = await t("select public.fee_relief_decide($1,true) r", [d1]);
+    for (const id of [sc, wv]) await t("select public.fee_relief_decide($1,true)", [id]);
+    out.twice = await t("select public.fee_relief_decide($1,false)", [d1]);
+    await act(A.admin);
+    out.st1 = (await t("select public.fee_statement($1,$2,$3) r", [sid, T, Y])).row?.r;
+    await act(checker); await t("select public.fee_relief_decide($1,true)", [big]); await act(A.admin);
+    out.st2 = (await t("select public.fee_statement($1,$2,$3) r", [sid, T, Y])).row?.r;
+    await t("select public.fee_relief_revoke($1)", [big]);
+    out.st3 = (await t("select public.fee_statement($1,$2,$3) r", [sid, T, Y])).row?.r;
+    // levies
+    const cls = (await asOwner("select class_id from students where id=$1", [sid])).row?.class_id;
+    const inClass = Number((await asOwner("select count(*) n from students where class_id=$1 and is_active", [cls])).row?.n);
+    out.levy = (await t("select public.fee_levy_create($1,'A5 Excursion levy',5000,$2,$3,$4) r", [A.schoolId, T, Y, [cls]])).row?.r;
+    out.levyAgain = (await t("select public.fee_levy_create($1,'A5 Excursion levy',5000,$2,$3,$4) r", [A.schoolId, T, Y, [cls]])).row?.r;
+    out.levyAmt = await t("select public.fee_levy_create($1,'A5 Excursion levy',7000,$2,$3,$4)", [A.schoolId, T, Y, [cls]]);
+    const bCls = (await asOwner("select id from classes where school_id=$1 limit 1", [B.schoolId])).row?.id;
+    out.levyForeign = await t("select public.fee_levy_create($1,'A5 Bad levy',1000,$2,$3,$4)", [A.schoolId, T, Y, [bCls]]);
+    out.st4 = (await t("select public.fee_statement($1,$2,$3) r", [sid, T, Y])).row?.r;
+    // sibling rule
+    await t("select public.fee_sibling_rule_set($1,2,25)", [A.schoolId]);
+    out.sib = (await t("select public.fee_sibling_apply($1,'second',$2) n", [A.schoolId, Y])).row?.n;
+    out.sibAgain = (await t("select public.fee_sibling_apply($1,'second',$2) n", [A.schoolId, Y])).row?.n;
+    out.sibFirstKid = kids.length ? (await asOwner("select count(*)::int n from fee_adjustments where student_id=$1 and rule='sibling' and term='second'", [kids[0]])).row?.n : null;
+    out.sibSecondKid = kids.length > 1 ? (await asOwner("select count(*)::int n from fee_adjustments where student_id=$1 and rule='sibling' and term='second'", [kids[1]])).row?.n : null;
+    // access
+    out.direct = await t("insert into fee_adjustments (school_id, student_id, kind, mode, value, term, academic_year, reason, status) values ($1,$2,'waiver','percent',100,$3,$4,'sneaky','approved')", [A.schoolId, sid, T, Y]);
+    if (parent) { await act(parent); out.parentSt = (await t("select public.fee_statement($1,$2,$3) r", [sid, T, Y])).row?.r; }
+    await act(B.admin); out.bSt = await t("select public.fee_statement($1,$2,$3)", [sid, T, Y]); out.bReq = await req("waiver", "percent", 100, "Cross-school waiver");
+    out.bRows = (await t("select count(*)::int n from fee_adjustments where student_id=$1", [sid])).row?.n; await act(A.admin);
+    Object.assign(out, { inClass, kids: kids.length, parent: !!parent });
+  });
+  rec("fees_relief", "Only fee managers request relief; reasons, sponsors and limits are enforced",
+    !v.teacherReq?.ok && !v.short?.ok && /sponsor/.test(v.noSponsor?.err ?? "") && !v.over?.ok, `${W_ERR(v.teacherReq)} | ${W_ERR(v.short)} | ${W_ERR(v.noSponsor)} | ${W_ERR(v.over)}`, "high");
+  rec("fees_relief", "Maker-checker: the requester cannot approve their own relief; a second manager decides once",
+    /separation_of_duties/.test(v.selfApprove?.err ?? "") && v.approve?.row?.r === "approved" && /already/.test(v.twice?.err ?? ""), `${W_ERR(v.selfApprove)} | ${W_ERR(v.twice)}`, "critical");
+  rec("fees_relief", "Statement: 10% + ₦50,000 tuition scholarship + uniform waiver = ₦80,000 relief (the waiver covers only what is left of the uniform); relief never exceeds the bill; revoking restores it",
+    Number(v.st1?.gross) === 120000 && Number(v.st1?.relief) === 80000 && Number(v.st1?.net) === 40000 && Number(v.st2?.net) === 0 && Number(v.st2?.relief) === 120000 && Number(v.st3?.net) === 40000,
+    `st1 ${v.st1?.relief}/${v.st1?.net}; st2 ${v.st2?.relief}/${v.st2?.net}; st3 ${v.st3?.net}`, "critical");
+  rec("fees_levies", "A levy charges each student in scope once; re-running never double-charges; amount changes and other schools' classes are refused",
+    v.levy?.charged_now === v.inClass && v.levyAgain?.charged_now === 0 && !v.levyAmt?.ok && !v.levyForeign?.ok && Number(v.st4?.gross) === 125000,
+    `charged ${v.levy?.charged_now}/${v.inClass}; again ${v.levyAgain?.charged_now}; gross ${v.st4?.gross}`, "high");
+  rec("fees_relief", "Sibling rule: second and later children get the discount, the first does not; applying twice adds nothing",
+    v.kids < 2 || (v.sib >= 1 && v.sibAgain === 0 && v.sibFirstKid === 0 && v.sibSecondKid === 1), `applied ${v.sib}, again ${v.sibAgain}; first ${v.sibFirstKid} second ${v.sibSecondKid}`, "high");
+  rec("fees_relief", "No direct writes; the parent reads their child's statement; another school can neither read nor request",
+    !v.direct?.ok && (!v.parent || Number(v.parentSt?.net) >= 0) && !v.bSt?.ok && !v.bReq?.ok && v.bRows === 0, `direct ${W_ERR(v.direct)}; B ${W_ERR(v.bSt)} / ${W_ERR(v.bReq)}`, "critical");
+}
+
+// ---------- A5b. Checkout charges the amount after relief (SHERIVS-A05b) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+    const Y = "2032/2033", T = "first";
+    const sid = (await asOwner("select id from students where school_id=$1 and is_active and parent_id is not null order by admission_number offset 11 limit 1", [A.schoolId])).row?.id;
+    const parent = (await asOwner("select parent_id from students where id=$1", [sid])).row?.parent_id;
+    const other = (await asOwner("select id from users where school_id=$1 and role='parent' and id <> $2 and not exists (select 1 from students s where s.parent_id = users.id and s.id=$3) limit 1", [A.schoolId, parent, sid])).row?.id;
+    await asOwner("delete from fees where student_id=$1 and academic_year=$2", [sid, Y]);
+    const ins = (ft, amt) => asOwner("insert into fees (school_id, student_id, fee_type, amount, term, academic_year, status, paid_amount) values ($1,$2,$3,$4,$5,$6,'unpaid',0) returning id", [A.schoolId, sid, ft, amt, T, Y]);
+    const tu = (await ins("tuition", 100000)).row.id, un = (await ins("uniform", 20000)).row.id, lv = (await ins("levy:A5b PTA", 5000)).row.id;
+    const checker = (await asOwner("select id from users where school_id=$1 and role='principal' limit 1", [A.schoolId])).row?.id ?? A.principal;
+    const req = async (k, m, val, reason, ft = null, sp = null) => (await t("select public.fee_relief_request($1,$2,$3,$4,$5,$6,$7,$8,$9) id", [sid, k, m, val, T, Y, reason, ft, sp])).row?.id;
+    const due = async (id) => Number((await t("select public.fee_amount_due($1) d", [id])).row?.d);
+    out.before = { tu: await due(tu), un: await due(un), lv: await due(lv) };
+    const d1 = await req("discount", "percent", 10, "Early payment discount");
+    const s1 = await req("scholarship", "fixed", 30000, "Merit scholarship", "tuition", "Borno Education Trust");
+    out.pendingIgnored = await due(tu);
+    await act(checker); for (const id of [d1, s1]) await t("select public.fee_relief_decide($1,true)", [id]); await act(A.admin);
+    out.after = { tu: await due(tu), un: await due(un), lv: await due(lv) };
+    out.st = (await t("select public.fee_statement($1,$2,$3) r", [sid, T, Y])).row?.r;
+    out.rowsSum = Number((await t("select sum(due) s from public.fee_dues($1,$2,$3)", [sid, T, Y])).row?.s);
+    await asOwner("update fees set paid_amount=8000, status='partial' where id=$1", [un]);
+    out.partial = await due(un);
+    const w = await req("waiver", "percent", 100, "Uniform waiver (hardship)", "uniform");
+    await act(checker); await t("select public.fee_relief_decide($1,true)", [w]); await act(A.admin);
+    out.waived = await due(un);
+    // settlement runs as the server (service_role): it can read the amount due for any row
+    await c.query("select set_config('request.jwt.claims', $1, true)", [JSON.stringify({ role: "service_role" })]);
+    out.server = Number((await t("select public.fee_amount_due($1) d", [tu])).row?.d);
+    if (parent) { await act(parent); out.parent = Number((await t("select public.fee_amount_due($1) d", [tu])).row?.d); out.parentRows = (await t("select count(*)::int n from public.fee_dues($1,$2,$3)", [sid, T, Y])).row?.n; }
+    if (other) { await act(other); out.otherParent = await t("select public.fee_amount_due($1)", [tu]); }
+    await act(B.admin); out.bDue = await t("select public.fee_amount_due($1)", [tu]); out.bRows = await t("select * from public.fee_dues($1,$2,$3)", [sid, T, Y]);
+    await act(A.admin); out.internal = await t("select * from public._fee_row_dues($1,$2,$3)", [sid, T, Y]);
+    await asOwner("update fees set status='paid' where id=$1", [lv]); out.paidRow = await due(lv);
+  });
+  rec("fees_checkout", "Before relief the checkout amount is the full row; pending (unapproved) relief changes nothing",
+    v.before?.tu === 100000 && v.before?.un === 20000 && v.before?.lv === 5000 && v.pendingIgnored === 100000, JSON.stringify(v.before), "critical");
+  rec("fees_checkout", "After approval: 10% across all rows + ₦30,000 tuition scholarship → tuition ₦60,000, uniform ₦18,000, levy ₦4,500",
+    v.after?.tu === 60000 && v.after?.un === 18000 && v.after?.lv === 4500, JSON.stringify(v.after), "critical");
+  rec("fees_checkout", "Per-row checkout amounts add up exactly to the statement balance (₦82,500)",
+    v.rowsSum === 82500 && Number(v.st?.balance) === 82500 && Number(v.st?.relief) === 42500, `rows ${v.rowsSum}; statement ${v.st?.balance}/${v.st?.relief}`, "critical");
+  rec("fees_checkout", "Part-payments are subtracted; a fully waived row has nothing to pay; paid rows are 0",
+    v.partial === 10000 && v.waived === 0 && v.paidRow === 0, `partial ${v.partial}; waived ${v.waived}; paid ${v.paidRow}`, "high");
+  rec("fees_checkout", "Settlement (service role) and the child's parent read the same amount; other parents, other schools and direct calls to the allocator are refused",
+    v.server === 60000 && (v.parent === undefined || v.parent === 60000) && (!v.otherParent || !v.otherParent.ok) && !v.bDue?.ok && !v.bRows?.ok && !v.internal?.ok,
+    `server ${v.server}; parent ${v.parent}; other ${W_ERR(v.otherParent)}; B ${W_ERR(v.bDue)}; internal ${W_ERR(v.internal)}`, "critical");
+}
+// ---------- A6. Class moves, transfers with consent, guardian rights, custody orders, safe pickup (SHERIVS-A06) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+    const sid = (await asOwner("select id from students where school_id=$1 and is_active and parent_id is not null order by admission_number offset 3 limit 1", [A.schoolId])).row?.id;
+    const st = (await asOwner("select class_id, parent_id from students where id=$1", [sid])).row;
+    const other = (await asOwner("select id from classes where school_id=$1 and id <> $2 limit 1", [A.schoolId, st.class_id])).row?.id;
+    const bCls = (await asOwner("select id from classes where school_id=$1 limit 1", [B.schoolId])).row?.id;
+    // class moves
+    await act(A.teacher); out.tMove = await t("select public.student_move_class($1,$2,'Teacher tries')", [sid, other]); await act(A.admin);
+    out.noReason = await t("select public.student_move_class($1,$2,'x')", [sid, other]);
+    out.foreign = await t("select public.student_move_class($1,$2,'Wrong school class')", [sid, bCls]);
+    out.move = await t("select public.student_move_class($1,$2,'Parent requested a stream change')", [sid, other]);
+    out.hist = (await t("select count(*)::int n from student_class_history where student_id=$1", [sid])).row?.n;
+    out.nowCls = (await asOwner("select class_id from students where id=$1", [sid])).row?.class_id === other;
+    // transfers
+    out.noConsent = await t("select public.transfer_out_issue($1,'Govt Sec School Maiduguri','Family relocating',false)", [sid]);
+    const iss = (await t("select public.transfer_out_issue($1,'Govt Sec School Maiduguri','Family relocating',true) r", [sid])).row?.r;
+    out.twice = await t("select public.transfer_out_issue($1,'Other School','Second attempt',true)", [sid]);
+    out.inactive = (await asOwner("select status, is_active from students where id=$1", [sid])).row;
+    out.ownClaim = await t("select public.transfer_in_claim($1)", [iss?.code]);
+    await act(B.admin);
+    out.bad = await t("select public.transfer_in_claim('NOTACODE00')");
+    out.claim = (await t("select public.transfer_in_claim($1) r", [iss?.code])).row?.r;
+    out.reclaim = await t("select public.transfer_in_claim($1)", [iss?.code]);
+    await act(A.admin);
+    // cancel flow on a second student
+    const sid2 = (await asOwner("select id from students where school_id=$1 and is_active order by admission_number offset 5 limit 1", [A.schoolId])).row?.id;
+    const cls2 = (await asOwner("select class_id from students where id=$1", [sid2])).row?.class_id;
+    const iss2 = (await t("select public.transfer_out_issue($1,'Some Academy','Considering a move',true) r", [sid2])).row?.r;
+    out.cancel = await t("select public.transfer_cancel($1)", [iss2?.id]);
+    out.restored = (await asOwner("select is_active, status, class_id from students where id=$1", [sid2])).row;
+    out.cls2ok = out.restored?.class_id === cls2;
+    // guardians, custody, pickup (on a third student)
+    const sid3 = (await asOwner("select id from students where school_id=$1 and is_active and parent_id is not null order by admission_number offset 7 limit 1", [A.schoolId])).row?.id;
+    const p1 = (await asOwner("select parent_id from students where id=$1", [sid3])).row?.parent_id;
+    const p2 = (await asOwner("select id from users where school_id=$1 and role='parent' and id <> $2 limit 1", [A.schoolId, p1])).row?.id;
+    await asOwner("update users set phone='+234 803 555 0101' where id=$1", [p1]);
+    await asOwner("insert into parent_student_map (school_id, parent_id, student_id, relationship) values ($1,$2,$3,'father'),($1,$4,$3,'mother') on conflict do nothing", [A.schoolId, p1, sid3, p2]);
+    await act(A.teacher);
+    out.gOk = (await t("select public.pickup_verify($1,'Parent One','08035550101') r", [sid3])).row?.r;
+    out.stranger = (await t("select public.pickup_verify($1,'Unknown Person','0700 000 0000') r", [sid3])).row?.r;
+    out.tOrder = await t("select public.custody_order_add($1,'X','1',null,'no_pickup','REF')", [sid3]);
+    out.tRead = (await t("select count(*)::int n from custody_orders where student_id=$1", [sid3])).row?.n;
+    await act(A.admin);
+    out.rights = await t("select public.guardian_rights_set($1,$2,true,false)", [sid3, p2]);
+    const ord = (await t("select public.custody_order_add($1,'Parent One','0803-555-0101',$2,'no_pickup','HC/MAI/123/2026') id", [sid3, p1])).row?.id;
+    await act(A.teacher);
+    out.blocked = (await t("select public.pickup_verify($1,'Parent One','+2348035550101') r", [sid3])).row?.r;
+    out.byName = (await t("select public.pickup_verify($1,'  parent one ',null) r", [sid3])).row?.r;
+    out.noRights = (await t("select public.pickup_verify($1,'Parent Two',null,$2) r", [sid3, p2])).row?.r;
+    out.events = (await t("select count(*)::int n, count(*) filter (where allowed)::int a from pickup_events where student_id=$1", [sid3])).row;
+    out.tamper = await t("update pickup_events set allowed=true where student_id=$1", [sid3]);
+    out.ownerTamper = await asOwner("delete from pickup_events where student_id=$1", [sid3]);
+    await act(A.admin); await t("select public.custody_order_revoke($1)", [ord]);
+    await t("select public.guardian_rights_set($1,$2,true,true)", [sid3, p1]);
+    await act(A.teacher); out.after = (await t("select public.pickup_verify($1,'Parent One','08035550101') r", [sid3])).row?.r;
+    // isolation + parents
+    await act(p1); out.pRead = (await t("select count(*)::int n from custody_orders where student_id=$1", [sid3])).row?.n;
+    out.pVerify = await t("select public.pickup_verify($1,'Me',null)", [sid3]);
+    await act(B.admin); out.bVerify = await t("select public.pickup_verify($1,'B',null)", [sid3]); out.bOrder = await t("select public.custody_order_add($1,'Z Z',null,null,'no_pickup','REF1')", [sid3]);
+    out.bHist = (await t("select count(*)::int n from student_class_history where student_id=$1", [sid])).row?.n;
+    out.direct = await t("insert into custody_orders (school_id, student_id, restricted_name, reference) values ($1,$2,'x','y')", [B.schoolId, sid3]);
+  });
+  rec("students_transfer", "Class moves need students.transfer, a reason and a same-school class; history is kept",
+    !v.tMove?.ok && !v.noReason?.ok && !v.foreign?.ok && v.move?.ok && v.hist === 1 && v.nowCls, `${W_ERR(v.tMove)} | ${W_ERR(v.noReason)} | ${W_ERR(v.foreign)} | hist ${v.hist}`, "high");
+  rec("students_transfer", "Transfer out requires parent consent, one open transfer per student, and marks the learner transferred",
+    /consent/.test(v.noConsent?.err ?? "") && !v.twice?.ok && v.inactive?.status === "transferred" && v.inactive?.is_active === false, `${W_ERR(v.noConsent)} | ${W_ERR(v.twice)} | ${JSON.stringify(v.inactive)}`, "critical");
+  rec("students_transfer", "Receiving school claims once with the code and gets a summary only (no medical/address/guardian data)",
+    !v.ownClaim?.ok && !v.bad?.ok && !!v.claim?.admission_number && !("medical_conditions" in (v.claim ?? {})) && !("home_address" in (v.claim ?? {})) && !("parent_phone" in (v.claim ?? {})) && !v.reclaim?.ok,
+    `keys ${Object.keys(v.claim ?? {}).join(",")}; reclaim ${W_ERR(v.reclaim)}`, "critical");
+  rec("students_transfer", "Cancelling an unclaimed transfer restores the learner to their class",
+    v.cancel?.ok && v.restored?.is_active === true && v.cls2ok, JSON.stringify(v.restored), "high");
+  rec("custody_pickup", "Guardians with pickup rights are allowed; strangers are refused; teachers cannot add or read custody orders",
+    v.gOk?.allowed === true && v.stranger?.allowed === false && !v.tOrder?.ok && v.tRead === 0, `${JSON.stringify(v.gOk)} ${JSON.stringify(v.stranger)} ${W_ERR(v.tOrder)}`, "critical");
+  rec("custody_pickup", "A court order blocks the named person by phone (any format) or name, overriding guardianship; guardians without pickup rights are refused",
+    v.blocked?.allowed === false && v.blocked?.reason === "restricted_by_order" && v.byName?.allowed === false && v.noRights?.allowed === false && v.noRights?.reason === "guardian_without_pickup_rights",
+    `${JSON.stringify(v.blocked)} ${JSON.stringify(v.byName)} ${JSON.stringify(v.noRights)}`, "critical");
+  rec("custody_pickup", "Every pickup check is logged append-only; revoking the order restores access",
+    v.events?.n >= 5 && !v.tamper?.ok && !v.ownerTamper?.ok && v.after?.allowed === true, `events ${JSON.stringify(v.events)}; ${W_ERR(v.ownerTamper)}; after ${JSON.stringify(v.after)}`, "high");
+  rec("custody_pickup", "Parents never see custody orders or run gate checks; another school can do nothing",
+    v.pRead === 0 && !v.pVerify?.ok && !v.bVerify?.ok && !v.bOrder?.ok && v.bHist === 0 && !v.direct?.ok, `${W_ERR(v.pVerify)} | ${W_ERR(v.bVerify)} | ${W_ERR(v.direct)}`, "critical");
+}
+// ---------- A7. Offline attendance v2: per-item idempotency, clock skew, conflict queue (SHERIVS-A07) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+    const cls = (await asOwner("select c.id, c.teacher_id from classes c where c.school_id=$1 and c.teacher_id is not null and exists (select 1 from students s where s.class_id=c.id and s.is_active) limit 1", [A.schoolId])).row;
+    const kids = (await asOwner("select id from students where class_id=$1 and is_active order by id limit 3", [cls.id])).r.rows.map((r) => r.id);
+    const tch = cls.teacher_id; const today = (await asOwner("select current_date::text d")).row.d;
+    await asOwner("delete from attendance where student_id = any($1) and date=$2", [kids, today]);
+    const nowIso = new Date().toISOString();
+    const item = (id, s, st, cap = nowIso) => ({ id, student_id: s, date: today, status: st, captured_at: cap });
+    await act(tch);
+    out.skew = await t("select public.offline_attendance_sync_v2('a7-skew', $1::jsonb, now() + interval '3 days')", [JSON.stringify([item("k0", kids[0], "present")])]);
+    out.b1 = (await t("select public.offline_attendance_sync_v2('a7-b1', $1::jsonb, now()) r", [JSON.stringify([item("k1", kids[0], "present"), item("k2", kids[1], "absent"), { student_id: kids[2], date: today, status: "late" }])])).row?.r;
+    out.replay = (await t("select public.offline_attendance_sync_v2('a7-b1', '[]'::jsonb, now()) r")).row?.r;
+    out.b2 = (await t("select public.offline_attendance_sync_v2('a7-b2', $1::jsonb, now()) r", [JSON.stringify([item("k1", kids[0], "present"), item("k2", kids[1], "absent")])])).row?.r;
+    out.rows = (await asOwner("select count(*)::int n from attendance where student_id = any($1) and date=$2", [kids, today])).row?.n;
+    // device 2h fast: captured time is skew-corrected, not "in the future"
+    const fast = new Date(Date.now() + 2 * 3600e3).toISOString();
+    out.fast = (await t("select public.offline_attendance_sync_v2('a7-fast', $1::jsonb, now() + interval '2 hours') r", [JSON.stringify([item("k3", kids[2], "late", fast)])])).row?.r;
+    out.future = (await t("select public.offline_attendance_sync_v2('a7-fut', $1::jsonb, now()) r", [JSON.stringify([item("k4", kids[2], "late", new Date(Date.now() + 3 * 3600e3).toISOString())])])).row?.r;
+    // conflict: admin marks kid0 absent, teacher device says present -> queued
+    await act(A.admin); await t("update attendance set status='absent', marked_by=$2 where student_id=$1 and date=current_date", [kids[0], A.admin]);
+    await asOwner("update attendance set status='absent', marked_by=$2 where student_id=$1 and date=current_date", [kids[0], A.admin]);
+    await act(tch);
+    out.b3 = (await t("select public.offline_attendance_sync_v2('a7-b3', $1::jsonb, now()) r", [JSON.stringify([item("k5", kids[0], "present")])])).row?.r;
+    out.tList = await t("select * from public.attendance_conflicts_list($1)", [A.schoolId]);
+    out.tOwn = (await t("select count(*)::int n from attendance_sync_conflicts where user_id=$1", [tch])).row?.n;
+    out.tResolve = await t("select public.attendance_conflict_resolve(id,'accept_device') from attendance_sync_conflicts where user_id=$1 limit 1", [tch]);
+    await act(A.admin);
+    const list = (await t("select * from public.attendance_conflicts_list($1)", [A.schoolId])).r?.rows ?? [];
+    out.listN = list.filter((x) => x.client_item_id === "k5").length;
+    const cid = list.find((x) => x.client_item_id === "k5")?.id;
+    out.bad = await t("select public.attendance_conflict_resolve($1,'overwrite')", [cid]);
+    out.res = (await t("select public.attendance_conflict_resolve($1,'accept_device','Teacher was in class') r", [cid])).row?.r;
+    out.again = await t("select public.attendance_conflict_resolve($1,'dismiss')", [cid]);
+    out.final = (await asOwner("select status, marked_by from attendance where student_id=$1 and date=current_date", [kids[0]])).row;
+    out.direct = await t("insert into attendance_sync_conflicts (school_id,user_id,batch,client_item_id,student_id,date,yours) values ($1,$2,'x','x',$3,current_date,'present')", [A.schoolId, A.admin, kids[0]]);
+    await act(B.admin); out.bList = await t("select * from public.attendance_conflicts_list($1)", [A.schoolId]);
+    out.bRead = (await t("select count(*)::int n from attendance_sync_conflicts where school_id=$1", [A.schoolId])).row?.n;
+    out.bResolve = await t("select public.attendance_conflict_resolve($1,'dismiss')", [cid]);
+    Object.assign(out, { tch, admin: A.admin });
+  });
+  rec("attendance_offline", "Devices with a clock more than a day off are refused with a clear message",
+    /clock_skew/.test(v.skew?.err ?? ""), W_ERR(v.skew), "high");
+  rec("attendance_offline", "Per-item idempotency: items without ids are rejected; resent items in a new batch are skipped, never double-applied; batch replays return the first answer",
+    v.b1?.applied === 2 && v.b1?.conflicts?.some((c) => c.why === "missing_item_id") && v.replay?.replay === true && v.b2?.applied === 0 && v.b2?.duplicates === 2 && v.rows === 2,
+    `b1 ${JSON.stringify(v.b1)}; b2 ${JSON.stringify(v.b2)}; rows ${v.rows}`, "critical");
+  rec("attendance_offline", "Captured times are corrected for device skew; marks captured in the future are refused",
+    v.fast?.applied === 1 && Math.abs(v.fast?.skew_seconds - 7200) < 120 && v.future?.conflicts?.[0]?.why === "captured_in_future",
+    `fast ${JSON.stringify(v.fast)}; future ${JSON.stringify(v.future?.conflicts)}`, "high");
+  rec("attendance_offline", "A different existing mark goes to the conflict queue; teachers see their own items but cannot list or resolve the school queue",
+    v.b3?.conflicts?.[0]?.queued === true && !v.tList?.ok && v.tOwn >= 1 && (!v.tResolve?.ok || v.tResolve?.r?.rowCount === 0), `${JSON.stringify(v.b3)}; ${W_ERR(v.tList)}`, "critical");
+  rec("attendance_offline", "Admins resolve each conflict once with a valid action; accepting the device mark updates attendance",
+    v.listN === 1 && !v.bad?.ok && v.res === "accepted_device" && /already/.test(v.again?.err ?? "") && v.final?.status === "present" && v.final?.marked_by === v.tch,
+    `${v.res}; final ${JSON.stringify(v.final)}`, "high");
+  rec("attendance_offline", "No direct writes; another school cannot list, read or resolve",
+    !v.direct?.ok && !v.bList?.ok && v.bRead === 0 && !v.bResolve?.ok, `${W_ERR(v.direct)} | ${W_ERR(v.bList)} | ${W_ERR(v.bResolve)}`, "critical");
+}
+
+// ---------- A7b. Teacher screen offline flow end to end (SHERIVS-A07b) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+    const cls = (await asOwner("select c.id, c.teacher_id from classes c where c.school_id=$1 and c.teacher_id is not null and exists (select 1 from students s where s.class_id=c.id and s.is_active) order by c.id desc limit 1", [A.schoolId])).row;
+    const kids = (await asOwner("select id from students where class_id=$1 and is_active order by id desc limit 4", [cls.id])).r.rows.map((r) => r.id);
+    const today = (await asOwner("select current_date::text d")).row.d;
+    await asOwner("delete from attendance where student_id = any($1) and date=$2", [kids, today]);
+    // what the teacher screen queues while offline (same shape as lib/offline/attendance-queue.ts)
+    const cap = new Date().toISOString();
+    const items = kids.map((s, i) => ({ id: `q-${i}-${s.slice(0, 8)}`, student_id: s, date: today, status: i === 0 ? "absent" : "present", captured_at: cap }));
+    const batch = `b-${items[0].id}-${items.length}`;
+    // meanwhile the form teacher's colleague (admin) marks kid 0 present at school
+    await asOwner("insert into attendance (school_id, student_id, class_id, date, status, marked_by) values ($1,$2,$3,$4,'present',$5)", [A.schoolId, kids[0], cls.id, today, A.admin]);
+    await act(cls.teacher_id);
+    out.first = (await t("select public.offline_attendance_sync_v2($1,$2::jsonb,now()) r", [batch, JSON.stringify(items)])).row?.r;
+    // response lost: the queue retries the same batch
+    out.retry = (await t("select public.offline_attendance_sync_v2($1,$2::jsonb,now()) r", [batch, JSON.stringify(items)])).row?.r;
+    // a later batch that still contains already-synced items (e.g. two tabs) adds nothing
+    out.later = (await t("select public.offline_attendance_sync_v2($1,$2::jsonb,now()) r", [`b-${items[1].id}-2`, JSON.stringify(items.slice(1, 3))])).row?.r;
+    out.mine = (await t("select count(*)::int n from attendance_sync_conflicts where user_id=$1 and date=$2", [cls.teacher_id, today])).row?.n;
+    out.rows = (await asOwner("select count(*)::int n, count(*) filter (where note like 'offline:%')::int o from attendance where student_id = any($1) and date=$2", [kids, today])).row;
+    await act(A.admin);
+    out.adminSees = ((await t("select * from public.attendance_conflicts_list($1)", [A.schoolId])).r?.rows ?? []).filter((x) => x.batch === batch).length;
+  });
+  rec("attendance_offline", "Teacher screen offline flow: queued marks sync once, a lost-response retry is a replay, overlapping batches add nothing",
+    v.first?.applied === 3 && v.retry?.replay === true && v.later?.applied === 0 && v.later?.duplicates === 2 && v.rows?.n === 4 && v.rows?.o === 3,
+    `first ${JSON.stringify(v.first?.applied)}; retry ${v.retry?.replay}; later ${JSON.stringify(v.later)}; rows ${JSON.stringify(v.rows)}`, "critical");
+  rec("attendance_offline", "A queued mark that disagrees with one saved at school is shown to the teacher and lands in the admin conflict queue",
+    v.mine === 1 && v.adminSees === 1 && v.first?.conflicts?.[0]?.queued === true, `teacher ${v.mine}; admin ${v.adminSees}`, "high");
+}
+
+// ---------- 25. Institution head console: head role + step-up MFA (SHERIVS-B01) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+    const claims = (u, aal) => c.query("select set_config('request.jwt.claims', $1, true)", [JSON.stringify({ sub: u, role: "authenticated", aal })]);
+    const slug = (await asOwner("select slug from schools where id=$1", [A.schoolId])).row?.slug;
+    await claims(A.admin, "aal1"); out.noMfa = await t("select public.head_role_grant($1,'vc')", [A.teacher]);
+    await claims(A.admin, "aal2");
+    out.self = await t("select public.head_role_grant($1,'vc')", [A.admin]);
+    out.foreign = await t("select public.head_role_grant($1,'vc')", [B.admin]);
+    out.badRole = await t("select public.head_role_grant($1,'king')", [A.teacher]);
+    out.past = await t("select public.head_role_grant($1,'vc',null, now() - interval '1 day')", [A.teacher]);
+    out.gid = (await t("select public.head_role_grant($1,'vc') id", [A.teacher])).row?.id;
+    out.hodId = (await t("select public.head_role_grant($1,'hod','Mathematics', now() + interval '30 days') id", [A.teacher])).row?.id;
+    await claims(B.admin, "aal2"); out.bGrant = await t("select public.head_role_grant($1,'vc')", [A.teacher]);
+    out.bRevoke = (await t("select public.head_role_revoke($1) r", [out.gid])).row?.r;
+    out.bSession = (await t("select public.head_console_session($1) r", [slug])).row?.r;
+    out.bOverview = await t("select public.head_console_overview($1)", [slug]);
+    await claims(A.teacher, "aal1");
+    out.tAal1 = (await t("select public.head_console_session($1) r", [slug])).row?.r;
+    out.tAal1Ov = await t("select public.head_console_overview($1)", [slug]);
+    out.tInsert = await t("insert into institution_heads (school_id, user_id, head_role) values ($1,$2,'vc')", [A.schoolId, A.teacher]);
+    await claims(A.teacher, "aal2");
+    out.tOk = (await t("select public.head_console_session($1) r", [slug])).row?.r;
+    out.tOv = (await t("select public.head_console_overview($1) r", [slug])).row?.r;
+    out.tSelfGrant = await t("select public.head_role_grant($1,'registrar')", [A.principal]);
+    out.unknown = (await t("select public.head_console_session('no-such-inst') r")).row?.r;
+    await claims(A.admin, "aal2"); out.revoke = (await t("select public.head_role_revoke($1) r", [out.gid])).row?.r;
+    await claims(A.teacher, "aal2");
+    out.afterRevoke = (await t("select public.head_console_session($1) r", [slug])).row?.r;
+    out.hodOv = (await t("select public.head_console_overview($1) r", [slug])).row?.r;
+    await asOwner("update institution_heads set ends_at = now() - interval '1 minute', starts_at = now() - interval '2 days' where id=$1", [out.hodId]);
+    await claims(A.teacher, "aal2");
+    out.expired = (await t("select public.head_console_session($1) r", [slug])).row?.r;
+    out.audit = (await asOwner("select array_agg(action order by id) a from head_console_audit where school_id=$1", [A.schoolId])).row?.a;
+    out.auditEdit = await asOwner("delete from head_console_audit where school_id=$1", [A.schoolId]);
+  });
+  rec("head_console", "Head roles are granted only by an institution admin with MFA, never to self, only to own members, valid roles and future end dates",
+    !v.noMfa?.ok && !v.self?.ok && !v.foreign?.ok && !v.badRole?.ok && !v.past?.ok && !!v.gid && !!v.hodId && !v.bGrant?.ok && v.bRevoke === false && !v.tInsert?.ok && !v.tSelfGrant?.ok,
+    JSON.stringify({ noMfa: v.noMfa?.err, self: v.self?.err }), "critical");
+  rec("head_console", "Console entry needs a head role AND aal2: same account without MFA is told to step up; other institutions' admins are refused",
+    v.tAal1?.status === "mfa_required" && !v.tAal1Ov?.ok && v.tOk?.status === "ok" && JSON.stringify(v.tOk?.roles) === JSON.stringify(["hod", "vc"])
+      && v.bSession?.status === "not_a_head" && !v.bOverview?.ok && v.unknown?.status === "unknown_institution",
+    JSON.stringify({ aal1: v.tAal1?.status, ok: v.tOk?.status, b: v.bSession?.status }), "critical");
+  rec("head_console", "Overview: VC sees finance, an HOD alone does not; revoked and expired roles lose access; audit is append-only",
+    v.tOv?.finance != null && v.tOv?.students > 0 && v.revoke === true && JSON.stringify(v.afterRevoke?.roles) === JSON.stringify(["hod"]) && v.hodOv?.finance === null
+      && v.expired?.status === "not_a_head" && v.audit?.includes("grant") && v.audit?.includes("revoke") && v.audit?.includes("view_overview") && !v.auditEdit?.ok,
+    JSON.stringify({ fin: !!v.tOv?.finance, hodFin: v.hodOv?.finance, expired: v.expired?.status, audit: v.audit }), "high");
+}
+// ---------- 26. Gov console realm (<label>.gov.sherivs.com) + invite-only officers with MFA and expiry (SHERIVS-B02) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+    const as = (u, aal = "aal1") => c.query("select set_config('request.jwt.claims', $1, true)", [JSON.stringify({ sub: u, role: "authenticated", aal })]);
+    const anon = async (sql, p = []) => { await c.query("SET LOCAL ROLE anon"); await c.query("select set_config('request.jwt.claims', '{\"role\":\"anon\"}', true)");
+      try { return await t(sql, p); } finally { await c.query("SET LOCAL ROLE authenticated"); } };
+    const PA = crypto.randomUUID(), SUP = crypto.randomUUID(), OFF = crypto.randomUUID(), OTHER = crypto.randomUUID();
+    const tag = PA.slice(0, 6), em = "officer-" + OFF.slice(0, 8) + "@moe.sim", label = "simb" + tag;
+    await asOwner("insert into auth.users (id, email) values ($1,$5),($2,$6),($3,$7),($4,$8)",
+      [PA, SUP, OFF, OTHER, "pab" + tag + "@sim.local", "supb" + tag + "@sim.local", em, "other-" + tag + "@moe.sim"]);
+    await asOwner("insert into platform_staff (id, email, full_name, status) values ($1,$2,'Sim PA B02','active'),($3,$4,'Sim Support B02','active')", [PA, "pab" + tag + "@sim.local", SUP, "supb" + tag + "@sim.local"]);
+    await asOwner("insert into platform_staff_roles (staff_id, role_code) values ($1,'platform_admin'),($2,'support')", [PA, SUP]);
+    await as(PA, "aal2");
+    const j = (await t("select public.gov_jurisdiction_create('Sim Borno MoE','Borno') id")).row?.id; out.j = j;
+    await as(PA, "aal1"); out.hostNoMfa = await t("select public.gov_jurisdiction_set_host($1,$2)", [j, label]);
+    out.inviteNoMfa = await t("select public.gov_officer_invite_create($1,$2,'director')", [em, j]);
+    await as(PA, "aal2");
+    out.reserved = await t("select public.gov_jurisdiction_set_host($1,'console')", [j]);
+    out.host = (await t("select public.gov_jurisdiction_set_host($1,$2) r", [j, label.toUpperCase()])).row?.r;
+    out.anonHost = (await anon("select public.gov_jurisdiction_by_host($1) r", [label])).row?.r;
+    out.anonInvites = await anon("select count(*) from gov_officer_invites");
+    await as(PA, "aal2");
+    const schoolEmail = (await asOwner("select au.email from auth.users au join users u on u.id=au.id where au.email is not null limit 1")).row?.email;
+    out.schoolInvite = schoolEmail ? await t("select public.gov_officer_invite_create($1,$2,'viewer')", [schoolEmail, j]) : { ok: false, skipped: true };
+    out.longInvite = await t("select public.gov_officer_invite_create($1,$2,'viewer',30)", [em, j]);
+    out.badRole = await t("select public.gov_officer_invite_create($1,$2,'king')", [em, j]);
+    const inv = (await t("select public.gov_officer_invite_create($1,$2,'director',7,90) r", [em.toUpperCase(), j])).row?.r; out.inv = inv;
+    out.dupOpen = await t("select public.gov_officer_invite_create($1,$2,'viewer')", [em, j]);
+    out.stored = (await t("select token_hash, email from gov_officer_invites where id=$1", [inv?.id])).row;
+    await as(SUP, "aal2"); out.supInvite = await t("select public.gov_officer_invite_create($1,$2,'viewer')", ["x-" + em, j]);
+    await as(A.admin, "aal2"); out.schoolAdminInvite = await t("select public.gov_officer_invite_create($1,$2,'viewer')", ["y-" + em, j]);
+    out.schoolAdminRead = (await t("select count(*)::int n from gov_officer_invites where jurisdiction_id=$1", [j])).row?.n;
+    await as(OTHER, "aal2"); out.wrongEmail = await t("select public.gov_officer_invite_accept($1)", [inv?.token]);
+    await as(OFF); out.badToken = await t("select public.gov_officer_invite_accept('deadbeef')");
+    out.sessBefore = (await t("select public.gov_console_session($1) r", [label])).row?.r?.status;
+    out.accept = (await t("select public.gov_officer_invite_accept($1) r", [inv?.token])).row?.r;
+    out.reuse = await t("select public.gov_officer_invite_accept($1)", [inv?.token]);
+    out.sessAal1 = (await t("select public.gov_console_session($1) r", [label])).row?.r?.status;
+    out.ovAal1 = await t("select public.gov_overview($1)", [j]);
+    await as(OFF, "aal2");
+    out.sess = (await t("select public.gov_console_session($1) r", [label])).row?.r;
+    out.ov = await t("select public.gov_overview($1)", [j]);
+    out.unknown = (await t("select public.gov_console_session('nowhere') r")).row?.r?.status;
+    // revoke + expiry
+    await as(PA, "aal2");
+    const inv2 = (await t("select public.gov_officer_invite_create($1,$2,'inspector') r", [OTHER.slice(0, 8) + "-insp@moe.sim", j])).row?.r;
+    out.revoke = (await t("select public.gov_officer_invite_revoke($1) r", [inv2?.id])).row?.r;
+    out.revokeAgain = (await t("select public.gov_officer_invite_revoke($1) r", [inv2?.id])).row?.r;
+    const inv3 = (await t("select public.gov_officer_invite_create($1,$2,'viewer') r", ["other-" + tag + "@moe.sim", j])).row?.r;
+    await asOwner("update gov_officer_invites set expires_at = now() - interval '1 minute' where id=$1", [inv3?.id]);
+    out.list = (await t("select public.gov_officer_invites_list($1) r", [j])).row?.r;
+    await as(OTHER, "aal2"); out.expiredInvite = await t("select public.gov_officer_invite_accept($1)", [inv3?.token]);
+    await asOwner("update gov_viewers set expires_at = now() - interval '1 minute' where user_id=$1 and jurisdiction_id=$2", [OFF, j]);
+    await as(OFF, "aal2");
+    out.mineExpired = (await t("select public.gov_my_jurisdictions() r")).row?.r;
+    out.ovExpired = await t("select public.gov_overview($1)", [j]);
+    out.sessExpired = (await t("select public.gov_console_session($1) r", [label])).row?.r?.status;
+    out.audit = (await asOwner("select array_agg(action order by id) a from gov_admin_audit where jurisdiction_id=$1", [j])).row?.a;
+    out.auditEdit = await asOwner("delete from gov_admin_audit where jurisdiction_id=$1", [j]);
+    Object.assign(out, { label, em });
+  });
+  rec("gov_officer_invite", "Only platform.gov.manage staff signed in with MFA set the host label and invite; support staff, school admins, no-MFA, reserved labels, tenant emails, >14-day or unknown-role invites are refused",
+    !v.hostNoMfa?.ok && !v.inviteNoMfa?.ok && !v.reserved?.ok && v.host === v.label && !v.supInvite?.ok && !v.schoolAdminInvite?.ok && v.schoolAdminRead === 0
+      && (v.schoolInvite?.skipped || !v.schoolInvite?.ok) && !v.longInvite?.ok && !v.badRole?.ok && !v.dupOpen?.ok,
+    JSON.stringify({ host: v.host, sup: v.supInvite?.err, noMfa: v.inviteNoMfa?.err }), "critical");
+  rec("gov_officer_invite", "Host label resolves publicly to the jurisdiction name only; the raw token is returned once and only its sha256 is stored; anon cannot read invites",
+    v.anonHost?.id === v.j && v.anonHost?.name === "Sim Borno MoE" && !("viewers" in (v.anonHost ?? {})) && !v.anonInvites?.ok
+      && /^[0-9a-f]{48}$/.test(v.inv?.token ?? "") && v.stored?.token_hash?.length === 64 && v.stored?.token_hash !== v.inv?.token && v.stored?.email === v.em,
+    JSON.stringify({ anonHost: v.anonHost?.name, stored: v.stored?.email }), "critical");
+  rec("gov_officer_invite", "Accept needs the same signed-in email and a valid single-use token; then the console demands MFA (server-side) before any read",
+    !v.wrongEmail?.ok && !v.badToken?.ok && v.sessBefore === "not_an_officer" && v.accept?.agency_role === "director" && !v.reuse?.ok
+      && v.sessAal1 === "mfa_required" && !v.ovAal1?.ok && v.sess?.status === "ok" && v.sess?.agency_role === "director" && v.ov?.ok && v.unknown === "unknown_jurisdiction",
+    JSON.stringify({ sessBefore: v.sessBefore, aal1: v.sessAal1, ovAal1: v.ovAal1?.err, sess: v.sess?.status, ov: v.ov?.err }), "critical");
+  rec("gov_officer_invite", "Revoked and expired invites cannot be used; an expired officer seat loses the console; every action is in the append-only audit",
+    v.revoke === true && v.revokeAgain === false && !v.expiredInvite?.ok && Array.isArray(v.mineExpired) && v.mineExpired.length === 0 && !v.ovExpired?.ok && v.sessExpired === "not_an_officer"
+      && v.list?.some((x) => x.status === "accepted") && v.list?.some((x) => x.status === "revoked") && v.list?.some((x) => x.status === "expired") && !JSON.stringify(v.list).includes("token")
+      && JSON.stringify(v.audit) === JSON.stringify(["jurisdiction_create", "host_set", "invite_create", "invite_accept", "invite_create", "invite_revoke", "invite_create"]) && !v.auditEdit?.ok,
+    `audit ${JSON.stringify(v.audit)}`, "high");
+}
+// ---------- 27. Gov console modules: inspections + circulars (SHERIVS-B03) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+    const as = (u, aal = "aal2") => c.query("select set_config('request.jwt.claims', $1, true)", [JSON.stringify({ sub: u, role: "authenticated", aal })]);
+    const INSP = crypto.randomUUID(), INSP2 = crypto.randomUUID(), DIR = crypto.randomUUID(), VIEW = crypto.randomUUID(), OLD = crypto.randomUUID();
+    await asOwner("insert into auth.users (id, email) select x, 'b03-'||left(x::text,8)||'@moe.sim' from unnest($1::uuid[]) x", [[INSP, INSP2, DIR, VIEW, OLD]]);
+    const j = (await asOwner("insert into gov_jurisdictions (name, state) values ('Sim B03 MoE','B03-' || left(gen_random_uuid()::text,6)) returning id")).row?.id;
+    await asOwner(`insert into gov_viewers (user_id, jurisdiction_id, agency_role, expires_at, mfa_required) values
+      ($1,$6,'inspector',now()+interval '1 year',true),($2,$6,'inspector',now()+interval '1 year',true),($3,$6,'director',now()+interval '1 year',true),
+      ($4,$6,'viewer',now()+interval '1 year',true),($5,$6,'director',now()-interval '1 day',true)`, [INSP, INSP2, DIR, VIEW, OLD, j]);
+    await act(A.admin); await t("select public.gov_sharing_set($1,$2,true)", [A.schoolId, j]);
+    const lga = (await asOwner("select lga from school_locations where school_id=$1", [A.schoolId])).row?.lga
+      ?? (await asOwner("insert into school_locations (school_id, state, lga) values ($1,'Borno','Maiduguri') returning lga", [A.schoolId])).row?.lga;
+    // inspections
+    await as(VIEW); out.viewerSched = await t("select public.gov_inspection_schedule($1,$2,current_date+7)", [j, A.schoolId]);
+    await as(OLD); out.expiredSched = await t("select public.gov_inspection_schedule($1,$2,current_date+7)", [j, A.schoolId]);
+    await as(INSP, "aal1"); out.noMfa = await t("select public.gov_inspection_schedule($1,$2,current_date+7)", [j, A.schoolId]);
+    await as(INSP);
+    out.notSharing = await t("select public.gov_inspection_schedule($1,$2,current_date+7)", [j, B.schoolId]);
+    out.badDate = await t("select public.gov_inspection_schedule($1,$2,current_date+800)", [j, A.schoolId]);
+    const ins = (await t("select public.gov_inspection_schedule($1,$2,current_date+7) id", [j, A.schoolId])).row?.id; out.ins = ins;
+    await as(INSP2); out.otherInspRecord = await t("select public.gov_inspection_record($1,'{\"teaching\":4,\"records\":3,\"leadership\":4}'::jsonb,'Lessons observed in JSS1-3; records mostly up to date.')", [ins]);
+    await as(INSP);
+    out.badScore = await t("select public.gov_inspection_record($1,'{\"teaching\":9,\"records\":3,\"leadership\":4}'::jsonb,'Lessons observed in JSS1-3; records mostly up to date.')", [ins]);
+    out.badDomain = await t("select public.gov_inspection_record($1,'{\"vibes\":4,\"records\":3,\"leadership\":4}'::jsonb,'Lessons observed in JSS1-3; records mostly up to date.')", [ins]);
+    out.record = (await t("select public.gov_inspection_record($1,'{\"teaching\":4,\"records\":3,\"leadership\":4,\"safety_welfare\":5}'::jsonb,'Lessons observed in JSS1-3; records mostly up to date.','Update fire drill log', current_date+30) r", [ins])).row?.r;
+    out.recordAgain = await t("select public.gov_inspection_record($1,'{\"teaching\":1,\"records\":1,\"leadership\":1}'::jsonb,'Trying to rewrite a final inspection report.')", [ins]);
+    await as(B.admin); out.bSees = (await t("select public.school_inspections_mine() r")).row?.r;
+    out.bRespond = await t("select public.school_inspection_respond($1,'We object to everything here.')", [ins]);
+    await as(A.teacher); out.teacherSees = await t("select public.school_inspections_mine()");
+    await as(A.admin); out.aSees = (await t("select public.school_inspections_mine() r")).row?.r;
+    out.respond = (await t("select public.school_inspection_respond($1,'Fire drill log updated on Monday.') r", [ins])).row?.r;
+    out.respondAgain = await t("select public.school_inspection_respond($1,'Second response attempt here.')", [ins]);
+    out.directTable = await t("select count(*) from gov_inspections");
+    await as(VIEW); out.viewerList = (await t("select public.gov_inspections_list($1) r", [j])).row?.r;
+    out.picker = (await t("select public.gov_sharing_schools($1) r", [j])).row?.r ?? [];
+    await as(VIEW, "aal1"); out.viewerListNoMfa = await t("select public.gov_inspections_list($1)", [j]);
+    // circulars
+    await as(INSP); out.inspPublish = await t("select public.gov_circular_publish($1,'Resumption date','Schools resume on Monday 12 January for second term.')", [j]);
+    await as(DIR);
+    const c1 = (await t("select public.gov_circular_publish($1,'Second term resumption','All schools resume on Monday 12 January for the second term.',null,true,'MOE/2026/01') id", [j])).row?.id;
+    const c2 = (await t("select public.gov_circular_publish($1,'LGA-only notice','This notice concerns schools in a different local government area.',array['Nowhere LGA']) id", [j])).row?.id;
+    const c3 = (await t("select public.gov_circular_publish($1,'Local notice','This notice concerns schools in this local government area only.',array[$2]) id", [j, lga.toUpperCase()])).row?.id;
+    await as(A.admin);
+    out.aCirc = (await t("select public.school_circulars_mine() r")).row?.r ?? [];
+    out.ack = (await t("select public.school_circular_ack($1) r", [c1])).row?.r;
+    out.ackAgain = (await t("select public.school_circular_ack($1) r", [c1])).row?.r;
+    out.ackOther = await t("select public.school_circular_ack($1)", [c2]);
+    await as(B.admin); out.bCirc = (await t("select public.school_circulars_mine() r")).row?.r ?? [];
+    out.bAck = await t("select public.school_circular_ack($1)", [c1]);
+    await as(DIR); out.list = (await t("select public.gov_circulars_list($1) r", [j])).row?.r;
+    out.withdraw = (await t("select public.gov_circular_withdraw($1) r", [c3])).row?.r;
+    await as(A.admin); out.aCircAfter = (await t("select public.school_circulars_mine() r")).row?.r ?? [];
+    out.audit = (await asOwner("select array_agg(action order by id) a from gov_console_audit where jurisdiction_id=$1", [j])).row?.a;
+    out.auditEdit = await asOwner("delete from gov_console_audit where jurisdiction_id=$1", [j]);
+    Object.assign(out, { c1, c2, c3 });
+  });
+  const ids = (l) => (l ?? []).map((x) => x.id);
+  rec("gov_inspection", "Only active inspectors/directors with MFA schedule inspections, only at schools sharing with the jurisdiction; viewers, expired seats and no-MFA are refused",
+    !v.viewerSched?.ok && !v.expiredSched?.ok && !v.noMfa?.ok && !v.notSharing?.ok && !v.badDate?.ok && !!v.ins, JSON.stringify({ viewer: v.viewerSched?.err, nm: v.noMfa?.err }), "critical");
+  rec("gov_inspection", "Only the assigned inspector records findings (fixed domains, scores 1-5, once); the report is then final",
+    !v.otherInspRecord?.ok && !v.badScore?.ok && !v.badDomain?.ok && v.record === true && !v.recordAgain?.ok, JSON.stringify({ other: v.otherInspRecord?.err }), "critical");
+  rec("gov_inspection", "School A's admin sees and answers its own report once; school B and teachers see nothing; tables are RPC-only; viewers read only with MFA",
+    v.aSees?.length === 1 && v.aSees[0].status === "completed" && v.respond === true && !v.respondAgain?.ok && Array.isArray(v.bSees) && v.bSees.length === 0 && !v.bRespond?.ok
+      && !v.teacherSees?.ok && !v.directTable?.ok && v.picker.length === 1 && v.picker[0].id === A.schoolId && v.viewerList?.[0]?.school_response?.startsWith("Fire") && !v.viewerListNoMfa?.ok,
+    JSON.stringify({ a: v.aSees?.length, b: v.bSees?.length }), "critical");
+  rec("gov_circular", "Directors publish circulars (inspectors cannot); schools see only circulars addressed to them (sharing + LGA match, case-insensitive) and acknowledge once",
+    !v.inspPublish?.ok && ids(v.aCirc).includes(v.c1) && ids(v.aCirc).includes(v.c3) && !ids(v.aCirc).includes(v.c2) && v.ack === true && v.ackAgain === false && !v.ackOther?.ok
+      && v.bCirc.length === 0 && !v.bAck?.ok,
+    JSON.stringify({ a: v.aCirc.length, b: v.bCirc.length }), "critical");
+  rec("gov_circular", "Gov sees recipients and acknowledgement counts; withdrawn circulars disappear for schools; every action is in the append-only audit",
+    v.list?.find((x) => x.id === v.c1)?.acked === 1 && v.list?.find((x) => x.id === v.c1)?.recipients >= 1 && v.list?.find((x) => x.id === v.c2)?.recipients === 0
+      && v.withdraw === true && !ids(v.aCircAfter).includes(v.c3)
+      && JSON.stringify(v.audit) === JSON.stringify(["inspection_schedule", "inspection_record", "inspection_school_response", "circular_publish", "circular_publish", "circular_publish", "circular_ack", "circular_withdraw"]) && !v.auditEdit?.ok,
+    `audit ${JSON.stringify(v.audit)}`, "high");
+}
+// ---------- 29. Teacher deployment (staffing + two-person postings) and CSV exports (SHERIVS-B05) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+    const as = (u, aal = "aal2") => c.query("select set_config('request.jwt.claims', $1, true)", [JSON.stringify({ sub: u, role: "authenticated", aal })]);
+    const PLAN = crypto.randomUUID(), DIR = crypto.randomUUID(), DIR2 = crypto.randomUUID(), DATA = crypto.randomUUID(), VIEW = crypto.randomUUID();
+    await asOwner("insert into auth.users (id, email) select x, 'b05-'||left(x::text,8)||'@moe.sim' from unnest($1::uuid[]) x", [[PLAN, DIR, DIR2, DATA, VIEW]]);
+    const j = (await asOwner("insert into gov_jurisdictions (name, state) values ('Sim B05 SUBEB','B05-' || left(gen_random_uuid()::text,6)) returning id")).row?.id;
+    await asOwner(`insert into gov_viewers (user_id, jurisdiction_id, agency_role, expires_at, mfa_required) values
+      ($1,$6,'planning_officer',now()+interval '1 year',true),($2,$6,'director',now()+interval '1 year',true),($3,$6,'director',now()+interval '1 year',true),
+      ($4,$6,'data_officer',now()+interval '1 year',true),($5,$6,'viewer',now()+interval '1 year',true)`, [PLAN, DIR, DIR2, DATA, VIEW, j]);
+    for (const [adm, sid, own] of [[A.admin, A.schoolId, "public"], [B.admin, B.schoolId, "public"], [C.admin, C.schoolId, "private"]]) {
+      await asOwner("insert into school_locations (school_id, state, lga, ownership) values ($1,'Borno','Maiduguri',$2) on conflict (school_id) do update set ownership=excluded.ownership", [sid, own]);
+      await as(adm, "aal1"); await t("select public.gov_sharing_set($1,$2,true)", [sid, j]);
+    }
+    // staffing
+    await as(VIEW); out.staffing = (await t("select public.gov_staffing($1) r", [j])).row?.r ?? [];
+    out.badThreshold = await t("select public.gov_staffing($1, 5)", [j]);
+    // postings
+    await as(VIEW); out.viewerPropose = await t("select public.gov_posting_propose($1,'Aisha Bello','TRCN-12345',$2,$3,current_date+7,'Mathematics shortage at receiving school')", [j, A.schoolId, B.schoolId]);
+    await as(PLAN);
+    out.toPrivate = await t("select public.gov_posting_propose($1,'Aisha Bello','TRCN-12345',$2,$3,current_date+7,'Mathematics shortage at receiving school')", [j, A.schoolId, C.schoolId]);
+    out.badRef = await t("select public.gov_posting_propose($1,'Aisha Bello','<script>',$2,$3,current_date+7,'Mathematics shortage at receiving school')", [j, A.schoolId, B.schoolId]);
+    out.pastDate = await t("select public.gov_posting_propose($1,'Aisha Bello','TRCN-12345',$2,$3,current_date-1,'Mathematics shortage at receiving school')", [j, A.schoolId, B.schoolId]);
+    const p1 = (await t("select public.gov_posting_propose($1,'Aisha Bello','trcn-12345',$2,$3,current_date+7,'Mathematics shortage at receiving school','Mathematics') id", [j, A.schoolId, B.schoolId])).row?.id; out.p1 = p1;
+    out.dup = await t("select public.gov_posting_propose($1,'Aisha Bello','TRCN-12345',$2,$3,current_date+9,'Second posting while one is open')", [j, A.schoolId, B.schoolId]);
+    await as(PLAN); out.planDecide = await t("select public.gov_posting_decide($1,true)", [p1]);
+    await as(DIR, "aal1"); out.noMfaDecide = await t("select public.gov_posting_decide($1,true)", [p1]);
+    await as(B.admin, "aal1"); out.bBefore = (await t("select public.school_postings_mine() r")).row?.r ?? [];
+    await as(DIR); out.approve = (await t("select public.gov_posting_decide($1,true,'Approved for next term') r", [p1])).row?.r;
+    out.approveAgain = await t("select public.gov_posting_decide($1,true)", [p1]);
+    await as(B.admin, "aal1");
+    out.bIncoming = (await t("select public.school_postings_mine() r")).row?.r ?? [];
+    out.receiveEarly = await t("select public.school_posting_ack($1)", [p1]);
+    await as(C.admin, "aal1"); out.cAck = await t("select public.school_posting_ack($1)", [p1]); out.cSees = (await t("select public.school_postings_mine() r")).row?.r ?? [];
+    await as(A.admin, "aal1"); out.release = (await t("select public.school_posting_ack($1) r", [p1])).row?.r;
+    await as(B.admin, "aal1"); out.receive = (await t("select public.school_posting_ack($1) r", [p1])).row?.r; out.receiveAgain = (await t("select public.school_posting_ack($1) r", [p1])).row?.r;
+    await as(DIR); out.cancelDone = (await t("select public.gov_posting_cancel($1,'Changed plans entirely') r", [p1])).row?.r;
+    await as(PLAN); const p2 = (await t("select public.gov_posting_propose($1,'Musa Ali','STAFF-777',null,$2,current_date+3,'New graduate teacher first posting') id", [j, B.schoolId])).row?.id;
+    await as(DIR2); out.reject = await t("select public.gov_posting_decide($1,false)", [p2]); out.rejectWithNote = (await t("select public.gov_posting_decide($1,false,'Budget not approved yet') r", [p2])).row?.r;
+    out.list = (await t("select public.gov_postings_list($1) r", [j])).row?.r ?? [];
+    out.directTable = await t("select count(*) from gov_teacher_postings");
+    // exports
+    await as(VIEW); out.viewerExport = await t("select public.gov_export($1,'schools')", [j]);
+    await as(DATA, "aal1"); out.noMfaExport = await t("select public.gov_export($1,'schools')", [j]);
+    await as(DATA);
+    out.exports = {};
+    for (const k of ["schools", "staffing", "inspections", "circulars", "postings"]) out.exports[k] = (await t("select public.gov_export($1,$2) r", [j, k])).row?.r;
+    out.badKind = await t("select public.gov_export($1,'learners')", [j]);
+    await asOwner("update schools set name = '=HYPERLINK(\"x\")' || name where id=$1", [B.schoolId]);
+    out.injection = (await t("select public.gov_export($1,'staffing') r", [j])).row?.r?.csv ?? "";
+    await as(A.teacher, "aal2"); out.teacherExport = await t("select public.gov_export($1,'schools')", [j]);
+    out.audit = (await asOwner("select array_agg(action order by id) a from gov_console_audit where jurisdiction_id=$1", [j])).row?.a ?? [];
+    Object.assign(out, { j });
+  });
+  const ex = v.exports ?? {};
+  rec("gov_deployment", "Staffing view gives teachers, learners and pupil-teacher ratio per sharing school, suppressed under 10 learners, with an understaffed flag",
+    v.staffing.length === 3 && v.staffing.every((r) => r.suppressed ? r.ptr === null && r.teachers === null : typeof r.learners === "number") && v.staffing.some((r) => typeof r.understaffed === "boolean") && !v.badThreshold?.ok,
+    JSON.stringify(v.staffing.map((r) => [r.ptr, r.understaffed])), "high");
+  rec("gov_deployment", "Postings: planning officers propose only between public sharing schools; another director approves with MFA (never the proposer); one open posting per teacher",
+    !v.viewerPropose?.ok && !v.toPrivate?.ok && !v.badRef?.ok && !v.pastDate?.ok && !!v.p1 && !v.dup?.ok && !v.planDecide?.ok && !v.noMfaDecide?.ok && v.approve === "approved" && !v.approveAgain?.ok
+      && !v.reject?.ok && v.rejectWithNote === "rejected",
+    JSON.stringify({ priv: v.toPrivate?.err, plan: v.planDecide?.err }), "critical");
+  rec("gov_deployment", "Schools see only approved postings that involve them; the releasing school releases before the receiving school receives; other schools cannot act; tables are RPC-only",
+    v.bBefore.length === 0 && v.bIncoming.some((x) => x.id === v.p1 && x.direction === "incoming") && !v.receiveEarly?.ok && !v.cAck?.ok && !v.cSees.some((x) => x.id === v.p1)
+      && v.release === "released" && v.receive === "received" && v.receiveAgain === "already_done" && v.cancelDone === false && !v.directTable?.ok
+      && v.list.find((x) => x.id === v.p1)?.teacher_ref === "TRCN-12345",
+    JSON.stringify({ early: v.receiveEarly?.err, rel: v.release, rec: v.receive }), "critical");
+  rec("gov_export", "Exports (schools, staffing, inspections, circulars, postings) need a data/planning/director role with MFA; viewers, teachers and unknown kinds are refused; suppression and formula-injection guards hold; each export is audited",
+    !v.viewerExport?.ok && !v.noMfaExport?.ok && !v.badKind?.ok && !v.teacherExport?.ok
+      && ["schools", "staffing", "inspections", "circulars", "postings"].every((k) => typeof ex[k]?.csv === "string" && ex[k].filename.endsWith(".csv"))
+      && ex.schools.csv.split("\n")[0].startsWith("school,lga") && ex.postings.csv.includes("TRCN-12345")
+      && !/(^|,)"=HYPERLINK/m.test(v.injection) && v.injection.includes("'=HYPERLINK")
+      && v.audit.filter((a) => a === "export").length === 6,
+    JSON.stringify({ exports: v.audit.filter((a) => a === "export").length }), "critical");
+}
+// ---------- 30. Officer-invite email delivery status (SHERIVS-B07) ----------
+{
+  const v = await wave(A.admin, async ({ t, asOwner, c, out }) => {
+    const as = (u, aal = "aal2") => c.query("select set_config('request.jwt.claims', $1, true)", [JSON.stringify({ sub: u, role: "authenticated", aal })]);
+    const PA = crypto.randomUUID(), tag = PA.slice(0, 6);
+    await asOwner("insert into auth.users (id, email) values ($1,$2)", [PA, "pa7" + tag + "@sim.local"]);
+    await asOwner("insert into platform_staff (id, email, full_name, status) values ($1,$2,'Sim PA B07','active')", [PA, "pa7" + tag + "@sim.local"]);
+    await asOwner("insert into platform_staff_roles (staff_id, role_code) values ($1,'platform_admin')", [PA]);
+    await as(PA);
+    const j = (await t("select public.gov_jurisdiction_create('Sim B07 MoE','B07-' || left(gen_random_uuid()::text,6)) id")).row?.id;
+    const inv = (await t("select public.gov_officer_invite_create($1,$2,'viewer') r", ["b07-" + tag + "@moe.sim", j])).row?.r;
+    await as(PA, "aal1"); out.ctxNoMfa = await t("select public.gov_officer_invite_mail_context($1)", [inv?.token]);
+    await as(A.admin); out.ctxSchoolAdmin = await t("select public.gov_officer_invite_mail_context($1)", [inv?.token]);
+    out.markSchoolAdmin = await t("select public.gov_officer_invite_mark_email($1,'sent')", [inv?.id]);
+    await as(PA);
+    out.ctxBad = await t("select public.gov_officer_invite_mail_context($1)", ["0".repeat(48)]);
+    out.ctxInject = await t("select public.gov_officer_invite_mail_context($1)", ["x' or 1=1 --"]);
+    out.ctx = (await t("select public.gov_officer_invite_mail_context($1) r", [inv?.token])).row?.r;
+    out.badStatus = await t("select public.gov_officer_invite_mark_email($1,'delivered')", [inv?.id]);
+    out.stub = (await t("select public.gov_officer_invite_mark_email($1,'stubbed','provider_not_configured') r", [inv?.id])).row?.r;
+    out.list = (await t("select public.gov_officer_invites_list($1) r", [j])).row?.r ?? [];
+    for (let k = 0; k < 4; k++) await t("select public.gov_officer_invite_mark_email($1,'failed','provider_error')", [inv?.id]);
+    out.sixth = await t("select public.gov_officer_invite_mark_email($1,'sent')", [inv?.id]);
+    out.ctxCapped = await t("select public.gov_officer_invite_mail_context($1)", [inv?.token]);
+    const inv2 = (await t("select public.gov_officer_invite_create($1,$2,'viewer') r", ["b07b-" + tag + "@moe.sim", j])).row?.r;
+    await t("select public.gov_officer_invite_revoke($1)", [inv2?.id]);
+    out.ctxRevoked = await t("select public.gov_officer_invite_mail_context($1)", [inv2?.token]);
+    out.markRevoked = await t("select public.gov_officer_invite_mark_email($1,'sent')", [inv2?.id]);
+    out.audit = (await asOwner("select count(*)::int n from gov_admin_audit where action='invite_email' and jurisdiction_id=$1", [j])).row?.n;
+    out.plain = (await asOwner("select count(*)::int n from gov_officer_invites where token_hash=$1", [inv?.token])).row?.n;
+  });
+  rec("gov_invite_email", "Invite mail context needs a gov admin with MFA plus the exact one-time token of a pending invite; school admins, bad, revoked and over-limit tokens are refused",
+    !v.ctxNoMfa?.ok && !v.ctxSchoolAdmin?.ok && !v.ctxBad?.ok && !v.ctxInject?.ok && !v.ctxRevoked?.ok && !v.ctxCapped?.ok
+      && v.ctx?.email?.startsWith("b07-") && v.ctx?.jurisdiction === "Sim B07 MoE" && !("token" in (v.ctx ?? {})) && v.plain === 0,
+    JSON.stringify({ ctx: !!v.ctx, capped: v.ctxCapped?.err }), "critical");
+  rec("gov_invite_email", "Delivery status (sent/stubbed/failed) is recorded and audited by gov admins only, capped at 5 attempts, and shown in the invite list",
+    !v.markSchoolAdmin?.ok && !v.badStatus?.ok && v.stub === "stubbed" && v.list.some((x) => x.email_status === "stubbed") && !v.sixth?.ok && !v.markRevoked?.ok && v.audit === 5,
+    JSON.stringify({ audit: v.audit, sixth: v.sixth?.err }), "high");
+}
+// ---------- 28. Minors' consent, break-glass review, time-limited delegation, shadow v2 (SHERIVS-B04) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+    const as = (u, aal = "aal1") => c.query("select set_config('request.jwt.claims', $1, true)", [JSON.stringify({ sub: u, role: "authenticated", aal })]);
+    const kid = (await asOwner("select student_id from parent_student_map where parent_id=$1 limit 1", [A.sampleParent])).row?.student_id
+      ?? (await asOwner("select id student_id from students where parent_id=$1 limit 1", [A.sampleParent])).row?.student_id;
+    const other = (await asOwner("select id from students where school_id=$1 and id<>$2 and coalesce(parent_id::text,'')<>$3::text and id not in (select student_id from parent_student_map where parent_id=$3::uuid) and coalesce(user_id::text,'')<>$4::text limit 1", [A.schoolId, kid, A.sampleParent, A.sampleStudentUser])).row?.id;
+    const self = (await asOwner("select id from students where user_id=$1 limit 1", [A.sampleStudentUser])).row?.id;
+    await asOwner("update students set date_of_birth = current_date - interval '12 years' where id=$1", [kid]);
+    if (self) await asOwner("update students set date_of_birth = current_date - interval '15 years' where id=$1", [self]);
+    await asOwner("delete from consent_records where student_id = any($1::uuid[])", [[kid, other, self].filter(Boolean)]);
+    // consent
+    await as(A.sampleParent);
+    out.gateBefore = (await t("select public.consent_gate($1,'ai_processing') r", [kid])).row?.r;
+    out.pGrant = (await t("select public.consent_set($1,'ai_processing',true) r", [kid])).row?.r;
+    out.pOther = await t("select public.consent_set($1,'ai_processing',true)", [other]);
+    out.pCore = await t("select public.consent_set($1,'core_education',false)", [kid]);
+    out.status = (await t("select public.consent_status($1) r", [kid])).row?.r;
+    out.gateAfter = (await t("select public.consent_gate($1,'ai_processing') r", [kid])).row?.r;
+    out.myLearners = (await t("select public.consent_my_learners() r")).row?.r ?? [];
+    if (self) { await as(A.sampleStudentUser); out.minorSelf = await t("select public.consent_set($1,'photos_media',true)", [self]);
+      await asOwner("update students set date_of_birth = current_date - interval '19 years' where id=$1", [self]);
+      out.adultSelf = (await t("select public.consent_set($1,'photos_media',true) r", [self])).row?.r; }
+    await as(A.teacher); out.teacherSet = await t("select public.consent_set($1,'photos_media',true,'admin_entered','form 12')", [other]);
+    await as(A.admin);
+    out.adminNoEvidence = await t("select public.consent_set($1,'photos_media',true,'web_form')", [other]);
+    out.adminPaper = (await t("select public.consent_set($1,'photos_media',true,'paper_signed','Form P-0042 on file') r", [other])).row?.r;
+    out.pWithdraw = null; await as(A.sampleParent); out.pWithdraw = (await t("select public.consent_set($1,'ai_processing',false) r", [kid])).row?.r;
+    out.gateWithdrawn = (await t("select public.consent_gate($1,'ai_processing') r", [kid])).row?.r;
+    await as(B.admin); out.bStatus = await t("select public.consent_status($1)", [kid]); out.bSet = await t("select public.consent_set($1,'photos_media',true,'paper_signed','Form X-1')", [kid]);
+    await as(A.admin); out.overview = (await t("select public.consent_overview() r")).row?.r;
+    out.events = (await asOwner("select array_agg(action order by at, action) a from consent_events where student_id=$1", [kid])).row?.a;
+    // break-glass review
+    await as(A.teacher);
+    const bg = (await t("select public.break_glass_open($1,'Seizure in class; need emergency contact and medical notes') id", [kid])).row?.id; out.bg = bg;
+    out.selfReview = await t("select public.break_glass_review($1,'justified','I needed it urgently')", [bg]);
+    out.teacherList = await t("select public.break_glass_list()");
+    await as(A.admin, "aal1"); out.reviewNoMfa = await t("select public.break_glass_review($1,'justified','Confirmed with nurse log')", [bg]);
+    await as(A.admin, "aal2");
+    out.listOpen = (await t("select public.break_glass_list() r")).row?.r?.find((x) => x.id === bg)?.state;
+    out.review = (await t("select public.break_glass_review($1,'justified','Confirmed with nurse log and parent call') r", [bg])).row?.r;
+    out.reviewAgain = await t("select public.break_glass_review($1,'unjustified','Changing my mind later')", [bg]);
+    out.listAfter = (await t("select public.break_glass_list() r")).row?.r?.find((x) => x.id === bg);
+    await as(B.admin, "aal2"); out.bReview = await t("select public.break_glass_review($1,'unjustified','Not my school at all')", [bg]);
+    // delegation
+    await as(A.admin, "aal2");
+    out.v2Before = (await t("select public.authz_check_v2($1,'fees.view','student',$2) r", [A.teacher, kid])).row?.r;
+    await as(A.admin, "aal1"); out.dNoMfa = await t("select public.delegation_grant($1, array['fees.view'], now()+interval '3 days','Bursar on leave this week')", [A.teacher]);
+    await as(A.admin, "aal2");
+    out.dSelf = await t("select public.delegation_grant($1, array['fees.view'], now()+interval '3 days','Bursar on leave this week')", [A.admin]);
+    out.dProtected = await t("select public.delegation_grant($1, array['results.publish'], now()+interval '3 days','Bursar on leave this week')", [A.teacher]);
+    out.dLong = await t("select public.delegation_grant($1, array['fees.view'], now()+interval '40 days','Bursar on leave this week')", [A.teacher]);
+    out.dParent = await t("select public.delegation_grant($1, array['fees.view'], now()+interval '3 days','Bursar on leave this week')", [A.sampleParent]);
+    out.dCross = await t("select public.delegation_grant($1, array['fees.view'], now()+interval '3 days','Bursar on leave this week')", [B.admin]);
+    const d = (await t("select public.delegation_grant($1, array['fees.view'], now()+interval '3 days','Bursar on leave this week') id", [A.teacher])).row?.id; out.d = d;
+    await as(A.teacher, "aal2"); out.tDelegatesUp = await t("select public.delegation_grant($1, array['payroll.approve'], now()+interval '3 days','Trying to escalate privileges')", [A.bursar]);
+    out.v2During = (await t("select public.authz_check_v2($1,'fees.view','student',$2) r", [A.teacher, kid])).row?.r;
+    out.v2Other = (await t("select public.authz_check_v2($1,'expenses.approve','student',$2) r", [A.teacher, kid])).row?.r;
+    out.v1During = (await t("select public.authz_check($1,'fees.view','student',$2) r", [A.teacher, kid])).row?.r;
+    out.mine = (await t("select public.delegations_mine() r")).row?.r;
+    await asOwner("select set_config('sherivs.authz_shadow_rate','1',true)");
+    out.shadow = (await t("select public.authz_shadow_v2('fees.view','student',$1,false) r", [kid])).row?.r;
+    out.shadowRow = (await asOwner("select new_allow, legacy_allow, deciding_layer from authz_shadow_log where user_id=$1 and action='fees.view' order by id desc limit 1", [A.teacher])).row;
+    out.shadowBad = (await t("select public.authz_shadow_v2('fees.view','nonsense',$1,true) r", [kid])).row?.r;
+    await as(A.admin, "aal2"); out.revoke = (await t("select public.delegation_revoke($1) r", [d])).row?.r;
+    await as(A.teacher); out.v2After = (await t("select public.authz_check_v2($1,'fees.view','student',$2) r", [A.teacher, kid])).row?.r;
+    out.directTable = await t("select count(*) from authority_delegations");
+    out.audit = (await asOwner("select array_agg(distinct action) a from safeguard_audit where school_id=$1", [A.schoolId])).row?.a ?? [];
+    out.auditEdit = await asOwner("delete from safeguard_audit where school_id=$1", [A.schoolId]);
+    Object.assign(out, { hasSelf: !!self, kid, other });
+  });
+  rec("consent", "A linked guardian grants and withdraws optional consent for a minor (gate follows); other parents, teachers, school B and minors themselves are refused; core education cannot be withdrawn",
+    v.gateBefore === false && v.pGrant === "granted" && !v.pOther?.ok && !v.pCore?.ok && v.status?.purposes?.ai_processing?.status === "granted" && v.status?.adult === false && v.gateAfter === true
+      && v.myLearners.some((x) => x.student_id === v.kid && x.purposes.ai_processing === "granted") && !v.myLearners.some((x) => x.student_id === v.other)
+      && (!v.hasSelf || (!v.minorSelf?.ok && v.adultSelf === "granted")) && !v.teacherSet?.ok && v.pWithdraw === "withdrawn" && v.gateWithdrawn === false && !v.bStatus?.ok && !v.bSet?.ok,
+    JSON.stringify({ minor: v.minorSelf?.err, other: v.pOther?.err }), "critical");
+  rec("consent", "A school admin records paper consent only with an evidence note; every change is an append-only consent event; overview counts by purpose",
+    !v.adminNoEvidence?.ok && v.adminPaper === "granted" && JSON.stringify(v.events) === JSON.stringify(["grant", "withdraw"]) && typeof v.overview?.photos_media?.granted === "number",
+    JSON.stringify({ events: v.events }), "high");
+  rec("break_glass", "Break-glass must be reviewed by someone else (admin/principal/DPO) with MFA, once; school B cannot; the list shows open then reviewed",
+    !!v.bg && !v.selfReview?.ok && !v.teacherList?.ok && !v.reviewNoMfa?.ok && v.listOpen === "open" && v.review === true && !v.reviewAgain?.ok
+      && v.listAfter?.state === "reviewed" && v.listAfter?.review_outcome === "justified" && !v.bReview?.ok,
+    JSON.stringify({ open: v.listOpen, after: v.listAfter?.state }), "critical");
+  rec("delegation", "Delegation needs MFA, a staff delegate in the same school, at most 30 days, non-protected permissions the delegator holds; never to self or upward",
+    !v.dNoMfa?.ok && !v.dSelf?.ok && !v.dProtected?.ok && !v.dLong?.ok && !v.dParent?.ok && !v.dCross?.ok && !!v.d && !v.tDelegatesUp?.ok && !v.directTable?.ok,
+    JSON.stringify({ prot: v.dProtected?.err, up: v.tDelegatesUp?.err }), "critical");
+  rec("delegation", "Shadow v2 allows only the delegated action during the window (live check unchanged), logs the disagreement, never throws; revocation ends it; all audited append-only",
+    v.v2Before?.allow === false && v.v2During?.allow === true && v.v2During?.deciding_layer === "delegation" && v.v2Other?.allow === false && v.v1During?.allow === false
+      && v.mine?.some((x) => x.id === v.d && x.state === "active") && v.shadow === false && v.shadowRow?.new_allow === true && v.shadowRow?.legacy_allow === false
+      && v.shadowRow?.deciding_layer === "delegation" && v.shadowBad === true && v.revoke === true && v.v2After?.allow === false
+      && ["consent_grant", "consent_withdraw", "break_glass_review", "delegation_grant", "delegation_revoke"].every((a) => v.audit.includes(a)) && !v.auditEdit?.ok,
+    JSON.stringify({ during: v.v2During?.deciding_layer, row: v.shadowRow, audit: v.audit }), "critical");
+}
+// ---------- 31. Group console (console.<label>.sherivs.com) for multi-school proprietors (SHERIVS-B06) ----------
+{
+  const v = await wave(A.admin, async ({ t, asOwner, c, out }) => {
+    const as = (u, aal = "aal2") => c.query("select set_config('request.jwt.claims', $1, true)", [JSON.stringify({ sub: u, role: "authenticated", aal })]);
+    const anon = async (sql, p = []) => { await c.query("SET LOCAL ROLE anon"); await c.query("select set_config('request.jwt.claims', '{\"role\":\"anon\"}', true)");
+      try { return await t(sql, p); } finally { await c.query("SET LOCAL ROLE authenticated"); } };
+    const PA = crypto.randomUUID(), OWN = crypto.randomUUID(), ADM = crypto.randomUUID(), VIEW = crypto.randomUUID(), tag = PA.slice(0, 6), label = "grp" + tag;
+    await asOwner("insert into auth.users (id, email) select x, 'b06-'||left(x::text,8)||'@sim.local' from unnest($1::uuid[]) x", [[PA, OWN, ADM, VIEW]]);
+    await asOwner("insert into platform_staff (id, email, full_name, status) values ($1,$2,'Sim PA B06','active')", [PA, "b06-" + PA.slice(0, 8) + "@sim.local"]);
+    await asOwner("insert into platform_staff_roles (staff_id, role_code) values ($1,'platform_admin')", [PA]);
+    await asOwner("delete from org_group_members where school_id = any($1::uuid[])", [[A.schoolId, B.schoolId]]);
+    await as(OWN); out.ownerCreate = await t("select public.group_create('Sim Group','x'||$1,$2)", [label, OWN]);
+    await as(PA, "aal1"); out.noMfaCreate = await t("select public.group_create('Sim Group',$1,$2)", [label, OWN]);
+    await as(PA); out.reserved = await t("select public.group_create('Sim Group','console',$1)", [OWN]);
+    out.badLabel = await t("select public.group_create('Sim Group','A b',$1)", [OWN]);
+    const g = (await t("select public.group_create('Sim Group',$1,$2) id", [label.toUpperCase(), OWN])).row?.id; out.g = g;
+    await as(OWN);
+    out.selfDemote = await t("select public.group_admin_set($1,$2,'viewer')", [g, OWN]);
+    out.addAdm = (await t("select public.group_admin_set($1,$2,'admin') r", [g, ADM])).row?.r;
+    out.addView = (await t("select public.group_admin_set($1,$2,'viewer') r", [g, VIEW])).row?.r;
+    await as(ADM); out.admAddAdmin = await t("select public.group_admin_set($1,$2,'admin')", [g, VIEW]);
+    await as(VIEW); out.viewRequest = await t("select public.group_join_request($1,$2)", [g, A.schoolId]);
+    await as(ADM, "aal1"); out.noMfaRequest = await t("select public.group_join_request($1,$2)", [g, A.schoolId]);
+    await as(ADM);
+    const rA = (await t("select public.group_join_request($1,$2) id", [g, A.schoolId])).row?.id;
+    const rB = (await t("select public.group_join_request($1,$2) id", [g, B.schoolId])).row?.id;
+    out.dupReq = await t("select public.group_join_request($1,$2)", [g, A.schoolId]);
+    out.admDecide = await t("select public.school_group_decide($1,true)", [rA]);
+    await as(B.admin); out.wrongSchool = await t("select public.school_group_decide($1,true)", [rA]);
+    await as(A.admin, "aal1"); out.reqsA = (await t("select public.school_group_requests() r")).row?.r; out.noMfaDecide = await t("select public.school_group_decide($1,true)", [rA]);
+    await as(A.admin); out.acceptA = (await t("select public.school_group_decide($1,true) r", [rA])).row?.r;
+    await as(B.admin); out.declineB = (await t("select public.school_group_decide($1,false) r", [rB])).row?.r;
+    await as(A.teacher); out.teacherReqs = await t("select public.school_group_requests()");
+    // sessions + overview
+    out.anonSess = await anon("select public.group_console_session($1)", [label]);
+    await as(VIEW, "aal1"); out.sessAal1 = (await t("select public.group_console_session($1) r", [label])).row?.r?.status;
+    out.ovAal1 = await t("select public.group_overview($1)", [g]);
+    await as(VIEW); out.sess = (await t("select public.group_console_session($1) r", [label])).row?.r;
+    out.ov = (await t("select public.group_overview($1) r", [g])).row?.r;
+    out.viewAdmins = await t("select public.group_admins_list($1)", [g]);
+    out.unknown = (await t("select public.group_console_session('nowhere') r")).row?.r?.status;
+    await as(B.admin); out.outsider = (await t("select public.group_console_session($1) r", [label])).row?.r?.status; out.outsiderOv = await t("select public.group_overview($1)", [g]);
+    out.directMembers = await t("select count(*) from org_group_admins");
+    out.directAudit = await t("update org_group_audit set action='x'");
+    // leave + revoke
+    await as(OWN); out.revokeView = (await t("select public.group_admin_set($1,$2,null) r", [g, VIEW])).row?.r;
+    await as(VIEW); out.afterRevoke = (await t("select public.group_console_session($1) r", [label])).row?.r?.status;
+    await as(A.admin); out.leave = (await t("select public.group_school_leave($1) r", [A.schoolId])).row?.r;
+    await as(OWN); out.ov2 = (await t("select public.group_overview($1) r", [g])).row?.r;
+    out.audit = (await asOwner("select array_agg(distinct action) a from org_group_audit where group_id=$1", [g])).row?.a ?? [];
+  });
+  rec("group_console", "Only a platform admin with MFA creates a group with a valid, non-reserved console label; owners manage admins (not themselves), admins and viewers cannot",
+    !v.ownerCreate?.ok && !v.noMfaCreate?.ok && !v.reserved?.ok && !v.badLabel?.ok && !!v.g && !v.selfDemote?.ok && v.addAdm === "admin" && v.addView === "viewer" && !v.admAddAdmin?.ok,
+    JSON.stringify({ g: !!v.g }), "critical");
+  rec("group_console", "Schools join only when their own admin accepts with MFA; one group per school; teachers, other schools and group staff cannot accept",
+    !v.viewRequest?.ok && !v.noMfaRequest?.ok && !v.dupReq?.ok && !v.admDecide?.ok && !v.wrongSchool?.ok && !v.noMfaDecide?.ok
+      && (v.reqsA?.pending ?? []).length === 1 && v.acceptA === "accepted" && v.declineB === "declined" && !v.teacherReqs?.ok,
+    JSON.stringify({ accept: v.acceptA, decline: v.declineB }), "critical");
+  rec("group_console", "Group console needs an active seat plus MFA; overview is aggregate-only with small-group suppression; outsiders, anon and revoked staff get nothing; tables are RPC-only and audit is append-only",
+    !v.anonSess?.ok && v.sessAal1 === "mfa_required" && !v.ovAal1?.ok && v.sess?.status === "ok" && v.sess?.role === "viewer" && v.unknown === "unknown"
+      && v.ov?.schools === 1 && (v.ov?.per_school ?? []).every((p) => p.suppressed ? p.enrolled === null : typeof p.enrolled === "number") && !JSON.stringify(v.ov).includes("admission")
+      && !v.viewAdmins?.ok && v.outsider === "no_access" && !v.outsiderOv?.ok && !v.directMembers?.ok && !v.directAudit?.ok
+      && v.revokeView === "revoked" && v.afterRevoke === "no_access" && v.leave === true && v.ov2?.schools === 0
+      && ["group_create", "join_accept", "join_decline", "overview_view", "leave", "admin_set"].every((a) => v.audit.includes(a)),
+    JSON.stringify({ sess: v.sess?.status, schools: v.ov?.schools, anon: v.anonSess?.ok, a1: v.sessAal1, ovA1: v.ovAal1?.ok, un: v.unknown, va: v.viewAdmins?.ok, out: v.outsider, oo: v.outsiderOv?.ok, dm: v.directMembers?.ok, da: v.directAudit?.ok, rv: v.revokeView, ar: v.afterRevoke, lv: v.leave, ov2: v.ov2?.schools, audit: v.audit }), "critical");
 }
 fs.writeFileSync("sim/scenario-results.json", JSON.stringify(results, null, 1));
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} passed`);
