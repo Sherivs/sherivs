@@ -114,7 +114,7 @@ Unit: catalog/SQL parity, validator, generator per org kind (no empty blocks, de
 ## 13. Delivery (3 phases) and measured results
 | Phase | Branch | Contents |
 |---|---|---|
-| 1 | `sherivs/website-engine-1` | Migration `20261024001000_sherivs_100_website_engine` + rollback, catalog/generator/validator/theme/i18n libs, 17 unit tests, sim (9 scenarios), k6 data path, neutrality baseline entries (W9/029 precedent) |
+| 1 | `sherivs/website-engine-1` | Migration `20261025100240_sherivs_100_website_engine` + rollback, catalog/generator/validator/theme/i18n libs, 17 unit tests, sim (9 scenarios), k6 data path, neutrality baseline entries (W9/029 precedent) |
 | 2 | `sherivs/website-engine-2` | SSR renderer (30 block components), host-based tenant loader with edge caching, `/` + `/pages/$slug`, per-host sitemap, SEO/JSON-LD/hreflang, prototype deleted, 16 renderer tests |
 | 3 | `sherivs/website-engine-3` | `/admin/website` builder, pure editor ops (7 tests), onboarding bootstrap, nav entry, demo seed, SSR k6 |
 
