@@ -196,7 +196,7 @@
       "database/supabase/migrations/20261025100060_sherivs_a06_transfers_guardians_custody.sql": 53,
       "database/supabase/migrations/20261025100070_sherivs_a07_offline_attendance_v2.sql": 30,
       "database/supabase/migrations/20261025100080_sherivs_b01_head_console.sql": 37,
-      "database/supabase/migrations/20261025000410_sherivs_b02_gov_officer_invites.sql": 2
+      "database/supabase/migrations/20261025100090_sherivs_b02_gov_officer_invites.sql": 2
     },
     "baselineGroups": 427
   },
@@ -11000,7 +11000,7 @@
       "firstSnippet": "'finance', CASE WHEN fin THEN (SELECT jsonb_build_object('billed', coalesce(sum(amount), 0), 'paid', coalesce(sum(paid_amount), 0)) FROM public.fees WHERE schoo"
     },
     {
-      "file": "database/supabase/migrations/20261025000410_sherivs_b02_gov_officer_invites.sql",
+      "file": "database/supabase/migrations/20261025100090_sherivs_b02_gov_officer_invites.sql",
       "kind": "vocabulary",
       "token": "school",
       "streamIRef": "SHERIVS-B02",
