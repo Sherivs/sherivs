@@ -1,7 +1,7 @@
 import pg from "pg"; import fs from "node:fs"; import path from "node:path";
 const DIR = process.argv[2] || new URL("../../database/supabase/migrations", import.meta.url).pathname;
 const extra = process.argv.slice(3);
-const c = new pg.Client({ host: "127.0.0.1", port: 54329, user: "postgres", database: process.env.SIMDB ?? "postgres" });
+const c = new pg.Client({ host: "127.0.0.1", port: Number(process.env.SIM_PG_PORT ?? 54329), user: "postgres", database: process.env.SIMDB ?? "postgres" });
 await c.connect();
 const files = [...fs.readdirSync(DIR).filter((f) => f.endsWith(".sql")).sort().map((f) => path.join(DIR, f)), ...extra];
 const res = [];

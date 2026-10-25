@@ -132,6 +132,7 @@ import { Route as AuthenticatedAdminSessionRolloverRouteImport } from './routes/
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
 import { Route as AuthenticatedAdminStaffAccountsRouteImport } from './routes/_authenticated/admin/staff-accounts'
 import { Route as AuthenticatedAdminStoresAssetsRouteImport } from './routes/_authenticated/admin/stores-assets'
+import { Route as AuthenticatedAdminStructureRouteImport } from './routes/_authenticated/admin/structure'
 import { Route as AuthenticatedAdminStudentIntelligenceRouteImport } from './routes/_authenticated/admin/student-intelligence'
 import { Route as AuthenticatedAdminStudentsRouteImport } from './routes/_authenticated/admin/students'
 import { Route as AuthenticatedAdminSupportRouteImport } from './routes/_authenticated/admin/support'
@@ -892,6 +893,12 @@ const AuthenticatedAdminStoresAssetsRoute =
     path: '/stores-assets',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminStructureRoute =
+  AuthenticatedAdminStructureRouteImport.update({
+    id: '/structure',
+    path: '/structure',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminStudentIntelligenceRoute =
   AuthenticatedAdminStudentIntelligenceRouteImport.update({
     id: '/student-intelligence',
@@ -1495,6 +1502,7 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/staff-accounts': typeof AuthenticatedAdminStaffAccountsRoute
   '/admin/stores-assets': typeof AuthenticatedAdminStoresAssetsRoute
+  '/admin/structure': typeof AuthenticatedAdminStructureRoute
   '/admin/student-intelligence': typeof AuthenticatedAdminStudentIntelligenceRoute
   '/admin/students': typeof AuthenticatedAdminStudentsRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
@@ -1697,6 +1705,7 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/staff-accounts': typeof AuthenticatedAdminStaffAccountsRoute
   '/admin/stores-assets': typeof AuthenticatedAdminStoresAssetsRoute
+  '/admin/structure': typeof AuthenticatedAdminStructureRoute
   '/admin/student-intelligence': typeof AuthenticatedAdminStudentIntelligenceRoute
   '/admin/students': typeof AuthenticatedAdminStudentsRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
@@ -1904,6 +1913,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/staff-accounts': typeof AuthenticatedAdminStaffAccountsRoute
   '/_authenticated/admin/stores-assets': typeof AuthenticatedAdminStoresAssetsRoute
+  '/_authenticated/admin/structure': typeof AuthenticatedAdminStructureRoute
   '/_authenticated/admin/student-intelligence': typeof AuthenticatedAdminStudentIntelligenceRoute
   '/_authenticated/admin/students': typeof AuthenticatedAdminStudentsRoute
   '/_authenticated/admin/support': typeof AuthenticatedAdminSupportRoute
@@ -2110,6 +2120,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/staff-accounts'
     | '/admin/stores-assets'
+    | '/admin/structure'
     | '/admin/student-intelligence'
     | '/admin/students'
     | '/admin/support'
@@ -2312,6 +2323,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/staff-accounts'
     | '/admin/stores-assets'
+    | '/admin/structure'
     | '/admin/student-intelligence'
     | '/admin/students'
     | '/admin/support'
@@ -2518,6 +2530,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/staff-accounts'
     | '/_authenticated/admin/stores-assets'
+    | '/_authenticated/admin/structure'
     | '/_authenticated/admin/student-intelligence'
     | '/_authenticated/admin/students'
     | '/_authenticated/admin/support'
@@ -3495,6 +3508,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminStoresAssetsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/structure': {
+      id: '/_authenticated/admin/structure'
+      path: '/structure'
+      fullPath: '/admin/structure'
+      preLoaderRoute: typeof AuthenticatedAdminStructureRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/student-intelligence': {
       id: '/_authenticated/admin/student-intelligence'
       path: '/student-intelligence'
@@ -4162,6 +4182,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminStaffAccountsRoute: typeof AuthenticatedAdminStaffAccountsRoute
   AuthenticatedAdminStoresAssetsRoute: typeof AuthenticatedAdminStoresAssetsRoute
+  AuthenticatedAdminStructureRoute: typeof AuthenticatedAdminStructureRoute
   AuthenticatedAdminStudentIntelligenceRoute: typeof AuthenticatedAdminStudentIntelligenceRoute
   AuthenticatedAdminStudentsRoute: typeof AuthenticatedAdminStudentsRoute
   AuthenticatedAdminSupportRoute: typeof AuthenticatedAdminSupportRoute
@@ -4255,6 +4276,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
     AuthenticatedAdminStaffAccountsRoute: AuthenticatedAdminStaffAccountsRoute,
     AuthenticatedAdminStoresAssetsRoute: AuthenticatedAdminStoresAssetsRoute,
+    AuthenticatedAdminStructureRoute: AuthenticatedAdminStructureRoute,
     AuthenticatedAdminStudentIntelligenceRoute:
       AuthenticatedAdminStudentIntelligenceRoute,
     AuthenticatedAdminStudentsRoute: AuthenticatedAdminStudentsRoute,

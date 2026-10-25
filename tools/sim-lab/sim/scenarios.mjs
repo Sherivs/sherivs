@@ -1,7 +1,7 @@
 // Scenario suite against the isolated sim DB. Each check records pass/fail + detail. No secrets involved.
 import pg from "pg"; import fs from "node:fs"; import crypto from "node:crypto";
 const M = JSON.parse(fs.readFileSync("sim/manifest.json", "utf8"));
-const pool = new pg.Pool({ host: "127.0.0.1", port: 54329, user: "postgres", max: 60 });
+const pool = new pg.Pool({ host: "127.0.0.1", port: Number(process.env.SIM_PG_PORT ?? 54329), user: "postgres", max: 60 });
 const results = [];
 const rec = (area, name, pass, detail, severity = "high") => { results.push({ area, name, pass, detail, severity }); console.log(pass ? "PASS" : "FAIL", area, "::", name, "::", detail); };
 async function as(uid, fn, role = "authenticated") {
@@ -1483,6 +1483,135 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : x?.err ?? "n/a");
   rec("custom_domain", "Removed domain stops resolving and can be claimed afresh; every action is in the append-only audit; resolver stays fast",
     v.removed === true && v.anonRemoved === null && !!v.bReclaim?.id && JSON.stringify(v.audit) === JSON.stringify(["add", "check", "set_primary", "remove"]) && !v.auditEdit?.ok && v.resolveMs < 20,
     `audit ${JSON.stringify(v.audit)}; resolve ${v.resolveMs} ms avg over 2,000 domains`, "high");
+}
+// ---------- A1. Scope sets complete: audit, no widening on remove, subject dim, caller area (SHERIVS-A01) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+    const cN = (await t("select public.campus_upsert($1,'A1 North') id", [A.schoolId])).row?.id;
+    const cS = (await t("select public.campus_upsert($1,'A1 South') id", [A.schoolId])).row?.id;
+    const [cls, other] = (await asOwner("select id from classes where school_id=$1 and exists (select 1 from students s where s.class_id=classes.id) order by name desc limit 2", [A.schoolId])).r.rows.map((r) => r.id);
+    const tt = (await asOwner("insert into timetables (school_id, class_id, academic_year, term) values ($1,$2,'2026/2027','first') returning id", [A.schoolId, cls])).row?.id;
+    await asOwner("insert into timetable_slots (timetable_id, school_id, day_of_week, period_number, start_time, end_time, subject) values ($1,$2,1,1,'08:00','08:40','A1 Further Mathematics')", [tt, A.schoolId]);
+    await asOwner("update classes set campus_id=$1 where id=$2", [cN, cls]); await asOwner("update classes set campus_id=$1 where id=$2", [cS, other]);
+    const subj = (await asOwner("select ts.subject from timetables tt join timetable_slots ts on ts.timetable_id=tt.id where tt.class_id=$1 and ts.subject is not null limit 1", [cls])).row?.subject;
+    const sIn = (await asOwner("select id from students where class_id=$1 limit 1", [cls])).row?.id;
+    const sOut = (await asOwner("select id from students where class_id=$1 limit 1", [other])).row?.id;
+    const staff = (await asOwner("select id from users where school_id=$1 and role='teacher' and id<>$2 and id not in (select teacher_id from classes where teacher_id is not null) and id not in (select teacher_id from timetable_slots where teacher_id is not null) order by id desc limit 1", [A.schoolId, A.teacher])).row?.id;
+    const ra = (await t("select public.role_assign($1,$2,'ng.year_head_year_tutor','org',null) id", [A.schoolId, staff])).row?.id;
+    const setN = (await t("select public.role_scope_set_add($1, jsonb_build_object('campus', jsonb_build_array($2::text)), 'A1 North') id", [ra, cN])).row?.id;
+    out.auditAdd = (await asOwner("select count(*)::int n from role_scope_audit where set_id=$1 and action='set_add'", [setN])).row?.n;
+    // restricted assigner (proprietor limited to North)
+    const prop = (await t("select public.role_assign($1,$2,'ng.proprietor','org',null) id", [A.schoolId, A.bursar])).row?.id;
+    await t("select public.role_scope_set_add($1, jsonb_build_object('campus', jsonb_build_array($2::text)))", [prop, cN]);
+    await act(A.bursar);
+    out.removeLast = await t("select public.role_scope_set_remove($1)", [setN]);
+    await act(A.admin);
+    const setS = (await t("select public.role_scope_set_add($1, jsonb_build_object('campus', jsonb_build_array($2::text)), 'A1 South') id", [ra, cS])).row?.id;
+    await act(A.bursar);
+    out.removeOutside = await t("select public.role_scope_set_remove($1)", [setS]);
+    out.removeInside = await t("select public.role_scope_set_remove($1)", [setN]);
+    await act(A.admin);
+    out.auditRemove = (await asOwner("select count(*)::int n from role_scope_audit where set_id=$1 and action='set_remove' and actor=$2", [setN, A.bursar])).row?.n;
+    out.auditEdit = await asOwner("delete from role_scope_audit where set_id=$1", [setN]);
+    // subject dimension: South set gone? keep South; add a subject-only set and check a subject match on the North class
+    await t("select public.role_scope_set_remove($1)", [setS]);
+    await t("select public.role_scope_set_add($1, jsonb_build_object('subject', jsonb_build_array($2::text)), 'A1 subject')", [ra, subj]);
+    out.subjIn = (await t("select public.authz_check($1,'students.view','student',$2) r", [staff, sIn])).row?.r;
+    out.subjNoTt = (await asOwner("select count(*)::int n from timetables tt join timetable_slots ts on ts.timetable_id=tt.id where tt.class_id=$1 and ts.subject=$2", [other, subj])).row?.n;
+    out.subjOut = (await t("select public.authz_check($1,'students.view','student',$2) r", [staff, sOut])).row?.r;
+    // caller's own area + class filter
+    await act(staff);
+    out.area = (await t("select public.my_operating_area($1) r", [A.schoolId])).row?.r;
+    out.ids = (await t("select public.scope_class_ids($1) r", [A.schoolId])).row?.r;
+    out.staffList = await t("select public.role_scope_sets_list($1)", [A.schoolId]);
+    await act(A.admin);
+    out.adminIds = (await t("select public.scope_class_ids($1) r", [A.schoolId])).row;
+    out.list = (await t("select public.role_scope_sets_list($1) r", [A.schoolId])).row?.r;
+    await act(B.admin); out.crossList = await t("select public.role_scope_sets_list($1)", [A.schoolId]);
+    out.crossAudit = (await t("select count(*)::int n from role_scope_audit where org_id=$1", [A.schoolId])).row?.n;
+    await act(A.admin);
+    Object.assign(out, { cls, other, ra, subj });
+  });
+  rec("scope_sets", "Every scope-set add/remove is written to an append-only audit", v.auditAdd === 1 && v.auditRemove === 1 && !v.auditEdit?.ok,
+    `add ${v.auditAdd}; remove ${v.auditRemove}; edit ${W_ERR(v.auditEdit)}`, "high");
+  rec("scope_sets", "A restricted assigner cannot widen by removing: not the last set, not a set outside their area; inside is fine",
+    !v.removeLast?.ok && !v.removeOutside?.ok && v.removeInside?.ok, `last ${W_ERR(v.removeLast)}; outside ${W_ERR(v.removeOutside)}; inside ${W_ERR(v.removeInside)}`, "critical");
+  rec("scope_sets", "Subject dimension matches the class timetable", v.subjIn?.allow === true && (v.subjNoTt > 0 || v.subjOut?.allow === false),
+    `in ${v.subjIn?.deciding_layer}; out ${v.subjOut?.deciding_layer} (other class teaches it: ${v.subjNoTt})`, "high");
+  rec("scope_sets", "Caller sees own area; class filter returns only in-area classes; admins get all (NULL)",
+    v.area?.unrestricted === false && v.area?.sets?.length === 1 && Array.isArray(v.ids) && v.ids.includes(v.cls) && (v.subjNoTt > 0 || !v.ids.includes(v.other)) && v.adminIds?.r === null,
+    `sets ${v.area?.sets?.length}; ids ${v.ids?.length}; admin ${JSON.stringify(v.adminIds?.r)}`, "high");
+  rec("scope_sets", "Only role managers list scope sets; other schools see neither sets nor audit",
+    Array.isArray(v.list) && v.list.some((s) => s.assignment_id === v.ra) && !v.staffList?.ok && !v.crossList?.ok && v.crossAudit === 0,
+    `staff ${W_ERR(v.staffList)}; cross ${W_ERR(v.crossList)}; cross audit ${v.crossAudit}`, "critical");
+}
+// ---------- A2. Structure: shifts, levels, gender sections, class placement, academic periods (SHERIVS-A02) ----------
+{
+  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+    const camp = (await t("select public.campus_upsert($1,'A2 Main') id", [A.schoolId])).row?.id;
+    const bCamp = (await asOwner("insert into campuses (school_id, name) values ($1,'A2 B campus') returning id", [B.schoolId])).row?.id;
+    await act(A.teacher); out.teacherShift = await t("select public.shift_upsert($1,null,'A2 Morning','morning')", [A.schoolId]); await act(A.admin);
+    const sh = (await t("select public.shift_upsert($1,$2,'A2 Morning','morning','07:30','12:30') id", [A.schoolId, camp])).row?.id;
+    out.same = (await t("select public.shift_upsert($1,$2,'a2 morning','morning','07:45','12:30') id", [A.schoolId, camp])).row?.id === sh;
+    out.badTime = await t("select public.shift_upsert($1,null,'A2 Bad','evening','18:00','17:00')", [A.schoolId]);
+    out.foreignCamp = await t("select public.shift_upsert($1,$2,'A2 X','morning')", [A.schoolId, bCamp]);
+    const lv = (await t("select public.level_upsert($1,'A2 JSS 1','jss',7) id", [A.schoolId])).row?.id;
+    const cls = (await asOwner("select id from classes where school_id=$1 order by name limit 1", [A.schoolId])).row?.id;
+    const sec = (await t("select public.section_upsert($1,$2,'A2 Girls College','junior_secondary') id", [A.schoolId, camp])).row?.id;
+    out.place = await t("select public.class_set_structure($1,$2,$3,$4)", [cls, sh, lv, sec]);
+    out.placed = (await asOwner("select shift_id=$2 and level_id=$3 and section_id=$4 ok from classes where id=$1", [cls, sh, lv, sec])).row?.ok;
+    const bShift = (await asOwner("insert into school_shifts (school_id, name, kind) values ($1,'A2 B shift','morning') returning id", [B.schoolId])).row?.id;
+    out.foreignShift = await t("select public.class_set_structure($1,$2,null)", [cls, bShift]);
+    out.profile = await t("select public.section_set_profile($1,'girls','boarding')", [sec]);
+    out.dims = (await asOwner("select public.resource_dims('class',$1) r", [cls])).row?.r;
+    await act(B.admin); out.bPlace = await t("select public.class_set_structure($1,null,null)", [cls]); out.bDel = await t("select public.shift_delete($1)", [sh]); await act(A.admin);
+    out.delUsed = await t("select public.shift_delete($1)", [sh]);
+    // a level referenced by a role operating area cannot be deleted
+    const lv2 = (await t("select public.level_upsert($1,'A2 SSS 3','sss',12) id", [A.schoolId])).row?.id;
+    const staff = (await asOwner("select id from users where school_id=$1 and role='teacher' and id<>$2 order by id limit 1", [A.schoolId, A.teacher])).row?.id;
+    const ra = (await t("select public.role_assign($1,$2,'ng.year_head_year_tutor','org',null) id", [A.schoolId, staff])).row?.id;
+    await t("select public.role_scope_set_add($1, jsonb_build_object('level', jsonb_build_array($2::text)))", [ra, lv2]);
+    out.delScoped = await t("select public.level_delete($1)", [lv2]);
+    await t("select public.class_set_structure($1,null,null)", [cls]);
+    out.delFree = await t("select public.shift_delete($1)", [sh]);
+    // academic periods
+    const P = (o, n, a, b, k = "term") => t("select public.academic_period_upsert($1,'2031/2032',$2,$3,$4,$5::date,$6::date) id", [A.schoolId, k, o, n, a, b]);
+    const p1 = (await P(1, "First term", "2031-09-08", "2031-12-12")).row?.id;
+    const p2 = (await P(2, "Second term", "2032-01-05", "2032-04-02")).row?.id;
+    out.overlap = await P(3, "Third term", "2032-03-30", "2032-07-20");
+    out.mixKind = await t("select public.academic_period_upsert($1,'2031/2032','semester',3,'S',  '2032-05-01','2032-07-01')", [A.schoolId]);
+    out.badSession = await t("select public.academic_period_upsert($1,'2031/2035','term',1,'X','2035-01-01','2035-02-01')", [A.schoolId]);
+    await t("select public.academic_period_set_current($1)", [p1]);
+    await t("select public.academic_period_set_current($1)", [p2]);
+    out.currents = (await asOwner("select count(*)::int n, max(id::text) id from academic_periods where school_id=$1 and is_current", [A.schoolId])).row;
+    await t("select public.academic_period_close($1)", [p1]);
+    out.reopen = await t("select public.academic_period_set_current($1)", [p1]);
+    out.editClosed = await P(1, "First term (edited)", "2031-09-08", "2031-12-12");
+    await act(A.teacher); out.teacherCur = (await t("select public.current_academic_period($1) r", [A.schoolId])).row?.r;
+    out.teacherPeriod = await t("select public.academic_period_upsert($1,'2033/2034','term',1,'X','2033-09-01','2033-12-01')", [A.schoolId]);
+    out.direct = await t("insert into academic_periods (school_id, session, kind, ordinal, name, starts_on, ends_on) values ($1,'2040/2041','term',1,'x','2040-09-01','2040-12-01')", [A.schoolId]);
+    await act(B.admin); out.bCur = (await t("select public.current_academic_period($1) r", [A.schoolId])).row?.r;
+    out.bRead = (await t("select count(*)::int n from academic_periods where school_id=$1", [A.schoolId])).row?.n; await act(A.admin);
+    out.audit = (await asOwner("select count(*)::int n from audit_logs where school_id=$1 and action in ('shift_upsert','shift_delete','level_upsert','section_profile','class_structure','period_upsert','period_current','period_close') and created_at > now() - interval '5 minutes'", [A.schoolId])).row?.n;
+    Object.assign(out, { p2 });
+  });
+  rec("structure", "Only settings managers create shifts; same name updates in place; bad times and other schools' campuses refused",
+    !v.teacherShift?.ok && v.same && !v.badTime?.ok && !v.foreignCamp?.ok, `teacher ${W_ERR(v.teacherShift)}; time ${W_ERR(v.badTime)}; campus ${W_ERR(v.foreignCamp)}`, "high");
+  rec("structure", "Class placement (shift, level, section) stays inside the school; another school cannot place or delete",
+    v.place?.ok && v.placed && !v.foreignShift?.ok && !v.bPlace?.ok && !v.bDel?.ok, `foreign ${W_ERR(v.foreignShift)}; B ${W_ERR(v.bPlace)} / ${W_ERR(v.bDel)}`, "critical");
+  rec("structure", "Gender/residency section profile flows into access dimensions", v.profile?.ok && JSON.stringify(v.dims?.gender) === '["girls"]',
+    JSON.stringify(v.dims?.gender), "high");
+  rec("structure", "Deletes are refused while classes or a role operating area use the item; allowed once free",
+    !v.delUsed?.ok && /in_use/.test(v.delUsed?.err ?? "") && !v.delScoped?.ok && /operating area/.test(v.delScoped?.err ?? "") && v.delFree?.ok,
+    `used ${W_ERR(v.delUsed)}; scoped ${W_ERR(v.delScoped)}; free ${W_ERR(v.delFree)}`, "high");
+  rec("periods", "Academic periods: no overlaps, one kind per session, valid session names, exactly one current",
+    !v.overlap?.ok && !v.mixKind?.ok && !v.badSession?.ok && v.currents?.n === 1 && v.currents?.id === v.p2,
+    `overlap ${W_ERR(v.overlap)}; kind ${W_ERR(v.mixKind)}; session ${W_ERR(v.badSession)}; current ${JSON.stringify(v.currents)}`, "high");
+  rec("periods", "Closed periods cannot be reopened or edited; teachers read the current period but cannot change periods",
+    !v.reopen?.ok && !v.editClosed?.ok && v.teacherCur?.id === v.p2 && !v.teacherPeriod?.ok && !v.direct?.ok,
+    `reopen ${W_ERR(v.reopen)}; edit ${W_ERR(v.editClosed)}; teacher ${W_ERR(v.teacherPeriod)}; direct ${W_ERR(v.direct)}`, "high");
+  rec("periods", "Another school sees neither the periods nor the current period; every change is audited",
+    v.bCur == null && v.bRead === 0 && v.audit >= 10, `B current ${JSON.stringify(v.bCur)}; B rows ${v.bRead}; audit ${v.audit}`, "critical");
 }
 // ---------- A3. Tertiary results: published-only GPA/CGPA, degree class, academic standing (SHERIVS-A03) ----------
 {

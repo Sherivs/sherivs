@@ -11,6 +11,7 @@ import { rows, rpc, sdb } from "@/lib/scholar/rpc";
 
 export const Route = createFileRoute("/_authenticated/admin/role-scopes")({ ssr: false, component: RoleScopesPage });
 type Opt = { id: string; name: string };
+type ScopeSet = { set_id: string; label: string | null; assignment_id: string; role: string; user_id: string; user_name: string | null; dims: Record<string, string[]> };
 const DIMS = ["campus", "shift", "section", "gender", "level", "class", "subject", "house", "hostel"] as const;
 type Dim = (typeof DIMS)[number];
 
@@ -49,14 +50,27 @@ function RoleScopesPage() {
   const houses = q("houses", () => rows<Opt>(sdb.from("student_groups").select("id,name").eq("school_id", org).eq("kind", "house")));
   all.shift = inCampus(shifts.data ?? []); all.section = inCampus(sections.data ?? []); all.level = levels.data ?? [];
   all.class = inCampus(classes.data ?? []).filter((c) => !pick.level.length || c.level_id == null || pick.level.includes(c.level_id));
-  all.house = houses.data ?? []; all.gender = ["boys", "girls", "mixed"].map((g) => ({ id: g, name: g })); all.hostel = []; all.subject = [];
+  const hostels = q("hostels", () => rows<{ id: string; block: string | null; room_number?: string | null }>(sdb.from("hostel_rooms").select("id,block").eq("school_id", org)));
+  const subjects = q("subjects", () => rows<{ subject: string | null }>(sdb.from("timetable_slots").select("subject").eq("school_id", org)));
+  all.house = houses.data ?? []; all.gender = ["boys", "girls", "mixed"].map((g) => ({ id: g, name: g }));
+  all.hostel = [...new Set((hostels.data ?? []).map((h) => h.block).filter((b): b is string => !!b))].map((b) => ({ id: b, name: `Block ${b}` }));
+  all.subject = [...new Set((subjects.data ?? []).map((x) => x.subject).filter((b): b is string => !!b))].sort().map((b) => ({ id: b, name: b }));
+  const sets = useQuery({ queryKey: ["scope-sets", org], enabled: !!org, queryFn: () => rpc<ScopeSet[]>("role_scope_sets_list", { p_org: org }).catch(() => [] as ScopeSet[]) });
+  const audit = q("scope-audit", () => rows<{ id: number; action: string; at: string; label: string | null; dims: Record<string, string[]> | null }>(sdb.from("role_scope_audit").select("id,action,at,label,dims").eq("org_id", org).order("at", { ascending: false }).limit(30)));
+  const nameOf = (d: string, ref: string) => (all[d as Dim] ?? []).find((o) => o.id === ref)?.name ?? ref;
   const report = useQuery({ queryKey: ["shadow", org], enabled: !!org, queryFn: () => rpc<Record<string, unknown>>("authz_shadow_report", { p_org: org }).catch(() => null) });
 
   async function save() {
     const dims: Record<string, string[]> = {};
     for (const d of DIMS) if (pick[d].length) dims[d] = pick[d];
-    if (subject.trim()) dims.subject = subject.split(",").map((s) => s.trim()).filter(Boolean);
+    const extra = subject.split(",").map((s) => s.trim()).filter(Boolean);
+    if (extra.length) dims.subject = [...new Set([...(dims.subject ?? []), ...extra])];
     try { await rpc("role_scope_set_add", { p_assignment: assignment, p_dims: dims }); toast.success("Scope set saved"); await qc.invalidateQueries(); }
+    catch (e) { toast.error((e as Error).message); }
+  }
+  async function remove(id: string) {
+    if (!confirm("Remove this scope set?")) return;
+    try { await rpc("role_scope_set_remove", { p_set: id }); toast.success("Scope set removed"); await qc.invalidateQueries(); }
     catch (e) { toast.error((e as Error).message); }
   }
   async function explain() {
@@ -71,11 +85,29 @@ function RoleScopesPage() {
           <option value="">Choose a role assignment</option>
           {(assignments.data ?? []).map((a) => <option key={a.id} value={a.id}>{a.role_code} · {a.user_id.slice(0, 8)}</option>)}</select>
         <div className="grid gap-2 md:grid-cols-3">
-          {DIMS.filter((d) => d !== "subject").map((d) => <Multi key={d} label={d} opts={all[d] ?? []} value={pick[d]} onChange={(v) => setPick({ ...pick, [d]: v })} />)}
-          <Input placeholder="Subjects (comma separated)" value={subject} onChange={(e) => setSubject(e.target.value)} />
+          {DIMS.map((d) => <Multi key={d} label={d} opts={all[d] ?? []} value={pick[d]} onChange={(v) => setPick({ ...pick, [d]: v })} />)}
+          <Input placeholder="Other subjects (comma separated)" value={subject} onChange={(e) => setSubject(e.target.value)} />
         </div>
         <Button disabled={!assignment} onClick={save}>Add scope set</Button>
         <p className="text-xs text-muted-foreground">You can never grant a wider area than your own.</p>
+      </div>
+      <div className="mt-4 space-y-2 rounded-lg border p-3"><h3 className="font-medium">Current scope sets</h3>
+        {(sets.data ?? []).length === 0 && <p className="text-sm text-muted-foreground">No scope sets yet: every role is organisation-wide.</p>}
+        <ul className="space-y-2 text-sm">
+          {(sets.data ?? []).map((s) => (
+            <li key={s.set_id} className="flex flex-wrap items-start justify-between gap-2 rounded border p-2">
+              <div><div className="font-medium">{s.user_name ?? s.user_id.slice(0, 8)} · {s.role}{s.label ? ` · ${s.label}` : ""}</div>
+                <div className="text-xs text-muted-foreground">{Object.entries(s.dims ?? {}).map(([d, refs]) => `${d}: ${refs.map((r) => nameOf(d, r)).join(" or ")}`).join("  AND  ")}</div></div>
+              <Button size="sm" variant="outline" onClick={() => remove(s.set_id)}>Remove</Button>
+            </li>))}
+        </ul>
+        <p className="text-xs text-muted-foreground">Several sets on one role: any of them. Removing the last set makes the role organisation-wide, so only administrators can do that.</p>
+      </div>
+      <div className="mt-4 space-y-2 rounded-lg border p-3"><h3 className="font-medium">Scope changes (audit)</h3>
+        <ul className="space-y-1 font-mono text-xs">
+          {(audit.data ?? []).map((a) => <li key={a.id}>{a.at.slice(0, 16).replace("T", " ")} {a.action} {a.label ?? ""} {a.dims ? Object.keys(a.dims).join("+") : ""}</li>)}
+          {(audit.data ?? []).length === 0 && <li className="text-muted-foreground">No changes yet.</li>}
+        </ul>
       </div>
       <div className="mt-4 space-y-2 rounded-lg border p-3"><h3 className="font-medium">Why can or can't someone see this? (shadow check)</h3>
         <div className="grid gap-2 md:grid-cols-3">
