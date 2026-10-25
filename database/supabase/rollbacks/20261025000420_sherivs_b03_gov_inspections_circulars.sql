@@ -1,0 +1,23 @@
+-- Rollback SHERIVS-B03: drops inspections, circulars, their RPCs and the gov console audit (export first if needed).
+BEGIN;
+DROP FUNCTION IF EXISTS public.school_circular_ack(uuid);
+DROP FUNCTION IF EXISTS public.school_circulars_mine();
+DROP FUNCTION IF EXISTS public.gov_circulars_list(uuid);
+DROP FUNCTION IF EXISTS public.gov_circular_withdraw(uuid);
+DROP FUNCTION IF EXISTS public.gov_circular_publish(uuid, text, text, text[], boolean, text);
+DROP FUNCTION IF EXISTS public._gov_circular_reaches(public.gov_circulars, uuid);
+DROP FUNCTION IF EXISTS public.school_inspection_respond(uuid, text);
+DROP FUNCTION IF EXISTS public.school_inspections_mine();
+DROP FUNCTION IF EXISTS public.gov_inspections_list(uuid, text);
+DROP FUNCTION IF EXISTS public.gov_sharing_schools(uuid);
+DROP FUNCTION IF EXISTS public.gov_inspection_cancel(uuid, text);
+DROP FUNCTION IF EXISTS public.gov_inspection_record(uuid, jsonb, text, text, date);
+DROP FUNCTION IF EXISTS public.gov_inspection_schedule(uuid, uuid, date, text, uuid);
+DROP TABLE IF EXISTS public.gov_circular_acks;
+DROP TABLE IF EXISTS public.gov_circulars;
+DROP TABLE IF EXISTS public.gov_inspections;
+DROP FUNCTION IF EXISTS public._gov_school_shares(uuid, uuid);
+DROP FUNCTION IF EXISTS public._gov_write_guard(uuid, text[]);
+DROP FUNCTION IF EXISTS public._gov_my_role(uuid);
+DROP TABLE IF EXISTS public.gov_console_audit;
+COMMIT;
