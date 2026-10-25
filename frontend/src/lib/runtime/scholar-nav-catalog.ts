@@ -1256,7 +1256,6 @@ export const SCHOLAR_NAV_CONTRIBUTIONS: readonly NavContribution[] = [
         url: "/admin/government",
         capabilities: ["r001:org_admin.government"],
         orderHint: 3,
-        orderHint: 2,
       },
       {
         key: "r001.org_admin.safeguards",
