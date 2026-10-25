@@ -207,7 +207,7 @@
       "database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql": 119,
       "database/supabase/migrations/20261025100220_sherivs_ux2_scope_policy_workspace.sql": 25,
       "database/supabase/migrations/20261025100230_sherivs_ux3_workspace_live_data.sql": 43,
-      "database/supabase/migrations/20261024001000_sherivs_100_website_engine.sql": 77
+      "database/supabase/migrations/20261025100240_sherivs_100_website_engine.sql": 77
     },
     "baselineGroups": 427
   },
@@ -12521,7 +12521,7 @@
       "firstSnippet": "WHEN 'w.enrolment' THEN"
     },
     {
-      "file": "database/supabase/migrations/20261024001000_sherivs_100_website_engine.sql",
+      "file": "database/supabase/migrations/20261025100240_sherivs_100_website_engine.sql",
       "kind": "vocabulary",
       "token": "school",
       "streamIRef": "SHERIVS-100",
@@ -12538,7 +12538,7 @@
       "firstSnippet": "('hero', 'Hero', 'identity', 'school', ARRAY['centered', 'split', 'minimal']::text[], false),"
     },
     {
-      "file": "database/supabase/migrations/20261024001000_sherivs_100_website_engine.sql",
+      "file": "database/supabase/migrations/20261025100240_sherivs_100_website_engine.sql",
       "kind": "vocabulary",
       "token": "fees",
       "streamIRef": "SHERIVS-100",
@@ -12549,7 +12549,7 @@
       "firstSnippet": "('fees_summary', 'Fees summary', 'admissions', NULL, ARRAY['table']::text[], false),"
     },
     {
-      "file": "database/supabase/migrations/20261024001000_sherivs_100_website_engine.sql",
+      "file": "database/supabase/migrations/20261025100240_sherivs_100_website_engine.sql",
       "kind": "structural",
       "token": "school_id",
       "streamIRef": "SHERIVS-100",
@@ -12626,7 +12626,7 @@
       "firstSnippet": "school_id uuid PRIMARY KEY REFERENCES public.schools(id) ON DELETE CASCADE,"
     },
     {
-      "file": "database/supabase/migrations/20261024001000_sherivs_100_website_engine.sql",
+      "file": "database/supabase/migrations/20261025100240_sherivs_100_website_engine.sql",
       "kind": "vocabulary-literal",
       "token": "staff",
       "streamIRef": "SHERIVS-100",
@@ -12637,7 +12637,7 @@
       "firstSnippet": "out := out || jsonb_build_object('staff', coalesce((SELECT jsonb_agg(jsonb_build_object('full_name', x.full_name, 'role', x.role, 'avatar_url', x.avatar_url,"
     },
     {
-      "file": "database/supabase/migrations/20261024001000_sherivs_100_website_engine.sql",
+      "file": "database/supabase/migrations/20261025100240_sherivs_100_website_engine.sql",
       "kind": "vocabulary",
       "token": "teacher",
       "streamIRef": "SHERIVS-100",
