@@ -12,6 +12,8 @@ import {
   resolveExperienceHost,
   shouldRedirectCanonicalRootToAuth,
 } from "@/lib/experience/experience-host";
+import { headConsoleSlugFromHost } from "@/lib/head-console/host";
+import { isGovHost } from "@/lib/gov/host";
 import { readRequestHostname } from "@/lib/experience/experience-host.functions";
 
 async function loaderHostname(): Promise<string> {
@@ -24,6 +26,10 @@ export const Route = createFileRoute("/")({
   loaderDeps: ({ search }) => ({ school: search.school, lang: search.lang }),
   loader: async ({ deps }) => {
     const hostname = await loaderHostname();
+    // SHERIVS-B01: console.<inst>.sherivs.com is the institution head console.
+    if (headConsoleSlugFromHost(hostname)) throw redirect({ to: "/head" });
+    // SHERIVS-B02: gov.sherivs.com and <state>.gov.sherivs.com open the government console.
+    if (isGovHost(hostname)) throw redirect({ to: "/gov" });
     const hostKind = resolveExperienceHost(hostname);
     // App and console must not SSR the public marketing homepage.
     if (shouldRedirectCanonicalRootToAuth(hostKind)) {

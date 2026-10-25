@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
+import { ScopeBanner, useScopeFilter } from "@/components/sds/scope-filter";
 import { PortalPage } from "@/components/portal-shell";
 import { CrudList, type CrudConfig } from "@/components/admin/crud-list";
 
@@ -27,6 +28,7 @@ type Row = {
 
 function StudentsPage() {
   const { school } = useApp();
+  const scope = useScopeFilter();
   const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
@@ -109,6 +111,7 @@ function StudentsPage() {
     ],
     orderBy: { column: "admission_number", ascending: true },
     defaultValues: { is_active: true },
+    selectIn: scope.classIds ? { column: "class_id", values: scope.classIds } : null,
   };
 
   return (
@@ -121,7 +124,8 @@ function StudentsPage() {
           ← Back to dashboard
         </Link>
       </div>
-      <CrudList config={config} />
+      <ScopeBanner scope={scope} />
+      {!scope.pending && <CrudList config={config} />}
     </PortalPage>
   );
 }

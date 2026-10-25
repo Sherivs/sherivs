@@ -142,3 +142,32 @@ npm run generate-assets   # regenerates the placeholder icon/splash PNGs
    beyond this mission's V1 foundation.
 5. Replace generated placeholder icon/splash artwork with final brand
    assets (design authority pending).
+## School workspace (Track E)
+
+Signed-in users now land in `app/(school)/`, a tab bar built from the **workspace manifest**
+(`src/workspace/manifest.ts`): one account, and the tabs follow the role on the `users` row.
+
+| Role | Tabs |
+| --- | --- |
+| student | Home, Results, CBT, Attendance, Fees, Messages |
+| parent | Home, Results, Attendance, Fees, Messages |
+| teacher | Home, Attendance, Results, CBT, Messages |
+| bursar | Home, Fees, Messages |
+| admin / principal / hq | Home, Results, Attendance, Fees, Messages (+ Platform console link to the original `(app)` screens) |
+| alumni / driver / unknown | Home, Messages |
+
+- Data: `src/api/school.client.ts`. Plain RLS-scoped reads plus the `cbt_start` / `cbt_sync` / `cbt_submit` RPCs, using the same
+  Supabase project and auth session as the web app. Every query passes an explicit `student_id`/`class_id` filter, so it uses an index.
+- Offline: `src/lib/offline-cache.ts` keeps the last good copy of results, attendance, fees, messages and the CBT list per user
+  in AsyncStorage and **labels it with the time it was fetched**. It is never shown as live and is cleared on sign-out.
+  CBT answers autosave every 15 s to the server and to the phone; the server's monotonic `client_seq` rejects stale replays.
+- Fee payment opens the web checkout (Paystack); settlement stays webhook-driven on the server.
+
+Verified locally: `npm run typecheck` passes, `npx expo start` serves Metro, and `npx expo export --platform android` bundles the app.
+
+### Needed to ship (not available in this environment)
+- **Expo account + `EXPO_TOKEN`** (for `eas build` / `eas update`; set as a CI secret).
+- **Apple Developer Program** membership ($99/yr) + App Store Connect app record. EAS can manage the certificates and profiles.
+- **Google Play Console** account ($25 one-time) + an upload keystore (EAS can generate it) + a service-account JSON for `eas submit`.
+- Production `EXPO_PUBLIC_*` values (Supabase URL + publishable key, web base URL) in EAS environment variables.
+- Push notifications (optional next step): `expo-notifications` + an FCM server key / APNs key.

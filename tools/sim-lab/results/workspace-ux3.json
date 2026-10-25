@@ -1,0 +1,770 @@
+{
+ "at": "2026-10-24T22:01:29.066Z",
+ "passed": 18,
+ "total": 18,
+ "results": [
+  {
+   "area": "workspace-ux3",
+   "name": "same role, same school, different scopes -> different homes",
+   "pass": true,
+   "detail": "{\"X\":[\"w.today_classes\",\"w.level_overview\",\"w.attendance_todo\",\"w.grading_queue\",\"w.lesson_note_status\",\"w.cbt_sessions\",\"w.ai_lesson_helper\",\"w.announcements\"],\"Y\":[\"w.today_classes\",\"w.campus_overview\",\"w.shift_overview\",\"w.attendance_todo\",\"w.grading_queue\",\"w.lesson_note_status\",\"w.cbt_sessions\",\"w.ai_lesson_helper\",\"w.announcements\"]}"
+  },
+  {
+   "area": "workspace-ux3",
+   "name": "level-scoped teacher gets the level card only",
+   "pass": true,
+   "detail": "{\"level\":[\"a86d9cd4-db67-45e0-a7c6-baeb69bc62c8\"],\"subject\":[\"Mathematics\"]}"
+  },
+  {
+   "area": "workspace-ux3",
+   "name": "campus+shift-scoped teacher gets campus and shift cards",
+   "pass": true,
+   "detail": "{\"shift\":[\"928e0967-15c9-4246-aa3c-63a9d4f15832\"],\"campus\":[\"d94eb75e-2b31-41b2-9433-6ed10602a1dd\"]}"
+  },
+  {
+   "area": "workspace-ux3",
+   "name": "live: level card counts only JSS 2 students",
+   "pass": true,
+   "detail": "19 / 22 vs 22 expected"
+  },
+  {
+   "area": "workspace-ux3",
+   "name": "live: campus card counts only Ajah Annex afternoon students",
+   "pass": true,
+   "detail": "28 / 30 vs 30 expected"
+  },
+  {
+   "area": "workspace-ux3",
+   "name": "live: today's lessons from the timetable (subject-scoped)",
+   "pass": true,
+   "detail": "{\"list\":[[\"08:00 Mathematics\",\"Rm 4\"],[\"10:10 Mathematics\",\"Rm 4\"]]}"
+  },
+  {
+   "area": "workspace-ux3",
+   "name": "live: scope labels are human names, not ids",
+   "pass": true,
+   "detail": "{\"shift\":{\"928e0967-15c9-4246-aa3c-63a9d4f15832\":\"Afternoon\"},\"campus\":{\"d94eb75e-2b31-41b2-9433-6ed10602a1dd\":\"Ajah Annex\"}}"
+  },
+  {
+   "area": "workspace-ux3",
+   "name": "live: no card fails under teacher RLS",
+   "pass": true,
+   "detail": "all cards readable"
+  },
+  {
+   "area": "workspace-ux3",
+   "name": "focus on a held scope narrows to that dimension",
+   "pass": true,
+   "detail": "{\"campus\":[\"d94eb75e-2b31-41b2-9433-6ed10602a1dd\"]}"
+  },
+  {
+   "area": "workspace-ux3",
+   "name": "focus on a scope the user does not hold is ignored",
+   "pass": true,
+   "detail": "{\"shift\":[\"928e0967-15c9-4246-aa3c-63a9d4f15832\"],\"campus\":[\"d94eb75e-2b31-41b2-9433-6ed10602a1dd\"]}"
+  },
+  {
+   "area": "workspace-ux3",
+   "name": "student cannot pull finance cards (skipped, not leaked)",
+   "pass": true,
+   "detail": "[\"w.my_results\",\"w.my_timetable\"]"
+  },
+  {
+   "area": "workspace-ux3",
+   "name": "parent sees only own children's balance",
+   "pass": true,
+   "detail": "900000 vs 900000; children 2"
+  },
+  {
+   "area": "workspace-ux3",
+   "name": "anon cannot call widget data",
+   "pass": true,
+   "detail": "anon"
+  },
+  {
+   "area": "workspace-ux3",
+   "name": "other school's cards return nothing",
+   "pass": true,
+   "detail": "{}"
+  },
+  {
+   "area": "workspace-ux3",
+   "name": "too many keys rejected",
+   "pass": true,
+   "detail": "41 keys"
+  },
+  {
+   "area": "workspace-ux3",
+   "name": "policy off hides AI helper; personalisation locked",
+   "pass": true,
+   "detail": "{\"widgets\":[\"w.today_classes\",\"w.level_overview\",\"w.attendance_todo\",\"w.grading_queue\",\"w.lesson_note_status\",\"w.cbt_sessions\",\"w.announcements\"],\"lock\":false}"
+  },
+  {
+   "area": "workspace-ux3",
+   "name": "teacher cannot change policies",
+   "pass": true,
+   "detail": "settings.manage required"
+  },
+  {
+   "area": "workspace-ux3",
+   "name": "widget data p95 < 150 ms (all cards of a home)",
+   "pass": true,
+   "detail": "p50 22.8 ms, p95 29.9 ms, 9 cards"
+  }
+ ],
+ "fixture": {
+  "lekki": "5f6ca13c-ed03-4ca1-ad78-088d6aa75a88",
+  "teacherX": "0ec4f3c4-f4f8-4b26-ac31-eefe398e6205",
+  "teacherY": "29078f5a-6ee7-4a86-a907-84b6be75ee32",
+  "scopes": {
+   "X": {
+    "level": [
+     "a86d9cd4-db67-45e0-a7c6-baeb69bc62c8"
+    ],
+    "subject": [
+     "Mathematics"
+    ]
+   },
+   "Y": {
+    "shift": [
+     "928e0967-15c9-4246-aa3c-63a9d4f15832"
+    ],
+    "campus": [
+     "d94eb75e-2b31-41b2-9433-6ed10602a1dd"
+    ]
+   }
+  }
+ },
+ "sample": {
+  "X": {
+   "cards": {
+    "w.cbt_sessions": {
+     "list": []
+    },
+    "w.announcements": {
+     "list": []
+    },
+    "w.grading_queue": {
+     "note": "scores left to enter",
+     "metric": "0"
+    },
+    "w.today_classes": {
+     "list": [
+      [
+       "08:00 Mathematics",
+       "Rm 4"
+      ],
+      [
+       "10:10 Mathematics",
+       "Rm 4"
+      ]
+     ]
+    },
+    "w.level_overview": {
+     "bar": 86,
+     "note": "present today",
+     "warn": "3 absent",
+     "metric": "19 / 22"
+    },
+    "w.attendance_todo": {
+     "note": "all registers marked today",
+     "metric": "0"
+    },
+    "w.lesson_note_status": {
+     "note": "no lesson notes yet"
+    }
+   },
+   "scope": {
+    "level": [
+     "a86d9cd4-db67-45e0-a7c6-baeb69bc62c8"
+    ],
+    "subject": [
+     "Mathematics"
+    ]
+   },
+   "labels": {
+    "level": {
+     "a86d9cd4-db67-45e0-a7c6-baeb69bc62c8": "JSS 2"
+    },
+    "subject": {
+     "Mathematics": "Mathematics"
+    }
+   }
+  },
+  "Y": {
+   "cards": {
+    "w.cbt_sessions": {
+     "list": []
+    },
+    "w.announcements": {
+     "list": []
+    },
+    "w.grading_queue": {
+     "note": "scores left to enter",
+     "metric": "0"
+    },
+    "w.today_classes": {
+     "list": [
+      [
+       "09:00 Basic Science",
+       "Lab 1"
+      ]
+     ]
+    },
+    "w.shift_overview": {
+     "bar": 93,
+     "note": "present today",
+     "warn": "2 absent",
+     "metric": "28 / 30"
+    },
+    "w.attendance_todo": {
+     "note": "all registers marked today",
+     "metric": "0"
+    },
+    "w.campus_overview": {
+     "bar": 93,
+     "note": "present today",
+     "warn": "2 absent",
+     "metric": "28 / 30"
+    },
+    "w.lesson_note_status": {
+     "note": "no lesson notes yet"
+    }
+   },
+   "scope": {
+    "shift": [
+     "928e0967-15c9-4246-aa3c-63a9d4f15832"
+    ],
+    "campus": [
+     "d94eb75e-2b31-41b2-9433-6ed10602a1dd"
+    ]
+   },
+   "labels": {
+    "shift": {
+     "928e0967-15c9-4246-aa3c-63a9d4f15832": "Afternoon"
+    },
+    "campus": {
+     "d94eb75e-2b31-41b2-9433-6ed10602a1dd": "Ajah Annex"
+    }
+   }
+  },
+  "manifestX": {
+   "nav": [
+    {
+     "to": "/workspace",
+     "key": "nav.home",
+     "label": "Home"
+    },
+    {
+     "to": "/admin/students",
+     "key": "nav.students",
+     "label": "Students"
+    },
+    {
+     "to": "/teacher/dashboard",
+     "key": "nav.my_classes",
+     "label": "My classes"
+    },
+    {
+     "to": "/teacher/attendance",
+     "key": "nav.attendance",
+     "label": "Attendance"
+    },
+    {
+     "to": "/teacher/gradebook",
+     "key": "nav.gradebook",
+     "label": "Gradebook"
+    },
+    {
+     "to": "/teacher/lesson-notes",
+     "key": "nav.lesson_notes",
+     "label": "Lesson notes"
+    },
+    {
+     "to": "/admin/exams",
+     "key": "nav.cbt",
+     "label": "CBT"
+    },
+    {
+     "to": "/settings",
+     "key": "nav.my_pay",
+     "label": "My payslips"
+    },
+    {
+     "to": "/admin/hr",
+     "key": "nav.staff",
+     "label": "Staff"
+    },
+    {
+     "to": "/student/ai-tutor",
+     "key": "nav.ai_tutor",
+     "label": "AI tutor"
+    },
+    {
+     "to": "/messages",
+     "key": "nav.messages",
+     "label": "Messages"
+    }
+   ],
+   "inbox": [
+    {
+     "to": "/messages",
+     "key": "i.messages",
+     "label": "Messages"
+    },
+    {
+     "to": "/notifications",
+     "key": "i.alerts",
+     "label": "Alerts"
+    }
+   ],
+   "locale": "en",
+   "org_id": "5f6ca13c-ed03-4ca1-ad78-088d6aa75a88",
+   "scopes": [
+    {
+     "ref": null,
+     "role": "ng.mathematics_teacher",
+     "sets": [
+      {
+       "level": [
+        "a86d9cd4-db67-45e0-a7c6-baeb69bc62c8"
+       ],
+       "subject": [
+        "Mathematics"
+       ]
+      }
+     ],
+     "type": "org"
+    }
+   ],
+   "actions": [
+    {
+     "to": "/teacher/attendance",
+     "key": "a.take_attendance",
+     "label": "Take attendance"
+    },
+    {
+     "to": "/teacher/gradebook",
+     "key": "a.enter_scores",
+     "label": "Enter scores"
+    },
+    {
+     "to": "/teacher/lesson-notes",
+     "key": "a.submit_note",
+     "label": "Submit lesson note"
+    },
+    {
+     "to": "/admin/exams",
+     "key": "a.new_cbt",
+     "label": "New CBT test"
+    },
+    {
+     "to": "/settings",
+     "key": "a.request_leave",
+     "label": "Request leave"
+    }
+   ],
+   "density": "comfortable",
+   "version": 2,
+   "widgets": [
+    {
+     "to": "/teacher/timetable",
+     "key": "w.today_classes",
+     "size": "m",
+     "label": "Today's lessons",
+     "scope": {}
+    },
+    {
+     "to": "/teacher/gradebook",
+     "key": "w.level_overview",
+     "size": "m",
+     "label": "My levels, classes & subjects",
+     "scope": {
+      "level": [
+       "a86d9cd4-db67-45e0-a7c6-baeb69bc62c8"
+      ],
+      "subject": [
+       "Mathematics"
+      ]
+     }
+    },
+    {
+     "to": "/teacher/attendance",
+     "key": "w.attendance_todo",
+     "size": "s",
+     "label": "Registers to mark",
+     "scope": {}
+    },
+    {
+     "to": "/teacher/gradebook",
+     "key": "w.grading_queue",
+     "size": "s",
+     "label": "Scores to enter",
+     "scope": {}
+    },
+    {
+     "to": "/teacher/lesson-notes",
+     "key": "w.lesson_note_status",
+     "size": "s",
+     "label": "Lesson note status",
+     "scope": {}
+    },
+    {
+     "to": "/admin/exams",
+     "key": "w.cbt_sessions",
+     "size": "m",
+     "label": "CBT sessions",
+     "scope": {}
+    },
+    {
+     "to": "/teacher/ai-assistant",
+     "key": "w.ai_lesson_helper",
+     "size": "s",
+     "label": "AI lesson helper",
+     "scope": {}
+    },
+    {
+     "to": "/messages",
+     "key": "w.announcements",
+     "size": "m",
+     "label": "Announcements",
+     "scope": {}
+    }
+   ],
+   "families": [
+    "teacher"
+   ],
+   "features": [
+    "ai",
+    "cbt",
+    "core",
+    "health",
+    "hostel",
+    "library",
+    "payroll",
+    "sms",
+    "transport",
+    "wallet",
+    "whatsapp"
+   ],
+   "policies": [
+    "workspace.personalise",
+    "students.ai_tutor",
+    "students.results_online",
+    "staff.ai_helper",
+    "staff.message_parents",
+    "parents.fees_online",
+    "parents.bus_tracking"
+   ],
+   "available": [
+    "w.form_class",
+    "w.staff_attendance",
+    "w.ai_tutor"
+   ],
+   "scope_options": {
+    "level": [
+     "a86d9cd4-db67-45e0-a7c6-baeb69bc62c8"
+    ],
+    "subject": [
+     "Mathematics"
+    ]
+   },
+   "primary_family": "teacher",
+   "can_personalise": true,
+   "hidden_by_policy": 76
+  },
+  "manifestY": {
+   "nav": [
+    {
+     "to": "/workspace",
+     "key": "nav.home",
+     "label": "Home"
+    },
+    {
+     "to": "/admin/students",
+     "key": "nav.students",
+     "label": "Students"
+    },
+    {
+     "to": "/teacher/dashboard",
+     "key": "nav.my_classes",
+     "label": "My classes"
+    },
+    {
+     "to": "/teacher/attendance",
+     "key": "nav.attendance",
+     "label": "Attendance"
+    },
+    {
+     "to": "/teacher/gradebook",
+     "key": "nav.gradebook",
+     "label": "Gradebook"
+    },
+    {
+     "to": "/teacher/lesson-notes",
+     "key": "nav.lesson_notes",
+     "label": "Lesson notes"
+    },
+    {
+     "to": "/admin/exams",
+     "key": "nav.cbt",
+     "label": "CBT"
+    },
+    {
+     "to": "/settings",
+     "key": "nav.my_pay",
+     "label": "My payslips"
+    },
+    {
+     "to": "/admin/hr",
+     "key": "nav.staff",
+     "label": "Staff"
+    },
+    {
+     "to": "/student/ai-tutor",
+     "key": "nav.ai_tutor",
+     "label": "AI tutor"
+    },
+    {
+     "to": "/messages",
+     "key": "nav.messages",
+     "label": "Messages"
+    }
+   ],
+   "inbox": [
+    {
+     "to": "/messages",
+     "key": "i.messages",
+     "label": "Messages"
+    },
+    {
+     "to": "/notifications",
+     "key": "i.alerts",
+     "label": "Alerts"
+    }
+   ],
+   "locale": "en",
+   "org_id": "5f6ca13c-ed03-4ca1-ad78-088d6aa75a88",
+   "scopes": [
+    {
+     "ref": null,
+     "role": "ng.mathematics_teacher",
+     "sets": [
+      {
+       "shift": [
+        "928e0967-15c9-4246-aa3c-63a9d4f15832"
+       ],
+       "campus": [
+        "d94eb75e-2b31-41b2-9433-6ed10602a1dd"
+       ]
+      }
+     ],
+     "type": "org"
+    }
+   ],
+   "actions": [
+    {
+     "to": "/teacher/attendance",
+     "key": "a.take_attendance",
+     "label": "Take attendance"
+    },
+    {
+     "to": "/teacher/gradebook",
+     "key": "a.enter_scores",
+     "label": "Enter scores"
+    },
+    {
+     "to": "/teacher/lesson-notes",
+     "key": "a.submit_note",
+     "label": "Submit lesson note"
+    },
+    {
+     "to": "/admin/exams",
+     "key": "a.new_cbt",
+     "label": "New CBT test"
+    },
+    {
+     "to": "/settings",
+     "key": "a.request_leave",
+     "label": "Request leave"
+    }
+   ],
+   "density": "comfortable",
+   "version": 2,
+   "widgets": [
+    {
+     "to": "/teacher/timetable",
+     "key": "w.today_classes",
+     "size": "m",
+     "label": "Today's lessons",
+     "scope": {}
+    },
+    {
+     "to": "/admin/students",
+     "key": "w.campus_overview",
+     "size": "l",
+     "label": "My campus today",
+     "scope": {
+      "campus": [
+       "d94eb75e-2b31-41b2-9433-6ed10602a1dd"
+      ]
+     }
+    },
+    {
+     "to": "/teacher/attendance",
+     "key": "w.shift_overview",
+     "size": "m",
+     "label": "My shift",
+     "scope": {
+      "shift": [
+       "928e0967-15c9-4246-aa3c-63a9d4f15832"
+      ]
+     }
+    },
+    {
+     "to": "/teacher/attendance",
+     "key": "w.attendance_todo",
+     "size": "s",
+     "label": "Registers to mark",
+     "scope": {}
+    },
+    {
+     "to": "/teacher/gradebook",
+     "key": "w.grading_queue",
+     "size": "s",
+     "label": "Scores to enter",
+     "scope": {}
+    },
+    {
+     "to": "/teacher/lesson-notes",
+     "key": "w.lesson_note_status",
+     "size": "s",
+     "label": "Lesson note status",
+     "scope": {}
+    },
+    {
+     "to": "/admin/exams",
+     "key": "w.cbt_sessions",
+     "size": "m",
+     "label": "CBT sessions",
+     "scope": {}
+    },
+    {
+     "to": "/teacher/ai-assistant",
+     "key": "w.ai_lesson_helper",
+     "size": "s",
+     "label": "AI lesson helper",
+     "scope": {}
+    },
+    {
+     "to": "/messages",
+     "key": "w.announcements",
+     "size": "m",
+     "label": "Announcements",
+     "scope": {}
+    }
+   ],
+   "families": [
+    "teacher"
+   ],
+   "features": [
+    "ai",
+    "cbt",
+    "core",
+    "health",
+    "hostel",
+    "library",
+    "payroll",
+    "sms",
+    "transport",
+    "wallet",
+    "whatsapp"
+   ],
+   "policies": [
+    "workspace.personalise",
+    "students.ai_tutor",
+    "students.results_online",
+    "staff.ai_helper",
+    "staff.message_parents",
+    "parents.fees_online",
+    "parents.bus_tracking"
+   ],
+   "available": [
+    "w.form_class",
+    "w.staff_attendance",
+    "w.ai_tutor"
+   ],
+   "scope_options": {
+    "shift": [
+     "928e0967-15c9-4246-aa3c-63a9d4f15832"
+    ],
+    "campus": [
+     "d94eb75e-2b31-41b2-9433-6ed10602a1dd"
+    ]
+   },
+   "primary_family": "teacher",
+   "can_personalise": true,
+   "hidden_by_policy": 75
+  },
+  "focusY": {
+   "scope": {
+    "dim": "shift",
+    "ref": "928e0967-15c9-4246-aa3c-63a9d4f15832"
+   },
+   "data": {
+    "cards": {
+     "w.cbt_sessions": {
+      "list": []
+     },
+     "w.announcements": {
+      "list": []
+     },
+     "w.grading_queue": {
+      "note": "scores left to enter",
+      "metric": "0"
+     },
+     "w.today_classes": {
+      "list": [
+       [
+        "09:00 Basic Science",
+        "Lab 1"
+       ]
+      ]
+     },
+     "w.shift_overview": {
+      "bar": 93,
+      "note": "present today",
+      "warn": "2 absent",
+      "metric": "28 / 30"
+     },
+     "w.attendance_todo": {
+      "note": "all registers marked today",
+      "metric": "0"
+     },
+     "w.campus_overview": {
+      "bar": 93,
+      "note": "present today",
+      "warn": "2 absent",
+      "metric": "28 / 30"
+     },
+     "w.lesson_note_status": {
+      "note": "no lesson notes yet"
+     }
+    },
+    "scope": {
+     "shift": [
+      "928e0967-15c9-4246-aa3c-63a9d4f15832"
+     ]
+    },
+    "labels": {
+     "shift": {
+      "928e0967-15c9-4246-aa3c-63a9d4f15832": "Afternoon"
+     },
+     "campus": {
+      "d94eb75e-2b31-41b2-9433-6ed10602a1dd": "Ajah Annex"
+     }
+    }
+   }
+  }
+ }
+}
