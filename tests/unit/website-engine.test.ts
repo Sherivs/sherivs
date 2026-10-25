@@ -11,7 +11,7 @@ import { validateDocument } from "@/lib/website/validate";
 import { DEMO_FACTS } from "../fixtures/website/demo-facts";
 
 const MIG = readFileSync(
-  "database/supabase/migrations/20261024001000_sherivs_100_website_engine.sql",
+  "database/supabase/migrations/20261025100240_sherivs_100_website_engine.sql",
   "utf8",
 );
 const bare: SiteData = { school: { name: "Bare School", slug: "bare" } };
