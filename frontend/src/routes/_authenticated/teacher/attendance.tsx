@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -9,6 +9,9 @@ import { PortalPage } from "@/components/portal-shell";
 import { Button } from "@/components/ui/button";
 import { markClassAttendance, teacherCheckWithQr } from "@/lib/runtime/scholar/attendance.functions";
 import { Input } from "@/components/ui/input";
+import { rpc } from "@/lib/scholar/rpc";
+import { createAttendanceQueue, type QueuedMark, type SyncResult } from "@/lib/offline/attendance-queue";
+import { cached, saveOrQueue } from "@/lib/offline/save-or-queue";
 
 export const Route = createFileRoute("/_authenticated/teacher/attendance")({
   ssr: false,
@@ -35,12 +38,68 @@ function todayStr() {
   return new Date().toISOString().slice(0, 10);
 }
 
+const browserStorage = () => (typeof window === "undefined" ? undefined : window.localStorage);
+
 function TeacherAttendancePage() {
   const { school, profile } = useApp();
   const schoolId = school?.id;
   const teacherId = profile?.id;
   const save = useServerFn(markClassAttendance);
   const today = todayStr();
+
+  // SHERIVS-A07b: offline queue. Marks made without a connection are kept on this device and synced
+  // through offline_attendance_sync_v2 (per-item ids, device clock check); disagreements go to the admin queue.
+  const [online, setOnline] = useState(() => (typeof navigator === "undefined" ? true : navigator.onLine));
+  const [pendingCount, setPendingCount] = useState(0);
+  const [lastSync, setLastSync] = useState<{ applied: number; duplicates: number; conflicts: number; error?: string } | null>(null);
+  const queue = useMemo(() => {
+    const storage = browserStorage();
+    if (!storage || !teacherId) return null;
+    return createAttendanceQueue({
+      storage,
+      userId: teacherId,
+      now: () => new Date(),
+      sync: (batch: string, items: QueuedMark[], clientNow: string) =>
+        rpc<SyncResult>("offline_attendance_sync_v2", { p_batch: batch, p_items: items, p_client_now: clientNow }),
+    });
+  }, [teacherId]);
+  const myConflicts = useQuery({
+    queryKey: ["my-attendance-conflicts", teacherId],
+    enabled: !!teacherId && online,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("attendance_sync_conflicts" as never)
+        .select("id, student_id, date, yours, server, status")
+        .eq("user_id", teacherId!)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      return (data ?? []) as unknown as { id: string; student_id: string; date: string; yours: string; server: string | null; status: string }[];
+    },
+  });
+  const syncNow = useCallback(async () => {
+    if (!queue) return;
+    const r = await queue.flush();
+    setPendingCount(queue.pending().length);
+    if (r.sent || r.error) setLastSync({ applied: r.applied, duplicates: r.duplicates, conflicts: r.conflicts.length, error: r.error });
+    if (r.sent && !r.error) {
+      toast.success(`Synced ${r.applied} offline mark${r.applied === 1 ? "" : "s"}${r.conflicts.length ? `; ${r.conflicts.length} sent to the admin to review` : ""}`);
+      void myConflicts.refetch();
+    } else if (r.error) toast.error(`Offline marks not synced yet: ${r.error}`);
+  }, [queue, myConflicts]);
+  useEffect(() => {
+    if (!queue) return;
+    setPendingCount(queue.pending().length);
+    const up = () => setOnline(true);
+    const down = () => setOnline(false);
+    window.addEventListener("online", up);
+    window.addEventListener("offline", down);
+    const off = queue.autoFlush(window);
+    const onOnline = () => setTimeout(() => setPendingCount(queue.pending().length), 1500);
+    window.addEventListener("online", onOnline);
+    if (navigator.onLine && queue.pending().length) void syncNow();
+    return () => { off(); window.removeEventListener("online", up); window.removeEventListener("offline", down); window.removeEventListener("online", onOnline); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queue]);
 
   const [classId, setClassId] = useState<string | null>(null);
   const [marks, setMarks] = useState<Record<string, Status>>({});
@@ -76,8 +135,11 @@ function TeacherAttendancePage() {
           if (c) ids.set(c.id, c);
         });
       }
-      return Array.from(ids.values()).sort((a, b) => a.name.localeCompare(b.name));
+      const out = Array.from(ids.values()).sort((a, b) => a.name.localeCompare(b.name));
+      cached<ClassRow[]>(browserStorage(), `classes.${tid}`).set(out);
+      return out;
     },
+    placeholderData: () => (teacherId ? cached<ClassRow[]>(browserStorage(), `classes.${teacherId}`).get() : undefined),
   });
 
   // 2) Students in the selected class
@@ -106,7 +168,11 @@ function TeacherAttendancePage() {
         }))
         .sort((a, b) => a.full_name.localeCompare(b.full_name)) as StudentWithName[];
     },
+    placeholderData: () => (classId ? cached<StudentWithName[]>(browserStorage(), `roster.${classId}`).get() : undefined),
   });
+  useEffect(() => {
+    if (classId && students.data && !students.isPlaceholderData) cached<StudentWithName[]>(browserStorage(), `roster.${classId}`).set(students.data);
+  }, [classId, students.data, students.isPlaceholderData]);
 
   // 3) Pre-fill existing attendance for today
   const existing = useQuery({
@@ -180,10 +246,23 @@ function TeacherAttendancePage() {
     if (!entries.length) return toast.error("Mark at least one student first");
     setSaving(true);
     try {
-      await save({ data: { class_id: classId, date: today, marks: entries } });
       const cls = classes.data?.find((c) => c.id === classId);
-      toast.success(`Attendance saved for ${cls?.name ?? "class"}`);
-      void existing.refetch();
+      const r = await saveOrQueue({
+        online: typeof navigator === "undefined" ? true : navigator.onLine,
+        marks: entries,
+        save: (m) => save({ data: { class_id: classId, date: today, marks: m } }),
+        queue: (m) => {
+          if (!queue) throw new Error("Offline saving is not available in this browser");
+          m.forEach((x) => queue.mark(x.student_id, today, x.status));
+          setPendingCount(queue.pending().length);
+        },
+      });
+      if (r.mode === "saved") {
+        toast.success(`Attendance saved for ${cls?.name ?? "class"}`);
+        void existing.refetch();
+      } else {
+        toast.success(`No connection: ${r.queued} mark${r.queued === 1 ? "" : "s"} saved on this device. They will sync when you are back online.`);
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to save");
     } finally {
@@ -206,6 +285,24 @@ function TeacherAttendancePage() {
         >
           ← Back
         </Link>
+      </div>
+
+      <div
+        role="status"
+        className={`mb-4 flex flex-wrap items-center gap-3 rounded-md border p-3 text-sm ${online ? "border-border" : "border-amber-500/40 bg-amber-500/10"}`}
+      >
+        <span className={online ? "text-emerald-400" : "text-amber-400"}>{online ? "Online" : "Offline: marks are saved on this device"}</span>
+        <span className="text-muted-foreground">
+          {pendingCount ? `${pendingCount} mark${pendingCount === 1 ? "" : "s"} waiting to sync` : "Nothing waiting to sync"}
+        </span>
+        {lastSync && (
+          <span className="text-xs text-muted-foreground">
+            Last sync: {lastSync.error ? `failed (${lastSync.error})` : `${lastSync.applied} applied, ${lastSync.duplicates} already synced, ${lastSync.conflicts} for admin review`}
+          </span>
+        )}
+        {pendingCount > 0 && online && (
+          <Button size="sm" variant="outline" onClick={() => void syncNow()}>Sync now</Button>
+        )}
       </div>
 
       <div className="uos-card p-5">
@@ -331,6 +428,22 @@ function TeacherAttendancePage() {
           </>
         )}
       </div>
+
+      {(myConflicts.data ?? []).length > 0 && (
+        <div className="uos-card mt-6 p-5">
+          <h3 className="font-display text-base font-semibold">Offline marks under admin review</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            These synced marks disagreed with one already saved by someone else. An admin decides which stands.
+          </p>
+          <ul className="mt-3 space-y-1 text-sm">
+            {(myConflicts.data ?? []).map((c) => (
+              <li key={c.id}>
+                {c.date} · {studentList.find((s) => s.id === c.student_id)?.full_name ?? c.student_id.slice(0, 8)} · you: {c.yours}, saved: {c.server ?? "—"} · {c.status.replace(/_/g, " ")}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <TeacherSelfCheckCard signInTime={signInTime} signOutTime={signOutTime} />
     </PortalPage>
