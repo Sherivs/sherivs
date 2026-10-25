@@ -2,7 +2,7 @@
   "artifact": "role-assignment-substrate",
   "wave": "R39",
   "mode": "static",
-  "generatedAt": "2026-10-20T18:44:42.815Z",
+  "generatedAt": "2026-10-25T02:56:48.008Z",
   "migration": "database/supabase/migrations/20260907000800_coregrid_role_assignment_substrate.sql",
   "migrationDigest": "sha256:d76a8df9a7d26b953dca5fccf1a8ded78b37a0356b337b936e3047ca3a2721ff",
   "serverSurface": "frontend/src/lib/runtime/scholar/scholar-role-assignments.functions.ts",
