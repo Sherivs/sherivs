@@ -1266,9 +1266,6 @@ export const SCHOLAR_NAV_CONTRIBUTIONS: readonly NavContribution[] = [
         orderHint: 4,
       },
       {
-        orderHint: 2,
-      },
-      {
         key: "r001.org_admin.school_group",
         label: "School group",
         iconKey: "settings",
