@@ -6,12 +6,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { GovJurisdictionContext } from "@/lib/gov/context";
 import { GOV_NAV, govMyJurisdictions, loadJurisdiction, saveJurisdiction } from "@/lib/gov/portal";
+import { govLabel, rememberGovMfaReturn, type GovConsoleSession } from "@/lib/gov/host";
+import { rpc } from "@/lib/scholar/rpc";
 
 export const Route = createFileRoute("/gov")({
   ssr: false,
   beforeLoad: async () => {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
+    // SHERIVS-B02: on <label>.gov.sherivs.com the realm is pinned to that jurisdiction and MFA is mandatory.
+    const label = govLabel(window.location);
+    if (!label) return { realm: null as GovConsoleSession | null };
+    const realm = await rpc<GovConsoleSession>("gov_console_session", { p_label: label });
+    if (realm.status === "signed_out") throw redirect({ to: "/auth" });
+    if (realm.status === "mfa_required") { rememberGovMfaReturn(window.location.pathname); throw redirect({ to: "/mfa" }); }
+    return { realm };
   },
   component: GovLayout,
 });
@@ -19,11 +28,23 @@ export const Route = createFileRoute("/gov")({
 
 function GovLayout() {
   const navigate = useNavigate();
+  const { realm } = Route.useRouteContext();
   const mine = useQuery({ queryKey: ["gov-mine"], queryFn: govMyJurisdictions });
   const [sel, setSel] = useState("");
   useEffect(() => setSel(loadJurisdiction()), []);
   const list = mine.data ?? [];
-  const current = list.find((j) => j.id === sel) ?? list[0] ?? null;
+  const pinned = realm?.status === "ok" ? realm.jurisdiction_id : null;
+  const current = (pinned ? list.find((j) => j.id === pinned) : list.find((j) => j.id === sel) ?? list[0]) ?? null;
+
+  if (realm && realm.status !== "ok") {
+    return (
+      <main className="mx-auto max-w-lg p-8 text-center">
+        <h1 className="text-xl font-semibold">{realm.status === "unknown_jurisdiction" ? "Unknown government console" : `No access to ${realm.jurisdiction}`}</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Access is by invitation only. Ask your ministry's Sherivs administrator for an invitation to this console.</p>
+        <Button className="mt-4" variant="outline" onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/auth" }); }}>Sign out</Button>
+      </main>
+    );
+  }
 
   if (mine.isLoading) return <div className="grid min-h-dvh place-items-center text-sm text-muted-foreground" role="status">Loading…</div>;
   if (!list.length) {
@@ -40,7 +61,7 @@ function GovLayout() {
       <div className="min-h-dvh md:grid md:grid-cols-[220px_1fr]">
         <aside className="border-b p-4 md:border-b-0 md:border-r">
           <div className="text-sm font-semibold">Sherivs · Government</div>
-          {list.length > 1 ? (
+          {list.length > 1 && !pinned ? (
             <select className="mt-3 w-full rounded-md border bg-background p-2 text-sm" aria-label="Jurisdiction" value={current?.id}
               onChange={(e) => { setSel(e.target.value); saveJurisdiction(e.target.value); }}>
               {list.map((j) => <option key={j.id} value={j.id}>{j.name}</option>)}

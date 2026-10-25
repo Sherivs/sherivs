@@ -18,6 +18,8 @@ import { Route as BlogRouteImport } from './routes/blog'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FoundationLoopRouteImport } from './routes/foundation-loop'
 import { Route as GovRouteRouteImport } from './routes/gov/route'
+import { Route as GovInviteRouteImport } from './routes/gov-invite'
+import { Route as HeadRouteImport } from './routes/head'
 import { Route as HealthDotjsonRouteImport } from './routes/health[.]json'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ManifestDotwebmanifestRouteImport } from './routes/manifest[.]webmanifest'
@@ -65,16 +67,22 @@ import { Route as EventsIdRouteImport } from './routes/events.$id'
 import { Route as GovIndexRouteImport } from './routes/gov/index'
 import { Route as GovAboutRouteImport } from './routes/gov/about'
 import { Route as GovAttendanceRouteImport } from './routes/gov/attendance'
+import { Route as GovCircularsRouteImport } from './routes/gov/circulars'
+import { Route as GovInspectionsRouteImport } from './routes/gov/inspections'
+import { Route as GovPostingsRouteImport } from './routes/gov/postings'
 import { Route as GovSchoolsRouteImport } from './routes/gov/schools'
+import { Route as GovStaffingRouteImport } from './routes/gov/staffing'
 import { Route as NewsIdRouteImport } from './routes/news.$id'
 import { Route as PlatformOrgRouteImport } from './routes/platform.org'
 import { Route as RealityClassRouteImport } from './routes/reality.$class'
+import { Route as AuthenticatedAdminAcademicStandingRouteImport } from './routes/_authenticated/admin/academic-standing'
 import { Route as AuthenticatedAdminAdmissionsRouteImport } from './routes/_authenticated/admin/admissions'
 import { Route as AuthenticatedAdminAdmissionsFunnelRouteImport } from './routes/_authenticated/admin/admissions-funnel'
 import { Route as AuthenticatedAdminAiAssistantRouteImport } from './routes/_authenticated/admin/ai-assistant'
 import { Route as AuthenticatedAdminAnalyticsRouteImport } from './routes/_authenticated/admin/analytics'
 import { Route as AuthenticatedAdminApiKeysRouteImport } from './routes/_authenticated/admin/api-keys'
 import { Route as AuthenticatedAdminAttendanceRouteImport } from './routes/_authenticated/admin/attendance'
+import { Route as AuthenticatedAdminAttendanceConflictsRouteImport } from './routes/_authenticated/admin/attendance-conflicts'
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin/audit'
 import { Route as AuthenticatedAdminAuditLogsRouteImport } from './routes/_authenticated/admin/audit-logs'
 import { Route as AuthenticatedAdminBroadcastRouteImport } from './routes/_authenticated/admin/broadcast'
@@ -91,17 +99,21 @@ import { Route as AuthenticatedAdminDomainsRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminEarlyWarningRouteImport } from './routes/_authenticated/admin/early-warning'
 import { Route as AuthenticatedAdminEducationRealityRouteImport } from './routes/_authenticated/admin/education-reality'
 import { Route as AuthenticatedAdminEnterpriseChecklistRouteImport } from './routes/_authenticated/admin/enterprise-checklist'
+import { Route as AuthenticatedAdminExamBodiesRouteImport } from './routes/_authenticated/admin/exam-bodies'
 import { Route as AuthenticatedAdminExaminationsRouteImport } from './routes/_authenticated/admin/examinations'
 import { Route as AuthenticatedAdminExamsRouteImport } from './routes/_authenticated/admin/exams'
 import { Route as AuthenticatedAdminExpensesRouteImport } from './routes/_authenticated/admin/expenses'
 import { Route as AuthenticatedAdminExtracurricularRouteImport } from './routes/_authenticated/admin/extracurricular'
 import { Route as AuthenticatedAdminFacilitiesRouteImport } from './routes/_authenticated/admin/facilities'
 import { Route as AuthenticatedAdminFeaturesRouteImport } from './routes/_authenticated/admin/features'
+import { Route as AuthenticatedAdminFeeReliefRouteImport } from './routes/_authenticated/admin/fee-relief'
 import { Route as AuthenticatedAdminFeesRouteImport } from './routes/_authenticated/admin/fees'
 import { Route as AuthenticatedAdminFeesDefaultersRouteImport } from './routes/_authenticated/admin/fees-defaulters'
 import { Route as AuthenticatedAdminFinancialReportsRouteImport } from './routes/_authenticated/admin/financial-reports'
 import { Route as AuthenticatedAdminGeofenceSettingsRouteImport } from './routes/_authenticated/admin/geofence-settings'
+import { Route as AuthenticatedAdminGovernmentRouteImport } from './routes/_authenticated/admin/government'
 import { Route as AuthenticatedAdminGradesRouteImport } from './routes/_authenticated/admin/grades'
+import { Route as AuthenticatedAdminHeadsRouteImport } from './routes/_authenticated/admin/heads'
 import { Route as AuthenticatedAdminHealthRouteImport } from './routes/_authenticated/admin/health'
 import { Route as AuthenticatedAdminHealthCertificateRouteImport } from './routes/_authenticated/admin/health-certificate'
 import { Route as AuthenticatedAdminHostelRouteImport } from './routes/_authenticated/admin/hostel'
@@ -133,12 +145,14 @@ import { Route as AuthenticatedAdminSessionRolloverRouteImport } from './routes/
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
 import { Route as AuthenticatedAdminStaffAccountsRouteImport } from './routes/_authenticated/admin/staff-accounts'
 import { Route as AuthenticatedAdminStoresAssetsRouteImport } from './routes/_authenticated/admin/stores-assets'
+import { Route as AuthenticatedAdminStructureRouteImport } from './routes/_authenticated/admin/structure'
 import { Route as AuthenticatedAdminStudentIntelligenceRouteImport } from './routes/_authenticated/admin/student-intelligence'
 import { Route as AuthenticatedAdminStudentsRouteImport } from './routes/_authenticated/admin/students'
 import { Route as AuthenticatedAdminSupportRouteImport } from './routes/_authenticated/admin/support'
 import { Route as AuthenticatedAdminTeacherIntelligenceRouteImport } from './routes/_authenticated/admin/teacher-intelligence'
 import { Route as AuthenticatedAdminTeachersRouteImport } from './routes/_authenticated/admin/teachers'
 import { Route as AuthenticatedAdminTimetableRouteImport } from './routes/_authenticated/admin/timetable'
+import { Route as AuthenticatedAdminTransfersCustodyRouteImport } from './routes/_authenticated/admin/transfers-custody'
 import { Route as AuthenticatedAdminVisitorsRouteImport } from './routes/_authenticated/admin/visitors'
 import { Route as AuthenticatedAdminWalletRouteImport } from './routes/_authenticated/admin/wallet'
 import { Route as AuthenticatedBursarDashboardRouteImport } from './routes/_authenticated/bursar/dashboard'
@@ -256,6 +270,16 @@ const FoundationLoopRoute = FoundationLoopRouteImport.update({
 const GovRouteRoute = GovRouteRouteImport.update({
   id: '/gov',
   path: '/gov',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GovInviteRoute = GovInviteRouteImport.update({
+  id: '/gov-invite',
+  path: '/gov-invite',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HeadRoute = HeadRouteImport.update({
+  id: '/head',
+  path: '/head',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HealthDotjsonRoute = HealthDotjsonRouteImport.update({
@@ -503,9 +527,29 @@ const GovAttendanceRoute = GovAttendanceRouteImport.update({
   path: '/attendance',
   getParentRoute: () => GovRouteRoute,
 } as any)
+const GovCircularsRoute = GovCircularsRouteImport.update({
+  id: '/circulars',
+  path: '/circulars',
+  getParentRoute: () => GovRouteRoute,
+} as any)
+const GovInspectionsRoute = GovInspectionsRouteImport.update({
+  id: '/inspections',
+  path: '/inspections',
+  getParentRoute: () => GovRouteRoute,
+} as any)
+const GovPostingsRoute = GovPostingsRouteImport.update({
+  id: '/postings',
+  path: '/postings',
+  getParentRoute: () => GovRouteRoute,
+} as any)
 const GovSchoolsRoute = GovSchoolsRouteImport.update({
   id: '/schools',
   path: '/schools',
+  getParentRoute: () => GovRouteRoute,
+} as any)
+const GovStaffingRoute = GovStaffingRouteImport.update({
+  id: '/staffing',
+  path: '/staffing',
   getParentRoute: () => GovRouteRoute,
 } as any)
 const NewsIdRoute = NewsIdRouteImport.update({
@@ -523,6 +567,12 @@ const RealityClassRoute = RealityClassRouteImport.update({
   path: '/reality/$class',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminAcademicStandingRoute =
+  AuthenticatedAdminAcademicStandingRouteImport.update({
+    id: '/academic-standing',
+    path: '/academic-standing',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminAdmissionsRoute =
   AuthenticatedAdminAdmissionsRouteImport.update({
     id: '/admissions',
@@ -557,6 +607,12 @@ const AuthenticatedAdminAttendanceRoute =
   AuthenticatedAdminAttendanceRouteImport.update({
     id: '/attendance',
     path: '/attendance',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminAttendanceConflictsRoute =
+  AuthenticatedAdminAttendanceConflictsRouteImport.update({
+    id: '/attendance-conflicts',
+    path: '/attendance-conflicts',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminAuditRoute = AuthenticatedAdminAuditRouteImport.update({
@@ -652,6 +708,12 @@ const AuthenticatedAdminEnterpriseChecklistRoute =
     path: '/enterprise-checklist',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminExamBodiesRoute =
+  AuthenticatedAdminExamBodiesRouteImport.update({
+    id: '/exam-bodies',
+    path: '/exam-bodies',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminExaminationsRoute =
   AuthenticatedAdminExaminationsRouteImport.update({
     id: '/examinations',
@@ -687,6 +749,12 @@ const AuthenticatedAdminFeaturesRoute =
     path: '/features',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminFeeReliefRoute =
+  AuthenticatedAdminFeeReliefRouteImport.update({
+    id: '/fee-relief',
+    path: '/fee-relief',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminFeesRoute = AuthenticatedAdminFeesRouteImport.update({
   id: '/fees',
   path: '/fees',
@@ -710,12 +778,23 @@ const AuthenticatedAdminGeofenceSettingsRoute =
     path: '/geofence-settings',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminGovernmentRoute =
+  AuthenticatedAdminGovernmentRouteImport.update({
+    id: '/government',
+    path: '/government',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminGradesRoute =
   AuthenticatedAdminGradesRouteImport.update({
     id: '/grades',
     path: '/grades',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminHeadsRoute = AuthenticatedAdminHeadsRouteImport.update({
+  id: '/heads',
+  path: '/heads',
+  getParentRoute: () => AuthenticatedAdminRouteRoute,
+} as any)
 const AuthenticatedAdminHealthRoute =
   AuthenticatedAdminHealthRouteImport.update({
     id: '/health',
@@ -898,6 +977,12 @@ const AuthenticatedAdminStoresAssetsRoute =
     path: '/stores-assets',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminStructureRoute =
+  AuthenticatedAdminStructureRouteImport.update({
+    id: '/structure',
+    path: '/structure',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminStudentIntelligenceRoute =
   AuthenticatedAdminStudentIntelligenceRouteImport.update({
     id: '/student-intelligence',
@@ -932,6 +1017,12 @@ const AuthenticatedAdminTimetableRoute =
   AuthenticatedAdminTimetableRouteImport.update({
     id: '/timetable',
     path: '/timetable',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminTransfersCustodyRoute =
+  AuthenticatedAdminTransfersCustodyRouteImport.update({
+    id: '/transfers-custody',
+    path: '/transfers-custody',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminVisitorsRoute =
@@ -1387,6 +1478,8 @@ export interface FileRoutesByFullPath {
   '/blog': typeof BlogRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/foundation-loop': typeof FoundationLoopRoute
+  '/gov-invite': typeof GovInviteRoute
+  '/head': typeof HeadRoute
   '/health.json': typeof HealthDotjsonRoute
   '/login': typeof LoginRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
@@ -1433,17 +1526,23 @@ export interface FileRoutesByFullPath {
   '/events/$id': typeof EventsIdRoute
   '/gov/about': typeof GovAboutRoute
   '/gov/attendance': typeof GovAttendanceRoute
+  '/gov/circulars': typeof GovCircularsRoute
+  '/gov/inspections': typeof GovInspectionsRoute
+  '/gov/postings': typeof GovPostingsRoute
   '/gov/schools': typeof GovSchoolsRoute
+  '/gov/staffing': typeof GovStaffingRoute
   '/news/$id': typeof NewsIdRoute
   '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
   '/gov/': typeof GovIndexRoute
+  '/admin/academic-standing': typeof AuthenticatedAdminAcademicStandingRoute
   '/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/admin/admissions-funnel': typeof AuthenticatedAdminAdmissionsFunnelRoute
   '/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/api-keys': typeof AuthenticatedAdminApiKeysRoute
   '/admin/attendance': typeof AuthenticatedAdminAttendanceRoute
+  '/admin/attendance-conflicts': typeof AuthenticatedAdminAttendanceConflictsRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/admin/broadcast': typeof AuthenticatedAdminBroadcastRoute
@@ -1460,17 +1559,21 @@ export interface FileRoutesByFullPath {
   '/admin/early-warning': typeof AuthenticatedAdminEarlyWarningRoute
   '/admin/education-reality': typeof AuthenticatedAdminEducationRealityRoute
   '/admin/enterprise-checklist': typeof AuthenticatedAdminEnterpriseChecklistRoute
+  '/admin/exam-bodies': typeof AuthenticatedAdminExamBodiesRoute
   '/admin/examinations': typeof AuthenticatedAdminExaminationsRoute
   '/admin/exams': typeof AuthenticatedAdminExamsRoute
   '/admin/expenses': typeof AuthenticatedAdminExpensesRoute
   '/admin/extracurricular': typeof AuthenticatedAdminExtracurricularRoute
   '/admin/facilities': typeof AuthenticatedAdminFacilitiesRoute
   '/admin/features': typeof AuthenticatedAdminFeaturesRoute
+  '/admin/fee-relief': typeof AuthenticatedAdminFeeReliefRoute
   '/admin/fees': typeof AuthenticatedAdminFeesRoute
   '/admin/fees-defaulters': typeof AuthenticatedAdminFeesDefaultersRoute
   '/admin/financial-reports': typeof AuthenticatedAdminFinancialReportsRoute
   '/admin/geofence-settings': typeof AuthenticatedAdminGeofenceSettingsRoute
+  '/admin/government': typeof AuthenticatedAdminGovernmentRoute
   '/admin/grades': typeof AuthenticatedAdminGradesRoute
+  '/admin/heads': typeof AuthenticatedAdminHeadsRoute
   '/admin/health': typeof AuthenticatedAdminHealthRoute
   '/admin/health-certificate': typeof AuthenticatedAdminHealthCertificateRoute
   '/admin/hostel': typeof AuthenticatedAdminHostelRoute
@@ -1502,12 +1605,14 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/staff-accounts': typeof AuthenticatedAdminStaffAccountsRoute
   '/admin/stores-assets': typeof AuthenticatedAdminStoresAssetsRoute
+  '/admin/structure': typeof AuthenticatedAdminStructureRoute
   '/admin/student-intelligence': typeof AuthenticatedAdminStudentIntelligenceRoute
   '/admin/students': typeof AuthenticatedAdminStudentsRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
   '/admin/teacher-intelligence': typeof AuthenticatedAdminTeacherIntelligenceRoute
   '/admin/teachers': typeof AuthenticatedAdminTeachersRoute
   '/admin/timetable': typeof AuthenticatedAdminTimetableRoute
+  '/admin/transfers-custody': typeof AuthenticatedAdminTransfersCustodyRoute
   '/admin/visitors': typeof AuthenticatedAdminVisitorsRoute
   '/admin/wallet': typeof AuthenticatedAdminWalletRoute
   '/bursar/dashboard': typeof AuthenticatedBursarDashboardRoute
@@ -1591,6 +1696,8 @@ export interface FileRoutesByTo {
   '/blog': typeof BlogRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/foundation-loop': typeof FoundationLoopRoute
+  '/gov-invite': typeof GovInviteRoute
+  '/head': typeof HeadRoute
   '/health.json': typeof HealthDotjsonRoute
   '/login': typeof LoginRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
@@ -1636,17 +1743,23 @@ export interface FileRoutesByTo {
   '/events/$id': typeof EventsIdRoute
   '/gov/about': typeof GovAboutRoute
   '/gov/attendance': typeof GovAttendanceRoute
+  '/gov/circulars': typeof GovCircularsRoute
+  '/gov/inspections': typeof GovInspectionsRoute
+  '/gov/postings': typeof GovPostingsRoute
   '/gov/schools': typeof GovSchoolsRoute
+  '/gov/staffing': typeof GovStaffingRoute
   '/news/$id': typeof NewsIdRoute
   '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
   '/gov': typeof GovIndexRoute
+  '/admin/academic-standing': typeof AuthenticatedAdminAcademicStandingRoute
   '/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/admin/admissions-funnel': typeof AuthenticatedAdminAdmissionsFunnelRoute
   '/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/api-keys': typeof AuthenticatedAdminApiKeysRoute
   '/admin/attendance': typeof AuthenticatedAdminAttendanceRoute
+  '/admin/attendance-conflicts': typeof AuthenticatedAdminAttendanceConflictsRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/admin/broadcast': typeof AuthenticatedAdminBroadcastRoute
@@ -1663,17 +1776,21 @@ export interface FileRoutesByTo {
   '/admin/early-warning': typeof AuthenticatedAdminEarlyWarningRoute
   '/admin/education-reality': typeof AuthenticatedAdminEducationRealityRoute
   '/admin/enterprise-checklist': typeof AuthenticatedAdminEnterpriseChecklistRoute
+  '/admin/exam-bodies': typeof AuthenticatedAdminExamBodiesRoute
   '/admin/examinations': typeof AuthenticatedAdminExaminationsRoute
   '/admin/exams': typeof AuthenticatedAdminExamsRoute
   '/admin/expenses': typeof AuthenticatedAdminExpensesRoute
   '/admin/extracurricular': typeof AuthenticatedAdminExtracurricularRoute
   '/admin/facilities': typeof AuthenticatedAdminFacilitiesRoute
   '/admin/features': typeof AuthenticatedAdminFeaturesRoute
+  '/admin/fee-relief': typeof AuthenticatedAdminFeeReliefRoute
   '/admin/fees': typeof AuthenticatedAdminFeesRoute
   '/admin/fees-defaulters': typeof AuthenticatedAdminFeesDefaultersRoute
   '/admin/financial-reports': typeof AuthenticatedAdminFinancialReportsRoute
   '/admin/geofence-settings': typeof AuthenticatedAdminGeofenceSettingsRoute
+  '/admin/government': typeof AuthenticatedAdminGovernmentRoute
   '/admin/grades': typeof AuthenticatedAdminGradesRoute
+  '/admin/heads': typeof AuthenticatedAdminHeadsRoute
   '/admin/health': typeof AuthenticatedAdminHealthRoute
   '/admin/health-certificate': typeof AuthenticatedAdminHealthCertificateRoute
   '/admin/hostel': typeof AuthenticatedAdminHostelRoute
@@ -1705,12 +1822,14 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/staff-accounts': typeof AuthenticatedAdminStaffAccountsRoute
   '/admin/stores-assets': typeof AuthenticatedAdminStoresAssetsRoute
+  '/admin/structure': typeof AuthenticatedAdminStructureRoute
   '/admin/student-intelligence': typeof AuthenticatedAdminStudentIntelligenceRoute
   '/admin/students': typeof AuthenticatedAdminStudentsRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
   '/admin/teacher-intelligence': typeof AuthenticatedAdminTeacherIntelligenceRoute
   '/admin/teachers': typeof AuthenticatedAdminTeachersRoute
   '/admin/timetable': typeof AuthenticatedAdminTimetableRoute
+  '/admin/transfers-custody': typeof AuthenticatedAdminTransfersCustodyRoute
   '/admin/visitors': typeof AuthenticatedAdminVisitorsRoute
   '/admin/wallet': typeof AuthenticatedAdminWalletRoute
   '/bursar/dashboard': typeof AuthenticatedBursarDashboardRoute
@@ -1798,6 +1917,8 @@ export interface FileRoutesById {
   '/blog': typeof BlogRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/foundation-loop': typeof FoundationLoopRoute
+  '/gov-invite': typeof GovInviteRoute
+  '/head': typeof HeadRoute
   '/health.json': typeof HealthDotjsonRoute
   '/login': typeof LoginRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
@@ -1844,17 +1965,23 @@ export interface FileRoutesById {
   '/events/$id': typeof EventsIdRoute
   '/gov/about': typeof GovAboutRoute
   '/gov/attendance': typeof GovAttendanceRoute
+  '/gov/circulars': typeof GovCircularsRoute
+  '/gov/inspections': typeof GovInspectionsRoute
+  '/gov/postings': typeof GovPostingsRoute
   '/gov/schools': typeof GovSchoolsRoute
+  '/gov/staffing': typeof GovStaffingRoute
   '/news/$id': typeof NewsIdRoute
   '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
   '/gov/': typeof GovIndexRoute
+  '/_authenticated/admin/academic-standing': typeof AuthenticatedAdminAcademicStandingRoute
   '/_authenticated/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/_authenticated/admin/admissions-funnel': typeof AuthenticatedAdminAdmissionsFunnelRoute
   '/_authenticated/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
   '/_authenticated/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/_authenticated/admin/api-keys': typeof AuthenticatedAdminApiKeysRoute
   '/_authenticated/admin/attendance': typeof AuthenticatedAdminAttendanceRoute
+  '/_authenticated/admin/attendance-conflicts': typeof AuthenticatedAdminAttendanceConflictsRoute
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/_authenticated/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/_authenticated/admin/broadcast': typeof AuthenticatedAdminBroadcastRoute
@@ -1871,17 +1998,21 @@ export interface FileRoutesById {
   '/_authenticated/admin/early-warning': typeof AuthenticatedAdminEarlyWarningRoute
   '/_authenticated/admin/education-reality': typeof AuthenticatedAdminEducationRealityRoute
   '/_authenticated/admin/enterprise-checklist': typeof AuthenticatedAdminEnterpriseChecklistRoute
+  '/_authenticated/admin/exam-bodies': typeof AuthenticatedAdminExamBodiesRoute
   '/_authenticated/admin/examinations': typeof AuthenticatedAdminExaminationsRoute
   '/_authenticated/admin/exams': typeof AuthenticatedAdminExamsRoute
   '/_authenticated/admin/expenses': typeof AuthenticatedAdminExpensesRoute
   '/_authenticated/admin/extracurricular': typeof AuthenticatedAdminExtracurricularRoute
   '/_authenticated/admin/facilities': typeof AuthenticatedAdminFacilitiesRoute
   '/_authenticated/admin/features': typeof AuthenticatedAdminFeaturesRoute
+  '/_authenticated/admin/fee-relief': typeof AuthenticatedAdminFeeReliefRoute
   '/_authenticated/admin/fees': typeof AuthenticatedAdminFeesRoute
   '/_authenticated/admin/fees-defaulters': typeof AuthenticatedAdminFeesDefaultersRoute
   '/_authenticated/admin/financial-reports': typeof AuthenticatedAdminFinancialReportsRoute
   '/_authenticated/admin/geofence-settings': typeof AuthenticatedAdminGeofenceSettingsRoute
+  '/_authenticated/admin/government': typeof AuthenticatedAdminGovernmentRoute
   '/_authenticated/admin/grades': typeof AuthenticatedAdminGradesRoute
+  '/_authenticated/admin/heads': typeof AuthenticatedAdminHeadsRoute
   '/_authenticated/admin/health': typeof AuthenticatedAdminHealthRoute
   '/_authenticated/admin/health-certificate': typeof AuthenticatedAdminHealthCertificateRoute
   '/_authenticated/admin/hostel': typeof AuthenticatedAdminHostelRoute
@@ -1913,12 +2044,14 @@ export interface FileRoutesById {
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/staff-accounts': typeof AuthenticatedAdminStaffAccountsRoute
   '/_authenticated/admin/stores-assets': typeof AuthenticatedAdminStoresAssetsRoute
+  '/_authenticated/admin/structure': typeof AuthenticatedAdminStructureRoute
   '/_authenticated/admin/student-intelligence': typeof AuthenticatedAdminStudentIntelligenceRoute
   '/_authenticated/admin/students': typeof AuthenticatedAdminStudentsRoute
   '/_authenticated/admin/support': typeof AuthenticatedAdminSupportRoute
   '/_authenticated/admin/teacher-intelligence': typeof AuthenticatedAdminTeacherIntelligenceRoute
   '/_authenticated/admin/teachers': typeof AuthenticatedAdminTeachersRoute
   '/_authenticated/admin/timetable': typeof AuthenticatedAdminTimetableRoute
+  '/_authenticated/admin/transfers-custody': typeof AuthenticatedAdminTransfersCustodyRoute
   '/_authenticated/admin/visitors': typeof AuthenticatedAdminVisitorsRoute
   '/_authenticated/admin/wallet': typeof AuthenticatedAdminWalletRoute
   '/_authenticated/bursar/dashboard': typeof AuthenticatedBursarDashboardRoute
@@ -2005,6 +2138,8 @@ export interface FileRouteTypes {
     | '/blog'
     | '/forgot-password'
     | '/foundation-loop'
+    | '/gov-invite'
+    | '/head'
     | '/health.json'
     | '/login'
     | '/manifest.webmanifest'
@@ -2051,17 +2186,23 @@ export interface FileRouteTypes {
     | '/events/$id'
     | '/gov/about'
     | '/gov/attendance'
+    | '/gov/circulars'
+    | '/gov/inspections'
+    | '/gov/postings'
     | '/gov/schools'
+    | '/gov/staffing'
     | '/news/$id'
     | '/platform/org'
     | '/reality/$class'
     | '/gov/'
+    | '/admin/academic-standing'
     | '/admin/admissions'
     | '/admin/admissions-funnel'
     | '/admin/ai-assistant'
     | '/admin/analytics'
     | '/admin/api-keys'
     | '/admin/attendance'
+    | '/admin/attendance-conflicts'
     | '/admin/audit'
     | '/admin/audit-logs'
     | '/admin/broadcast'
@@ -2078,17 +2219,21 @@ export interface FileRouteTypes {
     | '/admin/early-warning'
     | '/admin/education-reality'
     | '/admin/enterprise-checklist'
+    | '/admin/exam-bodies'
     | '/admin/examinations'
     | '/admin/exams'
     | '/admin/expenses'
     | '/admin/extracurricular'
     | '/admin/facilities'
     | '/admin/features'
+    | '/admin/fee-relief'
     | '/admin/fees'
     | '/admin/fees-defaulters'
     | '/admin/financial-reports'
     | '/admin/geofence-settings'
+    | '/admin/government'
     | '/admin/grades'
+    | '/admin/heads'
     | '/admin/health'
     | '/admin/health-certificate'
     | '/admin/hostel'
@@ -2120,12 +2265,14 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/staff-accounts'
     | '/admin/stores-assets'
+    | '/admin/structure'
     | '/admin/student-intelligence'
     | '/admin/students'
     | '/admin/support'
     | '/admin/teacher-intelligence'
     | '/admin/teachers'
     | '/admin/timetable'
+    | '/admin/transfers-custody'
     | '/admin/visitors'
     | '/admin/wallet'
     | '/bursar/dashboard'
@@ -2209,6 +2356,8 @@ export interface FileRouteTypes {
     | '/blog'
     | '/forgot-password'
     | '/foundation-loop'
+    | '/gov-invite'
+    | '/head'
     | '/health.json'
     | '/login'
     | '/manifest.webmanifest'
@@ -2254,17 +2403,23 @@ export interface FileRouteTypes {
     | '/events/$id'
     | '/gov/about'
     | '/gov/attendance'
+    | '/gov/circulars'
+    | '/gov/inspections'
+    | '/gov/postings'
     | '/gov/schools'
+    | '/gov/staffing'
     | '/news/$id'
     | '/platform/org'
     | '/reality/$class'
     | '/gov'
+    | '/admin/academic-standing'
     | '/admin/admissions'
     | '/admin/admissions-funnel'
     | '/admin/ai-assistant'
     | '/admin/analytics'
     | '/admin/api-keys'
     | '/admin/attendance'
+    | '/admin/attendance-conflicts'
     | '/admin/audit'
     | '/admin/audit-logs'
     | '/admin/broadcast'
@@ -2281,17 +2436,21 @@ export interface FileRouteTypes {
     | '/admin/early-warning'
     | '/admin/education-reality'
     | '/admin/enterprise-checklist'
+    | '/admin/exam-bodies'
     | '/admin/examinations'
     | '/admin/exams'
     | '/admin/expenses'
     | '/admin/extracurricular'
     | '/admin/facilities'
     | '/admin/features'
+    | '/admin/fee-relief'
     | '/admin/fees'
     | '/admin/fees-defaulters'
     | '/admin/financial-reports'
     | '/admin/geofence-settings'
+    | '/admin/government'
     | '/admin/grades'
+    | '/admin/heads'
     | '/admin/health'
     | '/admin/health-certificate'
     | '/admin/hostel'
@@ -2323,12 +2482,14 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/staff-accounts'
     | '/admin/stores-assets'
+    | '/admin/structure'
     | '/admin/student-intelligence'
     | '/admin/students'
     | '/admin/support'
     | '/admin/teacher-intelligence'
     | '/admin/teachers'
     | '/admin/timetable'
+    | '/admin/transfers-custody'
     | '/admin/visitors'
     | '/admin/wallet'
     | '/bursar/dashboard'
@@ -2415,6 +2576,8 @@ export interface FileRouteTypes {
     | '/blog'
     | '/forgot-password'
     | '/foundation-loop'
+    | '/gov-invite'
+    | '/head'
     | '/health.json'
     | '/login'
     | '/manifest.webmanifest'
@@ -2461,17 +2624,23 @@ export interface FileRouteTypes {
     | '/events/$id'
     | '/gov/about'
     | '/gov/attendance'
+    | '/gov/circulars'
+    | '/gov/inspections'
+    | '/gov/postings'
     | '/gov/schools'
+    | '/gov/staffing'
     | '/news/$id'
     | '/platform/org'
     | '/reality/$class'
     | '/gov/'
+    | '/_authenticated/admin/academic-standing'
     | '/_authenticated/admin/admissions'
     | '/_authenticated/admin/admissions-funnel'
     | '/_authenticated/admin/ai-assistant'
     | '/_authenticated/admin/analytics'
     | '/_authenticated/admin/api-keys'
     | '/_authenticated/admin/attendance'
+    | '/_authenticated/admin/attendance-conflicts'
     | '/_authenticated/admin/audit'
     | '/_authenticated/admin/audit-logs'
     | '/_authenticated/admin/broadcast'
@@ -2488,17 +2657,21 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/early-warning'
     | '/_authenticated/admin/education-reality'
     | '/_authenticated/admin/enterprise-checklist'
+    | '/_authenticated/admin/exam-bodies'
     | '/_authenticated/admin/examinations'
     | '/_authenticated/admin/exams'
     | '/_authenticated/admin/expenses'
     | '/_authenticated/admin/extracurricular'
     | '/_authenticated/admin/facilities'
     | '/_authenticated/admin/features'
+    | '/_authenticated/admin/fee-relief'
     | '/_authenticated/admin/fees'
     | '/_authenticated/admin/fees-defaulters'
     | '/_authenticated/admin/financial-reports'
     | '/_authenticated/admin/geofence-settings'
+    | '/_authenticated/admin/government'
     | '/_authenticated/admin/grades'
+    | '/_authenticated/admin/heads'
     | '/_authenticated/admin/health'
     | '/_authenticated/admin/health-certificate'
     | '/_authenticated/admin/hostel'
@@ -2530,12 +2703,14 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/staff-accounts'
     | '/_authenticated/admin/stores-assets'
+    | '/_authenticated/admin/structure'
     | '/_authenticated/admin/student-intelligence'
     | '/_authenticated/admin/students'
     | '/_authenticated/admin/support'
     | '/_authenticated/admin/teacher-intelligence'
     | '/_authenticated/admin/teachers'
     | '/_authenticated/admin/timetable'
+    | '/_authenticated/admin/transfers-custody'
     | '/_authenticated/admin/visitors'
     | '/_authenticated/admin/wallet'
     | '/_authenticated/bursar/dashboard'
@@ -2623,6 +2798,8 @@ export interface RootRouteChildren {
   BlogRoute: typeof BlogRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   FoundationLoopRoute: typeof FoundationLoopRoute
+  GovInviteRoute: typeof GovInviteRoute
+  HeadRoute: typeof HeadRoute
   HealthDotjsonRoute: typeof HealthDotjsonRoute
   LoginRoute: typeof LoginRoute
   ManifestDotwebmanifestRoute: typeof ManifestDotwebmanifestRoute
@@ -2707,6 +2884,20 @@ declare module '@tanstack/react-router' {
       path: '/gov'
       fullPath: '/gov'
       preLoaderRoute: typeof GovRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gov-invite': {
+      id: '/gov-invite'
+      path: '/gov-invite'
+      fullPath: '/gov-invite'
+      preLoaderRoute: typeof GovInviteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/head': {
+      id: '/head'
+      path: '/head'
+      fullPath: '/head'
+      preLoaderRoute: typeof HeadRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/health.json': {
@@ -3038,11 +3229,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GovAttendanceRouteImport
       parentRoute: typeof GovRouteRoute
     }
+    '/gov/circulars': {
+      id: '/gov/circulars'
+      path: '/circulars'
+      fullPath: '/gov/circulars'
+      preLoaderRoute: typeof GovCircularsRouteImport
+      parentRoute: typeof GovRouteRoute
+    }
+    '/gov/inspections': {
+      id: '/gov/inspections'
+      path: '/inspections'
+      fullPath: '/gov/inspections'
+      preLoaderRoute: typeof GovInspectionsRouteImport
+      parentRoute: typeof GovRouteRoute
+    }
+    '/gov/postings': {
+      id: '/gov/postings'
+      path: '/postings'
+      fullPath: '/gov/postings'
+      preLoaderRoute: typeof GovPostingsRouteImport
+      parentRoute: typeof GovRouteRoute
+    }
     '/gov/schools': {
       id: '/gov/schools'
       path: '/schools'
       fullPath: '/gov/schools'
       preLoaderRoute: typeof GovSchoolsRouteImport
+      parentRoute: typeof GovRouteRoute
+    }
+    '/gov/staffing': {
+      id: '/gov/staffing'
+      path: '/staffing'
+      fullPath: '/gov/staffing'
+      preLoaderRoute: typeof GovStaffingRouteImport
       parentRoute: typeof GovRouteRoute
     }
     '/news/$id': {
@@ -3065,6 +3284,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/reality/$class'
       preLoaderRoute: typeof RealityClassRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/admin/academic-standing': {
+      id: '/_authenticated/admin/academic-standing'
+      path: '/academic-standing'
+      fullPath: '/admin/academic-standing'
+      preLoaderRoute: typeof AuthenticatedAdminAcademicStandingRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/admissions': {
       id: '/_authenticated/admin/admissions'
@@ -3106,6 +3332,13 @@ declare module '@tanstack/react-router' {
       path: '/attendance'
       fullPath: '/admin/attendance'
       preLoaderRoute: typeof AuthenticatedAdminAttendanceRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/attendance-conflicts': {
+      id: '/_authenticated/admin/attendance-conflicts'
+      path: '/attendance-conflicts'
+      fullPath: '/admin/attendance-conflicts'
+      preLoaderRoute: typeof AuthenticatedAdminAttendanceConflictsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/audit': {
@@ -3220,6 +3453,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminEnterpriseChecklistRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/exam-bodies': {
+      id: '/_authenticated/admin/exam-bodies'
+      path: '/exam-bodies'
+      fullPath: '/admin/exam-bodies'
+      preLoaderRoute: typeof AuthenticatedAdminExamBodiesRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/examinations': {
       id: '/_authenticated/admin/examinations'
       path: '/examinations'
@@ -3262,6 +3502,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminFeaturesRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/fee-relief': {
+      id: '/_authenticated/admin/fee-relief'
+      path: '/fee-relief'
+      fullPath: '/admin/fee-relief'
+      preLoaderRoute: typeof AuthenticatedAdminFeeReliefRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/fees': {
       id: '/_authenticated/admin/fees'
       path: '/fees'
@@ -3290,11 +3537,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminGeofenceSettingsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/government': {
+      id: '/_authenticated/admin/government'
+      path: '/government'
+      fullPath: '/admin/government'
+      preLoaderRoute: typeof AuthenticatedAdminGovernmentRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/grades': {
       id: '/_authenticated/admin/grades'
       path: '/grades'
       fullPath: '/admin/grades'
       preLoaderRoute: typeof AuthenticatedAdminGradesRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/heads': {
+      id: '/_authenticated/admin/heads'
+      path: '/heads'
+      fullPath: '/admin/heads'
+      preLoaderRoute: typeof AuthenticatedAdminHeadsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/health': {
@@ -3514,6 +3775,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminStoresAssetsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/structure': {
+      id: '/_authenticated/admin/structure'
+      path: '/structure'
+      fullPath: '/admin/structure'
+      preLoaderRoute: typeof AuthenticatedAdminStructureRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/student-intelligence': {
       id: '/_authenticated/admin/student-intelligence'
       path: '/student-intelligence'
@@ -3554,6 +3822,13 @@ declare module '@tanstack/react-router' {
       path: '/timetable'
       fullPath: '/admin/timetable'
       preLoaderRoute: typeof AuthenticatedAdminTimetableRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/transfers-custody': {
+      id: '/_authenticated/admin/transfers-custody'
+      path: '/transfers-custody'
+      fullPath: '/admin/transfers-custody'
+      preLoaderRoute: typeof AuthenticatedAdminTransfersCustodyRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/visitors': {
@@ -4117,12 +4392,14 @@ const siteRouteRouteWithChildren = siteRouteRoute._addFileChildren(
 )
 
 interface AuthenticatedAdminRouteRouteChildren {
+  AuthenticatedAdminAcademicStandingRoute: typeof AuthenticatedAdminAcademicStandingRoute
   AuthenticatedAdminAdmissionsRoute: typeof AuthenticatedAdminAdmissionsRoute
   AuthenticatedAdminAdmissionsFunnelRoute: typeof AuthenticatedAdminAdmissionsFunnelRoute
   AuthenticatedAdminAiAssistantRoute: typeof AuthenticatedAdminAiAssistantRoute
   AuthenticatedAdminAnalyticsRoute: typeof AuthenticatedAdminAnalyticsRoute
   AuthenticatedAdminApiKeysRoute: typeof AuthenticatedAdminApiKeysRoute
   AuthenticatedAdminAttendanceRoute: typeof AuthenticatedAdminAttendanceRoute
+  AuthenticatedAdminAttendanceConflictsRoute: typeof AuthenticatedAdminAttendanceConflictsRoute
   AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
   AuthenticatedAdminAuditLogsRoute: typeof AuthenticatedAdminAuditLogsRoute
   AuthenticatedAdminBroadcastRoute: typeof AuthenticatedAdminBroadcastRoute
@@ -4139,17 +4416,21 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminEarlyWarningRoute: typeof AuthenticatedAdminEarlyWarningRoute
   AuthenticatedAdminEducationRealityRoute: typeof AuthenticatedAdminEducationRealityRoute
   AuthenticatedAdminEnterpriseChecklistRoute: typeof AuthenticatedAdminEnterpriseChecklistRoute
+  AuthenticatedAdminExamBodiesRoute: typeof AuthenticatedAdminExamBodiesRoute
   AuthenticatedAdminExaminationsRoute: typeof AuthenticatedAdminExaminationsRoute
   AuthenticatedAdminExamsRoute: typeof AuthenticatedAdminExamsRoute
   AuthenticatedAdminExpensesRoute: typeof AuthenticatedAdminExpensesRoute
   AuthenticatedAdminExtracurricularRoute: typeof AuthenticatedAdminExtracurricularRoute
   AuthenticatedAdminFacilitiesRoute: typeof AuthenticatedAdminFacilitiesRoute
   AuthenticatedAdminFeaturesRoute: typeof AuthenticatedAdminFeaturesRoute
+  AuthenticatedAdminFeeReliefRoute: typeof AuthenticatedAdminFeeReliefRoute
   AuthenticatedAdminFeesRoute: typeof AuthenticatedAdminFeesRoute
   AuthenticatedAdminFeesDefaultersRoute: typeof AuthenticatedAdminFeesDefaultersRoute
   AuthenticatedAdminFinancialReportsRoute: typeof AuthenticatedAdminFinancialReportsRoute
   AuthenticatedAdminGeofenceSettingsRoute: typeof AuthenticatedAdminGeofenceSettingsRoute
+  AuthenticatedAdminGovernmentRoute: typeof AuthenticatedAdminGovernmentRoute
   AuthenticatedAdminGradesRoute: typeof AuthenticatedAdminGradesRoute
+  AuthenticatedAdminHeadsRoute: typeof AuthenticatedAdminHeadsRoute
   AuthenticatedAdminHealthRoute: typeof AuthenticatedAdminHealthRoute
   AuthenticatedAdminHealthCertificateRoute: typeof AuthenticatedAdminHealthCertificateRoute
   AuthenticatedAdminHostelRoute: typeof AuthenticatedAdminHostelRoute
@@ -4181,18 +4462,22 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminStaffAccountsRoute: typeof AuthenticatedAdminStaffAccountsRoute
   AuthenticatedAdminStoresAssetsRoute: typeof AuthenticatedAdminStoresAssetsRoute
+  AuthenticatedAdminStructureRoute: typeof AuthenticatedAdminStructureRoute
   AuthenticatedAdminStudentIntelligenceRoute: typeof AuthenticatedAdminStudentIntelligenceRoute
   AuthenticatedAdminStudentsRoute: typeof AuthenticatedAdminStudentsRoute
   AuthenticatedAdminSupportRoute: typeof AuthenticatedAdminSupportRoute
   AuthenticatedAdminTeacherIntelligenceRoute: typeof AuthenticatedAdminTeacherIntelligenceRoute
   AuthenticatedAdminTeachersRoute: typeof AuthenticatedAdminTeachersRoute
   AuthenticatedAdminTimetableRoute: typeof AuthenticatedAdminTimetableRoute
+  AuthenticatedAdminTransfersCustodyRoute: typeof AuthenticatedAdminTransfersCustodyRoute
   AuthenticatedAdminVisitorsRoute: typeof AuthenticatedAdminVisitorsRoute
   AuthenticatedAdminWalletRoute: typeof AuthenticatedAdminWalletRoute
 }
 
 const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
   {
+    AuthenticatedAdminAcademicStandingRoute:
+      AuthenticatedAdminAcademicStandingRoute,
     AuthenticatedAdminAdmissionsRoute: AuthenticatedAdminAdmissionsRoute,
     AuthenticatedAdminAdmissionsFunnelRoute:
       AuthenticatedAdminAdmissionsFunnelRoute,
@@ -4200,6 +4485,8 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminAnalyticsRoute: AuthenticatedAdminAnalyticsRoute,
     AuthenticatedAdminApiKeysRoute: AuthenticatedAdminApiKeysRoute,
     AuthenticatedAdminAttendanceRoute: AuthenticatedAdminAttendanceRoute,
+    AuthenticatedAdminAttendanceConflictsRoute:
+      AuthenticatedAdminAttendanceConflictsRoute,
     AuthenticatedAdminAuditRoute: AuthenticatedAdminAuditRoute,
     AuthenticatedAdminAuditLogsRoute: AuthenticatedAdminAuditLogsRoute,
     AuthenticatedAdminBroadcastRoute: AuthenticatedAdminBroadcastRoute,
@@ -4218,6 +4505,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
       AuthenticatedAdminEducationRealityRoute,
     AuthenticatedAdminEnterpriseChecklistRoute:
       AuthenticatedAdminEnterpriseChecklistRoute,
+    AuthenticatedAdminExamBodiesRoute: AuthenticatedAdminExamBodiesRoute,
     AuthenticatedAdminExaminationsRoute: AuthenticatedAdminExaminationsRoute,
     AuthenticatedAdminExamsRoute: AuthenticatedAdminExamsRoute,
     AuthenticatedAdminExpensesRoute: AuthenticatedAdminExpensesRoute,
@@ -4225,6 +4513,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
       AuthenticatedAdminExtracurricularRoute,
     AuthenticatedAdminFacilitiesRoute: AuthenticatedAdminFacilitiesRoute,
     AuthenticatedAdminFeaturesRoute: AuthenticatedAdminFeaturesRoute,
+    AuthenticatedAdminFeeReliefRoute: AuthenticatedAdminFeeReliefRoute,
     AuthenticatedAdminFeesRoute: AuthenticatedAdminFeesRoute,
     AuthenticatedAdminFeesDefaultersRoute:
       AuthenticatedAdminFeesDefaultersRoute,
@@ -4232,7 +4521,9 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
       AuthenticatedAdminFinancialReportsRoute,
     AuthenticatedAdminGeofenceSettingsRoute:
       AuthenticatedAdminGeofenceSettingsRoute,
+    AuthenticatedAdminGovernmentRoute: AuthenticatedAdminGovernmentRoute,
     AuthenticatedAdminGradesRoute: AuthenticatedAdminGradesRoute,
+    AuthenticatedAdminHeadsRoute: AuthenticatedAdminHeadsRoute,
     AuthenticatedAdminHealthRoute: AuthenticatedAdminHealthRoute,
     AuthenticatedAdminHealthCertificateRoute:
       AuthenticatedAdminHealthCertificateRoute,
@@ -4273,6 +4564,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
     AuthenticatedAdminStaffAccountsRoute: AuthenticatedAdminStaffAccountsRoute,
     AuthenticatedAdminStoresAssetsRoute: AuthenticatedAdminStoresAssetsRoute,
+    AuthenticatedAdminStructureRoute: AuthenticatedAdminStructureRoute,
     AuthenticatedAdminStudentIntelligenceRoute:
       AuthenticatedAdminStudentIntelligenceRoute,
     AuthenticatedAdminStudentsRoute: AuthenticatedAdminStudentsRoute,
@@ -4281,6 +4573,8 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
       AuthenticatedAdminTeacherIntelligenceRoute,
     AuthenticatedAdminTeachersRoute: AuthenticatedAdminTeachersRoute,
     AuthenticatedAdminTimetableRoute: AuthenticatedAdminTimetableRoute,
+    AuthenticatedAdminTransfersCustodyRoute:
+      AuthenticatedAdminTransfersCustodyRoute,
     AuthenticatedAdminVisitorsRoute: AuthenticatedAdminVisitorsRoute,
     AuthenticatedAdminWalletRoute: AuthenticatedAdminWalletRoute,
   }
@@ -4590,14 +4884,22 @@ const AuthenticatedRouteRouteWithChildren =
 interface GovRouteRouteChildren {
   GovAboutRoute: typeof GovAboutRoute
   GovAttendanceRoute: typeof GovAttendanceRoute
+  GovCircularsRoute: typeof GovCircularsRoute
+  GovInspectionsRoute: typeof GovInspectionsRoute
+  GovPostingsRoute: typeof GovPostingsRoute
   GovSchoolsRoute: typeof GovSchoolsRoute
+  GovStaffingRoute: typeof GovStaffingRoute
   GovIndexRoute: typeof GovIndexRoute
 }
 
 const GovRouteRouteChildren: GovRouteRouteChildren = {
   GovAboutRoute: GovAboutRoute,
   GovAttendanceRoute: GovAttendanceRoute,
+  GovCircularsRoute: GovCircularsRoute,
+  GovInspectionsRoute: GovInspectionsRoute,
+  GovPostingsRoute: GovPostingsRoute,
   GovSchoolsRoute: GovSchoolsRoute,
+  GovStaffingRoute: GovStaffingRoute,
   GovIndexRoute: GovIndexRoute,
 }
 
@@ -4637,6 +4939,8 @@ const rootRouteChildren: RootRouteChildren = {
   BlogRoute: BlogRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
   FoundationLoopRoute: FoundationLoopRoute,
+  GovInviteRoute: GovInviteRoute,
+  HeadRoute: HeadRoute,
   HealthDotjsonRoute: HealthDotjsonRoute,
   LoginRoute: LoginRoute,
   ManifestDotwebmanifestRoute: ManifestDotwebmanifestRoute,
