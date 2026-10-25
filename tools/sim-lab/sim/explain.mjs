@@ -1,5 +1,5 @@
 import pg from "pg"; import fs from "node:fs"; const M = JSON.parse(fs.readFileSync("sim/manifest.json")); 
-const c = new pg.Client({ host: "127.0.0.1", port: 54329, user: "postgres" }); await c.connect();
+const c = new pg.Client({ host: "127.0.0.1", port: Number(process.env.SIM_PG_PORT ?? 54329), user: "postgres" }); await c.connect();
 const cases = [["student grades", M.institutions[4].sampleStudentUser, "select subject,grade from grades where is_published"],
   ["parent grades", M.institutions[4].sampleParent, `select subject from grades where student_id='${M.institutions[4].sampleStudent}'`],
   ["teacher students", M.institutions[4].teacher, "select id from students limit 100"],

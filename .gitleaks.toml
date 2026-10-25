@@ -1,0 +1,15 @@
+# Track E: gitleaks config. Default rules + allowlist for known synthetic fixtures (fake keys in unit tests,
+# nav-catalog permission keys that look like API keys). Real config/env files are never allowlisted.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "synthetic test fixtures and non-secret identifiers"
+paths = [
+  '''^tests/unit/.*\.test\.ts$''',
+  '''^tests/integration/.*\.test\.ts$''',
+  '''^frontend/src/lib/runtime/scholar-nav-catalog\.ts$''',
+  '''^frontend/src/lib/workspace-engine/nav-catalog\.ts$''',
+  '''^infrastructure/kubernetes/secret-refs\.yaml$''',
+  '''^\.claude/agents/.*\.md$''',
+]

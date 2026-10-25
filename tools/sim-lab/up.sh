@@ -3,7 +3,7 @@
 # Usage: tools/sim-lab/up.sh   (run from repo root or anywhere)
 set -euo pipefail
 cd "$(dirname "$0")"; mkdir -p bin load
-PORT=54329
+PORT="${SIM_PG_PORT:-54329}"
 if [ ! -x bin/pg/bin/postgres ]; then
   curl -sfL -o bin/pg.jar https://repo1.maven.org/maven2/io/zonky/test/postgres/embedded-postgres-binaries-linux-amd64/17.2.0/embedded-postgres-binaries-linux-amd64-17.2.0.jar
   (cd bin && unzip -oq pg.jar && mkdir -p pg && tar xJf postgres-linux-x86_64.txz -C pg)
