@@ -17,7 +17,7 @@
 --
 -- Tenant isolation: every write goes through SECURITY DEFINER RPCs that derive
 -- school_id from the integration row, never from the caller or the payload.
--- Rollback: database/supabase/rollbacks/20261024000900_sherivs_090_integration_hub.sql
+-- Rollback: database/supabase/rollbacks/20261025100180_sherivs_090_integration_hub.sql
 -- =============================================================================
 BEGIN;
 
