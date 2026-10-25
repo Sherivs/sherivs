@@ -1178,6 +1178,22 @@ export const SCHOLAR_NAV_CONTRIBUTIONS: readonly NavContribution[] = [
         orderHint: 2,
       },
       {
+        key: "r001.org_admin.structure",
+        label: "Shifts, levels & terms",
+        iconKey: "schools",
+        url: "/admin/structure",
+        capabilities: ["r001:org_admin.structure"],
+        orderHint: 2,
+      },
+      {
+        key: "r001.org_admin.academic_standing",
+        label: "Results & standing",
+        iconKey: "reports",
+        url: "/admin/academic-standing",
+        capabilities: ["r001:org_admin.academic_standing"],
+        orderHint: 2,
+      },
+      {
         key: "r001.org_admin.exam_bodies",
         label: "External exams (WAEC, NECO…)",
         iconKey: "grades",

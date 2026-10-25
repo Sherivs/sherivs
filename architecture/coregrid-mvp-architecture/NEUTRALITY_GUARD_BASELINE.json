@@ -12,11 +12,11 @@
       "warn": "observed violation group present in baselineEntries (printed every run)",
       "ratchet": "baseline entry no longer observed — removable by the engineer who cleared it"
     },
-    "lastRatchet": "2026-10-03: V1-006 (team SECURITY) neutralized the platform authorization core — removed all 9 frontend/src/lib/authorization.ts and all 13 frontend/src/lib/identity.ts entries (authorization.ts and identity.ts now carry zero education vocabulary; roles/relationship types are contributed via rbac/domain-contribution + domain-config registration) and refreshed the 7 frozen security-role-gate.ts legacy-fallback entries against the live tree (shrink-only, ADR-003/004). || 2026-10-03 (ADR-012): T-wave coordinator ADDED 3 quarantine groups (19 hits) for database/supabase/migrations/20261003000040_coregrid_school_media_bucket.sql — the FIRST baseline extension, made under ADR-004's explicit 'new ADR' mechanism: the declarative storage-provisioning migration must reference the legacy storage contract id school-media consumed by the frontend and by the applied 20260707223958 policy set; the neutral conversion (bucket id + policy predicates + path contract) is blocked on the neutral-tenant substrate conversion (same conversionPath class as the transport posture) and is recorded as an authorized follow-up that REMOVES these entries in the same change. Zero new privileges authorized by ADR-012. || 2026-10-08 (ADR-013): Sherivs refoundation ADDED 9 quarantine groups (47 hits) for database/supabase/migrations/20261008000050_coregrid_organization_memberships.sql — the SECOND baseline extension, made under ADR-004's explicit 'new ADR' mechanism (ADR-012 precedent): the multi-membership migration extends the LIVE legacy identity store in place (users.school_id stays the ACTIVE-CONTEXT binding; every tenant RLS predicate resolves through get_my_school_id()/get_my_role()), so its SQL necessarily carries the same legacy vocabulary class its owners are quarantined for (school_id, is_school_admin, get_my_school_id, tenant role names). It introduces NO new domain code on the universal surface — the table is additive, RLS-FORCED, and mirrors the legacy store. Zero new privileges beyond the policy-gated DML posture it declares. The neutral-tenant substrate conversion (COND-003 / ADR-012 conversionPath) removes these entries in the same change when it lands. || 2026-10-08 (ADR-013 amendment, same ADR authority): pre-apply verification against the LIVE users_role_check exposed two roles the migration's original CHECK omitted (alumni, driver) — the dual-write trigger must be able to mirror EVERY role the identity store legally holds, so the CHECK was corrected to mirror users_role_check exactly and the migration APPLIED under explicit operator authorization. This adds 1 quarantine group (vocabulary-literal:driver) to the ten now recorded for this migration."
+    "lastRatchet": "2026-10-03: V1-006 (team SECURITY) neutralized the platform authorization core — removed all 9 frontend/src/lib/authorization.ts and all 13 frontend/src/lib/identity.ts entries (authorization.ts and identity.ts now carry zero education vocabulary; roles/relationship types are contributed via rbac/domain-contribution + domain-config registration) and refreshed the 7 frozen security-role-gate.ts legacy-fallback entries against the live tree (shrink-only, ADR-003/004). || 2026-10-03 (ADR-012): T-wave coordinator ADDED 3 quarantine groups (19 hits) for database/supabase/migrations/20261003000040_coregrid_school_media_bucket.sql — the FIRST baseline extension, made under ADR-004's explicit 'new ADR' mechanism: the declarative storage-provisioning migration must reference the legacy storage contract id school-media consumed by the frontend and by the applied 20260707223958 policy set; the neutral conversion (bucket id + policy predicates + path contract) is blocked on the neutral-tenant substrate conversion (same conversionPath class as the transport posture) and is recorded as an authorized follow-up that REMOVES these entries in the same change. Zero new privileges authorized by ADR-012. || 2026-10-08 (ADR-013): Sherivs refoundation ADDED 9 quarantine groups (47 hits) for database/supabase/migrations/20261008000050_coregrid_organization_memberships.sql — the SECOND baseline extension, made under ADR-004's explicit 'new ADR' mechanism (ADR-012 precedent): the multi-membership migration extends the LIVE legacy identity store in place (users.school_id stays the ACTIVE-CONTEXT binding; every tenant RLS predicate resolves through get_my_school_id()/get_my_role()), so its SQL necessarily carries the same legacy vocabulary class its owners are quarantined for (school_id, is_school_admin, get_my_school_id, tenant role names). It introduces NO new domain code on the universal surface — the table is additive, RLS-FORCED, and mirrors the legacy store. Zero new privileges beyond the policy-gated DML posture it declares. The neutral-tenant substrate conversion (COND-003 / ADR-012 conversionPath) removes these entries in the same change when it lands. || 2026-10-08 (ADR-013 amendment, same ADR authority): pre-apply verification against the LIVE users_role_check exposed two roles the migration's original CHECK omitted (alumni, driver) — the dual-write trigger must be able to mirror EVERY role the identity store legally holds, so the CHECK was corrected to mirror users_role_check exactly and the migration APPLIED under explicit operator authorization. This adds 1 quarantine group (vocabulary-literal:driver) to the ten now recorded for this migration. || 2026-10-24 (W9/029 precedent): Track E ADDED 25 quarantine groups (58 hits) for the three sherivs_e_* migrations (RLS FORCE + read scoping, load-test indexes/policy initplans). They alter policies on the live legacy tenant store, so they necessarily name school_id / get_my_school_id / tenant role names; no new domain code on the universal surface."
   },
   "summary": {
-    "entryCount": 638,
-    "totalObservedHits": 3378,
+    "entryCount": 677,
+    "totalObservedHits": 3503,
     "hitsByFile": {
       "database/supabase/migrations/20260907000100_runtime_scholar_workforce_catalog.sql": 114,
       "database/supabase/migrations/20260620122048_50e590c2-5911-4c98-8931-fb46a4b509f3.sql": 84,
@@ -174,6 +174,8 @@
       "database/supabase/migrations/20261024000330_sherivs_026_wallet_topup_init_i18n_fix.sql": 11,
       "database/supabase/migrations/20261024000340_sherivs_027_gov_portal.sql": 19,
       "database/supabase/migrations/20261024000360_sherivs_029_school_custom_domains.sql": 36,
+      "database/supabase/migrations/20261024000910_sherivs_e_rls_read_scoping.sql": 26,
+      "database/supabase/migrations/20261024000920_sherivs_e_load_indexes.sql": 32,
       "database/supabase/migrations/20261020000030_sherivs_002_admission_insert_check.sql": 5,
       "database/supabase/migrations/20261020000040_sherivs_002_admissions_and_media_privacy.sql": 36,
       "database/supabase/migrations/20261020000050_sherivs_002_seed_staff_types_guard.sql": 21,
@@ -185,6 +187,9 @@
       "database/supabase/migrations/20261020000130_sherivs_006_membership_identity_freeze.sql": 19,
       "database/supabase/migrations/20261024000220_sherivs_015_privacy_lockdown_rls_speed.sql": 62,
       "database/supabase/migrations/20261024000230_sherivs_016_lifecycle_grading_tiers_audit.sql": 67,
+      "database/supabase/migrations/20261025100010_sherivs_a01_scope_sets_complete.sql": 9,
+      "database/supabase/migrations/20261025100020_sherivs_a02_structure_periods.sql": 33,
+      "database/supabase/migrations/20261025100030_sherivs_a03_tertiary_cgpa.sql": 25,
       "database/supabase/migrations/20261025100040_sherivs_a04_exam_body_windows.sql": 34
     },
     "baselineGroups": 427
@@ -9833,6 +9838,521 @@
         86
       ],
       "firstSnippet": "USING ((school_id = (SELECT public.get_my_school_id()) AND (SELECT public.is_school_admin())) OR (SELECT public.is_super_admin()));"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000910_sherivs_e_rls_read_scoping.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "SHERIVS-E (Track E QA/Security)",
+      "occurrences": 2,
+      "lines": [
+        1,
+        13
+      ],
+      "firstSnippet": "-- Track E (QA/Security) HIGH finding: several tables carry a PERMISSIVE `school_id = get_my_school_id()` policy"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000910_sherivs_e_rls_read_scoping.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-E (Track E QA/Security)",
+      "occurrences": 3,
+      "lines": [
+        1,
+        20,
+        22
+      ],
+      "firstSnippet": "-- Track E (QA/Security) HIGH finding: several tables carry a PERMISSIVE `school_id = get_my_school_id()` policy"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000910_sherivs_e_rls_read_scoping.sql",
+      "kind": "vocabulary",
+      "token": "student",
+      "streamIRef": "SHERIVS-E (Track E QA/Security)",
+      "occurrences": 2,
+      "lines": [
+        3,
+        30
+      ],
+      "firstSnippet": "-- signed-in student/parent/driver/alumni could read the whole school's attendance, clinic visits (health data),"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000910_sherivs_e_rls_read_scoping.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "SHERIVS-E (Track E QA/Security)",
+      "occurrences": 6,
+      "lines": [
+        3,
+        12,
+        13,
+        20,
+        22,
+        30
+      ],
+      "firstSnippet": "-- signed-in student/parent/driver/alumni could read the whole school's attendance, clinic visits (health data),"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000910_sherivs_e_rls_read_scoping.sql",
+      "kind": "vocabulary",
+      "token": "attendance",
+      "streamIRef": "SHERIVS-E (Track E QA/Security)",
+      "occurrences": 2,
+      "lines": [
+        3,
+        31
+      ],
+      "firstSnippet": "-- signed-in student/parent/driver/alumni could read the whole school's attendance, clinic visits (health data),"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000910_sherivs_e_rls_read_scoping.sql",
+      "kind": "vocabulary",
+      "token": "library",
+      "streamIRef": "SHERIVS-E (Track E QA/Security)",
+      "occurrences": 1,
+      "lines": [
+        4
+      ],
+      "firstSnippet": "-- discipline records, hostel and library records, staff payroll and staff leave."
+    },
+    {
+      "file": "database/supabase/migrations/20261024000910_sherivs_e_rls_read_scoping.sql",
+      "kind": "vocabulary",
+      "token": "hostel",
+      "streamIRef": "SHERIVS-E (Track E QA/Security)",
+      "occurrences": 1,
+      "lines": [
+        4
+      ],
+      "firstSnippet": "-- discipline records, hostel and library records, staff payroll and staff leave."
+    },
+    {
+      "file": "database/supabase/migrations/20261024000910_sherivs_e_rls_read_scoping.sql",
+      "kind": "vocabulary",
+      "token": "discipline",
+      "streamIRef": "SHERIVS-E (Track E QA/Security)",
+      "occurrences": 1,
+      "lines": [
+        4
+      ],
+      "firstSnippet": "-- discipline records, hostel and library records, staff payroll and staff leave."
+    },
+    {
+      "file": "database/supabase/migrations/20261024000910_sherivs_e_rls_read_scoping.sql",
+      "kind": "vocabulary",
+      "token": "payroll",
+      "streamIRef": "SHERIVS-E (Track E QA/Security)",
+      "occurrences": 1,
+      "lines": [
+        4
+      ],
+      "firstSnippet": "-- discipline records, hostel and library records, staff payroll and staff leave."
+    },
+    {
+      "file": "database/supabase/migrations/20261024000910_sherivs_e_rls_read_scoping.sql",
+      "kind": "vocabulary",
+      "token": "guardian",
+      "streamIRef": "SHERIVS-E (Track E QA/Security)",
+      "occurrences": 1,
+      "lines": [
+        8
+      ],
+      "firstSnippet": "-- Students the caller may see as themselves or as a parent/guardian (one evaluation per statement via initplan)."
+    },
+    {
+      "file": "database/supabase/migrations/20261024000910_sherivs_e_rls_read_scoping.sql",
+      "kind": "vocabulary-literal",
+      "token": "parent",
+      "streamIRef": "SHERIVS-E (Track E QA/Security)",
+      "occurrences": 1,
+      "lines": [
+        19
+      ],
+      "firstSnippet": "where me.role = 'parent' and u.id = me.uid and u.email is not null"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000910_sherivs_e_rls_read_scoping.sql",
+      "kind": "vocabulary",
+      "token": "teacher",
+      "streamIRef": "SHERIVS-E (Track E QA/Security)",
+      "occurrences": 1,
+      "lines": [
+        36
+      ],
+      "firstSnippet": "or (select public.my_active_role()) = any (array['admin','principal','bursar','hq','teacher'])"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000910_sherivs_e_rls_read_scoping.sql",
+      "kind": "vocabulary",
+      "token": "bursar",
+      "streamIRef": "SHERIVS-E (Track E QA/Security)",
+      "occurrences": 2,
+      "lines": [
+        36,
+        45
+      ],
+      "firstSnippet": "or (select public.my_active_role()) = any (array['admin','principal','bursar','hq','teacher'])"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000910_sherivs_e_rls_read_scoping.sql",
+      "kind": "vocabulary",
+      "token": "principal",
+      "streamIRef": "SHERIVS-E (Track E QA/Security)",
+      "occurrences": 2,
+      "lines": [
+        36,
+        45
+      ],
+      "firstSnippet": "or (select public.my_active_role()) = any (array['admin','principal','bursar','hq','teacher'])"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000920_sherivs_e_load_indexes.sql",
+      "kind": "vocabulary",
+      "token": "student",
+      "streamIRef": "SHERIVS-E (Track E QA/Security)",
+      "occurrences": 4,
+      "lines": [
+        5,
+        25,
+        33,
+        40
+      ],
+      "firstSnippet": "-- 1) Linked-student set now matches is_linked_to_student() exactly (incl. the parent_email fallback), so policies can"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000920_sherivs_e_load_indexes.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "SHERIVS-E (Track E QA/Security)",
+      "occurrences": 7,
+      "lines": [
+        10,
+        11,
+        18,
+        20,
+        25,
+        33,
+        56
+      ],
+      "firstSnippet": "-- runs for parents. An OR across these inside one WHERE forced a scan of the whole school's students (36 ms at 12k)."
+    },
+    {
+      "file": "database/supabase/migrations/20261024000920_sherivs_e_load_indexes.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "SHERIVS-E (Track E QA/Security)",
+      "occurrences": 4,
+      "lines": [
+        11,
+        29,
+        44,
+        59
+      ],
+      "firstSnippet": "with me as (select auth.uid() as uid, public.get_my_school_id() as school, public.my_active_role() as role),"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000920_sherivs_e_load_indexes.sql",
+      "kind": "vocabulary-literal",
+      "token": "parent",
+      "streamIRef": "SHERIVS-E (Track E QA/Security)",
+      "occurrences": 1,
+      "lines": [
+        17
+      ],
+      "firstSnippet": "where me.role = 'parent' and u.id = me.uid and u.email is not null"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000920_sherivs_e_load_indexes.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-E (Track E QA/Security)",
+      "occurrences": 6,
+      "lines": [
+        18,
+        20,
+        29,
+        35,
+        38,
+        45
+      ],
+      "firstSnippet": "and s.school_id = me.school and lower(s.parent_email) = lower(u.email))"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000920_sherivs_e_load_indexes.sql",
+      "kind": "vocabulary",
+      "token": "fee",
+      "streamIRef": "SHERIVS-E (Track E QA/Security)",
+      "occurrences": 1,
+      "lines": [
+        25
+      ],
+      "firstSnippet": "-- 2) fees_read: student/parent fee view was 1.06 s (is_linked_to_student per row over a 12k-student school) -> initplan array."
+    },
+    {
+      "file": "database/supabase/migrations/20261024000920_sherivs_e_load_indexes.sql",
+      "kind": "vocabulary",
+      "token": "fees",
+      "streamIRef": "SHERIVS-E (Track E QA/Security)",
+      "occurrences": 2,
+      "lines": [
+        26,
+        27
+      ],
+      "firstSnippet": "drop policy if exists fees_read on public.fees;"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000920_sherivs_e_load_indexes.sql",
+      "kind": "vocabulary",
+      "token": "teacher",
+      "streamIRef": "SHERIVS-E (Track E QA/Security)",
+      "occurrences": 1,
+      "lines": [
+        30
+      ],
+      "firstSnippet": "and ((select public.my_active_role()) = any (array['admin','principal','bursar','hq','teacher'])"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000920_sherivs_e_load_indexes.sql",
+      "kind": "vocabulary",
+      "token": "bursar",
+      "streamIRef": "SHERIVS-E (Track E QA/Security)",
+      "occurrences": 1,
+      "lines": [
+        30
+      ],
+      "firstSnippet": "and ((select public.my_active_role()) = any (array['admin','principal','bursar','hq','teacher'])"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000920_sherivs_e_load_indexes.sql",
+      "kind": "vocabulary",
+      "token": "principal",
+      "streamIRef": "SHERIVS-E (Track E QA/Security)",
+      "occurrences": 1,
+      "lines": [
+        30
+      ],
+      "firstSnippet": "and ((select public.my_active_role()) = any (array['admin','principal','bursar','hq','teacher'])"
+    },
+    {
+      "file": "database/supabase/migrations/20261024000920_sherivs_e_load_indexes.sql",
+      "kind": "vocabulary",
+      "token": "attendance",
+      "streamIRef": "SHERIVS-E (Track E QA/Security)",
+      "occurrences": 4,
+      "lines": [
+        33,
+        34,
+        35,
+        51
+      ],
+      "firstSnippet": "-- 3) Attendance: class register (class_id, date) and per-student history; school/day roll-ups."
+    },
+    {
+      "file": "database/supabase/migrations/20261025100010_sherivs_a01_scope_sets_complete.sql",
+      "kind": "vocabulary",
+      "token": "timetable",
+      "streamIRef": "SHERIVS-A01",
+      "occurrences": 1,
+      "lines": [
+        4
+      ],
+      "firstSnippet": "--  * the subject dimension now matches real data (timetable subjects of the class)"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100010_sherivs_a01_scope_sets_complete.sql",
+      "kind": "vocabulary",
+      "token": "student",
+      "streamIRef": "SHERIVS-A01",
+      "occurrences": 3,
+      "lines": [
+        79,
+        80,
+        117
+      ],
+      "firstSnippet": "IF p_kind = 'student' THEN SELECT * INTO s FROM public.students WHERE id = p_id; v_class := s.class_id;"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100010_sherivs_a01_scope_sets_complete.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-A01",
+      "occurrences": 3,
+      "lines": [
+        80,
+        89,
+        124
+      ],
+      "firstSnippet": "out := jsonb_build_object('org', s.school_id, 'student', s.id,"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100010_sherivs_a01_scope_sets_complete.sql",
+      "kind": "vocabulary",
+      "token": "hostel",
+      "streamIRef": "SHERIVS-A01",
+      "occurrences": 2,
+      "lines": [
+        82,
+        117
+      ],
+      "firstSnippet": "'hostel', coalesce((SELECT jsonb_agg(DISTINCT x) FROM public.hostel_allocations ha JOIN public.hostel_rooms hr ON hr.id = ha.room_id,"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100020_sherivs_a02_structure_periods.sql",
+      "kind": "vocabulary",
+      "token": "academic",
+      "streamIRef": "SHERIVS-A02",
+      "occurrences": 2,
+      "lines": [
+        1,
+        127
+      ],
+      "firstSnippet": "-- SHERIVS-A02 (Track A, day 2): shifts, gender/residency sections, levels and academic periods, manageable end to end."
+    },
+    {
+      "file": "database/supabase/migrations/20261025100020_sherivs_a02_structure_periods.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "SHERIVS-A02",
+      "occurrences": 1,
+      "lines": [
+        3
+      ],
+      "firstSnippet": "--  * academic_periods (terms, semesters or trimesters per session) with one current period per school"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100020_sherivs_a02_structure_periods.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-A02",
+      "occurrences": 28,
+      "lines": [
+        10,
+        21,
+        22,
+        29,
+        33,
+        43,
+        45,
+        47,
+        69,
+        85,
+        86,
+        95,
+        108,
+        118,
+        120,
+        121,
+        122,
+        134,
+        136,
+        138,
+        140,
+        141,
+        151,
+        153,
+        155,
+        163,
+        166,
+        172
+      ],
+      "firstSnippet": "school_id uuid NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100020_sherivs_a02_structure_periods.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "SHERIVS-A02",
+      "occurrences": 2,
+      "lines": [
+        29,
+        171
+      ],
+      "firstSnippet": "USING (school_id = public.get_my_school_id() OR coalesce(public.is_super_admin(), false));"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100030_sherivs_a03_tertiary_cgpa.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "SHERIVS-A03",
+      "occurrences": 3,
+      "lines": [
+        3,
+        5,
+        124
+      ],
+      "firstSnippet": "--  * configurable degree-class bands per school (NUC 5-point defaults when none are set)"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100030_sherivs_a03_tertiary_cgpa.sql",
+      "kind": "vocabulary",
+      "token": "academic",
+      "streamIRef": "SHERIVS-A03",
+      "occurrences": 1,
+      "lines": [
+        4
+      ],
+      "firstSnippet": "--  * academic standing per session: good standing / probation / withdrawal advised (two consecutive probations)"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100030_sherivs_a03_tertiary_cgpa.sql",
+      "kind": "vocabulary",
+      "token": "student",
+      "streamIRef": "SHERIVS-A03",
+      "occurrences": 1,
+      "lines": [
+        5
+      ],
+      "firstSnippet": "--  * readers: the student, a linked guardian, or staff with grades.view in that school"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100030_sherivs_a03_tertiary_cgpa.sql",
+      "kind": "vocabulary",
+      "token": "guardian",
+      "streamIRef": "SHERIVS-A03",
+      "occurrences": 1,
+      "lines": [
+        5
+      ],
+      "firstSnippet": "--  * readers: the student, a linked guardian, or staff with grades.view in that school"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100030_sherivs_a03_tertiary_cgpa.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-A03",
+      "occurrences": 16,
+      "lines": [
+        11,
+        13,
+        15,
+        23,
+        34,
+        35,
+        36,
+        71,
+        73,
+        84,
+        85,
+        110,
+        111,
+        120,
+        121,
+        131
+      ],
+      "firstSnippet": "school_id uuid NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100030_sherivs_a03_tertiary_cgpa.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "SHERIVS-A03",
+      "occurrences": 3,
+      "lines": [
+        23,
+        35,
+        129
+      ],
+      "firstSnippet": "EXECUTE format('CREATE POLICY %1$s_read ON public.%1$I FOR SELECT TO authenticated USING (school_id = public.get_my_school_id() OR coalesce(public.is_super_admi"
     },
     {
       "file": "database/supabase/migrations/20261025100040_sherivs_a04_exam_body_windows.sql",
