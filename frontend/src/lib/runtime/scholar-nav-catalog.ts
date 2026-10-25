@@ -1202,9 +1202,6 @@ export const SCHOLAR_NAV_CONTRIBUTIONS: readonly NavContribution[] = [
         orderHint: 2,
       },
       {
-        orderHint: 2,
-      },
-      {
         key: "r001.org_admin.fee_relief",
         label: "Fee relief & levies",
         iconKey: "fees",
