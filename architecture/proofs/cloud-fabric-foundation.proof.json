@@ -4,9 +4,9 @@
   "owner": "21",
   "capability": "cloud-fabric-byoc",
   "mode": "static",
-  "generatedAt": "2026-10-20T18:44:00.251Z",
+  "generatedAt": "2026-10-25T02:56:48.177Z",
   "infrastructureFiles": 59,
-  "inventoryDigest": "sha256:e06df3b90730b1425886f23f10d57955442a9ecac6d6922c454f1e348ca716ae",
+  "inventoryDigest": "sha256:69b87348b735bf9cb6a8650b6db72f26ff00c8e21e7d876eb2c271924e59b8c2",
   "providers": [
     "oci",
     "hetzner",

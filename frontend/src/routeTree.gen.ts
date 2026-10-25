@@ -68,6 +68,7 @@ import { Route as GovSchoolsRouteImport } from './routes/gov/schools'
 import { Route as NewsIdRouteImport } from './routes/news.$id'
 import { Route as PlatformOrgRouteImport } from './routes/platform.org'
 import { Route as RealityClassRouteImport } from './routes/reality.$class'
+import { Route as AuthenticatedAdminAcademicStandingRouteImport } from './routes/_authenticated/admin/academic-standing'
 import { Route as AuthenticatedAdminAdmissionsRouteImport } from './routes/_authenticated/admin/admissions'
 import { Route as AuthenticatedAdminAdmissionsFunnelRouteImport } from './routes/_authenticated/admin/admissions-funnel'
 import { Route as AuthenticatedAdminAiAssistantRouteImport } from './routes/_authenticated/admin/ai-assistant'
@@ -90,6 +91,7 @@ import { Route as AuthenticatedAdminDomainsRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminEarlyWarningRouteImport } from './routes/_authenticated/admin/early-warning'
 import { Route as AuthenticatedAdminEducationRealityRouteImport } from './routes/_authenticated/admin/education-reality'
 import { Route as AuthenticatedAdminEnterpriseChecklistRouteImport } from './routes/_authenticated/admin/enterprise-checklist'
+import { Route as AuthenticatedAdminExamBodiesRouteImport } from './routes/_authenticated/admin/exam-bodies'
 import { Route as AuthenticatedAdminExaminationsRouteImport } from './routes/_authenticated/admin/examinations'
 import { Route as AuthenticatedAdminExamsRouteImport } from './routes/_authenticated/admin/exams'
 import { Route as AuthenticatedAdminExpensesRouteImport } from './routes/_authenticated/admin/expenses'
@@ -132,6 +134,7 @@ import { Route as AuthenticatedAdminSessionRolloverRouteImport } from './routes/
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
 import { Route as AuthenticatedAdminStaffAccountsRouteImport } from './routes/_authenticated/admin/staff-accounts'
 import { Route as AuthenticatedAdminStoresAssetsRouteImport } from './routes/_authenticated/admin/stores-assets'
+import { Route as AuthenticatedAdminStructureRouteImport } from './routes/_authenticated/admin/structure'
 import { Route as AuthenticatedAdminStudentIntelligenceRouteImport } from './routes/_authenticated/admin/student-intelligence'
 import { Route as AuthenticatedAdminStudentsRouteImport } from './routes/_authenticated/admin/students'
 import { Route as AuthenticatedAdminSupportRouteImport } from './routes/_authenticated/admin/support'
@@ -517,6 +520,12 @@ const RealityClassRoute = RealityClassRouteImport.update({
   path: '/reality/$class',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminAcademicStandingRoute =
+  AuthenticatedAdminAcademicStandingRouteImport.update({
+    id: '/academic-standing',
+    path: '/academic-standing',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminAdmissionsRoute =
   AuthenticatedAdminAdmissionsRouteImport.update({
     id: '/admissions',
@@ -644,6 +653,12 @@ const AuthenticatedAdminEnterpriseChecklistRoute =
   AuthenticatedAdminEnterpriseChecklistRouteImport.update({
     id: '/enterprise-checklist',
     path: '/enterprise-checklist',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminExamBodiesRoute =
+  AuthenticatedAdminExamBodiesRouteImport.update({
+    id: '/exam-bodies',
+    path: '/exam-bodies',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminExaminationsRoute =
@@ -890,6 +905,12 @@ const AuthenticatedAdminStoresAssetsRoute =
   AuthenticatedAdminStoresAssetsRouteImport.update({
     id: '/stores-assets',
     path: '/stores-assets',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminStructureRoute =
+  AuthenticatedAdminStructureRouteImport.update({
+    id: '/structure',
+    path: '/structure',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminStudentIntelligenceRoute =
@@ -1431,6 +1452,7 @@ export interface FileRoutesByFullPath {
   '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
   '/gov/': typeof GovIndexRoute
+  '/admin/academic-standing': typeof AuthenticatedAdminAcademicStandingRoute
   '/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/admin/admissions-funnel': typeof AuthenticatedAdminAdmissionsFunnelRoute
   '/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
@@ -1453,6 +1475,7 @@ export interface FileRoutesByFullPath {
   '/admin/early-warning': typeof AuthenticatedAdminEarlyWarningRoute
   '/admin/education-reality': typeof AuthenticatedAdminEducationRealityRoute
   '/admin/enterprise-checklist': typeof AuthenticatedAdminEnterpriseChecklistRoute
+  '/admin/exam-bodies': typeof AuthenticatedAdminExamBodiesRoute
   '/admin/examinations': typeof AuthenticatedAdminExaminationsRoute
   '/admin/exams': typeof AuthenticatedAdminExamsRoute
   '/admin/expenses': typeof AuthenticatedAdminExpensesRoute
@@ -1495,6 +1518,7 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/staff-accounts': typeof AuthenticatedAdminStaffAccountsRoute
   '/admin/stores-assets': typeof AuthenticatedAdminStoresAssetsRoute
+  '/admin/structure': typeof AuthenticatedAdminStructureRoute
   '/admin/student-intelligence': typeof AuthenticatedAdminStudentIntelligenceRoute
   '/admin/students': typeof AuthenticatedAdminStudentsRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
@@ -1633,6 +1657,7 @@ export interface FileRoutesByTo {
   '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
   '/gov': typeof GovIndexRoute
+  '/admin/academic-standing': typeof AuthenticatedAdminAcademicStandingRoute
   '/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/admin/admissions-funnel': typeof AuthenticatedAdminAdmissionsFunnelRoute
   '/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
@@ -1655,6 +1680,7 @@ export interface FileRoutesByTo {
   '/admin/early-warning': typeof AuthenticatedAdminEarlyWarningRoute
   '/admin/education-reality': typeof AuthenticatedAdminEducationRealityRoute
   '/admin/enterprise-checklist': typeof AuthenticatedAdminEnterpriseChecklistRoute
+  '/admin/exam-bodies': typeof AuthenticatedAdminExamBodiesRoute
   '/admin/examinations': typeof AuthenticatedAdminExaminationsRoute
   '/admin/exams': typeof AuthenticatedAdminExamsRoute
   '/admin/expenses': typeof AuthenticatedAdminExpensesRoute
@@ -1697,6 +1723,7 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/staff-accounts': typeof AuthenticatedAdminStaffAccountsRoute
   '/admin/stores-assets': typeof AuthenticatedAdminStoresAssetsRoute
+  '/admin/structure': typeof AuthenticatedAdminStructureRoute
   '/admin/student-intelligence': typeof AuthenticatedAdminStudentIntelligenceRoute
   '/admin/students': typeof AuthenticatedAdminStudentsRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
@@ -1840,6 +1867,7 @@ export interface FileRoutesById {
   '/platform/org': typeof PlatformOrgRoute
   '/reality/$class': typeof RealityClassRoute
   '/gov/': typeof GovIndexRoute
+  '/_authenticated/admin/academic-standing': typeof AuthenticatedAdminAcademicStandingRoute
   '/_authenticated/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
   '/_authenticated/admin/admissions-funnel': typeof AuthenticatedAdminAdmissionsFunnelRoute
   '/_authenticated/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
@@ -1862,6 +1890,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/early-warning': typeof AuthenticatedAdminEarlyWarningRoute
   '/_authenticated/admin/education-reality': typeof AuthenticatedAdminEducationRealityRoute
   '/_authenticated/admin/enterprise-checklist': typeof AuthenticatedAdminEnterpriseChecklistRoute
+  '/_authenticated/admin/exam-bodies': typeof AuthenticatedAdminExamBodiesRoute
   '/_authenticated/admin/examinations': typeof AuthenticatedAdminExaminationsRoute
   '/_authenticated/admin/exams': typeof AuthenticatedAdminExamsRoute
   '/_authenticated/admin/expenses': typeof AuthenticatedAdminExpensesRoute
@@ -1904,6 +1933,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/staff-accounts': typeof AuthenticatedAdminStaffAccountsRoute
   '/_authenticated/admin/stores-assets': typeof AuthenticatedAdminStoresAssetsRoute
+  '/_authenticated/admin/structure': typeof AuthenticatedAdminStructureRoute
   '/_authenticated/admin/student-intelligence': typeof AuthenticatedAdminStudentIntelligenceRoute
   '/_authenticated/admin/students': typeof AuthenticatedAdminStudentsRoute
   '/_authenticated/admin/support': typeof AuthenticatedAdminSupportRoute
@@ -2046,6 +2076,7 @@ export interface FileRouteTypes {
     | '/platform/org'
     | '/reality/$class'
     | '/gov/'
+    | '/admin/academic-standing'
     | '/admin/admissions'
     | '/admin/admissions-funnel'
     | '/admin/ai-assistant'
@@ -2068,6 +2099,7 @@ export interface FileRouteTypes {
     | '/admin/early-warning'
     | '/admin/education-reality'
     | '/admin/enterprise-checklist'
+    | '/admin/exam-bodies'
     | '/admin/examinations'
     | '/admin/exams'
     | '/admin/expenses'
@@ -2110,6 +2142,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/staff-accounts'
     | '/admin/stores-assets'
+    | '/admin/structure'
     | '/admin/student-intelligence'
     | '/admin/students'
     | '/admin/support'
@@ -2248,6 +2281,7 @@ export interface FileRouteTypes {
     | '/platform/org'
     | '/reality/$class'
     | '/gov'
+    | '/admin/academic-standing'
     | '/admin/admissions'
     | '/admin/admissions-funnel'
     | '/admin/ai-assistant'
@@ -2270,6 +2304,7 @@ export interface FileRouteTypes {
     | '/admin/early-warning'
     | '/admin/education-reality'
     | '/admin/enterprise-checklist'
+    | '/admin/exam-bodies'
     | '/admin/examinations'
     | '/admin/exams'
     | '/admin/expenses'
@@ -2312,6 +2347,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/staff-accounts'
     | '/admin/stores-assets'
+    | '/admin/structure'
     | '/admin/student-intelligence'
     | '/admin/students'
     | '/admin/support'
@@ -2454,6 +2490,7 @@ export interface FileRouteTypes {
     | '/platform/org'
     | '/reality/$class'
     | '/gov/'
+    | '/_authenticated/admin/academic-standing'
     | '/_authenticated/admin/admissions'
     | '/_authenticated/admin/admissions-funnel'
     | '/_authenticated/admin/ai-assistant'
@@ -2476,6 +2513,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/early-warning'
     | '/_authenticated/admin/education-reality'
     | '/_authenticated/admin/enterprise-checklist'
+    | '/_authenticated/admin/exam-bodies'
     | '/_authenticated/admin/examinations'
     | '/_authenticated/admin/exams'
     | '/_authenticated/admin/expenses'
@@ -2518,6 +2556,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/staff-accounts'
     | '/_authenticated/admin/stores-assets'
+    | '/_authenticated/admin/structure'
     | '/_authenticated/admin/student-intelligence'
     | '/_authenticated/admin/students'
     | '/_authenticated/admin/support'
@@ -3047,6 +3086,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RealityClassRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin/academic-standing': {
+      id: '/_authenticated/admin/academic-standing'
+      path: '/academic-standing'
+      fullPath: '/admin/academic-standing'
+      preLoaderRoute: typeof AuthenticatedAdminAcademicStandingRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/admissions': {
       id: '/_authenticated/admin/admissions'
       path: '/admissions'
@@ -3199,6 +3245,13 @@ declare module '@tanstack/react-router' {
       path: '/enterprise-checklist'
       fullPath: '/admin/enterprise-checklist'
       preLoaderRoute: typeof AuthenticatedAdminEnterpriseChecklistRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/exam-bodies': {
+      id: '/_authenticated/admin/exam-bodies'
+      path: '/exam-bodies'
+      fullPath: '/admin/exam-bodies'
+      preLoaderRoute: typeof AuthenticatedAdminExamBodiesRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/examinations': {
@@ -3493,6 +3546,13 @@ declare module '@tanstack/react-router' {
       path: '/stores-assets'
       fullPath: '/admin/stores-assets'
       preLoaderRoute: typeof AuthenticatedAdminStoresAssetsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/structure': {
+      id: '/_authenticated/admin/structure'
+      path: '/structure'
+      fullPath: '/admin/structure'
+      preLoaderRoute: typeof AuthenticatedAdminStructureRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/student-intelligence': {
@@ -4098,6 +4158,7 @@ const siteRouteRouteWithChildren = siteRouteRoute._addFileChildren(
 )
 
 interface AuthenticatedAdminRouteRouteChildren {
+  AuthenticatedAdminAcademicStandingRoute: typeof AuthenticatedAdminAcademicStandingRoute
   AuthenticatedAdminAdmissionsRoute: typeof AuthenticatedAdminAdmissionsRoute
   AuthenticatedAdminAdmissionsFunnelRoute: typeof AuthenticatedAdminAdmissionsFunnelRoute
   AuthenticatedAdminAiAssistantRoute: typeof AuthenticatedAdminAiAssistantRoute
@@ -4120,6 +4181,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminEarlyWarningRoute: typeof AuthenticatedAdminEarlyWarningRoute
   AuthenticatedAdminEducationRealityRoute: typeof AuthenticatedAdminEducationRealityRoute
   AuthenticatedAdminEnterpriseChecklistRoute: typeof AuthenticatedAdminEnterpriseChecklistRoute
+  AuthenticatedAdminExamBodiesRoute: typeof AuthenticatedAdminExamBodiesRoute
   AuthenticatedAdminExaminationsRoute: typeof AuthenticatedAdminExaminationsRoute
   AuthenticatedAdminExamsRoute: typeof AuthenticatedAdminExamsRoute
   AuthenticatedAdminExpensesRoute: typeof AuthenticatedAdminExpensesRoute
@@ -4162,6 +4224,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminStaffAccountsRoute: typeof AuthenticatedAdminStaffAccountsRoute
   AuthenticatedAdminStoresAssetsRoute: typeof AuthenticatedAdminStoresAssetsRoute
+  AuthenticatedAdminStructureRoute: typeof AuthenticatedAdminStructureRoute
   AuthenticatedAdminStudentIntelligenceRoute: typeof AuthenticatedAdminStudentIntelligenceRoute
   AuthenticatedAdminStudentsRoute: typeof AuthenticatedAdminStudentsRoute
   AuthenticatedAdminSupportRoute: typeof AuthenticatedAdminSupportRoute
@@ -4174,6 +4237,8 @@ interface AuthenticatedAdminRouteRouteChildren {
 
 const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
   {
+    AuthenticatedAdminAcademicStandingRoute:
+      AuthenticatedAdminAcademicStandingRoute,
     AuthenticatedAdminAdmissionsRoute: AuthenticatedAdminAdmissionsRoute,
     AuthenticatedAdminAdmissionsFunnelRoute:
       AuthenticatedAdminAdmissionsFunnelRoute,
@@ -4199,6 +4264,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
       AuthenticatedAdminEducationRealityRoute,
     AuthenticatedAdminEnterpriseChecklistRoute:
       AuthenticatedAdminEnterpriseChecklistRoute,
+    AuthenticatedAdminExamBodiesRoute: AuthenticatedAdminExamBodiesRoute,
     AuthenticatedAdminExaminationsRoute: AuthenticatedAdminExaminationsRoute,
     AuthenticatedAdminExamsRoute: AuthenticatedAdminExamsRoute,
     AuthenticatedAdminExpensesRoute: AuthenticatedAdminExpensesRoute,
@@ -4254,6 +4320,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
     AuthenticatedAdminStaffAccountsRoute: AuthenticatedAdminStaffAccountsRoute,
     AuthenticatedAdminStoresAssetsRoute: AuthenticatedAdminStoresAssetsRoute,
+    AuthenticatedAdminStructureRoute: AuthenticatedAdminStructureRoute,
     AuthenticatedAdminStudentIntelligenceRoute:
       AuthenticatedAdminStudentIntelligenceRoute,
     AuthenticatedAdminStudentsRoute: AuthenticatedAdminStudentsRoute,
