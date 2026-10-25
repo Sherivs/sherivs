@@ -197,8 +197,8 @@
       "database/supabase/migrations/20261025100070_sherivs_a07_offline_attendance_v2.sql": 30,
       "database/supabase/migrations/20261025100080_sherivs_b01_head_console.sql": 37,
       "database/supabase/migrations/20261025100090_sherivs_b02_gov_officer_invites.sql": 2,
-      "database/supabase/migrations/20261025000410_sherivs_b02_gov_officer_invites.sql": 2,
-      "database/supabase/migrations/20261025000420_sherivs_b03_gov_inspections_circulars.sql": 35
+      "database/supabase/migrations/20261025100100_sherivs_b02_gov_officer_invites.sql": 2,
+      "database/supabase/migrations/20261025100110_sherivs_b03_gov_inspections_circulars.sql": 35
     },
     "baselineGroups": 427
   },
@@ -11014,7 +11014,7 @@
       "firstSnippet": "-- * Officers stay separate from tenant accounts (SHERIVS-028 rule): a school account cannot accept an invite."
     },
     {
-      "file": "database/supabase/migrations/20261025000410_sherivs_b02_gov_officer_invites.sql",
+      "file": "database/supabase/migrations/20261025100100_sherivs_b02_gov_officer_invites.sql",
       "kind": "vocabulary",
       "token": "school",
       "streamIRef": "SHERIVS-B02",
@@ -11026,7 +11026,7 @@
       "firstSnippet": "-- * Officers stay separate from tenant accounts (SHERIVS-028 rule): a school account cannot accept an invite."
     },
     {
-      "file": "database/supabase/migrations/20261025000420_sherivs_b03_gov_inspections_circulars.sql",
+      "file": "database/supabase/migrations/20261025100110_sherivs_b03_gov_inspections_circulars.sql",
       "kind": "structural",
       "token": "school_id",
       "streamIRef": "SHERIVS-B03",
@@ -11058,7 +11058,7 @@
       "firstSnippet": "id bigserial PRIMARY KEY, jurisdiction_id uuid NOT NULL, actor uuid, action text NOT NULL, ref_id uuid, school_id uuid,"
     },
     {
-      "file": "database/supabase/migrations/20261025000420_sherivs_b03_gov_inspections_circulars.sql",
+      "file": "database/supabase/migrations/20261025100110_sherivs_b03_gov_inspections_circulars.sql",
       "kind": "vocabulary",
       "token": "school",
       "streamIRef": "SHERIVS-B03",
@@ -11073,7 +11073,7 @@
       "firstSnippet": "IF NOT public._gov_school_shares(p_jurisdiction, p_school) THEN RAISE EXCEPTION 'school is not sharing with this jurisdiction'; END IF;"
     },
     {
-      "file": "database/supabase/migrations/20261025000420_sherivs_b03_gov_inspections_circulars.sql",
+      "file": "database/supabase/migrations/20261025100110_sherivs_b03_gov_inspections_circulars.sql",
       "kind": "vocabulary",
       "token": "get_my_school_id",
       "streamIRef": "SHERIVS-B03",
@@ -11087,7 +11087,7 @@
       "firstSnippet": "DECLARE s uuid := public.get_my_school_id();"
     },
     {
-      "file": "database/supabase/migrations/20261025000420_sherivs_b03_gov_inspections_circulars.sql",
+      "file": "database/supabase/migrations/20261025100110_sherivs_b03_gov_inspections_circulars.sql",
       "kind": "vocabulary",
       "token": "is_school_admin",
       "streamIRef": "SHERIVS-B03",
