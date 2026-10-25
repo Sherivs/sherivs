@@ -111,11 +111,11 @@ function loadTripwireDecision(): TripwireDecisionFn {
 }
 
 describe("drift-watch workflow (H2-24 / J-038): consume the evolution baseline continuously", () => {
-  it("parses as a workflow with the contracted triggers (push to main + weekly cron + manual)", () => {
+  it("parses as a workflow with the contracted triggers (push to master + weekly cron + manual)", () => {
     expect(doc.name).toBe("Drift Watch");
     const triggers = triggerSection();
     const push = triggers.push as { branches?: string[] } | undefined;
-    expect(push?.branches).toContain("main");
+    expect(push?.branches).toContain("master");
     expect(triggers.workflow_dispatch).toBeDefined();
     const schedule = triggers.schedule as { cron: string }[] | undefined;
     expect(Array.isArray(schedule)).toBe(true);
