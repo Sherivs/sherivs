@@ -7,7 +7,7 @@
 --                      token_url, term, academic_year); https URLs; secrets go to the vault.
 -- integration_claim_due_jobs v2: only connectors that can pull; at most one job per integration
 --                      per claim so one school cannot starve the others.
--- Rollback: database/supabase/rollbacks/20261024000920_sherivs_093_integration_connectors.sql
+-- Rollback: database/supabase/rollbacks/20261025100200_sherivs_093_integration_connectors.sql
 -- =============================================================================
 BEGIN;
 
