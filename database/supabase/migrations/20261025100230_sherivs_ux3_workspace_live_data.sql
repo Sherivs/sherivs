@@ -5,7 +5,7 @@
 -- -> classes; subject -> subject), or to one focused scope the caller actually holds (?scope=dim:ref).
 -- Keys the caller is not allowed to see (workspace_item_allowed) are skipped; a card whose table the caller
 -- cannot read returns {"unavailable": true} instead of failing the whole call.
--- Not applied to production. Rollback: database/supabase/rollbacks/20261024000950_sherivs_ux3_workspace_live_data.sql
+-- Not applied to production. Rollback: database/supabase/rollbacks/20261025100230_sherivs_ux3_workspace_live_data.sql
 BEGIN;
 
 -- Human labels for scope refs (refs are ids for campus/shift/section/level/class/house/hostel) ---------------

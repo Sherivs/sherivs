@@ -6,7 +6,7 @@
 -- features and enabled modules; and finally the user's own personalisation, which can only reference
 -- items they are allowed to see. Hiding an item is presentation only: every data RPC/RLS policy keeps
 -- enforcing the permission. workspace_item_allowed() is exported for data RPCs that want the same rule.
--- Rollback: database/supabase/rollbacks/20261024000930_sherivs_ux1_workspace_manifest.sql
+-- Rollback: database/supabase/rollbacks/20261025100210_sherivs_ux1_workspace_manifest.sql
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS public.workspace_item_catalog (

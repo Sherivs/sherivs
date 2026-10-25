@@ -1,4 +1,4 @@
--- Rollback for 20261024000950_sherivs_ux3_workspace_live_data.sql (drops only what it created).
+-- Rollback for 20261025100230_sherivs_ux3_workspace_live_data.sql (drops only what it created).
 BEGIN;
 DROP FUNCTION IF EXISTS public.workspace_scope_resolve(uuid, jsonb);
 DROP FUNCTION IF EXISTS public.workspace_widget_data(uuid, text[], jsonb);

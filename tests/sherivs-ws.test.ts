@@ -16,7 +16,7 @@ const s017 = fs.readFileSync(
   MIG + fs.readdirSync(MIG).find((f) => f.includes("sherivs_017_role_permission_catalog"))!,
   "utf8",
 );
-const ux1 = fs.readFileSync(MIG + "20261024000930_sherivs_ux1_workspace_manifest.sql", "utf8");
+const ux1 = fs.readFileSync(MIG + "20261025100210_sherivs_ux1_workspace_manifest.sql", "utf8");
 const PERMS = new Set(
   [...s017.matchAll(/^\s*\('([a-z_]+\.[a-z_]+)','[a-z_]+','/gm)].map((m) => m[1]),
 );
@@ -225,7 +225,7 @@ describe("design tokens meet WCAG AA", () => {
 
 // ---- SHERIVS-UX2: scope- and policy-aware workspaces -------------------------------------------------
 import { POLICIES, focusScope, scopeFocusOptions } from "@/lib/sherivs-ws/engine";
-const ux2 = fs.readFileSync(MIG + "20261024000940_sherivs_ux2_scope_policy_workspace.sql", "utf8");
+const ux2 = fs.readFileSync(MIG + "20261025100220_sherivs_ux2_scope_policy_workspace.sql", "utf8");
 const DIMS = [
   "campus",
   "shift",
@@ -336,7 +336,7 @@ describe("UX2 scope and policy layer", () => {
 
 // ---- SHERIVS-UX3: live card data + ?scope= on target pages ---------------------------------------------
 import { filterByScope, parseScopeParam, scopeLabel } from "@/lib/sherivs-ws/live";
-const ux3 = fs.readFileSync(MIG + "20261024000950_sherivs_ux3_workspace_live_data.sql", "utf8");
+const ux3 = fs.readFileSync(MIG + "20261025100230_sherivs_ux3_workspace_live_data.sql", "utf8");
 describe("UX3 live data and scope links", () => {
   it("migrations sort after Track E (#120)", () => {
     const files = fs
@@ -349,7 +349,7 @@ describe("UX3 live data and scope links", () => {
       "20261024000950",
     ]);
     expect(files.indexOf("20261024000920_sherivs_e_load_indexes.sql")).toBeLessThan(
-      files.indexOf("20261024000930_sherivs_ux1_workspace_manifest.sql"),
+      files.indexOf("20261025100210_sherivs_ux1_workspace_manifest.sql"),
     );
   });
   it("card data and scope resolution run under the caller's RLS (SECURITY INVOKER)", () => {
