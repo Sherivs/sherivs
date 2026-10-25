@@ -12,11 +12,11 @@
       "warn": "observed violation group present in baselineEntries (printed every run)",
       "ratchet": "baseline entry no longer observed — removable by the engineer who cleared it"
     },
-    "lastRatchet": "2026-10-03: V1-006 (team SECURITY) neutralized the platform authorization core — removed all 9 frontend/src/lib/authorization.ts and all 13 frontend/src/lib/identity.ts entries (authorization.ts and identity.ts now carry zero education vocabulary; roles/relationship types are contributed via rbac/domain-contribution + domain-config registration) and refreshed the 7 frozen security-role-gate.ts legacy-fallback entries against the live tree (shrink-only, ADR-003/004). || 2026-10-03 (ADR-012): T-wave coordinator ADDED 3 quarantine groups (19 hits) for database/supabase/migrations/20261003000040_coregrid_school_media_bucket.sql — the FIRST baseline extension, made under ADR-004's explicit 'new ADR' mechanism: the declarative storage-provisioning migration must reference the legacy storage contract id school-media consumed by the frontend and by the applied 20260707223958 policy set; the neutral conversion (bucket id + policy predicates + path contract) is blocked on the neutral-tenant substrate conversion (same conversionPath class as the transport posture) and is recorded as an authorized follow-up that REMOVES these entries in the same change. Zero new privileges authorized by ADR-012. || 2026-10-08 (ADR-013): Sherivs refoundation ADDED 9 quarantine groups (47 hits) for database/supabase/migrations/20261008000050_coregrid_organization_memberships.sql — the SECOND baseline extension, made under ADR-004's explicit 'new ADR' mechanism (ADR-012 precedent): the multi-membership migration extends the LIVE legacy identity store in place (users.school_id stays the ACTIVE-CONTEXT binding; every tenant RLS predicate resolves through get_my_school_id()/get_my_role()), so its SQL necessarily carries the same legacy vocabulary class its owners are quarantined for (school_id, is_school_admin, get_my_school_id, tenant role names). It introduces NO new domain code on the universal surface — the table is additive, RLS-FORCED, and mirrors the legacy store. Zero new privileges beyond the policy-gated DML posture it declares. The neutral-tenant substrate conversion (COND-003 / ADR-012 conversionPath) removes these entries in the same change when it lands. || 2026-10-08 (ADR-013 amendment, same ADR authority): pre-apply verification against the LIVE users_role_check exposed two roles the migration's original CHECK omitted (alumni, driver) — the dual-write trigger must be able to mirror EVERY role the identity store legally holds, so the CHECK was corrected to mirror users_role_check exactly and the migration APPLIED under explicit operator authorization. This adds 1 quarantine group (vocabulary-literal:driver) to the ten now recorded for this migration. || 2026-10-24 (W9/029 precedent): Track E ADDED 25 quarantine groups (58 hits) for the three sherivs_e_* migrations (RLS FORCE + read scoping, load-test indexes/policy initplans). They alter policies on the live legacy tenant store, so they necessarily name school_id / get_my_school_id / tenant role names; no new domain code on the universal surface."
+    "lastRatchet": "2026-10-03: V1-006 (team SECURITY) neutralized the platform authorization core — removed all 9 frontend/src/lib/authorization.ts and all 13 frontend/src/lib/identity.ts entries (authorization.ts and identity.ts now carry zero education vocabulary; roles/relationship types are contributed via rbac/domain-contribution + domain-config registration) and refreshed the 7 frozen security-role-gate.ts legacy-fallback entries against the live tree (shrink-only, ADR-003/004). || 2026-10-03 (ADR-012): T-wave coordinator ADDED 3 quarantine groups (19 hits) for database/supabase/migrations/20261003000040_coregrid_school_media_bucket.sql — the FIRST baseline extension, made under ADR-004's explicit 'new ADR' mechanism: the declarative storage-provisioning migration must reference the legacy storage contract id school-media consumed by the frontend and by the applied 20260707223958 policy set; the neutral conversion (bucket id + policy predicates + path contract) is blocked on the neutral-tenant substrate conversion (same conversionPath class as the transport posture) and is recorded as an authorized follow-up that REMOVES these entries in the same change. Zero new privileges authorized by ADR-012. || 2026-10-08 (ADR-013): Sherivs refoundation ADDED 9 quarantine groups (47 hits) for database/supabase/migrations/20261008000050_coregrid_organization_memberships.sql — the SECOND baseline extension, made under ADR-004's explicit 'new ADR' mechanism (ADR-012 precedent): the multi-membership migration extends the LIVE legacy identity store in place (users.school_id stays the ACTIVE-CONTEXT binding; every tenant RLS predicate resolves through get_my_school_id()/get_my_role()), so its SQL necessarily carries the same legacy vocabulary class its owners are quarantined for (school_id, is_school_admin, get_my_school_id, tenant role names). It introduces NO new domain code on the universal surface — the table is additive, RLS-FORCED, and mirrors the legacy store. Zero new privileges beyond the policy-gated DML posture it declares. The neutral-tenant substrate conversion (COND-003 / ADR-012 conversionPath) removes these entries in the same change when it lands. || 2026-10-08 (ADR-013 amendment, same ADR authority): pre-apply verification against the LIVE users_role_check exposed two roles the migration's original CHECK omitted (alumni, driver) — the dual-write trigger must be able to mirror EVERY role the identity store legally holds, so the CHECK was corrected to mirror users_role_check exactly and the migration APPLIED under explicit operator authorization. This adds 1 quarantine group (vocabulary-literal:driver) to the ten now recorded for this migration. || 2026-10-24 (W9/029 precedent): Track E ADDED 25 quarantine groups (58 hits) for the three sherivs_e_* migrations (RLS FORCE + read scoping, load-test indexes/policy initplans). They alter policies on the live legacy tenant store, so they necessarily name school_id / get_my_school_id / tenant role names; no new domain code on the universal surface. || 2026-10-25 (W9/029 precedent): merge train ADDED 8 quarantine groups for 20261025100180_sherivs_090_integration_hub.sql (Integration Hub tables are tenant-scoped on the live legacy store, so they name school_id and school vocabulary); no new domain code on the universal surface."
   },
   "summary": {
-    "entryCount": 734,
-    "totalObservedHits": 3879,
+    "entryCount": 742,
+    "totalObservedHits": 3946,
     "hitsByFile": {
       "database/supabase/migrations/20260907000100_runtime_scholar_workforce_catalog.sql": 114,
       "database/supabase/migrations/20260620122048_50e590c2-5911-4c98-8931-fb46a4b509f3.sql": 84,
@@ -200,7 +200,8 @@
       "database/supabase/migrations/20261025100110_sherivs_b03_gov_inspections_circulars.sql": 35,
       "database/supabase/migrations/20261025100140_sherivs_b05_gov_deployment_exports.sql": 26,
       "database/supabase/migrations/20261025100160_sherivs_b04_consent_breakglass_delegation.sql": 65,
-      "database/supabase/migrations/20261025100170_sherivs_b06_group_console.sql": 43
+      "database/supabase/migrations/20261025100170_sherivs_b06_group_console.sql": 43,
+      "database/supabase/migrations/20261025100180_sherivs_090_integration_hub.sql": 67
     },
     "baselineGroups": 427
   },
@@ -11423,6 +11424,153 @@
         163
       ],
       "firstSnippet": "(SELECT count(*) FILTER (WHERE status IN ('present','late')) FROM public.attendance a WHERE a.school_id = m.school_id AND a.date >= current_date - 30) att_p,"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100180_sherivs_090_integration_hub.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "SHERIVS-090",
+      "occurrences": 5,
+      "lines": [
+        2,
+        8,
+        180,
+        275,
+        302
+      ],
+      "firstSnippet": "-- SHERIVS-090 — Integration Hub: connect a school's existing software (SIS, result/fee"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100180_sherivs_090_integration_hub.sql",
+      "kind": "vocabulary",
+      "token": "fee",
+      "streamIRef": "SHERIVS-090",
+      "occurrences": 1,
+      "lines": [
+        2
+      ],
+      "firstSnippet": "-- SHERIVS-090 — Integration Hub: connect a school's existing software (SIS, result/fee"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100180_sherivs_090_integration_hub.sql",
+      "kind": "vocabulary",
+      "token": "classroom",
+      "streamIRef": "SHERIVS-090",
+      "occurrences": 3,
+      "lines": [
+        7,
+        48,
+        49
+      ],
+      "firstSnippet": "-- connector_manifests  platform catalog (CSV, REST/webhook, Google Classroom, ...)."
+    },
+    {
+      "file": "database/supabase/migrations/20261025100180_sherivs_090_integration_hub.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "SHERIVS-090",
+      "occurrences": 46,
+      "lines": [
+        19,
+        54,
+        68,
+        70,
+        74,
+        80,
+        86,
+        94,
+        101,
+        116,
+        123,
+        132,
+        135,
+        138,
+        145,
+        151,
+        158,
+        174,
+        189,
+        198,
+        211,
+        218,
+        229,
+        234,
+        242,
+        244,
+        245,
+        248,
+        254,
+        264,
+        277,
+        278,
+        279,
+        283,
+        284,
+        295,
+        296,
+        303,
+        310,
+        311,
+        319,
+        324,
+        325,
+        336,
+        343,
+        345
+      ],
+      "firstSnippet": "-- school_id from the integration row, never from the caller or the payload."
+    },
+    {
+      "file": "database/supabase/migrations/20261025100180_sherivs_090_integration_hub.sql",
+      "kind": "vocabulary",
+      "token": "student",
+      "streamIRef": "SHERIVS-090",
+      "occurrences": 6,
+      "lines": [
+        44,
+        46,
+        48,
+        59,
+        300,
+        305
+      ],
+      "firstSnippet": "('csv', 'CSV / Excel import', 'file', 'none', ARRAY['student','staff','guardian','class','result','fee_invoice','payment'], ARRAY['inbound'], 'beta',"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100180_sherivs_090_integration_hub.sql",
+      "kind": "vocabulary",
+      "token": "guardian",
+      "streamIRef": "SHERIVS-090",
+      "occurrences": 2,
+      "lines": [
+        44,
+        46
+      ],
+      "firstSnippet": "('csv', 'CSV / Excel import', 'file', 'none', ARRAY['student','staff','guardian','class','result','fee_invoice','payment'], ARRAY['inbound'], 'beta',"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100180_sherivs_090_integration_hub.sql",
+      "kind": "vocabulary-literal",
+      "token": "staff",
+      "streamIRef": "SHERIVS-090",
+      "occurrences": 3,
+      "lines": [
+        44,
+        46,
+        48
+      ],
+      "firstSnippet": "('csv', 'CSV / Excel import', 'file', 'none', ARRAY['student','staff','guardian','class','result','fee_invoice','payment'], ARRAY['inbound'], 'beta',"
+    },
+    {
+      "file": "database/supabase/migrations/20261025100180_sherivs_090_integration_hub.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "SHERIVS-090",
+      "occurrences": 1,
+      "lines": [
+        173
+      ],
+      "firstSnippet": "SELECT public.get_my_school_id() AS s"
     }
   ]
 }
