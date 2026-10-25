@@ -17,7 +17,7 @@
 -- Outbound: AFTER triggers on students, grades, fees enqueue to integration_outbox only for
 -- schools with an outbound-enabled integration that treats Sherivs as system of record for
 -- that entity; writes made by integration_ingest itself are not echoed back.
--- Rollback: database/supabase/rollbacks/20261024000910_sherivs_092_integration_entities_outbound.sql
+-- Rollback: database/supabase/rollbacks/20261025100190_sherivs_092_integration_entities_outbound.sql
 -- =============================================================================
 BEGIN;
 
