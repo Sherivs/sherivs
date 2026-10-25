@@ -199,7 +199,7 @@
       "database/supabase/migrations/20261025100090_sherivs_b02_gov_officer_invites.sql": 2,
       "database/supabase/migrations/20261025100110_sherivs_b03_gov_inspections_circulars.sql": 35,
       "database/supabase/migrations/20261025100140_sherivs_b05_gov_deployment_exports.sql": 26,
-      "database/supabase/migrations/20261025000430_sherivs_b04_consent_breakglass_delegation.sql": 65
+      "database/supabase/migrations/20261025100160_sherivs_b04_consent_breakglass_delegation.sql": 65
     },
     "baselineGroups": 427
   },
@@ -11166,7 +11166,7 @@
       "firstSnippet": "IF auth.uid() IS NULL OR s IS NULL OR NOT coalesce(public.is_school_admin(), false) THEN RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501'; END IF;"
     },
     {
-      "file": "database/supabase/migrations/20261025000430_sherivs_b04_consent_breakglass_delegation.sql",
+      "file": "database/supabase/migrations/20261025100160_sherivs_b04_consent_breakglass_delegation.sql",
       "kind": "structural",
       "token": "school_id",
       "streamIRef": "SHERIVS-B04",
@@ -11204,7 +11204,7 @@
       "firstSnippet": "id bigserial PRIMARY KEY, school_id uuid NOT NULL, actor uuid, action text NOT NULL, ref_id uuid, student_id uuid,"
     },
     {
-      "file": "database/supabase/migrations/20261025000430_sherivs_b04_consent_breakglass_delegation.sql",
+      "file": "database/supabase/migrations/20261025100160_sherivs_b04_consent_breakglass_delegation.sql",
       "kind": "vocabulary",
       "token": "guardian",
       "streamIRef": "SHERIVS-B04",
@@ -11220,7 +11220,7 @@
       "firstSnippet": "-- ===== 1. Minors' consent (NDPA s.31: a parent/guardian consents for a child under 18) ====="
     },
     {
-      "file": "database/supabase/migrations/20261025000430_sherivs_b04_consent_breakglass_delegation.sql",
+      "file": "database/supabase/migrations/20261025100160_sherivs_b04_consent_breakglass_delegation.sql",
       "kind": "vocabulary",
       "token": "student",
       "streamIRef": "SHERIVS-B04",
@@ -11234,7 +11234,7 @@
       "firstSnippet": "-- Who may set consent: a linked guardian (web form), an adult student for themselves, or a school admin recording"
     },
     {
-      "file": "database/supabase/migrations/20261025000430_sherivs_b04_consent_breakglass_delegation.sql",
+      "file": "database/supabase/migrations/20261025100160_sherivs_b04_consent_breakglass_delegation.sql",
       "kind": "vocabulary",
       "token": "school",
       "streamIRef": "SHERIVS-B04",
@@ -11248,7 +11248,7 @@
       "firstSnippet": "-- Who may set consent: a linked guardian (web form), an adult student for themselves, or a school admin recording"
     },
     {
-      "file": "database/supabase/migrations/20261025000430_sherivs_b04_consent_breakglass_delegation.sql",
+      "file": "database/supabase/migrations/20261025100160_sherivs_b04_consent_breakglass_delegation.sql",
       "kind": "vocabulary",
       "token": "get_my_school_id",
       "streamIRef": "SHERIVS-B04",
@@ -11267,7 +11267,7 @@
       "firstSnippet": "ELSIF s = public.get_my_school_id() AND coalesce(public.is_school_admin(), false) THEN"
     },
     {
-      "file": "database/supabase/migrations/20261025000430_sherivs_b04_consent_breakglass_delegation.sql",
+      "file": "database/supabase/migrations/20261025100160_sherivs_b04_consent_breakglass_delegation.sql",
       "kind": "vocabulary",
       "token": "is_school_admin",
       "streamIRef": "SHERIVS-B04",
@@ -11285,7 +11285,7 @@
       "firstSnippet": "ELSIF s = public.get_my_school_id() AND coalesce(public.is_school_admin(), false) THEN"
     },
     {
-      "file": "database/supabase/migrations/20261025000430_sherivs_b04_consent_breakglass_delegation.sql",
+      "file": "database/supabase/migrations/20261025100160_sherivs_b04_consent_breakglass_delegation.sql",
       "kind": "vocabulary",
       "token": "principal",
       "streamIRef": "SHERIVS-B04",
@@ -11298,7 +11298,7 @@
       "firstSnippet": "-- Review by the principal, an admin or the DPO, never the person who opened it; MFA required."
     },
     {
-      "file": "database/supabase/migrations/20261025000430_sherivs_b04_consent_breakglass_delegation.sql",
+      "file": "database/supabase/migrations/20261025100160_sherivs_b04_consent_breakglass_delegation.sql",
       "kind": "vocabulary-literal",
       "token": "parent",
       "streamIRef": "SHERIVS-B04",
@@ -11309,7 +11309,7 @@
       "firstSnippet": "IF NOT EXISTS (SELECT 1 FROM public.users u WHERE u.id = p_delegate AND u.school_id = s AND coalesce(u.is_active, true) AND u.role NOT IN ('parent','student')) "
     },
     {
-      "file": "database/supabase/migrations/20261025000430_sherivs_b04_consent_breakglass_delegation.sql",
+      "file": "database/supabase/migrations/20261025100160_sherivs_b04_consent_breakglass_delegation.sql",
       "kind": "vocabulary",
       "token": "grade",
       "streamIRef": "SHERIVS-B04",
@@ -11320,7 +11320,7 @@
       "firstSnippet": "-- Shadow wiring on grade entry (sampled like attendance; sherivs.authz_shadow_rate, default 10%)."
     },
     {
-      "file": "database/supabase/migrations/20261025000430_sherivs_b04_consent_breakglass_delegation.sql",
+      "file": "database/supabase/migrations/20261025100160_sherivs_b04_consent_breakglass_delegation.sql",
       "kind": "vocabulary",
       "token": "attendance",
       "streamIRef": "SHERIVS-B04",
