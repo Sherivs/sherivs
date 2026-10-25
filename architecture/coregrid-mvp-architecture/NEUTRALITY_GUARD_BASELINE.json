@@ -200,7 +200,7 @@
       "database/supabase/migrations/20261025100110_sherivs_b03_gov_inspections_circulars.sql": 35,
       "database/supabase/migrations/20261025100140_sherivs_b05_gov_deployment_exports.sql": 26,
       "database/supabase/migrations/20261025100160_sherivs_b04_consent_breakglass_delegation.sql": 65,
-      "database/supabase/migrations/20261025000450_sherivs_b06_group_console.sql": 43
+      "database/supabase/migrations/20261025100170_sherivs_b06_group_console.sql": 43
     },
     "baselineGroups": 427
   },
@@ -11332,7 +11332,7 @@
       "firstSnippet": "-- Shadow wiring on grade entry (sampled like attendance; sherivs.authz_shadow_rate, default 10%)."
     },
     {
-      "file": "database/supabase/migrations/20261025000450_sherivs_b06_group_console.sql",
+      "file": "database/supabase/migrations/20261025100170_sherivs_b06_group_console.sql",
       "kind": "vocabulary",
       "token": "school",
       "streamIRef": "SHERIVS-B06",
@@ -11354,7 +11354,7 @@
       "firstSnippet": "-- Builds on 021 org_groups/org_group_members. A school joins only with its own admin's consent (MFA);"
     },
     {
-      "file": "database/supabase/migrations/20261025000450_sherivs_b06_group_console.sql",
+      "file": "database/supabase/migrations/20261025100170_sherivs_b06_group_console.sql",
       "kind": "structural",
       "token": "school_id",
       "streamIRef": "SHERIVS-B06",
@@ -11391,7 +11391,7 @@
       "firstSnippet": "school_id uuid NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE, requested_by uuid NOT NULL,"
     },
     {
-      "file": "database/supabase/migrations/20261025000450_sherivs_b06_group_console.sql",
+      "file": "database/supabase/migrations/20261025100170_sherivs_b06_group_console.sql",
       "kind": "vocabulary",
       "token": "principal",
       "streamIRef": "SHERIVS-B06",
@@ -11402,7 +11402,7 @@
       "firstSnippet": "SELECT EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND school_id = p_school AND role IN ('admin','principal')) $$;"
     },
     {
-      "file": "database/supabase/migrations/20261025000450_sherivs_b06_group_console.sql",
+      "file": "database/supabase/migrations/20261025100170_sherivs_b06_group_console.sql",
       "kind": "vocabulary",
       "token": "teacher",
       "streamIRef": "SHERIVS-B06",
@@ -11413,7 +11413,7 @@
       "firstSnippet": "(SELECT count(*) FROM public.users u WHERE u.school_id = m.school_id AND u.role = 'teacher') teachers,"
     },
     {
-      "file": "database/supabase/migrations/20261025000450_sherivs_b06_group_console.sql",
+      "file": "database/supabase/migrations/20261025100170_sherivs_b06_group_console.sql",
       "kind": "vocabulary",
       "token": "attendance",
       "streamIRef": "SHERIVS-B06",
