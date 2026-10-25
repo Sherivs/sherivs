@@ -10,6 +10,7 @@ import {
   resolveExperienceHost,
   shouldRedirectCanonicalRootToAuth,
 } from "@/lib/experience/experience-host";
+import { headConsoleSlugFromHost } from "@/lib/head-console/host";
 import { isGovHost } from "@/lib/gov/host";
 import { readRequestHostname } from "@/lib/experience/experience-host.functions";
 
@@ -21,6 +22,8 @@ async function loaderHostname(): Promise<string> {
 export const Route = createFileRoute("/")({
   loader: async () => {
     const hostname = await loaderHostname();
+    // SHERIVS-B01: console.<inst>.sherivs.com is the institution head console.
+    if (headConsoleSlugFromHost(hostname)) throw redirect({ to: "/head" });
     // SHERIVS-B02: gov.sherivs.com and <state>.gov.sherivs.com open the government console.
     if (isGovHost(hostname)) throw redirect({ to: "/gov" });
     const hostKind = resolveExperienceHost(hostname);

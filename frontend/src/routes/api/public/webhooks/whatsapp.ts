@@ -12,6 +12,12 @@ const Body = z.object({ entry: z.array(z.object({ changes: z.array(z.object({ va
   messages: z.array(z.object({ id: z.string().max(200), from: z.string().max(20), text: z.object({ body: z.string().max(4096) }).partial().optional() })).optional(),
 }).partial() })).max(50) })).max(50) });
 
+/** Constant-time string compare (Track E: verify_token was compared with ===). */
+function sameSecret(a: string | null, b: string): boolean {
+  const x = Buffer.from(a ?? ""), y = Buffer.from(b);
+  return x.length === y.length && timingSafeEqual(x, y);
+}
+
 function validSig(raw: string, header: string | null, secret: string): boolean {
   if (!header?.startsWith("sha256=")) return false;
   const exp = createHmac("sha256", secret).update(raw).digest(); const got = header.slice(7);
@@ -23,7 +29,7 @@ export const Route = createFileRoute("/api/public/webhooks/whatsapp")({
     GET: async ({ request }) => {
       const u = new URL(request.url); const token = process.env.WHATSAPP_VERIFY_TOKEN;
       if (!token) return new Response("WhatsApp not configured", { status: 503 });
-      return u.searchParams.get("hub.mode") === "subscribe" && u.searchParams.get("hub.verify_token") === token
+      return u.searchParams.get("hub.mode") === "subscribe" && sameSecret(u.searchParams.get("hub.verify_token"), token)
         ? new Response(u.searchParams.get("hub.challenge") ?? "", { status: 200 }) : new Response("forbidden", { status: 403 });
     },
     POST: async ({ request }) => {

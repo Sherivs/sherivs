@@ -34,7 +34,7 @@ name: Drift Watch
 on:
   push:
     branches:
-      - main
+      - master
   workflow_dispatch:
   schedule:
     # Weekly, Wednesdays 04:37 UTC (off the top of the hour to avoid scheduler

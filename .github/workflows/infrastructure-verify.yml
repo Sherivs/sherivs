@@ -13,7 +13,7 @@ on:
       - "architecture/cloud-fabric-*.md"
       - "tests/unit/infrastructure-fabric.test.ts"
   push:
-    branches: [main]
+    branches: [master]
     paths:
       - "infrastructure/**"
       - "scripts/verify-infrastructure.mjs"
