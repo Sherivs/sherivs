@@ -1,0 +1,83 @@
+{
+ "at": "2026-10-24T21:29:09.377Z",
+ "ok": 19,
+ "total": 19,
+ "results": [
+  {
+   "name": "catalog seeded with csv, rest-webhook, google-classroom",
+   "ok": true
+  },
+  {
+   "name": "connect stores a vault reference, never a secret",
+   "ok": true
+  },
+  {
+   "name": "teacher cannot connect an integration",
+   "ok": true
+  },
+  {
+   "name": "tenant isolation: school A admin cannot connect for school B",
+   "ok": true
+  },
+  {
+   "name": "tenant isolation: school A admin cannot ingest via school B's integration",
+   "ok": true
+  },
+  {
+   "name": "tenant isolation: payload school_id is ignored; rows land only in the integration's school",
+   "ok": true
+  },
+  {
+   "name": "tenant isolation: RLS hides school B runs, maps and audit from school A admin",
+   "ok": true
+  },
+  {
+   "name": "tenant isolation: no direct client writes to hub tables",
+   "ok": true
+  },
+  {
+   "name": "tenant isolation: natural-key match never crosses schools",
+   "ok": true
+  },
+  {
+   "name": "idempotent re-sync: same payload twice -> 0 new rows, all unchanged",
+   "ok": true
+  },
+  {
+   "name": "idempotent replay: same idempotency key returns the original run, no writes",
+   "ok": true
+  },
+  {
+   "name": "changed record updates in place (no duplicate student)",
+   "ok": true
+  },
+  {
+   "name": "dedupe: existing Sherivs student matched by admission number",
+   "ok": true
+  },
+  {
+   "name": "mirror mode stages records but never writes core tables",
+   "ok": true
+  },
+  {
+   "name": "system-of-record = sherivs blocks inbound overwrite",
+   "ok": true
+  },
+  {
+   "name": "per-school limit: oversize batch rejected and audited",
+   "ok": true
+  },
+  {
+   "name": "audit trail is append-only",
+   "ok": true
+  },
+  {
+   "name": "webhook target lookup is service_role only",
+   "ok": true
+  },
+  {
+   "name": "scheduler claims due jobs once (SKIP LOCKED / next_run_at advance)",
+   "ok": true
+  }
+ ]
+}
