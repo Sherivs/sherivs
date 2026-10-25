@@ -2,7 +2,7 @@
   "artifact": "phase-completion",
   "wave": "AUDIT-1",
   "owner": "kernel (Phase 01 governance)",
-  "generatedAt": "2026-10-20T18:44:18.206Z",
+  "generatedAt": "2026-10-25T02:56:47.479Z",
   "authority": [
     "CONSTITUTION.md",
     "architecture/registry.json",
@@ -18,8 +18,8 @@
   },
   "summary": {
     "phasesAudited": 51,
-    "complete": 15,
-    "implementing": 18,
+    "complete": 14,
+    "implementing": 19,
     "architectureDefined": 18,
     "withModules": 33,
     "withResolvedModules": 33,
@@ -60,7 +60,14 @@
       "50",
       "51"
     ],
-    "unconfirmedClaims": [],
+    "unconfirmedClaims": [
+      {
+        "id": "08",
+        "levels": [
+          "L4 frontend/workspace integration"
+        ]
+      }
+    ],
     "exemptionsApplied": [
       {
         "phase": "01",
@@ -69,7 +76,7 @@
     ],
     "exemptionSource": "architecture/phase-completion-exemptions.json",
     "missingLevelFrequency": {
-      "L4 frontend/workspace integration": 36,
+      "L4 frontend/workspace integration": 37,
       "L3 backend": 18,
       "L2 data model": 12,
       "L1 conceptual": 1
@@ -370,7 +377,7 @@
         "L1 conceptual": true,
         "L2 data model": true,
         "L3 backend": true,
-        "L4 frontend/workspace integration": true,
+        "L4 frontend/workspace integration": false,
         "L5 operational maturity": true
       },
       "registryLevels": [
@@ -381,11 +388,15 @@
         true
       ],
       "registryStatus": "COMPLETE",
-      "derivedStatus": "COMPLETE",
-      "complete": true,
-      "missingLevels": [],
+      "derivedStatus": "IMPLEMENTING",
+      "complete": false,
+      "missingLevels": [
+        "L4 frontend/workspace integration"
+      ],
       "exemptedLevels": [],
-      "unconfirmedLevels": []
+      "unconfirmedLevels": [
+        "L4 frontend/workspace integration"
+      ]
     },
     {
       "id": "09",
