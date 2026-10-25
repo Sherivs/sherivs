@@ -10,7 +10,7 @@ import { LOCALE_NAMES, tx, ui } from "@/lib/website/i18n";
 import { buildNav, pageHref, visibleSections } from "@/lib/website/nav";
 import { effectiveDocument, findPage, resolveLocale } from "@/lib/website/seo";
 import { safeUrl } from "@/lib/website/sanitize";
-import { themeCss } from "@/lib/website/theme";
+import { resolvePairing, themeCss } from "@/lib/website/theme";
 import { pageHasContent } from "@/lib/website/nav";
 import type { Locale, Post, PublicSite, SiteDocument } from "@/lib/website/types";
 import { BlockView, PostCard, type BlockCtx } from "./blocks";
@@ -97,7 +97,13 @@ export function SiteView({
   const s = d.school;
 
   return (
-    <div className="sw" lang={l} data-dark={doc.theme.dark ?? "auto"} data-kind={kind}>
+    <div
+      className="sw"
+      lang={l}
+      data-dark={doc.theme.dark ?? "auto"}
+      data-kind={kind}
+      data-pairing={resolvePairing(doc.theme, kind)}
+    >
       <style dangerouslySetInnerHTML={{ __html: css }} />
       <a href="#sw-main" className="sw-skip">
         Skip to content

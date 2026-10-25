@@ -312,6 +312,34 @@ describe("bespoke public chrome", () => {
     expect(style(b)).toContain("Source Serif 4 Variable");
     expect(style(a)).not.toBe(style(b));
   });
+  it("keeps real word spaces in section titles (never Whatweoffer)", () => {
+    const html = renderToStaticMarkup(<SiteView site={site("lagosNurseryPrimary")} slug="home" />);
+    expect(html).toContain("What we offer");
+    expect(html).toContain("Admissions are open");
+    expect(html).toContain("Stories &amp; updates");
+    expect(html).not.toContain("Whatweoffer");
+    expect(html).not.toContain("Admissionsareopen");
+    expect(html).toContain('data-kind="nursery_primary"');
+    expect(html).toContain('data-pairing="friendly"');
+    expect(html).toContain("--sw-word-spacing:0.08em");
+  });
+  it("university and secondary homes use their own pairing and kind chrome", () => {
+    const uni = renderToStaticMarkup(<SiteView site={site("federalUniversity")} slug="home" />);
+    const sec = renderToStaticMarkup(<SiteView site={site("bornoSecondary")} slug="home" />);
+    expect(uni).toContain('data-kind="university"');
+    expect(uni).toContain('data-pairing="scholarly"');
+    expect(sec).toContain('data-kind="secondary"');
+    expect(sec).toContain('data-pairing="classic"');
+    expect(uni).toContain("Programmes");
+  });
+  it("policies page renders rules and NDPA copy with spaces intact", () => {
+    const html = renderToStaticMarkup(
+      <SiteView site={site("lagosNurseryPrimary")} slug="policies" />,
+    );
+    expect(html).toContain("Privacy notice (NDPA 2023)");
+    expect(html).toContain("Child protection and safeguarding");
+    expect(html).not.toContain("Childprotection");
+  });
 });
 
 describe("SEO on the school's own domain", () => {

@@ -105,6 +105,7 @@
   font-family: var(--sw-font-head);
   font-weight: var(--sw-head-weight);
   letter-spacing: var(--sw-head-tracking);
+  word-spacing: var(--sw-word-spacing, 0.08em);
   color: inherit;
   text-wrap: balance;
 }
@@ -1117,4 +1118,44 @@
   .sw-section {
     padding: 16px 0;
   }
+}
+
+/* Kind-specific chrome: same engine, not one generic multi-tenant skin. */
+.sw[data-kind="nursery_primary"] .sw-hero {
+  border-radius: 0 0 2.75rem 2.75rem;
+}
+.sw[data-kind="nursery_primary"] .sw-mark {
+  border-radius: 50%;
+}
+.sw[data-kind="nursery_primary"] .sw-btn {
+  border-radius: 999px;
+}
+.sw[data-kind="secondary"] .sw-header {
+  border-bottom: 3px solid var(--sw-primary);
+}
+.sw[data-kind="secondary"] .sw-hero {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--sw-primary) 10%, transparent), transparent 42%),
+    var(--sw-bg);
+}
+.sw[data-kind="university"] .sw-header {
+  border-bottom: 1px solid var(--sw-border);
+  box-shadow: inset 0 -4px 0 var(--sw-secondary);
+}
+.sw[data-kind="university"] .sw-hero {
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--sw-primary) 16%, var(--sw-bg)) 0%,
+    var(--sw-bg) 58%
+  );
+}
+.sw[data-kind="university"] .sw-btn {
+  border-radius: 4px;
+}
+.sw[data-kind="government"] .sw-topbar {
+  background: var(--sw-primary);
+  color: var(--sw-on-primary);
+}
+.sw[data-kind="government"] .sw-topbar a {
+  color: var(--sw-on-primary);
 }

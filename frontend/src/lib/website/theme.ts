@@ -87,7 +87,7 @@ export const PAIRINGS = {
     body: "inter",
     ratio: 1.2,
     weight: 750,
-    tracking: "-0.02em",
+    tracking: "-0.012em",
   },
   friendly: {
     label: "Friendly",
@@ -267,6 +267,7 @@ export function typeVars(pairing: PairingKey): Record<string, string> {
     "--sw-font-head": stack(pr.heading),
     "--sw-head-weight": String(pr.weight),
     "--sw-head-tracking": pr.tracking,
+    "--sw-word-spacing": "0.08em",
     "--sw-step-0": "clamp(1rem, calc(1rem + 0.0625 * ((100vw - 22.5rem) / 52.5)), 1.0625rem)",
     "--sw-step-1": step(1),
     "--sw-step-2": step(2),
