@@ -3,7 +3,7 @@
   "phase": "01",
   "phaseName": "Foundation",
   "source": "architecture/phase-01-foundation.md",
-  "generatedAt": "2026-10-25T02:56:47.779Z",
+  "generatedAt": "2026-10-25T03:20:23.967Z",
   "classificationDefinitions": {
     "ENFORCED": "an executable artefact proves it (test, verifier script, migration, policy or machine-checked contract match) and, where a boundary is declared, a real call site invokes it",
     "DECLARED": "a module, document or contract mentions it, but nothing executable proves it",
