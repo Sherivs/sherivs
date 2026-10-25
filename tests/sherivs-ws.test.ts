@@ -344,9 +344,9 @@ describe("UX3 live data and scope links", () => {
       .filter((f) => /sherivs_(ux\d|e_)/.test(f))
       .sort();
     expect(files.slice(-3).map((f) => f.slice(0, 14))).toEqual([
-      "20261024000930",
-      "20261024000940",
-      "20261024000950",
+      "20261025100210",
+      "20261025100220",
+      "20261025100230",
     ]);
     expect(files.indexOf("20261024000920_sherivs_e_load_indexes.sql")).toBeLessThan(
       files.indexOf("20261025100210_sherivs_ux1_workspace_manifest.sql"),
