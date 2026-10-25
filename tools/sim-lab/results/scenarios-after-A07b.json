@@ -1,0 +1,1570 @@
+[
+ {
+  "area": "enrollment",
+  "name": "Admin enrolls a student in own school",
+  "pass": true,
+  "detail": "inserted",
+  "severity": "high"
+ },
+ {
+  "area": "enrollment",
+  "name": "Admin cannot enroll into another school",
+  "pass": true,
+  "detail": "rejected by RLS",
+  "severity": "critical"
+ },
+ {
+  "area": "enrollment",
+  "name": "Teacher cannot enroll students",
+  "pass": true,
+  "detail": "rejected",
+  "severity": "high"
+ },
+ {
+  "area": "enrollment",
+  "name": "Duplicate admission number rejected",
+  "pass": true,
+  "detail": "unique constraint",
+  "severity": "high"
+ },
+ {
+  "area": "enrollment",
+  "name": "Bulk intake of 2,000 polytechnic students",
+  "pass": true,
+  "detail": "35 ms",
+  "severity": "medium"
+ },
+ {
+  "area": "rollover",
+  "name": "Database has a session rollover / promotion routine",
+  "pass": true,
+  "detail": "1 matching functions",
+  "severity": "medium"
+ },
+ {
+  "area": "rollover",
+  "name": "Students table can represent graduation / level history",
+  "pass": true,
+  "detail": "3 of status/graduated_at/current_session/level present",
+  "severity": "medium"
+ },
+ {
+  "area": "rollover",
+  "name": "Admin promotes 12,000 university students in one statement",
+  "pass": true,
+  "detail": "11000 rows in 311 ms (ad-hoc SQL, no app routine)",
+  "severity": "medium"
+ },
+ {
+  "area": "rollover",
+  "name": "Admin rollover cannot touch another school",
+  "pass": true,
+  "detail": "0 rows affected",
+  "severity": "critical"
+ },
+ {
+  "area": "results",
+  "name": "Grade letter auto-calculation present",
+  "pass": true,
+  "detail": "grades_autocalc, grades_points_fill, grades_publish_leakage_gate",
+  "severity": "low"
+ },
+ {
+  "area": "results",
+  "name": "Grade bands match the common Nigerian 70/60/50/45/40 scale",
+  "pass": true,
+  "detail": "A:70-100 B:60-69 C:50-59 D:45-49 E:40-44 F:20-39",
+  "severity": "medium"
+ },
+ {
+  "area": "results",
+  "name": "Scores above 100 (CA 40 + exam 95) are rejected",
+  "pass": true,
+  "detail": "rejected",
+  "severity": "high"
+ },
+ {
+  "area": "results",
+  "name": "Schema supports credit units / grade points for CGPA",
+  "pass": true,
+  "detail": "2 unit/point columns on grades",
+  "severity": "high"
+ },
+ {
+  "area": "results",
+  "name": "CGPA computed for 12,000 university students (sim-side, 5-point scale)",
+  "pass": true,
+  "detail": "12000 students; mean 3.17; first class 83",
+  "severity": "low"
+ },
+ {
+  "area": "results",
+  "name": "Student sees only own published results",
+  "pass": true,
+  "detail": "6 own rows, 0 others",
+  "severity": "critical"
+ },
+ {
+  "area": "results",
+  "name": "Parent sees only their children's results",
+  "pass": true,
+  "detail": "2 children visible",
+  "severity": "critical"
+ },
+ {
+  "area": "results",
+  "name": "Teacher cannot change another teacher's scores",
+  "pass": true,
+  "detail": "0 rows changed",
+  "severity": "high"
+ },
+ {
+  "area": "results",
+  "name": "Published results are locked against teacher edits",
+  "pass": true,
+  "detail": "0 published rows edited by teacher",
+  "severity": "high"
+ },
+ {
+  "area": "payments",
+  "name": "Intent bound to the school's own subaccount accepted",
+  "pass": true,
+  "detail": "accepted",
+  "severity": "critical"
+ },
+ {
+  "area": "payments",
+  "name": "Payment for school A routed to school B's subaccount is rejected",
+  "pass": true,
+  "detail": "payment intent subaccount is not the active subaccount of its organization",
+  "severity": "critical"
+ },
+ {
+  "area": "payments",
+  "name": "Existing intent cannot be re-pointed to another school",
+  "pass": true,
+  "detail": "payment intent subaccount is not the active subaccount of its organization",
+  "severity": "critical"
+ },
+ {
+  "area": "payments",
+  "name": "Parent cannot mark fees as paid",
+  "pass": true,
+  "detail": "0 rows changed",
+  "severity": "critical"
+ },
+ {
+  "area": "payments",
+  "name": "Bursar cannot edit another school's fees",
+  "pass": true,
+  "detail": "0 rows",
+  "severity": "critical"
+ },
+ {
+  "area": "payments",
+  "name": "Legacy schools.paystack_secret_key column not readable by anon",
+  "pass": true,
+  "detail": "column privilege denied",
+  "severity": "critical"
+ },
+ {
+  "area": "payments",
+  "name": "Legacy plaintext per-school Paystack secret column removed",
+  "pass": true,
+  "detail": "gone",
+  "severity": "high"
+ },
+ {
+  "area": "rls",
+  "name": "No user sees another school's rows (5 schools x 4 roles x 10 tables)",
+  "pass": true,
+  "detail": "0 leaking role/table pairs",
+  "severity": "critical"
+ },
+ {
+  "area": "rls",
+  "name": "Anonymous visitor sees no students, results or users",
+  "pass": true,
+  "detail": "{\"s\":0,\"g\":0,\"u\":0}",
+  "severity": "critical"
+ },
+ {
+  "area": "rls",
+  "name": "A student cannot read other users' NIN, bank account, salary, phone or face data",
+  "pass": true,
+  "detail": "column privileges withheld",
+  "severity": "critical"
+ },
+ {
+  "area": "rls",
+  "name": "A student cannot list classmates' records (medical, address, parent phone)",
+  "pass": true,
+  "detail": "0 other student rows visible",
+  "severity": "high"
+ },
+ {
+  "area": "privacy",
+  "name": "Teacher cannot SELECT users.nin directly (column privilege)",
+  "pass": true,
+  "detail": "permission denied",
+  "severity": "critical"
+ },
+ {
+  "area": "privacy",
+  "name": "SELECT * on users is refused (app must list safe columns)",
+  "pass": true,
+  "detail": "denied as expected",
+  "severity": "medium"
+ },
+ {
+  "area": "privacy",
+  "name": "User sees own NIN, account number and salary",
+  "pass": true,
+  "detail": "own fields returned",
+  "severity": "high"
+ },
+ {
+  "area": "privacy",
+  "name": "Teacher sees no colleague phone/NIN/account/salary",
+  "pass": true,
+  "detail": "[] visible",
+  "severity": "critical"
+ },
+ {
+  "area": "privacy",
+  "name": "Student sees no staff sensitive fields",
+  "pass": true,
+  "detail": "nothing returned",
+  "severity": "critical"
+ },
+ {
+  "area": "privacy",
+  "name": "Bursar sees staff account number + phone, not salary or NIN",
+  "pass": true,
+  "detail": "as designed",
+  "severity": "high"
+ },
+ {
+  "area": "privacy",
+  "name": "Admin sees salary + account + phone, never NIN or face data",
+  "pass": true,
+  "detail": "as designed",
+  "severity": "high"
+ },
+ {
+  "area": "privacy",
+  "name": "Admin gets nothing for another school's staff",
+  "pass": true,
+  "detail": "0 rows",
+  "severity": "critical"
+ },
+ {
+  "area": "privacy",
+  "name": "Anonymous cannot call users_private_fields",
+  "pass": true,
+  "detail": "denied",
+  "severity": "critical"
+ },
+ {
+  "area": "limits",
+  "name": "50 concurrent SMS sends against a 30 quota: exactly 30 allowed",
+  "pass": true,
+  "detail": "30 allowed, counter 30",
+  "severity": "high"
+ },
+ {
+  "area": "limits",
+  "name": "Negative quantities cannot refund quota",
+  "pass": true,
+  "detail": "returned false",
+  "severity": "high"
+ },
+ {
+  "area": "limits",
+  "name": "School users cannot call the metering function directly",
+  "pass": true,
+  "detail": "permission denied",
+  "severity": "high"
+ },
+ {
+  "area": "limits",
+  "name": "Override longer than 31 days is rejected",
+  "pass": true,
+  "detail": "rejected",
+  "severity": "medium"
+ },
+ {
+  "area": "limits",
+  "name": "Schools' subscription tier is linked to entitlement plans",
+  "pass": true,
+  "detail": "5 schools have a tier, 5 have entitlement rows (synced from tier)",
+  "severity": "medium"
+ },
+ {
+  "area": "audit",
+  "name": "200 linked entries appended",
+  "pass": true,
+  "detail": "all accepted",
+  "severity": "high"
+ },
+ {
+  "area": "audit",
+  "name": "Entry with a wrong previous hash is rejected",
+  "pass": true,
+  "detail": "rejected",
+  "severity": "critical"
+ },
+ {
+  "area": "audit",
+  "name": "Entry skipping sequence numbers is rejected",
+  "pass": true,
+  "detail": "rejected",
+  "severity": "critical"
+ },
+ {
+  "area": "audit",
+  "name": "Audit entries cannot be edited, deleted or truncated (even by the DB owner)",
+  "pass": true,
+  "detail": "update rejected, delete rejected, truncate rejected",
+  "severity": "critical"
+ },
+ {
+  "area": "audit",
+  "name": "Racing writers cannot fork the chain",
+  "pass": true,
+  "detail": "1 of 40 racers won, chain length 1 (losers must retry)",
+  "severity": "high"
+ },
+ {
+  "area": "audit",
+  "name": "Legacy audit_logs table is append-only",
+  "pass": true,
+  "detail": "2 update/delete guard triggers on audit_logs",
+  "severity": "medium"
+ },
+ {
+  "area": "vault",
+  "name": "Grant valid for 5 minutes accepted",
+  "pass": true,
+  "detail": "ttl 300 s",
+  "severity": "high"
+ },
+ {
+  "area": "vault",
+  "name": "Grant longer than 5 minutes rejected",
+  "pass": true,
+  "detail": "ttl 3600 s",
+  "severity": "critical"
+ },
+ {
+  "area": "vault",
+  "name": "Grant whose expiry exceeds issue + 5 min rejected",
+  "pass": true,
+  "detail": "expires_at +10 min",
+  "severity": "critical"
+ },
+ {
+  "area": "vault",
+  "name": "Critical grant cannot be approved without a named approver",
+  "pass": true,
+  "detail": "rejected",
+  "severity": "critical"
+ },
+ {
+  "area": "vault",
+  "name": "Credential access log is append-only",
+  "pass": true,
+  "detail": "rejected",
+  "severity": "critical"
+ },
+ {
+  "area": "vault",
+  "name": "School users cannot read encrypted credential rows",
+  "pass": true,
+  "detail": "permission denied",
+  "severity": "high"
+ },
+ {
+  "area": "vault",
+  "name": "School admin can read own credential access log (product promise)",
+  "pass": true,
+  "detail": "1 rows visible (legacy admin mapped to role:administrator)",
+  "severity": "medium"
+ },
+ {
+  "area": "lifecycle",
+  "name": "Dry-run preview for 12,000 university students changes nothing",
+  "pass": true,
+  "detail": "preview: 11000 promote, 661 repeat, 339 graduate, 0 skip",
+  "severity": "high"
+ },
+ {
+  "area": "lifecycle",
+  "name": "K-12 rollover: SS3 graduates, JSS1 moves into a JSS2 class",
+  "pass": true,
+  "detail": "85 SS3 -> 85 graduated; 86 JSS1 -> 86 in JSS2 classes",
+  "severity": "high"
+ },
+ {
+  "area": "lifecycle",
+  "name": "Re-running the same rollover is a no-op (idempotent)",
+  "pass": true,
+  "detail": "second run already_applied=true",
+  "severity": "critical"
+ },
+ {
+  "area": "lifecycle",
+  "name": "Every change leaves a lifecycle event and an audit entry",
+  "pass": true,
+  "detail": "1200 lifecycle events, 1 audit entry",
+  "severity": "high"
+ },
+ {
+  "area": "lifecycle",
+  "name": "Teacher cannot run a rollover",
+  "pass": true,
+  "detail": "denied",
+  "severity": "critical"
+ },
+ {
+  "area": "lifecycle",
+  "name": "Admin cannot roll over another school",
+  "pass": true,
+  "detail": "denied",
+  "severity": "critical"
+ },
+ {
+  "area": "lifecycle",
+  "name": "University: 7+ carry-over courses repeats (CGPA < 1.00 = probation flag only); only final-level students graduate",
+  "pass": true,
+  "detail": "11000 promoted, 661 repeated (7+ carry-overs or final-level outstanding), 0 on probation, 339 graduated, 2000 need a new class arm",
+  "severity": "high"
+ },
+ {
+  "area": "lifecycle",
+  "name": "Polytechnic: ND2 with failed courses repeats; manual withdraw override honoured",
+  "pass": true,
+  "detail": "ND2 student -> repeated; 1 withdrawn by override; 872 ND2/HND2 graduated",
+  "severity": "high"
+ },
+ {
+  "area": "lifecycle",
+  "name": "Lifecycle history is append-only",
+  "pass": true,
+  "detail": "rejected",
+  "severity": "high"
+ },
+ {
+  "area": "grading",
+  "name": "University results carry 5-point grade points (A=5 ... F=0)",
+  "pass": true,
+  "detail": "A=5 B=4 C=3 D=2 E=1 F=0",
+  "severity": "high"
+ },
+ {
+  "area": "grading",
+  "name": "Polytechnic uses the 4-point NBTE scale (A, AB, B, BC ... F)",
+  "pass": true,
+  "detail": "letters A,AB,B,BC,C,CD,D,E,F; max 4.00",
+  "severity": "medium"
+ },
+ {
+  "area": "grading",
+  "name": "K-12 stays on percentage grading (no grade points)",
+  "pass": true,
+  "detail": "0 of 7200 rows have points",
+  "severity": "medium"
+ },
+ {
+  "area": "grading",
+  "name": "SQL GPA equals independent JS computation",
+  "pass": true,
+  "detail": "SQL 2.65 over 20 units, JS 2.65",
+  "severity": "high"
+ },
+ {
+  "area": "grading",
+  "name": "Failed course becomes a carry-over; passing the retake clears it (both attempts count)",
+  "pass": true,
+  "detail": "outstanding 3 -> 2; units counted 23",
+  "severity": "high"
+ },
+ {
+  "area": "grading",
+  "name": "Degree classes follow NUC 4.50/3.50/2.40/1.50 and NBTE 3.50/3.00/2.50/2.00",
+  "pass": true,
+  "detail": "First Class | Second Class Lower | Third Class | Distinction | Pass",
+  "severity": "medium"
+ },
+ {
+  "area": "grading",
+  "name": "Student transcript shows own published results only",
+  "pass": true,
+  "detail": "own 8 rows, classmate 0",
+  "severity": "critical"
+ },
+ {
+  "area": "tiers",
+  "name": "Every school's tier maps to an entitlement plan",
+  "pass": true,
+  "detail": "enterprise->enterprise growth->growth professional->growth professional->growth starter->starter",
+  "severity": "high"
+ },
+ {
+  "area": "tiers",
+  "name": "Upgrading a school's tier switches its plan automatically",
+  "pass": true,
+  "detail": "starter -> enterprise",
+  "severity": "high"
+ },
+ {
+  "area": "tiers",
+  "name": "Starter SMS quota (500/month placeholder) enforced from the plan",
+  "pass": true,
+  "detail": "5 of 6 x100 sends allowed",
+  "severity": "high"
+ },
+ {
+  "area": "tiers",
+  "name": "School users cannot call plan metering directly",
+  "pass": true,
+  "detail": "denied",
+  "severity": "high"
+ },
+ {
+  "area": "audit",
+  "name": "Legacy audit_logs entries are bridged into the hash chain (verifiable by the TS verifier)",
+  "pass": true,
+  "detail": "2 chain entries verified",
+  "severity": "high"
+ },
+ {
+  "area": "audit",
+  "name": "audit_logs rejects UPDATE and DELETE (even by the DB owner)",
+  "pass": true,
+  "detail": "update rejected, delete rejected",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "School admin cannot read another school's credential log",
+  "pass": true,
+  "detail": "0 rows",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Teacher cannot read the credential log",
+  "pass": true,
+  "detail": "0 rows",
+  "severity": "high"
+ },
+ {
+  "area": "roles",
+  "name": "Demoting a principal ends their administrator assignment",
+  "pass": true,
+  "detail": "0 active assignments after demotion",
+  "severity": "high"
+ },
+ {
+  "area": "roles",
+  "name": "Every admin/principal is mapped to role:administrator",
+  "pass": true,
+  "detail": "10 active assignments for 10 admins/principals",
+  "severity": "medium"
+ },
+ {
+  "area": "roles",
+  "name": "Nigerian role catalog loaded; every template has mandatory permissions",
+  "pass": true,
+  "detail": "572 roles in 39 categories; 394 mandatory + 165 optional template permissions",
+  "severity": "high"
+ },
+ {
+  "area": "roles",
+  "name": "Admin assigns a catalog role with class scope",
+  "pass": true,
+  "detail": "assigned",
+  "severity": "high"
+ },
+ {
+  "area": "roles",
+  "name": "One person holds 2 roles; effective permissions are the union",
+  "pass": true,
+  "detail": "15 effective permissions",
+  "severity": "high"
+ },
+ {
+  "area": "roles",
+  "name": "Admin cannot assign a role to themselves",
+  "pass": true,
+  "detail": "no_self_role_grant: you cannot assign a role to yourself",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Cannot assign a role to another school's user",
+  "pass": true,
+  "detail": "denied / denied",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Mandatory permission cannot be switched off",
+  "pass": true,
+  "detail": "permission grades.enter is mandatory for role ng.subject_teacher and cannot be toggled",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Optional permission toggle applies to holders",
+  "pass": true,
+  "detail": "comms.send_class now still granted (via 2nd role)",
+  "severity": "high"
+ },
+ {
+  "area": "roles",
+  "name": "A role cannot be edited to carry a permission it does not declare",
+  "pass": true,
+  "detail": "permission payroll.approve is not an optional permission of role ng.subject_teacher",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Protected permission cannot be added as a custom grant",
+  "pass": true,
+  "detail": "protected permission payroll.approve can only be held through a catalog role that carries it",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Admin can add a custom permission/context to a role",
+  "pass": true,
+  "detail": "custom.lab_rota added",
+  "severity": "medium"
+ },
+ {
+  "area": "roles",
+  "name": "Custom role inherits every mandatory permission and guardrail of its base role",
+  "pass": true,
+  "detail": "9 mandatory, 5 guardrails inherited",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Role context lists locked mandatory + optional toggles + guardrails",
+  "pass": true,
+  "detail": "9 mandatory / 5 optional / 5 guardrails",
+  "severity": "high"
+ },
+ {
+  "area": "roles",
+  "name": "Separation of duties: Bursar cannot also be Internal Auditor",
+  "pass": true,
+  "detail": "separation of duties: Internal Auditor conflicts with the existing role Bursar",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Direct table writes by API roles are refused",
+  "pass": true,
+  "detail": "denied / denied / denied",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Even the DB owner cannot remove mandatory permissions or guardrails",
+  "pass": true,
+  "detail": "denied / denied / denied",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Teacher scope: own class yes, other class no",
+  "pass": true,
+  "detail": "own=true other=false",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Teacher cannot assign roles or read another user's permissions",
+  "pass": true,
+  "detail": "assign denied; peek 0",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Role context of another school is not visible",
+  "pass": true,
+  "detail": "null",
+  "severity": "high"
+ },
+ {
+  "area": "roles",
+  "name": "A role holder cannot change permissions of their own role",
+  "pass": true,
+  "detail": "no_self_role_grant: you cannot change permissions of a role you hold",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Payroll: preparer and payee cannot approve; a third person can",
+  "pass": true,
+  "detail": "preparer denied, payee denied, principal approved",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Expenses: no self-approval; approval limit enforced (bursar ₦2,000,000)",
+  "pass": true,
+  "detail": "self denied, ₦3m denied, ₦500k approved",
+  "severity": "critical"
+ },
+ {
+  "area": "roles",
+  "name": "Every role/permission change is audited and chained",
+  "pass": true,
+  "detail": "7 audit_logs rows, 7 audit_chain rows (actor + before/after recorded)",
+  "severity": "high"
+ },
+ {
+  "area": "fees",
+  "name": "Paystack education rate (default): ₦152k card = ₦1,064; ₦1m card capped at ₦1,500; transfer ₦300",
+  "pass": true,
+  "detail": "card152k=1064 card1m=1500 transfer=300",
+  "severity": "high"
+ },
+ {
+  "area": "fees",
+  "name": "Fee model is configurable (standard 1.5% + ₦100 cap ₦2,000; ₦100 waived under ₦2,500)",
+  "pass": true,
+  "detail": "std152k=2000 std2k=30",
+  "severity": "high"
+ },
+ {
+  "area": "fees",
+  "name": "Only Sherivs staff can change the fee model (school admin and direct writes refused)",
+  "pass": true,
+  "detail": "rpc not allowed: only Sherivs platform staff set payment fees; direct permission denied for table payment_fee_config",
+  "severity": "critical"
+ },
+ {
+  "area": "fees",
+  "name": "Fee model change is audited",
+  "pass": true,
+  "detail": "1 audit rows",
+  "severity": "high"
+ },
+ {
+  "area": "flags",
+  "name": "Paystack live is locked: platform staff, per-school override and DB owner all refused",
+  "pass": true,
+  "detail": "global flag paystack_live is locked; org flag paystack_live is locked; owner flag paystack_live is locked",
+  "severity": "critical"
+ },
+ {
+  "area": "flags",
+  "name": "Provider flags: staff can enable per school, school admin cannot",
+  "pass": true,
+  "detail": "admin not allowed",
+  "severity": "high"
+ },
+ {
+  "area": "ratelimit",
+  "name": "Onboarding rate limit: per-account (3/day) and global (50/hour) caps refuse new schools",
+  "pass": true,
+  "detail": "first created; account cap rate_limited: at most 3 schools per account per day; global cap rate_limited: onboarding is busy, try again shortly",
+  "severity": "high"
+ },
+ {
+  "area": "ratelimit",
+  "name": "Rate-limit counter cannot be called directly by users",
+  "pass": true,
+  "detail": "permission denied for function rate_limit_take",
+  "severity": "medium"
+ },
+ {
+  "area": "wallet",
+  "name": "Top-up credited only by the verified webhook (service role), idempotent on the Paystack reference",
+  "pass": true,
+  "detail": "admin not allowed: top-ups are credited by the verified payment webhook only; balance after replay 50000",
+  "severity": "critical"
+ },
+ {
+  "area": "wallet",
+  "name": "Term pools come from plan allowances x students (Growth: 8 SMS, 25 WA, 0.25 voice min)",
+  "pass": true,
+  "detail": "{\"sms\":9600,\"tier\":\"growth\",\"students\":1200,\"whatsapp\":30000,\"voice_min\":300}",
+  "severity": "high"
+ },
+ {
+  "area": "wallet",
+  "name": "Pool first, then wallet at the price book (SMS ₦10); replay is not charged twice",
+  "pass": true,
+  "detail": "pool send charged 0; overage 100; balance 49900",
+  "severity": "critical"
+ },
+ {
+  "area": "wallet",
+  "name": "Per-student daily cap enforced (Growth: 1 SMS per student per day)",
+  "pass": true,
+  "detail": "second daily_cap: 1 per student per day on this plan",
+  "severity": "high"
+ },
+ {
+  "area": "wallet",
+  "name": "Hard stop at zero for optional sends; safety messages still go out (wallet may go negative)",
+  "pass": true,
+  "detail": "normal insufficient_wallet: balance 49890.00 is below 140000.00; safety sent; balance -90110",
+  "severity": "critical"
+ },
+ {
+  "area": "wallet",
+  "name": "Low-balance (20%) and negative-balance alerts raised",
+  "pass": true,
+  "detail": "low_balance,negative_balance",
+  "severity": "medium"
+ },
+ {
+  "area": "wallet",
+  "name": "Wallet cannot be minted: direct ledger/balance writes refused and the ledger is append-only even for the DB owner",
+  "pass": true,
+  "detail": "permission denied for table wallet_ledger | permission denied for table school_wallets | wallet_ledger is append-only",
+  "severity": "critical"
+ },
+ {
+  "area": "wallet",
+  "name": "Parents and teachers cannot read the wallet ledger",
+  "pass": true,
+  "detail": "parent 0, teacher 0",
+  "severity": "high"
+ },
+ {
+  "area": "cash",
+  "name": "Cash tracker: teacher refused, receipt required, bursar records with receipt",
+  "pass": "56313e29-2f54-4390-a2a6-e585f82fbfbd",
+  "detail": "teacher not allowed; no receipt receipt photo or receipt number required",
+  "severity": "critical"
+ },
+ {
+  "area": "cash",
+  "name": "Sherivs share debited once per student per term (₦3,000 on Growth), not per instalment",
+  "pass": true,
+  "detail": "first 3000, second 0, wallet moved 3000",
+  "severity": "critical"
+ },
+ {
+  "area": "cash",
+  "name": "Cash for another school's student refused; paid-offline badge shows",
+  "pass": true,
+  "detail": "cross student not in this school; badge true",
+  "severity": "critical"
+ },
+ {
+  "area": "leakage",
+  "name": "Leakage check finds students paid without a Sherivs share",
+  "pass": true,
+  "detail": "{\"gap\":1,\"students_paid\":2,\"shares_collected\":1}",
+  "severity": "high"
+ },
+ {
+  "area": "leakage",
+  "name": "With the contract flag on, results cannot be published until leakage is settled",
+  "pass": true,
+  "detail": "flag off published; flag on results_blocked: 1 students paid without a Sherivs share this term; settle before publishing",
+  "severity": "high"
+ },
+ {
+  "area": "plan",
+  "name": "Upgrade charges the registration difference, effective next term, no refund",
+  "pass": true,
+  "detail": "{\"id\":\"b47b1055-cf9f-42c3-9f9a-6ddce626dd65\",\"refund\":0,\"effective\":\"next_term\",\"registration_difference\":750000}",
+  "severity": "medium"
+ },
+ {
+  "area": "ndpa",
+  "name": "NDPA pack: DPO, NDPC registration, retention schedule, DPIA recorded",
+  "pass": true,
+  "detail": "DPO appointed:ok; NDPC registration:ok; Privacy notice published:ok; Approved DPIA in date:ok; Retention schedule:ok; Guardian consent (core education):todo; Annual audit return filed:todo; No overdue data-subject requests:ok",
+  "severity": "high"
+ },
+ {
+  "area": "ndpa",
+  "name": "DPIA preparer cannot approve their own DPIA; another officer can",
+  "pass": true,
+  "detail": "self sod: the preparer cannot approve their own DPIA",
+  "severity": "critical"
+ },
+ {
+  "area": "ndpa",
+  "name": "Teachers cannot see the NDPA compliance file",
+  "pass": true,
+  "detail": "not allowed",
+  "severity": "high"
+ },
+ {
+  "area": "campus",
+  "name": "A–Z arm generator creates SS1 A–F (Science) once; named arms supported; bad range refused",
+  "pass": true,
+  "detail": "arms 6, rerun 0, named 2, bad arms must be a single letter range A-Z",
+  "severity": "high"
+ },
+ {
+  "area": "campus",
+  "name": "Students can sit in several groups (house + club); other-school students refused",
+  "pass": true,
+  "detail": "house 4, club 2, cross student not in this school",
+  "severity": "high"
+ },
+ {
+  "area": "campus",
+  "name": "Teacher cannot restructure classes; another school cannot add or read campuses",
+  "pass": true,
+  "detail": "teacher not allowed; cross not allowed; cross read 0",
+  "severity": "critical"
+ },
+ {
+  "area": "audit",
+  "name": "Wallet, cash, NDPA and campus changes are audited and chained",
+  "pass": true,
+  "detail": "38 audit rows, 38 chain rows",
+  "severity": "high"
+ },
+ {
+  "area": "comms",
+  "name": "WhatsApp needs an explicit opt-in; with opt-in it goes through the stub adapter (live flag off)",
+  "pass": true,
+  "detail": "blocked_optout → sent_stub via stub",
+  "severity": "critical"
+ },
+ {
+  "area": "comms",
+  "name": "Templates render with school name and variables; Hausa template chosen when asked",
+  "pass": true,
+  "detail": "Dear parent, Ada has an outstanding balance of N50,000 at Sim Lekki Heritage Aca… | lang ha",
+  "severity": "high"
+ },
+ {
+  "area": "comms",
+  "name": "Inbound STOP only via the verified webhook; afterwards normal sends are blocked but safety still goes out",
+  "pass": true,
+  "detail": "user not allowed: inbound is accepted from the verified provider webhook only; after STOP blocked_optout; safety sent_stub; forged safety blocked_optout",
+  "severity": "critical"
+ },
+ {
+  "area": "comms",
+  "name": "Marketing needs comms.broadcast (teacher refused); delivery log cannot be forged",
+  "pass": true,
+  "detail": "not allowed: marketing needs comms.broadcast | permission denied for table outbound_messages",
+  "severity": "high"
+ },
+ {
+  "area": "results",
+  "name": "Scratch-card PINs: generated hashed, unreadable by API roles, teacher cannot mint",
+  "pass": true,
+  "detail": "3 cards; api read permission denied for table result_pins; teacher not allowed",
+  "severity": "critical"
+ },
+ {
+  "area": "results",
+  "name": "Result checker: correct card shows published results; wrong PIN refused; card binds to first student; use limit",
+  "pass": true,
+  "detail": "subjects 6; wrong invalid serial or PIN; other this card is already used by another student; 3rd card exhausted (2 uses)",
+  "severity": "critical"
+ },
+ {
+  "area": "results",
+  "name": "PIN brute force is rate limited per card",
+  "pass": true,
+  "detail": "2 of 12 guesses rate-limited",
+  "severity": "critical"
+ },
+ {
+  "area": "transcripts",
+  "name": "Parent requests own child's transcript only; requester cannot issue; teacher cannot issue; principal issues",
+  "pass": true,
+  "detail": "other child not allowed; self sod: the requester cannot issue their own transcript; teacher not allowed",
+  "severity": "critical"
+ },
+ {
+  "area": "transcripts",
+  "name": "Public verification code confirms a real transcript and reveals no grades",
+  "pass": true,
+  "detail": "{\"valid\":true,\"school\":\"Sim Lekki Heritage Academy\",\"issued_at\":\"2026-10-24\",\"admission_number\":\"LEKK/2024/00001\"}",
+  "severity": "high"
+ },
+ {
+  "area": "admissions",
+  "name": "Funnel: exam → score → offer → acceptance fee (webhook) → enrol; stages cannot be skipped",
+  "pass": true,
+  "detail": "skip cannot move from exam_scheduled to enrolled; funnel {\"enrolled\":1}",
+  "severity": "high"
+ },
+ {
+  "area": "admissions",
+  "name": "Separation of duties: exam scorer cannot make the offer; teacher cannot confirm acceptance fee",
+  "pass": true,
+  "detail": "sod: the officer who scored the entrance exam cannot also make the offer | not allowed",
+  "severity": "critical"
+ },
+ {
+  "area": "admissions",
+  "name": "Another school cannot read the funnel",
+  "pass": true,
+  "detail": "not allowed",
+  "severity": "critical"
+ },
+ {
+  "area": "audit",
+  "name": "Comms, PIN, transcript and admission changes are audited",
+  "pass": true,
+  "detail": "11 audit rows",
+  "severity": "high"
+ },
+ {
+  "area": "scopes",
+  "name": "Scope set limits a role to its campus: same role allowed in North, refused in South (decided by scope layer)",
+  "pass": true,
+  "detail": "in all; out scope",
+  "severity": "critical"
+ },
+ {
+  "area": "scopes",
+  "name": "Scope refs must belong to the school; unknown dimension and empty sets refused",
+  "pass": true,
+  "detail": "scope campus ff4f56d8-bc1f-4fee-aa8f-1de48a504000 is not in this organisation | scope planet x is not in this organisation | scope set needs at least one dimension",
+  "severity": "high"
+ },
+ {
+  "area": "scopes",
+  "name": "Multi-select: OR within a dimension, AND across dimensions (campus North|South AND girls section)",
+  "pass": true,
+  "detail": "before girls section false; after true ",
+  "severity": "critical"
+ },
+ {
+  "area": "scopes",
+  "name": "Time-bound assignment stops granting after valid_until",
+  "pass": true,
+  "detail": "scope",
+  "severity": "high"
+ },
+ {
+  "area": "scopes",
+  "name": "Assigner can never grant wider than own scope, cannot leave their restricted dimension open, cannot widen self",
+  "pass": true,
+  "detail": "widen scope_wider_than_assigner: campus ed714720-171f-446a-886a-c8e0d21b4460 is outside your own operating area; open scope_wider_than_assigner: you must restrict campus like your own scope; self no_self_role_grant: you cannot widen your own operating area; direct permission denied for table role_assignment_scopes",
+  "severity": "critical"
+ },
+ {
+  "area": "authz",
+  "name": "Tenant gate: another school's admin is refused; users cannot evaluate for someone else",
+  "pass": true,
+  "detail": "cross tenant; spoof not allowed",
+  "severity": "critical"
+ },
+ {
+  "area": "authz",
+  "name": "ReBAC: parent sees own child, not another child",
+  "pass": true,
+  "detail": "kid rebac; other tenant",
+  "severity": "critical"
+ },
+ {
+  "area": "authz",
+  "name": "Consent gate: AI tutor refused without ai_processing consent",
+  "pass": true,
+  "detail": "consent",
+  "severity": "critical"
+ },
+ {
+  "area": "authz",
+  "name": "Break-glass: needs a real reason, alerts principal/DPO, grants sensitive read for 1 hour only, cannot be deleted",
+  "pass": true,
+  "detail": "short give a reason of at least 15 characters; alerts 1; expired rbac; delete break_glass_grants is append-only",
+  "severity": "critical"
+ },
+ {
+  "area": "shadow",
+  "name": "Shadow mode logs new vs legacy decisions next to live attendance writes without blocking them",
+  "pass": true,
+  "detail": "insert ALLOWED; logged 1; agree false; report {\"agree\":0,\"checks\":1,\"by_layer\":{\"policy:time_window\":1},\"new_looser\":0,\"new_stricter\":1}",
+  "severity": "high"
+ },
+ {
+  "area": "shadow",
+  "name": "Shadow report is admin/audit only; shadow log cannot be forged",
+  "pass": true,
+  "detail": "not allowed | permission denied for table authz_shadow_log",
+  "severity": "high"
+ },
+ {
+  "area": "onboarding",
+  "name": "Interview is adaptive (shifts asked because has_shifts; boarding + SSS follow-ups) and plan refuses an incomplete interview",
+  "pass": true,
+  "detail": "follow-ups [\"Boarding: houses, hostels and exeat rules\",\"SSS streams: science, arts, commercial, technical\"]; early interview incomplete: [\"institution\", \"campuses\", \"sections\", \"shifts\", \"curriculum\", \"levels\", \"calendar\", \"assessment\", \"fees\", \"people\", ",
+  "severity": "high"
+ },
+ {
+  "area": "onboarding",
+  "name": "Dry-run then apply provisions campuses, sections, shifts, levels, arms (named + lettered), houses, NERDC curriculum",
+  "pass": true,
+  "detail": "plan 16 items; apply ALLOWED; made {\"classes\":8,\"named\":3,\"leveled\":8,\"shifts\":2,\"levels\":4,\"cur\":2,\"houses\":2,\"res\":\"both\"}",
+  "severity": "critical"
+ },
+ {
+  "area": "onboarding",
+  "name": "Apply needs the reviewed plan hash; replay and a second session create no duplicates",
+  "pass": true,
+  "detail": "bad hash plan changed since you reviewed it; re-run the dry run; after re-run 8 classes",
+  "severity": "critical"
+ },
+ {
+  "area": "onboarding",
+  "name": "Tertiary refused in v1 (nursery to SSS first); teacher and other schools cannot run it",
+  "pass": true,
+  "detail": "tertiary is not supported in onboarding v1 (nursery to SSS only) | not allowed | not allowed",
+  "severity": "critical"
+ },
+ {
+  "area": "audit",
+  "name": "Scope sets, structure, break-glass and onboarding are audited",
+  "pass": true,
+  "detail": "43 audit rows",
+  "severity": "high"
+ },
+ {
+  "area": "exams",
+  "name": "Exam timetable: only schedulers create; class clash and out-of-session papers refused",
+  "pass": true,
+  "detail": "teacher not allowed; clash clash: this class already has a paper at that time; outside paper must fall inside the exam session dates",
+  "severity": "high"
+ },
+ {
+  "area": "exams",
+  "name": "Seating plan seats every student once and regenerates idempotently",
+  "pass": true,
+  "detail": "86/86",
+  "severity": "high"
+ },
+ {
+  "area": "exams",
+  "name": "Invigilator cannot be double-booked across overlapping papers",
+  "pass": true,
+  "detail": "double_booked: this invigilator already covers another paper at that time",
+  "severity": "critical"
+ },
+ {
+  "area": "exams",
+  "name": "Malpractice: only that paper's invigilator reports; admin, principal-bridge and reporter cannot decide; decided once",
+  "pass": true,
+  "detail": "other not allowed: only this paper's invigilators can report; admin not allowed; self sod: the reporting invigilator cannot decide the case; again case already decided",
+  "severity": "critical"
+ },
+ {
+  "area": "cbt",
+  "name": "Answer keys never leave the server (table unreadable, list and start omit keys); bad keys refused",
+  "pass": true,
+  "detail": "direct permission denied for table cbt_questions",
+  "severity": "critical"
+ },
+ {
+  "area": "cbt",
+  "name": "Offline sync: stale sequence ignored, restart resumes same attempt, submit scores once",
+  "pass": true,
+  "detail": "score 4/4; restart answers true",
+  "severity": "critical"
+ },
+ {
+  "area": "cbt",
+  "name": "Grace window: answers captured before deadline accepted after reconnect; answers captured after deadline ignored",
+  "pass": true,
+  "detail": "grace 4; late 0",
+  "severity": "critical"
+ },
+ {
+  "area": "cbt",
+  "name": "Students cannot touch another student's attempt; other schools cannot start the test",
+  "pass": true,
+  "detail": "not allowed | not allowed: this test is not for you",
+  "severity": "critical"
+ },
+ {
+  "area": "attendance",
+  "name": "Staff QR check-in: inside geofence accepted; outside, invalid and expired refused; every attempt logged",
+  "pass": true,
+  "detail": "in 25m; far 1401m; logged 4",
+  "severity": "critical"
+ },
+ {
+  "area": "attendance",
+  "name": "Check-in log is append-only and cannot be forged; only managers mint codes; parents cannot check in",
+  "pass": true,
+  "detail": "permission denied for table attendance_check_ins | attendance_check_ins is append-only",
+  "severity": "critical"
+ },
+ {
+  "area": "attendance",
+  "name": "Biometric: refused without consent, works with consent, low match refused, withdrawal stops it; device gateway only",
+  "pass": true,
+  "detail": "no_biometric_consent → ok → no_biometric_consent; user not allowed: device gateway only",
+  "severity": "critical"
+ },
+ {
+  "area": "offline",
+  "name": "Offline attendance batch: applies own-class marks, reports conflicts (other mark, not your class, date range), idempotent replay",
+  "pass": true,
+  "detail": "applied 2; conflicts date_out_of_range,date_out_of_range,not_your_class,server_has_other_mark",
+  "severity": "critical"
+ },
+ {
+  "area": "audit",
+  "name": "Exam, malpractice, CBT, check-in and offline changes are audited",
+  "pass": true,
+  "detail": "288 audit rows",
+  "severity": "high"
+ },
+ {
+  "area": "courses",
+  "name": "Prerequisites: cycle refused; course needing a failed prerequisite refused with the missing code",
+  "pass": true,
+  "detail": "cycle prerequisite cycle; {\"ok\":false,\"error\":\"prerequisite_missing\",\"missing\":\"MTH101\"} ",
+  "severity": "critical"
+ },
+ {
+  "area": "courses",
+  "name": "Registration window enforced; only admins set it",
+  "pass": true,
+  "detail": "registration_closed; teacher not allowed",
+  "severity": "high"
+ },
+ {
+  "area": "courses",
+  "name": "Carry-overs first: new courses blocked until failed courses are re-registered; carry-overs cannot be dropped",
+  "pass": true,
+  "detail": "register_carryovers_first → carry ok → 6 units; drop carry-over courses cannot be dropped",
+  "severity": "critical"
+ },
+ {
+  "area": "courses",
+  "name": "Unit limit (max 24) refuses an over-load",
+  "pass": true,
+  "detail": "{\"ok\":false,\"max\":24,\"error\":\"unit_limit\",\"units\":6}",
+  "severity": "high"
+ },
+ {
+  "area": "courses",
+  "name": "Adviser approves once; students cannot approve or drop others' courses or read them",
+  "pass": true,
+  "detail": "student not allowed; other drop not allowed; again registration is approved",
+  "severity": "critical"
+ },
+ {
+  "area": "siwes",
+  "name": "Placement issues a one-time supervisor code that is never readable back",
+  "pass": true,
+  "detail": "hash permission denied for table siwes_placements",
+  "severity": "critical"
+ },
+ {
+  "area": "siwes",
+  "name": "Logbook: own placement only, meaningful entries, weeks inside placement",
+  "pass": true,
+  "detail": "short new row for relation \"siwes_logbook\" violates check constraint \"siwes_logbook_entry_check\"; far week 40 is outside the placement; other not allowed",
+  "severity": "high"
+ },
+ {
+  "area": "siwes",
+  "name": "Industry supervisor verifies with the code (wrong code refused); verified weeks lock; brute force rate limited",
+  "pass": true,
+  "detail": "verify {\"ok\":true,\"error\":null}; locked week 1 is already verified and locked; rl 4/12",
+  "severity": "critical"
+ },
+ {
+  "area": "warning",
+  "name": "Early warning flags low attendance, low average and failing core subjects; re-runs never duplicate",
+  "pass": true,
+  "detail": "failing_core:act,low_attendance:act,low_average:act; run {\"sharp_drop\":0,\"low_average\":19,\"failing_core\":298,\"low_attendance\":1}",
+  "severity": "high"
+ },
+ {
+  "area": "warning",
+  "name": "Parents see only their child's flags; other schools see none; only staff run it; resolution needs a note",
+  "pass": true,
+  "detail": "parent 3; B 0; short record what was done (10+ characters)",
+  "severity": "high"
+ },
+ {
+  "area": "lessons",
+  "name": "Lesson notes: teacher submits own notes once; reviewer is never the author; returning needs a reason; scheme set by HoD/admin only",
+  "pass": true,
+  "detail": "other not allowed: you can only submit your own lesson notes; dup duplicate key value violates unique constraint \"lesson_note_reviews_open\"; teacher review not allowed; scheme not allowed",
+  "severity": "high"
+ },
+ {
+  "area": "hr",
+  "name": "Appraisal: no self-appraiser; self-review first, all criteria 1–5; only the assigned appraiser reviews; private to the three parties",
+  "pass": true,
+  "detail": "overall 4.00; early waiting for the self-review; self not allowed: only the assigned appraiser can review",
+  "severity": "high"
+ },
+ {
+  "area": "payroll",
+  "name": "PAYE uses Nigeria Tax Act 2025 bands with rent relief and pension: ₦6m gross → ₦749,040/yr",
+  "pass": true,
+  "detail": "paye 749040",
+  "severity": "critical"
+ },
+ {
+  "area": "payroll",
+  "name": "Payroll line: PAYE ₦62,420, pension 8% ₦36,000, loan ₦40,000 deducted; net ₦361,580",
+  "pass": true,
+  "detail": "{\"tax_deduction\":\"62420.00\",\"pension_deduction\":\"36000.00\",\"loan_deduction\":\"40000\",\"net_salary\":\"361580.00\"}",
+  "severity": "critical"
+ },
+ {
+  "area": "payroll",
+  "name": "SoD: no own salary, no self or admin loan approval, approver ≠ preparer; approval reduces loan balance",
+  "pass": true,
+  "detail": "admin loan not allowed; admin approve not allowed; balance 60000; big monthly deduction cannot exceed a third of monthly pay",
+  "severity": "critical"
+ },
+ {
+  "area": "inventory",
+  "name": "Stock never goes negative; moves append-only; reorder alert; direct edits and teachers refused",
+  "pass": true,
+  "detail": "over insufficient stock: 4 box left; direct permission denied for table inventory_items",
+  "severity": "high"
+ },
+ {
+  "area": "assets",
+  "name": "Asset register: unique tags, straight-line book value (₦600k over 4y, 1y old ≈ ₦450k), disposal final, history kept",
+  "pass": true,
+  "detail": "bv 450102.67; events 2",
+  "severity": "high"
+ },
+ {
+  "area": "visitors",
+  "name": "Pick-ups: only the parent authorises; strangers refused; gate code hashed and checked once; revoked authorisation denied at the gate",
+  "pass": true,
+  "detail": "stranger not_an_authorised_pickup; again already_in; revoked pickup_authorisation_revoked",
+  "severity": "critical"
+ },
+ {
+  "area": "audit",
+  "name": "Lesson, HR, payroll, inventory, asset and visitor changes are audited",
+  "pass": true,
+  "detail": "25 audit rows",
+  "severity": "high"
+ },
+ {
+  "area": "ussd",
+  "name": "USSD menu via provider webhook only: menu → child → fee balance (₦100,000) and attendance; unknown numbers and bad choices end politely",
+  "pass": true,
+  "detail": "END Outstanding fees: NGN 100,000. Pay at the bursary or online. | END Present 0 of 0 school days in the last 7 days.",
+  "severity": "high"
+ },
+ {
+  "area": "ivr",
+  "name": "IVR absence calls queue once per child per day in the chosen language; stubbed while voice_live is off; staff only",
+  "pass": true,
+  "detail": "queued 1; replay 0; Sannu. Yaronku bai zo makaranta yau ba.",
+  "severity": "high"
+ },
+ {
+  "area": "donations",
+  "name": "Online gifts only via the payment webhook (idempotent); bursar records transfers; progress hides anonymous donors; ledger append-only",
+  "pass": true,
+  "detail": "raised 400000 of 5000000; user not allowed: payment webhook only",
+  "severity": "critical"
+ },
+ {
+  "area": "gov",
+  "name": "Government dashboard: Sherivs staff grant viewers; only schools that opt in appear; aggregates only (no row access); withdrawal removes the school",
+  "pass": true,
+  "detail": "after {\"s\":1,\"e\":1200,\"att\":0}; raw rows 0",
+  "severity": "critical"
+ },
+ {
+  "area": "i18n",
+  "name": "UI strings in Hausa, Yoruba, Igbo, Pidgin with English fallback; locale preference validated",
+  "pass": true,
+  "detail": "Kuɗin makaranta / Fees",
+  "severity": "medium"
+ },
+ {
+  "area": "audit",
+  "name": "IVR, alumni, donation and data-sharing changes are audited",
+  "pass": true,
+  "detail": "8 audit rows",
+  "severity": "high"
+ },
+ {
+  "area": "wallet_topup",
+  "name": "Staff with wallet.topup create a Paystack intent (NGN100–10m, valid email, own school only); users cannot settle",
+  "pass": true,
+  "detail": "{\"reference\":\"wtp_dcd8fad021c54654b17bbc2c5bf583a8\",\"school_id\":\"5f6ca13c-ed03-4ca1-ad78-088d6aa75a88\",\"amount_kobo\":2500000}",
+  "severity": "high"
+ },
+ {
+  "area": "wallet_topup",
+  "name": "Settlement credits the wallet only on success + exact NGN amount; replays are no-ops; mismatches are rejected",
+  "pass": true,
+  "detail": "delta 25000; settled/duplicate/rejected",
+  "severity": "high"
+ },
+ {
+  "area": "i18n",
+  "name": "Igbo dashboard label is no longer English",
+  "pass": true,
+  "detail": "Ebe nchịkwa",
+  "severity": "low"
+ },
+ {
+  "area": "gov_portal",
+  "name": "Gov officer with no school account gets a portal only after Sherivs grants a jurisdiction; others (teacher, other jurisdiction) are refused",
+  "pass": true,
+  "detail": "mine [{\"id\":\"0dda2754-e93e-4b94-9bc4-a44817634129\",\"lga\":\"AMAC\",\"name\":\"Sim FCT UBEB\",\"state\":\"FCT\"}]",
+  "severity": "high"
+ },
+ {
+  "area": "gov_portal",
+  "name": "Aggregates only: no row access; a school with under 10 students shows no numbers; ownership/LGA groups under 10 are suppressed",
+  "pass": true,
+  "detail": "schools 2; small {\"lga\":\"Bwari\",\"school\":\"Sim Tiny School\",\"enrolled\":null,\"girls_pct\":null,\"ownership\":\"community\",\"suppressed\":true,\"pass_rate_pct\":null,\"attendance_pct\":null}",
+  "severity": "high"
+ },
+ {
+  "area": "gov_portal",
+  "name": "A jurisdiction whose shared schools total under 10 students is fully suppressed; trend weeks are bounded; every view is logged append-only",
+  "pass": true,
+  "detail": "ov2 {\"by_lga\":[{\"lga\":\"Bwari\",\"schools\":1,\"enrolled\":null,\"suppressed\":true,\"attendance_pct\":null}],\"schools\":1,\"enrolled\":null,\"girls_pct\":null,\"per_school\":[{\"lga\":\"Bwari\",\"school\":\"Sim Tiny School\",\"enrolled\":null,\"girls_pct\":null,\"ownership\":\"community\",\"suppressed\":true,\"pass_rate_pct\":null,\"attendance_pct\":null}],\"suppressed\":true,\"by_ownership\":[{\"schools\":1,\"enrolled\":null,\"ownership\":\"community\",\"suppressed\":true,\"attendance_pct\":null}],\"pass_rate_pct\":null,\"attendance_pct_30d\":null}; log 2",
+  "severity": "high"
+ },
+ {
+  "area": "gov_admin",
+  "name": "Only platform staff with platform.gov.manage create jurisdictions and grant/revoke officers (support staff and school admins refused)",
+  "pass": true,
+  "detail": "{\"sup\":\"not allowed: Sherivs platform staff with government access permission only\"}",
+  "severity": "high"
+ },
+ {
+  "area": "gov_admin",
+  "name": "Grant by email (case-insensitive) only for existing non-school accounts; the officer then sees the jurisdiction; revoke removes it",
+  "pass": true,
+  "detail": "grant aff7d2b3-feb8-4d35-b6a2-40e9f6883371; after []",
+  "severity": "high"
+ },
+ {
+  "area": "gov_admin",
+  "name": "Every create/grant/revoke is in the append-only gov_admin_audit",
+  "pass": true,
+  "detail": "[\"jurisdiction_create\",\"viewer_grant\",\"viewer_revoke\"]",
+  "severity": "high"
+ },
+ {
+  "area": "wallet_reconcile",
+  "name": "Reconciler lists only pending intents older than 5 min and not just checked (service role only); checks are counted",
+  "pass": true,
+  "detail": "list1 2; list2 1",
+  "severity": "high"
+ },
+ {
+  "area": "wallet_reconcile",
+  "name": "Stale pending top-ups (>24h) are marked failed exactly once (expiry floor 1h); a late confirmed payment still credits once",
+  "pass": true,
+  "detail": "expired 1/0; bad false; stale {\"status\":\"failed\",\"failure_reason\":\"expired: no payment confirmation\"}; late settled; delta 3000",
+  "severity": "high"
+ },
+ {
+  "area": "custom_domain",
+  "name": "School admin adds a normalised domain and gets TXT + CNAME instructions; teachers, reserved Sherivs hosts, bare SLDs and junk are refused",
+  "pass": true,
+  "detail": "{\"add\":\"portal.sim-5006f85e.sch.ng\",\"reserved\":\"this domain is reserved and cannot be added\"}",
+  "severity": "high"
+ },
+ {
+  "area": "custom_domain",
+  "name": "Tenant isolation: school B cannot claim, see, remove, make primary or rewrite school A's domain",
+  "pass": true,
+  "detail": "{\"bSees\":0,\"bRemove\":false,\"bDirect\":\"permission denied for table school_domains\"}",
+  "severity": "critical"
+ },
+ {
+  "area": "custom_domain",
+  "name": "Unverified domains never resolve; only the service role can verify; anon resolves a verified host (case/trailing-dot insensitive) to school A only, never reads the table",
+  "pass": true,
+  "detail": "{\"anonAfter\":true,\"anonTable\":\"permission denied for table school_domains\"}",
+  "severity": "critical"
+ },
+ {
+  "area": "custom_domain",
+  "name": "Host-scoped login: school A members allowed on A's domain, a school B user is refused there; platform hosts unaffected",
+  "pass": true,
+  "detail": "{\"a\":true,\"t\":true,\"b\":false,\"plat\":true}",
+  "severity": "critical"
+ },
+ {
+  "area": "custom_domain",
+  "name": "Removed domain stops resolving and can be claimed afresh; every action is in the append-only audit; resolver stays fast",
+  "pass": true,
+  "detail": "audit [\"add\",\"check\",\"set_primary\",\"remove\"]; resolve 0.48 ms avg over 2,000 domains",
+  "severity": "high"
+ },
+ {
+  "area": "attendance_offline",
+  "name": "Devices with a clock more than a day off are refused with a clear message",
+  "pass": true,
+  "detail": "clock_skew: device clock is 72 hours off; fix the date and time and sync again",
+  "severity": "high"
+ },
+ {
+  "area": "attendance_offline",
+  "name": "Per-item idempotency: items without ids are rejected; resent items in a new batch are skipped, never double-applied; batch replays return the first answer",
+  "pass": true,
+  "detail": "b1 {\"applied\":2,\"conflicts\":[{\"why\":\"missing_item_id\",\"student_id\":\"072085c9-bbd5-4e62-a5b4-0871abce721d\"}],\"duplicates\":0,\"skew_seconds\":0}; b2 {\"applied\":0,\"conflicts\":[],\"duplicates\":2,\"skew_seconds\":0}; rows 2",
+  "severity": "critical"
+ },
+ {
+  "area": "attendance_offline",
+  "name": "Captured times are corrected for device skew; marks captured in the future are refused",
+  "pass": true,
+  "detail": "fast {\"applied\":1,\"conflicts\":[],\"duplicates\":0,\"skew_seconds\":7200}; future [{\"id\":\"k4\",\"why\":\"captured_in_future\",\"student_id\":\"072085c9-bbd5-4e62-a5b4-0871abce721d\"}]",
+  "severity": "high"
+ },
+ {
+  "area": "attendance_offline",
+  "name": "A different existing mark goes to the conflict queue; teachers see their own items but cannot list or resolve the school queue",
+  "pass": true,
+  "detail": "{\"applied\":0,\"conflicts\":[{\"id\":\"k5\",\"why\":\"server_has_other_mark\",\"yours\":\"present\",\"queued\":true,\"server\":\"absent\",\"student_id\":\"004fe0b9-59ff-4a0c-a5d1-0c5c72fa165b\"}],\"duplicates\":0,\"skew_seconds\":0}; not allowed",
+  "severity": "critical"
+ },
+ {
+  "area": "attendance_offline",
+  "name": "Admins resolve each conflict once with a valid action; accepting the device mark updates attendance",
+  "pass": true,
+  "detail": "accepted_device; final {\"status\":\"present\",\"marked_by\":\"29ed9868-99af-4d4b-a27b-b2837333b9e2\"}",
+  "severity": "high"
+ },
+ {
+  "area": "attendance_offline",
+  "name": "No direct writes; another school cannot list, read or resolve",
+  "pass": true,
+  "detail": "permission denied for table attendance_sync_conflicts | not allowed | not allowed",
+  "severity": "critical"
+ },
+ {
+  "area": "attendance_offline",
+  "name": "Teacher screen offline flow: queued marks sync once, a lost-response retry is a replay, overlapping batches add nothing",
+  "pass": true,
+  "detail": "first 3; retry true; later {\"applied\":0,\"conflicts\":[],\"duplicates\":2,\"skew_seconds\":0}; rows {\"n\":4,\"o\":3}",
+  "severity": "critical"
+ },
+ {
+  "area": "attendance_offline",
+  "name": "A queued mark that disagrees with one saved at school is shown to the teacher and lands in the admin conflict queue",
+  "pass": true,
+  "detail": "teacher 1; admin 1",
+  "severity": "high"
+ }
+]
