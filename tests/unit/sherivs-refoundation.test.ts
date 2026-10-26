@@ -56,7 +56,7 @@ describe("Public company homepage (plane 1)", () => {
   });
 
   it("communicates the category without internal architecture", () => {
-    expect(home).toMatch(/operating intelligence for modern organizations/i);
+    expect(home).toContain("{PLATFORM_TAGLINE}");
     expect(home).toMatch(/The intelligence layer for a world that works together/);
     expect(home).toMatch(/Request a demo/);
     expect(home).not.toMatch(/phase/i);

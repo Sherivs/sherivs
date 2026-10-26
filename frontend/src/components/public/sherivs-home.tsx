@@ -57,9 +57,7 @@ export function SherivsHome() {
                 unified computing platform designed to coordinate work, manage state, and turn
                 intelligence into action.
               </p>
-              <p className="mt-3 max-w-xl text-sm text-sherivs-muted">
-                {PLATFORM_TAGLINE} — the operating intelligence for modern organizations.
-              </p>
+              <p className="mt-3 max-w-xl text-sm text-sherivs-muted">{PLATFORM_TAGLINE}.</p>
               <div className="sherivs-enter sherivs-enter-4 mt-8 flex flex-col gap-3 sm:flex-row">
                 <PublicButton href="/sherivs">Explore the Platform</PublicButton>
                 <PublicButton href="/request-demo" variant="secondary">

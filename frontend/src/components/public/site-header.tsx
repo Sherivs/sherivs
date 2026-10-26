@@ -41,7 +41,17 @@ export function SiteHeader() {
 
         <nav aria-label="Site" className="hidden items-center gap-1 lg:flex">
           {HEADER_GROUPS.map((group) => (
-            <details key={group.id} className="group relative">
+            <details
+              key={group.id}
+              className="group relative"
+              onToggle={(event) => {
+                if (!event.currentTarget.open) return;
+                const root = event.currentTarget.closest("nav");
+                root?.querySelectorAll("details[open]").forEach((node) => {
+                  if (node !== event.currentTarget) node.removeAttribute("open");
+                });
+              }}
+            >
               <summary className="cursor-pointer list-none rounded-md px-3 py-2 text-sm text-sherivs-muted hover:bg-white/5 hover:text-sherivs-white [&::-webkit-details-marker]:hidden">
                 {group.label}
               </summary>
