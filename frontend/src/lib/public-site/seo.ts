@@ -6,7 +6,7 @@ import {
   LEGAL_ENTITY_NAME,
   POSITIONING_STATEMENT,
 } from "@/lib/public-site/company";
-import { PUBLIC_CONTACTS } from "@/lib/public-site/contacts";
+import { PUBLIC_CONTACTS, publishedCompanySocial } from "@/lib/public-site/contacts";
 
 export function publicHead({
   title,
@@ -60,6 +60,7 @@ export function organizationJsonLd() {
       addressRegion: COMPANY_REGION,
       addressCountry: COMPANY_COUNTRY_CODE,
     },
+    sameAs: publishedCompanySocial().map((item) => item.href),
   };
 }
 

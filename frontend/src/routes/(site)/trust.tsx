@@ -21,7 +21,7 @@ function TrustPage() {
     <MarketingPage
       eyebrow="Trust"
       title="Trust center"
-      lead="Only principles and reports we can evidence. Certification badges stay unpublished until the owner supplies them."
+      lead="Only principles we can evidence. Certification badges, registration numbers, and certificate scans stay unpublished."
       crumbs={[
         { href: "/", label: "Home" },
         { href: "/trust", label: "Trust center" },
@@ -34,10 +34,10 @@ function TrustPage() {
           </h2>
           <Callout title="No fabricated attestations" tone="warning">
             SOC 2, ISO 27001, and similar certification badges are not displayed. Sherivs
-            Technologies Limited is the operating company. CAC and TIN details exist as
-            owner-stated facts; identifiers stay unpublished. NSCDC- and NDPA-related matters are
-            pending and are not shown as completed. If procurement requires a specific report, ask
-            during a demo.
+            Technologies Limited is the operating company. Registration numbers, tax identifiers,
+            and certificate scans are not published. NSCDC- and NDPA-related compliance matters are
+            not shown as named certifications here; the exact public terminology has not been
+            confirmed. If procurement requires a specific report, ask during a demo.
           </Callout>
           <ul className="grid gap-4 sm:grid-cols-2">
             {claims.map((claim) => (

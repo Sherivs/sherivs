@@ -27,9 +27,9 @@ export const POSITIONING_TAGLINE = "Intelligence infrastructure for a more conne
 export const POSITIONING_STATEMENT =
   "Sherivs is building an AI-native institutional computing platform that brings people, organizations, AI workforces, and digital twins into a shared, governed computing environment.";
 export const POSITIONING_RETHINKING =
-  "We are rethinking how intelligence is deployed, how work is coordinated, and how digital representations of real-world entities operate across connected systems.";
+  "Sherivs is rethinking how intelligence is deployed, how work is coordinated, and how digital representations of real-world entities operate across connected systems.";
 export const POSITIONING_PROGRAMMABLE =
-  "Our vision is to make computing, coordination, and intelligence programmable capabilities that institutions can build upon—not isolated tools that operate in silos.";
+  "Its long-term vision is to make computing, coordination, and intelligence programmable capabilities that institutions can build upon—not isolated tools that operate in silos.";
 export const POSITIONING_FOUNDATIONS =
   "From institutional applications to autonomous AI workforces and state-aware digital twins, Sherivs is developing the foundations for a world in which intelligent systems can work together with greater coherence, accountability, and control.";
 export const COMPANY_MISSION =

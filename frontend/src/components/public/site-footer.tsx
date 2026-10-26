@@ -5,7 +5,7 @@ import {
   COMPANY_LOCATION_LINE,
   LEGAL_ENTITY_NAME,
 } from "@/lib/public-site/company";
-import { PUBLIC_CONTACTS, PUBLIC_SOCIAL_LINKS } from "@/lib/public-site/contacts";
+import { PUBLIC_CONTACTS, publishedCompanySocial } from "@/lib/public-site/contacts";
 import { publishedPartners } from "@/lib/public-site/partners";
 import { publishedCompliance } from "@/lib/public-site/compliance";
 import { SherivsLogo } from "@/components/brand/sherivs-logo";
@@ -13,7 +13,7 @@ import { SherivsLogo } from "@/components/brand/sherivs-logo";
 export function SiteFooter() {
   const techPartners = publishedPartners("technology_partner");
   const compliance = publishedCompliance();
-  const social = PUBLIC_SOCIAL_LINKS.filter((item) => item.published && item.href);
+  const social = publishedCompanySocial();
 
   return (
     <footer className="border-t border-[var(--sherivs-border)] bg-[var(--sherivs-midnight)]">

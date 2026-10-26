@@ -1,15 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PLATFORM_NAME, PLATFORM_TAGLINE } from "@/lib/platform";
 import {
-  ACCEPTING_CUSTOMERS,
   COMPANY_LOCATION_LINE,
   COMPANY_MISSION,
   COMPANY_VISION,
   LEGAL_ENTITY_NAME,
-  POSITIONING_FOUNDATIONS,
+  POSITIONING_PROGRAMMABLE,
   POSITIONING_RETHINKING,
   POSITIONING_STATEMENT,
 } from "@/lib/public-site/company";
+import { publishedFounderSocial } from "@/lib/public-site/contacts";
 import { publicHead } from "@/lib/public-site/seo";
 import { MarketingPage } from "@/components/public/marketing-page";
 import { PageContainer, PublicButton, Section } from "@/components/public/ui";
@@ -51,7 +51,7 @@ function AboutPage() {
             invent a street address, telephone number, or registration identifier.
           </p>
           <p>{POSITIONING_RETHINKING}</p>
-          <p>{POSITIONING_FOUNDATIONS}</p>
+          <p>{POSITIONING_PROGRAMMABLE}</p>
           <p>
             <span className="font-medium text-sherivs-white">Mission.</span> {COMPANY_MISSION}
           </p>
@@ -65,13 +65,18 @@ function AboutPage() {
             (“is building”, “is developing”) describes the work in progress, not a claim that every
             capability is generally available today.
           </p>
-          {ACCEPTING_CUSTOMERS ? (
-            <p>
-              Sherivs is accepting customers. New organizations currently onboard onto Scholar.
-              Request a demonstration if you want a walkthrough of what is available today versus
-              what remains in development.
+          {publishedFounderSocial().map((item) => (
+            <p key={item.id}>
+              <a
+                href={item.href}
+                rel="noopener noreferrer"
+                className="text-sherivs-cyan underline-offset-4 hover:underline"
+              >
+                {item.label}
+              </a>
+              <span> — a personal profile, not an official Sherivs company page.</span>
             </p>
-          ) : null}
+          ))}
           <p className="font-medium text-sherivs-white">{PLATFORM_TAGLINE}.</p>
           <div className="flex flex-wrap gap-3 pt-4">
             <PublicButton href="/request-demo">Request a demo</PublicButton>

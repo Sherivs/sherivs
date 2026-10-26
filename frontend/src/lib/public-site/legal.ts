@@ -18,7 +18,7 @@ export interface LegalDocument {
 }
 
 const SHARED_UNRESOLVED = [
-  "CAC registration number and certificate identifier for public display",
+  "Registration numbers, TIN, and certificate scans are not published (owner restriction — not requested as a website prerequisite)",
   "Street address and telephone number (not supplied; locality is Maiduguri, Borno State, Nigeria)",
   "Formal privacy lawful bases and retention schedules",
   "Cross-border transfer arrangements",

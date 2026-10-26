@@ -15,46 +15,86 @@ export const PUBLIC_CONTACTS = {
   legal: EMAIL_ROUTING.info.address,
 } as const;
 
-export const PUBLIC_SOCIAL_LINKS: readonly {
-  id: "linkedin" | "facebook" | "x" | "instagram" | "github";
+export type PublicSocialId = "linkedin" | "facebook" | "x" | "instagram" | "github";
+export type PublicSocialSurface = "company" | "founder" | "none";
+
+export interface PublicSocialLink {
+  id: PublicSocialId;
   label: string;
   href: string;
+  handle?: string;
   published: boolean;
+  /** company = footer/contact; founder = About only; none = never public. */
+  surface: PublicSocialSurface;
   notes: string;
-}[] = [
+}
+
+/**
+ * Owner-supplied social destinations (2026-10-26, mission 002).
+ * GitHub is stored only so it cannot be published by accident.
+ * X is unpublished until the exact public profile URL is verified.
+ */
+export const PUBLIC_SOCIAL_LINKS: readonly PublicSocialLink[] = [
   {
-    id: "linkedin",
-    label: "LinkedIn",
-    href: "",
-    published: false,
-    notes: "Owner reports an official account; profile URL not supplied.",
+    id: "instagram",
+    label: "Instagram",
+    href: "https://www.instagram.com/sherivs_?xtok=dXY1ZjhjYnZnYmd3",
+    published: true,
+    surface: "company",
+    notes:
+      "Owner-supplied destination preserved until a canonical public profile URL is verified. Tracking query is as supplied.",
   },
   {
     id: "facebook",
     label: "Facebook",
-    href: "",
-    published: false,
-    notes: "Owner reports an official account; profile URL not supplied.",
+    href: "https://www.facebook.com/share/1EhQZoG9X7/",
+    published: true,
+    surface: "company",
+    notes: "Owner-supplied share destination preserved until a canonical page URL is verified.",
   },
   {
     id: "x",
     label: "X",
     href: "",
+    handle: "@sherivs_",
     published: false,
-    notes: "Owner reports an official account; profile URL not supplied.",
+    surface: "company",
+    notes:
+      "Owner supplied the handle @sherivs_. Exact public profile URL was not verified from this environment (x.com and twitter.com returned 403). Not published as a link.",
   },
   {
-    id: "instagram",
-    label: "Instagram",
-    href: "",
-    published: false,
-    notes: "Owner reports an official account; profile URL not supplied.",
+    id: "linkedin",
+    label: "Founder on LinkedIn",
+    href: "https://www.linkedin.com/in/muhammad-sheriff-yusuf-wasili-84a771434?utm_source=share_via&utm_content=profile&utm_medium=member_android",
+    published: true,
+    surface: "founder",
+    notes:
+      "Personal profile. Must not be presented as an official Sherivs company page. Tracking query is as supplied.",
   },
   {
     id: "github",
     label: "GitHub",
     href: "",
     published: false,
-    notes: "Owner reports an official account; profile URL not supplied.",
+    surface: "none",
+    notes: "Owner explicitly does not want GitHub displayed on the public website.",
   },
 ];
+
+/** Company socials for footer, contact, and Organization JSON-LD. Never GitHub. */
+export function publishedCompanySocial() {
+  return PUBLIC_SOCIAL_LINKS.filter(
+    (item) =>
+      item.published &&
+      item.href.length > 0 &&
+      item.surface === "company" &&
+      item.id !== "github",
+  );
+}
+
+/** Founder profile links for About. Never presented as the company page. */
+export function publishedFounderSocial() {
+  return PUBLIC_SOCIAL_LINKS.filter(
+    (item) => item.published && item.href.length > 0 && item.surface === "founder" && item.id !== "github",
+  );
+}

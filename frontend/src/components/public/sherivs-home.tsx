@@ -3,6 +3,7 @@ import {
   COMPANY_MISSION,
   COMPANY_VISION,
   POSITIONING_PROGRAMMABLE,
+  POSITIONING_RETHINKING,
   POSITIONING_STATEMENT,
 } from "@/lib/public-site/company";
 import { SiteHeader } from "@/components/public/site-header";
@@ -60,6 +61,9 @@ export function SherivsHome() {
               </h1>
               <p className="sherivs-enter sherivs-enter-3 mt-5 max-w-xl text-sm leading-relaxed text-sherivs-muted sm:text-lg">
                 {POSITIONING_STATEMENT}
+              </p>
+              <p className="mt-3 max-w-xl text-sm leading-relaxed text-sherivs-muted sm:text-base">
+                {POSITIONING_RETHINKING}
               </p>
               <p className="mt-3 max-w-xl text-sm text-sherivs-muted">{PLATFORM_TAGLINE}.</p>
               <div className="sherivs-enter sherivs-enter-4 mt-8 flex flex-col gap-3 sm:flex-row">

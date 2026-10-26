@@ -13,15 +13,18 @@ import { HELP_ARTICLES } from "@/lib/public-site/help";
 import { LEGAL_DOCUMENTS } from "@/lib/public-site/legal";
 import { PUBLIC_SITEMAP_PATHS } from "@/lib/public-site/navigation";
 import {
-  THINKTECH_COLLABORATION,
-  THINKTECH_FOCUS,
+  THINKTECH_DESCRIPTION,
   THINKTECH_HEADLINE,
-  THINKTECH_RELATIONSHIP,
   publishedPartners,
 } from "@/lib/public-site/partners";
 import { COMPLIANCE_CLAIMS } from "@/lib/public-site/compliance";
 import { PRODUCT_FAMILIES, ARCHITECTURE_LAYERS } from "@/lib/public-site/capabilities";
-import { PUBLIC_CONTACTS, PUBLIC_SOCIAL_LINKS } from "@/lib/public-site/contacts";
+import {
+  PUBLIC_CONTACTS,
+  PUBLIC_SOCIAL_LINKS,
+  publishedCompanySocial,
+  publishedFounderSocial,
+} from "@/lib/public-site/contacts";
 import {
   ACCEPTING_CUSTOMERS,
   COMPANY_LOCATION_LINE,
@@ -82,15 +85,15 @@ describe("public content honesty", () => {
     expect(publishedPartners("technology_partner").map((p) => p.id)).toEqual(["thinktech"]);
     expect(publishedPartners("technology_partner")[0]?.logoSrc).toBe("/partners/thinktech.png");
     expect(THINKTECH_HEADLINE).toBe("Building the next generation of intelligent technology");
-    expect(THINKTECH_COLLABORATION).toMatch(/collaborating across technology development/);
-    expect(THINKTECH_RELATIONSHIP).toMatch(/establishing, integrating, and growing/);
-    expect(THINKTECH_FOCUS).toMatch(/technology foundations, supporting integrations/);
-    expect(publishedPartners("technology_partner")[0]?.summary).toBe(THINKTECH_COLLABORATION);
+    expect(THINKTECH_DESCRIPTION).toBe(
+      "Sherivs and ThinkTech collaborate across technology development, infrastructure, consulting, integration, and marketing to advance the Sherivs platform. Their work focuses on developing technology foundations, supporting integrations, and growing the Sherivs ecosystem.",
+    );
+    expect(publishedPartners("technology_partner")[0]?.summary).toBe(THINKTECH_DESCRIPTION);
     expect(read("frontend/src/lib/public-site/partners.ts")).not.toMatch(
       /scope has not been supplied/,
     );
-    expect(read("frontend/src/routes/(site)/company.partners.tsx")).toContain("{THINKTECH_FOCUS}");
-    expect(read("frontend/src/lib/public-site/faq.ts")).toContain("THINKTECH_COLLABORATION");
+    expect(read("frontend/src/routes/(site)/company.partners.tsx")).toContain("{THINKTECH_DESCRIPTION}");
+    expect(read("frontend/src/lib/public-site/faq.ts")).toContain("THINKTECH_DESCRIPTION");
     expect(existsSync(join(ROOT, "public/partners/thinktech.png"))).toBe(true);
     expect(existsSync(join(ROOT, "public/brand/sherivs-wordmark.png"))).toBe(true);
     expect(existsSync(join(ROOT, "docs/brand/sherivs-wordmark-source.png"))).toBe(true);
@@ -105,8 +108,12 @@ describe("public content honesty", () => {
     expect(PLATFORM_PAGE_TITLE).toBe(`Sherivs — ${POSITIONING_TAGLINE}`);
     expect(PLATFORM_PAGE_DESCRIPTION).toBe(POSITIONING_STATEMENT);
     expect(POSITIONING_STATEMENT).toMatch(/AI-native institutional computing platform/);
-    expect(POSITIONING_RETHINKING).toMatch(/rethinking how intelligence is deployed/);
-    expect(POSITIONING_PROGRAMMABLE).toMatch(/programmable capabilities/);
+    expect(POSITIONING_RETHINKING).toBe(
+      "Sherivs is rethinking how intelligence is deployed, how work is coordinated, and how digital representations of real-world entities operate across connected systems.",
+    );
+    expect(POSITIONING_PROGRAMMABLE).toBe(
+      "Its long-term vision is to make computing, coordination, and intelligence programmable capabilities that institutions can build upon—not isolated tools that operate in silos.",
+    );
     expect(POSITIONING_FOUNDATIONS).toMatch(/is developing the foundations/);
     expect(COMPANY_MISSION).toBe(
       "Build the computing infrastructure that enables people, institutions, and intelligent systems to work together.",
@@ -115,6 +122,7 @@ describe("public content honesty", () => {
       "A world where intelligence, computation, and coordinated action are accessible capabilities for every institution.",
     );
     expect(read("frontend/src/components/public/sherivs-home.tsx")).toContain("{POSITIONING_STATEMENT}");
+    expect(read("frontend/src/components/public/sherivs-home.tsx")).toContain("{POSITIONING_RETHINKING}");
     expect(read("frontend/src/components/public/sherivs-home.tsx")).toContain("{COMPANY_MISSION}");
     expect(read("frontend/src/components/public/sherivs-home.tsx")).toContain("{COMPANY_VISION}");
     expect(read("frontend/src/lib/public-site/faq.ts")).toContain("POSITIONING_STATEMENT");
@@ -126,8 +134,7 @@ describe("public content honesty", () => {
     expect(PUBLIC_CONTACTS.legal).toBe(PUBLIC_CONTACTS.info);
   });
 
-  it("keeps social links unpublished until URLs are supplied", () => {
-    expect(PUBLIC_SOCIAL_LINKS.every((item) => item.published === false)).toBe(true);
+  it("publishes only owner-supplied company socials and never GitHub", () => {
     expect(PUBLIC_SOCIAL_LINKS.map((item) => item.id).sort()).toEqual([
       "facebook",
       "github",
@@ -135,14 +142,41 @@ describe("public content honesty", () => {
       "linkedin",
       "x",
     ]);
+    const github = PUBLIC_SOCIAL_LINKS.find((item) => item.id === "github");
+    expect(github?.published).toBe(false);
+    expect(github?.href).toBe("");
+    expect(publishedCompanySocial().map((item) => item.id).sort()).toEqual(["facebook", "instagram"]);
+    expect(publishedCompanySocial().every((item) => item.id !== "github")).toBe(true);
+    expect(publishedFounderSocial().map((item) => item.id)).toEqual(["linkedin"]);
+    expect(publishedFounderSocial()[0]?.href).toMatch(/linkedin\.com\/in\//);
+    expect(PUBLIC_SOCIAL_LINKS.find((item) => item.id === "x")?.published).toBe(false);
+    expect(PUBLIC_SOCIAL_LINKS.find((item) => item.id === "x")?.handle).toBe("@sherivs_");
+    expect(read("frontend/src/components/public/site-footer.tsx")).toContain("publishedCompanySocial");
+    expect(read("frontend/src/components/public/site-footer.tsx")).not.toMatch(/github/i);
+    expect(read("frontend/src/routes/(site)/contact.tsx")).not.toMatch(/github/i);
   });
 
   it("does not publish TIN, NSCDC, NDPA, or certification badges", () => {
     expect(COMPLIANCE_CLAIMS.find((c) => c.id === "tin")?.published).toBe(false);
-    expect(COMPLIANCE_CLAIMS.find((c) => c.id === "nscdc")?.status).toBe("pending");
-    expect(COMPLIANCE_CLAIMS.find((c) => c.id === "ndpa")?.status).toBe("pending");
+    expect(COMPLIANCE_CLAIMS.find((c) => c.id === "cac")?.published).toBe(false);
+    expect(COMPLIANCE_CLAIMS.find((c) => c.id === "nscdc")?.status).toBe("unpublished");
+    expect(COMPLIANCE_CLAIMS.find((c) => c.id === "ndpa")?.status).toBe("unpublished");
     expect(COMPLIANCE_CLAIMS.find((c) => c.id === "nscdc")?.published).toBe(false);
     expect(COMPLIANCE_CLAIMS.find((c) => c.id === "ndpa")?.published).toBe(false);
+    expect(read("frontend/src/routes/(site)/trust.tsx")).not.toMatch(/pending and are not shown as completed/);
+  });
+
+  it("keeps the homepage free of customer-availability announcements", () => {
+    const home = read("frontend/src/components/public/sherivs-home.tsx");
+    expect(home).not.toMatch(/accepting customers|now accepting|open for customers/i);
+    expect(home).toContain('href="/sherivs"');
+    expect(home).toContain('href="/request-demo"');
+    expect(FAQ_PREVIEW_IDS).not.toContain("how-to-start");
+    expect(FAQ_PREVIEW_IDS).not.toContain("who-sherivs-serves");
+    for (const id of FAQ_PREVIEW_IDS) {
+      const item = FAQ_ITEMS.find((entry) => entry.id === id);
+      expect(item?.answer, id).not.toMatch(/accepting customers/i);
+    }
   });
 
   it("does not publish certification badges", () => {

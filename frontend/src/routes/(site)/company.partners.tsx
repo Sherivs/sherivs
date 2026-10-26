@@ -1,11 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { publicHead } from "@/lib/public-site/seo";
 import {
-  THINKTECH_COLLABORATION,
-  THINKTECH_FOCUS,
+  THINKTECH_DESCRIPTION,
   THINKTECH_HEADLINE,
   THINKTECH_HONESTY,
-  THINKTECH_RELATIONSHIP,
   publishedPartners,
 } from "@/lib/public-site/partners";
 import { MarketingPage } from "@/components/public/marketing-page";
@@ -16,7 +14,7 @@ export const Route = createFileRoute("/(site)/company/partners")({
   head: () =>
     publicHead({
       title: "Partners",
-      description: THINKTECH_COLLABORATION,
+      description: THINKTECH_DESCRIPTION,
       path: "/company/partners",
     }),
 });
@@ -42,9 +40,7 @@ function PartnersPage() {
             <h2 id="thinktech-heading" className="font-display text-xl font-semibold text-sherivs-white">
               Sherivs and ThinkTech
             </h2>
-            <p>{THINKTECH_COLLABORATION}</p>
-            <p>{THINKTECH_RELATIONSHIP}</p>
-            <p>{THINKTECH_FOCUS}</p>
+            <p>{THINKTECH_DESCRIPTION}</p>
           </div>
           <div>
             <h3 id="partner-list" className="font-display text-lg font-semibold">

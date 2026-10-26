@@ -22,13 +22,13 @@ See `docs/brand/ASSET-INVENTORY.md`. Tokens sampled from the mark: cyan `#14A8FC
 - Legal entity and Maiduguri location on About, footer, JSON-LD (no street, no TIN).
 - Email routing: info / hello / support with distinct form destinations.
 - ThinkTech as `technology_partner`, with owner-supplied collaboration copy (development, infrastructure, consulting, integration, marketing). Separate from Paystack/WhatsApp integrations.
-- CAC/TIN unpublished identifiers; NSCDC/NDPA pending unpublished.
-- Accepting customers stated without counts.
+- CAC/TIN unpublished identifiers (not requested). NSCDC/NDPA obtained per owner; exact public terminology unpublished.
+- Homepage has no customer-availability announcement.
 
 ## 4. Limitations
 
 - Mailto is not ticket creation.
 - ThinkTech collaboration copy is published; exclusive terms, equity, and joint-venture filings are still not claimed.
 - Legal drafts remain noindex pending counsel.
-- Social unpublished.
+- Instagram and Facebook destinations published as supplied; X unpublished pending URL verification; GitHub omitted.
 - Production deploy not claimed.

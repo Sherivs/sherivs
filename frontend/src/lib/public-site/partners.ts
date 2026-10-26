@@ -7,20 +7,16 @@
  */
 
 /**
- * Owner-supplied ThinkTech collaboration copy (2026-10-26).
+ * Owner-approved ThinkTech copy (mission 002, 2026-10-26).
  * Describes published collaboration scope — not a commercial customer
- * reference, exclusive deal, joint-venture filing, or a claim that every
- * listed activity is generally available today.
+ * reference, exclusive deal, joint-venture filing, joint product, or a
+ * claim that every listed activity is generally available today.
  */
 export const THINKTECH_HEADLINE = "Building the next generation of intelligent technology";
-export const THINKTECH_COLLABORATION =
-  "Sherivs and ThinkTech are collaborating across technology development, infrastructure, consulting, integration, and marketing to advance the Sherivs platform.";
-export const THINKTECH_RELATIONSHIP =
-  "The relationship brings together technical development and implementation efforts with the broader work of establishing, integrating, and growing the Sherivs ecosystem.";
-export const THINKTECH_FOCUS =
-  "Together, the focus is on developing the technology foundations, supporting integrations, and market-facing capabilities needed to bring Sherivs' vision to organizations and users.";
+export const THINKTECH_DESCRIPTION =
+  "Sherivs and ThinkTech collaborate across technology development, infrastructure, consulting, integration, and marketing to advance the Sherivs platform. Their work focuses on developing technology foundations, supporting integrations, and growing the Sherivs ecosystem.";
 export const THINKTECH_HONESTY =
-  "This is the owner-supplied collaboration description. It does not invent exclusive terms, equity, a joint-venture registration, or that every listed activity is a generally available product.";
+  "This is the owner-approved collaboration description. It does not invent joint products, customer outcomes, revenue figures, exclusive terms, equity, or that every listed activity is a generally available product.";
 
 export type PartnerKind =
   | "commercial"
@@ -48,7 +44,7 @@ export const PUBLIC_PARTNERS: readonly PublicPartner[] = [
     kind: "technology_partner",
     href: "https://www.thinktech.com",
     logoSrc: "/partners/thinktech.png",
-    summary: THINKTECH_COLLABORATION,
+    summary: THINKTECH_DESCRIPTION,
     published: true,
     notes:
       "Owner-supplied website and logo (cropped from the provided plate; not redrawn). Tagline spelling is as supplied. TLS to thinktech.com could not be verified from this environment (handshake failure); the URL is still published as supplied.",

@@ -1,5 +1,5 @@
 import { POSITIONING_STATEMENT } from "@/lib/public-site/company";
-import { THINKTECH_COLLABORATION, THINKTECH_FOCUS } from "@/lib/public-site/partners";
+import { THINKTECH_DESCRIPTION } from "@/lib/public-site/partners";
 
 export interface FaqItem {
   id: string;
@@ -35,7 +35,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
     category: "About Sherivs",
     question: "Who does Sherivs serve?",
     answer:
-      "Sherivs is built for institutions that need shared identity, records, and governed intelligence — schools first, through Sherivs Scholar, and other organizations as additional runtimes mature. Sherivs Technologies Limited, based in Maiduguri, Borno State, Nigeria, is accepting customers. Education is an important domain; it is not the definition of the company.",
+      "Sherivs is built for institutions that need shared identity, records, and governed intelligence — schools first, through Sherivs Scholar, and other organizations as additional runtimes mature. Sherivs Technologies Limited is based in Maiduguri, Borno State, Nigeria. Education is an important domain; it is not the definition of the company.",
     related: [
       { href: "/about", label: "About" },
       { href: "/solutions", label: "Solutions" },
@@ -103,7 +103,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
     category: "Security",
     question: "Is Sherivs SOC 2 or ISO 27001 certified?",
     answer:
-      "Sherivs does not display SOC 2, ISO 27001, or similar certification badges. The owner states that Sherivs Technologies Limited holds a CAC registration certificate and a FIRS TIN; those identifiers are not published here. NSCDC- and NDPA-related matters are pending and are not shown as completed. Engineering principles on this site (tenant isolation, audit) are not certificates.",
+      "Sherivs does not display SOC 2, ISO 27001, or similar certification badges. Registration numbers and tax identifiers are not published. NSCDC- and NDPA-related compliance matters are not shown as named certifications here; certificate details stay unpublished. Engineering principles on this site (tenant isolation, audit) are not certificates.",
     related: [
       { href: "/security", label: "Security" },
       { href: "/trust", label: "Trust center" },
@@ -114,7 +114,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
     category: "Onboarding",
     question: "How do we get started?",
     answer:
-      "Sherivs is accepting customers. Request a demo (hello@sherivs.com) for a walkthrough, or create an organization from Sign in. New organizations currently onboard onto Scholar. There are no public demo passwords on the website.",
+      "Request a demo (hello@sherivs.com) for a walkthrough, or create an organization from Sign in. New organizations currently onboard onto Scholar. There are no public demo passwords on the website.",
     related: [
       { href: "/request-demo", label: "Request a demo" },
       { href: "/auth", label: "Sign in" },
@@ -124,7 +124,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
     id: "thinktech",
     category: "About Sherivs",
     question: "Who is ThinkTech?",
-    answer: `${THINKTECH_COLLABORATION} ${THINKTECH_FOCUS} ThinkTech is a published technology partner — not a commercial customer reference, and not the same as configured integrations such as Paystack or WhatsApp.`,
+    answer: `${THINKTECH_DESCRIPTION} ThinkTech is a published technology partner — not a commercial customer reference, and not the same as configured integrations such as Paystack or WhatsApp.`,
     related: [
       { href: "/company/partners", label: "Partners" },
       { href: "/integrations", label: "Integrations" },
@@ -180,11 +180,9 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
 
 export const FAQ_PREVIEW_IDS = [
   "what-is-sherivs",
-  "who-sherivs-serves",
   "not-a-chatbot",
   "available-today",
   "ai-workforce-limits",
   "twins-today",
-  "how-to-start",
   "support-path",
 ] as const;

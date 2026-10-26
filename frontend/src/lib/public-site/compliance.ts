@@ -2,8 +2,9 @@
  * Public compliance and certification claims.
  *
  * Only `published: true` entries may appear as badges or “certified”
- * statements. Owner-stated registrations without public identifiers stay
- * unpublished. Pending matters must never render as completed.
+ * statements. Registration numbers and certificate scans stay unpublished
+ * and must not be requested as a website prerequisite. Obtained-but-undisclosed
+ * matters stay unpublished until exact public terminology is confirmed.
  */
 export interface ComplianceClaim {
   id: string;
@@ -24,9 +25,9 @@ export const COMPLIANCE_CLAIMS: readonly ComplianceClaim[] = [
     published: false,
     publicDisclosure: "entity_only",
     summary:
-      "The owner states that Sherivs Technologies Limited holds a CAC company registration certificate. The registration number, issue date, and certificate identifier are not published until the owner confirms the exact public-facing details.",
-    ownerContext: "Owner-provided: CAC company registration certificate exists.",
-    publishWhen: "Owner supplies the exact public registration identifier and approves publication.",
+      "Sherivs Technologies Limited is the legal entity. CAC registration identifiers and certificate scans are not published (owner restriction).",
+    ownerContext: "Owner 002: company name may be shown; registration numbers and certificate scans must not be published or requested as a website prerequisite.",
+    publishWhen: "Remain unpublished. Do not request the registration number.",
   },
   {
     id: "tin",
@@ -34,31 +35,35 @@ export const COMPLIANCE_CLAIMS: readonly ComplianceClaim[] = [
     status: "unpublished",
     published: false,
     publicDisclosure: "omit",
-    summary:
-      "The owner states that FIRS has issued a TIN. The TIN is not published on the marketing site.",
-    ownerContext: "Owner-provided: TIN issued by FIRS. Default: keep off the public footer.",
-    publishWhen: "Owner explicitly approves publication of the TIN for a legitimate purpose.",
+    summary: "Tax identification numbers are not published on the marketing site (owner restriction).",
+    ownerContext: "Owner 002: do not publish TIN, certificate scans, or request the identifier as a website prerequisite.",
+    publishWhen: "Remain unpublished. Do not request the TIN.",
   },
   {
     id: "nscdc",
     name: "NSCDC-related compliance",
-    status: "pending",
+    status: "unpublished",
     published: false,
     publicDisclosure: "omit",
-    summary: "Pending. Not a completed registration or certification.",
-    ownerContext: "Owner-provided: pending. Do not display as approved or certified.",
-    publishWhen: "Owner confirms whether and how pending status should be disclosed, with evidence.",
+    summary:
+      "The owner states that relevant NSCDC-related compliance matters have been obtained. Certificate details and the exact public terminology (registration, compliance status, certification, accreditation, or approval) are not disclosed here.",
+    ownerContext:
+      "Owner 002: obtained; do not disclose certificates; do not invent a certification name or treat this as a public badge.",
+    publishWhen:
+      "Owner confirms exact public wording. Do not request certificate numbers. Do not describe as pending.",
   },
   {
     id: "ndpa",
     name: "NDPA-related compliance",
-    status: "pending",
+    status: "unpublished",
     published: false,
     publicDisclosure: "omit",
     summary:
-      "Pending. NDPA is not treated as a generic certification badge. Do not claim NDPA certified.",
-    ownerContext: "Owner-provided: pending. Nigeria Data Protection Act context, not a badge.",
-    publishWhen: "Owner confirms public wording with evidence. Never as a fake certification mark.",
+      "The owner states that relevant NDPA-related compliance matters have been obtained. Certificate details and the exact public terminology are not disclosed. This is not shown as an NDPA certification badge.",
+    ownerContext:
+      "Owner 002: obtained; do not disclose certificates; do not claim “NDPA certified” without confirmed terminology.",
+    publishWhen:
+      "Owner confirms exact public wording distinguishing registration, compliance, certification, accreditation, or approval. Do not request certificate numbers.",
   },
   {
     id: "soc2",
