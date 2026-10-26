@@ -61,26 +61,28 @@ export const Route = createFileRoute("/")({
 const platformHead = () => ({
   meta: [
     {
-      title: `${PLATFORM_NAME} — The operating intelligence for modern organizations`,
+      title: `${PLATFORM_NAME} — The intelligence layer for a world that works together`,
     },
     {
       name: "description",
       content:
-        "Sherivs connects your organization's people, knowledge, workflows, communications, data, and AI workforce into one intelligent operating environment.",
+        "Sherivs connects people, organizations, AI agents, and digital twins through a unified computing platform designed to coordinate work, manage state, and turn intelligence into action.",
     },
     {
       property: "og:title",
-      content: `${PLATFORM_NAME} — Intelligent operating infrastructure for organizations`,
+      content: `${PLATFORM_NAME} — The intelligence layer for a world that works together`,
     },
     {
       property: "og:description",
       content:
-        "One intelligent operating environment for organizations: people, knowledge, workflows, AI workforce, and operations — governed by design.",
+        "Sherivs connects people, organizations, AI agents, and digital twins through a unified computing platform.",
     },
     { property: "og:type", content: "website" },
     { property: "og:url", content: `${PLATFORM_URL}/` },
     { property: "og:image", content: `${PLATFORM_URL}/og-image.png` },
     { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:title", content: `${PLATFORM_NAME} — The intelligence layer for a world that works together` },
+    { name: "twitter:description", content: "Institutional computing for organizations, with Scholar available today." },
     { name: "twitter:image", content: `${PLATFORM_URL}/og-image.png` },
   ],
   links: [{ rel: "canonical", href: `${PLATFORM_URL}/` }],

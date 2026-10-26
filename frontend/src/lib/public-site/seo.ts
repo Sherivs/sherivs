@@ -1,0 +1,111 @@
+import { PLATFORM_NAME, PLATFORM_URL } from "@/lib/platform";
+
+export function publicHead({
+  title,
+  description,
+  path,
+  noindex = false,
+  ogType = "website",
+}: {
+  title: string;
+  description: string;
+  path: string;
+  noindex?: boolean;
+  ogType?: "website" | "article";
+}) {
+  const url = path.startsWith("http") ? path : `${PLATFORM_URL}${path}`;
+  const pageTitle = title.includes(PLATFORM_NAME) ? title : `${title} — ${PLATFORM_NAME}`;
+  return {
+    meta: [
+      { title: pageTitle },
+      { name: "description", content: description },
+      { property: "og:title", content: pageTitle },
+      { property: "og:description", content: description },
+      { property: "og:type", content: ogType },
+      { property: "og:url", content: url },
+      { property: "og:image", content: `${PLATFORM_URL}/og-image.png` },
+      { property: "og:site_name", content: PLATFORM_NAME },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: pageTitle },
+      { name: "twitter:description", content: description },
+      { name: "twitter:image", content: `${PLATFORM_URL}/og-image.png` },
+      ...(noindex
+        ? [{ name: "robots", content: "noindex, nofollow" }]
+        : [{ name: "robots", content: "index, follow" }]),
+    ],
+    links: [{ rel: "canonical", href: url }],
+  };
+}
+
+export function organizationJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: PLATFORM_NAME,
+    url: PLATFORM_URL,
+    logo: `${PLATFORM_URL}/brand/sherivs-logo-512.png`,
+    email: "hello@sherivs.com",
+  };
+}
+
+export function softwareJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: PLATFORM_NAME,
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web",
+    url: PLATFORM_URL,
+    description:
+      "Sherivs is an AI-native institutional computing platform that connects people, organizations, AI agents, and digital twins through a governed environment.",
+  };
+}
+
+export function breadcrumbJsonLd(items: readonly { name: string; path: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: `${PLATFORM_URL}${item.path}`,
+    })),
+  };
+}
+
+export function faqJsonLd(items: readonly { question: string; answer: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: { "@type": "Answer", text: item.answer },
+    })),
+  };
+}
+
+export function articleJsonLd(article: {
+  title: string;
+  summary: string;
+  path: string;
+  publishedAt: string;
+  updatedAt: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: article.title,
+    description: article.summary,
+    datePublished: article.publishedAt,
+    dateModified: article.updatedAt,
+    author: { "@type": "Organization", name: PLATFORM_NAME },
+    publisher: {
+      "@type": "Organization",
+      name: PLATFORM_NAME,
+      logo: { "@type": "ImageObject", url: `${PLATFORM_URL}/brand/sherivs-logo-512.png` },
+    },
+    mainEntityOfPage: `${PLATFORM_URL}${article.path}`,
+  };
+}

@@ -1,0 +1,142 @@
+/*
+ * SHERIVS REALITY INTELLIGENCE — LUMINOUS ENTERPRISE
+ *
+ * Public-site design tokens. Hex values live here only; components consume
+ * CSS custom properties / Tailwind theme aliases. Sampled from the official
+ * Sherivs mark (royal blue #184EFD, cyan #24BFFD, violet family) and tuned
+ * for WCAG 2.2 AA contrast on the dark primary surface.
+ */
+
+:root {
+  --sherivs-obsidian: #080d1a;
+  --sherivs-midnight: #10182b;
+  --sherivs-navy: #162038;
+  --sherivs-blue: #184efd;
+  --sherivs-blue-bright: #4263ff;
+  --sherivs-cyan: #24bffd;
+  --sherivs-violet: #9067ff;
+  --sherivs-white: #f5f8ff;
+  --sherivs-muted: #b7c0d4;
+  --sherivs-success: #39d98a;
+  --sherivs-warning: #ffc857;
+  --sherivs-danger: #ff6b7a;
+
+  --sherivs-bg: var(--sherivs-obsidian);
+  --sherivs-bg-elevated: var(--sherivs-midnight);
+  --sherivs-bg-panel: var(--sherivs-navy);
+  --sherivs-text: var(--sherivs-white);
+  --sherivs-text-muted: var(--sherivs-muted);
+  --sherivs-border: rgba(245, 248, 255, 0.1);
+  --sherivs-border-strong: rgba(245, 248, 255, 0.18);
+  --sherivs-glass: rgba(16, 24, 43, 0.64);
+  --sherivs-glass-border: rgba(66, 99, 255, 0.28);
+  --sherivs-focus: #7aa2ff;
+  --sherivs-shadow: 0 18px 48px rgba(0, 0, 0, 0.38);
+  --sherivs-shadow-glow: 0 0 0 1px rgba(24, 78, 253, 0.25), 0 24px 64px rgba(24, 78, 253, 0.12);
+
+  --sherivs-radius-sm: 8px;
+  --sherivs-radius: 14px;
+  --sherivs-radius-lg: 22px;
+  --sherivs-space-1: 0.25rem;
+  --sherivs-space-2: 0.5rem;
+  --sherivs-space-3: 0.75rem;
+  --sherivs-space-4: 1rem;
+  --sherivs-space-6: 1.5rem;
+  --sherivs-space-8: 2rem;
+  --sherivs-space-12: 3rem;
+  --sherivs-space-16: 4rem;
+  --sherivs-space-24: 6rem;
+  --sherivs-container: 72rem;
+  --sherivs-container-wide: 80rem;
+  --sherivs-prose: 42rem;
+
+  --sherivs-motion-fast: 160ms;
+  --sherivs-motion: 420ms;
+  --sherivs-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --sherivs-z-nav: 40;
+  --sherivs-z-overlay: 50;
+  --sherivs-z-toast: 60;
+}
+
+@theme inline {
+  --color-sherivs-obsidian: var(--sherivs-obsidian);
+  --color-sherivs-midnight: var(--sherivs-midnight);
+  --color-sherivs-navy: var(--sherivs-navy);
+  --color-sherivs-blue: var(--sherivs-blue);
+  --color-sherivs-cyan: var(--sherivs-cyan);
+  --color-sherivs-violet: var(--sherivs-violet);
+  --color-sherivs-white: var(--sherivs-white);
+  --color-sherivs-muted: var(--sherivs-muted);
+  --color-sherivs-success: var(--sherivs-success);
+  --color-sherivs-warning: var(--sherivs-warning);
+}
+
+.sherivs-public {
+  color: var(--sherivs-text);
+  background: var(--sherivs-bg);
+}
+
+.sherivs-public :focus-visible {
+  outline: 2px solid var(--sherivs-focus);
+  outline-offset: 3px;
+}
+
+.sherivs-glass {
+  background: var(--sherivs-glass);
+  border: 1px solid var(--sherivs-glass-border);
+  backdrop-filter: blur(18px) saturate(140%);
+  box-shadow: var(--sherivs-shadow-glow);
+}
+
+.sherivs-kicker {
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--sherivs-cyan);
+}
+
+.sherivs-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+}
+
+@keyframes sherivs-fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes sherivs-pulse-node {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+@keyframes sherivs-dash {
+  to { stroke-dashoffset: -24; }
+}
+
+.sherivs-enter {
+  animation: sherivs-fade-up var(--sherivs-motion) var(--sherivs-ease) both;
+}
+
+.sherivs-enter-2 { animation-delay: 80ms; }
+.sherivs-enter-3 { animation-delay: 160ms; }
+.sherivs-enter-4 { animation-delay: 240ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sherivs-public {
+    --sherivs-motion-fast: 0ms;
+    --sherivs-motion: 0ms;
+  }
+  .sherivs-enter,
+  .sherivs-enter-2,
+  .sherivs-enter-3,
+  .sherivs-enter-4 {
+    animation: none;
+  }
+  .sherivs-motion-loop {
+    animation: none !important;
+  }
+}

@@ -9,6 +9,7 @@ import {
   type AnalyticsConsent,
 } from "@/lib/analytics/consent";
 import { identifyPosthog, startPosthog, stopPosthog } from "@/lib/analytics/posthog";
+import { resolveExperienceHost } from "@/lib/experience/experience-host";
 
 const KEY = import.meta.env.VITE_POSTHOG_KEY as string | undefined;
 const HOST = import.meta.env.VITE_POSTHOG_HOST as string | undefined;
@@ -64,7 +65,14 @@ export function AnalyticsConsent() {
         With your permission we collect anonymous usage analytics (pages visited and buttons
         used). We never record your screen, what you type, or your name, email or phone.
         Student accounts are never tracked. See our{" "}
-        <a href="/privacy" className="underline">
+        <a
+          href={
+            resolveExperienceHost(window.location.hostname) === "tenant"
+              ? "/privacy"
+              : "/privacy-policy"
+          }
+          className="underline"
+        >
           privacy notice
         </a>
         .

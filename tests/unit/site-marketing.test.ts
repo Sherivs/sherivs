@@ -134,9 +134,8 @@ describe("Route modules — real links, no fake submissions, landmarks", () => {
   });
 
   it("links sign-up and sign-in to the real auth surface at /auth", () => {
-    for (const source of [layout, page]) {
-      expect(source).toContain('to="/auth"');
-    }
+    expect(header).toContain('to="/auth"');
+    expect(page).toContain('to="/auth"');
     // No dead platform sign-up route is invented.
     expect(layout).not.toContain('to="/signup"');
     expect(page).not.toContain('to="/signup"');
@@ -154,14 +153,12 @@ describe("Route modules — real links, no fake submissions, landmarks", () => {
     // Header landmarks live in the shared SiteHeader component.
     expect(header).toContain("<header");
     expect(header).toMatch(/aria-label="Site"/);
-    // The header's section navigation anchors into the public homepage
-    // (the company experience at /), not into this page.
-    for (const anchor of ["platform", "ai-workforce", "solutions", "enterprise", "security"]) {
-      expect(header).toContain(`"/#${anchor}"`);
-    }
+    expect(header).toContain('to="/sherivs"');
+    expect(header).toContain('to="/request-demo"');
+    expect(header).toContain('to="/auth"');
     expect(layout).toContain("<SiteHeader />");
     expect(layout).toContain("<main");
-    expect(layout).toContain("<footer");
+    expect(layout).toContain("<SiteFooter />");
     for (const anchor of ["capabilities", "runtimes", "security", "pricing"]) {
       expect(page).toContain(`id="${anchor}"`);
     }
