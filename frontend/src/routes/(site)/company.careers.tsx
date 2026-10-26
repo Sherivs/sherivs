@@ -33,8 +33,8 @@ function CareersPage() {
           </h2>
           <p>
             If you want to work on institutional computing, write to{" "}
-            <a className="text-sherivs-cyan underline-offset-4 hover:underline" href={`mailto:${PUBLIC_CONTACTS.sales}`}>
-              {PUBLIC_CONTACTS.sales}
+            <a className="text-sherivs-cyan underline-offset-4 hover:underline" href={`mailto:${PUBLIC_CONTACTS.info}`}>
+              {PUBLIC_CONTACTS.info}
             </a>
             . We will not invent roles, locations, or headcount to fill this page.
           </p>

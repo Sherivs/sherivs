@@ -36,8 +36,8 @@ function RequestDemoPage() {
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-sherivs-muted">
               Direct address:{" "}
-              <a className="text-sherivs-cyan underline-offset-4 hover:underline" href={`mailto:${PUBLIC_CONTACTS.sales}?subject=Demo%20request`}>
-                {PUBLIC_CONTACTS.sales}
+              <a className="text-sherivs-cyan underline-offset-4 hover:underline" href={`mailto:${PUBLIC_CONTACTS.hello}?subject=Demo%20request`}>
+                {PUBLIC_CONTACTS.hello}
               </a>
             </p>
             <div className="mt-8 grid gap-4">

@@ -3,20 +3,20 @@
  *
  * Public-site design tokens. Hex values live here only; components consume
  * CSS custom properties / Tailwind theme aliases. Sampled from the official
- * Sherivs mark (royal blue #184EFD, cyan #24BFFD, violet family) and tuned
+ * Sherivs mark (sampled cyan #14A8FC, blue #1848FD, violet #8254F6) and tuned
  * for WCAG 2.2 AA contrast on the dark primary surface.
  */
 
 :root {
-  --sherivs-obsidian: #080d1a;
+  --sherivs-obsidian: #080b18;
   --sherivs-midnight: #10182b;
   --sherivs-navy: #162038;
-  --sherivs-blue: #184efd;
-  --sherivs-blue-bright: #4263ff;
-  --sherivs-cyan: #24bffd;
-  --sherivs-violet: #9067ff;
-  --sherivs-white: #f5f8ff;
-  --sherivs-muted: #b7c0d4;
+  --sherivs-blue: #1848fd;
+  --sherivs-blue-bright: #246bfd;
+  --sherivs-cyan: #14a8fc;
+  --sherivs-violet: #8254f6;
+  --sherivs-white: #f7f9ff;
+  --sherivs-muted: #aab4c8;
   --sherivs-success: #39d98a;
   --sherivs-warning: #ffc857;
   --sherivs-danger: #ff6b7a;

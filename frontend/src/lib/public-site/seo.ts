@@ -1,4 +1,11 @@
 import { PLATFORM_NAME, PLATFORM_URL } from "@/lib/platform";
+import {
+  COMPANY_COUNTRY_CODE,
+  COMPANY_LOCALITY,
+  COMPANY_REGION,
+  LEGAL_ENTITY_NAME,
+} from "@/lib/public-site/company";
+import { PUBLIC_CONTACTS } from "@/lib/public-site/contacts";
 
 export function publicHead({
   title,
@@ -42,9 +49,16 @@ export function organizationJsonLd() {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: PLATFORM_NAME,
+    legalName: LEGAL_ENTITY_NAME,
     url: PLATFORM_URL,
     logo: `${PLATFORM_URL}/brand/sherivs-logo-512.png`,
-    email: "hello@sherivs.com",
+    email: [PUBLIC_CONTACTS.info, PUBLIC_CONTACTS.hello, PUBLIC_CONTACTS.support],
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: COMPANY_LOCALITY,
+      addressRegion: COMPANY_REGION,
+      addressCountry: COMPANY_COUNTRY_CODE,
+    },
   };
 }
 

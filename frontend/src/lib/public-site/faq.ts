@@ -29,6 +29,39 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
     ],
   },
   {
+    id: "who-sherivs-serves",
+    category: "About Sherivs",
+    question: "Who does Sherivs serve?",
+    answer:
+      "Sherivs is built for institutions that need shared identity, records, and governed intelligence — schools first, through Sherivs Scholar, and other organizations as additional runtimes mature. Sherivs Technologies Limited, based in Maiduguri, Borno State, Nigeria, is accepting customers. Education is an important domain; it is not the definition of the company.",
+    related: [
+      { href: "/about", label: "About" },
+      { href: "/solutions", label: "Solutions" },
+    ],
+  },
+  {
+    id: "not-a-chatbot",
+    category: "About Sherivs",
+    question: "How is Sherivs different from a conventional AI assistant?",
+    answer:
+      "An assistant replies in a side panel. Sherivs is designed as institutional computing: people, organizations, agents, and twins share identity, policy, and state. AI workers are bounded identities with owners and oversight, not a single unbounded chatbot. Unlimited autonomous execution is not offered.",
+    related: [
+      { href: "/sherivs", label: "Platform" },
+      { href: "/product/ai-workforce", label: "AI workforce" },
+    ],
+  },
+  {
+    id: "institutional-computing",
+    category: "About Sherivs",
+    question: "What does institutional computing mean?",
+    answer:
+      "Institutional computing is a shared, governed environment where an organization's people, records, agents, and twins operate together instead of across disconnected tools. Canonical records stay separate from derived intelligence. See the insights article for a fuller definition.",
+    related: [
+      { href: "/insights/what-is-institutional-computing", label: "Article" },
+      { href: "/product/institutional-computing", label: "Institutional computing" },
+    ],
+  },
+  {
     id: "available-today",
     category: "Product availability",
     question: "What can an organization use today?",
@@ -68,7 +101,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
     category: "Security",
     question: "Is Sherivs SOC 2 or ISO 27001 certified?",
     answer:
-      "Sherivs does not display certification badges or registration numbers on this site because no owner-approved evidence is on file. The platform is built around tenant isolation, authenticated access, and audit trails. Those are engineering principles, not certificates.",
+      "Sherivs does not display SOC 2, ISO 27001, or similar certification badges. The owner states that Sherivs Technologies Limited holds a CAC registration certificate and a FIRS TIN; those identifiers are not published here. NSCDC- and NDPA-related matters are pending and are not shown as completed. Engineering principles on this site (tenant isolation, audit) are not certificates.",
     related: [
       { href: "/security", label: "Security" },
       { href: "/trust", label: "Trust center" },
@@ -79,7 +112,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
     category: "Onboarding",
     question: "How do we get started?",
     answer:
-      "Request a demo if you want a walkthrough, or create an organization from Sign in. New organizations currently onboard onto Scholar. There are no public demo passwords on the website.",
+      "Sherivs is accepting customers. Request a demo (hello@sherivs.com) for a walkthrough, or create an organization from Sign in. New organizations currently onboard onto Scholar. There are no public demo passwords on the website.",
     related: [
       { href: "/request-demo", label: "Request a demo" },
       { href: "/auth", label: "Sign in" },
@@ -109,7 +142,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
     category: "Security",
     question: "Where is data stored?",
     answer:
-      "A public, owner-approved data-residency statement is not on file. This site will not invent regions or transfer clauses. Ask during a demo or write to privacy@sherivs.com if residency is a requirement for your organization.",
+      "A public, owner-approved data-residency statement is not on file. This site will not invent regions or transfer clauses. Ask during a demo or write to info@sherivs.com if residency is a requirement for your organization.",
     related: [{ href: "/privacy-policy", label: "Privacy policy" }],
   },
   {
@@ -135,11 +168,11 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
 
 export const FAQ_PREVIEW_IDS = [
   "what-is-sherivs",
+  "who-sherivs-serves",
+  "not-a-chatbot",
   "available-today",
   "ai-workforce-limits",
   "twins-today",
-  "security-certified",
   "how-to-start",
-  "integrations",
-  "developer-api",
+  "support-path",
 ] as const;

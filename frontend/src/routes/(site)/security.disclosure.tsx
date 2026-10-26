@@ -33,12 +33,8 @@ function DisclosurePage() {
           </h2>
           <p>
             Email{" "}
-            <a className="text-sherivs-cyan underline-offset-4 hover:underline" href={`mailto:${PUBLIC_CONTACTS.privacy}`}>
-              {PUBLIC_CONTACTS.privacy}
-            </a>{" "}
-            or{" "}
-            <a className="text-sherivs-cyan underline-offset-4 hover:underline" href={`mailto:${PUBLIC_CONTACTS.legal}`}>
-              {PUBLIC_CONTACTS.legal}
+            <a className="text-sherivs-cyan underline-offset-4 hover:underline" href={`mailto:${PUBLIC_CONTACTS.info}`}>
+              {PUBLIC_CONTACTS.info}
             </a>{" "}
             with a factual description. Include affected host and time. Do not include secrets from
             other organizations.

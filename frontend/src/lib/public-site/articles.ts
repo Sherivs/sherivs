@@ -104,7 +104,7 @@ export const PUBLIC_ARTICLES: readonly PublicArticle[] = [
   },
   {
     slug: "digital-twins-state-and-events",
-    title: "Why digital twins need persistent state and event-driven compute",
+    title: "How digital twins maintain identity, state, and relationships",
     summary:
       "A twin that is only a 3D model is decoration. A useful twin remembers state, relationships, and events, then computes when those events occur.",
     author: { name: "Sherivs", role: "Editorial" },
@@ -170,7 +170,7 @@ export const PUBLIC_ARTICLES: readonly PublicArticle[] = [
   },
   {
     slug: "scalable-ai-workflows",
-    title: "Building scalable AI workflows without permanently running every worker",
+    title: "How event-driven computing reduces unnecessary persistent workloads",
     summary:
       "Always-on workers are an expensive default. Most institutional work is event-driven or scheduled.",
     author: { name: "Sherivs", role: "Editorial" },
@@ -217,6 +217,7 @@ export const PUBLIC_ARTICLES: readonly PublicArticle[] = [
     relatedSlugs: [
       "what-is-institutional-computing",
       "permissions-and-verifiable-outcomes",
+      "governed-intelligence-for-institutions",
     ],
     published: true,
     sections: [
@@ -230,6 +231,72 @@ export const PUBLIC_ARTICLES: readonly PublicArticle[] = [
         heading: "A public standard for claims",
         paragraphs: [
           "This website will not invent customers, certifications, or performance numbers to make the story feel finished. The useful question is always: who is acting, on what, under which policy, and how would we verify the result?",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "governed-intelligence-for-institutions",
+    title: "Building governed intelligence for institutions",
+    summary:
+      "Intelligence that cannot be permissioned, recorded, and refused is not institutional infrastructure.",
+    author: { name: "Sherivs", role: "Editorial" },
+    publishedAt: "2026-10-26",
+    updatedAt: "2026-10-26",
+    category: "Industry Perspectives",
+    tags: ["governance", "intelligence", "institutions"],
+    seoTitle: "Building governed intelligence for institutions",
+    seoDescription:
+      "Why institutions need intelligence that sits inside identity, policy, and verification — not beside them.",
+    relatedSlugs: [
+      "connected-institutional-intelligence",
+      "permissions-and-verifiable-outcomes",
+    ],
+    published: true,
+    sections: [
+      {
+        paragraphs: [
+          "Institutions already have intelligence: people, procedures, and records. Adding a model does not automatically make that intelligence safer. It can make it faster at being wrong, or faster at acting outside policy.",
+          "Governed intelligence means a model may propose, a policy may allow or deny, and a record may change only when the action is attributable. Sherivs uses that order on purpose. It is slower to hype and more useful when the work is real.",
+        ],
+      },
+      {
+        heading: "What this is not",
+        paragraphs: [
+          "This is not a claim that every Sherivs surface already routes every prompt through a finished public gateway with published SLAs. An internal AI gateway exists. A certified intelligence product does not. The design position is still the right one to hold while those layers mature.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "agent-versus-engineering-workforce",
+    title: "The difference between an AI agent and an autonomous engineering workforce",
+    summary:
+      "An agent completes a task. A workforce is a set of identities, permissions, and oversight. Treating them as the same thing is how systems lose control.",
+    author: { name: "Sherivs", role: "Editorial" },
+    publishedAt: "2026-10-26",
+    updatedAt: "2026-10-26",
+    category: "AI Agents and Autonomous Work",
+    tags: ["agents", "workforce", "oversight"],
+    seoTitle: "AI agent versus autonomous engineering workforce",
+    seoDescription:
+      "Why Sherivs distinguishes a single agent from a governed workforce of workers with owners and limits.",
+    relatedSlugs: [
+      "from-assistants-to-ai-workforces",
+      "scalable-ai-workflows",
+    ],
+    published: true,
+    sections: [
+      {
+        paragraphs: [
+          "An AI agent is often a loop: read, think, act. That loop is useful for a bounded job. It is not an organization. An engineering workforce — even a small one — needs names, owners, scopes, budgets, and a way for a person to stop the work.",
+          "Sherivs uses “AI workforce” for that second idea. Workers are identities. They do not enlarge their own permissions. They do not deploy themselves. Unlimited autonomous execution is not the product.",
+        ],
+      },
+      {
+        heading: "Availability",
+        paragraphs: [
+          "Some worker surfaces in the application still require configured model credentials and are labelled in development. This article describes the design, not a promise that every institution already runs a full autonomous workforce.",
         ],
       },
     ],

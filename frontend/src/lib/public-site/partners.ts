@@ -1,12 +1,14 @@
 /**
  * Approved public partner, customer, and integration records.
  *
- * Distinguishes commercial partners from technology integrations. Entries
- * without `published: true` must not render. Do not invent relationships.
+ * Distinguishes technology partners from commercial partners and from
+ * technology integrations. Entries without `published: true` must not render.
+ * Do not invent relationships, logos, or partnership scope.
  */
 export type PartnerKind =
   | "commercial"
   | "strategic"
+  | "technology_partner"
   | "technology_integration"
   | "customer"
   | "community";
@@ -23,6 +25,17 @@ export interface PublicPartner {
 }
 
 export const PUBLIC_PARTNERS: readonly PublicPartner[] = [
+  {
+    id: "thinktech",
+    name: "ThinkTech",
+    kind: "technology_partner",
+    href: "https://www.thinktech.com",
+    summary:
+      "Technology partner. The owner has authorized public display of this relationship. The exact partnership scope has not been supplied, so this site does not describe joint products, integrations, or endorsements.",
+    published: true,
+    notes:
+      "Owner-supplied website. No approved ThinkTech logo is in the repository. TLS to thinktech.com could not be verified from this environment (handshake failure); the URL is still published as supplied.",
+  },
   {
     id: "paystack",
     name: "Paystack",

@@ -1,8 +1,11 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { PUBLIC_CONTACTS } from "@/lib/public-site/contacts";
+import { EMAIL_ROUTING } from "@/lib/public-site/company";
 import { Field, PublicButton, inputClass } from "@/components/public/ui";
 
 export type MailtoKind = "demo" | "contact" | "support";
+
+type Inquiry = "general" | "prospect" | "partnership";
 
 const SUBJECT: Record<MailtoKind, string> = {
   demo: "Demo request",
@@ -10,11 +13,12 @@ const SUBJECT: Record<MailtoKind, string> = {
   support: "Support request",
 };
 
-const TO: Record<MailtoKind, string> = {
-  demo: PUBLIC_CONTACTS.sales,
-  contact: PUBLIC_CONTACTS.sales,
-  support: PUBLIC_CONTACTS.support,
-};
+function routeTo(kind: MailtoKind, inquiry: Inquiry): string {
+  if (kind === "support") return PUBLIC_CONTACTS.support;
+  if (kind === "demo") return PUBLIC_CONTACTS.hello;
+  if (inquiry === "general") return PUBLIC_CONTACTS.info;
+  return PUBLIC_CONTACTS.hello;
+}
 
 export function MailtoForm({ kind }: { kind: MailtoKind }) {
   const [status, setStatus] = useState<"idle" | "ready" | "error">("idle");
@@ -29,16 +33,27 @@ export function MailtoForm({ kind }: { kind: MailtoKind }) {
     size: "",
     severity: "normal",
     category: "question",
+    inquiry: "prospect" as Inquiry,
     message: "",
     followUp: "email",
+    reference: "",
     consent: false,
   });
 
-  const to = TO[kind];
+  const to = routeTo(kind, values.inquiry);
+  const purpose =
+    kind === "support"
+      ? EMAIL_ROUTING.support.purpose
+      : kind === "demo"
+        ? EMAIL_ROUTING.hello.purpose
+        : values.inquiry === "general"
+          ? EMAIL_ROUTING.info.purpose
+          : EMAIL_ROUTING.hello.purpose;
+
   const privacy = useMemo(
     () =>
-      `This form opens your email client and addresses ${to}. Sherivs does not create a ticket until that message is received. Do not include passwords or unnecessary personal data.`,
-    [to],
+      `This form opens your email client and addresses ${to} (${purpose}). Sherivs does not create a ticket until that message is received. Do not include passwords or unnecessary personal data.`,
+    [to, purpose],
   );
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -53,23 +68,33 @@ export function MailtoForm({ kind }: { kind: MailtoKind }) {
       setStatus("error");
       return;
     }
+    const subject =
+      kind === "contact"
+        ? values.inquiry === "partnership"
+          ? "Partnership inquiry"
+          : values.inquiry === "general"
+            ? "General inquiry"
+            : "Prospective customer inquiry"
+        : SUBJECT[kind];
     const body = [
       `Name: ${values.name}`,
       `Work email: ${values.email}`,
       values.organization && `Organization: ${values.organization}`,
       values.role && `Role: ${values.role}`,
       kind !== "support" && `Organization type: ${values.orgType}`,
+      kind === "contact" && `Inquiry type: ${values.inquiry}`,
       values.interest && `Area of interest: ${values.interest}`,
       values.size && `Approximate size: ${values.size}`,
       kind === "support" && `Category: ${values.category}`,
       kind === "support" && `Severity: ${values.severity}`,
+      kind === "support" && values.reference && `Reference: ${values.reference}`,
       `Preferred follow-up: ${values.followUp}`,
       "",
       values.message,
     ]
       .filter(Boolean)
       .join("\n");
-    const href = `mailto:${to}?subject=${encodeURIComponent(SUBJECT[kind])}&body=${encodeURIComponent(body)}`;
+    const href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.location.href = href;
     setStatus("ready");
   };
@@ -78,7 +103,7 @@ export function MailtoForm({ kind }: { kind: MailtoKind }) {
     (key: keyof typeof values) =>
     (event: { target: { value?: string; checked?: boolean; type?: string } }) => {
       const value = event.target.type === "checkbox" ? Boolean(event.target.checked) : event.target.value ?? "";
-      setValues((current) => ({ ...current, [key]: value }));
+      setValues((current) => ({ ...current, [key]: value as never }));
     };
 
   return (
@@ -129,6 +154,15 @@ export function MailtoForm({ kind }: { kind: MailtoKind }) {
           />
         </Field>
       </div>
+      {kind === "contact" ? (
+        <Field id={`${kind}-inquiry`} label="What is this about?">
+          <select id={`${kind}-inquiry`} className={inputClass} value={values.inquiry} onChange={set("inquiry")}>
+            <option value="prospect">Prospective customer or demonstration</option>
+            <option value="partnership">Partnership or business development</option>
+            <option value="general">General company or administrative inquiry</option>
+          </select>
+        </Field>
+      ) : null}
       {kind !== "support" ? (
         <Field id={`${kind}-type`} label="Organization type">
           <select id={`${kind}-type`} className={inputClass} value={values.orgType} onChange={set("orgType")}>
@@ -158,7 +192,17 @@ export function MailtoForm({ kind }: { kind: MailtoKind }) {
           </Field>
         </div>
       )}
-      {kind !== "support" ? (
+      {kind === "support" ? (
+        <Field id={`${kind}-ref`} label="Reference ID (optional)">
+          <input
+            id={`${kind}-ref`}
+            className={inputClass}
+            value={values.reference}
+            onChange={set("reference")}
+            autoComplete="off"
+          />
+        </Field>
+      ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           <Field id={`${kind}-interest`} label="Area of interest">
             <input
@@ -172,7 +216,7 @@ export function MailtoForm({ kind }: { kind: MailtoKind }) {
             <input id={`${kind}-size`} className={inputClass} value={values.size} onChange={set("size")} />
           </Field>
         </div>
-      ) : null}
+      )}
       <Field id={`${kind}-message`} label="Message" error={errors.message}>
         <textarea
           id={`${kind}-message`}

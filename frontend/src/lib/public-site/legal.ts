@@ -18,12 +18,14 @@ export interface LegalDocument {
 }
 
 const SHARED_UNRESOLVED = [
-  "Legal entity name, registration number, and registered address",
+  "CAC registration number and certificate identifier for public display",
+  "Street address and telephone number (not supplied; locality is Maiduguri, Borno State, Nigeria)",
   "Formal privacy lawful bases and retention schedules",
   "Cross-border transfer arrangements",
   "Data-processing addendum countersigned by counsel",
   "Subprocessor list approved for public display",
   "Refund, SLA, and certification language",
+  "Dedicated privacy@ and legal@ mailboxes (currently routed to info@sherivs.com)",
 ] as const;
 
 export const LEGAL_DOCUMENTS: readonly LegalDocument[] = [
@@ -39,7 +41,7 @@ export const LEGAL_DOCUMENTS: readonly LegalDocument[] = [
       {
         heading: "Who this covers",
         body: [
-          "This notice describes the Sherivs platform at sherivs.com, app.sherivs.com, and related customer workspaces. Organization public websites on tenant hosts may publish their own policies.",
+          "This notice describes the Sherivs platform at sherivs.com, app.sherivs.com, and related customer workspaces operated by Sherivs Technologies Limited, Maiduguri, Borno State, Nigeria. Organization public websites on tenant hosts may publish their own policies.",
           "It is a product-accurate summary, not a substitute for a counsel-reviewed privacy policy. Unresolved legal facts are listed on this page.",
         ],
       },
@@ -73,7 +75,7 @@ export const LEGAL_DOCUMENTS: readonly LegalDocument[] = [
       },
       {
         heading: "Contact",
-        body: ["Privacy questions: privacy@sherivs.com."],
+        body: ["Privacy questions: info@sherivs.com (a dedicated privacy mailbox has not been owner-confirmed)."],
       },
     ],
   },
@@ -112,7 +114,7 @@ export const LEGAL_DOCUMENTS: readonly LegalDocument[] = [
       },
       {
         heading: "Contact",
-        body: ["Legal contact: legal@sherivs.com."],
+        body: ["Legal contact: info@sherivs.com (a dedicated legal mailbox has not been owner-confirmed)."],
       },
     ],
   },

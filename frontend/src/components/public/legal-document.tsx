@@ -48,8 +48,8 @@ function LegalBody({ doc }: { doc: LegalDocument }) {
           </ul>
           <p className="mt-4 text-sm text-sherivs-muted">
             Legal contact:{" "}
-            <a className="text-sherivs-cyan underline-offset-4 hover:underline" href={`mailto:${PUBLIC_CONTACTS.legal}`}>
-              {PUBLIC_CONTACTS.legal}
+            <a className="text-sherivs-cyan underline-offset-4 hover:underline" href={`mailto:${PUBLIC_CONTACTS.info}`}>
+              {PUBLIC_CONTACTS.info}
             </a>
           </p>
         </div>

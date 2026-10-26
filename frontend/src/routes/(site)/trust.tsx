@@ -33,8 +33,11 @@ function TrustPage() {
             Trust topics
           </h2>
           <Callout title="No fabricated attestations" tone="warning">
-            SOC 2, ISO 27001, and similar registrations are not displayed. If your procurement
-            process requires them, ask during a demo.
+            SOC 2, ISO 27001, and similar certification badges are not displayed. Sherivs
+            Technologies Limited is the operating company. CAC and TIN details exist as
+            owner-stated facts; identifiers stay unpublished. NSCDC- and NDPA-related matters are
+            pending and are not shown as completed. If procurement requires a specific report, ask
+            during a demo.
           </Callout>
           <ul className="grid gap-4 sm:grid-cols-2">
             {claims.map((claim) => (

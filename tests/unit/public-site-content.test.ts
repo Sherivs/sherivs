@@ -15,6 +15,12 @@ import { PUBLIC_SITEMAP_PATHS } from "@/lib/public-site/navigation";
 import { publishedPartners } from "@/lib/public-site/partners";
 import { COMPLIANCE_CLAIMS } from "@/lib/public-site/compliance";
 import { PRODUCT_FAMILIES, ARCHITECTURE_LAYERS } from "@/lib/public-site/capabilities";
+import { PUBLIC_CONTACTS, PUBLIC_SOCIAL_LINKS } from "@/lib/public-site/contacts";
+import {
+  ACCEPTING_CUSTOMERS,
+  COMPANY_LOCATION_LINE,
+  LEGAL_ENTITY_NAME,
+} from "@/lib/public-site/company";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const read = (ref: string) => readFileSync(join(ROOT, ref), "utf8");
@@ -59,6 +65,37 @@ describe("public content honesty", () => {
       "paystack",
       "whatsapp",
     ]);
+    expect(publishedPartners("technology_partner").map((p) => p.id)).toEqual(["thinktech"]);
+  });
+
+  it("uses owner-provided company identity without inventing registration numbers", () => {
+    expect(LEGAL_ENTITY_NAME).toBe("Sherivs Technologies Limited");
+    expect(COMPANY_LOCATION_LINE).toBe("Maiduguri, Borno State, Nigeria");
+    expect(ACCEPTING_CUSTOMERS).toBe(true);
+    expect(PUBLIC_CONTACTS.info).toBe("info@sherivs.com");
+    expect(PUBLIC_CONTACTS.hello).toBe("hello@sherivs.com");
+    expect(PUBLIC_CONTACTS.support).toBe("support@sherivs.com");
+    expect(PUBLIC_CONTACTS.privacy).toBe(PUBLIC_CONTACTS.info);
+    expect(PUBLIC_CONTACTS.legal).toBe(PUBLIC_CONTACTS.info);
+  });
+
+  it("keeps social links unpublished until URLs are supplied", () => {
+    expect(PUBLIC_SOCIAL_LINKS.every((item) => item.published === false)).toBe(true);
+    expect(PUBLIC_SOCIAL_LINKS.map((item) => item.id).sort()).toEqual([
+      "facebook",
+      "github",
+      "instagram",
+      "linkedin",
+      "x",
+    ]);
+  });
+
+  it("does not publish TIN, NSCDC, NDPA, or certification badges", () => {
+    expect(COMPLIANCE_CLAIMS.find((c) => c.id === "tin")?.published).toBe(false);
+    expect(COMPLIANCE_CLAIMS.find((c) => c.id === "nscdc")?.status).toBe("pending");
+    expect(COMPLIANCE_CLAIMS.find((c) => c.id === "ndpa")?.status).toBe("pending");
+    expect(COMPLIANCE_CLAIMS.find((c) => c.id === "nscdc")?.published).toBe(false);
+    expect(COMPLIANCE_CLAIMS.find((c) => c.id === "ndpa")?.published).toBe(false);
   });
 
   it("does not publish certification badges", () => {

@@ -9,7 +9,7 @@ export const Route = createFileRoute("/(site)/legal/contact")({
   head: () =>
     publicHead({
       title: "Legal contact",
-      description: "Contact Sherivs legal and privacy teams at verified email addresses.",
+      description: "Contact Sherivs Technologies Limited about legal and privacy questions at info@sherivs.com.",
       path: "/legal/contact",
     }),
 });
@@ -19,7 +19,7 @@ function LegalContactPage() {
     <MarketingPage
       eyebrow="Legal"
       title="Legal contact"
-      lead="No invented registered addresses. Use the mailboxes we actually operate."
+      lead="No invented registered addresses or telephone numbers. Dedicated legal@ and privacy@ mailboxes have not been owner-confirmed."
       crumbs={[
         { href: "/", label: "Home" },
         { href: "/legal/contact", label: "Legal contact" },
@@ -31,15 +31,9 @@ function LegalContactPage() {
             Addresses
           </h2>
           <p>
-            Legal:{" "}
-            <a className="text-sherivs-cyan underline-offset-4 hover:underline" href={`mailto:${PUBLIC_CONTACTS.legal}`}>
-              {PUBLIC_CONTACTS.legal}
-            </a>
-          </p>
-          <p>
-            Privacy:{" "}
-            <a className="text-sherivs-cyan underline-offset-4 hover:underline" href={`mailto:${PUBLIC_CONTACTS.privacy}`}>
-              {PUBLIC_CONTACTS.privacy}
+            Legal and privacy:{" "}
+            <a className="text-sherivs-cyan underline-offset-4 hover:underline" href={`mailto:${PUBLIC_CONTACTS.info}`}>
+              {PUBLIC_CONTACTS.info}
             </a>
           </p>
         </PageContainer>

@@ -140,6 +140,42 @@ export function FeatureCard({
   return <div className={cls}>{inner}</div>;
 }
 
+export function PartnerCard({
+  name,
+  summary,
+  href,
+  kindLabel,
+  logoSrc,
+}: {
+  name: string;
+  summary?: string;
+  href?: string;
+  kindLabel: string;
+  logoSrc?: string;
+}) {
+  return (
+    <article className="rounded-[var(--sherivs-radius)] border border-[var(--sherivs-border)] bg-[color-mix(in_oklab,var(--sherivs-midnight)_55%,transparent)] p-5">
+      <p className="sherivs-kicker">{kindLabel}</p>
+      <div className="mt-3 flex items-start gap-3">
+        {logoSrc ? (
+          <img src={logoSrc} alt="" width={40} height={40} className="h-10 w-10 object-contain" />
+        ) : null}
+        <h3 className="font-display text-lg font-semibold">{name}</h3>
+      </div>
+      {summary ? <p className="mt-2 text-sm leading-relaxed text-sherivs-muted">{summary}</p> : null}
+      {href ? (
+        <a
+          href={href}
+          rel="noopener noreferrer"
+          className="mt-3 inline-block text-sm text-sherivs-cyan underline-offset-4 hover:underline"
+        >
+          {href.replace(/^https?:\/\//, "")}
+        </a>
+      ) : null}
+    </article>
+  );
+}
+
 export function Callout({
   title,
   children,
