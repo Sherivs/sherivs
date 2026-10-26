@@ -9,7 +9,7 @@ import { resolveTenantDomain, resolveTenantSlug } from "@/lib/tenant";
 import { PLATFORM_NAME, PLATFORM_PAGE_DESCRIPTION, PLATFORM_PAGE_TITLE, PLATFORM_URL } from "@/lib/platform";
 import { resolveExperienceHost } from "@/lib/experience/experience-host";
 import { isRetiredApplicationHostname } from "@/lib/experience/retired-application-host";
-import { APP_ENTRY_TAGLINE, isAppEntryKind, parseAppEntryPanel } from "@/lib/experience/app-entry-host";
+import { isAppEntryKind, parseAppEntryPanel } from "@/lib/experience/app-entry-host";
 import { effectiveExperienceHostKind } from "@/lib/experience/console-host-routing";
 import { readRequestHostname } from "@/lib/experience/experience-host.functions";
 import { useApp } from "@/contexts/app-context";
@@ -84,8 +84,8 @@ export const Route = createFileRoute("/")({
     if (loaderData?.appEntry) {
       return {
         meta: [
-          { title: `${PLATFORM_NAME} — ${APP_ENTRY_TAGLINE}` },
-          { name: "description", content: APP_ENTRY_TAGLINE },
+          { title: PLATFORM_NAME },
+          { name: "description", content: `Sign in to ${PLATFORM_NAME}.` },
           { name: "robots", content: "noindex, nofollow" },
         ],
       };

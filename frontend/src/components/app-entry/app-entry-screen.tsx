@@ -16,7 +16,7 @@ import {
 import { SherivsMark } from "@/components/brand/sherivs-logo";
 import { resolveTenantDomain } from "@/lib/tenant";
 import { schoolDomainLoginAllowed } from "@/lib/domains/school-domains";
-import { APP_ENTRY_TAGLINE, type AppEntryPanel } from "@/lib/experience/app-entry-host";
+import { type AppEntryPanel } from "@/lib/experience/app-entry-host";
 import {
   INVITE_LOGIN_ERROR,
   classifySignInIdentifier,
@@ -75,7 +75,6 @@ function BrandBlock() {
         <SherivsMark size={68} decorative className="app-entry-mark" />
       </div>
       <h1 className="app-entry-wordmark">{PLATFORM_NAME}</h1>
-      <p className="app-entry-tagline">{APP_ENTRY_TAGLINE}</p>
     </header>
   );
 }

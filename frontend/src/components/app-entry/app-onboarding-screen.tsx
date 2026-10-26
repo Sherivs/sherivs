@@ -3,7 +3,6 @@ import { Link } from "@tanstack/react-router";
 import { ChevronLeft, UserPlus } from "lucide-react";
 import { PLATFORM_NAME } from "@/lib/platform";
 import { SherivsMark } from "@/components/brand/sherivs-logo";
-import { APP_ENTRY_TAGLINE } from "@/lib/experience/app-entry-host";
 import { ONBOARDING_MAILBOX, buildOnboardingMailto } from "@/lib/auth/onboarding-request";
 import { AppEntryCanvas } from "./app-entry-canvas";
 
@@ -56,7 +55,6 @@ export function AppOnboardingScreen() {
           <SherivsMark size={56} decorative className="app-entry-mark" />
         </div>
         <h1 className="app-entry-wordmark">{PLATFORM_NAME}</h1>
-        <p className="app-entry-tagline">{APP_ENTRY_TAGLINE}</p>
       </header>
 
       <section className="app-entry-panel" data-testid="app-entry-onboarding" aria-labelledby="onboarding-heading">

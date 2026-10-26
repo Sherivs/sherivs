@@ -10,9 +10,6 @@
  */
 import { hostnameFromHostHeader, resolveExperienceHost, type ExperienceHostKind } from "./experience-host";
 
-/** Splash tagline — matches the owner-approved splash composition. */
-export const APP_ENTRY_TAGLINE = "Build a smarter, more productive tomorrow.";
-
 export type AppEntryPanel = "splash" | "signin";
 
 export function isAppEntryKind(kind: ExperienceHostKind): boolean {

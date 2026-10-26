@@ -3,7 +3,6 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  APP_ENTRY_TAGLINE,
   isAppEntryHostname,
   isAppEntryKind,
   parseAppEntryPanel,
@@ -48,8 +47,14 @@ describe("app-entry host", () => {
     expect(parseAppEntryPanel(undefined)).toBe("splash");
   });
 
-  it("keeps the owner-approved splash tagline", () => {
-    expect(APP_ENTRY_TAGLINE).toBe("Build a smarter, more productive tomorrow.");
+  it("does not render the splash slogan under the wordmark", () => {
+    const splash = read("frontend/src/components/app-entry/app-entry-screen.tsx");
+    const onboarding = read("frontend/src/components/app-entry/app-onboarding-screen.tsx");
+    const css = read("frontend/src/components/app-entry/app-entry.css");
+    expect(splash).not.toContain("Build a smarter");
+    expect(onboarding).not.toContain("Build a smarter");
+    expect(splash).not.toContain("app-entry-tagline");
+    expect(css).toContain('"Nunito"');
   });
 });
 

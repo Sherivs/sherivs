@@ -124,26 +124,15 @@
 }
 
 .app-entry-wordmark {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: 2.05rem;
+  margin: 0.15rem 0 0;
+  font-family: "Nunito", ui-rounded, sans-serif;
+  font-size: 2.35rem;
   font-weight: 700;
-  letter-spacing: -0.04em;
+  letter-spacing: 0.01em;
   line-height: 1;
   color: #ffffff;
   animation: app-entry-rise var(--app-entry-motion) var(--app-entry-ease) both;
   animation-delay: 90ms;
-}
-
-.app-entry-tagline {
-  margin: 1.15rem 0 0;
-  max-width: 16.5rem;
-  font-size: 0.98rem;
-  font-weight: 400;
-  line-height: 1.45;
-  color: var(--app-entry-muted);
-  animation: app-entry-rise var(--app-entry-motion) var(--app-entry-ease) both;
-  animation-delay: 170ms;
 }
 
 .app-entry-actions {
@@ -499,7 +488,6 @@
   }
   .app-entry-brand,
   .app-entry-wordmark,
-  .app-entry-tagline,
   .app-entry-actions,
   .app-entry-panel,
   .app-entry-mark,
