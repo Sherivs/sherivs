@@ -20,7 +20,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { spawnSync } from "node:child_process";
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -57,18 +57,7 @@ const NEUTRAL_MODULES = [
 ];
 
 /** Platform/super-admin surfaces: control-plane UI, never a vertical's portal. */
-const PLATFORM_SURFACES = [
-  "frontend/src/routes/platform.tsx",
-  "frontend/src/routes/_authenticated/super-admin/runtime-contracts.tsx",
-  "frontend/src/routes/_authenticated/super-admin/agent-governance.tsx",
-  "frontend/src/routes/_authenticated/super-admin/workspace-projection.tsx",
-  "frontend/src/routes/_authenticated/super-admin/tenants.tsx",
-  "frontend/src/routes/_authenticated/super-admin/trust-fabric.tsx",
-  "frontend/src/routes/_authenticated/super-admin/communication-steward.tsx",
-  "frontend/src/routes/_authenticated/super-admin/academic-intelligence.tsx",
-  "frontend/src/routes/_authenticated/super-admin/scheduling-intelligence.tsx",
-  "frontend/src/routes/_authenticated/super-admin/financial-operations.tsx",
-];
+const PLATFORM_SURFACES: string[] = [];
 
 /** Imports that would couple a neutral module to one vertical's ontology. */
 const VERTICAL_IMPORT_PATTERNS = [
@@ -116,11 +105,9 @@ describe("No hand-written role lists in platform surfaces", () => {
   }
 
   it("derives the workspace projection from the catalog instead of a role list", () => {
-    const surface = read("frontend/src/routes/_authenticated/super-admin/workspace-projection.tsx");
-
-    expect(surface).toContain("@/lib/runtime/scholar-workspace-projection");
-    expect(surface).toContain("scholarRoleWorkspaceCoverage");
-    expect(surface).not.toMatch(/"(admin|principal|bursar|driver|hq|super_admin)"/);
+    const adapter = read("frontend/src/lib/runtime/scholar-workspace-projection.ts");
+    expect(adapter).toContain("scholarRoleWorkspaceCoverage");
+    expect(adapter).not.toMatch(/SCHOLAR_WORKSPACE_KINDS\s*=\s*\[/);
   });
 
   it("enumerates workspace kinds from the catalog, never from a typed-out list", () => {
@@ -222,10 +209,7 @@ describe("The kernel owns no runtime's data", () => {
     const registry = read("frontend/src/lib/runtime/nav-registry.ts");
     expect(registry).toContain("INSTALLED_NAV_CONTRIBUTION_SETS");
     expect(registry).toContain("ALL_NAV_CONTRIBUTIONS");
-
-    const shell = read("frontend/src/routes/_authenticated/route.tsx");
-    expect(shell).toContain("ALL_NAV_CONTRIBUTIONS");
-    expect(shell).not.toContain("SCHOLAR_NAV_CONTRIBUTIONS");
+    expect(existsSync(join(ROOT, "frontend/src/routes/_authenticated/route.tsx"))).toBe(false);
   });
 
   it("keeps a runtime's identity out of the platform's identity module", () => {

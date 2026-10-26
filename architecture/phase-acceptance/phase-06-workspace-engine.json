@@ -210,7 +210,7 @@
       "boundary": [
         { "kind": "module", "path": "frontend/src/routes/_authenticated/super-admin/workspace-projection.tsx", "contains": "scholar-workspace-projection" }
       ],
-      "boundaryNote": "Closed 2026-09-14 and re-closed after the neutrality correction: the neutral engine (`composeWorkspace`, input-driven, zero runtime imports) is bound by a runtime-layer adapter that derives every workspace kind from the catalog and counts the FULL reality-role registry. `/super-admin/workspace-projection` renders coverage, audit findings and a labelled sample — it declares no role list."
+      "boundaryNote": "The `/super-admin/workspace-projection` L4 surface was removed with the hardcoded console UI (2026-10-26). The neutral engine and Scholar adapter remain; projection is IMPLEMENTED_UNWIRED until a governed replacement surface exists."
     },
     {
       "id": "document-completeness",

@@ -9,10 +9,10 @@ Version-target classification: **ACTIVE-V1** (public marketing and documentation
 | Root / branch at start | `/workspace`, `master` @ `53557e07` |
 | Unrelated dirty file | `package-lock.json` (left unstaged) |
 | Stack | TanStack Start/Router, Vite, React 19, TypeScript, Tailwind 4, Supabase, Vercel — **not migrated** |
-| Hosts | `sherivs.com` / `www.sherivs.com` public; `app.sherivs.com` app; `console.sherivs.com` internal — **not changed** |
+| Hosts | `sherivs.com` / `www.sherivs.com` public; `app.sherivs.com` / `console.sherivs.com` / gov/head/group shells **retired** (unavailable surface, not the marketing homepage) |
 | Existing Plane A routes | `/`, `/about`, `/contact`, `/request-demo`, `/sherivs`, `/coregrid`→`/sherivs`, `/privacy-policy`, `/terms`, `/status`, verification tools |
-| Collision: `/platform` | Session-gated internal engineering dashboard. **Kept internal.** Public architecture lives at `/product/*` and `/sherivs`. |
-| Collision: `/blog` | Tenant (Plane B) `blog_posts`. Company writing is `/insights`. |
+| Collision: `/platform` | Hardcoded internal dashboard **removed**. Public architecture lives at `/product/*` and `/sherivs`. |
+| Collision: `/blog` | Hardcoded tenant leftover blog **removed**. Company writing is `/insights`. |
 | Forms | Previously mailto-only. Public forms now compose mailto; they never claim a ticket exists. |
 | Fonts | Inter + Plus Jakarta Sans (existing). No third family. |
 | Brand color | Logo primary `#184EFD` (not the proposed `#4263FF`). |
@@ -21,7 +21,7 @@ Version-target classification: **ACTIVE-V1** (public marketing and documentation
 
 Public product and company routes under `(site)/`. Redirects: `/product`→`/sherivs`, `/company/about`→`/about`, `/legal/privacy`→`/privacy-policy`, `/legal/terms`→`/terms`, `/coregrid`→`/sherivs`.
 
-Internal `/platform` and tenant `/blog` are unchanged.
+Hardcoded `/platform` and leftover tenant `/blog` routes have been removed. The public website and website-engine tenant sites remain.
 
 ## 3. Missing owner-provided information
 

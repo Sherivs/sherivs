@@ -27,9 +27,6 @@ const AUTH = "frontend/src/routes/auth.tsx";
 const SITE_LAYOUT = "frontend/src/routes/(site)/route.tsx";
 const SITE_PAGE = "frontend/src/routes/(site)/sherivs.tsx";
 const SHERIVS_HOME = "frontend/src/components/public/sherivs-home.tsx";
-const PLATFORM_PAGE = "frontend/src/routes/platform.tsx";
-const PLATFORM_ORG_PAGE = "frontend/src/routes/platform.org.tsx";
-const COMMAND_CENTRE = "frontend/src/routes/_authenticated/command-centre/index.tsx";
 
 describe("Platform identity", () => {
   it("presents the company as Sherivs", () => {
@@ -95,20 +92,14 @@ describe("Public authentication surface", () => {
 });
 
 describe("Internal architecture stays off the public surface", () => {
-  it("/platform and /platform/org are session-gated", () => {
-    for (const ref of [PLATFORM_PAGE, PLATFORM_ORG_PAGE]) {
-      const source = read(ref);
-      expect(source).toContain("beforeLoad");
-      expect(source).toContain('redirect({ to: "/auth" })');
-      expect(source).toContain("supabase.auth.getUser");
-      expect(source).toContain('"noindex, nofollow"');
+  it("hardcoded /platform, /platform/org, and command-centre shells are gone", () => {
+    for (const ref of [
+      "frontend/src/routes/platform.tsx",
+      "frontend/src/routes/platform.org.tsx",
+      "frontend/src/routes/_authenticated/command-centre/index.tsx",
+    ]) {
+      expect(() => read(ref)).toThrow();
     }
-  });
-
-  it("the internal control surface presents as Sherivs Control", () => {
-    const commandCentre = read(COMMAND_CENTRE);
-    expect(commandCentre).toContain("Sherivs Control");
-    expect(commandCentre).not.toContain("CoreGrid Command Centre");
   });
 });
 

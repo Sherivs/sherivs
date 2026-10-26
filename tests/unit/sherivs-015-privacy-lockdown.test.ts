@@ -55,8 +55,6 @@ describe("SHERIVS-015 privacy lockdown", () => {
   it("app code no longer selects sensitive columns or * from users directly", () => {
     for (const f of [
       "frontend/src/contexts/app-context.tsx",
-      "frontend/src/routes/_authenticated/admin/hr.tsx",
-      "frontend/src/routes/_authenticated/admin/teachers.tsx",
       "frontend/src/lib/profile.functions.ts",
     ]) {
       const src = readFileSync(join(ROOT, f), "utf8");

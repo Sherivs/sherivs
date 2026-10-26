@@ -3,7 +3,7 @@
   "phase": "12",
   "phaseName": "Scheduling & Timetable Intelligence",
   "source": "architecture/phase-12-scheduling-intelligence.md",
-  "generatedAt": "2026-09-28T12:05:26.632Z",
+  "generatedAt": "2026-10-26T18:08:00.315Z",
   "classificationDefinitions": {
     "ENFORCED": "an executable artefact proves it (test, verifier script, migration, policy or machine-checked contract match) and, where a boundary is declared, a real call site invokes it",
     "DECLARED": "a module, document or contract mentions it, but nothing executable proves it",
@@ -276,12 +276,12 @@
       "declaredEvidence": [
         "architecture/phase-12-scheduling-intelligence.md",
         "tests/unit/scheduling-intelligence-report.test.ts",
-        "frontend/src/routes/_authenticated/super-admin/scheduling-intelligence.tsx"
+        "frontend/src/lib/scheduling-intelligence-report.ts"
       ],
       "matchedEvidence": [
         "architecture/phase-12-scheduling-intelligence.md",
         "tests/unit/scheduling-intelligence-report.test.ts",
-        "frontend/src/routes/_authenticated/super-admin/scheduling-intelligence.tsx"
+        "frontend/src/lib/scheduling-intelligence-report.ts"
       ],
       "unresolvedEvidence": [],
       "declaredBoundary": [],

@@ -41,15 +41,10 @@ describe("disposition registry — audit law", () => {
 
   it("classifies every entry exactly once and cites evidence", () => {
     const counts = dispositionCounts();
-    expect(counts.V1_BUILD).toBe(4);
-    expect(counts.V2_CLASSIFIED).toBe(7);
-    expect(counts.AUDITED_REAL).toBe(18);
-    expect(PLACEHOLDER_DISPOSITIONS.length).toBe(
-      counts.V1_BUILD + counts.V2_CLASSIFIED + counts.AUDITED_REAL,
-    );
-    for (const entry of PLACEHOLDER_DISPOSITIONS) {
-      expect(entry.evidence.trim().length, `${entry.route} evidence`).toBeGreaterThan(20);
-    }
+    expect(counts.V1_BUILD).toBe(0);
+    expect(counts.V2_CLASSIFIED).toBe(0);
+    expect(counts.AUDITED_REAL).toBe(0);
+    expect(PLACEHOLDER_DISPOSITIONS.length).toBe(0);
   });
 
   it("points every entry at an existing route file", () => {
@@ -102,14 +97,10 @@ describe("V2_CLASSIFIED pages — honest planned-state law", () => {
   const v2Entries = PLACEHOLDER_DISPOSITIONS.filter((e) => e.disposition === "V2_CLASSIFIED");
 
   it("renders the honest planned-capability state, stated in the open", () => {
-    // The phrase lives in ONE place — the shared component — so a page cannot
-    // claim honesty without actually rendering the honest state.
-    const componentSrc = routeSource("frontend/src/components/planned-capability-state.tsx");
-    expect(componentSrc).toContain("Planned capability — not in V1.");
-    for (const entry of v2Entries) {
-      const src = routeSource(entry.file);
-      expect(src, entry.route).toContain("PlannedCapabilityState");
-    }
+    expect(existsSync(join(ROOT, "frontend/src/components/planned-capability-state.tsx"))).toBe(
+      false,
+    );
+    expect(v2Entries).toEqual([]);
   });
 
   it("fabricates nothing: no statics, no stats arrays, no fake controls", () => {
@@ -126,14 +117,7 @@ describe("V2_CLASSIFIED pages — honest planned-state law", () => {
 describe("fabrication sweep — the retired placeholder renderer", () => {
   it("no admin route renders IntelligenceCenter fabricated metrics anymore", () => {
     const adminDir = join(ROOT, "frontend/src/routes/_authenticated/admin");
-    const offenders: string[] = [];
-    const entries = readdirSync(adminDir);
-    for (const name of entries) {
-      if (!name.endsWith(".tsx")) continue;
-      const src = readFileSync(join(adminDir, name), "utf-8");
-      if (src.includes("IntelligenceCenter")) offenders.push(name);
-    }
-    expect(offenders).toEqual([]);
+    expect(existsSync(adminDir)).toBe(false);
   });
 });
 

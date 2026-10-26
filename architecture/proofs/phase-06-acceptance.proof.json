@@ -3,7 +3,7 @@
   "phase": "06",
   "phaseName": "Workspace Engine",
   "source": "architecture/phase-06-workspace-engine.md",
-  "generatedAt": "2026-09-28T12:05:20.913Z",
+  "generatedAt": "2026-10-26T18:08:00.005Z",
   "classificationDefinitions": {
     "ENFORCED": "an executable artefact proves it (test, verifier script, migration, policy or machine-checked contract match) and, where a boundary is declared, a real call site invokes it",
     "DECLARED": "a module, document or contract mentions it, but nothing executable proves it",
@@ -12,10 +12,12 @@
   },
   "summary": {
     "areas": 18,
-    "enforced": 16,
+    "enforced": 15,
     "declared": 2,
-    "implementedUnwired": 0,
-    "implementedUnwiredAreas": [],
+    "implementedUnwired": 1,
+    "implementedUnwiredAreas": [
+      "workspace-projection"
+    ],
     "missing": 0,
     "missingRequired": [],
     "unresolvedEvidencePaths": []
@@ -283,6 +285,7 @@
         "tests/unit/workspace-experience.test.ts"
       ],
       "matchedEvidence": [
+        "frontend/src/lib/runtime/nav-registry.ts",
         "tests/unit/workspace-experience.test.ts"
       ],
       "unresolvedEvidence": [],
@@ -352,7 +355,7 @@
       "requirement": "The composition a viewer receives is inspectable from real engine output, and the full role catalog is accounted for without any hand-written role list.",
       "required": true,
       "ownerPhase": null,
-      "classification": "ENFORCED",
+      "classification": "IMPLEMENTED_UNWIRED",
       "declaredEvidence": [
         "frontend/src/lib/workspace-projection.ts",
         "frontend/src/lib/runtime/scholar-workspace-projection.ts",
@@ -369,9 +372,7 @@
       "declaredBoundary": [
         "frontend/src/routes/_authenticated/super-admin/workspace-projection.tsx"
       ],
-      "boundaryEvidence": [
-        "frontend/src/routes/_authenticated/super-admin/workspace-projection.tsx"
-      ]
+      "boundaryEvidence": []
     },
     {
       "id": "document-completeness",

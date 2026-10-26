@@ -3,7 +3,7 @@
   "phase": "04",
   "phaseName": "Education Reality Engine",
   "source": "architecture/phase-04-education-reality-engine.md",
-  "generatedAt": "2026-09-28T12:05:12.047Z",
+  "generatedAt": "2026-10-26T18:07:59.890Z",
   "classificationDefinitions": {
     "ENFORCED": "an executable artefact proves it (test, verifier script, migration, policy or machine-checked contract match) and, where a boundary is declared, a real call site invokes it",
     "DECLARED": "a module, document or contract mentions it, but nothing executable proves it",
@@ -12,10 +12,12 @@
   },
   "summary": {
     "areas": 16,
-    "enforced": 16,
+    "enforced": 15,
     "declared": 0,
-    "implementedUnwired": 0,
-    "implementedUnwiredAreas": [],
+    "implementedUnwired": 1,
+    "implementedUnwiredAreas": [
+      "workspace-projection"
+    ],
     "missing": 0,
     "missingRequired": [],
     "unresolvedEvidencePaths": []
@@ -358,7 +360,7 @@
       "requirement": "The institution's operating reality is readable in a surface from real state, and the surface reports honestly when there is none.",
       "required": true,
       "ownerPhase": null,
-      "classification": "ENFORCED",
+      "classification": "IMPLEMENTED_UNWIRED",
       "declaredEvidence": [
         "frontend/src/lib/education-reality-view.ts",
         "tests/unit/education-reality-view.test.ts"
@@ -371,9 +373,7 @@
       "declaredBoundary": [
         "frontend/src/routes/_authenticated/admin/education-reality.tsx"
       ],
-      "boundaryEvidence": [
-        "frontend/src/routes/_authenticated/admin/education-reality.tsx"
-      ]
+      "boundaryEvidence": []
     }
   ],
   "ok": true,

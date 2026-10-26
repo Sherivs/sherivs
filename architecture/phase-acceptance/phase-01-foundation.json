@@ -518,7 +518,7 @@
       "boundary": [
         { "kind": "module", "path": "frontend/src/routes/platform.tsx", "contains": "foundation-standards" }
       ],
-      "boundaryNote": "Closed 2026-09-14: `/platform` renders the foundation's capability id and the four verification contracts it provides, derived from the phase-01 engineering contract (never a copy). Rendering a capability's name in the 50-capability catalogue was deliberately NOT accepted as a projection — this section projects the capability's own contract."
+      "boundaryNote": "The `/platform` L4 surface was removed with the hardcoded prototype UI (2026-10-26). Foundation-standards modules and tests remain; projection is IMPLEMENTED_UNWIRED until a governed replacement surface exists."
     },
     {
       "id": "rate-limiting",

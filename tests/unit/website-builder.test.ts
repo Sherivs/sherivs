@@ -1,5 +1,5 @@
 /** SHERIVS-100 phase 3: builder editing operations keep documents valid and never write fake translations. */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { BLOCK_TYPES } from "@/lib/website/catalog";
@@ -91,28 +91,16 @@ describe("editor operations", () => {
 
 describe("builder wiring", () => {
   const ROOT = join(__dirname, "../..");
-  it("uses the guarded RPCs with optimistic concurrency, and onboarding bootstraps without overwriting", () => {
-    const b = readFileSync(
-      join(ROOT, "frontend/src/routes/_authenticated/admin/website.tsx"),
-      "utf8",
-    );
-    for (const fn of [
-      "website_get",
-      "website_facts",
-      "website_preview_data",
-      "website_save_draft",
-      "website_publish",
-      "website_rollback",
-    ])
-      expect(b).toContain(`"${fn}"`);
-    expect(b).toContain("p_expected_rev: rev");
+  it("keeps website engine RPCs in the domain layer after the admin builder UI was removed", () => {
+    expect(
+      existsSync(join(ROOT, "frontend/src/routes/_authenticated/admin/website.tsx")),
+    ).toBe(false);
+    expect(
+      existsSync(join(ROOT, "frontend/src/routes/_authenticated/admin/onboarding-interview.tsx")),
+    ).toBe(false);
     const boot = readFileSync(join(ROOT, "frontend/src/lib/website/bootstrap.ts"), "utf8");
     expect(boot).toMatch(/if \(state\.exists\) return "exists"/);
-    expect(
-      readFileSync(
-        join(ROOT, "frontend/src/routes/_authenticated/admin/onboarding-interview.tsx"),
-        "utf8",
-      ),
-    ).toContain("ensureWebsite(org)");
+    const fns = readFileSync(join(ROOT, "frontend/src/lib/website/public-site.functions.ts"), "utf8");
+    expect(fns.length).toBeGreaterThan(0);
   });
 });

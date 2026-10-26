@@ -10,7 +10,7 @@
  * - Simulated database behavior: not available (no offline PG harness).
  * - Real PostgreSQL integration / live catalog: NOT AUTHORIZED.
  */
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -523,7 +523,7 @@ describe("proposed migration inventory and rollback inverse", () => {
 
   it("application call sites import the privilege helper", () => {
     expect(read(PROFILE_FN)).toContain("parseSelfProfilePatch");
-    expect(read(HR)).toContain("parseHrStaffPatch");
+    expect(existsSync(join(ROOT, HR))).toBe(false);
   });
 });
 

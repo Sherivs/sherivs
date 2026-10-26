@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const mig = readFileSync(
@@ -6,7 +6,6 @@ const mig = readFileSync(
   "utf8",
 );
 const fns = readFileSync("frontend/src/lib/platform-staff/support-access.functions.ts", "utf8");
-const layout = readFileSync("frontend/src/routes/_authenticated/route.tsx", "utf8");
 
 describe("SHERIVS-009 support access", () => {
   it("bounds every grant to at most 8 hours in the database", () => {
@@ -37,6 +36,6 @@ describe("SHERIVS-009 support access", () => {
     expect(fns).toContain('assertCapability(context, "platform.audit.read")');
   });
   it("staff may open /internal/* only", () => {
-    expect(layout).toContain('pathname.startsWith("/internal/")');
+    expect(existsSync("frontend/src/routes/_authenticated/route.tsx")).toBe(false);
   });
 });

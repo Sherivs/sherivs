@@ -3,7 +3,7 @@
   "phase": "02",
   "phaseName": "Identity",
   "source": "architecture/phase-02-identity.md",
-  "generatedAt": "2026-09-28T12:05:03.790Z",
+  "generatedAt": "2026-10-26T18:07:59.768Z",
   "classificationDefinitions": {
     "ENFORCED": "an executable artefact proves it (test, verifier script, migration, policy or machine-checked contract match) and, where a boundary is declared, a real call site invokes it",
     "DECLARED": "a module, document or contract mentions it, but nothing executable proves it",
@@ -12,10 +12,12 @@
   },
   "summary": {
     "areas": 12,
-    "enforced": 11,
+    "enforced": 10,
     "declared": 1,
-    "implementedUnwired": 0,
-    "implementedUnwiredAreas": [],
+    "implementedUnwired": 1,
+    "implementedUnwiredAreas": [
+      "workspace-projection"
+    ],
     "missing": 0,
     "missingRequired": [],
     "unresolvedEvidencePaths": []
@@ -241,7 +243,7 @@
       "requirement": "The identity capability is projected in at least one workspace from real state (L4), not only in the backend.",
       "required": true,
       "ownerPhase": null,
-      "classification": "ENFORCED",
+      "classification": "IMPLEMENTED_UNWIRED",
       "declaredEvidence": [
         "frontend/src/lib/identity-registry.functions.ts",
         "tests/unit/p08-enforcement-surface.test.ts"
@@ -254,9 +256,7 @@
       "declaredBoundary": [
         "frontend/src/routes/_authenticated/admin/identities.tsx"
       ],
-      "boundaryEvidence": [
-        "frontend/src/routes/_authenticated/admin/identities.tsx"
-      ]
+      "boundaryEvidence": []
     },
     {
       "id": "identity-events",

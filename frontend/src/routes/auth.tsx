@@ -1,12 +1,8 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
-import { scholarWorkspaceHome } from "@/lib/runtime/nav-registry";
-import { PLATFORM_NAME } from "@/lib/platform";
-import { resolveSherivsIdentity } from "@/lib/identity/resolve-identity.functions";
-import { identityFromAppState } from "@/lib/identity/context";
+import { PLATFORM_NAME, PLATFORM_URL } from "@/lib/platform";
 import { Turnstile, captchaRequired } from "@/components/security/turnstile";
 import { PasswordInput } from "@/components/security/password-input";
 import { PasswordStrengthMeter } from "@/components/security/password-strength-meter";
@@ -37,9 +33,7 @@ const backoff = createLoginBackoff(
 );
 
 function AuthPage() {
-  const navigate = useNavigate();
-  const { loading, role, refresh, school, tenantSlug, profile, superAdmin, platformStaff } =
-    useApp();
+  const { loading, refresh, school, tenantSlug, authUser, signOut } = useApp();
   // Console host (console.sherivs.com): staff-branded copy, no self-service
   // sign-up. Login, reset, Turnstile and MFA are unchanged.
   const experience = authPageExperience(currentEffectiveHostKind());
@@ -66,18 +60,6 @@ function AuthPage() {
     const id = setInterval(() => setWaitMs(backoff.remainingMs()), 1000);
     return () => clearInterval(id);
   }, [waitMs > 0]);
-  const resolveIdentity = useServerFn(resolveSherivsIdentity);
-
-  // Identity-based post-auth routing (§11): signed-in users are routed by the
-  // resolved identity chain — internal workforce → /internal, one membership
-  // → its workspace, several → the organization selector, none → /welcome —
-  // never unconditionally into a runtime workspace.
-  const contextIdentity = identityFromAppState({ superAdmin, profile, school, platformStaff });
-  useEffect(() => {
-    if (!loading && (role || platformStaff)) {
-      navigate({ to: contextIdentity.destination, replace: true });
-    }
-  }, [loading, role, platformStaff, contextIdentity.destination, navigate]);
 
   function reset() {
     setError(null);
@@ -164,28 +146,6 @@ function AuthPage() {
         }).catch(() => {});
 
         await refresh();
-
-        // Server-authoritative identity resolution (§11): resolve the full
-        // chain — memberships → organizations → roles → runtime → workspace
-        // — and route to its destination. The context effect above is the
-        // fallback if the server round-trip fails.
-        // SHERIVS-027: government officers have no school membership; send them to their own portal.
-        if (data.user) {
-          const [{ data: member }, { data: gov }] = await Promise.all([
-            supabase.from("users").select("id").eq("id", data.user.id).maybeSingle(),
-            (supabase as unknown as { rpc: (f: string) => PromiseLike<{ data: unknown }> }).rpc("gov_my_jurisdictions"),
-          ]);
-          if (!member && Array.isArray(gov) && gov.length > 0) {
-            await navigate({ to: "/gov", replace: true });
-            return;
-          }
-        }
-        try {
-          const identity = await resolveIdentity();
-          await navigate({ to: identity.destination, replace: true });
-        } catch {
-          // context effect handles routing — never block sign-in on resolution
-        }
       } else if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
           email,
@@ -212,6 +172,38 @@ function AuthPage() {
   }
 
   const title = experience.heading ?? (mode === "signin" ? "Sign in" : "Create account");
+
+  if (!loading && authUser) {
+    return (
+      <div className="auth-shell">
+        <div className="auth-card uos-card" data-testid="auth-card">
+          <Link to="/" aria-label={`${PLATFORM_NAME} home`} className="mb-6 inline-flex">
+            <SherivsLogo size={36} wordmarkClassName="text-xl" />
+          </Link>
+          <h1 className="font-display text-2xl font-bold">Signed in</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            The application workspace is not available. The {PLATFORM_NAME} company website remains
+            at sherivs.com.
+          </p>
+          <div className="mt-6 flex flex-col gap-2">
+            <a
+              href={PLATFORM_URL}
+              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground"
+            >
+              Open sherivs.com
+            </a>
+            <button
+              type="button"
+              onClick={() => void signOut()}
+              className="rounded-md border border-border px-4 py-3 text-sm font-semibold hover:bg-accent"
+            >
+              Sign out
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="auth-shell">

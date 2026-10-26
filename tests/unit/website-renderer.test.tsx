@@ -128,11 +128,8 @@ describe("prototype removed", () => {
     const idx = readFileSync(join(ROOT, "frontend/src/routes/index.tsx"), "utf8");
     expect(idx).toContain("<SiteView");
     expect(idx).not.toContain("PublicSchoolSite");
-    const settings = readFileSync(
-      join(ROOT, "frontend/src/routes/_authenticated/admin/settings.tsx"),
-      "utf8",
-    );
-    expect(settings).not.toMatch(/SectionsTab|HeroTab/);
-    expect(settings).toContain("/admin/website");
+    expect(
+      existsSync(join(ROOT, "frontend/src/routes/_authenticated/admin/settings.tsx")),
+    ).toBe(false);
   });
 });

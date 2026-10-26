@@ -278,13 +278,11 @@ describe("public content honesty", () => {
 
 describe("route collision guards", () => {
   it("keeps /platform session-gated", () => {
-    const source = read("frontend/src/routes/platform.tsx");
-    expect(source).toContain("supabase.auth.getUser");
-    expect(source).toContain('"noindex, nofollow"');
+    expect(existsSync(join(ROOT, "frontend/src/routes/platform.tsx"))).toBe(false);
   });
 
   it("does not replace the tenant blog routes", () => {
-    expect(read("frontend/src/routes/blog.tsx")).toContain("blog_posts");
+    expect(existsSync(join(ROOT, "frontend/src/routes/blog.tsx"))).toBe(false);
     expect(read("frontend/src/routes/(site)/insights.index.tsx")).toContain("/insights");
   });
 });

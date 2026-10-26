@@ -1,6 +1,5 @@
 @import "tailwindcss" source(none);
 @import "tw-animate-css";
-@import "./components/sds/sds.css";
 @import "./styles/sherivs-public.css";
 
 @source "../src";

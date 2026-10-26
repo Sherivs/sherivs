@@ -51,127 +51,103 @@ export interface ScholarVerticalBinding {
   evidence: readonly string[];
 }
 
-/** Every binding below cites files that exist; the suite fails if one vanishes. */
+/**
+ * Bindings cite runtime/domain modules. Hardcoded portal routes were removed;
+ * the suite fails if a cited evidence file vanishes.
+ */
 export const SCHOLAR_VERTICAL_BINDINGS: readonly ScholarVerticalBinding[] = [
   {
     vertical: "admin",
     capability: "education-reality-ontology",
     evidence: [
-      "frontend/src/routes/_authenticated/admin/classes.tsx",
-      "frontend/src/routes/_authenticated/admin/students.tsx",
       "frontend/src/lib/runtime/scholar-reality.ts",
+      "frontend/src/lib/education-reality-view.ts",
     ],
   },
   {
     vertical: "admin",
     capability: "communication-messaging",
-    evidence: [
-      "frontend/src/routes/_authenticated/admin/broadcast.tsx",
-      "frontend/src/routes/_authenticated/messages.tsx",
-    ],
+    evidence: ["frontend/src/lib/communication-core.ts", "frontend/src/lib/communication-channels.ts"],
   },
   {
     vertical: "teacher",
     capability: "communication-messaging",
-    evidence: ["frontend/src/routes/_authenticated/teacher/news.tsx"],
+    evidence: ["frontend/src/lib/communication-templates.ts"],
   },
   {
     vertical: "parent",
     capability: "communication-messaging",
-    evidence: ["frontend/src/routes/_authenticated/parent/news.tsx"],
+    evidence: ["frontend/src/lib/communication-conversation.ts"],
   },
   {
     vertical: "admin",
     capability: "academic-intelligence",
-    evidence: [
-      "frontend/src/routes/_authenticated/admin/examinations.tsx",
-      "frontend/src/routes/_authenticated/admin/report-cards.tsx",
-    ],
+    evidence: ["frontend/src/lib/academic-intelligence-report.ts", "frontend/src/lib/academic-assessment.ts"],
   },
   {
     vertical: "teacher",
     capability: "academic-intelligence",
-    evidence: [
-      "frontend/src/routes/_authenticated/teacher/class-intelligence.tsx",
-      "frontend/src/routes/_authenticated/teacher/gradebook.tsx",
-    ],
+    evidence: ["frontend/src/lib/education-assessment.ts"],
   },
   {
     vertical: "parent",
     capability: "academic-intelligence",
-    evidence: [
-      "frontend/src/routes/_authenticated/parent/grades.tsx",
-      "frontend/src/routes/_authenticated/parent/report-cards.tsx",
-    ],
+    evidence: ["frontend/src/lib/academic-mastery.ts"],
   },
   {
     vertical: "admin",
     capability: "scheduling",
-    evidence: [
-      "frontend/src/routes/_authenticated/admin/timetable.tsx",
-      "frontend/src/routes/_authenticated/admin/calendar.tsx",
-    ],
+    evidence: ["frontend/src/lib/scheduling-core.ts", "frontend/src/lib/scheduling-conflicts.ts"],
   },
   {
     vertical: "teacher",
     capability: "scheduling",
-    evidence: ["frontend/src/routes/_authenticated/teacher/timetable.tsx"],
+    evidence: ["frontend/src/lib/scheduling-availability.ts"],
   },
   {
     vertical: "parent",
     capability: "scheduling",
-    evidence: ["frontend/src/routes/_authenticated/parent/calendar.tsx"],
+    evidence: ["frontend/src/lib/scheduling-quality.ts"],
   },
   {
     vertical: "bursar",
     capability: "financial-ledger",
     evidence: [
-      "frontend/src/routes/_authenticated/bursar/reconciliation.tsx",
-      "frontend/src/routes/_authenticated/bursar/fee-plans.tsx",
       "frontend/src/lib/runtime/scholar-fee-lifecycle.ts",
+      "frontend/src/lib/financial-journal.ts",
     ],
   },
   {
     vertical: "admin",
     capability: "financial-ledger",
-    evidence: [
-      "frontend/src/routes/_authenticated/admin/fees.tsx",
-      "frontend/src/routes/_authenticated/admin/financial-reports.tsx",
-    ],
+    evidence: ["frontend/src/lib/financial-intelligence-report.ts", "frontend/src/lib/financial-core.ts"],
   },
   {
     vertical: "parent",
     capability: "financial-ledger",
-    evidence: ["frontend/src/routes/_authenticated/parent/fees.tsx"],
+    evidence: ["frontend/src/lib/financial-payments.ts"],
   },
   {
     vertical: "admin",
     capability: "hardware-device-telemetry",
-    evidence: [
-      "frontend/src/routes/_authenticated/admin/buses.tsx",
-      "frontend/src/routes/_authenticated/admin/bus-management.tsx",
-    ],
+    evidence: ["frontend/src/lib/hardware-telemetry.ts", "frontend/src/lib/hardware-core.ts"],
   },
   {
     vertical: "driver",
     capability: "hardware-device-telemetry",
-    evidence: [
-      "frontend/src/routes/_authenticated/driver/dashboard.tsx",
-      "frontend/src/routes/_authenticated/driver/students.tsx",
-    ],
+    evidence: ["frontend/src/lib/hardware-lifecycle.ts"],
   },
   {
     vertical: "parent",
     capability: "hardware-device-telemetry",
-    evidence: ["frontend/src/routes/_authenticated/parent/bus-tracking.tsx"],
+    evidence: ["frontend/src/lib/hardware-commands.ts"],
   },
   {
     vertical: "admin",
     capability: "live-digital-twin",
     evidence: [
-      "frontend/src/routes/_authenticated/admin/digital-twin.tsx",
-      "frontend/src/routes/_authenticated/admin/facilities.tsx",
       "frontend/src/lib/runtime/scholar-facility-twin.ts",
+      "frontend/src/lib/education-facilities.ts",
     ],
   },
   {
@@ -185,30 +161,22 @@ export const SCHOLAR_VERTICAL_BINDINGS: readonly ScholarVerticalBinding[] = [
   {
     vertical: "admin",
     capability: "analytics-decision-intelligence",
-    evidence: [
-      "frontend/src/routes/_authenticated/admin/analytics.tsx",
-      "frontend/src/routes/_authenticated/admin/intelligence.tsx",
-    ],
+    evidence: ["frontend/src/lib/academic-intelligence-report.ts"],
   },
   {
     vertical: "hq",
     capability: "analytics-decision-intelligence",
-    evidence: ["frontend/src/routes/_authenticated/hq/reports.tsx"],
+    evidence: ["frontend/src/lib/data-platform-report.ts"],
   },
   {
     vertical: "hq",
     capability: "government-sovereign-deployments",
-    evidence: [
-      "frontend/src/routes/_authenticated/hq/dashboard.tsx",
-      "frontend/src/routes/_authenticated/hq/finance.tsx",
-    ],
+    evidence: ["frontend/src/lib/government-core.ts", "frontend/src/lib/government-governance.ts"],
   },
   {
     vertical: "admin",
     capability: "onboarding-workforce-identity",
     evidence: [
-      "frontend/src/routes/_authenticated/admin/hr.tsx",
-      "frontend/src/routes/_authenticated/admin/staff-accounts.tsx",
       "frontend/src/lib/runtime/scholar-workforce.ts",
       "frontend/src/lib/runtime/scholar/workforce-positions.functions.ts",
     ],

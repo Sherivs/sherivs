@@ -125,7 +125,7 @@ describe("Vercel SSR output wiring", () => {
 });
 
 describe("canonical root redirect", () => {
-  it("sends app and console `/` to /auth and leaves public/www on `/`", () => {
+  it("classifies app and console as hosts that must not SSR the public homepage", () => {
     expect(shouldRedirectCanonicalRootToAuth(resolveExperienceHost("app.sherivs.com"))).toBe(true);
     expect(shouldRedirectCanonicalRootToAuth(resolveExperienceHost("console.sherivs.com"))).toBe(
       true,
@@ -141,8 +141,9 @@ describe("canonical root redirect", () => {
     expect(resolveExperienceHost("app.sherivs.com")).toBe("app");
     expect(resolveExperienceHost("console.sherivs.com")).toBe("internal");
     const index = read("frontend/src/routes/index.tsx");
-    expect(index).toContain("shouldRedirectCanonicalRootToAuth");
-    expect(index).toContain('throw redirect({ to: "/auth" })');
+    expect(index).toContain("isRetiredApplicationHostname");
+    expect(index).toContain("ApplicationUnavailable");
+    expect(index).toContain("<SherivsHome />");
     expect(index).toContain("readRequestHostname");
   });
 });
@@ -175,14 +176,12 @@ describe("authorization is independent of hostname classification", () => {
     expect(internal.destination).toBe(SHERIVS_INTERNAL_HOME);
   });
 
-  it("keeps RoleGuard and platform-super-admin gates on authenticated internal routes", () => {
-    const internal = read("frontend/src/routes/_authenticated/internal.tsx");
-    expect(internal).toContain('RoleGuard allow={["super_admin"]}');
-    const superAdmin = read("frontend/src/routes/_authenticated/super-admin/route.tsx");
-    expect(superAdmin).toContain('RoleGuard allow={["super_admin"]}');
-    const authenticated = read("frontend/src/routes/_authenticated/route.tsx");
-    expect(authenticated).toContain('throw redirect({ to: "/auth" })');
-    expect(authenticated).toContain("supabase.auth.getUser()");
+  it("does not ship hardcoded internal console or super-admin shells", () => {
+    expect(existsSync(join(ROOT, "frontend/src/routes/_authenticated/internal.tsx"))).toBe(false);
+    expect(existsSync(join(ROOT, "frontend/src/routes/_authenticated/super-admin/route.tsx"))).toBe(
+      false,
+    );
+    expect(existsSync(join(ROOT, "frontend/src/routes/_authenticated/route.tsx"))).toBe(false);
   });
 });
 

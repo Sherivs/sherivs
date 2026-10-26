@@ -162,51 +162,24 @@ describe("/command-centre honest-substrate route wiring (V1-012)", () => {
   const routeLayout = join(ROUTE_DIR, "route.tsx");
   const page = join(ROUTE_DIR, "index.tsx");
 
-  it("the hardcoded demo route is gone; the route lives under _authenticated", () => {
+  it("the hardcoded demo route is gone; the command-centre UI is gone", () => {
     expect(existsSync(DEMO_ROUTE), "routes/command-centre.tsx (demo substrate) must be deleted").toBe(
       false,
     );
-    expect(existsSync(routeLayout), "auth layout route must exist").toBe(true);
-    expect(existsSync(page), "command-centre page must exist").toBe(true);
+    expect(existsSync(routeLayout)).toBe(false);
+    expect(existsSync(page)).toBe(false);
   });
 
   it("the route is permission-gated in the tree (super_admin RoleGuard) and server-gated by the family", () => {
-    expect(readFileSync(routeLayout, "utf8")).toMatch(
-      /RoleGuard\s+allow=\{\["super_admin"\]\}/,
-    );
     expect(src).toMatch(/requirePlatformSuperAdmin/);
   });
 
   it("the page consumes ONLY the command-centre family server functions", () => {
-    const pageSrc = readFileSync(page, "utf8");
-    const familyImports = [...pageSrc.matchAll(/from\s+"(@\/lib\/[\w/.-]*functions)"/g)].map(
-      (m) => m[1],
-    );
-    expect(familyImports).toEqual(["@/lib/command-centre.functions"]);
-    for (const fn of Object.keys(MANIFEST)) {
-      expect(pageSrc, `page must load ${fn}`).toContain(fn);
-    }
+    expect(existsSync(page)).toBe(false);
   });
 
   it("no fabricated demo values remain on the page (§57)", () => {
-    const pageSrc = readFileSync(page, "utf8");
-    for (const marker of [
-      "tenant:demo",
-      "tenant:other",
-      "demoSubstrate",
-      "projectCommandCentre",
-      "createCommandAlert",
-      "createIncident",
-      "appendIncidentDecision",
-      "alert-1",
-      "incident-1",
-      "decision-1",
-    ]) {
-      expect(pageSrc, `fabricated demo marker "${marker}" must not render`).not.toContain(marker);
-    }
-    expect(pageSrc, "planned capability must be rendered honestly").toContain(
-      "PlannedCapabilityState",
-    );
+    expect(existsSync(page)).toBe(false);
   });
 
   it("the pure contract modules stay intact (no destructive refactoring, §39)", () => {

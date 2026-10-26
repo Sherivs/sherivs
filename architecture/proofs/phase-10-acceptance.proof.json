@@ -3,7 +3,7 @@
   "phase": "10",
   "phaseName": "Communication Platform",
   "source": "architecture/phase-10-communication-platform.md",
-  "generatedAt": "2026-09-28T12:05:25.351Z",
+  "generatedAt": "2026-10-26T18:08:00.215Z",
   "classificationDefinitions": {
     "ENFORCED": "an executable artefact proves it (test, verifier script, migration, policy or machine-checked contract match) and, where a boundary is declared, a real call site invokes it",
     "DECLARED": "a module, document or contract mentions it, but nothing executable proves it",
@@ -12,10 +12,12 @@
   },
   "summary": {
     "areas": 38,
-    "enforced": 31,
+    "enforced": 30,
     "declared": 7,
-    "implementedUnwired": 0,
-    "implementedUnwiredAreas": [],
+    "implementedUnwired": 1,
+    "implementedUnwiredAreas": [
+      "audit-obligation"
+    ],
     "missing": 0,
     "missingRequired": [],
     "unresolvedEvidencePaths": []
@@ -462,7 +464,7 @@
       "requirement": "Every decision — allowed refused, gated or escalated — carries an audit obligation and a reason long enough to be actionable.",
       "required": true,
       "ownerPhase": null,
-      "classification": "ENFORCED",
+      "classification": "IMPLEMENTED_UNWIRED",
       "declaredEvidence": [
         "frontend/src/lib/communication-steward.ts",
         "tests/unit/communication-steward.test.ts"
@@ -475,9 +477,7 @@
       "declaredBoundary": [
         "frontend/src/routes/_authenticated/super-admin/communication-steward.tsx"
       ],
-      "boundaryEvidence": [
-        "frontend/src/routes/_authenticated/super-admin/communication-steward.tsx"
-      ]
+      "boundaryEvidence": []
     },
     {
       "id": "call-state-machine",

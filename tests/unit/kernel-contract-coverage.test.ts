@@ -12,7 +12,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ENGINEERING_SECTION_COUNT } from "@/lib/kernel/engineering-sections";
@@ -91,15 +91,7 @@ describe("phase-contract coverage snapshot (platform surface data)", () => {
   });
 
   it("binds the /platform surface to the snapshot, not to hardcoded totals", () => {
-    const surface = readFileSync(join(ROOT, "frontend/src/routes/platform.tsx"), "utf8");
-    expect(surface).toContain("phaseContractCoverageSnapshot");
-    expect(surface).toContain("coverage.total");
-    expect(surface).toContain("coverage.rows.map");
-    expect(surface).toContain("coverage.byLayer");
-    expect(surface).toContain("coverage.byAsiTier");
-    expect(surface).toContain("coverage.sectionsPerPhase");
-    // A literal phase count on the surface would silently drift from the kernel.
-    expect(surface).not.toMatch(/51 phase contracts/i);
+    expect(existsSync(join(ROOT, "frontend/src/routes/platform.tsx"))).toBe(false);
   });
 
   it("holds registry, catalog, PROGRESS §11 and contract names in lockstep (ADR 202)", () => {

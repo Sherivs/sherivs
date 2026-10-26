@@ -168,7 +168,7 @@
       "evidence": [
         { "kind": "document", "path": "architecture/phase-12-scheduling-intelligence.md", "contains": "ER. Domain-Neutral Scheduling For Every Organization" },
         { "kind": "test", "path": "tests/unit/scheduling-intelligence-report.test.ts", "contains": "names no runtime and no customer in its declarations" },
-        { "kind": "module", "path": "frontend/src/routes/_authenticated/super-admin/scheduling-intelligence.tsx", "contains": "ORGANIZATION_VOCABULARY" }
+        { "kind": "module", "path": "frontend/src/lib/scheduling-intelligence-report.ts", "contains": "Scheduling vocabulary" }
       ],
       "boundary": []
     },

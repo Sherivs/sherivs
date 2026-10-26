@@ -3,7 +3,7 @@
   "phase": "13",
   "phaseName": "Payment, Billing & Financial Operating System",
   "source": "architecture/phase-13-financial-system.md",
-  "generatedAt": "2026-09-28T12:05:27.941Z",
+  "generatedAt": "2026-10-26T18:08:00.363Z",
   "classificationDefinitions": {
     "ENFORCED": "an executable artefact proves it (test, verifier script, migration, policy or machine-checked contract match) and, where a boundary is declared, a real call site invokes it",
     "DECLARED": "a module, document or contract mentions it, but nothing executable proves it",
@@ -335,13 +335,11 @@
       "classification": "ENFORCED",
       "declaredEvidence": [
         "frontend/src/lib/financial-intelligence-report.ts",
-        "tests/unit/financial-intelligence-report.test.ts",
-        "frontend/src/routes/_authenticated/super-admin/financial-operations.tsx"
+        "tests/unit/financial-intelligence-report.test.ts"
       ],
       "matchedEvidence": [
         "frontend/src/lib/financial-intelligence-report.ts",
-        "tests/unit/financial-intelligence-report.test.ts",
-        "frontend/src/routes/_authenticated/super-admin/financial-operations.tsx"
+        "tests/unit/financial-intelligence-report.test.ts"
       ],
       "unresolvedEvidence": [],
       "declaredBoundary": [],

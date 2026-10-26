@@ -3,7 +3,7 @@
   "phase": "11",
   "phaseName": "Academic Intelligence",
   "source": "architecture/phase-11-academic-intelligence.md",
-  "generatedAt": "2026-09-28T12:05:26.125Z",
+  "generatedAt": "2026-10-26T18:08:00.266Z",
   "classificationDefinitions": {
     "ENFORCED": "an executable artefact proves it (test, verifier script, migration, policy or machine-checked contract match) and, where a boundary is declared, a real call site invokes it",
     "DECLARED": "a module, document or contract mentions it, but nothing executable proves it",
@@ -12,10 +12,12 @@
   },
   "summary": {
     "areas": 17,
-    "enforced": 12,
+    "enforced": 11,
     "declared": 5,
-    "implementedUnwired": 0,
-    "implementedUnwiredAreas": [],
+    "implementedUnwired": 1,
+    "implementedUnwiredAreas": [
+      "rule-attribution-and-surface"
+    ],
     "missing": 0,
     "missingRequired": [],
     "unresolvedEvidencePaths": []
@@ -289,7 +291,7 @@
       "requirement": "The phase report ties each rule to a module and a suite, exercises the engines on real inputs, and is rendered by a surface that declares no role list of its own.",
       "required": true,
       "ownerPhase": null,
-      "classification": "ENFORCED",
+      "classification": "IMPLEMENTED_UNWIRED",
       "declaredEvidence": [
         "frontend/src/lib/academic-intelligence-report.ts",
         "tests/unit/academic-intelligence-report.test.ts"
@@ -302,9 +304,7 @@
       "declaredBoundary": [
         "frontend/src/routes/_authenticated/super-admin/academic-intelligence.tsx"
       ],
-      "boundaryEvidence": [
-        "frontend/src/routes/_authenticated/super-admin/academic-intelligence.tsx"
-      ]
+      "boundaryEvidence": []
     },
     {
       "id": "academic-persistence",

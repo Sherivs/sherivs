@@ -146,7 +146,7 @@
       "boundary": [
         { "kind": "module", "path": "frontend/src/routes/_authenticated/admin/identities.tsx", "contains": "identity-registry" }
       ],
-      "boundaryNote": "Closed 2026-09-14 (P02-2): `/admin/identities` renders the identities inside the actor's own tenant boundary from real state (`listIdentities`) and can register one, so the identity capability is now projected in a workspace instead of existing only as backend code."
+      "boundaryNote": "The `/admin/identities` L4 surface was removed with the hardcoded portal UI (2026-10-26). Identity registry functions and tests remain; workspace projection is IMPLEMENTED_UNWIRED until a governed replacement surface exists."
     },
     {
       "id": "identity-events",

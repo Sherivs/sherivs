@@ -26,32 +26,29 @@ Canonical planes:
 | `/reset-password` | Account recovery | visitors | A | Public | keep | keep | none | VERIFIED |
 | `/coregrid` | Legacy path → platform detail page | visitors | A | Public | Compatibility alias, Sherivs content | redirect or retire after link hygiene | document removal criteria | PARTIAL |
 | `/robots.txt`, `/sitemap.xml`, `/manifest.webmanifest`, `/health.json` | Infrastructure metadata | crawlers | A | Public | sherivs.com identity | keep | none | VERIFIED |
-| `/marketplace` | Feature catalog published from organization reality | visitors | A | Public | Metadata rebranded to Sherivs | classify: keep public or gate behind org reality | none required | VERIFIED |
-| `/reality/$class` | Generated-environment explainer | visitors | A | Public | Metadata rebranded to Sherivs | review whether internal concept belongs public | propose gate or noindex if not customer-narrative | PARTIAL |
-| `/blog`, `/blog/$slug`, `/news/$id`, `/events/$id` | Organization-generated content (tenant-driven) | visitors | B | Public | tenant content surfaces | belongs to Plane B narrative | classify during Plane B work | PARTIAL |
-| `/privacy` | Duplicate of `/privacy-policy` | visitors | A | Public | legacy path | redirect to canonical | add redirect or retire | PARTIAL |
+| `/marketplace` | Feature catalog prototype | visitors | A | removed | hardcoded UI deleted | do not restore prototype | REMOVED |
+| `/reality/$class` | Generated-environment explainer | visitors | A | removed | hardcoded UI deleted | do not restore prototype | REMOVED |
+| `/blog`, `/blog/$slug`, `/news/$id`, `/events/$id` | Leftover tenant content shells | B | removed | hardcoded UI deleted | tenant sites use the website engine | REMOVED |
+| `/privacy` | Duplicate of `/privacy-policy` | visitors | A | removed | leftover path deleted; canonical is `/privacy-policy` | do not restore | REMOVED |
 | `/login` | Legacy auth entry | visitors | A | Public | redirects (beforeLoad) | verify target is `/auth` | none | VERIFIED |
 
 ## Internal/engineering surfaces (not customer product)
 
 | Route | Purpose | Plane | Public/Private | Current state | Migration action | Status |
 |---|---|---|---|---|---|---|
-| `/platform` | Engineering phase/control view | D | Session-gated, noindex | gated via `beforeLoad` | keep internal | VERIFIED |
-| `/platform/org` | Organization-scope platform view | D | Session-gated, noindex | gated | keep internal | VERIFIED |
-| `/foundation-loop`, `/scholar-foundation-loop`, `/rules` | Internal engineering walkthroughs | D | Authenticated | inspect gating | verify no public links | PARTIAL |
+| `/platform`, `/platform/org` | Engineering phase/control view | D | removed | hardcoded UI deleted | do not restore prototype | REMOVED |
+| `/foundation-loop`, `/scholar-foundation-loop`, `/rules` | Internal engineering walkthroughs | D | removed | hardcoded UI deleted | do not restore prototype | REMOVED |
 
 ## Plane C — Organization Internal Workspace (Scholar runtime)
 
+Hardcoded Scholar portal routes, portal chrome, and the app.sherivs.com application shell have been **removed**. Identity/domain modules remain. A replacement workspace UI is not in this tree.
+
 | Route | Purpose | Plane | Authority | Current state | Target state | Status |
 |---|---|---|---|---|---|---|
-| `/admin/*` (60 routes) | School-admin operations | C | tenant membership + role | Scholar runtime screens | Scholar runtime behind universal shell | VERIFIED (runtime isolation pending full shell rollout) |
-| `/teacher/*`, `/parent/*`, `/student/*`, `/bursar/*`, `/driver/*`, `/hq/*` | Role workspaces | C | role guard | Scholar roles | Scholar roles (correct — education runtime) | VERIFIED |
-| `/organizations` | Organization selector | C | memberships | multi-membership selector | keep | VERIFIED |
-| `/welcome` | Unlinked-account landing | C | authenticated | keep | keep | VERIFIED |
-| `/runtime` | Runtime workspace projection | C | authenticated | rebranded to Sherivs | keep | VERIFIED |
-| `/messages`, `/notifications`, `/settings`, `/admin/*` cross-cuts | Universal shell capabilities | C | authenticated | shared | universal shell candidate | PARTIAL |
-| `/super-admin/*` (21 routes) | Platform operations | D | super-admin | rebranded titles | Sherivs internal ops | VERIFIED |
-| `/internal` | Sherivs HQ (identity destination) | D | internal workforce | implemented | expand | VERIFIED |
+| `/admin/*`, `/teacher/*`, `/parent/*`, `/student/*`, `/bursar/*`, `/driver/*`, `/hq/*` | Role workspaces | C | tenant membership + role | hardcoded UI deleted | future governed workspace | REMOVED |
+| `/organizations`, `/welcome`, `/runtime`, `/messages`, `/notifications`, `/settings` | Shell capabilities | C | authenticated | hardcoded UI deleted | future governed workspace | REMOVED |
+| `/super-admin/*`, `/internal`, `/command-centre/*` | Platform / HQ ops | D | internal workforce | hardcoded UI deleted | future governed console | REMOVED |
+| `app.sherivs.com`, `console.sherivs.com`, gov/head/group hosts | Application / console shells | C/D | host routing | retired unavailable surface | do not SSR public homepage | REMOVED |
 
 ## Boundary rules locked
 
@@ -64,6 +61,4 @@ Canonical planes:
 ## Known open items
 
 - `/coregrid` compatibility path: retire after external link hygiene; cannot break until tracked.
-- `/reality/$class` and `/marketplace` expose internal-category narratives publicly without noindex; propose noindex or fold into the public product narrative.
-- `/privacy` duplicates the canonical policy page; needs a redirect.
-- Universal shell (Plane C) still renders Scholar-native navigation for scholar organizations; runtime-aware shell composition is the next structural milestone.
+- Universal shell (Plane C) and Sherivs internal console (Plane D) hardcoded UIs are removed. Replacement workspace UI is future work.

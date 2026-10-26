@@ -3,7 +3,7 @@
   "phase": "07",
   "phaseName": "AI Agent System",
   "source": "architecture/phase-07-ai-agent-system.md",
-  "generatedAt": "2026-09-28T12:05:22.177Z",
+  "generatedAt": "2026-10-26T18:08:00.054Z",
   "classificationDefinitions": {
     "ENFORCED": "an executable artefact proves it (test, verifier script, migration, policy or machine-checked contract match) and, where a boundary is declared, a real call site invokes it",
     "DECLARED": "a module, document or contract mentions it, but nothing executable proves it",
@@ -12,10 +12,12 @@
   },
   "summary": {
     "areas": 14,
-    "enforced": 14,
+    "enforced": 13,
     "declared": 0,
-    "implementedUnwired": 0,
-    "implementedUnwiredAreas": [],
+    "implementedUnwired": 1,
+    "implementedUnwiredAreas": [
+      "governance-projection"
+    ],
     "missing": 0,
     "missingRequired": [],
     "unresolvedEvidencePaths": []
@@ -277,7 +279,7 @@
       "requirement": "What the agent system enforces is inspectable, and its state machines are exercised rather than described.",
       "required": true,
       "ownerPhase": null,
-      "classification": "ENFORCED",
+      "classification": "IMPLEMENTED_UNWIRED",
       "declaredEvidence": [
         "frontend/src/lib/agent-governance-report.ts",
         "tests/unit/agent-governance-report.test.ts"
@@ -290,9 +292,7 @@
       "declaredBoundary": [
         "frontend/src/routes/_authenticated/super-admin/agent-governance.tsx"
       ],
-      "boundaryEvidence": [
-        "frontend/src/routes/_authenticated/super-admin/agent-governance.tsx"
-      ]
+      "boundaryEvidence": []
     },
     {
       "id": "agent-knowledge",

@@ -594,7 +594,7 @@
       "boundary": [
         { "kind": "module", "path": "frontend/src/routes/_authenticated/super-admin/trust-fabric.tsx", "contains": "trust-fabric-report" }
       ],
-      "boundaryNote": "Closed 2026-09-16: /super-admin/trust-fabric renders the vocabulary, the 10 invariant checks (each run against the shipped machine), the exercised decision paths, the two readings of 'usable' (fabric vs enforcement) and the 10 declared gaps. The page declares no role list of its own."
+      "boundaryNote": "The `/super-admin/trust-fabric` L4 surface was removed with the hardcoded console UI (2026-10-26). `trust-fabric-report` and its tests remain; projection is IMPLEMENTED_UNWIRED until a governed replacement surface exists."
     },
     {
       "id": "document-completeness",
