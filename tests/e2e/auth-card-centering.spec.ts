@@ -13,13 +13,6 @@ const SHOT_DIR = process.env.AUTH_SHOT_DIR;
 
 const PAGES: { name: string; path: string; prepare?: (p: Page) => Promise<void> }[] = [
   { name: "signin", path: "/auth" },
-  {
-    name: "signup",
-    path: "/auth",
-    prepare: async (p) => {
-      await p.getByRole("button", { name: /create one/i }).click();
-    },
-  },
   { name: "forgot", path: "/forgot-password" },
   { name: "reset", path: "/reset-password" },
 ];

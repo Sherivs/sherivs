@@ -1,5 +1,6 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { Lock, LogIn, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
 import { PLATFORM_NAME, PLATFORM_URL } from "@/lib/platform";
@@ -15,11 +16,20 @@ import {
   loginErrorMessage,
   newPasswordServerMessage,
 } from "@/lib/security/auth-feedback";
-import { SherivsLogo } from "@/components/brand/sherivs-logo";
+import { SherivsLockup } from "@/components/brand/sherivs-logo";
+import { GoogleMark } from "@/components/auth/google-mark";
 import { resolveTenantDomain } from "@/lib/tenant";
 import { schoolDomainLoginAllowed } from "@/lib/domains/school-domains";
 import { currentEffectiveHostKind } from "@/lib/experience/console-host-routing";
 import { authPageExperience, effectiveAuthMode } from "@/lib/experience/auth-page-experience";
+import {
+  consumeOAuthError,
+  googleSignInRedirectTo,
+  parseOAuthCallbackError,
+  startGoogleSignIn,
+} from "@/lib/auth/google-sign-in";
+import { rememberPreferenceActive, setRememberPreference } from "@/lib/auth/remember-session";
+import "@/components/app-entry/app-entry.css";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -59,6 +69,10 @@ function AuthPage() {
   const [captchaNonce, setCaptchaNonce] = useState(0);
   const [captchaUnavailable, setCaptchaUnavailable] = useState(false);
   const [waitMs, setWaitMs] = useState(() => backoff.remainingMs());
+  const [remember, setRemember] = useState(() =>
+    typeof window !== "undefined" ? rememberPreferenceActive() : false,
+  );
+  const [busyKind, setBusyKind] = useState<"password" | "google" | null>(null);
 
   // Count down any active backoff after repeated failed sign-ins.
   useEffect(() => {
@@ -66,6 +80,21 @@ function AuthPage() {
     const id = setInterval(() => setWaitMs(backoff.remainingMs()), 1000);
     return () => clearInterval(id);
   }, [waitMs > 0]);
+
+  useEffect(() => {
+    const stored = consumeOAuthError();
+    const params = new URLSearchParams(window.location.search);
+    const fromCallback = parseOAuthCallbackError(params);
+    const next = stored ?? fromCallback;
+    if (next) setError(next);
+    if (fromCallback && params.has("error")) {
+      params.delete("error");
+      params.delete("error_description");
+      params.delete("error_code");
+      const qs = params.toString();
+      window.history.replaceState(null, "", `${window.location.pathname}${qs ? `?${qs}` : ""}`);
+    }
+  }, []);
 
   function reset() {
     setError(null);
@@ -87,7 +116,9 @@ function AuthPage() {
       return setError("Please complete the security check.");
     }
     const captcha = captchaToken ?? undefined;
+    if (mode === "signin") setRememberPreference(remember);
     setBusy(true);
+    setBusyKind("password");
     try {
       if (mode === "signin") {
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -171,38 +202,61 @@ function AuthPage() {
       setError(err instanceof Error ? err.message : "Authentication failed");
     } finally {
       setBusy(false);
+      setBusyKind(null);
       // Turnstile tokens are single-use: always fetch a fresh one.
       setCaptchaToken(null);
       setCaptchaNonce((n) => n + 1);
     }
   }
 
-  const title = experience.heading ?? (mode === "signin" ? "Sign in" : "Create account");
+  async function handleGoogle() {
+    reset();
+    setRememberPreference(remember);
+    setBusy(true);
+    setBusyKind("google");
+    const result = await startGoogleSignIn(
+      (args) => supabase.auth.signInWithOAuth(args),
+      {
+        redirectTo: googleSignInRedirectTo(window.location.origin, "/auth"),
+        loginHint: email,
+      },
+    );
+    if (!result.ok) {
+      setBusy(false);
+      setBusyKind(null);
+      setError(result.error);
+    }
+  }
+
+  const title = experience.heading ?? (mode === "signin" ? "Welcome back" : "Create account");
+  const signInCopy = mode === "signin";
 
   if (!loading && authUser) {
     return (
-      <div className="auth-shell">
-        <div className="auth-card uos-card" data-testid="auth-card">
-          <Link to="/" aria-label={`${PLATFORM_NAME} home`} className="mb-6 inline-flex">
-            <SherivsLogo size={36} wordmarkClassName="text-xl" />
-          </Link>
-          <h1 className="font-display text-2xl font-bold">Signed in</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+      <div className="auth-shell app-entry app-entry-login">
+        <div className="app-entry-login-orbs" aria-hidden="true">
+          <span className="app-entry-orb app-entry-orb-cyan" />
+          <span className="app-entry-orb app-entry-orb-blue" />
+          <span className="app-entry-orb app-entry-orb-violet" />
+        </div>
+        <Link to="/" aria-label={`${PLATFORM_NAME} home`} className="app-entry-login-chrome">
+          <SherivsLockup height={34} />
+        </Link>
+        <div className="auth-card uos-card app-entry-login-card" data-testid="auth-card">
+          <p className="app-entry-login-kicker">You are signed in</p>
+          <h1 className="app-entry-login-title">Welcome back</h1>
+          <p className="app-entry-panel-lead">
             The application workspace is not available. The {PLATFORM_NAME} company website remains
             at sherivs.com.
           </p>
           <div className="mt-6 flex flex-col gap-2">
-            <a
-              href={PLATFORM_URL}
-              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground"
-            >
+            <a href={PLATFORM_URL} className="app-entry-login-submit">
+              <span className="app-entry-glass-icon" aria-hidden="true">
+                <LogIn />
+              </span>
               Open sherivs.com
             </a>
-            <button
-              type="button"
-              onClick={() => void signOut()}
-              className="rounded-md border border-border px-4 py-3 text-sm font-semibold hover:bg-accent"
-            >
+            <button type="button" onClick={() => void signOut()} className="app-entry-login-google">
               Sign out
             </button>
           </div>
@@ -212,14 +266,19 @@ function AuthPage() {
   }
 
   return (
-    <div className="auth-shell">
-      <div className="auth-card uos-card" data-testid="auth-card">
-        <div className="mb-6">
-          {!school && (
-            <Link to="/" aria-label={`${PLATFORM_NAME} home`} className="mb-6 inline-flex">
-              <SherivsLogo size={36} wordmarkClassName="text-xl" />
-            </Link>
-          )}
+    <div className="auth-shell app-entry app-entry-login">
+      <div className="app-entry-login-orbs" aria-hidden="true">
+        <span className="app-entry-orb app-entry-orb-cyan" />
+        <span className="app-entry-orb app-entry-orb-blue" />
+        <span className="app-entry-orb app-entry-orb-violet" />
+      </div>
+      {!school && (
+        <Link to="/" aria-label={`${PLATFORM_NAME} home`} className="app-entry-login-chrome">
+          <SherivsLockup height={34} />
+        </Link>
+      )}
+      <div className="auth-card uos-card app-entry-login-card" data-testid="auth-card">
+        <div className="mb-2">
           {school && (
             <div className="mb-4 flex items-center gap-3">
               {school.logo_url ? (
@@ -245,33 +304,48 @@ function AuthPage() {
               </div>
             </div>
           )}
-          <h1 className="font-display text-2xl font-bold">{title}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{experience.subtext}</p>
+          <p className="app-entry-login-kicker">Please enter your details</p>
+          <h1 className="app-entry-login-title">{signInCopy ? "Welcome back" : title}</h1>
+          <p className="mt-0 mb-4 text-sm text-muted-foreground">{experience.subtext}</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="app-entry-login-form">
           {mode === "signup" && (
             <Field label="Full name">
               <input
                 required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="uos-input"
+                className="app-entry-login-input"
+                style={{ paddingLeft: "0.95rem" }}
                 autoComplete="name"
               />
             </Field>
           )}
-          <Field label="Email">
+          <label className="app-entry-login-field">
+            <span className="sr-only">Email address</span>
+            <span className="app-entry-login-field-icon">
+              <span className="app-entry-glass-icon" aria-hidden="true">
+                <Mail />
+              </span>
+            </span>
             <input
               required
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="uos-input"
+              className="app-entry-login-input"
+              placeholder="Email address"
               autoComplete="email"
             />
-          </Field>
-          <Field label="Password">
+          </label>
+          <label className="app-entry-login-field">
+            <span className="sr-only">Password</span>
+            <span className="app-entry-login-field-icon">
+              <span className="app-entry-glass-icon" aria-hidden="true">
+                <Lock />
+              </span>
+            </span>
             <PasswordInput
               required
               minLength={mode === "signup" ? PASSWORD_MIN_LENGTH : undefined}
@@ -279,10 +353,28 @@ function AuthPage() {
               onChange={(e) => setPassword(e.target.value)}
               autoComplete={mode === "signin" ? "current-password" : "new-password"}
               name="password"
+              placeholder="Password"
+              inputClassName="app-entry-login-input app-entry-login-input-password"
             />
-          </Field>
+          </label>
 
           {mode === "signup" && <PasswordStrengthMeter password={password} email={email} />}
+
+          {signInCopy && (
+            <div className="app-entry-login-row">
+              <label className="app-entry-login-remember">
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                />
+                Remember for 30 days
+              </label>
+              <Link to="/forgot-password" search={email ? { email } : {}} className="app-entry-login-forgot">
+                Forgot password
+              </Link>
+            </div>
+          )}
 
           <Turnstile
             onToken={setCaptchaToken}
@@ -291,22 +383,19 @@ function AuthPage() {
           />
 
           {mode === "signin" && waitMs > 0 && (
-            <div
-              role="status"
-              className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm"
-            >
+            <div role="status" className="app-entry-alert app-entry-alert-wait">
               Too many unsuccessful attempts. For your security, please wait{" "}
               <strong>{formatSeconds(waitMs)}</strong> before trying again, or reset your password.
             </div>
           )}
 
           {error && (
-            <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive-foreground">
+            <div role="alert" className="app-entry-alert app-entry-alert-error">
               {error}
             </div>
           )}
           {info && (
-            <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+            <div className="app-entry-alert app-entry-alert-info">
               {info}
             </div>
           )}
@@ -314,29 +403,35 @@ function AuthPage() {
           <button
             type="submit"
             disabled={busy || (mode === "signin" && waitMs > 0)}
-            className="w-full rounded-md bg-primary px-4 py-3 font-semibold text-primary-foreground disabled:opacity-60"
+            className="app-entry-login-submit"
           >
-            {busy
+            <span className="app-entry-glass-icon" aria-hidden="true">
+              <LogIn />
+            </span>
+            {busyKind === "password"
               ? "Please wait…"
               : mode === "signin"
                 ? "Sign in"
                 : "Create account"}
           </button>
 
-          {mode === "signin" && (
-            <div className="text-center">
-              <Link
-                to="/forgot-password"
-                search={email ? { email } : {}}
-                className="text-sm font-medium text-primary underline-offset-2 hover:underline"
-              >
-                Forgotten password?
-              </Link>
-            </div>
+          {signInCopy && (
+            <button
+              type="button"
+              className="app-entry-login-google"
+              disabled={busy || waitMs > 0}
+              onClick={() => void handleGoogle()}
+              data-testid="auth-google"
+            >
+              <span className="app-entry-glass-icon app-entry-google-glass" aria-hidden="true">
+                <GoogleMark size={16} />
+              </span>
+              {busyKind === "google" ? "Opening Google…" : "Sign in with Google"}
+            </button>
           )}
         </form>
 
-        <div className="mt-6 space-y-2 text-center text-sm">
+        <div className="mt-5 space-y-2 text-center text-sm">
           {mode === "signin" && experience.allowSignup && (
             <button
               type="button"
@@ -361,13 +456,16 @@ function AuthPage() {
               Already have an account? Sign in
             </button>
           )}
+          {signInCopy && !experience.allowSignup && (
+            <p className="app-entry-login-invite">
+              Need an account? Ask your administrator to invite you.
+            </p>
+          )}
           <Link to="/" className="block text-xs text-muted-foreground hover:text-foreground">
             Back to site
           </Link>
         </div>
       </div>
-
-      <style>{`.uos-input{display:block;width:100%;border-radius:.5rem;background:var(--color-surface-2);border:1px solid var(--color-border);padding:.55rem .75rem;color:var(--color-foreground);outline:none}.uos-input:focus{box-shadow:0 0 0 2px var(--color-ring)}`}</style>
     </div>
   );
 }

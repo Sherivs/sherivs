@@ -31,8 +31,8 @@ describe("auth card layout with Turnstile (narrow phones)", () => {
   it("applies the shell/card to every auth page", () => {
     for (const f of ["frontend/src/routes/auth.tsx", "frontend/src/routes/forgot-password.tsx", "frontend/src/routes/reset-password.tsx"]) {
       const s = read(f);
-      expect(s, f).toContain('className="auth-shell"');
-      expect(s, f).toContain('className="auth-card uos-card"');
+      expect(s, f).toMatch(/className="auth-shell[\s"]/);
+      expect(s, f).toContain('className="auth-card uos-card');
       expect(s, f).not.toContain("min-h-dvh grid place-items-center");
     }
   });

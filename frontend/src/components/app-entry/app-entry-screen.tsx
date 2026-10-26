@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ChevronLeft, LogIn, UserPlus } from "lucide-react";
+import { ChevronLeft, Lock, LogIn, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
-import { PLATFORM_URL } from "@/lib/platform";
+import { PLATFORM_NAME, PLATFORM_URL } from "@/lib/platform";
 import { Turnstile, captchaRequired } from "@/components/security/turnstile";
 import { PasswordInput } from "@/components/security/password-input";
 import { turnstileEnabled } from "@/lib/security/turnstile-config";
@@ -13,7 +13,8 @@ import {
   formatSeconds,
   loginErrorMessage,
 } from "@/lib/security/auth-feedback";
-import { SherivsMark } from "@/components/brand/sherivs-logo";
+import { SherivsLockup, SherivsMark } from "@/components/brand/sherivs-logo";
+import { GoogleMark } from "@/components/auth/google-mark";
 import { resolveTenantDomain } from "@/lib/tenant";
 import { schoolDomainLoginAllowed } from "@/lib/domains/school-domains";
 import { type AppEntryPanel } from "@/lib/experience/app-entry-host";
@@ -22,6 +23,13 @@ import {
   classifySignInIdentifier,
   toPasswordSignInPayload,
 } from "@/lib/auth/sign-in-identifier";
+import {
+  consumeOAuthError,
+  googleSignInRedirectTo,
+  parseOAuthCallbackError,
+  startGoogleSignIn,
+} from "@/lib/auth/google-sign-in";
+import { rememberPreferenceActive, setRememberPreference } from "@/lib/auth/remember-session";
 import { AppEntryCanvas } from "./app-entry-canvas";
 import { AppEntryWordmark } from "./app-entry-wordmark";
 
@@ -31,18 +39,20 @@ const backoff = createLoginBackoff(
 
 export function AppEntryScreen({ panel }: { panel: AppEntryPanel }) {
   const { loading, authUser, signOut } = useApp();
+  const login = panel === "signin" || Boolean(authUser);
 
   if (!loading && authUser) {
     return (
-      <AppEntryCanvas>
-        <BrandBlock />
-        <section className="app-entry-panel" data-testid="app-entry-signed-in">
-          <h2>Signed in</h2>
+      <AppEntryCanvas tone="login">
+        <LoginChrome />
+        <section className="app-entry-login-card" data-testid="app-entry-signed-in">
+          <p className="app-entry-login-kicker">You are signed in</p>
+          <h2 className="app-entry-login-title">Welcome back</h2>
           <p className="app-entry-panel-lead">
             You are authenticated. The internal application workspace is the next
             phase — it is not on this screen.
           </p>
-          <a className="app-entry-card app-entry-card-primary" href={PLATFORM_URL}>
+          <a className="app-entry-login-submit" href={PLATFORM_URL}>
             <GlassIcon>
               <LogIn />
             </GlassIcon>
@@ -50,7 +60,7 @@ export function AppEntryScreen({ panel }: { panel: AppEntryPanel }) {
           </a>
           <button
             type="button"
-            className="app-entry-card app-entry-card-secondary"
+            className="app-entry-login-google"
             style={{ marginTop: "0.85rem" }}
             onClick={() => void signOut()}
           >
@@ -61,11 +71,28 @@ export function AppEntryScreen({ panel }: { panel: AppEntryPanel }) {
     );
   }
 
+  if (login) {
+    return (
+      <AppEntryCanvas tone="login">
+        <LoginChrome />
+        <SignInPanel />
+      </AppEntryCanvas>
+    );
+  }
+
   return (
     <AppEntryCanvas>
       <BrandBlock />
-      {panel === "signin" ? <SignInPanel /> : <SplashCards />}
+      <SplashCards />
     </AppEntryCanvas>
+  );
+}
+
+function LoginChrome() {
+  return (
+    <Link to="/" className="app-entry-login-chrome" aria-label={`${PLATFORM_NAME} home`}>
+      <SherivsLockup height={34} />
+    </Link>
   );
 }
 
@@ -80,7 +107,7 @@ function BrandBlock() {
   );
 }
 
-function GlassIcon({ children }: { children: React.ReactNode }) {
+function GlassIcon({ children }: { children: ReactNode }) {
   return (
     <span className="app-entry-glass-icon" aria-hidden="true">
       {children}
@@ -103,16 +130,7 @@ function SplashCards() {
         </GlassIcon>
         Sign In
       </button>
-      <Link
-        to="/onboarding"
-        className="app-entry-card app-entry-card-secondary"
-        data-testid="app-entry-create-account-card"
-      >
-        <GlassIcon>
-          <UserPlus />
-        </GlassIcon>
-        Create Account
-      </Link>
+      <p className="app-entry-legal">Access is by invitation. An administrator must invite you.</p>
     </div>
   );
 }
@@ -122,7 +140,10 @@ function SignInPanel() {
   const navigate = useNavigate();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [remember, setRemember] = useState(() =>
+    typeof window !== "undefined" ? rememberPreferenceActive() : false,
+  );
+  const [busy, setBusy] = useState<"password" | "google" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaNonce, setCaptchaNonce] = useState(0);
@@ -134,6 +155,21 @@ function SignInPanel() {
     const id = setInterval(() => setWaitMs(backoff.remainingMs()), 1000);
     return () => clearInterval(id);
   }, [waitMs > 0]);
+
+  useEffect(() => {
+    const stored = consumeOAuthError();
+    const params = new URLSearchParams(window.location.search);
+    const fromCallback = parseOAuthCallbackError(params);
+    const next = stored ?? fromCallback;
+    if (next) setError(next);
+    if (fromCallback && params.has("error")) {
+      params.delete("error");
+      params.delete("error_description");
+      params.delete("error_code");
+      const qs = params.toString();
+      window.history.replaceState(null, "", `${window.location.pathname}${qs ? `?${qs}` : ""}`);
+    }
+  }, []);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -148,7 +184,8 @@ function SignInPanel() {
     const classified = classifySignInIdentifier(identifier);
     const payload = toPasswordSignInPayload(classified, password, captchaToken ?? undefined);
     const auditEmail = classified.kind === "email" ? classified.value : undefined;
-    setBusy(true);
+    setRememberPreference(remember);
+    setBusy("password");
     try {
       const { data, error: authError } = await supabase.auth.signInWithPassword(payload);
       if (authError) {
@@ -193,19 +230,41 @@ function SignInPanel() {
     } catch (err) {
       setError(err instanceof Error ? err.message : INVITE_LOGIN_ERROR);
     } finally {
-      setBusy(false);
+      setBusy(null);
       setCaptchaToken(null);
       setCaptchaNonce((n) => n + 1);
     }
   }
 
+  async function handleGoogle() {
+    setError(null);
+    setRememberPreference(remember);
+    setBusy("google");
+    const result = await startGoogleSignIn(
+      (args) => supabase.auth.signInWithOAuth(args),
+      {
+        redirectTo: googleSignInRedirectTo(window.location.origin, "/?panel=signin"),
+        loginHint: classifySignInIdentifier(identifier).kind === "email" ? identifier : undefined,
+      },
+    );
+    if (!result.ok) {
+      setBusy(null);
+      setError(result.error);
+    }
+  }
+
   const forgotSearch = classifySignInIdentifier(identifier).kind === "email" ? { email: identifier.trim() } : {};
+  const submitting = busy !== null;
 
   return (
-    <section className="app-entry-panel" data-testid="app-entry-signin" aria-labelledby="app-entry-signin-heading">
+    <section
+      className="app-entry-login-card"
+      data-testid="app-entry-signin"
+      aria-labelledby="app-entry-signin-heading"
+    >
       <button
         type="button"
-        className="app-entry-back"
+        className="app-entry-back app-entry-login-back"
         onClick={() =>
           void navigate({
             to: "/",
@@ -219,15 +278,24 @@ function SignInPanel() {
         <ChevronLeft size={16} aria-hidden="true" />
         Back
       </button>
-      <h2 id="app-entry-signin-heading">Sign in</h2>
-      <form onSubmit={handleSubmit} className="app-entry-form">
-        <label className="app-entry-field">
-          <span>Username, email, or phone number</span>
+      <p className="app-entry-login-kicker">Please enter your details</p>
+      <h2 id="app-entry-signin-heading" className="app-entry-login-title">
+        Welcome back
+      </h2>
+      <form onSubmit={handleSubmit} className="app-entry-login-form">
+        <label className="app-entry-login-field">
+          <span className="sr-only">Email address</span>
+          <span className="app-entry-login-field-icon">
+            <GlassIcon>
+              <Mail />
+            </GlassIcon>
+          </span>
           <input
             required
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
-            className="app-entry-input"
+            className="app-entry-login-input"
+            placeholder="Email address"
             autoComplete="username"
             autoCapitalize="none"
             autoCorrect="off"
@@ -236,18 +304,38 @@ function SignInPanel() {
             data-testid="app-entry-identifier"
           />
         </label>
-        <label className="app-entry-field">
-          <span>Password</span>
+        <label className="app-entry-login-field">
+          <span className="sr-only">Password</span>
+          <span className="app-entry-login-field-icon">
+            <GlassIcon>
+              <Lock />
+            </GlassIcon>
+          </span>
           <PasswordInput
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="current-password"
             name="password"
-            inputClassName="app-entry-input"
+            inputClassName="app-entry-login-input app-entry-login-input-password"
             fieldLabel="password"
+            placeholder="Password"
           />
         </label>
+        <div className="app-entry-login-row">
+          <label className="app-entry-login-remember">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+              data-testid="app-entry-remember"
+            />
+            Remember for 30 days
+          </label>
+          <Link to="/forgot-password" search={forgotSearch} className="app-entry-login-forgot">
+            Forgot password
+          </Link>
+        </div>
         <Turnstile
           onToken={setCaptchaToken}
           onUnavailable={() => setCaptchaUnavailable(true)}
@@ -266,18 +354,30 @@ function SignInPanel() {
         )}
         <button
           type="submit"
-          disabled={busy || waitMs > 0}
-          className="app-entry-card app-entry-card-primary app-entry-submit"
+          disabled={submitting || waitMs > 0}
+          className="app-entry-login-submit"
           data-testid="app-entry-submit"
         >
           <GlassIcon>
             <LogIn />
           </GlassIcon>
-          {busy ? "Please wait…" : "Sign In"}
+          {busy === "password" ? "Please wait…" : "Sign in"}
         </button>
-        <Link to="/forgot-password" search={forgotSearch} className="app-entry-forgot">
-          Forgot password?
-        </Link>
+        <button
+          type="button"
+          className="app-entry-login-google"
+          data-testid="app-entry-google"
+          disabled={submitting || waitMs > 0}
+          onClick={() => void handleGoogle()}
+        >
+          <span className="app-entry-glass-icon app-entry-google-glass" aria-hidden="true">
+            <GoogleMark size={16} />
+          </span>
+          {busy === "google" ? "Opening Google…" : "Sign in with Google"}
+        </button>
+        <p className="app-entry-login-invite">
+          Need an account? Ask your administrator to invite you.
+        </p>
       </form>
     </section>
   );

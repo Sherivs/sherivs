@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 import { resolvePublicSupabaseConfig } from "./public-config";
+import { createAuthStorage } from "@/lib/auth/remember-session";
 
 function isNewSupabaseApiKey(value: string): boolean {
   return value.startsWith("sb_publishable_") || value.startsWith("sb_secret_");
@@ -50,9 +51,13 @@ function createSupabaseClient() {
       fetch: createSupabaseFetch(resolved.publishableKey),
     },
     auth: {
-      storage: typeof window !== "undefined" ? localStorage : undefined,
+      storage:
+        typeof window !== "undefined"
+          ? createAuthStorage({ local: window.localStorage, session: window.sessionStorage })
+          : undefined,
       persistSession: true,
       autoRefreshToken: true,
+      detectSessionInUrl: true,
     },
   });
 }

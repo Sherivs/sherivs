@@ -62,6 +62,9 @@ describe("app-entry host", () => {
     expect(wordmark).toContain("/brand/sherivs-app-wordmark.png");
     expect(canvas).toContain("/app-entry/splash-field.jpg");
     expect(canvas).toContain("app-entry-backdrop");
+    expect(canvas).toContain('tone === "login"');
+    expect(css).toContain(".app-entry-login-card");
+    expect(css).toContain("#1848fd");
     expect(canvas).not.toMatch(/className="app-entry-field"/);
     expect(css).toContain(".app-entry-backdrop");
     expect(existsSync(join(ROOT, "public/app-entry/splash-field.jpg"))).toBe(true);
@@ -86,15 +89,20 @@ describe("app-entry wiring", () => {
     expect(splash).not.toContain("command-centre");
     expect(splash).not.toContain("portal-shell");
     expect(splash).toContain("signInWithPassword");
+    expect(splash).toContain("signInWithOAuth");
     expect(splash).not.toContain("signUp");
-    expect(splash).toContain("Forgot password?");
+    expect(splash).toContain("Forgot password");
+    expect(splash).toContain("Welcome back");
+    expect(splash).toContain("Sign in with Google");
+    expect(splash).toContain("Remember for 30 days");
     expect(splash).not.toContain("Use the username, email, or phone number");
-    expect(splash).toContain("/onboarding");
+    expect(splash).not.toContain("Create Account");
+    expect(splash).not.toContain("/onboarding");
     expect(splash).toContain("app-entry-glass-icon");
     expect(splash).toContain("size={68}");
   });
 
-  it("routes Create Account to Sherivs-team onboarding, never Auth sign-up", () => {
+  it("keeps Sherivs-team onboarding as a mailto, never Auth sign-up", () => {
     const onboarding = read("frontend/src/components/app-entry/app-onboarding-screen.tsx");
     expect(onboarding).toContain("buildOnboardingMailto");
     expect(onboarding).not.toContain("signUp");

@@ -30,7 +30,7 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     body: [
       {
         paragraphs: [
-          "Go to app.sherivs.com and choose Create Account, or request a demo at hello@sherivs.com. The Sherivs team creates the organization's admin account. There is no self-service sign-up and no public demo passwords.",
+          "Request a demo at hello@sherivs.com or on the public website. The Sherivs team creates the organization's admin account. There is no self-service sign-up on app.sherivs.com and no public demo passwords.",
           "After the admin account is provisioned, that admin invites every other user by email with login credentials. Invited users sign in on app.sherivs.com — they do not create their own accounts.",
         ],
       },

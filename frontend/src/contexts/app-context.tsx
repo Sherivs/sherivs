@@ -8,6 +8,11 @@ import { resolveSchoolByHost, schoolDomainLoginAllowed } from "@/lib/domains/sch
 import { type AppRole } from "@/lib/roles";
 import { runtimeWorkspaceHome } from "@/lib/runtime/nav-registry";
 import { customTenantColors } from "@/lib/brand/tenant-colors";
+import {
+  GOOGLE_UNINVITED_ERROR,
+  persistOAuthError,
+  shouldRejectUninvitedGooglePrincipal,
+} from "@/lib/auth/google-sign-in";
 
 /**
  * UserProfile = row from public.users (tenant member).
@@ -158,6 +163,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
           .maybeSingle();
         if (sa) nextSuperAdmin = sa as SuperAdminProfile;
         else nextPlatformStaff = await loadPlatformStaff(currentSession.user.id);
+      }
+
+      // Google OAuth can create an Auth user with no membership. Sign that
+      // session out — access is by admin invite, never self-registration.
+      if (
+        shouldRejectUninvitedGooglePrincipal({
+          hasMembership: Boolean(nextProfile || nextSuperAdmin || nextPlatformStaff),
+          user: currentSession.user,
+        })
+      ) {
+        persistOAuthError(GOOGLE_UNINVITED_ERROR);
+        await supabase.auth.signOut();
+        setSession(null);
+        nextProfile = null;
+        nextSuperAdmin = null;
+        nextPlatformStaff = null;
       }
     }
 

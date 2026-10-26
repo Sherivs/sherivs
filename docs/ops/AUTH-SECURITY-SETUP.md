@@ -85,3 +85,21 @@ set up:
    - Sender email `no-reply@sherivs.com`, Sender name `Sherivs`
 3. Raise **Rate Limits**, then **Emails sent per hour**, to something like 100.
 4. Send yourself a reset from a phone that is not signed in to Supabase, to confirm delivery.
+
+## Step 7: Google sign-in (invited accounts only)
+The login card offers **Sign in with Google**. That button opens Google's account picker.
+It must **not** become a public sign-up path.
+
+1. In Google Cloud Console, create an OAuth client (Web application) for the Sherivs project.
+   Authorized JavaScript origins: `https://app.sherivs.com` (and `http://localhost:3000` for local).
+   Authorized redirect URIs: `https://<project-ref>.supabase.co/auth/v1/callback`.
+2. In Supabase, **Authentication** → **Providers** → **Google**: enable it and paste the client ID and secret.
+3. **Authentication** → **URL Configuration** → **Redirect URLs**, add:
+   - `https://app.sherivs.com/`
+   - `https://app.sherivs.com/?panel=signin`
+   - `https://app.sherivs.com/auth`
+4. Keep **Allow new users to sign up** off if the dashboard shows it. Invited users already exist
+   (admin `inviteUserByEmail` / `createUser`). A Google account with no membership is signed out
+   by the app with an invitation message.
+5. Check: on `app.sherivs.com` tap **Sign in**, then **Sign in with Google**. Google should list
+   accounts. An invited Gmail address signs in. An unknown Google account does not stay signed in.
