@@ -44,10 +44,10 @@ function RequestDemoPage() {
               <div className="rounded-[var(--sherivs-radius)] border border-[var(--sherivs-border)] p-5">
                 <h3 className="font-display font-semibold">Start now</h3>
                 <p className="mt-2 text-sm text-sherivs-muted">
-                  Create your organization&apos;s account. The runtime you can select today is Scholar.
+                  The Sherivs team creates your organization&apos;s admin account. That admin then invites users by email.
                 </p>
-                <PublicButton href="/auth" variant="secondary" className="mt-3">
-                  Create your organization
+                <PublicButton href="/onboarding" variant="secondary" className="mt-3">
+                  Request an admin account
                 </PublicButton>
               </div>
               <div className="rounded-[var(--sherivs-radius)] border border-[var(--sherivs-border)] p-5">

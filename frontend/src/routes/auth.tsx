@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
@@ -23,6 +23,12 @@ import { authPageExperience, effectiveAuthMode } from "@/lib/experience/auth-pag
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
+  beforeLoad: () => {
+    if (typeof window === "undefined") return;
+    if (currentEffectiveHostKind() === "app") {
+      throw redirect({ to: "/", search: { panel: "signin" } });
+    }
+  },
   component: AuthPage,
 });
 

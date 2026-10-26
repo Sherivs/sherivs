@@ -4,10 +4,13 @@ import { parseSiteSearch, siteHead } from "@/components/website/route-support";
 import { getPublicSite } from "@/lib/website/public-site.functions";
 import { SherivsHome } from "@/components/public/sherivs-home";
 import { ApplicationUnavailable } from "@/components/public/application-unavailable";
+import { AppEntryScreen } from "@/components/app-entry/app-entry-screen";
 import { resolveTenantDomain, resolveTenantSlug } from "@/lib/tenant";
-import { PLATFORM_PAGE_DESCRIPTION, PLATFORM_PAGE_TITLE, PLATFORM_URL } from "@/lib/platform";
+import { PLATFORM_NAME, PLATFORM_PAGE_DESCRIPTION, PLATFORM_PAGE_TITLE, PLATFORM_URL } from "@/lib/platform";
 import { resolveExperienceHost } from "@/lib/experience/experience-host";
 import { isRetiredApplicationHostname } from "@/lib/experience/retired-application-host";
+import { APP_ENTRY_TAGLINE, isAppEntryKind, parseAppEntryPanel } from "@/lib/experience/app-entry-host";
+import { effectiveExperienceHostKind } from "@/lib/experience/console-host-routing";
 import { readRequestHostname } from "@/lib/experience/experience-host.functions";
 import { useApp } from "@/contexts/app-context";
 
@@ -28,14 +31,33 @@ export const Route = createFileRoute("/")({
   loaderDeps: ({ search }) => ({ school: search.school, lang: search.lang }),
   loader: async ({ deps }) => {
     const hostname = await loaderHostname();
-    const hostKind = resolveExperienceHost(hostname);
-    // App, console, gov, head, and group hosts must not SSR the public
+    const hostKind = effectiveExperienceHostKind(
+      hostname,
+      import.meta.env.VITE_SHERIVS_HOST_KIND_OVERRIDE as string | undefined,
+    );
+    // app.sherivs.com is the application splash — not the public homepage
+    // and not the deleted workspace shell.
+    if (isAppEntryKind(hostKind)) {
+      return {
+        hostname,
+        hostKind,
+        retired: false as const,
+        appEntry: true as const,
+        surface: "application",
+        site: null,
+        preview: false,
+        tenant: null,
+        lang: deps.lang,
+      };
+    }
+    // Console, gov, head, and group hosts must not SSR the public
     // marketing homepage or a hardcoded workspace shell.
-    if (isRetiredApplicationHostname(hostname)) {
+    if (isRetiredApplicationHostname(hostname) || hostKind === "internal") {
       return {
         hostname,
         hostKind,
         retired: true as const,
+        appEntry: false as const,
         surface: retiredSurfaceLabel(hostname),
         site: null,
         preview: false,
@@ -49,6 +71,7 @@ export const Route = createFileRoute("/")({
       hostname,
       hostKind,
       retired: false as const,
+      appEntry: false as const,
       surface: null,
       site: res.site,
       preview: res.preview,
@@ -58,6 +81,15 @@ export const Route = createFileRoute("/")({
   },
   component: Index,
   head: ({ loaderData }) => {
+    if (loaderData?.appEntry) {
+      return {
+        meta: [
+          { title: `${PLATFORM_NAME} — ${APP_ENTRY_TAGLINE}` },
+          { name: "description", content: APP_ENTRY_TAGLINE },
+          { name: "robots", content: "noindex, nofollow" },
+        ],
+      };
+    }
     if (loaderData?.retired) {
       return {
         meta: [
@@ -106,7 +138,12 @@ const platformHead = () => ({
 
 function Index() {
   const data = Route.useLoaderData();
+  const search = Route.useSearch();
   const { loading } = useApp();
+
+  if (data.appEntry) {
+    return <AppEntryScreen panel={parseAppEntryPanel(search.panel)} />;
+  }
 
   if (data.retired) {
     return <ApplicationUnavailable surface={data.surface ?? "application"} />;

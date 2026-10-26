@@ -52,19 +52,21 @@ describe("hardcoded application shells are removed", () => {
     kept("frontend/src/routes/auth.tsx");
     kept("frontend/src/components/public/application-unavailable.tsx");
     kept("frontend/src/lib/experience/retired-application-host.ts");
+    kept("frontend/src/components/app-entry/app-entry-screen.tsx");
+    kept("frontend/src/routes/onboarding.tsx");
   });
 });
 
 describe("retired application hosts", () => {
-  it("retires app, console, gov, head, and group hosts — not public or tenant sites", () => {
-    expect(isRetiredApplicationHostname("app.sherivs.com")).toBe(true);
+  it("retires console, gov, head, and group hosts — not public, tenant, or the app splash", () => {
+    expect(isRetiredApplicationHostname("app.sherivs.com")).toBe(false);
     expect(isRetiredApplicationHostname("console.sherivs.com")).toBe(true);
     expect(isRetiredApplicationHostname("internal.sherivs.com")).toBe(true);
     expect(isRetiredApplicationHostname("gov.sherivs.com")).toBe(true);
     expect(isRetiredApplicationHostname("head.sherivs.com")).toBe(true);
     expect(isRetiredApplicationHostname("group.sherivs.com")).toBe(true);
     expect(isRetiredApplicationHostname("admin.sherivs.com")).toBe(true);
-    expect(isRetiredApplicationHostname("app.universalschoolos.com")).toBe(true);
+    expect(isRetiredApplicationHostname("app.universalschoolos.com")).toBe(false);
     expect(isRetiredApplicationHostname("console.universalschoolos.com")).toBe(true);
     expect(isRetiredApplicationHostname("borno.gov.sherivs.com")).toBe(true);
     expect(isRetiredApplicationHostname("console.unimaid.sherivs.com")).toBe(true);

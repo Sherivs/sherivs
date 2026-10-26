@@ -30,14 +30,14 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     body: [
       {
         paragraphs: [
-          "Open Sign in from sherivs.com or go to app.sherivs.com. Create an account with your work email. There are no public demo passwords.",
-          "After authentication, create an organization. The runtime you can select today is Sherivs Scholar (education). Other industry runtimes are not offered at onboarding yet.",
+          "Go to app.sherivs.com and choose Create Account, or request a demo at hello@sherivs.com. The Sherivs team creates the organization's admin account. There is no self-service sign-up and no public demo passwords.",
+          "After the admin account is provisioned, that admin invites every other user by email with login credentials. Invited users sign in on app.sherivs.com — they do not create their own accounts.",
         ],
       },
       {
         heading: "If you already have an invitation",
         paragraphs: [
-          "Use the invitation you received from your organization. Membership is granted by the organization, not by this public website.",
+          "Use the email and password from your invitation. Membership is granted by your organization's admin, not by this public website.",
         ],
       },
     ],

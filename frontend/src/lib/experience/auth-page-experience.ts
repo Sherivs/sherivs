@@ -12,7 +12,7 @@ export interface AuthPageExperience {
   /** Heading override; null keeps the mode-based heading. */
   heading: string | null;
   subtext: string;
-  /** Self-service sign-up. Console staff are created only by invite. */
+  /** Self-service sign-up. Organization admins and console staff are created only by invite. */
   allowSignup: boolean;
 }
 
@@ -24,10 +24,17 @@ export function authPageExperience(hostKind: ExperienceHostKind): AuthPageExperi
       allowSignup: false,
     };
   }
+  if (hostKind === "app") {
+    return {
+      heading: PLATFORM_NAME,
+      subtext: `Sign in with the credentials from your invitation. ${PLATFORM_NAME} creates organization admin accounts; admins invite users by email.`,
+      allowSignup: false,
+    };
+  }
   return {
     heading: null,
     subtext: `Sign in to ${PLATFORM_NAME} — your organization's operating environment.`,
-    allowSignup: true,
+    allowSignup: false,
   };
 }
 

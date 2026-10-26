@@ -26,13 +26,13 @@ describe("sign-in page per host", () => {
     expect(x.allowSignup).toBe(false);
   });
 
-  it("app host: organization copy and sign-up available", () => {
+  it("app host: invitation copy and no self-service sign-up", () => {
     const x = authPageExperience(effectiveExperienceHostKind("app.sherivs.com"));
-    expect(x.heading).toBeNull();
-    expect(x.subtext).toBe("Sign in to Sherivs — your organization's operating environment.");
-    expect(x.allowSignup).toBe(true);
-    expect(effectiveAuthMode("signup", x)).toBe("signup");
+    expect(x.heading).toBe("Sherivs");
+    expect(x.allowSignup).toBe(false);
+    expect(effectiveAuthMode("signup", x)).toBe("signin");
     expect(effectiveAuthMode("bogus", x)).toBe("signin");
+    expect(x.subtext.toLowerCase()).toContain("invitation");
   });
 
   it("auth page wires the host experience and gates the sign-up toggle", () => {

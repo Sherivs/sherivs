@@ -143,6 +143,7 @@ describe("canonical root redirect", () => {
     const index = read("frontend/src/routes/index.tsx");
     expect(index).toContain("isRetiredApplicationHostname");
     expect(index).toContain("ApplicationUnavailable");
+    expect(index).toContain("AppEntryScreen");
     expect(index).toContain("<SherivsHome />");
     expect(index).toContain("readRequestHostname");
   });

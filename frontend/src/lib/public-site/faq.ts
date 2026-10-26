@@ -114,9 +114,10 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
     category: "Onboarding",
     question: "How do we get started?",
     answer:
-      "Request a demo (hello@sherivs.com) for a walkthrough, or create an organization from Sign in. New organizations currently onboard onto Scholar. There are no public demo passwords on the website.",
+      "Request a demo (hello@sherivs.com) for a walkthrough. Sherivs creates your organization's admin account; that admin then invites users by email with login credentials. There is no self-service sign-up and no public demo passwords on the website.",
     related: [
       { href: "/request-demo", label: "Request a demo" },
+      { href: "/onboarding", label: "Request an admin account" },
       { href: "/auth", label: "Sign in" },
     ],
   },

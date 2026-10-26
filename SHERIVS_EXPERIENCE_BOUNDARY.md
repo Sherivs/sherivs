@@ -41,14 +41,15 @@ Canonical planes:
 
 ## Plane C — Organization Internal Workspace (Scholar runtime)
 
-Hardcoded Scholar portal routes, portal chrome, and the app.sherivs.com application shell have been **removed**. Identity/domain modules remain. A replacement workspace UI is not in this tree.
+Hardcoded Scholar portal routes, portal chrome, and the previous application shells have been **removed**. Identity/domain modules remain. `app.sherivs.com` now serves the splash / sign-in / Sherivs-team onboarding entry. A replacement workspace UI is not in this tree.
 
 | Route | Purpose | Plane | Authority | Current state | Target state | Status |
 |---|---|---|---|---|---|---|
 | `/admin/*`, `/teacher/*`, `/parent/*`, `/student/*`, `/bursar/*`, `/driver/*`, `/hq/*` | Role workspaces | C | tenant membership + role | hardcoded UI deleted | future governed workspace | REMOVED |
 | `/organizations`, `/welcome`, `/runtime`, `/messages`, `/notifications`, `/settings` | Shell capabilities | C | authenticated | hardcoded UI deleted | future governed workspace | REMOVED |
 | `/super-admin/*`, `/internal`, `/command-centre/*` | Platform / HQ ops | D | internal workforce | hardcoded UI deleted | future governed console | REMOVED |
-| `app.sherivs.com`, `console.sherivs.com`, gov/head/group hosts | Application / console shells | C/D | host routing | retired unavailable surface | do not SSR public homepage | REMOVED |
+| `app.sherivs.com` `/`, `/onboarding` | Application splash, sign-in, team onboarding | C | host routing + invitation credentials | splash first view; Create Account is not self-signup | workspace shell is later work | IMPLEMENTED |
+| `console.sherivs.com`, gov/head/group hosts | Console shells | D | host routing | retired unavailable surface | do not SSR public homepage | REMOVED |
 
 ## Boundary rules locked
 

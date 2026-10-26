@@ -4,8 +4,9 @@
  * The Lovable/Scholar portal shells, Sherivs internal console chrome, and
  * gov/head/group console UIs have been removed. These hostnames must not
  * SSR the public marketing homepage (sherivs.com) and must not render a
- * prototype workspace. Tenant websites (`<slug>.sherivs.com` and custom
- * domains) remain on the website engine.
+ * prototype workspace. Canonical app.sherivs.com is the application splash
+ * (not retired). Tenant websites (`<slug>.sherivs.com` and custom domains)
+ * remain on the website engine.
  *
  * Hostname classification is routing, not authorization.
  */
@@ -43,7 +44,9 @@ export function isRetiredApplicationHostname(hostname: string): boolean {
   const host = hostnameFromHostHeader(hostname);
   if (!host) return false;
   const kind = resolveExperienceHost(host);
-  if (kind === "app" || kind === "internal") return true;
+  // Canonical app hosts render the splash / sign-in / onboarding entry.
+  if (kind === "app") return false;
+  if (kind === "internal") return true;
   if (isGovHost(host)) return true;
   if (CONSOLE_LABEL_HOST.test(host)) return true;
   if (isRetiredPlatformLabelHost(host)) return true;

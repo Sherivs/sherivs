@@ -1,0 +1,89 @@
+import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import {
+  APP_ENTRY_TAGLINE,
+  isAppEntryHostname,
+  isAppEntryKind,
+  parseAppEntryPanel,
+} from "@/lib/experience/app-entry-host";
+import { isRetiredApplicationHostname } from "@/lib/experience/retired-application-host";
+import { resolveExperienceHost } from "@/lib/experience/experience-host";
+
+const ROOT = fileURLToPath(new URL("../..", import.meta.url));
+const read = (ref: string) => readFileSync(join(ROOT, ref), "utf8");
+
+describe("app-entry host", () => {
+  it("classifies canonical app hosts as the splash entry, not retired", () => {
+    expect(resolveExperienceHost("app.sherivs.com")).toBe("app");
+    expect(isAppEntryKind("app")).toBe(true);
+    expect(isAppEntryHostname("app.sherivs.com")).toBe(true);
+    expect(isAppEntryHostname("app.universalschoolos.com")).toBe(true);
+    expect(isRetiredApplicationHostname("app.sherivs.com")).toBe(false);
+    expect(isRetiredApplicationHostname("app.universalschoolos.com")).toBe(false);
+  });
+
+  it("keeps console, gov, head, and group hosts retired", () => {
+    expect(isAppEntryHostname("console.sherivs.com")).toBe(false);
+    expect(isRetiredApplicationHostname("console.sherivs.com")).toBe(true);
+    expect(isRetiredApplicationHostname("internal.sherivs.com")).toBe(true);
+    expect(isRetiredApplicationHostname("gov.sherivs.com")).toBe(true);
+    expect(isRetiredApplicationHostname("head.sherivs.com")).toBe(true);
+    expect(isRetiredApplicationHostname("group.sherivs.com")).toBe(true);
+    expect(isRetiredApplicationHostname("admin.sherivs.com")).toBe(true);
+  });
+
+  it("does not treat public or tenant sites as app entry", () => {
+    expect(isAppEntryHostname("sherivs.com")).toBe(false);
+    expect(isAppEntryHostname("www.sherivs.com")).toBe(false);
+    expect(isAppEntryHostname("northwind.sherivs.com")).toBe(false);
+    expect(isRetiredApplicationHostname("northwind.sherivs.com")).toBe(false);
+  });
+
+  it("parses the sign-in panel and keeps other values on splash", () => {
+    expect(parseAppEntryPanel("signin")).toBe("signin");
+    expect(parseAppEntryPanel("splash")).toBe("splash");
+    expect(parseAppEntryPanel("signup")).toBe("splash");
+    expect(parseAppEntryPanel(undefined)).toBe("splash");
+  });
+
+  it("keeps the owner-approved splash tagline", () => {
+    expect(APP_ENTRY_TAGLINE).toBe("Build a smarter, more productive tomorrow.");
+  });
+});
+
+describe("app-entry wiring", () => {
+  it("renders the splash on the app host index and keeps console unavailable", () => {
+    const index = read("frontend/src/routes/index.tsx");
+    expect(index).toContain("AppEntryScreen");
+    expect(index).toContain("isAppEntryKind");
+    expect(index).toContain("isRetiredApplicationHostname");
+    expect(index).toContain("ApplicationUnavailable");
+    expect(index).toContain("<SherivsHome />");
+    expect(index).not.toContain("signUp");
+  });
+
+  it("does not restore deleted workspace shells", () => {
+    const splash = read("frontend/src/components/app-entry/app-entry-screen.tsx");
+    expect(splash).not.toContain("_authenticated");
+    expect(splash).not.toContain("command-centre");
+    expect(splash).not.toContain("portal-shell");
+    expect(splash).toContain("signInWithPassword");
+    expect(splash).not.toContain("signUp");
+    expect(splash).toContain("Forgot password?");
+    expect(splash).toContain("/onboarding");
+    expect(splash).toContain("app-entry-glass-icon");
+    expect(splash).toContain("size={68}");
+  });
+
+  it("routes Create Account to Sherivs-team onboarding, never Auth sign-up", () => {
+    const onboarding = read("frontend/src/components/app-entry/app-onboarding-screen.tsx");
+    expect(onboarding).toContain("buildOnboardingMailto");
+    expect(onboarding).not.toContain("signUp");
+    expect(onboarding).toContain("self-service sign-up");
+    const route = read("frontend/src/routes/onboarding.tsx");
+    expect(route).toContain("createFileRoute(\"/onboarding\")");
+    expect(route).toContain("AppOnboardingScreen");
+  });
+});
