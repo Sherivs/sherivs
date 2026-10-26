@@ -31,6 +31,7 @@ export interface GoogleOAuthStartArgs {
   options: {
     redirectTo: string;
     queryParams: Record<string, string>;
+    skipBrowserRedirect: true;
   };
 }
 
@@ -46,6 +47,7 @@ export function googleOAuthStartOptions(input: {
     options: {
       redirectTo: input.redirectTo,
       queryParams,
+      skipBrowserRedirect: true,
     },
   };
 }
@@ -107,14 +109,40 @@ export function consumeOAuthError(
   return message && message.trim() ? message : null;
 }
 
+export async function probeGoogleAuthorizeUrl(
+  url: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+  try {
+    const response = await fetchImpl(url, {
+      method: "GET",
+      redirect: "manual",
+      headers: { Accept: "application/json" },
+    });
+    if (response.status >= 400) {
+      const body = (await response.json().catch(() => null)) as { msg?: string; message?: string } | null;
+      return { ok: false, error: googleAuthErrorMessage({ message: body?.msg ?? body?.message }) };
+    }
+    const location = response.headers.get("Location");
+    return { ok: true, url: location && location.length > 0 ? location : url };
+  } catch {
+    return { ok: true, url };
+  }
+}
+
 export async function startGoogleSignIn(
   signInWithOAuth: (args: GoogleOAuthStartArgs) => Promise<{
     data: { url: string | null };
     error: { message: string } | null;
   }>,
   input: { redirectTo: string; loginHint?: string },
+  fetchImpl: typeof fetch = fetch,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { error } = await signInWithOAuth(googleOAuthStartOptions(input));
+  const { data, error } = await signInWithOAuth(googleOAuthStartOptions(input));
   if (error) return { ok: false, error: googleAuthErrorMessage(error) };
+  if (!data.url) return { ok: false, error: GOOGLE_GENERIC_ERROR };
+  const probed = await probeGoogleAuthorizeUrl(data.url, fetchImpl);
+  if (!probed.ok) return probed;
+  if (typeof window !== "undefined") window.location.assign(probed.url);
   return { ok: true };
 }

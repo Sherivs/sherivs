@@ -12,6 +12,7 @@ import {
   googleSignInRedirectTo,
   parseOAuthCallbackError,
   persistOAuthError,
+  probeGoogleAuthorizeUrl,
   shouldRejectUninvitedGooglePrincipal,
   startGoogleSignIn,
 } from "@/lib/auth/google-sign-in";
@@ -26,6 +27,7 @@ describe("googleOAuthStartOptions", () => {
     expect(args.options.redirectTo).toBe("https://app.sherivs.com/?panel=signin");
     expect(args.options.queryParams.prompt).toBe(GOOGLE_SELECT_ACCOUNT);
     expect(args.options.queryParams.login_hint).toBe("ada@school.edu");
+    expect(args.options.skipBrowserRedirect).toBe(true);
   });
 
   it("omits login_hint unless the identifier is an email", () => {
@@ -107,19 +109,35 @@ describe("google error copy", () => {
 describe("startGoogleSignIn", () => {
   it("starts OAuth with select_account and surfaces mapped errors", async () => {
     const calls: unknown[] = [];
-    const ok = await startGoogleSignIn(async (args) => {
-      calls.push(args);
-      return { data: { url: "https://accounts.google.com/o" }, error: null };
-    }, { redirectTo: "https://app.sherivs.com/?panel=signin" });
+    const passthrough: typeof fetch = async (input) =>
+      new Response(null, { status: 302, headers: { Location: String(input) } });
+    const ok = await startGoogleSignIn(
+      async (args) => {
+        calls.push(args);
+        return { data: { url: "https://accounts.google.com/o" }, error: null };
+      },
+      { redirectTo: "https://app.sherivs.com/?panel=signin" },
+      passthrough,
+    );
     expect(ok).toEqual({ ok: true });
     expect(calls[0]).toMatchObject({
       provider: "google",
-      options: { queryParams: { prompt: "select_account" } },
+      options: { queryParams: { prompt: "select_account" }, skipBrowserRedirect: true },
     });
 
     const failed = await startGoogleSignIn(async () => {
       return { data: { url: null }, error: { message: "provider is not enabled" } };
     }, { redirectTo: "https://app.sherivs.com/auth" });
     expect(failed).toEqual({ ok: false, error: GOOGLE_UNAVAILABLE_ERROR });
+  });
+
+  it("keeps the visitor on the login card when Google is not enabled", async () => {
+    const fetchImpl: typeof fetch = async () =>
+      new Response(
+        JSON.stringify({ code: 400, msg: "Unsupported provider: provider is not enabled" }),
+        { status: 400, headers: { "Content-Type": "application/json" } },
+      );
+    const probed = await probeGoogleAuthorizeUrl("https://example.supabase.co/auth/v1/authorize?provider=google", fetchImpl);
+    expect(probed).toEqual({ ok: false, error: GOOGLE_UNAVAILABLE_ERROR });
   });
 });

@@ -744,6 +744,7 @@ a.app-entry-login-submit {
   text-align: center;
   font-size: 0.84rem;
   color: #8b93a7;
+  text-wrap: balance;
 }
 
 .app-entry-login .app-entry-alert-error {
