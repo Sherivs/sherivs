@@ -23,7 +23,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
     id: "what-is-sherivs",
     category: "About Sherivs",
     question: "What is Sherivs?",
-    answer: `${POSITIONING_STATEMENT} Education through Scholar is available today; other capabilities described here are in development and are not claimed as generally available.`,
+    answer: `${POSITIONING_STATEMENT} Education through Scholar can be used today; other capabilities described here are in development and are not claimed as generally available.`,
     related: [
       { href: "/sherivs", label: "Platform overview" },
       { href: "/company/vision", label: "Vision" },
