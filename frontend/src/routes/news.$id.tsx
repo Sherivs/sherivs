@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
+import { PublicContentShell } from "@/components/public/policy-shell";
 
 export const Route = createFileRoute("/news/$id")({
   component: NewsDetail,
@@ -83,32 +84,32 @@ function NewsDetail() {
     };
   }, [post.data, school]);
 
-  if (loading || post.isLoading) return <Shell>Loading…</Shell>;
-  if (!school) return <Shell>Open this page from a school site.</Shell>;
+  if (loading || post.isLoading) return <PublicContentShell>Loading…</PublicContentShell>;
+  if (!school) return <PublicContentShell>Open this page from a school site.</PublicContentShell>;
   if (!post.data)
     return (
-      <Shell>
+      <PublicContentShell>
         <h1 className="font-display text-2xl font-bold">Article not found</h1>
-        <Link to="/" className="mt-4 inline-block text-[var(--tenant-primary)] underline">
+        <Link to="/" className="mt-4 inline-block text-primary underline">
           ← Back to {school.name}
         </Link>
-      </Shell>
+      </PublicContentShell>
     );
 
   const p = post.data;
   return (
-    <Shell>
-      <Link to="/" className="text-xs uppercase tracking-widest text-slate-400 hover:text-white">
+    <PublicContentShell>
+      <Link to="/" className="text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground">
         ← {school.name}
       </Link>
       {p.category && (
-        <div className="mt-6 text-[11px] uppercase tracking-widest text-[var(--tenant-primary)] font-bold">
+        <div className="mt-6 text-[11px] font-bold uppercase tracking-widest text-primary">
           {p.category}
         </div>
       )}
-      <h1 className="mt-2 font-display text-3xl md:text-5xl font-extrabold">{p.title}</h1>
+      <h1 className="mt-2 font-display text-3xl font-bold tracking-tight md:text-5xl">{p.title}</h1>
       {p.published_at && (
-        <p className="mt-3 text-sm text-slate-500">
+        <p className="mt-3 text-sm text-muted-foreground">
           {new Date(p.published_at).toLocaleDateString(undefined, {
             year: "numeric",
             month: "long",
@@ -123,21 +124,10 @@ function NewsDetail() {
           className="mt-8 w-full rounded-2xl object-cover"
         />
       )}
-      {p.excerpt && <p className="mt-8 text-lg text-slate-300 leading-relaxed">{p.excerpt}</p>}
+      {p.excerpt && <p className="mt-8 text-lg leading-relaxed text-muted-foreground">{p.excerpt}</p>}
       {p.content && (
-        <div className="mt-6 whitespace-pre-wrap text-slate-200 leading-relaxed">{p.content}</div>
+        <div className="mt-6 whitespace-pre-wrap leading-relaxed">{p.content}</div>
       )}
-    </Shell>
-  );
-}
-
-function Shell({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      className="min-h-dvh text-white"
-      style={{ background: "linear-gradient(180deg, #0a0f1e 0%, #0d1424 100%)" }}
-    >
-      <article className="mx-auto max-w-3xl px-6 py-16 md:py-24">{children}</article>
-    </div>
+    </PublicContentShell>
   );
 }

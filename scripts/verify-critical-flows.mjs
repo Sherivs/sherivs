@@ -95,7 +95,7 @@ async function main() {
     const homeHtml = await home.text();
     record(
       "F1 public-homepage",
-      home.status === 200 && /operating intelligence/i.test(homeHtml) && !/coregrid/i.test(homeHtml),
+      home.status === 200 && /Sherivs/i.test(homeHtml) && !/coregrid/i.test(homeHtml) && !/request a demo/i.test(homeHtml),
       `status=${home.status}`,
     );
 

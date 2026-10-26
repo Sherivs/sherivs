@@ -7,6 +7,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
+import { PublicContentShell } from "@/components/public/policy-shell";
 
 export const Route = createFileRoute("/blog")({
   component: BlogIndex,
@@ -59,52 +60,47 @@ function BlogIndex() {
   }, [posts.data, q, cat]);
 
   return (
-    <div
-      className="min-h-dvh text-white"
-      style={{ background: "linear-gradient(180deg, #0a0f1e 0%, #0d1424 100%)" }}
-    >
-      <div className="mx-auto max-w-6xl px-6 py-16 md:py-24">
-        {school && (
-          <Link
-            to="/"
-            className="text-xs uppercase tracking-widest text-slate-400 hover:text-white"
-          >
-            ← {school.name}
-          </Link>
-        )}
-        <h1 className="mt-6 font-display text-4xl md:text-6xl font-extrabold">Blog</h1>
-        <p className="mt-3 text-slate-400">Stories, updates and announcements.</p>
+    <PublicContentShell wide>
+      {school && (
+        <Link
+          to="/"
+          className="text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground"
+        >
+          ← {school.name}
+        </Link>
+      )}
+      <h1 className="mt-6 font-display text-4xl font-bold tracking-tight md:text-5xl">Blog</h1>
+      <p className="mt-3 text-muted-foreground">Stories, updates and announcements.</p>
 
-        <div className="mt-8 flex flex-wrap gap-3">
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search posts…"
-            className="flex-1 min-w-[200px] rounded-md border border-white/10 bg-white/5 px-4 py-2 text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[var(--tenant-primary,#3b82f6)]"
-          />
-          <select
-            value={cat}
-            onChange={(e) => setCat(e.target.value)}
-            className="rounded-md border border-white/10 bg-white/5 px-4 py-2 text-sm"
-          >
-            <option value="all">All categories</option>
-            {categories.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {loading || posts.isLoading || filtered.length === 0 ? (
-            <SkeletonCards />
-          ) : (
-            filtered.map((p) => <BlogCard key={p.id} post={p} />)
-          )}
-        </div>
+      <div className="mt-8 flex flex-wrap gap-3">
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search posts…"
+          className="min-w-[200px] flex-1 rounded-md border border-border bg-background px-4 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        />
+        <select
+          value={cat}
+          onChange={(e) => setCat(e.target.value)}
+          className="rounded-md border border-border bg-background px-4 py-2 text-sm"
+        >
+          <option value="all">All categories</option>
+          {categories.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
       </div>
-    </div>
+
+      <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {loading || posts.isLoading || filtered.length === 0 ? (
+          <SkeletonCards />
+        ) : (
+          filtered.map((p) => <BlogCard key={p.id} post={p} />)
+        )}
+      </div>
+    </PublicContentShell>
   );
 }
 
@@ -113,7 +109,7 @@ function BlogCard({ post }: { post: Post }) {
     <Link
       to="/blog/$slug"
       params={{ slug: post.slug }}
-      className="group block overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] transition hover:border-[var(--tenant-primary,#3b82f6)]/60"
+      className="group block overflow-hidden rounded-2xl border border-border bg-card transition hover:border-primary/60"
     >
       {post.cover_image_url ? (
         <img
@@ -122,20 +118,20 @@ function BlogCard({ post }: { post: Post }) {
           className="h-48 w-full object-cover transition group-hover:scale-[1.02]"
         />
       ) : (
-        <div className="flex h-48 items-center justify-center bg-gradient-to-br from-white/5 to-white/0 text-xs uppercase tracking-widest text-slate-500">
+        <div className="flex h-48 items-center justify-center bg-muted text-xs uppercase tracking-widest text-muted-foreground">
           {post.category ?? "Article"}
         </div>
       )}
       <div className="p-5">
         {post.category && (
-          <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--tenant-primary,#3b82f6)]">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-primary">
             {post.category}
           </span>
         )}
         <h3 className="mt-2 font-display text-xl font-bold leading-snug">{post.title}</h3>
-        {post.excerpt && <p className="mt-2 line-clamp-3 text-sm text-slate-400">{post.excerpt}</p>}
+        {post.excerpt && <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">{post.excerpt}</p>}
         {post.published_at && (
-          <p className="mt-3 text-xs text-slate-500">
+          <p className="mt-3 text-xs text-muted-foreground">
             {new Date(post.published_at).toLocaleDateString(undefined, {
               year: "numeric",
               month: "long",
@@ -154,18 +150,18 @@ function SkeletonCards() {
       {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className="overflow-hidden rounded-2xl border-2 border-dashed border-white/15 bg-white/[0.02]"
+          className="overflow-hidden rounded-2xl border-2 border-dashed border-border bg-muted/20"
         >
           <div className="flex h-48 items-center justify-center">
-            <span className="rounded-full bg-[var(--tenant-primary,#3b82f6)]/15 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[var(--tenant-primary,#3b82f6)]">
+            <span className="rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary">
               [ BLOG POST ]
             </span>
           </div>
           <div className="space-y-2 p-5">
-            <div className="h-3 w-20 rounded bg-white/5" />
-            <div className="h-5 w-3/4 rounded bg-white/10" />
-            <div className="h-3 w-full rounded bg-white/5" />
-            <div className="h-3 w-2/3 rounded bg-white/5" />
+            <div className="h-3 w-20 rounded bg-muted" />
+            <div className="h-5 w-3/4 rounded bg-muted" />
+            <div className="h-3 w-full rounded bg-muted" />
+            <div className="h-3 w-2/3 rounded bg-muted" />
           </div>
         </div>
       ))}

@@ -26,7 +26,7 @@ function RulesPage() {
   return (
     <PolicyShell title="School Rules & Regulations" schoolName={school.name}>
       {body ? (
-        <div className="whitespace-pre-wrap leading-relaxed text-slate-200">{body}</div>
+        <div className="whitespace-pre-wrap leading-relaxed">{body}</div>
       ) : (
         <PolicySkeleton
           label="SCHOOL RULES AND REGULATIONS"

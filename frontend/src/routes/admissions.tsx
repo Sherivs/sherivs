@@ -420,8 +420,8 @@ function AdmissionsPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-[#0a0f1e] text-white">
-      <div className="border-b border-white/[0.06]">
+    <div className="min-h-dvh bg-background text-foreground">
+      <div className="border-b border-border">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
           <div className="flex items-center gap-3">
             {school.logo_url ? (
@@ -444,10 +444,10 @@ function AdmissionsPage() {
             )}
             <div>
               <div className="font-display text-lg font-semibold">{school.name}</div>
-              <div className="text-xs text-white/50">Admissions {form.academic_year}</div>
+              <div className="text-xs text-muted-foreground">Admissions {form.academic_year}</div>
             </div>
           </div>
-          <Link to="/" className="text-sm text-white/60 hover:text-white">
+          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">
             ← Back to website
           </Link>
         </div>
@@ -457,7 +457,7 @@ function AdmissionsPage() {
         <h1 className="font-display text-3xl font-bold tracking-tight md:text-4xl">
           Online Admission Application
         </h1>
-        <p className="mt-3 max-w-3xl text-sm text-white/60">
+        <p className="mt-3 max-w-3xl text-sm text-muted-foreground">
           {school.admission_requirements ?? "Complete the form below to apply for admission."}
         </p>
         {school.admission_deadline && (
@@ -481,39 +481,39 @@ function AdmissionsPage() {
                       (done
                         ? "bg-emerald-500 text-white"
                         : active
-                          ? "bg-white text-black"
-                          : "border border-white/15 text-white/50")
+                          ? "bg-foreground text-background"
+                          : "border border-border text-muted-foreground")
                     }
                   >
                     {done ? <Check className="h-4 w-4" /> : n}
                   </div>
                   {i < STEPS.length - 1 && (
-                    <div className={"h-px flex-1 " + (done ? "bg-emerald-500" : "bg-white/10")} />
+                    <div className={"h-px flex-1 " + (done ? "bg-emerald-500" : "bg-border")} />
                   )}
                 </div>
               );
             })}
           </div>
-          <div className="mt-3 flex justify-between text-[10px] uppercase tracking-widest text-white/50">
+          <div className="mt-3 flex justify-between text-[10px] uppercase tracking-widest text-muted-foreground">
             {STEPS.map((s) => (
               <span key={s}>{s}</span>
             ))}
           </div>
         </div>
 
-        <div className="mt-10 rounded-3xl border border-white/[0.07] bg-white/[0.03] p-6 md:p-8">
+        <div className="mt-10 rounded-3xl border border-border bg-muted/30 p-6 md:p-8">
           {step === 1 && <Step1 form={form} update={update} classes={classesQ.data ?? []} />}
           {step === 2 && <Step2 form={form} update={update} />}
           {step === 3 && <Step3 form={form} update={update} />}
           {step === 4 && <Step4 form={form} update={update} schoolId={school.id} />}
           {step === 5 && <Step5 form={form} update={update} classes={classesQ.data ?? []} />}
 
-          <div className="mt-10 flex items-center justify-between border-t border-white/[0.06] pt-6">
+          <div className="mt-10 flex items-center justify-between border-t border-border pt-6">
             <button
               type="button"
               onClick={back}
               disabled={step === 1}
-              className="inline-flex items-center gap-2 rounded-full border border-white/15 px-5 py-2 text-sm text-white/80 disabled:opacity-30"
+              className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2 text-sm text-foreground disabled:opacity-30"
             >
               <ArrowLeft className="h-4 w-4" /> Back
             </button>
@@ -551,7 +551,7 @@ function AdmissionsPage() {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-6 inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/60">
+    <div className="mb-6 inline-flex items-center rounded-full border border-border bg-muted/30 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground">
       {children}
     </div>
   );
@@ -568,7 +568,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-white/50">
+      <span className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-muted-foreground">
         {label}
         {required && <span className="ml-1 text-rose-400">*</span>}
       </span>
@@ -578,7 +578,7 @@ function Field({
 }
 
 const inputCls =
-  "w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-white/30 focus:outline-none";
+  "w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none";
 
 function Toggle({
   on,
@@ -590,15 +590,15 @@ function Toggle({
   label: string;
 }) {
   return (
-    <label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-sm">
-      <span className="text-white/80">{label}</span>
+    <label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-border bg-muted/20 px-4 py-3 text-sm">
+      <span className="text-foreground">{label}</span>
       <button
         type="button"
         role="switch"
         aria-checked={on}
         onClick={() => onChange(!on)}
         className={
-          "relative h-6 w-11 rounded-full transition " + (on ? "bg-emerald-500" : "bg-white/15")
+          "relative h-6 w-11 rounded-full transition " + (on ? "bg-emerald-500" : "bg-muted")
         }
       >
         <span
@@ -1033,16 +1033,16 @@ function Step4({ form, update, schoolId }: StepProps & { schoolId: string }) {
                 "rounded-2xl border-2 border-dashed p-5 transition " +
                 (uploaded
                   ? "border-emerald-500/40 bg-emerald-500/5"
-                  : "border-white/10 bg-white/[0.02] hover:border-white/20")
+                  : "border-border bg-muted/20 hover:border-primary/40")
               }
             >
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <div className="font-semibold text-white">
+                  <div className="font-semibold text-foreground">
                     {d.label}
-                    {d.optional && <span className="ml-2 text-xs text-white/40">(optional)</span>}
+                    {d.optional && <span className="ml-2 text-xs text-muted-foreground">(optional)</span>}
                   </div>
-                  <div className="mt-1 text-xs text-white/40">
+                  <div className="mt-1 text-xs text-muted-foreground">
                     Max {d.maxMb}MB · {d.accept.includes("pdf") ? "PDF or image" : "Image"}
                   </div>
                   {uploaded && (
@@ -1051,7 +1051,7 @@ function Step4({ form, update, schoolId }: StepProps & { schoolId: string }) {
                     </div>
                   )}
                 </div>
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-sm text-white/90 hover:bg-white/5">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-border px-4 py-2 text-sm text-foreground hover:bg-muted">
                   {busy ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
@@ -1079,17 +1079,17 @@ function Step5({ form, update, classes }: StepProps & { classes: ClassRow[] }) {
   const className =
     classes.find((c) => c.name === form.applying_for_class)?.name ?? form.applying_for_class;
   const Row = ({ k, v }: { k: string; v: string | null | undefined }) => (
-    <div className="flex justify-between gap-4 border-b border-white/[0.06] py-1.5 text-sm">
-      <span className="text-white/50">{k}</span>
-      <span className="text-right text-white">{v?.toString().trim() || "—"}</span>
+    <div className="flex justify-between gap-4 border-b border-border py-1.5 text-sm">
+      <span className="text-muted-foreground">{k}</span>
+      <span className="text-right text-foreground">{v?.toString().trim() || "—"}</span>
     </div>
   );
   return (
     <div>
       <SectionLabel>Review Your Application</SectionLabel>
       <div className="grid gap-6 md:grid-cols-2">
-        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5">
-          <h4 className="mb-3 font-display text-sm font-semibold uppercase tracking-widest text-white/60">
+        <div className="rounded-2xl border border-border bg-muted/20 p-5">
+          <h4 className="mb-3 font-display text-sm font-semibold uppercase tracking-widest text-muted-foreground">
             Student
           </h4>
           <Row k="Name" v={`${form.first_name} ${form.last_name}`} />
@@ -1100,8 +1100,8 @@ function Step5({ form, update, classes }: StepProps & { classes: ClassRow[] }) {
           <Row k="Nationality" v={form.nationality} />
           <Row k="Blood / Genotype" v={`${form.blood_group || "—"} / ${form.genotype || "—"}`} />
         </div>
-        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5">
-          <h4 className="mb-3 font-display text-sm font-semibold uppercase tracking-widest text-white/60">
+        <div className="rounded-2xl border border-border bg-muted/20 p-5">
+          <h4 className="mb-3 font-display text-sm font-semibold uppercase tracking-widest text-muted-foreground">
             Academic History
           </h4>
           <Row k="Previous School" v={form.previous_school} />
@@ -1109,8 +1109,8 @@ function Step5({ form, update, classes }: StepProps & { classes: ClassRow[] }) {
           <Row k="Year" v={form.year_completed} />
           <Row k="Disciplined" v={form.was_disciplined ? "Yes" : "No"} />
         </div>
-        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5">
-          <h4 className="mb-3 font-display text-sm font-semibold uppercase tracking-widest text-white/60">
+        <div className="rounded-2xl border border-border bg-muted/20 p-5">
+          <h4 className="mb-3 font-display text-sm font-semibold uppercase tracking-widest text-muted-foreground">
             Family
           </h4>
           <Row k="Parent 1" v={`${form.p1_name} (${form.p1_relationship})`} />
@@ -1121,8 +1121,8 @@ function Step5({ form, update, classes }: StepProps & { classes: ClassRow[] }) {
           )}
           <Row k="Emergency" v={`${form.emergency_name} (${form.emergency_phone})`} />
         </div>
-        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5">
-          <h4 className="mb-3 font-display text-sm font-semibold uppercase tracking-widest text-white/60">
+        <div className="rounded-2xl border border-border bg-muted/20 p-5">
+          <h4 className="mb-3 font-display text-sm font-semibold uppercase tracking-widest text-muted-foreground">
             Documents
           </h4>
           {REQUIRED_DOCS.map((d) => (
@@ -1131,8 +1131,8 @@ function Step5({ form, update, classes }: StepProps & { classes: ClassRow[] }) {
         </div>
       </div>
 
-      <div className="mt-8 space-y-3 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5">
-        <p className="text-xs leading-relaxed text-white/60">
+      <div className="mt-8 space-y-3 rounded-2xl border border-border bg-muted/20 p-5">
+        <p className="text-xs leading-relaxed text-muted-foreground">
           I certify that all information provided in this application is true and accurate to the
           best of my knowledge. I understand that providing false information may result in
           cancellation of admission.
@@ -1174,7 +1174,7 @@ function SuccessScreen({
   showInterview: boolean;
 }) {
   return (
-    <div className="min-h-dvh bg-[#0a0f1e] text-white">
+    <div className="min-h-dvh bg-background text-foreground">
       <div className="mx-auto max-w-3xl px-6 py-20 text-center">
         <div
           className="mx-auto grid h-16 w-16 place-items-center rounded-full"
@@ -1183,14 +1183,14 @@ function SuccessScreen({
           <Check className="h-8 w-8 text-white" />
         </div>
         <h1 className="mt-6 font-display text-4xl font-bold">Application Submitted</h1>
-        <p className="mt-3 text-base text-white/60">
+        <p className="mt-3 text-base text-muted-foreground">
           Your application has been received successfully.
         </p>
-        <div className="mt-6 inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/[0.04] px-5 py-2.5">
-          <span className="text-xs uppercase tracking-widest text-white/50">Application No.</span>
-          <span className="font-mono text-base font-bold text-white">{appNumber}</span>
+        <div className="mt-6 inline-flex items-center gap-3 rounded-full border border-border bg-muted/30 px-5 py-2.5">
+          <span className="text-xs uppercase tracking-widest text-muted-foreground">Application No.</span>
+          <span className="font-mono text-base font-bold text-foreground">{appNumber}</span>
         </div>
-        <p className="mx-auto mt-6 max-w-lg text-sm text-white/60">
+        <p className="mx-auto mt-6 max-w-lg text-sm text-muted-foreground">
           We will contact you within 5–7 working days to schedule an interview. Check your email for
           confirmation.
         </p>
@@ -1198,7 +1198,7 @@ function SuccessScreen({
           {!showInterview && (
             <button
               onClick={onInterview}
-              className="rounded-full border border-white/15 px-6 py-3 text-sm text-white/90 hover:bg-white/5"
+              className="rounded-full border border-border px-6 py-3 text-sm text-foreground hover:bg-muted"
             >
               Complete Interview Pre-Screening (Optional)
             </button>
@@ -1243,29 +1243,29 @@ function InterviewModal({ applicationId }: { applicationId: string }) {
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 backdrop-blur-md p-4">
-      <div className="w-full max-w-2xl rounded-3xl border border-white/[0.07] bg-[#0a0f1e] p-8">
+      <div className="w-full max-w-2xl rounded-3xl border border-border bg-background p-8">
         {done ? (
           <div className="text-center">
             <Check className="mx-auto h-12 w-12 text-emerald-400" />
-            <h3 className="mt-4 font-display text-2xl font-bold text-white">
+            <h3 className="mt-4 font-display text-2xl font-bold text-foreground">
               Pre-screening complete
             </h3>
-            <p className="mt-2 text-sm text-white/60">
+            <p className="mt-2 text-sm text-muted-foreground">
               Thank you. Our admissions team will review your application thoroughly.
             </p>
           </div>
         ) : (
           <>
             <div className="flex items-center justify-between">
-              <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-white/60">
+              <span className="rounded-full border border-border bg-muted/30 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                 {q.category}
               </span>
-              <span className="text-xs text-white/50">
+              <span className="text-xs text-muted-foreground">
                 Question {idx + 1} of {INTERVIEW_QUESTIONS.length}
               </span>
             </div>
-            <h3 className="mt-5 font-display text-xl font-semibold text-white">{q.question}</h3>
-            <p className="mt-2 text-xs text-white/40">{q.hint}</p>
+            <h3 className="mt-5 font-display text-xl font-semibold text-foreground">{q.question}</h3>
+            <p className="mt-2 text-xs text-muted-foreground">{q.hint}</p>
             <textarea
               rows={6}
               maxLength={500}
@@ -1274,12 +1274,12 @@ function InterviewModal({ applicationId }: { applicationId: string }) {
               className={inputCls + " mt-4"}
               placeholder="Type your answer here (50–500 characters)…"
             />
-            <div className="mt-1 text-right text-[11px] text-white/40">{ans.length} / 500</div>
+            <div className="mt-1 text-right text-[11px] text-muted-foreground">{ans.length} / 500</div>
             <div className="mt-6 flex items-center justify-between">
               <button
                 disabled={idx === 0}
                 onClick={() => setIdx(idx - 1)}
-                className="rounded-full border border-white/15 px-5 py-2 text-sm disabled:opacity-30"
+                className="rounded-full border border-border px-5 py-2 text-sm disabled:opacity-30"
               >
                 Previous
               </button>
@@ -1313,10 +1313,10 @@ function InterviewModal({ applicationId }: { applicationId: string }) {
 
 function Centered({ title, children }: { title: string; children?: React.ReactNode }) {
   return (
-    <div className="grid min-h-dvh place-items-center bg-[#0a0f1e] px-6 text-center text-white">
+    <div className="grid min-h-dvh place-items-center bg-background px-6 text-center text-foreground">
       <div>
         <h1 className="font-display text-3xl font-bold">{title}</h1>
-        {children && <p className="mt-3 text-sm text-white/60">{children}</p>}
+        {children && <p className="mt-3 text-sm text-muted-foreground">{children}</p>}
       </div>
     </div>
   );

@@ -26,7 +26,7 @@ function PrivacyPage() {
   return (
     <PolicyShell title="Privacy Policy" schoolName={school.name}>
       {body ? (
-        <div className="whitespace-pre-wrap leading-relaxed text-slate-200">{body}</div>
+        <div className="whitespace-pre-wrap leading-relaxed">{body}</div>
       ) : (
         <PolicySkeleton
           label="PRIVACY POLICY"

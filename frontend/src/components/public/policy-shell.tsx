@@ -1,5 +1,6 @@
 /**
- * Minimal dark shell used by /privacy and /rules public pages.
+ * Minimal public content shell for tenant leftover pages (privacy, rules,
+ * blog, news, events). Replaces the Lovable navy-gradient prototype chrome.
  */
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
@@ -14,33 +15,45 @@ export function PolicyShell({
   children: ReactNode;
 }) {
   return (
-    <div
-      className="min-h-dvh text-white"
-      style={{ background: "linear-gradient(180deg, #0a0f1e 0%, #0d1424 100%)" }}
-    >
-      <article className="mx-auto max-w-3xl px-6 py-16 md:py-24">
-        {schoolName && (
-          <Link
-            to="/"
-            className="text-xs uppercase tracking-widest text-slate-400 hover:text-white"
-          >
-            ← {schoolName}
-          </Link>
-        )}
-        <h1 className="mt-6 font-display text-3xl md:text-5xl font-extrabold">{title}</h1>
-        <div className="mt-8">{children}</div>
-      </article>
-    </div>
+    <PublicContentShell>
+      {schoolName && (
+        <Link
+          to="/"
+          className="text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground"
+        >
+          ← {schoolName}
+        </Link>
+      )}
+      <h1 className="mt-6 font-display text-3xl font-bold tracking-tight md:text-5xl">{title}</h1>
+      <div className="mt-8">{children}</div>
+    </PublicContentShell>
   );
 }
 
 export function PolicySkeleton({ label, body }: { label: string; body: string }) {
   return (
-    <div className="rounded-2xl border-2 border-dashed border-white/15 bg-white/[0.02] p-8">
-      <span className="inline-block rounded-full bg-[var(--tenant-primary,#3b82f6)]/15 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[var(--tenant-primary,#3b82f6)]">
+    <div className="rounded-2xl border-2 border-dashed border-border bg-muted/20 p-8">
+      <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary">
         [ {label} ]
       </span>
-      <p className="mt-6 text-sm text-slate-400">{body}</p>
+      <p className="mt-6 text-sm text-muted-foreground">{body}</p>
+    </div>
+  );
+}
+
+/** Shared article/list chrome for leftover tenant public pages. */
+export function PublicContentShell({
+  children,
+  wide = false,
+}: {
+  children: ReactNode;
+  wide?: boolean;
+}) {
+  return (
+    <div className="min-h-dvh bg-background text-foreground">
+      <article className={`mx-auto px-6 py-16 md:py-24 ${wide ? "max-w-6xl" : "max-w-3xl"}`}>
+        {children}
+      </article>
     </div>
   );
 }

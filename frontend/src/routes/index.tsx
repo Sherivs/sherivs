@@ -7,7 +7,7 @@ import { getPublicSite } from "@/lib/website/public-site.functions";
 import { SherivsHome } from "@/components/public/sherivs-home";
 import { identityFromAppState } from "@/lib/identity/context";
 import { resolveTenantDomain, resolveTenantSlug } from "@/lib/tenant";
-import { PLATFORM_NAME, PLATFORM_URL } from "@/lib/platform";
+import { PLATFORM_NAME, PLATFORM_TAGLINE, PLATFORM_URL } from "@/lib/platform";
 import {
   resolveExperienceHost,
   shouldRedirectCanonicalRootToAuth,
@@ -61,21 +61,19 @@ export const Route = createFileRoute("/")({
 const platformHead = () => ({
   meta: [
     {
-      title: `${PLATFORM_NAME} — The operating intelligence for modern organizations`,
+      title: PLATFORM_NAME,
     },
     {
       name: "description",
-      content:
-        "Sherivs connects your organization's people, knowledge, workflows, communications, data, and AI workforce into one intelligent operating environment.",
+      content: PLATFORM_TAGLINE,
     },
     {
       property: "og:title",
-      content: `${PLATFORM_NAME} — Intelligent operating infrastructure for organizations`,
+      content: PLATFORM_NAME,
     },
     {
       property: "og:description",
-      content:
-        "One intelligent operating environment for organizations: people, knowledge, workflows, AI workforce, and operations — governed by design.",
+      content: PLATFORM_TAGLINE,
     },
     { property: "og:type", content: "website" },
     { property: "og:url", content: `${PLATFORM_URL}/` },

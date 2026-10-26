@@ -1,11 +1,11 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 /**
- * Former path of the Sherivs platform page (Sherivs was the former name of the
- * Sherivs platform). Kept as a permanent redirect so existing links keep working.
+ * Former path of the platform marketing page. Permanent redirect to the
+ * company root (the marketing prototype was removed).
  */
 export const Route = createFileRoute("/(site)/coregrid")({
   beforeLoad: () => {
-    throw redirect({ to: "/sherivs", replace: true, statusCode: 301 });
+    throw redirect({ to: "/", replace: true, statusCode: 301 });
   },
 });

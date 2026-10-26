@@ -1,183 +1,116 @@
 /**
- * Sherivs — V1-007 platform public site (`(site)` route group) tests.
+ * Sherivs public site — after Lovable prototype removal.
  *
- * The vitest environment here is `node` (no jsdom/RTL in this repository), so
- * route surfaces are validated the way existing structural tests validate
- * surfaces (tests/unit/platform-neutrality.test.ts): typed view-model imports
- * plus structural file assertions for the laws the public site must not break.
- *
- * Laws under test:
- *  - every interactive element links to a REAL route (/auth), never a fake form;
- *  - pricing data comes from one typed module, not scattered JSX;
- *  - semantic landmarks and section anchors exist for accessibility;
- *  - the site narrates an INSTALLED runtime, never the platform as a runtime
- *    (platform-neutrality LAW 3 / LAW 5).
+ * The vitest environment here is `node` (no jsdom/RTL). Route surfaces are
+ * validated as structural file assertions:
+ *  - marketing story / pricing modules are gone
+ *  - leftover marketing paths redirect to `/`
+ *  - remaining chrome links only to real routes
+ *  - no navy-gradient prototype shell remains on tenant leftover pages
  */
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { MARKETING_TIERS, formatTierPrice } from "@/routes/(site)/-content/pricing-tiers";
-import {
-  INSTALLED_RUNTIME_PROOFS,
-  SECURITY_GUARANTEES,
-  SITE_CAPABILITIES,
-} from "@/routes/(site)/-content/site-content";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const read = (ref: string) => readFileSync(join(ROOT, ref), "utf8");
 
 const SITE_LAYOUT = "frontend/src/routes/(site)/route.tsx";
-const SITE_PAGE = "frontend/src/routes/(site)/sherivs.tsx";
 const SITE_HEADER = "frontend/src/components/public/site-header.tsx";
+const LOVABLE_NAVY = "linear-gradient(180deg, #0a0f1e 0%, #0d1424 100%)";
 
-describe("Pricing tier catalog (typed module)", () => {
-  it("exposes the five commercial tiers by stable id", () => {
-    expect(MARKETING_TIERS.map((tier) => tier.id)).toEqual([
-      "trial",
-      "starter",
-      "growth",
-      "professional",
-      "enterprise",
-    ]);
-  });
-
-  it("carries well-formed prices; only Enterprise is quoted as a custom contract", () => {
-    const priced = MARKETING_TIERS.filter((tier) => tier.monthlyPrice !== null);
-    const custom = MARKETING_TIERS.filter((tier) => tier.monthlyPrice === null);
-    expect(custom.map((tier) => tier.id)).toEqual(["enterprise"]);
-    for (const tier of priced) {
-      expect(tier.monthlyPrice as number, `${tier.id} monthly`).toBeGreaterThanOrEqual(0);
-      expect(tier.annualPrice as number, `${tier.id} annual`).toBeGreaterThanOrEqual(0);
-      expect(tier.monthlyPrice as number).toBeLessThanOrEqual(tier.annualPrice as number);
-    }
-  });
-
-  it("mirrors the commercial catalog prices in ₦", () => {
-    const byId = new Map(MARKETING_TIERS.map((tier) => [tier.id, tier]));
-    expect(byId.get("trial")?.monthlyPrice).toBe(0);
-    expect(byId.get("starter")?.monthlyPrice).toBe(15_000);
-    expect(byId.get("growth")?.monthlyPrice).toBe(35_000);
-    expect(byId.get("professional")?.monthlyPrice).toBe(75_000);
-    expect(formatTierPrice(15_000)).toBe("₦15,000");
-    expect(formatTierPrice(null)).toBe("Custom");
-  });
-
-  it("marks exactly one tier as recommended and gives every tier a CTA", () => {
-    expect(MARKETING_TIERS.filter((tier) => tier.featured).map((tier) => tier.id)).toEqual([
-      "growth",
-    ]);
-    for (const tier of MARKETING_TIERS) {
-      expect(tier.ctaLabel.length).toBeGreaterThan(0);
-      expect(tier.highlights.length).toBeGreaterThan(0);
-    }
+describe("Prototype marketing modules are gone", () => {
+  it("does not ship the hardcoded pricing catalog or capability story", () => {
+    expect(existsSync(join(ROOT, "frontend/src/routes/(site)/-content/pricing-tiers.ts"))).toBe(
+      false,
+    );
+    expect(existsSync(join(ROOT, "frontend/src/routes/(site)/-content/site-content.ts"))).toBe(
+      false,
+    );
+    expect(existsSync(join(ROOT, "frontend/src/components/public/platform-home.tsx"))).toBe(false);
   });
 });
 
-describe("Site content view-models", () => {
-  it("presents the six platform capabilities", () => {
-    expect(SITE_CAPABILITIES.map((capability) => capability.id)).toEqual([
-      "reality-model",
-      "missions",
-      "ai-workforce",
-      "evidence",
-      "governance",
-      "workspace",
-    ]);
-    for (const capability of SITE_CAPABILITIES) {
-      expect(capability.title.length).toBeGreaterThan(0);
-      expect(capability.description.length).toBeGreaterThan(0);
-    }
-  });
-
-  it("presents the security and governance guarantees", () => {
-    expect(SECURITY_GUARANTEES.length).toBeGreaterThanOrEqual(6);
-    for (const guarantee of SECURITY_GUARANTEES) {
-      expect(guarantee.title.length).toBeGreaterThan(0);
-      expect(guarantee.description.length).toBeGreaterThan(0);
-    }
-  });
-
-  it("names the first installed runtime as a runtime, never as the platform", () => {
-    expect(INSTALLED_RUNTIME_PROOFS).toHaveLength(1);
-    const [runtime] = INSTALLED_RUNTIME_PROOFS;
-    expect(runtime.manifestId).toBe("runtime:scholar");
-    expect(runtime.name).toBe("Scholar");
-    expect(runtime.proof).toContain("Runtime-001");
-    expect(runtime.proof).toMatch(/kernel stays fully valid/);
-  });
-});
-
-describe("Route modules — real links, no fake submissions, landmarks", () => {
+describe("Route modules — redirects, real links, landmarks", () => {
   const layout = read(SITE_LAYOUT);
-  const page = read(SITE_PAGE);
-  // The header is a shared component (used by the (site) layout AND the
-  // homepage component, which renders outside the layout group).
   const header = read(SITE_HEADER);
 
-  it("registers the (site) layout group, the /sherivs page and the /coregrid redirect in the generated tree", () => {
+  it("registers the (site) layout group and former marketing paths in the generated tree", () => {
     const tree = read("frontend/src/routeTree.gen.ts");
     expect(tree).toContain("'/(site)'");
     expect(tree).toContain("'/(site)/sherivs'");
     expect(tree).toContain("'/(site)/coregrid'");
+    expect(tree).toContain("'/(site)/about'");
   });
 
-  it("keeps the former /coregrid path as a redirect to /sherivs", () => {
-    const legacy = read("frontend/src/routes/(site)/coregrid.tsx");
-    expect(legacy).toContain('createFileRoute("/(site)/coregrid")');
-    expect(legacy).toContain('redirect({ to: "/sherivs"');
+  it("keeps /sherivs, /about and /coregrid as redirects to /", () => {
+    for (const ref of [
+      "frontend/src/routes/(site)/sherivs.tsx",
+      "frontend/src/routes/(site)/about.tsx",
+      "frontend/src/routes/(site)/coregrid.tsx",
+    ]) {
+      const source = read(ref);
+      expect(source).toContain("redirect");
+      expect(source).toContain('to: "/"');
+    }
   });
 
   it("declares the expected file route ids", () => {
     expect(layout).toContain('createFileRoute("/(site)")');
-    expect(page).toContain('createFileRoute("/(site)/sherivs")');
   });
 
-  it("links sign-up and sign-in to the real auth surface at /auth", () => {
-    for (const source of [layout, page]) {
-      expect(source).toContain('to="/auth"');
-    }
-    // No dead platform sign-up route is invented.
+  it("links sign-in to the real auth surface at /auth", () => {
+    expect(layout).toContain('to="/auth"');
+    expect(header).toContain('to="/auth"');
     expect(layout).not.toContain('to="/signup"');
-    expect(page).not.toContain('to="/signup"');
+    expect(header).not.toContain('to="/signup"');
   });
 
-  it("contains no form and no fake submission — every CTA is a route link", () => {
-    for (const source of [layout, page]) {
+  it("contains no form and no fake submission — remaining CTAs are route links", () => {
+    for (const source of [layout, header]) {
       expect(source).not.toMatch(/<form\b/);
       expect(source).not.toMatch(/onSubmit/);
       expect(source).not.toMatch(/<button\b/);
     }
   });
 
-  it("renders semantic landmarks; sections anchor between layout and pages", () => {
-    // Header landmarks live in the shared SiteHeader component.
+  it("renders semantic landmarks without prototype section navigation", () => {
     expect(header).toContain("<header");
-    expect(header).toMatch(/aria-label="Site"/);
-    // The header's section navigation anchors into the public homepage
-    // (the company experience at /), not into this page.
-    for (const anchor of ["platform", "ai-workforce", "solutions", "enterprise", "security"]) {
-      expect(header).toContain(`"/#${anchor}"`);
-    }
+    expect(header).toMatch(/aria-label="Account"/);
+    expect(header).not.toContain("/#platform");
+    expect(header).not.toContain("/#ai-workforce");
+    expect(header).not.toContain("/#solutions");
+    expect(header).not.toContain("/#enterprise");
     expect(layout).toContain("<SiteHeader />");
     expect(layout).toContain("<main");
     expect(layout).toContain("<footer");
-    for (const anchor of ["capabilities", "runtimes", "security", "pricing"]) {
-      expect(page).toContain(`id="${anchor}"`);
-    }
-  });
-
-  it("keeps every heading labelled for assistive technology", () => {
-    expect(page).toMatch(/aria-labelledby="coregrid-hero"/);
-    for (const anchor of ["capabilities", "runtimes", "security", "pricing"]) {
-      expect(page).toMatch(new RegExp(`aria-labelledby="${anchor}-heading"`));
-      expect(page).toContain(`id="${anchor}-heading"`);
-    }
   });
 
   it("uses no raster images, so no missing alt text is possible", () => {
     expect(layout).not.toMatch(/<img\b/);
-    expect(page).not.toMatch(/<img\b/);
+    expect(header).not.toMatch(/<img\b/);
+  });
+});
+
+describe("Tenant leftover pages no longer use the Lovable navy shell", () => {
+  const leftovers = [
+    "frontend/src/components/public/policy-shell.tsx",
+    "frontend/src/routes/blog.tsx",
+    "frontend/src/routes/blog.$slug.tsx",
+    "frontend/src/routes/news.$id.tsx",
+    "frontend/src/routes/events.$id.tsx",
+    "frontend/src/routes/privacy.tsx",
+    "frontend/src/routes/rules.tsx",
+    "frontend/src/routes/admissions.tsx",
+  ];
+
+  it("drops the hardcoded #0a0f1e gradient and navy page backgrounds", () => {
+    for (const ref of leftovers) {
+      const source = read(ref);
+      expect(source, ref).not.toContain(LOVABLE_NAVY);
+      expect(source, ref).not.toContain("bg-[#0a0f1e]");
+    }
   });
 });
 
@@ -186,12 +119,9 @@ describe("Platform narration neutrality (LAW 3 / LAW 5)", () => {
     /CoreGrid Scholar|Scholar's|Scholar is|Scholar consumes|Scholar binds|Scholar resolves|Scholar remains|Scholar-only|Scholar-flavored|Scholar catalog|Scholar runtime \(runtime-001\)/;
   const SELF_IDENTIFICATION = /^\s*(?:\/\*|\*|\/\/)\s*CoreGrid Scholar\b/m;
 
-  const sources = [
-    "-content/pricing-tiers.ts",
-    "-content/site-content.ts",
-    "route.tsx",
-    "coregrid.tsx",
-  ].map((ref) => read(`frontend/src/routes/(site)/${ref}`));
+  const sources = ["route.tsx", "coregrid.tsx", "sherivs.tsx", "about.tsx"].map((ref) =>
+    read(`frontend/src/routes/(site)/${ref}`),
+  );
 
   it("never narrates a runtime as the platform", () => {
     for (const source of sources) {

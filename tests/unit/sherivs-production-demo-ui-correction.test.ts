@@ -8,24 +8,25 @@ const read = (relative: string) => readFileSync(join(ROOT, relative), "utf8");
 
 describe("public root no longer mounts in-memory Command Centre", () => {
   const index = read("frontend/src/routes/index.tsx");
-  const home = read("frontend/src/components/public/platform-home.tsx");
+  const home = read("frontend/src/components/public/sherivs-home.tsx");
 
-  it("renders the neutral public home (SherivsHome) instead of CommandCentre on /", () => {
+  it("renders the Sherivs public home instead of CommandCentre on /", () => {
     expect(index).toContain("<SherivsHome />");
     expect(index).not.toMatch(/from ["']@\/components\/command-centre\/command-centre["']/);
     expect(index).not.toContain("<CommandCentre");
     expect(index).not.toContain("user:demo-administrator");
   });
 
-  it("uses the shared Sherivs logo component (real public brand assets) and real auth/overview routes", () => {
-    expect(home).toContain("<SherivsMark");
+  it("uses the shared Sherivs logo and a real auth route; leftover platform-home is gone", () => {
+    expect(existsSync(join(ROOT, "frontend/src/components/public/platform-home.tsx"))).toBe(false);
+    const header = read("frontend/src/components/public/site-header.tsx");
+    expect(header).toContain("<SherivsLogo");
     const logo = readFileSync(join(ROOT, "frontend/src/components/brand/sherivs-logo.tsx"), "utf8");
     expect(logo).toContain("/brand/sherivs-mark-");
     for (const px of [64, 128, 256])
       expect(existsSync(join(ROOT, `public/brand/sherivs-mark-${px}.png`))).toBe(true);
     expect(logo).toContain("`${PLATFORM_NAME} logo`");
     expect(home).toContain('to="/auth"');
-    expect(home).toContain('to="/sherivs"');
     expect(home).not.toContain("tenant:coregrid-demo");
     expect(home).not.toMatch(/\b94%\b/);
     expect(home).not.toMatch(/Live attendance/);
@@ -33,7 +34,6 @@ describe("public root no longer mounts in-memory Command Centre", () => {
 
   it("preserves tenant public sites and authenticated workspace routing", () => {
     expect(index).toContain("<SiteView"); // dynamic website engine (SHERIVS-100)
-    // master routes signed-in users via the resolved identity chain.
     expect(index).toContain("identityFromAppState");
     expect(index).toContain('createFileRoute("/")');
   });
