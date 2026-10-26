@@ -15,7 +15,10 @@ export const COMPANY_COUNTRY_CODE = "NG";
 export const COMPANY_LOCATION_LINE = "Maiduguri, Borno State, Nigeria";
 export const PUBLIC_WEBSITE_HOST = "www.sherivs.com";
 
-/** Owner states Sherivs is accepting customers. Not a count or SLA. */
+/**
+ * Internal operational fact only. Must never render as a homepage
+ * availability announcement, badge, or banner (owner 002).
+ */
 export const ACCEPTING_CUSTOMERS = true;
 
 /**

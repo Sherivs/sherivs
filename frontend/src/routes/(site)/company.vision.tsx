@@ -4,6 +4,8 @@ import {
   COMPANY_VISION,
   POSITIONING_FOUNDATIONS,
   POSITIONING_PROGRAMMABLE,
+  POSITIONING_RETHINKING,
+  POSITIONING_STATEMENT,
 } from "@/lib/public-site/company";
 import { publicHead } from "@/lib/public-site/seo";
 import { MarketingPage } from "@/components/public/marketing-page";
@@ -45,7 +47,9 @@ function VisionPage() {
             <p>{POSITIONING_PROGRAMMABLE}</p>
           </div>
           <div className="space-y-3">
-            <h2 className="font-display text-xl font-semibold text-sherivs-white">Foundations</h2>
+            <h2 className="font-display text-xl font-semibold text-sherivs-white">How we think about it</h2>
+            <p>{POSITIONING_STATEMENT}</p>
+            <p>{POSITIONING_RETHINKING}</p>
             <p>{POSITIONING_FOUNDATIONS}</p>
           </div>
           <p>

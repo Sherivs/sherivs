@@ -8,6 +8,10 @@ import {
 } from "@/lib/public-site/company";
 import { PUBLIC_CONTACTS, publishedCompanySocial } from "@/lib/public-site/contacts";
 
+function publishedXHandle() {
+  return publishedCompanySocial().find((item) => item.id === "x")?.handle;
+}
+
 export function publicHead({
   title,
   description,
@@ -23,6 +27,7 @@ export function publicHead({
 }) {
   const url = path.startsWith("http") ? path : `${PLATFORM_URL}${path}`;
   const pageTitle = title.includes(PLATFORM_NAME) ? title : `${title} — ${PLATFORM_NAME}`;
+  const xHandle = publishedXHandle();
   return {
     meta: [
       { title: pageTitle },
@@ -37,6 +42,7 @@ export function publicHead({
       { name: "twitter:title", content: pageTitle },
       { name: "twitter:description", content: description },
       { name: "twitter:image", content: `${PLATFORM_URL}/og-image.png` },
+      ...(xHandle ? [{ name: "twitter:site", content: xHandle }] : []),
       ...(noindex
         ? [{ name: "robots", content: "noindex, nofollow" }]
         : [{ name: "robots", content: "index, follow" }]),

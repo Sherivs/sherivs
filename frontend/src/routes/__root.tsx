@@ -11,12 +11,15 @@ import { type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { AppProvider } from "@/contexts/app-context";
 import { PLATFORM_PAGE_DESCRIPTION, PLATFORM_PAGE_TITLE } from "@/lib/platform";
+import { publishedCompanySocial } from "@/lib/public-site/contacts";
 import { Toaster } from "@/components/ui/sonner";
 import { RouteProgressBar } from "@/components/route-progress-bar";
 import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme";
 import { SherivsLockup, SherivsLogo } from "@/components/brand/sherivs-logo";
 import { AnalyticsConsent } from "@/components/analytics/analytics-consent";
 import { captureClientError } from "@/lib/observability/sentry-browser";
+
+const PUBLIC_X_HANDLE = publishedCompanySocial().find((item) => item.id === "x")?.handle;
 
 function NotFoundComponent() {
   return (
@@ -95,6 +98,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:image", content: "https://sherivs.com/og-image.png" },
       { name: "twitter:image", content: "https://sherivs.com/og-image.png" },
       { name: "twitter:card", content: "summary_large_image" },
+      ...(PUBLIC_X_HANDLE ? [{ name: "twitter:site", content: PUBLIC_X_HANDLE }] : []),
       { property: "og:type", content: "website" },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },

@@ -3,7 +3,7 @@
  * and route collisions with internal / tenant surfaces.
  */
 import { describe, expect, it } from "vitest";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PUBLIC_ANNOUNCEMENT } from "@/lib/public-site/announcement";
@@ -161,6 +161,10 @@ describe("public content honesty", () => {
     expect(organizationJsonLd().sameAs).toContain("https://x.com/sherivs_");
     expect(organizationJsonLd().sameAs.join(" ")).not.toMatch(/github/i);
     expect(read("frontend/src/lib/public-site/contacts.ts")).toContain('href: "https://x.com/sherivs_"');
+    expect(read("frontend/src/lib/public-site/seo.ts")).toContain('name: "twitter:site"');
+    expect(read("frontend/src/routes/__root.tsx")).toContain('name: "twitter:site"');
+    expect(read("frontend/src/routes/(site)/company.vision.tsx")).toContain("{POSITIONING_STATEMENT}");
+    expect(read("frontend/src/routes/(site)/company.vision.tsx")).toContain("{POSITIONING_RETHINKING}");
     expect(read("frontend/src/components/public/site-footer.tsx")).toContain("CompanySocialLinks");
     expect(read("frontend/src/routes/(site)/contact.tsx")).toContain("CompanySocialLinks");
     expect(read("frontend/src/components/public/company-social-links.tsx")).toContain("href={item.href}");
@@ -201,6 +205,25 @@ describe("public content honesty", () => {
     expect(PRODUCT_FAMILIES.find((p) => p.id === "scholar")?.status).toBe("available");
     expect(PRODUCT_FAMILIES.find((p) => p.id === "developers")?.status).toBe("planned");
     expect(ARCHITECTURE_LAYERS).toHaveLength(8);
+  });
+
+  it("keeps GitHub URLs, CAC numbers, and TIN off public marketing sources", () => {
+    const roots = [
+      "frontend/src/lib/public-site",
+      "frontend/src/components/public",
+      "frontend/src/routes/(site)",
+    ];
+    const files = roots.flatMap((dir) =>
+      readdirSync(join(ROOT, dir), { recursive: true, encoding: "utf8" })
+        .filter((name) => /\.(tsx?)$/.test(String(name)))
+        .map((name) => join(dir, String(name))),
+    );
+    for (const ref of files) {
+      const source = read(ref);
+      expect(source, ref).not.toMatch(/github\.com\//i);
+      expect(source, ref).not.toMatch(/\bRC[\s-]*\d{5,}\b/);
+      expect(source, ref).not.toMatch(/\bTIN[\s:]*\d{6,}\b/i);
+    }
   });
 
   it("never sitemaps the internal platform engineering route or tenant blog", () => {
