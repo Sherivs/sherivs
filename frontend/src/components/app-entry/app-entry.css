@@ -245,6 +245,10 @@
   letter-spacing: -0.03em;
 }
 
+.app-entry-panel h2 + .app-entry-form {
+  margin-top: 1.15rem;
+}
+
 .app-entry-panel-lead {
   margin: 0.4rem 0 1.35rem;
   font-size: 0.88rem;
@@ -295,18 +299,22 @@
 
 .app-entry-forgot {
   display: block;
-  margin-top: 0.15rem;
+  margin-top: 0.35rem;
+  padding: 0.35rem 0.5rem;
   text-align: center;
-  color: #9ec1ff;
-  font-size: 0.86rem;
-  font-weight: 600;
-  text-decoration: none;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1.5px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85), 0 0 14px rgba(0, 0, 0, 0.55);
 }
 
 .app-entry-forgot:hover {
   color: #ffffff;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  filter: brightness(1.08);
 }
 
 .app-entry-alert {

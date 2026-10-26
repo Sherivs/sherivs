@@ -220,9 +220,6 @@ function SignInPanel() {
         Back
       </button>
       <h2 id="app-entry-signin-heading">Sign in</h2>
-      <p className="app-entry-panel-lead">
-        Use the username, email, or phone number and password from your invitation.
-      </p>
       <form onSubmit={handleSubmit} className="app-entry-form">
         <label className="app-entry-field">
           <span>Username, email, or phone number</span>

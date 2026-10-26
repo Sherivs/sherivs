@@ -88,6 +88,7 @@ describe("app-entry wiring", () => {
     expect(splash).toContain("signInWithPassword");
     expect(splash).not.toContain("signUp");
     expect(splash).toContain("Forgot password?");
+    expect(splash).not.toContain("Use the username, email, or phone number");
     expect(splash).toContain("/onboarding");
     expect(splash).toContain("app-entry-glass-icon");
     expect(splash).toContain("size={68}");
