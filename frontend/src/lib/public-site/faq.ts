@@ -103,7 +103,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
     category: "Security",
     question: "Is Sherivs SOC 2 or ISO 27001 certified?",
     answer:
-      "Sherivs does not display SOC 2, ISO 27001, or similar certification badges. Registration numbers and tax identifiers are not published. NSCDC- and NDPA-related compliance matters are not shown as named certifications here; certificate details stay unpublished. Engineering principles on this site (tenant isolation, audit) are not certificates.",
+      "Sherivs does not display SOC 2, ISO 27001, or similar certification badges. Registration numbers and tax identifiers are not published. NSCDC- and NDPA-related statuses are not shown as named certifications; public wording is awaiting owner approval of the exact official instrument. Certificate details stay unpublished. Engineering principles on this site (tenant isolation, audit) are not certificates.",
     related: [
       { href: "/security", label: "Security" },
       { href: "/trust", label: "Trust center" },

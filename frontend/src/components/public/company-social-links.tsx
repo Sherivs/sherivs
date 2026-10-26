@@ -1,6 +1,10 @@
 import type { ReactNode } from "react";
 import type { PublicSocialId, PublicSocialLink } from "@/lib/public-site/contacts";
-import { publishedCompanySocial } from "@/lib/public-site/contacts";
+import {
+  publishedCompanySocial,
+  socialAriaLabel,
+  socialVisibleCaption,
+} from "@/lib/public-site/contacts";
 import { cn } from "@/lib/utils";
 
 function InstagramMark() {
@@ -29,17 +33,23 @@ function XMark() {
   );
 }
 
+function LinkedInMark() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-current">
+      <path d="M6.5 9.2H4V20h2.5V9.2ZM5.25 4A1.55 1.55 0 1 0 5.26 7.1 1.55 1.55 0 0 0 5.25 4ZM20 20h-2.5v-5.7c0-1.36-.03-3.1-1.9-3.1-1.9 0-2.19 1.48-2.19 3v5.8H11V9.2h2.4v1.47h.03c.33-.63 1.15-1.3 2.37-1.3 2.54 0 3.2 1.67 3.2 3.84V20Z" />
+    </svg>
+  );
+}
+
 const COMPANY_SOCIAL_ICONS: Partial<Record<PublicSocialId, () => ReactNode>> = {
   instagram: InstagramMark,
   facebook: FacebookMark,
   x: XMark,
+  linkedin: LinkedInMark,
 };
 
-function socialAriaLabel(item: PublicSocialLink) {
-  if (item.id === "x") {
-    return `Sherivs on X (${item.handle ?? "@sherivs_"})`;
-  }
-  return `Sherivs on ${item.label}`;
+function caption(item: PublicSocialLink) {
+  return socialVisibleCaption(item);
 }
 
 export function CompanySocialLinks({
@@ -66,10 +76,7 @@ export function CompanySocialLinks({
                 className="inline-flex items-center gap-2 text-sm text-sherivs-cyan underline-offset-4 hover:underline"
               >
                 {Icon ? <Icon /> : null}
-                <span>
-                  {item.label}
-                  {item.handle ? ` ${item.handle}` : ""}
-                </span>
+                <span>{caption(item)}</span>
               </a>
             </li>
           );

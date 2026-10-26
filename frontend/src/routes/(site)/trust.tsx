@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { publicHead } from "@/lib/public-site/seo";
-import { publishedCompliance } from "@/lib/public-site/compliance";
+import { awaitingWordingCompliance, publishedCompliance } from "@/lib/public-site/compliance";
 import { MarketingPage } from "@/components/public/marketing-page";
 import { Callout, FeatureCard, PageContainer, Section } from "@/components/public/ui";
 
@@ -17,6 +17,7 @@ export const Route = createFileRoute("/(site)/trust")({
 
 function TrustPage() {
   const claims = publishedCompliance();
+  const wordingGate = awaitingWordingCompliance();
   return (
     <MarketingPage
       eyebrow="Trust"
@@ -35,10 +36,31 @@ function TrustPage() {
           <Callout title="No fabricated attestations" tone="warning">
             SOC 2, ISO 27001, and similar certification badges are not displayed. Sherivs
             Technologies Limited is the operating company. Registration numbers, tax identifiers,
-            and certificate scans are not published. NSCDC- and NDPA-related compliance matters are
-            not shown as named certifications here; the exact public terminology has not been
-            confirmed. If procurement requires a specific report, ask during a demo.
+            and certificate scans are not published. NSCDC- and NDPA-related statuses stay behind
+            an owner wording gate until the exact official instrument is confirmed. If procurement
+            requires a specific report, ask during a demo.
           </Callout>
+          {wordingGate.length > 0 ? (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-sherivs-muted">
+                Compliance statements
+              </p>
+              <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+                {wordingGate.map((claim) => (
+                  <li
+                    key={claim.id}
+                    className="rounded-[var(--sherivs-radius)] border border-dashed border-[var(--sherivs-border)] p-4"
+                  >
+                    <p className="font-display text-base font-semibold">{claim.name}</p>
+                    <p className="mt-2 inline-flex rounded-full border border-[var(--sherivs-border-strong)] bg-white/5 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-sherivs-muted">
+                      Awaiting owner-approved wording
+                    </p>
+                    <p className="mt-3 text-sm leading-relaxed text-sherivs-muted">{claim.summary}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           <ul className="grid gap-4 sm:grid-cols-2">
             {claims.map((claim) => (
               <li key={claim.id}>

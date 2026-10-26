@@ -9,7 +9,6 @@ import {
   POSITIONING_RETHINKING,
   POSITIONING_STATEMENT,
 } from "@/lib/public-site/company";
-import { publishedFounderSocial } from "@/lib/public-site/contacts";
 import { publicHead } from "@/lib/public-site/seo";
 import { MarketingPage } from "@/components/public/marketing-page";
 import { PageContainer, PublicButton, Section } from "@/components/public/ui";
@@ -65,18 +64,6 @@ function AboutPage() {
             (“is building”, “is developing”) describes the work in progress, not a claim that every
             capability is generally available today.
           </p>
-          {publishedFounderSocial().map((item) => (
-            <p key={item.id}>
-              <a
-                href={item.href}
-                rel="noopener noreferrer"
-                className="text-sherivs-cyan underline-offset-4 hover:underline"
-              >
-                {item.label}
-              </a>
-              <span> — a personal profile, not an official Sherivs company page.</span>
-            </p>
-          ))}
           <p className="font-medium text-sherivs-white">{PLATFORM_TAGLINE}.</p>
           <div className="flex flex-wrap gap-3 pt-4">
             <PublicButton href="/request-demo">Request a demo</PublicButton>
