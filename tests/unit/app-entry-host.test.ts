@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -51,10 +51,21 @@ describe("app-entry host", () => {
     const splash = read("frontend/src/components/app-entry/app-entry-screen.tsx");
     const onboarding = read("frontend/src/components/app-entry/app-onboarding-screen.tsx");
     const css = read("frontend/src/components/app-entry/app-entry.css");
+    const wordmark = read("frontend/src/components/app-entry/app-entry-wordmark.tsx");
+    const canvas = read("frontend/src/components/app-entry/app-entry-canvas.tsx");
     expect(splash).not.toContain("Build a smarter");
     expect(onboarding).not.toContain("Build a smarter");
     expect(splash).not.toContain("app-entry-tagline");
-    expect(css).toContain('"Nunito"');
+    expect(css).not.toContain("Nunito");
+    expect(splash).toContain("AppEntryWordmark");
+    expect(onboarding).toContain("AppEntryWordmark");
+    expect(wordmark).toContain("/brand/sherivs-app-wordmark.png");
+    expect(canvas).toContain("/app-entry/splash-field.jpg");
+    expect(canvas).toContain("app-entry-backdrop");
+    expect(canvas).not.toMatch(/className="app-entry-field"/);
+    expect(css).toContain(".app-entry-backdrop");
+    expect(existsSync(join(ROOT, "public/app-entry/splash-field.jpg"))).toBe(true);
+    expect(existsSync(join(ROOT, "public/brand/sherivs-app-wordmark.png"))).toBe(true);
   });
 });
 

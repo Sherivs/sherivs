@@ -5,6 +5,7 @@ import { PLATFORM_NAME } from "@/lib/platform";
 import { SherivsMark } from "@/components/brand/sherivs-logo";
 import { ONBOARDING_MAILBOX, buildOnboardingMailto } from "@/lib/auth/onboarding-request";
 import { AppEntryCanvas } from "./app-entry-canvas";
+import { AppEntryWordmark } from "./app-entry-wordmark";
 
 /**
  * Create Account destination. Sherivs provisions the organization admin.
@@ -54,7 +55,7 @@ export function AppOnboardingScreen() {
         <div className="app-entry-mark-wrap">
           <SherivsMark size={56} decorative className="app-entry-mark" />
         </div>
-        <h1 className="app-entry-wordmark">{PLATFORM_NAME}</h1>
+        <AppEntryWordmark />
       </header>
 
       <section className="app-entry-panel" data-testid="app-entry-onboarding" aria-labelledby="onboarding-heading">

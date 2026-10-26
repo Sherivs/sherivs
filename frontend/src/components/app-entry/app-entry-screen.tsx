@@ -3,7 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft, LogIn, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
-import { PLATFORM_NAME, PLATFORM_URL } from "@/lib/platform";
+import { PLATFORM_URL } from "@/lib/platform";
 import { Turnstile, captchaRequired } from "@/components/security/turnstile";
 import { PasswordInput } from "@/components/security/password-input";
 import { turnstileEnabled } from "@/lib/security/turnstile-config";
@@ -23,6 +23,7 @@ import {
   toPasswordSignInPayload,
 } from "@/lib/auth/sign-in-identifier";
 import { AppEntryCanvas } from "./app-entry-canvas";
+import { AppEntryWordmark } from "./app-entry-wordmark";
 
 const backoff = createLoginBackoff(
   typeof window !== "undefined" ? window.localStorage : undefined,
@@ -74,7 +75,7 @@ function BrandBlock() {
       <div className="app-entry-mark-wrap">
         <SherivsMark size={68} decorative className="app-entry-mark" />
       </div>
-      <h1 className="app-entry-wordmark">{PLATFORM_NAME}</h1>
+      <AppEntryWordmark />
     </header>
   );
 }

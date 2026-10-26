@@ -20,8 +20,10 @@
   flex-direction: column;
   min-height: 100dvh;
   width: 100%;
+  overflow-x: hidden;
   color: var(--app-entry-ink);
-  background: #070b18;
+  /* Sampled from the top of splash-field.jpg */
+  background: #010005;
   color-scheme: dark;
 }
 
@@ -31,47 +33,30 @@
   outline-offset: 3px;
 }
 
-.app-entry-aurora,
-.app-entry-waves {
+.app-entry-backdrop {
   position: fixed;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.app-entry-aurora {
   inset: 0;
-  background:
-    radial-gradient(ellipse 80% 55% at 50% -10%, rgba(36, 107, 253, 0.28), transparent 58%),
-    radial-gradient(ellipse 70% 50% at 8% 88%, rgba(24, 72, 253, 0.42), transparent 58%),
-    radial-gradient(ellipse 60% 45% at 92% 96%, rgba(130, 84, 246, 0.4), transparent 55%),
-    radial-gradient(ellipse 40% 30% at 70% 30%, rgba(20, 168, 252, 0.12), transparent 70%),
-    #070b18;
-}
-
-.app-entry-waves {
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 46%;
+  z-index: 0;
   overflow: hidden;
+  pointer-events: none;
 }
 
-.app-entry-waves svg {
+.app-entry-backdrop img {
   position: absolute;
   inset: 0;
   width: 100%;
-  height: 130%;
-  transform-origin: 50% 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Portrait phones crop the landscape photo horizontally. Keep a slight
+     left bias so the electric-blue ribbon origin stays in frame; pin Y
+     toward the silk waves when the viewport is wider than the photo. */
+  object-position: 46% 72%;
 }
 
-.app-entry-wave-a {
-  animation: app-entry-drift-a 18s var(--app-entry-ease) infinite alternate;
-}
-.app-entry-wave-b {
-  animation: app-entry-drift-b 22s var(--app-entry-ease) infinite alternate;
-}
-.app-entry-wave-c {
-  animation: app-entry-drift-c 26s ease-in-out infinite alternate;
+@media (min-aspect-ratio: 1/1) {
+  .app-entry-backdrop img {
+    object-position: 50% 70%;
+  }
 }
 
 .app-entry-stage {
@@ -124,15 +109,17 @@
 }
 
 .app-entry-wordmark {
-  margin: 0.15rem 0 0;
-  font-family: "Nunito", ui-rounded, sans-serif;
-  font-size: 2.35rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  line-height: 1;
-  color: #ffffff;
-  animation: app-entry-rise var(--app-entry-motion) var(--app-entry-ease) both;
-  animation-delay: 90ms;
+  margin: 0.45rem 0 0;
+  line-height: 0;
+}
+
+.app-entry-wordmark img {
+  display: block;
+  height: 2.55rem;
+  width: auto;
+  max-width: min(18rem, 86vw);
+  user-select: none;
+  pointer-events: none;
 }
 
 .app-entry-actions {
@@ -440,33 +427,6 @@
   }
 }
 
-@keyframes app-entry-drift-a {
-  from {
-    transform: translate3d(-2%, 1%, 0) scale(1);
-  }
-  to {
-    transform: translate3d(3%, -2%, 0) scale(1.04);
-  }
-}
-
-@keyframes app-entry-drift-b {
-  from {
-    transform: translate3d(2%, 0, 0) scale(1.02);
-  }
-  to {
-    transform: translate3d(-4%, -3%, 0) scale(1);
-  }
-}
-
-@keyframes app-entry-drift-c {
-  from {
-    transform: translate3d(-1%, 2%, 0);
-  }
-  to {
-    transform: translate3d(2%, -1%, 0);
-  }
-}
-
 @keyframes app-entry-sheen {
   0% {
     transform: translateX(-30%) rotate(18deg);
@@ -492,9 +452,6 @@
   .app-entry-panel,
   .app-entry-mark,
   .app-entry-mark-wrap::before,
-  .app-entry-wave-a,
-  .app-entry-wave-b,
-  .app-entry-wave-c,
   .app-entry-glass-icon::after {
     animation: none !important;
   }
