@@ -4,11 +4,7 @@ import { ChevronLeft, UserPlus } from "lucide-react";
 import { PLATFORM_NAME } from "@/lib/platform";
 import { SherivsMark } from "@/components/brand/sherivs-logo";
 import { APP_ENTRY_TAGLINE } from "@/lib/experience/app-entry-host";
-import {
-  ONBOARDING_MAILBOX,
-  ONBOARDING_MAILBOX_PURPOSE,
-  buildOnboardingMailto,
-} from "@/lib/auth/onboarding-request";
+import { ONBOARDING_MAILBOX, buildOnboardingMailto } from "@/lib/auth/onboarding-request";
 import { AppEntryCanvas } from "./app-entry-canvas";
 
 /**
@@ -54,7 +50,7 @@ export function AppOnboardingScreen() {
     };
 
   return (
-    <AppEntryCanvas>
+    <AppEntryCanvas align="start">
       <header className="app-entry-brand">
         <div className="app-entry-mark-wrap">
           <SherivsMark size={56} decorative className="app-entry-mark" />
@@ -91,9 +87,9 @@ export function AppOnboardingScreen() {
 
         <form onSubmit={onSubmit} noValidate className="app-entry-form">
           <p className="app-entry-panel-lead" style={{ marginTop: 0 }}>
-            This form opens your email client and addresses {ONBOARDING_MAILBOX} (
-            {ONBOARDING_MAILBOX_PURPOSE}). {PLATFORM_NAME} does not create a ticket
-            until that message is received. Do not include passwords.
+            This form opens your email client to {ONBOARDING_MAILBOX}. {PLATFORM_NAME}{" "}
+            does not create a ticket until that message is received. Do not include
+            passwords.
           </p>
           <label className="app-entry-field">
             <span>Organization</span>
