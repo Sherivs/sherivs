@@ -3,7 +3,7 @@
  * and route collisions with internal / tenant surfaces.
  */
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PUBLIC_ANNOUNCEMENT } from "@/lib/public-site/announcement";
@@ -66,6 +66,10 @@ describe("public content honesty", () => {
       "whatsapp",
     ]);
     expect(publishedPartners("technology_partner").map((p) => p.id)).toEqual(["thinktech"]);
+    expect(publishedPartners("technology_partner")[0]?.logoSrc).toBe("/partners/thinktech.png");
+    expect(existsSync(join(ROOT, "public/partners/thinktech.png"))).toBe(true);
+    expect(existsSync(join(ROOT, "public/brand/sherivs-wordmark.png"))).toBe(true);
+    expect(existsSync(join(ROOT, "docs/brand/sherivs-wordmark-source.png"))).toBe(true);
   });
 
   it("uses owner-provided company identity without inventing registration numbers", () => {

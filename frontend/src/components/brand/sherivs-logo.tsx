@@ -61,3 +61,28 @@ export function SherivsLogo({
     </span>
   );
 }
+
+/**
+ * Official lockup (S + typeset “Sherivs”) from the owner-supplied wordmark.
+ * Letterforms are dark navy — use on light surfaces only. Dark public chrome
+ * keeps <SherivsLogo> (compact S + live white text) for contrast.
+ */
+export function SherivsLockup({
+  height = 40,
+  className = "",
+}: {
+  height?: number;
+  className?: string;
+}) {
+  return (
+    <img
+      src="/brand/sherivs-wordmark.png"
+      alt={PLATFORM_NAME}
+      height={height}
+      decoding="async"
+      draggable={false}
+      className={`shrink-0 select-none ${className}`}
+      style={{ height, width: "auto" }}
+    />
+  );
+}

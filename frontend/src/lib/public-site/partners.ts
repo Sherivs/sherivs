@@ -30,11 +30,12 @@ export const PUBLIC_PARTNERS: readonly PublicPartner[] = [
     name: "ThinkTech",
     kind: "technology_partner",
     href: "https://www.thinktech.com",
+    logoSrc: "/partners/thinktech.png",
     summary:
       "Technology partner. The owner has authorized public display of this relationship. The exact partnership scope has not been supplied, so this site does not describe joint products, integrations, or endorsements.",
     published: true,
     notes:
-      "Owner-supplied website. No approved ThinkTech logo is in the repository. TLS to thinktech.com could not be verified from this environment (handshake failure); the URL is still published as supplied.",
+      "Owner-supplied website and logo (cropped from the provided plate; not redrawn). Tagline spelling is as supplied. TLS to thinktech.com could not be verified from this environment (handshake failure); the URL is still published as supplied.",
   },
   {
     id: "paystack",

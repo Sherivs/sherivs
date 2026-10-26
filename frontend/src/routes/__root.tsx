@@ -14,7 +14,7 @@ import { PLATFORM_PAGE_DESCRIPTION, PLATFORM_PAGE_TITLE } from "@/lib/platform";
 import { Toaster } from "@/components/ui/sonner";
 import { RouteProgressBar } from "@/components/route-progress-bar";
 import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme";
-import { SherivsLogo } from "@/components/brand/sherivs-logo";
+import { SherivsLockup, SherivsLogo } from "@/components/brand/sherivs-logo";
 import { AnalyticsConsent } from "@/components/analytics/analytics-consent";
 import { captureClientError } from "@/lib/observability/sentry-browser";
 
@@ -23,7 +23,7 @@ function NotFoundComponent() {
     <div className="flex min-h-dvh items-center justify-center px-4">
       <div className="max-w-md text-center">
         <Link to="/" aria-label="Sherivs home" className="mb-8 inline-flex">
-          <SherivsLogo size={40} wordmarkClassName="text-2xl" />
+          <SherivsLockup height={44} />
         </Link>
         <h1 className="text-7xl font-bold bg-[image:var(--brand-gradient)] bg-clip-text text-transparent">404</h1>
         <h2 className="mt-4 text-xl font-semibold">Page not found</h2>

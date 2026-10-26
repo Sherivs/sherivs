@@ -155,13 +155,13 @@ export function PartnerCard({
 }) {
   return (
     <article className="rounded-[var(--sherivs-radius)] border border-[var(--sherivs-border)] bg-[color-mix(in_oklab,var(--sherivs-midnight)_55%,transparent)] p-5">
-      <p className="sherivs-kicker">{kindLabel}</p>
-      <div className="mt-3 flex items-start gap-3">
-        {logoSrc ? (
-          <img src={logoSrc} alt="" width={40} height={40} className="h-10 w-10 object-contain" />
-        ) : null}
-        <h3 className="font-display text-lg font-semibold">{name}</h3>
-      </div>
+      {logoSrc ? (
+        <div className="flex h-28 items-center justify-center rounded-[var(--sherivs-radius-sm)] bg-white p-4">
+          <img src={logoSrc} alt="" className="max-h-24 w-auto max-w-full object-contain" />
+        </div>
+      ) : null}
+      <p className={`sherivs-kicker ${logoSrc ? "mt-4" : ""}`}>{kindLabel}</p>
+      <h3 className="mt-2 font-display text-lg font-semibold">{name}</h3>
       {summary ? <p className="mt-2 text-sm leading-relaxed text-sherivs-muted">{summary}</p> : null}
       {href ? (
         <a

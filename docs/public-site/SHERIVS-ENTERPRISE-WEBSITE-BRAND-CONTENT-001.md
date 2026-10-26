@@ -10,12 +10,12 @@ Version-target classification: **ACTIVE-V1** (public marketing and documentation
 | Prior work | Luminous Enterprise public site already on this stack (TanStack Start, Vite, React, Tailwind). Not migrated. |
 | Logo | `docs/brand/sherivs-logo-source.png` (light), `public/brand/sherivs-logo-512.png` (dark), `public/brand/sherivs-mark-{64,128,256}.png`. Component: `SherivsLogo` / `SherivsMark`. Not redrawn. |
 | Email MX | `sherivs.com` MX `mx1/mx2.privateemail.com`. Individual mailbox SMTP not proven. Forms remain mailto. |
-| ThinkTech | Owner URL `https://www.thinktech.com`. TLS handshake from this environment failed; URL still published as supplied. No logo in repo. |
+| ThinkTech | Owner URL `https://www.thinktech.com`. TLS handshake from this environment failed; URL still published as supplied. Logo cropped from owner JPEG to `public/partners/thinktech.png`. |
 | Social | Owner reports accounts; no verified URLs in repository. Configured, unpublished. |
 
 ## 2. Brand
 
-See `docs/brand/ASSET-INVENTORY.md`. Tokens sampled from the mark: cyan `#14A8FC`, blue `#1848FD`, violet `#8254F6`, field `#080B18`. Fonts remain Inter + Plus Jakarta Sans.
+See `docs/brand/ASSET-INVENTORY.md`. Tokens sampled from the mark: cyan `#14A8FC`, blue `#1848FD`, violet `#8254F6`, field `#080B18`. Fonts remain Inter + Plus Jakarta Sans. Dark chrome uses the compact S plus live white wordmark for contrast; the official lockup is reserved for light surfaces because its letterforms are navy.
 
 ## 3. Company facts applied
 
@@ -28,7 +28,7 @@ See `docs/brand/ASSET-INVENTORY.md`. Tokens sampled from the mark: cyan `#14A8FC
 ## 4. Limitations
 
 - Mailto is not ticket creation.
-- ThinkTech scope and logo pending.
+- ThinkTech scope still unconfirmed (logo is published).
 - Legal drafts remain noindex pending counsel.
 - Social unpublished.
 - Production deploy not claimed.

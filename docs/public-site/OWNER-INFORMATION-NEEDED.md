@@ -9,13 +9,13 @@ Do not invent these. Public pages either omit them or label them unpublished.
 - Location: Maiduguri, Borno State, Nigeria (no street address).
 - Mailboxes: info@, hello@, support@sherivs.com (MX at privateemail.com; individual SMTP not proven).
 - Accepting customers: yes (no counts).
-- Technology partner: ThinkTech — https://www.thinktech.com (no approved logo; scope unconfirmed).
+- Technology partner: ThinkTech — https://www.thinktech.com (logo on file; scope unconfirmed).
 - Owner-stated CAC certificate and FIRS TIN exist; identifiers unpublished.
 - NSCDC- and NDPA-related compliance: pending, unpublished.
 
 ## Still needed
 
-1. ThinkTech partnership description and approved logo file.
+1. ThinkTech partnership description (logo is now on file).
 2. CAC registration number / certificate identifier if they should appear publicly.
 3. Explicit approval if the TIN should ever appear (default remains unpublished).
 4. Whether pending NSCDC / NDPA status should be disclosed, and in what wording.

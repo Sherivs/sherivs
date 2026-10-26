@@ -68,15 +68,32 @@ export function SiteFooter() {
           <p className="text-xs font-semibold uppercase tracking-widest text-sherivs-muted">
             Technology partners
           </p>
-          <ul className="mt-3 flex flex-wrap gap-3 text-sm text-sherivs-muted">
+          <ul className="mt-3 flex flex-wrap items-center gap-3">
             {techPartners.map((partner) => (
-              <li key={partner.id} className="rounded-full border border-[var(--sherivs-border)] px-3 py-1">
+              <li key={partner.id}>
                 {partner.href ? (
-                  <a href={partner.href} rel="noopener noreferrer" className="hover:text-sherivs-white">
-                    {partner.name}
+                  <a
+                    href={partner.href}
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-[var(--sherivs-radius-sm)] border border-[var(--sherivs-border)] bg-white px-3 py-2 text-sm text-neutral-900 hover:opacity-90"
+                  >
+                    {partner.logoSrc ? (
+                      <>
+                        <img src={partner.logoSrc} alt="" className="h-8 w-auto object-contain" />
+                        <span className="sr-only">{partner.name}</span>
+                      </>
+                    ) : (
+                      partner.name
+                    )}
                   </a>
                 ) : (
-                  partner.name
+                  <span className="inline-flex items-center rounded-[var(--sherivs-radius-sm)] border border-[var(--sherivs-border)] bg-white px-3 py-2 text-sm text-neutral-900">
+                    {partner.logoSrc ? (
+                      <img src={partner.logoSrc} alt={partner.name} className="h-8 w-auto object-contain" />
+                    ) : (
+                      partner.name
+                    )}
+                  </span>
                 )}
               </li>
             ))}
