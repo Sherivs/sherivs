@@ -41,7 +41,7 @@ export default defineConfig({
     ? undefined
     : {
         command: "npm run dev -- --port 8080 --strictPort",
-        url: "http://localhost:8080/coregrid",
+        url: "http://localhost:8080/",
         reuseExistingServer: true,
         timeout: 180_000,
         env: {
