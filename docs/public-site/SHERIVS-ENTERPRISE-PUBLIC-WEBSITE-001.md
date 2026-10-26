@@ -27,7 +27,13 @@ Internal `/platform` and tenant `/blog` are unchanged.
 
 See `docs/public-site/OWNER-INFORMATION-NEEDED.md`.
 
-## 4. Known limitations
+## 4. Nested-route layout fix
+
+TanStack file routes `foo.tsx` + `foo.bar.tsx` treat `foo.tsx` as a parent layout. A `beforeLoad` redirect on `product.tsx` therefore sent `/product/architecture` (and siblings) to `/sherivs`. Parents without `<Outlet />` also hid child pages such as `/solutions/education`.
+
+Parents are now Outlet layouts; index content lives in `*.index.tsx`. `/product` still redirects to `/sherivs`.
+
+## 5. Known limitations
 
 - No public helpdesk backend; support/demo/contact use the visitor's mail client.
 - Legal drafts are noindex until counsel/owner approval.
@@ -35,7 +41,7 @@ See `docs/public-site/OWNER-INFORMATION-NEEDED.md`.
 - Public developer API/SDK is planned, not published.
 - Lighthouse scores are not claimed without a measured run against production.
 
-## 5. Recommended next improvements
+## 6. Recommended next improvements
 
 - Owner-approved legal entity, DPA, subprocessors, and cookie table.
 - Working lead capture (authenticated server function) if email-only is insufficient.

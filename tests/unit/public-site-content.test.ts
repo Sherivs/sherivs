@@ -87,6 +87,33 @@ describe("route collision guards", () => {
 
   it("does not replace the tenant blog routes", () => {
     expect(read("frontend/src/routes/blog.tsx")).toContain("blog_posts");
-    expect(read("frontend/src/routes/(site)/insights.tsx")).toContain("/insights");
+    expect(read("frontend/src/routes/(site)/insights.index.tsx")).toContain("/insights");
+  });
+});
+
+describe("nested public layouts do not swallow children", () => {
+  const layouts = [
+    "frontend/src/routes/(site)/product.tsx",
+    "frontend/src/routes/(site)/solutions.tsx",
+    "frontend/src/routes/(site)/security.tsx",
+    "frontend/src/routes/(site)/help.tsx",
+    "frontend/src/routes/(site)/insights.tsx",
+  ];
+
+  it("renders an Outlet in every parent that has nested public pages", () => {
+    for (const file of layouts) {
+      const source = read(file);
+      expect(source, file).toContain("<Outlet />");
+      expect(source, file).not.toContain("throw redirect");
+    }
+  });
+
+  it("keeps the /product → /sherivs alias on the index route only", () => {
+    const index = read("frontend/src/routes/(site)/product.index.tsx");
+    expect(index).toContain('createFileRoute("/(site)/product/")');
+    expect(index).toContain('redirect({ to: "/sherivs" })');
+    expect(read("frontend/src/routes/(site)/product.architecture.tsx")).toContain(
+      "ProductLayerPage",
+    );
   });
 });

@@ -95,7 +95,9 @@ import { Route as siteCompanyAboutRouteImport } from './routes/(site)/company.ab
 import { Route as siteCompanyCareersRouteImport } from './routes/(site)/company.careers'
 import { Route as siteCompanyPartnersRouteImport } from './routes/(site)/company.partners'
 import { Route as siteCompanyVisionRouteImport } from './routes/(site)/company.vision'
+import { Route as siteHelpIndexRouteImport } from './routes/(site)/help.index'
 import { Route as siteHelpSlugRouteImport } from './routes/(site)/help.$slug'
+import { Route as siteInsightsIndexRouteImport } from './routes/(site)/insights.index'
 import { Route as siteInsightsSlugRouteImport } from './routes/(site)/insights.$slug'
 import { Route as siteLegalAcceptableUseRouteImport } from './routes/(site)/legal.acceptable-use'
 import { Route as siteLegalContactRouteImport } from './routes/(site)/legal.contact'
@@ -104,12 +106,15 @@ import { Route as siteLegalDataProcessingRouteImport } from './routes/(site)/leg
 import { Route as siteLegalPrivacyRouteImport } from './routes/(site)/legal.privacy'
 import { Route as siteLegalSubprocessorsRouteImport } from './routes/(site)/legal.subprocessors'
 import { Route as siteLegalTermsRouteImport } from './routes/(site)/legal.terms'
+import { Route as siteProductIndexRouteImport } from './routes/(site)/product.index'
 import { Route as siteProductAiWorkforceRouteImport } from './routes/(site)/product.ai-workforce'
 import { Route as siteProductArchitectureRouteImport } from './routes/(site)/product.architecture'
 import { Route as siteProductDigitalTwinsRouteImport } from './routes/(site)/product.digital-twins'
 import { Route as siteProductInstitutionalComputingRouteImport } from './routes/(site)/product.institutional-computing'
 import { Route as siteProductIntelligenceRouteImport } from './routes/(site)/product.intelligence'
+import { Route as siteSecurityIndexRouteImport } from './routes/(site)/security.index'
 import { Route as siteSecurityDisclosureRouteImport } from './routes/(site)/security.disclosure'
+import { Route as siteSolutionsIndexRouteImport } from './routes/(site)/solutions.index'
 import { Route as siteSolutionsEducationRouteImport } from './routes/(site)/solutions.education'
 import { Route as siteSolutionsEnterpriseRouteImport } from './routes/(site)/solutions.enterprise'
 import { Route as siteSolutionsResearchRouteImport } from './routes/(site)/solutions.research'
@@ -712,10 +717,20 @@ const siteCompanyVisionRoute = siteCompanyVisionRouteImport.update({
   path: '/company/vision',
   getParentRoute: () => siteRouteRoute,
 } as any)
+const siteHelpIndexRoute = siteHelpIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => siteHelpRoute,
+} as any)
 const siteHelpSlugRoute = siteHelpSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
   getParentRoute: () => siteHelpRoute,
+} as any)
+const siteInsightsIndexRoute = siteInsightsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => siteInsightsRoute,
 } as any)
 const siteInsightsSlugRoute = siteInsightsSlugRouteImport.update({
   id: '/$slug',
@@ -757,6 +772,11 @@ const siteLegalTermsRoute = siteLegalTermsRouteImport.update({
   path: '/legal/terms',
   getParentRoute: () => siteRouteRoute,
 } as any)
+const siteProductIndexRoute = siteProductIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => siteProductRoute,
+} as any)
 const siteProductAiWorkforceRoute = siteProductAiWorkforceRouteImport.update({
   id: '/ai-workforce',
   path: '/ai-workforce',
@@ -783,10 +803,20 @@ const siteProductIntelligenceRoute = siteProductIntelligenceRouteImport.update({
   path: '/intelligence',
   getParentRoute: () => siteProductRoute,
 } as any)
+const siteSecurityIndexRoute = siteSecurityIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => siteSecurityRoute,
+} as any)
 const siteSecurityDisclosureRoute = siteSecurityDisclosureRouteImport.update({
   id: '/disclosure',
   path: '/disclosure',
   getParentRoute: () => siteSecurityRoute,
+} as any)
+const siteSolutionsIndexRoute = siteSolutionsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => siteSolutionsRoute,
 } as any)
 const siteSolutionsEducationRoute = siteSolutionsEducationRouteImport.update({
   id: '/education',
@@ -2002,6 +2032,11 @@ export interface FileRoutesByFullPath {
   '/teacher/sign-in': typeof AuthenticatedTeacherSignInRoute
   '/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
   '/workspace/settings': typeof AuthenticatedWorkspaceSettingsRoute
+  '/help/': typeof siteHelpIndexRoute
+  '/insights/': typeof siteInsightsIndexRoute
+  '/product/': typeof siteProductIndexRoute
+  '/security/': typeof siteSecurityIndexRoute
+  '/solutions/': typeof siteSolutionsIndexRoute
   '/command-centre/': typeof AuthenticatedCommandCentreIndexRoute
   '/insights/category/$slug': typeof siteInsightsCategorySlugRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
@@ -2049,16 +2084,11 @@ export interface FileRoutesByTo {
   '/developers': typeof siteDevelopersRoute
   '/docs': typeof siteDocsRoute
   '/faq': typeof siteFaqRoute
-  '/help': typeof siteHelpRouteWithChildren
-  '/insights': typeof siteInsightsRouteWithChildren
   '/integrations': typeof siteIntegrationsRoute
   '/privacy-policy': typeof sitePrivacyPolicyRoute
-  '/product': typeof siteProductRouteWithChildren
   '/request-demo': typeof siteRequestDemoRoute
-  '/security': typeof siteSecurityRouteWithChildren
   '/sherivs': typeof siteSherivsRoute
   '/siwes-verify': typeof siteSiwesVerifyRoute
-  '/solutions': typeof siteSolutionsRouteWithChildren
   '/status': typeof siteStatusRoute
   '/support': typeof siteSupportRoute
   '/terms': typeof siteTermsRoute
@@ -2264,6 +2294,11 @@ export interface FileRoutesByTo {
   '/teacher/sign-in': typeof AuthenticatedTeacherSignInRoute
   '/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
   '/workspace/settings': typeof AuthenticatedWorkspaceSettingsRoute
+  '/help': typeof siteHelpIndexRoute
+  '/insights': typeof siteInsightsIndexRoute
+  '/product': typeof siteProductIndexRoute
+  '/security': typeof siteSecurityIndexRoute
+  '/solutions': typeof siteSolutionsIndexRoute
   '/command-centre': typeof AuthenticatedCommandCentreIndexRoute
   '/insights/category/$slug': typeof siteInsightsCategorySlugRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
@@ -2531,6 +2566,11 @@ export interface FileRoutesById {
   '/_authenticated/teacher/sign-in': typeof AuthenticatedTeacherSignInRoute
   '/_authenticated/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
   '/_authenticated/workspace_/settings': typeof AuthenticatedWorkspaceSettingsRoute
+  '/(site)/help/': typeof siteHelpIndexRoute
+  '/(site)/insights/': typeof siteInsightsIndexRoute
+  '/(site)/product/': typeof siteProductIndexRoute
+  '/(site)/security/': typeof siteSecurityIndexRoute
+  '/(site)/solutions/': typeof siteSolutionsIndexRoute
   '/_authenticated/command-centre/': typeof AuthenticatedCommandCentreIndexRoute
   '/(site)/insights/category/$slug': typeof siteInsightsCategorySlugRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
@@ -2797,6 +2837,11 @@ export interface FileRouteTypes {
     | '/teacher/sign-in'
     | '/teacher/timetable'
     | '/workspace/settings'
+    | '/help/'
+    | '/insights/'
+    | '/product/'
+    | '/security/'
+    | '/solutions/'
     | '/command-centre/'
     | '/insights/category/$slug'
     | '/api/public/audit/password-reset'
@@ -2844,16 +2889,11 @@ export interface FileRouteTypes {
     | '/developers'
     | '/docs'
     | '/faq'
-    | '/help'
-    | '/insights'
     | '/integrations'
     | '/privacy-policy'
-    | '/product'
     | '/request-demo'
-    | '/security'
     | '/sherivs'
     | '/siwes-verify'
-    | '/solutions'
     | '/status'
     | '/support'
     | '/terms'
@@ -3059,6 +3099,11 @@ export interface FileRouteTypes {
     | '/teacher/sign-in'
     | '/teacher/timetable'
     | '/workspace/settings'
+    | '/help'
+    | '/insights'
+    | '/product'
+    | '/security'
+    | '/solutions'
     | '/command-centre'
     | '/insights/category/$slug'
     | '/api/public/audit/password-reset'
@@ -3325,6 +3370,11 @@ export interface FileRouteTypes {
     | '/_authenticated/teacher/sign-in'
     | '/_authenticated/teacher/timetable'
     | '/_authenticated/workspace_/settings'
+    | '/(site)/help/'
+    | '/(site)/insights/'
+    | '/(site)/product/'
+    | '/(site)/security/'
+    | '/(site)/solutions/'
     | '/_authenticated/command-centre/'
     | '/(site)/insights/category/$slug'
     | '/api/public/audit/password-reset'
@@ -3978,12 +4028,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof siteCompanyVisionRouteImport
       parentRoute: typeof siteRouteRoute
     }
+    '/(site)/help/': {
+      id: '/(site)/help/'
+      path: '/'
+      fullPath: '/help/'
+      preLoaderRoute: typeof siteHelpIndexRouteImport
+      parentRoute: typeof siteHelpRoute
+    }
     '/(site)/help/$slug': {
       id: '/(site)/help/$slug'
       path: '/$slug'
       fullPath: '/help/$slug'
       preLoaderRoute: typeof siteHelpSlugRouteImport
       parentRoute: typeof siteHelpRoute
+    }
+    '/(site)/insights/': {
+      id: '/(site)/insights/'
+      path: '/'
+      fullPath: '/insights/'
+      preLoaderRoute: typeof siteInsightsIndexRouteImport
+      parentRoute: typeof siteInsightsRoute
     }
     '/(site)/insights/$slug': {
       id: '/(site)/insights/$slug'
@@ -4041,6 +4105,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof siteLegalTermsRouteImport
       parentRoute: typeof siteRouteRoute
     }
+    '/(site)/product/': {
+      id: '/(site)/product/'
+      path: '/'
+      fullPath: '/product/'
+      preLoaderRoute: typeof siteProductIndexRouteImport
+      parentRoute: typeof siteProductRoute
+    }
     '/(site)/product/ai-workforce': {
       id: '/(site)/product/ai-workforce'
       path: '/ai-workforce'
@@ -4076,12 +4147,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof siteProductIntelligenceRouteImport
       parentRoute: typeof siteProductRoute
     }
+    '/(site)/security/': {
+      id: '/(site)/security/'
+      path: '/'
+      fullPath: '/security/'
+      preLoaderRoute: typeof siteSecurityIndexRouteImport
+      parentRoute: typeof siteSecurityRoute
+    }
     '/(site)/security/disclosure': {
       id: '/(site)/security/disclosure'
       path: '/disclosure'
       fullPath: '/security/disclosure'
       preLoaderRoute: typeof siteSecurityDisclosureRouteImport
       parentRoute: typeof siteSecurityRoute
+    }
+    '/(site)/solutions/': {
+      id: '/(site)/solutions/'
+      path: '/'
+      fullPath: '/solutions/'
+      preLoaderRoute: typeof siteSolutionsIndexRouteImport
+      parentRoute: typeof siteSolutionsRoute
     }
     '/(site)/solutions/education': {
       id: '/(site)/solutions/education'
@@ -5229,10 +5314,12 @@ declare module '@tanstack/react-router' {
 
 interface siteHelpRouteChildren {
   siteHelpSlugRoute: typeof siteHelpSlugRoute
+  siteHelpIndexRoute: typeof siteHelpIndexRoute
 }
 
 const siteHelpRouteChildren: siteHelpRouteChildren = {
   siteHelpSlugRoute: siteHelpSlugRoute,
+  siteHelpIndexRoute: siteHelpIndexRoute,
 }
 
 const siteHelpRouteWithChildren = siteHelpRoute._addFileChildren(
@@ -5241,11 +5328,13 @@ const siteHelpRouteWithChildren = siteHelpRoute._addFileChildren(
 
 interface siteInsightsRouteChildren {
   siteInsightsSlugRoute: typeof siteInsightsSlugRoute
+  siteInsightsIndexRoute: typeof siteInsightsIndexRoute
   siteInsightsCategorySlugRoute: typeof siteInsightsCategorySlugRoute
 }
 
 const siteInsightsRouteChildren: siteInsightsRouteChildren = {
   siteInsightsSlugRoute: siteInsightsSlugRoute,
+  siteInsightsIndexRoute: siteInsightsIndexRoute,
   siteInsightsCategorySlugRoute: siteInsightsCategorySlugRoute,
 }
 
@@ -5259,6 +5348,7 @@ interface siteProductRouteChildren {
   siteProductDigitalTwinsRoute: typeof siteProductDigitalTwinsRoute
   siteProductInstitutionalComputingRoute: typeof siteProductInstitutionalComputingRoute
   siteProductIntelligenceRoute: typeof siteProductIntelligenceRoute
+  siteProductIndexRoute: typeof siteProductIndexRoute
 }
 
 const siteProductRouteChildren: siteProductRouteChildren = {
@@ -5268,6 +5358,7 @@ const siteProductRouteChildren: siteProductRouteChildren = {
   siteProductInstitutionalComputingRoute:
     siteProductInstitutionalComputingRoute,
   siteProductIntelligenceRoute: siteProductIntelligenceRoute,
+  siteProductIndexRoute: siteProductIndexRoute,
 }
 
 const siteProductRouteWithChildren = siteProductRoute._addFileChildren(
@@ -5276,10 +5367,12 @@ const siteProductRouteWithChildren = siteProductRoute._addFileChildren(
 
 interface siteSecurityRouteChildren {
   siteSecurityDisclosureRoute: typeof siteSecurityDisclosureRoute
+  siteSecurityIndexRoute: typeof siteSecurityIndexRoute
 }
 
 const siteSecurityRouteChildren: siteSecurityRouteChildren = {
   siteSecurityDisclosureRoute: siteSecurityDisclosureRoute,
+  siteSecurityIndexRoute: siteSecurityIndexRoute,
 }
 
 const siteSecurityRouteWithChildren = siteSecurityRoute._addFileChildren(
@@ -5290,12 +5383,14 @@ interface siteSolutionsRouteChildren {
   siteSolutionsEducationRoute: typeof siteSolutionsEducationRoute
   siteSolutionsEnterpriseRoute: typeof siteSolutionsEnterpriseRoute
   siteSolutionsResearchRoute: typeof siteSolutionsResearchRoute
+  siteSolutionsIndexRoute: typeof siteSolutionsIndexRoute
 }
 
 const siteSolutionsRouteChildren: siteSolutionsRouteChildren = {
   siteSolutionsEducationRoute: siteSolutionsEducationRoute,
   siteSolutionsEnterpriseRoute: siteSolutionsEnterpriseRoute,
   siteSolutionsResearchRoute: siteSolutionsResearchRoute,
+  siteSolutionsIndexRoute: siteSolutionsIndexRoute,
 }
 
 const siteSolutionsRouteWithChildren = siteSolutionsRoute._addFileChildren(
