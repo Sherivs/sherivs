@@ -19,8 +19,16 @@ import { PUBLIC_CONTACTS, PUBLIC_SOCIAL_LINKS } from "@/lib/public-site/contacts
 import {
   ACCEPTING_CUSTOMERS,
   COMPANY_LOCATION_LINE,
+  COMPANY_MISSION,
+  COMPANY_VISION,
   LEGAL_ENTITY_NAME,
+  POSITIONING_FOUNDATIONS,
+  POSITIONING_PROGRAMMABLE,
+  POSITIONING_RETHINKING,
+  POSITIONING_STATEMENT,
+  POSITIONING_TAGLINE,
 } from "@/lib/public-site/company";
+import { PLATFORM_PAGE_DESCRIPTION, PLATFORM_PAGE_TITLE, PLATFORM_TAGLINE } from "@/lib/platform";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const read = (ref: string) => readFileSync(join(ROOT, ref), "utf8");
@@ -76,6 +84,25 @@ describe("public content honesty", () => {
     expect(LEGAL_ENTITY_NAME).toBe("Sherivs Technologies Limited");
     expect(COMPANY_LOCATION_LINE).toBe("Maiduguri, Borno State, Nigeria");
     expect(ACCEPTING_CUSTOMERS).toBe(true);
+    expect(POSITIONING_TAGLINE).toBe("Intelligence infrastructure for a more connected world");
+    expect(PLATFORM_TAGLINE).toBe(POSITIONING_TAGLINE);
+    expect(PLATFORM_PAGE_TITLE).toBe(`Sherivs — ${POSITIONING_TAGLINE}`);
+    expect(PLATFORM_PAGE_DESCRIPTION).toBe(POSITIONING_STATEMENT);
+    expect(POSITIONING_STATEMENT).toMatch(/AI-native institutional computing platform/);
+    expect(POSITIONING_RETHINKING).toMatch(/rethinking how intelligence is deployed/);
+    expect(POSITIONING_PROGRAMMABLE).toMatch(/programmable capabilities/);
+    expect(POSITIONING_FOUNDATIONS).toMatch(/is developing the foundations/);
+    expect(COMPANY_MISSION).toBe(
+      "Build the computing infrastructure that enables people, institutions, and intelligent systems to work together.",
+    );
+    expect(COMPANY_VISION).toBe(
+      "A world where intelligence, computation, and coordinated action are accessible capabilities for every institution.",
+    );
+    expect(read("frontend/src/components/public/sherivs-home.tsx")).toContain("{POSITIONING_STATEMENT}");
+    expect(read("frontend/src/components/public/sherivs-home.tsx")).toContain("{COMPANY_MISSION}");
+    expect(read("frontend/src/components/public/sherivs-home.tsx")).toContain("{COMPANY_VISION}");
+    expect(read("frontend/src/lib/public-site/faq.ts")).toContain("POSITIONING_STATEMENT");
+    expect(read("frontend/src/lib/public-site/seo.ts")).toContain("POSITIONING_STATEMENT");
     expect(PUBLIC_CONTACTS.info).toBe("info@sherivs.com");
     expect(PUBLIC_CONTACTS.hello).toBe("hello@sherivs.com");
     expect(PUBLIC_CONTACTS.support).toBe("support@sherivs.com");

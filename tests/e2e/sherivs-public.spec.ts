@@ -18,7 +18,7 @@ test.describe("Sherivs public homepage (plane A)", () => {
   }) => {
     await page.goto("/");
 
-    await expect(page).toHaveTitle(/Sherivs — The intelligence layer for a world that works together/);
+    await expect(page).toHaveTitle(/Sherivs — Intelligence infrastructure for a more connected world/);
 
     // The brand and the category are both present on the first screen: the
     // header carries the company name, the hero carries the category — never

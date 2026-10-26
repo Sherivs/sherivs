@@ -3,7 +3,12 @@ import { PLATFORM_NAME, PLATFORM_TAGLINE } from "@/lib/platform";
 import {
   ACCEPTING_CUSTOMERS,
   COMPANY_LOCATION_LINE,
+  COMPANY_MISSION,
+  COMPANY_VISION,
   LEGAL_ENTITY_NAME,
+  POSITIONING_FOUNDATIONS,
+  POSITIONING_RETHINKING,
+  POSITIONING_STATEMENT,
 } from "@/lib/public-site/company";
 import { publicHead } from "@/lib/public-site/seo";
 import { MarketingPage } from "@/components/public/marketing-page";
@@ -19,8 +24,7 @@ export const Route = createFileRoute("/(site)/about")({
   head: () =>
     publicHead({
       title: `About — ${PLATFORM_NAME}`,
-      description:
-        "Sherivs Technologies Limited builds Sherivs, an AI-native institutional computing platform, from Maiduguri, Borno State, Nigeria.",
+      description: POSITIONING_STATEMENT,
       path: "/about",
     }),
 });
@@ -30,7 +34,7 @@ function AboutPage() {
     <MarketingPage
       eyebrow="About"
       title={PLATFORM_NAME}
-      lead={`${LEGAL_ENTITY_NAME} builds Sherivs — an AI-native institutional computing platform designed to connect people, organizations, AI agents, and digital twins through a shared, governed environment.`}
+      lead={POSITIONING_STATEMENT}
       crumbs={[
         { href: "/", label: "Home" },
         { href: "/about", label: "About" },
@@ -46,12 +50,20 @@ function AboutPage() {
             company that operates them. We are based in {COMPANY_LOCATION_LINE}. This page does not
             invent a street address, telephone number, or registration identifier.
           </p>
+          <p>{POSITIONING_RETHINKING}</p>
+          <p>{POSITIONING_FOUNDATIONS}</p>
           <p>
-            Organizations deserve an operating environment that understands how they actually work:
-            identity, records, workflows, and intelligence in one governed place. Education is an
-            important domain — the first installed runtime is Scholar — but the platform is
-            intended for a broader range of institutions. It is not a chatbot, a generic SaaS
-            template, or a model marketplace.
+            <span className="font-medium text-sherivs-white">Mission.</span> {COMPANY_MISSION}
+          </p>
+          <p>
+            <span className="font-medium text-sherivs-white">Vision.</span> {COMPANY_VISION}
+          </p>
+          <p>
+            Education is an important domain — the first installed runtime is Scholar — but the
+            platform is intended for a broader range of institutions. It is not a chatbot, a
+            generic SaaS template, or a model marketplace. Directional language on this site
+            (“is building”, “is developing”) describes the work in progress, not a claim that every
+            capability is generally available today.
           </p>
           {ACCEPTING_CUSTOMERS ? (
             <p>
@@ -60,7 +72,7 @@ function AboutPage() {
               what remains in development.
             </p>
           ) : null}
-          <p className="font-medium text-sherivs-white">{PLATFORM_TAGLINE}</p>
+          <p className="font-medium text-sherivs-white">{PLATFORM_TAGLINE}.</p>
           <div className="flex flex-wrap gap-3 pt-4">
             <PublicButton href="/request-demo">Request a demo</PublicButton>
             <PublicButton href="/contact" variant="secondary">

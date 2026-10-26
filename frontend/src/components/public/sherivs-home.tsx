@@ -1,4 +1,10 @@
 import { PLATFORM_NAME, PLATFORM_TAGLINE } from "@/lib/platform";
+import {
+  COMPANY_MISSION,
+  COMPANY_VISION,
+  POSITIONING_PROGRAMMABLE,
+  POSITIONING_STATEMENT,
+} from "@/lib/public-site/company";
 import { SiteHeader } from "@/components/public/site-header";
 import { SiteFooter } from "@/components/public/site-footer";
 import { NetworkViz } from "@/components/public/network-viz";
@@ -53,9 +59,7 @@ export function SherivsHome() {
                 The intelligence layer for a world that works together.
               </h1>
               <p className="sherivs-enter sherivs-enter-3 mt-5 max-w-xl text-sm leading-relaxed text-sherivs-muted sm:text-lg">
-                Sherivs connects people, organizations, AI agents, and digital twins through a
-                unified computing platform designed to coordinate work, manage state, and turn
-                intelligence into action.
+                {POSITIONING_STATEMENT}
               </p>
               <p className="mt-3 max-w-xl text-sm text-sherivs-muted">{PLATFORM_TAGLINE}.</p>
               <div className="sherivs-enter sherivs-enter-4 mt-8 flex flex-col gap-3 sm:flex-row">
@@ -289,9 +293,13 @@ export function SherivsHome() {
             <SectionHeading
               id="vision-heading"
               eyebrow="Long-term vision"
-              title="Institutions that can think together without losing control"
-              lead="The ambition is a world where schools, enterprises, and research groups share a computing environment that is intelligent and still governable. That future is not the same as the Scholar runtime you can use today. We keep those stories on separate layers of this site."
+              title={COMPANY_VISION}
+              lead={POSITIONING_PROGRAMMABLE}
             />
+            <p className="mt-4 max-w-2xl text-sm leading-relaxed text-sherivs-muted sm:text-base">
+              That future is not the same as the Scholar runtime you can use today. We keep those
+              stories on separate layers of this site.
+            </p>
             <div className="mt-8">
               <PublicButton href="/company/vision" variant="secondary">
                 Vision and mission
@@ -323,7 +331,7 @@ export function SherivsHome() {
           <PageContainer className="py-16 sm:py-20">
             <div className="sherivs-glass rounded-[var(--sherivs-radius-lg)] px-6 py-10 text-center sm:px-12">
               <h2 id="cta-heading" className="sherivs-display text-2xl font-bold sm:text-3xl">
-                Build the next generation of intelligent institutions.
+                {COMPANY_MISSION}
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-sm text-sherivs-muted sm:text-base">
                 Request a walkthrough, or write to the Sherivs team. Create an organization when you

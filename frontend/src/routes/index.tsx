@@ -7,7 +7,7 @@ import { getPublicSite } from "@/lib/website/public-site.functions";
 import { SherivsHome } from "@/components/public/sherivs-home";
 import { identityFromAppState } from "@/lib/identity/context";
 import { resolveTenantDomain, resolveTenantSlug } from "@/lib/tenant";
-import { PLATFORM_NAME, PLATFORM_URL } from "@/lib/platform";
+import { PLATFORM_PAGE_DESCRIPTION, PLATFORM_PAGE_TITLE, PLATFORM_URL } from "@/lib/platform";
 import {
   resolveExperienceHost,
   shouldRedirectCanonicalRootToAuth,
@@ -61,28 +61,26 @@ export const Route = createFileRoute("/")({
 const platformHead = () => ({
   meta: [
     {
-      title: `${PLATFORM_NAME} — The intelligence layer for a world that works together`,
+      title: PLATFORM_PAGE_TITLE,
     },
     {
       name: "description",
-      content:
-        "Sherivs connects people, organizations, AI agents, and digital twins through a unified computing platform designed to coordinate work, manage state, and turn intelligence into action.",
+      content: PLATFORM_PAGE_DESCRIPTION,
     },
     {
       property: "og:title",
-      content: `${PLATFORM_NAME} — The intelligence layer for a world that works together`,
+      content: PLATFORM_PAGE_TITLE,
     },
     {
       property: "og:description",
-      content:
-        "Sherivs connects people, organizations, AI agents, and digital twins through a unified computing platform.",
+      content: PLATFORM_PAGE_DESCRIPTION,
     },
     { property: "og:type", content: "website" },
     { property: "og:url", content: `${PLATFORM_URL}/` },
     { property: "og:image", content: `${PLATFORM_URL}/og-image.png` },
     { name: "twitter:card", content: "summary_large_image" },
-    { name: "twitter:title", content: `${PLATFORM_NAME} — The intelligence layer for a world that works together` },
-    { name: "twitter:description", content: "Institutional computing for organizations, with Scholar available today." },
+    { name: "twitter:title", content: PLATFORM_PAGE_TITLE },
+    { name: "twitter:description", content: PLATFORM_PAGE_DESCRIPTION },
     { name: "twitter:image", content: `${PLATFORM_URL}/og-image.png` },
   ],
   links: [{ rel: "canonical", href: `${PLATFORM_URL}/` }],

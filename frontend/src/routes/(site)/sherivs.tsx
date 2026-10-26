@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { PLATFORM_NAME, PLATFORM_TAGLINE } from "@/lib/platform";
+import { PLATFORM_NAME, PLATFORM_PAGE_DESCRIPTION, PLATFORM_TAGLINE } from "@/lib/platform";
+import { POSITIONING_RETHINKING } from "@/lib/public-site/company";
 import {
   INSTALLED_RUNTIME_PROOFS,
   SECURITY_GUARANTEES,
@@ -23,8 +24,7 @@ export const Route = createFileRoute("/(site)/sherivs")({
   head: () =>
     publicHead({
       title: `${PLATFORM_NAME} — ${PLATFORM_TAGLINE}`,
-      description:
-        "Sherivs is an intelligent operating platform for organizations: one environment that understands how your organization works, coordinates people and an AI workforce, and continuously improves operations.",
+      description: PLATFORM_PAGE_DESCRIPTION,
       path: "/sherivs",
     }),
 });
@@ -39,12 +39,13 @@ function SherivsPlatformPage() {
             id="coregrid-hero"
             className="sherivs-display mt-3 max-w-3xl text-4xl font-bold sm:text-5xl"
           >
-            The intelligent operating platform for organizations
+            {PLATFORM_NAME}
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-sherivs-muted sm:text-lg">
-            Sherivs connects your organization&apos;s people, knowledge, workflows, communications,
-            data, and AI workforce into one intelligent operating environment — one that understands
-            how your organization works and continuously improves it.
+            {PLATFORM_PAGE_DESCRIPTION}
+          </p>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-sherivs-muted sm:text-base">
+            {POSITIONING_RETHINKING}
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
             <Link

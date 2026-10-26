@@ -34,7 +34,7 @@ const COMMAND_CENTRE = "frontend/src/routes/_authenticated/command-centre/index.
 describe("Platform identity", () => {
   it("presents the company as Sherivs", () => {
     expect(PLATFORM_NAME).toBe("Sherivs");
-    expect(PLATFORM_TAGLINE).toMatch(/operating intelligence/i);
+    expect(PLATFORM_TAGLINE).toMatch(/intelligence infrastructure/i);
     expect(PLATFORM_DOMAIN).toBe("sherivs.com");
   });
 });

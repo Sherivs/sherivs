@@ -4,6 +4,7 @@ import {
   COMPANY_LOCALITY,
   COMPANY_REGION,
   LEGAL_ENTITY_NAME,
+  POSITIONING_STATEMENT,
 } from "@/lib/public-site/company";
 import { PUBLIC_CONTACTS } from "@/lib/public-site/contacts";
 
@@ -70,8 +71,7 @@ export function softwareJsonLd() {
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web",
     url: PLATFORM_URL,
-    description:
-      "Sherivs is an AI-native institutional computing platform that connects people, organizations, AI agents, and digital twins through a governed environment.",
+    description: POSITIONING_STATEMENT,
   };
 }
 

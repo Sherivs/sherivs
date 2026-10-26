@@ -18,7 +18,7 @@ Updated: 2026-10-26. Marks were not redrawn. Wordmark and ThinkTech files are ow
 | `public/partners/thinktech.png` | Cropped ThinkTech lockup on its white plate. Not redrawn. |
 | `public/favicon.ico`, `favicon-16x16.png`, `favicon-32x32.png` | Browser icon (standalone S). |
 | `public/apple-touch-icon.png`, `public/icons/*.png` | PWA / touch icons (standalone S). |
-| `public/og-image.png` | Social-sharing image (S + live white word on navy; official lockup is too dark for that field). |
+| `public/og-image.png` | Social-sharing image (S + live white word on navy; official lockup is too dark for that field). Tagline is the owner positioning line. |
 | `frontend/src/components/brand/sherivs-logo.tsx` | `<SherivsLogo>` / `<SherivsMark>` for dark chrome; `<SherivsLockup>` for light surfaces. |
 
 ## Variant selection

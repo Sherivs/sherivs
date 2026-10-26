@@ -1,3 +1,5 @@
+import { POSITIONING_STATEMENT } from "@/lib/public-site/company";
+
 export interface FaqItem {
   id: string;
   category: string;
@@ -21,8 +23,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
     id: "what-is-sherivs",
     category: "About Sherivs",
     question: "What is Sherivs?",
-    answer:
-      "Sherivs is an AI-native institutional computing platform. It is designed to connect people, organizations, AI agents, and digital twins in a governed environment so work, state, and intelligence can be coordinated instead of scattered across tools.",
+    answer: `${POSITIONING_STATEMENT} Education through Scholar is available today; other capabilities described here are in development and are not claimed as generally available.`,
     related: [
       { href: "/sherivs", label: "Platform overview" },
       { href: "/company/vision", label: "Vision" },

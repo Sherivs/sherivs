@@ -1,3 +1,5 @@
+import { POSITIONING_TAGLINE } from "@/lib/public-site/company";
+
 /**
  * Public navigation and footer model. Links only to real public routes.
  * Internal `/platform` (engineering) and console hosts are never linked.
@@ -24,7 +26,7 @@ export const PLATFORM_NAV: NavGroup = {
     {
       href: "/sherivs",
       label: "Platform overview",
-      description: "How Sherivs connects people, organizations, agents, and twins.",
+      description: `${POSITIONING_TAGLINE}.`,
     },
     {
       href: "/product/architecture",
