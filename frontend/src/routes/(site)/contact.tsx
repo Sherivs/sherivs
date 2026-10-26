@@ -3,6 +3,7 @@ import { PLATFORM_NAME } from "@/lib/platform";
 import { publicHead } from "@/lib/public-site/seo";
 import { COMPANY_LOCATION_LINE, EMAIL_ROUTING, MAIL_DELIVERY_NOTE } from "@/lib/public-site/company";
 import { PUBLIC_CONTACTS, publishedCompanySocial } from "@/lib/public-site/contacts";
+import { CompanySocialLinks } from "@/components/public/company-social-links";
 import { MarketingPage } from "@/components/public/marketing-page";
 import { PageContainer, Section } from "@/components/public/ui";
 import { MailtoForm } from "@/components/public/mailto-form";
@@ -60,19 +61,7 @@ function ContactPage() {
             {publishedCompanySocial().length > 0 ? (
               <div className="space-y-2 pt-2">
                 <h3 className="font-display text-base font-semibold">Public profiles</h3>
-                <ul className="space-y-1 text-sm text-sherivs-muted">
-                  {publishedCompanySocial().map((item) => (
-                    <li key={item.id}>
-                      <a
-                        href={item.href}
-                        rel="noopener noreferrer"
-                        className="text-sherivs-cyan underline-offset-4 hover:underline"
-                      >
-                        {item.label}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
+                <CompanySocialLinks variant="list" />
               </div>
             ) : null}
           </div>

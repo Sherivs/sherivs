@@ -5,16 +5,15 @@ import {
   COMPANY_LOCATION_LINE,
   LEGAL_ENTITY_NAME,
 } from "@/lib/public-site/company";
-import { PUBLIC_CONTACTS, publishedCompanySocial } from "@/lib/public-site/contacts";
+import { PUBLIC_CONTACTS } from "@/lib/public-site/contacts";
 import { publishedPartners } from "@/lib/public-site/partners";
 import { publishedCompliance } from "@/lib/public-site/compliance";
 import { SherivsLogo } from "@/components/brand/sherivs-logo";
+import { CompanySocialLinks } from "@/components/public/company-social-links";
 
 export function SiteFooter() {
   const techPartners = publishedPartners("technology_partner");
   const compliance = publishedCompliance();
-  const social = publishedCompanySocial();
-
   return (
     <footer className="border-t border-[var(--sherivs-border)] bg-[var(--sherivs-midnight)]">
       <div className="mx-auto grid w-full max-w-[var(--sherivs-container-wide)] gap-8 px-4 py-12 text-sm sm:grid-cols-2 sm:px-6 lg:grid-cols-4 xl:grid-cols-6">
@@ -114,15 +113,7 @@ export function SiteFooter() {
         </div>
       ) : null}
 
-      {social.length > 0 ? (
-        <div className="mx-auto flex max-w-[var(--sherivs-container-wide)] flex-wrap gap-4 px-4 pb-6 sm:px-6">
-          {social.map((item) => (
-            <a key={item.id} href={item.href} rel="noopener noreferrer" className="text-sm text-sherivs-cyan">
-              {item.label}
-            </a>
-          ))}
-        </div>
-      ) : null}
+      <CompanySocialLinks className="mx-auto max-w-[var(--sherivs-container-wide)] px-4 pb-6 sm:px-6" />
 
       <div className="flex flex-col items-center justify-between gap-3 border-t border-[var(--sherivs-border)] px-4 py-4 text-xs text-sherivs-muted sm:flex-row sm:px-6">
         <p>

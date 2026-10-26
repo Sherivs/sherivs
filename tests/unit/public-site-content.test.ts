@@ -25,6 +25,7 @@ import {
   publishedCompanySocial,
   publishedFounderSocial,
 } from "@/lib/public-site/contacts";
+import { organizationJsonLd } from "@/lib/public-site/seo";
 import {
   ACCEPTING_CUSTOMERS,
   COMPANY_LOCATION_LINE,
@@ -145,13 +146,26 @@ describe("public content honesty", () => {
     const github = PUBLIC_SOCIAL_LINKS.find((item) => item.id === "github");
     expect(github?.published).toBe(false);
     expect(github?.href).toBe("");
-    expect(publishedCompanySocial().map((item) => item.id).sort()).toEqual(["facebook", "instagram"]);
+    expect(publishedCompanySocial().map((item) => item.id).sort()).toEqual([
+      "facebook",
+      "instagram",
+      "x",
+    ]);
     expect(publishedCompanySocial().every((item) => item.id !== "github")).toBe(true);
     expect(publishedFounderSocial().map((item) => item.id)).toEqual(["linkedin"]);
     expect(publishedFounderSocial()[0]?.href).toMatch(/linkedin\.com\/in\//);
-    expect(PUBLIC_SOCIAL_LINKS.find((item) => item.id === "x")?.published).toBe(false);
-    expect(PUBLIC_SOCIAL_LINKS.find((item) => item.id === "x")?.handle).toBe("@sherivs_");
-    expect(read("frontend/src/components/public/site-footer.tsx")).toContain("publishedCompanySocial");
+    const x = PUBLIC_SOCIAL_LINKS.find((item) => item.id === "x");
+    expect(x?.published).toBe(true);
+    expect(x?.handle).toBe("@sherivs_");
+    expect(x?.href).toBe("https://x.com/sherivs_");
+    expect(organizationJsonLd().sameAs).toContain("https://x.com/sherivs_");
+    expect(organizationJsonLd().sameAs.join(" ")).not.toMatch(/github/i);
+    expect(read("frontend/src/lib/public-site/contacts.ts")).toContain('href: "https://x.com/sherivs_"');
+    expect(read("frontend/src/components/public/site-footer.tsx")).toContain("CompanySocialLinks");
+    expect(read("frontend/src/routes/(site)/contact.tsx")).toContain("CompanySocialLinks");
+    expect(read("frontend/src/components/public/company-social-links.tsx")).toContain("href={item.href}");
+    expect(read("frontend/src/components/public/company-social-links.tsx")).toContain('id === "x"');
+    expect(read("frontend/src/components/public/company-social-links.tsx")).not.toMatch(/github/i);
     expect(read("frontend/src/components/public/site-footer.tsx")).not.toMatch(/github/i);
     expect(read("frontend/src/routes/(site)/contact.tsx")).not.toMatch(/github/i);
   });

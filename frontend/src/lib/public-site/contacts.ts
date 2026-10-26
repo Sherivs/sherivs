@@ -32,7 +32,7 @@ export interface PublicSocialLink {
 /**
  * Owner-supplied social destinations (2026-10-26, mission 002).
  * GitHub is stored only so it cannot be published by accident.
- * X is unpublished until the exact public profile URL is verified.
+ * X uses the owner-supplied public profile https://x.com/sherivs_.
  */
 export const PUBLIC_SOCIAL_LINKS: readonly PublicSocialLink[] = [
   {
@@ -55,12 +55,11 @@ export const PUBLIC_SOCIAL_LINKS: readonly PublicSocialLink[] = [
   {
     id: "x",
     label: "X",
-    href: "",
+    href: "https://x.com/sherivs_",
     handle: "@sherivs_",
-    published: false,
+    published: true,
     surface: "company",
-    notes:
-      "Owner supplied the handle @sherivs_. Exact public profile URL was not verified from this environment (x.com and twitter.com returned 403). Not published as a link.",
+    notes: "Owner-supplied public profile URL. Footer and contact icons route here.",
   },
   {
     id: "linkedin",

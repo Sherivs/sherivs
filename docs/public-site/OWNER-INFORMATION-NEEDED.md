@@ -15,25 +15,24 @@ prerequisite for website implementation (owner restriction, mission 002).
 - Technology partner: ThinkTech — https://www.thinktech.com, approved collaboration description, logo on file.
 - Instagram and Facebook destinations as supplied (canonical page URLs not separately verified).
 - LinkedIn personal/founder profile stored as founder surface only.
-- X handle `@sherivs_` stored; public profile URL unpublished pending verification.
+- X company profile published at https://x.com/sherivs_ (handle `@sherivs_`). Footer and contact icons route there.
 - GitHub: owner forbids public display.
 - NSCDC- and NDPA-related matters: owner states obtained; certificates and exact terminology unpublished.
 
 ## Still needed (non-sensitive)
 
 1. Canonical Instagram and Facebook profile URLs, if the supplied share/tracking URLs should be replaced.
-2. Verified public X profile URL for `@sherivs_` (handle is on file; link unpublished).
-3. Dedicated privacy@ / legal@ mailboxes, if they should exist separately from info@.
-4. Support helpdesk API beyond mailto to support@sherivs.com.
-5. Product availability changes (second runtime, public API, twin GA).
-6. Privacy lawful bases, retention periods, transfer arrangements, residency regions.
-7. Approved customer testimonials or references.
-8. Counsel-reviewed privacy policy, terms, AUP, cookie policy, and DPA.
-9. Public subprocessors list (name, purpose, region).
-10. Refund terms and any SLA intended for public display.
-11. Careers listings, if hiring should be public.
-12. A real announcement for the optional announcement bar.
-13. Confirmed public wording for NSCDC/NDPA if a Trust Center claim should appear (registration vs compliance vs certification vs accreditation vs approval). Do not send certificate numbers.
+2. Dedicated privacy@ / legal@ mailboxes, if they should exist separately from info@.
+3. Support helpdesk API beyond mailto to support@sherivs.com.
+4. Product availability changes (second runtime, public API, twin GA).
+5. Privacy lawful bases, retention periods, transfer arrangements, residency regions.
+6. Approved customer testimonials or references.
+7. Counsel-reviewed privacy policy, terms, AUP, cookie policy, and DPA.
+8. Public subprocessors list (name, purpose, region).
+9. Refund terms and any SLA intended for public display.
+10. Careers listings, if hiring should be public.
+11. A real announcement for the optional announcement bar.
+12. Confirmed public wording for NSCDC/NDPA if a Trust Center claim should appear (registration vs compliance vs certification vs accreditation vs approval). Do not send certificate numbers.
 
 ## Explicitly not requested
 

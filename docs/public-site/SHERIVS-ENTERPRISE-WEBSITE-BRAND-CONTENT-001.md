@@ -30,5 +30,5 @@ See `docs/brand/ASSET-INVENTORY.md`. Tokens sampled from the mark: cyan `#14A8FC
 - Mailto is not ticket creation.
 - ThinkTech collaboration copy is published; exclusive terms, equity, and joint-venture filings are still not claimed.
 - Legal drafts remain noindex pending counsel.
-- Instagram and Facebook destinations published as supplied; X unpublished pending URL verification; GitHub omitted.
+- Instagram and Facebook destinations published as supplied; X published at https://x.com/sherivs_; GitHub omitted.
 - Production deploy not claimed.
