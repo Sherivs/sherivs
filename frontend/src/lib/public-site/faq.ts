@@ -1,4 +1,5 @@
 import { POSITIONING_STATEMENT } from "@/lib/public-site/company";
+import { THINKTECH_COLLABORATION, THINKTECH_FOCUS } from "@/lib/public-site/partners";
 
 export interface FaqItem {
   id: string;
@@ -117,6 +118,16 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
     related: [
       { href: "/request-demo", label: "Request a demo" },
       { href: "/auth", label: "Sign in" },
+    ],
+  },
+  {
+    id: "thinktech",
+    category: "About Sherivs",
+    question: "Who is ThinkTech?",
+    answer: `${THINKTECH_COLLABORATION} ${THINKTECH_FOCUS} ThinkTech is a published technology partner — not a commercial customer reference, and not the same as configured integrations such as Paystack or WhatsApp.`,
+    related: [
+      { href: "/company/partners", label: "Partners" },
+      { href: "/integrations", label: "Integrations" },
     ],
   },
   {

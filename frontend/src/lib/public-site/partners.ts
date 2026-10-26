@@ -3,8 +3,25 @@
  *
  * Distinguishes technology partners from commercial partners and from
  * technology integrations. Entries without `published: true` must not render.
- * Do not invent relationships, logos, or partnership scope.
+ * Do not invent relationships, logos, exclusive terms, or partnership scope.
  */
+
+/**
+ * Owner-supplied ThinkTech collaboration copy (2026-10-26).
+ * Describes published collaboration scope — not a commercial customer
+ * reference, exclusive deal, joint-venture filing, or a claim that every
+ * listed activity is generally available today.
+ */
+export const THINKTECH_HEADLINE = "Building the next generation of intelligent technology";
+export const THINKTECH_COLLABORATION =
+  "Sherivs and ThinkTech are collaborating across technology development, infrastructure, consulting, integration, and marketing to advance the Sherivs platform.";
+export const THINKTECH_RELATIONSHIP =
+  "The relationship brings together technical development and implementation efforts with the broader work of establishing, integrating, and growing the Sherivs ecosystem.";
+export const THINKTECH_FOCUS =
+  "Together, the focus is on developing the technology foundations, supporting integrations, and market-facing capabilities needed to bring Sherivs' vision to organizations and users.";
+export const THINKTECH_HONESTY =
+  "This is the owner-supplied collaboration description. It does not invent exclusive terms, equity, a joint-venture registration, or that every listed activity is a generally available product.";
+
 export type PartnerKind =
   | "commercial"
   | "strategic"
@@ -31,8 +48,7 @@ export const PUBLIC_PARTNERS: readonly PublicPartner[] = [
     kind: "technology_partner",
     href: "https://www.thinktech.com",
     logoSrc: "/partners/thinktech.png",
-    summary:
-      "Technology partner. The owner has authorized public display of this relationship. The exact partnership scope has not been supplied, so this site does not describe joint products, integrations, or endorsements.",
+    summary: THINKTECH_COLLABORATION,
     published: true,
     notes:
       "Owner-supplied website and logo (cropped from the provided plate; not redrawn). Tagline spelling is as supplied. TLS to thinktech.com could not be verified from this environment (handshake failure); the URL is still published as supplied.",

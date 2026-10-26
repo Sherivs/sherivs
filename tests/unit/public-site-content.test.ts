@@ -12,7 +12,13 @@ import { FAQ_ITEMS, FAQ_PREVIEW_IDS } from "@/lib/public-site/faq";
 import { HELP_ARTICLES } from "@/lib/public-site/help";
 import { LEGAL_DOCUMENTS } from "@/lib/public-site/legal";
 import { PUBLIC_SITEMAP_PATHS } from "@/lib/public-site/navigation";
-import { publishedPartners } from "@/lib/public-site/partners";
+import {
+  THINKTECH_COLLABORATION,
+  THINKTECH_FOCUS,
+  THINKTECH_HEADLINE,
+  THINKTECH_RELATIONSHIP,
+  publishedPartners,
+} from "@/lib/public-site/partners";
 import { COMPLIANCE_CLAIMS } from "@/lib/public-site/compliance";
 import { PRODUCT_FAMILIES, ARCHITECTURE_LAYERS } from "@/lib/public-site/capabilities";
 import { PUBLIC_CONTACTS, PUBLIC_SOCIAL_LINKS } from "@/lib/public-site/contacts";
@@ -75,6 +81,16 @@ describe("public content honesty", () => {
     ]);
     expect(publishedPartners("technology_partner").map((p) => p.id)).toEqual(["thinktech"]);
     expect(publishedPartners("technology_partner")[0]?.logoSrc).toBe("/partners/thinktech.png");
+    expect(THINKTECH_HEADLINE).toBe("Building the next generation of intelligent technology");
+    expect(THINKTECH_COLLABORATION).toMatch(/collaborating across technology development/);
+    expect(THINKTECH_RELATIONSHIP).toMatch(/establishing, integrating, and growing/);
+    expect(THINKTECH_FOCUS).toMatch(/technology foundations, supporting integrations/);
+    expect(publishedPartners("technology_partner")[0]?.summary).toBe(THINKTECH_COLLABORATION);
+    expect(read("frontend/src/lib/public-site/partners.ts")).not.toMatch(
+      /scope has not been supplied/,
+    );
+    expect(read("frontend/src/routes/(site)/company.partners.tsx")).toContain("{THINKTECH_FOCUS}");
+    expect(read("frontend/src/lib/public-site/faq.ts")).toContain("THINKTECH_COLLABORATION");
     expect(existsSync(join(ROOT, "public/partners/thinktech.png"))).toBe(true);
     expect(existsSync(join(ROOT, "public/brand/sherivs-wordmark.png"))).toBe(true);
     expect(existsSync(join(ROOT, "docs/brand/sherivs-wordmark-source.png"))).toBe(true);

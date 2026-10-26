@@ -44,7 +44,7 @@ Owner-proposed `#246BFD` / `#29C5F6` were shifted toward sampled logo pixels so 
 
 ## ThinkTech
 
-Public partner card uses `public/partners/thinktech.png` on a white plate so the black lockup remains readable on the dark site. The tagline spelling on the supplied artwork is unchanged. Partnership **scope** is still unconfirmed.
+Public partner card uses `public/partners/thinktech.png` on a white plate so the black lockup remains readable on the dark site. The tagline spelling on the supplied artwork is unchanged. Owner-supplied collaboration copy (development, infrastructure, consulting, integration, marketing) is published on `/company/partners`.
 
 ## Typography
 

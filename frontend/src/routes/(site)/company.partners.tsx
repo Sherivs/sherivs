@@ -1,6 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { publicHead } from "@/lib/public-site/seo";
-import { publishedPartners } from "@/lib/public-site/partners";
+import {
+  THINKTECH_COLLABORATION,
+  THINKTECH_FOCUS,
+  THINKTECH_HEADLINE,
+  THINKTECH_HONESTY,
+  THINKTECH_RELATIONSHIP,
+  publishedPartners,
+} from "@/lib/public-site/partners";
 import { MarketingPage } from "@/components/public/marketing-page";
 import { Callout, PageContainer, PartnerCard, Section } from "@/components/public/ui";
 
@@ -9,8 +16,7 @@ export const Route = createFileRoute("/(site)/company/partners")({
   head: () =>
     publicHead({
       title: "Partners",
-      description:
-        "Sherivs publishes only approved partner relationships. ThinkTech is listed as a technology partner. Integrations are listed separately.",
+      description: THINKTECH_COLLABORATION,
       path: "/company/partners",
     }),
 });
@@ -23,20 +29,27 @@ function PartnersPage() {
     <MarketingPage
       eyebrow="Company"
       title="Partners"
-      lead="Approved relationships only. Technology partners are not commercial partners, customers, or product integrations unless that is separately established."
+      lead={THINKTECH_HEADLINE}
       crumbs={[
         { href: "/", label: "Home" },
         { href: "/about", label: "Company" },
         { href: "/company/partners", label: "Partners" },
       ]}
     >
-      <Section labelledBy="partner-list">
+      <Section labelledBy="thinktech-heading">
         <PageContainer className="space-y-10 py-16">
-          <h2 id="partner-list" className="sr-only">
-            Partner lists
-          </h2>
+          <div className="max-w-3xl space-y-4 text-sm leading-relaxed text-sherivs-muted sm:text-base">
+            <h2 id="thinktech-heading" className="font-display text-xl font-semibold text-sherivs-white">
+              Sherivs and ThinkTech
+            </h2>
+            <p>{THINKTECH_COLLABORATION}</p>
+            <p>{THINKTECH_RELATIONSHIP}</p>
+            <p>{THINKTECH_FOCUS}</p>
+          </div>
           <div>
-            <h3 className="font-display text-lg font-semibold">Technology partners</h3>
+            <h3 id="partner-list" className="font-display text-lg font-semibold">
+              Technology partners
+            </h3>
             <ul className="mt-4 grid gap-4 sm:grid-cols-2">
               {technologyPartners.map((item) => (
                 <li key={item.id}>
@@ -54,7 +67,8 @@ function PartnersPage() {
           {commercial.length === 0 && strategic.length === 0 ? (
             <Callout title="No published commercial or strategic partners">
               Approved commercial and strategic names have not been supplied. This section stays
-              empty rather than filled with placeholders.
+              empty rather than filled with placeholders. ThinkTech is a technology partner, not a
+              commercial customer reference.
             </Callout>
           ) : null}
           <Callout title="Not an integration directory">
@@ -64,6 +78,7 @@ function PartnersPage() {
             </a>{" "}
             page as configured technology paths. They are not listed here as partners.
           </Callout>
+          <Callout title="What this page does not claim">{THINKTECH_HONESTY}</Callout>
         </PageContainer>
       </Section>
     </MarketingPage>
