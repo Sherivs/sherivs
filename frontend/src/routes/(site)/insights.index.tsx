@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { publicHead } from "@/lib/public-site/seo";
+import { POSITIONING_TAGLINE } from "@/lib/public-site/company";
 import { ARTICLE_CATEGORIES, categoryToSlug, publishedArticles } from "@/lib/public-site/articles";
 import { MarketingPage } from "@/components/public/marketing-page";
 import { PageContainer, Section } from "@/components/public/ui";
@@ -10,7 +11,7 @@ export const Route = createFileRoute("/(site)/insights/")({
   head: () =>
     publicHead({
       title: "Insights",
-      description: "Evergreen writing on institutional computing, AI workforces, digital twins, and governed intelligence.",
+      description: `${POSITIONING_TAGLINE}. Essays on institutional computing, AI workforces, digital twins, and governed intelligence.`,
       path: "/insights",
     }),
 });
@@ -21,7 +22,7 @@ function InsightsIndex() {
     <MarketingPage
       eyebrow="Insights"
       title="Insights"
-      lead="Company articles on the Sherivs vision. Organization blogs remain on each tenant host at /blog."
+      lead={`${POSITIONING_TAGLINE}. Company essays on institutional computing, AI workforces, digital twins, and governed intelligence. Organization blogs remain on each tenant host at /blog.`}
       crumbs={[
         { href: "/", label: "Home" },
         { href: "/insights", label: "Insights" },

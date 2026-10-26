@@ -1,3 +1,5 @@
+import { POSITIONING_STATEMENT } from "@/lib/public-site/company";
+
 export const ARTICLE_CATEGORIES = [
   "AI and Intelligence Infrastructure",
   "AI Agents and Autonomous Work",
@@ -223,6 +225,7 @@ export const PUBLIC_ARTICLES: readonly PublicArticle[] = [
     sections: [
       {
         paragraphs: [
+          POSITIONING_STATEMENT,
           "Connected intelligence is not “one model that knows everything.” It is the ability to ask a question against the records, people, and policies an organization has already authorized, then to act only within that same boundary.",
           "Sherivs is built toward that architecture: identity and governance, institutional computing, agent orchestration, twins, model routing, execution, data, and assurance. Some of those layers are usable today in Scholar. Others are in development or long-term.",
         ],

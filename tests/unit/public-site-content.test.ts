@@ -128,6 +128,8 @@ describe("public content honesty", () => {
     expect(read("frontend/src/components/public/sherivs-home.tsx")).toContain("{COMPANY_VISION}");
     expect(read("frontend/src/lib/public-site/faq.ts")).toContain("POSITIONING_STATEMENT");
     expect(read("frontend/src/lib/public-site/seo.ts")).toContain("POSITIONING_STATEMENT");
+    expect(read("frontend/src/routes/(site)/insights.index.tsx")).toContain("POSITIONING_TAGLINE");
+    expect(read("frontend/src/lib/public-site/articles.ts")).toContain("POSITIONING_STATEMENT");
     expect(PUBLIC_CONTACTS.info).toBe("info@sherivs.com");
     expect(PUBLIC_CONTACTS.hello).toBe("hello@sherivs.com");
     expect(PUBLIC_CONTACTS.support).toBe("support@sherivs.com");
