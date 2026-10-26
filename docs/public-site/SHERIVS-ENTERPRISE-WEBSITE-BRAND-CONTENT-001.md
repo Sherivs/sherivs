@@ -11,7 +11,7 @@ Version-target classification: **ACTIVE-V1** (public marketing and documentation
 | Logo | `docs/brand/sherivs-logo-source.png` (light), `public/brand/sherivs-logo-512.png` (dark), `public/brand/sherivs-mark-{64,128,256}.png`. Component: `SherivsLogo` / `SherivsMark`. Not redrawn. |
 | Email MX | `sherivs.com` MX `mx1/mx2.privateemail.com`. Individual mailbox SMTP not proven. Forms remain mailto. |
 | ThinkTech | Owner URL `https://www.thinktech.com`. TLS handshake from this environment failed; URL still published as supplied. Logo cropped from owner JPEG to `public/partners/thinktech.png`. |
-| Social | Owner reports accounts; no verified URLs in repository. Configured, unpublished. |
+| Social | Instagram and Facebook published as supplied destinations. X published at `https://x.com/sherivs_`. LinkedIn is founder-only. GitHub omitted. |
 
 ## 2. Brand
 
