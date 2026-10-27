@@ -339,7 +339,7 @@ export function AppNotificationsScreen() {
           <small data-testid="push-status">{pushStatusLabel(support)}</small>
         </div>
       </div>
-      <div className="app-shell-actions">
+      <div className="app-shell-push-actions">
         <button
           type="button"
           className="app-shell-primary"

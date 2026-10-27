@@ -656,7 +656,7 @@
   border: 1px solid var(--shell-line);
 }
 
-.app-shell-actions {
+.app-shell-push-actions {
   display: grid;
   gap: 0.55rem;
 }

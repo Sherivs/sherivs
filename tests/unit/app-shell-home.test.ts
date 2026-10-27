@@ -198,6 +198,8 @@ describe("application shell files", () => {
     expect(notifications).toContain("push-enable");
     expect(notifications).toContain("sendTestPush");
     expect(notifications).toContain("registerPushSubscription");
+    expect(notifications).toContain("app-shell-push-actions");
+    expect(read("frontend/src/components/app-shell/app-shell.css")).toContain("app-shell-push-actions");
     const chrome = read("frontend/src/components/app-shell/app-shell.tsx");
     expect(chrome).toContain("refreshPushTokenIfGranted");
   });
