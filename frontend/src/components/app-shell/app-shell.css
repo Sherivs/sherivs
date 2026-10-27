@@ -514,11 +514,14 @@
 .app-shell-drawer-account {
   display: grid;
   gap: 0.22rem;
+  align-content: start;
+  grid-auto-rows: min-content;
 }
 
 .app-shell-drawer-list {
   overflow: auto;
   flex: 1;
+  min-height: 0;
 }
 
 .app-shell-drawer-item {
@@ -567,6 +570,10 @@
   margin: 0;
   font-size: 1.28rem;
   letter-spacing: -0.03em;
+}
+
+.app-shell-section .app-shell-widget {
+  min-height: 0;
 }
 
 .app-shell-empty {
