@@ -4,10 +4,9 @@ import "./app-entry.css";
 /**
  * Shared field for splash, sign-in, and onboarding.
  *
- * Splash / onboarding use the owner-supplied splash-field photograph
- * (`public/app-entry/splash-field.jpg`) — the visual source of truth —
- * not a substitute SVG. The sign-in tone is a light glass field sampled
- * from the Sherivs mark (cyan / blue / violet). Foreground chrome stays
+ * The app splash and sign-in share the light glass field sampled from the
+ * Sherivs mark (cyan / blue / violet orbs on `#eef2f8`). Onboarding still
+ * uses the owner-supplied splash-field photograph. Foreground chrome stays
  * in `.app-entry-stage`.
  *
  * The backdrop class is distinct from form `.app-entry-field` labels.

@@ -62,7 +62,7 @@ export function AppEntryScreen({ panel }: { panel: AppEntryPanel }) {
   }
 
   return (
-    <AppEntryCanvas>
+    <AppEntryCanvas tone="login">
       <BrandBlock />
       <SplashCards />
     </AppEntryCanvas>

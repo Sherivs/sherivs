@@ -63,8 +63,11 @@ describe("app-entry host", () => {
     expect(canvas).toContain("/app-entry/splash-field.jpg");
     expect(canvas).toContain("app-entry-backdrop");
     expect(canvas).toContain('tone === "login"');
+    expect(splash).toMatch(/<AppEntryCanvas tone="login">\s*<BrandBlock \/>/);
+    expect(css).toContain(".app-entry-login .app-entry-wordmark::after");
     expect(css).toContain(".app-entry-login-card");
     expect(css).toContain("#1848fd");
+    expect(css).toContain("#eef2f8");
     expect(css).not.toContain(".app-entry-login-chrome");
     expect(canvas).not.toMatch(/className="app-entry-field"/);
     expect(css).toContain(".app-entry-backdrop");
