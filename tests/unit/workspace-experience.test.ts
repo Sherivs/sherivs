@@ -3,9 +3,12 @@
  */
 import { describe, expect, it } from "vitest";
 import {
+  clockInTimeZone,
   dayPartForHour,
   greetingForHour,
+  hourInTimeZone,
   resolveMemberWorkspaceExperience,
+  SHELL_TIME_ZONE,
 } from "../../frontend/src/lib/experience/workspace-experience";
 
 describe("time-of-day part + greeting", () => {
@@ -23,7 +26,14 @@ describe("time-of-day part + greeting", () => {
     expect(greetingForHour(8)).toBe("Good morning");
     expect(greetingForHour(14)).toBe("Good afternoon");
     expect(greetingForHour(19)).toBe("Good evening");
-    expect(greetingForHour(2)).toBe("Good evening");
+    expect(greetingForHour(2)).toBe("Good night");
+  });
+
+  it("reads the greeting hour in Africa/Lagos", () => {
+    const at = new Date("2026-10-27T10:54:00Z");
+    expect(hourInTimeZone(at, SHELL_TIME_ZONE)).toBe(11);
+    expect(greetingForHour(hourInTimeZone(at, SHELL_TIME_ZONE))).toBe("Good morning");
+    expect(clockInTimeZone(at, SHELL_TIME_ZONE)).toMatch(/WAT$/);
   });
 });
 

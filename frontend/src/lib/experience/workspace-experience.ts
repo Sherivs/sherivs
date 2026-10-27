@@ -9,12 +9,14 @@
 export type DayPart = "morning" | "afternoon" | "evening" | "night";
 export type ExperienceLocale = "en";
 
+export const SHELL_TIME_ZONE = "Africa/Lagos";
+
 const GREETINGS: Readonly<Record<ExperienceLocale, Record<DayPart, string>>> = {
   en: {
     morning: "Good morning",
     afternoon: "Good afternoon",
     evening: "Good evening",
-    night: "Good evening",
+    night: "Good night",
   },
 };
 
@@ -28,6 +30,28 @@ export function dayPartForHour(hour: number): DayPart {
 export function greetingForHour(hour: number, locale: ExperienceLocale = "en"): string {
   const part = dayPartForHour(hour);
   return GREETINGS[locale][part];
+}
+
+/** Hour 0–23 in an IANA zone. Shell greetings use Africa/Lagos (WAT). */
+export function hourInTimeZone(at: Date, timeZone: string = SHELL_TIME_ZONE): number {
+  const formatted = new Intl.DateTimeFormat("en-GB", {
+    hour: "numeric",
+    hourCycle: "h23",
+    timeZone,
+  }).format(at);
+  const hour = Number.parseInt(formatted, 10);
+  if (!Number.isFinite(hour)) return at.getUTCHours();
+  return hour === 24 ? 0 : hour;
+}
+
+export function clockInTimeZone(at: Date, timeZone: string = SHELL_TIME_ZONE): string {
+  const clock = new Intl.DateTimeFormat("en-GB", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+    timeZone,
+  }).format(at);
+  return `${clock} WAT`;
 }
 
 export interface MemberWorkspaceExperienceInput {

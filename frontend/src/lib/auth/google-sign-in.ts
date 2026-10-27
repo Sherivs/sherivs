@@ -58,6 +58,13 @@ export function googleSignInRedirectTo(origin: string, pathWithSearch: string): 
   return `${origin.replace(/\/+$/, "")}${path}`;
 }
 
+export function hasGoogleIdentity(user: GoogleOAuthUser | null | undefined): boolean {
+  if (!user) return false;
+  const identities = user.identities ?? [];
+  if (identities.some((identity) => identity.provider === GOOGLE_OAUTH_PROVIDER)) return true;
+  return (user.app_metadata?.provider ?? "").toLowerCase() === GOOGLE_OAUTH_PROVIDER;
+}
+
 export function isGoogleOnlyIdentity(user: GoogleOAuthUser): boolean {
   const identities = user.identities ?? [];
   if (identities.length > 0) {

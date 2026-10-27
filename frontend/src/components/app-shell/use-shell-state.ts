@@ -10,9 +10,14 @@ import {
   shouldShowContextSwitcher,
   type ShellAffiliation,
 } from "@/lib/shell/membership-policy";
-import { composeBottomSlots, sidePanelNav, toShellNavItem } from "@/lib/shell/chrome";
+import { composeBottomSlots, composeHomeSections, composeSidePanel, toShellNavItem } from "@/lib/shell/chrome";
 import { compactPersonName } from "@/lib/shell/display-name";
-import { greetingForHour } from "@/lib/experience/workspace-experience";
+import {
+  clockInTimeZone,
+  greetingForHour,
+  hourInTimeZone,
+  SHELL_TIME_ZONE,
+} from "@/lib/experience/workspace-experience";
 import { scholarWorkspaceLabelForRole } from "@/lib/runtime/nav-registry";
 import type { AppRole } from "@/lib/roles";
 
@@ -28,6 +33,7 @@ export function useShellState() {
   const [cards, setCards] = useState<Record<string, CardData>>({});
   const [affiliations, setAffiliations] = useState<ShellAffiliation[]>([]);
   const [query, setQuery] = useState("");
+  const [now, setNow] = useState(() => Date.now());
 
   const load = useCallback(async () => {
     const profile = app.profile;
@@ -93,11 +99,39 @@ export function useShellState() {
     void load();
   }, [load]);
 
-  const hour = new Date().getHours();
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const at = new Date(now);
+  const hour = hourInTimeZone(at, SHELL_TIME_ZONE);
   const name = compactPersonName(app.profile?.full_name ?? app.authUser?.user_metadata?.full_name);
   const nav = useMemo(() => (manifest?.nav ?? []).map(toShellNavItem), [manifest]);
-  const drawer = useMemo(() => sidePanelNav(nav), [nav]);
-  const bottom = useMemo(() => composeBottomSlots(nav), [nav]);
+  const home = useMemo(
+    () =>
+      composeHomeSections({
+        widgets: manifest?.widgets,
+        actions: manifest?.actions,
+        inbox: manifest?.inbox,
+        nav: manifest?.nav,
+      }),
+    [manifest],
+  );
+  const drawer = useMemo(
+    () =>
+      composeSidePanel({
+        nav: manifest?.nav,
+        widgets: manifest?.widgets,
+        actions: manifest?.actions,
+        inbox: manifest?.inbox,
+      }),
+    [manifest],
+  );
+  const bottom = useMemo(
+    () => composeBottomSlots({ widgets: manifest?.widgets, nav: manifest?.nav }),
+    [manifest],
+  );
   const filteredDrawer = useMemo(() => {
     const needle = query.trim().toLowerCase();
     if (!needle) return drawer;
@@ -111,10 +145,12 @@ export function useShellState() {
     affiliations,
     showSwitcher: shouldShowContextSwitcher(affiliations),
     greeting: greetingForHour(hour),
+    clock: clockInTimeZone(at, SHELL_TIME_ZONE),
     name,
     roleTitle: app.role ? scholarWorkspaceLabelForRole(app.role) : "Member",
     orgName: app.school?.name ?? "Your organization",
     nav,
+    home,
     drawer: filteredDrawer,
     bottom,
     query,

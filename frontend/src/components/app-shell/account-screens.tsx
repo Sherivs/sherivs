@@ -1,8 +1,22 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Fingerprint, ScanFace, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
+import { GoogleMark } from "@/components/auth/google-mark";
+import {
+  googleAuthErrorMessage,
+  googleOAuthStartOptions,
+  googleSignInRedirectTo,
+  hasGoogleIdentity,
+  probeGoogleAuthorizeUrl,
+} from "@/lib/auth/google-sign-in";
+import {
+  BIOMETRIC_PASKEY_STEPS,
+  GOOGLE_LINK_STEPS,
+  GOOGLE_PROVIDER_STEPS,
+  platformAuthenticatorAvailable,
+} from "@/lib/shell/auth-setup";
 import { APP_SHELL_HOME } from "@/lib/shell/paths";
 import { useAppShell } from "./shell-context";
 import { ShellGlassIcon } from "./glass-icon";
@@ -56,9 +70,17 @@ export function AppSettingsScreen() {
 }
 
 export function AppSecurityScreen() {
+  const app = useApp();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  const [googleBusy, setGoogleBusy] = useState(false);
+  const [biometricReady, setBiometricReady] = useState<boolean | null>(null);
+  const googleConnected = hasGoogleIdentity(app.authUser);
+
+  useEffect(() => {
+    void platformAuthenticatorAvailable().then(setBiometricReady);
+  }, []);
 
   async function savePassword(event: React.FormEvent) {
     event.preventDefault();
@@ -73,10 +95,47 @@ export function AppSecurityScreen() {
     setConfirm("");
   }
 
+  async function connectGoogle() {
+    setGoogleBusy(true);
+    setMessage(null);
+    const args = googleOAuthStartOptions({
+      redirectTo: googleSignInRedirectTo(window.location.origin, "/home/security"),
+    });
+    const { data, error } = await supabase.auth.linkIdentity({
+      provider: args.provider,
+      options: {
+        redirectTo: args.options.redirectTo,
+        queryParams: args.options.queryParams,
+        skipBrowserRedirect: true,
+      },
+    });
+    if (error || !data.url) {
+      setGoogleBusy(false);
+      setMessage(googleAuthErrorMessage(error));
+      return;
+    }
+    const probed = await probeGoogleAuthorizeUrl(data.url);
+    if (!probed.ok) {
+      setGoogleBusy(false);
+      setMessage(probed.error);
+      return;
+    }
+    window.location.assign(probed.url);
+  }
+
   return (
     <section className="app-shell-section">
       <SectionBack />
       <h1>Biometric and authentication</h1>
+
+      <div className="app-shell-card">
+        <div className="app-shell-status">
+          <div>
+            <p>Password</p>
+            <small>Change the invitation password on this identity.</small>
+          </div>
+        </div>
+      </div>
       <form className="app-shell-form" onSubmit={(event) => void savePassword(event)}>
         <label>
           New password
@@ -89,6 +148,34 @@ export function AppSecurityScreen() {
         <button type="submit">Update password</button>
       </form>
       {message ? <p className="app-shell-empty">{message}</p> : null}
+
+      <div className="app-shell-card">
+        <ShellGlassIcon>
+          <GoogleMark size={16} />
+        </ShellGlassIcon>
+        <div>
+          <p>Google</p>
+          <small>{googleConnected ? "Connected to this login." : "Not connected yet."}</small>
+        </div>
+      </div>
+      {googleConnected ? null : (
+        <button type="button" className="app-shell-primary" disabled={googleBusy} onClick={() => void connectGoogle()}>
+          {googleBusy ? "Opening Google…" : "Connect Google"}
+        </button>
+      )}
+      <p className="app-shell-org">For the member</p>
+      <ol className="app-shell-steps">
+        {GOOGLE_LINK_STEPS.map((step) => (
+          <li key={step}>{step}</li>
+        ))}
+      </ol>
+      <p className="app-shell-org">For the project owner — enable Google in Supabase</p>
+      <ol className="app-shell-steps" data-testid="google-owner-steps">
+        {GOOGLE_PROVIDER_STEPS.map((step) => (
+          <li key={step}>{step}</li>
+        ))}
+      </ol>
+
       <div className="app-shell-cards">
         <div className="app-shell-card">
           <ShellGlassIcon>
@@ -96,7 +183,13 @@ export function AppSecurityScreen() {
           </ShellGlassIcon>
           <div>
             <p>Fingerprint</p>
-            <small>Uses this device’s biometric unlock. Sherivs never stores the print.</small>
+            <small>
+              {biometricReady
+                ? "This device can verify a passkey with Touch ID or Windows Hello."
+                : biometricReady === false
+                  ? "This browser has no platform authenticator yet."
+                  : "Checking this device…"}
+            </small>
           </div>
         </div>
         <div className="app-shell-card">
@@ -105,10 +198,16 @@ export function AppSecurityScreen() {
           </ShellGlassIcon>
           <div>
             <p>Face ID</p>
-            <small>Available on devices that already protect the OS lock screen with Face ID.</small>
+            <small>Same WebAuthn passkey. Sherivs never stores a face or fingerprint image.</small>
           </div>
         </div>
       </div>
+      <p className="app-shell-org">Professional passkey rollout</p>
+      <ol className="app-shell-steps" data-testid="biometric-owner-steps">
+        {BIOMETRIC_PASKEY_STEPS.map((step) => (
+          <li key={step}>{step}</li>
+        ))}
+      </ol>
     </section>
   );
 }
@@ -119,10 +218,21 @@ export function AppHelpScreen() {
       <SectionBack />
       <h1>Help and support</h1>
       <p className="app-shell-empty">
-        Ask your organization administrator to invite you into another school as a membership, not a
-        second login. Parents can hold staff roles and children in more than one school on the same
-        identity.
+        Ask your administrator to invite this same login into another organization as a membership,
+        not a second account. One person can hold several roles and several schools on one identity.
       </p>
+      <p className="app-shell-org">Enable Google sign-in</p>
+      <ol className="app-shell-steps">
+        {GOOGLE_PROVIDER_STEPS.map((step) => (
+          <li key={step}>{step}</li>
+        ))}
+      </ol>
+      <p className="app-shell-org">Enable fingerprint or Face ID</p>
+      <ol className="app-shell-steps">
+        {BIOMETRIC_PASKEY_STEPS.map((step) => (
+          <li key={step}>{step}</li>
+        ))}
+      </ol>
       <a className="app-shell-primary" href="mailto:hello@sherivs.com">
         Email support
       </a>

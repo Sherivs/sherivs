@@ -39,6 +39,8 @@ export function searchableSection(key: string, label: string): boolean {
     hay.includes("library") ||
     hay.includes("attendance") ||
     hay.includes("grade") ||
-    hay.includes("exam")
+    hay.includes("exam") ||
+    hay.includes("news") ||
+    hay.includes("announce")
   );
 }

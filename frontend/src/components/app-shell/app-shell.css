@@ -210,6 +210,11 @@
   font-size: 0.9rem;
 }
 
+.app-shell-greeting-time {
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+
 .app-shell-greeting h1 {
   margin: 0.1rem 0 0;
   font-size: 1.22rem;
@@ -603,6 +608,28 @@
   background: rgba(255, 255, 255, 0.9);
   padding: 0.7rem 0.8rem;
   color: var(--shell-ink);
+}
+
+.app-shell-steps {
+  margin: 0.35rem 0 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.42rem;
+  color: var(--shell-ink);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.app-shell-steps li::marker {
+  color: var(--shell-blue);
+  font-weight: 700;
+}
+
+.app-shell-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
 }
 
 .app-shell-form button,

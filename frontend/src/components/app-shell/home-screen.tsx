@@ -2,10 +2,9 @@ import { useState } from "react";
 import { ChevronDown, ChevronRight, Search } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { composeActivity } from "@/lib/shell/activity";
-import { toShellNavItem } from "@/lib/shell/chrome";
 import { shellIcon } from "@/lib/shell/icon-registry";
 import { accentTone, formatWidgetMetric } from "@/lib/shell/metrics";
-import { APP_SHELL_NOTIFICATIONS, appShellSectionPath } from "@/lib/shell/paths";
+import { APP_SHELL_NOTIFICATIONS } from "@/lib/shell/paths";
 import { searchableSection } from "@/lib/shell/role-template";
 import { switchActiveOrganization } from "@/lib/identity/memberships.functions";
 import { ShellGlassIcon } from "./glass-icon";
@@ -20,21 +19,13 @@ export function AppHomeScreen() {
   const shell = useAppShell();
   const [openSwitcher, setOpenSwitcher] = useState(false);
   const needle = shell.query.trim().toLowerCase();
-  const widgets = (shell.manifest?.widgets ?? [])
-    .filter((widget) => matches(needle, widget.label, widget.key))
-    .slice(0, 8);
-  const actions = (shell.manifest?.actions ?? [])
-    .filter((action) => matches(needle, action.label, action.key))
-    .slice(0, 8);
-  const shown = new Set([...widgets.map((item) => item.key), ...actions.map((item) => item.key)]);
-  const cards = (
-    shell.manifest?.inbox?.length ? shell.manifest.inbox.map(toShellNavItem) : shell.drawer
-  )
-    .filter((item) => !shown.has(item.key) && matches(needle, item.label, item.key))
-    .slice(0, 8);
-  const activity = composeActivity({
-    inbox: shell.manifest?.inbox ?? [],
-    widgets: shell.manifest?.widgets ?? [],
+  const widgets = shell.home.widgets.filter((item) => matches(needle, item.label, item.key)).slice(0, 8);
+  const actions = shell.home.actions.filter((item) => matches(needle, item.label, item.key)).slice(0, 8);
+  const news = shell.home.news.filter((item) => matches(needle, item.label, item.key));
+  const cards = shell.home.cards.filter((item) => matches(needle, item.label, item.key)).slice(0, 8);
+  const newsLists = composeActivity({
+    inbox: [],
+    widgets: shell.manifest?.widgets?.filter((item) => /announce|news/i.test(`${item.key} ${item.label}`)) ?? [],
     cards: shell.cards,
   }).filter((item) => matches(needle, item.title, item.key));
   const showSearch =
@@ -52,7 +43,10 @@ export function AppHomeScreen() {
   return (
     <div className="app-shell-home" data-testid="app-shell-home">
       <header className="app-shell-greeting">
-        <p>{shell.greeting},</p>
+        <p>
+          {shell.greeting}
+          <span className="app-shell-greeting-time"> · {shell.clock}</span>
+        </p>
         <h1>{shell.name.display}</h1>
         <p className="app-shell-org">{shell.orgName}</p>
         {shell.showSwitcher ? (
@@ -103,7 +97,7 @@ export function AppHomeScreen() {
             const Icon = shellIcon(widget.icon);
             const metric = formatWidgetMetric(shell.cards[widget.key]);
             return (
-              <Link key={widget.key} to={appShellSectionPath(widget.key) as never} className="app-shell-widget">
+              <Link key={widget.key} to={widget.href as never} className="app-shell-widget">
                 <ShellGlassIcon className={`app-shell-tone-${accentTone(index)}`}>
                   <Icon />
                 </ShellGlassIcon>
@@ -126,7 +120,7 @@ export function AppHomeScreen() {
             {actions.map((action, index) => {
               const Icon = shellIcon(action.icon);
               return (
-                <Link key={action.key} to={appShellSectionPath(action.key) as never} className="app-shell-action">
+                <Link key={action.key} to={action.href as never} className="app-shell-action">
                   <ShellGlassIcon className={`app-shell-tone-${accentTone(index + 1)}`}>
                     <Icon />
                   </ShellGlassIcon>
@@ -138,14 +132,19 @@ export function AppHomeScreen() {
         </>
       ) : null}
 
-      {activity.length ? (
+      {news.length || newsLists.length ? (
         <>
           <div className="app-shell-section-title">
-            <h2>Recent activity</h2>
-            <Link to={APP_SHELL_NOTIFICATIONS as never}>View all</Link>
+            <h2>News and announcements</h2>
           </div>
-          <div className="app-shell-activity" data-testid="app-shell-activity">
-            {activity.map((item) => {
+          <div className="app-shell-activity" data-testid="app-shell-news">
+            {(newsLists.length ? newsLists : news.map((item) => ({
+              key: item.key,
+              title: item.label,
+              detail: "From your organization",
+              icon: item.icon,
+              href: item.href,
+            }))).map((item) => {
               const Icon = shellIcon(item.icon);
               return (
                 <Link key={item.key} to={item.href as never} className="app-shell-activity-item">
@@ -168,6 +167,7 @@ export function AppHomeScreen() {
         <>
           <div className="app-shell-section-title">
             <h2>Workspace</h2>
+            <Link to={APP_SHELL_NOTIFICATIONS as never}>View all</Link>
           </div>
           <div className="app-shell-cards">
             {cards.map((item) => {

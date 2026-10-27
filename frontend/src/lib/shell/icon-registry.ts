@@ -28,6 +28,7 @@ import {
   HeartPulse,
   HelpCircle,
   Home,
+  Inbox,
   IdCard,
   KeyRound,
   Landmark,
@@ -124,6 +125,7 @@ const ICONS: Record<string, LucideIcon> = {
   fingerprint: Fingerprint,
   help: HelpCircle,
   search: LayoutGrid,
+  inbox: Inbox,
 };
 
 export function shellIcon(name: string | null | undefined): LucideIcon {
