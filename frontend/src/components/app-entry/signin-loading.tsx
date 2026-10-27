@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { SherivsMark } from "@/components/brand/sherivs-logo";
 import {
   SHERIVS_WORDMARK_SRC,
   nextSherivsLoadingPhase,
@@ -44,9 +43,6 @@ export function SignInLoading() {
       aria-live="polite"
       aria-label="Signing you in"
     >
-      <span className="app-entry-glass-icon app-entry-signin-loading-mark" aria-hidden="true">
-        <SherivsMark size={22} decorative />
-      </span>
       <div
         className="app-entry-signin-loading-word"
         style={{ ["--sherivs-reveal" as string]: String(reveal) }}

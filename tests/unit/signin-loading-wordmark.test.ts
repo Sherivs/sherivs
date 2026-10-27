@@ -76,8 +76,9 @@ describe("signin loading wordmark", () => {
     expect(css).toContain("#1848fd");
     expect(css).toContain("min(10.25rem, 46vw)");
     expect(css).toContain("position: fixed");
-    expect(loading).toContain("app-entry-glass-icon");
-    expect(loading).toContain("SherivsMark");
+    expect(loading).not.toContain("SherivsMark");
+    expect(loading).not.toContain("app-entry-glass-icon");
+    expect(css).not.toContain("app-entry-signin-loading-mark");
     expect(screen).toContain("SignInLoading");
     expect(screen).toContain("onSigningChange(true)");
     expect(auth).toContain("SignInLoading");

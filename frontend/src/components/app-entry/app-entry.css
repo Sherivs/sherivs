@@ -767,25 +767,6 @@ a.app-entry-login-submit {
   animation: app-entry-rise 640ms var(--app-entry-ease) both;
 }
 
-.app-entry-signin-loading-mark {
-  width: 2.15rem;
-  height: 2.15rem;
-  animation: app-entry-signin-loading-float 3.6s ease-in-out infinite;
-}
-
-.app-entry-signin-loading-mark img {
-  width: 1.15rem;
-  height: 1.15rem;
-}
-
-.app-entry-login .app-entry-signin-loading-mark {
-  background: linear-gradient(165deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.42) 55%, rgba(232, 240, 255, 0.55));
-  border-color: rgba(255, 255, 255, 0.88);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    0 10px 22px rgba(24, 72, 253, 0.14);
-}
-
 .app-entry-signin-loading-word {
   --sherivs-reveal: 0;
   width: min(10.25rem, 46vw);
@@ -889,7 +870,6 @@ a.app-entry-login-submit {
   .app-entry-signin-loading,
   .app-entry-signin-loading-mask,
   .app-entry-signin-loading-word,
-  .app-entry-signin-loading-mark,
   .app-entry-signin-loading-caption,
   .app-entry-mark,
   .app-entry-mark-wrap::before,
