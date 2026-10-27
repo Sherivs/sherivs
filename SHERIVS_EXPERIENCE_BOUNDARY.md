@@ -41,14 +41,15 @@ Canonical planes:
 
 ## Plane C — Organization Internal Workspace (Scholar runtime)
 
-Hardcoded Scholar portal routes, portal chrome, and the previous application shells have been **removed**. Identity/domain modules remain. `app.sherivs.com` now serves the splash / sign-in / Sherivs-team onboarding entry. A replacement workspace UI is not in this tree.
+Hardcoded Scholar portal routes, portal chrome, and the previous application shells have been **removed**. Identity/domain modules remain. `app.sherivs.com` serves splash / invite-only sign-in, then the governed `/home` shell. The shell renders capability-filtered widgets and nav from `workspace_manifest` / the Scholar nav catalog — it does not restore `_authenticated` or `portal-shell`.
 
 | Route | Purpose | Plane | Authority | Current state | Target state | Status |
 |---|---|---|---|---|---|---|
 | `/admin/*`, `/teacher/*`, `/parent/*`, `/student/*`, `/bursar/*`, `/driver/*`, `/hq/*` | Role workspaces | C | tenant membership + role | hardcoded UI deleted | future governed workspace | REMOVED |
 | `/organizations`, `/welcome`, `/runtime`, `/messages`, `/notifications`, `/settings` | Shell capabilities | C | authenticated | hardcoded UI deleted | future governed workspace | REMOVED |
 | `/super-admin/*`, `/internal`, `/command-centre/*` | Platform / HQ ops | D | internal workforce | hardcoded UI deleted | future governed console | REMOVED |
-| `app.sherivs.com` `/`, `/onboarding` | Application splash, invite-only sign-in, team onboarding | C | host routing + invitation credentials | splash then Sign in; Google for invited accounts; no self-signup | workspace shell is later work | IMPLEMENTED |
+| `app.sherivs.com` `/`, `/onboarding` | Application splash, invite-only sign-in, team onboarding | C | host routing + invitation credentials | splash then Sign in; Google for invited accounts; no self-signup | keep | IMPLEMENTED |
+| `/home`, `/home/s/$section`, `/home/ai` | Governed organization workspace shell | C | authenticated + membership | capability-dynamic home, 75% glass drawer, role bottom slots | keep | IMPLEMENTED |
 | `console.sherivs.com`, gov/head/group hosts | Console shells | D | host routing | retired unavailable surface | do not SSR public homepage | REMOVED |
 
 ## Boundary rules locked
@@ -62,4 +63,4 @@ Hardcoded Scholar portal routes, portal chrome, and the previous application she
 ## Known open items
 
 - `/coregrid` compatibility path: retire after external link hygiene; cannot break until tracked.
-- Universal shell (Plane C) and Sherivs internal console (Plane D) hardcoded UIs are removed. Replacement workspace UI is future work.
+- Sherivs internal console (Plane D) hardcoded UI remains removed. Plane C replacement is the governed `/home` shell.

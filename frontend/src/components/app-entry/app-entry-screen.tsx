@@ -1,9 +1,8 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, Navigate, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft, Lock, LogIn, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
-import { PLATFORM_URL } from "@/lib/platform";
 import { Turnstile, captchaRequired } from "@/components/security/turnstile";
 import { PasswordInput } from "@/components/security/password-input";
 import { turnstileEnabled } from "@/lib/security/turnstile-config";
@@ -43,37 +42,12 @@ const backoff = createLoginBackoff(
 );
 
 export function AppEntryScreen({ panel }: { panel: AppEntryPanel }) {
-  const { loading, authUser, signOut } = useApp();
+  const { loading, authUser } = useApp();
   const [signingIn, setSigningIn] = useState(false);
   const login = panel === "signin" || Boolean(authUser);
 
   if (!loading && authUser && !signingIn) {
-    return (
-      <AppEntryCanvas tone="login">
-        <section className="app-entry-login-card" data-testid="app-entry-signed-in">
-          <p className="app-entry-login-kicker">You are signed in</p>
-          <h2 className="app-entry-login-title">Welcome back</h2>
-          <p className="app-entry-panel-lead">
-            You are authenticated. The internal application workspace is the next
-            phase — it is not on this screen.
-          </p>
-          <a className="app-entry-login-submit" href={PLATFORM_URL}>
-            <GlassIcon>
-              <LogIn />
-            </GlassIcon>
-            Open sherivs.com
-          </a>
-          <button
-            type="button"
-            className="app-entry-login-google"
-            style={{ marginTop: "0.85rem" }}
-            onClick={() => void signOut()}
-          >
-            Sign out
-          </button>
-        </section>
-      </AppEntryCanvas>
-    );
+    return <Navigate to="/home" />;
   }
 
   if (login) {

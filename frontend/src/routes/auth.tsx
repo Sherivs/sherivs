@@ -1,9 +1,8 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Lock, LogIn, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
-import { PLATFORM_NAME, PLATFORM_URL } from "@/lib/platform";
 import { Turnstile, captchaRequired } from "@/components/security/turnstile";
 import { PasswordInput } from "@/components/security/password-input";
 import { PasswordStrengthMeter } from "@/components/security/password-strength-meter";
@@ -53,7 +52,7 @@ const backoff = createLoginBackoff(
 );
 
 function AuthPage() {
-  const { loading, refresh, school, tenantSlug, authUser, signOut } = useApp();
+  const { loading, refresh, school, tenantSlug, authUser } = useApp();
   // Console host (console.sherivs.com): staff-branded copy, no self-service
   // sign-up. Login, reset, Turnstile and MFA are unchanged.
   const experience = authPageExperience(currentEffectiveHostKind());
@@ -252,34 +251,7 @@ function AuthPage() {
   }
 
   if (!loading && authUser) {
-    return (
-      <div className="auth-shell app-entry app-entry-login">
-        <div className="app-entry-login-orbs" aria-hidden="true">
-          <span className="app-entry-orb app-entry-orb-cyan" />
-          <span className="app-entry-orb app-entry-orb-blue" />
-          <span className="app-entry-orb app-entry-orb-violet" />
-        </div>
-        <div className="auth-card uos-card app-entry-login-card" data-testid="auth-card">
-          <p className="app-entry-login-kicker">You are signed in</p>
-          <h1 className="app-entry-login-title">Welcome back</h1>
-          <p className="app-entry-panel-lead">
-            The application workspace is not available. The {PLATFORM_NAME} company website remains
-            at sherivs.com.
-          </p>
-          <div className="mt-6 flex flex-col gap-2">
-            <a href={PLATFORM_URL} className="app-entry-login-submit">
-              <span className="app-entry-glass-icon" aria-hidden="true">
-                <LogIn />
-              </span>
-              Open sherivs.com
-            </a>
-            <button type="button" onClick={() => void signOut()} className="app-entry-login-google">
-              Sign out
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+    return <Navigate to="/home" />;
   }
 
   return (

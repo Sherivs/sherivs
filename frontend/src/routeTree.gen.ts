@@ -14,6 +14,7 @@ import { Route as siteRouteRouteImport } from './routes/(site)/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as HealthDotjsonRouteImport } from './routes/health[.]json'
+import { Route as HomeRouteRouteImport } from './routes/home/route'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ManifestDotwebmanifestRouteImport } from './routes/manifest[.]webmanifest'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
@@ -43,6 +44,13 @@ import { Route as siteSupportRouteImport } from './routes/(site)/support'
 import { Route as siteTermsRouteImport } from './routes/(site)/terms'
 import { Route as siteTrustRouteImport } from './routes/(site)/trust'
 import { Route as siteVerifyTranscriptRouteImport } from './routes/(site)/verify-transcript'
+import { Route as HomeIndexRouteImport } from './routes/home/index'
+import { Route as HomeAiRouteImport } from './routes/home/ai'
+import { Route as HomeHelpRouteImport } from './routes/home/help'
+import { Route as HomeNotificationsRouteImport } from './routes/home/notifications'
+import { Route as HomeProfileRouteImport } from './routes/home/profile'
+import { Route as HomeSecurityRouteImport } from './routes/home/security'
+import { Route as HomeSettingsRouteImport } from './routes/home/settings'
 import { Route as PagesSlugRouteImport } from './routes/pages.$slug'
 import { Route as siteCompanyAboutRouteImport } from './routes/(site)/company.about'
 import { Route as siteCompanyCareersRouteImport } from './routes/(site)/company.careers'
@@ -71,6 +79,7 @@ import { Route as siteSolutionsIndexRouteImport } from './routes/(site)/solution
 import { Route as siteSolutionsEducationRouteImport } from './routes/(site)/solutions.education'
 import { Route as siteSolutionsEnterpriseRouteImport } from './routes/(site)/solutions.enterprise'
 import { Route as siteSolutionsResearchRouteImport } from './routes/(site)/solutions.research'
+import { Route as HomeSSectionRouteImport } from './routes/home/s.$section'
 import { Route as siteInsightsCategorySlugRouteImport } from './routes/(site)/insights.category.$slug'
 import { Route as ApiPublicAuditPasswordResetRouteImport } from './routes/api/public/audit.password-reset'
 import { Route as ApiPublicCronIntegrationsSyncRouteImport } from './routes/api/public/cron/integrations-sync'
@@ -102,6 +111,11 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
 const HealthDotjsonRoute = HealthDotjsonRouteImport.update({
   id: '/health.json',
   path: '/health.json',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HomeRouteRoute = HomeRouteRouteImport.update({
+  id: '/home',
+  path: '/home',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -249,6 +263,41 @@ const siteVerifyTranscriptRoute = siteVerifyTranscriptRouteImport.update({
   path: '/verify-transcript',
   getParentRoute: () => siteRouteRoute,
 } as any)
+const HomeIndexRoute = HomeIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => HomeRouteRoute,
+} as any)
+const HomeAiRoute = HomeAiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
+  getParentRoute: () => HomeRouteRoute,
+} as any)
+const HomeHelpRoute = HomeHelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => HomeRouteRoute,
+} as any)
+const HomeNotificationsRoute = HomeNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => HomeRouteRoute,
+} as any)
+const HomeProfileRoute = HomeProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => HomeRouteRoute,
+} as any)
+const HomeSecurityRoute = HomeSecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
+  getParentRoute: () => HomeRouteRoute,
+} as any)
+const HomeSettingsRoute = HomeSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => HomeRouteRoute,
+} as any)
 const PagesSlugRoute = PagesSlugRouteImport.update({
   id: '/pages/$slug',
   path: '/pages/$slug',
@@ -390,6 +439,11 @@ const siteSolutionsResearchRoute = siteSolutionsResearchRouteImport.update({
   path: '/research',
   getParentRoute: () => siteSolutionsRoute,
 } as any)
+const HomeSSectionRoute = HomeSSectionRouteImport.update({
+  id: '/s/$section',
+  path: '/s/$section',
+  getParentRoute: () => HomeRouteRoute,
+} as any)
 const siteInsightsCategorySlugRoute =
   siteInsightsCategorySlugRouteImport.update({
     id: '/category/$slug',
@@ -440,6 +494,7 @@ const ApiPublicWebhooksIntegrationsWebhookIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/home': typeof HomeRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/health.json': typeof HealthDotjsonRoute
@@ -472,7 +527,14 @@ export interface FileRoutesByFullPath {
   '/terms': typeof siteTermsRoute
   '/trust': typeof siteTrustRoute
   '/verify-transcript': typeof siteVerifyTranscriptRoute
+  '/home/ai': typeof HomeAiRoute
+  '/home/help': typeof HomeHelpRoute
+  '/home/notifications': typeof HomeNotificationsRoute
+  '/home/profile': typeof HomeProfileRoute
+  '/home/security': typeof HomeSecurityRoute
+  '/home/settings': typeof HomeSettingsRoute
   '/pages/$slug': typeof PagesSlugRoute
+  '/home/': typeof HomeIndexRoute
   '/company/about': typeof siteCompanyAboutRoute
   '/company/careers': typeof siteCompanyCareersRoute
   '/company/partners': typeof siteCompanyPartnersRoute
@@ -495,6 +557,7 @@ export interface FileRoutesByFullPath {
   '/solutions/education': typeof siteSolutionsEducationRoute
   '/solutions/enterprise': typeof siteSolutionsEnterpriseRoute
   '/solutions/research': typeof siteSolutionsResearchRoute
+  '/home/s/$section': typeof HomeSSectionRoute
   '/help/': typeof siteHelpIndexRoute
   '/insights/': typeof siteInsightsIndexRoute
   '/product/': typeof siteProductIndexRoute
@@ -538,7 +601,14 @@ export interface FileRoutesByTo {
   '/terms': typeof siteTermsRoute
   '/trust': typeof siteTrustRoute
   '/verify-transcript': typeof siteVerifyTranscriptRoute
+  '/home/ai': typeof HomeAiRoute
+  '/home/help': typeof HomeHelpRoute
+  '/home/notifications': typeof HomeNotificationsRoute
+  '/home/profile': typeof HomeProfileRoute
+  '/home/security': typeof HomeSecurityRoute
+  '/home/settings': typeof HomeSettingsRoute
   '/pages/$slug': typeof PagesSlugRoute
+  '/home': typeof HomeIndexRoute
   '/company/about': typeof siteCompanyAboutRoute
   '/company/careers': typeof siteCompanyCareersRoute
   '/company/partners': typeof siteCompanyPartnersRoute
@@ -561,6 +631,7 @@ export interface FileRoutesByTo {
   '/solutions/education': typeof siteSolutionsEducationRoute
   '/solutions/enterprise': typeof siteSolutionsEnterpriseRoute
   '/solutions/research': typeof siteSolutionsResearchRoute
+  '/home/s/$section': typeof HomeSSectionRoute
   '/help': typeof siteHelpIndexRoute
   '/insights': typeof siteInsightsIndexRoute
   '/product': typeof siteProductIndexRoute
@@ -579,6 +650,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/(site)': typeof siteRouteRouteWithChildren
+  '/home': typeof HomeRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/health.json': typeof HealthDotjsonRoute
@@ -611,7 +683,14 @@ export interface FileRoutesById {
   '/(site)/terms': typeof siteTermsRoute
   '/(site)/trust': typeof siteTrustRoute
   '/(site)/verify-transcript': typeof siteVerifyTranscriptRoute
+  '/home/ai': typeof HomeAiRoute
+  '/home/help': typeof HomeHelpRoute
+  '/home/notifications': typeof HomeNotificationsRoute
+  '/home/profile': typeof HomeProfileRoute
+  '/home/security': typeof HomeSecurityRoute
+  '/home/settings': typeof HomeSettingsRoute
   '/pages/$slug': typeof PagesSlugRoute
+  '/home/': typeof HomeIndexRoute
   '/(site)/company/about': typeof siteCompanyAboutRoute
   '/(site)/company/careers': typeof siteCompanyCareersRoute
   '/(site)/company/partners': typeof siteCompanyPartnersRoute
@@ -634,6 +713,7 @@ export interface FileRoutesById {
   '/(site)/solutions/education': typeof siteSolutionsEducationRoute
   '/(site)/solutions/enterprise': typeof siteSolutionsEnterpriseRoute
   '/(site)/solutions/research': typeof siteSolutionsResearchRoute
+  '/home/s/$section': typeof HomeSSectionRoute
   '/(site)/help/': typeof siteHelpIndexRoute
   '/(site)/insights/': typeof siteInsightsIndexRoute
   '/(site)/product/': typeof siteProductIndexRoute
@@ -652,6 +732,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/home'
     | '/auth'
     | '/forgot-password'
     | '/health.json'
@@ -684,7 +765,14 @@ export interface FileRouteTypes {
     | '/terms'
     | '/trust'
     | '/verify-transcript'
+    | '/home/ai'
+    | '/home/help'
+    | '/home/notifications'
+    | '/home/profile'
+    | '/home/security'
+    | '/home/settings'
     | '/pages/$slug'
+    | '/home/'
     | '/company/about'
     | '/company/careers'
     | '/company/partners'
@@ -707,6 +795,7 @@ export interface FileRouteTypes {
     | '/solutions/education'
     | '/solutions/enterprise'
     | '/solutions/research'
+    | '/home/s/$section'
     | '/help/'
     | '/insights/'
     | '/product/'
@@ -750,7 +839,14 @@ export interface FileRouteTypes {
     | '/terms'
     | '/trust'
     | '/verify-transcript'
+    | '/home/ai'
+    | '/home/help'
+    | '/home/notifications'
+    | '/home/profile'
+    | '/home/security'
+    | '/home/settings'
     | '/pages/$slug'
+    | '/home'
     | '/company/about'
     | '/company/careers'
     | '/company/partners'
@@ -773,6 +869,7 @@ export interface FileRouteTypes {
     | '/solutions/education'
     | '/solutions/enterprise'
     | '/solutions/research'
+    | '/home/s/$section'
     | '/help'
     | '/insights'
     | '/product'
@@ -790,6 +887,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/(site)'
+    | '/home'
     | '/auth'
     | '/forgot-password'
     | '/health.json'
@@ -822,7 +920,14 @@ export interface FileRouteTypes {
     | '/(site)/terms'
     | '/(site)/trust'
     | '/(site)/verify-transcript'
+    | '/home/ai'
+    | '/home/help'
+    | '/home/notifications'
+    | '/home/profile'
+    | '/home/security'
+    | '/home/settings'
     | '/pages/$slug'
+    | '/home/'
     | '/(site)/company/about'
     | '/(site)/company/careers'
     | '/(site)/company/partners'
@@ -845,6 +950,7 @@ export interface FileRouteTypes {
     | '/(site)/solutions/education'
     | '/(site)/solutions/enterprise'
     | '/(site)/solutions/research'
+    | '/home/s/$section'
     | '/(site)/help/'
     | '/(site)/insights/'
     | '/(site)/product/'
@@ -863,6 +969,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   siteRouteRoute: typeof siteRouteRouteWithChildren
+  HomeRouteRoute: typeof HomeRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   HealthDotjsonRoute: typeof HealthDotjsonRoute
@@ -917,6 +1024,13 @@ declare module '@tanstack/react-router' {
       path: '/health.json'
       fullPath: '/health.json'
       preLoaderRoute: typeof HealthDotjsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/home': {
+      id: '/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof HomeRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -1122,6 +1236,55 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof siteVerifyTranscriptRouteImport
       parentRoute: typeof siteRouteRoute
     }
+    '/home/': {
+      id: '/home/'
+      path: '/'
+      fullPath: '/home/'
+      preLoaderRoute: typeof HomeIndexRouteImport
+      parentRoute: typeof HomeRouteRoute
+    }
+    '/home/ai': {
+      id: '/home/ai'
+      path: '/ai'
+      fullPath: '/home/ai'
+      preLoaderRoute: typeof HomeAiRouteImport
+      parentRoute: typeof HomeRouteRoute
+    }
+    '/home/help': {
+      id: '/home/help'
+      path: '/help'
+      fullPath: '/home/help'
+      preLoaderRoute: typeof HomeHelpRouteImport
+      parentRoute: typeof HomeRouteRoute
+    }
+    '/home/notifications': {
+      id: '/home/notifications'
+      path: '/notifications'
+      fullPath: '/home/notifications'
+      preLoaderRoute: typeof HomeNotificationsRouteImport
+      parentRoute: typeof HomeRouteRoute
+    }
+    '/home/profile': {
+      id: '/home/profile'
+      path: '/profile'
+      fullPath: '/home/profile'
+      preLoaderRoute: typeof HomeProfileRouteImport
+      parentRoute: typeof HomeRouteRoute
+    }
+    '/home/security': {
+      id: '/home/security'
+      path: '/security'
+      fullPath: '/home/security'
+      preLoaderRoute: typeof HomeSecurityRouteImport
+      parentRoute: typeof HomeRouteRoute
+    }
+    '/home/settings': {
+      id: '/home/settings'
+      path: '/settings'
+      fullPath: '/home/settings'
+      preLoaderRoute: typeof HomeSettingsRouteImport
+      parentRoute: typeof HomeRouteRoute
+    }
     '/pages/$slug': {
       id: '/pages/$slug'
       path: '/pages/$slug'
@@ -1317,6 +1480,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/solutions/research'
       preLoaderRoute: typeof siteSolutionsResearchRouteImport
       parentRoute: typeof siteSolutionsRoute
+    }
+    '/home/s/$section': {
+      id: '/home/s/$section'
+      path: '/s/$section'
+      fullPath: '/home/s/$section'
+      preLoaderRoute: typeof HomeSSectionRouteImport
+      parentRoute: typeof HomeRouteRoute
     }
     '/(site)/insights/category/$slug': {
       id: '/(site)/insights/category/$slug'
@@ -1540,9 +1710,36 @@ const siteRouteRouteWithChildren = siteRouteRoute._addFileChildren(
   siteRouteRouteChildren,
 )
 
+interface HomeRouteRouteChildren {
+  HomeAiRoute: typeof HomeAiRoute
+  HomeHelpRoute: typeof HomeHelpRoute
+  HomeNotificationsRoute: typeof HomeNotificationsRoute
+  HomeProfileRoute: typeof HomeProfileRoute
+  HomeSecurityRoute: typeof HomeSecurityRoute
+  HomeSettingsRoute: typeof HomeSettingsRoute
+  HomeIndexRoute: typeof HomeIndexRoute
+  HomeSSectionRoute: typeof HomeSSectionRoute
+}
+
+const HomeRouteRouteChildren: HomeRouteRouteChildren = {
+  HomeAiRoute: HomeAiRoute,
+  HomeHelpRoute: HomeHelpRoute,
+  HomeNotificationsRoute: HomeNotificationsRoute,
+  HomeProfileRoute: HomeProfileRoute,
+  HomeSecurityRoute: HomeSecurityRoute,
+  HomeSettingsRoute: HomeSettingsRoute,
+  HomeIndexRoute: HomeIndexRoute,
+  HomeSSectionRoute: HomeSSectionRoute,
+}
+
+const HomeRouteRouteWithChildren = HomeRouteRoute._addFileChildren(
+  HomeRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   siteRouteRoute: siteRouteRouteWithChildren,
+  HomeRouteRoute: HomeRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   HealthDotjsonRoute: HealthDotjsonRoute,

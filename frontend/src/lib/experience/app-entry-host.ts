@@ -2,8 +2,9 @@
  * App-entry host (ACTIVE-V1).
  *
  * app.sherivs.com is the customer application first view: splash, in-place
- * sign-in, and Sherivs-team onboarding. It must not SSR the public marketing
- * homepage and must not restore the deleted workspace shell.
+ * sign-in, and Sherivs-team onboarding. After authentication it enters `/home`.
+ * It must not SSR the public marketing homepage and must not restore the
+ * deleted `_authenticated` / `portal-shell` trees.
  *
  * Console, gov, head, and group hosts stay on the retired unavailable surface.
  * Hostname classification is routing, not authorization.
