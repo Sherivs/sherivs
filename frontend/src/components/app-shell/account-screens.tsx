@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Fingerprint, ScanFace, Sparkles } from "lucide-react";
+import { Bell, Fingerprint, ScanFace, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
 import { GoogleMark } from "@/components/auth/google-mark";
@@ -11,10 +11,18 @@ import {
   hasGoogleIdentity,
   probeGoogleAuthorizeUrl,
 } from "@/lib/auth/google-sign-in";
+import { sendTestPush } from "@/lib/push.functions";
+import {
+  getPushSupport,
+  registerPushSubscription,
+  unregisterPushToken,
+  type PushSupport,
+} from "@/lib/push-client";
 import {
   BIOMETRIC_PASKEY_STEPS,
   GOOGLE_LINK_STEPS,
   GOOGLE_PROVIDER_STEPS,
+  PUSH_DEVICE_STEPS,
   platformAuthenticatorAvailable,
 } from "@/lib/shell/auth-setup";
 import { APP_SHELL_HOME } from "@/lib/shell/paths";
@@ -240,15 +248,136 @@ export function AppHelpScreen() {
   );
 }
 
+function pushStatusLabel(support: PushSupport): string {
+  if (!support.vapidConfigured) return "This build is missing the public VAPID key.";
+  if (!support.supported) return "This browser cannot receive web push.";
+  if (support.permission === "granted") return "This device is allowed to receive push.";
+  if (support.permission === "denied") return "This browser blocked notifications. Allow them in site settings.";
+  return "Push is off on this device until you enable it.";
+}
+
 export function AppNotificationsScreen() {
+  const app = useApp();
   const shell = useAppShell();
   const inbox = shell.manifest?.inbox ?? [];
+  const userId = app.profile?.id ?? app.authUser?.id ?? "";
+  const [support, setSupport] = useState<PushSupport>(() => getPushSupport());
+  const [busy, setBusy] = useState<"enable" | "disable" | "test" | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSupport(getPushSupport());
+  }, []);
+
+  async function enablePush() {
+    setBusy("enable");
+    setMessage(null);
+    const result = await registerPushSubscription(userId);
+    setSupport(getPushSupport());
+    setBusy(null);
+    if (result.ok) {
+      setMessage("Push is enabled on this device.");
+      return;
+    }
+    if (result.reason === "missing_vapid") {
+      setMessage("Push is not configured on this build. The public VAPID key is required.");
+      return;
+    }
+    if (result.reason === "denied") {
+      setMessage("This browser blocked notifications. Allow them in site settings, then try again.");
+      return;
+    }
+    if (result.reason === "unsupported") {
+      setMessage("This browser cannot receive web push.");
+      return;
+    }
+    setMessage("Could not enable push on this device.");
+  }
+
+  async function disablePush() {
+    setBusy("disable");
+    setMessage(null);
+    try {
+      await unregisterPushToken(userId);
+      setSupport(getPushSupport());
+      setMessage("Push is disabled on this device.");
+    } catch {
+      setMessage("Could not disable push on this device.");
+    }
+    setBusy(null);
+  }
+
+  async function testPush() {
+    setBusy("test");
+    setMessage(null);
+    try {
+      const result = await sendTestPush();
+      if (result.delivered > 0) {
+        setMessage("Test notification sent. Open the ping to return here.");
+      } else if (result.skipped === "vapid_keys_missing") {
+        setMessage("The server is missing VAPID keys, so the test could not be signed.");
+      } else {
+        setMessage("No stored subscription on this member yet. Enable push first.");
+      }
+    } catch {
+      setMessage("Could not send a test notification.");
+    }
+    setBusy(null);
+  }
+
   return (
     <section className="app-shell-section">
       <SectionBack />
       <h1>Notifications</h1>
+
+      <div className="app-shell-card">
+        <ShellGlassIcon>
+          <Bell />
+        </ShellGlassIcon>
+        <div>
+          <p>Device push</p>
+          <small data-testid="push-status">{pushStatusLabel(support)}</small>
+        </div>
+      </div>
+      <div className="app-shell-actions">
+        <button
+          type="button"
+          className="app-shell-primary"
+          data-testid="push-enable"
+          disabled={Boolean(busy) || !userId}
+          onClick={() => void enablePush()}
+        >
+          {busy === "enable" ? "Enabling…" : "Enable push on this device"}
+        </button>
+        <button
+          type="button"
+          className="app-shell-secondary"
+          data-testid="push-disable"
+          disabled={Boolean(busy) || !userId}
+          onClick={() => void disablePush()}
+        >
+          {busy === "disable" ? "Disabling…" : "Disable push"}
+        </button>
+        <button
+          type="button"
+          className="app-shell-secondary"
+          data-testid="push-test"
+          disabled={Boolean(busy) || !userId}
+          onClick={() => void testPush()}
+        >
+          {busy === "test" ? "Sending…" : "Send test"}
+        </button>
+      </div>
+      {message ? <p className="app-shell-empty">{message}</p> : null}
+      <p className="app-shell-org">On this device</p>
+      <ol className="app-shell-steps" data-testid="push-device-steps">
+        {PUSH_DEVICE_STEPS.map((step) => (
+          <li key={step}>{step}</li>
+        ))}
+      </ol>
+
       {inbox.length === 0 ? (
-        <p className="app-shell-empty">No notification streams are enabled for this role.</p>
+        <p className="app-shell-empty">No in-app notification streams are enabled for this role.</p>
       ) : (
         <div className="app-shell-cards">
           {inbox.map((item) => (

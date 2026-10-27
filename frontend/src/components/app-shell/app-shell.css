@@ -633,16 +633,39 @@
 }
 
 .app-shell-form button,
-.app-shell-primary {
+.app-shell-primary,
+.app-shell-secondary {
   border: 0;
   border-radius: 12px;
   padding: 0.75rem 0.9rem;
-  background: linear-gradient(180deg, #4b86ff 0%, #1848fd 100%);
-  color: #fff;
   font-weight: 700;
   cursor: pointer;
   text-decoration: none;
   text-align: center;
+}
+
+.app-shell-form button,
+.app-shell-primary {
+  background: linear-gradient(180deg, #4b86ff 0%, #1848fd 100%);
+  color: #fff;
+}
+
+.app-shell-secondary {
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--shell-ink);
+  border: 1px solid var(--shell-line);
+}
+
+.app-shell-actions {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.app-shell-form button:disabled,
+.app-shell-primary:disabled,
+.app-shell-secondary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .app-shell-back {

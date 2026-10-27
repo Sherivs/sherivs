@@ -358,7 +358,7 @@ export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = 
     hasHealthCheck: false,
     status: "CONFIGURED_BUT_UNVERIFIED",
     verificationLevel: "credential_present",
-    note: "Generated locally (uncompressed P-256 point, base64url) 2026-10-06; provisioned to Vercel + mirrored as VITE_VAPID_PUBLIC_KEY. Delivery activates once browser subscriptions exist.",
+    note: "Generated locally (uncompressed P-256 point, base64url) 2026-10-06; provisioned to Vercel + mirrored as VITE_VAPID_PUBLIC_KEY. Shell Notifications registers the device subscription.",
   },
   {
     envVar: "VAPID_PRIVATE_KEY",
@@ -383,6 +383,18 @@ export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = 
     status: "CONFIGURED_BUT_UNVERIFIED",
     verificationLevel: "credential_present",
     note: "Mirrored from VAPID_PUBLIC_KEY at provisioning; public by design (an application-server key is not a secret).",
+  },
+  {
+    envVar: "VAPID_SUBJECT",
+    provider: "web-push",
+    classification: "server_runtime_configuration",
+    runtimeScope: "server",
+    requiredCapability: "Contact URL claimed on VAPID JWTs for web push delivery",
+    adapterRef: "frontend/src/lib/push.server.ts",
+    hasHealthCheck: false,
+    status: "CONFIGURED_BUT_UNVERIFIED",
+    verificationLevel: "credential_present",
+    note: "Defaults to https://app.sherivs.com when unset. Server-only claim, never a secret.",
   },
 
   // ── Intelligence gateway (provider-neutral, OpenAI-compatible) ──

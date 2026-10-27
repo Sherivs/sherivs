@@ -23,6 +23,14 @@ export const GOOGLE_LINK_STEPS = [
   "After Google returns, this login can use either password or Google.",
 ] as const;
 
+export const PUSH_DEVICE_STEPS = [
+  "Open Notifications while signed in on app.sherivs.com.",
+  "Tap Enable push on this device and allow the browser prompt.",
+  "Sherivs stores the subscription on this member row only (users.push_token).",
+  "Tap Send test. Opening the ping returns to this inbox.",
+  "Tap Disable push on this device to unsubscribe and clear the stored token.",
+] as const;
+
 export const BIOMETRIC_PASKEY_STEPS = [
   "Serve the app only on HTTPS (app.sherivs.com already is).",
   "Register the WebAuthn relying party as app.sherivs.com. Never collect or store a fingerprint or Face ID image.",

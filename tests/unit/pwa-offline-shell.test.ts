@@ -221,7 +221,7 @@ describe("offline shell service worker", () => {
     expect(notifications[0].title).toBe("Maths");
     expect(notifications[0].options.body).toBe("Homework due");
     expect(notifications[0].options.icon).toBe("/favicon.ico");
-    expect(notifications[0].options.data).toEqual({ url: "/notifications" });
+    expect(notifications[0].options.data).toEqual({ url: "/home/notifications" });
 
     dispatch("notificationclick", {
       notification: { data: { url: "/timetable" }, close: () => {} },

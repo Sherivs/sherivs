@@ -1,7 +1,8 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, Navigate, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { Bell, LogOut, Menu, Sparkles } from "lucide-react";
 import { useApp } from "@/contexts/app-context";
+import { refreshPushTokenIfGranted } from "@/lib/push-client";
 import { SHELL_ACCOUNT_NAV } from "@/lib/shell/account";
 import { shellIcon } from "@/lib/shell/icon-registry";
 import { APP_SHELL_HOME, APP_SHELL_NOTIFICATIONS, APP_SHELL_PROFILE } from "@/lib/shell/paths";
@@ -28,6 +29,12 @@ function ShellChrome({ children }: { children: ReactNode }) {
   const avatar = app.profile?.avatar_url;
   const display = shell.name.display;
   const path = location.pathname;
+  const pushUserId = app.profile?.id ?? app.authUser?.id;
+
+  useEffect(() => {
+    if (!pushUserId) return;
+    void refreshPushTokenIfGranted(pushUserId);
+  }, [pushUserId]);
 
   function go(href: string, key?: string) {
     if (key) setPending(key);

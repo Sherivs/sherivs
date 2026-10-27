@@ -5275,17 +5275,6 @@
       "firstSnippet": "/** Deliver a push ping to a set of users in the caller's school. */"
     },
     {
-      "file": "frontend/src/lib/push.server.ts",
-      "kind": "vocabulary",
-      "token": "vibeora",
-      "streamIRef": "unmapped",
-      "occurrences": 1,
-      "lines": [
-        88
-      ],
-      "firstSnippet": "const subject = process.env.VAPID_SUBJECT ?? \"mailto:notifications@vibeora.app\";"
-    },
-    {
       "file": "frontend/src/lib/regional-context.ts",
       "kind": "vocabulary",
       "token": "academic",

@@ -49,7 +49,7 @@ Hardcoded Scholar portal routes, portal chrome, and the previous application she
 | `/organizations`, `/welcome`, `/runtime`, `/messages`, `/notifications`, `/settings` | Shell capabilities | C | authenticated | hardcoded UI deleted | future governed workspace | REMOVED |
 | `/super-admin/*`, `/internal`, `/command-centre/*` | Platform / HQ ops | D | internal workforce | hardcoded UI deleted | future governed console | REMOVED |
 | `app.sherivs.com` `/`, `/onboarding` | Application splash, invite-only sign-in, team onboarding | C | host routing + invitation credentials | splash then Sign in; Google for invited accounts; no self-signup | keep | IMPLEMENTED |
-| `/home`, `/home/s/$section`, `/home/ai` | Governed organization workspace shell | C | authenticated + membership | capability-dynamic home, 75% glass drawer, role bottom slots | keep | IMPLEMENTED |
+| `/home`, `/home/s/$section`, `/home/ai`, `/home/notifications` | Governed organization workspace shell | C | authenticated + membership | capability-dynamic home, 75% glass drawer, role bottom slots, VAPID device push | keep | IMPLEMENTED |
 | `console.sherivs.com`, gov/head/group hosts | Console shells | D | host routing | retired unavailable surface | do not SSR public homepage | REMOVED |
 
 ## Boundary rules locked

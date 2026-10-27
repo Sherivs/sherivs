@@ -16,7 +16,11 @@ import {
   composeHomeSections,
   composeSidePanel,
 } from "../../frontend/src/lib/shell/chrome";
-import { BIOMETRIC_PASKEY_STEPS, GOOGLE_PROVIDER_STEPS } from "../../frontend/src/lib/shell/auth-setup";
+import {
+  BIOMETRIC_PASKEY_STEPS,
+  GOOGLE_PROVIDER_STEPS,
+  PUSH_DEVICE_STEPS,
+} from "../../frontend/src/lib/shell/auth-setup";
 import { fallbackManifest } from "../../frontend/src/lib/shell/fallback-manifest";
 import { formatWidgetMetric } from "../../frontend/src/lib/shell/metrics";
 import { APP_SHELL_AI, APP_SHELL_HOME, APP_SHELL_PROFILE, appShellSectionPath } from "../../frontend/src/lib/shell/paths";
@@ -189,5 +193,12 @@ describe("application shell files", () => {
     expect(home).not.toContain("Digital Twin");
     expect(GOOGLE_PROVIDER_STEPS[1]).toMatch(/Google/);
     expect(BIOMETRIC_PASKEY_STEPS[1]).toMatch(/WebAuthn/);
+    expect(PUSH_DEVICE_STEPS[1]).toMatch(/Enable push/);
+    const notifications = read("frontend/src/components/app-shell/account-screens.tsx");
+    expect(notifications).toContain("push-enable");
+    expect(notifications).toContain("sendTestPush");
+    expect(notifications).toContain("registerPushSubscription");
+    const chrome = read("frontend/src/components/app-shell/app-shell.tsx");
+    expect(chrome).toContain("refreshPushTokenIfGranted");
   });
 });
