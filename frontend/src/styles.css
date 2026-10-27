@@ -276,16 +276,33 @@
   }
   .auth-card > *, .auth-card form, .auth-card form > * { min-width: 0; max-width: 100%; }
   .turnstile-slot {
-    display: flex;
-    justify-content: center;
+    display: block;
     width: 100%;
     max-width: 100%;
     min-width: 0;
     min-height: 65px;
     overflow: hidden;
+    container-type: inline-size;
+    container-name: turnstile;
   }
-  .turnstile-host { width: 100%; max-width: 100%; display: flex; justify-content: center; }
+  .turnstile-host {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-height: 65px;
+  }
   .turnstile-host iframe { max-width: 100% !important; }
+  /* Flexible widget is min 300×65. Scale that bar on narrow cards; never the square. */
+  @container turnstile (max-width: 299px) {
+    .turnstile-host {
+      width: 300px;
+      max-width: 300px;
+      height: 65px;
+      transform: scale(calc(100cqi / 300));
+      transform-origin: top left;
+      margin-bottom: calc(65px * (100cqi / 300 - 1));
+    }
+  }
 
   .uos-card {
     background: var(--glass-bg);

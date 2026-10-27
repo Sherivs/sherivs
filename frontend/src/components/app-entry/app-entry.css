@@ -564,6 +564,11 @@
   gap: 0.85rem;
 }
 
+.app-entry-login-form .turnstile-slot {
+  width: 100%;
+  justify-self: stretch;
+}
+
 .app-entry-login-field {
   position: relative;
   display: block;

@@ -72,22 +72,40 @@ export function Turnstile({
     if (!TURNSTILE_SITE_KEY || !ref.current) return;
     let id: string | undefined;
     let cancelled = false;
+    let observer: ResizeObserver | undefined;
     cb.current(null);
+
+    const renderWidget = (host: HTMLDivElement) => {
+      if (cancelled || !window.turnstile) return;
+      id = window.turnstile.render(host, {
+        sitekey: TURNSTILE_SITE_KEY,
+        // Long 65px bar only: flexible when the card is wide enough, otherwise
+        // the 300×65 normal widget (CSS scales it). Never the 150×140 square.
+        size: turnstileSize(host.clientWidth),
+        callback: (t: string) => cb.current(t),
+        "expired-callback": () => cb.current(null),
+        "error-callback": () => {
+          cb.current(null);
+          unavailable.current?.();
+        },
+      });
+    };
+
     loadScript()
       .then(() => {
-        if (cancelled || !ref.current || !window.turnstile) return;
-        id = window.turnstile.render(ref.current, {
-          sitekey: TURNSTILE_SITE_KEY,
-          // "flexible" stretches to the container (min 300px); below that use the
-          // 150px "compact" widget so the iframe can never overflow a phone card.
-          size: turnstileSize(ref.current.clientWidth),
-          callback: (t: string) => cb.current(t),
-          "expired-callback": () => cb.current(null),
-          "error-callback": () => {
-            cb.current(null);
-            unavailable.current?.();
-          },
+        const host = ref.current;
+        if (cancelled || !host || !window.turnstile) return;
+        if (host.clientWidth >= 1) {
+          renderWidget(host);
+          return;
+        }
+        observer = new ResizeObserver(() => {
+          if (cancelled || host.clientWidth < 1) return;
+          observer?.disconnect();
+          observer = undefined;
+          renderWidget(host);
         });
+        observer.observe(host);
       })
       .catch(() => {
         cb.current(null);
@@ -95,6 +113,7 @@ export function Turnstile({
       });
     return () => {
       cancelled = true;
+      observer?.disconnect();
       if (id && window.turnstile) window.turnstile.remove(id);
     };
   }, [resetKey]);
@@ -107,9 +126,9 @@ export function Turnstile({
   );
 }
 
-/** Widget size for a container width: Cloudflare's flexible widget needs at least 300px. */
-export function turnstileSize(containerWidth: number): "flexible" | "compact" {
-  return containerWidth >= 300 ? "flexible" : "compact";
+/** Long rectangle only. Compact (square) is never used. */
+export function turnstileSize(containerWidth = 0): "flexible" | "normal" {
+  return containerWidth >= 300 ? "flexible" : "normal";
 }
 
 /** True when the form must wait for a token before submitting. */

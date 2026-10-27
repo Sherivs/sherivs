@@ -8,17 +8,20 @@ const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const read = (p: string) => readFileSync(join(ROOT, p), "utf8");
 
 describe("auth card layout with Turnstile (narrow phones)", () => {
-  it("uses the flexible widget when it fits and compact below 300px", () => {
+  it("uses the long bar: flexible when it fits, 300px normal below that, never compact", () => {
     expect(turnstileSize(300)).toBe("flexible");
     expect(turnstileSize(420)).toBe("flexible");
-    expect(turnstileSize(299)).toBe("compact");
-    expect(turnstileSize(0)).toBe("compact");
+    expect(turnstileSize(299)).toBe("normal");
+    expect(turnstileSize(0)).toBe("normal");
+    expect(turnstileSize()).toBe("normal");
   });
 
   it("renders Turnstile with an explicit size inside an overflow-safe slot", () => {
     const t = read("frontend/src/components/security/turnstile.tsx");
     expect(t).toContain("size: turnstileSize(");
     expect(t).toContain('className="turnstile-slot"');
+    expect(t).not.toMatch(/size:\s*"compact"/);
+    expect(t).not.toContain('"compact"');
   });
 
   it("defines a shrinkable single-column shell and a min(100%, 28rem) border-box card", () => {
