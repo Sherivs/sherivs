@@ -1,24 +1,46 @@
-import { ChevronRight, Search } from "lucide-react";
+import { useState } from "react";
+import { ChevronDown, ChevronRight, Search } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { composeActivity } from "@/lib/shell/activity";
+import { toShellNavItem } from "@/lib/shell/chrome";
 import { shellIcon } from "@/lib/shell/icon-registry";
+import { accentTone, formatWidgetMetric } from "@/lib/shell/metrics";
+import { APP_SHELL_NOTIFICATIONS, appShellSectionPath } from "@/lib/shell/paths";
 import { searchableSection } from "@/lib/shell/role-template";
-import { naira } from "@/lib/sherivs-ws/live";
+import { switchActiveOrganization } from "@/lib/identity/memberships.functions";
 import { ShellGlassIcon } from "./glass-icon";
 import { useAppShell } from "./shell-context";
-import { appShellSectionPath } from "@/lib/shell/paths";
-import { toShellNavItem } from "@/lib/shell/chrome";
-import { switchActiveOrganization } from "@/lib/identity/memberships.functions";
-import { useState } from "react";
+
+function matches(needle: string, label: string, key: string): boolean {
+  if (!needle) return true;
+  return `${label} ${key}`.toLowerCase().includes(needle);
+}
 
 export function AppHomeScreen() {
   const shell = useAppShell();
   const [openSwitcher, setOpenSwitcher] = useState(false);
-  const widgets = (shell.manifest?.widgets ?? []).slice(0, 4);
+  const needle = shell.query.trim().toLowerCase();
+  const widgets = (shell.manifest?.widgets ?? [])
+    .filter((widget) => matches(needle, widget.label, widget.key))
+    .slice(0, 8);
+  const actions = (shell.manifest?.actions ?? [])
+    .filter((action) => matches(needle, action.label, action.key))
+    .slice(0, 8);
+  const shown = new Set([...widgets.map((item) => item.key), ...actions.map((item) => item.key)]);
   const cards = (
-    shell.manifest?.inbox?.length
-      ? shell.manifest.inbox.map(toShellNavItem)
-      : shell.drawer
-  ).slice(0, 8);
-  const showSearch = shell.drawer.some((item) => searchableSection(item.key, item.label));
+    shell.manifest?.inbox?.length ? shell.manifest.inbox.map(toShellNavItem) : shell.drawer
+  )
+    .filter((item) => !shown.has(item.key) && matches(needle, item.label, item.key))
+    .slice(0, 8);
+  const activity = composeActivity({
+    inbox: shell.manifest?.inbox ?? [],
+    widgets: shell.manifest?.widgets ?? [],
+    cards: shell.cards,
+  }).filter((item) => matches(needle, item.title, item.key));
+  const showSearch =
+    shell.drawer.some((item) => searchableSection(item.key, item.label)) ||
+    widgets.length > 3 ||
+    actions.length > 0;
 
   async function chooseContext(organizationId: string, role: string) {
     setOpenSwitcher(false);
@@ -41,10 +63,8 @@ export function AppHomeScreen() {
               data-testid="app-shell-switcher"
               onClick={() => setOpenSwitcher((open) => !open)}
             >
-              <span>
-                {shell.roleTitle}
-              </span>
-              <ChevronRight size={16} />
+              <span>{shell.roleTitle}</span>
+              <ChevronDown size={16} />
             </button>
             {openSwitcher ? (
               <div className="app-shell-switcher-menu" role="listbox">
@@ -79,18 +99,17 @@ export function AppHomeScreen() {
 
       {widgets.length ? (
         <div className="app-shell-widgets" data-testid="app-shell-widgets">
-          {widgets.map((widget) => {
+          {widgets.map((widget, index) => {
             const Icon = shellIcon(widget.icon);
-            const data = shell.cards[widget.key];
-            const metric = data?.money && typeof data.metric === "number" ? naira(data.metric) : data?.metric ?? "—";
+            const metric = formatWidgetMetric(shell.cards[widget.key]);
             return (
-              <a key={widget.key} href={appShellSectionPath(widget.key)} className="app-shell-widget">
-                <ShellGlassIcon>
+              <Link key={widget.key} to={appShellSectionPath(widget.key) as never} className="app-shell-widget">
+                <ShellGlassIcon className={`app-shell-tone-${accentTone(index)}`}>
                   <Icon />
                 </ShellGlassIcon>
-                <strong>{String(metric)}</strong>
+                <strong className={`app-shell-metric-${metric.tone}`}>{metric.text}</strong>
                 <span>{widget.label}</span>
-              </a>
+              </Link>
             );
           })}
         </div>
@@ -98,26 +117,77 @@ export function AppHomeScreen() {
         <p className="app-shell-empty">This role has no home widgets yet. Open a section from the menu.</p>
       )}
 
-      <div className="app-shell-section-title">
-        <h2>Workspace</h2>
-      </div>
-      <div className="app-shell-cards">
-        {cards.map((item) => {
-          const Icon = shellIcon(item.icon);
-          return (
-            <a key={item.key} href={item.href} className="app-shell-card">
-              <ShellGlassIcon>
-                <Icon />
-              </ShellGlassIcon>
-              <div>
-                <p>{item.label}</p>
-                <small>Open section</small>
-              </div>
-              <ChevronRight size={16} style={{ marginLeft: "auto", opacity: 0.45 }} />
-            </a>
-          );
-        })}
-      </div>
+      {actions.length ? (
+        <>
+          <div className="app-shell-section-title">
+            <h2>Quick actions</h2>
+          </div>
+          <div className="app-shell-actions" data-testid="app-shell-actions">
+            {actions.map((action, index) => {
+              const Icon = shellIcon(action.icon);
+              return (
+                <Link key={action.key} to={appShellSectionPath(action.key) as never} className="app-shell-action">
+                  <ShellGlassIcon className={`app-shell-tone-${accentTone(index + 1)}`}>
+                    <Icon />
+                  </ShellGlassIcon>
+                  {action.label}
+                </Link>
+              );
+            })}
+          </div>
+        </>
+      ) : null}
+
+      {activity.length ? (
+        <>
+          <div className="app-shell-section-title">
+            <h2>Recent activity</h2>
+            <Link to={APP_SHELL_NOTIFICATIONS as never}>View all</Link>
+          </div>
+          <div className="app-shell-activity" data-testid="app-shell-activity">
+            {activity.map((item) => {
+              const Icon = shellIcon(item.icon);
+              return (
+                <Link key={item.key} to={item.href as never} className="app-shell-activity-item">
+                  <ShellGlassIcon>
+                    <Icon />
+                  </ShellGlassIcon>
+                  <div>
+                    <p>{item.title}</p>
+                    <small>{item.detail}</small>
+                  </div>
+                  <ChevronRight size={16} style={{ marginLeft: "auto", opacity: 0.45 }} />
+                </Link>
+              );
+            })}
+          </div>
+        </>
+      ) : null}
+
+      {cards.length ? (
+        <>
+          <div className="app-shell-section-title">
+            <h2>Workspace</h2>
+          </div>
+          <div className="app-shell-cards">
+            {cards.map((item) => {
+              const Icon = shellIcon(item.icon);
+              return (
+                <Link key={item.key} to={item.href as never} className="app-shell-card">
+                  <ShellGlassIcon>
+                    <Icon />
+                  </ShellGlassIcon>
+                  <div>
+                    <p>{item.label}</p>
+                    <small>Open section</small>
+                  </div>
+                  <ChevronRight size={16} style={{ marginLeft: "auto", opacity: 0.45 }} />
+                </Link>
+              );
+            })}
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }

@@ -1,15 +1,26 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { Fingerprint, ScanFace, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
+import { APP_SHELL_HOME } from "@/lib/shell/paths";
 import { useAppShell } from "./shell-context";
 import { ShellGlassIcon } from "./glass-icon";
+
+function SectionBack() {
+  return (
+    <Link to={APP_SHELL_HOME as never} className="app-shell-back">
+      ← Home
+    </Link>
+  );
+}
 
 export function AppProfileScreen() {
   const app = useApp();
   const shell = useAppShell();
   return (
     <section className="app-shell-section">
+      <SectionBack />
       <h1>Profile</h1>
       <p className="app-shell-org">{app.profile?.email}</p>
       <div className="app-shell-card">
@@ -28,6 +39,7 @@ export function AppSettingsScreen() {
   const shell = useAppShell();
   return (
     <section className="app-shell-section">
+      <SectionBack />
       <h1>Settings</h1>
       <p className="app-shell-empty">
         Workspace density and hidden widgets stay personal. Administration still decides which
@@ -63,6 +75,7 @@ export function AppSecurityScreen() {
 
   return (
     <section className="app-shell-section">
+      <SectionBack />
       <h1>Biometric and authentication</h1>
       <form className="app-shell-form" onSubmit={(event) => void savePassword(event)}>
         <label>
@@ -103,6 +116,7 @@ export function AppSecurityScreen() {
 export function AppHelpScreen() {
   return (
     <section className="app-shell-section">
+      <SectionBack />
       <h1>Help and support</h1>
       <p className="app-shell-empty">
         Ask your organization administrator to invite you into another school as a membership, not a
@@ -121,6 +135,7 @@ export function AppNotificationsScreen() {
   const inbox = shell.manifest?.inbox ?? [];
   return (
     <section className="app-shell-section">
+      <SectionBack />
       <h1>Notifications</h1>
       {inbox.length === 0 ? (
         <p className="app-shell-empty">No notification streams are enabled for this role.</p>
@@ -143,7 +158,8 @@ export function AppNotificationsScreen() {
 export function AppAiScreen() {
   return (
     <section className="app-shell-section">
-      <ShellGlassIcon size={44}>
+      <SectionBack />
+      <ShellGlassIcon size={44} tone="accent">
         <Sparkles />
       </ShellGlassIcon>
       <h1>AI</h1>

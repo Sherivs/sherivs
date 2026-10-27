@@ -1,10 +1,13 @@
+import { useState } from "react";
 import { Search } from "lucide-react";
-import { shellIcon } from "@/lib/shell/icon-registry";
+import { Link } from "@tanstack/react-router";
 import { catalogItem } from "@/lib/sherivs-ws/engine";
+import { shellIcon } from "@/lib/shell/icon-registry";
+import { formatWidgetMetric } from "@/lib/shell/metrics";
+import { APP_SHELL_HOME } from "@/lib/shell/paths";
 import { searchableSection } from "@/lib/shell/role-template";
 import { ShellGlassIcon } from "./glass-icon";
 import { useAppShell } from "./shell-context";
-import { useState } from "react";
 
 export function AppSectionScreen({ sectionKey }: { sectionKey: string }) {
   const shell = useAppShell();
@@ -19,11 +22,14 @@ export function AppSectionScreen({ sectionKey }: { sectionKey: string }) {
   const icon = item && "icon" in item ? item.icon : "layout";
   const Icon = shellIcon(icon);
   const showSearch = searchableSection(sectionKey, String(label));
-  const metric = shell.cards[sectionKey];
+  const metric = formatWidgetMetric(shell.cards[sectionKey]);
 
   return (
     <section className="app-shell-section" data-testid="app-shell-section">
-      <ShellGlassIcon size={44}>
+      <Link to={APP_SHELL_HOME as never} className="app-shell-back">
+        ← Home
+      </Link>
+      <ShellGlassIcon size={44} tone="accent">
         <Icon />
       </ShellGlassIcon>
       <h1>{label}</h1>
@@ -41,10 +47,10 @@ export function AppSectionScreen({ sectionKey }: { sectionKey: string }) {
           />
         </label>
       ) : null}
-      {metric?.metric != null || metric?.note ? (
+      {metric.text !== "—" ? (
         <div className="app-shell-widget">
-          <strong>{String(metric.metric ?? "—")}</strong>
-          <span>{metric.note ?? label}</span>
+          <strong className={`app-shell-metric-${metric.tone}`}>{metric.text}</strong>
+          <span>{shell.cards[sectionKey]?.note ?? label}</span>
         </div>
       ) : (
         <p className="app-shell-empty">

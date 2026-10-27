@@ -21,10 +21,12 @@ import {
   Clock,
   FileCheck,
   FileText,
+  Fingerprint,
   Flag,
   Gavel,
   GraduationCap,
   HeartPulse,
+  HelpCircle,
   Home,
   IdCard,
   KeyRound,
@@ -47,6 +49,7 @@ import {
   Star,
   TrendingUp,
   UserPlus,
+  UserRound,
   UserX,
   Users,
   Wallet,
@@ -117,6 +120,10 @@ const ICONS: Record<string, LucideIcon> = {
   intelligence: Sparkles,
   group: Layers,
   signin: KeyRound,
+  user: UserRound,
+  fingerprint: Fingerprint,
+  help: HelpCircle,
+  search: LayoutGrid,
 };
 
 export function shellIcon(name: string | null | undefined): LucideIcon {

@@ -1,17 +1,10 @@
 import { useState, type ReactNode } from "react";
-import { Navigate, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { Bell, Fingerprint, HelpCircle, LogOut, Menu, Settings, Sparkles, UserRound } from "lucide-react";
+import { Link, Navigate, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
+import { Bell, LogOut, Menu, Sparkles } from "lucide-react";
 import { useApp } from "@/contexts/app-context";
+import { SHELL_ACCOUNT_NAV } from "@/lib/shell/account";
 import { shellIcon } from "@/lib/shell/icon-registry";
-import {
-  APP_SHELL_AI,
-  APP_SHELL_HELP,
-  APP_SHELL_HOME,
-  APP_SHELL_NOTIFICATIONS,
-  APP_SHELL_PROFILE,
-  APP_SHELL_SECURITY,
-  APP_SHELL_SETTINGS,
-} from "@/lib/shell/paths";
+import { APP_SHELL_HOME, APP_SHELL_NOTIFICATIONS, APP_SHELL_PROFILE } from "@/lib/shell/paths";
 import { ShellGlassIcon } from "./glass-icon";
 import { AppShellStateProvider, useAppShell } from "./shell-context";
 import "./app-shell.css";
@@ -31,17 +24,31 @@ function ShellChrome({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [drawer, setDrawer] = useState(false);
+  const [pending, setPending] = useState<string | null>(null);
   const avatar = app.profile?.avatar_url;
   const display = shell.name.display;
   const path = location.pathname;
 
-  function go(href: string) {
-    setDrawer(false);
-    void navigate({ to: href });
+  function go(href: string, key?: string) {
+    if (key) setPending(key);
+    window.setTimeout(
+      () => {
+        setDrawer(false);
+        setPending(null);
+        void navigate({ to: href as never });
+      },
+      key ? 170 : 0,
+    );
   }
 
+  const portrait = avatar ? (
+    <img className="app-shell-avatar" src={avatar} alt="" />
+  ) : (
+    <span className="app-shell-avatar app-shell-avatar-fallback">{initials(display)}</span>
+  );
+
   return (
-    <div className="app-shell" data-testid="app-shell">
+    <div className={`app-shell${drawer ? " is-drawer-open" : ""}`} data-testid="app-shell">
       <div className="app-shell-orbs" aria-hidden="true">
         <span className="app-shell-orb app-shell-orb-cyan" />
         <span className="app-shell-orb app-shell-orb-blue" />
@@ -53,10 +60,11 @@ function ShellChrome({ children }: { children: ReactNode }) {
             type="button"
             className="app-shell-icon-btn"
             aria-label="Open menu"
+            aria-expanded={drawer}
             data-testid="app-shell-menu"
             onClick={() => setDrawer(true)}
           >
-            <ShellGlassIcon>
+            <ShellGlassIcon tone="dark">
               <Menu />
             </ShellGlassIcon>
           </button>
@@ -67,44 +75,32 @@ function ShellChrome({ children }: { children: ReactNode }) {
               aria-label="Notifications"
               onClick={() => go(APP_SHELL_NOTIFICATIONS)}
             >
-              <ShellGlassIcon>
+              <ShellGlassIcon tone="dark">
                 <Bell />
               </ShellGlassIcon>
             </button>
-            <button
-              type="button"
-              className="app-shell-icon-btn"
-              aria-label="Profile"
-              onClick={() => go(APP_SHELL_PROFILE)}
-            >
-              {avatar ? (
-                <img className="app-shell-avatar" src={avatar} alt="" />
-              ) : (
-                <span className="app-shell-avatar app-shell-avatar-fallback">{initials(display)}</span>
-              )}
+            <button type="button" className="app-shell-icon-btn" aria-label="Profile" onClick={() => go(APP_SHELL_PROFILE)}>
+              {portrait}
             </button>
           </div>
         </header>
-        <main className="app-shell-main">{children}</main>
+        <main className="app-shell-main">
+          <div className="app-shell-sheet">{children}</div>
+        </main>
         <nav className="app-shell-bottom" aria-label="Primary">
           {shell.bottom.map((slot) => {
             if (slot.kind === "empty" || !slot.href) {
-              return <span key={slot.key} className="is-empty" />;
+              return <span key={slot.key} className="app-shell-bottom-empty" aria-hidden="true" />;
             }
             const Icon = slot.kind === "ai" ? Sparkles : shellIcon(slot.icon);
             const active = path === slot.href || (slot.kind === "home" && path === APP_SHELL_HOME);
             return (
-              <a
-                key={slot.key}
-                href={slot.href}
-                className={active ? "is-active" : undefined}
-                aria-label={slot.label}
-              >
+              <Link key={slot.key} to={slot.href as never} className={active ? "is-active" : undefined} aria-label={slot.label}>
                 <ShellGlassIcon active={active}>
                   <Icon />
                 </ShellGlassIcon>
                 {slot.label}
-              </a>
+              </Link>
             );
           })}
         </nav>
@@ -116,9 +112,9 @@ function ShellChrome({ children }: { children: ReactNode }) {
           <aside className="app-shell-drawer" data-testid="app-shell-drawer">
             <div className="app-shell-drawer-profile">
               {avatar ? (
-                <img className="app-shell-avatar" src={avatar} alt="" />
+                <img className="app-shell-avatar app-shell-avatar-lg" src={avatar} alt="" />
               ) : (
-                <span className="app-shell-avatar app-shell-avatar-fallback">{initials(display)}</span>
+                <span className="app-shell-avatar app-shell-avatar-lg app-shell-avatar-fallback">{initials(display)}</span>
               )}
               <div>
                 <h2>{display}</h2>
@@ -127,53 +123,47 @@ function ShellChrome({ children }: { children: ReactNode }) {
                 </p>
               </div>
             </div>
-            <div className="app-shell-drawer-list">
-              {shell.drawer.map((item) => {
+            <div className="app-shell-drawer-account">
+              {SHELL_ACCOUNT_NAV.map((item) => {
                 const Icon = shellIcon(item.icon);
-                const active = path === item.href;
+                const active = pending === item.key || path === item.href;
                 return (
-                  <a
+                  <button
                     key={item.key}
-                    href={item.href}
+                    type="button"
                     className={`app-shell-drawer-item${active ? " is-active" : ""}`}
-                    onClick={() => setDrawer(false)}
+                    onClick={() => go(item.href, item.key)}
                   >
                     <ShellGlassIcon active={active}>
                       <Icon />
                     </ShellGlassIcon>
                     {item.label}
-                  </a>
+                  </button>
                 );
               })}
             </div>
-            <div className="app-shell-drawer-account">
-              <a className="app-shell-drawer-item" href={APP_SHELL_PROFILE} onClick={() => setDrawer(false)}>
-                <ShellGlassIcon>
-                  <UserRound />
-                </ShellGlassIcon>
-                Profile
-              </a>
-              <a className="app-shell-drawer-item" href={APP_SHELL_SETTINGS} onClick={() => setDrawer(false)}>
-                <ShellGlassIcon>
-                  <Settings />
-                </ShellGlassIcon>
-                Settings
-              </a>
-              <a className="app-shell-drawer-item" href={APP_SHELL_SECURITY} onClick={() => setDrawer(false)}>
-                <ShellGlassIcon>
-                  <Fingerprint />
-                </ShellGlassIcon>
-                Biometric and authentication
-              </a>
-              <a className="app-shell-drawer-item" href={APP_SHELL_HELP} onClick={() => setDrawer(false)}>
-                <ShellGlassIcon>
-                  <HelpCircle />
-                </ShellGlassIcon>
-                Help and support
-              </a>
+            {shell.drawer.length ? <p className="app-shell-drawer-kicker">Workspace</p> : null}
+            <div className="app-shell-drawer-list">
+              {shell.drawer.map((item) => {
+                const Icon = shellIcon(item.icon);
+                const active = pending === item.key || path === item.href;
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    className={`app-shell-drawer-item${active ? " is-active" : ""}`}
+                    onClick={() => go(item.href, item.key)}
+                  >
+                    <ShellGlassIcon active={active}>
+                      <Icon />
+                    </ShellGlassIcon>
+                    {item.label}
+                  </button>
+                );
+              })}
             </div>
             <button type="button" className="app-shell-signout" onClick={() => void app.signOut()}>
-              <LogOut size={16} style={{ marginRight: 8, verticalAlign: "middle" }} />
+              <LogOut size={16} />
               Sign out
             </button>
           </aside>

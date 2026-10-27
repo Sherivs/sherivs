@@ -8,8 +8,12 @@ import {
   mergeAffiliations,
   shouldShowContextSwitcher,
 } from "../../frontend/src/lib/shell/membership-policy";
+import { composeActivity } from "../../frontend/src/lib/shell/activity";
+import { SHELL_ACCOUNT_NAV } from "../../frontend/src/lib/shell/account";
 import { composeBottomSlots, toShellNavItem } from "../../frontend/src/lib/shell/chrome";
-import { APP_SHELL_AI, APP_SHELL_HOME, appShellSectionPath } from "../../frontend/src/lib/shell/paths";
+import { fallbackManifest } from "../../frontend/src/lib/shell/fallback-manifest";
+import { formatWidgetMetric } from "../../frontend/src/lib/shell/metrics";
+import { APP_SHELL_AI, APP_SHELL_HOME, APP_SHELL_PROFILE, appShellSectionPath } from "../../frontend/src/lib/shell/paths";
 import { pickSwitchTarget } from "../../frontend/src/lib/identity/memberships.functions";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
@@ -90,6 +94,43 @@ describe("shell chrome", () => {
   });
 });
 
+describe("role-dynamic home", () => {
+  it("builds parent widgets and actions from the catalog, not a hardcoded page", () => {
+    const manifest = fallbackManifest({
+      organizationId: "11111111-1111-1111-1111-111111111111",
+      organizationName: "ThinkTech Organization",
+      role: "parent",
+    });
+    expect(manifest.widgets.map((row) => row.key)).toEqual(
+      expect.arrayContaining(["w.children_summary", "w.child_fees", "w.child_bus", "w.announcements"]),
+    );
+    expect(manifest.actions.some((row) => row.key === "a.pay_fees")).toBe(true);
+    expect(manifest.nav.some((row) => row.to.includes("/admin/dashboard"))).toBe(false);
+  });
+
+  it("keeps account items under the portrait and formats live metrics only", () => {
+    expect(SHELL_ACCOUNT_NAV[0]?.href).toBe(APP_SHELL_PROFILE);
+    expect(SHELL_ACCOUNT_NAV.map((row) => row.label)).toEqual([
+      "Profile",
+      "Settings",
+      "Biometric and authentication",
+      "Help and support",
+    ]);
+    expect(formatWidgetMetric({ metric: 2 }).text).toBe("2");
+    expect(formatWidgetMetric({ metric: "98.6%", money: false }).tone).toBe("green");
+    expect(formatWidgetMetric(undefined).text).toBe("—");
+  });
+
+  it("composes activity from inbox and never invents Digital Twin events", () => {
+    const items = composeActivity({
+      inbox: [{ key: "in.alerts", label: "Alerts", icon: "bell" }],
+      cards: {},
+    });
+    expect(items[0]?.title).toBe("Alerts");
+    expect(JSON.stringify(items)).not.toMatch(/digital twin/i);
+  });
+});
+
 describe("application shell files", () => {
   it("adds the governed /home shell without restoring deleted prototypes", () => {
     expect(existsSync(join(ROOT, "frontend/src/routes/home/route.tsx"))).toBe(true);
@@ -102,9 +143,14 @@ describe("application shell files", () => {
     const css = read("frontend/src/components/app-shell/app-shell.css");
     expect(css).toContain("width: 75vw");
     expect(css).toContain("backdrop-filter");
+    expect(css).toContain("app-shell-sheet");
     const shell = read("frontend/src/components/app-shell/app-shell.tsx");
     expect(shell).toContain("app-shell-menu");
-    expect(shell).toContain("Biometric and authentication");
+    expect(shell).toContain("SHELL_ACCOUNT_NAV");
     expect(shell).not.toContain("portal-shell");
+    const home = read("frontend/src/components/app-shell/home-screen.tsx");
+    expect(home).toContain("Quick actions");
+    expect(home).toContain("Recent activity");
+    expect(home).not.toContain("Digital Twin");
   });
 });
