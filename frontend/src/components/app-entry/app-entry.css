@@ -768,12 +768,9 @@ a.app-entry-login-submit {
 }
 
 .app-entry-signin-loading-word {
-  --sherivs-reveal: 0;
   width: min(10.25rem, 46vw);
   aspect-ratio: 1138 / 313;
   position: relative;
-  animation: app-entry-signin-loading-float 3.6s ease-in-out infinite;
-  animation-delay: 180ms;
 }
 
 .app-entry-signin-loading-mask {
@@ -787,17 +784,23 @@ a.app-entry-login-submit {
     #1848fd 78%,
     #8254f6 100%
   );
-  background-size: 180% 100%;
-  animation: app-entry-signin-loading-sheen 7s ease-in-out infinite;
   -webkit-mask-image: url("/brand/sherivs-app-wordmark.png");
   mask-image: url("/brand/sherivs-app-wordmark.png");
   -webkit-mask-size: 100% 100%;
   mask-size: 100% 100%;
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
-  clip-path: inset(0 calc((1 - var(--sherivs-reveal, 0)) * 100%) 0 0);
-  transition: clip-path 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  clip-path: inset(0 100% 0 0);
   filter: drop-shadow(0 8px 18px rgba(24, 72, 253, 0.12));
+  will-change: clip-path, opacity;
+  backface-visibility: hidden;
+  animation: app-entry-signin-loading-write 2.8s linear infinite;
+}
+
+.app-entry-signin-loading-word.is-static .app-entry-signin-loading-mask {
+  animation: none;
+  clip-path: inset(0 0 0 0);
+  opacity: 1;
 }
 
 .app-entry-signin-loading-mask img {
@@ -818,23 +821,25 @@ a.app-entry-login-submit {
   animation: app-entry-signin-loading-caption 2.8s ease-in-out infinite;
 }
 
-@keyframes app-entry-signin-loading-float {
-  0%,
+@keyframes app-entry-signin-loading-write {
+  0% {
+    clip-path: inset(0 100% 0 0);
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.33, 0.08, 0.2, 1);
+  }
+  70% {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    animation-timing-function: linear;
+  }
+  86% {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    animation-timing-function: ease-out;
+  }
   100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-5px);
-  }
-}
-
-@keyframes app-entry-signin-loading-sheen {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
+    clip-path: inset(0 0 0 0);
+    opacity: 0;
   }
 }
 
@@ -870,7 +875,13 @@ a.app-entry-login-submit {
   .app-entry-signin-loading,
   .app-entry-signin-loading-mask,
   .app-entry-signin-loading-word,
-  .app-entry-signin-loading-caption,
+  .app-entry-signin-loading-caption {
+    animation: none !important;
+  }
+  .app-entry-signin-loading-mask {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
   .app-entry-mark,
   .app-entry-mark-wrap::before,
   .app-entry-glass-icon::after,

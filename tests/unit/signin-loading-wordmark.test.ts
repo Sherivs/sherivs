@@ -3,15 +3,13 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  SHERIVS_FADE_MS,
   SHERIVS_HOLD_MS,
-  SHERIVS_LETTER_ENDS,
-  SHERIVS_LETTER_MS,
   SHERIVS_LOADING_FLOOR_MS,
   SHERIVS_LOADING_LETTERS,
+  SHERIVS_LOOP_MS,
   SHERIVS_WORDMARK_SRC,
-  nextSherivsLoadingPhase,
-  sherivsRevealAt,
-  sherivsVisibleWord,
+  SHERIVS_WRITE_MS,
   signInLoadingRemainingMs,
 } from "../../frontend/src/lib/auth/signin-loading-wordmark";
 
@@ -19,65 +17,49 @@ const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const read = (p: string) => readFileSync(join(ROOT, p), "utf8");
 
 describe("signin loading wordmark", () => {
-  it("types sherivs one letter at a time in order", () => {
+  it("keeps the official sherivs letter identity", () => {
     expect([...SHERIVS_LOADING_LETTERS]).toEqual(["s", "h", "e", "r", "i", "v", "s"]);
-    expect(sherivsVisibleWord(0)).toBe("");
-    expect(sherivsVisibleWord(1)).toBe("s");
-    expect(sherivsVisibleWord(2)).toBe("sh");
-    expect(sherivsVisibleWord(3)).toBe("she");
-    expect(sherivsVisibleWord(4)).toBe("sher");
-    expect(sherivsVisibleWord(5)).toBe("sheri");
-    expect(sherivsVisibleWord(6)).toBe("sheriv");
-    expect(sherivsVisibleWord(7)).toBe("sherivs");
+    expect(SHERIVS_WORDMARK_SRC).toBe("/brand/sherivs-app-wordmark.png");
   });
 
-  it("widens the official wordmark clip at each letter", () => {
-    expect(sherivsRevealAt(0)).toBe(0);
-    expect(sherivsRevealAt(1)).toBe(SHERIVS_LETTER_ENDS[0]);
-    expect(sherivsRevealAt(7)).toBe(1);
-    for (let i = 1; i < SHERIVS_LETTER_ENDS.length; i += 1) {
-      expect(SHERIVS_LETTER_ENDS[i]).toBeGreaterThan(SHERIVS_LETTER_ENDS[i - 1]);
-    }
-  });
-
-  it("loops: letters, hold the full word, then clear", () => {
-    let phase = 0;
-    const seen: number[] = [];
-    for (let i = 0; i < 10; i += 1) {
-      const next = nextSherivsLoadingPhase(phase);
-      phase = next.phase;
-      seen.push(next.visible);
-    }
-    expect(seen.slice(0, 7)).toEqual([1, 2, 3, 4, 5, 6, 7]);
-    expect(seen[7]).toBe(7);
-    expect(seen[8]).toBe(0);
-    expect(seen[9]).toBe(1);
-    expect(nextSherivsLoadingPhase(6).delayMs).toBe(SHERIVS_LETTER_MS);
-    expect(nextSherivsLoadingPhase(7).delayMs).toBe(SHERIVS_HOLD_MS);
-    expect(SHERIVS_LETTER_MS).toBeGreaterThanOrEqual(240);
-    expect(SHERIVS_HOLD_MS).toBeGreaterThan(SHERIVS_LETTER_MS);
+  it("writes as one continuous signature, then holds and fades", () => {
+    expect(SHERIVS_WRITE_MS).toBe(1960);
+    expect(SHERIVS_HOLD_MS).toBe(450);
+    expect(SHERIVS_FADE_MS).toBe(390);
+    expect(SHERIVS_LOOP_MS).toBe(SHERIVS_WRITE_MS + SHERIVS_HOLD_MS + SHERIVS_FADE_MS);
+    expect(SHERIVS_LOOP_MS).toBe(2800);
+    expect(SHERIVS_LOADING_FLOOR_MS).toBe(SHERIVS_WRITE_MS + SHERIVS_HOLD_MS);
   });
 
   it("keeps the overlay up for at least one full write", () => {
-    expect(SHERIVS_LOADING_FLOOR_MS).toBe(7 * SHERIVS_LETTER_MS + SHERIVS_HOLD_MS);
     expect(signInLoadingRemainingMs(1000, 1000)).toBe(SHERIVS_LOADING_FLOOR_MS);
     expect(signInLoadingRemainingMs(1000, 1000 + SHERIVS_LOADING_FLOOR_MS + 10)).toBe(0);
   });
 
-  it("uses the official wordmark on the login field, not a live font", () => {
+  it("uses a CSS signature write with no letter-step clock or snap reset", () => {
     const screen = read("frontend/src/components/app-entry/app-entry-screen.tsx");
     const auth = read("frontend/src/routes/auth.tsx");
     const loading = read("frontend/src/components/app-entry/signin-loading.tsx");
     const css = read("frontend/src/components/app-entry/app-entry.css");
     expect(loading).toContain("SHERIVS_WORDMARK_SRC");
-    expect(SHERIVS_WORDMARK_SRC).toBe("/brand/sherivs-app-wordmark.png");
+    expect(loading).not.toContain("useState");
+    expect(loading).not.toContain("setTimeout");
+    expect(loading).not.toContain("nextSherivsLoadingPhase");
+    expect(loading).not.toContain("--sherivs-reveal");
+    expect(loading).not.toContain("SherivsMark");
+    expect(loading).not.toContain("app-entry-glass-icon");
     expect(css).toContain('url("/brand/sherivs-app-wordmark.png")');
     expect(css).toContain("#10182b");
     expect(css).toContain("#1848fd");
     expect(css).toContain("min(10.25rem, 46vw)");
     expect(css).toContain("position: fixed");
-    expect(loading).not.toContain("SherivsMark");
-    expect(loading).not.toContain("app-entry-glass-icon");
+    expect(css).toContain("app-entry-signin-loading-write");
+    expect(css).toContain("clip-path: inset(0 100% 0 0)");
+    expect(css).toContain("clip-path: inset(0 0 0 0)");
+    expect(css).not.toContain("--sherivs-reveal");
+    expect(css).not.toContain("transition: clip-path");
+    expect(css).not.toContain("app-entry-signin-loading-float");
+    expect(css).not.toContain("app-entry-signin-loading-sheen");
     expect(css).not.toContain("app-entry-signin-loading-mark");
     expect(screen).toContain("SignInLoading");
     expect(screen).toContain("onSigningChange(true)");
