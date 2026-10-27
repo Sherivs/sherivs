@@ -12,10 +12,10 @@ export const SHERIVS_LETTER_ENDS = [0.164, 0.351, 0.5, 0.584, 0.658, 0.817, 1] a
 
 export const SHERIVS_WORDMARK_SRC = "/brand/sherivs-app-wordmark.png";
 
-/** Slightly brisk type-on; a full word then a short hold. */
-export const SHERIVS_LETTER_MS = 90;
-export const SHERIVS_HOLD_MS = 320;
-export const SHERIVS_RESET_MS = 140;
+/** Calm type-on: one letter, a breath, then the next. */
+export const SHERIVS_LETTER_MS = 260;
+export const SHERIVS_HOLD_MS = 820;
+export const SHERIVS_RESET_MS = 320;
 /** Show at least one complete write so a fast Auth response still lands cleanly. */
 export const SHERIVS_LOADING_FLOOR_MS =
   SHERIVS_LOADING_LETTERS.length * SHERIVS_LETTER_MS + SHERIVS_HOLD_MS;

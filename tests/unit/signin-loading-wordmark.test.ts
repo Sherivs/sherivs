@@ -54,6 +54,8 @@ describe("signin loading wordmark", () => {
     expect(seen[9]).toBe(1);
     expect(nextSherivsLoadingPhase(6).delayMs).toBe(SHERIVS_LETTER_MS);
     expect(nextSherivsLoadingPhase(7).delayMs).toBe(SHERIVS_HOLD_MS);
+    expect(SHERIVS_LETTER_MS).toBeGreaterThanOrEqual(240);
+    expect(SHERIVS_HOLD_MS).toBeGreaterThan(SHERIVS_LETTER_MS);
   });
 
   it("keeps the overlay up for at least one full write", () => {
@@ -72,6 +74,10 @@ describe("signin loading wordmark", () => {
     expect(css).toContain('url("/brand/sherivs-app-wordmark.png")');
     expect(css).toContain("#10182b");
     expect(css).toContain("#1848fd");
+    expect(css).toContain("min(10.25rem, 46vw)");
+    expect(css).toContain("position: fixed");
+    expect(loading).toContain("app-entry-glass-icon");
+    expect(loading).toContain("SherivsMark");
     expect(screen).toContain("SignInLoading");
     expect(screen).toContain("onSigningChange(true)");
     expect(auth).toContain("SignInLoading");
