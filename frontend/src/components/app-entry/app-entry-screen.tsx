@@ -3,7 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft, Lock, LogIn, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
-import { PLATFORM_NAME, PLATFORM_URL } from "@/lib/platform";
+import { PLATFORM_URL } from "@/lib/platform";
 import { Turnstile, captchaRequired } from "@/components/security/turnstile";
 import { PasswordInput } from "@/components/security/password-input";
 import { turnstileEnabled } from "@/lib/security/turnstile-config";
@@ -13,7 +13,7 @@ import {
   formatSeconds,
   loginErrorMessage,
 } from "@/lib/security/auth-feedback";
-import { SherivsLockup, SherivsMark } from "@/components/brand/sherivs-logo";
+import { SherivsMark } from "@/components/brand/sherivs-logo";
 import { GoogleMark } from "@/components/auth/google-mark";
 import { resolveTenantDomain } from "@/lib/tenant";
 import { schoolDomainLoginAllowed } from "@/lib/domains/school-domains";
@@ -44,7 +44,6 @@ export function AppEntryScreen({ panel }: { panel: AppEntryPanel }) {
   if (!loading && authUser) {
     return (
       <AppEntryCanvas tone="login">
-        <LoginChrome />
         <section className="app-entry-login-card" data-testid="app-entry-signed-in">
           <p className="app-entry-login-kicker">You are signed in</p>
           <h2 className="app-entry-login-title">Welcome back</h2>
@@ -74,7 +73,6 @@ export function AppEntryScreen({ panel }: { panel: AppEntryPanel }) {
   if (login) {
     return (
       <AppEntryCanvas tone="login">
-        <LoginChrome />
         <SignInPanel />
       </AppEntryCanvas>
     );
@@ -85,14 +83,6 @@ export function AppEntryScreen({ panel }: { panel: AppEntryPanel }) {
       <BrandBlock />
       <SplashCards />
     </AppEntryCanvas>
-  );
-}
-
-function LoginChrome() {
-  return (
-    <Link to="/" className="app-entry-login-chrome" aria-label={`${PLATFORM_NAME} home`}>
-      <SherivsLockup height={34} />
-    </Link>
   );
 }
 

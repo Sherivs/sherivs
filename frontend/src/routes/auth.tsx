@@ -16,7 +16,6 @@ import {
   loginErrorMessage,
   newPasswordServerMessage,
 } from "@/lib/security/auth-feedback";
-import { SherivsLockup } from "@/components/brand/sherivs-logo";
 import { GoogleMark } from "@/components/auth/google-mark";
 import { resolveTenantDomain } from "@/lib/tenant";
 import { schoolDomainLoginAllowed } from "@/lib/domains/school-domains";
@@ -239,9 +238,6 @@ function AuthPage() {
           <span className="app-entry-orb app-entry-orb-blue" />
           <span className="app-entry-orb app-entry-orb-violet" />
         </div>
-        <Link to="/" aria-label={`${PLATFORM_NAME} home`} className="app-entry-login-chrome">
-          <SherivsLockup height={34} />
-        </Link>
         <div className="auth-card uos-card app-entry-login-card" data-testid="auth-card">
           <p className="app-entry-login-kicker">You are signed in</p>
           <h1 className="app-entry-login-title">Welcome back</h1>
@@ -272,11 +268,6 @@ function AuthPage() {
         <span className="app-entry-orb app-entry-orb-blue" />
         <span className="app-entry-orb app-entry-orb-violet" />
       </div>
-      {!school && (
-        <Link to="/" aria-label={`${PLATFORM_NAME} home`} className="app-entry-login-chrome">
-          <SherivsLockup height={34} />
-        </Link>
-      )}
       <div className="auth-card uos-card app-entry-login-card" data-testid="auth-card">
         <div className="mb-2">
           {school && (

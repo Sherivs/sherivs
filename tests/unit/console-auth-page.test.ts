@@ -46,5 +46,7 @@ describe("sign-in page per host", () => {
     expect(authSource).toContain("Sign in with Google");
     expect(authSource).toContain("Remember for 30 days");
     expect(authSource).toContain("Ask your administrator to invite you");
+    expect(authSource).not.toContain("SherivsLockup");
+    expect(authSource).not.toContain("app-entry-login-chrome");
   });
 });

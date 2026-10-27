@@ -65,6 +65,7 @@ describe("app-entry host", () => {
     expect(canvas).toContain('tone === "login"');
     expect(css).toContain(".app-entry-login-card");
     expect(css).toContain("#1848fd");
+    expect(css).not.toContain(".app-entry-login-chrome");
     expect(canvas).not.toMatch(/className="app-entry-field"/);
     expect(css).toContain(".app-entry-backdrop");
     expect(existsSync(join(ROOT, "public/app-entry/splash-field.jpg"))).toBe(true);
@@ -100,6 +101,8 @@ describe("app-entry wiring", () => {
     expect(splash).not.toContain("/onboarding");
     expect(splash).toContain("app-entry-glass-icon");
     expect(splash).toContain("size={68}");
+    expect(splash).not.toContain("SherivsLockup");
+    expect(splash).not.toContain("app-entry-login-chrome");
   });
 
   it("keeps Sherivs-team onboarding as a mailto, never Auth sign-up", () => {

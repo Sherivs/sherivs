@@ -505,18 +505,9 @@
   animation-delay: -11s;
 }
 
-.app-entry-login-chrome {
-  position: fixed;
-  z-index: 3;
-  top: 1.35rem;
-  left: 1.5rem;
-  display: inline-flex;
-  animation: app-entry-rise var(--app-entry-motion) var(--app-entry-ease) both;
-}
-
 .app-entry-stage-login {
   width: min(100%, 28rem);
-  padding-top: 5.5rem;
+  padding-top: 2.5rem;
 }
 
 .app-entry-login-card {
@@ -775,7 +766,6 @@ a.app-entry-login-submit {
   .app-entry-actions,
   .app-entry-panel,
   .app-entry-login-card,
-  .app-entry-login-chrome,
   .app-entry-mark,
   .app-entry-mark-wrap::before,
   .app-entry-glass-icon::after,
