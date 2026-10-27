@@ -103,6 +103,8 @@ describe("app-entry wiring", () => {
     expect(splash).toContain("size={68}");
     expect(splash).not.toContain("SherivsLockup");
     expect(splash).not.toContain("app-entry-login-chrome");
+    expect(splash).toContain("SignInLoading");
+    expect(splash).toContain("onSigningChange");
   });
 
   it("keeps Sherivs-team onboarding as a mailto, never Auth sign-up", () => {

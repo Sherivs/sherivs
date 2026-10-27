@@ -28,6 +28,11 @@ import {
   startGoogleSignIn,
 } from "@/lib/auth/google-sign-in";
 import { rememberPreferenceActive, setRememberPreference } from "@/lib/auth/remember-session";
+import {
+  SHERIVS_LOADING_FLOOR_MS,
+  signInLoadingRemainingMs,
+} from "@/lib/auth/signin-loading-wordmark";
+import { SignInLoading } from "@/components/app-entry/signin-loading";
 import "@/components/app-entry/app-entry.css";
 
 export const Route = createFileRoute("/auth")({
@@ -118,6 +123,7 @@ function AuthPage() {
     if (mode === "signin") setRememberPreference(remember);
     setBusy(true);
     setBusyKind("password");
+    const startedAt = Date.now();
     try {
       if (mode === "signin") {
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -182,6 +188,8 @@ function AuthPage() {
         }).catch(() => {});
 
         await refresh();
+        const remain = signInLoadingRemainingMs(startedAt, Date.now(), SHERIVS_LOADING_FLOOR_MS);
+        if (remain > 0) await new Promise((resolve) => setTimeout(resolve, remain));
       } else if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
           email,
@@ -229,6 +237,19 @@ function AuthPage() {
 
   const title = experience.heading ?? (mode === "signin" ? "Welcome back" : "Create account");
   const signInCopy = mode === "signin";
+
+  if (busy && busyKind === "password") {
+    return (
+      <div className="auth-shell app-entry app-entry-login">
+        <div className="app-entry-login-orbs" aria-hidden="true">
+          <span className="app-entry-orb app-entry-orb-cyan" />
+          <span className="app-entry-orb app-entry-orb-blue" />
+          <span className="app-entry-orb app-entry-orb-violet" />
+        </div>
+        <SignInLoading />
+      </div>
+    );
+  }
 
   if (!loading && authUser) {
     return (

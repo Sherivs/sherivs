@@ -30,8 +30,13 @@ import {
   startGoogleSignIn,
 } from "@/lib/auth/google-sign-in";
 import { rememberPreferenceActive, setRememberPreference } from "@/lib/auth/remember-session";
+import {
+  SHERIVS_LOADING_FLOOR_MS,
+  signInLoadingRemainingMs,
+} from "@/lib/auth/signin-loading-wordmark";
 import { AppEntryCanvas } from "./app-entry-canvas";
 import { AppEntryWordmark } from "./app-entry-wordmark";
+import { SignInLoading } from "./signin-loading";
 
 const backoff = createLoginBackoff(
   typeof window !== "undefined" ? window.localStorage : undefined,
@@ -39,9 +44,10 @@ const backoff = createLoginBackoff(
 
 export function AppEntryScreen({ panel }: { panel: AppEntryPanel }) {
   const { loading, authUser, signOut } = useApp();
+  const [signingIn, setSigningIn] = useState(false);
   const login = panel === "signin" || Boolean(authUser);
 
-  if (!loading && authUser) {
+  if (!loading && authUser && !signingIn) {
     return (
       <AppEntryCanvas tone="login">
         <section className="app-entry-login-card" data-testid="app-entry-signed-in">
@@ -73,7 +79,10 @@ export function AppEntryScreen({ panel }: { panel: AppEntryPanel }) {
   if (login) {
     return (
       <AppEntryCanvas tone="login">
-        <SignInPanel />
+        {signingIn ? <SignInLoading /> : null}
+        <div hidden={signingIn}>
+          <SignInPanel onSigningChange={setSigningIn} />
+        </div>
       </AppEntryCanvas>
     );
   }
@@ -125,7 +134,7 @@ function SplashCards() {
   );
 }
 
-function SignInPanel() {
+function SignInPanel({ onSigningChange }: { onSigningChange: (signing: boolean) => void }) {
   const { refresh, school, tenantSlug } = useApp();
   const navigate = useNavigate();
   const [identifier, setIdentifier] = useState("");
@@ -176,6 +185,8 @@ function SignInPanel() {
     const auditEmail = classified.kind === "email" ? classified.value : undefined;
     setRememberPreference(remember);
     setBusy("password");
+    onSigningChange(true);
+    const startedAt = Date.now();
     try {
       const { data, error: authError } = await supabase.auth.signInWithPassword(payload);
       if (authError) {
@@ -217,10 +228,13 @@ function SignInPanel() {
       }).catch(() => {});
 
       await refresh();
+      const remain = signInLoadingRemainingMs(startedAt, Date.now(), SHERIVS_LOADING_FLOOR_MS);
+      if (remain > 0) await new Promise((resolve) => setTimeout(resolve, remain));
     } catch (err) {
       setError(err instanceof Error ? err.message : INVITE_LOGIN_ERROR);
     } finally {
       setBusy(null);
+      onSigningChange(false);
       setCaptchaToken(null);
       setCaptchaNonce((n) => n + 1);
     }

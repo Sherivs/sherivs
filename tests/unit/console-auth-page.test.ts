@@ -48,5 +48,6 @@ describe("sign-in page per host", () => {
     expect(authSource).toContain("Ask your administrator to invite you");
     expect(authSource).not.toContain("SherivsLockup");
     expect(authSource).not.toContain("app-entry-login-chrome");
+    expect(authSource).toContain("SignInLoading");
   });
 });
