@@ -560,6 +560,7 @@
 
 .app-entry-login-card {
   position: relative;
+  z-index: 1;
   width: 100%;
   padding: 1.85rem 1.65rem 1.7rem;
   border-radius: 22px;

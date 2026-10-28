@@ -36,10 +36,12 @@ describe("sign-in page per host", () => {
   });
 
   it("auth page wires the host experience and gates the sign-up toggle", () => {
-    expect(authSource).toContain("authPageExperience(currentEffectiveHostKind())");
+    expect(authSource).toContain("authPageExperience(hostKind)");
     expect(authSource).toContain("effectiveAuthMode(requestedMode, experience)");
     expect(authSource).toContain('mode === "signin" && experience.allowSignup');
-    expect(authSource).not.toContain("{experience.subtext}");
+    expect(authSource).toContain("{experience.subtext}");
+    expect(authSource).toContain("postSignInPath");
+    expect(authSource).toContain("identityFromAppState");
     expect(authSource).toContain("<Turnstile");
     expect(authSource).toContain("app-entry-login-submit");
     expect(authSource).toContain('data-testid="auth-submit"');

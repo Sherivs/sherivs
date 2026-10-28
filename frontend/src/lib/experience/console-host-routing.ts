@@ -23,6 +23,8 @@ import {
   type ExperienceHostKind,
 } from "./experience-host";
 
+export type { ExperienceHostKind };
+
 export { CONSOLE_HOME_PATH };
 export const CONSOLE_ORIGIN = `https://${CANONICAL_CONSOLE_HOST}`;
 
@@ -44,10 +46,13 @@ export function effectiveExperienceHostKind(
   return parseHostKindOverride(override) ?? real;
 }
 
-export function currentEffectiveHostKind(): ExperienceHostKind {
-  if (typeof window === "undefined") return "local";
+export function currentEffectiveHostKind(hostname?: string | null): ExperienceHostKind {
   const override = (import.meta.env?.VITE_SHERIVS_HOST_KIND_OVERRIDE as string | undefined) ?? null;
-  return effectiveExperienceHostKind(window.location.hostname, override);
+  if (typeof window !== "undefined") {
+    return effectiveExperienceHostKind(window.location.hostname, override);
+  }
+  if (hostname) return effectiveExperienceHostKind(hostname, override);
+  return "local";
 }
 
 export function isConsolePath(pathname: string): boolean {
@@ -117,4 +122,49 @@ export function decideHostRoute(input: {
   }
   if (isConsolePath(pathname)) return { kind: "console_elsewhere" };
   return { kind: "allow" };
+}
+
+/**
+ * Only same-origin Internal Console surfaces may be used as a post-auth
+ * `next` target. Rejects protocol-relative URLs, other origins, and
+ * organization-app paths.
+ */
+export function sanitizeConsoleNextPath(next: string | null | undefined): string | null {
+  if (typeof next !== "string") return null;
+  let raw = next.trim();
+  if (!raw) return null;
+  try {
+    raw = decodeURIComponent(raw);
+  } catch {
+    return null;
+  }
+  if (!raw.startsWith("/") || raw.startsWith("//") || raw.includes("://") || raw.includes("\\")) {
+    return null;
+  }
+  const path = (raw.split("?")[0] ?? "").split("#")[0] ?? "";
+  const normalized = path.replace(/\/+$/, "") || "/";
+  return isConsoleSurfacePath(normalized) ? normalized : null;
+}
+
+/** Search params for `/auth` when the console sends an unsigned visitor to sign in. */
+export function consoleSignInSearch(pathname: string): { next: string } {
+  return { next: sanitizeConsoleNextPath(pathname) ?? CONSOLE_HOME_PATH };
+}
+
+/**
+ * Where a signed-in session should land.
+ *
+ * Console host: always the Internal Console (or a sanitized `next`).
+ * Elsewhere: the identity destination (staff → `/console`, members → workspace).
+ * Local / preview: honour a sanitized `next` so `/console` → `/auth` round-trips.
+ */
+export function postSignInPath(input: {
+  hostKind: ExperienceHostKind;
+  identityDestination: string;
+  next?: string | null;
+}): string {
+  const next = sanitizeConsoleNextPath(input.next);
+  if (input.hostKind === "internal") return next ?? CONSOLE_HOME_PATH;
+  if (input.hostKind === "local" && next) return next;
+  return input.identityDestination;
 }

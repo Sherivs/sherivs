@@ -10,6 +10,7 @@ import { type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { AppProvider } from "@/contexts/app-context";
+import { ConsoleGate } from "@/components/internal-console/console-gate";
 import { PLATFORM_PAGE_DESCRIPTION, PLATFORM_PAGE_TITLE } from "@/lib/platform";
 import { publishedCompanySocial } from "@/lib/public-site/contacts";
 import { Toaster } from "@/components/ui/sonner";
@@ -28,7 +29,9 @@ function NotFoundComponent() {
         <Link to="/" aria-label="Sherivs home" className="mb-8 inline-flex">
           <SherivsLockup height={44} />
         </Link>
-        <h1 className="text-7xl font-bold bg-[image:var(--brand-gradient)] bg-clip-text text-transparent">404</h1>
+        <h1 className="text-7xl font-bold bg-[image:var(--brand-gradient)] bg-clip-text text-transparent">
+          404
+        </h1>
         <h2 className="mt-4 text-xl font-semibold">Page not found</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           The page you're looking for doesn't exist.
@@ -57,9 +60,7 @@ function ErrorComponent({ error, reset }: { error: unknown; reset?: () => void }
           <SherivsLogo size={40} wordmarkClassName="text-2xl" />
         </div>
         <h1 className="text-xl font-semibold">Something went wrong</h1>
-        <p className="mt-2 text-sm text-muted-foreground break-words">
-          {message}
-        </p>
+        <p className="mt-2 text-sm text-muted-foreground break-words">{message}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           {reset && (
             <button
@@ -157,7 +158,9 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AppProvider>
         <RouteProgressBar />
-        <Outlet />
+        <ConsoleGate>
+          <Outlet />
+        </ConsoleGate>
         <Toaster richColors closeButton position="top-right" />
         <AnalyticsConsent />
       </AppProvider>

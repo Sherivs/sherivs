@@ -267,6 +267,8 @@
     box-sizing: border-box;
   }
   .auth-card {
+    position: relative;
+    z-index: 1;
     box-sizing: border-box;
     width: min(100%, 28rem);
     min-width: 0;

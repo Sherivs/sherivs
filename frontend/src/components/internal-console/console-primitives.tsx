@@ -12,7 +12,7 @@ export function ConsoleAtmosphere({ children }: { children: ReactNode }) {
         <span className="sherivs-console-orb sherivs-console-orb-blue" />
         <span className="sherivs-console-orb sherivs-console-orb-violet" />
       </div>
-      <div className="sherivs-console-status">{children}</div>
+      <div className="sherivs-console-stage">{children}</div>
     </div>
   );
 }

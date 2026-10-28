@@ -291,16 +291,39 @@ describe("console host routing for /console", () => {
 
   it("keeps signed-in console status copy above the background orbs", () => {
     const css = readFileSync("frontend/src/components/internal-console/console.css", "utf8");
-    expect(css).toContain(".sherivs-console-status");
-    expect(css).toMatch(/\.sherivs-console-status\s*\{[\s\S]*z-index:\s*1/);
+    expect(css).toContain(".sherivs-console-stage");
+    expect(css).toMatch(/\.sherivs-console-stage\s*\{[\s\S]*z-index:\s*1/);
+    const statusBlock = css.match(/\.sherivs-console-status\s*\{[^}]+\}/)?.[0];
+    expect(statusBlock).toContain("inline-flex");
+    expect(statusBlock).not.toContain("min-height");
+    expect(css).toContain("minmax(0, 1fr)");
+    const primitives = readFileSync(
+      "frontend/src/components/internal-console/console-primitives.tsx",
+      "utf8",
+    );
+    expect(primitives).toContain("sherivs-console-stage");
+    expect(primitives).not.toContain('className="sherivs-console-status"');
     const gate = readFileSync("frontend/src/components/internal-console/console-gate.tsx", "utf8");
     expect(gate).toContain("ConsoleLoadingState");
-    const shell = readFileSync("frontend/src/components/internal-console/console-shell.tsx", "utf8");
+    expect(gate).toContain("consoleSignInSearch");
+    expect(gate).toContain("hostKindProp");
+    const shell = readFileSync(
+      "frontend/src/components/internal-console/console-shell.tsx",
+      "utf8",
+    );
     expect(shell).toContain("ConsoleLoadingState");
-    const authz = readFileSync("frontend/src/components/internal-console/not-authorised.tsx", "utf8");
+    expect(shell).toContain("consoleSignInSearch");
+    const authz = readFileSync(
+      "frontend/src/components/internal-console/not-authorised.tsx",
+      "utf8",
+    );
     expect(authz).toContain("ConsoleAtmosphere");
     expect(authz).toContain("console-not-authorised");
     expect(authz).not.toMatch(/Signing in with a school account/);
+    const root = readFileSync("frontend/src/routes/__root.tsx", "utf8");
+    expect(root).toContain("<ConsoleGate>");
+    const index = readFileSync("frontend/src/routes/index.tsx", "utf8");
+    expect(index).toContain("hostKind={data.hostKind}");
   });
 
   it("resolves workforce identity even when a tenant profile exists", () => {
@@ -468,8 +491,11 @@ describe("local visual fixture", () => {
   });
 
   it("derives fixture pipeline metrics from the organization store without fabricating users", async () => {
-    const { buildConsoleVisualFixtureOverview, CONSOLE_FIXTURE_ORGS_KEY, readFixtureOrganizationSnapshot } =
-      await import("@/lib/internal-console/visual-fixture");
+    const {
+      buildConsoleVisualFixtureOverview,
+      CONSOLE_FIXTURE_ORGS_KEY,
+      readFixtureOrganizationSnapshot,
+    } = await import("@/lib/internal-console/visual-fixture");
     const raw = JSON.stringify({
       organizations: [
         {
@@ -523,7 +549,9 @@ describe("local visual fixture", () => {
     expect(parsed.metrics.onboarding).toBe(1);
     expect(parsed.activity[0]?.description).toContain("Riverside School");
     const previous =
-      typeof window === "undefined" ? null : window.sessionStorage.getItem(CONSOLE_FIXTURE_ORGS_KEY);
+      typeof window === "undefined"
+        ? null
+        : window.sessionStorage.getItem(CONSOLE_FIXTURE_ORGS_KEY);
     if (typeof window !== "undefined") {
       window.sessionStorage.setItem(CONSOLE_FIXTURE_ORGS_KEY, raw);
     }
@@ -532,7 +560,9 @@ describe("local visual fixture", () => {
       const overview = buildConsoleVisualFixtureOverview();
       expect(overview.organizationMetrics.active).toBe(1);
       expect(overview.organizationMetrics.onboarding).toBe(1);
-      expect(overview.metrics.find((metric) => metric.key === "active-organizations")?.value).toBe("1");
+      expect(overview.metrics.find((metric) => metric.key === "active-organizations")?.value).toBe(
+        "1",
+      );
       expect(overview.attention.some((item) => item.id === "onboarding-pipeline")).toBe(true);
       expect(overview.assignments).toHaveLength(1);
       expect(overview.registeredUsers).toBeNull();

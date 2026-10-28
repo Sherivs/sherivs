@@ -17,8 +17,13 @@ import {
   newPasswordServerMessage,
 } from "@/lib/security/auth-feedback";
 import { GoogleMark } from "@/components/auth/google-mark";
-import { currentEffectiveHostKind } from "@/lib/experience/console-host-routing";
+import {
+  currentEffectiveHostKind,
+  postSignInPath,
+  sanitizeConsoleNextPath,
+} from "@/lib/experience/console-host-routing";
 import { authPageExperience, effectiveAuthMode } from "@/lib/experience/auth-page-experience";
+import { identityFromAppState } from "@/lib/identity/context";
 import { ACCOUNT_INVITATION_COPY } from "@/lib/auth/organization-access";
 import { assertPostAuthOrganizationAccess } from "@/lib/auth/organization-access-client";
 import {
@@ -48,6 +53,12 @@ import "@/components/app-entry/app-entry.css";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
+  validateSearch: (search: Record<string, unknown>): { mode?: string; next?: string } => {
+    const out: { mode?: string; next?: string } = {};
+    if (typeof search.mode === "string") out.mode = search.mode;
+    if (typeof search.next === "string") out.next = search.next;
+    return out;
+  },
   beforeLoad: () => {
     if (typeof window === "undefined") return;
     if (currentEffectiveHostKind() === "app") {
@@ -62,11 +73,14 @@ type Mode = "signin" | "signup";
 const backoff = createLoginBackoff(typeof window !== "undefined" ? window.localStorage : undefined);
 
 function AuthPage() {
-  const { loading, refresh, school, tenantSlug, authUser } = useApp();
+  const app = useApp();
+  const { loading, refresh, school, tenantSlug, authUser } = app;
+  const search = Route.useSearch();
   const localFixtureEnabled = consoleVisualFixtureEnabled();
   // Console host (console.sherivs.com): staff-branded copy, no self-service
   // sign-up. Login, reset, Turnstile and MFA are unchanged.
-  const experience = authPageExperience(currentEffectiveHostKind());
+  const hostKind = currentEffectiveHostKind();
+  const experience = authPageExperience(hostKind);
   const [requestedMode, setMode] = useState<Mode>(() =>
     typeof window !== "undefined"
       ? effectiveAuthMode(new URLSearchParams(window.location.search).get("mode"), experience)
@@ -221,8 +235,10 @@ function AuthPage() {
     setRememberPreference(remember);
     setBusy(true);
     setBusyKind("google");
+    const next = sanitizeConsoleNextPath(search.next);
+    const authReturn = next ? `/auth?next=${encodeURIComponent(next)}` : "/auth";
     const result = await startGoogleSignIn((args) => supabase.auth.signInWithOAuth(args), {
-      redirectTo: googleSignInRedirectTo(window.location.origin, "/auth"),
+      redirectTo: googleSignInRedirectTo(window.location.origin, authReturn),
       loginHint: classifySignInIdentifier(email).kind === "email" ? email : undefined,
     });
     if (!result.ok) {
@@ -234,6 +250,16 @@ function AuthPage() {
 
   const title = experience.heading ?? (mode === "signin" ? "Welcome back" : "Create account");
   const signInCopy = mode === "signin";
+  const signedInDestination = postSignInPath({
+    hostKind,
+    identityDestination: identityFromAppState({
+      superAdmin: app.superAdmin,
+      platformStaff: app.platformStaff,
+      profile: app.profile,
+      school: app.school,
+    }).destination,
+    next: search.next,
+  });
 
   if (busy && busyKind === "password") {
     return (
@@ -249,10 +275,7 @@ function AuthPage() {
   }
 
   if (!loading && authUser) {
-    if (currentEffectiveHostKind() === "internal") {
-      return <Navigate to="/console" />;
-    }
-    return <Navigate to="/home" />;
+    return <Navigate to={signedInDestination as never} />;
   }
 
   return (
@@ -294,7 +317,10 @@ function AuthPage() {
             </div>
           )}
           <p className="app-entry-login-kicker">Please enter your details</p>
-          <h1 className="app-entry-login-title">{signInCopy ? "Welcome back" : title}</h1>
+          <h1 className="app-entry-login-title">{title}</h1>
+          {hostKind === "internal" ? (
+            <p className="app-entry-login-invite">{experience.subtext}</p>
+          ) : null}
         </div>
 
         <form onSubmit={handleSubmit} className="app-entry-login-form">
@@ -460,9 +486,11 @@ function AuthPage() {
           {signInCopy && !experience.allowSignup && (
             <p className="app-entry-login-invite">{ACCOUNT_INVITATION_COPY}</p>
           )}
-          <Link to="/" className="block text-xs text-muted-foreground hover:text-foreground">
-            Back to site
-          </Link>
+          {hostKind !== "internal" ? (
+            <Link to="/" className="block text-xs text-muted-foreground hover:text-foreground">
+              Back to site
+            </Link>
+          ) : null}
         </div>
       </div>
     </div>

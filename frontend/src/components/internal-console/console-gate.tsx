@@ -3,22 +3,43 @@ import { Navigate, useLocation } from "@tanstack/react-router";
 import { useApp } from "@/contexts/app-context";
 import {
   CONSOLE_HOME_PATH,
+  consoleSignInSearch,
   currentEffectiveHostKind,
   decideHostRoute,
   isConsoleOperator,
+  isConsolePath,
+  type ExperienceHostKind,
 } from "@/lib/experience/console-host-routing";
 import { ConsoleNotAuthorised } from "./not-authorised";
 import { ConsoleElsewhere } from "./not-authorised";
 import { ConsoleLoadingState } from "./console-primitives";
 import "./console.css";
 
-export function ConsoleGate({ children }: { children?: ReactNode }) {
+/**
+ * Console host gate.
+ *
+ * Index (`/`) passes `hostKind` from the SSR hostname loader so console.sherivs.com
+ * does not wait on `window`. The root shell wraps every route so unsigned
+ * visitors on the console host go to `/auth`, and signed-in staff reach
+ * `/console` instead of leaking public pages.
+ */
+export function ConsoleGate({
+  children,
+  hostKind: hostKindProp,
+}: {
+  children?: ReactNode;
+  hostKind?: ExperienceHostKind;
+}) {
   const app = useApp();
   const location = useLocation();
-  const hostKind = currentEffectiveHostKind();
+  const hostKind =
+    typeof window === "undefined"
+      ? (hostKindProp ?? currentEffectiveHostKind())
+      : currentEffectiveHostKind();
   const operator = isConsoleOperator(app);
+  const needsConsoleChrome = hostKind === "internal" || isConsolePath(location.pathname);
 
-  if (app.loading) {
+  if (needsConsoleChrome && app.loading) {
     return <ConsoleLoadingState message="Signing you in to the Internal Console…" />;
   }
 
@@ -30,7 +51,9 @@ export function ConsoleGate({ children }: { children?: ReactNode }) {
   });
 
   if (decision.kind === "redirect") {
-    if (decision.to === "/auth") return <Navigate to="/auth" />;
+    if (decision.to === "/auth") {
+      return <Navigate to="/auth" search={consoleSignInSearch(location.pathname) as never} />;
+    }
     return <Navigate to={decision.to as never} />;
   }
   if (decision.kind === "not_authorised") return <ConsoleNotAuthorised />;

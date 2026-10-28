@@ -24,6 +24,7 @@ import {
 import { SherivsLogo } from "@/components/brand/sherivs-logo";
 import { useApp } from "@/contexts/app-context";
 import {
+  consoleSignInSearch,
   currentEffectiveHostKind,
   decideHostRoute,
   isConsoleOperator,
@@ -622,12 +623,16 @@ export function InternalConsoleLayout() {
     isConsoleOperator: operator,
   });
   if (decision.kind === "redirect") {
-    if (decision.to === "/auth") return <Navigate to="/auth" />;
+    if (decision.to === "/auth") {
+      return <Navigate to="/auth" search={consoleSignInSearch(location.pathname) as never} />;
+    }
     return <Navigate to={decision.to as never} />;
   }
   if (decision.kind === "not_authorised") return <ConsoleNotAuthorised />;
   if (decision.kind === "console_elsewhere") return <ConsoleElsewhere />;
-  if (!app.authUser) return <Navigate to="/auth" />;
+  if (!app.authUser) {
+    return <Navigate to="/auth" search={consoleSignInSearch(location.pathname) as never} />;
+  }
   if (!operator) return <ConsoleNotAuthorised />;
 
   return (

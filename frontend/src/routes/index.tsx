@@ -7,7 +7,12 @@ import { ApplicationUnavailable } from "@/components/public/application-unavaila
 import { AppEntryScreen } from "@/components/app-entry/app-entry-screen";
 import { ConsoleGate } from "@/components/internal-console/console-gate";
 import { resolveTenantDomain, resolveTenantSlug } from "@/lib/tenant";
-import { PLATFORM_NAME, PLATFORM_PAGE_DESCRIPTION, PLATFORM_PAGE_TITLE, PLATFORM_URL } from "@/lib/platform";
+import {
+  PLATFORM_NAME,
+  PLATFORM_PAGE_DESCRIPTION,
+  PLATFORM_PAGE_TITLE,
+  PLATFORM_URL,
+} from "@/lib/platform";
 import { resolveExperienceHost } from "@/lib/experience/experience-host";
 import { isRetiredApplicationHostname } from "@/lib/experience/retired-application-host";
 import { isAppEntryKind, parseAppEntryPanel } from "@/lib/experience/app-entry-host";
@@ -173,7 +178,7 @@ function Index() {
   }
 
   if (data.consoleEntry) {
-    return <ConsoleGate />;
+    return <ConsoleGate hostKind={data.hostKind} />;
   }
 
   if (data.retired) {
