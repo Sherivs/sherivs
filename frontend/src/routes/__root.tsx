@@ -10,7 +10,6 @@ import { type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { AppProvider } from "@/contexts/app-context";
-import { ConsoleGate } from "@/components/internal-console/console-gate";
 import { PLATFORM_PAGE_DESCRIPTION, PLATFORM_PAGE_TITLE } from "@/lib/platform";
 import { publishedCompanySocial } from "@/lib/public-site/contacts";
 import { Toaster } from "@/components/ui/sonner";
@@ -158,9 +157,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AppProvider>
         <RouteProgressBar />
-        <ConsoleGate>
-          <Outlet />
-        </ConsoleGate>
+        <Outlet />
         <Toaster richColors closeButton position="top-right" />
         <AnalyticsConsent />
       </AppProvider>

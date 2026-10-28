@@ -307,6 +307,7 @@ describe("console host routing for /console", () => {
     expect(gate).toContain("ConsoleLoadingState");
     expect(gate).toContain("consoleSignInSearch");
     expect(gate).toContain("hostKindProp");
+    expect(gate).toContain("clientReady");
     const shell = readFileSync(
       "frontend/src/components/internal-console/console-shell.tsx",
       "utf8",
@@ -320,8 +321,9 @@ describe("console host routing for /console", () => {
     expect(authz).toContain("ConsoleAtmosphere");
     expect(authz).toContain("console-not-authorised");
     expect(authz).not.toMatch(/Signing in with a school account/);
-    const root = readFileSync("frontend/src/routes/__root.tsx", "utf8");
-    expect(root).toContain("<ConsoleGate>");
+    const site = readFileSync("frontend/src/routes/(site)/route.tsx", "utf8");
+    expect(site).toContain('hostKind === "internal"');
+    expect(site).toContain('redirect({ to: "/" })');
     const index = readFileSync("frontend/src/routes/index.tsx", "utf8");
     expect(index).toContain("hostKind={data.hostKind}");
   });

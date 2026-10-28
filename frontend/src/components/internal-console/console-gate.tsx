@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Navigate, useLocation } from "@tanstack/react-router";
 import { useApp } from "@/contexts/app-context";
 import {
@@ -20,8 +20,11 @@ import "./console.css";
  *
  * Index (`/`) passes `hostKind` from the SSR hostname loader so console.sherivs.com
  * does not wait on `window`. The root shell wraps every route so unsigned
- * visitors on the console host go to `/auth`, and signed-in staff reach
+ * visitors on the console host go to `/auth`, and signed-in operators reach
  * `/console` instead of leaking public pages.
+ *
+ * When this gate wraps children (the root shell), the first client paint must
+ * match SSR: do not replace the tree until after mount.
  */
 export function ConsoleGate({
   children,
@@ -32,12 +35,19 @@ export function ConsoleGate({
 }) {
   const app = useApp();
   const location = useLocation();
-  const hostKind =
-    typeof window === "undefined"
-      ? (hostKindProp ?? currentEffectiveHostKind())
-      : currentEffectiveHostKind();
+  const [clientReady, setClientReady] = useState(false);
+  useEffect(() => {
+    setClientReady(true);
+  }, []);
+
+  const liveKind = currentEffectiveHostKind();
+  const hostKind = !clientReady && hostKindProp ? hostKindProp : liveKind;
   const operator = isConsoleOperator(app);
   const needsConsoleChrome = hostKind === "internal" || isConsolePath(location.pathname);
+
+  if (children && !clientReady) {
+    return children;
+  }
 
   if (needsConsoleChrome && app.loading) {
     return <ConsoleLoadingState message="Signing you in to the Internal Console…" />;

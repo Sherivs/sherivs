@@ -862,6 +862,11 @@ a.app-entry-login-submit {
   text-wrap: balance;
 }
 
+.app-entry-login-title + .app-entry-login-invite {
+  margin: -1.05rem 0 1.15rem;
+  text-align: left;
+}
+
 .app-entry-login .app-entry-alert-error {
   color: #8a1f32;
   background: rgba(255, 107, 122, 0.12);

@@ -1,15 +1,33 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/public/site-header";
 import { SiteFooter } from "@/components/public/site-footer";
+import { effectiveExperienceHostKind } from "@/lib/experience/console-host-routing";
+import { readRequestHostname } from "@/lib/experience/experience-host.functions";
 
 /**
  * Sherivs public site — pathless layout group `(site)`.
  *
  * Presentation only. Internal architecture stays behind authentication.
  * Header and footer live in shared components so this file stays landmark-only.
+ * The console host never renders this marketing layout.
  */
 
+async function siteHostname(): Promise<string> {
+  if (typeof window !== "undefined") return window.location.hostname;
+  return readRequestHostname();
+}
+
 export const Route = createFileRoute("/(site)")({
+  beforeLoad: async () => {
+    const hostname = await siteHostname();
+    const hostKind = effectiveExperienceHostKind(
+      hostname,
+      import.meta.env.VITE_SHERIVS_HOST_KIND_OVERRIDE as string | undefined,
+    );
+    if (hostKind === "internal") {
+      throw redirect({ to: "/" });
+    }
+  },
   component: SiteLayout,
 });
 
