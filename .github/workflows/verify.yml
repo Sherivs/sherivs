@@ -113,8 +113,9 @@ jobs:
         working-directory: tools/sim-lab
         run: |
           node sim/security-audit.mjs > security-audit.json
-          node -e "const a=require('./security-audit.json'); const bad=a.rls_disabled.length+a.rls_not_forced.length+a.secdef_no_search_path.length; if(bad){console.error(a);process.exit(1)}"
+          node -e "const a=require('./security-audit.json'); const bad=a.rls_disabled.length+a.rls_not_forced.length+a.secdef_no_search_path.length+(a.schema_create||[]).length; if(bad){console.error(JSON.stringify({rls_disabled:a.rls_disabled,rls_not_forced:a.rls_not_forced,secdef_no_search_path:a.secdef_no_search_path,schema_create:a.schema_create}));process.exit(1)}"
           node sim/rls-e-check.mjs
+          node sim/check-result-ratelimit.mjs
       - name: k6 smoke (50 VUs, key flows)
         working-directory: tools/sim-lab
         run: |

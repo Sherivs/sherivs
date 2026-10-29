@@ -21,6 +21,7 @@ const out = {
   secdef_no_search_path: (await q(`select p.proname from pg_proc p join pg_namespace n on n.oid=pronamespace where nspname='public' and prosecdef and not exists (select 1 from unnest(coalesce(proconfig,'{}')) x where x like 'search_path=%') order by 1`)).map((r) => r.proname),
   secdef_mutable_search_path: (await q(`select p.proname, x from pg_proc p join pg_namespace n on n.oid=pronamespace, unnest(proconfig) x where nspname='public' and prosecdef and x like 'search_path=%' and x !~ '^search_path=("?pg_catalog"?, ?)?"?(public|pg_temp|""|)"?(, ?"?(public|pg_temp|extensions)"?)*$' order by 1`)),
   secdef_anon_execute: (await q(`select p.proname from pg_proc p join pg_namespace n on n.oid=pronamespace where nspname='public' and prosecdef and has_function_privilege('anon',p.oid,'execute') order by 1`)).map((r) => r.proname),
+  schema_create: (await q(`select rolname from (values ('anon'), ('authenticated'), ('public')) as roles(rolname) where has_schema_privilege(rolname, 'public', 'CREATE') order by 1`)).map((r) => r.rolname),
   secdef_total: (await q(`select count(*)::int n from pg_proc p join pg_namespace n on n.oid=pronamespace where nspname='public' and prosecdef`))[0].n,
   views_definer: (await q(`select relname from pg_class c join pg_namespace n on n.oid=relnamespace where nspname='public' and relkind in ('v','m') and not coalesce(reloptions::text like '%security_invoker=true%',false) order by 1`)).map((r) => r.relname),
   buckets: await q(`select id, public from storage.buckets order by 1`).catch(() => []),
