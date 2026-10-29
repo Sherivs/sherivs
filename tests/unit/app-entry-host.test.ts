@@ -58,7 +58,10 @@ describe("app-entry host", () => {
     expect(splash).not.toContain("app-entry-tagline");
     expect(css).not.toContain("Nunito");
     expect(splash).toContain("AppEntryWordmark");
-    expect(onboarding).toContain("AppEntryWordmark");
+    expect(onboarding).toContain("SherivsLogo");
+    expect(onboarding).toContain('lettering="brand"');
+    expect(onboarding).toContain('tone="login"');
+    expect(onboarding).not.toContain("splash-field");
     expect(wordmark).toContain("/brand/sherivs-app-wordmark.png");
     expect(canvas).toContain("/app-entry/splash-field.jpg");
     expect(canvas).toContain("app-entry-backdrop");
@@ -117,9 +120,12 @@ describe("app-entry wiring", () => {
     const onboarding = read("frontend/src/components/app-entry/app-onboarding-screen.tsx");
     expect(onboarding).toContain("buildOnboardingMailto");
     expect(onboarding).not.toContain("signUp");
-    expect(onboarding).toContain("self-service sign-up");
+    expect(onboarding).toContain("Bring your school into Sherivs.");
+    expect(onboarding).toContain("window.location.href = href");
+    expect(onboarding).not.toContain("submitted successfully");
+    expect(onboarding).not.toContain("self-service sign-up");
     const route = read("frontend/src/routes/onboarding.tsx");
-    expect(route).toContain("createFileRoute(\"/onboarding\")");
+    expect(route).toContain('createFileRoute("/onboarding")');
     expect(route).toContain("AppOnboardingScreen");
   });
 });
