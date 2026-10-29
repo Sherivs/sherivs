@@ -1,5 +1,7 @@
 # Security audit — 2026-10-29 (M006)
 
+This note is pull request #171.
+
 Scope: `master` at `5f6cfce2` (Sherivs Scholar / CoreGrid V1). Stack reviewed: TanStack Start, Vite, React 19, Supabase (Postgres RLS, Auth, WebAuthn, Google OAuth, Turnstile), Vercel, GitHub Actions, Expo (`mobile/app.json`). Production headers were read from `https://www.sherivs.com/` (HEAD only). No migration was applied to production. No secret values are recorded in this document.
 
 Version target: V1 organizational capability. Nothing here un-freezes V2 or V3.
