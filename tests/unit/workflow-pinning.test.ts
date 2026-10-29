@@ -4,7 +4,9 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
-const workflows = readdirSync(join(ROOT, ".github/workflows")).filter((name) => name.endsWith(".yml"));
+const workflows = readdirSync(join(ROOT, ".github/workflows")).filter((name) =>
+  name.endsWith(".yml"),
+);
 
 describe("GitHub Actions pinning", () => {
   it("pins every action to a commit SHA", () => {
