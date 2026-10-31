@@ -98,15 +98,18 @@ describe("editor operations", () => {
 describe("builder wiring", () => {
   const ROOT = join(__dirname, "../..");
   it("keeps website engine RPCs in the domain layer after the admin builder UI was removed", () => {
-    expect(
-      existsSync(join(ROOT, "frontend/src/routes/_authenticated/admin/website.tsx")),
-    ).toBe(false);
+    expect(existsSync(join(ROOT, "frontend/src/routes/_authenticated/admin/website.tsx"))).toBe(
+      false,
+    );
     expect(
       existsSync(join(ROOT, "frontend/src/routes/_authenticated/admin/onboarding-interview.tsx")),
     ).toBe(false);
     const boot = readFileSync(join(ROOT, "frontend/src/lib/website/bootstrap.ts"), "utf8");
     expect(boot).toMatch(/if \(state\.exists\) return "exists"/);
-    const fns = readFileSync(join(ROOT, "frontend/src/lib/website/public-site.functions.ts"), "utf8");
+    const fns = readFileSync(
+      join(ROOT, "frontend/src/lib/website/public-site.functions.ts"),
+      "utf8",
+    );
     expect(fns.length).toBeGreaterThan(0);
   });
 });

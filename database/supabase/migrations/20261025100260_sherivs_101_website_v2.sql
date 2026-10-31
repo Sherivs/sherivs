@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS public.website_posts (
 );
 CREATE INDEX IF NOT EXISTS website_posts_pub_idx ON public.website_posts (school_id, publish_at DESC) WHERE status = 'published';
 ALTER TABLE public.website_posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.website_posts FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS website_posts_read ON public.website_posts;
 CREATE POLICY website_posts_read ON public.website_posts FOR SELECT TO authenticated
   USING (public.scholar_can(school_id, 'website.manage') OR public.scholar_can(school_id, 'website.posts'));

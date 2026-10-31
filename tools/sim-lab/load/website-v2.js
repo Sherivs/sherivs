@@ -31,6 +31,7 @@ export default function () {
   const r = http.get(`${__ENV.BASE}${path}`, { headers: { Host: host }, tags: { host, path } });
   const body = r.body || "";
   check(r, { status: (x) => x.status === status, "own org": () => body.includes(want) });
-  for (const h of HOSTS) if (h !== host && (body.includes(ORGS[h]) || body.includes(`https://${h}/`))) leaks.add(1);
+  for (const h of HOSTS)
+    if (h !== host && (body.includes(ORGS[h]) || body.includes(`https://${h}/`))) leaks.add(1);
   if (host === "www.littlepearls.sch.ng" && body.includes("WASSCE 2026")) leaks.add(1);
 }
