@@ -2,13 +2,6 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 import { mkdirSync, readFileSync } from "node:fs";
 import { dirname } from "node:path";
 
-test.use({
-  viewport: { width: 1280, height: 900 },
-  deviceScaleFactor: 1,
-  isMobile: false,
-  hasTouch: false,
-});
-
 const API_URL = "https://synthetic.supabase.test";
 const SCHOOL_ID = "a1000000-0000-4000-8000-000000000001";
 const ADMIN_ID = "a1000000-0000-4000-8000-000000000002";
@@ -463,16 +456,42 @@ test("captures desktop and mobile role-management screens with synthetic records
   );
   await expect(temporaryAssignment).toContainText("temporary");
 
-  for (const width of [1280, 390]) {
-    await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
-    await expect(screen).toBeVisible();
-    await expect.poll(() => page.evaluate(() => document.documentElement.clientWidth)).toBe(width);
-    await expect
-      .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
-      .toBeLessThanOrEqual(width);
-    const path = testInfo.outputPath(`role-management-${width}.png`);
-    mkdirSync(dirname(path), { recursive: true });
-    await page.screenshot({ path, fullPage: width !== 390, scale: "css" });
-    expect(readFileSync(path).readUInt32BE(16)).toBe(width);
+  const width = testInfo.project.name === "desktop-chromium" ? 1280 : 390;
+  await expect(screen).toBeVisible();
+  for (const section of [
+    "Create a custom role",
+    "Add custom responsibility",
+    "Assign a role",
+    "Grant an add-on responsibility",
+    "Delegate a role temporarily",
+    "Role assignments",
+    "Add-on grants and delegations",
+    "Assignment audit history",
+  ]) {
+    await expect(screen.getByText(section, { exact: true })).toBeVisible();
   }
+  await expect.poll(() => page.evaluate(() => document.documentElement.clientWidth)).toBe(width);
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
+    .toBeLessThanOrEqual(width);
+  await page.evaluate(() => document.fonts.ready);
+  const path = testInfo.outputPath(`role-management-${width}.png`);
+  mkdirSync(dirname(path), { recursive: true });
+  await page.addStyleTag({ content: ".app-shell-bottom { position: absolute !important; }" });
+  const shell = page.getByTestId("app-shell");
+  const shellBounds = await shell.boundingBox();
+  expect(shellBounds?.width).toBe(width);
+  expect(shellBounds?.height).toBeGreaterThan(800);
+  const navAndScreenBounds = await page.evaluate(() => {
+    const nav = document.querySelector(".app-shell-bottom")?.getBoundingClientRect();
+    const screen = document
+      .querySelector('[data-testid="role-management-screen"]')
+      ?.getBoundingClientRect();
+    return { navTop: nav?.top, screenBottom: screen?.bottom };
+  });
+  expect(navAndScreenBounds.navTop).toBeGreaterThanOrEqual(
+    navAndScreenBounds.screenBottom ?? Infinity,
+  );
+  await shell.screenshot({ path, scale: "css", animations: "disabled" });
+  expect(readFileSync(path).readUInt32BE(16)).toBe(width);
 });
