@@ -81,6 +81,10 @@ jobs:
           SHERIVS_DATABASE_TARGET: production
           SHERIVS_CONFIRM_PRODUCTION: nwrflbpbhyiqdptmlccm
           PRODUCTION_DATABASE_URL: ${{ secrets.PROD_DB_URL_BACKUP }}
+          # Public Supabase root CAs (2021 + 2025 rotation), copied from
+          # supabase/cli@e365ad6b apps/cli/src/commands/gen/types/templates/prod-ca-*.ts.
+          # Strict verification per scripts/lib/pg-ssl.mjs; never SHERIVS_DB_INSECURE_TLS.
+          SHERIVS_DB_CA_CERT: ${{ github.workspace }}/.github/certs/supabase-root-ca.pem
         run: node scripts/db-apply-one.mjs "${MIGRATION}_"
 
       - name: Record ledger row
