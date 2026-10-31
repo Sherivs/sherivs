@@ -647,6 +647,32 @@
   gap: 0.6rem;
 }
 
+.workspace-preview,
+.workspace-preview .app-shell-frame {
+  height: auto;
+  min-height: 100dvh;
+  overflow: visible;
+}
+
+:root:has(.workspace-preview),
+body:has(.workspace-preview) {
+  height: auto;
+  min-height: 100%;
+}
+
+.workspace-preview .app-shell-main {
+  flex: 0 0 auto;
+  overflow: visible;
+  padding-bottom: 2rem;
+}
+
+.workspace-preview .app-shell-sheet,
+.workspace-preview .app-shell-home {
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+}
+
 .workspace-preview-header label {
   display: grid;
   gap: 0.2rem;
@@ -683,6 +709,31 @@
   font-weight: 700;
   text-align: center;
   text-decoration: none;
+}
+
+.workspace-preview .app-shell-widgets,
+.workspace-preview .app-shell-cards {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+}
+
+.workspace-preview-count {
+  flex: 0 0 auto;
+  border: 1px solid var(--shell-line);
+  border-radius: 999px;
+  padding: 0.25rem 0.6rem;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--shell-muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.workspace-preview-responsibility-card {
+  min-height: 4.5rem;
+  overflow-wrap: anywhere;
+}
+
+.workspace-preview-responsibility-card > div {
+  min-width: 0;
 }
 
 .workspace-preview-search {

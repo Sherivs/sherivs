@@ -52,6 +52,26 @@ test("renders only each fixture role's workspace and exactly three primary secti
     await expect(page.getByRole("heading", { name: "Recent" })).toBeVisible();
     await expect(page.getByText("Demo reminder", { exact: true })).toBeVisible();
     await expect(page.getByText("Demo attendance view", { exact: true })).toBeVisible();
+    const pageEnd = await page.locator(".app-shell-recent-list").evaluate((element) => {
+      const documentHeight = document.documentElement.scrollHeight;
+      const bottom = element.getBoundingClientRect().bottom + window.scrollY;
+      let ancestor: HTMLElement | null = element as HTMLElement;
+      while (ancestor && ancestor !== document.body) {
+        const style = getComputedStyle(ancestor);
+        if (
+          (style.overflowY === "hidden" || style.overflowY === "clip") &&
+          ancestor.scrollHeight > ancestor.clientHeight
+        ) {
+          return { bottom, documentHeight, clipped: true };
+        }
+        ancestor = ancestor.parentElement;
+      }
+      return { bottom, documentHeight, clipped: false };
+    });
+    expect(pageEnd.clipped, `${role.label} preview content is clipped`).toBe(false);
+    expect(pageEnd.bottom, `${role.label} preview extends beyond the page`).toBeLessThanOrEqual(
+      pageEnd.documentHeight,
+    );
     const hiddenItem = EXPECTED_HIDDEN_ITEMS[role.key];
     if (hiddenItem) await expect(page.getByText(hiddenItem, { exact: true })).toHaveCount(0);
 

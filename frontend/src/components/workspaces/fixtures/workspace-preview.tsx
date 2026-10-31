@@ -7,6 +7,8 @@ import {
 } from "./demo-workspaces";
 import { additionalResponsibilities, primarySections } from "../workspace-shell";
 import { ConnectionStatus } from "@/components/app-shell/connection-status";
+import { ShellGlassIcon } from "@/components/app-shell/glass-icon";
+import { shellIcon } from "@/lib/shell/icon-registry";
 import "@/components/app-shell/app-shell.css";
 
 export function WorkspaceFixturePreview() {
@@ -33,6 +35,24 @@ export function WorkspaceFixturePreview() {
   const scopeOptions = Object.entries(manifest.scopeOptions).flatMap(([dim, refs]) =>
     refs.map((ref) => ({ dim, ref })),
   );
+  const renderResponsibility = (item: (typeof primary)[number], group: string) => {
+    const Icon = shellIcon(item.icon);
+    return (
+      <article
+        key={item.key}
+        role="listitem"
+        className="app-shell-card workspace-preview-responsibility-card"
+      >
+        <ShellGlassIcon tone="accent">
+          <Icon />
+        </ShellGlassIcon>
+        <div>
+          <p>{item.label}</p>
+          <small>{group}</small>
+        </div>
+      </article>
+    );
+  };
 
   return (
     <div className="app-shell workspace-preview" data-testid="workspace-preview">
@@ -107,20 +127,22 @@ export function WorkspaceFixturePreview() {
           </nav>
 
           <section aria-labelledby="workspace-preview-core">
-            <h2 id="workspace-preview-core">Core responsibilities</h2>
-            <ul>
-              {primary.map((item) => (
-                <li key={item.key}>{item.label}</li>
-              ))}
-            </ul>
+            <div className="app-shell-section-title">
+              <h2 id="workspace-preview-core">Core responsibilities</h2>
+              <span className="workspace-preview-count">{primary.length} sections</span>
+            </div>
+            <div className="app-shell-cards" role="list" aria-label="Core responsibility cards">
+              {primary.map((item) => renderResponsibility(item, "Core responsibility"))}
+            </div>
           </section>
           <section aria-labelledby="workspace-preview-addon">
-            <h2 id="workspace-preview-addon">Add-on responsibilities</h2>
-            <ul>
-              {addOns.map((item) => (
-                <li key={item.key}>{item.label}</li>
-              ))}
-            </ul>
+            <div className="app-shell-section-title">
+              <h2 id="workspace-preview-addon">Add-on responsibilities</h2>
+              <span className="workspace-preview-count">{addOns.length} available</span>
+            </div>
+            <div className="app-shell-cards" role="list" aria-label="Add-on responsibility cards">
+              {addOns.map((item) => renderResponsibility(item, "Additional responsibility"))}
+            </div>
           </section>
 
           <section aria-labelledby="workspace-preview-widgets">
