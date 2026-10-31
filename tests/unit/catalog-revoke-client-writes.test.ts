@@ -31,6 +31,9 @@ describe("website catalog client write privileges", () => {
   });
 
   it("rolls back only the observed writes and warns before restoring client access", () => {
+    const executable = ROLLBACK.split("\n")
+      .filter((line) => !line.trim().startsWith("--"))
+      .join("\n");
     expect(ROLLBACK).toMatch(/^-- WARNING:/m);
     expect(ROLLBACK).toContain(
       "GRANT INSERT, UPDATE, DELETE ON TABLE\n  public.websites, public.website_versions, public.website_audit, public.website_block_types\n  TO authenticated;",
@@ -38,7 +41,7 @@ describe("website catalog client write privileges", () => {
     expect(ROLLBACK).toContain(
       "GRANT INSERT, UPDATE, DELETE ON TABLE public.website_block_types TO anon;",
     );
-    expect(ROLLBACK).not.toMatch(/\bTRUNCATE\b/i);
-    expect(ROLLBACK).not.toMatch(/\bGRANT\s+ALL\b/i);
+    expect(executable).not.toMatch(/\bTRUNCATE\b/i);
+    expect(executable).not.toMatch(/\bGRANT\s+ALL\b/i);
   });
 });
