@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 /**
  * Provider adapters for school comms (SHERIVS-020). Server only.
  * The database decides WHAT may be sent (templates, opt-in, wallet, caps) and records it in
@@ -5,7 +7,11 @@
  * flag is on) and calls one of these adapters. With no credentials every adapter is a stub.
  */
 export type SendResult = { ok: true; providerRef: string } | { ok: false; error: string };
-export interface CommsAdapter { readonly name: string; readonly live: boolean; send(to: string, body: string, opts?: { template?: string; language?: string }): Promise<SendResult> }
+export interface CommsAdapter {
+  readonly name: string;
+  readonly live: boolean;
+  send(to: string, body: string, opts?: { template?: string; language?: string; parameters?: string[] }): Promise<SendResult>;
+}
 
 export class StubAdapter implements CommsAdapter {
   readonly live = false;
@@ -16,16 +22,93 @@ export class StubAdapter implements CommsAdapter {
 /** Meta WhatsApp Cloud API. Needs WHATSAPP_TOKEN and WHATSAPP_PHONE_NUMBER_ID. */
 export class WhatsAppCloudAdapter implements CommsAdapter {
   readonly name = "meta_cloud";
-  constructor(private token = process.env.WHATSAPP_TOKEN, private phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID) {}
+  constructor(
+    private token = process.env.WHATSAPP_TOKEN,
+    private phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID,
+    private fetchImpl: typeof fetch = fetch,
+    private sleep: (ms: number) => Promise<void> = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  ) {}
+
   get live() { return !!this.token && !!this.phoneId; }
-  async send(to: string, _body: string, opts?: { template?: string; language?: string }): Promise<SendResult> {
+
+  async send(
+    to: string,
+    body: string,
+    opts?: { template?: string; language?: string; parameters?: string[] },
+  ): Promise<SendResult> {
     if (!this.live) return { ok: false, error: "whatsapp not configured" };
-    const res = await fetch(`https://graph.facebook.com/v21.0/${this.phoneId}/messages`, {
-      method: "POST", headers: { Authorization: `Bearer ${this.token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ messaging_product: "whatsapp", to, type: "template", template: { name: opts?.template, language: { code: opts?.language === "en" ? "en" : opts?.language ?? "en" } } }),
-    });
-    const j = (await res.json().catch(() => ({}))) as { messages?: { id: string }[]; error?: { message?: string } };
-    return res.ok && j.messages?.[0]?.id ? { ok: true, providerRef: j.messages[0].id } : { ok: false, error: j.error?.message ?? `http ${res.status}` };
+    const recipient = to.replace(/^\+/, "");
+    if (!/^[1-9]\d{7,14}$/.test(recipient)) return { ok: false, error: "invalid WhatsApp recipient" };
+    if (opts?.template) {
+      if (!/^[a-z0-9_]{1,512}$/.test(opts.template)) return { ok: false, error: "invalid WhatsApp template" };
+      if (opts.parameters?.some((parameter) => parameter.length > 1024)) {
+        return { ok: false, error: "invalid WhatsApp template parameters" };
+      }
+    } else if (body.length < 1 || body.length > 4096) {
+      return { ok: false, error: "invalid WhatsApp text body" };
+    }
+
+    const payload = opts?.template
+      ? {
+          messaging_product: "whatsapp",
+          to: recipient,
+          type: "template",
+          template: {
+            name: opts.template,
+            language: { code: opts.language ?? "en" },
+            ...(opts.parameters?.length
+              ? {
+                  components: [
+                    {
+                      type: "body",
+                      parameters: opts.parameters.map((text) => ({ type: "text", text })),
+                    },
+                  ],
+                }
+              : {}),
+          },
+        }
+      : {
+          messaging_product: "whatsapp",
+          to: recipient,
+          type: "text",
+          text: { body, preview_url: false },
+        };
+    const endpoint = `https://graph.facebook.com/v21.0/${encodeURIComponent(this.phoneId!)}/messages`;
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      let response: Response;
+      try {
+        response = await this.fetchImpl(endpoint, {
+          method: "POST",
+          redirect: "error",
+          signal: AbortSignal.timeout(10_000),
+          headers: { Authorization: "Bearer " + this.token, "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      } catch {
+        if (attempt === 2) return { ok: false, error: "WhatsApp provider request failed" };
+        await this.sleep(250 * 2 ** attempt);
+        continue;
+      }
+
+      if (!response.ok) {
+        const retryable = response.status === 408 || response.status === 429 || response.status >= 500;
+        if (retryable && attempt < 2) {
+          await this.sleep(250 * 2 ** attempt);
+          continue;
+        }
+        return { ok: false, error: `WhatsApp provider returned HTTP ${response.status}` };
+      }
+
+      const parsed = z
+        .object({ messages: z.array(z.object({ id: z.string().min(1).max(200) })).min(1) })
+        .safeParse(await response.json().catch(() => null));
+      if (!parsed.success) return { ok: false, error: "WhatsApp provider returned no message receipt" };
+      return { ok: true, providerRef: parsed.data.messages[0].id };
+    }
+
+    return { ok: false, error: "WhatsApp provider request failed" };
   }
 }
 
@@ -37,7 +120,8 @@ export class BulkSmsNigeriaAdapter implements CommsAdapter {
   async send(to: string, body: string): Promise<SendResult> {
     if (!this.live) return { ok: false, error: "sms not configured" };
     const res = await fetch("https://www.bulksmsnigeria.com/api/v2/sms", {
-      method: "POST", headers: { Authorization: `Bearer ${this.token}`, "Content-Type": "application/json", Accept: "application/json" },
+      method: "POST",
+      headers: { Authorization: "Bearer " + this.token, "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({ from: this.sender, to, body, gateway: "direct-refund" }),
     });
     const j = (await res.json().catch(() => ({}))) as { data?: { message_id?: string }; message?: string };
