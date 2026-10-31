@@ -66,9 +66,9 @@ describe("exposedServerOnlyVars", () => {
   });
 
   it("detects server-only secrets exposed via NEXT_PUBLIC_ and PUBLIC_ prefixes", () => {
-    expect(
-      exposedServerOnlyVars({ NEXT_PUBLIC_RESEND_API_KEY: "secret" }),
-    ).toContain("RESEND_API_KEY");
+    expect(exposedServerOnlyVars({ NEXT_PUBLIC_RESEND_API_KEY: "secret" })).toContain(
+      "RESEND_API_KEY",
+    );
     expect(exposedServerOnlyVars({ PUBLIC_PAYSTACK_SECRET_KEY: "secret" })).toContain(
       "PAYSTACK_SECRET_KEY",
     );
@@ -79,6 +79,10 @@ describe("exposedServerOnlyVars", () => {
       "TWILIO_AUTH_TOKEN",
     );
     expect(exposedServerOnlyVars({ VITE_VAPI_API_KEY: "secret" })).toContain("VAPI_API_KEY");
+    expect(exposedServerOnlyVars({ VITE_WHATSAPP_TOKEN: "secret" })).toContain("WHATSAPP_TOKEN");
+    expect(exposedServerOnlyVars({ PUBLIC_WHATSAPP_APP_SECRET: "secret" })).toContain(
+      "WHATSAPP_APP_SECRET",
+    );
   });
 
   it("ignores empty exposed values", () => {

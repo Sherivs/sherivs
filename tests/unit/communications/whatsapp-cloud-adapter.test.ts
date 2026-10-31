@@ -3,7 +3,8 @@ import { WhatsAppCloudAdapter } from "../../../frontend/src/lib/scholar/comms/ad
 
 const TOKEN = "whatsapp-test-token";
 const PHONE_ID = "123456789012345";
-const receipt = () => new Response(JSON.stringify({ messages: [{ id: "wamid.test-message" }] }), { status: 200 });
+const receipt = () =>
+  new Response(JSON.stringify({ messages: [{ id: "wamid.test-message" }] }), { status: 200 });
 
 describe("WhatsApp Cloud adapter", () => {
   it("sends a bounded text message using the Cloud API and minimizes its receipt", async () => {
@@ -90,7 +91,9 @@ describe("WhatsApp Cloud adapter", () => {
 
   it("does not retry non-retryable responses or expose provider/credential data", async () => {
     const fetchImpl = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ error: { message: `${TOKEN} private detail` } }), { status: 400 }),
+      new Response(JSON.stringify({ error: { message: `${TOKEN} private detail` } }), {
+        status: 400,
+      }),
     );
     const sleep = vi.fn();
     const adapter = new WhatsAppCloudAdapter(TOKEN, PHONE_ID, fetchImpl, sleep);
@@ -100,5 +103,17 @@ describe("WhatsApp Cloud adapter", () => {
     expect(JSON.stringify(result)).not.toContain(TOKEN);
     expect(sleep).not.toHaveBeenCalled();
     expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not retry an ambiguous network failure that could duplicate a non-idempotent send", async () => {
+    const fetchImpl = vi.fn().mockRejectedValue(new Error(TOKEN));
+    const sleep = vi.fn();
+    const adapter = new WhatsAppCloudAdapter(TOKEN, PHONE_ID, fetchImpl, sleep);
+
+    const result = await adapter.send("2349015056201", "Hello");
+    expect(result).toEqual({ ok: false, error: "WhatsApp provider request failed" });
+    expect(JSON.stringify(result)).not.toContain(TOKEN);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(sleep).not.toHaveBeenCalled();
   });
 });

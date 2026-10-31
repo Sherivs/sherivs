@@ -55,9 +55,27 @@ describe("provider credential registry", () => {
     expect(serverOnly).toContain("PAYSTACK_SECRET_KEY");
     expect(serverOnly).toContain("TWILIO_AUTH_TOKEN");
     expect(serverOnly).toContain("VAPI_API_KEY");
+    expect(serverOnly).toContain("WHATSAPP_TOKEN");
+    expect(serverOnly).toContain("WHATSAPP_APP_SECRET");
+    expect(serverOnly).toContain("WHATSAPP_VERIFY_TOKEN");
     expect(serverOnly).toContain("POSTHOG_PERSONAL_API_KEY");
     expect(serverOnly).not.toContain("SUPABASE_URL");
     expect(serverOnly).not.toContain("SUPABASE_ANON_KEY");
+  });
+
+  it("classifies WhatsApp credentials and server configuration without claiming deployment", () => {
+    for (const envVar of ["WHATSAPP_TOKEN", "WHATSAPP_APP_SECRET", "WHATSAPP_VERIFY_TOKEN"]) {
+      const entry = credentialEntryForEnvVar(envVar);
+      expect(entry?.provider).toBe("meta-whatsapp");
+      expect(entry?.classification).toBe("server_runtime_secret");
+      expect(entry?.runtimeScope).toBe("server");
+      expect(entry?.status).toBe("NOT_CONFIGURED");
+      expect(entry?.verificationLevel).toBe("none");
+    }
+
+    expect(credentialEntryForEnvVar("WHATSAPP_PHONE_NUMBER_ID")?.classification).toBe(
+      "server_runtime_configuration",
+    );
   });
 
   it("flags server-only credentials under every client-visible prefix", () => {
@@ -118,9 +136,7 @@ describe("provider credential registry", () => {
   });
 
   it("refuses a registry entry carrying secret-shaped material", () => {
-    const corrupted = [
-      ...PROVIDER_CREDENTIAL_REGISTRY.map((entry) => ({ ...entry })),
-    ];
+    const corrupted = [...PROVIDER_CREDENTIAL_REGISTRY.map((entry) => ({ ...entry }))];
     corrupted[0] = { ...corrupted[0], note: "leaked re_0123456789abcdef1234 value" };
     const result = validateProviderCredentialRegistry(corrupted);
     expect(result.ok).toBe(false);
