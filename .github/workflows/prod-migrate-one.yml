@@ -1,0 +1,105 @@
+name: Prod migrate one
+
+# Manually-triggered, single-file production migration.
+# Fails closed: input validation, typed confirmation, ledger pre-check
+# (target not applied, no earlier repo migration missing from the ledger),
+# then scripts/db-apply-one.mjs, then the ledger row in
+# supabase_migrations.schema_migrations (version, name), then verification.
+# Secrets are never echoed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      migration:
+        description: "Migration version / filename stem (e.g. 20261025100260)"
+        required: true
+        type: string
+      confirm:
+        description: "Type APPLY-<migration> to confirm"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prod-migrate
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: Apply ${{ inputs.migration }} to production
+    runs-on: ubuntu-latest
+    environment: Production
+    timeout-minutes: 20
+    env:
+      MIGRATION: ${{ inputs.migration }}
+      CONFIRM: ${{ inputs.confirm }}
+      PGCONNECT_TIMEOUT: "20"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with: { node-version: "22", cache: npm }
+
+      - name: Validate input
+        id: v
+        run: |
+          set -euo pipefail
+          [[ "$MIGRATION" =~ ^[0-9]{14}$ ]] || { echo "::error::migration must be a 14-digit version"; exit 1; }
+          [ "$CONFIRM" = "APPLY-$MIGRATION" ] || { echo "::error::confirm must equal APPLY-$MIGRATION"; exit 1; }
+          n=$(ls database/supabase/migrations/${MIGRATION}_*.sql 2>/dev/null | wc -l)
+          [ "$n" = "1" ] || { echo "::error::expected exactly 1 file for $MIGRATION, found $n"; exit 1; }
+          f=$(basename database/supabase/migrations/${MIGRATION}_*.sql .sql)
+          echo "name=${f#${MIGRATION}_}" >> "$GITHUB_OUTPUT"
+          echo "file: $f.sql"
+
+      - name: Check secret
+        env: { DB_URL: "${{ secrets.PROD_DB_URL_BACKUP }}" }
+        run: '[ -n "$DB_URL" ] || { echo "::error::PROD_DB_URL_BACKUP not set"; exit 1; }'
+
+      - name: Ledger pre-check
+        env: { DB_URL: "${{ secrets.PROD_DB_URL_BACKUP }}" }
+        run: |
+          set -euo pipefail
+          q() { psql "$DB_URL" -X -At -v ON_ERROR_STOP=1 -c "$1"; }
+          echo "ledger count before: $(q 'select count(*) from supabase_migrations.schema_migrations')"
+          [ "$(q "select count(*) from supabase_migrations.schema_migrations where version='$MIGRATION'")" = "0" ] \
+            || { echo "::error::$MIGRATION is already in the ledger"; exit 1; }
+          q 'select version from supabase_migrations.schema_migrations' | sort > applied.txt
+          ls database/supabase/migrations/*.sql | xargs -n1 basename | cut -c1-14 | sort -u \
+            | awk -v t="$MIGRATION" '$1 < t' > earlier.txt
+          comm -23 earlier.txt applied.txt > missing.txt
+          if [ -s missing.txt ]; then
+            echo "::error::earlier migrations not in ledger:"; cat missing.txt; exit 1
+          fi
+          echo "all $(wc -l < earlier.txt) earlier repo migrations are in the ledger"
+
+      - run: npm ci --ignore-scripts --no-audit --fund=false
+
+      - name: Apply (scripts/db-apply-one.mjs)
+        env:
+          SHERIVS_DATABASE_TARGET: production
+          SHERIVS_CONFIRM_PRODUCTION: nwrflbpbhyiqdptmlccm
+          PRODUCTION_DATABASE_URL: ${{ secrets.PROD_DB_URL_BACKUP }}
+        run: node scripts/db-apply-one.mjs "${MIGRATION}_"
+
+      - name: Record ledger row
+        env:
+          DB_URL: ${{ secrets.PROD_DB_URL_BACKUP }}
+          MNAME: ${{ steps.v.outputs.name }}
+        run: |
+          psql "$DB_URL" -X -At -v ON_ERROR_STOP=1 -v ver="$MIGRATION" -v nm="$MNAME" \
+            -c "insert into supabase_migrations.schema_migrations (version, name) values (:'ver', :'nm')"
+
+      - name: Verify
+        env: { DB_URL: "${{ secrets.PROD_DB_URL_BACKUP }}" }
+        run: |
+          set -euo pipefail
+          q() { psql "$DB_URL" -X -A -v ON_ERROR_STOP=1 -c "$1"; }
+          q "select version, name from supabase_migrations.schema_migrations where version='$MIGRATION'"
+          q "select count(*) as ledger_count from supabase_migrations.schema_migrations"
+          if [ "$MIGRATION" = "20261025100260" ]; then
+            q "select c.relname, c.relrowsecurity as rls_enabled, c.relforcerowsecurity as rls_forced from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relname='website_posts'"
+            q "select p.proname from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and (p.proname ilike '%website%' or p.proname ilike '%post%') order by 1"
+            q "select count(*) as policies from pg_policies where schemaname='public' and tablename='website_posts'"
+          fi
