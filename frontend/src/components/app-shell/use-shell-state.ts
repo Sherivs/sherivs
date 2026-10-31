@@ -3,8 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
 import { fromServer, type ServerManifest } from "@/lib/sherivs-ws/server-adapter";
 import type { CardData, WidgetDataResponse } from "@/lib/sherivs-ws/live";
-import type { WorkspaceManifest } from "@/lib/sherivs-ws/engine";
-import { fallbackManifest } from "@/lib/shell/fallback-manifest";
+import type { WorkspaceManifest, WorkspacePrefs } from "@/components/workspaces/_contract-shim";
 import {
   mergeAffiliations,
   shouldShowContextSwitcher,
@@ -21,10 +20,10 @@ import {
 import { scholarWorkspaceLabelForRole } from "@/lib/runtime/nav-registry";
 import type { AppRole } from "@/lib/roles";
 
-async function rpcJson<T>(name: string, args: Record<string, unknown>): Promise<T | null> {
-  const { data, error } = await supabase.rpc(name as never, args as never);
-  if (error) return null;
-  return (data as T) ?? null;
+interface WorkspacePrefsQuery {
+  select(columns: string): WorkspacePrefsQuery;
+  eq(column: string, value: string): WorkspacePrefsQuery;
+  maybeSingle(): Promise<{ data: { prefs: WorkspacePrefs } | null; error: unknown }>;
 }
 
 export function useShellState() {
@@ -34,64 +33,108 @@ export function useShellState() {
   const [affiliations, setAffiliations] = useState<ShellAffiliation[]>([]);
   const [query, setQuery] = useState("");
   const [now, setNow] = useState(() => Date.now());
+  const [manifestLoading, setManifestLoading] = useState(true);
+  const [manifestError, setManifestError] = useState(false);
+  const [widgetsLoading, setWidgetsLoading] = useState(false);
+  const [widgetsError, setWidgetsError] = useState(false);
+  const [prefs, setPrefs] = useState<WorkspacePrefs>({});
+  const [prefsReady, setPrefsReady] = useState(false);
+  const [prefsError, setPrefsError] = useState(false);
 
   const load = useCallback(async () => {
     const profile = app.profile;
     const school = app.school;
+    setManifestLoading(true);
+    setManifestError(false);
+    setWidgetsError(false);
     if (!profile || !school) {
       setManifest(null);
       setAffiliations([]);
+      setManifestLoading(false);
       return;
     }
-    const { data: memberships } = await supabase
-      .from("organization_memberships")
-      .select("school_id, role, is_active")
-      .eq("user_id", profile.id)
-      .eq("is_active", true);
-    const orgIds = [...new Set((memberships ?? []).map((row) => row.school_id).filter(Boolean))];
-    const { data: orgs } = orgIds.length
-      ? await supabase.from("schools").select("id, name").in("id", orgIds)
-      : { data: [] as { id: string; name: string | null }[] };
-    const orgNameById = new Map((orgs ?? []).map((row) => [row.id, row.name ?? school.name]));
+    try {
+      const { data: memberships } = await supabase
+        .from("organization_memberships")
+        .select("school_id, role, is_active")
+        .eq("user_id", profile.id)
+        .eq("is_active", true);
+      const orgIds = [...new Set((memberships ?? []).map((row) => row.school_id).filter(Boolean))];
+      const { data: orgs } = orgIds.length
+        ? await supabase.from("schools").select("id, name").in("id", orgIds)
+        : { data: [] as { id: string; name: string | null }[] };
+      const orgNameById = new Map((orgs ?? []).map((row) => [row.id, row.name ?? school.name]));
 
-    const fromMemberships: ShellAffiliation[] = (memberships ?? []).map((row) => ({
-      organizationId: row.school_id,
-      organizationName: orgNameById.get(row.school_id) ?? school.name,
-      role: row.role as AppRole,
-      active: row.school_id === school.id && row.role === profile.role,
-    }));
-    const nextAffiliations = mergeAffiliations(
-      fromMemberships.length
-        ? fromMemberships
-        : [
-            {
-              organizationId: school.id,
-              organizationName: school.name,
-              role: profile.role,
-              active: true,
-            },
-          ],
-    );
-    setAffiliations(nextAffiliations);
+      const fromMemberships: ShellAffiliation[] = (memberships ?? []).map((row) => ({
+        organizationId: row.school_id,
+        organizationName: orgNameById.get(row.school_id) ?? school.name,
+        role: row.role as AppRole,
+        active: row.school_id === school.id && row.role === profile.role,
+      }));
+      setAffiliations(
+        mergeAffiliations(
+          fromMemberships.length
+            ? fromMemberships
+            : [
+                {
+                  organizationId: school.id,
+                  organizationName: school.name,
+                  role: profile.role,
+                  active: true,
+                },
+              ],
+        ),
+      );
 
-    const remote = await rpcJson<ServerManifest>("workspace_manifest", { p_org: school.id });
-    const next = remote
-      ? fromServer(remote, { name: school.name, plan: "growth" })
-      : fallbackManifest({
-          organizationId: school.id,
-          organizationName: school.name,
-          role: profile.role,
-        });
-    setManifest(next);
-    const keys = next.widgets.map((item) => item.key);
-    if (keys.length) {
-      const live = await rpcJson<WidgetDataResponse>("workspace_widget_data", {
-        p_org: school.id,
-        p_keys: keys,
+      const { data: remote, error: remoteError } = await supabase.rpc(
+        "workspace_manifest" as never,
+        { p_org: school.id } as never,
+      );
+      if (remoteError || !remote) {
+        setManifest(null);
+        setCards({});
+        setPrefsReady(false);
+        setManifestError(true);
+        return;
+      }
+
+      const next = fromServer(remote as unknown as ServerManifest, {
+        name: school.name,
+        plan: "growth",
       });
-      setCards(live?.cards ?? {});
-    } else {
+      setManifest(next);
+
+      const prefsTable = supabase.from("user_workspace_prefs" as never) as unknown as WorkspacePrefsQuery;
+      const { data: preferenceRow, error: preferenceError } = await prefsTable
+        .select("prefs")
+        .eq("user_id", profile.id)
+        .eq("org_id", school.id)
+        .maybeSingle();
+      setPrefsReady(!preferenceError);
+      setPrefsError(Boolean(preferenceError));
+      setPrefs((preferenceRow?.prefs as WorkspacePrefs | undefined) ?? {});
+
+      const keys = next.widgets.map((item) => item.key);
+      if (!keys.length) {
+        setCards({});
+        setWidgetsLoading(false);
+      } else {
+        setWidgetsLoading(true);
+        const { data: live, error: liveError } = await supabase.rpc(
+          "workspace_widget_data" as never,
+          { p_org: school.id, p_keys: keys } as never,
+        );
+        setCards(liveError ? {} : ((live as unknown as WidgetDataResponse | null)?.cards ?? {}));
+        setWidgetsError(Boolean(liveError));
+        setWidgetsLoading(false);
+      }
+    } catch {
+      setManifest(null);
       setCards({});
+      setPrefsReady(false);
+      setManifestError(true);
+    } finally {
+      setManifestLoading(false);
     }
   }, [app.profile, app.school]);
 
@@ -103,6 +146,25 @@ export function useShellState() {
     const id = window.setInterval(() => setNow(Date.now()), 30_000);
     return () => window.clearInterval(id);
   }, []);
+
+  const savePrefs = useCallback(
+    async (nextPrefs: WorkspacePrefs): Promise<boolean> => {
+      if (!app.school || !manifest?.canPersonalise || !prefsReady) return false;
+      setPrefsError(false);
+      const { data, error } = await supabase.rpc(
+        "workspace_prefs_save" as never,
+        { p_org: app.school.id, p_prefs: nextPrefs } as never,
+      );
+      if (error) {
+        setPrefsError(true);
+        return false;
+      }
+      setPrefs((data as unknown as WorkspacePrefs | null) ?? nextPrefs);
+      await load();
+      return true;
+    },
+    [app.school, load, manifest?.canPersonalise, prefsReady],
+  );
 
   const at = new Date(now);
   const hour = hourInTimeZone(at, SHELL_TIME_ZONE);
@@ -142,6 +204,14 @@ export function useShellState() {
     app,
     manifest,
     cards,
+    manifestLoading,
+    manifestError,
+    widgetsLoading,
+    widgetsError,
+    prefs,
+    prefsReady,
+    prefsError,
+    savePrefs,
     affiliations,
     showSwitcher: shouldShowContextSwitcher(affiliations),
     greeting: greetingForHour(hour),
