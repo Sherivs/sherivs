@@ -17,7 +17,9 @@ async function signOut(page: import("@playwright/test").Page) {
   await page.getByRole("button", { name: "Sign out" }).click();
 }
 
-test("an assignment appears in the member manifest and disappears when revoked", async ({ page }) => {
+test("an assignment appears in the member manifest and disappears when revoked", async ({
+  page,
+}) => {
   const fixture = await provisionLegacyFixture();
   test.skip(!fixture, FIXTURE_SKIP_NO_BACKEND);
   if (!fixture) return;
@@ -59,7 +61,9 @@ test("an assignment appears in the member manifest and disappears when revoked",
       await inputs.nth(5).fill("");
       await responsibilityForm.getByRole("button", { name: "Add responsibility" }).click();
       await expect(inputs.nth(0)).toHaveValue("");
-      await expect(page.getByRole("status").filter({ hasText: "Change saved and audited." })).toBeVisible();
+      await expect(
+        page.getByRole("status").filter({ hasText: "Change saved and audited." }),
+      ).toBeVisible();
     }
 
     const assignmentForm = page.locator("form").filter({
@@ -71,7 +75,10 @@ test("an assignment appears in the member manifest and disappears when revoked",
     await assignmentForm.getByLabel("Assignment role").selectOption("teacher");
     await assignmentForm.getByLabel("Assignment scope").selectOption("class");
     await assignmentForm.locator('input[type="text"]').fill(classId);
-    await assignmentForm.locator('input[type="datetime-local"]').first().fill(localDateTime(new Date()));
+    await assignmentForm
+      .locator('input[type="datetime-local"]')
+      .first()
+      .fill(localDateTime(new Date()));
     await assignmentForm.getByRole("button", { name: "Assign role" }).click();
     await expect(page.getByText("Change saved and audited.")).toBeVisible();
 

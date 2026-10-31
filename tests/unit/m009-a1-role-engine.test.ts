@@ -105,7 +105,9 @@ describe("M009-A1 role engine migration", () => {
         [resolve("scripts/generate-workspace-permission-matrix.mjs")],
         { cwd: temporaryRoot },
       );
-      expect(matrix).toBe(readFileSync(join(temporaryRoot, "docs/workspaces/permission-matrix.md"), "utf8"));
+      expect(matrix).toBe(
+        readFileSync(join(temporaryRoot, "docs/workspaces/permission-matrix.md"), "utf8"),
+      );
     } finally {
       rmSync(temporaryRoot, { recursive: true, force: true });
     }

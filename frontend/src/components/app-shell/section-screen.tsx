@@ -56,8 +56,8 @@ export function AppSectionScreen({ sectionKey }: { sectionKey: string }) {
         </div>
       ) : (
         <p className="app-shell-empty">
-          This section is open for your current role. Records stay tenant-scoped and only appear when
-          your administration has granted the matching permission.
+          This section is open for your current role. Records stay tenant-scoped and only appear
+          when your administration has granted the matching permission.
         </p>
       )}
     </section>
