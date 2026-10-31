@@ -40,6 +40,12 @@ export function isHomeNavKey(key: string): boolean {
   return key === "nav.home";
 }
 
+export function homeHrefForScope(scope: { dim: string; ref: string } | null): string {
+  return scope
+    ? `${APP_SHELL_HOME}?scope=${encodeURIComponent(`${scope.dim}:${scope.ref}`)}`
+    : APP_SHELL_HOME;
+}
+
 export function isAiNavKey(key: string): boolean {
   return (
     AI_KEYS.has(key) ||
@@ -59,7 +65,7 @@ export function toShellNavItem(item: Catalogish): ShellNavItem {
     ? `?${new URLSearchParams(item.to.slice(item.to.indexOf("?") + 1)).toString()}`
     : "";
   if (isHomeNavKey(item.key)) {
-    return { ...item, catalogTo: item.to, href: APP_SHELL_HOME };
+    return { ...item, catalogTo: item.to, href: `${APP_SHELL_HOME}${query}` };
   }
   if (isAiNavKey(item.key)) {
     return { ...item, catalogTo: item.to, href: `${APP_SHELL_AI}${query}` };

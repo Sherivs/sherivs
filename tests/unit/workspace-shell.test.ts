@@ -9,6 +9,7 @@ import {
 import { permittedNotificationLink } from "@/lib/shell/notification-links";
 import { composeBottomSlots } from "@/lib/shell/chrome";
 import { focusScope } from "@/lib/sherivs-ws/engine";
+import roleTemplates from "@/lib/sherivs-ws/role-templates.data";
 import {
   additionalResponsibilities,
   permittedWidgetCatalog,
@@ -24,12 +25,20 @@ function manifestFor(role: AppRole) {
 }
 
 describe("workspace shell manifest presentation", () => {
+  it("builds synthetic fixtures for every V1 role template", () => {
+    expect(Object.keys(DEMO_WORKSPACE_MANIFESTS).sort()).toEqual(Object.keys(roleTemplates).sort());
+  });
+
   it.each(["teacher", "bursar", "principal", "parent"] as const)(
     "selects three authorized primary sections for %s",
     (role) => {
       const manifest = manifestFor(role);
       const primary = primarySections(manifest);
-      const manifestKeys = new Set([...manifest.widgets, ...manifest.nav].map((item) => item.key));
+      const manifestKeys = new Set(
+        [...manifest.widgets, ...manifest.nav, ...manifest.actions, ...manifest.inbox].map(
+          (item) => item.key,
+        ),
+      );
 
       expect(primary).toHaveLength(3);
       expect(primary.every((item) => manifestKeys.has(item.key))).toBe(true);

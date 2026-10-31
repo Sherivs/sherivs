@@ -1,13 +1,26 @@
 import { computeWorkspace, type WorkspaceManifest } from "@/lib/sherivs-ws/engine";
 import roleTemplates from "@/lib/sherivs-ws/role-templates.data";
 
-export const DEMO_WORKSPACE_ROLES = [
-  { key: "teacher", label: "Teacher", template: "teacher" },
-  { key: "bursar", label: "Bursar", template: "bursar" },
-  { key: "principal", label: "Principal", template: "head_of_institution" },
-  { key: "parent", label: "Parent", template: "parent" },
-  { key: "government-officer", label: "Government officer", template: "regulator_inspector" },
-] as const;
+const ROLE_LABELS: Record<string, string> = {
+  head_of_institution: "Principal",
+  regulator_inspector: "Government officer",
+};
+
+function roleLabel(template: string): string {
+  return (
+    ROLE_LABELS[template] ??
+    template
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ")
+  );
+}
+
+export const DEMO_WORKSPACE_ROLES = Object.keys(roleTemplates).map((template) => ({
+  key: template,
+  label: roleLabel(template),
+  template,
+}));
 
 const DEMO_ORGANIZATION = {
   id: "demo-school-a",
@@ -56,7 +69,7 @@ function demoManifest(role: (typeof DEMO_WORKSPACE_ROLES)[number]): WorkspaceMan
 
 export const DEMO_WORKSPACE_MANIFESTS = Object.fromEntries(
   DEMO_WORKSPACE_ROLES.map((role) => [role.key, demoManifest(role)]),
-) as Record<(typeof DEMO_WORKSPACE_ROLES)[number]["key"], WorkspaceManifest>;
+) as Record<string, WorkspaceManifest>;
 
 export const DEMO_WORKSPACE_NOTIFICATIONS = [
   {

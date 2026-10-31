@@ -14,14 +14,26 @@ export const WIDGET_REGISTRY: readonly CatalogItem[] = CATALOG.filter(
 );
 
 export function primarySections(manifest: WorkspaceManifest): WorkspaceManifestItem[] {
-  return [...manifest.widgets, ...manifest.nav]
-    .filter(
-      (item) =>
-        !SYSTEM_NAV_KEYS.has(item.key) &&
-        !isHomeNavKey(item.key) &&
-        !isAiNavKey(item.key) &&
-        !isNewsItem(item.key, item.label),
-    )
+  const seen = new Set<string>();
+  return [
+    ...manifest.widgets,
+    ...manifest.nav,
+    ...manifest.actions,
+    ...manifest.inbox,
+  ]
+    .filter((item) => {
+      if (
+        seen.has(item.key) ||
+        SYSTEM_NAV_KEYS.has(item.key) ||
+        isHomeNavKey(item.key) ||
+        isAiNavKey(item.key) ||
+        isNewsItem(item.key, item.label)
+      ) {
+        return false;
+      }
+      seen.add(item.key);
+      return true;
+    })
     .slice(0, 3);
 }
 
@@ -30,7 +42,7 @@ export function additionalResponsibilities(
   primary: readonly WorkspaceManifestItem[] = primarySections(manifest),
 ): WorkspaceManifestItem[] {
   const primaryKeys = new Set(primary.map((item) => item.key));
-  return manifest.nav.filter(
+  return [...manifest.nav, ...manifest.widgets, ...manifest.actions, ...manifest.inbox].filter(
     (item) => !SYSTEM_NAV_KEYS.has(item.key) && !primaryKeys.has(item.key),
   );
 }

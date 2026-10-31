@@ -15,6 +15,7 @@ import {
   composeBottomSlots,
   composeHomeSections,
   composeSidePanel,
+  homeHrefForScope,
   toShellNavItem,
 } from "../../frontend/src/lib/shell/chrome";
 import {
@@ -154,6 +155,16 @@ describe("shell chrome", () => {
         to: "/teacher/timetable?scope=campus%3Anorth",
       }).href,
     ).toBe("/home/s/w.today_classes?scope=campus%3Anorth");
+    expect(
+      toShellNavItem({
+        key: "nav.home",
+        label: "Home",
+        icon: "home",
+        to: "/workspace?scope=campus%3Anorth",
+      }).href,
+    ).toBe("/home?scope=campus%3Anorth");
+    expect(homeHrefForScope({ dim: "campus", ref: "north" })).toBe("/home?scope=campus%3Anorth");
+    expect(homeHrefForScope(null)).toBe("/home");
   });
 });
 

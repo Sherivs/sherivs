@@ -37,7 +37,7 @@ interface WorkspacePrefsQuery {
 export function useShellState() {
   const app = useApp();
   const location = useLocation();
-  const scopeFocus = useMemo(
+  const requestedScopeFocus = useMemo(
     () => parseScopeParam(new URLSearchParams(location.searchStr).get("scope")),
     [location.searchStr],
   );
@@ -54,6 +54,16 @@ export function useShellState() {
   const [prefs, setPrefs] = useState<WorkspacePrefs>({});
   const [prefsReady, setPrefsReady] = useState(false);
   const [prefsError, setPrefsError] = useState(false);
+  const scopeFocus = useMemo(() => {
+    if (
+      !manifest ||
+      !requestedScopeFocus ||
+      !manifest.scopeOptions[requestedScopeFocus.dim]?.includes(requestedScopeFocus.ref)
+    ) {
+      return null;
+    }
+    return requestedScopeFocus;
+  }, [manifest, requestedScopeFocus]);
 
   const load = useCallback(async () => {
     const profile = app.profile;

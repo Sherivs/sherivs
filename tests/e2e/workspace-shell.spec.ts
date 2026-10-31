@@ -1,12 +1,19 @@
 import { expect, test } from "@playwright/test";
 
-const WORKSPACE_ROLES = [
-  { key: "teacher", label: "Teacher", hidden: "Fee collection" },
-  { key: "bursar", label: "Bursar", hidden: "Registers to mark" },
-  { key: "principal", label: "Principal", hidden: "My children" },
-  { key: "parent", label: "Parent", hidden: "Scores to enter" },
-  { key: "government-officer", label: "Government officer", hidden: "Fee collection" },
-] as const;
+const EXPECTED_HIDDEN_ITEMS: Record<string, string> = {
+  teacher: "Fee collection",
+  bursar: "Registers to mark",
+  head_of_institution: "My children",
+  parent: "Scores to enter",
+  regulator_inspector: "Fee collection",
+};
+const RESPONSIVE_ROLES = new Set([
+  "teacher",
+  "bursar",
+  "head_of_institution",
+  "parent",
+  "regulator_inspector",
+]);
 
 test("renders only each fixture role's workspace and exactly three primary sections", async ({
   page,
@@ -22,7 +29,18 @@ test("renders only each fixture role's workspace and exactly three primary secti
   await page.keyboard.press("Tab");
   await expect(page.getByLabel("Search authorized workspace")).toBeFocused();
 
-  for (const role of WORKSPACE_ROLES) {
+  const roleOptions = await page
+    .getByLabel("Role fixture")
+    .locator("option")
+    .evaluateAll((options) =>
+      options.map((option) => ({
+        key: (option as HTMLOptionElement).value,
+        label: option.textContent?.trim() ?? "",
+      })),
+    );
+  expect(roleOptions.length).toBeGreaterThan(5);
+
+  for (const role of roleOptions) {
     await page.getByLabel("Role fixture").selectOption(role.key);
     await expect(page.getByRole("heading", { name: `${role.label} workspace` })).toBeVisible();
     const primary = page.getByRole("navigation", { name: "Primary sections" });
@@ -31,17 +49,20 @@ test("renders only each fixture role's workspace and exactly three primary secti
     await expect(page.getByRole("heading", { name: "Add-on responsibilities" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Notifications" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Recent" })).toBeVisible();
-    await expect(page.getByText(role.hidden, { exact: true })).toHaveCount(0);
     await expect(page.getByText("Demo reminder", { exact: true })).toBeVisible();
+    await expect(page.getByText("Demo attendance view", { exact: true })).toBeVisible();
+    const hiddenItem = EXPECTED_HIDDEN_ITEMS[role.key];
+    if (hiddenItem) await expect(page.getByText(hiddenItem, { exact: true })).toHaveCount(0);
 
-    for (const width of [320, 390, 768, 1024, 1440]) {
+    const widths = RESPONSIVE_ROLES.has(role.key) ? [320, 390, 768, 1024, 1440] : [390];
+    for (const width of widths) {
       await page.setViewportSize({ width, height: width < 768 ? 844 : 1000 });
       await expect(primary.getByRole("link")).toHaveCount(3);
       const horizontalOverflow = await page.evaluate(
         () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
       );
       expect(horizontalOverflow, `${role.label} overflows at ${width}px`).toBe(false);
-      if (width === 390 || width === 1440) {
+      if (RESPONSIVE_ROLES.has(role.key) && (width === 390 || width === 1440)) {
         await page.screenshot({
           path: testInfo.outputPath(`${role.key}-${width}.png`),
           fullPage: true,
