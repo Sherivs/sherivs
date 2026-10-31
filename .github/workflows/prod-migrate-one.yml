@@ -18,6 +18,11 @@ on:
         description: "Type APPLY-<migration> to confirm"
         required: true
         type: string
+      record_only:
+        description: "Recovery: SQL already committed, only write the ledger row + verify (skips apply)"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -77,6 +82,7 @@ jobs:
       - run: npm ci --ignore-scripts --no-audit --fund=false
 
       - name: Apply (scripts/db-apply-one.mjs)
+        if: ${{ !inputs.record_only }}
         env:
           SHERIVS_DATABASE_TARGET: production
           SHERIVS_CONFIRM_PRODUCTION: nwrflbpbhyiqdptmlccm
@@ -91,13 +97,23 @@ jobs:
           NODE_EXTRA_CA_CERTS: ${{ github.workspace }}/.github/certs/supabase-root-ca.pem
         run: node scripts/db-apply-one.mjs "${MIGRATION}_"
 
+      - name: Record-only guard (20261025100260 objects must already exist)
+        if: ${{ inputs.record_only }}
+        env: { DB_URL: "${{ secrets.PROD_DB_URL_BACKUP }}" }
+        run: |
+          set -euo pipefail
+          [ "$MIGRATION" = "20261025100260" ] || { echo "::error::record_only is only supported for 20261025100260"; exit 1; }
+          [ "$(psql "$DB_URL" -X -At -c "select to_regclass('public.website_posts') is not null")" = "t" ] \
+            || { echo "::error::public.website_posts missing; refusing to record ledger row"; exit 1; }
+
       - name: Record ledger row
         env:
           DB_URL: ${{ secrets.PROD_DB_URL_BACKUP }}
           MNAME: ${{ steps.v.outputs.name }}
         run: |
-          psql "$DB_URL" -X -At -v ON_ERROR_STOP=1 -v ver="$MIGRATION" -v nm="$MNAME" \
-            -c "insert into supabase_migrations.schema_migrations (version, name) values (:'ver', :'nm')"
+          # psql only interpolates :'var' in script input, not in -c.
+          echo "insert into supabase_migrations.schema_migrations (version, name) values (:'ver', :'nm');" \
+            | psql "$DB_URL" -X -At -v ON_ERROR_STOP=1 -v ver="$MIGRATION" -v nm="$MNAME"
 
       - name: Verify
         env: { DB_URL: "${{ secrets.PROD_DB_URL_BACKUP }}" }
