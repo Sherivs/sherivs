@@ -68,3 +68,12 @@ onboarding, or authority-link workflow are introduced here.
 Migrations and rollback files are authored only; do not apply them to a live
 database. Run `tests/integration/m009-a1-role-engine.local.sql` only against a
 loopback disposable database after replaying the repository migrations.
+
+## Release order
+
+M009-A1 depends on SHERIVS-017, introduced by
+`20261024000240_sherivs_017_role_permission_catalog.sql`. Release and verify
+SHERIVS-017 in an approved non-production environment before applying M009-A1.
+M009-A1 fails before changing schema when any required SHERIVS-017 object is
+absent. Production application requires separate owner approval; this work
+authorizes no live database changes.

@@ -8,10 +8,12 @@ import { APP_SHELL_HOME } from "@/lib/shell/paths";
 import { searchableSection } from "@/lib/shell/role-template";
 import { ShellGlassIcon } from "./glass-icon";
 import { useAppShell } from "./shell-context";
+import { RoleManagementScreen } from "./role-management-screen";
 
 export function AppSectionScreen({ sectionKey }: { sectionKey: string }) {
   const shell = useAppShell();
   const [query, setQuery] = useState("");
+  if (sectionKey === "roles") return <RoleManagementScreen />;
   const item =
     shell.nav.find((row) => row.key === sectionKey) ??
     shell.manifest?.widgets.find((row) => row.key === sectionKey) ??

@@ -1,6 +1,23 @@
 -- M009-A1: additive role-responsibility engine extensions.
 -- Catalog content, authority-link workflows and UI are owned by later missions.
 -- Authority-scoped assignments fail closed until a verified-link contract exists.
+DO $$
+DECLARE
+  missing text[] := ARRAY[]::text[];
+BEGIN
+  IF to_regclass('public.role_catalog') IS NULL THEN missing := array_append(missing, 'public.role_catalog'); END IF;
+  IF to_regclass('public.role_templates') IS NULL THEN missing := array_append(missing, 'public.role_templates'); END IF;
+  IF to_regclass('public.role_template_permissions') IS NULL THEN missing := array_append(missing, 'public.role_template_permissions'); END IF;
+  IF to_regclass('public.user_role_assignments') IS NULL THEN missing := array_append(missing, 'public.user_role_assignments'); END IF;
+  IF to_regprocedure('public.role_create_custom(uuid,text,text,text)') IS NULL THEN
+    missing := array_append(missing, 'public.role_create_custom(uuid,text,text,text)');
+  END IF;
+  IF cardinality(missing) > 0 THEN
+    RAISE EXCEPTION 'M009-A1 requires SHERIVS-017 (20261024000240_sherivs_017_role_permission_catalog.sql); missing: %',
+      array_to_string(missing, ', ')
+      USING ERRCODE = '55000';
+  END IF;
+END $$;
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS public.workspace_org_units (
@@ -395,11 +412,7 @@ BEGIN
     EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);
     EXECUTE format('ALTER TABLE public.%I FORCE ROW LEVEL SECURITY', t);
     EXECUTE format('REVOKE ALL ON public.%I FROM PUBLIC, anon, authenticated, service_role', t);
-    IF t <> 'role_assignment_audit_events' THEN
-      EXECUTE format('GRANT SELECT ON public.%I TO authenticated', t);
-    ELSE
-      EXECUTE format('GRANT SELECT ON public.%I TO authenticated', t);
-    END IF;
+    EXECUTE format('GRANT SELECT ON public.%I TO authenticated', t);
   END LOOP;
   FOREACH t IN ARRAY ARRAY[
     'workspace_org_units','workspace_responsibility_catalog','workspace_role_responsibilities',

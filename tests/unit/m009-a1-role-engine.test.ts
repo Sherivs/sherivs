@@ -1,4 +1,7 @@
-import { readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const migration = readFileSync(
@@ -91,5 +94,28 @@ describe("M009-A1 role engine migration", () => {
     expect(harness).toContain("deactivated user loses effective permissions");
     expect(harness).toContain("deactivated source member loses delegated permissions");
     expect(harness).toContain("ROLLBACK;");
+  });
+
+  it("keeps the permission matrix documentation generated from the catalog query", () => {
+    const temporaryRoot = mkdtempSync(join(tmpdir(), "m009-role-matrix-"));
+    try {
+      mkdirSync(join(temporaryRoot, "docs/workspaces"), { recursive: true });
+      execFileSync(
+        process.execPath,
+        [resolve("scripts/generate-workspace-permission-matrix.mjs")],
+        { cwd: temporaryRoot },
+      );
+      expect(matrix).toBe(readFileSync(join(temporaryRoot, "docs/workspaces/permission-matrix.md"), "utf8"));
+    } finally {
+      rmSync(temporaryRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("requires SHERIVS-017 before changing the role engine schema", () => {
+    expect(migration.indexOf("M009-A1 requires SHERIVS-017")).toBeLessThan(
+      migration.indexOf("BEGIN;"),
+    );
+    expect(migration).toContain("public.role_create_custom(uuid,text,text,text)");
+    expect(migration).not.toContain("IF t <> 'role_assignment_audit_events'");
   });
 });
