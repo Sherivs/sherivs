@@ -229,7 +229,8 @@ describe("error containment (failures never escape the call boundary)", () => {
   });
 
   it("containSync never throws and records the outcome", () => {
-    const policy = createAdapterFailurePolicy(baseConfig());
+    const time = immediateClock();
+    const policy = createAdapterFailurePolicy(baseConfig({ clock: time.clock }));
     const ok = policy.containSync("op.ok", () => 42);
     expect(ok).toEqual({ outcome: "ok", value: 42, attempts: 1, durationMs: 0, mode: "healthy" });
 
