@@ -12,6 +12,7 @@ import {
 } from "@/lib/ai/ai-guard.server";
 
 const CALL_SITES = [
+  "frontend/src/lib/communications/africas-talking-voice.server.ts",
   "frontend/src/lib/runtime/scholar/lesson-plan-ai.functions.ts",
   "frontend/src/lib/runtime/scholar/expense-insights.functions.ts",
   "frontend/src/lib/runtime/scholar/timetable.functions.ts",

@@ -66,9 +66,9 @@ describe("exposedServerOnlyVars", () => {
   });
 
   it("detects server-only secrets exposed via NEXT_PUBLIC_ and PUBLIC_ prefixes", () => {
-    expect(
-      exposedServerOnlyVars({ NEXT_PUBLIC_RESEND_API_KEY: "secret" }),
-    ).toContain("RESEND_API_KEY");
+    expect(exposedServerOnlyVars({ NEXT_PUBLIC_RESEND_API_KEY: "secret" })).toContain(
+      "RESEND_API_KEY",
+    );
     expect(exposedServerOnlyVars({ PUBLIC_PAYSTACK_SECRET_KEY: "secret" })).toContain(
       "PAYSTACK_SECRET_KEY",
     );
@@ -79,6 +79,16 @@ describe("exposedServerOnlyVars", () => {
       "TWILIO_AUTH_TOKEN",
     );
     expect(exposedServerOnlyVars({ VITE_VAPI_API_KEY: "secret" })).toContain("VAPI_API_KEY");
+  });
+
+  it("keeps voice callback and transcription credentials server-only", () => {
+    expect(exposedServerOnlyVars({ VITE_AT_API_KEY: "secret" })).toContain("AT_API_KEY");
+    expect(exposedServerOnlyVars({ PUBLIC_AT_VOICE_WEBHOOK_TOKEN: "secret" })).toContain(
+      "AT_VOICE_WEBHOOK_TOKEN",
+    );
+    expect(exposedServerOnlyVars({ NEXT_PUBLIC_VOICE_STT_API_KEY: "secret" })).toContain(
+      "VOICE_STT_API_KEY",
+    );
   });
 
   it("ignores empty exposed values", () => {
