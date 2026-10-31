@@ -85,6 +85,10 @@ jobs:
           # supabase/cli@e365ad6b apps/cli/src/commands/gen/types/templates/prod-ca-*.ts.
           # Strict verification per scripts/lib/pg-ssl.mjs; never SHERIVS_DB_INSECURE_TLS.
           SHERIVS_DB_CA_CERT: ${{ github.workspace }}/.github/certs/supabase-root-ca.pem
+          # pg lets sslmode in the URL override the ssl.ca option, so also trust the
+          # pinned root process-wide (remediation documented in scripts/lib/pg-ssl.mjs).
+          # Probe run 41217893569: chain *.pooler -> Intermediate 2021 -> Root 2021 (80:70:25:AD...CA:FA).
+          NODE_EXTRA_CA_CERTS: ${{ github.workspace }}/.github/certs/supabase-root-ca.pem
         run: node scripts/db-apply-one.mjs "${MIGRATION}_"
 
       - name: Record ledger row
