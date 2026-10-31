@@ -22,6 +22,7 @@ import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as WorkspacePreviewRouteImport } from './routes/workspace-preview'
 import { Route as siteAboutRouteImport } from './routes/(site)/about'
 import { Route as siteAccessibilityRouteImport } from './routes/(site)/accessibility'
 import { Route as siteCheckResultRouteImport } from './routes/(site)/check-result'
@@ -185,6 +186,11 @@ const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkspacePreviewRoute = WorkspacePreviewRouteImport.update({
+  id: '/workspace-preview',
+  path: '/workspace-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const siteAboutRoute = siteAboutRouteImport.update({
@@ -716,6 +722,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/workspace-preview': typeof WorkspacePreviewRoute
   '/console/activity': typeof ConsoleActivityRouteRouteWithChildren
   '/console/organizations': typeof ConsoleOrganizationsRouteRouteWithChildren
   '/console/runtimes': typeof ConsoleRuntimesRouteRouteWithChildren
@@ -828,6 +835,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/workspace-preview': typeof WorkspacePreviewRoute
   '/about': typeof siteAboutRoute
   '/accessibility': typeof siteAccessibilityRoute
   '/check-result': typeof siteCheckResultRoute
@@ -934,6 +942,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/workspace-preview': typeof WorkspacePreviewRoute
   '/console/activity': typeof ConsoleActivityRouteRouteWithChildren
   '/console/organizations': typeof ConsoleOrganizationsRouteRouteWithChildren
   '/console/runtimes': typeof ConsoleRuntimesRouteRouteWithChildren
@@ -1050,6 +1059,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/workspace-preview'
     | '/console/activity'
     | '/console/organizations'
     | '/console/runtimes'
@@ -1162,6 +1172,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/workspace-preview'
     | '/about'
     | '/accessibility'
     | '/check-result'
@@ -1267,6 +1278,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/workspace-preview'
     | '/console/activity'
     | '/console/organizations'
     | '/console/runtimes'
@@ -1383,6 +1395,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  WorkspacePreviewRoute: typeof WorkspacePreviewRoute
   DotwellKnownAppleAppSiteAssociationRoute: typeof DotwellKnownAppleAppSiteAssociationRoute
   DotwellKnownAssetlinksDotjsonRoute: typeof DotwellKnownAssetlinksDotjsonRoute
   ApiWebauthnRoute: typeof ApiWebauthnRoute
@@ -1488,6 +1501,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workspace-preview': {
+      id: '/workspace-preview'
+      path: '/workspace-preview'
+      fullPath: '/workspace-preview'
+      preLoaderRoute: typeof WorkspacePreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(site)/about': {
@@ -2516,6 +2536,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  WorkspacePreviewRoute: WorkspacePreviewRoute,
   DotwellKnownAppleAppSiteAssociationRoute:
     DotwellKnownAppleAppSiteAssociationRoute,
   DotwellKnownAssetlinksDotjsonRoute: DotwellKnownAssetlinksDotjsonRoute,

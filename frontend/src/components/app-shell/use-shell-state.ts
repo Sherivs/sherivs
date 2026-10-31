@@ -1,15 +1,23 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocation } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
 import { fromServer, type ServerManifest } from "@/lib/sherivs-ws/server-adapter";
-import type { CardData, WidgetDataResponse } from "@/lib/sherivs-ws/live";
+import { parseScopeParam, type CardData, type WidgetDataResponse } from "@/lib/sherivs-ws/live";
+import { focusScope, scopeFocusOptions } from "@/lib/sherivs-ws/engine";
 import type { WorkspaceManifest, WorkspacePrefs } from "@/components/workspaces/_contract-shim";
 import {
   mergeAffiliations,
   shouldShowContextSwitcher,
   type ShellAffiliation,
 } from "@/lib/shell/membership-policy";
-import { composeBottomSlots, composeHomeSections, composeSidePanel, toShellNavItem } from "@/lib/shell/chrome";
+import {
+  composeBottomSlots,
+  composeHomeSections,
+  composeSidePanel,
+  toShellNavItem,
+} from "@/lib/shell/chrome";
+import { primarySections } from "@/components/workspaces/workspace-shell";
 import { compactPersonName } from "@/lib/shell/display-name";
 import {
   clockInTimeZone,
@@ -28,8 +36,14 @@ interface WorkspacePrefsQuery {
 
 export function useShellState() {
   const app = useApp();
+  const location = useLocation();
+  const scopeFocus = useMemo(
+    () => parseScopeParam(new URLSearchParams(location.searchStr).get("scope")),
+    [location.searchStr],
+  );
   const [manifest, setManifest] = useState<WorkspaceManifest | null>(null);
   const [cards, setCards] = useState<Record<string, CardData>>({});
+  const [scopeLabels, setScopeLabels] = useState<WidgetDataResponse["labels"]>({});
   const [affiliations, setAffiliations] = useState<ShellAffiliation[]>([]);
   const [query, setQuery] = useState("");
   const [now, setNow] = useState(() => Date.now());
@@ -93,6 +107,8 @@ export function useShellState() {
       if (remoteError || !remote) {
         setManifest(null);
         setCards({});
+        setScopeLabels({});
+        setWidgetsLoading(false);
         setPrefsReady(false);
         setManifestError(true);
         return;
@@ -104,7 +120,9 @@ export function useShellState() {
       });
       setManifest(next);
 
-      const prefsTable = supabase.from("user_workspace_prefs" as never) as unknown as WorkspacePrefsQuery;
+      const prefsTable = supabase.from(
+        "user_workspace_prefs" as never,
+      ) as unknown as WorkspacePrefsQuery;
       const { data: preferenceRow, error: preferenceError } = await prefsTable
         .select("prefs")
         .eq("user_id", profile.id)
@@ -113,24 +131,11 @@ export function useShellState() {
       setPrefsReady(!preferenceError);
       setPrefsError(Boolean(preferenceError));
       setPrefs((preferenceRow?.prefs as WorkspacePrefs | undefined) ?? {});
-
-      const keys = next.widgets.map((item) => item.key);
-      if (!keys.length) {
-        setCards({});
-        setWidgetsLoading(false);
-      } else {
-        setWidgetsLoading(true);
-        const { data: live, error: liveError } = await supabase.rpc(
-          "workspace_widget_data" as never,
-          { p_org: school.id, p_keys: keys } as never,
-        );
-        setCards(liveError ? {} : ((live as unknown as WidgetDataResponse | null)?.cards ?? {}));
-        setWidgetsError(Boolean(liveError));
-        setWidgetsLoading(false);
-      }
     } catch {
       setManifest(null);
       setCards({});
+      setScopeLabels({});
+      setWidgetsLoading(false);
       setPrefsReady(false);
       setManifestError(true);
     } finally {
@@ -143,6 +148,57 @@ export function useShellState() {
   }, [load]);
 
   useEffect(() => {
+    const schoolId = app.school?.id;
+    if (!manifest || !schoolId) {
+      setCards({});
+      setScopeLabels({});
+      setWidgetsLoading(false);
+      return;
+    }
+
+    const keys = manifest.widgets.map((item) => item.key);
+    if (!keys.length) {
+      setCards({});
+      setScopeLabels({});
+      setWidgetsLoading(false);
+      return;
+    }
+
+    let active = true;
+    setWidgetsLoading(true);
+    setWidgetsError(false);
+    const loadCards = async () => {
+      try {
+        const { data: live, error: liveError } = await supabase.rpc(
+          "workspace_widget_data" as never,
+          {
+            p_org: schoolId,
+            p_keys: keys,
+            p_scope: scopeFocus,
+          } as never,
+        );
+        if (!active) return;
+        setCards(liveError ? {} : ((live as unknown as WidgetDataResponse | null)?.cards ?? {}));
+        setScopeLabels(
+          liveError ? {} : ((live as unknown as WidgetDataResponse | null)?.labels ?? {}),
+        );
+        setWidgetsError(Boolean(liveError));
+      } catch {
+        if (!active) return;
+        setCards({});
+        setScopeLabels({});
+        setWidgetsError(true);
+      } finally {
+        if (active) setWidgetsLoading(false);
+      }
+    };
+    void loadCards();
+    return () => {
+      active = false;
+    };
+  }, [app.school?.id, manifest, scopeFocus]);
+
+  useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 30_000);
     return () => window.clearInterval(id);
   }, []);
@@ -151,17 +207,22 @@ export function useShellState() {
     async (nextPrefs: WorkspacePrefs): Promise<boolean> => {
       if (!app.school || !manifest?.canPersonalise || !prefsReady) return false;
       setPrefsError(false);
-      const { data, error } = await supabase.rpc(
-        "workspace_prefs_save" as never,
-        { p_org: app.school.id, p_prefs: nextPrefs } as never,
-      );
-      if (error) {
+      try {
+        const { data, error } = await supabase.rpc(
+          "workspace_prefs_save" as never,
+          { p_org: app.school.id, p_prefs: nextPrefs } as never,
+        );
+        if (error) {
+          setPrefsError(true);
+          return false;
+        }
+        setPrefs((data as unknown as WorkspacePrefs | null) ?? nextPrefs);
+        await load();
+        return true;
+      } catch {
         setPrefsError(true);
         return false;
       }
-      setPrefs((data as unknown as WorkspacePrefs | null) ?? nextPrefs);
-      await load();
-      return true;
     },
     [app.school, load, manifest?.canPersonalise, prefsReady],
   );
@@ -169,30 +230,38 @@ export function useShellState() {
   const at = new Date(now);
   const hour = hourInTimeZone(at, SHELL_TIME_ZONE);
   const name = compactPersonName(app.profile?.full_name ?? app.authUser?.user_metadata?.full_name);
-  const nav = useMemo(() => (manifest?.nav ?? []).map(toShellNavItem), [manifest]);
+  const focusedManifest = useMemo(
+    () => (manifest ? focusScope(manifest, scopeFocus) : null),
+    [manifest, scopeFocus],
+  );
+  const nav = useMemo(() => (focusedManifest?.nav ?? []).map(toShellNavItem), [focusedManifest]);
+  const primaryNav = useMemo(
+    () => (focusedManifest ? primarySections(focusedManifest).map(toShellNavItem) : []),
+    [focusedManifest],
+  );
   const home = useMemo(
     () =>
       composeHomeSections({
-        widgets: manifest?.widgets,
-        actions: manifest?.actions,
-        inbox: manifest?.inbox,
-        nav: manifest?.nav,
+        widgets: focusedManifest?.widgets,
+        actions: focusedManifest?.actions,
+        inbox: focusedManifest?.inbox,
+        nav: focusedManifest?.nav,
       }),
-    [manifest],
+    [focusedManifest],
   );
   const drawer = useMemo(
     () =>
       composeSidePanel({
-        nav: manifest?.nav,
-        widgets: manifest?.widgets,
-        actions: manifest?.actions,
-        inbox: manifest?.inbox,
+        nav: focusedManifest?.nav,
+        widgets: focusedManifest?.widgets,
+        actions: focusedManifest?.actions,
+        inbox: focusedManifest?.inbox,
       }),
-    [manifest],
+    [focusedManifest],
   );
   const bottom = useMemo(
-    () => composeBottomSlots({ widgets: manifest?.widgets, nav: manifest?.nav }),
-    [manifest],
+    () => composeBottomSlots({ widgets: focusedManifest?.widgets, nav: focusedManifest?.nav }),
+    [focusedManifest],
   );
   const filteredDrawer = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -203,7 +272,10 @@ export function useShellState() {
   return {
     app,
     manifest,
+    scopeFocus,
+    availableScopes: manifest ? scopeFocusOptions(manifest) : [],
     cards,
+    scopeLabels,
     manifestLoading,
     manifestError,
     widgetsLoading,
@@ -220,6 +292,7 @@ export function useShellState() {
     roleTitle: app.role ? scholarWorkspaceLabelForRole(app.role) : "Member",
     orgName: app.school?.name ?? "Your organization",
     nav,
+    primaryNav,
     home,
     drawer: filteredDrawer,
     bottom,

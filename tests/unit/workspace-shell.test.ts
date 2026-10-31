@@ -1,6 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { fallbackManifest } from "@/lib/shell/fallback-manifest";
 import type { AppRole } from "@/lib/roles";
+import { runAuditedBulkAction } from "@/components/workspaces/bulk-action";
+import {
+  DEMO_WORKSPACE_MANIFESTS,
+  DEMO_WORKSPACE_ROLES,
+} from "@/components/workspaces/fixtures/demo-workspaces";
+import { permittedNotificationLink } from "@/lib/shell/notification-links";
+import { composeBottomSlots } from "@/lib/shell/chrome";
+import { focusScope } from "@/lib/sherivs-ws/engine";
 import {
   additionalResponsibilities,
   permittedWidgetCatalog,
@@ -21,12 +29,29 @@ describe("workspace shell manifest presentation", () => {
     (role) => {
       const manifest = manifestFor(role);
       const primary = primarySections(manifest);
+      const manifestKeys = new Set([...manifest.widgets, ...manifest.nav].map((item) => item.key));
 
       expect(primary).toHaveLength(3);
-      expect(primary.every((item) => manifest.nav.some((nav) => nav.key === item.key))).toBe(true);
-      expect(additionalResponsibilities(manifest, primary).some((item) =>
-        primary.some((primaryItem) => primaryItem.key === item.key),
-      )).toBe(false);
+      expect(primary.every((item) => manifestKeys.has(item.key))).toBe(true);
+      expect(
+        additionalResponsibilities(manifest, primary).some((item) =>
+          primary.some((primaryItem) => primaryItem.key === item.key),
+        ),
+      ).toBe(false);
+    },
+  );
+
+  it.each(DEMO_WORKSPACE_ROLES)(
+    "provides exactly three permitted primary sections for $label",
+    (role) => {
+      const manifest = DEMO_WORKSPACE_MANIFESTS[role.key];
+      const primary = primarySections(manifest);
+      expect(primary).toHaveLength(3);
+      expect(
+        composeBottomSlots(manifest)
+          .slice(1, 4)
+          .map((item) => item.key),
+      ).toEqual(primary.map((item) => item.key));
     },
   );
 
@@ -41,9 +66,46 @@ describe("workspace shell manifest presentation", () => {
     expect(catalog.some((item) => item.key === "w.fee_collection")).toBe(false);
   });
 
+  it("applies an assigned scope to nav, widgets, and actions but rejects unassigned scopes", () => {
+    const manifest = DEMO_WORKSPACE_MANIFESTS.teacher;
+    const focused = focusScope(manifest, { dim: "campus", ref: "demo-campus-north" });
+
+    for (const item of [...focused.nav, ...focused.widgets, ...focused.actions]) {
+      expect(new URL(item.to, "https://demo.invalid").searchParams.get("scope")).toBe(
+        "campus:demo-campus-north",
+      );
+    }
+    expect(focusScope(manifest, { dim: "campus", ref: "demo-campus-west" })).toBe(manifest);
+  });
+
   it("moves widgets one position and leaves unknown or out-of-range moves unchanged", () => {
     expect(reorderWidgetKeys(["a", "b", "c"], "b", 1)).toEqual(["a", "c", "b"]);
     expect(reorderWidgetKeys(["a", "b"], "a", -1)).toEqual(["a", "b"]);
     expect(reorderWidgetKeys(["a", "b"], "missing", 1)).toEqual(["a", "b"]);
+  });
+
+  it("requires explicit confirmation and an audit reference for bulk actions", async () => {
+    const execute = vi.fn(async () => ({ auditRef: "audit-record" }));
+    const action = { id: "archive", label: "Archive", execute };
+
+    expect(await runAuditedBulkAction(action, ["one"], false)).toBeNull();
+    expect(execute).not.toHaveBeenCalled();
+    await expect(runAuditedBulkAction(action, ["one"], true)).resolves.toEqual({
+      auditRef: "audit-record",
+    });
+
+    await expect(
+      runAuditedBulkAction({ ...action, execute: async () => ({ auditRef: " " }) }, ["one"], true),
+    ).rejects.toThrow("no audit reference");
+  });
+
+  it("only deep-links notifications to currently authorized workspace destinations", () => {
+    const destinations = [{ href: "/home/s/nav.attendance", catalogTo: "/teacher/attendance" }];
+
+    expect(permittedNotificationLink("/teacher/attendance", destinations)).toBe(
+      "/home/s/nav.attendance",
+    );
+    expect(permittedNotificationLink("/admin/payroll", destinations)).toBeNull();
+    expect(permittedNotificationLink("//external.example/path", destinations)).toBeNull();
   });
 });

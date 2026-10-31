@@ -26,7 +26,10 @@ export interface WorkspaceManifest {
   available: WorkspaceManifestItem[];
   actions: WorkspaceManifestItem[];
   inbox: WorkspaceManifestItem[];
-  hiddenByPolicy: { key: string; reason: string }[];
+  hiddenByPolicy: {
+    key: string;
+    reason: "permission" | "feature" | "family" | "policy" | "scope";
+  }[];
   scopeOptions: Record<string, string[]>;
   policies: string[];
   canPersonalise: boolean;

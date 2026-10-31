@@ -16,7 +16,7 @@ interface ConnectionState {
 
 function initialConnectionState(): ConnectionState {
   return {
-    online: typeof navigator === "undefined" || navigator.onLine,
+    online: true,
     syncing: false,
     pendingItems: null,
   };
@@ -40,12 +40,17 @@ export function ConnectionStatus() {
         return;
       }
       const status = detail as WorkspaceSyncStatus;
-      setState((current) => ({ ...current, syncing: status.syncing, pendingItems: status.pendingItems }));
+      setState((current) => ({
+        ...current,
+        syncing: status.syncing,
+        pendingItems: status.pendingItems,
+      }));
     };
 
     window.addEventListener("online", updateOnline);
     window.addEventListener("offline", updateOnline);
     window.addEventListener(WORKSPACE_SYNC_STATUS_EVENT, updateSync);
+    updateOnline();
     return () => {
       window.removeEventListener("online", updateOnline);
       window.removeEventListener("offline", updateOnline);
@@ -66,7 +71,9 @@ export function ConnectionStatus() {
       <Icon size={15} aria-hidden="true" />
       <span>{label}</span>
       <span className="app-shell-connection-pending">
-        {state.pendingItems === null ? "Pending count unavailable" : `${state.pendingItems} pending`}
+        {state.pendingItems === null
+          ? "Pending count unavailable"
+          : `${state.pendingItems} pending`}
       </span>
     </span>
   );

@@ -56,6 +56,7 @@ export default defineConfig({
             process.env.SUPABASE_PUBLISHABLE_KEY ??
             process.env.SUPABASE_ANON_KEY ??
             "",
+          VITE_WORKSPACE_VISUAL_FIXTURE: process.env.VITE_WORKSPACE_VISUAL_FIXTURE ?? "1",
         },
       },
 });
