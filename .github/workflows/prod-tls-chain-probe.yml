@@ -1,0 +1,28 @@
+name: Prod DB TLS chain probe
+
+# Read-only: prints ONLY subject / issuer / SHA-256 fingerprint of each
+# certificate the prod DB endpoint presents. Never prints the URL or password.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    environment: Production
+    timeout-minutes: 5
+    steps:
+      - name: Probe chain
+        env: { DB_URL: "${{ secrets.PROD_DB_URL_BACKUP }}" }
+        run: |
+          set -euo pipefail
+          hp=$(python3 -c 'import os,urllib.parse as u;p=u.urlsplit(os.environ["DB_URL"]);print(f"{p.hostname}:{p.port or 5432}")')
+          echo "host kind: $(echo "${hp%%:*}" | sed -E 's/^[^.]+\./*./') port: ${hp##*:}"
+          echo | timeout 20 openssl s_client -starttls postgres -connect "$hp" -servername "${hp%%:*}" -showcerts 2>/dev/null \
+            | awk '/-----BEGIN CERTIFICATE-----/{c++; f="cert" c ".pem"} f{print > f} /-----END CERTIFICATE-----/{f=""}'
+          for f in cert*.pem; do
+            echo "== $f"
+            openssl x509 -in "$f" -noout -subject -issuer -enddate -fingerprint -sha256
+          done
