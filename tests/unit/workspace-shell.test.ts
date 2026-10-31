@@ -16,6 +16,7 @@ import {
   primarySections,
   reorderWidgetKeys,
   WIDGET_REGISTRY,
+  workspaceResponsibilityIcon,
 } from "@/components/workspaces/workspace-shell";
 
 const ORG_ID = "11111111-1111-4111-8111-111111111111";
@@ -79,6 +80,39 @@ describe("workspace shell manifest presentation", () => {
       ).toEqual(primary.map((item) => item.key));
     },
   );
+
+  it.each(DEMO_WORKSPACE_ROLES)(
+    "deduplicates responsibilities and resolves card icons for $label",
+    (role) => {
+      const manifest = DEMO_WORKSPACE_MANIFESTS[role.key];
+      const primary = primarySections(manifest);
+      const responsibilities = [...primary, ...additionalResponsibilities(manifest, primary)];
+      const keys = new Set<string>();
+      const destinations = new Set<string>();
+
+      for (const item of responsibilities) {
+        const path = item.to.trim().split(/[?#]/, 1)[0] ?? "";
+        const destination = path.replace(/\/+$/, "") || (path ? "/" : "");
+        expect(keys.has(item.key), `duplicate key ${item.key}`).toBe(false);
+        if (destination) {
+          expect(destinations.has(destination), `duplicate destination ${destination}`).toBe(false);
+          destinations.add(destination);
+        }
+        expect(workspaceResponsibilityIcon(item)).toBeTruthy();
+        keys.add(item.key);
+      }
+    },
+  );
+
+  it("uses a catalog icon or the dashboard fallback when a card has no icon", () => {
+    const knownItem = DEMO_WORKSPACE_MANIFESTS.teacher.widgets.find(
+      (item) => item.key === "w.grading_queue",
+    )!;
+    expect(workspaceResponsibilityIcon({ ...knownItem, icon: "" })).toBe("clipboard");
+    expect(
+      workspaceResponsibilityIcon({ ...knownItem, key: "unknown", to: "/unknown", icon: "" }),
+    ).toBe("dashboard");
+  });
 
   it("only exposes catalog widgets already admitted by the server manifest", () => {
     const manifest = manifestFor("teacher");

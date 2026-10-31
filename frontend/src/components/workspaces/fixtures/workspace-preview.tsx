@@ -5,7 +5,11 @@ import {
   DEMO_WORKSPACE_RECENT,
   DEMO_WORKSPACE_ROLES,
 } from "./demo-workspaces";
-import { additionalResponsibilities, primarySections } from "../workspace-shell";
+import {
+  additionalResponsibilities,
+  primarySections,
+  workspaceResponsibilityIcon,
+} from "../workspace-shell";
 import { ConnectionStatus } from "@/components/app-shell/connection-status";
 import { ShellGlassIcon } from "@/components/app-shell/glass-icon";
 import { shellIcon } from "@/lib/shell/icon-registry";
@@ -36,7 +40,7 @@ export function WorkspaceFixturePreview() {
     refs.map((ref) => ({ dim, ref })),
   );
   const renderResponsibility = (item: (typeof primary)[number], group: string) => {
-    const Icon = shellIcon(item.icon);
+    const Icon = shellIcon(workspaceResponsibilityIcon(item));
     return (
       <article
         key={item.key}

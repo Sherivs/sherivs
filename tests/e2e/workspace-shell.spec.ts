@@ -48,6 +48,8 @@ test("renders only each fixture role's workspace and exactly three primary secti
     await expect(primary.getByRole("link")).toHaveCount(3);
     await expect(page.getByRole("heading", { name: "Core responsibilities" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Add-on responsibilities" })).toBeVisible();
+    const responsibilityCards = page.locator(".workspace-preview-responsibility-card");
+    await expect(responsibilityCards.locator("svg")).toHaveCount(await responsibilityCards.count());
     await expect(page.getByRole("heading", { name: "Notifications" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Recent" })).toBeVisible();
     await expect(page.getByText("Demo reminder", { exact: true })).toBeVisible();
