@@ -18,6 +18,7 @@ const RESPONSIVE_ROLES = new Set([
 test("renders only each fixture role's workspace and exactly three primary sections", async ({
   page,
 }, testInfo) => {
+  test.setTimeout(180_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/workspace-preview");
   await expect(page.getByTestId("workspace-preview")).toBeVisible();
@@ -54,7 +55,7 @@ test("renders only each fixture role's workspace and exactly three primary secti
     const hiddenItem = EXPECTED_HIDDEN_ITEMS[role.key];
     if (hiddenItem) await expect(page.getByText(hiddenItem, { exact: true })).toHaveCount(0);
 
-    const widths = RESPONSIVE_ROLES.has(role.key) ? [320, 390, 768, 1024, 1440] : [390];
+    const widths = RESPONSIVE_ROLES.has(role.key) ? [320, 390, 768, 1024, 1440] : [390, 1440];
     for (const width of widths) {
       await page.setViewportSize({ width, height: width < 768 ? 844 : 1000 });
       await expect(primary.getByRole("link")).toHaveCount(3);
@@ -62,10 +63,11 @@ test("renders only each fixture role's workspace and exactly three primary secti
         () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
       );
       expect(horizontalOverflow, `${role.label} overflows at ${width}px`).toBe(false);
-      if (RESPONSIVE_ROLES.has(role.key) && (width === 390 || width === 1440)) {
+      if (width === 390 || width === 1440) {
         await page.screenshot({
           path: testInfo.outputPath(`${role.key}-${width}.png`),
           fullPage: true,
+          scale: "css",
         });
       }
     }

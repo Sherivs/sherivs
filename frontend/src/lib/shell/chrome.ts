@@ -100,10 +100,17 @@ function uniquePush(target: Catalogish[], seen: Set<string>, item: Catalogish) {
 export function composeBottomSlots(input: {
   widgets?: readonly Catalogish[];
   nav?: readonly Catalogish[];
+  actions?: readonly Catalogish[];
+  inbox?: readonly Catalogish[];
 }): readonly ShellBottomSlot[] {
   const picked: Catalogish[] = [];
   const seen = new Set<string>();
-  for (const item of [...(input.widgets ?? []), ...(input.nav ?? [])]) {
+  for (const item of [
+    ...(input.widgets ?? []),
+    ...(input.nav ?? []),
+    ...(input.actions ?? []),
+    ...(input.inbox ?? []),
+  ]) {
     if (picked.length >= 3) break;
     if (!eligibleBottom(item)) continue;
     uniquePush(picked, seen, item);

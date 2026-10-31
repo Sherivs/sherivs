@@ -50,6 +50,22 @@ describe("workspace shell manifest presentation", () => {
     },
   );
 
+  it.each(Object.keys(roleTemplates) as AppRole[])(
+    "provides three permitted fallback sections for %s",
+    (role) => {
+      const manifest = manifestFor(role);
+      const primary = primarySections(manifest);
+      const permitted = new Set(
+        [...manifest.widgets, ...manifest.nav, ...manifest.actions, ...manifest.inbox].map(
+          (item) => item.key,
+        ),
+      );
+
+      expect(primary).toHaveLength(3);
+      expect(primary.every((item) => permitted.has(item.key))).toBe(true);
+    },
+  );
+
   it.each(DEMO_WORKSPACE_ROLES)(
     "provides exactly three permitted primary sections for $label",
     (role) => {

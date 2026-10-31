@@ -270,7 +270,13 @@ export function useShellState() {
     [focusedManifest],
   );
   const bottom = useMemo(
-    () => composeBottomSlots({ widgets: focusedManifest?.widgets, nav: focusedManifest?.nav }),
+    () =>
+      composeBottomSlots({
+        widgets: focusedManifest?.widgets,
+        nav: focusedManifest?.nav,
+        actions: focusedManifest?.actions,
+        inbox: focusedManifest?.inbox,
+      }),
     [focusedManifest],
   );
   const filteredDrawer = useMemo(() => {

@@ -15,12 +15,7 @@ export const WIDGET_REGISTRY: readonly CatalogItem[] = CATALOG.filter(
 
 export function primarySections(manifest: WorkspaceManifest): WorkspaceManifestItem[] {
   const seen = new Set<string>();
-  return [
-    ...manifest.widgets,
-    ...manifest.nav,
-    ...manifest.actions,
-    ...manifest.inbox,
-  ]
+  return [...manifest.widgets, ...manifest.nav, ...manifest.actions, ...manifest.inbox]
     .filter((item) => {
       if (
         seen.has(item.key) ||
