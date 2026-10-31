@@ -43,9 +43,6 @@ describe("Sherivs blue/purple rebrand", () => {
       "frontend/src/routes/forgot-password.tsx",
       "frontend/src/routes/reset-password.tsx",
       "frontend/src/routes/__root.tsx",
-      "frontend/src/routes/_authenticated/route.tsx",
-      "frontend/src/routes/_authenticated/internal.tsx",
-      "frontend/src/components/portal-sidebar.tsx",
     ]) expect(read(f), f).toMatch(/<Sherivs(Logo|Mark)\b/);
   });
 

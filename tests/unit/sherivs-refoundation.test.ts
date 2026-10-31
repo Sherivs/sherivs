@@ -27,14 +27,11 @@ const AUTH = "frontend/src/routes/auth.tsx";
 const SITE_LAYOUT = "frontend/src/routes/(site)/route.tsx";
 const SITE_PAGE = "frontend/src/routes/(site)/sherivs.tsx";
 const SHERIVS_HOME = "frontend/src/components/public/sherivs-home.tsx";
-const PLATFORM_PAGE = "frontend/src/routes/platform.tsx";
-const PLATFORM_ORG_PAGE = "frontend/src/routes/platform.org.tsx";
-const COMMAND_CENTRE = "frontend/src/routes/_authenticated/command-centre/index.tsx";
 
 describe("Platform identity", () => {
   it("presents the company as Sherivs", () => {
     expect(PLATFORM_NAME).toBe("Sherivs");
-    expect(PLATFORM_TAGLINE).toMatch(/operating intelligence/i);
+    expect(PLATFORM_TAGLINE).toMatch(/better-run schools/i);
     expect(PLATFORM_DOMAIN).toBe("sherivs.com");
   });
 });
@@ -56,8 +53,12 @@ describe("Public company homepage (plane 1)", () => {
   });
 
   it("communicates the category without internal architecture", () => {
-    expect(home).toMatch(/operating intelligence for modern organizations/i);
-    expect(home).toMatch(/Request a demo/);
+    expect(home).toContain("SCHOLAR_HERO");
+    expect(read("frontend/src/lib/public-site/scholar.ts")).toMatch(
+      /Your school\. One intelligent operating environment\./,
+    );
+    expect(home).toMatch(/Sherivs Scholar/);
+    expect(read("frontend/src/lib/public-site/scholar.ts")).toMatch(/Get started/);
     expect(home).not.toMatch(/phase/i);
     expect(home).not.toMatch(/kernel/i);
     expect(home).not.toMatch(/runtime binding/i);
@@ -68,9 +69,11 @@ describe("Public company homepage (plane 1)", () => {
     expect(home).not.toMatch(/customers|testimonials|case stud|awards|trusted by/i);
   });
 
-  it("positions runtimes honestly — Education available, others marked in development", () => {
-    expect(home).toMatch(/In development/);
+  it("positions Sherivs Scholar as the first product without advertising unlaunched families", () => {
     expect(home).toMatch(/Scholar/);
+    expect(home).not.toMatch(/Sherivs Enterprise/);
+    expect(home).not.toMatch(/Developer Platform/);
+    expect(home).not.toMatch(/Digital-twin runtime/);
   });
 });
 
@@ -94,29 +97,28 @@ describe("Public authentication surface", () => {
 });
 
 describe("Internal architecture stays off the public surface", () => {
-  it("/platform and /platform/org are session-gated", () => {
-    for (const ref of [PLATFORM_PAGE, PLATFORM_ORG_PAGE]) {
-      const source = read(ref);
-      expect(source).toContain("beforeLoad");
-      expect(source).toContain('redirect({ to: "/auth" })');
-      expect(source).toContain("supabase.auth.getUser");
-      expect(source).toContain('"noindex, nofollow"');
+  it("hardcoded /platform, /platform/org, and command-centre shells are gone", () => {
+    for (const ref of [
+      "frontend/src/routes/platform.tsx",
+      "frontend/src/routes/platform.org.tsx",
+      "frontend/src/routes/_authenticated/command-centre/index.tsx",
+    ]) {
+      expect(() => read(ref)).toThrow();
     }
-  });
-
-  it("the internal control surface presents as Sherivs Control", () => {
-    const commandCentre = read(COMMAND_CENTRE);
-    expect(commandCentre).toContain("Sherivs Control");
-    expect(commandCentre).not.toContain("CoreGrid Command Centre");
   });
 });
 
 describe("Public site engagement paths", () => {
   const layout = read(SITE_LAYOUT);
+  const header = read("frontend/src/components/public/site-header.tsx");
+  const footer = read("frontend/src/components/public/site-footer.tsx");
 
-  it("offers Request a demo as the primary CTA and links the real routes", () => {
-    expect(layout).toMatch(/Request a demo/);
-    expect(layout).toContain('to="/request-demo"');
-    expect(layout).toContain('to="/auth"');
+  it("offers Get started and Sign in as the primary engagement paths", () => {
+    expect(header).toMatch(/Get started/);
+    expect(header).toContain('href="/onboarding"');
+    expect(header).toContain('to="/auth"');
+    expect(layout).toContain("<SiteHeader />");
+    expect(layout).toContain("<SiteFooter />");
+    expect(footer).toContain("PUBLIC_CONTACTS");
   });
 });

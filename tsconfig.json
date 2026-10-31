@@ -5,6 +5,7 @@
     "vite.config.ts",
     "eslint.config.js",
     "tests/**/*.ts",
+    "tests/**/*.d.ts",
     "scripts/**/*.ts"
   ],
   "compilerOptions": {
@@ -30,7 +31,9 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
     "paths": {
-      "@/*": ["./frontend/src/*"]
+      "@/*": ["./frontend/src/*"],
+      "react-native": ["./types/web-typecheck/react-native.ts"],
+      "react-native-passkeys": ["./types/web-typecheck/react-native-passkeys.ts"]
     }
   }
 }

@@ -11,6 +11,7 @@
       "bundleIdentifier": "com.coregrid.app",
       "buildNumber": "1",
       "supportsTablet": true,
+      "associatedDomains": ["webcredentials:sherivs.com"],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }

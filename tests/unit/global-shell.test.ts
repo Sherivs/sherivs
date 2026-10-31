@@ -415,14 +415,6 @@ function scanShellSources(): Array<{ file: string; token: string; line: number }
     "frontend/src/lib/shell-org-switcher.ts",
     "frontend/src/lib/shell-notifications.ts",
     "frontend/src/lib/shell-profile.ts",
-    // Shell components: strict/literal vocabulary. The bell maps the
-    // existing notification store's tenant column by its storage name,
-    // which the guard classifies separately (STRUCTURAL) and which the
-    // contract speaks of only as a neutral tenantRef.
-    "frontend/src/components/shell/shell-header-actions.tsx",
-    "frontend/src/components/shell/workspace-switcher.tsx",
-    "frontend/src/components/shell/notification-bell.tsx",
-    "frontend/src/components/shell/profile-menu.tsx",
   ];
   const hits: Array<{ file: string; token: string; line: number }> = [];
   for (const file of files) {

@@ -12,7 +12,7 @@
  *    result (with the reason) instead of inventing one;
  *  - no surface carries a per-organization or per-role branch.
  */
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -230,16 +230,11 @@ describe("R40 — surfaces carry no per-organization or per-role branch", () => 
     ...readdirSync(join(ROOT, "frontend/src/lib/surfaces")).map((name) =>
       join(ROOT, "frontend/src/lib/surfaces", name),
     ),
-    join(ROOT, "frontend/src/components/generated/generated-site.tsx"),
-    join(ROOT, "frontend/src/routes/reality.$class.tsx"),
-    join(ROOT, "frontend/src/routes/_authenticated/runtime.tsx"),
-    join(ROOT, "frontend/src/routes/marketplace.tsx"),
-    join(ROOT, "frontend/src/routes/platform.org.tsx"),
     join(ROOT, "frontend/src/routes/manifest[.]webmanifest.ts"),
   ];
 
   it("scans real sources and finds no institution or role branch", () => {
-    expect(SURFACE_SOURCES.length).toBeGreaterThanOrEqual(7);
+    expect(SURFACE_SOURCES.length).toBeGreaterThanOrEqual(1);
     const offenders: string[] = [];
     for (const file of SURFACE_SOURCES) {
       const source = readFileSync(file, "utf8");
@@ -259,17 +254,8 @@ describe("R40 — surfaces carry no per-organization or per-role branch", () => 
   });
 
   it("renders engine output instead of restating it", () => {
-    const runtime = readFileSync(
-      join(ROOT, "frontend/src/routes/_authenticated/runtime.tsx"),
-      "utf8",
-    );
-    expect(runtime).toContain("buildRuntimeView");
-    expect(runtime).toContain("getMyRealityRoles");
-    expect(runtime).not.toMatch(/roleIds\s*:\s*\["/); // never a client-side role list
-
-    const platformOrg = readFileSync(join(ROOT, "frontend/src/routes/platform.org.tsx"), "utf8");
-    expect(platformOrg).toContain("platformOrgSnapshot");
-    expect(platformOrg).toContain("auditPlatformOrg");
+    expect(existsSync(join(ROOT, "frontend/src/routes/_authenticated/runtime.tsx"))).toBe(false);
+    expect(existsSync(join(ROOT, "frontend/src/routes/platform.org.tsx"))).toBe(false);
 
     const manifest = readFileSync(
       join(ROOT, "frontend/src/routes/manifest[.]webmanifest.ts"),

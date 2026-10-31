@@ -26,21 +26,36 @@ describe("sign-in page per host", () => {
     expect(x.allowSignup).toBe(false);
   });
 
-  it("app host: organization copy and sign-up available", () => {
+  it("app host: invitation copy and no self-service sign-up", () => {
     const x = authPageExperience(effectiveExperienceHostKind("app.sherivs.com"));
-    expect(x.heading).toBeNull();
-    expect(x.subtext).toBe("Sign in to Sherivs — your organization's operating environment.");
-    expect(x.allowSignup).toBe(true);
-    expect(effectiveAuthMode("signup", x)).toBe("signup");
+    expect(x.heading).toBe("Sherivs");
+    expect(x.allowSignup).toBe(false);
+    expect(effectiveAuthMode("signup", x)).toBe("signin");
     expect(effectiveAuthMode("bogus", x)).toBe("signin");
+    expect(x.subtext.toLowerCase()).toContain("invitation");
   });
 
   it("auth page wires the host experience and gates the sign-up toggle", () => {
-    expect(authSource).toContain("authPageExperience(currentEffectiveHostKind())");
+    expect(authSource).toContain("authPageExperience(hostKind)");
     expect(authSource).toContain("effectiveAuthMode(requestedMode, experience)");
     expect(authSource).toContain('mode === "signin" && experience.allowSignup');
     expect(authSource).toContain("{experience.subtext}");
+    expect(authSource).toContain("postSignInPath");
+    expect(authSource).toContain("identityFromAppState");
     expect(authSource).toContain("<Turnstile");
-    expect(authSource).toContain('to="/forgot-password"');
+    expect(authSource).toContain("app-entry-login-submit");
+    expect(authSource).toContain('data-testid="auth-submit"');
+    expect(authSource).toContain("EnterpriseLoginFields");
+    expect(authSource).toContain("startGoogleSignIn");
+    expect(authSource).toContain("Sign in with Google");
+    expect(authSource).toContain("ACCOUNT_INVITATION_COPY");
+    expect(authSource).not.toContain("PASSKEY_DEVICE_HELP");
+    expect(authSource).toContain("EnterpriseLoginFields");
+    expect(authSource).not.toContain("SherivsLockup");
+    expect(authSource).not.toContain("app-entry-login-chrome");
+    expect(authSource).toContain("SignInLoading");
+    expect(authSource).toContain("consoleVisualFixtureEnabled()");
+    expect(authSource).toContain("CONSOLE_FIXTURE_PERSONAS");
+    expect(authSource).toContain("Continue as {persona.jobTitle}");
   });
 });

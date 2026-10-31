@@ -2,33 +2,48 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { signInWithPassword } from "@/api/auth.client";
+import { signInWithPasskey } from "@/api/passkeys.client";
 import { ApiError, errorHeadline } from "@/api/errors";
 import { useSession } from "@/providers/session-provider";
 import { useConnectivity } from "@/providers/connectivity-provider";
-import { Card, ErrorState, Field, PrimaryButton, Text as UIText } from "@/ui/components";
+import { Card, ErrorState, Field, PrimaryButton, SecondaryButton, Text as UIText } from "@/ui/components";
 import { palette, spacing, typography } from "@/ui/theme";
 
 export default function SignInScreen() {
   const router = useRouter();
-  const { client } = useSession();
+  const { client, env } = useSession();
   const { snapshot } = useConnectivity();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<"password" | "passkey" | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
 
   const offline = snapshot.state !== "online";
+  const nativePasskey = Platform.OS === "ios" || Platform.OS === "android";
 
-  const submit = async () => {
+  const submitPassword = async () => {
     setError(null);
-    setBusy(true);
+    setBusy("password");
     try {
       await signInWithPassword(client, email.trim(), password);
       router.replace("/");
     } catch (cause) {
       setError(cause instanceof ApiError ? cause : new ApiError("unknown", "sign-in failed"));
     } finally {
-      setBusy(false);
+      setBusy(null);
+    }
+  };
+
+  const submitPasskey = async () => {
+    setError(null);
+    setBusy("passkey");
+    try {
+      await signInWithPasskey(client, env);
+      router.replace("/");
+    } catch (cause) {
+      setError(cause instanceof ApiError ? cause : new ApiError("unknown", "passkey sign-in failed"));
+    } finally {
+      setBusy(null);
     }
   };
 
@@ -61,7 +76,20 @@ export default function SignInScreen() {
             autoComplete="password"
             placeholder="••••••••"
           />
-          <PrimaryButton label="Sign in" onPress={() => void submit()} busy={busy} disabled={offline} />
+          <PrimaryButton
+            label="Sign in"
+            onPress={() => void submitPassword()}
+            busy={busy === "password"}
+            disabled={offline || busy !== null}
+          />
+          {nativePasskey ? (
+            <SecondaryButton
+              label="Sign in with a passkey"
+              onPress={() => void submitPasskey()}
+              busy={busy === "passkey"}
+              disabled={offline || busy !== null}
+            />
+          ) : null}
           {offline ? (
             <UIText>You are offline — sign-in requires a connection to Sherivs.</UIText>
           ) : null}

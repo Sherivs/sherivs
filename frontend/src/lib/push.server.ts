@@ -8,12 +8,14 @@ const timeAuthority = new TimeAuthority(new SystemClock());
  *
  * Sends VAPID-authenticated, payload-less push messages to stored browser
  * subscriptions. The service worker (`public/sw.js`) renders a generic
- * notification and deep-links the user to /notifications.
+ * notification and deep-links the user to /home/notifications.
  *
  * Requires the `VAPID_PUBLIC_KEY` (base64url, uncompressed P-256 point) and
  * `VAPID_PRIVATE_KEY` (base64url, raw 32-byte scalar) secrets. When they are
  * missing, delivery is skipped silently so in-app notifications still work.
  */
+
+export const DEFAULT_VAPID_SUBJECT = "https://app.sherivs.com";
 
 function base64UrlToBytes(input: string): Uint8Array {
   const padded = input.replace(/-/g, "+").replace(/_/g, "/");
@@ -90,7 +92,7 @@ export type PushDeliveryResult = {
 export async function sendWebPush(tokens: string[]): Promise<PushDeliveryResult> {
   const publicKey = process.env.VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
-  const subject = process.env.VAPID_SUBJECT ?? "mailto:notifications@vibeora.app";
+  const subject = process.env.VAPID_SUBJECT ?? DEFAULT_VAPID_SUBJECT;
 
   if (!tokens.length) return { attempted: 0, delivered: 0, expired: [] };
   if (!publicKey || !privateKey) {

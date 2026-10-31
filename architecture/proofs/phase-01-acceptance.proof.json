@@ -3,7 +3,7 @@
   "phase": "01",
   "phaseName": "Foundation",
   "source": "architecture/phase-01-foundation.md",
-  "generatedAt": "2026-10-25T03:20:23.967Z",
+  "generatedAt": "2026-10-26T18:09:35.697Z",
   "classificationDefinitions": {
     "ENFORCED": "an executable artefact proves it (test, verifier script, migration, policy or machine-checked contract match) and, where a boundary is declared, a real call site invokes it",
     "DECLARED": "a module, document or contract mentions it, but nothing executable proves it",
@@ -12,11 +12,12 @@
   },
   "summary": {
     "areas": 45,
-    "enforced": 42,
+    "enforced": 41,
     "declared": 0,
-    "implementedUnwired": 3,
+    "implementedUnwired": 4,
     "implementedUnwiredAreas": [
       "observability",
+      "workspace-projection",
       "rate-limiting",
       "resource-budgets"
     ],
@@ -522,8 +523,7 @@
         "frontend/src/components/error-boundary.tsx"
       ],
       "boundaryEvidence": [
-        "frontend/src/server.ts",
-        "frontend/src/components/error-boundary.tsx"
+        "frontend/src/server.ts"
       ]
     },
     {
@@ -874,7 +874,7 @@
       "requirement": "The foundation's own capability and verification contracts are readable in a surface from real contract data, so the foundation is not enforcement-only.",
       "required": true,
       "ownerPhase": "01",
-      "classification": "ENFORCED",
+      "classification": "IMPLEMENTED_UNWIRED",
       "declaredEvidence": [
         "frontend/src/lib/foundation-standards.ts",
         "tests/unit/foundation-standards.test.ts"
@@ -887,9 +887,7 @@
       "declaredBoundary": [
         "frontend/src/routes/platform.tsx"
       ],
-      "boundaryEvidence": [
-        "frontend/src/routes/platform.tsx"
-      ]
+      "boundaryEvidence": []
     },
     {
       "id": "rate-limiting",

@@ -1,24 +1,35 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { useApp } from "@/contexts/app-context";
+import { createFileRoute } from "@tanstack/react-router";
 import { SiteView } from "@/components/website/site-view";
 import { parseSiteSearch, siteHead } from "@/components/website/route-support";
 import { getPublicSite } from "@/lib/website/public-site.functions";
 import { SherivsHome } from "@/components/public/sherivs-home";
-import { identityFromAppState } from "@/lib/identity/context";
+import { ApplicationUnavailable } from "@/components/public/application-unavailable";
+import { AppEntryScreen } from "@/components/app-entry/app-entry-screen";
+import { ConsoleGate } from "@/components/internal-console/console-gate";
 import { resolveTenantDomain, resolveTenantSlug } from "@/lib/tenant";
-import { PLATFORM_NAME, PLATFORM_URL } from "@/lib/platform";
 import {
-  resolveExperienceHost,
-  shouldRedirectCanonicalRootToAuth,
-} from "@/lib/experience/experience-host";
-import { headConsoleSlugFromHost } from "@/lib/head-console/host";
-import { isGovHost } from "@/lib/gov/host";
+  PLATFORM_NAME,
+  PLATFORM_PAGE_DESCRIPTION,
+  PLATFORM_PAGE_TITLE,
+  PLATFORM_URL,
+} from "@/lib/platform";
+import { resolveExperienceHost } from "@/lib/experience/experience-host";
+import { isRetiredApplicationHostname } from "@/lib/experience/retired-application-host";
+import { isAppEntryKind, parseAppEntryPanel } from "@/lib/experience/app-entry-host";
+import { effectiveExperienceHostKind } from "@/lib/experience/console-host-routing";
 import { readRequestHostname } from "@/lib/experience/experience-host.functions";
+import { useApp } from "@/contexts/app-context";
 
 async function loaderHostname(): Promise<string> {
   if (typeof window !== "undefined") return window.location.hostname;
   return readRequestHostname();
+}
+
+function retiredSurfaceLabel(hostname: string): string {
+  const kind = resolveExperienceHost(hostname);
+  if (kind === "internal") return "internal console";
+  if (kind === "app") return "application";
+  return "console";
 }
 
 export const Route = createFileRoute("/")({
@@ -26,20 +37,66 @@ export const Route = createFileRoute("/")({
   loaderDeps: ({ search }) => ({ school: search.school, lang: search.lang }),
   loader: async ({ deps }) => {
     const hostname = await loaderHostname();
-    // SHERIVS-B01: console.<inst>.sherivs.com is the institution head console.
-    if (headConsoleSlugFromHost(hostname)) throw redirect({ to: "/head" });
-    // SHERIVS-B02: gov.sherivs.com and <state>.gov.sherivs.com open the government console.
-    if (isGovHost(hostname)) throw redirect({ to: "/gov" });
-    const hostKind = resolveExperienceHost(hostname);
-    // App and console must not SSR the public marketing homepage.
-    if (shouldRedirectCanonicalRootToAuth(hostKind)) {
-      throw redirect({ to: "/auth" });
+    const hostKind = effectiveExperienceHostKind(
+      hostname,
+      import.meta.env.VITE_SHERIVS_HOST_KIND_OVERRIDE as string | undefined,
+    );
+    // app.sherivs.com is the application splash — not the public homepage
+    // and not the deleted workspace shell.
+    if (isAppEntryKind(hostKind)) {
+      return {
+        hostname,
+        hostKind,
+        retired: false as const,
+        appEntry: true as const,
+        consoleEntry: false as const,
+        surface: "application",
+        site: null,
+        preview: false,
+        tenant: null,
+        lang: deps.lang,
+      };
+    }
+    // console.sherivs.com is the Internal Console — never the marketing homepage.
+    if (hostKind === "internal") {
+      return {
+        hostname,
+        hostKind,
+        retired: false as const,
+        appEntry: false as const,
+        consoleEntry: true as const,
+        surface: "internal console",
+        site: null,
+        preview: false,
+        tenant: null,
+        lang: deps.lang,
+      };
+    }
+    // Gov, head, and group hosts must not SSR the public marketing homepage
+    // or a hardcoded workspace shell.
+    if (isRetiredApplicationHostname(hostname)) {
+      return {
+        hostname,
+        hostKind,
+        retired: true as const,
+        appEntry: false as const,
+        consoleEntry: false as const,
+        surface: retiredSurfaceLabel(hostname),
+        site: null,
+        preview: false,
+        tenant: null,
+        lang: deps.lang,
+      };
     }
     // Organization website (custom domain, <slug>.sherivs.com, or ?school= preview on the platform host).
     const res = await getPublicSite(deps.school);
     return {
       hostname,
       hostKind,
+      retired: false as const,
+      appEntry: false as const,
+      consoleEntry: false as const,
+      surface: null,
       site: res.site,
       preview: res.preview,
       tenant: res.tenant,
@@ -48,6 +105,31 @@ export const Route = createFileRoute("/")({
   },
   component: Index,
   head: ({ loaderData }) => {
+    if (loaderData?.appEntry) {
+      return {
+        meta: [
+          { title: PLATFORM_NAME },
+          { name: "description", content: `Sign in to ${PLATFORM_NAME}.` },
+          { name: "robots", content: "noindex, nofollow" },
+        ],
+      };
+    }
+    if (loaderData?.consoleEntry) {
+      return {
+        meta: [
+          { title: `Internal Console — ${PLATFORM_NAME}` },
+          { name: "robots", content: "noindex, nofollow" },
+        ],
+      };
+    }
+    if (loaderData?.retired) {
+      return {
+        meta: [
+          { title: "Application not available — Sherivs" },
+          { name: "robots", content: "noindex, nofollow" },
+        ],
+      };
+    }
     if (loaderData?.site) {
       const h = siteHead(loaderData.site, "home", loaderData.lang, loaderData.preview);
       return { meta: h.meta, links: h.links };
@@ -61,26 +143,26 @@ export const Route = createFileRoute("/")({
 const platformHead = () => ({
   meta: [
     {
-      title: `${PLATFORM_NAME} — The operating intelligence for modern organizations`,
+      title: PLATFORM_PAGE_TITLE,
     },
     {
       name: "description",
-      content:
-        "Sherivs connects your organization's people, knowledge, workflows, communications, data, and AI workforce into one intelligent operating environment.",
+      content: PLATFORM_PAGE_DESCRIPTION,
     },
     {
       property: "og:title",
-      content: `${PLATFORM_NAME} — Intelligent operating infrastructure for organizations`,
+      content: PLATFORM_PAGE_TITLE,
     },
     {
       property: "og:description",
-      content:
-        "One intelligent operating environment for organizations: people, knowledge, workflows, AI workforce, and operations — governed by design.",
+      content: PLATFORM_PAGE_DESCRIPTION,
     },
     { property: "og:type", content: "website" },
     { property: "og:url", content: `${PLATFORM_URL}/` },
     { property: "og:image", content: `${PLATFORM_URL}/og-image.png` },
     { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:title", content: PLATFORM_PAGE_TITLE },
+    { name: "twitter:description", content: PLATFORM_PAGE_DESCRIPTION },
     { name: "twitter:image", content: `${PLATFORM_URL}/og-image.png` },
   ],
   links: [{ rel: "canonical", href: `${PLATFORM_URL}/` }],
@@ -88,27 +170,20 @@ const platformHead = () => ({
 
 function Index() {
   const data = Route.useLoaderData();
-  const { loading, school, tenantSlug, role, profile, superAdmin, platformStaff } = useApp();
-  const navigate = useNavigate();
+  const search = Route.useSearch();
+  const { loading } = useApp();
 
-  // Identity-based routing (§11): signed-in users on the platform host (not a
-  // tenant site) go to their resolved identity destination.
-  const identity = identityFromAppState({ superAdmin, profile, school, platformStaff });
-  const onTenantSite = data.tenant || !!tenantSlug;
-  useEffect(() => {
-    if (!loading && (role || profile || superAdmin || platformStaff) && !onTenantSite) {
-      navigate({ to: identity.destination, replace: true });
-    }
-  }, [
-    loading,
-    role,
-    profile,
-    superAdmin,
-    platformStaff,
-    onTenantSite,
-    identity.destination,
-    navigate,
-  ]);
+  if (data.appEntry) {
+    return <AppEntryScreen panel={parseAppEntryPanel(search.panel)} />;
+  }
+
+  if (data.consoleEntry) {
+    return <ConsoleGate hostKind={data.hostKind} />;
+  }
+
+  if (data.retired) {
+    return <ApplicationUnavailable surface={data.surface ?? "application"} />;
+  }
 
   // Organization website: server-rendered from the published document (or generated from live data).
   if (data.site) {

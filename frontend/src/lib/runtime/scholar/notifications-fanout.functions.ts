@@ -250,7 +250,7 @@ export const pushNotification = createServerFn({ method: "POST" })
       title: data.title,
       message: data.message,
       type: "announcement",
-      action_url: data.action_url ?? "/notifications",
+      action_url: data.action_url ?? "/home/notifications",
       is_read: false,
     }));
     const { error } = await supabase.from("notifications").insert(rows);
@@ -304,7 +304,7 @@ export const notifyCalendarEvent = createServerFn({ method: "POST" })
       title: `New ${typeLabel}: ${data.title}`,
       message: `Scheduled for ${data.start_date}. Open the calendar for details.`,
       type: "calendar_event",
-      action_url: "/notifications",
+      action_url: "/home/notifications",
       is_read: false,
     }));
     const { error } = await supabase.from("notifications").insert(rows);

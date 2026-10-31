@@ -3,7 +3,7 @@
   "phase": "05",
   "phaseName": "Core Application Runtime",
   "source": "architecture/phase-05-core-application-runtime.md",
-  "generatedAt": "2026-09-28T12:05:17.140Z",
+  "generatedAt": "2026-10-26T18:07:59.935Z",
   "classificationDefinitions": {
     "ENFORCED": "an executable artefact proves it (test, verifier script, migration, policy or machine-checked contract match) and, where a boundary is declared, a real call site invokes it",
     "DECLARED": "a module, document or contract mentions it, but nothing executable proves it",
@@ -12,11 +12,12 @@
   },
   "summary": {
     "areas": 13,
-    "enforced": 12,
+    "enforced": 11,
     "declared": 0,
-    "implementedUnwired": 1,
+    "implementedUnwired": 2,
     "implementedUnwiredAreas": [
-      "observability"
+      "observability",
+      "runtime-knowledge"
     ],
     "missing": 0,
     "missingRequired": [],
@@ -258,7 +259,7 @@
       "requirement": "The runtime can describe and exercise its own execution fabric — capabilities, jobs, events, approvals, command/query and resilience — without claiming domain truth.",
       "required": true,
       "ownerPhase": null,
-      "classification": "ENFORCED",
+      "classification": "IMPLEMENTED_UNWIRED",
       "declaredEvidence": [
         "frontend/src/lib/runtime-self-report.ts",
         "tests/unit/runtime-self-report.test.ts"
@@ -271,9 +272,7 @@
       "declaredBoundary": [
         "frontend/src/routes/_authenticated/super-admin/runtime-contracts.tsx"
       ],
-      "boundaryEvidence": [
-        "frontend/src/routes/_authenticated/super-admin/runtime-contracts.tsx"
-      ]
+      "boundaryEvidence": []
     },
     {
       "id": "document-completeness",

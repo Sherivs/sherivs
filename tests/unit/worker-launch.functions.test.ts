@@ -25,7 +25,7 @@
  * executor seam only (the live gateway executor stays EXTERNAL REVIEW PENDING).
  */
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -552,12 +552,7 @@ describe("§27 server-function invariants — worker-launch.functions.ts", () =>
 });
 
 describe("route wiring invariants (the UI consumes the real server function)", () => {
-  const route = readFileSync(ROUTE_SRC, "utf8");
-
-  it("the route renders the typed outcome and never invents launch state", () => {
-    expect(route).toMatch(/useServerFn\(launchWorkerMission\)/);
-    expect(route).toMatch(/blocked_no_credential/);
-    expect(route).toMatch(/BLOCKED_NO_CREDENTIAL/);
-    expect(route).toMatch(/EXTERNAL REVIEW PENDING/);
+  it("the hardcoded worker-missions console page is gone", () => {
+    expect(existsSync(ROUTE_SRC)).toBe(false);
   });
 });

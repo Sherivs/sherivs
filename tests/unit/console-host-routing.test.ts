@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
+  consoleSignInSearch,
   decideHostRoute,
   effectiveExperienceHostKind,
   isConsoleOperator,
   isConsolePath,
   isConsoleSurfacePath,
   parseHostKindOverride,
+  postSignInPath,
+  sanitizeConsoleNextPath,
 } from "@/lib/experience/console-host-routing";
 
 const operator = { signedIn: true, isConsoleOperator: true };
@@ -29,16 +32,16 @@ describe("console host routing", () => {
   });
 
   it("matches console paths exactly", () => {
-    for (const p of ["/internal", "/internal/", "/internal/support", "/internal_/access-review"])
+    for (const p of ["/console", "/console/", "/console/team", "/console_/access-review"])
       expect(isConsolePath(p)).toBe(true);
-    for (const p of ["/", "/internals", "/admin", "/super-admin/staff"])
+    for (const p of ["/", "/internal", "/admin", "/super-admin/staff"])
       expect(isConsolePath(p)).toBe(false);
   });
 
   it("keeps console-linked surfaces on the console host", () => {
-    for (const p of ["/mfa", "/super-admin/staff", "/command-centre", "/platform/org", "/runtime"])
+    for (const p of ["/mfa", "/console", "/console/team"])
       expect(isConsoleSurfacePath(p)).toBe(true);
-    for (const p of ["/admin", "/teacher/lesson-plans", "/welcome", "/mfa-x"])
+    for (const p of ["/admin", "/super-admin/staff", "/command-centre", "/welcome", "/mfa-x"])
       expect(isConsoleSurfacePath(p)).toBe(false);
     expect(decideHostRoute({ hostKind: "internal", pathname: "/mfa", ...operator }).kind).toBe(
       "allow",
@@ -48,22 +51,30 @@ describe("console host routing", () => {
     ).toBe("allow");
   });
 
-  it("on the console host sends operators to /internal and blocks non-staff", () => {
+  it("on the console host sends operators to /console and blocks non-staff", () => {
     expect(decideHostRoute({ hostKind: "internal", pathname: "/admin", ...operator })).toEqual({
       kind: "redirect",
-      to: "/internal",
+      to: "/console",
     });
     expect(
-      decideHostRoute({ hostKind: "internal", pathname: "/internal/support", ...operator }),
+      decideHostRoute({ hostKind: "internal", pathname: "/console/team", ...operator }),
     ).toEqual({ kind: "allow" });
     expect(
       decideHostRoute({
         hostKind: "internal",
-        pathname: "/internal",
+        pathname: "/console",
         signedIn: true,
         isConsoleOperator: false,
       }),
     ).toEqual({ kind: "not_authorised" });
+    expect(
+      decideHostRoute({
+        hostKind: "internal",
+        pathname: "/auth",
+        signedIn: false,
+        isConsoleOperator: false,
+      }),
+    ).toEqual({ kind: "allow" });
     expect(
       decideHostRoute({
         hostKind: "internal",
@@ -74,14 +85,14 @@ describe("console host routing", () => {
     ).toEqual({ kind: "redirect", to: "/auth" });
   });
 
-  it("does not serve /internal on app, public or tenant hosts", () => {
+  it("does not serve /console on app, public or tenant hosts", () => {
     for (const hostKind of ["app", "public_platform", "tenant"] as const) {
-      expect(decideHostRoute({ hostKind, pathname: "/internal", ...operator }).kind).toBe(
+      expect(decideHostRoute({ hostKind, pathname: "/console", ...operator }).kind).toBe(
         "console_elsewhere",
       );
       expect(decideHostRoute({ hostKind, pathname: "/admin", ...operator }).kind).toBe("allow");
     }
-    expect(decideHostRoute({ hostKind: "local", pathname: "/internal", ...operator }).kind).toBe(
+    expect(decideHostRoute({ hostKind: "local", pathname: "/console", ...operator }).kind).toBe(
       "allow",
     );
   });
@@ -90,5 +101,55 @@ describe("console host routing", () => {
     expect(isConsoleOperator({ superAdmin: { id: "a" } })).toBe(true);
     expect(isConsoleOperator({ platformStaff: { id: "b" } })).toBe(true);
     expect(isConsoleOperator({ superAdmin: null, platformStaff: null })).toBe(false);
+  });
+
+  it("sanitizes post-auth next paths to console surfaces only", () => {
+    expect(sanitizeConsoleNextPath("/console")).toBe("/console");
+    expect(sanitizeConsoleNextPath("/console/team")).toBe("/console/team");
+    expect(sanitizeConsoleNextPath("/mfa")).toBe("/mfa");
+    expect(sanitizeConsoleNextPath("/console/?x=1")).toBe("/console");
+    expect(sanitizeConsoleNextPath("/home")).toBeNull();
+    expect(sanitizeConsoleNextPath("/auth")).toBeNull();
+    expect(sanitizeConsoleNextPath("//evil.example")).toBeNull();
+    expect(sanitizeConsoleNextPath("https://evil.example/console")).toBeNull();
+    expect(consoleSignInSearch("/")).toEqual({ next: "/console" });
+    expect(consoleSignInSearch("/console/team")).toEqual({ next: "/console/team" });
+  });
+
+  it("returns staff to the Internal Console after sign-in", () => {
+    expect(
+      postSignInPath({
+        hostKind: "internal",
+        identityDestination: "/console",
+        next: "/console/team",
+      }),
+    ).toBe("/console/team");
+    expect(
+      postSignInPath({
+        hostKind: "internal",
+        identityDestination: "/home",
+        next: "/home",
+      }),
+    ).toBe("/console");
+    expect(
+      postSignInPath({
+        hostKind: "local",
+        identityDestination: "/console",
+        next: "/console/organizations",
+      }),
+    ).toBe("/console/organizations");
+    expect(
+      postSignInPath({
+        hostKind: "app",
+        identityDestination: "/home",
+        next: "/console",
+      }),
+    ).toBe("/home");
+    expect(
+      postSignInPath({
+        hostKind: "local",
+        identityDestination: "/console",
+      }),
+    ).toBe("/console");
   });
 });

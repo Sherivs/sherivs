@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useApp } from "@/contexts/app-context";
+import { currentEffectiveHostKind, isConsoleOperator } from "@/lib/experience/console-host-routing";
 import {
   analyticsAllowed,
   doNotTrackEnabled,
@@ -9,6 +10,7 @@ import {
   type AnalyticsConsent,
 } from "@/lib/analytics/consent";
 import { identifyPosthog, startPosthog, stopPosthog } from "@/lib/analytics/posthog";
+import { resolveExperienceHost } from "@/lib/experience/experience-host";
 
 const KEY = import.meta.env.VITE_POSTHOG_KEY as string | undefined;
 const HOST = import.meta.env.VITE_POSTHOG_HOST as string | undefined;
@@ -18,7 +20,8 @@ const HOST = import.meta.env.VITE_POSTHOG_HOST as string | undefined;
  * accepts. Students and Do-Not-Track browsers are never tracked or asked.
  */
 export function AnalyticsConsent() {
-  const { profile, role, school } = useApp();
+  const app = useApp();
+  const { profile, role, school, loading, superAdmin, platformStaff } = app;
   const [consent, setConsent] = useState<AnalyticsConsent>("unset");
   const [ready, setReady] = useState(false);
   const [dnt, setDnt] = useState(false);
@@ -42,6 +45,12 @@ export function AnalyticsConsent() {
     );
   }, [ready, allowed, profile?.id, role, school?.id, profile?.school_id]);
 
+  const hostKind = currentEffectiveHostKind();
+  const operator = isConsoleOperator({ superAdmin, platformStaff });
+  if (hostKind === "internal" && (loading || !operator)) {
+    return null;
+  }
+
   if (!ready || !shouldAskForAnalyticsConsent({ key: KEY, consent, doNotTrack: dnt, role })) {
     return null;
   }
@@ -61,10 +70,17 @@ export function AnalyticsConsent() {
     >
       <p className="text-sm font-semibold">Help us improve Sherivs</p>
       <p className="mt-1 text-xs text-muted-foreground">
-        With your permission we collect anonymous usage analytics (pages visited and buttons
-        used). We never record your screen, what you type, or your name, email or phone.
-        Student accounts are never tracked. See our{" "}
-        <a href="/privacy" className="underline">
+        With your permission we collect anonymous usage analytics (pages visited and buttons used).
+        We never record your screen, what you type, or your name, email or phone. Student accounts
+        are never tracked. See our{" "}
+        <a
+          href={
+            resolveExperienceHost(window.location.hostname) === "tenant"
+              ? "/privacy"
+              : "/privacy-policy"
+          }
+          className="underline"
+        >
           privacy notice
         </a>
         .

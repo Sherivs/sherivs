@@ -2,7 +2,7 @@
   "artifact": "phase-completion",
   "wave": "AUDIT-1",
   "owner": "kernel (Phase 01 governance)",
-  "generatedAt": "2026-10-25T03:20:22.847Z",
+  "generatedAt": "2026-10-26T18:09:36.063Z",
   "authority": [
     "CONSTITUTION.md",
     "architecture/registry.json",
@@ -18,8 +18,8 @@
   },
   "summary": {
     "phasesAudited": 51,
-    "complete": 14,
-    "implementing": 19,
+    "complete": 4,
+    "implementing": 29,
     "architectureDefined": 18,
     "withModules": 33,
     "withResolvedModules": 33,
@@ -62,7 +62,67 @@
     ],
     "unconfirmedClaims": [
       {
+        "id": "01",
+        "levels": [
+          "L4 frontend/workspace integration"
+        ]
+      },
+      {
+        "id": "02",
+        "levels": [
+          "L4 frontend/workspace integration"
+        ]
+      },
+      {
+        "id": "05",
+        "levels": [
+          "L4 frontend/workspace integration"
+        ]
+      },
+      {
+        "id": "06",
+        "levels": [
+          "L4 frontend/workspace integration"
+        ]
+      },
+      {
+        "id": "07",
+        "levels": [
+          "L4 frontend/workspace integration"
+        ]
+      },
+      {
         "id": "08",
+        "levels": [
+          "L4 frontend/workspace integration"
+        ]
+      },
+      {
+        "id": "09",
+        "levels": [
+          "L4 frontend/workspace integration"
+        ]
+      },
+      {
+        "id": "10",
+        "levels": [
+          "L4 frontend/workspace integration"
+        ]
+      },
+      {
+        "id": "11",
+        "levels": [
+          "L4 frontend/workspace integration"
+        ]
+      },
+      {
+        "id": "13",
+        "levels": [
+          "L4 frontend/workspace integration"
+        ]
+      },
+      {
+        "id": "25",
         "levels": [
           "L4 frontend/workspace integration"
         ]
@@ -76,7 +136,7 @@
     ],
     "exemptionSource": "architecture/phase-completion-exemptions.json",
     "missingLevelFrequency": {
-      "L4 frontend/workspace integration": 37,
+      "L4 frontend/workspace integration": 47,
       "L3 backend": 18,
       "L2 data model": 12,
       "L1 conceptual": 1
@@ -99,7 +159,7 @@
         "L1 conceptual": true,
         "L2 data model": false,
         "L3 backend": true,
-        "L4 frontend/workspace integration": true,
+        "L4 frontend/workspace integration": false,
         "L5 operational maturity": true
       },
       "registryLevels": [
@@ -110,13 +170,17 @@
         true
       ],
       "registryStatus": "COMPLETE",
-      "derivedStatus": "COMPLETE",
-      "complete": true,
-      "missingLevels": [],
+      "derivedStatus": "IMPLEMENTING",
+      "complete": false,
+      "missingLevels": [
+        "L4 frontend/workspace integration"
+      ],
       "exemptedLevels": [
         "L2 data model"
       ],
-      "unconfirmedLevels": []
+      "unconfirmedLevels": [
+        "L4 frontend/workspace integration"
+      ]
     },
     {
       "id": "02",
@@ -139,7 +203,7 @@
         "L1 conceptual": true,
         "L2 data model": true,
         "L3 backend": true,
-        "L4 frontend/workspace integration": true,
+        "L4 frontend/workspace integration": false,
         "L5 operational maturity": true
       },
       "registryLevels": [
@@ -150,11 +214,15 @@
         true
       ],
       "registryStatus": "COMPLETE",
-      "derivedStatus": "COMPLETE",
-      "complete": true,
-      "missingLevels": [],
+      "derivedStatus": "IMPLEMENTING",
+      "complete": false,
+      "missingLevels": [
+        "L4 frontend/workspace integration"
+      ],
       "exemptedLevels": [],
-      "unconfirmedLevels": []
+      "unconfirmedLevels": [
+        "L4 frontend/workspace integration"
+      ]
     },
     {
       "id": "03",
@@ -264,7 +332,7 @@
         "L1 conceptual": true,
         "L2 data model": true,
         "L3 backend": true,
-        "L4 frontend/workspace integration": true,
+        "L4 frontend/workspace integration": false,
         "L5 operational maturity": true
       },
       "registryLevels": [
@@ -275,11 +343,15 @@
         true
       ],
       "registryStatus": "COMPLETE",
-      "derivedStatus": "COMPLETE",
-      "complete": true,
-      "missingLevels": [],
+      "derivedStatus": "IMPLEMENTING",
+      "complete": false,
+      "missingLevels": [
+        "L4 frontend/workspace integration"
+      ],
       "exemptedLevels": [],
-      "unconfirmedLevels": []
+      "unconfirmedLevels": [
+        "L4 frontend/workspace integration"
+      ]
     },
     {
       "id": "06",
@@ -301,7 +373,7 @@
         "L1 conceptual": true,
         "L2 data model": true,
         "L3 backend": true,
-        "L4 frontend/workspace integration": true,
+        "L4 frontend/workspace integration": false,
         "L5 operational maturity": true
       },
       "registryLevels": [
@@ -312,11 +384,15 @@
         true
       ],
       "registryStatus": "COMPLETE",
-      "derivedStatus": "COMPLETE",
-      "complete": true,
-      "missingLevels": [],
+      "derivedStatus": "IMPLEMENTING",
+      "complete": false,
+      "missingLevels": [
+        "L4 frontend/workspace integration"
+      ],
       "exemptedLevels": [],
-      "unconfirmedLevels": []
+      "unconfirmedLevels": [
+        "L4 frontend/workspace integration"
+      ]
     },
     {
       "id": "07",
@@ -338,7 +414,7 @@
         "L1 conceptual": true,
         "L2 data model": true,
         "L3 backend": true,
-        "L4 frontend/workspace integration": true,
+        "L4 frontend/workspace integration": false,
         "L5 operational maturity": true
       },
       "registryLevels": [
@@ -349,11 +425,15 @@
         true
       ],
       "registryStatus": "COMPLETE",
-      "derivedStatus": "COMPLETE",
-      "complete": true,
-      "missingLevels": [],
+      "derivedStatus": "IMPLEMENTING",
+      "complete": false,
+      "missingLevels": [
+        "L4 frontend/workspace integration"
+      ],
       "exemptedLevels": [],
-      "unconfirmedLevels": []
+      "unconfirmedLevels": [
+        "L4 frontend/workspace integration"
+      ]
     },
     {
       "id": "08",
@@ -418,7 +498,7 @@
         "L1 conceptual": true,
         "L2 data model": true,
         "L3 backend": true,
-        "L4 frontend/workspace integration": true,
+        "L4 frontend/workspace integration": false,
         "L5 operational maturity": true
       },
       "registryLevels": [
@@ -429,11 +509,15 @@
         true
       ],
       "registryStatus": "COMPLETE",
-      "derivedStatus": "COMPLETE",
-      "complete": true,
-      "missingLevels": [],
+      "derivedStatus": "IMPLEMENTING",
+      "complete": false,
+      "missingLevels": [
+        "L4 frontend/workspace integration"
+      ],
       "exemptedLevels": [],
-      "unconfirmedLevels": []
+      "unconfirmedLevels": [
+        "L4 frontend/workspace integration"
+      ]
     },
     {
       "id": "10",
@@ -457,7 +541,7 @@
         "L1 conceptual": true,
         "L2 data model": true,
         "L3 backend": true,
-        "L4 frontend/workspace integration": true,
+        "L4 frontend/workspace integration": false,
         "L5 operational maturity": true
       },
       "registryLevels": [
@@ -468,11 +552,15 @@
         true
       ],
       "registryStatus": "COMPLETE",
-      "derivedStatus": "COMPLETE",
-      "complete": true,
-      "missingLevels": [],
+      "derivedStatus": "IMPLEMENTING",
+      "complete": false,
+      "missingLevels": [
+        "L4 frontend/workspace integration"
+      ],
       "exemptedLevels": [],
-      "unconfirmedLevels": []
+      "unconfirmedLevels": [
+        "L4 frontend/workspace integration"
+      ]
     },
     {
       "id": "11",
@@ -496,7 +584,7 @@
         "L1 conceptual": true,
         "L2 data model": true,
         "L3 backend": true,
-        "L4 frontend/workspace integration": true,
+        "L4 frontend/workspace integration": false,
         "L5 operational maturity": true
       },
       "registryLevels": [
@@ -507,11 +595,15 @@
         true
       ],
       "registryStatus": "COMPLETE",
-      "derivedStatus": "COMPLETE",
-      "complete": true,
-      "missingLevels": [],
+      "derivedStatus": "IMPLEMENTING",
+      "complete": false,
+      "missingLevels": [
+        "L4 frontend/workspace integration"
+      ],
       "exemptedLevels": [],
-      "unconfirmedLevels": []
+      "unconfirmedLevels": [
+        "L4 frontend/workspace integration"
+      ]
     },
     {
       "id": "12",
@@ -576,7 +668,7 @@
         "L1 conceptual": true,
         "L2 data model": true,
         "L3 backend": true,
-        "L4 frontend/workspace integration": true,
+        "L4 frontend/workspace integration": false,
         "L5 operational maturity": true
       },
       "registryLevels": [
@@ -587,11 +679,15 @@
         true
       ],
       "registryStatus": "COMPLETE",
-      "derivedStatus": "COMPLETE",
-      "complete": true,
-      "missingLevels": [],
+      "derivedStatus": "IMPLEMENTING",
+      "complete": false,
+      "missingLevels": [
+        "L4 frontend/workspace integration"
+      ],
       "exemptedLevels": [],
-      "unconfirmedLevels": []
+      "unconfirmedLevels": [
+        "L4 frontend/workspace integration"
+      ]
     },
     {
       "id": "14",
@@ -1032,7 +1128,7 @@
         "L1 conceptual": true,
         "L2 data model": true,
         "L3 backend": true,
-        "L4 frontend/workspace integration": true,
+        "L4 frontend/workspace integration": false,
         "L5 operational maturity": true
       },
       "registryLevels": [
@@ -1043,11 +1139,15 @@
         true
       ],
       "registryStatus": "COMPLETE",
-      "derivedStatus": "COMPLETE",
-      "complete": true,
-      "missingLevels": [],
+      "derivedStatus": "IMPLEMENTING",
+      "complete": false,
+      "missingLevels": [
+        "L4 frontend/workspace integration"
+      ],
       "exemptedLevels": [],
-      "unconfirmedLevels": []
+      "unconfirmedLevels": [
+        "L4 frontend/workspace integration"
+      ]
     },
     {
       "id": "26",

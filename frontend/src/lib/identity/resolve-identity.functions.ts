@@ -45,7 +45,7 @@ export const resolveSherivsIdentity = createServerFn({ method: "GET" })
     }
 
     // 1b. Internal Sherivs staff (SHERIVS-008): accept a pending invite (own
-    //     row only; grants nothing) and route ACTIVE staff to /internal.
+    //     row only; grants nothing) and route ACTIVE staff to /console.
     await db.rpc("claim_platform_staff_invite");
     const { data: staff } = await db
       .from("platform_staff")

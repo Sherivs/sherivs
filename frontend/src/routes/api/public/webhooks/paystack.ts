@@ -14,6 +14,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { SystemClock, TimeAuthority } from "@/lib/kernel/time-authority";
 import { settlePaystackCharge, type SettlementDb } from "@/lib/payments/paystack-settlement";
+import { CONSOLE_SUBSCRIPTION_PREFIX } from "@/lib/internal-console/operations";
+import {
+  settleConsoleSubscription,
+  type ConsoleSubscriptionDb,
+} from "@/lib/payments/console-subscription-settlement";
 import { clientIpFromHeaders } from "@/lib/security/request-safety";
 import { verifyHmacHexSignature } from "@/lib/security/webhook-signature.server";
 import { settleWalletTopup, WALLET_TOPUP_PREFIX } from "@/lib/runtime/scholar/wallet-topup.functions";
@@ -34,13 +39,15 @@ const PaystackEventSchema = z.object({
       amount: z.number().int().nonnegative().max(100_000_000).optional(),
       currency: z.string().max(8).optional(),
       status: z.string().max(32).optional(),
-      metadata: z
-        .object({
-          fee_id: z.string().uuid().optional(),
-          school_id: z.string().max(64).optional(),
-          sherivs_share_kobo: z.number().int().nonnegative().max(100_000_000).optional(),
-          sherivs_split: z.boolean().optional(),
-        })
+          metadata: z
+            .object({
+              fee_id: z.string().uuid().optional(),
+              school_id: z.string().max(64).optional(),
+              subscription_id: z.string().uuid().optional(),
+              organization_id: z.string().uuid().optional(),
+              sherivs_share_kobo: z.number().int().nonnegative().max(100_000_000).optional(),
+              sherivs_split: z.boolean().optional(),
+            })
         .partial()
         .nullish(),
       subaccount: z.object({ subaccount_code: z.string().max(64).optional() }).partial().nullish(),
@@ -104,6 +111,37 @@ export const Route = createFileRoute("/api/public/webhooks/paystack")({
             processingStatus = r.outcome;
             errorMessage = r.reason ?? null;
           } catch {
+            return new Response("Processing error", { status: 500 });
+          }
+        } else if (
+          event.event === "charge.success" &&
+          event.data?.reference?.startsWith(CONSOLE_SUBSCRIPTION_PREFIX)
+        ) {
+          try {
+            const result = await settleConsoleSubscription(
+              supabaseAdmin as unknown as ConsoleSubscriptionDb,
+              {
+                reference: event.data.reference,
+                status: event.data.status,
+                amountKobo: event.data.amount,
+                currency: event.data.currency,
+              },
+            );
+            schoolId = "schoolId" in result ? (result.schoolId ?? null) : null;
+            processingStatus = result.outcome;
+            if (result.outcome === "rejected" || result.outcome === "ignored") {
+              errorMessage = result.reason;
+            }
+          } catch (err) {
+            await supabaseAdmin.from("webhook_logs").insert({
+              school_id: null,
+              provider: "paystack",
+              event_type: event.event,
+              payload: { reference: event.data.reference },
+              processing_status: "error",
+              error_message: err instanceof Error ? err.message.slice(0, 300) : "settlement error",
+              processed_at: timeAuthority.now().at,
+            });
             return new Response("Processing error", { status: 500 });
           }
         } else if (event.event === "charge.success" && event.data?.reference) {

@@ -4,7 +4,7 @@
  * Proves the destination law of `frontend/src/lib/identity/identity.ts` and
  * its agreement with the client-side derivation (`context.ts`):
  *
- *   - internal Sherivs workforce → /internal (never a customer workspace)
+ *   - internal Sherivs workforce → /console (never a customer workspace)
  *   - one organization membership → that membership's runtime workspace
  *   - multiple memberships → the organization selector
  *   - no membership (or a deactivated one) → /welcome, never a workspace

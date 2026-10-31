@@ -202,8 +202,7 @@
       "required": true,
       "evidence": [
         { "kind": "module", "path": "frontend/src/lib/financial-intelligence-report.ts", "contains": "export function runFinancialChecks" },
-        { "kind": "test", "path": "tests/unit/financial-intelligence-report.test.ts", "contains": "names a module and a suite that exist" },
-        { "kind": "module", "path": "frontend/src/routes/_authenticated/super-admin/financial-operations.tsx", "contains": "financial-operations" }
+        { "kind": "test", "path": "tests/unit/financial-intelligence-report.test.ts", "contains": "names a module and a suite that exist" }
       ],
       "boundary": []
     },

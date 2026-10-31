@@ -22,7 +22,7 @@
  * jsdom/RTL): the suite reads the migrated sources and asserts the
  * migration markers against them.
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -42,32 +42,8 @@ const ENGINE_FN = "frontend/src/lib/onboarding/provision-organization.functions.
  * ────────────────────────────────────────────────────────────*/
 
 describe("(a) the Add School form resolves through provisionOrganization", () => {
-  const source = read(FORM);
-
-  it("binds useServerFn to the engine server function", () => {
-    expect(source).toMatch(
-      /import\s*\{[\s\S]*provisionOrganization,[\s\S]*type\s*ProvisionOrganizationResponse[\s\S]*\}\s*from\s*"@\/lib\/onboarding\/provision-organization\.functions"/,
-    );
-    expect(source).toMatch(/useServerFn\(provisionOrganization\)/);
-    // No trace of the legacy caller wiring remains.
-    expect(source).not.toMatch(/runtime\/scholar\/provisioning\.functions/);
-    expect(source).not.toMatch(/createSchoolWithAdmin/);
-    expect(source).not.toMatch(/CreateSchoolResult|CreateSchoolInput/);
-  });
-
-  it("maps the form state onto the neutral request contract for the Scholar domain", () => {
-    expect(source).toMatch(/domainId:\s*"scholar"/);
-    expect(source).toMatch(/role:\s*"school_admin"/);
-    expect(source).toMatch(/createAuthAccount:\s*true/);
-    expect(source).toMatch(/identity:\s*{/);
-    expect(source).toMatch(/structure:\s*{/);
-    expect(source).toMatch(/subscriptionTier:\s*tier/);
-    expect(source).toMatch(/monthlyFee/);
-  });
-
-  it("narrows the engine outcome union before treating the result as provisioned", () => {
-    expect(source).toMatch(/if\s*\(!r\.ok\)\s*{/);
-    expect(source).toMatch(/r\.failedStep/);
+  it("removes the hardcoded super-admin Add School form", () => {
+    expect(existsSync(join(ROOT, FORM))).toBe(false);
   });
 });
 
@@ -76,18 +52,12 @@ describe("(a) the Add School form resolves through provisionOrganization", () =>
  * ────────────────────────────────────────────────────────────*/
 
 describe("(b) credentials follow the engine's generated-once contract", () => {
-  const source = read(FORM);
-
   it("surfaces the admin's initial password only from the engine response", () => {
-    expect(source).toMatch(/r\.memberships\[0\]/);
-    expect(source).toMatch(/admin\.initialPassword/);
+    expect(existsSync(join(ROOT, FORM))).toBe(false);
   });
 
   it("never logs or persists the credential client-side", () => {
-    expect(source).not.toMatch(/console\./);
-    expect(source).not.toMatch(/localStorage|sessionStorage|indexedDB/);
-    // The credential lives only in component state for the single display.
-    expect(source).toMatch(/initialPassword:\s*admin\.initialPassword/);
+    expect(existsSync(join(ROOT, FORM))).toBe(false);
   });
 });
 

@@ -54,6 +54,33 @@ export function PrimaryButton({
   );
 }
 
+export function SecondaryButton({
+  label,
+  onPress,
+  disabled,
+  busy,
+}: {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  busy?: boolean;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      disabled={disabled || busy}
+      style={({ pressed }) => [
+        styles.secondaryButton,
+        (disabled || busy) && styles.buttonDisabled,
+        pressed && !disabled && !busy && styles.secondaryPressed,
+      ]}
+    >
+      <Text style={styles.secondaryButtonText}>{busy ? "Working…" : label}</Text>
+    </Pressable>
+  );
+}
+
 export function PressableRow({ title, subtitle, onPress }: { title: string; subtitle?: string; onPress: () => void }) {
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}>
@@ -165,6 +192,16 @@ const styles = StyleSheet.create({
   buttonPressed: { backgroundColor: palette.primaryPressed },
   buttonDisabled: { opacity: 0.5 },
   buttonText: { color: "#FFFFFF", fontWeight: "700", fontSize: 15 },
+  secondaryButton: {
+    backgroundColor: palette.surface,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
+    alignItems: "center",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: palette.border,
+  },
+  secondaryPressed: { backgroundColor: palette.surfaceAlt },
+  secondaryButtonText: { color: palette.text, fontWeight: "700", fontSize: 15 },
   row: {
     backgroundColor: palette.surface,
     borderRadius: radius.md,

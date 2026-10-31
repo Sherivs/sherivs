@@ -10,6 +10,7 @@ import {
   NEUTRAL_SENT_MESSAGE,
   RESEND_COOLDOWN_MS,
 } from "@/lib/security/auth-feedback";
+import { postSecurityAudit } from "@/lib/security/post-security-audit";
 import { SherivsLogo } from "@/components/brand/sherivs-logo";
 
 export const Route = createFileRoute("/forgot-password")({
@@ -47,13 +48,11 @@ function FindAccountPage() {
     setBusy(true);
     try {
       // Server-side audit + per-IP limit first.
-      const auditRes = await fetch("/api/public/audit/password-reset", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ event: "password_reset_requested", email }),
-      }).catch(() => null);
+      const auditRes = await postSecurityAudit({ event: "password_reset_requested", email });
       if (auditRes?.status === 429) {
-        const body = (await auditRes.json().catch(() => null)) as { retry_after_ms?: number } | null;
+        const body = (await auditRes.json().catch(() => null)) as {
+          retry_after_ms?: number;
+        } | null;
         const wait = body?.retry_after_ms ?? RESEND_COOLDOWN_MS;
         setCooldownUntil(Date.now() + wait);
         setNow(Date.now());
@@ -121,7 +120,10 @@ function FindAccountPage() {
                 resetKey={captchaNonce}
               />
               {error && (
-                <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive-foreground">
+                <div
+                  role="alert"
+                  className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive-foreground"
+                >
                   {error}
                 </div>
               )}
@@ -137,7 +139,11 @@ function FindAccountPage() {
                   disabled={busy || remaining > 0}
                   className="rounded-md bg-primary px-4 py-3 font-semibold text-primary-foreground disabled:opacity-60"
                 >
-                  {busy ? "Searching…" : remaining > 0 ? `Try again in ${formatSeconds(remaining)}` : "Search"}
+                  {busy
+                    ? "Searching…"
+                    : remaining > 0
+                      ? `Try again in ${formatSeconds(remaining)}`
+                      : "Search"}
                 </button>
               </div>
             </form>
@@ -158,7 +164,10 @@ function FindAccountPage() {
               resetKey={`sent:${captchaNonce}`}
             />
             {error && (
-              <div role="alert" className="mt-4 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive-foreground">
+              <div
+                role="alert"
+                className="mt-4 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive-foreground"
+              >
                 {error}
               </div>
             )}
@@ -169,7 +178,11 @@ function FindAccountPage() {
                 disabled={busy || remaining > 0}
                 className="w-full rounded-md border border-border px-4 py-3 font-semibold disabled:opacity-60"
               >
-                {remaining > 0 ? `Resend link in ${formatSeconds(remaining)}` : busy ? "Sending…" : "Resend link"}
+                {remaining > 0
+                  ? `Resend link in ${formatSeconds(remaining)}`
+                  : busy
+                    ? "Sending…"
+                    : "Resend link"}
               </button>
               <button
                 type="button"

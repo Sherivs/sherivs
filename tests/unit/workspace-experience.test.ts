@@ -1,55 +1,139 @@
-/**
- * Sherivs — workspace experience resolver tests (Phase 24).
- */
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { workspacesForViewer, parseWorkspaceId, workspaceById } from "@/lib/internal-console/workspaces";
+import { roleCodesForWorkspaceProvisioning } from "@/lib/internal-console/role-workspace";
 import {
-  dayPartForHour,
-  greetingForHour,
-  resolveMemberWorkspaceExperience,
-} from "../../frontend/src/lib/experience/workspace-experience";
+  WORKSPACE_EXPERIENCES,
+  experienceKeyForWorkspace,
+  visibleWorkspaceNav,
+} from "@/lib/internal-console/workspace-experience";
+import { CONSOLE_METRIC_CONTRACTS } from "@/lib/internal-console/metrics";
 
-describe("time-of-day part + greeting", () => {
-  it("maps hours to day parts", () => {
-    expect(dayPartForHour(0)).toBe("night");
-    expect(dayPartForHour(6)).toBe("morning");
-    expect(dayPartForHour(11)).toBe("morning");
-    expect(dayPartForHour(12)).toBe("afternoon");
-    expect(dayPartForHour(16)).toBe("afternoon");
-    expect(dayPartForHour(18)).toBe("evening");
-    expect(dayPartForHour(23)).toBe("night");
-  });
+const provisionSource = readFileSync(
+  "frontend/src/lib/internal-console/organization.store.server.ts",
+  "utf8",
+);
 
-  it("returns the localized greeting", () => {
-    expect(greetingForHour(8)).toBe("Good morning");
-    expect(greetingForHour(14)).toBe("Good afternoon");
-    expect(greetingForHour(19)).toBe("Good evening");
-    expect(greetingForHour(2)).toBe("Good evening");
-  });
-});
-
-describe("member workspace experience", () => {
-  it("prefers the real post title when a primary position exists", () => {
-    const exp = resolveMemberWorkspaceExperience({
-      hour: 9,
-      memberLabel: "Educator",
-      positionTitle: "Head of Department",
+describe("role workspace operating environments", () => {
+  it("maps super-admin to Platform Operations rather than every database role", () => {
+    const workspaces = workspacesForViewer({
+      displayName: "Ada",
+      isSuperAdmin: true,
+      roles: [],
     });
-    expect(exp.greeting).toBe("Good morning");
-    expect(exp.roleTitle).toBe("Head of Department");
+    expect(workspaces.map((row) => row.id)).toEqual(["me", "role:platform_owner"]);
+    expect(workspaces[1]?.name).toBe("Platform Operations");
+    expect(workspaces[1]?.type).toBe("role");
+    expect(roleCodesForWorkspaceProvisioning({ isSuperAdmin: true, roles: [] })).toEqual([
+      "platform_owner",
+    ]);
   });
 
-  it("falls back to the membership label without a position", () => {
-    const exp = resolveMemberWorkspaceExperience({ hour: 15, memberLabel: "Finance officer" });
-    expect(exp.roleTitle).toBe("Finance officer");
-  });
-
-  it("treats blank position titles as absent", () => {
-    const exp = resolveMemberWorkspaceExperience({
-      hour: 20,
-      memberLabel: "Educator",
-      positionTitle: "   ",
+  it("keeps personal workspaces private and role workspaces separate", () => {
+    const workspaces = workspacesForViewer({
+      displayName: "Ada",
+      isSuperAdmin: false,
+      roles: ["engineering"],
     });
-    expect(exp.roleTitle).toBe("Educator");
-    expect(exp.greeting).toBe("Good evening");
+    expect(workspaces.map((row) => row.id)).toEqual(["me", "role:engineering"]);
+    expect(workspaces[1]?.name).toBe("Engineering");
+    expect(
+      workspaceById("role:operations", {
+        displayName: "Ada",
+        isSuperAdmin: false,
+        roles: ["engineering"],
+      }),
+    ).toBeNull();
+    expect(parseWorkspaceId("role:platform_owner")).toEqual({
+      kind: "role",
+      role: "platform_owner",
+    });
+    expect(parseWorkspaceId("role-platform-operations")).toEqual({
+      kind: "role",
+      role: "platform_owner",
+    });
+  });
+
+  it("resolves each initial internal role to a dedicated experience", () => {
+    expect(
+      experienceKeyForWorkspace({
+        id: "role:platform_owner",
+        slug: "role-platform-operations",
+        type: "role",
+        name: "Platform Operations",
+      }),
+    ).toBe("platform_operations");
+    expect(
+      experienceKeyForWorkspace({
+        id: "role:platform_admin",
+        slug: "role-platform-admin",
+        type: "role",
+        name: "Platform Administration",
+      }),
+    ).toBe("platform_administration");
+    expect(
+      experienceKeyForWorkspace({
+        id: "role:operations",
+        slug: "role-operations",
+        type: "role",
+        name: "Operations",
+      }),
+    ).toBe("operations");
+    expect(
+      experienceKeyForWorkspace({
+        id: "role:engineering",
+        slug: "role-engineering",
+        type: "role",
+        name: "Engineering",
+      }),
+    ).toBe("engineering");
+    expect(
+      experienceKeyForWorkspace({
+        id: "role:support",
+        slug: "role-support",
+        type: "role",
+        name: "Support",
+      }),
+    ).toBe("support");
+    expect(
+      experienceKeyForWorkspace({ id: "me", slug: "me", type: "personal", name: "My Workspace" }),
+    ).toBe("personal");
+    expect(Object.keys(WORKSPACE_EXPERIENCES)).toEqual([
+      "platform_operations",
+      "platform_administration",
+      "operations",
+      "engineering",
+      "support",
+      "personal",
+      "shared",
+    ]);
+  });
+
+  it("hides workspace destinations the viewer cannot use", () => {
+    const nav = visibleWorkspaceNav(WORKSPACE_EXPERIENCES.engineering, {
+      isSuperAdmin: false,
+      capabilities: new Set(["platform.engineering.read"]),
+    });
+    expect(nav.map((item) => item.label)).toEqual([
+      "Runtime health",
+      "Sherivs Scholar",
+      "Metrics",
+      "Logs",
+      "Incidents",
+      "Help",
+    ]);
+    expect(nav.some((item) => item.label === "Security events")).toBe(false);
+  });
+
+  it("does not write an invalid trial subscription_status during provisioning", () => {
+    expect(provisionSource).not.toMatch(/subscription_status:\s*"trial"/);
+    expect(provisionSource).toContain('subscription_status: "active"');
+    expect(provisionSource).toContain('subscription_status: "suspended"');
+  });
+
+  it("documents the commercial subscription ledger as a payment-history count", () => {
+    const metric = CONSOLE_METRIC_CONTRACTS.find((row) => row.key === "subscription-ledger");
+    expect(metric?.calculation).toMatch(/count/i);
+    expect(metric?.source).toMatch(/public.subscriptions/i);
   });
 });

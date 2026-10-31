@@ -1,10 +1,12 @@
 /**
  * Sherivs internal console — platform staff administration (SHERIVS-008).
  *
- * Every write runs with the SERVICE ROLE, and only after the canonical
- * platform-super-admin gate. Clients have no write grant on platform_staff /
- * platform_staff_roles (RLS + grants in migration 20261020000150). Every
- * operation is audited (control-plane scope, tenantId null) — never secrets.
+ * Every write runs with the SERVICE ROLE after a capability check
+ * (`platform.staff.manage`, which includes super admins). Privileged role
+ * grants still require the platform-super-admin gate. Clients have no write
+ * grant on platform_staff / platform_staff_roles (RLS + grants in migration
+ * 20261020000150). Every operation is audited (control-plane scope, tenantId
+ * null) — never secrets.
  *
  * `client.server` is imported INSIDE handlers so this file stays safe to
  * import from components.
@@ -18,12 +20,26 @@ import { requirePlatformSuperAdmin } from "@/lib/security-role-gate";
 import { assertInternalAal2 } from "@/lib/security/mfa-server";
 import { writeAuditRecord } from "@/lib/server/write-audit";
 import { SystemClock, TimeAuthority } from "@/lib/kernel/time-authority";
-import { PLATFORM_ROLE_CODES, canTransition, type PlatformStaffStatus } from "./catalogue";
+import {
+  PLATFORM_ROLE_CODES,
+  PRIVILEGED_PLATFORM_ROLES,
+  canTransition,
+  type PlatformStaffStatus,
+} from "./catalogue";
+import { CONSOLE_ORIGIN } from "@/lib/experience/console-host-routing";
+import { isMissingRelation, store } from "@/lib/internal-console/store";
 
 type GateContext = {
   supabase: Parameters<typeof requirePlatformSuperAdmin>[0];
   claims: { exp: number };
   userId: string;
+};
+
+type RpcClient = {
+  rpc: (
+    fn: string,
+    args?: Record<string, unknown>,
+  ) => PromiseLike<{ data: unknown; error: unknown }>;
 };
 
 async function assertSuper(context: GateContext) {
@@ -35,6 +51,15 @@ async function assertSuper(context: GateContext) {
   });
 }
 
+async function assertCapability(context: GateContext, capability: string) {
+  assertInternalAal2((context as { claims?: { aal?: unknown } }).claims);
+  const { data, error } = await (context.supabase as unknown as RpcClient).rpc(
+    "has_platform_capability",
+    { p_capability: capability },
+  );
+  if (error || data !== true) throw new Error("Not authorized");
+}
+
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin;
@@ -42,16 +67,22 @@ async function admin() {
 
 const timeAuthority = new TimeAuthority(new SystemClock());
 
-const DEFAULT_APP_ORIGIN = "https://app.sherivs.com";
+const INVITE_TTL_MS = 14 * 24 * 60 * 60 * 1000;
 function inviteRedirect(): string {
   // Supabase only honours redirects on the Auth → URL Configuration allow-list.
-  let origin = DEFAULT_APP_ORIGIN;
+  let origin = CONSOLE_ORIGIN;
   try {
     origin = new URL(getRequest().url).origin;
   } catch {
-    /* fall back to canonical app host */
+    /* fall back to the Internal Console host */
   }
   return `${origin}/reset-password`;
+}
+
+function inviteExpiry(fromIso: string): string {
+  const fromMs = Date.parse(fromIso);
+  if (!Number.isFinite(fromMs)) throw new Error("invalid invitation time");
+  return new Date(fromMs + INVITE_TTL_MS).toISOString();
 }
 
 async function audit(
@@ -79,7 +110,7 @@ const roleList = z.array(z.enum(PLATFORM_ROLE_CODES)).max(PLATFORM_ROLE_CODES.le
 export const listPlatformStaff = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertSuper(context);
+    await assertCapability(context, "platform.staff.read");
     const db = await admin();
     const { data, error } = await db
       .from("platform_staff")
@@ -110,13 +141,17 @@ const inviteSchema = z.object({
   fullName: z.string().trim().min(2).max(120),
   department: z.string().trim().max(80).optional(),
   roles: roleList.min(1),
+  initialWorkspaceId: z.string().uuid().optional(),
 });
 
 export const invitePlatformStaff = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: unknown) => inviteSchema.parse(input))
   .handler(async ({ data, context }) => {
-    await assertSuper(context);
+    await assertCapability(context, "platform.staff.manage");
+    if (data.roles.some((role) => PRIVILEGED_PLATFORM_ROLES.has(role))) {
+      await assertSuper(context);
+    }
     const db = await admin();
 
     const { data: existing } = await db
@@ -125,6 +160,25 @@ export const invitePlatformStaff = createServerFn({ method: "POST" })
       .ilike("email", data.email)
       .maybeSingle();
     if (existing) throw new Error("That email is already platform staff.");
+
+    if (data.initialWorkspaceId) {
+      const { data: workspace, error: workspaceErr } = await store(db)
+        .from("platform_workspace")
+        .select("id, kind, status")
+        .eq("id", data.initialWorkspaceId)
+        .maybeSingle();
+      if (workspaceErr) {
+        throw new Error(
+          isMissingRelation(workspaceErr)
+            ? "Workspace store is not configured."
+            : workspaceErr.message,
+        );
+      }
+      const row = workspace as { id: string; kind: string; status: string } | null;
+      if (!row || !["shared", "role"].includes(row.kind) || row.status !== "active") {
+        throw new Error("Initial workspace must be an active shared or role workspace.");
+      }
+    }
 
     // Never repurpose an existing (e.g. customer) account into staff: invite
     // creates a NEW auth user; an existing account makes the invite fail.
@@ -142,14 +196,31 @@ export const invitePlatformStaff = createServerFn({ method: "POST" })
     }
     const staffId = invited.user.id;
 
-    const { error: insErr } = await db.from("platform_staff").insert({
+    const invitedAt = timeAuthority.now().at;
+    const staffRow = {
       id: staffId,
       email: data.email,
       full_name: data.fullName,
       department: data.department || null,
       status: "invited",
       invited_by: context.userId,
-    });
+      invited_at: invitedAt,
+      invite_expires_at: inviteExpiry(invitedAt),
+      initial_workspace_id: data.initialWorkspaceId ?? null,
+    };
+    let { error: insErr } = await db.from("platform_staff").insert(staffRow as never);
+    if (insErr && /invite_expires_at|initial_workspace_id|schema cache/i.test(insErr.message)) {
+      const retry = await db.from("platform_staff").insert({
+        id: staffRow.id,
+        email: staffRow.email,
+        full_name: staffRow.full_name,
+        department: staffRow.department,
+        status: staffRow.status,
+        invited_by: staffRow.invited_by,
+        invited_at: staffRow.invited_at,
+      });
+      insErr = retry.error;
+    }
     if (insErr) {
       // Do not leave a dangling invited auth user behind.
       await db.auth.admin.deleteUser(staffId);
@@ -168,6 +239,7 @@ export const invitePlatformStaff = createServerFn({ method: "POST" })
       email: data.email,
       roles: data.roles,
       department: data.department ?? null,
+      initialWorkspaceId: data.initialWorkspaceId ?? null,
     });
     return { id: staffId };
   });
@@ -191,7 +263,7 @@ export const resendPlatformStaffInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: unknown) => idSchema.parse(input))
   .handler(async ({ data, context }) => {
-    await assertSuper(context);
+    await assertCapability(context, "platform.staff.manage");
     const staff = await loadStaff(data.staffId);
     if (staff.status !== "invited") throw new Error("Only pending invites can be resent.");
     const db = await admin();
@@ -210,6 +282,14 @@ export const resendPlatformStaffInvite = createServerFn({ method: "POST" })
         throw new Error(rErr.message);
       }
     }
+    const { error: expiryErr } = await db
+      .from("platform_staff")
+      .update({
+        invite_expires_at: inviteExpiry(timeAuthority.now().at),
+        updated_at: timeAuthority.now().at,
+      } as never)
+      .eq("id", staff.id);
+    void expiryErr;
     await audit(context, "resend_invite", staff.id, "succeeded", { email: staff.email });
     return { ok: true };
   });
@@ -224,7 +304,7 @@ export const setPlatformStaffStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: unknown) => statusSchema.parse(input))
   .handler(async ({ data, context }) => {
-    await assertSuper(context);
+    await assertCapability(context, "platform.staff.manage");
     if (data.staffId === context.userId) throw new Error("You cannot change your own status.");
     const staff = await loadStaff(data.staffId);
     if (!canTransition(staff.status, data.status)) {
@@ -256,6 +336,10 @@ export const setPlatformStaffStatus = createServerFn({ method: "POST" })
       from: staff.status,
       to: data.status,
     });
+    const { error: syncErr } = await store(db).rpc("sync_platform_staff_workspaces", {
+      p_user_id: staff.id,
+    });
+    if (syncErr && !isMissingRelation(syncErr)) throw new Error(syncErr.message);
     return { ok: true };
   });
 
@@ -266,7 +350,7 @@ export const setPlatformStaffRoles = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: unknown) => rolesSchema.parse(input))
   .handler(async ({ data, context }) => {
-    await assertSuper(context);
+    await assertCapability(context, "platform.staff.manage");
     const staff = await loadStaff(data.staffId);
     if (staff.status === "revoked") throw new Error("Revoked staff cannot hold roles.");
     const db = await admin();
@@ -276,6 +360,13 @@ export const setPlatformStaffRoles = createServerFn({ method: "POST" })
       .eq("staff_id", staff.id);
     const before = new Set((current ?? []).map((r) => r.role_code));
     const after = new Set<string>(data.roles);
+    if (
+      [...before, ...after].some((role) =>
+        (PRIVILEGED_PLATFORM_ROLES as ReadonlySet<string>).has(role),
+      )
+    ) {
+      await assertSuper(context);
+    }
     const toAdd = [...after].filter((r) => !before.has(r));
     const toRemove = [...before].filter((r) => !after.has(r));
     if (toRemove.length) {
@@ -295,5 +386,9 @@ export const setPlatformStaffRoles = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
     await audit(context, "set_roles", staff.id, "succeeded", { added: toAdd, removed: toRemove });
+    const { error: syncErr } = await store(db).rpc("sync_platform_staff_workspaces", {
+      p_user_id: staff.id,
+    });
+    if (syncErr && !isMissingRelation(syncErr)) throw new Error(syncErr.message);
     return { roles: [...after] };
   });

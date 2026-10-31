@@ -242,7 +242,7 @@
       "boundary": [
         { "kind": "module", "path": "frontend/src/routes/_authenticated/super-admin/tenants.tsx", "contains": "tenant-registry" }
       ],
-      "boundaryNote": "Closed 2026-09-14 (P03-4), and moved out of the Scholar portal after the neutrality correction: `/super-admin/tenants` is the platform control plane, lists every tenant from real `cg_tenant` state through `listTenants` behind the super-admin gate, and registers tenants through the idempotent `registerTenant`. It declares no role list of its own."
+      "boundaryNote": "The `/super-admin/tenants` L4 surface was removed with the hardcoded console UI (2026-10-26). Tenant registry functions and tests remain; workspace projection is IMPLEMENTED_UNWIRED until a governed replacement surface exists."
     }
   ]
 }

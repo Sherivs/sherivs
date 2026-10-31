@@ -10,13 +10,44 @@ import { isIP } from "node:net";
 export type FetchLike = (url: string, init?: RequestInit) => Promise<Response>;
 const MAX_BYTES = 10 * 1024 * 1024;
 
+function ipv6Groups(ip: string): number[] | null {
+  const raw = ip.toLowerCase();
+  if (raw.includes("%")) return null;
+  const halves = raw.split("::");
+  if (halves.length > 2) return null;
+  const parse = (side: string): number[] | null => {
+    if (!side) return [];
+    const nums: number[] = [];
+    for (const part of side.split(":")) {
+      if (!/^[0-9a-f]{1,4}$/.test(part)) return null;
+      nums.push(Number.parseInt(part, 16));
+    }
+    return nums;
+  };
+  const left = parse(halves[0] ?? "");
+  if (!left) return null;
+  if (halves.length === 1) return left.length === 8 ? left : null;
+  const right = parse(halves[1] ?? "");
+  if (!right) return null;
+  const missing = 8 - left.length - right.length;
+  if (missing < 0) return null;
+  return [...left, ...Array<number>(missing).fill(0), ...right];
+}
+
+function ipv4FromGroups(hi: number, lo: number): string {
+  return `${(hi >> 8) & 255}.${hi & 255}.${(lo >> 8) & 255}.${lo & 255}`;
+}
+
 export function isPublicAddress(ip: string): boolean {
   if (isIP(ip) === 4) {
-    const [a, b] = ip.split(".").map(Number);
+    const [a, b, c] = ip.split(".").map(Number);
     if (a === 10 || a === 127 || a === 0 || a >= 224) return false;
     if (a === 169 && b === 254) return false;
     if (a === 172 && b >= 16 && b <= 31) return false;
     if (a === 192 && b === 168) return false;
+    // 192.0.0.0/24 (IETF protocol assignments) and 192.88.99.0/24 (6to4 anycast).
+    if (a === 192 && b === 0 && c === 0) return false;
+    if (a === 192 && b === 88 && c === 99) return false;
     if (a === 100 && b >= 64 && b <= 127) return false;
     if (a === 198 && (b === 18 || b === 19)) return false;
     return true;
@@ -29,12 +60,41 @@ export function isPublicAddress(ip: string): boolean {
       x.startsWith("fe8") ||
       x.startsWith("fe9") ||
       x.startsWith("fea") ||
-      x.startsWith("feb")
+      x.startsWith("feb") ||
+      x.startsWith("fec") ||
+      x.startsWith("fed") ||
+      x.startsWith("fee") ||
+      x.startsWith("fef")
     )
       return false;
     if (x.startsWith("fc") || x.startsWith("fd") || x.startsWith("ff")) return false;
-    const m = x.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
-    return m ? isPublicAddress(m[1]) : true;
+    const mapped = x.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+    if (mapped) return isPublicAddress(mapped[1] ?? "");
+    const groups = ipv6Groups(x);
+    if (!groups) return false;
+    // IPv4-mapped in hextet form, NAT64, 6to4: the embedded IPv4 is the real target.
+    const v4Mapped =
+      groups[0] === 0 &&
+      groups[1] === 0 &&
+      groups[2] === 0 &&
+      groups[3] === 0 &&
+      groups[4] === 0 &&
+      groups[5] === 0xffff;
+    if (v4Mapped) return isPublicAddress(ipv4FromGroups(groups[6] ?? 0, groups[7] ?? 0));
+    const nat64 =
+      groups[0] === 0x64 &&
+      groups[1] === 0xff9b &&
+      groups[2] === 0 &&
+      groups[3] === 0 &&
+      groups[4] === 0 &&
+      groups[5] === 0;
+    if (nat64) return isPublicAddress(ipv4FromGroups(groups[6] ?? 0, groups[7] ?? 0));
+    if (groups[0] === 0x64 && groups[1] === 0xff9b && groups[2] === 1) return false;
+    if (groups[0] === 0x2002)
+      return isPublicAddress(ipv4FromGroups(groups[1] ?? 0, groups[2] ?? 0));
+    if (groups[0] === 0x2001 && groups[1] === 0) return false;
+    if (groups[0] === 0x100 && groups[1] === 0 && groups[2] === 0 && groups[3] === 0) return false;
+    return true;
   }
   return false;
 }

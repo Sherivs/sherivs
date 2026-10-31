@@ -23,6 +23,7 @@ export const PLATFORM_ROLE_CAPABILITIES: Record<PlatformRoleCode, readonly strin
     "platform.staff.read",
     "platform.staff.manage",
     "platform.tenants.read",
+    "platform.tenants.manage",
     "platform.config.read",
     "platform.audit.read",
     "platform.gov.manage",
@@ -32,7 +33,12 @@ export const PLATFORM_ROLE_CAPABILITIES: Record<PlatformRoleCode, readonly strin
   security: ["platform.security.read", "platform.audit.read"],
   finance: ["platform.finance.read"],
   sales: ["platform.tenants.read", "platform.sales.handle"],
-  operations: ["platform.operations.read", "platform.config.read"],
+  operations: [
+    "platform.operations.read",
+    "platform.config.read",
+    "platform.tenants.read",
+    "platform.tenants.manage",
+  ],
 };
 
 export const PLATFORM_ROLE_LABELS: Record<PlatformRoleCode, string> = {

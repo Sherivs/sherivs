@@ -13,7 +13,7 @@
  *   5. Organization lifecycle state derives from verified truth only
  *      (Constitution §9) — active+onboarded = operational, etc.
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -170,30 +170,14 @@ describe("Organization reality read-model (Milestone 9)", () => {
 
 describe("Reality exposure inside the runtime workspace (Milestone 9 presentation)", () => {
   const ROOT = fileURLToPath(new URL("../..", import.meta.url));
-  const read = (ref: string) => readFileSync(join(ROOT, ref), "utf8");
 
-  it("the workspace dashboard renders the universal reality card (not domain queries)", () => {
-    const dashboard = read("frontend/src/routes/_authenticated/admin/dashboard.tsx");
-    expect(dashboard).toContain("OrganizationRealityCard");
-  });
-
-  it("the reality card reads the RLS-scoped read-model and never fabricates invisible data", () => {
-    const card = read("frontend/src/components/reality/organization-reality-card.tsx");
-    expect(card).toContain("readMyOrganizationsReality");
-    expect(card).toContain("organizationStateLabel");
-    // A null roster (not visible under the caller's RLS scope) renders as an
-    // explicit not-visible state, never a fabricated number.
-    expect(card).toContain("Not visible in this context");
-    // Canonical-truth boundary (Constitution §9) is stated on the surface.
-    expect(card).toMatch(/predicted|inferred/i);
-  });
-
-  it("the authenticated shell routes the founder persona to the pipeline, not a dead end", () => {
-    // An unlinked account has no profile row; the shell must still render the
-    // §21 founder surfaces (/welcome, /onboarding) — the server function
-    // re-verifies every authorization itself.
-    const layout = read("frontend/src/routes/_authenticated/route.tsx");
-    expect(layout).toMatch(/pathname === "\/welcome" \|\| pathname\.startsWith\("\/onboarding"\)/);
-    expect(layout).toContain("return <Outlet />;");
+  it("removes the hardcoded workspace dashboard, reality card, and authenticated shell", () => {
+    expect(existsSync(join(ROOT, "frontend/src/routes/_authenticated/admin/dashboard.tsx"))).toBe(
+      false,
+    );
+    expect(
+      existsSync(join(ROOT, "frontend/src/components/reality/organization-reality-card.tsx")),
+    ).toBe(false);
+    expect(existsSync(join(ROOT, "frontend/src/routes/_authenticated/route.tsx"))).toBe(false);
   });
 });

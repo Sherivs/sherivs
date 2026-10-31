@@ -43,9 +43,19 @@ describe("SSRF guard", () => {
       "fc00::1",
       "fe80::1",
       "::ffff:127.0.0.1",
+      "fec0::1",
+      "64:ff9b::7f00:1",
+      "64:ff9b::a9fe:a9fe",
+      "64:ff9b:1::1",
+      "2002:7f00:1::",
+      "2002:a9fe:a9fe::",
+      "2001:0:1::1",
+      "100::1",
+      "192.0.0.8",
+      "192.88.99.1",
     ])
       expect(isPublicAddress(ip), ip).toBe(false);
-    for (const ip of ["8.8.8.8", "102.89.1.10", "2001:4860:4860::8888"])
+    for (const ip of ["8.8.8.8", "102.89.1.10", "2001:4860:4860::8888", "64:ff9b::808:808"])
       expect(isPublicAddress(ip), ip).toBe(true);
   });
   it("rejects http, credentials-in-URL and hosts resolving to private IPs", async () => {

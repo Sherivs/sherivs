@@ -75,14 +75,12 @@ describe("Pricing tier catalog (typed module)", () => {
 });
 
 describe("Site content view-models", () => {
-  it("presents the six platform capabilities", () => {
+  it("presents the Scholar product capabilities", () => {
     expect(SITE_CAPABILITIES.map((capability) => capability.id)).toEqual([
-      "reality-model",
-      "missions",
-      "ai-workforce",
-      "evidence",
-      "governance",
-      "workspace",
+      "school-administration",
+      "academic-operations",
+      "teacher-student",
+      "parent-engagement",
     ]);
     for (const capability of SITE_CAPABILITIES) {
       expect(capability.title.length).toBeGreaterThan(0);
@@ -134,9 +132,8 @@ describe("Route modules — real links, no fake submissions, landmarks", () => {
   });
 
   it("links sign-up and sign-in to the real auth surface at /auth", () => {
-    for (const source of [layout, page]) {
-      expect(source).toContain('to="/auth"');
-    }
+    expect(header).toContain('to="/auth"');
+    expect(page).toMatch(/to="\/auth"|href="\/auth"/);
     // No dead platform sign-up route is invented.
     expect(layout).not.toContain('to="/signup"');
     expect(page).not.toContain('to="/signup"');
@@ -154,23 +151,20 @@ describe("Route modules — real links, no fake submissions, landmarks", () => {
     // Header landmarks live in the shared SiteHeader component.
     expect(header).toContain("<header");
     expect(header).toMatch(/aria-label="Site"/);
-    // The header's section navigation anchors into the public homepage
-    // (the company experience at /), not into this page.
-    for (const anchor of ["platform", "ai-workforce", "solutions", "enterprise", "security"]) {
-      expect(header).toContain(`"/#${anchor}"`);
-    }
+    expect(header).toContain('to="/auth"');
+    expect(header).toContain('href="/onboarding"');
     expect(layout).toContain("<SiteHeader />");
     expect(layout).toContain("<main");
-    expect(layout).toContain("<footer");
-    for (const anchor of ["capabilities", "runtimes", "security", "pricing"]) {
+    expect(layout).toContain("<SiteFooter />");
+    for (const anchor of ["capabilities", "community", "security"]) {
       expect(page).toContain(`id="${anchor}"`);
     }
   });
 
   it("keeps every heading labelled for assistive technology", () => {
-    expect(page).toMatch(/aria-labelledby="coregrid-hero"/);
-    for (const anchor of ["capabilities", "runtimes", "security", "pricing"]) {
-      expect(page).toMatch(new RegExp(`aria-labelledby="${anchor}-heading"`));
+    expect(page).toMatch(/aria-labelledby="scholar-hero"/);
+    for (const anchor of ["capabilities", "community", "security"]) {
+      expect(page).toMatch(new RegExp(`labelledBy="${anchor}-heading"`));
       expect(page).toContain(`id="${anchor}-heading"`);
     }
   });

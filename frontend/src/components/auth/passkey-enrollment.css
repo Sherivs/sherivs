@@ -1,0 +1,146 @@
+.passkey-enroll {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem 1rem 2rem;
+  color: #10182b;
+  background:
+    radial-gradient(1200px 600px at 8% -10%, rgba(20, 168, 252, 0.16), transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, rgba(130, 84, 246, 0.12), transparent 50%),
+    #eef2f8;
+}
+
+.passkey-enroll-card {
+  width: min(26.5rem, 100%);
+  display: grid;
+  gap: 1rem;
+  padding: 1.5rem 1.25rem 1.35rem;
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.78));
+  border: 1px solid rgba(16, 24, 43, 0.08);
+  box-shadow: 0 24px 60px rgba(16, 24, 43, 0.08);
+}
+
+.passkey-enroll-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-family: var(--font-display, inherit);
+  font-weight: 750;
+  font-size: 1.05rem;
+}
+
+.passkey-enroll-kicker {
+  margin: 0;
+  color: #6b7690;
+  font-size: 0.82rem;
+}
+
+.passkey-enroll-card h1 {
+  margin: 0;
+  font-family: var(--font-display, inherit);
+  font-size: 1.55rem;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+
+.passkey-enroll-lead {
+  margin: 0;
+  color: #3d4660;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.passkey-enroll-icons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+
+.passkey-enroll-icon {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.85rem;
+  border-radius: 16px;
+  background: rgba(238, 242, 248, 0.9);
+  border: 1px solid rgba(16, 24, 43, 0.06);
+}
+
+.passkey-enroll-icon strong {
+  font-size: 0.88rem;
+}
+
+.passkey-enroll-icon small {
+  color: #6b7690;
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+.passkey-enroll-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 0.95rem;
+  border-radius: 16px;
+  background: rgba(238, 242, 248, 0.9);
+}
+
+.passkey-enroll-toggle span {
+  font-weight: 650;
+  font-size: 0.95rem;
+}
+
+.passkey-enroll-actions {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.passkey-enroll-primary,
+.passkey-enroll-skip {
+  min-height: 3rem;
+  border-radius: 12px;
+  font-family: var(--font-display, inherit);
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.passkey-enroll-primary {
+  border: 0;
+  color: #fff;
+  background: linear-gradient(180deg, #4b86ff 0%, #1848fd 58%, #143cdc 100%);
+}
+
+.passkey-enroll-primary:disabled,
+.passkey-enroll-skip:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.passkey-enroll-skip {
+  border: 1px solid rgba(16, 24, 43, 0.12);
+  background: rgba(255, 255, 255, 0.8);
+  color: #10182b;
+}
+
+.passkey-enroll-status {
+  margin: 0;
+  min-height: 1.2rem;
+  color: #3d4660;
+  font-size: 0.88rem;
+}
+
+.passkey-enroll-status[data-tone="error"] {
+  color: #b42318;
+}
+
+.passkey-enroll-status[data-tone="ok"] {
+  color: #12805c;
+}
+
+@media (max-width: 480px) {
+  .passkey-enroll-card {
+    padding: 1.25rem 1rem 1.15rem;
+    border-radius: 22px;
+  }
+}

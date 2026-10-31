@@ -3,7 +3,7 @@
   "phase": "19",
   "phaseName": "Command Centre",
   "source": "architecture/phase-19-command-centre.md",
-  "generatedAt": "2026-09-28T13:22:37.202Z",
+  "generatedAt": "2026-10-26T18:08:00.411Z",
   "classificationDefinitions": {
     "ENFORCED": "an executable artefact proves it (test, verifier script, migration, policy or machine-checked contract match) and, where a boundary is declared, a real call site invokes it",
     "DECLARED": "a module, document or contract mentions it, but nothing executable proves it",

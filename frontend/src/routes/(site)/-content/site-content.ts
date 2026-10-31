@@ -1,11 +1,9 @@
 /**
- * Sherivs platform public site — marketing content view-models.
+ * Sherivs Scholar public product page — marketing content view-models.
  *
  * Presentation-only copy for the (site) public route group. Every string here
  * is static marketing presentation: no backend call, no form, no fake state.
- * The platform is narrated neutrally — a runtime's name belongs to the runtime
- * layer, and the platform speaks about an INSTALLED runtime, never about
- * itself as one (platform-neutrality LAW 3/LAW 5).
+ * Capabilities are limited to implemented Scholar functionality.
  */
 
 export interface SiteCapability {
@@ -26,101 +24,86 @@ export interface RuntimeProof {
   manifestId: string;
   name: string;
   description: string;
-  /** What this installation proves about the platform kernel. */
+  /** What this installation proves about the product. */
   proof: string;
 }
 
-/** The six platform capabilities surfaced on the public site. */
+/** Scholar capabilities surfaced on the public product page. */
 export const SITE_CAPABILITIES: readonly SiteCapability[] = [
   {
-    id: "reality-model",
-    title: "Reality model",
+    id: "school-administration",
+    title: "School administration",
     description:
-      "A canonical reality model holds verified system truth — records, transactions, state and history — and keeps it separate from derived intelligence. Predictions and AI interpretations never overwrite verified truth without validation.",
+      "Keep essential school records, organization settings, and administrative workflows organized in one place.",
   },
   {
-    id: "missions",
-    title: "Missions",
+    id: "academic-operations",
+    title: "Academic operations",
     description:
-      "Work is expressed as governed missions with owners, evidence requirements and completion criteria — not as untracked tasks. Every mission leaves an auditable trail from proposal to verified outcome.",
+      "Manage classes, subjects, attendance, and assessment information as part of everyday school operations.",
   },
   {
-    id: "ai-workforce",
-    title: "AI workforce",
+    id: "teacher-student",
+    title: "Teacher and student workflows",
     description:
-      "Autonomous intelligence systems participate as governed agents: first-class identities with owners, scopes, permissions and lifecycle states. Agents are untrusted by default and cannot expand their own permissions.",
+      "Teachers and students sign in to the same workspace. What they can open follows membership and role. There is no separate teacher or student application.",
   },
   {
-    id: "evidence",
-    title: "Evidence",
+    id: "parent-engagement",
+    title: "Parent engagement",
     description:
-      "Claims require evidence. The platform enforces verification contracts on itself — capability ownership, dependency law, conformance checks — so progress can be audited, not just asserted.",
-  },
-  {
-    id: "governance",
-    title: "Governance",
-    description:
-      "Layered authorization (RBAC, ABAC, ReBAC, policy and context) resolves every decision through identity, tenant, role, relationship, resource, purpose and risk — with ALLOW, DENY, REDACT and ESCALATE outcomes.",
-  },
-  {
-    id: "workspace",
-    title: "Workspace",
-    description:
-      "Every person gets a workspace projected from the roles and policies their organization defines. Nothing is forced on anyone: the organization composes the surfaces it actually uses.",
+      "Parents and guardians can be invited into the organization. They use the same workspace shell. There is no separate parent application.",
   },
 ];
 
-/** Security and governance guarantees surfaced on the public site. */
+/** Security and access practices surfaced on the public site. */
 export const SECURITY_GUARANTEES: readonly GovernanceGuarantee[] = [
   {
     id: "tenant-isolation",
-    title: "Tenant isolation by database, not by UI",
+    title: "School data separation",
     description:
-      "Row Level Security is mandatory for tenant-sensitive data. Application code is never the only security layer: the database enforces tenant boundaries even when application logic fails.",
+      "Tenant-sensitive records are restricted at the data layer as well as in the application. Row-level security is enabled widely and is not forced on every table.",
   },
   {
-    id: "layered-authorization",
-    title: "Layered authorization",
+    id: "role-access",
+    title: "Role-based access",
     description:
-      "Identity, tenant, role, relationship, resource, policy, context and risk resolve to a decision on every request. Server functions authenticate, resolve tenancy, authorize, validate, execute and audit — in that order.",
+      "What someone can see and do follows from organization membership and role, not from hiding a control in the interface.",
   },
   {
-    id: "canonical-truth",
-    title: "Canonical truth protection",
+    id: "authentication",
+    title: "Authenticated accounts",
     description:
-      "Reality (verified records) and intelligence (predictions, AI interpretations) are separated by law. AI inference must never overwrite canonical truth without validation.",
+      "People sign in with authenticated accounts. Password recovery and optional passkeys are part of the sign-in experience.",
   },
   {
-    id: "ai-output-trust",
-    title: "AI output is untrusted by default",
+    id: "invites",
+    title: "Account and access management",
     description:
-      "AI proposals pass validation, policy check and human approval before execution — and every step is audited. No agent can silently increase its own permissions or deploy itself.",
+      "Sherivs creates the organization admin after an account request is received. That admin invites other users. The public form does not create the account by itself. Revoking membership is an administrative action inside the school.",
   },
   {
-    id: "immutable-audit",
-    title: "Immutable audit records",
+    id: "student-records",
+    title: "Student information",
     description:
-      "Every important action leaves an audit trail: who did what, when, under which policy. Logs never carry secrets or unnecessary private data.",
+      "Student records live inside the school's organization and are available to people the school has invited, according to their role.",
   },
   {
-    id: "agent-governance",
-    title: "Agent lifecycle governance",
+    id: "privacy-notice",
+    title: "Public privacy notice",
     description:
-      "Agents move through proposed, reviewed, approved, deployed, monitored, suspended and retired states. Security is continuous: observe, evaluate, decide, enforce, audit, re-evaluate.",
+      "The privacy policy describes current product practices. Sherivs does not display certification badges or audit claims that are not on file.",
   },
 ];
 
-/**
- * Domain runtimes installed on the kernel, as the public site presents them.
- * A runtime is an application installed on Sherivs — a consumer of the
- * platform, never its identity.
- */
+/** The first installed runtime, named as a product — never as the company. */
 export const INSTALLED_RUNTIME_PROOFS: readonly RuntimeProof[] = [
   {
     manifestId: "runtime:scholar",
     name: "Scholar",
-    description: "African Education Runtime",
+    description:
+      "Sherivs Scholar, the school product on Sherivs, gives invited people one workspace shaped by membership and role.",
     proof:
-      "Runtime-001. The first installed runtime demonstrates the kernel's neutrality: a school inherits the platform's governed core — identity, tenancy, security, workspaces, AI — and brings only its own education domain. Remove that runtime and the kernel stays fully valid.",
+      "Runtime-001 is installed as Scholar. The company remains Sherivs; the kernel stays fully valid without treating Scholar as the company platform.",
   },
 ];

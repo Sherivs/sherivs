@@ -53,8 +53,8 @@ self.addEventListener("push", (event) => {
     body: payload.body || "You have a new notification.",
     icon: "/favicon.ico",
     badge: "/favicon.ico",
-    tag: payload.tag || "vibeora-notification",
-    data: { url: payload.url || "/notifications" },
+    tag: payload.tag || "sherivs-notification",
+    data: { url: payload.url || "/home/notifications" },
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
@@ -62,7 +62,7 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const target = (event.notification.data && event.notification.data.url) || "/notifications";
+  const target = (event.notification.data && event.notification.data.url) || "/home/notifications";
 
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {

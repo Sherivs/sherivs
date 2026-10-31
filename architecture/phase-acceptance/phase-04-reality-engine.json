@@ -209,7 +209,7 @@
       "boundary": [
         { "kind": "module", "path": "frontend/src/routes/_authenticated/admin/education-reality.tsx", "contains": "education-reality-view" }
       ],
-      "boundaryNote": "Closed 2026-09-14: `/admin/education-reality` answers the phase's §1 questions from the institution's published operating model (own tenant only), rendering published/not_published/invalid_spec truthfully — it never renders a default school."
+      "boundaryNote": "The `/admin/education-reality` L4 surface was removed with the hardcoded portal UI (2026-10-26). `education-reality-view` and its tests remain; workspace projection is IMPLEMENTED_UNWIRED until a governed replacement surface exists."
     }
   ]
 }

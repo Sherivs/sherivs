@@ -163,7 +163,7 @@
       "boundary": [
         { "kind": "module", "path": "frontend/src/routes/_authenticated/super-admin/agent-governance.tsx", "contains": "agent-governance-report" }
       ],
-      "boundaryNote": "Closed 2026-09-14: `/super-admin/agent-governance` states each enforced rule with the module and suite behind it and shows the self-check result — a declared task transition permitted, an undeclared one refused, and reasoning stopped at the step ceiling."
+      "boundaryNote": "The `/super-admin/agent-governance` L4 surface was removed with the hardcoded console UI (2026-10-26). `agent-governance-report` and its tests remain; projection is IMPLEMENTED_UNWIRED until a governed replacement surface exists."
     },
     {
       "id": "agent-knowledge",

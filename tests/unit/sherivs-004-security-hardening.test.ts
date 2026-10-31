@@ -67,10 +67,30 @@ describe("SHERIVS-004 input safety", () => {
     expect(urlField.safeParse("data:text/html,<script>").success).toBe(false);
   });
 
-  it("clientIpFromHeaders prefers the edge header and bounds length", () => {
-    expect(clientIpFromHeaders(new Headers({ "cf-connecting-ip": "1.2.3.4" }))).toBe("1.2.3.4");
+  it("clientIpFromHeaders trusts only the Vercel peer, and Cloudflare's visitor header only behind Cloudflare", () => {
+    expect(clientIpFromHeaders(new Headers({ "cf-connecting-ip": "1.2.3.4" }))).toBe("unknown");
     expect(clientIpFromHeaders(new Headers({ "x-forwarded-for": "5.6.7.8, 9.9.9.9" }))).toBe(
-      "5.6.7.8",
+      "unknown",
+    );
+    expect(
+      clientIpFromHeaders(
+        new Headers({
+          "x-vercel-forwarded-for": "203.0.113.10",
+          "cf-connecting-ip": "1.2.3.4",
+          "x-forwarded-for": "5.6.7.8",
+        }),
+      ),
+    ).toBe("203.0.113.10");
+    expect(
+      clientIpFromHeaders(
+        new Headers({
+          "x-vercel-forwarded-for": "104.16.1.1",
+          "cf-connecting-ip": "203.0.113.50",
+        }),
+      ),
+    ).toBe("203.0.113.50");
+    expect(clientIpFromHeaders(new Headers({ "x-vercel-forwarded-for": "x".repeat(65) }))).toBe(
+      "unknown",
     );
     expect(clientIpFromHeaders(new Headers())).toBe("unknown");
   });

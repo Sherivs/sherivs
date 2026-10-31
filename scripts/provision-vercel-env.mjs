@@ -56,6 +56,12 @@ const ENV_MAPPINGS = [
   { key: "VAPID_PUBLIC_KEY", source: "VAPID_PUBLIC_KEY", target: "server" },
   { key: "VAPID_PRIVATE_KEY", source: "VAPID_PRIVATE_KEY", target: "server" },
   { key: "VITE_VAPID_PUBLIC_KEY", source: "VAPID_PUBLIC_KEY", target: "client" },
+  {
+    key: "VAPID_SUBJECT",
+    source: "VAPID_SUBJECT",
+    target: "server",
+    fallback: "https://app.sherivs.com",
+  },
   // Product analytics ingest key (client-safe by design; surface gated by §19/§20/§21)
   { key: "POSTHOG_PROJECT_API_KEY", source: "POSTHOG_PROJECT_API_KEY", target: "server" },
 ];
@@ -110,8 +116,14 @@ async function main() {
 
   const results = [];
   for (const mapping of ENV_MAPPINGS) {
-    const value = process.env[mapping.source];
-    if (!value || value.trim() === "") {
+    const fromEnv = process.env[mapping.source];
+    const value =
+      fromEnv && fromEnv.trim() !== ""
+        ? fromEnv
+        : typeof mapping.fallback === "string" && mapping.fallback.trim() !== ""
+          ? mapping.fallback
+          : "";
+    if (!value) {
       results.push({ key: mapping.key, source: mapping.source, outcome: "SKIPPED_ABSENT" });
       continue;
     }

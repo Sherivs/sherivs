@@ -1,4 +1,5 @@
 /** SEO for a rendered site page: title, description, canonical, hreflang, Open Graph, JSON-LD (SPEC §9). */
+import { jsonLdJson } from "@/lib/security/json-ld";
 import { generateSite, orgKind } from "./generator";
 import { tx } from "./i18n";
 import { pageHasContent } from "./nav";
@@ -119,7 +120,7 @@ export function siteSeo(site: PublicSite, slug: string, lang: unknown, post?: Po
     },
     themeColor: doc.theme.primary,
     icon: siteIcon(site),
-    jsonLd: JSON.stringify(ld).replace(/</g, "\\u003c"),
+    jsonLd: jsonLdJson(ld),
   };
 }
 

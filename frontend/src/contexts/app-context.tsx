@@ -8,6 +8,20 @@ import { resolveSchoolByHost, schoolDomainLoginAllowed } from "@/lib/domains/sch
 import { type AppRole } from "@/lib/roles";
 import { runtimeWorkspaceHome } from "@/lib/runtime/nav-registry";
 import { customTenantColors } from "@/lib/brand/tenant-colors";
+import {
+  GOOGLE_UNINVITED_ERROR,
+  persistOAuthError,
+  shouldRejectUninvitedGooglePrincipal,
+} from "@/lib/auth/google-sign-in";
+import { ORGANIZATION_ACCESS_DENIED } from "@/lib/auth/organization-access";
+import { currentEffectiveHostKind } from "@/lib/experience/console-host-routing";
+import {
+  consoleVisualFixtureActive,
+  consoleVisualFixtureEnabled,
+  deactivateConsoleVisualFixture,
+  readSelectedFixturePersona,
+  type ConsoleFixturePersona,
+} from "@/lib/internal-console/visual-fixture";
 
 /**
  * UserProfile = row from public.users (tenant member).
@@ -90,6 +104,67 @@ function applyBrandColors(school: SchoolRow | null) {
  * grants nothing), then read the caller's own staff row + roles via RLS.
  * Only ACTIVE staff resolve; any failure resolves to "not staff".
  */
+function fixtureSession(persona: ConsoleFixturePersona): Session {
+  const user = {
+    id: persona.id,
+    email: persona.email,
+    aud: "authenticated",
+    role: "authenticated",
+    app_metadata: { provider: "email", providers: ["email"] },
+    user_metadata: { full_name: persona.name },
+    created_at: "2026-10-27T00:00:00.000Z",
+  } as User;
+  return {
+    access_token: "local-fixture",
+    refresh_token: "local-fixture",
+    token_type: "bearer",
+    expires_in: 3600,
+    expires_at: 4102444800,
+    user,
+  };
+}
+
+function fixtureWorkforce(persona: ConsoleFixturePersona): {
+  superAdmin: SuperAdminProfile | null;
+  platformStaff: PlatformStaffProfile | null;
+} {
+  if (persona.isSuperAdmin) {
+    return {
+      superAdmin: { id: persona.id, full_name: persona.name, email: persona.email },
+      platformStaff: null,
+    };
+  }
+  return {
+    superAdmin: null,
+    platformStaff: {
+      id: persona.id,
+      full_name: persona.name,
+      email: persona.email,
+      status: "active",
+      roles: [...persona.roles],
+    },
+  };
+}
+
+const IDENTITY_LOAD_MS = 12_000;
+const SESSION_LOAD_MS = 4_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label} timed out`)), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
 async function loadPlatformStaff(userId: string): Promise<PlatformStaffProfile | null> {
   try {
     await supabase.rpc("claim_platform_staff_invite");
@@ -114,6 +189,26 @@ async function loadPlatformStaff(userId: string): Promise<PlatformStaffProfile |
   }
 }
 
+async function loadWorkforce(userId: string): Promise<{
+  superAdmin: SuperAdminProfile | null;
+  platformStaff: PlatformStaffProfile | null;
+}> {
+  const [{ data: sa }, platformStaff] = await Promise.all([
+    supabase
+      .from("super_admins")
+      .select("id, full_name, email, is_active")
+      .eq("id", userId)
+      .maybeSingle(),
+    loadPlatformStaff(userId),
+  ]);
+  const row = sa as (SuperAdminProfile & { is_active?: boolean | null }) | null;
+  const superAdmin =
+    row && row.is_active !== false
+      ? { id: row.id, full_name: row.full_name, email: row.email }
+      : null;
+  return { superAdmin, platformStaff };
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -125,7 +220,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   async function load(currentSession: Session | null) {
     setLoading(true);
-    const slug = resolveTenantSlug();
+    if (consoleVisualFixtureActive()) {
+      const persona = readSelectedFixturePersona();
+      const workforce = fixtureWorkforce(persona);
+      setSession(fixtureSession(persona));
+      setProfile(null);
+      setSuperAdmin(workforce.superAdmin);
+      setPlatformStaff(workforce.platformStaff);
+      setSchool(null);
+      setTenantSlug(null);
+      setLoading(false);
+      return;
+    }
+    const consoleHost = currentEffectiveHostKind() === "internal";
+    const slug = consoleHost ? null : resolveTenantSlug();
     setTenantSlug(slug);
 
     let nextProfile: UserProfile | null = null;
@@ -133,103 +241,165 @@ export function AppProvider({ children }: { children: ReactNode }) {
     let nextPlatformStaff: PlatformStaffProfile | null = null;
     let nextSchool: SchoolRow | null = null;
 
-    if (currentSession?.user) {
-      // Try tenant profile first
-      const { data: profRow } = await supabase
-        .from("users")
-        .select(USER_SAFE_COLUMNS)
-        .eq("id", currentSession.user.id)
-        .maybeSingle();
-      const prof = profRow as unknown as UserProfile | null;
+    try {
+      if (currentSession?.user) {
+        const userId = currentSession.user.id;
+        // Workforce identity is independent of a tenant membership row. A
+        // platform owner who also has an organization profile must still
+        // resolve as a console operator.
+        const [profRow, workforce] = await withTimeout(
+          Promise.all([
+            supabase.from("users").select(USER_SAFE_COLUMNS).eq("id", userId).maybeSingle(),
+            loadWorkforce(userId),
+          ]),
+          IDENTITY_LOAD_MS,
+          "identity",
+        );
+        const prof = profRow.data as unknown as UserProfile | null;
+        nextSuperAdmin = workforce.superAdmin;
+        nextPlatformStaff = workforce.platformStaff;
 
-      if (prof) {
-        nextProfile = prof;
-        const { data: sch } = await supabase
-          .from("schools")
-          .select(SCHOOL_CLIENT_COLUMNS)
-          .eq("id", prof.school_id)
-          .maybeSingle();
-        if (sch) nextSchool = sch as unknown as SchoolRow;
-      } else {
-        const { data: sa } = await supabase
-          .from("super_admins")
-          .select("id, full_name, email")
-          .eq("id", currentSession.user.id)
-          .maybeSingle();
-        if (sa) nextSuperAdmin = sa as SuperAdminProfile;
-        else nextPlatformStaff = await loadPlatformStaff(currentSession.user.id);
+        if (prof) {
+          const activeMember = (prof as UserProfile & { is_active?: boolean }).is_active !== false;
+          if (!activeMember) {
+            persistOAuthError(ORGANIZATION_ACCESS_DENIED);
+            await supabase.auth.signOut();
+            setSession(null);
+          } else {
+            nextProfile = prof;
+            const { data: sch } = await supabase
+              .from("schools")
+              .select(SCHOOL_CLIENT_COLUMNS)
+              .eq("id", prof.school_id)
+              .eq("is_active", true)
+              .maybeSingle();
+            if (sch) nextSchool = sch as unknown as SchoolRow;
+            else {
+              persistOAuthError(ORGANIZATION_ACCESS_DENIED);
+              await supabase.auth.signOut();
+              setSession(null);
+              nextProfile = null;
+            }
+          }
+        }
+
+        // Google OAuth can create an Auth user with no membership. Sign that
+        // session out — access is by admin invite, never self-registration.
+        if (
+          shouldRejectUninvitedGooglePrincipal({
+            hasMembership: Boolean(nextProfile || nextSuperAdmin || nextPlatformStaff),
+            user: currentSession.user,
+          })
+        ) {
+          persistOAuthError(GOOGLE_UNINVITED_ERROR);
+          await supabase.auth.signOut();
+          setSession(null);
+          nextProfile = null;
+          nextSuperAdmin = null;
+          nextPlatformStaff = null;
+          nextSchool = null;
+        }
       }
-    }
 
-    // Public-site lookup by slug (anyone, signed in or not)
-    if (!nextSchool && slug) {
-      const { data: sch } = await supabase
-        .from("schools")
-        .select(SCHOOL_CLIENT_COLUMNS)
-        .eq("slug", slug)
-        .eq("is_active", true)
-        .maybeSingle();
-      if (sch) nextSchool = sch as unknown as SchoolRow;
-    }
+      // Console host is not a tenant site — skip school lookups that can stall sign-in.
+      if (!consoleHost) {
+        if (!nextSchool && slug) {
+          const { data: sch } = await supabase
+            .from("schools")
+            .select(SCHOOL_CLIENT_COLUMNS)
+            .eq("slug", slug)
+            .eq("is_active", true)
+            .maybeSingle();
+          if (sch) nextSchool = sch as unknown as SchoolRow;
+        }
 
-    // Plane B: custom-domain lookup — an organization's own registered
-    // domain (schools.domain) serves its public site when the visitor
-    // lands on it. Subdomain and platform hosts never reach this branch.
-    // SHERIVS-029: verified rows in school_domains win; legacy schools.domain is the fallback.
-    const tenantDomain = resolveTenantDomain();
-    if (tenantDomain && !slug) {
-      const resolved = await resolveSchoolByHost(tenantDomain);
-      // A session that does not belong to this school's domain is ended here (host-scoped login).
-      if (currentSession && resolved && !(await schoolDomainLoginAllowed(tenantDomain))) {
-        await supabase.auth.signOut();
-        nextProfile = null;
-        nextSuperAdmin = null;
-        nextPlatformStaff = null;
-        nextSchool = null;
+        // Plane B: custom-domain lookup — an organization's own registered
+        // domain (schools.domain) serves its public site when the visitor
+        // lands on it. Subdomain and platform hosts never reach this branch.
+        // SHERIVS-029: verified rows in school_domains win; legacy schools.domain is the fallback.
+        const tenantDomain = resolveTenantDomain();
+        if (tenantDomain && !slug) {
+          const resolved = await resolveSchoolByHost(tenantDomain);
+          // A session that does not belong to this school's domain is ended here (host-scoped login).
+          if (currentSession && resolved && !(await schoolDomainLoginAllowed(tenantDomain))) {
+            await supabase.auth.signOut();
+            nextProfile = null;
+            nextSuperAdmin = null;
+            nextPlatformStaff = null;
+            nextSchool = null;
+          }
+          if (resolved && (!nextSchool || nextSchool.id !== resolved.school_id)) {
+            const { data: sch } = await supabase
+              .from("schools")
+              .select(SCHOOL_CLIENT_COLUMNS)
+              .eq("id", resolved.school_id)
+              .eq("is_active", true)
+              .maybeSingle();
+            nextSchool = sch ? (sch as unknown as SchoolRow) : null;
+          }
+        }
+        if (!nextSchool && !slug && tenantDomain) {
+          const { data: sch } = await supabase
+            .from("schools")
+            .select(SCHOOL_CLIENT_COLUMNS)
+            .eq("domain", tenantDomain)
+            .eq("is_active", true)
+            .maybeSingle();
+          if (sch) nextSchool = sch as unknown as SchoolRow;
+        }
       }
-      if (resolved && (!nextSchool || nextSchool.id !== resolved.school_id)) {
-        const { data: sch } = await supabase
-          .from("schools")
-          .select(SCHOOL_CLIENT_COLUMNS)
-          .eq("id", resolved.school_id)
-          .eq("is_active", true)
-          .maybeSingle();
-        nextSchool = sch ? (sch as unknown as SchoolRow) : null;
-      }
+    } catch {
+      /* Fail closed on identity errors, but never leave the console on a blank loading gradient. */
+    } finally {
+      setProfile(nextProfile);
+      setSuperAdmin(nextSuperAdmin);
+      setPlatformStaff(nextPlatformStaff);
+      setSchool(nextSchool);
+      applyBrandColors(nextSchool);
+      setLoading(false);
     }
-    if (!nextSchool && !slug && tenantDomain) {
-      const { data: sch } = await supabase
-        .from("schools")
-        .select(SCHOOL_CLIENT_COLUMNS)
-        .eq("domain", tenantDomain)
-        .eq("is_active", true)
-        .maybeSingle();
-      if (sch) nextSchool = sch as unknown as SchoolRow;
-    }
-
-    setProfile(nextProfile);
-    setSuperAdmin(nextSuperAdmin);
-    setPlatformStaff(nextPlatformStaff);
-    setSchool(nextSchool);
-    applyBrandColors(nextSchool);
-    setLoading(false);
   }
 
   useEffect(() => {
     let cancelled = false;
-    supabase.auth.getSession().then(({ data }) => {
-      if (cancelled) return;
-      setSession(data.session);
-      void load(data.session);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
-      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      setSession(sess);
-      void load(sess);
-    });
+    let unsubscribe: (() => void) | undefined;
+
+    async function boot() {
+      try {
+        if (consoleVisualFixtureActive()) {
+          if (!cancelled) await load(null);
+          return;
+        }
+        // Local role simulation: do not wait on Supabase before the operator
+        // picks a persona. Production builds never enable this flag.
+        if (consoleVisualFixtureEnabled()) {
+          if (!cancelled) setLoading(false);
+          return;
+        }
+        const { data } = await withTimeout(supabase.auth.getSession(), SESSION_LOAD_MS, "session");
+        if (cancelled) return;
+        setSession(data.session);
+        await load(data.session);
+      } catch {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    void boot();
+    try {
+      const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
+        if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+        setSession(sess);
+        void load(sess);
+      });
+      unsubscribe = () => sub.subscription.unsubscribe();
+    } catch {
+      /* Fail closed: identity still resolves from getSession(). */
+    }
+
     return () => {
       cancelled = true;
-      sub.subscription.unsubscribe();
+      unsubscribe?.();
     };
   }, []);
 
@@ -287,12 +457,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
     tenantSlug,
     role,
     refresh: async () => {
+      if (consoleVisualFixtureActive()) {
+        await load(null);
+        return;
+      }
       const { data } = await supabase.auth.getSession();
       setSession(data.session);
       await load(data.session);
     },
     signOut: async () => {
-      await supabase.auth.signOut();
+      const localFixture = consoleVisualFixtureActive();
+      deactivateConsoleVisualFixture();
+      if (!localFixture) {
+        await supabase.auth.signOut();
+      }
+      setSession(null);
+      setProfile(null);
+      setSuperAdmin(null);
+      setPlatformStaff(null);
     },
   };
 

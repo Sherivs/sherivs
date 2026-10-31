@@ -29,7 +29,6 @@ describe("password rule: 10+ chars, upper, lower, digit (matches Supabase Auth)"
     for (const f of [
       "frontend/src/routes/auth.tsx",
       "frontend/src/routes/reset-password.tsx",
-      "frontend/src/routes/_authenticated/settings.tsx",
     ]) {
       const src = readFileSync(f, "utf8");
       expect(src, f).toContain("newPasswordError(");

@@ -2,21 +2,42 @@
  * Browser-side push notification registration.
  *
  * Registers the service worker, requests notification permission, subscribes
- * to the Push API (VAPID when `VITE_VAPID_PUBLIC_KEY` is configured) and
- * persists the resulting subscription on `users.push_token`.
+ * to the Push API (VAPID public key required) and persists the resulting
+ * subscription on `users.push_token`.
  */
 import { supabase } from "@/integrations/supabase/client";
 
 export type PushSupport = {
   supported: boolean;
   permission: NotificationPermission | "unsupported";
+  vapidConfigured: boolean;
 };
 
+export type RegisterPushResult = {
+  ok: boolean;
+  token: string | null;
+  reason?: "unsupported" | "denied" | "missing_vapid" | "no_user" | "error";
+};
+
+/** Client-safe application-server key. Empty builds cannot subscribe. */
+export function vapidPublicKey(): string | null {
+  const raw = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+  if (typeof raw !== "string") return null;
+  const key = raw.trim();
+  return key.length > 0 ? key : null;
+}
+
 export function getPushSupport(): PushSupport {
-  if (typeof window === "undefined") return { supported: false, permission: "unsupported" };
+  if (typeof window === "undefined") {
+    return { supported: false, permission: "unsupported", vapidConfigured: Boolean(vapidPublicKey()) };
+  }
   const supported =
     "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
-  return { supported, permission: supported ? Notification.permission : "unsupported" };
+  return {
+    supported,
+    permission: supported ? Notification.permission : "unsupported",
+    vapidConfigured: Boolean(vapidPublicKey()),
+  };
 }
 
 function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
@@ -40,35 +61,47 @@ async function ensureRegistration(): Promise<ServiceWorkerRegistration> {
  * the signed-in user. Returns the stored token, or null when unavailable.
  */
 export async function registerPushToken(userId: string): Promise<string | null> {
+  const result = await registerPushSubscription(userId);
+  return result.token;
+}
+
+export async function registerPushSubscription(userId: string): Promise<RegisterPushResult> {
+  if (!userId) return { ok: false, token: null, reason: "no_user" };
   const { supported } = getPushSupport();
-  if (!supported || !userId) return null;
+  if (!supported) return { ok: false, token: null, reason: "unsupported" };
+
+  const vapid = vapidPublicKey();
+  if (!vapid) return { ok: false, token: null, reason: "missing_vapid" };
 
   const permission =
     Notification.permission === "default"
       ? await Notification.requestPermission()
       : Notification.permission;
-  if (permission !== "granted") return null;
+  if (permission !== "granted") return { ok: false, token: null, reason: "denied" };
 
-  const registration = await ensureRegistration();
-  await navigator.serviceWorker.ready;
+  try {
+    const registration = await ensureRegistration();
+    await navigator.serviceWorker.ready;
 
-  let subscription = await registration.pushManager.getSubscription();
-  if (!subscription) {
-    const vapid = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
-    subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      ...(vapid ? { applicationServerKey: urlBase64ToUint8Array(vapid) } : {}),
-    });
+    let subscription = await registration.pushManager.getSubscription();
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapid),
+      });
+    }
+
+    const token = JSON.stringify(subscription.toJSON());
+    const { error } = await supabase
+      .from("users")
+      .update({ push_token: token, push_token_updated_at: new Date().toISOString() })
+      .eq("id", userId);
+    if (error) throw error;
+
+    return { ok: true, token };
+  } catch {
+    return { ok: false, token: null, reason: "error" };
   }
-
-  const token = JSON.stringify(subscription.toJSON());
-  const { error } = await supabase
-    .from("users")
-    .update({ push_token: token, push_token_updated_at: new Date().toISOString() })
-    .eq("id", userId);
-  if (error) throw error;
-
-  return token;
 }
 
 /** Remove the browser subscription and clear the stored token. */

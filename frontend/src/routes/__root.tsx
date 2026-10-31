@@ -11,19 +11,22 @@ import { type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { AppProvider } from "@/contexts/app-context";
 import { PLATFORM_PAGE_DESCRIPTION, PLATFORM_PAGE_TITLE } from "@/lib/platform";
+import { publishedCompanySocial } from "@/lib/public-site/contacts";
 import { Toaster } from "@/components/ui/sonner";
 import { RouteProgressBar } from "@/components/route-progress-bar";
 import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme";
-import { SherivsLogo } from "@/components/brand/sherivs-logo";
+import { SherivsLockup, SherivsLogo } from "@/components/brand/sherivs-logo";
 import { AnalyticsConsent } from "@/components/analytics/analytics-consent";
 import { captureClientError } from "@/lib/observability/sentry-browser";
+
+const PUBLIC_X_HANDLE = publishedCompanySocial().find((item) => item.id === "x")?.handle;
 
 function NotFoundComponent() {
   return (
     <div className="flex min-h-dvh items-center justify-center px-4">
       <div className="max-w-md text-center">
         <Link to="/" aria-label="Sherivs home" className="mb-8 inline-flex">
-          <SherivsLogo size={40} wordmarkClassName="text-2xl" />
+          <SherivsLockup height={44} />
         </Link>
         <h1 className="text-7xl font-bold bg-[image:var(--brand-gradient)] bg-clip-text text-transparent">
           404
@@ -113,6 +116,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
             { property: "og:image", content: "https://sherivs.com/og-image.png" },
             { name: "twitter:image", content: "https://sherivs.com/og-image.png" },
             { name: "twitter:card", content: "summary_large_image" },
+            ...(PUBLIC_X_HANDLE ? [{ name: "twitter:site", content: PUBLIC_X_HANDLE }] : []),
             { property: "og:type", content: "website" },
             { property: "og:image:width", content: "1200" },
             { property: "og:image:height", content: "630" },
@@ -134,7 +138,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
             { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
             {
               rel: "stylesheet",
-              href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap",
+              href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap",
             },
           ],
         },

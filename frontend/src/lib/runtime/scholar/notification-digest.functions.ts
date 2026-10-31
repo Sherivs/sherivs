@@ -75,7 +75,7 @@ export const sendNotificationDigests = createServerFn({ method: "POST" })
         title: `Your ${data.frequency} summary`,
         message: `${list.length} new updates in the last ${hours}h — ${parts}.`,
         type: "digest",
-        action_url: "/notifications",
+        action_url: "/home/notifications",
         is_read: false,
       });
       if (!error) sent += 1;

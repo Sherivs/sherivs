@@ -31,14 +31,24 @@ import { writeAuditRecord } from "@/lib/server/write-audit";
 const switchValidator = z.object({
   /** The organization to make active (must be an ACTIVE membership of the caller). */
   organizationId: z.string().uuid(),
+  /** Optional role when the person holds more than one role in that organization. */
+  role: z.string().min(2).max(40).optional(),
 });
 
 /** Pure selection helper — testable; mirrors the resolver's ordering. */
-export function pickSwitchTarget<T extends { organizationId: string }>(
+export function pickSwitchTarget<T extends { organizationId: string; role?: string }>(
   memberships: readonly T[],
   organizationId: string,
+  role?: string,
 ): T | null {
-  return memberships.find((m) => m.organizationId === organizationId) ?? null;
+  if (role) {
+    return (
+      memberships.find((row) => row.organizationId === organizationId && row.role === role) ??
+      memberships.find((row) => row.organizationId === organizationId) ??
+      null
+    );
+  }
+  return memberships.find((row) => row.organizationId === organizationId) ?? null;
 }
 
 export const switchActiveOrganization = createServerFn({ method: "POST" })
@@ -49,13 +59,16 @@ export const switchActiveOrganization = createServerFn({ method: "POST" })
     const userId = context.userId;
 
     // 1. Resolve the caller's own ACTIVE membership (RLS-scoped).
-    const { data: membership, error: membershipErr } = await db
+    let membershipQuery = db
       .from("organization_memberships")
       .select("school_id, role, is_active")
       .eq("user_id", userId)
       .eq("school_id", data.organizationId)
       .eq("is_active", true)
-      .maybeSingle();
+      .order("is_primary", { ascending: false })
+      .limit(1);
+    if (data.role) membershipQuery = membershipQuery.eq("role", data.role);
+    const { data: membership, error: membershipErr } = await membershipQuery.maybeSingle();
     if (membershipErr || !membership) {
       throw new Error("Not an active member of that organization.");
     }
@@ -67,14 +80,13 @@ export const switchActiveOrganization = createServerFn({ method: "POST" })
     //    accounts cannot switch contexts at all).
     const { data: profile, error: profileErr } = await db
       .from("users")
-      .select("id, school_id, is_active")
+      .select("id, school_id, role, is_active")
       .eq("id", userId)
       .maybeSingle();
     if (profileErr || !profile || profile.is_active === false) {
       throw new Error("Account is not active.");
     }
-    if (profile.school_id === data.organizationId) {
-      // Already active — resolve the destination without a write.
+    if (profile.school_id === data.organizationId && profile.role === membershipRole) {
       return {
         destination: runtimeWorkspaceHome(membershipRole),
         organizationId: data.organizationId,

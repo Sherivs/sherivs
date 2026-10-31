@@ -15,8 +15,23 @@ const migration = readFileSync(
   "utf8",
 );
 // Capabilities added to a seeded role by a later migration (append-only to the array).
-const LATER_GRANTS: Record<string, { file: string; caps: string[] }> = {
-  platform_admin: { file: "database/supabase/migrations/20261024000350_sherivs_028_gov_admin_topup_reconcile.sql", caps: ["platform.gov.manage"] },
+const LATER_GRANTS: Record<string, Array<{ file: string; caps: string[] }>> = {
+  platform_admin: [
+    {
+      file: "database/supabase/migrations/20261024000350_sherivs_028_gov_admin_topup_reconcile.sql",
+      caps: ["platform.gov.manage"],
+    },
+    {
+      file: "database/supabase/migrations/20261027002000_sherivs_031_control_plane_engines.sql",
+      caps: ["platform.tenants.manage"],
+    },
+  ],
+  operations: [
+    {
+      file: "database/supabase/migrations/20261027002000_sherivs_031_control_plane_engines.sql",
+      caps: ["platform.tenants.read", "platform.tenants.manage"],
+    },
+  ],
 };
 const fns = readFileSync("frontend/src/lib/platform-staff/staff.functions.ts", "utf8");
 
@@ -28,11 +43,16 @@ describe("platform role catalogue mirrors the migration seed", () => {
       .split("\n")
       .slice(line, line + 3)
       .join("\n");
-    const later = LATER_GRANTS[code];
+    const later = LATER_GRANTS[code] ?? [];
     for (const cap of PLATFORM_ROLE_CAPABILITIES[code]) {
-      if (later?.caps.includes(cap)) {
-        const sql = readFileSync(later.file, "utf8");
-        expect(sql).toMatch(new RegExp(`array_append\\(capabilities, '${cap.replace(/\./g, "\\.")}'\\)[\\s\\S]*code = '${code}'`));
+      const grant = later.find((entry) => entry.caps.includes(cap));
+      if (grant) {
+        const sql = readFileSync(grant.file, "utf8");
+        expect(sql).toMatch(
+          new RegExp(
+            `array_append\\(capabilities, '${cap.replace(/\./g, "\\.")}'\\)[\\s\\S]*code = '${code}'`,
+          ),
+        );
       } else expect(block).toContain(`'${cap}'`);
     }
   });
@@ -56,10 +76,13 @@ describe("migration security posture", () => {
 });
 
 describe("staff server functions", () => {
-  it("every exported server fn runs the super-admin gate", () => {
+  it("list is capability-gated; privileged grants still use the super-admin gate", () => {
     const exported = fns.match(/export const \w+ = createServerFn/g) ?? [];
     expect(exported.length).toBe(5);
-    expect(fns.match(/await assertSuper\(context\);/g)?.length).toBe(5);
+    expect(fns).toContain('assertCapability(context, "platform.staff.read")');
+    expect(fns).toContain('assertCapability(context, "platform.staff.manage")');
+    expect(fns).toContain("requirePlatformSuperAdmin");
+    expect(fns).toContain("PRIVILEGED_PLATFORM_ROLES");
   });
   it("invites redirect to /reset-password and are audited", () => {
     expect(fns).toContain("/reset-password");
@@ -104,7 +127,7 @@ describe("lifecycle + workspace", () => {
       visibleInternalSections(sections, { isSuperAdmin: true, capabilities: new Set() }),
     ).toHaveLength(3);
   });
-  it("routes active platform staff to /internal", () => {
+  it("routes active platform staff to /console", () => {
     const id = identityFromAppState({
       superAdmin: null,
       profile: null,

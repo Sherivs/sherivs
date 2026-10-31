@@ -11,229 +11,113 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as siteRouteRouteImport } from './routes/(site)/route'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AdmissionsRouteImport } from './routes/admissions'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as BlogRouteImport } from './routes/blog'
+import { Route as ConsoleRouteRouteImport } from './routes/console/route'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
-import { Route as FoundationLoopRouteImport } from './routes/foundation-loop'
-import { Route as GovRouteRouteImport } from './routes/gov/route'
-import { Route as GovInviteRouteImport } from './routes/gov-invite'
-import { Route as HeadRouteImport } from './routes/head'
 import { Route as HealthDotjsonRouteImport } from './routes/health[.]json'
+import { Route as HomeRouteRouteImport } from './routes/home/route'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ManifestDotwebmanifestRouteImport } from './routes/manifest[.]webmanifest'
-import { Route as MarketplaceRouteImport } from './routes/marketplace'
-import { Route as PlatformRouteImport } from './routes/platform'
-import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as RssDotxmlRouteImport } from './routes/rss[.]xml'
-import { Route as RulesRouteImport } from './routes/rules'
-import { Route as ScholarFoundationLoopRouteImport } from './routes/scholar-foundation-loop'
 import { Route as SiteIconDotsvgRouteImport } from './routes/site-icon[.]svg'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as UxLabRouteImport } from './routes/ux-lab'
 import { Route as siteAboutRouteImport } from './routes/(site)/about'
+import { Route as siteAccessibilityRouteImport } from './routes/(site)/accessibility'
 import { Route as siteCheckResultRouteImport } from './routes/(site)/check-result'
 import { Route as siteContactRouteImport } from './routes/(site)/contact'
 import { Route as siteCoregridRouteImport } from './routes/(site)/coregrid'
+import { Route as siteDevelopersRouteImport } from './routes/(site)/developers'
+import { Route as siteDocsRouteImport } from './routes/(site)/docs'
+import { Route as siteFaqRouteImport } from './routes/(site)/faq'
+import { Route as siteHelpRouteImport } from './routes/(site)/help'
+import { Route as siteInsightsRouteImport } from './routes/(site)/insights'
+import { Route as siteIntegrationsRouteImport } from './routes/(site)/integrations'
 import { Route as sitePrivacyPolicyRouteImport } from './routes/(site)/privacy-policy'
+import { Route as siteProductRouteImport } from './routes/(site)/product'
 import { Route as siteRequestDemoRouteImport } from './routes/(site)/request-demo'
+import { Route as siteSecurityRouteImport } from './routes/(site)/security'
 import { Route as siteSherivsRouteImport } from './routes/(site)/sherivs'
 import { Route as siteSiwesVerifyRouteImport } from './routes/(site)/siwes-verify'
+import { Route as siteSolutionsRouteImport } from './routes/(site)/solutions'
 import { Route as siteStatusRouteImport } from './routes/(site)/status'
+import { Route as siteSupportRouteImport } from './routes/(site)/support'
 import { Route as siteTermsRouteImport } from './routes/(site)/terms'
+import { Route as siteTrustRouteImport } from './routes/(site)/trust'
 import { Route as siteVerifyTranscriptRouteImport } from './routes/(site)/verify-transcript'
-import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
-import { Route as AuthenticatedBursarRouteRouteImport } from './routes/_authenticated/bursar/route'
-import { Route as AuthenticatedCommandCentreRouteRouteImport } from './routes/_authenticated/command-centre/route'
-import { Route as AuthenticatedConsentRouteImport } from './routes/_authenticated/consent'
-import { Route as AuthenticatedDriverRouteRouteImport } from './routes/_authenticated/driver/route'
-import { Route as AuthenticatedGovDashboardRouteImport } from './routes/_authenticated/gov-dashboard'
-import { Route as AuthenticatedHqRouteRouteImport } from './routes/_authenticated/hq/route'
-import { Route as AuthenticatedInternalRouteImport } from './routes/_authenticated/internal'
-import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
-import { Route as AuthenticatedMfaRouteImport } from './routes/_authenticated/mfa'
-import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
-import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
-import { Route as AuthenticatedOrganizationsRouteImport } from './routes/_authenticated/organizations'
-import { Route as AuthenticatedParentRouteRouteImport } from './routes/_authenticated/parent/route'
-import { Route as AuthenticatedRuntimeRouteImport } from './routes/_authenticated/runtime'
-import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
-import { Route as AuthenticatedStudentRouteRouteImport } from './routes/_authenticated/student/route'
-import { Route as AuthenticatedSuperAdminRouteRouteImport } from './routes/_authenticated/super-admin/route'
-import { Route as AuthenticatedTeacherRouteRouteImport } from './routes/_authenticated/teacher/route'
-import { Route as AuthenticatedWelcomeRouteImport } from './routes/_authenticated/welcome'
-import { Route as AuthenticatedWorkspaceRouteImport } from './routes/_authenticated/workspace'
-import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
-import { Route as EventsIdRouteImport } from './routes/events.$id'
-import { Route as GovIndexRouteImport } from './routes/gov/index'
-import { Route as GovAboutRouteImport } from './routes/gov/about'
-import { Route as GovAttendanceRouteImport } from './routes/gov/attendance'
-import { Route as GovCircularsRouteImport } from './routes/gov/circulars'
-import { Route as GovInspectionsRouteImport } from './routes/gov/inspections'
-import { Route as GovPostingsRouteImport } from './routes/gov/postings'
-import { Route as GovSchoolsRouteImport } from './routes/gov/schools'
-import { Route as GovStaffingRouteImport } from './routes/gov/staffing'
-import { Route as GroupIndexRouteImport } from './routes/group/index'
-import { Route as NewsIdRouteImport } from './routes/news.$id'
+import { Route as DotwellKnownAppleAppSiteAssociationRouteImport } from './routes/[.]well-known/apple-app-site-association'
+import { Route as DotwellKnownAssetlinksDotjsonRouteImport } from './routes/[.]well-known/assetlinks[.]json'
+import { Route as ApiWebauthnRouteImport } from './routes/api/webauthn'
+import { Route as ConsoleIndexRouteImport } from './routes/console/index'
+import { Route as ConsoleAccountRouteImport } from './routes/console/account'
+import { Route as ConsoleActivityRouteRouteImport } from './routes/console/activity/route'
+import { Route as ConsoleHelpRouteImport } from './routes/console/help'
+import { Route as ConsoleOrganizationsRouteRouteImport } from './routes/console/organizations/route'
+import { Route as ConsoleRuntimesRouteRouteImport } from './routes/console/runtimes/route'
+import { Route as ConsoleSettingsRouteImport } from './routes/console/settings'
+import { Route as ConsoleTeamRouteRouteImport } from './routes/console/team/route'
+import { Route as ConsoleWorkspacesRouteRouteImport } from './routes/console/workspaces/route'
+import { Route as HomeIndexRouteImport } from './routes/home/index'
+import { Route as HomeAiRouteImport } from './routes/home/ai'
+import { Route as HomeHelpRouteImport } from './routes/home/help'
+import { Route as HomeNotificationsRouteImport } from './routes/home/notifications'
+import { Route as HomeProfileRouteImport } from './routes/home/profile'
+import { Route as HomeSecurityRouteImport } from './routes/home/security'
+import { Route as HomeSettingsRouteImport } from './routes/home/settings'
 import { Route as PagesSlugRouteImport } from './routes/pages.$slug'
-import { Route as PlatformOrgRouteImport } from './routes/platform.org'
 import { Route as PostsPostRouteImport } from './routes/posts.$post'
-import { Route as RealityClassRouteImport } from './routes/reality.$class'
-import { Route as AuthenticatedAdminAcademicStandingRouteImport } from './routes/_authenticated/admin/academic-standing'
-import { Route as AuthenticatedAdminAdmissionsRouteImport } from './routes/_authenticated/admin/admissions'
-import { Route as AuthenticatedAdminAdmissionsFunnelRouteImport } from './routes/_authenticated/admin/admissions-funnel'
-import { Route as AuthenticatedAdminAiAssistantRouteImport } from './routes/_authenticated/admin/ai-assistant'
-import { Route as AuthenticatedAdminAnalyticsRouteImport } from './routes/_authenticated/admin/analytics'
-import { Route as AuthenticatedAdminApiKeysRouteImport } from './routes/_authenticated/admin/api-keys'
-import { Route as AuthenticatedAdminAttendanceRouteImport } from './routes/_authenticated/admin/attendance'
-import { Route as AuthenticatedAdminAttendanceConflictsRouteImport } from './routes/_authenticated/admin/attendance-conflicts'
-import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin/audit'
-import { Route as AuthenticatedAdminAuditLogsRouteImport } from './routes/_authenticated/admin/audit-logs'
-import { Route as AuthenticatedAdminBroadcastRouteImport } from './routes/_authenticated/admin/broadcast'
-import { Route as AuthenticatedAdminBusManagementRouteImport } from './routes/_authenticated/admin/bus-management'
-import { Route as AuthenticatedAdminBusesRouteImport } from './routes/_authenticated/admin/buses'
-import { Route as AuthenticatedAdminCalendarRouteImport } from './routes/_authenticated/admin/calendar'
-import { Route as AuthenticatedAdminCampusesRouteImport } from './routes/_authenticated/admin/campuses'
-import { Route as AuthenticatedAdminClassesRouteImport } from './routes/_authenticated/admin/classes'
-import { Route as AuthenticatedAdminCmsRouteImport } from './routes/_authenticated/admin/cms'
-import { Route as AuthenticatedAdminDashboardRouteImport } from './routes/_authenticated/admin/dashboard'
-import { Route as AuthenticatedAdminDigitalTwinRouteImport } from './routes/_authenticated/admin/digital-twin'
-import { Route as AuthenticatedAdminDisciplineRouteImport } from './routes/_authenticated/admin/discipline'
-import { Route as AuthenticatedAdminDomainsRouteImport } from './routes/_authenticated/admin/domains'
-import { Route as AuthenticatedAdminEarlyWarningRouteImport } from './routes/_authenticated/admin/early-warning'
-import { Route as AuthenticatedAdminEducationRealityRouteImport } from './routes/_authenticated/admin/education-reality'
-import { Route as AuthenticatedAdminEnterpriseChecklistRouteImport } from './routes/_authenticated/admin/enterprise-checklist'
-import { Route as AuthenticatedAdminExamBodiesRouteImport } from './routes/_authenticated/admin/exam-bodies'
-import { Route as AuthenticatedAdminExaminationsRouteImport } from './routes/_authenticated/admin/examinations'
-import { Route as AuthenticatedAdminExamsRouteImport } from './routes/_authenticated/admin/exams'
-import { Route as AuthenticatedAdminExpensesRouteImport } from './routes/_authenticated/admin/expenses'
-import { Route as AuthenticatedAdminExtracurricularRouteImport } from './routes/_authenticated/admin/extracurricular'
-import { Route as AuthenticatedAdminFacilitiesRouteImport } from './routes/_authenticated/admin/facilities'
-import { Route as AuthenticatedAdminFeaturesRouteImport } from './routes/_authenticated/admin/features'
-import { Route as AuthenticatedAdminFeeReliefRouteImport } from './routes/_authenticated/admin/fee-relief'
-import { Route as AuthenticatedAdminFeesRouteImport } from './routes/_authenticated/admin/fees'
-import { Route as AuthenticatedAdminFeesDefaultersRouteImport } from './routes/_authenticated/admin/fees-defaulters'
-import { Route as AuthenticatedAdminFinancialReportsRouteImport } from './routes/_authenticated/admin/financial-reports'
-import { Route as AuthenticatedAdminGeofenceSettingsRouteImport } from './routes/_authenticated/admin/geofence-settings'
-import { Route as AuthenticatedAdminGovernmentRouteImport } from './routes/_authenticated/admin/government'
-import { Route as AuthenticatedAdminGradesRouteImport } from './routes/_authenticated/admin/grades'
-import { Route as AuthenticatedAdminHeadsRouteImport } from './routes/_authenticated/admin/heads'
-import { Route as AuthenticatedAdminHealthRouteImport } from './routes/_authenticated/admin/health'
-import { Route as AuthenticatedAdminHealthCertificateRouteImport } from './routes/_authenticated/admin/health-certificate'
-import { Route as AuthenticatedAdminHostelRouteImport } from './routes/_authenticated/admin/hostel'
-import { Route as AuthenticatedAdminHrRouteImport } from './routes/_authenticated/admin/hr'
-import { Route as AuthenticatedAdminHrPayrollRouteImport } from './routes/_authenticated/admin/hr-payroll'
-import { Route as AuthenticatedAdminIdentitiesRouteImport } from './routes/_authenticated/admin/identities'
-import { Route as AuthenticatedAdminIntegrationsRouteImport } from './routes/_authenticated/admin/integrations'
-import { Route as AuthenticatedAdminIntelligenceRouteImport } from './routes/_authenticated/admin/intelligence'
-import { Route as AuthenticatedAdminIntelligenceAiRouteImport } from './routes/_authenticated/admin/intelligence-ai'
-import { Route as AuthenticatedAdminIntelligenceOperationsRouteImport } from './routes/_authenticated/admin/intelligence-operations'
-import { Route as AuthenticatedAdminIntelligenceParentsRouteImport } from './routes/_authenticated/admin/intelligence-parents'
-import { Route as AuthenticatedAdminIntelligenceStudentsRouteImport } from './routes/_authenticated/admin/intelligence-students'
-import { Route as AuthenticatedAdminIntelligenceTeachersRouteImport } from './routes/_authenticated/admin/intelligence-teachers'
-import { Route as AuthenticatedAdminInventoryRouteImport } from './routes/_authenticated/admin/inventory'
-import { Route as AuthenticatedAdminLessonPlansRouteImport } from './routes/_authenticated/admin/lesson-plans'
-import { Route as AuthenticatedAdminLibraryRouteImport } from './routes/_authenticated/admin/library'
-import { Route as AuthenticatedAdminLockedAccountsRouteImport } from './routes/_authenticated/admin/locked-accounts'
-import { Route as AuthenticatedAdminMessagesLogRouteImport } from './routes/_authenticated/admin/messages-log'
-import { Route as AuthenticatedAdminNdpaRouteImport } from './routes/_authenticated/admin/ndpa'
-import { Route as AuthenticatedAdminNewsRouteImport } from './routes/_authenticated/admin/news'
-import { Route as AuthenticatedAdminOnboardingInterviewRouteImport } from './routes/_authenticated/admin/onboarding-interview'
-import { Route as AuthenticatedAdminOperationsRouteImport } from './routes/_authenticated/admin/operations'
-import { Route as AuthenticatedAdminPayrollRouteImport } from './routes/_authenticated/admin/payroll'
-import { Route as AuthenticatedAdminReportCardsRouteImport } from './routes/_authenticated/admin/report-cards'
-import { Route as AuthenticatedAdminRoleScopesRouteImport } from './routes/_authenticated/admin/role-scopes'
-import { Route as AuthenticatedAdminRolesRouteImport } from './routes/_authenticated/admin/roles'
-import { Route as AuthenticatedAdminSafeguardsRouteImport } from './routes/_authenticated/admin/safeguards'
-import { Route as AuthenticatedAdminSchoolGroupRouteImport } from './routes/_authenticated/admin/school-group'
-import { Route as AuthenticatedAdminSchoolProfileRouteImport } from './routes/_authenticated/admin/school-profile'
-import { Route as AuthenticatedAdminSessionRolloverRouteImport } from './routes/_authenticated/admin/session-rollover'
-import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
-import { Route as AuthenticatedAdminStaffAccountsRouteImport } from './routes/_authenticated/admin/staff-accounts'
-import { Route as AuthenticatedAdminStoresAssetsRouteImport } from './routes/_authenticated/admin/stores-assets'
-import { Route as AuthenticatedAdminStructureRouteImport } from './routes/_authenticated/admin/structure'
-import { Route as AuthenticatedAdminStudentIntelligenceRouteImport } from './routes/_authenticated/admin/student-intelligence'
-import { Route as AuthenticatedAdminStudentsRouteImport } from './routes/_authenticated/admin/students'
-import { Route as AuthenticatedAdminSupportRouteImport } from './routes/_authenticated/admin/support'
-import { Route as AuthenticatedAdminTeacherIntelligenceRouteImport } from './routes/_authenticated/admin/teacher-intelligence'
-import { Route as AuthenticatedAdminTeachersRouteImport } from './routes/_authenticated/admin/teachers'
-import { Route as AuthenticatedAdminTimetableRouteImport } from './routes/_authenticated/admin/timetable'
-import { Route as AuthenticatedAdminTransfersCustodyRouteImport } from './routes/_authenticated/admin/transfers-custody'
-import { Route as AuthenticatedAdminVisitorsRouteImport } from './routes/_authenticated/admin/visitors'
-import { Route as AuthenticatedAdminWalletRouteImport } from './routes/_authenticated/admin/wallet'
-import { Route as AuthenticatedAdminWebsiteRouteImport } from './routes/_authenticated/admin/website'
-import { Route as AuthenticatedBursarDashboardRouteImport } from './routes/_authenticated/bursar/dashboard'
-import { Route as AuthenticatedBursarFeePlansRouteImport } from './routes/_authenticated/bursar/fee-plans'
-import { Route as AuthenticatedBursarFinancialIntelligenceRouteImport } from './routes/_authenticated/bursar/financial-intelligence'
-import { Route as AuthenticatedBursarReceiptsRouteImport } from './routes/_authenticated/bursar/receipts'
-import { Route as AuthenticatedBursarReconciliationRouteImport } from './routes/_authenticated/bursar/reconciliation'
-import { Route as AuthenticatedBursarReportsRouteImport } from './routes/_authenticated/bursar/reports'
-import { Route as AuthenticatedCommandCentreIndexRouteImport } from './routes/_authenticated/command-centre/index'
-import { Route as AuthenticatedDriverDashboardRouteImport } from './routes/_authenticated/driver/dashboard'
-import { Route as AuthenticatedDriverStudentsRouteImport } from './routes/_authenticated/driver/students'
-import { Route as AuthenticatedHqDashboardRouteImport } from './routes/_authenticated/hq/dashboard'
-import { Route as AuthenticatedHqFinanceRouteImport } from './routes/_authenticated/hq/finance'
-import { Route as AuthenticatedHqReportsRouteImport } from './routes/_authenticated/hq/reports'
-import { Route as AuthenticatedInternalAccessReviewRouteImport } from './routes/_authenticated/internal_.access-review'
-import { Route as AuthenticatedInternalGovAccessRouteImport } from './routes/_authenticated/internal_.gov-access'
-import { Route as AuthenticatedInternalSupportRouteImport } from './routes/_authenticated/internal_.support'
-import { Route as AuthenticatedParentAiAssistantRouteImport } from './routes/_authenticated/parent/ai-assistant'
-import { Route as AuthenticatedParentAttendanceRouteImport } from './routes/_authenticated/parent/attendance'
-import { Route as AuthenticatedParentBusTrackingRouteImport } from './routes/_authenticated/parent/bus-tracking'
-import { Route as AuthenticatedParentCalendarRouteImport } from './routes/_authenticated/parent/calendar'
-import { Route as AuthenticatedParentChildrenRouteImport } from './routes/_authenticated/parent/children'
-import { Route as AuthenticatedParentDashboardRouteImport } from './routes/_authenticated/parent/dashboard'
-import { Route as AuthenticatedParentFeesRouteImport } from './routes/_authenticated/parent/fees'
-import { Route as AuthenticatedParentGradesRouteImport } from './routes/_authenticated/parent/grades'
-import { Route as AuthenticatedParentNewsRouteImport } from './routes/_authenticated/parent/news'
-import { Route as AuthenticatedParentReportCardsRouteImport } from './routes/_authenticated/parent/report-cards'
-import { Route as AuthenticatedStudentAiTutorRouteImport } from './routes/_authenticated/student/ai-tutor'
-import { Route as AuthenticatedStudentAttendanceRouteImport } from './routes/_authenticated/student/attendance'
-import { Route as AuthenticatedStudentCalendarRouteImport } from './routes/_authenticated/student/calendar'
-import { Route as AuthenticatedStudentCbtRouteImport } from './routes/_authenticated/student/cbt'
-import { Route as AuthenticatedStudentCourseRegistrationRouteImport } from './routes/_authenticated/student/course-registration'
-import { Route as AuthenticatedStudentDashboardRouteImport } from './routes/_authenticated/student/dashboard'
-import { Route as AuthenticatedStudentFeesRouteImport } from './routes/_authenticated/student/fees'
-import { Route as AuthenticatedStudentGradesRouteImport } from './routes/_authenticated/student/grades'
-import { Route as AuthenticatedStudentNewsRouteImport } from './routes/_authenticated/student/news'
-import { Route as AuthenticatedStudentReportCardRouteImport } from './routes/_authenticated/student/report-card'
-import { Route as AuthenticatedStudentTimetableRouteImport } from './routes/_authenticated/student/timetable'
-import { Route as AuthenticatedSuperAdminAcademicIntelligenceRouteImport } from './routes/_authenticated/super-admin/academic-intelligence'
-import { Route as AuthenticatedSuperAdminAgentGovernanceRouteImport } from './routes/_authenticated/super-admin/agent-governance'
-import { Route as AuthenticatedSuperAdminBillingRouteImport } from './routes/_authenticated/super-admin/billing'
-import { Route as AuthenticatedSuperAdminCommunicationStewardRouteImport } from './routes/_authenticated/super-admin/communication-steward'
-import { Route as AuthenticatedSuperAdminDashboardRouteImport } from './routes/_authenticated/super-admin/dashboard'
-import { Route as AuthenticatedSuperAdminFinancialOperationsRouteImport } from './routes/_authenticated/super-admin/financial-operations'
-import { Route as AuthenticatedSuperAdminLogsRouteImport } from './routes/_authenticated/super-admin/logs'
-import { Route as AuthenticatedSuperAdminPlatformConfigRouteImport } from './routes/_authenticated/super-admin/platform-config'
-import { Route as AuthenticatedSuperAdminRuntimeContractsRouteImport } from './routes/_authenticated/super-admin/runtime-contracts'
-import { Route as AuthenticatedSuperAdminSchedulingIntelligenceRouteImport } from './routes/_authenticated/super-admin/scheduling-intelligence'
-import { Route as AuthenticatedSuperAdminSchoolsRouteImport } from './routes/_authenticated/super-admin/schools'
-import { Route as AuthenticatedSuperAdminSettingsRouteImport } from './routes/_authenticated/super-admin/settings'
-import { Route as AuthenticatedSuperAdminStaffRouteImport } from './routes/_authenticated/super-admin/staff'
-import { Route as AuthenticatedSuperAdminSupportRouteImport } from './routes/_authenticated/super-admin/support'
-import { Route as AuthenticatedSuperAdminTenantsRouteImport } from './routes/_authenticated/super-admin/tenants'
-import { Route as AuthenticatedSuperAdminTiersRouteImport } from './routes/_authenticated/super-admin/tiers'
-import { Route as AuthenticatedSuperAdminTrustFabricRouteImport } from './routes/_authenticated/super-admin/trust-fabric'
-import { Route as AuthenticatedSuperAdminWorkerMissionsRouteImport } from './routes/_authenticated/super-admin/worker-missions'
-import { Route as AuthenticatedSuperAdminWorkspaceProjectionRouteImport } from './routes/_authenticated/super-admin/workspace-projection'
-import { Route as AuthenticatedTeacherAiAssistantRouteImport } from './routes/_authenticated/teacher/ai-assistant'
-import { Route as AuthenticatedTeacherAttendanceRouteImport } from './routes/_authenticated/teacher/attendance'
-import { Route as AuthenticatedTeacherAttendanceWeekRouteImport } from './routes/_authenticated/teacher/attendance-week'
-import { Route as AuthenticatedTeacherCalendarRouteImport } from './routes/_authenticated/teacher/calendar'
-import { Route as AuthenticatedTeacherClassIntelligenceRouteImport } from './routes/_authenticated/teacher/class-intelligence'
-import { Route as AuthenticatedTeacherDashboardRouteImport } from './routes/_authenticated/teacher/dashboard'
-import { Route as AuthenticatedTeacherGradebookRouteImport } from './routes/_authenticated/teacher/gradebook'
-import { Route as AuthenticatedTeacherGradesRouteImport } from './routes/_authenticated/teacher/grades'
-import { Route as AuthenticatedTeacherLessonNotesRouteImport } from './routes/_authenticated/teacher/lesson-notes'
-import { Route as AuthenticatedTeacherLessonPlansRouteImport } from './routes/_authenticated/teacher/lesson-plans'
-import { Route as AuthenticatedTeacherNewsRouteImport } from './routes/_authenticated/teacher/news'
-import { Route as AuthenticatedTeacherSignInRouteImport } from './routes/_authenticated/teacher/sign-in'
-import { Route as AuthenticatedTeacherTimetableRouteImport } from './routes/_authenticated/teacher/timetable'
-import { Route as AuthenticatedWorkspaceSettingsRouteImport } from './routes/_authenticated/workspace_.settings'
+import { Route as siteCompanyAboutRouteImport } from './routes/(site)/company.about'
+import { Route as siteCompanyCareersRouteImport } from './routes/(site)/company.careers'
+import { Route as siteCompanyPartnersRouteImport } from './routes/(site)/company.partners'
+import { Route as siteCompanyVisionRouteImport } from './routes/(site)/company.vision'
+import { Route as siteHelpIndexRouteImport } from './routes/(site)/help.index'
+import { Route as siteHelpSlugRouteImport } from './routes/(site)/help.$slug'
+import { Route as siteInsightsIndexRouteImport } from './routes/(site)/insights.index'
+import { Route as siteInsightsSlugRouteImport } from './routes/(site)/insights.$slug'
+import { Route as siteLegalAcceptableUseRouteImport } from './routes/(site)/legal.acceptable-use'
+import { Route as siteLegalContactRouteImport } from './routes/(site)/legal.contact'
+import { Route as siteLegalCookiesRouteImport } from './routes/(site)/legal.cookies'
+import { Route as siteLegalDataProcessingRouteImport } from './routes/(site)/legal.data-processing'
+import { Route as siteLegalPrivacyRouteImport } from './routes/(site)/legal.privacy'
+import { Route as siteLegalSubprocessorsRouteImport } from './routes/(site)/legal.subprocessors'
+import { Route as siteLegalTermsRouteImport } from './routes/(site)/legal.terms'
+import { Route as siteProductIndexRouteImport } from './routes/(site)/product.index'
+import { Route as siteProductAiWorkforceRouteImport } from './routes/(site)/product.ai-workforce'
+import { Route as siteProductArchitectureRouteImport } from './routes/(site)/product.architecture'
+import { Route as siteProductDigitalTwinsRouteImport } from './routes/(site)/product.digital-twins'
+import { Route as siteProductInstitutionalComputingRouteImport } from './routes/(site)/product.institutional-computing'
+import { Route as siteProductIntelligenceRouteImport } from './routes/(site)/product.intelligence'
+import { Route as siteSecurityIndexRouteImport } from './routes/(site)/security.index'
+import { Route as siteSecurityDisclosureRouteImport } from './routes/(site)/security.disclosure'
+import { Route as siteSolutionsIndexRouteImport } from './routes/(site)/solutions.index'
+import { Route as siteSolutionsEducationRouteImport } from './routes/(site)/solutions.education'
+import { Route as siteSolutionsEnterpriseRouteImport } from './routes/(site)/solutions.enterprise'
+import { Route as siteSolutionsResearchRouteImport } from './routes/(site)/solutions.research'
+import { Route as ApiPublicWebauthnRouteImport } from './routes/api/public/webauthn'
+import { Route as ConsoleActivityIndexRouteImport } from './routes/console/activity/index'
+import { Route as ConsoleActivityAdminRouteImport } from './routes/console/activity/admin'
+import { Route as ConsoleActivityBillingRouteImport } from './routes/console/activity/billing'
+import { Route as ConsoleActivityIncidentsRouteImport } from './routes/console/activity/incidents'
+import { Route as ConsoleActivityLogsRouteImport } from './routes/console/activity/logs'
+import { Route as ConsoleActivityMetricsRouteImport } from './routes/console/activity/metrics'
+import { Route as ConsoleActivitySecurityRouteImport } from './routes/console/activity/security'
+import { Route as ConsoleActivityTicketsRouteImport } from './routes/console/activity/tickets'
+import { Route as ConsoleOrganizationsIndexRouteImport } from './routes/console/organizations/index'
+import { Route as ConsoleOrganizationsOrganizationIdRouteImport } from './routes/console/organizations/$organizationId'
+import { Route as ConsoleOrganizationsNewRouteImport } from './routes/console/organizations/new'
+import { Route as ConsoleRuntimesIndexRouteImport } from './routes/console/runtimes/index'
+import { Route as ConsoleRuntimesScholarRouteImport } from './routes/console/runtimes/scholar'
+import { Route as ConsoleTeamIndexRouteImport } from './routes/console/team/index'
+import { Route as ConsoleTeamAccessRouteImport } from './routes/console/team/access'
+import { Route as ConsoleTeamInvitationsRouteImport } from './routes/console/team/invitations'
+import { Route as ConsoleTeamRolesRouteImport } from './routes/console/team/roles'
+import { Route as ConsoleTeamSuspendedRouteImport } from './routes/console/team/suspended'
+import { Route as ConsoleWorkspacesIndexRouteImport } from './routes/console/workspaces/index'
+import { Route as ConsoleWorkspacesWorkspaceIdRouteImport } from './routes/console/workspaces/$workspaceId'
+import { Route as HomeSSectionRouteImport } from './routes/home/s.$section'
+import { Route as siteInsightsCategorySlugRouteImport } from './routes/(site)/insights.category.$slug'
 import { Route as ApiPublicAuditPasswordResetRouteImport } from './routes/api/public/audit.password-reset'
 import { Route as ApiPublicCronIntegrationsSyncRouteImport } from './routes/api/public/cron/integrations-sync'
 import { Route as ApiPublicCronWalletTopupReconcileRouteImport } from './routes/api/public/cron/wallet-topup-reconcile'
@@ -251,23 +135,14 @@ const siteRouteRoute = siteRouteRouteImport.update({
   id: '/(site)',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdmissionsRoute = AdmissionsRouteImport.update({
-  id: '/admissions',
-  path: '/admissions',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BlogRoute = BlogRouteImport.update({
-  id: '/blog',
-  path: '/blog',
+const ConsoleRouteRoute = ConsoleRouteRouteImport.update({
+  id: '/console',
+  path: '/console',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -275,29 +150,14 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const FoundationLoopRoute = FoundationLoopRouteImport.update({
-  id: '/foundation-loop',
-  path: '/foundation-loop',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GovRouteRoute = GovRouteRouteImport.update({
-  id: '/gov',
-  path: '/gov',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GovInviteRoute = GovInviteRouteImport.update({
-  id: '/gov-invite',
-  path: '/gov-invite',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HeadRoute = HeadRouteImport.update({
-  id: '/head',
-  path: '/head',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const HealthDotjsonRoute = HealthDotjsonRouteImport.update({
   id: '/health.json',
   path: '/health.json',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HomeRouteRoute = HomeRouteRouteImport.update({
+  id: '/home',
+  path: '/home',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -310,19 +170,9 @@ const ManifestDotwebmanifestRoute = ManifestDotwebmanifestRouteImport.update({
   path: '/manifest.webmanifest',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MarketplaceRoute = MarketplaceRouteImport.update({
-  id: '/marketplace',
-  path: '/marketplace',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PlatformRoute = PlatformRouteImport.update({
-  id: '/platform',
-  path: '/platform',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -340,16 +190,6 @@ const RssDotxmlRoute = RssDotxmlRouteImport.update({
   path: '/rss.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RulesRoute = RulesRouteImport.update({
-  id: '/rules',
-  path: '/rules',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ScholarFoundationLoopRoute = ScholarFoundationLoopRouteImport.update({
-  id: '/scholar-foundation-loop',
-  path: '/scholar-foundation-loop',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SiteIconDotsvgRoute = SiteIconDotsvgRouteImport.update({
   id: '/site-icon.svg',
   path: '/site-icon.svg',
@@ -360,14 +200,14 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
-const UxLabRoute = UxLabRouteImport.update({
-  id: '/ux-lab',
-  path: '/ux-lab',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const siteAboutRoute = siteAboutRouteImport.update({
   id: '/about',
   path: '/about',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteAccessibilityRoute = siteAccessibilityRouteImport.update({
+  id: '/accessibility',
+  path: '/accessibility',
   getParentRoute: () => siteRouteRoute,
 } as any)
 const siteCheckResultRoute = siteCheckResultRouteImport.update({
@@ -385,14 +225,54 @@ const siteCoregridRoute = siteCoregridRouteImport.update({
   path: '/coregrid',
   getParentRoute: () => siteRouteRoute,
 } as any)
+const siteDevelopersRoute = siteDevelopersRouteImport.update({
+  id: '/developers',
+  path: '/developers',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteDocsRoute = siteDocsRouteImport.update({
+  id: '/docs',
+  path: '/docs',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteFaqRoute = siteFaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteHelpRoute = siteHelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteInsightsRoute = siteInsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteIntegrationsRoute = siteIntegrationsRouteImport.update({
+  id: '/integrations',
+  path: '/integrations',
+  getParentRoute: () => siteRouteRoute,
+} as any)
 const sitePrivacyPolicyRoute = sitePrivacyPolicyRouteImport.update({
   id: '/privacy-policy',
   path: '/privacy-policy',
   getParentRoute: () => siteRouteRoute,
 } as any)
+const siteProductRoute = siteProductRouteImport.update({
+  id: '/product',
+  path: '/product',
+  getParentRoute: () => siteRouteRoute,
+} as any)
 const siteRequestDemoRoute = siteRequestDemoRouteImport.update({
   id: '/request-demo',
   path: '/request-demo',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteSecurityRoute = siteSecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
   getParentRoute: () => siteRouteRoute,
 } as any)
 const siteSherivsRoute = siteSherivsRouteImport.update({
@@ -405,9 +285,19 @@ const siteSiwesVerifyRoute = siteSiwesVerifyRouteImport.update({
   path: '/siwes-verify',
   getParentRoute: () => siteRouteRoute,
 } as any)
+const siteSolutionsRoute = siteSolutionsRouteImport.update({
+  id: '/solutions',
+  path: '/solutions',
+  getParentRoute: () => siteRouteRoute,
+} as any)
 const siteStatusRoute = siteStatusRouteImport.update({
   id: '/status',
   path: '/status',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteSupportRoute = siteSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
   getParentRoute: () => siteRouteRoute,
 } as any)
 const siteTermsRoute = siteTermsRouteImport.update({
@@ -415,1102 +305,379 @@ const siteTermsRoute = siteTermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => siteRouteRoute,
 } as any)
+const siteTrustRoute = siteTrustRouteImport.update({
+  id: '/trust',
+  path: '/trust',
+  getParentRoute: () => siteRouteRoute,
+} as any)
 const siteVerifyTranscriptRoute = siteVerifyTranscriptRouteImport.update({
   id: '/verify-transcript',
   path: '/verify-transcript',
   getParentRoute: () => siteRouteRoute,
 } as any)
-const AuthenticatedAdminRouteRoute = AuthenticatedAdminRouteRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedBursarRouteRoute =
-  AuthenticatedBursarRouteRouteImport.update({
-    id: '/bursar',
-    path: '/bursar',
-    getParentRoute: () => AuthenticatedRouteRoute,
+const DotwellKnownAppleAppSiteAssociationRoute =
+  DotwellKnownAppleAppSiteAssociationRouteImport.update({
+    id: '/.well-known/apple-app-site-association',
+    path: '/.well-known/apple-app-site-association',
+    getParentRoute: () => rootRouteImport,
   } as any)
-const AuthenticatedCommandCentreRouteRoute =
-  AuthenticatedCommandCentreRouteRouteImport.update({
-    id: '/command-centre',
-    path: '/command-centre',
-    getParentRoute: () => AuthenticatedRouteRoute,
+const DotwellKnownAssetlinksDotjsonRoute =
+  DotwellKnownAssetlinksDotjsonRouteImport.update({
+    id: '/.well-known/assetlinks.json',
+    path: '/.well-known/assetlinks.json',
+    getParentRoute: () => rootRouteImport,
   } as any)
-const AuthenticatedConsentRoute = AuthenticatedConsentRouteImport.update({
-  id: '/consent',
-  path: '/consent',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedDriverRouteRoute =
-  AuthenticatedDriverRouteRouteImport.update({
-    id: '/driver',
-    path: '/driver',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedGovDashboardRoute =
-  AuthenticatedGovDashboardRouteImport.update({
-    id: '/gov-dashboard',
-    path: '/gov-dashboard',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedHqRouteRoute = AuthenticatedHqRouteRouteImport.update({
-  id: '/hq',
-  path: '/hq',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedInternalRoute = AuthenticatedInternalRouteImport.update({
-  id: '/internal',
-  path: '/internal',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedMessagesRoute = AuthenticatedMessagesRouteImport.update({
-  id: '/messages',
-  path: '/messages',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedMfaRoute = AuthenticatedMfaRouteImport.update({
-  id: '/mfa',
-  path: '/mfa',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedNotificationsRoute =
-  AuthenticatedNotificationsRouteImport.update({
-    id: '/notifications',
-    path: '/notifications',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedOrganizationsRoute =
-  AuthenticatedOrganizationsRouteImport.update({
-    id: '/organizations',
-    path: '/organizations',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedParentRouteRoute =
-  AuthenticatedParentRouteRouteImport.update({
-    id: '/parent',
-    path: '/parent',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedRuntimeRoute = AuthenticatedRuntimeRouteImport.update({
-  id: '/runtime',
-  path: '/runtime',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedStudentRouteRoute =
-  AuthenticatedStudentRouteRouteImport.update({
-    id: '/student',
-    path: '/student',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedSuperAdminRouteRoute =
-  AuthenticatedSuperAdminRouteRouteImport.update({
-    id: '/super-admin',
-    path: '/super-admin',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedTeacherRouteRoute =
-  AuthenticatedTeacherRouteRouteImport.update({
-    id: '/teacher',
-    path: '/teacher',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedWelcomeRoute = AuthenticatedWelcomeRouteImport.update({
-  id: '/welcome',
-  path: '/welcome',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedWorkspaceRoute = AuthenticatedWorkspaceRouteImport.update({
-  id: '/workspace',
-  path: '/workspace',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const BlogSlugRoute = BlogSlugRouteImport.update({
-  id: '/$slug',
-  path: '/$slug',
-  getParentRoute: () => BlogRoute,
-} as any)
-const EventsIdRoute = EventsIdRouteImport.update({
-  id: '/events/$id',
-  path: '/events/$id',
+const ApiWebauthnRoute = ApiWebauthnRouteImport.update({
+  id: '/api/webauthn',
+  path: '/api/webauthn',
   getParentRoute: () => rootRouteImport,
 } as any)
-const GovIndexRoute = GovIndexRouteImport.update({
+const ConsoleIndexRoute = ConsoleIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => GovRouteRoute,
+  getParentRoute: () => ConsoleRouteRoute,
 } as any)
-const GovAboutRoute = GovAboutRouteImport.update({
-  id: '/about',
-  path: '/about',
-  getParentRoute: () => GovRouteRoute,
+const ConsoleAccountRoute = ConsoleAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => ConsoleRouteRoute,
 } as any)
-const GovAttendanceRoute = GovAttendanceRouteImport.update({
-  id: '/attendance',
-  path: '/attendance',
-  getParentRoute: () => GovRouteRoute,
+const ConsoleActivityRouteRoute = ConsoleActivityRouteRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => ConsoleRouteRoute,
 } as any)
-const GovCircularsRoute = GovCircularsRouteImport.update({
-  id: '/circulars',
-  path: '/circulars',
-  getParentRoute: () => GovRouteRoute,
+const ConsoleHelpRoute = ConsoleHelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => ConsoleRouteRoute,
 } as any)
-const GovInspectionsRoute = GovInspectionsRouteImport.update({
-  id: '/inspections',
-  path: '/inspections',
-  getParentRoute: () => GovRouteRoute,
+const ConsoleOrganizationsRouteRoute =
+  ConsoleOrganizationsRouteRouteImport.update({
+    id: '/organizations',
+    path: '/organizations',
+    getParentRoute: () => ConsoleRouteRoute,
+  } as any)
+const ConsoleRuntimesRouteRoute = ConsoleRuntimesRouteRouteImport.update({
+  id: '/runtimes',
+  path: '/runtimes',
+  getParentRoute: () => ConsoleRouteRoute,
 } as any)
-const GovPostingsRoute = GovPostingsRouteImport.update({
-  id: '/postings',
-  path: '/postings',
-  getParentRoute: () => GovRouteRoute,
+const ConsoleSettingsRoute = ConsoleSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => ConsoleRouteRoute,
 } as any)
-const GovSchoolsRoute = GovSchoolsRouteImport.update({
-  id: '/schools',
-  path: '/schools',
-  getParentRoute: () => GovRouteRoute,
+const ConsoleTeamRouteRoute = ConsoleTeamRouteRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => ConsoleRouteRoute,
 } as any)
-const GovStaffingRoute = GovStaffingRouteImport.update({
-  id: '/staffing',
-  path: '/staffing',
-  getParentRoute: () => GovRouteRoute,
+const ConsoleWorkspacesRouteRoute = ConsoleWorkspacesRouteRouteImport.update({
+  id: '/workspaces',
+  path: '/workspaces',
+  getParentRoute: () => ConsoleRouteRoute,
 } as any)
-const GroupIndexRoute = GroupIndexRouteImport.update({
-  id: '/group/',
-  path: '/group/',
-  getParentRoute: () => rootRouteImport,
+const HomeIndexRoute = HomeIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => HomeRouteRoute,
 } as any)
-const NewsIdRoute = NewsIdRouteImport.update({
-  id: '/news/$id',
-  path: '/news/$id',
-  getParentRoute: () => rootRouteImport,
+const HomeAiRoute = HomeAiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
+  getParentRoute: () => HomeRouteRoute,
+} as any)
+const HomeHelpRoute = HomeHelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => HomeRouteRoute,
+} as any)
+const HomeNotificationsRoute = HomeNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => HomeRouteRoute,
+} as any)
+const HomeProfileRoute = HomeProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => HomeRouteRoute,
+} as any)
+const HomeSecurityRoute = HomeSecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
+  getParentRoute: () => HomeRouteRoute,
+} as any)
+const HomeSettingsRoute = HomeSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => HomeRouteRoute,
 } as any)
 const PagesSlugRoute = PagesSlugRouteImport.update({
   id: '/pages/$slug',
   path: '/pages/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PlatformOrgRoute = PlatformOrgRouteImport.update({
-  id: '/org',
-  path: '/org',
-  getParentRoute: () => PlatformRoute,
-} as any)
 const PostsPostRoute = PostsPostRouteImport.update({
   id: '/posts/$post',
   path: '/posts/$post',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RealityClassRoute = RealityClassRouteImport.update({
-  id: '/reality/$class',
-  path: '/reality/$class',
+const siteCompanyAboutRoute = siteCompanyAboutRouteImport.update({
+  id: '/company/about',
+  path: '/company/about',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteCompanyCareersRoute = siteCompanyCareersRouteImport.update({
+  id: '/company/careers',
+  path: '/company/careers',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteCompanyPartnersRoute = siteCompanyPartnersRouteImport.update({
+  id: '/company/partners',
+  path: '/company/partners',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteCompanyVisionRoute = siteCompanyVisionRouteImport.update({
+  id: '/company/vision',
+  path: '/company/vision',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteHelpIndexRoute = siteHelpIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => siteHelpRoute,
+} as any)
+const siteHelpSlugRoute = siteHelpSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => siteHelpRoute,
+} as any)
+const siteInsightsIndexRoute = siteInsightsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => siteInsightsRoute,
+} as any)
+const siteInsightsSlugRoute = siteInsightsSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => siteInsightsRoute,
+} as any)
+const siteLegalAcceptableUseRoute = siteLegalAcceptableUseRouteImport.update({
+  id: '/legal/acceptable-use',
+  path: '/legal/acceptable-use',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteLegalContactRoute = siteLegalContactRouteImport.update({
+  id: '/legal/contact',
+  path: '/legal/contact',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteLegalCookiesRoute = siteLegalCookiesRouteImport.update({
+  id: '/legal/cookies',
+  path: '/legal/cookies',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteLegalDataProcessingRoute = siteLegalDataProcessingRouteImport.update({
+  id: '/legal/data-processing',
+  path: '/legal/data-processing',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteLegalPrivacyRoute = siteLegalPrivacyRouteImport.update({
+  id: '/legal/privacy',
+  path: '/legal/privacy',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteLegalSubprocessorsRoute = siteLegalSubprocessorsRouteImport.update({
+  id: '/legal/subprocessors',
+  path: '/legal/subprocessors',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteLegalTermsRoute = siteLegalTermsRouteImport.update({
+  id: '/legal/terms',
+  path: '/legal/terms',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const siteProductIndexRoute = siteProductIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => siteProductRoute,
+} as any)
+const siteProductAiWorkforceRoute = siteProductAiWorkforceRouteImport.update({
+  id: '/ai-workforce',
+  path: '/ai-workforce',
+  getParentRoute: () => siteProductRoute,
+} as any)
+const siteProductArchitectureRoute = siteProductArchitectureRouteImport.update({
+  id: '/architecture',
+  path: '/architecture',
+  getParentRoute: () => siteProductRoute,
+} as any)
+const siteProductDigitalTwinsRoute = siteProductDigitalTwinsRouteImport.update({
+  id: '/digital-twins',
+  path: '/digital-twins',
+  getParentRoute: () => siteProductRoute,
+} as any)
+const siteProductInstitutionalComputingRoute =
+  siteProductInstitutionalComputingRouteImport.update({
+    id: '/institutional-computing',
+    path: '/institutional-computing',
+    getParentRoute: () => siteProductRoute,
+  } as any)
+const siteProductIntelligenceRoute = siteProductIntelligenceRouteImport.update({
+  id: '/intelligence',
+  path: '/intelligence',
+  getParentRoute: () => siteProductRoute,
+} as any)
+const siteSecurityIndexRoute = siteSecurityIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => siteSecurityRoute,
+} as any)
+const siteSecurityDisclosureRoute = siteSecurityDisclosureRouteImport.update({
+  id: '/disclosure',
+  path: '/disclosure',
+  getParentRoute: () => siteSecurityRoute,
+} as any)
+const siteSolutionsIndexRoute = siteSolutionsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => siteSolutionsRoute,
+} as any)
+const siteSolutionsEducationRoute = siteSolutionsEducationRouteImport.update({
+  id: '/education',
+  path: '/education',
+  getParentRoute: () => siteSolutionsRoute,
+} as any)
+const siteSolutionsEnterpriseRoute = siteSolutionsEnterpriseRouteImport.update({
+  id: '/enterprise',
+  path: '/enterprise',
+  getParentRoute: () => siteSolutionsRoute,
+} as any)
+const siteSolutionsResearchRoute = siteSolutionsResearchRouteImport.update({
+  id: '/research',
+  path: '/research',
+  getParentRoute: () => siteSolutionsRoute,
+} as any)
+const ApiPublicWebauthnRoute = ApiPublicWebauthnRouteImport.update({
+  id: '/api/public/webauthn',
+  path: '/api/public/webauthn',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedAdminAcademicStandingRoute =
-  AuthenticatedAdminAcademicStandingRouteImport.update({
-    id: '/academic-standing',
-    path: '/academic-standing',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminAdmissionsRoute =
-  AuthenticatedAdminAdmissionsRouteImport.update({
-    id: '/admissions',
-    path: '/admissions',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminAdmissionsFunnelRoute =
-  AuthenticatedAdminAdmissionsFunnelRouteImport.update({
-    id: '/admissions-funnel',
-    path: '/admissions-funnel',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminAiAssistantRoute =
-  AuthenticatedAdminAiAssistantRouteImport.update({
-    id: '/ai-assistant',
-    path: '/ai-assistant',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminAnalyticsRoute =
-  AuthenticatedAdminAnalyticsRouteImport.update({
-    id: '/analytics',
-    path: '/analytics',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminApiKeysRoute =
-  AuthenticatedAdminApiKeysRouteImport.update({
-    id: '/api-keys',
-    path: '/api-keys',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminAttendanceRoute =
-  AuthenticatedAdminAttendanceRouteImport.update({
-    id: '/attendance',
-    path: '/attendance',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminAttendanceConflictsRoute =
-  AuthenticatedAdminAttendanceConflictsRouteImport.update({
-    id: '/attendance-conflicts',
-    path: '/attendance-conflicts',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminAuditRoute = AuthenticatedAdminAuditRouteImport.update({
-  id: '/audit',
-  path: '/audit',
-  getParentRoute: () => AuthenticatedAdminRouteRoute,
+const ConsoleActivityIndexRoute = ConsoleActivityIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ConsoleActivityRouteRoute,
 } as any)
-const AuthenticatedAdminAuditLogsRoute =
-  AuthenticatedAdminAuditLogsRouteImport.update({
-    id: '/audit-logs',
-    path: '/audit-logs',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminBroadcastRoute =
-  AuthenticatedAdminBroadcastRouteImport.update({
-    id: '/broadcast',
-    path: '/broadcast',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminBusManagementRoute =
-  AuthenticatedAdminBusManagementRouteImport.update({
-    id: '/bus-management',
-    path: '/bus-management',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminBusesRoute = AuthenticatedAdminBusesRouteImport.update({
-  id: '/buses',
-  path: '/buses',
-  getParentRoute: () => AuthenticatedAdminRouteRoute,
+const ConsoleActivityAdminRoute = ConsoleActivityAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => ConsoleActivityRouteRoute,
 } as any)
-const AuthenticatedAdminCalendarRoute =
-  AuthenticatedAdminCalendarRouteImport.update({
-    id: '/calendar',
-    path: '/calendar',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminCampusesRoute =
-  AuthenticatedAdminCampusesRouteImport.update({
-    id: '/campuses',
-    path: '/campuses',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminClassesRoute =
-  AuthenticatedAdminClassesRouteImport.update({
-    id: '/classes',
-    path: '/classes',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminCmsRoute = AuthenticatedAdminCmsRouteImport.update({
-  id: '/cms',
-  path: '/cms',
-  getParentRoute: () => AuthenticatedAdminRouteRoute,
+const ConsoleActivityBillingRoute = ConsoleActivityBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => ConsoleActivityRouteRoute,
 } as any)
-const AuthenticatedAdminDashboardRoute =
-  AuthenticatedAdminDashboardRouteImport.update({
-    id: '/dashboard',
-    path: '/dashboard',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
+const ConsoleActivityIncidentsRoute =
+  ConsoleActivityIncidentsRouteImport.update({
+    id: '/incidents',
+    path: '/incidents',
+    getParentRoute: () => ConsoleActivityRouteRoute,
   } as any)
-const AuthenticatedAdminDigitalTwinRoute =
-  AuthenticatedAdminDigitalTwinRouteImport.update({
-    id: '/digital-twin',
-    path: '/digital-twin',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminDisciplineRoute =
-  AuthenticatedAdminDisciplineRouteImport.update({
-    id: '/discipline',
-    path: '/discipline',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminDomainsRoute =
-  AuthenticatedAdminDomainsRouteImport.update({
-    id: '/domains',
-    path: '/domains',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminEarlyWarningRoute =
-  AuthenticatedAdminEarlyWarningRouteImport.update({
-    id: '/early-warning',
-    path: '/early-warning',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminEducationRealityRoute =
-  AuthenticatedAdminEducationRealityRouteImport.update({
-    id: '/education-reality',
-    path: '/education-reality',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminEnterpriseChecklistRoute =
-  AuthenticatedAdminEnterpriseChecklistRouteImport.update({
-    id: '/enterprise-checklist',
-    path: '/enterprise-checklist',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminExamBodiesRoute =
-  AuthenticatedAdminExamBodiesRouteImport.update({
-    id: '/exam-bodies',
-    path: '/exam-bodies',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminExaminationsRoute =
-  AuthenticatedAdminExaminationsRouteImport.update({
-    id: '/examinations',
-    path: '/examinations',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminExamsRoute = AuthenticatedAdminExamsRouteImport.update({
-  id: '/exams',
-  path: '/exams',
-  getParentRoute: () => AuthenticatedAdminRouteRoute,
+const ConsoleActivityLogsRoute = ConsoleActivityLogsRouteImport.update({
+  id: '/logs',
+  path: '/logs',
+  getParentRoute: () => ConsoleActivityRouteRoute,
 } as any)
-const AuthenticatedAdminExpensesRoute =
-  AuthenticatedAdminExpensesRouteImport.update({
-    id: '/expenses',
-    path: '/expenses',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminExtracurricularRoute =
-  AuthenticatedAdminExtracurricularRouteImport.update({
-    id: '/extracurricular',
-    path: '/extracurricular',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminFacilitiesRoute =
-  AuthenticatedAdminFacilitiesRouteImport.update({
-    id: '/facilities',
-    path: '/facilities',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminFeaturesRoute =
-  AuthenticatedAdminFeaturesRouteImport.update({
-    id: '/features',
-    path: '/features',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminFeeReliefRoute =
-  AuthenticatedAdminFeeReliefRouteImport.update({
-    id: '/fee-relief',
-    path: '/fee-relief',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminFeesRoute = AuthenticatedAdminFeesRouteImport.update({
-  id: '/fees',
-  path: '/fees',
-  getParentRoute: () => AuthenticatedAdminRouteRoute,
+const ConsoleActivityMetricsRoute = ConsoleActivityMetricsRouteImport.update({
+  id: '/metrics',
+  path: '/metrics',
+  getParentRoute: () => ConsoleActivityRouteRoute,
 } as any)
-const AuthenticatedAdminFeesDefaultersRoute =
-  AuthenticatedAdminFeesDefaultersRouteImport.update({
-    id: '/fees-defaulters',
-    path: '/fees-defaulters',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminFinancialReportsRoute =
-  AuthenticatedAdminFinancialReportsRouteImport.update({
-    id: '/financial-reports',
-    path: '/financial-reports',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminGeofenceSettingsRoute =
-  AuthenticatedAdminGeofenceSettingsRouteImport.update({
-    id: '/geofence-settings',
-    path: '/geofence-settings',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminGovernmentRoute =
-  AuthenticatedAdminGovernmentRouteImport.update({
-    id: '/government',
-    path: '/government',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminGradesRoute =
-  AuthenticatedAdminGradesRouteImport.update({
-    id: '/grades',
-    path: '/grades',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminHeadsRoute = AuthenticatedAdminHeadsRouteImport.update({
-  id: '/heads',
-  path: '/heads',
-  getParentRoute: () => AuthenticatedAdminRouteRoute,
+const ConsoleActivitySecurityRoute = ConsoleActivitySecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
+  getParentRoute: () => ConsoleActivityRouteRoute,
 } as any)
-const AuthenticatedAdminHealthRoute =
-  AuthenticatedAdminHealthRouteImport.update({
-    id: '/health',
-    path: '/health',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminHealthCertificateRoute =
-  AuthenticatedAdminHealthCertificateRouteImport.update({
-    id: '/health-certificate',
-    path: '/health-certificate',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminHostelRoute =
-  AuthenticatedAdminHostelRouteImport.update({
-    id: '/hostel',
-    path: '/hostel',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminHrRoute = AuthenticatedAdminHrRouteImport.update({
-  id: '/hr',
-  path: '/hr',
-  getParentRoute: () => AuthenticatedAdminRouteRoute,
+const ConsoleActivityTicketsRoute = ConsoleActivityTicketsRouteImport.update({
+  id: '/tickets',
+  path: '/tickets',
+  getParentRoute: () => ConsoleActivityRouteRoute,
 } as any)
-const AuthenticatedAdminHrPayrollRoute =
-  AuthenticatedAdminHrPayrollRouteImport.update({
-    id: '/hr-payroll',
-    path: '/hr-payroll',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminIdentitiesRoute =
-  AuthenticatedAdminIdentitiesRouteImport.update({
-    id: '/identities',
-    path: '/identities',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminIntegrationsRoute =
-  AuthenticatedAdminIntegrationsRouteImport.update({
-    id: '/integrations',
-    path: '/integrations',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminIntelligenceRoute =
-  AuthenticatedAdminIntelligenceRouteImport.update({
-    id: '/intelligence',
-    path: '/intelligence',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminIntelligenceAiRoute =
-  AuthenticatedAdminIntelligenceAiRouteImport.update({
-    id: '/intelligence-ai',
-    path: '/intelligence-ai',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminIntelligenceOperationsRoute =
-  AuthenticatedAdminIntelligenceOperationsRouteImport.update({
-    id: '/intelligence-operations',
-    path: '/intelligence-operations',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminIntelligenceParentsRoute =
-  AuthenticatedAdminIntelligenceParentsRouteImport.update({
-    id: '/intelligence-parents',
-    path: '/intelligence-parents',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminIntelligenceStudentsRoute =
-  AuthenticatedAdminIntelligenceStudentsRouteImport.update({
-    id: '/intelligence-students',
-    path: '/intelligence-students',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminIntelligenceTeachersRoute =
-  AuthenticatedAdminIntelligenceTeachersRouteImport.update({
-    id: '/intelligence-teachers',
-    path: '/intelligence-teachers',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminInventoryRoute =
-  AuthenticatedAdminInventoryRouteImport.update({
-    id: '/inventory',
-    path: '/inventory',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminLessonPlansRoute =
-  AuthenticatedAdminLessonPlansRouteImport.update({
-    id: '/lesson-plans',
-    path: '/lesson-plans',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminLibraryRoute =
-  AuthenticatedAdminLibraryRouteImport.update({
-    id: '/library',
-    path: '/library',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminLockedAccountsRoute =
-  AuthenticatedAdminLockedAccountsRouteImport.update({
-    id: '/locked-accounts',
-    path: '/locked-accounts',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminMessagesLogRoute =
-  AuthenticatedAdminMessagesLogRouteImport.update({
-    id: '/messages-log',
-    path: '/messages-log',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminNdpaRoute = AuthenticatedAdminNdpaRouteImport.update({
-  id: '/ndpa',
-  path: '/ndpa',
-  getParentRoute: () => AuthenticatedAdminRouteRoute,
-} as any)
-const AuthenticatedAdminNewsRoute = AuthenticatedAdminNewsRouteImport.update({
-  id: '/news',
-  path: '/news',
-  getParentRoute: () => AuthenticatedAdminRouteRoute,
-} as any)
-const AuthenticatedAdminOnboardingInterviewRoute =
-  AuthenticatedAdminOnboardingInterviewRouteImport.update({
-    id: '/onboarding-interview',
-    path: '/onboarding-interview',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminOperationsRoute =
-  AuthenticatedAdminOperationsRouteImport.update({
-    id: '/operations',
-    path: '/operations',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminPayrollRoute =
-  AuthenticatedAdminPayrollRouteImport.update({
-    id: '/payroll',
-    path: '/payroll',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminReportCardsRoute =
-  AuthenticatedAdminReportCardsRouteImport.update({
-    id: '/report-cards',
-    path: '/report-cards',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminRoleScopesRoute =
-  AuthenticatedAdminRoleScopesRouteImport.update({
-    id: '/role-scopes',
-    path: '/role-scopes',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminRolesRoute = AuthenticatedAdminRolesRouteImport.update({
-  id: '/roles',
-  path: '/roles',
-  getParentRoute: () => AuthenticatedAdminRouteRoute,
-} as any)
-const AuthenticatedAdminSafeguardsRoute =
-  AuthenticatedAdminSafeguardsRouteImport.update({
-    id: '/safeguards',
-    path: '/safeguards',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminSchoolGroupRoute =
-  AuthenticatedAdminSchoolGroupRouteImport.update({
-    id: '/school-group',
-    path: '/school-group',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminSchoolProfileRoute =
-  AuthenticatedAdminSchoolProfileRouteImport.update({
-    id: '/school-profile',
-    path: '/school-profile',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminSessionRolloverRoute =
-  AuthenticatedAdminSessionRolloverRouteImport.update({
-    id: '/session-rollover',
-    path: '/session-rollover',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminSettingsRoute =
-  AuthenticatedAdminSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminStaffAccountsRoute =
-  AuthenticatedAdminStaffAccountsRouteImport.update({
-    id: '/staff-accounts',
-    path: '/staff-accounts',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminStoresAssetsRoute =
-  AuthenticatedAdminStoresAssetsRouteImport.update({
-    id: '/stores-assets',
-    path: '/stores-assets',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminStructureRoute =
-  AuthenticatedAdminStructureRouteImport.update({
-    id: '/structure',
-    path: '/structure',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminStudentIntelligenceRoute =
-  AuthenticatedAdminStudentIntelligenceRouteImport.update({
-    id: '/student-intelligence',
-    path: '/student-intelligence',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminStudentsRoute =
-  AuthenticatedAdminStudentsRouteImport.update({
-    id: '/students',
-    path: '/students',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminSupportRoute =
-  AuthenticatedAdminSupportRouteImport.update({
-    id: '/support',
-    path: '/support',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminTeacherIntelligenceRoute =
-  AuthenticatedAdminTeacherIntelligenceRouteImport.update({
-    id: '/teacher-intelligence',
-    path: '/teacher-intelligence',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminTeachersRoute =
-  AuthenticatedAdminTeachersRouteImport.update({
-    id: '/teachers',
-    path: '/teachers',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminTimetableRoute =
-  AuthenticatedAdminTimetableRouteImport.update({
-    id: '/timetable',
-    path: '/timetable',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminTransfersCustodyRoute =
-  AuthenticatedAdminTransfersCustodyRouteImport.update({
-    id: '/transfers-custody',
-    path: '/transfers-custody',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminVisitorsRoute =
-  AuthenticatedAdminVisitorsRouteImport.update({
-    id: '/visitors',
-    path: '/visitors',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminWalletRoute =
-  AuthenticatedAdminWalletRouteImport.update({
-    id: '/wallet',
-    path: '/wallet',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminWebsiteRoute =
-  AuthenticatedAdminWebsiteRouteImport.update({
-    id: '/website',
-    path: '/website',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedBursarDashboardRoute =
-  AuthenticatedBursarDashboardRouteImport.update({
-    id: '/dashboard',
-    path: '/dashboard',
-    getParentRoute: () => AuthenticatedBursarRouteRoute,
-  } as any)
-const AuthenticatedBursarFeePlansRoute =
-  AuthenticatedBursarFeePlansRouteImport.update({
-    id: '/fee-plans',
-    path: '/fee-plans',
-    getParentRoute: () => AuthenticatedBursarRouteRoute,
-  } as any)
-const AuthenticatedBursarFinancialIntelligenceRoute =
-  AuthenticatedBursarFinancialIntelligenceRouteImport.update({
-    id: '/financial-intelligence',
-    path: '/financial-intelligence',
-    getParentRoute: () => AuthenticatedBursarRouteRoute,
-  } as any)
-const AuthenticatedBursarReceiptsRoute =
-  AuthenticatedBursarReceiptsRouteImport.update({
-    id: '/receipts',
-    path: '/receipts',
-    getParentRoute: () => AuthenticatedBursarRouteRoute,
-  } as any)
-const AuthenticatedBursarReconciliationRoute =
-  AuthenticatedBursarReconciliationRouteImport.update({
-    id: '/reconciliation',
-    path: '/reconciliation',
-    getParentRoute: () => AuthenticatedBursarRouteRoute,
-  } as any)
-const AuthenticatedBursarReportsRoute =
-  AuthenticatedBursarReportsRouteImport.update({
-    id: '/reports',
-    path: '/reports',
-    getParentRoute: () => AuthenticatedBursarRouteRoute,
-  } as any)
-const AuthenticatedCommandCentreIndexRoute =
-  AuthenticatedCommandCentreIndexRouteImport.update({
+const ConsoleOrganizationsIndexRoute =
+  ConsoleOrganizationsIndexRouteImport.update({
     id: '/',
     path: '/',
-    getParentRoute: () => AuthenticatedCommandCentreRouteRoute,
+    getParentRoute: () => ConsoleOrganizationsRouteRoute,
   } as any)
-const AuthenticatedDriverDashboardRoute =
-  AuthenticatedDriverDashboardRouteImport.update({
-    id: '/dashboard',
-    path: '/dashboard',
-    getParentRoute: () => AuthenticatedDriverRouteRoute,
+const ConsoleOrganizationsOrganizationIdRoute =
+  ConsoleOrganizationsOrganizationIdRouteImport.update({
+    id: '/$organizationId',
+    path: '/$organizationId',
+    getParentRoute: () => ConsoleOrganizationsRouteRoute,
   } as any)
-const AuthenticatedDriverStudentsRoute =
-  AuthenticatedDriverStudentsRouteImport.update({
-    id: '/students',
-    path: '/students',
-    getParentRoute: () => AuthenticatedDriverRouteRoute,
-  } as any)
-const AuthenticatedHqDashboardRoute =
-  AuthenticatedHqDashboardRouteImport.update({
-    id: '/dashboard',
-    path: '/dashboard',
-    getParentRoute: () => AuthenticatedHqRouteRoute,
-  } as any)
-const AuthenticatedHqFinanceRoute = AuthenticatedHqFinanceRouteImport.update({
-  id: '/finance',
-  path: '/finance',
-  getParentRoute: () => AuthenticatedHqRouteRoute,
+const ConsoleOrganizationsNewRoute = ConsoleOrganizationsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => ConsoleOrganizationsRouteRoute,
 } as any)
-const AuthenticatedHqReportsRoute = AuthenticatedHqReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => AuthenticatedHqRouteRoute,
+const ConsoleRuntimesIndexRoute = ConsoleRuntimesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ConsoleRuntimesRouteRoute,
 } as any)
-const AuthenticatedInternalAccessReviewRoute =
-  AuthenticatedInternalAccessReviewRouteImport.update({
-    id: '/internal_/access-review',
-    path: '/internal/access-review',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedInternalGovAccessRoute =
-  AuthenticatedInternalGovAccessRouteImport.update({
-    id: '/internal_/gov-access',
-    path: '/internal/gov-access',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedInternalSupportRoute =
-  AuthenticatedInternalSupportRouteImport.update({
-    id: '/internal_/support',
-    path: '/internal/support',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedParentAiAssistantRoute =
-  AuthenticatedParentAiAssistantRouteImport.update({
-    id: '/ai-assistant',
-    path: '/ai-assistant',
-    getParentRoute: () => AuthenticatedParentRouteRoute,
-  } as any)
-const AuthenticatedParentAttendanceRoute =
-  AuthenticatedParentAttendanceRouteImport.update({
-    id: '/attendance',
-    path: '/attendance',
-    getParentRoute: () => AuthenticatedParentRouteRoute,
-  } as any)
-const AuthenticatedParentBusTrackingRoute =
-  AuthenticatedParentBusTrackingRouteImport.update({
-    id: '/bus-tracking',
-    path: '/bus-tracking',
-    getParentRoute: () => AuthenticatedParentRouteRoute,
-  } as any)
-const AuthenticatedParentCalendarRoute =
-  AuthenticatedParentCalendarRouteImport.update({
-    id: '/calendar',
-    path: '/calendar',
-    getParentRoute: () => AuthenticatedParentRouteRoute,
-  } as any)
-const AuthenticatedParentChildrenRoute =
-  AuthenticatedParentChildrenRouteImport.update({
-    id: '/children',
-    path: '/children',
-    getParentRoute: () => AuthenticatedParentRouteRoute,
-  } as any)
-const AuthenticatedParentDashboardRoute =
-  AuthenticatedParentDashboardRouteImport.update({
-    id: '/dashboard',
-    path: '/dashboard',
-    getParentRoute: () => AuthenticatedParentRouteRoute,
-  } as any)
-const AuthenticatedParentFeesRoute = AuthenticatedParentFeesRouteImport.update({
-  id: '/fees',
-  path: '/fees',
-  getParentRoute: () => AuthenticatedParentRouteRoute,
+const ConsoleRuntimesScholarRoute = ConsoleRuntimesScholarRouteImport.update({
+  id: '/scholar',
+  path: '/scholar',
+  getParentRoute: () => ConsoleRuntimesRouteRoute,
 } as any)
-const AuthenticatedParentGradesRoute =
-  AuthenticatedParentGradesRouteImport.update({
-    id: '/grades',
-    path: '/grades',
-    getParentRoute: () => AuthenticatedParentRouteRoute,
-  } as any)
-const AuthenticatedParentNewsRoute = AuthenticatedParentNewsRouteImport.update({
-  id: '/news',
-  path: '/news',
-  getParentRoute: () => AuthenticatedParentRouteRoute,
+const ConsoleTeamIndexRoute = ConsoleTeamIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ConsoleTeamRouteRoute,
 } as any)
-const AuthenticatedParentReportCardsRoute =
-  AuthenticatedParentReportCardsRouteImport.update({
-    id: '/report-cards',
-    path: '/report-cards',
-    getParentRoute: () => AuthenticatedParentRouteRoute,
-  } as any)
-const AuthenticatedStudentAiTutorRoute =
-  AuthenticatedStudentAiTutorRouteImport.update({
-    id: '/ai-tutor',
-    path: '/ai-tutor',
-    getParentRoute: () => AuthenticatedStudentRouteRoute,
-  } as any)
-const AuthenticatedStudentAttendanceRoute =
-  AuthenticatedStudentAttendanceRouteImport.update({
-    id: '/attendance',
-    path: '/attendance',
-    getParentRoute: () => AuthenticatedStudentRouteRoute,
-  } as any)
-const AuthenticatedStudentCalendarRoute =
-  AuthenticatedStudentCalendarRouteImport.update({
-    id: '/calendar',
-    path: '/calendar',
-    getParentRoute: () => AuthenticatedStudentRouteRoute,
-  } as any)
-const AuthenticatedStudentCbtRoute = AuthenticatedStudentCbtRouteImport.update({
-  id: '/cbt',
-  path: '/cbt',
-  getParentRoute: () => AuthenticatedStudentRouteRoute,
+const ConsoleTeamAccessRoute = ConsoleTeamAccessRouteImport.update({
+  id: '/access',
+  path: '/access',
+  getParentRoute: () => ConsoleTeamRouteRoute,
 } as any)
-const AuthenticatedStudentCourseRegistrationRoute =
-  AuthenticatedStudentCourseRegistrationRouteImport.update({
-    id: '/course-registration',
-    path: '/course-registration',
-    getParentRoute: () => AuthenticatedStudentRouteRoute,
+const ConsoleTeamInvitationsRoute = ConsoleTeamInvitationsRouteImport.update({
+  id: '/invitations',
+  path: '/invitations',
+  getParentRoute: () => ConsoleTeamRouteRoute,
+} as any)
+const ConsoleTeamRolesRoute = ConsoleTeamRolesRouteImport.update({
+  id: '/roles',
+  path: '/roles',
+  getParentRoute: () => ConsoleTeamRouteRoute,
+} as any)
+const ConsoleTeamSuspendedRoute = ConsoleTeamSuspendedRouteImport.update({
+  id: '/suspended',
+  path: '/suspended',
+  getParentRoute: () => ConsoleTeamRouteRoute,
+} as any)
+const ConsoleWorkspacesIndexRoute = ConsoleWorkspacesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ConsoleWorkspacesRouteRoute,
+} as any)
+const ConsoleWorkspacesWorkspaceIdRoute =
+  ConsoleWorkspacesWorkspaceIdRouteImport.update({
+    id: '/$workspaceId',
+    path: '/$workspaceId',
+    getParentRoute: () => ConsoleWorkspacesRouteRoute,
   } as any)
-const AuthenticatedStudentDashboardRoute =
-  AuthenticatedStudentDashboardRouteImport.update({
-    id: '/dashboard',
-    path: '/dashboard',
-    getParentRoute: () => AuthenticatedStudentRouteRoute,
-  } as any)
-const AuthenticatedStudentFeesRoute =
-  AuthenticatedStudentFeesRouteImport.update({
-    id: '/fees',
-    path: '/fees',
-    getParentRoute: () => AuthenticatedStudentRouteRoute,
-  } as any)
-const AuthenticatedStudentGradesRoute =
-  AuthenticatedStudentGradesRouteImport.update({
-    id: '/grades',
-    path: '/grades',
-    getParentRoute: () => AuthenticatedStudentRouteRoute,
-  } as any)
-const AuthenticatedStudentNewsRoute =
-  AuthenticatedStudentNewsRouteImport.update({
-    id: '/news',
-    path: '/news',
-    getParentRoute: () => AuthenticatedStudentRouteRoute,
-  } as any)
-const AuthenticatedStudentReportCardRoute =
-  AuthenticatedStudentReportCardRouteImport.update({
-    id: '/report-card',
-    path: '/report-card',
-    getParentRoute: () => AuthenticatedStudentRouteRoute,
-  } as any)
-const AuthenticatedStudentTimetableRoute =
-  AuthenticatedStudentTimetableRouteImport.update({
-    id: '/timetable',
-    path: '/timetable',
-    getParentRoute: () => AuthenticatedStudentRouteRoute,
-  } as any)
-const AuthenticatedSuperAdminAcademicIntelligenceRoute =
-  AuthenticatedSuperAdminAcademicIntelligenceRouteImport.update({
-    id: '/academic-intelligence',
-    path: '/academic-intelligence',
-    getParentRoute: () => AuthenticatedSuperAdminRouteRoute,
-  } as any)
-const AuthenticatedSuperAdminAgentGovernanceRoute =
-  AuthenticatedSuperAdminAgentGovernanceRouteImport.update({
-    id: '/agent-governance',
-    path: '/agent-governance',
-    getParentRoute: () => AuthenticatedSuperAdminRouteRoute,
-  } as any)
-const AuthenticatedSuperAdminBillingRoute =
-  AuthenticatedSuperAdminBillingRouteImport.update({
-    id: '/billing',
-    path: '/billing',
-    getParentRoute: () => AuthenticatedSuperAdminRouteRoute,
-  } as any)
-const AuthenticatedSuperAdminCommunicationStewardRoute =
-  AuthenticatedSuperAdminCommunicationStewardRouteImport.update({
-    id: '/communication-steward',
-    path: '/communication-steward',
-    getParentRoute: () => AuthenticatedSuperAdminRouteRoute,
-  } as any)
-const AuthenticatedSuperAdminDashboardRoute =
-  AuthenticatedSuperAdminDashboardRouteImport.update({
-    id: '/dashboard',
-    path: '/dashboard',
-    getParentRoute: () => AuthenticatedSuperAdminRouteRoute,
-  } as any)
-const AuthenticatedSuperAdminFinancialOperationsRoute =
-  AuthenticatedSuperAdminFinancialOperationsRouteImport.update({
-    id: '/financial-operations',
-    path: '/financial-operations',
-    getParentRoute: () => AuthenticatedSuperAdminRouteRoute,
-  } as any)
-const AuthenticatedSuperAdminLogsRoute =
-  AuthenticatedSuperAdminLogsRouteImport.update({
-    id: '/logs',
-    path: '/logs',
-    getParentRoute: () => AuthenticatedSuperAdminRouteRoute,
-  } as any)
-const AuthenticatedSuperAdminPlatformConfigRoute =
-  AuthenticatedSuperAdminPlatformConfigRouteImport.update({
-    id: '/platform-config',
-    path: '/platform-config',
-    getParentRoute: () => AuthenticatedSuperAdminRouteRoute,
-  } as any)
-const AuthenticatedSuperAdminRuntimeContractsRoute =
-  AuthenticatedSuperAdminRuntimeContractsRouteImport.update({
-    id: '/runtime-contracts',
-    path: '/runtime-contracts',
-    getParentRoute: () => AuthenticatedSuperAdminRouteRoute,
-  } as any)
-const AuthenticatedSuperAdminSchedulingIntelligenceRoute =
-  AuthenticatedSuperAdminSchedulingIntelligenceRouteImport.update({
-    id: '/scheduling-intelligence',
-    path: '/scheduling-intelligence',
-    getParentRoute: () => AuthenticatedSuperAdminRouteRoute,
-  } as any)
-const AuthenticatedSuperAdminSchoolsRoute =
-  AuthenticatedSuperAdminSchoolsRouteImport.update({
-    id: '/schools',
-    path: '/schools',
-    getParentRoute: () => AuthenticatedSuperAdminRouteRoute,
-  } as any)
-const AuthenticatedSuperAdminSettingsRoute =
-  AuthenticatedSuperAdminSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => AuthenticatedSuperAdminRouteRoute,
-  } as any)
-const AuthenticatedSuperAdminStaffRoute =
-  AuthenticatedSuperAdminStaffRouteImport.update({
-    id: '/staff',
-    path: '/staff',
-    getParentRoute: () => AuthenticatedSuperAdminRouteRoute,
-  } as any)
-const AuthenticatedSuperAdminSupportRoute =
-  AuthenticatedSuperAdminSupportRouteImport.update({
-    id: '/support',
-    path: '/support',
-    getParentRoute: () => AuthenticatedSuperAdminRouteRoute,
-  } as any)
-const AuthenticatedSuperAdminTenantsRoute =
-  AuthenticatedSuperAdminTenantsRouteImport.update({
-    id: '/tenants',
-    path: '/tenants',
-    getParentRoute: () => AuthenticatedSuperAdminRouteRoute,
-  } as any)
-const AuthenticatedSuperAdminTiersRoute =
-  AuthenticatedSuperAdminTiersRouteImport.update({
-    id: '/tiers',
-    path: '/tiers',
-    getParentRoute: () => AuthenticatedSuperAdminRouteRoute,
-  } as any)
-const AuthenticatedSuperAdminTrustFabricRoute =
-  AuthenticatedSuperAdminTrustFabricRouteImport.update({
-    id: '/trust-fabric',
-    path: '/trust-fabric',
-    getParentRoute: () => AuthenticatedSuperAdminRouteRoute,
-  } as any)
-const AuthenticatedSuperAdminWorkerMissionsRoute =
-  AuthenticatedSuperAdminWorkerMissionsRouteImport.update({
-    id: '/worker-missions',
-    path: '/worker-missions',
-    getParentRoute: () => AuthenticatedSuperAdminRouteRoute,
-  } as any)
-const AuthenticatedSuperAdminWorkspaceProjectionRoute =
-  AuthenticatedSuperAdminWorkspaceProjectionRouteImport.update({
-    id: '/workspace-projection',
-    path: '/workspace-projection',
-    getParentRoute: () => AuthenticatedSuperAdminRouteRoute,
-  } as any)
-const AuthenticatedTeacherAiAssistantRoute =
-  AuthenticatedTeacherAiAssistantRouteImport.update({
-    id: '/ai-assistant',
-    path: '/ai-assistant',
-    getParentRoute: () => AuthenticatedTeacherRouteRoute,
-  } as any)
-const AuthenticatedTeacherAttendanceRoute =
-  AuthenticatedTeacherAttendanceRouteImport.update({
-    id: '/attendance',
-    path: '/attendance',
-    getParentRoute: () => AuthenticatedTeacherRouteRoute,
-  } as any)
-const AuthenticatedTeacherAttendanceWeekRoute =
-  AuthenticatedTeacherAttendanceWeekRouteImport.update({
-    id: '/attendance-week',
-    path: '/attendance-week',
-    getParentRoute: () => AuthenticatedTeacherRouteRoute,
-  } as any)
-const AuthenticatedTeacherCalendarRoute =
-  AuthenticatedTeacherCalendarRouteImport.update({
-    id: '/calendar',
-    path: '/calendar',
-    getParentRoute: () => AuthenticatedTeacherRouteRoute,
-  } as any)
-const AuthenticatedTeacherClassIntelligenceRoute =
-  AuthenticatedTeacherClassIntelligenceRouteImport.update({
-    id: '/class-intelligence',
-    path: '/class-intelligence',
-    getParentRoute: () => AuthenticatedTeacherRouteRoute,
-  } as any)
-const AuthenticatedTeacherDashboardRoute =
-  AuthenticatedTeacherDashboardRouteImport.update({
-    id: '/dashboard',
-    path: '/dashboard',
-    getParentRoute: () => AuthenticatedTeacherRouteRoute,
-  } as any)
-const AuthenticatedTeacherGradebookRoute =
-  AuthenticatedTeacherGradebookRouteImport.update({
-    id: '/gradebook',
-    path: '/gradebook',
-    getParentRoute: () => AuthenticatedTeacherRouteRoute,
-  } as any)
-const AuthenticatedTeacherGradesRoute =
-  AuthenticatedTeacherGradesRouteImport.update({
-    id: '/grades',
-    path: '/grades',
-    getParentRoute: () => AuthenticatedTeacherRouteRoute,
-  } as any)
-const AuthenticatedTeacherLessonNotesRoute =
-  AuthenticatedTeacherLessonNotesRouteImport.update({
-    id: '/lesson-notes',
-    path: '/lesson-notes',
-    getParentRoute: () => AuthenticatedTeacherRouteRoute,
-  } as any)
-const AuthenticatedTeacherLessonPlansRoute =
-  AuthenticatedTeacherLessonPlansRouteImport.update({
-    id: '/lesson-plans',
-    path: '/lesson-plans',
-    getParentRoute: () => AuthenticatedTeacherRouteRoute,
-  } as any)
-const AuthenticatedTeacherNewsRoute =
-  AuthenticatedTeacherNewsRouteImport.update({
-    id: '/news',
-    path: '/news',
-    getParentRoute: () => AuthenticatedTeacherRouteRoute,
-  } as any)
-const AuthenticatedTeacherSignInRoute =
-  AuthenticatedTeacherSignInRouteImport.update({
-    id: '/sign-in',
-    path: '/sign-in',
-    getParentRoute: () => AuthenticatedTeacherRouteRoute,
-  } as any)
-const AuthenticatedTeacherTimetableRoute =
-  AuthenticatedTeacherTimetableRouteImport.update({
-    id: '/timetable',
-    path: '/timetable',
-    getParentRoute: () => AuthenticatedTeacherRouteRoute,
-  } as any)
-const AuthenticatedWorkspaceSettingsRoute =
-  AuthenticatedWorkspaceSettingsRouteImport.update({
-    id: '/workspace_/settings',
-    path: '/workspace/settings',
-    getParentRoute: () => AuthenticatedRouteRoute,
+const HomeSSectionRoute = HomeSSectionRouteImport.update({
+  id: '/s/$section',
+  path: '/s/$section',
+  getParentRoute: () => HomeRouteRoute,
+} as any)
+const siteInsightsCategorySlugRoute =
+  siteInsightsCategorySlugRouteImport.update({
+    id: '/category/$slug',
+    path: '/category/$slug',
+    getParentRoute: () => siteInsightsRoute,
   } as any)
 const ApiPublicAuditPasswordResetRoute =
   ApiPublicAuditPasswordResetRouteImport.update({
@@ -1556,228 +723,113 @@ const ApiPublicWebhooksIntegrationsWebhookIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/gov': typeof GovRouteRouteWithChildren
-  '/admissions': typeof AdmissionsRoute
+  '/console': typeof ConsoleRouteRouteWithChildren
+  '/home': typeof HomeRouteRouteWithChildren
   '/auth': typeof AuthRoute
-  '/blog': typeof BlogRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
-  '/foundation-loop': typeof FoundationLoopRoute
-  '/gov-invite': typeof GovInviteRoute
-  '/head': typeof HeadRoute
   '/health.json': typeof HealthDotjsonRoute
   '/login': typeof LoginRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
-  '/marketplace': typeof MarketplaceRoute
-  '/platform': typeof PlatformRouteWithChildren
-  '/privacy': typeof PrivacyRoute
+  '/onboarding': typeof OnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/rss.xml': typeof RssDotxmlRoute
-  '/rules': typeof RulesRoute
-  '/scholar-foundation-loop': typeof ScholarFoundationLoopRoute
   '/site-icon.svg': typeof SiteIconDotsvgRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/ux-lab': typeof UxLabRoute
-  '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
-  '/bursar': typeof AuthenticatedBursarRouteRouteWithChildren
-  '/command-centre': typeof AuthenticatedCommandCentreRouteRouteWithChildren
-  '/driver': typeof AuthenticatedDriverRouteRouteWithChildren
-  '/hq': typeof AuthenticatedHqRouteRouteWithChildren
-  '/parent': typeof AuthenticatedParentRouteRouteWithChildren
-  '/student': typeof AuthenticatedStudentRouteRouteWithChildren
-  '/super-admin': typeof AuthenticatedSuperAdminRouteRouteWithChildren
-  '/teacher': typeof AuthenticatedTeacherRouteRouteWithChildren
+  '/console/activity': typeof ConsoleActivityRouteRouteWithChildren
+  '/console/organizations': typeof ConsoleOrganizationsRouteRouteWithChildren
+  '/console/runtimes': typeof ConsoleRuntimesRouteRouteWithChildren
+  '/console/team': typeof ConsoleTeamRouteRouteWithChildren
+  '/console/workspaces': typeof ConsoleWorkspacesRouteRouteWithChildren
   '/about': typeof siteAboutRoute
+  '/accessibility': typeof siteAccessibilityRoute
   '/check-result': typeof siteCheckResultRoute
   '/contact': typeof siteContactRoute
   '/coregrid': typeof siteCoregridRoute
+  '/developers': typeof siteDevelopersRoute
+  '/docs': typeof siteDocsRoute
+  '/faq': typeof siteFaqRoute
+  '/help': typeof siteHelpRouteWithChildren
+  '/insights': typeof siteInsightsRouteWithChildren
+  '/integrations': typeof siteIntegrationsRoute
   '/privacy-policy': typeof sitePrivacyPolicyRoute
+  '/product': typeof siteProductRouteWithChildren
   '/request-demo': typeof siteRequestDemoRoute
+  '/security': typeof siteSecurityRouteWithChildren
   '/sherivs': typeof siteSherivsRoute
   '/siwes-verify': typeof siteSiwesVerifyRoute
+  '/solutions': typeof siteSolutionsRouteWithChildren
   '/status': typeof siteStatusRoute
+  '/support': typeof siteSupportRoute
   '/terms': typeof siteTermsRoute
+  '/trust': typeof siteTrustRoute
   '/verify-transcript': typeof siteVerifyTranscriptRoute
-  '/consent': typeof AuthenticatedConsentRoute
-  '/gov-dashboard': typeof AuthenticatedGovDashboardRoute
-  '/internal': typeof AuthenticatedInternalRoute
-  '/messages': typeof AuthenticatedMessagesRoute
-  '/mfa': typeof AuthenticatedMfaRoute
-  '/notifications': typeof AuthenticatedNotificationsRoute
-  '/onboarding': typeof AuthenticatedOnboardingRoute
-  '/organizations': typeof AuthenticatedOrganizationsRoute
-  '/runtime': typeof AuthenticatedRuntimeRoute
-  '/settings': typeof AuthenticatedSettingsRoute
-  '/welcome': typeof AuthenticatedWelcomeRoute
-  '/workspace': typeof AuthenticatedWorkspaceRoute
-  '/blog/$slug': typeof BlogSlugRoute
-  '/events/$id': typeof EventsIdRoute
-  '/gov/about': typeof GovAboutRoute
-  '/gov/attendance': typeof GovAttendanceRoute
-  '/gov/circulars': typeof GovCircularsRoute
-  '/gov/inspections': typeof GovInspectionsRoute
-  '/gov/postings': typeof GovPostingsRoute
-  '/gov/schools': typeof GovSchoolsRoute
-  '/gov/staffing': typeof GovStaffingRoute
-  '/news/$id': typeof NewsIdRoute
+  '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
+  '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
+  '/api/webauthn': typeof ApiWebauthnRoute
+  '/console/account': typeof ConsoleAccountRoute
+  '/console/help': typeof ConsoleHelpRoute
+  '/console/settings': typeof ConsoleSettingsRoute
+  '/home/ai': typeof HomeAiRoute
+  '/home/help': typeof HomeHelpRoute
+  '/home/notifications': typeof HomeNotificationsRoute
+  '/home/profile': typeof HomeProfileRoute
+  '/home/security': typeof HomeSecurityRoute
+  '/home/settings': typeof HomeSettingsRoute
   '/pages/$slug': typeof PagesSlugRoute
-  '/platform/org': typeof PlatformOrgRoute
   '/posts/$post': typeof PostsPostRoute
-  '/reality/$class': typeof RealityClassRoute
-  '/gov/': typeof GovIndexRoute
-  '/group/': typeof GroupIndexRoute
-  '/admin/academic-standing': typeof AuthenticatedAdminAcademicStandingRoute
-  '/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
-  '/admin/admissions-funnel': typeof AuthenticatedAdminAdmissionsFunnelRoute
-  '/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
-  '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
-  '/admin/api-keys': typeof AuthenticatedAdminApiKeysRoute
-  '/admin/attendance': typeof AuthenticatedAdminAttendanceRoute
-  '/admin/attendance-conflicts': typeof AuthenticatedAdminAttendanceConflictsRoute
-  '/admin/audit': typeof AuthenticatedAdminAuditRoute
-  '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
-  '/admin/broadcast': typeof AuthenticatedAdminBroadcastRoute
-  '/admin/bus-management': typeof AuthenticatedAdminBusManagementRoute
-  '/admin/buses': typeof AuthenticatedAdminBusesRoute
-  '/admin/calendar': typeof AuthenticatedAdminCalendarRoute
-  '/admin/campuses': typeof AuthenticatedAdminCampusesRoute
-  '/admin/classes': typeof AuthenticatedAdminClassesRoute
-  '/admin/cms': typeof AuthenticatedAdminCmsRoute
-  '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
-  '/admin/digital-twin': typeof AuthenticatedAdminDigitalTwinRoute
-  '/admin/discipline': typeof AuthenticatedAdminDisciplineRoute
-  '/admin/domains': typeof AuthenticatedAdminDomainsRoute
-  '/admin/early-warning': typeof AuthenticatedAdminEarlyWarningRoute
-  '/admin/education-reality': typeof AuthenticatedAdminEducationRealityRoute
-  '/admin/enterprise-checklist': typeof AuthenticatedAdminEnterpriseChecklistRoute
-  '/admin/exam-bodies': typeof AuthenticatedAdminExamBodiesRoute
-  '/admin/examinations': typeof AuthenticatedAdminExaminationsRoute
-  '/admin/exams': typeof AuthenticatedAdminExamsRoute
-  '/admin/expenses': typeof AuthenticatedAdminExpensesRoute
-  '/admin/extracurricular': typeof AuthenticatedAdminExtracurricularRoute
-  '/admin/facilities': typeof AuthenticatedAdminFacilitiesRoute
-  '/admin/features': typeof AuthenticatedAdminFeaturesRoute
-  '/admin/fee-relief': typeof AuthenticatedAdminFeeReliefRoute
-  '/admin/fees': typeof AuthenticatedAdminFeesRoute
-  '/admin/fees-defaulters': typeof AuthenticatedAdminFeesDefaultersRoute
-  '/admin/financial-reports': typeof AuthenticatedAdminFinancialReportsRoute
-  '/admin/geofence-settings': typeof AuthenticatedAdminGeofenceSettingsRoute
-  '/admin/government': typeof AuthenticatedAdminGovernmentRoute
-  '/admin/grades': typeof AuthenticatedAdminGradesRoute
-  '/admin/heads': typeof AuthenticatedAdminHeadsRoute
-  '/admin/health': typeof AuthenticatedAdminHealthRoute
-  '/admin/health-certificate': typeof AuthenticatedAdminHealthCertificateRoute
-  '/admin/hostel': typeof AuthenticatedAdminHostelRoute
-  '/admin/hr': typeof AuthenticatedAdminHrRoute
-  '/admin/hr-payroll': typeof AuthenticatedAdminHrPayrollRoute
-  '/admin/identities': typeof AuthenticatedAdminIdentitiesRoute
-  '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
-  '/admin/intelligence': typeof AuthenticatedAdminIntelligenceRoute
-  '/admin/intelligence-ai': typeof AuthenticatedAdminIntelligenceAiRoute
-  '/admin/intelligence-operations': typeof AuthenticatedAdminIntelligenceOperationsRoute
-  '/admin/intelligence-parents': typeof AuthenticatedAdminIntelligenceParentsRoute
-  '/admin/intelligence-students': typeof AuthenticatedAdminIntelligenceStudentsRoute
-  '/admin/intelligence-teachers': typeof AuthenticatedAdminIntelligenceTeachersRoute
-  '/admin/inventory': typeof AuthenticatedAdminInventoryRoute
-  '/admin/lesson-plans': typeof AuthenticatedAdminLessonPlansRoute
-  '/admin/library': typeof AuthenticatedAdminLibraryRoute
-  '/admin/locked-accounts': typeof AuthenticatedAdminLockedAccountsRoute
-  '/admin/messages-log': typeof AuthenticatedAdminMessagesLogRoute
-  '/admin/ndpa': typeof AuthenticatedAdminNdpaRoute
-  '/admin/news': typeof AuthenticatedAdminNewsRoute
-  '/admin/onboarding-interview': typeof AuthenticatedAdminOnboardingInterviewRoute
-  '/admin/operations': typeof AuthenticatedAdminOperationsRoute
-  '/admin/payroll': typeof AuthenticatedAdminPayrollRoute
-  '/admin/report-cards': typeof AuthenticatedAdminReportCardsRoute
-  '/admin/role-scopes': typeof AuthenticatedAdminRoleScopesRoute
-  '/admin/roles': typeof AuthenticatedAdminRolesRoute
-  '/admin/safeguards': typeof AuthenticatedAdminSafeguardsRoute
-  '/admin/school-group': typeof AuthenticatedAdminSchoolGroupRoute
-  '/admin/school-profile': typeof AuthenticatedAdminSchoolProfileRoute
-  '/admin/session-rollover': typeof AuthenticatedAdminSessionRolloverRoute
-  '/admin/settings': typeof AuthenticatedAdminSettingsRoute
-  '/admin/staff-accounts': typeof AuthenticatedAdminStaffAccountsRoute
-  '/admin/stores-assets': typeof AuthenticatedAdminStoresAssetsRoute
-  '/admin/structure': typeof AuthenticatedAdminStructureRoute
-  '/admin/student-intelligence': typeof AuthenticatedAdminStudentIntelligenceRoute
-  '/admin/students': typeof AuthenticatedAdminStudentsRoute
-  '/admin/support': typeof AuthenticatedAdminSupportRoute
-  '/admin/teacher-intelligence': typeof AuthenticatedAdminTeacherIntelligenceRoute
-  '/admin/teachers': typeof AuthenticatedAdminTeachersRoute
-  '/admin/timetable': typeof AuthenticatedAdminTimetableRoute
-  '/admin/transfers-custody': typeof AuthenticatedAdminTransfersCustodyRoute
-  '/admin/visitors': typeof AuthenticatedAdminVisitorsRoute
-  '/admin/wallet': typeof AuthenticatedAdminWalletRoute
-  '/admin/website': typeof AuthenticatedAdminWebsiteRoute
-  '/bursar/dashboard': typeof AuthenticatedBursarDashboardRoute
-  '/bursar/fee-plans': typeof AuthenticatedBursarFeePlansRoute
-  '/bursar/financial-intelligence': typeof AuthenticatedBursarFinancialIntelligenceRoute
-  '/bursar/receipts': typeof AuthenticatedBursarReceiptsRoute
-  '/bursar/reconciliation': typeof AuthenticatedBursarReconciliationRoute
-  '/bursar/reports': typeof AuthenticatedBursarReportsRoute
-  '/driver/dashboard': typeof AuthenticatedDriverDashboardRoute
-  '/driver/students': typeof AuthenticatedDriverStudentsRoute
-  '/hq/dashboard': typeof AuthenticatedHqDashboardRoute
-  '/hq/finance': typeof AuthenticatedHqFinanceRoute
-  '/hq/reports': typeof AuthenticatedHqReportsRoute
-  '/internal/access-review': typeof AuthenticatedInternalAccessReviewRoute
-  '/internal/gov-access': typeof AuthenticatedInternalGovAccessRoute
-  '/internal/support': typeof AuthenticatedInternalSupportRoute
-  '/parent/ai-assistant': typeof AuthenticatedParentAiAssistantRoute
-  '/parent/attendance': typeof AuthenticatedParentAttendanceRoute
-  '/parent/bus-tracking': typeof AuthenticatedParentBusTrackingRoute
-  '/parent/calendar': typeof AuthenticatedParentCalendarRoute
-  '/parent/children': typeof AuthenticatedParentChildrenRoute
-  '/parent/dashboard': typeof AuthenticatedParentDashboardRoute
-  '/parent/fees': typeof AuthenticatedParentFeesRoute
-  '/parent/grades': typeof AuthenticatedParentGradesRoute
-  '/parent/news': typeof AuthenticatedParentNewsRoute
-  '/parent/report-cards': typeof AuthenticatedParentReportCardsRoute
-  '/student/ai-tutor': typeof AuthenticatedStudentAiTutorRoute
-  '/student/attendance': typeof AuthenticatedStudentAttendanceRoute
-  '/student/calendar': typeof AuthenticatedStudentCalendarRoute
-  '/student/cbt': typeof AuthenticatedStudentCbtRoute
-  '/student/course-registration': typeof AuthenticatedStudentCourseRegistrationRoute
-  '/student/dashboard': typeof AuthenticatedStudentDashboardRoute
-  '/student/fees': typeof AuthenticatedStudentFeesRoute
-  '/student/grades': typeof AuthenticatedStudentGradesRoute
-  '/student/news': typeof AuthenticatedStudentNewsRoute
-  '/student/report-card': typeof AuthenticatedStudentReportCardRoute
-  '/student/timetable': typeof AuthenticatedStudentTimetableRoute
-  '/super-admin/academic-intelligence': typeof AuthenticatedSuperAdminAcademicIntelligenceRoute
-  '/super-admin/agent-governance': typeof AuthenticatedSuperAdminAgentGovernanceRoute
-  '/super-admin/billing': typeof AuthenticatedSuperAdminBillingRoute
-  '/super-admin/communication-steward': typeof AuthenticatedSuperAdminCommunicationStewardRoute
-  '/super-admin/dashboard': typeof AuthenticatedSuperAdminDashboardRoute
-  '/super-admin/financial-operations': typeof AuthenticatedSuperAdminFinancialOperationsRoute
-  '/super-admin/logs': typeof AuthenticatedSuperAdminLogsRoute
-  '/super-admin/platform-config': typeof AuthenticatedSuperAdminPlatformConfigRoute
-  '/super-admin/runtime-contracts': typeof AuthenticatedSuperAdminRuntimeContractsRoute
-  '/super-admin/scheduling-intelligence': typeof AuthenticatedSuperAdminSchedulingIntelligenceRoute
-  '/super-admin/schools': typeof AuthenticatedSuperAdminSchoolsRoute
-  '/super-admin/settings': typeof AuthenticatedSuperAdminSettingsRoute
-  '/super-admin/staff': typeof AuthenticatedSuperAdminStaffRoute
-  '/super-admin/support': typeof AuthenticatedSuperAdminSupportRoute
-  '/super-admin/tenants': typeof AuthenticatedSuperAdminTenantsRoute
-  '/super-admin/tiers': typeof AuthenticatedSuperAdminTiersRoute
-  '/super-admin/trust-fabric': typeof AuthenticatedSuperAdminTrustFabricRoute
-  '/super-admin/worker-missions': typeof AuthenticatedSuperAdminWorkerMissionsRoute
-  '/super-admin/workspace-projection': typeof AuthenticatedSuperAdminWorkspaceProjectionRoute
-  '/teacher/ai-assistant': typeof AuthenticatedTeacherAiAssistantRoute
-  '/teacher/attendance': typeof AuthenticatedTeacherAttendanceRoute
-  '/teacher/attendance-week': typeof AuthenticatedTeacherAttendanceWeekRoute
-  '/teacher/calendar': typeof AuthenticatedTeacherCalendarRoute
-  '/teacher/class-intelligence': typeof AuthenticatedTeacherClassIntelligenceRoute
-  '/teacher/dashboard': typeof AuthenticatedTeacherDashboardRoute
-  '/teacher/gradebook': typeof AuthenticatedTeacherGradebookRoute
-  '/teacher/grades': typeof AuthenticatedTeacherGradesRoute
-  '/teacher/lesson-notes': typeof AuthenticatedTeacherLessonNotesRoute
-  '/teacher/lesson-plans': typeof AuthenticatedTeacherLessonPlansRoute
-  '/teacher/news': typeof AuthenticatedTeacherNewsRoute
-  '/teacher/sign-in': typeof AuthenticatedTeacherSignInRoute
-  '/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
-  '/workspace/settings': typeof AuthenticatedWorkspaceSettingsRoute
-  '/command-centre/': typeof AuthenticatedCommandCentreIndexRoute
+  '/console/': typeof ConsoleIndexRoute
+  '/home/': typeof HomeIndexRoute
+  '/company/about': typeof siteCompanyAboutRoute
+  '/company/careers': typeof siteCompanyCareersRoute
+  '/company/partners': typeof siteCompanyPartnersRoute
+  '/company/vision': typeof siteCompanyVisionRoute
+  '/help/$slug': typeof siteHelpSlugRoute
+  '/insights/$slug': typeof siteInsightsSlugRoute
+  '/legal/acceptable-use': typeof siteLegalAcceptableUseRoute
+  '/legal/contact': typeof siteLegalContactRoute
+  '/legal/cookies': typeof siteLegalCookiesRoute
+  '/legal/data-processing': typeof siteLegalDataProcessingRoute
+  '/legal/privacy': typeof siteLegalPrivacyRoute
+  '/legal/subprocessors': typeof siteLegalSubprocessorsRoute
+  '/legal/terms': typeof siteLegalTermsRoute
+  '/product/ai-workforce': typeof siteProductAiWorkforceRoute
+  '/product/architecture': typeof siteProductArchitectureRoute
+  '/product/digital-twins': typeof siteProductDigitalTwinsRoute
+  '/product/institutional-computing': typeof siteProductInstitutionalComputingRoute
+  '/product/intelligence': typeof siteProductIntelligenceRoute
+  '/security/disclosure': typeof siteSecurityDisclosureRoute
+  '/solutions/education': typeof siteSolutionsEducationRoute
+  '/solutions/enterprise': typeof siteSolutionsEnterpriseRoute
+  '/solutions/research': typeof siteSolutionsResearchRoute
+  '/api/public/webauthn': typeof ApiPublicWebauthnRoute
+  '/console/activity/admin': typeof ConsoleActivityAdminRoute
+  '/console/activity/billing': typeof ConsoleActivityBillingRoute
+  '/console/activity/incidents': typeof ConsoleActivityIncidentsRoute
+  '/console/activity/logs': typeof ConsoleActivityLogsRoute
+  '/console/activity/metrics': typeof ConsoleActivityMetricsRoute
+  '/console/activity/security': typeof ConsoleActivitySecurityRoute
+  '/console/activity/tickets': typeof ConsoleActivityTicketsRoute
+  '/console/organizations/$organizationId': typeof ConsoleOrganizationsOrganizationIdRoute
+  '/console/organizations/new': typeof ConsoleOrganizationsNewRoute
+  '/console/runtimes/scholar': typeof ConsoleRuntimesScholarRoute
+  '/console/team/access': typeof ConsoleTeamAccessRoute
+  '/console/team/invitations': typeof ConsoleTeamInvitationsRoute
+  '/console/team/roles': typeof ConsoleTeamRolesRoute
+  '/console/team/suspended': typeof ConsoleTeamSuspendedRoute
+  '/console/workspaces/$workspaceId': typeof ConsoleWorkspacesWorkspaceIdRoute
+  '/home/s/$section': typeof HomeSSectionRoute
+  '/help/': typeof siteHelpIndexRoute
+  '/insights/': typeof siteInsightsIndexRoute
+  '/product/': typeof siteProductIndexRoute
+  '/security/': typeof siteSecurityIndexRoute
+  '/solutions/': typeof siteSolutionsIndexRoute
+  '/console/activity/': typeof ConsoleActivityIndexRoute
+  '/console/organizations/': typeof ConsoleOrganizationsIndexRoute
+  '/console/runtimes/': typeof ConsoleRuntimesIndexRoute
+  '/console/team/': typeof ConsoleTeamIndexRoute
+  '/console/workspaces/': typeof ConsoleWorkspacesIndexRoute
+  '/insights/category/$slug': typeof siteInsightsCategorySlugRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/cron/integrations-sync': typeof ApiPublicCronIntegrationsSyncRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
@@ -1788,226 +840,101 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admissions': typeof AdmissionsRoute
   '/auth': typeof AuthRoute
-  '/blog': typeof BlogRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
-  '/foundation-loop': typeof FoundationLoopRoute
-  '/gov-invite': typeof GovInviteRoute
-  '/head': typeof HeadRoute
   '/health.json': typeof HealthDotjsonRoute
   '/login': typeof LoginRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
-  '/marketplace': typeof MarketplaceRoute
-  '/platform': typeof PlatformRouteWithChildren
-  '/privacy': typeof PrivacyRoute
+  '/onboarding': typeof OnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/rss.xml': typeof RssDotxmlRoute
-  '/rules': typeof RulesRoute
-  '/scholar-foundation-loop': typeof ScholarFoundationLoopRoute
   '/site-icon.svg': typeof SiteIconDotsvgRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/ux-lab': typeof UxLabRoute
-  '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
-  '/bursar': typeof AuthenticatedBursarRouteRouteWithChildren
-  '/driver': typeof AuthenticatedDriverRouteRouteWithChildren
-  '/hq': typeof AuthenticatedHqRouteRouteWithChildren
-  '/parent': typeof AuthenticatedParentRouteRouteWithChildren
-  '/student': typeof AuthenticatedStudentRouteRouteWithChildren
-  '/super-admin': typeof AuthenticatedSuperAdminRouteRouteWithChildren
-  '/teacher': typeof AuthenticatedTeacherRouteRouteWithChildren
   '/about': typeof siteAboutRoute
+  '/accessibility': typeof siteAccessibilityRoute
   '/check-result': typeof siteCheckResultRoute
   '/contact': typeof siteContactRoute
   '/coregrid': typeof siteCoregridRoute
+  '/developers': typeof siteDevelopersRoute
+  '/docs': typeof siteDocsRoute
+  '/faq': typeof siteFaqRoute
+  '/integrations': typeof siteIntegrationsRoute
   '/privacy-policy': typeof sitePrivacyPolicyRoute
   '/request-demo': typeof siteRequestDemoRoute
   '/sherivs': typeof siteSherivsRoute
   '/siwes-verify': typeof siteSiwesVerifyRoute
   '/status': typeof siteStatusRoute
+  '/support': typeof siteSupportRoute
   '/terms': typeof siteTermsRoute
+  '/trust': typeof siteTrustRoute
   '/verify-transcript': typeof siteVerifyTranscriptRoute
-  '/consent': typeof AuthenticatedConsentRoute
-  '/gov-dashboard': typeof AuthenticatedGovDashboardRoute
-  '/internal': typeof AuthenticatedInternalRoute
-  '/messages': typeof AuthenticatedMessagesRoute
-  '/mfa': typeof AuthenticatedMfaRoute
-  '/notifications': typeof AuthenticatedNotificationsRoute
-  '/onboarding': typeof AuthenticatedOnboardingRoute
-  '/organizations': typeof AuthenticatedOrganizationsRoute
-  '/runtime': typeof AuthenticatedRuntimeRoute
-  '/settings': typeof AuthenticatedSettingsRoute
-  '/welcome': typeof AuthenticatedWelcomeRoute
-  '/workspace': typeof AuthenticatedWorkspaceRoute
-  '/blog/$slug': typeof BlogSlugRoute
-  '/events/$id': typeof EventsIdRoute
-  '/gov/about': typeof GovAboutRoute
-  '/gov/attendance': typeof GovAttendanceRoute
-  '/gov/circulars': typeof GovCircularsRoute
-  '/gov/inspections': typeof GovInspectionsRoute
-  '/gov/postings': typeof GovPostingsRoute
-  '/gov/schools': typeof GovSchoolsRoute
-  '/gov/staffing': typeof GovStaffingRoute
-  '/news/$id': typeof NewsIdRoute
+  '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
+  '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
+  '/api/webauthn': typeof ApiWebauthnRoute
+  '/console/account': typeof ConsoleAccountRoute
+  '/console/help': typeof ConsoleHelpRoute
+  '/console/settings': typeof ConsoleSettingsRoute
+  '/home/ai': typeof HomeAiRoute
+  '/home/help': typeof HomeHelpRoute
+  '/home/notifications': typeof HomeNotificationsRoute
+  '/home/profile': typeof HomeProfileRoute
+  '/home/security': typeof HomeSecurityRoute
+  '/home/settings': typeof HomeSettingsRoute
   '/pages/$slug': typeof PagesSlugRoute
-  '/platform/org': typeof PlatformOrgRoute
   '/posts/$post': typeof PostsPostRoute
-  '/reality/$class': typeof RealityClassRoute
-  '/gov': typeof GovIndexRoute
-  '/group': typeof GroupIndexRoute
-  '/admin/academic-standing': typeof AuthenticatedAdminAcademicStandingRoute
-  '/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
-  '/admin/admissions-funnel': typeof AuthenticatedAdminAdmissionsFunnelRoute
-  '/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
-  '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
-  '/admin/api-keys': typeof AuthenticatedAdminApiKeysRoute
-  '/admin/attendance': typeof AuthenticatedAdminAttendanceRoute
-  '/admin/attendance-conflicts': typeof AuthenticatedAdminAttendanceConflictsRoute
-  '/admin/audit': typeof AuthenticatedAdminAuditRoute
-  '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
-  '/admin/broadcast': typeof AuthenticatedAdminBroadcastRoute
-  '/admin/bus-management': typeof AuthenticatedAdminBusManagementRoute
-  '/admin/buses': typeof AuthenticatedAdminBusesRoute
-  '/admin/calendar': typeof AuthenticatedAdminCalendarRoute
-  '/admin/campuses': typeof AuthenticatedAdminCampusesRoute
-  '/admin/classes': typeof AuthenticatedAdminClassesRoute
-  '/admin/cms': typeof AuthenticatedAdminCmsRoute
-  '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
-  '/admin/digital-twin': typeof AuthenticatedAdminDigitalTwinRoute
-  '/admin/discipline': typeof AuthenticatedAdminDisciplineRoute
-  '/admin/domains': typeof AuthenticatedAdminDomainsRoute
-  '/admin/early-warning': typeof AuthenticatedAdminEarlyWarningRoute
-  '/admin/education-reality': typeof AuthenticatedAdminEducationRealityRoute
-  '/admin/enterprise-checklist': typeof AuthenticatedAdminEnterpriseChecklistRoute
-  '/admin/exam-bodies': typeof AuthenticatedAdminExamBodiesRoute
-  '/admin/examinations': typeof AuthenticatedAdminExaminationsRoute
-  '/admin/exams': typeof AuthenticatedAdminExamsRoute
-  '/admin/expenses': typeof AuthenticatedAdminExpensesRoute
-  '/admin/extracurricular': typeof AuthenticatedAdminExtracurricularRoute
-  '/admin/facilities': typeof AuthenticatedAdminFacilitiesRoute
-  '/admin/features': typeof AuthenticatedAdminFeaturesRoute
-  '/admin/fee-relief': typeof AuthenticatedAdminFeeReliefRoute
-  '/admin/fees': typeof AuthenticatedAdminFeesRoute
-  '/admin/fees-defaulters': typeof AuthenticatedAdminFeesDefaultersRoute
-  '/admin/financial-reports': typeof AuthenticatedAdminFinancialReportsRoute
-  '/admin/geofence-settings': typeof AuthenticatedAdminGeofenceSettingsRoute
-  '/admin/government': typeof AuthenticatedAdminGovernmentRoute
-  '/admin/grades': typeof AuthenticatedAdminGradesRoute
-  '/admin/heads': typeof AuthenticatedAdminHeadsRoute
-  '/admin/health': typeof AuthenticatedAdminHealthRoute
-  '/admin/health-certificate': typeof AuthenticatedAdminHealthCertificateRoute
-  '/admin/hostel': typeof AuthenticatedAdminHostelRoute
-  '/admin/hr': typeof AuthenticatedAdminHrRoute
-  '/admin/hr-payroll': typeof AuthenticatedAdminHrPayrollRoute
-  '/admin/identities': typeof AuthenticatedAdminIdentitiesRoute
-  '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
-  '/admin/intelligence': typeof AuthenticatedAdminIntelligenceRoute
-  '/admin/intelligence-ai': typeof AuthenticatedAdminIntelligenceAiRoute
-  '/admin/intelligence-operations': typeof AuthenticatedAdminIntelligenceOperationsRoute
-  '/admin/intelligence-parents': typeof AuthenticatedAdminIntelligenceParentsRoute
-  '/admin/intelligence-students': typeof AuthenticatedAdminIntelligenceStudentsRoute
-  '/admin/intelligence-teachers': typeof AuthenticatedAdminIntelligenceTeachersRoute
-  '/admin/inventory': typeof AuthenticatedAdminInventoryRoute
-  '/admin/lesson-plans': typeof AuthenticatedAdminLessonPlansRoute
-  '/admin/library': typeof AuthenticatedAdminLibraryRoute
-  '/admin/locked-accounts': typeof AuthenticatedAdminLockedAccountsRoute
-  '/admin/messages-log': typeof AuthenticatedAdminMessagesLogRoute
-  '/admin/ndpa': typeof AuthenticatedAdminNdpaRoute
-  '/admin/news': typeof AuthenticatedAdminNewsRoute
-  '/admin/onboarding-interview': typeof AuthenticatedAdminOnboardingInterviewRoute
-  '/admin/operations': typeof AuthenticatedAdminOperationsRoute
-  '/admin/payroll': typeof AuthenticatedAdminPayrollRoute
-  '/admin/report-cards': typeof AuthenticatedAdminReportCardsRoute
-  '/admin/role-scopes': typeof AuthenticatedAdminRoleScopesRoute
-  '/admin/roles': typeof AuthenticatedAdminRolesRoute
-  '/admin/safeguards': typeof AuthenticatedAdminSafeguardsRoute
-  '/admin/school-group': typeof AuthenticatedAdminSchoolGroupRoute
-  '/admin/school-profile': typeof AuthenticatedAdminSchoolProfileRoute
-  '/admin/session-rollover': typeof AuthenticatedAdminSessionRolloverRoute
-  '/admin/settings': typeof AuthenticatedAdminSettingsRoute
-  '/admin/staff-accounts': typeof AuthenticatedAdminStaffAccountsRoute
-  '/admin/stores-assets': typeof AuthenticatedAdminStoresAssetsRoute
-  '/admin/structure': typeof AuthenticatedAdminStructureRoute
-  '/admin/student-intelligence': typeof AuthenticatedAdminStudentIntelligenceRoute
-  '/admin/students': typeof AuthenticatedAdminStudentsRoute
-  '/admin/support': typeof AuthenticatedAdminSupportRoute
-  '/admin/teacher-intelligence': typeof AuthenticatedAdminTeacherIntelligenceRoute
-  '/admin/teachers': typeof AuthenticatedAdminTeachersRoute
-  '/admin/timetable': typeof AuthenticatedAdminTimetableRoute
-  '/admin/transfers-custody': typeof AuthenticatedAdminTransfersCustodyRoute
-  '/admin/visitors': typeof AuthenticatedAdminVisitorsRoute
-  '/admin/wallet': typeof AuthenticatedAdminWalletRoute
-  '/admin/website': typeof AuthenticatedAdminWebsiteRoute
-  '/bursar/dashboard': typeof AuthenticatedBursarDashboardRoute
-  '/bursar/fee-plans': typeof AuthenticatedBursarFeePlansRoute
-  '/bursar/financial-intelligence': typeof AuthenticatedBursarFinancialIntelligenceRoute
-  '/bursar/receipts': typeof AuthenticatedBursarReceiptsRoute
-  '/bursar/reconciliation': typeof AuthenticatedBursarReconciliationRoute
-  '/bursar/reports': typeof AuthenticatedBursarReportsRoute
-  '/driver/dashboard': typeof AuthenticatedDriverDashboardRoute
-  '/driver/students': typeof AuthenticatedDriverStudentsRoute
-  '/hq/dashboard': typeof AuthenticatedHqDashboardRoute
-  '/hq/finance': typeof AuthenticatedHqFinanceRoute
-  '/hq/reports': typeof AuthenticatedHqReportsRoute
-  '/internal/access-review': typeof AuthenticatedInternalAccessReviewRoute
-  '/internal/gov-access': typeof AuthenticatedInternalGovAccessRoute
-  '/internal/support': typeof AuthenticatedInternalSupportRoute
-  '/parent/ai-assistant': typeof AuthenticatedParentAiAssistantRoute
-  '/parent/attendance': typeof AuthenticatedParentAttendanceRoute
-  '/parent/bus-tracking': typeof AuthenticatedParentBusTrackingRoute
-  '/parent/calendar': typeof AuthenticatedParentCalendarRoute
-  '/parent/children': typeof AuthenticatedParentChildrenRoute
-  '/parent/dashboard': typeof AuthenticatedParentDashboardRoute
-  '/parent/fees': typeof AuthenticatedParentFeesRoute
-  '/parent/grades': typeof AuthenticatedParentGradesRoute
-  '/parent/news': typeof AuthenticatedParentNewsRoute
-  '/parent/report-cards': typeof AuthenticatedParentReportCardsRoute
-  '/student/ai-tutor': typeof AuthenticatedStudentAiTutorRoute
-  '/student/attendance': typeof AuthenticatedStudentAttendanceRoute
-  '/student/calendar': typeof AuthenticatedStudentCalendarRoute
-  '/student/cbt': typeof AuthenticatedStudentCbtRoute
-  '/student/course-registration': typeof AuthenticatedStudentCourseRegistrationRoute
-  '/student/dashboard': typeof AuthenticatedStudentDashboardRoute
-  '/student/fees': typeof AuthenticatedStudentFeesRoute
-  '/student/grades': typeof AuthenticatedStudentGradesRoute
-  '/student/news': typeof AuthenticatedStudentNewsRoute
-  '/student/report-card': typeof AuthenticatedStudentReportCardRoute
-  '/student/timetable': typeof AuthenticatedStudentTimetableRoute
-  '/super-admin/academic-intelligence': typeof AuthenticatedSuperAdminAcademicIntelligenceRoute
-  '/super-admin/agent-governance': typeof AuthenticatedSuperAdminAgentGovernanceRoute
-  '/super-admin/billing': typeof AuthenticatedSuperAdminBillingRoute
-  '/super-admin/communication-steward': typeof AuthenticatedSuperAdminCommunicationStewardRoute
-  '/super-admin/dashboard': typeof AuthenticatedSuperAdminDashboardRoute
-  '/super-admin/financial-operations': typeof AuthenticatedSuperAdminFinancialOperationsRoute
-  '/super-admin/logs': typeof AuthenticatedSuperAdminLogsRoute
-  '/super-admin/platform-config': typeof AuthenticatedSuperAdminPlatformConfigRoute
-  '/super-admin/runtime-contracts': typeof AuthenticatedSuperAdminRuntimeContractsRoute
-  '/super-admin/scheduling-intelligence': typeof AuthenticatedSuperAdminSchedulingIntelligenceRoute
-  '/super-admin/schools': typeof AuthenticatedSuperAdminSchoolsRoute
-  '/super-admin/settings': typeof AuthenticatedSuperAdminSettingsRoute
-  '/super-admin/staff': typeof AuthenticatedSuperAdminStaffRoute
-  '/super-admin/support': typeof AuthenticatedSuperAdminSupportRoute
-  '/super-admin/tenants': typeof AuthenticatedSuperAdminTenantsRoute
-  '/super-admin/tiers': typeof AuthenticatedSuperAdminTiersRoute
-  '/super-admin/trust-fabric': typeof AuthenticatedSuperAdminTrustFabricRoute
-  '/super-admin/worker-missions': typeof AuthenticatedSuperAdminWorkerMissionsRoute
-  '/super-admin/workspace-projection': typeof AuthenticatedSuperAdminWorkspaceProjectionRoute
-  '/teacher/ai-assistant': typeof AuthenticatedTeacherAiAssistantRoute
-  '/teacher/attendance': typeof AuthenticatedTeacherAttendanceRoute
-  '/teacher/attendance-week': typeof AuthenticatedTeacherAttendanceWeekRoute
-  '/teacher/calendar': typeof AuthenticatedTeacherCalendarRoute
-  '/teacher/class-intelligence': typeof AuthenticatedTeacherClassIntelligenceRoute
-  '/teacher/dashboard': typeof AuthenticatedTeacherDashboardRoute
-  '/teacher/gradebook': typeof AuthenticatedTeacherGradebookRoute
-  '/teacher/grades': typeof AuthenticatedTeacherGradesRoute
-  '/teacher/lesson-notes': typeof AuthenticatedTeacherLessonNotesRoute
-  '/teacher/lesson-plans': typeof AuthenticatedTeacherLessonPlansRoute
-  '/teacher/news': typeof AuthenticatedTeacherNewsRoute
-  '/teacher/sign-in': typeof AuthenticatedTeacherSignInRoute
-  '/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
-  '/workspace/settings': typeof AuthenticatedWorkspaceSettingsRoute
-  '/command-centre': typeof AuthenticatedCommandCentreIndexRoute
+  '/console': typeof ConsoleIndexRoute
+  '/home': typeof HomeIndexRoute
+  '/company/about': typeof siteCompanyAboutRoute
+  '/company/careers': typeof siteCompanyCareersRoute
+  '/company/partners': typeof siteCompanyPartnersRoute
+  '/company/vision': typeof siteCompanyVisionRoute
+  '/help/$slug': typeof siteHelpSlugRoute
+  '/insights/$slug': typeof siteInsightsSlugRoute
+  '/legal/acceptable-use': typeof siteLegalAcceptableUseRoute
+  '/legal/contact': typeof siteLegalContactRoute
+  '/legal/cookies': typeof siteLegalCookiesRoute
+  '/legal/data-processing': typeof siteLegalDataProcessingRoute
+  '/legal/privacy': typeof siteLegalPrivacyRoute
+  '/legal/subprocessors': typeof siteLegalSubprocessorsRoute
+  '/legal/terms': typeof siteLegalTermsRoute
+  '/product/ai-workforce': typeof siteProductAiWorkforceRoute
+  '/product/architecture': typeof siteProductArchitectureRoute
+  '/product/digital-twins': typeof siteProductDigitalTwinsRoute
+  '/product/institutional-computing': typeof siteProductInstitutionalComputingRoute
+  '/product/intelligence': typeof siteProductIntelligenceRoute
+  '/security/disclosure': typeof siteSecurityDisclosureRoute
+  '/solutions/education': typeof siteSolutionsEducationRoute
+  '/solutions/enterprise': typeof siteSolutionsEnterpriseRoute
+  '/solutions/research': typeof siteSolutionsResearchRoute
+  '/api/public/webauthn': typeof ApiPublicWebauthnRoute
+  '/console/activity/admin': typeof ConsoleActivityAdminRoute
+  '/console/activity/billing': typeof ConsoleActivityBillingRoute
+  '/console/activity/incidents': typeof ConsoleActivityIncidentsRoute
+  '/console/activity/logs': typeof ConsoleActivityLogsRoute
+  '/console/activity/metrics': typeof ConsoleActivityMetricsRoute
+  '/console/activity/security': typeof ConsoleActivitySecurityRoute
+  '/console/activity/tickets': typeof ConsoleActivityTicketsRoute
+  '/console/organizations/$organizationId': typeof ConsoleOrganizationsOrganizationIdRoute
+  '/console/organizations/new': typeof ConsoleOrganizationsNewRoute
+  '/console/runtimes/scholar': typeof ConsoleRuntimesScholarRoute
+  '/console/team/access': typeof ConsoleTeamAccessRoute
+  '/console/team/invitations': typeof ConsoleTeamInvitationsRoute
+  '/console/team/roles': typeof ConsoleTeamRolesRoute
+  '/console/team/suspended': typeof ConsoleTeamSuspendedRoute
+  '/console/workspaces/$workspaceId': typeof ConsoleWorkspacesWorkspaceIdRoute
+  '/home/s/$section': typeof HomeSSectionRoute
+  '/help': typeof siteHelpIndexRoute
+  '/insights': typeof siteInsightsIndexRoute
+  '/product': typeof siteProductIndexRoute
+  '/security': typeof siteSecurityIndexRoute
+  '/solutions': typeof siteSolutionsIndexRoute
+  '/console/activity': typeof ConsoleActivityIndexRoute
+  '/console/organizations': typeof ConsoleOrganizationsIndexRoute
+  '/console/runtimes': typeof ConsoleRuntimesIndexRoute
+  '/console/team': typeof ConsoleTeamIndexRoute
+  '/console/workspaces': typeof ConsoleWorkspacesIndexRoute
+  '/insights/category/$slug': typeof siteInsightsCategorySlugRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/cron/integrations-sync': typeof ApiPublicCronIntegrationsSyncRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
@@ -2020,229 +947,113 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/(site)': typeof siteRouteRouteWithChildren
-  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/gov': typeof GovRouteRouteWithChildren
-  '/admissions': typeof AdmissionsRoute
+  '/console': typeof ConsoleRouteRouteWithChildren
+  '/home': typeof HomeRouteRouteWithChildren
   '/auth': typeof AuthRoute
-  '/blog': typeof BlogRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
-  '/foundation-loop': typeof FoundationLoopRoute
-  '/gov-invite': typeof GovInviteRoute
-  '/head': typeof HeadRoute
   '/health.json': typeof HealthDotjsonRoute
   '/login': typeof LoginRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
-  '/marketplace': typeof MarketplaceRoute
-  '/platform': typeof PlatformRouteWithChildren
-  '/privacy': typeof PrivacyRoute
+  '/onboarding': typeof OnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/rss.xml': typeof RssDotxmlRoute
-  '/rules': typeof RulesRoute
-  '/scholar-foundation-loop': typeof ScholarFoundationLoopRoute
   '/site-icon.svg': typeof SiteIconDotsvgRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/ux-lab': typeof UxLabRoute
-  '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
-  '/_authenticated/bursar': typeof AuthenticatedBursarRouteRouteWithChildren
-  '/_authenticated/command-centre': typeof AuthenticatedCommandCentreRouteRouteWithChildren
-  '/_authenticated/driver': typeof AuthenticatedDriverRouteRouteWithChildren
-  '/_authenticated/hq': typeof AuthenticatedHqRouteRouteWithChildren
-  '/_authenticated/parent': typeof AuthenticatedParentRouteRouteWithChildren
-  '/_authenticated/student': typeof AuthenticatedStudentRouteRouteWithChildren
-  '/_authenticated/super-admin': typeof AuthenticatedSuperAdminRouteRouteWithChildren
-  '/_authenticated/teacher': typeof AuthenticatedTeacherRouteRouteWithChildren
+  '/console/activity': typeof ConsoleActivityRouteRouteWithChildren
+  '/console/organizations': typeof ConsoleOrganizationsRouteRouteWithChildren
+  '/console/runtimes': typeof ConsoleRuntimesRouteRouteWithChildren
+  '/console/team': typeof ConsoleTeamRouteRouteWithChildren
+  '/console/workspaces': typeof ConsoleWorkspacesRouteRouteWithChildren
   '/(site)/about': typeof siteAboutRoute
+  '/(site)/accessibility': typeof siteAccessibilityRoute
   '/(site)/check-result': typeof siteCheckResultRoute
   '/(site)/contact': typeof siteContactRoute
   '/(site)/coregrid': typeof siteCoregridRoute
+  '/(site)/developers': typeof siteDevelopersRoute
+  '/(site)/docs': typeof siteDocsRoute
+  '/(site)/faq': typeof siteFaqRoute
+  '/(site)/help': typeof siteHelpRouteWithChildren
+  '/(site)/insights': typeof siteInsightsRouteWithChildren
+  '/(site)/integrations': typeof siteIntegrationsRoute
   '/(site)/privacy-policy': typeof sitePrivacyPolicyRoute
+  '/(site)/product': typeof siteProductRouteWithChildren
   '/(site)/request-demo': typeof siteRequestDemoRoute
+  '/(site)/security': typeof siteSecurityRouteWithChildren
   '/(site)/sherivs': typeof siteSherivsRoute
   '/(site)/siwes-verify': typeof siteSiwesVerifyRoute
+  '/(site)/solutions': typeof siteSolutionsRouteWithChildren
   '/(site)/status': typeof siteStatusRoute
+  '/(site)/support': typeof siteSupportRoute
   '/(site)/terms': typeof siteTermsRoute
+  '/(site)/trust': typeof siteTrustRoute
   '/(site)/verify-transcript': typeof siteVerifyTranscriptRoute
-  '/_authenticated/consent': typeof AuthenticatedConsentRoute
-  '/_authenticated/gov-dashboard': typeof AuthenticatedGovDashboardRoute
-  '/_authenticated/internal': typeof AuthenticatedInternalRoute
-  '/_authenticated/messages': typeof AuthenticatedMessagesRoute
-  '/_authenticated/mfa': typeof AuthenticatedMfaRoute
-  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
-  '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
-  '/_authenticated/organizations': typeof AuthenticatedOrganizationsRoute
-  '/_authenticated/runtime': typeof AuthenticatedRuntimeRoute
-  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
-  '/_authenticated/welcome': typeof AuthenticatedWelcomeRoute
-  '/_authenticated/workspace': typeof AuthenticatedWorkspaceRoute
-  '/blog/$slug': typeof BlogSlugRoute
-  '/events/$id': typeof EventsIdRoute
-  '/gov/about': typeof GovAboutRoute
-  '/gov/attendance': typeof GovAttendanceRoute
-  '/gov/circulars': typeof GovCircularsRoute
-  '/gov/inspections': typeof GovInspectionsRoute
-  '/gov/postings': typeof GovPostingsRoute
-  '/gov/schools': typeof GovSchoolsRoute
-  '/gov/staffing': typeof GovStaffingRoute
-  '/news/$id': typeof NewsIdRoute
+  '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
+  '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
+  '/api/webauthn': typeof ApiWebauthnRoute
+  '/console/account': typeof ConsoleAccountRoute
+  '/console/help': typeof ConsoleHelpRoute
+  '/console/settings': typeof ConsoleSettingsRoute
+  '/home/ai': typeof HomeAiRoute
+  '/home/help': typeof HomeHelpRoute
+  '/home/notifications': typeof HomeNotificationsRoute
+  '/home/profile': typeof HomeProfileRoute
+  '/home/security': typeof HomeSecurityRoute
+  '/home/settings': typeof HomeSettingsRoute
   '/pages/$slug': typeof PagesSlugRoute
-  '/platform/org': typeof PlatformOrgRoute
   '/posts/$post': typeof PostsPostRoute
-  '/reality/$class': typeof RealityClassRoute
-  '/gov/': typeof GovIndexRoute
-  '/group/': typeof GroupIndexRoute
-  '/_authenticated/admin/academic-standing': typeof AuthenticatedAdminAcademicStandingRoute
-  '/_authenticated/admin/admissions': typeof AuthenticatedAdminAdmissionsRoute
-  '/_authenticated/admin/admissions-funnel': typeof AuthenticatedAdminAdmissionsFunnelRoute
-  '/_authenticated/admin/ai-assistant': typeof AuthenticatedAdminAiAssistantRoute
-  '/_authenticated/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
-  '/_authenticated/admin/api-keys': typeof AuthenticatedAdminApiKeysRoute
-  '/_authenticated/admin/attendance': typeof AuthenticatedAdminAttendanceRoute
-  '/_authenticated/admin/attendance-conflicts': typeof AuthenticatedAdminAttendanceConflictsRoute
-  '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
-  '/_authenticated/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
-  '/_authenticated/admin/broadcast': typeof AuthenticatedAdminBroadcastRoute
-  '/_authenticated/admin/bus-management': typeof AuthenticatedAdminBusManagementRoute
-  '/_authenticated/admin/buses': typeof AuthenticatedAdminBusesRoute
-  '/_authenticated/admin/calendar': typeof AuthenticatedAdminCalendarRoute
-  '/_authenticated/admin/campuses': typeof AuthenticatedAdminCampusesRoute
-  '/_authenticated/admin/classes': typeof AuthenticatedAdminClassesRoute
-  '/_authenticated/admin/cms': typeof AuthenticatedAdminCmsRoute
-  '/_authenticated/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
-  '/_authenticated/admin/digital-twin': typeof AuthenticatedAdminDigitalTwinRoute
-  '/_authenticated/admin/discipline': typeof AuthenticatedAdminDisciplineRoute
-  '/_authenticated/admin/domains': typeof AuthenticatedAdminDomainsRoute
-  '/_authenticated/admin/early-warning': typeof AuthenticatedAdminEarlyWarningRoute
-  '/_authenticated/admin/education-reality': typeof AuthenticatedAdminEducationRealityRoute
-  '/_authenticated/admin/enterprise-checklist': typeof AuthenticatedAdminEnterpriseChecklistRoute
-  '/_authenticated/admin/exam-bodies': typeof AuthenticatedAdminExamBodiesRoute
-  '/_authenticated/admin/examinations': typeof AuthenticatedAdminExaminationsRoute
-  '/_authenticated/admin/exams': typeof AuthenticatedAdminExamsRoute
-  '/_authenticated/admin/expenses': typeof AuthenticatedAdminExpensesRoute
-  '/_authenticated/admin/extracurricular': typeof AuthenticatedAdminExtracurricularRoute
-  '/_authenticated/admin/facilities': typeof AuthenticatedAdminFacilitiesRoute
-  '/_authenticated/admin/features': typeof AuthenticatedAdminFeaturesRoute
-  '/_authenticated/admin/fee-relief': typeof AuthenticatedAdminFeeReliefRoute
-  '/_authenticated/admin/fees': typeof AuthenticatedAdminFeesRoute
-  '/_authenticated/admin/fees-defaulters': typeof AuthenticatedAdminFeesDefaultersRoute
-  '/_authenticated/admin/financial-reports': typeof AuthenticatedAdminFinancialReportsRoute
-  '/_authenticated/admin/geofence-settings': typeof AuthenticatedAdminGeofenceSettingsRoute
-  '/_authenticated/admin/government': typeof AuthenticatedAdminGovernmentRoute
-  '/_authenticated/admin/grades': typeof AuthenticatedAdminGradesRoute
-  '/_authenticated/admin/heads': typeof AuthenticatedAdminHeadsRoute
-  '/_authenticated/admin/health': typeof AuthenticatedAdminHealthRoute
-  '/_authenticated/admin/health-certificate': typeof AuthenticatedAdminHealthCertificateRoute
-  '/_authenticated/admin/hostel': typeof AuthenticatedAdminHostelRoute
-  '/_authenticated/admin/hr': typeof AuthenticatedAdminHrRoute
-  '/_authenticated/admin/hr-payroll': typeof AuthenticatedAdminHrPayrollRoute
-  '/_authenticated/admin/identities': typeof AuthenticatedAdminIdentitiesRoute
-  '/_authenticated/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
-  '/_authenticated/admin/intelligence': typeof AuthenticatedAdminIntelligenceRoute
-  '/_authenticated/admin/intelligence-ai': typeof AuthenticatedAdminIntelligenceAiRoute
-  '/_authenticated/admin/intelligence-operations': typeof AuthenticatedAdminIntelligenceOperationsRoute
-  '/_authenticated/admin/intelligence-parents': typeof AuthenticatedAdminIntelligenceParentsRoute
-  '/_authenticated/admin/intelligence-students': typeof AuthenticatedAdminIntelligenceStudentsRoute
-  '/_authenticated/admin/intelligence-teachers': typeof AuthenticatedAdminIntelligenceTeachersRoute
-  '/_authenticated/admin/inventory': typeof AuthenticatedAdminInventoryRoute
-  '/_authenticated/admin/lesson-plans': typeof AuthenticatedAdminLessonPlansRoute
-  '/_authenticated/admin/library': typeof AuthenticatedAdminLibraryRoute
-  '/_authenticated/admin/locked-accounts': typeof AuthenticatedAdminLockedAccountsRoute
-  '/_authenticated/admin/messages-log': typeof AuthenticatedAdminMessagesLogRoute
-  '/_authenticated/admin/ndpa': typeof AuthenticatedAdminNdpaRoute
-  '/_authenticated/admin/news': typeof AuthenticatedAdminNewsRoute
-  '/_authenticated/admin/onboarding-interview': typeof AuthenticatedAdminOnboardingInterviewRoute
-  '/_authenticated/admin/operations': typeof AuthenticatedAdminOperationsRoute
-  '/_authenticated/admin/payroll': typeof AuthenticatedAdminPayrollRoute
-  '/_authenticated/admin/report-cards': typeof AuthenticatedAdminReportCardsRoute
-  '/_authenticated/admin/role-scopes': typeof AuthenticatedAdminRoleScopesRoute
-  '/_authenticated/admin/roles': typeof AuthenticatedAdminRolesRoute
-  '/_authenticated/admin/safeguards': typeof AuthenticatedAdminSafeguardsRoute
-  '/_authenticated/admin/school-group': typeof AuthenticatedAdminSchoolGroupRoute
-  '/_authenticated/admin/school-profile': typeof AuthenticatedAdminSchoolProfileRoute
-  '/_authenticated/admin/session-rollover': typeof AuthenticatedAdminSessionRolloverRoute
-  '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
-  '/_authenticated/admin/staff-accounts': typeof AuthenticatedAdminStaffAccountsRoute
-  '/_authenticated/admin/stores-assets': typeof AuthenticatedAdminStoresAssetsRoute
-  '/_authenticated/admin/structure': typeof AuthenticatedAdminStructureRoute
-  '/_authenticated/admin/student-intelligence': typeof AuthenticatedAdminStudentIntelligenceRoute
-  '/_authenticated/admin/students': typeof AuthenticatedAdminStudentsRoute
-  '/_authenticated/admin/support': typeof AuthenticatedAdminSupportRoute
-  '/_authenticated/admin/teacher-intelligence': typeof AuthenticatedAdminTeacherIntelligenceRoute
-  '/_authenticated/admin/teachers': typeof AuthenticatedAdminTeachersRoute
-  '/_authenticated/admin/timetable': typeof AuthenticatedAdminTimetableRoute
-  '/_authenticated/admin/transfers-custody': typeof AuthenticatedAdminTransfersCustodyRoute
-  '/_authenticated/admin/visitors': typeof AuthenticatedAdminVisitorsRoute
-  '/_authenticated/admin/wallet': typeof AuthenticatedAdminWalletRoute
-  '/_authenticated/admin/website': typeof AuthenticatedAdminWebsiteRoute
-  '/_authenticated/bursar/dashboard': typeof AuthenticatedBursarDashboardRoute
-  '/_authenticated/bursar/fee-plans': typeof AuthenticatedBursarFeePlansRoute
-  '/_authenticated/bursar/financial-intelligence': typeof AuthenticatedBursarFinancialIntelligenceRoute
-  '/_authenticated/bursar/receipts': typeof AuthenticatedBursarReceiptsRoute
-  '/_authenticated/bursar/reconciliation': typeof AuthenticatedBursarReconciliationRoute
-  '/_authenticated/bursar/reports': typeof AuthenticatedBursarReportsRoute
-  '/_authenticated/driver/dashboard': typeof AuthenticatedDriverDashboardRoute
-  '/_authenticated/driver/students': typeof AuthenticatedDriverStudentsRoute
-  '/_authenticated/hq/dashboard': typeof AuthenticatedHqDashboardRoute
-  '/_authenticated/hq/finance': typeof AuthenticatedHqFinanceRoute
-  '/_authenticated/hq/reports': typeof AuthenticatedHqReportsRoute
-  '/_authenticated/internal_/access-review': typeof AuthenticatedInternalAccessReviewRoute
-  '/_authenticated/internal_/gov-access': typeof AuthenticatedInternalGovAccessRoute
-  '/_authenticated/internal_/support': typeof AuthenticatedInternalSupportRoute
-  '/_authenticated/parent/ai-assistant': typeof AuthenticatedParentAiAssistantRoute
-  '/_authenticated/parent/attendance': typeof AuthenticatedParentAttendanceRoute
-  '/_authenticated/parent/bus-tracking': typeof AuthenticatedParentBusTrackingRoute
-  '/_authenticated/parent/calendar': typeof AuthenticatedParentCalendarRoute
-  '/_authenticated/parent/children': typeof AuthenticatedParentChildrenRoute
-  '/_authenticated/parent/dashboard': typeof AuthenticatedParentDashboardRoute
-  '/_authenticated/parent/fees': typeof AuthenticatedParentFeesRoute
-  '/_authenticated/parent/grades': typeof AuthenticatedParentGradesRoute
-  '/_authenticated/parent/news': typeof AuthenticatedParentNewsRoute
-  '/_authenticated/parent/report-cards': typeof AuthenticatedParentReportCardsRoute
-  '/_authenticated/student/ai-tutor': typeof AuthenticatedStudentAiTutorRoute
-  '/_authenticated/student/attendance': typeof AuthenticatedStudentAttendanceRoute
-  '/_authenticated/student/calendar': typeof AuthenticatedStudentCalendarRoute
-  '/_authenticated/student/cbt': typeof AuthenticatedStudentCbtRoute
-  '/_authenticated/student/course-registration': typeof AuthenticatedStudentCourseRegistrationRoute
-  '/_authenticated/student/dashboard': typeof AuthenticatedStudentDashboardRoute
-  '/_authenticated/student/fees': typeof AuthenticatedStudentFeesRoute
-  '/_authenticated/student/grades': typeof AuthenticatedStudentGradesRoute
-  '/_authenticated/student/news': typeof AuthenticatedStudentNewsRoute
-  '/_authenticated/student/report-card': typeof AuthenticatedStudentReportCardRoute
-  '/_authenticated/student/timetable': typeof AuthenticatedStudentTimetableRoute
-  '/_authenticated/super-admin/academic-intelligence': typeof AuthenticatedSuperAdminAcademicIntelligenceRoute
-  '/_authenticated/super-admin/agent-governance': typeof AuthenticatedSuperAdminAgentGovernanceRoute
-  '/_authenticated/super-admin/billing': typeof AuthenticatedSuperAdminBillingRoute
-  '/_authenticated/super-admin/communication-steward': typeof AuthenticatedSuperAdminCommunicationStewardRoute
-  '/_authenticated/super-admin/dashboard': typeof AuthenticatedSuperAdminDashboardRoute
-  '/_authenticated/super-admin/financial-operations': typeof AuthenticatedSuperAdminFinancialOperationsRoute
-  '/_authenticated/super-admin/logs': typeof AuthenticatedSuperAdminLogsRoute
-  '/_authenticated/super-admin/platform-config': typeof AuthenticatedSuperAdminPlatformConfigRoute
-  '/_authenticated/super-admin/runtime-contracts': typeof AuthenticatedSuperAdminRuntimeContractsRoute
-  '/_authenticated/super-admin/scheduling-intelligence': typeof AuthenticatedSuperAdminSchedulingIntelligenceRoute
-  '/_authenticated/super-admin/schools': typeof AuthenticatedSuperAdminSchoolsRoute
-  '/_authenticated/super-admin/settings': typeof AuthenticatedSuperAdminSettingsRoute
-  '/_authenticated/super-admin/staff': typeof AuthenticatedSuperAdminStaffRoute
-  '/_authenticated/super-admin/support': typeof AuthenticatedSuperAdminSupportRoute
-  '/_authenticated/super-admin/tenants': typeof AuthenticatedSuperAdminTenantsRoute
-  '/_authenticated/super-admin/tiers': typeof AuthenticatedSuperAdminTiersRoute
-  '/_authenticated/super-admin/trust-fabric': typeof AuthenticatedSuperAdminTrustFabricRoute
-  '/_authenticated/super-admin/worker-missions': typeof AuthenticatedSuperAdminWorkerMissionsRoute
-  '/_authenticated/super-admin/workspace-projection': typeof AuthenticatedSuperAdminWorkspaceProjectionRoute
-  '/_authenticated/teacher/ai-assistant': typeof AuthenticatedTeacherAiAssistantRoute
-  '/_authenticated/teacher/attendance': typeof AuthenticatedTeacherAttendanceRoute
-  '/_authenticated/teacher/attendance-week': typeof AuthenticatedTeacherAttendanceWeekRoute
-  '/_authenticated/teacher/calendar': typeof AuthenticatedTeacherCalendarRoute
-  '/_authenticated/teacher/class-intelligence': typeof AuthenticatedTeacherClassIntelligenceRoute
-  '/_authenticated/teacher/dashboard': typeof AuthenticatedTeacherDashboardRoute
-  '/_authenticated/teacher/gradebook': typeof AuthenticatedTeacherGradebookRoute
-  '/_authenticated/teacher/grades': typeof AuthenticatedTeacherGradesRoute
-  '/_authenticated/teacher/lesson-notes': typeof AuthenticatedTeacherLessonNotesRoute
-  '/_authenticated/teacher/lesson-plans': typeof AuthenticatedTeacherLessonPlansRoute
-  '/_authenticated/teacher/news': typeof AuthenticatedTeacherNewsRoute
-  '/_authenticated/teacher/sign-in': typeof AuthenticatedTeacherSignInRoute
-  '/_authenticated/teacher/timetable': typeof AuthenticatedTeacherTimetableRoute
-  '/_authenticated/workspace_/settings': typeof AuthenticatedWorkspaceSettingsRoute
-  '/_authenticated/command-centre/': typeof AuthenticatedCommandCentreIndexRoute
+  '/console/': typeof ConsoleIndexRoute
+  '/home/': typeof HomeIndexRoute
+  '/(site)/company/about': typeof siteCompanyAboutRoute
+  '/(site)/company/careers': typeof siteCompanyCareersRoute
+  '/(site)/company/partners': typeof siteCompanyPartnersRoute
+  '/(site)/company/vision': typeof siteCompanyVisionRoute
+  '/(site)/help/$slug': typeof siteHelpSlugRoute
+  '/(site)/insights/$slug': typeof siteInsightsSlugRoute
+  '/(site)/legal/acceptable-use': typeof siteLegalAcceptableUseRoute
+  '/(site)/legal/contact': typeof siteLegalContactRoute
+  '/(site)/legal/cookies': typeof siteLegalCookiesRoute
+  '/(site)/legal/data-processing': typeof siteLegalDataProcessingRoute
+  '/(site)/legal/privacy': typeof siteLegalPrivacyRoute
+  '/(site)/legal/subprocessors': typeof siteLegalSubprocessorsRoute
+  '/(site)/legal/terms': typeof siteLegalTermsRoute
+  '/(site)/product/ai-workforce': typeof siteProductAiWorkforceRoute
+  '/(site)/product/architecture': typeof siteProductArchitectureRoute
+  '/(site)/product/digital-twins': typeof siteProductDigitalTwinsRoute
+  '/(site)/product/institutional-computing': typeof siteProductInstitutionalComputingRoute
+  '/(site)/product/intelligence': typeof siteProductIntelligenceRoute
+  '/(site)/security/disclosure': typeof siteSecurityDisclosureRoute
+  '/(site)/solutions/education': typeof siteSolutionsEducationRoute
+  '/(site)/solutions/enterprise': typeof siteSolutionsEnterpriseRoute
+  '/(site)/solutions/research': typeof siteSolutionsResearchRoute
+  '/api/public/webauthn': typeof ApiPublicWebauthnRoute
+  '/console/activity/admin': typeof ConsoleActivityAdminRoute
+  '/console/activity/billing': typeof ConsoleActivityBillingRoute
+  '/console/activity/incidents': typeof ConsoleActivityIncidentsRoute
+  '/console/activity/logs': typeof ConsoleActivityLogsRoute
+  '/console/activity/metrics': typeof ConsoleActivityMetricsRoute
+  '/console/activity/security': typeof ConsoleActivitySecurityRoute
+  '/console/activity/tickets': typeof ConsoleActivityTicketsRoute
+  '/console/organizations/$organizationId': typeof ConsoleOrganizationsOrganizationIdRoute
+  '/console/organizations/new': typeof ConsoleOrganizationsNewRoute
+  '/console/runtimes/scholar': typeof ConsoleRuntimesScholarRoute
+  '/console/team/access': typeof ConsoleTeamAccessRoute
+  '/console/team/invitations': typeof ConsoleTeamInvitationsRoute
+  '/console/team/roles': typeof ConsoleTeamRolesRoute
+  '/console/team/suspended': typeof ConsoleTeamSuspendedRoute
+  '/console/workspaces/$workspaceId': typeof ConsoleWorkspacesWorkspaceIdRoute
+  '/home/s/$section': typeof HomeSSectionRoute
+  '/(site)/help/': typeof siteHelpIndexRoute
+  '/(site)/insights/': typeof siteInsightsIndexRoute
+  '/(site)/product/': typeof siteProductIndexRoute
+  '/(site)/security/': typeof siteSecurityIndexRoute
+  '/(site)/solutions/': typeof siteSolutionsIndexRoute
+  '/console/activity/': typeof ConsoleActivityIndexRoute
+  '/console/organizations/': typeof ConsoleOrganizationsIndexRoute
+  '/console/runtimes/': typeof ConsoleRuntimesIndexRoute
+  '/console/team/': typeof ConsoleTeamIndexRoute
+  '/console/workspaces/': typeof ConsoleWorkspacesIndexRoute
+  '/(site)/insights/category/$slug': typeof siteInsightsCategorySlugRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/cron/integrations-sync': typeof ApiPublicCronIntegrationsSyncRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
@@ -2255,228 +1066,113 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/gov'
-    | '/admissions'
+    | '/console'
+    | '/home'
     | '/auth'
-    | '/blog'
     | '/forgot-password'
-    | '/foundation-loop'
-    | '/gov-invite'
-    | '/head'
     | '/health.json'
     | '/login'
     | '/manifest.webmanifest'
-    | '/marketplace'
-    | '/platform'
-    | '/privacy'
+    | '/onboarding'
     | '/reset-password'
     | '/robots.txt'
     | '/rss.xml'
-    | '/rules'
-    | '/scholar-foundation-loop'
     | '/site-icon.svg'
     | '/sitemap.xml'
-    | '/ux-lab'
-    | '/admin'
-    | '/bursar'
-    | '/command-centre'
-    | '/driver'
-    | '/hq'
-    | '/parent'
-    | '/student'
-    | '/super-admin'
-    | '/teacher'
+    | '/console/activity'
+    | '/console/organizations'
+    | '/console/runtimes'
+    | '/console/team'
+    | '/console/workspaces'
     | '/about'
+    | '/accessibility'
     | '/check-result'
     | '/contact'
     | '/coregrid'
+    | '/developers'
+    | '/docs'
+    | '/faq'
+    | '/help'
+    | '/insights'
+    | '/integrations'
     | '/privacy-policy'
+    | '/product'
     | '/request-demo'
+    | '/security'
     | '/sherivs'
     | '/siwes-verify'
+    | '/solutions'
     | '/status'
+    | '/support'
     | '/terms'
+    | '/trust'
     | '/verify-transcript'
-    | '/consent'
-    | '/gov-dashboard'
-    | '/internal'
-    | '/messages'
-    | '/mfa'
-    | '/notifications'
-    | '/onboarding'
-    | '/organizations'
-    | '/runtime'
-    | '/settings'
-    | '/welcome'
-    | '/workspace'
-    | '/blog/$slug'
-    | '/events/$id'
-    | '/gov/about'
-    | '/gov/attendance'
-    | '/gov/circulars'
-    | '/gov/inspections'
-    | '/gov/postings'
-    | '/gov/schools'
-    | '/gov/staffing'
-    | '/news/$id'
+    | '/.well-known/apple-app-site-association'
+    | '/.well-known/assetlinks.json'
+    | '/api/webauthn'
+    | '/console/account'
+    | '/console/help'
+    | '/console/settings'
+    | '/home/ai'
+    | '/home/help'
+    | '/home/notifications'
+    | '/home/profile'
+    | '/home/security'
+    | '/home/settings'
     | '/pages/$slug'
-    | '/platform/org'
     | '/posts/$post'
-    | '/reality/$class'
-    | '/gov/'
-    | '/group/'
-    | '/admin/academic-standing'
-    | '/admin/admissions'
-    | '/admin/admissions-funnel'
-    | '/admin/ai-assistant'
-    | '/admin/analytics'
-    | '/admin/api-keys'
-    | '/admin/attendance'
-    | '/admin/attendance-conflicts'
-    | '/admin/audit'
-    | '/admin/audit-logs'
-    | '/admin/broadcast'
-    | '/admin/bus-management'
-    | '/admin/buses'
-    | '/admin/calendar'
-    | '/admin/campuses'
-    | '/admin/classes'
-    | '/admin/cms'
-    | '/admin/dashboard'
-    | '/admin/digital-twin'
-    | '/admin/discipline'
-    | '/admin/domains'
-    | '/admin/early-warning'
-    | '/admin/education-reality'
-    | '/admin/enterprise-checklist'
-    | '/admin/exam-bodies'
-    | '/admin/examinations'
-    | '/admin/exams'
-    | '/admin/expenses'
-    | '/admin/extracurricular'
-    | '/admin/facilities'
-    | '/admin/features'
-    | '/admin/fee-relief'
-    | '/admin/fees'
-    | '/admin/fees-defaulters'
-    | '/admin/financial-reports'
-    | '/admin/geofence-settings'
-    | '/admin/government'
-    | '/admin/grades'
-    | '/admin/heads'
-    | '/admin/health'
-    | '/admin/health-certificate'
-    | '/admin/hostel'
-    | '/admin/hr'
-    | '/admin/hr-payroll'
-    | '/admin/identities'
-    | '/admin/integrations'
-    | '/admin/intelligence'
-    | '/admin/intelligence-ai'
-    | '/admin/intelligence-operations'
-    | '/admin/intelligence-parents'
-    | '/admin/intelligence-students'
-    | '/admin/intelligence-teachers'
-    | '/admin/inventory'
-    | '/admin/lesson-plans'
-    | '/admin/library'
-    | '/admin/locked-accounts'
-    | '/admin/messages-log'
-    | '/admin/ndpa'
-    | '/admin/news'
-    | '/admin/onboarding-interview'
-    | '/admin/operations'
-    | '/admin/payroll'
-    | '/admin/report-cards'
-    | '/admin/role-scopes'
-    | '/admin/roles'
-    | '/admin/safeguards'
-    | '/admin/school-group'
-    | '/admin/school-profile'
-    | '/admin/session-rollover'
-    | '/admin/settings'
-    | '/admin/staff-accounts'
-    | '/admin/stores-assets'
-    | '/admin/structure'
-    | '/admin/student-intelligence'
-    | '/admin/students'
-    | '/admin/support'
-    | '/admin/teacher-intelligence'
-    | '/admin/teachers'
-    | '/admin/timetable'
-    | '/admin/transfers-custody'
-    | '/admin/visitors'
-    | '/admin/wallet'
-    | '/admin/website'
-    | '/bursar/dashboard'
-    | '/bursar/fee-plans'
-    | '/bursar/financial-intelligence'
-    | '/bursar/receipts'
-    | '/bursar/reconciliation'
-    | '/bursar/reports'
-    | '/driver/dashboard'
-    | '/driver/students'
-    | '/hq/dashboard'
-    | '/hq/finance'
-    | '/hq/reports'
-    | '/internal/access-review'
-    | '/internal/gov-access'
-    | '/internal/support'
-    | '/parent/ai-assistant'
-    | '/parent/attendance'
-    | '/parent/bus-tracking'
-    | '/parent/calendar'
-    | '/parent/children'
-    | '/parent/dashboard'
-    | '/parent/fees'
-    | '/parent/grades'
-    | '/parent/news'
-    | '/parent/report-cards'
-    | '/student/ai-tutor'
-    | '/student/attendance'
-    | '/student/calendar'
-    | '/student/cbt'
-    | '/student/course-registration'
-    | '/student/dashboard'
-    | '/student/fees'
-    | '/student/grades'
-    | '/student/news'
-    | '/student/report-card'
-    | '/student/timetable'
-    | '/super-admin/academic-intelligence'
-    | '/super-admin/agent-governance'
-    | '/super-admin/billing'
-    | '/super-admin/communication-steward'
-    | '/super-admin/dashboard'
-    | '/super-admin/financial-operations'
-    | '/super-admin/logs'
-    | '/super-admin/platform-config'
-    | '/super-admin/runtime-contracts'
-    | '/super-admin/scheduling-intelligence'
-    | '/super-admin/schools'
-    | '/super-admin/settings'
-    | '/super-admin/staff'
-    | '/super-admin/support'
-    | '/super-admin/tenants'
-    | '/super-admin/tiers'
-    | '/super-admin/trust-fabric'
-    | '/super-admin/worker-missions'
-    | '/super-admin/workspace-projection'
-    | '/teacher/ai-assistant'
-    | '/teacher/attendance'
-    | '/teacher/attendance-week'
-    | '/teacher/calendar'
-    | '/teacher/class-intelligence'
-    | '/teacher/dashboard'
-    | '/teacher/gradebook'
-    | '/teacher/grades'
-    | '/teacher/lesson-notes'
-    | '/teacher/lesson-plans'
-    | '/teacher/news'
-    | '/teacher/sign-in'
-    | '/teacher/timetable'
-    | '/workspace/settings'
-    | '/command-centre/'
+    | '/console/'
+    | '/home/'
+    | '/company/about'
+    | '/company/careers'
+    | '/company/partners'
+    | '/company/vision'
+    | '/help/$slug'
+    | '/insights/$slug'
+    | '/legal/acceptable-use'
+    | '/legal/contact'
+    | '/legal/cookies'
+    | '/legal/data-processing'
+    | '/legal/privacy'
+    | '/legal/subprocessors'
+    | '/legal/terms'
+    | '/product/ai-workforce'
+    | '/product/architecture'
+    | '/product/digital-twins'
+    | '/product/institutional-computing'
+    | '/product/intelligence'
+    | '/security/disclosure'
+    | '/solutions/education'
+    | '/solutions/enterprise'
+    | '/solutions/research'
+    | '/api/public/webauthn'
+    | '/console/activity/admin'
+    | '/console/activity/billing'
+    | '/console/activity/incidents'
+    | '/console/activity/logs'
+    | '/console/activity/metrics'
+    | '/console/activity/security'
+    | '/console/activity/tickets'
+    | '/console/organizations/$organizationId'
+    | '/console/organizations/new'
+    | '/console/runtimes/scholar'
+    | '/console/team/access'
+    | '/console/team/invitations'
+    | '/console/team/roles'
+    | '/console/team/suspended'
+    | '/console/workspaces/$workspaceId'
+    | '/home/s/$section'
+    | '/help/'
+    | '/insights/'
+    | '/product/'
+    | '/security/'
+    | '/solutions/'
+    | '/console/activity/'
+    | '/console/organizations/'
+    | '/console/runtimes/'
+    | '/console/team/'
+    | '/console/workspaces/'
+    | '/insights/category/$slug'
     | '/api/public/audit/password-reset'
     | '/api/public/cron/integrations-sync'
     | '/api/public/cron/wallet-topup-reconcile'
@@ -2487,226 +1183,101 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/admissions'
     | '/auth'
-    | '/blog'
     | '/forgot-password'
-    | '/foundation-loop'
-    | '/gov-invite'
-    | '/head'
     | '/health.json'
     | '/login'
     | '/manifest.webmanifest'
-    | '/marketplace'
-    | '/platform'
-    | '/privacy'
+    | '/onboarding'
     | '/reset-password'
     | '/robots.txt'
     | '/rss.xml'
-    | '/rules'
-    | '/scholar-foundation-loop'
     | '/site-icon.svg'
     | '/sitemap.xml'
-    | '/ux-lab'
-    | '/admin'
-    | '/bursar'
-    | '/driver'
-    | '/hq'
-    | '/parent'
-    | '/student'
-    | '/super-admin'
-    | '/teacher'
     | '/about'
+    | '/accessibility'
     | '/check-result'
     | '/contact'
     | '/coregrid'
+    | '/developers'
+    | '/docs'
+    | '/faq'
+    | '/integrations'
     | '/privacy-policy'
     | '/request-demo'
     | '/sherivs'
     | '/siwes-verify'
     | '/status'
+    | '/support'
     | '/terms'
+    | '/trust'
     | '/verify-transcript'
-    | '/consent'
-    | '/gov-dashboard'
-    | '/internal'
-    | '/messages'
-    | '/mfa'
-    | '/notifications'
-    | '/onboarding'
-    | '/organizations'
-    | '/runtime'
-    | '/settings'
-    | '/welcome'
-    | '/workspace'
-    | '/blog/$slug'
-    | '/events/$id'
-    | '/gov/about'
-    | '/gov/attendance'
-    | '/gov/circulars'
-    | '/gov/inspections'
-    | '/gov/postings'
-    | '/gov/schools'
-    | '/gov/staffing'
-    | '/news/$id'
+    | '/.well-known/apple-app-site-association'
+    | '/.well-known/assetlinks.json'
+    | '/api/webauthn'
+    | '/console/account'
+    | '/console/help'
+    | '/console/settings'
+    | '/home/ai'
+    | '/home/help'
+    | '/home/notifications'
+    | '/home/profile'
+    | '/home/security'
+    | '/home/settings'
     | '/pages/$slug'
-    | '/platform/org'
     | '/posts/$post'
-    | '/reality/$class'
-    | '/gov'
-    | '/group'
-    | '/admin/academic-standing'
-    | '/admin/admissions'
-    | '/admin/admissions-funnel'
-    | '/admin/ai-assistant'
-    | '/admin/analytics'
-    | '/admin/api-keys'
-    | '/admin/attendance'
-    | '/admin/attendance-conflicts'
-    | '/admin/audit'
-    | '/admin/audit-logs'
-    | '/admin/broadcast'
-    | '/admin/bus-management'
-    | '/admin/buses'
-    | '/admin/calendar'
-    | '/admin/campuses'
-    | '/admin/classes'
-    | '/admin/cms'
-    | '/admin/dashboard'
-    | '/admin/digital-twin'
-    | '/admin/discipline'
-    | '/admin/domains'
-    | '/admin/early-warning'
-    | '/admin/education-reality'
-    | '/admin/enterprise-checklist'
-    | '/admin/exam-bodies'
-    | '/admin/examinations'
-    | '/admin/exams'
-    | '/admin/expenses'
-    | '/admin/extracurricular'
-    | '/admin/facilities'
-    | '/admin/features'
-    | '/admin/fee-relief'
-    | '/admin/fees'
-    | '/admin/fees-defaulters'
-    | '/admin/financial-reports'
-    | '/admin/geofence-settings'
-    | '/admin/government'
-    | '/admin/grades'
-    | '/admin/heads'
-    | '/admin/health'
-    | '/admin/health-certificate'
-    | '/admin/hostel'
-    | '/admin/hr'
-    | '/admin/hr-payroll'
-    | '/admin/identities'
-    | '/admin/integrations'
-    | '/admin/intelligence'
-    | '/admin/intelligence-ai'
-    | '/admin/intelligence-operations'
-    | '/admin/intelligence-parents'
-    | '/admin/intelligence-students'
-    | '/admin/intelligence-teachers'
-    | '/admin/inventory'
-    | '/admin/lesson-plans'
-    | '/admin/library'
-    | '/admin/locked-accounts'
-    | '/admin/messages-log'
-    | '/admin/ndpa'
-    | '/admin/news'
-    | '/admin/onboarding-interview'
-    | '/admin/operations'
-    | '/admin/payroll'
-    | '/admin/report-cards'
-    | '/admin/role-scopes'
-    | '/admin/roles'
-    | '/admin/safeguards'
-    | '/admin/school-group'
-    | '/admin/school-profile'
-    | '/admin/session-rollover'
-    | '/admin/settings'
-    | '/admin/staff-accounts'
-    | '/admin/stores-assets'
-    | '/admin/structure'
-    | '/admin/student-intelligence'
-    | '/admin/students'
-    | '/admin/support'
-    | '/admin/teacher-intelligence'
-    | '/admin/teachers'
-    | '/admin/timetable'
-    | '/admin/transfers-custody'
-    | '/admin/visitors'
-    | '/admin/wallet'
-    | '/admin/website'
-    | '/bursar/dashboard'
-    | '/bursar/fee-plans'
-    | '/bursar/financial-intelligence'
-    | '/bursar/receipts'
-    | '/bursar/reconciliation'
-    | '/bursar/reports'
-    | '/driver/dashboard'
-    | '/driver/students'
-    | '/hq/dashboard'
-    | '/hq/finance'
-    | '/hq/reports'
-    | '/internal/access-review'
-    | '/internal/gov-access'
-    | '/internal/support'
-    | '/parent/ai-assistant'
-    | '/parent/attendance'
-    | '/parent/bus-tracking'
-    | '/parent/calendar'
-    | '/parent/children'
-    | '/parent/dashboard'
-    | '/parent/fees'
-    | '/parent/grades'
-    | '/parent/news'
-    | '/parent/report-cards'
-    | '/student/ai-tutor'
-    | '/student/attendance'
-    | '/student/calendar'
-    | '/student/cbt'
-    | '/student/course-registration'
-    | '/student/dashboard'
-    | '/student/fees'
-    | '/student/grades'
-    | '/student/news'
-    | '/student/report-card'
-    | '/student/timetable'
-    | '/super-admin/academic-intelligence'
-    | '/super-admin/agent-governance'
-    | '/super-admin/billing'
-    | '/super-admin/communication-steward'
-    | '/super-admin/dashboard'
-    | '/super-admin/financial-operations'
-    | '/super-admin/logs'
-    | '/super-admin/platform-config'
-    | '/super-admin/runtime-contracts'
-    | '/super-admin/scheduling-intelligence'
-    | '/super-admin/schools'
-    | '/super-admin/settings'
-    | '/super-admin/staff'
-    | '/super-admin/support'
-    | '/super-admin/tenants'
-    | '/super-admin/tiers'
-    | '/super-admin/trust-fabric'
-    | '/super-admin/worker-missions'
-    | '/super-admin/workspace-projection'
-    | '/teacher/ai-assistant'
-    | '/teacher/attendance'
-    | '/teacher/attendance-week'
-    | '/teacher/calendar'
-    | '/teacher/class-intelligence'
-    | '/teacher/dashboard'
-    | '/teacher/gradebook'
-    | '/teacher/grades'
-    | '/teacher/lesson-notes'
-    | '/teacher/lesson-plans'
-    | '/teacher/news'
-    | '/teacher/sign-in'
-    | '/teacher/timetable'
-    | '/workspace/settings'
-    | '/command-centre'
+    | '/console'
+    | '/home'
+    | '/company/about'
+    | '/company/careers'
+    | '/company/partners'
+    | '/company/vision'
+    | '/help/$slug'
+    | '/insights/$slug'
+    | '/legal/acceptable-use'
+    | '/legal/contact'
+    | '/legal/cookies'
+    | '/legal/data-processing'
+    | '/legal/privacy'
+    | '/legal/subprocessors'
+    | '/legal/terms'
+    | '/product/ai-workforce'
+    | '/product/architecture'
+    | '/product/digital-twins'
+    | '/product/institutional-computing'
+    | '/product/intelligence'
+    | '/security/disclosure'
+    | '/solutions/education'
+    | '/solutions/enterprise'
+    | '/solutions/research'
+    | '/api/public/webauthn'
+    | '/console/activity/admin'
+    | '/console/activity/billing'
+    | '/console/activity/incidents'
+    | '/console/activity/logs'
+    | '/console/activity/metrics'
+    | '/console/activity/security'
+    | '/console/activity/tickets'
+    | '/console/organizations/$organizationId'
+    | '/console/organizations/new'
+    | '/console/runtimes/scholar'
+    | '/console/team/access'
+    | '/console/team/invitations'
+    | '/console/team/roles'
+    | '/console/team/suspended'
+    | '/console/workspaces/$workspaceId'
+    | '/home/s/$section'
+    | '/help'
+    | '/insights'
+    | '/product'
+    | '/security'
+    | '/solutions'
+    | '/console/activity'
+    | '/console/organizations'
+    | '/console/runtimes'
+    | '/console/team'
+    | '/console/workspaces'
+    | '/insights/category/$slug'
     | '/api/public/audit/password-reset'
     | '/api/public/cron/integrations-sync'
     | '/api/public/cron/wallet-topup-reconcile'
@@ -2718,229 +1289,113 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/(site)'
-    | '/_authenticated'
-    | '/gov'
-    | '/admissions'
+    | '/console'
+    | '/home'
     | '/auth'
-    | '/blog'
     | '/forgot-password'
-    | '/foundation-loop'
-    | '/gov-invite'
-    | '/head'
     | '/health.json'
     | '/login'
     | '/manifest.webmanifest'
-    | '/marketplace'
-    | '/platform'
-    | '/privacy'
+    | '/onboarding'
     | '/reset-password'
     | '/robots.txt'
     | '/rss.xml'
-    | '/rules'
-    | '/scholar-foundation-loop'
     | '/site-icon.svg'
     | '/sitemap.xml'
-    | '/ux-lab'
-    | '/_authenticated/admin'
-    | '/_authenticated/bursar'
-    | '/_authenticated/command-centre'
-    | '/_authenticated/driver'
-    | '/_authenticated/hq'
-    | '/_authenticated/parent'
-    | '/_authenticated/student'
-    | '/_authenticated/super-admin'
-    | '/_authenticated/teacher'
+    | '/console/activity'
+    | '/console/organizations'
+    | '/console/runtimes'
+    | '/console/team'
+    | '/console/workspaces'
     | '/(site)/about'
+    | '/(site)/accessibility'
     | '/(site)/check-result'
     | '/(site)/contact'
     | '/(site)/coregrid'
+    | '/(site)/developers'
+    | '/(site)/docs'
+    | '/(site)/faq'
+    | '/(site)/help'
+    | '/(site)/insights'
+    | '/(site)/integrations'
     | '/(site)/privacy-policy'
+    | '/(site)/product'
     | '/(site)/request-demo'
+    | '/(site)/security'
     | '/(site)/sherivs'
     | '/(site)/siwes-verify'
+    | '/(site)/solutions'
     | '/(site)/status'
+    | '/(site)/support'
     | '/(site)/terms'
+    | '/(site)/trust'
     | '/(site)/verify-transcript'
-    | '/_authenticated/consent'
-    | '/_authenticated/gov-dashboard'
-    | '/_authenticated/internal'
-    | '/_authenticated/messages'
-    | '/_authenticated/mfa'
-    | '/_authenticated/notifications'
-    | '/_authenticated/onboarding'
-    | '/_authenticated/organizations'
-    | '/_authenticated/runtime'
-    | '/_authenticated/settings'
-    | '/_authenticated/welcome'
-    | '/_authenticated/workspace'
-    | '/blog/$slug'
-    | '/events/$id'
-    | '/gov/about'
-    | '/gov/attendance'
-    | '/gov/circulars'
-    | '/gov/inspections'
-    | '/gov/postings'
-    | '/gov/schools'
-    | '/gov/staffing'
-    | '/news/$id'
+    | '/.well-known/apple-app-site-association'
+    | '/.well-known/assetlinks.json'
+    | '/api/webauthn'
+    | '/console/account'
+    | '/console/help'
+    | '/console/settings'
+    | '/home/ai'
+    | '/home/help'
+    | '/home/notifications'
+    | '/home/profile'
+    | '/home/security'
+    | '/home/settings'
     | '/pages/$slug'
-    | '/platform/org'
     | '/posts/$post'
-    | '/reality/$class'
-    | '/gov/'
-    | '/group/'
-    | '/_authenticated/admin/academic-standing'
-    | '/_authenticated/admin/admissions'
-    | '/_authenticated/admin/admissions-funnel'
-    | '/_authenticated/admin/ai-assistant'
-    | '/_authenticated/admin/analytics'
-    | '/_authenticated/admin/api-keys'
-    | '/_authenticated/admin/attendance'
-    | '/_authenticated/admin/attendance-conflicts'
-    | '/_authenticated/admin/audit'
-    | '/_authenticated/admin/audit-logs'
-    | '/_authenticated/admin/broadcast'
-    | '/_authenticated/admin/bus-management'
-    | '/_authenticated/admin/buses'
-    | '/_authenticated/admin/calendar'
-    | '/_authenticated/admin/campuses'
-    | '/_authenticated/admin/classes'
-    | '/_authenticated/admin/cms'
-    | '/_authenticated/admin/dashboard'
-    | '/_authenticated/admin/digital-twin'
-    | '/_authenticated/admin/discipline'
-    | '/_authenticated/admin/domains'
-    | '/_authenticated/admin/early-warning'
-    | '/_authenticated/admin/education-reality'
-    | '/_authenticated/admin/enterprise-checklist'
-    | '/_authenticated/admin/exam-bodies'
-    | '/_authenticated/admin/examinations'
-    | '/_authenticated/admin/exams'
-    | '/_authenticated/admin/expenses'
-    | '/_authenticated/admin/extracurricular'
-    | '/_authenticated/admin/facilities'
-    | '/_authenticated/admin/features'
-    | '/_authenticated/admin/fee-relief'
-    | '/_authenticated/admin/fees'
-    | '/_authenticated/admin/fees-defaulters'
-    | '/_authenticated/admin/financial-reports'
-    | '/_authenticated/admin/geofence-settings'
-    | '/_authenticated/admin/government'
-    | '/_authenticated/admin/grades'
-    | '/_authenticated/admin/heads'
-    | '/_authenticated/admin/health'
-    | '/_authenticated/admin/health-certificate'
-    | '/_authenticated/admin/hostel'
-    | '/_authenticated/admin/hr'
-    | '/_authenticated/admin/hr-payroll'
-    | '/_authenticated/admin/identities'
-    | '/_authenticated/admin/integrations'
-    | '/_authenticated/admin/intelligence'
-    | '/_authenticated/admin/intelligence-ai'
-    | '/_authenticated/admin/intelligence-operations'
-    | '/_authenticated/admin/intelligence-parents'
-    | '/_authenticated/admin/intelligence-students'
-    | '/_authenticated/admin/intelligence-teachers'
-    | '/_authenticated/admin/inventory'
-    | '/_authenticated/admin/lesson-plans'
-    | '/_authenticated/admin/library'
-    | '/_authenticated/admin/locked-accounts'
-    | '/_authenticated/admin/messages-log'
-    | '/_authenticated/admin/ndpa'
-    | '/_authenticated/admin/news'
-    | '/_authenticated/admin/onboarding-interview'
-    | '/_authenticated/admin/operations'
-    | '/_authenticated/admin/payroll'
-    | '/_authenticated/admin/report-cards'
-    | '/_authenticated/admin/role-scopes'
-    | '/_authenticated/admin/roles'
-    | '/_authenticated/admin/safeguards'
-    | '/_authenticated/admin/school-group'
-    | '/_authenticated/admin/school-profile'
-    | '/_authenticated/admin/session-rollover'
-    | '/_authenticated/admin/settings'
-    | '/_authenticated/admin/staff-accounts'
-    | '/_authenticated/admin/stores-assets'
-    | '/_authenticated/admin/structure'
-    | '/_authenticated/admin/student-intelligence'
-    | '/_authenticated/admin/students'
-    | '/_authenticated/admin/support'
-    | '/_authenticated/admin/teacher-intelligence'
-    | '/_authenticated/admin/teachers'
-    | '/_authenticated/admin/timetable'
-    | '/_authenticated/admin/transfers-custody'
-    | '/_authenticated/admin/visitors'
-    | '/_authenticated/admin/wallet'
-    | '/_authenticated/admin/website'
-    | '/_authenticated/bursar/dashboard'
-    | '/_authenticated/bursar/fee-plans'
-    | '/_authenticated/bursar/financial-intelligence'
-    | '/_authenticated/bursar/receipts'
-    | '/_authenticated/bursar/reconciliation'
-    | '/_authenticated/bursar/reports'
-    | '/_authenticated/driver/dashboard'
-    | '/_authenticated/driver/students'
-    | '/_authenticated/hq/dashboard'
-    | '/_authenticated/hq/finance'
-    | '/_authenticated/hq/reports'
-    | '/_authenticated/internal_/access-review'
-    | '/_authenticated/internal_/gov-access'
-    | '/_authenticated/internal_/support'
-    | '/_authenticated/parent/ai-assistant'
-    | '/_authenticated/parent/attendance'
-    | '/_authenticated/parent/bus-tracking'
-    | '/_authenticated/parent/calendar'
-    | '/_authenticated/parent/children'
-    | '/_authenticated/parent/dashboard'
-    | '/_authenticated/parent/fees'
-    | '/_authenticated/parent/grades'
-    | '/_authenticated/parent/news'
-    | '/_authenticated/parent/report-cards'
-    | '/_authenticated/student/ai-tutor'
-    | '/_authenticated/student/attendance'
-    | '/_authenticated/student/calendar'
-    | '/_authenticated/student/cbt'
-    | '/_authenticated/student/course-registration'
-    | '/_authenticated/student/dashboard'
-    | '/_authenticated/student/fees'
-    | '/_authenticated/student/grades'
-    | '/_authenticated/student/news'
-    | '/_authenticated/student/report-card'
-    | '/_authenticated/student/timetable'
-    | '/_authenticated/super-admin/academic-intelligence'
-    | '/_authenticated/super-admin/agent-governance'
-    | '/_authenticated/super-admin/billing'
-    | '/_authenticated/super-admin/communication-steward'
-    | '/_authenticated/super-admin/dashboard'
-    | '/_authenticated/super-admin/financial-operations'
-    | '/_authenticated/super-admin/logs'
-    | '/_authenticated/super-admin/platform-config'
-    | '/_authenticated/super-admin/runtime-contracts'
-    | '/_authenticated/super-admin/scheduling-intelligence'
-    | '/_authenticated/super-admin/schools'
-    | '/_authenticated/super-admin/settings'
-    | '/_authenticated/super-admin/staff'
-    | '/_authenticated/super-admin/support'
-    | '/_authenticated/super-admin/tenants'
-    | '/_authenticated/super-admin/tiers'
-    | '/_authenticated/super-admin/trust-fabric'
-    | '/_authenticated/super-admin/worker-missions'
-    | '/_authenticated/super-admin/workspace-projection'
-    | '/_authenticated/teacher/ai-assistant'
-    | '/_authenticated/teacher/attendance'
-    | '/_authenticated/teacher/attendance-week'
-    | '/_authenticated/teacher/calendar'
-    | '/_authenticated/teacher/class-intelligence'
-    | '/_authenticated/teacher/dashboard'
-    | '/_authenticated/teacher/gradebook'
-    | '/_authenticated/teacher/grades'
-    | '/_authenticated/teacher/lesson-notes'
-    | '/_authenticated/teacher/lesson-plans'
-    | '/_authenticated/teacher/news'
-    | '/_authenticated/teacher/sign-in'
-    | '/_authenticated/teacher/timetable'
-    | '/_authenticated/workspace_/settings'
-    | '/_authenticated/command-centre/'
+    | '/console/'
+    | '/home/'
+    | '/(site)/company/about'
+    | '/(site)/company/careers'
+    | '/(site)/company/partners'
+    | '/(site)/company/vision'
+    | '/(site)/help/$slug'
+    | '/(site)/insights/$slug'
+    | '/(site)/legal/acceptable-use'
+    | '/(site)/legal/contact'
+    | '/(site)/legal/cookies'
+    | '/(site)/legal/data-processing'
+    | '/(site)/legal/privacy'
+    | '/(site)/legal/subprocessors'
+    | '/(site)/legal/terms'
+    | '/(site)/product/ai-workforce'
+    | '/(site)/product/architecture'
+    | '/(site)/product/digital-twins'
+    | '/(site)/product/institutional-computing'
+    | '/(site)/product/intelligence'
+    | '/(site)/security/disclosure'
+    | '/(site)/solutions/education'
+    | '/(site)/solutions/enterprise'
+    | '/(site)/solutions/research'
+    | '/api/public/webauthn'
+    | '/console/activity/admin'
+    | '/console/activity/billing'
+    | '/console/activity/incidents'
+    | '/console/activity/logs'
+    | '/console/activity/metrics'
+    | '/console/activity/security'
+    | '/console/activity/tickets'
+    | '/console/organizations/$organizationId'
+    | '/console/organizations/new'
+    | '/console/runtimes/scholar'
+    | '/console/team/access'
+    | '/console/team/invitations'
+    | '/console/team/roles'
+    | '/console/team/suspended'
+    | '/console/workspaces/$workspaceId'
+    | '/home/s/$section'
+    | '/(site)/help/'
+    | '/(site)/insights/'
+    | '/(site)/product/'
+    | '/(site)/security/'
+    | '/(site)/solutions/'
+    | '/console/activity/'
+    | '/console/organizations/'
+    | '/console/runtimes/'
+    | '/console/team/'
+    | '/console/workspaces/'
+    | '/(site)/insights/category/$slug'
     | '/api/public/audit/password-reset'
     | '/api/public/cron/integrations-sync'
     | '/api/public/cron/wallet-topup-reconcile'
@@ -2953,35 +1408,25 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   siteRouteRoute: typeof siteRouteRouteWithChildren
-  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
-  GovRouteRoute: typeof GovRouteRouteWithChildren
-  AdmissionsRoute: typeof AdmissionsRoute
+  ConsoleRouteRoute: typeof ConsoleRouteRouteWithChildren
+  HomeRouteRoute: typeof HomeRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
-  BlogRoute: typeof BlogRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
-  FoundationLoopRoute: typeof FoundationLoopRoute
-  GovInviteRoute: typeof GovInviteRoute
-  HeadRoute: typeof HeadRoute
   HealthDotjsonRoute: typeof HealthDotjsonRoute
   LoginRoute: typeof LoginRoute
   ManifestDotwebmanifestRoute: typeof ManifestDotwebmanifestRoute
-  MarketplaceRoute: typeof MarketplaceRoute
-  PlatformRoute: typeof PlatformRouteWithChildren
-  PrivacyRoute: typeof PrivacyRoute
+  OnboardingRoute: typeof OnboardingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   RssDotxmlRoute: typeof RssDotxmlRoute
-  RulesRoute: typeof RulesRoute
-  ScholarFoundationLoopRoute: typeof ScholarFoundationLoopRoute
   SiteIconDotsvgRoute: typeof SiteIconDotsvgRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
-  UxLabRoute: typeof UxLabRoute
-  EventsIdRoute: typeof EventsIdRoute
-  NewsIdRoute: typeof NewsIdRoute
+  DotwellKnownAppleAppSiteAssociationRoute: typeof DotwellKnownAppleAppSiteAssociationRoute
+  DotwellKnownAssetlinksDotjsonRoute: typeof DotwellKnownAssetlinksDotjsonRoute
+  ApiWebauthnRoute: typeof ApiWebauthnRoute
   PagesSlugRoute: typeof PagesSlugRoute
   PostsPostRoute: typeof PostsPostRoute
-  RealityClassRoute: typeof RealityClassRoute
-  GroupIndexRoute: typeof GroupIndexRoute
+  ApiPublicWebauthnRoute: typeof ApiPublicWebauthnRoute
   ApiPublicAuditPasswordResetRoute: typeof ApiPublicAuditPasswordResetRoute
   ApiPublicCronIntegrationsSyncRoute: typeof ApiPublicCronIntegrationsSyncRoute
   ApiPublicCronWalletTopupReconcileRoute: typeof ApiPublicCronWalletTopupReconcileRoute
@@ -3007,20 +1452,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof siteRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admissions': {
-      id: '/admissions'
-      path: '/admissions'
-      fullPath: '/admissions'
-      preLoaderRoute: typeof AdmissionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -3028,11 +1459,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/blog': {
-      id: '/blog'
-      path: '/blog'
-      fullPath: '/blog'
-      preLoaderRoute: typeof BlogRouteImport
+    '/console': {
+      id: '/console'
+      path: '/console'
+      fullPath: '/console'
+      preLoaderRoute: typeof ConsoleRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -3042,39 +1473,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/foundation-loop': {
-      id: '/foundation-loop'
-      path: '/foundation-loop'
-      fullPath: '/foundation-loop'
-      preLoaderRoute: typeof FoundationLoopRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/gov': {
-      id: '/gov'
-      path: '/gov'
-      fullPath: '/gov'
-      preLoaderRoute: typeof GovRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/gov-invite': {
-      id: '/gov-invite'
-      path: '/gov-invite'
-      fullPath: '/gov-invite'
-      preLoaderRoute: typeof GovInviteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/head': {
-      id: '/head'
-      path: '/head'
-      fullPath: '/head'
-      preLoaderRoute: typeof HeadRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/health.json': {
       id: '/health.json'
       path: '/health.json'
       fullPath: '/health.json'
       preLoaderRoute: typeof HealthDotjsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/home': {
+      id: '/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof HomeRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -3091,25 +1501,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManifestDotwebmanifestRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/marketplace': {
-      id: '/marketplace'
-      path: '/marketplace'
-      fullPath: '/marketplace'
-      preLoaderRoute: typeof MarketplaceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/platform': {
-      id: '/platform'
-      path: '/platform'
-      fullPath: '/platform'
-      preLoaderRoute: typeof PlatformRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -3133,20 +1529,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RssDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/rules': {
-      id: '/rules'
-      path: '/rules'
-      fullPath: '/rules'
-      preLoaderRoute: typeof RulesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/scholar-foundation-loop': {
-      id: '/scholar-foundation-loop'
-      path: '/scholar-foundation-loop'
-      fullPath: '/scholar-foundation-loop'
-      preLoaderRoute: typeof ScholarFoundationLoopRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/site-icon.svg': {
       id: '/site-icon.svg'
       path: '/site-icon.svg'
@@ -3161,18 +1543,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/ux-lab': {
-      id: '/ux-lab'
-      path: '/ux-lab'
-      fullPath: '/ux-lab'
-      preLoaderRoute: typeof UxLabRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/(site)/about': {
       id: '/(site)/about'
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof siteAboutRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/accessibility': {
+      id: '/(site)/accessibility'
+      path: '/accessibility'
+      fullPath: '/accessibility'
+      preLoaderRoute: typeof siteAccessibilityRouteImport
       parentRoute: typeof siteRouteRoute
     }
     '/(site)/check-result': {
@@ -3196,6 +1578,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof siteCoregridRouteImport
       parentRoute: typeof siteRouteRoute
     }
+    '/(site)/developers': {
+      id: '/(site)/developers'
+      path: '/developers'
+      fullPath: '/developers'
+      preLoaderRoute: typeof siteDevelopersRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/docs': {
+      id: '/(site)/docs'
+      path: '/docs'
+      fullPath: '/docs'
+      preLoaderRoute: typeof siteDocsRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/faq': {
+      id: '/(site)/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof siteFaqRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/help': {
+      id: '/(site)/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof siteHelpRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/insights': {
+      id: '/(site)/insights'
+      path: '/insights'
+      fullPath: '/insights'
+      preLoaderRoute: typeof siteInsightsRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/integrations': {
+      id: '/(site)/integrations'
+      path: '/integrations'
+      fullPath: '/integrations'
+      preLoaderRoute: typeof siteIntegrationsRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
     '/(site)/privacy-policy': {
       id: '/(site)/privacy-policy'
       path: '/privacy-policy'
@@ -3203,11 +1627,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof sitePrivacyPolicyRouteImport
       parentRoute: typeof siteRouteRoute
     }
+    '/(site)/product': {
+      id: '/(site)/product'
+      path: '/product'
+      fullPath: '/product'
+      preLoaderRoute: typeof siteProductRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
     '/(site)/request-demo': {
       id: '/(site)/request-demo'
       path: '/request-demo'
       fullPath: '/request-demo'
       preLoaderRoute: typeof siteRequestDemoRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/security': {
+      id: '/(site)/security'
+      path: '/security'
+      fullPath: '/security'
+      preLoaderRoute: typeof siteSecurityRouteImport
       parentRoute: typeof siteRouteRoute
     }
     '/(site)/sherivs': {
@@ -3224,11 +1662,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof siteSiwesVerifyRouteImport
       parentRoute: typeof siteRouteRoute
     }
+    '/(site)/solutions': {
+      id: '/(site)/solutions'
+      path: '/solutions'
+      fullPath: '/solutions'
+      preLoaderRoute: typeof siteSolutionsRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
     '/(site)/status': {
       id: '/(site)/status'
       path: '/status'
       fullPath: '/status'
       preLoaderRoute: typeof siteStatusRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/support': {
+      id: '/(site)/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof siteSupportRouteImport
       parentRoute: typeof siteRouteRoute
     }
     '/(site)/terms': {
@@ -3238,6 +1690,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof siteTermsRouteImport
       parentRoute: typeof siteRouteRoute
     }
+    '/(site)/trust': {
+      id: '/(site)/trust'
+      path: '/trust'
+      fullPath: '/trust'
+      preLoaderRoute: typeof siteTrustRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
     '/(site)/verify-transcript': {
       id: '/(site)/verify-transcript'
       path: '/verify-transcript'
@@ -3245,236 +1704,138 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof siteVerifyTranscriptRouteImport
       parentRoute: typeof siteRouteRoute
     }
-    '/_authenticated/admin': {
-      id: '/_authenticated/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AuthenticatedAdminRouteRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/bursar': {
-      id: '/_authenticated/bursar'
-      path: '/bursar'
-      fullPath: '/bursar'
-      preLoaderRoute: typeof AuthenticatedBursarRouteRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/command-centre': {
-      id: '/_authenticated/command-centre'
-      path: '/command-centre'
-      fullPath: '/command-centre'
-      preLoaderRoute: typeof AuthenticatedCommandCentreRouteRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/consent': {
-      id: '/_authenticated/consent'
-      path: '/consent'
-      fullPath: '/consent'
-      preLoaderRoute: typeof AuthenticatedConsentRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/driver': {
-      id: '/_authenticated/driver'
-      path: '/driver'
-      fullPath: '/driver'
-      preLoaderRoute: typeof AuthenticatedDriverRouteRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/gov-dashboard': {
-      id: '/_authenticated/gov-dashboard'
-      path: '/gov-dashboard'
-      fullPath: '/gov-dashboard'
-      preLoaderRoute: typeof AuthenticatedGovDashboardRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/hq': {
-      id: '/_authenticated/hq'
-      path: '/hq'
-      fullPath: '/hq'
-      preLoaderRoute: typeof AuthenticatedHqRouteRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/internal': {
-      id: '/_authenticated/internal'
-      path: '/internal'
-      fullPath: '/internal'
-      preLoaderRoute: typeof AuthenticatedInternalRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/messages': {
-      id: '/_authenticated/messages'
-      path: '/messages'
-      fullPath: '/messages'
-      preLoaderRoute: typeof AuthenticatedMessagesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/mfa': {
-      id: '/_authenticated/mfa'
-      path: '/mfa'
-      fullPath: '/mfa'
-      preLoaderRoute: typeof AuthenticatedMfaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/notifications': {
-      id: '/_authenticated/notifications'
-      path: '/notifications'
-      fullPath: '/notifications'
-      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/onboarding': {
-      id: '/_authenticated/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/organizations': {
-      id: '/_authenticated/organizations'
-      path: '/organizations'
-      fullPath: '/organizations'
-      preLoaderRoute: typeof AuthenticatedOrganizationsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/parent': {
-      id: '/_authenticated/parent'
-      path: '/parent'
-      fullPath: '/parent'
-      preLoaderRoute: typeof AuthenticatedParentRouteRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/runtime': {
-      id: '/_authenticated/runtime'
-      path: '/runtime'
-      fullPath: '/runtime'
-      preLoaderRoute: typeof AuthenticatedRuntimeRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/settings': {
-      id: '/_authenticated/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/student': {
-      id: '/_authenticated/student'
-      path: '/student'
-      fullPath: '/student'
-      preLoaderRoute: typeof AuthenticatedStudentRouteRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/super-admin': {
-      id: '/_authenticated/super-admin'
-      path: '/super-admin'
-      fullPath: '/super-admin'
-      preLoaderRoute: typeof AuthenticatedSuperAdminRouteRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/teacher': {
-      id: '/_authenticated/teacher'
-      path: '/teacher'
-      fullPath: '/teacher'
-      preLoaderRoute: typeof AuthenticatedTeacherRouteRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/welcome': {
-      id: '/_authenticated/welcome'
-      path: '/welcome'
-      fullPath: '/welcome'
-      preLoaderRoute: typeof AuthenticatedWelcomeRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/workspace': {
-      id: '/_authenticated/workspace'
-      path: '/workspace'
-      fullPath: '/workspace'
-      preLoaderRoute: typeof AuthenticatedWorkspaceRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/blog/$slug': {
-      id: '/blog/$slug'
-      path: '/$slug'
-      fullPath: '/blog/$slug'
-      preLoaderRoute: typeof BlogSlugRouteImport
-      parentRoute: typeof BlogRoute
-    }
-    '/events/$id': {
-      id: '/events/$id'
-      path: '/events/$id'
-      fullPath: '/events/$id'
-      preLoaderRoute: typeof EventsIdRouteImport
+    '/.well-known/apple-app-site-association': {
+      id: '/.well-known/apple-app-site-association'
+      path: '/.well-known/apple-app-site-association'
+      fullPath: '/.well-known/apple-app-site-association'
+      preLoaderRoute: typeof DotwellKnownAppleAppSiteAssociationRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/gov/': {
-      id: '/gov/'
+    '/.well-known/assetlinks.json': {
+      id: '/.well-known/assetlinks.json'
+      path: '/.well-known/assetlinks.json'
+      fullPath: '/.well-known/assetlinks.json'
+      preLoaderRoute: typeof DotwellKnownAssetlinksDotjsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/webauthn': {
+      id: '/api/webauthn'
+      path: '/api/webauthn'
+      fullPath: '/api/webauthn'
+      preLoaderRoute: typeof ApiWebauthnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/console/': {
+      id: '/console/'
       path: '/'
-      fullPath: '/gov/'
-      preLoaderRoute: typeof GovIndexRouteImport
-      parentRoute: typeof GovRouteRoute
+      fullPath: '/console/'
+      preLoaderRoute: typeof ConsoleIndexRouteImport
+      parentRoute: typeof ConsoleRouteRoute
     }
-    '/gov/about': {
-      id: '/gov/about'
-      path: '/about'
-      fullPath: '/gov/about'
-      preLoaderRoute: typeof GovAboutRouteImport
-      parentRoute: typeof GovRouteRoute
+    '/console/account': {
+      id: '/console/account'
+      path: '/account'
+      fullPath: '/console/account'
+      preLoaderRoute: typeof ConsoleAccountRouteImport
+      parentRoute: typeof ConsoleRouteRoute
     }
-    '/gov/attendance': {
-      id: '/gov/attendance'
-      path: '/attendance'
-      fullPath: '/gov/attendance'
-      preLoaderRoute: typeof GovAttendanceRouteImport
-      parentRoute: typeof GovRouteRoute
+    '/console/activity': {
+      id: '/console/activity'
+      path: '/activity'
+      fullPath: '/console/activity'
+      preLoaderRoute: typeof ConsoleActivityRouteRouteImport
+      parentRoute: typeof ConsoleRouteRoute
     }
-    '/gov/circulars': {
-      id: '/gov/circulars'
-      path: '/circulars'
-      fullPath: '/gov/circulars'
-      preLoaderRoute: typeof GovCircularsRouteImport
-      parentRoute: typeof GovRouteRoute
+    '/console/help': {
+      id: '/console/help'
+      path: '/help'
+      fullPath: '/console/help'
+      preLoaderRoute: typeof ConsoleHelpRouteImport
+      parentRoute: typeof ConsoleRouteRoute
     }
-    '/gov/inspections': {
-      id: '/gov/inspections'
-      path: '/inspections'
-      fullPath: '/gov/inspections'
-      preLoaderRoute: typeof GovInspectionsRouteImport
-      parentRoute: typeof GovRouteRoute
+    '/console/organizations': {
+      id: '/console/organizations'
+      path: '/organizations'
+      fullPath: '/console/organizations'
+      preLoaderRoute: typeof ConsoleOrganizationsRouteRouteImport
+      parentRoute: typeof ConsoleRouteRoute
     }
-    '/gov/postings': {
-      id: '/gov/postings'
-      path: '/postings'
-      fullPath: '/gov/postings'
-      preLoaderRoute: typeof GovPostingsRouteImport
-      parentRoute: typeof GovRouteRoute
+    '/console/runtimes': {
+      id: '/console/runtimes'
+      path: '/runtimes'
+      fullPath: '/console/runtimes'
+      preLoaderRoute: typeof ConsoleRuntimesRouteRouteImport
+      parentRoute: typeof ConsoleRouteRoute
     }
-    '/gov/schools': {
-      id: '/gov/schools'
-      path: '/schools'
-      fullPath: '/gov/schools'
-      preLoaderRoute: typeof GovSchoolsRouteImport
-      parentRoute: typeof GovRouteRoute
+    '/console/settings': {
+      id: '/console/settings'
+      path: '/settings'
+      fullPath: '/console/settings'
+      preLoaderRoute: typeof ConsoleSettingsRouteImport
+      parentRoute: typeof ConsoleRouteRoute
     }
-    '/gov/staffing': {
-      id: '/gov/staffing'
-      path: '/staffing'
-      fullPath: '/gov/staffing'
-      preLoaderRoute: typeof GovStaffingRouteImport
-      parentRoute: typeof GovRouteRoute
+    '/console/team': {
+      id: '/console/team'
+      path: '/team'
+      fullPath: '/console/team'
+      preLoaderRoute: typeof ConsoleTeamRouteRouteImport
+      parentRoute: typeof ConsoleRouteRoute
     }
-    '/group/': {
-      id: '/group/'
-      path: '/group'
-      fullPath: '/group/'
-      preLoaderRoute: typeof GroupIndexRouteImport
-      parentRoute: typeof rootRouteImport
+    '/console/workspaces': {
+      id: '/console/workspaces'
+      path: '/workspaces'
+      fullPath: '/console/workspaces'
+      preLoaderRoute: typeof ConsoleWorkspacesRouteRouteImport
+      parentRoute: typeof ConsoleRouteRoute
     }
-    '/news/$id': {
-      id: '/news/$id'
-      path: '/news/$id'
-      fullPath: '/news/$id'
-      preLoaderRoute: typeof NewsIdRouteImport
-      parentRoute: typeof rootRouteImport
+    '/home/': {
+      id: '/home/'
+      path: '/'
+      fullPath: '/home/'
+      preLoaderRoute: typeof HomeIndexRouteImport
+      parentRoute: typeof HomeRouteRoute
+    }
+    '/home/ai': {
+      id: '/home/ai'
+      path: '/ai'
+      fullPath: '/home/ai'
+      preLoaderRoute: typeof HomeAiRouteImport
+      parentRoute: typeof HomeRouteRoute
+    }
+    '/home/help': {
+      id: '/home/help'
+      path: '/help'
+      fullPath: '/home/help'
+      preLoaderRoute: typeof HomeHelpRouteImport
+      parentRoute: typeof HomeRouteRoute
+    }
+    '/home/notifications': {
+      id: '/home/notifications'
+      path: '/notifications'
+      fullPath: '/home/notifications'
+      preLoaderRoute: typeof HomeNotificationsRouteImport
+      parentRoute: typeof HomeRouteRoute
+    }
+    '/home/profile': {
+      id: '/home/profile'
+      path: '/profile'
+      fullPath: '/home/profile'
+      preLoaderRoute: typeof HomeProfileRouteImport
+      parentRoute: typeof HomeRouteRoute
+    }
+    '/home/security': {
+      id: '/home/security'
+      path: '/security'
+      fullPath: '/home/security'
+      preLoaderRoute: typeof HomeSecurityRouteImport
+      parentRoute: typeof HomeRouteRoute
+    }
+    '/home/settings': {
+      id: '/home/settings'
+      path: '/settings'
+      fullPath: '/home/settings'
+      preLoaderRoute: typeof HomeSettingsRouteImport
+      parentRoute: typeof HomeRouteRoute
     }
     '/pages/$slug': {
       id: '/pages/$slug'
@@ -3483,13 +1844,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PagesSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/platform/org': {
-      id: '/platform/org'
-      path: '/org'
-      fullPath: '/platform/org'
-      preLoaderRoute: typeof PlatformOrgRouteImport
-      parentRoute: typeof PlatformRoute
-    }
     '/posts/$post': {
       id: '/posts/$post'
       path: '/posts/$post'
@@ -3497,1076 +1851,355 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PostsPostRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/reality/$class': {
-      id: '/reality/$class'
-      path: '/reality/$class'
-      fullPath: '/reality/$class'
-      preLoaderRoute: typeof RealityClassRouteImport
+    '/(site)/company/about': {
+      id: '/(site)/company/about'
+      path: '/company/about'
+      fullPath: '/company/about'
+      preLoaderRoute: typeof siteCompanyAboutRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/company/careers': {
+      id: '/(site)/company/careers'
+      path: '/company/careers'
+      fullPath: '/company/careers'
+      preLoaderRoute: typeof siteCompanyCareersRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/company/partners': {
+      id: '/(site)/company/partners'
+      path: '/company/partners'
+      fullPath: '/company/partners'
+      preLoaderRoute: typeof siteCompanyPartnersRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/company/vision': {
+      id: '/(site)/company/vision'
+      path: '/company/vision'
+      fullPath: '/company/vision'
+      preLoaderRoute: typeof siteCompanyVisionRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/help/': {
+      id: '/(site)/help/'
+      path: '/'
+      fullPath: '/help/'
+      preLoaderRoute: typeof siteHelpIndexRouteImport
+      parentRoute: typeof siteHelpRoute
+    }
+    '/(site)/help/$slug': {
+      id: '/(site)/help/$slug'
+      path: '/$slug'
+      fullPath: '/help/$slug'
+      preLoaderRoute: typeof siteHelpSlugRouteImport
+      parentRoute: typeof siteHelpRoute
+    }
+    '/(site)/insights/': {
+      id: '/(site)/insights/'
+      path: '/'
+      fullPath: '/insights/'
+      preLoaderRoute: typeof siteInsightsIndexRouteImport
+      parentRoute: typeof siteInsightsRoute
+    }
+    '/(site)/insights/$slug': {
+      id: '/(site)/insights/$slug'
+      path: '/$slug'
+      fullPath: '/insights/$slug'
+      preLoaderRoute: typeof siteInsightsSlugRouteImport
+      parentRoute: typeof siteInsightsRoute
+    }
+    '/(site)/legal/acceptable-use': {
+      id: '/(site)/legal/acceptable-use'
+      path: '/legal/acceptable-use'
+      fullPath: '/legal/acceptable-use'
+      preLoaderRoute: typeof siteLegalAcceptableUseRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/legal/contact': {
+      id: '/(site)/legal/contact'
+      path: '/legal/contact'
+      fullPath: '/legal/contact'
+      preLoaderRoute: typeof siteLegalContactRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/legal/cookies': {
+      id: '/(site)/legal/cookies'
+      path: '/legal/cookies'
+      fullPath: '/legal/cookies'
+      preLoaderRoute: typeof siteLegalCookiesRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/legal/data-processing': {
+      id: '/(site)/legal/data-processing'
+      path: '/legal/data-processing'
+      fullPath: '/legal/data-processing'
+      preLoaderRoute: typeof siteLegalDataProcessingRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/legal/privacy': {
+      id: '/(site)/legal/privacy'
+      path: '/legal/privacy'
+      fullPath: '/legal/privacy'
+      preLoaderRoute: typeof siteLegalPrivacyRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/legal/subprocessors': {
+      id: '/(site)/legal/subprocessors'
+      path: '/legal/subprocessors'
+      fullPath: '/legal/subprocessors'
+      preLoaderRoute: typeof siteLegalSubprocessorsRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/legal/terms': {
+      id: '/(site)/legal/terms'
+      path: '/legal/terms'
+      fullPath: '/legal/terms'
+      preLoaderRoute: typeof siteLegalTermsRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/product/': {
+      id: '/(site)/product/'
+      path: '/'
+      fullPath: '/product/'
+      preLoaderRoute: typeof siteProductIndexRouteImport
+      parentRoute: typeof siteProductRoute
+    }
+    '/(site)/product/ai-workforce': {
+      id: '/(site)/product/ai-workforce'
+      path: '/ai-workforce'
+      fullPath: '/product/ai-workforce'
+      preLoaderRoute: typeof siteProductAiWorkforceRouteImport
+      parentRoute: typeof siteProductRoute
+    }
+    '/(site)/product/architecture': {
+      id: '/(site)/product/architecture'
+      path: '/architecture'
+      fullPath: '/product/architecture'
+      preLoaderRoute: typeof siteProductArchitectureRouteImport
+      parentRoute: typeof siteProductRoute
+    }
+    '/(site)/product/digital-twins': {
+      id: '/(site)/product/digital-twins'
+      path: '/digital-twins'
+      fullPath: '/product/digital-twins'
+      preLoaderRoute: typeof siteProductDigitalTwinsRouteImport
+      parentRoute: typeof siteProductRoute
+    }
+    '/(site)/product/institutional-computing': {
+      id: '/(site)/product/institutional-computing'
+      path: '/institutional-computing'
+      fullPath: '/product/institutional-computing'
+      preLoaderRoute: typeof siteProductInstitutionalComputingRouteImport
+      parentRoute: typeof siteProductRoute
+    }
+    '/(site)/product/intelligence': {
+      id: '/(site)/product/intelligence'
+      path: '/intelligence'
+      fullPath: '/product/intelligence'
+      preLoaderRoute: typeof siteProductIntelligenceRouteImport
+      parentRoute: typeof siteProductRoute
+    }
+    '/(site)/security/': {
+      id: '/(site)/security/'
+      path: '/'
+      fullPath: '/security/'
+      preLoaderRoute: typeof siteSecurityIndexRouteImport
+      parentRoute: typeof siteSecurityRoute
+    }
+    '/(site)/security/disclosure': {
+      id: '/(site)/security/disclosure'
+      path: '/disclosure'
+      fullPath: '/security/disclosure'
+      preLoaderRoute: typeof siteSecurityDisclosureRouteImport
+      parentRoute: typeof siteSecurityRoute
+    }
+    '/(site)/solutions/': {
+      id: '/(site)/solutions/'
+      path: '/'
+      fullPath: '/solutions/'
+      preLoaderRoute: typeof siteSolutionsIndexRouteImport
+      parentRoute: typeof siteSolutionsRoute
+    }
+    '/(site)/solutions/education': {
+      id: '/(site)/solutions/education'
+      path: '/education'
+      fullPath: '/solutions/education'
+      preLoaderRoute: typeof siteSolutionsEducationRouteImport
+      parentRoute: typeof siteSolutionsRoute
+    }
+    '/(site)/solutions/enterprise': {
+      id: '/(site)/solutions/enterprise'
+      path: '/enterprise'
+      fullPath: '/solutions/enterprise'
+      preLoaderRoute: typeof siteSolutionsEnterpriseRouteImport
+      parentRoute: typeof siteSolutionsRoute
+    }
+    '/(site)/solutions/research': {
+      id: '/(site)/solutions/research'
+      path: '/research'
+      fullPath: '/solutions/research'
+      preLoaderRoute: typeof siteSolutionsResearchRouteImport
+      parentRoute: typeof siteSolutionsRoute
+    }
+    '/api/public/webauthn': {
+      id: '/api/public/webauthn'
+      path: '/api/public/webauthn'
+      fullPath: '/api/public/webauthn'
+      preLoaderRoute: typeof ApiPublicWebauthnRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/admin/academic-standing': {
-      id: '/_authenticated/admin/academic-standing'
-      path: '/academic-standing'
-      fullPath: '/admin/academic-standing'
-      preLoaderRoute: typeof AuthenticatedAdminAcademicStandingRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/admissions': {
-      id: '/_authenticated/admin/admissions'
-      path: '/admissions'
-      fullPath: '/admin/admissions'
-      preLoaderRoute: typeof AuthenticatedAdminAdmissionsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/admissions-funnel': {
-      id: '/_authenticated/admin/admissions-funnel'
-      path: '/admissions-funnel'
-      fullPath: '/admin/admissions-funnel'
-      preLoaderRoute: typeof AuthenticatedAdminAdmissionsFunnelRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/ai-assistant': {
-      id: '/_authenticated/admin/ai-assistant'
-      path: '/ai-assistant'
-      fullPath: '/admin/ai-assistant'
-      preLoaderRoute: typeof AuthenticatedAdminAiAssistantRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/analytics': {
-      id: '/_authenticated/admin/analytics'
-      path: '/analytics'
-      fullPath: '/admin/analytics'
-      preLoaderRoute: typeof AuthenticatedAdminAnalyticsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/api-keys': {
-      id: '/_authenticated/admin/api-keys'
-      path: '/api-keys'
-      fullPath: '/admin/api-keys'
-      preLoaderRoute: typeof AuthenticatedAdminApiKeysRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/attendance': {
-      id: '/_authenticated/admin/attendance'
-      path: '/attendance'
-      fullPath: '/admin/attendance'
-      preLoaderRoute: typeof AuthenticatedAdminAttendanceRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/attendance-conflicts': {
-      id: '/_authenticated/admin/attendance-conflicts'
-      path: '/attendance-conflicts'
-      fullPath: '/admin/attendance-conflicts'
-      preLoaderRoute: typeof AuthenticatedAdminAttendanceConflictsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/audit': {
-      id: '/_authenticated/admin/audit'
-      path: '/audit'
-      fullPath: '/admin/audit'
-      preLoaderRoute: typeof AuthenticatedAdminAuditRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/audit-logs': {
-      id: '/_authenticated/admin/audit-logs'
-      path: '/audit-logs'
-      fullPath: '/admin/audit-logs'
-      preLoaderRoute: typeof AuthenticatedAdminAuditLogsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/broadcast': {
-      id: '/_authenticated/admin/broadcast'
-      path: '/broadcast'
-      fullPath: '/admin/broadcast'
-      preLoaderRoute: typeof AuthenticatedAdminBroadcastRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/bus-management': {
-      id: '/_authenticated/admin/bus-management'
-      path: '/bus-management'
-      fullPath: '/admin/bus-management'
-      preLoaderRoute: typeof AuthenticatedAdminBusManagementRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/buses': {
-      id: '/_authenticated/admin/buses'
-      path: '/buses'
-      fullPath: '/admin/buses'
-      preLoaderRoute: typeof AuthenticatedAdminBusesRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/calendar': {
-      id: '/_authenticated/admin/calendar'
-      path: '/calendar'
-      fullPath: '/admin/calendar'
-      preLoaderRoute: typeof AuthenticatedAdminCalendarRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/campuses': {
-      id: '/_authenticated/admin/campuses'
-      path: '/campuses'
-      fullPath: '/admin/campuses'
-      preLoaderRoute: typeof AuthenticatedAdminCampusesRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/classes': {
-      id: '/_authenticated/admin/classes'
-      path: '/classes'
-      fullPath: '/admin/classes'
-      preLoaderRoute: typeof AuthenticatedAdminClassesRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/cms': {
-      id: '/_authenticated/admin/cms'
-      path: '/cms'
-      fullPath: '/admin/cms'
-      preLoaderRoute: typeof AuthenticatedAdminCmsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/dashboard': {
-      id: '/_authenticated/admin/dashboard'
-      path: '/dashboard'
-      fullPath: '/admin/dashboard'
-      preLoaderRoute: typeof AuthenticatedAdminDashboardRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/digital-twin': {
-      id: '/_authenticated/admin/digital-twin'
-      path: '/digital-twin'
-      fullPath: '/admin/digital-twin'
-      preLoaderRoute: typeof AuthenticatedAdminDigitalTwinRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/discipline': {
-      id: '/_authenticated/admin/discipline'
-      path: '/discipline'
-      fullPath: '/admin/discipline'
-      preLoaderRoute: typeof AuthenticatedAdminDisciplineRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/domains': {
-      id: '/_authenticated/admin/domains'
-      path: '/domains'
-      fullPath: '/admin/domains'
-      preLoaderRoute: typeof AuthenticatedAdminDomainsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/early-warning': {
-      id: '/_authenticated/admin/early-warning'
-      path: '/early-warning'
-      fullPath: '/admin/early-warning'
-      preLoaderRoute: typeof AuthenticatedAdminEarlyWarningRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/education-reality': {
-      id: '/_authenticated/admin/education-reality'
-      path: '/education-reality'
-      fullPath: '/admin/education-reality'
-      preLoaderRoute: typeof AuthenticatedAdminEducationRealityRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/enterprise-checklist': {
-      id: '/_authenticated/admin/enterprise-checklist'
-      path: '/enterprise-checklist'
-      fullPath: '/admin/enterprise-checklist'
-      preLoaderRoute: typeof AuthenticatedAdminEnterpriseChecklistRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/exam-bodies': {
-      id: '/_authenticated/admin/exam-bodies'
-      path: '/exam-bodies'
-      fullPath: '/admin/exam-bodies'
-      preLoaderRoute: typeof AuthenticatedAdminExamBodiesRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/examinations': {
-      id: '/_authenticated/admin/examinations'
-      path: '/examinations'
-      fullPath: '/admin/examinations'
-      preLoaderRoute: typeof AuthenticatedAdminExaminationsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/exams': {
-      id: '/_authenticated/admin/exams'
-      path: '/exams'
-      fullPath: '/admin/exams'
-      preLoaderRoute: typeof AuthenticatedAdminExamsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/expenses': {
-      id: '/_authenticated/admin/expenses'
-      path: '/expenses'
-      fullPath: '/admin/expenses'
-      preLoaderRoute: typeof AuthenticatedAdminExpensesRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/extracurricular': {
-      id: '/_authenticated/admin/extracurricular'
-      path: '/extracurricular'
-      fullPath: '/admin/extracurricular'
-      preLoaderRoute: typeof AuthenticatedAdminExtracurricularRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/facilities': {
-      id: '/_authenticated/admin/facilities'
-      path: '/facilities'
-      fullPath: '/admin/facilities'
-      preLoaderRoute: typeof AuthenticatedAdminFacilitiesRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/features': {
-      id: '/_authenticated/admin/features'
-      path: '/features'
-      fullPath: '/admin/features'
-      preLoaderRoute: typeof AuthenticatedAdminFeaturesRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/fee-relief': {
-      id: '/_authenticated/admin/fee-relief'
-      path: '/fee-relief'
-      fullPath: '/admin/fee-relief'
-      preLoaderRoute: typeof AuthenticatedAdminFeeReliefRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/fees': {
-      id: '/_authenticated/admin/fees'
-      path: '/fees'
-      fullPath: '/admin/fees'
-      preLoaderRoute: typeof AuthenticatedAdminFeesRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/fees-defaulters': {
-      id: '/_authenticated/admin/fees-defaulters'
-      path: '/fees-defaulters'
-      fullPath: '/admin/fees-defaulters'
-      preLoaderRoute: typeof AuthenticatedAdminFeesDefaultersRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/financial-reports': {
-      id: '/_authenticated/admin/financial-reports'
-      path: '/financial-reports'
-      fullPath: '/admin/financial-reports'
-      preLoaderRoute: typeof AuthenticatedAdminFinancialReportsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/geofence-settings': {
-      id: '/_authenticated/admin/geofence-settings'
-      path: '/geofence-settings'
-      fullPath: '/admin/geofence-settings'
-      preLoaderRoute: typeof AuthenticatedAdminGeofenceSettingsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/government': {
-      id: '/_authenticated/admin/government'
-      path: '/government'
-      fullPath: '/admin/government'
-      preLoaderRoute: typeof AuthenticatedAdminGovernmentRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/grades': {
-      id: '/_authenticated/admin/grades'
-      path: '/grades'
-      fullPath: '/admin/grades'
-      preLoaderRoute: typeof AuthenticatedAdminGradesRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/heads': {
-      id: '/_authenticated/admin/heads'
-      path: '/heads'
-      fullPath: '/admin/heads'
-      preLoaderRoute: typeof AuthenticatedAdminHeadsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/health': {
-      id: '/_authenticated/admin/health'
-      path: '/health'
-      fullPath: '/admin/health'
-      preLoaderRoute: typeof AuthenticatedAdminHealthRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/health-certificate': {
-      id: '/_authenticated/admin/health-certificate'
-      path: '/health-certificate'
-      fullPath: '/admin/health-certificate'
-      preLoaderRoute: typeof AuthenticatedAdminHealthCertificateRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/hostel': {
-      id: '/_authenticated/admin/hostel'
-      path: '/hostel'
-      fullPath: '/admin/hostel'
-      preLoaderRoute: typeof AuthenticatedAdminHostelRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/hr': {
-      id: '/_authenticated/admin/hr'
-      path: '/hr'
-      fullPath: '/admin/hr'
-      preLoaderRoute: typeof AuthenticatedAdminHrRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/hr-payroll': {
-      id: '/_authenticated/admin/hr-payroll'
-      path: '/hr-payroll'
-      fullPath: '/admin/hr-payroll'
-      preLoaderRoute: typeof AuthenticatedAdminHrPayrollRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/identities': {
-      id: '/_authenticated/admin/identities'
-      path: '/identities'
-      fullPath: '/admin/identities'
-      preLoaderRoute: typeof AuthenticatedAdminIdentitiesRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/integrations': {
-      id: '/_authenticated/admin/integrations'
-      path: '/integrations'
-      fullPath: '/admin/integrations'
-      preLoaderRoute: typeof AuthenticatedAdminIntegrationsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/intelligence': {
-      id: '/_authenticated/admin/intelligence'
-      path: '/intelligence'
-      fullPath: '/admin/intelligence'
-      preLoaderRoute: typeof AuthenticatedAdminIntelligenceRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/intelligence-ai': {
-      id: '/_authenticated/admin/intelligence-ai'
-      path: '/intelligence-ai'
-      fullPath: '/admin/intelligence-ai'
-      preLoaderRoute: typeof AuthenticatedAdminIntelligenceAiRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/intelligence-operations': {
-      id: '/_authenticated/admin/intelligence-operations'
-      path: '/intelligence-operations'
-      fullPath: '/admin/intelligence-operations'
-      preLoaderRoute: typeof AuthenticatedAdminIntelligenceOperationsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/intelligence-parents': {
-      id: '/_authenticated/admin/intelligence-parents'
-      path: '/intelligence-parents'
-      fullPath: '/admin/intelligence-parents'
-      preLoaderRoute: typeof AuthenticatedAdminIntelligenceParentsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/intelligence-students': {
-      id: '/_authenticated/admin/intelligence-students'
-      path: '/intelligence-students'
-      fullPath: '/admin/intelligence-students'
-      preLoaderRoute: typeof AuthenticatedAdminIntelligenceStudentsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/intelligence-teachers': {
-      id: '/_authenticated/admin/intelligence-teachers'
-      path: '/intelligence-teachers'
-      fullPath: '/admin/intelligence-teachers'
-      preLoaderRoute: typeof AuthenticatedAdminIntelligenceTeachersRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/inventory': {
-      id: '/_authenticated/admin/inventory'
-      path: '/inventory'
-      fullPath: '/admin/inventory'
-      preLoaderRoute: typeof AuthenticatedAdminInventoryRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/lesson-plans': {
-      id: '/_authenticated/admin/lesson-plans'
-      path: '/lesson-plans'
-      fullPath: '/admin/lesson-plans'
-      preLoaderRoute: typeof AuthenticatedAdminLessonPlansRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/library': {
-      id: '/_authenticated/admin/library'
-      path: '/library'
-      fullPath: '/admin/library'
-      preLoaderRoute: typeof AuthenticatedAdminLibraryRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/locked-accounts': {
-      id: '/_authenticated/admin/locked-accounts'
-      path: '/locked-accounts'
-      fullPath: '/admin/locked-accounts'
-      preLoaderRoute: typeof AuthenticatedAdminLockedAccountsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/messages-log': {
-      id: '/_authenticated/admin/messages-log'
-      path: '/messages-log'
-      fullPath: '/admin/messages-log'
-      preLoaderRoute: typeof AuthenticatedAdminMessagesLogRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/ndpa': {
-      id: '/_authenticated/admin/ndpa'
-      path: '/ndpa'
-      fullPath: '/admin/ndpa'
-      preLoaderRoute: typeof AuthenticatedAdminNdpaRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/news': {
-      id: '/_authenticated/admin/news'
-      path: '/news'
-      fullPath: '/admin/news'
-      preLoaderRoute: typeof AuthenticatedAdminNewsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/onboarding-interview': {
-      id: '/_authenticated/admin/onboarding-interview'
-      path: '/onboarding-interview'
-      fullPath: '/admin/onboarding-interview'
-      preLoaderRoute: typeof AuthenticatedAdminOnboardingInterviewRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/operations': {
-      id: '/_authenticated/admin/operations'
-      path: '/operations'
-      fullPath: '/admin/operations'
-      preLoaderRoute: typeof AuthenticatedAdminOperationsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/payroll': {
-      id: '/_authenticated/admin/payroll'
-      path: '/payroll'
-      fullPath: '/admin/payroll'
-      preLoaderRoute: typeof AuthenticatedAdminPayrollRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/report-cards': {
-      id: '/_authenticated/admin/report-cards'
-      path: '/report-cards'
-      fullPath: '/admin/report-cards'
-      preLoaderRoute: typeof AuthenticatedAdminReportCardsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/role-scopes': {
-      id: '/_authenticated/admin/role-scopes'
-      path: '/role-scopes'
-      fullPath: '/admin/role-scopes'
-      preLoaderRoute: typeof AuthenticatedAdminRoleScopesRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/roles': {
-      id: '/_authenticated/admin/roles'
-      path: '/roles'
-      fullPath: '/admin/roles'
-      preLoaderRoute: typeof AuthenticatedAdminRolesRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/safeguards': {
-      id: '/_authenticated/admin/safeguards'
-      path: '/safeguards'
-      fullPath: '/admin/safeguards'
-      preLoaderRoute: typeof AuthenticatedAdminSafeguardsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/school-group': {
-      id: '/_authenticated/admin/school-group'
-      path: '/school-group'
-      fullPath: '/admin/school-group'
-      preLoaderRoute: typeof AuthenticatedAdminSchoolGroupRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/school-profile': {
-      id: '/_authenticated/admin/school-profile'
-      path: '/school-profile'
-      fullPath: '/admin/school-profile'
-      preLoaderRoute: typeof AuthenticatedAdminSchoolProfileRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/session-rollover': {
-      id: '/_authenticated/admin/session-rollover'
-      path: '/session-rollover'
-      fullPath: '/admin/session-rollover'
-      preLoaderRoute: typeof AuthenticatedAdminSessionRolloverRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/settings': {
-      id: '/_authenticated/admin/settings'
-      path: '/settings'
-      fullPath: '/admin/settings'
-      preLoaderRoute: typeof AuthenticatedAdminSettingsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/staff-accounts': {
-      id: '/_authenticated/admin/staff-accounts'
-      path: '/staff-accounts'
-      fullPath: '/admin/staff-accounts'
-      preLoaderRoute: typeof AuthenticatedAdminStaffAccountsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/stores-assets': {
-      id: '/_authenticated/admin/stores-assets'
-      path: '/stores-assets'
-      fullPath: '/admin/stores-assets'
-      preLoaderRoute: typeof AuthenticatedAdminStoresAssetsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/structure': {
-      id: '/_authenticated/admin/structure'
-      path: '/structure'
-      fullPath: '/admin/structure'
-      preLoaderRoute: typeof AuthenticatedAdminStructureRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/student-intelligence': {
-      id: '/_authenticated/admin/student-intelligence'
-      path: '/student-intelligence'
-      fullPath: '/admin/student-intelligence'
-      preLoaderRoute: typeof AuthenticatedAdminStudentIntelligenceRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/students': {
-      id: '/_authenticated/admin/students'
-      path: '/students'
-      fullPath: '/admin/students'
-      preLoaderRoute: typeof AuthenticatedAdminStudentsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/support': {
-      id: '/_authenticated/admin/support'
-      path: '/support'
-      fullPath: '/admin/support'
-      preLoaderRoute: typeof AuthenticatedAdminSupportRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/teacher-intelligence': {
-      id: '/_authenticated/admin/teacher-intelligence'
-      path: '/teacher-intelligence'
-      fullPath: '/admin/teacher-intelligence'
-      preLoaderRoute: typeof AuthenticatedAdminTeacherIntelligenceRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/teachers': {
-      id: '/_authenticated/admin/teachers'
-      path: '/teachers'
-      fullPath: '/admin/teachers'
-      preLoaderRoute: typeof AuthenticatedAdminTeachersRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/timetable': {
-      id: '/_authenticated/admin/timetable'
-      path: '/timetable'
-      fullPath: '/admin/timetable'
-      preLoaderRoute: typeof AuthenticatedAdminTimetableRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/transfers-custody': {
-      id: '/_authenticated/admin/transfers-custody'
-      path: '/transfers-custody'
-      fullPath: '/admin/transfers-custody'
-      preLoaderRoute: typeof AuthenticatedAdminTransfersCustodyRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/visitors': {
-      id: '/_authenticated/admin/visitors'
-      path: '/visitors'
-      fullPath: '/admin/visitors'
-      preLoaderRoute: typeof AuthenticatedAdminVisitorsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/wallet': {
-      id: '/_authenticated/admin/wallet'
-      path: '/wallet'
-      fullPath: '/admin/wallet'
-      preLoaderRoute: typeof AuthenticatedAdminWalletRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/website': {
-      id: '/_authenticated/admin/website'
-      path: '/website'
-      fullPath: '/admin/website'
-      preLoaderRoute: typeof AuthenticatedAdminWebsiteRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/bursar/dashboard': {
-      id: '/_authenticated/bursar/dashboard'
-      path: '/dashboard'
-      fullPath: '/bursar/dashboard'
-      preLoaderRoute: typeof AuthenticatedBursarDashboardRouteImport
-      parentRoute: typeof AuthenticatedBursarRouteRoute
-    }
-    '/_authenticated/bursar/fee-plans': {
-      id: '/_authenticated/bursar/fee-plans'
-      path: '/fee-plans'
-      fullPath: '/bursar/fee-plans'
-      preLoaderRoute: typeof AuthenticatedBursarFeePlansRouteImport
-      parentRoute: typeof AuthenticatedBursarRouteRoute
-    }
-    '/_authenticated/bursar/financial-intelligence': {
-      id: '/_authenticated/bursar/financial-intelligence'
-      path: '/financial-intelligence'
-      fullPath: '/bursar/financial-intelligence'
-      preLoaderRoute: typeof AuthenticatedBursarFinancialIntelligenceRouteImport
-      parentRoute: typeof AuthenticatedBursarRouteRoute
-    }
-    '/_authenticated/bursar/receipts': {
-      id: '/_authenticated/bursar/receipts'
-      path: '/receipts'
-      fullPath: '/bursar/receipts'
-      preLoaderRoute: typeof AuthenticatedBursarReceiptsRouteImport
-      parentRoute: typeof AuthenticatedBursarRouteRoute
-    }
-    '/_authenticated/bursar/reconciliation': {
-      id: '/_authenticated/bursar/reconciliation'
-      path: '/reconciliation'
-      fullPath: '/bursar/reconciliation'
-      preLoaderRoute: typeof AuthenticatedBursarReconciliationRouteImport
-      parentRoute: typeof AuthenticatedBursarRouteRoute
-    }
-    '/_authenticated/bursar/reports': {
-      id: '/_authenticated/bursar/reports'
-      path: '/reports'
-      fullPath: '/bursar/reports'
-      preLoaderRoute: typeof AuthenticatedBursarReportsRouteImport
-      parentRoute: typeof AuthenticatedBursarRouteRoute
-    }
-    '/_authenticated/command-centre/': {
-      id: '/_authenticated/command-centre/'
+    '/console/activity/': {
+      id: '/console/activity/'
       path: '/'
-      fullPath: '/command-centre/'
-      preLoaderRoute: typeof AuthenticatedCommandCentreIndexRouteImport
-      parentRoute: typeof AuthenticatedCommandCentreRouteRoute
+      fullPath: '/console/activity/'
+      preLoaderRoute: typeof ConsoleActivityIndexRouteImport
+      parentRoute: typeof ConsoleActivityRouteRoute
     }
-    '/_authenticated/driver/dashboard': {
-      id: '/_authenticated/driver/dashboard'
-      path: '/dashboard'
-      fullPath: '/driver/dashboard'
-      preLoaderRoute: typeof AuthenticatedDriverDashboardRouteImport
-      parentRoute: typeof AuthenticatedDriverRouteRoute
+    '/console/activity/admin': {
+      id: '/console/activity/admin'
+      path: '/admin'
+      fullPath: '/console/activity/admin'
+      preLoaderRoute: typeof ConsoleActivityAdminRouteImport
+      parentRoute: typeof ConsoleActivityRouteRoute
     }
-    '/_authenticated/driver/students': {
-      id: '/_authenticated/driver/students'
-      path: '/students'
-      fullPath: '/driver/students'
-      preLoaderRoute: typeof AuthenticatedDriverStudentsRouteImport
-      parentRoute: typeof AuthenticatedDriverRouteRoute
-    }
-    '/_authenticated/hq/dashboard': {
-      id: '/_authenticated/hq/dashboard'
-      path: '/dashboard'
-      fullPath: '/hq/dashboard'
-      preLoaderRoute: typeof AuthenticatedHqDashboardRouteImport
-      parentRoute: typeof AuthenticatedHqRouteRoute
-    }
-    '/_authenticated/hq/finance': {
-      id: '/_authenticated/hq/finance'
-      path: '/finance'
-      fullPath: '/hq/finance'
-      preLoaderRoute: typeof AuthenticatedHqFinanceRouteImport
-      parentRoute: typeof AuthenticatedHqRouteRoute
-    }
-    '/_authenticated/hq/reports': {
-      id: '/_authenticated/hq/reports'
-      path: '/reports'
-      fullPath: '/hq/reports'
-      preLoaderRoute: typeof AuthenticatedHqReportsRouteImport
-      parentRoute: typeof AuthenticatedHqRouteRoute
-    }
-    '/_authenticated/internal_/access-review': {
-      id: '/_authenticated/internal_/access-review'
-      path: '/internal/access-review'
-      fullPath: '/internal/access-review'
-      preLoaderRoute: typeof AuthenticatedInternalAccessReviewRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/internal_/gov-access': {
-      id: '/_authenticated/internal_/gov-access'
-      path: '/internal/gov-access'
-      fullPath: '/internal/gov-access'
-      preLoaderRoute: typeof AuthenticatedInternalGovAccessRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/internal_/support': {
-      id: '/_authenticated/internal_/support'
-      path: '/internal/support'
-      fullPath: '/internal/support'
-      preLoaderRoute: typeof AuthenticatedInternalSupportRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/parent/ai-assistant': {
-      id: '/_authenticated/parent/ai-assistant'
-      path: '/ai-assistant'
-      fullPath: '/parent/ai-assistant'
-      preLoaderRoute: typeof AuthenticatedParentAiAssistantRouteImport
-      parentRoute: typeof AuthenticatedParentRouteRoute
-    }
-    '/_authenticated/parent/attendance': {
-      id: '/_authenticated/parent/attendance'
-      path: '/attendance'
-      fullPath: '/parent/attendance'
-      preLoaderRoute: typeof AuthenticatedParentAttendanceRouteImport
-      parentRoute: typeof AuthenticatedParentRouteRoute
-    }
-    '/_authenticated/parent/bus-tracking': {
-      id: '/_authenticated/parent/bus-tracking'
-      path: '/bus-tracking'
-      fullPath: '/parent/bus-tracking'
-      preLoaderRoute: typeof AuthenticatedParentBusTrackingRouteImport
-      parentRoute: typeof AuthenticatedParentRouteRoute
-    }
-    '/_authenticated/parent/calendar': {
-      id: '/_authenticated/parent/calendar'
-      path: '/calendar'
-      fullPath: '/parent/calendar'
-      preLoaderRoute: typeof AuthenticatedParentCalendarRouteImport
-      parentRoute: typeof AuthenticatedParentRouteRoute
-    }
-    '/_authenticated/parent/children': {
-      id: '/_authenticated/parent/children'
-      path: '/children'
-      fullPath: '/parent/children'
-      preLoaderRoute: typeof AuthenticatedParentChildrenRouteImport
-      parentRoute: typeof AuthenticatedParentRouteRoute
-    }
-    '/_authenticated/parent/dashboard': {
-      id: '/_authenticated/parent/dashboard'
-      path: '/dashboard'
-      fullPath: '/parent/dashboard'
-      preLoaderRoute: typeof AuthenticatedParentDashboardRouteImport
-      parentRoute: typeof AuthenticatedParentRouteRoute
-    }
-    '/_authenticated/parent/fees': {
-      id: '/_authenticated/parent/fees'
-      path: '/fees'
-      fullPath: '/parent/fees'
-      preLoaderRoute: typeof AuthenticatedParentFeesRouteImport
-      parentRoute: typeof AuthenticatedParentRouteRoute
-    }
-    '/_authenticated/parent/grades': {
-      id: '/_authenticated/parent/grades'
-      path: '/grades'
-      fullPath: '/parent/grades'
-      preLoaderRoute: typeof AuthenticatedParentGradesRouteImport
-      parentRoute: typeof AuthenticatedParentRouteRoute
-    }
-    '/_authenticated/parent/news': {
-      id: '/_authenticated/parent/news'
-      path: '/news'
-      fullPath: '/parent/news'
-      preLoaderRoute: typeof AuthenticatedParentNewsRouteImport
-      parentRoute: typeof AuthenticatedParentRouteRoute
-    }
-    '/_authenticated/parent/report-cards': {
-      id: '/_authenticated/parent/report-cards'
-      path: '/report-cards'
-      fullPath: '/parent/report-cards'
-      preLoaderRoute: typeof AuthenticatedParentReportCardsRouteImport
-      parentRoute: typeof AuthenticatedParentRouteRoute
-    }
-    '/_authenticated/student/ai-tutor': {
-      id: '/_authenticated/student/ai-tutor'
-      path: '/ai-tutor'
-      fullPath: '/student/ai-tutor'
-      preLoaderRoute: typeof AuthenticatedStudentAiTutorRouteImport
-      parentRoute: typeof AuthenticatedStudentRouteRoute
-    }
-    '/_authenticated/student/attendance': {
-      id: '/_authenticated/student/attendance'
-      path: '/attendance'
-      fullPath: '/student/attendance'
-      preLoaderRoute: typeof AuthenticatedStudentAttendanceRouteImport
-      parentRoute: typeof AuthenticatedStudentRouteRoute
-    }
-    '/_authenticated/student/calendar': {
-      id: '/_authenticated/student/calendar'
-      path: '/calendar'
-      fullPath: '/student/calendar'
-      preLoaderRoute: typeof AuthenticatedStudentCalendarRouteImport
-      parentRoute: typeof AuthenticatedStudentRouteRoute
-    }
-    '/_authenticated/student/cbt': {
-      id: '/_authenticated/student/cbt'
-      path: '/cbt'
-      fullPath: '/student/cbt'
-      preLoaderRoute: typeof AuthenticatedStudentCbtRouteImport
-      parentRoute: typeof AuthenticatedStudentRouteRoute
-    }
-    '/_authenticated/student/course-registration': {
-      id: '/_authenticated/student/course-registration'
-      path: '/course-registration'
-      fullPath: '/student/course-registration'
-      preLoaderRoute: typeof AuthenticatedStudentCourseRegistrationRouteImport
-      parentRoute: typeof AuthenticatedStudentRouteRoute
-    }
-    '/_authenticated/student/dashboard': {
-      id: '/_authenticated/student/dashboard'
-      path: '/dashboard'
-      fullPath: '/student/dashboard'
-      preLoaderRoute: typeof AuthenticatedStudentDashboardRouteImport
-      parentRoute: typeof AuthenticatedStudentRouteRoute
-    }
-    '/_authenticated/student/fees': {
-      id: '/_authenticated/student/fees'
-      path: '/fees'
-      fullPath: '/student/fees'
-      preLoaderRoute: typeof AuthenticatedStudentFeesRouteImport
-      parentRoute: typeof AuthenticatedStudentRouteRoute
-    }
-    '/_authenticated/student/grades': {
-      id: '/_authenticated/student/grades'
-      path: '/grades'
-      fullPath: '/student/grades'
-      preLoaderRoute: typeof AuthenticatedStudentGradesRouteImport
-      parentRoute: typeof AuthenticatedStudentRouteRoute
-    }
-    '/_authenticated/student/news': {
-      id: '/_authenticated/student/news'
-      path: '/news'
-      fullPath: '/student/news'
-      preLoaderRoute: typeof AuthenticatedStudentNewsRouteImport
-      parentRoute: typeof AuthenticatedStudentRouteRoute
-    }
-    '/_authenticated/student/report-card': {
-      id: '/_authenticated/student/report-card'
-      path: '/report-card'
-      fullPath: '/student/report-card'
-      preLoaderRoute: typeof AuthenticatedStudentReportCardRouteImport
-      parentRoute: typeof AuthenticatedStudentRouteRoute
-    }
-    '/_authenticated/student/timetable': {
-      id: '/_authenticated/student/timetable'
-      path: '/timetable'
-      fullPath: '/student/timetable'
-      preLoaderRoute: typeof AuthenticatedStudentTimetableRouteImport
-      parentRoute: typeof AuthenticatedStudentRouteRoute
-    }
-    '/_authenticated/super-admin/academic-intelligence': {
-      id: '/_authenticated/super-admin/academic-intelligence'
-      path: '/academic-intelligence'
-      fullPath: '/super-admin/academic-intelligence'
-      preLoaderRoute: typeof AuthenticatedSuperAdminAcademicIntelligenceRouteImport
-      parentRoute: typeof AuthenticatedSuperAdminRouteRoute
-    }
-    '/_authenticated/super-admin/agent-governance': {
-      id: '/_authenticated/super-admin/agent-governance'
-      path: '/agent-governance'
-      fullPath: '/super-admin/agent-governance'
-      preLoaderRoute: typeof AuthenticatedSuperAdminAgentGovernanceRouteImport
-      parentRoute: typeof AuthenticatedSuperAdminRouteRoute
-    }
-    '/_authenticated/super-admin/billing': {
-      id: '/_authenticated/super-admin/billing'
+    '/console/activity/billing': {
+      id: '/console/activity/billing'
       path: '/billing'
-      fullPath: '/super-admin/billing'
-      preLoaderRoute: typeof AuthenticatedSuperAdminBillingRouteImport
-      parentRoute: typeof AuthenticatedSuperAdminRouteRoute
+      fullPath: '/console/activity/billing'
+      preLoaderRoute: typeof ConsoleActivityBillingRouteImport
+      parentRoute: typeof ConsoleActivityRouteRoute
     }
-    '/_authenticated/super-admin/communication-steward': {
-      id: '/_authenticated/super-admin/communication-steward'
-      path: '/communication-steward'
-      fullPath: '/super-admin/communication-steward'
-      preLoaderRoute: typeof AuthenticatedSuperAdminCommunicationStewardRouteImport
-      parentRoute: typeof AuthenticatedSuperAdminRouteRoute
+    '/console/activity/incidents': {
+      id: '/console/activity/incidents'
+      path: '/incidents'
+      fullPath: '/console/activity/incidents'
+      preLoaderRoute: typeof ConsoleActivityIncidentsRouteImport
+      parentRoute: typeof ConsoleActivityRouteRoute
     }
-    '/_authenticated/super-admin/dashboard': {
-      id: '/_authenticated/super-admin/dashboard'
-      path: '/dashboard'
-      fullPath: '/super-admin/dashboard'
-      preLoaderRoute: typeof AuthenticatedSuperAdminDashboardRouteImport
-      parentRoute: typeof AuthenticatedSuperAdminRouteRoute
-    }
-    '/_authenticated/super-admin/financial-operations': {
-      id: '/_authenticated/super-admin/financial-operations'
-      path: '/financial-operations'
-      fullPath: '/super-admin/financial-operations'
-      preLoaderRoute: typeof AuthenticatedSuperAdminFinancialOperationsRouteImport
-      parentRoute: typeof AuthenticatedSuperAdminRouteRoute
-    }
-    '/_authenticated/super-admin/logs': {
-      id: '/_authenticated/super-admin/logs'
+    '/console/activity/logs': {
+      id: '/console/activity/logs'
       path: '/logs'
-      fullPath: '/super-admin/logs'
-      preLoaderRoute: typeof AuthenticatedSuperAdminLogsRouteImport
-      parentRoute: typeof AuthenticatedSuperAdminRouteRoute
+      fullPath: '/console/activity/logs'
+      preLoaderRoute: typeof ConsoleActivityLogsRouteImport
+      parentRoute: typeof ConsoleActivityRouteRoute
     }
-    '/_authenticated/super-admin/platform-config': {
-      id: '/_authenticated/super-admin/platform-config'
-      path: '/platform-config'
-      fullPath: '/super-admin/platform-config'
-      preLoaderRoute: typeof AuthenticatedSuperAdminPlatformConfigRouteImport
-      parentRoute: typeof AuthenticatedSuperAdminRouteRoute
+    '/console/activity/metrics': {
+      id: '/console/activity/metrics'
+      path: '/metrics'
+      fullPath: '/console/activity/metrics'
+      preLoaderRoute: typeof ConsoleActivityMetricsRouteImport
+      parentRoute: typeof ConsoleActivityRouteRoute
     }
-    '/_authenticated/super-admin/runtime-contracts': {
-      id: '/_authenticated/super-admin/runtime-contracts'
-      path: '/runtime-contracts'
-      fullPath: '/super-admin/runtime-contracts'
-      preLoaderRoute: typeof AuthenticatedSuperAdminRuntimeContractsRouteImport
-      parentRoute: typeof AuthenticatedSuperAdminRouteRoute
+    '/console/activity/security': {
+      id: '/console/activity/security'
+      path: '/security'
+      fullPath: '/console/activity/security'
+      preLoaderRoute: typeof ConsoleActivitySecurityRouteImport
+      parentRoute: typeof ConsoleActivityRouteRoute
     }
-    '/_authenticated/super-admin/scheduling-intelligence': {
-      id: '/_authenticated/super-admin/scheduling-intelligence'
-      path: '/scheduling-intelligence'
-      fullPath: '/super-admin/scheduling-intelligence'
-      preLoaderRoute: typeof AuthenticatedSuperAdminSchedulingIntelligenceRouteImport
-      parentRoute: typeof AuthenticatedSuperAdminRouteRoute
+    '/console/activity/tickets': {
+      id: '/console/activity/tickets'
+      path: '/tickets'
+      fullPath: '/console/activity/tickets'
+      preLoaderRoute: typeof ConsoleActivityTicketsRouteImport
+      parentRoute: typeof ConsoleActivityRouteRoute
     }
-    '/_authenticated/super-admin/schools': {
-      id: '/_authenticated/super-admin/schools'
-      path: '/schools'
-      fullPath: '/super-admin/schools'
-      preLoaderRoute: typeof AuthenticatedSuperAdminSchoolsRouteImport
-      parentRoute: typeof AuthenticatedSuperAdminRouteRoute
+    '/console/organizations/': {
+      id: '/console/organizations/'
+      path: '/'
+      fullPath: '/console/organizations/'
+      preLoaderRoute: typeof ConsoleOrganizationsIndexRouteImport
+      parentRoute: typeof ConsoleOrganizationsRouteRoute
     }
-    '/_authenticated/super-admin/settings': {
-      id: '/_authenticated/super-admin/settings'
-      path: '/settings'
-      fullPath: '/super-admin/settings'
-      preLoaderRoute: typeof AuthenticatedSuperAdminSettingsRouteImport
-      parentRoute: typeof AuthenticatedSuperAdminRouteRoute
+    '/console/organizations/$organizationId': {
+      id: '/console/organizations/$organizationId'
+      path: '/$organizationId'
+      fullPath: '/console/organizations/$organizationId'
+      preLoaderRoute: typeof ConsoleOrganizationsOrganizationIdRouteImport
+      parentRoute: typeof ConsoleOrganizationsRouteRoute
     }
-    '/_authenticated/super-admin/staff': {
-      id: '/_authenticated/super-admin/staff'
-      path: '/staff'
-      fullPath: '/super-admin/staff'
-      preLoaderRoute: typeof AuthenticatedSuperAdminStaffRouteImport
-      parentRoute: typeof AuthenticatedSuperAdminRouteRoute
+    '/console/organizations/new': {
+      id: '/console/organizations/new'
+      path: '/new'
+      fullPath: '/console/organizations/new'
+      preLoaderRoute: typeof ConsoleOrganizationsNewRouteImport
+      parentRoute: typeof ConsoleOrganizationsRouteRoute
     }
-    '/_authenticated/super-admin/support': {
-      id: '/_authenticated/super-admin/support'
-      path: '/support'
-      fullPath: '/super-admin/support'
-      preLoaderRoute: typeof AuthenticatedSuperAdminSupportRouteImport
-      parentRoute: typeof AuthenticatedSuperAdminRouteRoute
+    '/console/runtimes/': {
+      id: '/console/runtimes/'
+      path: '/'
+      fullPath: '/console/runtimes/'
+      preLoaderRoute: typeof ConsoleRuntimesIndexRouteImport
+      parentRoute: typeof ConsoleRuntimesRouteRoute
     }
-    '/_authenticated/super-admin/tenants': {
-      id: '/_authenticated/super-admin/tenants'
-      path: '/tenants'
-      fullPath: '/super-admin/tenants'
-      preLoaderRoute: typeof AuthenticatedSuperAdminTenantsRouteImport
-      parentRoute: typeof AuthenticatedSuperAdminRouteRoute
+    '/console/runtimes/scholar': {
+      id: '/console/runtimes/scholar'
+      path: '/scholar'
+      fullPath: '/console/runtimes/scholar'
+      preLoaderRoute: typeof ConsoleRuntimesScholarRouteImport
+      parentRoute: typeof ConsoleRuntimesRouteRoute
     }
-    '/_authenticated/super-admin/tiers': {
-      id: '/_authenticated/super-admin/tiers'
-      path: '/tiers'
-      fullPath: '/super-admin/tiers'
-      preLoaderRoute: typeof AuthenticatedSuperAdminTiersRouteImport
-      parentRoute: typeof AuthenticatedSuperAdminRouteRoute
+    '/console/team/': {
+      id: '/console/team/'
+      path: '/'
+      fullPath: '/console/team/'
+      preLoaderRoute: typeof ConsoleTeamIndexRouteImport
+      parentRoute: typeof ConsoleTeamRouteRoute
     }
-    '/_authenticated/super-admin/trust-fabric': {
-      id: '/_authenticated/super-admin/trust-fabric'
-      path: '/trust-fabric'
-      fullPath: '/super-admin/trust-fabric'
-      preLoaderRoute: typeof AuthenticatedSuperAdminTrustFabricRouteImport
-      parentRoute: typeof AuthenticatedSuperAdminRouteRoute
+    '/console/team/access': {
+      id: '/console/team/access'
+      path: '/access'
+      fullPath: '/console/team/access'
+      preLoaderRoute: typeof ConsoleTeamAccessRouteImport
+      parentRoute: typeof ConsoleTeamRouteRoute
     }
-    '/_authenticated/super-admin/worker-missions': {
-      id: '/_authenticated/super-admin/worker-missions'
-      path: '/worker-missions'
-      fullPath: '/super-admin/worker-missions'
-      preLoaderRoute: typeof AuthenticatedSuperAdminWorkerMissionsRouteImport
-      parentRoute: typeof AuthenticatedSuperAdminRouteRoute
+    '/console/team/invitations': {
+      id: '/console/team/invitations'
+      path: '/invitations'
+      fullPath: '/console/team/invitations'
+      preLoaderRoute: typeof ConsoleTeamInvitationsRouteImport
+      parentRoute: typeof ConsoleTeamRouteRoute
     }
-    '/_authenticated/super-admin/workspace-projection': {
-      id: '/_authenticated/super-admin/workspace-projection'
-      path: '/workspace-projection'
-      fullPath: '/super-admin/workspace-projection'
-      preLoaderRoute: typeof AuthenticatedSuperAdminWorkspaceProjectionRouteImport
-      parentRoute: typeof AuthenticatedSuperAdminRouteRoute
+    '/console/team/roles': {
+      id: '/console/team/roles'
+      path: '/roles'
+      fullPath: '/console/team/roles'
+      preLoaderRoute: typeof ConsoleTeamRolesRouteImport
+      parentRoute: typeof ConsoleTeamRouteRoute
     }
-    '/_authenticated/teacher/ai-assistant': {
-      id: '/_authenticated/teacher/ai-assistant'
-      path: '/ai-assistant'
-      fullPath: '/teacher/ai-assistant'
-      preLoaderRoute: typeof AuthenticatedTeacherAiAssistantRouteImport
-      parentRoute: typeof AuthenticatedTeacherRouteRoute
+    '/console/team/suspended': {
+      id: '/console/team/suspended'
+      path: '/suspended'
+      fullPath: '/console/team/suspended'
+      preLoaderRoute: typeof ConsoleTeamSuspendedRouteImport
+      parentRoute: typeof ConsoleTeamRouteRoute
     }
-    '/_authenticated/teacher/attendance': {
-      id: '/_authenticated/teacher/attendance'
-      path: '/attendance'
-      fullPath: '/teacher/attendance'
-      preLoaderRoute: typeof AuthenticatedTeacherAttendanceRouteImport
-      parentRoute: typeof AuthenticatedTeacherRouteRoute
+    '/console/workspaces/': {
+      id: '/console/workspaces/'
+      path: '/'
+      fullPath: '/console/workspaces/'
+      preLoaderRoute: typeof ConsoleWorkspacesIndexRouteImport
+      parentRoute: typeof ConsoleWorkspacesRouteRoute
     }
-    '/_authenticated/teacher/attendance-week': {
-      id: '/_authenticated/teacher/attendance-week'
-      path: '/attendance-week'
-      fullPath: '/teacher/attendance-week'
-      preLoaderRoute: typeof AuthenticatedTeacherAttendanceWeekRouteImport
-      parentRoute: typeof AuthenticatedTeacherRouteRoute
+    '/console/workspaces/$workspaceId': {
+      id: '/console/workspaces/$workspaceId'
+      path: '/$workspaceId'
+      fullPath: '/console/workspaces/$workspaceId'
+      preLoaderRoute: typeof ConsoleWorkspacesWorkspaceIdRouteImport
+      parentRoute: typeof ConsoleWorkspacesRouteRoute
     }
-    '/_authenticated/teacher/calendar': {
-      id: '/_authenticated/teacher/calendar'
-      path: '/calendar'
-      fullPath: '/teacher/calendar'
-      preLoaderRoute: typeof AuthenticatedTeacherCalendarRouteImport
-      parentRoute: typeof AuthenticatedTeacherRouteRoute
+    '/home/s/$section': {
+      id: '/home/s/$section'
+      path: '/s/$section'
+      fullPath: '/home/s/$section'
+      preLoaderRoute: typeof HomeSSectionRouteImport
+      parentRoute: typeof HomeRouteRoute
     }
-    '/_authenticated/teacher/class-intelligence': {
-      id: '/_authenticated/teacher/class-intelligence'
-      path: '/class-intelligence'
-      fullPath: '/teacher/class-intelligence'
-      preLoaderRoute: typeof AuthenticatedTeacherClassIntelligenceRouteImport
-      parentRoute: typeof AuthenticatedTeacherRouteRoute
-    }
-    '/_authenticated/teacher/dashboard': {
-      id: '/_authenticated/teacher/dashboard'
-      path: '/dashboard'
-      fullPath: '/teacher/dashboard'
-      preLoaderRoute: typeof AuthenticatedTeacherDashboardRouteImport
-      parentRoute: typeof AuthenticatedTeacherRouteRoute
-    }
-    '/_authenticated/teacher/gradebook': {
-      id: '/_authenticated/teacher/gradebook'
-      path: '/gradebook'
-      fullPath: '/teacher/gradebook'
-      preLoaderRoute: typeof AuthenticatedTeacherGradebookRouteImport
-      parentRoute: typeof AuthenticatedTeacherRouteRoute
-    }
-    '/_authenticated/teacher/grades': {
-      id: '/_authenticated/teacher/grades'
-      path: '/grades'
-      fullPath: '/teacher/grades'
-      preLoaderRoute: typeof AuthenticatedTeacherGradesRouteImport
-      parentRoute: typeof AuthenticatedTeacherRouteRoute
-    }
-    '/_authenticated/teacher/lesson-notes': {
-      id: '/_authenticated/teacher/lesson-notes'
-      path: '/lesson-notes'
-      fullPath: '/teacher/lesson-notes'
-      preLoaderRoute: typeof AuthenticatedTeacherLessonNotesRouteImport
-      parentRoute: typeof AuthenticatedTeacherRouteRoute
-    }
-    '/_authenticated/teacher/lesson-plans': {
-      id: '/_authenticated/teacher/lesson-plans'
-      path: '/lesson-plans'
-      fullPath: '/teacher/lesson-plans'
-      preLoaderRoute: typeof AuthenticatedTeacherLessonPlansRouteImport
-      parentRoute: typeof AuthenticatedTeacherRouteRoute
-    }
-    '/_authenticated/teacher/news': {
-      id: '/_authenticated/teacher/news'
-      path: '/news'
-      fullPath: '/teacher/news'
-      preLoaderRoute: typeof AuthenticatedTeacherNewsRouteImport
-      parentRoute: typeof AuthenticatedTeacherRouteRoute
-    }
-    '/_authenticated/teacher/sign-in': {
-      id: '/_authenticated/teacher/sign-in'
-      path: '/sign-in'
-      fullPath: '/teacher/sign-in'
-      preLoaderRoute: typeof AuthenticatedTeacherSignInRouteImport
-      parentRoute: typeof AuthenticatedTeacherRouteRoute
-    }
-    '/_authenticated/teacher/timetable': {
-      id: '/_authenticated/teacher/timetable'
-      path: '/timetable'
-      fullPath: '/teacher/timetable'
-      preLoaderRoute: typeof AuthenticatedTeacherTimetableRouteImport
-      parentRoute: typeof AuthenticatedTeacherRouteRoute
-    }
-    '/_authenticated/workspace_/settings': {
-      id: '/_authenticated/workspace_/settings'
-      path: '/workspace/settings'
-      fullPath: '/workspace/settings'
-      preLoaderRoute: typeof AuthenticatedWorkspaceSettingsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/(site)/insights/category/$slug': {
+      id: '/(site)/insights/category/$slug'
+      path: '/category/$slug'
+      fullPath: '/insights/category/$slug'
+      preLoaderRoute: typeof siteInsightsCategorySlugRouteImport
+      parentRoute: typeof siteInsightsRoute
     }
     '/api/public/audit/password-reset': {
       id: '/api/public/audit/password-reset'
@@ -4620,618 +2253,338 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface siteHelpRouteChildren {
+  siteHelpSlugRoute: typeof siteHelpSlugRoute
+  siteHelpIndexRoute: typeof siteHelpIndexRoute
+}
+
+const siteHelpRouteChildren: siteHelpRouteChildren = {
+  siteHelpSlugRoute: siteHelpSlugRoute,
+  siteHelpIndexRoute: siteHelpIndexRoute,
+}
+
+const siteHelpRouteWithChildren = siteHelpRoute._addFileChildren(
+  siteHelpRouteChildren,
+)
+
+interface siteInsightsRouteChildren {
+  siteInsightsSlugRoute: typeof siteInsightsSlugRoute
+  siteInsightsIndexRoute: typeof siteInsightsIndexRoute
+  siteInsightsCategorySlugRoute: typeof siteInsightsCategorySlugRoute
+}
+
+const siteInsightsRouteChildren: siteInsightsRouteChildren = {
+  siteInsightsSlugRoute: siteInsightsSlugRoute,
+  siteInsightsIndexRoute: siteInsightsIndexRoute,
+  siteInsightsCategorySlugRoute: siteInsightsCategorySlugRoute,
+}
+
+const siteInsightsRouteWithChildren = siteInsightsRoute._addFileChildren(
+  siteInsightsRouteChildren,
+)
+
+interface siteProductRouteChildren {
+  siteProductAiWorkforceRoute: typeof siteProductAiWorkforceRoute
+  siteProductArchitectureRoute: typeof siteProductArchitectureRoute
+  siteProductDigitalTwinsRoute: typeof siteProductDigitalTwinsRoute
+  siteProductInstitutionalComputingRoute: typeof siteProductInstitutionalComputingRoute
+  siteProductIntelligenceRoute: typeof siteProductIntelligenceRoute
+  siteProductIndexRoute: typeof siteProductIndexRoute
+}
+
+const siteProductRouteChildren: siteProductRouteChildren = {
+  siteProductAiWorkforceRoute: siteProductAiWorkforceRoute,
+  siteProductArchitectureRoute: siteProductArchitectureRoute,
+  siteProductDigitalTwinsRoute: siteProductDigitalTwinsRoute,
+  siteProductInstitutionalComputingRoute:
+    siteProductInstitutionalComputingRoute,
+  siteProductIntelligenceRoute: siteProductIntelligenceRoute,
+  siteProductIndexRoute: siteProductIndexRoute,
+}
+
+const siteProductRouteWithChildren = siteProductRoute._addFileChildren(
+  siteProductRouteChildren,
+)
+
+interface siteSecurityRouteChildren {
+  siteSecurityDisclosureRoute: typeof siteSecurityDisclosureRoute
+  siteSecurityIndexRoute: typeof siteSecurityIndexRoute
+}
+
+const siteSecurityRouteChildren: siteSecurityRouteChildren = {
+  siteSecurityDisclosureRoute: siteSecurityDisclosureRoute,
+  siteSecurityIndexRoute: siteSecurityIndexRoute,
+}
+
+const siteSecurityRouteWithChildren = siteSecurityRoute._addFileChildren(
+  siteSecurityRouteChildren,
+)
+
+interface siteSolutionsRouteChildren {
+  siteSolutionsEducationRoute: typeof siteSolutionsEducationRoute
+  siteSolutionsEnterpriseRoute: typeof siteSolutionsEnterpriseRoute
+  siteSolutionsResearchRoute: typeof siteSolutionsResearchRoute
+  siteSolutionsIndexRoute: typeof siteSolutionsIndexRoute
+}
+
+const siteSolutionsRouteChildren: siteSolutionsRouteChildren = {
+  siteSolutionsEducationRoute: siteSolutionsEducationRoute,
+  siteSolutionsEnterpriseRoute: siteSolutionsEnterpriseRoute,
+  siteSolutionsResearchRoute: siteSolutionsResearchRoute,
+  siteSolutionsIndexRoute: siteSolutionsIndexRoute,
+}
+
+const siteSolutionsRouteWithChildren = siteSolutionsRoute._addFileChildren(
+  siteSolutionsRouteChildren,
+)
+
 interface siteRouteRouteChildren {
   siteAboutRoute: typeof siteAboutRoute
+  siteAccessibilityRoute: typeof siteAccessibilityRoute
   siteCheckResultRoute: typeof siteCheckResultRoute
   siteContactRoute: typeof siteContactRoute
   siteCoregridRoute: typeof siteCoregridRoute
+  siteDevelopersRoute: typeof siteDevelopersRoute
+  siteDocsRoute: typeof siteDocsRoute
+  siteFaqRoute: typeof siteFaqRoute
+  siteHelpRoute: typeof siteHelpRouteWithChildren
+  siteInsightsRoute: typeof siteInsightsRouteWithChildren
+  siteIntegrationsRoute: typeof siteIntegrationsRoute
   sitePrivacyPolicyRoute: typeof sitePrivacyPolicyRoute
+  siteProductRoute: typeof siteProductRouteWithChildren
   siteRequestDemoRoute: typeof siteRequestDemoRoute
+  siteSecurityRoute: typeof siteSecurityRouteWithChildren
   siteSherivsRoute: typeof siteSherivsRoute
   siteSiwesVerifyRoute: typeof siteSiwesVerifyRoute
+  siteSolutionsRoute: typeof siteSolutionsRouteWithChildren
   siteStatusRoute: typeof siteStatusRoute
+  siteSupportRoute: typeof siteSupportRoute
   siteTermsRoute: typeof siteTermsRoute
+  siteTrustRoute: typeof siteTrustRoute
   siteVerifyTranscriptRoute: typeof siteVerifyTranscriptRoute
+  siteCompanyAboutRoute: typeof siteCompanyAboutRoute
+  siteCompanyCareersRoute: typeof siteCompanyCareersRoute
+  siteCompanyPartnersRoute: typeof siteCompanyPartnersRoute
+  siteCompanyVisionRoute: typeof siteCompanyVisionRoute
+  siteLegalAcceptableUseRoute: typeof siteLegalAcceptableUseRoute
+  siteLegalContactRoute: typeof siteLegalContactRoute
+  siteLegalCookiesRoute: typeof siteLegalCookiesRoute
+  siteLegalDataProcessingRoute: typeof siteLegalDataProcessingRoute
+  siteLegalPrivacyRoute: typeof siteLegalPrivacyRoute
+  siteLegalSubprocessorsRoute: typeof siteLegalSubprocessorsRoute
+  siteLegalTermsRoute: typeof siteLegalTermsRoute
 }
 
 const siteRouteRouteChildren: siteRouteRouteChildren = {
   siteAboutRoute: siteAboutRoute,
+  siteAccessibilityRoute: siteAccessibilityRoute,
   siteCheckResultRoute: siteCheckResultRoute,
   siteContactRoute: siteContactRoute,
   siteCoregridRoute: siteCoregridRoute,
+  siteDevelopersRoute: siteDevelopersRoute,
+  siteDocsRoute: siteDocsRoute,
+  siteFaqRoute: siteFaqRoute,
+  siteHelpRoute: siteHelpRouteWithChildren,
+  siteInsightsRoute: siteInsightsRouteWithChildren,
+  siteIntegrationsRoute: siteIntegrationsRoute,
   sitePrivacyPolicyRoute: sitePrivacyPolicyRoute,
+  siteProductRoute: siteProductRouteWithChildren,
   siteRequestDemoRoute: siteRequestDemoRoute,
+  siteSecurityRoute: siteSecurityRouteWithChildren,
   siteSherivsRoute: siteSherivsRoute,
   siteSiwesVerifyRoute: siteSiwesVerifyRoute,
+  siteSolutionsRoute: siteSolutionsRouteWithChildren,
   siteStatusRoute: siteStatusRoute,
+  siteSupportRoute: siteSupportRoute,
   siteTermsRoute: siteTermsRoute,
+  siteTrustRoute: siteTrustRoute,
   siteVerifyTranscriptRoute: siteVerifyTranscriptRoute,
+  siteCompanyAboutRoute: siteCompanyAboutRoute,
+  siteCompanyCareersRoute: siteCompanyCareersRoute,
+  siteCompanyPartnersRoute: siteCompanyPartnersRoute,
+  siteCompanyVisionRoute: siteCompanyVisionRoute,
+  siteLegalAcceptableUseRoute: siteLegalAcceptableUseRoute,
+  siteLegalContactRoute: siteLegalContactRoute,
+  siteLegalCookiesRoute: siteLegalCookiesRoute,
+  siteLegalDataProcessingRoute: siteLegalDataProcessingRoute,
+  siteLegalPrivacyRoute: siteLegalPrivacyRoute,
+  siteLegalSubprocessorsRoute: siteLegalSubprocessorsRoute,
+  siteLegalTermsRoute: siteLegalTermsRoute,
 }
 
 const siteRouteRouteWithChildren = siteRouteRoute._addFileChildren(
   siteRouteRouteChildren,
 )
 
-interface AuthenticatedAdminRouteRouteChildren {
-  AuthenticatedAdminAcademicStandingRoute: typeof AuthenticatedAdminAcademicStandingRoute
-  AuthenticatedAdminAdmissionsRoute: typeof AuthenticatedAdminAdmissionsRoute
-  AuthenticatedAdminAdmissionsFunnelRoute: typeof AuthenticatedAdminAdmissionsFunnelRoute
-  AuthenticatedAdminAiAssistantRoute: typeof AuthenticatedAdminAiAssistantRoute
-  AuthenticatedAdminAnalyticsRoute: typeof AuthenticatedAdminAnalyticsRoute
-  AuthenticatedAdminApiKeysRoute: typeof AuthenticatedAdminApiKeysRoute
-  AuthenticatedAdminAttendanceRoute: typeof AuthenticatedAdminAttendanceRoute
-  AuthenticatedAdminAttendanceConflictsRoute: typeof AuthenticatedAdminAttendanceConflictsRoute
-  AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
-  AuthenticatedAdminAuditLogsRoute: typeof AuthenticatedAdminAuditLogsRoute
-  AuthenticatedAdminBroadcastRoute: typeof AuthenticatedAdminBroadcastRoute
-  AuthenticatedAdminBusManagementRoute: typeof AuthenticatedAdminBusManagementRoute
-  AuthenticatedAdminBusesRoute: typeof AuthenticatedAdminBusesRoute
-  AuthenticatedAdminCalendarRoute: typeof AuthenticatedAdminCalendarRoute
-  AuthenticatedAdminCampusesRoute: typeof AuthenticatedAdminCampusesRoute
-  AuthenticatedAdminClassesRoute: typeof AuthenticatedAdminClassesRoute
-  AuthenticatedAdminCmsRoute: typeof AuthenticatedAdminCmsRoute
-  AuthenticatedAdminDashboardRoute: typeof AuthenticatedAdminDashboardRoute
-  AuthenticatedAdminDigitalTwinRoute: typeof AuthenticatedAdminDigitalTwinRoute
-  AuthenticatedAdminDisciplineRoute: typeof AuthenticatedAdminDisciplineRoute
-  AuthenticatedAdminDomainsRoute: typeof AuthenticatedAdminDomainsRoute
-  AuthenticatedAdminEarlyWarningRoute: typeof AuthenticatedAdminEarlyWarningRoute
-  AuthenticatedAdminEducationRealityRoute: typeof AuthenticatedAdminEducationRealityRoute
-  AuthenticatedAdminEnterpriseChecklistRoute: typeof AuthenticatedAdminEnterpriseChecklistRoute
-  AuthenticatedAdminExamBodiesRoute: typeof AuthenticatedAdminExamBodiesRoute
-  AuthenticatedAdminExaminationsRoute: typeof AuthenticatedAdminExaminationsRoute
-  AuthenticatedAdminExamsRoute: typeof AuthenticatedAdminExamsRoute
-  AuthenticatedAdminExpensesRoute: typeof AuthenticatedAdminExpensesRoute
-  AuthenticatedAdminExtracurricularRoute: typeof AuthenticatedAdminExtracurricularRoute
-  AuthenticatedAdminFacilitiesRoute: typeof AuthenticatedAdminFacilitiesRoute
-  AuthenticatedAdminFeaturesRoute: typeof AuthenticatedAdminFeaturesRoute
-  AuthenticatedAdminFeeReliefRoute: typeof AuthenticatedAdminFeeReliefRoute
-  AuthenticatedAdminFeesRoute: typeof AuthenticatedAdminFeesRoute
-  AuthenticatedAdminFeesDefaultersRoute: typeof AuthenticatedAdminFeesDefaultersRoute
-  AuthenticatedAdminFinancialReportsRoute: typeof AuthenticatedAdminFinancialReportsRoute
-  AuthenticatedAdminGeofenceSettingsRoute: typeof AuthenticatedAdminGeofenceSettingsRoute
-  AuthenticatedAdminGovernmentRoute: typeof AuthenticatedAdminGovernmentRoute
-  AuthenticatedAdminGradesRoute: typeof AuthenticatedAdminGradesRoute
-  AuthenticatedAdminHeadsRoute: typeof AuthenticatedAdminHeadsRoute
-  AuthenticatedAdminHealthRoute: typeof AuthenticatedAdminHealthRoute
-  AuthenticatedAdminHealthCertificateRoute: typeof AuthenticatedAdminHealthCertificateRoute
-  AuthenticatedAdminHostelRoute: typeof AuthenticatedAdminHostelRoute
-  AuthenticatedAdminHrRoute: typeof AuthenticatedAdminHrRoute
-  AuthenticatedAdminHrPayrollRoute: typeof AuthenticatedAdminHrPayrollRoute
-  AuthenticatedAdminIdentitiesRoute: typeof AuthenticatedAdminIdentitiesRoute
-  AuthenticatedAdminIntegrationsRoute: typeof AuthenticatedAdminIntegrationsRoute
-  AuthenticatedAdminIntelligenceRoute: typeof AuthenticatedAdminIntelligenceRoute
-  AuthenticatedAdminIntelligenceAiRoute: typeof AuthenticatedAdminIntelligenceAiRoute
-  AuthenticatedAdminIntelligenceOperationsRoute: typeof AuthenticatedAdminIntelligenceOperationsRoute
-  AuthenticatedAdminIntelligenceParentsRoute: typeof AuthenticatedAdminIntelligenceParentsRoute
-  AuthenticatedAdminIntelligenceStudentsRoute: typeof AuthenticatedAdminIntelligenceStudentsRoute
-  AuthenticatedAdminIntelligenceTeachersRoute: typeof AuthenticatedAdminIntelligenceTeachersRoute
-  AuthenticatedAdminInventoryRoute: typeof AuthenticatedAdminInventoryRoute
-  AuthenticatedAdminLessonPlansRoute: typeof AuthenticatedAdminLessonPlansRoute
-  AuthenticatedAdminLibraryRoute: typeof AuthenticatedAdminLibraryRoute
-  AuthenticatedAdminLockedAccountsRoute: typeof AuthenticatedAdminLockedAccountsRoute
-  AuthenticatedAdminMessagesLogRoute: typeof AuthenticatedAdminMessagesLogRoute
-  AuthenticatedAdminNdpaRoute: typeof AuthenticatedAdminNdpaRoute
-  AuthenticatedAdminNewsRoute: typeof AuthenticatedAdminNewsRoute
-  AuthenticatedAdminOnboardingInterviewRoute: typeof AuthenticatedAdminOnboardingInterviewRoute
-  AuthenticatedAdminOperationsRoute: typeof AuthenticatedAdminOperationsRoute
-  AuthenticatedAdminPayrollRoute: typeof AuthenticatedAdminPayrollRoute
-  AuthenticatedAdminReportCardsRoute: typeof AuthenticatedAdminReportCardsRoute
-  AuthenticatedAdminRoleScopesRoute: typeof AuthenticatedAdminRoleScopesRoute
-  AuthenticatedAdminRolesRoute: typeof AuthenticatedAdminRolesRoute
-  AuthenticatedAdminSafeguardsRoute: typeof AuthenticatedAdminSafeguardsRoute
-  AuthenticatedAdminSchoolGroupRoute: typeof AuthenticatedAdminSchoolGroupRoute
-  AuthenticatedAdminSchoolProfileRoute: typeof AuthenticatedAdminSchoolProfileRoute
-  AuthenticatedAdminSessionRolloverRoute: typeof AuthenticatedAdminSessionRolloverRoute
-  AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
-  AuthenticatedAdminStaffAccountsRoute: typeof AuthenticatedAdminStaffAccountsRoute
-  AuthenticatedAdminStoresAssetsRoute: typeof AuthenticatedAdminStoresAssetsRoute
-  AuthenticatedAdminStructureRoute: typeof AuthenticatedAdminStructureRoute
-  AuthenticatedAdminStudentIntelligenceRoute: typeof AuthenticatedAdminStudentIntelligenceRoute
-  AuthenticatedAdminStudentsRoute: typeof AuthenticatedAdminStudentsRoute
-  AuthenticatedAdminSupportRoute: typeof AuthenticatedAdminSupportRoute
-  AuthenticatedAdminTeacherIntelligenceRoute: typeof AuthenticatedAdminTeacherIntelligenceRoute
-  AuthenticatedAdminTeachersRoute: typeof AuthenticatedAdminTeachersRoute
-  AuthenticatedAdminTimetableRoute: typeof AuthenticatedAdminTimetableRoute
-  AuthenticatedAdminTransfersCustodyRoute: typeof AuthenticatedAdminTransfersCustodyRoute
-  AuthenticatedAdminVisitorsRoute: typeof AuthenticatedAdminVisitorsRoute
-  AuthenticatedAdminWalletRoute: typeof AuthenticatedAdminWalletRoute
-  AuthenticatedAdminWebsiteRoute: typeof AuthenticatedAdminWebsiteRoute
+interface ConsoleActivityRouteRouteChildren {
+  ConsoleActivityAdminRoute: typeof ConsoleActivityAdminRoute
+  ConsoleActivityBillingRoute: typeof ConsoleActivityBillingRoute
+  ConsoleActivityIncidentsRoute: typeof ConsoleActivityIncidentsRoute
+  ConsoleActivityLogsRoute: typeof ConsoleActivityLogsRoute
+  ConsoleActivityMetricsRoute: typeof ConsoleActivityMetricsRoute
+  ConsoleActivitySecurityRoute: typeof ConsoleActivitySecurityRoute
+  ConsoleActivityTicketsRoute: typeof ConsoleActivityTicketsRoute
+  ConsoleActivityIndexRoute: typeof ConsoleActivityIndexRoute
 }
 
-const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
+const ConsoleActivityRouteRouteChildren: ConsoleActivityRouteRouteChildren = {
+  ConsoleActivityAdminRoute: ConsoleActivityAdminRoute,
+  ConsoleActivityBillingRoute: ConsoleActivityBillingRoute,
+  ConsoleActivityIncidentsRoute: ConsoleActivityIncidentsRoute,
+  ConsoleActivityLogsRoute: ConsoleActivityLogsRoute,
+  ConsoleActivityMetricsRoute: ConsoleActivityMetricsRoute,
+  ConsoleActivitySecurityRoute: ConsoleActivitySecurityRoute,
+  ConsoleActivityTicketsRoute: ConsoleActivityTicketsRoute,
+  ConsoleActivityIndexRoute: ConsoleActivityIndexRoute,
+}
+
+const ConsoleActivityRouteRouteWithChildren =
+  ConsoleActivityRouteRoute._addFileChildren(ConsoleActivityRouteRouteChildren)
+
+interface ConsoleOrganizationsRouteRouteChildren {
+  ConsoleOrganizationsOrganizationIdRoute: typeof ConsoleOrganizationsOrganizationIdRoute
+  ConsoleOrganizationsNewRoute: typeof ConsoleOrganizationsNewRoute
+  ConsoleOrganizationsIndexRoute: typeof ConsoleOrganizationsIndexRoute
+}
+
+const ConsoleOrganizationsRouteRouteChildren: ConsoleOrganizationsRouteRouteChildren =
   {
-    AuthenticatedAdminAcademicStandingRoute:
-      AuthenticatedAdminAcademicStandingRoute,
-    AuthenticatedAdminAdmissionsRoute: AuthenticatedAdminAdmissionsRoute,
-    AuthenticatedAdminAdmissionsFunnelRoute:
-      AuthenticatedAdminAdmissionsFunnelRoute,
-    AuthenticatedAdminAiAssistantRoute: AuthenticatedAdminAiAssistantRoute,
-    AuthenticatedAdminAnalyticsRoute: AuthenticatedAdminAnalyticsRoute,
-    AuthenticatedAdminApiKeysRoute: AuthenticatedAdminApiKeysRoute,
-    AuthenticatedAdminAttendanceRoute: AuthenticatedAdminAttendanceRoute,
-    AuthenticatedAdminAttendanceConflictsRoute:
-      AuthenticatedAdminAttendanceConflictsRoute,
-    AuthenticatedAdminAuditRoute: AuthenticatedAdminAuditRoute,
-    AuthenticatedAdminAuditLogsRoute: AuthenticatedAdminAuditLogsRoute,
-    AuthenticatedAdminBroadcastRoute: AuthenticatedAdminBroadcastRoute,
-    AuthenticatedAdminBusManagementRoute: AuthenticatedAdminBusManagementRoute,
-    AuthenticatedAdminBusesRoute: AuthenticatedAdminBusesRoute,
-    AuthenticatedAdminCalendarRoute: AuthenticatedAdminCalendarRoute,
-    AuthenticatedAdminCampusesRoute: AuthenticatedAdminCampusesRoute,
-    AuthenticatedAdminClassesRoute: AuthenticatedAdminClassesRoute,
-    AuthenticatedAdminCmsRoute: AuthenticatedAdminCmsRoute,
-    AuthenticatedAdminDashboardRoute: AuthenticatedAdminDashboardRoute,
-    AuthenticatedAdminDigitalTwinRoute: AuthenticatedAdminDigitalTwinRoute,
-    AuthenticatedAdminDisciplineRoute: AuthenticatedAdminDisciplineRoute,
-    AuthenticatedAdminDomainsRoute: AuthenticatedAdminDomainsRoute,
-    AuthenticatedAdminEarlyWarningRoute: AuthenticatedAdminEarlyWarningRoute,
-    AuthenticatedAdminEducationRealityRoute:
-      AuthenticatedAdminEducationRealityRoute,
-    AuthenticatedAdminEnterpriseChecklistRoute:
-      AuthenticatedAdminEnterpriseChecklistRoute,
-    AuthenticatedAdminExamBodiesRoute: AuthenticatedAdminExamBodiesRoute,
-    AuthenticatedAdminExaminationsRoute: AuthenticatedAdminExaminationsRoute,
-    AuthenticatedAdminExamsRoute: AuthenticatedAdminExamsRoute,
-    AuthenticatedAdminExpensesRoute: AuthenticatedAdminExpensesRoute,
-    AuthenticatedAdminExtracurricularRoute:
-      AuthenticatedAdminExtracurricularRoute,
-    AuthenticatedAdminFacilitiesRoute: AuthenticatedAdminFacilitiesRoute,
-    AuthenticatedAdminFeaturesRoute: AuthenticatedAdminFeaturesRoute,
-    AuthenticatedAdminFeeReliefRoute: AuthenticatedAdminFeeReliefRoute,
-    AuthenticatedAdminFeesRoute: AuthenticatedAdminFeesRoute,
-    AuthenticatedAdminFeesDefaultersRoute:
-      AuthenticatedAdminFeesDefaultersRoute,
-    AuthenticatedAdminFinancialReportsRoute:
-      AuthenticatedAdminFinancialReportsRoute,
-    AuthenticatedAdminGeofenceSettingsRoute:
-      AuthenticatedAdminGeofenceSettingsRoute,
-    AuthenticatedAdminGovernmentRoute: AuthenticatedAdminGovernmentRoute,
-    AuthenticatedAdminGradesRoute: AuthenticatedAdminGradesRoute,
-    AuthenticatedAdminHeadsRoute: AuthenticatedAdminHeadsRoute,
-    AuthenticatedAdminHealthRoute: AuthenticatedAdminHealthRoute,
-    AuthenticatedAdminHealthCertificateRoute:
-      AuthenticatedAdminHealthCertificateRoute,
-    AuthenticatedAdminHostelRoute: AuthenticatedAdminHostelRoute,
-    AuthenticatedAdminHrRoute: AuthenticatedAdminHrRoute,
-    AuthenticatedAdminHrPayrollRoute: AuthenticatedAdminHrPayrollRoute,
-    AuthenticatedAdminIdentitiesRoute: AuthenticatedAdminIdentitiesRoute,
-    AuthenticatedAdminIntegrationsRoute: AuthenticatedAdminIntegrationsRoute,
-    AuthenticatedAdminIntelligenceRoute: AuthenticatedAdminIntelligenceRoute,
-    AuthenticatedAdminIntelligenceAiRoute:
-      AuthenticatedAdminIntelligenceAiRoute,
-    AuthenticatedAdminIntelligenceOperationsRoute:
-      AuthenticatedAdminIntelligenceOperationsRoute,
-    AuthenticatedAdminIntelligenceParentsRoute:
-      AuthenticatedAdminIntelligenceParentsRoute,
-    AuthenticatedAdminIntelligenceStudentsRoute:
-      AuthenticatedAdminIntelligenceStudentsRoute,
-    AuthenticatedAdminIntelligenceTeachersRoute:
-      AuthenticatedAdminIntelligenceTeachersRoute,
-    AuthenticatedAdminInventoryRoute: AuthenticatedAdminInventoryRoute,
-    AuthenticatedAdminLessonPlansRoute: AuthenticatedAdminLessonPlansRoute,
-    AuthenticatedAdminLibraryRoute: AuthenticatedAdminLibraryRoute,
-    AuthenticatedAdminLockedAccountsRoute:
-      AuthenticatedAdminLockedAccountsRoute,
-    AuthenticatedAdminMessagesLogRoute: AuthenticatedAdminMessagesLogRoute,
-    AuthenticatedAdminNdpaRoute: AuthenticatedAdminNdpaRoute,
-    AuthenticatedAdminNewsRoute: AuthenticatedAdminNewsRoute,
-    AuthenticatedAdminOnboardingInterviewRoute:
-      AuthenticatedAdminOnboardingInterviewRoute,
-    AuthenticatedAdminOperationsRoute: AuthenticatedAdminOperationsRoute,
-    AuthenticatedAdminPayrollRoute: AuthenticatedAdminPayrollRoute,
-    AuthenticatedAdminReportCardsRoute: AuthenticatedAdminReportCardsRoute,
-    AuthenticatedAdminRoleScopesRoute: AuthenticatedAdminRoleScopesRoute,
-    AuthenticatedAdminRolesRoute: AuthenticatedAdminRolesRoute,
-    AuthenticatedAdminSafeguardsRoute: AuthenticatedAdminSafeguardsRoute,
-    AuthenticatedAdminSchoolGroupRoute: AuthenticatedAdminSchoolGroupRoute,
-    AuthenticatedAdminSchoolProfileRoute: AuthenticatedAdminSchoolProfileRoute,
-    AuthenticatedAdminSessionRolloverRoute:
-      AuthenticatedAdminSessionRolloverRoute,
-    AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
-    AuthenticatedAdminStaffAccountsRoute: AuthenticatedAdminStaffAccountsRoute,
-    AuthenticatedAdminStoresAssetsRoute: AuthenticatedAdminStoresAssetsRoute,
-    AuthenticatedAdminStructureRoute: AuthenticatedAdminStructureRoute,
-    AuthenticatedAdminStudentIntelligenceRoute:
-      AuthenticatedAdminStudentIntelligenceRoute,
-    AuthenticatedAdminStudentsRoute: AuthenticatedAdminStudentsRoute,
-    AuthenticatedAdminSupportRoute: AuthenticatedAdminSupportRoute,
-    AuthenticatedAdminTeacherIntelligenceRoute:
-      AuthenticatedAdminTeacherIntelligenceRoute,
-    AuthenticatedAdminTeachersRoute: AuthenticatedAdminTeachersRoute,
-    AuthenticatedAdminTimetableRoute: AuthenticatedAdminTimetableRoute,
-    AuthenticatedAdminTransfersCustodyRoute:
-      AuthenticatedAdminTransfersCustodyRoute,
-    AuthenticatedAdminVisitorsRoute: AuthenticatedAdminVisitorsRoute,
-    AuthenticatedAdminWalletRoute: AuthenticatedAdminWalletRoute,
-    AuthenticatedAdminWebsiteRoute: AuthenticatedAdminWebsiteRoute,
+    ConsoleOrganizationsOrganizationIdRoute:
+      ConsoleOrganizationsOrganizationIdRoute,
+    ConsoleOrganizationsNewRoute: ConsoleOrganizationsNewRoute,
+    ConsoleOrganizationsIndexRoute: ConsoleOrganizationsIndexRoute,
   }
 
-const AuthenticatedAdminRouteRouteWithChildren =
-  AuthenticatedAdminRouteRoute._addFileChildren(
-    AuthenticatedAdminRouteRouteChildren,
+const ConsoleOrganizationsRouteRouteWithChildren =
+  ConsoleOrganizationsRouteRoute._addFileChildren(
+    ConsoleOrganizationsRouteRouteChildren,
   )
 
-interface AuthenticatedBursarRouteRouteChildren {
-  AuthenticatedBursarDashboardRoute: typeof AuthenticatedBursarDashboardRoute
-  AuthenticatedBursarFeePlansRoute: typeof AuthenticatedBursarFeePlansRoute
-  AuthenticatedBursarFinancialIntelligenceRoute: typeof AuthenticatedBursarFinancialIntelligenceRoute
-  AuthenticatedBursarReceiptsRoute: typeof AuthenticatedBursarReceiptsRoute
-  AuthenticatedBursarReconciliationRoute: typeof AuthenticatedBursarReconciliationRoute
-  AuthenticatedBursarReportsRoute: typeof AuthenticatedBursarReportsRoute
+interface ConsoleRuntimesRouteRouteChildren {
+  ConsoleRuntimesScholarRoute: typeof ConsoleRuntimesScholarRoute
+  ConsoleRuntimesIndexRoute: typeof ConsoleRuntimesIndexRoute
 }
 
-const AuthenticatedBursarRouteRouteChildren: AuthenticatedBursarRouteRouteChildren =
+const ConsoleRuntimesRouteRouteChildren: ConsoleRuntimesRouteRouteChildren = {
+  ConsoleRuntimesScholarRoute: ConsoleRuntimesScholarRoute,
+  ConsoleRuntimesIndexRoute: ConsoleRuntimesIndexRoute,
+}
+
+const ConsoleRuntimesRouteRouteWithChildren =
+  ConsoleRuntimesRouteRoute._addFileChildren(ConsoleRuntimesRouteRouteChildren)
+
+interface ConsoleTeamRouteRouteChildren {
+  ConsoleTeamAccessRoute: typeof ConsoleTeamAccessRoute
+  ConsoleTeamInvitationsRoute: typeof ConsoleTeamInvitationsRoute
+  ConsoleTeamRolesRoute: typeof ConsoleTeamRolesRoute
+  ConsoleTeamSuspendedRoute: typeof ConsoleTeamSuspendedRoute
+  ConsoleTeamIndexRoute: typeof ConsoleTeamIndexRoute
+}
+
+const ConsoleTeamRouteRouteChildren: ConsoleTeamRouteRouteChildren = {
+  ConsoleTeamAccessRoute: ConsoleTeamAccessRoute,
+  ConsoleTeamInvitationsRoute: ConsoleTeamInvitationsRoute,
+  ConsoleTeamRolesRoute: ConsoleTeamRolesRoute,
+  ConsoleTeamSuspendedRoute: ConsoleTeamSuspendedRoute,
+  ConsoleTeamIndexRoute: ConsoleTeamIndexRoute,
+}
+
+const ConsoleTeamRouteRouteWithChildren =
+  ConsoleTeamRouteRoute._addFileChildren(ConsoleTeamRouteRouteChildren)
+
+interface ConsoleWorkspacesRouteRouteChildren {
+  ConsoleWorkspacesWorkspaceIdRoute: typeof ConsoleWorkspacesWorkspaceIdRoute
+  ConsoleWorkspacesIndexRoute: typeof ConsoleWorkspacesIndexRoute
+}
+
+const ConsoleWorkspacesRouteRouteChildren: ConsoleWorkspacesRouteRouteChildren =
   {
-    AuthenticatedBursarDashboardRoute: AuthenticatedBursarDashboardRoute,
-    AuthenticatedBursarFeePlansRoute: AuthenticatedBursarFeePlansRoute,
-    AuthenticatedBursarFinancialIntelligenceRoute:
-      AuthenticatedBursarFinancialIntelligenceRoute,
-    AuthenticatedBursarReceiptsRoute: AuthenticatedBursarReceiptsRoute,
-    AuthenticatedBursarReconciliationRoute:
-      AuthenticatedBursarReconciliationRoute,
-    AuthenticatedBursarReportsRoute: AuthenticatedBursarReportsRoute,
+    ConsoleWorkspacesWorkspaceIdRoute: ConsoleWorkspacesWorkspaceIdRoute,
+    ConsoleWorkspacesIndexRoute: ConsoleWorkspacesIndexRoute,
   }
 
-const AuthenticatedBursarRouteRouteWithChildren =
-  AuthenticatedBursarRouteRoute._addFileChildren(
-    AuthenticatedBursarRouteRouteChildren,
+const ConsoleWorkspacesRouteRouteWithChildren =
+  ConsoleWorkspacesRouteRoute._addFileChildren(
+    ConsoleWorkspacesRouteRouteChildren,
   )
 
-interface AuthenticatedCommandCentreRouteRouteChildren {
-  AuthenticatedCommandCentreIndexRoute: typeof AuthenticatedCommandCentreIndexRoute
+interface ConsoleRouteRouteChildren {
+  ConsoleActivityRouteRoute: typeof ConsoleActivityRouteRouteWithChildren
+  ConsoleOrganizationsRouteRoute: typeof ConsoleOrganizationsRouteRouteWithChildren
+  ConsoleRuntimesRouteRoute: typeof ConsoleRuntimesRouteRouteWithChildren
+  ConsoleTeamRouteRoute: typeof ConsoleTeamRouteRouteWithChildren
+  ConsoleWorkspacesRouteRoute: typeof ConsoleWorkspacesRouteRouteWithChildren
+  ConsoleAccountRoute: typeof ConsoleAccountRoute
+  ConsoleHelpRoute: typeof ConsoleHelpRoute
+  ConsoleSettingsRoute: typeof ConsoleSettingsRoute
+  ConsoleIndexRoute: typeof ConsoleIndexRoute
 }
 
-const AuthenticatedCommandCentreRouteRouteChildren: AuthenticatedCommandCentreRouteRouteChildren =
-  {
-    AuthenticatedCommandCentreIndexRoute: AuthenticatedCommandCentreIndexRoute,
-  }
-
-const AuthenticatedCommandCentreRouteRouteWithChildren =
-  AuthenticatedCommandCentreRouteRoute._addFileChildren(
-    AuthenticatedCommandCentreRouteRouteChildren,
-  )
-
-interface AuthenticatedDriverRouteRouteChildren {
-  AuthenticatedDriverDashboardRoute: typeof AuthenticatedDriverDashboardRoute
-  AuthenticatedDriverStudentsRoute: typeof AuthenticatedDriverStudentsRoute
+const ConsoleRouteRouteChildren: ConsoleRouteRouteChildren = {
+  ConsoleActivityRouteRoute: ConsoleActivityRouteRouteWithChildren,
+  ConsoleOrganizationsRouteRoute: ConsoleOrganizationsRouteRouteWithChildren,
+  ConsoleRuntimesRouteRoute: ConsoleRuntimesRouteRouteWithChildren,
+  ConsoleTeamRouteRoute: ConsoleTeamRouteRouteWithChildren,
+  ConsoleWorkspacesRouteRoute: ConsoleWorkspacesRouteRouteWithChildren,
+  ConsoleAccountRoute: ConsoleAccountRoute,
+  ConsoleHelpRoute: ConsoleHelpRoute,
+  ConsoleSettingsRoute: ConsoleSettingsRoute,
+  ConsoleIndexRoute: ConsoleIndexRoute,
 }
 
-const AuthenticatedDriverRouteRouteChildren: AuthenticatedDriverRouteRouteChildren =
-  {
-    AuthenticatedDriverDashboardRoute: AuthenticatedDriverDashboardRoute,
-    AuthenticatedDriverStudentsRoute: AuthenticatedDriverStudentsRoute,
-  }
-
-const AuthenticatedDriverRouteRouteWithChildren =
-  AuthenticatedDriverRouteRoute._addFileChildren(
-    AuthenticatedDriverRouteRouteChildren,
-  )
-
-interface AuthenticatedHqRouteRouteChildren {
-  AuthenticatedHqDashboardRoute: typeof AuthenticatedHqDashboardRoute
-  AuthenticatedHqFinanceRoute: typeof AuthenticatedHqFinanceRoute
-  AuthenticatedHqReportsRoute: typeof AuthenticatedHqReportsRoute
-}
-
-const AuthenticatedHqRouteRouteChildren: AuthenticatedHqRouteRouteChildren = {
-  AuthenticatedHqDashboardRoute: AuthenticatedHqDashboardRoute,
-  AuthenticatedHqFinanceRoute: AuthenticatedHqFinanceRoute,
-  AuthenticatedHqReportsRoute: AuthenticatedHqReportsRoute,
-}
-
-const AuthenticatedHqRouteRouteWithChildren =
-  AuthenticatedHqRouteRoute._addFileChildren(AuthenticatedHqRouteRouteChildren)
-
-interface AuthenticatedParentRouteRouteChildren {
-  AuthenticatedParentAiAssistantRoute: typeof AuthenticatedParentAiAssistantRoute
-  AuthenticatedParentAttendanceRoute: typeof AuthenticatedParentAttendanceRoute
-  AuthenticatedParentBusTrackingRoute: typeof AuthenticatedParentBusTrackingRoute
-  AuthenticatedParentCalendarRoute: typeof AuthenticatedParentCalendarRoute
-  AuthenticatedParentChildrenRoute: typeof AuthenticatedParentChildrenRoute
-  AuthenticatedParentDashboardRoute: typeof AuthenticatedParentDashboardRoute
-  AuthenticatedParentFeesRoute: typeof AuthenticatedParentFeesRoute
-  AuthenticatedParentGradesRoute: typeof AuthenticatedParentGradesRoute
-  AuthenticatedParentNewsRoute: typeof AuthenticatedParentNewsRoute
-  AuthenticatedParentReportCardsRoute: typeof AuthenticatedParentReportCardsRoute
-}
-
-const AuthenticatedParentRouteRouteChildren: AuthenticatedParentRouteRouteChildren =
-  {
-    AuthenticatedParentAiAssistantRoute: AuthenticatedParentAiAssistantRoute,
-    AuthenticatedParentAttendanceRoute: AuthenticatedParentAttendanceRoute,
-    AuthenticatedParentBusTrackingRoute: AuthenticatedParentBusTrackingRoute,
-    AuthenticatedParentCalendarRoute: AuthenticatedParentCalendarRoute,
-    AuthenticatedParentChildrenRoute: AuthenticatedParentChildrenRoute,
-    AuthenticatedParentDashboardRoute: AuthenticatedParentDashboardRoute,
-    AuthenticatedParentFeesRoute: AuthenticatedParentFeesRoute,
-    AuthenticatedParentGradesRoute: AuthenticatedParentGradesRoute,
-    AuthenticatedParentNewsRoute: AuthenticatedParentNewsRoute,
-    AuthenticatedParentReportCardsRoute: AuthenticatedParentReportCardsRoute,
-  }
-
-const AuthenticatedParentRouteRouteWithChildren =
-  AuthenticatedParentRouteRoute._addFileChildren(
-    AuthenticatedParentRouteRouteChildren,
-  )
-
-interface AuthenticatedStudentRouteRouteChildren {
-  AuthenticatedStudentAiTutorRoute: typeof AuthenticatedStudentAiTutorRoute
-  AuthenticatedStudentAttendanceRoute: typeof AuthenticatedStudentAttendanceRoute
-  AuthenticatedStudentCalendarRoute: typeof AuthenticatedStudentCalendarRoute
-  AuthenticatedStudentCbtRoute: typeof AuthenticatedStudentCbtRoute
-  AuthenticatedStudentCourseRegistrationRoute: typeof AuthenticatedStudentCourseRegistrationRoute
-  AuthenticatedStudentDashboardRoute: typeof AuthenticatedStudentDashboardRoute
-  AuthenticatedStudentFeesRoute: typeof AuthenticatedStudentFeesRoute
-  AuthenticatedStudentGradesRoute: typeof AuthenticatedStudentGradesRoute
-  AuthenticatedStudentNewsRoute: typeof AuthenticatedStudentNewsRoute
-  AuthenticatedStudentReportCardRoute: typeof AuthenticatedStudentReportCardRoute
-  AuthenticatedStudentTimetableRoute: typeof AuthenticatedStudentTimetableRoute
-}
-
-const AuthenticatedStudentRouteRouteChildren: AuthenticatedStudentRouteRouteChildren =
-  {
-    AuthenticatedStudentAiTutorRoute: AuthenticatedStudentAiTutorRoute,
-    AuthenticatedStudentAttendanceRoute: AuthenticatedStudentAttendanceRoute,
-    AuthenticatedStudentCalendarRoute: AuthenticatedStudentCalendarRoute,
-    AuthenticatedStudentCbtRoute: AuthenticatedStudentCbtRoute,
-    AuthenticatedStudentCourseRegistrationRoute:
-      AuthenticatedStudentCourseRegistrationRoute,
-    AuthenticatedStudentDashboardRoute: AuthenticatedStudentDashboardRoute,
-    AuthenticatedStudentFeesRoute: AuthenticatedStudentFeesRoute,
-    AuthenticatedStudentGradesRoute: AuthenticatedStudentGradesRoute,
-    AuthenticatedStudentNewsRoute: AuthenticatedStudentNewsRoute,
-    AuthenticatedStudentReportCardRoute: AuthenticatedStudentReportCardRoute,
-    AuthenticatedStudentTimetableRoute: AuthenticatedStudentTimetableRoute,
-  }
-
-const AuthenticatedStudentRouteRouteWithChildren =
-  AuthenticatedStudentRouteRoute._addFileChildren(
-    AuthenticatedStudentRouteRouteChildren,
-  )
-
-interface AuthenticatedSuperAdminRouteRouteChildren {
-  AuthenticatedSuperAdminAcademicIntelligenceRoute: typeof AuthenticatedSuperAdminAcademicIntelligenceRoute
-  AuthenticatedSuperAdminAgentGovernanceRoute: typeof AuthenticatedSuperAdminAgentGovernanceRoute
-  AuthenticatedSuperAdminBillingRoute: typeof AuthenticatedSuperAdminBillingRoute
-  AuthenticatedSuperAdminCommunicationStewardRoute: typeof AuthenticatedSuperAdminCommunicationStewardRoute
-  AuthenticatedSuperAdminDashboardRoute: typeof AuthenticatedSuperAdminDashboardRoute
-  AuthenticatedSuperAdminFinancialOperationsRoute: typeof AuthenticatedSuperAdminFinancialOperationsRoute
-  AuthenticatedSuperAdminLogsRoute: typeof AuthenticatedSuperAdminLogsRoute
-  AuthenticatedSuperAdminPlatformConfigRoute: typeof AuthenticatedSuperAdminPlatformConfigRoute
-  AuthenticatedSuperAdminRuntimeContractsRoute: typeof AuthenticatedSuperAdminRuntimeContractsRoute
-  AuthenticatedSuperAdminSchedulingIntelligenceRoute: typeof AuthenticatedSuperAdminSchedulingIntelligenceRoute
-  AuthenticatedSuperAdminSchoolsRoute: typeof AuthenticatedSuperAdminSchoolsRoute
-  AuthenticatedSuperAdminSettingsRoute: typeof AuthenticatedSuperAdminSettingsRoute
-  AuthenticatedSuperAdminStaffRoute: typeof AuthenticatedSuperAdminStaffRoute
-  AuthenticatedSuperAdminSupportRoute: typeof AuthenticatedSuperAdminSupportRoute
-  AuthenticatedSuperAdminTenantsRoute: typeof AuthenticatedSuperAdminTenantsRoute
-  AuthenticatedSuperAdminTiersRoute: typeof AuthenticatedSuperAdminTiersRoute
-  AuthenticatedSuperAdminTrustFabricRoute: typeof AuthenticatedSuperAdminTrustFabricRoute
-  AuthenticatedSuperAdminWorkerMissionsRoute: typeof AuthenticatedSuperAdminWorkerMissionsRoute
-  AuthenticatedSuperAdminWorkspaceProjectionRoute: typeof AuthenticatedSuperAdminWorkspaceProjectionRoute
-}
-
-const AuthenticatedSuperAdminRouteRouteChildren: AuthenticatedSuperAdminRouteRouteChildren =
-  {
-    AuthenticatedSuperAdminAcademicIntelligenceRoute:
-      AuthenticatedSuperAdminAcademicIntelligenceRoute,
-    AuthenticatedSuperAdminAgentGovernanceRoute:
-      AuthenticatedSuperAdminAgentGovernanceRoute,
-    AuthenticatedSuperAdminBillingRoute: AuthenticatedSuperAdminBillingRoute,
-    AuthenticatedSuperAdminCommunicationStewardRoute:
-      AuthenticatedSuperAdminCommunicationStewardRoute,
-    AuthenticatedSuperAdminDashboardRoute:
-      AuthenticatedSuperAdminDashboardRoute,
-    AuthenticatedSuperAdminFinancialOperationsRoute:
-      AuthenticatedSuperAdminFinancialOperationsRoute,
-    AuthenticatedSuperAdminLogsRoute: AuthenticatedSuperAdminLogsRoute,
-    AuthenticatedSuperAdminPlatformConfigRoute:
-      AuthenticatedSuperAdminPlatformConfigRoute,
-    AuthenticatedSuperAdminRuntimeContractsRoute:
-      AuthenticatedSuperAdminRuntimeContractsRoute,
-    AuthenticatedSuperAdminSchedulingIntelligenceRoute:
-      AuthenticatedSuperAdminSchedulingIntelligenceRoute,
-    AuthenticatedSuperAdminSchoolsRoute: AuthenticatedSuperAdminSchoolsRoute,
-    AuthenticatedSuperAdminSettingsRoute: AuthenticatedSuperAdminSettingsRoute,
-    AuthenticatedSuperAdminStaffRoute: AuthenticatedSuperAdminStaffRoute,
-    AuthenticatedSuperAdminSupportRoute: AuthenticatedSuperAdminSupportRoute,
-    AuthenticatedSuperAdminTenantsRoute: AuthenticatedSuperAdminTenantsRoute,
-    AuthenticatedSuperAdminTiersRoute: AuthenticatedSuperAdminTiersRoute,
-    AuthenticatedSuperAdminTrustFabricRoute:
-      AuthenticatedSuperAdminTrustFabricRoute,
-    AuthenticatedSuperAdminWorkerMissionsRoute:
-      AuthenticatedSuperAdminWorkerMissionsRoute,
-    AuthenticatedSuperAdminWorkspaceProjectionRoute:
-      AuthenticatedSuperAdminWorkspaceProjectionRoute,
-  }
-
-const AuthenticatedSuperAdminRouteRouteWithChildren =
-  AuthenticatedSuperAdminRouteRoute._addFileChildren(
-    AuthenticatedSuperAdminRouteRouteChildren,
-  )
-
-interface AuthenticatedTeacherRouteRouteChildren {
-  AuthenticatedTeacherAiAssistantRoute: typeof AuthenticatedTeacherAiAssistantRoute
-  AuthenticatedTeacherAttendanceRoute: typeof AuthenticatedTeacherAttendanceRoute
-  AuthenticatedTeacherAttendanceWeekRoute: typeof AuthenticatedTeacherAttendanceWeekRoute
-  AuthenticatedTeacherCalendarRoute: typeof AuthenticatedTeacherCalendarRoute
-  AuthenticatedTeacherClassIntelligenceRoute: typeof AuthenticatedTeacherClassIntelligenceRoute
-  AuthenticatedTeacherDashboardRoute: typeof AuthenticatedTeacherDashboardRoute
-  AuthenticatedTeacherGradebookRoute: typeof AuthenticatedTeacherGradebookRoute
-  AuthenticatedTeacherGradesRoute: typeof AuthenticatedTeacherGradesRoute
-  AuthenticatedTeacherLessonNotesRoute: typeof AuthenticatedTeacherLessonNotesRoute
-  AuthenticatedTeacherLessonPlansRoute: typeof AuthenticatedTeacherLessonPlansRoute
-  AuthenticatedTeacherNewsRoute: typeof AuthenticatedTeacherNewsRoute
-  AuthenticatedTeacherSignInRoute: typeof AuthenticatedTeacherSignInRoute
-  AuthenticatedTeacherTimetableRoute: typeof AuthenticatedTeacherTimetableRoute
-}
-
-const AuthenticatedTeacherRouteRouteChildren: AuthenticatedTeacherRouteRouteChildren =
-  {
-    AuthenticatedTeacherAiAssistantRoute: AuthenticatedTeacherAiAssistantRoute,
-    AuthenticatedTeacherAttendanceRoute: AuthenticatedTeacherAttendanceRoute,
-    AuthenticatedTeacherAttendanceWeekRoute:
-      AuthenticatedTeacherAttendanceWeekRoute,
-    AuthenticatedTeacherCalendarRoute: AuthenticatedTeacherCalendarRoute,
-    AuthenticatedTeacherClassIntelligenceRoute:
-      AuthenticatedTeacherClassIntelligenceRoute,
-    AuthenticatedTeacherDashboardRoute: AuthenticatedTeacherDashboardRoute,
-    AuthenticatedTeacherGradebookRoute: AuthenticatedTeacherGradebookRoute,
-    AuthenticatedTeacherGradesRoute: AuthenticatedTeacherGradesRoute,
-    AuthenticatedTeacherLessonNotesRoute: AuthenticatedTeacherLessonNotesRoute,
-    AuthenticatedTeacherLessonPlansRoute: AuthenticatedTeacherLessonPlansRoute,
-    AuthenticatedTeacherNewsRoute: AuthenticatedTeacherNewsRoute,
-    AuthenticatedTeacherSignInRoute: AuthenticatedTeacherSignInRoute,
-    AuthenticatedTeacherTimetableRoute: AuthenticatedTeacherTimetableRoute,
-  }
-
-const AuthenticatedTeacherRouteRouteWithChildren =
-  AuthenticatedTeacherRouteRoute._addFileChildren(
-    AuthenticatedTeacherRouteRouteChildren,
-  )
-
-interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAdminRouteRoute: typeof AuthenticatedAdminRouteRouteWithChildren
-  AuthenticatedBursarRouteRoute: typeof AuthenticatedBursarRouteRouteWithChildren
-  AuthenticatedCommandCentreRouteRoute: typeof AuthenticatedCommandCentreRouteRouteWithChildren
-  AuthenticatedDriverRouteRoute: typeof AuthenticatedDriverRouteRouteWithChildren
-  AuthenticatedHqRouteRoute: typeof AuthenticatedHqRouteRouteWithChildren
-  AuthenticatedParentRouteRoute: typeof AuthenticatedParentRouteRouteWithChildren
-  AuthenticatedStudentRouteRoute: typeof AuthenticatedStudentRouteRouteWithChildren
-  AuthenticatedSuperAdminRouteRoute: typeof AuthenticatedSuperAdminRouteRouteWithChildren
-  AuthenticatedTeacherRouteRoute: typeof AuthenticatedTeacherRouteRouteWithChildren
-  AuthenticatedConsentRoute: typeof AuthenticatedConsentRoute
-  AuthenticatedGovDashboardRoute: typeof AuthenticatedGovDashboardRoute
-  AuthenticatedInternalRoute: typeof AuthenticatedInternalRoute
-  AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
-  AuthenticatedMfaRoute: typeof AuthenticatedMfaRoute
-  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
-  AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
-  AuthenticatedOrganizationsRoute: typeof AuthenticatedOrganizationsRoute
-  AuthenticatedRuntimeRoute: typeof AuthenticatedRuntimeRoute
-  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
-  AuthenticatedWelcomeRoute: typeof AuthenticatedWelcomeRoute
-  AuthenticatedWorkspaceRoute: typeof AuthenticatedWorkspaceRoute
-  AuthenticatedInternalAccessReviewRoute: typeof AuthenticatedInternalAccessReviewRoute
-  AuthenticatedInternalGovAccessRoute: typeof AuthenticatedInternalGovAccessRoute
-  AuthenticatedInternalSupportRoute: typeof AuthenticatedInternalSupportRoute
-  AuthenticatedWorkspaceSettingsRoute: typeof AuthenticatedWorkspaceSettingsRoute
-}
-
-const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAdminRouteRoute: AuthenticatedAdminRouteRouteWithChildren,
-  AuthenticatedBursarRouteRoute: AuthenticatedBursarRouteRouteWithChildren,
-  AuthenticatedCommandCentreRouteRoute:
-    AuthenticatedCommandCentreRouteRouteWithChildren,
-  AuthenticatedDriverRouteRoute: AuthenticatedDriverRouteRouteWithChildren,
-  AuthenticatedHqRouteRoute: AuthenticatedHqRouteRouteWithChildren,
-  AuthenticatedParentRouteRoute: AuthenticatedParentRouteRouteWithChildren,
-  AuthenticatedStudentRouteRoute: AuthenticatedStudentRouteRouteWithChildren,
-  AuthenticatedSuperAdminRouteRoute:
-    AuthenticatedSuperAdminRouteRouteWithChildren,
-  AuthenticatedTeacherRouteRoute: AuthenticatedTeacherRouteRouteWithChildren,
-  AuthenticatedConsentRoute: AuthenticatedConsentRoute,
-  AuthenticatedGovDashboardRoute: AuthenticatedGovDashboardRoute,
-  AuthenticatedInternalRoute: AuthenticatedInternalRoute,
-  AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
-  AuthenticatedMfaRoute: AuthenticatedMfaRoute,
-  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
-  AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
-  AuthenticatedOrganizationsRoute: AuthenticatedOrganizationsRoute,
-  AuthenticatedRuntimeRoute: AuthenticatedRuntimeRoute,
-  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
-  AuthenticatedWelcomeRoute: AuthenticatedWelcomeRoute,
-  AuthenticatedWorkspaceRoute: AuthenticatedWorkspaceRoute,
-  AuthenticatedInternalAccessReviewRoute:
-    AuthenticatedInternalAccessReviewRoute,
-  AuthenticatedInternalGovAccessRoute: AuthenticatedInternalGovAccessRoute,
-  AuthenticatedInternalSupportRoute: AuthenticatedInternalSupportRoute,
-  AuthenticatedWorkspaceSettingsRoute: AuthenticatedWorkspaceSettingsRoute,
-}
-
-const AuthenticatedRouteRouteWithChildren =
-  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
-
-interface GovRouteRouteChildren {
-  GovAboutRoute: typeof GovAboutRoute
-  GovAttendanceRoute: typeof GovAttendanceRoute
-  GovCircularsRoute: typeof GovCircularsRoute
-  GovInspectionsRoute: typeof GovInspectionsRoute
-  GovPostingsRoute: typeof GovPostingsRoute
-  GovSchoolsRoute: typeof GovSchoolsRoute
-  GovStaffingRoute: typeof GovStaffingRoute
-  GovIndexRoute: typeof GovIndexRoute
-}
-
-const GovRouteRouteChildren: GovRouteRouteChildren = {
-  GovAboutRoute: GovAboutRoute,
-  GovAttendanceRoute: GovAttendanceRoute,
-  GovCircularsRoute: GovCircularsRoute,
-  GovInspectionsRoute: GovInspectionsRoute,
-  GovPostingsRoute: GovPostingsRoute,
-  GovSchoolsRoute: GovSchoolsRoute,
-  GovStaffingRoute: GovStaffingRoute,
-  GovIndexRoute: GovIndexRoute,
-}
-
-const GovRouteRouteWithChildren = GovRouteRoute._addFileChildren(
-  GovRouteRouteChildren,
+const ConsoleRouteRouteWithChildren = ConsoleRouteRoute._addFileChildren(
+  ConsoleRouteRouteChildren,
 )
 
-interface BlogRouteChildren {
-  BlogSlugRoute: typeof BlogSlugRoute
+interface HomeRouteRouteChildren {
+  HomeAiRoute: typeof HomeAiRoute
+  HomeHelpRoute: typeof HomeHelpRoute
+  HomeNotificationsRoute: typeof HomeNotificationsRoute
+  HomeProfileRoute: typeof HomeProfileRoute
+  HomeSecurityRoute: typeof HomeSecurityRoute
+  HomeSettingsRoute: typeof HomeSettingsRoute
+  HomeIndexRoute: typeof HomeIndexRoute
+  HomeSSectionRoute: typeof HomeSSectionRoute
 }
 
-const BlogRouteChildren: BlogRouteChildren = {
-  BlogSlugRoute: BlogSlugRoute,
+const HomeRouteRouteChildren: HomeRouteRouteChildren = {
+  HomeAiRoute: HomeAiRoute,
+  HomeHelpRoute: HomeHelpRoute,
+  HomeNotificationsRoute: HomeNotificationsRoute,
+  HomeProfileRoute: HomeProfileRoute,
+  HomeSecurityRoute: HomeSecurityRoute,
+  HomeSettingsRoute: HomeSettingsRoute,
+  HomeIndexRoute: HomeIndexRoute,
+  HomeSSectionRoute: HomeSSectionRoute,
 }
 
-const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
-
-interface PlatformRouteChildren {
-  PlatformOrgRoute: typeof PlatformOrgRoute
-}
-
-const PlatformRouteChildren: PlatformRouteChildren = {
-  PlatformOrgRoute: PlatformOrgRoute,
-}
-
-const PlatformRouteWithChildren = PlatformRoute._addFileChildren(
-  PlatformRouteChildren,
+const HomeRouteRouteWithChildren = HomeRouteRoute._addFileChildren(
+  HomeRouteRouteChildren,
 )
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   siteRouteRoute: siteRouteRouteWithChildren,
-  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
-  GovRouteRoute: GovRouteRouteWithChildren,
-  AdmissionsRoute: AdmissionsRoute,
+  ConsoleRouteRoute: ConsoleRouteRouteWithChildren,
+  HomeRouteRoute: HomeRouteRouteWithChildren,
   AuthRoute: AuthRoute,
-  BlogRoute: BlogRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
-  FoundationLoopRoute: FoundationLoopRoute,
-  GovInviteRoute: GovInviteRoute,
-  HeadRoute: HeadRoute,
   HealthDotjsonRoute: HealthDotjsonRoute,
   LoginRoute: LoginRoute,
   ManifestDotwebmanifestRoute: ManifestDotwebmanifestRoute,
-  MarketplaceRoute: MarketplaceRoute,
-  PlatformRoute: PlatformRouteWithChildren,
-  PrivacyRoute: PrivacyRoute,
+  OnboardingRoute: OnboardingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   RssDotxmlRoute: RssDotxmlRoute,
-  RulesRoute: RulesRoute,
-  ScholarFoundationLoopRoute: ScholarFoundationLoopRoute,
   SiteIconDotsvgRoute: SiteIconDotsvgRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
-  UxLabRoute: UxLabRoute,
-  EventsIdRoute: EventsIdRoute,
-  NewsIdRoute: NewsIdRoute,
+  DotwellKnownAppleAppSiteAssociationRoute:
+    DotwellKnownAppleAppSiteAssociationRoute,
+  DotwellKnownAssetlinksDotjsonRoute: DotwellKnownAssetlinksDotjsonRoute,
+  ApiWebauthnRoute: ApiWebauthnRoute,
   PagesSlugRoute: PagesSlugRoute,
   PostsPostRoute: PostsPostRoute,
-  RealityClassRoute: RealityClassRoute,
-  GroupIndexRoute: GroupIndexRoute,
+  ApiPublicWebauthnRoute: ApiPublicWebauthnRoute,
   ApiPublicAuditPasswordResetRoute: ApiPublicAuditPasswordResetRoute,
   ApiPublicCronIntegrationsSyncRoute: ApiPublicCronIntegrationsSyncRoute,
   ApiPublicCronWalletTopupReconcileRoute:

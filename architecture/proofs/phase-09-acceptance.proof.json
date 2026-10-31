@@ -3,7 +3,7 @@
   "phase": "09",
   "phaseName": "Security & Trust Fabric",
   "source": "architecture/phase-09-security-trust-fabric.md",
-  "generatedAt": "2026-09-28T12:05:24.044Z",
+  "generatedAt": "2026-10-26T18:08:00.144Z",
   "classificationDefinitions": {
     "ENFORCED": "an executable artefact proves it (test, verifier script, migration, policy or machine-checked contract match) and, where a boundary is declared, a real call site invokes it",
     "DECLARED": "a module, document or contract mentions it, but nothing executable proves it",
@@ -12,12 +12,13 @@
   },
   "summary": {
     "areas": 49,
-    "enforced": 34,
+    "enforced": 33,
     "declared": 13,
-    "implementedUnwired": 2,
+    "implementedUnwired": 3,
     "implementedUnwiredAreas": [
       "phase08-consumption",
-      "observability"
+      "observability",
+      "l4-surface"
     ],
     "missing": 0,
     "missingRequired": [],
@@ -1003,7 +1004,7 @@
       "requirement": "The phase has a surface where its behaviour is visible and exercised rather than described.",
       "required": true,
       "ownerPhase": null,
-      "classification": "ENFORCED",
+      "classification": "IMPLEMENTED_UNWIRED",
       "declaredEvidence": [
         "frontend/src/lib/trust-fabric-report.ts",
         "tests/unit/trust-fabric-report.test.ts"
@@ -1016,9 +1017,7 @@
       "declaredBoundary": [
         "frontend/src/routes/_authenticated/super-admin/trust-fabric.tsx"
       ],
-      "boundaryEvidence": [
-        "frontend/src/routes/_authenticated/super-admin/trust-fabric.tsx"
-      ]
+      "boundaryEvidence": []
     },
     {
       "id": "document-completeness",

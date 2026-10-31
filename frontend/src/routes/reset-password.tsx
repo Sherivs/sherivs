@@ -7,6 +7,7 @@ import { newPasswordError } from "@/lib/security/password-strength";
 import { newPasswordServerMessage, recoveryLinkError } from "@/lib/security/auth-feedback";
 import { PasswordInput } from "@/components/security/password-input";
 import { PasswordStrengthMeter } from "@/components/security/password-strength-meter";
+import { postSecurityAudit } from "@/lib/security/post-security-audit";
 import { SherivsLogo } from "@/components/brand/sherivs-logo";
 
 export const Route = createFileRoute("/reset-password")({
@@ -83,14 +84,9 @@ function ResetPasswordPage() {
       const { data, error } = await supabase.auth.updateUser({ password });
       if (error) throw new Error(newPasswordServerMessage(error));
 
-      void fetch("/api/public/audit/password-reset", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          event: "password_reset_completed",
-          user_id: data.user?.id,
-          email: data.user?.email,
-        }),
+      void postSecurityAudit({
+        event: "password_reset_completed",
+        email: data.user?.email,
       }).catch(() => {});
 
       if (signOutOthers) {
@@ -119,7 +115,10 @@ function ResetPasswordPage() {
 
         {invalid && !done && (
           <div className="mt-4 space-y-4" data-testid="link-invalid">
-            <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-3 text-sm">
+            <p
+              role="alert"
+              className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-3 text-sm"
+            >
               {invalid} For your security, reset links work once and expire after a short time.
             </p>
             <Link
@@ -128,7 +127,10 @@ function ResetPasswordPage() {
             >
               Send a new link
             </Link>
-            <Link to="/auth" className="block text-center text-sm text-muted-foreground hover:text-foreground">
+            <Link
+              to="/auth"
+              className="block text-center text-sm text-muted-foreground hover:text-foreground"
+            >
               Back to sign in
             </Link>
           </div>
@@ -201,7 +203,10 @@ function ResetPasswordPage() {
                 </span>
               </label>
               {error && (
-                <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive-foreground">
+                <div
+                  role="alert"
+                  className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive-foreground"
+                >
                   {error}
                 </div>
               )}
@@ -217,9 +222,13 @@ function ResetPasswordPage() {
         )}
 
         {done && (
-          <div className="mt-6 rounded-md border border-border bg-muted/30 px-3 py-3 text-sm" role="status">
-            Your password has been changed{signOutOthers ? " and other devices were signed out" : ""}.
-            Taking you to your dashboard…
+          <div
+            className="mt-6 rounded-md border border-border bg-muted/30 px-3 py-3 text-sm"
+            role="status"
+          >
+            Your password has been changed
+            {signOutOthers ? " and other devices were signed out" : ""}. Taking you to your
+            dashboard…
           </div>
         )}
       </div>

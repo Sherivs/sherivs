@@ -14,9 +14,8 @@
 6. **WCAG 2.2 AA.** All token pairs ≥ 4.5:1 in light and dark (unit-tested), visible focus rings, skip link, landmarks,
    labelled controls, `aria-current`, reduced motion respected.
 
-## Tokens (`frontend/src/components/sds/sds.css`)
-Scoped under `.sds` so screens migrate one at a time. Colour: green primary `#0b6b3a` (dark `#3fb873`), amber accent,
-neutral greys; type scale 12/14/16/20/24/32; spacing 4/8/12/16/24/32; radius 8/12/16; density `comfortable|compact`.
+## Tokens
+The prototype SDS stylesheet (`frontend/src/components/sds/sds.css`) and workspace chrome were removed with the hardcoded portal UI. Workspace catalog/engine modules remain; a replacement surface is future work.
 
 ## Engine
 - Catalog: `tools/workspace/catalog_src.py` (single source) generates `frontend/src/lib/sherivs-ws/catalog.data.ts` and the

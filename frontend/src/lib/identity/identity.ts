@@ -16,7 +16,7 @@ import type { AppRole } from "@/lib/roles";
  *
  * Destination law:
  *   - Sherivs employee (internal workforce)  → the internal Sherivs
- *     operating environment (/internal), never a customer workspace.
+ *     operating environment (/console), never a customer workspace.
  *   - Exactly one organization membership    → that organization's runtime
  *     workspace (the membership carries its own resolved home path).
  *   - Multiple organization memberships      → the organization selector
@@ -26,7 +26,7 @@ import type { AppRole } from "@/lib/roles";
  */
 
 /** Route of the internal Sherivs operating environment (plane 4). */
-export const SHERIVS_INTERNAL_HOME = "/internal";
+export const SHERIVS_INTERNAL_HOME = "/console";
 /** Route of the multi-organization selector. */
 export const ORGANIZATION_SELECTOR_PATH = "/organizations";
 /** Route shown to authenticated users with no organization membership yet. */
