@@ -1,5 +1,5 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 import { dirname } from "node:path";
 
 test.use({
@@ -472,6 +472,7 @@ test("captures desktop and mobile role-management screens with synthetic records
       .toBeLessThanOrEqual(width);
     const path = testInfo.outputPath(`role-management-${width}.png`);
     mkdirSync(dirname(path), { recursive: true });
-    await page.screenshot({ path, fullPage: true, scale: "css" });
+    await page.screenshot({ path, fullPage: width !== 390, scale: "css" });
+    expect(readFileSync(path).readUInt32BE(16)).toBe(width);
   }
 });
