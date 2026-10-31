@@ -12741,6 +12741,54 @@
         137
       ],
       "firstSnippet": "DECLARE f public.fees; sub public.org_payment_subaccounts; due numeric; share numeric; amt_k bigint; share_k bigint := 0; l public.student_platform_fee_ledger;"
+    },
+    {
+      "file": "database/supabase/migrations/20261031000010_sherivs_m009_a1_role_responsibility_engine.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "ADR-014",
+      "occurrences": 12,
+      "lines": [
+        58,
+        182,
+        183,
+        184,
+        187,
+        341,
+        465,
+        480,
+        486,
+        874,
+        995,
+        1041
+      ],
+      "firstSnippet": "WHERE m.user_id = NEW.user_id AND m.school_id = NEW.org_id AND m.is_active"
+    },
+    {
+      "file": "database/supabase/migrations/20261031000010_sherivs_m009_a1_role_responsibility_engine.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "ADR-014",
+      "occurrences": 5,
+      "lines": [
+        416,
+        418,
+        420,
+        426,
+        446
+      ],
+      "firstSnippet": "FOR SELECT TO authenticated USING (org_id = (SELECT public.get_my_school_id()));"
+    },
+    {
+      "file": "database/supabase/migrations/20261031000010_sherivs_m009_a1_role_responsibility_engine.sql",
+      "kind": "vocabulary",
+      "token": "payroll",
+      "streamIRef": "ADR-014",
+      "occurrences": 1,
+      "lines": [
+        665
+      ],
+      "firstSnippet": "WHERE e.permission_code IN ('expenses.approve','payroll.approve','payments.refund','grades.approve','results.publish','procurement.approve')"
     }
   ]
 }
