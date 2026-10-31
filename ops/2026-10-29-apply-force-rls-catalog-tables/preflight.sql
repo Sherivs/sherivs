@@ -1,12 +1,13 @@
 -- =============================================================================
--- PREFLIGHT (READ-ONLY) for FORCE RLS on the six catalogs.
+-- PREFLIGHT (READ-ONLY) for FORCE RLS on the six catalogs and client write grants.
 -- Paste into the Supabase SQL editor for production. Run this file alone, in
 -- its own query. It changes nothing.
 --
 -- Result: one grid, check_name / value / ok. Every row in section Z must be
--- ok = true before apply.sql. Section F is informational: force_alone_safe
--- is true only when every affected SECURITY DEFINER owner already bypasses
--- RLS. The combined apply.sql is the path to use either way.
+-- ok = true before apply.sql. Current client write grants appear in section Z
+-- as a report of what the companion migration will revoke. Section F is
+-- informational: force_alone_safe is true only when every affected SECURITY
+-- DEFINER owner already bypasses RLS. The combined apply.sql is the path to use.
 -- =============================================================================
 SET default_transaction_read_only = on;
 
@@ -69,7 +70,18 @@ ledger_hit AS (
          CASE WHEN NOT (SELECT present FROM ledger) THEN NULL
               ELSE EXISTS (SELECT 1 FROM ledger_rows s WHERE s.version = v.version)
          END AS applied
-    FROM (VALUES ('20261029001000'), ('20261029001100')) v(version)
+    FROM (VALUES
+      ('20261029001000'), ('20261029001100'), ('20261030000100')
+    ) v(version)
+),
+client_write_grants AS (
+  SELECT r.rolname, t.relname, p.privilege
+    FROM (VALUES ('anon'), ('authenticated')) r(rolname)
+    CROSS JOIN (VALUES
+      ('websites'), ('website_versions'), ('website_audit'), ('website_block_types')
+    ) t(relname)
+    CROSS JOIN (VALUES ('INSERT'), ('UPDATE'), ('DELETE'), ('TRUNCATE')) p(privilege)
+   WHERE has_table_privilege(r.rolname, format('public.%I', t.relname), p.privilege)
 ),
 owners AS (
   SELECT DISTINCT fn.owner, fn.rolsuper, fn.rolbypassrls
@@ -174,6 +186,16 @@ SELECT section, check_name, value, ok
                 ELSE 'ready' END,
            (SELECT present FROM ledger)
            AND NOT EXISTS (SELECT 1 FROM ledger_hit WHERE applied)
+    UNION ALL
+    SELECT 'Z', 'current client write grants',
+           COALESCE((
+            SELECT string_agg(
+              rolname || ' ' || relname || ' ' || privilege,
+              ', ' ORDER BY rolname, relname, privilege
+            )
+              FROM client_write_grants
+           ), 'none'),
+           true
     UNION ALL
     SELECT 'Z', 'combined_apply_safe',
            CASE
