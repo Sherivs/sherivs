@@ -61,6 +61,7 @@ describe("tenant-scoped offline IndexedDB store", () => {
     const tenantA = store(database);
     const tenantB = store(database, otherScope);
     await tenantA.write("timetable", "current", [{ id: "slot-a" }]);
+    await tenantA.readThrough("messages", "notifications", async () => [{ id: "message-a" }]);
 
     await expect(tenantB.read("timetable", "current")).resolves.toBeUndefined();
     await expect(
@@ -73,6 +74,11 @@ describe("tenant-scoped offline IndexedDB store", () => {
         throw new Error("not authorized");
       }),
     ).rejects.toThrow("not authorized");
+    await expect(
+      tenantA.readThrough("messages", "notifications", async () => {
+        throw new TypeError("Failed to fetch");
+      }),
+    ).resolves.toEqual({ data: [{ id: "message-a" }], source: "offline" });
   });
 
   it("expires offline reads after the configured staleness window", async () => {

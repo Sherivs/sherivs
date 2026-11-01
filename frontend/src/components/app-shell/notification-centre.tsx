@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
+import { createOfflineStore } from "@/lib/offline/indexeddb-store";
 import { permittedNotificationLink } from "@/lib/shell/notification-links";
 import { useAppShell } from "./shell-context";
 
@@ -21,6 +22,7 @@ export function NotificationCentre() {
   const app = useApp();
   const shell = useAppShell();
   const userId = app.profile?.id;
+  const role = app.profile?.role;
   const schoolId = app.school?.id;
   const [rows, setRows] = useState<NotificationRow[]>([]);
   const [filter, setFilter] = useState<NotificationFilter>("all");
@@ -30,7 +32,7 @@ export function NotificationCentre() {
 
   const load = useCallback(async () => {
     try {
-      if (!userId || !schoolId) {
+      if (!userId || !schoolId || !role) {
         setRows([]);
         setLoading(false);
         setError(true);
@@ -38,26 +40,26 @@ export function NotificationCentre() {
       }
       setLoading(true);
       setError(false);
-      const { data, error: loadError } = await supabase
-        .from("notifications")
-        .select("id, title, message, type, is_read, action_url, created_at")
-        .eq("school_id", schoolId)
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(100);
-      if (loadError) {
-        setRows([]);
-        setError(true);
-      } else {
-        setRows((data ?? []) as NotificationRow[]);
-      }
+      const offline = createOfflineStore({ tenantId: schoolId, userId, role });
+      const { data } = await offline.readThrough("messages", "notifications", async () => {
+        const { data, error: loadError } = await supabase
+          .from("notifications")
+          .select("id, title, message, type, is_read, action_url, created_at")
+          .eq("school_id", schoolId)
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false })
+          .limit(100);
+        if (loadError) throw loadError;
+        return (data ?? []) as NotificationRow[];
+      });
+      setRows(data);
     } catch {
       setRows([]);
       setError(true);
     } finally {
       setLoading(false);
     }
-  }, [schoolId, userId]);
+  }, [role, schoolId, userId]);
 
   useEffect(() => {
     void load();
@@ -82,9 +84,15 @@ export function NotificationCentre() {
       if (updateError) {
         setError(true);
       } else {
-        setRows((current) =>
-          current.map((item) => (item.id === row.id ? { ...item, is_read: true } : item)),
+        const nextRows = rows.map((item) =>
+          item.id === row.id ? { ...item, is_read: true } : item,
         );
+        setRows(nextRows);
+        if (role) {
+          await createOfflineStore({ tenantId: schoolId, userId, role })
+            .write("messages", "notifications", nextRows)
+            .catch(() => {});
+        }
       }
     } catch {
       setError(true);
