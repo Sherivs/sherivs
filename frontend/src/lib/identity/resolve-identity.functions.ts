@@ -37,25 +37,27 @@ export const resolveSherivsIdentity = createServerFn({ method: "GET" })
     //    customer organization workspace by default.
     const { data: internal } = await db
       .from("super_admins")
-      .select("id, full_name, email")
+      .select("id, full_name, email, is_active")
       .eq("id", userId)
       .maybeSingle();
-    if (internal) {
+    if (internal && internal.is_active !== false) {
       return resolveIdentity({ isSherivsInternal: true, memberships: [] });
     }
 
     // 1b. Internal Sherivs staff (SHERIVS-008): accept a pending invite (own
     //     row only; grants nothing) and route ACTIVE staff to /console.
-    await db.rpc("claim_platform_staff_invite");
+    const { error: claimError } = await db.rpc("claim_platform_staff_invite");
+    if (claimError) throw new Error("Invitation claim could not be completed.");
     const { data: staff } = await db
       .from("platform_staff")
-      .select("id")
+      .select("id, status")
       .eq("id", userId)
-      .eq("status", "active")
       .maybeSingle();
     if (staff) {
+      if (staff.status !== "active") throw new Error("Not authorized");
       return resolveIdentity({ isSherivsInternal: true, memberships: [] });
     }
+    if (internal) throw new Error("Not authorized");
 
     // 2. The membership SET (active only, primary first) — RLS-scoped to the
     //    caller's own rows. Substrate failure or emptiness falls back to the

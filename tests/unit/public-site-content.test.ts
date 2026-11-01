@@ -93,6 +93,45 @@ describe("public content honesty", () => {
     }
   });
 
+  it("publishes Sherivs privacy and terms notices with required data-deletion guidance", () => {
+    const privacy = LEGAL_DOCUMENTS.find((doc) => doc.slug === "/privacy");
+    const terms = LEGAL_DOCUMENTS.find((doc) => doc.slug === "/terms");
+    expect(privacy?.status).toBe("published");
+    expect(privacy?.indexable).toBe(true);
+    expect(privacy?.lastUpdated).toBe("1 November 2026");
+    expect(terms?.status).toBe("published");
+
+    const privacyText = privacy?.sections
+      .map((section) => [section.heading, ...section.body].join(" "))
+      .join(" ");
+    for (const required of [
+      "Sherivs Technologies Limited",
+      "Nigeria",
+      "school",
+      "staff",
+      "student",
+      "guardian",
+      "WhatsApp",
+      "SMS",
+      "voice",
+      "Nigeria Data Protection Act 2023",
+      "retention",
+      "access",
+      "correction",
+      "info@sherivs.com",
+      "Data deletion request",
+      "WhatsApp phone number",
+    ]) {
+      expect(privacyText).toContain(required);
+    }
+
+    expect(read("frontend/src/routes/(site)/privacy.tsx")).toContain('path: "/privacy"');
+    expect(read("frontend/src/routes/(site)/privacy-policy.tsx")).toContain(
+      'redirect({ to: "/privacy" })',
+    );
+    expect(read("frontend/src/lib/public-site/navigation.ts")).toContain('"/privacy",');
+  });
+
   it("does not treat technology integrations as commercial partners", () => {
     expect(publishedPartners("commercial")).toHaveLength(0);
     expect(

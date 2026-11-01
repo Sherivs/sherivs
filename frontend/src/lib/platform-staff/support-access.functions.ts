@@ -61,11 +61,8 @@ type RpcClient = {
 /** Capability check through the caller's own session (database is the authority). */
 async function assertCapability(context: Ctx, capability: string) {
   assertInternalAal2((context as { claims?: { aal?: unknown } }).claims);
-  const { data, error } = await (context.supabase as unknown as RpcClient).rpc(
-    "has_platform_capability",
-    { p_capability: capability },
-  );
-  if (error || data !== true) throw new Error("Not authorized");
+  const { assertConsoleCapability } = await import("@/lib/internal-console/console-access.server");
+  await assertConsoleCapability(context, capability, "audit.read");
 }
 
 /* ---------- grant ---------- */
@@ -254,7 +251,7 @@ export const getAccessReview = createServerFn({ method: "GET" })
     });
     await writeAuditRecord(db, {
       action: "platform_access_review.view",
-      gate: "has_platform_capability:platform.audit.read",
+      gate: "has_internal_console_capability:platform.audit.read",
       tenantId: null,
       actorId: context.userId,
       table: "platform_staff",

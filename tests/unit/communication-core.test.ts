@@ -31,8 +31,9 @@ const NOW = "2026-01-01T00:00:00Z";
 function makeMessage(overrides: Partial<CommunicationMessage> = {}): CommunicationMessage {
   const created = createMessage({
     tenantId: TENANT_A,
+    orgId: TENANT_A,
     sender: "admin-1",
-    recipients: ["user-1", "user-2"],
+    recipientUserIds: ["user-1", "user-2"],
     channel: "in_app",
     subject: "Staff meeting",
     content: "Tomorrow 10am",
@@ -48,16 +49,18 @@ describe("createMessage (F.1)", () => {
   it("creates a message with all contract fields", () => {
     const message = makeMessage();
     expect(message.sender).toBe("admin-1");
+    expect(message.orgId).toBe(TENANT_A);
     expect(message.priority).toBe("NORMAL");
     expect(message.classification).toBe("INTERNAL");
-    expect(message.recipients).toHaveLength(2);
+    expect(message.recipientUserIds).toHaveLength(2);
   });
 
   it("rejects a message without a sender", () => {
     const result = createMessage({
       tenantId: TENANT_A,
+      orgId: TENANT_A,
       sender: "",
-      recipients: ["user-1"],
+      recipientUserIds: ["user-1"],
       channel: "in_app",
       subject: "Hi",
       content: "",
@@ -71,8 +74,9 @@ describe("createMessage (F.1)", () => {
   it("rejects a message with no recipients", () => {
     const result = createMessage({
       tenantId: TENANT_A,
+      orgId: TENANT_A,
       sender: "admin-1",
-      recipients: [],
+      recipientUserIds: [],
       channel: "in_app",
       subject: "Hi",
       content: "",
@@ -86,8 +90,9 @@ describe("createMessage (F.1)", () => {
   it("rejects a message with neither subject nor content", () => {
     const result = createMessage({
       tenantId: TENANT_A,
+      orgId: TENANT_A,
       sender: "admin-1",
-      recipients: ["user-1"],
+      recipientUserIds: ["user-1"],
       channel: "in_app",
       subject: "",
       content: "",
@@ -101,8 +106,9 @@ describe("createMessage (F.1)", () => {
   it("rejects a message without a correlation id (CB)", () => {
     const result = createMessage({
       tenantId: TENANT_A,
+      orgId: TENANT_A,
       sender: "admin-1",
-      recipients: ["user-1"],
+      recipientUserIds: ["user-1"],
       channel: "in_app",
       subject: "Hi",
       content: "",
@@ -111,6 +117,35 @@ describe("createMessage (F.1)", () => {
       now: NOW,
     });
     expect(result.ok).toBe(false);
+  });
+
+  it("rejects an org mismatch and blank recipient identifiers", () => {
+    const mismatch = createMessage({
+      tenantId: TENANT_A,
+      orgId: TENANT_B,
+      sender: "admin-1",
+      recipientUserIds: ["user-1"],
+      channel: "whatsapp",
+      subject: "Hi",
+      content: "",
+      correlationId: "corr-1",
+      idempotencyKey: "idem-1",
+      now: NOW,
+    });
+    const blankRecipient = createMessage({
+      tenantId: TENANT_A,
+      orgId: TENANT_A,
+      sender: "admin-1",
+      recipientUserIds: [" "],
+      channel: "whatsapp",
+      subject: "Hi",
+      content: "",
+      correlationId: "corr-1",
+      idempotencyKey: "idem-2",
+      now: NOW,
+    });
+    expect(mismatch.ok).toBe(false);
+    expect(blankRecipient.ok).toBe(false);
   });
 });
 

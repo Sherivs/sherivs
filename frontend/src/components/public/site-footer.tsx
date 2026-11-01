@@ -93,7 +93,7 @@ export function SiteFooter() {
           © {new Date().getFullYear()} {LEGAL_ENTITY_NAME}. All rights reserved.
         </p>
         <p className="flex flex-wrap gap-x-4 gap-y-2">
-          <PublicLink href="/privacy-policy" className="hover:text-[var(--sherivs-ink)]">
+          <PublicLink href="/privacy" className="hover:text-[var(--sherivs-ink)]">
             Privacy
           </PublicLink>
           <PublicLink href="/terms" className="hover:text-[var(--sherivs-ink)]">

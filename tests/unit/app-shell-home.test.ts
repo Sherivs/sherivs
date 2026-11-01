@@ -203,6 +203,7 @@ describe("role-dynamic home", () => {
       "Settings",
       "Biometric and authentication",
       "Help and support",
+      "Communications",
     ]);
     expect(formatWidgetMetric({ metric: 2 }).text).toBe("2");
     expect(formatWidgetMetric({ metric: "98.6%", money: false }).tone).toBe("green");

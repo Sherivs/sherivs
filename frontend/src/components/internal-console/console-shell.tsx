@@ -1,4 +1,12 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { Link, Navigate, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -196,6 +204,7 @@ function ConsoleChrome({ children }: { children: ReactNode }) {
   const [openProfile, setOpenProfile] = useState(false);
   const [openNotice, setOpenNotice] = useState(false);
   const [mobileSearch, setMobileSearch] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
   const overview = console.overview;
   const capabilities = useMemo(() => new Set(overview?.viewer.capabilities ?? []), [overview]);
   const viewer = {
@@ -238,6 +247,48 @@ function ConsoleChrome({ children }: { children: ReactNode }) {
     setOpenNotice(false);
   }, [path]);
 
+  useEffect(() => {
+    if (!drawer) return;
+    const firstItem = document.querySelector<HTMLElement>("#console-navigation nav a[href]");
+    firstItem?.focus();
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setDrawer(false);
+      menuButton.current?.focus();
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [drawer]);
+
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || drawer) return;
+      if (openWorkspace) {
+        setOpenWorkspace(false);
+        document.querySelector<HTMLButtonElement>('[aria-label^="Switch workspace"]')?.focus();
+      } else if (openRuntime) {
+        setOpenRuntime(false);
+        document.querySelector<HTMLButtonElement>('[aria-label^="Switch runtime"]')?.focus();
+      } else if (openQuick) {
+        setOpenQuick(false);
+        document.querySelector<HTMLButtonElement>('[aria-label="Quick actions"]')?.focus();
+      } else if (openNotice) {
+        setOpenNotice(false);
+        document.querySelector<HTMLButtonElement>('[aria-label="Notifications"]')?.focus();
+      } else if (openProfile) {
+        setOpenProfile(false);
+        document.querySelector<HTMLButtonElement>('[aria-label="Account menu"]')?.focus();
+      } else if (openSearch) {
+        setOpenSearch(false);
+        document
+          .querySelector<HTMLInputElement>('[aria-label="Search authorized resources"]')
+          ?.focus();
+      }
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [drawer, openWorkspace, openRuntime, openQuick, openNotice, openProfile, openSearch]);
+
   const display = overview?.viewer.name ?? app.authUser?.email ?? "Staff";
   const workspaces = overview?.workspaces ?? [];
   const activeWorkspaceId = workspaceIdFromPath(path) ?? workspaces[0]?.id ?? "me";
@@ -256,6 +307,9 @@ function ConsoleChrome({ children }: { children: ReactNode }) {
       className={`sherivs-console${drawer ? " is-drawer" : ""}${collapsed ? " is-collapsed" : ""}`}
       data-testid="internal-console"
     >
+      <a className="sherivs-console-skip-link" href="#console-main">
+        Skip to main content
+      </a>
       <div className="sherivs-console-orbs" aria-hidden="true">
         <span className="sherivs-console-orb sherivs-console-orb-cyan" />
         <span className="sherivs-console-orb sherivs-console-orb-blue" />
@@ -266,8 +320,11 @@ function ConsoleChrome({ children }: { children: ReactNode }) {
           <button
             type="button"
             className="sherivs-console-icon-btn sherivs-console-menu"
-            aria-label="Open menu"
-            onClick={() => setDrawer(true)}
+            ref={menuButton}
+            aria-label={drawer ? "Close menu" : "Open menu"}
+            aria-expanded={drawer}
+            aria-controls="console-navigation"
+            onClick={() => setDrawer((open) => !open)}
           >
             <Menu size={18} />
           </button>
@@ -283,9 +340,9 @@ function ConsoleChrome({ children }: { children: ReactNode }) {
               <button
                 type="button"
                 className="sherivs-console-chip"
-                aria-haspopup="listbox"
                 aria-expanded={openWorkspace}
-                aria-label="Switch workspace"
+                aria-controls={openWorkspace ? "console-workspace-options" : undefined}
+                aria-label={`Switch workspace, current: ${workspaceName}`}
                 onClick={() => {
                   setOpenWorkspace((open) => !open);
                   setOpenRuntime(false);
@@ -299,14 +356,16 @@ function ConsoleChrome({ children }: { children: ReactNode }) {
                 ) : null}
               </button>
               {openWorkspace ? (
-                <div
+                <nav
+                  id="console-workspace-options"
                   className="sherivs-console-search-panel sherivs-console-switcher-panel"
-                  role="listbox"
+                  aria-label="Authorized workspaces"
                 >
                   {workspaces.map((workspace) => (
                     <Link
                       key={workspace.id}
                       to={workspace.href as never}
+                      aria-current={workspace.id === activeWorkspaceId ? "page" : undefined}
                       onClick={() => {
                         setOpenWorkspace(false);
                         void console.reload();
@@ -325,16 +384,16 @@ function ConsoleChrome({ children }: { children: ReactNode }) {
                       No authorized workspaces.
                     </p>
                   ) : null}
-                </div>
+                </nav>
               ) : null}
             </div>
-            <div className="sherivs-console-switcher">
+            <div className="sherivs-console-switcher is-runtime">
               <button
                 type="button"
                 className="sherivs-console-chip"
-                aria-haspopup="listbox"
                 aria-expanded={openRuntime}
-                aria-label="Switch runtime"
+                aria-controls={openRuntime ? "console-runtime-options" : undefined}
+                aria-label={`Switch runtime, current: ${runtimeName}`}
                 onClick={() => {
                   setOpenRuntime((open) => !open);
                   setOpenWorkspace(false);
@@ -345,9 +404,10 @@ function ConsoleChrome({ children }: { children: ReactNode }) {
                 <strong>{runtimeName}</strong>
               </button>
               {openRuntime ? (
-                <div
+                <nav
+                  id="console-runtime-options"
                   className="sherivs-console-search-panel sherivs-console-switcher-panel"
-                  role="listbox"
+                  aria-label="Operational runtimes"
                 >
                   {runtimes
                     .filter((runtime) => runtime.status === "operational_product")
@@ -355,13 +415,23 @@ function ConsoleChrome({ children }: { children: ReactNode }) {
                       <Link
                         key={runtime.id}
                         to={runtime.helpHref as never}
+                        aria-current={runtime.id === activeRuntime?.id ? "page" : undefined}
                         onClick={() => setOpenRuntime(false)}
                       >
                         <strong>{runtime.name}</strong>
                         <small> · operational product</small>
                       </Link>
                     ))}
-                </div>
+                  {!runtimes.some((runtime) => runtime.status === "operational_product") ? (
+                    <p
+                      className="sherivs-console-empty"
+                      role="status"
+                      style={{ padding: "0.7rem" }}
+                    >
+                      No operational runtimes are available.
+                    </p>
+                  ) : null}
+                </nav>
               ) : null}
             </div>
             <span
@@ -370,7 +440,10 @@ function ConsoleChrome({ children }: { children: ReactNode }) {
               {overview?.context.environment ?? "Unknown"}
             </span>
           </div>
-          <div className={`sherivs-console-search-wrap${mobileSearch ? " is-open" : ""}`}>
+          <div
+            id="console-search"
+            className={`sherivs-console-search-wrap${mobileSearch ? " is-open" : ""}`}
+          >
             <label className="sherivs-console-search">
               <Search size={16} />
               <input
@@ -382,10 +455,19 @@ function ConsoleChrome({ children }: { children: ReactNode }) {
                 onFocus={() => setOpenSearch(true)}
                 placeholder="Search authorized resources"
                 aria-label="Search authorized resources"
+                aria-expanded={openSearch && query.trim().length >= 2}
+                aria-controls={
+                  openSearch && query.trim().length >= 2 ? "console-search-results" : undefined
+                }
               />
             </label>
             {openSearch && query.trim().length >= 2 ? (
-              <div className="sherivs-console-search-panel" role="listbox">
+              <div
+                id="console-search-results"
+                className="sherivs-console-search-panel"
+                role="region"
+                aria-label="Search results"
+              >
                 {hits.length ? (
                   hits.map((hit) => (
                     <Link
@@ -419,6 +501,8 @@ function ConsoleChrome({ children }: { children: ReactNode }) {
               type="button"
               className="sherivs-console-icon-btn sherivs-console-search-toggle"
               aria-label="Search"
+              aria-expanded={mobileSearch}
+              aria-controls="console-search"
               onClick={() => setMobileSearch((open) => !open)}
             >
               <Search size={18} />
@@ -549,11 +633,18 @@ function ConsoleChrome({ children }: { children: ReactNode }) {
             type="button"
             className="sherivs-console-drawer-scrim"
             aria-label="Close menu"
-            onClick={() => setDrawer(false)}
+            onClick={() => {
+              setDrawer(false);
+              menuButton.current?.focus();
+            }}
           />
         ) : null}
 
-        <aside className="sherivs-console-side">
+        <aside
+          id="console-navigation"
+          className="sherivs-console-side"
+          aria-label="Console navigation"
+        >
           <button
             type="button"
             className="sherivs-console-icon-btn"
@@ -576,7 +667,7 @@ function ConsoleChrome({ children }: { children: ReactNode }) {
           </nav>
         </aside>
 
-        <main className="sherivs-console-main">
+        <main id="console-main" className="sherivs-console-main" tabIndex={-1}>
           <div className="sherivs-console-sheet">
             {consoleVisualFixtureActive() ? (
               <>
@@ -672,7 +763,7 @@ export function InternalConsoleLayout() {
     <ConsoleCtx.Provider value={{ overview, error, reload }}>
       <ConsoleChrome>
         {error && !overview ? (
-          <section className="sherivs-console-card">
+          <section className="sherivs-console-card" role="alert">
             <h1>Console unavailable</h1>
             <p className="sherivs-console-error">{error}</p>
           </section>

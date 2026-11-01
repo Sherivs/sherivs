@@ -1073,6 +1073,18 @@ body:has(.workspace-preview) {
   color: var(--shell-muted);
 }
 
+.app-shell-form .app-shell-checkbox {
+  display: flex;
+  align-items: center;
+  justify-self: start;
+  gap: 0.5rem;
+}
+
+.app-shell-form .app-shell-checkbox input {
+  width: auto;
+  margin: 0;
+}
+
 .app-shell-form input {
   border-radius: 12px;
   border: 1px solid var(--shell-line);

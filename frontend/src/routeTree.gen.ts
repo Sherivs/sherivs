@@ -36,6 +36,7 @@ import { Route as siteFaqRouteImport } from './routes/(site)/faq'
 import { Route as siteHelpRouteImport } from './routes/(site)/help'
 import { Route as siteInsightsRouteImport } from './routes/(site)/insights'
 import { Route as siteIntegrationsRouteImport } from './routes/(site)/integrations'
+import { Route as sitePrivacyRouteImport } from './routes/(site)/privacy'
 import { Route as sitePrivacyPolicyRouteImport } from './routes/(site)/privacy-policy'
 import { Route as siteProductRouteImport } from './routes/(site)/product'
 import { Route as siteRequestDemoRouteImport } from './routes/(site)/request-demo'
@@ -67,6 +68,7 @@ import { Route as HomeNotificationsRouteImport } from './routes/home/notificatio
 import { Route as HomeProfileRouteImport } from './routes/home/profile'
 import { Route as HomeSecurityRouteImport } from './routes/home/security'
 import { Route as HomeSettingsRouteImport } from './routes/home/settings'
+import { Route as HomeVoiceAgentRouteImport } from './routes/home/voice-agent'
 import { Route as PagesSlugRouteImport } from './routes/pages.$slug'
 import { Route as PostsPostRouteImport } from './routes/posts.$post'
 import { Route as siteCompanyAboutRouteImport } from './routes/(site)/company.about'
@@ -262,6 +264,11 @@ const siteIntegrationsRoute = siteIntegrationsRouteImport.update({
   path: '/integrations',
   getParentRoute: () => siteRouteRoute,
 } as any)
+const sitePrivacyRoute = sitePrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => siteRouteRoute,
+} as any)
 const sitePrivacyPolicyRoute = sitePrivacyPolicyRouteImport.update({
   id: '/privacy-policy',
   path: '/privacy-policy',
@@ -418,6 +425,11 @@ const HomeSecurityRoute = HomeSecurityRouteImport.update({
 const HomeSettingsRoute = HomeSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => HomeRouteRoute,
+} as any)
+const HomeVoiceAgentRoute = HomeVoiceAgentRouteImport.update({
+  id: '/voice-agent',
+  path: '/voice-agent',
   getParentRoute: () => HomeRouteRoute,
 } as any)
 const PagesSlugRoute = PagesSlugRouteImport.update({
@@ -766,6 +778,7 @@ export interface FileRoutesByFullPath {
   '/help': typeof siteHelpRouteWithChildren
   '/insights': typeof siteInsightsRouteWithChildren
   '/integrations': typeof siteIntegrationsRoute
+  '/privacy': typeof sitePrivacyRoute
   '/privacy-policy': typeof sitePrivacyPolicyRoute
   '/product': typeof siteProductRouteWithChildren
   '/request-demo': typeof siteRequestDemoRoute
@@ -790,6 +803,7 @@ export interface FileRoutesByFullPath {
   '/home/profile': typeof HomeProfileRoute
   '/home/security': typeof HomeSecurityRoute
   '/home/settings': typeof HomeSettingsRoute
+  '/home/voice-agent': typeof HomeVoiceAgentRoute
   '/pages/$slug': typeof PagesSlugRoute
   '/posts/$post': typeof PostsPostRoute
   '/console/': typeof ConsoleIndexRoute
@@ -876,6 +890,7 @@ export interface FileRoutesByTo {
   '/docs': typeof siteDocsRoute
   '/faq': typeof siteFaqRoute
   '/integrations': typeof siteIntegrationsRoute
+  '/privacy': typeof sitePrivacyRoute
   '/privacy-policy': typeof sitePrivacyPolicyRoute
   '/request-demo': typeof siteRequestDemoRoute
   '/sherivs': typeof siteSherivsRoute
@@ -897,6 +912,7 @@ export interface FileRoutesByTo {
   '/home/profile': typeof HomeProfileRoute
   '/home/security': typeof HomeSecurityRoute
   '/home/settings': typeof HomeSettingsRoute
+  '/home/voice-agent': typeof HomeVoiceAgentRoute
   '/pages/$slug': typeof PagesSlugRoute
   '/posts/$post': typeof PostsPostRoute
   '/console': typeof ConsoleIndexRoute
@@ -994,6 +1010,7 @@ export interface FileRoutesById {
   '/(site)/help': typeof siteHelpRouteWithChildren
   '/(site)/insights': typeof siteInsightsRouteWithChildren
   '/(site)/integrations': typeof siteIntegrationsRoute
+  '/(site)/privacy': typeof sitePrivacyRoute
   '/(site)/privacy-policy': typeof sitePrivacyPolicyRoute
   '/(site)/product': typeof siteProductRouteWithChildren
   '/(site)/request-demo': typeof siteRequestDemoRoute
@@ -1018,6 +1035,7 @@ export interface FileRoutesById {
   '/home/profile': typeof HomeProfileRoute
   '/home/security': typeof HomeSecurityRoute
   '/home/settings': typeof HomeSettingsRoute
+  '/home/voice-agent': typeof HomeVoiceAgentRoute
   '/pages/$slug': typeof PagesSlugRoute
   '/posts/$post': typeof PostsPostRoute
   '/console/': typeof ConsoleIndexRoute
@@ -1115,6 +1133,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/insights'
     | '/integrations'
+    | '/privacy'
     | '/privacy-policy'
     | '/product'
     | '/request-demo'
@@ -1139,6 +1158,7 @@ export interface FileRouteTypes {
     | '/home/profile'
     | '/home/security'
     | '/home/settings'
+    | '/home/voice-agent'
     | '/pages/$slug'
     | '/posts/$post'
     | '/console/'
@@ -1225,6 +1245,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/faq'
     | '/integrations'
+    | '/privacy'
     | '/privacy-policy'
     | '/request-demo'
     | '/sherivs'
@@ -1246,6 +1267,7 @@ export interface FileRouteTypes {
     | '/home/profile'
     | '/home/security'
     | '/home/settings'
+    | '/home/voice-agent'
     | '/pages/$slug'
     | '/posts/$post'
     | '/console'
@@ -1342,6 +1364,7 @@ export interface FileRouteTypes {
     | '/(site)/help'
     | '/(site)/insights'
     | '/(site)/integrations'
+    | '/(site)/privacy'
     | '/(site)/privacy-policy'
     | '/(site)/product'
     | '/(site)/request-demo'
@@ -1366,6 +1389,7 @@ export interface FileRouteTypes {
     | '/home/profile'
     | '/home/security'
     | '/home/settings'
+    | '/home/voice-agent'
     | '/pages/$slug'
     | '/posts/$post'
     | '/console/'
@@ -1654,6 +1678,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof siteIntegrationsRouteImport
       parentRoute: typeof siteRouteRoute
     }
+    '/(site)/privacy': {
+      id: '/(site)/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof sitePrivacyRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
     '/(site)/privacy-policy': {
       id: '/(site)/privacy-policy'
       path: '/privacy-policy'
@@ -1869,6 +1900,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/home/settings'
       preLoaderRoute: typeof HomeSettingsRouteImport
+      parentRoute: typeof HomeRouteRoute
+    }
+    '/home/voice-agent': {
+      id: '/home/voice-agent'
+      path: '/voice-agent'
+      fullPath: '/home/voice-agent'
+      preLoaderRoute: typeof HomeVoiceAgentRouteImport
       parentRoute: typeof HomeRouteRoute
     }
     '/pages/$slug': {
@@ -2391,6 +2429,7 @@ interface siteRouteRouteChildren {
   siteHelpRoute: typeof siteHelpRouteWithChildren
   siteInsightsRoute: typeof siteInsightsRouteWithChildren
   siteIntegrationsRoute: typeof siteIntegrationsRoute
+  sitePrivacyRoute: typeof sitePrivacyRoute
   sitePrivacyPolicyRoute: typeof sitePrivacyPolicyRoute
   siteProductRoute: typeof siteProductRouteWithChildren
   siteRequestDemoRoute: typeof siteRequestDemoRoute
@@ -2428,6 +2467,7 @@ const siteRouteRouteChildren: siteRouteRouteChildren = {
   siteHelpRoute: siteHelpRouteWithChildren,
   siteInsightsRoute: siteInsightsRouteWithChildren,
   siteIntegrationsRoute: siteIntegrationsRoute,
+  sitePrivacyRoute: sitePrivacyRoute,
   sitePrivacyPolicyRoute: sitePrivacyPolicyRoute,
   siteProductRoute: siteProductRouteWithChildren,
   siteRequestDemoRoute: siteRequestDemoRoute,
@@ -2584,6 +2624,7 @@ interface HomeRouteRouteChildren {
   HomeProfileRoute: typeof HomeProfileRoute
   HomeSecurityRoute: typeof HomeSecurityRoute
   HomeSettingsRoute: typeof HomeSettingsRoute
+  HomeVoiceAgentRoute: typeof HomeVoiceAgentRoute
   HomeIndexRoute: typeof HomeIndexRoute
   HomeSSectionRoute: typeof HomeSSectionRoute
 }
@@ -2595,6 +2636,7 @@ const HomeRouteRouteChildren: HomeRouteRouteChildren = {
   HomeProfileRoute: HomeProfileRoute,
   HomeSecurityRoute: HomeSecurityRoute,
   HomeSettingsRoute: HomeSettingsRoute,
+  HomeVoiceAgentRoute: HomeVoiceAgentRoute,
   HomeIndexRoute: HomeIndexRoute,
   HomeSSectionRoute: HomeSSectionRoute,
 }
