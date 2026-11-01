@@ -276,7 +276,6 @@ export async function listIncidents(
   await assertAnyCapability(context, [
     "platform.engineering.read",
     "platform.operations.read",
-    "platform.tenants.read",
     "platform.audit.read",
   ]);
   const db = await admin();

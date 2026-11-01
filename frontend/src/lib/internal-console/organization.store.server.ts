@@ -12,6 +12,8 @@ import {
   canTransitionOrganization,
   currentOnboardingStep,
   isOrganizationLifecycleState,
+  isOrganizationAssignedToStaff,
+  isSupportScopedViewer,
   medianHours,
   organizationQuestionnaireSchema,
   questionnaireReady,
@@ -87,11 +89,23 @@ async function assertStaff(context: Ctx) {
 
 async function assertCapability(context: Ctx, capability: string, aal2 = false) {
   if (aal2) assertInternalAal2(context.claims);
+  if (!(await hasCapability(context, capability))) throw new Error("Not authorized");
+}
+
+async function hasCapability(context: Ctx, capability: string): Promise<boolean> {
   const { data, error } = await (context.supabase as unknown as RpcClient).rpc(
     "has_platform_capability",
     { p_capability: capability },
   );
-  if (error || data !== true) throw new Error("Not authorized");
+  return !error && data === true;
+}
+
+async function isSupportScoped(context: Ctx): Promise<boolean> {
+  const [hasSupportCapability, hasTenantManagementCapability] = await Promise.all([
+    hasCapability(context, "platform.support.handle"),
+    hasCapability(context, "platform.tenants.manage"),
+  ]);
+  return isSupportScopedViewer({ hasSupportCapability, hasTenantManagementCapability });
 }
 
 async function audit(
@@ -355,6 +369,7 @@ export async function listOrganizationDirectory(
 }> {
   await assertStaff(context);
   await assertCapability(context, "platform.tenants.read");
+  const supportScoped = await isSupportScoped(context);
   const db = await admin();
   const { rows, organizationMetrics } = await loadOrganizationMetrics(db);
   const assignments = await assignmentsFor(
@@ -363,6 +378,11 @@ export async function listOrganizationDirectory(
   );
   const query = (input.query ?? "").trim().toLowerCase();
   const organizations = rows
+    .filter(
+      (row) =>
+        !supportScoped ||
+        isOrganizationAssignedToStaff(assignments.get(row.id) ?? [], context.userId),
+    )
     .filter((row) => (input.state ? row.lifecycle_state === input.state : true))
     .filter((row) =>
       query
@@ -378,7 +398,21 @@ export async function listOrganizationDirectory(
       );
       return directoryRow(row, owner?.staffName ?? null, assigned.filter((item) => item.status === "active").length);
     });
-  return { organizations, store: "database", metrics: organizationMetrics };
+  const metrics = supportScoped
+    ? {
+        available: false,
+        source: "not authorized for platform-wide metrics",
+        total: null,
+        active: null,
+        onboarding: null,
+        suspended: null,
+        failedProvisioning: null,
+        submitted: null,
+        conversionRate: null,
+        medianOnboardingHours: null,
+      }
+    : organizationMetrics;
+  return { organizations, store: "database", metrics };
 }
 
 export async function getOrganizationDetail(context: Ctx, id: string): Promise<OrganizationDetail> {
@@ -387,6 +421,10 @@ export async function getOrganizationDetail(context: Ctx, id: string): Promise<O
   const db = await admin();
   const row = await loadOrg(db, id);
   const assigned = (await assignmentsFor(db, [id])).get(id) ?? [];
+  const supportScoped = await isSupportScoped(context);
+  if (supportScoped && !isOrganizationAssignedToStaff(assigned, context.userId)) {
+    throw new Error("Not authorized");
+  }
   const owner = assigned.find(
     (item) => item.assignmentType === "onboarding_owner" && item.status === "active",
   );

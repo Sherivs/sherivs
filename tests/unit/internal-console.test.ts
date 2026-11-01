@@ -662,7 +662,12 @@ describe("local visual fixture", () => {
     ]);
     for (const persona of CONSOLE_FIXTURE_PERSONAS) {
       const overview = buildConsoleVisualFixtureOverview(persona);
-      if (withTenants.has(persona.key)) {
+      if (persona.key === "support") {
+        expect(overview.viewer.capabilities).toContain("platform.tenants.read");
+        expect(overview.organizationMetrics.available).toBe(false);
+        expect(overview.organizations).toEqual([]);
+        expect(overview.metrics.every((metric) => !metric.key.includes("organization"))).toBe(true);
+      } else if (withTenants.has(persona.key)) {
         expect(overview.organizationMetrics.available).toBe(true);
         expect(overview.organizationStore).toBe("fixture");
       } else {
@@ -676,7 +681,9 @@ describe("local visual fixture", () => {
       }
     }
     const home = readFileSync("frontend/src/components/internal-console/home-screen.tsx", "utf8");
-    expect(home).toContain("canReadOrgs && overview.organizationMetrics.available");
+    expect(home).toContain(
+      "canReadOrgs && !supportScoped && overview.organizationMetrics.available",
+    );
     expect(home).toContain('data-testid="console-org-pipeline"');
     const { helpArticlesFor } = await import("@/lib/internal-console/help-catalog");
     const engineerHelp = helpArticlesFor({

@@ -20,7 +20,9 @@ import {
   ORGANIZATION_ACCESS_EFFECTS,
   canTransitionOrganization,
   currentOnboardingStep,
+  isOrganizationAssignedToStaff,
   isOrganizationLifecycleState,
+  isSupportScopedViewer,
   questionnaireReady,
   slugifyOrganizationName,
   type OrganizationAssignmentType,
@@ -33,7 +35,9 @@ import {
   CONSOLE_FIXTURE_OPERATOR,
   CONSOLE_FIXTURE_ORGS_KEY,
   consoleVisualFixtureActive,
+  readSelectedFixturePersona,
 } from "@/lib/internal-console/visual-fixture";
+import { viewerCapabilities } from "@/lib/internal-console/roles";
 
 const FIXTURE_KEY = CONSOLE_FIXTURE_ORGS_KEY;
 
@@ -73,6 +77,19 @@ function directoryFrom(detail: OrganizationDetail): OrganizationDirectoryRow {
     onboardingOwnerName:
       assignments.find((item) => item.assignmentType === "onboarding_owner" && item.status === "active")
         ?.staffName ?? null,
+  };
+}
+
+function fixtureSupportScope() {
+  const persona = readSelectedFixturePersona();
+  const capabilities = viewerCapabilities(persona.roles, persona.isSuperAdmin);
+  return {
+    persona,
+    scoped: isSupportScopedViewer({
+      isSuperAdmin: persona.isSuperAdmin,
+      hasSupportCapability: capabilities.has("platform.support.handle"),
+      hasTenantManagementCapability: capabilities.has("platform.tenants.manage"),
+    }),
   };
 }
 
@@ -131,8 +148,13 @@ export async function apiListOrganizations(input: { query?: string; state?: stri
 }> {
   if (consoleVisualFixtureActive()) {
     const query = (input.query ?? "").trim().toLowerCase();
+    const { persona, scoped } = fixtureSupportScope();
     const organizations = readStore()
       .organizations.filter((row) => (input.state ? row.lifecycleState === input.state : true))
+      .filter(
+        (row) =>
+          !scoped || isOrganizationAssignedToStaff(row.assignments, persona.id),
+      )
       .filter((row) =>
         query ? `${row.displayName} ${row.country ?? ""} ${row.lifecycleState}`.toLowerCase().includes(query) : true,
       )
@@ -145,8 +167,12 @@ export async function apiListOrganizations(input: { query?: string; state?: stri
 
 export async function apiGetOrganization(id: string): Promise<OrganizationDetail> {
   if (consoleVisualFixtureActive()) {
+    const { persona, scoped } = fixtureSupportScope();
     const found = readStore().organizations.find((row) => row.id === id);
     if (!found) throw new Error("Organization not found.");
+    if (scoped && !isOrganizationAssignedToStaff(found.assignments, persona.id)) {
+      throw new Error("Not authorized");
+    }
     return found;
   }
   return getOrganization({ data: { id } });

@@ -25,7 +25,11 @@ import type {
   ConsoleOverview,
   ConsoleStaffRow,
 } from "./overview";
-import type { OrganizationMetricsSnapshot } from "./organization-lifecycle";
+import {
+  isSupportScopedViewer,
+  organizationsAssignedToStaff,
+  type OrganizationMetricsSnapshot,
+} from "./organization-lifecycle";
 
 const timeAuthority = new TimeAuthority(new SystemClock());
 
@@ -39,6 +43,17 @@ type RpcClient = {
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin;
+}
+
+async function hasPlatformCapability(
+  context: { supabase: unknown },
+  capability: string,
+): Promise<boolean> {
+  const { data, error } = await (context.supabase as unknown as RpcClient).rpc(
+    "has_platform_capability",
+    { p_capability: capability },
+  );
+  return !error && data === true;
 }
 
 function requestHost(): string | null {
@@ -129,6 +144,16 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
       (row) => row.role_code,
     );
     const capabilities = viewerCapabilities(roles, isSuperAdmin);
+    const [canReadOrganizations, hasSupportCapability, hasTenantManagementCapability] =
+      await Promise.all([
+        hasPlatformCapability(context, "platform.tenants.read"),
+        hasPlatformCapability(context, "platform.support.handle"),
+        hasPlatformCapability(context, "platform.tenants.manage"),
+      ]);
+    const supportScoped = isSupportScopedViewer({
+      hasSupportCapability,
+      hasTenantManagementCapability,
+    });
     const claimEmail =
       typeof (context.claims as { email?: unknown }).email === "string"
         ? (context.claims as { email: string }).email
@@ -532,18 +557,24 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
     let scholarTenants: number | null = null;
     let registeredUsers: number | null = null;
     let activeUsers30d: number | null = null;
-    if (capabilities.has("platform.tenants.read")) {
+    if (canReadOrganizations) {
       const { loadOrganizationMetrics, loadViewerAssignments } = await import(
         "./organization.store.server"
       );
       try {
         const snapshot = await loadOrganizationMetrics(db);
-        organizationMetrics = snapshot.organizationMetrics;
+        assignments = await loadViewerAssignments(db, context.userId);
+        const visibleRows = supportScoped
+          ? organizationsAssignedToStaff(snapshot.rows, assignments, context.userId)
+          : snapshot.rows;
+        organizationMetrics = supportScoped ? emptyOrgMetrics : snapshot.organizationMetrics;
         organizationStore = snapshot.organizationMetrics.available ? "database" : "unavailable";
-        scholarTenants = snapshot.scholarTenants;
-        registeredUsers = snapshot.registeredUsers;
-        activeUsers30d = snapshot.activeUsers30d;
-        organizations = snapshot.rows.slice(0, 8).map((row) => ({
+        if (!supportScoped) {
+          scholarTenants = snapshot.scholarTenants;
+          registeredUsers = snapshot.registeredUsers;
+          activeUsers30d = snapshot.activeUsers30d;
+        }
+        organizations = visibleRows.slice(0, 8).map((row) => ({
           id: row.id,
           displayName: row.display_name,
           orgType: "school" as const,
@@ -563,7 +594,6 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
           onboardingOwnerName: null,
           assignmentCount: 0,
         }));
-        assignments = await loadViewerAssignments(db, context.userId);
         if (organizationMetrics.available) {
           const pushMetric = (
             key: string,
@@ -649,7 +679,7 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
             });
           }
         }
-        if (registeredUsers !== null) {
+        if (!supportScoped && registeredUsers !== null) {
           metrics.push({
             key: "registered-users",
             name: "Registered users",
@@ -663,7 +693,7 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
               "Identity-store rows in public.users. Platform staff without a school membership are excluded.",
           });
         }
-        if (activeUsers30d !== null) {
+        if (!supportScoped && activeUsers30d !== null) {
           metrics.push({
             key: "active-users-30d",
             name: "Active users (30 days)",
@@ -677,7 +707,7 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
               "Scholar users whose Auth last_sign_in_at is within 30 days. Account creation alone is not activity.",
           });
         }
-        if (scholarTenants !== null) {
+        if (!supportScoped && scholarTenants !== null) {
           metrics.push({
             key: "scholar-tenants",
             name: "Scholar tenant records",

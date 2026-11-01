@@ -306,6 +306,43 @@ export type OrganizationAssignmentRecord = {
   releasedAt: string | null;
 };
 
+export function isSupportScopedViewer(input: {
+  isSuperAdmin?: boolean;
+  hasSupportCapability: boolean;
+  hasTenantManagementCapability: boolean;
+}): boolean {
+  return (
+    !input.isSuperAdmin &&
+    input.hasSupportCapability &&
+    !input.hasTenantManagementCapability
+  );
+}
+
+export function isOrganizationAssignedToStaff(
+  assignments: readonly Pick<OrganizationAssignmentRecord, "staffId" | "status">[],
+  staffId: string,
+): boolean {
+  return assignments.some(
+    (assignment) => assignment.staffId === staffId && assignment.status === "active",
+  );
+}
+
+export function organizationsAssignedToStaff<T extends { id: string }>(
+  organizations: readonly T[],
+  assignments: readonly Pick<
+    OrganizationAssignmentRecord,
+    "organizationId" | "staffId" | "status"
+  >[],
+  staffId: string,
+): T[] {
+  const assignedIds = new Set(
+    assignments
+      .filter((assignment) => assignment.staffId === staffId && assignment.status === "active")
+      .map((assignment) => assignment.organizationId),
+  );
+  return organizations.filter((organization) => assignedIds.has(organization.id));
+}
+
 export type OrganizationDetail = OrganizationDirectoryRow & {
   legalName: string | null;
   questionnaire: OrganizationDraft;

@@ -18,6 +18,8 @@ import type {
 } from "./overview";
 import { formatRatio } from "./metrics";
 import {
+  isSupportScopedViewer,
+  organizationsAssignedToStaff,
   isOrganizationLifecycleState,
   summarizeOrganizationStates,
   type OrganizationAssignmentRecord,
@@ -119,6 +121,9 @@ export const CONSOLE_FIXTURE_PERSONAS: readonly ConsoleFixturePersona[] = [
 ];
 
 const DEFAULT_FIXTURE_PERSONA = CONSOLE_FIXTURE_PERSONAS[0];
+const SUPPORT_FIXTURE_PERSONA = CONSOLE_FIXTURE_PERSONAS.find(
+  (persona) => persona.key === "support",
+);
 
 /** Compatibility actor used by fixture organization / operations stores. */
 export const CONSOLE_FIXTURE_OPERATOR = {
@@ -234,7 +239,7 @@ function fixtureDemoOrganizations() {
       provisionedAt: "2026-10-22T00:00:00.000Z",
       activatedAt: at,
       onboardingOwnerName: actor.name,
-      assignmentCount: 1,
+      assignmentCount: SUPPORT_FIXTURE_PERSONA ? 2 : 1,
       legalName: "Riverside School Ltd",
       questionnaire: { displayName: "Riverside School", country: "NG" },
       questionnaireStep: "review",
@@ -263,6 +268,21 @@ function fixtureDemoOrganizations() {
           assignedAt: "2026-10-21T00:00:00.000Z",
           releasedAt: null,
         },
+        ...(SUPPORT_FIXTURE_PERSONA
+          ? [
+              {
+                id: "fixture-asg-riverside-support",
+                organizationId: "fixture-org-active",
+                staffId: SUPPORT_FIXTURE_PERSONA.id,
+                staffName: SUPPORT_FIXTURE_PERSONA.name,
+                assignmentType: "support",
+                status: "active",
+                assignedBy: actor.id,
+                assignedAt: "2026-10-22T00:00:00.000Z",
+                releasedAt: null,
+              },
+            ]
+          : []),
       ],
       transitions: [
         {
@@ -696,6 +716,14 @@ export function buildConsoleVisualFixtureOverview(
   const snapshot = fixtureOrganizationSnapshot();
   const canReadOrgs = persona.isSuperAdmin || capabilities.includes("platform.tenants.read");
   const canAudit = persona.isSuperAdmin || capabilities.includes("platform.audit.read");
+  const supportScoped = isSupportScopedViewer({
+    isSuperAdmin: persona.isSuperAdmin,
+    hasSupportCapability: capabilities.includes("platform.support.handle"),
+    hasTenantManagementCapability: capabilities.includes("platform.tenants.manage"),
+  });
+  const visibleOrganizations = supportScoped
+    ? organizationsAssignedToStaff(snapshot.organizations, snapshot.assignments, persona.id)
+    : snapshot.organizations;
   const unauthorizedOrgMetrics = {
     available: false,
     source: "not authorized",
@@ -773,7 +801,7 @@ export function buildConsoleVisualFixtureOverview(
       cards: healthCards,
       caveat: "These statuses describe the local visual fixture, not a live environment.",
     },
-    metrics: canReadOrgs
+    metrics: canReadOrgs && !supportScoped
       ? fixtureOrganizationMetricsCards(snapshot)
       : fixtureOrganizationMetricsCards(snapshot).filter(
           (metric) =>
@@ -784,7 +812,7 @@ export function buildConsoleVisualFixtureOverview(
         item.href === CONSOLE_PATHS.organizations ||
         item.href.startsWith(`${CONSOLE_PATHS.organizations}/`)
       ) {
-        return canReadOrgs;
+        return canReadOrgs && !supportScoped;
       }
       return true;
     }),
@@ -800,9 +828,9 @@ export function buildConsoleVisualFixtureOverview(
     activeStaff: 0,
     usageDefinition:
       "Fixture directory is empty. No synthetic staff rows are shown as if they were live records.",
-    organizations: canReadOrgs ? snapshot.organizations : [],
+    organizations: canReadOrgs ? visibleOrganizations : [],
     organizationStore: canReadOrgs ? "fixture" : "unavailable",
-    organizationMetrics: canReadOrgs ? snapshot.metrics : unauthorizedOrgMetrics,
+    organizationMetrics: canReadOrgs && !supportScoped ? snapshot.metrics : unauthorizedOrgMetrics,
     assignments: canReadOrgs
       ? snapshot.assignments.filter((item) => item.staffId === persona.id)
       : [],

@@ -37,6 +37,10 @@ export function ConsoleHomeScreen() {
     capabilities: new Set(overview.viewer.capabilities),
   };
   const canReadOrgs = viewer.isSuperAdmin || viewer.capabilities.has("platform.tenants.read");
+  const supportScoped =
+    !viewer.isSuperAdmin &&
+    viewer.capabilities.has("platform.support.handle") &&
+    !viewer.capabilities.has("platform.tenants.manage");
   const actions = quickActionsFor(viewer);
   const allowed = allowedHrefsFrom([
     ...overview.workspaces,
@@ -87,7 +91,7 @@ export function ConsoleHomeScreen() {
         {attention.length === 0 ? <p>No verified items need attention right now.</p> : null}
       </section>
 
-      {canReadOrgs && overview.organizationMetrics.available ? (
+      {canReadOrgs && !supportScoped && overview.organizationMetrics.available ? (
         <section className="sherivs-console-card" data-testid="console-org-pipeline">
           <h2>Onboarding pipeline</h2>
           <p>
@@ -106,7 +110,7 @@ export function ConsoleHomeScreen() {
             </Link>
           </div>
         </section>
-      ) : canReadOrgs ? (
+      ) : canReadOrgs && !supportScoped ? (
         <section className="sherivs-console-card">
           <h2>Onboarding pipeline</h2>
           <p className="sherivs-console-empty">
