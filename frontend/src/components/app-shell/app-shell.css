@@ -1244,10 +1244,6 @@ body:has(.workspace-preview) {
 }
 
 @media (max-width: 400px) {
-  .app-shell-connection-pending {
-    display: none;
-  }
-
   .app-shell-notification-card {
     flex-direction: column;
   }

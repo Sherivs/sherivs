@@ -70,5 +70,23 @@ test("Data Saver remains usable on a throttled Slow 3G profile", async ({ page }
     path: join(SCREENSHOTS, `workspace-data-saver-${width}.png`),
     fullPage: true,
   });
+
+  const connection = page.getByTestId("workspace-connection-status");
+  await expect(connection).toContainText("Online");
+  await page.context().setOffline(true);
+  await expect(connection).toContainText("Offline");
+  await page.evaluate(() => {
+    window.dispatchEvent(
+      new CustomEvent("sherivs:sync-status", {
+        detail: { pendingItems: 2, conflictItems: 1, syncing: false },
+      }),
+    );
+  });
+  await expect(connection).toContainText("2 pending · 1 need review");
+  await expect(page.locator(".app-shell-connection-pending")).toBeVisible();
+  await page.screenshot({
+    path: join(SCREENSHOTS, `offline-queue-${width}.png`),
+    fullPage: true,
+  });
   await cdp.detach();
 });
