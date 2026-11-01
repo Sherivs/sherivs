@@ -89,6 +89,7 @@ interface FakeCacheEntry {
 
 class FakeCache {
   readonly entries = new Map<string, FakeCacheEntry>();
+  failPut = false;
 
   private key(request: string | { url: string }, ignoreSearch: boolean): string {
     const url = typeof request === "string" ? request : request.url;
@@ -104,6 +105,7 @@ class FakeCache {
   }
 
   async put(request: string | { url: string }, response: Response): Promise<void> {
+    if (this.failPut) throw new Error("storage full");
     if (!response.ok) throw new Error(`cannot cache non-ok response (${response.status})`);
     this.entries.set(this.key(request, false), { response: response.clone() });
   }
@@ -259,16 +261,33 @@ describe("offline shell service worker", () => {
   it("caches only the public root shell, never authenticated route documents", async () => {
     fetchImpl = (input) => Promise.resolve(new Response("<html>page</html>", { status: 200 }));
     loadServiceWorker();
-    dispatch("fetch", { request: { mode: "navigate", method: "GET", url: "https://sherivs.test/" } });
+    dispatch("fetch", {
+      request: { mode: "navigate", method: "GET", url: "https://sherivs.test/" },
+    });
     await drained();
     const shell = cachesStore.get("sherivs-app-shell-v1");
     expect(await shell?.entries.has("/")).toBe(true);
 
-    dispatch("fetch", { request: { mode: "navigate", method: "GET", url: "https://sherivs.test/home" } });
+    dispatch("fetch", {
+      request: { mode: "navigate", method: "GET", url: "https://sherivs.test/home" },
+    });
     await drained();
     expect(await shell?.entries.has("/home")).toBe(false);
     const response = await firstResponse();
     expect(response).toBeInstanceOf(Response);
+  });
+
+  it("returns successful network responses when app-shell caching fails", async () => {
+    fetchImpl = () => Promise.resolve(new Response("<html>network</html>", { status: 200 }));
+    loadServiceWorker();
+    const shell = await sandbox.caches.open("sherivs-app-shell-v1");
+    shell.failPut = true;
+
+    dispatch("fetch", {
+      request: { mode: "navigate", method: "GET", url: "https://sherivs.test/" },
+    });
+    await drained();
+    expect((await firstResponse()).status).toBe(200);
   });
 
   it("never caches redirect or error navigation responses", async () => {

@@ -7,14 +7,14 @@ import {
 import { createAttendanceQueue, type QueuedMark } from "@/lib/offline/attendance-queue";
 
 class MemoryDatabase implements OfflineDatabase {
-  readonly records = new Map<string, { scopeKey: string; value: unknown }>();
+  readonly records = new Map<string, { scopeKey: string; value: unknown; cachedAt: string }>();
   readonly mutations = new Map<string, OfflineMutation>();
 
   async readRecord<T>(id: string) {
-    return this.records.get(id) as { scopeKey: string; value: T } | undefined;
+    return this.records.get(id) as { scopeKey: string; value: T; cachedAt: string } | undefined;
   }
-  async writeRecord<T>(id: string, scopeKey: string, value: T) {
-    this.records.set(id, { scopeKey, value });
+  async writeRecord<T>(id: string, scopeKey: string, value: T, cachedAt: string) {
+    this.records.set(id, { scopeKey, value, cachedAt });
   }
   async readMutations(scopeKey: string) {
     return [...this.mutations.values()].filter((item) => item.scopeKey === scopeKey);
@@ -26,8 +26,10 @@ class MemoryDatabase implements OfflineDatabase {
     this.mutations.delete(id);
   }
   async deleteScope(scopeKey: string) {
-    for (const [id, record] of this.records) if (record.scopeKey === scopeKey) this.records.delete(id);
-    for (const [id, item] of this.mutations) if (item.scopeKey === scopeKey) this.mutations.delete(id);
+    for (const [id, record] of this.records)
+      if (record.scopeKey === scopeKey) this.records.delete(id);
+    for (const [id, item] of this.mutations)
+      if (item.scopeKey === scopeKey) this.mutations.delete(id);
   }
   async clear() {
     this.records.clear();
@@ -42,7 +44,10 @@ const ids = () => `i${++n}`;
 
 function queue(
   database: MemoryDatabase,
-  sync: Parameters<typeof createAttendanceQueue>[0]["sync"] = async () => ({ applied: 0, conflicts: [] }),
+  sync: Parameters<typeof createAttendanceQueue>[0]["sync"] = async () => ({
+    applied: 0,
+    conflicts: [],
+  }),
 ) {
   return createAttendanceQueue({
     scope,
@@ -112,7 +117,9 @@ describe("SHERIVS-A07 tenant-scoped IndexedDB attendance outbox", () => {
 
     expect(report.conflicts[0]?.why).toBe("server_has_other_mark");
     await expect(q.pending()).resolves.toHaveLength(0);
-    await expect(q.conflicts()).resolves.toMatchObject([{ student_id: "s1", why: "server_has_other_mark" }]);
+    await expect(q.conflicts()).resolves.toMatchObject([
+      { student_id: "s1", why: "server_has_other_mark" },
+    ]);
   });
 
   it("shares concurrent flushes and sends at most 500 marks per batch", async () => {

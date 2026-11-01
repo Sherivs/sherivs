@@ -8,14 +8,14 @@ import {
 } from "@/lib/offline/indexeddb-store";
 
 class MemoryDatabase implements OfflineDatabase {
-  readonly records = new Map<string, { scopeKey: string; value: unknown }>();
+  readonly records = new Map<string, { scopeKey: string; value: unknown; cachedAt: string }>();
   readonly mutations = new Map<string, OfflineMutation>();
 
   async readRecord<T>(id: string) {
-    return this.records.get(id) as { scopeKey: string; value: T } | undefined;
+    return this.records.get(id) as { scopeKey: string; value: T; cachedAt: string } | undefined;
   }
-  async writeRecord<T>(id: string, scopeKey: string, value: T) {
-    this.records.set(id, { scopeKey, value });
+  async writeRecord<T>(id: string, scopeKey: string, value: T, cachedAt: string) {
+    this.records.set(id, { scopeKey, value, cachedAt });
   }
   async readMutations(scopeKey: string) {
     return [...this.mutations.values()].filter((item) => item.scopeKey === scopeKey);
@@ -27,8 +27,10 @@ class MemoryDatabase implements OfflineDatabase {
     this.mutations.delete(id);
   }
   async deleteScope(scopeKey: string) {
-    for (const [id, record] of this.records) if (record.scopeKey === scopeKey) this.records.delete(id);
-    for (const [id, item] of this.mutations) if (item.scopeKey === scopeKey) this.mutations.delete(id);
+    for (const [id, record] of this.records)
+      if (record.scopeKey === scopeKey) this.records.delete(id);
+    for (const [id, item] of this.mutations)
+      if (item.scopeKey === scopeKey) this.mutations.delete(id);
   }
   async clear() {
     this.records.clear();
@@ -73,9 +75,32 @@ describe("tenant-scoped offline IndexedDB store", () => {
     ).rejects.toThrow("not authorized");
   });
 
+  it("expires offline reads after the configured staleness window", async () => {
+    const database = new MemoryDatabase();
+    const recent = createOfflineStore(scope, {
+      database,
+      now: () => new Date("2026-11-01T10:00:00Z"),
+      maxStaleMs: 60_000,
+    });
+    await recent.write("results", "term-1", [{ id: "result-1" }]);
+    const expired = createOfflineStore(scope, {
+      database,
+      now: () => new Date("2026-11-01T10:02:00Z"),
+      maxStaleMs: 60_000,
+    });
+
+    await expect(
+      expired.readThrough("results", "term-1", async () => {
+        throw new TypeError("Failed to fetch");
+      }),
+    ).rejects.toThrow("Failed to fetch");
+  });
+
   it("retries mutations with the same idempotency id and retains manual conflicts", async () => {
     const offline = store(new MemoryDatabase());
-    const attendance = await offline.enqueue("attendance", "student-1:2026-11-01", { status: "present" });
+    const attendance = await offline.enqueue("attendance", "student-1:2026-11-01", {
+      status: "present",
+    });
     let fail = true;
     const sent: string[] = [];
     const send = async (item: OfflineMutation) => {
@@ -95,6 +120,30 @@ describe("tenant-scoped offline IndexedDB store", () => {
     expect(sent).toEqual([attendance.id, attendance.id]);
   });
 
+  it("keeps conflicting score submissions queued for explicit reconciliation", async () => {
+    const offline = store(new MemoryDatabase());
+    const score = await offline.enqueue("score", "assessment-1:student-1", {
+      score: 82,
+      expectedVersion: 4,
+    });
+
+    const result = await offline.sync(
+      async (item) => ({
+        outcome: "conflict",
+        reason: item.id === score.id ? "score_version_changed" : "unknown_operation",
+      }),
+      "score",
+    );
+
+    expect(result).toMatchObject({
+      applied: 0,
+      conflicts: [
+        { id: score.id, kind: "score", state: "conflict", conflict: "score_version_changed" },
+      ],
+      remaining: 0,
+    });
+  });
+
   it("clears only the requested scope", async () => {
     const database = new MemoryDatabase();
     const tenantA = store(database);
@@ -112,6 +161,7 @@ describe("tenant-scoped offline IndexedDB store", () => {
   it("removes legacy offline payloads without clearing unrelated preferences", () => {
     const values = new Map([
       ["sherivs.offline.queue.v1", "queue"],
+      ["sherivs.offline.data-saver:tenant-user-role", "enabled"],
       ["sherivs.cbt.attempt-1", "answers"],
       ["theme", "dark"],
     ]);

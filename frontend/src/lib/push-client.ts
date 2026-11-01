@@ -29,7 +29,11 @@ export function vapidPublicKey(): string | null {
 
 export function getPushSupport(): PushSupport {
   if (typeof window === "undefined") {
-    return { supported: false, permission: "unsupported", vapidConfigured: Boolean(vapidPublicKey()) };
+    return {
+      supported: false,
+      permission: "unsupported",
+      vapidConfigured: Boolean(vapidPublicKey()),
+    };
   }
   const supported =
     "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;

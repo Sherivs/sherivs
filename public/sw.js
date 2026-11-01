@@ -88,7 +88,11 @@ self.addEventListener("fetch", (event) => {
         // The root document is the only cached navigation; it is the public app
         // shell, while authenticated routes stay network-only.
         if (response && response.ok && url.pathname === APP_SHELL_URL && !url.search) {
-          await cache.put(APP_SHELL_URL, response.clone());
+          try {
+            await cache.put(APP_SHELL_URL, response.clone());
+          } catch {
+            /* A cache quota failure must not turn a successful network response into an offline page. */
+          }
         }
         return response;
       } catch {

@@ -7,6 +7,7 @@ export const WORKSPACE_SYNC_STATUS_EVENT = "sherivs:sync-status";
 
 export interface WorkspaceSyncStatus {
   pendingItems: number;
+  conflictItems?: number;
   syncing: boolean;
 }
 
@@ -14,6 +15,7 @@ interface ConnectionState {
   online: boolean;
   syncing: boolean;
   pendingItems: number | null;
+  conflictItems: number;
 }
 
 function initialConnectionState(): ConnectionState {
@@ -21,6 +23,7 @@ function initialConnectionState(): ConnectionState {
     online: true,
     syncing: false,
     pendingItems: null,
+    conflictItems: 0,
   };
 }
 
@@ -33,22 +36,28 @@ export function ConnectionStatus() {
   const role = app.profile?.role;
   const preferenceKey =
     userId && tenantId && role
-      ? `sherivs.data-saver:${encodeURIComponent(JSON.stringify([tenantId, userId, role]))}`
+      ? `sherivs.offline.data-saver:${encodeURIComponent(JSON.stringify([tenantId, userId, role]))}`
       : null;
 
   useEffect(() => {
     if (!userId || !tenantId || !role) {
-      setState((current) => ({ ...current, pendingItems: null }));
+      setState((current) => ({ ...current, pendingItems: null, conflictItems: 0 }));
       return;
     }
     let active = true;
     const store = createOfflineStore({ tenantId, userId, role });
     void store.list().then(
       (items) => {
-        if (active) setState((current) => ({ ...current, pendingItems: items.length }));
+        if (active) {
+          setState((current) => ({
+            ...current,
+            pendingItems: items.filter((item) => item.state === "pending").length,
+            conflictItems: items.filter((item) => item.state === "conflict").length,
+          }));
+        }
       },
       () => {
-        if (active) setState((current) => ({ ...current, pendingItems: null }));
+        if (active) setState((current) => ({ ...current, pendingItems: null, conflictItems: 0 }));
       },
     );
     return () => {
@@ -128,6 +137,9 @@ export function ConnectionStatus() {
         typeof (detail as WorkspaceSyncStatus).pendingItems !== "number" ||
         !Number.isInteger((detail as WorkspaceSyncStatus).pendingItems) ||
         (detail as WorkspaceSyncStatus).pendingItems < 0 ||
+        ((detail as WorkspaceSyncStatus).conflictItems !== undefined &&
+          (!Number.isInteger((detail as WorkspaceSyncStatus).conflictItems) ||
+            (detail as WorkspaceSyncStatus).conflictItems! < 0)) ||
         typeof (detail as WorkspaceSyncStatus).syncing !== "boolean"
       ) {
         return;
@@ -137,6 +149,7 @@ export function ConnectionStatus() {
         ...current,
         syncing: status.syncing,
         pendingItems: status.pendingItems,
+        conflictItems: status.conflictItems ?? 0,
       }));
     };
 
@@ -177,7 +190,10 @@ export function ConnectionStatus() {
         <Icon size={15} aria-hidden="true" />
         <span>{label}</span>
         <span className="app-shell-connection-pending">
-          {state.pendingItems === null ? "Pending count unavailable" : `${state.pendingItems} pending`}
+          {state.pendingItems === null
+            ? "Pending count unavailable"
+            : `${state.pendingItems} pending`}
+          {state.conflictItems > 0 ? ` · ${state.conflictItems} need review` : ""}
         </span>
       </span>
       <button

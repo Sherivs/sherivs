@@ -444,11 +444,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
               tenantId: profile.school_id,
               userId: profile.id,
               role: profile.role,
-            }).then(() => load(session)).then(() => {
-              if (typeof window !== "undefined" && next.role) {
-                window.location.assign(runtimeWorkspaceHome(next.role as AppRole));
-              }
-            });
+            })
+              .then(() => load(session))
+              .then(() => {
+                if (typeof window !== "undefined" && next.role) {
+                  window.location.assign(runtimeWorkspaceHome(next.role as AppRole));
+                }
+              });
           }
         },
       )

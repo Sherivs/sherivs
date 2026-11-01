@@ -2,11 +2,7 @@
  * Attendance outbox (SHERIVS-A07): tenant-scoped IndexedDB persistence,
  * stable per-item ids and server-enforced duplicate/conflict handling.
  */
-import {
-  createOfflineStore,
-  type OfflineScope,
-  type OfflineStore,
-} from "./indexeddb-store";
+import { createOfflineStore, type OfflineScope, type OfflineStore } from "./indexeddb-store";
 
 export type AttendanceStatus = "present" | "absent" | "late" | "excused";
 export type QueuedMark = {
@@ -98,7 +94,9 @@ export function createAttendanceQueue(opts: {
         report.duplicates += result.duplicates ?? 0;
         report.conflicts.push(...result.conflicts);
         const conflictsById = new Map(
-          result.conflicts.filter((conflict) => conflict.id).map((conflict) => [conflict.id!, conflict.why]),
+          result.conflicts
+            .filter((conflict) => conflict.id)
+            .map((conflict) => [conflict.id!, conflict.why]),
         );
         for (const item of items) {
           const conflict = conflictsById.get(item.id);
@@ -115,7 +113,10 @@ export function createAttendanceQueue(opts: {
 
   /** Flush; concurrent calls share one in-flight flush. */
   function flush(): Promise<FlushReport> {
-    if (!flushing) flushing = flushOnce().finally(() => { flushing = null; });
+    if (!flushing)
+      flushing = flushOnce().finally(() => {
+        flushing = null;
+      });
     return flushing;
   }
 
@@ -124,7 +125,9 @@ export function createAttendanceQueue(opts: {
     addEventListener(type: string, listener: () => void): void;
     removeEventListener(type: string, listener: () => void): void;
   }) {
-    const on = () => { void flush(); };
+    const on = () => {
+      void flush();
+    };
     target.addEventListener("online", on);
     return () => target.removeEventListener("online", on);
   }

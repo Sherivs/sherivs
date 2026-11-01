@@ -1,6 +1,6 @@
 import { isNetworkError } from "./save-or-queue";
 
-export type OfflineDomain = "timetable" | "results" | "attendance" | "messages";
+export type OfflineDomain = "timetable" | "results" | "attendance" | "messages" | "workspace";
 export type OfflineMutationKind = "attendance" | "score";
 export type OfflineMutationState = "pending" | "conflict";
 
@@ -22,8 +22,8 @@ export interface OfflineMutation<T = unknown> {
 }
 
 export interface OfflineDatabase {
-  readRecord<T>(id: string): Promise<{ scopeKey: string; value: T } | undefined>;
-  writeRecord<T>(id: string, scopeKey: string, value: T): Promise<void>;
+  readRecord<T>(id: string): Promise<{ scopeKey: string; value: T; cachedAt: string } | undefined>;
+  writeRecord<T>(id: string, scopeKey: string, value: T, cachedAt: string): Promise<void>;
   readMutations(scopeKey: string): Promise<OfflineMutation[]>;
   writeMutation(mutation: OfflineMutation): Promise<void>;
   deleteMutation(id: string): Promise<void>;
@@ -41,7 +41,11 @@ export interface OfflineSyncResult {
 export interface OfflineStore {
   read<T>(domain: OfflineDomain, key: string): Promise<T | undefined>;
   write<T>(domain: OfflineDomain, key: string, value: T): Promise<void>;
-  readThrough<T>(domain: OfflineDomain, key: string, load: () => Promise<T>): Promise<{ data: T; source: "network" | "offline" }>;
+  readThrough<T>(
+    domain: OfflineDomain,
+    key: string,
+    load: () => Promise<T>,
+  ): Promise<{ data: T; source: "network" | "offline" }>;
   enqueue<T>(kind: OfflineMutationKind, entityId: string, payload: T): Promise<OfflineMutation<T>>;
   list(kind?: OfflineMutationKind): Promise<OfflineMutation[]>;
   pending(kind?: OfflineMutationKind): Promise<OfflineMutation[]>;
@@ -49,7 +53,9 @@ export interface OfflineStore {
   markConflict(id: string, reason: string): Promise<void>;
   setSyncing(syncing: boolean): Promise<void>;
   sync(
-    send: (mutation: OfflineMutation) => Promise<{ outcome: "applied" | "conflict"; reason?: string }>,
+    send: (
+      mutation: OfflineMutation,
+    ) => Promise<{ outcome: "applied" | "conflict"; reason?: string }>,
     kind?: OfflineMutationKind,
   ): Promise<OfflineSyncResult>;
   clear(): Promise<void>;
@@ -78,15 +84,18 @@ function requestResult<T>(request: IDBRequest<T>): Promise<T> {
 function transactionDone(transaction: IDBTransaction): Promise<void> {
   return new Promise((resolve, reject) => {
     transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error ?? new Error("Offline storage transaction failed"));
-    transaction.onabort = () => reject(transaction.error ?? new Error("Offline storage transaction aborted"));
+    transaction.onerror = () =>
+      reject(transaction.error ?? new Error("Offline storage transaction failed"));
+    transaction.onabort = () =>
+      reject(transaction.error ?? new Error("Offline storage transaction aborted"));
   });
 }
 
 function createBrowserDatabase(): OfflineDatabase {
   let opening: Promise<IDBDatabase> | undefined;
   const open = (): Promise<IDBDatabase> => {
-    if (typeof indexedDB === "undefined") return Promise.reject(new Error("IndexedDB is unavailable"));
+    if (typeof indexedDB === "undefined")
+      return Promise.reject(new Error("IndexedDB is unavailable"));
     if (!opening) {
       opening = new Promise<IDBDatabase>((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -105,7 +114,8 @@ function createBrowserDatabase(): OfflineDatabase {
           request.result.onversionchange = () => request.result.close();
           resolve(request.result);
         };
-        request.onerror = () => reject(request.error ?? new Error("Could not open offline storage"));
+        request.onerror = () =>
+          reject(request.error ?? new Error("Could not open offline storage"));
         request.onblocked = () => reject(new Error("Offline storage upgrade is blocked"));
       }).catch((error: unknown): never => {
         opening = undefined;
@@ -116,17 +126,19 @@ function createBrowserDatabase(): OfflineDatabase {
   };
 
   return {
-    async readRecord<T>(id: string): Promise<{ scopeKey: string; value: T } | undefined> {
+    async readRecord<T>(
+      id: string,
+    ): Promise<{ scopeKey: string; value: T; cachedAt: string } | undefined> {
       const db = await open();
       const tx = db.transaction(RECORDS, "readonly");
       const result = await requestResult(tx.objectStore(RECORDS).get(id));
       await transactionDone(tx);
-      return result as { scopeKey: string; value: T } | undefined;
+      return result as { scopeKey: string; value: T; cachedAt: string } | undefined;
     },
-    async writeRecord<T>(id: string, scopeKey: string, value: T): Promise<void> {
+    async writeRecord<T>(id: string, scopeKey: string, value: T, cachedAt: string): Promise<void> {
       const db = await open();
       const tx = db.transaction(RECORDS, "readwrite");
-      tx.objectStore(RECORDS).put({ id, scopeKey, value });
+      tx.objectStore(RECORDS).put({ id, scopeKey, value, cachedAt });
       await transactionDone(tx);
     },
     async readMutations(scopeKey: string): Promise<OfflineMutation[]> {
@@ -170,28 +182,41 @@ function createBrowserDatabase(): OfflineDatabase {
 
 export function createOfflineStore(
   scope: OfflineScope,
-  options: { database?: OfflineDatabase; now?: () => Date; newId?: () => string } = {},
+  options: {
+    database?: OfflineDatabase;
+    now?: () => Date;
+    newId?: () => string;
+    maxStaleMs?: number;
+  } = {},
 ): OfflineStore {
   const scopeKey = offlineScopeKey(scope);
   const database = options.database ?? createBrowserDatabase();
   const now = options.now ?? (() => new Date());
   const newId = options.newId ?? (() => globalThis.crypto.randomUUID());
+  const maxStaleMs = options.maxStaleMs ?? 24 * 60 * 60 * 1000;
   const recordId = (domain: OfflineDomain, key: string) => `${scopeKey}\u001f${domain}\u001f${key}`;
-  const publishStatus = async (syncing: boolean) => {
+  let syncing = false;
+  const publishStatus = async () => {
     if (typeof window === "undefined") return;
-    const pendingItems = (await database.readMutations(scopeKey)).length;
+    const mutations = await database.readMutations(scopeKey);
+    const pendingItems = mutations.filter((mutation) => mutation.state === "pending").length;
+    const conflictItems = mutations.filter((mutation) => mutation.state === "conflict").length;
     window.dispatchEvent(
-      new CustomEvent("sherivs:sync-status", { detail: { pendingItems, syncing } }),
+      new CustomEvent("sherivs:sync-status", {
+        detail: { pendingItems, conflictItems, syncing },
+      }),
     );
   };
 
   const store: OfflineStore = {
     async read<T>(domain: OfflineDomain, key: string) {
       const record = await database.readRecord<T>(recordId(domain, key));
-      return record?.scopeKey === scopeKey ? record.value : undefined;
+      if (record?.scopeKey !== scopeKey) return undefined;
+      const age = now().getTime() - Date.parse(record.cachedAt);
+      return Number.isFinite(age) && age >= 0 && age <= maxStaleMs ? record.value : undefined;
     },
     async write<T>(domain: OfflineDomain, key: string, value: T) {
-      await database.writeRecord(recordId(domain, key), scopeKey, value);
+      await database.writeRecord(recordId(domain, key), scopeKey, value, now().toISOString());
     },
     async readThrough<T>(domain: OfflineDomain, key: string, load: () => Promise<T>) {
       let data: T;
@@ -204,7 +229,7 @@ export function createOfflineStore(
         return { data, source: "offline" };
       }
       try {
-        await database.writeRecord(recordId(domain, key), scopeKey, data);
+        await database.writeRecord(recordId(domain, key), scopeKey, data, now().toISOString());
       } catch {
         /* A successful authorized read stays usable when local storage is unavailable. */
       }
@@ -222,7 +247,7 @@ export function createOfflineStore(
         state: "pending",
       };
       await database.writeMutation(mutation);
-      await publishStatus(false);
+      await publishStatus();
       return mutation;
     },
     async list(kind?: OfflineMutationKind) {
@@ -233,31 +258,44 @@ export function createOfflineStore(
       return (await this.list(kind)).filter((mutation) => mutation.state === "pending");
     },
     async discard(id: string) {
-      if ((await this.list()).some((mutation) => mutation.id === id)) await database.deleteMutation(id);
-      await publishStatus(false);
+      if ((await this.list()).some((mutation) => mutation.id === id))
+        await database.deleteMutation(id);
+      await publishStatus();
     },
     async markConflict(id: string, reason: string) {
-      const mutation = (await this.list()).find((item) => item.id === id && item.state === "pending");
-      if (mutation) await database.writeMutation({ ...mutation, state: "conflict", conflict: reason });
-      await publishStatus(false);
+      const mutation = (await this.list()).find(
+        (item) => item.id === id && item.state === "pending",
+      );
+      if (mutation)
+        await database.writeMutation({ ...mutation, state: "conflict", conflict: reason });
+      await publishStatus();
     },
-    setSyncing: publishStatus,
+    async setSyncing(value: boolean) {
+      syncing = value;
+      await publishStatus();
+    },
     async sync(
-      send: (mutation: OfflineMutation) => Promise<{ outcome: "applied" | "conflict"; reason?: string }>,
+      send: (
+        mutation: OfflineMutation,
+      ) => Promise<{ outcome: "applied" | "conflict"; reason?: string }>,
       kind?: OfflineMutationKind,
     ) {
       const queue = await database.readMutations(scopeKey);
       let applied = 0;
       let error: string | undefined;
       const conflicts: OfflineMutation[] = [];
-      await publishStatus(true);
+      await this.setSyncing(true);
       try {
         for (const mutation of queue) {
           if (mutation.state !== "pending" || (kind && mutation.kind !== kind)) continue;
           try {
             const result = await send(mutation);
             if (result.outcome === "conflict") {
-              const conflict = { ...mutation, state: "conflict" as const, conflict: result.reason ?? "manual_review_required" };
+              const conflict = {
+                ...mutation,
+                state: "conflict" as const,
+                conflict: result.reason ?? "manual_review_required",
+              };
               await database.writeMutation(conflict);
               conflicts.push(conflict);
             } else {
@@ -270,7 +308,7 @@ export function createOfflineStore(
           }
         }
       } finally {
-        await publishStatus(false);
+        await this.setSyncing(false);
       }
       return {
         applied,
@@ -281,7 +319,7 @@ export function createOfflineStore(
     },
     async clear() {
       await database.deleteScope(scopeKey);
-      await publishStatus(false);
+      await publishStatus();
     },
   };
   return store;
