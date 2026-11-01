@@ -28,7 +28,7 @@ The SQL scripts are disposable local-stack harnesses wrapped in `BEGIN`/`ROLLBAC
 | Focused synthetic console Playwright test | **Pass** — both configured Chromium projects; screenshot dimensions 1440×900 and 390×844 |
 | Broader existing console role-simulation journey | **Incomplete** — the mobile run failed on `/console/organizations/fixture-org-active`; server-side Supabase fixture variables were absent, so this is not a successful backend browser verification |
 | SQL harness execution | **Not run** — no local Supabase endpoint responded on `127.0.0.1:54322`; no production endpoint was used |
-| GitHub Verify workflow | **Not green** — run #252 for commit `66196a7` concluded `action_required`, with zero jobs and no failed-job logs |
+| GitHub Verify workflow | **Not green** — runs #252 and #254 concluded `action_required`, with zero jobs and no failed-job logs |
 
 Existing test sources are distinguished below from tests that were executed. An SQL harness being present or changed does not mean the database behavior was verified.
 
@@ -68,7 +68,7 @@ The linked implementation PRs for phases B, C, D, F, and G (#237–241) remain o
 - Phase H has not been deployed. Existing historical deployment records in other progress documents are not independent verification of this change.
 - No production database was accessed or changed; no production-verified claim is made.
 - The new SQL assertions have not run because no disposable local Supabase database was available.
-- The latest GitHub Verify run (#252) was `action_required` with zero jobs and no failed-job logs. A green remote workflow is not evidenced.
+- GitHub Verify runs #252 and #254 were `action_required` with zero jobs and no failed-job logs. A green remote workflow is not evidenced.
 - Phases B–G are not merged. In particular, Support organization assignment scoping remains a documented authorization gap.
 - Do not deploy or close the phase until the pending implementation dependencies land, the SQL harnesses run against a disposable non-production stack, the authorization gap is fixed and covered, and the Verify workflow completes green.
 
