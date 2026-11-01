@@ -801,12 +801,13 @@ export function buildConsoleVisualFixtureOverview(
       cards: healthCards,
       caveat: "These statuses describe the local visual fixture, not a live environment.",
     },
-    metrics: canReadOrgs && !supportScoped
-      ? fixtureOrganizationMetricsCards(snapshot)
-      : fixtureOrganizationMetricsCards(snapshot).filter(
-          (metric) =>
-            !metric.key.includes("organization") && metric.key !== "onboarding-conversion",
-        ),
+    metrics:
+      canReadOrgs && !supportScoped
+        ? fixtureOrganizationMetricsCards(snapshot)
+        : fixtureOrganizationMetricsCards(snapshot).filter(
+            (metric) =>
+              !metric.key.includes("organization") && metric.key !== "onboarding-conversion",
+          ),
     attention: fixtureAttention(snapshot).filter((item) => {
       if (
         item.href === CONSOLE_PATHS.organizations ||

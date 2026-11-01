@@ -550,7 +550,7 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
       conversionRate: null,
       medianOnboardingHours: null,
     };
-    let organizationMetrics: OrganizationMetricsSnapshot = emptyOrgMetrics
+    let organizationMetrics: OrganizationMetricsSnapshot = emptyOrgMetrics;
     let organizations: ConsoleOverview["organizations"] = [];
     let organizationStore: ConsoleOverview["organizationStore"] = "unavailable";
     let assignments: ConsoleOverview["assignments"] = [];
@@ -558,9 +558,8 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
     let registeredUsers: number | null = null;
     let activeUsers30d: number | null = null;
     if (canReadOrganizations) {
-      const { loadOrganizationMetrics, loadViewerAssignments } = await import(
-        "./organization.store.server"
-      );
+      const { loadOrganizationMetrics, loadViewerAssignments } =
+        await import("./organization.store.server");
       try {
         const snapshot = await loadOrganizationMetrics(db);
         assignments = await loadViewerAssignments(db, context.userId);
@@ -578,7 +577,8 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
           id: row.id,
           displayName: row.display_name,
           orgType: "school" as const,
-          lifecycleState: row.lifecycle_state as ConsoleOverview["organizations"][number]["lifecycleState"],
+          lifecycleState:
+            row.lifecycle_state as ConsoleOverview["organizations"][number]["lifecycleState"],
           country: row.country,
           region: row.region,
           city: row.city,
@@ -652,12 +652,16 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
             "platform_organization.lifecycle_state",
             organizationMetrics.suspended !== null,
           );
-          if (typeof organizationMetrics.failedProvisioning === "number" && organizationMetrics.failedProvisioning > 0) {
+          if (
+            typeof organizationMetrics.failedProvisioning === "number" &&
+            organizationMetrics.failedProvisioning > 0
+          ) {
             attention.push({
               id: "provisioning-failed",
               severity: "high",
               title: `${organizationMetrics.failedProvisioning} provisioning failure${organizationMetrics.failedProvisioning === 1 ? "" : "s"}`,
-              description: "Provisioning failed for one or more organization cases. Retry is idempotent.",
+              description:
+                "Provisioning failed for one or more organization cases. Retry is idempotent.",
               detectedAt: now,
               resource: "Organizations",
               owner: null,
@@ -665,7 +669,10 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
               href: CONSOLE_PATHS.organizations,
             });
           }
-          if (typeof organizationMetrics.onboarding === "number" && organizationMetrics.onboarding > 0) {
+          if (
+            typeof organizationMetrics.onboarding === "number" &&
+            organizationMetrics.onboarding > 0
+          ) {
             attention.push({
               id: "onboarding-pipeline",
               severity: "medium",

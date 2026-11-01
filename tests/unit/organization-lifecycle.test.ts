@@ -14,7 +14,10 @@ import {
   summarizeOrganizationStates,
   uniqueOrganizationSlug,
 } from "@/lib/internal-console/organization-lifecycle";
-import { ROLE_WORKSPACE_MAPPINGS, roleCodesForWorkspaceProvisioning } from "@/lib/internal-console/role-workspace";
+import {
+  ROLE_WORKSPACE_MAPPINGS,
+  roleCodesForWorkspaceProvisioning,
+} from "@/lib/internal-console/role-workspace";
 import { CONSOLE_METRIC_CONTRACTS } from "@/lib/internal-console/metrics";
 import { CONSOLE_PATHS } from "@/lib/internal-console/paths";
 import { isWorkingWorkspace } from "@/lib/internal-console/workspaces";
@@ -207,9 +210,9 @@ describe("role-to-workspace provisioning mapping", () => {
       }),
     ).toEqual(["operations", "support"]);
     expect(ROLE_WORKSPACE_MAPPINGS.every((row) => row.slug.startsWith("role-"))).toBe(true);
-    expect(ROLE_WORKSPACE_MAPPINGS.find((row) => row.roleCode === "platform_owner")?.inPlatformRoles).toBe(
-      false,
-    );
+    expect(
+      ROLE_WORKSPACE_MAPPINGS.find((row) => row.roleCode === "platform_owner")?.inPlatformRoles,
+    ).toBe(false);
   });
 
   it("keeps personal workspaces private when staff.manage is present", () => {

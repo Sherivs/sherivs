@@ -53,7 +53,13 @@ export function scrubValue(value: unknown, depth = 0, seen = new WeakSet<object>
 
 type EventLike = {
   user?: Record<string, unknown> | null;
-  request?: { cookies?: unknown; headers?: Record<string, unknown>; data?: unknown; query_string?: unknown; url?: string } | null;
+  request?: {
+    cookies?: unknown;
+    headers?: Record<string, unknown>;
+    data?: unknown;
+    query_string?: unknown;
+    url?: string;
+  } | null;
   [k: string]: unknown;
 };
 
@@ -65,7 +71,10 @@ export function scrubEvent<T extends EventLike>(event: T): T {
   const userId = event.user && typeof event.user.id === "string" ? event.user.id : undefined;
   const req = event.request
     ? {
-        url: typeof event.request.url === "string" ? scrubString(event.request.url.split("?")[0] ?? "") : undefined,
+        url:
+          typeof event.request.url === "string"
+            ? scrubString(event.request.url.split("?")[0] ?? "")
+            : undefined,
         headers: event.request.headers
           ? (scrubValue(
               Object.fromEntries(
