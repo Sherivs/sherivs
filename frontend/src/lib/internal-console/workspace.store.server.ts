@@ -11,6 +11,7 @@ import {
   type ConsoleRuntimeContract,
 } from "./runtime-contract";
 import type { RecentResource } from "./recent";
+import { assertConsoleCapability } from "./console-access.server";
 
 type Admin = Awaited<ReturnType<typeof admin>>;
 
@@ -188,11 +189,7 @@ type Ctx = {
 async function assertCapability(context: Ctx, capability: string) {
   const { assertInternalAal2 } = await import("@/lib/security/mfa-server");
   assertInternalAal2(context.claims);
-  const { data, error } = await (context.supabase as unknown as RpcClient).rpc(
-    "has_platform_capability",
-    { p_capability: capability },
-  );
-  if (error || data !== true) throw new Error("Not authorized");
+  await assertConsoleCapability(context, capability);
 }
 
 async function requireActiveStaff(db: Admin, userId: string): Promise<void> {
@@ -222,7 +219,7 @@ async function audit(
   const { writeAuditRecord } = await import("@/lib/server/write-audit");
   await writeAuditRecord(await admin(), {
     action: `platform_workspace.${action}`,
-    gate: "has_platform_capability:platform.staff.manage",
+    gate: "has_internal_console_capability:platform.staff.manage",
     tenantId: null,
     actorId: context.userId,
     table: "platform_workspace",

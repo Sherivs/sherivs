@@ -138,7 +138,7 @@ export const FOOTER_LEGAL: NavGroup = {
   id: "footer-legal",
   label: "Legal",
   items: [
-    { href: "/privacy-policy", label: "Privacy policy" },
+    { href: "/privacy", label: "Privacy notice" },
     { href: "/terms", label: "Terms of service" },
     { href: "/legal/acceptable-use", label: "Acceptable use policy" },
   ],
@@ -183,7 +183,7 @@ export const PUBLIC_SITEMAP_PATHS: readonly string[] = [
   "/status",
   "/security",
   "/trust",
-  "/privacy-policy",
+  "/privacy",
   "/terms",
   "/legal/acceptable-use",
   "/legal/contact",

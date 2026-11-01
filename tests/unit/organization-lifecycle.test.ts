@@ -155,16 +155,14 @@ describe("Support workspace organization scope", () => {
 
   it("enforces assignment scope on directory, detail, and overview server reads", () => {
     expect(organizationStore).toContain(
-      "isOrganizationAssignedToStaff(assignments.get(row.id) ?? [], context.userId)",
+      "await loadAssignedSupportOrganizationIds(db, context.userId)",
     );
+    expect(organizationStore).toContain("{ organizationIds, includePlatformMetrics: false }");
     expect(organizationStore).toContain(
-      "if (supportScoped && !isOrganizationAssignedToStaff(assigned, context.userId))",
+      "loadAssignedSupportOrganizationIds(db, context.userId)).includes(id)",
     );
-    expect(overviewFunctions).toContain(
-      "organizationsAssignedToStaff(snapshot.rows, assignments, context.userId)",
-    );
+    expect(overviewFunctions).toContain("organizationMetrics = supportScoped ? emptyOrgMetrics");
     expect(overviewFunctions).toContain("if (!supportScoped)");
-    expect(organizationStore).toContain("not authorized for platform-wide metrics");
   });
 
   it("does not grant Support access to global incident details", () => {

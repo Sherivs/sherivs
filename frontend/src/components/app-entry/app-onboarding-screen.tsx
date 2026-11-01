@@ -253,7 +253,7 @@ export function AppOnboardingScreen() {
               </p>
               <p className="app-onboard-note">
                 Share only the information needed to process your request. Never include passwords.{" "}
-                <Link to="/privacy-policy">Privacy policy</Link>
+                <Link to="/privacy">Privacy notice</Link>
               </p>
               <p className="app-onboard-note" id="onboarding-mailto-note">
                 This opens your email app with a draft to {ONBOARDING_MAILBOX}. Nothing is sent

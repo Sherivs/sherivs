@@ -20,9 +20,7 @@ import {
   ORGANIZATION_ACCESS_EFFECTS,
   canTransitionOrganization,
   currentOnboardingStep,
-  isOrganizationAssignedToStaff,
   isOrganizationLifecycleState,
-  isSupportScopedViewer,
   questionnaireReady,
   slugifyOrganizationName,
   type OrganizationAssignmentType,
@@ -34,6 +32,7 @@ import {
 import {
   CONSOLE_FIXTURE_OPERATOR,
   CONSOLE_FIXTURE_ORGS_KEY,
+  assignedSupportOrganizationIds,
   consoleVisualFixtureActive,
   readSelectedFixturePersona,
 } from "@/lib/internal-console/visual-fixture";
@@ -84,19 +83,6 @@ function directoryFrom(detail: OrganizationDetail): OrganizationDirectoryRow {
       assignments.find(
         (item) => item.assignmentType === "onboarding_owner" && item.status === "active",
       )?.staffName ?? null,
-  };
-}
-
-function fixtureSupportScope() {
-  const persona = readSelectedFixturePersona();
-  const capabilities = viewerCapabilities(persona.roles, persona.isSuperAdmin);
-  return {
-    persona,
-    scoped: isSupportScopedViewer({
-      isSuperAdmin: persona.isSuperAdmin,
-      hasSupportCapability: capabilities.has("platform.support.handle"),
-      hasTenantManagementCapability: capabilities.has("platform.tenants.manage"),
-    }),
   };
 }
 
@@ -161,10 +147,20 @@ export async function apiListOrganizations(
 }> {
   if (consoleVisualFixtureActive()) {
     const query = (input.query ?? "").trim().toLowerCase();
-    const { persona, scoped } = fixtureSupportScope();
-    const organizations = readStore()
-      .organizations.filter((row) => (input.state ? row.lifecycleState === input.state : true))
-      .filter((row) => !scoped || isOrganizationAssignedToStaff(row.assignments, persona.id))
+    const storedOrganizations = readStore().organizations;
+    const persona = readSelectedFixturePersona();
+    const capabilities = viewerCapabilities(persona.roles, persona.isSuperAdmin);
+    const supportOnly =
+      capabilities.has("platform.support.handle") && !capabilities.has("platform.tenants.manage");
+    const assignedIds = supportOnly
+      ? assignedSupportOrganizationIds(
+          storedOrganizations.flatMap((organization) => organization.assignments),
+          persona.id,
+        )
+      : null;
+    const organizations = storedOrganizations
+      .filter((row) => !assignedIds || assignedIds.has(row.id))
+      .filter((row) => (input.state ? row.lifecycleState === input.state : true))
       .filter((row) =>
         query
           ? `${row.displayName} ${row.country ?? ""} ${row.lifecycleState}`
@@ -181,10 +177,16 @@ export async function apiListOrganizations(
 
 export async function apiGetOrganization(id: string): Promise<OrganizationDetail> {
   if (consoleVisualFixtureActive()) {
-    const { persona, scoped } = fixtureSupportScope();
+    const persona = readSelectedFixturePersona();
     const found = readStore().organizations.find((row) => row.id === id);
     if (!found) throw new Error("Organization not found.");
-    if (scoped && !isOrganizationAssignedToStaff(found.assignments, persona.id)) {
+    const capabilities = viewerCapabilities(persona.roles, persona.isSuperAdmin);
+    const supportOnly =
+      capabilities.has("platform.support.handle") && !capabilities.has("platform.tenants.manage");
+    if (
+      supportOnly &&
+      !assignedSupportOrganizationIds(found.assignments, persona.id).has(found.id)
+    ) {
       throw new Error("Not authorized");
     }
     return found;

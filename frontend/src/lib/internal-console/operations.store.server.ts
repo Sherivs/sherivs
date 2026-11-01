@@ -7,6 +7,8 @@ import { SystemClock, TimeAuthority } from "@/lib/kernel/time-authority";
 import { assertInternalAal2 } from "@/lib/security/mfa-server";
 import { scrubString } from "@/lib/observability/scrub";
 import { isMissingRelation, store } from "./store";
+import { hasConsoleCapability } from "./console-access.server";
+import { loadAssignedSupportOrganizationIds } from "./organization.store.server";
 import {
   CONSOLE_SUBSCRIPTION_PREFIX,
   canTransitionIncident,
@@ -44,20 +46,38 @@ async function admin() {
   return supabaseAdmin;
 }
 
-async function hasCapability(context: Ctx, capability: string): Promise<boolean> {
-  const { data, error } = await (context.supabase as unknown as RpcClient).rpc(
-    "has_platform_capability",
-    { p_capability: capability },
-  );
-  return !error && data === true;
+async function hasCapability(
+  context: Ctx,
+  capability: string,
+  platformOperationsAction?: string | null,
+): Promise<boolean> {
+  return hasConsoleCapability(context, capability, platformOperationsAction);
 }
 
-async function assertAnyCapability(context: Ctx, capabilities: readonly string[], aal2 = false) {
+async function assertAnyCapability(
+  context: Ctx,
+  capabilities: readonly string[],
+  aal2 = false,
+  platformOperationsAction?: string,
+) {
   if (aal2) assertInternalAal2(context.claims);
   for (const capability of capabilities) {
-    if (await hasCapability(context, capability)) return;
+    if (await hasCapability(context, capability, platformOperationsAction ?? null)) return;
   }
   throw new Error("Not authorized");
+}
+
+async function supportOrganizationScope(context: Ctx, db: Awaited<ReturnType<typeof admin>>) {
+  const support =
+    (await hasConsoleCapability(context, "platform.support.handle")) &&
+    !(await hasConsoleCapability(context, "platform.tenants.manage"));
+  return support ? loadAssignedSupportOrganizationIds(db, context.userId) : null;
+}
+
+function assertAssignedOrganization(scope: string[] | null, organizationId: string | null) {
+  if (scope !== null && (!organizationId || !scope.includes(organizationId))) {
+    throw new Error("Organization not found.");
+  }
 }
 
 async function audit(
@@ -69,7 +89,7 @@ async function audit(
 ) {
   await writeAuditRecord(await admin(), {
     action,
-    gate: "has_platform_capability",
+    gate: "has_internal_console_capability",
     tenantId: null,
     actorId: context.userId,
     table,
@@ -168,13 +188,16 @@ export async function listTickets(
 ): Promise<{ tickets: ConsoleTicket[]; source: string; available: boolean }> {
   await assertAnyCapability(context, ["platform.tenants.read", "platform.support.handle"]);
   const db = await admin();
-  const { data, error } = await store(db)
+  const scope = await supportOrganizationScope(context, db);
+  let request = store(db)
     .from("platform_ticket")
     .select(
       "id, organization_id, subject, body, status, priority, opened_by, assigned_to, created_at, updated_at, resolved_at",
-    )
-    .order("updated_at", { ascending: false })
-    .limit(200);
+    );
+  if (scope !== null) {
+    request = scope.length ? request.in("organization_id", scope) : request.limit(0);
+  }
+  const { data, error } = await request.order("updated_at", { ascending: false }).limit(200);
   if (error) {
     if (isMissingRelation(error)) {
       return { tickets: [], source: "platform_ticket not applied", available: false };
@@ -201,6 +224,8 @@ export async function createTicket(
 ): Promise<ConsoleTicket> {
   await assertAnyCapability(context, ["platform.support.handle", "platform.tenants.manage"], true);
   const db = await admin();
+  const supportScope = await supportOrganizationScope(context, db);
+  assertAssignedOrganization(supportScope, input.organizationId ?? null);
   const now = timeAuthority.now().at;
   const { data, error } = await store(db)
     .from("platform_ticket")
@@ -250,6 +275,8 @@ export async function transitionTicket(
   }
   const row = current.data as TicketRow | null;
   if (!row) throw new Error("Ticket not found.");
+  const supportScope = await supportOrganizationScope(context, await admin());
+  assertAssignedOrganization(supportScope, row.organization_id);
   if (!isTicketStatus(row.status) || !canTransitionTicket(row.status, input.toStatus)) {
     throw new Error("That ticket status change is not allowed.");
   }
@@ -279,19 +306,23 @@ export async function listIncidents(context: Ctx): Promise<{
   available: boolean;
   openCount: number | null;
 }> {
-  await assertAnyCapability(context, [
-    "platform.engineering.read",
-    "platform.operations.read",
-    "platform.audit.read",
-  ]);
+  await assertAnyCapability(
+    context,
+    ["platform.engineering.read", "platform.operations.read", "platform.audit.read"],
+    false,
+    "incident.summary.read",
+  );
   const db = await admin();
-  const { data, error } = await store(db)
+  const scope = await supportOrganizationScope(context, db);
+  let request = store(db)
     .from("platform_incident")
     .select(
       "id, organization_id, title, details, severity, status, opened_by, created_at, updated_at, resolved_at",
-    )
-    .order("updated_at", { ascending: false })
-    .limit(200);
+    );
+  if (scope !== null) {
+    request = scope.length ? request.in("organization_id", scope) : request.limit(0);
+  }
+  const { data, error } = await request.order("updated_at", { ascending: false }).limit(200);
   if (error) {
     if (isMissingRelation(error)) {
       return {
@@ -409,7 +440,12 @@ export async function searchLogs(
   context: Ctx,
   input: { query?: string; limit?: number },
 ): Promise<{ events: ConsoleLogHit[]; source: string; available: boolean }> {
-  await assertAnyCapability(context, ["platform.engineering.read", "platform.audit.read"]);
+  await assertAnyCapability(
+    context,
+    ["platform.engineering.read", "platform.audit.read"],
+    false,
+    "logs.search",
+  );
   const db = await admin();
   const query = sanitizeLogQuery(input.query ?? "");
   let request = db

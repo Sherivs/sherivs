@@ -117,7 +117,12 @@ export function workspaceById(
   if (parsed.kind === "record") return null;
   const ws = sharedWorkspaceForRole(parsed.role);
   if (!ws) return null;
-  if (viewer.isSuperAdmin || viewer.roles.includes(parsed.role)) return ws;
+  if (
+    (viewer.isSuperAdmin && parsed.role === "platform_owner") ||
+    viewer.roles.some((role) => mappingForRole(role)?.roleCode === parsed.role)
+  ) {
+    return ws;
+  }
   return null;
 }
 

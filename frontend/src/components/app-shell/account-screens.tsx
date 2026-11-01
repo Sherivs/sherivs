@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "@tanstack/react-router";
 import { Bell, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,6 +28,16 @@ import { APP_SHELL_HOME } from "@/lib/shell/paths";
 import { useAppShell } from "./shell-context";
 import { ShellGlassIcon } from "./glass-icon";
 import { NotificationCentre } from "./notification-centre";
+import {
+  configureVoiceAgent,
+  decideVoiceCall,
+  dispatchApprovedVoiceCall,
+  getVoiceAgentSettings,
+  listVoiceCalls,
+  requestVoiceCall,
+  type VoiceAgentCall,
+  type VoiceAgentSettings,
+} from "@/lib/communications/voice-agent.functions";
 
 function SectionBack() {
   return (
@@ -73,6 +83,297 @@ export function AppSettingsScreen() {
           <small>{shell.orgName}</small>
         </div>
       </div>
+      <div className="app-shell-card">
+        <div>
+          <p>Organization voice agent</p>
+          <small>Available to organization administrators; server authorization is enforced.</small>
+        </div>
+        <Link to={"/home/voice-agent" as never} className="app-shell-back">
+          Manage voice agent →
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+export function AppVoiceAgentScreen() {
+  const [settings, setSettings] = useState<VoiceAgentSettings | null>(null);
+  const [calls, setCalls] = useState<VoiceAgentCall[]>([]);
+  const provider = "africas_talking" as const;
+  const [providerNumber, setProviderNumber] = useState("");
+  const [extension, setExtension] = useState("");
+  const [enabled, setEnabled] = useState(false);
+  const [category, setCategory] = useState<"fee_reminder" | "absence_alert">("fee_reminder");
+  const [recipientPhone, setRecipientPhone] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  async function reload() {
+    try {
+      const [nextSettings, nextCalls] = await Promise.all([
+        getVoiceAgentSettings({ data: {} }),
+        listVoiceCalls({ data: {} }),
+      ]);
+      setSettings(nextSettings);
+      setEnabled(nextSettings.enabled);
+      setProviderNumber(nextSettings.providerNumber ?? "");
+      setExtension(nextSettings.extension ?? "");
+      setCalls(nextCalls);
+      setMessage(null);
+    } catch {
+      setMessage("Voice settings are available only to an authorized organization administrator.");
+    }
+  }
+
+  useEffect(() => {
+    void reload();
+  }, []);
+
+  async function submitSettings(event: FormEvent) {
+    event.preventDefault();
+    setBusy(true);
+    try {
+      await configureVoiceAgent({
+        data: { enabled, provider, providerNumber, extension },
+      });
+      await reload();
+      setMessage(
+        "Voice agent settings saved. Live calling remains controlled by the voice_live flag.",
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Voice settings could not be saved.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submitCall(event: FormEvent) {
+    event.preventDefault();
+    setBusy(true);
+    try {
+      await requestVoiceCall({ data: { category, recipientPhone } });
+      setRecipientPhone("");
+      await reload();
+      setMessage(
+        "Call request queued for approval. A different organization administrator must approve it.",
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Call request could not be queued.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function decide(callId: string, approve: boolean) {
+    setBusy(true);
+    try {
+      await decideVoiceCall({ data: { callId, approve } });
+      await reload();
+      setMessage(
+        approve
+          ? "Call approved. Dispatch remains off until live voice is enabled."
+          : "Call request rejected.",
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Call decision could not be recorded.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function dispatch(callId: string) {
+    setBusy(true);
+    try {
+      const result = await dispatchApprovedVoiceCall({ data: { callId } });
+      await reload();
+      setMessage(
+        result.status === "completed"
+          ? "The provider accepted the call."
+          : result.status === "failed"
+            ? "The call could not be placed; the usage reservation was released."
+            : result.status === "provider_not_configured"
+              ? "Africa’s Talking is not configured for server-side voice dispatch."
+              : "Live voice is disabled. The approved call remains queued.",
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Call dispatch could not be completed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="app-shell-section" data-testid="org-voice-agent">
+      <Link to="/home/settings" className="app-shell-back">
+        ← Settings
+      </Link>
+      <h1>Organization voice agent</h1>
+      <p className="app-shell-empty">
+        Configure an organization number and manage consent-checked outbound call approvals. Live
+        voice stays disabled until the separate voice_live flag is explicitly enabled.
+      </p>
+      <p className="app-shell-empty">
+        Incoming callers are not authenticated. The voice agent currently answers public help only;
+        organization-specific fees, results, admissions, and timetable records remain unavailable
+        until secure caller verification is implemented.
+      </p>
+      {message ? (
+        <p role="status" className="app-shell-empty">
+          {message}
+        </p>
+      ) : null}
+      {!settings ? (
+        <p className="app-shell-empty">
+          Load this page as an authorized organization administrator.
+        </p>
+      ) : (
+        <>
+          <div className="app-shell-card">
+            <div>
+              <p>Live voice</p>
+              <small>
+                {settings.voiceLive
+                  ? "Enabled by the existing feature flag"
+                  : "Disabled by default"}
+              </small>
+            </div>
+            <div>
+              <p>Voice minutes</p>
+              <small>
+                {settings.voiceMinutesUsed} of {settings.voiceMinutesQuota} used this month
+              </small>
+            </div>
+          </div>
+          <form className="app-shell-form" onSubmit={submitSettings}>
+            <h2>Number and add-on</h2>
+            <label>
+              Provider
+              <select value={provider} disabled>
+                <option value="africas_talking">Africa&apos;s Talking</option>
+              </select>
+            </label>
+            <label>
+              Organization number
+              <input
+                type="tel"
+                required
+                autoComplete="tel"
+                placeholder="+2348012345678"
+                value={providerNumber}
+                onChange={(event) => setProviderNumber(event.target.value)}
+              />
+            </label>
+            <label>
+              Optional extension
+              <input
+                value={extension}
+                maxLength={12}
+                onChange={(event) => setExtension(event.target.value)}
+              />
+            </label>
+            <label className="app-shell-checkbox">
+              <input
+                type="checkbox"
+                checked={enabled}
+                onChange={(event) => setEnabled(event.target.checked)}
+              />
+              Enable organization add-on
+            </label>
+            <button type="submit" className="app-shell-primary" disabled={busy}>
+              Save settings
+            </button>
+          </form>
+          <form className="app-shell-form" onSubmit={submitCall}>
+            <h2>Request an outbound call</h2>
+            <p>
+              Recipient must have active voice consent. Requests do not place a call until another
+              admin approves.
+            </p>
+            <label>
+              Call purpose
+              <select
+                value={category}
+                onChange={(event) => setCategory(event.target.value as typeof category)}
+              >
+                <option value="fee_reminder">Fee reminder</option>
+                <option value="absence_alert">Absence alert</option>
+              </select>
+            </label>
+            <label>
+              Consented recipient number
+              <input
+                type="tel"
+                required
+                autoComplete="tel"
+                placeholder="+2348012345678"
+                value={recipientPhone}
+                onChange={(event) => setRecipientPhone(event.target.value)}
+              />
+            </label>
+            <button
+              type="submit"
+              className="app-shell-primary"
+              disabled={busy || !settings.enabled}
+            >
+              Request approval
+            </button>
+          </form>
+          <section aria-labelledby="voice-approval-heading">
+            <h2 id="voice-approval-heading">Approval queue</h2>
+            {calls.length === 0 ? (
+              <p className="app-shell-empty">No pending or approved calls.</p>
+            ) : (
+              calls.map((call) => (
+                <article className="app-shell-card" key={call.id}>
+                  <div>
+                    <p>{call.category === "fee_reminder" ? "Fee reminder" : "Absence alert"}</p>
+                    <small>
+                      {call.recipient_redacted} · {new Date(call.created_at).toLocaleString()}
+                    </small>
+                    <p>{call.script}</p>
+                  </div>
+                  <div className="app-shell-actions">
+                    {call.status === "pending" ? (
+                      <>
+                        <button
+                          type="button"
+                          className="app-shell-primary"
+                          disabled={busy}
+                          onClick={() => void decide(call.id, true)}
+                        >
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          className="app-shell-secondary"
+                          disabled={busy}
+                          onClick={() => void decide(call.id, false)}
+                        >
+                          Reject
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        className="app-shell-primary"
+                        disabled={
+                          busy ||
+                          !settings.voiceLive ||
+                          !settings.enabled ||
+                          settings.provider !== "africas_talking"
+                        }
+                        onClick={() => void dispatch(call.id)}
+                      >
+                        Dispatch approved call
+                      </button>
+                    )}
+                  </div>
+                </article>
+              ))
+            )}
+          </section>
+        </>
+      )}
     </section>
   );
 }
