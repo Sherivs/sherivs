@@ -13,11 +13,13 @@ import {
 import { Link } from "@tanstack/react-router";
 import { useApp } from "@/contexts/app-context";
 import {
+  assistantProposalIsDenied,
   assistantProposalRequiresPasskey,
   createAssistantClient,
   type AssistantAttachment,
   type AssistantProposal,
 } from "@/lib/assistant/assistant-client";
+import { assistantPersonaForRole } from "@/lib/assistant/assistant-persona";
 import { APP_SHELL_HOME } from "@/lib/shell/paths";
 import { useAppShell } from "./shell-context";
 import { ShellGlassIcon } from "./glass-icon";
@@ -25,26 +27,6 @@ import { ShellGlassIcon } from "./glass-icon";
 const assistantClient = createAssistantClient();
 const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 const QUICK_REPLIES = ["Help me plan my day", "What needs my attention?", "Show my assigned work"];
-
-const PERSONA_BY_ROLE: Readonly<Record<string, string>> = {
-  admin: "My School Assistant",
-  admin_officer: "My School Assistant",
-  bursar: "My Bursary Assistant",
-  driver: "My Route Assistant",
-  form_teacher: "My Teaching Assistant",
-  head_of_institution: "My Leadership Assistant",
-  hod: "My Department Assistant",
-  hq: "My Platform Assistant",
-  librarian: "My Library Assistant",
-  nurse: "My Health Assistant",
-  parent: "My Family Assistant",
-  principal: "My Leadership Assistant",
-  proprietor: "My Organization Assistant",
-  student: "My Learning Companion",
-  super_admin: "My Platform Assistant",
-  support_staff: "My Work Assistant",
-  teacher: "My Teaching Assistant",
-};
 
 interface ChatMessage {
   id: number;
@@ -59,10 +41,6 @@ interface Conversation {
   messages: ChatMessage[];
 }
 
-export function assistantPersonaForRole(role: string | null | undefined): string {
-  return (role && PERSONA_BY_ROLE[role]) || "My Assistant";
-}
-
 export function AssistantScreen() {
   const app = useApp();
   const shell = useAppShell();
@@ -73,27 +51,52 @@ export function AssistantScreen() {
   const [draft, setDraft] = useState("");
   const [attachments, setAttachments] = useState<AssistantAttachment[]>([]);
   const [sending, setSending] = useState(false);
-  const [online, setOnline] = useState(() => navigator.onLine);
+  const [online, setOnline] = useState(() =>
+    typeof navigator === "undefined" ? true : navigator.onLine,
+  );
   const [recording, setRecording] = useState(false);
   const [attachmentMessage, setAttachmentMessage] = useState<string | null>(null);
   const [conversationSequence, setConversationSequence] = useState(1);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [queuedCount, setQueuedCount] = useState(0);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const nextMessageId = useRef(1);
+  const contextGenerationRef = useRef(0);
+  const discardRecordingRef = useRef(false);
   const contextReady = Boolean(app.profile?.id && app.school?.id && app.role);
-  const queuedCount = messages.filter((message) => message.kind === "user").length;
 
   useEffect(() => {
-    const update = () => setOnline(navigator.onLine);
+    const update = () => setOnline(typeof navigator === "undefined" || navigator.onLine);
     window.addEventListener("online", update);
     window.addEventListener("offline", update);
     return () => {
       window.removeEventListener("online", update);
       window.removeEventListener("offline", update);
+      discardRecordingRef.current = true;
+      if (recorderRef.current?.state !== "inactive") recorderRef.current?.stop();
       streamRef.current?.getTracks().forEach((track) => track.stop());
     };
   }, []);
+
+  useEffect(() => {
+    contextGenerationRef.current += 1;
+    discardRecordingRef.current = true;
+    if (recorderRef.current?.state !== "inactive") recorderRef.current?.stop();
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    recorderRef.current = null;
+    streamRef.current = null;
+    setRecording(false);
+    setMessages([]);
+    setConversations([]);
+    setHistoryOpen(false);
+    setDraft("");
+    setAttachments([]);
+    setAttachmentMessage(null);
+    setSending(false);
+    setQueuedCount(0);
+    setConversationSequence(1);
+    nextMessageId.current = 1;
+  }, [app.profile?.id, app.school?.id, app.role]);
 
   function addMessage(message: Omit<ChatMessage, "id">) {
     const id = nextMessageId.current++;
@@ -103,10 +106,12 @@ export function AssistantScreen() {
   async function sendMessage(text = draft) {
     const message = text.trim();
     if (!message || sending || !contextReady) return;
+    const contextGeneration = contextGenerationRef.current;
     setDraft("");
     setSending(true);
     addMessage({ kind: "user", text: message });
     if (!online) {
+      setQueuedCount((count) => count + 1);
       addMessage({
         kind: "system",
         text: "Queued in this tab for this session. Nothing has been sent to a server.",
@@ -117,14 +122,10 @@ export function AssistantScreen() {
 
     try {
       const result = await assistantClient.send({
-        context: {
-          userId: app.profile!.id,
-          organizationId: app.school!.id,
-          role: app.role!,
-        },
         message,
         attachments,
       });
+      if (contextGeneration !== contextGenerationRef.current) return;
       if (result.status === "unavailable") {
         addMessage({
           kind: "system",
@@ -138,13 +139,14 @@ export function AssistantScreen() {
         });
       }
     } catch {
-      addMessage({
-        kind: "system",
-        text: "Assistant service could not be reached. Your message was not sent.",
-      });
+      if (contextGeneration === contextGenerationRef.current) {
+        addMessage({
+          kind: "system",
+          text: "Assistant service could not be reached. Your message was not sent.",
+        });
+      }
     } finally {
-      setAttachments([]);
-      setSending(false);
+      if (contextGeneration === contextGenerationRef.current) setSending(false);
     }
   }
 
@@ -175,6 +177,16 @@ export function AssistantScreen() {
         setAttachmentMessage(`${file.name} exceeds the 5 MB attachment limit.`);
         continue;
       }
+      if (
+        !file.type ||
+        (!file.type.startsWith("image/") &&
+          !file.type.startsWith("audio/") &&
+          file.type !== "application/pdf" &&
+          !file.type.startsWith("text/"))
+      ) {
+        setAttachmentMessage(`${file.name} is not a supported attachment type.`);
+        continue;
+      }
       accepted.push({
         name: file.name,
         contentType: file.type || "application/octet-stream",
@@ -195,15 +207,29 @@ export function AssistantScreen() {
       setAttachmentMessage("Voice recording is not supported in this browser.");
       return;
     }
+    const contextGeneration = contextGenerationRef.current;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (contextGeneration !== contextGenerationRef.current || !contextReady) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
       streamRef.current = stream;
       const recorder = new MediaRecorder(stream);
       const chunks: BlobPart[] = [];
+      const recordingGeneration = contextGenerationRef.current;
+      discardRecordingRef.current = false;
       recorder.addEventListener("dataavailable", (event) => {
         if (event.data.size) chunks.push(event.data);
       });
       recorder.addEventListener("stop", () => {
+        if (discardRecordingRef.current || recordingGeneration !== contextGenerationRef.current) {
+          stream.getTracks().forEach((track) => track.stop());
+          streamRef.current = null;
+          recorderRef.current = null;
+          setRecording(false);
+          return;
+        }
         const blob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
         const file = new File([blob], `voice-note-${Date.now()}.webm`, {
           type: blob.type,
@@ -333,13 +359,18 @@ export function AssistantScreen() {
                 <article className="app-shell-assistant-proposal" key={proposal.id}>
                   <ShieldCheck size={17} aria-hidden="true" />
                   <div>
-                    <strong>{proposal.riskTier} proposal</strong>
+                    <strong>
+                      {proposal.riskTier}{" "}
+                      {assistantProposalIsDenied(proposal) ? "denied" : "proposal"}
+                    </strong>
                     <p>{proposal.summary}</p>
                     {assistantProposalRequiresPasskey(proposal) ? (
                       <small>
-                        Human approval and passkey step-up are required in the authorized console.
-                        This chat cannot approve or execute this action.
+                        T3 requires human approval and passkey step-up. This chat cannot approve or
+                        execute it; that approval flow is not connected here.
                       </small>
+                    ) : assistantProposalIsDenied(proposal) ? (
+                      <small>Denied by policy. This action cannot be approved or executed.</small>
                     ) : (
                       <small>Proposal only. Execution is not available in this chat.</small>
                     )}
@@ -382,7 +413,9 @@ export function AssistantScreen() {
                   type="button"
                   aria-label={`Remove ${attachment.name}`}
                   onClick={() =>
-                    setAttachments((current) => current.filter((_, itemIndex) => itemIndex !== index))
+                    setAttachments((current) =>
+                      current.filter((_, itemIndex) => itemIndex !== index),
+                    )
                   }
                 >
                   <X size={14} />
@@ -394,7 +427,6 @@ export function AssistantScreen() {
         <label className="app-shell-assistant-input-label">
           <span className="sr-only">Message {persona}</span>
           <textarea
-            ref={inputRef}
             value={draft}
             onChange={(event) => setDraft(event.target.value.slice(0, 4000))}
             placeholder="Message your assistant…"
@@ -406,12 +438,17 @@ export function AssistantScreen() {
         </label>
         <div className="app-shell-assistant-composer-tools">
           <label className="app-shell-assistant-tool" aria-label="Attach a file">
+            <span className="sr-only">Attach a file</span>
             <Paperclip size={17} />
             <input
               type="file"
-              accept="image/*,application/pdf,text/plain"
+              accept="image/*,audio/*,application/pdf,text/plain"
+              aria-label="Attach a file"
               multiple
-              onChange={(event) => addFiles(event.target.files)}
+              onChange={(event) => {
+                addFiles(event.target.files);
+                event.target.value = "";
+              }}
             />
           </label>
           <button

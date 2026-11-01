@@ -40,4 +40,8 @@ The Control Plane is a separate, non-tenant workspace. Its role-workspace mappin
 
 ## Explicit V1 boundary
 
-The existing AI navigation entry is retained; this home-shell change does not add a digital-twin persona, twin-derived insights, a JARVIS chat client, or new Reality Intelligence. The V1 Control Plane gap matrix defers the AI workforce control plane and digital twins. Implementing those capabilities requires the governing scope to be explicitly unfrozen first.
+The owner-authorized V1 scope record in `docs/v1/V1-SCOPE-LOCK.md` names the bounded personal twins epic (#223) and JARVIS epic (#225). This supersedes older inventory statements that treated these named capabilities as frozen; it does not unfreeze physical/device twins, V3 Reality Intelligence, or unrelated future capabilities.
+
+The `/home/ai` route now renders a role-named Assistant screen. Its typed client deliberately returns `unavailable` until an approved chat transport is connected; the screen does not invent replies or upload messages, attachments, or voice notes. Session-only conversation history and offline queue content are cleared when the page is closed or the active identity, organization, or role changes. T3 proposals are display-only and require human approval plus passkey step-up; that approval flow is not connected here, and this screen cannot approve or execute proposals. T4 proposals are denied by policy.
+
+Twin-derived home insights, durable personal Twin state, the JARVIS workforce/runtime, connected streaming chat, and a persisted cross-session assistant history are not implemented or claimed by this shell change. Their delivery remains subject to their authorized phase acceptance, security, and operational gates.

@@ -1,5 +1,5 @@
 /**
- * Shell chrome composition: Home and AI are pinned; the three middle slots
+ * Shell chrome composition: Home and Assistant are pinned; the three middle slots
  * are the role's most important sections (family widgets first). The drawer
  * lists every remaining role preference. Account items stay under the portrait.
  */
@@ -103,7 +103,7 @@ function eligibleBottom(item: Catalogish): boolean {
   );
 }
 
-/** Home | three role-priority sections | AI. */
+/** Home | three role-priority sections | Assistant. */
 export function composeBottomSlots(input: {
   widgets?: readonly Catalogish[];
   nav?: readonly Catalogish[];
@@ -140,7 +140,7 @@ export function composeBottomSlots(input: {
   return [
     { key: "nav.home", label: "Home", icon: "home", href: APP_SHELL_HOME, kind: "home" },
     ...roleSlots,
-    { key: "nav.ai", label: "AI", icon: "sparkles", href: APP_SHELL_AI, kind: "ai" },
+    { key: "nav.ai", label: "Assistant", icon: "sparkles", href: APP_SHELL_AI, kind: "ai" },
   ];
 }
 

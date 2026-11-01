@@ -37,6 +37,12 @@ import {
 } from "../../frontend/src/lib/shell/paths";
 import { pickSwitchTarget } from "../../frontend/src/lib/identity/memberships.functions";
 import type { AppRole } from "../../frontend/src/lib/roles";
+import {
+  assistantProposalIsDenied,
+  assistantProposalRequiresPasskey,
+  createAssistantClient,
+} from "../../frontend/src/lib/assistant/assistant-client";
+import { assistantPersonaForRole } from "../../frontend/src/lib/assistant/assistant-persona";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const read = (p: string) => readFileSync(join(ROOT, p), "utf8");
@@ -54,6 +60,34 @@ describe("application shell greeting", () => {
   it("keeps two names compact", () => {
     expect(compactPersonName("Muhammad Ali Musa").display).toBe("Muhammad Musa");
     expect(compactPersonName("Ada").display).toBe("Ada");
+  });
+});
+
+describe("role-aware assistant boundary", () => {
+  it("uses a role persona and falls back for unknown roles", () => {
+    expect(assistantPersonaForRole("teacher")).toBe("My Teaching Assistant");
+    expect(assistantPersonaForRole("student")).toBe("My Learning Companion");
+    expect(assistantPersonaForRole("platform_owner")).toBe("My Platform Assistant");
+    expect(assistantPersonaForRole("unknown")).toBe("My Assistant");
+  });
+
+  it("reports unavailable when no chat transport is connected", async () => {
+    const client = createAssistantClient();
+    await expect(client.send({ message: "Show my schedule", attachments: [] })).resolves.toEqual({
+      status: "unavailable",
+    });
+  });
+
+  it("keeps T3 proposals behind human passkey approval and denies T4", () => {
+    expect(
+      assistantProposalRequiresPasskey({ id: "p1", summary: "Change access", riskTier: "T3" }),
+    ).toBe(true);
+    expect(
+      assistantProposalRequiresPasskey({ id: "p2", summary: "Read a report", riskTier: "T1" }),
+    ).toBe(false);
+    expect(assistantProposalIsDenied({ id: "p3", summary: "Delete records", riskTier: "T4" })).toBe(
+      true,
+    );
   });
 });
 
@@ -131,7 +165,7 @@ describe("membership invite law", () => {
 });
 
 describe("shell chrome", () => {
-  it("pins home and AI and fills three role-priority slots from manifest widgets", () => {
+  it("pins home and Assistant and fills three role-priority slots from manifest widgets", () => {
     const slots = composeBottomSlots({
       widgets: [
         {
@@ -167,6 +201,7 @@ describe("shell chrome", () => {
     expect(slots[2]?.key).toBe("w.attendance_todo");
     expect(slots[3]?.key).toBe("w.grading_queue");
     expect(slots[4]?.href).toBe(APP_SHELL_AI);
+    expect(slots[4]?.label).toBe("Assistant");
     expect(compactBottomLabel("Registers to mark")).toBe("Registers");
     expect(appShellSectionPath("w.today_classes")).toBe("/home/s/w.today_classes");
   });
