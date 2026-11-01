@@ -37,7 +37,7 @@ import {
   requestVoiceCall,
   type VoiceAgentCall,
   type VoiceAgentSettings,
-} from "@/lib/runtime/scholar/voice-agent.functions";
+} from "@/lib/communications/voice-agent.functions";
 
 function SectionBack() {
   return (
@@ -213,6 +213,11 @@ export function AppVoiceAgentScreen() {
         Configure an organization number and manage consent-checked outbound call approvals. Live
         voice stays disabled until the separate voice_live flag is explicitly enabled.
       </p>
+      <p className="app-shell-empty">
+        Incoming callers are not authenticated. The voice agent currently answers public help only;
+        organization-specific fees, results, admissions, and timetable records remain unavailable
+        until secure caller verification is implemented.
+      </p>
       {message ? (
         <p role="status" className="app-shell-empty">
           {message}
@@ -240,7 +245,7 @@ export function AppVoiceAgentScreen() {
               </small>
             </div>
           </div>
-          <form className="sherivs-console-form" onSubmit={submitSettings}>
+          <form className="app-shell-form" onSubmit={submitSettings}>
             <h2>Number and add-on</h2>
             <label>
               Provider
@@ -279,11 +284,11 @@ export function AppVoiceAgentScreen() {
               />
               Enable organization add-on
             </label>
-            <button type="submit" className="sherivs-console-btn" disabled={busy}>
+            <button type="submit" className="app-shell-primary" disabled={busy}>
               Save settings
             </button>
           </form>
-          <form className="sherivs-console-form" onSubmit={submitCall}>
+          <form className="app-shell-form" onSubmit={submitCall}>
             <h2>Request an outbound call</h2>
             <p>
               Recipient must have active voice consent. Requests do not place a call until another
@@ -312,7 +317,7 @@ export function AppVoiceAgentScreen() {
             </label>
             <button
               type="submit"
-              className="sherivs-console-btn"
+              className="app-shell-primary"
               disabled={busy || !settings.enabled}
             >
               Request approval
@@ -332,12 +337,12 @@ export function AppVoiceAgentScreen() {
                     </small>
                     <p>{call.script}</p>
                   </div>
-                  <div className="sherivs-console-actions">
+                  <div className="app-shell-actions">
                     {call.status === "pending" ? (
                       <>
                         <button
                           type="button"
-                          className="sherivs-console-btn"
+                          className="app-shell-primary"
                           disabled={busy}
                           onClick={() => void decide(call.id, true)}
                         >
@@ -345,7 +350,7 @@ export function AppVoiceAgentScreen() {
                         </button>
                         <button
                           type="button"
-                          className="sherivs-console-btn secondary"
+                          className="app-shell-secondary"
                           disabled={busy}
                           onClick={() => void decide(call.id, false)}
                         >
@@ -355,7 +360,7 @@ export function AppVoiceAgentScreen() {
                     ) : (
                       <button
                         type="button"
-                        className="sherivs-console-btn"
+                        className="app-shell-primary"
                         disabled={
                           busy ||
                           !settings.voiceLive ||

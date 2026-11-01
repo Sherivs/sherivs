@@ -371,6 +371,38 @@ describe("Africa's Talking voice support callback", () => {
     expect(JSON.stringify(audit.mock.calls)).not.toContain("caller@example.com");
   });
 
+  it("uses the neutral organization key for the language adapter on an org-routed call", async () => {
+    const { db } = createDb(true, true);
+    const answer = vi.fn(async () => "Please use the organization portal.");
+    const handler = createAfricaTalkingVoiceCallbackHandler({
+      env: ENV,
+      db,
+      assistant: {
+        transcriber: {
+          providerId: "test-stt",
+          transcribe: async () => "How do I apply?",
+        },
+        language: { providerId: "test-llm", answer },
+        speech: {
+          providerId: "test-tts",
+          speak: (text, callbackUrl) => recordVoiceXml(text, callbackUrl),
+        },
+      },
+      audit: vi.fn(async () => undefined),
+    });
+
+    await handler(request());
+    await handler(request(CALLBACK_TOKEN, { sessionId: SESSION_ID, dtmfDigits: "1" }));
+    await handler(
+      request(CALLBACK_TOKEN, {
+        sessionId: SESSION_ID,
+        recordingUrl: "https://voice.africastalking.com/recording.wav",
+      }),
+    );
+
+    expect(answer).toHaveBeenCalledWith("How do I apply?", TENANT_REF, expect.any(String));
+  });
+
   it("dials the configured human support number for a caller escalation request", async () => {
     const { db, calls } = createDb(true);
     const answer = vi.fn(async () => "This should not be called.");

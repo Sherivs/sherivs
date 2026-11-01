@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
@@ -37,8 +36,11 @@ const callInput = z.object({
 export type VoiceAgentSettings = z.infer<typeof settingsInput>;
 export type VoiceAgentCall = z.infer<typeof callInput>;
 
-async function loadPrivateSettings(supabase: SupabaseClient) {
-  const { data, error } = await supabase.rpc("voice_agent_settings" as never, {} as never);
+async function loadPrivateSettings(supabase: unknown) {
+  const rpcClient = supabase as {
+    rpc: (name: never, args: never) => PromiseLike<{ data: unknown; error: unknown }>;
+  };
+  const { data, error } = await rpcClient.rpc("voice_agent_settings" as never, {} as never);
   if (error) throw new Error("Voice agent settings are unavailable.");
   return privateSettingsInput.parse(data);
 }
@@ -47,7 +49,7 @@ export const getVoiceAgentSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: unknown) => emptyInput.parse(input ?? {}))
   .handler(async ({ context }) => {
-    const settings = await loadPrivateSettings(context.supabase as never);
+    const settings = await loadPrivateSettings(context.supabase);
     return publicSettings(settings);
   });
 
@@ -105,9 +107,17 @@ export const requestVoiceCall = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { data: callId, error } = await context.supabase.rpc(
+    const settings = await loadPrivateSettings(context.supabase);
+    if (!settings.enabled) throw new Error("Voice agent is not enabled for this organization.");
+    const { assertVoiceRecipientConsent } =
+      await import("@/lib/communications/voice-consent.server");
+    await assertVoiceRecipientConsent(settings.tenantRef, data.recipientPhone);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: callId, error } = await supabaseAdmin.rpc(
       "voice_agent_request_call" as never,
       {
+        p_tenant_ref: settings.tenantRef,
+        p_requester: context.userId,
         p_category: data.category,
         p_recipient_phone: data.recipientPhone,
         p_subject_ref: null,
@@ -159,13 +169,30 @@ export const dispatchApprovedVoiceCall = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: unknown) => callIdInput.parse(input))
   .handler(async ({ data, context }) => {
-    const settings = await loadPrivateSettings(context.supabase as never);
+    const settings = await loadPrivateSettings(context.supabase);
     if (!settings.enabled || !settings.voiceLive) return { status: "live_voice_disabled" as const };
 
     const config = twilioVoiceConfigFromEnv(process.env);
     if (!config) return { status: "provider_not_configured" as const };
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: target, error: targetError } = await supabaseAdmin.rpc(
+      "voice_agent_approved_call_target" as never,
+      { p_call_id: data.callId, p_tenant_ref: settings.tenantRef } as never,
+    );
+    if (targetError) throw new Error("Approved call could not be verified for dispatch.");
+    const targetCall = z
+      .object({
+        tenantRef: z.string().uuid(),
+        recipientPhone: z.string().regex(/^\+[1-9][0-9]{7,14}$/),
+      })
+      .parse(target);
+    if (targetCall.tenantRef !== settings.tenantRef) {
+      throw new Error("Approved call is outside the active organization.");
+    }
+    const { assertVoiceRecipientConsent } =
+      await import("@/lib/communications/voice-consent.server");
+    await assertVoiceRecipientConsent(settings.tenantRef, targetCall.recipientPhone);
     const { data: claimed, error: claimError } = await supabaseAdmin.rpc(
       "voice_agent_claim_call" as never,
       { p_call_id: data.callId, p_tenant_ref: settings.tenantRef } as never,

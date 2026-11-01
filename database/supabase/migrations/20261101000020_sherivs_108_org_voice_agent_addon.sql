@@ -1,6 +1,6 @@
 -- SHERIVS-108 — tenant-scoped voice agent add-on.
 -- Status: AUTHORED, NOT APPLIED. Live calls remain disabled by voice_live.
--- Tenant identity is the neutral cg tenant reference; no school_id is added.
+-- Tenant identity is the neutral cg tenant reference.
 BEGIN;
 
 ALTER TABLE public.cg_org_communication_sender
@@ -80,29 +80,42 @@ DECLARE
   v_after_hash text;
 BEGIN
   IF TG_OP = 'DELETE' THEN
-    v_tenant_ref := CASE WHEN TG_TABLE_NAME = 'cg_org_communication_sender'
-      THEN OLD.tenant_id ELSE OLD.tenant_ref END;
-    v_target_id := CASE WHEN TG_TABLE_NAME = 'cg_org_voice_agent'
-      THEN v_tenant_ref WHEN TG_TABLE_NAME = 'cg_org_communication_sender'
-      THEN OLD.sender_ref ELSE OLD.id::text END;
-    v_target_type := CASE WHEN TG_TABLE_NAME = 'cg_org_voice_agent' THEN 'voice_agent'
-      WHEN TG_TABLE_NAME = 'cg_org_communication_sender' THEN 'voice_sender' ELSE 'voice_call' END;
+    IF TG_TABLE_NAME = 'cg_org_communication_sender' THEN
+      v_tenant_ref := OLD.tenant_id;
+      v_target_id := OLD.sender_ref;
+      v_target_type := 'voice_sender';
+    ELSIF TG_TABLE_NAME = 'cg_org_voice_agent' THEN
+      v_tenant_ref := OLD.tenant_ref;
+      v_target_id := v_tenant_ref;
+      v_target_type := 'voice_agent';
+    ELSE
+      v_tenant_ref := OLD.tenant_ref;
+      v_target_id := OLD.id::text;
+      v_target_type := 'voice_call';
+    END IF;
     v_action := 'voice.call.failed';
   ELSE
-    v_tenant_ref := CASE WHEN TG_TABLE_NAME = 'cg_org_communication_sender'
-      THEN NEW.tenant_id ELSE NEW.tenant_ref END;
-    v_target_id := CASE WHEN TG_TABLE_NAME = 'cg_org_voice_agent'
-      THEN v_tenant_ref WHEN TG_TABLE_NAME = 'cg_org_communication_sender'
-      THEN NEW.sender_ref ELSE NEW.id::text END;
-    v_target_type := CASE WHEN TG_TABLE_NAME = 'cg_org_voice_agent' THEN 'voice_agent'
-      WHEN TG_TABLE_NAME = 'cg_org_communication_sender' THEN 'voice_sender' ELSE 'voice_call' END;
-    IF TG_TABLE_NAME = 'cg_org_voice_agent' THEN
-      v_action := 'voice.agent.settings.updated';
-    ELSIF TG_TABLE_NAME = 'cg_org_communication_sender' THEN
+    IF TG_TABLE_NAME = 'cg_org_communication_sender' THEN
+      v_tenant_ref := NEW.tenant_id;
+      v_target_id := NEW.sender_ref;
+      v_target_type := 'voice_sender';
       v_action := 'voice.agent.sender.updated';
+    ELSIF TG_TABLE_NAME = 'cg_org_voice_agent' THEN
+      v_tenant_ref := NEW.tenant_ref;
+      v_target_id := v_tenant_ref;
+      v_target_type := 'voice_agent';
+      v_action := 'voice.agent.settings.updated';
     ELSIF TG_OP = 'INSERT' THEN
+      v_actor := NEW.requested_by;
+      v_actor_kind := 'user';
+      v_tenant_ref := NEW.tenant_ref;
+      v_target_id := NEW.id::text;
+      v_target_type := 'voice_call';
       v_action := 'voice.call.requested';
     ELSE
+      v_tenant_ref := NEW.tenant_ref;
+      v_target_id := NEW.id::text;
+      v_target_type := 'voice_call';
       v_action := CASE NEW.status
         WHEN 'approved' THEN 'voice.call.approved'
         WHEN 'rejected' THEN 'voice.call.rejected'
@@ -164,7 +177,6 @@ DECLARE
   v_sender record;
   v_enabled boolean := false;
   v_live boolean := false;
-  v_school uuid;
   v_limit bigint := 0;
   v_used bigint := 0;
 BEGIN
@@ -176,8 +188,7 @@ BEGIN
     FROM public.cg_org_communication_sender
     WHERE tenant_id = v_tenant AND org_ref = v_tenant AND channel = 'voice' AND status = 'active'
     ORDER BY created_at DESC LIMIT 1;
-  SELECT school_id INTO v_school FROM public.school_tenant_map WHERE tenant_id = v_tenant::uuid;
-  IF v_school IS NOT NULL THEN v_live := coalesce(public.flag_on('voice_live', v_school), false); END IF;
+  v_live := coalesce(public.flag_on('voice_live', v_tenant::uuid), false);
   SELECT q.quota INTO v_limit
     FROM public.org_entitlements e
     JOIN public.entitlement_plan_quotas q ON q.plan_id = e.plan_id AND q.meter = 'voice_minutes'
@@ -243,48 +254,62 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS public.voice_agent_request_call(text, text, text);
 CREATE OR REPLACE FUNCTION public.voice_agent_request_call(
-  p_category text, p_recipient_phone text, p_subject_ref text DEFAULT NULL
+  p_tenant_ref text, p_requester text, p_category text, p_recipient_phone text,
+  p_subject_ref text DEFAULT NULL
 ) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
 DECLARE
-  v_tenant text := public.get_my_tenant_id();
-  v_school uuid;
   v_id uuid;
-  v_permission text;
 BEGIN
-  IF auth.uid() IS NULL OR v_tenant IS NULL THEN RAISE EXCEPTION 'not authorized' USING ERRCODE = '42501'; END IF;
-  IF p_category NOT IN ('fee_reminder', 'absence_alert')
-     OR p_recipient_phone !~ '^\+[1-9][0-9]{7,14}$'
+  IF coalesce(auth.role(), '') <> 'service_role' THEN
+    RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501';
+  END IF;
+  IF p_tenant_ref IS NULL OR p_tenant_ref !~ '^[0-9a-fA-F-]{36}$'
+     OR p_requester IS NULL OR length(p_requester) NOT BETWEEN 1 AND 160
+     OR p_category IS NULL OR p_category NOT IN ('fee_reminder', 'absence_alert')
+     OR p_recipient_phone IS NULL OR p_recipient_phone !~ '^\+[1-9][0-9]{7,14}$'
      OR (p_subject_ref IS NOT NULL AND length(p_subject_ref) > 160) THEN
     RAISE EXCEPTION 'invalid voice call request';
   END IF;
-  SELECT school_id INTO v_school FROM public.school_tenant_map WHERE tenant_id = v_tenant::uuid;
-  IF v_school IS NULL THEN RAISE EXCEPTION 'tenant does not have a Scholar data mapping'; END IF;
-  v_permission := CASE p_category WHEN 'fee_reminder' THEN 'comms.broadcast' ELSE 'attendance.view' END;
-  IF NOT public.scholar_can(v_school, v_permission) THEN RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501'; END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM public.comms_optins
-    WHERE school_id = v_school AND phone = p_recipient_phone AND channel = 'voice' AND status = 'opted_in'
-  ) THEN RAISE EXCEPTION 'recipient has not opted in to voice calls' USING ERRCODE = '42501'; END IF;
-  IF NOT EXISTS (SELECT 1 FROM public.cg_org_voice_agent WHERE tenant_ref = v_tenant AND enabled) THEN
+  IF NOT EXISTS (SELECT 1 FROM public.cg_org_voice_agent WHERE tenant_ref = p_tenant_ref AND enabled) THEN
     RAISE EXCEPTION 'voice agent is not enabled for this organization';
   END IF;
-  PERFORM pg_advisory_xact_lock(hashtextextended(v_tenant, 108));
+  PERFORM pg_advisory_xact_lock(hashtextextended(p_tenant_ref, 108));
   IF (SELECT count(*) FROM public.cg_voice_call_approvals
-      WHERE tenant_ref = v_tenant AND created_at >= statement_timestamp() - interval '1 hour') >= 20 THEN
+      WHERE tenant_ref = p_tenant_ref AND created_at >= statement_timestamp() - interval '1 hour') >= 20 THEN
     RAISE EXCEPTION 'organization voice request rate limit exceeded';
   END IF;
   INSERT INTO public.cg_voice_call_approvals
     (tenant_ref, category, recipient_phone, script, subject_ref, requested_by)
   VALUES (
-    v_tenant, p_category, p_recipient_phone,
+    p_tenant_ref, p_category, p_recipient_phone,
     CASE p_category
-      WHEN 'fee_reminder' THEN 'This is a fee reminder from your organization. Please contact the office for details.'
-      ELSE 'Your organization has an attendance update. Please contact the office for details.'
+      WHEN 'fee_reminder' THEN 'Your organization has a billing update. Please contact the office for details.'
+      ELSE 'Your organization has an important update. Please contact the office for details.'
     END,
-    p_subject_ref, auth.uid()::text
+    p_subject_ref, p_requester
   ) RETURNING id INTO v_id;
   RETURN v_id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.voice_agent_approved_call_target(
+  p_call_id uuid, p_tenant_ref text
+) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
+DECLARE
+  v_call public.cg_voice_call_approvals%ROWTYPE;
+BEGIN
+  IF coalesce(auth.role(), '') <> 'service_role' THEN
+    RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501';
+  END IF;
+  SELECT * INTO v_call FROM public.cg_voice_call_approvals
+    WHERE id = p_call_id AND tenant_ref = p_tenant_ref AND status = 'approved';
+  IF v_call.id IS NULL THEN RAISE EXCEPTION 'approved call is unavailable'; END IF;
+  RETURN jsonb_build_object(
+    'tenantRef', v_call.tenant_ref,
+    'recipientPhone', v_call.recipient_phone
+  );
 END;
 $$;
 
@@ -335,7 +360,6 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
 DECLARE
   v_call public.cg_voice_call_approvals%ROWTYPE;
   v_sender record;
-  v_school uuid;
   v_quota bigint;
   v_tenant uuid;
   v_period text := to_char(statement_timestamp() AT TIME ZONE 'UTC', 'YYYY-MM');
@@ -348,13 +372,8 @@ BEGIN
     RAISE EXCEPTION 'voice agent is disabled';
   END IF;
   v_tenant := v_call.tenant_ref::uuid;
-  SELECT school_id INTO v_school FROM public.school_tenant_map WHERE tenant_id = v_tenant;
-  IF v_school IS NULL OR NOT coalesce(public.flag_on('voice_live', v_school), false) THEN
+  IF NOT coalesce(public.flag_on('voice_live', v_tenant), false) THEN
     RAISE EXCEPTION 'voice_live is disabled for this organization';
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM public.comms_optins WHERE school_id = v_school
-      AND phone = v_call.recipient_phone AND channel = 'voice' AND status = 'opted_in') THEN
-    RAISE EXCEPTION 'recipient voice consent is not active';
   END IF;
   SELECT q.quota INTO v_quota
     FROM public.org_entitlements e
@@ -409,14 +428,16 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.voice_agent_settings(), public.voice_agent_configure(boolean, text, text, text),
-  public.voice_agent_request_call(text, text, text), public.voice_agent_pending_calls(),
+public.voice_agent_request_call(text, text, text, text, text),
+public.voice_agent_approved_call_target(uuid, text), public.voice_agent_pending_calls(),
   public.voice_agent_decide_call(uuid, boolean), public.voice_agent_claim_call(uuid, text),
-  public.voice_agent_finish_call(uuid, boolean, text) FROM PUBLIC, anon;
+public.voice_agent_finish_call(uuid, boolean, text) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.voice_agent_settings(), public.voice_agent_configure(boolean, text, text, text),
-  public.voice_agent_request_call(text, text, text), public.voice_agent_pending_calls(),
+public.voice_agent_pending_calls(),
   public.voice_agent_decide_call(uuid, boolean) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.voice_agent_claim_call(uuid, text),
-  public.voice_agent_finish_call(uuid, boolean, text) TO service_role;
+GRANT EXECUTE ON FUNCTION public.voice_agent_request_call(text, text, text, text, text),
+public.voice_agent_approved_call_target(uuid, text), public.voice_agent_claim_call(uuid, text),
+public.voice_agent_finish_call(uuid, boolean, text) TO service_role;
 
 COMMENT ON TABLE public.cg_org_voice_agent IS
   'Tenant-neutral voice-agent add-on configuration. Disabled by default; live transport still requires the separate voice_live flag.';
