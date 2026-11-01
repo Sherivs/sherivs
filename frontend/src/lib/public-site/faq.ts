@@ -70,7 +70,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
     answer:
       "Sherivs Scholar follows controlled access, organizational boundaries, and the appropriate handling of institutional information. Refer to the privacy policy and verified product documentation for details of the controls currently implemented.",
     related: [
-      { href: "/privacy-policy", label: "Privacy policy" },
+      { href: "/privacy", label: "Privacy notice" },
       { href: "/security", label: "Security" },
     ],
   },

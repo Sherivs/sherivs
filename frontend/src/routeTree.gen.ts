@@ -36,6 +36,7 @@ import { Route as siteFaqRouteImport } from './routes/(site)/faq'
 import { Route as siteHelpRouteImport } from './routes/(site)/help'
 import { Route as siteInsightsRouteImport } from './routes/(site)/insights'
 import { Route as siteIntegrationsRouteImport } from './routes/(site)/integrations'
+import { Route as sitePrivacyRouteImport } from './routes/(site)/privacy'
 import { Route as sitePrivacyPolicyRouteImport } from './routes/(site)/privacy-policy'
 import { Route as siteProductRouteImport } from './routes/(site)/product'
 import { Route as siteRequestDemoRouteImport } from './routes/(site)/request-demo'
@@ -260,6 +261,11 @@ const siteInsightsRoute = siteInsightsRouteImport.update({
 const siteIntegrationsRoute = siteIntegrationsRouteImport.update({
   id: '/integrations',
   path: '/integrations',
+  getParentRoute: () => siteRouteRoute,
+} as any)
+const sitePrivacyRoute = sitePrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => siteRouteRoute,
 } as any)
 const sitePrivacyPolicyRoute = sitePrivacyPolicyRouteImport.update({
@@ -766,6 +772,7 @@ export interface FileRoutesByFullPath {
   '/help': typeof siteHelpRouteWithChildren
   '/insights': typeof siteInsightsRouteWithChildren
   '/integrations': typeof siteIntegrationsRoute
+  '/privacy': typeof sitePrivacyRoute
   '/privacy-policy': typeof sitePrivacyPolicyRoute
   '/product': typeof siteProductRouteWithChildren
   '/request-demo': typeof siteRequestDemoRoute
@@ -876,6 +883,7 @@ export interface FileRoutesByTo {
   '/docs': typeof siteDocsRoute
   '/faq': typeof siteFaqRoute
   '/integrations': typeof siteIntegrationsRoute
+  '/privacy': typeof sitePrivacyRoute
   '/privacy-policy': typeof sitePrivacyPolicyRoute
   '/request-demo': typeof siteRequestDemoRoute
   '/sherivs': typeof siteSherivsRoute
@@ -994,6 +1002,7 @@ export interface FileRoutesById {
   '/(site)/help': typeof siteHelpRouteWithChildren
   '/(site)/insights': typeof siteInsightsRouteWithChildren
   '/(site)/integrations': typeof siteIntegrationsRoute
+  '/(site)/privacy': typeof sitePrivacyRoute
   '/(site)/privacy-policy': typeof sitePrivacyPolicyRoute
   '/(site)/product': typeof siteProductRouteWithChildren
   '/(site)/request-demo': typeof siteRequestDemoRoute
@@ -1115,6 +1124,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/insights'
     | '/integrations'
+    | '/privacy'
     | '/privacy-policy'
     | '/product'
     | '/request-demo'
@@ -1225,6 +1235,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/faq'
     | '/integrations'
+    | '/privacy'
     | '/privacy-policy'
     | '/request-demo'
     | '/sherivs'
@@ -1342,6 +1353,7 @@ export interface FileRouteTypes {
     | '/(site)/help'
     | '/(site)/insights'
     | '/(site)/integrations'
+    | '/(site)/privacy'
     | '/(site)/privacy-policy'
     | '/(site)/product'
     | '/(site)/request-demo'
@@ -1652,6 +1664,13 @@ declare module '@tanstack/react-router' {
       path: '/integrations'
       fullPath: '/integrations'
       preLoaderRoute: typeof siteIntegrationsRouteImport
+      parentRoute: typeof siteRouteRoute
+    }
+    '/(site)/privacy': {
+      id: '/(site)/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof sitePrivacyRouteImport
       parentRoute: typeof siteRouteRoute
     }
     '/(site)/privacy-policy': {
@@ -2391,6 +2410,7 @@ interface siteRouteRouteChildren {
   siteHelpRoute: typeof siteHelpRouteWithChildren
   siteInsightsRoute: typeof siteInsightsRouteWithChildren
   siteIntegrationsRoute: typeof siteIntegrationsRoute
+  sitePrivacyRoute: typeof sitePrivacyRoute
   sitePrivacyPolicyRoute: typeof sitePrivacyPolicyRoute
   siteProductRoute: typeof siteProductRouteWithChildren
   siteRequestDemoRoute: typeof siteRequestDemoRoute
@@ -2428,6 +2448,7 @@ const siteRouteRouteChildren: siteRouteRouteChildren = {
   siteHelpRoute: siteHelpRouteWithChildren,
   siteInsightsRoute: siteInsightsRouteWithChildren,
   siteIntegrationsRoute: siteIntegrationsRoute,
+  sitePrivacyRoute: sitePrivacyRoute,
   sitePrivacyPolicyRoute: sitePrivacyPolicyRoute,
   siteProductRoute: siteProductRouteWithChildren,
   siteRequestDemoRoute: siteRequestDemoRoute,

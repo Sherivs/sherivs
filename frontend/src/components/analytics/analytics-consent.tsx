@@ -75,9 +75,7 @@ export function AnalyticsConsent() {
         are never tracked. See our{" "}
         <a
           href={
-            resolveExperienceHost(window.location.hostname) === "tenant"
-              ? "/privacy"
-              : "/privacy-policy"
+            resolveExperienceHost(window.location.hostname) === "tenant" ? "/privacy" : "/privacy"
           }
           className="underline"
         >

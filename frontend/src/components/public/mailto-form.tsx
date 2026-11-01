@@ -280,10 +280,7 @@ export function MailtoForm({ kind }: { kind: MailtoKind }) {
           />
           <span>
             I understand this opens my email client to {to}. See the{" "}
-            <a
-              className="text-sherivs-cyan underline-offset-4 hover:underline"
-              href="/privacy-policy"
-            >
+            <a className="text-sherivs-cyan underline-offset-4 hover:underline" href="/privacy">
               privacy policy
             </a>
             .
