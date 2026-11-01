@@ -27,6 +27,7 @@ import {
 import { APP_SHELL_HOME } from "@/lib/shell/paths";
 import { useAppShell } from "./shell-context";
 import { ShellGlassIcon } from "./glass-icon";
+import { NotificationCentre } from "./notification-centre";
 
 function SectionBack() {
   return (
@@ -320,6 +321,7 @@ export function AppNotificationsScreen() {
     <section className="app-shell-section">
       <SectionBack />
       <h1>Notifications</h1>
+      <NotificationCentre />
 
       <div className="app-shell-card">
         <ShellGlassIcon>

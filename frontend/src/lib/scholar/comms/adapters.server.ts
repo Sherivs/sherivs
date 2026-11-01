@@ -23,75 +23,6 @@ export class StubAdapter implements CommsAdapter {
   }
 }
 
-/** Meta WhatsApp Cloud API. Needs WHATSAPP_TOKEN and WHATSAPP_PHONE_NUMBER_ID. */
-export class WhatsAppCloudAdapter implements CommsAdapter {
-  readonly name = "meta_cloud";
-  constructor(
-    private token = process.env.WHATSAPP_TOKEN,
-    private phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID,
-  ) {}
-  get live() {
-    return !!this.token && !!this.phoneId;
-  }
-  async send(
-    to: string,
-    _body: string,
-    opts?: { template?: string; language?: string; parameters?: string[] },
-  ): Promise<SendResult> {
-    if (!this.live) return { ok: false, error: "whatsapp not configured" };
-    const res = await fetch(`https://graph.facebook.com/v21.0/${this.phoneId}/messages`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${this.token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        to,
-        type: "template",
-        template: {
-          name: opts?.template,
-          language: { code: opts?.language === "en" ? "en" : (opts?.language ?? "en") },
-          ...(opts?.parameters?.length
-            ? {
-                components: [
-                  {
-                    type: "body",
-                    parameters: opts.parameters.map((text) => ({ type: "text", text })),
-                  },
-                ],
-              }
-            : {}),
-        },
-      }),
-    });
-    const j = (await res.json().catch(() => ({}))) as {
-      messages?: { id: string }[];
-      error?: { message?: string };
-    };
-    return res.ok && j.messages?.[0]?.id
-      ? { ok: true, providerRef: j.messages[0].id }
-      : { ok: false, error: j.error?.message ?? `http ${res.status}` };
-  }
-  async sendSessionText(to: string, body: string): Promise<SendResult> {
-    if (!this.live) return { ok: false, error: "whatsapp not configured" };
-    const res = await fetch(`https://graph.facebook.com/v21.0/${this.phoneId}/messages`, {
-      method: "POST",
-      headers: { Authorization: "Bearer " + this.token, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        to,
-        type: "text",
-        text: { body: body.slice(0, 4096) },
-      }),
-    });
-    const j = (await res.json().catch(() => ({}))) as {
-      messages?: { id: string }[];
-      error?: { message?: string };
-    };
-    return res.ok && j.messages?.[0]?.id
-      ? { ok: true, providerRef: j.messages[0].id }
-      : { ok: false, error: j.error?.message ?? `http ${res.status}` };
-  }
-}
-
 /** BulkSMSNigeria. Needs BULKSMS_NG_TOKEN and BULKSMS_NG_SENDER. */
 export class BulkSmsNigeriaAdapter implements CommsAdapter {
   readonly name = "bulksmsnigeria";
@@ -107,7 +38,7 @@ export class BulkSmsNigeriaAdapter implements CommsAdapter {
     const res = await fetch("https://www.bulksmsnigeria.com/api/v2/sms", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${this.token}`,
+        Authorization: "Bearer " + this.token,
         "Content-Type": "application/json",
         Accept: "application/json",
       },
@@ -125,10 +56,7 @@ export class BulkSmsNigeriaAdapter implements CommsAdapter {
 
 export function adapterFor(channel: string, liveFlag: boolean): CommsAdapter {
   if (!liveFlag) return new StubAdapter(`${channel}_stub`);
-  if (channel === "whatsapp") {
-    const a = new WhatsAppCloudAdapter();
-    return a.live ? a : new StubAdapter("whatsapp_stub");
-  }
+  if (channel === "whatsapp") return new StubAdapter("whatsapp_shared_gateway_required");
   if (channel === "sms") {
     const a = new BulkSmsNigeriaAdapter();
     return a.live ? a : new StubAdapter("sms_stub");
