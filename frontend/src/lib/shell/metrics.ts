@@ -3,7 +3,8 @@ import { naira, type CardData } from "@/lib/sherivs-ws/live";
 export type MetricTone = "ink" | "green" | "amber" | "blue";
 
 export function formatWidgetMetric(data: CardData | undefined): { text: string; tone: MetricTone } {
-  if (!data || data.unavailable) return { text: "—", tone: "ink" };
+  if (data?.unavailable) return { text: "Unavailable", tone: "ink" };
+  if (!data) return { text: "No data yet", tone: "ink" };
   if (data.money && typeof data.metric === "number") {
     return { text: naira(data.metric), tone: "green" };
   }
@@ -13,7 +14,7 @@ export function formatWidgetMetric(data: CardData | undefined): { text: string; 
   if (data.metric != null && data.metric !== "") {
     return { text: String(data.metric), tone: data.warn ? "amber" : "blue" };
   }
-  return { text: "—", tone: "ink" };
+  return { text: "No data yet", tone: "ink" };
 }
 
 const TONES = ["blue", "violet", "cyan", "green"] as const;

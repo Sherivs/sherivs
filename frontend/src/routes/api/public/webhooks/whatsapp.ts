@@ -81,6 +81,11 @@ function safeMetaErrorCode(code: string | number | undefined): string | null {
   return typeof value === "string" && /^[A-Za-z0-9_.-]{1,32}$/.test(value) ? value : null;
 }
 
+function logRpcFailure(fn: string, error: { code?: string } | null): void {
+  const code = error?.code && /^[A-Za-z0-9_.-]{1,16}$/.test(error.code) ? error.code : "unknown";
+  console.error("whatsapp_webhook_rpc_failed", { fn, code });
+}
+
 export const Route = createFileRoute("/api/public/webhooks/whatsapp")({
   server: {
     handlers: {
@@ -121,7 +126,7 @@ export const Route = createFileRoute("/api/public/webhooks/whatsapp")({
           rpc: (
             fn: string,
             args: Record<string, unknown>,
-          ) => Promise<{ data: unknown; error: { message: string } | null }>;
+          ) => Promise<{ data: unknown; error: { code?: string; message: string } | null }>;
         };
 
         for (const entry of parsed.data.entry) {
@@ -132,13 +137,19 @@ export const Route = createFileRoute("/api/public/webhooks/whatsapp")({
             for (const message of change.value.messages ?? []) {
               const phone = normalizeWhatsAppPhone(message.from);
               if (!phone) continue;
-              const { error } = await db.rpc("cg_whatsapp_receive", {
+              const { data, error } = await db.rpc("cg_whatsapp_receive", {
                 p_provider_sender_ref: providerSenderRef,
                 p_from: phone,
                 p_body: message.text?.body ?? "",
                 p_provider_ref: message.id,
               });
-              if (error) return new Response("processing error", { status: 500 });
+              if (error) {
+                logRpcFailure("cg_whatsapp_receive", error);
+                return new Response("processing error", { status: 500 });
+              }
+              if (data === "unmapped_sender") {
+                console.warn("whatsapp_webhook_unmapped_sender");
+              }
             }
 
             for (const status of change.value.statuses ?? []) {
@@ -149,7 +160,10 @@ export const Route = createFileRoute("/api/public/webhooks/whatsapp")({
                 p_status: status.status,
                 p_error_code: errorCode,
               });
-              if (error || data !== true) return new Response("processing error", { status: 500 });
+              if (error || data !== true) {
+                logRpcFailure("cg_whatsapp_status", error);
+                return new Response("processing error", { status: 500 });
+              }
             }
           }
         }

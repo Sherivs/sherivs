@@ -51,7 +51,7 @@ export const listConsoleAudit = createServerFn({ method: "POST" })
       const filter =
         data.scope === "security"
           ? "action.like.platform_staff.status.%,action.like.platform_staff.set_roles,action.like.platform_support.%,action.like.platform_organization.state.suspended,action.like.platform_organization.state.deactivated"
-          : "action.like.platform_staff.%,action.like.platform_support.%,action.like.platform_access_review.%,action.like.platform_workspace.%,action.like.platform_organization.%";
+          : "action.like.platform_staff.%,action.like.platform_support.%,action.like.platform_access_review.%,action.like.platform_workspace.%,action.like.platform_organization.%,action.like.platform_incident.%,action.like.platform_ticket.%,action.like.platform_billing.%";
       const { data: rows, error } = await db
         .from("audit_logs")
         .select("id, action, user_id, record_id, created_at, new_value")
@@ -69,7 +69,7 @@ export const listConsoleAudit = createServerFn({ method: "POST" })
         details: { scope: data.scope, count: (rows ?? []).length },
       });
       const events: ConsoleActivityItem[] = (rows ?? []).map((row) => {
-        const payload = (row.new_value ?? {}) as { outcome?: string };
+        const payload = (row.new_value ?? {}) as { outcome?: string; correlation_id?: string };
         return {
           id: String(row.id),
           description: describeAction(row.action),
@@ -78,6 +78,7 @@ export const listConsoleAudit = createServerFn({ method: "POST" })
           at: row.created_at ?? new Date(0).toISOString(),
           outcome: typeof payload.outcome === "string" ? payload.outcome : "recorded",
           action: row.action,
+          correlationId: typeof payload.correlation_id === "string" ? payload.correlation_id : null,
         };
       });
       return { events, source: "audit_logs (control-plane platform_* actions)" };

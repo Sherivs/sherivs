@@ -451,13 +451,13 @@
   background: currentColor;
 }
 
-.sherivs-console-status.is-operational {
+.sherivs-console-status.is-healthy {
   color: var(--console-green);
   background: rgba(18, 128, 92, 0.1);
 }
 
 .sherivs-console-status.is-degraded,
-.sherivs-console-status.is-maintenance {
+.sherivs-console-status.is-not-configured {
   color: var(--console-amber);
   background: rgba(180, 83, 9, 0.1);
 }

@@ -274,11 +274,13 @@ describe("internal console V1 contract", () => {
   });
 
   it("never treats a missing health signal as operational", () => {
-    expect(mapProcessHealth("ok")).toBe("operational");
+    expect(mapProcessHealth("ok")).toBe("healthy");
     expect(mapProcessHealth("failing")).toBe("unavailable");
     expect(mapProcessHealth(undefined)).toBe("unknown");
     expect(overallFromCards(["unknown", "unknown"])).toBe("unknown");
-    expect(overallFromCards(["operational", "unknown"])).toBe("degraded");
+    expect(overallFromCards(["healthy", "unknown"])).toBe("degraded");
+    expect(overallFromCards(["healthy", "not-configured"])).toBe("degraded");
+    expect(overallFromCards(["unknown", "not-configured"])).toBe("unknown");
   });
 });
 
@@ -492,10 +494,10 @@ describe("local visual fixture", () => {
     expect(overview.activity).toEqual([]);
     expect(overview.recent).toEqual([]);
     expect(overview.health.cards.every((card) => card.status === "unknown")).toBe(true);
-    expect(overview.metrics.find((metric) => metric.key === "active-staff")?.available).toBe(false);
-    expect(overview.metrics.find((metric) => metric.key === "control-plane-organizations")).toEqual(
-      expect.objectContaining({ available: true, value: "0" }),
-    );
+    expect(overview.metrics.find((metric) => metric.key === "active-staff")).toBeUndefined();
+    expect(
+      overview.metrics.find((metric) => metric.key === "control-plane-organizations"),
+    ).toBeUndefined();
     expect(overview.viewer.isSuperAdmin).toBe(true);
     expect(overview.viewer.email).toBe("owner.fixture@localhost");
     expect(overview.viewer.presentationRole).toBe("platform_owner");

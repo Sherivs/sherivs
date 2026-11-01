@@ -6,8 +6,15 @@ import { refreshPushTokenIfGranted } from "@/lib/push-client";
 import { SHELL_ACCOUNT_NAV } from "@/lib/shell/account";
 import { shellIcon } from "@/lib/shell/icon-registry";
 import { APP_SHELL_HOME, APP_SHELL_NOTIFICATIONS, APP_SHELL_PROFILE } from "@/lib/shell/paths";
+import {
+  affiliationForOrganization,
+  organizationOptions,
+  rolesForOrganization,
+} from "@/lib/shell/membership-policy";
+import { switchActiveOrganization } from "@/lib/identity/memberships.functions";
 import { OrganizationAccessDenied } from "@/components/auth/organization-access-denied";
 import { isActiveMembership } from "@/lib/auth/organization-access";
+import { scholarWorkspaceLabelForRole } from "@/lib/runtime/nav-registry";
 import { ShellGlassIcon } from "./glass-icon";
 import { AppShellStateProvider, useAppShell } from "./shell-context";
 import { ConnectionStatus } from "./connection-status";
@@ -30,6 +37,7 @@ function ShellChrome({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const [drawer, setDrawer] = useState(false);
   const [pending, setPending] = useState<string | null>(null);
+  const [contextError, setContextError] = useState(false);
   const avatar = app.profile?.avatar_url;
   const display = shell.name.display;
   const path = location.pathname;
@@ -37,6 +45,23 @@ function ShellChrome({ children }: { children: ReactNode }) {
   const primary = shell.primaryNav;
   const primaryKeys = new Set(primary.map((slot) => slot.key));
   const additional = shell.drawer.filter((item) => !primaryKeys.has(item.key));
+  const activeOrganizationId = app.school?.id ?? "";
+  const activeRole = app.role ?? "";
+  const organizations = organizationOptions(shell.affiliations);
+  const roles = rolesForOrganization(shell.affiliations, activeOrganizationId);
+
+  async function switchContext(organizationId: string, role: string) {
+    setContextError(false);
+    setPending("context");
+    try {
+      await switchActiveOrganization({ data: { organizationId, role } });
+      await app.refresh();
+    } catch {
+      setContextError(true);
+    } finally {
+      setPending(null);
+    }
+  }
 
   useEffect(() => {
     if (!pushUserId) return;
@@ -44,7 +69,12 @@ function ShellChrome({ children }: { children: ReactNode }) {
   }, [pushUserId]);
 
   function go(href: string, key?: string) {
-    if (key) setPending(key);
+    if (key) {
+      setPending(key);
+      if ([...shell.nav, ...shell.drawer].some((item) => item.key === key)) {
+        shell.recordUsage(key);
+      }
+    }
     window.setTimeout(
       () => {
         setDrawer(false);
@@ -82,30 +112,80 @@ function ShellChrome({ children }: { children: ReactNode }) {
               <Menu />
             </ShellGlassIcon>
           </button>
-          <nav className="app-shell-primary-nav" aria-label="Primary sections">
-            {primary.map((slot) => {
-              const active = path === slot.href;
-              return (
-                <Link
-                  key={slot.key}
-                  to={slot.href as never}
-                  className={active ? "is-active" : undefined}
-                  aria-current={active ? "page" : undefined}
-                  onClick={() =>
-                    rememberResource({
-                      id: slot.key,
-                      title: slot.label,
-                      href: slot.href,
-                      kind: "workspace-section",
-                      at: new Date().toISOString(),
-                    })
-                  }
-                >
-                  {slot.label}
-                </Link>
-              );
-            })}
-          </nav>
+          <div className="app-shell-header-center">
+            <nav className="app-shell-primary-nav" aria-label="Primary sections">
+              {primary.map((slot) => {
+                const active = path === slot.href;
+                return (
+                  <Link
+                    key={slot.key}
+                    to={slot.href as never}
+                    className={active ? "is-active" : undefined}
+                    aria-current={active ? "page" : undefined}
+                    onClick={() => {
+                      shell.recordUsage(slot.key);
+                      rememberResource({
+                        id: slot.key,
+                        title: slot.label,
+                        href: slot.href,
+                        kind: "workspace-section",
+                        at: new Date().toISOString(),
+                      });
+                    }}
+                  >
+                    {slot.label}
+                  </Link>
+                );
+              })}
+            </nav>
+            {roles.length > 1 || organizations.length > 1 ? (
+              <div className="app-shell-context-switchers">
+                {roles.length > 1 ? (
+                  <select
+                    aria-label="Active role"
+                    value={activeRole}
+                    disabled={pending === "context"}
+                    onChange={(event) =>
+                      void switchContext(activeOrganizationId, event.target.value)
+                    }
+                  >
+                    {roles.map((role) => (
+                      <option key={role} value={role}>
+                        {scholarWorkspaceLabelForRole(role)}
+                      </option>
+                    ))}
+                  </select>
+                ) : null}
+                {organizations.length > 1 ? (
+                  <select
+                    aria-label="Active organization"
+                    value={activeOrganizationId}
+                    disabled={pending === "context"}
+                    onChange={(event) => {
+                      const affiliation = affiliationForOrganization(
+                        shell.affiliations,
+                        event.target.value,
+                        activeRole,
+                      );
+                      if (affiliation)
+                        void switchContext(affiliation.organizationId, affiliation.role);
+                    }}
+                  >
+                    {organizations.map((organization) => (
+                      <option key={organization.organizationId} value={organization.organizationId}>
+                        {organization.organizationName}
+                      </option>
+                    ))}
+                  </select>
+                ) : null}
+              </div>
+            ) : null}
+            {contextError ? (
+              <p className="app-shell-context-error" role="alert">
+                Could not switch workspace. Your current context is unchanged.
+              </p>
+            ) : null}
+          </div>
           <div className="app-shell-header-actions">
             <ConnectionStatus />
             <button
@@ -144,6 +224,9 @@ function ShellChrome({ children }: { children: ReactNode }) {
                 to={slot.href as never}
                 className={active ? "is-active" : undefined}
                 aria-label={slot.label}
+                onClick={() => {
+                  if (slot.kind === "role") shell.recordUsage(slot.key);
+                }}
               >
                 <ShellGlassIcon active={active}>
                   <Icon />

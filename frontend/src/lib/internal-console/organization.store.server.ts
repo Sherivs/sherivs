@@ -663,6 +663,20 @@ async function uniqueSchoolSlug(db: Admin, base: string): Promise<string> {
   return slugifyOrganizationName(`${base}-${contextSlice()}`);
 }
 
+async function provisionSchoolForOrganization(
+  db: Admin,
+  organization: OrgRow,
+  slug: string,
+): Promise<string> {
+  const { data, error } = await store(db).rpc("provision_platform_organization_school", {
+    p_organization_id: organization.id,
+    p_school_slug: slug,
+  });
+  if (error) throw new Error(error.message);
+  if (typeof data !== "string") throw new Error("School provisioning returned no school id.");
+  return data;
+}
+
 function contextSlice(): string {
   return timeAuthority.now().atMs.toString(36).slice(-6);
 }
@@ -690,45 +704,19 @@ export async function provisionOrganizationCase(
     let schoolId = row.school_id;
     if (!schoolId) {
       const slug = row.slug ?? (await uniqueSchoolSlug(db, row.display_name));
-      const { data: created, error } = await db
-        .from("schools")
-        .insert({
-          name: row.display_name,
-          slug,
-          email: row.questionnaire.officialEmail ?? row.questionnaire.contactEmail ?? null,
-          phone: row.questionnaire.contactPhone ?? null,
-          is_active: false,
-          onboarding_completed: false,
-        })
-        .select("id")
-        .single();
-      if (error) {
-        if (/duplicate|unique/i.test(error.message)) {
-          const retrySlug = await uniqueSchoolSlug(db, `${row.display_name}-org`);
-          const retry = await db
-            .from("schools")
-            .insert({
-              name: row.display_name,
-              slug: retrySlug,
-              is_active: false,
-              onboarding_completed: false,
-            })
-            .select("id")
-            .single();
-          if (retry.error) throw new Error(retry.error.message);
-          schoolId = (retry.data as { id: string }).id;
-        } else {
-          throw new Error(error.message);
-        }
-      } else {
-        schoolId = (created as { id: string }).id;
+      try {
+        schoolId = await provisionSchoolForOrganization(db, row, slug);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "";
+        if (!/duplicate|unique/i.test(message)) throw error;
+        const retrySlug = await uniqueSchoolSlug(db, `${row.display_name}-org`);
+        schoolId = await provisionSchoolForOrganization(db, row, retrySlug);
       }
     }
     const now = timeAuthority.now().at;
     const { error: updateErr } = await store(db)
       .from("platform_organization")
       .update({
-        school_id: schoolId,
         slug: row.slug ?? slugifyOrganizationName(row.display_name),
         enabled_runtime: "scholar",
         provisioned_at: row.provisioned_at ?? now,

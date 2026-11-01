@@ -51,6 +51,7 @@ export interface ConsoleActivityItem {
   at: string;
   outcome: string;
   action: string;
+  correlationId?: string | null;
 }
 
 export interface ConsoleStaffRow {

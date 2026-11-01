@@ -17,6 +17,12 @@ import { defaultRoleWorkspaceCode, mappingForRole } from "./role-workspace";
 import { store } from "./store";
 import { REGISTERED_RUNTIMES } from "./runtime-contract";
 import { allowedHrefsFrom } from "./recent";
+import {
+  authorizedConsoleMetrics,
+  formatRatio,
+  isMetricAuthorized,
+  metricContract,
+} from "./metrics";
 import type {
   ConsoleActivityItem,
   ConsoleAttentionItem,
@@ -164,6 +170,9 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
 
     const healthReport = await buildHealthReport();
     const processStatus = mapProcessHealth(healthReport.status);
+    const incidentContract = metricContract("incidents");
+    const canReadIncidentMetrics =
+      incidentContract !== null && isMetricAuthorized(incidentContract, capabilities);
 
     let databaseStatus: ConsoleHealthState = "unknown";
     let databaseDetail = "The database check did not complete.";
@@ -174,7 +183,7 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
         databaseStatus = "unavailable";
         databaseDetail = "The required database health query failed.";
       } else {
-        databaseStatus = "operational";
+        databaseStatus = "healthy";
         databaseDetail =
           "The platform catalogue query succeeded. This does not prove every workflow.";
       }
@@ -207,7 +216,7 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
       {
         key: "auth",
         name: "Authentication",
-        status: "operational",
+        status: "healthy",
         detail:
           "This request was authenticated. That does not prove every sign-in or recovery workflow is functioning.",
         lastCheck: now,
@@ -226,7 +235,7 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
       {
         key: "storage",
         name: "Storage",
-        status: "unknown",
+        status: "not-configured",
         detail: "Storage operations are not monitored on this page.",
         lastCheck: null,
         href: CONSOLE_PATHS.activityMetrics,
@@ -235,7 +244,7 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
       {
         key: "integrations",
         name: "Critical Integrations",
-        status: "unknown",
+        status: "not-configured",
         detail: "Provider health is measured by verification drills, not this homepage.",
         lastCheck: null,
         href: CONSOLE_PATHS.activityMetrics,
@@ -245,10 +254,12 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
         key: "incidents",
         name: "Active Incidents",
         status: "unknown",
-        detail: "Open operational incidents have not been counted yet.",
+        detail: canReadIncidentMetrics
+          ? "Open operational incidents have not been counted yet."
+          : "Incident status is not shown to this viewer.",
         lastCheck: null,
         href: CONSOLE_PATHS.activityIncidents,
-        source: "platform_incident",
+        source: canReadIncidentMetrics ? "platform_incident" : "not authorized",
       },
     ];
 
@@ -372,7 +383,7 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
         .from("audit_logs")
         .select("id, action, user_id, record_id, created_at, new_value")
         .or(
-          "action.like.platform_staff.%,action.like.platform_support.%,action.like.platform_access_review.%,action.like.platform_workspace.%,action.like.platform_organization.%",
+          "action.like.platform_staff.%,action.like.platform_support.%,action.like.platform_access_review.%,action.like.platform_workspace.%,action.like.platform_organization.%,action.like.platform_incident.%,action.like.platform_ticket.%,action.like.platform_billing.%",
         )
         .order("created_at", { ascending: false })
         .limit(20);
@@ -395,6 +406,7 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
       for (const row of data ?? []) {
         const payload = (row.new_value ?? {}) as {
           outcome?: string;
+          correlation_id?: string;
           details?: Record<string, unknown>;
         };
         activity.push({
@@ -405,6 +417,7 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
           at: row.created_at ?? now,
           outcome: typeof payload.outcome === "string" ? payload.outcome : "recorded",
           action: row.action,
+          correlationId: typeof payload.correlation_id === "string" ? payload.correlation_id : null,
         });
       }
     }
@@ -671,6 +684,37 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
             "platform_organization.lifecycle_state",
             organizationMetrics.suspended !== null,
           );
+          pushMetric(
+            "failed-provisioning",
+            "Failed provisioning operations",
+            organizationMetrics.failedProvisioning === null
+              ? null
+              : String(organizationMetrics.failedProvisioning),
+            "cases",
+            "Cases currently in provisioning_failed. Retries are allowed and audited.",
+            "platform_organization.lifecycle_state",
+            organizationMetrics.failedProvisioning !== null,
+          );
+          pushMetric(
+            "onboarding-conversion",
+            "Onboarding completion rate",
+            formatRatio(organizationMetrics.conversionRate),
+            "%",
+            "Active cases divided by cases that have left draft.",
+            "platform_organization",
+            organizationMetrics.conversionRate !== null,
+          );
+          pushMetric(
+            "onboarding-duration",
+            "Median onboarding duration",
+            organizationMetrics.medianOnboardingHours === null
+              ? null
+              : String(organizationMetrics.medianOnboardingHours),
+            "hours",
+            "Median hours from submission to activation for activated cases.",
+            "platform_organization.submitted_at and activated_at",
+            organizationMetrics.medianOnboardingHours !== null,
+          );
           if (
             typeof organizationMetrics.failedProvisioning === "number" &&
             organizationMetrics.failedProvisioning > 0
@@ -753,15 +797,19 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
     }
 
     const { countOpenIncidents, countSubscriptions } = await import("./operations.store.server");
-    const openIncidentCount = await countOpenIncidents();
+    const openIncidentCount = canReadIncidentMetrics ? await countOpenIncidents() : null;
     const incidentCard = cards.find((card) => card.key === "incidents");
     if (incidentCard) {
-      if (openIncidentCount === null) {
+      if (!canReadIncidentMetrics) {
+        incidentCard.status = "unknown";
+        incidentCard.detail = "Incident status is not shown to this viewer.";
+        incidentCard.source = "not authorized";
+      } else if (openIncidentCount === null) {
         incidentCard.status = "unknown";
         incidentCard.detail = "Incident storage is not applied or could not be read.";
         incidentCard.lastCheck = now;
       } else {
-        incidentCard.status = "operational";
+        incidentCard.status = "healthy";
         incidentCard.detail =
           openIncidentCount === 0
             ? "No open operational incidents are recorded."
@@ -770,7 +818,7 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
       }
     }
     const incidentMetric = metrics.find((metric) => metric.key === "incidents");
-    if (incidentMetric) {
+    if (incidentMetric && canReadIncidentMetrics) {
       incidentMetric.value = openIncidentCount === null ? null : String(openIncidentCount);
       incidentMetric.updatedAt = now;
       incidentMetric.available = openIncidentCount !== null;
@@ -834,7 +882,7 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
         caveat:
           "These cards report verified checks only. Unknown means there is not enough evidence. A loaded homepage is not a health check.",
       },
-      metrics,
+      metrics: authorizedConsoleMetrics(metrics, capabilities),
       attention,
       activity,
       workspaces,
