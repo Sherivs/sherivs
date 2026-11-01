@@ -5,6 +5,9 @@ import { expect, test } from "@playwright/test";
 const SCREENSHOTS = process.env.OFFLINE_SCREENSHOT_DIR ?? "/tmp/coregrid-offline-screenshots";
 
 test("Data Saver remains usable on a throttled Slow 3G profile", async ({ page }, testInfo) => {
+  await page.goto("/workspace-preview", { waitUntil: "domcontentloaded" });
+  await expect(page.getByTestId("workspace-preview")).toBeVisible();
+
   const cdp = await page.context().newCDPSession(page);
   await cdp.send("Network.enable");
   await cdp.send("Network.setCacheDisabled", { cacheDisabled: true });
@@ -17,8 +20,6 @@ test("Data Saver remains usable on a throttled Slow 3G profile", async ({ page }
   });
 
   const startedAt = Date.now();
-  await page.goto("/workspace-preview", { waitUntil: "domcontentloaded" });
-  await expect(page.getByTestId("workspace-preview")).toBeVisible();
   await page.getByTestId("data-saver-toggle").click();
   await expect(page.getByTestId("data-saver-toggle")).toHaveAttribute("aria-pressed", "true");
 
@@ -45,6 +46,43 @@ test("Data Saver remains usable on a throttled Slow 3G profile", async ({ page }
   });
 
   const width = page.viewportSize()?.width ?? 0;
+  mkdirSync(SCREENSHOTS, { recursive: true });
+  await page.screenshot({
+    path: join(SCREENSHOTS, `workspace-data-saver-${width}.png`),
+    fullPage: true,
+  });
+
+  await page.context().setOffline(true);
+  await page.evaluate(() => {
+    window.dispatchEvent(
+      new CustomEvent("sherivs:sync-status", {
+        detail: { pendingItems: 3, conflictItems: 1, syncing: false },
+      }),
+    );
+  });
+  const connection = page.getByTestId("workspace-connection-status");
+  await expect(connection).toContainText("Offline");
+  await expect(connection).toContainText("3 pending · 1 need review");
+  await page.screenshot({
+    path: join(SCREENSHOTS, `workspace-pending-conflict-${width}.png`),
+    fullPage: true,
+  });
+
+  await page.evaluate(() => {
+    window.dispatchEvent(
+      new CustomEvent("sherivs:sync-status", {
+        detail: { pendingItems: 0, conflictItems: 0, syncing: false },
+      }),
+    );
+  });
+  await expect(connection).toContainText("0 pending");
+  await expect(page.getByRole("heading", { name: "teacher workspace" })).toBeVisible();
+  await expect(page.getByText("Demo reminder", { exact: true })).toBeVisible();
+  await page.screenshot({
+    path: join(SCREENSHOTS, `workspace-offline-view-${width}.png`),
+    fullPage: true,
+  });
+
   const resources = await page.evaluate(() =>
     performance
       .getEntriesByType("resource")
@@ -65,10 +103,6 @@ test("Data Saver remains usable on a throttled Slow 3G profile", async ({ page }
     contentType: "application/json",
   });
 
-  mkdirSync(SCREENSHOTS, { recursive: true });
-  await page.screenshot({
-    path: join(SCREENSHOTS, `workspace-data-saver-${width}.png`),
-    fullPage: true,
-  });
+  await page.context().setOffline(false);
   await cdp.detach();
 });
