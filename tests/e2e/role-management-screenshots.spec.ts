@@ -456,7 +456,7 @@ test("captures desktop and mobile role-management screens with synthetic records
   );
   await expect(temporaryAssignment).toContainText("temporary");
 
-  const width = testInfo.project.name === "desktop-chromium" ? 1280 : 390;
+  const width = testInfo.project.name === "desktop-chromium" ? 1440 : 390;
   await expect(screen).toBeVisible();
   for (const section of [
     "Create a custom role",
@@ -478,8 +478,7 @@ test("captures desktop and mobile role-management screens with synthetic records
   const path = testInfo.outputPath(`role-management-${width}.png`);
   mkdirSync(dirname(path), { recursive: true });
   await page.addStyleTag({ content: ".app-shell-bottom { position: absolute !important; }" });
-  const shell = page.getByTestId("app-shell");
-  const shellBounds = await shell.boundingBox();
+  const shellBounds = await page.getByTestId("app-shell").boundingBox();
   expect(shellBounds?.width).toBe(width);
   expect(shellBounds?.height).toBeGreaterThan(800);
   const navAndScreenBounds = await page.evaluate(() => {
@@ -492,6 +491,10 @@ test("captures desktop and mobile role-management screens with synthetic records
   expect(navAndScreenBounds.navTop).toBeGreaterThanOrEqual(
     navAndScreenBounds.screenBottom ?? Infinity,
   );
-  await shell.screenshot({ path, scale: "css", animations: "disabled" });
+  await page.getByTestId("app-shell").screenshot({
+    path,
+    scale: "css",
+    animations: "disabled",
+  });
   expect(readFileSync(path).readUInt32BE(16)).toBe(width);
 });
