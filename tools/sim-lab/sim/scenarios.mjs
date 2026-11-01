@@ -2353,10 +2353,23 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
     const P1 = "2348030000001",
       P2 = "2348030000002";
     await asOwner("update users set phone=$2 where id=$1", [p1User, P1]);
-    await asOwner("update auth.users set phone=$2, phone_confirmed_at=now() where id=$1", [p1User, P1]);
+    await asOwner("update auth.users set phone=$2, phone_confirmed_at=now() where id=$1", [
+      p1User,
+      P1,
+    ]);
     await asOwner("update users set phone=$2 where id=$1", [p2User, P2]);
-    await asOwner("update auth.users set phone=$2, phone_confirmed_at=now() where id=$1", [p2User, P2]);
-    const proposeAndApprove = async (actor, audience, channel, template, vars = {}, language = "en") => {
+    await asOwner("update auth.users set phone=$2, phone_confirmed_at=now() where id=$1", [
+      p2User,
+      P2,
+    ]);
+    const proposeAndApprove = async (
+      actor,
+      audience,
+      channel,
+      template,
+      vars = {},
+      language = "en",
+    ) => {
       await act(actor);
       const proposed = await t(
         "select public.comms_propose_send($1,$2,$3::jsonb,$4,$5::jsonb,$6) r",
@@ -2365,7 +2378,10 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
       if (!proposed.ok) return proposed;
       const proposalId = proposed.row.r.proposal_id;
       await act(A.principal);
-      const approved = await t("select public.comms_approve_send($1,$2) r", [A.schoolId, proposalId]);
+      const approved = await t("select public.comms_approve_send($1,$2) r", [
+        A.schoolId,
+        proposalId,
+      ]);
       if (!approved.ok) return approved;
       const sent = await t(
         "select id, proposal_id, body, status, provider, language from outbound_messages where proposal_id=$1 order by created_at desc limit 1",
@@ -2375,18 +2391,28 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
     };
     const parentAudience = { kind: "user", user_id: p1User };
     out.waNoOptin = await proposeAndApprove(A.admin, parentAudience, "whatsapp", "fee_reminder", {
-      student: "Ada", amount: "N50,000",
+      student: "Ada",
+      amount: "N50,000",
     });
     await t("select public.comms_set_optin($1,$2,'whatsapp','opted_in','paper_signed')", [
       A.schoolId,
       P1,
     ]);
     out.waOptin = await proposeAndApprove(A.admin, parentAudience, "whatsapp", "fee_reminder", {
-      student: "Ada", amount: "N50,000",
+      student: "Ada",
+      amount: "N50,000",
     });
-    out.smsHa = await proposeAndApprove(A.admin, { kind: "user", user_id: p2User }, "sms", "absence_alert", {
-      student: "Musa", date: "24/10",
-    }, "ha");
+    out.smsHa = await proposeAndApprove(
+      A.admin,
+      { kind: "user", user_id: p2User },
+      "sms",
+      "absence_alert",
+      {
+        student: "Musa",
+        date: "24/10",
+      },
+      "ha",
+    );
     out.body = out.waOptin?.body;
     // STOP via verified webhook, then normal send is blocked, safety still goes out
     out.userInbound = await t("select public.comms_inbound($1,'sms',$2,'STOP','prov-1')", [
@@ -2396,32 +2422,55 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
     out.stop = (
       await svc("select public.comms_inbound($1,'sms',$2,'stop','prov-1') a", [A.schoolId, P2])
     ).row?.a;
-    out.afterStop = await proposeAndApprove(A.admin, { kind: "user", user_id: p2User }, "sms", "result_ready");
-    out.safety = await proposeAndApprove(A.admin, { kind: "user", user_id: p2User }, "sms", "emergency", {
-      message: "Early closure 12pm",
-    });
-    out.fakeSafety = await proposeAndApprove(A.admin, { kind: "user", user_id: p2User }, "sms", "result_ready");
+    out.afterStop = await proposeAndApprove(
+      A.admin,
+      { kind: "user", user_id: p2User },
+      "sms",
+      "result_ready",
+    );
+    out.safety = await proposeAndApprove(
+      A.admin,
+      { kind: "user", user_id: p2User },
+      "sms",
+      "emergency",
+      {
+        message: "Early closure 12pm",
+      },
+    );
+    out.fakeSafety = await proposeAndApprove(
+      A.admin,
+      { kind: "user", user_id: p2User },
+      "sms",
+      "result_ready",
+    );
     await act(A.teacher);
     out.teacherMkt = await t(
       "select public.comms_propose_send($1,'whatsapp',$2::jsonb,'open_day','{}'::jsonb) r",
       [A.schoolId, JSON.stringify(parentAudience)],
     );
     await act(A.admin);
-    out.liveRow = (await t("select provider, status from outbound_messages where proposal_id=$1", [
-      out.waOptin?.proposal_id,
-    ])).row;
+    out.liveRow = (
+      await t("select provider, status from outbound_messages where proposal_id=$1", [
+        out.waOptin?.proposal_id,
+      ])
+    ).row;
     out.directOut = await t(
       "insert into outbound_messages (school_id, channel, to_address, category, body, status, reference) values ($1,'sms','2348000000000','utility','x','sent','forged')",
       [A.schoolId],
     );
-    const classId = (await asOwner("select class_id from students where id=$1", [studs[0].id])).row.class_id;
-    const proposeOnly = async (audience) => t(
-      "select public.comms_propose_send($1,'sms',$2::jsonb,'absence_alert','{}'::jsonb) r",
-      [A.schoolId, JSON.stringify(audience)],
-    );
+    const classId = (await asOwner("select class_id from students where id=$1", [studs[0].id])).row
+      .class_id;
+    const proposeOnly = async (audience) =>
+      t("select public.comms_propose_send($1,'sms',$2::jsonb,'absence_alert','{}'::jsonb) r", [
+        A.schoolId,
+        JSON.stringify(audience),
+      ]);
     out.classAudience = await proposeOnly({ kind: "class", class_id: classId });
     out.roleAudience = await proposeOnly({ kind: "role", role: "parent" });
-    out.guardianAudience = await proposeOnly({ kind: "guardian_of_student", student_id: studs[0].id });
+    out.guardianAudience = await proposeOnly({
+      kind: "guardian_of_student",
+      student_id: studs[0].id,
+    });
     out.crossTenantProposal = await t(
       "select public.comms_propose_send($1,'sms',$2::jsonb,'absence_alert','{}'::jsonb) r",
       [A.schoolId, JSON.stringify({ kind: "user", user_id: B.sampleParent })],
@@ -2439,25 +2488,30 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
       "insert into organization_memberships (user_id,school_id,role,is_primary,is_active) values ($1,$2,'parent',false,true) on conflict (user_id,school_id) do update set is_active=true",
       [p1User, B.schoolId],
     );
-    out.multiOrgRoute = (await svc(
-      "select public.comms_route_inbound('+234 901 505 6201',$1,'Hello','wa-route-1') r",
-      [P1],
-    )).row?.r;
-    out.orgSelection = (await svc(
-      "select public.comms_route_inbound('+2349015056201',$1,'1','wa-route-choice-1') r",
-      [P1],
-    )).row?.r;
-    out.contextOrg = (await svc(
-      "select org_id from comms_conversation_context where sender_phone='2348030000001'",
-    )).row?.org_id;
-    out.unknownRoute = (await svc(
-      "select public.comms_route_inbound('+2349015056201','2340000000000','Hello','wa-unknown-1') r",
-    )).row?.r;
+    out.multiOrgRoute = (
+      await svc(
+        "select public.comms_route_inbound('+234 901 505 6201',$1,'Hello','wa-route-1') r",
+        [P1],
+      )
+    ).row?.r;
+    out.orgSelection = (
+      await svc(
+        "select public.comms_route_inbound('+2349015056201',$1,'1','wa-route-choice-1') r",
+        [P1],
+      )
+    ).row?.r;
+    out.contextOrg = (
+      await svc("select org_id from comms_conversation_context where sender_phone='2348030000001'")
+    ).row?.org_id;
+    out.unknownRoute = (
+      await svc(
+        "select public.comms_route_inbound('+2349015056201','2340000000000','Hello','wa-unknown-1') r",
+      )
+    ).row?.r;
     await act(A.admin);
-    out.crossTenantRead = await t(
-      "select count(*)::int n from outbound_messages where org_id=$1",
-      [B.schoolId],
-    );
+    out.crossTenantRead = await t("select count(*)::int n from outbound_messages where org_id=$1", [
+      B.schoolId,
+    ]);
     await act(A.sampleStudentUser);
     out.recipientIsolation = await t(
       "select count(*)::int n from outbound_messages where recipient_user_id <> $1",
@@ -2638,7 +2692,10 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
   rec(
     "comms",
     "Audience resolution supports user, class, role and guardian-of-student without cross-organization lookup",
-    v.classAudience?.ok && v.roleAudience?.ok && v.guardianAudience?.ok && !v.crossTenantProposal?.ok,
+    v.classAudience?.ok &&
+      v.roleAudience?.ok &&
+      v.guardianAudience?.ok &&
+      !v.crossTenantProposal?.ok,
     `class ${W_ERR(v.classAudience)}; role ${W_ERR(v.roleAudience)}; guardian ${W_ERR(v.guardianAudience)}; cross-org ${W_ERR(v.crossTenantProposal)}`,
     "critical",
   );

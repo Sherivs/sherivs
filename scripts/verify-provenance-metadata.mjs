@@ -71,7 +71,10 @@ const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const CAMPAIGN_RECORD_REL = "architecture/campaigns/H3-WAVE-CAMPAIGN.md";
 const ROOT_AUTHORITY_REL = "AGENTS.md";
 const ADR_TEMPLATE_REL = "architecture/adr/TEMPLATE.md";
-const ARTIFACTS_DIR = (process.env.SHERIVS_ARTIFACTS_DIR ?? process.env.COREGRID_ARTIFACTS_DIR) ?? "/opt/cursor/artifacts";
+const ARTIFACTS_DIR =
+  process.env.SHERIVS_ARTIFACTS_DIR ??
+  process.env.COREGRID_ARTIFACTS_DIR ??
+  "/opt/cursor/artifacts";
 
 // ── argument parsing ─────────────────────────────────────────────────────────
 const argv = process.argv.slice(2);
