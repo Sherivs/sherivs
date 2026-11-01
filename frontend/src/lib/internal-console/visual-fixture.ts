@@ -171,6 +171,22 @@ export function readSelectedFixturePersona(): ConsoleFixturePersona {
   }
 }
 
+export function assignedSupportOrganizationIds(
+  assignments: readonly OrganizationAssignmentRecord[],
+  userId: string,
+): Set<string> {
+  return new Set(
+    assignments
+      .filter(
+        (assignment) =>
+          assignment.staffId === userId &&
+          assignment.assignmentType === "support" &&
+          assignment.status === "active",
+      )
+      .map((assignment) => assignment.organizationId),
+  );
+}
+
 export function selectConsoleVisualFixturePersona(key: string): ConsoleFixturePersona {
   const persona = fixturePersonaByKey(key);
   if (typeof window !== "undefined") {
@@ -214,6 +230,7 @@ function seedConsoleVisualFixtureDemo(): void {
 
 function fixtureDemoOrganizations() {
   const actor = CONSOLE_FIXTURE_OPERATOR;
+  const support = CONSOLE_FIXTURE_PERSONAS.find((persona) => persona.key === "support");
   const at = "2026-10-27T12:00:00.000Z";
   return [
     {
@@ -234,7 +251,7 @@ function fixtureDemoOrganizations() {
       provisionedAt: "2026-10-22T00:00:00.000Z",
       activatedAt: at,
       onboardingOwnerName: actor.name,
-      assignmentCount: 1,
+      assignmentCount: 2,
       legalName: "Riverside School Ltd",
       questionnaire: { displayName: "Riverside School", country: "NG" },
       questionnaireStep: "review",
@@ -263,6 +280,21 @@ function fixtureDemoOrganizations() {
           assignedAt: "2026-10-21T00:00:00.000Z",
           releasedAt: null,
         },
+        ...(support
+          ? [
+              {
+                id: "fixture-support-riverside",
+                organizationId: "fixture-org-active",
+                staffId: support.id,
+                staffName: support.name,
+                assignmentType: "support" as const,
+                status: "active" as const,
+                assignedBy: actor.id,
+                assignedAt: "2026-10-21T00:00:00.000Z",
+                releasedAt: null,
+              },
+            ]
+          : []),
       ],
       transitions: [
         {
@@ -685,6 +717,7 @@ function fixtureAttention(
 
 export function buildConsoleVisualFixtureOverview(
   persona: ConsoleFixturePersona = readSelectedFixturePersona(),
+  organizationSnapshot?: ReturnType<typeof readFixtureOrganizationSnapshot>,
 ): ConsoleOverview {
   const roles = [...persona.roles];
   const capabilities = [...viewerCapabilities(roles, persona.isSuperAdmin)];
@@ -693,9 +726,37 @@ export function buildConsoleVisualFixtureOverview(
     isSuperAdmin: persona.isSuperAdmin,
     roles,
   });
-  const snapshot = fixtureOrganizationSnapshot();
-  const canReadOrgs = persona.isSuperAdmin || capabilities.includes("platform.tenants.read");
-  const canAudit = persona.isSuperAdmin || capabilities.includes("platform.audit.read");
+  const fullSnapshot = organizationSnapshot ?? fixtureOrganizationSnapshot();
+  const supportOnly =
+    capabilities.includes("platform.support.handle") &&
+    !capabilities.includes("platform.tenants.manage");
+  const assignedSupportIds = assignedSupportOrganizationIds(fullSnapshot.assignments, persona.id);
+  const snapshot = supportOnly
+    ? {
+        ...fullSnapshot,
+        organizations: fullSnapshot.organizations.filter((organization) =>
+          assignedSupportIds.has(organization.id),
+        ),
+        assignments: fullSnapshot.assignments.filter(
+          (assignment) =>
+            assignment.staffId === persona.id &&
+            assignment.assignmentType === "support" &&
+            assignment.status === "active",
+        ),
+      }
+    : fullSnapshot;
+  if (supportOnly) {
+    snapshot.metrics = {
+      ...emptyOrganizationMetrics(),
+      ...summarizeOrganizationStates(
+        snapshot.organizations.map((organization) => organization.lifecycleState),
+      ),
+    };
+  }
+  const canReadOrgs =
+    capabilities.includes("platform.tenants.read") ||
+    capabilities.includes("platform.operations.read");
+  const canAudit = capabilities.includes("platform.audit.read");
   const unauthorizedOrgMetrics = {
     available: false,
     source: "not authorized",

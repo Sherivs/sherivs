@@ -358,7 +358,7 @@ function GovernanceSection() {
         <p className="mt-6 text-sm text-sherivs-muted">
           Read the{" "}
           <PublicLink
-            href="/privacy-policy"
+            href="/privacy"
             className="sherivs-band-link underline-offset-4 hover:underline"
           >
             privacy policy

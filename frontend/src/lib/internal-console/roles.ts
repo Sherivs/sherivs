@@ -36,8 +36,12 @@ export function presentationRoleFor(input: {
   roles: readonly string[];
 }): ConsolePresentationRole {
   if (input.isSuperAdmin) return "platform_owner";
-  if (input.roles.includes("platform_admin")) return "platform_administrator";
-  if (input.roles.includes("operations")) return "operations_administrator";
+  if (input.roles.some((role) => ["platform_admin", "security"].includes(role))) {
+    return "platform_administrator";
+  }
+  if (input.roles.some((role) => ["operations", "finance", "sales"].includes(role))) {
+    return "operations_administrator";
+  }
   if (input.roles.includes("engineering")) return "engineer";
   if (input.roles.includes("support")) return "support_specialist";
   return "standard_team_member";
@@ -84,6 +88,7 @@ export const CONSOLE_NAV: readonly ConsoleNavItem[] = [
         label: "Directory",
         href: CONSOLE_PATHS.organizations,
         capability: "platform.tenants.read",
+        anyOf: ["platform.tenants.read", "platform.operations.read"],
       },
       {
         key: "organization-onboard",
@@ -224,12 +229,7 @@ export const CONSOLE_NAV: readonly ConsoleNavItem[] = [
         label: "Incidents",
         href: CONSOLE_PATHS.activityIncidents,
         capability: "platform.engineering.read",
-        anyOf: [
-          "platform.engineering.read",
-          "platform.operations.read",
-          "platform.tenants.read",
-          "platform.audit.read",
-        ],
+        anyOf: ["platform.engineering.read", "platform.operations.read"],
       },
       {
         key: "tickets",
@@ -260,7 +260,6 @@ export function navVisible(
   item: ConsoleNavItem,
   viewer: { isSuperAdmin: boolean; capabilities: ReadonlySet<string> },
 ): boolean {
-  if (viewer.isSuperAdmin) return true;
   if (item.anyOf?.length) {
     return item.anyOf.some((capability) => viewer.capabilities.has(capability));
   }
@@ -359,7 +358,6 @@ export function quickActionsFor(viewer: {
 }): ConsoleQuickAction[] {
   return CONSOLE_QUICK_ACTIONS.filter((action) => {
     if (action.ownerOnly && !viewer.isSuperAdmin) return false;
-    if (viewer.isSuperAdmin) return true;
     return action.capability === null || viewer.capabilities.has(action.capability);
   });
 }
@@ -368,15 +366,9 @@ export function viewerCapabilities(roles: readonly string[], isSuperAdmin: boole
   const caps = capabilitiesForRoles(roles);
   if (isSuperAdmin) {
     for (const extra of [
-      "platform.staff.read",
-      "platform.staff.manage",
-      "platform.tenants.read",
-      "platform.config.read",
-      "platform.audit.read",
-      "platform.engineering.read",
       "platform.operations.read",
-      "platform.security.read",
-      "platform.support.handle",
+      "platform.audit.read",
+      "platform.operations.assign",
     ])
       caps.add(extra);
   }

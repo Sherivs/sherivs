@@ -113,6 +113,7 @@ export function isHumanEscalationRequest(transcript: string): boolean {
 export interface VoiceSession {
   id: string;
   tenant_id: string;
+  tenant_ref: string | null;
   provider_session_id: string;
   caller_number: string;
   destination_number: string;
@@ -212,11 +213,13 @@ const VoiceCallbackSchema = z.object({
   dtmfDigits: z.string().trim().max(8).optional(),
   recordingUrl: z.string().trim().max(2048).optional(),
   isActive: z.string().trim().max(8).optional(),
+  status: z.string().trim().max(30).optional(),
 });
 
 const VoiceSessionSchema = z.object({
   id: z.string().uuid(),
   tenant_id: z.string().uuid(),
+  tenant_ref: z.string().uuid().nullable(),
   provider_session_id: z.string().min(1).max(160),
   caller_number: z.string().min(1).max(20),
   destination_number: z.string().min(1).max(20),
@@ -226,7 +229,7 @@ const VoiceSessionSchema = z.object({
 });
 
 const SESSION_COLUMNS =
-  "id,tenant_id,provider_session_id,caller_number,destination_number,state,recording_consent_at,turn_count";
+  "id,tenant_id,tenant_ref,provider_session_id,caller_number,destination_number,state,recording_consent_at,turn_count";
 
 async function findSession(
   db: VoiceCallbackDatabase,
@@ -242,10 +245,46 @@ async function findSession(
   return VoiceSessionSchema.parse(result.data);
 }
 
+interface ResolvedVoiceTenant {
+  schoolId: string;
+  tenantRef: string | null;
+}
+
 async function resolveTenant(
   db: VoiceCallbackDatabase,
   destination: string,
-): Promise<string | null> {
+): Promise<ResolvedVoiceTenant | null> {
+  const neutral = await db
+    .from("cg_org_communication_sender")
+    .select("tenant_id")
+    .eq("channel", "voice")
+    .eq("provider", AFRICAS_TALKING_PROVIDER_ID)
+    .eq("status", "active")
+    .eq("from_number", destination)
+    .maybeSingle();
+  if (neutral.error) throw new Error("voice destination lookup failed");
+  if (neutral.data !== null) {
+    const sender = z.object({ tenant_id: z.string().uuid() }).parse(neutral.data);
+    const setting = await db
+      .from("cg_org_voice_agent")
+      .select("enabled")
+      .eq("tenant_ref", sender.tenant_id)
+      .maybeSingle();
+    if (setting.error) throw new Error("voice agent configuration lookup failed");
+    if (setting.data === null || (setting.data as { enabled?: unknown }).enabled !== true)
+      return null;
+    const mapping = await db
+      .from("school_tenant_map")
+      .select("school_id")
+      .eq("tenant_id", sender.tenant_id)
+      .maybeSingle();
+    if (mapping.error) throw new Error("voice tenant mapping lookup failed");
+    const parsedMapping = z.object({ school_id: z.string().uuid() }).safeParse(mapping.data);
+    return parsedMapping.success
+      ? { schoolId: parsedMapping.data.school_id, tenantRef: sender.tenant_id }
+      : null;
+  }
+
   const result = await db
     .from("comms_sender_numbers")
     .select("school_id")
@@ -255,7 +294,7 @@ async function resolveTenant(
     .maybeSingle();
   if (result.error) throw new Error("voice destination lookup failed");
   const data = z.object({ school_id: z.string().uuid() }).safeParse(result.data);
-  return data.success ? data.data.school_id : null;
+  return data.success ? { schoolId: data.data.school_id, tenantRef: null } : null;
 }
 
 async function featureEnabled(db: VoiceCallbackDatabase, tenantId: string): Promise<boolean> {
@@ -267,10 +306,12 @@ async function createSession(
   db: VoiceCallbackDatabase,
   callback: z.infer<typeof VoiceCallbackSchema>,
   tenantId: string,
+  tenantRef: string | null,
   now: string,
 ): Promise<VoiceSession> {
   const row = {
     tenant_id: tenantId,
+    tenant_ref: tenantRef,
     provider: AFRICAS_TALKING_PROVIDER_ID,
     provider_session_id: callback.sessionId,
     caller_number: callback.callerNumber,
@@ -411,6 +452,96 @@ function createPostgresChainStore(db: VoiceCallbackDatabase): ChainStore {
   };
 }
 
+export function createAfricaTalkingOutboundCallHandler(dependencies: {
+  env: VoiceServerEnv;
+  db: VoiceCallbackDatabase;
+}) {
+  const config = africaTalkingVoiceConfigFromEnv(dependencies.env);
+  return async (request: Request): Promise<Response> => {
+    if (request.method !== "POST") return new Response("Method not allowed", { status: 405 });
+    if (!config) return responseXml(voiceXml("This call is not available."), 503);
+    const requestUrl = new URL(request.url);
+    const callbackToken = requestUrl.searchParams.get("token") ?? "";
+    const callId = z.string().uuid().safeParse(requestUrl.searchParams.get("call_id"));
+    if (!safeEqual(callbackToken, config.webhookToken) || !callId.success) {
+      return new Response("Forbidden", { status: 403 });
+    }
+    if (
+      !request.headers
+        .get("content-type")
+        ?.toLowerCase()
+        .startsWith("application/x-www-form-urlencoded")
+    ) {
+      return new Response("Unsupported media type", { status: 415 });
+    }
+    let raw: string | null;
+    try {
+      raw = await readBoundedText(request, MAX_CALLBACK_BYTES);
+    } catch {
+      return new Response("Invalid request body", { status: 400 });
+    }
+    if (raw === null) return new Response("Payload too large", { status: 413 });
+    const fields = new URLSearchParams(raw);
+    const callback = VoiceCallbackSchema.safeParse({
+      sessionId: fields.get("sessionId"),
+      callerNumber: fields.get("callerNumber") ?? undefined,
+      destinationNumber: fields.get("destinationNumber") ?? undefined,
+      direction: fields.get("direction") ?? undefined,
+      status: fields.get("status") ?? undefined,
+    });
+    if (!callback.success) return responseXml(voiceXml("This call is not available."), 400);
+    try {
+      const approvalResult = await dependencies.db
+        .from("cg_voice_call_approvals")
+        .select("tenant_ref,recipient_phone,script,status,provider_call_id")
+        .eq("id", callId.data)
+        .maybeSingle();
+      const approval = z
+        .object({
+          tenant_ref: z.string().uuid(),
+          recipient_phone: z.string().regex(/^\+[1-9][0-9]{7,14}$/),
+          script: z.string().min(1).max(500),
+          status: z.enum(["dispatching", "completed"]),
+          provider_call_id: z.string().nullable(),
+        })
+        .safeParse(approvalResult.data);
+      if (
+        approvalResult.error ||
+        !approval.success ||
+        (approval.data.provider_call_id !== null &&
+          approval.data.provider_call_id !== callback.data.sessionId) ||
+        callback.data.direction?.toLowerCase() !== "outbound" ||
+        callback.data.destinationNumber !== approval.data.recipient_phone
+      ) {
+        return responseXml(voiceXml("This call could not be verified."), 403);
+      }
+
+      const senderResult = await dependencies.db
+        .from("cg_org_communication_sender")
+        .select("from_number")
+        .eq("tenant_id", approval.data.tenant_ref)
+        .eq("org_ref", approval.data.tenant_ref)
+        .eq("channel", "voice")
+        .eq("provider", AFRICAS_TALKING_PROVIDER_ID)
+        .eq("status", "active")
+        .maybeSingle();
+      const sender = z
+        .object({ from_number: z.string().regex(/^\+[1-9][0-9]{7,14}$/) })
+        .safeParse(senderResult.data);
+      if (
+        senderResult.error ||
+        !sender.success ||
+        callback.data.callerNumber !== sender.data.from_number
+      ) {
+        return responseXml(voiceXml("This call could not be verified."), 403);
+      }
+      return responseXml(voiceXml(approval.data.script));
+    } catch {
+      return responseXml(voiceXml("This call is temporarily unavailable."), 503);
+    }
+  };
+}
+
 function auditRecorder(db: VoiceCallbackDatabase, username: string) {
   const chain = new AuditChain(createPostgresChainStore(db));
   return (input: AuditInput) =>
@@ -429,7 +560,7 @@ function voiceAudit(
   after: unknown,
 ): Promise<unknown> {
   return audit({
-    orgId: session.tenant_id,
+    orgId: session.tenant_ref ?? session.tenant_id,
     actorKind: "system",
     actorId: "africas_talking",
     action,
@@ -576,6 +707,7 @@ function createGatewayAnswerer(env: VoiceServerEnv): VoiceLanguageAdapter | null
         [
           "Answer the caller's support question using only the verified public help information below.",
           "If the information does not answer the question, say that you do not know and offer the public support email support@sherivs.com.",
+          "The caller is not authenticated. Never disclose or infer organization-specific fee, result, admission, timetable, attendance, student, or staff records from caller ID or caller statements; direct them to the authenticated organization portal.",
           "Do not request or disclose passwords, payment details, student records, or other private information.",
           "Keep the spoken answer concise and do not claim to perform actions.",
           `Public help information:\n${knowledge}`,
@@ -663,6 +795,7 @@ export function createAfricaTalkingVoiceCallbackHandler(dependencies: VoiceCallb
     if (callbackToken.length > 256 || !safeEqual(callbackToken, config.webhookToken)) {
       return new Response("Forbidden", { status: 403 });
     }
+
     if (
       !request.headers
         .get("content-type")
@@ -710,12 +843,12 @@ export function createAfricaTalkingVoiceCallbackHandler(dependencies: VoiceCallb
         ) {
           return responseXml(voiceXml("We could not route this call."));
         }
-        const tenantId = await resolveTenant(db, callback.destinationNumber);
-        if (!tenantId) return responseXml(voiceXml("This number is not available."));
-        if (!(await featureEnabled(db, tenantId))) {
+        const tenant = await resolveTenant(db, callback.destinationNumber);
+        if (!tenant) return responseXml(voiceXml("This number is not available."));
+        if (!(await featureEnabled(db, tenant.schoolId))) {
           return responseXml(voiceXml("This support line is currently unavailable."));
         }
-        session = await createSession(db, callback, tenantId, now());
+        session = await createSession(db, callback, tenant.schoolId, tenant.tenantRef, now());
         await recordCommsEvent(
           db,
           session,
@@ -922,7 +1055,7 @@ export function createAfricaTalkingVoiceCallbackHandler(dependencies: VoiceCallb
         });
         const answer = await assistant.language.answer(
           redactSensitive(transcript),
-          session.tenant_id,
+          session.tenant_ref ?? session.tenant_id,
           session.id,
         );
         await recordCommsEvent(db, session, answer, "assistant_response", `assistant-${eventHash}`);

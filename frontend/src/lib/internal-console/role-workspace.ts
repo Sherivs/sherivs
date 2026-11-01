@@ -24,7 +24,8 @@ export const ROLE_WORKSPACE_MAPPINGS: readonly RoleWorkspaceMapping[] = [
     roleCode: "platform_owner",
     slug: "role-platform-operations",
     name: "Platform Operations",
-    description: "Platform governance and authorized oversight. Membership is not a permission grant.",
+    description:
+      "Platform governance and authorized oversight. Membership is not a permission grant.",
     presentationRole: "platform_owner",
     inPlatformRoles: false,
   },
@@ -60,36 +61,19 @@ export const ROLE_WORKSPACE_MAPPINGS: readonly RoleWorkspaceMapping[] = [
     presentationRole: "support_specialist",
     inPlatformRoles: true,
   },
-  {
-    roleCode: "security",
-    slug: "role-security",
-    name: "Security",
-    description: "Trust, audit, and security operations within granted capabilities.",
-    presentationRole: "standard_team_member",
-    inPlatformRoles: true,
-  },
-  {
-    roleCode: "finance",
-    slug: "role-finance",
-    name: "Finance",
-    description: "Financial operations within granted capabilities.",
-    presentationRole: "standard_team_member",
-    inPlatformRoles: true,
-  },
-  {
-    roleCode: "sales",
-    slug: "role-sales",
-    name: "Sales",
-    description: "Organization registry assistance within granted capabilities.",
-    presentationRole: "standard_team_member",
-    inPlatformRoles: true,
-  },
 ];
+
+const WORKSPACE_ROLE_ALIASES: Readonly<Record<string, string>> = {
+  security: "platform_admin",
+  finance: "operations",
+  sales: "operations",
+};
 
 const PRIORITY = ROLE_WORKSPACE_MAPPINGS.map((row) => row.roleCode);
 
 export function mappingForRole(roleCode: string): RoleWorkspaceMapping | null {
-  return ROLE_WORKSPACE_MAPPINGS.find((row) => row.roleCode === roleCode) ?? null;
+  const workspaceRole = WORKSPACE_ROLE_ALIASES[roleCode] ?? roleCode;
+  return ROLE_WORKSPACE_MAPPINGS.find((row) => row.roleCode === workspaceRole) ?? null;
 }
 
 export function roleCodesForWorkspaceProvisioning(input: {
@@ -99,7 +83,8 @@ export function roleCodesForWorkspaceProvisioning(input: {
   const codes = new Set<string>();
   if (input.isSuperAdmin) codes.add("platform_owner");
   for (const role of input.roles) {
-    if (mappingForRole(role)) codes.add(role);
+    const mapping = mappingForRole(role);
+    if (mapping) codes.add(mapping.roleCode);
   }
   return PRIORITY.filter((role) => codes.has(role));
 }
@@ -131,7 +116,9 @@ export function presentationToDatabaseRoles(
 }
 
 export function databaseRolesCoveredByMappings(): readonly string[] {
-  return PLATFORM_ROLE_CODES.filter((code) => ROLE_WORKSPACE_MAPPINGS.some((row) => row.roleCode === code));
+  return PLATFORM_ROLE_CODES.filter((code) =>
+    ROLE_WORKSPACE_MAPPINGS.some((row) => row.roleCode === code),
+  );
 }
 
 export function mappingLabel(roleCode: string): string {

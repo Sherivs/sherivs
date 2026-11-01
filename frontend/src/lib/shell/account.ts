@@ -1,5 +1,6 @@
 import {
   APP_SHELL_HELP,
+  APP_SHELL_COMMUNICATIONS,
   APP_SHELL_PROFILE,
   APP_SHELL_SECURITY,
   APP_SHELL_SETTINGS,
@@ -16,6 +17,12 @@ export const SHELL_ACCOUNT_NAV = [
     href: APP_SHELL_SECURITY,
   },
   { key: "account.help", label: "Help and support", icon: "help", href: APP_SHELL_HELP },
+  {
+    key: "account.communications",
+    label: "Communications",
+    icon: "inbox",
+    href: APP_SHELL_COMMUNICATIONS,
+  },
 ] as const;
 
 export type ShellAccountKey = (typeof SHELL_ACCOUNT_NAV)[number]["key"];

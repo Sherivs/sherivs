@@ -47,7 +47,11 @@ const STEP_LABELS: Record<OrganizationOnboardingStep, string> = {
 };
 
 function LifecycleBadge({ state }: { state: OrganizationLifecycleState }) {
-  return <span className={`sherivs-console-pill is-${state}`}>{ORGANIZATION_LIFECYCLE_LABELS[state]}</span>;
+  return (
+    <span className={`sherivs-console-pill is-${state}`}>
+      {ORGANIZATION_LIFECYCLE_LABELS[state]}
+    </span>
+  );
 }
 
 export function ConsoleOrganizationDirectory() {
@@ -60,7 +64,10 @@ export function ConsoleOrganizationDirectory() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const canManage = overview?.viewer.capabilities.includes("platform.tenants.manage") ?? false;
-  const canRead = overview?.viewer.capabilities.includes("platform.tenants.read") ?? false;
+  const canRead =
+    overview?.viewer.capabilities.some((capability) =>
+      ["platform.tenants.read", "platform.operations.read"].includes(capability),
+    ) ?? false;
 
   async function load() {
     setBusy(true);
@@ -169,7 +176,8 @@ export function ConsoleOrganizationDirectory() {
                     <Link to={CONSOLE_PATHS.organization(row.id) as never}>{row.displayName}</Link>
                     <div>
                       <small>
-                        {[row.city, row.region, row.country].filter(Boolean).join(", ") || "Location not recorded"}
+                        {[row.city, row.region, row.country].filter(Boolean).join(", ") ||
+                          "Location not recorded"}
                       </small>
                     </div>
                   </td>
@@ -369,7 +377,10 @@ export function ConsoleOrganizationOnboarding() {
               <select
                 value={draft.contactMethod ?? "email"}
                 onChange={(event) =>
-                  patch({ contactMethod: event.target.value as typeof ORGANIZATION_CONTACT_METHODS[number] })
+                  patch({
+                    contactMethod: event.target
+                      .value as (typeof ORGANIZATION_CONTACT_METHODS)[number],
+                  })
                 }
               >
                 {ORGANIZATION_CONTACT_METHODS.map((method) => (
@@ -394,7 +405,9 @@ export function ConsoleOrganizationOnboarding() {
               <select
                 value={draft.expectedScale ?? "unspecified"}
                 onChange={(event) =>
-                  patch({ expectedScale: event.target.value as typeof ORGANIZATION_SCALES[number] })
+                  patch({
+                    expectedScale: event.target.value as (typeof ORGANIZATION_SCALES)[number],
+                  })
                 }
               >
                 {ORGANIZATION_SCALES.map((scale) => (
@@ -428,7 +441,8 @@ export function ConsoleOrganizationOnboarding() {
                 value={draft.launchTimeframe ?? "unspecified"}
                 onChange={(event) =>
                   patch({
-                    launchTimeframe: event.target.value as typeof ORGANIZATION_LAUNCH_WINDOWS[number],
+                    launchTimeframe: event.target
+                      .value as (typeof ORGANIZATION_LAUNCH_WINDOWS)[number],
                   })
                 }
               >
@@ -484,7 +498,8 @@ export function ConsoleOrganizationOnboarding() {
             <div className="sherivs-console-row">
               <strong>{draft.displayName}</strong>
               <small>
-                {draft.orgType} · {[draft.city, draft.region, draft.country].filter(Boolean).join(", ")}
+                {draft.orgType} ·{" "}
+                {[draft.city, draft.region, draft.country].filter(Boolean).join(", ")}
               </small>
             </div>
             <div className="sherivs-console-row">
@@ -521,7 +536,8 @@ export function ConsoleOrganizationProfile() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [pending, setPending] = useState<string | null>(null);
-  const [assignmentType, setAssignmentType] = useState<OrganizationAssignmentType>("onboarding_owner");
+  const [assignmentType, setAssignmentType] =
+    useState<OrganizationAssignmentType>("onboarding_owner");
   const [staffId, setStaffId] = useState(overview?.viewer.id ?? "");
   const canManage = overview?.viewer.capabilities.includes("platform.tenants.manage") ?? false;
 
@@ -623,7 +639,10 @@ export function ConsoleOrganizationProfile() {
         </div>
         <div className="sherivs-console-row">
           <strong>Location</strong>
-          <small>{[detail.city, detail.region, detail.country].filter(Boolean).join(", ") || "Not recorded"}</small>
+          <small>
+            {[detail.city, detail.region, detail.country].filter(Boolean).join(", ") ||
+              "Not recorded"}
+          </small>
         </div>
         {detail.contact ? (
           <div className="sherivs-console-row">
@@ -635,7 +654,9 @@ export function ConsoleOrganizationProfile() {
         ) : (
           <div className="sherivs-console-row">
             <strong>Primary contact</strong>
-            <small>Contact details are limited to assigned staff and organization administrators.</small>
+            <small>
+              Contact details are limited to assigned staff and organization administrators.
+            </small>
           </div>
         )}
         <div className="sherivs-console-row">
@@ -699,7 +720,9 @@ export function ConsoleOrganizationProfile() {
                 <button
                   type="button"
                   className="sherivs-console-btn secondary"
-                  onClick={() => void run(`release-${assignment.id}`, () => apiRelease(assignment.id))}
+                  onClick={() =>
+                    void run(`release-${assignment.id}`, () => apiRelease(assignment.id))
+                  }
                 >
                   Release
                 </button>
@@ -708,7 +731,9 @@ export function ConsoleOrganizationProfile() {
           ))}
         </div>
       ) : (
-        <p className="sherivs-console-empty">No staff are assigned. Releasing an assignee keeps history.</p>
+        <p className="sherivs-console-empty">
+          No staff are assigned. Releasing an assignee keeps history.
+        </p>
       )}
       {canManage ? (
         <form

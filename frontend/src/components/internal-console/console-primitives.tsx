@@ -20,7 +20,13 @@ export function ConsoleAtmosphere({ children }: { children: ReactNode }) {
 export function ConsoleLoadingState({ message }: { message: string }) {
   return (
     <ConsoleAtmosphere>
-      <section className="sherivs-console-card" data-testid="console-loading">
+      <section
+        className="sherivs-console-card"
+        data-testid="console-loading"
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+      >
         <p className="sherivs-console-page-kicker">Internal Console</p>
         <h1>Sherivs</h1>
         <p>{message}</p>
