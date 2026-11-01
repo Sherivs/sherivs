@@ -43,8 +43,11 @@ export interface OfflineStore {
   write<T>(domain: OfflineDomain, key: string, value: T): Promise<void>;
   readThrough<T>(domain: OfflineDomain, key: string, load: () => Promise<T>): Promise<{ data: T; source: "network" | "offline" }>;
   enqueue<T>(kind: OfflineMutationKind, entityId: string, payload: T): Promise<OfflineMutation<T>>;
+  list(kind?: OfflineMutationKind): Promise<OfflineMutation[]>;
   pending(kind?: OfflineMutationKind): Promise<OfflineMutation[]>;
   discard(id: string): Promise<void>;
+  markConflict(id: string, reason: string): Promise<void>;
+  setSyncing(syncing: boolean): Promise<void>;
   sync(
     send: (mutation: OfflineMutation) => Promise<{ outcome: "applied" | "conflict"; reason?: string }>,
     kind?: OfflineMutationKind,
@@ -85,7 +88,7 @@ function createBrowserDatabase(): OfflineDatabase {
   const open = (): Promise<IDBDatabase> => {
     if (typeof indexedDB === "undefined") return Promise.reject(new Error("IndexedDB is unavailable"));
     if (!opening) {
-      opening = new Promise((resolve, reject) => {
+      opening = new Promise<IDBDatabase>((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
         request.onupgradeneeded = () => {
           const db = request.result;
@@ -104,12 +107,12 @@ function createBrowserDatabase(): OfflineDatabase {
         };
         request.onerror = () => reject(request.error ?? new Error("Could not open offline storage"));
         request.onblocked = () => reject(new Error("Offline storage upgrade is blocked"));
-      }).catch((error: unknown) => {
+      }).catch((error: unknown): never => {
         opening = undefined;
         throw error;
       });
     }
-    return opening;
+    return opening!;
   };
 
   return {
@@ -174,16 +177,23 @@ export function createOfflineStore(
   const now = options.now ?? (() => new Date());
   const newId = options.newId ?? (() => globalThis.crypto.randomUUID());
   const recordId = (domain: OfflineDomain, key: string) => `${scopeKey}\u001f${domain}\u001f${key}`;
+  const publishStatus = async (syncing: boolean) => {
+    if (typeof window === "undefined") return;
+    const pendingItems = (await database.readMutations(scopeKey)).length;
+    window.dispatchEvent(
+      new CustomEvent("sherivs:sync-status", { detail: { pendingItems, syncing } }),
+    );
+  };
 
-  return {
-    async read<T>(domain, key) {
-      const record = await database.readRecord<{ scopeKey: string; value: T }>(recordId(domain, key));
+  const store: OfflineStore = {
+    async read<T>(domain: OfflineDomain, key: string) {
+      const record = await database.readRecord<T>(recordId(domain, key));
       return record?.scopeKey === scopeKey ? record.value : undefined;
     },
-    async write<T>(domain, key, value) {
+    async write<T>(domain: OfflineDomain, key: string, value: T) {
       await database.writeRecord(recordId(domain, key), scopeKey, value);
     },
-    async readThrough<T>(domain, key, load) {
+    async readThrough<T>(domain: OfflineDomain, key: string, load: () => Promise<T>) {
       let data: T;
       try {
         data = await load();
@@ -200,7 +210,7 @@ export function createOfflineStore(
       }
       return { data, source: "network" };
     },
-    async enqueue<T>(kind, entityId, payload) {
+    async enqueue<T>(kind: OfflineMutationKind, entityId: string, payload: T) {
       if (!entityId.trim()) throw new Error("Offline mutation requires an entity id");
       const mutation: OfflineMutation<T> = {
         id: newId(),
@@ -212,44 +222,69 @@ export function createOfflineStore(
         state: "pending",
       };
       await database.writeMutation(mutation);
+      await publishStatus(false);
       return mutation;
     },
-    async pending(kind) {
+    async list(kind?: OfflineMutationKind) {
       const mutations = await database.readMutations(scopeKey);
-      return mutations.filter((mutation) => mutation.state === "pending" && (!kind || mutation.kind === kind));
+      return mutations.filter((mutation) => !kind || mutation.kind === kind);
     },
-    discard: (id) => database.deleteMutation(id),
-    async sync(send, kind) {
+    async pending(kind?: OfflineMutationKind) {
+      return (await this.list(kind)).filter((mutation) => mutation.state === "pending");
+    },
+    async discard(id: string) {
+      if ((await this.list()).some((mutation) => mutation.id === id)) await database.deleteMutation(id);
+      await publishStatus(false);
+    },
+    async markConflict(id: string, reason: string) {
+      const mutation = (await this.list()).find((item) => item.id === id && item.state === "pending");
+      if (mutation) await database.writeMutation({ ...mutation, state: "conflict", conflict: reason });
+      await publishStatus(false);
+    },
+    setSyncing: publishStatus,
+    async sync(
+      send: (mutation: OfflineMutation) => Promise<{ outcome: "applied" | "conflict"; reason?: string }>,
+      kind?: OfflineMutationKind,
+    ) {
       const queue = await database.readMutations(scopeKey);
       let applied = 0;
       let error: string | undefined;
       const conflicts: OfflineMutation[] = [];
-      for (const mutation of queue) {
-        if (mutation.state !== "pending" || (kind && mutation.kind !== kind)) continue;
-        try {
-          const result = await send(mutation);
-          if (result.outcome === "conflict") {
-            const conflict = { ...mutation, state: "conflict" as const, conflict: result.reason ?? "manual_review_required" };
-            await database.writeMutation(conflict);
-            conflicts.push(conflict);
-          } else {
-            await database.deleteMutation(mutation.id);
-            applied += 1;
+      await publishStatus(true);
+      try {
+        for (const mutation of queue) {
+          if (mutation.state !== "pending" || (kind && mutation.kind !== kind)) continue;
+          try {
+            const result = await send(mutation);
+            if (result.outcome === "conflict") {
+              const conflict = { ...mutation, state: "conflict" as const, conflict: result.reason ?? "manual_review_required" };
+              await database.writeMutation(conflict);
+              conflicts.push(conflict);
+            } else {
+              await database.deleteMutation(mutation.id);
+              applied += 1;
+            }
+          } catch (syncError) {
+            error = syncError instanceof Error ? syncError.message : "Offline sync failed";
+            break;
           }
-        } catch (syncError) {
-          error = syncError instanceof Error ? syncError.message : "Offline sync failed";
-          break;
         }
+      } finally {
+        await publishStatus(false);
       }
       return {
         applied,
         conflicts,
-        remaining: (await database.readMutations(scopeKey)).filter((mutation) => mutation.state === "pending").length,
+        remaining: (await this.pending()).length,
         ...(error ? { error } : {}),
       };
     },
-    clear: () => database.deleteScope(scopeKey),
+    async clear() {
+      await database.deleteScope(scopeKey);
+      await publishStatus(false);
+    },
   };
+  return store;
 }
 
 export function clearOfflineData(scope?: OfflineScope): Promise<void> {

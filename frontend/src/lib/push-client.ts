@@ -56,6 +56,16 @@ async function ensureRegistration(): Promise<ServiceWorkerRegistration> {
   return navigator.serviceWorker.register("/sw.js", { scope: "/" });
 }
 
+/** Register the offline app shell independently of optional push permission. */
+export async function registerOfflineServiceWorker(): Promise<void> {
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+  try {
+    await ensureRegistration();
+  } catch {
+    /* Offline shell registration is best-effort. */
+  }
+}
+
 /**
  * Subscribe (or reuse an existing subscription) and store the token against
  * the signed-in user. Returns the stored token, or null when unavailable.
