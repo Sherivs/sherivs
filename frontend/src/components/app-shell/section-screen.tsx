@@ -4,7 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { catalogItem } from "@/lib/sherivs-ws/engine";
 import { shellIcon } from "@/lib/shell/icon-registry";
 import { formatWidgetMetric } from "@/lib/shell/metrics";
-import { APP_SHELL_HOME } from "@/lib/shell/paths";
+import { homeHrefForScope } from "@/lib/shell/chrome";
 import { searchableSection } from "@/lib/shell/role-template";
 import { ShellGlassIcon } from "./glass-icon";
 import { useAppShell } from "./shell-context";
@@ -25,10 +25,11 @@ export function AppSectionScreen({ sectionKey }: { sectionKey: string }) {
   const Icon = shellIcon(icon);
   const showSearch = searchableSection(sectionKey, String(label));
   const metric = formatWidgetMetric(shell.cards[sectionKey]);
+  const homeHref = homeHrefForScope(shell.scopeFocus);
 
   return (
     <section className="app-shell-section" data-testid="app-shell-section">
-      <Link to={APP_SHELL_HOME as never} className="app-shell-back">
+      <Link to={homeHref as never} className="app-shell-back">
         ← Home
       </Link>
       <ShellGlassIcon size={44} tone="accent">
