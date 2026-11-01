@@ -2,10 +2,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
-  createTwilioVoiceAdapter,
-  createTwilioVoiceProviderRegistry,
-  twilioVoiceConfigFromEnv,
-} from "@/lib/communications/twilio-voice.server";
+  africaTalkingVoiceConfigFromEnv,
+  AFRICAS_TALKING_PROVIDER_ID,
+} from "@/lib/communications/africas-talking-voice.server";
+import {
+  createAfricaTalkingVoiceAdapter,
+  createAfricaTalkingVoiceProviderRegistry,
+} from "@/lib/communications/africas-talking-outbound.server";
 import {
   isTelephonyCallReceipt,
   type TelephonyCallCommand,
@@ -15,7 +18,7 @@ const emptyInput = z.object({});
 const callIdInput = z.object({ callId: z.string().uuid() });
 const settingsInput = z.object({
   enabled: z.boolean(),
-  provider: z.enum(["twilio", "africas_talking"]).nullable(),
+  provider: z.literal("africas_talking").nullable(),
   providerNumber: z.string().nullable(),
   extension: z.string().nullable(),
   voiceLive: z.boolean(),
@@ -59,7 +62,7 @@ export const configureVoiceAgent = createServerFn({ method: "POST" })
     z
       .object({
         enabled: z.boolean(),
-        provider: z.enum(["twilio", "africas_talking"]),
+        provider: z.literal("africas_talking"),
         providerNumber: z
           .string()
           .trim()
@@ -158,7 +161,7 @@ export const decideVoiceCall = createServerFn({ method: "POST" })
 const claimedCallInput = z.object({
   id: z.string().uuid(),
   tenantRef: z.string().uuid(),
-  provider: z.literal("twilio"),
+  provider: z.literal(AFRICAS_TALKING_PROVIDER_ID),
   category: z.enum(["fee_reminder", "absence_alert"]),
   fromNumber: z.string().regex(/^\+[1-9][0-9]{7,14}$/),
   recipientPhone: z.string().regex(/^\+[1-9][0-9]{7,14}$/),
@@ -172,7 +175,7 @@ export const dispatchApprovedVoiceCall = createServerFn({ method: "POST" })
     const settings = await loadPrivateSettings(context.supabase);
     if (!settings.enabled || !settings.voiceLive) return { status: "live_voice_disabled" as const };
 
-    const config = twilioVoiceConfigFromEnv(process.env);
+    const config = africaTalkingVoiceConfigFromEnv(process.env);
     if (!config) return { status: "provider_not_configured" as const };
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -199,8 +202,12 @@ export const dispatchApprovedVoiceCall = createServerFn({ method: "POST" })
     );
     if (claimError) throw new Error("Approved call could not be claimed for dispatch.");
     const call = claimedCallInput.parse(claimed);
-    const adapter = createTwilioVoiceAdapter({ ...config, fromNumber: call.fromNumber });
-    const registry = createTwilioVoiceProviderRegistry(process.env);
+    const adapter = createAfricaTalkingVoiceAdapter({
+      config,
+      fromNumber: call.fromNumber,
+      callId: call.id,
+    });
+    const registry = createAfricaTalkingVoiceProviderRegistry(process.env);
     const command: TelephonyCallCommand = {
       callKind: call.category,
       tenantRef: call.tenantRef,

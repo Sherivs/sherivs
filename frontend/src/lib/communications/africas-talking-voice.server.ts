@@ -213,6 +213,7 @@ const VoiceCallbackSchema = z.object({
   dtmfDigits: z.string().trim().max(8).optional(),
   recordingUrl: z.string().trim().max(2048).optional(),
   isActive: z.string().trim().max(8).optional(),
+  status: z.string().trim().max(30).optional(),
 });
 
 const VoiceSessionSchema = z.object({
@@ -448,6 +449,96 @@ function createPostgresChainStore(db: VoiceCallbackDatabase): ChainStore {
       if (result.error || !Array.isArray(result.data)) throw new Error("audit-chain list failed");
       return result.data.map(fromRow);
     },
+  };
+}
+
+export function createAfricaTalkingOutboundCallHandler(dependencies: {
+  env: VoiceServerEnv;
+  db: VoiceCallbackDatabase;
+}) {
+  const config = africaTalkingVoiceConfigFromEnv(dependencies.env);
+  return async (request: Request): Promise<Response> => {
+    if (request.method !== "POST") return new Response("Method not allowed", { status: 405 });
+    if (!config) return responseXml(voiceXml("This call is not available."), 503);
+    const requestUrl = new URL(request.url);
+    const callbackToken = requestUrl.searchParams.get("token") ?? "";
+    const callId = z.string().uuid().safeParse(requestUrl.searchParams.get("call_id"));
+    if (!safeEqual(callbackToken, config.webhookToken) || !callId.success) {
+      return new Response("Forbidden", { status: 403 });
+    }
+    if (
+      !request.headers
+        .get("content-type")
+        ?.toLowerCase()
+        .startsWith("application/x-www-form-urlencoded")
+    ) {
+      return new Response("Unsupported media type", { status: 415 });
+    }
+    let raw: string | null;
+    try {
+      raw = await readBoundedText(request, MAX_CALLBACK_BYTES);
+    } catch {
+      return new Response("Invalid request body", { status: 400 });
+    }
+    if (raw === null) return new Response("Payload too large", { status: 413 });
+    const fields = new URLSearchParams(raw);
+    const callback = VoiceCallbackSchema.safeParse({
+      sessionId: fields.get("sessionId"),
+      callerNumber: fields.get("callerNumber") ?? undefined,
+      destinationNumber: fields.get("destinationNumber") ?? undefined,
+      direction: fields.get("direction") ?? undefined,
+      status: fields.get("status") ?? undefined,
+    });
+    if (!callback.success) return responseXml(voiceXml("This call is not available."), 400);
+    try {
+      const approvalResult = await dependencies.db
+        .from("cg_voice_call_approvals")
+        .select("tenant_ref,recipient_phone,script,status,provider_call_id")
+        .eq("id", callId.data)
+        .maybeSingle();
+      const approval = z
+        .object({
+          tenant_ref: z.string().uuid(),
+          recipient_phone: z.string().regex(/^\+[1-9][0-9]{7,14}$/),
+          script: z.string().min(1).max(500),
+          status: z.enum(["dispatching", "completed"]),
+          provider_call_id: z.string().nullable(),
+        })
+        .safeParse(approvalResult.data);
+      if (
+        approvalResult.error ||
+        !approval.success ||
+        (approval.data.provider_call_id !== null &&
+          approval.data.provider_call_id !== callback.data.sessionId) ||
+        callback.data.direction?.toLowerCase() !== "outbound" ||
+        callback.data.destinationNumber !== approval.data.recipient_phone
+      ) {
+        return responseXml(voiceXml("This call could not be verified."), 403);
+      }
+
+      const senderResult = await dependencies.db
+        .from("cg_org_communication_sender")
+        .select("from_number")
+        .eq("tenant_id", approval.data.tenant_ref)
+        .eq("org_ref", approval.data.tenant_ref)
+        .eq("channel", "voice")
+        .eq("provider", AFRICAS_TALKING_PROVIDER_ID)
+        .eq("status", "active")
+        .maybeSingle();
+      const sender = z
+        .object({ from_number: z.string().regex(/^\+[1-9][0-9]{7,14}$/) })
+        .safeParse(senderResult.data);
+      if (
+        senderResult.error ||
+        !sender.success ||
+        callback.data.callerNumber !== sender.data.from_number
+      ) {
+        return responseXml(voiceXml("This call could not be verified."), 403);
+      }
+      return responseXml(voiceXml(approval.data.script));
+    } catch {
+      return responseXml(voiceXml("This call is temporarily unavailable."), 503);
+    }
   };
 }
 
@@ -704,6 +795,7 @@ export function createAfricaTalkingVoiceCallbackHandler(dependencies: VoiceCallb
     if (callbackToken.length > 256 || !safeEqual(callbackToken, config.webhookToken)) {
       return new Response("Forbidden", { status: 403 });
     }
+
     if (
       !request.headers
         .get("content-type")

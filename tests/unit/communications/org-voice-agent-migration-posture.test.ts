@@ -42,6 +42,18 @@ describe("organization voice-agent migration posture", () => {
     expect(MIGRATION).toContain("FROM PUBLIC, anon, authenticated, service_role;");
   });
 
+  it("uses only the existing Africa's Talking voice provider", () => {
+    expect(MIGRATION).toContain("channel = 'voice' AND provider = 'africas_talking'");
+    expect(MIGRATION).toContain("provider = 'africas_talking'");
+    expect(SERVER_FUNCTIONS).toContain('provider: z.literal("africas_talking")');
+    expect(SERVER_FUNCTIONS).not.toContain("twilio-voice.server");
+    const voiceProviderCheck = MIGRATION.match(
+      /ADD CONSTRAINT cg_org_communication_sender_provider_check([\s\S]*?),\s*ADD COLUMN/s,
+    )?.[1];
+    expect(voiceProviderCheck).toContain("channel = 'voice' AND provider = 'africas_talking'");
+    expect(voiceProviderCheck).not.toContain("channel = 'voice' AND provider = 'twilio'");
+  });
+
   it("checks consent in the server boundary and requires a different admin for approval", () => {
     expect(SERVER_FUNCTIONS).toContain("assertVoiceRecipientConsent");
     expect(CONSENT_HELPER).toContain('.from("comms_optins"');

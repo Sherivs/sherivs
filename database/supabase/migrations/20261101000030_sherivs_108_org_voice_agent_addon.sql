@@ -10,7 +10,7 @@ ALTER TABLE public.cg_org_communication_sender
   ADD CONSTRAINT cg_org_communication_sender_channel_check CHECK (channel IN ('sms', 'voice')),
   ADD CONSTRAINT cg_org_communication_sender_provider_check
     CHECK ((channel = 'sms' AND provider = 'twilio')
-        OR (channel = 'voice' AND provider IN ('twilio', 'africas_talking'))),
+        OR (channel = 'voice' AND provider = 'africas_talking')),
   ADD COLUMN IF NOT EXISTS extension text
     CHECK (extension IS NULL OR extension ~ '^[0-9A-Za-z*#]{1,12}$');
 
@@ -220,7 +220,7 @@ BEGIN
   IF auth.uid() IS NULL OR v_tenant IS NULL OR NOT public.is_tenant_admin(v_tenant) THEN
     RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501';
   END IF;
-  IF p_provider NOT IN ('twilio', 'africas_talking')
+  IF p_provider IS DISTINCT FROM 'africas_talking'
      OR p_provider_number !~ '^\+[1-9][0-9]{7,14}$'
      OR (p_extension IS NOT NULL AND p_extension !~ '^[0-9A-Za-z*#]{1,12}$') THEN
     RAISE EXCEPTION 'invalid voice sender configuration';
@@ -232,7 +232,7 @@ BEGIN
       WHERE e.org_id = v_tenant::uuid;
     IF coalesce(v_quota, 0) <= 0 THEN RAISE EXCEPTION 'voice agent is not included in this organization entitlement'; END IF;
   END IF;
-  v_sender_ref := 'voice:' || v_tenant || ':' || p_provider;
+  v_sender_ref := 'voice:' || v_tenant || ':africas_talking';
   UPDATE public.cg_org_communication_sender
     SET status = 'suspended', updated_at = statement_timestamp()
     WHERE tenant_id = v_tenant AND org_ref = v_tenant AND channel = 'voice'
@@ -389,7 +389,7 @@ BEGIN
   SELECT provider, from_number INTO v_sender
     FROM public.cg_org_communication_sender
     WHERE tenant_id = v_call.tenant_ref AND org_ref = v_call.tenant_ref
-      AND channel = 'voice' AND status = 'active' AND provider = 'twilio'
+      AND channel = 'voice' AND status = 'active' AND provider = 'africas_talking'
     ORDER BY created_at DESC LIMIT 1;
   IF v_sender.provider IS NULL THEN RAISE EXCEPTION 'outbound voice provider is not configured'; END IF;
   IF NOT public.meter_consume(v_tenant, 'voice_minutes', v_period, '', 1, v_quota) THEN

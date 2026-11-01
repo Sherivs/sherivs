@@ -99,7 +99,7 @@ export function AppSettingsScreen() {
 export function AppVoiceAgentScreen() {
   const [settings, setSettings] = useState<VoiceAgentSettings | null>(null);
   const [calls, setCalls] = useState<VoiceAgentCall[]>([]);
-  const [provider, setProvider] = useState<"twilio" | "africas_talking">("africas_talking");
+  const provider = "africas_talking" as const;
   const [providerNumber, setProviderNumber] = useState("");
   const [extension, setExtension] = useState("");
   const [enabled, setEnabled] = useState(false);
@@ -116,7 +116,6 @@ export function AppVoiceAgentScreen() {
       ]);
       setSettings(nextSettings);
       setEnabled(nextSettings.enabled);
-      setProvider(nextSettings.provider ?? "africas_talking");
       setProviderNumber(nextSettings.providerNumber ?? "");
       setExtension(nextSettings.extension ?? "");
       setCalls(nextCalls);
@@ -193,7 +192,7 @@ export function AppVoiceAgentScreen() {
           : result.status === "failed"
             ? "The call could not be placed; the usage reservation was released."
             : result.status === "provider_not_configured"
-              ? "Twilio is not configured for server-side voice dispatch."
+              ? "Africa’s Talking is not configured for server-side voice dispatch."
               : "Live voice is disabled. The approved call remains queued.",
       );
     } catch (error) {
@@ -249,11 +248,7 @@ export function AppVoiceAgentScreen() {
             <h2>Number and add-on</h2>
             <label>
               Provider
-              <select
-                value={provider}
-                onChange={(event) => setProvider(event.target.value as typeof provider)}
-              >
-                <option value="twilio">Twilio</option>
+              <select value={provider} disabled>
                 <option value="africas_talking">Africa&apos;s Talking</option>
               </select>
             </label>
@@ -365,7 +360,7 @@ export function AppVoiceAgentScreen() {
                           busy ||
                           !settings.voiceLive ||
                           !settings.enabled ||
-                          settings.provider !== "twilio"
+                          settings.provider !== "africas_talking"
                         }
                         onClick={() => void dispatch(call.id)}
                       >
