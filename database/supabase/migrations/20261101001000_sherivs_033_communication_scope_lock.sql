@@ -607,6 +607,24 @@ BEGIN
   SELECT * INTO v_context FROM public.comms_conversation_context c
     WHERE c.channel = 'whatsapp' AND c.gateway_number = v_gateway AND c.sender_phone = v_from
     FOR UPDATE;
+  IF v_context.channel IS NOT NULL AND (
+    v_context.sender_user_id IS NULL OR NOT EXISTS (
+    SELECT 1 FROM public.users u
+    JOIN auth.users au ON au.id = u.id
+    JOIN public.organization_memberships m
+      ON m.user_id = u.id AND m.is_active
+    WHERE u.id = v_context.sender_user_id AND coalesce(u.is_active, true)
+      AND au.phone_confirmed_at IS NOT NULL
+      AND regexp_replace(coalesce(u.phone,''), '\D', '', 'g') = v_from
+      AND regexp_replace(coalesce(au.phone,''), '\D', '', 'g') = v_from
+      AND ((v_context.state = 'selected' AND m.school_id = v_context.org_id)
+        OR (v_context.state = 'select_org' AND m.school_id = ANY(v_context.candidate_org_ids)))
+    )
+  ) THEN
+    DELETE FROM public.comms_conversation_context
+      WHERE channel = 'whatsapp' AND gateway_number = v_gateway AND sender_phone = v_from;
+    RETURN jsonb_build_object('action','support');
+  END IF;
   IF FOUND AND v_context.state = 'select_org' THEN
     BEGIN v_choice := v_text::int; EXCEPTION WHEN others THEN v_choice := NULL; END;
     IF v_choice IS NULL OR v_choice < 1 OR v_choice > cardinality(v_context.candidate_org_ids) THEN
