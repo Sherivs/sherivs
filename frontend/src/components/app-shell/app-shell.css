@@ -104,6 +104,12 @@
   max-width: 100%;
 }
 
+html:has(.app-shell-frame.is-role-management),
+body:has(.app-shell-frame.is-role-management) {
+  height: auto;
+  min-height: 100dvh;
+}
+
 .app-shell.is-drawer-open .app-shell-frame {
   transform: translateX(3%) scale(0.97);
   transform-origin: right center;

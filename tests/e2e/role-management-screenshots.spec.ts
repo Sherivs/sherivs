@@ -373,7 +373,9 @@ test("captures desktop and mobile role-management screens with synthetic records
   await customRoleForm.getByRole("button", { name: "Create role" }).click();
   const customRoleCodeElement = page.locator("code").filter({ hasText: "synthetic_hr_" });
   await expect(customRoleCodeElement).toBeVisible();
-  const customRoleCode = await customRoleCodeElement.textContent().then((text) => text?.trim() ?? "");
+  const customRoleCode = await customRoleCodeElement
+    .textContent()
+    .then((text) => text?.trim() ?? "");
   expect(customRoleCode).toContain("synthetic_hr_");
   await expect(page.getByRole("button", { name: "Copy role code" })).toBeVisible();
 
@@ -474,6 +476,17 @@ test("captures desktop and mobile role-management screens with synthetic records
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
     .toBeLessThanOrEqual(width);
   await expect(page.getByRole("link", { name: "← Home" })).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const header = document.querySelector(".app-shell-header")?.getBoundingClientRect();
+        const breadcrumb = document
+          .querySelector('[data-testid="role-management-screen"] .app-shell-back')
+          ?.getBoundingClientRect();
+        return (breadcrumb?.top ?? 0) >= (header?.bottom ?? Infinity);
+      }),
+    )
+    .toBe(true);
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollHeight))
     .toBeGreaterThan(2000);
