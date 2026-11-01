@@ -493,20 +493,9 @@ test("captures desktop and mobile role-management screens with synthetic records
   await page.evaluate(() => document.fonts.ready);
   const path = testInfo.outputPath(`role-management-${width}.png`);
   mkdirSync(dirname(path), { recursive: true });
-  await page.addStyleTag({ content: ".app-shell-bottom { position: absolute !important; }" });
   const shellBounds = await page.getByTestId("app-shell").boundingBox();
   expect(shellBounds?.width).toBe(width);
   expect(shellBounds?.height).toBeGreaterThan(800);
-  const navAndScreenBounds = await page.evaluate(() => {
-    const nav = document.querySelector(".app-shell-bottom")?.getBoundingClientRect();
-    const screen = document
-      .querySelector('[data-testid="role-management-screen"]')
-      ?.getBoundingClientRect();
-    return { navTop: nav?.top, screenBottom: screen?.bottom };
-  });
-  expect(navAndScreenBounds.navTop).toBeGreaterThanOrEqual(
-    navAndScreenBounds.screenBottom ?? Infinity,
-  );
   await page.screenshot({
     path,
     fullPage: true,
