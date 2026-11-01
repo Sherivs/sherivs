@@ -8,22 +8,24 @@
 | Mission | SV1-MOBILITY (Scholar runtime; V1 organizational capability) |
 | Capabilities | Student promotion, transfer, and lifecycle mobility (issue #249) |
 | Supersedes-in-part | None |
-| Cites | Issue #249; `database/supabase/migrations/20261101110000_sv1_student_mobility.sql`; `frontend/src/lib/scholar/progression.ts`; `architecture/coregrid-mvp-architecture/NEUTRALITY_GUARD_BASELINE.json`; ADR-004; `architecture/coregrid-mvp-architecture/adr/ADR-013_MULTIMEMBERSHIP_LEGACY_STORE_EXTENSION.md`; AGENTS.md §§17, 26, 28, 38, 45 |
+| Cites | Issue #249; `database/supabase/migrations/20261101110000_sv1_student_mobility.sql`; `database/supabase/migrations/20261101120000_sv1_student_mobility_bulk.sql`; `frontend/src/lib/scholar/progression.ts`; `architecture/coregrid-mvp-architecture/NEUTRALITY_GUARD_BASELINE.json`; ADR-004; `architecture/coregrid-mvp-architecture/adr/ADR-013_MULTIMEMBERSHIP_LEGACY_STORE_EXTENSION.md`; AGENTS.md §§17, 26, 28, 38, 45 |
 | Minimal ownership artifact | This ADR only — a decision artifact |
 
 ## Context
 
 Issue #249 authorizes V1 student mobility in the existing Scholar model. The
-additive migration records immutable placement snapshots, requests, approvals,
-mobility events, finance links, and consented transfer imports. It also extends
-the existing `students` row for compatibility and uses the existing
-`school_id`, `get_my_school_id()`, `scholar_can()`, and Scholar tables for tenant
-identity, authorization, and historical academic data. The migration's RLS
-policies are enabled and forced; direct table writes are revoked from client
-roles, and mutation is exposed through permission-checked functions.
+additive migrations record immutable placement snapshots, requests, approvals,
+mobility events, finance links, consented transfer imports, eligibility previews,
+and atomic bulk requests. They extend the existing `students` row for
+compatibility and use the existing `school_id`, `get_my_school_id()`,
+`scholar_can()`, and Scholar tables for tenant identity, authorization, and
+historical academic data. The original migration's RLS policies are enabled and
+forced; direct table writes are revoked from client roles, and mutation is
+exposed through permission-checked functions. The follow-up migration adds
+permission-checked RPCs and grants no direct table access.
 
 The domain-neutrality guard scans every SQL migration. Its live scan observes
-ten new `(kind, file, token)` groups (110 hits) in this migration. The existing
+new `(kind, file, token)` groups in these migrations. The existing
 neutral-tenant substrate is not the active Scholar identity/RLS store, and its
 conversion remains outside this additive V1 feature. The guard's baseline
 ratchet policy normally allows removals only; ADR-004 requires a separate ADR
@@ -56,8 +58,8 @@ groups from its report.
 
 ### Option 3 — Record a narrow, temporary baseline exception (proposed)
 
-Keep the migration on the current Scholar store and record only the observed
-groups for this named migration, with this ADR as their provenance.
+Keep the migrations on the current Scholar store and record only the observed
+groups for these named migrations, with this ADR as their provenance.
 
 - **Consequences:** This preserves the active tenant/RLS contract and makes the
   exception visible to CI and reviewers. It also retains domain-specific
@@ -68,8 +70,9 @@ groups for this named migration, with this ADR as their provenance.
 ## Recommendation (decision)
 
 **Use Option 3, subject to operator ratification of the baseline exception.**
-The baseline may contain only the ten observed groups for
-`20261101110000_sv1_student_mobility.sql`, with their current hit counts and
+The baseline may contain only the observed groups for
+`20261101110000_sv1_student_mobility.sql` and
+`20261101120000_sv1_student_mobility_bulk.sql`, with current hit counts and
 lines and a reference to this ADR. Do not suppress further findings, add
 unrelated files, change the neutrality guard, or grant broader privileges.
 Keep RLS forced, mutation permission-checked, cross-organization imports
@@ -93,9 +96,9 @@ authorization.
 
 - **Positive:** The V1 mobility migration can be evaluated by the existing
   neutrality guard without hiding its legacy-store dependencies.
-- **Negative / obligations:** The baseline records ten groups and 110 observed
-  hits. Any changed line counts require refreshing the entries; new groups need
-  separate review. This ADR does not authorize applying the migration, AI
+- **Negative / obligations:** The baseline records the observed groups for both
+  migrations. Any changed line counts require refreshing the entries; new
+  groups need separate review. This ADR does not authorize applying migrations, AI
   recommendations, autonomous decisions, or V2/V3 scope.
 - **For the wave/program specifically:** SV1-MOBILITY owns the feature
   implementation; the operator owns ratification of this neutrality exception
@@ -105,10 +108,10 @@ authorization.
 
 - **WHO?** SV1-MOBILITY owns the V1 feature; the operator rules this proposed
   exception; the neutral-tenant conversion owner retires it.
-- **WHAT?** Quarantine only the migration's ten observed neutrality groups,
+- **WHAT?** Quarantine only the two migrations' observed neutrality groups,
   pending operator ratification.
 - **WHERE?** This ADR records the decision; the baseline records exact groups;
-  the migration and progression module implement the mechanics and tests.
+  the two migrations and progression module implement the mechanics and tests.
 - **WHY?** Issue #249 extends the active Scholar store, whose required domain
   vocabulary is detected by the migration-wide neutrality guard.
 - **UNDER WHICH POLICY?** AGENTS.md §§17, 26, 28, 38, 45; ADR-004's new-ADR
@@ -121,5 +124,5 @@ authorization.
 - **Database integration:** A database-backed migration/integration test has
   not run. The database owner must validate the migration against the deployed
   schema before any separately authorized apply.
-- **Retirement:** The neutral-tenant conversion owner must remove the ten
-  entries in the same change that replaces this legacy adapter.
+- **Retirement:** The neutral-tenant conversion owner must remove these
+  migration entries in the same change that replaces this legacy adapter.

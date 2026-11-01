@@ -12,6 +12,10 @@ const MIGRATION = readFileSync(
   join(ROOT, "database/supabase/migrations/20261101110000_sv1_student_mobility.sql"),
   "utf8",
 );
+const BULK_MIGRATION = readFileSync(
+  join(ROOT, "database/supabase/migrations/20261101120000_sv1_student_mobility_bulk.sql"),
+  "utf8",
+);
 
 const evidence: StudentMobilityEvidence = {
   studentId: "student-1",
@@ -141,5 +145,24 @@ describe("SV1 student mobility migration", () => {
     expect(MIGRATION).toContain("movement can only be cancelled before its effective date");
     expect(MIGRATION).toContain("movement cannot be backdated");
     expect(MIGRATION).toContain("student_mobility_cancel");
+  });
+
+  it("previews policy evidence and restricts it to the caller's authorized tenant", () => {
+    expect(BULK_MIGRATION).toContain("public.scholar_can(v_school, 'students.transfer')");
+    expect(BULK_MIGRATION).toContain("WHERE id = p_student AND school_id = v_school");
+    expect(BULK_MIGRATION).toContain("'eligible', cardinality(v_unmet) = 0");
+    expect(BULK_MIGRATION).toContain("'required_approvals'");
+    expect(BULK_MIGRATION).toContain("'outstanding_balance'");
+    expect(BULK_MIGRATION).toContain("student_mobility_preview");
+  });
+
+  it("bounds and validates bulk requests before atomically inserting per-student requests", () => {
+    expect(BULK_MIGRATION).toContain("jsonb_array_length(p_items) NOT BETWEEN 1 AND 200");
+    expect(BULK_MIGRATION).toContain("bulk preview contains a missing or duplicate student");
+    expect(BULK_MIGRATION).toContain("public.student_mobility_bulk_preview(p_items)");
+    expect(BULK_MIGRATION).toContain("public.student_mobility_request(");
+    expect(BULK_MIGRATION).toContain("FROM PUBLIC, anon");
+    expect(BULK_MIGRATION).toContain("TO authenticated");
+    expect(BULK_MIGRATION).not.toContain("INSERT INTO public.student_mobility_requests");
   });
 });
