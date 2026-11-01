@@ -234,7 +234,9 @@ async function assignmentsFor(
   if (!organizationIds.length) return out;
   const { data, error } = await store(db)
     .from("platform_organization_assignment")
-    .select("id, organization_id, staff_id, assignment_type, status, assigned_by, assigned_at, released_at")
+    .select(
+      "id, organization_id, staff_id, assignment_type, status, assigned_by, assigned_at, released_at",
+    )
     .in("organization_id", organizationIds);
   if (error) {
     if (isMissingRelation(error)) return out;
@@ -328,8 +330,7 @@ export async function loadOrganizationMetrics(db: Admin): Promise<{
     scholarTenants = typeof payload.schools_total === "number" ? payload.schools_total : null;
     registeredUsers =
       typeof payload.registered_users === "number" ? payload.registered_users : null;
-    activeUsers30d =
-      typeof payload.active_users_30d === "number" ? payload.active_users_30d : null;
+    activeUsers30d = typeof payload.active_users_30d === "number" ? payload.active_users_30d : null;
   }
   return {
     organizationMetrics: {
@@ -376,7 +377,11 @@ export async function listOrganizationDirectory(
       const owner = assigned.find(
         (item) => item.assignmentType === "onboarding_owner" && item.status === "active",
       );
-      return directoryRow(row, owner?.staffName ?? null, assigned.filter((item) => item.status === "active").length);
+      return directoryRow(
+        row,
+        owner?.staffName ?? null,
+        assigned.filter((item) => item.status === "active").length,
+      );
     });
   return { organizations, store: "database", metrics: organizationMetrics };
 }
@@ -395,9 +400,12 @@ export async function getOrganizationDetail(context: Ctx, id: string): Promise<O
     assigned.some((item) => item.staffId === context.userId && item.status === "active");
   let privileged = canSeeContact;
   if (!privileged) {
-    const { data } = await (context.supabase as unknown as RpcClient).rpc("has_platform_capability", {
-      p_capability: "platform.tenants.manage",
-    });
+    const { data } = await (context.supabase as unknown as RpcClient).rpc(
+      "has_platform_capability",
+      {
+        p_capability: "platform.tenants.manage",
+      },
+    );
     privileged = data === true;
   }
   const { data: transitions } = await store(db)
@@ -408,7 +416,11 @@ export async function getOrganizationDetail(context: Ctx, id: string): Promise<O
     .limit(40);
   const state = asState(row.lifecycle_state);
   return {
-    ...directoryRow(row, owner?.staffName ?? null, assigned.filter((item) => item.status === "active").length),
+    ...directoryRow(
+      row,
+      owner?.staffName ?? null,
+      assigned.filter((item) => item.status === "active").length,
+    ),
     legalName: row.legal_name,
     questionnaire: row.questionnaire ?? {},
     questionnaireStep: asStep(row.questionnaire_step),
@@ -420,16 +432,19 @@ export async function getOrganizationDetail(context: Ctx, id: string): Promise<O
     activatedBy: row.activated_by,
     contact: privileged ? contactFrom(row.questionnaire ?? {}) : null,
     assignments: assigned,
-    transitions: ((transitions ?? []) as Array<{
-      id: string;
-      from_state: string | null;
-      to_state: string;
-      actor_id: string | null;
-      reason: string | null;
-      created_at: string;
-    }>).map((item) => ({
+    transitions: (
+      (transitions ?? []) as Array<{
+        id: string;
+        from_state: string | null;
+        to_state: string;
+        actor_id: string | null;
+        reason: string | null;
+        created_at: string;
+      }>
+    ).map((item) => ({
       id: item.id,
-      fromState: item.from_state && isOrganizationLifecycleState(item.from_state) ? item.from_state : null,
+      fromState:
+        item.from_state && isOrganizationLifecycleState(item.from_state) ? item.from_state : null,
       toState: asState(item.to_state),
       actorId: item.actor_id,
       reason: item.reason,
@@ -442,7 +457,9 @@ export async function getOrganizationDetail(context: Ctx, id: string): Promise<O
           ? ORGANIZATION_ACCESS_EFFECTS.deactivate
           : state === "active"
             ? ORGANIZATION_ACCESS_EFFECTS.activate
-            : state === "ready_for_activation" || state === "provisioning" || state === "provisioning_failed"
+            : state === "ready_for_activation" ||
+                state === "provisioning" ||
+                state === "provisioning_failed"
               ? ORGANIZATION_ACCESS_EFFECTS.provision
               : null,
   };
@@ -552,7 +569,10 @@ export async function transitionOrganization(
   const row = await loadOrg(db, input.id);
   const now = timeAuthority.now().at;
   const extra: Record<string, unknown> = {};
-  if (input.toState === "under_review") extra.reviewed_by = context.userId, extra.reviewed_at = now;
+  if (input.toState === "under_review") {
+    extra.reviewed_by = context.userId;
+    extra.reviewed_at = now;
+  }
   if (input.toState === "submitted") extra.reviewed_at = now;
   await applyState(db, context, row, input.toState, extra, input.reason ?? input.toState);
   return { id: input.id, state: input.toState };
@@ -595,7 +615,11 @@ export async function provisionOrganizationCase(
   const db = await admin();
   let row = await loadOrg(db, id);
   const from = asState(row.lifecycle_state);
-  if (from === "under_review" || from === "provisioning_failed" || from === "ready_for_activation") {
+  if (
+    from === "under_review" ||
+    from === "provisioning_failed" ||
+    from === "ready_for_activation"
+  ) {
     await applyState(db, context, row, "provisioning", { provisioning_error: null }, "provision");
     row = await loadOrg(db, id);
   } else if (from !== "provisioning") {
@@ -814,7 +838,9 @@ export async function loadViewerAssignments(
 ): Promise<OrganizationAssignmentRecord[]> {
   const { data, error } = await store(db)
     .from("platform_organization_assignment")
-    .select("id, organization_id, staff_id, assignment_type, status, assigned_by, assigned_at, released_at")
+    .select(
+      "id, organization_id, staff_id, assignment_type, status, assigned_by, assigned_at, released_at",
+    )
     .eq("staff_id", userId)
     .eq("status", "active");
   if (error) {

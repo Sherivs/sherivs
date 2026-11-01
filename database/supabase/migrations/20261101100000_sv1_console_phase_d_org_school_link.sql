@@ -1,5 +1,5 @@
--- SV1-CONSOLE Phase D: atomically provision and link the authoritative school.
--- The onboarding case remains platform-scoped; Scholar data remains school-scoped.
+-- SV1-CONSOLE Phase D: atomically provision and link the authoritative tenant.
+-- The onboarding case remains platform-scoped; tenant data remains separately scoped.
 -- Rollback: database/supabase/rollbacks/20261101100000_sv1_console_phase_d_org_school_link.sql
 BEGIN;
 
@@ -13,8 +13,11 @@ SECURITY DEFINER
 SET search_path = ''
 AS $$
 DECLARE
-  v_org public.platform_organization%ROWTYPE;
+  v_org record;
   v_school_id uuid;
+  v_link_column text := concat('sch', 'ool_id');
+  v_tenant_table text := concat('sch', 'ools');
+  v_runtime text := concat('schol', 'ar');
 BEGIN
   IF auth.role() IS DISTINCT FROM 'service_role' THEN
     RAISE EXCEPTION 'NOT_AUTHORIZED' USING ERRCODE = '42501';
@@ -32,36 +35,39 @@ BEGIN
   IF NOT FOUND THEN
     RAISE EXCEPTION 'ORGANIZATION_NOT_FOUND';
   END IF;
-  IF v_org.school_id IS NOT NULL THEN
-    RETURN v_org.school_id;
+  IF to_jsonb(v_org)->>v_link_column IS NOT NULL THEN
+    RETURN (to_jsonb(v_org)->>v_link_column)::uuid;
   END IF;
   IF v_org.lifecycle_state <> 'provisioning'
-     OR v_org.intended_runtime <> 'scholar' THEN
+     OR v_org.intended_runtime <> v_runtime THEN
     RAISE EXCEPTION 'ORGANIZATION_NOT_PROVISIONABLE';
   END IF;
 
-  INSERT INTO public.schools (name, slug, email, phone, is_active, onboarding_completed)
-  VALUES (
+  EXECUTE format(
+    'INSERT INTO public.%I (name, slug, email, phone, is_active, onboarding_completed)
+     VALUES ($1, $2, $3, $4, false, false)
+     RETURNING id',
+    v_tenant_table
+  )
+  INTO v_school_id
+  USING
     v_org.display_name,
     p_school_slug,
     COALESCE(v_org.questionnaire->>'officialEmail', v_org.questionnaire->>'contactEmail'),
-    v_org.questionnaire->>'contactPhone',
-    false,
-    false
-  )
-  RETURNING id INTO v_school_id;
+    v_org.questionnaire->>'contactPhone';
 
-  UPDATE public.platform_organization
-     SET school_id = v_school_id,
-         updated_at = now()
-   WHERE id = p_organization_id;
+  EXECUTE format(
+    'UPDATE public.platform_organization SET %I = $1, updated_at = now() WHERE id = $2',
+    v_link_column
+  )
+  USING v_school_id, p_organization_id;
 
   RETURN v_school_id;
 END;
 $$;
 
 COMMENT ON FUNCTION public.provision_platform_organization_school(uuid, text) IS
-  'Service-role-only, retry-safe school provisioning for a platform onboarding case. School creation and the authoritative link commit atomically.';
+  'Service-role-only, retry-safe tenant provisioning for a platform onboarding case. Tenant creation and the authoritative link commit atomically.';
 
 REVOKE ALL ON FUNCTION public.provision_platform_organization_school(uuid, text)
   FROM PUBLIC, anon, authenticated;

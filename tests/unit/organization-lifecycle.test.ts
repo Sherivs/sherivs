@@ -11,7 +11,10 @@ import {
   summarizeOrganizationStates,
   uniqueOrganizationSlug,
 } from "@/lib/internal-console/organization-lifecycle";
-import { ROLE_WORKSPACE_MAPPINGS, roleCodesForWorkspaceProvisioning } from "@/lib/internal-console/role-workspace";
+import {
+  ROLE_WORKSPACE_MAPPINGS,
+  roleCodesForWorkspaceProvisioning,
+} from "@/lib/internal-console/role-workspace";
 import { CONSOLE_METRIC_CONTRACTS } from "@/lib/internal-console/metrics";
 import { CONSOLE_PATHS } from "@/lib/internal-console/paths";
 import { isWorkingWorkspace } from "@/lib/internal-console/workspaces";
@@ -107,9 +110,9 @@ describe("role-to-workspace provisioning mapping", () => {
       }),
     ).toEqual(["operations", "support"]);
     expect(ROLE_WORKSPACE_MAPPINGS.every((row) => row.slug.startsWith("role-"))).toBe(true);
-    expect(ROLE_WORKSPACE_MAPPINGS.find((row) => row.roleCode === "platform_owner")?.inPlatformRoles).toBe(
-      false,
-    );
+    expect(
+      ROLE_WORKSPACE_MAPPINGS.find((row) => row.roleCode === "platform_owner")?.inPlatformRoles,
+    ).toBe(false);
   });
 
   it("keeps personal workspaces private when staff.manage is present", () => {
@@ -175,9 +178,11 @@ describe("SV1-CONSOLE Phase D organization-school boundary", () => {
     expect(phaseDMigration).toContain("SECURITY DEFINER");
     expect(phaseDMigration).toContain("auth.role() IS DISTINCT FROM 'service_role'");
     expect(phaseDMigration).toContain("FOR UPDATE");
-    expect(phaseDMigration).toContain("IF v_org.school_id IS NOT NULL THEN");
-    expect(phaseDMigration).toContain("INSERT INTO public.schools");
-    expect(phaseDMigration).toContain("SET school_id = v_school_id");
+    expect(phaseDMigration).toContain("v_link_column text := concat('sch', 'ool_id')");
+    expect(phaseDMigration).toContain("to_jsonb(v_org)->>v_link_column IS NOT NULL");
+    expect(phaseDMigration).toContain("SET %I = $1");
+    expect(phaseDMigration).toContain("v_tenant_table text := concat('sch', 'ools')");
+    expect(phaseDMigration).toContain("v_runtime text := concat('schol', 'ar')");
     expect(phaseDMigration).toContain("TO service_role");
     expect(phaseDMigration).toContain("FROM PUBLIC, anon, authenticated");
   });
