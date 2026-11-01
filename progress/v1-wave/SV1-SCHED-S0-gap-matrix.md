@@ -1,8 +1,8 @@
 # SV1-SCHED — Phase 12 S0 gap matrix
 
-**Assessment date:** 2026-11-01  
-**Epic:** [#227](https://github.com/vibeoraai-bit/coregrid-scholar-migration/issues/227)  
-**Requested version target:** Sherivs Scholar V1  
+**Assessment date:** 2026-11-01
+**Epic:** [#227](https://github.com/vibeoraai-bit/coregrid-scholar-migration/issues/227)
+**Requested version target:** Sherivs Scholar V1
 **Current repository classification:** Phase 12 is **V2 — frozen**. `architecture/coregrid-mvp-architecture/reconstruction/STREAM_F_PHASE_EXTRACTION.json:145-151` records `v1Required: false`, `bucket: V2`, and explains that scheduling is a Scholar domain-runtime need, not a V1 platform capability. The issue's V1 label conflicts with this classification; no explicit human unfreeze/reconciliation record was found. This S0 document is analysis/proposal only.
 
 ## Scope and status key
