@@ -412,7 +412,10 @@ defineFamilySuite({
       note: "caller must see the intent under RLS (wallet.view) before service-role settlement; settlement matches amount/currency against the DB intent",
     },
   ],
-  helpers: { settleWalletTopup: [/\.rpc\("wallet_topup_settle"/], testSecret: [/startsWith\("sk_test_"\)/] },
+  helpers: {
+    settleWalletTopup: [/\.rpc\("wallet_topup_settle"/],
+    testSecret: [/requirePaystackTestKey/],
+  },
   findings: [
     "§27.6 note: the intent row is audited by the scholar_audit trigger; settlement is idempotent on the reference. Recorded, not accommodated.",
   ],

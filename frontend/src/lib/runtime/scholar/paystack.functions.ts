@@ -22,7 +22,12 @@ import {
   type SettlementDb,
 } from "../../payments/paystack-settlement";
 import { canInitiateFeePayment } from "../../payments/fee-payment-access";
-import { assertSplitTestKey, buildFeeInitializeBody, type FeeCheckoutPlan } from "../../payments/fee-split";
+import {
+  assertSplitTestKey,
+  buildFeeInitializeBody,
+  type FeeCheckoutPlan,
+} from "../../payments/fee-split";
+import { requirePaystackTestKey } from "../../payments/paystack-testmode.server";
 
 /** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
 const timeAuthority = new TimeAuthority(new SystemClock());
@@ -36,9 +41,7 @@ type PaystackInitResponse = {
 };
 
 function paystackSecret(): string {
-  const k = process.env.PAYSTACK_SECRET_KEY;
-  if (!k) throw new Error("Payments are not configured: missing PAYSTACK_SECRET_KEY");
-  return k;
+  return requirePaystackTestKey(process.env.PAYSTACK_SECRET_KEY);
 }
 
 function isPaystackCheckoutUrl(raw: string): boolean {
@@ -55,6 +58,7 @@ export const initFeePayment = createServerFn({ method: "POST" })
   .validator((i: unknown) => initSchema.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const secret = paystackSecret();
     const { data: fee, error } = await supabase
       .from("fees")
       .select("id, amount, paid_amount, status, school_id, student_id, fee_type, term")
@@ -82,7 +86,6 @@ export const initFeePayment = createServerFn({ method: "POST" })
       rpc(fn: string, args: Record<string, unknown>): PromiseLike<{ data: FeeCheckoutPlan | null; error: { message: string } | null }>;
     }).rpc("fee_checkout_split", { p_fee: fee.id, p_reference: reference });
     if (planErr || !plan) throw new Error(planErr?.message ?? "Could not plan the payment");
-    const secret = paystackSecret();
     if (plan.split) assertSplitTestKey(secret);
     const initBody = buildFeeInitializeBody(plan, {
       email: data.email,
@@ -111,6 +114,9 @@ export const initFeePayment = createServerFn({ method: "POST" })
       throw new Error(body.message || `Paystack init failed (${res.status})`);
     }
 
+    if (body.data.reference !== reference) {
+      throw new Error("Paystack returned an unexpected reference");
+    }
     if (!isPaystackCheckoutUrl(body.data.authorization_url)) {
       throw new Error("Paystack returned an unexpected checkout URL");
     }
@@ -137,6 +143,14 @@ export const verifyFeePayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((i: unknown) => verifySchema.parse(i))
   .handler(async ({ data, context }) => {
+    const { data: visible } = await context.supabase
+      .from("fees")
+      .select("id")
+      .eq("paystack_reference", data.reference)
+      .maybeSingle();
+    if (!visible) throw new Error("Payment reference not found");
+
+    const secret = paystackSecret();
     const res = await fetch(
       `https://api.paystack.co/transaction/verify/${encodeURIComponent(data.reference)}`,
       { headers: { Authorization: `Bearer ${paystackSecret()}` } },
@@ -148,6 +162,7 @@ export const verifyFeePayment = createServerFn({ method: "POST" })
         amount: number;
         currency?: string;
         reference?: string;
+        paid_at?: string;
         metadata?: { fee_id?: string; school_id?: string; sherivs_share_kobo?: number; sherivs_split?: boolean } | null;
         subaccount?: { subaccount_code?: string } | null;
       };
@@ -156,15 +171,7 @@ export const verifyFeePayment = createServerFn({ method: "POST" })
     if (!res.ok || !body.status || !body.data) {
       throw new Error(body.message || "Verification failed");
     }
-
-    // The caller must be able to see the invoice (RLS-scoped read) before the
-    // server settles it with elevated privileges.
-    const { data: visible } = await context.supabase
-      .from("fees")
-      .select("id")
-      .eq("paystack_reference", data.reference)
-      .maybeSingle();
-    if (!visible) throw new Error("Payment reference not found");
+    if (body.data.reference !== data.reference) throw new Error("Verification reference mismatch");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const result = await settlePaystackCharge(supabaseAdmin as unknown as SettlementDb, {
@@ -172,6 +179,7 @@ export const verifyFeePayment = createServerFn({ method: "POST" })
       status: body.data.status,
       amountKobo: body.data.amount,
       currency: body.data.currency,
+      paidAt: body.data.paid_at,
       metadata: body.data.metadata,
       subaccountCode: body.data.subaccount?.subaccount_code ?? null,
     });

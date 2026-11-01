@@ -11,6 +11,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   initializePaystackTestTransaction,
   paystackTestModeFromEnv,
+  requirePaystackTestKey,
   validateTestModeKey,
   verifyOwnedPayment,
   type PaystackAuditEntry,
@@ -78,6 +79,9 @@ const INIT_OK = { status: true, message: "Authorization created", data: {
 describe("credential class enforcement (test rails only)", () => {
   it("accepts sk_test keys and refuses every other class with a secret-free reason", () => {
     expect(validateTestModeKey("sk_test_abc123")).toEqual({ ok: true });
+    expect(requirePaystackTestKey(" sk_test_abc123 ")).toBe("sk_test_abc123");
+    expect(validateTestModeKey("sk_test_").ok).toBe(false);
+    expect(() => requirePaystackTestKey(LIVE_KEY)).toThrow(/TEST secret keys/);
     for (const key of ["", "  ", LIVE_KEY, "pk_test_abc", "rsk_abc", "sk_abc", "sk Livetest"]) {
       const check = validateTestModeKey(key);
       expect(check.ok).toBe(false);

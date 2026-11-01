@@ -90,6 +90,16 @@ describe("provider health — probe state derivation", () => {
     expect(report.state).toBe("AUTHENTICATED");
   });
 
+  it("does not probe Paystack when configured with a non-test key", async () => {
+    const fetchImpl = vi.fn(okFetch(200));
+    const report = await checkPaystackHealth(
+      { PAYSTACK_SECRET_KEY: "sk_test_" },
+      fetchImpl,
+    );
+    expect(report.state).toBe("NOT_CONFIGURED");
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
   it("escalates the supabase service-health 2xx to OPERATIONAL", async () => {
     const report = await checkSupabaseHealth(
       { SUPABASE_URL: "https://example.supabase.co", SUPABASE_PUBLISHABLE_KEY: "k" },
@@ -202,7 +212,7 @@ describe("provider health — battery posture and statics", () => {
         SUPABASE_URL: "https://example.supabase.co",
         SUPABASE_PUBLISHABLE_KEY: "k",
         RESEND_API_KEY: "k",
-        PAYSTACK_SECRET_KEY: "k",
+        PAYSTACK_SECRET_KEY: "sk_test_fixture",
         TWILIO_ACCOUNT_SID: "AC123",
         TWILIO_AUTH_TOKEN: "tok",
         VAPI_API_KEY: "k",

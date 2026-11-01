@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { assertSplitTestKey, buildFeeInitializeBody, schoolReceivesKobo, sherivsNetKobo, PLAN_SHARE_NAIRA, type FeeCheckoutPlan } from "../../frontend/src/lib/payments/fee-split";
 import { settlePaystackCharge, type SettlementDb } from "../../frontend/src/lib/payments/paystack-settlement";
 
+const CURRENT_REFERENCE = `uos_aaaaaaaaaaaaaaaa_${Date.now()}`;
 const plan = (p: Partial<FeeCheckoutPlan> = {}): FeeCheckoutPlan => ({
   split: true, amount_kobo: 6_000_000, share_kobo: 300_000, subaccount_code: "ACCT_school1", bearer: "account",
   school_id: "s", student_id: "st", academic_year: "2026/2027", term: "first", ...p });
@@ -64,15 +65,21 @@ function db(fee: Fee, due: number, split: { ok: boolean; reason?: string } | { e
   } as unknown as SettlementDb;
   return { d, rpcCalls };
 }
-const fee = (): Fee => ({ id: "11111111-1111-4111-8111-111111111111", school_id: "22222222-2222-4222-8222-222222222222", amount: 60000, paid_amount: 0, status: "unpaid", paystack_reference: "uos_r" });
-const facts = (m: Record<string, unknown> | null, sub: string | null = "ACCT_school1") =>
-  ({ reference: "uos_r", status: "success", amountKobo: 6_000_000, currency: "NGN", metadata: m, subaccountCode: sub });
+const fee = (): Fee => ({ id: "11111111-1111-4111-8111-111111111111", school_id: "22222222-2222-4222-8222-222222222222", amount: 60000, paid_amount: 0, status: "unpaid", paystack_reference: CURRENT_REFERENCE });
+const facts = (m: Record<string, unknown> | null, sub: string | null = "ACCT_school1") => ({
+  reference: CURRENT_REFERENCE,
+  status: "success",
+  amountKobo: 6_000_000,
+  currency: "NGN",
+  metadata: m,
+  subaccountCode: sub,
+});
 
 describe("SHERIVS-PAY-SPLIT settlement", () => {
   it("records the term share with the subaccount Paystack reported", async () => {
     const { d, rpcCalls } = db(fee(), 60000);
     expect((await settlePaystackCharge(d, facts({ sherivs_split: true, sherivs_share_kobo: 300_000 }))).outcome).toBe("settled");
-    expect(rpcCalls[1]).toEqual(["fee_split_settle", { p_reference: "uos_r", p_subaccount: "ACCT_school1", p_share_kobo: 300_000 }]);
+    expect(rpcCalls[1]).toEqual(["fee_split_settle", { p_reference: CURRENT_REFERENCE, p_subaccount: "ACCT_school1", p_share_kobo: 300_000 }]);
   });
   it("non-split charges never touch the split ledger", async () => {
     const { d, rpcCalls } = db(fee(), 60000);

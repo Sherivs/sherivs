@@ -130,7 +130,7 @@ export function validateTestModeKey(
 ): { ok: true } | { ok: false; code: "missing_key" | "non_test_key"; reason: string } {
   const key = secretKey.trim();
   if (!key) return { ok: false, code: "missing_key", reason: "Paystack secret key is required" };
-  if (!key.startsWith(TEST_KEY_PREFIX)) {
+  if (!key.startsWith(TEST_KEY_PREFIX) || key.length === TEST_KEY_PREFIX.length) {
     return {
       ok: false,
       code: "non_test_key",
@@ -138,6 +138,13 @@ export function validateTestModeKey(
     };
   }
   return { ok: true };
+}
+
+export function requirePaystackTestKey(secretKey: string | null | undefined): string {
+  const key = secretKey?.trim() ?? "";
+  const validation = validateTestModeKey(key);
+  if (!validation.ok) throw new Error(validation.reason);
+  return key;
 }
 
 interface PaystackApiEnvelope {

@@ -22,6 +22,7 @@ import {
 import { clientIpFromHeaders } from "@/lib/security/request-safety";
 import { verifyHmacHexSignature } from "@/lib/security/webhook-signature.server";
 import { settleWalletTopup, WALLET_TOPUP_PREFIX } from "@/lib/runtime/scholar/wallet-topup.functions";
+import { requirePaystackTestKey } from "@/lib/payments/paystack-testmode.server";
 
 /**
  * Bounded event contract (§26): an authenticated-but-malformed payload is
@@ -39,6 +40,7 @@ const PaystackEventSchema = z.object({
       amount: z.number().int().nonnegative().max(100_000_000).optional(),
       currency: z.string().max(8).optional(),
       status: z.string().max(32).optional(),
+      paid_at: z.string().datetime({ offset: true }).optional(),
           metadata: z
             .object({
               fee_id: z.string().uuid().optional(),
@@ -60,8 +62,12 @@ export const Route = createFileRoute("/api/public/webhooks/paystack")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const secret = process.env.PAYSTACK_SECRET_KEY;
-        if (!secret) return new Response("Payments not configured", { status: 503 });
+        let secret: string;
+        try {
+          secret = requirePaystackTestKey(process.env.PAYSTACK_SECRET_KEY);
+        } catch {
+          return new Response("Payments not configured", { status: 503 });
+        }
 
         const ip = clientIpFromHeaders(request.headers);
         const { checkPublicRateLimit } = await import("@/lib/security/public-rate-limit.server");
@@ -151,6 +157,7 @@ export const Route = createFileRoute("/api/public/webhooks/paystack")({
               status: event.data.status,
               amountKobo: event.data.amount,
               currency: event.data.currency,
+              paidAt: event.data.paid_at,
               metadata: event.data.metadata,
               subaccountCode: event.data.subaccount?.subaccount_code ?? null,
             });

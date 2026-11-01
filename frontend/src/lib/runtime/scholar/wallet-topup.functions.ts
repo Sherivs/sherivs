@@ -13,14 +13,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requirePaystackTestKey } from "../../payments/paystack-testmode.server";
 
 export const WALLET_TOPUP_PREFIX = "wtp_";
 
 function testSecret(): string {
-  const k = process.env.PAYSTACK_SECRET_KEY;
-  if (!k) throw new Error("Payments are not configured");
-  if (!k.startsWith("sk_test_")) throw new Error("Wallet top-up is limited to Paystack test mode for now");
-  return k;
+  return requirePaystackTestKey(process.env.PAYSTACK_SECRET_KEY);
 }
 
 const initSchema = z.object({
@@ -91,14 +89,22 @@ export const verifyWalletTopup = createServerFn({ method: "POST" })
       .eq("reference", data.reference)
       .maybeSingle();
     if (!visible) throw new Error("Top-up not found");
+    testSecret();
     const res = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(data.reference)}`, {
       headers: { Authorization: `Bearer ${testSecret()}` },
     });
-    const body = (await res.json()) as { status: boolean; data?: { status: string; amount: number; currency?: string } };
+    const body = (await res.json()) as {
+      status: boolean;
+      data?: { status: string; amount: number; currency?: string; reference?: string };
+    };
     if (!res.ok || !body.status || !body.data) throw new Error("Verification failed");
+    if (body.data.reference !== data.reference) throw new Error("Verification reference mismatch");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const r = await settleWalletTopup(supabaseAdmin, {
-      reference: data.reference, status: body.data.status, amountKobo: body.data.amount, currency: body.data.currency,
+      reference: data.reference,
+      status: body.data.status,
+      amountKobo: body.data.amount,
+      currency: body.data.currency,
     });
     return { paid: r.outcome === "settled" || r.outcome === "duplicate", outcome: r.outcome };
   });

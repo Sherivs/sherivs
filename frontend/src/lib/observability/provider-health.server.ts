@@ -30,6 +30,7 @@
 
 import { twilioRestAuthFromEnv } from "../communications/twilio-auth.server";
 import { SystemClock, TimeAuthority } from "../kernel/time-authority";
+import { validateTestModeKey } from "../payments/paystack-testmode.server";
 
 /** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
 const healthTimeAuthority = new TimeAuthority(new SystemClock());
@@ -208,7 +209,8 @@ export async function checkResendHealth(env: ServerEnv, fetchImpl: FetchLike = f
 /** Paystack — read-only GET /transaction?perPage=1 with the bearer credential. */
 export async function checkPaystackHealth(env: ServerEnv, fetchImpl: FetchLike = fetch): Promise<ProviderHealthReport> {
   const startedAt = healthTimeAuthority.now().atMs;
-  if (!isNonBlank(env.PAYSTACK_SECRET_KEY)) return notConfigured("paystack", ["PAYSTACK_SECRET_KEY"]);
+  const keyCheck = validateTestModeKey(env.PAYSTACK_SECRET_KEY ?? "");
+  if (!keyCheck.ok) return notConfigured("paystack", ["PAYSTACK_SECRET_KEY"]);
 
   const outcome = await probe(
     "https://api.paystack.co/transaction?perPage=1",

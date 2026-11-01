@@ -15,8 +15,9 @@ function db(fee: Fee, due: number | { error: string }) {
   } as unknown as SettlementDb;
   return { d, updates, rpcCalls };
 }
-const fee = (): Fee => ({ id: "11111111-1111-4111-8111-111111111111", school_id: "22222222-2222-4222-8222-222222222222", amount: 100000, paid_amount: 0, status: "unpaid", paystack_reference: "uos_r" });
-const facts = (kobo: number) => ({ reference: "uos_r", status: "success", amountKobo: kobo, currency: "NGN", metadata: null });
+const CURRENT_REFERENCE = `uos_aaaaaaaaaaaaaaaa_${Date.now()}`;
+const fee = (): Fee => ({ id: "11111111-1111-4111-8111-111111111111", school_id: "22222222-2222-4222-8222-222222222222", amount: 100000, paid_amount: 0, status: "unpaid", paystack_reference: CURRENT_REFERENCE });
+const facts = (kobo: number) => ({ reference: CURRENT_REFERENCE, status: "success", amountKobo: kobo, currency: "NGN", metadata: null });
 
 describe("SHERIVS-A05b settlement charges the amount after relief", () => {
   it("settles the net amount (₦100,000 tuition with ₦40,000 relief → ₦60,000) and records what was paid", async () => {
@@ -46,5 +47,14 @@ describe("SHERIVS-A05b settlement charges the amount after relief", () => {
     const src = readFileSync("frontend/src/lib/runtime/scholar/paystack.functions.ts", "utf8");
     expect(src).toContain('rpc("fee_amount_due"');
     expect(src).not.toMatch(/const outstanding = Number\(fee\.amount\)/);
+  });
+
+  it("checks tenant-visible ownership before provider verification and rejects provider reference changes", () => {
+    const src = readFileSync("frontend/src/lib/runtime/scholar/paystack.functions.ts", "utf8");
+    const verify = src.slice(src.indexOf("export const verifyFeePayment"));
+    expect(verify.indexOf('.from("fees")')).toBeLessThan(
+      verify.indexOf("api.paystack.co/transaction/verify"),
+    );
+    expect(verify).toContain("body.data.reference !== data.reference");
   });
 });

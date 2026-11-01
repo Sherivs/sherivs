@@ -12,6 +12,17 @@ import { SystemClock, TimeAuthority } from "../kernel/time-authority";
 const timeAuthority = new TimeAuthority(new SystemClock());
 
 export const PAYSTACK_CURRENCY = "NGN";
+export const PAYSTACK_FEE_REFERENCE_TTL_MS = 24 * 60 * 60 * 1000;
+
+export function isExpiredFeePaymentReference(
+  reference: string,
+  paymentAtMs = timeAuthority.now().atMs,
+): boolean {
+  const timestamp = /^uos_[0-9a-f]{16}_([0-9]{13})$/.exec(reference)?.[1];
+  if (!timestamp) return true;
+  const createdAtMs = Number(timestamp);
+  return createdAtMs > paymentAtMs || paymentAtMs - createdAtMs >= PAYSTACK_FEE_REFERENCE_TTL_MS;
+}
 
 export type PaystackChargeFacts = {
   reference: string;
@@ -19,6 +30,8 @@ export type PaystackChargeFacts = {
   /** Minor units (kobo) exactly as reported by Paystack. */
   amountKobo: number | undefined;
   currency: string | undefined;
+  /** Provider-signed payment completion time, when present in the event/verification response. */
+  paidAt?: string;
   metadata?: { fee_id?: string | null; school_id?: string | null; sherivs_share_kobo?: number | null; sherivs_split?: boolean | null } | null;
   /** SHERIVS-PAY-SPLIT: subaccount Paystack reports for the charge (split checkouts only). */
   subaccountCode?: string | null;
@@ -93,6 +106,13 @@ export async function settlePaystackCharge(
     return { outcome: "rejected", reason: "metadata_mismatch", ...ref };
   }
   if (fee.status === "paid") return { outcome: "duplicate", ...ref };
+  const paidAtMs = facts.paidAt === undefined ? undefined : Date.parse(facts.paidAt);
+  if (
+    (paidAtMs !== undefined && !Number.isFinite(paidAtMs)) ||
+    isExpiredFeePaymentReference(facts.reference, paidAtMs ?? timeAuthority.now().atMs)
+  ) {
+    return { outcome: "rejected", reason: "expired_reference", ...ref };
+  }
 
   if ((facts.currency ?? "").toUpperCase() !== PAYSTACK_CURRENCY) {
     return { outcome: "rejected", reason: "currency_mismatch", ...ref };

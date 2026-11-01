@@ -187,9 +187,24 @@ evidence pattern:
    and at the launch-gate review that considers closing BLK-4.
 3. Any FAIL → finding against the BLK-4 ledger; BLK-4 closure is off the table until a
    clean re-run.
-4. When (and only when) the human launch-gate owner lifts BLK-4, the payment round-trip
-   re-runs against the live rails as a ratification step — live keys then enter through
-   the same approved channel, same serialization, same secret-free evidence law. This
-   runbook governs that future run too; the credential-class gate must be explicitly
-   re-authorized for the live class by that human decision (the runner as authored
-   refuses live keys by design, and no drill evidence alone changes that).
+4. A future live switch is outside this TEST-MODE runbook. The current runtime and drill
+   refuse live keys; neither this runbook nor drill evidence changes that gate.
+
+## 9. Live-switch readiness (non-executable)
+
+This section is a review checklist only. No live credential was provisioned, no live
+endpoint was contacted, and no switch was performed as part of this work.
+
+Before any separately authorized live-switch change:
+
+1. The human launch-gate owner records explicit approval and resolves BLK-4, including
+   business verification and the required independent payment/security review.
+2. The owning team approves a separate code change to the runtime credential gate;
+   this TEST-only release must not be used to serve live transactions.
+3. The change includes a rollback plan, a limited rollout, monitoring, reconciliation,
+   and a verified route back to TEST mode.
+4. Live credentials, if later authorized, are provisioned only through the approved
+   secret manager; values must never be copied into source, logs, evidence, or this
+   runbook.
+5. Execute only after the change is reviewed and deployed under the recorded approval.
+   This checklist contains no live commands and authorizes no execution.
