@@ -171,6 +171,22 @@ export function readSelectedFixturePersona(): ConsoleFixturePersona {
   }
 }
 
+export function assignedSupportOrganizationIds(
+  assignments: readonly OrganizationAssignmentRecord[],
+  userId: string,
+): Set<string> {
+  return new Set(
+    assignments
+      .filter(
+        (assignment) =>
+          assignment.staffId === userId &&
+          assignment.assignmentType === "support" &&
+          assignment.status === "active",
+      )
+      .map((assignment) => assignment.organizationId),
+  );
+}
+
 export function selectConsoleVisualFixturePersona(key: string): ConsoleFixturePersona {
   const persona = fixturePersonaByKey(key);
   if (typeof window !== "undefined") {
@@ -714,16 +730,7 @@ export function buildConsoleVisualFixtureOverview(
   const supportOnly =
     capabilities.includes("platform.support.handle") &&
     !capabilities.includes("platform.tenants.manage");
-  const assignedSupportIds = new Set(
-    fullSnapshot.assignments
-      .filter(
-        (assignment) =>
-          assignment.staffId === persona.id &&
-          assignment.assignmentType === "support" &&
-          assignment.status === "active",
-      )
-      .map((assignment) => assignment.organizationId),
-  );
+  const assignedSupportIds = assignedSupportOrganizationIds(fullSnapshot.assignments, persona.id);
   const snapshot = supportOnly
     ? {
         ...fullSnapshot,

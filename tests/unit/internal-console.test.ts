@@ -678,6 +678,7 @@ describe("local visual fixture", () => {
       buildConsoleVisualFixtureOverview,
       CONSOLE_FIXTURE_PERSONAS,
       readFixtureOrganizationSnapshot,
+      assignedSupportOrganizationIds,
     } = await import("@/lib/internal-console/visual-fixture");
     const support = CONSOLE_FIXTURE_PERSONAS.find((persona) => persona.key === "support");
     if (!support) throw new Error("Support fixture is required.");
@@ -735,6 +736,25 @@ describe("local visual fixture", () => {
     expect(
       overview.assignments.every((assignment) => assignment.assignmentType === "support"),
     ).toBe(true);
+    expect(
+      assignedSupportOrganizationIds(
+        [
+          ...overview.assignments,
+          {
+            id: "unassigned-support",
+            organizationId: "fixture-org-unassigned",
+            staffId: "another-support",
+            staffName: "Other Support",
+            assignmentType: "support",
+            status: "active",
+            assignedBy: support.id,
+            assignedAt: "2026-10-27T00:00:00.000Z",
+            releasedAt: null,
+          },
+        ],
+        support.id,
+      ),
+    ).toEqual(new Set(["fixture-org-active"]));
     const { helpArticlesFor } = await import("@/lib/internal-console/help-catalog");
     const engineerHelp = helpArticlesFor({
       isSuperAdmin: false,

@@ -33,7 +33,10 @@ import {
   CONSOLE_FIXTURE_OPERATOR,
   CONSOLE_FIXTURE_ORGS_KEY,
   consoleVisualFixtureActive,
+  readSelectedFixturePersona,
+  assignedSupportOrganizationIds,
 } from "@/lib/internal-console/visual-fixture";
+import { viewerCapabilities } from "@/lib/internal-console/roles";
 
 const FIXTURE_KEY = CONSOLE_FIXTURE_ORGS_KEY;
 
@@ -65,14 +68,21 @@ function writeStore(store: FixtureStore): void {
 }
 
 function directoryFrom(detail: OrganizationDetail): OrganizationDirectoryRow {
-  const { questionnaire: _q, contact: _c, assignments, transitions: _t, accessEffects: _a, ...row } =
-    detail;
+  const {
+    questionnaire: _q,
+    contact: _c,
+    assignments,
+    transitions: _t,
+    accessEffects: _a,
+    ...row
+  } = detail;
   return {
     ...row,
     assignmentCount: assignments.filter((item) => item.status === "active").length,
     onboardingOwnerName:
-      assignments.find((item) => item.assignmentType === "onboarding_owner" && item.status === "active")
-        ?.staffName ?? null,
+      assignments.find(
+        (item) => item.assignmentType === "onboarding_owner" && item.status === "active",
+      )?.staffName ?? null,
   };
 }
 
@@ -98,11 +108,15 @@ function applyFixtureState(
         ? (detail.schoolId ?? `fixture-school-${detail.id.slice(0, 8)}`)
         : detail.schoolId,
     enabledRuntime:
-      toState === "deactivated" ? null : toState === "ready_for_activation" || toState === "active"
-        ? "scholar"
-        : detail.enabledRuntime,
+      toState === "deactivated"
+        ? null
+        : toState === "ready_for_activation" || toState === "active"
+          ? "scholar"
+          : detail.enabledRuntime,
     outstandingRequirements:
-      toState === "ready_for_activation" ? ["invite_organization_administrator"] : detail.outstandingRequirements,
+      toState === "ready_for_activation"
+        ? ["invite_organization_administrator"]
+        : detail.outstandingRequirements,
     accessEffects:
       toState === "suspended"
         ? ORGANIZATION_ACCESS_EFFECTS.suspend
@@ -125,16 +139,34 @@ function applyFixtureState(
   };
 }
 
-export async function apiListOrganizations(input: { query?: string; state?: string } = {}): Promise<{
+export async function apiListOrganizations(
+  input: { query?: string; state?: string } = {},
+): Promise<{
   organizations: OrganizationDirectoryRow[];
   store: "database" | "fixture";
 }> {
   if (consoleVisualFixtureActive()) {
     const query = (input.query ?? "").trim().toLowerCase();
-    const organizations = readStore()
-      .organizations.filter((row) => (input.state ? row.lifecycleState === input.state : true))
+    const storedOrganizations = readStore().organizations;
+    const persona = readSelectedFixturePersona();
+    const capabilities = viewerCapabilities(persona.roles, persona.isSuperAdmin);
+    const supportOnly =
+      capabilities.has("platform.support.handle") && !capabilities.has("platform.tenants.manage");
+    const assignedIds = supportOnly
+      ? assignedSupportOrganizationIds(
+          storedOrganizations.flatMap((organization) => organization.assignments),
+          persona.id,
+        )
+      : null;
+    const organizations = storedOrganizations
+      .filter((row) => !assignedIds || assignedIds.has(row.id))
+      .filter((row) => (input.state ? row.lifecycleState === input.state : true))
       .filter((row) =>
-        query ? `${row.displayName} ${row.country ?? ""} ${row.lifecycleState}`.toLowerCase().includes(query) : true,
+        query
+          ? `${row.displayName} ${row.country ?? ""} ${row.lifecycleState}`
+              .toLowerCase()
+              .includes(query)
+          : true,
       )
       .map(directoryFrom);
     return { organizations, store: "fixture" };
@@ -293,7 +325,9 @@ export async function apiProvision(id: string): Promise<{ id: string }> {
   if (consoleVisualFixtureActive()) {
     replaceFixture(id, (row) => {
       const provisioning =
-        row.lifecycleState === "provisioning" ? row : applyFixtureState(row, "provisioning", "provision");
+        row.lifecycleState === "provisioning"
+          ? row
+          : applyFixtureState(row, "provisioning", "provision");
       return applyFixtureState(provisioning, "ready_for_activation", "provisioned");
     });
     return { id };
