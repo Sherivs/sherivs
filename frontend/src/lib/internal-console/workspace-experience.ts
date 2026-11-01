@@ -228,6 +228,6 @@ export function visibleWorkspaceNav(
 ): WorkspaceNavLink[] {
   return contract.navigation.filter(
     (item) =>
-      viewer.isSuperAdmin || item.capability === null || viewer.capabilities.has(item.capability),
+      item.capability === null || viewer.capabilities.has(item.capability),
   );
 }

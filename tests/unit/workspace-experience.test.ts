@@ -54,6 +54,32 @@ describe("role workspace operating environments", () => {
     });
   });
 
+  it("folds legacy work roles into the six V1 workspaces without extra role workspaces", () => {
+    expect(
+      workspacesForViewer({
+        displayName: "Ada",
+        isSuperAdmin: false,
+        roles: ["security", "finance", "sales"],
+      }).map(({ id }) => id),
+    ).toEqual(["me", "role:platform_admin", "role:operations"]);
+  });
+
+  it("limits the super-admin workspace experience to Platform Operations capabilities", () => {
+    const viewer = {
+      isSuperAdmin: true,
+      capabilities: new Set(["platform.operations.read", "platform.tenants.read", "platform.audit.read"]),
+    };
+    expect(visibleWorkspaceNav(WORKSPACE_EXPERIENCES.platform_operations, viewer).map(({ label }) => label))
+      .toEqual(["Overview", "Organizations", "Workspaces", "Runtime directory", "Analytics", "Incidents", "Tickets", "Audit", "Help"]);
+    expect(
+      workspaceById("role:platform_admin", {
+        displayName: "Ada",
+        isSuperAdmin: true,
+        roles: [],
+      }),
+    ).toBeNull();
+  });
+
   it("resolves each initial internal role to a dedicated experience", () => {
     expect(
       experienceKeyForWorkspace({

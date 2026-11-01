@@ -73,7 +73,10 @@ describe("internal console V1 contract", () => {
       "support_specialist",
     );
     expect(presentationRoleFor({ isSuperAdmin: false, roles: ["finance"] })).toBe(
-      "standard_team_member",
+      "operations_administrator",
+    );
+    expect(presentationRoleFor({ isSuperAdmin: false, roles: ["security"] })).toBe(
+      "platform_administrator",
     );
   });
 
@@ -101,7 +104,7 @@ describe("internal console V1 contract", () => {
       quickActionsFor({ isSuperAdmin: true, capabilities: new Set() }).some(
         (item) => item.key === "invite",
       ),
-    ).toBe(true);
+    ).toBe(false);
     const engineer = {
       isSuperAdmin: false,
       capabilities: viewerCapabilities(["engineering"], false),
@@ -636,9 +639,9 @@ describe("local visual fixture", () => {
       operations: "operations_administrator",
       engineering: "engineer",
       support: "support_specialist",
-      security: "standard_team_member",
-      finance: "standard_team_member",
-      sales: "standard_team_member",
+      security: "platform_administrator",
+      finance: "operations_administrator",
+      sales: "operations_administrator",
     } as const;
     for (const persona of CONSOLE_FIXTURE_PERSONAS) {
       const overview = buildConsoleVisualFixtureOverview(persona);
