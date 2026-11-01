@@ -5,11 +5,11 @@ import { describe, expect, it } from "vitest";
 
 const ROOT = fileURLToPath(new URL("../../..", import.meta.url));
 const MIGRATION = readFileSync(
-  join(ROOT, "database/supabase/migrations/20261101000030_sherivs_108_org_voice_agent_addon.sql"),
+  join(ROOT, "database/supabase/migrations/20261101000050_sherivs_108_org_voice_agent_addon.sql"),
   "utf8",
 );
 const ROLLBACK = readFileSync(
-  join(ROOT, "database/supabase/rollbacks/20261101000030_sherivs_108_org_voice_agent_addon.sql"),
+  join(ROOT, "database/supabase/rollbacks/20261101000050_sherivs_108_org_voice_agent_addon.sql"),
   "utf8",
 );
 const SERVER_FUNCTIONS = readFileSync(
