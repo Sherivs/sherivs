@@ -24,7 +24,8 @@ export const ROLE_WORKSPACE_MAPPINGS: readonly RoleWorkspaceMapping[] = [
     roleCode: "platform_owner",
     slug: "role-platform-operations",
     name: "Platform Operations",
-    description: "Platform governance and authorized oversight. Membership is not a permission grant.",
+    description:
+      "Platform governance and authorized oversight. Membership is not a permission grant.",
     presentationRole: "platform_owner",
     inPlatformRoles: false,
   },
@@ -115,7 +116,9 @@ export function presentationToDatabaseRoles(
 }
 
 export function databaseRolesCoveredByMappings(): readonly string[] {
-  return PLATFORM_ROLE_CODES.filter((code) => ROLE_WORKSPACE_MAPPINGS.some((row) => row.roleCode === code));
+  return PLATFORM_ROLE_CODES.filter((code) =>
+    ROLE_WORKSPACE_MAPPINGS.some((row) => row.roleCode === code),
+  );
 }
 
 export function mappingLabel(roleCode: string): string {
