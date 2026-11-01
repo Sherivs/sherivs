@@ -629,6 +629,9 @@ test("captures teacher home, shell navigation, profile, context selectors, and A
   const home = page.getByTestId("app-shell-home");
   await expect(home).toBeVisible();
   await expect(home).toContainText("Today's lessons");
+  await expect(page.getByTestId("app-shell-actions").locator("a")).toHaveCount(4);
+  expect(await page.getByTestId("app-shell-cards").locator("a").count()).toBeLessThanOrEqual(8);
+  await expect(home.getByText("—", { exact: true })).toHaveCount(0);
   await expect(page.getByLabel("Active role")).toBeVisible();
   await expect(page.getByLabel("Active organization")).toBeVisible();
   await captureShellScreen(page, "teacher-home-emeka", width);

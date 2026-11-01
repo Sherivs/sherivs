@@ -5,6 +5,7 @@
  */
 
 import { APP_SHELL_AI, APP_SHELL_HOME, appShellSectionPath } from "./paths";
+import { rankByUsage, type ShellUsageCounts } from "./usage";
 
 export interface ShellNavItem {
   key: string;
@@ -178,6 +179,8 @@ export function composeHomeSections(input: {
   actions?: readonly Catalogish[];
   inbox?: readonly Catalogish[];
   nav?: readonly Catalogish[];
+  available?: readonly Catalogish[];
+  usage?: ShellUsageCounts;
 }): {
   widgets: ShellNavItem[];
   actions: ShellNavItem[];
@@ -187,7 +190,6 @@ export function composeHomeSections(input: {
   const widgets = (input.widgets ?? [])
     .filter((item) => !isNewsItem(item.key, item.label) && !isAiNavKey(item.key))
     .map(toShellNavItem);
-  const actions = (input.actions ?? []).filter((item) => !isAiNavKey(item.key)).map(toShellNavItem);
   const news: ShellNavItem[] = [];
   const newsSeen = new Set<string>();
   for (const item of [...(input.widgets ?? []), ...(input.inbox ?? []), ...(input.nav ?? [])]) {
@@ -195,23 +197,31 @@ export function composeHomeSections(input: {
     newsSeen.add(item.key);
     news.push(toShellNavItem(item));
   }
-  const shown = new Set([...widgets, ...actions, ...news].map((item) => item.key));
-  const cards: ShellNavItem[] = [];
-  const cardSeen = new Set<string>();
-  for (const item of [...(input.nav ?? []), ...(input.inbox ?? [])]) {
-    if (
-      shown.has(item.key) ||
-      cardSeen.has(item.key) ||
-      isHomeNavKey(item.key) ||
-      ACCOUNT_KEYS.has(item.key) ||
-      isAiNavKey(item.key)
-    ) {
-      continue;
-    }
-    cardSeen.add(item.key);
-    cards.push(toShellNavItem(item));
-  }
-  return { widgets, actions, news, cards };
+  const shown = [...(input.widgets ?? []), ...news];
+  const shownKeys = new Set(shown.map((item) => item.key));
+  const candidates = rankByUsage(
+    uniqueCatalogItems([
+      ...(input.actions ?? []),
+      ...(input.nav ?? []),
+      ...(input.inbox ?? []),
+      ...(input.available ?? []),
+    ]).filter((item) => {
+      return (
+        !shownKeys.has(item.key) &&
+        !isHomeNavKey(item.key) &&
+        !ACCOUNT_KEYS.has(item.key) &&
+        !isAiNavKey(item.key) &&
+        !isNewsItem(item.key, item.label)
+      );
+    }),
+    input.usage ?? {},
+  );
+  return {
+    widgets,
+    actions: candidates.slice(0, 4).map(toShellNavItem),
+    news,
+    cards: candidates.slice(4, 12).map(toShellNavItem),
+  };
 }
 
 /** @deprecated Prefer composeSidePanel — kept for tests that pass a nav list. */

@@ -27,6 +27,7 @@ import {
   PUSH_DEVICE_STEPS,
 } from "../../frontend/src/lib/shell/auth-setup";
 import { fallbackManifest } from "../../frontend/src/lib/shell/fallback-manifest";
+import { focusScope } from "../../frontend/src/lib/sherivs-ws/engine";
 import { formatWidgetMetric } from "../../frontend/src/lib/shell/metrics";
 import { rankByUsage, shellUsageStorageKey } from "../../frontend/src/lib/shell/usage";
 import {
@@ -290,6 +291,69 @@ describe("role-dynamic home", () => {
     expect(firstTeacher.widgets[0]?.key).not.toBe(secondTeacher.widgets[0]?.key);
   });
 
+  it("fills four quick actions and up to eight add-on cards from the authorized manifest by usage", () => {
+    const items = (prefix: string, count: number) =>
+      Array.from({ length: count }, (_, index) => ({
+        key: `${prefix}.${index + 1}`,
+        label: `${prefix} ${index + 1}`,
+        icon: "calendar",
+        to: `/${prefix}/${index + 1}`,
+      }));
+    const actions = items("action", 5);
+    const nav = items("section", 4);
+    const available = items("addon", 3);
+    const home = composeHomeSections({
+      widgets: [items("widget", 1)[0]!],
+      actions,
+      nav,
+      available,
+      usage: { "section.2": 10, "action.3": 5 },
+    });
+
+    expect(home.actions).toHaveLength(4);
+    expect(home.actions.map((item) => item.key)).toEqual([
+      "section.2",
+      "action.3",
+      "action.1",
+      "action.2",
+    ]);
+    expect(home.cards).toHaveLength(8);
+    expect(home.cards.map((item) => item.key)).toContain("addon.1");
+    expect(home.cards.map((item) => item.key)).not.toContain("widget.1");
+  });
+
+  it("does not pad quick actions or add-on cards beyond authorized manifest items", () => {
+    const home = composeHomeSections({
+      actions: [
+        { key: "action.attendance", label: "Attendance", icon: "check", to: "/attendance" },
+      ],
+      nav: [{ key: "section.classes", label: "Classes", icon: "class", to: "/classes" }],
+    });
+
+    expect(home.actions.map((item) => item.key)).toEqual(["action.attendance", "section.classes"]);
+    expect(home.cards).toEqual([]);
+  });
+
+  it("keeps focused scope on generated add-on and inbox routes", () => {
+    const manifest = manifestFor("teacher");
+    const focused = focusScope(
+      {
+        ...manifest,
+        scopeOptions: { campus: ["north"] },
+        available: [
+          { ...manifest.widgets[0]!, key: "w.campus_addon", scopeDims: { campus: ["north"] } },
+          { ...manifest.widgets[0]!, key: "w.shift_addon", scopeDims: { shift: ["day"] } },
+        ],
+        inbox: [{ ...manifest.widgets[0]!, key: "i.messages" }],
+      },
+      { dim: "campus", ref: "north" },
+    );
+
+    expect(focused.available.map((item) => item.key)).toEqual(["w.campus_addon"]);
+    expect(focused.available[0]?.to).toContain("?scope=campus%3Anorth");
+    expect(focused.inbox[0]?.to).toContain("?scope=campus%3Anorth");
+  });
+
   it("ranks only authorized home items by scoped usage while preserving default order on ties", () => {
     const items = [
       { key: "w.schedule", label: "Schedule" },
@@ -316,7 +380,8 @@ describe("role-dynamic home", () => {
     ]);
     expect(formatWidgetMetric({ metric: 2 }).text).toBe("2");
     expect(formatWidgetMetric({ metric: "98.6%", money: false }).tone).toBe("green");
-    expect(formatWidgetMetric(undefined).text).toBe("—");
+    expect(formatWidgetMetric(undefined).text).toBe("No data yet");
+    expect(formatWidgetMetric({ unavailable: true }).text).toBe("Unavailable");
   });
 
   it("composes activity from inbox and never invents Digital Twin events", () => {

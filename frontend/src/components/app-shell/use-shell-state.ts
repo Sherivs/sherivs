@@ -288,8 +288,10 @@ export function useShellState() {
         actions: rankedManifest?.actions,
         inbox: rankedManifest?.inbox,
         nav: rankedManifest?.nav,
+        available: rankedManifest?.available,
+        usage,
       }),
-    [rankedManifest],
+    [rankedManifest, usage],
   );
   const drawer = useMemo(
     () =>

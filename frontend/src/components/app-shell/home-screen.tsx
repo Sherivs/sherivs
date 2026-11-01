@@ -29,7 +29,7 @@ export function AppHomeScreen() {
   const widgets = shell.home.widgets.filter((item) => matches(needle, item.label, item.key));
   const actions = shell.home.actions
     .filter((item) => matches(needle, item.label, item.key))
-    .slice(0, 8);
+    .slice(0, 4);
   const news = shell.home.news.filter((item) => matches(needle, item.label, item.key));
   const cards = shell.home.cards
     .filter((item) => matches(needle, item.label, item.key))
@@ -334,11 +334,11 @@ export function AppHomeScreen() {
         </p>
       </section>
 
-      {actions.length ? (
-        <>
-          <div className="app-shell-section-title">
-            <h2>Quick actions</h2>
-          </div>
+      <section aria-labelledby="quick-actions-heading">
+        <div className="app-shell-section-title">
+          <h2 id="quick-actions-heading">Quick actions</h2>
+        </div>
+        {actions.length ? (
           <div className="app-shell-actions" data-testid="app-shell-actions">
             {actions.map((action, index) => {
               const Icon = shellIcon(action.icon);
@@ -357,8 +357,17 @@ export function AppHomeScreen() {
               );
             })}
           </div>
-        </>
-      ) : null}
+        ) : null}
+        {actions.length < 4 ? (
+          <p className="app-shell-empty" role="status">
+            {needle
+              ? "No more authorized quick actions match your search."
+              : actions.length
+                ? `Only ${actions.length} authorized quick action${actions.length === 1 ? "" : "s"} are available for this role.`
+                : "No quick actions are currently authorized for this role."}
+          </p>
+        ) : null}
+      </section>
 
       {news.length || newsLists.length ? (
         <>
@@ -399,36 +408,51 @@ export function AppHomeScreen() {
         </>
       ) : null}
 
-      {cards.length ? (
-        <>
-          <div className="app-shell-section-title">
-            <h2>Workspace</h2>
-            <Link to={APP_SHELL_NOTIFICATIONS as never}>View all</Link>
-          </div>
-          <div className="app-shell-cards">
-            {cards.map((item) => {
-              const Icon = shellIcon(item.icon);
-              return (
-                <Link
-                  key={item.key}
-                  to={item.href as never}
-                  className="app-shell-card"
-                  onClick={() => shell.recordUsage(item.key)}
-                >
-                  <ShellGlassIcon>
-                    <Icon />
-                  </ShellGlassIcon>
-                  <div>
-                    <p>{item.label}</p>
-                    <small>Open section</small>
-                  </div>
-                  <ChevronRight size={16} style={{ marginLeft: "auto", opacity: 0.45 }} />
-                </Link>
-              );
-            })}
-          </div>
-        </>
-      ) : null}
+      <section aria-labelledby="workspace-cards-heading">
+        <div className="app-shell-section-title">
+          <h2 id="workspace-cards-heading">Workspace</h2>
+          <Link to={APP_SHELL_NOTIFICATIONS as never}>View all</Link>
+        </div>
+        {cards.length ? (
+          <>
+            <p className="app-shell-empty">
+              {needle
+                ? `Showing ${cards.length} matching authorized workspace section${cards.length === 1 ? "" : "s"}.`
+                : cards.length < 8
+                  ? `Only ${cards.length} additional authorized workspace section${cards.length === 1 ? "" : "s"} are available for this role.`
+                  : "Showing up to 8 additional authorized workspace sections."}
+            </p>
+            <div className="app-shell-cards" data-testid="app-shell-cards">
+              {cards.map((item) => {
+                const Icon = shellIcon(item.icon);
+                return (
+                  <Link
+                    key={item.key}
+                    to={item.href as never}
+                    className="app-shell-card"
+                    onClick={() => shell.recordUsage(item.key)}
+                  >
+                    <ShellGlassIcon>
+                      <Icon />
+                    </ShellGlassIcon>
+                    <div>
+                      <p>{item.label}</p>
+                      <small>Open section</small>
+                    </div>
+                    <ChevronRight size={16} style={{ marginLeft: "auto", opacity: 0.45 }} />
+                  </Link>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <p className="app-shell-empty">
+            {needle
+              ? "No authorized workspace sections match your search."
+              : "No additional authorized workspace sections are available for this role."}
+          </p>
+        )}
+      </section>
 
       <section aria-labelledby="recent-heading">
         <div className="app-shell-section-title">
