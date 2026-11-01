@@ -32,7 +32,12 @@ export type PaystackChargeFacts = {
   currency: string | undefined;
   /** Provider-signed payment completion time, when present in the event/verification response. */
   paidAt?: string;
-  metadata?: { fee_id?: string | null; school_id?: string | null; sherivs_share_kobo?: number | null; sherivs_split?: boolean | null } | null;
+  metadata?: {
+    fee_id?: string | null;
+    school_id?: string | null;
+    sherivs_share_kobo?: number | null;
+    sherivs_split?: boolean | null;
+  } | null;
   /** SHERIVS-PAY-SPLIT: subaccount Paystack reports for the charge (split checkouts only). */
   subaccountCode?: string | null;
 };
@@ -51,15 +56,27 @@ export interface SettlementDb {
    * after approved discounts/scholarships/waivers. The real Supabase client always has it.
    */
   rpc?(fn: "fee_amount_due", args: { p_fee: string }): DbResult<number | string>;
-  rpc?(fn: "fee_split_settle", args: { p_reference: string; p_subaccount: string | null; p_share_kobo: number }): DbResult<SplitSettleResult>;
+  rpc?(
+    fn: "fee_split_settle",
+    args: { p_reference: string; p_subaccount: string | null; p_share_kobo: number },
+  ): DbResult<SplitSettleResult>;
   from(table: "fees"): {
     select(cols: string): {
       eq(col: string, value: string): { maybeSingle(): DbResult<FeeRow> };
     };
     update(patch: Record<string, unknown>): {
-      eq(col: string, value: string): {
-        eq(col: string, value: string): {
-          neq(col: string, value: string): {
+      eq(
+        col: string,
+        value: string,
+      ): {
+        eq(
+          col: string,
+          value: string,
+        ): {
+          neq(
+            col: string,
+            value: string,
+          ): {
             select(cols: string): DbResult<Array<{ id: string }>>;
           };
         };
@@ -68,7 +85,13 @@ export interface SettlementDb {
   };
 }
 
-export type SplitSettleResult = { ok: boolean; reason?: string; share_collected?: boolean; wallet_refunded?: boolean; duplicate?: boolean };
+export type SplitSettleResult = {
+  ok: boolean;
+  reason?: string;
+  share_collected?: boolean;
+  wallet_refunded?: boolean;
+  duplicate?: boolean;
+};
 
 type FeeRow = {
   id: string;
@@ -155,7 +178,10 @@ export async function settlePaystackCharge(
  * main account (once per student per term; a wallet debit taken meanwhile by a cash payment is refunded).
  * Non-split charges are a no-op. A failure here never un-pays the fee; it throws so the webhook logs it.
  */
-export async function settleSplitShare(db: SettlementDb, facts: PaystackChargeFacts): Promise<SplitSettleResult | null> {
+export async function settleSplitShare(
+  db: SettlementDb,
+  facts: PaystackChargeFacts,
+): Promise<SplitSettleResult | null> {
   if (!facts.metadata?.sherivs_split || !db.rpc) return null;
   const share = Number(facts.metadata.sherivs_share_kobo ?? 0);
   const { data, error } = await db.rpc("fee_split_settle", {

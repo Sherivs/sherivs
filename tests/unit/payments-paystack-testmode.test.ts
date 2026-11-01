@@ -48,15 +48,20 @@ function auditSink(entries: PaystackAuditEntry[], throwOn?: number) {
 }
 
 function config(
-  overrides: Partial<PaystackTestModeConfig> & { auditThrowOn?: number; entries?: PaystackAuditEntry[] } = {},
+  overrides: Partial<PaystackTestModeConfig> & {
+    auditThrowOn?: number;
+    entries?: PaystackAuditEntry[];
+  } = {},
 ): PaystackTestModeConfig {
   const entries = overrides.entries ?? [];
   return {
     ...overrides,
     secretKey: overrides.secretKey ?? TEST_KEY,
-    transport: overrides.transport ?? ((): Promise<Response> => {
-      throw new Error("transport must be injected in unit tests");
-    }),
+    transport:
+      overrides.transport ??
+      ((): Promise<Response> => {
+        throw new Error("transport must be injected in unit tests");
+      }),
     audit: overrides.audit ?? auditSink(entries, overrides.auditThrowOn),
     failurePolicy: overrides.failurePolicy,
     baseUrl: overrides.baseUrl,
@@ -64,17 +69,23 @@ function config(
 }
 
 function jsonResponse(status: number, body: unknown): Promise<Response> {
-  return Promise.resolve(new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  }));
+  return Promise.resolve(
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { "Content-Type": "application/json" },
+    }),
+  );
 }
 
-const INIT_OK = { status: true, message: "Authorization created", data: {
-  authorization_url: "https://checkout.paystack.com/abc123",
-  access_code: "abc123",
-  reference: "cg_tenant-a_user-0001_fee_payment_fee-0001_NGN_15000",
-} };
+const INIT_OK = {
+  status: true,
+  message: "Authorization created",
+  data: {
+    authorization_url: "https://checkout.paystack.com/abc123",
+    access_code: "abc123",
+    reference: "cg_tenant-a_user-0001_fee_payment_fee-0001_NGN_15000",
+  },
+};
 
 describe("credential class enforcement (test rails only)", () => {
   it("accepts sk_test keys and refuses every other class with a secret-free reason", () => {
@@ -94,7 +105,10 @@ describe("credential class enforcement (test rails only)", () => {
 
   it("denies every operation before any provider contact when the key is not test-class", async () => {
     const transport = vi.fn(() => jsonResponse(200, INIT_OK));
-    const cfg = config({ secretKey: LIVE_KEY, transport: transport as unknown as PaystackTestModeConfig["transport"] });
+    const cfg = config({
+      secretKey: LIVE_KEY,
+      transport: transport as unknown as PaystackTestModeConfig["transport"],
+    });
     const init = await initializePaystackTestTransaction(cfg, reference(), "payer@example.com");
     expect(init).toMatchObject({ ok: false, code: "non_test_key" });
     expect(transport).not.toHaveBeenCalled();
@@ -184,7 +198,9 @@ describe("initialize transaction (injected transport)", () => {
   });
 
   it("contains provider errors as structured results (never throws)", async () => {
-    const cfg = config({ transport: () => jsonResponse(401, { status: false, message: "Invalid key" }) });
+    const cfg = config({
+      transport: () => jsonResponse(401, { status: false, message: "Invalid key" }),
+    });
     const result = await initializePaystackTestTransaction(cfg, reference(), "payer@example.com");
     expect(result).toMatchObject({ ok: false, code: "provider_error" });
     if (!result.ok) expect(result.reason).toContain("401");
@@ -226,14 +242,20 @@ describe("ownership validation (verify before any financial effect)", () => {
   it("denies amount and currency mismatches as ownership_mismatch", async () => {
     const wrongAmount = config({ transport: () => jsonResponse(200, VERIFY_OK(99_999, "NGN")) });
     const wrongCurrency = config({ transport: () => jsonResponse(200, VERIFY_OK(15_000, "GHS")) });
-    const amountResult = await verifyOwnedPayment(wrongAmount, "cg_x", { amount: money(15_000, "NGN") });
+    const amountResult = await verifyOwnedPayment(wrongAmount, "cg_x", {
+      amount: money(15_000, "NGN"),
+    });
     expect(amountResult).toMatchObject({ ok: false, code: "ownership_mismatch" });
-    const currencyResult = await verifyOwnedPayment(wrongCurrency, "cg_x", { amount: money(15_000, "NGN") });
+    const currencyResult = await verifyOwnedPayment(wrongCurrency, "cg_x", {
+      amount: money(15_000, "NGN"),
+    });
     expect(currencyResult).toMatchObject({ ok: false, code: "ownership_mismatch" });
   });
 
   it("denies malformed provider payloads (fail closed)", async () => {
-    const cfg = config({ transport: () => jsonResponse(200, { status: true, data: { hello: true } }) });
+    const cfg = config({
+      transport: () => jsonResponse(200, { status: true, data: { hello: true } }),
+    });
     const result = await verifyOwnedPayment(cfg, "cg_x", { amount: money(15_000, "NGN") });
     expect(result).toMatchObject({ ok: false, code: "malformed_response" });
   });

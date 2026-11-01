@@ -92,10 +92,7 @@ describe("provider health — probe state derivation", () => {
 
   it("does not probe Paystack when configured with a non-test key", async () => {
     const fetchImpl = vi.fn(okFetch(200));
-    const report = await checkPaystackHealth(
-      { PAYSTACK_SECRET_KEY: "sk_test_" },
-      fetchImpl,
-    );
+    const report = await checkPaystackHealth({ PAYSTACK_SECRET_KEY: "sk_test_" }, fetchImpl);
     expect(report.state).toBe("NOT_CONFIGURED");
     expect(fetchImpl).not.toHaveBeenCalled();
   });
@@ -135,23 +132,58 @@ describe("provider health — battery posture and statics", () => {
   it("evaluates posture ok / degraded / failing", () => {
     expect(
       evaluateProviderHealthPosture([
-        { provider: "a", state: "AUTHENTICATED", detail: "", checkedAt: "", httpStatus: 200, durationMs: 1 },
-        { provider: "b", state: "NOT_REQUIRED", detail: "", checkedAt: "", httpStatus: null, durationMs: 0 },
+        {
+          provider: "a",
+          state: "AUTHENTICATED",
+          detail: "",
+          checkedAt: "",
+          httpStatus: 200,
+          durationMs: 1,
+        },
+        {
+          provider: "b",
+          state: "NOT_REQUIRED",
+          detail: "",
+          checkedAt: "",
+          httpStatus: null,
+          durationMs: 0,
+        },
       ]).status,
     ).toBe("ok");
     expect(
       evaluateProviderHealthPosture([
-        { provider: "a", state: "CONFIGURED", detail: "", checkedAt: "", httpStatus: 401, durationMs: 1 },
+        {
+          provider: "a",
+          state: "CONFIGURED",
+          detail: "",
+          checkedAt: "",
+          httpStatus: 401,
+          durationMs: 1,
+        },
       ]).status,
     ).toBe("degraded");
     expect(
       evaluateProviderHealthPosture([
-        { provider: "a", state: "DEGRADED", detail: "", checkedAt: "", httpStatus: null, durationMs: 1 },
+        {
+          provider: "a",
+          state: "DEGRADED",
+          detail: "",
+          checkedAt: "",
+          httpStatus: null,
+          durationMs: 1,
+        },
       ]).status,
     ).toBe("failing");
     expect(
       evaluateProviderHealthPosture([
-        { provider: "a", state: "NOT_CONFIGURED", detail: "", checkedAt: "", httpStatus: null, durationMs: 0 },
+        {
+          provider: "a",
+          state: "NOT_CONFIGURED",
+          detail: "",
+          checkedAt: "",
+          httpStatus: null,
+          durationMs: 0,
+        },
       ]).status,
     ).toBe("failing");
   });

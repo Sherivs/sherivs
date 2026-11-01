@@ -32,13 +32,26 @@ export const initWalletTopup = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const secret = testSecret();
     // Tenant comes from the caller's own membership row, never from client input.
-    const { data: me, error: meErr } = await context.supabase.from("users").select("school_id").eq("id", context.userId).maybeSingle();
+    const { data: me, error: meErr } = await context.supabase
+      .from("users")
+      .select("school_id")
+      .eq("id", context.userId)
+      .maybeSingle();
     if (meErr) throw new Error(meErr.message);
     const schoolId = (me as { school_id: string | null } | null)?.school_id;
     if (!schoolId) throw new Error("No school workspace on this account");
-    const { data: intent, error } = await (context.supabase as unknown as {
-      rpc: (fn: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
-    }).rpc("wallet_topup_intent_create", { p_school: schoolId, p_amount: data.amount, p_email: data.email });
+    const { data: intent, error } = await (
+      context.supabase as unknown as {
+        rpc: (
+          fn: string,
+          args: Record<string, unknown>,
+        ) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
+      }
+    ).rpc("wallet_topup_intent_create", {
+      p_school: schoolId,
+      p_amount: data.amount,
+      p_email: data.email,
+    });
     if (error) throw new Error(error.message);
     const it = intent as { reference: string; amount_kobo: number; school_id: string };
     const res = await fetch("https://api.paystack.co/transaction/initialize", {
@@ -52,14 +65,25 @@ export const initWalletTopup = createServerFn({ method: "POST" })
         metadata: { kind: "wallet_topup", school_id: it.school_id },
       }),
     });
-    const body = (await res.json()) as { status: boolean; message: string; data?: { authorization_url: string; reference: string } };
-    if (!res.ok || !body.status || !body.data) throw new Error(body.message || `Paystack init failed (${res.status})`);
+    const body = (await res.json()) as {
+      status: boolean;
+      message: string;
+      data?: { authorization_url: string; reference: string };
+    };
+    if (!res.ok || !body.status || !body.data)
+      throw new Error(body.message || `Paystack init failed (${res.status})`);
     const url = new URL(body.data.authorization_url);
-    if (url.protocol !== "https:" || url.hostname !== "checkout.paystack.com") throw new Error("Unexpected checkout URL");
+    if (url.protocol !== "https:" || url.hostname !== "checkout.paystack.com")
+      throw new Error("Unexpected checkout URL");
     return { authorization_url: body.data.authorization_url, reference: it.reference };
   });
 
-type AdminRpc = { rpc: (fn: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { message: string } | null }> };
+type AdminRpc = {
+  rpc: (
+    fn: string,
+    args: Record<string, unknown>,
+  ) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
+};
 
 /** Shared settlement used by the webhook and the verify callback. */
 export async function settleWalletTopup(
@@ -90,9 +114,12 @@ export const verifyWalletTopup = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!visible) throw new Error("Top-up not found");
     testSecret();
-    const res = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(data.reference)}`, {
-      headers: { Authorization: `Bearer ${testSecret()}` },
-    });
+    const res = await fetch(
+      `https://api.paystack.co/transaction/verify/${encodeURIComponent(data.reference)}`,
+      {
+        headers: { Authorization: `Bearer ${testSecret()}` },
+      },
+    );
     const body = (await res.json()) as {
       status: boolean;
       data?: { status: string; amount: number; currency?: string; reference?: string };

@@ -133,7 +133,9 @@ function mapTicket(row: TicketRow, names: Map<string, string>): ConsoleTicket {
     subject: row.subject,
     body: row.body,
     status: isTicketStatus(row.status) ? row.status : "open",
-    priority: (["low", "normal", "high", "urgent"] as const).includes(row.priority as TicketPriority)
+    priority: (["low", "normal", "high", "urgent"] as const).includes(
+      row.priority as TicketPriority,
+    )
       ? (row.priority as TicketPriority)
       : "normal",
     openedBy: row.opened_by,
@@ -274,9 +276,12 @@ export async function transitionTicket(
   return mapTicket(next, names);
 }
 
-export async function listIncidents(
-  context: Ctx,
-): Promise<{ incidents: ConsoleIncident[]; source: string; available: boolean; openCount: number | null }> {
+export async function listIncidents(context: Ctx): Promise<{
+  incidents: ConsoleIncident[];
+  source: string;
+  available: boolean;
+  openCount: number | null;
+}> {
   await assertAnyCapability(context, [
     "platform.engineering.read",
     "platform.operations.read",
@@ -293,7 +298,12 @@ export async function listIncidents(
     .limit(200);
   if (error) {
     if (isMissingRelation(error)) {
-      return { incidents: [], source: "platform_incident not applied", available: false, openCount: null };
+      return {
+        incidents: [],
+        source: "platform_incident not applied",
+        available: false,
+        openCount: null,
+      };
     }
     throw new Error(error.message);
   }
@@ -304,7 +314,8 @@ export async function listIncidents(
     incidents,
     source: "platform_incident",
     available: true,
-    openCount: incidents.filter((row) => row.status !== "resolved" && row.status !== "closed").length,
+    openCount: incidents.filter((row) => row.status !== "resolved" && row.status !== "closed")
+      .length,
   };
 }
 
@@ -417,9 +428,7 @@ export async function searchLogs(
     request = db
       .from("audit_logs")
       .select("id, action, user_id, created_at, new_value")
-      .or(
-        `action.ilike.%${query}%,action.like.platform_%`,
-      )
+      .or(`action.ilike.%${query}%,action.like.platform_%`)
       .ilike("action", `%${query}%`)
       .order("created_at", { ascending: false })
       .limit(input.limit ?? 80);
@@ -485,7 +494,11 @@ export async function listBilling(context: Ctx): Promise<ConsoleBillingSnapshot>
       .select("id, school_id, display_name")
       .in("school_id", schoolIds);
     if (!orgs.error && orgs.data) {
-      for (const row of orgs.data as Array<{ id: string; school_id: string; display_name: string }>) {
+      for (const row of orgs.data as Array<{
+        id: string;
+        school_id: string;
+        display_name: string;
+      }>) {
         orgBySchool.set(row.school_id, { id: row.id, display_name: row.display_name });
       }
     }
@@ -494,11 +507,13 @@ export async function listBilling(context: Ctx): Promise<ConsoleBillingSnapshot>
     .from("school_platform_pricing")
     .select("school_id, per_student_fee, note")
     .limit(200);
-  const pricing = ((pricingQuery.data ?? []) as Array<{
-    school_id: string;
-    per_student_fee: number | string | null;
-    note: string | null;
-  }>).map((row) => ({
+  const pricing = (
+    (pricingQuery.data ?? []) as Array<{
+      school_id: string;
+      per_student_fee: number | string | null;
+      note: string | null;
+    }>
+  ).map((row) => ({
     schoolId: row.school_id,
     organizationName: orgBySchool.get(row.school_id)?.display_name ?? null,
     perStudentFee: Number(row.per_student_fee ?? 0),
@@ -531,7 +546,10 @@ export async function initOrganizationSubscription(
   input: { organizationId: string; email: string },
 ): Promise<{ access_code: string; authorization_url: string; reference: string }> {
   await assertAnyCapability(context, ["platform.tenants.manage"], true);
-  if (!(await hasCapability(context, "platform.finance.read")) && !(await hasCapability(context, "platform.tenants.manage"))) {
+  if (
+    !(await hasCapability(context, "platform.finance.read")) &&
+    !(await hasCapability(context, "platform.tenants.manage"))
+  ) {
     throw new Error("Not authorized");
   }
   const secret = requirePaystackTestKey(process.env.PAYSTACK_SECRET_KEY);

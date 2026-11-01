@@ -21,7 +21,10 @@ import {
 } from "@/lib/payments/console-subscription-settlement";
 import { clientIpFromHeaders } from "@/lib/security/request-safety";
 import { verifyHmacHexSignature } from "@/lib/security/webhook-signature.server";
-import { settleWalletTopup, WALLET_TOPUP_PREFIX } from "@/lib/runtime/scholar/wallet-topup.functions";
+import {
+  settleWalletTopup,
+  WALLET_TOPUP_PREFIX,
+} from "@/lib/runtime/scholar/wallet-topup.functions";
 import { requirePaystackTestKey } from "@/lib/payments/paystack-testmode.server";
 
 /**
@@ -41,18 +44,21 @@ const PaystackEventSchema = z.object({
       currency: z.string().max(8).optional(),
       status: z.string().max(32).optional(),
       paid_at: z.string().datetime({ offset: true }).optional(),
-          metadata: z
-            .object({
-              fee_id: z.string().uuid().optional(),
-              school_id: z.string().max(64).optional(),
-              subscription_id: z.string().uuid().optional(),
-              organization_id: z.string().uuid().optional(),
-              sherivs_share_kobo: z.number().int().nonnegative().max(100_000_000).optional(),
-              sherivs_split: z.boolean().optional(),
-            })
+      metadata: z
+        .object({
+          fee_id: z.string().uuid().optional(),
+          school_id: z.string().max(64).optional(),
+          subscription_id: z.string().uuid().optional(),
+          organization_id: z.string().uuid().optional(),
+          sherivs_share_kobo: z.number().int().nonnegative().max(100_000_000).optional(),
+          sherivs_split: z.boolean().optional(),
+        })
         .partial()
         .nullish(),
-      subaccount: z.object({ subaccount_code: z.string().max(64).optional() }).partial().nullish(),
+      subaccount: z
+        .object({ subaccount_code: z.string().max(64).optional() })
+        .partial()
+        .nullish(),
     })
     .partial()
     .nullish(),
@@ -104,7 +110,10 @@ export const Route = createFileRoute("/api/public/webhooks/paystack")({
         let processingStatus = "ignored";
         let errorMessage: string | null = null;
 
-        if (event.event === "charge.success" && event.data?.reference?.startsWith(WALLET_TOPUP_PREFIX)) {
+        if (
+          event.event === "charge.success" &&
+          event.data?.reference?.startsWith(WALLET_TOPUP_PREFIX)
+        ) {
           // SHERIVS-026: school wallet top-up. Settlement checks amount/currency against the DB intent.
           try {
             const r = await settleWalletTopup(supabaseAdmin, {

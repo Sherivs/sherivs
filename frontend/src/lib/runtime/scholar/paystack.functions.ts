@@ -73,7 +73,10 @@ export const initFeePayment = createServerFn({ method: "POST" })
 
     // SHERIVS-A05b: charge what is owed after approved discounts, scholarships and waivers
     // (the same server function settlement checks against), never the gross row amount.
-    const { data: due, error: dueErr } = await supabase.rpc("fee_amount_due" as never, { p_fee: fee.id } as never);
+    const { data: due, error: dueErr } = await supabase.rpc(
+      "fee_amount_due" as never,
+      { p_fee: fee.id } as never,
+    );
     if (dueErr) throw new Error(dueErr.message);
     const outstanding = Number(due ?? 0);
     if (outstanding <= 0) throw new Error("Nothing to pay on this invoice");
@@ -82,9 +85,14 @@ export const initFeePayment = createServerFn({ method: "POST" })
     // SHERIVS-PAY-SPLIT: the server plans the split (school subaccount, Sherivs term share once per
     // student per term, bearer = main account). Amount is fee_amount_due again, checked against `outstanding`.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: plan, error: planErr } = await (supabaseAdmin as unknown as {
-      rpc(fn: string, args: Record<string, unknown>): PromiseLike<{ data: FeeCheckoutPlan | null; error: { message: string } | null }>;
-    }).rpc("fee_checkout_split", { p_fee: fee.id, p_reference: reference });
+    const { data: plan, error: planErr } = await (
+      supabaseAdmin as unknown as {
+        rpc(
+          fn: string,
+          args: Record<string, unknown>,
+        ): PromiseLike<{ data: FeeCheckoutPlan | null; error: { message: string } | null }>;
+      }
+    ).rpc("fee_checkout_split", { p_fee: fee.id, p_reference: reference });
     if (planErr || !plan) throw new Error(planErr?.message ?? "Could not plan the payment");
     if (plan.split) assertSplitTestKey(secret);
     const initBody = buildFeeInitializeBody(plan, {
@@ -163,7 +171,12 @@ export const verifyFeePayment = createServerFn({ method: "POST" })
         currency?: string;
         reference?: string;
         paid_at?: string;
-        metadata?: { fee_id?: string; school_id?: string; sherivs_share_kobo?: number; sherivs_split?: boolean } | null;
+        metadata?: {
+          fee_id?: string;
+          school_id?: string;
+          sherivs_share_kobo?: number;
+          sherivs_split?: boolean;
+        } | null;
         subaccount?: { subaccount_code?: string } | null;
       };
       message?: string;
