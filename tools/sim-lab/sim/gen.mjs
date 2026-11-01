@@ -55,6 +55,8 @@ for (const a of ARCHETYPES) {
   }
   await bulk(c, "auth.users", ["id","email"], authRows);
   await bulk(c, "users", ["id","school_id","full_name","email","role","phone"], userRows);
+  await c.query(`UPDATE auth.users a SET phone = u.phone, phone_confirmed_at = now()
+    FROM public.users u WHERE u.id = a.id`);
   await bulk(c, "organization_memberships", ["user_id","school_id","role","is_primary","is_active"], memRows);
   await bulk(c, "classes", ["id","school_id","name","grade_level","teacher_id","academic_year","capacity"], classRows);
   await bulk(c, "students", ["id","school_id","user_id","admission_number","class_id","gender","state_of_origin","parent_id","enrollment_date"], studentRows);

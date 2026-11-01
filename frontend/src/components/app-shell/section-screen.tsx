@@ -8,6 +8,7 @@ import { APP_SHELL_HOME } from "@/lib/shell/paths";
 import { searchableSection } from "@/lib/shell/role-template";
 import { ShellGlassIcon } from "./glass-icon";
 import { useAppShell } from "./shell-context";
+import { CommunicationInboxScreen } from "./communication-inbox";
 
 export function AppSectionScreen({ sectionKey }: { sectionKey: string }) {
   const shell = useAppShell();
@@ -23,6 +24,8 @@ export function AppSectionScreen({ sectionKey }: { sectionKey: string }) {
   const Icon = shellIcon(icon);
   const showSearch = searchableSection(sectionKey, String(label));
   const metric = formatWidgetMetric(shell.cards[sectionKey]);
+
+  if (sectionKey === "communications") return <CommunicationInboxScreen />;
 
   return (
     <section className="app-shell-section" data-testid="app-shell-section">
@@ -54,8 +57,8 @@ export function AppSectionScreen({ sectionKey }: { sectionKey: string }) {
         </div>
       ) : (
         <p className="app-shell-empty">
-          This section is open for your current role. Records stay tenant-scoped and only appear when
-          your administration has granted the matching permission.
+          This section is open for your current role. Records stay tenant-scoped and only appear
+          when your administration has granted the matching permission.
         </p>
       )}
     </section>
