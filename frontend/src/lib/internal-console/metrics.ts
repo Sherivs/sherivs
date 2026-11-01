@@ -216,7 +216,7 @@ export const CONSOLE_METRIC_CONTRACTS: readonly ConsoleMetricContract[] = [
     key: "subscription-ledger",
     name: "Commercial subscriptions",
     definition:
-      "Count of subscription payment-history rows. schools.subscription_status is a coarse tenant access flag and this metric is not recognized revenue or authorization.",
+      "Count of subscription payment-history rows; recognized revenue is not this metric. schools.subscription_status is a coarse tenant access flag, not a billing ledger or authorization.",
     source: "public.subscriptions",
     calculation: "count of subscription payment-history rows; not recognized revenue",
     window: "current ledger",
