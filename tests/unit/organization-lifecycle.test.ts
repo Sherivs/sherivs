@@ -20,6 +20,14 @@ const migration = readFileSync(
   "database/supabase/migrations/20261027002000_sherivs_031_control_plane_engines.sql",
   "utf8",
 );
+const phaseDMigration = readFileSync(
+  "database/supabase/migrations/20261101100000_sv1_console_phase_d_org_school_link.sql",
+  "utf8",
+);
+const organizationStore = readFileSync(
+  "frontend/src/lib/internal-console/organization.store.server.ts",
+  "utf8",
+);
 
 describe("organization lifecycle engine", () => {
   it("rejects invalid transitions rather than trusting UI buttons", () => {
@@ -159,6 +167,35 @@ describe("SHERIVS-031 control-plane engines migration", () => {
     expect(migration).toContain("concat('sch', 'ool_id')");
     expect(migration).toContain("concat('schol', 'ar')");
     expect(migration).toContain("tenant link is set only after provisioning");
+  });
+});
+
+describe("SV1-CONSOLE Phase D organization-school boundary", () => {
+  it("creates and links a school once under a locked service-role transaction", () => {
+    expect(phaseDMigration).toContain("SECURITY DEFINER");
+    expect(phaseDMigration).toContain("auth.role() IS DISTINCT FROM 'service_role'");
+    expect(phaseDMigration).toContain("FOR UPDATE");
+    expect(phaseDMigration).toContain("IF v_org.school_id IS NOT NULL THEN");
+    expect(phaseDMigration).toContain("INSERT INTO public.schools");
+    expect(phaseDMigration).toContain("SET school_id = v_school_id");
+    expect(phaseDMigration).toContain("TO service_role");
+    expect(phaseDMigration).toContain("FROM PUBLIC, anon, authenticated");
+  });
+
+  it("routes provisioning through the atomic RPC and preserves lifecycle auditing", () => {
+    const provisioning = organizationStore.slice(
+      organizationStore.indexOf("export async function provisionOrganizationCase"),
+      organizationStore.indexOf("export async function activateOrganization"),
+    );
+    const stateTransition = organizationStore.slice(
+      organizationStore.indexOf("async function applyState"),
+      organizationStore.indexOf("async function assignmentsFor"),
+    );
+    expect(organizationStore).toContain('"provision_platform_organization_school"');
+    expect(provisioning).toContain("provisionSchoolForOrganization(db, row, slug)");
+    expect(provisioning).not.toContain('.from("schools")\n        .insert(');
+    expect(stateTransition).toContain("await recordTransition");
+    expect(stateTransition).toContain("await audit(context, `state.${toState}`");
   });
 });
 
