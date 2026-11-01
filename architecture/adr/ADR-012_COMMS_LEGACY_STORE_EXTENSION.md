@@ -4,7 +4,7 @@
 |---|---|
 | Status | PROPOSED (operator ratification requested) |
 | Date | 2026-11-01 |
-| Author | Coding agent for issue #221 |
+| Author | `copilot-swe-agent[bot]` (GitHub Copilot Coding Agent; issue #221) |
 | Mission | Issue #221 — scope-locked V1 communications |
 | Capabilities | V1 organizational communications; V1CAP-067 (domain-neutrality guard) |
 | Supersedes-in-part | None |

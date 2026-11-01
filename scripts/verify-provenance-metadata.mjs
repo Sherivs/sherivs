@@ -18,7 +18,8 @@
  *                   H2-NN, mrNNN), or the template/root-authority equivalents.
  *                   Per campaign convention every H3 artifact is authored by a
  *                   numbered agent team, so the team attribution IS the
- *                   AI-generated disclosure.
+ *                   AI-generated disclosure. Explicit authenticated coding-agent
+ *                   account names are also accepted as creator identities.
  *   createdAt     — WHEN: an inline ISO date (required inline for ADRs, the
  *                   campaign record and the root authority), or wave-inheritance
  *                   for wave-scope classes: the campaign record is the root
@@ -134,6 +135,7 @@ const CREATOR_MATCHERS = [
   /\bMISSION-V1-\d{3}\b/, // V5.3 V1 mission series (MISSION-V1-001..018)
   /\bH2-\d{2,3}\b/,
   /\bmr\d{3}\b/i,
+  /\bcopilot-swe-agent\[bot\]/i, // authenticated GitHub Copilot coding-agent account
 ];
 
 /** @type {readonly RegExp[]} */
