@@ -206,6 +206,10 @@ export const CONSOLE_NAV: readonly ConsoleNavItem[] = [
           "platform.tenants.read",
           "platform.operations.read",
           "platform.engineering.read",
+          "platform.staff.read",
+          "platform.finance.read",
+          "platform.tenants.manage",
+          "platform.audit.read",
         ],
       },
       {

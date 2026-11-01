@@ -16,7 +16,7 @@ import type {
   ConsoleMetric,
   ConsoleOverview,
 } from "./overview";
-import { formatRatio } from "./metrics";
+import { authorizedConsoleMetrics, formatRatio } from "./metrics";
 import {
   isOrganizationLifecycleState,
   summarizeOrganizationStates,
@@ -773,12 +773,15 @@ export function buildConsoleVisualFixtureOverview(
       cards: healthCards,
       caveat: "These statuses describe the local visual fixture, not a live environment.",
     },
-    metrics: canReadOrgs
-      ? fixtureOrganizationMetricsCards(snapshot)
-      : fixtureOrganizationMetricsCards(snapshot).filter(
-          (metric) =>
-            !metric.key.includes("organization") && metric.key !== "onboarding-conversion",
-        ),
+    metrics: authorizedConsoleMetrics(
+      canReadOrgs
+        ? fixtureOrganizationMetricsCards(snapshot)
+        : fixtureOrganizationMetricsCards(snapshot).filter(
+            (metric) =>
+              !metric.key.includes("organization") && metric.key !== "onboarding-conversion",
+          ),
+      new Set(capabilities),
+    ),
     attention: fixtureAttention(snapshot).filter((item) => {
       if (
         item.href === CONSOLE_PATHS.organizations ||

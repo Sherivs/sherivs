@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { SystemClock, TimeAuthority } from "../kernel/time-authority";
 
 /** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
@@ -44,6 +45,9 @@ export type WriteAuditEntry = {
   readonly tenantId: string | null;
   /** WHO — the authenticated actor's auth uid (written to the user_id column). */
   readonly actorId: string | null;
+  /** Actor reference for non-user identities such as governed agents. */
+  readonly actorRef?: string | null;
+  readonly actorKind?: "human" | "agent" | "system";
   /**
    * WHO — verified identity claim. Required whenever actorId is not backed by
    * a canonical tenant user row (audit_logs.user_id is FK-attributed to
@@ -56,6 +60,12 @@ export type WriteAuditEntry = {
   readonly recordId?: string | null;
   /** OUTCOME of the audited operation. */
   readonly outcome: WriteAuditOutcome;
+  /** Reuse a request correlation id when one is available; otherwise one is generated. */
+  readonly correlationId?: string;
+  /** Allow-listed, non-sensitive state immediately before the action. */
+  readonly before?: Record<string, unknown> | null;
+  /** Allow-listed, non-sensitive state or proposal immediately after the action. */
+  readonly after?: Record<string, unknown> | null;
   /** Non-sensitive context (§29: never secrets, credentials, or tokens). */
   readonly details?: Record<string, unknown>;
 };
@@ -81,7 +91,7 @@ export async function writeAuditRecord(
   client: WriteAuditClient,
   entry: WriteAuditEntry,
 ): Promise<WriteAuditResult> {
-  if (!entry.actorId && !entry.actorEmail) {
+  if (!entry.actorId && !entry.actorEmail && !entry.actorRef) {
     throw new Error(
       `write-audit: refusing to persist an unattributed write ("${entry.action}" under ${entry.gate}) — WHO is mandatory`,
     );
@@ -93,26 +103,42 @@ export async function writeAuditRecord(
   }
 
   const recordedAt = timeAuthority.now().at;
+  const correlationId = entry.correlationId?.trim() || randomUUID();
+  if (correlationId.length > 200) {
+    throw new Error(`write-audit: correlation id is too long ("${entry.action}")`);
+  }
+  const actorRef = entry.actorRef?.trim() || null;
+  if (entry.actorRef && !actorRef) {
+    throw new Error(`write-audit: actor reference cannot be empty ("${entry.action}")`);
+  }
+  if (actorRef && actorRef.length > 200) {
+    throw new Error(`write-audit: actor reference is too long ("${entry.action}")`);
+  }
   const payload: Record<string, unknown> = {
     school_id: entry.tenantId,
     user_id: entry.actorId,
     action: entry.action,
     table_name: entry.table,
     record_id: entry.recordId ?? null,
+    old_value: entry.before ?? null,
     new_value: {
       gate: entry.gate,
       outcome: entry.outcome,
+      correlation_id: correlationId,
+      actor_kind: entry.actorKind ?? (actorRef ? "agent" : "human"),
       actor_id: entry.actorId,
       actor_email: entry.actorEmail ?? null,
+      actor_ref: actorRef,
       recorded_at: recordedAt,
       tenant_id: entry.tenantId,
+      after: entry.after ?? null,
       details: entry.details ?? null,
     },
   };
 
-  const result = (await client.from("audit_logs").insert(payload)) as
-    | { error?: { message: string } | null }
-    | null;
+  const result = (await client.from("audit_logs").insert(payload)) as {
+    error?: { message: string } | null;
+  } | null;
   const message = result?.error?.message;
   if (result?.error) {
     throw new Error(

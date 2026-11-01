@@ -275,11 +275,13 @@ describe("internal console V1 contract", () => {
   });
 
   it("never treats a missing health signal as operational", () => {
-    expect(mapProcessHealth("ok")).toBe("operational");
+    expect(mapProcessHealth("ok")).toBe("healthy");
     expect(mapProcessHealth("failing")).toBe("unavailable");
     expect(mapProcessHealth(undefined)).toBe("unknown");
     expect(overallFromCards(["unknown", "unknown"])).toBe("unknown");
-    expect(overallFromCards(["operational", "unknown"])).toBe("degraded");
+    expect(overallFromCards(["healthy", "unknown"])).toBe("degraded");
+    expect(overallFromCards(["healthy", "not-configured"])).toBe("degraded");
+    expect(overallFromCards(["unknown", "not-configured"])).toBe("unknown");
   });
 });
 
