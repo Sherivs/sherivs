@@ -63,7 +63,7 @@ describe("WhatsApp webhook validation", () => {
           changes: [
             {
               value: {
-                metadata: { display_phone_number: "+2349015056201" },
+                metadata: { display_phone_number: "+2349015056201", phone_number_id: "123456" },
                 statuses: [{ id: "wamid.outbound", status: "read", timestamp: "1793476800" }],
               },
             },
@@ -92,11 +92,10 @@ describe("WhatsApp webhook validation", () => {
     expect(normalizeWhatsAppPhone("123")).toBeNull();
   });
 
-  it("resolves the sender tenant and persists inbound text and delivery statuses", async () => {
+  it("routes callbacks through the registered tenant sender and persists inbound/status events", async () => {
     process.env.WHATSAPP_APP_SECRET = SECRET;
     mockRpc.mockImplementation(async (name: string) => {
-      if (name === "comms_whatsapp_sender_school") return { data: "school-1", error: null };
-      if (name === "comms_whatsapp_status") return { data: true, error: null };
+      if (name === "cg_whatsapp_status") return { data: true, error: null };
       return { data: "logged", error: null };
     });
     const raw = JSON.stringify({
@@ -105,7 +104,7 @@ describe("WhatsApp webhook validation", () => {
           changes: [
             {
               value: {
-                metadata: { display_phone_number: "+2349015056201" },
+                metadata: { display_phone_number: "+2349015056201", phone_number_id: "123456" },
                 messages: [{ id: "wamid.inbound", from: "2349015056202", text: { body: "STOP" } }],
                 statuses: [{ id: "wamid.outbound", status: "read" }],
               },
@@ -124,22 +123,45 @@ describe("WhatsApp webhook validation", () => {
     });
 
     expect(response.status).toBe(200);
-    expect(mockRpc).toHaveBeenNthCalledWith(1, "comms_whatsapp_sender_school", {
-      p_phone: "+2349015056201",
-    });
-    expect(mockRpc).toHaveBeenNthCalledWith(2, "comms_inbound", {
-      p_school: "school-1",
-      p_channel: "whatsapp",
+    expect(mockRpc).toHaveBeenNthCalledWith(1, "cg_whatsapp_receive", {
+      p_provider_sender_ref: "123456",
       p_from: "+2349015056202",
       p_body: "STOP",
       p_provider_ref: "wamid.inbound",
     });
-    expect(mockRpc).toHaveBeenNthCalledWith(3, "comms_whatsapp_status", {
-      p_school: "school-1",
+    expect(mockRpc).toHaveBeenNthCalledWith(2, "cg_whatsapp_status", {
+      p_provider_sender_ref: "123456",
       p_provider_ref: "wamid.outbound",
       p_status: "read",
       p_error_code: null,
     });
+  });
+
+  it("ignores callbacks without the provider's registered sender reference", async () => {
+    process.env.WHATSAPP_APP_SECRET = SECRET;
+    const raw = JSON.stringify({
+      entry: [
+        {
+          changes: [
+            {
+              value: {
+                metadata: { display_phone_number: "+2349015056201", phone_number_id: "123456" },
+                messages: [],
+              },
+            },
+          ],
+        },
+      ],
+    });
+    const response = await postWebhook({
+      request: new Request("https://app.example.test/api/public/webhooks/whatsapp", {
+        method: "POST",
+        headers: { "x-hub-signature-256": signature(raw) },
+        body: raw,
+      }),
+    });
+    expect(response.status).toBe(200);
+    expect(mockRpc).not.toHaveBeenCalled();
   });
 
   it("rejects a bad signature without calling persistence RPCs", async () => {

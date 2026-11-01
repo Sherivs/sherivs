@@ -39,7 +39,7 @@ export const WhatsAppWebhookSchema = z.object({
                   metadata: z
                     .object({
                       display_phone_number: z.string().max(40).optional(),
-                      phone_number_id: z.string().max(40).optional(),
+                      phone_number_id: z.string().min(1).max(160).optional(),
                     })
                     .partial()
                     .optional(),
@@ -126,21 +126,14 @@ export const Route = createFileRoute("/api/public/webhooks/whatsapp")({
 
         for (const entry of parsed.data.entry) {
           for (const change of entry.changes) {
-            const displayNumber = change.value.metadata?.display_phone_number;
-            if (!displayNumber) continue;
-            const { data: schoolId, error: senderError } = await db.rpc(
-              "comms_whatsapp_sender_school",
-              { p_phone: displayNumber },
-            );
-            if (senderError) return new Response("processing error", { status: 500 });
-            if (typeof schoolId !== "string") continue;
+            const providerSenderRef = change.value.metadata?.phone_number_id;
+            if (!providerSenderRef) continue;
 
             for (const message of change.value.messages ?? []) {
               const phone = normalizeWhatsAppPhone(message.from);
               if (!phone) continue;
-              const { error } = await db.rpc("comms_inbound", {
-                p_school: schoolId,
-                p_channel: "whatsapp",
+              const { error } = await db.rpc("cg_whatsapp_receive", {
+                p_provider_sender_ref: providerSenderRef,
                 p_from: phone,
                 p_body: message.text?.body ?? "",
                 p_provider_ref: message.id,
@@ -150,8 +143,8 @@ export const Route = createFileRoute("/api/public/webhooks/whatsapp")({
 
             for (const status of change.value.statuses ?? []) {
               const errorCode = safeMetaErrorCode(status.errors?.[0]?.code);
-              const { data, error } = await db.rpc("comms_whatsapp_status", {
-                p_school: schoolId,
+              const { data, error } = await db.rpc("cg_whatsapp_status", {
+                p_provider_sender_ref: providerSenderRef,
                 p_provider_ref: status.id,
                 p_status: status.status,
                 p_error_code: errorCode,

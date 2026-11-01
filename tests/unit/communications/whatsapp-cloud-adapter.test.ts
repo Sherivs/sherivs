@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { WhatsAppCloudAdapter } from "../../../frontend/src/lib/scholar/comms/adapters.server";
+import { WhatsAppCloudAdapter } from "../../../frontend/src/lib/communications/whatsapp-cloud.server";
 
 const TOKEN = "whatsapp-test-token";
 const PHONE_ID = "123456789012345";
@@ -57,6 +57,17 @@ describe("WhatsApp Cloud adapter", () => {
         ],
       },
     });
+  });
+
+  it("uses only the sender reference resolved for the tenant by the shared gateway", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(receipt());
+    const adapter = new WhatsAppCloudAdapter(TOKEN, "untrusted-default", fetchImpl, vi.fn());
+
+    await expect(
+      adapter.send("+2349015056201", "Hello", { phoneNumberId: "987654321" }),
+    ).resolves.toMatchObject({ ok: true });
+
+    expect(fetchImpl.mock.calls[0][0]).toBe("https://graph.facebook.com/v21.0/987654321/messages");
   });
 
   it("rejects invalid local input without contacting Meta", async () => {

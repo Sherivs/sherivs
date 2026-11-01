@@ -1,29 +1,32 @@
--- Rollback for 20261101000010_sherivs_whatsapp_cloud.sql (NOT APPLIED).
+-- Roll back the tenant-neutral WhatsApp extension before applying the migration.
 BEGIN;
 
-DROP TRIGGER IF EXISTS trg_inbound_messages_whatsapp_audit ON public.inbound_messages;
-DROP TRIGGER IF EXISTS trg_outbound_messages_whatsapp_audit ON public.outbound_messages;
-DROP TRIGGER IF EXISTS trg_inbound_whatsapp_conversation ON public.inbound_messages;
-DROP TRIGGER IF EXISTS trg_outbound_whatsapp_conversation ON public.outbound_messages;
+DROP FUNCTION IF EXISTS public.cg_whatsapp_status(text, text, text, text);
+DROP FUNCTION IF EXISTS public.cg_whatsapp_receive(text, text, text, text);
+DROP FUNCTION IF EXISTS public.cg_whatsapp_dispatch_result(uuid, text, text, text);
+DROP FUNCTION IF EXISTS public.cg_whatsapp_prepare_send(text, text, text, text, text);
+DROP TRIGGER IF EXISTS cg_communication_optin_audit ON public.cg_communication_optin;
+DROP TRIGGER IF EXISTS cg_communication_message_audit ON public.cg_communication_message;
+DROP TRIGGER IF EXISTS cg_communication_recipient_audit ON public.cg_communication_recipient_address;
+DROP TRIGGER IF EXISTS cg_communication_sender_audit ON public.cg_org_communication_sender;
+DROP TRIGGER IF EXISTS cg_communication_conversation_audit ON public.cg_communication_conversation;
+DROP FUNCTION IF EXISTS public.cg_communication_audit();
 
-DROP FUNCTION IF EXISTS public.comms_whatsapp_status(uuid, text, text, text);
-DROP FUNCTION IF EXISTS public.comms_whatsapp_sender_school(text);
-DROP FUNCTION IF EXISTS public.comms_whatsapp_map_message();
-DROP FUNCTION IF EXISTS public.comms_whatsapp_audit();
+DROP TABLE IF EXISTS public.cg_communication_optin;
+DROP TABLE IF EXISTS public.cg_communication_message;
+DROP TABLE IF EXISTS public.cg_communication_conversation;
+DROP TABLE IF EXISTS public.cg_communication_recipient_address;
 
-ALTER TABLE public.inbound_messages
-  DROP CONSTRAINT IF EXISTS inbound_messages_conversation_org_fk,
-  DROP COLUMN IF EXISTS user_id,
-  DROP COLUMN IF EXISTS conversation_id;
-ALTER TABLE public.outbound_messages
-  DROP CONSTRAINT IF EXISTS outbound_messages_conversation_org_fk,
-  DROP COLUMN IF EXISTS user_id,
-  DROP COLUMN IF EXISTS conversation_id,
-  DROP CONSTRAINT IF EXISTS outbound_messages_status_check;
-ALTER TABLE public.outbound_messages
-  ADD CONSTRAINT outbound_messages_status_check
-  CHECK (status IN ('queued','sent_stub','sent','delivered','failed','blocked_optout','blocked_wallet','blocked_cap'));
-
-DROP TABLE IF EXISTS public.comms_conversations;
+DROP INDEX IF EXISTS public.cg_org_communication_sender_meta_ref_active;
+ALTER TABLE public.cg_org_communication_sender
+  DROP CONSTRAINT IF EXISTS cg_org_communication_sender_provider_ref_check,
+  DROP CONSTRAINT IF EXISTS cg_org_communication_sender_channel_check,
+  DROP CONSTRAINT IF EXISTS cg_org_communication_sender_provider_check;
+ALTER TABLE public.cg_org_communication_sender
+  ADD CONSTRAINT cg_org_communication_sender_channel_check CHECK (channel = 'sms'),
+  ADD CONSTRAINT cg_org_communication_sender_provider_check CHECK (provider = 'twilio');
+ALTER TABLE public.cg_org_communication_sender
+  DROP COLUMN IF EXISTS provider_sender_ref;
+ALTER TABLE public.cg_org_communication_sender NO FORCE ROW LEVEL SECURITY;
 
 COMMIT;
