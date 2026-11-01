@@ -30,7 +30,22 @@ export default defineConfig({
   projects: [
     {
       name: "mobile-chromium",
-      use: { ...devices["Pixel 5"] },
+      use: {
+        viewport: { width: 390, height: 844 },
+        deviceScaleFactor: 1,
+        isMobile: false,
+        hasTouch: true,
+      },
+    },
+    {
+      name: "desktop-chromium",
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1440, height: 800 },
+        deviceScaleFactor: 1,
+        isMobile: false,
+        hasTouch: false,
+      },
     },
   ],
   // E2E convention (tests/README.md): specs run against a locally-started dev

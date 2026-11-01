@@ -16,8 +16,7 @@
   color: var(--shell-ink);
   background:
     radial-gradient(1200px 600px at 8% -10%, rgba(20, 168, 252, 0.16), transparent 55%),
-    radial-gradient(900px 500px at 100% 0%, rgba(130, 84, 246, 0.12), transparent 50%),
-    #eef2f8;
+    radial-gradient(900px 500px at 100% 0%, rgba(130, 84, 246, 0.12), transparent 50%), #eef2f8;
   color-scheme: light;
 }
 
@@ -130,7 +129,43 @@
   width: min(100%, 28rem);
   margin: 0 auto;
   background: transparent;
-  transition: transform 280ms var(--shell-ease), filter 280ms var(--shell-ease);
+  transition:
+    transform 280ms var(--shell-ease),
+    filter 280ms var(--shell-ease);
+}
+
+.app-shell-frame.is-role-management {
+  width: min(100%, 76rem);
+  height: auto;
+}
+
+.app-shell-frame.is-role-management .app-shell-main {
+  flex: 0 0 auto;
+  min-width: 0;
+  margin-top: 0;
+}
+
+.app-shell-frame.is-role-management .app-shell-sheet {
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  overflow: visible;
+}
+
+.app-shell-frame.is-role-management .app-shell-section {
+  min-width: 0;
+  width: 100%;
+}
+
+.app-shell-frame.is-role-management .app-shell-section > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+html:has(.app-shell-frame.is-role-management),
+body:has(.app-shell-frame.is-role-management) {
+  height: auto;
+  min-height: 100dvh;
 }
 
 .app-shell.is-drawer-open .app-shell-frame {
@@ -196,7 +231,12 @@
   place-items: center;
   flex-shrink: 0;
   border-radius: 999px;
-  background: linear-gradient(165deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.14) 55%, rgba(255, 255, 255, 0.28));
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.55),
+    rgba(255, 255, 255, 0.14) 55%,
+    rgba(255, 255, 255, 0.28)
+  );
   border: 1px solid rgba(255, 255, 255, 0.55);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.7),
@@ -213,7 +253,12 @@
 }
 
 .app-shell-glass-icon.is-dark {
-  background: linear-gradient(165deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0.08) 55%, rgba(255, 255, 255, 0.18));
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.32),
+    rgba(255, 255, 255, 0.08) 55%,
+    rgba(255, 255, 255, 0.18)
+  );
   border-color: rgba(255, 255, 255, 0.48);
   color: #f7f9ff;
   box-shadow:
@@ -424,10 +469,18 @@
   line-height: 1.25;
 }
 
-.app-shell-metric-green { color: var(--shell-green); }
-.app-shell-metric-amber { color: var(--shell-amber); }
-.app-shell-metric-blue { color: var(--shell-blue); }
-.app-shell-metric-ink { color: var(--shell-ink); }
+.app-shell-metric-green {
+  color: var(--shell-green);
+}
+.app-shell-metric-amber {
+  color: var(--shell-amber);
+}
+.app-shell-metric-blue {
+  color: var(--shell-blue);
+}
+.app-shell-metric-ink {
+  color: var(--shell-ink);
+}
 
 .app-shell-actions {
   display: grid;
@@ -453,10 +506,22 @@
   height: 2.7rem;
 }
 
-.app-shell-tone-blue { color: var(--shell-blue); background: rgba(24, 72, 253, 0.12); }
-.app-shell-tone-violet { color: var(--shell-violet); background: rgba(130, 84, 246, 0.14); }
-.app-shell-tone-cyan { color: #0b8fd4; background: rgba(20, 168, 252, 0.14); }
-.app-shell-tone-green { color: var(--shell-green); background: rgba(18, 128, 92, 0.12); }
+.app-shell-tone-blue {
+  color: var(--shell-blue);
+  background: rgba(24, 72, 253, 0.12);
+}
+.app-shell-tone-violet {
+  color: var(--shell-violet);
+  background: rgba(130, 84, 246, 0.14);
+}
+.app-shell-tone-cyan {
+  color: #0b8fd4;
+  background: rgba(20, 168, 252, 0.14);
+}
+.app-shell-tone-green {
+  color: var(--shell-green);
+  background: rgba(18, 128, 92, 0.12);
+}
 
 .app-shell-section-title {
   display: flex;

@@ -59,12 +59,14 @@ export function priorityRank(priority: CommunicationPriority): number {
   }
 }
 
-export type CommunicationChannelType = "in_app" | "email" | "sms" | "push" | "voice" | "external";
+export type CommunicationChannelType =
+  "in_app" | "email" | "sms" | "whatsapp" | "push" | "voice" | "external";
 
 export const COMMUNICATION_CHANNEL_TYPES: readonly CommunicationChannelType[] = [
   "in_app",
   "email",
   "sms",
+  "whatsapp",
   "push",
   "voice",
   "external",

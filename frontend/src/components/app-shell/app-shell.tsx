@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, Navigate, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { Bell, LogOut, Menu, Sparkles } from "lucide-react";
+import { Bell, LogOut, Menu, Settings2, Sparkles } from "lucide-react";
 import { useApp } from "@/contexts/app-context";
 import { refreshPushTokenIfGranted } from "@/lib/push-client";
 import { SHELL_ACCOUNT_NAV } from "@/lib/shell/account";
@@ -68,7 +68,7 @@ function ShellChrome({ children }: { children: ReactNode }) {
         <span className="app-shell-orb app-shell-orb-blue" />
         <span className="app-shell-orb app-shell-orb-violet" />
       </div>
-      <div className="app-shell-frame">
+      <div className={`app-shell-frame${path === "/home/s/roles" ? " is-role-management" : ""}`}>
         <header className="app-shell-header">
           <button
             type="button"
@@ -243,6 +243,19 @@ function ShellChrome({ children }: { children: ReactNode }) {
                 );
               })}
             </div>
+            {app.profile ? (
+              <button
+                type="button"
+                className={`app-shell-drawer-item${path === "/home/s/roles" ? " is-active" : ""}`}
+                onClick={() => go("/home/s/roles", "role-management")}
+                data-testid="role-management-link"
+              >
+                <ShellGlassIcon active={path === "/home/s/roles"}>
+                  <Settings2 />
+                </ShellGlassIcon>
+                Roles and responsibilities
+              </button>
+            ) : null}
             <button type="button" className="app-shell-signout" onClick={() => void app.signOut()}>
               <LogOut size={16} />
               Sign out

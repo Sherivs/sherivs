@@ -41,7 +41,7 @@ Issue #197’s Support workspace requirement limits support to assigned organiza
 
 ### SF-4 — M009-A1 is tenant-scoped; the production prerequisite is unresolved
 
-Draft PR #196 builds the M009-A1 contract over tenant-scoped role assignments and active organization membership. Its migration alters `public.user_role_assignments`; the checked-in SHERIVS-017 migration that creates `role_catalog` and `user_role_assignments` explicitly says “NOT APPLIED TO PRODUCTION” (`database/supabase/migrations/20261024000240_sherivs_017_role_permission_catalog.sql:1-15,37-86`; draft PR #196 migration `20261031000010_sherivs_m009_a1_role_responsibility_engine.sql:21-36,55-61`).
+Draft PR #196 builds the M009-A1 contract over tenant-scoped role assignments and active organization membership. Its migration alters `public.user_role_assignments`; the checked-in SHERIVS-017 migration that creates `role_catalog` and `user_role_assignments` explicitly says “NOT APPLIED TO PRODUCTION” (`database/supabase/migrations/20261024000240_sherivs_017_role_permission_catalog.sql:1- 15,37-86`; draft PR #196 migration `20261101000010_sherivs_m009_a1_role_responsibility_engine.sql:21-36,55-61`).
 
 **Risk:** Implementing/merging M009 without confirming its prerequisite schema and release sequence may fail in environments that lack SHERIVS-017. Applying M009 to console staff would also cross the tenant/control-plane identity boundary.
 

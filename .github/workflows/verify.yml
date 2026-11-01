@@ -28,7 +28,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: "${{ env.NODE_VERSION }}", cache: npm }
-      - run: npm ci --ignore-scripts --no-audit --fund=false
+      - run: npm ci --include=dev --ignore-scripts --no-audit --fund=false
       - run: npx tsc --noEmit
 
   lint:
@@ -57,8 +57,31 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: "${{ env.NODE_VERSION }}", cache: npm }
-      - run: npm ci --no-audit --fund=false
+      - run: npm ci --include=dev --no-audit --fund=false
       - run: npm run test:unit
+
+  role-management-screenshots:
+    name: Role management UI screenshots
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VITE_SUPABASE_URL: https://synthetic.supabase.test
+      VITE_SUPABASE_PUBLISHABLE_KEY: synthetic-role-management-test-key
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "${{ env.NODE_VERSION }}", cache: npm }
+      - run: npm ci --include=dev --no-audit --fund=false
+      - run: npx playwright install --with-deps chromium
+      - name: Capture desktop and mobile role-management screens
+        run: npx playwright test tests/e2e/role-management-screenshots.spec.ts --project=desktop-chromium --project=mobile-chromium
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-screenshots
+          path: test-results/**/role-management-*.png
+          if-no-files-found: warn
+          retention-days: 7
 
   repo-guards:
     name: Registry, drift, neutrality, secrets guards + build

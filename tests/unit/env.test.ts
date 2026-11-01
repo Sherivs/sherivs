@@ -79,6 +79,10 @@ describe("exposedServerOnlyVars", () => {
       "TWILIO_AUTH_TOKEN",
     );
     expect(exposedServerOnlyVars({ VITE_VAPI_API_KEY: "secret" })).toContain("VAPI_API_KEY");
+    expect(exposedServerOnlyVars({ VITE_WHATSAPP_TOKEN: "secret" })).toContain("WHATSAPP_TOKEN");
+    expect(exposedServerOnlyVars({ PUBLIC_WHATSAPP_APP_SECRET: "secret" })).toContain(
+      "WHATSAPP_APP_SECRET",
+    );
   });
 
   it("keeps voice callback and transcription credentials server-only", () => {
