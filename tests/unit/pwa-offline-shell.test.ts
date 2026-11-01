@@ -142,6 +142,7 @@ const sandbox = {
     },
   },
   Response,
+  URL,
   console,
   self: {
     addEventListener(type: string, listener: (event: unknown) => void): void {
@@ -255,13 +256,17 @@ describe("offline shell service worker", () => {
     expect(shell?.entries.has("/")).toBe(true);
   });
 
-  it("caches successful navigations network-first", async () => {
+  it("caches only the public root shell, never authenticated route documents", async () => {
     fetchImpl = (input) => Promise.resolve(new Response("<html>page</html>", { status: 200 }));
     loadServiceWorker();
-    dispatch("fetch", { request: { mode: "navigate", method: "GET", url: "/timetable" } });
+    dispatch("fetch", { request: { mode: "navigate", method: "GET", url: "https://sherivs.test/" } });
     await drained();
     const shell = cachesStore.get("sherivs-app-shell-v1");
-    expect(await shell?.entries.has("/timetable")).toBe(true);
+    expect(await shell?.entries.has("/")).toBe(true);
+
+    dispatch("fetch", { request: { mode: "navigate", method: "GET", url: "https://sherivs.test/home" } });
+    await drained();
+    expect(await shell?.entries.has("/home")).toBe(false);
     const response = await firstResponse();
     expect(response).toBeInstanceOf(Response);
   });
@@ -275,16 +280,16 @@ describe("offline shell service worker", () => {
     expect(await shell?.entries.has("/login")).toBe(false);
   });
 
-  it("falls back to the cached navigation when offline", async () => {
+  it("falls back to the public app shell for authenticated routes when offline", async () => {
     loadServiceWorker();
     const shell = await sandbox.caches.open("sherivs-app-shell-v1");
-    await shell.put({ url: "/timetable" }, new Response("<html>cached page</html>"));
+    await shell.put("/", new Response("<html>public shell</html>"));
     fetchImpl = () => Promise.reject(new TypeError("Failed to fetch"));
 
-    dispatch("fetch", { request: { mode: "navigate", method: "GET", url: "/timetable" } });
+    dispatch("fetch", { request: { mode: "navigate", method: "GET", url: "/home" } });
     await drained();
     const response = await firstResponse();
-    expect(await response.text()).toBe("<html>cached page</html>");
+    expect(await response.text()).toBe("<html>public shell</html>");
   });
 
   it("falls back to the precached shell for uncached navigations when offline", async () => {
