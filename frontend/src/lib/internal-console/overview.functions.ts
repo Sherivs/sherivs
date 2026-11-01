@@ -105,11 +105,14 @@ function describeAction(action: string): string {
 export const getConsoleOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ConsoleOverview> => {
+    const { error: claimError } = await context.supabase.rpc("claim_platform_staff_invite");
+    if (claimError) throw new Error("Invitation claim could not be completed.");
     const { data: isStaff, error: staffErr } = await (context.supabase as unknown as RpcClient).rpc(
       "is_platform_staff",
     );
     if (staffErr || isStaff !== true) throw new Error("Not authorized");
 
+    const { assertConsoleCapability } = await import("./console-access.server");
     const now = timeAuthority.now().at;
     const { environment, source: environmentSource } = environmentLabel();
     const { data: superRow } = await context.supabase
@@ -117,14 +120,16 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
       .select("id, full_name, email")
       .eq("id", context.userId)
       .maybeSingle();
-    await context.supabase.rpc("claim_platform_staff_invite");
+    const isSuperAdmin = Boolean(superRow);
+    if (isSuperAdmin) {
+      await assertConsoleCapability(context as never, "platform.operations.read", "overview.read");
+    }
     const { data: staffRow } = await context.supabase
       .from("platform_staff")
       .select("id, full_name, email, status, platform_staff_roles(role_code)")
       .eq("id", context.userId)
       .eq("status", "active")
       .maybeSingle();
-    const isSuperAdmin = Boolean(superRow);
     const roles = ((staffRow?.platform_staff_roles ?? []) as Array<{ role_code: string }>).map(
       (row) => row.role_code,
     );
@@ -493,7 +498,7 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
     await ensurePersonalWorkspace(db, context.userId);
     await syncStaffWorkspaces(db, context.userId);
     await ensureRegisteredRuntimes(db);
-    const canManageWorkspaces = isSuperAdmin || capabilities.has("platform.staff.manage");
+    const canManageWorkspaces = capabilities.has("platform.staff.manage");
     const storedWorkspaces = await loadAuthorizedWorkspaces(
       db,
       context.userId,
@@ -525,19 +530,38 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
       conversionRate: null,
       medianOnboardingHours: null,
     };
-    let organizationMetrics: OrganizationMetricsSnapshot = emptyOrgMetrics
+    let organizationMetrics: OrganizationMetricsSnapshot = emptyOrgMetrics;
     let organizations: ConsoleOverview["organizations"] = [];
     let organizationStore: ConsoleOverview["organizationStore"] = "unavailable";
     let assignments: ConsoleOverview["assignments"] = [];
     let scholarTenants: number | null = null;
     let registeredUsers: number | null = null;
     let activeUsers30d: number | null = null;
-    if (capabilities.has("platform.tenants.read")) {
-      const { loadOrganizationMetrics, loadViewerAssignments } = await import(
-        "./organization.store.server"
-      );
+    if (capabilities.has("platform.tenants.read") || capabilities.has("platform.operations.read")) {
+      if (isSuperAdmin) {
+        await assertConsoleCapability(
+          context as never,
+          "platform.operations.read",
+          "organization.summary.read",
+        );
+      }
+      const { loadAssignedSupportOrganizationIds, loadOrganizationMetrics, loadViewerAssignments } =
+        await import("./organization.store.server");
       try {
-        const snapshot = await loadOrganizationMetrics(db);
+        const supportOnly =
+          capabilities.has("platform.support.handle") &&
+          !capabilities.has("platform.tenants.manage");
+        const organizationIds = supportOnly
+          ? await loadAssignedSupportOrganizationIds(db, context.userId)
+          : undefined;
+        const snapshot = await loadOrganizationMetrics(
+          db,
+          supportOnly
+            ? { organizationIds, includePlatformMetrics: false }
+            : isSuperAdmin
+              ? { operationsSummary: true }
+              : undefined,
+        );
         organizationMetrics = snapshot.organizationMetrics;
         organizationStore = snapshot.organizationMetrics.available ? "database" : "unavailable";
         scholarTenants = snapshot.scholarTenants;
@@ -547,7 +571,8 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
           id: row.id,
           displayName: row.display_name,
           orgType: "school" as const,
-          lifecycleState: row.lifecycle_state as ConsoleOverview["organizations"][number]["lifecycleState"],
+          lifecycleState:
+            row.lifecycle_state as ConsoleOverview["organizations"][number]["lifecycleState"],
           country: row.country,
           region: row.region,
           city: row.city,
@@ -622,12 +647,16 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
             "platform_organization.lifecycle_state",
             organizationMetrics.suspended !== null,
           );
-          if (typeof organizationMetrics.failedProvisioning === "number" && organizationMetrics.failedProvisioning > 0) {
+          if (
+            typeof organizationMetrics.failedProvisioning === "number" &&
+            organizationMetrics.failedProvisioning > 0
+          ) {
             attention.push({
               id: "provisioning-failed",
               severity: "high",
               title: `${organizationMetrics.failedProvisioning} provisioning failure${organizationMetrics.failedProvisioning === 1 ? "" : "s"}`,
-              description: "Provisioning failed for one or more organization cases. Retry is idempotent.",
+              description:
+                "Provisioning failed for one or more organization cases. Retry is idempotent.",
               detectedAt: now,
               resource: "Organizations",
               owner: null,
@@ -635,7 +664,10 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
               href: CONSOLE_PATHS.organizations,
             });
           }
-          if (typeof organizationMetrics.onboarding === "number" && organizationMetrics.onboarding > 0) {
+          if (
+            typeof organizationMetrics.onboarding === "number" &&
+            organizationMetrics.onboarding > 0
+          ) {
             attention.push({
               id: "onboarding-pipeline",
               severity: "medium",

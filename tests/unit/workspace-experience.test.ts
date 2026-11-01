@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { workspacesForViewer, parseWorkspaceId, workspaceById } from "@/lib/internal-console/workspaces";
+import {
+  workspacesForViewer,
+  parseWorkspaceId,
+  workspaceById,
+} from "@/lib/internal-console/workspaces";
 import { roleCodesForWorkspaceProvisioning } from "@/lib/internal-console/role-workspace";
+import { viewerCapabilities } from "@/lib/internal-console/roles";
 import {
   WORKSPACE_EXPERIENCES,
   experienceKeyForWorkspace,
@@ -52,6 +57,51 @@ describe("role workspace operating environments", () => {
       kind: "role",
       role: "platform_owner",
     });
+  });
+
+  it("folds legacy work roles into the six V1 workspaces without extra role workspaces", () => {
+    expect(
+      workspacesForViewer({
+        displayName: "Ada",
+        isSuperAdmin: false,
+        roles: ["security", "finance", "sales"],
+      }).map(({ id }) => id),
+    ).toEqual(["me", "role:platform_admin", "role:operations"]);
+  });
+
+  it("limits the super-admin workspace experience to Platform Operations capabilities", () => {
+    const superAdminCapabilities = viewerCapabilities([], true);
+    expect(superAdminCapabilities.has("platform.operations.read")).toBe(true);
+    expect(superAdminCapabilities.has("platform.audit.read")).toBe(true);
+    expect(superAdminCapabilities.has("platform.operations.assign")).toBe(true);
+    expect(superAdminCapabilities.has("platform.staff.manage")).toBe(false);
+    expect(superAdminCapabilities.has("platform.tenants.manage")).toBe(false);
+    expect(superAdminCapabilities.has("platform.tenants.read")).toBe(false);
+    const viewer = {
+      isSuperAdmin: true,
+      capabilities: superAdminCapabilities,
+    };
+    expect(
+      visibleWorkspaceNav(WORKSPACE_EXPERIENCES.platform_operations, viewer).map(
+        ({ label }) => label,
+      ),
+    ).toEqual([
+      "Overview",
+      "Organizations",
+      "Workspaces",
+      "Runtime directory",
+      "Analytics",
+      "Incidents",
+      "Audit",
+      "Help",
+    ]);
+    expect(
+      workspaceById("role:platform_admin", {
+        displayName: "Ada",
+        isSuperAdmin: true,
+        roles: [],
+      }),
+    ).toBeNull();
   });
 
   it("resolves each initial internal role to a dedicated experience", () => {

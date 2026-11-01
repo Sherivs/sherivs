@@ -53,11 +53,8 @@ async function assertSuper(context: GateContext) {
 
 async function assertCapability(context: GateContext, capability: string) {
   assertInternalAal2((context as { claims?: { aal?: unknown } }).claims);
-  const { data, error } = await (context.supabase as unknown as RpcClient).rpc(
-    "has_platform_capability",
-    { p_capability: capability },
-  );
-  if (error || data !== true) throw new Error("Not authorized");
+  const { assertConsoleCapability } = await import("@/lib/internal-console/console-access.server");
+  await assertConsoleCapability(context, capability);
 }
 
 async function admin() {
@@ -148,9 +145,18 @@ export const invitePlatformStaff = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: unknown) => inviteSchema.parse(input))
   .handler(async ({ data, context }) => {
-    await assertCapability(context, "platform.staff.manage");
-    if (data.roles.some((role) => PRIVILEGED_PLATFORM_ROLES.has(role))) {
+    const privilegedGrant = data.roles.some((role) => PRIVILEGED_PLATFORM_ROLES.has(role));
+    if (privilegedGrant) {
       await assertSuper(context);
+      const { assertConsoleCapability } =
+        await import("@/lib/internal-console/console-access.server");
+      await assertConsoleCapability(
+        context,
+        "platform.staff.manage",
+        "staff.privileged_role_approval",
+      );
+    } else {
+      await assertCapability(context, "platform.staff.manage");
     }
     const db = await admin();
 
@@ -322,24 +328,41 @@ export const setPlatformStaffStatus = createServerFn({ method: "POST" })
       .eq("id", staff.id);
     if (error) throw new Error(error.message);
 
+    let identityError: string | null = null;
+    let roleError: string | null = null;
     if (data.status !== "active") {
       // Cut off live sessions: ban the auth account (suspend/revoke) — the
       // 'none' duration lifts it on reactivation. Revoked staff also lose roles.
-      await db.auth.admin.updateUserById(staff.id, { ban_duration: "876000h" });
+      const { error: banError } = await db.auth.admin.updateUserById(staff.id, {
+        ban_duration: "876000h",
+      });
+      identityError = banError?.message ?? null;
       if (data.status === "revoked") {
-        await db.from("platform_staff_roles").delete().eq("staff_id", staff.id);
+        const { error: revokeRolesError } = await db
+          .from("platform_staff_roles")
+          .delete()
+          .eq("staff_id", staff.id);
+        roleError = revokeRolesError?.message ?? null;
       }
     } else {
-      await db.auth.admin.updateUserById(staff.id, { ban_duration: "none" });
+      const { error: unbanError } = await db.auth.admin.updateUserById(staff.id, {
+        ban_duration: "none",
+      });
+      identityError = unbanError?.message ?? null;
     }
     await audit(context, `status.${data.status}`, staff.id, "succeeded", {
       from: staff.status,
       to: data.status,
+      identityUpdateSucceeded: identityError === null,
+      roleRemovalSucceeded: roleError === null,
     });
     const { error: syncErr } = await store(db).rpc("sync_platform_staff_workspaces", {
       p_user_id: staff.id,
     });
     if (syncErr && !isMissingRelation(syncErr)) throw new Error(syncErr.message);
+    if (identityError || roleError) {
+      throw new Error("The staff status was saved, but one or more access updates failed.");
+    }
     return { ok: true };
   });
 
@@ -350,7 +373,6 @@ export const setPlatformStaffRoles = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: unknown) => rolesSchema.parse(input))
   .handler(async ({ data, context }) => {
-    await assertCapability(context, "platform.staff.manage");
     const staff = await loadStaff(data.staffId);
     if (staff.status === "revoked") throw new Error("Revoked staff cannot hold roles.");
     const db = await admin();
@@ -360,35 +382,32 @@ export const setPlatformStaffRoles = createServerFn({ method: "POST" })
       .eq("staff_id", staff.id);
     const before = new Set((current ?? []).map((r) => r.role_code));
     const after = new Set<string>(data.roles);
-    if (
-      [...before, ...after].some((role) =>
-        (PRIVILEGED_PLATFORM_ROLES as ReadonlySet<string>).has(role),
-      )
-    ) {
+    const privilegedGrant = [...before, ...after].some((role) =>
+      (PRIVILEGED_PLATFORM_ROLES as ReadonlySet<string>).has(role),
+    );
+    if (privilegedGrant) {
       await assertSuper(context);
+      const { assertConsoleCapability } =
+        await import("@/lib/internal-console/console-access.server");
+      await assertConsoleCapability(
+        context,
+        "platform.staff.manage",
+        "staff.privileged_role_approval",
+      );
+    } else {
+      await assertCapability(context, "platform.staff.manage");
     }
     const toAdd = [...after].filter((r) => !before.has(r));
     const toRemove = [...before].filter((r) => !after.has(r));
-    if (toRemove.length) {
-      const { error } = await db
-        .from("platform_staff_roles")
-        .delete()
-        .eq("staff_id", staff.id)
-        .in("role_code", toRemove);
-      if (error) throw new Error(error.message);
-    }
-    if (toAdd.length) {
-      const { error } = await db
-        .from("platform_staff_roles")
-        .insert(
-          toAdd.map((role_code) => ({ staff_id: staff.id, role_code, granted_by: context.userId })),
-        );
-      if (error) throw new Error(error.message);
-    }
+    const { error: roleError } = await (db as unknown as RpcClient).rpc(
+      "set_platform_staff_roles",
+      {
+        p_staff_id: staff.id,
+        p_role_codes: [...after],
+        p_actor_id: context.userId,
+      },
+    );
+    if (roleError) throw new Error("The role change could not be reconciled.");
     await audit(context, "set_roles", staff.id, "succeeded", { added: toAdd, removed: toRemove });
-    const { error: syncErr } = await store(db).rpc("sync_platform_staff_workspaces", {
-      p_user_id: staff.id,
-    });
-    if (syncErr && !isMissingRelation(syncErr)) throw new Error(syncErr.message);
     return { roles: [...after] };
   });

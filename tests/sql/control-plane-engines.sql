@@ -55,6 +55,38 @@ SELECT public.sync_platform_staff_workspaces('42222222-2222-4222-8222-2222222222
 INSERT INTO cp_results VALUES ('sync is idempotent for role workspace', (
   SELECT count(*) FROM public.platform_role_workspace WHERE role_code = 'operations'
 ) = 1);
+DELETE FROM public.platform_staff_roles
+ WHERE staff_id = '42222222-2222-4222-8222-222222222222';
+INSERT INTO public.platform_staff_roles (staff_id, role_code)
+VALUES ('42222222-2222-4222-8222-222222222222', 'engineering');
+SELECT public.sync_platform_staff_workspaces('42222222-2222-4222-8222-222222222222');
+INSERT INTO cp_results VALUES ('role change removes old workspace membership', NOT EXISTS (
+  SELECT 1
+  FROM public.platform_role_workspace rw
+  JOIN public.platform_workspace_member m ON m.workspace_id = rw.workspace_id
+  WHERE rw.role_code = 'operations' AND m.user_id = '42222222-2222-4222-8222-222222222222'
+));
+INSERT INTO cp_results VALUES ('role change adds new workspace membership', EXISTS (
+  SELECT 1
+  FROM public.platform_role_workspace rw
+  JOIN public.platform_workspace_member m ON m.workspace_id = rw.workspace_id
+  WHERE rw.role_code = 'engineering' AND m.user_id = '42222222-2222-4222-8222-222222222222'
+));
+INSERT INTO cp_results VALUES ('role change preserves personal workspace', (
+  SELECT count(*) = 1
+  FROM public.platform_workspace w
+  JOIN public.platform_workspace_member m ON m.workspace_id = w.id
+  WHERE w.kind = 'personal' AND m.user_id = '42222222-2222-4222-8222-222222222222'
+));
+UPDATE public.platform_staff
+   SET status = 'suspended'
+ WHERE id = '42222222-2222-4222-8222-222222222222';
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claims', '{"sub":"42222222-2222-4222-8222-222222222222","role":"authenticated"}', true);
+INSERT INTO cp_results VALUES ('suspended staff loses platform capability',
+  NOT public.has_platform_capability('platform.engineering.read')
+);
+RESET ROLE;
 
 SELECT check_name, ok FROM cp_results ORDER BY check_name;
 ROLLBACK;

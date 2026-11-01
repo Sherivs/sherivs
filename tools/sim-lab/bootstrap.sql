@@ -12,7 +12,8 @@ CREATE TABLE auth.users (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(), email text UNIQUE, phone text, role text DEFAULT 'authenticated',
   raw_user_meta_data jsonb DEFAULT '{}'::jsonb, raw_app_meta_data jsonb DEFAULT '{}'::jsonb,
   encrypted_password text, email_confirmed_at timestamptz, created_at timestamptz DEFAULT now(), updated_at timestamptz DEFAULT now(),
-  last_sign_in_at timestamptz, is_anonymous boolean DEFAULT false, deleted_at timestamptz, banned_until timestamptz);
+  last_sign_in_at timestamptz, phone_confirmed_at timestamptz, is_anonymous boolean DEFAULT false,
+  deleted_at timestamptz, banned_until timestamptz);
 CREATE FUNCTION auth.jwt() RETURNS jsonb LANGUAGE sql STABLE AS
   $$ SELECT coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb $$;
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(auth.jwt()->>'sub','')::uuid $$;

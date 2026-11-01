@@ -73,7 +73,10 @@ describe("internal console V1 contract", () => {
       "support_specialist",
     );
     expect(presentationRoleFor({ isSuperAdmin: false, roles: ["finance"] })).toBe(
-      "standard_team_member",
+      "operations_administrator",
+    );
+    expect(presentationRoleFor({ isSuperAdmin: false, roles: ["security"] })).toBe(
+      "platform_administrator",
     );
   });
 
@@ -91,17 +94,13 @@ describe("internal console V1 contract", () => {
     ]);
     const supportActivity = filterNav(CONSOLE_NAV, support).find((item) => item.key === "activity");
     expect(supportActivity?.navigable).toBe(false);
-    expect(supportActivity?.children?.map((item) => item.key)).toEqual([
-      "metrics",
-      "incidents",
-      "tickets",
-    ]);
+    expect(supportActivity?.children?.map((item) => item.key)).toEqual(["metrics", "tickets"]);
     expect(quickActionsFor(support).some((item) => item.key === "invite")).toBe(false);
     expect(
       quickActionsFor({ isSuperAdmin: true, capabilities: new Set() }).some(
         (item) => item.key === "invite",
       ),
-    ).toBe(true);
+    ).toBe(false);
     const engineer = {
       isSuperAdmin: false,
       capabilities: viewerCapabilities(["engineering"], false),
@@ -642,9 +641,9 @@ describe("local visual fixture", () => {
       operations: "operations_administrator",
       engineering: "engineer",
       support: "support_specialist",
-      security: "standard_team_member",
-      finance: "standard_team_member",
-      sales: "standard_team_member",
+      security: "platform_administrator",
+      finance: "operations_administrator",
+      sales: "operations_administrator",
     } as const;
     for (const persona of CONSOLE_FIXTURE_PERSONAS) {
       const overview = buildConsoleVisualFixtureOverview(persona);
@@ -659,13 +658,7 @@ describe("local visual fixture", () => {
   it("does not leak organization pipeline data to roles without tenants.read", async () => {
     const { buildConsoleVisualFixtureOverview, CONSOLE_FIXTURE_PERSONAS } =
       await import("@/lib/internal-console/visual-fixture");
-    const withTenants = new Set([
-      "platform_owner",
-      "platform_admin",
-      "operations",
-      "support",
-      "sales",
-    ]);
+    const withTenants = new Set(["platform_owner", "operations", "support", "sales"]);
     for (const persona of CONSOLE_FIXTURE_PERSONAS) {
       const overview = buildConsoleVisualFixtureOverview(persona);
       if (withTenants.has(persona.key)) {
@@ -684,6 +677,90 @@ describe("local visual fixture", () => {
     const home = readFileSync("frontend/src/components/internal-console/home-screen.tsx", "utf8");
     expect(home).toContain("canReadOrgs && overview.organizationMetrics.available");
     expect(home).toContain('data-testid="console-org-pipeline"');
+  });
+
+  it("limits the Support fixture to explicitly assigned organization cases", async () => {
+    const {
+      buildConsoleVisualFixtureOverview,
+      CONSOLE_FIXTURE_PERSONAS,
+      readFixtureOrganizationSnapshot,
+      assignedSupportOrganizationIds,
+    } = await import("@/lib/internal-console/visual-fixture");
+    const support = CONSOLE_FIXTURE_PERSONAS.find((persona) => persona.key === "support");
+    if (!support) throw new Error("Support fixture is required.");
+    const overview = buildConsoleVisualFixtureOverview(
+      support,
+      readFixtureOrganizationSnapshot(
+        JSON.stringify({
+          organizations: [
+            {
+              id: "fixture-org-active",
+              displayName: "Assigned School",
+              lifecycleState: "active",
+              assignments: [
+                {
+                  id: "support-assignment",
+                  organizationId: "fixture-org-active",
+                  staffId: support.id,
+                  staffName: support.name,
+                  assignmentType: "support",
+                  status: "active",
+                },
+                {
+                  id: "other-assignment",
+                  organizationId: "fixture-org-unassigned",
+                  staffId: "another-support",
+                  staffName: "Other Support",
+                  assignmentType: "support",
+                  status: "active",
+                },
+              ],
+            },
+            {
+              id: "fixture-org-unassigned",
+              displayName: "Unassigned School",
+              lifecycleState: "active",
+              assignments: [
+                {
+                  id: "other-assignment",
+                  organizationId: "fixture-org-unassigned",
+                  staffId: "another-support",
+                  staffName: "Other Support",
+                  assignmentType: "support",
+                  status: "active",
+                },
+              ],
+            },
+          ],
+        }),
+      ),
+    );
+    expect(overview.organizations.map((organization) => organization.id)).toEqual([
+      "fixture-org-active",
+    ]);
+    expect(overview.organizationMetrics.total).toBe(1);
+    expect(
+      overview.assignments.every((assignment) => assignment.assignmentType === "support"),
+    ).toBe(true);
+    expect(
+      assignedSupportOrganizationIds(
+        [
+          ...overview.assignments,
+          {
+            id: "unassigned-support",
+            organizationId: "fixture-org-unassigned",
+            staffId: "another-support",
+            staffName: "Other Support",
+            assignmentType: "support",
+            status: "active",
+            assignedBy: support.id,
+            assignedAt: "2026-10-27T00:00:00.000Z",
+            releasedAt: null,
+          },
+        ],
+        support.id,
+      ),
+    ).toEqual(new Set(["fixture-org-active"]));
     const { helpArticlesFor } = await import("@/lib/internal-console/help-catalog");
     const engineerHelp = helpArticlesFor({
       isSuperAdmin: false,

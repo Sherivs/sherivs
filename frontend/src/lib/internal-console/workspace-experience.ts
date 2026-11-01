@@ -46,20 +46,31 @@ export const WORKSPACE_EXPERIENCES: Record<WorkspaceExperienceKey, WorkspaceExpe
     purpose: "Platform-wide oversight and coordinated operational decision-making.",
     audience: "Platform owners (super-admin) and personnel granted the matching capabilities.",
     membership: "Role workspace for platform_owner. Membership is not a permission grant.",
-    lifecycle: "Provisioned when a super-admin staff membership is active. Archived membership is removed on revocation.",
-    revocation: "Revocation drops role-workspace membership. Personal workspace ownership is preserved.",
+    lifecycle:
+      "Provisioned when a super-admin staff membership is active. Archived membership is removed on revocation.",
+    revocation:
+      "Revocation drops role-workspace membership. Personal workspace ownership is preserved.",
     privacy: "Does not expose private personal workspaces or unrestricted school records.",
-    requiredCapabilities: ["platform.tenants.read"],
+    requiredCapabilities: ["platform.operations.read"],
     navigation: [
       { label: "Overview", href: CONSOLE_PATHS.home, capability: null },
-      { label: "Organizations", href: CONSOLE_PATHS.organizations, capability: "platform.tenants.read" },
-      { label: "Onboard organization", href: CONSOLE_PATHS.organizationNew, capability: "platform.tenants.manage" },
+      {
+        label: "Organizations",
+        href: CONSOLE_PATHS.organizations,
+        capability: "platform.operations.read",
+      },
       { label: "Workspaces", href: CONSOLE_PATHS.workspaces, capability: null },
       { label: "Runtime directory", href: CONSOLE_PATHS.runtimes, capability: null },
-      { label: "Analytics", href: CONSOLE_PATHS.activityMetrics, capability: "platform.tenants.read" },
-      { label: "Incidents", href: CONSOLE_PATHS.activityIncidents, capability: "platform.tenants.read" },
-      { label: "Tickets", href: CONSOLE_PATHS.activityTickets, capability: "platform.tenants.read" },
-      { label: "Billing", href: CONSOLE_PATHS.activityBilling, capability: "platform.tenants.manage" },
+      {
+        label: "Analytics",
+        href: CONSOLE_PATHS.activityMetrics,
+        capability: "platform.operations.read",
+      },
+      {
+        label: "Incidents",
+        href: CONSOLE_PATHS.activityIncidents,
+        capability: "platform.operations.read",
+      },
       { label: "Audit", href: CONSOLE_PATHS.activityAdmin, capability: "platform.audit.read" },
       { label: "Help", href: CONSOLE_PATHS.help, capability: null },
     ],
@@ -71,32 +82,51 @@ export const WORKSPACE_EXPERIENCES: Record<WorkspaceExperienceKey, WorkspaceExpe
     audience: "Staff with the platform_admin role.",
     membership: "Role workspace for platform_admin.",
     lifecycle: "Provisioned when the platform_admin role is assigned. Reconciled on role change.",
-    revocation: "Role-workspace membership is removed. Super-admin privileges are never granted from this workspace.",
+    revocation:
+      "Role-workspace membership is removed. Super-admin privileges are never granted from this workspace.",
     privacy: "Staff-management permission does not open another person's personal workspace.",
     requiredCapabilities: ["platform.staff.read"],
     navigation: [
       { label: "Team directory", href: CONSOLE_PATHS.team, capability: "platform.staff.read" },
-      { label: "Invitations", href: CONSOLE_PATHS.teamInvitations, capability: "platform.staff.read" },
+      {
+        label: "Invitations",
+        href: CONSOLE_PATHS.teamInvitations,
+        capability: "platform.staff.read",
+      },
       { label: "Role catalogue", href: CONSOLE_PATHS.teamRoles, capability: "platform.staff.read" },
       { label: "Access review", href: CONSOLE_PATHS.teamAccess, capability: "platform.audit.read" },
       { label: "Workspaces", href: CONSOLE_PATHS.workspaces, capability: null },
-      { label: "Administrative audit", href: CONSOLE_PATHS.activityAdmin, capability: "platform.audit.read" },
-      { label: "Platform settings", href: CONSOLE_PATHS.settings, capability: "platform.config.read" },
+      {
+        label: "Administrative audit",
+        href: CONSOLE_PATHS.activityAdmin,
+        capability: "platform.audit.read",
+      },
+      {
+        label: "Platform settings",
+        href: CONSOLE_PATHS.settings,
+        capability: "platform.config.read",
+      },
       { label: "Help", href: CONSOLE_PATHS.help, capability: null },
     ],
   },
   operations: {
     key: "operations",
     title: "Operations",
-    purpose: "Manage organization onboarding and the operational lifecycle of organizations using Sherivs.",
+    purpose:
+      "Manage organization onboarding and the operational lifecycle of organizations using Sherivs.",
     audience: "Staff with the operations role.",
     membership: "Role workspace for operations.",
     lifecycle: "Provisioned when the operations role is assigned.",
-    revocation: "Role-workspace membership is removed. Organization assignment history is retained.",
+    revocation:
+      "Role-workspace membership is removed. Organization assignment history is retained.",
     privacy: "Organization lifecycle permission is not school-tenant data permission.",
     requiredCapabilities: ["platform.tenants.read"],
     navigation: [
-      { label: "Organization directory", href: CONSOLE_PATHS.organizations, capability: "platform.tenants.read" },
+      {
+        label: "Organization directory",
+        href: CONSOLE_PATHS.organizations,
+        capability: "platform.tenants.read",
+      },
       {
         label: "Onboarding queue",
         href: CONSOLE_PATHS.organizations,
@@ -116,9 +146,21 @@ export const WORKSPACE_EXPERIENCES: Record<WorkspaceExperienceKey, WorkspaceExpe
         capability: "platform.tenants.read",
       },
       { label: "Runtime eligibility", href: CONSOLE_PATHS.runtimes, capability: null },
-      { label: "Operational metrics", href: CONSOLE_PATHS.activityMetrics, capability: "platform.tenants.read" },
-      { label: "Incidents", href: CONSOLE_PATHS.activityIncidents, capability: "platform.tenants.read" },
-      { label: "Billing", href: CONSOLE_PATHS.activityBilling, capability: "platform.tenants.manage" },
+      {
+        label: "Operational metrics",
+        href: CONSOLE_PATHS.activityMetrics,
+        capability: "platform.tenants.read",
+      },
+      {
+        label: "Incidents",
+        href: CONSOLE_PATHS.activityIncidents,
+        capability: "platform.tenants.read",
+      },
+      {
+        label: "Billing",
+        href: CONSOLE_PATHS.activityBilling,
+        capability: "platform.tenants.manage",
+      },
       { label: "Help", href: CONSOLE_PATHS.help, capability: null },
     ],
   },
@@ -135,27 +177,53 @@ export const WORKSPACE_EXPERIENCES: Record<WorkspaceExperienceKey, WorkspaceExpe
     navigation: [
       { label: "Runtime health", href: CONSOLE_PATHS.runtimes, capability: null },
       { label: "Sherivs Scholar", href: CONSOLE_PATHS.scholar, capability: null },
-      { label: "Metrics", href: CONSOLE_PATHS.activityMetrics, capability: "platform.engineering.read" },
+      {
+        label: "Metrics",
+        href: CONSOLE_PATHS.activityMetrics,
+        capability: "platform.engineering.read",
+      },
       { label: "Logs", href: CONSOLE_PATHS.activityLogs, capability: "platform.engineering.read" },
-      { label: "Incidents", href: CONSOLE_PATHS.activityIncidents, capability: "platform.engineering.read" },
-      { label: "Security events", href: CONSOLE_PATHS.activitySecurity, capability: "platform.audit.read" },
+      {
+        label: "Incidents",
+        href: CONSOLE_PATHS.activityIncidents,
+        capability: "platform.engineering.read",
+      },
+      {
+        label: "Security events",
+        href: CONSOLE_PATHS.activitySecurity,
+        capability: "platform.audit.read",
+      },
       { label: "Help", href: CONSOLE_PATHS.help, capability: null },
     ],
   },
   support: {
     key: "support",
     title: "Support",
-    purpose: "Help organizations resolve onboarding and product-access issues while preserving tenant privacy.",
+    purpose:
+      "Help organizations resolve onboarding and product-access issues while preserving tenant privacy.",
     audience: "Staff with the support role.",
     membership: "Role workspace for support.",
     lifecycle: "Provisioned when the support role is assigned.",
     revocation: "Role-workspace membership is removed. Assignment history is retained.",
-    privacy: "Support staff do not receive student, financial, or biometric school records from this workspace.",
+    privacy:
+      "Support staff do not receive student, financial, or biometric school records from this workspace.",
     requiredCapabilities: ["platform.tenants.read"],
     navigation: [
-      { label: "Assigned organizations", href: CONSOLE_PATHS.organizations, capability: "platform.tenants.read" },
-      { label: "Organization directory", href: CONSOLE_PATHS.organizations, capability: "platform.tenants.read" },
-      { label: "Tickets", href: CONSOLE_PATHS.activityTickets, capability: "platform.support.handle" },
+      {
+        label: "Assigned organizations",
+        href: CONSOLE_PATHS.organizations,
+        capability: "platform.tenants.read",
+      },
+      {
+        label: "Organization directory",
+        href: CONSOLE_PATHS.organizations,
+        capability: "platform.tenants.read",
+      },
+      {
+        label: "Tickets",
+        href: CONSOLE_PATHS.activityTickets,
+        capability: "platform.support.handle",
+      },
       { label: "Runtime availability", href: CONSOLE_PATHS.scholar, capability: null },
       { label: "Help", href: CONSOLE_PATHS.help, capability: null },
     ],
@@ -167,8 +235,10 @@ export const WORKSPACE_EXPERIENCES: Record<WorkspaceExperienceKey, WorkspaceExpe
     audience: "Every internal staff member.",
     membership: "Owned by the staff member. Private by default.",
     lifecycle: "Created on invitation claim. Role changes do not delete it.",
-    revocation: "Suspension and revocation block protected requests. Ownership and audit history remain.",
-    privacy: "Administrators may see workspace metadata. They cannot open personal content from staff.manage.",
+    revocation:
+      "Suspension and revocation block protected requests. Ownership and audit history remain.",
+    privacy:
+      "Administrators may see workspace metadata. They cannot open personal content from staff.manage.",
     requiredCapabilities: [],
     navigation: [
       { label: "My workspaces", href: CONSOLE_PATHS.workspaces, capability: null },
@@ -182,7 +252,8 @@ export const WORKSPACE_EXPERIENCES: Record<WorkspaceExperienceKey, WorkspaceExpe
     purpose: "A custom shared working environment for explicitly authorized members.",
     audience: "Assigned members of a shared workspace.",
     membership: "Explicit membership rows. Not derived from role.",
-    lifecycle: "Created by authorized staff. May be archived. Role workspaces are not managed through this form.",
+    lifecycle:
+      "Created by authorized staff. May be archived. Role workspaces are not managed through this form.",
     revocation: "Removing a member does not delete their personal workspace.",
     privacy: "Shared content is limited to members. This is not a personal workspace.",
     requiredCapabilities: ["platform.staff.manage"],
@@ -201,7 +272,9 @@ const ROLE_EXPERIENCE: Record<string, WorkspaceExperienceKey> = {
   support: "support",
 };
 
-export function experienceKeyForWorkspace(workspace: Pick<InternalWorkspace, "id" | "slug" | "type" | "name">): WorkspaceExperienceKey {
+export function experienceKeyForWorkspace(
+  workspace: Pick<InternalWorkspace, "id" | "slug" | "type" | "name">,
+): WorkspaceExperienceKey {
   if (workspace.type === "personal" || workspace.id === "me" || workspace.slug === "me") {
     return "personal";
   }
@@ -227,7 +300,6 @@ export function visibleWorkspaceNav(
   viewer: { isSuperAdmin: boolean; capabilities: ReadonlySet<string> },
 ): WorkspaceNavLink[] {
   return contract.navigation.filter(
-    (item) =>
-      viewer.isSuperAdmin || item.capability === null || viewer.capabilities.has(item.capability),
+    (item) => item.capability === null || viewer.capabilities.has(item.capability),
   );
 }

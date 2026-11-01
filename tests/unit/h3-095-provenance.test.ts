@@ -336,6 +336,22 @@ describe("H3-095 provenance checker — CLI exit-code contracts (synthetic tree)
     expect(finding?.missing).not.toContain("creator");
   });
 
+  it("recognizes an explicitly attributed GitHub Copilot coding-agent identity", () => {
+    const tree = makeTree("copilot-creator");
+    const attributed = ADR_STUB.replace(
+      "| Author | SYNTHETIC STRATEGIST (TEAM H3-990, A-990) |",
+      "| Author | `copilot-swe-agent[bot]` (GitHub Copilot Coding Agent) |",
+    );
+    writeFileSync(join(tree.root, "architecture", "adr", "ADR-991_COPILOT.md"), attributed);
+    const run = runScript(["--root", tree.root, "--json"], {
+      COREGRID_ARTIFACTS_DIR: tree.artifactsDir,
+    });
+    expect(run.status).toBe(0);
+    expect(
+      findingFor(parseJson(run.stdout), "architecture/adr/ADR-991_COPILOT.md"),
+    ).toBeUndefined();
+  });
+
   it("fails closed with a verification FINDING when no decision posture is declared (exit 1)", () => {
     const tree = makeTree("no-verification");
     writeFileSync(
