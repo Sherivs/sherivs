@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link } from "@tanstack/react-router";
+import { Copy } from "lucide-react";
 import { useApp } from "@/contexts/app-context";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveWorkspaceManifest } from "@/lib/workspaces/manifest-resolver";
@@ -84,6 +85,7 @@ export function RoleManagementScreen() {
   const [roleName, setRoleName] = useState("");
   const [roleBase, setRoleBase] = useState("");
   const [createdRole, setCreatedRole] = useState("");
+  const [copiedRole, setCopiedRole] = useState(false);
   const [responsibilityRole, setResponsibilityRole] = useState("");
   const [responsibilityCode, setResponsibilityCode] = useState("");
   const [responsibilityLabel, setResponsibilityLabel] = useState("");
@@ -340,6 +342,16 @@ export function RoleManagementScreen() {
     setBusy(false);
   }
 
+  async function copyRoleCode() {
+    try {
+      await navigator.clipboard.writeText(createdRole);
+      setCopiedRole(true);
+      window.setTimeout(() => setCopiedRole(false), 1500);
+    } catch {
+      setError("Unable to copy the role code from this browser.");
+    }
+  }
+
   if (loading) return <p role="status">Loading role access…</p>;
 
   return (
@@ -452,7 +464,24 @@ export function RoleManagementScreen() {
                     Create role
                   </Button>
                 </form>
-                {createdRole ? <p className="text-sm">Created role code: {createdRole}</p> : null}
+                {createdRole ? (
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="shrink-0 text-sm">Created role code:</span>
+                    <code className="min-w-0 flex-1 break-all rounded bg-muted p-2 text-xs">
+                      {createdRole}
+                    </code>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      aria-label={copiedRole ? "Role code copied" : "Copy role code"}
+                      onClick={() => void copyRoleCode()}
+                    >
+                      <Copy aria-hidden="true" />
+                      {copiedRole ? "Copied" : "Copy"}
+                    </Button>
+                  </div>
+                ) : null}
               </CardContent>
             </Card>
           ) : null}

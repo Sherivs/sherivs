@@ -371,12 +371,11 @@ test("captures desktop and mobile role-management screens with synthetic records
   });
   await customRoleForm.locator("input").fill("Synthetic HR Coordinator");
   await customRoleForm.getByRole("button", { name: "Create role" }).click();
-  await expect(page.getByText(/Created role code: custom\./)).toBeVisible();
-  const customRoleCode = await page
-    .getByText(/Created role code: /)
-    .textContent()
-    .then((text) => text?.replace("Created role code: ", "").trim() ?? "");
+  const customRoleCodeElement = page.locator("code").filter({ hasText: "synthetic_hr_" });
+  await expect(customRoleCodeElement).toBeVisible();
+  const customRoleCode = await customRoleCodeElement.textContent().then((text) => text?.trim() ?? "");
   expect(customRoleCode).toContain("synthetic_hr_");
+  await expect(page.getByRole("button", { name: "Copy role code" })).toBeVisible();
 
   const responsibilityForm = page.locator("form").filter({
     has: page.getByRole("button", { name: "Add responsibility" }),
@@ -474,6 +473,10 @@ test("captures desktop and mobile role-management screens with synthetic records
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
     .toBeLessThanOrEqual(width);
+  await expect(page.getByRole("link", { name: "← Home" })).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollHeight))
+    .toBeGreaterThan(2000);
   await page.evaluate(() => document.fonts.ready);
   const path = testInfo.outputPath(`role-management-${width}.png`);
   mkdirSync(dirname(path), { recursive: true });
@@ -491,10 +494,13 @@ test("captures desktop and mobile role-management screens with synthetic records
   expect(navAndScreenBounds.navTop).toBeGreaterThanOrEqual(
     navAndScreenBounds.screenBottom ?? Infinity,
   );
-  await page.getByTestId("app-shell").screenshot({
+  await page.screenshot({
     path,
+    fullPage: true,
     scale: "css",
     animations: "disabled",
   });
-  expect(readFileSync(path).readUInt32BE(16)).toBe(width);
+  const screenshot = readFileSync(path);
+  expect(screenshot.readUInt32BE(16)).toBe(width);
+  expect(screenshot.readUInt32BE(20)).toBeGreaterThan(2000);
 });

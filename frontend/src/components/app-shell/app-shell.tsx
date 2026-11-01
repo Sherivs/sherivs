@@ -63,7 +63,7 @@ function ShellChrome({ children }: { children: ReactNode }) {
         <span className="app-shell-orb app-shell-orb-blue" />
         <span className="app-shell-orb app-shell-orb-violet" />
       </div>
-      <div className="app-shell-frame">
+      <div className={`app-shell-frame${path === "/home/s/roles" ? " is-role-management" : ""}`}>
         <header className="app-shell-header">
           <button
             type="button"
