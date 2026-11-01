@@ -28,11 +28,8 @@ async function admin() {
 
 async function assertCapability(context: Ctx, capability: string) {
   assertInternalAal2(context.claims);
-  const { data, error } = await (context.supabase as unknown as RpcClient).rpc(
-    "has_platform_capability",
-    { p_capability: capability },
-  );
-  if (error || data !== true) throw new Error("Not authorized");
+  const { assertConsoleCapability } = await import("./console-access.server");
+  await assertConsoleCapability(context, capability, "audit.read");
 }
 
 function describeAction(action: string): string {
@@ -64,7 +61,7 @@ export const listConsoleAudit = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
       await writeAuditRecord(db, {
         action: "platform_console.audit.view",
-        gate: "has_platform_capability:platform.audit.read",
+        gate: "has_internal_console_capability:platform.audit.read",
         tenantId: null,
         actorId: context.userId,
         table: "audit_logs",

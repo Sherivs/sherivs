@@ -88,6 +88,7 @@ export const CONSOLE_NAV: readonly ConsoleNavItem[] = [
         label: "Directory",
         href: CONSOLE_PATHS.organizations,
         capability: "platform.tenants.read",
+        anyOf: ["platform.tenants.read", "platform.operations.read"],
       },
       {
         key: "organization-onboard",
@@ -206,11 +207,7 @@ export const CONSOLE_NAV: readonly ConsoleNavItem[] = [
         label: "Metrics",
         href: CONSOLE_PATHS.activityMetrics,
         capability: "platform.tenants.read",
-        anyOf: [
-          "platform.tenants.read",
-          "platform.operations.read",
-          "platform.engineering.read",
-        ],
+        anyOf: ["platform.tenants.read", "platform.operations.read", "platform.engineering.read"],
       },
       {
         key: "logs",
@@ -224,12 +221,7 @@ export const CONSOLE_NAV: readonly ConsoleNavItem[] = [
         label: "Incidents",
         href: CONSOLE_PATHS.activityIncidents,
         capability: "platform.engineering.read",
-        anyOf: [
-          "platform.engineering.read",
-          "platform.operations.read",
-          "platform.tenants.read",
-          "platform.audit.read",
-        ],
+        anyOf: ["platform.engineering.read", "platform.operations.read"],
       },
       {
         key: "tickets",
@@ -367,7 +359,6 @@ export function viewerCapabilities(roles: readonly string[], isSuperAdmin: boole
   if (isSuperAdmin) {
     for (const extra of [
       "platform.operations.read",
-      "platform.tenants.read",
       "platform.audit.read",
       "platform.operations.assign",
     ])

@@ -94,11 +94,7 @@ describe("internal console V1 contract", () => {
     ]);
     const supportActivity = filterNav(CONSOLE_NAV, support).find((item) => item.key === "activity");
     expect(supportActivity?.navigable).toBe(false);
-    expect(supportActivity?.children?.map((item) => item.key)).toEqual([
-      "metrics",
-      "incidents",
-      "tickets",
-    ]);
+    expect(supportActivity?.children?.map((item) => item.key)).toEqual(["metrics", "tickets"]);
     expect(quickActionsFor(support).some((item) => item.key === "invite")).toBe(false);
     expect(
       quickActionsFor({ isSuperAdmin: true, capabilities: new Set() }).some(
@@ -656,13 +652,7 @@ describe("local visual fixture", () => {
   it("does not leak organization pipeline data to roles without tenants.read", async () => {
     const { buildConsoleVisualFixtureOverview, CONSOLE_FIXTURE_PERSONAS } =
       await import("@/lib/internal-console/visual-fixture");
-    const withTenants = new Set([
-      "platform_owner",
-      "platform_admin",
-      "operations",
-      "support",
-      "sales",
-    ]);
+    const withTenants = new Set(["platform_owner", "operations", "support", "sales"]);
     for (const persona of CONSOLE_FIXTURE_PERSONAS) {
       const overview = buildConsoleVisualFixtureOverview(persona);
       if (withTenants.has(persona.key)) {
@@ -681,6 +671,70 @@ describe("local visual fixture", () => {
     const home = readFileSync("frontend/src/components/internal-console/home-screen.tsx", "utf8");
     expect(home).toContain("canReadOrgs && overview.organizationMetrics.available");
     expect(home).toContain('data-testid="console-org-pipeline"');
+  });
+
+  it("limits the Support fixture to explicitly assigned organization cases", async () => {
+    const {
+      buildConsoleVisualFixtureOverview,
+      CONSOLE_FIXTURE_PERSONAS,
+      readFixtureOrganizationSnapshot,
+    } = await import("@/lib/internal-console/visual-fixture");
+    const support = CONSOLE_FIXTURE_PERSONAS.find((persona) => persona.key === "support");
+    if (!support) throw new Error("Support fixture is required.");
+    const overview = buildConsoleVisualFixtureOverview(
+      support,
+      readFixtureOrganizationSnapshot(
+        JSON.stringify({
+          organizations: [
+            {
+              id: "fixture-org-active",
+              displayName: "Assigned School",
+              lifecycleState: "active",
+              assignments: [
+                {
+                  id: "support-assignment",
+                  organizationId: "fixture-org-active",
+                  staffId: support.id,
+                  staffName: support.name,
+                  assignmentType: "support",
+                  status: "active",
+                },
+                {
+                  id: "other-assignment",
+                  organizationId: "fixture-org-unassigned",
+                  staffId: "another-support",
+                  staffName: "Other Support",
+                  assignmentType: "support",
+                  status: "active",
+                },
+              ],
+            },
+            {
+              id: "fixture-org-unassigned",
+              displayName: "Unassigned School",
+              lifecycleState: "active",
+              assignments: [
+                {
+                  id: "other-assignment",
+                  organizationId: "fixture-org-unassigned",
+                  staffId: "another-support",
+                  staffName: "Other Support",
+                  assignmentType: "support",
+                  status: "active",
+                },
+              ],
+            },
+          ],
+        }),
+      ),
+    );
+    expect(overview.organizations.map((organization) => organization.id)).toEqual([
+      "fixture-org-active",
+    ]);
+    expect(overview.organizationMetrics.total).toBe(1);
+    expect(
+      overview.assignments.every((assignment) => assignment.assignmentType === "support"),
+    ).toBe(true);
     const { helpArticlesFor } = await import("@/lib/internal-console/help-catalog");
     const engineerHelp = helpArticlesFor({
       isSuperAdmin: false,

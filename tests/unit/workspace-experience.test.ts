@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { workspacesForViewer, parseWorkspaceId, workspaceById } from "@/lib/internal-console/workspaces";
+import {
+  workspacesForViewer,
+  parseWorkspaceId,
+  workspaceById,
+} from "@/lib/internal-console/workspaces";
 import { roleCodesForWorkspaceProvisioning } from "@/lib/internal-console/role-workspace";
+import { viewerCapabilities } from "@/lib/internal-console/roles";
 import {
   WORKSPACE_EXPERIENCES,
   experienceKeyForWorkspace,
@@ -65,12 +70,31 @@ describe("role workspace operating environments", () => {
   });
 
   it("limits the super-admin workspace experience to Platform Operations capabilities", () => {
+    const superAdminCapabilities = viewerCapabilities([], true);
+    expect(superAdminCapabilities.has("platform.operations.read")).toBe(true);
+    expect(superAdminCapabilities.has("platform.audit.read")).toBe(true);
+    expect(superAdminCapabilities.has("platform.operations.assign")).toBe(true);
+    expect(superAdminCapabilities.has("platform.staff.manage")).toBe(false);
+    expect(superAdminCapabilities.has("platform.tenants.manage")).toBe(false);
+    expect(superAdminCapabilities.has("platform.tenants.read")).toBe(false);
     const viewer = {
       isSuperAdmin: true,
-      capabilities: new Set(["platform.operations.read", "platform.tenants.read", "platform.audit.read"]),
+      capabilities: superAdminCapabilities,
     };
-    expect(visibleWorkspaceNav(WORKSPACE_EXPERIENCES.platform_operations, viewer).map(({ label }) => label))
-      .toEqual(["Overview", "Organizations", "Workspaces", "Runtime directory", "Analytics", "Incidents", "Tickets", "Audit", "Help"]);
+    expect(
+      visibleWorkspaceNav(WORKSPACE_EXPERIENCES.platform_operations, viewer).map(
+        ({ label }) => label,
+      ),
+    ).toEqual([
+      "Overview",
+      "Organizations",
+      "Workspaces",
+      "Runtime directory",
+      "Analytics",
+      "Incidents",
+      "Audit",
+      "Help",
+    ]);
     expect(
       workspaceById("role:platform_admin", {
         displayName: "Ada",

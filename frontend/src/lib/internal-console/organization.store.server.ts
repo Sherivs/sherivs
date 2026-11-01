@@ -6,6 +6,7 @@ import { isMissingRelation, store } from "./store";
 import { writeAuditRecord } from "@/lib/server/write-audit";
 import { SystemClock, TimeAuthority } from "@/lib/kernel/time-authority";
 import { assertInternalAal2 } from "@/lib/security/mfa-server";
+import { assertConsoleCapability, hasConsoleCapability } from "./console-access.server";
 import {
   ORGANIZATION_ACCESS_EFFECTS,
   ORGANIZATION_ONBOARDING_STEPS,
@@ -85,13 +86,14 @@ async function assertStaff(context: Ctx) {
   if (error || data !== true) throw new Error("Not authorized");
 }
 
-async function assertCapability(context: Ctx, capability: string, aal2 = false) {
+async function assertCapability(
+  context: Ctx,
+  capability: string,
+  aal2 = false,
+  platformOperationsAction?: string,
+): Promise<boolean> {
   if (aal2) assertInternalAal2(context.claims);
-  const { data, error } = await (context.supabase as unknown as RpcClient).rpc(
-    "has_platform_capability",
-    { p_capability: capability },
-  );
-  if (error || data !== true) throw new Error("Not authorized");
+  return assertConsoleCapability(context, capability, platformOperationsAction);
 }
 
 async function audit(
@@ -103,7 +105,7 @@ async function audit(
 ) {
   await writeAuditRecord(await admin(), {
     action: `platform_organization.${action}`,
-    gate: "has_platform_capability:platform.tenants.manage",
+    gate: "has_internal_console_capability:platform.tenants.manage",
     tenantId: null,
     actorId: context.userId,
     table: "platform_organization",
@@ -167,10 +169,13 @@ function contactFrom(draft: OrganizationDraft) {
   };
 }
 
-async function loadOrg(db: Admin, id: string): Promise<OrgRow> {
+const OPERATIONS_ORG_COLUMNS =
+  "id, school_id, slug, display_name, org_type, country, region, city, lifecycle_state, questionnaire_step, intended_runtime, enabled_runtime, outstanding_requirements, created_by, submitted_by, reviewed_by, activated_by, created_at, updated_at, submitted_at, provisioned_at, activated_at, suspended_at, deactivated_at";
+
+async function loadOrg(db: Admin, id: string, operationsSummary = false): Promise<OrgRow> {
   const { data, error } = await store(db)
     .from("platform_organization")
-    .select("*")
+    .select(operationsSummary ? OPERATIONS_ORG_COLUMNS : "*")
     .eq("id", id)
     .maybeSingle();
   if (error) {
@@ -234,7 +239,9 @@ async function assignmentsFor(
   if (!organizationIds.length) return out;
   const { data, error } = await store(db)
     .from("platform_organization_assignment")
-    .select("id, organization_id, staff_id, assignment_type, status, assigned_by, assigned_at, released_at")
+    .select(
+      "id, organization_id, staff_id, assignment_type, status, assigned_by, assigned_at, released_at",
+    )
     .in("organization_id", organizationIds);
   if (error) {
     if (isMissingRelation(error)) return out;
@@ -277,7 +284,14 @@ async function assignmentsFor(
   return out;
 }
 
-export async function loadOrganizationMetrics(db: Admin): Promise<{
+export async function loadOrganizationMetrics(
+  db: Admin,
+  scope?: {
+    organizationIds?: string[];
+    includePlatformMetrics?: boolean;
+    operationsSummary?: boolean;
+  },
+): Promise<{
   organizationMetrics: OrganizationMetricsSnapshot;
   scholarTenants: number | null;
   registeredUsers: number | null;
@@ -296,11 +310,18 @@ export async function loadOrganizationMetrics(db: Admin): Promise<{
     conversionRate: null,
     medianOnboardingHours: null,
   };
-  const { data, error } = await store(db)
+  let request = store(db)
     .from("platform_organization")
-    .select("*")
-    .order("updated_at", { ascending: false })
-    .limit(500);
+    .select(scope?.operationsSummary ? OPERATIONS_ORG_COLUMNS : "*");
+  if (scope) {
+    if (scope.organizationIds) {
+      request =
+        scope.organizationIds.length > 0
+          ? request.in("id", scope.organizationIds)
+          : request.limit(0);
+    }
+  }
+  const { data, error } = await request.order("updated_at", { ascending: false }).limit(500);
   if (error) {
     if (isMissingRelation(error)) {
       return {
@@ -322,14 +343,16 @@ export async function loadOrganizationMetrics(db: Admin): Promise<{
   let scholarTenants: number | null = null;
   let registeredUsers: number | null = null;
   let activeUsers30d: number | null = null;
-  const metrics = await store(db).rpc("platform_control_plane_metrics");
-  if (!metrics.error && metrics.data && typeof metrics.data === "object") {
-    const payload = metrics.data as Record<string, unknown>;
-    scholarTenants = typeof payload.schools_total === "number" ? payload.schools_total : null;
-    registeredUsers =
-      typeof payload.registered_users === "number" ? payload.registered_users : null;
-    activeUsers30d =
-      typeof payload.active_users_30d === "number" ? payload.active_users_30d : null;
+  if (!scope || scope.includePlatformMetrics !== false) {
+    const metrics = await store(db).rpc("platform_control_plane_metrics");
+    if (!metrics.error && metrics.data && typeof metrics.data === "object") {
+      const payload = metrics.data as Record<string, unknown>;
+      scholarTenants = typeof payload.schools_total === "number" ? payload.schools_total : null;
+      registeredUsers =
+        typeof payload.registered_users === "number" ? payload.registered_users : null;
+      activeUsers30d =
+        typeof payload.active_users_30d === "number" ? payload.active_users_30d : null;
+    }
   }
   return {
     organizationMetrics: {
@@ -345,6 +368,24 @@ export async function loadOrganizationMetrics(db: Admin): Promise<{
   };
 }
 
+export async function loadAssignedSupportOrganizationIds(
+  db: Admin,
+  userId: string,
+): Promise<string[]> {
+  const { data, error } = await store(db)
+    .from("platform_organization_assignment")
+    .select("organization_id")
+    .eq("staff_id", userId)
+    .eq("assignment_type", "support")
+    .eq("status", "active");
+  if (error) {
+    if (isMissingRelation(error)) return [];
+    throw new Error(error.message);
+  }
+  const rows = (data ?? []) as Array<{ organization_id: string }>;
+  return [...new Set(rows.map((row) => row.organization_id))];
+}
+
 export async function listOrganizationDirectory(
   context: Ctx,
   input: { query?: string; state?: string },
@@ -354,9 +395,34 @@ export async function listOrganizationDirectory(
   metrics: OrganizationMetricsSnapshot;
 }> {
   await assertStaff(context);
-  await assertCapability(context, "platform.tenants.read");
+  let operationsSummary = false;
+  if (
+    await hasConsoleCapability(context, "platform.operations.read", "organization.summary.read")
+  ) {
+    operationsSummary = await assertCapability(
+      context,
+      "platform.operations.read",
+      false,
+      "organization.summary.read",
+    );
+  } else {
+    await assertCapability(context, "platform.tenants.read");
+  }
   const db = await admin();
-  const { rows, organizationMetrics } = await loadOrganizationMetrics(db);
+  const supportOnly =
+    (await hasConsoleCapability(context, "platform.support.handle")) &&
+    !(await hasConsoleCapability(context, "platform.tenants.manage"));
+  const organizationIds = supportOnly
+    ? await loadAssignedSupportOrganizationIds(db, context.userId)
+    : undefined;
+  const { rows, organizationMetrics } = await loadOrganizationMetrics(
+    db,
+    supportOnly
+      ? { organizationIds, includePlatformMetrics: false }
+      : operationsSummary
+        ? { operationsSummary: true }
+        : undefined,
+  );
   const assignments = await assignmentsFor(
     db,
     rows.map((row) => row.id),
@@ -376,16 +442,31 @@ export async function listOrganizationDirectory(
       const owner = assigned.find(
         (item) => item.assignmentType === "onboarding_owner" && item.status === "active",
       );
-      return directoryRow(row, owner?.staffName ?? null, assigned.filter((item) => item.status === "active").length);
+      return directoryRow(
+        row,
+        owner?.staffName ?? null,
+        assigned.filter((item) => item.status === "active").length,
+      );
     });
   return { organizations, store: "database", metrics: organizationMetrics };
 }
 
 export async function getOrganizationDetail(context: Ctx, id: string): Promise<OrganizationDetail> {
   await assertStaff(context);
-  await assertCapability(context, "platform.tenants.read");
+  const operationsSummary = await hasConsoleCapability(
+    context,
+    "platform.operations.read",
+    "organization.summary.read",
+  );
+  if (!operationsSummary) await assertCapability(context, "platform.tenants.read");
   const db = await admin();
-  const row = await loadOrg(db, id);
+  const supportOnly =
+    (await hasConsoleCapability(context, "platform.support.handle")) &&
+    !(await hasConsoleCapability(context, "platform.tenants.manage"));
+  if (supportOnly && !(await loadAssignedSupportOrganizationIds(db, context.userId)).includes(id)) {
+    throw new Error("Organization not found.");
+  }
+  const row = await loadOrg(db, id, operationsSummary);
   const assigned = (await assignmentsFor(db, [id])).get(id) ?? [];
   const owner = assigned.find(
     (item) => item.assignmentType === "onboarding_owner" && item.status === "active",
@@ -395,44 +476,52 @@ export async function getOrganizationDetail(context: Ctx, id: string): Promise<O
     assigned.some((item) => item.staffId === context.userId && item.status === "active");
   let privileged = canSeeContact;
   if (!privileged) {
-    const { data } = await (context.supabase as unknown as RpcClient).rpc("has_platform_capability", {
-      p_capability: "platform.tenants.manage",
-    });
-    privileged = data === true;
+    privileged = await hasConsoleCapability(context, "platform.tenants.manage");
   }
   const { data: transitions } = await store(db)
     .from("platform_organization_transition")
-    .select("id, from_state, to_state, actor_id, reason, created_at")
+    .select(
+      operationsSummary
+        ? "id, from_state, to_state, created_at"
+        : "id, from_state, to_state, actor_id, reason, created_at",
+    )
     .eq("organization_id", id)
     .order("created_at", { ascending: false })
     .limit(40);
   const state = asState(row.lifecycle_state);
   return {
-    ...directoryRow(row, owner?.staffName ?? null, assigned.filter((item) => item.status === "active").length),
-    legalName: row.legal_name,
-    questionnaire: row.questionnaire ?? {},
+    ...directoryRow(
+      row,
+      owner?.staffName ?? null,
+      assigned.filter((item) => item.status === "active").length,
+    ),
+    legalName: operationsSummary ? null : row.legal_name,
+    questionnaire: operationsSummary ? {} : (row.questionnaire ?? {}),
     questionnaireStep: asStep(row.questionnaire_step),
-    provisioningError: row.provisioning_error,
+    provisioningError: operationsSummary ? null : row.provisioning_error,
     outstandingRequirements: requirementList(row.outstanding_requirements),
     createdBy: row.created_by,
     submittedBy: row.submitted_by,
     reviewedBy: row.reviewed_by,
     activatedBy: row.activated_by,
-    contact: privileged ? contactFrom(row.questionnaire ?? {}) : null,
+    contact: !operationsSummary && privileged ? contactFrom(row.questionnaire ?? {}) : null,
     assignments: assigned,
-    transitions: ((transitions ?? []) as Array<{
-      id: string;
-      from_state: string | null;
-      to_state: string;
-      actor_id: string | null;
-      reason: string | null;
-      created_at: string;
-    }>).map((item) => ({
+    transitions: (
+      (transitions ?? []) as Array<{
+        id: string;
+        from_state: string | null;
+        to_state: string;
+        actor_id: string | null;
+        reason: string | null;
+        created_at: string;
+      }>
+    ).map((item) => ({
       id: item.id,
-      fromState: item.from_state && isOrganizationLifecycleState(item.from_state) ? item.from_state : null,
+      fromState:
+        item.from_state && isOrganizationLifecycleState(item.from_state) ? item.from_state : null,
       toState: asState(item.to_state),
-      actorId: item.actor_id,
-      reason: item.reason,
+      actorId: operationsSummary ? null : item.actor_id,
+      reason: operationsSummary ? null : item.reason,
       at: item.created_at,
     })),
     accessEffects:
@@ -442,7 +531,9 @@ export async function getOrganizationDetail(context: Ctx, id: string): Promise<O
           ? ORGANIZATION_ACCESS_EFFECTS.deactivate
           : state === "active"
             ? ORGANIZATION_ACCESS_EFFECTS.activate
-            : state === "ready_for_activation" || state === "provisioning" || state === "provisioning_failed"
+            : state === "ready_for_activation" ||
+                state === "provisioning" ||
+                state === "provisioning_failed"
               ? ORGANIZATION_ACCESS_EFFECTS.provision
               : null,
   };
@@ -552,7 +643,10 @@ export async function transitionOrganization(
   const row = await loadOrg(db, input.id);
   const now = timeAuthority.now().at;
   const extra: Record<string, unknown> = {};
-  if (input.toState === "under_review") extra.reviewed_by = context.userId, extra.reviewed_at = now;
+  if (input.toState === "under_review") {
+    extra.reviewed_by = context.userId;
+    extra.reviewed_at = now;
+  }
   if (input.toState === "submitted") extra.reviewed_at = now;
   await applyState(db, context, row, input.toState, extra, input.reason ?? input.toState);
   return { id: input.id, state: input.toState };
@@ -581,7 +675,11 @@ export async function provisionOrganizationCase(
   const db = await admin();
   let row = await loadOrg(db, id);
   const from = asState(row.lifecycle_state);
-  if (from === "under_review" || from === "provisioning_failed" || from === "ready_for_activation") {
+  if (
+    from === "under_review" ||
+    from === "provisioning_failed" ||
+    from === "ready_for_activation"
+  ) {
     await applyState(db, context, row, "provisioning", { provisioning_error: null }, "provision");
     row = await loadOrg(db, id);
   } else if (from !== "provisioning") {
@@ -754,7 +852,22 @@ export async function assignOrganizationStaff(
   context: Ctx,
   input: { organizationId: string; staffId: string; assignmentType: OrganizationAssignmentType },
 ): Promise<{ id: string }> {
-  await assertCapability(context, "platform.tenants.manage", true);
+  const operationsActor = await hasConsoleCapability(
+    context,
+    "platform.operations.assign",
+    "organization.assign_operations",
+  );
+  if (operationsActor) {
+    if (input.assignmentType !== "operations") throw new Error("Not authorized");
+    await assertCapability(
+      context,
+      "platform.operations.assign",
+      true,
+      "organization.assign_operations",
+    );
+  } else {
+    await assertCapability(context, "platform.tenants.manage", true);
+  }
   const db = await admin();
   await loadOrg(db, input.organizationId);
   const { data: staff, error: staffErr } = await db
@@ -800,8 +913,35 @@ export async function releaseOrganizationAssignment(
   context: Ctx,
   assignmentId: string,
 ): Promise<{ ok: true }> {
-  await assertCapability(context, "platform.tenants.manage", true);
   const db = await admin();
+  const operationsActor = await hasConsoleCapability(
+    context,
+    "platform.operations.assign",
+    "organization.assign_operations",
+  );
+  if (operationsActor) {
+    const { data: assignment, error: assignmentError } = await store(db)
+      .from("platform_organization_assignment")
+      .select("assignment_type")
+      .eq("id", assignmentId)
+      .eq("status", "active")
+      .maybeSingle();
+    if (assignmentError) throw new Error(assignmentError.message);
+    if (
+      !(assignment as { assignment_type?: string } | null) ||
+      (assignment as { assignment_type?: string }).assignment_type !== "operations"
+    ) {
+      throw new Error("Assignment not found.");
+    }
+    await assertCapability(
+      context,
+      "platform.operations.assign",
+      true,
+      "organization.assign_operations",
+    );
+  } else {
+    await assertCapability(context, "platform.tenants.manage", true);
+  }
   const { data, error } = await store(db)
     .from("platform_organization_assignment")
     .update({
@@ -826,7 +966,9 @@ export async function loadViewerAssignments(
 ): Promise<OrganizationAssignmentRecord[]> {
   const { data, error } = await store(db)
     .from("platform_organization_assignment")
-    .select("id, organization_id, staff_id, assignment_type, status, assigned_by, assigned_at, released_at")
+    .select(
+      "id, organization_id, staff_id, assignment_type, status, assigned_by, assigned_at, released_at",
+    )
     .eq("staff_id", userId)
     .eq("status", "active");
   if (error) {
