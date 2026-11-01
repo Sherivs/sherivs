@@ -70,7 +70,7 @@ function TrustPage() {
               </li>
             ))}
             <li>
-              <FeatureCard title="Privacy" href="/privacy-policy">
+              <FeatureCard title="Privacy" href="/privacy">
                 How organizational and personal data is handled at the level the product implements.
               </FeatureCard>
             </li>

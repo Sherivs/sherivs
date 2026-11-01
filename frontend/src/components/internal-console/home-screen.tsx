@@ -36,7 +36,9 @@ export function ConsoleHomeScreen() {
     isSuperAdmin: overview.viewer.isSuperAdmin,
     capabilities: new Set(overview.viewer.capabilities),
   };
-  const canReadOrgs = viewer.isSuperAdmin || viewer.capabilities.has("platform.tenants.read");
+  const canReadOrgs =
+    viewer.capabilities.has("platform.tenants.read") ||
+    viewer.capabilities.has("platform.operations.read");
   const actions = quickActionsFor(viewer);
   const allowed = allowedHrefsFrom([
     ...overview.workspaces,

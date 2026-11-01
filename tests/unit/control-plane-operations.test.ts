@@ -9,7 +9,10 @@ import {
 } from "@/lib/internal-console/operations";
 import { CONSOLE_PATHS } from "@/lib/internal-console/paths";
 import { CONSOLE_NAV, filterNav, viewerCapabilities } from "@/lib/internal-console/roles";
-import { WORKSPACE_EXPERIENCES, visibleWorkspaceNav } from "@/lib/internal-console/workspace-experience";
+import {
+  WORKSPACE_EXPERIENCES,
+  visibleWorkspaceNav,
+} from "@/lib/internal-console/workspace-experience";
 import { CONSOLE_METRIC_CONTRACTS } from "@/lib/internal-console/metrics";
 import { settleConsoleSubscription } from "@/lib/payments/console-subscription-settlement";
 
@@ -57,14 +60,16 @@ describe("console operations navigation", () => {
     expect(CONSOLE_PATHS.activityLogs).toBe("/console/activity/logs");
   });
 
-  it("shows support tickets and hides billing for support specialists", () => {
+  it("shows support tickets while denying incidents and billing to support specialists", () => {
     const support = {
       isSuperAdmin: false,
       capabilities: viewerCapabilities(["support"], false),
     };
     const activity = filterNav(CONSOLE_NAV, support).find((item) => item.key === "activity");
-    expect(activity?.children?.map((item) => item.key)).toEqual(["metrics", "incidents", "tickets"]);
-    const organizations = filterNav(CONSOLE_NAV, support).find((item) => item.key === "organizations");
+    expect(activity?.children?.map((item) => item.key)).toEqual(["metrics", "tickets"]);
+    const organizations = filterNav(CONSOLE_NAV, support).find(
+      (item) => item.key === "organizations",
+    );
     expect(organizations?.children?.map((item) => item.key)).not.toContain("billing");
   });
 

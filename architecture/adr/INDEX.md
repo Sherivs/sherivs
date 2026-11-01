@@ -14,11 +14,12 @@ This index is a record of reality, not intent: an ADR exists here only if its fi
 
 ## ADR register — `architecture/adr/`
 
-The H3-wave ADR directory. Next free number here: **ADR-012**.
+The H3-wave ADR directory. Next free number here: **ADR-013**.
 
 | # | File | Title | Status | Date | Gist |
 |---|---|---|---|---|---|
 | 011 | [ADR-011_BACKUP_EXPIRY_DISCIPLINE.md](./ADR-011_BACKUP_EXPIRY_DISCIPLINE.md) | Backup-Expiry Discipline — Erasure Reaches Backups Through Time, Never Through Mutation (J-042) | PROPOSED | 2026-10-03 | Backups are bounded-lifetime redundant copies: manifest-bound `expiresAt` ≤ the earliest retention deadline among contained personal-data families (binding ADR-008's B-1..B-4); flat TTLs forbidden; backups read through the redaction layer; restore re-applies redaction state; expired-copy destruction ruled non-destruction. Closes ADR-005 UNKNOWN 4 and binds the discipline ADR-008 recorded as a standalone ruling. |
+| 012 | [ADR-012_COMMS_LEGACY_STORE_EXTENSION.md](./ADR-012_COMMS_LEGACY_STORE_EXTENSION.md) | V1 Communications Extends the Legacy Organization Store (COND-003) | PROPOSED | 2026-11-01 | Records the proposed neutrality-baseline exception for four legacy-vocabulary groups in the additive V1 communications migration; preserves the existing school/organization identity binding and defers tenant-model conversion. |
 
 ## ADR register — `architecture/coregrid-mvp-architecture/adr/`
 

@@ -94,3 +94,45 @@ test.describe("Sherivs public homepage (plane A)", () => {
     expect(h1, "exactly one h1").toBe(1);
   });
 });
+
+test.describe("Sherivs public legal pages", () => {
+  test("privacy page explains data handling and offers deletion instructions", async ({
+    page,
+  }, testInfo) => {
+    await page.goto("/privacy");
+
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Privacy notice");
+    await expect(page.getByRole("heading", { name: /how to request deletion/i })).toBeVisible();
+    await expect(page.locator("body")).toContainText("Sherivs Technologies Limited");
+    await expect(page.locator("body")).toContainText("Nigeria Data Protection Act 2023");
+    await expect(page.locator("body")).toContainText("WhatsApp messages, SMS, or voice calls");
+    await expect(page.locator("body")).toContainText("Data deletion request");
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+      "href",
+      /https:\/\/(www\.)?sherivs\.com\/privacy$/,
+    );
+
+    const overflow = await page.evaluate(() => {
+      const doc = document.documentElement;
+      return doc.scrollWidth - doc.clientWidth;
+    });
+    expect(
+      overflow,
+      `horizontal overflow at ${testInfo.project.use.viewport?.width}px`,
+    ).toBeLessThanOrEqual(1);
+    await page.screenshot({ path: testInfo.outputPath("privacy.png"), fullPage: true });
+  });
+
+  test("terms page is public, canonical, and screenshot-ready", async ({ page }, testInfo) => {
+    await page.goto("/terms");
+
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Terms of service");
+    await expect(page.locator("body")).toContainText("Sherivs Technologies Limited");
+    await expect(page.locator("body")).toContainText("NDPA 2023");
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+      "href",
+      /https:\/\/(www\.)?sherivs\.com\/terms$/,
+    );
+    await page.screenshot({ path: testInfo.outputPath("terms.png"), fullPage: true });
+  });
+});

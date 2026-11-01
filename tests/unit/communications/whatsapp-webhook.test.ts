@@ -104,7 +104,12 @@ describe("WhatsApp webhook validation", () => {
           changes: [
             {
               value: {
-                metadata: { display_phone_number: "+2349015056201", phone_number_id: "123456" },
+                metadata: {
+                  display_phone_number: "+19995550123",
+                  phone_number_id: "123456",
+                  org_id: "org-b-spoof",
+                  tenant_id: "tenant-b-spoof",
+                },
                 messages: [{ id: "wamid.inbound", from: "2349015056202", text: { body: "STOP" } }],
                 statuses: [{ id: "wamid.outbound", status: "read" }],
               },
@@ -129,6 +134,8 @@ describe("WhatsApp webhook validation", () => {
       p_body: "STOP",
       p_provider_ref: "wamid.inbound",
     });
+    expect(mockRpc.mock.calls[0]?.[1]).not.toHaveProperty("p_org_id");
+    expect(mockRpc.mock.calls[0]?.[1]).not.toHaveProperty("p_tenant_id");
     expect(mockRpc).toHaveBeenNthCalledWith(2, "cg_whatsapp_status", {
       p_provider_sender_ref: "123456",
       p_provider_ref: "wamid.outbound",

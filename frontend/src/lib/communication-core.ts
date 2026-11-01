@@ -89,9 +89,11 @@ export const MESSAGE_CLASSIFICATIONS: readonly MessageClassification[] = [
 
 export interface CommunicationMessage {
   id: string;
+  /** Existing tenant binding; V1 organizations use the same tenant ID. */
   tenantId: TenantId;
+  orgId: TenantId;
   sender: string;
-  recipients: string[];
+  recipientUserIds: string[];
   channel: CommunicationChannelType;
   subject: string;
   content: string;
@@ -107,8 +109,9 @@ export interface CommunicationMessage {
 
 export interface CreateMessageInput {
   tenantId: TenantId;
+  orgId: TenantId;
   sender: string;
-  recipients: string[];
+  recipientUserIds: string[];
   channel: CommunicationChannelType;
   subject: string;
   content: string;
@@ -126,10 +129,16 @@ export type CreateMessageResult =
   { ok: true; message: CommunicationMessage } | { ok: false; error: string };
 
 export function createMessage(input: CreateMessageInput): CreateMessageResult {
+  if (input.tenantId.trim() === "" || input.orgId.trim() === "" || input.orgId !== input.tenantId) {
+    return { ok: false, error: "Message organization must match its tenant (DN)" };
+  }
   if (input.sender.trim() === "") {
     return { ok: false, error: "Message sender is required (F.1)" };
   }
-  if (input.recipients.length === 0) {
+  if (
+    input.recipientUserIds.length === 0 ||
+    input.recipientUserIds.some((id) => id.trim() === "")
+  ) {
     return { ok: false, error: "Message requires at least one recipient (F.1)" };
   }
   if (input.subject.trim() === "" && input.content.trim() === "") {
@@ -146,8 +155,9 @@ export function createMessage(input: CreateMessageInput): CreateMessageResult {
     message: {
       id: `msg-${input.idempotencyKey}-${input.now}`,
       tenantId: input.tenantId,
+      orgId: input.orgId,
       sender: input.sender,
-      recipients: input.recipients,
+      recipientUserIds: input.recipientUserIds,
       channel: input.channel,
       subject: input.subject,
       content: input.content,
@@ -168,7 +178,7 @@ export function isMessageTenantConsistent(
   message: CommunicationMessage,
   tenantId: TenantId,
 ): boolean {
-  return message.tenantId === tenantId;
+  return message.orgId === tenantId && message.tenantId === tenantId;
 }
 
 /** Expired messages must not be delivered (message expiration in F.1). */
