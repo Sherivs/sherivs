@@ -14,22 +14,44 @@ const MIG = readFileSync(
   "database/supabase/migrations/20261025100240_sherivs_100_website_engine.sql",
   "utf8",
 );
+const MIG2 = readFileSync(
+  "database/supabase/migrations/20261025100260_sherivs_101_website_v2.sql",
+  "utf8",
+);
+/** Effective seed: v1 rows + v2 rows, with v2 variant UPDATEs applied. */
+const SEED = (() => {
+  const rows = new Map<
+    string,
+    { category: string; source: string | null; variants: string[]; optIn: boolean }
+  >();
+  for (const m of (MIG + MIG2).matchAll(
+    /\('([a-z_]+)', '[^']*', '([a-z_]+)', (NULL|'[^']*'), ARRAY\[([^\]]*)\]::text\[\], (true|false)\)/g,
+  ))
+    rows.set(m[1], {
+      category: m[2],
+      source: m[3] === "NULL" ? null : m[3].replace(/'/g, ""),
+      variants: m[4].replace(/'/g, "").split(", "),
+      optIn: m[5] === "true",
+    });
+  for (const m of MIG2.matchAll(
+    /SET variants = ARRAY\[([^\]]*)\]::text\[\] WHERE key = '([a-z_]+)'/g,
+  ))
+    rows.get(m[2])!.variants = m[1].replace(/'/g, "").split(", ");
+  return rows;
+})();
 const bare: SiteData = { school: { name: "Bare School", slug: "bare" } };
 
 describe("catalog", () => {
-  it("matches the SQL seed exactly (keys, variants, opt-in)", () => {
+  it("matches the SQL seed exactly (keys, variants, opt-in), v1 + v2 migrations", () => {
     for (const b of BLOCKS) {
-      const row = MIG.match(
-        new RegExp(
-          `\\('${b.type}', '[^']*', '${b.category}', (NULL|'[^']*'), ARRAY\\[([^\\]]*)\\]::text\\[\\], (true|false)\\)`,
-        ),
-      );
+      const row = SEED.get(b.type);
       expect(row, b.type).toBeTruthy();
-      expect(row![2].replace(/'/g, "").split(", ")).toEqual(b.variants);
-      expect(row![3] === "true").toBe(!!b.optIn);
-      expect(row![1] === "NULL" ? null : row![1].replace(/'/g, "")).toBe(b.dataSource);
+      expect(row!.category, b.type).toBe(b.category);
+      expect(row!.variants, b.type).toEqual(b.variants);
+      expect(row!.optIn, b.type).toBe(!!b.optIn);
+      expect(row!.source, b.type).toBe(b.dataSource);
     }
-    expect((MIG.match(/^\s+\('[a-z_]+', '/gm) ?? []).length).toBe(BLOCKS.length);
+    expect(SEED.size).toBe(BLOCKS.length);
   });
   it("has at least 25 blocks, each with variants, fields and a guard", () => {
     expect(BLOCKS.length).toBeGreaterThanOrEqual(25);
@@ -62,7 +84,9 @@ describe("generator", () => {
         expect(p.sections.length, p.slug).toBeGreaterThan(0);
         for (const s of p.sections)
           for (const b of s.blocks)
-            expect(blockVisible(b, f.data, doc.locales[0]), `${p.slug}/${b.type}`).toBe(true);
+            if (b.type !== "blog")
+              // blog blocks wait for posts written after onboarding (hidden until then)
+              expect(blockVisible(b, f.data, doc.locales[0]), `${p.slug}/${b.type}`).toBe(true);
       }
       expect(JSON.stringify(generateSite(f))).toBe(JSON.stringify(doc));
       expect(doc.pages[0].slug).toBe("home");

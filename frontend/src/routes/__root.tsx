@@ -83,47 +83,65 @@ function ErrorComponent({ error, reset }: { error: unknown; reset?: () => void }
   );
 }
 
+/** Organization websites (custom domain / subdomain / preview) carry their own title, icons, colours and fonts. */
+function isOrgSite(matches: ReadonlyArray<{ loaderData?: unknown }> | undefined): boolean {
+  return !!matches?.some((m) => {
+    const d = m.loaderData as { site?: unknown; tenant?: boolean } | undefined;
+    return !!d?.site || d?.tenant === true;
+  });
+}
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: PLATFORM_PAGE_TITLE },
-      { name: "description", content: PLATFORM_PAGE_DESCRIPTION },
-      { property: "og:title", content: PLATFORM_PAGE_TITLE },
-      { name: "twitter:title", content: PLATFORM_PAGE_TITLE },
-      { name: "description", content: PLATFORM_PAGE_DESCRIPTION },
-      { property: "og:description", content: PLATFORM_PAGE_DESCRIPTION },
-      { name: "twitter:description", content: PLATFORM_PAGE_DESCRIPTION },
-      { property: "og:image", content: "https://sherivs.com/og-image.png" },
-      { name: "twitter:image", content: "https://sherivs.com/og-image.png" },
-      { name: "twitter:card", content: "summary_large_image" },
-      ...(PUBLIC_X_HANDLE ? [{ name: "twitter:site", content: PUBLIC_X_HANDLE }] : []),
-      { property: "og:type", content: "website" },
-      { property: "og:image:width", content: "1200" },
-      { property: "og:image:height", content: "630" },
-      { property: "og:image:alt", content: "Sherivs logo" },
-      { property: "og:site_name", content: "Sherivs" },
-      // Served, generated manifest (see routes/manifest[.]webmanifest.ts).
-      { name: "theme-color", content: "#184efd" },
-      { name: "apple-mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-title", content: "Sherivs" },
-      { name: "mobile-web-app-capable", content: "yes" },
-    ],
-    links: [
-      { rel: "stylesheet", href: appCss },
-      { rel: "manifest", href: "/manifest.webmanifest" },
-      { rel: "icon", href: "/favicon.ico", sizes: "any" },
-      { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32x32.png" },
-      { rel: "icon", type: "image/png", sizes: "16x16", href: "/favicon-16x16.png" },
-      { rel: "icon", type: "image/png", sizes: "192x192", href: "/icons/icon-192.png" },
-      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap",
-      },
-    ],
-  }),
+  head: ({ matches }) =>
+    isOrgSite(matches)
+      ? {
+          // No Sherivs title/OG/icons and no Google Fonts on school websites (SHERIVS-101).
+          meta: [
+            { charSet: "utf-8" },
+            { name: "viewport", content: "width=device-width, initial-scale=1" },
+          ],
+          links: [{ rel: "stylesheet", href: appCss }],
+        }
+      : {
+          meta: [
+            { charSet: "utf-8" },
+            { name: "viewport", content: "width=device-width, initial-scale=1" },
+            { title: PLATFORM_PAGE_TITLE },
+            { name: "description", content: PLATFORM_PAGE_DESCRIPTION },
+            { property: "og:title", content: PLATFORM_PAGE_TITLE },
+            { name: "twitter:title", content: PLATFORM_PAGE_TITLE },
+            { name: "description", content: PLATFORM_PAGE_DESCRIPTION },
+            { property: "og:description", content: PLATFORM_PAGE_DESCRIPTION },
+            { name: "twitter:description", content: PLATFORM_PAGE_DESCRIPTION },
+            { property: "og:image", content: "https://sherivs.com/og-image.png" },
+            { name: "twitter:image", content: "https://sherivs.com/og-image.png" },
+            { name: "twitter:card", content: "summary_large_image" },
+            ...(PUBLIC_X_HANDLE ? [{ name: "twitter:site", content: PUBLIC_X_HANDLE }] : []),
+            { property: "og:type", content: "website" },
+            { property: "og:image:width", content: "1200" },
+            { property: "og:image:height", content: "630" },
+            { property: "og:image:alt", content: "Sherivs logo" },
+            { property: "og:site_name", content: "Sherivs" },
+            // Served, generated manifest (see routes/manifest[.]webmanifest.ts).
+            { name: "theme-color", content: "#184efd" },
+            { name: "apple-mobile-web-app-capable", content: "yes" },
+            { name: "apple-mobile-web-app-title", content: "Sherivs" },
+            { name: "mobile-web-app-capable", content: "yes" },
+          ],
+          links: [
+            { rel: "stylesheet", href: appCss },
+            { rel: "manifest", href: "/manifest.webmanifest" },
+            { rel: "icon", href: "/favicon.ico", sizes: "any" },
+            { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32x32.png" },
+            { rel: "icon", type: "image/png", sizes: "16x16", href: "/favicon-16x16.png" },
+            { rel: "icon", type: "image/png", sizes: "192x192", href: "/icons/icon-192.png" },
+            { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
+            {
+              rel: "stylesheet",
+              href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap",
+            },
+          ],
+        },
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,

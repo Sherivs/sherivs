@@ -21,6 +21,8 @@ import { Route as ManifestDotwebmanifestRouteImport } from './routes/manifest[.]
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
+import { Route as RssDotxmlRouteImport } from './routes/rss[.]xml'
+import { Route as SiteIconDotsvgRouteImport } from './routes/site-icon[.]svg'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as siteAboutRouteImport } from './routes/(site)/about'
 import { Route as siteAccessibilityRouteImport } from './routes/(site)/accessibility'
@@ -65,6 +67,7 @@ import { Route as HomeProfileRouteImport } from './routes/home/profile'
 import { Route as HomeSecurityRouteImport } from './routes/home/security'
 import { Route as HomeSettingsRouteImport } from './routes/home/settings'
 import { Route as PagesSlugRouteImport } from './routes/pages.$slug'
+import { Route as PostsPostRouteImport } from './routes/posts.$post'
 import { Route as siteCompanyAboutRouteImport } from './routes/(site)/company.about'
 import { Route as siteCompanyCareersRouteImport } from './routes/(site)/company.careers'
 import { Route as siteCompanyPartnersRouteImport } from './routes/(site)/company.partners'
@@ -180,6 +183,16 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
   id: '/robots.txt',
   path: '/robots.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RssDotxmlRoute = RssDotxmlRouteImport.update({
+  id: '/rss.xml',
+  path: '/rss.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SiteIconDotsvgRoute = SiteIconDotsvgRouteImport.update({
+  id: '/site-icon.svg',
+  path: '/site-icon.svg',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -403,6 +416,11 @@ const HomeSettingsRoute = HomeSettingsRouteImport.update({
 const PagesSlugRoute = PagesSlugRouteImport.update({
   id: '/pages/$slug',
   path: '/pages/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PostsPostRoute = PostsPostRouteImport.update({
+  id: '/posts/$post',
+  path: '/posts/$post',
   getParentRoute: () => rootRouteImport,
 } as any)
 const siteCompanyAboutRoute = siteCompanyAboutRouteImport.update({
@@ -715,6 +733,8 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/rss.xml': typeof RssDotxmlRoute
+  '/site-icon.svg': typeof SiteIconDotsvgRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/console/activity': typeof ConsoleActivityRouteRouteWithChildren
   '/console/organizations': typeof ConsoleOrganizationsRouteRouteWithChildren
@@ -757,6 +777,7 @@ export interface FileRoutesByFullPath {
   '/home/security': typeof HomeSecurityRoute
   '/home/settings': typeof HomeSettingsRoute
   '/pages/$slug': typeof PagesSlugRoute
+  '/posts/$post': typeof PostsPostRoute
   '/console/': typeof ConsoleIndexRoute
   '/home/': typeof HomeIndexRoute
   '/company/about': typeof siteCompanyAboutRoute
@@ -827,6 +848,8 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/rss.xml': typeof RssDotxmlRoute
+  '/site-icon.svg': typeof SiteIconDotsvgRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/about': typeof siteAboutRoute
   '/accessibility': typeof siteAccessibilityRoute
@@ -859,6 +882,7 @@ export interface FileRoutesByTo {
   '/home/security': typeof HomeSecurityRoute
   '/home/settings': typeof HomeSettingsRoute
   '/pages/$slug': typeof PagesSlugRoute
+  '/posts/$post': typeof PostsPostRoute
   '/console': typeof ConsoleIndexRoute
   '/home': typeof HomeIndexRoute
   '/company/about': typeof siteCompanyAboutRoute
@@ -933,6 +957,8 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/rss.xml': typeof RssDotxmlRoute
+  '/site-icon.svg': typeof SiteIconDotsvgRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/console/activity': typeof ConsoleActivityRouteRouteWithChildren
   '/console/organizations': typeof ConsoleOrganizationsRouteRouteWithChildren
@@ -975,6 +1001,7 @@ export interface FileRoutesById {
   '/home/security': typeof HomeSecurityRoute
   '/home/settings': typeof HomeSettingsRoute
   '/pages/$slug': typeof PagesSlugRoute
+  '/posts/$post': typeof PostsPostRoute
   '/console/': typeof ConsoleIndexRoute
   '/home/': typeof HomeIndexRoute
   '/(site)/company/about': typeof siteCompanyAboutRoute
@@ -1049,6 +1076,8 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/reset-password'
     | '/robots.txt'
+    | '/rss.xml'
+    | '/site-icon.svg'
     | '/sitemap.xml'
     | '/console/activity'
     | '/console/organizations'
@@ -1091,6 +1120,7 @@ export interface FileRouteTypes {
     | '/home/security'
     | '/home/settings'
     | '/pages/$slug'
+    | '/posts/$post'
     | '/console/'
     | '/home/'
     | '/company/about'
@@ -1161,6 +1191,8 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/reset-password'
     | '/robots.txt'
+    | '/rss.xml'
+    | '/site-icon.svg'
     | '/sitemap.xml'
     | '/about'
     | '/accessibility'
@@ -1193,6 +1225,7 @@ export interface FileRouteTypes {
     | '/home/security'
     | '/home/settings'
     | '/pages/$slug'
+    | '/posts/$post'
     | '/console'
     | '/home'
     | '/company/about'
@@ -1266,6 +1299,8 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/reset-password'
     | '/robots.txt'
+    | '/rss.xml'
+    | '/site-icon.svg'
     | '/sitemap.xml'
     | '/console/activity'
     | '/console/organizations'
@@ -1308,6 +1343,7 @@ export interface FileRouteTypes {
     | '/home/security'
     | '/home/settings'
     | '/pages/$slug'
+    | '/posts/$post'
     | '/console/'
     | '/home/'
     | '/(site)/company/about'
@@ -1382,11 +1418,14 @@ export interface RootRouteChildren {
   OnboardingRoute: typeof OnboardingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
+  RssDotxmlRoute: typeof RssDotxmlRoute
+  SiteIconDotsvgRoute: typeof SiteIconDotsvgRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   DotwellKnownAppleAppSiteAssociationRoute: typeof DotwellKnownAppleAppSiteAssociationRoute
   DotwellKnownAssetlinksDotjsonRoute: typeof DotwellKnownAssetlinksDotjsonRoute
   ApiWebauthnRoute: typeof ApiWebauthnRoute
   PagesSlugRoute: typeof PagesSlugRoute
+  PostsPostRoute: typeof PostsPostRoute
   ApiPublicWebauthnRoute: typeof ApiPublicWebauthnRoute
   ApiPublicAuditPasswordResetRoute: typeof ApiPublicAuditPasswordResetRoute
   ApiPublicCronIntegrationsSyncRoute: typeof ApiPublicCronIntegrationsSyncRoute
@@ -1481,6 +1520,20 @@ declare module '@tanstack/react-router' {
       path: '/robots.txt'
       fullPath: '/robots.txt'
       preLoaderRoute: typeof RobotsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rss.xml': {
+      id: '/rss.xml'
+      path: '/rss.xml'
+      fullPath: '/rss.xml'
+      preLoaderRoute: typeof RssDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/site-icon.svg': {
+      id: '/site-icon.svg'
+      path: '/site-icon.svg'
+      fullPath: '/site-icon.svg'
+      preLoaderRoute: typeof SiteIconDotsvgRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -1789,6 +1842,13 @@ declare module '@tanstack/react-router' {
       path: '/pages/$slug'
       fullPath: '/pages/$slug'
       preLoaderRoute: typeof PagesSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/posts/$post': {
+      id: '/posts/$post'
+      path: '/posts/$post'
+      fullPath: '/posts/$post'
+      preLoaderRoute: typeof PostsPostRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(site)/company/about': {
@@ -2515,12 +2575,15 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingRoute: OnboardingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
+  RssDotxmlRoute: RssDotxmlRoute,
+  SiteIconDotsvgRoute: SiteIconDotsvgRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   DotwellKnownAppleAppSiteAssociationRoute:
     DotwellKnownAppleAppSiteAssociationRoute,
   DotwellKnownAssetlinksDotjsonRoute: DotwellKnownAssetlinksDotjsonRoute,
   ApiWebauthnRoute: ApiWebauthnRoute,
   PagesSlugRoute: PagesSlugRoute,
+  PostsPostRoute: PostsPostRoute,
   ApiPublicWebauthnRoute: ApiPublicWebauthnRoute,
   ApiPublicAuditPasswordResetRoute: ApiPublicAuditPasswordResetRoute,
   ApiPublicCronIntegrationsSyncRoute: ApiPublicCronIntegrationsSyncRoute,

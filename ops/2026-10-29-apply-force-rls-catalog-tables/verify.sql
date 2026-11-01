@@ -27,6 +27,15 @@ need_policy AS (
      AND p.prosecdef
      AND NOT r.rolsuper
      AND NOT r.rolbypassrls
+),
+client_write_grants AS (
+  SELECT r.rolname, t.relname, p.privilege
+    FROM (VALUES ('anon'), ('authenticated')) r(rolname)
+    CROSS JOIN (VALUES
+     ('websites'), ('website_versions'), ('website_audit'), ('website_block_types')
+    ) t(relname)
+    CROSS JOIN (VALUES ('INSERT'), ('UPDATE'), ('DELETE'), ('TRUNCATE')) p(privilege)
+   WHERE has_table_privilege(r.rolname, format('public.%I', t.relname), p.privilege)
 )
 SELECT check_name, value, ok
   FROM (
@@ -43,6 +52,11 @@ SELECT check_name, value, ok
            CASE WHEN EXISTS (SELECT 1 FROM supabase_migrations.schema_migrations WHERE version = '20261029001100')
                 THEN 'recorded' ELSE 'ABSENT' END,
            EXISTS (SELECT 1 FROM supabase_migrations.schema_migrations WHERE version = '20261029001100')
+    UNION ALL
+    SELECT 'ledger has 20261030000100',
+           CASE WHEN EXISTS (SELECT 1 FROM supabase_migrations.schema_migrations WHERE version = '20261030000100')
+                THEN 'recorded' ELSE 'ABSENT' END,
+           EXISTS (SELECT 1 FROM supabase_migrations.schema_migrations WHERE version = '20261030000100')
     UNION ALL
     SELECT 'client policy ' || e.policyname || ' remains',
            COALESCE(p.cmd || ' / ' || p.roles::text, 'MISSING'),
@@ -73,6 +87,32 @@ SELECT check_name, value, ok
     SELECT 'authenticated can still select exam_bodies',
            has_table_privilege('authenticated','public.exam_bodies','SELECT')::text,
            has_table_privilege('authenticated','public.exam_bodies','SELECT')
+    UNION ALL
+    SELECT 'authenticated can still select website_block_types',
+           has_table_privilege('authenticated','public.website_block_types','SELECT')::text,
+           has_table_privilege('authenticated','public.website_block_types','SELECT')
+    UNION ALL
+    SELECT 'authenticated can still select websites',
+           has_table_privilege('authenticated','public.websites','SELECT')::text,
+           has_table_privilege('authenticated','public.websites','SELECT')
+    UNION ALL
+    SELECT 'authenticated can still select website_versions',
+           has_table_privilege('authenticated','public.website_versions','SELECT')::text,
+           has_table_privilege('authenticated','public.website_versions','SELECT')
+    UNION ALL
+    SELECT 'authenticated can still select website_audit',
+           has_table_privilege('authenticated','public.website_audit','SELECT')::text,
+           has_table_privilege('authenticated','public.website_audit','SELECT')
+    UNION ALL
+    SELECT 'no client catalog write privileges remain',
+           COALESCE((
+             SELECT string_agg(
+               rolname || ' ' || relname || ' ' || privilege,
+               ', ' ORDER BY rolname, relname, privilege
+             )
+               FROM client_write_grants
+           ), 'none'),
+           NOT EXISTS (SELECT 1 FROM client_write_grants)
     UNION ALL
     SELECT 'no definer policy names anon/authenticated/public',
            COALESCE((

@@ -5,6 +5,7 @@
 import { useState, type ReactNode } from "react";
 import { BLOCK_HEADINGS, tx, ui, type UiKey } from "@/lib/website/i18n";
 import { safeUrl } from "@/lib/website/sanitize";
+import { openVacancies } from "@/lib/website/catalog";
 import type { Block, Locale, SiteData } from "@/lib/website/types";
 import type { OrgKind } from "@/lib/website/generator";
 import { Rich } from "./rich";
@@ -16,6 +17,9 @@ export interface BlockCtx {
   kind: OrgKind;
   /** Builds an internal link that keeps preview (?school=) and language context. */
   link: (path: string) => string;
+  /** v2: school logo / crest for hero "crest" style. */
+  logo?: string | null;
+  crest?: string | null;
 }
 type P = { b: Block; c: BlockCtx };
 
@@ -86,36 +90,45 @@ function Hero({ b, c }: P) {
   const s = c.data.school;
   const cta = href(c, b.props.cta_href);
   const label = T(c, b.props.cta_label);
-  const img = b.variant === "split" ? safeUrl(b.props.image) : null;
+  const v = b.variant ?? "centered";
+  const img = v === "split" || v === "banner" ? safeUrl(b.props.image) : null;
+  const crest = v === "crest" ? safeUrl(c.crest ?? c.logo) : null;
   const chips = factChips(c);
+  const tagline = T(c, b.props.tagline);
+  const motto = s.motto && tagline !== s.motto ? s.motto : "";
   return (
-    <div className="sw-wrap">
-      <div>
-        <h1 className="sw-h1">{T(c, b.props.heading) || s.name}</h1>
-        {T(c, b.props.tagline) ? (
-          <p className="sw-sub" style={{ fontSize: "1.15rem" }}>
-            {T(c, b.props.tagline)}
-          </p>
-        ) : null}
-        {chips.length ? (
-          <div className="sw-facts">
-            {chips.map((x) => (
-              <span key={x} className="sw-chip">
-                {x}
-              </span>
-            ))}
-          </div>
-        ) : null}
-        {cta && label ? (
-          <div className="sw-actions">
-            <a className="sw-btn" href={cta}>
-              {label}
-            </a>
-          </div>
+    <>
+      {img && v === "banner" ? (
+        <img className="sw-hero-bg" src={img} alt="" fetchPriority="high" />
+      ) : null}
+      <div className="sw-wrap">
+        <div className="sw-hero-copy">
+          {crest ? <img className="sw-crest" src={crest} alt="" width={112} height={112} /> : null}
+          {v === "crest" && motto ? <p className="sw-eyebrow">{motto}</p> : null}
+          <h1 className="sw-h1">{T(c, b.props.heading) || s.name}</h1>
+          {tagline ? <p className="sw-lede">{tagline}</p> : null}
+          {chips.length ? (
+            <div className="sw-facts">
+              {chips.map((x) => (
+                <span key={x} className="sw-chip">
+                  {x}
+                </span>
+              ))}
+            </div>
+          ) : null}
+          {cta && label ? (
+            <div className="sw-actions">
+              <a className="sw-btn" href={cta}>
+                {label}
+              </a>
+            </div>
+          ) : null}
+        </div>
+        {img && v === "split" ? (
+          <img className="sw-hero-img" src={img} alt="" fetchPriority="high" />
         ) : null}
       </div>
-      {img ? <img src={img} alt="" fetchPriority="high" /> : null}
-    </div>
+    </>
   );
 }
 function About({ b, c }: P) {
@@ -470,7 +483,7 @@ function News({ b, c }: P) {
             <Img src={x.cover_image_url} alt="" className="sw-cover" />
             {x.published_at ? <p className="sw-meta">{day(x.published_at).full}</p> : null}
             <h3 className="sw-h3" style={{ marginTop: 4 }}>
-              <a href={c.link(`/news/${x.id}`)}>{x.title}</a>
+              <a href={c.link(`/posts/${x.id}`)}>{x.title}</a>
             </h3>
             {x.excerpt ? <p>{x.excerpt}</p> : null}
           </article>
@@ -869,6 +882,305 @@ function Video({ b, c }: P) {
   );
 }
 
+/* ---------- v2 content types ---------- */
+function postHref(c: BlockCtx, slug: string) {
+  return c.link(`/posts/${slug}`);
+}
+export function PostCard({
+  p,
+  c,
+  big,
+}: {
+  p: NonNullable<SiteData["posts"]>[number];
+  c: BlockCtx;
+  big?: boolean;
+}) {
+  const title = T(c, p.title);
+  const ex = T(c, p.excerpt);
+  return (
+    <article className={big ? "sw-card sw-post sw-post-big" : "sw-card sw-post"}>
+      <Img src={p.cover_url} alt="" className="sw-cover" />
+      <p className="sw-meta">
+        {[p.category, day(p.published_at).full].filter(Boolean).join(" · ")}
+      </p>
+      <h3 className={big ? "sw-h2" : "sw-h3"}>
+        <a href={postHref(c, p.slug)}>{title}</a>
+      </h3>
+      {ex ? <p>{ex}</p> : null}
+      {p.author_name ? (
+        <p className="sw-meta">
+          {L(c, "by")} {p.author_name}
+        </p>
+      ) : null}
+    </article>
+  );
+}
+function Blog({ b, c }: P) {
+  const cat = typeof b.props.category === "string" ? b.props.category.toLowerCase() : "";
+  const posts = (c.data.posts ?? [])
+    .filter((p) => !cat || (p.category ?? "").toLowerCase() === cat)
+    .slice(0, num(b.props.limit, 6));
+  const v = b.variant ?? "grid";
+  const [first, ...rest] = posts;
+  return (
+    <>
+      <Head b={b} c={c} intro />
+      {v === "featured" && first ? (
+        <div className="sw-featured">
+          <PostCard p={first} c={c} big />
+          {rest.length ? (
+            <div className="sw-list">
+              {rest.map((p) => (
+                <PostCard key={p.id} p={p} c={c} />
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : (
+        <div className={v === "list" ? "sw-list" : "sw-grid"}>
+          {posts.map((p) => (
+            <PostCard key={p.id} p={p} c={c} />
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+type Rec = Record<string, unknown>;
+function Policies({ b, c }: P) {
+  const items = arr<Rec>(b.props.items).filter((x) => T(c, x.title));
+  const cards = b.variant === "cards";
+  return (
+    <>
+      <Head b={b} c={c} intro />
+      <div className={cards ? "sw-grid" : "sw-faq"}>
+        {items.map((x, i) => {
+          const file = href(c, x.file);
+          const body = T(c, x.body);
+          const meta = (
+            <>
+              {T(c, x.summary) ? <p>{T(c, x.summary)}</p> : null}
+              {body ? <Rich text={body} className="sw-prose" /> : null}
+              <div className="sw-actions">
+                {file ? (
+                  <a className="sw-btn sw-btn-alt" href={file}>
+                    {L(c, "download")}
+                  </a>
+                ) : null}
+                {typeof x.reviewed === "string" && x.reviewed ? (
+                  <span className="sw-meta">
+                    {L(c, "reviewed")}: {x.reviewed}
+                  </span>
+                ) : null}
+              </div>
+            </>
+          );
+          const id = `policy-${typeof x.kind === "string" ? x.kind : i}`;
+          return cards ? (
+            <div key={i} className="sw-card" id={id}>
+              <h3 className="sw-h3">{T(c, x.title)}</h3>
+              {meta}
+            </div>
+          ) : (
+            <details key={i} id={id}>
+              <summary>{T(c, x.title)}</summary>
+              <div>{meta}</div>
+            </details>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+function Rules({ b, c }: P) {
+  const groups = arr<Rec>(b.props.groups)
+    .map((g) => ({
+      title: T(c, g.title),
+      rules: T(c, g.rules)
+        .split("\n")
+        .map((r) => r.replace(/^[-*\d.)\s]+/, "").trim())
+        .filter(Boolean),
+    }))
+    .filter((g) => g.rules.length);
+  const numbered = b.variant === "numbered";
+  let n = 0;
+  return (
+    <>
+      <Head b={b} c={c} intro />
+      <div className="sw-rules">
+        {groups.map((g, i) => (
+          <section key={i} className="sw-card">
+            {g.title ? <h3 className="sw-h3">{g.title}</h3> : null}
+            <ol
+              className={numbered ? "sw-ol" : "sw-ol sw-ol-plain"}
+              start={numbered ? n + 1 : undefined}
+            >
+              {g.rules.map((r, j) => {
+                n++;
+                return <li key={j}>{r}</li>;
+              })}
+            </ol>
+          </section>
+        ))}
+      </div>
+    </>
+  );
+}
+function Calendar({ b, c }: P) {
+  const items = arr<Rec>(b.props.items)
+    .filter((x) => /^\d{4}-\d{2}-\d{2}$/.test(String(x.starts ?? "")))
+    .sort((x, y) => String(x.starts).localeCompare(String(y.starts)));
+  const range = (x: Rec) =>
+    [
+      day(String(x.starts)).full,
+      /^\d{4}-\d{2}-\d{2}$/.test(String(x.ends ?? "")) ? day(String(x.ends)).full : "",
+    ]
+      .filter(Boolean)
+      .join(" – ");
+  return (
+    <>
+      <Head b={b} c={c} intro />
+      {b.variant === "timeline" ? (
+        <ol className="sw-timeline">
+          {items.map((x, i) => (
+            <li key={i}>
+              <b>{T(c, x.label)}</b>
+              <span className="sw-meta">{range(x)}</span>
+              {T(c, x.note) ? <span>{T(c, x.note)}</span> : null}
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <div className="sw-scroll">
+          <table className="sw-table">
+            <tbody>
+              {items.map((x, i) => (
+                <tr key={i}>
+                  <th scope="row">{T(c, x.label)}</th>
+                  <td>{range(x)}</td>
+                  <td>{T(c, x.note)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </>
+  );
+}
+function Downloads({ b, c }: P) {
+  const items = arr<Rec>(b.props.items).filter((x) => href(c, x.href) && T(c, x.label));
+  const groups = [...new Set(items.map((x) => String(x.group ?? "")))];
+  return (
+    <>
+      <Head b={b} c={c} />
+      {groups.map((g) => (
+        <div key={g} className="sw-dl-group">
+          {g ? <h3 className="sw-h3">{g}</h3> : null}
+          <ul className={b.variant === "grid" ? "sw-grid sw-grid-sm sw-dl" : "sw-list sw-dl"}>
+            {items
+              .filter((x) => String(x.group ?? "") === g)
+              .map((x, i) => (
+                <li key={i} className={b.variant === "grid" ? "sw-card" : undefined}>
+                  <a href={href(c, x.href) as string}>
+                    <span aria-hidden className="sw-dl-icon">
+                      ↓
+                    </span>
+                    {T(c, x.label)}
+                  </a>
+                  {typeof x.detail === "string" && x.detail ? (
+                    <span className="sw-meta"> · {x.detail}</span>
+                  ) : null}
+                </li>
+              ))}
+          </ul>
+        </div>
+      ))}
+    </>
+  );
+}
+function Careers({ b, c }: P) {
+  const jobs = openVacancies(b, c.locale) as Rec[];
+  return (
+    <>
+      <Head b={b} c={c} intro />
+      <div className={b.variant === "cards" ? "sw-grid" : "sw-list"}>
+        {jobs.map((x, i) => {
+          const apply = href(c, x.apply_href);
+          return (
+            <article key={i} className="sw-card">
+              <h3 className="sw-h3">{T(c, x.title)}</h3>
+              <p className="sw-meta">
+                {[
+                  typeof x.type === "string" ? x.type : "",
+                  /^\d{4}-\d{2}-\d{2}$/.test(String(x.closes ?? ""))
+                    ? `${L(c, "closes")} ${day(String(x.closes)).full}`
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+              {T(c, x.summary) ? <Rich text={T(c, x.summary)} /> : null}
+              {apply ? (
+                <div className="sw-actions">
+                  <a className="sw-btn" href={apply}>
+                    {L(c, "apply")}
+                  </a>
+                </div>
+              ) : null}
+            </article>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+function Pta({ b, c }: P) {
+  const ex = arr<Rec>(b.props.executives).filter((x) => typeof x.name === "string" && x.name);
+  const contact = href(c, b.props.contact);
+  return (
+    <>
+      <Head b={b} c={c} intro />
+      <div className={b.variant === "split" ? "sw-split" : undefined}>
+        <div>
+          {T(c, b.props.meetings) ? (
+            <div className="sw-callout">
+              <h3 className="sw-h3">{L(c, "meetings")}</h3>
+              <Rich text={T(c, b.props.meetings)} />
+            </div>
+          ) : null}
+          {contact ? (
+            <div className="sw-actions">
+              <a className="sw-btn" href={contact}>
+                {L(c, "get_in_touch")}
+              </a>
+            </div>
+          ) : null}
+        </div>
+        {ex.length ? (
+          <div>
+            <h3 className="sw-h3">{L(c, "executives")}</h3>
+            <ul className="sw-list">
+              {ex.map((x, i) => (
+                <li key={i} className="sw-person">
+                  <span className="sw-avatar" aria-hidden>
+                    {initials(String(x.name))}
+                  </span>
+                  <span>
+                    <b>{String(x.name)}</b>
+                    <br />
+                    <span className="sw-meta">{T(c, x.role)}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </div>
+    </>
+  );
+}
+
 const R: Record<string, (p: P) => ReactNode> = {
   hero: Hero,
   about: About,
@@ -900,12 +1212,19 @@ const R: Record<string, (p: P) => ReactNode> = {
   links: Links,
   agencies: Agencies,
   video: Video,
+  blog: Blog,
+  policies: Policies,
+  rules: Rules,
+  calendar: Calendar,
+  downloads: Downloads,
+  careers: Careers,
+  pta: Pta,
 };
 export const RENDERED_TYPES = Object.keys(R);
 export function BlockView({ b, c }: P) {
   const C = R[b.type];
   return C ? (
-    <div className="sw-block" data-block={b.type} id={b.id}>
+    <div className="sw-block" data-block={b.type} data-variant={b.variant} id={b.id}>
       <C b={b} c={c} />
     </div>
   ) : null;

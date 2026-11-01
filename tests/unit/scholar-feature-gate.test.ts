@@ -29,6 +29,8 @@ import {
   enabledFeatureCodes,
   featureGateSnapshot,
 } from "@/lib/scholar/feature-gate";
+import { tenantTierEntitlement } from "@/lib/payments/tier-entitlements";
+import { tenantId } from "@/lib/tenant-core";
 import type { EducationRealityRole } from "@/lib/scholar/roles/role-definition";
 import { EDUCATION_REALITY_ROLES, roleById } from "@/lib/scholar/roles/role-registry";
 
@@ -169,6 +171,31 @@ describe("feature gate — fail closed", () => {
     const decision = decideFeatureAccess({ code: "r001.attendance.record", actor });
     expect(decision.enabled).toBe(false);
     expect(decision.reasons.join(" ")).toMatch(/no assigned role declares this capability/);
+  });
+
+  it("does not let active commercial status or entitlement substitute for actor permission", () => {
+    const commercialEntitlement = tenantTierEntitlement(
+      tenantId("tenant:a"),
+      "enterprise",
+      "fee_management",
+    );
+    const commercialContext = {
+      identityId: "user:1",
+      tenantId: "tenant:a",
+      roleIds: [],
+      organizationStatus: "active",
+      subscriptionStatus: "active",
+      commercialEntitlement: commercialEntitlement.entitled,
+    };
+
+    const decision = decideFeatureAccess({
+      code: "r001.finance.fees.collect",
+      actor: commercialContext,
+    });
+
+    expect(commercialEntitlement.entitled).toBe(true);
+    expect(decision.enabled).toBe(false);
+    expect(decision.reasons.join(" ")).toMatch(/no assigned role in the categories/);
   });
 
   it("allows only when a tenant grant exists, and reports the models used", () => {

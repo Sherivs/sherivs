@@ -105,7 +105,7 @@ DECLARE v_id uuid;
 BEGIN
   v_id := public.workspace_role_assignment_create(
     '59000000-0000-4000-8000-0000000000a1','a9000000-0000-4000-8000-000000000002',
-    'head_of_institution','institution',NULL,now() - interval '1 minute',NULL,false,NULL,'{}','{}'
+    'ng.principal','institution',NULL,now() - interval '1 minute',NULL,false,NULL,'{}','{}'
   );
   INSERT INTO m009.assignment_ids VALUES ('user-a-head', v_id);
   v_id := public.workspace_role_assignment_create(
@@ -184,6 +184,7 @@ SELECT m009.denied('future result author cannot receive publication approval',
   $$SELECT public.workspace_role_assignment_create('59000000-0000-4000-8000-0000000000a1','a9000000-0000-4000-8000-000000000002','m009_test_result_entry','institution',NULL,now() + interval '1 hour',NULL,false,NULL,'{}','{}')$$);
 SELECT m009.denied('unverified authority scopes are denied',
   $$SELECT public.workspace_role_assignment_create('59000000-0000-4000-8000-0000000000a1','a9000000-0000-4000-8000-000000000002','m009_test_reader','authority','unverified',now(),NULL,false,NULL,'{}','{}')$$);
+SELECT m009.logout();
 
 -- Responsibility grants expire automatically and revocation immediately removes access.
 INSERT INTO public.workspace_responsibility_catalog (
@@ -200,7 +201,7 @@ BEGIN
   v_assignment := (SELECT id FROM m009.assignment_ids WHERE label = 'user-a-head');
   v_responsibility := (SELECT id FROM public.workspace_responsibility_catalog WHERE code='m009_timed_support');
   PERFORM public.workspace_role_responsibility_add(
-    '59000000-0000-4000-8000-0000000000a1','head_of_institution',v_responsibility
+    '59000000-0000-4000-8000-0000000000a1','ng.principal',v_responsibility
   );
   v_grant := public.workspace_responsibility_grant(
     v_assignment,v_responsibility,now() - interval '1 second',now() + interval '2 seconds'
@@ -216,10 +217,10 @@ SELECT m009.cnt('active add-on grant contributes its permission',
   $$SELECT 1 FROM public.effective_permissions('59000000-0000-4000-8000-0000000000a1',auth.uid()) WHERE permission_code='library.circulate'$$, 1);
 SELECT m009.logout();
 SELECT pg_sleep(3);
-SELECT m009.login('a9000000-0000-4000-8000-000000000002');
 SELECT m009.cnt('expired add-on grant loses permission',
-  $$SELECT 1 FROM public.effective_permissions('59000000-0000-4000-8000-0000000000a1',auth.uid()) WHERE permission_code='library.circulate'$$, 0);
-SELECT m009.logout();
+  $$SELECT 1 FROM public.workspace_effective_permission_rows_at(
+    '59000000-0000-4000-8000-0000000000a1','a9000000-0000-4000-8000-000000000002',clock_timestamp()
+  ) WHERE permission_code='library.circulate'$$, 0);
 
 SELECT m009.login('a9000000-0000-4000-8000-000000000001');
 DO $revoke_grant$
@@ -241,10 +242,10 @@ SELECT m009.logout();
 SELECT m009.login('a9000000-0000-4000-8000-000000000001');
 SELECT public.workspace_responsibility_revoke((SELECT id FROM m009.assignment_ids WHERE label='revocable-grant'));
 SELECT m009.logout();
-SELECT m009.login('a9000000-0000-4000-8000-000000000002');
 SELECT m009.cnt('revoked add-on grant loses permission',
-  $$SELECT 1 FROM public.effective_permissions('59000000-0000-4000-8000-0000000000a1',auth.uid()) WHERE permission_code='library.circulate'$$, 0);
-SELECT m009.logout();
+  $$SELECT 1 FROM public.workspace_effective_permission_rows_at(
+    '59000000-0000-4000-8000-0000000000a1','a9000000-0000-4000-8000-000000000002',clock_timestamp()
+  ) WHERE permission_code='library.circulate'$$, 0);
 
 -- Delegation carries the source permission only for its effective window.
 SELECT m009.login('a9000000-0000-4000-8000-000000000001');

@@ -130,3 +130,19 @@ Known limits / follow-ups:
 - Website tokens mirror SDS v1; Track D can restyle `website.css` without touching block code.
 - `schools.section_*_enabled` and the hero columns are kept (no destructive migration) but no longer read.
 - The builder was verified by unit tests and the RPC sim; it was not screenshotted, because the sim has no auth server for an admin session.
+
+## v2 (SHERIVS-101): content types, typography, brand theming, bespoke sites
+
+Migration `20261025100260_sherivs_101_website_v2` (+ rollback, applied/rolled back 3x on a copy of master's 132-migration ledger).
+
+**Content types** (all blocks, hidden when empty, editable in `/admin/website`): `blog` (table `website_posts`: localized title/excerpt/body, category, cover, author, SEO, draft/published, `publish_at` in the future = scheduled; public routes `/posts/<slug>`, `/rss.xml`, posts in `sitemap.xml`), `rules` (code of conduct), `policies` (admissions, anti-bullying, safeguarding, privacy/NDPA 2023, fees & refunds, uniform, ICT...), `calendar` (term dates), `downloads` (forms), `careers` (vacancies, expired ones hidden), `pta`; existing FAQs/alumni/gallery gained variants. The generator seeds rules, NDPA privacy, safeguarding, anti-bullying and admissions policies, term dates, PTA and downloads from onboarding answers; a "Parents" ("Resources" for tertiary) page and footer-linked "Rules & policies" and "Careers" pages. Blog blocks are kept on pages with other content and stay hidden until the first post.
+
+**Roles:** `website.manage` edits/publishes the site and all posts; new `website.posts` (PR, admissions, alumni, deputy admin, ICT, student affairs templates) writes drafts of own posts only. Posts are audited in `website_audit`. `website_set_brand` writes `schools.primary_color/secondary_color`.
+
+**Typography:** six self-hosted pairings (fontsource variable woff2, latin + latin-ext + vietnamese subsets for Hausa/Igbo/Yoruba diacritics; no Google Fonts at runtime): classic, scholarly, modern, friendly, civic, heritage. Default by school type (nursery/primary friendly, secondary heritage, tertiary scholarly, government civic). Fluid type scale via CSS variables; only the chosen pairing's files are preloaded.
+
+**Brand theming:** the full palette (tints/shades, surfaces, borders, on-colors, footer) is derived from the school's primary/secondary colours, every text/background pair is auto-corrected to WCAG AA, and a dark palette is derived (`dark: auto|light|dark`, `prefers-color-scheme`).
+
+**Bespoke feel:** the org site's `<head>` carries no Sherivs meta, icons or fonts; per-school title, favicon (logo or generated monogram `/site-icon.svg`), OG image/type, theme-color, canonical on the school's own verified domain; hero variants (centered, split, banner, crest), topbar, name + motto lockup, crest in footer, optional hideable "Website by Sherivs" credit. `robots.txt` is now a per-host route: org hosts get their own body and `Sitemap:`; the static `public/robots.txt` is removed.
+
+**Results:** unit (website suites + v2 suite), sim v1 9/9 and v2 8/8 (cross-tenant post isolation, author/editor rights, scheduled posts hidden, anon cannot read the table, brand writes need manage), k6 `load/website-v2.js` 1,000 VUs/60 s on one Node SSR process: 0 cross-tenant leaks, 2.1 % client timeouts at saturation (same profile as v1; production sits behind the edge cache).

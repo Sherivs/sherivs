@@ -24,10 +24,11 @@ export const Route = createFileRoute("/onboarding")({
   component: OnboardingPage,
   head: () => ({
     meta: [
-      { title: `Create an account — ${PLATFORM_NAME}` },
+      { title: `Bring your school into Sherivs — ${PLATFORM_NAME}` },
       {
         name: "description",
-        content: `${PLATFORM_NAME} creates your organization's admin account. Admins then invite users by email. There is no self-service sign-up.`,
+        content:
+          "Request an administrator account to set up your organization, configure school operations, and invite your community into Sherivs Scholar. This page opens your email app. It does not create an account or a ticket.",
       },
       { name: "robots", content: "noindex, nofollow" },
     ],

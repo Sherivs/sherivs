@@ -23,7 +23,10 @@ const PUBLIC_DIR = join(ROOT, "public");
 describe("canonical public dir", () => {
   it("ships the PWA assets from one public dir (no split frontend/public)", () => {
     expect(existsSync(join(PUBLIC_DIR, "sw.js"))).toBe(true);
-    expect(existsSync(join(PUBLIC_DIR, "robots.txt"))).toBe(true);
+    // robots.txt is served by routes/robots[.]txt.ts (per host: each school site gets its own; SHERIVS-101).
+    // A static copy would shadow the route, so it must not exist.
+    expect(existsSync(join(PUBLIC_DIR, "robots.txt"))).toBe(false);
+    expect(existsSync(join(ROOT, "frontend", "src", "routes", "robots[.]txt.ts"))).toBe(true);
     expect(existsSync(join(PUBLIC_DIR, "favicon.ico"))).toBe(true);
     expect(existsSync(join(ROOT, "frontend", "public"))).toBe(false);
   });
@@ -243,8 +246,7 @@ describe("offline shell service worker", () => {
   });
 
   it("precaches the app shell at install", async () => {
-    fetchImpl = (input) =>
-      Promise.resolve(new Response("<html>shell</html>", { status: 200 }));
+    fetchImpl = (input) => Promise.resolve(new Response("<html>shell</html>", { status: 200 }));
     loadServiceWorker();
     dispatch("install", {});
     await drained();
@@ -254,8 +256,7 @@ describe("offline shell service worker", () => {
   });
 
   it("caches successful navigations network-first", async () => {
-    fetchImpl = (input) =>
-      Promise.resolve(new Response("<html>page</html>", { status: 200 }));
+    fetchImpl = (input) => Promise.resolve(new Response("<html>page</html>", { status: 200 }));
     loadServiceWorker();
     dispatch("fetch", { request: { mode: "navigate", method: "GET", url: "/timetable" } });
     await drained();

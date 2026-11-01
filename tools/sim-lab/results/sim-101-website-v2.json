@@ -1,0 +1,39 @@
+{
+ "at": "2026-10-25T05:32:56.211Z",
+ "pass": 8,
+ "total": 8,
+ "results": [
+  {
+   "name": "v2 theme + seo validate; bad pairing, bad favicon and javascript: rejected",
+   "ok": true
+  },
+  {
+   "name": "author writes drafts but cannot publish; editor publishes",
+   "ok": true
+  },
+  {
+   "name": "teacher (no website permission) and anon cannot read or write posts",
+   "ok": true
+  },
+  {
+   "name": "public site shows only published, due posts; drafts and scheduled stay hidden",
+   "ok": true
+  },
+  {
+   "name": "tenant isolation: B's host cannot read A's post; A cannot write into B",
+   "ok": true
+  },
+  {
+   "name": "blog-less site carries no posts in its public bundle",
+   "ok": true
+  },
+  {
+   "name": "brand colours: managers set schools.primary/secondary; others cannot; hex enforced",
+   "ok": true
+  },
+  {
+   "name": "post validation: slug, lengths, script URLs, duplicate links",
+   "ok": true
+  }
+ ]
+}
