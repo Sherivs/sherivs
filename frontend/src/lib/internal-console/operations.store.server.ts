@@ -5,6 +5,7 @@
 import { writeAuditRecord } from "@/lib/server/write-audit";
 import { SystemClock, TimeAuthority } from "@/lib/kernel/time-authority";
 import { assertInternalAal2 } from "@/lib/security/mfa-server";
+import { scrubString } from "@/lib/observability/scrub";
 import { isMissingRelation, store } from "./store";
 import {
   CONSOLE_SUBSCRIPTION_PREFIX,
@@ -145,8 +146,8 @@ function mapIncident(row: IncidentRow, names: Map<string, string>): ConsoleIncid
     id: row.id,
     organizationId: row.organization_id,
     organizationName: row.organization_id ? (names.get(row.organization_id) ?? null) : null,
-    title: row.title,
-    details: row.details ?? "",
+    title: scrubString(row.title),
+    details: scrubString(row.details ?? ""),
     severity: (["low", "medium", "high", "critical"] as const).includes(
       row.severity as IncidentSeverity,
     )

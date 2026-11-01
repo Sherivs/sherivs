@@ -145,14 +145,14 @@ test("signs into every V1 console role and clicks visible console links", async 
         await expect(page.getByTestId(`console-workspace-${workspace.key}`)).toContainText(
           "Student records, fees, and biometric data are not available here.",
         );
-        await page.goto("/console/organizations", { waitUntil: "domcontentloaded" });
+        await page.locator('.sherivs-console-nav a[href="/console/organizations"]').first().click();
         const organizations = page.getByTestId("console-organizations");
         await expect(organizations).toBeVisible();
         await expect(organizations).toContainText("Riverside School");
         await expect(organizations).not.toContainText("Harbour Academy");
         await expect(organizations).not.toContainText("Sahel College");
       }
-      await page.goto("/console", { waitUntil: "domcontentloaded" });
+      await page.locator('.sherivs-console-nav a[href="/console"]').first().click();
       await expect(page.getByTestId("console-home")).toBeVisible();
     }
 
@@ -163,7 +163,7 @@ test("signs into every V1 console role and clicks visible console links", async 
     await expect(personalWorkspaceLink).toBeVisible();
     await personalWorkspaceLink.click();
     await expect(page.getByTestId("console-workspace-personal")).toBeVisible();
-    await page.goto("/console", { waitUntil: "domcontentloaded" });
+    await page.locator('.sherivs-console-nav a[href="/console"]').first().click();
     await expect(page.getByTestId("console-home")).toBeVisible();
 
     const heading =

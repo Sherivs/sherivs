@@ -31,6 +31,10 @@ const operationsStore = readFileSync(
   "frontend/src/lib/internal-console/operations.store.server.ts",
   "utf8",
 );
+const operationsScreens = readFileSync(
+  "frontend/src/components/internal-console/operations-screens.tsx",
+  "utf8",
+);
 const migration = readFileSync(
   "database/supabase/migrations/20261027002000_sherivs_031_control_plane_engines.sql",
   "utf8",
@@ -168,6 +172,23 @@ describe("Support workspace organization scope", () => {
     expect(listIncidents).toContain('"platform.engineering.read"');
     expect(listIncidents).toContain('"platform.operations.read"');
     expect(listIncidents).not.toContain('"platform.tenants.read"');
+  });
+
+  it("aligns the incident screen gate with server authorization and scrubs free text", () => {
+    const incidentScreen = operationsScreens.slice(
+      operationsScreens.indexOf("export function ConsoleIncidents"),
+      operationsScreens.indexOf("export function ConsoleLogs"),
+    );
+    const incidentMapper = operationsStore.slice(
+      operationsStore.indexOf("function mapIncident"),
+      operationsStore.indexOf("export async function listTickets"),
+    );
+    expect(incidentScreen).not.toContain('capabilities.includes("platform.tenants.read")');
+    expect(incidentScreen).toContain(
+      "Operational incidents require engineering, operations, or audit capability.",
+    );
+    expect(incidentMapper).toContain("title: scrubString(row.title)");
+    expect(incidentMapper).toContain('details: scrubString(row.details ?? "")');
   });
 });
 

@@ -7,9 +7,22 @@ describe("Sentry scrubbing", () => {
     const s = scrubString(
       "user ada.obi@school.ng called +234 803 555 0101 / 08035550101 with " +
         "Bearer abcDEF1234567890xyz and eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.c2lnbmF0dXJlMTIz " +
-        "key sb_secret_ABCDEFGH12345678 url /cb?access_token=SECRET123&ok=1",
+        "key sb_secret_ABCDEFGH12345678 url /cb?access_token=SECRET123&ok=1 " +
+        "NODE_ENV=production API_KEY=raw-secret DATABASE_URL=postgres://db.test/app",
     );
-    for (const leak of ["ada.obi@school.ng", "803 555", "08035550101", "abcDEF1234567890xyz", "eyJhbGci", "sb_secret_ABCDEFGH", "SECRET123"])
+    for (const leak of [
+      "ada.obi@school.ng",
+      "803 555",
+      "08035550101",
+      "abcDEF1234567890xyz",
+      "eyJhbGci",
+      "sb_secret_ABCDEFGH",
+      "SECRET123",
+      "production",
+      "raw-secret",
+      "postgres://",
+      "db.test",
+    ])
       expect(s).not.toContain(leak);
     expect(s).toContain("ok=1");
     expect(scrubString("error 404 at line 12")).toBe("error 404 at line 12");

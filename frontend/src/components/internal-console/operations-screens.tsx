@@ -204,7 +204,6 @@ export function ConsoleIncidents() {
   const canRead =
     capabilities.includes("platform.engineering.read") ||
     capabilities.includes("platform.operations.read") ||
-    capabilities.includes("platform.tenants.read") ||
     capabilities.includes("platform.audit.read");
   const canWrite = canWriteIncidents(capabilities);
 
@@ -228,7 +227,7 @@ export function ConsoleIncidents() {
     return (
       <section className="sherivs-console-card">
         <h1>Incidents</h1>
-        <p>Operational incidents require an authorized engineering, operations, or tenant-read capability.</p>
+        <p>Operational incidents require engineering, operations, or audit capability.</p>
       </section>
     );
   }
