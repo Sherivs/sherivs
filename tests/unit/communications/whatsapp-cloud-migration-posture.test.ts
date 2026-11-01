@@ -3,14 +3,14 @@ import { describe, expect, it } from "vitest";
 
 const migration = readFileSync(
   new URL(
-    "../../../database/supabase/migrations/20261101000010_sherivs_whatsapp_cloud.sql",
+    "../../../database/supabase/migrations/20261101000020_sherivs_whatsapp_cloud.sql",
     import.meta.url,
   ),
   "utf8",
 );
 const rollback = readFileSync(
   new URL(
-    "../../../database/supabase/rollbacks/20261101000010_sherivs_whatsapp_cloud.sql",
+    "../../../database/supabase/rollbacks/20261101000020_sherivs_whatsapp_cloud.sql",
     import.meta.url,
   ),
   "utf8",

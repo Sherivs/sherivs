@@ -47,6 +47,28 @@ only an existing outbound message for that same registered sender. RLS is
 enabled and forced on communication records, direct client access is revoked,
 and privacy-minimized changes are appended to `audit_chain`.
 
+## Shared communications integration boundary
+
+This PR owns the WhatsApp provider adapter, the single
+`/api/public/webhooks/whatsapp` route, and the tenant-neutral sender registry.
+The communications-fabric work in PR #222 should build on these contracts; it
+may add shared approval and queue policies, but must reuse this provider/send
+boundary and communication ledger. It must not introduce a second WhatsApp
+route, sender registry, gateway, ledger, or Meta transport.
+
+- `public.cg_org_communication_sender` is the canonical sender registry.
+  Webhook callbacks identify a sender using Meta's `phone_number_id` and resolve
+  tenant and organization scope only from this registry.
+- The route calls the service-role-only `cg_whatsapp_receive` and
+  `cg_whatsapp_status` RPCs for inbound and delivery events.
+- `sendWhatsAppMessage` in
+  `frontend/src/lib/communications/whatsapp-cloud.server.ts` accepts an
+  authorized tenant, organization, and principal reference. It prepares the
+  ledger record and resolves the recipient through `cg_whatsapp_prepare_send`
+  before calling `WhatsAppCloudAdapter`, then records the result through
+  `cg_whatsapp_dispatch_result`. Callers must not provide a recipient address
+  directly.
+
 This migration is review-only until explicitly approved and applied by an
 authorized operator. No production database change is performed by this
 integration work.

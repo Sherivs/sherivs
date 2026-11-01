@@ -1,7 +1,7 @@
 -- WhatsApp Cloud support for the shared, tenant-neutral communication fabric.
 -- NOT APPLIED. Sender identity, messages, and consent use tenant_id + org_ref;
 -- provider callbacks never choose a tenant from payload data.
--- Rollback: database/supabase/rollbacks/20261101000010_sherivs_whatsapp_cloud.sql
+-- Rollback: database/supabase/rollbacks/20261101000020_sherivs_whatsapp_cloud.sql
 BEGIN;
 
 ALTER TABLE public.cg_org_communication_sender
