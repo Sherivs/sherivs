@@ -1,6 +1,6 @@
 # Apply FORCE RLS on the six catalogs
 
-Version target: **V1**. Owner-approved migration: `20261029001000_sherivs_force_rls_catalog_tables` (merged in PR #161). Companion, required unless preflight says otherwise: `20261029001100_sherivs_catalog_definer_rls_policies`.
+Version target: **V1**. The bundle applies `20261029001000_sherivs_force_rls_catalog_tables` (merged in PR #161), `20261029001100_sherivs_catalog_definer_rls_policies`, and `20261030000100_sherivs_catalog_revoke_client_writes`.
 
 Nothing in this folder has been run against production.
 
@@ -11,7 +11,7 @@ There is **no GitHub Actions workflow that applies SQL migrations to production*
 | Path | What it actually does | Use for this change |
 | --- | --- | --- |
 | Supabase SQL editor | The documented production path. `docs/ops/sql/step0-sql-editor.sql`, `docs/ops/RELEASE-2026-10-21.md`, `docs/ops/ROLLOUT-SHERIVS-001-005.md`, and open PR #71 (`docs/ops/sql/apply-release-60-migrations.sql`) all paste one transaction into the dashboard. The ledger is `supabase_migrations.schema_migrations` (`version`, plus `name` when that column exists). | **Yes. This runbook.** |
-| Laptop `supabase db push --db-url "$PROD_DB_URL"` | Applies **every** pending file under `database/supabase/migrations/`, not this pair. Documented in the same rollout notes. | No, unless a dry-run lists only `20261029001000` and `20261029001100`. |
+| Laptop `supabase db push --db-url "$PROD_DB_URL"` | Applies **every** pending file under `database/supabase/migrations/`, not just this bundle. Documented in the same rollout notes. | No, unless a dry-run lists only `20261029001000`, `20261029001100`, and `20261030000100`. |
 | `.github/workflows/infrastructure-plan-apply.yml` | Terraform plan/apply. `workflow_dispatch` inputs: `provider` (`environments/production`, `oci`, `hetzner`, `vultr`, `cloudflare`, `supabase`), `action` (`plan` or `apply`), `confirm_apply` (must be `APPLY`). Environments named in the file: `infrastructure-plan`, `infrastructure-apply`. Secrets by name: `TF_STATE_ACCESS_KEY_ID`, `TF_STATE_SECRET_ACCESS_KEY`, `OCI_PRIVATE_KEY_PEM`, `TF_VAR_oci_tenancy_ocid`, `TF_VAR_oci_user_ocid`, `TF_VAR_oci_fingerprint`, `TF_VAR_hetzner_token`, `TF_VAR_vultr_api_key`, `TF_VAR_cloudflare_api_token`, `TF_VAR_supabase_access_token`, `SUPABASE_DB_URL`. | **No.** Those two environments are not created (API 404). The workflow has no recorded runs. It does not run this SQL. |
 | `.github/workflows/release.yml` | App image build and SSH deploy. Environment: `production`. Fails closed when `DEPLOY_SSH_HOST`, `DEPLOY_SSH_USER`, or `DEPLOY_SSH_KEY` is empty. Also references `DOCKER_REGISTRY`, `DOCKER_USERNAME`, `DOCKER_PASSWORD`, `DOCKER_NAMESPACE`. | **No.** No release runs are recorded. It does not apply SQL. |
 | `.github/workflows/nightly-db-backup.yml` | Read-only `pg_dump`. Fails closed without `PROD_DB_URL_BACKUP` and `BACKUP_PASSPHRASE`. Recent scheduled runs succeeded, so those two secrets are set. | **No.** Do not point an apply at the backup URL. |
@@ -39,7 +39,7 @@ On a role that owns those functions and has neither superuser nor `BYPASSRLS`, P
 
 The companion adds at most nine policies, and only for function owners that fail both `rolsuper` and `rolbypassrls`. Writes still require `public.scholar_can(school_id, 'website.manage')`. If every affected owner already bypasses RLS, it creates no policy. Re-running it is safe. It does not `GRANT`, does not change role attributes, and does not edit the anon/authenticated policies.
 
-Local proof (disposable Postgres 16, not production): `tests/sql/catalog-definer-force-rls.sql` → `HARNESS PASS`. The same database then ran this folder's `preflight.sql` (`combined_apply_safe` = YES, `force_alone_safe` = NO), `apply.sql`, `verify.sql` (19/19 true), a second paste (`APPLY REFUSED: already recorded`), and `rollback.sql`.
+Local proof runs against disposable Postgres 16, not production: `tests/sql/catalog-definer-force-rls.sql`. It exercises the catalog definer policies and the client-write revoke while preserving client SELECT grants.
 
 `tools/sim-lab` Postgres is created by `initdb` as a superuser, so the stock sim cannot show this failure. The harness sets the function and table owner to `app_owner` with `NOSUPERUSER NOBYPASSRLS` and runs each affected function as that role.
 
@@ -59,7 +59,8 @@ Objects that read or write the six tables, and whether FORCE changes them.
 | Cron `GET/POST /api/public/cron/integrations-sync` | service role for `.from("integrations")` | No. Does not read the six catalogs. `service_role` bypasses RLS | same cron route |
 | `_website_immutable` trigger | invoker (the role that `UPDATE`/`DELETE`s `website_versions` or `website_audit`) | The RPC path does not update those tables. A non-bypass owner `UPDATE` changes 0 rows, so the row stays immutable. `service_role` still hits the trigger | Harness: owner `UPDATE` row count 0 |
 | Client `SELECT` policies (`website_block_types_read`, `websites_read`, `website_versions_read`, `website_audit_read`, `exam_bodies_read`, `connector_manifests_read`) | `anon` / `authenticated` | No. Non-owners were already subject to RLS | Harness anon/authenticated checks; verify.sql |
-| Direct `.from("websites" \| …)` in `frontend/` | none found | No | repo search on `origin/master` |
+| Browser/client access to these tables | No direct `.from("websites" \| "website_versions" \| "website_audit" \| "website_block_types")` calls found in `frontend/` or `mobile/`. The public-site path calls `sb.rpc("website_public", …)` in `frontend/src/lib/website/public-site.functions.ts`; onboarding calls `website_get`, `website_save_draft`, and `website_publish` through `rpc()` in `frontend/src/lib/website/bootstrap.ts`. | No direct client table writes | repo search in `frontend/` and `mobile/` |
+| Website catalog write implementation | `website_save_draft`, `website_publish`, and `website_rollback` are SECURITY DEFINER functions in `database/supabase/migrations/20261025100240_sherivs_100_website_engine.sql` | Writes remain on RPCs | Website engine migration |
 | Views on these tables | none | No | no `CREATE VIEW` |
 | `pg_cron` jobs | none in repo | No | no `cron.schedule` |
 | Edge functions | none in repo | No | no `supabase/functions` |
@@ -71,22 +72,22 @@ Foreign-key checks bypass RLS. No view or policy was widened for `anon` or `auth
 
 1. Confirm a database backup from the last 24 hours (Dashboard → Database → Backups). Stop if there is not one.
 2. Open the production SQL editor. Paste `preflight.sql`. Run it alone.
-3. Read section **Z**. Continue only when every Z row is `ok = true` and `combined_apply_safe` is `YES — paste apply.sql`.
+3. Read section **Z**. Continue only when every Z row is `ok = true` and `combined_apply_safe` is `YES — paste apply.sql`. The `current client write grants` row reports the four-table grants that the bundle will revoke; it does not authorize direct writes.
 4. Read `force_alone_safe`.
    - `YES` means every affected function owner already bypasses RLS. `apply.sql` will force the tables and add no policy.
    - `NO` means `apply.sql` will also add the nine owner policies. Do not paste `20261029001000` by itself.
 5. New query. Paste `apply.sql`. Run once.
-6. Expected: `NOTICE: APPLY guard passed`, six `ALTER TABLE`, then either `catalog definer policy … for <owner>` or `no non-bypass owner; policy not created`, then `COMMIT`, then six rows with `relforcerowsecurity = t`.
-7. New query. Paste `verify.sql`. Every row must be `ok = true` (19 rows on the fixture; production has the same checks plus live catalog counts greater than 0).
+6. Expected: `NOTICE: APPLY guard passed`, six `ALTER TABLE`, then either `catalog definer policy … for <owner>` or `no non-bypass owner; policy not created`, followed by the four `REVOKE` statements, `COMMIT`, and six rows with `relforcerowsecurity = t`.
+7. New query. Paste `verify.sql`. Every row must be `ok = true`; it confirms the new ledger version, absence of client write privileges on all four tables, and retention of client SELECT grants.
 8. Smoke: open a published school site; as a website manager, save a draft. As an exams officer, the body list still loads. As a settings manager, connector connect still resolves a known key.
-9. A second paste of `apply.sql` must stop with `APPLY REFUSED: already recorded (20261029001000, 20261029001100)`.
+9. A second paste of `apply.sql` must stop with `APPLY REFUSED: already recorded` and list the recorded versions.
 
 ## Go / no-go
 
 **Go** when all of these are true:
 
 - Backup is current.
-- Preflight section Z is all `ok = true`.
+- Preflight section Z is all `ok = true`; inspect the client write grant report.
 - You paste `apply.sql` (both migrations, one transaction), not the FORCE file alone, unless `force_alone_safe` is true.
 - `verify.sql` is all `ok = true` and the smoke checks pass.
 
@@ -104,5 +105,6 @@ Foreign-key checks bypass RLS. No view or policy was widened for `anon` or `auth
 - `NO FORCE` on the six tables (the existing rollback file).
 - `DROP` of the nine definer policies only (the companion rollback). Client policies stay.
 - Deletes ledger versions `20261029001000` and `20261029001100`.
+- Intentionally does not restore client write grants or remove `20261030000100` from the ledger. Direct writes remain revoked after the FORCE/policy rollback. The standalone rollback `database/supabase/rollbacks/20261030000100_sherivs_catalog_revoke_client_writes.sql` restores the observed client grants and must only be used with explicit authorization.
 
 It does not drop data. After it commits, a non-bypass table owner bypasses RLS again, which is the pre-change behavior. Paste it only to undo this apply.

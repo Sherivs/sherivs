@@ -190,6 +190,39 @@ CREATE POLICY connector_manifests_read ON public.connector_manifests FOR SELECT 
 REVOKE ALL ON public.websites, public.website_versions, public.website_audit FROM anon;
 GRANT SELECT ON public.website_block_types TO anon, authenticated;
 GRANT SELECT ON public.websites, public.website_versions, public.website_audit TO authenticated;
+GRANT INSERT, UPDATE, DELETE, TRUNCATE ON TABLE
+  public.websites, public.website_versions, public.website_audit, public.website_block_types
+  TO anon, authenticated;
+\echo == revoke direct client writes; preserve catalog reads ==
+\ir ../../database/supabase/migrations/20261030000100_sherivs_catalog_revoke_client_writes.sql
+\ir ../../database/supabase/migrations/20261030000100_sherivs_catalog_revoke_client_writes.sql
+DO $client_catalog_privileges$
+DECLARE
+  v_role text;
+  v_table text;
+  v_privilege text;
+BEGIN
+  FOREACH v_role IN ARRAY ARRAY['anon', 'authenticated'] LOOP
+    FOREACH v_table IN ARRAY ARRAY[
+      'websites', 'website_versions', 'website_audit', 'website_block_types'
+    ] LOOP
+      FOREACH v_privilege IN ARRAY ARRAY['INSERT', 'UPDATE', 'DELETE', 'TRUNCATE'] LOOP
+        IF has_table_privilege(v_role, format('public.%I', v_table), v_privilege) THEN
+          RAISE EXCEPTION 'FAIL: % retains % on %', v_role, v_privilege, v_table;
+        END IF;
+      END LOOP;
+    END LOOP;
+  END LOOP;
+
+  IF NOT has_table_privilege('anon', 'public.website_block_types', 'SELECT')
+     OR NOT has_table_privilege('authenticated', 'public.website_block_types', 'SELECT')
+     OR NOT has_table_privilege('authenticated', 'public.websites', 'SELECT')
+     OR NOT has_table_privilege('authenticated', 'public.website_versions', 'SELECT')
+     OR NOT has_table_privilege('authenticated', 'public.website_audit', 'SELECT') THEN
+    RAISE EXCEPTION 'FAIL: a client SELECT grant changed';
+  END IF;
+END
+$client_catalog_privileges$;
 REVOKE ALL ON public.exam_bodies FROM PUBLIC, anon, authenticated;
 GRANT SELECT ON public.exam_bodies TO authenticated;
 REVOKE ALL ON public.connector_manifests FROM PUBLIC, anon, authenticated;

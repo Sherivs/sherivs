@@ -10,6 +10,8 @@ import { OrganizationAccessDenied } from "@/components/auth/organization-access-
 import { isActiveMembership } from "@/lib/auth/organization-access";
 import { ShellGlassIcon } from "./glass-icon";
 import { AppShellStateProvider, useAppShell } from "./shell-context";
+import { ConnectionStatus } from "./connection-status";
+import { rememberResource } from "@/lib/internal-console/recent";
 import "./app-shell.css";
 
 function initials(name: string): string {
@@ -32,6 +34,9 @@ function ShellChrome({ children }: { children: ReactNode }) {
   const display = shell.name.display;
   const path = location.pathname;
   const pushUserId = app.profile?.id ?? app.authUser?.id;
+  const primary = shell.primaryNav;
+  const primaryKeys = new Set(primary.map((slot) => slot.key));
+  const additional = shell.drawer.filter((item) => !primaryKeys.has(item.key));
 
   useEffect(() => {
     if (!pushUserId) return;
@@ -77,7 +82,32 @@ function ShellChrome({ children }: { children: ReactNode }) {
               <Menu />
             </ShellGlassIcon>
           </button>
+          <nav className="app-shell-primary-nav" aria-label="Primary sections">
+            {primary.map((slot) => {
+              const active = path === slot.href;
+              return (
+                <Link
+                  key={slot.key}
+                  to={slot.href as never}
+                  className={active ? "is-active" : undefined}
+                  aria-current={active ? "page" : undefined}
+                  onClick={() =>
+                    rememberResource({
+                      id: slot.key,
+                      title: slot.label,
+                      href: slot.href,
+                      kind: "workspace-section",
+                      at: new Date().toISOString(),
+                    })
+                  }
+                >
+                  {slot.label}
+                </Link>
+              );
+            })}
+          </nav>
           <div className="app-shell-header-actions">
+            <ConnectionStatus />
             <button
               type="button"
               className="app-shell-icon-btn"
@@ -168,9 +198,34 @@ function ShellChrome({ children }: { children: ReactNode }) {
                 );
               })}
             </div>
-            {shell.drawer.length ? <p className="app-shell-drawer-kicker">Workspace</p> : null}
+            {primary.length ? (
+              <p className="app-shell-drawer-kicker">Core responsibilities</p>
+            ) : null}
+            <nav className="app-shell-drawer-list" aria-label="Core responsibilities">
+              {primary.map((item) => {
+                const active = pending === item.key || path === item.href;
+                const Icon = shellIcon(item.icon);
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    className={`app-shell-drawer-item${active ? " is-active" : ""}`}
+                    aria-current={active ? "page" : undefined}
+                    onClick={() => go(item.href, item.key)}
+                  >
+                    <ShellGlassIcon active={active}>
+                      <Icon />
+                    </ShellGlassIcon>
+                    {item.label}
+                  </button>
+                );
+              })}
+            </nav>
+            {additional.length ? (
+              <p className="app-shell-drawer-kicker">Add-on responsibilities</p>
+            ) : null}
             <div className="app-shell-drawer-list">
-              {shell.drawer.map((item) => {
+              {additional.map((item) => {
                 const Icon = shellIcon(item.icon);
                 const active = pending === item.key || path === item.href;
                 return (

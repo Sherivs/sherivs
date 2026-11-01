@@ -1,7 +1,7 @@
 -- =============================================================================
--- Apply 20261029001000 (FORCE RLS on six catalogs) and 20261029001100
--- (definer policies, only when a function owner lacks superuser and BYPASSRLS)
--- to PRODUCTION via the Supabase SQL editor.
+-- Apply 20261029001000 (FORCE RLS on six catalogs), 20261029001100
+-- (definer policies, only when a function owner lacks superuser and BYPASSRLS),
+-- and 20261030000100 (revoke client writes) to PRODUCTION via the Supabase SQL editor.
 --
 -- HOW TO USE: paste this whole file into a new SQL editor query and Run once.
 --   * One transaction. Any error rolls back everything, including the ledger.
@@ -33,7 +33,7 @@ BEGIN
 
   SELECT string_agg(version, ', ' ORDER BY version) INTO v_bad
     FROM supabase_migrations.schema_migrations
-   WHERE version IN ('20261029001000', '20261029001100');
+   WHERE version IN ('20261029001000', '20261029001100', '20261030000100');
   IF v_bad IS NOT NULL THEN
     RAISE EXCEPTION 'APPLY REFUSED: already recorded (%). Nothing was changed.', v_bad;
   END IF;
@@ -284,6 +284,25 @@ DROP FUNCTION pg_temp.catalog_org_column();
 -- [apply: inner COMMIT removed; outer transaction applies]
 -- COMMIT;
 
+-- #############################################################################
+-- >>> 20261030000100_sherivs_catalog_revoke_client_writes.sql
+-- #############################################################################
+
+-- V1. Remove direct client writes from the website catalog tables.
+-- Catalog writes continue through the existing SECURITY DEFINER RPCs.
+-- REVOKE is idempotent and leaves SELECT privileges unchanged.
+-- Rollback: database/supabase/rollbacks/20261030000100_sherivs_catalog_revoke_client_writes.sql
+-- [apply: inner BEGIN removed; outer transaction applies]
+-- BEGIN;
+
+REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON TABLE public.websites FROM anon, authenticated;
+REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON TABLE public.website_versions FROM anon, authenticated;
+REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON TABLE public.website_audit FROM anon, authenticated;
+REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON TABLE public.website_block_types FROM anon, authenticated;
+
+-- [apply: inner COMMIT removed; outer transaction applies]
+-- COMMIT;
+
 DO $apply_assert$
 BEGIN
   IF (
@@ -333,6 +352,18 @@ BEGIN
     RAISE EXCEPTION 'APPLY ABORT: a client role can INSERT into websites';
   END IF;
 
+  IF EXISTS (
+    SELECT 1
+      FROM (VALUES ('anon'), ('authenticated')) r(role_name)
+      CROSS JOIN (VALUES
+        ('websites'), ('website_versions'), ('website_audit'), ('website_block_types')
+      ) t(table_name)
+      CROSS JOIN (VALUES ('INSERT'), ('UPDATE'), ('DELETE'), ('TRUNCATE')) p(privilege)
+     WHERE has_table_privilege(r.role_name, format('public.%I', t.table_name), p.privilege)
+  ) THEN
+    RAISE EXCEPTION 'APPLY ABORT: a client role retains a catalog write privilege';
+  END IF;
+
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND policyname = 'website_block_types_read')
      OR NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND policyname = 'websites_read')
      OR NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND policyname = 'website_versions_read')
@@ -354,12 +385,14 @@ BEGIN
   ) THEN
     INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES
       ('20261029001000', 'sherivs_force_rls_catalog_tables'),
-      ('20261029001100', 'sherivs_catalog_definer_rls_policies')
+      ('20261029001100', 'sherivs_catalog_definer_rls_policies'),
+      ('20261030000100', 'sherivs_catalog_revoke_client_writes')
     ON CONFLICT (version) DO NOTHING;
   ELSE
     INSERT INTO supabase_migrations.schema_migrations (version) VALUES
       ('20261029001000'),
-      ('20261029001100')
+      ('20261029001100'),
+      ('20261030000100')
     ON CONFLICT (version) DO NOTHING;
   END IF;
 END

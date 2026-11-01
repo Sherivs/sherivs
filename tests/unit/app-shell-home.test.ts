@@ -15,6 +15,8 @@ import {
   composeBottomSlots,
   composeHomeSections,
   composeSidePanel,
+  homeHrefForScope,
+  toShellNavItem,
 } from "../../frontend/src/lib/shell/chrome";
 import {
   BIOMETRIC_PASKEY_STEPS,
@@ -23,7 +25,12 @@ import {
 } from "../../frontend/src/lib/shell/auth-setup";
 import { fallbackManifest } from "../../frontend/src/lib/shell/fallback-manifest";
 import { formatWidgetMetric } from "../../frontend/src/lib/shell/metrics";
-import { APP_SHELL_AI, APP_SHELL_HOME, APP_SHELL_PROFILE, appShellSectionPath } from "../../frontend/src/lib/shell/paths";
+import {
+  APP_SHELL_AI,
+  APP_SHELL_HOME,
+  APP_SHELL_PROFILE,
+  appShellSectionPath,
+} from "../../frontend/src/lib/shell/paths";
 import { pickSwitchTarget } from "../../frontend/src/lib/identity/memberships.functions";
 import type { AppRole } from "../../frontend/src/lib/roles";
 
@@ -91,15 +98,35 @@ describe("membership invite law", () => {
 });
 
 describe("shell chrome", () => {
-  it("pins home and AI and fills three role-priority slots from widgets", () => {
+  it("pins home and AI and fills three role-priority slots from manifest widgets", () => {
     const slots = composeBottomSlots({
       widgets: [
-        { key: "w.today_classes", label: "Today's lessons", icon: "calendar", to: "/teacher/timetable" },
-        { key: "w.attendance_todo", label: "Registers to mark", icon: "check-square", to: "/teacher/attendance" },
+        {
+          key: "w.today_classes",
+          label: "Today's lessons",
+          icon: "calendar",
+          to: "/teacher/timetable",
+        },
+        {
+          key: "w.attendance_todo",
+          label: "Registers to mark",
+          icon: "check-square",
+          to: "/teacher/attendance",
+        },
         { key: "w.announcements", label: "Announcements", icon: "megaphone", to: "/messages" },
-        { key: "w.grading_queue", label: "Scores to enter", icon: "clipboard", to: "/teacher/gradebook" },
+        {
+          key: "w.grading_queue",
+          label: "Scores to enter",
+          icon: "clipboard",
+          to: "/teacher/gradebook",
+        },
       ],
-      nav: [{ key: "nav.home", label: "Home", icon: "home", to: "/workspace" }],
+      nav: [
+        { key: "nav.home", label: "Home", icon: "home", to: "/workspace" },
+        { key: "nav.classes", label: "Classes", icon: "class", to: "/classes" },
+        { key: "nav.attendance", label: "Attendance", icon: "attendance", to: "/attendance" },
+        { key: "nav.grades", label: "Grades", icon: "grades", to: "/grades" },
+      ],
     });
     expect(slots).toHaveLength(5);
     expect(slots[0]?.href).toBe(APP_SHELL_HOME);
@@ -118,6 +145,27 @@ describe("shell chrome", () => {
     ];
     expect(pickSwitchTarget(rows, "a", "admin")?.role).toBe("admin");
   });
+
+  it("preserves validated assigned-scope context on workspace links", () => {
+    expect(
+      toShellNavItem({
+        key: "w.today_classes",
+        label: "Today's lessons",
+        icon: "calendar",
+        to: "/teacher/timetable?scope=campus%3Anorth",
+      }).href,
+    ).toBe("/home/s/w.today_classes?scope=campus%3Anorth");
+    expect(
+      toShellNavItem({
+        key: "nav.home",
+        label: "Home",
+        icon: "home",
+        to: "/workspace?scope=campus%3Anorth",
+      }).href,
+    ).toBe("/home?scope=campus%3Anorth");
+    expect(homeHrefForScope({ dim: "campus", ref: "north" })).toBe("/home?scope=campus%3Anorth");
+    expect(homeHrefForScope(null)).toBe("/home");
+  });
 });
 
 describe("role-dynamic home", () => {
@@ -133,9 +181,11 @@ describe("role-dynamic home", () => {
     expect(home.news.some((row) => /announce/i.test(row.key + row.label))).toBe(true);
     expect(home.actions.some((row) => row.key === "a.take_attendance")).toBe(true);
     expect(drawer.length).toBeGreaterThan(3);
-    expect(bottom[1]?.key).toBe("w.today_classes");
-    expect(bottom[2]?.key).toBe("w.attendance_todo");
-    expect(bottom[3]?.key).toBe("w.grading_queue");
+    expect(bottom.slice(1, 4).map((slot) => slot.key)).toEqual([
+      "w.today_classes",
+      "w.attendance_todo",
+      "w.grading_queue",
+    ]);
   });
 
   it("gives bursar and admin their own priority sections", () => {
@@ -199,7 +249,9 @@ describe("application shell files", () => {
     expect(notifications).toContain("sendTestPush");
     expect(notifications).toContain("registerPushSubscription");
     expect(notifications).toContain("app-shell-push-actions");
-    expect(read("frontend/src/components/app-shell/app-shell.css")).toContain("app-shell-push-actions");
+    expect(read("frontend/src/components/app-shell/app-shell.css")).toContain(
+      "app-shell-push-actions",
+    );
     const chrome = read("frontend/src/components/app-shell/app-shell.tsx");
     expect(chrome).toContain("refreshPushTokenIfGranted");
   });

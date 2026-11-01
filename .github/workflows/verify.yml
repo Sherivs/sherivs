@@ -73,6 +73,28 @@ jobs:
       - run: npm run verify:registry && npm run verify:drift && npm run verify:neutrality && npm run verify:secrets
       - run: npm run build
 
+  workspace-e2e:
+    name: Workspace shell E2E + screenshots
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VITE_SUPABASE_URL: http://127.0.0.1:54321
+      VITE_SUPABASE_PUBLISHABLE_KEY: local-workspace-e2e-public-key
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "${{ env.NODE_VERSION }}", cache: npm }
+      - run: npm ci --no-audit --fund=false
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test tests/e2e/workspace-shell.spec.ts --project=mobile-chromium
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-screenshots
+          path: test-results/
+          if-no-files-found: warn
+          retention-days: 7
+
   gitleaks:
     name: Secret scan (gitleaks)
     runs-on: ubuntu-latest

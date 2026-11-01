@@ -17,6 +17,9 @@ const POLICY = read(
 const POLICY_ROLLBACK = read(
   "database/supabase/rollbacks/20261029001100_sherivs_catalog_definer_rls_policies.sql",
 );
+const REVOKE = read(
+  "database/supabase/migrations/20261030000100_sherivs_catalog_revoke_client_writes.sql",
+);
 const FORCE = read(
   "database/supabase/migrations/20261029001000_sherivs_force_rls_catalog_tables.sql",
 );
@@ -89,8 +92,12 @@ describe("catalog definer RLS policies", () => {
     for (const line of statements(POLICY)) {
       if (line.trim().length > 0) expect(APPLY).toContain(line);
     }
+    for (const line of statements(REVOKE)) {
+      if (line.trim().length > 0) expect(APPLY).toContain(line);
+    }
     expect(APPLY).toContain("20261029001000");
     expect(APPLY).toContain("20261029001100");
+    expect(APPLY).toContain("20261030000100");
     expect(APPLY).not.toMatch(/^\s*GRANT /m);
   });
 
