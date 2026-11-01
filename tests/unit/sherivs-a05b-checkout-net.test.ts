@@ -25,9 +25,9 @@ function db(fee: Fee, due: number | { error: string }) {
     },
     from: () => ({
       select: () => ({
-        eq: (_c: string, ref: string) => ({
+        eq: (column: string, ref: string) => ({
           maybeSingle: async () => ({
-            data: fee.paystack_reference === ref ? fee : null,
+            data: (column === "id" ? fee.id : fee.paystack_reference) === ref ? fee : null,
             error: null,
           }),
         }),
@@ -39,7 +39,8 @@ function db(fee: Fee, due: number | { error: string }) {
               select: async () => {
                 if (fee.status === "paid") return { data: [], error: null };
                 updates.push(patch);
-                fee.status = "paid";
+                fee.status = String(patch.status);
+                fee.paystack_reference = patch.paystack_reference as string | null;
                 return { data: [{ id: fee.id }], error: null };
               },
             }),
@@ -79,6 +80,37 @@ describe("SHERIVS-A05b settlement charges the amount after relief", () => {
     expect(await settlePaystackCharge(d, facts(10_000_000))).toMatchObject({
       outcome: "rejected",
       reason: "amount_mismatch",
+    });
+    expect(updates).toHaveLength(0);
+  });
+  it("applies a server-intended partial installment without marking the balance settled", async () => {
+    const { d, updates } = db(fee(), 60000);
+    const partialFacts = {
+      ...facts(2_000_000),
+      canonicalAmountKobo: 2_000_000,
+      canonicalFeeId: fee().id,
+      canonicalScopeRef: fee().school_id,
+    };
+    expect(await settlePaystackCharge(d, partialFacts)).toMatchObject({ outcome: "settled" });
+    expect(updates[0]).toMatchObject({ status: "partial", paid_amount: 20000, paid_at: null });
+    expect(await settlePaystackCharge(d, partialFacts)).toMatchObject({ outcome: "duplicate" });
+    expect(updates).toHaveLength(1);
+  });
+  it("does not apply an older intent over a newer checkout reference", async () => {
+    const record = fee();
+    record.paystack_reference = "a-newer-reference";
+    const { d, updates } = db(record, 60000);
+    expect(
+      await settlePaystackCharge(d, {
+        ...facts(6_000_000),
+        reference: `uos_bbbbbbbbbbbbbbbb_${Date.now()}`,
+        canonicalFeeId: record.id,
+        canonicalScopeRef: record.school_id,
+        canonicalAmountKobo: 6_000_000,
+      }),
+    ).toMatchObject({
+      outcome: "rejected",
+      reason: "reference_no_longer_current",
     });
     expect(updates).toHaveLength(0);
   });

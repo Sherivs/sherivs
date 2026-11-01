@@ -26,6 +26,12 @@ import {
   WALLET_TOPUP_PREFIX,
 } from "@/lib/runtime/scholar/wallet-topup.functions";
 import { requirePaystackTestKey } from "@/lib/payments/paystack-testmode.server";
+import {
+  reconcileFinancialPayment,
+  recordFinancialSettlement,
+  finishFinancialReversal,
+  type FinancialLifecycleDb,
+} from "@/lib/runtime/scholar/payment-lifecycle.server";
 
 /**
  * Bounded event contract (§26): an authenticated-but-malformed payload is
@@ -40,6 +46,7 @@ const PaystackEventSchema = z.object({
   data: z
     .object({
       reference: z.string().min(1).max(200).optional(),
+      id: z.union([z.string().max(200), z.number().int().nonnegative()]).optional(),
       amount: z.number().int().nonnegative().max(100_000_000).optional(),
       currency: z.string().max(8).optional(),
       status: z.string().max(32).optional(),
@@ -57,6 +64,10 @@ const PaystackEventSchema = z.object({
         .nullish(),
       subaccount: z
         .object({ subaccount_code: z.string().max(64).optional() })
+        .partial()
+        .nullish(),
+      transaction: z
+        .object({ reference: z.string().min(1).max(200).optional() })
         .partial()
         .nullish(),
     })
@@ -161,12 +172,56 @@ export const Route = createFileRoute("/api/public/webhooks/paystack")({
           }
         } else if (event.event === "charge.success" && event.data?.reference) {
           try {
+            const lifecycleDb = supabaseAdmin as unknown as FinancialLifecycleDb;
+            const providerEventRef = `charge.success:${event.data.reference}`;
+            let canonicalAmountKobo: number | undefined;
+            let canonicalFeeId: string | undefined;
+            let canonicalScopeRef: string | undefined;
+            let hasFinancialIntent = false;
+            if (event.data.status === "success") {
+              const reconciliation = await reconcileFinancialPayment(lifecycleDb, {
+                reference: event.data.reference,
+                providerEventRef,
+                amountMinor: event.data.amount ?? 0,
+                currency: event.data.currency ?? "",
+                paidAt: event.data.paid_at ?? null,
+              });
+              if (reconciliation.verdict === "unknown_reference") {
+                processingStatus = "legacy_reference";
+              } else if (
+                reconciliation.verdict !== "matched" ||
+                !Number.isSafeInteger(reconciliation.expected_minor) ||
+                !reconciliation.subject_ref ||
+                !reconciliation.scope_ref
+              ) {
+                processingStatus = "rejected";
+                errorMessage = `financial reconciliation: ${reconciliation.verdict}`;
+                await supabaseAdmin.from("webhook_logs").insert({
+                  school_id: null,
+                  provider: "paystack",
+                  event_type: event.event,
+                  payload: { reference: event.data.reference },
+                  processing_status: processingStatus,
+                  error_message: errorMessage,
+                  processed_at: timeAuthority.now().at,
+                });
+                return new Response("ok");
+              } else {
+                hasFinancialIntent = true;
+                canonicalAmountKobo = reconciliation.expected_minor;
+                canonicalFeeId = reconciliation.subject_ref;
+                canonicalScopeRef = reconciliation.scope_ref;
+              }
+            }
             const result = await settlePaystackCharge(supabaseAdmin as unknown as SettlementDb, {
               reference: event.data.reference,
               status: event.data.status,
               amountKobo: event.data.amount,
               currency: event.data.currency,
               paidAt: event.data.paid_at,
+              canonicalAmountKobo,
+              canonicalFeeId,
+              canonicalScopeRef,
               metadata: event.data.metadata,
               subaccountCode: event.data.subaccount?.subaccount_code ?? null,
             });
@@ -177,6 +232,18 @@ export const Route = createFileRoute("/api/public/webhooks/paystack")({
               errorMessage = result.reason;
             } else if (result.outcome === "settled" && result.splitError) {
               errorMessage = `split: ${result.splitError}`;
+            }
+            if (hasFinancialIntent) {
+              const ledgerResult = await recordFinancialSettlement(lifecycleDb, {
+                reference: event.data.reference,
+                providerEventRef,
+                amountMinor: event.data.amount ?? 0,
+                currency: event.data.currency ?? "",
+                paidAt: event.data.paid_at ?? null,
+              });
+              if (!["settled", "duplicate"].includes(ledgerResult.outcome)) {
+                throw new Error(`financial ledger: ${ledgerResult.outcome}`);
+              }
             }
           } catch (err) {
             await supabaseAdmin.from("webhook_logs").insert({
@@ -189,6 +256,59 @@ export const Route = createFileRoute("/api/public/webhooks/paystack")({
               processed_at: timeAuthority.now().at,
             });
             // Non-2xx so Paystack redelivers; settlement is idempotent.
+            return new Response("Processing error", { status: 500 });
+          }
+        } else if (
+          event.event === "refund.processed" &&
+          event.data?.id !== undefined &&
+          event.data.transaction?.reference
+        ) {
+          try {
+            const reversalDb = supabaseAdmin as unknown as {
+              from(table: "cg_financial_reversal"): {
+                select(columns: string): {
+                  eq(
+                    column: string,
+                    value: string,
+                  ): {
+                    maybeSingle(): PromiseLike<{
+                      data: { id: string; reference: string } | null;
+                      error: { message: string } | null;
+                    }>;
+                  };
+                };
+              };
+            };
+            const { data: reversal, error } = await reversalDb
+              .from("cg_financial_reversal")
+              .select("id, reference")
+              .eq("provider_ref", String(event.data.id))
+              .maybeSingle();
+            if (error) throw new Error(error.message);
+            if (reversal?.reference === event.data.transaction.reference) {
+              const state = "processed";
+              await finishFinancialReversal(supabaseAdmin as unknown as FinancialLifecycleDb, {
+                id: reversal.id,
+                state,
+              });
+              processingStatus = state;
+            } else {
+              processingStatus = "ignored";
+              errorMessage = "unknown_refund_reference";
+            }
+            await supabaseAdmin.from("webhook_logs").insert({
+              school_id: null,
+              provider: "paystack",
+              event_type: event.event,
+              payload: {
+                provider_ref: String(event.data.id),
+                reference: event.data.transaction.reference,
+              },
+              processing_status: processingStatus,
+              error_message: errorMessage,
+              processed_at: timeAuthority.now().at,
+            });
+          } catch {
             return new Response("Processing error", { status: 500 });
           }
         }

@@ -20,7 +20,9 @@ describe("tenant-scoped financial continuity migration", () => {
     expect(migration).toMatch(
       /FOREIGN KEY \(org_ref, tenant_id\) REFERENCES public\.cg_org_unit \(id, tenant_id\)/,
     );
-    expect(migration).toMatch(/FUNCTION public\.cg_financial_bind_scope[\s\S]*?auth\.role\(\)[\s\S]*?'service_role'/);
+    expect(migration).toMatch(
+      /FUNCTION public\.cg_financial_bind_scope[\s\S]*?auth\.role\(\)[\s\S]*?'service_role'/,
+    );
     expect(migration).toMatch(
       /GRANT EXECUTE ON FUNCTION public\.cg_financial_bind_scope\(text, text, text, text\) TO service_role/,
     );
@@ -59,6 +61,25 @@ describe("tenant-scoped financial continuity migration", () => {
       /tenant_id = public\.get_my_tenant_id\(\) AND \(principal_ref = auth\.uid\(\)::text OR public\.is_tenant_admin\(tenant_id\)\)/,
     );
     expect(migration).toMatch(/REVOKE INSERT, UPDATE, DELETE ON public\.cg_financial_plan/);
+    expect(migration).toMatch(
+      /CREATE UNIQUE INDEX cg_financial_intent_one_pending_subject[\s\S]*?ON public\.cg_financial_intent \(scope_ref, subject_ref\)[\s\S]*?WHERE state = 'pending'/,
+    );
+    expect(migration).toMatch(/tenant_id = public\.get_my_tenant_id\(\)/);
+  });
+
+  it("denies authenticated cross-tenant reads and keeps org routing unavailable to clients", () => {
+    expect(migration).toMatch(
+      /FOR SELECT TO authenticated USING \(tenant_id = public\.get_my_tenant_id\(\) AND \(principal_ref = auth\.uid\(\)::text OR public\.is_tenant_admin\(tenant_id\)\)\)/,
+    );
+    expect(migration).toMatch(
+      /REVOKE ALL ON public\.cg_financial_scope_binding FROM PUBLIC, anon, authenticated/,
+    );
+    expect(migration).toMatch(
+      /GRANT EXECUTE ON FUNCTION public\.cg_financial_route_for_scope\(text\) TO service_role/,
+    );
+    expect(migration).toMatch(
+      /REVOKE ALL ON FUNCTION public\.cg_financial_route_for_scope\(text\) FROM PUBLIC, anon, authenticated/,
+    );
   });
 
   it("checks plan totals, scheduled amount, settlement amount/currency, and expiration on the server", () => {
@@ -66,17 +87,36 @@ describe("tenant-scoped financial continuity migration", () => {
     expect(migration).toMatch(/v_sum <> p_total_minor/);
     expect(migration).toMatch(/p_amount_minor <> v_part\.due_minor - v_part\.applied_minor/);
     expect(migration).toMatch(/p_amount_minor IS DISTINCT FROM v_intent\.amount_minor/);
-    expect(migration).toMatch(/upper\(coalesce\(p_currency, ''\)\) IS DISTINCT FROM v_intent\.currency/);
+    expect(migration).toMatch(
+      /upper\(coalesce\(p_currency, ''\)\) IS DISTINCT FROM v_intent\.currency/,
+    );
     expect(migration).toMatch(/v_now >= v_intent\.expires_at/);
+    expect(migration).toMatch(
+      /v_intent\.state NOT IN \('pending', 'expired'\)[\s\S]*?v_intent\.state = 'expired'[\s\S]*?p_paid_at IS NULL OR p_paid_at >= v_intent\.expires_at/,
+    );
     expect(migration).toMatch(
       /cg_financial_plan_part\s+SET applied_minor = applied_minor \+ v_intent\.amount_minor/,
     );
+    expect(migration).toMatch(/'subject_ref', v_intent\.subject_ref/);
+    expect(migration).toMatch(/'scope_ref', v_intent\.scope_ref/);
+    expect(migration).toMatch(/pg_advisory_xact_lock/);
+    expect(migration).toMatch(
+      /FUNCTION public\.cg_financial_fail_intent\(p_reference text\)[\s\S]*?auth\.role\(\)[\s\S]*?'service_role'[\s\S]*?SET state = 'failed'/,
+    );
+    expect(rollback).toContain("cg_financial_fail_intent(text)");
   });
 
   it("creates immutable settlement evidence and reconciliation records and caps cumulative reversals", () => {
     expect(migration).toMatch(/CREATE TABLE public\.cg_financial_evidence/);
     expect(migration).toMatch(/CREATE TRIGGER cg_financial_entry_immutable/);
     expect(migration).toMatch(/provider_event_ref text NOT NULL UNIQUE/);
+    expect(migration).toMatch(
+      /CREATE INDEX cg_financial_reconciliation_event_recent[\s\S]*?ON public\.cg_financial_reconciliation \(provider_event_ref, checked_at DESC\)/,
+    );
+    expect(migration).not.toMatch(
+      /CREATE TABLE public\.cg_financial_reconciliation[\s\S]*?provider_event_ref text NOT NULL UNIQUE/,
+    );
+    expect(migration).not.toContain("ON CONFLICT (provider_event_ref)");
     expect(migration).toMatch(/v_reserved \+ p_amount_minor > v_entry\.amount_minor/);
     expect(migration).toMatch(/CREATE TABLE public\.cg_financial_reconciliation/);
     expect(migration).toMatch(/expected_minor, observed_minor, expected_currency/);

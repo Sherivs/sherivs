@@ -1,8 +1,9 @@
 -- Rollback for 20261101000060_cg_financial_scope.sql (NOT APPLIED).
 BEGIN;
 DROP FUNCTION IF EXISTS public.cg_financial_record_reconciliation(text, text, bigint, text, timestamptz);
+DROP FUNCTION IF EXISTS public.cg_financial_fail_intent(text);
 DROP FUNCTION IF EXISTS public.cg_financial_finish_reversal(uuid, text, text);
-DROP FUNCTION IF EXISTS public.cg_financial_request_reversal(uuid, bigint, text, text);
+DROP FUNCTION IF EXISTS public.cg_financial_request_reversal(uuid, bigint, text, text, text);
 DROP FUNCTION IF EXISTS public.cg_financial_record_settlement(text, text, bigint, text, timestamptz);
 DROP FUNCTION IF EXISTS public.cg_financial_create_plan(text, text, text, bigint, text, jsonb);
 DROP FUNCTION IF EXISTS public.cg_financial_create_intent(text, text, text, text, bigint, text, uuid, timestamptz);

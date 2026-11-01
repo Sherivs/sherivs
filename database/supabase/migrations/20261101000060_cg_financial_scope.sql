@@ -197,6 +197,9 @@ CREATE TABLE public.cg_financial_intent (
 );
 CREATE INDEX cg_financial_intent_tenant_recent
   ON public.cg_financial_intent (tenant_id, org_ref, created_at DESC);
+CREATE UNIQUE INDEX cg_financial_intent_one_pending_subject
+  ON public.cg_financial_intent (scope_ref, subject_ref)
+  WHERE state = 'pending';
 CREATE UNIQUE INDEX cg_financial_plan_active_subject
   ON public.cg_financial_plan (scope_ref, subject_ref, principal_ref)
   WHERE state = 'active';
@@ -247,6 +250,7 @@ CREATE TABLE public.cg_financial_reversal (
   amount_minor bigint NOT NULL CHECK (amount_minor > 0),
   currency text NOT NULL CHECK (currency ~ '^[A-Z]{3}$'),
   reason text NOT NULL CHECK (length(btrim(reason)) BETWEEN 1 AND 500),
+  requested_by text NOT NULL CHECK (length(requested_by) BETWEEN 1 AND 160),
   idempotency_key text NOT NULL UNIQUE CHECK (length(idempotency_key) BETWEEN 1 AND 200),
   provider_ref text UNIQUE,
   state text NOT NULL DEFAULT 'requested' CHECK (state IN ('requested', 'processing', 'processed', 'failed', 'cancelled')),
@@ -266,7 +270,7 @@ CREATE TABLE public.cg_financial_reconciliation (
   org_ref text NOT NULL,
   subject_ref text NOT NULL,
   principal_ref text NOT NULL,
-  provider_event_ref text NOT NULL UNIQUE,
+  provider_event_ref text NOT NULL,
   expected_minor bigint NOT NULL CHECK (expected_minor > 0),
   observed_minor bigint NOT NULL CHECK (observed_minor >= 0),
   expected_currency text NOT NULL CHECK (expected_currency ~ '^[A-Z]{3}$'),
@@ -276,6 +280,8 @@ CREATE TABLE public.cg_financial_reconciliation (
   FOREIGN KEY (reference, scope_ref, tenant_id, org_ref, subject_ref, principal_ref)
     REFERENCES public.cg_financial_intent (reference, scope_ref, tenant_id, org_ref, subject_ref, principal_ref) ON DELETE RESTRICT
 );
+CREATE INDEX cg_financial_reconciliation_event_recent
+  ON public.cg_financial_reconciliation (provider_event_ref, checked_at DESC);
 
 CREATE OR REPLACE FUNCTION public.cg_financial_create_intent(
   p_reference text,
@@ -307,6 +313,19 @@ BEGIN
   END IF;
   SELECT * INTO v_binding FROM public.cg_financial_scope_binding WHERE scope_ref = p_scope_ref;
   IF v_binding.scope_ref IS NULL THEN RAISE EXCEPTION 'scope is not provisioned' USING ERRCODE = '23503'; END IF;
+  PERFORM pg_advisory_xact_lock(
+    hashtextextended(v_binding.scope_ref || ':' || btrim(p_subject_ref), 867201)
+  );
+  UPDATE public.cg_financial_intent SET state = 'expired'
+   WHERE scope_ref = v_binding.scope_ref AND subject_ref = btrim(p_subject_ref)
+     AND state = 'pending' AND expires_at <= now();
+  IF EXISTS (
+    SELECT 1 FROM public.cg_financial_intent
+     WHERE scope_ref = v_binding.scope_ref AND subject_ref = btrim(p_subject_ref)
+       AND state = 'pending'
+  ) THEN
+    RAISE EXCEPTION 'an active intent already exists for this subject' USING ERRCODE = '23505';
+  END IF;
   IF p_plan_part_id IS NOT NULL THEN
     SELECT part.* INTO v_part
       FROM public.cg_financial_plan_part part
@@ -337,6 +356,27 @@ END
 $$;
 REVOKE ALL ON FUNCTION public.cg_financial_create_intent(text, text, text, text, bigint, text, uuid, timestamptz) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.cg_financial_create_intent(text, text, text, text, bigint, text, uuid, timestamptz) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.cg_financial_fail_intent(p_reference text)
+RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $$
+DECLARE
+  v_state text;
+BEGIN
+  IF coalesce(auth.role(), '') <> 'service_role' THEN
+    RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501';
+  END IF;
+  SELECT state INTO v_state FROM public.cg_financial_intent
+   WHERE reference = p_reference FOR UPDATE;
+  IF v_state IS NULL THEN RAISE EXCEPTION 'intent not found'; END IF;
+  IF v_state = 'failed' THEN RETURN; END IF;
+  IF v_state <> 'pending' THEN RAISE EXCEPTION 'intent is not pending'; END IF;
+  UPDATE public.cg_financial_intent SET state = 'failed' WHERE reference = p_reference;
+END
+$$;
+REVOKE ALL ON FUNCTION public.cg_financial_fail_intent(text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.cg_financial_fail_intent(text) TO service_role;
 
 CREATE OR REPLACE FUNCTION public.cg_financial_record_settlement(
   p_reference text,
@@ -373,8 +413,12 @@ BEGIN
   IF v_intent.state = 'settled' THEN
     RETURN jsonb_build_object('outcome', 'duplicate');
   END IF;
-  IF v_intent.state <> 'pending' THEN
+  IF v_intent.state NOT IN ('pending', 'expired') THEN
     RETURN jsonb_build_object('outcome', 'not_pending');
+  END IF;
+  IF v_intent.state = 'expired'
+     AND (p_paid_at IS NULL OR p_paid_at >= v_intent.expires_at) THEN
+    RETURN jsonb_build_object('outcome', 'expired');
   END IF;
   INSERT INTO public.cg_financial_entry (
     reference, scope_ref, tenant_id, org_ref, subject_ref, principal_ref,
@@ -435,6 +479,7 @@ DECLARE
   v_seq integer := 0;
   v_due bigint;
   v_due_at timestamptz;
+  v_previous_due_at timestamptz;
 BEGIN
   IF coalesce(auth.role(), '') <> 'service_role' THEN
     RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501';
@@ -451,8 +496,12 @@ BEGIN
   FOR v_part IN SELECT value FROM jsonb_array_elements(p_parts) LOOP
     v_due := (v_part->>'amount_minor')::bigint;
     v_due_at := (v_part->>'due_at')::timestamptz;
-    IF v_due <= 0 OR v_due_at IS NULL THEN RAISE EXCEPTION 'invalid plan part'; END IF;
+    IF v_due <= 0 OR v_due_at IS NULL OR v_due_at <= now()
+       OR (v_previous_due_at IS NOT NULL AND v_due_at <= v_previous_due_at) THEN
+      RAISE EXCEPTION 'invalid plan part';
+    END IF;
     v_sum := v_sum + v_due;
+    v_previous_due_at := v_due_at;
   END LOOP;
   IF v_sum <> p_total_minor THEN RAISE EXCEPTION 'plan parts must equal the server amount'; END IF;
   INSERT INTO public.cg_financial_plan (
@@ -482,7 +531,8 @@ CREATE OR REPLACE FUNCTION public.cg_financial_request_reversal(
   p_entry_id uuid,
   p_amount_minor bigint,
   p_reason text,
-  p_idempotency_key text
+  p_idempotency_key text,
+  p_requested_by text
 ) RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $$
@@ -497,11 +547,18 @@ BEGIN
   END IF;
   SELECT * INTO v_existing FROM public.cg_financial_reversal WHERE idempotency_key = p_idempotency_key;
   IF v_existing.id IS NOT NULL THEN
+    IF v_existing.entry_id IS DISTINCT FROM p_entry_id
+       OR v_existing.amount_minor IS DISTINCT FROM p_amount_minor
+       OR v_existing.reason IS DISTINCT FROM btrim(p_reason)
+       OR v_existing.requested_by IS DISTINCT FROM btrim(p_requested_by) THEN
+      RAISE EXCEPTION 'idempotency key conflict' USING ERRCODE = '23505';
+    END IF;
     RETURN jsonb_build_object('id', v_existing.id, 'state', v_existing.state, 'duplicate', true);
   END IF;
   SELECT * INTO v_entry FROM public.cg_financial_entry WHERE id = p_entry_id FOR UPDATE;
   IF v_entry.id IS NULL OR p_amount_minor IS NULL OR p_amount_minor <= 0
-     OR p_reason IS NULL OR length(btrim(p_reason)) NOT BETWEEN 1 AND 500 THEN
+     OR p_reason IS NULL OR length(btrim(p_reason)) NOT BETWEEN 1 AND 500
+     OR p_requested_by IS NULL OR length(btrim(p_requested_by)) NOT BETWEEN 1 AND 160 THEN
     RAISE EXCEPTION 'invalid reversal request';
   END IF;
   SELECT coalesce(sum(amount_minor), 0) INTO v_reserved FROM public.cg_financial_reversal
@@ -511,17 +568,17 @@ BEGIN
   END IF;
   INSERT INTO public.cg_financial_reversal (
     entry_id, reference, scope_ref, tenant_id, org_ref, subject_ref, principal_ref,
-    amount_minor, currency, reason, idempotency_key
+    amount_minor, currency, reason, requested_by, idempotency_key
   ) VALUES (
     v_entry.id, v_entry.reference, v_entry.scope_ref, v_entry.tenant_id, v_entry.org_ref,
     v_entry.subject_ref, v_entry.principal_ref, p_amount_minor, v_entry.currency,
-    btrim(p_reason), btrim(p_idempotency_key)
+    btrim(p_reason), btrim(p_requested_by), btrim(p_idempotency_key)
   ) RETURNING * INTO v_row;
   RETURN jsonb_build_object('id', v_row.id, 'state', v_row.state, 'reference', v_row.reference);
 END
 $$;
-REVOKE ALL ON FUNCTION public.cg_financial_request_reversal(uuid, bigint, text, text) FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.cg_financial_request_reversal(uuid, bigint, text, text) TO service_role;
+REVOKE ALL ON FUNCTION public.cg_financial_request_reversal(uuid, bigint, text, text, text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.cg_financial_request_reversal(uuid, bigint, text, text, text) TO service_role;
 
 CREATE OR REPLACE FUNCTION public.cg_financial_finish_reversal(
   p_id uuid,
@@ -594,17 +651,13 @@ BEGIN
     v_intent.subject_ref, v_intent.principal_ref, p_provider_event_ref,
     v_intent.amount_minor, greatest(coalesce(p_observed_minor, 0), 0),
     v_intent.currency, p_observed_currency, v_verdict, now()
-  ) ON CONFLICT (provider_event_ref) DO NOTHING
-  RETURNING * INTO v_row;
-  IF v_row.id IS NULL THEN
-    SELECT * INTO v_row FROM public.cg_financial_reconciliation
-     WHERE provider_event_ref = p_provider_event_ref;
-  END IF;
+  ) RETURNING * INTO v_row;
   RETURN jsonb_build_object(
     'verdict', v_row.verdict,
     'id', v_row.id,
     'expected_minor', v_intent.amount_minor,
     'currency', v_intent.currency,
+    'subject_ref', v_intent.subject_ref,
     'scope_ref', v_intent.scope_ref,
     'tenant_id', v_intent.tenant_id,
     'org_ref', v_intent.org_ref

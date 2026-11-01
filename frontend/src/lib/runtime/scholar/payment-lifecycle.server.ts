@@ -24,6 +24,8 @@ export type FinancialReconciliation = {
   verdict: "matched" | "mismatch" | "unknown_reference" | "expired";
   expected_minor?: number;
   currency?: string;
+  subject_ref?: string;
+  scope_ref?: string;
 };
 
 function throwOnError(error: RpcError | null, operation: string): void {
@@ -67,6 +69,16 @@ export async function createFinancialIntent(
   return data;
 }
 
+export async function failFinancialIntent(
+  db: FinancialLifecycleDb,
+  reference: string,
+): Promise<void> {
+  const { error } = await db.rpc("cg_financial_fail_intent", {
+    p_reference: reference,
+  });
+  throwOnError(error, "financial intent failure");
+}
+
 export async function reconcileFinancialPayment(
   db: FinancialLifecycleDb,
   input: {
@@ -101,7 +113,15 @@ export async function recordFinancialSettlement(
     currency: string;
     paidAt: string | null;
   },
-): Promise<{ outcome: "settled" | "duplicate" | "unknown_reference" | "expired" | "not_pending" | "amount_or_currency_mismatch" }> {
+): Promise<{
+  outcome:
+    | "settled"
+    | "duplicate"
+    | "unknown_reference"
+    | "expired"
+    | "not_pending"
+    | "amount_or_currency_mismatch";
+}> {
   const { data, error } = await db.rpc<{
     outcome:
       | "settled"
@@ -153,6 +173,7 @@ export async function requestFinancialReversal(
     amountMinor: number;
     reason: string;
     idempotencyKey: string;
+    requestedBy: string;
   },
 ): Promise<{ id: string; state: string; reference?: string; duplicate?: boolean }> {
   const { data, error } = await db.rpc<{
@@ -165,6 +186,7 @@ export async function requestFinancialReversal(
     p_amount_minor: input.amountMinor,
     p_reason: input.reason,
     p_idempotency_key: input.idempotencyKey,
+    p_requested_by: input.requestedBy,
   });
   throwOnError(error, "financial reversal request");
   if (!data) throw new Error("financial reversal request returned no record");
@@ -173,7 +195,11 @@ export async function requestFinancialReversal(
 
 export async function finishFinancialReversal(
   db: FinancialLifecycleDb,
-  input: { id: string; state: "processing" | "processed" | "failed" | "cancelled"; providerRef?: string },
+  input: {
+    id: string;
+    state: "processing" | "processed" | "failed" | "cancelled";
+    providerRef?: string;
+  },
 ): Promise<void> {
   const { error } = await db.rpc("cg_financial_finish_reversal", {
     p_id: input.id,

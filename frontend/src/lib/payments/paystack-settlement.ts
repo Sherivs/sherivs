@@ -2,10 +2,10 @@
  * SHERIVS-004 — Paystack settlement: the single path that may mark a fee paid.
  *
  * Both the webhook and the client verify call feed provider-confirmed facts
- * here. A fee is marked paid only when the reference, status, currency and
- * amount match what the SERVER expects from the fee row, and the write is a
- * compare-and-set on `status <> 'paid'` so redeliveries/replays are no-ops
- * (idempotent; `fees.paystack_reference` is additionally UNIQUE in the DB).
+ * here. A fee is updated only when the reference, status, currency and amount
+ * match server-held expectations. Partial settlement consumes its active
+ * reference in the same fee-row update so a replay cannot increment twice;
+ * full settlement is protected by the terminal `paid` state.
  */
 import { SystemClock, TimeAuthority } from "../kernel/time-authority";
 
@@ -18,7 +18,7 @@ export function isExpiredFeePaymentReference(
   reference: string,
   paymentAtMs = timeAuthority.now().atMs,
 ): boolean {
-  const timestamp = /^uos_[0-9a-f]{16}_([0-9]{13})$/.exec(reference)?.[1];
+  const timestamp = /^uos_[0-9a-f]{16}_([0-9]{13})(?:_[0-9a-f]{8})?$/.exec(reference)?.[1];
   if (!timestamp) return true;
   const createdAtMs = Number(timestamp);
   return createdAtMs > paymentAtMs || paymentAtMs - createdAtMs >= PAYSTACK_FEE_REFERENCE_TTL_MS;
@@ -32,6 +32,11 @@ export type PaystackChargeFacts = {
   currency: string | undefined;
   /** Provider-signed payment completion time, when present in the event/verification response. */
   paidAt?: string;
+  /** Amount from the server-created intent, never from provider metadata. */
+  canonicalAmountKobo?: number;
+  /** Fee identity and scope resolved from the server-held financial intent. */
+  canonicalFeeId?: string;
+  canonicalScopeRef?: string;
   metadata?: {
     fee_id?: string | null;
     school_id?: string | null;
@@ -114,15 +119,31 @@ export async function settlePaystackCharge(
   if (facts.status !== "success") return { outcome: "ignored", reason: "charge_not_successful" };
   if (!facts.reference) return { outcome: "ignored", reason: "missing_reference" };
 
-  const { data: fee, error } = await db
+  const feeQuery = db
     .from("fees")
     .select("id, school_id, amount, paid_amount, status, paystack_reference")
-    .eq("paystack_reference", facts.reference)
-    .maybeSingle();
+    .eq(
+      facts.canonicalFeeId ? "id" : "paystack_reference",
+      facts.canonicalFeeId ?? facts.reference,
+    );
+  const { data: fee, error } = await feeQuery.maybeSingle();
   if (error) throw new Error(`fee lookup failed: ${error.message}`);
   if (!fee) return { outcome: "ignored", reason: "unknown_reference" };
 
   const ref = { feeId: fee.id, schoolId: fee.school_id };
+  if (
+    (facts.canonicalFeeId && facts.canonicalFeeId !== fee.id) ||
+    (facts.canonicalScopeRef && facts.canonicalScopeRef !== fee.school_id) ||
+    (!facts.canonicalFeeId && fee.paystack_reference !== facts.reference)
+  ) {
+    return { outcome: "rejected", reason: "canonical_intent_mismatch", ...ref };
+  }
+  if (facts.canonicalFeeId && fee.paystack_reference !== facts.reference) {
+    if (fee.paystack_reference === null || fee.status === "paid") {
+      return { outcome: "duplicate", ...ref };
+    }
+    return { outcome: "rejected", reason: "reference_no_longer_current", ...ref };
+  }
   const claimedFee = facts.metadata?.fee_id;
   const claimedSchool = facts.metadata?.school_id;
   if ((claimedFee && claimedFee !== fee.id) || (claimedSchool && claimedSchool !== fee.school_id)) {
@@ -140,23 +161,27 @@ export async function settlePaystackCharge(
   if ((facts.currency ?? "").toUpperCase() !== PAYSTACK_CURRENCY) {
     return { outcome: "rejected", reason: "currency_mismatch", ...ref };
   }
-  let expected = expectedChargeKobo(fee);
+  let outstanding = expectedChargeKobo(fee);
   if (db.rpc) {
     const { data: due, error: dueErr } = await db.rpc("fee_amount_due", { p_fee: fee.id });
     if (dueErr) throw new Error(`amount due lookup failed: ${dueErr.message}`);
-    expected = Math.round(Number(due ?? 0) * 100);
+    outstanding = Math.round(Number(due ?? 0) * 100);
   }
-  if (expected <= 0 || facts.amountKobo !== expected) {
+  const expected = facts.canonicalAmountKobo ?? outstanding;
+  if (expected <= 0 || expected > outstanding || facts.amountKobo !== expected) {
     return { outcome: "rejected", reason: "amount_mismatch", ...ref };
   }
+  const paidAmount = Math.round((Number(fee.paid_amount ?? 0) + expected / 100) * 100) / 100;
+  const fullySettled = expected === outstanding;
 
   const { data: updated, error: upErr } = await db
     .from("fees")
     .update({
-      status: "paid",
-      // Record what was actually paid; relief makes up the rest of the row.
-      paid_amount: Math.round((Number(fee.paid_amount ?? 0) + expected / 100) * 100) / 100,
-      paid_at: timeAuthority.now().at,
+      status: fullySettled ? "paid" : "partial",
+      paid_amount: paidAmount,
+      paid_at: fullySettled ? timeAuthority.now().at : null,
+      paystack_reference: fullySettled ? facts.reference : null,
+      paystack_access_code: null,
     })
     .eq("id", fee.id)
     .eq("paystack_reference", facts.reference)
