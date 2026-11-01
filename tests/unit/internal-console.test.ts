@@ -307,12 +307,16 @@ describe("console host routing for /console", () => {
     );
     expect(primitives).toContain("sherivs-console-stage");
     expect(primitives).not.toContain('className="sherivs-console-status"');
+    expect(primitives).toContain('role="status"');
+    expect(primitives).toContain('aria-busy="true"');
     const gate = readFileSync("frontend/src/components/internal-console/console-gate.tsx", "utf8");
     expect(gate).toContain("ConsoleLoadingState");
     expect(gate).toContain("Opening the Internal Console…");
     expect(css).toMatch(
-      /@media \(max-width: 960px\)[\s\S]*\.sherivs-console-orb\s*\{[\s\S]*animation:\s*none/,
+      /@media \(max-width: 1100px\)[\s\S]*\.sherivs-console-orb\s*\{[\s\S]*animation:\s*none/,
     );
+    expect(css).toContain(".sherivs-console-skip-link");
+    expect(css).toContain("@media (prefers-reduced-motion: reduce)");
     expect(gate).toContain("consoleSignInSearch");
     expect(gate).toContain("hostKindProp");
     expect(gate).toContain("clientReady");
@@ -322,6 +326,8 @@ describe("console host routing for /console", () => {
     );
     expect(shell).toContain("ConsoleLoadingState");
     expect(shell).toContain("consoleSignInSearch");
+    expect(shell).toContain('aria-controls="console-navigation"');
+    expect(shell).toContain('href="#console-main"');
     const authz = readFileSync(
       "frontend/src/components/internal-console/not-authorised.tsx",
       "utf8",
