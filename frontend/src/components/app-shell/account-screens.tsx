@@ -99,7 +99,7 @@ export function AppSettingsScreen() {
 export function AppVoiceAgentScreen() {
   const [settings, setSettings] = useState<VoiceAgentSettings | null>(null);
   const [calls, setCalls] = useState<VoiceAgentCall[]>([]);
-  const [provider, setProvider] = useState<"twilio" | "africas_talking">("twilio");
+  const [provider, setProvider] = useState<"twilio" | "africas_talking">("africas_talking");
   const [providerNumber, setProviderNumber] = useState("");
   const [extension, setExtension] = useState("");
   const [enabled, setEnabled] = useState(false);
@@ -116,7 +116,7 @@ export function AppVoiceAgentScreen() {
       ]);
       setSettings(nextSettings);
       setEnabled(nextSettings.enabled);
-      setProvider(nextSettings.provider ?? "twilio");
+      setProvider(nextSettings.provider ?? "africas_talking");
       setProviderNumber(nextSettings.providerNumber ?? "");
       setExtension(nextSettings.extension ?? "");
       setCalls(nextCalls);
@@ -276,7 +276,7 @@ export function AppVoiceAgentScreen() {
                 onChange={(event) => setExtension(event.target.value)}
               />
             </label>
-            <label>
+            <label className="app-shell-checkbox">
               <input
                 type="checkbox"
                 checked={enabled}
