@@ -41,6 +41,11 @@ BEGIN
   SELECT * INTO s FROM public.students
    WHERE id = p_student AND school_id = v_school;
   IF s.id IS NULL THEN RAISE EXCEPTION 'student is not in this organization' USING ERRCODE = '42501'; END IF;
+  IF p_movement_type = 'readmit' AND s.is_active IS NOT FALSE THEN
+    v_unmet := array_append(v_unmet, 'only an inactive student can be readmitted');
+  ELSIF p_movement_type <> 'readmit' AND s.is_active IS FALSE THEN
+    v_unmet := array_append(v_unmet, 'inactive student must be readmitted before movement');
+  END IF;
   IF p_target_class IS NOT NULL THEN
     SELECT * INTO c FROM public.classes
      WHERE id = p_target_class AND school_id = v_school;
@@ -165,8 +170,12 @@ BEGIN
     v_type := coalesce(nullif(v_item->>'movement_type', ''), 'promote');
     SELECT count(*)::integer INTO v_extra
       FROM jsonb_array_elements(p_items) AS entries(other_item)
+      JOIN public.students other_student
+        ON other_student.id = nullif(other_item->>'student_id', '')::uuid
+       AND other_student.school_id = v_school
      WHERE nullif(other_item->>'target_class_id', '')::uuid IS NOT DISTINCT FROM v_class
-       AND nullif(other_item->>'student_id', '')::uuid IS DISTINCT FROM v_student;
+       AND other_student.id IS DISTINCT FROM v_student
+       AND other_student.class_id IS DISTINCT FROM v_class;
     v_results := v_results || jsonb_build_array(
       public.student_mobility_preview(v_student, v_class, v_type, v_extra)
     );

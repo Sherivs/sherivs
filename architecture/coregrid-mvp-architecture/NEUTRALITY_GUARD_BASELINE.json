@@ -4,7 +4,7 @@
     "mission": "MISSION-R-05 (J-037 / V1CAP-067) continuous domain-neutrality CI guard",
     "guard": "scripts/verify-domain-neutrality.mjs",
     "generatedOn": "2026-10-01",
-    "lastExtension": "2026-11-01 (SV1-MOBILITY / ADR-013): added only observed findings for the V1 bulk preview/request migration; 5 groups, 22 hits; no table grants or domain code added.",
+    "lastExtension": "2026-11-01 (SV1-MOBILITY / ADR-013): added only observed findings for the V1 bulk preview/request migration; 5 groups, 25 hits; no table grants or domain code added.",
     "provenance": "Tokens derived from STREAM_I_CONTAMINATION_AUDIT.json (34 findings) and the P33 kernel-purity DOMAIN_TERMS. Every entry was OBSERVED by the guard against the live tree on the generation date; entries carry the observed file, kind, token, occurrence count and line numbers. streamIRef maps each entry back to its STREAM I finding (or STREAM H domainContaminationInCode entry) where one exists.",
     "scope": "frontend/src/lib/*.ts (universal lib ROOT files only \u2014 kernel/ purity is owned by tests/unit/kernel-purity.test.ts), frontend/src/lib/kernel/phase-contracts/ (NOT covered by the kernel-purity test), database/supabase/migrations/*.sql",
     "ratchetPolicy": "SHRINK-ONLY RATCHET (ADR-003/004 coordination): entries may be REMOVED as relocations land \u2014 they may NEVER be added. The guard fails on any observed (kind, file, token) violation group not present in this list and warns (never silently passes) on every entry it does contain, printing each quarantined hit on every run. To clear an entry, relocate the domain code into the owning runtime namespace, then delete the entry in the same change.",
@@ -17,7 +17,7 @@
   },
   "summary": {
     "entryCount": 838,
-    "totalObservedHits": 4617,
+    "totalObservedHits": 4620,
     "hitsByFile": {
       "database/supabase/migrations/20261024000240_sherivs_017_role_permission_catalog.sql": 549,
       "database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql": 119,
@@ -73,10 +73,10 @@
       "database/supabase/migrations/20261025100140_sherivs_b05_gov_deployment_exports.sql": 26,
       "database/supabase/migrations/20261025100030_sherivs_a03_tertiary_cgpa.sql": 25,
       "database/supabase/migrations/20261025100220_sherivs_ux2_scope_policy_workspace.sql": 25,
+      "database/supabase/migrations/20261101120000_sv1_student_mobility_bulk.sql": 25,
       "database/supabase/migrations/20261024000250_sherivs_018_fee_config_flags_rate_limit.sql": 24,
       "frontend/src/lib/subscription-tiers.ts": 24,
       "database/supabase/migrations/20260620150249_aeff3a12-2619-4cc9-aa0f-a7f5a844e8f3.sql": 23,
-      "database/supabase/migrations/20261101120000_sv1_student_mobility_bulk.sql": 22,
       "frontend/src/lib/education-assessment.ts": 22,
       "database/supabase/migrations/20260904010000_coregrid_rls_transport_and_grants.sql": 21,
       "database/supabase/migrations/20261020000050_sherivs_002_seed_staff_types_guard.sql": 21,
@@ -9552,8 +9552,8 @@
       "kind": "structural",
       "token": "school_id",
       "streamIRef": "SV1-MOBILITY (ADR-013)",
-      "occurrences": 10,
-      "lines": [42, 46, 53, 60, 63, 68, 77, 88, 95, 108],
+      "occurrences": 11,
+      "lines": [42, 51, 58, 65, 68, 73, 82, 93, 100, 113, 175],
       "firstSnippet": "WHERE id = p_student AND school_id = v_school;"
     },
     {
@@ -9562,7 +9562,7 @@
       "token": "attendance",
       "streamIRef": "SV1-MOBILITY (ADR-013)",
       "occurrences": 4,
-      "lines": [90, 94, 98, 100],
+      "lines": [95, 99, 103, 105],
       "firstSnippet": "v_unmet := array_append(v_unmet, 'attendance period is unknown');"
     },
     {
@@ -9571,7 +9571,7 @@
       "token": "fees",
       "streamIRef": "SV1-MOBILITY (ADR-013)",
       "occurrences": 1,
-      "lines": [107],
+      "lines": [112],
       "firstSnippet": "INTO v_balance FROM public.fees"
     },
     {
@@ -9580,7 +9580,7 @@
       "token": "get_my_school_id",
       "streamIRef": "SV1-MOBILITY (ADR-013)",
       "occurrences": 3,
-      "lines": [13, 139, 185],
+      "lines": [13, 144, 194],
       "firstSnippet": "v_school uuid := public.get_my_school_id();"
     },
     {
@@ -9588,8 +9588,8 @@
       "kind": "vocabulary",
       "token": "student",
       "streamIRef": "SV1-MOBILITY (ADR-013)",
-      "occurrences": 4,
-      "lines": [39, 43, 160, 206],
+      "occurrences": 6,
+      "lines": [39, 43, 45, 47, 165, 215],
       "firstSnippet": "RAISE EXCEPTION 'additional student count is invalid';"
     },
     {

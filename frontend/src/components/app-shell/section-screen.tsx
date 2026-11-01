@@ -10,12 +10,14 @@ import { ShellGlassIcon } from "./glass-icon";
 import { useAppShell } from "./shell-context";
 import { RoleManagementScreen } from "./role-management-screen";
 import { CommunicationInboxScreen } from "./communication-inbox";
+import { StudentMobilityScreen } from "./student-mobility-screen";
 
 export function AppSectionScreen({ sectionKey }: { sectionKey: string }) {
   const shell = useAppShell();
   const [query, setQuery] = useState("");
   if (sectionKey === "roles") return <RoleManagementScreen />;
   if (sectionKey === "communications") return <CommunicationInboxScreen />;
+  if (sectionKey === "nav.students" || sectionKey === "students") return <StudentMobilityScreen />;
   const item =
     shell.nav.find((row) => row.key === sectionKey) ??
     shell.manifest?.widgets.find((row) => row.key === sectionKey) ??

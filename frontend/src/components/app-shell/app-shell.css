@@ -134,36 +134,43 @@
     filter 280ms var(--shell-ease);
 }
 
-.app-shell-frame.is-role-management {
+.app-shell-frame.is-role-management,
+.app-shell-frame.is-student-mobility {
   width: min(100%, 76rem);
   height: auto;
 }
 
-.app-shell-frame.is-role-management .app-shell-main {
+.app-shell-frame.is-role-management .app-shell-main,
+.app-shell-frame.is-student-mobility .app-shell-main {
   flex: 0 0 auto;
   min-width: 0;
   margin-top: 0;
 }
 
-.app-shell-frame.is-role-management .app-shell-sheet {
+.app-shell-frame.is-role-management .app-shell-sheet,
+.app-shell-frame.is-student-mobility .app-shell-sheet {
   min-width: 0;
   min-height: 0;
   height: auto;
   overflow: visible;
 }
 
-.app-shell-frame.is-role-management .app-shell-section {
+.app-shell-frame.is-role-management .app-shell-section,
+.app-shell-frame.is-student-mobility .app-shell-section {
   min-width: 0;
   width: 100%;
 }
 
-.app-shell-frame.is-role-management .app-shell-section > * {
+.app-shell-frame.is-role-management .app-shell-section > *,
+.app-shell-frame.is-student-mobility .app-shell-section > * {
   min-width: 0;
   max-width: 100%;
 }
 
 html:has(.app-shell-frame.is-role-management),
-body:has(.app-shell-frame.is-role-management) {
+body:has(.app-shell-frame.is-role-management),
+html:has(.app-shell-frame.is-student-mobility),
+body:has(.app-shell-frame.is-student-mobility) {
   height: auto;
   min-height: 100dvh;
 }
