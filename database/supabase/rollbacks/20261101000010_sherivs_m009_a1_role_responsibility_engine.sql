@@ -1,4 +1,4 @@
--- Rollback for 20261031000010_sherivs_m009_a1_role_responsibility_engine.sql.
+-- Rollback for 20261101000010_sherivs_m009_a1_role_responsibility_engine.sql.
 -- Immutable role_assignment_audit_events are deliberately retained.
 BEGIN;
 

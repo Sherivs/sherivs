@@ -5,11 +5,11 @@ import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const migration = readFileSync(
-  "database/supabase/migrations/20261031000010_sherivs_m009_a1_role_responsibility_engine.sql",
+  "database/supabase/migrations/20261101000010_sherivs_m009_a1_role_responsibility_engine.sql",
   "utf8",
 );
 const rollback = readFileSync(
-  "database/supabase/rollbacks/20261031000010_sherivs_m009_a1_role_responsibility_engine.sql",
+  "database/supabase/rollbacks/20261101000010_sherivs_m009_a1_role_responsibility_engine.sql",
   "utf8",
 );
 const matrix = readFileSync("docs/workspaces/permission-matrix.md", "utf8");

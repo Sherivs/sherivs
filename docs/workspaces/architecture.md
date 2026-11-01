@@ -14,7 +14,7 @@ authorization grant.
 The shared TypeScript contract is
 `frontend/src/lib/workspaces/contract.ts`. The pure manifest resolver is
 `frontend/src/lib/workspaces/manifest-resolver.ts`. Database changes are in
-`20261031000010_sherivs_m009_a1_role_responsibility_engine.sql`; the paired
+`20261101000010_sherivs_m009_a1_role_responsibility_engine.sql`; the paired
 rollback retains the append-only assignment audit events.
 
 ## Assignment and permission flow

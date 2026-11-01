@@ -28,7 +28,7 @@ contracts rather than invent a parallel tenant system.
 ## Decision
 
 1. Quarantine the three observed neutrality-guard groups for
-   `20261031000010_sherivs_m009_a1_role_responsibility_engine.sql` under this
+   `20261101000010_sherivs_m009_a1_role_responsibility_engine.sql` under this
    ADR: the legacy tenant-column reference (`school_id`), the current-tenant
    helper (`get_my_school_id`), and the existing permission code
    (`payroll.approve`).

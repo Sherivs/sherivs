@@ -85,7 +85,7 @@
       "database/supabase/migrations/20261020000130_sherivs_006_membership_identity_freeze.sql": 19,
       "database/supabase/migrations/20261024000340_sherivs_027_gov_portal.sql": 19,
       "database/supabase/migrations/20260707223958_421f2364-7989-4069-b78c-fd119f19daeb.sql": 18,
-      "database/supabase/migrations/20261031000010_sherivs_m009_a1_role_responsibility_engine.sql": 18,
+      "database/supabase/migrations/20261101000010_sherivs_m009_a1_role_responsibility_engine.sql": 18,
       "frontend/src/lib/financial-splits.ts": 18,
       "database/supabase/migrations/20260907000800_coregrid_role_assignment_substrate.sql": 17,
       "frontend/src/lib/identity-actor.ts": 17,
@@ -9370,7 +9370,7 @@
       "firstSnippet": "('rules', 'School rules & code of conduct', 'policies', NULL, ARRAY['grouped', 'numbered']::text[], false),"
     },
     {
-      "file": "database/supabase/migrations/20261031000010_sherivs_m009_a1_role_responsibility_engine.sql",
+      "file": "database/supabase/migrations/20261101000010_sherivs_m009_a1_role_responsibility_engine.sql",
       "kind": "structural",
       "token": "school_id",
       "streamIRef": "ADR-014",
@@ -9392,7 +9392,7 @@
       "firstSnippet": "WHERE m.user_id = NEW.user_id AND m.school_id = NEW.org_id AND m.is_active"
     },
     {
-      "file": "database/supabase/migrations/20261031000010_sherivs_m009_a1_role_responsibility_engine.sql",
+      "file": "database/supabase/migrations/20261101000010_sherivs_m009_a1_role_responsibility_engine.sql",
       "kind": "vocabulary",
       "token": "get_my_school_id",
       "streamIRef": "ADR-014",
@@ -9407,7 +9407,7 @@
       "firstSnippet": "FOR SELECT TO authenticated USING (org_id = (SELECT public.get_my_school_id()));"
     },
     {
-      "file": "database/supabase/migrations/20261031000010_sherivs_m009_a1_role_responsibility_engine.sql",
+      "file": "database/supabase/migrations/20261101000010_sherivs_m009_a1_role_responsibility_engine.sql",
       "kind": "vocabulary",
       "token": "payroll",
       "streamIRef": "ADR-014",
