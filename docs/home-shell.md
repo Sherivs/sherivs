@@ -7,10 +7,10 @@ The shared Scholar home is composed from the authenticated identity's active org
 ## Composition and context
 
 - The manifest supplies permitted widgets, navigation, actions, inbox streams, and optional additions. The shell uses these for the home, drawer, and bottom navigation; permissions remain separate from role, responsibility, and organization context.
-- Interactions with authorized workspace destinations are counted locally under an identity + organization + role-specific key. Within each generated section, higher-use items are promoted while equal counts retain manifest order; no item is added by usage data and server authorization remains authoritative.
+- Interactions with authorized workspace destinations are counted locally under an identity + organization + role-specific key. Authorized actions, navigation, inbox, and available add-ons are ranked together; the first four become quick actions and the next eight or fewer become additional workspace cards. Daily widgets remain a separate section. Equal counts retain manifest order; usage never adds items, and server authorization remains authoritative.
 - The bottom navigation pins Home and the existing AI entry, then fills the middle three slots from the manifest's available workspace responsibilities. The drawer lists the remaining authorized destinations. Home widgets and actions are rendered only from the same authorized manifest.
 - Members with multiple roles in the active organization get an **Active role** selector. Members of multiple organizations get an **Active organization** selector. Each selector contains only active membership rows. Changing context uses the existing authenticated switch operation; the active identity is unchanged, and the workspace reloads for the resolved context.
-- Live widget values come from the tenant-scoped `workspace_widget_data` operation. Missing values are displayed as unavailable rather than invented. Assigned scope selection is checked against the manifest before it is applied.
+- Live widget values come from the tenant-scoped `workspace_widget_data` operation. Missing values display as “No data yet” and unavailable sources as “Unavailable”; neither is replaced with invented data. Assigned scope selection is checked against the manifest before it is applied.
 - The greeting uses the member's display name and Africa/Lagos local time. No inference is presented as verified institutional truth.
 
 ## Default responsibility inputs
