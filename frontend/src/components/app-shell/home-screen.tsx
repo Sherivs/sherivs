@@ -1,14 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  ChevronDown,
-  ChevronRight,
-  MoveDown,
-  MoveUp,
-  Plus,
-  Search,
-  Settings2,
-  X,
-} from "lucide-react";
+import { ChevronRight, MoveDown, MoveUp, Plus, Search, Settings2, X } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { composeActivity } from "@/lib/shell/activity";
 import { shellIcon } from "@/lib/shell/icon-registry";
@@ -20,7 +11,6 @@ import {
   rememberResource,
 } from "@/lib/internal-console/recent";
 import { permittedWidgetCatalog, reorderWidgetKeys } from "@/components/workspaces/workspace-shell";
-import { switchActiveOrganization } from "@/lib/identity/memberships.functions";
 import { ShellGlassIcon } from "./glass-icon";
 import { useAppShell } from "./shell-context";
 
@@ -32,7 +22,6 @@ function matches(needle: string, label: string, key: string): boolean {
 export function AppHomeScreen() {
   const shell = useAppShell();
   const navigate = useNavigate();
-  const [openSwitcher, setOpenSwitcher] = useState(false);
   const [manageWidgets, setManageWidgets] = useState(false);
   const [savingWidgets, setSavingWidgets] = useState(false);
   const [widgetMessage, setWidgetMessage] = useState<string | null>(null);
@@ -71,6 +60,7 @@ export function AppHomeScreen() {
   }, [allowedHrefs]);
 
   function remember(item: { key: string; label: string; href: string }) {
+    shell.recordUsage(item.key);
     rememberResource({
       id: item.key,
       title: item.label,
@@ -78,13 +68,6 @@ export function AppHomeScreen() {
       kind: "workspace-section",
       at: new Date().toISOString(),
     });
-  }
-
-  async function chooseContext(organizationId: string, role: string) {
-    setOpenSwitcher(false);
-    await switchActiveOrganization({ data: { organizationId, role } });
-    await shell.app.refresh();
-    await shell.reload();
   }
 
   async function chooseScope(value: string) {
@@ -167,34 +150,6 @@ export function AppHomeScreen() {
         </p>
         <h1>{shell.name.display}</h1>
         <p className="app-shell-org">{shell.orgName}</p>
-        {shell.showSwitcher ? (
-          <div>
-            <button
-              type="button"
-              className="app-shell-switcher"
-              data-testid="app-shell-switcher"
-              onClick={() => setOpenSwitcher((open) => !open)}
-            >
-              <span>{shell.roleTitle}</span>
-              <ChevronDown size={16} />
-            </button>
-            {openSwitcher ? (
-              <div className="app-shell-switcher-menu" role="listbox">
-                {shell.affiliations.map((row) => (
-                  <button
-                    key={`${row.organizationId}:${row.role}`}
-                    type="button"
-                    className={row.active ? "is-active" : undefined}
-                    onClick={() => void chooseContext(row.organizationId, row.role)}
-                  >
-                    <strong>{row.organizationName}</strong>
-                    <small>{row.role}</small>
-                  </button>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        ) : null}
         {shell.availableScopes.length ? (
           <label className="app-shell-scope-switcher">
             Assigned scope
@@ -454,7 +409,12 @@ export function AppHomeScreen() {
             {cards.map((item) => {
               const Icon = shellIcon(item.icon);
               return (
-                <Link key={item.key} to={item.href as never} className="app-shell-card">
+                <Link
+                  key={item.key}
+                  to={item.href as never}
+                  className="app-shell-card"
+                  onClick={() => shell.recordUsage(item.key)}
+                >
                   <ShellGlassIcon>
                     <Icon />
                   </ShellGlassIcon>

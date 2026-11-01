@@ -7,6 +7,9 @@ import {
   membershipInviteDecision,
   mergeAffiliations,
   shouldShowContextSwitcher,
+  affiliationForOrganization,
+  organizationOptions,
+  rolesForOrganization,
 } from "../../frontend/src/lib/shell/membership-policy";
 import { composeActivity } from "../../frontend/src/lib/shell/activity";
 import { SHELL_ACCOUNT_NAV } from "../../frontend/src/lib/shell/account";
@@ -25,6 +28,7 @@ import {
 } from "../../frontend/src/lib/shell/auth-setup";
 import { fallbackManifest } from "../../frontend/src/lib/shell/fallback-manifest";
 import { formatWidgetMetric } from "../../frontend/src/lib/shell/metrics";
+import { rankByUsage, shellUsageStorageKey } from "../../frontend/src/lib/shell/usage";
 import {
   APP_SHELL_AI,
   APP_SHELL_HOME,
@@ -94,6 +98,35 @@ describe("membership invite law", () => {
         ]),
       ),
     ).toBe(true);
+  });
+
+  it("keeps role and organization choices limited to active memberships", () => {
+    const affiliations = [
+      { organizationId: "a", organizationName: "A", role: "teacher" as const, active: true },
+      { organizationId: "a", organizationName: "A", role: "admin" as const, active: false },
+      { organizationId: "b", organizationName: "B", role: "teacher" as const, active: false },
+    ];
+
+    expect(organizationOptions(affiliations)).toEqual([
+      { organizationId: "a", organizationName: "A" },
+      { organizationId: "b", organizationName: "B" },
+    ]);
+    expect(rolesForOrganization(affiliations, "a")).toEqual(["teacher", "admin"]);
+    expect(affiliationForOrganization(affiliations, "b", "teacher")).toBe(affiliations[2]);
+    expect(affiliationForOrganization(affiliations, "b", "admin")).toBe(affiliations[2]);
+    expect(affiliationForOrganization(affiliations, "missing", "teacher")).toBeNull();
+  });
+
+  it("isolates usage history by identity, organization, and active role", () => {
+    const scope = { userId: "user-a", organizationId: "org-a", role: "teacher" };
+    expect(shellUsageStorageKey(scope)).not.toBe(
+      shellUsageStorageKey({ ...scope, organizationId: "org-b" }),
+    );
+    expect(shellUsageStorageKey(scope)).not.toBe(shellUsageStorageKey({ ...scope, role: "admin" }));
+    expect(shellUsageStorageKey({ ...scope, userId: "user-b" })).not.toBe(
+      shellUsageStorageKey(scope),
+    );
+    expect(shellUsageStorageKey({ ...scope, role: "" })).toBeNull();
   });
 });
 
@@ -196,6 +229,47 @@ describe("role-dynamic home", () => {
     expect(bursar[1]?.key).not.toBe(admin[1]?.key);
   });
 
+  it("generates different teacher homes from different authorized manifests", () => {
+    const manifest = manifestFor("teacher");
+    const [first, second] = manifest.widgets;
+    expect(first).toBeDefined();
+    expect(second).toBeDefined();
+
+    const firstTeacher = composeHomeSections({
+      ...manifest,
+      widgets: [first!],
+      nav: [],
+      actions: [],
+      inbox: [],
+    });
+    const secondTeacher = composeHomeSections({
+      ...manifest,
+      widgets: [second!],
+      nav: [],
+      actions: [],
+      inbox: [],
+    });
+
+    expect(firstTeacher.widgets.map((item) => item.key)).toEqual([first!.key]);
+    expect(secondTeacher.widgets.map((item) => item.key)).toEqual([second!.key]);
+    expect(firstTeacher.widgets[0]?.key).not.toBe(secondTeacher.widgets[0]?.key);
+  });
+
+  it("ranks only authorized home items by scoped usage while preserving default order on ties", () => {
+    const items = [
+      { key: "w.schedule", label: "Schedule" },
+      { key: "w.attendance", label: "Attendance" },
+      { key: "w.grades", label: "Grades" },
+    ];
+    expect(rankByUsage(items, { "w.grades": 4, "w.attendance": 2 })).toEqual([
+      items[2],
+      items[1],
+      items[0],
+    ]);
+    expect(rankByUsage(items, {})).toEqual(items);
+    expect(rankByUsage(items.slice(0, 2), { "w.grades": 99 })).toEqual(items.slice(0, 2));
+  });
+
   it("keeps account items under the portrait and formats live metrics only", () => {
     expect(SHELL_ACCOUNT_NAV[0]?.href).toBe(APP_SHELL_PROFILE);
     expect(SHELL_ACCOUNT_NAV.map((row) => row.label)).toEqual([
@@ -234,6 +308,8 @@ describe("application shell files", () => {
     expect(css).toContain("app-shell-sheet");
     const shell = read("frontend/src/components/app-shell/app-shell.tsx");
     expect(shell).toContain("app-shell-menu");
+    expect(shell).toContain('aria-label="Active role"');
+    expect(shell).toContain('aria-label="Active organization"');
     expect(shell).toContain("SHELL_ACCOUNT_NAV");
     expect(shell).not.toContain("portal-shell");
     const home = read("frontend/src/components/app-shell/home-screen.tsx");

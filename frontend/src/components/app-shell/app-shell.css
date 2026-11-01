@@ -176,6 +176,7 @@ body:has(.app-shell-frame.is-role-management) {
 
 .app-shell-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
@@ -187,7 +188,43 @@ body:has(.app-shell-frame.is-role-management) {
   box-shadow: 0 16px 32px rgba(16, 24, 43, 0.18);
 }
 
+.app-shell-header-center {
+  order: 3;
+  display: grid;
+  flex: 1 1 100%;
+  min-width: 0;
+  justify-items: center;
+  gap: 0.35rem;
+}
+
+.app-shell-context-switchers {
+  display: flex;
+  justify-content: center;
+  gap: 0.45rem;
+  width: 100%;
+}
+
+.app-shell-context-switchers select {
+  min-width: 0;
+  max-width: 50%;
+  min-height: 2.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 0.65rem;
+  padding: 0.35rem 0.55rem;
+  background: #19233d;
+  color: #f7f9ff;
+  font: inherit;
+}
+
+.app-shell-context-error {
+  margin: 0;
+  color: #ffd2cc;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
 .app-shell-header-actions {
+  order: 2;
   display: flex;
   align-items: center;
   gap: 0.55rem;
@@ -331,53 +368,6 @@ body:has(.app-shell-frame.is-role-management) {
   margin: 0.22rem 0 0;
   color: var(--shell-muted);
   font-size: 0.84rem;
-}
-
-.app-shell-switcher {
-  margin-top: 0.75rem;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
-  padding: 0.58rem 0.78rem;
-  border-radius: 14px;
-  border: 1px solid rgba(16, 24, 43, 0.08);
-  background: var(--shell-glass);
-  backdrop-filter: blur(18px) saturate(160%);
-  box-shadow: 0 8px 22px rgba(16, 24, 43, 0.05);
-  color: var(--shell-ink);
-  font-size: 0.86rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.app-shell-switcher-menu {
-  margin: 0.45rem 0 0;
-  padding: 0.35rem;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid var(--shell-line);
-  box-shadow: 0 16px 32px rgba(16, 24, 43, 0.12);
-}
-
-.app-shell-switcher-menu button {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.1rem;
-  padding: 0.55rem 0.65rem;
-  border: 0;
-  border-radius: 10px;
-  background: transparent;
-  cursor: pointer;
-  text-align: left;
-}
-
-.app-shell-switcher-menu button.is-active,
-.app-shell-switcher-menu button:hover {
-  background: rgba(24, 72, 253, 0.08);
 }
 
 .app-shell-scope-switcher {
@@ -1230,6 +1220,23 @@ body:has(.workspace-preview) {
   .app-shell-header {
     padding: 0.85rem clamp(1.25rem, 3vw, 3rem);
     border-radius: 0;
+  }
+
+  .app-shell-header-center {
+    order: 2;
+    flex: 1 1 auto;
+  }
+
+  .app-shell-context-switchers {
+    width: auto;
+  }
+
+  .app-shell-context-switchers select {
+    max-width: 13rem;
+  }
+
+  .app-shell-header-actions {
+    order: 3;
   }
 
   .app-shell-primary-nav {
