@@ -16,6 +16,33 @@ const rollback = readFileSync(
   "utf8",
 );
 
+const fix = readFileSync(
+  new URL(
+    "../../../database/supabase/migrations/20261101100100_sherivs_whatsapp_receive_phone_regex_fix.sql",
+    import.meta.url,
+  ),
+  "utf8",
+);
+
+describe("WhatsApp receive phone regex fix", () => {
+  it("uses a single-backslash E.164 regex that accepts +2349015056201", () => {
+    expect(fix).not.toContain("\\\\+");
+    const match = fix.match(/p_from !~ '([^']+)'/);
+    expect(match?.[1]).toBe("^\\+[1-9][0-9]{7,14}$");
+    expect(new RegExp(match![1]).test("+2349015056201")).toBe(true);
+    expect(new RegExp(match![1]).test("2349015056201")).toBe(false);
+  });
+
+  it("keeps the receive function service-role only and adds a service-role sender mapping RPC", () => {
+    expect(fix).toContain("CREATE OR REPLACE FUNCTION public.cg_whatsapp_receive");
+    expect(fix).toContain("coalesce(auth.role(), '') <> 'service_role'");
+    expect(fix).toContain("CREATE OR REPLACE FUNCTION public.cg_whatsapp_map_sender");
+    expect(fix).toContain("GRANT EXECUTE ON FUNCTION public.cg_whatsapp_map_sender");
+    expect(fix).toContain("TO service_role");
+    expect(fix).not.toContain("school_id");
+  });
+});
+
 describe("WhatsApp Cloud migration posture", () => {
   it("uses the shared tenant/org keys and sender registry", () => {
     expect(migration).toContain("tenant_id text NOT NULL");
