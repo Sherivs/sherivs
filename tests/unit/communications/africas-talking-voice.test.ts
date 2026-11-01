@@ -15,6 +15,7 @@ import {
 } from "../../../frontend/src/lib/communications/africas-talking-voice.server";
 
 const SCHOOL_ID = "00000000-0000-4000-8000-000000000001";
+const TENANT_REF = "00000000-0000-4000-8000-000000000003";
 const SESSION_ID = "at-session-123";
 const CALLBACK_TOKEN = "voice-webhook-unit-test-token-with-sufficient-length";
 const CALLBACK_URL = "https://voice.example.test/api/public/webhooks/africas-talking-voice";
@@ -54,7 +55,7 @@ function request(
   });
 }
 
-function createDb(flagEnabled: boolean) {
+function createDb(flagEnabled: boolean, neutralSender = false) {
   const calls: Array<{ table: string; operation: string; values?: Record<string, unknown> }> = [];
   let session: VoiceSession | null = null;
   const providerRefs = new Set<string>();
@@ -62,6 +63,7 @@ function createDb(flagEnabled: boolean) {
   const initialSession: VoiceSession = {
     id: "00000000-0000-4000-8000-000000000002",
     tenant_id: SCHOOL_ID,
+    tenant_ref: null,
     provider_session_id: SESSION_ID,
     caller_number: "+2348012345678",
     destination_number: "+2348098765432",
@@ -90,16 +92,22 @@ function createDb(flagEnabled: boolean) {
         },
         maybeSingle: async () => ({
           data:
-            table === "comms_sender_numbers"
-              ? schoolRow
-              : table === "voice_call_sessions" && inserted
-                ? (session = session ?? initialSession)
-                : table === "voice_call_sessions"
-                  ? session
-                  : table === "inbound_messages" &&
-                      providerRefs.has(String(filters.get("provider_ref")))
-                    ? { id: "logged-message" }
-                    : null,
+            table === "cg_org_communication_sender" && neutralSender
+              ? { tenant_id: TENANT_REF }
+              : table === "cg_org_voice_agent" && neutralSender
+                ? { enabled: true }
+                : table === "school_tenant_map" && neutralSender
+                  ? { school_id: SCHOOL_ID }
+                  : table === "comms_sender_numbers" && !neutralSender
+                    ? schoolRow
+                    : table === "voice_call_sessions" && inserted
+                      ? (session = session ?? initialSession)
+                      : table === "voice_call_sessions"
+                        ? session
+                        : table === "inbound_messages" &&
+                            providerRefs.has(String(filters.get("provider_ref")))
+                          ? { id: "logged-message" }
+                          : null,
           error: null,
         }),
         insert(values: Record<string, unknown>) {
@@ -109,6 +117,7 @@ function createDb(flagEnabled: boolean) {
             session = {
               ...initialSession,
               tenant_id: String(values.tenant_id),
+              tenant_ref: typeof values.tenant_ref === "string" ? values.tenant_ref : null,
               caller_number: String(values.caller_number),
               destination_number: String(values.destination_number),
               provider_session_id: String(values.provider_session_id),
@@ -227,6 +236,7 @@ describe("Africa's Talking voice support callback", () => {
       audit,
       now: () => "2026-10-31T12:00:00.000Z",
     });
+
     const response = await handler(request());
     const xml = await response.text();
 
@@ -250,6 +260,33 @@ describe("Africa's Talking voice support callback", () => {
     expect(audit).toHaveBeenCalledWith(
       expect.objectContaining({ orgId: SCHOOL_ID, action: "voice.call.started" }),
     );
+  });
+
+  it("routes an enabled neutral sender through its org key and records canonical audit scope", async () => {
+    const { db, calls } = createDb(true, true);
+    const audit = vi.fn(async () => undefined);
+    const handler = createAfricaTalkingVoiceCallbackHandler({
+      env: ENV,
+      db,
+      assistant: null,
+      audit,
+      now: () => "2026-10-31T12:00:00.000Z",
+    });
+
+    const response = await handler(request());
+
+    expect(response.status).toBe(200);
+    expect(calls.find((call) => call.table === "cg_org_communication_sender")?.operation).toBe(
+      "select",
+    );
+    expect(
+      calls.find((call) => call.table === "voice_call_sessions" && call.operation === "insert")
+        ?.values,
+    ).toMatchObject({ tenant_id: SCHOOL_ID, tenant_ref: TENANT_REF });
+    expect(audit).toHaveBeenCalledWith(
+      expect.objectContaining({ orgId: TENANT_REF, action: "voice.call.started" }),
+    );
+    expect(calls.some((call) => call.table === "comms_sender_numbers")).toBe(false);
   });
 
   it("requires consent before recording, then stores grounded responses in the comms log", async () => {

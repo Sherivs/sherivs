@@ -8,9 +8,14 @@ ALTER TABLE public.cg_org_communication_sender
   DROP CONSTRAINT IF EXISTS cg_org_communication_sender_provider_check;
 ALTER TABLE public.cg_org_communication_sender
   ADD CONSTRAINT cg_org_communication_sender_channel_check CHECK (channel IN ('sms', 'voice')),
-  ADD CONSTRAINT cg_org_communication_sender_provider_check CHECK (provider IN ('twilio', 'africas_talking')),
+  ADD CONSTRAINT cg_org_communication_sender_provider_check
+    CHECK ((channel = 'sms' AND provider = 'twilio')
+        OR (channel = 'voice' AND provider IN ('twilio', 'africas_talking'))),
   ADD COLUMN IF NOT EXISTS extension text
     CHECK (extension IS NULL OR extension ~ '^[0-9A-Za-z*#]{1,12}$');
+
+ALTER TABLE public.voice_call_sessions
+  ADD COLUMN IF NOT EXISTS tenant_ref text;
 
 CREATE TABLE IF NOT EXISTS public.cg_org_voice_agent (
   tenant_ref text PRIMARY KEY CHECK (tenant_ref ~ '^[0-9a-fA-F-]{36}$'),
@@ -73,8 +78,6 @@ DECLARE
   v_prev_hash text;
   v_before_hash text;
   v_after_hash text;
-  v_payload text;
-  v_entry_hash text;
 BEGIN
   IF TG_OP = 'DELETE' THEN
     v_tenant_ref := CASE WHEN TG_TABLE_NAME = 'cg_org_communication_sender'
@@ -121,17 +124,14 @@ BEGIN
   IF TG_OP <> 'DELETE' THEN
     v_after_hash := encode(extensions.digest(convert_to(to_jsonb(NEW)::text, 'UTF8'), 'sha256'), 'hex');
   END IF;
-  v_payload := '[' || v_seq::text || ',' || to_json(v_at)::text || ',' || to_json(v_org::text)::text
-    || ',' || to_json(v_actor_kind)::text || ',' || to_json(v_actor)::text || ',' || to_json(v_action)::text
-    || ',' || to_json(v_target_type)::text || ',' || to_json(v_target_id)::text
-    || ',null,null,' || coalesce(to_json(v_before_hash)::text, 'null') || ','
-    || coalesce(to_json(v_after_hash)::text, 'null') || ',' || to_json(v_prev_hash)::text || ']';
-  v_entry_hash := encode(extensions.digest(convert_to(v_prev_hash || v_payload, 'UTF8'), 'sha256'), 'hex');
   INSERT INTO public.audit_chain
     (org_id, seq, at, actor_kind, actor_id, action, target_type, target_id, ip, device,
      before_hash, after_hash, prev_hash, entry_hash)
   VALUES (v_org, v_seq, v_at::timestamptz, v_actor_kind, v_actor, v_action, v_target_type, v_target_id,
-          NULL, NULL, v_before_hash, v_after_hash, v_prev_hash, v_entry_hash);
+          NULL, NULL, v_before_hash, v_after_hash, v_prev_hash,
+          public.audit_chain_canonical_hash(v_prev_hash, v_seq, v_at::timestamptz, v_org,
+            v_actor_kind, v_actor, v_action, v_target_type, v_target_id,
+            NULL, NULL, v_before_hash, v_after_hash));
   IF TG_OP = 'DELETE' THEN RETURN OLD; END IF;
   RETURN NEW;
 END;
@@ -289,7 +289,7 @@ END;
 $$;
 
 CREATE OR REPLACE FUNCTION public.voice_agent_pending_calls()
-RETURNS TABLE (id uuid, category text, recipient_redacted text, script text, requested_by text, created_at timestamptz)
+RETURNS TABLE (id uuid, category text, recipient_redacted text, script text, status text, requested_by text, created_at timestamptz)
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
 DECLARE v_tenant text := public.get_my_tenant_id();
 BEGIN
@@ -299,9 +299,9 @@ BEGIN
   RETURN QUERY
   SELECT a.id, a.category,
     left(a.recipient_phone, 4) || repeat('*', greatest(length(a.recipient_phone) - 6, 0)) || right(a.recipient_phone, 2),
-    a.script, a.requested_by, a.created_at
+    a.script, a.status, a.requested_by, a.created_at
   FROM public.cg_voice_call_approvals a
-  WHERE a.tenant_ref = v_tenant AND a.status = 'pending'
+  WHERE a.tenant_ref = v_tenant AND a.status IN ('pending', 'approved')
   ORDER BY a.created_at ASC LIMIT 50;
 END;
 $$;
@@ -329,7 +329,8 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.voice_agent_claim_call(p_call_id uuid)
+DROP FUNCTION IF EXISTS public.voice_agent_claim_call(uuid);
+CREATE OR REPLACE FUNCTION public.voice_agent_claim_call(p_call_id uuid, p_tenant_ref text)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
 DECLARE
   v_call public.cg_voice_call_approvals%ROWTYPE;
@@ -340,7 +341,8 @@ DECLARE
   v_period text := to_char(statement_timestamp() AT TIME ZONE 'UTC', 'YYYY-MM');
 BEGIN
   IF coalesce(auth.role(), '') <> 'service_role' THEN RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501'; END IF;
-  SELECT * INTO v_call FROM public.cg_voice_call_approvals WHERE id = p_call_id FOR UPDATE;
+  SELECT * INTO v_call FROM public.cg_voice_call_approvals
+    WHERE id = p_call_id AND tenant_ref = p_tenant_ref FOR UPDATE;
   IF v_call.id IS NULL OR v_call.status <> 'approved' THEN RAISE EXCEPTION 'call is not approved'; END IF;
   IF NOT EXISTS (SELECT 1 FROM public.cg_org_voice_agent WHERE tenant_ref = v_call.tenant_ref AND enabled) THEN
     RAISE EXCEPTION 'voice agent is disabled';
@@ -379,7 +381,8 @@ BEGIN
     WHERE id = p_call_id;
   RETURN jsonb_build_object(
     'id', v_call.id, 'tenantRef', v_call.tenant_ref, 'provider', v_sender.provider,
-    'fromNumber', v_sender.from_number, 'recipientPhone', v_call.recipient_phone, 'script', v_call.script
+    'fromNumber', v_sender.from_number, 'recipientPhone', v_call.recipient_phone, 'script', v_call.script,
+    'category', v_call.category
   );
 END;
 $$;
@@ -407,12 +410,12 @@ $$;
 
 REVOKE ALL ON FUNCTION public.voice_agent_settings(), public.voice_agent_configure(boolean, text, text, text),
   public.voice_agent_request_call(text, text, text), public.voice_agent_pending_calls(),
-  public.voice_agent_decide_call(uuid, boolean), public.voice_agent_claim_call(uuid),
+  public.voice_agent_decide_call(uuid, boolean), public.voice_agent_claim_call(uuid, text),
   public.voice_agent_finish_call(uuid, boolean, text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.voice_agent_settings(), public.voice_agent_configure(boolean, text, text, text),
   public.voice_agent_request_call(text, text, text), public.voice_agent_pending_calls(),
   public.voice_agent_decide_call(uuid, boolean) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.voice_agent_claim_call(uuid),
+GRANT EXECUTE ON FUNCTION public.voice_agent_claim_call(uuid, text),
   public.voice_agent_finish_call(uuid, boolean, text) TO service_role;
 
 COMMENT ON TABLE public.cg_org_voice_agent IS

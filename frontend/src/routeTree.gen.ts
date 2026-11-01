@@ -67,6 +67,7 @@ import { Route as HomeNotificationsRouteImport } from './routes/home/notificatio
 import { Route as HomeProfileRouteImport } from './routes/home/profile'
 import { Route as HomeSecurityRouteImport } from './routes/home/security'
 import { Route as HomeSettingsRouteImport } from './routes/home/settings'
+import { Route as HomeVoiceAgentRouteImport } from './routes/home/voice-agent'
 import { Route as PagesSlugRouteImport } from './routes/pages.$slug'
 import { Route as PostsPostRouteImport } from './routes/posts.$post'
 import { Route as siteCompanyAboutRouteImport } from './routes/(site)/company.about'
@@ -418,6 +419,11 @@ const HomeSecurityRoute = HomeSecurityRouteImport.update({
 const HomeSettingsRoute = HomeSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => HomeRouteRoute,
+} as any)
+const HomeVoiceAgentRoute = HomeVoiceAgentRouteImport.update({
+  id: '/voice-agent',
+  path: '/voice-agent',
   getParentRoute: () => HomeRouteRoute,
 } as any)
 const PagesSlugRoute = PagesSlugRouteImport.update({
@@ -790,6 +796,7 @@ export interface FileRoutesByFullPath {
   '/home/profile': typeof HomeProfileRoute
   '/home/security': typeof HomeSecurityRoute
   '/home/settings': typeof HomeSettingsRoute
+  '/home/voice-agent': typeof HomeVoiceAgentRoute
   '/pages/$slug': typeof PagesSlugRoute
   '/posts/$post': typeof PostsPostRoute
   '/console/': typeof ConsoleIndexRoute
@@ -897,6 +904,7 @@ export interface FileRoutesByTo {
   '/home/profile': typeof HomeProfileRoute
   '/home/security': typeof HomeSecurityRoute
   '/home/settings': typeof HomeSettingsRoute
+  '/home/voice-agent': typeof HomeVoiceAgentRoute
   '/pages/$slug': typeof PagesSlugRoute
   '/posts/$post': typeof PostsPostRoute
   '/console': typeof ConsoleIndexRoute
@@ -1018,6 +1026,7 @@ export interface FileRoutesById {
   '/home/profile': typeof HomeProfileRoute
   '/home/security': typeof HomeSecurityRoute
   '/home/settings': typeof HomeSettingsRoute
+  '/home/voice-agent': typeof HomeVoiceAgentRoute
   '/pages/$slug': typeof PagesSlugRoute
   '/posts/$post': typeof PostsPostRoute
   '/console/': typeof ConsoleIndexRoute
@@ -1139,6 +1148,7 @@ export interface FileRouteTypes {
     | '/home/profile'
     | '/home/security'
     | '/home/settings'
+    | '/home/voice-agent'
     | '/pages/$slug'
     | '/posts/$post'
     | '/console/'
@@ -1246,6 +1256,7 @@ export interface FileRouteTypes {
     | '/home/profile'
     | '/home/security'
     | '/home/settings'
+    | '/home/voice-agent'
     | '/pages/$slug'
     | '/posts/$post'
     | '/console'
@@ -1366,6 +1377,7 @@ export interface FileRouteTypes {
     | '/home/profile'
     | '/home/security'
     | '/home/settings'
+    | '/home/voice-agent'
     | '/pages/$slug'
     | '/posts/$post'
     | '/console/'
@@ -1869,6 +1881,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/home/settings'
       preLoaderRoute: typeof HomeSettingsRouteImport
+      parentRoute: typeof HomeRouteRoute
+    }
+    '/home/voice-agent': {
+      id: '/home/voice-agent'
+      path: '/voice-agent'
+      fullPath: '/home/voice-agent'
+      preLoaderRoute: typeof HomeVoiceAgentRouteImport
       parentRoute: typeof HomeRouteRoute
     }
     '/pages/$slug': {
@@ -2584,6 +2603,7 @@ interface HomeRouteRouteChildren {
   HomeProfileRoute: typeof HomeProfileRoute
   HomeSecurityRoute: typeof HomeSecurityRoute
   HomeSettingsRoute: typeof HomeSettingsRoute
+  HomeVoiceAgentRoute: typeof HomeVoiceAgentRoute
   HomeIndexRoute: typeof HomeIndexRoute
   HomeSSectionRoute: typeof HomeSSectionRoute
 }
@@ -2595,6 +2615,7 @@ const HomeRouteRouteChildren: HomeRouteRouteChildren = {
   HomeProfileRoute: HomeProfileRoute,
   HomeSecurityRoute: HomeSecurityRoute,
   HomeSettingsRoute: HomeSettingsRoute,
+  HomeVoiceAgentRoute: HomeVoiceAgentRoute,
   HomeIndexRoute: HomeIndexRoute,
   HomeSSectionRoute: HomeSSectionRoute,
 }
