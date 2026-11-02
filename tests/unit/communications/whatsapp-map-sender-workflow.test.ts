@@ -51,11 +51,11 @@ describe("production WhatsApp sender mapping workflow", () => {
     expect(mapping?.run).toContain("'+2349015056201',");
     expect(mapping?.run).toContain("'env://WHATSAPP_ACCESS_TOKEN',");
     expect(mapping?.run).toContain("'workflow:sv1-wa-map-sender'");
-    expect(
-      mapping?.run.match(/SELECT public\.cg_whatsapp_map_sender\(([\s\S]*?)\);/)?.[1]
-        .split(",")
-        .map((argument) => argument.trim()),
-    ).toHaveLength(6);
+    const mappedArguments = mapping?.run?.match(
+      /SELECT public\.cg_whatsapp_map_sender\(([\s\S]*?)\);/,
+    );
+    expect(mappedArguments).not.toBeNull();
+    expect(mappedArguments?.[1].split(",").map((argument) => argument.trim())).toHaveLength(6);
     expect(mapping?.run).toContain("ROLLBACK;");
     expect(mapping?.run).not.toMatch(/\b(?:INSERT|UPDATE|DELETE|TRUNCATE)\b/i);
   });

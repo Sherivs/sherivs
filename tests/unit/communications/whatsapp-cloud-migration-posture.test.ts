@@ -105,6 +105,11 @@ describe("WhatsApp Cloud migration posture", () => {
         expect(tenantBindingMigration).toContain("c.status = 'opted_in'");
         expect(tenantBindingMigration).toContain("recipient_hash");
         expect(tenantBindingMigration).toContain("encode(sha256(convert_to(v_recipient, 'UTF8')), 'hex')");
+        expect(tenantBindingMigration).toContain("CREATE TRIGGER cg_whatsapp_send_audit_append_only");
+        expect(tenantBindingMigration).toContain("WhatsApp send audit is append-only");
+        expect(tenantBindingRollback).toContain(
+          "DROP FUNCTION IF EXISTS public.cg_whatsapp_send_audit_immutable()",
+        );
       });
 
       it("stores inbound forwarding in a tenant/org/conversation scoped forced-RLS outbox", () => {
