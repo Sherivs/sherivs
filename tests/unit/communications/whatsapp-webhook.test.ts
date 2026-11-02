@@ -306,7 +306,14 @@ describe("WhatsApp webhook validation", () => {
       if (name === "cg_whatsapp_receive") return { data: "logged", error: null };
       if (name === "cg_whatsapp_prepare_auto_ack") {
         return {
-          data: [{ tenant_id: "tenant-a", org_ref: "org-a", principal_ref: "principal-a" }],
+          data: [
+            {
+              tenant_id: "tenant-a",
+              org_ref: "org-a",
+              principal_ref: "principal-a",
+              recipient_address: "+2349015056202",
+            },
+          ],
           error: null,
         };
       }
@@ -328,6 +335,7 @@ describe("WhatsApp webhook validation", () => {
       tenantId: "tenant-a",
       orgRef: "org-a",
       principalRef: "principal-a",
+      expectedRecipientAddress: "+2349015056202",
       body: "Thanks, we received your message.",
       retryTransient: false,
     });

@@ -75,6 +75,10 @@ describe("WhatsApp Cloud migration posture", () => {
       expect(e2eMigration).toContain("FORCE ROW LEVEL SECURITY");
       expect(e2eMigration).toContain("REVOKE ALL ON public.%I FROM PUBLIC, anon, authenticated");
       expect(e2eMigration).toContain("GRANT ALL ON public.%I TO service_role");
+      expect(e2eMigration).toContain(
+        "tenant_id = public.get_my_tenant_id() AND public.is_tenant_admin(tenant_id)",
+      );
+      expect(e2eMigration.match(/CREATE POLICY cg_whatsapp_.*_tenant_select/g)).toHaveLength(5);
     });
 
     it("dedupes provider message IDs and applies an atomic per-sender one-minute limit", () => {
@@ -87,12 +91,11 @@ describe("WhatsApp Cloud migration posture", () => {
     });
 
     it("claims automatic replies once and checks the 24-hour window and current opt-in", () => {
-      expect(e2eMigration).toContain(
-        "CREATE OR REPLACE FUNCTION public.cg_whatsapp_prepare_auto_ack",
-      );
+      expect(e2eMigration).toContain("CREATE FUNCTION public.cg_whatsapp_prepare_auto_ack");
       expect(e2eMigration).toContain("m.provider_created_at >= now() - interval '24 hours'");
       expect(e2eMigration).toContain("m.provider_created_at <= now()");
       expect(e2eMigration).toContain("c.status = 'opted_in'");
+      expect(e2eMigration).toContain("recipient_address text");
       expect(e2eMigration).toContain("ON CONFLICT (inbound_provider_ref) DO NOTHING");
       expect(e2eMigration).toContain("requested_by = p_reviewer_ref");
       expect(e2eMigration).toContain("provider_status_at = now()");
@@ -107,6 +110,13 @@ describe("WhatsApp Cloud migration posture", () => {
       expect(e2eMigration).toContain("mapped_sender_count bigint");
       expect(e2eMigration).toContain("unmapped_sender_count bigint");
       expect(e2eRollback).toContain("DROP TABLE IF EXISTS public.cg_whatsapp_inbound_event");
+    });
+
+    it("scopes recipient-link listing to a single tenant", () => {
+      expect(e2eMigration).toContain(
+        "CREATE OR REPLACE FUNCTION public.cg_whatsapp_list_recipient_link_requests(p_tenant_id text)",
+      );
+      expect(e2eMigration).toContain("WHERE r.tenant_id = p_tenant_id");
     });
 
     it("has a rollback that restores the prior receiver and removes only new WhatsApp objects", () => {

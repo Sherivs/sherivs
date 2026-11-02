@@ -1,5 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
-import { WhatsAppCloudAdapter } from "../../../frontend/src/lib/communications/whatsapp-cloud.server";
+import {
+  sendWhatsAppMessage,
+  WhatsAppCloudAdapter,
+} from "../../../frontend/src/lib/communications/whatsapp-cloud.server";
+
+const { mockAdminRpc } = vi.hoisted(() => ({ mockAdminRpc: vi.fn() }));
+vi.mock("@/integrations/supabase/client.server", () => ({
+  supabaseAdmin: { rpc: mockAdminRpc },
+}));
 
 const TOKEN = "whatsapp-test-token";
 const PHONE_ID = "123456789012345";
@@ -152,5 +160,42 @@ describe("WhatsApp Cloud adapter", () => {
       adapter.send("2349015056201", "Thanks", { retryTransient: false }),
     ).resolves.toMatchObject({ ok: false });
     expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not dispatch an acknowledgement if the prepared address differs from the inbound sender", async () => {
+    mockAdminRpc.mockImplementation(async (name: string) => {
+      if (name === "cg_whatsapp_prepare_send") {
+        return {
+          data: [
+            {
+              message_id: "00000000-0000-4000-8000-000000000001",
+              provider_sender_ref: PHONE_ID,
+              recipient_address: "+2349015056999",
+            },
+          ],
+          error: null,
+        };
+      }
+      return { data: true, error: null };
+    });
+    const send = vi.fn();
+    const result = await sendWhatsAppMessage(
+      {
+        tenantId: "tenant-a",
+        orgRef: "org-a",
+        principalRef: "principal-a",
+        body: "Thanks",
+        expectedRecipientAddress: "+2349015056202",
+      },
+      { send } as unknown as WhatsAppCloudAdapter,
+    );
+
+    expect(result).toMatchObject({ ok: false });
+    expect(send).not.toHaveBeenCalled();
+    expect(mockAdminRpc).toHaveBeenCalledWith(
+      "cg_whatsapp_dispatch_result",
+      expect.objectContaining({ p_status: "failed", p_error_code: "recipient_mismatch" }),
+    );
+    mockAdminRpc.mockReset();
   });
 });

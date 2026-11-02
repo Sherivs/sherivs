@@ -81,10 +81,18 @@ export async function getWhatsAppHealthReport(context: Context) {
   };
 }
 
-export async function listRecipientLinkRequests(context: Context) {
+export async function listRecipientLinkRequests(context: Context, input: { tenantId: string }) {
   await assertConsoleCapability(context, "platform.tenants.manage");
+  const { data: isTenantAdmin, error: scopeError } = await context.supabase.rpc("is_tenant_admin", {
+    p_tenant: input.tenantId,
+  });
+  if (scopeError || isTenantAdmin !== true) {
+    throw new Error("WhatsApp recipient-link requests are unavailable.");
+  }
   const db = await admin();
-  const { data, error } = await db.rpc("cg_whatsapp_list_recipient_link_requests");
+  const { data, error } = await db.rpc("cg_whatsapp_list_recipient_link_requests", {
+    p_tenant_id: input.tenantId,
+  });
   if (error || !Array.isArray(data)) {
     throw new Error("WhatsApp recipient-link requests are unavailable.");
   }
@@ -93,13 +101,25 @@ export async function listRecipientLinkRequests(context: Context) {
 
 export async function reviewRecipientLink(
   context: Context,
-  input: { requestId: string; decision: "approved" | "rejected"; reviewNote?: string },
+  input: {
+    tenantId: string;
+    requestId: string;
+    decision: "approved" | "rejected";
+    reviewNote?: string;
+  },
 ) {
   assertInternalAal2(context.claims);
   await assertConsoleCapability(context, "platform.tenants.manage");
+  const { data: isTenantAdmin, error: scopeError } = await context.supabase.rpc("is_tenant_admin", {
+    p_tenant: input.tenantId,
+  });
+  if (scopeError || isTenantAdmin !== true) {
+    throw new Error("WhatsApp recipient-link review failed.");
+  }
   const db = await admin();
   const { data, error } = await db.rpc("cg_whatsapp_review_recipient_link", {
     p_request_id: input.requestId,
+    p_tenant_id: input.tenantId,
     p_decision: input.decision,
     p_reviewer_ref: context.userId,
     p_review_note: input.reviewNote ?? null,

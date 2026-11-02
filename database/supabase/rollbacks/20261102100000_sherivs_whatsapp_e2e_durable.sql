@@ -2,8 +2,8 @@
 BEGIN;
 
 DROP FUNCTION IF EXISTS public.cg_whatsapp_health();
-DROP FUNCTION IF EXISTS public.cg_whatsapp_review_recipient_link(uuid, text, text, text);
-DROP FUNCTION IF EXISTS public.cg_whatsapp_list_recipient_link_requests();
+DROP FUNCTION IF EXISTS public.cg_whatsapp_review_recipient_link(uuid, text, text, text, text);
+DROP FUNCTION IF EXISTS public.cg_whatsapp_list_recipient_link_requests(text);
 DROP FUNCTION IF EXISTS public.cg_whatsapp_request_recipient_link_internal(text, text, text, text, text, text);
 DROP FUNCTION IF EXISTS public.cg_whatsapp_request_recipient_link(text, text, text, text, text);
 DROP FUNCTION IF EXISTS public.cg_whatsapp_record_recipient_link_request(text, text, text, text, text, text);

@@ -19,6 +19,7 @@ export interface WhatsAppGatewaySendCommand {
   language?: string;
   parameters?: string[];
   retryTransient?: boolean;
+  expectedRecipientAddress?: string;
 }
 
 /**
@@ -58,6 +59,18 @@ export async function sendWhatsAppMessage(
     return { ok: false, error: "WhatsApp gateway returned no unique send target" };
 
   const target = rows.data[0];
+  if (
+    command.expectedRecipientAddress &&
+    target.recipient_address !== command.expectedRecipientAddress
+  ) {
+    await db.rpc("cg_whatsapp_dispatch_result", {
+      p_message_id: target.message_id,
+      p_status: "failed",
+      p_provider_ref: null,
+      p_error_code: "recipient_mismatch",
+    });
+    return { ok: false, error: "WhatsApp recipient no longer matches the inbound sender" };
+  }
   const sent = await adapter.send(target.recipient_address, command.body, {
     template: command.templateCode,
     language: command.language,

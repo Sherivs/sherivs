@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       confirm:
-        description: "Type MAP-1407639185765089 to confirm"
+        description: "Type MAP-1407639185765089 to map the production sender"
         required: true
         type: string
       dry_run:
@@ -84,7 +84,7 @@ jobs:
           }
           printf 'tenant_id=%s\norg_ref=%s\n' "$TENANT_ID" "$ORG_REF" >> "$GITHUB_OUTPUT"
 
-      - name: Map and verify WhatsApp sender
+      - name: Map WhatsApp sender
         env:
           DB_URL: ${{ secrets.PROD_DB_URL_BACKUP }}
           TENANT_ID: ${{ steps.org.outputs.tenant_id }}
@@ -103,17 +103,14 @@ jobs:
             p_provider_sender_ref => '1407639185765089',
             p_from_number => '+2349015056201'
           );
-          SELECT sender_ref, tenant_id, org_ref, channel, provider, from_number,
-                 status, provider_sender_ref
-            FROM public.cg_org_communication_sender
-           WHERE tenant_id = :'tenant_id' AND org_ref = :'org_ref'
-             AND provider_sender_ref = '1407639185765089'
-             AND channel = 'whatsapp' AND provider = 'meta_cloud';
           SELECT count(*) = 1 AS mapping_valid
             FROM public.cg_org_communication_sender
-           WHERE tenant_id = :'tenant_id' AND org_ref = :'org_ref'
+           WHERE tenant_id = :'tenant_id'
+             AND org_ref = :'org_ref'
              AND provider_sender_ref = '1407639185765089'
-             AND channel = 'whatsapp' AND provider = 'meta_cloud' AND status = 'active'
+             AND channel = 'whatsapp'
+             AND provider = 'meta_cloud'
+             AND status = 'active'
           \gset
           \if :mapping_valid
           \else
@@ -127,4 +124,40 @@ jobs:
           COMMIT;
           \echo "Sender mapping committed."
           \endif
+          SQL
+
+      - name: Verify sender mapping
+        if: ${{ inputs.dry_run == false }}
+        env:
+          DB_URL: ${{ secrets.PROD_DB_URL_BACKUP }}
+          TENANT_ID: ${{ steps.org.outputs.tenant_id }}
+          ORG_REF: ${{ steps.org.outputs.org_ref }}
+        run: |
+          set -euo pipefail
+          count="$(psql "$DB_URL" -X -At -v ON_ERROR_STOP=1 \
+            -v tenant_id="$TENANT_ID" \
+            -v org_ref="$ORG_REF" <<'SQL'
+          SELECT count(*)
+            FROM public.cg_org_communication_sender
+           WHERE tenant_id = :'tenant_id'
+             AND org_ref = :'org_ref'
+             AND provider_sender_ref = '1407639185765089'
+             AND channel = 'whatsapp'
+             AND provider = 'meta_cloud';
+          SQL
+          )"
+          [ "$count" = "1" ] || {
+            echo "::error::expected exactly one mapped sender row, found $count"
+            exit 1
+          }
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -v tenant_id="$TENANT_ID" \
+            -v org_ref="$ORG_REF" -P pager=off <<'SQL'
+          SELECT sender_ref, tenant_id, org_ref, channel, provider, from_number,
+                 status, provider_sender_ref, created_at, updated_at
+            FROM public.cg_org_communication_sender
+           WHERE tenant_id = :'tenant_id'
+             AND org_ref = :'org_ref'
+             AND provider_sender_ref = '1407639185765089'
+             AND channel = 'whatsapp'
+             AND provider = 'meta_cloud';
           SQL

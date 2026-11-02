@@ -18,6 +18,7 @@ CREATE TABLE public.cg_whatsapp_inbound_event (
 
 CREATE TABLE public.cg_whatsapp_inbound_rate_limit (
   provider_sender_ref text NOT NULL CHECK (provider_sender_ref ~ '^[0-9]{1,160}$'),
+  tenant_id text NOT NULL CHECK (length(tenant_id) BETWEEN 1 AND 128),
   address text NOT NULL CHECK (address ~ '^\+[1-9][0-9]{7,14}$'),
   window_started_at timestamptz NOT NULL,
   request_count integer NOT NULL CHECK (request_count > 0),
@@ -27,6 +28,7 @@ CREATE TABLE public.cg_whatsapp_inbound_rate_limit (
 CREATE TABLE public.cg_whatsapp_dead_letter (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   provider_sender_ref text NOT NULL CHECK (length(provider_sender_ref) BETWEEN 1 AND 160),
+  tenant_id text CHECK (tenant_id IS NULL OR length(tenant_id) BETWEEN 1 AND 128),
   provider_ref text CHECK (provider_ref IS NULL OR length(provider_ref) BETWEEN 1 AND 200),
   event_type text NOT NULL CHECK (event_type IN ('message', 'status')),
   error_code text NOT NULL CHECK (error_code ~ '^[A-Za-z0-9_.-]{1,32}$'),
@@ -96,6 +98,22 @@ BEGIN
 END
 $rls$;
 
+CREATE POLICY cg_whatsapp_inbound_event_tenant_select
+  ON public.cg_whatsapp_inbound_event FOR SELECT TO authenticated
+  USING (tenant_id IS NOT NULL AND tenant_id = public.get_my_tenant_id());
+CREATE POLICY cg_whatsapp_inbound_rate_limit_tenant_select
+  ON public.cg_whatsapp_inbound_rate_limit FOR SELECT TO authenticated
+  USING (tenant_id = public.get_my_tenant_id());
+CREATE POLICY cg_whatsapp_dead_letter_tenant_select
+  ON public.cg_whatsapp_dead_letter FOR SELECT TO authenticated
+  USING (tenant_id IS NOT NULL AND tenant_id = public.get_my_tenant_id());
+CREATE POLICY cg_whatsapp_auto_ack_tenant_select
+  ON public.cg_whatsapp_auto_ack FOR SELECT TO authenticated
+  USING (tenant_id = public.get_my_tenant_id());
+CREATE POLICY cg_whatsapp_recipient_link_request_tenant_select
+  ON public.cg_whatsapp_recipient_link_request FOR SELECT TO authenticated
+  USING (tenant_id = public.get_my_tenant_id() AND public.is_tenant_admin(tenant_id));
+
 DROP FUNCTION public.cg_whatsapp_receive(text, text, text, text);
 CREATE FUNCTION public.cg_whatsapp_receive(
   p_provider_sender_ref text,
@@ -163,10 +181,11 @@ BEGIN
   ) THEN RETURN 'duplicate'; END IF;
 
   INSERT INTO public.cg_whatsapp_inbound_rate_limit
-    (provider_sender_ref, address, window_started_at, request_count)
-  VALUES (p_provider_sender_ref, p_from, clock_timestamp(), 1)
+    (provider_sender_ref, tenant_id, address, window_started_at, request_count)
+  VALUES (p_provider_sender_ref, v_sender.tenant_id, p_from, clock_timestamp(), 1)
   ON CONFLICT (provider_sender_ref, address) DO UPDATE
-    SET window_started_at = CASE
+    SET tenant_id = EXCLUDED.tenant_id,
+        window_started_at = CASE
           WHEN public.cg_whatsapp_inbound_rate_limit.window_started_at <= clock_timestamp() - interval '1 minute'
             THEN clock_timestamp()
           ELSE public.cg_whatsapp_inbound_rate_limit.window_started_at
@@ -291,6 +310,8 @@ CREATE OR REPLACE FUNCTION public.cg_whatsapp_dead_letter(
   p_error_code text
 ) RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $$
+DECLARE
+  v_tenant_id text;
 BEGIN
   IF coalesce(auth.role(), '') <> 'service_role' THEN
     RAISE EXCEPTION 'not allowed: WhatsApp dead letters require the verified webhook';
@@ -301,9 +322,14 @@ BEGIN
      OR p_error_code IS NULL OR p_error_code !~ '^[A-Za-z0-9_.-]{1,32}$' THEN
     RAISE EXCEPTION 'invalid WhatsApp dead-letter event';
   END IF;
+  SELECT s.tenant_id INTO v_tenant_id
+    FROM public.cg_org_communication_sender s
+   WHERE s.provider_sender_ref = p_provider_sender_ref
+     AND s.channel = 'whatsapp' AND s.provider = 'meta_cloud' AND s.status = 'active'
+   LIMIT 1;
   INSERT INTO public.cg_whatsapp_dead_letter
-    (provider_sender_ref, provider_ref, event_type, error_code)
-  VALUES (p_provider_sender_ref, p_provider_ref, p_event_type, p_error_code)
+    (provider_sender_ref, tenant_id, provider_ref, event_type, error_code)
+  VALUES (p_provider_sender_ref, v_tenant_id, p_provider_ref, p_event_type, p_error_code)
   ON CONFLICT DO NOTHING;
   RETURN true;
 END
@@ -311,10 +337,16 @@ $$;
 REVOKE ALL ON FUNCTION public.cg_whatsapp_dead_letter(text, text, text, text) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.cg_whatsapp_dead_letter(text, text, text, text) TO service_role;
 
-CREATE OR REPLACE FUNCTION public.cg_whatsapp_prepare_auto_ack(
+DROP FUNCTION IF EXISTS public.cg_whatsapp_prepare_auto_ack(text, text);
+CREATE FUNCTION public.cg_whatsapp_prepare_auto_ack(
   p_inbound_provider_ref text,
   p_body text
-) RETURNS TABLE (tenant_id text, org_ref text, principal_ref text)
+) RETURNS TABLE (
+  tenant_id text,
+  org_ref text,
+  principal_ref text,
+  recipient_address text
+)
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $$
 DECLARE
@@ -359,7 +391,9 @@ BEGIN
   RETURN QUERY
     WITH eligible AS (
       SELECT v_message.tenant_id AS tenant_id, v_message.org_ref AS org_ref,
-             v_message.principal_ref AS principal_ref
+             v_message.principal_ref AS principal_ref,
+             (SELECT cv.address FROM public.cg_communication_conversation cv
+               WHERE cv.id = v_message.conversation_id) AS recipient_address
     ), claimed AS (
       INSERT INTO public.cg_whatsapp_auto_ack
         (inbound_provider_ref, tenant_id, org_ref, principal_ref, status)
@@ -369,7 +403,8 @@ BEGIN
       RETURNING cg_whatsapp_auto_ack.tenant_id, cg_whatsapp_auto_ack.org_ref,
                 cg_whatsapp_auto_ack.principal_ref
     )
-    SELECT c.tenant_id, c.org_ref, c.principal_ref FROM claimed c;
+    SELECT c.tenant_id, c.org_ref, c.principal_ref, e.recipient_address
+      FROM claimed c CROSS JOIN eligible e;
 END
 $$;
 REVOKE ALL ON FUNCTION public.cg_whatsapp_prepare_auto_ack(text, text) FROM PUBLIC, anon, authenticated;
@@ -488,7 +523,7 @@ REVOKE ALL ON FUNCTION public.cg_whatsapp_request_recipient_link_internal(text, 
 GRANT EXECUTE ON FUNCTION public.cg_whatsapp_request_recipient_link_internal(text, text, text, text, text, text)
   TO service_role;
 
-CREATE OR REPLACE FUNCTION public.cg_whatsapp_list_recipient_link_requests()
+CREATE OR REPLACE FUNCTION public.cg_whatsapp_list_recipient_link_requests(p_tenant_id text)
 RETURNS TABLE (
   id uuid, tenant_id text, org_ref text, principal_ref text, address text,
   consent_evidence text, status text, requested_by text, requested_at timestamptz,
@@ -500,18 +535,23 @@ BEGIN
     RAISE EXCEPTION 'not allowed: recipient-link review requires the Internal Console'
       USING ERRCODE = '42501';
   END IF;
+  IF p_tenant_id IS NULL OR length(p_tenant_id) NOT BETWEEN 1 AND 128 THEN
+    RAISE EXCEPTION 'invalid WhatsApp tenant scope';
+  END IF;
   RETURN QUERY
     SELECT r.id, r.tenant_id, r.org_ref, r.principal_ref, r.address, r.consent_evidence,
            r.status, r.requested_by, r.requested_at, r.reviewed_by, r.reviewed_at, r.review_note
       FROM public.cg_whatsapp_recipient_link_request r
+     WHERE r.tenant_id = p_tenant_id
      ORDER BY r.requested_at DESC;
 END
 $$;
-REVOKE ALL ON FUNCTION public.cg_whatsapp_list_recipient_link_requests() FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.cg_whatsapp_list_recipient_link_requests() TO service_role;
+REVOKE ALL ON FUNCTION public.cg_whatsapp_list_recipient_link_requests(text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.cg_whatsapp_list_recipient_link_requests(text) TO service_role;
 
 CREATE OR REPLACE FUNCTION public.cg_whatsapp_review_recipient_link(
   p_request_id uuid,
+  p_tenant_id text,
   p_decision text,
   p_reviewer_ref text,
   p_review_note text DEFAULT NULL
@@ -524,14 +564,15 @@ BEGIN
     RAISE EXCEPTION 'not allowed: recipient-link review requires the Internal Console'
       USING ERRCODE = '42501';
   END IF;
-  IF p_request_id IS NULL OR p_decision IS NULL OR p_decision NOT IN ('approved', 'rejected')
+  IF p_request_id IS NULL OR p_tenant_id IS NULL OR length(p_tenant_id) NOT BETWEEN 1 AND 128
+     OR p_decision IS NULL OR p_decision NOT IN ('approved', 'rejected')
      OR p_reviewer_ref IS NULL OR length(p_reviewer_ref) NOT BETWEEN 1 AND 160
      OR (p_review_note IS NOT NULL AND length(p_review_note) > 500) THEN
     RAISE EXCEPTION 'invalid WhatsApp recipient-link review';
   END IF;
   SELECT * INTO v_request
     FROM public.cg_whatsapp_recipient_link_request
-   WHERE id = p_request_id AND status = 'pending'
+   WHERE id = p_request_id AND tenant_id = p_tenant_id AND status = 'pending'
    FOR UPDATE;
   IF NOT FOUND THEN RETURN false; END IF;
   IF v_request.requested_by = p_reviewer_ref THEN
@@ -576,9 +617,9 @@ BEGIN
   RETURN true;
 END
 $$;
-REVOKE ALL ON FUNCTION public.cg_whatsapp_review_recipient_link(uuid, text, text, text)
+REVOKE ALL ON FUNCTION public.cg_whatsapp_review_recipient_link(uuid, text, text, text, text)
   FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.cg_whatsapp_review_recipient_link(uuid, text, text, text)
+GRANT EXECUTE ON FUNCTION public.cg_whatsapp_review_recipient_link(uuid, text, text, text, text)
   TO service_role;
 
 CREATE OR REPLACE FUNCTION public.cg_whatsapp_health()

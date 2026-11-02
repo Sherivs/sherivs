@@ -9,7 +9,8 @@ const requestSchema = z.object({
   address: z
     .string()
     .trim()
-    .regex(/^\+[1-9]\d{7,14}$/),
+    .regex(/^\+?[1-9]\d{7,14}$/)
+    .transform((value) => (value.startsWith("+") ? value : `+${value}`)),
   consentEvidence: z.string().trim().min(1).max(500),
 });
 
@@ -30,12 +31,16 @@ export const getWhatsAppHealth = createServerFn({ method: "GET" })
 
 export const listWhatsAppRecipientLinkRequests = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .validator((input: unknown) =>
+    z.object({ tenantId: z.string().trim().min(1).max(128) }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
     const { listRecipientLinkRequests } = await import("./whatsapp.store.server");
-    return listRecipientLinkRequests(context as never);
+    return listRecipientLinkRequests(context as never, data);
   });
 
 const reviewSchema = z.object({
+  tenantId: z.string().trim().min(1).max(128),
   requestId: z.string().uuid(),
   decision: z.enum(["approved", "rejected"]),
   reviewNote: z.string().trim().max(500).optional(),

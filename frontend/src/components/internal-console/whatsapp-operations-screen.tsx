@@ -40,6 +40,7 @@ export function WhatsAppOperationsScreen() {
   const [health, setHealth] = useState<Health | null>(null);
   const [requests, setRequests] = useState<RequestRow[]>([]);
   const [reviewNote, setReviewNote] = useState("");
+  const [reviewTenantId, setReviewTenantId] = useState("");
   const [requestForm, setRequestForm] = useState({
     tenantId: "",
     orgRef: "",
@@ -50,13 +51,17 @@ export function WhatsAppOperationsScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function load() {
+  async function load(tenantId = reviewTenantId) {
     setBusy(true);
     setError(null);
     try {
       setHealth(await getWhatsAppHealth());
-      if (canManage) {
-        setRequests((await listWhatsAppRecipientLinkRequests()) as RequestRow[]);
+      if (canManage && tenantId.trim()) {
+        setRequests(
+          (await listWhatsAppRecipientLinkRequests({ data: { tenantId } })) as RequestRow[],
+        );
+      } else {
+        setRequests([]);
       }
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "WhatsApp operations could not load.");
@@ -76,7 +81,12 @@ export function WhatsAppOperationsScreen() {
     setError(null);
     try {
       await reviewWhatsAppRecipientLink({
-        data: { requestId, decision, reviewNote: reviewNote || undefined },
+        data: {
+          tenantId: reviewTenantId,
+          requestId,
+          decision,
+          reviewNote: reviewNote || undefined,
+        },
       });
       setReviewNote("");
       await load();
@@ -162,7 +172,7 @@ export function WhatsAppOperationsScreen() {
               void requestWhatsAppRecipientLink({ data: requestForm })
                 .then(() => {
                   setRequestForm({
-                    tenantId: "",
+                    tenantId: requestForm.tenantId,
                     orgRef: "",
                     principalRef: "",
                     address: "",
@@ -186,9 +196,10 @@ export function WhatsAppOperationsScreen() {
                 required
                 maxLength={128}
                 value={requestForm.tenantId}
-                onChange={(event) =>
-                  setRequestForm((current) => ({ ...current, tenantId: event.target.value }))
-                }
+                onChange={(event) => {
+                  setRequestForm((current) => ({ ...current, tenantId: event.target.value }));
+                  setReviewTenantId(event.target.value);
+                }}
               />
             </label>
             <label>
@@ -220,7 +231,7 @@ export function WhatsAppOperationsScreen() {
                 type="tel"
                 autoComplete="off"
                 maxLength={16}
-                pattern="\+[1-9][0-9]{7,14}"
+                pattern="\+?[1-9][0-9]{7,14}"
                 value={requestForm.address}
                 onChange={(event) =>
                   setRequestForm((current) => ({ ...current, address: event.target.value }))

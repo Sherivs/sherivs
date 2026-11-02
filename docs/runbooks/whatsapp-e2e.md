@@ -1,5 +1,15 @@
 # Sherivs WhatsApp end-to-end runbook
 
+Authority: AGENTS.md §§12, 17, 26, 31; this runbook documents the existing
+WhatsApp integration contracts.
+Creator: copilot-swe-agent[bot]
+Created: 2026-11-02
+
+## Verification
+
+Focused WhatsApp tests passed; the migration and rollback were exercised on
+PostgreSQL 17.2.
+
 This runbook uses the existing `/api/public/webhooks/whatsapp` route, the
 `cg_org_communication_sender` registry, and
 `frontend/src/lib/communications/whatsapp-cloud.server.ts`. Do not create a
@@ -82,4 +92,3 @@ production workflows as part of a code review.
 7. Check the health report for unmapped senders or dead-letter events. Investigate
    failures using sanitized error codes only; never export tokens, webhook
    signatures, full payloads, or unnecessary phone/message content into logs.
-

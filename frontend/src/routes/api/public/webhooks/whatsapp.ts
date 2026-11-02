@@ -185,6 +185,7 @@ async function sendAutomaticAcknowledgement(db: WebhookDb, providerRef: string):
           tenant_id: z.string().min(1).max(128),
           org_ref: z.string().min(1).max(160),
           principal_ref: z.string().min(1).max(160),
+          recipient_address: z.string().regex(/^\+[1-9]\d{7,14}$/),
         }),
       )
       .safeParse(data);
@@ -201,6 +202,7 @@ async function sendAutomaticAcknowledgement(db: WebhookDb, providerRef: string):
         tenantId: target.tenant_id,
         orgRef: target.org_ref,
         principalRef: target.principal_ref,
+        expectedRecipientAddress: target.recipient_address,
         body,
         retryTransient: false,
       });
