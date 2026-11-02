@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "@tanstack/react-router";
-import { Bell, Sparkles } from "lucide-react";
+import { Bell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
 import { GoogleMark } from "@/components/auth/google-mark";
@@ -28,6 +28,7 @@ import { APP_SHELL_HOME } from "@/lib/shell/paths";
 import { useAppShell } from "./shell-context";
 import { ShellGlassIcon } from "./glass-icon";
 import { NotificationCentre } from "./notification-centre";
+import { AssistantScreen } from "./assistant-screen";
 import {
   configureVoiceAgent,
   decideVoiceCall,
@@ -693,17 +694,5 @@ export function AppNotificationsScreen() {
 }
 
 export function AppAiScreen() {
-  return (
-    <section className="app-shell-section">
-      <SectionBack />
-      <ShellGlassIcon size={44} tone="accent">
-        <Sparkles />
-      </ShellGlassIcon>
-      <h1>AI</h1>
-      <p className="app-shell-empty">
-        The assistant uses the Sherivs AI gateway with only the records this role may see. Ask your
-        administrator if this section is empty.
-      </p>
-    </section>
-  );
+  return <AssistantScreen />;
 }

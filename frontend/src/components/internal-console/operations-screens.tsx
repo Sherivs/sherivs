@@ -129,17 +129,29 @@ export function ConsoleTickets() {
         <form onSubmit={(event) => void onCreate(event)} className="sherivs-console-form">
           <label>
             Subject
-            <input value={subject} onChange={(event) => setSubject(event.target.value)} required minLength={3} />
+            <input
+              value={subject}
+              onChange={(event) => setSubject(event.target.value)}
+              required
+              minLength={3}
+            />
           </label>
           <label>
             Details
-            <textarea value={body} onChange={(event) => setBody(event.target.value)} required minLength={3} />
+            <textarea
+              value={body}
+              onChange={(event) => setBody(event.target.value)}
+              required
+              minLength={3}
+            />
           </label>
           <label>
             Priority
             <select
               value={priority}
-              onChange={(event) => setPriority(event.target.value as (typeof TICKET_PRIORITIES)[number])}
+              onChange={(event) =>
+                setPriority(event.target.value as (typeof TICKET_PRIORITIES)[number])
+              }
             >
               {TICKET_PRIORITIES.map((item) => (
                 <option key={item} value={item}>
@@ -165,19 +177,19 @@ export function ConsoleTickets() {
               <p>{ticket.body}</p>
               {canWrite ? (
                 <div className="sherivs-console-actions">
-                  {TICKET_STATUSES.filter((status) => canTransitionTicket(ticket.status, status)).map(
-                    (status) => (
-                      <button
-                        key={status}
-                        type="button"
-                        className="sherivs-console-btn secondary"
-                        disabled={busy}
-                        onClick={() => void onTransition(ticket.id, status)}
-                      >
-                        Mark {status}
-                      </button>
-                    ),
-                  )}
+                  {TICKET_STATUSES.filter((status) =>
+                    canTransitionTicket(ticket.status, status),
+                  ).map((status) => (
+                    <button
+                      key={status}
+                      type="button"
+                      className="sherivs-console-btn secondary"
+                      disabled={busy}
+                      onClick={() => void onTransition(ticket.id, status)}
+                    >
+                      Mark {status}
+                    </button>
+                  ))}
                 </div>
               ) : null}
             </div>
@@ -204,7 +216,6 @@ export function ConsoleIncidents() {
   const canRead =
     capabilities.includes("platform.engineering.read") ||
     capabilities.includes("platform.operations.read") ||
-    capabilities.includes("platform.tenants.read") ||
     capabilities.includes("platform.audit.read");
   const canWrite = canWriteIncidents(capabilities);
 
@@ -228,7 +239,7 @@ export function ConsoleIncidents() {
     return (
       <section className="sherivs-console-card">
         <h1>Incidents</h1>
-        <p>Operational incidents require an authorized engineering, operations, or tenant-read capability.</p>
+        <p>Operational incidents require engineering, operations, or audit capability.</p>
       </section>
     );
   }
@@ -273,24 +284,37 @@ export function ConsoleIncidents() {
       {error ? <ConsoleNotice tone="error">{error}</ConsoleNotice> : null}
       {!available ? (
         <ConsoleNotice>
-          Incident storage is not applied in this environment. SHERIVS-032 creates platform_incident.
+          Incident storage is not applied in this environment. SHERIVS-032 creates
+          platform_incident.
         </ConsoleNotice>
       ) : null}
       {canWrite ? (
         <form onSubmit={(event) => void onCreate(event)} className="sherivs-console-form">
           <label>
             Title
-            <input value={title} onChange={(event) => setTitle(event.target.value)} required minLength={3} />
+            <input
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              required
+              minLength={3}
+            />
           </label>
           <label>
             Details
-            <textarea value={details} onChange={(event) => setDetails(event.target.value)} required minLength={3} />
+            <textarea
+              value={details}
+              onChange={(event) => setDetails(event.target.value)}
+              required
+              minLength={3}
+            />
           </label>
           <label>
             Severity
             <select
               value={severity}
-              onChange={(event) => setSeverity(event.target.value as (typeof INCIDENT_SEVERITIES)[number])}
+              onChange={(event) =>
+                setSeverity(event.target.value as (typeof INCIDENT_SEVERITIES)[number])
+              }
             >
               {INCIDENT_SEVERITIES.map((item) => (
                 <option key={item} value={item}>
@@ -347,14 +371,16 @@ export function ConsoleLogs() {
   const [source, setSource] = useState("");
   const [available, setAvailable] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [events, setEvents] = useState<Array<{
-    id: string;
-    action: string;
-    description: string;
-    actor: string | null;
-    at: string;
-    outcome: string;
-  }>>([]);
+  const [events, setEvents] = useState<
+    Array<{
+      id: string;
+      action: string;
+      description: string;
+      actor: string | null;
+      at: string;
+      outcome: string;
+    }>
+  >([]);
   const canRead =
     overview?.viewer.capabilities.includes("platform.engineering.read") ||
     overview?.viewer.capabilities.includes("platform.audit.read");
@@ -500,7 +526,8 @@ export function ConsoleBilling() {
           "School subscription payment history from public.subscriptions. This is not recognized revenue."}
       </p>
       <p>
-        Paystack mode: {snapshot?.paystackMode ?? "unknown"}. Source: {snapshot?.source ?? "loading"}.
+        Paystack mode: {snapshot?.paystackMode ?? "unknown"}. Source:{" "}
+        {snapshot?.source ?? "loading"}.
       </p>
       {snapshot?.paystackMode === "test" ? (
         <ConsoleNotice tone="warning">
@@ -515,7 +542,8 @@ export function ConsoleBilling() {
             <div key={row.id} className="sherivs-console-row">
               <strong>{row.organizationName ?? row.schoolId}</strong>
               <small>
-                {row.plan} · {row.status} · {row.amountPaid} · {row.paystackReference ?? "no reference"}
+                {row.plan} · {row.status} · {row.amountPaid} ·{" "}
+                {row.paystackReference ?? "no reference"}
               </small>
             </div>
           ))
@@ -543,8 +571,8 @@ export function ConsoleBilling() {
         <>
           <h2>Collect a configured monthly fee</h2>
           <p>
-            Checkout uses the linked school&apos;s monthly_fee and Paystack Inline. The webhook is the
-            source of truth.
+            Checkout uses the linked school&apos;s monthly_fee and Paystack Inline. The webhook is
+            the source of truth.
           </p>
           <div className="sherivs-console-list">
             {orgs.length ? (

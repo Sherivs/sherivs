@@ -37,7 +37,9 @@ export function membershipInviteDecision(input: {
   if (held) {
     return { kind: "already_held", reason: "duplicate_affiliation" };
   }
-  const sameOrg = input.affiliations.some((row) => row.organizationId === input.targetOrganizationId);
+  const sameOrg = input.affiliations.some(
+    (row) => row.organizationId === input.targetOrganizationId,
+  );
   if (sameOrg) {
     return { kind: "add_role", reason: "same_organization_additional_role" };
   }
@@ -56,6 +58,47 @@ export function shouldShowContextSwitcher(affiliations: readonly ShellAffiliatio
   return orgs.size > 1 || roles.size > 1;
 }
 
+export function organizationOptions(
+  affiliations: readonly ShellAffiliation[],
+): Array<Pick<ShellAffiliation, "organizationId" | "organizationName">> {
+  const seen = new Set<string>();
+  const options: Array<Pick<ShellAffiliation, "organizationId" | "organizationName">> = [];
+  for (const row of affiliations) {
+    if (seen.has(row.organizationId)) continue;
+    seen.add(row.organizationId);
+    options.push({
+      organizationId: row.organizationId,
+      organizationName: row.organizationName,
+    });
+  }
+  return options;
+}
+
+export function rolesForOrganization(
+  affiliations: readonly ShellAffiliation[],
+  organizationId: string,
+): ShellAffiliation["role"][] {
+  return [
+    ...new Set(
+      affiliations.filter((row) => row.organizationId === organizationId).map((row) => row.role),
+    ),
+  ];
+}
+
+export function affiliationForOrganization(
+  affiliations: readonly ShellAffiliation[],
+  organizationId: string,
+  preferredRole: string,
+): ShellAffiliation | null {
+  return (
+    affiliations.find(
+      (row) => row.organizationId === organizationId && row.role === preferredRole,
+    ) ??
+    affiliations.find((row) => row.organizationId === organizationId) ??
+    null
+  );
+}
+
 export function mergeAffiliations(rows: readonly ShellAffiliation[]): ShellAffiliation[] {
   const seen = new Map<string, ShellAffiliation>();
   for (const row of rows) {
@@ -70,6 +113,8 @@ export function mergeAffiliations(rows: readonly ShellAffiliation[]): ShellAffil
   return [...seen.values()];
 }
 
-export function activeAffiliation(affiliations: readonly ShellAffiliation[]): ShellAffiliation | null {
+export function activeAffiliation(
+  affiliations: readonly ShellAffiliation[],
+): ShellAffiliation | null {
   return affiliations.find((row) => row.active) ?? affiliations[0] ?? null;
 }

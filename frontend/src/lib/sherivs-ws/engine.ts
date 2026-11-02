@@ -286,7 +286,22 @@ export function focusScope(m: WorkspaceManifest, f: ScopeFocus | null): Workspac
       to: tag(w.to),
       scopeDims: w.scopeDims ? { [f.dim]: [f.ref] } : undefined,
     }));
-  return { ...m, nav, widgets, actions: m.actions.map((a) => ({ ...a, to: tag(a.to) })) };
+  const available = m.available
+    .filter((w) => !w.scopeDims || f.dim in w.scopeDims)
+    .map((w) => ({
+      ...w,
+      to: tag(w.to),
+      scopeDims: w.scopeDims ? { [f.dim]: [f.ref] } : undefined,
+    }));
+  const inbox = m.inbox.map((item) => ({ ...item, to: tag(item.to) }));
+  return {
+    ...m,
+    nav,
+    widgets,
+    actions: m.actions.map((a) => ({ ...a, to: tag(a.to) })),
+    available,
+    inbox,
+  };
 }
 export const scopeFocusOptions = (m: WorkspaceManifest): ScopeFocus[] =>
   Object.entries(m.scopeOptions).flatMap(([dim, refs]) => refs.map((ref) => ({ dim, ref })));

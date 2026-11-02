@@ -35,7 +35,7 @@ import {
 } from "@/lib/internal-console/overview";
 import { workspaceTypeLabel } from "@/lib/internal-console/workspaces";
 import { ROLE_WORKSPACE_MAPPINGS } from "@/lib/internal-console/role-workspace";
-import { CONSOLE_METRIC_CONTRACTS, metricContract } from "@/lib/internal-console/metrics";
+import { authorizedMetricContracts, metricContract } from "@/lib/internal-console/metrics";
 import { consoleVisualFixtureActive } from "@/lib/internal-console/visual-fixture";
 import { ConfirmAction, ConsoleNotice, StaffStatusBadge } from "./console-primitives";
 import { ConsoleWorkspaceExperience } from "./workspace-screens";
@@ -942,6 +942,7 @@ function AuditList({ scope }: { scope: "all" | "admin" | "security" }) {
               {event.action} · {event.outcome} · {event.actor ?? "unknown actor"} ·{" "}
               {new Date(event.at).toLocaleString()}
             </small>
+            {event.correlationId ? <small>Correlation ID: {event.correlationId}</small> : null}
           </div>
         ))}
       </div>
@@ -973,23 +974,17 @@ export function ConsoleActivity({ scope = "all" }: { scope?: "all" | "admin" | "
 export function ConsoleMetrics() {
   const { overview } = useConsole();
   if (!overview) return <section className="sherivs-console-card">Loading metrics…</section>;
-  const canReadMetrics =
-    overview.viewer.capabilities.includes("platform.engineering.read") ||
-    overview.viewer.capabilities.includes("platform.operations.read") ||
-    overview.viewer.capabilities.includes("platform.tenants.read");
-  if (!canReadMetrics) {
+  const contractsForViewer = authorizedMetricContracts(new Set(overview.viewer.capabilities));
+  if (contractsForViewer.length === 0) {
     return (
       <section className="sherivs-console-card">
         <h1>Metrics</h1>
-        <p>
-          Operational metrics require an authorized operations, engineering, or tenant-read
-          capability.
-        </p>
+        <p>No metrics are available to this viewer's capabilities.</p>
       </section>
     );
   }
   const measuredKeys = new Set((overview?.metrics ?? []).map((metric) => metric.key));
-  const contracts = CONSOLE_METRIC_CONTRACTS.filter((contract) => !measuredKeys.has(contract.key));
+  const contracts = contractsForViewer.filter((contract) => !measuredKeys.has(contract.key));
   return (
     <section className="sherivs-console-card" data-testid="console-metrics">
       <p className="sherivs-console-page-kicker">Intelligence & Assurance</p>

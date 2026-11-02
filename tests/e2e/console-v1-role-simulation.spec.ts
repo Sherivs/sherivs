@@ -23,6 +23,14 @@ const ROLES = [
   { key: "sales", title: "Sales", name: "Yusuf Ibrahim" },
 ] as const;
 
+const V1_ROLE_WORKSPACES: Record<string, { key: string; name: string }> = {
+  platform_owner: { key: "platform_operations", name: "Platform Operations" },
+  platform_admin: { key: "platform_administration", name: "Platform Administration" },
+  operations: { key: "operations", name: "Operations" },
+  engineering: { key: "engineering", name: "Engineering" },
+  support: { key: "support", name: "Support" },
+};
+
 test.use({
   viewport: { width: 1280, height: 800 },
   isMobile: false,
@@ -113,6 +121,50 @@ test("signs into every V1 console role and clicks visible console links", async 
     await page.locator('.sherivs-console-nav a[href="/console"]').first().click();
     await expect(page.getByTestId("console-home")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId("console-home")).toContainText(role.name);
+
+    const workspace = V1_ROLE_WORKSPACES[role.key];
+    if (workspace) {
+      const workspaceLink = page
+        .locator('a[href^="/console/workspaces/"]')
+        .filter({ hasText: workspace.name })
+        .first();
+      await expect(workspaceLink).toBeVisible();
+      await workspaceLink.click();
+      await expect(page.getByTestId(`console-workspace-${workspace.key}`)).toBeVisible();
+      if (workspace.key === "platform_administration") {
+        await expect(page.getByTestId(`console-workspace-${workspace.key}`)).toContainText(
+          "cannot grant super-admin privileges",
+        );
+      }
+      if (workspace.key === "engineering") {
+        await expect(page.getByTestId(`console-workspace-${workspace.key}`)).toContainText(
+          "does not invent log rows or expose secrets",
+        );
+      }
+      if (workspace.key === "support") {
+        await expect(page.getByTestId(`console-workspace-${workspace.key}`)).toContainText(
+          "Student records, fees, and biometric data are not available here.",
+        );
+        await page.locator('.sherivs-console-nav a[href="/console/organizations"]').first().click();
+        const organizations = page.getByTestId("console-organizations");
+        await expect(organizations).toBeVisible();
+        await expect(organizations).toContainText("Riverside School");
+        await expect(organizations).not.toContainText("Harbour Academy");
+        await expect(organizations).not.toContainText("Sahel College");
+      }
+      await page.locator('.sherivs-console-nav a[href="/console"]').first().click();
+      await expect(page.getByTestId("console-home")).toBeVisible();
+    }
+
+    const personalWorkspaceLink = page
+      .locator('a[href^="/console/workspaces/"]')
+      .filter({ hasText: "My Workspace" })
+      .first();
+    await expect(personalWorkspaceLink).toBeVisible();
+    await personalWorkspaceLink.click();
+    await expect(page.getByTestId("console-workspace-personal")).toBeVisible();
+    await page.locator('.sherivs-console-nav a[href="/console"]').first().click();
+    await expect(page.getByTestId("console-home")).toBeVisible();
 
     const heading =
       (
@@ -241,9 +293,11 @@ test("signs into every V1 console role and clicks visible console links", async 
   expect(report).toHaveLength(ROLES.length);
   const owner = report.find((row) => row.role === "Platform Owner");
   const engineer = report.find((row) => row.role === "Engineer");
+  const support = report.find((row) => row.role === "Support Specialist");
   const finance = report.find((row) => row.role === "Finance");
   expect(owner?.homeHasOrgPipeline).toBe(true);
   expect(engineer?.homeHasOrgPipeline).toBe(false);
+  expect(support?.homeHasOrgPipeline).toBe(false);
   expect(finance?.homeHasOrgPipeline).toBe(false);
 
   const video = testInfo.attachments.find((item) => item.name === "video");

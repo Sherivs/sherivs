@@ -9,6 +9,7 @@ import {
   requirePaystackTestKey,
   validateTestModeKey,
 } from "@/lib/payments/paystack-testmode.server";
+import { scrubString } from "@/lib/observability/scrub";
 import { isMissingRelation, store } from "./store";
 import { hasConsoleCapability } from "./console-access.server";
 import { loadAssignedSupportOrganizationIds } from "./organization.store.server";
@@ -171,8 +172,8 @@ function mapIncident(row: IncidentRow, names: Map<string, string>): ConsoleIncid
     id: row.id,
     organizationId: row.organization_id,
     organizationName: row.organization_id ? (names.get(row.organization_id) ?? null) : null,
-    title: row.title,
-    details: row.details ?? "",
+    title: scrubString(row.title),
+    details: scrubString(row.details ?? ""),
     severity: (["low", "medium", "high", "critical"] as const).includes(
       row.severity as IncidentSeverity,
     )
@@ -311,12 +312,7 @@ export async function listIncidents(context: Ctx): Promise<{
 }> {
   await assertAnyCapability(
     context,
-    [
-      "platform.engineering.read",
-      "platform.operations.read",
-      "platform.tenants.read",
-      "platform.audit.read",
-    ],
+    ["platform.engineering.read", "platform.operations.read", "platform.audit.read"],
     false,
     "incident.summary.read",
   );

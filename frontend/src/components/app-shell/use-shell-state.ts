@@ -6,11 +6,7 @@ import { fromServer, type ServerManifest } from "@/lib/sherivs-ws/server-adapter
 import { parseScopeParam, type CardData, type WidgetDataResponse } from "@/lib/sherivs-ws/live";
 import { focusScope, scopeFocusOptions } from "@/lib/sherivs-ws/engine";
 import type { WorkspaceManifest, WorkspacePrefs } from "@/components/workspaces/_contract-shim";
-import {
-  mergeAffiliations,
-  shouldShowContextSwitcher,
-  type ShellAffiliation,
-} from "@/lib/shell/membership-policy";
+import { mergeAffiliations, type ShellAffiliation } from "@/lib/shell/membership-policy";
 import {
   composeBottomSlots,
   composeHomeSections,
@@ -27,6 +23,12 @@ import {
 } from "@/lib/experience/workspace-experience";
 import { scholarWorkspaceLabelForRole } from "@/lib/runtime/nav-registry";
 import type { AppRole } from "@/lib/roles";
+import {
+  rankByUsage,
+  readShellUsage,
+  recordShellUsage,
+  type ShellUsageScope,
+} from "@/lib/shell/usage";
 
 interface WorkspacePrefsQuery {
   select(columns: string): WorkspacePrefsQuery;
@@ -37,6 +39,23 @@ interface WorkspacePrefsQuery {
 export function useShellState() {
   const app = useApp();
   const location = useLocation();
+  const usageScope = useMemo<ShellUsageScope>(
+    () => ({
+      userId: app.profile?.id ?? "",
+      organizationId: app.school?.id ?? "",
+      role: app.role ?? "",
+    }),
+    [app.profile?.id, app.school?.id, app.role],
+  );
+  const [, setUsageRevision] = useState(0);
+  const usage = readShellUsage(usageScope);
+  const recordUsage = useCallback(
+    (key: string) => {
+      recordShellUsage(usageScope, key);
+      setUsageRevision((revision) => revision + 1);
+    },
+    [usageScope],
+  );
   const requestedScopeFocus = useMemo(
     () => parseScopeParam(new URLSearchParams(location.searchStr).get("scope")),
     [location.searchStr],
@@ -244,40 +263,55 @@ export function useShellState() {
     () => (manifest ? focusScope(manifest, scopeFocus) : null),
     [manifest, scopeFocus],
   );
-  const nav = useMemo(() => (focusedManifest?.nav ?? []).map(toShellNavItem), [focusedManifest]);
+  const rankedManifest = useMemo(
+    () =>
+      focusedManifest
+        ? {
+            ...focusedManifest,
+            widgets: rankByUsage(focusedManifest.widgets, usage),
+            nav: rankByUsage(focusedManifest.nav, usage),
+            actions: rankByUsage(focusedManifest.actions, usage),
+            inbox: rankByUsage(focusedManifest.inbox, usage),
+          }
+        : null,
+    [focusedManifest, usage],
+  );
+  const nav = useMemo(() => (rankedManifest?.nav ?? []).map(toShellNavItem), [rankedManifest]);
   const primaryNav = useMemo(
-    () => (focusedManifest ? primarySections(focusedManifest).map(toShellNavItem) : []),
-    [focusedManifest],
+    () => (rankedManifest ? primarySections(rankedManifest).map(toShellNavItem) : []),
+    [rankedManifest],
   );
   const home = useMemo(
     () =>
       composeHomeSections({
-        widgets: focusedManifest?.widgets,
-        actions: focusedManifest?.actions,
-        inbox: focusedManifest?.inbox,
-        nav: focusedManifest?.nav,
+        widgets: rankedManifest?.widgets,
+        actions: rankedManifest?.actions,
+        inbox: rankedManifest?.inbox,
+        nav: rankedManifest?.nav,
+        available: rankedManifest?.available,
+        usage,
       }),
-    [focusedManifest],
+    [rankedManifest, usage],
   );
   const drawer = useMemo(
     () =>
       composeSidePanel({
-        nav: focusedManifest?.nav,
-        widgets: focusedManifest?.widgets,
-        actions: focusedManifest?.actions,
-        inbox: focusedManifest?.inbox,
+        nav: rankedManifest?.nav,
+        widgets: rankedManifest?.widgets,
+        actions: rankedManifest?.actions,
+        inbox: rankedManifest?.inbox,
       }),
-    [focusedManifest],
+    [rankedManifest],
   );
   const bottom = useMemo(
     () =>
       composeBottomSlots({
-        widgets: focusedManifest?.widgets,
-        nav: focusedManifest?.nav,
-        actions: focusedManifest?.actions,
-        inbox: focusedManifest?.inbox,
+        widgets: rankedManifest?.widgets,
+        nav: rankedManifest?.nav,
+        actions: rankedManifest?.actions,
+        inbox: rankedManifest?.inbox,
       }),
-    [focusedManifest],
+    [rankedManifest],
   );
   const filteredDrawer = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -301,7 +335,7 @@ export function useShellState() {
     prefsError,
     savePrefs,
     affiliations,
-    showSwitcher: shouldShowContextSwitcher(affiliations),
+    recordUsage,
     greeting: greetingForHour(hour),
     clock: clockInTimeZone(at, SHELL_TIME_ZONE),
     name,

@@ -88,7 +88,7 @@ Console-specific role engine or weaken RLS to close the gap.
   [`operations.store.server.ts`](../../frontend/src/lib/internal-console/operations.store.server.ts#L455-L615),
   [`operations-screens.tsx`](../../frontend/src/components/internal-console/operations-screens.tsx#L438-L573).
 - Metric source and semantics:
-  [`metrics.ts`](../../frontend/src/lib/internal-console/metrics.ts#L142-L152).
+  [`metrics.ts`](../../frontend/src/lib/internal-console/metrics.ts#L216-L226).
 - School lifecycle updates and status distinction:
   [`organization.store.server.ts`](../../frontend/src/lib/internal-console/organization.store.server.ts#L672-L742);
   [`organization-lifecycle.ts`](../../frontend/src/lib/internal-console/organization-lifecycle.ts#L238-L274).

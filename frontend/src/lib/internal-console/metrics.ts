@@ -31,7 +31,8 @@ export const CONSOLE_METRIC_CONTRACTS: readonly ConsoleMetricContract[] = [
   {
     key: "active-organizations",
     name: "Active organizations",
-    definition: "Lifecycle cases in state active. This is not the same as a loaded Scholar homepage.",
+    definition:
+      "Lifecycle cases in state active. This is not the same as a loaded Scholar homepage.",
     source: "platform_organization.lifecycle_state",
     calculation: "count where lifecycle_state = active",
     window: "current",
@@ -66,9 +67,9 @@ export const CONSOLE_METRIC_CONTRACTS: readonly ConsoleMetricContract[] = [
     name: "Onboarding completion rate",
     definition: "Active cases divided by cases that have left draft.",
     source: "platform_organization",
-    calculation: "active / (total - draft)",
+    calculation: "active / (total - draft) * 100",
     window: "all recorded cases",
-    unit: "ratio",
+    unit: "%",
     freshness: "read at page load",
     authorization: "platform.tenants.read",
   },
@@ -97,7 +98,8 @@ export const CONSOLE_METRIC_CONTRACTS: readonly ConsoleMetricContract[] = [
   {
     key: "scholar-tenants",
     name: "Scholar tenant records",
-    definition: "Rows in public.schools, the live Scholar tenant store. Includes tenants not created through the Internal Console questionnaire.",
+    definition:
+      "Rows in public.schools, the live Scholar tenant store. Includes tenants not created through the Internal Console questionnaire.",
     source: "public.schools",
     calculation: "count(*)",
     window: "current",
@@ -108,7 +110,8 @@ export const CONSOLE_METRIC_CONTRACTS: readonly ConsoleMetricContract[] = [
   {
     key: "registered-users",
     name: "Registered users",
-    definition: "Identity-store rows in public.users. Platform staff without a school membership are excluded.",
+    definition:
+      "Identity-store rows in public.users. Platform staff without a school membership are excluded.",
     source: "public.users",
     calculation: "count(*)",
     window: "current",
@@ -119,7 +122,8 @@ export const CONSOLE_METRIC_CONTRACTS: readonly ConsoleMetricContract[] = [
   {
     key: "active-users-30d",
     name: "Active users (30 days)",
-    definition: "Scholar users whose Auth last_sign_in_at is within 30 days. Account creation alone is not activity.",
+    definition:
+      "Scholar users whose Auth last_sign_in_at is within 30 days. Account creation alone is not activity.",
     source: "auth.users.last_sign_in_at joined to public.users",
     calculation: "count where last_sign_in_at >= now() - 30 days",
     window: "trailing 30 days",
@@ -130,41 +134,126 @@ export const CONSOLE_METRIC_CONTRACTS: readonly ConsoleMetricContract[] = [
   {
     key: "invitation-acceptance",
     name: "Staff invitation acceptance rate",
-    definition: "Active staff divided by staff who were invited (active + invited + expired + revoked after invite).",
+    definition: "Active staff rows divided by staff rows with an invitation timestamp.",
     source: "platform_staff",
-    calculation: "active / (active + invited + expired + revoked with invited_at)",
+    calculation: "count(status = active) / count(invited_at is not null) * 100",
     window: "current staff directory",
-    unit: "ratio",
+    unit: "%",
     freshness: "read at page load",
     authorization: "platform.staff.read",
+  },
+  {
+    key: "active-staff",
+    name: "Active Internal Staff",
+    definition:
+      "Sherivs staff rows currently in status active. Customer-school users are excluded.",
+    source: "platform_staff.status",
+    calculation: "count where status = active",
+    window: "current active memberships",
+    unit: "people",
+    freshness: "read at page load",
+    authorization: "platform.staff.read",
+  },
+  {
+    key: "pending-invites",
+    name: "Pending Staff Invitations",
+    definition: "Staff rows in status invited. Delivery is not implied.",
+    source: "platform_staff.status",
+    calculation: "count where status = invited",
+    window: "current",
+    unit: "invitations",
+    freshness: "read at page load",
+    authorization: "platform.staff.read",
+  },
+  {
+    key: "api-error",
+    name: "API Error Rate",
+    definition:
+      "Eligible failed API requests divided by eligible API requests. Not collected in V1.",
+    source: "not configured",
+    calculation: "not collected",
+    window: "not measured",
+    unit: "%",
+    freshness: "not configured",
+    authorization: "platform.engineering.read",
+  },
+  {
+    key: "api-latency",
+    name: "API Latency",
+    definition: "Response-time percentiles for eligible API requests. Not collected in V1.",
+    source: "not configured",
+    calculation: "not collected",
+    window: "not measured",
+    unit: "ms",
+    freshness: "not configured",
+    authorization: "platform.engineering.read",
+  },
+  {
+    key: "incidents",
+    name: "Active Incidents",
+    definition:
+      "Incidents currently open, acknowledged, or mitigating. Closed records are excluded.",
+    source: "platform_incident",
+    calculation: "count in active incident states",
+    window: "current",
+    unit: "incidents",
+    freshness: "read at page load",
+    authorization:
+      "platform.operations.read | platform.engineering.read | platform.tenants.read | platform.audit.read",
+  },
+  {
+    key: "uptime",
+    name: "Application Process Uptime",
+    definition: "Operating-system process uptime for this application instance.",
+    source: "buildHealthReport process snapshot",
+    calculation: "uptime_s",
+    window: "since process start",
+    unit: "seconds",
+    freshness: "read at page load",
+    authorization: "platform.engineering.read",
   },
   {
     key: "subscription-ledger",
     name: "Commercial subscriptions",
     definition:
-      "Recognized subscription, trial, past-due, and revenue totals from an authoritative billing ledger. schools.subscription_status is a coarse tenant access flag written by lifecycle operations and is not this metric.",
+      "Count of subscription payment-history rows; recognized revenue is not this metric. schools.subscription_status is a coarse tenant access flag, not a billing ledger or authorization.",
     source: "public.subscriptions",
     calculation: "count of subscription payment-history rows; not recognized revenue",
     window: "current ledger",
     unit: "subscriptions",
     freshness: "read at page load",
-    authorization: "platform.finance.read",
-  },
-  {
-    key: "runtime-availability",
-    name: "Sherivs Scholar process availability",
-    definition: "Application process health for the Scholar runtime. This is not organization onboarding completeness.",
-    source: "buildHealthReport",
-    calculation: "mapProcessHealth(status)",
-    window: "current process",
-    unit: "status",
-    freshness: "read at page load",
-    authorization: "console operator",
+    authorization: "platform.finance.read | platform.tenants.manage",
   },
 ];
 
 export function metricContract(key: string): ConsoleMetricContract | null {
   return CONSOLE_METRIC_CONTRACTS.find((row) => row.key === key) ?? null;
+}
+
+export function isMetricAuthorized(
+  contract: ConsoleMetricContract,
+  capabilities: ReadonlySet<string>,
+): boolean {
+  return contract.authorization
+    .split("|")
+    .map((capability) => capability.trim())
+    .some((capability) => capabilities.has(capability));
+}
+
+export function authorizedMetricContracts(
+  capabilities: ReadonlySet<string>,
+): ConsoleMetricContract[] {
+  return CONSOLE_METRIC_CONTRACTS.filter((contract) => isMetricAuthorized(contract, capabilities));
+}
+
+export function authorizedConsoleMetrics<T extends { key: string }>(
+  metrics: readonly T[],
+  capabilities: ReadonlySet<string>,
+): T[] {
+  return metrics.filter((metric) => {
+    const contract = metricContract(metric.key);
+    return contract !== null && isMetricAuthorized(contract, capabilities);
+  });
 }
 
 export function formatRatio(value: number | null): string | null {

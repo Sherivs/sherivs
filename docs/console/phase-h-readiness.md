@@ -1,7 +1,7 @@
 # SV1-CONSOLE Phase H — Tests, evidence, and deployment readiness
 
-**Snapshot:** 2026-11-01  
-**Version target:** V1 organizational capability envelope  
+**Snapshot:** 2026-11-01
+**Version target:** V1 organizational capability envelope
 **Scope:** Test and evidence changes only. No migration, production database, or runtime authorization changes were made.
 
 ## Deliverables 11–15

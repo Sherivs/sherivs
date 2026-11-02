@@ -274,11 +274,13 @@ describe("internal console V1 contract", () => {
   });
 
   it("never treats a missing health signal as operational", () => {
-    expect(mapProcessHealth("ok")).toBe("operational");
+    expect(mapProcessHealth("ok")).toBe("healthy");
     expect(mapProcessHealth("failing")).toBe("unavailable");
     expect(mapProcessHealth(undefined)).toBe("unknown");
     expect(overallFromCards(["unknown", "unknown"])).toBe("unknown");
-    expect(overallFromCards(["operational", "unknown"])).toBe("degraded");
+    expect(overallFromCards(["healthy", "unknown"])).toBe("degraded");
+    expect(overallFromCards(["healthy", "not-configured"])).toBe("degraded");
+    expect(overallFromCards(["unknown", "not-configured"])).toBe("unknown");
   });
 });
 
@@ -492,10 +494,10 @@ describe("local visual fixture", () => {
     expect(overview.activity).toEqual([]);
     expect(overview.recent).toEqual([]);
     expect(overview.health.cards.every((card) => card.status === "unknown")).toBe(true);
-    expect(overview.metrics.find((metric) => metric.key === "active-staff")?.available).toBe(false);
-    expect(overview.metrics.find((metric) => metric.key === "control-plane-organizations")).toEqual(
-      expect.objectContaining({ available: true, value: "0" }),
-    );
+    expect(overview.metrics.find((metric) => metric.key === "active-staff")).toBeUndefined();
+    expect(
+      overview.metrics.find((metric) => metric.key === "control-plane-organizations"),
+    ).toBeUndefined();
     expect(overview.viewer.isSuperAdmin).toBe(true);
     expect(overview.viewer.email).toBe("owner.fixture@localhost");
     expect(overview.viewer.presentationRole).toBe("platform_owner");
@@ -661,7 +663,12 @@ describe("local visual fixture", () => {
     const withTenants = new Set(["platform_owner", "operations", "support", "sales"]);
     for (const persona of CONSOLE_FIXTURE_PERSONAS) {
       const overview = buildConsoleVisualFixtureOverview(persona);
-      if (withTenants.has(persona.key)) {
+      if (persona.key === "support") {
+        expect(overview.viewer.capabilities).toContain("platform.tenants.read");
+        expect(overview.organizationMetrics.available).toBe(false);
+        expect(overview.organizations).toEqual([]);
+        expect(overview.metrics.every((metric) => !metric.key.includes("organization"))).toBe(true);
+      } else if (withTenants.has(persona.key)) {
         expect(overview.organizationMetrics.available).toBe(true);
         expect(overview.organizationStore).toBe("fixture");
       } else {
@@ -675,7 +682,9 @@ describe("local visual fixture", () => {
       }
     }
     const home = readFileSync("frontend/src/components/internal-console/home-screen.tsx", "utf8");
-    expect(home).toContain("canReadOrgs && overview.organizationMetrics.available");
+    expect(home).toContain(
+      "canReadOrgs && !supportScoped && overview.organizationMetrics.available",
+    );
     expect(home).toContain('data-testid="console-org-pipeline"');
   });
 
@@ -738,7 +747,7 @@ describe("local visual fixture", () => {
     expect(overview.organizations.map((organization) => organization.id)).toEqual([
       "fixture-org-active",
     ]);
-    expect(overview.organizationMetrics.total).toBe(1);
+    expect(overview.organizationMetrics.total).toBeNull();
     expect(
       overview.assignments.every((assignment) => assignment.assignmentType === "support"),
     ).toBe(true);

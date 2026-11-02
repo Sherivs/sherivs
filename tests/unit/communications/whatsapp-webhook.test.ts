@@ -171,6 +171,32 @@ describe("WhatsApp webhook validation", () => {
     expect(mockRpc).not.toHaveBeenCalled();
   });
 
+  it("returns 200 for an unmapped sender and 500 without leaking error text on RPC failure", async () => {
+    process.env.WHATSAPP_APP_SECRET = SECRET;
+    const raw = JSON.stringify(messagePayload);
+    const send = () =>
+      postWebhook({
+        request: new Request("https://app.example.test/api/public/webhooks/whatsapp", {
+          method: "POST",
+          headers: { "x-hub-signature-256": signature(raw) },
+          body: raw,
+        }),
+      });
+    const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    mockRpc.mockResolvedValueOnce({ data: "unmapped_sender", error: null });
+    expect((await send()).status).toBe(200);
+    mockRpc.mockResolvedValueOnce({
+      data: null,
+      error: { code: "P0001", message: "secret detail" },
+    });
+    const failed = await send();
+    expect(failed.status).toBe(500);
+    expect(await failed.text()).toBe("processing error");
+    expect(JSON.stringify(spy.mock.calls)).not.toContain("secret detail");
+    expect(JSON.stringify(spy.mock.calls)).toContain("P0001");
+    spy.mockRestore();
+  });
+
   it("rejects a bad signature without calling persistence RPCs", async () => {
     process.env.WHATSAPP_APP_SECRET = SECRET;
     const raw = JSON.stringify(messagePayload);

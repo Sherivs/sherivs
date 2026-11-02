@@ -1,6 +1,7 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
-import { mkdirSync, readFileSync } from "node:fs";
-import { dirname } from "node:path";
+import { mkdirSync, readFileSync, statSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const API_URL = "https://synthetic.supabase.test";
 const SCHOOL_ID = "a1000000-0000-4000-8000-000000000001";
@@ -8,6 +9,9 @@ const ADMIN_ID = "a1000000-0000-4000-8000-000000000002";
 const TEACHER_ID = "a1000000-0000-4000-8000-000000000003";
 const BURSAR_ID = "a1000000-0000-4000-8000-000000000004";
 const INITIAL_ASSIGNMENT_ID = "a1000000-0000-4000-8000-000000000005";
+const SECOND_TEACHER_ID = "a1000000-0000-4000-8000-000000000006";
+const SECOND_SCHOOL_ID = "a2000000-0000-4000-8000-000000000001";
+const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 
 type FixtureRow = Record<string, unknown>;
 
@@ -33,14 +37,22 @@ async function reply(route: Route, value: unknown, status = 200) {
   });
 }
 
-async function installSyntheticRoleFixture(page: Page) {
-  const adminUser = {
-    id: ADMIN_ID,
+async function installSyntheticRoleFixture(page: Page, userId = ADMIN_ID) {
+  const userName =
+    userId === TEACHER_ID
+      ? "Synthetic Teacher Emeka"
+      : userId === SECOND_TEACHER_ID
+        ? "Synthetic Teacher Aisha"
+        : userId === BURSAR_ID
+          ? "Synthetic Bursar Ada"
+          : "Synthetic HR Admin";
+  const authUser = {
+    id: userId,
     aud: "authenticated",
     role: "authenticated",
-    email: "synthetic-hr-admin@example.test",
+    email: `${userId}@example.test`,
     app_metadata: { provider: "email", providers: ["email"] },
-    user_metadata: { full_name: "Synthetic HR Admin" },
+    user_metadata: { full_name: userName },
     created_at: "2026-10-31T00:00:00.000Z",
   };
   const session = {
@@ -49,7 +61,7 @@ async function installSyntheticRoleFixture(page: Page) {
     token_type: "bearer",
     expires_in: 3600,
     expires_at: Math.floor(Date.now() / 1000) + 3600,
-    user: adminUser,
+    user: authUser,
   };
   await page.addInitScript(
     ({ key, value }) => {
@@ -146,6 +158,14 @@ async function installSyntheticRoleFixture(page: Page) {
       role: "bursar",
       is_active: true,
     },
+    {
+      id: SECOND_TEACHER_ID,
+      school_id: SCHOOL_ID,
+      full_name: "Synthetic Teacher Aisha",
+      email: "synthetic-teacher-aisha@example.test",
+      role: "teacher",
+      is_active: true,
+    },
   ];
   const assignments: FixtureRow[] = [
     {
@@ -186,6 +206,11 @@ async function installSyntheticRoleFixture(page: Page) {
     role_assignment_audit_events: auditEvents,
     organization_memberships: [
       { school_id: SCHOOL_ID, role: "admin", is_active: true, user_id: ADMIN_ID },
+      { school_id: SCHOOL_ID, role: "teacher", is_active: true, user_id: TEACHER_ID },
+      { school_id: SCHOOL_ID, role: "form_teacher", is_active: true, user_id: TEACHER_ID },
+      { school_id: SECOND_SCHOOL_ID, role: "teacher", is_active: true, user_id: TEACHER_ID },
+      { school_id: SCHOOL_ID, role: "teacher", is_active: true, user_id: SECOND_TEACHER_ID },
+      { school_id: SCHOOL_ID, role: "bursar", is_active: true, user_id: BURSAR_ID },
     ],
   };
 
@@ -198,7 +223,7 @@ async function installSyntheticRoleFixture(page: Page) {
     }
 
     if (url.pathname === "/auth/v1/user") {
-      await reply(route, adminUser);
+      await reply(route, authUser);
       return;
     }
 
@@ -314,7 +339,51 @@ async function installSyntheticRoleFixture(page: Page) {
         const assignment = assignments.find((row) => row.id === args.p_assignment);
         if (assignment) assignment.status = "ended";
       } else if (rpcName === "workspace_manifest") {
-        result = null;
+        const role =
+          userId === BURSAR_ID
+            ? "bursar"
+            : userId === TEACHER_ID || userId === SECOND_TEACHER_ID
+              ? "teacher"
+              : "head_of_institution";
+        const teacherItems =
+          userId === SECOND_TEACHER_ID
+            ? ["w.grading_queue", "w.lesson_note_status"]
+            : ["w.today_classes", "w.attendance_todo", "w.grading_queue"];
+        const nav =
+          role === "teacher"
+            ? ["nav.home", "nav.my_classes", "nav.attendance", "nav.gradebook"]
+            : role === "bursar"
+              ? ["nav.home", "nav.fee_collection"]
+              : ["nav.home", "nav.students"];
+        result = {
+          version: 2,
+          org_id: SCHOOL_ID,
+          families: [role],
+          primary_family: role,
+          features: ["core"],
+          locale: "en",
+          density: "comfortable",
+          scopes: [{ role, type: "org", ref: null, sets: [] }],
+          nav: nav.map((key) => ({ key })),
+          widgets: (role === "teacher"
+            ? teacherItems
+            : role === "bursar"
+              ? ["w.fee_collection"]
+              : ["w.school_health"]
+          ).map((key) => ({ key })),
+          policies: [],
+          can_personalise: true,
+          scope_options: {},
+          available: [],
+          actions: (role === "teacher"
+            ? ["a.take_attendance", "a.enter_scores", "a.submit_note"]
+            : role === "bursar"
+              ? ["a.request_leave"]
+              : []
+          ).map((key) => ({ key })),
+          inbox: [],
+          hidden_by_policy: 0,
+        };
       } else if (rpcName === "workspace_widget_data") {
         result = { cards: {} };
       }
@@ -325,6 +394,13 @@ async function installSyntheticRoleFixture(page: Page) {
     if (url.pathname.startsWith("/rest/v1/")) {
       const table = url.pathname.split("/").at(-1) ?? "";
       let rows = tableData[table] ?? [];
+      if (table === "organization_memberships") {
+        rows = rows.filter(
+          (row) => row.user_id === url.searchParams.get("user_id")?.replace("eq.", ""),
+        );
+        await reply(route, rows);
+        return;
+      }
       if (table === "schools") {
         const school = {
           id: SCHOOL_ID,
@@ -340,9 +416,18 @@ async function installSyntheticRoleFixture(page: Page) {
         const isMembershipList = [...url.searchParams.values()].some((value) =>
           value.startsWith("in."),
         );
-        await reply(route, isMembershipList ? [{ id: SCHOOL_ID, name: school.name }] : school);
+        await reply(
+          route,
+          isMembershipList
+            ? [
+                { id: SCHOOL_ID, name: school.name },
+                { id: SECOND_SCHOOL_ID, name: "Synthetic Annex" },
+              ]
+            : school,
+        );
         return;
       }
+
       if (table === "users" && url.searchParams.has("id")) {
         rows = users.filter((row) => row.id === url.searchParams.get("id")?.replace("eq.", ""));
         await reply(route, rows[0] ?? null);
@@ -354,6 +439,31 @@ async function installSyntheticRoleFixture(page: Page) {
 
     await reply(route, null);
   });
+}
+
+async function captureShellScreen(page: Page, filename: string, width: 390 | 1440): Promise<void> {
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+    width,
+  );
+  expect(await page.evaluate(() => document.body.scrollWidth)).toBeLessThanOrEqual(width);
+  expect(
+    await page
+      .locator(".app-shell-frame")
+      .evaluate((element) => element.getBoundingClientRect().right),
+  ).toBeLessThanOrEqual(width);
+  if (process.env.UPDATE_HOME_SHELL_SCREENSHOTS !== "1") return;
+  const path = join(ROOT, "docs", "screenshots", "home-shell", `${filename}-${width}.jpg`);
+  mkdirSync(dirname(path), { recursive: true });
+  await page.evaluate(() => document.fonts.ready);
+  await page.screenshot({
+    path,
+    type: "jpeg",
+    quality: 85,
+    fullPage: true,
+    scale: "css",
+    animations: "disabled",
+  });
+  expect(statSync(path).size).toBeGreaterThan(10_000);
 }
 
 test("captures desktop and mobile role-management screens with synthetic records", async ({
@@ -505,4 +615,91 @@ test("captures desktop and mobile role-management screens with synthetic records
   const screenshot = readFileSync(path);
   expect(screenshot.readUInt32BE(16)).toBe(width);
   expect(screenshot.readUInt32BE(20)).toBeGreaterThan(2000);
+});
+
+test("captures teacher home, shell navigation, profile, context selectors, and Assistant", async ({
+  page,
+}, testInfo) => {
+  test.setTimeout(180_000);
+  const width = testInfo.project.name === "desktop-chromium" ? 1440 : 390;
+  await installSyntheticRoleFixture(page, TEACHER_ID);
+  await page.setViewportSize({ width, height: width === 390 ? 844 : 800 });
+  await page.goto("/home");
+
+  const home = page.getByTestId("app-shell-home");
+  await expect(home).toBeVisible();
+  await expect(home).toContainText("Today's lessons");
+  await expect(page.getByTestId("app-shell-actions").locator("a")).toHaveCount(4);
+  expect(await page.getByTestId("app-shell-cards").locator("a").count()).toBeLessThanOrEqual(8);
+  await expect(home.getByText("—", { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("Active role")).toBeVisible();
+  await expect(page.getByLabel("Active organization")).toBeVisible();
+  await captureShellScreen(page, "teacher-home-emeka", width);
+  await captureShellScreen(page, "teacher-context-switchers", width);
+  await captureShellScreen(page, "teacher-bottom-navigation", width);
+
+  await page.getByTestId("app-shell-menu").click();
+  const drawer = page.getByTestId("app-shell-drawer");
+  await expect(drawer).toBeVisible();
+  await expect(drawer).toContainText("Add-on responsibilities");
+  await captureShellScreen(page, "teacher-sidebar", width);
+  await page
+    .getByRole("button", { name: "Close menu" })
+    .click({ position: { x: width - 20, y: 20 } });
+
+  await page.getByRole("button", { name: "Profile" }).click();
+  await expect(page.getByRole("heading", { name: "Profile" })).toBeVisible();
+  await captureShellScreen(page, "teacher-profile", width);
+
+  await page.goto("/home/ai");
+  await expect(page.getByTestId("assistant-screen")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "My Teaching Assistant" })).toBeVisible();
+  await expect(
+    page.getByText("No assistant service is connected yet", { exact: false }),
+  ).toBeVisible();
+  await captureShellScreen(page, "assistant-teacher", width);
+  await page.getByTestId("assistant-composer").fill("Show my schedule");
+  await page.getByRole("button", { name: "Send message" }).click();
+  await expect(page.getByTestId("assistant-message-system")).toContainText(
+    "Assistant service is not available yet",
+  );
+  await expect(page.getByTestId("assistant-message-assistant")).toHaveCount(0);
+
+  await page.context().setOffline(true);
+  await expect(
+    page.getByTestId("assistant-screen").getByText("Offline", { exact: true }),
+  ).toBeVisible();
+  await page.getByTestId("assistant-composer").fill("What should I prepare?");
+  await page.getByRole("button", { name: "Send message" }).click();
+  await expect(page.getByText("1 message kept in this tab only")).toBeVisible();
+  await page.context().setOffline(false);
+  await page.reload();
+  await page.goto("/home/ai");
+  await expect(page.getByTestId("assistant-message-user")).toHaveCount(0);
+  await expect(page.getByText(/kept in this tab only/)).toHaveCount(0);
+});
+
+test("captures distinct authorized homes for two teachers and a bursar", async ({
+  page,
+}, testInfo) => {
+  test.setTimeout(180_000);
+  const width = testInfo.project.name === "desktop-chromium" ? 1440 : 390;
+  await page.setViewportSize({ width, height: width === 390 ? 844 : 800 });
+
+  await installSyntheticRoleFixture(page, SECOND_TEACHER_ID);
+  await page.goto("/home");
+  const secondTeacherHome = page.getByTestId("app-shell-home");
+  await expect(secondTeacherHome).toBeVisible();
+  await expect(secondTeacherHome).toContainText("Scores to enter");
+  await expect(secondTeacherHome).toContainText("Lesson note status");
+  await captureShellScreen(page, "teacher-home-aisha", width);
+
+  const bursarPage = await page.context().newPage();
+  await bursarPage.setViewportSize({ width, height: width === 390 ? 844 : 800 });
+  await installSyntheticRoleFixture(bursarPage, BURSAR_ID);
+  await bursarPage.goto("/home");
+  const bursarHome = bursarPage.getByTestId("app-shell-home");
+  await expect(bursarHome).toBeVisible();
+  await expect(bursarHome).toContainText("Fee collection");
+  await captureShellScreen(bursarPage, "bursar-home", width);
 });

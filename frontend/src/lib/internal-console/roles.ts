@@ -207,7 +207,15 @@ export const CONSOLE_NAV: readonly ConsoleNavItem[] = [
         label: "Metrics",
         href: CONSOLE_PATHS.activityMetrics,
         capability: "platform.tenants.read",
-        anyOf: ["platform.tenants.read", "platform.operations.read", "platform.engineering.read"],
+        anyOf: [
+          "platform.tenants.read",
+          "platform.operations.read",
+          "platform.engineering.read",
+          "platform.staff.read",
+          "platform.finance.read",
+          "platform.tenants.manage",
+          "platform.audit.read",
+        ],
       },
       {
         key: "logs",

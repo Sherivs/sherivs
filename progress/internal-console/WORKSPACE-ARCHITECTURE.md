@@ -27,6 +27,8 @@ Derived fallback workspaces exist only when SHERIVS-030/031 are not applied. The
 
 Security, finance, and sales keep their existing database roles and receive matching role workspaces. They are not extra privileged identities.
 
+Support-only server reads are limited to organizations with an active assignment to the current staff member. Global organization summaries and incident details are not available through the Support workspace.
+
 ## Provisioning
 
 Invitation claim, overview load, role change, and status change call `sync_platform_staff_workspaces`. The RPC is idempotent. Personal ownership survives role change and revocation. Role membership is recalculated.

@@ -17,6 +17,12 @@ import { defaultRoleWorkspaceCode, mappingForRole } from "./role-workspace";
 import { store } from "./store";
 import { REGISTERED_RUNTIMES } from "./runtime-contract";
 import { allowedHrefsFrom } from "./recent";
+import {
+  authorizedConsoleMetrics,
+  formatRatio,
+  isMetricAuthorized,
+  metricContract,
+} from "./metrics";
 import type {
   ConsoleActivityItem,
   ConsoleAttentionItem,
@@ -25,7 +31,7 @@ import type {
   ConsoleOverview,
   ConsoleStaffRow,
 } from "./overview";
-import type { OrganizationMetricsSnapshot } from "./organization-lifecycle";
+import { isSupportScopedViewer, type OrganizationMetricsSnapshot } from "./organization-lifecycle";
 
 const timeAuthority = new TimeAuthority(new SystemClock());
 
@@ -39,6 +45,17 @@ type RpcClient = {
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin;
+}
+
+async function hasPlatformCapability(
+  context: { supabase: unknown },
+  capability: string,
+): Promise<boolean> {
+  const { data, error } = await (context.supabase as unknown as RpcClient).rpc(
+    "has_platform_capability",
+    { p_capability: capability },
+  );
+  return !error && data === true;
 }
 
 function requestHost(): string | null {
@@ -134,6 +151,16 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
       (row) => row.role_code,
     );
     const capabilities = viewerCapabilities(roles, isSuperAdmin);
+    const [canReadOrganizations, hasSupportCapability, hasTenantManagementCapability] =
+      await Promise.all([
+        hasPlatformCapability(context, "platform.tenants.read"),
+        hasPlatformCapability(context, "platform.support.handle"),
+        hasPlatformCapability(context, "platform.tenants.manage"),
+      ]);
+    const supportScoped = isSupportScopedViewer({
+      hasSupportCapability,
+      hasTenantManagementCapability,
+    });
     const claimEmail =
       typeof (context.claims as { email?: unknown }).email === "string"
         ? (context.claims as { email: string }).email
@@ -143,6 +170,9 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
 
     const healthReport = await buildHealthReport();
     const processStatus = mapProcessHealth(healthReport.status);
+    const incidentContract = metricContract("incidents");
+    const canReadIncidentMetrics =
+      incidentContract !== null && isMetricAuthorized(incidentContract, capabilities);
 
     let databaseStatus: ConsoleHealthState = "unknown";
     let databaseDetail = "The database check did not complete.";
@@ -153,7 +183,7 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
         databaseStatus = "unavailable";
         databaseDetail = "The required database health query failed.";
       } else {
-        databaseStatus = "operational";
+        databaseStatus = "healthy";
         databaseDetail =
           "The platform catalogue query succeeded. This does not prove every workflow.";
       }
@@ -186,7 +216,7 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
       {
         key: "auth",
         name: "Authentication",
-        status: "operational",
+        status: "healthy",
         detail:
           "This request was authenticated. That does not prove every sign-in or recovery workflow is functioning.",
         lastCheck: now,
@@ -205,7 +235,7 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
       {
         key: "storage",
         name: "Storage",
-        status: "unknown",
+        status: "not-configured",
         detail: "Storage operations are not monitored on this page.",
         lastCheck: null,
         href: CONSOLE_PATHS.activityMetrics,
@@ -214,7 +244,7 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
       {
         key: "integrations",
         name: "Critical Integrations",
-        status: "unknown",
+        status: "not-configured",
         detail: "Provider health is measured by verification drills, not this homepage.",
         lastCheck: null,
         href: CONSOLE_PATHS.activityMetrics,
@@ -224,10 +254,12 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
         key: "incidents",
         name: "Active Incidents",
         status: "unknown",
-        detail: "Open operational incidents have not been counted yet.",
+        detail: canReadIncidentMetrics
+          ? "Open operational incidents have not been counted yet."
+          : "Incident status is not shown to this viewer.",
         lastCheck: null,
         href: CONSOLE_PATHS.activityIncidents,
-        source: "platform_incident",
+        source: canReadIncidentMetrics ? "platform_incident" : "not authorized",
       },
     ];
 
@@ -351,7 +383,7 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
         .from("audit_logs")
         .select("id, action, user_id, record_id, created_at, new_value")
         .or(
-          "action.like.platform_staff.%,action.like.platform_support.%,action.like.platform_access_review.%,action.like.platform_workspace.%,action.like.platform_organization.%",
+          "action.like.platform_staff.%,action.like.platform_support.%,action.like.platform_access_review.%,action.like.platform_workspace.%,action.like.platform_organization.%,action.like.platform_incident.%,action.like.platform_ticket.%,action.like.platform_billing.%",
         )
         .order("created_at", { ascending: false })
         .limit(20);
@@ -374,6 +406,7 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
       for (const row of data ?? []) {
         const payload = (row.new_value ?? {}) as {
           outcome?: string;
+          correlation_id?: string;
           details?: Record<string, unknown>;
         };
         activity.push({
@@ -384,6 +417,7 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
           at: row.created_at ?? now,
           outcome: typeof payload.outcome === "string" ? payload.outcome : "recorded",
           action: row.action,
+          correlationId: typeof payload.correlation_id === "string" ? payload.correlation_id : null,
         });
       }
     }
@@ -537,7 +571,7 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
     let scholarTenants: number | null = null;
     let registeredUsers: number | null = null;
     let activeUsers30d: number | null = null;
-    if (capabilities.has("platform.tenants.read") || capabilities.has("platform.operations.read")) {
+    if (canReadOrganizations || capabilities.has("platform.operations.read")) {
       if (isSuperAdmin) {
         await assertConsoleCapability(
           context as never,
@@ -562,12 +596,16 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
               ? { operationsSummary: true }
               : undefined,
         );
-        organizationMetrics = snapshot.organizationMetrics;
+        assignments = await loadViewerAssignments(db, context.userId);
+        const visibleRows = snapshot.rows;
+        organizationMetrics = supportScoped ? emptyOrgMetrics : snapshot.organizationMetrics;
         organizationStore = snapshot.organizationMetrics.available ? "database" : "unavailable";
-        scholarTenants = snapshot.scholarTenants;
-        registeredUsers = snapshot.registeredUsers;
-        activeUsers30d = snapshot.activeUsers30d;
-        organizations = snapshot.rows.slice(0, 8).map((row) => ({
+        if (!supportScoped) {
+          scholarTenants = snapshot.scholarTenants;
+          registeredUsers = snapshot.registeredUsers;
+          activeUsers30d = snapshot.activeUsers30d;
+        }
+        organizations = visibleRows.slice(0, 8).map((row) => ({
           id: row.id,
           displayName: row.display_name,
           orgType: "school" as const,
@@ -588,7 +626,6 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
           onboardingOwnerName: null,
           assignmentCount: 0,
         }));
-        assignments = await loadViewerAssignments(db, context.userId);
         if (organizationMetrics.available) {
           const pushMetric = (
             key: string,
@@ -647,6 +684,37 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
             "platform_organization.lifecycle_state",
             organizationMetrics.suspended !== null,
           );
+          pushMetric(
+            "failed-provisioning",
+            "Failed provisioning operations",
+            organizationMetrics.failedProvisioning === null
+              ? null
+              : String(organizationMetrics.failedProvisioning),
+            "cases",
+            "Cases currently in provisioning_failed. Retries are allowed and audited.",
+            "platform_organization.lifecycle_state",
+            organizationMetrics.failedProvisioning !== null,
+          );
+          pushMetric(
+            "onboarding-conversion",
+            "Onboarding completion rate",
+            formatRatio(organizationMetrics.conversionRate),
+            "%",
+            "Active cases divided by cases that have left draft.",
+            "platform_organization",
+            organizationMetrics.conversionRate !== null,
+          );
+          pushMetric(
+            "onboarding-duration",
+            "Median onboarding duration",
+            organizationMetrics.medianOnboardingHours === null
+              ? null
+              : String(organizationMetrics.medianOnboardingHours),
+            "hours",
+            "Median hours from submission to activation for activated cases.",
+            "platform_organization.submitted_at and activated_at",
+            organizationMetrics.medianOnboardingHours !== null,
+          );
           if (
             typeof organizationMetrics.failedProvisioning === "number" &&
             organizationMetrics.failedProvisioning > 0
@@ -681,7 +749,7 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
             });
           }
         }
-        if (registeredUsers !== null) {
+        if (!supportScoped && registeredUsers !== null) {
           metrics.push({
             key: "registered-users",
             name: "Registered users",
@@ -695,7 +763,7 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
               "Identity-store rows in public.users. Platform staff without a school membership are excluded.",
           });
         }
-        if (activeUsers30d !== null) {
+        if (!supportScoped && activeUsers30d !== null) {
           metrics.push({
             key: "active-users-30d",
             name: "Active users (30 days)",
@@ -709,7 +777,7 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
               "Scholar users whose Auth last_sign_in_at is within 30 days. Account creation alone is not activity.",
           });
         }
-        if (scholarTenants !== null) {
+        if (!supportScoped && scholarTenants !== null) {
           metrics.push({
             key: "scholar-tenants",
             name: "Scholar tenant records",
@@ -729,15 +797,19 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
     }
 
     const { countOpenIncidents, countSubscriptions } = await import("./operations.store.server");
-    const openIncidentCount = await countOpenIncidents();
+    const openIncidentCount = canReadIncidentMetrics ? await countOpenIncidents() : null;
     const incidentCard = cards.find((card) => card.key === "incidents");
     if (incidentCard) {
-      if (openIncidentCount === null) {
+      if (!canReadIncidentMetrics) {
+        incidentCard.status = "unknown";
+        incidentCard.detail = "Incident status is not shown to this viewer.";
+        incidentCard.source = "not authorized";
+      } else if (openIncidentCount === null) {
         incidentCard.status = "unknown";
         incidentCard.detail = "Incident storage is not applied or could not be read.";
         incidentCard.lastCheck = now;
       } else {
-        incidentCard.status = "operational";
+        incidentCard.status = "healthy";
         incidentCard.detail =
           openIncidentCount === 0
             ? "No open operational incidents are recorded."
@@ -746,7 +818,7 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
       }
     }
     const incidentMetric = metrics.find((metric) => metric.key === "incidents");
-    if (incidentMetric) {
+    if (incidentMetric && canReadIncidentMetrics) {
       incidentMetric.value = openIncidentCount === null ? null : String(openIncidentCount);
       incidentMetric.updatedAt = now;
       incidentMetric.available = openIncidentCount !== null;
@@ -810,7 +882,7 @@ export const getConsoleOverview = createServerFn({ method: "GET" })
         caveat:
           "These cards report verified checks only. Unknown means there is not enough evidence. A loaded homepage is not a health check.",
       },
-      metrics,
+      metrics: authorizedConsoleMetrics(metrics, capabilities),
       attention,
       activity,
       workspaces,
