@@ -7777,6 +7777,7 @@ export type Database = {
       };
       get_my_role: { Args: never; Returns: string };
       get_my_school_id: { Args: never; Returns: string };
+      read_my_tenant_hierarchy: { Args: never; Returns: Json };
       session_rollover: {
         Args: { p_school: string; p_from: string; p_to: string; p_dry_run?: boolean; p_overrides?: Json };
         Returns: Json;
