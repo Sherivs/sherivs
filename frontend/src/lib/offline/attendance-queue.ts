@@ -1,69 +1,145 @@
 /**
- * Offline attendance queue (SHERIVS-A07).
- * Marks are stored locally with a stable item id, then flushed in batches to `offline_attendance_sync_v2`
- * when the device is online. The server skips item ids it has already seen, so a retry after a dropped
- * response never double-applies. Items the server answers for (applied, duplicate, conflict) leave the queue;
- * a network or clock error leaves everything queued for the next attempt.
+ * Attendance outbox (SHERIVS-A07): tenant-scoped IndexedDB persistence,
+ * stable per-item ids and server-enforced duplicate/conflict handling.
  */
+import { createOfflineStore, type OfflineScope, type OfflineStore } from "./indexeddb-store";
+
 export type AttendanceStatus = "present" | "absent" | "late" | "excused";
-export type QueuedMark = { id: string; student_id: string; date: string; status: AttendanceStatus; captured_at: string };
-export type SyncResult = { applied: number; duplicates?: number; conflicts: { id?: string; why: string }[]; replay?: boolean; skew_seconds?: number };
-export type KV = { getItem(k: string): string | null; setItem(k: string, v: string): void; removeItem(k: string): void };
+export type QueuedMark = {
+  id: string;
+  student_id: string;
+  date: string;
+  status: AttendanceStatus;
+  captured_at: string;
+};
+export type SyncResult = {
+  applied: number;
+  duplicates?: number;
+  conflicts: { id?: string; why: string }[];
+  replay?: boolean;
+  skew_seconds?: number;
+};
 export type Sync = (batch: string, items: QueuedMark[], clientNow: string) => Promise<SyncResult>;
 
-const KEY = "sherivs.offline.attendance.v2";
 const MAX_BATCH = 500;
 
-export function createAttendanceQueue(opts: { storage: KV; sync: Sync; /** Injected clock (time-source discipline: lib code never samples the wall clock). */ now: () => Date; newId?: () => string; userId: string }) {
+function toMark(item: { id: string; payload: unknown }): QueuedMark {
+  return { id: item.id, ...(item.payload as Omit<QueuedMark, "id">) };
+}
+
+export function createAttendanceQueue(opts: {
+  scope: OfflineScope;
+  store?: OfflineStore;
+  sync: Sync;
+  /** Injected clock (time-source discipline: lib code never samples the wall clock). */
+  now: () => Date;
+  newId?: () => string;
+}) {
   const now = opts.now;
-  const newId = opts.newId ?? (() => globalThis.crypto.randomUUID());
-  const key = `${KEY}:${opts.userId}`;
+  const store =
+    opts.store ??
+    createOfflineStore(opts.scope, {
+      now: opts.now,
+      newId: opts.newId,
+    });
   let flushing: Promise<FlushReport> | null = null;
 
-  const read = (): QueuedMark[] => {
-    try { const v = JSON.parse(opts.storage.getItem(key) ?? "[]"); return Array.isArray(v) ? v : []; } catch { return []; }
-  };
-  const write = (items: QueuedMark[]) => (items.length ? opts.storage.setItem(key, JSON.stringify(items)) : opts.storage.removeItem(key));
-
-  /** Queue (or replace) today's mark for a student. The last mark for the same student+date wins locally. */
-  function mark(student_id: string, date: string, status: AttendanceStatus): QueuedMark {
-    const items = read().filter((x) => !(x.student_id === student_id && x.date === date));
-    const m: QueuedMark = { id: newId(), student_id, date, status, captured_at: now().toISOString() };
-    items.push(m); write(items); return m;
+  async function mark(
+    student_id: string,
+    date: string,
+    status: AttendanceStatus,
+  ): Promise<QueuedMark> {
+    const entityId = `${student_id}:${date}`;
+    const previous = await store.pending("attendance");
+    for (const item of previous) {
+      if (item.entityId === entityId) await store.discard(item.id);
+    }
+    const mutation = await store.enqueue("attendance", entityId, {
+      student_id,
+      date,
+      status,
+      captured_at: now().toISOString(),
+    });
+    return toMark(mutation);
   }
 
-  type FlushReport = { sent: number; applied: number; duplicates: number; conflicts: { id?: string; why: string }[]; remaining: number; error?: string };
+  type FlushReport = {
+    sent: number;
+    applied: number;
+    duplicates: number;
+    conflicts: { id?: string; why: string }[];
+    remaining: number;
+    error?: string;
+  };
 
   async function flushOnce(): Promise<FlushReport> {
-    const rep: FlushReport = { sent: 0, applied: 0, duplicates: 0, conflicts: [], remaining: 0 };
-    for (;;) {
-      const items = read();
-      if (!items.length) break;
-      const chunk = items.slice(0, MAX_BATCH);
-      const batch = `b-${chunk[0].id}-${chunk.length}`;
-      let res: SyncResult;
-      try { res = await opts.sync(batch, chunk, now().toISOString()); }
-      catch (e) { rep.error = (e as Error).message; break; }
-      rep.sent += chunk.length; rep.applied += res.applied; rep.duplicates += res.duplicates ?? 0; rep.conflicts.push(...res.conflicts);
-      const done = new Set(chunk.map((x) => x.id));
-      write(read().filter((x) => !done.has(x.id)));
+    const report: FlushReport = { sent: 0, applied: 0, duplicates: 0, conflicts: [], remaining: 0 };
+    await store.setSyncing(true);
+    try {
+      for (;;) {
+        const items = (await store.pending("attendance")).slice(0, MAX_BATCH);
+        if (!items.length) break;
+        const marks = items.map(toMark);
+        const batch = `b-${marks[0]!.id}-${marks.length}`;
+        let result: SyncResult;
+        try {
+          result = await opts.sync(batch, marks, now().toISOString());
+        } catch (error) {
+          report.error = error instanceof Error ? error.message : "Attendance sync failed";
+          break;
+        }
+
+        report.sent += marks.length;
+        report.applied += result.applied;
+        report.duplicates += result.duplicates ?? 0;
+        report.conflicts.push(...result.conflicts);
+        const conflictsById = new Map(
+          result.conflicts
+            .filter((conflict) => conflict.id)
+            .map((conflict) => [conflict.id!, conflict.why]),
+        );
+        for (const item of items) {
+          const conflict = conflictsById.get(item.id);
+          if (conflict) await store.markConflict(item.id, conflict);
+          else await store.discard(item.id);
+        }
+      }
+    } finally {
+      await store.setSyncing(false);
     }
-    rep.remaining = read().length;
-    return rep;
+    report.remaining = (await store.pending("attendance")).length;
+    return report;
   }
 
   /** Flush; concurrent calls share one in-flight flush. */
   function flush(): Promise<FlushReport> {
-    if (!flushing) flushing = flushOnce().finally(() => { flushing = null; });
+    if (!flushing)
+      flushing = flushOnce().finally(() => {
+        flushing = null;
+      });
     return flushing;
   }
 
   /** Flush whenever the browser comes back online. Returns an unsubscribe function. */
-  function autoFlush(target: { addEventListener(t: string, f: () => void): void; removeEventListener(t: string, f: () => void): void }) {
-    const on = () => { void flush(); };
+  function autoFlush(target: {
+    addEventListener(type: string, listener: () => void): void;
+    removeEventListener(type: string, listener: () => void): void;
+  }) {
+    const on = () => {
+      void flush();
+    };
     target.addEventListener("online", on);
     return () => target.removeEventListener("online", on);
   }
 
-  return { mark, flush, autoFlush, pending: () => read() };
+  return {
+    mark,
+    flush,
+    autoFlush,
+    pending: async () => (await store.pending("attendance")).map(toMark),
+    conflicts: async () =>
+      (await store.list("attendance"))
+        .filter((item) => item.state === "conflict")
+        .map((item) => ({ ...toMark(item), why: item.conflict ?? "manual_review_required" })),
+  };
 }

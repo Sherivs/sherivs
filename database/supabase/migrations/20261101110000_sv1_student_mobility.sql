@@ -153,13 +153,14 @@ CREATE TRIGGER student_placements_immutable
   FOR EACH ROW EXECUTE FUNCTION public.student_placement_immutable();
 
 CREATE OR REPLACE FUNCTION public.student_mobility_class_guard()
-RETURNS trigger LANGUAGE plpgsql SET search_path = ''
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $$
 DECLARE r public.student_mobility_requests%ROWTYPE; v_approver uuid;
 BEGIN
   IF (OLD.class_id IS DISTINCT FROM NEW.class_id
       OR OLD.current_session IS DISTINCT FROM NEW.current_session)
-     AND current_setting('coregrid.mobility.commit', true) IS DISTINCT FROM 'on' THEN
+     AND current_setting('coregrid.mobility.commit', true) IS DISTINCT FROM 'on'
+     AND current_setting('coregrid.mobility.system_path', true) IS DISTINCT FROM 'on' THEN
     SELECT * INTO r FROM public.student_mobility_requests
      WHERE student_id = NEW.id AND school_id = NEW.school_id AND status = 'approved'
        AND target_class_id IS NOT DISTINCT FROM NEW.class_id
@@ -299,7 +300,8 @@ BEGIN
     END IF;
     SELECT sh.name INTO v_shift FROM public.school_shifts sh
      WHERE sh.id = v_class.shift_id AND sh.school_id = NEW.school_id;
-    IF v_class.capacity IS NOT NULL THEN
+    IF v_class.capacity IS NOT NULL
+       AND current_setting('coregrid.mobility.system_path', true) IS DISTINCT FROM 'on' THEN
       SELECT count(*)::integer INTO v_count FROM public.students s
        WHERE s.class_id = NEW.class_id AND s.is_active IS NOT FALSE
          AND s.id IS DISTINCT FROM NEW.id;
@@ -457,6 +459,7 @@ DECLARE
   v_id uuid;
   v_target_session text;
   v_exit boolean := p_movement_type IN ('withdraw', 'graduate');
+  v_expected_status text;
 BEGIN
   IF v_school IS NULL OR NOT public.scholar_can(v_school, 'students.transfer') THEN
     RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501';
@@ -487,16 +490,17 @@ BEGIN
   ) THEN RAISE EXCEPTION 'target shift is not assigned to the destination class'; END IF;
   IF p_effective_at IS NULL THEN RAISE EXCEPTION 'effective date is required'; END IF;
   IF p_effective_at < now() THEN RAISE EXCEPTION 'movement cannot be backdated'; END IF;
+  v_expected_status := CASE p_movement_type
+    WHEN 'promote' THEN 'promoted'
+    WHEN 'double_promote' THEN 'promoted'
+    WHEN 'repeat' THEN 'repeated'
+    WHEN 'withdraw' THEN 'withdrawn'
+    WHEN 'graduate' THEN 'graduated'
+    ELSE 'active'
+  END;
   IF p_target_class IS NOT DISTINCT FROM s.class_id
      AND v_target_session IS NOT DISTINCT FROM s.current_session
-     AND CASE p_movement_type
-       WHEN 'promote' THEN 'promoted'
-       WHEN 'double_promote' THEN 'promoted'
-       WHEN 'repeat' THEN 'repeated'
-       WHEN 'withdraw' THEN 'withdrawn'
-       WHEN 'graduate' THEN 'graduated'
-       ELSE 'active'
-     END IS NOT DISTINCT FROM s.status
+     AND v_expected_status IS NOT DISTINCT FROM s.status
      AND (p_movement_type NOT IN ('withdraw', 'graduate')) = coalesce(s.is_active, true) THEN
     RAISE EXCEPTION 'movement does not change the student placement or lifecycle';
   END IF;
@@ -816,5 +820,12 @@ GRANT EXECUTE ON FUNCTION public.student_mobility_rules_set(smallint, numeric, n
   public.student_mobility_cancel(uuid), public.student_mobility_commit(uuid),
   public.student_move_class(uuid, uuid, text),
   public.student_transfer_import(text, uuid, text) TO authenticated;
+
+-- Existing governed server paths that change students.class_id/current_session directly (annual rollover with its
+-- own rules, audit and idempotency; external-system class import). The flag is scoped to each function call only.
+ALTER FUNCTION public.session_rollover(uuid, text, text, boolean, jsonb)
+  SET coregrid.mobility.system_path = 'on';
+ALTER FUNCTION public._integration_apply_record(public.integrations, text, text, jsonb, uuid, boolean)
+  SET coregrid.mobility.system_path = 'on';
 
 COMMIT;
