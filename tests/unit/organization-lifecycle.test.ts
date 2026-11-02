@@ -166,7 +166,7 @@ describe("Support workspace organization scope", () => {
       '.eq("assignment_type", "support")\n    .eq("status", "active")',
     );
     expect(organizationStore).toContain(
-      "? request.in(\"id\", scope.organizationIds)\n          : request.limit(0)",
+      '? request.in("id", scope.organizationIds)\n          : request.limit(0)',
     );
     expect(organizationStore).toContain(
       "loadAssignedSupportOrganizationIds(db, context.userId)).includes(id)",
