@@ -19,8 +19,7 @@ async function run(request: Request): Promise<Response> {
     const result = await dispatchWhatsAppN8nOutbox({
       db: supabaseAdmin as never,
     });
-    if (!result.ok)
-      return Response.json({ ok: false, error: result.error }, { status: 503 });
+    if (!result.ok) return Response.json({ ok: false, error: result.error }, { status: 503 });
     return Response.json(result);
   } catch {
     return Response.json({ ok: false, error: "forwarding_failed" }, { status: 503 });

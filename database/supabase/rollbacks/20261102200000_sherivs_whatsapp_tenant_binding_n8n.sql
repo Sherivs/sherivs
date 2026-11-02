@@ -6,12 +6,23 @@ DROP FUNCTION IF EXISTS public.cg_whatsapp_enqueue_n8n_event();
 DROP FUNCTION IF EXISTS public.cg_whatsapp_claim_n8n_outbox(integer);
 DROP FUNCTION IF EXISTS public.cg_whatsapp_complete_n8n_outbox(uuid, uuid, boolean, text);
 DROP FUNCTION IF EXISTS public.cg_whatsapp_prepare_n8n_reply(text, text, uuid, text);
+DROP FUNCTION IF EXISTS public.cg_whatsapp_n8n_reply_result(text, text, text, uuid, uuid, text);
 DROP FUNCTION IF EXISTS public.cg_whatsapp_n8n_reply_result(text, text, text, uuid, text);
 DROP FUNCTION IF EXISTS public.cg_whatsapp_prepare_send(text, text, text, text, text, uuid, text, text);
 DROP FUNCTION IF EXISTS public.cg_whatsapp_prepare_auto_ack(text, text, text);
 DROP FUNCTION IF EXISTS public.cg_whatsapp_auto_ack_result(text, text, text, text);
 DROP TRIGGER IF EXISTS cg_whatsapp_send_audit_append_only ON public.cg_whatsapp_send_audit;
 DROP FUNCTION IF EXISTS public.cg_whatsapp_send_audit_immutable();
+
+ALTER TABLE public.cg_org_communication_sender
+  DROP CONSTRAINT cg_org_communication_sender_channel_check,
+  DROP CONSTRAINT cg_org_communication_sender_provider_check;
+ALTER TABLE public.cg_org_communication_sender
+  ADD CONSTRAINT cg_org_communication_sender_channel_check
+    CHECK (channel IN ('sms', 'voice')),
+  ADD CONSTRAINT cg_org_communication_sender_provider_check
+    CHECK ((channel = 'sms' AND provider = 'twilio')
+        OR (channel = 'voice' AND provider = 'africas_talking'));
 
 DROP TABLE IF EXISTS public.cg_whatsapp_n8n_reply;
 DROP TABLE IF EXISTS public.cg_whatsapp_send_audit;

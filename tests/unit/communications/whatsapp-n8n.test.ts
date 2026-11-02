@@ -199,6 +199,7 @@ describe("WhatsApp n8n forwarding and reply authentication", () => {
             provider_sender_ref: "123456",
             conversation_id: reply.conversation_id,
             recipient_address: "+2349015056201",
+            claim_token: "00000000-0000-4000-8000-000000000004",
           },
         ],
         error: null,
@@ -225,14 +226,64 @@ describe("WhatsApp n8n forwarding and reply authentication", () => {
       p_reply_id: reply.reply_id,
       p_inbound_provider_ref: reply.inbound_provider_ref,
       p_conversation_id: reply.conversation_id,
+      p_claim_token: "00000000-0000-4000-8000-000000000004",
       p_status: "sent",
     });
 
     const withTenant = signedRequest({ ...reply, tenant_id: "tenant-b" });
     expect((await POST_REPLY({ request: withTenant })).status).toBe(400);
     expect(mockSend).toHaveBeenCalledTimes(1);
-    expect(
-      N8nWhatsAppReplySchema.safeParse({ ...reply, org_ref: "org-b" }).success,
-    ).toBe(false);
+    expect(N8nWhatsAppReplySchema.safeParse({ ...reply, org_ref: "org-b" }).success).toBe(false);
+  });
+
+  it("allows a failed reply to retry the same payload with a fresh claim token", async () => {
+    process.env.N8N_WHATSAPP_SIGNING_SECRET = SECRET;
+    const reply = {
+      reply_id: "automation-retry-1",
+      inbound_provider_ref: "wamid.inbound",
+      conversation_id: "00000000-0000-4000-8000-000000000002",
+      body: "Thanks",
+    };
+    const target = {
+      tenant_id: "tenant-a",
+      org_ref: "org-a",
+      principal_ref: "principal-a",
+      provider_sender_ref: "123456",
+      conversation_id: reply.conversation_id,
+      recipient_address: "+2349015056201",
+    };
+    mockRpc
+      .mockResolvedValueOnce({
+        data: [{ ...target, claim_token: "00000000-0000-4000-8000-000000000004" }],
+        error: null,
+      })
+      .mockResolvedValueOnce({ data: true, error: null })
+      .mockResolvedValueOnce({
+        data: [{ ...target, claim_token: "00000000-0000-4000-8000-000000000005" }],
+        error: null,
+      })
+      .mockResolvedValueOnce({ data: true, error: null });
+    mockSend
+      .mockResolvedValueOnce({ ok: false, error: "provider unavailable" })
+      .mockResolvedValueOnce({ ok: true, providerRef: "wamid.outbound" });
+
+    expect((await POST_REPLY({ request: signedRequest(reply) })).status).toBe(502);
+    expect((await POST_REPLY({ request: signedRequest(reply) })).status).toBe(200);
+    expect(mockRpc).toHaveBeenNthCalledWith(2, "cg_whatsapp_n8n_reply_result", {
+      p_tenant_id: "tenant-a",
+      p_reply_id: reply.reply_id,
+      p_inbound_provider_ref: reply.inbound_provider_ref,
+      p_conversation_id: reply.conversation_id,
+      p_claim_token: "00000000-0000-4000-8000-000000000004",
+      p_status: "failed",
+    });
+    expect(mockRpc).toHaveBeenNthCalledWith(4, "cg_whatsapp_n8n_reply_result", {
+      p_tenant_id: "tenant-a",
+      p_reply_id: reply.reply_id,
+      p_inbound_provider_ref: reply.inbound_provider_ref,
+      p_conversation_id: reply.conversation_id,
+      p_claim_token: "00000000-0000-4000-8000-000000000005",
+      p_status: "sent",
+    });
   });
 });

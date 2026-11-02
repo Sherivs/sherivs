@@ -1,5 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { N8nWhatsAppReplySchema, verifyN8nWhatsAppSignature } from "@/lib/communications/whatsapp-n8n.server";
+import {
+  N8nWhatsAppReplySchema,
+  verifyN8nWhatsAppSignature,
+} from "@/lib/communications/whatsapp-n8n.server";
 import { sendWhatsAppMessage } from "@/lib/communications/whatsapp-cloud.server";
 
 type ReplyDb = {
@@ -11,9 +14,11 @@ type ReplyDb = {
 
 async function handleReply(request: Request): Promise<Response> {
   const secret = process.env.N8N_WHATSAPP_SIGNING_SECRET;
-  if (!secret || secret.length < 32) return new Response("Reply endpoint is not configured", { status: 503 });
+  if (!secret || secret.length < 32)
+    return new Response("Reply endpoint is not configured", { status: 503 });
   const rawBody = await request.text();
-  if (Buffer.byteLength(rawBody, "utf8") > 16 * 1024) return new Response("Payload too large", { status: 413 });
+  if (Buffer.byteLength(rawBody, "utf8") > 16 * 1024)
+    return new Response("Payload too large", { status: 413 });
   if (
     !verifyN8nWhatsAppSignature({
       rawBody,
@@ -52,7 +57,8 @@ async function handleReply(request: Request): Promise<Response> {
     typeof target.principal_ref !== "string" ||
     typeof target.provider_sender_ref !== "string" ||
     typeof target.conversation_id !== "string" ||
-    typeof target.recipient_address !== "string"
+    typeof target.recipient_address !== "string" ||
+    typeof target.claim_token !== "string"
   )
     return new Response("Reply not authorized", { status: 403 });
 
@@ -77,6 +83,7 @@ async function handleReply(request: Request): Promise<Response> {
     p_reply_id: parsed.data.reply_id,
     p_inbound_provider_ref: parsed.data.inbound_provider_ref,
     p_conversation_id: parsed.data.conversation_id,
+    p_claim_token: target.claim_token,
     p_status: result.ok ? "sent" : "failed",
   });
   if (recordError || recorded !== true)

@@ -97,6 +97,10 @@ describe("WhatsApp Cloud migration posture", () => {
 
     describe("tenant binding and signed n8n forwarding migration", () => {
       it("binds every send to an inbound event, origin sender, conversation and canonical recipient", () => {
+        expect(tenantBindingMigration).toContain("CHECK (channel IN ('sms', 'whatsapp', 'voice'))");
+        expect(tenantBindingMigration).toContain(
+          "(channel = 'whatsapp' AND provider = 'meta_cloud')",
+        );
         expect(tenantBindingMigration).toContain(
           "cg_whatsapp_prepare_send(text, text, text, text, text, uuid, text, text)",
         );
@@ -104,11 +108,26 @@ describe("WhatsApp Cloud migration posture", () => {
         expect(tenantBindingMigration).toContain("m.conversation_id = p_conversation_id");
         expect(tenantBindingMigration).toContain("c.status = 'opted_in'");
         expect(tenantBindingMigration).toContain("recipient_hash");
-        expect(tenantBindingMigration).toContain("encode(sha256(convert_to(v_recipient, 'UTF8')), 'hex')");
-        expect(tenantBindingMigration).toContain("CREATE TRIGGER cg_whatsapp_send_audit_append_only");
+        expect(tenantBindingMigration).toContain(
+          "encode(sha256(convert_to(v_recipient, 'UTF8')), 'hex')",
+        );
+        expect(tenantBindingMigration).toContain("body_hash text NOT NULL");
+        expect(tenantBindingMigration).toContain("lease_until <= now()");
+        expect(tenantBindingMigration).toContain(
+          "cg_whatsapp_n8n_reply.body_hash = EXCLUDED.body_hash",
+        );
+        expect(tenantBindingMigration).toContain(
+          "cg_whatsapp_n8n_reply_result(text, text, text, uuid, uuid, text)",
+        );
+        expect(tenantBindingMigration).toContain(
+          "CREATE TRIGGER cg_whatsapp_send_audit_append_only",
+        );
         expect(tenantBindingMigration).toContain("WhatsApp send audit is append-only");
         expect(tenantBindingRollback).toContain(
           "DROP FUNCTION IF EXISTS public.cg_whatsapp_send_audit_immutable()",
+        );
+        expect(tenantBindingRollback).toContain(
+          "DROP FUNCTION IF EXISTS public.cg_whatsapp_n8n_reply_result(text, text, text, uuid, uuid, text)",
         );
       });
 
@@ -118,17 +137,27 @@ describe("WhatsApp Cloud migration posture", () => {
         expect(tenantBindingMigration).toContain("UNIQUE (tenant_id, message_id)");
         expect(tenantBindingMigration).toContain("FOR UPDATE SKIP LOCKED");
         expect(tenantBindingMigration).toContain("attempt_count < 8");
-        expect(tenantBindingMigration).toContain("CREATE POLICY cg_whatsapp_n8n_outbox_tenant_select");
-        expect(tenantBindingMigration).toContain("CREATE POLICY cg_whatsapp_n8n_dead_letter_tenant_select");
+        expect(tenantBindingMigration).toContain(
+          "CREATE POLICY cg_whatsapp_n8n_outbox_tenant_select",
+        );
+        expect(tenantBindingMigration).toContain(
+          "CREATE POLICY cg_whatsapp_n8n_dead_letter_tenant_select",
+        );
         expect(tenantBindingMigration).toContain("ALTER TABLE public.%I FORCE ROW LEVEL SECURITY");
-        expect(tenantBindingRollback).toContain("DROP TABLE IF EXISTS public.cg_whatsapp_n8n_outbox");
-        expect(tenantBindingRollback).toContain("DROP TABLE IF EXISTS public.cg_whatsapp_n8n_dead_letter");
+        expect(tenantBindingRollback).toContain(
+          "DROP TABLE IF EXISTS public.cg_whatsapp_n8n_outbox",
+        );
+        expect(tenantBindingRollback).toContain(
+          "DROP TABLE IF EXISTS public.cg_whatsapp_n8n_dead_letter",
+        );
       });
 
       it("does not add function-level custom GUC settings and requires server-only reply RPCs", () => {
         expect(tenantBindingMigration).not.toMatch(/ALTER FUNCTION[^;]*SET\s+coregrid\./i);
         expect(tenantBindingMigration).toContain("public.cg_whatsapp_prepare_n8n_reply");
-        expect(tenantBindingMigration).toContain("GRANT EXECUTE ON FUNCTION public.cg_whatsapp_prepare_n8n_reply");
+        expect(tenantBindingMigration).toContain(
+          "GRANT EXECUTE ON FUNCTION public.cg_whatsapp_prepare_n8n_reply",
+        );
         expect(tenantBindingMigration).toContain("FROM PUBLIC, anon, authenticated");
         expect(tenantBindingMigration).toContain("PRIMARY KEY (tenant_id, reply_id)");
       });
@@ -150,6 +179,9 @@ describe("WhatsApp Cloud migration posture", () => {
       expect(e2eMigration).toContain("c.status = 'opted_in'");
       expect(e2eMigration).toContain("recipient_address text");
       expect(e2eMigration).toContain("ON CONFLICT (inbound_provider_ref) DO NOTHING");
+      expect(tenantBindingMigration).toContain(
+        "ON CONFLICT ON CONSTRAINT cg_whatsapp_auto_ack_pkey DO NOTHING",
+      );
       expect(e2eMigration).toContain("requested_by = p_reviewer_ref");
       expect(e2eMigration).toContain("provider_status_at = now()");
     });

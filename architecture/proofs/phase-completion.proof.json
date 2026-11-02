@@ -2,7 +2,7 @@
   "artifact": "phase-completion",
   "wave": "AUDIT-1",
   "owner": "kernel (Phase 01 governance)",
-  "generatedAt": "2026-11-02T22:08:43.232Z",
+  "generatedAt": "2026-11-02T22:30:01.569Z",
   "authority": [
     "CONSTITUTION.md",
     "architecture/registry.json",

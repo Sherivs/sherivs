@@ -1,5 +1,9 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
+import { SystemClock, TimeAuthority } from "../kernel/time-authority";
+
+/** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 const OutboxClaimSchema = z.object({
   outbox_id: z.string().uuid(),
@@ -52,11 +56,7 @@ export function getN8nWhatsAppConfig(env = process.env) {
   }
 }
 
-export function signN8nWhatsAppPayload(
-  timestamp: string,
-  rawBody: string,
-  secret: string,
-): string {
+export function signN8nWhatsAppPayload(timestamp: string, rawBody: string, secret: string): string {
   return `sha256=${createHmac("sha256", secret).update(`${timestamp}.${rawBody}`).digest("hex")}`;
 }
 
@@ -101,7 +101,7 @@ export async function dispatchWhatsAppN8nOutbox(input: {
     }
     const row = parsed.data;
     const body = JSON.stringify(payload.data);
-    const timestamp = String(Math.floor((input.now?.() ?? Date.now()) / 1000));
+    const timestamp = String(Math.floor((input.now?.() ?? timeAuthority.now().atMs) / 1000));
     let success = false;
     let errorCode = "delivery_failed";
     try {
@@ -147,10 +147,12 @@ export function verifyN8nWhatsAppSignature(input: {
 }): boolean {
   if (!input.timestamp || !/^\d{1,10}$/.test(input.timestamp)) return false;
   const timestamp = Number(input.timestamp);
-  const now = Math.floor((input.now ?? Date.now()) / 1000);
+  const now = Math.floor((input.now ?? timeAuthority.now().atMs) / 1000);
   if (!Number.isSafeInteger(timestamp) || Math.abs(now - timestamp) > 300) return false;
   if (!input.signature || !/^sha256=[0-9a-f]{64}$/i.test(input.signature)) return false;
-  const expected = Buffer.from(signN8nWhatsAppPayload(input.timestamp, input.rawBody, input.secret));
+  const expected = Buffer.from(
+    signN8nWhatsAppPayload(input.timestamp, input.rawBody, input.secret),
+  );
   const supplied = Buffer.from(input.signature);
   return expected.length === supplied.length && timingSafeEqual(expected, supplied);
 }

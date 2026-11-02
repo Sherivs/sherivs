@@ -94,6 +94,9 @@ same five-minute timestamp format. Do not send tenant IDs, a phone number, a
 Meta token, or call Graph from n8n. Sherivs resolves tenant, sender, active
 membership, opt-in, conversation, and recipient again; replies outside the
 24-hour window or after opt-out are rejected.
+Retry transient failures with the same `reply_id` and identical body. A failed
+claim is released immediately; an abandoned claim is retryable after its
+five-minute lease. Reusing an ID with changed content is rejected.
 
 ## Reviewed onboarding and health
 

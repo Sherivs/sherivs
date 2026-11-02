@@ -2,6 +2,17 @@
 -- NOT APPLIED. Rollback: database/supabase/rollbacks/20261102200000_sherivs_whatsapp_tenant_binding_n8n.sql
 BEGIN;
 
+ALTER TABLE public.cg_org_communication_sender
+  DROP CONSTRAINT cg_org_communication_sender_channel_check,
+  DROP CONSTRAINT cg_org_communication_sender_provider_check;
+ALTER TABLE public.cg_org_communication_sender
+  ADD CONSTRAINT cg_org_communication_sender_channel_check
+    CHECK (channel IN ('sms', 'whatsapp', 'voice')),
+  ADD CONSTRAINT cg_org_communication_sender_provider_check
+    CHECK ((channel = 'sms' AND provider = 'twilio')
+        OR (channel = 'whatsapp' AND provider = 'meta_cloud')
+        OR (channel = 'voice' AND provider = 'africas_talking'));
+
 CREATE TABLE public.cg_whatsapp_n8n_outbox (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id text NOT NULL CHECK (length(tenant_id) BETWEEN 1 AND 128),
@@ -74,9 +85,14 @@ CREATE TABLE public.cg_whatsapp_n8n_reply (
   conversation_id uuid NOT NULL,
   recipient_hash text NOT NULL CHECK (recipient_hash ~ '^[0-9a-f]{64}$'),
   status text NOT NULL DEFAULT 'queued' CHECK (status IN ('queued', 'sent', 'failed')),
+  body_hash text NOT NULL CHECK (body_hash ~ '^[0-9a-f]{64}$'),
+  claim_token uuid,
+  lease_until timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (tenant_id, reply_id),
+  CHECK ((status = 'queued' AND claim_token IS NOT NULL AND lease_until IS NOT NULL)
+      OR (status <> 'queued' AND claim_token IS NULL AND lease_until IS NULL)),
   FOREIGN KEY (org_ref, tenant_id) REFERENCES public.cg_org_unit (id, tenant_id) ON DELETE CASCADE,
   FOREIGN KEY (conversation_id, tenant_id, org_ref)
     REFERENCES public.cg_communication_conversation (id, tenant_id, org_ref) ON DELETE CASCADE
@@ -358,7 +374,7 @@ BEGIN
      conversation_id, status)
   VALUES (p_inbound_provider_ref, v_sender_ref, v_message.tenant_id, v_message.org_ref,
           v_message.principal_ref, v_message.conversation_id, 'queued')
-  ON CONFLICT (tenant_id, provider_sender_ref, inbound_provider_ref) DO NOTHING;
+  ON CONFLICT ON CONSTRAINT cg_whatsapp_auto_ack_pkey DO NOTHING;
   IF NOT FOUND THEN RETURN; END IF;
   tenant_id := v_message.tenant_id;
   org_ref := v_message.org_ref;
@@ -478,7 +494,7 @@ BEGIN
      AND r.principal_ref = p_principal_ref AND r.channel = 'whatsapp'
      AND cv.channel = 'whatsapp';
   IF v_count <> 1 THEN
-    RAISE EXCEPTION 'WhatsApp conversation recipient is not uniquely linked to the active principal';
+    RAISE EXCEPTION 'WhatsApp conversation address is not uniquely linked';
   END IF;
   SELECT r.address INTO v_recipient
     FROM public.cg_communication_recipient_address r
@@ -533,13 +549,15 @@ CREATE OR REPLACE FUNCTION public.cg_whatsapp_prepare_n8n_reply(
   principal_ref text,
   provider_sender_ref text,
   conversation_id uuid,
-  recipient_address text
+  recipient_address text,
+  claim_token uuid
 ) LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $$
 DECLARE
   v_message public.cg_communication_message%ROWTYPE;
   v_address text;
   v_sender_ref text;
+  v_claim_token uuid := gen_random_uuid();
 BEGIN
   IF coalesce(auth.role(), '') <> 'service_role' THEN
     RAISE EXCEPTION 'not allowed: WhatsApp replies require a signed server request' USING ERRCODE = '42501';
@@ -590,10 +608,22 @@ BEGIN
     RAISE EXCEPTION 'WhatsApp recipient is not currently authorized' USING ERRCODE = '42501';
   END IF;
   INSERT INTO public.cg_whatsapp_n8n_reply
-    (tenant_id, org_ref, reply_id, inbound_provider_ref, conversation_id, recipient_hash)
+    (tenant_id, org_ref, reply_id, inbound_provider_ref, conversation_id, recipient_hash,
+     body_hash, claim_token, lease_until)
   VALUES (v_message.tenant_id, v_message.org_ref, p_reply_id, p_inbound_provider_ref,
-          p_conversation_id, encode(sha256(convert_to(v_address, 'UTF8')), 'hex'))
-  ON CONFLICT (tenant_id, reply_id) DO NOTHING;
+          p_conversation_id, encode(sha256(convert_to(v_address, 'UTF8')), 'hex'),
+          encode(sha256(convert_to(p_body, 'UTF8')), 'hex'), v_claim_token,
+          now() + interval '5 minutes')
+  ON CONFLICT (tenant_id, reply_id) DO UPDATE
+    SET status = 'queued', claim_token = EXCLUDED.claim_token,
+        lease_until = EXCLUDED.lease_until, updated_at = now()
+    WHERE cg_whatsapp_n8n_reply.inbound_provider_ref = EXCLUDED.inbound_provider_ref
+      AND cg_whatsapp_n8n_reply.conversation_id = EXCLUDED.conversation_id
+      AND cg_whatsapp_n8n_reply.recipient_hash = EXCLUDED.recipient_hash
+      AND cg_whatsapp_n8n_reply.body_hash = EXCLUDED.body_hash
+      AND (cg_whatsapp_n8n_reply.status = 'failed'
+        OR (cg_whatsapp_n8n_reply.status = 'queued' AND cg_whatsapp_n8n_reply.lease_until <= now()))
+  RETURNING cg_whatsapp_n8n_reply.claim_token INTO v_claim_token;
   IF NOT FOUND THEN RETURN; END IF;
   tenant_id := v_message.tenant_id;
   org_ref := v_message.org_ref;
@@ -601,6 +631,7 @@ BEGIN
   provider_sender_ref := v_sender_ref;
   conversation_id := p_conversation_id;
   recipient_address := v_address;
+  claim_token := v_claim_token;
   RETURN NEXT;
 END
 $$;
@@ -614,6 +645,7 @@ CREATE OR REPLACE FUNCTION public.cg_whatsapp_n8n_reply_result(
   p_reply_id text,
   p_inbound_provider_ref text,
   p_conversation_id uuid,
+  p_claim_token uuid,
   p_status text
 ) RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $$
@@ -622,20 +654,22 @@ BEGIN
     RAISE EXCEPTION 'not allowed: WhatsApp reply result requires service role' USING ERRCODE = '42501';
   END IF;
   IF p_reply_id IS NULL OR p_inbound_provider_ref IS NULL OR p_conversation_id IS NULL
+     OR p_claim_token IS NULL
      OR p_tenant_id IS NULL OR length(p_tenant_id) NOT BETWEEN 1 AND 128
      OR p_status NOT IN ('sent', 'failed') THEN
     RAISE EXCEPTION 'invalid WhatsApp reply result';
   END IF;
   UPDATE public.cg_whatsapp_n8n_reply
-     SET status = p_status, updated_at = now()
+     SET status = p_status, claim_token = NULL, lease_until = NULL, updated_at = now()
    WHERE reply_id = p_reply_id AND inbound_provider_ref = p_inbound_provider_ref
-     AND conversation_id = p_conversation_id AND tenant_id = p_tenant_id AND status = 'queued';
+     AND conversation_id = p_conversation_id AND tenant_id = p_tenant_id
+     AND status = 'queued' AND claim_token = p_claim_token;
   RETURN FOUND;
 END
 $$;
-REVOKE ALL ON FUNCTION public.cg_whatsapp_n8n_reply_result(text, text, text, uuid, text)
+REVOKE ALL ON FUNCTION public.cg_whatsapp_n8n_reply_result(text, text, text, uuid, uuid, text)
   FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.cg_whatsapp_n8n_reply_result(text, text, text, uuid, text)
+GRANT EXECUTE ON FUNCTION public.cg_whatsapp_n8n_reply_result(text, text, text, uuid, uuid, text)
   TO service_role;
 
 COMMIT;

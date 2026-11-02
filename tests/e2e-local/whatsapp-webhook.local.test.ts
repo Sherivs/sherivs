@@ -296,13 +296,17 @@ describe.skipIf(!enabled)("WhatsApp signed webhook E2E (local Supabase only)", (
     expect(oldResult).toBe("logged");
     const { error: ageError } = await client
       .from("cg_communication_message")
-      .update({ created_at: "2000-01-01T00:00:00.000Z" })
+      .update({ provider_created_at: "2000-01-01T00:00:00.000Z" })
       .eq("tenant_id", tenantId)
       .eq("provider_ref", oldRef);
     expect(ageError).toBeNull();
     const { data: expiredTargets, error: expiredError } = await client.rpc(
       "cg_whatsapp_prepare_auto_ack",
-      { p_inbound_provider_ref: oldRef, p_body: "Should not send" },
+      {
+        p_provider_sender_ref: providerSenderRef,
+        p_inbound_provider_ref: oldRef,
+        p_body: "Should not send",
+      },
     );
     expect(expiredError).toBeNull();
     expect(expiredTargets).toEqual([]);

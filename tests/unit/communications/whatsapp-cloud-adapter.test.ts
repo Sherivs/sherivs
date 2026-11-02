@@ -220,7 +220,9 @@ describe("WhatsApp Cloud adapter", () => {
         recipient,
       };
     });
-    const byInboundRef = new Map(records.map((record, index) => [record.inboundProviderRef, { ...record, index }]));
+    const byInboundRef = new Map(
+      records.map((record, index) => [record.inboundProviderRef, { ...record, index }]),
+    );
     mockAdminRpc.mockImplementation(async (name: string, args: Record<string, unknown>) => {
       if (name === "cg_whatsapp_prepare_send") {
         const target = byInboundRef.get(String(args.p_inbound_provider_ref));
@@ -274,7 +276,9 @@ describe("WhatsApp Cloud adapter", () => {
     }
     (fetchImpl.mock.calls as [string, RequestInit][]).forEach(([url, init], index) => {
       const target = records[index];
-      expect(url).toBe(`https://graph.facebook.com/v21.0/${target?.inboundProviderSenderRef}/messages`);
+      expect(url).toBe(
+        `https://graph.facebook.com/v21.0/${target?.inboundProviderSenderRef}/messages`,
+      );
       expect(JSON.parse(String(init.body))).toMatchObject({
         to: target?.recipient.slice(1),
         text: { body: `reply-${target?.inboundProviderRef}`, preview_url: false },
