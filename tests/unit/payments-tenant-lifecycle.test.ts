@@ -5,6 +5,7 @@ import {
   createFinancialPlan,
   failFinancialIntent,
   finishFinancialReversal,
+  recordFinancialRefund,
   recordFinancialSettlement,
   reconcileFinancialPayment,
   requestFinancialReversal,
@@ -155,6 +156,24 @@ describe("tenant-bound server financial lifecycle RPCs", () => {
     });
   });
 
+  it("reconciles refund callbacks against provider id, payment reference, amount, and currency", async () => {
+    const { client, rpc } = db({ outcome: "processed" });
+    await expect(
+      recordFinancialRefund(client, {
+        providerReference: "refund-a",
+        reference: "payment-a",
+        amountMinor: 1000,
+        currency: "NGN",
+      }),
+    ).resolves.toEqual({ outcome: "processed" });
+    expect(rpc).toHaveBeenCalledWith("cg_financial_record_refund", {
+      p_provider_ref: "refund-a",
+      p_reference: "payment-a",
+      p_amount_minor: 1000,
+      p_currency: "NGN",
+    });
+  });
+
   it("keeps client schemas free of neutral org bindings and payment amounts", () => {
     const source = readFileSync("frontend/src/lib/runtime/scholar/paystack.functions.ts", "utf8");
     const initSchema = source.slice(
@@ -178,6 +197,10 @@ describe("tenant-bound server financial lifecycle RPCs", () => {
     expect(source).toContain("charge.success:${event.data.reference}");
     expect(source).toContain("reconcileFinancialPayment");
     expect(source).toContain("recordFinancialSettlement");
+    expect(source).toContain('event.event === "refund.processed"');
+    expect(source).toContain("recordFinancialRefund");
+    expect(source).toContain("amountMinor: refund.amount");
+    expect(source).toContain("currency: refund.currency");
     expect(source).toContain('reconciliation.verdict === "unknown_reference"');
   });
 

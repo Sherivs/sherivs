@@ -29,7 +29,7 @@ import { requirePaystackTestKey } from "@/lib/payments/paystack-testmode.server"
 import {
   reconcileFinancialPayment,
   recordFinancialSettlement,
-  finishFinancialReversal,
+  recordFinancialRefund,
   type FinancialLifecycleDb,
 } from "@/lib/runtime/scholar/payment-lifecycle.server";
 
@@ -258,51 +258,46 @@ export const Route = createFileRoute("/api/public/webhooks/paystack")({
             // Non-2xx so Paystack redelivers; settlement is idempotent.
             return new Response("Processing error", { status: 500 });
           }
-        } else if (
-          event.event === "refund.processed" &&
-          event.data?.id !== undefined &&
-          event.data.transaction?.reference
-        ) {
+        } else if (event.event === "refund.processed") {
           try {
-            const reversalDb = supabaseAdmin as unknown as {
-              from(table: "cg_financial_reversal"): {
-                select(columns: string): {
-                  eq(
-                    column: string,
-                    value: string,
-                  ): {
-                    maybeSingle(): PromiseLike<{
-                      data: { id: string; reference: string } | null;
-                      error: { message: string } | null;
-                    }>;
-                  };
-                };
-              };
-            };
-            const { data: reversal, error } = await reversalDb
-              .from("cg_financial_reversal")
-              .select("id, reference")
-              .eq("provider_ref", String(event.data.id))
-              .maybeSingle();
-            if (error) throw new Error(error.message);
-            if (reversal?.reference === event.data.transaction.reference) {
-              const state = "processed";
-              await finishFinancialReversal(supabaseAdmin as unknown as FinancialLifecycleDb, {
-                id: reversal.id,
-                state,
-              });
-              processingStatus = state;
+            const refund = event.data;
+            if (
+              refund?.id === undefined ||
+              !refund.transaction?.reference ||
+              refund.amount === undefined ||
+              !refund.currency
+            ) {
+              processingStatus = "rejected";
+              errorMessage = "invalid_refund_event";
             } else {
-              processingStatus = "ignored";
-              errorMessage = "unknown_refund_reference";
+              const result = await recordFinancialRefund(
+                supabaseAdmin as unknown as FinancialLifecycleDb,
+                {
+                  providerReference: String(refund.id),
+                  reference: refund.transaction.reference,
+                  amountMinor: refund.amount,
+                  currency: refund.currency,
+                },
+              );
+              processingStatus =
+                result.outcome === "processed"
+                  ? "processed"
+                  : result.outcome === "duplicate"
+                    ? "duplicate"
+                    : result.outcome === "unknown_reference"
+                      ? "ignored"
+                      : "rejected";
+              if (!["processed", "duplicate"].includes(result.outcome)) {
+                errorMessage = result.outcome;
+              }
             }
             await supabaseAdmin.from("webhook_logs").insert({
               school_id: null,
               provider: "paystack",
               event_type: event.event,
               payload: {
-                provider_ref: String(event.data.id),
-                reference: event.data.transaction.reference,
+                provider_ref: refund?.id === undefined ? null : String(refund.id),
+                reference: refund?.transaction?.reference ?? null,
               },
               processing_status: processingStatus,
               error_message: errorMessage,
