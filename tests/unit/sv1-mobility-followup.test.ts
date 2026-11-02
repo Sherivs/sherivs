@@ -7,7 +7,16 @@ const MIGRATION = readFileSync(
     __dirname,
     "..",
     "..",
-    "database/supabase/migrations/20261102100000_sv1_student_mobility_followup.sql",
+    "database/supabase/migrations/20261103000000_sv1_student_mobility_followup.sql",
+  ),
+  "utf8",
+);
+const ROLLBACK = readFileSync(
+  join(
+    __dirname,
+    "..",
+    "..",
+    "database/supabase/rollbacks/20261103000000_sv1_student_mobility_followup.sql",
   ),
   "utf8",
 );
@@ -56,5 +65,40 @@ describe("SV1 mobility follow-up migration", () => {
     expect(MIGRATION).not.toMatch(
       /GRANT EXECUTE ON FUNCTION public\.(?:student_mobility_fee_proration|student_mobility_notify_approvers|student_mobility_request_notification|student_mobility_approval_notification)\(/,
     );
+  });
+
+  it("ships a same-version rollback for every introduced table, trigger, and function", () => {
+    expect(MIGRATION).toMatch(/^BEGIN;/m);
+    expect(MIGRATION).toMatch(/^COMMIT;/m);
+    expect(ROLLBACK).toMatch(/^BEGIN;/m);
+    expect(ROLLBACK).toMatch(/^COMMIT;/m);
+    expect(ROLLBACK).toContain("-- Rollback for 20261103000000_sv1_student_mobility_followup.sql.");
+    expect(MIGRATION).toContain(
+      "CREATE TABLE IF NOT EXISTS public.student_mobility_fee_allocations",
+    );
+    expect(ROLLBACK).toContain("DROP TABLE IF EXISTS public.student_mobility_fee_allocations");
+
+    for (const trigger of [
+      "student_mobility_fee_allocations_append_only",
+      "student_mobility_fee_proration",
+      "student_mobility_request_notification",
+      "student_mobility_approval_notification",
+      "trg_student_mobility_fee_allocations_audit",
+    ]) {
+      expect(MIGRATION).toContain(`CREATE TRIGGER ${trigger}`);
+      expect(ROLLBACK).toContain(`DROP TRIGGER IF EXISTS ${trigger}`);
+    }
+
+    for (const [fn, signature] of [
+      ["student_mobility_append_only", ""],
+      ["student_mobility_fee_proration", ""],
+      ["student_mobility_notify_approvers", "uuid, uuid, text, text"],
+      ["student_mobility_request_notification", ""],
+      ["student_mobility_approval_notification", ""],
+      ["student_mobility_reschedule", "uuid, timestamptz"],
+    ]) {
+      expect(MIGRATION).toContain(`FUNCTION public.${fn}(`);
+      expect(ROLLBACK).toContain(`DROP FUNCTION IF EXISTS public.${fn}(${signature})`);
+    }
   });
 });
