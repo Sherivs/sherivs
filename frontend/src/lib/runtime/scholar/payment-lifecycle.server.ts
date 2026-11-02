@@ -208,3 +208,37 @@ export async function finishFinancialReversal(
   });
   throwOnError(error, "financial reversal update");
 }
+
+export async function recordFinancialRefund(
+  db: FinancialLifecycleDb,
+  input: {
+    providerReference: string;
+    reference: string;
+    amountMinor: number;
+    currency: string;
+  },
+): Promise<{
+  outcome:
+    | "processed"
+    | "duplicate"
+    | "unknown_reference"
+    | "amount_or_currency_mismatch"
+    | "not_processing";
+}> {
+  const { data, error } = await db.rpc<{
+    outcome:
+      | "processed"
+      | "duplicate"
+      | "unknown_reference"
+      | "amount_or_currency_mismatch"
+      | "not_processing";
+  }>("cg_financial_record_refund", {
+    p_provider_ref: input.providerReference,
+    p_reference: input.reference,
+    p_amount_minor: input.amountMinor,
+    p_currency: input.currency,
+  });
+  throwOnError(error, "financial refund reconciliation");
+  if (!data) throw new Error("financial refund reconciliation returned no outcome");
+  return data;
+}

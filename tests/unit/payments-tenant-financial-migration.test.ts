@@ -5,6 +5,14 @@ const migrationPath = "database/supabase/migrations/20261101000060_cg_financial_
 const rollbackPath = "database/supabase/rollbacks/20261101000060_cg_financial_scope.sql";
 const migration = readFileSync(migrationPath, "utf8");
 const rollback = readFileSync(rollbackPath, "utf8");
+const refundMigration = readFileSync(
+  "database/supabase/migrations/20261102000100_sv1_paystack_refund_reconciliation.sql",
+  "utf8",
+);
+const refundRollback = readFileSync(
+  "database/supabase/rollbacks/20261102000100_sv1_paystack_refund_reconciliation.sql",
+  "utf8",
+);
 
 describe("tenant-scoped financial continuity migration", () => {
   it("is additive, unapplied, timestamped after the existing payment migration, and reversible", () => {
@@ -120,5 +128,29 @@ describe("tenant-scoped financial continuity migration", () => {
     expect(migration).toMatch(/v_reserved \+ p_amount_minor > v_entry\.amount_minor/);
     expect(migration).toMatch(/CREATE TABLE public\.cg_financial_reconciliation/);
     expect(migration).toMatch(/expected_minor, observed_minor, expected_currency/);
+  });
+
+  it("reconciles refund events atomically against the reserved reversal and is reversible", () => {
+    expect(refundMigration).toMatch(
+      /NOT APPLIED[\s\S]*Do not apply to production without explicit owner approval/i,
+    );
+    expect(refundMigration).toMatch(
+      /FUNCTION public\.cg_financial_record_refund[\s\S]*?auth\.role\(\)[\s\S]*?'service_role'[\s\S]*?WHERE provider_ref = btrim\(p_provider_ref\)[\s\S]*?FOR UPDATE/,
+    );
+    expect(refundMigration).toMatch(/v_reversal\.reference IS DISTINCT FROM btrim\(p_reference\)/);
+    expect(refundMigration).toMatch(
+      /v_reversal\.amount_minor IS DISTINCT FROM p_amount_minor[\s\S]*?v_reversal\.currency IS DISTINCT FROM upper\(btrim\(p_currency\)\)/,
+    );
+    expect(refundMigration).toMatch(/v_reversal\.state = 'processed'[\s\S]*?'duplicate'/);
+    expect(refundMigration).toMatch(/v_reversal\.state <> 'processing'/);
+    expect(refundMigration).toMatch(
+      /REVOKE ALL ON FUNCTION public\.cg_financial_record_refund[\s\S]*?FROM PUBLIC, anon, authenticated/,
+    );
+    expect(refundMigration).toMatch(
+      /GRANT EXECUTE ON FUNCTION public\.cg_financial_record_refund[\s\S]*?TO service_role/,
+    );
+    expect(refundRollback).toContain(
+      "DROP FUNCTION IF EXISTS public.cg_financial_record_refund(text, text, bigint, text)",
+    );
   });
 });
