@@ -5,6 +5,10 @@
 import { writeAuditRecord } from "@/lib/server/write-audit";
 import { SystemClock, TimeAuthority } from "@/lib/kernel/time-authority";
 import { assertInternalAal2 } from "@/lib/security/mfa-server";
+import {
+  requirePaystackTestKey,
+  validateTestModeKey,
+} from "@/lib/payments/paystack-testmode.server";
 import { scrubString } from "@/lib/observability/scrub";
 import { isMissingRelation, store } from "./store";
 import { hasConsoleCapability } from "./console-access.server";
@@ -491,10 +495,10 @@ export async function searchLogs(
 }
 
 function paystackMode(): ConsoleBillingSnapshot["paystackMode"] {
-  const key = process.env.PAYSTACK_SECRET_KEY ?? "";
+  const key = process.env.PAYSTACK_SECRET_KEY?.trim() ?? "";
   if (!key) return "unconfigured";
   if (key.startsWith("sk_live_")) return "live";
-  return "test";
+  return validateTestModeKey(key).ok ? "test" : "unconfigured";
 }
 
 export async function listBilling(context: Ctx): Promise<ConsoleBillingSnapshot> {
@@ -584,8 +588,7 @@ export async function initOrganizationSubscription(
   ) {
     throw new Error("Not authorized");
   }
-  const secret = process.env.PAYSTACK_SECRET_KEY;
-  if (!secret) throw new Error("Payments are not configured: missing PAYSTACK_SECRET_KEY");
+  const secret = requirePaystackTestKey(process.env.PAYSTACK_SECRET_KEY);
   const db = await admin();
   const org = await store(db)
     .from("platform_organization")

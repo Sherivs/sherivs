@@ -643,6 +643,37 @@ body:has(.app-shell-frame.is-student-mobility) {
   font-weight: 550;
 }
 
+.app-shell-data-saver {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 0.55rem;
+  padding: 0.35rem 0.5rem;
+  color: #f7f9ff;
+  background: transparent;
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.app-shell-data-saver.is-active {
+  color: #10233d;
+  background: #d7efff;
+}
+
+html[data-data-saver="true"] *,
+html[data-data-saver="true"] *::before,
+html[data-data-saver="true"] *::after {
+  scroll-behavior: auto !important;
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
 .app-shell-widget-tools,
 .app-shell-widget-catalog {
   display: flex;
@@ -1228,10 +1259,6 @@ body:has(.workspace-preview) {
 }
 
 @media (max-width: 400px) {
-  .app-shell-connection-pending {
-    display: none;
-  }
-
   .app-shell-notification-card {
     flex-direction: column;
   }

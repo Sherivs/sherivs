@@ -30,6 +30,7 @@
 
 import { twilioRestAuthFromEnv } from "../communications/twilio-auth.server";
 import { SystemClock, TimeAuthority } from "../kernel/time-authority";
+import { validateTestModeKey } from "../payments/paystack-testmode.server";
 
 /** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
 const healthTimeAuthority = new TimeAuthority(new SystemClock());
@@ -160,7 +161,10 @@ function configuredBadTarget(provider: string, envName: string): ProviderHealthR
  * ────────────────────────────────────────────────────────────*/
 
 /** Supabase auth service health — read-only GET {SUPABASE_URL}/auth/v1/health. */
-export async function checkSupabaseHealth(env: ServerEnv, fetchImpl: FetchLike = fetch): Promise<ProviderHealthReport> {
+export async function checkSupabaseHealth(
+  env: ServerEnv,
+  fetchImpl: FetchLike = fetch,
+): Promise<ProviderHealthReport> {
   const startedAt = healthTimeAuthority.now().atMs;
   if (!isNonBlank(env.SUPABASE_URL) || !isNonBlank(env.SUPABASE_PUBLISHABLE_KEY)) {
     return notConfigured("supabase", ["SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY"]);
@@ -186,7 +190,10 @@ export async function checkSupabaseHealth(env: ServerEnv, fetchImpl: FetchLike =
 }
 
 /** Resend — read-only GET /domains with the bearer credential. */
-export async function checkResendHealth(env: ServerEnv, fetchImpl: FetchLike = fetch): Promise<ProviderHealthReport> {
+export async function checkResendHealth(
+  env: ServerEnv,
+  fetchImpl: FetchLike = fetch,
+): Promise<ProviderHealthReport> {
   const startedAt = healthTimeAuthority.now().atMs;
   if (!isNonBlank(env.RESEND_API_KEY)) return notConfigured("resend", ["RESEND_API_KEY"]);
 
@@ -206,9 +213,13 @@ export async function checkResendHealth(env: ServerEnv, fetchImpl: FetchLike = f
 }
 
 /** Paystack — read-only GET /transaction?perPage=1 with the bearer credential. */
-export async function checkPaystackHealth(env: ServerEnv, fetchImpl: FetchLike = fetch): Promise<ProviderHealthReport> {
+export async function checkPaystackHealth(
+  env: ServerEnv,
+  fetchImpl: FetchLike = fetch,
+): Promise<ProviderHealthReport> {
   const startedAt = healthTimeAuthority.now().atMs;
-  if (!isNonBlank(env.PAYSTACK_SECRET_KEY)) return notConfigured("paystack", ["PAYSTACK_SECRET_KEY"]);
+  const keyCheck = validateTestModeKey(env.PAYSTACK_SECRET_KEY ?? "");
+  if (!keyCheck.ok) return notConfigured("paystack", ["PAYSTACK_SECRET_KEY"]);
 
   const outcome = await probe(
     "https://api.paystack.co/transaction?perPage=1",
@@ -226,11 +237,17 @@ export async function checkPaystackHealth(env: ServerEnv, fetchImpl: FetchLike =
 }
 
 /** Twilio — read-only GET /2010-04-01/Accounts/{sid}.json with Basic auth. */
-export async function checkTwilioHealth(env: ServerEnv, fetchImpl: FetchLike = fetch): Promise<ProviderHealthReport> {
+export async function checkTwilioHealth(
+  env: ServerEnv,
+  fetchImpl: FetchLike = fetch,
+): Promise<ProviderHealthReport> {
   const startedAt = healthTimeAuthority.now().atMs;
   const auth = twilioRestAuthFromEnv(env);
   if (!auth) {
-    return notConfigured("twilio", ["TWILIO_ACCOUNT_SID", "TWILIO_API_KEY+TWILIO_API_SECRET or TWILIO_AUTH_TOKEN"]);
+    return notConfigured("twilio", [
+      "TWILIO_ACCOUNT_SID",
+      "TWILIO_API_KEY+TWILIO_API_SECRET or TWILIO_AUTH_TOKEN",
+    ]);
   }
 
   const accountSid = auth.accountSid;
@@ -255,7 +272,10 @@ export async function checkTwilioHealth(env: ServerEnv, fetchImpl: FetchLike = f
 }
 
 /** Vapi — read-only GET /assistant?limit=1 with the bearer credential. */
-export async function checkVapiHealth(env: ServerEnv, fetchImpl: FetchLike = fetch): Promise<ProviderHealthReport> {
+export async function checkVapiHealth(
+  env: ServerEnv,
+  fetchImpl: FetchLike = fetch,
+): Promise<ProviderHealthReport> {
   const startedAt = healthTimeAuthority.now().atMs;
   if (!isNonBlank(env.VAPI_API_KEY)) return notConfigured("vapi", ["VAPI_API_KEY"]);
 
@@ -279,7 +299,10 @@ export async function checkVapiHealth(env: ServerEnv, fetchImpl: FetchLike = fet
  * credential. The gateway URL is operator-declared config (§25); the probe
  * is provider-neutral and hard-refuses non-https targets.
  */
-export async function checkAiGatewayHealth(env: ServerEnv, fetchImpl: FetchLike = fetch): Promise<ProviderHealthReport> {
+export async function checkAiGatewayHealth(
+  env: ServerEnv,
+  fetchImpl: FetchLike = fetch,
+): Promise<ProviderHealthReport> {
   const startedAt = healthTimeAuthority.now().atMs;
   if (!isNonBlank(env.AI_API_KEY) || !isNonBlank(env.AI_GATEWAY_URL)) {
     return notConfigured("ai-gateway", ["AI_API_KEY", "AI_GATEWAY_URL"]);
@@ -310,9 +333,13 @@ export async function checkAiGatewayHealth(env: ServerEnv, fetchImpl: FetchLike 
  * ingest client events — that requires a project key (phc_), which remains
  * an operator action.
  */
-export async function checkPosthogHealth(env: ServerEnv, fetchImpl: FetchLike = fetch): Promise<ProviderHealthReport> {
+export async function checkPosthogHealth(
+  env: ServerEnv,
+  fetchImpl: FetchLike = fetch,
+): Promise<ProviderHealthReport> {
   const startedAt = healthTimeAuthority.now().atMs;
-  if (!isNonBlank(env.POSTHOG_PERSONAL_API_KEY)) return notConfigured("posthog", ["POSTHOG_PERSONAL_API_KEY"]);
+  if (!isNonBlank(env.POSTHOG_PERSONAL_API_KEY))
+    return notConfigured("posthog", ["POSTHOG_PERSONAL_API_KEY"]);
   const rawBase = isNonBlank(env.POSTHOG_API_URL) ? env.POSTHOG_API_URL : "https://us.posthog.com";
   const base = assertHttpsUrl(rawBase);
   if (base === null) return configuredBadTarget("posthog", "POSTHOG_API_URL");
@@ -340,7 +367,10 @@ export async function checkPosthogHealth(env: ServerEnv, fetchImpl: FetchLike = 
  * degrading. A runtime DSN (error reporting) remains a separate operator
  * action and is never derivable from this token.
  */
-export async function checkSentryHealth(env: ServerEnv, fetchImpl: FetchLike = fetch): Promise<ProviderHealthReport> {
+export async function checkSentryHealth(
+  env: ServerEnv,
+  fetchImpl: FetchLike = fetch,
+): Promise<ProviderHealthReport> {
   const startedAt = healthTimeAuthority.now().atMs;
   if (!isNonBlank(env.SENTRY_AUTH_TOKEN)) return notConfigured("sentry", ["SENTRY_AUTH_TOKEN"]);
 
@@ -364,10 +394,16 @@ export async function checkSentryHealth(env: ServerEnv, fetchImpl: FetchLike = f
  * The GraphQL host is REGION-QUALIFIED: the account evidence is EU-region
  * (api.eu.newrelic.com); US accounts must override NEW_RELIC_API_URL.
  */
-export async function checkNewRelicHealth(env: ServerEnv, fetchImpl: FetchLike = fetch): Promise<ProviderHealthReport> {
+export async function checkNewRelicHealth(
+  env: ServerEnv,
+  fetchImpl: FetchLike = fetch,
+): Promise<ProviderHealthReport> {
   const startedAt = healthTimeAuthority.now().atMs;
-  if (!isNonBlank(env.NEW_RELIC_USER_KEY)) return notConfigured("new-relic", ["NEW_RELIC_USER_KEY"]);
-  const rawBase = isNonBlank(env.NEW_RELIC_API_URL) ? env.NEW_RELIC_API_URL : "https://api.eu.newrelic.com";
+  if (!isNonBlank(env.NEW_RELIC_USER_KEY))
+    return notConfigured("new-relic", ["NEW_RELIC_USER_KEY"]);
+  const rawBase = isNonBlank(env.NEW_RELIC_API_URL)
+    ? env.NEW_RELIC_API_URL
+    : "https://api.eu.newrelic.com";
   const base = assertHttpsUrl(rawBase);
   if (base === null) return configuredBadTarget("new-relic", "NEW_RELIC_API_URL");
 
@@ -388,9 +424,13 @@ export async function checkNewRelicHealth(env: ServerEnv, fetchImpl: FetchLike =
 }
 
 /** Cloudflare — read-only GET /client/v4/user/tokens/verify (token self-check). */
-export async function checkCloudflareHealth(env: ServerEnv, fetchImpl: FetchLike = fetch): Promise<ProviderHealthReport> {
+export async function checkCloudflareHealth(
+  env: ServerEnv,
+  fetchImpl: FetchLike = fetch,
+): Promise<ProviderHealthReport> {
   const startedAt = healthTimeAuthority.now().atMs;
-  if (!isNonBlank(env.CLOUDFLARE_API_TOKEN)) return notConfigured("cloudflare", ["CLOUDFLARE_API_TOKEN"]);
+  if (!isNonBlank(env.CLOUDFLARE_API_TOKEN))
+    return notConfigured("cloudflare", ["CLOUDFLARE_API_TOKEN"]);
 
   const outcome = await probe(
     "https://api.cloudflare.com/client/v4/user/tokens/verify",
@@ -408,7 +448,10 @@ export async function checkCloudflareHealth(env: ServerEnv, fetchImpl: FetchLike
 }
 
 /** Vercel — read-only GET /v9/projects with the (team-scoped) bearer token. */
-export async function checkVercelHealth(env: ServerEnv, fetchImpl: FetchLike = fetch): Promise<ProviderHealthReport> {
+export async function checkVercelHealth(
+  env: ServerEnv,
+  fetchImpl: FetchLike = fetch,
+): Promise<ProviderHealthReport> {
   const startedAt = healthTimeAuthority.now().atMs;
   if (!isNonBlank(env.VERCEL_API_TOKEN)) return notConfigured("vercel", ["VERCEL_API_TOKEN"]);
 
@@ -428,7 +471,10 @@ export async function checkVercelHealth(env: ServerEnv, fetchImpl: FetchLike = f
 }
 
 /** Expo EAS — read-only POST graphql viewer query with the bearer token. */
-export async function checkExpoHealth(env: ServerEnv, fetchImpl: FetchLike = fetch): Promise<ProviderHealthReport> {
+export async function checkExpoHealth(
+  env: ServerEnv,
+  fetchImpl: FetchLike = fetch,
+): Promise<ProviderHealthReport> {
   const startedAt = healthTimeAuthority.now().atMs;
   if (!isNonBlank(env.EXPO_TOKEN)) return notConfigured("expo-eas", ["EXPO_TOKEN"]);
 
@@ -455,7 +501,10 @@ export async function checkExpoHealth(env: ServerEnv, fetchImpl: FetchLike = fet
  * OPTIONAL capability must never fail the battery. When supplied, a single
  * read-only PING verifies the credential.
  */
-export async function checkRedisHealth(env: ServerEnv, fetchImpl: FetchLike = fetch): Promise<ProviderHealthReport> {
+export async function checkRedisHealth(
+  env: ServerEnv,
+  fetchImpl: FetchLike = fetch,
+): Promise<ProviderHealthReport> {
   const startedAt = healthTimeAuthority.now().atMs;
   if (!isNonBlank(env.REDIS_REST_URL) || !isNonBlank(env.REDIS_REST_TOKEN)) {
     return {
@@ -473,7 +522,10 @@ export async function checkRedisHealth(env: ServerEnv, fetchImpl: FetchLike = fe
 
   const outcome = await probe(
     base,
-    { Authorization: `Bearer ${env.REDIS_REST_TOKEN as string}`, "Content-Type": "application/json" },
+    {
+      Authorization: `Bearer ${env.REDIS_REST_TOKEN as string}`,
+      "Content-Type": "application/json",
+    },
     fetchImpl,
     { method: "POST", body: JSON.stringify(["PING"]) },
   );
@@ -532,8 +584,19 @@ export async function runProviderHealthBattery(
     checkRedisHealth(env, fetchImpl),
   ]);
   return [
-    supabase, resend, paystack, twilio, vapi, aiGateway,
-    posthog, sentry, newRelic, cloudflare, vercel, expo, redis,
+    supabase,
+    resend,
+    paystack,
+    twilio,
+    vapi,
+    aiGateway,
+    posthog,
+    sentry,
+    newRelic,
+    cloudflare,
+    vercel,
+    expo,
+    redis,
     ...staticNotRequiredProviders(),
   ];
 }

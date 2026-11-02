@@ -87,8 +87,7 @@ export type PaystackTestModeDenyCode =
   | "ownership_mismatch";
 
 export type PaystackTestModeResult<T> =
-  | { ok: true; value: T }
-  | { ok: false; code: PaystackTestModeDenyCode; reason: string };
+  { ok: true; value: T } | { ok: false; code: PaystackTestModeDenyCode; reason: string };
 
 export interface InitializedTransaction {
   provider: "paystack";
@@ -130,7 +129,7 @@ export function validateTestModeKey(
 ): { ok: true } | { ok: false; code: "missing_key" | "non_test_key"; reason: string } {
   const key = secretKey.trim();
   if (!key) return { ok: false, code: "missing_key", reason: "Paystack secret key is required" };
-  if (!key.startsWith(TEST_KEY_PREFIX)) {
+  if (!key.startsWith(TEST_KEY_PREFIX) || key.length === TEST_KEY_PREFIX.length) {
     return {
       ok: false,
       code: "non_test_key",
@@ -138,6 +137,13 @@ export function validateTestModeKey(
     };
   }
   return { ok: true };
+}
+
+export function requirePaystackTestKey(secretKey: string | null | undefined): string {
+  const key = secretKey?.trim() ?? "";
+  const validation = validateTestModeKey(key);
+  if (!validation.ok) throw new Error(validation.reason);
+  return key;
 }
 
 interface PaystackApiEnvelope {
@@ -163,19 +169,21 @@ function defaultTransport(url: string, init: RequestInit): Promise<Response> {
 }
 
 /** Shared construction validation (fail fast, before any caller mutation). */
-function buildRuntime(config: PaystackTestModeConfig): {
-  ok: true;
-  runtime: {
-    key: string;
-    baseUrl: string;
-    policy: AdapterFailurePolicy;
-    transport: (url: string, init: RequestInit) => Promise<Response>;
-  };
-} | {
-  ok: false;
-  code: "missing_key" | "non_test_key" | "missing_audit_sink";
-  reason: string;
-} {
+function buildRuntime(config: PaystackTestModeConfig):
+  | {
+      ok: true;
+      runtime: {
+        key: string;
+        baseUrl: string;
+        policy: AdapterFailurePolicy;
+        transport: (url: string, init: RequestInit) => Promise<Response>;
+      };
+    }
+  | {
+      ok: false;
+      code: "missing_key" | "non_test_key" | "missing_audit_sink";
+      reason: string;
+    } {
   const keyCheck = validateTestModeKey(config.secretKey);
   if (!keyCheck.ok) return keyCheck;
   if (typeof config.audit !== "function") {
@@ -246,24 +254,27 @@ export async function initializePaystackTestTransaction(
     // transport retry (replays dedupe only via the registered reference).
     maxAttempts: 1,
     call: async () => {
-      const res = await runtime.runtime.transport(`${runtime.runtime.baseUrl}/transaction/initialize`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${runtime.runtime.key}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          reference: idempotencyKey,
-          amount: reference.amount.amountMinor,
-          currency: reference.amount.currency,
-          email: payerEmail.trim(),
-          metadata: {
-            tenant_id: reference.tenantId,
-            purpose_kind: reference.purpose.kind,
-            purpose_ref: reference.purpose.ref,
+      const res = await runtime.runtime.transport(
+        `${runtime.runtime.baseUrl}/transaction/initialize`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${runtime.runtime.key}`,
+            "Content-Type": "application/json",
           },
-        }),
-      });
+          body: JSON.stringify({
+            reference: idempotencyKey,
+            amount: reference.amount.amountMinor,
+            currency: reference.amount.currency,
+            email: payerEmail.trim(),
+            metadata: {
+              tenant_id: reference.tenantId,
+              purpose_kind: reference.purpose.kind,
+              purpose_ref: reference.purpose.ref,
+            },
+          }),
+        },
+      );
       const text = await res.text();
       if (!res.ok) throw new Error(providerReason(res.status, text));
       return JSON.parse(text) as PaystackApiEnvelope;

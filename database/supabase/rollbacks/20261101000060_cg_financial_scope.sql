@@ -1,0 +1,24 @@
+-- Rollback for 20261101000060_cg_financial_scope.sql (NOT APPLIED).
+BEGIN;
+DROP FUNCTION IF EXISTS public.cg_financial_record_reconciliation(text, text, bigint, text, timestamptz);
+DROP FUNCTION IF EXISTS public.cg_financial_fail_intent(text);
+DROP FUNCTION IF EXISTS public.cg_financial_finish_reversal(uuid, text, text);
+DROP FUNCTION IF EXISTS public.cg_financial_request_reversal(uuid, bigint, text, text, text);
+DROP FUNCTION IF EXISTS public.cg_financial_record_settlement(text, text, bigint, text, timestamptz);
+DROP FUNCTION IF EXISTS public.cg_financial_create_plan(text, text, text, bigint, text, jsonb);
+DROP FUNCTION IF EXISTS public.cg_financial_create_intent(text, text, text, text, bigint, text, uuid, timestamptz);
+DROP FUNCTION IF EXISTS public.cg_financial_route_for_scope(text);
+DROP FUNCTION IF EXISTS public.cg_financial_set_route(text, text, boolean, text);
+DROP FUNCTION IF EXISTS public.cg_financial_resolve_scope(text);
+DROP FUNCTION IF EXISTS public.cg_financial_bind_scope(text, text, text, text);
+DROP FUNCTION IF EXISTS public.cg_financial_immutable();
+DROP TABLE IF EXISTS public.cg_financial_reconciliation;
+DROP TABLE IF EXISTS public.cg_financial_reversal;
+DROP TABLE IF EXISTS public.cg_financial_evidence;
+DROP TABLE IF EXISTS public.cg_financial_entry;
+DROP TABLE IF EXISTS public.cg_financial_intent;
+DROP TABLE IF EXISTS public.cg_financial_plan_part;
+DROP TABLE IF EXISTS public.cg_financial_plan;
+DROP TABLE IF EXISTS public.cg_financial_provider_route;
+DROP TABLE IF EXISTS public.cg_financial_scope_binding;
+COMMIT;

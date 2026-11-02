@@ -16,6 +16,7 @@ import {
 } from "../../frontend/src/lib/security/security-headers";
 import { urlField } from "../../frontend/src/lib/validation";
 import {
+  PAYSTACK_FEE_REFERENCE_TTL_MS,
   expectedChargeKobo,
   settlePaystackCharge,
   type SettlementDb,
@@ -125,7 +126,8 @@ describe("SHERIVS-004 webhook signature", () => {
   it("the webhook route reads the key from env, fails closed and uses the shared verifier", () => {
     const route = read("frontend/src/routes/api/public/webhooks/paystack.ts");
     expect(route).toContain("process.env.PAYSTACK_SECRET_KEY");
-    expect(route).toMatch(/if \(!secret\) return new Response\([^)]*503/);
+    expect(route).toContain("requirePaystackTestKey");
+    expect(route).toContain("status: 503");
     expect(route).toContain("verifyHmacHexSignature(raw, signature, secret)");
     expect(route).toContain("settlePaystackCharge");
     expect(route).not.toMatch(/\.from\("fees"\)\s*\.update/);
@@ -174,16 +176,17 @@ function fakeDb(fee: Fee | null) {
   return { db, updates };
 }
 
+const CURRENT_REFERENCE = `uos_aaaaaaaaaaaaaaaa_${Date.now()}`;
 const baseFee = (): Fee => ({
   id: "11111111-1111-4111-8111-111111111111",
   school_id: "22222222-2222-4222-8222-222222222222",
   amount: 50000,
   paid_amount: 10000,
   status: "partial",
-  paystack_reference: "uos_ref_1",
+  paystack_reference: CURRENT_REFERENCE,
 });
 const facts = (over: Record<string, unknown> = {}) => ({
-  reference: "uos_ref_1",
+  reference: CURRENT_REFERENCE,
   status: "success",
   amountKobo: 4_000_000,
   currency: "NGN",
@@ -224,6 +227,27 @@ describe("SHERIVS-004 paystack settlement (amount/currency/reference)", () => {
     expect((await settlePaystackCharge(db, facts({ status: "failed" }))).outcome).toBe("ignored");
     expect((await settlePaystackCharge(db, facts({ reference: "nope" }))).outcome).toBe("ignored");
     expect(updates).toHaveLength(0);
+  });
+
+  it("rejects an expired fee reference without writing", async () => {
+    const expiredReference = `uos_aaaaaaaaaaaaaaaa_${Date.now() - PAYSTACK_FEE_REFERENCE_TTL_MS - 1}`;
+    const { db, updates } = fakeDb({ ...baseFee(), paystack_reference: expiredReference });
+    expect(await settlePaystackCharge(db, facts({ reference: expiredReference }))).toMatchObject({
+      outcome: "rejected",
+      reason: "expired_reference",
+    });
+    expect(updates).toHaveLength(0);
+  });
+
+  it("accepts a delayed webhook when Paystack confirms payment before reference expiry", async () => {
+    const issuedAt = Date.now() - PAYSTACK_FEE_REFERENCE_TTL_MS - 60_000;
+    const reference = `uos_aaaaaaaaaaaaaaaa_${issuedAt}`;
+    const paymentAt = new Date(issuedAt + PAYSTACK_FEE_REFERENCE_TTL_MS - 1).toISOString();
+    const { db, updates } = fakeDb({ ...baseFee(), paystack_reference: reference });
+    expect(await settlePaystackCharge(db, facts({ reference, paidAt: paymentAt }))).toMatchObject({
+      outcome: "settled",
+    });
+    expect(updates).toHaveLength(1);
   });
 
   it("is idempotent: a replayed event is a duplicate with no second write", async () => {

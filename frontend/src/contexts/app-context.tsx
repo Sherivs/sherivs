@@ -13,6 +13,7 @@ import {
   persistOAuthError,
   shouldRejectUninvitedGooglePrincipal,
 } from "@/lib/auth/google-sign-in";
+import { clearLegacyOfflineStorage, clearOfflineData } from "@/lib/offline/indexeddb-store";
 import { ORGANIZATION_ACCESS_DENIED } from "@/lib/auth/organization-access";
 import { currentEffectiveHostKind } from "@/lib/experience/console-host-routing";
 import {
@@ -97,6 +98,15 @@ function applyBrandColors(school: SchoolRow | null) {
   else root.style.removeProperty("--tenant-primary");
   if (colors.secondary) root.style.setProperty("--tenant-secondary", colors.secondary);
   else root.style.removeProperty("--tenant-secondary");
+}
+
+async function clearClientOfflineData(scope?: { tenantId: string; userId: string; role: string }) {
+  clearLegacyOfflineStorage();
+  try {
+    await clearOfflineData(scope);
+  } catch {
+    /* Offline storage may be unavailable or blocked by the browser. */
+  }
 }
 
 /**
@@ -389,6 +399,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
         if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+        if (event === "SIGNED_OUT") void clearClientOfflineData();
         setSession(sess);
         void load(sess);
       });
@@ -429,11 +440,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
           // Role or school changed → reload profile and bounce to the right dashboard
           if (next.role !== profile.role || next.school_id !== profile.school_id) {
-            void load(session).then(() => {
-              if (typeof window !== "undefined" && next.role) {
-                window.location.assign(runtimeWorkspaceHome(next.role as AppRole));
-              }
-            });
+            void clearClientOfflineData({
+              tenantId: profile.school_id,
+              userId: profile.id,
+              role: profile.role,
+            })
+              .then(() => load(session))
+              .then(() => {
+                if (typeof window !== "undefined" && next.role) {
+                  window.location.assign(runtimeWorkspaceHome(next.role as AppRole));
+                }
+              });
           }
         },
       )
@@ -471,6 +488,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!localFixture) {
         await supabase.auth.signOut();
       }
+      await clearClientOfflineData();
       setSession(null);
       setProfile(null);
       setSuperAdmin(null);
