@@ -555,7 +555,7 @@ BEGIN
          AND r.channel = 'whatsapp' AND r.address = v_request.address
          AND r.principal_ref <> v_request.principal_ref
     ) THEN
-      RAISE EXCEPTION 'WhatsApp address is already linked to a different principal';
+      RAISE EXCEPTION 'WhatsApp address is already linked to a different member';
     END IF;
     INSERT INTO public.cg_communication_recipient_address
       (tenant_id, org_ref, principal_ref, channel, address)
