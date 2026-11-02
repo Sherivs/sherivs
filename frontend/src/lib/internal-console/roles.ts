@@ -97,6 +97,13 @@ export const CONSOLE_NAV: readonly ConsoleNavItem[] = [
         capability: "platform.tenants.manage",
       },
       {
+        key: "communications",
+        label: "WhatsApp",
+        href: CONSOLE_PATHS.communications,
+        capability: "platform.operations.read",
+        anyOf: ["platform.operations.read", "platform.tenants.manage"],
+      },
+      {
         key: "billing",
         label: "Billing",
         href: CONSOLE_PATHS.activityBilling,

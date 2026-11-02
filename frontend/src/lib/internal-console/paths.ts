@@ -9,6 +9,7 @@ export const CONSOLE_HOME_PATH = "/console" as const;
 export const CONSOLE_PATHS = {
   home: CONSOLE_HOME_PATH,
   organizations: `${CONSOLE_HOME_PATH}/organizations`,
+  communications: `${CONSOLE_HOME_PATH}/communications`,
   organizationNew: `${CONSOLE_HOME_PATH}/organizations/new`,
   organization: (id: string) => `${CONSOLE_HOME_PATH}/organizations/${encodeURIComponent(id)}`,
   team: `${CONSOLE_HOME_PATH}/team`,

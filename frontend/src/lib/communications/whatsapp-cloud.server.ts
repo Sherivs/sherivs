@@ -7,6 +7,7 @@ export type WhatsAppSendOptions = {
   language?: string;
   parameters?: string[];
   phoneNumberId?: string;
+  retryTransient?: boolean;
 };
 
 export interface WhatsAppGatewaySendCommand {
@@ -17,6 +18,7 @@ export interface WhatsAppGatewaySendCommand {
   templateCode?: string;
   language?: string;
   parameters?: string[];
+  retryTransient?: boolean;
 }
 
 /**
@@ -61,6 +63,7 @@ export async function sendWhatsAppMessage(
     language: command.language,
     parameters: command.parameters,
     phoneNumberId: target.provider_sender_ref,
+    retryTransient: command.retryTransient,
   });
   const recorded = await db.rpc("cg_whatsapp_dispatch_result", {
     p_message_id: target.message_id,
@@ -83,6 +86,7 @@ export class WhatsAppCloudAdapter {
     private fetchImpl: typeof fetch = fetch,
     private sleep: (ms: number) => Promise<void> = (ms) =>
       new Promise((resolve) => setTimeout(resolve, ms)),
+    private graphVersion = process.env.WHATSAPP_GRAPH_VERSION?.trim() || "v21.0",
   ) {}
 
   get live() {
@@ -92,6 +96,8 @@ export class WhatsAppCloudAdapter {
   async send(to: string, body: string, opts?: WhatsAppSendOptions): Promise<WhatsAppSendResult> {
     const phoneNumberId = opts?.phoneNumberId ?? this.defaultPhoneId;
     if (!this.live || !phoneNumberId) return { ok: false, error: "whatsapp not configured" };
+    if (!/^v\d+\.\d+$/.test(this.graphVersion))
+      return { ok: false, error: "invalid WhatsApp Graph API version" };
     if (!/^[0-9]{1,32}$/.test(phoneNumberId))
       return { ok: false, error: "invalid WhatsApp sender reference" };
     const recipient = to.replace(/^\+/, "");
@@ -135,7 +141,7 @@ export class WhatsAppCloudAdapter {
           type: "text",
           text: { body, preview_url: false },
         };
-    const endpoint = `https://graph.facebook.com/v21.0/${encodeURIComponent(phoneNumberId)}/messages`;
+    const endpoint = `https://graph.facebook.com/${this.graphVersion}/${encodeURIComponent(phoneNumberId)}/messages`;
 
     for (let attempt = 0; attempt < 3; attempt += 1) {
       let response: Response;
@@ -154,7 +160,7 @@ export class WhatsAppCloudAdapter {
       if (!response.ok) {
         const retryable =
           response.status === 408 || response.status === 429 || response.status >= 500;
-        if (retryable && attempt < 2) {
+        if (retryable && opts?.retryTransient !== false && attempt < 2) {
           await this.sleep(250 * 2 ** attempt);
           continue;
         }

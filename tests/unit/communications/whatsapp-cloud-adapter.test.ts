@@ -70,6 +70,22 @@ describe("WhatsApp Cloud adapter", () => {
     expect(fetchImpl.mock.calls[0][0]).toBe("https://graph.facebook.com/v21.0/987654321/messages");
   });
 
+  it("uses a validated configured Graph API version and defaults to v21.0", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(receipt());
+    const adapter = new WhatsAppCloudAdapter(TOKEN, PHONE_ID, fetchImpl, vi.fn(), "v22.1");
+
+    await adapter.send("2349015056201", "Hello");
+    expect(fetchImpl.mock.calls[0][0]).toBe(
+      "https://graph.facebook.com/v22.1/123456789012345/messages",
+    );
+
+    const invalid = new WhatsAppCloudAdapter(TOKEN, PHONE_ID, vi.fn(), vi.fn(), "v22.1/evil");
+    await expect(invalid.send("2349015056201", "Hello")).resolves.toMatchObject({
+      ok: false,
+      error: "invalid WhatsApp Graph API version",
+    });
+  });
+
   it("rejects invalid local input without contacting Meta", async () => {
     const fetchImpl = vi.fn();
     const adapter = new WhatsAppCloudAdapter(TOKEN, PHONE_ID, fetchImpl, vi.fn());
@@ -126,5 +142,15 @@ describe("WhatsApp Cloud adapter", () => {
     expect(JSON.stringify(result)).not.toContain(TOKEN);
     expect(fetchImpl).toHaveBeenCalledTimes(1);
     expect(sleep).not.toHaveBeenCalled();
+  });
+
+  it("does not retry transient HTTP responses for at-most-once automatic acknowledgements", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(null, { status: 503 }));
+    const adapter = new WhatsAppCloudAdapter(TOKEN, PHONE_ID, fetchImpl, vi.fn());
+
+    await expect(
+      adapter.send("2349015056201", "Thanks", { retryTransient: false }),
+    ).resolves.toMatchObject({ ok: false });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 });
