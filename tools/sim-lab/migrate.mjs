@@ -14,3 +14,4 @@ fs.writeFileSync("migrate-result.json", JSON.stringify(res, null, 1));
 console.log(`applied ${res.filter((r) => r.ok).length}/${res.length}`);
 for (const r of res.filter((r) => !r.ok)) console.log("FAIL", r.f, "::", r.err);
 await c.end();
+if (res.some((r) => !r.ok)) process.exit(1);

@@ -134,9 +134,9 @@ const [A, B, C, D, E] = M.institutions;
   );
   rec(
     "rollover",
-    "Admin promotes 12,000 university students in one statement",
-    r.ok,
-    r.ok ? `${r.r.rowCount} rows in ${Date.now() - t0} ms (ad-hoc SQL, no app routine)` : r.err,
+    "Ad-hoc SQL cannot change students.class_id without an approved mobility request (rollover goes through session_rollover)",
+    !r.ok && /approved student mobility request/.test(r.err ?? ""),
+    r.ok ? `${r.r.rowCount} rows in ${Date.now() - t0} ms (UNGUARDED)` : r.err,
     "medium",
   );
   const cross = await tryq(E.admin, "UPDATE students SET class_id = class_id WHERE school_id=$1", [
@@ -6187,10 +6187,14 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
       [sid, other],
     );
     out.hist = (
-      await t("select count(*)::int n from student_class_history where student_id=$1", [sid])
+      await asOwner(
+        "select count(*)::int n from student_mobility_requests where student_id=$1 and status='pending' and target_class_id=$2",
+        [sid, other],
+      )
     ).row?.n;
     out.nowCls =
-      (await asOwner("select class_id from students where id=$1", [sid])).row?.class_id === other;
+      (await asOwner("select class_id from students where id=$1", [sid])).row?.class_id ===
+      st.class_id;
     // transfers
     out.noConsent = await t(
       "select public.transfer_out_issue($1,'Govt Sec School Maiduguri','Family relocating',false)",
@@ -6221,6 +6225,10 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
       )
     ).row?.id;
     const cls2 = (await asOwner("select class_id from students where id=$1", [sid2])).row?.class_id;
+    await asOwner(
+      "update fees set status='paid', paid_amount=amount where student_id=$1 and school_id=$2",
+      [sid2, A.schoolId],
+    );
     const iss2 = (
       await t("select public.transfer_out_issue($1,'Some Academy','Considering a move',true) r", [
         sid2,
@@ -6315,7 +6323,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
   });
   rec(
     "students_transfer",
-    "Class moves need students.transfer, a reason and a same-school class; history is kept",
+    "Class moves need students.transfer, a reason and a same-school class; the move is queued as a pending mobility request (the class changes only after approval)",
     !v.tMove?.ok && !v.noReason?.ok && !v.foreign?.ok && v.move?.ok && v.hist === 1 && v.nowCls,
     `${W_ERR(v.tMove)} | ${W_ERR(v.noReason)} | ${W_ERR(v.foreign)} | hist ${v.hist}`,
     "high",
