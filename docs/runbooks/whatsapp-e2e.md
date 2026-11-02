@@ -30,17 +30,35 @@ this runbook, commits, tickets, or logs. Never use a `VITE_`, `NEXT_PUBLIC_`, or
 - `WHATSAPP_VERIFY_TOKEN`
 - `WHATSAPP_GRAPH_VERSION` (optional; defaults to `v21.0`)
 - `WHATSAPP_AUTO_ACK_TEXT` (short reply; an empty value disables auto-ack)
-- `N8N_WHATSAPP_WEBHOOK_URL` (HTTPS webhook on an allowlisted `*.amazonaws.com` host)
+- `N8N_WHATSAPP_WEBHOOK_URL` (HTTPS n8n webhook URL)
+- `N8N_WHATSAPP_ALLOWED_HOSTS` (comma-separated exact hostnames, e.g. `automate.sherivs.com`; no wildcards)
 - `N8N_WHATSAPP_SIGNING_SECRET` (random server-side HMAC key; minimum 32 characters)
-- `CRON_SECRET` (existing Vercel Cron bearer secret for the outbox dispatcher)
+- `CRON_SECRET` (bearer secret for the protected outbox dispatcher)
 
 Use the Meta system-user permanent access token for the production sender.
 Grant that system user the minimum required access to the WABA and phone number.
 Keep development, preview, and production values separated.
-The n8n dispatcher rejects non-HTTPS URLs, non-AWS hosts, credentials in the
-URL, and nonstandard ports. Configure a Vercel Cron invocation for
-`/api/public/cron/whatsapp-n8n-forward` with the existing `CRON_SECRET`; it
-claims durable outbox rows and uses bounded retries and dead-letter storage.
+The n8n dispatcher fails closed unless the URL is HTTPS and its hostname exactly
+matches an entry in `N8N_WHATSAPP_ALLOWED_HOSTS`; it rejects wildcard entries,
+lookalike hosts, URL credentials, and nonstandard ports. In n8n, use a Schedule
+Trigger node set to every minute, followed by an HTTP Request node that calls
+`https://www.sherivs.com/api/public/cron/whatsapp-n8n-forward` using `GET`.
+Use the standard bearer authorization scheme and source its credential from
+`CRON_SECRET`. This protected endpoint claims
+durable outbox rows and uses bounded retries and dead-letter storage. Vercel
+Hobby cron is not used.
+
+## Migration and code deployment order
+
+These additive migrations retain the existing four-argument receive RPC and
+five-argument send RPC as service-role-only compatibility wrappers. The wrappers
+delegate to the new tenant-bound functions; the legacy send wrapper additionally
+requires a recent stored inbound message. Apply migrations
+`20261103000100_sherivs_whatsapp_e2e_durable.sql` and then
+`20261103000200_sherivs_whatsapp_tenant_binding_n8n.sql` before deploying/merging
+the code that calls their expanded signatures. This ordering keeps the currently
+deployed webhook RPC calls working throughout deployment. Keep both wrappers
+until a separate reviewed cleanup migration is approved.
 
 ## Meta webhook configuration
 

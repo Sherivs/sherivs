@@ -8,6 +8,7 @@ import {
   verifyN8nWhatsAppSignature,
 } from "../../../frontend/src/lib/communications/whatsapp-n8n.server";
 import { Route } from "../../../frontend/src/routes/api/public/webhooks/whatsapp-reply";
+import { Route as ForwardRoute } from "../../../frontend/src/routes/api/public/cron/whatsapp-n8n-forward";
 
 const { mockRpc, mockSend } = vi.hoisted(() => ({ mockRpc: vi.fn(), mockSend: vi.fn() }));
 vi.mock("@/integrations/supabase/client.server", () => ({
@@ -20,11 +21,23 @@ vi.mock("@/lib/communications/whatsapp-cloud.server", () => ({
 const SECRET = "n8n-signing-secret-fixture-not-a-production-value";
 const ORIGINAL_URL = process.env.N8N_WHATSAPP_WEBHOOK_URL;
 const ORIGINAL_SECRET = process.env.N8N_WHATSAPP_SIGNING_SECRET;
+const ORIGINAL_ALLOWED_HOSTS = process.env.N8N_WHATSAPP_ALLOWED_HOSTS;
+const ORIGINAL_CRON_SECRET = process.env.CRON_SECRET;
 const POST_REPLY = (
   Route as unknown as {
     options: { server: { handlers: { POST: (input: { request: Request }) => Promise<Response> } } };
   }
 ).options.server.handlers.POST;
+const POST_FORWARD = (
+  ForwardRoute as unknown as {
+    options: { server: { handlers: { POST: (input: { request: Request }) => Promise<Response> } } };
+  }
+).options.server.handlers.POST;
+const GET_FORWARD = (
+  ForwardRoute as unknown as {
+    options: { server: { handlers: { GET: (input: { request: Request }) => Promise<Response> } } };
+  }
+).options.server.handlers.GET;
 
 function signedRequest(body: unknown, now = Date.now()): Request {
   const raw = JSON.stringify(body);
@@ -44,39 +57,55 @@ afterEach(() => {
   else process.env.N8N_WHATSAPP_WEBHOOK_URL = ORIGINAL_URL;
   if (ORIGINAL_SECRET === undefined) delete process.env.N8N_WHATSAPP_SIGNING_SECRET;
   else process.env.N8N_WHATSAPP_SIGNING_SECRET = ORIGINAL_SECRET;
+  if (ORIGINAL_ALLOWED_HOSTS === undefined) delete process.env.N8N_WHATSAPP_ALLOWED_HOSTS;
+  else process.env.N8N_WHATSAPP_ALLOWED_HOSTS = ORIGINAL_ALLOWED_HOSTS;
+  if (ORIGINAL_CRON_SECRET === undefined) delete process.env.CRON_SECRET;
+  else process.env.CRON_SECRET = ORIGINAL_CRON_SECRET;
   mockRpc.mockReset();
   mockSend.mockReset();
 });
 
 describe("WhatsApp n8n forwarding and reply authentication", () => {
-  it("accepts only HTTPS AWS endpoints and a strong environment signing secret", () => {
+  it("accepts only HTTPS exact-host allowlist entries and a strong signing secret", () => {
     expect(
       getN8nWhatsAppConfig({
-        N8N_WHATSAPP_WEBHOOK_URL: "https://n8n-prod.us-east-1.amazonaws.com/hooks/wa",
+        N8N_WHATSAPP_WEBHOOK_URL: "https://automate.sherivs.com/hooks/wa",
+        N8N_WHATSAPP_ALLOWED_HOSTS: " automate.sherivs.com,other.example.test ",
         N8N_WHATSAPP_SIGNING_SECRET: SECRET,
       }),
-    ).toMatchObject({ webhookUrl: "https://n8n-prod.us-east-1.amazonaws.com/hooks/wa" });
+    ).toMatchObject({ webhookUrl: "https://automate.sherivs.com/hooks/wa" });
     expect(
       getN8nWhatsAppConfig({
-        N8N_WHATSAPP_WEBHOOK_URL: "http://n8n-prod.us-east-1.amazonaws.com/hooks/wa",
-        N8N_WHATSAPP_SIGNING_SECRET: SECRET,
-      }),
-    ).toBeNull();
-    expect(
-      getN8nWhatsAppConfig({
-        N8N_WHATSAPP_WEBHOOK_URL: "https://127.0.0.1/hooks/wa",
+        N8N_WHATSAPP_WEBHOOK_URL: "http://automate.sherivs.com/hooks/wa",
+        N8N_WHATSAPP_ALLOWED_HOSTS: "automate.sherivs.com",
         N8N_WHATSAPP_SIGNING_SECRET: SECRET,
       }),
     ).toBeNull();
     expect(
       getN8nWhatsAppConfig({
-        N8N_WHATSAPP_WEBHOOK_URL: "https://n8n.example.test/hooks/wa",
+        N8N_WHATSAPP_WEBHOOK_URL: "https://unlisted.sherivs.com/hooks/wa",
+        N8N_WHATSAPP_ALLOWED_HOSTS: "automate.sherivs.com",
         N8N_WHATSAPP_SIGNING_SECRET: SECRET,
       }),
     ).toBeNull();
     expect(
       getN8nWhatsAppConfig({
-        N8N_WHATSAPP_WEBHOOK_URL: "https://n8n-prod.amazonaws.com/hooks/wa",
+        N8N_WHATSAPP_WEBHOOK_URL: "https://automate.sherivs.com.evil.test/hooks/wa",
+        N8N_WHATSAPP_ALLOWED_HOSTS: "automate.sherivs.com",
+        N8N_WHATSAPP_SIGNING_SECRET: SECRET,
+      }),
+    ).toBeNull();
+    expect(
+      getN8nWhatsAppConfig({
+        N8N_WHATSAPP_WEBHOOK_URL: "https://automate.sherivs.com/hooks/wa",
+        N8N_WHATSAPP_ALLOWED_HOSTS: "*.sherivs.com",
+        N8N_WHATSAPP_SIGNING_SECRET: SECRET,
+      }),
+    ).toBeNull();
+    expect(
+      getN8nWhatsAppConfig({
+        N8N_WHATSAPP_WEBHOOK_URL: "https://automate.sherivs.com/hooks/wa",
+        N8N_WHATSAPP_ALLOWED_HOSTS: "automate.sherivs.com",
         N8N_WHATSAPP_SIGNING_SECRET: "short",
       }),
     ).toBeNull();
@@ -120,7 +149,8 @@ describe("WhatsApp n8n forwarding and reply authentication", () => {
   });
 
   it("signs and durably records a tenant-scoped outbox delivery without exposing secrets", async () => {
-    process.env.N8N_WHATSAPP_WEBHOOK_URL = "https://n8n-prod.amazonaws.com/hooks/wa";
+    process.env.N8N_WHATSAPP_WEBHOOK_URL = "https://automate.sherivs.com/hooks/wa";
+    process.env.N8N_WHATSAPP_ALLOWED_HOSTS = "automate.sherivs.com";
     process.env.N8N_WHATSAPP_SIGNING_SECRET = SECRET;
     const now = 1_800_000_000_000;
     const payload = {
@@ -159,7 +189,7 @@ describe("WhatsApp n8n forwarding and reply authentication", () => {
     ).resolves.toEqual({ ok: true, delivered: 1, failed: 0 });
 
     const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("https://n8n-prod.amazonaws.com/hooks/wa");
+    expect(url).toBe("https://automate.sherivs.com/hooks/wa");
     const headers = new Headers(init.headers);
     const raw = String(init.body);
     expect(
@@ -179,6 +209,36 @@ describe("WhatsApp n8n forwarding and reply authentication", () => {
       p_success: true,
       p_error_code: null,
     });
+  });
+
+  it("allows the documented minute scheduler to trigger the bearer-protected outbox endpoint", async () => {
+    process.env.CRON_SECRET = "cron-secret-fixture-not-a-production-value";
+    process.env.N8N_WHATSAPP_WEBHOOK_URL = "https://automate.sherivs.com/hooks/wa";
+    process.env.N8N_WHATSAPP_ALLOWED_HOSTS = "automate.sherivs.com";
+    process.env.N8N_WHATSAPP_SIGNING_SECRET = SECRET;
+    mockRpc.mockResolvedValueOnce({ data: [], error: null });
+    const url = "https://www.sherivs.com/api/public/cron/whatsapp-n8n-forward";
+
+    expect(
+      (
+        await GET_FORWARD({
+          request: new Request(url, { method: "GET" }),
+        })
+      ).status,
+    ).toBe(401);
+    expect(mockRpc).not.toHaveBeenCalled();
+
+    const response = await GET_FORWARD({
+      request: new Request(url, {
+        method: "GET",
+        headers: {
+          authorization: ["Bear", "er ", process.env.CRON_SECRET].join(""),
+        },
+      }),
+    });
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ ok: true, delivered: 0 });
+    expect(mockRpc).toHaveBeenCalledWith("cg_whatsapp_claim_n8n_outbox", { p_limit: 20 });
   });
 
   it("rejects tenant overrides in n8n replies and only sends a server-resolved target", async () => {

@@ -25,28 +25,28 @@ const fix = readFileSync(
 );
 const e2eMigration = readFileSync(
   new URL(
-    "../../../database/supabase/migrations/20261102100000_sherivs_whatsapp_e2e_durable.sql",
+    "../../../database/supabase/migrations/20261103000100_sherivs_whatsapp_e2e_durable.sql",
     import.meta.url,
   ),
   "utf8",
 );
 const e2eRollback = readFileSync(
   new URL(
-    "../../../database/supabase/rollbacks/20261102100000_sherivs_whatsapp_e2e_durable.sql",
+    "../../../database/supabase/rollbacks/20261103000100_sherivs_whatsapp_e2e_durable.sql",
     import.meta.url,
   ),
   "utf8",
 );
 const tenantBindingMigration = readFileSync(
   new URL(
-    "../../../database/supabase/migrations/20261102200000_sherivs_whatsapp_tenant_binding_n8n.sql",
+    "../../../database/supabase/migrations/20261103000200_sherivs_whatsapp_tenant_binding_n8n.sql",
     import.meta.url,
   ),
   "utf8",
 );
 const tenantBindingRollback = readFileSync(
   new URL(
-    "../../../database/supabase/rollbacks/20261102200000_sherivs_whatsapp_tenant_binding_n8n.sql",
+    "../../../database/supabase/rollbacks/20261103000200_sherivs_whatsapp_tenant_binding_n8n.sql",
     import.meta.url,
   ),
   "utf8",
@@ -93,6 +93,13 @@ describe("WhatsApp Cloud migration posture", () => {
         "tenant_id = public.get_my_tenant_id() AND public.is_tenant_admin(tenant_id)",
       );
       expect(e2eMigration.match(/CREATE POLICY cg_whatsapp_.*_tenant_select/g)).toHaveLength(5);
+      expect(e2eMigration).toContain("CREATE OR REPLACE FUNCTION public.cg_whatsapp_receive(");
+      expect(e2eMigration).toContain(
+        "REVOKE ALL ON FUNCTION public.cg_whatsapp_receive(text, text, text, text)",
+      );
+      expect(e2eMigration).not.toContain(
+        "DROP FUNCTION public.cg_whatsapp_receive(text, text, text, text)",
+      );
     });
 
     describe("tenant binding and signed n8n forwarding migration", () => {
@@ -112,6 +119,15 @@ describe("WhatsApp Cloud migration posture", () => {
           "encode(sha256(convert_to(v_recipient, 'UTF8')), 'hex')",
         );
         expect(tenantBindingMigration).toContain("body_hash text NOT NULL");
+        expect(tenantBindingMigration).toContain(
+          "CREATE OR REPLACE FUNCTION public.cg_whatsapp_prepare_send(",
+        );
+        expect(tenantBindingMigration).toContain(
+          "REVOKE ALL ON FUNCTION public.cg_whatsapp_prepare_send(text, text, text, text, text)",
+        );
+        expect(tenantBindingMigration).not.toContain(
+          "DROP FUNCTION public.cg_whatsapp_prepare_send(text, text, text, text, text)",
+        );
         expect(tenantBindingMigration).toContain("lease_until <= now()");
         expect(tenantBindingMigration).toContain(
           "cg_whatsapp_n8n_reply.body_hash = EXCLUDED.body_hash",

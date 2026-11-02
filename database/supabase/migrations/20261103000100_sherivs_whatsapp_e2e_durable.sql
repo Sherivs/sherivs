@@ -1,5 +1,5 @@
 -- Durable webhook protection, recipient review, auto-ack claims, and health data.
--- NOT APPLIED. Rollback: database/supabase/rollbacks/20261102100000_sherivs_whatsapp_e2e_durable.sql
+-- NOT APPLIED. Rollback: database/supabase/rollbacks/20261103000100_sherivs_whatsapp_e2e_durable.sql
 BEGIN;
 
 ALTER TABLE public.cg_communication_message
@@ -114,7 +114,6 @@ CREATE POLICY cg_whatsapp_recipient_link_request_tenant_select
   ON public.cg_whatsapp_recipient_link_request FOR SELECT TO authenticated
   USING (tenant_id = public.get_my_tenant_id() AND public.is_tenant_admin(tenant_id));
 
-DROP FUNCTION public.cg_whatsapp_receive(text, text, text, text);
 CREATE FUNCTION public.cg_whatsapp_receive(
   p_provider_sender_ref text,
   p_from text,
@@ -252,6 +251,27 @@ $$;
 REVOKE ALL ON FUNCTION public.cg_whatsapp_receive(text, text, text, text, timestamptz)
   FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.cg_whatsapp_receive(text, text, text, text, timestamptz)
+  TO service_role;
+
+CREATE OR REPLACE FUNCTION public.cg_whatsapp_receive(
+  p_provider_sender_ref text,
+  p_from text,
+  p_body text,
+  p_provider_ref text
+) RETURNS text LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $$
+BEGIN
+  IF coalesce(auth.role(), '') <> 'service_role' THEN
+    RAISE EXCEPTION 'not allowed: WhatsApp callbacks require a verified provider webhook' USING ERRCODE = '42501';
+  END IF;
+  RETURN public.cg_whatsapp_receive(
+    p_provider_sender_ref, p_from, p_body, p_provider_ref, NULL::timestamptz
+  );
+END
+$$;
+REVOKE ALL ON FUNCTION public.cg_whatsapp_receive(text, text, text, text)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.cg_whatsapp_receive(text, text, text, text)
   TO service_role;
 
 CREATE OR REPLACE FUNCTION public.cg_whatsapp_status(

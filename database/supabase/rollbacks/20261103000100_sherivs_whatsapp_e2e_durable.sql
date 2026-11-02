@@ -1,4 +1,4 @@
--- Roll back 20261102100000 and restore the prior inbound receiver.
+-- Roll back 20261103000100 and restore the prior inbound receiver.
 BEGIN;
 
 DROP FUNCTION IF EXISTS public.cg_whatsapp_health();

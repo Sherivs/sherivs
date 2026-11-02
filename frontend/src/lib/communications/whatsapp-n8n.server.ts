@@ -39,6 +39,14 @@ export type WhatsAppN8nDatabase = {
 export function getN8nWhatsAppConfig(env = process.env) {
   const webhookUrl = env.N8N_WHATSAPP_WEBHOOK_URL?.trim();
   const signingSecret = env.N8N_WHATSAPP_SIGNING_SECRET;
+  const allowedHosts = (env.N8N_WHATSAPP_ALLOWED_HOSTS ?? "")
+    .split(",")
+    .map((host) => host.trim().toLowerCase())
+    .filter((host) =>
+      /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*$/.test(
+        host,
+      ),
+    );
   if (!webhookUrl || !signingSecret || signingSecret.length < 32) return null;
   try {
     const url = new URL(webhookUrl);
@@ -47,7 +55,7 @@ export function getN8nWhatsAppConfig(env = process.env) {
       url.username ||
       url.password ||
       (url.port && url.port !== "443") ||
-      !url.hostname.endsWith(".amazonaws.com")
+      !allowedHosts.includes(url.hostname.toLowerCase())
     )
       return null;
     return { webhookUrl: url.toString(), signingSecret };

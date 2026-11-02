@@ -133,7 +133,7 @@ $$;
 REVOKE ALL ON FUNCTION public.cg_whatsapp_auto_ack_result(text, text, text) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.cg_whatsapp_auto_ack_result(text, text, text) TO service_role;
 
-CREATE FUNCTION public.cg_whatsapp_prepare_send(
+CREATE OR REPLACE FUNCTION public.cg_whatsapp_prepare_send(
   p_tenant_id text,
   p_org_ref text,
   p_principal_ref text,

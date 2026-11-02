@@ -1,5 +1,5 @@
 -- Tenant-bound WhatsApp dispatch and durable signed n8n forwarding.
--- NOT APPLIED. Rollback: database/supabase/rollbacks/20261102200000_sherivs_whatsapp_tenant_binding_n8n.sql
+-- NOT APPLIED. Rollback: database/supabase/rollbacks/20261103000200_sherivs_whatsapp_tenant_binding_n8n.sql
 BEGIN;
 
 ALTER TABLE public.cg_org_communication_sender
@@ -418,7 +418,6 @@ REVOKE ALL ON FUNCTION public.cg_whatsapp_auto_ack_result(text, text, text, text
   FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.cg_whatsapp_auto_ack_result(text, text, text, text) TO service_role;
 
-DROP FUNCTION public.cg_whatsapp_prepare_send(text, text, text, text, text);
 CREATE FUNCTION public.cg_whatsapp_prepare_send(
   p_tenant_id text,
   p_org_ref text,
@@ -536,6 +535,55 @@ $$;
 REVOKE ALL ON FUNCTION public.cg_whatsapp_prepare_send(text, text, text, text, text, uuid, text, text)
   FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.cg_whatsapp_prepare_send(text, text, text, text, text, uuid, text, text)
+  TO service_role;
+
+CREATE OR REPLACE FUNCTION public.cg_whatsapp_prepare_send(
+  p_tenant_id text,
+  p_org_ref text,
+  p_principal_ref text,
+  p_body text,
+  p_template_code text DEFAULT NULL
+) RETURNS TABLE (message_id uuid, provider_sender_ref text, recipient_address text)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $$
+DECLARE
+  v_inbound record;
+BEGIN
+  IF coalesce(auth.role(), '') <> 'service_role' THEN
+    RAISE EXCEPTION 'not allowed: WhatsApp sends require the shared server gateway' USING ERRCODE = '42501';
+  END IF;
+  SELECT m.conversation_id, e.provider_sender_ref, m.provider_ref
+    INTO v_inbound
+    FROM public.cg_communication_message m
+    JOIN public.cg_whatsapp_inbound_event e
+      ON e.tenant_id = m.tenant_id AND e.org_ref = m.org_ref AND e.provider_ref = m.provider_ref
+     AND e.status = 'received'
+    JOIN public.cg_communication_recipient_address r
+      ON r.tenant_id = m.tenant_id AND r.org_ref = m.org_ref
+     AND r.principal_ref = m.principal_ref AND r.channel = 'whatsapp'
+    JOIN public.cg_communication_conversation cv
+      ON cv.id = m.conversation_id AND cv.tenant_id = m.tenant_id
+     AND cv.org_ref = m.org_ref AND cv.address = r.address
+   WHERE m.tenant_id = p_tenant_id AND m.org_ref = p_org_ref
+     AND m.principal_ref = p_principal_ref AND m.channel = 'whatsapp'
+     AND m.direction = 'inbound' AND m.provider_created_at >= now() - interval '24 hours'
+     AND m.provider_created_at <= now()
+   ORDER BY m.provider_created_at DESC
+   LIMIT 1;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'WhatsApp send requires a recent server-recorded inbound message' USING ERRCODE = '42501';
+  END IF;
+  RETURN QUERY
+    SELECT p.message_id, p.provider_sender_ref, p.recipient_address
+      FROM public.cg_whatsapp_prepare_send(
+        p_tenant_id, p_org_ref, p_principal_ref, p_body, p_template_code,
+        v_inbound.conversation_id, v_inbound.provider_sender_ref, v_inbound.provider_ref
+      ) p;
+END
+$$;
+REVOKE ALL ON FUNCTION public.cg_whatsapp_prepare_send(text, text, text, text, text)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.cg_whatsapp_prepare_send(text, text, text, text, text)
   TO service_role;
 
 CREATE OR REPLACE FUNCTION public.cg_whatsapp_prepare_n8n_reply(
