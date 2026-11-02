@@ -14,13 +14,23 @@ export interface WhatsAppGatewaySendCommand {
   tenantId: string;
   orgRef: string;
   principalRef: string;
+  conversationId: string;
+  inboundProviderSenderRef: string;
+  inboundProviderRef: string;
   body: string;
   templateCode?: string;
   language?: string;
   parameters?: string[];
   retryTransient?: boolean;
-  expectedRecipientAddress?: string;
+  expectedRecipientAddress: string;
 }
+
+export type WhatsAppSendDatabase = {
+  rpc: (
+    fn: string,
+    args: Record<string, unknown>,
+  ) => Promise<{ data: unknown; error: { message: string } | null }>;
+};
 
 /**
  * Dispatch through the shared tenant/org message ledger. The caller must pass
@@ -29,18 +39,20 @@ export interface WhatsAppGatewaySendCommand {
 export async function sendWhatsAppMessage(
   command: WhatsAppGatewaySendCommand,
   adapter = new WhatsAppCloudAdapter(),
+  database?: WhatsAppSendDatabase,
 ): Promise<WhatsAppSendResult> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const db = supabaseAdmin as unknown as {
-    rpc: (
-      fn: string,
-      args: Record<string, unknown>,
-    ) => Promise<{ data: unknown; error: { message: string } | null }>;
-  };
+  let db = database;
+  if (!db) {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    db = supabaseAdmin as unknown as WhatsAppSendDatabase;
+  }
   const prepared = await db.rpc("cg_whatsapp_prepare_send", {
     p_tenant_id: command.tenantId,
     p_org_ref: command.orgRef,
     p_principal_ref: command.principalRef,
+    p_conversation_id: command.conversationId,
+    p_provider_sender_ref: command.inboundProviderSenderRef,
+    p_inbound_provider_ref: command.inboundProviderRef,
     p_body: command.body,
     p_template_code: command.templateCode ?? null,
   });
@@ -51,6 +63,7 @@ export async function sendWhatsAppMessage(
       z.object({
         message_id: z.string().uuid(),
         provider_sender_ref: z.string().min(1).max(160),
+        conversation_id: z.string().uuid(),
         recipient_address: z.string().regex(/^\+[1-9]\d{7,14}$/),
       }),
     )
@@ -60,7 +73,7 @@ export async function sendWhatsAppMessage(
 
   const target = rows.data[0];
   if (
-    command.expectedRecipientAddress &&
+    target.provider_sender_ref !== command.inboundProviderSenderRef ||
     target.recipient_address !== command.expectedRecipientAddress
   ) {
     await db.rpc("cg_whatsapp_dispatch_result", {
@@ -69,7 +82,16 @@ export async function sendWhatsAppMessage(
       p_provider_ref: null,
       p_error_code: "recipient_mismatch",
     });
-    return { ok: false, error: "WhatsApp recipient no longer matches the inbound sender" };
+    return { ok: false, error: "WhatsApp send target no longer matches the inbound sender" };
+  }
+  if (target.conversation_id !== command.conversationId) {
+    await db.rpc("cg_whatsapp_dispatch_result", {
+      p_message_id: target.message_id,
+      p_status: "failed",
+      p_provider_ref: null,
+      p_error_code: "conversation_mismatch",
+    });
+    return { ok: false, error: "WhatsApp conversation no longer matches the inbound message" };
   }
   const sent = await adapter.send(target.recipient_address, command.body, {
     template: command.templateCode,

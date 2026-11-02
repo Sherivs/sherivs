@@ -170,6 +170,7 @@ describe("WhatsApp Cloud adapter", () => {
             {
               message_id: "00000000-0000-4000-8000-000000000001",
               provider_sender_ref: PHONE_ID,
+              conversation_id: "00000000-0000-4000-8000-000000000002",
               recipient_address: "+2349015056999",
             },
           ],
@@ -184,6 +185,9 @@ describe("WhatsApp Cloud adapter", () => {
         tenantId: "tenant-a",
         orgRef: "org-a",
         principalRef: "principal-a",
+        conversationId: "00000000-0000-4000-8000-000000000002",
+        inboundProviderSenderRef: PHONE_ID,
+        inboundProviderRef: "wamid.inbound",
         body: "Thanks",
         expectedRecipientAddress: "+2349015056202",
       },
@@ -196,6 +200,86 @@ describe("WhatsApp Cloud adapter", () => {
       "cg_whatsapp_dispatch_result",
       expect.objectContaining({ p_status: "failed", p_error_code: "recipient_mismatch" }),
     );
+    mockAdminRpc.mockReset();
+  });
+
+  it("keeps interleaved sends isolated across four tenants and three senders each", async () => {
+    const records = Array.from({ length: 12 }, (_, index) => {
+      const tenantIndex = Math.floor(index / 3);
+      const senderRef = String(900_000 + index);
+      const conversationId = `00000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`;
+      const inboundProviderRef = `wamid.t${tenantIndex}.s${index % 3}`;
+      const recipient = `+234800000${String(index).padStart(4, "0")}`;
+      return {
+        tenantId: `tenant-${tenantIndex}`,
+        orgRef: `org-${tenantIndex}`,
+        principalRef: `principal-${index}`,
+        conversationId,
+        inboundProviderSenderRef: senderRef,
+        inboundProviderRef,
+        recipient,
+      };
+    });
+    const byInboundRef = new Map(records.map((record, index) => [record.inboundProviderRef, { ...record, index }]));
+    mockAdminRpc.mockImplementation(async (name: string, args: Record<string, unknown>) => {
+      if (name === "cg_whatsapp_prepare_send") {
+        const target = byInboundRef.get(String(args.p_inbound_provider_ref));
+        if (!target) return { data: [], error: null };
+        return {
+          data: [
+            {
+              message_id: `00000000-0000-4000-8000-${String(target.index + 100).padStart(12, "0")}`,
+              provider_sender_ref: target.inboundProviderSenderRef,
+              conversation_id: target.conversationId,
+              recipient_address: target.recipient,
+            },
+          ],
+          error: null,
+        };
+      }
+      return { data: true, error: null };
+    });
+    const fetchImpl = vi.fn().mockResolvedValue(receipt());
+    const adapter = new WhatsAppCloudAdapter(TOKEN, PHONE_ID, fetchImpl, vi.fn());
+
+    await Promise.all(
+      records.map((record) =>
+        sendWhatsAppMessage(
+          {
+            tenantId: record.tenantId,
+            orgRef: record.orgRef,
+            principalRef: record.principalRef,
+            conversationId: record.conversationId,
+            inboundProviderSenderRef: record.inboundProviderSenderRef,
+            inboundProviderRef: record.inboundProviderRef,
+            expectedRecipientAddress: record.recipient,
+            body: `reply-${record.inboundProviderRef}`,
+          },
+          adapter,
+          { rpc: mockAdminRpc } as never,
+        ),
+      ),
+    );
+
+    expect(fetchImpl).toHaveBeenCalledTimes(12);
+    for (const [name, args] of mockAdminRpc.mock.calls) {
+      if (name !== "cg_whatsapp_prepare_send") continue;
+      const target = byInboundRef.get(String(args.p_inbound_provider_ref));
+      expect(args).toMatchObject({
+        p_tenant_id: target?.tenantId,
+        p_org_ref: target?.orgRef,
+        p_conversation_id: target?.conversationId,
+        p_provider_sender_ref: target?.inboundProviderSenderRef,
+      });
+    }
+    (fetchImpl.mock.calls as [string, RequestInit][]).forEach(([url, init], index) => {
+      const target = records[index];
+      expect(url).toBe(`https://graph.facebook.com/v21.0/${target?.inboundProviderSenderRef}/messages`);
+      expect(JSON.parse(String(init.body))).toMatchObject({
+        to: target?.recipient.slice(1),
+        text: { body: `reply-${target?.inboundProviderRef}`, preview_url: false },
+      });
+    });
     mockAdminRpc.mockReset();
   });
 });

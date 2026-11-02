@@ -7,6 +7,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import { sendWhatsAppMessage } from "@/lib/communications/whatsapp-cloud.server";
+import { normalizeWhatsAppPhone } from "@/lib/communications/whatsapp-phone";
+export { normalizeWhatsAppPhone } from "@/lib/communications/whatsapp-phone";
 
 export const WhatsAppInboundMessageSchema = z.object({
   id: z.string().min(1).max(200),
@@ -17,7 +19,7 @@ export const WhatsAppInboundMessageSchema = z.object({
   from: z
     .string()
     .max(20)
-    .regex(/^\+?[1-9]\d{7,14}$/),
+    .regex(/^(?:\+?[1-9]\d{7,14}|0\d{10})$/),
   type: z
     .enum([
       "text",
@@ -94,11 +96,6 @@ export function verifyWhatsAppWebhookSignature(
   return timingSafeEqual(Buffer.from(header.slice(7), "hex"), expected);
 }
 
-export function normalizeWhatsAppPhone(value: string): string | null {
-  const digits = value.replace(/\D/g, "");
-  return /^[1-9]\d{7,14}$/.test(digits) ? `+${digits}` : null;
-}
-
 function candidateEventId(value: unknown): string | null {
   if (!value || typeof value !== "object" || !("id" in value)) return null;
   const id = value.id;
@@ -161,7 +158,11 @@ async function deadLetter(
   }
 }
 
-async function sendAutomaticAcknowledgement(db: WebhookDb, providerRef: string): Promise<boolean> {
+async function sendAutomaticAcknowledgement(
+  db: WebhookDb,
+  providerSenderRef: string,
+  providerRef: string,
+): Promise<boolean> {
   const body =
     process.env.WHATSAPP_AUTO_ACK_TEXT ??
     "Thanks for your message. A Sherivs team member will respond soon.";
@@ -172,6 +173,7 @@ async function sendAutomaticAcknowledgement(db: WebhookDb, providerRef: string):
 
   try {
     const { data, error } = await db.rpc("cg_whatsapp_prepare_auto_ack", {
+      p_provider_sender_ref: providerSenderRef,
       p_inbound_provider_ref: providerRef,
       p_body: body,
     });
@@ -185,6 +187,8 @@ async function sendAutomaticAcknowledgement(db: WebhookDb, providerRef: string):
           tenant_id: z.string().min(1).max(128),
           org_ref: z.string().min(1).max(160),
           principal_ref: z.string().min(1).max(160),
+          provider_sender_ref: z.string().regex(/^[0-9]{1,160}$/),
+          conversation_id: z.string().uuid(),
           recipient_address: z.string().regex(/^\+[1-9]\d{7,14}$/),
         }),
       )
@@ -202,6 +206,9 @@ async function sendAutomaticAcknowledgement(db: WebhookDb, providerRef: string):
         tenantId: target.tenant_id,
         orgRef: target.org_ref,
         principalRef: target.principal_ref,
+        conversationId: target.conversation_id,
+        inboundProviderSenderRef: target.provider_sender_ref,
+        inboundProviderRef: providerRef,
         expectedRecipientAddress: target.recipient_address,
         body,
         retryTransient: false,
@@ -210,6 +217,7 @@ async function sendAutomaticAcknowledgement(db: WebhookDb, providerRef: string):
       result = { ok: false, error: "WhatsApp automatic acknowledgement failed" };
     }
     const { error: recordError, data: recorded } = await db.rpc("cg_whatsapp_auto_ack_result", {
+      p_provider_sender_ref: providerSenderRef,
       p_inbound_provider_ref: providerRef,
       p_status: result.ok ? "sent" : "failed",
       p_error_code: result.ok ? null : "send_failed",
@@ -336,7 +344,11 @@ export const Route = createFileRoute("/api/public/webhooks/whatsapp")({
               } else if (data === "rate_limited") {
                 console.warn("whatsapp_webhook_rate_limited");
               } else if (data === "logged" || data === "opted_in") {
-                const sent = await sendAutomaticAcknowledgement(db, message.data.id);
+                const sent = await sendAutomaticAcknowledgement(
+                  db,
+                  providerSenderRef,
+                  message.data.id,
+                );
                 if (!sent) {
                   const stored = await deadLetter(
                     db,

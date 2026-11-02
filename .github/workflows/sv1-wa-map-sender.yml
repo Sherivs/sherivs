@@ -98,10 +98,12 @@ jobs:
           SELECT set_config('request.jwt.claims', '{"role":"service_role"}', true);
           SELECT set_config('request.jwt.claim.role', 'service_role', true);
           SELECT public.cg_whatsapp_map_sender(
-            p_tenant_id => :'tenant_id',
-            p_org_ref => :'org_ref',
-            p_provider_sender_ref => '1407639185765089',
-            p_from_number => '+2349015056201'
+            :'tenant_id',
+            :'org_ref',
+            '1407639185765089',
+            '+2349015056201',
+            'env://WHATSAPP_ACCESS_TOKEN',
+            'workflow:sv1-wa-map-sender'
           );
           SELECT count(*) = 1 AS mapping_valid
             FROM public.cg_org_communication_sender

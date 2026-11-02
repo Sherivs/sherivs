@@ -65,7 +65,7 @@ export async function getWhatsAppHealthReport(context: Context) {
       phoneNumberId: Boolean(process.env.WHATSAPP_PHONE_NUMBER_ID?.trim()),
       appSecret: Boolean(process.env.WHATSAPP_APP_SECRET?.trim()),
       verifyToken: Boolean(process.env.WHATSAPP_VERIFY_TOKEN?.trim()),
-      graphVersion: Boolean(process.env.WHATSAPP_GRAPH_VERSION?.trim()),
+      graphVersion: Boolean(process.env.WHATSAPP_GRAPH_VERSION?.trim() || "v21.0"),
       autoAck: Boolean(
         (
           process.env.WHATSAPP_AUTO_ACK_TEXT ??

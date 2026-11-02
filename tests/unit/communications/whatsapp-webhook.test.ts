@@ -110,6 +110,11 @@ describe("WhatsApp webhook validation", () => {
   it("normalizes E.164 senders without accepting malformed numbers", () => {
     expect(normalizeWhatsAppPhone("234 901 505 6202")).toBe("+2349015056202");
     expect(normalizeWhatsAppPhone("+2349015056202")).toBe("+2349015056202");
+    expect(normalizeWhatsAppPhone("09015056202")).toBe("+2349015056202");
+    expect(normalizeWhatsAppPhone("+09015056202")).toBe("+2349015056202");
+    expect(
+      WhatsAppInboundMessageSchema.safeParse({ id: "wamid.local", from: "09015056202" }).success,
+    ).toBe(true);
     expect(normalizeWhatsAppPhone("abc")).toBeNull();
     expect(normalizeWhatsAppPhone("123")).toBeNull();
   });
@@ -311,6 +316,8 @@ describe("WhatsApp webhook validation", () => {
               tenant_id: "tenant-a",
               org_ref: "org-a",
               principal_ref: "principal-a",
+              provider_sender_ref: "123456",
+              conversation_id: "00000000-0000-4000-8000-000000000001",
               recipient_address: "+2349015056202",
             },
           ],
@@ -335,13 +342,23 @@ describe("WhatsApp webhook validation", () => {
       tenantId: "tenant-a",
       orgRef: "org-a",
       principalRef: "principal-a",
+      conversationId: "00000000-0000-4000-8000-000000000001",
+      inboundProviderSenderRef: "123456",
+      inboundProviderRef: "wamid.inbound",
       expectedRecipientAddress: "+2349015056202",
       body: "Thanks, we received your message.",
       retryTransient: false,
     });
     expect(mockRpc).toHaveBeenCalledWith("cg_whatsapp_prepare_auto_ack", {
+      p_provider_sender_ref: "123456",
       p_inbound_provider_ref: "wamid.inbound",
       p_body: "Thanks, we received your message.",
+    });
+    expect(mockRpc).toHaveBeenCalledWith("cg_whatsapp_auto_ack_result", {
+      p_provider_sender_ref: "123456",
+      p_inbound_provider_ref: "wamid.inbound",
+      p_status: "sent",
+      p_error_code: null,
     });
   });
 

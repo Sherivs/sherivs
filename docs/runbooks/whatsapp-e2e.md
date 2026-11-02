@@ -13,8 +13,10 @@ PostgreSQL 17.2.
 This runbook uses the existing `/api/public/webhooks/whatsapp` route, the
 `cg_org_communication_sender` registry, and
 `frontend/src/lib/communications/whatsapp-cloud.server.ts`. Do not create a
-second gateway, route, or sender registry. Tenant and organization scope come
-only from the active sender mapping, never from webhook payload fields.
+second Meta callback, send gateway, or sender registry. The authenticated n8n
+reply endpoint and the Cron outbox worker are internal routes, not Meta
+callbacks or alternate send paths. Tenant and organization scope come only
+from the active sender mapping, never from webhook payload fields.
 
 ## Vercel environment variable names
 
@@ -28,10 +30,17 @@ this runbook, commits, tickets, or logs. Never use a `VITE_`, `NEXT_PUBLIC_`, or
 - `WHATSAPP_VERIFY_TOKEN`
 - `WHATSAPP_GRAPH_VERSION` (optional; defaults to `v21.0`)
 - `WHATSAPP_AUTO_ACK_TEXT` (short reply; an empty value disables auto-ack)
+- `N8N_WHATSAPP_WEBHOOK_URL` (HTTPS webhook on an allowlisted `*.amazonaws.com` host)
+- `N8N_WHATSAPP_SIGNING_SECRET` (random server-side HMAC key; minimum 32 characters)
+- `CRON_SECRET` (existing Vercel Cron bearer secret for the outbox dispatcher)
 
 Use the Meta system-user permanent access token for the production sender.
 Grant that system user the minimum required access to the WABA and phone number.
 Keep development, preview, and production values separated.
+The n8n dispatcher rejects non-HTTPS URLs, non-AWS hosts, credentials in the
+URL, and nonstandard ports. Configure a Vercel Cron invocation for
+`/api/public/cron/whatsapp-n8n-forward` with the existing `CRON_SECRET`; it
+claims durable outbox rows and uses bounded retries and dead-letter storage.
 
 ## Meta webhook configuration
 
@@ -49,12 +58,51 @@ In the Meta app dashboard:
 
 The webhook validates `X-Hub-Signature-256` against the raw request body before
 processing it. The GET verification handshake uses the configured verify token.
+Only sender-registry-resolved, stored inbound events enter the n8n outbox. The
+event includes tenant and organization IDs, the conversation/message IDs, body,
+timestamp, and a recipient hash; it excludes the plaintext phone number and Meta
+credentials. The outbox lease and claim token make concurrent dispatch safe.
+Delivery failures use capped exponential backoff and move to a tenant-scoped
+dead-letter table after eight attempts.
+
+The app signs the exact UTF-8 JSON bytes using the timestamp-prefixed form
+`HMAC-SHA256(secret, timestamp + "." + raw_body)`. n8n must reject stale or
+future timestamps outside five minutes before processing:
+
+```python
+import hashlib
+import hmac
+import os
+import time
+
+def verify_sherivs(raw_body: bytes, timestamp: str, signature: str) -> bool:
+    if not timestamp.isdigit() or abs(int(time.time()) - int(timestamp)) > 300:
+        return False
+    expected = "sha256=" + hmac.new(
+        os.environ["N8N_WHATSAPP_SIGNING_SECRET"].encode(),
+        timestamp.encode() + b"." + raw_body,
+        hashlib.sha256,
+    ).hexdigest()
+    return hmac.compare_digest(expected, signature)
+```
+
+For an automated reply, n8n POSTs a signed JSON body to
+`https://www.sherivs.com/api/public/webhooks/whatsapp-reply` with `reply_id`,
+`inbound_provider_ref`, `conversation_id`, and `body`, plus
+`X-Sherivs-Timestamp` and `X-Sherivs-Signature`. The reply signature uses the
+same five-minute timestamp format. Do not send tenant IDs, a phone number, a
+Meta token, or call Graph from n8n. Sherivs resolves tenant, sender, active
+membership, opt-in, conversation, and recipient again; replies outside the
+24-hour window or after opt-out are rejected.
 
 ## Reviewed onboarding and health
 
 An organization administrator may request a link only for an existing active
 organization member and must provide consent evidence. The authenticated
 request action checks tenant administration and membership in the database.
+Numbers are normalized before linking: `+234…`, `234…`, and Nigerian local
+`0…` form (for example `09015056201`) are stored and compared as canonical
+`+234…` E.164 values. Meta sends the same number without the leading `+`.
 An authorized Internal Console reviewer approves or rejects the request; the
 requester cannot approve their own request. Approval creates the recipient link
 and opted-in record. It does not create an account or provision a principal.

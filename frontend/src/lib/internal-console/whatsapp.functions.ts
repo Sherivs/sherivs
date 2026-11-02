@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { normalizeWhatsAppPhone } from "@/lib/communications/whatsapp-phone";
 
 const requestSchema = z.object({
   tenantId: z.string().trim().min(1).max(128),
@@ -9,8 +10,8 @@ const requestSchema = z.object({
   address: z
     .string()
     .trim()
-    .regex(/^\+?[1-9]\d{7,14}$/)
-    .transform((value) => (value.startsWith("+") ? value : `+${value}`)),
+    .transform((value) => normalizeWhatsAppPhone(value) ?? "")
+    .pipe(z.string().regex(/^\+[1-9]\d{7,14}$/)),
   consentEvidence: z.string().trim().min(1).max(500),
 });
 

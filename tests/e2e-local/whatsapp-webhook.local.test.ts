@@ -217,17 +217,38 @@ describe.skipIf(!enabled)("WhatsApp signed webhook E2E (local Supabase only)", (
     const client = db!;
     const { data: messages } = await client
       .from("cg_communication_message")
-      .select("tenant_id, org_ref, direction, status, body, provider_ref")
+      .select("tenant_id, org_ref, conversation_id, direction, status, body, provider_ref")
       .eq("tenant_id", tenantId)
       .eq("provider_ref", providerRef);
     expect(messages).toEqual([
       expect.objectContaining({
         tenant_id: tenantId,
         org_ref: orgRef,
+        conversation_id: expect.any(String),
         direction: "inbound",
         status: "received",
         body: "Hello",
         provider_ref: providerRef,
+      }),
+    ]);
+    const { data: forwarded } = await client
+      .from("cg_whatsapp_n8n_outbox")
+      .select("tenant_id, org_ref, conversation_id, provider_ref, status, payload")
+      .eq("tenant_id", tenantId)
+      .eq("provider_ref", providerRef);
+    expect(forwarded).toEqual([
+      expect.objectContaining({
+        tenant_id: tenantId,
+        org_ref: orgRef,
+        conversation_id: messages?.[0]?.conversation_id,
+        provider_ref: providerRef,
+        status: "pending",
+        payload: expect.objectContaining({
+          tenant_id: tenantId,
+          org_ref: orgRef,
+          provider_message_id: providerRef,
+          recipient_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+        }),
       }),
     ]);
 
@@ -238,7 +259,7 @@ describe.skipIf(!enabled)("WhatsApp signed webhook E2E (local Supabase only)", (
     expect(acknowledgements).toEqual([{ status: "sent" }]);
     const { data: outbound } = await client
       .from("cg_communication_message")
-      .select("status, provider_ref, body")
+      .select("id, status, provider_ref, body")
       .eq("tenant_id", tenantId)
       .eq("direction", "outbound");
     expect(outbound).toEqual([
@@ -246,6 +267,20 @@ describe.skipIf(!enabled)("WhatsApp signed webhook E2E (local Supabase only)", (
         status: "sent",
         provider_ref: `wamid.ack.${run}`,
         body: "Thanks, we received your message.",
+      }),
+    ]);
+    const { data: sendAudit } = await client
+      .from("cg_whatsapp_send_audit")
+      .select("tenant_id, org_ref, conversation_id, message_id, recipient_hash")
+      .eq("tenant_id", tenantId)
+      .eq("message_id", outbound?.[0]?.id);
+    expect(sendAudit).toEqual([
+      expect.objectContaining({
+        tenant_id: tenantId,
+        org_ref: orgRef,
+        conversation_id: messages?.[0]?.conversation_id,
+        message_id: outbound?.[0]?.id,
+        recipient_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
       }),
     ]);
 

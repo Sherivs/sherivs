@@ -37,6 +37,20 @@ const e2eRollback = readFileSync(
   ),
   "utf8",
 );
+const tenantBindingMigration = readFileSync(
+  new URL(
+    "../../../database/supabase/migrations/20261102200000_sherivs_whatsapp_tenant_binding_n8n.sql",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const tenantBindingRollback = readFileSync(
+  new URL(
+    "../../../database/supabase/rollbacks/20261102200000_sherivs_whatsapp_tenant_binding_n8n.sql",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 describe("WhatsApp receive phone regex fix", () => {
   it("uses a single-backslash E.164 regex that accepts +2349015056201", () => {
@@ -79,6 +93,40 @@ describe("WhatsApp Cloud migration posture", () => {
         "tenant_id = public.get_my_tenant_id() AND public.is_tenant_admin(tenant_id)",
       );
       expect(e2eMigration.match(/CREATE POLICY cg_whatsapp_.*_tenant_select/g)).toHaveLength(5);
+    });
+
+    describe("tenant binding and signed n8n forwarding migration", () => {
+      it("binds every send to an inbound event, origin sender, conversation and canonical recipient", () => {
+        expect(tenantBindingMigration).toContain(
+          "cg_whatsapp_prepare_send(text, text, text, text, text, uuid, text, text)",
+        );
+        expect(tenantBindingMigration).toContain("e.provider_sender_ref = p_provider_sender_ref");
+        expect(tenantBindingMigration).toContain("m.conversation_id = p_conversation_id");
+        expect(tenantBindingMigration).toContain("c.status = 'opted_in'");
+        expect(tenantBindingMigration).toContain("recipient_hash");
+        expect(tenantBindingMigration).toContain("encode(sha256(convert_to(v_recipient, 'UTF8')), 'hex')");
+      });
+
+      it("stores inbound forwarding in a tenant/org/conversation scoped forced-RLS outbox", () => {
+        expect(tenantBindingMigration).toContain("CREATE TABLE public.cg_whatsapp_n8n_outbox");
+        expect(tenantBindingMigration).toContain("CREATE TABLE public.cg_whatsapp_n8n_dead_letter");
+        expect(tenantBindingMigration).toContain("UNIQUE (tenant_id, message_id)");
+        expect(tenantBindingMigration).toContain("FOR UPDATE SKIP LOCKED");
+        expect(tenantBindingMigration).toContain("attempt_count < 8");
+        expect(tenantBindingMigration).toContain("CREATE POLICY cg_whatsapp_n8n_outbox_tenant_select");
+        expect(tenantBindingMigration).toContain("CREATE POLICY cg_whatsapp_n8n_dead_letter_tenant_select");
+        expect(tenantBindingMigration).toContain("ALTER TABLE public.%I FORCE ROW LEVEL SECURITY");
+        expect(tenantBindingRollback).toContain("DROP TABLE IF EXISTS public.cg_whatsapp_n8n_outbox");
+        expect(tenantBindingRollback).toContain("DROP TABLE IF EXISTS public.cg_whatsapp_n8n_dead_letter");
+      });
+
+      it("does not add function-level custom GUC settings and requires server-only reply RPCs", () => {
+        expect(tenantBindingMigration).not.toMatch(/ALTER FUNCTION[^;]*SET\s+coregrid\./i);
+        expect(tenantBindingMigration).toContain("public.cg_whatsapp_prepare_n8n_reply");
+        expect(tenantBindingMigration).toContain("GRANT EXECUTE ON FUNCTION public.cg_whatsapp_prepare_n8n_reply");
+        expect(tenantBindingMigration).toContain("FROM PUBLIC, anon, authenticated");
+        expect(tenantBindingMigration).toContain("PRIMARY KEY (tenant_id, reply_id)");
+      });
     });
 
     it("dedupes provider message IDs and applies an atomic per-sender one-minute limit", () => {
