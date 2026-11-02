@@ -134,36 +134,43 @@
     filter 280ms var(--shell-ease);
 }
 
-.app-shell-frame.is-role-management {
+.app-shell-frame.is-role-management,
+.app-shell-frame.is-student-mobility {
   width: min(100%, 76rem);
   height: auto;
 }
 
-.app-shell-frame.is-role-management .app-shell-main {
+.app-shell-frame.is-role-management .app-shell-main,
+.app-shell-frame.is-student-mobility .app-shell-main {
   flex: 0 0 auto;
   min-width: 0;
   margin-top: 0;
 }
 
-.app-shell-frame.is-role-management .app-shell-sheet {
+.app-shell-frame.is-role-management .app-shell-sheet,
+.app-shell-frame.is-student-mobility .app-shell-sheet {
   min-width: 0;
   min-height: 0;
   height: auto;
   overflow: visible;
 }
 
-.app-shell-frame.is-role-management .app-shell-section {
+.app-shell-frame.is-role-management .app-shell-section,
+.app-shell-frame.is-student-mobility .app-shell-section {
   min-width: 0;
   width: 100%;
 }
 
-.app-shell-frame.is-role-management .app-shell-section > * {
+.app-shell-frame.is-role-management .app-shell-section > *,
+.app-shell-frame.is-student-mobility .app-shell-section > * {
   min-width: 0;
   max-width: 100%;
 }
 
 html:has(.app-shell-frame.is-role-management),
-body:has(.app-shell-frame.is-role-management) {
+body:has(.app-shell-frame.is-role-management),
+html:has(.app-shell-frame.is-student-mobility),
+body:has(.app-shell-frame.is-student-mobility) {
   height: auto;
   min-height: 100dvh;
 }
@@ -634,6 +641,37 @@ body:has(.app-shell-frame.is-role-management) {
 .app-shell-connection-pending {
   opacity: 0.8;
   font-weight: 550;
+}
+
+.app-shell-data-saver {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 0.55rem;
+  padding: 0.35rem 0.5rem;
+  color: #f7f9ff;
+  background: transparent;
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.app-shell-data-saver.is-active {
+  color: #10233d;
+  background: #d7efff;
+}
+
+html[data-data-saver="true"] *,
+html[data-data-saver="true"] *::before,
+html[data-data-saver="true"] *::after {
+  scroll-behavior: auto !important;
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
 }
 
 .app-shell-widget-tools,
@@ -1221,10 +1259,6 @@ body:has(.workspace-preview) {
 }
 
 @media (max-width: 400px) {
-  .app-shell-connection-pending {
-    display: none;
-  }
-
   .app-shell-notification-card {
     flex-direction: column;
   }

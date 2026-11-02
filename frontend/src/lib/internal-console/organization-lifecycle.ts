@@ -72,11 +72,7 @@ export function isOnboardingPipelineState(state: OrganizationLifecycleState): bo
   return ONBOARDING_PIPELINE_STATES.includes(state);
 }
 
-export const ORGANIZATION_ASSIGNMENT_TYPES = [
-  "onboarding_owner",
-  "support",
-  "operations",
-] as const;
+export const ORGANIZATION_ASSIGNMENT_TYPES = ["onboarding_owner", "support", "operations"] as const;
 export type OrganizationAssignmentType = (typeof ORGANIZATION_ASSIGNMENT_TYPES)[number];
 
 export const ORGANIZATION_ASSIGNMENT_LABELS: Record<OrganizationAssignmentType, string> = {
@@ -105,12 +101,7 @@ export const ORGANIZATION_LAUNCH_WINDOWS = [
   "unspecified",
 ] as const;
 export const ORGANIZATION_CONTACT_METHODS = ["email", "phone"] as const;
-export const ORGANIZATION_WORKFLOWS = [
-  "people",
-  "academics",
-  "finance",
-  "communication",
-] as const;
+export const ORGANIZATION_WORKFLOWS = ["people", "academics", "finance", "communication"] as const;
 export const ORGANIZATION_EDUCATION_LEVELS = [
   "nursery",
   "primary",
@@ -178,10 +169,7 @@ export type OrganizationDraft = Partial<OrganizationQuestionnaire> & {
   questionnaireStep?: OrganizationOnboardingStep;
 };
 
-export function stepCompleted(
-  step: OrganizationOnboardingStep,
-  draft: OrganizationDraft,
-): boolean {
+export function stepCompleted(step: OrganizationOnboardingStep, draft: OrganizationDraft): boolean {
   switch (step) {
     case "identity":
       return organizationIdentitySchema.safeParse(draft).success;
@@ -239,19 +227,22 @@ export const ORGANIZATION_ACCESS_EFFECTS = {
   provision: {
     sessions: "No Scholar sessions are created. The tenant is not yet authorized.",
     api: "Tenant APIs remain unauthorized until activation.",
-    runtime: "Sherivs Scholar eligibility is recorded on the case; the runtime is not launched for the organization.",
+    runtime:
+      "Sherivs Scholar eligibility is recorded on the case; the runtime is not launched for the organization.",
     data: "A schools row is created with is_active = false. No student or academic records are created.",
     audit: "Provisioning outcome is appended. Prior questionnaire history is kept.",
   },
   activate: {
-    sessions: "Existing staff sessions are unchanged. Organization administrators sign in separately.",
+    sessions:
+      "Existing staff sessions are unchanged. Organization administrators sign in separately.",
     api: "Authorized Scholar requests for this tenant may proceed.",
     runtime: "Sherivs Scholar authorization applies to this organization.",
     data: "Existing records are retained. Activation does not complete academic configuration.",
     audit: "Activation is appended.",
   },
   suspend: {
-    sessions: "Sherivs does not globally revoke every browser session. The next authorized Scholar request re-evaluates schools.is_active.",
+    sessions:
+      "Sherivs does not globally revoke every browser session. The next authorized Scholar request re-evaluates schools.is_active.",
     api: "Tenant API access is denied while the school row is inactive and subscription_status is suspended.",
     runtime: "Sherivs Scholar stays registered, but this organization is not authorized to use it.",
     data: "Records are retained. Suspension does not delete the organization, members, or questionnaire.",
@@ -306,6 +297,39 @@ export type OrganizationAssignmentRecord = {
   releasedAt: string | null;
 };
 
+export function isSupportScopedViewer(input: {
+  isSuperAdmin?: boolean;
+  hasSupportCapability: boolean;
+  hasTenantManagementCapability: boolean;
+}): boolean {
+  return !input.isSuperAdmin && input.hasSupportCapability && !input.hasTenantManagementCapability;
+}
+
+export function isOrganizationAssignedToStaff(
+  assignments: readonly Pick<OrganizationAssignmentRecord, "staffId" | "status">[],
+  staffId: string,
+): boolean {
+  return assignments.some(
+    (assignment) => assignment.staffId === staffId && assignment.status === "active",
+  );
+}
+
+export function organizationsAssignedToStaff<T extends { id: string }>(
+  organizations: readonly T[],
+  assignments: readonly Pick<
+    OrganizationAssignmentRecord,
+    "organizationId" | "staffId" | "status"
+  >[],
+  staffId: string,
+): T[] {
+  const assignedIds = new Set(
+    assignments
+      .filter((assignment) => assignment.staffId === staffId && assignment.status === "active")
+      .map((assignment) => assignment.organizationId),
+  );
+  return organizations.filter((organization) => assignedIds.has(organization.id));
+}
+
 export type OrganizationDetail = OrganizationDirectoryRow & {
   legalName: string | null;
   questionnaire: OrganizationDraft;
@@ -332,7 +356,8 @@ export type OrganizationDetail = OrganizationDirectoryRow & {
     reason: string | null;
     at: string;
   }>;
-  accessEffects: (typeof ORGANIZATION_ACCESS_EFFECTS)[keyof typeof ORGANIZATION_ACCESS_EFFECTS] | null;
+  accessEffects:
+    (typeof ORGANIZATION_ACCESS_EFFECTS)[keyof typeof ORGANIZATION_ACCESS_EFFECTS] | null;
 };
 
 export type OrganizationMetricsSnapshot = {
@@ -348,9 +373,7 @@ export type OrganizationMetricsSnapshot = {
   medianOnboardingHours: number | null;
 };
 
-export function summarizeOrganizationStates(
-  states: readonly OrganizationLifecycleState[],
-): {
+export function summarizeOrganizationStates(states: readonly OrganizationLifecycleState[]): {
   total: number;
   active: number;
   onboarding: number;

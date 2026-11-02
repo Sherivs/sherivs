@@ -4,7 +4,7 @@
  * Sherivs processes children's data (NDPA 2023). Nothing that identifies a
  * person — names, emails, phone numbers, student records — or any credential
  * may leave the platform in an error report. Keys are redacted by name, and
- * free text is pattern-scrubbed for emails, phone numbers and tokens.
+ * free text is pattern-scrubbed for emails, phone numbers, tokens and environment assignments.
  */
 export const REDACTED = "[redacted]";
 
@@ -15,6 +15,7 @@ const EMAIL = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
 const JWT = /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/g;
 const BEARER = /\b(bearer|basic)\s+[A-Za-z0-9._~+/=-]{8,}/gi;
 const KEYLIKE = /\b(sk|pk|rk|sb|phc|phx|ghp|gho|github_pat|xox[abp])_[A-Za-z0-9_]{8,}\b/gi;
+const ENV_ASSIGNMENT = /\b([A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\s*=\s*)(?:"[^"]*"|'[^']*'|[^\s,;]+)/g;
 const QUERY_SECRET =
   /([?&#](?:access_token|refresh_token|token|code|key|apikey|api_key|password|secret|signature|sig)=)[^&#\s]+/gi;
 // Phone numbers: +234..., 0803..., (555) 123-4567 — 7+ digits with separators.
@@ -22,6 +23,7 @@ const PHONE = /(?<![\w.])\+?\d[\d\s().-]{6,}\d(?![\w.])/g;
 
 export function scrubString(value: string): string {
   return value
+    .replace(ENV_ASSIGNMENT, `$1${REDACTED}`)
     .replace(JWT, REDACTED)
     .replace(BEARER, `$1 ${REDACTED}`)
     .replace(KEYLIKE, REDACTED)
@@ -51,7 +53,13 @@ export function scrubValue(value: unknown, depth = 0, seen = new WeakSet<object>
 
 type EventLike = {
   user?: Record<string, unknown> | null;
-  request?: { cookies?: unknown; headers?: Record<string, unknown>; data?: unknown; query_string?: unknown; url?: string } | null;
+  request?: {
+    cookies?: unknown;
+    headers?: Record<string, unknown>;
+    data?: unknown;
+    query_string?: unknown;
+    url?: string;
+  } | null;
   [k: string]: unknown;
 };
 
@@ -63,7 +71,10 @@ export function scrubEvent<T extends EventLike>(event: T): T {
   const userId = event.user && typeof event.user.id === "string" ? event.user.id : undefined;
   const req = event.request
     ? {
-        url: typeof event.request.url === "string" ? scrubString(event.request.url.split("?")[0] ?? "") : undefined,
+        url:
+          typeof event.request.url === "string"
+            ? scrubString(event.request.url.split("?")[0] ?? "")
+            : undefined,
         headers: event.request.headers
           ? (scrubValue(
               Object.fromEntries(

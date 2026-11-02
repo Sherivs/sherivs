@@ -5,7 +5,10 @@ import {
   ORGANIZATION_LIFECYCLE_STATES,
   canTransitionOrganization,
   currentOnboardingStep,
+  isOrganizationAssignedToStaff,
+  isSupportScopedViewer,
   medianHours,
+  organizationsAssignedToStaff,
   questionnaireReady,
   slugifyOrganizationName,
   summarizeOrganizationStates,
@@ -19,16 +22,28 @@ import { CONSOLE_METRIC_CONTRACTS } from "@/lib/internal-console/metrics";
 import { CONSOLE_PATHS } from "@/lib/internal-console/paths";
 import { isWorkingWorkspace } from "@/lib/internal-console/workspaces";
 
+const organizationStore = readFileSync(
+  "frontend/src/lib/internal-console/organization.store.server.ts",
+  "utf8",
+);
+const overviewFunctions = readFileSync(
+  "frontend/src/lib/internal-console/overview.functions.ts",
+  "utf8",
+);
+const operationsStore = readFileSync(
+  "frontend/src/lib/internal-console/operations.store.server.ts",
+  "utf8",
+);
+const operationsScreens = readFileSync(
+  "frontend/src/components/internal-console/operations-screens.tsx",
+  "utf8",
+);
 const migration = readFileSync(
   "database/supabase/migrations/20261027002000_sherivs_031_control_plane_engines.sql",
   "utf8",
 );
 const phaseDMigration = readFileSync(
   "database/supabase/migrations/20261101100000_sv1_console_phase_d_org_school_link.sql",
-  "utf8",
-);
-const organizationStore = readFileSync(
-  "frontend/src/lib/internal-console/organization.store.server.ts",
   "utf8",
 );
 
@@ -92,6 +107,93 @@ describe("organization lifecycle engine", () => {
   it("defines suspension without deletion", () => {
     expect(ORGANIZATION_ACCESS_EFFECTS.suspend.data).toMatch(/retained/i);
     expect(ORGANIZATION_ACCESS_EFFECTS.deactivate.data).toMatch(/not deletion/i);
+  });
+});
+
+describe("Support workspace organization scope", () => {
+  const assignments = [
+    { organizationId: "assigned", staffId: "support-1", status: "active" as const },
+    { organizationId: "released", staffId: "support-1", status: "released" as const },
+    { organizationId: "other", staffId: "support-2", status: "active" as const },
+  ];
+
+  it("limits Support-only viewers without narrowing platform operators", () => {
+    expect(
+      isSupportScopedViewer({
+        hasSupportCapability: true,
+        hasTenantManagementCapability: false,
+      }),
+    ).toBe(true);
+    expect(
+      isSupportScopedViewer({
+        hasSupportCapability: true,
+        hasTenantManagementCapability: true,
+      }),
+    ).toBe(false);
+    expect(
+      isSupportScopedViewer({
+        isSuperAdmin: true,
+        hasSupportCapability: true,
+        hasTenantManagementCapability: false,
+      }),
+    ).toBe(false);
+    expect(
+      isSupportScopedViewer({
+        hasSupportCapability: false,
+        hasTenantManagementCapability: false,
+      }),
+    ).toBe(false);
+  });
+
+  it("includes only organizations with an active assignment to the current staff member", () => {
+    expect(isOrganizationAssignedToStaff(assignments, "support-1")).toBe(true);
+    expect(isOrganizationAssignedToStaff(assignments.slice(1), "support-1")).toBe(false);
+    expect(
+      organizationsAssignedToStaff(
+        [{ id: "assigned" }, { id: "released" }, { id: "other" }],
+        assignments,
+        "support-1",
+      ),
+    ).toEqual([{ id: "assigned" }]);
+  });
+
+  it("enforces assignment scope on directory, detail, and overview server reads", () => {
+    expect(organizationStore).toContain(
+      "await loadAssignedSupportOrganizationIds(db, context.userId)",
+    );
+    expect(organizationStore).toContain("{ organizationIds, includePlatformMetrics: false }");
+    expect(organizationStore).toContain(
+      "loadAssignedSupportOrganizationIds(db, context.userId)).includes(id)",
+    );
+    expect(overviewFunctions).toContain("organizationMetrics = supportScoped ? emptyOrgMetrics");
+    expect(overviewFunctions).toContain("if (!supportScoped)");
+  });
+
+  it("does not grant Support access to global incident details", () => {
+    const listIncidents = operationsStore.slice(
+      operationsStore.indexOf("export async function listIncidents"),
+      operationsStore.indexOf("export async function createIncident"),
+    );
+    expect(listIncidents).toContain('"platform.engineering.read"');
+    expect(listIncidents).toContain('"platform.operations.read"');
+    expect(listIncidents).not.toContain('"platform.tenants.read"');
+  });
+
+  it("aligns the incident screen gate with server authorization and scrubs free text", () => {
+    const incidentScreen = operationsScreens.slice(
+      operationsScreens.indexOf("export function ConsoleIncidents"),
+      operationsScreens.indexOf("export function ConsoleLogs"),
+    );
+    const incidentMapper = operationsStore.slice(
+      operationsStore.indexOf("function mapIncident"),
+      operationsStore.indexOf("export async function listTickets"),
+    );
+    expect(incidentScreen).not.toContain('capabilities.includes("platform.tenants.read")');
+    expect(incidentScreen).toContain(
+      "Operational incidents require engineering, operations, or audit capability.",
+    );
+    expect(incidentMapper).toContain("title: scrubString(row.title)");
+    expect(incidentMapper).toContain('details: scrubString(row.details ?? "")');
   });
 });
 

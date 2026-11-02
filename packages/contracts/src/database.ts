@@ -7779,7 +7779,13 @@ export type Database = {
       get_my_school_id: { Args: never; Returns: string };
       read_my_tenant_hierarchy: { Args: never; Returns: Json };
       session_rollover: {
-        Args: { p_school: string; p_from: string; p_to: string; p_dry_run?: boolean; p_overrides?: Json };
+        Args: {
+          p_school: string;
+          p_from: string;
+          p_to: string;
+          p_dry_run?: boolean;
+          p_overrides?: Json;
+        };
         Returns: Json;
       };
       configure_academic_defaults: {
@@ -7792,7 +7798,12 @@ export type Database = {
       };
       member_outstanding_carryovers: {
         Args: { p_student: string };
-        Returns: { course_code: string; credit_units: number; last_academic_year: string; attempts: number }[];
+        Returns: {
+          course_code: string;
+          credit_units: number;
+          last_academic_year: string;
+          attempts: number;
+        }[];
       };
       member_transcript: {
         Args: { p_student: string };

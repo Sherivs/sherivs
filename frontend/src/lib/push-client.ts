@@ -29,7 +29,11 @@ export function vapidPublicKey(): string | null {
 
 export function getPushSupport(): PushSupport {
   if (typeof window === "undefined") {
-    return { supported: false, permission: "unsupported", vapidConfigured: Boolean(vapidPublicKey()) };
+    return {
+      supported: false,
+      permission: "unsupported",
+      vapidConfigured: Boolean(vapidPublicKey()),
+    };
   }
   const supported =
     "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
@@ -54,6 +58,16 @@ async function ensureRegistration(): Promise<ServiceWorkerRegistration> {
   const existing = await navigator.serviceWorker.getRegistration("/sw.js");
   if (existing) return existing;
   return navigator.serviceWorker.register("/sw.js", { scope: "/" });
+}
+
+/** Register the offline app shell independently of optional push permission. */
+export async function registerOfflineServiceWorker(): Promise<void> {
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+  try {
+    await ensureRegistration();
+  } catch {
+    /* Offline shell registration is best-effort. */
+  }
 }
 
 /**

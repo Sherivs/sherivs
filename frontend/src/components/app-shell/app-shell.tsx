@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link, Navigate, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { Bell, LogOut, Menu, Settings2, Sparkles } from "lucide-react";
 import { useApp } from "@/contexts/app-context";
-import { refreshPushTokenIfGranted } from "@/lib/push-client";
+import { refreshPushTokenIfGranted, registerOfflineServiceWorker } from "@/lib/push-client";
 import { SHELL_ACCOUNT_NAV } from "@/lib/shell/account";
 import { shellIcon } from "@/lib/shell/icon-registry";
 import { APP_SHELL_HOME, APP_SHELL_NOTIFICATIONS, APP_SHELL_PROFILE } from "@/lib/shell/paths";
@@ -64,6 +64,10 @@ function ShellChrome({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
+    void registerOfflineServiceWorker();
+  }, []);
+
+  useEffect(() => {
     if (!pushUserId) return;
     void refreshPushTokenIfGranted(pushUserId);
   }, [pushUserId]);
@@ -98,7 +102,9 @@ function ShellChrome({ children }: { children: ReactNode }) {
         <span className="app-shell-orb app-shell-orb-blue" />
         <span className="app-shell-orb app-shell-orb-violet" />
       </div>
-      <div className={`app-shell-frame${path === "/home/s/roles" ? " is-role-management" : ""}`}>
+      <div
+        className={`app-shell-frame${path === "/home/s/roles" ? " is-role-management" : ""}${path === "/home/s/nav.students" || path === "/home/s/students" ? " is-student-mobility" : ""}`}
+      >
         <header className="app-shell-header">
           <button
             type="button"

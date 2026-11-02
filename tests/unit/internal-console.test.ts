@@ -663,7 +663,12 @@ describe("local visual fixture", () => {
     const withTenants = new Set(["platform_owner", "operations", "support", "sales"]);
     for (const persona of CONSOLE_FIXTURE_PERSONAS) {
       const overview = buildConsoleVisualFixtureOverview(persona);
-      if (withTenants.has(persona.key)) {
+      if (persona.key === "support") {
+        expect(overview.viewer.capabilities).toContain("platform.tenants.read");
+        expect(overview.organizationMetrics.available).toBe(false);
+        expect(overview.organizations).toEqual([]);
+        expect(overview.metrics.every((metric) => !metric.key.includes("organization"))).toBe(true);
+      } else if (withTenants.has(persona.key)) {
         expect(overview.organizationMetrics.available).toBe(true);
         expect(overview.organizationStore).toBe("fixture");
       } else {
@@ -677,7 +682,9 @@ describe("local visual fixture", () => {
       }
     }
     const home = readFileSync("frontend/src/components/internal-console/home-screen.tsx", "utf8");
-    expect(home).toContain("canReadOrgs && overview.organizationMetrics.available");
+    expect(home).toContain(
+      "canReadOrgs && !supportScoped && overview.organizationMetrics.available",
+    );
     expect(home).toContain('data-testid="console-org-pipeline"');
   });
 
@@ -740,7 +747,7 @@ describe("local visual fixture", () => {
     expect(overview.organizations.map((organization) => organization.id)).toEqual([
       "fixture-org-active",
     ]);
-    expect(overview.organizationMetrics.total).toBe(1);
+    expect(overview.organizationMetrics.total).toBeNull();
     expect(
       overview.assignments.every((assignment) => assignment.assignmentType === "support"),
     ).toBe(true);

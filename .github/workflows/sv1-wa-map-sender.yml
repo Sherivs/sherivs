@@ -1,0 +1,137 @@
+name: Map Sherivs WhatsApp sender
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type MAP-1407639185765089 to map the production sender"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prod-whatsapp-map-sender
+  cancel-in-progress: false
+
+jobs:
+  map-sender:
+    name: Map sender in production
+    runs-on: ubuntu-latest
+    environment: Production
+    timeout-minutes: 10
+    env:
+      CONFIRM: ${{ inputs.confirm }}
+      PGCONNECT_TIMEOUT: "20"
+    steps:
+      - name: Validate branch and confirmation
+        run: |
+          set -euo pipefail
+          [ "$GITHUB_REF" = "refs/heads/master" ] || { echo "::error::this workflow may only run from master"; exit 1; }
+          [ "$CONFIRM" = "MAP-1407639185765089" ] || { echo "::error::confirm must equal MAP-1407639185765089"; exit 1; }
+
+      - name: Check production database secret
+        env:
+          DB_URL: ${{ secrets.PROD_DB_URL_BACKUP }}
+        run: '[ -n "$DB_URL" ] || { echo "::error::PROD_DB_URL_BACKUP not set"; exit 1; }'
+
+      - name: Resolve Sherivs platform/internal organization
+        id: org
+        env:
+          DB_URL: ${{ secrets.PROD_DB_URL_BACKUP }}
+        run: |
+          set -euo pipefail
+          rows="$(psql "$DB_URL" -X -At -F $'\t' -v ON_ERROR_STOP=1 <<'SQL'
+          SELECT tenant_id, id
+            FROM public.cg_org_unit
+           WHERE kind = 'organization'
+             AND parent_org_unit_id IS NULL
+             AND lifecycle_state = 'active'
+             AND profile->>'name' = 'Sherivs';
+          SQL
+          )"
+          if [ -z "$rows" ]; then
+            matches=()
+          else
+            mapfile -t matches <<< "$rows"
+          fi
+          [ "${#matches[@]}" -eq 1 ] || {
+            echo "::error::expected exactly one active Sherivs organization root, found ${#matches[@]}"
+            exit 1
+          }
+          row="${matches[0]}"
+          [[ "$row" == *$'\t'* && "$row" != *$'\t'*$'\t'* ]] || {
+            echo "::error::organization lookup returned malformed identifiers"
+            exit 1
+          }
+          TENANT_ID="${row%%$'\t'*}"
+          ORG_REF="${row#*$'\t'}"
+          [[ "$TENANT_ID" =~ ^[A-Za-z0-9][A-Za-z0-9_.:@/-]{0,127}$ ]] || {
+            echo "::error::organization lookup returned an invalid tenant id"
+            exit 1
+          }
+          [[ "$ORG_REF" =~ ^[A-Za-z0-9][A-Za-z0-9_.:@/-]{0,159}$ ]] || {
+            echo "::error::organization lookup returned an invalid org ref"
+            exit 1
+          }
+          echo "Matched platform/internal organization: tenant_id=$TENANT_ID org_ref=$ORG_REF"
+          printf 'tenant_id=%s\norg_ref=%s\n' "$TENANT_ID" "$ORG_REF" >> "$GITHUB_OUTPUT"
+
+      - name: Map WhatsApp sender
+        env:
+          DB_URL: ${{ secrets.PROD_DB_URL_BACKUP }}
+          TENANT_ID: ${{ steps.org.outputs.tenant_id }}
+          ORG_REF: ${{ steps.org.outputs.org_ref }}
+        run: |
+          set -euo pipefail
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 \
+            -v tenant_id="$TENANT_ID" \
+            -v org_ref="$ORG_REF" <<'SQL'
+          BEGIN;
+          SET LOCAL role service_role;
+          SELECT set_config('request.jwt.claims', '{"role":"service_role"}', true);
+          SELECT set_config('request.jwt.claim.role', 'service_role', true);
+          SELECT public.cg_whatsapp_map_sender(
+            p_tenant_id => :'tenant_id',
+            p_org_ref => :'org_ref',
+            p_provider_sender_ref => '1407639185765089',
+            p_from_number => '+2349015056201'
+          );
+          COMMIT;
+          SQL
+
+      - name: Verify sender mapping
+        env:
+          DB_URL: ${{ secrets.PROD_DB_URL_BACKUP }}
+          TENANT_ID: ${{ steps.org.outputs.tenant_id }}
+          ORG_REF: ${{ steps.org.outputs.org_ref }}
+        run: |
+          set -euo pipefail
+          count="$(psql "$DB_URL" -X -At -v ON_ERROR_STOP=1 \
+            -v tenant_id="$TENANT_ID" \
+            -v org_ref="$ORG_REF" <<'SQL'
+          SELECT count(*)
+            FROM public.cg_org_communication_sender
+           WHERE tenant_id = :'tenant_id'
+             AND org_ref = :'org_ref'
+             AND provider_sender_ref = '1407639185765089'
+             AND channel = 'whatsapp'
+             AND provider = 'meta_cloud';
+          SQL
+          )"
+          [ "$count" = "1" ] || {
+            echo "::error::expected exactly one mapped sender row, found $count"
+            exit 1
+          }
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -v tenant_id="$TENANT_ID" \
+            -v org_ref="$ORG_REF" -P pager=off <<'SQL'
+          SELECT sender_ref, tenant_id, org_ref, channel, provider, from_number,
+                 status, provider_sender_ref, created_at, updated_at
+            FROM public.cg_org_communication_sender
+           WHERE tenant_id = :'tenant_id'
+             AND org_ref = :'org_ref'
+             AND provider_sender_ref = '1407639185765089'
+             AND channel = 'whatsapp'
+             AND provider = 'meta_cloud';
+          SQL

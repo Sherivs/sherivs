@@ -1,10 +1,8 @@
 /* Sherivs — service worker for web push notifications + offline shell. */
 
-/* The offline shell is the smallest useful offline surface: precache the app's
- * root document at install, then serve navigations network-first (caching every
- * successful navigation) and fall back to the cache — the visited URL first,
- * the precached shell second — only when the network is unreachable. Push
- * notification behaviour is unchanged. */
+/* Cache only the public root shell. Authenticated route documents can contain
+ * tenant or user data and must never be persisted in the shared Cache Storage.
+ * User-scoped offline reads belong in the app's tenant-scoped IndexedDB store. */
 const APP_SHELL_CACHE = "sherivs-app-shell-v1";
 // Former cache names (CoreGrid was the former platform name), removed on activate.
 const LEGACY_CACHE_PREFIXES = ["coregrid-app-shell-"];
@@ -86,15 +84,19 @@ self.addEventListener("fetch", (event) => {
       const cache = await caches.open(APP_SHELL_CACHE);
       try {
         const response = await fetch(request);
-        // 2xx only: redirects and opaque responses must never enter the cache.
-        if (response && response.ok) {
-          cache.put(request, response.clone());
+        const url = new URL(request.url);
+        // The root document is the only cached navigation; it is the public app
+        // shell, while authenticated routes stay network-only.
+        if (response && response.ok && url.pathname === APP_SHELL_URL && !url.search) {
+          try {
+            await cache.put(APP_SHELL_URL, response.clone());
+          } catch {
+            /* A cache quota failure must not turn a successful network response into an offline page. */
+          }
         }
         return response;
       } catch {
-        const cached =
-          (await cache.match(request, { ignoreSearch: true })) ||
-          (await cache.match(APP_SHELL_URL));
+        const cached = await cache.match(APP_SHELL_URL);
         if (cached) return cached;
         return new Response("Offline — Sherivs is unavailable until you reconnect.", {
           status: 503,

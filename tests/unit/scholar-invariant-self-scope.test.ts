@@ -94,7 +94,8 @@ const CLIENT_TENANT_FIELD_RE = /(?:school_id|schoolId|tenant_id|tenantId):\s*z\.
 const HANDLER_DATA_RE = /\.handler\(\s*(?:async\s+)?\(\s*\{\s*data\b/;
 const SUBSTRATE_RE = /\bsupabase\b|\.rpc\(|supabaseAdmin|asKernelAdmin/;
 const MUTATION_RE = /\.(insert|update|upsert)\(/;
-const WRITE_EVIDENCE_RE = /\.(insert|update|upsert)\(|\.rpc\(|updateUserById|settlePaystackCharge\(/;
+const WRITE_EVIDENCE_RE =
+  /\.(insert|update|upsert)\(|\.rpc\(|updateUserById|settlePaystackCharge\(/;
 const VENDOR_SDK_RE = /from ["'](@supabase\/supabase-js|twilio|paystack)["']/;
 
 function serverFnBlocks(src: string): Map<string, string> {
@@ -123,9 +124,7 @@ function defineFamilySuite(fam: FamilySpec): void {
       for (const spec of fam.functions) {
         const block = blocks.get(spec.fn);
         expect(block, `${fam.family}#${spec.fn} block present`).toBeDefined();
-        expect(block).toMatch(
-          new RegExp(`createServerFn\\(\\{\\s*method:\\s*"${spec.method}"`),
-        );
+        expect(block).toMatch(new RegExp(`createServerFn\\(\\{\\s*method:\\s*"${spec.method}"`));
       }
     });
 
@@ -141,7 +140,9 @@ function defineFamilySuite(fam: FamilySpec): void {
           expect(spec.method, `${label}: public bootstrap probe must stay a read-only GET`).toBe(
             "GET",
           );
-          expect(block, `${label}: probe may return only a derived boolean`).toMatch(/hasSuperAdmin/);
+          expect(block, `${label}: probe may return only a derived boolean`).toMatch(
+            /hasSuperAdmin/,
+          );
         } else {
           expect(block, `${label}: must enter through requireSupabaseAuth`).toMatch(MIDDLEWARE_RE);
         }
@@ -150,9 +151,10 @@ function defineFamilySuite(fam: FamilySpec): void {
 
     it("2 RESOLVE TENANT: tenant resolved server-side, never trusted from client input", () => {
       if (!fam.clientTenantSelector) {
-        expect(src, `${fam.family}: client input contract must declare no tenant field`).not.toMatch(
-          CLIENT_TENANT_FIELD_RE,
-        );
+        expect(
+          src,
+          `${fam.family}: client input contract must declare no tenant field`,
+        ).not.toMatch(CLIENT_TENANT_FIELD_RE);
       }
       for (const spec of fam.functions) {
         const block = blocks.get(spec.fn) ?? "";
@@ -161,13 +163,17 @@ function defineFamilySuite(fam: FamilySpec): void {
           expect(block, `${label}: must never query by a client-supplied tenant id`).not.toMatch(
             EQ_CLIENT_TENANT_RE,
           );
-          expect(block, `${label}: must never stamp a client-supplied tenant id into a row`).not.toMatch(
-            PAYLOAD_CLIENT_TENANT_RE,
-          );
+          expect(
+            block,
+            `${label}: must never stamp a client-supplied tenant id into a row`,
+          ).not.toMatch(PAYLOAD_CLIENT_TENANT_RE);
         }
         const marker = spec.gateMarker ?? GATE_MARKERS[spec.gate];
         if (marker) {
-          expect(block, `${label}: tenant/authority must be resolved through the declared enforcement`).toMatch(marker);
+          expect(
+            block,
+            `${label}: tenant/authority must be resolved through the declared enforcement`,
+          ).toMatch(marker);
         }
       }
     });
@@ -191,7 +197,9 @@ function defineFamilySuite(fam: FamilySpec): void {
         expect(block, `${label}: lifecycle signal must be threaded (never silent)`).toMatch(
           /lifecycle:\s*null/,
         );
-        expect(block, `${label}: session validity must be attested at the gate`).toMatch(/sessionValid/);
+        expect(block, `${label}: session validity must be attested at the gate`).toMatch(
+          /sessionValid/,
+        );
       }
     });
 
@@ -219,17 +227,19 @@ function defineFamilySuite(fam: FamilySpec): void {
     it("5 EXECUTE: sanctioned substrate only — no vendor leakage, gateway adoption where AI-bearing", () => {
       for (const spec of fam.functions) {
         const block = blocks.get(spec.fn) ?? "";
-        expect(block, `${fam.family}#${spec.fn}: must execute through the sanctioned substrate`).toMatch(
-          SUBSTRATE_RE,
-        );
+        expect(
+          block,
+          `${fam.family}#${spec.fn}: must execute through the sanctioned substrate`,
+        ).toMatch(SUBSTRATE_RE);
       }
       expect(src, `${fam.family}: no vendor SDK import (provider-agnostic, §25)`).not.toMatch(
         VENDOR_SDK_RE,
       );
       if (fam.gateway) {
-        expect(src, `${fam.family}: AI-bearing family must route through the AI gateway (§20)`).toMatch(
-          /invokeAiGateway/,
-        );
+        expect(
+          src,
+          `${fam.family}: AI-bearing family must route through the AI gateway (§20)`,
+        ).toMatch(/invokeAiGateway/);
       }
       if (fam.externalProvider) {
         expect(
@@ -252,16 +262,19 @@ function defineFamilySuite(fam: FamilySpec): void {
             (spec.auditMarkers ?? []).length,
             `${label}: ${spec.audit} must declare its evidence markers`,
           ).toBeGreaterThan(0);
-          expect(evidence, `${label}: must perform the declared mutation`).toMatch(WRITE_EVIDENCE_RE);
+          expect(evidence, `${label}: must perform the declared mutation`).toMatch(
+            WRITE_EVIDENCE_RE,
+          );
           for (const re of spec.auditMarkers ?? []) {
             expect(evidence, `${label}: audit evidence marker`).toMatch(re);
           }
         }
       }
       if (fam.auditDeclaration) {
-        expect(src, `${fam.family}: contract must declare its audit posture in its own header`).toContain(
-          fam.auditDeclaration,
-        );
+        expect(
+          src,
+          `${fam.family}: contract must declare its audit posture in its own header`,
+        ).toContain(fam.auditDeclaration);
       }
     });
 
@@ -373,20 +386,49 @@ defineFamilySuite({
       input: "zod",
       gate: "rls-scoped",
       audit: "write-through",
-      auditMarkers: [/paystack_reference/],
-      extra: [/\.eq\("paystack_reference", data\.reference\)/],
-      note: "the fee write is bound to the provider reference (replay/rebinding protection); the webhook is the source of truth",
+      auditMarkers: [/recordFinancialSettlement\(/],
+      extra: [/\.eq\("paystack_reference", data\.reference\)/, /reconcileFinancialPayment\(/],
+      note: "legacy references remain RLS-scoped; new intents resolve their canonical fee and tenant server-side before reconciliation",
+    },
+    {
+      fn: "createFeePaymentPlan",
+      method: "POST",
+      input: "zod",
+      gate: "rls-scoped",
+      audit: "write-through",
+      auditMarkers: [/createFinancialPlan\(/],
+      extra: [/canInitiateFeePayment\(/, /fee_amount_due/],
+    },
+    {
+      fn: "listFeePaymentReceipts",
+      method: "POST",
+      input: "zod",
+      gate: "rls-scoped",
+      gateMarker: /\.from\("cg_financial_evidence"\)/,
+      audit: "pure-read",
+      extra: [/\.eq\("reference", data\.reference\)/],
+    },
+    {
+      fn: "requestFeeRefund",
+      method: "POST",
+      input: "zod",
+      gate: "rls-scoped",
+      gateMarker: /\.from\("cg_financial_entry"\)/,
+      audit: "write-through",
+      auditMarkers: [/requestFinancialReversal\(/, /finishFinancialReversal\(/],
+      extra: [/is_tenant_admin/, /paystackSecret\(/],
     },
   ],
   findings: [
     "§27.3 finding: authorization is RLS-scoped on the authenticated client (parent/bursar roles are outside the school-admin gate by design) — documented in the p08-enforcement-surface DOCUMENTED_EXEMPT ledger. Recorded, not accommodated.",
-    "§27.6 note: payment-state audit lives in the fees row (paystack_reference/paid_amount/paid_at) and the signature-verified webhook path (§36); the family itself writes no separate audit event. Recorded, not accommodated.",
+    "§27.6 note: server financial lifecycle RPCs persist append-only reconciliation, settlement, and receipt evidence; existing fee rows remain the legacy balance projection.",
   ],
 });
 
 defineFamilySuite({
   family: "wallet-topup.functions.ts",
-  externalProvider: "Paystack api.paystack.co (PAYSTACK_SECRET_KEY, test key only, server-side only)",
+  externalProvider:
+    "Paystack api.paystack.co (PAYSTACK_SECRET_KEY, test key only, server-side only)",
   functions: [
     {
       fn: "initWalletTopup",
@@ -412,7 +454,10 @@ defineFamilySuite({
       note: "caller must see the intent under RLS (wallet.view) before service-role settlement; settlement matches amount/currency against the DB intent",
     },
   ],
-  helpers: { settleWalletTopup: [/\.rpc\("wallet_topup_settle"/], testSecret: [/startsWith\("sk_test_"\)/] },
+  helpers: {
+    settleWalletTopup: [/\.rpc\("wallet_topup_settle"/],
+    testSecret: [/requirePaystackTestKey/],
+  },
   findings: [
     "§27.6 note: the intent row is audited by the scholar_audit trigger; settlement is idempotent on the reference. Recorded, not accommodated.",
   ],

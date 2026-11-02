@@ -119,6 +119,9 @@ export const CONSOLE_FIXTURE_PERSONAS: readonly ConsoleFixturePersona[] = [
 ];
 
 const DEFAULT_FIXTURE_PERSONA = CONSOLE_FIXTURE_PERSONAS[0];
+const SUPPORT_FIXTURE_PERSONA = CONSOLE_FIXTURE_PERSONAS.find(
+  (persona) => persona.key === "support",
+);
 
 /** Compatibility actor used by fixture organization / operations stores. */
 export const CONSOLE_FIXTURE_OPERATOR = {
@@ -730,6 +733,7 @@ export function buildConsoleVisualFixtureOverview(
   const supportOnly =
     capabilities.includes("platform.support.handle") &&
     !capabilities.includes("platform.tenants.manage");
+  const supportScoped = supportOnly;
   const assignedSupportIds = assignedSupportOrganizationIds(fullSnapshot.assignments, persona.id);
   const snapshot = supportOnly
     ? {
@@ -835,7 +839,7 @@ export function buildConsoleVisualFixtureOverview(
       caveat: "These statuses describe the local visual fixture, not a live environment.",
     },
     metrics: authorizedConsoleMetrics(
-      canReadOrgs
+      canReadOrgs && !supportScoped
         ? fixtureOrganizationMetricsCards(snapshot)
         : fixtureOrganizationMetricsCards(snapshot).filter(
             (metric) =>
@@ -848,7 +852,7 @@ export function buildConsoleVisualFixtureOverview(
         item.href === CONSOLE_PATHS.organizations ||
         item.href.startsWith(`${CONSOLE_PATHS.organizations}/`)
       ) {
-        return canReadOrgs;
+        return canReadOrgs && !supportScoped;
       }
       return true;
     }),
@@ -866,7 +870,7 @@ export function buildConsoleVisualFixtureOverview(
       "Fixture directory is empty. No synthetic staff rows are shown as if they were live records.",
     organizations: canReadOrgs ? snapshot.organizations : [],
     organizationStore: canReadOrgs ? "fixture" : "unavailable",
-    organizationMetrics: canReadOrgs ? snapshot.metrics : unauthorizedOrgMetrics,
+    organizationMetrics: canReadOrgs && !supportScoped ? snapshot.metrics : unauthorizedOrgMetrics,
     assignments: canReadOrgs
       ? snapshot.assignments.filter((item) => item.staffId === persona.id)
       : [],

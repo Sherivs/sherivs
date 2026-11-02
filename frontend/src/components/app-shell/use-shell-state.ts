@@ -15,6 +15,7 @@ import {
 } from "@/lib/shell/chrome";
 import { primarySections } from "@/components/workspaces/workspace-shell";
 import { compactPersonName } from "@/lib/shell/display-name";
+import { createOfflineStore } from "@/lib/offline/indexeddb-store";
 import {
   clockInTimeZone,
   greetingForHour,
@@ -96,6 +97,11 @@ export function useShellState() {
       setManifestLoading(false);
       return;
     }
+    const offline = createOfflineStore({
+      tenantId: school.id,
+      userId: profile.id,
+      role: profile.role,
+    });
     try {
       const { data: memberships } = await supabase
         .from("organization_memberships")
@@ -129,19 +135,14 @@ export function useShellState() {
         ),
       );
 
-      const { data: remote, error: remoteError } = await supabase.rpc(
-        "workspace_manifest" as never,
-        { p_org: school.id } as never,
-      );
-      if (remoteError || !remote) {
-        setManifest(null);
-        setCards({});
-        setScopeLabels({});
-        setWidgetsLoading(false);
-        setPrefsReady(false);
-        setManifestError(true);
-        return;
-      }
+      const { data: remote } = await offline.readThrough("workspace", "manifest", async () => {
+        const { data, error } = await supabase.rpc(
+          "workspace_manifest" as never,
+          { p_org: school.id } as never,
+        );
+        if (error || !data) throw error ?? new Error("Workspace is unavailable");
+        return data as unknown as ServerManifest;
+      });
 
       const next = fromServer(remote as unknown as ServerManifest, {
         name: school.name,
@@ -178,12 +179,18 @@ export function useShellState() {
 
   useEffect(() => {
     const schoolId = app.school?.id;
-    if (!manifest || !schoolId) {
+    const profile = app.profile;
+    if (!manifest || !schoolId || !profile) {
       setCards({});
       setScopeLabels({});
       setWidgetsLoading(false);
       return;
     }
+    const offline = createOfflineStore({
+      tenantId: schoolId,
+      userId: profile.id,
+      role: profile.role,
+    });
 
     const keys = manifest.widgets.map((item) => item.key);
     if (!keys.length) {
@@ -198,20 +205,26 @@ export function useShellState() {
     setWidgetsError(false);
     const loadCards = async () => {
       try {
-        const { data: live, error: liveError } = await supabase.rpc(
-          "workspace_widget_data" as never,
-          {
-            p_org: schoolId,
-            p_keys: keys,
-            p_scope: scopeFocus,
-          } as never,
+        const { data: live } = await offline.readThrough(
+          "workspace",
+          `widgets:${JSON.stringify([keys, scopeFocus])}`,
+          async () => {
+            const { data, error } = await supabase.rpc(
+              "workspace_widget_data" as never,
+              {
+                p_org: schoolId,
+                p_keys: keys,
+                p_scope: scopeFocus,
+              } as never,
+            );
+            if (error) throw error;
+            return data as unknown as WidgetDataResponse | null;
+          },
         );
         if (!active) return;
-        setCards(liveError ? {} : ((live as unknown as WidgetDataResponse | null)?.cards ?? {}));
-        setScopeLabels(
-          liveError ? {} : ((live as unknown as WidgetDataResponse | null)?.labels ?? {}),
-        );
-        setWidgetsError(Boolean(liveError));
+        setCards(live?.cards ?? {});
+        setScopeLabels(live?.labels ?? {});
+        setWidgetsError(false);
       } catch {
         if (!active) return;
         setCards({});
@@ -222,10 +235,12 @@ export function useShellState() {
       }
     };
     void loadCards();
+    window.addEventListener("online", loadCards);
     return () => {
       active = false;
+      window.removeEventListener("online", loadCards);
     };
-  }, [app.school?.id, manifest, scopeFocus]);
+  }, [app.profile, app.school?.id, manifest, scopeFocus]);
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 30_000);

@@ -32,9 +32,9 @@ import {
 import {
   CONSOLE_FIXTURE_OPERATOR,
   CONSOLE_FIXTURE_ORGS_KEY,
+  assignedSupportOrganizationIds,
   consoleVisualFixtureActive,
   readSelectedFixturePersona,
-  assignedSupportOrganizationIds,
 } from "@/lib/internal-console/visual-fixture";
 import { viewerCapabilities } from "@/lib/internal-console/roles";
 
@@ -177,8 +177,18 @@ export async function apiListOrganizations(
 
 export async function apiGetOrganization(id: string): Promise<OrganizationDetail> {
   if (consoleVisualFixtureActive()) {
+    const persona = readSelectedFixturePersona();
     const found = readStore().organizations.find((row) => row.id === id);
     if (!found) throw new Error("Organization not found.");
+    const capabilities = viewerCapabilities(persona.roles, persona.isSuperAdmin);
+    const supportOnly =
+      capabilities.has("platform.support.handle") && !capabilities.has("platform.tenants.manage");
+    if (
+      supportOnly &&
+      !assignedSupportOrganizationIds(found.assignments, persona.id).has(found.id)
+    ) {
+      throw new Error("Not authorized");
+    }
     return found;
   }
   return getOrganization({ data: { id } });

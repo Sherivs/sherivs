@@ -838,6 +838,11 @@
 }
 
 @media (max-width: 1100px) {
+  html:has(.sherivs-console),
+  body:has(.sherivs-console) {
+    height: auto;
+  }
+
   .sherivs-console-orb {
     animation: none;
     filter: none;
@@ -918,7 +923,6 @@
     overflow: visible;
     flex-wrap: wrap;
     padding-bottom: 0.1rem;
-    -webkit-overflow-scrolling: touch;
   }
 
   .sherivs-console-chip {

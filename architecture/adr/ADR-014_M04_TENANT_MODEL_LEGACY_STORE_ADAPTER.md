@@ -1,4 +1,4 @@
-# ADR-013: M04 Extends the Existing Organization Tenant Store (COND-003)
+# ADR-014: M04 Extends the Existing Organization Tenant Store (COND-003)
 
 || Field | Value |
 ||---|---|
