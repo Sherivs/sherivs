@@ -33,7 +33,7 @@ Treat a verified institution-authority relationship as sufficient to grant actio
 
 ### Option 3 — Require verified relationship evidence for flagged assignments while retaining role-engine permissions (retained)
 
-Flag only authority-dependent global role templates. A flagged assignment is effective only when its evidence references exactly one same-tenant M04 link that is verified and effective at evaluation time. The existing role template, assigned responsibilities, scope, policy, and RLS remain the permission source. The tertiary fallback is read-only.
+Flag only authority-dependent global role templates. A flagged assignment is effective only when its evidence references exactly one same-tenant M04 link that is verified and effective at evaluation time. The existing role template, assigned responsibilities, scope, policy, and RLS remain the permission source. The tertiary fallback is read-only and maps to the existing principal workspace family; the migration fails rather than overwriting any pre-existing fallback template data.
 
 - **Consequences:** It prevents title-only and stale-link access while preserving distinctions among existing role templates. It adds a required evidence selection to assignment and fails closed if M04 data or evidence is missing. Existing M04 authority records are not created or modified by this decision.
 

@@ -45,6 +45,11 @@ UPDATE public.role_catalog
      'ng.provost_postgraduate_college'
    );
 
+UPDATE public.workspace_family_layouts
+   SET template_codes = array_remove(template_codes, 'm009_tertiary_executive_read_only')
+ WHERE family = 'principal'
+   AND template_codes @> ARRAY['m009_tertiary_executive_read_only']::text[];
+
 DELETE FROM public.role_template_permissions
  WHERE template_code = 'm009_tertiary_executive_read_only';
 DELETE FROM public.role_templates

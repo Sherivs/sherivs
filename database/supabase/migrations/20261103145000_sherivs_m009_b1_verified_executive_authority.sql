@@ -6,9 +6,35 @@ BEGIN
      OR to_regclass('public.role_templates') IS NULL
      OR to_regclass('public.role_template_permissions') IS NULL
      OR to_regclass('public.user_role_assignments') IS NULL
+     OR to_regclass('public.workspace_family_layouts') IS NULL
      OR to_regclass('public.institution_authority_links') IS NULL
      OR to_regprocedure('public.workspace_effective_permission_rows_at(uuid,uuid,timestamptz)') IS NULL THEN
     RAISE EXCEPTION 'M009-B1 requires M009-A1 and M04 role and authority-link contracts'
+      USING ERRCODE = '55000';
+  END IF;
+  IF EXISTS (
+       SELECT 1 FROM public.role_templates
+        WHERE code = 'm009_tertiary_executive_read_only'
+     )
+     OR EXISTS (
+       SELECT 1 FROM public.role_template_permissions
+        WHERE template_code = 'm009_tertiary_executive_read_only'
+     )
+     OR EXISTS (
+       SELECT 1 FROM public.role_catalog
+        WHERE template_code = 'm009_tertiary_executive_read_only'
+     )
+     OR EXISTS (
+       SELECT 1 FROM public.workspace_family_layouts
+        WHERE template_codes @> ARRAY['m009_tertiary_executive_read_only']::text[]
+     ) THEN
+    RAISE EXCEPTION 'M009-B1 tertiary executive template already exists'
+      USING ERRCODE = '55000';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.workspace_family_layouts WHERE family = 'principal'
+  ) THEN
+    RAISE EXCEPTION 'M009-B1 requires the principal workspace family layout'
       USING ERRCODE = '55000';
   END IF;
 END
@@ -26,20 +52,17 @@ VALUES (
   'confidential',
   NULL,
   ARRAY['tenant_isolation','audited','verified_institution_authority_link','read_only']::text[]
-)
-ON CONFLICT (code) DO UPDATE
-  SET default_scope = EXCLUDED.default_scope,
-      data_sensitivity = EXCLUDED.data_sensitivity,
-      approval_limit_ngn = EXCLUDED.approval_limit_ngn,
-      guardrails = EXCLUDED.guardrails;
+);
 
 INSERT INTO public.role_template_permissions (template_code, permission_code, kind, default_on)
 VALUES
   ('m009_tertiary_executive_read_only','analytics.institution','mandatory',true),
   ('m009_tertiary_executive_read_only','reports.academic','mandatory',true),
-  ('m009_tertiary_executive_read_only','reports.financial','mandatory',true)
-ON CONFLICT (template_code, permission_code) DO UPDATE
-  SET kind = EXCLUDED.kind, default_on = EXCLUDED.default_on;
+  ('m009_tertiary_executive_read_only','reports.financial','mandatory',true);
+
+UPDATE public.workspace_family_layouts
+   SET template_codes = array_append(template_codes, 'm009_tertiary_executive_read_only')
+ WHERE family = 'principal';
 
 UPDATE public.role_catalog
    SET template_code = 'm009_tertiary_executive_read_only',

@@ -33,6 +33,18 @@ describe("M009 B-1 verified authority gate", () => {
     expect(MIGRATION).not.toMatch(/INSERT\s+INTO\s+public\.institution_authority_link_audit/i);
   });
 
+  it("maps tertiary executives to the principal workspace without replacing existing template data", () => {
+    expect(MIGRATION).toContain(
+      "UPDATE public.workspace_family_layouts\n   SET template_codes = array_append(template_codes, 'm009_tertiary_executive_read_only')",
+    );
+    expect(MIGRATION).toContain("M009-B1 tertiary executive template already exists");
+    expect(MIGRATION).not.toContain("ON CONFLICT (code) DO UPDATE");
+    expect(MIGRATION).not.toContain("ON CONFLICT (template_code, permission_code) DO UPDATE");
+    expect(ROLLBACK).toContain(
+      "SET template_codes = array_remove(template_codes, 'm009_tertiary_executive_read_only')",
+    );
+  });
+
   it("restores the original tertiary template mappings and permission resolver on rollback", () => {
     expect(ROLLBACK).toContain(
       "DROP FUNCTION IF EXISTS public.workspace_authority_link_evidence_is_verified",
