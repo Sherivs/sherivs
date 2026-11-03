@@ -21,10 +21,7 @@ export default defineConfig({
     "import.meta.env.VITE_SENTRY_RELEASE": JSON.stringify(sentryRelease),
     "import.meta.env.VITE_SENTRY_ENVIRONMENT": JSON.stringify(sentryEnvironment),
   },
-  build: {
-    manifest: true,
-    ...(sentryUpload ? { sourcemap: "hidden" } : {}),
-  },
+  build: sentryUpload ? { sourcemap: "hidden" } : undefined,
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./frontend/src", import.meta.url)),

@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, rmSync } from "node:fs";
 import { resolve, sep } from "node:path";
 import { gzipSync } from "node:zlib";
 
@@ -54,6 +54,9 @@ const gzipBytes = [...jsFiles].reduce((total, file) => {
 const limitBytes = 250 * 1024;
 const size = (gzipBytes / 1024).toFixed(2);
 const limit = (limitBytes / 1024).toFixed(2);
+
+rmSync(manifestPath);
+rmSync(resolve(publicDir, ".vite"), { recursive: true, force: true });
 
 console.log(
   `/home static JavaScript: ${size} KiB gzip (${jsFiles.size} files; limit ${limit} KiB)`,

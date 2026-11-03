@@ -494,7 +494,6 @@ export function StudentMobilityScreen() {
   const selectedApprovals = approvals.filter((approval) =>
     selectedRequests.some((request) => request.id === approval.request_id),
   );
-  const classOptions = classes.filter((item) => item.id !== selectedStudent?.class_id);
   const documentPlacements = selectedPlacements.map((placement) => ({
     className: classLabel(
       classById.get(placement.class_id ?? ""),
