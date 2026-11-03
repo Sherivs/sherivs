@@ -15,6 +15,7 @@ import {
   permittedWidgetCatalog,
   primarySections,
   reorderWidgetKeys,
+  visibleWorkspaceWidgets,
   WIDGET_REGISTRY,
   workspaceResponsibilityIcon,
 } from "@/components/workspaces/workspace-shell";
@@ -73,6 +74,15 @@ describe("workspace shell manifest presentation", () => {
       const manifest = DEMO_WORKSPACE_MANIFESTS[role.key];
       const primary = primarySections(manifest);
       expect(primary).toHaveLength(3);
+      const widgets = visibleWorkspaceWidgets(manifest);
+      expect(widgets.length).toBeGreaterThanOrEqual(3);
+      expect(
+        widgets.every((item) =>
+          [...manifest.widgets, ...manifest.available].some(
+            (permitted) => permitted.key === item.key,
+          ),
+        ),
+      ).toBe(true);
       expect(
         composeBottomSlots(manifest)
           .slice(1, 4)
@@ -123,6 +133,22 @@ describe("workspace shell manifest presentation", () => {
     expect(catalog.length).toBeGreaterThan(0);
     expect(catalog.every((item) => visible.has(item.key))).toBe(true);
     expect(catalog.some((item) => item.key === "w.fee_collection")).toBe(false);
+  });
+
+  it("uses only permitted, non-hidden widgets to fill the three-card minimum", () => {
+    const manifest = DEMO_WORKSPACE_MANIFESTS.form_teacher;
+    const hidden = manifest.available[0]!.key;
+    const widgets = visibleWorkspaceWidgets(manifest, [hidden]);
+
+    expect(widgets).toHaveLength(3);
+    expect(widgets.some((item) => item.key === hidden)).toBe(false);
+    expect(
+      widgets.every((item) =>
+        [...manifest.widgets, ...manifest.available].some(
+          (permitted) => permitted.key === item.key,
+        ),
+      ),
+    ).toBe(true);
   });
 
   it("applies an assigned scope to nav, widgets, and actions but rejects unassigned scopes", () => {
