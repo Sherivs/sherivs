@@ -1,5 +1,6 @@
 import type {
   ResponsibilityGrant,
+  InstitutionAuthorityLink,
   RoleAssignment,
   RoleDelegation,
   RoleTemplate,
@@ -22,7 +23,27 @@ export interface WorkspaceResolutionData {
   readonly assignments: readonly RoleAssignment[];
   readonly delegations?: readonly RoleDelegation[];
   readonly responsibilityGrants?: readonly ResponsibilityGrant[];
+  readonly authorityLinks?: readonly InstitutionAuthorityLink[];
   readonly roleTemplates: readonly RoleTemplate[];
+}
+
+export const AUTHORITY_LINK_EVIDENCE_PREFIX = "authority_link:";
+
+export function verifiedAuthorityLinkId(
+  evidence: readonly string[],
+  authorityLinks: readonly InstitutionAuthorityLink[],
+  at: string | number,
+  tenantId: string,
+): string | null {
+  const timestamp = typeof at === "number" ? at : Date.parse(at);
+  if (!Number.isFinite(timestamp)) return null;
+  const references = evidence
+    .filter((entry) => entry.startsWith(AUTHORITY_LINK_EVIDENCE_PREFIX))
+    .map((entry) => entry.slice(AUTHORITY_LINK_EVIDENCE_PREFIX.length));
+  if (references.length !== 1) return null;
+  const link = authorityLinks.find((candidate) => candidate.id === references[0]);
+  if (!link || link.tenantId !== tenantId || link.verificationStatus !== "verified") return null;
+  return isEffective(link.effectiveFrom, link.effectiveUntil, null, timestamp) ? link.id : null;
 }
 
 function isEffective(
@@ -69,6 +90,7 @@ export function resolveWorkspaceManifest(
 ): WorkspaceManifest | null {
   const timestamp = Date.parse(at);
   if (!user.id || !institution.id || Number.isNaN(timestamp)) return null;
+  const authorityLinks = data.authorityLinks ?? [];
 
   const delegatedAssignmentIds = new Set(
     (data.delegations ?? [])
@@ -87,14 +109,25 @@ export function resolveWorkspaceManifest(
         ),
       ),
   );
-  const visibleAssignments = data.assignments.filter(
-    (assignment) =>
-      assignment.tenantId === institution.id &&
-      assignment.scopeType !== "authority" &&
-      assignment.scopeType !== "lga" &&
-      assignmentIsEffective(assignment, timestamp) &&
-      (assignment.userId === user.id || delegatedAssignmentIds.has(assignment.id)),
-  );
+  const visibleAssignments = data.assignments.filter((assignment) => {
+    if (
+      assignment.tenantId !== institution.id ||
+      assignment.scopeType === "authority" ||
+      assignment.scopeType === "lga" ||
+      !assignmentIsEffective(assignment, timestamp) ||
+      (assignment.userId !== user.id && !delegatedAssignmentIds.has(assignment.id))
+    ) {
+      return false;
+    }
+    const template = data.roleTemplates.find(
+      (candidate) => candidate.id === assignment.roleTemplateId,
+    );
+    return (
+      !template?.requiresVerifiedAuthorityLink ||
+      verifiedAuthorityLinkId(assignment.evidence, authorityLinks, timestamp, institution.id) !==
+        null
+    );
+  });
   const visibleAssignmentIds = new Set(visibleAssignments.map(({ id }) => id));
   if (visibleAssignmentIds.size === 0) return null;
 
