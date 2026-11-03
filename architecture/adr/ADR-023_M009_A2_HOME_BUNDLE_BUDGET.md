@@ -15,7 +15,7 @@
 
 M009 Stage A requires a role-based workspace with exactly three primary navigation sections, a widget catalog, recent activity, and notifications; access remains tied to assigned roles and permissions (issue #175). The A2 follow-up requires all 56 V1 role templates to have exactly three primary sections and at least three widgets, while bringing the `/home` initial JavaScript graph to no more than 250 KiB gzip without removing features.
 
-The original measured static graph was 340.51 KiB gzip. After making optional website-head and Sentry code load only when needed it measured 263.81 KiB, still above the budget. The selected route-level split measures 236.81 KiB. These figures use Vite's production manifest, the default TanStack Start client entry plus the `/home` route and index component entries, recursive static `imports` only, and the sum of each unique emitted JavaScript file compressed independently with gzip level 9. KiB is 1024 bytes. The two workspace modules remain explicit dynamic imports and are not counted as first-load files. The regular production build does not emit a manifest; the verification-only build emits `.output/public/.vite/manifest.json`, which the size-check script removes after reading it.
+The original measured static graph was 340.51 KiB gzip. After making optional website-head and Sentry code load only when needed it measured 263.81 KiB, still above the budget. The selected route-level split measures 236.80 KiB. These figures use Vite's production manifest, the default TanStack Start client entry plus the `/home` route and index component entries, recursive static `imports` only, and the sum of each unique emitted JavaScript file compressed independently with gzip level 9. KiB is 1024 bytes. The two workspace modules remain explicit dynamic imports and are not counted as first-load files. The regular production build does not emit a manifest; the verification-only build emits `.output/public/.vite/manifest.json`, which the size-check script removes after reading it.
 
 ## Options
 
@@ -50,8 +50,8 @@ Keep the route entry lightweight and load the existing shell and home screen thr
 
 ## Consequences (summary)
 
-- **Positive:** The initial `/home` static graph is machine-checked at 236.81 KiB gzip against the 250 KiB limit, while all role templates retain three primary sections and at least three authorized widgets.
-- **Negative / obligations:** Keep deferred imports explicit, retain the accessible fallback, and update the bundle measurement and role coverage checks if route entry points change. The 236.81 KiB result is reproducible with `npm run verify:home-bundle:build`; the temporary manifest is deleted by the checker, and ordinary production builds emit no manifest.
+- **Positive:** The initial `/home` static graph is machine-checked at 236.80 KiB gzip against the 250 KiB limit, while all role templates retain three primary sections and at least three authorized widgets.
+- **Negative / obligations:** Keep deferred imports explicit, retain the accessible fallback, and update the bundle measurement and role coverage checks if route entry points change. The 236.80 KiB result is reproducible with `npm run verify:home-bundle:build`; the temporary manifest is deleted by the checker, and ordinary production builds emit no manifest.
 - **For the wave/program specifically:** This is a bounded M009-A2 V1 organizational workspace follow-up. It makes no database or migration change and authorizes no V2 or V3 work.
 
 ## Golden Questions
