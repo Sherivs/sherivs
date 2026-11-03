@@ -102,7 +102,7 @@ jobs:
             :'org_ref',
             '1407639185765089',
             '+2349015056201',
-            'env://WHATSAPP_ACCESS_TOKEN',
+            'env://WHATSAPP_TOKEN',
             'workflow:sv1-wa-map-sender'
           );
           SELECT count(*) = 1 AS mapping_valid

@@ -1,4 +1,5 @@
 import { createHmac } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   dispatchWhatsAppN8nOutbox,
@@ -23,6 +24,14 @@ const ORIGINAL_URL = process.env.N8N_WHATSAPP_WEBHOOK_URL;
 const ORIGINAL_SECRET = process.env.N8N_WHATSAPP_SIGNING_SECRET;
 const ORIGINAL_ALLOWED_HOSTS = process.env.N8N_WHATSAPP_ALLOWED_HOSTS;
 const ORIGINAL_CRON_SECRET = process.env.CRON_SECRET;
+const inboundExport = JSON.parse(
+  readFileSync(
+    new URL("../../../automation/n8n/sherivs-wa-inbound-handler.json", import.meta.url),
+    "utf8",
+  ),
+) as {
+  nodes: { name: string; parameters: { jsCode?: string } }[];
+};
 const POST_REPLY = (
   Route as unknown as {
     options: { server: { handlers: { POST: (input: { request: Request }) => Promise<Response> } } };
@@ -66,6 +75,20 @@ afterEach(() => {
 });
 
 describe("WhatsApp n8n forwarding and reply authentication", () => {
+  it("uses the same timestamp-prefixed HMAC vector as the n8n export", () => {
+    const verifierCode = inboundExport.nodes.find(
+      (node) => node.name === "Verify signature and inbound shape",
+    )?.parameters.jsCode;
+    expect(verifierCode).toContain("update(`${timestamp}.${rawBody}`)");
+
+    const timestamp = "1800000000";
+    const raw = '{"event_type":"whatsapp.inbound"}';
+    const exportSignature = `sha256=${createHmac("sha256", SECRET)
+      .update(`${timestamp}.${raw}`)
+      .digest("hex")}`;
+    expect(exportSignature).toBe(signN8nWhatsAppPayload(timestamp, raw, SECRET));
+  });
+
   it("accepts only HTTPS exact-host allowlist entries and a strong signing secret", () => {
     expect(
       getN8nWhatsAppConfig({

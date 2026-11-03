@@ -51,6 +51,14 @@ const tenantBindingRollback = readFileSync(
   ),
   "utf8",
 );
+const senderWorkflow = readFileSync(
+  new URL("../../../.github/workflows/sv1-wa-map-sender.yml", import.meta.url),
+  "utf8",
+);
+const cloudAdapter = readFileSync(
+  new URL("../../../frontend/src/lib/communications/whatsapp-cloud.server.ts", import.meta.url),
+  "utf8",
+);
 
 describe("WhatsApp receive phone regex fix", () => {
   it("uses a single-backslash E.164 regex that accepts +2349015056201", () => {
@@ -72,6 +80,11 @@ describe("WhatsApp receive phone regex fix", () => {
 });
 
 describe("WhatsApp Cloud migration posture", () => {
+  it("uses the provider token environment name in the sender mapping", () => {
+    expect(senderWorkflow).toContain("'env://WHATSAPP_TOKEN'");
+    expect(cloudAdapter).toContain("process.env.WHATSAPP_TOKEN");
+  });
+
   it("uses the shared tenant/org keys and sender registry", () => {
     expect(migration).toContain("tenant_id text NOT NULL");
     expect(migration).toContain("org_ref text NOT NULL");

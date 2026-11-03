@@ -49,7 +49,7 @@ describe("production WhatsApp sender mapping workflow", () => {
     expect(mapping?.run).toContain("public.cg_whatsapp_map_sender(");
     expect(mapping?.run).toContain("'1407639185765089',");
     expect(mapping?.run).toContain("'+2349015056201',");
-    expect(mapping?.run).toContain("'env://WHATSAPP_ACCESS_TOKEN',");
+    expect(mapping?.run).toContain("'env://WHATSAPP_TOKEN',");
     expect(mapping?.run).toContain("'workflow:sv1-wa-map-sender'");
     const mappedArguments = mapping?.run?.match(
       /SELECT public\.cg_whatsapp_map_sender\(([\s\S]*?)\);/,

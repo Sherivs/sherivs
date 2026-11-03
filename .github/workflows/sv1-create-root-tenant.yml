@@ -1,0 +1,99 @@
+name: Create Sherivs root tenant
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type CREATE-SHERIVS-ROOT-TENANT to confirm"
+        required: true
+        type: string
+      dry_run:
+        description: "Roll back the tenant transaction after verification"
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prod-sherivs-root-tenant
+  cancel-in-progress: false
+
+jobs:
+  create-root-tenant:
+    name: Create Sherivs root tenant
+    runs-on: ubuntu-latest
+    environment: Production
+    timeout-minutes: 10
+    env:
+      CONFIRM: ${{ inputs.confirm }}
+      DRY_RUN: ${{ inputs.dry_run }}
+      PGCONNECT_TIMEOUT: "20"
+    steps:
+      - name: Validate branch and confirmation
+        run: |
+          set -euo pipefail
+          [ "$GITHUB_REF" = "refs/heads/master" ] || { echo "::error::this workflow may only run from master"; exit 1; }
+          [ "$CONFIRM" = "CREATE-SHERIVS-ROOT-TENANT" ] || { echo "::error::confirm must equal CREATE-SHERIVS-ROOT-TENANT"; exit 1; }
+          [[ "$DRY_RUN" == "true" || "$DRY_RUN" == "false" ]] || { echo "::error::dry_run must be boolean"; exit 1; }
+
+      - name: Check production database secret
+        env:
+          DB_URL: ${{ secrets.PROD_DB_URL_BACKUP }}
+        run: '[ -n "$DB_URL" ] || { echo "::error::PROD_DB_URL_BACKUP not set"; exit 1; }'
+
+      - name: Create if absent and verify
+        env:
+          DB_URL: ${{ secrets.PROD_DB_URL_BACKUP }}
+        run: |
+          set -euo pipefail
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -v dry_run="$DRY_RUN" <<'SQL'
+          BEGIN ISOLATION LEVEL SERIALIZABLE;
+          SET LOCAL role service_role;
+          SELECT set_config('request.jwt.claims', '{"role":"service_role"}', true) AS claims \gset
+          SELECT set_config('request.jwt.claim.role', 'service_role', true) AS role_claim \gset
+          DO $root$
+          DECLARE
+            v_expected_id constant uuid := '3c0d0f9a-56bb-4a3e-8e02-b1a426f1c201';
+            v_matches integer;
+            v_existing public.cg_tenant%ROWTYPE;
+          BEGIN
+            SELECT count(*)::integer INTO v_matches
+              FROM public.cg_tenant
+             WHERE id = v_expected_id OR name = 'Sherivs' OR slug = 'sherivs';
+
+            IF v_matches > 1 THEN
+              RAISE EXCEPTION 'duplicate or conflicting Sherivs tenant rows; refusing to choose';
+            ELSIF v_matches = 1 THEN
+              SELECT * INTO v_existing
+                FROM public.cg_tenant
+               WHERE id = v_expected_id OR name = 'Sherivs' OR slug = 'sherivs';
+              IF v_existing.id IS DISTINCT FROM v_expected_id
+                 OR v_existing.tenant_type IS DISTINCT FROM 'organization'
+                 OR v_existing.name IS DISTINCT FROM 'Sherivs'
+                 OR v_existing.slug IS DISTINCT FROM 'sherivs'
+                 OR v_existing.status IS DISTINCT FROM 'ACTIVE'
+                 OR v_existing.parent_tenant_id IS NOT NULL
+                 OR v_existing.environment IS DISTINCT FROM 'production' THEN
+                RAISE EXCEPTION 'Sherivs tenant conflicts with the expected active root; refusing to choose';
+              END IF;
+            ELSE
+              INSERT INTO public.cg_tenant
+                (id, tenant_type, name, slug, status, parent_tenant_id, environment)
+              VALUES
+                (v_expected_id, 'organization', 'Sherivs', 'sherivs', 'ACTIVE', NULL, 'production');
+            END IF;
+          END
+          $root$;
+          SELECT id AS tenant_id
+            FROM public.cg_tenant
+           WHERE id = '3c0d0f9a-56bb-4a3e-8e02-b1a426f1c201';
+          \if :dry_run
+          ROLLBACK;
+          \echo "Dry run complete; tenant transaction rolled back."
+          \else
+          COMMIT;
+          \echo "Root tenant transaction committed."
+          \endif
+          SQL

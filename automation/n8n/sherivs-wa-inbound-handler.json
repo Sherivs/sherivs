@@ -1,0 +1,299 @@
+{
+  "name": "Sherivs WhatsApp inbound handler",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sherivs-wa-inbound-placeholder",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "sherivs-wa-inbound-webhook",
+      "name": "Inbound webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const crypto = require('crypto');\nconst item = $input.first().json;\nconst headers = item.headers ?? {};\nconst timestamp = headers['x-sherivs-timestamp'];\nconst signature = headers['x-sherivs-signature'];\nconst rawBody = typeof item.rawBody === 'string' ? item.rawBody : Buffer.isBuffer(item.rawBody) ? item.rawBody.toString('utf8') : null;\nconst reject = () => [{ json: { valid: false } }];\nconst secret = process.env.N8N_WHATSAPP_SIGNING_SECRET;\nif (rawBody === null || typeof secret !== 'string' || secret.length < 32 || typeof timestamp !== 'string' || !/^[0-9]+$/.test(timestamp) || typeof signature !== 'string' || !/^sha256=[0-9a-f]{64}$/.test(signature)) return reject();\nconst timestampSeconds = Number(timestamp);\nif (!Number.isSafeInteger(timestampSeconds) || Math.abs(Math.floor(Date.now() / 1000) - timestampSeconds) > 300) return reject();\nconst expected = Buffer.from(`sha256=${crypto.createHmac('sha256', secret).update(`${timestamp}.${rawBody}`).digest('hex')}`, 'utf8');\nconst supplied = Buffer.from(signature, 'utf8');\nif (expected.length !== supplied.length || !crypto.timingSafeEqual(expected, supplied)) return reject();\nlet event;\ntry {\n  event = JSON.parse(rawBody);\n} catch {\n  return reject();\n}\nif (!event || typeof event !== 'object' || Array.isArray(event)) return reject();\nconst uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;\nconst validReceivedAt = event.received_at === null || (typeof event.received_at === 'string' && /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}([.][0-9]+)?Z$/.test(event.received_at) && !Number.isNaN(Date.parse(event.received_at)));\nif (event.event_type !== 'whatsapp.inbound' || typeof event.event_id !== 'string' || !uuid.test(event.event_id) || typeof event.provider_message_id !== 'string' || event.provider_message_id.length < 1 || event.provider_message_id.length > 200 || typeof event.tenant_id !== 'string' || event.tenant_id.length < 1 || event.tenant_id.length > 128 || typeof event.org_ref !== 'string' || event.org_ref.length < 1 || event.org_ref.length > 160 || typeof event.conversation_id !== 'string' || !uuid.test(event.conversation_id) || typeof event.recipient_hash !== 'string' || !/^[0-9a-f]{64}$/.test(event.recipient_hash) || !validReceivedAt || typeof event.body !== 'string' || event.body.length > 4096) return reject();\nreturn [{ json: { valid: true, event: { event_id: event.event_id, provider_message_id: event.provider_message_id, conversation_id: event.conversation_id, body: event.body } } }];"
+      },
+      "id": "sherivs-wa-verify-signature",
+      "name": "Verify signature and inbound shape",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "sherivs-wa-valid-branch",
+      "name": "Signature valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: false } }}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "id": "sherivs-wa-reject",
+      "name": "Reject unauthorized request",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        720,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const input = $input.first().json;\nreturn [{ json: { event: input.event, reply_body: '' } }];"
+      },
+      "id": "sherivs-wa-optional-reply-policy",
+      "name": "Optional reply policy (disabled until configured)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.reply_body }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "sherivs-wa-reply-enabled",
+      "name": "Reply configured?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const crypto = require('crypto');\nconst input = $input.first().json;\nconst secret = process.env.N8N_WHATSAPP_SIGNING_SECRET;\nif (typeof secret !== 'string' || secret.length < 32 || typeof input.reply_body !== 'string' || input.reply_body.length < 1 || input.reply_body.length > 4096) throw new Error('Reply signing is not configured');\nconst reply = {\n  reply_id: `n8n-${input.event.event_id}`,\n  inbound_provider_ref: input.event.provider_message_id,\n  conversation_id: input.event.conversation_id,\n  body: input.reply_body\n};\nconst rawBody = JSON.stringify(reply);\nconst timestamp = String(Math.floor(Date.now() / 1000));\nconst signature = `sha256=${crypto.createHmac('sha256', secret).update(`${timestamp}.${rawBody}`).digest('hex')}`;\nreturn [{ json: { rawBody, timestamp, signature } }];"
+      },
+      "id": "sherivs-wa-sign-reply",
+      "name": "Prepare signed reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.sherivs.com/api/public/webhooks/whatsapp-reply",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Sherivs-Timestamp",
+              "value": "={{ $json.timestamp }}"
+            },
+            {
+              "name": "X-Sherivs-Signature",
+              "value": "={{ $json.signature }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.rawBody }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "sherivs-wa-post-reply",
+      "name": "Post signed reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1440,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "sherivs-wa-accepted",
+      "name": "Accept inbound event",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1200,
+        80
+      ]
+    }
+  ],
+  "connections": {
+    "Inbound webhook": {
+      "main": [
+        [
+          {
+            "node": "Verify signature and inbound shape",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify signature and inbound shape": {
+      "main": [
+        [
+          {
+            "node": "Signature valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Signature valid?": {
+      "main": [
+        [
+          {
+            "node": "Optional reply policy (disabled until configured)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reject unauthorized request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Optional reply policy (disabled until configured)": {
+      "main": [
+        [
+          {
+            "node": "Reply configured?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply configured?": {
+      "main": [
+        [
+          {
+            "node": "Prepare signed reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Accept inbound event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare signed reply": {
+      "main": [
+        [
+          {
+            "node": "Post signed reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post signed reply": {
+      "main": [
+        [
+          {
+            "node": "Accept inbound event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

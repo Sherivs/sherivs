@@ -48,6 +48,45 @@ Use the standard bearer authorization scheme and source its credential from
 durable outbox rows and uses bounded retries and dead-letter storage. Vercel
 Hobby cron is not used.
 
+## n8n import and activation order
+
+The workflow exports in `automation/n8n/` are inactive. The inbound export uses
+`sherivs-wa-inbound-placeholder` as a placeholder path; select the approved n8n
+path before import/activation, then set the Vercel webhook URL to the resulting
+production URL (`/webhook/…`, not the test URL). Keep the exact host in the
+allowed-host list.
+
+1. Set the Vercel `N8N_WHATSAPP_SIGNING_SECRET`, `N8N_WHATSAPP_WEBHOOK_URL`,
+   `N8N_WHATSAPP_ALLOWED_HOSTS`, and `CRON_SECRET` values, then redeploy.
+2. Import both workflow exports into n8n and leave them inactive.
+3. Create the Header Auth credential named `Sherivs CRON Authorization` with
+   header name `Authorization` and a bearer value sourced from `CRON_SECRET`,
+   stored only in the credential. Configure the n8n process environment
+   `N8N_WHATSAPP_SIGNING_SECRET` with the same signing secret as Vercel.
+4. Manually run the forward tick and expect HTTP 200 with `delivered: 0` when the
+   outbox is empty. Send a correctly signed test POST to n8n's test URL: a valid
+   request is accepted, while a stale timestamp or bad signature is rejected
+   with HTTP 401.
+5. Run `sv1-create-root-tenant` first with `dry_run: true`, then with
+   `dry_run: false`.
+6. Run `sv1-wa-create-root-org` first with `dry_run: true`, then with
+   `dry_run: false`, passing it the tenant ID printed by the root-tenant
+   workflow.
+7. Run `sv1-wa-map-sender` first with `dry_run: true`, then with
+   `dry_run: false`.
+8. Activate the inbound handler, then activate the forward tick.
+9. Perform the real-message test below with an authorized, consenting test
+   sender.
+10. To roll back, deactivate both n8n workflows. The durable outbox continues
+    buffering inbound events for later delivery.
+
+The inbound workflow requires the n8n process settings
+`NODE_FUNCTION_ALLOW_BUILTIN=crypto` and `N8N_BLOCK_ENV_ACCESS_IN_NODE=false`
+for its Code nodes to use HMAC and read `N8N_WHATSAPP_SIGNING_SECRET`. This
+enables Code-node access to the crypto module and process environment; keep the
+n8n instance trusted and restrict workflow editing because those nodes can read
+configured environment values. No secrets are stored in the exports.
+
 ## Migration and code deployment order
 
 These additive migrations retain the existing four-argument receive RPC and
