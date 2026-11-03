@@ -209,9 +209,7 @@ function seedRecord(
   return result.store;
 }
 
-function retrievalRequest(
-  overrides?: Partial<MemoryRetrievalRequest>,
-): MemoryRetrievalRequest {
+function retrievalRequest(overrides?: Partial<MemoryRetrievalRequest>): MemoryRetrievalRequest {
   return {
     identityRef: IDENTITY_A,
     tenantId: TENANT_A,
@@ -279,7 +277,10 @@ function seedWideRecord(
   overrides?: Partial<MemoryWriteRequest>,
 ): MemoryTierStore {
   const withScope = ensureSeedingScope(store);
-  const result = writeMemoryRecord(withScope, writeRequest({ scopeId: SEED_SCOPE_ID, ...overrides }));
+  const result = writeMemoryRecord(
+    withScope,
+    writeRequest({ scopeId: SEED_SCOPE_ID, ...overrides }),
+  );
   if (!result.ok) throw new Error(`seed wide record rejected: ${result.error}`);
   return result.store;
 }
@@ -375,7 +376,11 @@ describe("unauthenticated retrieval is denied (fail-closed, J-017)", () => {
 
   it("denies a whitespace-only identity (not a name — not an identity)", () => {
     const result = expectTierDenied(
-      retrieveMemory(tierStoreWithScopes(), retrievalRequest({ identityRef: "   " }), retrievalConfig()),
+      retrieveMemory(
+        tierStoreWithScopes(),
+        retrievalRequest({ identityRef: "   " }),
+        retrievalConfig(),
+      ),
     );
     expect(result.outcome).toBe("denied");
     expect(result.records).toHaveLength(0);
@@ -474,9 +479,7 @@ describe("cross-tenant retrieval is denied end-to-end", () => {
         provenance: { source: "workforce:field-agent", originTenantId: TENANT_B, verified: false },
       }),
     });
-    const result = expectTierGranted(
-      retrieveMemory(store, retrievalRequest(), retrievalConfig()),
-    );
+    const result = expectTierGranted(retrieveMemory(store, retrievalRequest(), retrievalConfig()));
     expect(result.records.map((r) => r.id)).toEqual(["mem:alpha:001"]);
     const mismatch = result.exclusions.find((e) => e.recordId === "mem:beta:001");
     expect(mismatch?.reason).toBe("tenant_mismatch");
@@ -690,9 +693,7 @@ describe("scope expansion is unreachable through retrieval paths", () => {
     const store = seedRecord(tierStoreWithScopes());
     const scopesBefore = store.scopes;
     const recordsBefore = store.records;
-    const result = expectTierGranted(
-      retrieveMemory(store, retrievalRequest(), retrievalConfig()),
-    );
+    const result = expectTierGranted(retrieveMemory(store, retrievalRequest(), retrievalConfig()));
     expect(result.store.scopes).toEqual(scopesBefore);
     expect(result.store.records).toEqual(recordsBefore);
     expect(result.store.accessLog).toHaveLength(store.accessLog.length + 1);
@@ -719,11 +720,9 @@ describe("scope expansion is unreachable through retrieval paths", () => {
     const registry = scopeGateRegistry();
     const before = registry.entries[0];
     expectGateDenied(
-      enforceMemoryScopeAccess(
-        registry,
-        scopeGateAccess({ domain: "finance_ledger" }),
-        { now: NOW },
-      ),
+      enforceMemoryScopeAccess(registry, scopeGateAccess({ domain: "finance_ledger" }), {
+        now: NOW,
+      }),
     );
     const after = registry.entries[0];
     expect(after).toBe(before);
@@ -734,7 +733,9 @@ describe("scope expansion is unreachable through retrieval paths", () => {
   it("a domain denied by retrieval stays uncovered — widening exists ONLY as an explicit, audited act", () => {
     const registry = scopeGateRegistry();
     expectGateDenied(
-      enforceMemoryScopeAccess(registry, scopeGateAccess({ domain: "finance_ledger" }), { now: NOW }),
+      enforceMemoryScopeAccess(registry, scopeGateAccess({ domain: "finance_ledger" }), {
+        now: NOW,
+      }),
     );
     const entryBefore = registry.entries[0];
     expect(entryBefore.declaration.domains).not.toContain("finance_ledger");
@@ -788,7 +789,12 @@ describe("scope expansion is unreachable through retrieval paths", () => {
       content: "organizational knowledge note",
     });
     const result = expectTierEvaluated(
-      retrieveMemoryThroughWorkerSession(store, opened.session, retrievalRequest(), retrievalConfig()),
+      retrieveMemoryThroughWorkerSession(
+        store,
+        opened.session,
+        retrievalRequest(),
+        retrievalConfig(),
+      ),
     );
     expect(result.records).toHaveLength(0);
     expect(result.exclusions[0]?.reason).toBe("binding_tier_not_readable");
@@ -865,13 +871,11 @@ describe("retrieval results never leak beyond the authorized scope", () => {
         provenance: { source: "workforce:field-agent", originTenantId: TENANT_B, verified: false },
       }),
     });
-    const result = expectTierGranted(
-      retrieveMemory(store, retrievalRequest(), retrievalConfig()),
-    );
+    const result = expectTierGranted(retrieveMemory(store, retrievalRequest(), retrievalConfig()));
     expect(result.outcome).toBe("partial");
     expect(result.records.map((r) => r.id)).toEqual(["mem:alpha:authorized"]);
     const reasonsById = new Map(result.exclusions.map((e) => [e.recordId, e.reason]));
-    expect(reasonsById.get("mem:alpha:restricted")).toBe("exceeds_declared_sensitivity");
+    expect(reasonsById.get("mem:alpha:restricted")).toBe("outside_declared_scope");
     expect(reasonsById.get("mem:alpha:other-domain")).toBe("outside_declared_scope");
     expect(reasonsById.get("mem:beta:foreign")).toBe("tenant_mismatch");
     for (const record of result.records) {
@@ -888,7 +892,9 @@ describe("retrieval results never leak beyond the authorized scope", () => {
       retrieveMemory(store, retrievalRequest({ maxResults: 1 }), retrievalConfig()),
     );
     expect(result.records.map((r) => r.id)).toEqual(["mem:alpha:one"]);
-    expect(result.exclusions.find((e) => e.recordId === "mem:alpha:two")?.reason).toBe("item_budget");
+    expect(result.exclusions.find((e) => e.recordId === "mem:alpha:two")?.reason).toBe(
+      "item_budget",
+    );
   });
 
   it("TEXTUAL OVERLAP cannot rescue an unauthorized record — there is no similarity path to a grant (G-015)", () => {
@@ -913,9 +919,7 @@ describe("retrieval results never leak beyond the authorized scope", () => {
     let store = tierStoreWithScopes();
     store = seedRecord(store, { recordId: "mem:alpha:kept" });
     store = seedWideRecord(store, { recordId: "mem:alpha:dropped", domain: "finance" });
-    const result = expectTierGranted(
-      retrieveMemory(store, retrievalRequest(), retrievalConfig()),
-    );
+    const result = expectTierGranted(retrieveMemory(store, retrievalRequest(), retrievalConfig()));
     expect(result.accessRecord.returnedRecordIds).toEqual(result.records.map((r) => r.id));
     const coveredIds = new Set([
       ...result.accessRecord.returnedRecordIds,
@@ -942,7 +946,11 @@ describe("retrieval results never leak beyond the authorized scope", () => {
 
   it("exclusion records carry reasons and metadata — never the withheld record's CONTENT", () => {
     let store = tierStoreWithScopes();
-    store = seedWideRecord(store, { recordId: "mem:alpha:dropped", domain: "finance", content: "finance note" });
+    store = seedWideRecord(store, {
+      recordId: "mem:alpha:dropped",
+      domain: "finance",
+      content: "finance note",
+    });
     const result = expectTierEvaluated(
       retrieveMemory(store, retrievalRequest(), retrievalConfig()),
     );
@@ -961,7 +969,12 @@ describe("retrieval results never leak beyond the authorized scope", () => {
       domain: "roster",
     });
     const result = expectTierGranted(
-      retrieveMemoryThroughWorkerSession(store, opened.session, retrievalRequest(), retrievalConfig()),
+      retrieveMemoryThroughWorkerSession(
+        store,
+        opened.session,
+        retrievalRequest(),
+        retrievalConfig(),
+      ),
     );
     expect(result.records.map((r) => r.id)).toEqual(["mem:alpha:in-binding"]);
     for (const record of result.records) {

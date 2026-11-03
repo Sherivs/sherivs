@@ -42,7 +42,7 @@ Never put secrets, tokens or unnecessary personal data in the description (AGENT
 ## Template — NDPC notification (LEGAL REVIEW REQUIRED)
 
 > To: Nigeria Data Protection Commission — `<submission channel>`
-> From: `<controller / school name>`, DPO `<name, contact>`
+> From: `<controller / school name>`; DPO: `<controller's designated DPO>`; contact routing supplied at runtime
 > Date/time of awareness: `<detected_at>`; date of notice: `<now>`
 > 1. Nature of the breach (what, how, when, ongoing?)
 > 2. Categories and approximate number of data subjects and records: `<affected_subjects_estimate>`
@@ -55,7 +55,7 @@ Never put secrets, tokens or unnecessary personal data in the description (AGENT
 
 > Subject: Important notice about your child's information at `<school>`
 >
-> Dear `<guardian>`, on `<date>` we discovered that `<plain description>` affected information about `<child / category of data>`. We have `<containment steps>`. You may wish to `<recommended precautions>`. We have informed the Nigeria Data Protection Commission. For questions contact `<DPO contact>`. We apologise for the concern this causes.
+> Dear `<guardian>`, on `<date>` we discovered that `<plain description>` affected information about `<child / category of data>`. We have `<containment steps>`. You may wish to `<recommended precautions>`. We have informed the Nigeria Data Protection Commission. For questions, use the controller's DPO contact channel supplied at runtime. We apologise for the concern this causes.
 
 ## Related
 

@@ -8,8 +8,16 @@ Status: **foundations implemented (SHERIVS-003), V1 scope**. Everything marked *
 |---|---|
 | Data controller | Each school (tenant) for its pupils, guardians and staff |
 | Data processor | Sherivs platform operator (Control Plane) on behalf of schools — **LEGAL REVIEW REQUIRED**: data processing agreement per school |
-| DPO contact | `<DPO NAME / EMAIL / PHONE — PLACEHOLDER, to be appointed>` |
+| DPO designation | [Current designation](#current-dpo-designation); contact routing is supplied at runtime |
 | Regulator | Nigeria Data Protection Commission (NDPC) |
+
+## Current DPO designation
+
+<!-- DPO DESIGNATION START -->
+**Muhammad** — Interim Data Protection Officer, Sherivs. Interim appointment effective 2026-11-03 through 2027-02-02. **Status: Active.** Contact routing is supplied at runtime and is not stored in this repository.
+<!-- DPO DESIGNATION END -->
+
+Regenerate this section after changing `config/dpo-designation.json` with `node scripts/lib/dpo-designation.mjs`.
 
 ## Lawful bases per processing activity (provisional)
 

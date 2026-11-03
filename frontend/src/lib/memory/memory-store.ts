@@ -37,11 +37,10 @@
  * envelope, Constitution §12).
  *
  * Boundary: pure data + pure functions. No persistence, no I/O, no vendor,
- * no wall-clock sampling — time is always supplied. Database truth for this
- * tier is authored (NOT applied) in
- * `database/supabase/migrations/20261002000004_coregrid_v1_memory_tier.sql`
- * with deny-by-default RLS (enabled, zero policies, no anon/authenticated
- * grants); application code is never the only security layer
+ * no wall-clock sampling — time is always supplied. The repository migration
+ * source is `database/supabase/migrations/20261002000004_coregrid_v1_memory_tier.sql`;
+ * production reconciliation evidence and its stronger FORCE RLS posture are
+ * documented in ADR-021. Application code is never the only security layer
  * (Constitution §17).
  *
  * Worker memory sessions (J-007 / V1CAP-016, MISSION-R-42, wave 3): a worker's
@@ -500,6 +499,8 @@ export interface MemoryRetrievalRequest {
   tenantId: string;
   /** REQUIRED — the DECLARED scope this retrieval draws on. */
   scopeId: string;
+  /** When supplied, the retrieval must match the declared scope's mission. */
+  missionRef?: string | null;
   /** Server-side resolved permission set of the identity; read-only input. */
   permissions: readonly string[];
   purpose: string;
@@ -659,6 +660,14 @@ export function retrieveMemory(
       `Retrieval denied: scope "${scope.scopeId}" is bound to tenant "${scope.tenantId}", not "${request.tenantId}"`,
     );
   }
+  if ("missionRef" in request && (request.missionRef ?? null) !== scope.missionRef) {
+    return finishDenied(
+      request.identityRef,
+      request.tenantId,
+      request.scopeId,
+      `Retrieval denied: scope "${scope.scopeId}" is bound to mission "${scope.missionRef ?? "null"}", not "${request.missionRef ?? "null"}"`,
+    );
+  }
   if (!scope.actorScope.includes(request.identityRef)) {
     return finishDenied(
       request.identityRef,
@@ -716,6 +725,16 @@ export function retrieveMemory(
   );
   const returned: MemoryRecord[] = [];
   for (const record of candidates) {
+    if (record.scopeId !== scope.scopeId || record.missionRef !== scope.missionRef) {
+      recordExclusion(
+        record.id,
+        record.tenantId,
+        "outside_declared_scope",
+        `Record scope or mission does not match retrieval scope "${scope.scopeId}"`,
+        null,
+      );
+      continue;
+    }
     // Worker-session binding gates run FIRST (outermost boundary): a record the
     // session binding cannot see is excluded with an audit record before any
     // other gate is evaluated (J-007/V1CAP-016).
