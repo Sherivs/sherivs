@@ -1,6 +1,18 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { computeTermResult, type TermResultWeights } from "@/lib/scholar/result-computation";
 import type { GradingModel } from "@/lib/scholar/grading";
+
+const migration = readFileSync(
+  "database/supabase/migrations/20261104010000_sherivs_m06_ca_terminal_results.sql",
+  "utf8",
+);
+const rollback = readFileSync(
+  "database/supabase/rollbacks/20261104010000_sherivs_m06_ca_terminal_results.sql",
+  "utf8",
+);
+const harness = readFileSync("tests/integration/m06-ca-and-results.local.sql", "utf8");
+const adrIndex = readFileSync("architecture/adr/INDEX.md", "utf8");
 
 const gradingModel: GradingModel = {
   code: "M06-PERCENT",
@@ -90,6 +102,48 @@ describe("M06 weighted CA and terminal results", () => {
     ).toThrow("CA component weights must sum to 100");
     expect(() =>
       computeTermResult(weights, [{ code: "quiz", score: 4 }], null, gradingModel),
-    ).toThrow('outside its possible range');
+    ).toThrow("outside its possible range");
+  });
+});
+
+describe("M06 database result workflow", () => {
+  it("adds the reserved forward-only migration and a guarded rollback", () => {
+    expect(migration).toContain("Authored only; never applied to a live database");
+    expect(migration).toContain("public.m06_result_weight_profiles");
+    expect(migration).toContain("public.m06_result_component_scores");
+    expect(migration).toContain("public.m06_result_amendments");
+    expect(rollback).toContain("M06 rollback refused");
+    expect(rollback).toContain("result configuration, scores, approvals, or audit evidence");
+  });
+
+  it("enforces null-aware weights, distinct approval, published lock, and audited amendments", () => {
+    expect(migration).toContain("NEW.ca_score IS NULL OR NEW.exam_score IS NULL");
+    expect(migration).toContain("NEW.result_entered_by = v_actor");
+    expect(migration).toContain("public.workspace_role_sod_assert(NEW.school_id, v_actor)");
+    expect(migration).toContain("approved results require a distinct, audited amendment");
+    expect(migration).toContain("M06 result amendment audit is append-only");
+    expect(migration).toContain("CREATE POLICY m06_result_amendments_read");
+  });
+
+  it("forces RLS and prevents direct writes to the M06 evidence tables", () => {
+    expect(migration).toContain("ALTER TABLE public.%I FORCE ROW LEVEL SECURITY");
+    expect(migration).toContain(
+      "REVOKE ALL ON public.%I FROM PUBLIC, anon, authenticated, service_role",
+    );
+    expect(migration).toContain("TO authenticated");
+    expect(harness).toContain("M06: refusing non-loopback server address");
+    expect(harness).toContain("tenant B cannot read tenant A amendment audit");
+    expect(harness).toContain("ROLLBACK;");
+  });
+
+  it("indexes the owner-reserved ADR and exposes only validated server calls", () => {
+    expect(adrIndex).toContain("ADR-044_M06_TENANT_SCOPED_RESULTS_WORKFLOW.md");
+    expect(adrIndex).toContain("Next free number: **ADR-045**");
+    const server = readFileSync("frontend/src/lib/runtime/scholar/results.functions.ts", "utf8");
+    expect(server).toContain('"m06_set_result_weights"');
+    expect(server).toContain('"m06_enter_result_scores"');
+    expect(server).toContain('"m06_approve_result"');
+    expect(server).toContain('"m06_publish_result"');
+    expect(server).toContain('"m06_amend_result"');
   });
 });

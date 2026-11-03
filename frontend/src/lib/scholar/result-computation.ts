@@ -40,6 +40,8 @@ export function computeTermResult(
     !Number.isFinite(weights.terminalWeight) ||
     weights.caWeight <= 0 ||
     weights.terminalWeight <= 0 ||
+    roundToHundredth(weights.caWeight) !== weights.caWeight ||
+    roundToHundredth(weights.terminalWeight) !== weights.terminalWeight ||
     roundToHundredth(weights.caWeight + weights.terminalWeight) !== 100
   ) {
     throw new Error("CA and terminal weights must be positive and sum to 100");
@@ -54,12 +56,17 @@ export function computeTermResult(
   const componentCodes = new Set<string>();
   let componentWeight = 0;
   for (const component of weights.caComponents) {
-    if (!component.code.trim() || componentCodes.has(component.code)) {
+    if (
+      !component.code.trim() ||
+      component.code !== component.code.trim() ||
+      componentCodes.has(component.code)
+    ) {
       throw new Error("CA component codes must be non-empty and unique");
     }
     if (
       !Number.isFinite(component.weight) ||
       component.weight <= 0 ||
+      roundToHundredth(component.weight) !== component.weight ||
       !Number.isFinite(component.maxScore) ||
       component.maxScore <= 0
     ) {
