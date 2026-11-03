@@ -76,7 +76,8 @@ export async function performSubmit(deps: {
 }) {
   const { adminClient: db, actorId, input } = deps;
   const actor = await loadActor(db, actorId);
-  if (!actor?.school_id || actor.is_active === false) throw new Error("Forbidden: no active school identity");
+  if (!actor?.school_id || actor.is_active === false)
+    throw new Error("Forbidden: no active school identity");
   const schoolId = actor.school_id;
 
   if (input.subjectType === "student") {
@@ -109,7 +110,11 @@ export async function performSubmit(deps: {
     .select("id")
     .single();
   throwIfError(ins, "Failed to record request");
-  const id = ins.data.id as string;
+  const request = ins.data as { id?: unknown } | null;
+  if (typeof request?.id !== "string") {
+    throw new Error("Failed to record request: missing request identifier");
+  }
+  const id = request.id;
 
   await appendEvent(db, { id, school_id: schoolId }, null, "received", actorId);
   await writeAuditRecord(db, {
@@ -150,8 +155,10 @@ export async function performTransition(
     throw new Error(`Illegal transition ${req.status} -> ${input.to}`);
   }
   // Completion happens only via executeExport/executeErasure so the work is actually done.
-  if (input.to === "completed") throw new Error("Use executeExport/executeErasure to complete a request");
-  if (input.to === "rejected" && !input.note?.trim()) throw new Error("A rejection reason is required");
+  if (input.to === "completed")
+    throw new Error("Use executeExport/executeErasure to complete a request");
+  if (input.to === "rejected" && !input.note?.trim())
+    throw new Error("A rejection reason is required");
 
   const now = timeAuthority.now().at;
   const patch: Record<string, unknown> =

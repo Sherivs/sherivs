@@ -11,6 +11,7 @@ export const WORKSPACE_CATEGORIES = [
 export type WorkspaceCategory = (typeof WORKSPACE_CATEGORIES)[number];
 
 export const ROLE_SCOPE_TYPES = [
+  "org",
   "class",
   "subject",
   "campus",
