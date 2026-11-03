@@ -139,6 +139,29 @@ const [A, B, C, D, E] = M.institutions;
     r.ok ? `${r.r.rowCount} rows in ${Date.now() - t0} ms (UNGUARDED)` : r.err,
     "medium",
   );
+  let spoof;
+  try {
+    spoof = {
+      ok: true,
+      r: await as(E.admin, async (c) => {
+        await c.query("SELECT set_config('coregrid.mobility.system_path','on',true)");
+        return c.query(
+          `WITH ord AS (SELECT id, name, row_number() over (order by name) rn FROM classes WHERE school_id=$1)
+          UPDATE students s SET class_id = nxt.id FROM ord cur JOIN ord nxt ON nxt.rn = cur.rn + 1 WHERE s.class_id = cur.id AND s.school_id=$1`,
+          [E.schoolId],
+        );
+      }),
+    };
+  } catch (e) {
+    spoof = { ok: false, err: e.message.slice(0, 140) };
+  }
+  rec(
+    "rollover",
+    "An authenticated user setting coregrid.mobility.system_path themselves cannot bypass the class-change guard",
+    !spoof.ok && /approved student mobility request/.test(spoof.err ?? ""),
+    spoof.ok ? `${spoof.r.rowCount} rows changed (GUC BYPASS)` : spoof.err,
+    "critical",
+  );
   const cross = await tryq(E.admin, "UPDATE students SET class_id = class_id WHERE school_id=$1", [
     A.schoolId,
   ]);

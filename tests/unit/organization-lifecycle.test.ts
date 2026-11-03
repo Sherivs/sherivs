@@ -163,7 +163,17 @@ describe("Support workspace organization scope", () => {
     );
     expect(organizationStore).toContain("{ organizationIds, includePlatformMetrics: false }");
     expect(organizationStore).toContain(
+      '.eq("assignment_type", "support")\n    .eq("status", "active")',
+    );
+    expect(organizationStore).toContain(
+      '? request.in("id", scope.organizationIds)\n          : request.limit(0)',
+    );
+    expect(organizationStore).toContain(
       "loadAssignedSupportOrganizationIds(db, context.userId)).includes(id)",
+    );
+    expect(overviewFunctions).toContain("const visibleRows = snapshot.rows;");
+    expect(overviewFunctions).toMatch(
+      /supportOnly\s*\?\s*\{\s*organizationIds,\s*includePlatformMetrics:\s*false\s*\}/,
     );
     expect(overviewFunctions).toContain("organizationMetrics = supportScoped ? emptyOrgMetrics");
     expect(overviewFunctions).toContain("if (!supportScoped)");
