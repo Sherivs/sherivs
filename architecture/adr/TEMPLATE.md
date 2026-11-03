@@ -11,7 +11,7 @@
 || Cites | <the files, JSON registers, migrations (file:line), and AGENTS/Constitution sections the decision rests on — every load-bearing claim carries a citation> |
 || Minimal ownership artifact | <the one artifact this ADR owns, if it authors one; otherwise "This ADR only — a decision artifact"> |
 
-> Numbering: sequential (`ADR-015` is next free in `architecture/adr/`). Filename: `ADR-NNN_SNAKE_CASE_TITLE.md`. Never renumber, rewrite, or delete an existing ADR (AGENTS §39) — a new ADR supersedes; it does not edit its predecessor. Update `INDEX.md` in the same change.
+> Numbering: sequential (`ADR-042` is next free in `architecture/adr/`). Filename: `ADR-NNN_SNAKE_CASE_TITLE.md`. Never renumber, rewrite, or delete an existing ADR (AGENTS §39) — a new ADR supersedes; it does not edit its predecessor. Update `INDEX.md` in the same change.
 
 ## Context
 

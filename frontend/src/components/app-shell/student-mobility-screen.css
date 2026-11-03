@@ -51,6 +51,31 @@
   gap: 0.55rem;
 }
 
+.mobility-reschedule {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.mobility-reschedule label {
+  display: grid;
+  gap: 0.35rem;
+  color: #47546b;
+  font-size: 0.74rem;
+  font-weight: 750;
+}
+
+.mobility-reschedule input {
+  min-height: 2.45rem;
+  border: 1px solid #d6deea;
+  border-radius: 0.65rem;
+  padding: 0.45rem 0.6rem;
+  color: #1e2b43;
+  background: #fff;
+  font: inherit;
+}
+
 .mobility-secondary,
 .mobility-primary,
 .mobility-icon-button {
@@ -335,6 +360,13 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.mobility-document-actions {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
 .mobility-card,
 .mobility-link-card {
   display: grid;
@@ -461,6 +493,51 @@
 
 .mobility-warning-list {
   color: #9a5c00;
+}
+
+.mobility-advisory,
+.mobility-advisory-result,
+.mobility-proration {
+  display: grid;
+  gap: 0.5rem;
+  border: 1px solid #c9d5f5;
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  color: #34425c;
+  background: #f5f7ff;
+  font-size: 0.78rem;
+}
+
+.mobility-advisory p,
+.mobility-advisory-result p {
+  margin: 0.2rem 0 0;
+}
+
+.mobility-advisory-result ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.mobility-advisory-result small {
+  color: #667085;
+  line-height: 1.5;
+}
+
+.mobility-proration-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.mobility-proration-list article {
+  display: grid;
+  gap: 0.2rem;
+  border-top: 1px solid #e1e8f2;
+  padding-top: 0.55rem;
+}
+
+.mobility-proration-list small {
+  color: #667085;
+  line-height: 1.5;
 }
 
 .mobility-approval-chain {
@@ -720,6 +797,24 @@
 
 .mobility-bulk-footer {
   justify-content: flex-end;
+}
+
+.mobility-confirm-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  max-width: 34rem;
+  color: #47546b;
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.mobility-confirm-check input {
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 1rem;
+  margin: 0.08rem 0 0;
+  accent-color: #1948d8;
 }
 
 .mobility-preview-list {

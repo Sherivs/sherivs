@@ -1,0 +1,109 @@
+name: Create Sherivs root organization
+
+on:
+  workflow_dispatch:
+    inputs:
+      tenant_id:
+        description: "Existing CoreGrid tenant identifier for the Sherivs root organization"
+        required: true
+        type: string
+      confirm:
+        description: "Type CREATE-SHERIVS-ROOT to confirm"
+        required: true
+        type: string
+      dry_run:
+        description: "Roll back after checking the root organization"
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prod-whatsapp-root-org
+  cancel-in-progress: false
+
+jobs:
+  create-root:
+    name: Create Sherivs root organization
+    runs-on: ubuntu-latest
+    environment: Production
+    timeout-minutes: 10
+    env:
+      TENANT_ID: ${{ inputs.tenant_id }}
+      CONFIRM: ${{ inputs.confirm }}
+      DRY_RUN: ${{ inputs.dry_run }}
+      PGCONNECT_TIMEOUT: "20"
+    steps:
+      - name: Validate branch and confirmation
+        run: |
+          set -euo pipefail
+          [ "$GITHUB_REF" = "refs/heads/master" ] || { echo "::error::this workflow may only run from master"; exit 1; }
+          [ "$CONFIRM" = "CREATE-SHERIVS-ROOT" ] || { echo "::error::confirm must equal CREATE-SHERIVS-ROOT"; exit 1; }
+          [[ "$TENANT_ID" =~ ^[A-Za-z0-9][A-Za-z0-9_.:@/-]{0,127}$ ]] || { echo "::error::tenant_id has an invalid format"; exit 1; }
+          [[ "$DRY_RUN" == "true" || "$DRY_RUN" == "false" ]] || { echo "::error::dry_run must be boolean"; exit 1; }
+
+      - name: Check production database secret
+        env:
+          DB_URL: ${{ secrets.PROD_DB_URL_BACKUP }}
+        run: '[ -n "$DB_URL" ] || { echo "::error::PROD_DB_URL_BACKUP not set"; exit 1; }'
+
+      - name: Create if absent and verify
+        env:
+          DB_URL: ${{ secrets.PROD_DB_URL_BACKUP }}
+        run: |
+          set -euo pipefail
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 \
+            -v tenant_id="$TENANT_ID" -v dry_run="$DRY_RUN" <<'SQL'
+          BEGIN;
+          SET LOCAL role service_role;
+          SELECT set_config('request.jwt.claims', '{"role":"service_role"}', true);
+          SELECT set_config('request.jwt.claim.role', 'service_role', true);
+          SELECT set_config('sv1.whatsapp_root_tenant_id', :'tenant_id', true);
+          DO $root$
+          DECLARE
+            v_tenant text := current_setting('sv1.whatsapp_root_tenant_id');
+            v_root_count integer;
+          BEGIN
+            IF NOT EXISTS (
+              SELECT 1 FROM public.cg_tenant t
+               WHERE t.id::text = v_tenant AND t.parent_tenant_id IS NULL AND t.status = 'ACTIVE'
+            ) THEN
+              RAISE EXCEPTION 'confirmed tenant must be an existing active root tenant';
+            END IF;
+            SELECT count(*)::integer INTO v_root_count
+              FROM public.cg_org_unit
+             WHERE kind = 'organization' AND parent_org_unit_id IS NULL
+               AND profile->>'name' = 'Sherivs';
+            IF v_root_count > 1 THEN
+              RAISE EXCEPTION 'multiple Sherivs root organizations exist; refusing to choose';
+            ELSIF v_root_count = 1 THEN
+              IF NOT EXISTS (
+                SELECT 1 FROM public.cg_org_unit
+                 WHERE id = 'org-sherivs-root' AND tenant_id = v_tenant
+                   AND kind = 'organization' AND parent_org_unit_id IS NULL
+                   AND lifecycle_state = 'active' AND profile->>'name' = 'Sherivs'
+              ) THEN
+                RAISE EXCEPTION 'a Sherivs root exists but does not match the confirmed tenant and root id';
+              END IF;
+            ELSE
+              INSERT INTO public.cg_org_unit
+                (id, tenant_id, kind, parent_org_unit_id, lifecycle_state, profile, created_by)
+              VALUES
+                ('org-sherivs-root', v_tenant, 'organization', NULL, 'active',
+                 '{"name":"Sherivs"}'::jsonb, 'workflow:sv1-wa-create-root-org');
+            END IF;
+          END
+          $root$;
+          SELECT id, tenant_id, kind, parent_org_unit_id, lifecycle_state, profile->>'name' AS name
+            FROM public.cg_org_unit
+           WHERE id = 'org-sherivs-root' AND tenant_id = :'tenant_id';
+          \if :dry_run
+          ROLLBACK;
+          \echo "Dry run complete; root organization transaction rolled back."
+          \else
+          COMMIT;
+          \echo "Root organization transaction committed."
+          \endif
+          SQL

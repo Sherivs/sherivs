@@ -7,6 +7,10 @@ import {
   mobilityActionsFor,
   type StudentMovementType,
 } from "@/lib/scholar/mobility-workflow";
+import { bulkMobilityFingerprint, bulkMobilityPreviewIsCurrent } from "@/lib/scholar/mobility-bulk";
+import { downloadMobilityDocument } from "@/lib/scholar/mobility-documents";
+import { getMobilityAdvisory } from "@/lib/runtime/scholar/mobility-advisory.functions";
+import type { MobilityAdvisoryResult } from "@/lib/scholar/mobility-advisory";
 import { useAppShell } from "./shell-context";
 import "./student-mobility-screen.css";
 
@@ -101,6 +105,19 @@ type FeeRow = {
   paid_amount: number | null;
   status: string | null;
 };
+type FeeAllocation = {
+  event_id: string;
+  fee_id: string;
+  placement_id: string;
+  period_start: string;
+  period_end: string;
+  service_seconds: number;
+  period_seconds: number;
+  fee_amount: number;
+  paid_amount: number;
+  outstanding_amount: number;
+  created_at: string;
+};
 type MobilityPolicy = {
   required_approvals: number;
   approval_roles: string[];
@@ -179,6 +196,7 @@ export function StudentMobilityScreen() {
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [events, setEvents] = useState<MobilityEvent[]>([]);
   const [fees, setFees] = useState<FeeRow[]>([]);
+  const [feeAllocations, setFeeAllocations] = useState<FeeAllocation[]>([]);
   const [policy, setPolicy] = useState<MobilityPolicy | null>(null);
   const [permissions, setPermissions] = useState(new Set<string>());
   const [selectedId, setSelectedId] = useState("");
@@ -193,12 +211,17 @@ export function StudentMobilityScreen() {
   const [reason, setReason] = useState("");
   const [effectiveDate, setEffectiveDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [eligibility, setEligibility] = useState<Eligibility | null>(null);
+  const [mobilityAdvice, setMobilityAdvice] = useState<MobilityAdvisoryResult | null>(null);
+  const [adviceLoading, setAdviceLoading] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkSourceClass, setBulkSourceClass] = useState("");
   const [bulkTargetClass, setBulkTargetClass] = useState("");
   const [bulkSelected, setBulkSelected] = useState<string[]>([]);
   const [bulkOverrides, setBulkOverrides] = useState<Record<string, BulkOverride>>({});
   const [bulkPreview, setBulkPreview] = useState<Eligibility[]>([]);
+  const [bulkPreviewFingerprint, setBulkPreviewFingerprint] = useState("");
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
+  const [bulkApplyConfirmed, setBulkApplyConfirmed] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!schoolId || !userId) {
@@ -242,6 +265,7 @@ export function StudentMobilityScreen() {
         approvalResult,
         eventResult,
         ruleResult,
+        feeAllocationResult,
       ] = await Promise.all([
         client
           .from("students")
@@ -321,6 +345,16 @@ export function StudentMobilityScreen() {
           .select("required_approvals,approval_roles,fee_clearance,updated_at")
           .eq("school_id", schoolId)
           .limit(1),
+        nextPermissions.has("fees.view")
+          ? client
+              .from("student_mobility_fee_allocations")
+              .select(
+                "event_id,fee_id,placement_id,period_start,period_end,service_seconds,period_seconds,fee_amount,paid_amount,outstanding_amount,created_at",
+              )
+              .eq("school_id", schoolId)
+              .order("created_at", { ascending: false })
+              .limit(5000)
+          : Promise.resolve({ data: [], error: null }),
       ]);
 
       if (studentResult.error || classResult.error) {
@@ -357,6 +391,7 @@ export function StudentMobilityScreen() {
       setRequests((requestResult.data ?? []) as unknown as MobilityRequest[]);
       setApprovals((approvalResult.data ?? []) as unknown as Approval[]);
       setEvents((eventResult.data ?? []) as unknown as MobilityEvent[]);
+      setFeeAllocations((feeAllocationResult.data ?? []) as unknown as FeeAllocation[]);
       const rule = ruleResult.data?.[0] as unknown as MobilityPolicy | undefined;
       setPolicy(rule ?? null);
       setSelectedId((current) =>
@@ -381,6 +416,11 @@ export function StudentMobilityScreen() {
       if (feeResult.error && nextPermissions.has("fees.view")) {
         setNotice(
           "Fee balance is unavailable; your fees.view permission is required for balances.",
+        );
+      }
+      if (feeAllocationResult.error && nextPermissions.has("fees.view")) {
+        setNotice(
+          "Placement fee allocations are unavailable until the V1 follow-up migration is installed.",
         );
       }
     } catch (cause) {
@@ -439,10 +479,48 @@ export function StudentMobilityScreen() {
   const selectedRequests = requests.filter((request) => request.student_id === selectedId);
   const selectedPlacements = placements.filter((placement) => placement.student_id === selectedId);
   const selectedEvents = events.filter((event) => event.student_id === selectedId);
+  const latestAllocationEventByFee = new Map<string, string>();
+  for (const allocation of feeAllocations) {
+    if (!latestAllocationEventByFee.has(allocation.fee_id)) {
+      latestAllocationEventByFee.set(allocation.fee_id, allocation.event_id);
+    }
+  }
+  const selectedPlacementIds = new Set(selectedPlacements.map((placement) => placement.id));
+  const selectedFeeAllocations = feeAllocations.filter(
+    (allocation) =>
+      selectedPlacementIds.has(allocation.placement_id) &&
+      latestAllocationEventByFee.get(allocation.fee_id) === allocation.event_id,
+  );
   const selectedApprovals = approvals.filter((approval) =>
     selectedRequests.some((request) => request.id === approval.request_id),
   );
   const classOptions = classes.filter((item) => item.id !== selectedStudent?.class_id);
+  const documentPlacements = selectedPlacements.map((placement) => ({
+    className: classLabel(
+      classById.get(placement.class_id ?? ""),
+      campusById,
+      sectionById,
+      shiftById,
+      {
+        campusId: placement.campus_id,
+        sectionId: placement.section_id,
+        shift: placement.shift,
+        arm: placement.arm,
+      },
+    ),
+    movementType: MOVEMENT_LABELS[placement.movement_type] ?? placement.movement_type,
+    reason: placement.reason,
+    effectiveFrom: placement.effective_from,
+    effectiveTo: placement.effective_to,
+    session: placement.session,
+  }));
+  const currentBulkFingerprint = bulkMobilityFingerprint(bulkItems(), effectiveDate);
+  const currentBulkPreview = bulkMobilityPreviewIsCurrent(
+    bulkSelected,
+    bulkPreview.map((item) => item.student_id),
+    bulkPreviewFingerprint,
+    currentBulkFingerprint,
+  );
 
   useEffect(() => {
     if (!selectedStudent || !permissions.has("students.transfer")) {
@@ -504,11 +582,32 @@ export function StudentMobilityScreen() {
     });
     if (result.error) setError(result.error.message);
     else {
-      setNotice("Movement request submitted for the configured approval chain.");
       setReason("");
       await refresh();
+      setNotice("Movement request submitted for the configured approval chain.");
     }
     setBusy(false);
+  }
+
+  async function requestMobilityAdvice() {
+    if (!selectedStudent || !eligibility || adviceLoading) return;
+    setAdviceLoading(true);
+    setMobilityAdvice(null);
+    setError("");
+    try {
+      const result = await getMobilityAdvisory({
+        data: {
+          studentId: selectedStudent.id,
+          targetClassId: action?.requiresDestination ? targetClassId || null : null,
+          movementType,
+        },
+      });
+      setMobilityAdvice(result);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "The advisory could not be generated.");
+    } finally {
+      setAdviceLoading(false);
+    }
   }
 
   async function runRequestAction(
@@ -524,14 +623,30 @@ export function StudentMobilityScreen() {
     const result = await client.rpc(name, args);
     if (result.error) setError(result.error.message);
     else {
-      setNotice(
+      const successNotice =
         name === "student_mobility_approve"
           ? "Approval recorded."
           : name === "student_mobility_cancel"
             ? "Movement cancelled before its effective date."
-            : "Approved movement committed; the placement timeline has been updated.",
-      );
+            : "Approved movement committed; the placement timeline has been updated.";
       await refresh();
+      setNotice(successNotice);
+    }
+    setBusy(false);
+  }
+
+  async function rescheduleRequest(requestId: string, effectiveDateValue: string) {
+    setBusy(true);
+    setError("");
+    const result = await client.rpc("student_mobility_reschedule", {
+      p_request: requestId,
+      p_effective_at: effectiveDateValue,
+    });
+    if (result.error) {
+      setError(result.error.message);
+    } else {
+      await refresh();
+      setNotice("Effective date updated; the movement still requires human approval.");
     }
     setBusy(false);
   }
@@ -548,23 +663,55 @@ export function StudentMobilityScreen() {
     });
   }
 
+  function resetBulkReview() {
+    setBulkPreview([]);
+    setBulkPreviewFingerprint("");
+    setBulkConfirmOpen(false);
+    setBulkApplyConfirmed(false);
+  }
+
   async function previewBulk() {
-    if (!bulkSelected.length || !bulkTargetClass) return;
+    if (!bulkSelected.length || bulkSelected.length > 200 || !bulkTargetClass) return;
     setBusy(true);
     setError("");
-    const result = await client.rpc("student_mobility_bulk_preview", { p_items: bulkItems() });
+    const items = bulkItems();
+    const fingerprint = bulkMobilityFingerprint(items, effectiveDate);
+    const result = await client.rpc("student_mobility_bulk_preview", { p_items: items });
     if (result.error) {
       setError(result.error.message);
-      setBulkPreview([]);
+      resetBulkReview();
     } else {
-      setBulkPreview(responseRows<Eligibility>(result.data));
-      setNotice("Dry-run complete. Review every student result before submitting the batch.");
+      const preview = responseRows<Eligibility>(result.data);
+      if (
+        !bulkMobilityPreviewIsCurrent(
+          bulkSelected,
+          preview.map((item) => item.student_id),
+          fingerprint,
+          currentBulkFingerprint,
+        )
+      ) {
+        setError("The preview did not match the selected students. Run the dry-run again.");
+        resetBulkReview();
+      } else {
+        setBulkPreview(preview);
+        setBulkPreviewFingerprint(fingerprint);
+        setBulkConfirmOpen(false);
+        setBulkApplyConfirmed(false);
+        setNotice("Dry-run complete. Review every student result before confirming the batch.");
+      }
     }
     setBusy(false);
   }
 
   async function submitBulk() {
-    if (!bulkSelected.length || bulkPreview.length !== bulkSelected.length) return;
+    if (
+      !bulkSelected.length ||
+      !currentBulkPreview ||
+      bulkPreview.some((item) => !item.eligible) ||
+      !bulkConfirmOpen ||
+      !bulkApplyConfirmed
+    )
+      return;
     setBusy(true);
     setError("");
     const result = await client.rpc("student_mobility_bulk_request", {
@@ -573,10 +720,11 @@ export function StudentMobilityScreen() {
     });
     if (result.error) setError(result.error.message);
     else {
-      setNotice(`${responseRows(result.data).length} promotion requests submitted atomically.`);
+      const submittedCount = responseRows(result.data).length;
       setBulkSelected([]);
-      setBulkPreview([]);
+      resetBulkReview();
       await refresh();
+      setNotice(`${submittedCount} promotion requests submitted atomically.`);
     }
     setBusy(false);
   }
@@ -621,6 +769,60 @@ export function StudentMobilityScreen() {
               <Users size={16} /> {bulkOpen ? "Close bulk wizard" : "Bulk promotion"}
             </button>
           ) : null}
+          {permissions.has("fees.view") ? (
+            <section className="mobility-proration" aria-label="Placement fee proration">
+              <div className="mobility-panel-heading">
+                <div>
+                  <span className="mobility-eyebrow">Finance allocation ledger</span>
+                  <h3>Prorated fees by placement</h3>
+                </div>
+                <span className="mobility-count">{selectedFeeAllocations.length} allocations</span>
+              </div>
+              {selectedFeeAllocations.length ? (
+                <div className="mobility-proration-list">
+                  {selectedFeeAllocations.map((allocation) => {
+                    const placement = selectedPlacements.find(
+                      (item) => item.id === allocation.placement_id,
+                    );
+                    return (
+                      <article
+                        key={`${allocation.event_id}-${allocation.fee_id}-${allocation.placement_id}`}
+                      >
+                        <strong>
+                          {classLabel(
+                            classById.get(placement?.class_id ?? ""),
+                            campusById,
+                            sectionById,
+                            shiftById,
+                            placement
+                              ? {
+                                  campusId: placement.campus_id,
+                                  sectionId: placement.section_id,
+                                  shift: placement.shift,
+                                  arm: placement.arm,
+                                }
+                              : undefined,
+                          )}
+                        </strong>
+                        <small>
+                          {displayDate(allocation.period_start)}–
+                          {displayDate(allocation.period_end)} ·{" "}
+                          {currency(Number(allocation.fee_amount))} allocated ·{" "}
+                          {currency(Number(allocation.paid_amount))} paid ·{" "}
+                          {currency(Number(allocation.outstanding_amount))} outstanding
+                        </small>
+                      </article>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="mobility-empty">
+                  Period-based allocations appear after an approved movement and when a fee matches
+                  a configured academic period.
+                </p>
+              )}
+            </section>
+          ) : null}
           <button
             type="button"
             className="mobility-icon-button"
@@ -661,7 +863,7 @@ export function StudentMobilityScreen() {
                 onChange={(event) => {
                   setBulkSourceClass(event.target.value);
                   setBulkSelected([]);
-                  setBulkPreview([]);
+                  resetBulkReview();
                 }}
               >
                 {classes.map((item) => (
@@ -677,7 +879,7 @@ export function StudentMobilityScreen() {
                 value={bulkTargetClass}
                 onChange={(event) => {
                   setBulkTargetClass(event.target.value);
-                  setBulkPreview([]);
+                  resetBulkReview();
                 }}
               >
                 {classes.map((item) => (
@@ -692,7 +894,10 @@ export function StudentMobilityScreen() {
               <input
                 type="date"
                 value={effectiveDate}
-                onChange={(event) => setEffectiveDate(event.target.value)}
+                onChange={(event) => {
+                  setEffectiveDate(event.target.value);
+                  resetBulkReview();
+                }}
               />
             </label>
           </div>
@@ -715,12 +920,20 @@ export function StudentMobilityScreen() {
                       type="checkbox"
                       checked={checked}
                       onChange={(event) => {
+                        if (
+                          event.target.checked &&
+                          bulkSelected.length >= 200 &&
+                          !bulkSelected.includes(student.id)
+                        ) {
+                          setError("A bulk mobility batch cannot exceed 200 students.");
+                          return;
+                        }
                         setBulkSelected((current) =>
                           event.target.checked
                             ? [...current, student.id]
                             : current.filter((id) => id !== student.id),
                         );
-                        setBulkPreview([]);
+                        resetBulkReview();
                       }}
                     />
                     <span>{student.full_name}</span>
@@ -737,7 +950,7 @@ export function StudentMobilityScreen() {
                           movementType: event.target.value as StudentMovementType,
                         },
                       }));
-                      setBulkPreview([]);
+                      resetBulkReview();
                     }}
                   >
                     <option value="promote">Promote</option>
@@ -753,7 +966,7 @@ export function StudentMobilityScreen() {
                         ...current,
                         [student.id]: { ...override, targetClassId: event.target.value },
                       }));
-                      setBulkPreview([]);
+                      resetBulkReview();
                     }}
                   >
                     {classes.map((item) => (
@@ -778,19 +991,51 @@ export function StudentMobilityScreen() {
             >
               Run dry-run
             </button>
-            <button
-              type="button"
-              className="mobility-primary"
-              disabled={
-                !bulkPreview.length ||
-                bulkPreview.length !== bulkSelected.length ||
-                bulkPreview.some((item) => !item.eligible) ||
-                busy
-              }
-              onClick={() => void submitBulk()}
-            >
-              Submit promotion requests
-            </button>
+            {!bulkConfirmOpen ? (
+              <button
+                type="button"
+                className="mobility-primary"
+                disabled={!currentBulkPreview || bulkPreview.some((item) => !item.eligible) || busy}
+                onClick={() => {
+                  setBulkApplyConfirmed(false);
+                  setBulkConfirmOpen(true);
+                }}
+              >
+                Continue to confirmation
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="mobility-secondary"
+                  onClick={() => {
+                    setBulkConfirmOpen(false);
+                    setBulkApplyConfirmed(false);
+                  }}
+                >
+                  Back to preview
+                </button>
+                <label className="mobility-confirm-check">
+                  <input
+                    type="checkbox"
+                    checked={bulkApplyConfirmed}
+                    onChange={(event) => setBulkApplyConfirmed(event.target.checked)}
+                  />
+                  <span>
+                    I confirm that {bulkSelected.length} eligible request(s) will be submitted for
+                    the configured human approval chain.
+                  </span>
+                </label>
+                <button
+                  type="button"
+                  className="mobility-primary"
+                  disabled={!currentBulkPreview || !bulkApplyConfirmed || busy}
+                  onClick={() => void submitBulk()}
+                >
+                  {busy ? "Submitting…" : "Apply requests"}
+                </button>
+              </>
+            )}
           </div>
           {bulkPreview.length ? (
             <div className="mobility-preview-list" aria-live="polite">
@@ -938,6 +1183,42 @@ export function StudentMobilityScreen() {
                       Previous campus, section, shift, class and arm stay in the timeline.
                     </small>
                   </article>
+                  {permissions.has("students.transfer") && selectedPlacements.length ? (
+                    <div className="mobility-document-actions">
+                      <button
+                        type="button"
+                        className="mobility-secondary"
+                        onClick={() =>
+                          downloadMobilityDocument(
+                            "transfer-certificate",
+                            {
+                              fullName: selectedStudent.full_name,
+                              admissionNumber: selectedStudent.admission_number,
+                            },
+                            documentPlacements,
+                          )
+                        }
+                      >
+                        Download transfer certificate
+                      </button>
+                      <button
+                        type="button"
+                        className="mobility-secondary"
+                        onClick={() =>
+                          downloadMobilityDocument(
+                            "movement-record",
+                            {
+                              fullName: selectedStudent.full_name,
+                              admissionNumber: selectedStudent.admission_number,
+                            },
+                            documentPlacements,
+                          )
+                        }
+                      >
+                        Download movement record
+                      </button>
+                    </div>
+                  ) : null}
                   {permissions.has("students.transfer") ? (
                     <button
                       type="button"
@@ -971,6 +1252,9 @@ export function StudentMobilityScreen() {
                         onCommit={() =>
                           void runRequestAction("student_mobility_commit", request.id)
                         }
+                        onReschedule={(effectiveAt) =>
+                          void rescheduleRequest(request.id, effectiveAt)
+                        }
                       />
                     ))}
                 </section>
@@ -1003,6 +1287,7 @@ export function StudentMobilityScreen() {
                             onChange={(event) => {
                               const nextType = event.target.value as StudentMovementType;
                               setMovementType(nextType);
+                              setMobilityAdvice(null);
                               if (nextType === "repeat")
                                 setTargetClassId(selectedStudent.class_id ?? "");
                               else if (targetClassId === selectedStudent.class_id) {
@@ -1026,7 +1311,10 @@ export function StudentMobilityScreen() {
                             Destination placement
                             <select
                               value={targetClassId}
-                              onChange={(event) => setTargetClassId(event.target.value)}
+                              onChange={(event) => {
+                                setTargetClassId(event.target.value);
+                                setMobilityAdvice(null);
+                              }}
                             >
                               <option value="">Select class, arm, campus, section and shift</option>
                               {(movementType === "repeat"
@@ -1060,6 +1348,41 @@ export function StudentMobilityScreen() {
                         </label>
                       </div>
                       {eligibility ? <EligibilityCard result={eligibility} /> : null}
+                      {eligibility && permissions.has("students.transfer") ? (
+                        <div className="mobility-advisory">
+                          <div>
+                            <strong>AI advisory only</strong>
+                            <p>
+                              Explainable guidance from the verified policy preview. It cannot
+                              change eligibility, approve, or apply a movement.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            className="mobility-secondary"
+                            disabled={adviceLoading}
+                            onClick={() => void requestMobilityAdvice()}
+                          >
+                            {adviceLoading ? "Preparing advisory…" : "Get AI advisory"}
+                          </button>
+                          {mobilityAdvice ? (
+                            <div className="mobility-advisory-result" aria-live="polite">
+                              <strong>{mobilityAdvice.headline}</strong>
+                              <p>{mobilityAdvice.recommendation}</p>
+                              <p>{mobilityAdvice.rationale}</p>
+                              <ul>
+                                {mobilityAdvice.evidence.map((item, index) => (
+                                  <li key={`${index}-${item}`}>{item}</li>
+                                ))}
+                              </ul>
+                              <small>
+                                {mobilityAdvice.aiProvenance.notice} Human review is required.{" "}
+                                {mobilityAdvice.limitations}
+                              </small>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
                       <div className="mobility-approval-chain">
                         <strong>Approval chain</strong>
                         <span>
@@ -1170,6 +1493,9 @@ export function StudentMobilityScreen() {
                           }
                           onCommit={() =>
                             void runRequestAction("student_mobility_commit", request.id)
+                          }
+                          onReschedule={(effectiveAt) =>
+                            void rescheduleRequest(request.id, effectiveAt)
                           }
                         />
                       ))}
@@ -1283,6 +1609,7 @@ function RequestCard({
   onApprove,
   onCancel,
   onCommit,
+  onReschedule,
 }: {
   request: MobilityRequest;
   approvals: Approval[];
@@ -1293,9 +1620,11 @@ function RequestCard({
   onApprove: () => void;
   onCancel: () => void;
   onCommit: () => void;
+  onReschedule: (effectiveAt: string) => void;
 }) {
   const [reviewEligibility, setReviewEligibility] = useState<Eligibility | null>(null);
   const [previewUnavailable, setPreviewUnavailable] = useState(false);
+  const [rescheduleDate, setRescheduleDate] = useState(request.effective_at.slice(0, 10));
   const approvalCount = approvals.filter((approval) => approval.decision === "approved").length;
   const canApprove =
     canMove && request.status === "pending" && request.requested_by !== currentUserId;
@@ -1305,6 +1634,12 @@ function RequestCard({
     Date.parse(request.effective_at) > Date.now();
   const canCommit =
     canMove && request.status === "approved" && Date.parse(request.effective_at) <= Date.now();
+  const canReschedule =
+    canMove &&
+    request.status === "pending" &&
+    request.requested_by === currentUserId &&
+    approvals.length === 0 &&
+    Date.parse(request.effective_at) > Date.now();
   const target = request.policy_snapshot ?? {};
 
   useEffect(() => {
@@ -1375,6 +1710,29 @@ function RequestCard({
         <p className="mobility-hint">Checking current eligibility…</p>
       ) : null}
       {Object.keys(target).length ? <small>Policy snapshot: {JSON.stringify(target)}</small> : null}
+      {canReschedule ? (
+        <div className="mobility-reschedule">
+          <label>
+            New effective date
+            <input
+              type="date"
+              min={new Date(Date.now() + 86_400_000).toISOString().slice(0, 10)}
+              value={rescheduleDate}
+              onChange={(event) => setRescheduleDate(event.target.value)}
+            />
+          </label>
+          <button
+            type="button"
+            className="mobility-secondary"
+            disabled={
+              busy || !rescheduleDate || rescheduleDate === request.effective_at.slice(0, 10)
+            }
+            onClick={() => onReschedule(new Date(`${rescheduleDate}T00:00:00.000Z`).toISOString())}
+          >
+            Change effective date
+          </button>
+        </div>
+      ) : null}
       <div className="mobility-request-actions">
         {canApprove ? (
           <button type="button" className="mobility-secondary" disabled={busy} onClick={onApprove}>

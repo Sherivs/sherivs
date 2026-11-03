@@ -12,6 +12,7 @@ const CLASS_TWO = "b2000000-0000-4000-8000-000000000006";
 const CAMPUS_ONE = "b2000000-0000-4000-8000-000000000007";
 const CAMPUS_TWO = "b2000000-0000-4000-8000-000000000008";
 const REQUEST_ID = "b2000000-0000-4000-8000-000000000009";
+const REQUEST_TWO_ID = "b2000000-0000-4000-8000-000000000019";
 
 type FixtureRow = Record<string, unknown>;
 
@@ -172,6 +173,21 @@ const tableData: Record<string, FixtureRow[]> = {
       reason: "End-of-session promotion",
     },
   ],
+  student_mobility_fee_allocations: [
+    {
+      event_id: "b2000000-0000-4000-8000-000000000017",
+      fee_id: "b2000000-0000-4000-8000-000000000018",
+      placement_id: "b2000000-0000-4000-8000-000000000015",
+      period_start: "2026-09-01",
+      period_end: "2026-11-30",
+      service_seconds: 7776000,
+      period_seconds: 7776000,
+      fee_amount: 60000,
+      paid_amount: 60000,
+      outstanding_amount: 0,
+      created_at: "2026-09-01T00:00:00.000Z",
+    },
+  ],
   student_mobility_requests: [
     {
       id: REQUEST_ID,
@@ -185,6 +201,21 @@ const tableData: Record<string, FixtureRow[]> = {
       reason: "Approved campus placement change",
       status: "pending",
       requested_by: "b2000000-0000-4000-8000-000000000016",
+      policy_snapshot: {},
+      created_at: new Date().toISOString(),
+    },
+    {
+      id: REQUEST_TWO_ID,
+      school_id: SCHOOL_ID,
+      student_id: STUDENT_TWO,
+      movement_type: "internal_transfer",
+      target_class_id: CLASS_TWO,
+      target_session: "2026/2027",
+      target_shift: "Afternoon",
+      effective_at: new Date(Date.now() + 86_400_000).toISOString(),
+      reason: "Pending requester reschedule",
+      status: "pending",
+      requested_by: ADMIN_ID,
       policy_snapshot: {},
       created_at: new Date().toISOString(),
     },
@@ -319,6 +350,21 @@ async function installMobilityFixture(page: Page) {
         );
         return;
       }
+      if (name === "student_mobility_bulk_request") {
+        const items = Array.isArray(args.p_items) ? args.p_items : [];
+        await reply(
+          route,
+          items.map((item, index) => ({
+            student_id: (item as Record<string, unknown>).student_id,
+            request_id: `b2000000-0000-4000-8000-${String(index + 20).padStart(12, "0")}`,
+          })),
+        );
+        return;
+      }
+      if (name === "student_mobility_reschedule") {
+        await reply(route, null);
+        return;
+      }
       await reply(route, REQUEST_ID);
       return;
     }
@@ -366,6 +412,15 @@ test("captures desktop and mobile student, movement, and bulk promotion screens"
   await expect(page.getByRole("heading", { name: "Student records", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Ada Okafor" })).toBeVisible();
   await expect(page.getByText("Consolidated outstanding balance")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Prorated fees by placement" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Download transfer certificate" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Download movement record" })).toBeVisible();
+  const certificateDownload = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download transfer certificate" }).click();
+  expect((await certificateDownload).suggestedFilename()).toBe("transfer-certificate.pdf");
+  const movementDownload = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download movement record" }).click();
+  expect((await movementDownload).suggestedFilename()).toBe("movement-record.pdf");
   await expect(page.getByText("Eligibility checks passed").first()).toBeVisible();
   await assertNoHorizontalOverflow(page);
   mkdirSync(join(process.cwd(), "docs/screenshots"), { recursive: true });
@@ -384,6 +439,8 @@ test("captures desktop and mobile student, movement, and bulk promotion screens"
 
   await page.getByRole("tab", { name: "Movement" }).click();
   await expect(page.getByRole("heading", { name: "Request a movement" })).toBeVisible();
+  await expect(page.getByText("AI advisory only")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Get AI advisory" })).toBeVisible();
   await expect(page.getByText("Eligibility checks passed").first()).toBeVisible();
   await expect(page.getByText("Placement timeline")).toBeVisible();
   await assertNoHorizontalOverflow(page);
@@ -403,8 +460,15 @@ test("captures desktop and mobile student, movement, and bulk promotion screens"
   await page.getByRole("checkbox").nth(1).check();
   await page.getByRole("button", { name: "Run dry-run" }).click();
   await expect(
-    page.getByText("Dry-run complete. Review every student result before submitting the batch."),
+    page.getByText("Dry-run complete. Review every student result before confirming the batch."),
   ).toBeVisible();
+  await page.getByRole("button", { name: "Continue to confirmation" }).click();
+  const confirmation = page.getByRole("checkbox", {
+    name: /I confirm that 2 eligible request\(s\) will be submitted/,
+  });
+  await expect(page.getByRole("button", { name: "Apply requests" })).toBeDisabled();
+  await confirmation.check();
+  await expect(page.getByRole("button", { name: "Apply requests" })).toBeEnabled();
   await assertNoHorizontalOverflow(page);
   await page.screenshot({
     path: "docs/screenshots/student-mobility-bulk-1440.png",
@@ -413,4 +477,19 @@ test("captures desktop and mobile student, movement, and bulk promotion screens"
   await page.setViewportSize({ width: 390, height: 844 });
   await assertNoHorizontalOverflow(page);
   await page.screenshot({ path: "docs/screenshots/student-mobility-bulk-390.png", fullPage: true });
+  await page.getByRole("button", { name: "Apply requests" }).click();
+  await expect(page.getByText("2 promotion requests submitted atomically.")).toBeVisible();
+  await page.getByRole("button", { name: /Tunde Bello/ }).click();
+  await expect(page.getByRole("heading", { name: "Tunde Bello" })).toBeVisible();
+  const requesterCard = page
+    .locator(".mobility-request-card")
+    .filter({ hasText: "Pending requester reschedule" })
+    .first();
+  await expect(requesterCard.getByRole("button", { name: "Approve" })).toHaveCount(0);
+  const rescheduleDate = new Date(Date.now() + 3 * 86_400_000).toISOString().slice(0, 10);
+  await page.getByLabel("New effective date").fill(rescheduleDate);
+  await page.getByRole("button", { name: "Change effective date" }).click();
+  await expect(
+    page.getByText("Effective date updated; the movement still requires human approval."),
+  ).toBeVisible();
 });
