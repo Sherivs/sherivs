@@ -34,8 +34,14 @@ import {
   workerLaunchRequestSchema,
   type WorkerLaunchDeps,
 } from "@/lib/workforce/worker-launch.functions";
-import { executeWorkerMissionLaunch } from "@/lib/workforce/worker-launch-runtime.server";
+import {
+  buildWorkerLaunchDeps,
+  executeWorkerMissionLaunch,
+  type WorkerLaunchAdminClient,
+} from "@/lib/workforce/worker-launch-runtime.server";
 import type { WriteAuditEntry } from "@/lib/server/write-audit";
+import type { WorkerLifecycleAuditRecord } from "@/lib/workforce/worker-host";
+import { createWorkerLifecycleEvidence } from "@/lib/agent-runtime/ephemeral-lifecycle";
 import { requirePlatformSuperAdmin } from "@/lib/security-role-gate";
 import { createInMemoryMissionExecutionStore } from "@/lib/missions/mission-execution-store";
 import type { MissionLeasePort, MissionRecordPort } from "@/lib/missions/mission-execution-store";
@@ -51,10 +57,7 @@ import {
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const FAMILY_SRC = join(ROOT, "frontend/src/lib/workforce/worker-launch.functions.ts");
 const CONTRACT_SRC = join(ROOT, "frontend/src/lib/workforce/worker-launch-contract.ts");
-const RUNTIME_SRC = join(
-  ROOT,
-  "frontend/src/lib/workforce/worker-launch-runtime.server.ts",
-);
+const RUNTIME_SRC = join(ROOT, "frontend/src/lib/workforce/worker-launch-runtime.server.ts");
 const ROUTE_SRC = join(ROOT, "frontend/src/routes/_authenticated/super-admin/worker-missions.tsx");
 
 /* ─────────────────────────────────────────────────────────────
@@ -68,6 +71,7 @@ const VERSION = "1.0";
 const ACTION = "record-observation";
 const EXECUTION_ID = "exec-launch-1";
 const WORKER_ID = "worker-launch-1";
+const AUDIT_TENANT = "10000000-0000-4000-8000-000000000001";
 
 const CONFIG: MissionExecutionConfig = {
   leaseTtlMs: 30_000,
@@ -158,6 +162,8 @@ function governedWorker(): { definition: WorkerDefinition; grants: WorkerDelegat
         delegatedCapabilities: [`mission:execute:${MISSION_ID}`],
         maxGrantedRiskClass: "medium",
         state: "active",
+        grantedAt: T0,
+        expiresAt: "2026-10-04T12:00:00.000Z",
       },
     ],
   };
@@ -181,6 +187,7 @@ function registryPort(worker: ReturnType<typeof governedWorker>) {
         grants: worker.grants,
         tenantId: input.tenantId,
         missionId: input.missionId,
+        now: T0,
       });
     },
     quarantineWorker: async (input: unknown) => {
@@ -195,6 +202,7 @@ function launchDeps(overrides?: {
 }): Promise<WorkerLaunchDeps & { audits: WriteAuditEntry[]; readonly leaseAttempts: number }> {
   return (async () => {
     const audits: WriteAuditEntry[] = [];
+    const lifecycleAudits: WorkerLifecycleAuditRecord[] = [];
     let leaseAttempts = 0;
     const store = await seededStore();
     // Lease-attempt counting wrapper: proves "nothing was attempted" claims.
@@ -211,8 +219,12 @@ function launchDeps(overrides?: {
       audit: async (entry) => {
         audits.push(entry);
       },
+      recordLifecycle: async (record) => {
+        lifecycleAudits.push(record);
+      },
       readEnv: (name) => overrides?.env?.[name],
       now: () => T0,
+      newCorrelationId: () => "correlation-launch-test",
       newRuntimeInstanceId: () => "runtime-launch-test-1",
       executor: overrides?.executor,
       audits,
@@ -507,6 +519,60 @@ describe("launched path (host cycle over in-memory ports, injected executor)", (
   });
 });
 
+describe("worker lifecycle audit tenant attribution", () => {
+  it("fails closed for non-UUID tenants and writes canonical tenants to the chain bridge", async () => {
+    const auditRows: Record<string, unknown>[] = [];
+    const admin = {
+      from(table: string) {
+        if (table === "users") {
+          return {
+            select: () => ({
+              eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }),
+            }),
+          };
+        }
+        if (table === "audit_logs") {
+          return {
+            insert: async (row: Record<string, unknown>) => {
+              auditRows.push(row);
+              return { error: null };
+            },
+          };
+        }
+        throw new Error(`unexpected table: ${table}`);
+      },
+    } as unknown as WorkerLaunchAdminClient;
+    const deps = await buildWorkerLaunchDeps({
+      admin,
+      actorId: "launch-actor",
+      actorEmail: null,
+    });
+    const lifecycleRecord = (tenantId: string): WorkerLifecycleAuditRecord => ({
+      tenantId,
+      runtimeInstanceId: "runtime-launch-1",
+      executionId: EXECUTION_ID,
+      missionId: MISSION_ID,
+      outcome: "succeeded",
+      reason: "worker woke",
+      evidence: createWorkerLifecycleEvidence({
+        transition: "wake",
+        at: T0,
+        actorId: WORKER_ID,
+        workerId: WORKER_ID,
+        grantId: "grant-launch-1",
+        correlationId: "correlation-launch-1",
+      }),
+    });
+
+    await expect(deps.recordLifecycle(lifecycleRecord(TENANT))).rejects.toThrow("UUID tenant id");
+    expect(auditRows).toHaveLength(0);
+
+    await deps.recordLifecycle(lifecycleRecord(AUDIT_TENANT));
+    expect(auditRows).toHaveLength(1);
+    expect(auditRows[0]?.school_id).toBe(AUDIT_TENANT);
+  });
+});
+
 /* ─────────────────────────────────────────────────────────────
  * 6. §27 static invariants — the shipped surface carries the chain
  * ────────────────────────────────────────────────────────────*/
@@ -527,7 +593,9 @@ describe("§27 server-function invariants — worker-launch.functions.ts", () =>
   });
 
   it("4 VALIDATE: the Zod strict validator is wired into the server function", () => {
-    expect(src).toMatch(/\.validator\(\(input: unknown\) => workerLaunchRequestSchema\.parse\(input\)\)/);
+    expect(src).toMatch(
+      /\.validator\(\(input: unknown\) => workerLaunchRequestSchema\.parse\(input\)\)/,
+    );
     expect(contract).toMatch(/\.strict\(\)/);
   });
 

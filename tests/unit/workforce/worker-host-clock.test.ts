@@ -463,16 +463,22 @@ function fakeRegistry(definition: WorkerDefinition) {
     },
     authorityPort(): WorkerAuthorityPort {
       return {
-        async resolveAuthority({ tenantId, workerId, missionId }) {
+        async resolveAuthority({ tenantId, workerId, missionId, now }) {
           if (workerId !== state.definition.id) {
             return { ok: false, reason: `worker_not_registered:${workerId}` };
           }
-          return buildWorkerMissionActor({
+          const resolution = buildWorkerMissionActor({
             definition: state.definition,
             grants: state.grants,
             tenantId,
             missionId,
+            now,
           });
+          if (!resolution.ok) return resolution;
+          if (resolution.grantId === null) {
+            return { ok: false, reason: "worker_not_delegated:no active execution grant" };
+          }
+          return { ...resolution, grantId: resolution.grantId };
         },
       };
     },
@@ -502,6 +508,8 @@ async function harness(opts?: { adopt?: boolean; frozenNow?: () => string }): Pr
     delegatedCapabilities: [`mission:execute:${MISSION_ID}`],
     maxGrantedRiskClass: "low",
     state: "active",
+    grantedAt: T0,
+    expiresAt: "2026-10-02T12:00:00.000Z",
   });
   const clock = fakeClock();
   const ports: MissionLeasePort & Pick<MissionRecordPort, "getExecution" | "verifyExecution"> =
@@ -509,6 +517,8 @@ async function harness(opts?: { adopt?: boolean; frozenNow?: () => string }): Pr
   const deps: WorkerHostDeps = {
     missions: ports,
     authority: registry.authorityPort(),
+    audit: { async recordLifecycle() {} },
+    correlationId: "correlation-host-clock",
     quarantineThreshold: 99,
     now: opts?.frozenNow ?? clock.now,
     ...(opts?.adopt ? { clock: clock.now } : {}),

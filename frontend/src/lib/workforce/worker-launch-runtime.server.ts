@@ -28,6 +28,7 @@ import type {
   WorkerExecutionHandle,
   WorkerHostExecutor,
   WorkerHostMissionPorts,
+  WorkerLifecycleAuditRecord,
   WorkerQuarantinePort,
 } from "./worker-host";
 import { runWorkerHost } from "./worker-host";
@@ -49,6 +50,19 @@ const timeAuthority = new TimeAuthority(new SystemClock());
 
 /** Default quarantine bound threaded to the host (registry records the ledger row). */
 const DEFAULT_QUARANTINE_THRESHOLD = 3;
+
+function auditUuid(value: string | null | undefined): string | null {
+  return value !== undefined && value !== null && z.string().uuid().safeParse(value).success
+    ? value
+    : null;
+}
+
+function auditTenantUuid(value: string): string {
+  if (!z.string().uuid().safeParse(value).success) {
+    throw new Error("worker lifecycle audit requires a UUID tenant id for audit-chain attribution");
+  }
+  return value;
+}
 
 /** Production substrate: the sanctioned service-role DB adapters, unmodified. */
 export type WorkerLaunchAdminClient = Parameters<typeof createWorkerRegistryDb>[0];
@@ -98,12 +112,45 @@ export async function buildWorkerLaunchDeps(input: {
     audit: async (entry) => {
       await writeAuditRecord(input.admin, {
         ...entry,
+        tenantId: auditUuid(entry.tenantId),
+        recordId: auditUuid(entry.recordId),
         actorId: actorHasCanonicalRow ? input.actorId : null,
         actorEmail: actorHasCanonicalRow ? (entry.actorEmail ?? null) : input.actorEmail,
+        details: {
+          ...entry.details,
+          tenant_id: entry.tenantId,
+          record_ref: entry.recordId ?? null,
+        },
+      });
+    },
+    recordLifecycle: async (event: WorkerLifecycleAuditRecord) => {
+      await writeAuditRecord(input.admin, {
+        action: `workforce.worker.${event.evidence.transition}`,
+        gate: "worker-host-delegation-gate",
+        tenantId: auditTenantUuid(event.tenantId),
+        actorId: null,
+        actorRef: event.evidence.actorId,
+        actorKind: "agent",
+        table: "cg_worker_definition",
+        recordId: null,
+        outcome: event.outcome,
+        correlationId: event.evidence.correlationId,
+        details: {
+          tenant_id: event.tenantId,
+          transition_at: event.evidence.at,
+          worker_id: event.evidence.workerId,
+          grant_id: event.evidence.grantId,
+          correlation_id: event.evidence.correlationId,
+          runtime_instance_id: event.runtimeInstanceId,
+          execution_id: event.executionId,
+          mission_id: event.missionId,
+          reason: event.reason,
+        },
       });
     },
     readEnv: (name) => process.env[name],
     now: () => timeAuthority.now().at,
+    newCorrelationId: () => crypto.randomUUID(),
     newRuntimeInstanceId: () => `runtime-${crypto.randomUUID()}`,
   };
 }
@@ -158,6 +205,20 @@ export function buildAiGatewayExecutor(input: {
       return { outcome: "failed", reason: `ai_guard_deny: ${(err as Error).message}` };
     }
 
+    const authorization = await handle.authorizeExecution();
+    if (!authorization.ok) {
+      return {
+        outcome: "failed",
+        reason: `delegation_denied_before_inference: ${authorization.reason}`,
+      };
+    }
+    const actionHeartbeat = await handle.heartbeat();
+    if (!actionHeartbeat.ok) {
+      return {
+        outcome: "failed",
+        reason: `lease_lost_before_inference: ${actionHeartbeat.reason}`,
+      };
+    }
     const outcome = await invokeAiGateway<z.infer<typeof workerMissionOutputSchema>>({
       tenantRef: execution.tenantId,
       actorRef: workerId,
@@ -227,6 +288,7 @@ export async function executeWorkerMissionLaunch(
   },
   deps: WorkerLaunchDeps,
 ): Promise<WorkerLaunchOutcome> {
+  const correlationId = deps.newCorrelationId();
   const parsed = workerLaunchRequestSchema.safeParse(input.data);
   if (!parsed.success) {
     const reason = `launch request rejected: ${parsed.error.message.slice(0, 300)}`;
@@ -240,6 +302,7 @@ export async function executeWorkerMissionLaunch(
       outcome: "failed",
       code: "invalid_request",
       reason,
+      correlationId,
     });
     await deps.audit(entry);
     return { outcome: "denied", code: "invalid_request", reason, audit: toAuditIntent(entry) };
@@ -270,6 +333,7 @@ export async function executeWorkerMissionLaunch(
       outcome: "failed",
       code: "gate_denied",
       reason,
+      correlationId,
     });
     await deps.audit(entry);
     return { outcome: "denied", code: "gate_denied", reason, audit: toAuditIntent(entry) };
@@ -288,6 +352,7 @@ export async function executeWorkerMissionLaunch(
       outcome: "failed",
       code: "execution_not_found",
       reason,
+      correlationId,
     });
     await deps.audit(entry);
     return { outcome: "denied", code: "execution_not_found", reason, audit: toAuditIntent(entry) };
@@ -298,6 +363,7 @@ export async function executeWorkerMissionLaunch(
     tenantId: data.tenantId,
     definitionId: data.workerId,
     missionId: execution.missionId,
+    now: deps.now(),
   });
   if (!authority.ok) {
     const entry = launchAuditEntry({
@@ -309,6 +375,7 @@ export async function executeWorkerMissionLaunch(
       outcome: "failed",
       code: "worker_not_launchable",
       reason: authority.reason,
+      correlationId,
       extra: { worker_authority_reason: authority.reason.slice(0, 300) },
     });
     await deps.audit(entry);
@@ -334,6 +401,7 @@ export async function executeWorkerMissionLaunch(
       outcome: "failed",
       code: "BLOCKED_NO_CREDENTIAL",
       reason,
+      correlationId,
       extra: {
         blocked_code: "BLOCKED_NO_CREDENTIAL",
         missing_environment: [...credentialGate.missing],
@@ -353,8 +421,8 @@ export async function executeWorkerMissionLaunch(
 
   /* 5b. EXECUTE — one governed host cycle over the validated substrate. */
   const authorityPort: WorkerAuthorityPort = {
-    resolveAuthority: ({ tenantId, workerId, missionId }) =>
-      deps.registry.resolveWorkerAuthority({ tenantId, definitionId: workerId, missionId }),
+    resolveAuthority: ({ tenantId, workerId, missionId, now }) =>
+      deps.registry.resolveWorkerAuthority({ tenantId, definitionId: workerId, missionId, now }),
   };
   const quarantinePort: WorkerQuarantinePort = {
     quarantineWorker: async (q) => {
@@ -373,9 +441,11 @@ export async function executeWorkerMissionLaunch(
     {
       missions: deps.missions,
       authority: authorityPort,
+      audit: { recordLifecycle: deps.recordLifecycle },
       quarantine: quarantinePort,
       quarantineThreshold: deps.quarantineThreshold ?? DEFAULT_QUARANTINE_THRESHOLD,
       now: deps.now,
+      correlationId,
     },
     {
       tenantId: data.tenantId,
@@ -397,6 +467,7 @@ export async function executeWorkerMissionLaunch(
     reason: host.wake.ok
       ? `host cycle complete: ${host.phases.map((phase) => `${phase.phase}:${phase.ok ? "ok" : "denied"}`).join(" → ")}`
       : host.wake.reason,
+    correlationId,
     extra: {
       host_execute_outcome: host.execute.outcome,
       host_execute_reason: host.execute.reason.slice(0, 300),

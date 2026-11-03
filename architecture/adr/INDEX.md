@@ -4,7 +4,7 @@
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Purpose                            | Complete, verified index of every Architecture Decision Record in this repository                                                                                                                |
 | Maintainer                         | J-094 (ADR Librarian, Squad J — Governance & documentation)                                                                                                                                      |
-| Last verified against working tree | 2026-11-01                                                                                                                                                                                       |
+| Last verified against working tree | 2026-11-03                                                                                                                                                                                       |
 | Canonical template                 | [TEMPLATE.md](./TEMPLATE.md) — every new ADR MUST follow it                                                                                                                                      |
 | Authority                          | AGENTS.md §4 places Architecture Decisions at governance level 4 (below security invariants, privacy, and the Constitution); §22/§23 (inspect before acting); §38 (large changes require an ADR) |
 
@@ -15,8 +15,8 @@ This index is a record of reality, not intent: an ADR exists here only if its fi
 ## ADR register — `architecture/adr/`
 
 The H3-wave ADR directory. M09 was assigned **ADR-017** by owner coordination;
-ADR-015 and ADR-016 remain outside this mission's allocation. Next free number:
-**ADR-018**.
+ADR-015 and ADR-016 remain outside this mission's allocation. **ADR-020** is
+reserved by CORE-05; ADR-018 and ADR-019 remain unallocated.
 
 | #   | File                                                                                               | Title                                                                                           | Status   | Date       | Gist                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | --- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | -------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -25,6 +25,7 @@ ADR-015 and ADR-016 remain outside this mission's allocation. Next free number:
 | 013 | [ADR-013_SV1_MOBILITY_LEGACY_STORE_EXTENSION.md](./ADR-013_SV1_MOBILITY_LEGACY_STORE_EXTENSION.md) | SV1 Student Mobility Extends the Legacy Scholar Store                                           | PROPOSED | 2026-11-01 | Records a proposed, migration-specific neutrality-baseline exception for the V1 student-mobility extension; preserves the active Scholar tenant/RLS contract and defers neutral-tenant conversion.                                                                                                                                                                                                                             |
 | 014 | [ADR-014_M04_TENANT_MODEL_LEGACY_STORE_ADAPTER.md](./ADR-014_M04_TENANT_MODEL_LEGACY_STORE_ADAPTER.md) | M04 Extends the Existing Organization Tenant Store (COND-003) | PROPOSED | 2026-11-02 | Records the proposed M04 neutrality-baseline exception for two observed legacy-vocabulary groups in the new V1 tenant-authority migration, preserving existing tenant helper and tenant-column use for org/campus/shift RLS. |
 | 017 | [ADR-017_M09_NDPA_CONSENT_GUARDIANS.md](./ADR-017_M09_NDPA_CONSENT_GUARDIANS.md) | Purpose-Bound Consent and Explicit Learner Relationships (M09) | PROPOSED | 2026-11-03 | Records M09's proposed V1 model for effective-dated learner relationships, attributed per-purpose consent, immediate withdrawal, and audited append-only history. |
+| 020 | [ADR-020_BOUNDED_WORKER_DELEGATION.md](./ADR-020_BOUNDED_WORKER_DELEGATION.md) | Bounded Worker Delegation and Audited Activation (CORE-05) | PROPOSED | 2026-11-03 | Requires active, effective, unexpired, mission-scoped grants at activation and execution; atomically audits grant/revoke using service-role-only RPCs while preserving existing tables and RLS. |
 
 ## ADR register — `architecture/coregrid-mvp-architecture/adr/`
 

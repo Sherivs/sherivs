@@ -127,6 +127,9 @@ export const delegationGrantInputSchema = z
     delegatedCapabilities: z.array(z.string().trim().min(1).max(160)).max(64),
     maxGrantedRiskClass: riskClassSchema,
     grantedBy: z.string().trim().min(1).max(160),
+    grantedAt: z.string().datetime({ offset: true }),
+    expiresAt: z.string().datetime({ offset: true }),
+    correlationId: z.string().trim().min(1).max(200),
   })
   .strict();
 
@@ -141,6 +144,8 @@ export const workerDelegationGrantStateSchema = z
     delegatedCapabilities: z.array(z.string().trim().min(1).max(160)).max(64),
     maxGrantedRiskClass: riskClassSchema,
     state: z.enum(["active", "revoked"]),
+    grantedAt: z.string().datetime({ offset: true }),
+    expiresAt: z.string().datetime({ offset: true }).nullable(),
   })
   .strict();
 
@@ -194,6 +199,8 @@ export type WorkerAuthorityResolution =
       actor: MissionActorContext;
       /** delegated ∩ declared mission capabilities that produced the grants. */
       effectiveCapabilities: readonly string[];
+      /** A live grant that contributed effective authority, when one exists. */
+      grantId: string | null;
     }
   | { ok: false; reason: string };
 
@@ -204,9 +211,9 @@ export type WorkerAuthorityResolution =
  *      requested tenant (multi-tenancy law, §13);
  *   3. definition lifecycle must be USABLE (`isIdentityUsable` — a suspended,
  *      archived or deleted worker — e.g. a quarantined one — never resolves);
- *   4. only `state === "active"` grants count; a grant naming another
- *      definition or a malformed shape FAILS THE RESOLUTION (fail closed —
- *      untrusted input is never silently skipped);
+ *      4. only active, effective, unexpired grants count; a grant naming
+ *      another definition or a malformed shape FAILS THE RESOLUTION (fail
+ *      closed — untrusted input is never silently skipped);
  *   5. escalation checks per grant: every delegated capability must be in the
  *      definition's DECLARED capability set, and the granted risk class must
  *      be at or below the definition's ceiling (denied, never clamped);
@@ -227,14 +234,17 @@ export function buildWorkerMissionActor(input: {
   grants: readonly WorkerDelegationGrantState[];
   tenantId: string;
   missionId: string;
+  now: string;
 }): WorkerAuthorityResolution {
   const tenantCheck = z.string().trim().min(1).max(128).safeParse(input.tenantId);
   const missionCheck = z.string().trim().min(1).max(160).safeParse(input.missionId);
-  if (!tenantCheck.success || !missionCheck.success) {
+  const nowCheck = z.string().datetime().safeParse(input.now);
+  if (!tenantCheck.success || !missionCheck.success || !nowCheck.success) {
     return { ok: false, reason: "invalid_scope:tenant and mission ids are required" };
   }
   const tenantId = tenantCheck.data;
   const missionId = missionCheck.data;
+  const now = nowCheck.data;
 
   if (input.definition.tenantScope !== tenantId) {
     return { ok: false, reason: "cross_tenant:worker definition tenant scope mismatch" };
@@ -251,6 +261,7 @@ export function buildWorkerMissionActor(input: {
   );
   const extraPermissions: { resource: string; action: string; scope: string }[] = [];
   const effective: string[] = [];
+  let grantId: string | null = null;
 
   for (const grant of input.grants) {
     const grantCheck = workerDelegationGrantStateSchema.safeParse(grant);
@@ -266,7 +277,14 @@ export function buildWorkerMissionActor(input: {
         reason: `grant_definition_mismatch:${state.grantId}`,
       };
     }
-    if (state.state !== "active") continue; // revocation: effective immediately
+    if (
+      state.state !== "active" ||
+      Date.parse(state.grantedAt) > Date.parse(now) ||
+      state.expiresAt === null ||
+      Date.parse(state.expiresAt) <= Date.parse(now)
+    ) {
+      continue; // revocation and the bounded grant window are effective immediately
+    }
 
     for (const capabilityId of state.delegatedCapabilities) {
       if (!declared.has(capabilityId)) {
@@ -294,6 +312,7 @@ export function buildWorkerMissionActor(input: {
         continue; // scoped to another mission — contributes nothing here
       }
       effective.push(capabilityId);
+      grantId ??= state.grantId;
       extraPermissions.push({
         resource: "mission",
         action: missionClaim.action,
@@ -315,7 +334,7 @@ export function buildWorkerMissionActor(input: {
   if (!actorCheck.success) {
     return { ok: false, reason: `actor_context_rejected:${actorCheck.error.message}` };
   }
-  return { ok: true, actor: actorCheck.data, effectiveCapabilities: effective };
+  return { ok: true, actor: actorCheck.data, effectiveCapabilities: effective, grantId };
 }
 
 /* ─────────────────────────────────────────────────────────────

@@ -60,6 +60,10 @@ import {
 import type { MissionLeasePort, MissionRecordPort } from "../missions/mission-execution-store";
 import type { MissionActorContext } from "../missions/mission-authorization";
 import type { WorkCriticality } from "../verification";
+import {
+  createWorkerLifecycleEvidence,
+  type WorkerLifecycleTransition,
+} from "../agent-runtime/ephemeral-lifecycle";
 import { workerQuarantineDecision, type WorkerQuarantineDecision } from "./worker-registry";
 
 /** The lease/record surface the host drives (V1-004 ports, unmodified). */
@@ -72,7 +76,24 @@ export interface WorkerAuthorityPort {
     tenantId: string;
     workerId: string;
     missionId: string;
-  }): Promise<{ ok: true; actor: MissionActorContext } | { ok: false; reason: string }>;
+    now: string;
+  }): Promise<
+    { ok: true; actor: MissionActorContext; grantId: string } | { ok: false; reason: string }
+  >;
+}
+
+export interface WorkerLifecycleAuditRecord {
+  readonly evidence: ReturnType<typeof createWorkerLifecycleEvidence>;
+  readonly tenantId: string;
+  readonly runtimeInstanceId: string;
+  readonly executionId: string;
+  readonly missionId: string | null;
+  readonly outcome: "succeeded" | "failed" | "denied";
+  readonly reason: string;
+}
+
+export interface WorkerLifecycleAuditPort {
+  recordLifecycle(input: WorkerLifecycleAuditRecord): Promise<void>;
 }
 
 /** Quarantine recording (workforce registry): recorded, no longer leased to. */
@@ -93,6 +114,8 @@ export interface WorkerExecutionHandle {
   readonly grant: LeaseGrant;
   /** Heartbeat the lease; an expired lease denies (recover and re-lease). */
   heartbeat(): Promise<{ ok: true; leaseExpiresAt: string } | { ok: false; reason: string }>;
+  /** Re-resolve the live grant immediately before each worker action. */
+  authorizeExecution(): Promise<{ ok: true; grantId: string } | { ok: false; reason: string }>;
 }
 
 export type WorkerHostExecutor = (
@@ -109,11 +132,13 @@ export interface WorkerVerificationPlan {
 export interface WorkerHostDeps {
   readonly missions: WorkerHostMissionPorts;
   readonly authority: WorkerAuthorityPort;
+  readonly audit: WorkerLifecycleAuditPort;
   readonly quarantine?: WorkerQuarantinePort;
   /** Failure count at which a worker is quarantined (recorded, not leased to). */
   readonly quarantineThreshold: number;
   /** Injected clock (J-023): every host instant comes from here. */
   readonly now: () => string;
+  readonly correlationId: string;
   /**
    * Optional governed cycle clock (W3-INT seam adoption). When supplied it
    * SUPERSEDES `now` as the cycle's single time authority and is threaded
@@ -213,20 +238,67 @@ export async function runWorkerHost(
   // `deps.now` and the whole cycle is byte-identical to the pre-adoption host.
   const now = deps.clock ?? deps.now;
   const phases: WorkerHostPhase[] = [];
+  const correlationId = z.string().trim().min(1).max(200).parse(deps.correlationId);
+  if (!z.string().datetime().safeParse(now()).success) {
+    const reason = "invalid_input: worker host clock returned an unparseable instant";
+    phases.push({ phase: "WAKE", ok: false, detail: reason });
+    const denied = deniedCycle(parsedInput.data, phases, reason);
+    return {
+      ...denied,
+      execute: { ...denied.execute, denyCode: "invalid_input" },
+    };
+  }
+  let missionId: string | null = null;
+  const auditLifecycle = async (
+    transition: WorkerLifecycleTransition,
+    grantId: string | null,
+    outcome: WorkerLifecycleAuditRecord["outcome"],
+    reason: string,
+    actorId = workerId,
+  ): Promise<void> => {
+    await deps.audit.recordLifecycle({
+      evidence: createWorkerLifecycleEvidence({
+        transition,
+        at: now(),
+        actorId,
+        workerId,
+        grantId,
+        correlationId,
+      }),
+      tenantId,
+      runtimeInstanceId: parsedInput.data.runtimeInstanceId,
+      executionId,
+      missionId,
+      outcome,
+      reason: reason.slice(0, 300),
+    });
+  };
 
   /* ── WAKE ─────────────────────────────────────────────── */
   const execution = await deps.missions.getExecution(tenantId, executionId);
   if (execution === null) {
     phases.push({ phase: "WAKE", ok: false, detail: "execution not found in scope" });
+    await auditLifecycle("wake", null, "denied", "execution not found in scope");
     return deniedCycle(parsedInput.data, phases, "execution not found in scope");
   }
-  const authority = await deps.authority.resolveAuthority({
-    tenantId,
-    workerId,
-    missionId: execution.missionId,
-  });
+  missionId = execution.missionId;
+  let authority: Awaited<ReturnType<WorkerAuthorityPort["resolveAuthority"]>>;
+  try {
+    authority = await deps.authority.resolveAuthority({
+      tenantId,
+      workerId,
+      missionId: execution.missionId,
+      now: now(),
+    });
+  } catch (error) {
+    const reason = `authority resolution failed: ${error instanceof Error ? error.message : String(error)}`;
+    phases.push({ phase: "WAKE", ok: false, detail: reason });
+    await auditLifecycle("wake", null, "denied", reason);
+    return deniedCycle(parsedInput.data, phases, reason);
+  }
   if (!authority.ok) {
     phases.push({ phase: "WAKE", ok: false, detail: authority.reason });
+    await auditLifecycle("wake", null, "denied", authority.reason);
     return deniedCycle(parsedInput.data, phases, authority.reason);
   }
   const actor = authority.actor;
@@ -234,8 +306,27 @@ export async function runWorkerHost(
     // Fail closed: the resolved actor MUST be the governed worker identity.
     const detail = "authority resolved a different actor than the governed worker identity";
     phases.push({ phase: "WAKE", ok: false, detail });
+    await auditLifecycle("wake", authority.grantId, "denied", detail);
     return deniedCycle(parsedInput.data, phases, detail);
   }
+  const expectedPermission = actor.extraPermissions?.some(
+    (permission) =>
+      permission.resource === "mission" &&
+      permission.action === "execute" &&
+      permission.scope === `${tenantId}:mission:${execution.missionId}`,
+  );
+  if (!expectedPermission || !authority.grantId.trim()) {
+    const detail = "authority resolution omitted a live, mission-scoped execution grant";
+    phases.push({ phase: "WAKE", ok: false, detail });
+    await auditLifecycle("wake", authority.grantId || null, "denied", detail);
+    return deniedCycle(parsedInput.data, phases, detail);
+  }
+  await auditLifecycle(
+    "wake",
+    authority.grantId,
+    "succeeded",
+    `authorized for mission ${execution.missionId}`,
+  );
   phases.push({
     phase: "WAKE",
     ok: true,
@@ -254,9 +345,88 @@ export async function runWorkerHost(
     now: now(),
     clock: deps.clock,
     execute: async (grant) => {
+      const authorizeExecution = async (): Promise<
+        { ok: true; grantId: string } | { ok: false; reason: string }
+      > => {
+        let current: Awaited<ReturnType<WorkerAuthorityPort["resolveAuthority"]>>;
+        try {
+          current = await deps.authority.resolveAuthority({
+            tenantId,
+            workerId,
+            missionId: execution.missionId,
+            now: now(),
+          });
+        } catch (error) {
+          const reason = `authority resolution failed: ${error instanceof Error ? error.message : String(error)}`;
+          try {
+            await auditLifecycle("run", authority.grantId, "denied", reason);
+          } catch (auditError) {
+            return {
+              ok: false,
+              reason: `lifecycle_audit_failed: ${auditError instanceof Error ? auditError.message : String(auditError)}`,
+            };
+          }
+          return { ok: false, reason };
+        }
+        if (!current.ok || current.actor.actorId !== workerId) {
+          const reason = current.ok
+            ? "authority resolved a different actor than the governed worker identity"
+            : current.reason;
+          try {
+            await auditLifecycle("run", authority.grantId, "denied", reason);
+          } catch (error) {
+            return {
+              ok: false,
+              reason: `lifecycle_audit_failed: ${error instanceof Error ? error.message : String(error)}`,
+            };
+          }
+          return { ok: false, reason };
+        }
+        const actionPermission = current.actor.extraPermissions?.some(
+          (permission) =>
+            permission.resource === "mission" &&
+            permission.action === "execute" &&
+            permission.scope === `${tenantId}:mission:${execution.missionId}`,
+        );
+        if (!actionPermission || !current.grantId.trim()) {
+          const reason = "authority resolution omitted a live, mission-scoped execution grant";
+          try {
+            await auditLifecycle("run", current.grantId || null, "denied", reason);
+          } catch (error) {
+            return {
+              ok: false,
+              reason: `lifecycle_audit_failed: ${error instanceof Error ? error.message : String(error)}`,
+            };
+          }
+          return { ok: false, reason };
+        }
+        return { ok: true, grantId: current.grantId };
+      };
+      const currentAuthority = await authorizeExecution();
+      if (!currentAuthority.ok) {
+        return {
+          outcome: "failed",
+          reason: `delegation_denied_before_run: ${currentAuthority.reason}`,
+        };
+      }
+      try {
+        await auditLifecycle(
+          "run",
+          currentAuthority.grantId,
+          "succeeded",
+          `execution ${executionId} started`,
+        );
+      } catch (error) {
+        return {
+          outcome: "failed",
+          reason: `lifecycle_audit_failed_before_run: ${error instanceof Error ? error.message : String(error)}`,
+        };
+      }
       const heartbeat = async (): Promise<
         { ok: true; leaseExpiresAt: string } | { ok: false; reason: string }
       > => {
+        const current = await authorizeExecution();
+        if (!current.ok) return { ok: false, reason: current.reason };
         const beat = await deps.missions.heartbeatLease({
           actor,
           request: {
@@ -273,7 +443,7 @@ export async function runWorkerHost(
       };
       let outcome: MissionDriverExecutorResult;
       try {
-        outcome = await input.execute({ grant, heartbeat });
+        outcome = await input.execute({ grant, heartbeat, authorizeExecution });
       } catch (error) {
         // An executor exception is a worker-reported failure, never a crash
         // path: the failure is recorded with bounded-retry backoff.
@@ -420,6 +590,12 @@ export async function runWorkerHost(
       ? `worker quarantined: ${quarantineDecision.reason}`
       : "cycle complete — host sleeps (library-form, no resident process)",
   });
+  await auditLifecycle(
+    "sleep",
+    authority.grantId,
+    "succeeded",
+    quarantined ? `worker quarantined: ${quarantineDecision.reason}` : "cycle complete",
+  );
 
   return {
     workerId,

@@ -35,6 +35,7 @@ import {
 import {
   runWorkerHost,
   type WorkerAuthorityPort,
+  type WorkerLifecycleAuditRecord,
   type WorkerQuarantinePort,
 } from "@/lib/workforce/worker-host";
 
@@ -44,6 +45,7 @@ import {
 
 const TENANT = "tenant-alpha";
 const T0 = "2026-10-01T12:00:00.000Z";
+const T1 = "2026-10-02T12:00:00.000Z";
 const MISSION_ID = "MISSION-V1-003-HOST";
 const VERSION = "1.0";
 const ACTION = "record-observation";
@@ -176,16 +178,22 @@ function fakeRegistry(definition: WorkerDefinition) {
     },
     authorityPort(): WorkerAuthorityPort {
       return {
-        async resolveAuthority({ tenantId, workerId, missionId }) {
+        async resolveAuthority({ tenantId, workerId, missionId, now }) {
           if (workerId !== state.definition.id) {
             return { ok: false, reason: `worker_not_registered:${workerId}` };
           }
-          return buildWorkerMissionActor({
+          const resolution = buildWorkerMissionActor({
             definition: state.definition,
             grants: state.grants,
             tenantId,
             missionId,
+            now,
           });
+          if (!resolution.ok) return resolution;
+          if (resolution.grantId === null) {
+            return { ok: false, reason: "worker_not_delegated:no active execution grant" };
+          }
+          return { ...resolution, grantId: resolution.grantId };
         },
       };
     },
@@ -227,6 +235,7 @@ describe("worker registration (§28 persistent identity)", () => {
       grants: [],
       tenantId: TENANT,
       missionId: MISSION_ID,
+      now: T0,
     });
     expect(resolution.ok).toBe(true);
     if (!resolution.ok) return;
@@ -274,10 +283,13 @@ describe("delegation grant resolution (neutral RBAC mapping, Invariant 12)", () 
           delegatedCapabilities: [`mission:execute:${MISSION_ID}`],
           maxGrantedRiskClass: "low",
           state: "active",
+          grantedAt: T0,
+          expiresAt: T1,
         },
       ],
       tenantId: TENANT,
       missionId: MISSION_ID,
+      now: T0,
     });
     expect(resolution.ok).toBe(true);
     if (!resolution.ok) return;
@@ -302,10 +314,13 @@ describe("delegation grant resolution (neutral RBAC mapping, Invariant 12)", () 
           delegatedCapabilities: ["mission:execute:OTHER-MISSION"],
           maxGrantedRiskClass: "low",
           state: "active",
+          grantedAt: T0,
+          expiresAt: T1,
         },
       ],
       tenantId: TENANT,
       missionId: MISSION_ID,
+      now: T0,
     });
     // OTHER-MISSION is not a declared claim → escalation denied, never clamped.
     expect(resolution.ok).toBe(false);
@@ -327,10 +342,13 @@ describe("delegation grant resolution (neutral RBAC mapping, Invariant 12)", () 
           delegatedCapabilities: [`mission:execute:${MISSION_ID}`],
           maxGrantedRiskClass: "critical",
           state: "active",
+          grantedAt: T0,
+          expiresAt: T1,
         },
       ],
       tenantId: TENANT,
       missionId: MISSION_ID,
+      now: T0,
     });
     expect(resolution.ok).toBe(false);
     if (resolution.ok) return;
@@ -351,10 +369,13 @@ describe("delegation grant resolution (neutral RBAC mapping, Invariant 12)", () 
           delegatedCapabilities: [`mission:execute:${MISSION_ID}`],
           maxGrantedRiskClass: "low",
           state: "revoked",
+          grantedAt: T0,
+          expiresAt: T1,
         },
       ],
       tenantId: TENANT,
       missionId: MISSION_ID,
+      now: T0,
     });
     expect(revoked.ok).toBe(true);
     if (!revoked.ok) return;
@@ -367,6 +388,7 @@ describe("delegation grant resolution (neutral RBAC mapping, Invariant 12)", () 
       grants: [],
       tenantId: "tenant-beta",
       missionId: MISSION_ID,
+      now: T0,
     });
     expect(crossTenant.ok).toBe(false);
     if (crossTenant.ok) return;
@@ -386,6 +408,7 @@ describe("delegation grant resolution (neutral RBAC mapping, Invariant 12)", () 
       grants: [],
       tenantId: TENANT,
       missionId: MISSION_ID,
+      now: T0,
     });
     expect(resolution.ok).toBe(false);
     if (resolution.ok) return;
@@ -415,6 +438,8 @@ async function harness(executionId = "exec-1"): Promise<Harness> {
     delegatedCapabilities: [`mission:execute:${MISSION_ID}`],
     maxGrantedRiskClass: "low",
     state: "active",
+    grantedAt: T0,
+    expiresAt: T1,
   });
   const clock = fakeClock();
   const quarantine = registry.quarantinePort();
@@ -424,9 +449,17 @@ async function harness(executionId = "exec-1"): Promise<Harness> {
 function hostDeps(h: Harness, threshold: number) {
   const ports: MissionLeasePort & Pick<MissionRecordPort, "getExecution" | "verifyExecution"> =
     h.store;
+  const audits: WorkerLifecycleAuditRecord[] = [];
   return {
     missions: ports,
     authority: h.registry.authorityPort(),
+    audit: {
+      async recordLifecycle(record: WorkerLifecycleAuditRecord) {
+        audits.push(record);
+      },
+    },
+    correlationId: "correlation-host-cycle",
+    audits,
     quarantine: h.quarantine,
     quarantineThreshold: threshold,
     now: h.clock.now,
@@ -479,6 +512,17 @@ describe("worker host loop — happy path with heartbeat (WAKE→…→SLEEP)", 
     expect(result.sleep.state).toBe("sleeping");
     expect(result.sleep.quarantined).toBe(false);
     expect(heartbeats).toHaveLength(1);
+    expect(deps.audits.map((record) => record.evidence.transition)).toEqual([
+      "wake",
+      "run",
+      "sleep",
+    ]);
+    for (const record of deps.audits) {
+      expect(record.evidence.actorId).toBe("worker-1");
+      expect(record.evidence.workerId).toBe("worker-1");
+      expect(record.evidence.grantId).toBe("grant-1");
+      expect(record.evidence.correlationId).toBe("correlation-host-cycle");
+    }
     expect(result.phases.map((p) => p.phase)).toEqual([
       "WAKE",
       "EXECUTE",
@@ -510,6 +554,37 @@ describe("worker host loop — happy path with heartbeat (WAKE→…→SLEEP)", 
     expect(result.persist.ok).toBe(false);
     expect(result.phases[0]?.phase).toBe("WAKE");
     expect(result.phases[0]?.ok).toBe(false);
+  });
+
+  it("denies activation before execution when the worker has no active delegation", async () => {
+    const h = await harness();
+    h.registry.state.grants = [];
+    const deps = hostDeps(h, 99);
+    const result = await runWorkerHost(deps, {
+      tenantId: TENANT,
+      workerId: "worker-1",
+      runtimeInstanceId: "runtime-abc",
+      executionId: "exec-1",
+      execute: async () => {
+        throw new Error("must not execute without a delegation");
+      },
+    });
+
+    expect(result.wake.ok).toBe(false);
+    if (result.wake.ok) return;
+    expect(result.wake.reason).toContain("worker_not_delegated");
+    expect(result.execute.leased).toBe(false);
+    expect(deps.audits).toHaveLength(1);
+    expect(deps.audits[0]).toMatchObject({
+      evidence: {
+        transition: "wake",
+        actorId: "worker-1",
+        workerId: "worker-1",
+        grantId: null,
+        correlationId: "correlation-host-cycle",
+      },
+      outcome: "denied",
+    });
   });
 });
 
@@ -551,6 +626,8 @@ describe("worker host loop — lease handoff on heartbeat expiry", () => {
       delegatedCapabilities: [`mission:execute:${MISSION_ID}`],
       maxGrantedRiskClass: "low",
       state: "active",
+      grantedAt: T0,
+      expiresAt: T1,
     });
     h.clock.advance(2_000);
     const bCycle = await runWorkerHost(
@@ -731,13 +808,49 @@ describe("worker host loop — revocation-at-gate (delegation revoked)", () => {
         throw new Error("must never execute after revocation");
       },
     });
-    expect(after.wake.ok).toBe(true); // identity still resolves…
+    expect(after.wake.ok).toBe(false);
+    if (after.wake.ok) return;
     expect(after.execute.leased).toBe(false);
     expect(after.execute.outcome).toBe("not_leased");
-    // …but the lease gate denies: agent authority requires explicit
-    // delegation (Invariant 12) — the revocation is immediate.
-    expect(after.execute.denyCode).toBe("unauthorized");
-    expect(after.execute.reason).toContain("explicit delegation");
+    expect(after.wake.reason).toContain("worker_not_delegated");
+    expect(deps.audits.at(-1)?.evidence.transition).toBe("wake");
+  });
+});
+
+describe("worker host loop — mid-run revocation", () => {
+  it("denies the next action after revocation and records the denial", async () => {
+    const h = await harness();
+    const deps = hostDeps(h, 99);
+    let actionAuthorization: { ok: boolean; reason?: string } | undefined;
+
+    const result = await runWorkerHost(deps, {
+      tenantId: TENANT,
+      workerId: "worker-1",
+      runtimeInstanceId: "runtime-a",
+      executionId: "exec-1",
+      execute: async ({ authorizeExecution }) => {
+        h.registry.revoke("grant-1");
+        actionAuthorization = await authorizeExecution();
+        return { outcome: "failed" as const, reason: "delegation revoked before action" };
+      },
+    });
+
+    expect(actionAuthorization).toMatchObject({
+      ok: false,
+      reason: expect.stringContaining("worker_not_delegated"),
+    });
+    expect(result.execute.outcome).toBe("failed");
+    expect(result.execute.reason).toContain("delegation revoked before action");
+    expect(deps.audits.filter((record) => record.outcome === "denied").pop()).toMatchObject({
+      evidence: {
+        transition: "run",
+        actorId: "worker-1",
+        workerId: "worker-1",
+        grantId: "grant-1",
+        correlationId: "correlation-host-cycle",
+      },
+      outcome: "denied",
+    });
   });
 });
 

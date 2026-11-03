@@ -19,15 +19,16 @@
  *   quarantineWorker       → cg_worker_quarantine ledger row + definition
  *                            lifecycle_state → 'suspended' (persistent,
  *                            immediate freeze)
- *   resolveWorkerAuthority → definition + capabilities + ACTIVE grants +
- *                            quarantine check → neutral-RBAC actor context
+ *   resolveWorkerAuthority → definition + capabilities + active, effective,
+ *                            unexpired, mission-scoped grant + quarantine
+ *                            check → neutral-RBAC actor context
  *                            via `buildWorkerMissionActor`
  *                            (worker-registry.ts)
  *   workerLeaseGate        → the read-time `WorkerLeaseGate` the mission
- *                            lease adapter
- *                            (missions/mission-lease-db.server.ts)
- *                            consults at WAKE: quarantined / non-usable /
- *                            fully-revoked workers are NOT leased to.
+ *                            lease adapter consults at acquisition,
+ *                            heartbeat, and completion: quarantined,
+ *                            non-usable, revoked, expired, or mis-scoped
+ *                            workers are denied.
  *
  * Security posture (the substrates' own law): RLS on every table is
  * deny-by-default (enabled, zero policies, anon/authenticated revoked), so
@@ -48,7 +49,6 @@ import {
   validateKernelRowEnvelope,
   type KernelObjectEnvelopeInput,
 } from "../kernel/reality";
-import { isIdentityUsable } from "../identity";
 import type { WorkerDefinition } from "./worker-definition";
 import {
   buildWorkerMissionActor,
@@ -101,6 +101,8 @@ const grantRowSchema = z.object({
   delegated_capabilities: z.array(z.string()),
   max_granted_risk_class: riskClassSchema,
   state: z.enum(["active", "revoked"]),
+  granted_at: z.string().datetime({ offset: true }),
+  expires_at: z.string().datetime({ offset: true }).nullable(),
 });
 
 const quarantineRowSchema = z.object({
@@ -148,6 +150,7 @@ export interface WorkerRegistryDb {
     revokedBy: string;
     reason: string;
     now: string;
+    correlationId: string;
   }): Promise<{ ok: true; replayed: boolean } | { ok: false; reason: string }>;
 
   /** Record quarantine + suspend the definition (persistent, immediate). */
@@ -166,9 +169,12 @@ export interface WorkerRegistryDb {
     tenantId: string;
     definitionId: string;
     missionId: string;
-  }): Promise<{ ok: true; actor: MissionActorContext } | { ok: false; reason: string }>;
+    now: string;
+  }): Promise<
+    { ok: true; actor: MissionActorContext; grantId: string } | { ok: false; reason: string }
+  >;
 
-  /** The read-time lease gate: quarantine ∘ lifecycle ∘ active-grant. */
+  /** The read-time gate: quarantine ∘ lifecycle ∘ active, bounded mission grant. */
   workerLeaseGate(): WorkerLeaseGate;
 }
 
@@ -269,13 +275,113 @@ export function createWorkerRegistryDb(client: WorkerRegistryDbClient): WorkerRe
     };
   }
 
-  async function activeGrantCount(tenantId: string, definitionId: string): Promise<number> {
+  async function loadGrants(
+    tenantId: string,
+    definitionId: string,
+  ): Promise<WorkerDelegationGrantState[]> {
     const grantRows = await selectRows("cg_worker_delegation_grant", [
       ["tenant_id", tenantId],
       ["definition_id", definitionId],
-      ["state", "active"],
     ]);
-    return grantRows.length;
+    return grantRows.map((row) => {
+      const parsed = parseOrThrow("cg_worker_delegation_grant", grantRowSchema, row);
+      return workerDelegationGrantStateSchema.parse({
+        grantId: parsed.id,
+        definitionId: parsed.definition_id,
+        delegationRef: parsed.delegation_ref,
+        delegatedCapabilities: parsed.delegated_capabilities,
+        maxGrantedRiskClass: parsed.max_granted_risk_class,
+        state: parsed.state,
+        grantedAt: parsed.granted_at,
+        expiresAt: parsed.expires_at,
+      });
+    });
+  }
+
+  function matchingExecutionGrant(
+    grants: readonly WorkerDelegationGrantState[],
+    definitionId: string,
+    missionId: string,
+    now: string,
+  ): WorkerDelegationGrantState | null {
+    const required = `mission:execute:${missionId}`;
+    const wildcard = "mission:execute:*";
+    return (
+      grants.find(
+        (grant) =>
+          grant.definitionId === definitionId &&
+          grant.state === "active" &&
+          Date.parse(grant.grantedAt) <= Date.parse(now) &&
+          grant.expiresAt !== null &&
+          Date.parse(grant.expiresAt) > Date.parse(now) &&
+          grant.delegatedCapabilities.includes(required),
+      ) ??
+      grants.find(
+        (grant) =>
+          grant.definitionId === definitionId &&
+          grant.state === "active" &&
+          Date.parse(grant.grantedAt) <= Date.parse(now) &&
+          grant.expiresAt !== null &&
+          Date.parse(grant.expiresAt) > Date.parse(now) &&
+          grant.delegatedCapabilities.includes(wildcard),
+      ) ??
+      null
+    );
+  }
+
+  async function resolveWorkerAuthority(input: {
+    tenantId: string;
+    definitionId: string;
+    missionId: string;
+    now: string;
+  }): Promise<
+    { ok: true; actor: MissionActorContext; grantId: string } | { ok: false; reason: string }
+  > {
+    const { tenantId, definitionId, missionId, now } = input;
+    const loaded = await loadDefinition(tenantId, definitionId);
+    if (loaded === null) {
+      return invalid(`worker definition ${definitionId} is not registered in tenant ${tenantId}`);
+    }
+    const quarantineRows = await selectRows("cg_worker_quarantine", [
+      ["tenant_id", tenantId],
+      ["definition_id", definitionId],
+      ["state", "quarantined"],
+    ]);
+    for (const row of quarantineRows) {
+      parseOrThrow("cg_worker_quarantine", quarantineRowSchema, row);
+    }
+    if (quarantineRows.length > 0) {
+      return invalid("worker_quarantined:failure bound reached — no longer leased to");
+    }
+
+    const grants = await loadGrants(tenantId, definitionId);
+    const grant = matchingExecutionGrant(grants, definitionId, missionId, now);
+    if (grant === null) {
+      return invalid("worker_not_delegated:no active, unexpired, scope-matching execution grant");
+    }
+    const resolution = buildWorkerMissionActor({
+      definition: loaded,
+      grants: [grant],
+      tenantId,
+      missionId,
+      now,
+    });
+    if (!resolution.ok) return invalid(resolution.reason);
+    const executionScope = `${tenantId}:mission:${missionId}`;
+    const executionPermission = resolution.actor.extraPermissions?.find(
+      (permission) =>
+        permission.resource === "mission" &&
+        permission.action === "execute" &&
+        permission.scope === executionScope,
+    );
+    if (executionPermission === undefined) {
+      return invalid("worker_not_delegated:no mission-scoped execution permission");
+    }
+    return {
+      ok: true,
+      actor: { ...resolution.actor, extraPermissions: [executionPermission] },
+      grantId: grant.grantId,
+    };
   }
 
   return {
@@ -345,6 +451,9 @@ export function createWorkerRegistryDb(client: WorkerRegistryDbClient): WorkerRe
       const parsed = delegationGrantInputSchema.safeParse(input);
       if (!parsed.success) return invalid(`delegation grant rejected: ${parsed.error.message}`);
       const grant = parsed.data;
+      if (Date.parse(grant.expiresAt) <= Date.parse(grant.grantedAt)) {
+        return invalid("delegation grant expiry must be after its grant instant");
+      }
       const loaded = await loadDefinition(grant.tenantId, grant.definitionId);
       if (loaded === null) {
         return invalid(
@@ -357,45 +466,58 @@ export function createWorkerRegistryDb(client: WorkerRegistryDbClient): WorkerRe
         ["id", grant.grantId],
       ]);
       if (existingGrant !== null) {
-        // Idempotent replay (§10): the recorded grant state is canonical truth.
+        const sameContent =
+          existingGrant.definition_id === grant.definitionId &&
+          existingGrant.delegation_ref === grant.delegationRef &&
+          JSON.stringify(existingGrant.delegated_capabilities) ===
+            JSON.stringify(grant.delegatedCapabilities) &&
+          existingGrant.max_granted_risk_class === grant.maxGrantedRiskClass &&
+          existingGrant.granted_by === grant.grantedBy &&
+          typeof existingGrant.granted_at === "string" &&
+          Date.parse(existingGrant.granted_at) === Date.parse(grant.grantedAt) &&
+          typeof existingGrant.expires_at === "string" &&
+          Date.parse(existingGrant.expires_at) === Date.parse(grant.expiresAt);
+        if (!sameContent) {
+          return invalid(`delegation grant ${grant.grantId} already exists with different content`);
+        }
         return { ok: true, grantId: grant.grantId, replayed: true };
       }
 
-      await insertRow("cg_worker_delegation_grant", {
-        id: grant.grantId,
-        tenant_id: grant.tenantId,
-        definition_id: grant.definitionId,
-        delegation_ref: grant.delegationRef,
-        delegated_capabilities: [...grant.delegatedCapabilities],
-        max_granted_risk_class: grant.maxGrantedRiskClass,
-        state: "active",
-        granted_by: grant.grantedBy,
+      const persisted = await client.rpc("cg_worker_grant_delegation", {
+        p_tenant_id: grant.tenantId,
+        p_definition_id: grant.definitionId,
+        p_grant_id: grant.grantId,
+        p_delegation_ref: grant.delegationRef,
+        p_delegated_capabilities: grant.delegatedCapabilities,
+        p_max_granted_risk_class: grant.maxGrantedRiskClass,
+        p_granted_by: grant.grantedBy,
+        p_granted_at: grant.grantedAt,
+        p_expires_at: grant.expiresAt,
+        p_correlation_id: grant.correlationId,
       });
-      // Append-only RULING-3 history reference (the live grant row above is
-      // the state surface; this row is the attribution record).
-      await insertRow("cg_worker_delegation", {
-        id: grant.grantId,
-        tenant_id: grant.tenantId,
-        definition_id: grant.definitionId,
-        delegation_ref: grant.delegationRef,
-        delegated_capabilities: [...grant.delegatedCapabilities],
-        max_granted_risk_class: grant.maxGrantedRiskClass,
-        recorded_by: grant.grantedBy,
-      });
-      await updateRows(
-        "cg_worker_definition",
-        {
-          delegation_history_refs: [...loaded.delegationHistoryRefs, grant.delegationRef],
-        },
-        [
-          ["tenant_id", grant.tenantId],
-          ["id", grant.definitionId],
-        ],
-      );
-      return { ok: true, grantId: grant.grantId, replayed: false };
+      if (persisted.error) throw persistenceFailed("cg_worker_delegation_grant", persisted.error);
+      if (typeof persisted.data !== "boolean") {
+        throw new Error("worker delegation grant transaction returned an invalid result");
+      }
+      return { ok: true, grantId: grant.grantId, replayed: !persisted.data };
     },
 
     async revokeDelegation(input) {
+      const validated = z
+        .object({
+          tenantId: z.string().trim().min(1).max(128),
+          definitionId: z.string().trim().min(1).max(160),
+          grantId: z.string().trim().min(1).max(160),
+          revokedBy: z.string().trim().min(1).max(160),
+          reason: z.string().trim().min(1).max(500),
+          now: z.string().datetime(),
+          correlationId: z.string().trim().min(1).max(200),
+        })
+        .strict()
+        .safeParse(input);
+      if (!validated.success)
+        return invalid(`delegation revocation rejected: ${validated.error.message}`);
+      input = validated.data;
       const existing = await maybeRow("cg_worker_delegation_grant", [
         ["tenant_id", input.tenantId],
         ["id", input.grantId],
@@ -409,28 +531,24 @@ export function createWorkerRegistryDb(client: WorkerRegistryDbClient): WorkerRe
           `delegation grant ${input.grantId} does not belong to worker ${input.definitionId}`,
         );
       }
-      if (grant.state === "revoked") {
-        // Replay: revocation is idempotent; the recorded revocation stands.
-        return { ok: true, replayed: true };
-      }
       const reason = z.string().trim().min(1).max(500).safeParse(input.reason);
       if (!reason.success) {
         return invalid(`revocation requires a reason: ${reason.error.message}`);
       }
-      await updateRows(
-        "cg_worker_delegation_grant",
-        {
-          state: "revoked",
-          revoked_by: input.revokedBy,
-          revoked_at: input.now,
-          revoked_reason: reason.data,
-        },
-        [
-          ["tenant_id", input.tenantId],
-          ["id", input.grantId],
-        ],
-      );
-      return { ok: true, replayed: false };
+      const persisted = await client.rpc("cg_worker_revoke_delegation", {
+        p_tenant_id: input.tenantId,
+        p_definition_id: input.definitionId,
+        p_grant_id: input.grantId,
+        p_revoked_by: input.revokedBy,
+        p_reason: reason.data,
+        p_now: input.now,
+        p_correlation_id: input.correlationId,
+      });
+      if (persisted.error) throw persistenceFailed("cg_worker_delegation_grant", persisted.error);
+      if (typeof persisted.data !== "boolean") {
+        throw new Error("worker delegation revocation transaction returned an invalid result");
+      }
+      return { ok: true, replayed: !persisted.data };
     },
 
     async quarantineWorker(input) {
@@ -459,81 +577,19 @@ export function createWorkerRegistryDb(client: WorkerRegistryDbClient): WorkerRe
       return { ok: true };
     },
 
-    async resolveWorkerAuthority({ tenantId, definitionId, missionId }) {
-      const loaded = await loadDefinition(tenantId, definitionId);
-      if (loaded === null) {
-        return invalid(`worker definition ${definitionId} is not registered in tenant ${tenantId}`);
-      }
-      // Quarantine gate (read-time): a quarantined worker is not leased to.
-      const quarantineRows = await selectRows("cg_worker_quarantine", [
-        ["tenant_id", tenantId],
-        ["definition_id", definitionId],
-        ["state", "quarantined"],
-      ]);
-      for (const row of quarantineRows) {
-        parseOrThrow("cg_worker_quarantine", quarantineRowSchema, row);
-      }
-      if (quarantineRows.length > 0) {
-        return invalid("worker_quarantined:failure bound reached — no longer leased to");
-      }
-
-      const grantRows = await selectRows("cg_worker_delegation_grant", [
-        ["tenant_id", tenantId],
-        ["definition_id", definitionId],
-      ]);
-      const grants: WorkerDelegationGrantState[] = grantRows.map((row) => {
-        const parsed = parseOrThrow("cg_worker_delegation_grant", grantRowSchema, row);
-        return workerDelegationGrantStateSchema.parse({
-          grantId: parsed.id,
-          definitionId: parsed.definition_id,
-          delegationRef: parsed.delegation_ref,
-          delegatedCapabilities: parsed.delegated_capabilities,
-          maxGrantedRiskClass: parsed.max_granted_risk_class,
-          state: parsed.state,
-        });
-      });
-
-      const resolution = buildWorkerMissionActor({
-        definition: loaded,
-        grants,
-        tenantId,
-        missionId,
-      });
-      if (!resolution.ok) return invalid(resolution.reason);
-      return { ok: true, actor: resolution.actor };
-    },
+    resolveWorkerAuthority,
 
     workerLeaseGate(): WorkerLeaseGate {
-      return async ({ tenantId, workerId }) => {
-        // Read-time, never cached: quarantine, lifecycle and live delegation
-        // state are evaluated at EVERY gate check (revocation and quarantine
-        // take effect at the next check, immediately).
-        const loaded = await loadDefinition(tenantId, workerId);
-        if (loaded === null) {
-          return { ok: false, reason: `worker_not_registered:${workerId}` };
-        }
-        if (!isIdentityUsable({ lifecycle: loaded.lifecycle })) {
-          return { ok: false, reason: `worker_lifecycle_unusable:${loaded.lifecycle}` };
-        }
-        const quarantineRows = await selectRows("cg_worker_quarantine", [
-          ["tenant_id", tenantId],
-          ["definition_id", workerId],
-          ["state", "quarantined"],
-        ]);
-        if (quarantineRows.length > 0) {
-          return {
-            ok: false,
-            reason: "worker_quarantined:failure bound reached — no longer leased to",
-          };
-        }
-        const activeGrants = await activeGrantCount(tenantId, workerId);
-        if (activeGrants === 0) {
-          return {
-            ok: false,
-            reason: "worker_not_delegated:no active delegation grant (Invariant 12)",
-          };
-        }
-        return { ok: true };
+      return async ({ tenantId, workerId, missionId, now }) => {
+        // Reuse the full live authority check so expiry, scope, capability
+        // integrity, risk ceiling, lifecycle, and quarantine stay aligned.
+        const authority = await resolveWorkerAuthority({
+          tenantId,
+          definitionId: workerId,
+          missionId,
+          now,
+        });
+        return authority.ok ? { ok: true } : { ok: false, reason: authority.reason };
       };
     },
   };
