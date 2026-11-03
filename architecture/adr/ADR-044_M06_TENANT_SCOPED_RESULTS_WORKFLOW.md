@@ -3,8 +3,8 @@
 || Field | Value |
 ||---|---|
 || Status | PROPOSED (operator review before migration execution) |
-|| Date | 2026-11-04 |
-|| Author | GitHub Copilot Coding Agent (M06, issue #185) |
+|| Date | 2026-11-03 |
+|| Author | `copilot-swe-agent[bot]` (GitHub Copilot Coding Agent; issue #185) |
 || Mission | M06 CA and terminal results (V1 organizational academic capability) |
 || Capabilities | Tenant-scoped assessment and result records |
 || Supersedes-in-part | None |

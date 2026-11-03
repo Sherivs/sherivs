@@ -1,3 +1,4 @@
+/** Score and result mutations use tenant-resolving M06 database RPCs with auditable writes. */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
