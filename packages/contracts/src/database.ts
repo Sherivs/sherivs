@@ -5223,13 +5223,6 @@ export type Database = {
             referencedRelation: "users";
             referencedColumns: ["id"];
           },
-          {
-            foreignKeyName: "notifications_recipient_school_fkey";
-            columns: ["user_id", "school_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id", "school_id"];
-          },
         ];
       };
       organization_memberships: {

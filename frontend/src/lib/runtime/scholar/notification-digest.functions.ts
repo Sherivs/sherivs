@@ -15,6 +15,7 @@ import {
   isWithinQuietHours,
   type NotificationPreferences,
 } from "@/lib/notifications/delivery-policy";
+import { selectActiveMembershipRecipientIds } from "@/lib/notifications/membership-recipients";
 import { SystemClock, TimeAuthority } from "../../kernel/time-authority";
 
 /** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
@@ -63,16 +64,25 @@ export const sendNotificationDigests = createServerFn({ method: "POST" })
     if (preferencesError) throw new Error(preferencesError.message);
     const preferenceIds = (prefs ?? []).map((p) => p.user_id as string);
     const { data: activeUsers, error: recipientError } = preferenceIds.length
-      ? await supabaseAdmin
-          .from("users")
-          .select("id")
-          .eq("school_id", schoolId)
-          .eq("is_active", true)
-          .in("id", preferenceIds)
+      ? await supabaseAdmin.from("users").select("id").eq("is_active", true).in("id", preferenceIds)
       : { data: [], error: null };
     if (recipientError) throw new Error(recipientError.message);
-    const activeIds = new Set((activeUsers ?? []).map((user) => user.id as string));
-    const targetIds = preferenceIds.filter((id) => activeIds.has(id));
+    const activeUserIds = (activeUsers ?? []).map((user) => user.id as string);
+    const { data: memberships, error: membershipError } = activeUserIds.length
+      ? await supabaseAdmin
+          .from("organization_memberships")
+          .select("user_id, school_id, is_active")
+          .eq("school_id", schoolId)
+          .eq("is_active", true)
+          .in("user_id", activeUserIds)
+      : { data: [], error: null };
+    if (membershipError) throw new Error(membershipError.message);
+    const targetIds = selectActiveMembershipRecipientIds(
+      preferenceIds,
+      activeUserIds,
+      memberships ?? [],
+      schoolId,
+    );
     const prefsByUser = new Map(
       (prefs ?? []).map((pref) => [
         pref.user_id as string,

@@ -18,6 +18,10 @@ import {
   type NotificationPreferenceCategory,
   type NotificationPreferences,
 } from "@/lib/notifications/delivery-policy";
+import {
+  listActiveMembershipUserIds,
+  selectActiveMembershipRecipientIds,
+} from "@/lib/notifications/membership-recipients";
 import { SystemClock, TimeAuthority } from "../../kernel/time-authority";
 
 type NotificationInsert = Database["public"]["Tables"]["notifications"]["Insert"];
@@ -42,15 +46,28 @@ async function filterByPrefs(
   if (!candidates.length) return [];
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: recipients, error: recipientError } = await supabaseAdmin
+  const { data: activeUsers, error: activeUsersError } = await supabaseAdmin
     .from("users")
     .select("id")
-    .eq("school_id", schoolId)
     .eq("is_active", true)
     .in("id", candidates);
-  if (recipientError) throw new Error(recipientError.message);
-  const scopedIds = new Set((recipients ?? []).map((row) => row.id as string));
-  const targetIds = candidates.filter((id) => scopedIds.has(id));
+  if (activeUsersError) throw new Error(activeUsersError.message);
+  const activeUserIds = (activeUsers ?? []).map((row) => row.id as string);
+  if (!activeUserIds.length) return [];
+
+  const { data: memberships, error: membershipError } = await supabaseAdmin
+    .from("organization_memberships")
+    .select("user_id, school_id, is_active")
+    .eq("school_id", schoolId)
+    .eq("is_active", true)
+    .in("user_id", activeUserIds);
+  if (membershipError) throw new Error(membershipError.message);
+  const targetIds = selectActiveMembershipRecipientIds(
+    candidates,
+    activeUserIds,
+    memberships ?? [],
+    schoolId,
+  );
   if (!targetIds.length) return [];
 
   const { data, error } = await supabaseAdmin
@@ -304,13 +321,15 @@ export const pushNotification = createServerFn({ method: "POST" })
       sessionValid: typeof claims?.exp === "number" && tokenMsRemaining(claims.exp) > 0,
     });
 
-    let q = supabase.from("users").select("id").eq("school_id", schoolId).eq("is_active", true);
-    if (data.audience === "parents") q = q.eq("role", "parent");
-    else if (data.audience === "teachers") q = q.eq("role", "teacher");
-    else if (data.audience === "students") q = q.eq("role", "student");
-    const { data: users, error: usersError } = await q;
-    if (usersError) throw new Error(usersError.message);
-    const rawIds = (users ?? []).map((u) => u.id as string).filter((id) => id !== userId);
+    const roleByAudience = {
+      parents: "parent",
+      teachers: "teacher",
+      students: "student",
+    } as const;
+    const role = data.audience === "all" ? undefined : roleByAudience[data.audience];
+    const rawIds = (await listActiveMembershipUserIds(schoolId, role ? [role] : undefined)).filter(
+      (id) => id !== userId,
+    );
     const ids = await filterByPrefs(supabase, schoolId, rawIds, "announcements", "announcement");
 
     const idempotencyKey = await createNotificationIdempotencyKey(
@@ -361,19 +380,16 @@ export const notifyCalendarEvent = createServerFn({ method: "POST" })
       sessionValid: typeof claims?.exp === "number" && tokenMsRemaining(claims.exp) > 0,
     });
 
-    let q = supabase
-      .from("users")
-      .select("id, role")
-      .eq("school_id", schoolId)
-      .eq("is_active", true);
-    if (data.target_audience === "parents") q = q.eq("role", "parent");
-    else if (data.target_audience === "teachers") q = q.eq("role", "teacher");
-    else if (data.target_audience === "students") q = q.eq("role", "student");
-    else q = q.in("role", ["parent", "teacher", "student"]);
-
-    const { data: users, error: usersError } = await q;
-    if (usersError) throw new Error(usersError.message);
-    const raw = (users ?? []).map((u: { id: string }) => u.id).filter((id) => id !== userId);
+    const roleByAudience = {
+      parents: "parent",
+      teachers: "teacher",
+      students: "student",
+    } as const;
+    const roles =
+      data.target_audience === "all"
+        ? ["parent", "teacher", "student"]
+        : [roleByAudience[data.target_audience]];
+    const raw = (await listActiveMembershipUserIds(schoolId, roles)).filter((id) => id !== userId);
     const targets = await filterByPrefs(supabase, schoolId, raw, "announcements", "calendar_event");
 
     const idempotencyKey = await createNotificationIdempotencyKey("calendar_event", data.event_id);

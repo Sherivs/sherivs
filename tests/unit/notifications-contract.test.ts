@@ -20,6 +20,7 @@ import {
   isWithinQuietHours,
   shouldDeliverInAppNotification,
 } from "../../frontend/src/lib/notifications/delivery-policy";
+import { selectActiveMembershipRecipientIds } from "../../frontend/src/lib/notifications/membership-recipients";
 import { createNotificationIdempotencyKey } from "../../frontend/src/lib/notifications/delivery-key.server";
 
 function makeNotification(overrides: Partial<Notification> = {}): Notification {
@@ -266,19 +267,30 @@ describe("notification contract (tenant isolation, §17)", () => {
         ),
         "utf8",
       );
+      const membershipSwitch = readFileSync(
+        new URL("../../frontend/src/lib/identity/memberships.functions.ts", import.meta.url),
+        "utf8",
+      );
 
       expect(fanout).not.toContain("deliverPushToUsers");
       expect(fanout).not.toContain("@/lib/push.server");
+      expect(fanout).toContain("listActiveMembershipUserIds(schoolId");
+      expect(fanout).toContain('.from("organization_memberships")');
       expect(fanout).toContain('.eq("school_id", schoolId)');
       expect(fanout).toContain('onConflict: "school_id,user_id,idempotency_key"');
       expect(fanout).toContain("ignoreDuplicates: true");
       expect(fanout).toContain("await writeAuditRecord");
       expect(writer).toContain(".upsert(rows,");
       expect(writer).toContain("await writeAuditRecord");
+      expect(digest).toContain('.from("organization_memberships")');
       expect(digest).toContain('.eq("user_id", uid)');
       expect(digest).toContain('onConflict: "school_id,user_id,idempotency_key"');
       expect(digest).toContain("await writeAuditRecord");
-      expect(migration).toContain("notifications_recipient_school_fkey");
+      expect(migration).toContain("core19_validate_notification_membership");
+      expect(migration).toContain("public.organization_memberships");
+      expect(migration).toContain("m.is_active IS TRUE");
+      expect(migration).not.toContain("users_id_school_notification_uq");
+      expect(migration).not.toContain("REFERENCES public.users (id, school_id)");
       expect(migration).toContain("notifications_school_user_idempotency_key_uq");
       expect(migration).toContain("ALTER TABLE public.notifications FORCE ROW LEVEL SECURITY");
       expect(migration).toContain(
@@ -292,8 +304,62 @@ describe("notification contract (tenant isolation, §17)", () => {
       expect(
         preferencePolicies.match(/CREATE POLICY.*ON public\.notification_preferences/g),
       ).toHaveLength(3);
+      expect(membershipSwitch).toContain('.from("organization_memberships")');
+      expect(membershipSwitch).toContain(
+        ".update({ school_id: data.organizationId, role: membershipRole })",
+      );
       expect(rollback).toContain("DROP COLUMN idempotency_key");
+      expect(rollback).toContain("DROP TRIGGER core19_notification_membership_guard");
       expect(rollback).toContain("NO FORCE ROW LEVEL SECURITY");
+    });
+
+    it("accepts active members regardless of active context and rejects non-members", () => {
+      const activeContext = { user_id: "multi-member", school_id: "school-b" };
+      const candidates = ["multi-member", "non-member"];
+      const activeUsers = ["multi-member", "non-member"];
+      const memberships = [
+        { user_id: "multi-member", school_id: "school-a", is_active: true },
+        { user_id: "multi-member", school_id: "school-b", is_active: true },
+        { user_id: "non-member", school_id: "school-a", is_active: false },
+        { user_id: "non-member", school_id: "school-c", is_active: true },
+      ];
+
+      expect(
+        selectActiveMembershipRecipientIds(candidates, activeUsers, memberships, "school-a"),
+      ).toEqual(["multi-member"]);
+      expect(activeContext.school_id).not.toBe("school-a");
+      expect(
+        selectActiveMembershipRecipientIds(candidates, activeUsers, memberships, "school-b"),
+      ).toEqual(["multi-member"]);
+    });
+
+    it("allows switching active organization without moving existing notifications", () => {
+      const migration = readFileSync(
+        new URL(
+          "../../database/supabase/migrations/20261103143000_core19_notification_delivery.sql",
+          import.meta.url,
+        ),
+        "utf8",
+      );
+      const switchFunction = readFileSync(
+        new URL("../../frontend/src/lib/identity/memberships.functions.ts", import.meta.url),
+        "utf8",
+      );
+      const memberships = [
+        { user_id: "multi-member", school_id: "school-a", is_active: true },
+        { user_id: "multi-member", school_id: "school-b", is_active: true },
+      ];
+      const notification = { user_id: "multi-member", school_id: "school-a" };
+      const switchedContext = memberships.find(
+        (membership) => membership.school_id === "school-b" && membership.is_active,
+      );
+
+      expect(switchedContext).toBeDefined();
+      expect(switchFunction).toContain(
+        ".update({ school_id: data.organizationId, role: membershipRole })",
+      );
+      expect(migration).not.toContain("REFERENCES public.users (id, school_id)");
+      expect(notification.school_id).toBe("school-a");
     });
   });
 
