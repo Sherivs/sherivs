@@ -48,7 +48,7 @@ ALTER TABLE public.role_catalog
 INSERT INTO public.role_templates (code, default_scope, data_sensitivity, approval_limit_ngn, guardrails)
 VALUES (
   'm009_tertiary_executive_read_only',
-  'institution',
+  'org',
   'confidential',
   NULL,
   ARRAY['tenant_isolation','audited','verified_institution_authority_link','read_only']::text[]
@@ -124,7 +124,9 @@ UPDATE public.role_catalog
 CREATE OR REPLACE FUNCTION public.workspace_authority_link_evidence_is_verified(
   p_org uuid,
   p_evidence text[],
-  p_at timestamptz
+  p_at timestamptz,
+  p_assigner uuid,
+  p_assignee uuid
 )
 RETURNS boolean
 LANGUAGE sql
@@ -155,6 +157,9 @@ AS $$
           AND l.verification_status = 'verified'
           AND l.effective_from <= p_at
           AND (l.effective_until IS NULL OR l.effective_until > p_at)
+          AND l.verified_by IS NOT NULL
+          AND l.verified_by <> p_assigner
+          AND l.verified_by <> p_assignee
      )
 $$;
 
@@ -171,11 +176,14 @@ BEGIN
           AND r.requires_verified_authority_link
           AND (r.org_id IS NULL OR r.org_id = NEW.org_id)
      )
-     AND NOT public.workspace_authority_link_evidence_is_verified(
-       NEW.org_id, NEW.evidence, NEW.started_at
+     AND (
+       NEW.assigned_by IS DISTINCT FROM auth.uid()
+       OR NOT public.workspace_authority_link_evidence_is_verified(
+         NEW.org_id, NEW.evidence, NEW.started_at, auth.uid(), NEW.user_id
+       )
      ) THEN
-    RAISE EXCEPTION 'authority-dependent role assignments require one verified, effective institution-authority link in evidence'
-      USING ERRCODE = '42501';
+    RAISE EXCEPTION 'authority-dependent role assignments require one independently verified, effective institution-authority link in evidence'
+     USING ERRCODE = '42501';
   END IF;
   RETURN NEW;
 END
@@ -183,13 +191,13 @@ $$;
 
 DROP TRIGGER IF EXISTS trg_workspace_authority_role_assignment ON public.user_role_assignments;
 CREATE TRIGGER trg_workspace_authority_role_assignment
-  BEFORE INSERT OR UPDATE OF org_id, role_code, status, started_at, evidence
+  BEFORE INSERT OR UPDATE OF org_id, user_id, role_code, status, assigned_by, started_at, evidence
   ON public.user_role_assignments
   FOR EACH ROW EXECUTE FUNCTION public.workspace_authority_role_assignment_guard();
 
-REVOKE ALL ON FUNCTION public.workspace_authority_link_evidence_is_verified(uuid,text[],timestamptz)
+REVOKE ALL ON FUNCTION public.workspace_authority_link_evidence_is_verified(uuid,text[],timestamptz,uuid,uuid)
   FROM PUBLIC, anon, service_role;
-GRANT EXECUTE ON FUNCTION public.workspace_authority_link_evidence_is_verified(uuid,text[],timestamptz)
+GRANT EXECUTE ON FUNCTION public.workspace_authority_link_evidence_is_verified(uuid,text[],timestamptz,uuid,uuid)
   TO authenticated;
 REVOKE ALL ON FUNCTION public.workspace_authority_role_assignment_guard()
   FROM PUBLIC, anon, authenticated, service_role;
@@ -212,7 +220,9 @@ AS $$
       JOIN public.user_role_assignments a ON a.id = e.assignment_id
       JOIN public.role_catalog role ON role.code = e.role_code
      WHERE NOT role.requires_verified_authority_link
-        OR public.workspace_authority_link_evidence_is_verified(p_org, a.evidence, p_at)
+         OR public.workspace_authority_link_evidence_is_verified(
+           p_org, a.evidence, p_at, a.assigned_by, a.user_id
+         )
   ), grants AS (
     SELECT tp.permission_code, tp.kind, a.role_code, a.assignment_id, a.scope_type, a.scope_ref
       FROM assigned a

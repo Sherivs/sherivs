@@ -443,9 +443,12 @@ export function RoleManagementScreen() {
           {manifest ? (
             <>
               <p className="text-sm text-muted-foreground">Primary navigation</p>
-              <ul className="grid gap-1 pl-5 text-sm">
+              <ul
+                className="grid gap-1 pl-5 text-sm"
+                data-testid="manifest-primary-responsibilities"
+              >
                 {manifest.primaryNav.map((item) => (
-                  <li key={item.id}>
+                  <li key={item.id} data-responsibility={item.responsibilityId}>
                     {item.label} · {item.kind}
                   </li>
                 ))}

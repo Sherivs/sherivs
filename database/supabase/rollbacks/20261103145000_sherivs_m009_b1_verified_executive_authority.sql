@@ -3,7 +3,7 @@ BEGIN;
 
 DROP TRIGGER IF EXISTS trg_workspace_authority_role_assignment ON public.user_role_assignments;
 DROP FUNCTION IF EXISTS public.workspace_authority_role_assignment_guard();
-DROP FUNCTION IF EXISTS public.workspace_authority_link_evidence_is_verified(uuid,text[],timestamptz);
+DROP FUNCTION IF EXISTS public.workspace_authority_link_evidence_is_verified(uuid,text[],timestamptz,uuid,uuid);
 
 UPDATE public.role_catalog
    SET template_code = CASE code

@@ -29,8 +29,7 @@ import { randomBytes } from "node:crypto";
 /* ── Environment (names read; values never printed/logged) ────────────── */
 
 const SUPABASE_URL = process.env.SUPABASE_URL ?? "";
-const PUBLISHABLE_KEY =
-  process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY ?? "";
+const PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY ?? "";
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
 const fixtureCapable = Boolean(SUPABASE_URL && PUBLISHABLE_KEY && SERVICE_ROLE_KEY);
@@ -77,11 +76,15 @@ export interface FixtureCredentials {
   password: string;
 }
 
+export interface FixtureCredentialSet extends Record<LegacyRole, FixtureCredentials> {
+  verifier: FixtureCredentials;
+}
+
 export interface FixtureTenant {
   schoolId: string;
   schoolName: string;
   slug: string;
-  credentials: Record<LegacyRole, FixtureCredentials>;
+  credentials: FixtureCredentialSet;
   authUserIds: string[];
 }
 
@@ -138,7 +141,7 @@ async function provisionLegacyTenant(): Promise<FixtureTenant | null> {
     }
     const schoolId = String(school.data.id);
 
-    const credentials = {} as Record<LegacyRole, FixtureCredentials>;
+    const credentials = {} as FixtureCredentialSet;
     const authUserIds: string[] = [];
     for (const role of LEGACY_ROLES) {
       const email = uniqueEmail(role);
@@ -167,6 +170,33 @@ async function provisionLegacyTenant(): Promise<FixtureTenant | null> {
       }
       credentials[role] = { email, password };
     }
+
+    const verifierEmail = uniqueEmail("authority-verifier");
+    const verifierPassword = uniquePassword();
+    const verifier = await admin.auth.admin.createUser({
+      email: verifierEmail,
+      password: verifierPassword,
+      email_confirm: true,
+    });
+    if (verifier.error || !verifier.data.user) {
+      throw new Error(
+        `fixture authority verifier creation failed: ${verifier.error?.message ?? "no id"}`,
+      );
+    }
+    authUserIds.push(verifier.data.user.id);
+    const verifierUser = await admin.from("users").insert({
+      id: verifier.data.user.id,
+      school_id: schoolId,
+      full_name: "R1 E2E authority verifier",
+      email: verifierEmail,
+      role: "admin",
+    });
+    if (verifierUser.error) {
+      throw new Error(
+        `fixture authority verifier row insert failed: ${verifierUser.error.message}`,
+      );
+    }
+    credentials.verifier = { email: verifierEmail, password: verifierPassword };
 
     return { schoolId, schoolName, slug, credentials, authUserIds };
   } catch (e) {

@@ -39,12 +39,12 @@ Flag only authority-dependent global role templates. A flagged assignment is eff
 
 ## Recommendation (decision)
 
-**Use Option 3: authority relationship evidence is an eligibility gate, never a permission grant.** Enforce the gate both when an active authority-dependent assignment is written and when effective permissions are resolved; require a single UUID reference, matching tenant, verified status, and active effective dates. Keep assignment responsibility, scope, RLS, policy, and audit enforcement intact; do not infer powers from titles or seed authority records.
+**Use Option 3: independently verified authority relationship evidence is an eligibility gate, never a permission grant.** Enforce the gate both when an active authority-dependent assignment is written and when effective permissions are resolved; require a single UUID reference, matching tenant, verified status, active effective dates, and a verifier distinct from both the assigning actor and assignee. Keep assignment responsibility, scope, RLS, policy, and audit enforcement intact; do not infer powers from titles or seed authority records.
 
 ## Consequences (summary)
 
 - **Positive:** The eligibility invariant is machine-checkable and re-evaluated at permission resolution, so verification expiry or revocation fails closed. The tertiary read-only fallback carries no expense or payroll approval permission.
-- **Negative / obligations:** Assignment clients must surface eligible verified links and provide an explicit selection. Permission-matrix output must disclose the gate. Tests must cover unverified, expired, wrong-tenant, ambiguous, and verified evidence.
+- **Negative / obligations:** Assignment clients must surface eligible verified links and provide an explicit selection. Permission-matrix output must disclose the gate. Tests must cover unverified, expired, not-yet-effective, wrong-tenant, ambiguous, malformed, same-verifier/assigner, same-verifier/assignee, and valid evidence.
 - **For the wave/program specifically:** M009 Stage B-1 consumes M04 authority links and Stage A role assignments; it remains within the V1 organizational capability envelope. The live dashboard must display only authorized widget data and use “Not configured” for missing sources.
 
 ## Golden Questions
@@ -58,5 +58,6 @@ Flag only authority-dependent global role templates. A flagged assignment is eff
 ## UNKNOWNs
 
 - **Production authority evidence:** The operator must verify institution-specific source evidence and mandates before any relationship is marked verified. This ADR does not establish that evidence.
+- **Verification authority:** M04 currently permits tenant members with `settings.manage` to mark authority links verified; the update is stamped with `verified_by` and recorded in the immutable authority-link audit. This remains tenant-side, self-attested verification, not independent operator verification. Whether verification must become operator-only is an open operator decision; this ADR does not grant that capability.
 - **Executive data coverage:** Academic, workforce, compliance-deadline, and corrective-action sources may be absent. The workspace must show “Not configured” until an authorized source and widget contract exist.
 - **Operator ruling:** This proposed ADR remains unratified until the operator explicitly reviews and approves it.
