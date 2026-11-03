@@ -1,6 +1,6 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { SiteView } from "@/components/website/site-view";
-import { parseSiteSearch, siteHead } from "@/components/website/route-support";
+import { parseSiteSearch } from "@/components/website/site-search";
 import { getPublicSite } from "@/lib/website/public-site.functions";
 
 /** One blog post on an organization website: /posts/<slug> (published and due posts only; tenant from host). */
@@ -14,8 +14,9 @@ export const Route = createFileRoute("/posts/$post")({
     // Unknown, draft or scheduled post: the school's own "not found" page (its chrome, never platform branding).
     return { site: res.site, preview: res.preview, lang: deps.lang };
   },
-  head: ({ loaderData }) => {
+  head: async ({ loaderData }) => {
     if (!loaderData) return {};
+    const { siteHead } = await import("@/components/website/route-support");
     const d = loaderData;
     const h = siteHead(d.site, "news", d.lang, d.preview, d.site.post);
     return {

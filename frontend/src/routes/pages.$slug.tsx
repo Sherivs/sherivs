@@ -1,6 +1,6 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { SiteView } from "@/components/website/site-view";
-import { parseSiteSearch, siteHead } from "@/components/website/route-support";
+import { parseSiteSearch } from "@/components/website/site-search";
 import { getPublicSite } from "@/lib/website/public-site.functions";
 
 /** Inner pages of an organization website: /pages/<slug> on the school's domain or subdomain. */
@@ -17,8 +17,9 @@ export const Route = createFileRoute("/pages/$slug")({
       slug: params.slug.slice(0, 48),
     };
   },
-  head: ({ loaderData }) => {
+  head: async ({ loaderData }) => {
     if (!loaderData) return {};
+    const { siteHead } = await import("@/components/website/route-support");
     const h = siteHead(loaderData.site, loaderData.slug, loaderData.lang, loaderData.preview);
     return { meta: h.meta, links: h.links };
   },

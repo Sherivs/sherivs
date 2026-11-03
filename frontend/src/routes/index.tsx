@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteView } from "@/components/website/site-view";
-import { parseSiteSearch, siteHead } from "@/components/website/route-support";
+import { parseSiteSearch } from "@/components/website/site-search";
 import { getPublicSite } from "@/lib/website/public-site.functions";
 import { SherivsHome } from "@/components/public/sherivs-home";
 import { ApplicationUnavailable } from "@/components/public/application-unavailable";
@@ -104,7 +104,7 @@ export const Route = createFileRoute("/")({
     };
   },
   component: Index,
-  head: ({ loaderData }) => {
+  head: async ({ loaderData }) => {
     if (loaderData?.appEntry) {
       return {
         meta: [
@@ -131,6 +131,7 @@ export const Route = createFileRoute("/")({
       };
     }
     if (loaderData?.site) {
+      const { siteHead } = await import("@/components/website/route-support");
       const h = siteHead(loaderData.site, "home", loaderData.lang, loaderData.preview);
       return { meta: h.meta, links: h.links };
     }
