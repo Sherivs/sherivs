@@ -26,7 +26,8 @@ test("class attendance queues offline, syncs after reconnect, and clears cached 
   await expect(page.getByTestId("workspace-preview")).toBeVisible();
 
   await page.evaluate(async () => {
-    const moduleUrl = new URL("/src/lib/offline/attendance-queue.ts", location.origin).href;
+    const moduleUrl = new URL("/frontend/src/lib/offline/attendance-queue.ts", location.origin)
+      .href;
     const { createAttendanceQueue } = (await import(
       /* @vite-ignore */ moduleUrl
     )) as typeof import("../../frontend/src/lib/offline/attendance-queue");
@@ -64,7 +65,6 @@ test("class attendance queues offline, syncs after reconnect, and clears cached 
       date: "2026-11-03",
       status: "present",
     });
-    return target.__m05Queue?.flush();
   });
   await expect
     .poll(() => page.evaluate(() => (window as E2eWindow).__m05Queue?.pending()))
@@ -78,7 +78,7 @@ test("class attendance queues offline, syncs after reconnect, and clears cached 
   expect(await page.evaluate(() => (window as E2eWindow).__m05Persisted?.size)).toBe(1);
 
   const cleared = await page.evaluate(async () => {
-    const moduleUrl = new URL("/src/lib/offline/indexeddb-store.ts", location.origin).href;
+    const moduleUrl = new URL("/frontend/src/lib/offline/indexeddb-store.ts", location.origin).href;
     const { clearOfflineData, createOfflineStore } = (await import(
       /* @vite-ignore */ moduleUrl
     )) as typeof import("../../frontend/src/lib/offline/indexeddb-store");
