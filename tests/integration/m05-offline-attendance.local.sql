@@ -66,10 +66,6 @@ INSERT INTO public.users (id, school_id, full_name, email, role, is_active) VALU
   ('a5000000-0000-4000-8000-000000000001','55000000-0000-4000-8000-0000000000a1','M05 Synthetic Teacher A','m05-teacher-a@example.invalid','teacher',true),
   ('a5000000-0000-4000-8000-000000000002','55000000-0000-4000-8000-0000000000a1','M05 Synthetic Teacher B','m05-teacher-b@example.invalid','teacher',true),
   ('b5000000-0000-4000-8000-000000000001','55000000-0000-4000-8000-0000000000b1','M05 Synthetic Teacher Other Tenant','m05-other-tenant-teacher@example.invalid','teacher',true);
-INSERT INTO public.organization_memberships (user_id, school_id, role, is_primary, is_active) VALUES
-  ('a5000000-0000-4000-8000-000000000001','55000000-0000-4000-8000-0000000000a1','teacher',true,true),
-  ('a5000000-0000-4000-8000-000000000002','55000000-0000-4000-8000-0000000000a1','teacher',true,true),
-  ('b5000000-0000-4000-8000-000000000001','55000000-0000-4000-8000-0000000000b1','teacher',true,true);
 INSERT INTO public.classes (id, school_id, name, teacher_id) VALUES
   ('55000000-0000-4000-8000-0000000000c1','55000000-0000-4000-8000-0000000000a1','M05 Synthetic Class A','a5000000-0000-4000-8000-000000000001'),
   ('55000000-0000-4000-8000-0000000000c2','55000000-0000-4000-8000-0000000000a1','M05 Synthetic Class B','a5000000-0000-4000-8000-000000000002');
@@ -239,9 +235,9 @@ $own_class$;
 SELECT m05.cnt('assigned teacher can mark their own class',
   $$SELECT 1 FROM public.class_attendance_marks
      WHERE class_id='55000000-0000-4000-8000-0000000000c2'$$, 1);
-SELECT m05.cnt('tenant B cannot read tenant A attendance marks',
+SELECT m05.cnt('teacher B cannot read teacher A class marks',
   $$SELECT 1 FROM public.class_attendance_marks
-     WHERE school_id='55000000-0000-4000-8000-0000000000a1'$$, 0);
+     WHERE class_id='55000000-0000-4000-8000-0000000000c1'$$, 0);
 SELECT m05.logout();
 
 SELECT m05.login('b5000000-0000-4000-8000-000000000001');
