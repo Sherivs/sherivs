@@ -15,7 +15,7 @@ Status: **foundations implemented (SHERIVS-003), V1 scope**. Everything marked *
 
 | Activity | Lawful basis | Consent purpose | Notes |
 |---|---|---|---|
-| Enrolment, attendance, grades, timetables | Contract / public-task (core education) | `core_education` (default allowed unless withdrawn) | LEGAL REVIEW REQUIRED |
+| Enrolment, attendance, grades, timetables | Contract / public-task (provisional) | `core_education` | LEGAL REVIEW REQUIRED; processing is consent-gated pending the controller's basis decision |
 | Fees, payments, payroll | Legal obligation (records) | — | Retained per RP-FINAN-EDU; anonymized on erasure |
 | In-app messages / notifications | Legitimate interests (school operations) | — | RP-COMMS-EDU 365d |
 | SMS / WhatsApp / voice calls to guardians about a pupil | Consent | `messaging_sms_whatsapp` | Default DENY |
@@ -25,7 +25,9 @@ Status: **foundations implemented (SHERIVS-003), V1 scope**. Everything marked *
 
 ## Children's data and parental consent
 
-Pupils are children; the guardian linked in `parent_student_map` (or a school admin recording paper/verbal consent) grants and withdraws consent. Optional purposes are **default deny** and only count when granted under the current `CURRENT_CONSENT_POLICY_VERSION` (`frontend/src/lib/compliance/consent.ts`). Withdrawal is as easy as granting (`withdrawConsent`). Every change is stored in the append-only `consent_events` table plus an audit record. LEGAL REVIEW REQUIRED: age thresholds, whether `core_education` needs explicit consent.
+For learners under 18, only an active `legal_guardian` or `parent` relationship may grant or withdraw consent; a caregiver or fee payer relationship alone is insufficient. Adult learners consent for themselves. Relationship records are tenant-scoped and effective-dated; record access is a separate explicit flag and fee payer records cannot enable it.
+
+Every processing purpose, including `core_education`, requires a current, attributed consent grant. A withdrawal immediately blocks the purpose. Grants record their lawful basis, grantor, capture method, and timestamp. The mutable `consent_records` row is only the current decision; `consent_events` is the append-only history and each event is written to the audit log in the same transaction. Legacy grants without M09 attribution metadata do not authorize processing. These are engineering controls, not legal conclusions. LEGAL REVIEW REQUIRED: confirm the lawful basis and notice for each purpose, age threshold, and the legal effect of withdrawal.
 
 Enforcement points ("gates"): see *Consent gates* below.
 
