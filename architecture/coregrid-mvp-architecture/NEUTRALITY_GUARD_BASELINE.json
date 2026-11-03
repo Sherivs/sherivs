@@ -16,8 +16,8 @@
     "lastRatchet": "2026-10-03: V1-006 (team SECURITY) neutralized the platform authorization core — removed all 9 frontend/src/lib/authorization.ts and all 13 frontend/src/lib/identity.ts entries (authorization.ts and identity.ts now carry zero education vocabulary; roles/relationship types are contributed via rbac/domain-contribution + domain-config registration) and refreshed the 7 frozen security-role-gate.ts legacy-fallback entries against the live tree (shrink-only, ADR-003/004). || 2026-10-03 (ADR-012): T-wave coordinator ADDED 3 quarantine groups (19 hits) for database/supabase/migrations/20261003000040_coregrid_school_media_bucket.sql — the FIRST baseline extension, made under ADR-004's explicit 'new ADR' mechanism: the declarative storage-provisioning migration must reference the legacy storage contract id school-media consumed by the frontend and by the applied 20260707223958 policy set; the neutral conversion (bucket id + policy predicates + path contract) is blocked on the neutral-tenant substrate conversion (same conversionPath class as the transport posture) and is recorded as an authorized follow-up that REMOVES these entries in the same change. Zero new privileges authorized by ADR-012. || 2026-10-08 (ADR-013): Sherivs refoundation ADDED 9 quarantine groups (47 hits) for database/supabase/migrations/20261008000050_coregrid_organization_memberships.sql — the SECOND baseline extension, made under ADR-004's explicit 'new ADR' mechanism (ADR-012 precedent): the multi-membership migration extends the LIVE legacy identity store in place (users.school_id stays the ACTIVE-CONTEXT binding; every tenant RLS predicate resolves through get_my_school_id()/get_my_role()), so its SQL necessarily carries the same legacy vocabulary class its owners are quarantined for (school_id, is_school_admin, get_my_school_id, tenant role names). It introduces NO new domain code on the universal surface — the table is additive, RLS-FORCED, and mirrors the legacy store. Zero new privileges beyond the policy-gated DML posture it declares. The neutral-tenant substrate conversion (COND-003 / ADR-012 conversionPath) removes these entries in the same change when it lands. || 2026-10-08 (ADR-013 amendment, same ADR authority): pre-apply verification against the LIVE users_role_check exposed two roles the migration's original CHECK omitted (alumni, driver) — the dual-write trigger must be able to mirror EVERY role the identity store legally holds, so the CHECK was corrected to mirror users_role_check exactly and the migration APPLIED under explicit operator authorization. This adds 1 quarantine group (vocabulary-literal:driver) to the ten now recorded for this migration. || 2026-10-24 (W9/029 precedent): Track E ADDED 25 quarantine groups (58 hits) for the three sherivs_e_* migrations (RLS FORCE + read scoping, load-test indexes/policy initplans). They alter policies on the live legacy tenant store, so they necessarily name school_id / get_my_school_id / tenant role names; no new domain code on the universal surface. || 2026-10-25 (W9/029 precedent): merge train ADDED 8 quarantine groups for 20261025100180_sherivs_090_integration_hub.sql (Integration Hub tables are tenant-scoped on the live legacy store, so they name school_id and school vocabulary); no new domain code on the universal surface. || 2026-10-25 (W9/029 precedent): merge train quarantined 20261025100190_sherivs_092_integration_entities_outbound.sql (tenant-scoped migration on the live legacy store; names school_id/school vocabulary); no new domain code on the universal surface. || 2026-10-25 (W9/029 precedent): merge train quarantined 20261025100200_sherivs_093_integration_connectors.sql (tenant-scoped migration on the live legacy store; names school_id/school vocabulary); no new domain code on the universal surface. || 2026-10-24 (SHERIVS-UX1, W9/W11 precedent): ADDED 21 quarantine groups (119 hits) for database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql — the workspace manifest resolves the caller through the legacy tenant helpers (get_my_school_id/get_my_role) and names school modules and legacy role codes; no new privileges (all functions SECURITY DEFINER with explicit membership checks). || 2026-10-24 (SHERIVS-UX2, UX1/W9/W11 precedent): ADDED 13 quarantine groups (25 hits) for database/supabase/migrations/20261025100220_sherivs_ux2_scope_policy_workspace.sql — the scope/policy-aware workspace manifest replaces the UX1 function bodies and so carries the same legacy tenant helpers (get_my_school_id/get_my_role), legacy role codes and module names; no new privileges (all functions SECURITY DEFINER with explicit membership / settings.manage checks). || 2026-10-24 (SHERIVS-UX3, UX1/UX2 precedent): ADDED 8 quarantine groups (43 hits) for database/supabase/migrations/20261025100230_sherivs_ux3_workspace_live_data.sql — live workspace card data reads the legacy school tables (students, classes, fees, attendance...) by their existing names under the caller's own RLS (SECURITY INVOKER); no new privileges, no anon grants. || 2026-10-25 (W9/029 precedent): SHERIVS-PAY-SPLIT quarantined 20261025100250_sherivs_paystack_split_fee.sql (fee checkout split + term share on the live legacy fee/wallet store; names school_id/student/fee vocabulary); no new domain code on the universal surface. || 2026-11-03 (ADR-019 / M07): added only the five observed SQL-migration groups (fee: 12, fees: 6, bursar: 10, get_my_school_id: 3, structural school_id: 16 hits) for 20261103130000_sv1_m07_fees_ledger_receipts.sql; no new default permissions, and all reads and writes remain tenant- and role-gated under forced RLS"
   },
   "summary": {
-    "entryCount": 870,
-    "totalObservedHits": 4895,
+    "entryCount": 872,
+    "totalObservedHits": 4900,
     "hitsByFile": {
       "database/supabase/migrations/20261024000240_sherivs_017_role_permission_catalog.sql": 549,
       "database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql": 119,
@@ -149,6 +149,7 @@
       "frontend/src/lib/org-model.ts": 5,
       "frontend/src/lib/scheduling-constraints.ts": 5,
       "database/supabase/migrations/20261103140000_sherivs_sec01_check_result_uniform.sql": 5,
+      "database/supabase/migrations/20261103143000_core19_notification_delivery.sql": 5,
       "database/supabase/migrations/20260620122110_178748dc-376f-4c78-911d-ec879dfffce1.sql": 4,
       "database/supabase/migrations/20260620151525_b630392a-2197-480f-b1cb-99da6c869c81.sql": 4,
       "database/supabase/migrations/20261020000110_sherivs_004_privilege_hardening.sql": 4,
@@ -13820,6 +13821,31 @@
         411
       ],
       "firstSnippet": "AND r.template_code = 'teacher'"
+    },
+    {
+      "file": "database/supabase/migrations/20261103143000_core19_notification_delivery.sql",
+      "kind": "vocabulary",
+      "token": "school",
+      "streamIRef": "CORE-19",
+      "occurrences": 1,
+      "lines": [
+        2
+      ],
+      "firstSnippet": "-- safety and recipient/school integrity. Authenticated delivery remains in-app."
+    },
+    {
+      "file": "database/supabase/migrations/20261103143000_core19_notification_delivery.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "CORE-19",
+      "occurrences": 4,
+      "lines": [
+        7,
+        14,
+        15,
+        19
+      ],
+      "firstSnippet": "ADD CONSTRAINT users_id_school_notification_uq UNIQUE (id, school_id);"
     }
   ]
 }

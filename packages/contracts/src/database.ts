@@ -5176,6 +5176,7 @@ export type Database = {
           action_url: string | null;
           created_at: string | null;
           id: string;
+          idempotency_key: string | null;
           is_read: boolean | null;
           message: string;
           school_id: string;
@@ -5187,6 +5188,7 @@ export type Database = {
           action_url?: string | null;
           created_at?: string | null;
           id?: string;
+          idempotency_key?: string | null;
           is_read?: boolean | null;
           message: string;
           school_id: string;
@@ -5198,6 +5200,7 @@ export type Database = {
           action_url?: string | null;
           created_at?: string | null;
           id?: string;
+          idempotency_key?: string | null;
           is_read?: boolean | null;
           message?: string;
           school_id?: string;
@@ -5219,6 +5222,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "users";
             referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notifications_recipient_school_fkey";
+            columns: ["user_id", "school_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id", "school_id"];
           },
         ];
       };
