@@ -17,6 +17,8 @@ The executive workspace uses existing role assignments and tenant-scoped workspa
 
 The issue requires executive workspaces for distinct institutional roles without treating a proprietor, public principal, vice-chancellor, board member, dean, or HOD as interchangeable. Unverified relationships must grant nothing, and no authority, mandate, or relationship may be invented or seeded.
 
+The domain-neutrality guard scans every SQL migration. This additive migration necessarily references the existing role-engine template family and permission identifiers, as well as M04's `school_id` tenant binding; these are database-contract references, not domain logic added to the universal TypeScript surface. Obfuscating them or moving the SQL out of Supabase's migration directory would hide or break the contract. Under ADR-004, this ADR proposes a neutrality-baseline exception limited to the exact observed vocabulary and structural groups for this migration, subject to operator ratification. The baseline continues to report those references as warnings; this does not authorize unrelated baseline growth or a tenant-model conversion.
+
 ## Options
 
 ### Option 1 — Infer authority from the role title (rejected)
