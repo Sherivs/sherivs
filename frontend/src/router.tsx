@@ -14,7 +14,7 @@ export const getRouter = () => {
   });
 
   // Browser only; a no-op without VITE_SENTRY_DSN.
-  void initClientSentry(router);
+  initClientSentry(router);
 
   return router;
 };

@@ -4,7 +4,7 @@
 | -------------------------- | ----- |
 | Status                     | PROPOSED (operator review) |
 | Date                       | 2026-11-03 |
-| Author                     | Copilot coding agent (M009-A2 follow-up) |
+| Author                     | copilot-swe-agent[bot] (M009-A2 follow-up) |
 | Mission                    | M009-A2 follow-up (Scholar runtime; V1 organizational capability) |
 | Capabilities               | Consumes V1CAP-01 (multi-tenant workspaces) and V1CAP-03 (role/permission model); no capability ownership expansion |
 | Supersedes-in-part         | None |
