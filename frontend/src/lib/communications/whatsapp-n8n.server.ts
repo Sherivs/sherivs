@@ -77,7 +77,11 @@ export async function dispatchWhatsAppN8nOutbox(input: {
   if (!config) return { ok: false as const, error: "not_configured" };
   const fetchImpl = input.fetchImpl ?? fetch;
   const { data, error } = await input.db.rpc("cg_whatsapp_claim_n8n_outbox", { p_limit: 20 });
-  if (error || !Array.isArray(data)) return { ok: false as const, error: "claim_failed" };
+  if (error || !Array.isArray(data)) {
+    const code = (error as { code?: unknown } | null)?.code;
+    console.error("whatsapp_n8n_claim_failed", { code: typeof code === "string" ? code : null });
+    return { ok: false as const, error: "claim_failed" };
+  }
   let delivered = 0;
   let failed = 0;
 
