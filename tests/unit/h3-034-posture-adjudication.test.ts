@@ -81,9 +81,7 @@ function readMigration(migrationFileName: string): string {
 // prefixes and collapse whitespace so phrase assertions are line-wrap-proof.
 // Only used for matching — the raw file is never modified.
 function normalizeSqlText(sql: string): string {
-  return sql
-    .replace(/--/g, " ")
-    .replace(/\s+/g, " ");
+  return sql.replace(/--/g, " ").replace(/\s+/g, " ");
 }
 
 type BatteryTableEntry = {
@@ -95,7 +93,10 @@ type BatteryTableEntry = {
   postureSource?: string;
 };
 
-function batteryTableEntry(registry: { tables: BatteryTableEntry[] }, table: AdjudicatedTable): BatteryTableEntry {
+function batteryTableEntry(
+  registry: { tables: BatteryTableEntry[] },
+  table: AdjudicatedTable,
+): BatteryTableEntry {
   const entries = registry.tables.filter((t) => t.name === table);
   expect(
     entries.length,
@@ -122,7 +123,9 @@ describe("H3-034 posture adjudication (mission D-034) — internal consistency",
     }
 
     it("the worker-definitions migration authors ZERO policies (adjudicated rationale is the migration's own law)", () => {
-      const migration = normalizeSqlText(readMigration(EXPECTED_SOURCE_MIGRATION.cg_worker_delegation));
+      const migration = normalizeSqlText(
+        readMigration(EXPECTED_SOURCE_MIGRATION.cg_worker_delegation),
+      );
       expect(migration).not.toMatch(/CREATE\s+POLICY/i);
       expect(migration).toMatch(/Zero policies are deliberate/i);
       expect(migration).toMatch(
@@ -191,8 +194,13 @@ describe("H3-034 posture adjudication (mission D-034) — internal consistency",
     });
 
     it("the landed posture files (read directly via fs) contain no entry for any adjudicated table", () => {
-      for (const postureFileName of ["rls-table-postures-substrate.json", "rls-table-postures-transport.json"]) {
-        const parsed: { tables?: { name?: string }[] } = JSON.parse(readRepoFile(join("scripts", "verification", postureFileName)));
+      for (const postureFileName of [
+        "rls-table-postures-substrate.json",
+        "rls-table-postures-transport.json",
+      ]) {
+        const parsed: { tables?: { name?: string }[] } = JSON.parse(
+          readRepoFile(join("scripts", "verification", postureFileName)),
+        );
         const declaredNames = (parsed.tables ?? []).map((t) => t.name);
         for (const table of ADJUDICATED_TABLES) {
           expect(declaredNames).not.toContain(table);
@@ -264,7 +272,9 @@ describe("H3-034 posture adjudication (mission D-034) — internal consistency",
     it("the memory contract enforces the identity AND tenant AND scope AND policy authorization gate (L-T-015 mitigation owner)", () => {
       const contract = readRepoFile(OWNING_SERVER_PATH.cg_memory_scope);
       expect(contract).toMatch(/identity AND tenant AND/i);
-      expect(contract).toMatch(/No silent memory expansion|no silent memory expansion|No silent scope expansion|out-of-scope writes are REJECTED/i);
+      expect(contract).toMatch(
+        /No silent memory expansion|no silent memory expansion|No silent scope expansion|out-of-scope writes are REJECTED/i,
+      );
       expect(contract).toMatch(/20261002000004_coregrid_v1_memory_tier\.sql/);
     });
 
