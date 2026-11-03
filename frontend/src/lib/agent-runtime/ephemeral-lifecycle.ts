@@ -23,6 +23,7 @@
  * This module performs no persistence, no I/O, no execution.
  */
 
+import { z } from "zod";
 import type { AgentDefinitionId, AgentPermission } from "../agent-core";
 import {
   openWorkerMemorySession,
@@ -87,6 +88,34 @@ export type EphemeralLifecycleState =
   | "terminated";
 
 export const TERMINATED_STATE: EphemeralLifecycleState = "terminated";
+
+export type WorkerLifecycleTransition = "wake" | "run" | "sleep" | "grant" | "revoke";
+
+export interface WorkerLifecycleEvidence {
+  readonly transition: WorkerLifecycleTransition;
+  readonly at: string;
+  readonly actorId: string;
+  readonly workerId: string;
+  readonly grantId: string | null;
+  readonly correlationId: string;
+}
+
+const workerLifecycleEvidenceSchema = z
+  .object({
+    transition: z.enum(["wake", "run", "sleep", "grant", "revoke"]),
+    at: z.string().datetime(),
+    actorId: z.string().trim().min(1).max(200),
+    workerId: z.string().trim().min(1).max(160),
+    grantId: z.string().trim().min(1).max(160).nullable(),
+    correlationId: z.string().trim().min(1).max(200),
+  })
+  .strict();
+
+export function createWorkerLifecycleEvidence(
+  input: WorkerLifecycleEvidence,
+): WorkerLifecycleEvidence {
+  return workerLifecycleEvidenceSchema.parse(input);
+}
 
 /* ─────────────────────────────────────────────────────────────
  * Lifecycle events (discriminated union, one per Part 14 stage)

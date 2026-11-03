@@ -86,4 +86,3 @@ Registry claims this audit could not evidence (UNKNOWN class — review by hand)
 3. L3: every registry module resolves to real source; every contract-cited test exists and actually tests.
 4. L4: at least one workspace/route projects the capability from real state (never manufactured state).
 5. L5: an operational artefact names it — proof, verifier, CI job, runbook or infrastructure file.
-

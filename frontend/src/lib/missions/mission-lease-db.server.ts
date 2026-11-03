@@ -73,6 +73,7 @@ export type MissionLeaseDbClient = SupabaseClient;
 export type WorkerLeaseGate = (input: {
   tenantId: string;
   workerId: string;
+  missionId: string;
   now: string;
 }) => Promise<{ ok: true } | { ok: false; reason: string }>;
 
@@ -290,10 +291,11 @@ export function createDbMissionLeasePort(
   async function checkWorkerGate(
     tenantId: string,
     workerId: string,
+    missionId: string,
     now: string,
   ): Promise<{ ok: true } | { ok: false; reason: string }> {
     if (workerGate === undefined) return { ok: true };
-    return workerGate({ tenantId, workerId, now });
+    return workerGate({ tenantId, workerId, missionId, now });
   }
 
   type CompleteExecutionValue = {
@@ -339,6 +341,10 @@ export function createDbMissionLeasePort(
         code: "lease_expired",
         reason: `lease expired at ${lease.expires_at} — the work must be re-leased and redone`,
       };
+    }
+    const gate = await checkWorkerGate(tenantId, workerId, execution.missionId, now);
+    if (!gate.ok) {
+      return { ok: false, code: "unauthorized", reason: gate.reason };
     }
 
     if (outcome.outcome === "failed") {
@@ -415,7 +421,7 @@ export function createDbMissionLeasePort(
       if (execution === null || actor.tenantId !== tenantId) {
         return { ok: false, code: "cross_tenant", reason: "execution not found in scope" };
       }
-      const gate = await checkWorkerGate(tenantId, workerId, now);
+      const gate = await checkWorkerGate(tenantId, workerId, execution.missionId, now);
       if (!gate.ok) {
         return { ok: false, code: "unauthorized", reason: gate.reason };
       }
@@ -541,6 +547,10 @@ export function createDbMissionLeasePort(
           code: "lease_expired",
           reason: `lease expired at ${lease.expires_at} — recover and re-lease`,
         };
+      }
+      const gate = await checkWorkerGate(tenantId, workerId, lease.mission_id, now);
+      if (!gate.ok) {
+        return { ok: false, code: "unauthorized", reason: gate.reason };
       }
       const leaseExpiresAt = new Date(Date.parse(now) + cfg.leaseTtlMs).toISOString();
       await updateLeaseRow(leaseId, tenantId, {

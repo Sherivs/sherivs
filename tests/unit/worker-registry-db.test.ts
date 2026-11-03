@@ -20,6 +20,8 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import {
   createWorkerRegistryDb,
   type WorkerRegistryDbClient,
@@ -29,10 +31,17 @@ import {
  * Fixtures
  * ────────────────────────────────────────────────────────────*/
 
-const TENANT_A = "tenant-alpha";
-const TENANT_B = "tenant-beta";
+const TENANT_A = "10000000-0000-4000-8000-000000000001";
+const TENANT_B = "20000000-0000-4000-8000-000000000002";
 const T0 = "2026-10-01T12:00:00.000Z";
+const T1 = "2026-10-02T12:00:00.000Z";
 const MISSION_ID = "MISSION-V1-003-HOST";
+const EXPIRY_MIGRATION = fileURLToPath(
+  new URL(
+    "../../database/supabase/migrations/20261103141000_coregrid_v1_worker_delegation_expiry.sql",
+    import.meta.url,
+  ),
+);
 
 function registrationInput(definitionId = "worker-1", tenantId = TENANT_A) {
   return {
@@ -61,6 +70,9 @@ function delegationInput() {
     delegatedCapabilities: [`mission:execute:${MISSION_ID}`],
     maxGrantedRiskClass: "low" as const,
     grantedBy: "owner-1",
+    grantedAt: T0,
+    expiresAt: T1,
+    correlationId: "correlation-registry-grant",
   };
 }
 
@@ -95,6 +107,122 @@ function fakeSupabaseDb(): FakeDb {
   const writes: FakeDb["writes"] = [];
 
   const client = {
+    async rpc(name: string, args: Record<string, unknown>) {
+      if (name === "cg_worker_grant_delegation") {
+        const grant: Row = {
+          id: args.p_grant_id,
+          tenant_id: args.p_tenant_id,
+          definition_id: args.p_definition_id,
+          delegation_ref: args.p_delegation_ref,
+          delegated_capabilities: args.p_delegated_capabilities,
+          max_granted_risk_class: args.p_max_granted_risk_class,
+          state: "active",
+          granted_by: args.p_granted_by,
+          granted_at: args.p_granted_at,
+          expires_at: args.p_expires_at,
+        };
+        writes.push({ table: "cg_worker_delegation_grant", op: "insert", row: grant });
+        (
+          tables.get("cg_worker_delegation_grant") ??
+          tables.set("cg_worker_delegation_grant", []).get("cg_worker_delegation_grant")!
+        ).push(grant);
+        const history: Row = {
+          id: args.p_grant_id,
+          tenant_id: args.p_tenant_id,
+          definition_id: args.p_definition_id,
+          delegation_ref: args.p_delegation_ref,
+          delegated_capabilities: args.p_delegated_capabilities,
+          max_granted_risk_class: args.p_max_granted_risk_class,
+          recorded_by: args.p_granted_by,
+          recorded_at: args.p_granted_at,
+          expires_at: args.p_expires_at,
+        };
+        writes.push({ table: "cg_worker_delegation", op: "insert", row: history });
+        (
+          tables.get("cg_worker_delegation") ??
+          tables.set("cg_worker_delegation", []).get("cg_worker_delegation")!
+        ).push(history);
+        const definition = tables.get("cg_worker_definition")?.[0];
+        if (definition !== undefined) {
+          const refs = definition.delegation_history_refs as string[];
+          const patch = {
+            delegation_history_refs: refs.includes(String(args.p_delegation_ref))
+              ? refs
+              : [...refs, args.p_delegation_ref],
+          };
+          writes.push({ table: "cg_worker_definition", op: "update", row: patch });
+          Object.assign(definition, patch);
+        }
+        const lifecycleEvidence = {
+          transition: "grant",
+          at: args.p_granted_at,
+          actorId: args.p_granted_by,
+          workerId: args.p_definition_id,
+          grantId: args.p_grant_id,
+          correlationId: args.p_correlation_id,
+        };
+        const audit = {
+          action: "workforce.worker.grant",
+          new_value: {
+            correlation_id: args.p_correlation_id,
+            details: {
+              worker_id: args.p_definition_id,
+              grant_id: args.p_grant_id,
+              delegation_ref: args.p_delegation_ref,
+              expires_at: args.p_expires_at,
+              lifecycle_evidence: lifecycleEvidence,
+            },
+          },
+        };
+        writes.push({ table: "audit_logs", op: "insert", row: audit });
+        (tables.get("audit_logs") ?? tables.set("audit_logs", []).get("audit_logs")!).push(audit);
+        return { data: true, error: null };
+      }
+
+      if (name === "cg_worker_revoke_delegation") {
+        const grant = tables
+          .get("cg_worker_delegation_grant")
+          ?.find((row) => row.id === args.p_grant_id && row.tenant_id === args.p_tenant_id);
+        if (grant === undefined || grant.definition_id !== args.p_definition_id) {
+          return { data: null, error: { message: "grant ownership mismatch" } };
+        }
+        const changed = grant.state !== "revoked";
+        if (changed) {
+          const patch = {
+            state: "revoked",
+            revoked_by: args.p_revoked_by,
+            revoked_at: args.p_now,
+            revoked_reason: args.p_reason,
+          };
+          Object.assign(grant, patch);
+          writes.push({ table: "cg_worker_delegation_grant", op: "update", row: patch });
+        }
+        const lifecycleEvidence = {
+          transition: "revoke",
+          at: args.p_now,
+          actorId: args.p_revoked_by,
+          workerId: args.p_definition_id,
+          grantId: args.p_grant_id,
+          correlationId: args.p_correlation_id,
+        };
+        const audit = {
+          action: "workforce.worker.revoke",
+          new_value: {
+            correlation_id: args.p_correlation_id,
+            details: {
+              worker_id: args.p_definition_id,
+              grant_id: args.p_grant_id,
+              reason: args.p_reason,
+              lifecycle_evidence: lifecycleEvidence,
+            },
+          },
+        };
+        writes.push({ table: "audit_logs", op: "insert", row: audit });
+        (tables.get("audit_logs") ?? tables.set("audit_logs", []).get("audit_logs")!).push(audit);
+        return { data: changed, error: null };
+      }
+      return { data: null, error: { message: `unexpected RPC: ${name}` } };
+    },
     from(table: string) {
       const rowsFor = (): Row[] => tables.get(table) ?? [];
       const makeQuery = (filters: Array<[string, string]>) => ({
@@ -170,6 +298,18 @@ async function registeredDb() {
  * ────────────────────────────────────────────────────────────*/
 
 describe("worker registry db — registerWorker (§28 persistent identity)", () => {
+  it("adds expiry only to existing delegation tables without widening RLS", () => {
+    const migration = readFileSync(EXPIRY_MIGRATION, "utf8");
+    expect(migration).toMatch(/ALTER TABLE public\.cg_worker_delegation\b/i);
+    expect(migration).toMatch(/ALTER TABLE public\.cg_worker_delegation_grant\b/i);
+    expect(migration.match(/p_tenant_id !~\* '[^']+'/gi)).toHaveLength(2);
+    expect(migration.match(/v_audit_tenant := p_tenant_id::uuid;/gi)).toHaveLength(2);
+    expect(migration).not.toMatch(/CREATE\s+TABLE/i);
+    expect(migration).not.toMatch(/^\s*CREATE\s+POLICY\b/im);
+    expect(migration).not.toMatch(/\bTO\s+(?:PUBLIC|anon|authenticated)\b/i);
+    expect(migration).toMatch(/GRANT EXECUTE ON FUNCTION[\s\S]*?\bTO service_role;/i);
+  });
+
   it("persists an envelope-stamped definition plus capability claim rows", async () => {
     const db = fakeSupabaseDb();
     const registry = createWorkerRegistryDb(db.client);
@@ -237,6 +377,23 @@ describe("worker registry db — grantDelegation / revokeDelegation", () => {
     const history = db.tables.get("cg_worker_delegation")!;
     expect(history).toHaveLength(1);
     expect(history[0]!.recorded_by).toBe("owner-1");
+    const grantAudit = db.writes.find((write) => write.table === "audit_logs");
+    expect(grantAudit?.row.new_value).toMatchObject({
+      correlation_id: "correlation-registry-grant",
+      details: {
+        worker_id: "worker-1",
+        grant_id: "grant-1",
+        expires_at: T1,
+        lifecycle_evidence: {
+          transition: "grant",
+          at: T0,
+          actorId: "owner-1",
+          workerId: "worker-1",
+          grantId: "grant-1",
+          correlationId: "correlation-registry-grant",
+        },
+      },
+    });
 
     const definition = db.tables.get("cg_worker_definition")![0]!;
     expect(definition.delegation_history_refs).toEqual(["RULING-3:delegation:0001"]);
@@ -260,6 +417,7 @@ describe("worker registry db — grantDelegation / revokeDelegation", () => {
       revokedBy: "owner-1",
       reason: "operator-directed revocation",
       now: T0,
+      correlationId: "correlation-registry-revoke",
     });
     assertOk(revoked);
     expect(revoked.replayed).toBe(false);
@@ -268,6 +426,24 @@ describe("worker registry db — grantDelegation / revokeDelegation", () => {
     expect(grant.revoked_by).toBe("owner-1");
     expect(grant.revoked_at).toBe(T0);
     expect(grant.revoked_reason).toBe("operator-directed revocation");
+    const revokeAudit = db.writes.find(
+      (write) => write.table === "audit_logs" && write.row.action === "workforce.worker.revoke",
+    );
+    expect(revokeAudit?.row.new_value).toMatchObject({
+      correlation_id: "correlation-registry-revoke",
+      details: {
+        worker_id: "worker-1",
+        grant_id: "grant-1",
+        lifecycle_evidence: {
+          transition: "revoke",
+          at: T0,
+          actorId: "owner-1",
+          workerId: "worker-1",
+          grantId: "grant-1",
+          correlationId: "correlation-registry-revoke",
+        },
+      },
+    });
 
     const replay = await registry.revokeDelegation({
       tenantId: TENANT_A,
@@ -276,6 +452,7 @@ describe("worker registry db — grantDelegation / revokeDelegation", () => {
       revokedBy: "owner-1",
       reason: "operator-directed revocation",
       now: T0,
+      correlationId: "correlation-registry-revoke",
     });
     assertOk(replay);
     expect(replay.replayed).toBe(true);
@@ -291,6 +468,7 @@ describe("worker registry db — grantDelegation / revokeDelegation", () => {
       revokedBy: "owner-1",
       reason: "wrong owner",
       now: T0,
+      correlationId: "correlation-registry-revoke",
     });
     expectInvalid(denied, "does not belong to worker");
   });
@@ -302,12 +480,16 @@ describe("worker registry db — grantDelegation / revokeDelegation", () => {
 
 describe("worker registry db — resolveWorkerAuthority", () => {
   it("resolves the governed worker's actor with tenant-embedded extraPermissions", async () => {
-    const { registry } = await registeredDb();
+    const { db, registry } = await registeredDb();
     await registry.grantDelegation(delegationInput());
+    const grantRow = db.tables.get("cg_worker_delegation_grant")![0]!;
+    grantRow.granted_at = "2026-10-01T14:00:00+02:00";
+    grantRow.expires_at = "2026-10-02T14:00:00+02:00";
     const resolved = await registry.resolveWorkerAuthority({
       tenantId: TENANT_A,
       definitionId: "worker-1",
       missionId: MISSION_ID,
+      now: T0,
     });
     assertOk(resolved);
     expect(resolved.actor.actorId).toBe("worker-1");
@@ -324,8 +506,49 @@ describe("worker registry db — resolveWorkerAuthority", () => {
       tenantId: TENANT_B,
       definitionId: "worker-1",
       missionId: MISSION_ID,
+      now: T0,
     });
     expectInvalid(denied, "not registered in tenant");
+  });
+
+  it("denies expired and wrong-mission grants before activation", async () => {
+    const expired = await registeredDb();
+    const expiredGrant = {
+      ...delegationInput(),
+      expiresAt: "2026-10-01T12:00:01.000Z",
+    };
+    await expired.registry.grantDelegation(expiredGrant);
+    const expiredResult = await expired.registry.resolveWorkerAuthority({
+      tenantId: TENANT_A,
+      definitionId: "worker-1",
+      missionId: MISSION_ID,
+      now: "2026-10-01T12:00:01.000Z",
+    });
+    expectInvalid(expiredResult, "worker_not_delegated");
+
+    const wrongMission = await registeredDb();
+    await wrongMission.registry.grantDelegation(delegationInput());
+    const wrongScopeResult = await wrongMission.registry.resolveWorkerAuthority({
+      tenantId: TENANT_A,
+      definitionId: "worker-1",
+      missionId: "MISSION-OTHER",
+      now: T0,
+    });
+    expectInvalid(wrongScopeResult, "worker_not_delegated");
+
+    const notYetGranted = await registeredDb();
+    await notYetGranted.registry.grantDelegation({
+      ...delegationInput(),
+      grantedAt: T1,
+      expiresAt: "2026-10-03T12:00:00.000Z",
+    });
+    const notYetEffective = await notYetGranted.registry.resolveWorkerAuthority({
+      tenantId: TENANT_A,
+      definitionId: "worker-1",
+      missionId: MISSION_ID,
+      now: T0,
+    });
+    expectInvalid(notYetEffective, "worker_not_delegated");
   });
 });
 
@@ -361,15 +584,17 @@ describe("worker registry db — quarantineWorker + workerLeaseGate", () => {
       tenantId: TENANT_A,
       definitionId: "worker-1",
       missionId: MISSION_ID,
+      now: T0,
     });
     expectInvalid(authority, "worker_quarantined");
     const gate = await registry.workerLeaseGate()({
       tenantId: TENANT_A,
       workerId: "worker-1",
+      missionId: MISSION_ID,
       now: T0,
     });
     expect(gate.ok).toBe(false);
-    if (!gate.ok) expect(gate.reason).toContain("worker_lifecycle_unusable:suspended");
+    if (!gate.ok) expect(gate.reason).toContain("worker_quarantined");
   });
 
   it("allows the gate for a registered, delegated, unquarantined worker", async () => {
@@ -378,9 +603,26 @@ describe("worker registry db — quarantineWorker + workerLeaseGate", () => {
     const gate = await registry.workerLeaseGate()({
       tenantId: TENANT_A,
       workerId: "worker-1",
+      missionId: MISSION_ID,
       now: T0,
     });
     expect(gate.ok).toBe(true);
+  });
+
+  it("denies lease admission when a grant exceeds the worker's declared capabilities", async () => {
+    const { registry } = await registeredDb();
+    await registry.grantDelegation({
+      ...delegationInput(),
+      delegatedCapabilities: [`mission:execute:${MISSION_ID}`, "mission:execute:MISSION-OTHER"],
+    });
+    const gate = await registry.workerLeaseGate()({
+      tenantId: TENANT_A,
+      workerId: "worker-1",
+      missionId: MISSION_ID,
+      now: T0,
+    });
+    expect(gate.ok).toBe(false);
+    if (!gate.ok) expect(gate.reason).toContain("capability_escalation_denied");
   });
 
   it("denies the gate for every un-usable posture with zero gate-time writes", async () => {
@@ -388,10 +630,15 @@ describe("worker registry db — quarantineWorker + workerLeaseGate", () => {
     await registry.grantDelegation(delegationInput());
     const gate = registry.workerLeaseGate();
 
-    const unregistered = await gate({ tenantId: TENANT_A, workerId: "worker-ghost", now: T0 });
+    const unregistered = await gate({
+      tenantId: TENANT_A,
+      workerId: "worker-ghost",
+      missionId: MISSION_ID,
+      now: T0,
+    });
     expect(unregistered.ok).toBe(false);
     if (!unregistered.ok) {
-      expect(unregistered.reason).toContain("worker_not_registered:worker-ghost");
+      expect(unregistered.reason).toContain("worker definition worker-ghost is not registered");
     }
 
     await registry.revokeDelegation({
@@ -401,18 +648,25 @@ describe("worker registry db — quarantineWorker + workerLeaseGate", () => {
       revokedBy: "owner-1",
       reason: "all authority withdrawn",
       now: T0,
+      correlationId: "correlation-registry-revoke",
     });
-    const fullyRevoked = await gate({ tenantId: TENANT_A, workerId: "worker-1", now: T0 });
+    const fullyRevoked = await gate({
+      tenantId: TENANT_A,
+      workerId: "worker-1",
+      missionId: MISSION_ID,
+      now: T0,
+    });
     expect(fullyRevoked.ok).toBe(false);
     if (!fullyRevoked.ok) {
       expect(fullyRevoked.reason).toContain("worker_not_delegated");
     }
 
-    // The gate itself is READ-TIME: no writes beyond the registration (3),
-    // the grant (2 inserts + 1 mirror update) and the revocation (1 update),
+    // The gate itself is READ-TIME: no writes beyond registration, grant,
+    // revocation and their append-only audit entries,
     // and never a lease write.
-    expect(db.writes).toHaveLength(7);
-    expect(db.writes.filter((w) => w.op === "update")).toHaveLength(2); // ref mirror + revocation
+    expect(db.writes).toHaveLength(9);
+    expect(db.writes.filter((w) => w.op === "update")).toHaveLength(2);
+    expect(db.writes.filter((w) => w.table === "audit_logs")).toHaveLength(2);
     expect(db.writes.some((w) => w.table === "cg_mission_lease")).toBe(false);
   });
 
@@ -423,6 +677,7 @@ describe("worker registry db — quarantineWorker + workerLeaseGate", () => {
       tenantId: TENANT_A,
       definitionId: "worker-1",
       missionId: MISSION_ID,
+      now: T0,
     });
     assertOk(before);
     expect(before.actor.extraPermissions).toHaveLength(1);
@@ -434,18 +689,16 @@ describe("worker registry db — quarantineWorker + workerLeaseGate", () => {
       revokedBy: "owner-1",
       reason: "revoked mid-mission",
       now: T0,
+      correlationId: "correlation-registry-revoke",
     });
 
     const after = await registry.resolveWorkerAuthority({
       tenantId: TENANT_A,
       definitionId: "worker-1",
       missionId: MISSION_ID,
+      now: T0,
     });
-    assertOk(after);
-    // The revoked grant contributes NOTHING: the actor still resolves (so the
-    // denial is OBSERVABLE at the engine under Invariant 12), but carries zero
-    // extraPermissions.
-    expect(after.actor.extraPermissions).toEqual([]);
+    expectInvalid(after, "worker_not_delegated");
   });
 });
 
@@ -468,6 +721,7 @@ describe("worker registry db — untrusted definition rows", () => {
         tenantId: TENANT_A,
         definitionId: "worker-1",
         missionId: MISSION_ID,
+        now: T0,
       }),
     ).rejects.toThrow(/kernel|envelope|persistent kernel object/i);
   });

@@ -652,3 +652,24 @@ defineFamilySuite({
     },
   ],
 });
+
+defineFamilySuite({
+  family: "mobility-advisory.functions.ts",
+  gateway: true,
+  functions: [
+    {
+      fn: "getMobilityAdvisory",
+      method: "POST",
+      input: "zod",
+      gate: "self-scope-rpc",
+      audit: "pure-read",
+      gateMarker: /\.rpc\(\s*"get_my_school_id"\)/,
+      extra: [
+        /rpc\(\s*"scholar_can",\s*\{\s*p_org:\s*schoolId,\s*p_perm:\s*"students\.transfer"/s,
+        /rpc\(\s*"student_mobility_preview"/,
+        /tokenMsRemaining\(context\.claims\.exp\)/,
+      ],
+      note: "tenant and permission come from authenticated server context; policy preview and gateway advice are read-only and cannot approve or apply movements",
+    },
+  ],
+});

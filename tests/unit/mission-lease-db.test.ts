@@ -318,6 +318,41 @@ describe("db lease port — acquireLease over cg_mission_lease", () => {
  * ────────────────────────────────────────────────────────────*/
 
 describe("db lease port — completeExecution / failExecution", () => {
+  it("denies completion after the worker grant is revoked", async () => {
+    const db = fakeSupabaseDb(initialDb());
+    let delegated = true;
+    const port = leasePort(db, async ({ missionId }) =>
+      delegated && missionId === MISSION_ID
+        ? { ok: true }
+        : { ok: false, reason: "worker_not_delegated:revoked" },
+    );
+    const grant = expectOk(
+      await port.acquireLease({
+        actor: workerActor(),
+        request: { tenantId: TENANT_A, executionId: EXECUTION_ID, workerId: "worker-1", now: T0 },
+      }),
+    );
+    const writesBeforeCompletion = db.writes.length;
+    delegated = false;
+    const denied = await port.completeExecution({
+      actor: workerActor(),
+      request: {
+        tenantId: TENANT_A,
+        executionId: EXECUTION_ID,
+        leaseId: grant.leaseId,
+        workerId: "worker-1",
+        outcome: {
+          outcome: "succeeded",
+          evidence: [{ evidenceKind: "observation", sourceRef: "runtime:runtime-a", lineage: [] }],
+        },
+        now: new Date(Date.parse(T0) + 5_000).toISOString(),
+      },
+    });
+    expectDeny(denied, "unauthorized");
+    expect(db.writes).toHaveLength(writesBeforeCompletion);
+    expect(db.writes.some((write) => write.table === "cg_foundation_evidence")).toBe(false);
+  });
+
   it("releases the lease with outcome 'succeeded' and persists §12 evidence", async () => {
     const db = fakeSupabaseDb(initialDb());
     const port = leasePort(db);

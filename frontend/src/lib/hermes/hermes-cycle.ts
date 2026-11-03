@@ -720,6 +720,7 @@ async function delegateRepair(
     grants: identity.grants,
     tenantId: finding.tenantId,
     missionId: repairMissionId,
+    now,
   });
   if (!authority.ok) {
     return {

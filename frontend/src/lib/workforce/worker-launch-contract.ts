@@ -14,6 +14,7 @@ import type { WriteAuditEntry } from "@/lib/server/write-audit";
 import type {
   WorkerHostCycleResult,
   WorkerHostExecutor,
+  WorkerLifecycleAuditRecord,
   WorkerHostMissionPorts,
 } from "./worker-host";
 import type { WorkerRegistryDb } from "./worker-registry-db.server";
@@ -57,6 +58,7 @@ export interface WorkerLaunchAuditIntent {
   readonly table: string;
   readonly recordId: string | null;
   readonly tenantId: string | null;
+  readonly correlationId: string | null;
   readonly launch_outcome_code: string;
   readonly reason: string;
 }
@@ -70,6 +72,7 @@ export function toAuditIntent(entry: WriteAuditEntry): WorkerLaunchAuditIntent {
     table: entry.table,
     recordId: entry.recordId ?? null,
     tenantId: entry.tenantId,
+    correlationId: entry.correlationId ?? null,
     launch_outcome_code: details.launch_outcome_code ?? "",
     reason: details.reason ?? "",
   };
@@ -114,7 +117,9 @@ export type WorkerLaunchOutcome =
  */
 export function resolveAiCredentialGate(
   readEnv: (name: string) => string | undefined,
-): { present: true } | { present: false; missing: readonly (typeof AI_CREDENTIAL_ENV_VARS)[number][] } {
+):
+  | { present: true }
+  | { present: false; missing: readonly (typeof AI_CREDENTIAL_ENV_VARS)[number][] } {
   const missing = AI_CREDENTIAL_ENV_VARS.filter((name) => (readEnv(name) ?? "").trim() === "");
   return missing.length === 0 ? { present: true } : { present: false, missing };
 }
@@ -133,6 +138,7 @@ export function launchAuditEntry(input: {
   outcome: WriteAuditEntry["outcome"];
   code: string;
   reason: string;
+  correlationId?: string;
   extra?: Record<string, unknown>;
 }): WriteAuditEntry {
   const boundedReason = input.reason.slice(0, 300);
@@ -145,6 +151,7 @@ export function launchAuditEntry(input: {
     table: AUDIT_TARGET_TABLE,
     recordId: input.executionId,
     outcome: input.outcome,
+    correlationId: input.correlationId,
     details: {
       launch_outcome_code: input.code,
       reason: boundedReason,
@@ -169,10 +176,13 @@ export interface WorkerLaunchDeps {
   readonly missions: WorkerHostMissionPorts;
   /** Fail-closed audit writer (§27.6): a rejected audit fails the launch. */
   readonly audit: (entry: WriteAuditEntry) => Promise<void>;
+  /** Lifecycle evidence is attributed to the worker, not the launching human. */
+  readonly recordLifecycle: (record: WorkerLifecycleAuditRecord) => Promise<void>;
   /** Credential reads (§30: names in outcomes, values never leave the check). */
   readonly readEnv: (name: string) => string | undefined;
   /** J-023 injected clock. */
   readonly now: () => string;
+  readonly newCorrelationId: () => string;
   /** Ephemeral runtime-instance id factory (observability only, §28). */
   readonly newRuntimeInstanceId: () => string;
   /**

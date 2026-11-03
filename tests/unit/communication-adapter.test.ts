@@ -33,6 +33,7 @@ describe("shared WhatsApp gateway send flow", () => {
           {
             message_id: "00000000-0000-4000-8000-000000000001",
             provider_sender_ref: "123456789",
+            conversation_id: "00000000-0000-4000-8000-000000000002",
             recipient_address: "+2348030000001",
           },
         ],
@@ -46,6 +47,10 @@ describe("shared WhatsApp gateway send flow", () => {
           tenantId: TENANT_ID,
           orgRef: ORG_REF,
           principalRef: PRINCIPAL_REF,
+          conversationId: "00000000-0000-4000-8000-000000000002",
+          inboundProviderSenderRef: "123456789",
+          inboundProviderRef: "wamid.inbound",
+          expectedRecipientAddress: "+2348030000001",
           body: "Sherivs Academy: Ada",
           templateCode: "absence_alert_v1",
           language: "en",
@@ -60,6 +65,9 @@ describe("shared WhatsApp gateway send flow", () => {
       p_tenant_id: TENANT_ID,
       p_org_ref: ORG_REF,
       p_principal_ref: PRINCIPAL_REF,
+      p_conversation_id: "00000000-0000-4000-8000-000000000002",
+      p_provider_sender_ref: "123456789",
+      p_inbound_provider_ref: "wamid.inbound",
     });
     expect(rpc.mock.calls[0]?.[1]).not.toHaveProperty("p_recipient_address");
     expect(fetchImpl.mock.calls[0]?.[0]).toBe(
@@ -89,6 +97,10 @@ describe("shared WhatsApp gateway send flow", () => {
           tenantId: TENANT_ID,
           orgRef: ORG_REF,
           principalRef: PRINCIPAL_REF,
+          conversationId: "00000000-0000-4000-8000-000000000002",
+          inboundProviderSenderRef: "123456789",
+          inboundProviderRef: "wamid.inbound",
+          expectedRecipientAddress: "+2348030000001",
           body: "Unverified destination",
         },
         adapter,

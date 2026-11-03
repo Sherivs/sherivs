@@ -128,6 +128,8 @@ function hermesGrants(count: number): WorkerDelegationGrantState[] {
       delegatedCapabilities: ["mission:create:*", "mission:execute:*"],
       maxGrantedRiskClass: "medium",
       state: "active",
+      grantedAt: T0,
+      expiresAt: "2026-10-02T12:00:00.000Z",
     },
   ];
 }
