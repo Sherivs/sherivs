@@ -14,7 +14,9 @@ This index is a record of reality, not intent: an ADR exists here only if its fi
 
 ## ADR register — `architecture/adr/`
 
-The H3-wave ADR directory. Next free number here: **ADR-015**.
+The H3-wave ADR directory. M09 was assigned **ADR-017** by owner coordination;
+ADR-015 and ADR-016 remain outside this mission's allocation. Next free number:
+**ADR-018**.
 
 | #   | File                                                                                               | Title                                                                                           | Status   | Date       | Gist                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | --- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | -------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -22,6 +24,7 @@ The H3-wave ADR directory. Next free number here: **ADR-015**.
 | 012 | [ADR-012_COMMS_LEGACY_STORE_EXTENSION.md](./ADR-012_COMMS_LEGACY_STORE_EXTENSION.md)               | V1 Communications Extends the Legacy Organization Store (COND-003)                              | PROPOSED | 2026-11-01 | Records the proposed neutrality-baseline exception for four legacy-vocabulary groups in the additive V1 communications migration; preserves the existing school/organization identity binding and defers tenant-model conversion.                                                                                                                                                                                              |
 | 013 | [ADR-013_SV1_MOBILITY_LEGACY_STORE_EXTENSION.md](./ADR-013_SV1_MOBILITY_LEGACY_STORE_EXTENSION.md) | SV1 Student Mobility Extends the Legacy Scholar Store                                           | PROPOSED | 2026-11-01 | Records a proposed, migration-specific neutrality-baseline exception for the V1 student-mobility extension; preserves the active Scholar tenant/RLS contract and defers neutral-tenant conversion.                                                                                                                                                                                                                             |
 | 014 | [ADR-014_M04_TENANT_MODEL_LEGACY_STORE_ADAPTER.md](./ADR-014_M04_TENANT_MODEL_LEGACY_STORE_ADAPTER.md) | M04 Extends the Existing Organization Tenant Store (COND-003) | PROPOSED | 2026-11-02 | Records the proposed M04 neutrality-baseline exception for two observed legacy-vocabulary groups in the new V1 tenant-authority migration, preserving existing tenant helper and tenant-column use for org/campus/shift RLS. |
+| 017 | [ADR-017_M09_NDPA_CONSENT_GUARDIANS.md](./ADR-017_M09_NDPA_CONSENT_GUARDIANS.md) | Purpose-Bound Consent and Explicit Learner Relationships (M09) | PROPOSED | 2026-11-03 | Records M09's proposed V1 model for effective-dated learner relationships, attributed per-purpose consent, immediate withdrawal, and audited append-only history. |
 
 ## ADR register — `architecture/coregrid-mvp-architecture/adr/`
 
@@ -64,7 +67,7 @@ Note: `.claude/helpers/adr-compliance.sh` also maps ADR-006/ADR-007 to titles ("
 ## Maintenance rules (for future ADR authors)
 
 1. Follow [TEMPLATE.md](./TEMPLATE.md) exactly — metadata table first, then Context / Options (each with honest Consequences) / Recommendation / Golden Questions (AGENTS §43: WHO / WHAT / WHERE / WHY / UNDER WHICH POLICY) / UNKNOWNs.
-2. Number sequentially per directory: next free number in `architecture/adr/` is ADR-015; the `coregrid-mvp-architecture/adr/` corpus continues at ADR-012 or beyond only if the operator says where new rulings live — default new ADRs to `architecture/adr/`.
+2. Use the next available number in `architecture/adr/`; ADR-015 and ADR-016 were not allocated to M09, which was assigned ADR-017 by owner coordination. The `coregrid-mvp-architecture/adr/` corpus continues at ADR-012 or beyond only if the operator says where new rulings live — default new ADRs to `architecture/adr/`.
 3. Never renumber, rewrite history, or delete an existing ADR (AGENTS §39). A new ADR supersedes; it does not edit its predecessor.
 4. Add the new ADR to the register table above in the same change, with number, title, status, date, and a one-line gist — an unindexed ADR is a documentation defect.
 5. If a decision closes a gap-register entry, update that entry to point at the ruling.

@@ -2,7 +2,7 @@
   "artifact": "phase-completion",
   "wave": "AUDIT-1",
   "owner": "kernel (Phase 01 governance)",
-  "generatedAt": "2026-11-01T05:56:44.074Z",
+  "generatedAt": "2026-11-03T08:40:00.481Z",
   "authority": [
     "CONSTITUTION.md",
     "architecture/registry.json",
@@ -23,7 +23,7 @@
     "architectureDefined": 18,
     "withModules": 33,
     "withResolvedModules": 33,
-    "totalTestsCited": 2264,
+    "totalTestsCited": 2265,
     "registryBeyondAudit": [
       "14",
       "15",
@@ -525,7 +525,7 @@
       ],
       "modulesResolve": true,
       "citedTestFiles": 7,
-      "testsCounted": 168,
+      "testsCounted": 169,
       "executableEvidence": 7,
       "evidence": {
         "L1 conceptual": true,
