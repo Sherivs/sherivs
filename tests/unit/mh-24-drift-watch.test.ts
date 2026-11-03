@@ -135,7 +135,7 @@ describe("drift-watch workflow (H2-24 / J-038): consume the evolution baseline c
     expect(workflowSource).not.toMatch(/curl\s|wget\s/);
     for (const step of steps()) {
       if (step.uses) {
-        expect(["actions/checkout@v4", "actions/setup-node@v4"]).toContain(step.uses);
+        expect(step.uses).toMatch(/^actions\/(?:checkout|setup-node)@[0-9a-f]{40}$/);
       }
     }
   });
