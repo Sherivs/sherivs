@@ -5,8 +5,33 @@ import type { WriteAuditClient } from "@/lib/server/write-audit";
  * Deliberately loose so tests can inject an in-memory fake; callers pass the
  * service-role client only after their own authorization gate.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- structural postgrest builder; narrowed per call site
-export type ComplianceDb = { from(table: string): any } & WriteAuditClient;
+
+export type ComplianceQueryResult = {
+  data: unknown;
+  error: DbError;
+};
+
+export type ComplianceQuery = PromiseLike<ComplianceQueryResult> & {
+  select(columns?: string): ComplianceQuery;
+  insert(payload: Record<string, unknown> | Record<string, unknown>[]): ComplianceQuery;
+  update(payload: Record<string, unknown>): ComplianceQuery;
+  delete(): ComplianceQuery;
+  eq(column: string, value: unknown): ComplianceQuery;
+  in(column: string, values: readonly unknown[]): ComplianceQuery;
+  maybeSingle(): PromiseLike<ComplianceQueryResult>;
+  single(): PromiseLike<ComplianceQueryResult>;
+};
+
+export type ComplianceDb = {
+  from(table: string): ComplianceQuery;
+  rpc?(
+    name: string,
+    args?: Record<string, unknown>,
+  ): PromiseLike<{
+    data: unknown;
+    error: { message: string } | null;
+  }>;
+} & WriteAuditClient;
 
 export type DbError = { message: string } | null | undefined;
 

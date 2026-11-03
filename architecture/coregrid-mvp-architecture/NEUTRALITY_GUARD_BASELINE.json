@@ -1,23 +1,23 @@
 {
   "meta": {
-    "document": "NEUTRALITY_GUARD_BASELINE \u2014 explicit violation quarantine list",
+    "document": "NEUTRALITY_GUARD_BASELINE — explicit violation quarantine list",
     "mission": "MISSION-R-05 (J-037 / V1CAP-067) continuous domain-neutrality CI guard",
     "guard": "scripts/verify-domain-neutrality.mjs",
     "generatedOn": "2026-10-01",
-    "lastExtension": "2026-11-01 (SV1-MOBILITY / ADR-013): added only observed findings for the V1 bulk preview/request migration; 5 groups, 25 hits; no table grants or domain code added. || 2026-11-02 (M04 / ADR-014): added only two observed migration-vocabulary groups (school_id, 26 hits; get_my_school_id, 9 hits) from the M04 V1 tenant-authority migration. Existing tenant helpers and columns are required to preserve organization/campus/shift RLS; no application-code baselines or grants were added. The rollback is not scanned by the migration-only neutrality guard.",
+    "lastExtension": "2026-11-01 (SV1-MOBILITY / ADR-013): added only observed findings for the V1 bulk preview/request migration; 5 groups, 25 hits; no table grants or domain code added. || 2026-11-02 (M04 / ADR-014): added only two observed migration-vocabulary groups (school_id, 26 hits; get_my_school_id, 9 hits) from the M04 V1 tenant-authority migration. Existing tenant helpers and columns are required to preserve organization/campus/shift RLS; no application-code baselines or grants were added. The rollback is not scanned by the migration-only neutrality guard. || 2026-11-03 (M09 / ADR-017): added only seven observed migration-vocabulary groups (71 hits) for the V1 NDPA consent and guardian migration; existing tenant helpers and columns preserve the active M04 tenant boundary. No application-code baseline or privileges added. || 2026-11-03 (M13 / ADR-018): added only two observed migration-vocabulary groups (9 hits) for the V1 access-review migration; existing tenant helpers and columns preserve the active M04 tenant boundary. No application-code baseline or privileges added.",
     "provenance": "Tokens derived from STREAM_I_CONTAMINATION_AUDIT.json (34 findings) and the P33 kernel-purity DOMAIN_TERMS. Every entry was OBSERVED by the guard against the live tree on the generation date; entries carry the observed file, kind, token, occurrence count and line numbers. streamIRef maps each entry back to its STREAM I finding (or STREAM H domainContaminationInCode entry) where one exists.",
-    "scope": "frontend/src/lib/*.ts (universal lib ROOT files only \u2014 kernel/ purity is owned by tests/unit/kernel-purity.test.ts), frontend/src/lib/kernel/phase-contracts/ (NOT covered by the kernel-purity test), database/supabase/migrations/*.sql",
-    "ratchetPolicy": "SHRINK-ONLY RATCHET (ADR-003/004 coordination): entries may be REMOVED as relocations land \u2014 they may NEVER be added. The guard fails on any observed (kind, file, token) violation group not present in this list and warns (never silently passes) on every entry it does contain, printing each quarantined hit on every run. To clear an entry, relocate the domain code into the owning runtime namespace, then delete the entry in the same change.",
+    "scope": "frontend/src/lib/*.ts (universal lib ROOT files only — kernel/ purity is owned by tests/unit/kernel-purity.test.ts), frontend/src/lib/kernel/phase-contracts/ (NOT covered by the kernel-purity test), database/supabase/migrations/*.sql",
+    "ratchetPolicy": "SHRINK-ONLY RATCHET (ADR-003/004 coordination): entries may be REMOVED as relocations land — they may NEVER be added. The guard fails on any observed (kind, file, token) violation group not present in this list and warns (never silently passes) on every entry it does contain, printing each quarantined hit on every run. To clear an entry, relocate the domain code into the owning runtime namespace, then delete the entry in the same change.",
     "semantics": {
       "fail": "observed violation group absent from baselineEntries",
       "warn": "observed violation group present in baselineEntries (printed every run)",
-      "ratchet": "baseline entry no longer observed \u2014 removable by the engineer who cleared it"
+      "ratchet": "baseline entry no longer observed — removable by the engineer who cleared it"
     },
-    "lastRatchet": "2026-10-03: V1-006 (team SECURITY) neutralized the platform authorization core \u2014 removed all 9 frontend/src/lib/authorization.ts and all 13 frontend/src/lib/identity.ts entries (authorization.ts and identity.ts now carry zero education vocabulary; roles/relationship types are contributed via rbac/domain-contribution + domain-config registration) and refreshed the 7 frozen security-role-gate.ts legacy-fallback entries against the live tree (shrink-only, ADR-003/004). || 2026-10-03 (ADR-012): T-wave coordinator ADDED 3 quarantine groups (19 hits) for database/supabase/migrations/20261003000040_coregrid_school_media_bucket.sql \u2014 the FIRST baseline extension, made under ADR-004's explicit 'new ADR' mechanism: the declarative storage-provisioning migration must reference the legacy storage contract id school-media consumed by the frontend and by the applied 20260707223958 policy set; the neutral conversion (bucket id + policy predicates + path contract) is blocked on the neutral-tenant substrate conversion (same conversionPath class as the transport posture) and is recorded as an authorized follow-up that REMOVES these entries in the same change. Zero new privileges authorized by ADR-012. || 2026-10-08 (ADR-013): Sherivs refoundation ADDED 9 quarantine groups (47 hits) for database/supabase/migrations/20261008000050_coregrid_organization_memberships.sql \u2014 the SECOND baseline extension, made under ADR-004's explicit 'new ADR' mechanism (ADR-012 precedent): the multi-membership migration extends the LIVE legacy identity store in place (users.school_id stays the ACTIVE-CONTEXT binding; every tenant RLS predicate resolves through get_my_school_id()/get_my_role()), so its SQL necessarily carries the same legacy vocabulary class its owners are quarantined for (school_id, is_school_admin, get_my_school_id, tenant role names). It introduces NO new domain code on the universal surface \u2014 the table is additive, RLS-FORCED, and mirrors the legacy store. Zero new privileges beyond the policy-gated DML posture it declares. The neutral-tenant substrate conversion (COND-003 / ADR-012 conversionPath) removes these entries in the same change when it lands. || 2026-10-08 (ADR-013 amendment, same ADR authority): pre-apply verification against the LIVE users_role_check exposed two roles the migration's original CHECK omitted (alumni, driver) \u2014 the dual-write trigger must be able to mirror EVERY role the identity store legally holds, so the CHECK was corrected to mirror users_role_check exactly and the migration APPLIED under explicit operator authorization. This adds 1 quarantine group (vocabulary-literal:driver) to the ten now recorded for this migration. || 2026-10-24 (W9/029 precedent): Track E ADDED 25 quarantine groups (58 hits) for the three sherivs_e_* migrations (RLS FORCE + read scoping, load-test indexes/policy initplans). They alter policies on the live legacy tenant store, so they necessarily name school_id / get_my_school_id / tenant role names; no new domain code on the universal surface. || 2026-10-25 (W9/029 precedent): merge train ADDED 8 quarantine groups for 20261025100180_sherivs_090_integration_hub.sql (Integration Hub tables are tenant-scoped on the live legacy store, so they name school_id and school vocabulary); no new domain code on the universal surface. || 2026-10-25 (W9/029 precedent): merge train quarantined 20261025100190_sherivs_092_integration_entities_outbound.sql (tenant-scoped migration on the live legacy store; names school_id/school vocabulary); no new domain code on the universal surface. || 2026-10-25 (W9/029 precedent): merge train quarantined 20261025100200_sherivs_093_integration_connectors.sql (tenant-scoped migration on the live legacy store; names school_id/school vocabulary); no new domain code on the universal surface. || 2026-10-24 (SHERIVS-UX1, W9/W11 precedent): ADDED 21 quarantine groups (119 hits) for database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql \u2014 the workspace manifest resolves the caller through the legacy tenant helpers (get_my_school_id/get_my_role) and names school modules and legacy role codes; no new privileges (all functions SECURITY DEFINER with explicit membership checks). || 2026-10-24 (SHERIVS-UX2, UX1/W9/W11 precedent): ADDED 13 quarantine groups (25 hits) for database/supabase/migrations/20261025100220_sherivs_ux2_scope_policy_workspace.sql \u2014 the scope/policy-aware workspace manifest replaces the UX1 function bodies and so carries the same legacy tenant helpers (get_my_school_id/get_my_role), legacy role codes and module names; no new privileges (all functions SECURITY DEFINER with explicit membership / settings.manage checks). || 2026-10-24 (SHERIVS-UX3, UX1/UX2 precedent): ADDED 8 quarantine groups (43 hits) for database/supabase/migrations/20261025100230_sherivs_ux3_workspace_live_data.sql \u2014 live workspace card data reads the legacy school tables (students, classes, fees, attendance...) by their existing names under the caller's own RLS (SECURITY INVOKER); no new privileges, no anon grants. || 2026-10-25 (W9/029 precedent): SHERIVS-PAY-SPLIT quarantined 20261025100250_sherivs_paystack_split_fee.sql (fee checkout split + term share on the live legacy fee/wallet store; names school_id/student/fee vocabulary); no new domain code on the universal surface. || 2026-11-03 (ADR-019 / M07): added only the five observed SQL-migration groups (fee: 12, fees: 6, bursar: 10, get_my_school_id: 3, structural school_id: 16 hits) for 20261103130000_sv1_m07_fees_ledger_receipts.sql; no new default permissions, and all reads and writes remain tenant- and role-gated under forced RLS"
+    "lastRatchet": "2026-10-03: V1-006 (team SECURITY) neutralized the platform authorization core — removed all 9 frontend/src/lib/authorization.ts and all 13 frontend/src/lib/identity.ts entries (authorization.ts and identity.ts now carry zero education vocabulary; roles/relationship types are contributed via rbac/domain-contribution + domain-config registration) and refreshed the 7 frozen security-role-gate.ts legacy-fallback entries against the live tree (shrink-only, ADR-003/004). || 2026-10-03 (ADR-012): T-wave coordinator ADDED 3 quarantine groups (19 hits) for database/supabase/migrations/20261003000040_coregrid_school_media_bucket.sql — the FIRST baseline extension, made under ADR-004's explicit 'new ADR' mechanism: the declarative storage-provisioning migration must reference the legacy storage contract id school-media consumed by the frontend and by the applied 20260707223958 policy set; the neutral conversion (bucket id + policy predicates + path contract) is blocked on the neutral-tenant substrate conversion (same conversionPath class as the transport posture) and is recorded as an authorized follow-up that REMOVES these entries in the same change. Zero new privileges authorized by ADR-012. || 2026-10-08 (ADR-013): Sherivs refoundation ADDED 9 quarantine groups (47 hits) for database/supabase/migrations/20261008000050_coregrid_organization_memberships.sql — the SECOND baseline extension, made under ADR-004's explicit 'new ADR' mechanism (ADR-012 precedent): the multi-membership migration extends the LIVE legacy identity store in place (users.school_id stays the ACTIVE-CONTEXT binding; every tenant RLS predicate resolves through get_my_school_id()/get_my_role()), so its SQL necessarily carries the same legacy vocabulary class its owners are quarantined for (school_id, is_school_admin, get_my_school_id, tenant role names). It introduces NO new domain code on the universal surface — the table is additive, RLS-FORCED, and mirrors the legacy store. Zero new privileges beyond the policy-gated DML posture it declares. The neutral-tenant substrate conversion (COND-003 / ADR-012 conversionPath) removes these entries in the same change when it lands. || 2026-10-08 (ADR-013 amendment, same ADR authority): pre-apply verification against the LIVE users_role_check exposed two roles the migration's original CHECK omitted (alumni, driver) — the dual-write trigger must be able to mirror EVERY role the identity store legally holds, so the CHECK was corrected to mirror users_role_check exactly and the migration APPLIED under explicit operator authorization. This adds 1 quarantine group (vocabulary-literal:driver) to the ten now recorded for this migration. || 2026-10-24 (W9/029 precedent): Track E ADDED 25 quarantine groups (58 hits) for the three sherivs_e_* migrations (RLS FORCE + read scoping, load-test indexes/policy initplans). They alter policies on the live legacy tenant store, so they necessarily name school_id / get_my_school_id / tenant role names; no new domain code on the universal surface. || 2026-10-25 (W9/029 precedent): merge train ADDED 8 quarantine groups for 20261025100180_sherivs_090_integration_hub.sql (Integration Hub tables are tenant-scoped on the live legacy store, so they name school_id and school vocabulary); no new domain code on the universal surface. || 2026-10-25 (W9/029 precedent): merge train quarantined 20261025100190_sherivs_092_integration_entities_outbound.sql (tenant-scoped migration on the live legacy store; names school_id/school vocabulary); no new domain code on the universal surface. || 2026-10-25 (W9/029 precedent): merge train quarantined 20261025100200_sherivs_093_integration_connectors.sql (tenant-scoped migration on the live legacy store; names school_id/school vocabulary); no new domain code on the universal surface. || 2026-10-24 (SHERIVS-UX1, W9/W11 precedent): ADDED 21 quarantine groups (119 hits) for database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql — the workspace manifest resolves the caller through the legacy tenant helpers (get_my_school_id/get_my_role) and names school modules and legacy role codes; no new privileges (all functions SECURITY DEFINER with explicit membership checks). || 2026-10-24 (SHERIVS-UX2, UX1/W9/W11 precedent): ADDED 13 quarantine groups (25 hits) for database/supabase/migrations/20261025100220_sherivs_ux2_scope_policy_workspace.sql — the scope/policy-aware workspace manifest replaces the UX1 function bodies and so carries the same legacy tenant helpers (get_my_school_id/get_my_role), legacy role codes and module names; no new privileges (all functions SECURITY DEFINER with explicit membership / settings.manage checks). || 2026-10-24 (SHERIVS-UX3, UX1/UX2 precedent): ADDED 8 quarantine groups (43 hits) for database/supabase/migrations/20261025100230_sherivs_ux3_workspace_live_data.sql — live workspace card data reads the legacy school tables (students, classes, fees, attendance...) by their existing names under the caller's own RLS (SECURITY INVOKER); no new privileges, no anon grants. || 2026-10-25 (W9/029 precedent): SHERIVS-PAY-SPLIT quarantined 20261025100250_sherivs_paystack_split_fee.sql (fee checkout split + term share on the live legacy fee/wallet store; names school_id/student/fee vocabulary); no new domain code on the universal surface. || 2026-11-03 (ADR-019 / M07): added only the five observed SQL-migration groups (fee: 12, fees: 6, bursar: 10, get_my_school_id: 3, structural school_id: 16 hits) for 20261103130000_sv1_m07_fees_ledger_receipts.sql; no new default permissions, and all reads and writes remain tenant- and role-gated under forced RLS"
   },
   "summary": {
-    "entryCount": 845,
-    "totalObservedHits": 4702,
+    "entryCount": 854,
+    "totalObservedHits": 4782,
     "hitsByFile": {
       "database/supabase/migrations/20261024000240_sherivs_017_role_permission_catalog.sql": 549,
       "database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql": 119,
@@ -32,6 +32,7 @@
       "database/supabase/migrations/20261020000100_sherivs_004_in_school_write_roles.sql": 88,
       "database/supabase/migrations/20260620122048_50e590c2-5911-4c98-8931-fb46a4b509f3.sql": 84,
       "database/supabase/migrations/20261025100240_sherivs_100_website_engine.sql": 77,
+      "database/supabase/migrations/20261103110000_sherivs_m09_ndpa_guardians.sql": 71,
       "database/supabase/migrations/20260626150625_35a08443-45fd-46ae-807b-3644b44efe26.sql": 69,
       "database/supabase/migrations/20261024000230_sherivs_016_lifecycle_grading_tiers_audit.sql": 67,
       "database/supabase/migrations/20261025100180_sherivs_090_integration_hub.sql": 67,
@@ -39,6 +40,7 @@
       "database/supabase/migrations/20261020000090_sherivs_004_in_school_role_rls.sql": 64,
       "database/supabase/migrations/20261025100050_sherivs_a05_fee_relief_levies.sql": 64,
       "database/supabase/migrations/20261024000220_sherivs_015_privacy_lockdown_rls_speed.sql": 62,
+      "database/supabase/migrations/20261101001000_sherivs_033_communication_scope_lock.sql": 62,
       "database/supabase/migrations/20261020000060_sherivs_003_ndpa_foundations.sql": 59,
       "database/supabase/migrations/20261024000300_sherivs_023_courses_siwes_early_warning.sql": 56,
       "database/supabase/migrations/20261024000320_sherivs_025_ussd_ivr_alumni_gov_i18n.sql": 55,
@@ -48,6 +50,7 @@
       "database/supabase/migrations/20260907000600_runtime_scholar_workforce_ecosystem_extension.sql": 50,
       "database/supabase/migrations/20261008000050_coregrid_organization_memberships.sql": 48,
       "frontend/src/lib/education-institution.ts": 47,
+      "database/supabase/migrations/20261103130000_sv1_m07_fees_ledger_receipts.sql": 47,
       "database/supabase/migrations/20260725063636_d379b679-904b-4d2a-b9ed-11b463817fda.sql": 45,
       "database/supabase/migrations/20261003000042_platform_capture_out_of_band_tables.sql": 45,
       "database/supabase/migrations/20261025100170_sherivs_b06_group_console.sql": 43,
@@ -90,7 +93,6 @@
       "database/supabase/migrations/20261024000340_sherivs_027_gov_portal.sql": 19,
       "database/supabase/migrations/20260707223958_421f2364-7989-4069-b78c-fd119f19daeb.sql": 18,
       "database/supabase/migrations/20261101000010_sherivs_m009_a1_role_responsibility_engine.sql": 18,
-      "database/supabase/migrations/20261101001000_sherivs_033_communication_scope_lock.sql": 62,
       "frontend/src/lib/financial-splits.ts": 18,
       "database/supabase/migrations/20260907000800_coregrid_role_assignment_substrate.sql": 17,
       "frontend/src/lib/identity-actor.ts": 17,
@@ -120,6 +122,7 @@
       "database/supabase/migrations/20261025100010_sherivs_a01_scope_sets_complete.sql": 9,
       "frontend/src/lib/kernel/phase-contracts/phase-13-financial-system.ts": 9,
       "frontend/src/lib/trust-fabric-report.ts": 9,
+      "database/supabase/migrations/20261103120000_sherivs_m13_audit_access_reviews.sql": 9,
       "database/supabase/migrations/20260626133249_c712dcde-8e28-4f72-968d-a101b1bd5f7e.sql": 8,
       "database/supabase/migrations/20260907000700_coregrid_org_profile_substrate.sql": 8,
       "frontend/src/lib/analytics-core.ts": 8,
@@ -214,8 +217,7 @@
       "frontend/src/lib/runtime-command-query.ts": 1,
       "frontend/src/lib/scheduling-conflicts.ts": 1,
       "frontend/src/lib/scheduling-quality.ts": 1,
-      "frontend/src/lib/workforce-positions.ts": 1,
-      "database/supabase/migrations/20261103130000_sv1_m07_fees_ledger_receipts.sql": 47
+      "frontend/src/lib/workforce-positions.ts": 1
     },
     "baselineGroups": 427
   },
@@ -398,7 +400,7 @@
         627,
         631
       ],
-      "firstSnippet": "-- UNIVERSAL SCHOOL OS \u2014 Foundation schema"
+      "firstSnippet": "-- UNIVERSAL SCHOOL OS — Foundation schema"
     },
     {
       "file": "database/supabase/migrations/20260620122048_50e590c2-5911-4c98-8931-fb46a4b509f3.sql",
@@ -1154,7 +1156,7 @@
       "lines": [
         1
       ],
-      "firstSnippet": "-- Part 11: Vibeora Intelligence delta \u2014 fills gaps left from earlier migrations."
+      "firstSnippet": "-- Part 11: Vibeora Intelligence delta — fills gaps left from earlier migrations."
     },
     {
       "file": "database/supabase/migrations/20260705002543_e6b3e3bb-6d5e-4783-97cd-39e875bece40.sql",
@@ -1859,7 +1861,7 @@
         279,
         284
       ],
-      "firstSnippet": "-- Scholar (runtime:scholar) workforce-kind catalog install \u2014 R-001 content"
+      "firstSnippet": "-- Scholar (runtime:scholar) workforce-kind catalog install — R-001 content"
     },
     {
       "file": "database/supabase/migrations/20260907000100_runtime_scholar_workforce_catalog.sql",
@@ -2114,7 +2116,7 @@
         155,
         160
       ],
-      "firstSnippet": "-- Scholar (runtime:scholar) workforce-catalog EXTENSION \u2014 full African"
+      "firstSnippet": "-- Scholar (runtime:scholar) workforce-catalog EXTENSION — full African"
     },
     {
       "file": "database/supabase/migrations/20260907000600_runtime_scholar_workforce_ecosystem_extension.sql",
@@ -2256,7 +2258,7 @@
         2,
         15
       ],
-      "firstSnippet": "-- CoreGrid Scholar \u2014 role assignment & grant substrate (WAVE-R37, S2)"
+      "firstSnippet": "-- CoreGrid Scholar — role assignment & grant substrate (WAVE-R37, S2)"
     },
     {
       "file": "database/supabase/migrations/20260907000800_coregrid_role_assignment_substrate.sql",
@@ -2279,7 +2281,7 @@
       "lines": [
         20
       ],
-      "firstSnippet": "-- \"personal\"|\"system\"|\"custom\") \u2014 no Scholar-specific values. Lifecycle"
+      "firstSnippet": "-- \"personal\"|\"system\"|\"custom\") — no Scholar-specific values. Lifecycle"
     },
     {
       "file": "database/supabase/migrations/20261001000000_coregrid_v1_org_model.sql",
@@ -2316,7 +2318,7 @@
         113,
         114
       ],
-      "firstSnippet": "--   cg_org_membership \u2014 binding of a principal (human or workforce position"
+      "firstSnippet": "--   cg_org_membership — binding of a principal (human or workforce position"
     },
     {
       "file": "database/supabase/migrations/20261001000000_coregrid_v1_org_model.sql",
@@ -2338,7 +2340,7 @@
       "lines": [
         14
       ],
-      "firstSnippet": "--   V5.3 Part 46   \u2014 no domain contamination: no \"school\" (or any other"
+      "firstSnippet": "--   V5.3 Part 46   — no domain contamination: no \"school\" (or any other"
     },
     {
       "file": "database/supabase/migrations/20261002000000_coregrid_v1_kernel_envelope.sql",
@@ -2350,7 +2352,7 @@
         36,
         37
       ],
-      "firstSnippet": "--   created_by       \u2014 creator principal ref (human, agent, service)"
+      "firstSnippet": "--   created_by       — creator principal ref (human, agent, service)"
     },
     {
       "file": "database/supabase/migrations/20261002000001_coregrid_v1_neutral_tenant_primitives.sql",
@@ -2465,7 +2467,7 @@
         91,
         96
       ],
-      "firstSnippet": "-- CoreGrid \u2014 school-media storage bucket provisioning (post-R-wave follow-up,"
+      "firstSnippet": "-- CoreGrid — school-media storage bucket provisioning (post-R-wave follow-up,"
     },
     {
       "file": "database/supabase/migrations/20261003000042_platform_capture_out_of_band_tables.sql",
@@ -2774,7 +2776,7 @@
       "file": "database/supabase/migrations/20261008000060_organization_onboarding.sql",
       "kind": "structural",
       "token": "school_id",
-      "streamIRef": "ADR-013 (live identity-store uuid binding \u2014 COND-003 governs unification; 20261008000060)",
+      "streamIRef": "ADR-013 (live identity-store uuid binding — COND-003 governs unification; 20261008000060)",
       "occurrences": 2,
       "lines": [
         94,
@@ -2786,7 +2788,7 @@
       "file": "database/supabase/migrations/20261008000060_organization_onboarding.sql",
       "kind": "vocabulary",
       "token": "scholar",
-      "streamIRef": "ADR-013 (live identity-store runtime binding; V1 ships exactly one runtime \u2014 20261008000060)",
+      "streamIRef": "ADR-013 (live identity-store runtime binding; V1 ships exactly one runtime — 20261008000060)",
       "occurrences": 4,
       "lines": [
         19,
@@ -7443,7 +7445,7 @@
         105,
         107
       ],
-      "firstSnippet": "-- SHERIVS-A07: offline attendance v2 \u2014 per-item idempotency, device clock-skew checks, and an admin conflict queue."
+      "firstSnippet": "-- SHERIVS-A07: offline attendance v2 — per-item idempotency, device clock-skew checks, and an admin conflict queue."
     },
     {
       "file": "database/supabase/migrations/20261025100070_sherivs_a07_offline_attendance_v2.sql",
@@ -8096,7 +8098,7 @@
       "lines": [
         2
       ],
-      "firstSnippet": "-- SHERIVS-090 \u2014 Integration Hub: connect a school's existing software (SIS, result/fee"
+      "firstSnippet": "-- SHERIVS-090 — Integration Hub: connect a school's existing software (SIS, result/fee"
     },
     {
       "file": "database/supabase/migrations/20261025100180_sherivs_090_integration_hub.sql",
@@ -8134,7 +8136,7 @@
         275,
         302
       ],
-      "firstSnippet": "-- SHERIVS-090 \u2014 Integration Hub: connect a school's existing software (SIS, result/fee"
+      "firstSnippet": "-- SHERIVS-090 — Integration Hub: connect a school's existing software (SIS, result/fee"
     },
     {
       "file": "database/supabase/migrations/20261025100180_sherivs_090_integration_hub.sql",
@@ -9429,7 +9431,56 @@
       "token": "school_id",
       "streamIRef": "ADR-012 (architecture/adr/ADR-012_COMMS_LEGACY_STORE_EXTENSION.md)",
       "occurrences": 48,
-      "lines": [20, 21, 22, 23, 24, 28, 45, 47, 49, 52, 55, 62, 66, 69, 80, 96, 171, 184, 215, 222, 227, 235, 252, 262, 264, 273, 276, 321, 331, 389, 443, 456, 459, 461, 464, 472, 505, 558, 565, 568, 572, 575, 580, 622, 643, 645, 667, 723],
+      "lines": [
+        20,
+        21,
+        22,
+        23,
+        24,
+        28,
+        45,
+        47,
+        49,
+        52,
+        55,
+        62,
+        66,
+        69,
+        80,
+        96,
+        171,
+        184,
+        215,
+        222,
+        227,
+        235,
+        252,
+        262,
+        264,
+        273,
+        276,
+        321,
+        331,
+        389,
+        443,
+        456,
+        459,
+        461,
+        464,
+        472,
+        505,
+        558,
+        565,
+        568,
+        572,
+        575,
+        580,
+        622,
+        643,
+        645,
+        667,
+        723
+      ],
       "firstSnippet": "UPDATE public.comms_templates SET org_id = school_id WHERE org_id IS NULL AND school_id IS NOT NULL;"
     },
     {
@@ -9438,7 +9489,14 @@
       "token": "get_my_school_id",
       "streamIRef": "ADR-012 (architecture/adr/ADR-012_COMMS_LEGACY_STORE_EXTENSION.md)",
       "occurrences": 6,
-      "lines": [145, 148, 155, 159, 164, 258],
+      "lines": [
+        145,
+        148,
+        155,
+        159,
+        164,
+        258
+      ],
       "firstSnippet": "USING (org_id IS NULL OR org_id = public.get_my_school_id());"
     },
     {
@@ -9447,7 +9505,15 @@
       "token": "school",
       "streamIRef": "ADR-012 (architecture/adr/ADR-012_COMMS_LEGACY_STORE_EXTENSION.md)",
       "occurrences": 7,
-      "lines": [65, 172, 313, 322, 358, 434, 470],
+      "lines": [
+        65,
+        172,
+        313,
+        322,
+        358,
+        434,
+        470
+      ],
       "firstSnippet": "-- The single Sherivs gateway is registered once, not copied per school."
     },
     {
@@ -9456,7 +9522,9 @@
       "token": "student",
       "streamIRef": "ADR-012 (architecture/adr/ADR-012_COMMS_LEGACY_STORE_EXTENSION.md)",
       "occurrences": 1,
-      "lines": [322],
+      "lines": [
+        322
+      ],
       "firstSnippet": ") THEN RAISE EXCEPTION 'student not in this school'; END IF;"
     },
     {
@@ -9465,7 +9533,77 @@
       "token": "school_id",
       "streamIRef": "SV1-MOBILITY (ADR-013)",
       "occurrences": 69,
-      "lines": [15, 29, 51, 55, 69, 93, 97, 110, 114, 126, 133, 164, 219, 221, 224, 275, 279, 287, 291, 296, 301, 335, 343, 346, 354, 357, 377, 380, 385, 386, 425, 432, 470, 475, 478, 482, 486, 504, 530, 531, 547, 560, 561, 567, 568, 583, 584, 612, 613, 618, 620, 622, 627, 634, 642, 649, 658, 688, 737, 740, 742, 744, 753, 756, 762, 768, 773, 774, 798],
+      "lines": [
+        15,
+        29,
+        51,
+        55,
+        69,
+        93,
+        97,
+        110,
+        114,
+        126,
+        133,
+        164,
+        219,
+        221,
+        224,
+        275,
+        279,
+        287,
+        291,
+        296,
+        301,
+        335,
+        343,
+        346,
+        354,
+        357,
+        377,
+        380,
+        385,
+        386,
+        425,
+        432,
+        470,
+        475,
+        478,
+        482,
+        486,
+        504,
+        530,
+        531,
+        547,
+        560,
+        561,
+        567,
+        568,
+        583,
+        584,
+        612,
+        613,
+        618,
+        620,
+        622,
+        627,
+        634,
+        642,
+        649,
+        658,
+        688,
+        737,
+        740,
+        742,
+        744,
+        753,
+        756,
+        762,
+        768,
+        773,
+        774,
+        798
+      ],
       "firstSnippet": "school_id uuid PRIMARY KEY REFERENCES public.schools(id) ON DELETE CASCADE,"
     },
     {
@@ -9474,7 +9612,9 @@
       "token": "academic",
       "streamIRef": "SV1-MOBILITY (ADR-013)",
       "occurrences": 1,
-      "lines": [2],
+      "lines": [
+        2
+      ],
       "firstSnippet": "-- each academic placement and approved movement as a tenant-scoped timeline."
     },
     {
@@ -9483,7 +9623,9 @@
       "token": "admission",
       "streamIRef": "SV1-MOBILITY (ADR-013)",
       "occurrences": 1,
-      "lines": [728],
+      "lines": [
+        728
+      ],
       "firstSnippet": "RAISE EXCEPTION 'destination admission number is required';"
     },
     {
@@ -9492,7 +9634,12 @@
       "token": "attendance",
       "streamIRef": "SV1-MOBILITY (ADR-013)",
       "occurrences": 4,
-      "lines": [412, 644, 648, 652],
+      "lines": [
+        412,
+        644,
+        648,
+        652
+      ],
       "firstSnippet": "IF p_min_attendance_pct IS NOT NULL AND p_min_attendance_pct NOT BETWEEN 0 AND 100 THEN RAISE EXCEPTION 'minimum attendance must be between 0 and 100'; END IF;"
     },
     {
@@ -9501,7 +9648,11 @@
       "token": "enrollment",
       "streamIRef": "SV1-MOBILITY (ADR-013)",
       "occurrences": 3,
-      "lines": [80, 320, 383],
+      "lines": [
+        80,
+        320,
+        383
+      ],
       "firstSnippet": "'enrollment', 'promote', 'repeat', 'double_promote', 'demote',"
     },
     {
@@ -9510,7 +9661,9 @@
       "token": "fee",
       "streamIRef": "SV1-MOBILITY (ADR-013)",
       "occurrences": 1,
-      "lines": [416],
+      "lines": [
+        416
+      ],
       "firstSnippet": "IF p_fee_clearance IS NULL OR p_fee_clearance NOT IN ('block', 'warn', 'allow') THEN RAISE EXCEPTION 'invalid fee clearance policy'; END IF;"
     },
     {
@@ -9519,7 +9672,15 @@
       "token": "fees",
       "streamIRef": "SV1-MOBILITY (ADR-013)",
       "occurrences": 7,
-      "lines": [116, 223, 274, 281, 657, 660, 789],
+      "lines": [
+        116,
+        223,
+        274,
+        281,
+        657,
+        660,
+        789
+      ],
       "firstSnippet": "fee_id uuid NOT NULL REFERENCES public.fees(id) ON DELETE RESTRICT,"
     },
     {
@@ -9528,7 +9689,15 @@
       "token": "get_my_school_id",
       "streamIRef": "SV1-MOBILITY (ADR-013)",
       "occurrences": 7,
-      "lines": [404, 456, 527, 583, 601, 720, 798],
+      "lines": [
+        404,
+        456,
+        527,
+        583,
+        601,
+        720,
+        798
+      ],
       "firstSnippet": "DECLARE v_school uuid := public.get_my_school_id();"
     },
     {
@@ -9537,7 +9706,13 @@
       "token": "school",
       "streamIRef": "SV1-MOBILITY (ADR-013)",
       "occurrences": 5,
-      "lines": [281, 288, 293, 298, 660],
+      "lines": [
+        281,
+        288,
+        293,
+        298,
+        660
+      ],
       "firstSnippet": "RAISE EXCEPTION 'outstanding fees block transfer under school policy';"
     },
     {
@@ -9546,7 +9721,20 @@
       "token": "student",
       "streamIRef": "SV1-MOBILITY (ADR-013)",
       "occurrences": 12,
-      "lines": [1, 141, 169, 177, 383, 471, 472, 473, 501, 619, 629, 660],
+      "lines": [
+        1,
+        141,
+        169,
+        177,
+        383,
+        471,
+        472,
+        473,
+        501,
+        619,
+        629,
+        660
+      ],
       "firstSnippet": "-- SV1-MOBILITY: keep the current student row for compatibility while recording"
     },
     {
@@ -9555,7 +9743,19 @@
       "token": "school_id",
       "streamIRef": "SV1-MOBILITY (ADR-013)",
       "occurrences": 11,
-      "lines": [42, 51, 58, 65, 68, 73, 82, 93, 100, 113, 175],
+      "lines": [
+        42,
+        51,
+        58,
+        65,
+        68,
+        73,
+        82,
+        93,
+        100,
+        113,
+        175
+      ],
       "firstSnippet": "WHERE id = p_student AND school_id = v_school;"
     },
     {
@@ -9564,7 +9764,12 @@
       "token": "attendance",
       "streamIRef": "SV1-MOBILITY (ADR-013)",
       "occurrences": 4,
-      "lines": [95, 99, 103, 105],
+      "lines": [
+        95,
+        99,
+        103,
+        105
+      ],
       "firstSnippet": "v_unmet := array_append(v_unmet, 'attendance period is unknown');"
     },
     {
@@ -9573,7 +9778,9 @@
       "token": "fees",
       "streamIRef": "SV1-MOBILITY (ADR-013)",
       "occurrences": 1,
-      "lines": [112],
+      "lines": [
+        112
+      ],
       "firstSnippet": "INTO v_balance FROM public.fees"
     },
     {
@@ -9582,7 +9789,11 @@
       "token": "get_my_school_id",
       "streamIRef": "SV1-MOBILITY (ADR-013)",
       "occurrences": 3,
-      "lines": [13, 144, 194],
+      "lines": [
+        13,
+        144,
+        194
+      ],
       "firstSnippet": "v_school uuid := public.get_my_school_id();"
     },
     {
@@ -9591,7 +9802,14 @@
       "token": "student",
       "streamIRef": "SV1-MOBILITY (ADR-013)",
       "occurrences": 6,
-      "lines": [39, 43, 45, 47, 165, 215],
+      "lines": [
+        39,
+        43,
+        45,
+        47,
+        165,
+        215
+      ],
       "firstSnippet": "RAISE EXCEPTION 'additional student count is invalid';"
     },
     {
@@ -9615,7 +9833,7 @@
         2,
         12
       ],
-      "firstSnippet": "* CoreGrid \u2014 Academic Learning Intelligence: assessment intelligence."
+      "firstSnippet": "* CoreGrid — Academic Learning Intelligence: assessment intelligence."
     },
     {
       "file": "frontend/src/lib/academic-assessment.ts",
@@ -9670,7 +9888,7 @@
         41,
         74
       ],
-      "firstSnippet": "* CoreGrid \u2014 Academic Learning Intelligence core domain model"
+      "firstSnippet": "* CoreGrid — Academic Learning Intelligence core domain model"
     },
     {
       "file": "frontend/src/lib/academic-core.ts",
@@ -9737,7 +9955,7 @@
       "lines": [
         2
       ],
-      "firstSnippet": "* CoreGrid \u2014 Academic Learning Intelligence: curriculum and competency intelligence."
+      "firstSnippet": "* CoreGrid — Academic Learning Intelligence: curriculum and competency intelligence."
     },
     {
       "file": "frontend/src/lib/academic-curriculum.ts",
@@ -9767,7 +9985,7 @@
         366,
         397
       ],
-      "firstSnippet": "* CoreGrid \u2014 Academic Learning Intelligence: curriculum and competency intelligence."
+      "firstSnippet": "* CoreGrid — Academic Learning Intelligence: curriculum and competency intelligence."
     },
     {
       "file": "frontend/src/lib/academic-curriculum.ts",
@@ -9865,7 +10083,7 @@
         488,
         490
       ],
-      "firstSnippet": "* CoreGrid \u2014 Phase 11 Academic Learning Intelligence: the phase report."
+      "firstSnippet": "* CoreGrid — Phase 11 Academic Learning Intelligence: the phase report."
     },
     {
       "file": "frontend/src/lib/academic-intelligence-report.ts",
@@ -9943,7 +10161,7 @@
         23,
         178
       ],
-      "firstSnippet": "* CoreGrid \u2014 Academic Learning Intelligence Mastery Engine"
+      "firstSnippet": "* CoreGrid — Academic Learning Intelligence Mastery Engine"
     },
     {
       "file": "frontend/src/lib/academic-pathways.ts",
@@ -9966,7 +10184,7 @@
         2,
         6
       ],
-      "firstSnippet": "* CoreGrid \u2014 Academic Learning Intelligence prerequisite engine,"
+      "firstSnippet": "* CoreGrid — Academic Learning Intelligence prerequisite engine,"
     },
     {
       "file": "frontend/src/lib/academic-pathways.ts",
@@ -10020,7 +10238,7 @@
         191,
         290
       ],
-      "firstSnippet": "* CoreGrid \u2014 Academic Learning Intelligence risk engine,"
+      "firstSnippet": "* CoreGrid — Academic Learning Intelligence risk engine,"
     },
     {
       "file": "frontend/src/lib/academic-risk.ts",
@@ -10109,7 +10327,7 @@
       "lines": [
         170
       ],
-      "firstSnippet": "// Gateway entry (\u00a727 server-function discipline applied to model invocation)"
+      "firstSnippet": "// Gateway entry (§27 server-function discipline applied to model invocation)"
     },
     {
       "file": "frontend/src/lib/ai-governance.ts",
@@ -10498,7 +10716,7 @@
         5,
         20
       ],
-      "firstSnippet": "* CoreGrid \u2014 data migration discipline (Phase 14, domain-neutral)."
+      "firstSnippet": "* CoreGrid — data migration discipline (Phase 14, domain-neutral)."
     },
     {
       "file": "frontend/src/lib/data-platform-report.ts",
@@ -10655,7 +10873,7 @@
         789,
         798
       ],
-      "firstSnippet": "* Attendance (Sections 38\u201339)"
+      "firstSnippet": "* Attendance (Sections 38–39)"
     },
     {
       "file": "frontend/src/lib/education-core.ts",
@@ -10866,7 +11084,7 @@
         562,
         567
       ],
-      "firstSnippet": "* CoreGrid \u2014 Education Reality Engine curriculum engine."
+      "firstSnippet": "* CoreGrid — Education Reality Engine curriculum engine."
     },
     {
       "file": "frontend/src/lib/education-curriculum.ts",
@@ -11400,7 +11618,7 @@
       "lines": [
         99
       ],
-      "firstSnippet": "// \u2500\u2500\u2500 DB\u2013DE. Teacher, Infrastructure Programmes \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+      "firstSnippet": "// ─── DB–DE. Teacher, Infrastructure Programmes ───────────────────────"
     },
     {
       "file": "frontend/src/lib/hardware-core.ts",
@@ -11411,7 +11629,7 @@
       "lines": [
         24
       ],
-      "firstSnippet": "*   classroom, laboratory, vehicle, infrastructure zone, tenant \u2014"
+      "firstSnippet": "*   classroom, laboratory, vehicle, infrastructure zone, tenant —"
     },
     {
       "file": "frontend/src/lib/hardware-core.ts",
@@ -11434,7 +11652,7 @@
       "streamIRef": "unmapped",
       "occurrences": 1,
       "lines": [
-        269
+        270
       ],
       "firstSnippet": "* Grade telemetry quality (AC): VALID, ESTIMATED, STALE, MISSING,"
     },
@@ -11447,7 +11665,7 @@
       "lines": [
         257
       ],
-      "firstSnippet": "* Telemetry quality grading (AC) \u2014 time-aware"
+      "firstSnippet": "* Telemetry quality grading (AC) — time-aware"
     },
     {
       "file": "frontend/src/lib/identity-actor.ts",
@@ -11607,7 +11825,7 @@
       "lines": [
         312
       ],
-      "firstSnippet": "/** Room kind: classroom, laboratory, library, office, hall, dormitory, clinic\u2026 */"
+      "firstSnippet": "/** Room kind: classroom, laboratory, library, office, hall, dormitory, clinic… */"
     },
     {
       "file": "frontend/src/lib/institution-core.ts",
@@ -11618,7 +11836,7 @@
       "lines": [
         312
       ],
-      "firstSnippet": "/** Room kind: classroom, laboratory, library, office, hall, dormitory, clinic\u2026 */"
+      "firstSnippet": "/** Room kind: classroom, laboratory, library, office, hall, dormitory, clinic… */"
     },
     {
       "file": "frontend/src/lib/institution-core.ts",
@@ -11698,7 +11916,7 @@
         17,
         121
       ],
-      "firstSnippet": "*   school-admin gate \u2192 the actor's OWN school scope is the tenant boundary."
+      "firstSnippet": "*   school-admin gate → the actor's OWN school scope is the tenant boundary."
     },
     {
       "file": "frontend/src/lib/kernel/phase-contracts/define-phase.ts",
@@ -11745,7 +11963,7 @@
         112,
         202
       ],
-      "firstSnippet": "\"Give every CoreGrid phase one set of verified foundations \u2014 repository standards, configuration, secrets discipline, migration rules, typing, API boundary rule"
+      "firstSnippet": "\"Give every CoreGrid phase one set of verified foundations — repository standards, configuration, secrets discipline, migration rules, typing, API boundary rule"
     },
     {
       "file": "frontend/src/lib/kernel/phase-contracts/phase-01-foundation.ts",
@@ -11880,7 +12098,7 @@
         71,
         82
       ],
-      "firstSnippet": "* Phase 11 \u2014 Academic Intelligence contract (seeded authoring)."
+      "firstSnippet": "* Phase 11 — Academic Intelligence contract (seeded authoring)."
     },
     {
       "file": "frontend/src/lib/kernel/phase-contracts/phase-11-academic-intelligence.ts",
@@ -12201,7 +12419,7 @@
         425,
         468
       ],
-      "firstSnippet": "* principal is related to. It is a derived view, NEVER a permission grant \u2014"
+      "firstSnippet": "* principal is related to. It is a derived view, NEVER a permission grant —"
     },
     {
       "file": "frontend/src/lib/org-model.ts",
@@ -12325,7 +12543,7 @@
         731,
         734
       ],
-      "firstSnippet": "* - Education system localization (CL), terminology (CM), grading (CN) \u2014"
+      "firstSnippet": "* - Education system localization (CL), terminology (CM), grading (CN) —"
     },
     {
       "file": "frontend/src/lib/regional-context.ts",
@@ -12440,7 +12658,7 @@
       "lines": [
         2
       ],
-      "firstSnippet": "* CoreGrid \u2014 Scheduling & Timetable Intelligence Availability Engine"
+      "firstSnippet": "* CoreGrid — Scheduling & Timetable Intelligence Availability Engine"
     },
     {
       "file": "frontend/src/lib/scheduling-conflicts.ts",
@@ -12451,7 +12669,7 @@
       "lines": [
         2
       ],
-      "firstSnippet": "* CoreGrid \u2014 Scheduling & Timetable Intelligence: the conflict engine."
+      "firstSnippet": "* CoreGrid — Scheduling & Timetable Intelligence: the conflict engine."
     },
     {
       "file": "frontend/src/lib/scheduling-constraints.ts",
@@ -12486,7 +12704,7 @@
       "lines": [
         2
       ],
-      "firstSnippet": "* CoreGrid \u2014 Scheduling & Timetable Intelligence Constraint Engine"
+      "firstSnippet": "* CoreGrid — Scheduling & Timetable Intelligence Constraint Engine"
     },
     {
       "file": "frontend/src/lib/scheduling-core.ts",
@@ -12528,7 +12746,7 @@
       "lines": [
         2
       ],
-      "firstSnippet": "* CoreGrid \u2014 Scheduling & Timetable Intelligence core domain model"
+      "firstSnippet": "* CoreGrid — Scheduling & Timetable Intelligence core domain model"
     },
     {
       "file": "frontend/src/lib/scheduling-intelligence-report.ts",
@@ -12540,7 +12758,7 @@
         2,
         623
       ],
-      "firstSnippet": "* CoreGrid \u2014 Scheduling & Timetable Intelligence: the L4 intelligence report."
+      "firstSnippet": "* CoreGrid — Scheduling & Timetable Intelligence: the L4 intelligence report."
     },
     {
       "file": "frontend/src/lib/scheduling-quality.ts",
@@ -12551,7 +12769,7 @@
       "lines": [
         2
       ],
-      "firstSnippet": "* CoreGrid \u2014 Scheduling & Timetable Intelligence: quality, disruption and comparison."
+      "firstSnippet": "* CoreGrid — Scheduling & Timetable Intelligence: quality, disruption and comparison."
     },
     {
       "file": "frontend/src/lib/scheduling-validator.ts",
@@ -12573,7 +12791,7 @@
       "lines": [
         2
       ],
-      "firstSnippet": "* CoreGrid \u2014 Scheduling & Timetable Intelligence Independent"
+      "firstSnippet": "* CoreGrid — Scheduling & Timetable Intelligence Independent"
     },
     {
       "file": "frontend/src/lib/security-role-gate.ts",
@@ -12980,7 +13198,7 @@
       "lines": [
         61
       ],
-      "firstSnippet": "/** Display label: \"Head Teacher\" / \"Subject Teacher \u2022 primary\" / \"... (ended)\". */"
+      "firstSnippet": "/** Display label: \"Head Teacher\" / \"Subject Teacher • primary\" / \"... (ended)\". */"
     },
     {
       "file": "frontend/src/lib/workspace-projection.ts",
@@ -13058,6 +13276,176 @@
         296
       ],
       "firstSnippet": "ON public.campuses (id, school_id);"
+    },
+    {
+      "file": "database/supabase/migrations/20261103120000_sherivs_m13_audit_access_reviews.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "M13 (#192)",
+      "occurrences": 4,
+      "lines": [
+        8,
+        125,
+        134,
+        143
+      ],
+      "firstSnippet": "OR to_regprocedure('public.get_my_school_id()') IS NULL"
+    },
+    {
+      "file": "database/supabase/migrations/20261103120000_sherivs_m13_audit_access_reviews.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "M13 (#192)",
+      "occurrences": 5,
+      "lines": [
+        174,
+        188,
+        216,
+        283,
+        316
+      ],
+      "firstSnippet": "AND m.school_id = p_org"
+    },
+    {
+      "file": "database/supabase/migrations/20261103110000_sherivs_m09_ndpa_guardians.sql",
+      "kind": "structural",
+      "token": "school_id",
+      "streamIRef": "M09-ISSUE-188",
+      "occurrences": 48,
+      "lines": [
+        58,
+        76,
+        78,
+        80,
+        85,
+        94,
+        105,
+        121,
+        125,
+        143,
+        154,
+        157,
+        190,
+        210,
+        238,
+        246,
+        250,
+        261,
+        276,
+        304,
+        305,
+        357,
+        360,
+        373,
+        390,
+        392,
+        407,
+        414,
+        417,
+        438,
+        441,
+        446,
+        448,
+        468,
+        470,
+        572,
+        584,
+        585,
+        603,
+        604,
+        605,
+        611,
+        612,
+        613,
+        629,
+        630,
+        635,
+        636
+      ],
+      "firstSnippet": "school_id uuid NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,"
+    },
+    {
+      "file": "database/supabase/migrations/20261103110000_sherivs_m09_ndpa_guardians.sql",
+      "kind": "vocabulary-literal",
+      "token": "parent",
+      "streamIRef": "M09-ISSUE-188",
+      "occurrences": 4,
+      "lines": [
+        62,
+        212,
+        254,
+        375
+      ],
+      "firstSnippet": "relationship_type IN ('legal_guardian', 'parent', 'caregiver', 'fee_payer')"
+    },
+    {
+      "file": "database/supabase/migrations/20261103110000_sherivs_m09_ndpa_guardians.sql",
+      "kind": "vocabulary",
+      "token": "guardian",
+      "streamIRef": "M09-ISSUE-188",
+      "occurrences": 7,
+      "lines": [
+        112,
+        127,
+        149,
+        159,
+        257,
+        380,
+        384
+      ],
+      "firstSnippet": "RAISE EXCEPTION 'guardian relationship identity and start are immutable' USING ERRCODE = '23514';"
+    },
+    {
+      "file": "database/supabase/migrations/20261103110000_sherivs_m09_ndpa_guardians.sql",
+      "kind": "vocabulary",
+      "token": "fee",
+      "streamIRef": "M09-ISSUE-188",
+      "occurrences": 1,
+      "lines": [
+        116
+      ],
+      "firstSnippet": "RAISE EXCEPTION 'fee payer relationships cannot grant record access' USING ERRCODE = '23514';"
+    },
+    {
+      "file": "database/supabase/migrations/20261103110000_sherivs_m09_ndpa_guardians.sql",
+      "kind": "vocabulary",
+      "token": "get_my_school_id",
+      "streamIRef": "M09-ISSUE-188",
+      "occurrences": 8,
+      "lines": [
+        242,
+        304,
+        390,
+        584,
+        603,
+        611,
+        629,
+        635
+      ],
+      "firstSnippet": "OR v_school_id IS DISTINCT FROM public.get_my_school_id()"
+    },
+    {
+      "file": "database/supabase/migrations/20261103110000_sherivs_m09_ndpa_guardians.sql",
+      "kind": "vocabulary",
+      "token": "principal",
+      "streamIRef": "M09-ISSUE-188",
+      "occurrences": 1,
+      "lines": [
+        364
+      ],
+      "firstSnippet": "v_actor_is_admin := v_actor.role IN ('admin', 'principal');"
+    },
+    {
+      "file": "database/supabase/migrations/20261103110000_sherivs_m09_ndpa_guardians.sql",
+      "kind": "vocabulary",
+      "token": "is_school_admin",
+      "streamIRef": "M09-ISSUE-188",
+      "occurrences": 2,
+      "lines": [
+        603,
+        611
+      ],
+      "firstSnippet": "OR (public.is_school_admin() AND school_id = public.get_my_school_id())"
     },
     {
       "file": "database/supabase/migrations/20261103130000_sv1_m07_fees_ledger_receipts.sql",

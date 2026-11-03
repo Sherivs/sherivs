@@ -7637,58 +7637,96 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
     await asOwner("delete from consent_records where student_id = any($1::uuid[])", [
       [kid, other, self].filter(Boolean),
     ]);
+    // M09 requires an explicit relationship record; legacy parent links are not promoted to legal evidence.
+    await act(A.admin);
+    out.guardianRelationship = await t(
+      "select public.student_guardian_relationship_set($1,$2,'legal_guardian',false,$3) id",
+      [kid, A.sampleParent, "M09 synthetic consent guardian evidence"],
+    );
+    const otherUser = (await asOwner("select user_id from students where id=$1", [other])).row
+      ?.user_id;
+    await asOwner(
+      "update students set date_of_birth = current_date - interval '19 years' where id=$1",
+      [other],
+    );
     // consent
     await as(A.sampleParent);
     out.gateBefore = (await t("select public.consent_gate($1,'ai_processing') r", [kid])).row?.r;
-    out.pGrant = (await t("select public.consent_set($1,'ai_processing',true) r", [kid])).row?.r;
-    out.pOther = await t("select public.consent_set($1,'ai_processing',true)", [other]);
-    out.pCore = await t("select public.consent_set($1,'core_education',false)", [kid]);
+    out.pGrant = (
+      await t(
+        "select public.consent_set_v1($1,'ai_processing',true,$2,'consent','web_form',null) r",
+        [kid, A.sampleParent],
+      )
+    ).row?.r?.status;
+    out.pOther = await t(
+      "select public.consent_set_v1($1,'ai_processing',true,$2,'consent','web_form',null)",
+      [other, A.sampleParent],
+    );
+    out.pCore = (
+      await t(
+        "select public.consent_set_v1($1,'core_education',false,$2,'consent','web_form',null) r",
+        [kid, A.sampleParent],
+      )
+    ).row?.r?.status;
+    out.gateCoreWithdrawn = (
+      await t("select public.consent_gate($1,'core_education') r", [kid])
+    ).row?.r;
     out.status = (await t("select public.consent_status($1) r", [kid])).row?.r;
     out.gateAfter = (await t("select public.consent_gate($1,'ai_processing') r", [kid])).row?.r;
     out.myLearners = (await t("select public.consent_my_learners() r")).row?.r ?? [];
     if (self) {
       await as(A.sampleStudentUser);
-      out.minorSelf = await t("select public.consent_set($1,'photos_media',true)", [self]);
+      out.minorSelf = await t(
+        "select public.consent_set_v1($1,'photos_media',true,$2,'consent','web_form',null)",
+        [self, A.sampleStudentUser],
+      );
       await asOwner(
         "update students set date_of_birth = current_date - interval '19 years' where id=$1",
         [self],
       );
       out.adultSelf = (
-        await t("select public.consent_set($1,'photos_media',true) r", [self])
-      ).row?.r;
+        await t(
+          "select public.consent_set_v1($1,'photos_media',true,$2,'consent','web_form',null) r",
+          [self, A.sampleStudentUser],
+        )
+      ).row?.r?.status;
     }
     await as(A.teacher);
     out.teacherSet = await t(
-      "select public.consent_set($1,'photos_media',true,'admin_entered','form 12')",
-      [other],
+      "select public.consent_set_v1($1,'photos_media',true,$2,'consent','admin_entered','form 12')",
+      [other, A.teacher],
     );
     await as(A.admin);
-    out.adminNoEvidence = await t("select public.consent_set($1,'photos_media',true,'web_form')", [
-      other,
-    ]);
+    out.adminNoEvidence = await t(
+      "select public.consent_set_v1($1,'photos_media',true,$2,'consent','web_form',null)",
+      [other, otherUser],
+    );
     out.adminPaper = (
       await t(
-        "select public.consent_set($1,'photos_media',true,'paper_signed','Form P-0042 on file') r",
-        [other],
+        "select public.consent_set_v1($1,'photos_media',true,$2,'consent','paper_signed','Form P-0042 on file') r",
+        [other, otherUser],
       )
-    ).row?.r;
+    ).row?.r?.status;
     out.pWithdraw = null;
     await as(A.sampleParent);
     out.pWithdraw = (
-      await t("select public.consent_set($1,'ai_processing',false) r", [kid])
-    ).row?.r;
+      await t(
+        "select public.consent_set_v1($1,'ai_processing',false,$2,'consent','web_form',null) r",
+        [kid, A.sampleParent],
+      )
+    ).row?.r?.status;
     out.gateWithdrawn = (await t("select public.consent_gate($1,'ai_processing') r", [kid])).row?.r;
     await as(B.admin);
     out.bStatus = await t("select public.consent_status($1)", [kid]);
     out.bSet = await t(
-      "select public.consent_set($1,'photos_media',true,'paper_signed','Form X-1')",
-      [kid],
+      "select public.consent_set_v1($1,'photos_media',true,$2,'consent','paper_signed','Form X-1')",
+      [kid, A.sampleParent],
     );
     await as(A.admin);
     out.overview = (await t("select public.consent_overview() r")).row?.r;
     out.events = (
       await asOwner(
-        "select array_agg(action order by at, action) a from consent_events where student_id=$1",
+        "select array_agg(action order by at, action) a from consent_events where student_id=$1 and purpose='ai_processing'",
         [kid],
       )
     ).row?.a;
@@ -7821,11 +7859,13 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
   });
   rec(
     "consent",
-    "A linked guardian grants and withdraws optional consent for a minor (gate follows); other parents, teachers, school B and minors themselves are refused; core education cannot be withdrawn",
+    "An explicit M09 guardian grants and withdraws purpose consent for a minor; all purposes, including core education, are withdrawal-gated",
     v.gateBefore === false &&
       v.pGrant === "granted" &&
       !v.pOther?.ok &&
-      !v.pCore?.ok &&
+      v.pCore === "withdrawn" &&
+      v.gateCoreWithdrawn === false &&
+      v.guardianRelationship?.ok &&
       v.status?.purposes?.ai_processing?.status === "granted" &&
       v.status?.adult === false &&
       v.gateAfter === true &&
