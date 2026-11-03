@@ -6,20 +6,45 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
+import { sendWhatsAppMessage } from "@/lib/communications/whatsapp-cloud.server";
+import { normalizeWhatsAppPhone } from "@/lib/communications/whatsapp-phone";
+export { normalizeWhatsAppPhone } from "@/lib/communications/whatsapp-phone";
 
-const MessageSchema = z.object({
+export const WhatsAppInboundMessageSchema = z.object({
   id: z.string().min(1).max(200),
+  timestamp: z
+    .string()
+    .regex(/^\d{1,13}$/)
+    .optional(),
   from: z
     .string()
     .max(20)
-    .regex(/^\+?[1-9]\d{7,14}$/),
+    .regex(/^(?:\+?[1-9]\d{7,14}|0\d{10})$/),
+  type: z
+    .enum([
+      "text",
+      "image",
+      "audio",
+      "video",
+      "document",
+      "sticker",
+      "location",
+      "contacts",
+      "interactive",
+      "button",
+      "order",
+      "system",
+      "reaction",
+      "referral",
+    ])
+    .optional(),
   text: z
     .object({ body: z.string().max(4096) })
     .partial()
     .optional(),
 });
 
-const StatusSchema = z.object({
+export const WhatsAppStatusSchema = z.object({
   id: z.string().min(1).max(200),
   status: z.enum(["sent", "delivered", "read", "failed"]),
   errors: z
@@ -43,8 +68,8 @@ export const WhatsAppWebhookSchema = z.object({
                     })
                     .partial()
                     .optional(),
-                  messages: z.array(MessageSchema).max(100).optional(),
-                  statuses: z.array(StatusSchema).max(100).optional(),
+                  messages: z.array(z.unknown()).max(100).optional(),
+                  statuses: z.array(z.unknown()).max(100).optional(),
                 })
                 .partial(),
             }),
@@ -71,9 +96,26 @@ export function verifyWhatsAppWebhookSignature(
   return timingSafeEqual(Buffer.from(header.slice(7), "hex"), expected);
 }
 
-export function normalizeWhatsAppPhone(value: string): string | null {
-  const digits = value.replace(/\D/g, "");
-  return /^[1-9]\d{7,14}$/.test(digits) ? `+${digits}` : null;
+function candidateEventId(value: unknown): string | null {
+  if (!value || typeof value !== "object" || !("id" in value)) return null;
+  const id = value.id;
+  return typeof id === "string" && id.length >= 1 && id.length <= 200 ? id : null;
+}
+
+function messageBody(message: z.infer<typeof WhatsAppInboundMessageSchema>): string {
+  const text = message.text?.body;
+  if ((message.type === undefined || message.type === "text") && text !== undefined) return text;
+  const type = message.type ?? (text !== undefined ? "text" : "unknown");
+  return `[${type} message]`;
+}
+
+function providerTimestamp(value: string | undefined): string | null {
+  if (!value) return null;
+  const milliseconds = Number(value) * 1000;
+  const date = new Date(milliseconds);
+  return Number.isSafeInteger(Number(value)) && !Number.isNaN(date.getTime())
+    ? date.toISOString()
+    : null;
 }
 
 function safeMetaErrorCode(code: string | number | undefined): string | null {
@@ -84,6 +126,111 @@ function safeMetaErrorCode(code: string | number | undefined): string | null {
 function logRpcFailure(fn: string, error: { code?: string } | null): void {
   const code = error?.code && /^[A-Za-z0-9_.-]{1,16}$/.test(error.code) ? error.code : "unknown";
   console.error("whatsapp_webhook_rpc_failed", { fn, code });
+}
+
+type WebhookDb = {
+  rpc: (
+    fn: string,
+    args: Record<string, unknown>,
+  ) => Promise<{ data: unknown; error: { code?: string; message?: string } | null }>;
+};
+
+async function deadLetter(
+  db: WebhookDb,
+  providerSenderRef: string,
+  providerRef: string | null,
+  eventType: "message" | "status",
+  errorCode: string,
+): Promise<boolean> {
+  try {
+    const { data, error } = await db.rpc("cg_whatsapp_dead_letter", {
+      p_provider_sender_ref: providerSenderRef || "unknown",
+      p_provider_ref: providerRef,
+      p_event_type: eventType,
+      p_error_code: errorCode,
+    });
+    if (!error && data === true) return true;
+    logRpcFailure("cg_whatsapp_dead_letter", error);
+    return false;
+  } catch {
+    logRpcFailure("cg_whatsapp_dead_letter", null);
+    return false;
+  }
+}
+
+async function sendAutomaticAcknowledgement(
+  db: WebhookDb,
+  providerSenderRef: string,
+  providerRef: string,
+): Promise<boolean> {
+  const body =
+    process.env.WHATSAPP_AUTO_ACK_TEXT ??
+    "Thanks for your message. A Sherivs team member will respond soon.";
+  if (!body.trim() || body.length > 4096) {
+    console.error("whatsapp_auto_ack_configuration_invalid");
+    return true;
+  }
+
+  try {
+    const { data, error } = await db.rpc("cg_whatsapp_prepare_auto_ack", {
+      p_provider_sender_ref: providerSenderRef,
+      p_inbound_provider_ref: providerRef,
+      p_body: body,
+    });
+    if (error) {
+      logRpcFailure("cg_whatsapp_prepare_auto_ack", error);
+      return false;
+    }
+    const targets = z
+      .array(
+        z.object({
+          tenant_id: z.string().min(1).max(128),
+          org_ref: z.string().min(1).max(160),
+          principal_ref: z.string().min(1).max(160),
+          provider_sender_ref: z.string().regex(/^[0-9]{1,160}$/),
+          conversation_id: z.string().uuid(),
+          recipient_address: z.string().regex(/^\+[1-9]\d{7,14}$/),
+        }),
+      )
+      .safeParse(data);
+    if (!targets.success) {
+      console.error("whatsapp_auto_ack_target_invalid");
+      return false;
+    }
+    const target = targets.data[0];
+    if (!target) return true;
+
+    let result: Awaited<ReturnType<typeof sendWhatsAppMessage>>;
+    try {
+      result = await sendWhatsAppMessage({
+        tenantId: target.tenant_id,
+        orgRef: target.org_ref,
+        principalRef: target.principal_ref,
+        conversationId: target.conversation_id,
+        inboundProviderSenderRef: target.provider_sender_ref,
+        inboundProviderRef: providerRef,
+        expectedRecipientAddress: target.recipient_address,
+        body,
+        retryTransient: false,
+      });
+    } catch {
+      result = { ok: false, error: "WhatsApp automatic acknowledgement failed" };
+    }
+    const { error: recordError, data: recorded } = await db.rpc("cg_whatsapp_auto_ack_result", {
+      p_provider_sender_ref: providerSenderRef,
+      p_inbound_provider_ref: providerRef,
+      p_status: result.ok ? "sent" : "failed",
+      p_error_code: result.ok ? null : "send_failed",
+    });
+    if (recordError || recorded !== true) {
+      logRpcFailure("cg_whatsapp_auto_ack_result", recordError);
+      return false;
+    }
+    return result.ok;
+  } catch {
+    logRpcFailure("cg_whatsapp_prepare_auto_ack", null);
+    return false;
+  }
 }
 
 export const Route = createFileRoute("/api/public/webhooks/whatsapp")({
@@ -122,53 +269,156 @@ export const Route = createFileRoute("/api/public/webhooks/whatsapp")({
         if (!parsed.success) return new Response("bad payload", { status: 400 });
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const db = supabaseAdmin as unknown as {
-          rpc: (
-            fn: string,
-            args: Record<string, unknown>,
-          ) => Promise<{ data: unknown; error: { code?: string; message: string } | null }>;
-        };
+        const db = supabaseAdmin as unknown as WebhookDb;
+        let allEventsDurable = true;
 
         for (const entry of parsed.data.entry) {
           for (const change of entry.changes) {
             const providerSenderRef = change.value.metadata?.phone_number_id;
-            if (!providerSenderRef) continue;
 
-            for (const message of change.value.messages ?? []) {
-              const phone = normalizeWhatsAppPhone(message.from);
-              if (!phone) continue;
-              const { data, error } = await db.rpc("cg_whatsapp_receive", {
-                p_provider_sender_ref: providerSenderRef,
-                p_from: phone,
-                p_body: message.text?.body ?? "",
-                p_provider_ref: message.id,
-              });
+            for (const rawMessage of change.value.messages ?? []) {
+              const providerRef = candidateEventId(rawMessage);
+              const message = WhatsAppInboundMessageSchema.safeParse(rawMessage);
+              if (!message.success) {
+                const stored = await deadLetter(
+                  db,
+                  providerSenderRef ?? "unknown",
+                  providerRef,
+                  "message",
+                  "invalid_message",
+                );
+                allEventsDurable = allEventsDurable && stored;
+                continue;
+              }
+              if (!providerSenderRef) {
+                const stored = await deadLetter(
+                  db,
+                  "unknown",
+                  message.data.id,
+                  "message",
+                  "invalid_sender_metadata",
+                );
+                allEventsDurable = allEventsDurable && stored;
+                continue;
+              }
+              const phone = normalizeWhatsAppPhone(message.data.from);
+              if (!phone) {
+                const stored = await deadLetter(
+                  db,
+                  providerSenderRef,
+                  message.data.id,
+                  "message",
+                  "invalid_phone",
+                );
+                allEventsDurable = allEventsDurable && stored;
+                continue;
+              }
+              let data: unknown;
+              let error: { code?: string; message?: string } | null;
+              try {
+                ({ data, error } = await db.rpc("cg_whatsapp_receive", {
+                  p_provider_sender_ref: providerSenderRef,
+                  p_from: phone,
+                  p_body: messageBody(message.data),
+                  p_provider_ref: message.data.id,
+                  p_provider_timestamp: providerTimestamp(message.data.timestamp),
+                }));
+              } catch {
+                error = { code: "unknown" };
+                data = null;
+              }
               if (error) {
                 logRpcFailure("cg_whatsapp_receive", error);
-                return new Response("processing error", { status: 500 });
+                const stored = await deadLetter(
+                  db,
+                  providerSenderRef,
+                  message.data.id,
+                  "message",
+                  safeMetaErrorCode(error.code) ?? "receive_failed",
+                );
+                allEventsDurable = allEventsDurable && stored;
+                continue;
               }
               if (data === "unmapped_sender") {
                 console.warn("whatsapp_webhook_unmapped_sender");
+              } else if (data === "rate_limited") {
+                console.warn("whatsapp_webhook_rate_limited");
+              } else if (data === "logged" || data === "opted_in") {
+                const sent = await sendAutomaticAcknowledgement(
+                  db,
+                  providerSenderRef,
+                  message.data.id,
+                );
+                if (!sent) {
+                  const stored = await deadLetter(
+                    db,
+                    providerSenderRef,
+                    message.data.id,
+                    "message",
+                    "auto_ack_failed",
+                  );
+                  allEventsDurable = allEventsDurable && stored;
+                }
               }
             }
 
-            for (const status of change.value.statuses ?? []) {
-              const errorCode = safeMetaErrorCode(status.errors?.[0]?.code);
-              const { data, error } = await db.rpc("cg_whatsapp_status", {
-                p_provider_sender_ref: providerSenderRef,
-                p_provider_ref: status.id,
-                p_status: status.status,
-                p_error_code: errorCode,
-              });
+            for (const rawStatus of change.value.statuses ?? []) {
+              const providerRef = candidateEventId(rawStatus);
+              const status = WhatsAppStatusSchema.safeParse(rawStatus);
+              if (!status.success) {
+                const stored = await deadLetter(
+                  db,
+                  providerSenderRef ?? "unknown",
+                  providerRef,
+                  "status",
+                  "invalid_status",
+                );
+                allEventsDurable = allEventsDurable && stored;
+                continue;
+              }
+              if (!providerSenderRef) {
+                const stored = await deadLetter(
+                  db,
+                  "unknown",
+                  status.data.id,
+                  "status",
+                  "invalid_sender_metadata",
+                );
+                allEventsDurable = allEventsDurable && stored;
+                continue;
+              }
+              const errorCode = safeMetaErrorCode(status.data.errors?.[0]?.code);
+              let data: unknown;
+              let error: { code?: string; message?: string } | null;
+              try {
+                ({ data, error } = await db.rpc("cg_whatsapp_status", {
+                  p_provider_sender_ref: providerSenderRef,
+                  p_provider_ref: status.data.id,
+                  p_status: status.data.status,
+                  p_error_code: errorCode,
+                }));
+              } catch {
+                error = { code: "unknown" };
+                data = null;
+              }
               if (error || data !== true) {
                 logRpcFailure("cg_whatsapp_status", error);
-                return new Response("processing error", { status: 500 });
+                const stored = await deadLetter(
+                  db,
+                  providerSenderRef,
+                  status.data.id,
+                  "status",
+                  error ? (safeMetaErrorCode(error.code) ?? "status_failed") : "status_unmatched",
+                );
+                allEventsDurable = allEventsDurable && stored;
               }
             }
           }
         }
 
-        return new Response("ok");
+        return allEventsDurable
+          ? new Response("ok")
+          : new Response("processing error", { status: 500 });
       },
     },
   },

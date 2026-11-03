@@ -7,6 +7,11 @@ on:
         description: "Type MAP-1407639185765089 to map the production sender"
         required: true
         type: string
+      dry_run:
+        description: "Roll back the mapping transaction after verification"
+        required: true
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -23,6 +28,7 @@ jobs:
     timeout-minutes: 10
     env:
       CONFIRM: ${{ inputs.confirm }}
+      DRY_RUN: ${{ inputs.dry_run }}
       PGCONNECT_TIMEOUT: "20"
     steps:
       - name: Validate branch and confirmation
@@ -30,13 +36,14 @@ jobs:
           set -euo pipefail
           [ "$GITHUB_REF" = "refs/heads/master" ] || { echo "::error::this workflow may only run from master"; exit 1; }
           [ "$CONFIRM" = "MAP-1407639185765089" ] || { echo "::error::confirm must equal MAP-1407639185765089"; exit 1; }
+          [[ "$DRY_RUN" == "true" || "$DRY_RUN" == "false" ]] || { echo "::error::dry_run must be boolean"; exit 1; }
 
       - name: Check production database secret
         env:
           DB_URL: ${{ secrets.PROD_DB_URL_BACKUP }}
         run: '[ -n "$DB_URL" ] || { echo "::error::PROD_DB_URL_BACKUP not set"; exit 1; }'
 
-      - name: Resolve Sherivs platform/internal organization
+      - name: Resolve Sherivs root organization
         id: org
         env:
           DB_URL: ${{ secrets.PROD_DB_URL_BACKUP }}
@@ -75,7 +82,6 @@ jobs:
             echo "::error::organization lookup returned an invalid org ref"
             exit 1
           }
-          echo "Matched platform/internal organization: tenant_id=$TENANT_ID org_ref=$ORG_REF"
           printf 'tenant_id=%s\norg_ref=%s\n' "$TENANT_ID" "$ORG_REF" >> "$GITHUB_OUTPUT"
 
       - name: Map WhatsApp sender
@@ -86,22 +92,44 @@ jobs:
         run: |
           set -euo pipefail
           psql "$DB_URL" -X -v ON_ERROR_STOP=1 \
-            -v tenant_id="$TENANT_ID" \
-            -v org_ref="$ORG_REF" <<'SQL'
+            -v tenant_id="$TENANT_ID" -v org_ref="$ORG_REF" -v dry_run="$DRY_RUN" <<'SQL'
           BEGIN;
           SET LOCAL role service_role;
           SELECT set_config('request.jwt.claims', '{"role":"service_role"}', true);
           SELECT set_config('request.jwt.claim.role', 'service_role', true);
           SELECT public.cg_whatsapp_map_sender(
-            p_tenant_id => :'tenant_id',
-            p_org_ref => :'org_ref',
-            p_provider_sender_ref => '1407639185765089',
-            p_from_number => '+2349015056201'
+            :'tenant_id',
+            :'org_ref',
+            '1407639185765089',
+            '+2349015056201',
+            'env://WHATSAPP_ACCESS_TOKEN',
+            'workflow:sv1-wa-map-sender'
           );
+          SELECT count(*) = 1 AS mapping_valid
+            FROM public.cg_org_communication_sender
+           WHERE tenant_id = :'tenant_id'
+             AND org_ref = :'org_ref'
+             AND provider_sender_ref = '1407639185765089'
+             AND channel = 'whatsapp'
+             AND provider = 'meta_cloud'
+             AND status = 'active'
+          \gset
+          \if :mapping_valid
+          \else
+          \echo "::error::expected exactly one active sender mapping"
+          \quit 1
+          \endif
+          \if :dry_run
+          ROLLBACK;
+          \echo "Dry run complete; mapping transaction rolled back."
+          \else
           COMMIT;
+          \echo "Sender mapping committed."
+          \endif
           SQL
 
       - name: Verify sender mapping
+        if: ${{ inputs.dry_run == false }}
         env:
           DB_URL: ${{ secrets.PROD_DB_URL_BACKUP }}
           TENANT_ID: ${{ steps.org.outputs.tenant_id }}

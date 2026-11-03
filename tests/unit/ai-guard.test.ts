@@ -15,6 +15,7 @@ const CALL_SITES = [
   "frontend/src/lib/communications/africas-talking-voice.server.ts",
   "frontend/src/lib/runtime/scholar/lesson-plan-ai.functions.ts",
   "frontend/src/lib/runtime/scholar/expense-insights.functions.ts",
+  "frontend/src/lib/runtime/scholar/mobility-advisory.functions.ts",
   "frontend/src/lib/runtime/scholar/timetable.functions.ts",
   "frontend/src/lib/workforce/worker-launch-runtime.server.ts",
 ];

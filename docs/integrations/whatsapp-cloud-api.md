@@ -36,6 +36,9 @@ the challenge only after a constant-time verify-token comparison. The `POST`
 handler validates the raw request body against `X-Hub-Signature-256` before
 processing either inbound messages or delivery statuses.
 
+For the deployed Sherivs end-to-end setup and live-message verification, follow
+[`docs/runbooks/whatsapp-e2e.md`](../runbooks/whatsapp-e2e.md).
+
 Inbound sender resolution uses the service-only
 `cg_org_communication_sender` registry. Message, conversation, consent, and
 recipient records are scoped by the shared text `tenant_id` and `org_ref`;

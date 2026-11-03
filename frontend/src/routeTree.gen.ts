@@ -55,6 +55,7 @@ import { Route as ApiWebauthnRouteImport } from './routes/api/webauthn'
 import { Route as ConsoleIndexRouteImport } from './routes/console/index'
 import { Route as ConsoleAccountRouteImport } from './routes/console/account'
 import { Route as ConsoleActivityRouteRouteImport } from './routes/console/activity/route'
+import { Route as ConsoleCommunicationsRouteImport } from './routes/console/communications'
 import { Route as ConsoleHelpRouteImport } from './routes/console/help'
 import { Route as ConsoleOrganizationsRouteRouteImport } from './routes/console/organizations/route'
 import { Route as ConsoleRuntimesRouteRouteImport } from './routes/console/runtimes/route'
@@ -124,10 +125,12 @@ import { Route as siteInsightsCategorySlugRouteImport } from './routes/(site)/in
 import { Route as ApiPublicAuditPasswordResetRouteImport } from './routes/api/public/audit.password-reset'
 import { Route as ApiPublicCronIntegrationsSyncRouteImport } from './routes/api/public/cron/integrations-sync'
 import { Route as ApiPublicCronWalletTopupReconcileRouteImport } from './routes/api/public/cron/wallet-topup-reconcile'
+import { Route as ApiPublicCronWhatsappN8nForwardRouteImport } from './routes/api/public/cron/whatsapp-n8n-forward'
 import { Route as ApiPublicWebhooksAfricasTalkingVoiceRouteImport } from './routes/api/public/webhooks/africas-talking-voice'
 import { Route as ApiPublicWebhooksPaystackRouteImport } from './routes/api/public/webhooks/paystack'
 import { Route as ApiPublicWebhooksUssdRouteImport } from './routes/api/public/webhooks/ussd'
 import { Route as ApiPublicWebhooksWhatsappRouteImport } from './routes/api/public/webhooks/whatsapp'
+import { Route as ApiPublicWebhooksWhatsappReplyRouteImport } from './routes/api/public/webhooks/whatsapp-reply'
 import { Route as ApiPublicWebhooksIntegrationsWebhookIdRouteImport } from './routes/api/public/webhooks/integrations/$webhookId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -359,6 +362,11 @@ const ConsoleAccountRoute = ConsoleAccountRouteImport.update({
 const ConsoleActivityRouteRoute = ConsoleActivityRouteRouteImport.update({
   id: '/activity',
   path: '/activity',
+  getParentRoute: () => ConsoleRouteRoute,
+} as any)
+const ConsoleCommunicationsRoute = ConsoleCommunicationsRouteImport.update({
+  id: '/communications',
+  path: '/communications',
   getParentRoute: () => ConsoleRouteRoute,
 } as any)
 const ConsoleHelpRoute = ConsoleHelpRouteImport.update({
@@ -716,6 +724,12 @@ const ApiPublicCronWalletTopupReconcileRoute =
     path: '/api/public/cron/wallet-topup-reconcile',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronWhatsappN8nForwardRoute =
+  ApiPublicCronWhatsappN8nForwardRouteImport.update({
+    id: '/api/public/cron/whatsapp-n8n-forward',
+    path: '/api/public/cron/whatsapp-n8n-forward',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicWebhooksAfricasTalkingVoiceRoute =
   ApiPublicWebhooksAfricasTalkingVoiceRouteImport.update({
     id: '/api/public/webhooks/africas-talking-voice',
@@ -737,6 +751,12 @@ const ApiPublicWebhooksWhatsappRoute =
   ApiPublicWebhooksWhatsappRouteImport.update({
     id: '/api/public/webhooks/whatsapp',
     path: '/api/public/webhooks/whatsapp',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicWebhooksWhatsappReplyRoute =
+  ApiPublicWebhooksWhatsappReplyRouteImport.update({
+    id: '/api/public/webhooks/whatsapp-reply',
+    path: '/api/public/webhooks/whatsapp-reply',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicWebhooksIntegrationsWebhookIdRoute =
@@ -795,6 +815,7 @@ export interface FileRoutesByFullPath {
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
   '/api/webauthn': typeof ApiWebauthnRoute
   '/console/account': typeof ConsoleAccountRoute
+  '/console/communications': typeof ConsoleCommunicationsRoute
   '/console/help': typeof ConsoleHelpRoute
   '/console/settings': typeof ConsoleSettingsRoute
   '/home/ai': typeof HomeAiRoute
@@ -861,10 +882,12 @@ export interface FileRoutesByFullPath {
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/cron/integrations-sync': typeof ApiPublicCronIntegrationsSyncRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
+  '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
   '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
   '/api/public/webhooks/whatsapp': typeof ApiPublicWebhooksWhatsappRoute
+  '/api/public/webhooks/whatsapp-reply': typeof ApiPublicWebhooksWhatsappReplyRoute
   '/api/public/webhooks/integrations/$webhookId': typeof ApiPublicWebhooksIntegrationsWebhookIdRoute
 }
 export interface FileRoutesByTo {
@@ -904,6 +927,7 @@ export interface FileRoutesByTo {
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
   '/api/webauthn': typeof ApiWebauthnRoute
   '/console/account': typeof ConsoleAccountRoute
+  '/console/communications': typeof ConsoleCommunicationsRoute
   '/console/help': typeof ConsoleHelpRoute
   '/console/settings': typeof ConsoleSettingsRoute
   '/home/ai': typeof HomeAiRoute
@@ -970,10 +994,12 @@ export interface FileRoutesByTo {
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/cron/integrations-sync': typeof ApiPublicCronIntegrationsSyncRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
+  '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
   '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
   '/api/public/webhooks/whatsapp': typeof ApiPublicWebhooksWhatsappRoute
+  '/api/public/webhooks/whatsapp-reply': typeof ApiPublicWebhooksWhatsappReplyRoute
   '/api/public/webhooks/integrations/$webhookId': typeof ApiPublicWebhooksIntegrationsWebhookIdRoute
 }
 export interface FileRoutesById {
@@ -1027,6 +1053,7 @@ export interface FileRoutesById {
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
   '/api/webauthn': typeof ApiWebauthnRoute
   '/console/account': typeof ConsoleAccountRoute
+  '/console/communications': typeof ConsoleCommunicationsRoute
   '/console/help': typeof ConsoleHelpRoute
   '/console/settings': typeof ConsoleSettingsRoute
   '/home/ai': typeof HomeAiRoute
@@ -1093,10 +1120,12 @@ export interface FileRoutesById {
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/cron/integrations-sync': typeof ApiPublicCronIntegrationsSyncRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
+  '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
   '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
   '/api/public/webhooks/whatsapp': typeof ApiPublicWebhooksWhatsappRoute
+  '/api/public/webhooks/whatsapp-reply': typeof ApiPublicWebhooksWhatsappReplyRoute
   '/api/public/webhooks/integrations/$webhookId': typeof ApiPublicWebhooksIntegrationsWebhookIdRoute
 }
 export interface FileRouteTypes {
@@ -1150,6 +1179,7 @@ export interface FileRouteTypes {
     | '/.well-known/assetlinks.json'
     | '/api/webauthn'
     | '/console/account'
+    | '/console/communications'
     | '/console/help'
     | '/console/settings'
     | '/home/ai'
@@ -1216,10 +1246,12 @@ export interface FileRouteTypes {
     | '/api/public/audit/password-reset'
     | '/api/public/cron/integrations-sync'
     | '/api/public/cron/wallet-topup-reconcile'
+    | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/webhooks/africas-talking-voice'
     | '/api/public/webhooks/paystack'
     | '/api/public/webhooks/ussd'
     | '/api/public/webhooks/whatsapp'
+    | '/api/public/webhooks/whatsapp-reply'
     | '/api/public/webhooks/integrations/$webhookId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -1259,6 +1291,7 @@ export interface FileRouteTypes {
     | '/.well-known/assetlinks.json'
     | '/api/webauthn'
     | '/console/account'
+    | '/console/communications'
     | '/console/help'
     | '/console/settings'
     | '/home/ai'
@@ -1325,10 +1358,12 @@ export interface FileRouteTypes {
     | '/api/public/audit/password-reset'
     | '/api/public/cron/integrations-sync'
     | '/api/public/cron/wallet-topup-reconcile'
+    | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/webhooks/africas-talking-voice'
     | '/api/public/webhooks/paystack'
     | '/api/public/webhooks/ussd'
     | '/api/public/webhooks/whatsapp'
+    | '/api/public/webhooks/whatsapp-reply'
     | '/api/public/webhooks/integrations/$webhookId'
   id:
     | '__root__'
@@ -1381,6 +1416,7 @@ export interface FileRouteTypes {
     | '/.well-known/assetlinks.json'
     | '/api/webauthn'
     | '/console/account'
+    | '/console/communications'
     | '/console/help'
     | '/console/settings'
     | '/home/ai'
@@ -1447,10 +1483,12 @@ export interface FileRouteTypes {
     | '/api/public/audit/password-reset'
     | '/api/public/cron/integrations-sync'
     | '/api/public/cron/wallet-topup-reconcile'
+    | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/webhooks/africas-talking-voice'
     | '/api/public/webhooks/paystack'
     | '/api/public/webhooks/ussd'
     | '/api/public/webhooks/whatsapp'
+    | '/api/public/webhooks/whatsapp-reply'
     | '/api/public/webhooks/integrations/$webhookId'
   fileRoutesById: FileRoutesById
 }
@@ -1480,10 +1518,12 @@ export interface RootRouteChildren {
   ApiPublicAuditPasswordResetRoute: typeof ApiPublicAuditPasswordResetRoute
   ApiPublicCronIntegrationsSyncRoute: typeof ApiPublicCronIntegrationsSyncRoute
   ApiPublicCronWalletTopupReconcileRoute: typeof ApiPublicCronWalletTopupReconcileRoute
+  ApiPublicCronWhatsappN8nForwardRoute: typeof ApiPublicCronWhatsappN8nForwardRoute
   ApiPublicWebhooksAfricasTalkingVoiceRoute: typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
   ApiPublicWebhooksPaystackRoute: typeof ApiPublicWebhooksPaystackRoute
   ApiPublicWebhooksUssdRoute: typeof ApiPublicWebhooksUssdRoute
   ApiPublicWebhooksWhatsappRoute: typeof ApiPublicWebhooksWhatsappRoute
+  ApiPublicWebhooksWhatsappReplyRoute: typeof ApiPublicWebhooksWhatsappReplyRoute
   ApiPublicWebhooksIntegrationsWebhookIdRoute: typeof ApiPublicWebhooksIntegrationsWebhookIdRoute
 }
 
@@ -1809,6 +1849,13 @@ declare module '@tanstack/react-router' {
       path: '/activity'
       fullPath: '/console/activity'
       preLoaderRoute: typeof ConsoleActivityRouteRouteImport
+      parentRoute: typeof ConsoleRouteRoute
+    }
+    '/console/communications': {
+      id: '/console/communications'
+      path: '/communications'
+      fullPath: '/console/communications'
+      preLoaderRoute: typeof ConsoleCommunicationsRouteImport
       parentRoute: typeof ConsoleRouteRoute
     }
     '/console/help': {
@@ -2294,6 +2341,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronWalletTopupReconcileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/whatsapp-n8n-forward': {
+      id: '/api/public/cron/whatsapp-n8n-forward'
+      path: '/api/public/cron/whatsapp-n8n-forward'
+      fullPath: '/api/public/cron/whatsapp-n8n-forward'
+      preLoaderRoute: typeof ApiPublicCronWhatsappN8nForwardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/webhooks/africas-talking-voice': {
       id: '/api/public/webhooks/africas-talking-voice'
       path: '/api/public/webhooks/africas-talking-voice'
@@ -2320,6 +2374,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/webhooks/whatsapp'
       fullPath: '/api/public/webhooks/whatsapp'
       preLoaderRoute: typeof ApiPublicWebhooksWhatsappRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/webhooks/whatsapp-reply': {
+      id: '/api/public/webhooks/whatsapp-reply'
+      path: '/api/public/webhooks/whatsapp-reply'
+      fullPath: '/api/public/webhooks/whatsapp-reply'
+      preLoaderRoute: typeof ApiPublicWebhooksWhatsappReplyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/webhooks/integrations/$webhookId': {
@@ -2596,6 +2657,7 @@ interface ConsoleRouteRouteChildren {
   ConsoleTeamRouteRoute: typeof ConsoleTeamRouteRouteWithChildren
   ConsoleWorkspacesRouteRoute: typeof ConsoleWorkspacesRouteRouteWithChildren
   ConsoleAccountRoute: typeof ConsoleAccountRoute
+  ConsoleCommunicationsRoute: typeof ConsoleCommunicationsRoute
   ConsoleHelpRoute: typeof ConsoleHelpRoute
   ConsoleSettingsRoute: typeof ConsoleSettingsRoute
   ConsoleIndexRoute: typeof ConsoleIndexRoute
@@ -2608,6 +2670,7 @@ const ConsoleRouteRouteChildren: ConsoleRouteRouteChildren = {
   ConsoleTeamRouteRoute: ConsoleTeamRouteRouteWithChildren,
   ConsoleWorkspacesRouteRoute: ConsoleWorkspacesRouteRouteWithChildren,
   ConsoleAccountRoute: ConsoleAccountRoute,
+  ConsoleCommunicationsRoute: ConsoleCommunicationsRoute,
   ConsoleHelpRoute: ConsoleHelpRoute,
   ConsoleSettingsRoute: ConsoleSettingsRoute,
   ConsoleIndexRoute: ConsoleIndexRoute,
@@ -2673,11 +2736,13 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCronIntegrationsSyncRoute: ApiPublicCronIntegrationsSyncRoute,
   ApiPublicCronWalletTopupReconcileRoute:
     ApiPublicCronWalletTopupReconcileRoute,
+  ApiPublicCronWhatsappN8nForwardRoute: ApiPublicCronWhatsappN8nForwardRoute,
   ApiPublicWebhooksAfricasTalkingVoiceRoute:
     ApiPublicWebhooksAfricasTalkingVoiceRoute,
   ApiPublicWebhooksPaystackRoute: ApiPublicWebhooksPaystackRoute,
   ApiPublicWebhooksUssdRoute: ApiPublicWebhooksUssdRoute,
   ApiPublicWebhooksWhatsappRoute: ApiPublicWebhooksWhatsappRoute,
+  ApiPublicWebhooksWhatsappReplyRoute: ApiPublicWebhooksWhatsappReplyRoute,
   ApiPublicWebhooksIntegrationsWebhookIdRoute:
     ApiPublicWebhooksIntegrationsWebhookIdRoute,
 }

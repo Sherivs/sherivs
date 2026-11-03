@@ -7,17 +7,30 @@ export type WhatsAppSendOptions = {
   language?: string;
   parameters?: string[];
   phoneNumberId?: string;
+  retryTransient?: boolean;
 };
 
 export interface WhatsAppGatewaySendCommand {
   tenantId: string;
   orgRef: string;
   principalRef: string;
+  conversationId: string;
+  inboundProviderSenderRef: string;
+  inboundProviderRef: string;
   body: string;
   templateCode?: string;
   language?: string;
   parameters?: string[];
+  retryTransient?: boolean;
+  expectedRecipientAddress: string;
 }
+
+export type WhatsAppSendDatabase = {
+  rpc: (
+    fn: string,
+    args: Record<string, unknown>,
+  ) => Promise<{ data: unknown; error: { message: string } | null }>;
+};
 
 /**
  * Dispatch through the shared tenant/org message ledger. The caller must pass
@@ -26,18 +39,20 @@ export interface WhatsAppGatewaySendCommand {
 export async function sendWhatsAppMessage(
   command: WhatsAppGatewaySendCommand,
   adapter = new WhatsAppCloudAdapter(),
+  database?: WhatsAppSendDatabase,
 ): Promise<WhatsAppSendResult> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const db = supabaseAdmin as unknown as {
-    rpc: (
-      fn: string,
-      args: Record<string, unknown>,
-    ) => Promise<{ data: unknown; error: { message: string } | null }>;
-  };
+  let db = database;
+  if (!db) {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    db = supabaseAdmin as unknown as WhatsAppSendDatabase;
+  }
   const prepared = await db.rpc("cg_whatsapp_prepare_send", {
     p_tenant_id: command.tenantId,
     p_org_ref: command.orgRef,
     p_principal_ref: command.principalRef,
+    p_conversation_id: command.conversationId,
+    p_provider_sender_ref: command.inboundProviderSenderRef,
+    p_inbound_provider_ref: command.inboundProviderRef,
     p_body: command.body,
     p_template_code: command.templateCode ?? null,
   });
@@ -48,6 +63,7 @@ export async function sendWhatsAppMessage(
       z.object({
         message_id: z.string().uuid(),
         provider_sender_ref: z.string().min(1).max(160),
+        conversation_id: z.string().uuid(),
         recipient_address: z.string().regex(/^\+[1-9]\d{7,14}$/),
       }),
     )
@@ -56,11 +72,33 @@ export async function sendWhatsAppMessage(
     return { ok: false, error: "WhatsApp gateway returned no unique send target" };
 
   const target = rows.data[0];
+  if (
+    target.provider_sender_ref !== command.inboundProviderSenderRef ||
+    target.recipient_address !== command.expectedRecipientAddress
+  ) {
+    await db.rpc("cg_whatsapp_dispatch_result", {
+      p_message_id: target.message_id,
+      p_status: "failed",
+      p_provider_ref: null,
+      p_error_code: "recipient_mismatch",
+    });
+    return { ok: false, error: "WhatsApp send target no longer matches the inbound sender" };
+  }
+  if (target.conversation_id !== command.conversationId) {
+    await db.rpc("cg_whatsapp_dispatch_result", {
+      p_message_id: target.message_id,
+      p_status: "failed",
+      p_provider_ref: null,
+      p_error_code: "conversation_mismatch",
+    });
+    return { ok: false, error: "WhatsApp conversation no longer matches the inbound message" };
+  }
   const sent = await adapter.send(target.recipient_address, command.body, {
     template: command.templateCode,
     language: command.language,
     parameters: command.parameters,
     phoneNumberId: target.provider_sender_ref,
+    retryTransient: command.retryTransient,
   });
   const recorded = await db.rpc("cg_whatsapp_dispatch_result", {
     p_message_id: target.message_id,
@@ -83,6 +121,7 @@ export class WhatsAppCloudAdapter {
     private fetchImpl: typeof fetch = fetch,
     private sleep: (ms: number) => Promise<void> = (ms) =>
       new Promise((resolve) => setTimeout(resolve, ms)),
+    private graphVersion = process.env.WHATSAPP_GRAPH_VERSION?.trim() || "v21.0",
   ) {}
 
   get live() {
@@ -92,6 +131,8 @@ export class WhatsAppCloudAdapter {
   async send(to: string, body: string, opts?: WhatsAppSendOptions): Promise<WhatsAppSendResult> {
     const phoneNumberId = opts?.phoneNumberId ?? this.defaultPhoneId;
     if (!this.live || !phoneNumberId) return { ok: false, error: "whatsapp not configured" };
+    if (!/^v\d+\.\d+$/.test(this.graphVersion))
+      return { ok: false, error: "invalid WhatsApp Graph API version" };
     if (!/^[0-9]{1,32}$/.test(phoneNumberId))
       return { ok: false, error: "invalid WhatsApp sender reference" };
     const recipient = to.replace(/^\+/, "");
@@ -135,7 +176,7 @@ export class WhatsAppCloudAdapter {
           type: "text",
           text: { body, preview_url: false },
         };
-    const endpoint = `https://graph.facebook.com/v21.0/${encodeURIComponent(phoneNumberId)}/messages`;
+    const endpoint = `https://graph.facebook.com/${this.graphVersion}/${encodeURIComponent(phoneNumberId)}/messages`;
 
     for (let attempt = 0; attempt < 3; attempt += 1) {
       let response: Response;
@@ -154,7 +195,7 @@ export class WhatsAppCloudAdapter {
       if (!response.ok) {
         const retryable =
           response.status === 408 || response.status === 429 || response.status >= 500;
-        if (retryable && attempt < 2) {
+        if (retryable && opts?.retryTransient !== false && attempt < 2) {
           await this.sleep(250 * 2 ** attempt);
           continue;
         }
