@@ -19,9 +19,9 @@
  *  7. exclusions are first-class records (the memory twin of
  *     context-assembly's drop ledger) and there is no vector-only retrieval
  *     path (G-015);
- *  8. the migration and rollback are authored-not-applied with the
- *     deny-by-default RLS posture (enabled, zero policies, no grants to
- *     anon/authenticated) as structural checks on the SQL files.
+ *  8. the repository migration and rollback preserve their deny-by-default
+ *     RLS posture (enabled, zero policies, no client grants) as structural
+ *     checks on the SQL files; production state is reconciled in ADR-021.
  */
 
 import { describe, expect, it } from "vitest";
@@ -213,6 +213,44 @@ describe("authorization-gated retrieval (J-017 / G-015)", () => {
     expect(result.accessRecord.denialReason).toContain('bound to tenant "tenant-beta"');
   });
 
+  it("denies retrieval when the caller's mission does not match the declared scope", () => {
+    const { store } = storeWithRecord();
+    const result = retrieveMemory(store, retrieval({ missionRef: "mission:OTHER" }), { now: NOW });
+    expect(result.ok).toBe(false);
+    expect(result.records).toEqual([]);
+    expect(result.accessRecord.denialReason).toContain("bound to mission");
+  });
+
+  it("excludes records assigned to a different scope in the same tenant", () => {
+    const base = storeWithScopes();
+    const otherScope = declareMemoryScope(base, {
+      scopeId: "scope:alpha:other",
+      tenantId: TENANT_A,
+      missionRef: "mission:MISSION-R-36",
+      actorScope: [ACTOR_A],
+      domains: ["field-ops"],
+      maxSensitivity: "internal",
+    });
+    if (!otherScope.ok) throw new Error(otherScope.error);
+    const inScope = writeMemoryRecord(otherScope.store, writeRequest());
+    if (!inScope.ok) throw new Error(inScope.error);
+    const crossScope = writeMemoryRecord(
+      inScope.store,
+      writeRequest({ recordId: "mem:alpha:other", scopeId: "scope:alpha:other" }),
+    );
+    if (!crossScope.ok) throw new Error(crossScope.error);
+
+    const result = retrieveMemory(crossScope.store, retrieval(), { now: NOW });
+
+    expect(result.records.map((record) => record.id)).toEqual(["mem:alpha:001"]);
+    expect(result.accessRecord.exclusions).toEqual([
+      expect.objectContaining({
+        recordId: "mem:alpha:other",
+        reason: "outside_declared_scope",
+      }),
+    ]);
+  });
+
   it("denies an identity outside the declared scope's actorScope", () => {
     const { store } = storeWithRecord();
     const result = retrieveMemory(store, retrieval({ identityRef: ACTOR_B }), { now: NOW });
@@ -259,11 +297,7 @@ describe("auditable access records", () => {
     expect(denied.accessRecord.identityRef).toBeNull();
     expect(denied.store.accessLog).toHaveLength(1);
 
-    const deniedAgain = retrieveMemory(
-      denied.store,
-      retrieval({ tenantId: "" }),
-      { now: NOW },
-    );
+    const deniedAgain = retrieveMemory(denied.store, retrieval({ tenantId: "" }), { now: NOW });
     expect(deniedAgain.accessRecord.id).toBe("mem-access-000002");
     expect(deniedAgain.store.accessLog).toHaveLength(2);
   });
@@ -424,7 +458,9 @@ describe("envelope and bi-temporal record shape", () => {
     );
     expect(corrected.ok).toBe(true);
     // The superseded record is withheld from retrieval, with an exclusion.
-    const result = retrieveMemory(corrected.ok ? corrected.store : store, retrieval(), { now: NOW });
+    const result = retrieveMemory(corrected.ok ? corrected.store : store, retrieval(), {
+      now: NOW,
+    });
     expect(result.records.map((r) => r.id)).toEqual(["mem:alpha:002"]);
     expect(result.exclusions[0]).toMatchObject({
       recordId: "mem:alpha:001",
@@ -545,21 +581,16 @@ describe("exclusion ledger (nothing withheld silently)", () => {
       { now: NOW },
     );
     expect(result.records).toEqual([]);
-    expect(result.exclusions.map((e) => e.reason).sort()).toEqual([
-      "stale",
-      "validity_expired",
-    ]);
+    expect(result.exclusions.map((e) => e.reason).sort()).toEqual(["stale", "validity_expired"]);
   });
 
   it("budgets: in-scope authorized records beyond maxResults are excluded, not dropped", () => {
     const base = storeWithRecord().store;
     const second = writeMemoryRecord(base, writeRequest({ recordId: "mem:alpha:002" }));
     expect(second.ok).toBe(true);
-    const result = retrieveMemory(
-      second.ok ? second.store : base,
-      retrieval({ maxResults: 1 }),
-      { now: NOW },
-    );
+    const result = retrieveMemory(second.ok ? second.store : base, retrieval({ maxResults: 1 }), {
+      now: NOW,
+    });
     expect(result.records).toHaveLength(1);
     expect(result.exclusions[0]).toMatchObject({ reason: "item_budget" });
     expect(result.outcome).toBe("partial");
@@ -574,11 +605,9 @@ describe("exclusion ledger (nothing withheld silently)", () => {
       content: "field-operations route briefing",
       requiredPermission: "memory:restricted-read",
     }).store;
-    const result = retrieveMemory(
-      base,
-      retrieval({ purpose: "field-operations route briefing" }),
-      { now: NOW },
-    );
+    const result = retrieveMemory(base, retrieval({ purpose: "field-operations route briefing" }), {
+      now: NOW,
+    });
     expect(result.ok).toBe(false);
     expect(result.records).toEqual([]);
     expect(result.exclusions[0]?.reason).toBe("permission_denied");
@@ -586,10 +615,10 @@ describe("exclusion ledger (nothing withheld silently)", () => {
 });
 
 /* ─────────────────────────────────────────────────────────────
- * 8. Migration + rollback posture (authored, NOT applied)
+ * 8. Repository migration + rollback structure
  * ────────────────────────────────────────────────────────────*/
 
-describe("memory tier migration posture (authored-not-applied)", () => {
+describe("memory tier repository migration posture", () => {
   it("authors all three cg_memory tables with deny-by-default RLS", () => {
     for (const table of ["cg_memory_scope", "cg_memory_record", "cg_memory_access_log"]) {
       expect(MIGRATION).toContain(`CREATE TABLE IF NOT EXISTS public.${table} (`);
@@ -603,7 +632,9 @@ describe("memory tier migration posture (authored-not-applied)", () => {
   });
 
   it("pins the record object_type and the envelope atomicity", () => {
-    expect(MIGRATION).toContain("cg_memory_record_object_type CHECK (object_type = 'memory_record')");
+    expect(MIGRATION).toContain(
+      "cg_memory_record_object_type CHECK (object_type = 'memory_record')",
+    );
     expect(MIGRATION).toContain("cg_memory_record_envelope_atomic");
     expect(MIGRATION).toContain("cg_memory_record_envelope_causation_root");
     expect(MIGRATION).toContain("created_by          text NOT NULL");
@@ -613,8 +644,12 @@ describe("memory tier migration posture (authored-not-applied)", () => {
     expect(MIGRATION).toContain("cg_memory_record_bitemporal");
     expect(MIGRATION).toContain("cg_memory_record_scope_fk");
     expect(MIGRATION).toContain("cg_memory_record_supersedes_fk");
-    expect(MIGRATION).toContain("memory_class        text NOT NULL CHECK (memory_class IN ('practical','organizational'))");
-    expect(MIGRATION).toContain("sensitivity         text NOT NULL CHECK (sensitivity IN ('public','internal','restricted'))");
+    expect(MIGRATION).toContain(
+      "memory_class        text NOT NULL CHECK (memory_class IN ('practical','organizational'))",
+    );
+    expect(MIGRATION).toContain(
+      "sensitivity         text NOT NULL CHECK (sensitivity IN ('public','internal','restricted'))",
+    );
   });
 
   it("authored NO embedding/vector/similarity column (G-015)", () => {
@@ -639,7 +674,9 @@ describe("memory tier migration posture (authored-not-applied)", () => {
   });
 
   it("authors the append-only access audit with denial recording", () => {
-    expect(MIGRATION).toContain("outcome              text NOT NULL CHECK (outcome IN ('granted','partial','denied'))");
+    expect(MIGRATION).toContain(
+      "outcome              text NOT NULL CHECK (outcome IN ('granted','partial','denied'))",
+    );
     expect(MIGRATION).toContain("exclusions           jsonb NOT NULL DEFAULT '[]'::jsonb");
     expect(ROLLBACK).toContain("DROP TABLE IF EXISTS public.cg_memory_access_log;");
   });

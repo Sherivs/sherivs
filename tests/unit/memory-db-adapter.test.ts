@@ -35,6 +35,7 @@ vi.mock("@/integrations/supabase/client.server", () => ({
 const { createDbMemoryTierAdapter, createMemoryTierAdapter, resolveMemoryTierBackend } =
   await import("@/lib/memory/memory-db-adapter.server");
 const { createInMemoryMemoryTierAdapter } = await import("@/lib/memory/memory-adapter");
+const { assembleMemoryContext } = await import("@/lib/memory/memory-context.server");
 const { createMemoryTierStore } = await import("@/lib/memory/memory-store");
 
 type DbClient = Parameters<typeof createDbMemoryTierAdapter>[0];
@@ -142,6 +143,7 @@ function fakeSupabaseClient(
   dbDefaults: Record<string, FakeRow> = {},
 ) {
   const inserted: Array<{ table: string; row: FakeRow }> = [];
+  const filters: Array<{ table: string; column: string; value: string }> = [];
   const resolvedSpecs = new Map<string, TableSpec>();
   const specFor = (table: string): TableSpec => {
     const existing = resolvedSpecs.get(table);
@@ -160,8 +162,12 @@ function fakeSupabaseClient(
             error: spec.selectError ? { message: spec.selectError } : null,
           };
           return {
-            eq(_column: string, _value: string) {
-              return Promise.resolve(result);
+            eq(column: string, value: string) {
+              filters.push({ table, column, value });
+              return Promise.resolve({
+                ...result,
+                data: (spec.rows ?? []).filter((row) => row[column] === value),
+              });
             },
             then(
               onFulfilled?: (value: typeof result) => unknown,
@@ -182,7 +188,7 @@ function fakeSupabaseClient(
       };
     },
   };
-  return { client: client as unknown as DbClient, inserted, specs };
+  return { client: client as unknown as DbClient, inserted, filters, specs };
 }
 
 function dbAdapter(specs: Record<string, TableSpec> = {}) {
@@ -202,6 +208,13 @@ describe("memory tier backend selection (V1-005)", () => {
     expect(resolveMemoryTierBackend(undefined)).toBe("memory");
     expect(resolveMemoryTierBackend("")).toBe("memory");
     expect(resolveMemoryTierBackend("   ")).toBe("memory");
+  });
+
+  it("defaults to durable storage and refuses the in-memory backend in production", () => {
+    expect(resolveMemoryTierBackend(undefined, "production")).toBe("db");
+    expect(() => resolveMemoryTierBackend("memory", "production")).toThrow(
+      /must be "db" in production/,
+    );
   });
 
   it("accepts the registered backends", () => {
@@ -377,6 +390,76 @@ describe("db memory tier adapter — retrieve", () => {
     expect(accessRow?.row.recorded_at).toBe(NOW);
   });
 
+  it("persists an audit row for every memory retrieval assembled into model context", async () => {
+    const { adapter, inserted } = dbAdapter();
+    await adapter.declareScope({ scope: scopeA(), declaredBy: ACTOR_A });
+    await adapter.writeRecord(writeRequest());
+
+    const context = await assembleMemoryContext(
+      {
+        scopeId: SCOPE_A,
+        permissions: [],
+        domains: ["field-ops"],
+        maxSensitivity: "internal",
+        maxAgeSeconds: 3600,
+        maxItems: 5,
+        maxChars: 2000,
+        tenantRef: TENANT_A,
+        actorRef: ACTOR_A,
+        purpose: "field operations briefing",
+        missionRef: "mission:MISSION-R-36",
+        now: NOW,
+      },
+      adapter,
+    );
+
+    expect(context.assembledContent).toContain("Route B is closed");
+    const accessRows = inserted.filter((row) => row.table === "cg_memory_access_log");
+    expect(accessRows).toHaveLength(1);
+    expect(accessRows[0].row).toMatchObject({
+      tenant_id: TENANT_A,
+      identity_ref: ACTOR_A,
+      scope_id: SCOPE_A,
+      outcome: "granted",
+      returned_record_ids: ["mem:alpha:001"],
+    });
+  });
+
+  it("excludes same-tenant records from another scope and persists the exclusion", async () => {
+    const { adapter, inserted } = dbAdapter();
+    await adapter.declareScope({ scope: scopeA(), declaredBy: ACTOR_A });
+    await adapter.declareScope({
+      scope: {
+        ...scopeA(),
+        scopeId: "scope:alpha:other",
+      },
+      declaredBy: ACTOR_A,
+    });
+    await adapter.writeRecord(writeRequest());
+    await adapter.writeRecord(
+      writeRequest({
+        recordId: "mem:alpha:other",
+        scopeId: "scope:alpha:other",
+      }),
+    );
+
+    const result = await adapter.retrieve(retrievalRequest(), { now: NOW });
+
+    expect(result.records.map((record) => record.id)).toEqual(["mem:alpha:001"]);
+    expect(result.accessRecord.exclusions).toEqual([
+      expect.objectContaining({
+        recordId: "mem:alpha:other",
+        reason: "outside_declared_scope",
+      }),
+    ]);
+    expect(inserted.find((i) => i.table === "cg_memory_access_log")?.row.exclusions).toEqual([
+      expect.objectContaining({
+        recordId: "mem:alpha:other",
+        reason: "outside_declared_scope",
+      }),
+    ]);
+  });
+
   it("audits a DENIED attempt (undeclared scope) with the denial reason", async () => {
     const { adapter, inserted } = dbAdapter();
     await adapter.declareScope({ scope: scopeA(), declaredBy: ACTOR_A });
@@ -404,8 +487,8 @@ describe("db memory tier adapter — retrieve", () => {
     );
   });
 
-  it("keeps access-record ids globally unique across tenants", async () => {
-    const { adapter, inserted } = dbAdapter({
+  it("uses unique audit ids and reads access history only for the requesting tenant", async () => {
+    const { adapter, inserted, filters } = dbAdapter({
       // A foreign tenant's access audit already occupies mem-access-000001.
       cg_memory_access_log: {
         rows: [
@@ -426,11 +509,30 @@ describe("db memory tier adapter — retrieve", () => {
     });
     await adapter.declareScope({ scope: scopeA(), declaredBy: ACTOR_A });
     await adapter.writeRecord(writeRequest());
-    const result = await adapter.retrieve(retrievalRequest(), { now: NOW });
-    expect(result.ok).toBe(true);
+    const first = await adapter.retrieve(retrievalRequest(), { now: NOW });
+    const second = await adapter.retrieve(retrievalRequest(), { now: NOW });
+    expect(first.ok).toBe(true);
+    expect(second.ok).toBe(true);
 
-    const accessRow = inserted.find((i) => i.table === "cg_memory_access_log");
-    expect(accessRow?.row.id).toBe("mem-access-000002");
+    const accessRows = inserted.filter((row) => row.table === "cg_memory_access_log");
+    expect(accessRows).toHaveLength(2);
+    const accessIds = accessRows.map((row) => row.row.id);
+    expect(accessIds[0]).toMatch(
+      /^mem-access-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+    );
+    expect(accessIds[1]).toMatch(
+      /^mem-access-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+    );
+    expect(accessIds[0]).not.toBe(accessIds[1]);
+    expect(first.store.accessLog.map((row) => row.tenantId)).toEqual([TENANT_A]);
+    expect(
+      filters.some(
+        (filter) =>
+          filter.table === "cg_memory_access_log" &&
+          filter.column === "tenant_id" &&
+          filter.value === TENANT_A,
+      ),
+    ).toBe(true);
   });
 });
 

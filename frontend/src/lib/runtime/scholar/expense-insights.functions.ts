@@ -11,6 +11,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireStaffContext } from "@/lib/security-role-gate";
 import { invokeAiGateway, type AiGatewayOutcome } from "@/lib/ai-gateway.server";
+import { appendMemoryContext } from "@/lib/ai-context";
 import {
   aiGuardLimits,
   buildGuardedPrompt,
@@ -116,12 +117,12 @@ export const getExpenseInsights = createServerFn({ method: "POST" })
         provider: "ai-gateway",
         purpose: "summarization",
         ...limits,
-        invoke: async (provider) => {
+        invoke: async (provider, gatewayContext) => {
           const { output, usage } = await generateText({
             model: provider(EXPENSE_INSIGHTS_MODEL),
             output: Output.object({ schema: InsightSchema }),
             system,
-            prompt,
+            prompt: appendMemoryContext(prompt, gatewayContext?.memoryContext ?? null),
           });
           return {
             payload: output,

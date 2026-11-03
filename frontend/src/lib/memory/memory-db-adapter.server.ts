@@ -2,7 +2,7 @@
  * Sherivs — DB-backed memory tier adapter (MISSION V1-005).
  *
  * Persists the durable practical/organizational memory tier into the
- * cg_memory_* tables authored (NOT applied) by
+ * cg_memory_* tables initially defined in the repository by
  * `database/supabase/migrations/20261002000004_coregrid_v1_memory_tier.sql`:
  *
  *   declareScope → cg_memory_scope       (with declared_by provenance, §12)
@@ -33,20 +33,17 @@
  * before they re-enter `MemoryTierStore` — malformed rows fail the load,
  * they are never coerced.
  *
- * Tenant scoping: scope and record queries are tenant-scoped in SQL (the
- * tenant boundary is the query itself, strictly stronger than the pure
- * contract's defense-in-depth `tenant_mismatch` exclusion, which therefore
- * cannot arise on this backend). The access log is loaded across tenants so
- * the contract's access-record id generator stays collision-free on the
- * globally-unique cg_memory_access_log.id primary key.
+ * Tenant scoping: scope, record, and access-log queries are tenant-scoped in
+ * SQL. Before insertion, access ids are replaced with random UUIDs so
+ * concurrent requests cannot collide on a count-derived primary key.
  *
  * Selection: `createMemoryTierAdapter` reads `MEMORY_TIER_BACKEND`
- * ("memory" | "db"; default and fallback "memory") following the repo's
- * `process.env` server-module conventions. The in-memory fallback keeps
- * tests and unconfigured environments on the pure contract.
+ * ("memory" | "db"); production defaults to and requires "db", while
+ * tests/development retain the in-memory fallback.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { validateKernelObjectEnvelope } from "../kernel/reality";
 import {
@@ -71,8 +68,8 @@ import {
 
 /**
  * The db adapter runs on the service-role client. Typed as the bare
- * `SupabaseClient` because the generated `Database` types lag the AUTHORED
- * (not applied) cg_memory_* migration — the same posture as
+ * `SupabaseClient` because the generated `Database` types do not include the
+ * cg_memory_* tables yet — the same posture as
  * `kernel-admin-client.ts`. The untyped surface is contained here: every row
  * read from the database is Zod-validated before it reaches contract state.
  */
@@ -291,12 +288,11 @@ export function createDbMemoryTierAdapter(client: MemoryTierDbClient): MemoryTie
       await selectRows("cg_memory_record", tenantId),
       "cg_memory_record",
     );
-    // Access log loads across tenants: the contract generates access-record
-    // ids from the store's access-log length, and the log's id is a global
-    // primary key — continuity must be global, not per-tenant.
+    // Keep audit history tenant-scoped just like scopes and records; database
+    // primary-key uniqueness is provided by random UUIDs on each new audit.
     const accessLogRows = parseRows<MemoryAccessLogRow>(
       memoryAccessLogRowSchema,
-      await selectRows("cg_memory_access_log", null),
+      await selectRows("cg_memory_access_log", tenantId),
       "cg_memory_access_log",
     );
     return {
@@ -391,7 +387,15 @@ export function createDbMemoryTierAdapter(client: MemoryTierDbClient): MemoryTie
       // partial AND denied attempts are persisted before anything is returned.
       // A failed audit persist fails retrieval CLOSED — no record is served
       // without its audit trail.
-      const access = result.accessRecord;
+      const access = { ...result.accessRecord, id: `mem-access-${randomUUID()}` };
+      const auditedResult = {
+        ...result,
+        accessRecord: access,
+        store: {
+          ...result.store,
+          accessLog: [...result.store.accessLog.slice(0, -1), access],
+        },
+      };
       await insertRow("cg_memory_access_log", {
         id: access.id,
         tenant_id: access.tenantId,
@@ -404,7 +408,7 @@ export function createDbMemoryTierAdapter(client: MemoryTierDbClient): MemoryTie
         denial_reason: access.denialReason,
         recorded_at: access.recordedAt,
       });
-      return result;
+      return auditedResult;
     },
   };
 }
@@ -424,17 +428,23 @@ const MEMORY_TIER_BACKENDS = ["memory", "db"] as const;
 const backendSchema = z.enum(MEMORY_TIER_BACKENDS);
 
 /**
- * Resolve the configured backend. Empty/unset resolves to "memory" (the
- * fallback for tests and unconfigured environments); an unknown value throws
- * rather than silently degrading durability.
+ * Resolve the configured backend. Empty/unset resolves to "db" in production
+ * and "memory" elsewhere; an unknown value throws rather than silently
+ * degrading durability.
  */
-export function resolveMemoryTierBackend(raw: string | null | undefined): MemoryTierBackend {
-  const value = (raw ?? "").trim() || "memory";
+export function resolveMemoryTierBackend(
+  raw: string | null | undefined,
+  environment = process.env.NODE_ENV,
+): MemoryTierBackend {
+  const value = (raw ?? "").trim() || (environment === "production" ? "db" : "memory");
   const parsed = backendSchema.safeParse(value);
   if (!parsed.success) {
     throw new Error(
       `MEMORY_TIER_BACKEND "${value}" is not a registered memory tier backend (${MEMORY_TIER_BACKENDS.join(" | ")})`,
     );
+  }
+  if (environment === "production" && parsed.data !== "db") {
+    throw new Error('MEMORY_TIER_BACKEND must be "db" in production');
   }
   return parsed.data;
 }

@@ -42,6 +42,10 @@ import {
   type IntelligenceSnapshot,
   type RoutingRationaleStep,
 } from "./ai-gateway/reasoning-provenance";
+import {
+  assembleMemoryContext,
+  type GatewayMemoryContextRequest,
+} from "./memory/memory-context.server";
 import { SystemClock, TimeAuthority } from "./kernel/time-authority";
 
 /** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
@@ -283,12 +287,18 @@ export interface AiGatewayInvokeRequest<TPayload> {
    * explicitly absent context version.
    */
   intelligenceContext?: AiGatewayIntelligenceContext | null;
+  /**
+   * Persistent memory is retrieved only through an explicit declared scope.
+   * Tenant, identity and purpose are always taken from this gateway request.
+   */
+  memoryContext?: GatewayMemoryContextRequest;
   logSink?: LogSink;
   now?: () => number;
 }
 
 export type AiGatewayDenyCode =
   | "unconfigured"
+  | "context_unavailable"
   | "budget_exhausted"
   | "rate_limited"
   | "provider_failed"
@@ -302,6 +312,7 @@ export type AiGatewayDenyCode =
 export interface AiGatewayInvocationContext {
   model: string;
   providerClass: string | null;
+  memoryContext?: string;
 }
 
 export type AiGatewayOutcome<TPayload> =
@@ -375,6 +386,7 @@ async function invokeRoutedThroughRegistry<TPayload>(
     now: () => number;
     apiKey: string;
     log: (level: LogLevel, msg: string, fields?: GatewayLogFields) => void;
+    memoryContext: string | null;
   },
 ): Promise<AiGatewayOutcome<TPayload>> {
   const registry = request.modelRegistry;
@@ -470,6 +482,7 @@ async function invokeRoutedThroughRegistry<TPayload>(
         return request.invoke(provider, {
           model: modelId,
           providerClass: registry.describeModel(modelId).providerClass,
+          ...(deps.memoryContext == null ? {} : { memoryContext: deps.memoryContext }),
         });
       },
     });
@@ -623,10 +636,39 @@ export async function invokeAiGateway<TPayload>(
     return { decision: "deny", code: "unconfigured", reason };
   }
 
+  let assembledMemoryContext: string | null = null;
+  if (request.memoryContext) {
+    try {
+      const assembled = await assembleMemoryContext({
+        ...request.memoryContext,
+        tenantRef: request.tenantRef,
+        actorRef: request.actorRef,
+        purpose: request.purpose,
+        missionRef: request.missionRef ?? null,
+        now: new Date(now()).toISOString(),
+      });
+      assembledMemoryContext = assembled.assembledContent;
+      request = {
+        ...request,
+        intelligenceContext: assembled,
+      };
+    } catch {
+      const reason =
+        "AI context could not be assembled; memory retrieval or its mandatory audit failed closed";
+      log("error", "gateway.context.error", { code: "context_unavailable", reason });
+      return { decision: "deny", code: "context_unavailable", reason };
+    }
+  }
+
   // J-014: with a wired registry, routing is a gateway decision made before
   // any metered attempt; budget/rate/authorization re-apply per candidate.
   if (request.modelRegistry) {
-    return invokeRoutedThroughRegistry(request, { now, apiKey, log });
+    return invokeRoutedThroughRegistry(request, {
+      now,
+      apiKey,
+      log,
+      memoryContext: assembledMemoryContext,
+    });
   }
 
   if (request.ledger && request.budget) {
@@ -642,7 +684,10 @@ export async function invokeAiGateway<TPayload>(
   }
 
   if (request.rateLimiter) {
-    const limit = await request.rateLimiter.check(`${request.tenantRef}:${request.actorRef}`, now());
+    const limit = await request.rateLimiter.check(
+      `${request.tenantRef}:${request.actorRef}`,
+      now(),
+    );
     if (limit.decision === "deny") {
       const reason = `Rate limit exceeded for ${request.tenantRef}:${request.actorRef}; retry after ${limit.retryAfterMs}ms`;
       log("warn", "gateway.decision.deny", {
@@ -666,7 +711,11 @@ export async function invokeAiGateway<TPayload>(
       maxAttempts: 1,
       call: async () => {
         const provider = createAiGatewayProvider(apiKey);
-        return request.invoke(provider, { model: request.model, providerClass: null });
+        return request.invoke(provider, {
+          model: request.model,
+          providerClass: null,
+          ...(assembledMemoryContext == null ? {} : { memoryContext: assembledMemoryContext }),
+        });
       },
     });
     if (policyOutcome.outcome === "error") {
@@ -682,7 +731,11 @@ export async function invokeAiGateway<TPayload>(
   } else {
     try {
       const provider = createAiGatewayProvider(apiKey);
-      result = await request.invoke(provider, { model: request.model, providerClass: null });
+      result = await request.invoke(provider, {
+        model: request.model,
+        providerClass: null,
+        ...(assembledMemoryContext == null ? {} : { memoryContext: assembledMemoryContext }),
+      });
     } catch (err) {
       log("error", "gateway.invoke.error", { duration_ms: now() - startMs, err });
       throw err;

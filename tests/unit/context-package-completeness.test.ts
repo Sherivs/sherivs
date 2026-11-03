@@ -22,6 +22,9 @@ import {
   type ContextEnvelope,
   type ContextRequest,
 } from "@/lib/context-assembly";
+import { createInMemoryMemoryTierAdapter } from "@/lib/memory/memory-adapter";
+import { assembleMemoryContext } from "@/lib/memory/memory-context.server";
+import type { MemoryWriteRequest } from "@/lib/memory/memory-store";
 
 const NOW = "2026-10-01T00:00:00.000Z";
 const FRESH = "2026-09-30T23:00:00.000Z";
@@ -59,7 +62,9 @@ function makeCandidate(overrides?: Partial<ContextCandidate>): ContextCandidate 
   };
 }
 
-function expectAssembled(envelope: ContextEnvelope): Extract<ContextEnvelope, { kind: "assembled" }> {
+function expectAssembled(
+  envelope: ContextEnvelope,
+): Extract<ContextEnvelope, { kind: "assembled" }> {
   expect(envelope.kind).toBe("assembled");
   if (envelope.kind !== "assembled") throw new Error("expected assembled envelope");
   return envelope;
@@ -86,6 +91,124 @@ describe("J-011 — every package is fully scoped (memory_scope, data_scope, ris
       maxSensitivity: "internal",
       origin: "declared",
     });
+
+    describe("practical memory context integration", () => {
+      it("assembles only authorized records from the requested scope and audits the retrieval", async () => {
+        const adapter = createInMemoryMemoryTierAdapter();
+        const scope = (scopeId: string, tenantId = "tenant-a") => ({
+          scopeId,
+          tenantId,
+          missionRef: "mission-1",
+          actorScope: ["user-1"],
+          domains: ["attendance"],
+          maxSensitivity: "internal" as const,
+        });
+        await adapter.declareScope({ scope: scope("memory-a"), declaredBy: "user-1" });
+        await adapter.declareScope({ scope: scope("memory-a-other"), declaredBy: "user-1" });
+        await adapter.declareScope({ scope: scope("memory-b", "tenant-b"), declaredBy: "user-1" });
+
+        const write = async (overrides: Partial<MemoryWriteRequest>) => {
+          const request: MemoryWriteRequest = {
+            recordId: "memory-allowed",
+            scopeId: "memory-a",
+            identityRef: "user-1",
+            tenantId: "tenant-a",
+            missionRef: "mission-1",
+            memoryClass: "practical",
+            domain: "attendance",
+            content: "Synthetic approved memory",
+            sensitivity: "internal",
+            requiredPermission: null,
+            freshnessAt: FRESH,
+            recordedAt: NOW,
+            biTemporal: { validFrom: NOW },
+            envelope: {
+              objectType: "memory_record",
+              schemaVersion: "1.0",
+              status: "active",
+              createdBy: "user-1",
+              updatedBy: "user-1",
+              provenance: { source: "synthetic-fixture", originTenantId: "tenant-a" },
+              policyContext: { purpose: "attendance summary" },
+              traceId: "memory-trace",
+              correlationId: "memory-correlation",
+              declaredOrigin: "memory-context-test",
+            },
+            ...overrides,
+          };
+          const result = await adapter.writeRecord(request);
+          if (!result.ok) throw new Error(result.error);
+        };
+        await write({});
+        await write({
+          recordId: "memory-permission-denied",
+          requiredPermission: "read:restricted",
+        });
+        await write({
+          recordId: "memory-cross-scope",
+          scopeId: "memory-a-other",
+        });
+        await write({
+          recordId: "memory-cross-tenant",
+          scopeId: "memory-b",
+          tenantId: "tenant-b",
+          envelope: {
+            objectType: "memory_record",
+            schemaVersion: "1.0",
+            status: "active",
+            createdBy: "user-1",
+            updatedBy: "user-1",
+            provenance: { source: "synthetic-fixture", originTenantId: "tenant-b" },
+            policyContext: { purpose: "attendance summary" },
+            traceId: "memory-trace-b",
+            correlationId: "memory-correlation-b",
+            declaredOrigin: "memory-context-test",
+          },
+        });
+
+        const assembled = await assembleMemoryContext(
+          {
+            scopeId: "memory-a",
+            permissions: [],
+            domains: ["attendance"],
+            maxSensitivity: "internal",
+            maxAgeSeconds: 3600,
+            maxItems: 10,
+            maxChars: 10_000,
+            tenantRef: "tenant-a",
+            actorRef: "user-1",
+            purpose: "attendance summary",
+            missionRef: "mission-1",
+            now: NOW,
+          },
+          adapter,
+        );
+
+        expect(assembled.envelope.items.map((item) => item.id)).toEqual(["memory-allowed"]);
+        expect(assembled.assembledContent).toContain("Synthetic approved memory");
+        expect(assembled.assembledContent).not.toContain("memory-permission-denied");
+        expect(assembled.assembledContent).not.toContain("memory-cross-scope");
+        expect(assembled.assembledContent).not.toContain("memory-cross-tenant");
+        const loaded = await adapter.load();
+        if (!loaded.ok) throw new Error(loaded.error);
+        expect(loaded.store.accessLog.at(-1)).toMatchObject({
+          outcome: "partial",
+          scopeId: "memory-a",
+          returnedRecordIds: ["memory-allowed"],
+          exclusions: expect.arrayContaining([
+            expect.objectContaining({
+              recordId: "memory-permission-denied",
+              reason: "permission_denied",
+            }),
+            expect.objectContaining({
+              recordId: "memory-cross-scope",
+              reason: "outside_declared_scope",
+            }),
+            expect.objectContaining({ recordId: "memory-cross-tenant", reason: "tenant_mismatch" }),
+          ]),
+        });
+      });
+    });
     expect(envelope.dataScope).toEqual({
       domains: ["attendance"],
       maxSensitivity: "internal",
@@ -102,7 +225,11 @@ describe("J-011 — every package is fully scoped (memory_scope, data_scope, ris
     const envelope = expectAssembled(
       assembleContext(makeRequest(), [makeCandidate()], { maxAgeSeconds: 3600, now: NOW }),
     );
-    expect(envelope.memoryScope).toEqual({ domains: [], maxSensitivity: "public", origin: "derived" });
+    expect(envelope.memoryScope).toEqual({
+      domains: [],
+      maxSensitivity: "public",
+      origin: "derived",
+    });
     expect(envelope.dataScope).toEqual({
       domains: ["authorized_database_record"],
       maxSensitivity: "internal",
@@ -118,7 +245,11 @@ describe("J-011 — every package is fully scoped (memory_scope, data_scope, ris
     expect(second.traceId).toBe(first.traceId);
 
     const otherPurpose = expectAssembled(
-      assembleContext(makeRequest({ purpose: "payroll reconciliation" }), [makeCandidate()], config),
+      assembleContext(
+        makeRequest({ purpose: "payroll reconciliation" }),
+        [makeCandidate()],
+        config,
+      ),
     );
     const otherTime = expectAssembled(
       assembleContext(request, [makeCandidate()], { maxAgeSeconds: 3600, now: STALE_SWITCH_NOW }),
@@ -146,9 +277,9 @@ describe("J-011 — every package is fully scoped (memory_scope, data_scope, ris
     expect(riskOf([makeCandidate({ sensitivity: "internal" })]).level).toBe("medium");
     expect(riskOf([makeCandidate({ sensitivity: "restricted" })]).level).toBe("high");
     // Untrusted content is a prompt-injection surface: public + untrusted → medium.
-    expect(
-      riskOf([makeCandidate({ sensitivity: "public", source: "user_input" })]).level,
-    ).toBe("medium");
+    expect(riskOf([makeCandidate({ sensitivity: "public", source: "user_input" })]).level).toBe(
+      "medium",
+    );
     expect(riskOf([], { riskLevel: "critical" })).toEqual({
       level: "critical",
       origin: "declared",
@@ -199,7 +330,11 @@ describe("J-011 — every filter path produces a complete exclusion record", () 
           makeCandidate({ id: "too-sensitive", sensitivity: "restricted" }),
           makeCandidate({ id: "gated", requiredPermission: "read:payroll" }),
           makeCandidate({ id: "old", freshnessAt: "2026-09-30T22:00:00.000Z", purposeTags: [] }),
-          makeCandidate({ id: "long", freshnessAt: "2026-09-30T23:30:00.000Z", content: contextPayload("0123456789ABCDEFGHIJ") }),
+          makeCandidate({
+            id: "long",
+            freshnessAt: "2026-09-30T23:30:00.000Z",
+            content: contextPayload("0123456789ABCDEFGHIJ"),
+          }),
           makeCandidate({ id: "a-no-chars", content: contextPayload("aaaaa"), purposeTags: [] }),
           makeCandidate({ id: "b-over-count", content: contextPayload("bbbbb"), purposeTags: [] }),
         ],
@@ -365,7 +500,10 @@ describe("J-011 — sufficiency assessment on every package", () => {
       ),
     );
     expect(envelope.sufficiency).toEqual(
-      expect.objectContaining({ verdict: "insufficient", reason: "purpose_relevant_item_truncated" }),
+      expect.objectContaining({
+        verdict: "insufficient",
+        reason: "purpose_relevant_item_truncated",
+      }),
     );
   });
 });
@@ -423,9 +561,19 @@ describe("J-012 — zero-bleed switch fundamentals", () => {
     const prior = expectAssembled(
       assembleContext(
         makeRequest({
-          actorRef: { userId: "user-1", role: "teacher", permissions: ["read:attendance", "carry:preference"] },
+          actorRef: {
+            userId: "user-1",
+            role: "teacher",
+            permissions: ["read:attendance", "carry:preference"],
+          },
         }),
-        [makeCandidate({ id: "pref", content: contextPayload("CARRIED-PREFERENCE"), purposeTags: [] })],
+        [
+          makeCandidate({
+            id: "pref",
+            content: contextPayload("CARRIED-PREFERENCE"),
+            purposeTags: [],
+          }),
+        ],
         { maxAgeSeconds: 3600, now: NOW },
       ),
     );
@@ -460,7 +608,11 @@ describe("J-012 — zero-bleed switch fundamentals", () => {
     const prior = expectAssembled(
       assembleContext(
         makeRequest({
-          actorRef: { userId: "user-1", role: "admin", permissions: ["read:attendance", "carry:preference", "god-mode"] },
+          actorRef: {
+            userId: "user-1",
+            role: "admin",
+            permissions: ["read:attendance", "carry:preference", "god-mode"],
+          },
         }),
         [makeCandidate({ id: "sensitive", requiredPermission: "god-mode", purposeTags: [] })],
         { maxAgeSeconds: 3600, now: NOW },
@@ -558,7 +710,14 @@ describe("J-012 — zero-bleed switch fundamentals", () => {
         makeRequest({
           actorRef: { userId: "user-1", role: "teacher", permissions: ["read:restricted"] },
         }),
-        [makeCandidate({ id: "restricted", sensitivity: "restricted", requiredPermission: "read:restricted", purposeTags: [] })],
+        [
+          makeCandidate({
+            id: "restricted",
+            sensitivity: "restricted",
+            requiredPermission: "read:restricted",
+            purposeTags: [],
+          }),
+        ],
         { maxAgeSeconds: 3600, now: NOW },
       ),
     );
@@ -589,7 +748,13 @@ describe("J-012 — zero-bleed switch fundamentals", () => {
     const prior = expectAssembled(
       assembleContext(
         makeRequest(),
-        [makeCandidate({ id: "big", content: contextPayload("0123456789ABCDEF"), purposeTags: [] })],
+        [
+          makeCandidate({
+            id: "big",
+            content: contextPayload("0123456789ABCDEF"),
+            purposeTags: [],
+          }),
+        ],
         { maxAgeSeconds: 3600, now: NOW },
       ),
     );
@@ -601,7 +766,12 @@ describe("J-012 — zero-bleed switch fundamentals", () => {
             budget: { maxItems: 5, maxChars: 10 },
           }),
           candidates: [
-            makeCandidate({ id: "b1", tenantRef: "tenant-b", content: contextPayload("B1item"), purposeTags: [] }),
+            makeCandidate({
+              id: "b1",
+              tenantRef: "tenant-b",
+              content: contextPayload("B1item"),
+              purposeTags: [],
+            }),
           ],
           prior,
           carryOver: [{ priorItemId: "big", requiredPermission: null }],
@@ -672,12 +842,19 @@ describe("J-012 — zero-bleed switch fundamentals", () => {
     );
     expect(switched.carried).toHaveLength(1);
     expect(switched.exclusions).toEqual([
-      expect.objectContaining({ id: "pref", stage: "context_switch", detail: expect.stringContaining("Duplicate") }),
+      expect.objectContaining({
+        id: "pref",
+        stage: "context_switch",
+        detail: expect.stringContaining("Duplicate"),
+      }),
     ]);
   });
 
   it("handles a rejected prior package: nothing exists to carry, requests recorded as not_carried", () => {
-    const prior: ContextEnvelope = { kind: "rejected", reason: "Budget must allow at least zero chars and one item" };
+    const prior: ContextEnvelope = {
+      kind: "rejected",
+      reason: "Budget must allow at least zero chars and one item",
+    };
     const switched = expectAssembled(
       switchContextScope(
         {
@@ -711,7 +888,11 @@ describe("J-012 — zero-bleed switch fundamentals", () => {
         { maxAgeSeconds: 3600, now: SWITCH_NOW },
       ),
     );
-    expect(switched.memoryScope).toEqual({ domains: [], maxSensitivity: "public", origin: "derived" });
+    expect(switched.memoryScope).toEqual({
+      domains: [],
+      maxSensitivity: "public",
+      origin: "derived",
+    });
     expect(JSON.stringify(switched.memoryScope)).not.toContain("tenant-a-private");
   });
 
@@ -770,7 +951,13 @@ describe("J-012 — round-trips and adversarial cases", () => {
     const pA = expectAssembled(
       assembleContext(
         makeRequest(),
-        [makeCandidate({ id: "a1", content: contextPayload("A-ONLY-FIRST-VISIT"), purposeTags: [] })],
+        [
+          makeCandidate({
+            id: "a1",
+            content: contextPayload("A-ONLY-FIRST-VISIT"),
+            purposeTags: [],
+          }),
+        ],
         configA,
       ),
     );
@@ -779,7 +966,12 @@ describe("J-012 — round-trips and adversarial cases", () => {
         {
           request: makeRequest({ tenantRef: "tenant-b" }),
           candidates: [
-            makeCandidate({ id: "b1", tenantRef: "tenant-b", content: contextPayload("B-ONLY-MATERIAL"), purposeTags: [] }),
+            makeCandidate({
+              id: "b1",
+              tenantRef: "tenant-b",
+              content: contextPayload("B-ONLY-MATERIAL"),
+              purposeTags: [],
+            }),
           ],
           prior: pA,
         },
@@ -791,7 +983,11 @@ describe("J-012 — round-trips and adversarial cases", () => {
         {
           request: makeRequest({ tenantRef: "tenant-a" }),
           candidates: [
-            makeCandidate({ id: "a2", content: contextPayload("A2-FRESH-MATERIAL"), purposeTags: [] }),
+            makeCandidate({
+              id: "a2",
+              content: contextPayload("A2-FRESH-MATERIAL"),
+              purposeTags: [],
+            }),
           ],
           prior: pB,
         },
@@ -806,7 +1002,12 @@ describe("J-012 — round-trips and adversarial cases", () => {
     expect(material).not.toContain("B-ONLY-MATERIAL");
     // The B-hop items were withheld on the return trip and recorded.
     expect(pA2.exclusions).toEqual([
-      expect.objectContaining({ id: "b1", tenantRef: "tenant-b", reason: "not_carried", stage: "context_switch" }),
+      expect.objectContaining({
+        id: "b1",
+        tenantRef: "tenant-b",
+        reason: "not_carried",
+        stage: "context_switch",
+      }),
     ]);
     expect(pA2.traceId).not.toBe(pA.traceId);
   });
@@ -832,7 +1033,12 @@ describe("J-012 — round-trips and adversarial cases", () => {
         {
           request: makeRequest({ tenantRef: "tenant-b", actorRef: carrier }),
           candidates: [
-            makeCandidate({ id: "b1", tenantRef: "tenant-b", content: contextPayload("B-ONLY-MATERIAL"), purposeTags: [] }),
+            makeCandidate({
+              id: "b1",
+              tenantRef: "tenant-b",
+              content: contextPayload("B-ONLY-MATERIAL"),
+              purposeTags: [],
+            }),
           ],
           prior: pA,
           carryOver: [{ priorItemId: "pref", requiredPermission: "carry:preference" }],
@@ -845,7 +1051,11 @@ describe("J-012 — round-trips and adversarial cases", () => {
         {
           request: makeRequest({ tenantRef: "tenant-a", actorRef: carrier }),
           candidates: [
-            makeCandidate({ id: "a2", content: contextPayload("A2-FRESH-MATERIAL"), purposeTags: [] }),
+            makeCandidate({
+              id: "a2",
+              content: contextPayload("A2-FRESH-MATERIAL"),
+              purposeTags: [],
+            }),
           ],
           prior: pB,
           carryOver: [{ priorItemId: "pref", requiredPermission: "carry:preference" }],
@@ -867,9 +1077,7 @@ describe("J-012 — round-trips and adversarial cases", () => {
     const material = JSON.stringify({ items: pA2.items, carried: pA2.carried });
     expect(material).not.toContain("A-ONLY-MATERIAL");
     expect(material).not.toContain("B-ONLY-MATERIAL");
-    expect(pA2.exclusions).toEqual([
-      expect.objectContaining({ id: "b1", reason: "not_carried" }),
-    ]);
+    expect(pA2.exclusions).toEqual([expect.objectContaining({ id: "b1", reason: "not_carried" })]);
   });
 
   it("revokes carry permission mid-journey: the field stops crossing at the hop that lost authorization", () => {
@@ -920,7 +1128,13 @@ describe("J-012 — round-trips and adversarial cases", () => {
     const prior = expectAssembled(
       assembleContext(
         makeRequest(),
-        [makeCandidate({ id: "shared-id", content: contextPayload("PRIOR-CONTENT"), purposeTags: [] })],
+        [
+          makeCandidate({
+            id: "shared-id",
+            content: contextPayload("PRIOR-CONTENT"),
+            purposeTags: [],
+          }),
+        ],
         { maxAgeSeconds: 3600, now: NOW },
       ),
     );
