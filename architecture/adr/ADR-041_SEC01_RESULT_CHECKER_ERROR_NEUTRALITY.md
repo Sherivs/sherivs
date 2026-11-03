@@ -1,4 +1,4 @@
-# ADR-019: SEC-01 Preserves the Public Result-Checker Contract
+# ADR-041: SEC-01 Preserves the Public Result-Checker Contract
 
 || Field | Value |
 ||---|---|
