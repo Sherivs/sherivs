@@ -36,3 +36,25 @@ GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO anon, authenticated, service_role;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
+
+-- Migrations are applied as a NON-superuser role (like the Supabase `postgres` migration role) so failures that only
+-- occur without superuser (e.g. 42501 on function-level SET of a custom GUC) are caught by the dry-run.
+CREATE ROLE sim_migrator LOGIN NOSUPERUSER BYPASSRLS CREATEROLE CREATEDB;
+-- Membership (not the superuser attribute, which is never inherited) lets migrations run ALTER DEFAULT PRIVILEGES FOR ROLE postgres.
+GRANT postgres TO sim_migrator WITH INHERIT TRUE, SET FALSE;
+GRANT anon, authenticated, service_role TO sim_migrator;
+GRANT ALL ON DATABASE postgres TO sim_migrator;
+ALTER SCHEMA public OWNER TO sim_migrator;
+ALTER SCHEMA auth OWNER TO sim_migrator;
+ALTER SCHEMA storage OWNER TO sim_migrator;
+ALTER SCHEMA extensions OWNER TO sim_migrator;
+ALTER TABLE auth.users OWNER TO sim_migrator;
+ALTER TABLE storage.buckets OWNER TO sim_migrator;
+ALTER TABLE storage.objects OWNER TO sim_migrator;
+ALTER FUNCTION auth.jwt() OWNER TO sim_migrator;
+ALTER FUNCTION auth.uid() OWNER TO sim_migrator;
+ALTER FUNCTION auth.role() OWNER TO sim_migrator;
+ALTER FUNCTION auth.email() OWNER TO sim_migrator;
+ALTER FUNCTION storage.foldername(text) OWNER TO sim_migrator;
+ALTER FUNCTION storage.filename(text) OWNER TO sim_migrator;
+ALTER PUBLICATION supabase_realtime OWNER TO sim_migrator;

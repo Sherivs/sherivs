@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
@@ -164,5 +164,35 @@ describe("SV1 student mobility migration", () => {
     expect(BULK_MIGRATION).toContain("FROM PUBLIC, anon");
     expect(BULK_MIGRATION).toContain("TO authenticated");
     expect(BULK_MIGRATION).not.toContain("INSERT INTO public.student_mobility_requests");
+  });
+});
+
+describe("SV1 student mobility system-path flag", () => {
+  it("never attaches a coregrid.* GUC at function level (needs superuser; fails with 42501 in prod)", () => {
+    const dir = join(ROOT, "database/supabase/migrations");
+    const offenders = readdirSync(dir)
+      .filter((f) => f.endsWith(".sql"))
+      .filter((f) => {
+        const sql = readFileSync(join(dir, f), "utf8");
+        return (
+          /ALTER\s+FUNCTION[^;]*\bSET\s+"?coregrid\./i.test(sql) ||
+          /CREATE\s+(OR\s+REPLACE\s+)?FUNCTION[^$;]*\bSET\s+"?coregrid\./i.test(sql)
+        );
+      });
+    expect(offenders).toEqual([]);
+  });
+
+  it("enables the flag transaction-locally in the governed bodies and only honours it from their call stack", () => {
+    expect(MIGRATION).toContain("set_config(''coregrid.mobility.system_path'', ''on'', true)");
+    expect(MIGRATION).toContain("GET DIAGNOSTICS v_ctx = PG_CONTEXT");
+    expect(MIGRATION).toContain("session_rollover|_integration_apply_record");
+    expect(MIGRATION).not.toContain(
+      "current_setting('coregrid.mobility.system_path', true) IS DISTINCT",
+    );
+    expect(MIGRATION).toContain("REVOKE ALL ON FUNCTION public.student_mobility_system_path(text)");
+  });
+
+  it("keeps the bulk migration free of the system-path flag", () => {
+    expect(BULK_MIGRATION).not.toContain("system_path");
   });
 });

@@ -6,9 +6,10 @@ import { writeAuditRecord } from "@/lib/server/write-audit";
 import {
   CAPTURE_METHODS,
   CONSENT_PURPOSES,
-  CURRENT_CONSENT_POLICY_VERSION,
+  LAWFUL_BASES,
   decideConsent,
   type CaptureMethod,
+  type LawfulBasis,
   type ConsentPurpose,
   type ConsentRecordLike,
 } from "./consent";
@@ -32,12 +33,14 @@ export async function hasConsent(
 ): Promise<boolean> {
   const res = await client
     .from("consent_records")
-    .select("student_id, purpose, status, policy_version")
+    .select(
+      "student_id, purpose, status, policy_version, lawful_basis, granted_by, granted_at, withdrawn_at, updated_at",
+    )
     .eq("school_id", schoolId)
     .eq("student_id", studentId)
     .eq("purpose", purpose);
   // Fail closed: an unreadable consent table must never read as consent to optional purposes.
-  if (res?.error) return purpose === "core_education";
+  if (res?.error) return false;
   return decideConsent((res?.data ?? []) as ConsentRecordLike[], studentId, purpose);
 }
 
@@ -52,13 +55,15 @@ export async function filterConsentedStudents(
   if (!studentIds.length) return out;
   const res = await client
     .from("consent_records")
-    .select("student_id, purpose, status, policy_version")
+    .select(
+      "student_id, purpose, status, policy_version, lawful_basis, granted_by, granted_at, withdrawn_at, updated_at",
+    )
     .eq("school_id", schoolId)
     .eq("purpose", purpose)
     .in("student_id", [...studentIds]);
-  const rows = (res?.error ? null : res?.data ?? []) as ConsentRecordLike[] | null;
+  const rows = (res?.error ? null : (res?.data ?? [])) as ConsentRecordLike[] | null;
   for (const id of studentIds) {
-    if (rows ? decideConsent(rows, id, purpose) : purpose === "core_education") out.add(id);
+    if (rows && decideConsent(rows, id, purpose)) out.add(id);
   }
   return out;
 }
@@ -68,6 +73,8 @@ export type ConsentChangeInput = {
   purpose: ConsentPurpose;
   action: "grant" | "withdraw";
   captureMethod?: CaptureMethod;
+  lawfulBasis?: LawfulBasis;
+  grantedByUserId?: string;
   notes?: string;
 };
 
@@ -77,32 +84,66 @@ export type PerformConsentDeps = {
   input: ConsentChangeInput;
 };
 
-const ADMIN_CAPTURE: readonly CaptureMethod[] = ["admin_entered", "paper_signed", "verbal_recorded"];
+const ADMIN_CAPTURE: readonly CaptureMethod[] = [
+  "admin_entered",
+  "paper_signed",
+  "verbal_recorded",
+];
+
+function isAdult(dateOfBirth: string | null, now: string): boolean {
+  if (!dateOfBirth || !/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)) return false;
+  const cutoff = new Date(now);
+  if (Number.isNaN(cutoff.getTime())) return false;
+  cutoff.setUTCFullYear(cutoff.getUTCFullYear() - 18);
+  return dateOfBirth <= cutoff.toISOString().slice(0, 10);
+}
 
 export async function performConsentChange(deps: PerformConsentDeps) {
   const { adminClient: db, actorId, input } = deps;
+  const now = timeAuthority.now().at;
   const [actor, studentRes] = await Promise.all([
     loadActor(db, actorId),
-    db.from("students").select("id, school_id").eq("id", input.studentId).maybeSingle(),
+    db
+      .from("students")
+      .select("id, school_id, user_id, date_of_birth")
+      .eq("id", input.studentId)
+      .maybeSingle(),
   ]);
   throwIfError(studentRes, "Failed to load student");
-  const student = studentRes?.data as { id: string; school_id: string } | null;
+  const student = studentRes?.data as {
+    id: string;
+    school_id: string;
+    user_id?: string | null;
+    date_of_birth?: string | null;
+  } | null;
   const schoolId = student?.school_id ?? null;
 
-  let role: "guardian" | "admin" | null = null;
+  let role: "guardian" | "self" | "admin" | null = null;
   if (student && actor && actor.school_id === schoolId && actor.is_active !== false) {
-    if (isSchoolAdminOf(actor, student.school_id)) {
-      role = "admin";
+    if (student.user_id === actorId && isAdult(student.date_of_birth ?? null, now)) {
+      role = "self";
     } else {
       const link = await db
-        .from("parent_student_map")
-        .select("id")
-        .eq("parent_id", actorId)
+        .from("student_guardian_relationships")
+        .select("relationship_type, effective_from, effective_until")
         .eq("student_id", input.studentId)
         .eq("school_id", student.school_id)
-        .maybeSingle();
+        .eq("related_user_id", actorId);
       throwIfError(link, "Failed to load guardian link");
-      if (link?.data) role = "guardian";
+      const relationships = (link?.data ?? []) as {
+        relationship_type?: string;
+        effective_from?: string;
+        effective_until?: string | null;
+      }[];
+      const activeConsentRelationship = relationships.some(
+        (relationship) =>
+          ["legal_guardian", "parent"].includes(relationship.relationship_type ?? "") &&
+          !!relationship.effective_from &&
+          relationship.effective_from <= now.slice(0, 10) &&
+          (!relationship.effective_until || relationship.effective_until > now.slice(0, 10)),
+      );
+      if (activeConsentRelationship) role = "guardian";
+      else if (isSchoolAdminOf(actor, student.school_id)) role = "admin";
     }
   }
 
@@ -121,99 +162,56 @@ export async function performConsentChange(deps: PerformConsentDeps) {
     } catch {
       // best-effort: the denial must still surface
     }
-    throw new Error("Forbidden: only the student's guardian or a school admin may change consent");
+    throw new Error(
+      "Forbidden: only the adult learner, an active parent/legal guardian, or a school admin may change consent",
+    );
   }
 
-  // Guardians always act via the web form; only admins may record paper/verbal consent.
   const captureMethod: CaptureMethod =
-    role === "guardian" ? "web_form" : (input.captureMethod ?? "admin_entered");
+    role === "admin" ? (input.captureMethod ?? "admin_entered") : "web_form";
   if (role === "admin" && !ADMIN_CAPTURE.includes(captureMethod)) {
     throw new Error("Invalid capture method for admin-recorded consent");
   }
-
-  const now = timeAuthority.now().at;
-  const status = input.action === "grant" ? "granted" : "withdrawn";
-  const existing = await db
-    .from("consent_records")
-    .select("id")
-    .eq("school_id", student.school_id)
-    .eq("student_id", input.studentId)
-    .eq("purpose", input.purpose)
-    .maybeSingle();
-  throwIfError(existing, "Failed to load consent record");
-
-  const fields = {
-    status,
-    policy_version: CURRENT_CONSENT_POLICY_VERSION,
-    capture_method: captureMethod,
-    captured_by: actorId,
-    guardian_user_id: role === "guardian" ? actorId : null,
-    notes: input.notes ?? null,
-    ...(input.action === "grant"
-      ? { granted_at: now, withdrawn_at: null }
-      : { withdrawn_at: now }),
-  };
-
-  let consentId: string;
-  if (existing?.data?.id) {
-    consentId = existing.data.id as string;
-    const upd = await db
-      .from("consent_records")
-      .update(fields)
-      .eq("id", consentId)
-      .eq("school_id", student.school_id);
-    throwIfError(upd, "Failed to update consent");
-  } else {
-    const ins = await db
-      .from("consent_records")
-      .insert({
-        school_id: student.school_id,
-        student_id: input.studentId,
-        purpose: input.purpose,
-        ...fields,
-      })
-      .select("id")
-      .single();
-    throwIfError(ins, "Failed to record consent");
-    consentId = ins.data.id as string;
+  if (input.action === "grant" && !input.lawfulBasis) {
+    throw new Error("A lawful basis is required for every consent grant");
   }
-
-  const ev = await db.from("consent_events").insert({
-    school_id: student.school_id,
-    consent_id: consentId,
-    student_id: input.studentId,
-    purpose: input.purpose,
-    action: input.action,
-    policy_version: CURRENT_CONSENT_POLICY_VERSION,
-    actor_id: actorId,
-    capture_method: captureMethod,
-    at: now,
+  const grantedBy = role === "admin" ? input.grantedByUserId : actorId;
+  if (!grantedBy) throw new Error("The person granting consent must be identified");
+  if (input.lawfulBasis && !(LAWFUL_BASES as readonly string[]).includes(input.lawfulBasis)) {
+    throw new Error("Invalid lawful basis");
+  }
+  if (!db.rpc) throw new Error("Consent service is unavailable");
+  const result = await db.rpc("consent_set_for_actor", {
+    p_actor_id: actorId,
+    p_student_id: input.studentId,
+    p_purpose: input.purpose,
+    p_grant: input.action === "grant",
+    p_granted_by: grantedBy,
+    p_lawful_basis: input.lawfulBasis ?? null,
+    p_method: captureMethod,
+    p_note: input.notes ?? null,
   });
-  throwIfError(ev, "Failed to append consent event");
-
-  await writeAuditRecord(db, {
-    action: `consent.${input.action}`,
-    gate: role === "admin" ? "requireSchoolAdminScope" : "guardianLink",
-    tenantId: student.school_id,
-    actorId,
-    table: "consent_records",
-    recordId: consentId,
-    outcome: "succeeded",
-    details: {
-      purpose: input.purpose,
-      student_id: input.studentId,
-      capture_method: captureMethod,
-      policy_version: CURRENT_CONSENT_POLICY_VERSION,
-    },
-  });
-
-  return { ok: true as const, consentId, status };
+  throwIfError(result, "Failed to record consent");
+  const recorded = result?.data as { consent_id?: string; status?: string } | null;
+  if (
+    !recorded?.consent_id ||
+    recorded.status !== (input.action === "grant" ? "granted" : "withdrawn")
+  ) {
+    throw new Error("Consent service returned an invalid result");
+  }
+  return {
+    ok: true as const,
+    consentId: recorded.consent_id,
+    status: input.action === "grant" ? ("granted" as const) : ("withdrawn" as const),
+  };
 }
 
 const schema = z.object({
   studentId: z.string().uuid(),
   purpose: z.enum(CONSENT_PURPOSES),
   captureMethod: z.enum(CAPTURE_METHODS).optional(),
+  lawfulBasis: z.enum(LAWFUL_BASES).optional(),
+  grantedByUserId: z.string().uuid().optional(),
   notes: z.string().trim().max(500).optional(),
 });
 
