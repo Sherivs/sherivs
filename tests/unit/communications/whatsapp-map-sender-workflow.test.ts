@@ -47,8 +47,16 @@ describe("production WhatsApp sender mapping workflow", () => {
     expect(mapping?.run).toContain("SET LOCAL role service_role;");
     expect(mapping?.run).toContain("'request.jwt.claim.role', 'service_role'");
     expect(mapping?.run).toContain("public.cg_whatsapp_map_sender(");
-    expect(mapping?.run).toContain("p_provider_sender_ref => '1407639185765089'");
-    expect(mapping?.run).toContain("p_from_number => '+2349015056201'");
+    expect(mapping?.run).toContain("'1407639185765089',");
+    expect(mapping?.run).toContain("'+2349015056201',");
+    expect(mapping?.run).toContain("'env://WHATSAPP_ACCESS_TOKEN',");
+    expect(mapping?.run).toContain("'workflow:sv1-wa-map-sender'");
+    const mappedArguments = mapping?.run?.match(
+      /SELECT public\.cg_whatsapp_map_sender\(([\s\S]*?)\);/,
+    );
+    expect(mappedArguments).not.toBeNull();
+    expect(mappedArguments?.[1].split(",").map((argument) => argument.trim())).toHaveLength(6);
+    expect(mapping?.run).toContain("ROLLBACK;");
     expect(mapping?.run).not.toMatch(/\b(?:INSERT|UPDATE|DELETE|TRUNCATE)\b/i);
   });
 
