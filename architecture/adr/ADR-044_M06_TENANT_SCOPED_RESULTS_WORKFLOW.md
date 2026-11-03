@@ -8,8 +8,8 @@
 || Mission | M06 CA and terminal results (V1 organizational academic capability) |
 || Capabilities | Tenant-scoped assessment and result records |
 || Supersedes-in-part | None |
-|| Cites | `AGENTS.md` §§13, 17, 26–28, 30–31, 38, 42–45; `database/supabase/migrations/20261024000220_sherivs_015_privacy_lockdown_rls_speed.sql`; `database/supabase/migrations/20261101000010_sherivs_m009_a1_role_responsibility_engine.sql`; issues #175 and #185 |
-|| Minimal ownership artifact | This ADR only — a decision artifact |
+|| Cites | `AGENTS.md` §§13, 17, 26–28, 30–31, 38, 42–45; `database/supabase/migrations/20261024000220_sherivs_015_privacy_lockdown_rls_speed.sql`; `database/supabase/migrations/20261101000010_sherivs_m009_a1_role_responsibility_engine.sql`; `architecture/coregrid-mvp-architecture/NEUTRALITY_GUARD_BASELINE.json`; `scripts/ops/quarantine-migration-vocabulary.mjs`; issues #175 and #185 |
+|| Minimal ownership artifact | This ADR, its five exact SQL-only neutrality entries, and the M06 migration |
 
 ## Context
 
@@ -55,6 +55,20 @@ server-side; require a distinct authorized approver; publish only approved
 results; and require a distinct authorized actor plus append-only evidence for
 every approved/published score amendment. The migration and rollback are files
 only and are never applied to a live database by this change.**
+
+## Migration neutrality evidence
+
+The domain-neutrality verifier reports five groups confined to the M06 SQL
+migration: structural `school_id` (67 hits), and vocabulary
+`get_my_school_id` (8), `grade` (4), `scholar` (3), and `teacher` (2). The
+existing tenant and role substrate requires these terms in database-owned
+policies and functions, and SQL migrations cannot be relocated to the runtime
+namespace. Following ADR-004, the baseline records only those exact observed
+groups under `STREAM I: M06-ISSUE-185` using
+`scripts/ops/quarantine-migration-vocabulary.mjs`. This does not alter the
+verifier, quarantine TypeScript, or weaken any security control; these
+migration-only entries remain subject to removal when the underlying substrate
+is replaced. The proposed migration remains unapplied.
 
 ## Consequences (summary)
 
