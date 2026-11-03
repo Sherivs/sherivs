@@ -90,6 +90,14 @@ export const Route = createFileRoute("/")({
     }
     // Organization website (custom domain, <slug>.sherivs.com, or ?school= preview on the platform host).
     const res = await getPublicSite(deps.school);
+    const jsonLd = res.site
+      ? (await import("@/components/website/route-support")).siteHead(
+          res.site,
+          "home",
+          deps.lang,
+          res.preview,
+        ).jsonLd
+      : undefined;
     return {
       hostname,
       hostKind,
@@ -101,6 +109,7 @@ export const Route = createFileRoute("/")({
       preview: res.preview,
       tenant: res.tenant,
       lang: deps.lang,
+      jsonLd,
     };
   },
   component: Index,
@@ -188,14 +197,13 @@ function Index() {
 
   // Organization website: server-rendered from the published document (or generated from live data).
   if (data.site) {
-    const h = siteHead(data.site, "home", data.lang, data.preview);
     return (
       <SiteView
         site={data.site}
         slug="home"
         lang={data.lang}
         preview={data.preview}
-        jsonLd={h.jsonLd}
+        jsonLd={data.jsonLd}
       />
     );
   }
