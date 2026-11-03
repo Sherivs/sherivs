@@ -93,7 +93,8 @@ export const teacherCheckWithQr = createServerFn({ method: "POST" })
     if (tok.type !== "sign_in" && tok.type !== "sign_out")
       throw new Error("This code is not a teacher check-in code");
     if (tok.used) throw new Error("This code has already been used");
-    if (new Date(tok.expires_at).getTime() < timeAuthority.now().atMs) throw new Error("This code has expired");
+    if (new Date(tok.expires_at).getTime() < timeAuthority.now().atMs)
+      throw new Error("This code has expired");
     if (tok.school_id !== staff.schoolId) throw new Error("Wrong school");
 
     const { error: logErr } = await supabase.from("attendance_logs").insert({
@@ -168,4 +169,58 @@ export const markClassAttendance = createServerFn({ method: "POST" })
     if (upErr) throw new Error(upErr.message);
 
     return { ok: true, saved: rows.length };
+  });
+
+const offlineMarkSchema = z.object({
+  id: z.string().trim().min(1).max(160),
+  class_id: z.string().uuid(),
+  student_id: z.string().uuid(),
+  shift_id: z.string().uuid().nullable(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  period_key: z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/),
+  status: z.enum(ALLOWED_STATUSES),
+  captured_at: z.string().datetime(),
+});
+
+const offlineSyncSchema = z.object({
+  batch: z.string().trim().min(4).max(80),
+  items: z.array(offlineMarkSchema).min(1).max(500),
+  clientNow: z.string().datetime(),
+});
+
+const offlineSyncResultSchema = z.object({
+  applied: z.number().int().nonnegative(),
+  duplicates: z.number().int().nonnegative(),
+  conflicts: z.array(z.object({ id: z.string().optional(), why: z.string() })),
+  replay: z.boolean().optional(),
+  skew_seconds: z.number().int().optional(),
+});
+
+export const syncClassAttendance = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: unknown) => offlineSyncSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, claims } = context;
+    await requireStaffContext(supabase, "teaching_staff", {
+      lifecycle: null,
+      sessionValid: typeof claims?.exp === "number" && tokenMsRemaining(claims.exp) > 0,
+    });
+
+    const rpcClient = supabase as unknown as {
+      rpc: (
+        name: string,
+        args: {
+          p_batch: string;
+          p_items: z.infer<typeof offlineMarkSchema>[];
+          p_client_now: string;
+        },
+      ) => Promise<{ data: unknown; error: { message: string } | null }>;
+    };
+    const { data: result, error } = await rpcClient.rpc("offline_attendance_capture_sync_m05", {
+      p_batch: data.batch,
+      p_items: data.items,
+      p_client_now: data.clientNow,
+    });
+    if (error) throw new Error(error.message);
+    return offlineSyncResultSchema.parse(result);
   });
