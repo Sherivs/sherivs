@@ -56,6 +56,9 @@ DECLARE
   v_state text;
   v_id uuid := gen_random_uuid();
   v_dead_id uuid := gen_random_uuid();
+  v_conv_id uuid := gen_random_uuid();
+  v_tenant text;
+  v_sender text;
 BEGIN
   PERFORM wafix.as_role('service_role');
 
@@ -113,7 +116,7 @@ BEGIN
     AND NOT has_function_privilege('authenticated', 'public.cg_whatsapp_prepare_n8n_reply(text,text,uuid,text)', 'EXECUTE')
     AND has_function_privilege('service_role', 'public.cg_whatsapp_prepare_n8n_reply(text,text,uuid,text)', 'EXECUTE'));
 
-  -- prepare_n8n_reply: no 42702; its own 42501 'unavailable' is expected for missing data
+  -- prepare_n8n_reply with no seeded data: its own 42501 'unavailable', not 42702
   PERFORM wafix.as_role('service_role');
   BEGIN
     PERFORM * FROM public.cg_whatsapp_prepare_n8n_reply('wafix-reply', 'wamid.missing', gen_random_uuid(), 'hello');
@@ -127,6 +130,44 @@ BEGIN
       RESET ROLE;
       RAISE EXCEPTION 'WA-FIX FAIL: prepare_n8n_reply still raises 42702';
   END;
+
+  -- seed the minimum rows so prepare_n8n_reply reaches the INSERT ... ON CONFLICT (tenant_id, reply_id)
+  RESET ROLE;
+  INSERT INTO public.cg_communication_conversation (id, tenant_id, org_ref, channel, address, principal_ref)
+  VALUES (v_conv_id, 'wafix-tenant', 'wafix-org', 'whatsapp', '+2340000000001', 'wafix-principal');
+  INSERT INTO public.cg_communication_message
+    (tenant_id, org_ref, conversation_id, channel, direction, status, principal_ref, provider_ref, body,
+     provider_created_at)
+  VALUES ('wafix-tenant', 'wafix-org', v_conv_id, 'whatsapp', 'inbound', 'received', 'wafix-principal',
+          'wamid.wafix.in', 'hi', now() - interval '1 minute');
+  INSERT INTO public.cg_whatsapp_inbound_event (provider_sender_ref, provider_ref, tenant_id, org_ref, status)
+  VALUES ('1000000000001', 'wamid.wafix.in', 'wafix-tenant', 'wafix-org', 'received');
+  INSERT INTO public.cg_communication_recipient_address (tenant_id, org_ref, principal_ref, channel, address)
+  VALUES ('wafix-tenant', 'wafix-org', 'wafix-principal', 'whatsapp', '+2340000000001');
+  INSERT INTO public.cg_communication_optin (tenant_id, org_ref, channel, address, status, source)
+  VALUES ('wafix-tenant', 'wafix-org', 'whatsapp', '+2340000000001', 'opted_in', 'authorized_server');
+  INSERT INTO public.cg_org_membership (id, tenant_id, org_unit_id, principal_ref, role_ref, state)
+  VALUES ('wafix-membership', 'wafix-tenant', 'wafix-org', 'wafix-principal', 'wafix-role', 'active');
+  INSERT INTO public.cg_org_communication_sender
+    (sender_ref, tenant_id, org_ref, channel, provider, from_number, credential_ref, status, provenance,
+     provider_sender_ref)
+  VALUES ('wafix-sender-ref', 'wafix-tenant', 'wafix-org', 'whatsapp', 'meta_cloud', '+2340000000002',
+          'env://WAFIX_CRED', 'active', '{"createdBy":"wafix","createdAt":"2026-11-04"}'::jsonb, '1000000000001');
+  PERFORM wafix.as_role('service_role');
+  SELECT count(*), max(r.tenant_id), max(r.provider_sender_ref)
+    INTO v_rows, v_tenant, v_sender
+    FROM public.cg_whatsapp_prepare_n8n_reply('wafix-reply-2', 'wamid.wafix.in', v_conv_id, 'hello') r;
+  RESET ROLE;
+  PERFORM wafix.expect('prepare_n8n_reply reaches ON CONFLICT insert and returns one row',
+    v_rows = 1 AND v_tenant = 'wafix-tenant' AND v_sender = '1000000000001'
+    AND EXISTS (SELECT 1 FROM public.cg_whatsapp_n8n_reply
+                 WHERE tenant_id = 'wafix-tenant' AND reply_id = 'wafix-reply-2' AND status = 'queued'));
+  -- replay with the same reply_id still resolves ON CONFLICT without 42702 (live lease -> no row)
+  PERFORM wafix.as_role('service_role');
+  SELECT count(*) INTO v_rows
+    FROM public.cg_whatsapp_prepare_n8n_reply('wafix-reply-2', 'wamid.wafix.in', v_conv_id, 'hello');
+  RESET ROLE;
+  PERFORM wafix.expect('prepare_n8n_reply replay on live lease returns no row', v_rows = 0);
   PERFORM wafix.as_role('anon');
   BEGIN
     PERFORM * FROM public.cg_whatsapp_prepare_n8n_reply('wafix-reply', 'wamid.missing', gen_random_uuid(), 'hello');
