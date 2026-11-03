@@ -90,21 +90,57 @@ describe("SHERIVS-A07 tenant-scoped IndexedDB attendance outbox", () => {
 
   it("keeps the same item ids after network failure and retries idempotently", async () => {
     const database = new MemoryDatabase();
-    let fail = true;
     const sent: string[][] = [];
+    const persisted = new Set<string>();
     const q = queue(database, async (_batch, items) => {
       sent.push(items.map((item) => item.id));
-      if (fail) throw new Error("offline");
-      return { applied: 0, duplicates: items.length, conflicts: [] };
+      if (sent.length === 1) {
+        items.forEach((item) => persisted.add(item.id));
+        throw new Error("connection dropped after server commit");
+      }
+      const duplicates = items.filter((item) => persisted.has(item.id)).length;
+      return { applied: items.length - duplicates, duplicates, conflicts: [] };
     });
     await q.mark("s1", "2026-10-24", "present");
 
-    expect((await q.flush()).error).toBe("offline");
+    expect((await q.flush()).error).toBe("connection dropped after server commit");
     await expect(q.pending()).resolves.toHaveLength(1);
-    fail = false;
     const report = await q.flush();
     expect(sent[0]).toEqual(sent[1]);
+    expect(persisted.size).toBe(1);
     expect(report).toMatchObject({ duplicates: 1, remaining: 0 });
+  });
+
+  it("keeps attendance marks separate across class, shift, and period scopes", async () => {
+    const q = queue(new MemoryDatabase());
+    const shared = {
+      student_id: "s1",
+      date: "2026-10-24",
+      status: "present" as const,
+      shift_id: null,
+    };
+    await q.markForClass({ ...shared, class_id: "class-a", period_key: "daily" });
+    await q.markForClass({ ...shared, class_id: "class-a", period_key: "period-1" });
+    await q.markForClass({
+      ...shared,
+      class_id: "class-b",
+      shift_id: "shift-a",
+      period_key: "daily",
+    });
+
+    await expect(q.pending()).resolves.toHaveLength(3);
+  });
+
+  it("does not discard a batch when the server omits per-item conflict identity", async () => {
+    const q = queue(new MemoryDatabase(), async () => ({
+      applied: 0,
+      conflicts: [{ why: "server_has_other_mark" }],
+    }));
+    await q.mark("s1", "2026-10-24", "absent");
+
+    const report = await q.flush();
+    expect(report.error).toBe("Attendance sync returned an incomplete result");
+    await expect(q.pending()).resolves.toHaveLength(1);
   });
 
   it("retains a server conflict for manual review and does not retry it", async () => {

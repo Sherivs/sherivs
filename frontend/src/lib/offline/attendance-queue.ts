@@ -11,6 +11,14 @@ export type QueuedMark = {
   date: string;
   status: AttendanceStatus;
   captured_at: string;
+  class_id?: string;
+  shift_id?: string | null;
+  period_key?: string;
+};
+export type ClassAttendanceMark = Omit<QueuedMark, "id" | "captured_at"> & {
+  class_id: string;
+  shift_id: string | null;
+  period_key: string;
 };
 export type SyncResult = {
   applied: number;
@@ -44,23 +52,32 @@ export function createAttendanceQueue(opts: {
     });
   let flushing: Promise<FlushReport> | null = null;
 
+  async function enqueueMark(mark: Omit<QueuedMark, "id">): Promise<QueuedMark> {
+    const entityId = [
+      mark.class_id ?? "legacy",
+      mark.shift_id ?? "no-shift",
+      mark.period_key ?? "daily",
+      mark.student_id,
+      mark.date,
+    ].join(":");
+    const previous = await store.pending("attendance");
+    for (const item of previous) {
+      if (item.entityId === entityId) await store.discard(item.id);
+    }
+    const mutation = await store.enqueue("attendance", entityId, mark);
+    return toMark(mutation);
+  }
+
   async function mark(
     student_id: string,
     date: string,
     status: AttendanceStatus,
   ): Promise<QueuedMark> {
-    const entityId = `${student_id}:${date}`;
-    const previous = await store.pending("attendance");
-    for (const item of previous) {
-      if (item.entityId === entityId) await store.discard(item.id);
-    }
-    const mutation = await store.enqueue("attendance", entityId, {
-      student_id,
-      date,
-      status,
-      captured_at: now().toISOString(),
-    });
-    return toMark(mutation);
+    return enqueueMark({ student_id, date, status, captured_at: now().toISOString() });
+  }
+
+  async function markForClass(mark: ClassAttendanceMark): Promise<QueuedMark> {
+    return enqueueMark({ ...mark, captured_at: now().toISOString() });
   }
 
   type FlushReport = {
@@ -86,6 +103,21 @@ export function createAttendanceQueue(opts: {
           result = await opts.sync(batch, marks, now().toISOString());
         } catch (error) {
           report.error = error instanceof Error ? error.message : "Attendance sync failed";
+          break;
+        }
+
+        const conflictIds = result.conflicts.map((conflict) => conflict.id);
+        const itemIds = new Set(marks.map((mark) => mark.id));
+        if (
+          !Number.isInteger(result.applied) ||
+          result.applied < 0 ||
+          !Number.isInteger(result.duplicates ?? 0) ||
+          (result.duplicates ?? 0) < 0 ||
+          result.applied + (result.duplicates ?? 0) + result.conflicts.length !== marks.length ||
+          conflictIds.some((id) => !id || !itemIds.has(id)) ||
+          new Set(conflictIds).size !== conflictIds.length
+        ) {
+          report.error = "Attendance sync returned an incomplete result";
           break;
         }
 
@@ -134,6 +166,7 @@ export function createAttendanceQueue(opts: {
 
   return {
     mark,
+    markForClass,
     flush,
     autoFlush,
     pending: async () => (await store.pending("attendance")).map(toMark),

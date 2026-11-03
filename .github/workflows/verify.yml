@@ -25,8 +25,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with: { node-version: "${{ env.NODE_VERSION }}", cache: npm }
       - run: npm ci --include=dev --ignore-scripts --no-audit --fund=false
       - run: npx tsc --noEmit
@@ -38,9 +38,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with: { fetch-depth: 0 }
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with: { node-version: "${{ env.NODE_VERSION }}", cache: npm }
       - run: npm ci --ignore-scripts --no-audit --fund=false
       - name: ESLint on changed TS/JS files
@@ -54,8 +54,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with: { node-version: "${{ env.NODE_VERSION }}", cache: npm }
       - run: npm ci --include=dev --no-audit --fund=false
       - run: npm run test:unit
@@ -68,15 +68,15 @@ jobs:
       VITE_SUPABASE_URL: https://synthetic.supabase.test
       VITE_SUPABASE_PUBLISHABLE_KEY: synthetic-role-management-test-key
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with: { node-version: "${{ env.NODE_VERSION }}", cache: npm }
       - run: npm ci --include=dev --no-audit --fund=false
       - run: npx playwright install --with-deps chromium
       - name: Capture desktop and mobile role-management screens
         run: npx playwright test tests/e2e/role-management-screenshots.spec.ts --project=desktop-chromium --project=mobile-chromium
       - if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: ui-screenshots
           path: test-results/**/role-management-*.png
@@ -88,8 +88,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with: { node-version: "${{ env.NODE_VERSION }}", cache: npm }
       - run: npm ci --no-audit --fund=false
       - run: npm audit --omit=dev --audit-level=high
@@ -104,14 +104,14 @@ jobs:
       VITE_SUPABASE_URL: http://127.0.0.1:54321
       VITE_SUPABASE_PUBLISHABLE_KEY: local-workspace-e2e-public-key
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with: { node-version: "${{ env.NODE_VERSION }}", cache: npm }
       - run: npm ci --no-audit --fund=false
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test tests/e2e/workspace-shell.spec.ts --project=mobile-chromium
       - if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: ui-screenshots
           path: test-results/
@@ -123,14 +123,25 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with: { fetch-depth: 0 }
       - name: gitleaks (commits new to this PR / push; history audit is in docs/security/track-e-findings.md)
         run: |
-          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz | tar xz gitleaks
+          set -euo pipefail
+          version=8.21.2
+          archive="gitleaks_${version}_linux_x64.tar.gz"
+          work="$(mktemp -d)"
+          trap 'rm -rf "$work"' EXIT
+          base="https://github.com/gitleaks/gitleaks/releases/download/v${version}"
+          curl -sSfL "$base/$archive" -o "$work/$archive"
+          curl -sSfL "$base/gitleaks_${version}_checksums.txt" -o "$work/checksums.txt"
+          grep -E "^[[:xdigit:]]{64}[[:space:]]+${archive}$" "$work/checksums.txt" > "$work/expected.sha256"
+          test "$(wc -l < "$work/expected.sha256")" -eq 1
+          (cd "$work" && sha256sum --check expected.sha256)
           if [ "${{ github.event_name }}" = "pull_request" ]; then range="origin/${{ github.base_ref }}..HEAD"; else range="${{ github.event.before }}..HEAD"; fi
           case "$range" in 0000000*) range="HEAD~1..HEAD";; ..HEAD) range="HEAD~1..HEAD";; esac
-          ./gitleaks git --redact --no-banner -c .gitleaks.toml ${range:+--log-opts="$range"} .
+          tar -xzf "$work/$archive" -C "$work" gitleaks
+          "$work/gitleaks" git --redact --no-banner -c .gitleaks.toml ${range:+--log-opts="$range"} .
 
   migrations-sim:
     # Migration dry-run: every migration applied in order to a throwaway local Postgres 17 + Supabase bootstrap,
@@ -139,10 +150,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with: { node-version: "${{ env.NODE_VERSION }}" }
-      - uses: actions/cache@v4
+      - uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: tools/sim-lab/bin
           key: sim-lab-bin-pg17.2-pgrst12.2.3-k6v0.54.0
@@ -167,7 +178,7 @@ jobs:
           (bin/postgrest load/postgrest.conf > postgrest.log 2>&1 &) ; sleep 3
           cd load && SMOKE=1 PEAK=50 ../bin/k6 run --quiet flows.js
       - if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: sim-lab-results
           path: |
@@ -181,8 +192,8 @@ jobs:
     timeout-minutes: 10
     defaults: { run: { working-directory: mobile } }
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with: { node-version: "${{ env.NODE_VERSION }}", cache: npm, cache-dependency-path: mobile/package-lock.json }
       - run: npm ci --no-audit --fund=false
       - run: npm run typecheck
@@ -199,8 +210,8 @@ jobs:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with: { node-version: "${{ env.NODE_VERSION }}", cache: npm }
       - name: Skip when Vercel secrets are not configured
         id: gate
@@ -208,7 +219,7 @@ jobs:
       - if: steps.gate.outputs.ok == '1'
         name: Build + deploy preview (never --prod)
         run: |
-          npm i -g vercel@latest
+          npm i -g vercel@65.10.0
           vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
           vercel build --token="$VERCEL_TOKEN"
           url=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")

@@ -178,7 +178,7 @@ A Data Protection Impact Assessment is completed before go-live (NDPA s.28) and 
 of the pilot. Sherivs supplies the technical sections.
 
 ### B.14 Data Protection Officers
-State DPO: [name, contact]. Sherivs DPO: [name, contact].
+State DPO designation and contact routing: to be supplied by the State outside this repository. Sherivs DPO: see the [current designation](../ndpa-overview.md#current-dpo-designation); contact routing is supplied at runtime.
 
 ---
 

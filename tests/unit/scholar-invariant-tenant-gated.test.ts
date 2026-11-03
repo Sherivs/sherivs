@@ -329,6 +329,16 @@ defineFamilySuite({
       auditMarkers: [/\.from\("attendance"\)/],
       note: "attendance rows carry marked_by = authenticated userId",
     },
+    {
+      fn: "syncClassAttendance",
+      method: "POST",
+      input: "zod",
+      gate: "staff",
+      audit: "write-through",
+      auditMarkers: [/\.rpc\("offline_attendance_capture_sync_m05"/],
+      extra: [/offlineSyncSchema\.parse/],
+      note: "M05 sync uses the authenticated RPC with database-enforced assignment and mutation audit",
+    },
   ],
 });
 
