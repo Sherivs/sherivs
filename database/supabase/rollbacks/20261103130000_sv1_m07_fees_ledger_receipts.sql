@@ -1,4 +1,4 @@
--- Rollback for 20261103000000_sv1_m07_fees_ledger_receipts.sql (NOT APPLIED).
+-- Rollback for 20261103130000_sv1_m07_fees_ledger_receipts.sql (NOT APPLIED).
 -- Preserves any fee or audit records; refuse rollback after data has been written.
 BEGIN;
 

@@ -73,11 +73,34 @@ INSERT INTO public.users (id, school_id, full_name, email, role, is_active) VALU
   ('a7000000-0000-4000-8000-000000000004','57000000-0000-4000-8000-0000000000a1','M07 Synthetic Auditor','m07-auditor@example.invalid','teacher',true),
   ('b7000000-0000-4000-8000-000000000001','57000000-0000-4000-8000-0000000000b1','M07 Synthetic Tenant B','m07-tenant-b@example.invalid','teacher',true);
 INSERT INTO public.campuses (id, school_id, name, code) VALUES
-  ('57000000-0000-4000-8000-0000000000a2','57000000-0000-4000-8000-0000000000a1','M07 Synthetic Campus A','m07-a');
+  ('57000000-0000-4000-8000-0000000000a2','57000000-0000-4000-8000-0000000000a1','M07 Synthetic Campus A','m07-a'),
+  ('57000000-0000-4000-8000-0000000000b2','57000000-0000-4000-8000-0000000000b1','M07 Synthetic Campus B','m07-b');
 INSERT INTO public.cg_org_unit (id, tenant_id, kind, created_by)
-VALUES ('m07-org-a','57000000-0000-4000-8000-0000000000a1','organization','m07-fixture');
+VALUES
+  ('m07-org-a','57000000-0000-4000-8000-0000000000a1','organization','m07-fixture'),
+  ('m07-org-b','57000000-0000-4000-8000-0000000000b1','organization','m07-fixture');
 INSERT INTO public.cg_financial_scope_binding (scope_ref, tenant_id, org_ref, provisioned_by)
-VALUES ('m07-scope-a','57000000-0000-4000-8000-0000000000a1','m07-org-a','M07 synthetic fixture');
+VALUES
+  ('m07-scope-a','57000000-0000-4000-8000-0000000000a1','m07-org-a','M07 synthetic fixture'),
+  ('m07-scope-b','57000000-0000-4000-8000-0000000000b1','m07-org-b','M07 synthetic fixture');
+INSERT INTO public.cg_fee_schedule (
+  id, scope_ref, tenant_id, org_ref, code, label, academic_year, term, amount_kobo, effective_from, created_by
+) VALUES (
+  'b7000000-0000-4000-8000-0000000000b1','m07-scope-b','57000000-0000-4000-8000-0000000000b1',
+  'm07-org-b','M07-TUITION-B','M07 synthetic tenant B tuition','2026/27','Term 1',15000,
+  current_date,'b7000000-0000-4000-8000-000000000001'
+);
+INSERT INTO public.cg_fee_invoice (
+  id, scope_ref, tenant_id, org_ref, schedule_id, campus_id, subject_ref,
+  principal_ref, amount_kobo, due_at, issued_by
+) VALUES (
+  'b7000000-0000-4000-8000-0000000000b2','m07-scope-b','57000000-0000-4000-8000-0000000000b1',
+  'm07-org-b','b7000000-0000-4000-8000-0000000000b1','57000000-0000-4000-8000-0000000000b2',
+  'm07-student-b-001','m07-payer-b-001',15000,now() + interval '14 days',
+  'b7000000-0000-4000-8000-000000000001'
+);
+SELECT m07.cnt('synthetic tenant B fee exists', $$SELECT 1 FROM public.cg_fee_invoice
+  WHERE id='b7000000-0000-4000-8000-0000000000b2'$$, 1);
 
 SELECT m07.login('a7000000-0000-4000-8000-000000000001');
 DO $assignments$
@@ -172,7 +195,46 @@ SELECT m07.denied('cashier cannot decide own refund',
   $$SELECT public.cg_fee_decide_refund((SELECT id FROM m07.ids WHERE label='refund-request'),'approved',NULL)$$);
 SELECT m07.logout();
 
+SELECT m07.cnt('receipt numbers are sequential, tenant-unique, and gap-free',
+  $$SELECT 1 FROM public.cg_fee_receipt_sequence_status
+      WHERE tenant_id='57000000-0000-4000-8000-0000000000a1'
+        AND issued_count=2 AND first_number=1 AND last_number=2 AND gap_free IS TRUE
+        AND (SELECT count(DISTINCT receipt_number) FROM public.cg_fee_receipt
+              WHERE tenant_id='57000000-0000-4000-8000-0000000000a1')=2$$, 1);
+UPDATE public.cg_fee_receipt_counter SET last_number=3
+ WHERE tenant_id='57000000-0000-4000-8000-0000000000a1';
+SELECT m07.login('a7000000-0000-4000-8000-000000000002');
+DO $receipt_gap$
+DECLARE v_result jsonb;
+BEGIN
+  v_result := public.cg_fee_record_payment(
+    (SELECT id FROM m07.ids WHERE label='invoice'),1000,'cash','m07-payment-003',NULL
+  );
+  IF (v_result->>'receipt_number')::bigint <> 4 THEN
+    RAISE EXCEPTION 'M07 FAIL [receipt counter advances monotonically after a gap]';
+  END IF;
+  INSERT INTO m07.ids VALUES ('payment-three',(v_result->>'payment_id')::uuid);
+END
+$receipt_gap$;
+SELECT m07.logout();
+
+WITH request_row AS (
+  INSERT INTO public.cg_fee_refund_request (
+    scope_ref, tenant_id, org_ref, payment_id, invoice_id, campus_id,
+    subject_ref, principal_ref, amount_kobo, reason, idempotency_key, requested_by
+  )
+  SELECT p.scope_ref, p.tenant_id, p.org_ref, p.id, p.invoice_id, p.campus_id,
+         p.subject_ref, p.principal_ref, 250, 'M07 synthetic same-actor test',
+         'm07-refund-same-actor', 'a7000000-0000-4000-8000-000000000003'
+    FROM public.cg_fee_payment p
+   WHERE p.id=(SELECT id FROM m07.ids WHERE label='payment-one')
+  RETURNING id
+)
+INSERT INTO m07.ids SELECT 'same-actor-refund-request', id FROM request_row;
+
 SELECT m07.login('a7000000-0000-4000-8000-000000000003');
+SELECT m07.denied('same user cannot request and approve a refund',
+  $$SELECT public.cg_fee_decide_refund((SELECT id FROM m07.ids WHERE label='same-actor-refund-request'),'approved',NULL)$$);
 SELECT m07.denied('invoice with recorded payments cannot be reversed',
   $$SELECT public.cg_fee_reverse_invoice((SELECT id FROM m07.ids WHERE label='invoice'),'paid invoice correction')$$);
 INSERT INTO m07.ids (label,id)
@@ -195,21 +257,35 @@ SELECT m07.denied('auditor cannot record a payment',
 SELECT m07.cnt('invoice balance is reconstructed from ledger lines',
   $$SELECT 1 FROM public.cg_fee_invoice_balances
      WHERE invoice_id=(SELECT id FROM m07.ids WHERE label='invoice')
-       AND invoiced_kobo=10000 AND balance_kobo=6500$$, 1);
+       AND invoiced_kobo=10000 AND balance_kobo=5500$$, 1);
+SELECT m07.cnt('view balance equals the sum of ledger lines',
+  $$SELECT 1 FROM public.cg_fee_invoice_balances b
+      WHERE b.invoice_id=(SELECT id FROM m07.ids WHERE label='invoice')
+       AND b.balance_kobo=(
+         SELECT coalesce(sum(l.debit_kobo-l.credit_kobo),0)::bigint
+           FROM public.cg_fee_ledger_posting p
+           JOIN public.cg_fee_ledger_line l ON l.posting_id=p.id
+          WHERE p.invoice_id=b.invoice_id AND l.account_code='accounts_receivable'
+       )$$, 1);
 SELECT m07.cnt('invoice corrections use a balanced reversal entry',
   $$SELECT 1 FROM public.cg_fee_invoice_balances
      WHERE invoice_id=(SELECT id FROM m07.ids WHERE label='invoice-to-reverse')
        AND invoiced_kobo=10000 AND balance_kobo=0 AND is_reversed IS TRUE$$, 1);
-SELECT m07.cnt('receipt numbers are sequential, tenant-unique, and gap-free',
+SELECT m07.cnt('receipt sequence gap is detected',
   $$SELECT 1 FROM public.cg_fee_receipt_sequence_status
      WHERE tenant_id='57000000-0000-4000-8000-0000000000a1'
-       AND issued_count=2 AND first_number=1 AND last_number=2 AND gap_free IS TRUE$$, 1);
+       AND issued_count=3 AND first_number=1 AND last_number=4 AND gap_free IS FALSE
+       AND (SELECT count(DISTINCT receipt_number) FROM public.cg_fee_receipt
+             WHERE tenant_id='57000000-0000-4000-8000-0000000000a1')=3$$, 1);
+SELECT m07.cnt('tenant A cannot read tenant B fees',
+  $$SELECT 1 FROM public.cg_fee_invoice
+     WHERE id='b7000000-0000-4000-8000-0000000000b2'$$, 0);
 SELECT m07.denied('auditor cannot request a refund',
   $$SELECT public.cg_fee_request_refund((SELECT id FROM m07.ids WHERE label='payment-two'),100,'unauthorized','m07-auditor-refund')$$);
 SELECT m07.logout();
 
 SELECT m07.login('b7000000-0000-4000-8000-000000000001');
-SELECT m07.cnt('cross-tenant fee rows are not visible',
+SELECT m07.cnt('tenant B cannot read tenant A fees',
   $$SELECT 1 FROM public.cg_fee_invoice WHERE tenant_id='57000000-0000-4000-8000-0000000000a1'$$, 0);
 SELECT m07.logout();
 

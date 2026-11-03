@@ -1,6 +1,6 @@
 -- M07 V1 fee schedules, invoices, payments, receipts, and append-only ledger.
 -- Status: authored, NOT APPLIED. Never apply to a live database without explicit approval.
--- Rollback: database/supabase/rollbacks/20261103000000_sv1_m07_fees_ledger_receipts.sql
+-- Rollback: database/supabase/rollbacks/20261103130000_sv1_m07_fees_ledger_receipts.sql
 DO $guard$
 DECLARE
   missing text[] := ARRAY[]::text[];
@@ -38,8 +38,6 @@ BEGIN
   END IF;
 END
 $guard$;
-
-BEGIN;
 
 -- A bursar reconciles payments; the cashier role alone records cash.
 UPDATE public.role_template_permissions
@@ -1003,5 +1001,3 @@ GRANT EXECUTE ON FUNCTION public.cg_fee_reverse_invoice(uuid, text) TO authentic
 GRANT EXECUTE ON FUNCTION public.cg_fee_record_payment(uuid, bigint, text, text, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.cg_fee_request_refund(uuid, bigint, text, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.cg_fee_decide_refund(uuid, text, text) TO authenticated;
-
-COMMIT;
