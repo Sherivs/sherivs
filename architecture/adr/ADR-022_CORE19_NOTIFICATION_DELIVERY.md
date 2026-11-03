@@ -4,7 +4,7 @@
 ||---|---|
 || Status | PROPOSED (awaits operator approval) |
 || Date | 2026-11-03 |
-|| Author | Copilot (CORE-19) |
+|| Author | copilot-swe-agent[bot] / CORE-19 |
 || Mission | CORE-19 (V1 notification delivery) |
 || Capabilities | V1 Phase 10 notification service |
 || Supersedes-in-part | None |

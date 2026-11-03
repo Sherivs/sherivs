@@ -227,6 +227,10 @@ describe("notification contract (tenant isolation, §17)", () => {
         ),
         "utf8",
       );
+      const writer = fanout.slice(
+        fanout.indexOf("async function insertNotificationRows"),
+        fanout.indexOf("// ---------------- Grades published"),
+      );
       const digest = readFileSync(
         new URL(
           "../../frontend/src/lib/runtime/scholar/notification-digest.functions.ts",
@@ -269,6 +273,8 @@ describe("notification contract (tenant isolation, §17)", () => {
       expect(fanout).toContain('onConflict: "school_id,user_id,idempotency_key"');
       expect(fanout).toContain("ignoreDuplicates: true");
       expect(fanout).toContain("await writeAuditRecord");
+      expect(writer).toContain(".upsert(rows,");
+      expect(writer).toContain("await writeAuditRecord");
       expect(digest).toContain('.eq("user_id", uid)');
       expect(digest).toContain('onConflict: "school_id,user_id,idempotency_key"');
       expect(digest).toContain("await writeAuditRecord");
