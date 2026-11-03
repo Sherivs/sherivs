@@ -152,15 +152,27 @@ CREATE TRIGGER student_placements_immutable
   BEFORE UPDATE OR DELETE ON public.student_placements
   FOR EACH ROW EXECUTE FUNCTION public.student_placement_immutable();
 
+-- The system-path flag is only honoured when the trigger fires from inside one of the governed SECURITY DEFINER
+-- server paths (the call stack names them). A caller that sets coregrid.mobility.system_path itself, which any
+-- session can do, is therefore not bypassing the guard.
+CREATE OR REPLACE FUNCTION public.student_mobility_system_path(p_context text)
+RETURNS boolean LANGUAGE sql STABLE SET search_path = ''
+AS $$
+  SELECT current_setting('coregrid.mobility.system_path', true) IS NOT DISTINCT FROM 'on'
+     AND coalesce(p_context ~ 'PL/pgSQL function (public\.)?(session_rollover|_integration_apply_record)\(', false)
+$$;
+REVOKE ALL ON FUNCTION public.student_mobility_system_path(text) FROM PUBLIC, anon, authenticated;
+
 CREATE OR REPLACE FUNCTION public.student_mobility_class_guard()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $$
-DECLARE r public.student_mobility_requests%ROWTYPE; v_approver uuid;
+DECLARE r public.student_mobility_requests%ROWTYPE; v_approver uuid; v_ctx text;
 BEGIN
+  GET DIAGNOSTICS v_ctx = PG_CONTEXT;
   IF (OLD.class_id IS DISTINCT FROM NEW.class_id
       OR OLD.current_session IS DISTINCT FROM NEW.current_session)
      AND current_setting('coregrid.mobility.commit', true) IS DISTINCT FROM 'on'
-     AND current_setting('coregrid.mobility.system_path', true) IS DISTINCT FROM 'on' THEN
+     AND NOT public.student_mobility_system_path(v_ctx) THEN
     SELECT * INTO r FROM public.student_mobility_requests
      WHERE student_id = NEW.id AND school_id = NEW.school_id AND status = 'approved'
        AND target_class_id IS NOT DISTINCT FROM NEW.class_id
@@ -250,7 +262,9 @@ DECLARE
   v_count integer;
   v_balance numeric;
   v_active boolean;
+  v_ctx text;
 BEGIN
+  GET DIAGNOSTICS v_ctx = PG_CONTEXT;
   IF TG_OP = 'UPDATE' THEN
     IF OLD.class_id IS NOT DISTINCT FROM NEW.class_id
        AND OLD.current_session IS NOT DISTINCT FROM NEW.current_session
@@ -301,7 +315,7 @@ BEGIN
     SELECT sh.name INTO v_shift FROM public.school_shifts sh
      WHERE sh.id = v_class.shift_id AND sh.school_id = NEW.school_id;
     IF v_class.capacity IS NOT NULL
-       AND current_setting('coregrid.mobility.system_path', true) IS DISTINCT FROM 'on' THEN
+       AND NOT public.student_mobility_system_path(v_ctx) THEN
       SELECT count(*)::integer INTO v_count FROM public.students s
        WHERE s.class_id = NEW.class_id AND s.is_active IS NOT FALSE
          AND s.id IS DISTINCT FROM NEW.id;
@@ -822,10 +836,32 @@ GRANT EXECUTE ON FUNCTION public.student_mobility_rules_set(smallint, numeric, n
   public.student_transfer_import(text, uuid, text) TO authenticated;
 
 -- Existing governed server paths that change students.class_id/current_session directly (annual rollover with its
--- own rules, audit and idempotency; external-system class import). The flag is scoped to each function call only.
-ALTER FUNCTION public.session_rollover(uuid, text, text, boolean, jsonb)
-  SET coregrid.mobility.system_path = 'on';
-ALTER FUNCTION public._integration_apply_record(public.integrations, text, text, jsonb, uuid, boolean)
-  SET coregrid.mobility.system_path = 'on';
+-- own rules, audit and idempotency; external-system class import). The flag is enabled transaction-locally inside
+-- each function body (a function-level SET of a custom GUC needs superuser, which the migration role is not).
+-- The bodies are patched from their live definitions so the existing permission checks are kept unchanged.
+DO $mobility_system_path$
+DECLARE
+  v_def text;
+  v_new text;
+  v_flag constant text := E'PERFORM set_config(''coregrid.mobility.system_path'', ''on'', true);\n';
+  v_reset constant text := E'PERFORM set_config(''coregrid.mobility.system_path'', '''', true);\n';
+BEGIN
+  v_def := pg_get_functiondef('public.session_rollover(uuid, text, text, boolean, jsonb)'::regprocedure);
+  IF position('coregrid.mobility.system_path' IN v_def) = 0 THEN
+    v_new := replace(v_def, E'  UPDATE public.students st SET', E'  ' || v_flag || E'  UPDATE public.students st SET');
+    v_new := replace(v_new, E'  INSERT INTO public.member_lifecycle_events', E'  ' || v_reset || E'  INSERT INTO public.member_lifecycle_events');
+    IF v_new = v_def OR position(v_reset IN v_new) = 0 THEN RAISE EXCEPTION 'session_rollover anchors not found'; END IF;
+    EXECUTE v_new;
+  END IF;
+
+  v_def := pg_get_functiondef('public._integration_apply_record(public.integrations, text, text, jsonb, uuid, boolean)'::regprocedure);
+  IF position('coregrid.mobility.system_path' IN v_def) = 0 THEN
+    v_new := replace(v_def, E'  IF p_entity = ''student'' THEN\n', E'  IF p_entity = ''student'' THEN\n    ' || v_flag);
+    v_new := replace(v_new, E'\n  ELSIF p_entity = ''class'' THEN', E'\n    ' || v_reset || E'  ELSIF p_entity = ''class'' THEN');
+    IF v_new = v_def OR position(v_reset IN v_new) = 0 THEN RAISE EXCEPTION '_integration_apply_record anchors not found'; END IF;
+    EXECUTE v_new;
+  END IF;
+END
+$mobility_system_path$;
 
 COMMIT;
