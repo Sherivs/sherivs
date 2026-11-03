@@ -10,6 +10,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireSchoolAdminScope } from "@/lib/security-role-gate";
 import { invokeAiGateway } from "@/lib/ai-gateway.server";
+import { appendMemoryContext } from "@/lib/ai-context";
 import { aiGuardLimits, buildGuardedPrompt, guardAiOutput } from "@/lib/ai/ai-guard.server";
 
 const TIMETABLE_MODEL = "google/gemini-3-flash-preview";
@@ -89,12 +90,12 @@ Times must be HH:MM 24h. day_of_week is lowercase (monday..friday).`,
         provider: "ai-gateway",
         purpose: "drafting",
         ...limits,
-        invoke: async (provider) => {
+        invoke: async (provider, gatewayContext) => {
           const { output, usage } = await generateText({
             model: provider(TIMETABLE_MODEL),
             output: Output.object({ schema: draftSchema }),
             system,
-            prompt,
+            prompt: appendMemoryContext(prompt, gatewayContext?.memoryContext ?? null),
           });
           return {
             payload: output,

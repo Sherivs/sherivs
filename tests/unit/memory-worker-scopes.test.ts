@@ -460,7 +460,20 @@ describe("scope-bounded writes through a worker session", () => {
 describe("scope-bounded retrieval through a worker session", () => {
   it("returns only records inside the binding's namespaces and readable tiers, with audited exclusions for the rest", () => {
     const base = storeWithScopes();
-    const inBinding = seedRecord(base, { recordId: "mem:alpha:in-binding" });
+    const sameTenantOtherScope = declareMemoryScope(base, {
+      scopeId: "scope:alpha:other",
+      tenantId: TENANT_A,
+      missionRef: MISSION,
+      actorScope: [WORKER_A],
+      domains: ["field-ops"],
+      maxSensitivity: "internal",
+    });
+    if (!sameTenantOtherScope.ok) throw new Error(sameTenantOtherScope.error);
+    const crossScope = seedRecord(sameTenantOtherScope.store, {
+      recordId: "mem:alpha:other-scope",
+      scopeId: "scope:alpha:other",
+    });
+    const inBinding = seedRecord(crossScope.store, { recordId: "mem:alpha:in-binding" });
     const outsideNamespace = seedRecord(inBinding.store, {
       recordId: "mem:alpha:roster",
       domain: "roster",
@@ -483,6 +496,7 @@ describe("scope-bounded retrieval through a worker session", () => {
     const exclusionReasons = Object.fromEntries(
       result.accessRecord.exclusions.map((e) => [e.recordId, e.reason]),
     );
+    expect(exclusionReasons["mem:alpha:other-scope"]).toBe("outside_declared_scope");
     expect(exclusionReasons["mem:alpha:roster"]).toBe("outside_binding_namespace");
     expect(exclusionReasons["mem:alpha:org"]).toBe("binding_tier_not_readable");
     expect(result.accessRecord.outcome).toBe("partial");

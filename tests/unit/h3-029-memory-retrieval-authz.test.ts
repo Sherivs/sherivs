@@ -871,7 +871,7 @@ describe("retrieval results never leak beyond the authorized scope", () => {
     expect(result.outcome).toBe("partial");
     expect(result.records.map((r) => r.id)).toEqual(["mem:alpha:authorized"]);
     const reasonsById = new Map(result.exclusions.map((e) => [e.recordId, e.reason]));
-    expect(reasonsById.get("mem:alpha:restricted")).toBe("exceeds_declared_sensitivity");
+    expect(reasonsById.get("mem:alpha:restricted")).toBe("outside_declared_scope");
     expect(reasonsById.get("mem:alpha:other-domain")).toBe("outside_declared_scope");
     expect(reasonsById.get("mem:beta:foreign")).toBe("tenant_mismatch");
     for (const record of result.records) {

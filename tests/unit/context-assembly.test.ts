@@ -73,11 +73,10 @@ describe("assembleContext — permission filtering", () => {
     const request = makeRequest({
       actorRef: { userId: "user-1", role: "teacher", permissions },
     });
-    assembleContext(
-      request,
-      [makeCandidate({ requiredPermission: "read:payroll" })],
-      { maxAgeSeconds: 3600, now: NOW },
-    );
+    assembleContext(request, [makeCandidate({ requiredPermission: "read:payroll" })], {
+      maxAgeSeconds: 3600,
+      now: NOW,
+    });
     expect(permissions).toEqual(["read:attendance"]);
   });
 
@@ -105,10 +104,7 @@ describe("assembleContext — tenant boundary", () => {
     });
     const envelope = assembleContext(
       request,
-      [
-        makeCandidate({ id: "foreign", tenantRef: "tenant-b" }),
-        makeCandidate({ id: "own" }),
-      ],
+      [makeCandidate({ id: "foreign", tenantRef: "tenant-b" }), makeCandidate({ id: "own" })],
       { maxAgeSeconds: 3600, now: NOW },
     );
     expect(envelope.kind).toBe("assembled");
@@ -121,6 +117,42 @@ describe("assembleContext — tenant boundary", () => {
         reason: "tenant_mismatch",
       }),
     ]);
+  });
+
+  it("applies tenant, permission, and declared sensitivity gates to memory-backed records", () => {
+    const request = makeRequest({
+      dataScope: { domains: ["attendance"], maxSensitivity: "internal" },
+      memoryScope: { domains: ["attendance"], maxSensitivity: "internal" },
+    });
+    const envelope = assembleContext(
+      request,
+      [
+        makeCandidate({ id: "memory-allowed", purposeTags: ["attendance"] }),
+        makeCandidate({ id: "memory-foreign", tenantRef: "tenant-b", purposeTags: ["attendance"] }),
+        makeCandidate({
+          id: "memory-denied",
+          requiredPermission: "read:payroll",
+          purposeTags: ["attendance"],
+        }),
+        makeCandidate({
+          id: "memory-restricted",
+          sensitivity: "restricted",
+          purposeTags: ["attendance"],
+        }),
+      ],
+      { maxAgeSeconds: 3600, now: NOW },
+    );
+
+    expect(envelope.kind).toBe("assembled");
+    if (envelope.kind !== "assembled") return;
+    expect(envelope.items.map((item) => item.id)).toEqual(["memory-allowed"]);
+    expect(envelope.exclusions.map((item) => [item.id, item.reason])).toEqual(
+      expect.arrayContaining([
+        ["memory-foreign", "tenant_mismatch"],
+        ["memory-denied", "permission_denied"],
+        ["memory-restricted", "exceeds_declared_scope"],
+      ]),
+    );
   });
 });
 
@@ -167,9 +199,7 @@ describe("assembleContext — budget enforcement", () => {
     if (envelope.kind !== "assembled") return;
     expect(envelope.items.map((i) => i.id)).toEqual(["a", "b"]);
     expect(envelope.truncated).toBe(true);
-    expect(envelope.dropped).toEqual([
-      expect.objectContaining({ id: "c", reason: "budget" }),
-    ]);
+    expect(envelope.dropped).toEqual([expect.objectContaining({ id: "c", reason: "budget" })]);
   });
 
   it("truncates content to maxChars and records which item was shortened", () => {
@@ -199,9 +229,7 @@ describe("assembleContext — budget enforcement", () => {
     expect(envelope.kind).toBe("assembled");
     if (envelope.kind !== "assembled") return;
     expect(envelope.items.map((i) => i.id)).toEqual(["fills"]);
-    expect(envelope.dropped).toEqual([
-      expect.objectContaining({ id: "after", reason: "budget" }),
-    ]);
+    expect(envelope.dropped).toEqual([expect.objectContaining({ id: "after", reason: "budget" })]);
   });
 });
 
@@ -249,11 +277,10 @@ describe("assembleContext — untrusted marking", () => {
   });
 
   it("keeps institutional records trusted (trusted_data, not untrusted)", () => {
-    const envelope = assembleContext(
-      makeRequest(),
-      [makeCandidate({ id: "record" })],
-      { maxAgeSeconds: 3600, now: NOW },
-    );
+    const envelope = assembleContext(makeRequest(), [makeCandidate({ id: "record" })], {
+      maxAgeSeconds: 3600,
+      now: NOW,
+    });
     expect(envelope.kind).toBe("assembled");
     if (envelope.kind !== "assembled") return;
     expect(envelope.items[0].content).toMatchObject({
@@ -267,9 +294,21 @@ describe("assembleContext — untrusted marking", () => {
 describe("assembleContext — deterministic ordering", () => {
   it("ranks purpose-match above freshness above source priority, tie-breaking by id", () => {
     const candidates = [
-      makeCandidate({ id: "z-late-no-match", freshnessAt: "2026-09-30T23:10:00.000Z", purposeTags: [] }),
-      makeCandidate({ id: "m-purpose-match", freshnessAt: "2026-09-30T23:00:30.000Z", purposeTags: ["attendance"] }),
-      makeCandidate({ id: "b-fresh-no-match", freshnessAt: "2026-09-30T23:59:00.000Z", purposeTags: [] }),
+      makeCandidate({
+        id: "z-late-no-match",
+        freshnessAt: "2026-09-30T23:10:00.000Z",
+        purposeTags: [],
+      }),
+      makeCandidate({
+        id: "m-purpose-match",
+        freshnessAt: "2026-09-30T23:00:30.000Z",
+        purposeTags: ["attendance"],
+      }),
+      makeCandidate({
+        id: "b-fresh-no-match",
+        freshnessAt: "2026-09-30T23:59:00.000Z",
+        purposeTags: [],
+      }),
       makeCandidate({
         id: "y-policy-no-match",
         source: "system_policy",
@@ -277,7 +316,11 @@ describe("assembleContext — deterministic ordering", () => {
         freshnessAt: "2026-09-30T23:20:00.000Z",
         purposeTags: [],
       }),
-      makeCandidate({ id: "a-purpose-match", freshnessAt: "2026-09-30T23:00:30.000Z", purposeTags: ["attendance"] }),
+      makeCandidate({
+        id: "a-purpose-match",
+        freshnessAt: "2026-09-30T23:00:30.000Z",
+        purposeTags: ["attendance"],
+      }),
     ];
     const envelope = assembleContext(makeRequest(), candidates, {
       maxAgeSeconds: 3600,

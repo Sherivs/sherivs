@@ -249,10 +249,15 @@ describe("H3-034 posture adjudication (mission D-034) — internal consistency",
     ] as const)("%s's owning server-path contract exists on disk", (_table, serverPath) => {
       const contract = readRepoFile(serverPath);
       expect(contract.length).toBeGreaterThan(0);
-      // Each contract self-declares its authored database truth (the
-      // migration the adjudication relies on) and its deny-by-default
-      // authority semantics.
-      expect(contract).toMatch(/authored \(NOT applied\)/i);
+      // Memory's repository-vs-production reconciliation lives in ADR-021;
+      // its pure contract cites the repository migration without asserting
+      // whether that migration is applied in production.
+      if (_table === "cg_memory_scope" || _table === "cg_memory_record") {
+        expect(contract).toMatch(/20261002000004_coregrid_v1_memory_tier\.sql/);
+        expect(contract).toMatch(/ADR-021/);
+      } else {
+        expect(contract).toMatch(/authored \(NOT applied\)/i);
+      }
       expect(contract).toMatch(/deny by default|deny-by-default/i);
     });
 
