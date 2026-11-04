@@ -4,7 +4,7 @@
   "owner": "21",
   "capability": "cloud-fabric-byoc",
   "mode": "static",
-  "generatedAt": "2026-11-03T20:58:57.226Z",
+  "generatedAt": "2026-11-03T23:29:58.312Z",
   "infrastructureFiles": 59,
   "inventoryDigest": "sha256:69b87348b735bf9cb6a8650b6db72f26ff00c8e21e7d876eb2c271924e59b8c2",
   "providers": [
