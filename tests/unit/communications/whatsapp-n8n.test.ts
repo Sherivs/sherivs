@@ -234,6 +234,24 @@ describe("WhatsApp n8n forwarding and reply authentication", () => {
     });
   });
 
+  it("logs only the Postgres error code before returning claim_failed", async () => {
+    process.env.N8N_WHATSAPP_WEBHOOK_URL = "https://automate.sherivs.com/hooks/wa";
+    process.env.N8N_WHATSAPP_ALLOWED_HOSTS = "automate.sherivs.com";
+    process.env.N8N_WHATSAPP_SIGNING_SECRET = SECRET;
+    const logSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    mockRpc.mockResolvedValueOnce({
+      data: null,
+      error: { code: "42702", message: 'column reference "attempt_count" is ambiguous' },
+    });
+    await expect(dispatchWhatsAppN8nOutbox({ db: { rpc: mockRpc } })).resolves.toEqual({
+      ok: false,
+      error: "claim_failed",
+    });
+    expect(logSpy).toHaveBeenCalledWith("whatsapp_n8n_claim_failed", { code: "42702" });
+    expect(JSON.stringify(logSpy.mock.calls)).not.toContain("ambiguous");
+    logSpy.mockRestore();
+  });
+
   it("allows the documented minute scheduler to trigger the bearer-protected outbox endpoint", async () => {
     process.env.CRON_SECRET = "cron-secret-fixture-not-a-production-value";
     process.env.N8N_WHATSAPP_WEBHOOK_URL = "https://automate.sherivs.com/hooks/wa";
