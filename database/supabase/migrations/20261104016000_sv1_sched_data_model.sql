@@ -1,7 +1,6 @@
 -- SV1-SCHED S1: neutral, tenant-scoped scheduling inputs and versioned plans.
 -- Status: authored, NOT APPLIED. No production database changes are made here.
 -- Rollback: database/supabase/rollbacks/20261104016000_sv1_sched_data_model.sql
-BEGIN;
 
 DO $guard$
 BEGIN
@@ -332,8 +331,27 @@ BEGIN
     FROM public.cg_schedule_teaching_load
    WHERE tenant_id = NEW.tenant_id
      AND org_unit_id = NEW.org_unit_id
+     AND schedule_ref = NEW.schedule_ref
      AND class_arm_ref = NEW.class_arm_ref
      AND subject_ref = NEW.subject_ref;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'placement has no matching teaching load'
+      USING ERRCODE = '23514';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+      FROM public.cg_schedule_participant_qualification
+     WHERE tenant_id = NEW.tenant_id
+       AND org_unit_id = NEW.org_unit_id
+       AND participant_ref = NEW.participant_ref
+       AND subject_ref = NEW.subject_ref
+       AND (valid_until IS NULL OR valid_until >= CURRENT_DATE)
+  ) THEN
+    RAISE EXCEPTION 'participant qualification is missing or expired'
+      USING ERRCODE = '23514';
+  END IF;
+
   SELECT room_type, capacity
     INTO v_room_type, v_room_capacity
     FROM public.cg_schedule_room
@@ -443,5 +461,3 @@ GRANT EXECUTE ON FUNCTION public.cg_schedule_version_immutable() TO service_role
 GRANT EXECUTE ON FUNCTION public.cg_schedule_publication_guard() TO service_role;
 GRANT EXECUTE ON FUNCTION public.cg_schedule_placement_guard() TO service_role;
 GRANT EXECUTE ON FUNCTION public.cg_schedule_period_overlap_guard() TO service_role;
-
-COMMIT;

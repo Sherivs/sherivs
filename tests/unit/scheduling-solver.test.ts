@@ -300,7 +300,7 @@ describe("solveWeeklyTimetable", () => {
   });
 
   it("solves a simulated 30-arm, 60-instructor JSS1–SS3 school within seconds", () => {
-    const periods = makePeriods(5, 6);
+    const periods = makePeriods(5, 7);
     const subjects = Array.from({ length: 10 }, (_, index) => `subject-${index}`);
     const classArms = Array.from({ length: 30 }, (_, index) => ({
       id: `jss-${Math.floor(index / 10) + 1}-arm-${(index % 10) + 1}`,
@@ -337,6 +337,7 @@ describe("solveWeeklyTimetable", () => {
 
     expect(Date.now() - startedAt).toBeLessThan(5000);
     expect(result.requestedActivityCount).toBe(900);
+    expect(result.placements).toHaveLength(900);
     expectHardConstraints(input);
   }, 10_000);
 });

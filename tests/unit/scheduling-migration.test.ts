@@ -16,6 +16,7 @@ const ISOLATION_TEST = readFileSync(
   join(ROOT, "tests/integration/scheduling-rls.local.sql"),
   "utf8",
 );
+const VERIFY_WORKFLOW = readFileSync(join(ROOT, ".github/workflows/verify.yml"), "utf8");
 
 const TABLES = [
   "cg_schedule_bell_schedule",
@@ -46,10 +47,11 @@ describe("SV1-SCHED tenant-neutral data model", () => {
       "GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.%I TO service_role",
     );
     expect(MIGRATION).toContain("tenant_id = (SELECT public.get_my_tenant_id())");
-    expect(ISOLATION_TEST).toContain("tenant A cannot read tenant B room");
-    expect(ISOLATION_TEST).toContain("tenant A cannot write tenant B room");
-    expect(ISOLATION_TEST).toContain("tenant B cannot read tenant A room");
-    expect(ISOLATION_TEST).toContain("tenant B cannot write tenant A room");
+    expect(ISOLATION_TEST).toContain("check_other_tenant_reads");
+    expect(ISOLATION_TEST).toContain("check_cross_tenant_writes");
+    expect(ISOLATION_TEST).toContain("anon cannot read ");
+    expect(VERIFY_WORKFLOW).toContain("SV1-SCHED forced-RLS isolation");
+    expect(VERIFY_WORKFLOW).toContain("tests/integration/scheduling-rls.local.sql");
   });
 
   it("models weekly teaching loads, qualified teachers, room limits, and immutable versions", () => {
@@ -63,14 +65,19 @@ describe("SV1-SCHED tenant-neutral data model", () => {
     expect(MIGRATION).toContain("status IN ('draft', 'published')");
     expect(MIGRATION).toContain("published schedule versions are immutable");
     expect(MIGRATION).toContain("every required activity is placed");
+    expect(MIGRATION).toContain("AND schedule_ref = NEW.schedule_ref");
+    expect(MIGRATION).toContain("placement has no matching teaching load");
+    expect(MIGRATION).toContain("valid_until >= CURRENT_DATE");
+    expect(MIGRATION).toContain("participant qualification is missing or expired");
   });
 
   it("applies RLS and removes each owned table in the rollback", () => {
     for (const table of TABLES) {
       expect(MIGRATION).toContain(`'${table}'`);
       expect(ROLLBACK).toContain(`DROP TABLE IF EXISTS public.${table};`);
+      expect(ISOLATION_TEST).toContain(`'${table}'`);
     }
-    expect(ROLLBACK).toContain("BEGIN;");
-    expect(ROLLBACK).toContain("COMMIT;");
+    expect(MIGRATION).not.toMatch(/^\s*(BEGIN|COMMIT);\s*$/m);
+    expect(ROLLBACK).not.toMatch(/^\s*(BEGIN|COMMIT);\s*$/m);
   });
 });
