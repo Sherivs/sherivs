@@ -39,6 +39,7 @@ test.describe("M009 B-1 verified executive assignment flows", () => {
     test(`${roleCase.label} requires independent verification and reaches its workspace`, async ({
       page,
     }, testInfo) => {
+      test.setTimeout(180_000);
       const fixture = await provisionLegacyFixture();
       test.skip(!fixture, FIXTURE_SKIP_NO_BACKEND);
       if (!fixture) return;
@@ -52,6 +53,7 @@ test.describe("M009 B-1 verified executive assignment flows", () => {
       const setup = createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY ?? "", {
         auth: { persistSession: false, autoRefreshToken: false },
       });
+      let authorityLinkId: string | null = null;
 
       try {
         const signedIn = await authenticated.auth.signInWithPassword(fixture.credentials.admin);
@@ -79,11 +81,12 @@ test.describe("M009 B-1 verified executive assignment flows", () => {
             legal_basis: "Synthetic fixture only",
             source: "Synthetic E2E fixture",
             verification_status: "unverified",
+            effective_from: new Date(Date.now() - 60_000).toISOString(),
           })
           .select("id")
           .single();
         expect(linkResult.error).toBeNull();
-        const authorityLinkId = String(linkResult.data?.id);
+        authorityLinkId = String(linkResult.data?.id);
 
         await signIn(page, fixture.credentials.admin);
         await page.goto("/home/s/roles");
@@ -131,8 +134,12 @@ test.describe("M009 B-1 verified executive assignment flows", () => {
             verification_status: "verified",
             evidence_url: "https://example.invalid/synthetic-authority-evidence",
           })
-          .eq("id", authorityLinkId);
+          .eq("id", authorityLinkId)
+          .select("id,verification_status,verified_by")
+          .single();
         expect(verified.error).toBeNull();
+        expect(verified.data?.verification_status).toBe("verified");
+        expect(verified.data?.verified_by).toBeTruthy();
         await page.reload();
         await expect(page.getByTestId("role-management-screen")).toBeVisible();
 
@@ -141,9 +148,13 @@ test.describe("M009 B-1 verified executive assignment flows", () => {
         });
         await refreshedForm.getByLabel("Member").selectOption({ label: "R1 E2E principal" });
         await refreshedForm.getByLabel("Assignment role").selectOption(roleCase.roleCode);
-        await refreshedForm
-          .getByLabel("Verified institution-authority relationship")
-          .selectOption(authorityLinkId);
+        const refreshedAuthority = refreshedForm.getByLabel(
+          "Verified institution-authority relationship",
+        );
+        await expect(refreshedAuthority.locator(`option[value="${authorityLinkId}"]`)).toHaveCount(
+          1,
+        );
+        await refreshedAuthority.selectOption(authorityLinkId);
         await refreshedForm.getByLabel("Assignment scope").selectOption("institution");
         await refreshedForm
           .locator('input[type="datetime-local"]')
@@ -163,7 +174,7 @@ test.describe("M009 B-1 verified executive assignment flows", () => {
         await expect(
           page.getByTestId("role-assignment-row").filter({ hasText: "R1 E2E principal" }),
         ).toBeVisible();
-        const audit = await setup
+        const audit = await authenticated
           .from("role_assignment_audit_events")
           .select("id,action")
           .eq("org_id", fixture.schoolId)
@@ -219,9 +230,7 @@ test.describe("M009 B-1 verified executive assignment flows", () => {
         await expect(
           executiveWorkspace.getByText("Synthetic executive workspace ready"),
         ).toBeVisible();
-        await expect(
-          page.getByRole("navigation", { name: "Primary sections" }).getByRole("link"),
-        ).toHaveCount(3);
+        await expect(page.locator('nav[aria-label="Primary sections"] a')).toHaveCount(3);
         await page.screenshot({
           path: testInfo.outputPath(`executive-${roleCase.label}-390.png`),
           fullPage: true,
@@ -233,12 +242,22 @@ test.describe("M009 B-1 verified executive assignment flows", () => {
         await page.goto("/home");
         await page.setViewportSize({ width: 1440, height: 1000 });
         await expect(page.getByTestId("institutional-executive-workspace")).toBeVisible();
+        await expect(
+          page.getByRole("navigation", { name: "Primary sections" }).getByRole("link"),
+        ).toHaveCount(3);
         await page.screenshot({
           path: testInfo.outputPath(`executive-${roleCase.label}-1440.png`),
           fullPage: true,
           scale: "css",
         });
       } finally {
+        if (authorityLinkId) {
+          const removedLink = await verifier
+            .from("institution_authority_links")
+            .delete()
+            .eq("id", authorityLinkId);
+          expect.soft(removedLink.error, "Synthetic authority-link cleanup failed").toBeNull();
+        }
         await authenticated.auth.signOut();
         await verifier.auth.signOut();
         await cleanupLegacyFixture(fixture);

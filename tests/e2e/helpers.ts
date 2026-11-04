@@ -46,9 +46,8 @@ const FIXTURE_SKIP_PROVISION_FAILED =
 /* ── Run-scoped identity generation (memory only; never logged) ───────── */
 
 const RUN_TAG = "r1legacy";
-const runId = randomBytes(5).toString("hex");
 
-function uniqueEmail(localPart: string): string {
+function uniqueEmail(runId: string, localPart: string): string {
   return `${RUN_TAG}-${runId}-${localPart}@${RUN_TAG}.dev`;
 }
 
@@ -126,6 +125,7 @@ async function provisionLegacyTenant(): Promise<FixtureTenant | null> {
     return null;
   }
 
+  const runId = randomBytes(5).toString("hex");
   try {
     const admin = serviceRoleClient();
     const schoolName = `R1 Legacy Fixture School ${runId}`;
@@ -144,7 +144,7 @@ async function provisionLegacyTenant(): Promise<FixtureTenant | null> {
     const credentials = {} as FixtureCredentialSet;
     const authUserIds: string[] = [];
     for (const role of LEGACY_ROLES) {
-      const email = uniqueEmail(role);
+      const email = uniqueEmail(runId, role);
       const password = uniquePassword();
       const created = await admin.auth.admin.createUser({
         email,
@@ -171,7 +171,7 @@ async function provisionLegacyTenant(): Promise<FixtureTenant | null> {
       credentials[role] = { email, password };
     }
 
-    const verifierEmail = uniqueEmail("authority-verifier");
+    const verifierEmail = uniqueEmail(runId, "authority-verifier");
     const verifierPassword = uniquePassword();
     const verifier = await admin.auth.admin.createUser({
       email: verifierEmail,
@@ -331,7 +331,7 @@ export async function signIn(page: Page, credentials: FixtureCredentials) {
     await gotoAuth(page);
   }
   await page.getByLabel("Email").fill(credentials.email);
-  await page.getByLabel("Password").fill(credentials.password);
+  await page.getByLabel("Password", { exact: true }).fill(credentials.password);
   await page.getByRole("button", { name: /^sign in$/i }).click();
   await page.waitForURL(/\/dashboard/, { timeout: 30_000 });
 }
