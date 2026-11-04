@@ -673,3 +673,19 @@ defineFamilySuite({
     },
   ],
 });
+
+defineFamilySuite({
+  family: "personal-twin.functions.ts",
+  functions: [
+    {
+      fn: "provisionMyPersonalTwin",
+      method: "POST",
+      input: "zod",
+      gate: "self-scope-rpc",
+      gateMarker: /\.rpc\(\s*"get_my_school_id"\)/,
+      audit: "write-through",
+      auditMarkers: [/cg_personal_twin_provision/],
+      note: "server-resolved identity/tenant use the audited service-role provisioning RPC",
+    },
+  ],
+});
