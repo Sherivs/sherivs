@@ -94,7 +94,7 @@ jobs:
       - run: npm ci --no-audit --fund=false
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run verify:registry && npm run verify:drift && npm run verify:neutrality && npm run verify:secrets
-      - run: npm run build
+      - run: npm run verify:home-bundle:build
 
   workspace-e2e:
     name: Workspace shell E2E + screenshots

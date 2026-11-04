@@ -129,11 +129,7 @@ export function parseDependencyHealthMap(raw: unknown): DependencyHealthInventor
  * ────────────────────────────────────────────────────────────*/
 
 export type HealthMapFindingKind =
-  | "observed"
-  | "dead_check"
-  | "unknown_check"
-  | "invalid_result"
-  | "duplicate_result";
+  "observed" | "dead_check" | "unknown_check" | "invalid_result" | "duplicate_result";
 
 export interface HealthMapFinding {
   readonly kind: HealthMapFindingKind;
@@ -151,12 +147,6 @@ export interface HealthMapPosture {
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
-}
-
-function severity(status: HealthStatus): 0 | 1 | 2 {
-  if (status === "failing") return 2;
-  if (status === "degraded") return 1;
-  return 0;
 }
 
 /** Tier escalation: a degraded critical dependency is failing overall. */
@@ -179,7 +169,11 @@ export function evaluateHealthMapPosture(
   const observed = new Map<string, { status: HealthStatus; occurrences: number }>();
   for (const raw of rawResults) {
     let name: string | null = null;
-    if (typeof raw === "object" && raw !== null && isNonEmptyString((raw as Record<string, unknown>).name)) {
+    if (
+      typeof raw === "object" &&
+      raw !== null &&
+      isNonEmptyString((raw as Record<string, unknown>).name)
+    ) {
       name = ((raw as Record<string, unknown>).name as string).trim();
     }
     if (name === null) {
