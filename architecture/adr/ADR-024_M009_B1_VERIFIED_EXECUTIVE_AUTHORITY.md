@@ -5,6 +5,7 @@
 || Status | PROPOSED (operator review required before production rollout) |
 || Date | 2026-11-03 |
 || Author | Copilot Coding Agent (M009 Stage B-1) |
+|| Creator | copilot-swe-agent[bot] |
 || Mission | M009 Stage B-1 (Institutional Executive workspace; V1 organizational capability) |
 || Capabilities | Executive workspace and authority-gated role assignments |
 || Supersedes-in-part | None |
