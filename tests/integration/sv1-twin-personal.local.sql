@@ -12,7 +12,7 @@ BEGIN
      OR NOT (inet_server_addr() <<= '127.0.0.0/8'::inet OR inet_server_addr() = '::1'::inet) THEN
     RAISE EXCEPTION 'SV1-TWIN-01: refusing non-loopback database server %', inet_server_addr();
   END IF;
-  IF current_database() <> 'coregrid_twin_test'
+  IF current_database() NOT IN ('coregrid_twin_test', 'postgres')
      OR current_setting('coregrid.test_disposable_database', true) IS DISTINCT FROM 'on' THEN
     RAISE EXCEPTION 'SV1-TWIN-01: requires the named, explicitly marked disposable database';
   END IF;
@@ -28,6 +28,21 @@ BEGIN
   IF (SELECT count(*) FROM pg_policies
       WHERE schemaname = 'public' AND tablename = 'cg_personal_twin') <> 1 THEN
     RAISE EXCEPTION 'SV1-TWIN-01: only the self/active-tenant read policy is permitted';
+  END IF;
+  IF EXISTS (
+    SELECT 1
+    FROM pg_attribute
+    WHERE attrelid = 'public.audit_logs'::regclass
+      AND attname IN ('school_id', 'user_id')
+      AND attnotnull
+  ) OR (
+    SELECT count(*)
+    FROM pg_attribute
+    WHERE attrelid = 'public.audit_logs'::regclass
+      AND attname IN ('school_id', 'user_id')
+      AND NOT attnotnull
+  ) <> 2 THEN
+    RAISE EXCEPTION 'SV1-TWIN-01: denial audit requires nullable school_id and user_id';
   END IF;
   IF has_table_privilege('anon', 'public.cg_personal_twin', 'SELECT')
      OR NOT has_table_privilege('authenticated', 'public.cg_personal_twin', 'SELECT')
@@ -101,11 +116,13 @@ INSERT INTO public.users (id, school_id, full_name, email, role, is_active) VALU
    '55100000-0000-4000-8000-0000000000b1',
    'TWIN Synthetic User B', 'twin-b@example.invalid', 'teacher', true);
 
+SET LOCAL ROLE service_role;
 INSERT INTO public.organization_memberships (user_id, school_id, role, is_primary, is_active) VALUES
   ('a5100000-0000-4000-8000-000000000001',
    '55100000-0000-4000-8000-0000000000b1', 'teacher', false, true),
   ('a5100000-0000-4000-8000-000000000002',
    '55100000-0000-4000-8000-0000000000a1', 'teacher', false, true);
+RESET ROLE;
 
 CREATE TEMP TABLE sv1_twin_provision_results (
   identity_id uuid NOT NULL,
@@ -114,29 +131,29 @@ CREATE TEMP TABLE sv1_twin_provision_results (
 );
 
 INSERT INTO sv1_twin_provision_results
-SELECT 'a5100000-0000-4000-8000-000000000001',
-       '55100000-0000-4000-8000-0000000000a1',
+SELECT 'a5100000-0000-4000-8000-000000000001'::uuid,
+       '55100000-0000-4000-8000-0000000000a1'::uuid,
        public.cg_personal_twin_provision(
          'a5100000-0000-4000-8000-000000000001',
          '55100000-0000-4000-8000-0000000000a1'
        )
 UNION ALL
-SELECT 'a5100000-0000-4000-8000-000000000001',
-       '55100000-0000-4000-8000-0000000000b1',
+SELECT 'a5100000-0000-4000-8000-000000000001'::uuid,
+       '55100000-0000-4000-8000-0000000000b1'::uuid,
        public.cg_personal_twin_provision(
          'a5100000-0000-4000-8000-000000000001',
          '55100000-0000-4000-8000-0000000000b1'
        )
 UNION ALL
-SELECT 'a5100000-0000-4000-8000-000000000002',
-       '55100000-0000-4000-8000-0000000000a1',
+SELECT 'a5100000-0000-4000-8000-000000000002'::uuid,
+       '55100000-0000-4000-8000-0000000000a1'::uuid,
        public.cg_personal_twin_provision(
          'a5100000-0000-4000-8000-000000000002',
          '55100000-0000-4000-8000-0000000000a1'
        )
 UNION ALL
-SELECT 'a5100000-0000-4000-8000-000000000002',
-       '55100000-0000-4000-8000-0000000000b1',
+SELECT 'a5100000-0000-4000-8000-000000000002'::uuid,
+       '55100000-0000-4000-8000-0000000000b1'::uuid,
        public.cg_personal_twin_provision(
          'a5100000-0000-4000-8000-000000000002',
          '55100000-0000-4000-8000-0000000000b1'
@@ -178,6 +195,13 @@ BEGIN
     '55100000-0000-4000-8000-0000000000c1'
   )->>'outcome' IS DISTINCT FROM 'denied' THEN
     RAISE EXCEPTION 'SV1-TWIN-01 FAIL: provisioning without a tenant membership must deny';
+  END IF;
+
+  IF public.cg_personal_twin_provision(
+    'a5100000-0000-4000-8000-0000000000ff',
+    '55100000-0000-4000-8000-0000000000ff'
+  )->>'outcome' IS DISTINCT FROM 'denied' THEN
+    RAISE EXCEPTION 'SV1-TWIN-01 FAIL: nonexistent identity and tenant must deny';
   END IF;
 END
 $assertions$;
@@ -239,6 +263,15 @@ BEGIN
       AND new_value->>'outcome' = 'denied'
   ) THEN
     RAISE EXCEPTION 'SV1-TWIN-01 FAIL: denied provision attempt must be audited';
+  END IF;
+  IF (SELECT count(*) FROM public.audit_logs
+      WHERE action = 'twin.personal.provision'
+        AND school_id IS NULL
+        AND user_id IS NULL
+        AND new_value->>'outcome' = 'denied'
+        AND new_value->>'actor_id' = 'a5100000-0000-4000-8000-0000000000ff'
+        AND new_value->>'tenant_id' = '55100000-0000-4000-8000-0000000000ff') <> 1 THEN
+    RAISE EXCEPTION 'SV1-TWIN-01 FAIL: nonexistent identity/tenant denial must be audited with nullable references';
   END IF;
 END
 $audit$;

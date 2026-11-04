@@ -4,15 +4,13 @@
 -- only the personal-twin identity row and its reference to cg_memory_scope.
 -- Rollback: database/supabase/rollbacks/20261103154000_sv1_twin_personal_provisioning.sql
 
-BEGIN;
-
 CREATE TABLE public.cg_personal_twin (
-  id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  id               uuid PRIMARY KEY DEFAULT pg_catalog.gen_random_uuid(),
   identity_id      uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   school_id        uuid NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
   tenant_ref       text GENERATED ALWAYS AS (school_id::text) STORED,
   memory_scope_id  text NOT NULL,
-  created_at       timestamptz NOT NULL DEFAULT now(),
+  created_at       timestamptz NOT NULL DEFAULT pg_catalog.now(),
   CONSTRAINT cg_personal_twin_identity_tenant_unique UNIQUE (identity_id, school_id),
   CONSTRAINT cg_personal_twin_memory_scope_tenant_fk
     FOREIGN KEY (memory_scope_id, tenant_ref)
@@ -54,7 +52,7 @@ CREATE FUNCTION public.cg_personal_twin_provision(
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = pg_catalog, public, auth, pg_temp
+SET search_path = ''
 AS $function$
 DECLARE
   v_twin public.cg_personal_twin%ROWTYPE;
@@ -63,7 +61,7 @@ DECLARE
   v_audit_school_id uuid;
   v_audit_identity_id uuid;
   v_created boolean := false;
-  v_correlation_id text := gen_random_uuid()::text;
+  v_correlation_id text := pg_catalog.gen_random_uuid()::text;
 BEGIN
   IF p_identity_id IS NULL OR p_school_id IS NULL THEN
     RAISE EXCEPTION 'personal twin identity and tenant are required';
@@ -97,7 +95,7 @@ BEGIN
       'cg_personal_twin',
       NULL,
       NULL,
-      jsonb_build_object(
+      pg_catalog.jsonb_build_object(
         'gate', 'server-resolved-active-membership',
         'outcome', 'denied',
         'denial_reason', 'active_identity_membership_required',
@@ -105,10 +103,10 @@ BEGIN
         'actor_kind', 'human',
         'actor_id', p_identity_id,
         'tenant_id', p_school_id,
-        'recorded_at', now()
+        'recorded_at', pg_catalog.now()
       )
     );
-    RETURN jsonb_build_object('outcome', 'denied');
+    RETURN pg_catalog.jsonb_build_object('outcome', 'denied');
   END IF;
 
   SELECT * INTO v_twin
@@ -118,7 +116,7 @@ BEGIN
   FOR UPDATE;
 
   IF NOT FOUND THEN
-    v_twin_id := gen_random_uuid();
+    v_twin_id := pg_catalog.gen_random_uuid();
     v_scope_id := 'personal-twin:' || v_twin_id::text;
 
     INSERT INTO public.cg_memory_scope (
@@ -127,7 +125,7 @@ BEGIN
       v_scope_id,
       p_school_id::text,
       NULL,
-      jsonb_build_array(p_identity_id::text),
+      pg_catalog.jsonb_build_array(p_identity_id::text),
       '["personal-twin"]'::jsonb,
       'internal',
       p_identity_id::text
@@ -148,7 +146,7 @@ BEGIN
     'cg_personal_twin',
     v_twin.id,
     NULL,
-    jsonb_build_object(
+    pg_catalog.jsonb_build_object(
       'gate', 'server-resolved-active-membership',
       'outcome', 'succeeded',
       'created', v_created,
@@ -157,11 +155,11 @@ BEGIN
       'actor_id', p_identity_id,
       'tenant_id', p_school_id,
       'memory_scope_id', v_twin.memory_scope_id,
-      'recorded_at', now()
+      'recorded_at', pg_catalog.now()
     )
   );
 
-  RETURN jsonb_build_object(
+  RETURN pg_catalog.jsonb_build_object(
     'outcome', 'succeeded',
     'twin_id', v_twin.id,
     'memory_scope_id', v_twin.memory_scope_id,
@@ -172,5 +170,3 @@ $function$;
 
 REVOKE ALL ON FUNCTION public.cg_personal_twin_provision(uuid, uuid) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.cg_personal_twin_provision(uuid, uuid) TO service_role;
-
-COMMIT;
