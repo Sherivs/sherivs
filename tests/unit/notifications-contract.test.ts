@@ -311,6 +311,9 @@ describe("notification contract (tenant isolation, §17)", () => {
       expect(rollback).toContain("DROP COLUMN idempotency_key");
       expect(rollback).toContain("DROP TRIGGER core19_notification_membership_guard");
       expect(rollback).toContain("NO FORCE ROW LEVEL SECURITY");
+      expect(
+        rollback.indexOf("DROP INDEX public.notifications_school_user_idempotency_key_uq"),
+      ).toBeLessThan(rollback.indexOf("DROP COLUMN idempotency_key"));
     });
 
     it("accepts active members regardless of active context and rejects non-members", () => {

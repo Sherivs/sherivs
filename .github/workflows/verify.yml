@@ -159,6 +159,9 @@ jobs:
           key: sim-lab-bin-pg17.2-pgrst12.2.3-k6v0.54.0
       - name: Apply all migrations (fresh DB)
         run: bash tools/sim-lab/up.sh
+      - name: CORE-19 migration and rollback round-trip (disposable PostgreSQL)
+        working-directory: tools/sim-lab
+        run: node sim/core19-migration-rollback.mjs
       - name: Seed synthetic schools (10% scale)
         working-directory: tools/sim-lab
         run: SIM_SCALE=0.1 node sim/gen.mjs && node sim/seed-flows.mjs
