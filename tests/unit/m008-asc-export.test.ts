@@ -46,6 +46,28 @@ function readXlsxHeaders(bytes: Uint8Array): string[] {
   );
 }
 
+function readXlsxDataRow(bytes: Uint8Array): { columns: string[]; values: string[] } {
+  const sheet = strFromU8(unzipSync(bytes)["xl/worksheets/sheet1.xml"]);
+  const row = sheet.match(/<row r="2">([\s\S]*?)<\/row>/u)?.[1];
+  if (!row) throw new Error("XLSX data row is missing");
+  const cells = [
+    ...row.matchAll(
+      /<c r="([A-Z]+)2"(?: t="inlineStr")?><is><t xml:space="preserve">(.*?)<\/t><\/is><\/c>|<c r="([A-Z]+)2"><v>(.*?)<\/v><\/c>/gu,
+    ),
+  ];
+  return {
+    columns: cells.map((match) => match[1] ?? match[3]),
+    values: cells.map((match) =>
+      (match[2] ?? match[4])
+        .replaceAll("&quot;", '"')
+        .replaceAll("&apos;", "'")
+        .replaceAll("&gt;", ">")
+        .replaceAll("&lt;", "<")
+        .replaceAll("&amp;", "&"),
+    ),
+  };
+}
+
 describe("M08 ASC draft manifest export", () => {
   it("keeps CSV headers and values in the manifest order", () => {
     const expected = readFileSync(join(ROOT, "tests/fixtures/asc-export.golden.csv"), "utf8");
@@ -61,11 +83,16 @@ describe("M08 ASC draft manifest export", () => {
   it("keeps XLSX header and data columns in manifest order", () => {
     const expected = JSON.parse(
       readFileSync(join(ROOT, "tests/fixtures/asc-export.golden-xlsx-headers.json"), "utf8"),
-    ) as string[];
+    ) as { headers: string[]; columns: string[]; values: string[] };
+    const xlsx = serializeAscXlsx(ASC_MANIFEST_2026_DRAFT, FIXTURE_VALUES);
     expect(readXlsxHeaders(serializeAscXlsx(ASC_MANIFEST_2026_DRAFT, FIXTURE_VALUES))).toEqual(
-      expected,
+      expected.headers,
     );
-    expect(expected).toEqual(ascHeaders(ASC_MANIFEST_2026_DRAFT));
+    expect(ascHeaders(ASC_MANIFEST_2026_DRAFT)).toEqual(expected.headers);
+    expect(readXlsxDataRow(xlsx)).toEqual({
+      columns: expected.columns,
+      values: expected.values,
+    });
   });
 
   it("resolves source mappings from manifest data rather than hard-coded field keys", () => {

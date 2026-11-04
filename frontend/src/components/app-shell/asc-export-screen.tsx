@@ -44,7 +44,9 @@ export function AscExportScreen() {
         This field order is an unverified draft derived from the current schema. It has not been
         checked against an official ASC form; do not use it as an official return.
       </p>
-      <p>The included learner and teacher counts are current snapshots, not year-specific totals.</p>
+      <p>
+        The included learner and teacher counts are current snapshots, not year-specific totals.
+      </p>
       <p>
         Downloads are file-only. This does not submit or transmit data to any government system.
       </p>
