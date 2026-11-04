@@ -11,11 +11,18 @@ import { useAppShell } from "./shell-context";
 import { RoleManagementScreen } from "./role-management-screen";
 import { CommunicationInboxScreen } from "./communication-inbox";
 import { StudentMobilityScreen } from "./student-mobility-screen";
+import { PrivacyRegisterScreen } from "./privacy-register-screen";
 
 export function AppSectionScreen({ sectionKey }: { sectionKey: string }) {
   const shell = useAppShell();
   const [query, setQuery] = useState("");
   if (sectionKey === "roles") return <RoleManagementScreen />;
+  if (
+    sectionKey === "privacy" ||
+    sectionKey === "privacy-register" ||
+    sectionKey === "r001.org_admin.ndpa"
+  )
+    return <PrivacyRegisterScreen />;
   if (sectionKey === "communications") return <CommunicationInboxScreen />;
   if (sectionKey === "nav.students" || sectionKey === "students") return <StudentMobilityScreen />;
   const item =
