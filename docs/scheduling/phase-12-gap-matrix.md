@@ -1,7 +1,7 @@
 # Phase 12 Scheduling Gap Matrix — SV1-SCHED S0
 
-**Baseline:** repository checkout before this S0/S1 change, 2026-11-04  
-**Scope authority:** #227's owner authorization and the narrow V1 slice recorded in [`docs/v1/V1-SCOPE-LOCK.md`](../v1/V1-SCOPE-LOCK.md). This authorizes only the named scheduling workflow; it does not unfreeze all of Phase 12.  
+**Baseline:** repository checkout before this S0/S1 change, 2026-11-04
+**Scope authority:** #227's owner authorization and the narrow V1 slice recorded in [`docs/v1/V1-SCOPE-LOCK.md`](../v1/V1-SCOPE-LOCK.md). This authorizes only the named scheduling workflow; it does not unfreeze all of Phase 12.
 **Purpose:** inventory existing code and distinguish it from what this S1 change adds. No production database was changed.
 
 | Phase 12 sections                                                        | Existing code and baseline coverage                                                                                                                                         | S1 in this change                                                                                                                                        | Deferred / boundary                                                                                                                                                |
