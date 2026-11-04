@@ -25,8 +25,6 @@ BEGIN
 END
 $guard$;
 
-BEGIN;
-
 CREATE OR REPLACE FUNCTION public.m06_ca_components_valid(p_components jsonb)
 RETURNS boolean
 LANGUAGE plpgsql
@@ -249,6 +247,10 @@ DECLARE
   v_kind text;
   v_letter text;
   v_point numeric;
+  v_fallback_letter text;
+  v_fallback_remark text;
+  v_tot numeric;
+  v_m06_managed boolean;
   v_course public.courses%ROWTYPE;
 BEGIN
   IF NEW.course_id IS NOT NULL THEN
@@ -265,13 +267,62 @@ BEGIN
     NEW.credit_units := v_course.credit_units;
   END IF;
 
+  SELECT EXISTS (
+    SELECT 1 FROM public.m06_result_component_scores s WHERE s.grade_id = NEW.id
+  ) OR EXISTS (
+    SELECT 1 FROM public.m06_result_weight_profiles p
+     WHERE p.school_id = NEW.school_id AND p.subject = NEW.subject
+       AND p.term = NEW.term AND p.academic_year = NEW.academic_year
+  ) INTO v_m06_managed;
+  IF NOT v_m06_managed THEN
+    v_tot := coalesce(
+      NEW.total_score,
+      LEAST(100, coalesce(NEW.ca_score, 0) + coalesce(NEW.exam_score, 0))
+    );
+    SELECT s.grading_scale_id, g.scale_kind INTO v_scale, v_kind
+      FROM public.schools s
+      LEFT JOIN public.grading_scales g ON g.id = s.grading_scale_id
+     WHERE s.id = NEW.school_id;
+    IF v_scale IS NOT NULL
+       AND (NEW.ca_score IS NOT NULL OR NEW.exam_score IS NOT NULL OR NEW.total_score IS NOT NULL) THEN
+      SELECT b.letter, b.point INTO v_letter, v_point
+        FROM public.grading_scale_bands b
+       WHERE b.scale_id = v_scale AND b.min_score <= v_tot
+       ORDER BY b.min_score DESC
+       LIMIT 1;
+      NEW.grade_point := v_point;
+      IF v_kind = 'points' THEN NEW.grade := v_letter; END IF;
+    END IF;
+    RETURN NEW;
+  END IF;
+
   IF NEW.ca_score IS NULL OR NEW.exam_score IS NULL THEN
     NEW.total_score := NULL;
     NEW.grade_point := NULL;
     NEW.grade := NULL;
+    NEW.grade_remark := NULL;
     RETURN NEW;
   END IF;
   NEW.total_score := round(NEW.ca_score + NEW.exam_score, 2);
+  v_fallback_letter := CASE
+    WHEN LEAST(100, NEW.total_score) >= 70 THEN 'A'
+    WHEN LEAST(100, NEW.total_score) >= 60 THEN 'B'
+    WHEN LEAST(100, NEW.total_score) >= 50 THEN 'C'
+    WHEN LEAST(100, NEW.total_score) >= 45 THEN 'D'
+    WHEN LEAST(100, NEW.total_score) >= 40 THEN 'E'
+    ELSE 'F'
+  END;
+  v_fallback_remark := CASE v_fallback_letter
+    WHEN 'A' THEN 'Excellent'
+    WHEN 'B' THEN 'Very Good'
+    WHEN 'C' THEN 'Good'
+    WHEN 'D' THEN 'Pass'
+    WHEN 'E' THEN 'Weak Pass'
+    ELSE 'Fail'
+  END;
+  NEW.grade := v_fallback_letter;
+  NEW.grade_point := NULL;
+  NEW.grade_remark := v_fallback_remark;
 
   SELECT s.grading_scale_id, g.scale_kind INTO v_scale, v_kind
     FROM public.schools s
@@ -284,7 +335,7 @@ BEGIN
      ORDER BY b.min_score DESC
      LIMIT 1;
     NEW.grade_point := v_point;
-    NEW.grade := v_letter;
+    IF v_kind = 'points' THEN NEW.grade := v_letter; END IF;
   END IF;
   RETURN NEW;
 END
@@ -324,22 +375,47 @@ SET search_path = ''
 AS $$
 DECLARE
   v_score_changed boolean;
+  v_locked_changed boolean;
   v_m06_managed boolean := false;
   v_actor uuid := auth.uid();
 BEGIN
   v_score_changed := false;
+  v_locked_changed := false;
   IF TG_OP = 'UPDATE' THEN
     v_score_changed := NEW.ca_score IS DISTINCT FROM OLD.ca_score
       OR NEW.exam_score IS DISTINCT FROM OLD.exam_score
       OR NEW.terminal_score_raw IS DISTINCT FROM OLD.terminal_score_raw
       OR NEW.terminal_max_score IS DISTINCT FROM OLD.terminal_max_score;
+    v_locked_changed := v_score_changed
+      OR NEW.total_score IS DISTINCT FROM OLD.total_score
+      OR NEW.grade IS DISTINCT FROM OLD.grade
+      OR NEW.grade_point IS DISTINCT FROM OLD.grade_point
+      OR NEW.grade_remark IS DISTINCT FROM OLD.grade_remark
+      OR NEW.subject IS DISTINCT FROM OLD.subject
+      OR NEW.term IS DISTINCT FROM OLD.term
+      OR NEW.academic_year IS DISTINCT FROM OLD.academic_year
+      OR NEW.student_id IS DISTINCT FROM OLD.student_id
+      OR NEW.school_id IS DISTINCT FROM OLD.school_id;
     SELECT EXISTS (
       SELECT 1 FROM public.m06_result_component_scores s WHERE s.grade_id = OLD.id
+    ) OR EXISTS (
+      SELECT 1 FROM public.m06_result_weight_profiles p
+       WHERE p.school_id = OLD.school_id AND p.subject = OLD.subject
+         AND p.term = OLD.term AND p.academic_year = OLD.academic_year
+    ) OR EXISTS (
+      SELECT 1 FROM public.m06_result_weight_profiles p
+       WHERE p.school_id = NEW.school_id AND p.subject = NEW.subject
+         AND p.term = NEW.term AND p.academic_year = NEW.academic_year
     ) INTO v_m06_managed;
   END IF;
 
   IF TG_OP = 'INSERT' THEN
-    IF NEW.result_approved_by IS NOT NULL OR NEW.is_published IS TRUE THEN
+    IF (NEW.result_approved_by IS NOT NULL OR NEW.is_published IS TRUE)
+       AND EXISTS (
+         SELECT 1 FROM public.m06_result_weight_profiles p
+          WHERE p.school_id = NEW.school_id AND p.subject = NEW.subject
+            AND p.term = NEW.term AND p.academic_year = NEW.academic_year
+       ) THEN
       RAISE EXCEPTION 'M06 results must be entered before approval and publication'
         USING ERRCODE = '42501';
     END IF;
@@ -355,10 +431,8 @@ BEGIN
       USING ERRCODE = '42501';
   END IF;
 
-  IF v_score_changed AND (
-    OLD.result_approved_by IS NOT NULL
-    OR (v_m06_managed AND OLD.is_published IS TRUE)
-  ) THEN
+  IF v_locked_changed AND v_m06_managed
+     AND (OLD.result_approved_by IS NOT NULL OR OLD.is_published IS TRUE) THEN
     IF v_actor IS NULL OR v_actor = OLD.result_approved_by
        OR NEW.result_approved_by IS NOT NULL OR NEW.is_published IS TRUE
        OR NOT public.scholar_can(NEW.school_id, 'results.unpublish')
@@ -389,6 +463,10 @@ BEGIN
        OR NEW.total_score IS NULL
        OR NEW.result_entered_by IS NULL
        OR NEW.result_entered_by = v_actor
+       OR EXISTS (
+         SELECT 1 FROM public.m06_result_component_scores s
+          WHERE s.grade_id = NEW.id AND s.recorded_by = v_actor
+       )
        OR NOT EXISTS (
          SELECT 1 FROM public.m06_result_component_scores s WHERE s.grade_id = NEW.id
        )
@@ -411,12 +489,16 @@ BEGIN
       USING ERRCODE = '42501';
   END IF;
 
-  IF NEW.is_published IS TRUE AND OLD.is_published IS NOT TRUE THEN
+  IF NEW.is_published IS TRUE AND OLD.is_published IS NOT TRUE AND v_m06_managed THEN
     IF v_actor IS NULL
        OR NEW.result_published_by IS DISTINCT FROM v_actor
        OR NEW.result_published_at IS NULL
        OR NEW.result_approved_by IS NULL
        OR NEW.result_entered_by = v_actor
+       OR EXISTS (
+         SELECT 1 FROM public.m06_result_component_scores s
+          WHERE s.grade_id = NEW.id AND s.recorded_by = v_actor
+       )
        OR NOT public.scholar_can(NEW.school_id, 'results.publish') THEN
       RAISE EXCEPTION 'result publication requires approval and a distinct authorized publisher'
         USING ERRCODE = '42501';
@@ -755,6 +837,10 @@ BEGIN
      OR v_grade.is_published IS TRUE
      OR NOT EXISTS (
        SELECT 1 FROM public.m06_result_component_scores s WHERE s.grade_id = v_grade.id
+     )
+     OR EXISTS (
+       SELECT 1 FROM public.m06_result_component_scores s
+        WHERE s.grade_id = v_grade.id AND s.recorded_by = v_actor
      ) THEN
     RAISE EXCEPTION 'result is not approvable by this user' USING ERRCODE = '42501';
   END IF;
@@ -781,6 +867,10 @@ BEGIN
      OR NOT public.scholar_can(v_grade.school_id, 'results.publish')
      OR v_grade.result_approved_by IS NULL OR v_grade.total_score IS NULL
      OR v_grade.result_entered_by IS NULL OR v_grade.result_entered_by = v_actor
+     OR EXISTS (
+       SELECT 1 FROM public.m06_result_component_scores s
+        WHERE s.grade_id = v_grade.id AND s.recorded_by = v_actor
+     )
      OR v_grade.is_published IS TRUE THEN
     RAISE EXCEPTION 'result is not publishable by this user' USING ERRCODE = '42501';
   END IF;
@@ -923,5 +1013,3 @@ GRANT EXECUTE ON FUNCTION public.m06_set_result_weights(text,text,text,numeric,n
   public.m06_publish_result(uuid),
   public.m06_amend_result(uuid,jsonb,numeric,text)
   TO authenticated;
-
-COMMIT;

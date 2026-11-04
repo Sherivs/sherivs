@@ -50,9 +50,12 @@ BEGIN
   END IF;
 END $$;
 CREATE FUNCTION m06.denied(p_label text, p_sql text) RETURNS void LANGUAGE plpgsql AS $$
+DECLARE affected bigint;
 BEGIN
   BEGIN
     EXECUTE p_sql;
+    GET DIAGNOSTICS affected = ROW_COUNT;
+    IF affected = 0 THEN RETURN; END IF;
   EXCEPTION WHEN insufficient_privilege THEN RETURN;
   END;
   RAISE EXCEPTION 'M06 FAIL [%]: statement was allowed but must be denied', p_label;
@@ -63,6 +66,7 @@ INSERT INTO auth.users (id) VALUES
   ('a6000000-0000-4000-8000-000000000001'),
   ('a6000000-0000-4000-8000-000000000002'),
   ('a6000000-0000-4000-8000-000000000003'),
+  ('a6000000-0000-4000-8000-000000000004'),
   ('b6000000-0000-4000-8000-000000000001');
 INSERT INTO public.schools (id, name, slug) VALUES
   ('56000000-0000-4000-8000-0000000000a1', 'M06 Synthetic Organization A', 'm06-synthetic-a'),
@@ -71,6 +75,7 @@ INSERT INTO public.users (id, school_id, full_name, email, role, is_active) VALU
   ('a6000000-0000-4000-8000-000000000001','56000000-0000-4000-8000-0000000000a1','M06 Synthetic Teacher','m06-teacher@example.invalid','teacher',true),
   ('a6000000-0000-4000-8000-000000000002','56000000-0000-4000-8000-0000000000a1','M06 Synthetic Approver','m06-approver@example.invalid','admin',true),
   ('a6000000-0000-4000-8000-000000000003','56000000-0000-4000-8000-0000000000a1','M06 Synthetic Amender','m06-amender@example.invalid','admin',true),
+  ('a6000000-0000-4000-8000-000000000004','56000000-0000-4000-8000-0000000000a1','M06 Synthetic Independent Approver','m06-independent-approver@example.invalid','admin',true),
   ('b6000000-0000-4000-8000-000000000001','56000000-0000-4000-8000-0000000000b1','M06 Synthetic Other Tenant','m06-other@example.invalid','admin',true);
 INSERT INTO public.classes (id, school_id, name, teacher_id) VALUES
   ('56000000-0000-4000-8000-0000000000c1','56000000-0000-4000-8000-0000000000a1','M06 Synthetic Class','a6000000-0000-4000-8000-000000000001');
@@ -97,6 +102,7 @@ SELECT m06.cnt(
   'weighted CA and terminal scores produce a rounded total',
   $$SELECT 1 FROM public.grades g JOIN m06_saved_result r ON r.id = g.id
       WHERE g.ca_score = 13.33 AND g.exam_score = 40 AND g.total_score = 53.33
+        AND g.grade = 'C' AND g.grade_remark = 'Good' AND g.grade_point IS NULL
         AND g.result_entered_by = auth.uid()$$,
   1
 );
@@ -109,7 +115,8 @@ SELECT m06.cnt(
   'blank CA remains NULL rather than zero',
   $$SELECT 1 FROM public.grades
       WHERE student_id='56000000-0000-4000-8000-0000000000d2'
-        AND ca_score IS NULL AND total_score IS NULL$$,
+        AND ca_score IS NULL AND total_score IS NULL
+        AND grade IS NULL AND grade_point IS NULL AND grade_remark IS NULL$$,
   1
 );
 SELECT m06.denied(
@@ -119,6 +126,12 @@ SELECT m06.denied(
 SELECT m06.logout();
 
 SELECT m06.login('a6000000-0000-4000-8000-000000000002');
+SELECT m06.denied(
+  'configured M06 result cannot be published without approval',
+  $$UPDATE public.grades
+       SET is_published=true, result_published_by=auth.uid(), result_published_at=now()
+     WHERE id=(SELECT id FROM m06_saved_result)$$
+);
 SELECT public.m06_approve_result((SELECT id FROM m06_saved_result));
 SELECT m06.denied(
   'approver cannot amend the approved result',
@@ -135,22 +148,125 @@ SELECT public.m06_amend_result(
   '{"quiz":2,"project":2}'::jsonb, 21, 'M06 synthetic amendment'
 );
 SELECT m06.cnt(
-  'approved amendments create append-only audit evidence and reset approval',
-  $$SELECT 1 FROM public.m06_result_amendments a
-      JOIN m06_saved_result r ON r.id = a.grade_id
-      JOIN public.grades g ON g.id = a.grade_id
-      WHERE a.actor_id=auth.uid() AND g.result_approved_by IS NULL
-        AND g.is_published IS FALSE$$,
+  'amendment recomputes no-scale grade and remark and resets approval',
+  $$SELECT 1 FROM public.grades g JOIN m06_saved_result r ON r.id = g.id
+       WHERE g.total_score=68.67 AND g.grade='B' AND g.grade_remark='Very Good'
+         AND g.grade_point IS NULL AND g.result_approved_by IS NULL
+         AND g.is_published IS FALSE$$,
   1
 );
+SELECT m06.cnt(
+  'approved amendments create append-only audit evidence',
+  $$SELECT 1 FROM public.m06_result_amendments a
+      JOIN m06_saved_result r ON r.id = a.grade_id
+      WHERE a.actor_id=auth.uid()$$,
+  1
+);
+SELECT m06.denied(
+  'amender cannot approve their own amended scores',
+  $$SELECT public.m06_approve_result((SELECT id FROM m06_saved_result))$$
+);
+SELECT m06.logout();
+
+SELECT m06.login('a6000000-0000-4000-8000-000000000004');
 SELECT public.m06_approve_result((SELECT id FROM m06_saved_result));
+SELECT m06.logout();
+
+SELECT m06.login('a6000000-0000-4000-8000-000000000003');
+SELECT m06.denied(
+  'amender cannot publish their own amended scores',
+  $$SELECT public.m06_publish_result((SELECT id FROM m06_saved_result))$$
+);
 SELECT m06.logout();
 
 SELECT m06.login('a6000000-0000-4000-8000-000000000002');
 SELECT public.m06_publish_result((SELECT id FROM m06_saved_result));
 SELECT m06.denied(
-  'published scores cannot be edited without audited amendment',
+  'admin cannot directly edit published scores without audited amendment',
   $$UPDATE public.grades SET exam_score=1 WHERE id=(SELECT id FROM m06_saved_result)$$
+);
+SELECT m06.logout();
+
+SELECT m06.login('a6000000-0000-4000-8000-000000000001');
+SELECT m06.denied(
+  'teacher cannot directly edit published result outcome',
+  $$UPDATE public.grades SET grade_remark='tampered' WHERE id=(SELECT id FROM m06_saved_result)$$
+);
+SELECT m06.logout();
+
+SELECT m06.login('a6000000-0000-4000-8000-000000000002');
+SELECT m06.denied('admin cannot directly edit grade',
+  $$UPDATE public.grades SET grade='tampered' WHERE id=(SELECT id FROM m06_saved_result)$$);
+SELECT m06.denied('admin cannot directly edit grade point',
+  $$UPDATE public.grades SET grade_point=coalesce(grade_point,0)+1 WHERE id=(SELECT id FROM m06_saved_result)$$);
+SELECT m06.denied('admin cannot directly edit grade remark',
+  $$UPDATE public.grades SET grade_remark='tampered' WHERE id=(SELECT id FROM m06_saved_result)$$);
+SELECT m06.denied('admin cannot directly edit total score',
+  $$UPDATE public.grades SET total_score=total_score+1 WHERE id=(SELECT id FROM m06_saved_result)$$);
+SELECT m06.denied('admin cannot directly edit subject',
+  $$UPDATE public.grades SET subject='Biology' WHERE id=(SELECT id FROM m06_saved_result)$$);
+SELECT m06.denied('admin cannot directly edit term',
+  $$UPDATE public.grades SET term='Term 2' WHERE id=(SELECT id FROM m06_saved_result)$$);
+SELECT m06.denied('admin cannot directly edit academic year',
+  $$UPDATE public.grades SET academic_year='2027-2028' WHERE id=(SELECT id FROM m06_saved_result)$$);
+SELECT m06.denied('admin cannot directly edit student identity',
+  $$UPDATE public.grades SET student_id='56000000-0000-4000-8000-0000000000d2' WHERE id=(SELECT id FROM m06_saved_result)$$);
+SELECT m06.denied('admin cannot directly edit tenant identity',
+  $$UPDATE public.grades SET school_id='56000000-0000-4000-8000-0000000000b1' WHERE id=(SELECT id FROM m06_saved_result)$$);
+SELECT m06.logout();
+
+SELECT m06.login('a6000000-0000-4000-8000-000000000001');
+INSERT INTO public.grades (
+  school_id, student_id, class_id, subject, ca_score, exam_score, term,
+  academic_year, teacher_id, is_published
+) VALUES (
+  '56000000-0000-4000-8000-0000000000a1',
+  '56000000-0000-4000-8000-0000000000d1',
+  '56000000-0000-4000-8000-0000000000c1',
+  'Legacy Subject', 30, 30, 'Legacy Term', '2026-2027',
+  'a6000000-0000-4000-8000-000000000001', false
+);
+CREATE TEMP TABLE m06_legacy_result AS
+  SELECT id FROM public.grades
+   WHERE subject='Legacy Subject' AND term='Legacy Term' AND academic_year='2026-2027';
+SELECT m06.logout();
+SELECT m06.login('a6000000-0000-4000-8000-000000000002');
+UPDATE public.grades SET is_published=true
+ WHERE id=(SELECT id FROM m06_legacy_result);
+SELECT m06.cnt(
+  'unconfigured legacy result retains direct publication compatibility',
+  $$SELECT 1 FROM public.grades g JOIN m06_legacy_result r ON r.id=g.id
+      WHERE g.is_published IS TRUE AND g.result_approved_by IS NULL$$,
+  1
+);
+SELECT m06.logout();
+
+INSERT INTO public.grading_scales (id, school_id, code, name, scale_kind, max_point)
+VALUES (
+  '56000000-0000-4000-8000-0000000000e1',
+  '56000000-0000-4000-8000-0000000000a1',
+  'M06-TEST-POINTS', 'M06 Synthetic Points Scale', 'points', 4
+);
+INSERT INTO public.grading_scale_bands (scale_id, min_score, letter, point, remark)
+VALUES
+  ('56000000-0000-4000-8000-0000000000e1', 60, 'A', 4, 'Synthetic excellent'),
+  ('56000000-0000-4000-8000-0000000000e1', 0, 'C', 2, 'Synthetic pass');
+UPDATE public.schools
+   SET grading_scale_id='56000000-0000-4000-8000-0000000000e1'
+ WHERE id='56000000-0000-4000-8000-0000000000a1';
+SELECT m06.login('a6000000-0000-4000-8000-000000000001');
+SELECT public.m06_enter_result_scores(
+  '56000000-0000-4000-8000-0000000000d2',
+  'Mathematics', 'Term 1', '2026-2027',
+  '{"quiz":2,"project":2}'::jsonb, 21
+);
+SELECT m06.cnt(
+  'points-scale letter is recalculated after blank marks are entered',
+  $$SELECT 1 FROM public.grades
+      WHERE student_id='56000000-0000-4000-8000-0000000000d2'
+        AND total_score=68.67 AND grade='A' AND grade_point=4
+        AND grade_remark='Very Good'$$,
+  1
 );
 SELECT m06.logout();
 

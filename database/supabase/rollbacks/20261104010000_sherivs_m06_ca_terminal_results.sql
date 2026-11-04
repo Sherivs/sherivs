@@ -52,9 +52,6 @@ BEGIN
 END
 $$;
 
-UPDATE public.grades
-   SET total_score = coalesce(ca_score, 0) + coalesce(exam_score, 0);
-
 ALTER TABLE public.grades
   DROP CONSTRAINT grades_m06_terminal_range,
   DROP CONSTRAINT grades_m06_approval_sod,
@@ -67,7 +64,11 @@ ALTER TABLE public.grades
   DROP COLUMN terminal_max_score;
 ALTER TABLE public.grades
   ALTER COLUMN ca_score SET DEFAULT 0,
-  ALTER COLUMN exam_score SET DEFAULT 0;
+  ALTER COLUMN exam_score SET DEFAULT 0,
+  DROP COLUMN total_score;
+ALTER TABLE public.grades
+  ADD COLUMN total_score numeric
+    GENERATED ALWAYS AS (COALESCE(ca_score, 0) + COALESCE(exam_score, 0)) STORED;
 DROP POLICY IF EXISTS m06_result_amendments_read ON public.m06_result_amendments;
 DROP POLICY IF EXISTS m06_result_component_scores_read ON public.m06_result_component_scores;
 DROP POLICY IF EXISTS m06_result_weight_profiles_read ON public.m06_result_weight_profiles;

@@ -42,9 +42,9 @@ evidence. Missing configured marks leave CA/total/grade unavailable.
 - **Consequences:** Existing readers retain the `grades` record contract, and
   M06 can enforce its workflow in the database. The legacy `total_score` column
   becomes an ordinary trigger-maintained column to support a NULL total when a
-  required score is missing; rollback preserves its former coalescing behavior
-  but does not restore the generated-column storage attribute. Weight profiles
-  are locked after the first component score is recorded.
+  required score is missing; rollback restores the original generated-column
+  expression. Weight profiles are locked after the first component score is
+  recorded.
 
 ## Recommendation (decision)
 
@@ -55,6 +55,31 @@ server-side; require a distinct authorized approver; publish only approved
 results; and require a distinct authorized actor plus append-only evidence for
 every approved/published score amendment. The migration and rollback are files
 only and are never applied to a live database by this change.**
+
+## Legacy compatibility and grading behavior
+
+The M06 workflow is selected by a configured weight profile or recorded
+component scores. Such rows require approval before publication and cannot have
+their scores, outcomes, or result identity/scope changed without an amendment
+row in the same transaction. The database guard retains the pre-existing
+direct-publish behavior only for rows outside M06; it does not grant a new
+publication permission. A repository search found no frontend or mobile caller
+that directly publishes a grade: `results.functions.ts` invokes
+`m06_publish_result`, and the existing integration import
+(`20261025100190_sherivs_092_integration_entities_outbound.sql`) inserts result
+rows as unpublished. Direct publication of unconfigured legacy rows remains
+available to callers already authorized by the existing grade table grants and
+RLS. The disposable SQL harness verifies both legacy compatibility and the
+M06 approval gate.
+
+The replacement score trigger preserves the prior grading-scale rules:
+`grades_points_fill` overrides the letter only for `scale_kind = 'points'`,
+while percentage scales retain `grades_autocalc`'s legacy threshold letter.
+The legacy fallback remains capped at 100. For M06 rows only, the trigger
+recomputes the fallback letter and remark on every score write and clears
+`total_score`, `grade`, `grade_point`, and `grade_remark` whenever a required
+mark is missing. This prevents stale outcomes without changing non-M06 grade
+calculation behavior.
 
 ## Migration neutrality evidence
 
@@ -76,9 +101,10 @@ is replaced. The proposed migration remains unapplied.
   authorization, approval, publication, and amendment evidence are enforced
   below the UI.
 - **Negative / obligations:** Existing integrations that write legacy scores
-  remain trusted server-side compatibility paths; the M06 RPCs are the governed
-  path for new assessments. A configured weight profile cannot be changed after
-  scores are recorded for that scope.
+  remain trusted server-side compatibility paths; M06 RPCs are the governed
+  path for configured assessments. Direct table publication remains compatible
+  only for unconfigured legacy results. A configured weight profile cannot be
+  changed after scores are recorded for that scope.
 - **For the wave/program specifically:** M06 consumes the existing M009 role
   engine, `grades.enter`, `grades.approve`, `results.publish`, and
   `results.unpublish` permissions. It does not create roles, permissions,
