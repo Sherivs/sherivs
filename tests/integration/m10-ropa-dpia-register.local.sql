@@ -32,6 +32,10 @@ BEGIN
      OR NOT has_function_privilege('authenticated', 'public.dpia_approve(uuid)', 'EXECUTE') THEN
     RAISE EXCEPTION 'M10: DPIA sign-off execution is not limited to authenticated users';
   END IF;
+  IF has_function_privilege('authenticated', 'public.dpia_save(uuid,text,text,text[],text,text)', 'EXECUTE')
+     OR has_function_privilege('service_role', 'public.dpia_save(uuid,text,text,text[],text,text)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'M10: legacy unaudited DPIA writer remains executable';
+  END IF;
 END
 $guard$;
 
@@ -176,6 +180,14 @@ SELECT m10.denied('tenant A cannot spoof tenant B writes',
 SELECT m10.denied('authenticated users cannot write directly to ROPA',
   $$INSERT INTO public.ropa_processing_activities (activity_key, title, purpose, retention_reference, security_measures)
     VALUES ('m10.direct.write', 'M10 direct write', 'Synthetic purpose', 'Synthetic retention', 'Synthetic measures')$$);
+SELECT m10.denied('legacy unaudited DPIA writer is revoked',
+  $$SELECT public.dpia_save(
+    '61000000-0000-4000-8000-0000000000a1',
+    'M10 legacy writer attempt', 'Synthetic activity', '{}', 'low', 'Synthetic mitigation')$$);
+SELECT m10.denied('tenant admin cannot review platform ROPA',
+  $$SELECT public.privacy_ropa_owner_review(
+    (SELECT id FROM public.ropa_processing_activities
+      WHERE activity_key='platform.account_operations'), false)$$);
 SELECT m10.cnt('tenant A sees only its ROPA',
   $$SELECT 1 FROM public.ropa_processing_activities
      WHERE org_id='61000000-0000-4000-8000-0000000000a1'$$, 1);
@@ -196,8 +208,18 @@ SELECT m10.login('a1000000-0000-4000-8000-000000000003');
 SELECT m10.cnt('non-privacy staff cannot read tenant ROPA',
   $$SELECT 1 FROM public.ropa_processing_activities
      WHERE org_id='61000000-0000-4000-8000-0000000000a1'$$, 0);
+SELECT m10.cnt('non-DPO retains legacy NDPA DSAR permission',
+  $$SELECT 1 WHERE public.scholar_can(
+    '61000000-0000-4000-8000-0000000000a1', 'ndpa.dsar')$$, 1);
+SELECT m10.cnt('legacy NDPA DSAR permission no longer grants DPIA register read',
+  $$SELECT 1 FROM public.dpia_records
+      WHERE school_id='61000000-0000-4000-8000-0000000000a1'$$, 0);
 SELECT m10.denied('non-DPO cannot sign off',
   $$SELECT public.dpia_approve((SELECT id FROM m10.ids WHERE label='dpia-a'))$$);
+SELECT m10.denied('tenant DPO cannot review platform ROPA',
+  $$SELECT public.privacy_ropa_owner_review(
+    (SELECT id FROM public.ropa_processing_activities
+      WHERE activity_key='platform.account_operations'), false)$$);
 SELECT m10.logout();
 
 SELECT m10.login('a1000000-0000-4000-8000-000000000002');
@@ -216,6 +238,24 @@ SELECT m10.cnt('platform admin sees seeded synthetic ROPA only',
   $$SELECT 1 FROM public.ropa_processing_activities
      WHERE org_id IS NULL AND is_synthetic
        AND owner_review_status='owner_review_required'$$, 5);
+SELECT public.privacy_ropa_owner_review(
+  (SELECT id FROM public.ropa_processing_activities
+    WHERE activity_key='platform.account_operations'), false);
+SELECT public.privacy_ropa_owner_review(
+  (SELECT id FROM public.ropa_processing_activities
+    WHERE activity_key='platform.education_records'), true);
+SELECT m10.cnt('unconfirmed reviewed entry remains synthetic',
+  $$SELECT 1 FROM public.ropa_processing_activities
+      WHERE activity_key='platform.account_operations'
+       AND owner_review_status='owner_reviewed' AND is_synthetic$$, 1);
+SELECT m10.cnt('confirmed reviewed entry clears synthetic marker',
+  $$SELECT 1 FROM public.ropa_processing_activities
+      WHERE activity_key='platform.education_records'
+       AND owner_review_status='owner_reviewed' AND NOT is_synthetic$$, 1);
+SELECT m10.cnt('platform owner review is audited',
+  $$SELECT 1 FROM public.privacy_register_audit_events
+      WHERE org_id IS NULL AND record_kind='ropa'
+       AND action='ropa.owner_reviewed' AND actor_user_id=auth.uid()$$, 2);
 SELECT m10.cnt('platform admin cannot read tenant ROPA',
   $$SELECT 1 FROM public.ropa_processing_activities WHERE org_id IS NOT NULL$$, 0);
 SELECT m10.cnt('platform export is audited',

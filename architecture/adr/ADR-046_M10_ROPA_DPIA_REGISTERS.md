@@ -57,6 +57,15 @@ are synthetic and explicitly require owner review.
   legacy tenant/domain terms are quarantined under this ADR; the guard remains
   strict on all other files and vocabulary.
 
+The read policy is intentionally tightened. Previously, a tenant user holding
+`ndpa.dsar` could read `dpia_records`; after this change, DSAR-only holders who
+are neither organization administrators nor assigned DPOs lose that register
+read access. They retain their separate data-subject-request responsibilities.
+This limits DPIA risk assessments to the roles that administer or formally
+approve the register. The legacy `dpia_save` writer is also revoked because it
+does not emit the M10 register audit event; the new authenticated audited RPC is
+the only supported DPIA write path.
+
 ### Option 3 — Store both registers in application-managed files (rejected)
 
 Keep register entries outside the tenant database and rely on the UI to enforce
@@ -74,8 +83,11 @@ to platform super-admins. The exact effective DPO role is required for DPIA
 sign-off, and the sign-off plus export actions are recorded in an append-only
 register audit table within the same database transaction. All writes use
 authenticated RPCs with an empty `search_path`; direct API table writes remain
-revoked. Platform seed entries contain synthetic descriptions and require owner
-review before they are treated as verified processing facts.
+revoked. The platform super-admin can record owner review, either retaining a
+reviewed synthetic placeholder or explicitly confirming real values and
+clearing the synthetic marker; both outcomes are audited. Platform seed
+entries require owner review before they are treated as verified processing
+facts.
 
 ### Explicit residual risk (stated, bounded, owned — not hidden)
 
@@ -93,10 +105,12 @@ review before they are treated as verified processing facts.
 
 - **Positive:** The existing DPIA store remains canonical, cross-tenant access
   is database-enforced, only the assigned DPO can sign off, and each signature
-  and export has an immutable audit record.
+  and export has an immutable audit record. Super-admin owner review is available
+  for platform ROPA placeholders and is itself audited.
 - **Negative / obligations:** Owners must review synthetic platform entries;
   tenants must provide accurate purpose, categories, recipients, transfers,
-  retention references, security measures, risks and mitigations.
+  retention references, security measures, risks and mitigations. Users with
+  only `ndpa.dsar` (and no administrator or DPO role) no longer read DPIAs.
 - **For the wave/program specifically:** M10 consumes the M04 tenant model and
   M009 role engine and does not change authentication, onboarding, tenant
   creation, frozen V2/V3 scope, or production state.

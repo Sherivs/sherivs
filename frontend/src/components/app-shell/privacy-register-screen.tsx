@@ -3,6 +3,7 @@ import { useApp } from "@/contexts/app-context";
 import {
   exportPrivacyRegister,
   loadPrivacyRegister,
+  reviewPlatformRopa,
   saveDpia,
   saveRopaActivity,
   signOffDpia,
@@ -182,6 +183,27 @@ export function PrivacyRegisterScreen() {
     }
   }
 
+  async function reviewRopa(row: RopaActivity, confirmedRealValues: boolean) {
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      await reviewPlatformRopa({
+        data: { ropaId: row.id, confirmedRealValues },
+      });
+      setNotice(
+        confirmedRealValues
+          ? "Platform activity reviewed and confirmed as accurate."
+          : "Platform activity marked reviewed; it remains a synthetic placeholder.",
+      );
+      await reload();
+    } catch {
+      setError("Platform owner review was denied or could not be recorded.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function approveDpia(row: DpiaRecord) {
     setBusy(true);
     setError(null);
@@ -248,9 +270,30 @@ export function PrivacyRegisterScreen() {
               {row.is_synthetic || row.owner_review_status === "owner_review_required" ? (
                 <p> Synthetic placeholder — owner review required.</p>
               ) : null}
+              {row.owner_review_status === "owner_reviewed" ? (
+                <p>Owner reviewed{row.is_synthetic ? "; still a synthetic placeholder." : "."}</p>
+              ) : null}
               <button type="button" onClick={() => editRopa(row)} disabled={busy}>
                 Edit
               </button>
+              {schoolId === null && row.is_synthetic ? (
+                <>
+                  {row.owner_review_status === "owner_review_required" ? (
+                    <button
+                      type="button"
+                      onClick={() => void reviewRopa(row, false)}
+                      disabled={busy}
+                    >
+                      Mark reviewed; keep synthetic
+                    </button>
+                  ) : null}
+                  <button type="button" onClick={() => void reviewRopa(row, true)} disabled={busy}>
+                    {row.owner_review_status === "owner_reviewed"
+                      ? "Confirm real values and clear synthetic marker"
+                      : "Confirm values accurate and complete review"}
+                  </button>
+                </>
+              ) : null}
             </li>
           ))}
         </ul>

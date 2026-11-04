@@ -95,6 +95,10 @@ const dpiaSchema = scopeSchema.extend({
   mitigations: z.string().trim().max(4000),
 });
 const signOffSchema = z.object({ dpiaId: z.string().uuid() });
+const ownerReviewSchema = z.object({
+  ropaId: z.string().uuid(),
+  confirmedRealValues: z.boolean(),
+});
 
 export const loadPrivacyRegister = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -121,6 +125,16 @@ export const saveRopaActivity = createServerFn({ method: "POST" })
       p_transfer_details: data.transferDetails,
       p_retention_reference: data.retentionReference,
       p_security_measures: data.securityMeasures,
+    }),
+  );
+
+export const reviewPlatformRopa = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: unknown) => ownerReviewSchema.parse(input))
+  .handler(async ({ data, context }) =>
+    callRpc(context as PrivacyContext, "privacy_ropa_owner_review", {
+      p_id: data.ropaId,
+      p_confirmed_real_values: data.confirmedRealValues,
     }),
   );
 

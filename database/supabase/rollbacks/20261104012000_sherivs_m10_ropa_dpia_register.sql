@@ -8,6 +8,7 @@ DROP POLICY IF EXISTS ropa_processing_activities_read ON public.ropa_processing_
 
 REVOKE ALL ON FUNCTION public.privacy_register_snapshot(uuid),
   public.privacy_ropa_save(uuid,uuid,text,text,text,text[],text[],text[],text[],text,text),
+  public.privacy_ropa_owner_review(uuid,boolean),
   public.privacy_dpia_save(uuid,uuid,text,text,text[],text,text[],text),
   public.dpia_approve(uuid),
   public.privacy_register_export(uuid),
@@ -16,6 +17,7 @@ REVOKE ALL ON FUNCTION public.privacy_register_snapshot(uuid),
   FROM PUBLIC, anon, authenticated, service_role;
 DROP FUNCTION IF EXISTS public.privacy_register_snapshot(uuid);
 DROP FUNCTION IF EXISTS public.privacy_ropa_save(uuid,uuid,text,text,text,text[],text[],text[],text[],text,text);
+DROP FUNCTION IF EXISTS public.privacy_ropa_owner_review(uuid,boolean);
 DROP FUNCTION IF EXISTS public.privacy_dpia_save(uuid,uuid,text,text,text[],text,text[],text);
 DROP FUNCTION IF EXISTS public.privacy_register_export(uuid);
 DROP FUNCTION IF EXISTS public.privacy_register_is_dpo(uuid);
@@ -41,6 +43,10 @@ BEGIN
 END
 $$;
 GRANT EXECUTE ON FUNCTION public.dpia_approve(uuid) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.dpia_save(uuid,text,text,text[],text,text)
+  FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.dpia_save(uuid,text,text,text[],text,text)
+  TO authenticated, service_role;
 
 CREATE POLICY dpia_records_read ON public.dpia_records
   FOR SELECT TO authenticated

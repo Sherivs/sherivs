@@ -22,8 +22,6 @@ BEGIN
 END
 $guard$;
 
-BEGIN;
-
 ALTER TABLE public.dpia_records
   ADD COLUMN IF NOT EXISTS risks text[] NOT NULL DEFAULT '{}';
 
@@ -63,7 +61,8 @@ CREATE TABLE public.privacy_register_audit_events (
   record_id uuid,
   actor_user_id uuid NOT NULL,
   action text NOT NULL CHECK (action IN (
-    'ropa.created','ropa.updated','dpia.created','dpia.updated','dpia.signed_off','register.exported'
+    'ropa.created','ropa.updated','ropa.owner_reviewed',
+    'dpia.created','dpia.updated','dpia.signed_off','register.exported'
   )),
   details jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(details) = 'object'),
   occurred_at timestamptz NOT NULL DEFAULT clock_timestamp()
@@ -104,6 +103,8 @@ REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER
   ON public.dpia_records FROM PUBLIC, anon, authenticated, service_role;
 GRANT SELECT ON public.dpia_records TO authenticated;
 REVOKE EXECUTE ON FUNCTION public.dpia_approve(uuid)
+  FROM PUBLIC, anon, authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.dpia_save(uuid,text,text,text[],text,text)
   FROM PUBLIC, anon, authenticated, service_role;
 
 CREATE OR REPLACE FUNCTION public.privacy_register_is_dpo(p_school uuid)
@@ -357,6 +358,50 @@ BEGIN
 END
 $$;
 
+CREATE OR REPLACE FUNCTION public.privacy_ropa_owner_review(
+  p_id uuid,
+  p_confirmed_real_values boolean
+) RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE v_row public.ropa_processing_activities%ROWTYPE;
+BEGIN
+  IF auth.uid() IS NULL OR NOT coalesce(public.is_super_admin(), false) THEN
+    RAISE EXCEPTION 'platform super-admin access is required for owner review'
+      USING ERRCODE = '42501';
+  END IF;
+  IF p_confirmed_real_values IS NULL THEN
+    RAISE EXCEPTION 'explicit owner confirmation is required'
+      USING ERRCODE = '22023';
+  END IF;
+  SELECT * INTO v_row
+    FROM public.ropa_processing_activities
+   WHERE id = p_id AND org_id IS NULL
+   FOR UPDATE;
+  IF v_row.id IS NULL OR v_row.owner_review_status = 'not_required' THEN
+    RAISE EXCEPTION 'platform processing activity is not reviewable'
+      USING ERRCODE = '42501';
+  END IF;
+  UPDATE public.ropa_processing_activities
+     SET owner_review_status = 'owner_reviewed',
+         is_synthetic = CASE WHEN p_confirmed_real_values THEN false ELSE is_synthetic END,
+         updated_by = auth.uid(),
+         updated_at = clock_timestamp()
+   WHERE id = v_row.id;
+  INSERT INTO public.privacy_register_audit_events
+    (org_id, record_kind, record_id, actor_user_id, action, details)
+  VALUES (
+    NULL, 'ropa', v_row.id, auth.uid(), 'ropa.owner_reviewed',
+    jsonb_build_object(
+      'confirmed_real_values', p_confirmed_real_values,
+      'was_synthetic', v_row.is_synthetic
+    )
+  );
+END
+$$;
+
 CREATE OR REPLACE FUNCTION public.privacy_dpia_save(
   p_id uuid,
   p_school uuid,
@@ -494,15 +539,15 @@ $$;
 
 REVOKE ALL ON FUNCTION public.privacy_register_snapshot(uuid),
   public.privacy_ropa_save(uuid,uuid,text,text,text,text[],text[],text[],text[],text,text),
+  public.privacy_ropa_owner_review(uuid,boolean),
   public.privacy_dpia_save(uuid,uuid,text,text,text[],text,text[],text),
   public.dpia_approve(uuid),
   public.privacy_register_export(uuid)
   FROM PUBLIC, anon, service_role;
 GRANT EXECUTE ON FUNCTION public.privacy_register_snapshot(uuid),
   public.privacy_ropa_save(uuid,uuid,text,text,text,text[],text[],text[],text[],text,text),
+  public.privacy_ropa_owner_review(uuid,boolean),
   public.privacy_dpia_save(uuid,uuid,text,text,text[],text,text[],text),
   public.dpia_approve(uuid),
   public.privacy_register_export(uuid)
   TO authenticated;
-
-COMMIT;
