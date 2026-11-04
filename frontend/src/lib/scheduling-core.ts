@@ -367,10 +367,10 @@ export interface SolverClassArm {
   learnerCount: number;
 }
 
-export interface SolverTeacher {
+export interface SolverInstructor {
   id: string;
   qualifiedSubjectIds: string[];
-  /** If omitted, the teacher may be considered for every period. */
+  /** If omitted, the instructor may be considered for every period. */
   availablePeriodIds?: string[];
   unavailablePeriodIds?: string[];
   preferredPeriodIds?: string[];
@@ -388,8 +388,8 @@ export interface SolverTeachingLoad {
   classArmId: string;
   subjectId: string;
   periodsPerWeek: number;
-  /** When supplied, restricts the qualified teachers considered. */
-  teacherIds?: string[];
+  /** When supplied, restricts the qualified instructors considered. */
+  instructorIds?: string[];
   requiredRoomType?: string;
   heavy?: boolean;
 }
@@ -398,25 +398,25 @@ export interface SolveWeeklyTimetableInput {
   seed: number | string;
   periods: SolverPeriod[];
   classArms: SolverClassArm[];
-  teachers: SolverTeacher[];
+  instructors: SolverInstructor[];
   rooms: SolverRoom[];
   teachingLoads: SolverTeachingLoad[];
 }
 
 export interface TimetablePlacement {
-  lessonId: string;
+  activityId: string;
   classArmId: string;
   subjectId: string;
   periodId: string;
-  teacherId: string;
+  instructorId: string;
   roomId: string;
   score: number;
   hardConstraints: string[];
   explanation: string[];
 }
 
-export interface UnplacedTimetableLesson {
-  lessonId: string;
+export interface UnplacedTimetableActivity {
+  activityId: string;
   classArmId: string;
   subjectId: string;
   explanation: string[];
@@ -424,22 +424,22 @@ export interface UnplacedTimetableLesson {
 
 export interface SolveWeeklyTimetableResult {
   seed: number | string;
-  requestedLessonCount: number;
+  requestedActivityCount: number;
   placements: TimetablePlacement[];
-  unplaced: UnplacedTimetableLesson[];
-  /** Mean placement score across all requested lessons; unplaced lessons score zero. */
+  unplaced: UnplacedTimetableActivity[];
+  /** Mean placement score across all requested activities; unplaced activities score zero. */
   qualityScore: number;
 }
 
-interface SolverLesson {
-  lessonId: string;
+interface SolverActivity {
+  activityId: string;
   classArmId: string;
   subjectId: string;
   sequence: number;
   periodsPerWeek: number;
   requiredRoomType?: string;
   heavy: boolean;
-  teachers: SolverTeacher[];
+  instructors: SolverInstructor[];
   rooms: SolverRoom[];
 }
 
@@ -475,7 +475,7 @@ function validateSolverInput(input: SolveWeeklyTimetableInput): void {
   }
   assertUniqueIds(input.periods, "Period");
   assertUniqueIds(input.classArms, "Class-arm");
-  assertUniqueIds(input.teachers, "Teacher");
+  assertUniqueIds(input.instructors, "Instructor");
   assertUniqueIds(input.rooms, "Room");
 
   const periodIds = new Set(input.periods.map((period) => period.id));
@@ -513,7 +513,7 @@ function validateSolverInput(input: SolveWeeklyTimetableInput): void {
   }
 
   const classArmIds = new Set(input.classArms.map((arm) => arm.id));
-  const teacherIds = new Set(input.teachers.map((teacher) => teacher.id));
+  const instructorIds = new Set(input.instructors.map((instructor) => instructor.id));
   const checkPeriodRefs = (ids: string[] | undefined, entityId: string): void => {
     for (const id of ids ?? []) {
       if (!periodIds.has(id)) throw new Error(`${entityId} references unknown period ${id}`);
@@ -524,10 +524,10 @@ function validateSolverInput(input: SolveWeeklyTimetableInput): void {
       throw new Error(`Class arm ${arm.id} has invalid learner count`);
     }
   }
-  for (const teacher of input.teachers) {
-    checkPeriodRefs(teacher.availablePeriodIds, `Teacher ${teacher.id}`);
-    checkPeriodRefs(teacher.unavailablePeriodIds, `Teacher ${teacher.id}`);
-    checkPeriodRefs(teacher.preferredPeriodIds, `Teacher ${teacher.id}`);
+  for (const instructor of input.instructors) {
+    checkPeriodRefs(instructor.availablePeriodIds, `Instructor ${instructor.id}`);
+    checkPeriodRefs(instructor.unavailablePeriodIds, `Instructor ${instructor.id}`);
+    checkPeriodRefs(instructor.preferredPeriodIds, `Instructor ${instructor.id}`);
   }
   for (const room of input.rooms) {
     if (room.type.trim() === "" || !Number.isFinite(room.capacity) || room.capacity <= 0) {
@@ -549,8 +549,8 @@ function validateSolverInput(input: SolveWeeklyTimetableInput): void {
     ) {
       throw new Error("Teaching loads require a subject and positive periods per week");
     }
-    if (load.teacherIds?.some((id) => !teacherIds.has(id))) {
-      throw new Error(`Teaching load for ${load.subjectId} references an unknown teacher`);
+    if (load.instructorIds?.some((id) => !instructorIds.has(id))) {
+      throw new Error(`Teaching load for ${load.subjectId} references an unknown instructor`);
     }
     const loadKey = JSON.stringify([load.classArmId, load.subjectId]);
     if (loadKeys.has(loadKey))
@@ -582,21 +582,21 @@ function getDailyGaps(periodNumbers: number[]): number {
 /**
  * Places weekly teaching loads without violating hard constraints. Candidate
  * ties use the supplied seed; soft preferences only influence which feasible
- * placement is selected. Every requested lesson is returned as either a
- * placement with its reasons or an unplaced lesson with the blocking reasons.
+ * placement is selected. Every requested activity is returned as either a
+ * placement with its reasons or an unplaced activity with the blocking reasons.
  */
 export function solveWeeklyTimetable(input: SolveWeeklyTimetableInput): SolveWeeklyTimetableResult {
   validateSolverInput(input);
 
   const armById = new Map(input.classArms.map((arm) => [arm.id, arm]));
-  const lessons: SolverLesson[] = [];
+  const activities: SolverActivity[] = [];
 
   for (const load of input.teachingLoads) {
-    const teachers = input.teachers
+    const instructors = input.instructors
       .filter(
-        (teacher) =>
-          teacher.qualifiedSubjectIds.includes(load.subjectId) &&
-          (load.teacherIds === undefined || load.teacherIds.includes(teacher.id)),
+        (instructor) =>
+          instructor.qualifiedSubjectIds.includes(load.subjectId) &&
+          (load.instructorIds === undefined || load.instructorIds.includes(instructor.id)),
       )
       .sort((a, b) => a.id.localeCompare(b.id));
     const requiredCapacity = armById.get(load.classArmId)?.learnerCount ?? 0;
@@ -609,61 +609,61 @@ export function solveWeeklyTimetable(input: SolveWeeklyTimetableInput): SolveWee
       .sort((a, b) => a.id.localeCompare(b.id));
 
     for (let sequence = 1; sequence <= load.periodsPerWeek; sequence += 1) {
-      lessons.push({
-        lessonId: JSON.stringify([load.classArmId, load.subjectId, sequence]),
+      activities.push({
+        activityId: JSON.stringify([load.classArmId, load.subjectId, sequence]),
         classArmId: load.classArmId,
         subjectId: load.subjectId,
         sequence,
         periodsPerWeek: load.periodsPerWeek,
         requiredRoomType: load.requiredRoomType,
         heavy: load.heavy ?? false,
-        teachers,
+        instructors,
         rooms,
       });
     }
   }
 
-  lessons.sort((a, b) => {
-    const aDomainSize = a.teachers.length * a.rooms.length * input.periods.length;
-    const bDomainSize = b.teachers.length * b.rooms.length * input.periods.length;
+  activities.sort((a, b) => {
+    const aDomainSize = a.instructors.length * a.rooms.length * input.periods.length;
+    const bDomainSize = b.instructors.length * b.rooms.length * input.periods.length;
     if (aDomainSize !== bDomainSize) return aDomainSize - bDomainSize;
     return (
-      hashSeededValue(input.seed, a.lessonId) - hashSeededValue(input.seed, b.lessonId) ||
-      a.lessonId.localeCompare(b.lessonId)
+      hashSeededValue(input.seed, a.activityId) - hashSeededValue(input.seed, b.activityId) ||
+      a.activityId.localeCompare(b.activityId)
     );
   });
 
   const classOccupancy = new Map<string, Set<string>>();
-  const teacherOccupancy = new Map<string, Set<string>>();
+  const instructorOccupancy = new Map<string, Set<string>>();
   const roomOccupancy = new Map<string, Set<string>>();
   const classPlacements = new Map<string, SolverPlacementState[]>();
-  const teacherPlacements = new Map<string, SolverPlacementState[]>();
+  const instructorPlacements = new Map<string, SolverPlacementState[]>();
   const placements: SolverPlacementState[] = [];
-  const unplaced: UnplacedTimetableLesson[] = [];
+  const unplaced: UnplacedTimetableActivity[] = [];
   const occupancyKey = (entityId: string, periodId: string): string =>
     JSON.stringify([entityId, periodId]);
 
-  for (const lesson of lessons) {
+  for (const activity of activities) {
     const reasons = new Set<string>();
     const orderedPeriods = [...input.periods].sort(
       (a, b) =>
-        hashSeededValue(input.seed, `${lesson.lessonId}:${a.id}`) -
-          hashSeededValue(input.seed, `${lesson.lessonId}:${b.id}`) || a.id.localeCompare(b.id),
+        hashSeededValue(input.seed, `${activity.activityId}:${a.id}`) -
+          hashSeededValue(input.seed, `${activity.activityId}:${b.id}`) || a.id.localeCompare(b.id),
     );
-    const orderedTeachers = [...lesson.teachers].sort(
+    const orderedInstructors = [...activity.instructors].sort(
       (a, b) =>
-        hashSeededValue(input.seed, `${lesson.lessonId}:${a.id}`) -
-          hashSeededValue(input.seed, `${lesson.lessonId}:${b.id}`) || a.id.localeCompare(b.id),
+        hashSeededValue(input.seed, `${activity.activityId}:${a.id}`) -
+          hashSeededValue(input.seed, `${activity.activityId}:${b.id}`) || a.id.localeCompare(b.id),
     );
-    const orderedRooms = [...lesson.rooms].sort(
+    const orderedRooms = [...activity.rooms].sort(
       (a, b) =>
-        hashSeededValue(input.seed, `${lesson.lessonId}:${a.id}`) -
-          hashSeededValue(input.seed, `${lesson.lessonId}:${b.id}`) || a.id.localeCompare(b.id),
+        hashSeededValue(input.seed, `${activity.activityId}:${a.id}`) -
+          hashSeededValue(input.seed, `${activity.activityId}:${b.id}`) || a.id.localeCompare(b.id),
     );
     let best:
       | {
           period: SolverPeriod;
-          teacher: SolverTeacher;
+          instructor: SolverInstructor;
           room: SolverRoom;
           penalty: number;
           tieBreak: number;
@@ -671,46 +671,50 @@ export function solveWeeklyTimetable(input: SolveWeeklyTimetableInput): SolveWee
         }
       | undefined;
 
-    if (lesson.teachers.length === 0) {
-      reasons.add(`No assigned and qualified teacher is available for ${lesson.subjectId}`);
+    if (activity.instructors.length === 0) {
+      reasons.add(`No assigned and qualified instructor is available for ${activity.subjectId}`);
     }
-    if (lesson.rooms.length === 0) {
+    if (activity.rooms.length === 0) {
       reasons.add(
-        `No room meets the capacity${lesson.requiredRoomType ? ` and type (${lesson.requiredRoomType})` : ""} requirement`,
+        `No room meets the capacity${activity.requiredRoomType ? ` and type (${activity.requiredRoomType})` : ""} requirement`,
       );
     }
 
     periodCandidates: for (const period of orderedPeriods) {
-      if (classOccupancy.get(lesson.classArmId)?.has(period.id)) {
+      if (classOccupancy.get(activity.classArmId)?.has(period.id)) {
         reasons.add("The class arm is already scheduled in every remaining feasible period");
         continue;
       }
-      const availableTeachers = orderedTeachers.filter((teacher) =>
-        isPeriodAvailable(period.id, teacher.availablePeriodIds, teacher.unavailablePeriodIds),
+      const availableInstructors = orderedInstructors.filter((instructor) =>
+        isPeriodAvailable(
+          period.id,
+          instructor.availablePeriodIds,
+          instructor.unavailablePeriodIds,
+        ),
       );
-      if (availableTeachers.length === 0 && lesson.teachers.length > 0) {
-        reasons.add("Qualified teachers are unavailable during the remaining periods");
+      if (availableInstructors.length === 0 && activity.instructors.length > 0) {
+        reasons.add("Qualified instructors are unavailable during the remaining periods");
         continue;
       }
       const availableRooms = orderedRooms.filter((room) =>
         isPeriodAvailable(period.id, room.availablePeriodIds, room.unavailablePeriodIds),
       );
-      if (availableRooms.length === 0 && lesson.rooms.length > 0) {
+      if (availableRooms.length === 0 && activity.rooms.length > 0) {
         reasons.add("Suitable rooms are unavailable during the remaining periods");
         continue;
       }
 
-      for (const teacher of availableTeachers) {
-        if (teacherOccupancy.get(occupancyKey(teacher.id, period.id))?.has(period.id)) {
-          reasons.add("Qualified teachers are already scheduled during the remaining periods");
+      for (const instructor of availableInstructors) {
+        if (instructorOccupancy.get(occupancyKey(instructor.id, period.id))?.has(period.id)) {
+          reasons.add("Qualified instructors are already scheduled during the remaining periods");
           continue;
         }
-        const previousClass = classPlacements.get(lesson.classArmId) ?? [];
+        const previousClass = classPlacements.get(activity.classArmId) ?? [];
         const sameSubjectToday = previousClass.filter(
           (placement) =>
-            placement.subjectId === lesson.subjectId && placement.dayOfWeek === period.dayOfWeek,
+            placement.subjectId === activity.subjectId && placement.dayOfWeek === period.dayOfWeek,
         ).length;
-        const adjacentHeavy = lesson.heavy
+        const adjacentHeavy = activity.heavy
           ? previousClass.some(
               (placement) =>
                 placement.heavy &&
@@ -718,15 +722,15 @@ export function solveWeeklyTimetable(input: SolveWeeklyTimetableInput): SolveWee
                 Math.abs(placement.periodNumber - period.periodNumber) === 1,
             )
           : false;
-        const priorTeacherDay = (teacherPlacements.get(teacher.id) ?? [])
+        const priorInstructorDay = (instructorPlacements.get(instructor.id) ?? [])
           .filter((placement) => placement.dayOfWeek === period.dayOfWeek)
           .map((placement) => placement.periodNumber);
-        const gapsBefore = getDailyGaps(priorTeacherDay);
-        const gapsAfter = getDailyGaps([...priorTeacherDay, period.periodNumber]);
+        const gapsBefore = getDailyGaps(priorInstructorDay);
+        const gapsAfter = getDailyGaps([...priorInstructorDay, period.periodNumber]);
         const newGaps = Math.max(0, gapsAfter - gapsBefore);
-        const hasPreference = (teacher.preferredPeriodIds?.length ?? 0) > 0;
+        const hasPreference = (instructor.preferredPeriodIds?.length ?? 0) > 0;
         const preferred =
-          !hasPreference || teacher.preferredPeriodIds?.includes(period.id) === true;
+          !hasPreference || instructor.preferredPeriodIds?.includes(period.id) === true;
         const penalty =
           sameSubjectToday * 20 +
           (adjacentHeavy ? 12 : 0) +
@@ -741,12 +745,12 @@ export function solveWeeklyTimetable(input: SolveWeeklyTimetableInput): SolveWee
             : "Avoids a back-to-back heavy-subject placement",
           hasPreference
             ? preferred
-              ? "Matches the teacher's preferred period"
-              : "Uses a non-preferred teacher period (soft penalty 8)"
-            : "No teacher period preference was supplied",
+              ? "Matches the instructor's preferred period"
+              : "Uses a non-preferred instructor period (soft penalty 8)"
+            : "No instructor period preference was supplied",
           newGaps > 0
-            ? `Adds ${newGaps} teacher free gap(s) (soft penalty ${newGaps * 3})`
-            : "Does not add a teacher free gap",
+            ? `Adds ${newGaps} instructor free gap(s) (soft penalty ${newGaps * 3})`
+            : "Does not add an instructor free gap",
         ];
         for (const room of availableRooms) {
           if (roomOccupancy.get(occupancyKey(room.id, period.id))?.has(period.id)) {
@@ -757,14 +761,14 @@ export function solveWeeklyTimetable(input: SolveWeeklyTimetableInput): SolveWee
           const tieBreak =
             hashSeededValue(
               input.seed,
-              `${lesson.lessonId}\u0000${period.id}\u0000${teacher.id}\u0000${room.id}`,
+              `${activity.activityId}\u0000${period.id}\u0000${instructor.id}\u0000${room.id}`,
             ) / 0x1_0000_0000;
           if (
             best === undefined ||
             penalty < best.penalty ||
             (penalty === best.penalty && tieBreak < best.tieBreak)
           ) {
-            best = { period, teacher, room, penalty, tieBreak, explanation };
+            best = { period, instructor, room, penalty, tieBreak, explanation };
             if (penalty === 0) break periodCandidates;
           }
         }
@@ -773,64 +777,64 @@ export function solveWeeklyTimetable(input: SolveWeeklyTimetableInput): SolveWee
 
     if (best === undefined) {
       if (reasons.size === 0)
-        reasons.add("No feasible period, teacher, and room combination remains");
+        reasons.add("No feasible period, instructor, and room combination remains");
       unplaced.push({
-        lessonId: lesson.lessonId,
-        classArmId: lesson.classArmId,
-        subjectId: lesson.subjectId,
+        activityId: activity.activityId,
+        classArmId: activity.classArmId,
+        subjectId: activity.subjectId,
         explanation: [...reasons],
       });
       continue;
     }
 
     const placement: SolverPlacementState = {
-      lessonId: lesson.lessonId,
-      classArmId: lesson.classArmId,
-      subjectId: lesson.subjectId,
+      activityId: activity.activityId,
+      classArmId: activity.classArmId,
+      subjectId: activity.subjectId,
       periodId: best.period.id,
-      teacherId: best.teacher.id,
+      instructorId: best.instructor.id,
       roomId: best.room.id,
       score: Math.max(0, 100 - best.penalty),
       hardConstraints: [
-        "Teacher is qualified and available",
-        "Class arm, teacher, and room are not double-booked",
+        "Instructor is qualified and available",
+        "Class arm, instructor, and room are not double-booked",
         "Room meets the required capacity and type",
       ],
       explanation: [
-        `Placed lesson ${lesson.sequence} of ${lesson.periodsPerWeek} requested periods per week`,
+        `Placed activity ${activity.sequence} of ${activity.periodsPerWeek} requested periods per week`,
         ...best.explanation,
       ],
       dayOfWeek: best.period.dayOfWeek,
       periodNumber: best.period.periodNumber,
-      heavy: lesson.heavy,
+      heavy: activity.heavy,
     };
     placements.push(placement);
     for (const [occupancy, key] of [
-      [classOccupancy, lesson.classArmId],
-      [teacherOccupancy, occupancyKey(best.teacher.id, best.period.id)],
+      [classOccupancy, activity.classArmId],
+      [instructorOccupancy, occupancyKey(best.instructor.id, best.period.id)],
       [roomOccupancy, occupancyKey(best.room.id, best.period.id)],
     ] as const) {
       const periods = occupancy.get(key) ?? new Set<string>();
       periods.add(best.period.id);
       occupancy.set(key, periods);
     }
-    classPlacements.set(lesson.classArmId, [
-      ...(classPlacements.get(lesson.classArmId) ?? []),
+    classPlacements.set(activity.classArmId, [
+      ...(classPlacements.get(activity.classArmId) ?? []),
       placement,
     ]);
-    teacherPlacements.set(best.teacher.id, [
-      ...(teacherPlacements.get(best.teacher.id) ?? []),
+    instructorPlacements.set(best.instructor.id, [
+      ...(instructorPlacements.get(best.instructor.id) ?? []),
       placement,
     ]);
   }
 
-  const requestedLessonCount = lessons.length;
+  const requestedActivityCount = activities.length;
   const qualityScore =
-    requestedLessonCount === 0
+    requestedActivityCount === 0
       ? 100
       : Math.round(
           (placements.reduce((total, placement) => total + placement.score, 0) /
-            requestedLessonCount) *
+            requestedActivityCount) *
             100,
         ) / 100;
   const orderByPeriod = (a: SolverPlacementState, b: SolverPlacementState): number =>
@@ -841,14 +845,14 @@ export function solveWeeklyTimetable(input: SolveWeeklyTimetableInput): SolveWee
 
   return {
     seed: input.seed,
-    requestedLessonCount,
+    requestedActivityCount,
     placements: placements
       .sort(orderByPeriod)
       .map(
         ({ dayOfWeek: _dayOfWeek, periodNumber: _periodNumber, heavy: _heavy, ...placement }) =>
           placement,
       ),
-    unplaced: unplaced.sort((a, b) => a.lessonId.localeCompare(b.lessonId)),
+    unplaced: unplaced.sort((a, b) => a.activityId.localeCompare(b.activityId)),
     qualityScore,
   };
 }
