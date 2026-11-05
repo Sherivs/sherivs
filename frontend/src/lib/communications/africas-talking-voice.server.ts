@@ -369,7 +369,7 @@ function voiceEventProviderRef(session: VoiceSession, suffix: string): string {
     .digest("hex")}`;
 }
 
-function createPostgresChainStore(db: VoiceCallbackDatabase): ChainStore {
+export function createPostgresChainStore(db: VoiceCallbackDatabase): ChainStore {
   const columns =
     "org_id,seq,at,actor_kind,actor_id,action,target_type,target_id,ip,device,before_hash,after_hash,prev_hash,entry_hash";
   const fromRow = (row: unknown): ChainEntry => {

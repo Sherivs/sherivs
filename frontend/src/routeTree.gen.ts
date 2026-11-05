@@ -128,6 +128,7 @@ import { Route as ApiPublicCronWalletTopupReconcileRouteImport } from './routes/
 import { Route as ApiPublicCronWhatsappN8nForwardRouteImport } from './routes/api/public/cron/whatsapp-n8n-forward'
 import { Route as ApiPublicWebhooksAfricasTalkingVoiceRouteImport } from './routes/api/public/webhooks/africas-talking-voice'
 import { Route as ApiPublicWebhooksPaystackRouteImport } from './routes/api/public/webhooks/paystack'
+import { Route as ApiPublicWebhooksResendRouteImport } from './routes/api/public/webhooks/resend'
 import { Route as ApiPublicWebhooksUssdRouteImport } from './routes/api/public/webhooks/ussd'
 import { Route as ApiPublicWebhooksWhatsappRouteImport } from './routes/api/public/webhooks/whatsapp'
 import { Route as ApiPublicWebhooksWhatsappReplyRouteImport } from './routes/api/public/webhooks/whatsapp-reply'
@@ -742,6 +743,11 @@ const ApiPublicWebhooksPaystackRoute =
     path: '/api/public/webhooks/paystack',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicWebhooksResendRoute = ApiPublicWebhooksResendRouteImport.update({
+  id: '/api/public/webhooks/resend',
+  path: '/api/public/webhooks/resend',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicWebhooksUssdRoute = ApiPublicWebhooksUssdRouteImport.update({
   id: '/api/public/webhooks/ussd',
   path: '/api/public/webhooks/ussd',
@@ -885,6 +891,7 @@ export interface FileRoutesByFullPath {
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
+  '/api/public/webhooks/resend': typeof ApiPublicWebhooksResendRoute
   '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
   '/api/public/webhooks/whatsapp': typeof ApiPublicWebhooksWhatsappRoute
   '/api/public/webhooks/whatsapp-reply': typeof ApiPublicWebhooksWhatsappReplyRoute
@@ -997,6 +1004,7 @@ export interface FileRoutesByTo {
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
+  '/api/public/webhooks/resend': typeof ApiPublicWebhooksResendRoute
   '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
   '/api/public/webhooks/whatsapp': typeof ApiPublicWebhooksWhatsappRoute
   '/api/public/webhooks/whatsapp-reply': typeof ApiPublicWebhooksWhatsappReplyRoute
@@ -1123,6 +1131,7 @@ export interface FileRoutesById {
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
+  '/api/public/webhooks/resend': typeof ApiPublicWebhooksResendRoute
   '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
   '/api/public/webhooks/whatsapp': typeof ApiPublicWebhooksWhatsappRoute
   '/api/public/webhooks/whatsapp-reply': typeof ApiPublicWebhooksWhatsappReplyRoute
@@ -1249,6 +1258,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/webhooks/africas-talking-voice'
     | '/api/public/webhooks/paystack'
+    | '/api/public/webhooks/resend'
     | '/api/public/webhooks/ussd'
     | '/api/public/webhooks/whatsapp'
     | '/api/public/webhooks/whatsapp-reply'
@@ -1361,6 +1371,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/webhooks/africas-talking-voice'
     | '/api/public/webhooks/paystack'
+    | '/api/public/webhooks/resend'
     | '/api/public/webhooks/ussd'
     | '/api/public/webhooks/whatsapp'
     | '/api/public/webhooks/whatsapp-reply'
@@ -1486,6 +1497,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/webhooks/africas-talking-voice'
     | '/api/public/webhooks/paystack'
+    | '/api/public/webhooks/resend'
     | '/api/public/webhooks/ussd'
     | '/api/public/webhooks/whatsapp'
     | '/api/public/webhooks/whatsapp-reply'
@@ -1521,6 +1533,7 @@ export interface RootRouteChildren {
   ApiPublicCronWhatsappN8nForwardRoute: typeof ApiPublicCronWhatsappN8nForwardRoute
   ApiPublicWebhooksAfricasTalkingVoiceRoute: typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
   ApiPublicWebhooksPaystackRoute: typeof ApiPublicWebhooksPaystackRoute
+  ApiPublicWebhooksResendRoute: typeof ApiPublicWebhooksResendRoute
   ApiPublicWebhooksUssdRoute: typeof ApiPublicWebhooksUssdRoute
   ApiPublicWebhooksWhatsappRoute: typeof ApiPublicWebhooksWhatsappRoute
   ApiPublicWebhooksWhatsappReplyRoute: typeof ApiPublicWebhooksWhatsappReplyRoute
@@ -2362,6 +2375,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWebhooksPaystackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/webhooks/resend': {
+      id: '/api/public/webhooks/resend'
+      path: '/api/public/webhooks/resend'
+      fullPath: '/api/public/webhooks/resend'
+      preLoaderRoute: typeof ApiPublicWebhooksResendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/webhooks/ussd': {
       id: '/api/public/webhooks/ussd'
       path: '/api/public/webhooks/ussd'
@@ -2740,6 +2760,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicWebhooksAfricasTalkingVoiceRoute:
     ApiPublicWebhooksAfricasTalkingVoiceRoute,
   ApiPublicWebhooksPaystackRoute: ApiPublicWebhooksPaystackRoute,
+  ApiPublicWebhooksResendRoute: ApiPublicWebhooksResendRoute,
   ApiPublicWebhooksUssdRoute: ApiPublicWebhooksUssdRoute,
   ApiPublicWebhooksWhatsappRoute: ApiPublicWebhooksWhatsappRoute,
   ApiPublicWebhooksWhatsappReplyRoute: ApiPublicWebhooksWhatsappReplyRoute,

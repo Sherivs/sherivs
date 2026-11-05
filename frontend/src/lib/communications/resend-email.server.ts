@@ -193,6 +193,8 @@ export function createResendEmailAdapter(config: ResendEmailConfig, evidence: De
           headers: {
             Authorization: `Bearer ${config.apiKey as string}`,
             "Content-Type": "application/json",
+            // Provider-side dedupe so a worker retry never double-sends.
+            "Idempotency-Key": command.notification.id,
           },
           body: JSON.stringify(parsedPayload.data),
         });
