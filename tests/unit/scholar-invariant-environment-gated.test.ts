@@ -296,12 +296,13 @@ void defineFamilySuite;
 
 /* ───────────────────────────────────────────────────────────────────────────
  * Part 2 — the coverage ledger: the five M-R-121 T2 suites partition the
- * 26 Scholar server-function families exhaustively.
+ * 27 Scholar server-function families exhaustively.
  * ─────────────────────────────────────────────────────────────────────────*/
 
 const SUITE_PARTITION: Readonly<Record<string, readonly string[]>> = {
   "scholar-invariant-tenant-gated.test.ts": [
     "attendance.functions.ts",
+    "asc-export.functions.ts",
     "digital-twin.functions.ts",
     "facilities.functions.ts",
     "notification-digest.functions.ts",
@@ -346,7 +347,6 @@ describe("§27 invariant coverage ledger — Scholar server-function families", 
   it("all 27 families exist on disk and are partitioned exactly once across the five suites", () => {
     expect(onDisk).toHaveLength(27);
     const covered = Object.values(SUITE_PARTITION).flat();
-    expect(onDisk).toHaveLength(27);
     expect(covered).toHaveLength(27);
     expect(new Set(covered).size, "no family may be covered twice").toBe(27);
     expect([...covered].sort()).toEqual(onDisk);

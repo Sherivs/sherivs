@@ -504,6 +504,23 @@ defineFamilySuite({
 });
 
 defineFamilySuite({
+  family: "asc-export.functions.ts",
+  auditDeclaration: "fail-closed export audit",
+  functions: [
+    {
+      fn: "exportAscFile",
+      method: "POST",
+      input: "zod",
+      gate: "school-admin",
+      audit: "explicit-event",
+      auditMarkers: [/\.from\("students"\)/, /writeAuditRecord\(/],
+      extra: [/scholar_can/, /manifest_revision/, /count: "exact"/],
+      note: "export is authorized by the tenant role gate and academic-report permission, then fail-closed audited",
+    },
+  ],
+});
+
+defineFamilySuite({
   family: "staff-privilege.functions.ts",
   functions: [
     {
