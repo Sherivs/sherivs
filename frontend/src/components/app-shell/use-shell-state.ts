@@ -13,7 +13,7 @@ import {
   composeSidePanel,
   toShellNavItem,
 } from "@/lib/shell/chrome";
-import { primarySections } from "@/components/workspaces/workspace-shell";
+import { primarySections, visibleWorkspaceWidgets } from "@/components/workspaces/workspace-shell";
 import { compactPersonName } from "@/lib/shell/display-name";
 import { createOfflineStore } from "@/lib/offline/indexeddb-store";
 import {
@@ -192,7 +192,7 @@ export function useShellState() {
       role: profile.role,
     });
 
-    const keys = manifest.widgets.map((item) => item.key);
+    const keys = visibleWorkspaceWidgets(manifest, prefs.hidden).map((item) => item.key);
     if (!keys.length) {
       setCards({});
       setScopeLabels({});
@@ -240,7 +240,7 @@ export function useShellState() {
       active = false;
       window.removeEventListener("online", loadCards);
     };
-  }, [app.profile, app.school?.id, manifest, scopeFocus]);
+  }, [app.profile, app.school?.id, manifest, prefs.hidden, scopeFocus]);
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 30_000);
@@ -299,14 +299,14 @@ export function useShellState() {
   const home = useMemo(
     () =>
       composeHomeSections({
-        widgets: rankedManifest?.widgets,
+        widgets: rankedManifest ? visibleWorkspaceWidgets(rankedManifest, prefs.hidden) : undefined,
         actions: rankedManifest?.actions,
         inbox: rankedManifest?.inbox,
         nav: rankedManifest?.nav,
         available: rankedManifest?.available,
         usage,
       }),
-    [rankedManifest, usage],
+    [rankedManifest, prefs.hidden, usage],
   );
   const drawer = useMemo(
     () =>
