@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteView } from "@/components/website/site-view";
-import { parseSiteSearch, siteHead } from "@/components/website/route-support";
+import { parseSiteSearch } from "@/components/website/site-search";
 import { getPublicSite } from "@/lib/website/public-site.functions";
 import { SherivsHome } from "@/components/public/sherivs-home";
 import { ApplicationUnavailable } from "@/components/public/application-unavailable";
@@ -90,6 +90,14 @@ export const Route = createFileRoute("/")({
     }
     // Organization website (custom domain, <slug>.sherivs.com, or ?school= preview on the platform host).
     const res = await getPublicSite(deps.school);
+    const jsonLd = res.site
+      ? (await import("@/components/website/route-support")).siteHead(
+          res.site,
+          "home",
+          deps.lang,
+          res.preview,
+        ).jsonLd
+      : undefined;
     return {
       hostname,
       hostKind,
@@ -101,10 +109,11 @@ export const Route = createFileRoute("/")({
       preview: res.preview,
       tenant: res.tenant,
       lang: deps.lang,
+      jsonLd,
     };
   },
   component: Index,
-  head: ({ loaderData }) => {
+  head: async ({ loaderData }) => {
     if (loaderData?.appEntry) {
       return {
         meta: [
@@ -131,6 +140,7 @@ export const Route = createFileRoute("/")({
       };
     }
     if (loaderData?.site) {
+      const { siteHead } = await import("@/components/website/route-support");
       const h = siteHead(loaderData.site, "home", loaderData.lang, loaderData.preview);
       return { meta: h.meta, links: h.links };
     }
@@ -187,14 +197,13 @@ function Index() {
 
   // Organization website: server-rendered from the published document (or generated from live data).
   if (data.site) {
-    const h = siteHead(data.site, "home", data.lang, data.preview);
     return (
       <SiteView
         site={data.site}
         slug="home"
         lang={data.lang}
         preview={data.preview}
-        jsonLd={h.jsonLd}
+        jsonLd={data.jsonLd}
       />
     );
   }

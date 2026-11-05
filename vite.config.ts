@@ -38,6 +38,17 @@ export default defineConfig({
             // nitro/vite builds from this
             srcDirectory: "./frontend/src",
             server: { entry: "server" },
+            router: {
+              codeSplittingOptions: {
+                defaultBehavior: [
+                  ["loader"],
+                  ["component"],
+                  ["pendingComponent"],
+                  ["errorComponent"],
+                  ["notFoundComponent"],
+                ],
+              },
+            },
             // Fail the build if client bundles import server-only modules
             // (e.g. the service-role Supabase client) or the `server-only` specifier.
             importProtection: {

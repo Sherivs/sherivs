@@ -13,6 +13,22 @@ export const WIDGET_REGISTRY: readonly CatalogItem[] = CATALOG.filter(
   (item) => item.kind === "widget",
 );
 
+export function visibleWorkspaceWidgets(
+  manifest: WorkspaceManifest,
+  hiddenKeys: readonly string[] = [],
+): WorkspaceManifestItem[] {
+  const hidden = new Set(hiddenKeys);
+  const widgets = uniqueCatalogItems(manifest.widgets.filter((item) => !hidden.has(item.key)));
+  if (widgets.length >= 3) return widgets;
+
+  for (const item of manifest.available) {
+    if (item.kind !== "widget" || hidden.has(item.key) || widgets.length >= 3) continue;
+    const next = uniqueCatalogItems([...widgets, item]);
+    if (next.length > widgets.length) widgets.push(item);
+  }
+  return widgets;
+}
+
 export function primarySections(manifest: WorkspaceManifest): WorkspaceManifestItem[] {
   return uniqueCatalogItems(
     [...manifest.widgets, ...manifest.nav, ...manifest.actions, ...manifest.inbox].filter(

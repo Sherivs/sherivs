@@ -6,7 +6,7 @@
  * environment gate (ALLOW_DEMO_PROVISIONING, default OFF in every
  * environment). The suite pins that gate and records the gap honestly.
  *
- * Part 2 — the coverage ledger: all 26 Scholar server-function families are
+ * Part 2 — the coverage ledger: all 27 Scholar server-function families are
  * partitioned across exactly the five M-R-121 T2 §27 invariant suites, so a
  * new family cannot silently escape the invariant regime.
  */
@@ -296,12 +296,13 @@ void defineFamilySuite;
 
 /* ───────────────────────────────────────────────────────────────────────────
  * Part 2 — the coverage ledger: the five M-R-121 T2 suites partition the
- * 26 Scholar server-function families exhaustively.
+ * 27 Scholar server-function families exhaustively.
  * ─────────────────────────────────────────────────────────────────────────*/
 
 const SUITE_PARTITION: Readonly<Record<string, readonly string[]>> = {
   "scholar-invariant-tenant-gated.test.ts": [
     "attendance.functions.ts",
+    "asc-export.functions.ts",
     "digital-twin.functions.ts",
     "facilities.functions.ts",
     "notification-digest.functions.ts",
@@ -342,11 +343,11 @@ describe("§27 invariant coverage ledger — Scholar server-function families", 
     .filter((f) => f.endsWith(".functions.ts"))
     .sort();
 
-  it("all 26 families exist on disk and are partitioned exactly once across the five suites", () => {
-    expect(onDisk).toHaveLength(26);
+  it("all 27 families exist on disk and are partitioned exactly once across the five suites", () => {
+    expect(onDisk).toHaveLength(27);
     const covered = Object.values(SUITE_PARTITION).flat();
-    expect(covered).toHaveLength(26);
-    expect(new Set(covered).size, "no family may be covered twice").toBe(26);
+    expect(covered).toHaveLength(27);
+    expect(new Set(covered).size, "no family may be covered twice").toBe(27);
     expect([...covered].sort()).toEqual(onDisk);
     for (const suite of Object.keys(SUITE_PARTITION)) {
       expect(() => readFileSync(join(ROOT, "tests/unit", suite), "utf8"), suite).not.toThrow();

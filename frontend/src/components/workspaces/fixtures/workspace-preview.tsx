@@ -8,6 +8,7 @@ import {
 import {
   additionalResponsibilities,
   primarySections,
+  visibleWorkspaceWidgets,
   workspaceResponsibilityIcon,
 } from "../workspace-shell";
 import { ConnectionStatus } from "@/components/app-shell/connection-status";
@@ -24,6 +25,7 @@ export function WorkspaceFixturePreview() {
   const manifest = DEMO_WORKSPACE_MANIFESTS[roleKey];
   const primary = primarySections(manifest);
   const addOns = additionalResponsibilities(manifest, primary);
+  const widgets = visibleWorkspaceWidgets(manifest);
   const permittedItems = [
     ...manifest.nav,
     ...manifest.widgets,
@@ -152,7 +154,7 @@ export function WorkspaceFixturePreview() {
           <section aria-labelledby="workspace-preview-widgets">
             <h2 id="workspace-preview-widgets">Daily activity</h2>
             <div className="app-shell-widgets">
-              {manifest.widgets.map((item) => (
+              {widgets.map((item) => (
                 <article key={item.key} className="app-shell-widget">
                   <strong>{item.label}</strong>
                   <span>Demo preview — no live records</span>
