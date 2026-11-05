@@ -57,21 +57,26 @@ export function validateAnswer(q: DiscoveryQuestion, a: DiscoveryAnswer): Questi
       else issues.push(...validateValue(q, a.value as AnswerValue));
       break;
     case "inferred":
-      if (a.source === "human") bad("inferred_not_human", "a human answer is confirmed, not inferred");
+      if (a.source === "human")
+        bad("inferred_not_human", "a human answer is confirmed, not inferred");
       if (!hasValue(a.value)) bad("inferred_requires_value", "inferred answer has no value");
       else issues.push(...validateValue(q, a.value as AnswerValue));
       break;
     case "conflicting":
-      if (!a.candidates || a.candidates.length < 2) bad("conflict_requires_candidates", "needs >= 2 candidates");
-      if (hasValue(a.value)) bad("conflict_has_no_value", "a conflicting answer carries no resolved value");
+      if (!a.candidates || a.candidates.length < 2)
+        bad("conflict_requires_candidates", "needs >= 2 candidates");
+      if (hasValue(a.value))
+        bad("conflict_has_no_value", "a conflicting answer carries no resolved value");
       break;
     case "unknown":
     case "pending":
       if (hasValue(a.value)) bad("state_has_no_value", `${a.state} answer must not carry a value`);
       break;
     case "not_applicable":
-      if (!q.allowNotApplicable) bad("not_applicable_forbidden", "question does not permit not_applicable");
-      if (hasValue(a.value)) bad("state_has_no_value", "not_applicable answer must not carry a value");
+      if (!q.allowNotApplicable)
+        bad("not_applicable_forbidden", "question does not permit not_applicable");
+      if (hasValue(a.value))
+        bad("state_has_no_value", "not_applicable answer must not carry a value");
       break;
     default:
       bad("unknown_state", String(a.state));
@@ -88,41 +93,51 @@ export function validateValue(q: DiscoveryQuestion, v: AnswerValue): QuestionIss
       if (typeof v !== "boolean") bad("type_mismatch", "expected boolean");
       break;
     case "number":
-      if (typeof v !== "number" || !Number.isFinite(v)) bad("type_mismatch", "expected finite number");
+      if (typeof v !== "number" || !Number.isFinite(v))
+        bad("type_mismatch", "expected finite number");
       else {
         if (val.min !== undefined && v < val.min) bad("below_min", `${v} < ${val.min}`);
         if (val.max !== undefined && v > val.max) bad("above_max", `${v} > ${val.max}`);
       }
       break;
     case "single":
-      if (typeof v !== "string" || (val.options && !val.options.includes(v))) bad("invalid_option", String(v));
+      if (typeof v !== "string" || (val.options && !val.options.includes(v)))
+        bad("invalid_option", String(v));
       break;
     case "multi":
       if (!Array.isArray(v)) bad("type_mismatch", "expected array");
       else {
         const arr = v as readonly string[];
-        if (val.options && arr.some((x) => !val.options!.includes(x))) bad("invalid_option", arr.join(","));
-        if (val.minItems !== undefined && arr.length < val.minItems) bad("too_few_items", String(arr.length));
-        if (val.maxItems !== undefined && arr.length > val.maxItems) bad("too_many_items", String(arr.length));
+        if (val.options && arr.some((x) => !val.options!.includes(x)))
+          bad("invalid_option", arr.join(","));
+        if (val.minItems !== undefined && arr.length < val.minItems)
+          bad("too_few_items", String(arr.length));
+        if (val.maxItems !== undefined && arr.length > val.maxItems)
+          bad("too_many_items", String(arr.length));
       }
       break;
     case "date":
-      if (typeof v !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(v) || Number.isNaN(Date.parse(v))) bad("invalid_date", String(v));
+      if (typeof v !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(v) || Number.isNaN(Date.parse(v)))
+        bad("invalid_date", String(v));
       break;
     case "time":
-      if (typeof v !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(v)) bad("invalid_time", String(v));
+      if (typeof v !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(v))
+        bad("invalid_time", String(v));
       break;
     case "repeating_group":
     case "hierarchy":
       if (!Array.isArray(v)) bad("type_mismatch", "expected array");
       else {
-        if (val.minItems !== undefined && v.length < val.minItems) bad("too_few_items", String(v.length));
-        if (val.maxItems !== undefined && v.length > val.maxItems) bad("too_many_items", String(v.length));
+        if (val.minItems !== undefined && v.length < val.minItems)
+          bad("too_few_items", String(v.length));
+        if (val.maxItems !== undefined && v.length > val.maxItems)
+          bad("too_many_items", String(v.length));
       }
       break;
     default:
       if (typeof v !== "string") bad("type_mismatch", "expected string");
-      else if (val.maxLength !== undefined && v.length > val.maxLength) bad("too_long", String(v.length));
+      else if (val.maxLength !== undefined && v.length > val.maxLength)
+        bad("too_long", String(v.length));
   }
   return issues;
 }

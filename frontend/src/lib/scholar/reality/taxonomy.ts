@@ -85,7 +85,12 @@ const e = (id: string, domain: RealityDomain, label: string, owner: string): Ent
 });
 
 export const ENTITY_TYPES: readonly EntityTypeDef[] = [
-  e("tenant", "identity", "Tenant (neutral organization key)", "frontend/src/lib/scholar/platform-org"),
+  e(
+    "tenant",
+    "identity",
+    "Tenant (neutral organization key)",
+    "frontend/src/lib/scholar/platform-org",
+  ),
   e("group", "org_topology", "Group", "frontend/src/lib/scholar/platform-org"),
   e("institution", "org_topology", "Institution", "frontend/src/lib/scholar/platform-org"),
   e("campus", "org_topology", "Campus", "frontend/src/lib/scholar/structure-graph.ts"),
@@ -98,16 +103,41 @@ export const ENTITY_TYPES: readonly EntityTypeDef[] = [
   e("section", "academic_topology", "Section / arm", "frontend/src/lib/scholar/class.ts"),
   e("stream", "academic_topology", "Stream", "frontend/src/lib/scholar/class-flexibility.ts"),
   e("calendar", "temporal", "Academic calendar", "frontend/src/lib/scholar/calendar.ts"),
-  e("academic_period", "temporal", "Academic period", "frontend/src/lib/scholar/academic-period.ts"),
+  e(
+    "academic_period",
+    "temporal",
+    "Academic period",
+    "frontend/src/lib/scholar/academic-period.ts",
+  ),
   e("shift", "temporal", "Shift", "frontend/src/lib/scholar/calendar.ts"),
   e("position", "human", "Position", "frontend/src/lib/scholar/roles/index.ts"),
   e("person", "human", "Person (identity-bound)", "frontend/src/lib/scholar/platform-org"),
-  e("teaching_assignment", "teaching_assignments", "Teaching assignment", "frontend/src/lib/scholar/assignment.ts"),
-  e("assessment_scheme", "assessment_grading", "Assessment scheme", "frontend/src/lib/scholar/assessment-model.ts"),
+  e(
+    "teaching_assignment",
+    "teaching_assignments",
+    "Teaching assignment",
+    "frontend/src/lib/scholar/assignment.ts",
+  ),
+  e(
+    "assessment_scheme",
+    "assessment_grading",
+    "Assessment scheme",
+    "frontend/src/lib/scholar/assessment-model.ts",
+  ),
   e("grading_scale", "assessment_grading", "Grading scale", "frontend/src/lib/scholar/grading.ts"),
   e("fee_structure", "finance", "Fee structure", "frontend/src/lib/scholar/billing"),
-  e("boarding_unit", "operations", "Boarding / hostel unit", "frontend/src/lib/scholar/boarding.ts"),
-  e("external_body", "governance_external", "External regulatory / examination body", "frontend/src/lib/scholar/examination.ts"),
+  e(
+    "boarding_unit",
+    "operations",
+    "Boarding / hostel unit",
+    "frontend/src/lib/scholar/boarding.ts",
+  ),
+  e(
+    "external_body",
+    "governance_external",
+    "External regulatory / examination body",
+    "frontend/src/lib/scholar/examination.ts",
+  ),
 ];
 
 export interface RelationshipTypeDef {
@@ -128,7 +158,12 @@ const r = (
 ): RelationshipTypeDef => ({ id, from, to, label, temporal });
 
 export const RELATIONSHIP_TYPES: readonly RelationshipTypeDef[] = [
-  r("contains", ["tenant", "group", "institution", "campus", "premises", "building"], ["group", "institution", "campus", "premises", "building", "room"], "contains"),
+  r(
+    "contains",
+    ["tenant", "group", "institution", "campus", "premises", "building"],
+    ["group", "institution", "campus", "premises", "building", "room"],
+    "contains",
+  ),
   r("offers", ["institution", "campus"], ["stage", "programme"], "offers"),
   r("has_level", ["stage", "programme"], ["level"], "has level"),
   r("has_section", ["level"], ["section", "stream"], "has section"),
@@ -171,7 +206,8 @@ export function validateTaxonomy(
   for (const x of entities) {
     if (ids.has(x.id)) issues.push({ code: "duplicate_entity_type", message: x.id });
     ids.add(x.id);
-    if (!isRealityDomain(x.domain)) issues.push({ code: "unknown_domain", message: `${x.id}:${x.domain}` });
+    if (!isRealityDomain(x.domain))
+      issues.push({ code: "unknown_domain", message: `${x.id}:${x.domain}` });
     if (!x.owner) issues.push({ code: "missing_owner", message: x.id });
   }
   const rids = new Set<string>();

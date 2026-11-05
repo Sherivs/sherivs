@@ -13,7 +13,8 @@ import {
 } from "./taxonomy";
 
 export const QUESTION_ID_PATTERN = /^[a-z][a-z0-9]*(\.[a-z][a-z0-9_]*){2,}$/;
-export const CONFIG_PATH_PATTERN = /^scholar\.institution\.operating_model\.[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$/;
+export const CONFIG_PATH_PATTERN =
+  /^scholar\.institution\.operating_model\.[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$/;
 const OPTION_TYPES = new Set(["single", "multi"]);
 
 export interface BranchCoverageRule {
@@ -36,24 +37,38 @@ export function validateRegistry(
   }
 
   for (const q of questions) {
-    if (!QUESTION_ID_PATTERN.test(q.id)) add("bad_id_format", q.id, "expected <pack>.<topic>.<name>");
-    if (!q.id.startsWith(`${q.pack}.`)) add("id_pack_mismatch", q.id, `id must start with ${q.pack}.`);
+    if (!QUESTION_ID_PATTERN.test(q.id))
+      add("bad_id_format", q.id, "expected <pack>.<topic>.<name>");
+    if (!q.id.startsWith(`${q.pack}.`))
+      add("id_pack_mismatch", q.id, `id must start with ${q.pack}.`);
     if (!isRealityDomain(q.domain)) add("unknown_domain", q.id, q.domain);
     if (!isAnswerType(q.answerType)) add("unknown_answer_type", q.id, q.answerType);
-    if (q.institutionTypes.length === 0) add("no_institution_types", q.id, "at least one institution type");
-    for (const t of q.institutionTypes) if (!isInstitutionType(t)) add("unknown_institution_type", q.id, t);
+    if (q.institutionTypes.length === 0)
+      add("no_institution_types", q.id, "at least one institution type");
+    for (const t of q.institutionTypes)
+      if (!isInstitutionType(t)) add("unknown_institution_type", q.id, t);
     if (!q.prompt.trim()) add("empty_prompt", q.id, "prompt required");
-    if (q.requiredToActivate && !q.required) add("activation_requires_required", q.id, "requiredToActivate implies required");
-    if (OPTION_TYPES.has(q.answerType) && !(q.validation.options && q.validation.options.length > 0)) {
+    if (q.requiredToActivate && !q.required)
+      add("activation_requires_required", q.id, "requiredToActivate implies required");
+    if (
+      OPTION_TYPES.has(q.answerType) &&
+      !(q.validation.options && q.validation.options.length > 0)
+    ) {
       add("missing_options", q.id, "single/multi questions need validation.options");
     }
     const v = q.validation;
-    if (v.min !== undefined && v.max !== undefined && v.min > v.max) add("bad_range", q.id, "min > max");
-    if (v.minItems !== undefined && v.maxItems !== undefined && v.minItems > v.maxItems) add("bad_range", q.id, "minItems > maxItems");
-    if (q.websiteMapping.publicSafe && !q.websiteMapping.field) add("public_field_missing", q.id, "publicSafe needs a field key");
-    if (q.websiteMapping.publicSafe && q.domain === "human") add("public_human_forbidden", q.id, "human-domain answers are never public");
-    if (!CONFIG_PATH_PATTERN.test(q.configMapping.path)) add("bad_config_path", q.id, q.configMapping.path);
-    if (!isEntityType(q.configMapping.entityType)) add("unknown_entity_type", q.id, q.configMapping.entityType);
+    if (v.min !== undefined && v.max !== undefined && v.min > v.max)
+      add("bad_range", q.id, "min > max");
+    if (v.minItems !== undefined && v.maxItems !== undefined && v.minItems > v.maxItems)
+      add("bad_range", q.id, "minItems > maxItems");
+    if (q.websiteMapping.publicSafe && !q.websiteMapping.field)
+      add("public_field_missing", q.id, "publicSafe needs a field key");
+    if (q.websiteMapping.publicSafe && q.domain === "human")
+      add("public_human_forbidden", q.id, "human-domain answers are never public");
+    if (!CONFIG_PATH_PATTERN.test(q.configMapping.path))
+      add("bad_config_path", q.id, q.configMapping.path);
+    if (!isEntityType(q.configMapping.entityType))
+      add("unknown_entity_type", q.id, q.configMapping.entityType);
 
     for (const d of q.dependsOn) {
       if (d === q.id) add("self_dependency", q.id, "depends on itself");
@@ -70,7 +85,8 @@ export function validateRegistry(
       const target = byId.get(c.questionId);
       if (!target) add("unknown_visibility_ref", q.id, c.questionId);
       else {
-        if (!q.dependsOn.includes(c.questionId)) add("visibility_not_a_dependency", q.id, c.questionId);
+        if (!q.dependsOn.includes(c.questionId))
+          add("visibility_not_a_dependency", q.id, c.questionId);
         if (!target.institutionTypes.some((t) => q.institutionTypes.includes(t))) {
           add("visibility_type_disjoint", q.id, c.questionId);
         }
@@ -83,10 +99,15 @@ export function validateRegistry(
   for (const rule of coverage) {
     const forType = questions.filter((q) => q.institutionTypes.includes(rule.institutionType));
     if (!forType.some((q) => q.visibleWhen.length === 0)) {
-      add("no_root_question", undefined, `${rule.institutionType} has no unconditional entry question`);
+      add(
+        "no_root_question",
+        undefined,
+        `${rule.institutionType} has no unconditional entry question`,
+      );
     }
     for (const d of rule.domains) {
-      if (!forType.some((q) => q.domain === d)) add("branch_coverage_gap", undefined, `${rule.institutionType}:${d}`);
+      if (!forType.some((q) => q.domain === d))
+        add("branch_coverage_gap", undefined, `${rule.institutionType}:${d}`);
     }
   }
   return issues;
