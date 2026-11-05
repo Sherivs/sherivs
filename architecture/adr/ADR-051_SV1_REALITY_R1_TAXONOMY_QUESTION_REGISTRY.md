@@ -4,7 +4,7 @@
 |---|---|
 | Status | PROPOSED (operator ratifies; R1 (#332), R3 interview slice (#334) and R9 website slice (#335) are explicitly authorized on #229 for V1 school onboarding; all other phases remain gated on separate written approval) |
 | Date | 2026-11-05 |
-| Author | Copilot (SV1-REALITY R1) |
+| Author | `copilot-swe-agent[bot]` (GitHub Copilot Coding Agent; SV1-REALITY R1) |
 | Mission | #332 (child of #229) |
 | Capabilities | Scholar runtime, practical search of onboarding reality (V1) |
 | Supersedes-in-part | None |
