@@ -20,7 +20,9 @@ export const Route = createFileRoute("/api/public/webhooks/resend")({
           env: process.env,
           db,
           audit: createEmailAuditRecorder(
-            createPostgresChainStore(db as unknown as Parameters<typeof createPostgresChainStore>[0]),
+            createPostgresChainStore(
+              db as unknown as Parameters<typeof createPostgresChainStore>[0],
+            ),
           ),
         });
         return handler(request);

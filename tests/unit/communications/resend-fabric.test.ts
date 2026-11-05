@@ -49,12 +49,14 @@ function makeDb(tables: Record<string, Row[]>, flagOn = true) {
         }
         return single ? (rows[0] ?? null) : rows.slice(0, cap).map((r) => ({ ...r }));
       };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const q: any = {
         select: () => q,
         eq: (k: string, v: unknown) => ((filters[k] = v), q),
         limit: (n: number) => ((cap = n), q),
         update: (v: Row) => ((patch = v), q),
         maybeSingle: () => ((single = true), Promise.resolve({ data: run(), error: null })),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         then: (res: any, rej: any) => Promise.resolve({ data: run(), error: null }).then(res, rej),
       };
       return q;
@@ -73,8 +75,22 @@ function world() {
   };
   return {
     outbound_messages: [
-      { ...base, id: MSG_A, org_id: ORG_A, school_id: ORG_A, recipient_user_id: USER_A, to_address: "a@example.test" },
-      { ...base, id: MSG_B, org_id: ORG_B, school_id: ORG_B, recipient_user_id: USER_B, to_address: "b@example.test" },
+      {
+        ...base,
+        id: MSG_A,
+        org_id: ORG_A,
+        school_id: ORG_A,
+        recipient_user_id: USER_A,
+        to_address: "a@example.test",
+      },
+      {
+        ...base,
+        id: MSG_B,
+        org_id: ORG_B,
+        school_id: ORG_B,
+        recipient_user_id: USER_B,
+        to_address: "b@example.test",
+      },
     ] as Row[],
     organization_memberships: [
       { user_id: USER_A, school_id: ORG_A, is_active: true },
@@ -105,7 +121,10 @@ function deps(db: ResendFabricDatabase, env: Record<string, string> = ENV) {
     deps: {
       db,
       env,
-      adapter: createResendEmailAdapter({ apiKey: env[RESEND_API_KEY_ENV] ?? null, fromAddress: env[RESEND_FROM_ADDRESS_ENV] ?? null }),
+      adapter: createResendEmailAdapter({
+        apiKey: env[RESEND_API_KEY_ENV] ?? null,
+        fromAddress: env[RESEND_FROM_ADDRESS_ENV] ?? null,
+      }),
       audit: async (i: AuditInput) => void audits.push(i),
     },
   };
@@ -127,7 +146,11 @@ describe("dispatchQueuedEmail", () => {
     expect(t.outbound_messages[0]).toMatchObject({ status: "sent", provider_ref: "re_123" });
     expect(t.outbound_messages[1].status).toBe("queued");
     expect(d.audits).toHaveLength(1);
-    expect(d.audits[0]).toMatchObject({ orgId: ORG_A, action: "comms.email.sent", actorKind: "system" });
+    expect(d.audits[0]).toMatchObject({
+      orgId: ORG_A,
+      action: "comms.email.sent",
+      actorKind: "system",
+    });
     expect(JSON.stringify(d.audits)).not.toContain("a@example.test");
     vi.unstubAllGlobals();
   });
@@ -176,7 +199,11 @@ describe("dispatchQueuedEmail", () => {
     const t = world();
     const d = deps(makeDb(t).db, { [RESEND_FROM_ADDRESS_ENV]: "no-reply@example.test" });
     const out = await dispatchQueuedEmail(d.deps, ORG_A);
-    expect(out[0]).toMatchObject({ outcome: "failed", reason: "provider_not_configured", retryable: false });
+    expect(out[0]).toMatchObject({
+      outcome: "failed",
+      reason: "provider_not_configured",
+      retryable: false,
+    });
     expect(f).not.toHaveBeenCalled();
     expect(t.outbound_messages[0].status).toBe("failed");
     expect(d.audits[0].action).toBe("comms.email.failed");
@@ -194,10 +221,16 @@ describe("dispatchQueuedEmail", () => {
   });
 
   it("keeps retryable provider failures queued", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response("{}", { status: 503 })));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("{}", { status: 503 })),
+    );
     const t = world();
     const d = deps(makeDb(t).db);
-    expect((await dispatchQueuedEmail(d.deps, ORG_A))[0]).toMatchObject({ outcome: "failed", retryable: true });
+    expect((await dispatchQueuedEmail(d.deps, ORG_A))[0]).toMatchObject({
+      outcome: "failed",
+      retryable: true,
+    });
     expect(t.outbound_messages[0].status).toBe("queued");
     vi.unstubAllGlobals();
   });
@@ -295,7 +328,14 @@ describe("resend webhook", () => {
 
   it("verifyResendWebhookSignature rejects a missing secret", () => {
     expect(
-      verifyResendWebhookSignature({ rawBody: "{}", id: "a", timestamp: "1", signature: "v1,x", secret: undefined, nowSeconds: 1 }),
+      verifyResendWebhookSignature({
+        rawBody: "{}",
+        id: "a",
+        timestamp: "1",
+        signature: "v1,x",
+        secret: undefined,
+        nowSeconds: 1,
+      }),
     ).toBe(false);
   });
 });
