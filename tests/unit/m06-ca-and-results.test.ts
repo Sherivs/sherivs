@@ -154,7 +154,8 @@ describe("M06 database result workflow", () => {
 
   it("indexes the owner-reserved ADR and exposes only validated server calls", () => {
     expect(adrIndex).toContain("ADR-044_M06_TENANT_SCOPED_RESULTS_WORKFLOW.md");
-    expect(adrIndex).toContain("Next free number: **ADR-045**");
+    expect(adrIndex).toContain("ADR-045_M08_ASC_FIELD_ORDER_MANIFEST.md");
+    expect(adrIndex).toContain("Next free number: **ADR-046**");
     const server = readFileSync("frontend/src/lib/runtime/scholar/results.functions.ts", "utf8");
     expect(server).toContain('"m06_set_result_weights"');
     expect(server).toContain('"m06_enter_result_scores"');
