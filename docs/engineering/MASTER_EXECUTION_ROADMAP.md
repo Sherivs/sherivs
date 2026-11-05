@@ -77,7 +77,7 @@
 |---|---|---|
 | 16-workstream repository audit | REPORTS RECEIVED | Reconcile evidence, resolve discrepancies, and update any provisional statuses. |
 | R1 taxonomy/registry PR #336 | CI GREEN / REVIEW PENDING | Owner re-review requested on `21f2fd5`; preserve draft until review. |
-| Scheduling PR #324 | READY FOR REVIEW | Remote checks are green; keep draft/unmerged pending explicit review. |
+| Scheduling PR #324 | INDEPENDENT REVIEW PASSED — OWNER REVIEW PENDING | Remote checks are green; reviewer found no significant issues but did not run tests. Keep draft/unmerged pending owner review. |
 | R3 interview #334 | AUTHORIZED / NOT STARTED | Confirm reuse/persistence model; reserve migration range on issue before any migration work. |
 | R9 website sync #335 | AUTHORIZED / DEPENDENCY BLOCKED | Start after R3 contract; reuse existing generator and only publish explicitly approved public-safe fields. |
 

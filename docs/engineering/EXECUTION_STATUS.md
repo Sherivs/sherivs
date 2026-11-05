@@ -11,7 +11,8 @@
 |---|---|---|
 | Repository-wide engineering audit | REPORTS RECEIVED | All 16 read-only workstreams submitted; findings are provisionally synthesized and require master verification. |
 | Reality R1 registry | READY FOR REVIEW | Draft PR #336; provenance attribution fix pushed as `21f2fd5`. 47 focused unit tests and typecheck pass locally; updated-head required CI checks are green, review requested. |
-| Scheduling PR #324 blocker repair | READY FOR REVIEW | Author reports all six requested fixes in `1794088`; current head checks are green. Draft PR remains unreviewed and unmerged. |
+| Scheduling PR #324 blocker repair | INDEPENDENT REVIEW PASSED — OWNER REVIEW PENDING | Author reports all six requested fixes in `1794088`; current head checks are green. Independent reviewer found no significant issues but did not run tests; draft remains unmerged. |
+| integrations-sync cron authorization discrepancy | SOURCE AUTH VERIFIED LOCALLY — DEPLOYED SCHEDULER OPERATIONS UNVERIFIED | Route tests verify missing secret (503), absent/wrong bearer (401), and accepted documented bearer before the unavailable-vault 503. Three focused tests, typecheck, targeted lint, and diff checks pass; scheduler retry/observability and deployed configuration remain unverified. |
 | R3 school onboarding interview | NOT STARTED | Owner-authorized bounded V1 issue #334; depends on R1 and repository audit. Any needed migration range must be reserved on the issue before implementation. |
 | R9 approved-reality website sync | BLOCKED BY DEPENDENCY | Owner-authorized bounded V1 issue #335; depends on R3 and the existing website generator contract. |
 | Master audit, roadmap, readiness matrix | DRAFTED | Provisional documents created; update after reconciling all reports and security follow-up. |
