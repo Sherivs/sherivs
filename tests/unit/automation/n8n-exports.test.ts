@@ -198,7 +198,9 @@ describe("n8n workflow exports", () => {
     const timestamp = String(Math.floor(Date.now() / 1000));
     const valid = `sha256=${crypto.createHmac("sha256", inboundSecret).update(`${timestamp}.${inboundBody}`).digest("hex")}`;
     const mutated = valid.slice(0, -1) + (valid.endsWith("0") ? "1" : "0");
-    expect((await runInboundVerification({ timestamp, signature: mutated }))[0].json.valid).toBe(false);
+    expect((await runInboundVerification({ timestamp, signature: mutated }))[0].json.valid).toBe(
+      false,
+    );
     expect((await runInboundVerification({ signature: "" }))[0].json.valid).toBe(false);
     expect((await runInboundVerification({ secretEnv: {} }))[0].json.valid).toBe(false);
   });
@@ -207,7 +209,9 @@ describe("n8n workflow exports", () => {
     for (const [file, workflow] of workflows) {
       for (const node of workflow.nodes) {
         if (node.type === "n8n-nodes-base.code") {
-          expect(node.parameters.jsCode as string, `${file}:${node.name}`).not.toMatch(/\bprocess\./);
+          expect(node.parameters.jsCode as string, `${file}:${node.name}`).not.toMatch(
+            /\bprocess\./,
+          );
         }
       }
     }
