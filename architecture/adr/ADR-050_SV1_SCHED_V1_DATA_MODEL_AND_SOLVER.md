@@ -4,7 +4,7 @@
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Status                     | PROPOSED — owner authorized the narrow V1 scope; production migration apply remains separately gated                                                              |
 | Date                       | 2026-11-04                                                                                                                                                        |
-| Author                     | Copilot Coding Agent                                                                                                                                              |
+| Author                     | Copilot Coding Agent (copilot-swe-agent[bot])                                                                                                                      |
 | Mission                    | SV1-SCHED S0/S1 (#322)                                                                                                                                            |
 | Capabilities               | #227's bounded V1 scheduling slice                                                                                                                                |
 | Supersedes-in-part         | None                                                                                                                                                              |
