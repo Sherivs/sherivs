@@ -52,7 +52,7 @@ All workstreams are read-only and must submit exact file/line evidence, implemen
 
 | Workstream | Status | Evidence / next gate |
 |---|---|---|
-| Generic webhook signature concern | FRAMING FIX PUSHED — RE-REVIEW PASSED, CI PENDING | Focused review confirmed no production callers in the repository; generic validation did not authenticate the body. Independent review found a timestamp/body delimiter ambiguity in the first HMAC implementation; the corrected length-prefixed timestamp/body framing was re-reviewed with no further findings. 53 focused tests, typecheck, targeted lint, and diff checks pass; draft PR #337 is open at `9f82bfd`. |
+| Generic webhook signature concern | REMEDIATION VERIFIED — RE-REVIEW AND OBSERVED CI PASSED; OWNER REVIEW PENDING | Focused review found no production callers; generic validation did not authenticate the body. Independent review found a timestamp/body delimiter ambiguity in the first HMAC implementation; the corrected length-prefixed framing was re-reviewed with no further findings. 56 focused tests, typecheck, targeted lint, and diff checks pass; all observed checks passed on draft PR #337 head `7650f3a` (Supabase Preview skipped because no migration is included). |
 
 ## Handover
 
