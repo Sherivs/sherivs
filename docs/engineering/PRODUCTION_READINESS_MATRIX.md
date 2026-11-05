@@ -1,0 +1,43 @@
+# Sherivs Production Readiness Matrix
+
+**Status:** Provisional; all audit reports are in, master review and selected checks remain.  
+**Baseline:** `master` at `e4be19c` (2026-11-05).  
+**Meaning:** “Not verified” means repository evidence alone does not establish a safe production state; it is not proof that a live system is absent.
+
+| Capability | Launch class | Status | Evidence / gap | Required exit evidence |
+|---|---|---|---|---|
+| Application build and CI | P0 | PARTIAL / CI-DEFINED | Verify workflows include typecheck, unit tests, scans, migration simulation and selected UI checks (`.github/workflows/verify.yml:20-260`). Full E2E and critical flows are not CI-gated. R1 CI is still running. | Green CI on exact release commit; reproducible build artifact and rollback reference. |
+| Admin school operations | P0 | PARTIAL / BLOCKED | Role management has service/RPC integration and selected E2E, but most generic admin sections render no real records/actions (`frontend/src/components/app-shell/section-screen.tsx:23-69`; `role-management-screen.tsx:112-171,226-343`). | End-to-end setup and core admin flows against authorized test tenants; replace or hide dead-end sections. |
+| Teacher workspace | P0 | BLOCKED | Catalog exists but web routes are missing; service functions do not prove a usable workflow (`frontend/src/lib/runtime/scholar-nav-catalog.ts:295-432`). | Real route/service journey, authorization, tests, responsive checks. |
+| Student workspace | P0 | PARTIAL | Mobile results, attendance and CBT use services; web routes absent; mobile fees and messages partial (`mobile/app/(school)/results.tsx:8-17`, `attendance.tsx:10-27`, `cbt.tsx:12-82`, `fees.tsx:28`). | Approve target clients; complete required workflows and route-level tests. |
+| Parent/guardian workspace | P0 | BLOCKED | Navigation exists but `/parent/*` route surface absent (`frontend/src/lib/runtime/scholar-nav-catalog.ts:26-149`). | Parent-child relationship authorization plus functional route tests. |
+| Non-teaching staff workspaces | P0/P1 | BLOCKED | Bursar/driver catalogs exist; corresponding routes absent; most staff roles have no workspace chrome (`frontend/src/lib/runtime/scholar-nav-catalog.ts:442-507,663-690`; `scholar-workforce-nav.ts:24-40`). | Define day-one roles, implement or hide incomplete workspace entries. |
+| Canonical tenant/data model | P0 | BLOCKED | Multiple tenant keys; CoreGrid schema is partially authored/not applied (`20261002000001_coregrid_v1_neutral_tenant_primitives.sql:4,65-71`; M07 migration `20261103130000...:4-35,49-111`). | Read-only production schema/migration reconciliation and a reviewed tenant ownership map. |
+| Database migration safety | P0 | NOT VERIFIED | Dependency checks exist; multiple CoreGrid migrations state AUTHORED, NOT APPLIED (`20261002000000...:5`; `20261002000003...:5-18`). | Exact migration ledger and schema diff from approved environment; local replay and rollback validation. |
+| Authentication / authorization / RLS | P0 | PARTIAL / NOT DEPLOYMENT-VERIFIED | Forced-RLS and tenant batteries exist, but authz includes shadow-mode design and local isolation tests may be credential-blocked/not required in CI (`20261024000280_sherivs_021_scope_sets_authz_onboarding.sql:1-5`; `security-batteries.yml:131-147`). | Reviewed auth/RLS audit, local cross-tenant read/write tests, CI wiring, no bypass paths. |
+| Payments and reconciliation | P0/P1 | PARTIAL / BLOCKED | Paystack webhook has signature/input/settlement controls; M07 invoice/ledger schema is authored, not applied; refunds are disabled (`database/supabase/migrations/20261103130000_sv1_m07_fees_ledger_receipts.sql:1-3,73-276`; `frontend/src/lib/payments/paystack-adapter.ts:192-201,262-264`). Generic webhook helper now uses HMAC-SHA256 but CI/review are pending. | Sandbox tests for success/failure/replay/refund/reconciliation; verify generic signature fix; no real charge. |
+| Email/SMS/WhatsApp/voice | P1 / launch-scope dependent | PARTIAL | Resend adapter tests exist; outbound SMS absent; WhatsApp and voice migrations are marked not applied; voice/escalation is gated. | Select channels; test sandbox providers, consent, rate limits, idempotency, tenant delivery records. |
+| AI provider routing | P2 | PARTIAL | Registry/fallback controls exist; a legacy path remains when registry is unwired (`frontend/src/lib/ai-gateway.server.ts:770-778`). | Enforce registry-backed routing and approved live drill with budget and sanitized evidence. |
+| Agent/JARVIS execution | P2 | NOT PRODUCTION READY | Agent/tool contracts are tested, but runtime state, approvals and parts of audit are in-memory; live governed tool registry is unproven (`frontend/src/lib/runtime-approval.ts:80-110,180-230`). | Durable tenant-scoped state, execution-boundary approval, audit, replay, and denial tests. |
+| Digital twins and memory | P2 | PARTIAL / NOT INTEGRATED | Role-context and memory contracts exist; durable memory migration is not applied (`frontend/src/lib/memory/memory-store.ts:1-80`; `20261002000004_coregrid_v1_memory_tier.sql:1-20`). | Integrated authorization and durable persistence only after explicit scope approval. |
+| Production deployment | P0 | CONFIGURED / NOT VERIFIED | Approval-gated release and rollback exist; credentials/operator configuration are absent from repo by design (`.github/workflows/release.yml:86-125`). | Owner-approved environment and budget, successful gated deployment, health smoke and rollback evidence. |
+| Monitoring and alerting | P0 | BLOCKED | Monitoring documentation says stack is not deployed; application error sink is not configured (`infrastructure/monitoring/README.md:20-27`; `docs/architecture/observability.md:3-19`). | Deployed alert route, synthetic incident test, on-call owner, retention policy. |
+| Backup and recovery | P0 | PARTIAL / NOT VERIFIED | Encrypted nightly dump workflow exists (`.github/workflows/nightly-db-backup.yml:1-119`); no independent restore evidence was found. | Successful restore drill from a retained artifact and documented RTO/RPO, custody, and access controls. |
+| Compliance and data lifecycle | P0/P1 | IN PROGRESS | Detailed audit is pending; do not infer compliance from policy artifacts alone. | Reviewed retention/deletion, data-subject, consent, audit, and incident-response evidence for launch scope. |
+| Public website | P1 / launch-scope dependent | BLOCKED BY R3 | R9 is authorized but depends on onboarding and existing generator; no new parallel website platform. | Preview/approval/publish tests proving only approved public-safe fields can be published. |
+| Cost and provider controls | P0 | NOT VERIFIED | Infrastructure options and provider configurations exist, but cost/alert limits are not established. | Owner-approved monthly ceilings, service inventory, budgets, alerts, and sandbox/production separation. |
+| Support and operational handover | P0 | NOT VERIFIED | On-call, incident escalation, and deployment ownership remain unverified. | Named owners, runbooks, escalation test, customer support path, and release sign-off. |
+| Critical-flow/E2E coverage | P0 | PARTIAL | CI runs selected UI checks, but the full E2E suite is not invoked; critical-flow script can succeed as SKIPPED unless run with `--live` (`scripts/verify-critical-flows.mjs:22-51`; `.github/workflows/verify.yml:21-245`). | Blocking CI verifies required launch flows; skipped live checks are surfaced as blocked rather than success. |
+
+## Readiness decision
+
+**NO-GO for full commercial production launch.** The exact day-one scope, deployed tenant/schema state, operational monitoring/restore evidence, and essential role-workspace journeys remain unverified or blocked. Advanced AI/twin work can be staged as P2 and need not delay a smaller approved V1 launch, but it must not be advertised as production-ready.
+
+## Required evidence before changing status
+
+1. Reconcile all 16 audit submissions and close the remaining review discrepancies.
+2. Obtain owner-approved launch scope, cost ceiling, RTO/RPO, production test window, and operations owner.
+3. Verify current production migration state without mutation; reconcile every tenant key and enforce the approved model.
+4. Pass route-level and two-tenant isolation tests for every P0 user journey.
+5. Demonstrate release/rollback, alert delivery, backup restoration, payment sandbox behavior, and selected communication channels.
+6. Re-run checks on the exact candidate release SHA; record artifacts and external dependencies without secrets.

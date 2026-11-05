@@ -13,6 +13,7 @@
 import type { TenantId } from "./tenant-core";
 import type { CorrelationId } from "./runtime-core";
 import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+import { createHmac, timingSafeEqual } from "node:crypto";
 
 /** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
 const timeAuthority = new TimeAuthority(new SystemClock());
@@ -110,6 +111,7 @@ export function validateWebhookSignature(
   signature: WebhookSignature,
   config: WebhookSecurityConfig,
   now: string,
+  rawBody: string | Uint8Array,
 ): { valid: true } | { valid: false; reason: string } {
   // Version must be allowed.
   if (!config.allowedVersions.includes(signature.version)) {
@@ -121,37 +123,45 @@ export function validateWebhookSignature(
   if (Number.isNaN(timestampMs)) {
     return { valid: false, reason: "Invalid timestamp" };
   }
-  const skew = Math.abs(Date.parse(now) - timestampMs);
+  const nowMs = Date.parse(now);
+  if (Number.isNaN(nowMs)) {
+    return { valid: false, reason: "Invalid current time" };
+  }
+  const skew = Math.abs(nowMs - timestampMs);
   if (skew > config.maxTimestampSkewMs) {
     return { valid: false, reason: "Timestamp outside allowed skew" };
   }
 
-  // Signature must be non-empty.
-  if (!signature.signature || signature.signature.length < 16) {
+  if (!config.secret || !/^[a-f0-9]{64}$/i.test(signature.signature)) {
     return { valid: false, reason: "Invalid signature" };
   }
 
-  return { valid: true };
+  const expected = Buffer.from(
+    computeWebhookSignature(rawBody, config.secret, signature.timestamp),
+    "hex",
+  );
+  const received = Buffer.from(signature.signature, "hex");
+  return timingSafeEqual(received, expected)
+    ? { valid: true }
+    : { valid: false, reason: "Signature mismatch" };
 }
 
 /**
- * Computes an HMAC signature for outbound webhook payloads.
- * Uses a simple deterministic hash for the domain layer.
+ * Computes an HMAC-SHA256 signature over the exact request body and timestamp.
  */
 export function computeWebhookSignature(
-  payload: Record<string, unknown>,
+  rawBody: string | Uint8Array,
   secret: string,
   timestamp: string,
 ): string {
-  const body = JSON.stringify(payload);
-  // Domain-layer deterministic signature (production would use crypto HMAC).
-  let hash = 0;
-  const material = `${timestamp}.${secret}.${body}`;
-  for (let i = 0; i < material.length; i++) {
-    hash = (hash << 5) - hash + material.charCodeAt(i);
-    hash |= 0;
+  if (!secret) {
+    throw new Error("Webhook signing secret must not be empty");
   }
-  return Math.abs(hash).toString(16).padStart(16, "0");
+  return createHmac("sha256", secret)
+    .update(timestamp, "utf8")
+    .update(".", "utf8")
+    .update(rawBody)
+    .digest("hex");
 }
 
 /* ─────────────────────────────────────────────────────────────
