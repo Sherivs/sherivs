@@ -29,8 +29,9 @@ No agent may declare work production-ready or merge/deploy changes. Audit findin
 
 | Agent | Team / specialty | Assignment | Status |
 |---|---|---|---|
-| webhook-signature-review | Security review | Validate the generic webhook signature concern; no exploit reproduction | REPORT RECEIVED — finding confirmed; remediation pending review |
-| master-orchestrator | Security implementation | HMAC-SHA256 over raw body/timestamp; constant-time verification and regression tests | IMPLEMENTED LOCALLY — 50 focused tests/typecheck/lint pass; CI pending |
+| webhook-signature-review | Security review | Validate the generic webhook signature concern; no exploit reproduction | REPORT RECEIVED — original finding confirmed; no in-repository production caller found |
+| PR code reviewer | Independent code review | Review draft PR #337 for correctness and regressions | REPORT RECEIVED — found delimiter ambiguity in initial HMAC framing; correction pending re-review |
+| master-orchestrator | Security implementation | HMAC-SHA256 with separately length-prefixed timestamp/body; constant-time verification and regression tests | FRAMING FIX IMPLEMENTED LOCALLY — 53 focused tests, typecheck, and targeted lint pass; CI/re-review pending |
 
 ## Submission requirements
 

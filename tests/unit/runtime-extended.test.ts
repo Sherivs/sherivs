@@ -149,6 +149,20 @@ describe("runtime-webhooks", () => {
       expect(result.valid).toBe(false);
     });
 
+    it("does not accept an equivalent timestamp representation with a changed body", () => {
+      const signature = computeWebhookSignature(rawBody, config.secret, NOW);
+      const equivalentTimestamp = NOW.replace("Z", "+00:00");
+      expect(Date.parse(equivalentTimestamp)).toBe(Date.parse(NOW));
+
+      const result = validateWebhookSignature(
+        { signature, timestamp: equivalentTimestamp, version: "v1" },
+        config,
+        NOW,
+        `${rawBody} `,
+      );
+      expect(result.valid).toBe(false);
+    });
+
     it("rejects an invalid current time", () => {
       const signature = computeWebhookSignature(rawBody, config.secret, NOW);
       const result = validateWebhookSignature(
@@ -166,13 +180,32 @@ describe("runtime-webhooks", () => {
       const s1 = computeWebhookSignature('{"a":1}', "secret", NOW);
       const s2 = computeWebhookSignature('{"a":1}', "secret", NOW);
       expect(s1).toBe(s2);
-      expect(s1).toBe("5443e211469116cb24f83f3b10cce49df067be02a348ce7a73fee008e5b76e9e");
+      expect(s1).toBe("b06e72867d658194516cc7a43f765aaed81525d33e1aaf0260e9dbfab1baab98");
     });
 
     it("produces different signatures for different payloads", () => {
       const s1 = computeWebhookSignature('{"a":1}', "secret", NOW);
       const s2 = computeWebhookSignature('{"a":2}', "secret", NOW);
       expect(s1).not.toBe(s2);
+    });
+
+    it("frames the timestamp and body so separator collisions cannot preserve a signature", () => {
+      const timestampA = "T";
+      const bodyA = "0.1";
+      const timestampB = "T.0";
+      const bodyB = "1";
+      expect(`${timestampA}.${bodyA}`).toBe(`${timestampB}.${bodyB}`);
+      expect(computeWebhookSignature(bodyA, "secret", timestampA)).not.toBe(
+        computeWebhookSignature(bodyB, "secret", timestampB),
+      );
+    });
+
+    it("signs equivalent timestamp formats as distinct byte sequences", () => {
+      const equivalentTimestamp = NOW.replace("Z", "+00:00");
+      expect(Date.parse(equivalentTimestamp)).toBe(Date.parse(NOW));
+      expect(computeWebhookSignature('{"a":1}', "secret", NOW)).not.toBe(
+        computeWebhookSignature('{"a":1}', "secret", equivalentTimestamp),
+      );
     });
 
     it("signs exact request bytes", () => {

@@ -10,12 +10,12 @@
 | Workstream | Status | Evidence / next gate |
 |---|---|---|
 | Repository-wide engineering audit | REPORTS RECEIVED | All 16 read-only workstreams submitted; findings are provisionally synthesized and require master verification. |
-| Reality R1 registry | READY FOR REVIEW | Draft PR #336; provenance attribution fix pushed as `21f2fd5`. 47 focused unit tests and typecheck pass locally; updated-head CI is running. |
+| Reality R1 registry | READY FOR REVIEW | Draft PR #336; provenance attribution fix pushed as `21f2fd5`. 47 focused unit tests and typecheck pass locally; updated-head required CI checks are green, review requested. |
 | Scheduling PR #324 blocker repair | READY FOR REVIEW | Author reports all six requested fixes in `1794088`; current head checks are green. Draft PR remains unreviewed and unmerged. |
 | R3 school onboarding interview | NOT STARTED | Owner-authorized bounded V1 issue #334; depends on R1 and repository audit. Any needed migration range must be reserved on the issue before implementation. |
 | R9 approved-reality website sync | BLOCKED BY DEPENDENCY | Owner-authorized bounded V1 issue #335; depends on R3 and the existing website generator contract. |
 | Master audit, roadmap, readiness matrix | DRAFTED | Provisional documents created; update after reconciling all reports and security follow-up. |
-| Autonomous mission backlog and execution state | IN PROGRESS | Persistent files are being added from the audit findings; statuses remain provisional until review. |
+| Autonomous mission backlog and execution state | DRAFTED | Persistent files are created; findings and statuses remain provisional until review. |
 
 ## Current scope and safety gates
 
@@ -51,7 +51,7 @@ All workstreams are read-only and must submit exact file/line evidence, implemen
 
 | Workstream | Status | Evidence / next gate |
 |---|---|---|
-| Generic webhook signature concern | FIX IMPLEMENTED — REVIEW/CI PENDING | Focused review confirmed no production callers in the repository; generic validation did not authenticate the body. Updated to HMAC-SHA256 with constant-time comparison and raw-body verification. 50 focused tests, typecheck, targeted lint, and diff checks pass locally. |
+| Generic webhook signature concern | FRAMING FIX IMPLEMENTED LOCALLY — RE-REVIEW/CI PENDING | Focused review confirmed no production callers in the repository; generic validation did not authenticate the body. Independent review found a timestamp/body delimiter ambiguity in the first HMAC implementation. It now uses length-prefixed timestamp/body framing with constant-time comparison and raw-body verification. 53 focused tests, typecheck, targeted lint, and diff checks pass; draft PR #337 is open at `d01bb56`, with the correction not yet pushed. |
 
 ## Handover
 

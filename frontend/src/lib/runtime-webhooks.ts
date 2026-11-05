@@ -157,10 +157,18 @@ export function computeWebhookSignature(
   if (!secret) {
     throw new Error("Webhook signing secret must not be empty");
   }
+  const timestampBytes = Buffer.from(timestamp, "utf8");
+  const bodyBytes =
+    typeof rawBody === "string" ? Buffer.from(rawBody, "utf8") : Buffer.from(rawBody);
+  const lengths = Buffer.alloc(16);
+  lengths.writeBigUInt64BE(BigInt(timestampBytes.length), 0);
+  lengths.writeBigUInt64BE(BigInt(bodyBytes.length), 8);
+
   return createHmac("sha256", secret)
-    .update(timestamp, "utf8")
-    .update(".", "utf8")
-    .update(rawBody)
+    .update("sherivs.webhook.signature.hmac-sha256\0", "utf8")
+    .update(lengths)
+    .update(timestampBytes)
+    .update(bodyBytes)
     .digest("hex");
 }
 
