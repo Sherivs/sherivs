@@ -51,7 +51,7 @@ All workstreams are read-only and must submit exact file/line evidence, implemen
 
 | Workstream | Status | Evidence / next gate |
 |---|---|---|
-| Generic webhook signature concern | FRAMING FIX IMPLEMENTED LOCALLY — RE-REVIEW/CI PENDING | Focused review confirmed no production callers in the repository; generic validation did not authenticate the body. Independent review found a timestamp/body delimiter ambiguity in the first HMAC implementation. It now uses length-prefixed timestamp/body framing with constant-time comparison and raw-body verification. 53 focused tests, typecheck, targeted lint, and diff checks pass; draft PR #337 is open at `d01bb56`, with the correction not yet pushed. |
+| Generic webhook signature concern | FRAMING FIX PUSHED — RE-REVIEW PASSED, CI PENDING | Focused review confirmed no production callers in the repository; generic validation did not authenticate the body. Independent review found a timestamp/body delimiter ambiguity in the first HMAC implementation; the corrected length-prefixed timestamp/body framing was re-reviewed with no further findings. 53 focused tests, typecheck, targeted lint, and diff checks pass; draft PR #337 is open at `9f82bfd`. |
 
 ## Handover
 
