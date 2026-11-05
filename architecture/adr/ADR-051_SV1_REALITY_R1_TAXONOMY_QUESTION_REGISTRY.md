@@ -1,15 +1,15 @@
 # ADR-051: Reality Engine R1 taxonomy and discovery question registry (SV1-REALITY #332)
 
-|| Field | Value |
-||---|---|
-|| Status | PROPOSED (operator ratifies; R1 approved on #229, R2+ still gated) |
-|| Date | 2026-11-05 |
-|| Author | Copilot (SV1-REALITY R1) |
-|| Mission | #332 (child of #229) |
-|| Capabilities | Scholar runtime, practical search of onboarding reality (V1) |
-|| Supersedes-in-part | None |
-|| Cites | `docs/reality/R0-REUSE-MAP.md`, `docs/reality/R0-GAP-MATRIX-ROADMAP.md`, `docs/v1/V1-SCOPE-LOCK.md`, `AGENTS.md` §45, `frontend/src/lib/scholar/config-discovery.ts`, `frontend/src/lib/scholar/reality-graph.ts` |
-|| Minimal ownership artifact | `frontend/src/lib/scholar/reality/` (code contract only) |
+| Field | Value |
+|---|---|
+| Status | PROPOSED (operator ratifies; R1 (#332), R3 interview slice (#334) and R9 website slice (#335) are explicitly authorized on #229 for V1 school onboarding; all other phases remain gated on separate written approval) |
+| Date | 2026-11-05 |
+| Author | Copilot (SV1-REALITY R1) |
+| Mission | #332 (child of #229) |
+| Capabilities | Scholar runtime, practical search of onboarding reality (V1) |
+| Supersedes-in-part | None |
+| Cites | `docs/reality/R0-REUSE-MAP.md`, `docs/reality/R0-GAP-MATRIX-ROADMAP.md`, `docs/v1/V1-SCOPE-LOCK.md`, `AGENTS.md` §45, `frontend/src/lib/scholar/config-discovery.ts`, `frontend/src/lib/scholar/reality-graph.ts` |
+| Minimal ownership artifact | `frontend/src/lib/scholar/reality/` (code contract only) |
 
 ## Context
 
