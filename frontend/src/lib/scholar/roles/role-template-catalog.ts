@@ -2053,7 +2053,7 @@ const roleTemplates: readonly RoleTemplate[] = [
 const relationshipSource =
   "M009 epic #175 and owner-provided research comment on #178; candidate only, not an authority determination";
 const relationshipEvidenceUrl =
-  "https://github.com/vibeoraai-bit/coregrid-scholar-migration/issues/178";
+  "https://github.com/Sherivs/sherivs/issues/178";
 const relationshipNotes =
   "Unverified candidate only. Official institution and authority names, responsibilities, and mandates must be confirmed before use. The reported LGEA and teacher-posting changes are not verified here; their current division and legal effect remain unconfirmed.";
 
