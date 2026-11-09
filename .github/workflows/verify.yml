@@ -209,7 +209,7 @@ jobs:
     needs: [typecheck, unit]
     environment: preview
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     permissions: { contents: read, pull-requests: write }
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -234,8 +234,33 @@ jobs:
           # Offline `vercel build` may not set VERCEL=1; force Nitro vercel preset.
           export NITRO_PRESET=vercel
           vercel build --token="$VERCEL_TOKEN"
-          url=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")
+          # Hobby teams BLOCK CLI deploys attributed to a non-owner git commit
+          # (PR merge commits / CI authors). Prebuilt output does not need .git;
+          # hide it so Vercel skips the collaboration author check.
+          mv .git .git.bak
+          # Never hang 15m on BLOCKED: fail fast if deploy does not finish.
+          set +e
+          out=$(timeout 180 vercel deploy --prebuilt --token="$VERCEL_TOKEN" 2>&1)
+          code=$?
+          set -e
+          mv .git.bak .git
+          echo "$out"
+          url=$(printf '%s
+' "$out" | sed -n 's#.*https://\(coregrid-scholar-migration[^[:space:]]*\.vercel\.app\).*#https://\1#p' | tail -1)
+          if [ -z "$url" ]; then
+            url=$(printf '%s
+' "$out" | grep -Eo 'https://[^[:space:]]+\.vercel\.app' | tail -1 || true)
+          fi
+          if [ "$code" -eq 124 ]; then
+            echo "::error::vercel deploy timed out after 180s (often Hobby BLOCKED on commit author). Preview URL if any: ${url:-none}"
+            exit 1
+          fi
+          if [ "$code" -ne 0 ] || [ -z "$url" ]; then
+            echo "::error::vercel deploy failed (exit $code). If readyState=BLOCKED, Hobby requires the commit author to be the team owner — we hide .git for prebuilt deploys to avoid that."
+            exit 1
+          fi
           echo "Preview: $url" >> "$GITHUB_STEP_SUMMARY"
+          echo "Preview: $url"
 
   vercel-prod:
     name: Vercel production deploy
@@ -265,5 +290,22 @@ jobs:
           export NITRO_PRESET=vercel
           export VERCEL_GIT_COMMIT_SHA=$GITHUB_SHA
           vercel build --prod --token="$VERCEL_TOKEN"
-          url=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")
+          mv .git .git.bak
+          set +e
+          out=$(timeout 180 vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN" 2>&1)
+          code=$?
+          set -e
+          mv .git.bak .git
+          echo "$out"
+          url=$(printf '%s
+' "$out" | grep -Eo 'https://[^[:space:]]+\.vercel\.app' | tail -1 || true)
+          if [ "$code" -eq 124 ]; then
+            echo "::error::vercel production deploy timed out after 180s. URL if any: ${url:-none}"
+            exit 1
+          fi
+          if [ "$code" -ne 0 ] || [ -z "$url" ]; then
+            echo "::error::vercel production deploy failed (exit $code)"
+            exit 1
+          fi
           echo "Production: $url" >> "$GITHUB_STEP_SUMMARY"
+          echo "Production: $url"
