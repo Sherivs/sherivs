@@ -227,6 +227,12 @@ jobs:
         run: |
           npm i -g vercel@65.10.0
           vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
+          # TanStack Start + Nitro emit Build Output API (.vercel/output), not a
+          # static "dist" folder. Clear any leftover Output Directory override
+          # from pulled project settings so vercel build does not look for dist.
+          node -e 'const fs=require("fs");const p=".vercel/project.json";const j=JSON.parse(fs.readFileSync(p,"utf8"));if(j.projectSettings){j.projectSettings.outputDirectory=null;}fs.writeFileSync(p,JSON.stringify(j,null,2));'
+          # Offline `vercel build` may not set VERCEL=1; force Nitro vercel preset.
+          export NITRO_PRESET=vercel
           vercel build --token="$VERCEL_TOKEN"
           url=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")
           echo "Preview: $url" >> "$GITHUB_STEP_SUMMARY"
@@ -255,6 +261,8 @@ jobs:
         run: |
           npm i -g vercel@65.10.0
           vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+          node -e 'const fs=require("fs");const p=".vercel/project.json";const j=JSON.parse(fs.readFileSync(p,"utf8"));if(j.projectSettings){j.projectSettings.outputDirectory=null;}fs.writeFileSync(p,JSON.stringify(j,null,2));'
+          export NITRO_PRESET=vercel
           export VERCEL_GIT_COMMIT_SHA=$GITHUB_SHA
           vercel build --prod --token="$VERCEL_TOKEN"
           url=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")
