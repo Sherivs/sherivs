@@ -207,6 +207,7 @@ jobs:
     name: Vercel preview deploy
     if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     needs: [typecheck, unit]
+    environment: preview
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions: { contents: read, pull-requests: write }
@@ -229,3 +230,32 @@ jobs:
           vercel build --token="$VERCEL_TOKEN"
           url=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")
           echo "Preview: $url" >> "$GITHUB_STEP_SUMMARY"
+
+  vercel-prod:
+    name: Vercel production deploy
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: [typecheck, unit]
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions: { contents: read }
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with: { node-version: "${{ env.NODE_VERSION }}", cache: npm }
+      - name: Skip when Vercel secrets are not configured
+        id: gate
+        run: '[ -n "$VERCEL_TOKEN" ] && echo "ok=1" >> "$GITHUB_OUTPUT" || echo "::notice::VERCEL_TOKEN not set; skipping production deploy"'
+      - if: steps.gate.outputs.ok == '1'
+        name: Build + deploy production
+        run: |
+          npm i -g vercel@65.10.0
+          vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+          export VERCEL_GIT_COMMIT_SHA=$GITHUB_SHA
+          vercel build --prod --token="$VERCEL_TOKEN"
+          url=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")
+          echo "Production: $url" >> "$GITHUB_STEP_SUMMARY"
