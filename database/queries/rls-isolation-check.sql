@@ -227,4 +227,43 @@ WHERE conrelid = 'public.cg_mission_intent'::regclass
   AND pg_get_constraintdef(oid) LIKE '%UNIQUE (tenant_id, mission_id, version)%'
 HAVING count(*) = 0;
 
+-- 10. COMMS-01 voice number binding. These checks apply only after
+--     20261104032000 adds the binding columns and service-role RPCs.
+--     Before that migration, the objects are absent and this section passes.
+SELECT format('FAIL: comms_sender_numbers RLS is not forced after COMMS-01') AS issue
+FROM pg_class c
+JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public'
+  AND c.relname = 'comms_sender_numbers'
+  AND EXISTS (
+    SELECT 1 FROM information_schema.columns col
+    WHERE col.table_schema = 'public'
+      AND col.table_name = 'comms_sender_numbers'
+      AND col.column_name = 'binding_role'
+  )
+  AND c.relforcerowsecurity IS NOT TRUE;
+
+SELECT format('FAIL: %s can execute public.%s', g.grantee, g.routine_name) AS issue
+FROM information_schema.role_routine_grants g
+WHERE g.specific_schema = 'public'
+  AND g.routine_name IN (
+    'comms_bind_voice_sender',
+    'comms_attach_platform_voice_org',
+    'comms_voice_number_audit'
+  )
+  AND g.grantee IN ('anon', 'PUBLIC', 'authenticated')
+  AND g.privilege_type = 'EXECUTE';
+
+SELECT format('FAIL: %s can execute the member-resolved voice request', g.grantee) AS issue
+FROM pg_proc p
+JOIN pg_namespace n ON n.oid = p.pronamespace
+JOIN information_schema.role_routine_grants g
+  ON g.specific_schema = n.nspname
+ AND g.routine_name = p.proname
+WHERE n.nspname = 'public'
+  AND p.proname = 'voice_agent_request_call'
+  AND pg_get_function_identity_arguments(p.oid) LIKE '%uuid%'
+  AND g.grantee IN ('anon', 'PUBLIC', 'authenticated')
+  AND g.privilege_type = 'EXECUTE';
+
 SELECT '✓ RLS isolation check passed' AS result;

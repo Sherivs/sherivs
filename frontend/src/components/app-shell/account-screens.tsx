@@ -35,6 +35,7 @@ import {
   dispatchApprovedVoiceCall,
   getVoiceAgentSettings,
   listVoiceCalls,
+  listVoiceConsentedRecipients,
   requestVoiceCall,
   type VoiceAgentCall,
   type VoiceAgentSettings,
@@ -100,26 +101,34 @@ export function AppSettingsScreen() {
 export function AppVoiceAgentScreen() {
   const [settings, setSettings] = useState<VoiceAgentSettings | null>(null);
   const [calls, setCalls] = useState<VoiceAgentCall[]>([]);
+  const [recipients, setRecipients] = useState<
+    Array<{ userId: string; displayName: string; phoneRedacted: string }>
+  >([]);
   const provider = "africas_talking" as const;
-  const [providerNumber, setProviderNumber] = useState("");
   const [extension, setExtension] = useState("");
   const [enabled, setEnabled] = useState(false);
   const [category, setCategory] = useState<"fee_reminder" | "absence_alert">("fee_reminder");
-  const [recipientPhone, setRecipientPhone] = useState("");
+  const [recipientUserId, setRecipientUserId] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   async function reload() {
     try {
-      const [nextSettings, nextCalls] = await Promise.all([
+      const [nextSettings, nextCalls, nextRecipients] = await Promise.all([
         getVoiceAgentSettings({ data: {} }),
         listVoiceCalls({ data: {} }),
+        listVoiceConsentedRecipients({ data: {} }).catch(() => []),
       ]);
       setSettings(nextSettings);
       setEnabled(nextSettings.enabled);
-      setProviderNumber(nextSettings.providerNumber ?? "");
       setExtension(nextSettings.extension ?? "");
       setCalls(nextCalls);
+      setRecipients(nextRecipients);
+      setRecipientUserId((current) =>
+        nextRecipients.some((recipient) => recipient.userId === current)
+          ? current
+          : (nextRecipients[0]?.userId ?? ""),
+      );
       setMessage(null);
     } catch {
       setMessage("Voice settings are available only to an authorized organization administrator.");
@@ -135,7 +144,7 @@ export function AppVoiceAgentScreen() {
     setBusy(true);
     try {
       await configureVoiceAgent({
-        data: { enabled, provider, providerNumber, extension },
+        data: { enabled, extension },
       });
       await reload();
       setMessage(
@@ -152,8 +161,7 @@ export function AppVoiceAgentScreen() {
     event.preventDefault();
     setBusy(true);
     try {
-      await requestVoiceCall({ data: { category, recipientPhone } });
-      setRecipientPhone("");
+      await requestVoiceCall({ data: { category, recipientUserId } });
       await reload();
       setMessage(
         "Call request queued for approval. A different organization administrator must approve it.",
@@ -210,8 +218,9 @@ export function AppVoiceAgentScreen() {
       </Link>
       <h1>Organization voice agent</h1>
       <p className="app-shell-empty">
-        Configure an organization number and manage consent-checked outbound call approvals. Live
-        voice stays disabled until the separate voice_live flag is explicitly enabled.
+        The organization number is bound on the server. Request calls only for members who already
+        opted in. Live voice stays disabled until the separate voice_live flag is explicitly
+        enabled.
       </p>
       <p className="app-shell-empty">
         Incoming callers are not authenticated. The voice agent currently answers public help only;
@@ -256,14 +265,16 @@ export function AppVoiceAgentScreen() {
             <label>
               Organization number
               <input
-                type="tel"
-                required
-                autoComplete="tel"
-                placeholder="+2348012345678"
-                value={providerNumber}
-                onChange={(event) => setProviderNumber(event.target.value)}
+                type="text"
+                readOnly
+                value={settings.providerNumber ?? "Not bound"}
+                aria-describedby="voice-number-binding"
               />
             </label>
+            <p id="voice-number-binding">
+              An operator binds this Africa&apos;s Talking number to the organization. It cannot be
+              typed here.
+            </p>
             <label>
               Optional extension
               <input
@@ -301,20 +312,27 @@ export function AppVoiceAgentScreen() {
               </select>
             </label>
             <label>
-              Consented recipient number
-              <input
-                type="tel"
+              Consented member
+              <select
                 required
-                autoComplete="tel"
-                placeholder="+2348012345678"
-                value={recipientPhone}
-                onChange={(event) => setRecipientPhone(event.target.value)}
-              />
+                value={recipientUserId}
+                onChange={(event) => setRecipientUserId(event.target.value)}
+              >
+                {recipients.length === 0 ? (
+                  <option value="">No consented members</option>
+                ) : (
+                  recipients.map((recipient) => (
+                    <option key={recipient.userId} value={recipient.userId}>
+                      {recipient.displayName} · {recipient.phoneRedacted}
+                    </option>
+                  ))
+                )}
+              </select>
             </label>
             <button
               type="submit"
               className="app-shell-primary"
-              disabled={busy || !settings.enabled}
+              disabled={busy || !settings.enabled || recipients.length === 0}
             >
               Request approval
             </button>

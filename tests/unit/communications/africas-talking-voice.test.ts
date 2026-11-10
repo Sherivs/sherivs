@@ -98,16 +98,23 @@ function createDb(flagEnabled: boolean, neutralSender = false) {
                 ? { enabled: true }
                 : table === "school_tenant_map" && neutralSender
                   ? { school_id: SCHOOL_ID }
-                  : table === "comms_sender_numbers" && !neutralSender
-                    ? schoolRow
-                    : table === "voice_call_sessions" && inserted
-                      ? (session = session ?? initialSession)
-                      : table === "voice_call_sessions"
-                        ? session
-                        : table === "inbound_messages" &&
-                            providerRefs.has(String(filters.get("provider_ref")))
-                          ? { id: "logged-message" }
-                          : null,
+                  : table === "comms_sender_numbers" &&
+                      filters.get("binding_role") === "platform_support"
+                    ? {
+                        provider_number: "+2349015056201",
+                        binding_role: "platform_support",
+                        number_status: "active",
+                      }
+                    : table === "comms_sender_numbers" && !neutralSender
+                      ? schoolRow
+                      : table === "voice_call_sessions" && inserted
+                        ? (session = session ?? initialSession)
+                        : table === "voice_call_sessions"
+                          ? session
+                          : table === "inbound_messages" &&
+                              providerRefs.has(String(filters.get("provider_ref")))
+                            ? { id: "logged-message" }
+                            : null,
           error: null,
         }),
         insert(values: Record<string, unknown>) {
@@ -459,6 +466,14 @@ describe("Africa's Talking voice support callback", () => {
     ).rejects.toThrow("unsupported voice recording URL");
     expect(fetcher).not.toHaveBeenCalled();
     expect(createVoiceAssistantFromEnv({ ...env, VOICE_TTS_PROVIDER: "unsupported" })).toBeNull();
+    const defaulted = createVoiceAssistantFromEnv({
+      ...ENV,
+      VOICE_STT_API_KEY: "unit-test-stt-key",
+      VOICE_LLM_PROVIDER: "ai-gateway",
+    });
+    expect(defaulted?.transcriber.providerId).toBe("openai");
+    expect(defaulted?.speech.providerId).toBe("africas_talking");
+    expect(defaulted?.speech.speak("Hello", new URL(CALLBACK_URL))).toContain("<Say>Hello</Say>");
   });
 
   it("extends comms storage and keeps the existing live flag disabled", () => {

@@ -16,6 +16,11 @@ import {
   type ChainStore,
 } from "../trust-ledger/hash-chain.server";
 import { SystemClock, TimeAuthority } from "../kernel/time-authority";
+import {
+  PLATFORM_VOICE_SUPPORT_NUMBER,
+  voiceSttProviderFromEnv,
+  voiceTtsProviderFromEnv,
+} from "./voice-number-binding";
 
 const timeAuthority = new TimeAuthority(new SystemClock());
 const MAX_CALLBACK_BYTES = 16 * 1024;
@@ -99,10 +104,13 @@ export function consentVoiceXml(callbackUrl: URL): string {
   );
 }
 
-export function dialHumanXml(): string {
+export function dialHumanXml(phone: string = PLATFORM_VOICE_SUPPORT_NUMBER): string {
+  if (phone !== PLATFORM_VOICE_SUPPORT_NUMBER) {
+    throw new Error("Human escalation dials only the bound platform support line.");
+  }
   return voiceXml(
     "Connecting you to a Sherivs support representative.",
-    '<Dial phoneNumbers="+2349015056201"/>',
+    `<Dial phoneNumbers="${phone}"/>`,
   );
 }
 
@@ -287,14 +295,65 @@ async function resolveTenant(
 
   const result = await db
     .from("comms_sender_numbers")
-    .select("school_id")
+    .select("school_id,org_id,binding_role,tenant_ref,number_status")
     .eq("channel", "voice")
     .eq("provider", AFRICAS_TALKING_PROVIDER_ID)
     .eq("provider_number", destination)
     .maybeSingle();
   if (result.error) throw new Error("voice destination lookup failed");
-  const data = z.object({ school_id: z.string().uuid() }).safeParse(result.data);
-  return data.success ? { schoolId: data.data.school_id, tenantRef: null } : null;
+  const parsed = z
+    .object({
+      school_id: z.string().uuid().nullable().optional(),
+      org_id: z.string().uuid().nullable().optional(),
+      binding_role: z.enum(["platform_support", "organization"]).nullable().optional(),
+      tenant_ref: z.string().uuid().nullable().optional(),
+      number_status: z.enum(["active", "suspended"]).nullable().optional(),
+    })
+    .safeParse(result.data);
+  if (!parsed.success || parsed.data.number_status === "suspended") return null;
+  const row = parsed.data;
+  if (row.org_id && row.school_id && row.org_id !== row.school_id) return null;
+  const schoolId = row.school_id ?? row.org_id ?? null;
+  if (row.binding_role === "platform_support") {
+    if (schoolId) return { schoolId, tenantRef: row.tenant_ref ?? null };
+    if (!row.tenant_ref) return null;
+    const mapping = await db
+      .from("school_tenant_map")
+      .select("school_id")
+      .eq("tenant_id", row.tenant_ref)
+      .maybeSingle();
+    if (mapping.error) throw new Error("voice tenant mapping lookup failed");
+    const mapped = z.object({ school_id: z.string().uuid() }).safeParse(mapping.data);
+    return mapped.success ? { schoolId: mapped.data.school_id, tenantRef: row.tenant_ref } : null;
+  }
+  return schoolId ? { schoolId, tenantRef: row.tenant_ref ?? null } : null;
+}
+
+async function loadPlatformSupportNumber(db: VoiceCallbackDatabase): Promise<string | null> {
+  const result = await db
+    .from("comms_sender_numbers")
+    .select("provider_number,binding_role,number_status")
+    .eq("channel", "voice")
+    .eq("provider", AFRICAS_TALKING_PROVIDER_ID)
+    .eq("binding_role", "platform_support")
+    .eq("number_status", "active")
+    .maybeSingle();
+  if (result.error || result.data === null) return null;
+  const parsed = z
+    .object({
+      provider_number: z.literal(PLATFORM_VOICE_SUPPORT_NUMBER),
+      binding_role: z.literal("platform_support"),
+    })
+    .safeParse(result.data);
+  return parsed.success ? parsed.data.provider_number : null;
+}
+
+async function dialBoundPlatformSupport(db: VoiceCallbackDatabase): Promise<Response> {
+  const platformNumber = await loadPlatformSupportNumber(db);
+  if (!platformNumber) {
+    return responseXml(voiceXml("A support representative is not available on this line."));
+  }
+  return responseXml(dialHumanXml(platformNumber));
 }
 
 async function featureEnabled(db: VoiceCallbackDatabase, tenantId: string): Promise<boolean> {
@@ -625,7 +684,7 @@ function createOpenAiTranscriber(
   fetcher: typeof fetch,
 ): VoiceSpeechToTextAdapter | null {
   const apiKey = env.VOICE_STT_API_KEY?.trim();
-  if (env.VOICE_STT_PROVIDER !== "openai" || !apiKey) return null;
+  if (voiceSttProviderFromEnv(env) !== "openai" || !apiKey) return null;
   let baseUrl: URL;
   try {
     baseUrl = new URL(env.VOICE_STT_BASE_URL?.trim() || "https://api.openai.com/v1");
@@ -746,7 +805,7 @@ function createGatewayAnswerer(env: VoiceServerEnv): VoiceLanguageAdapter | null
 }
 
 function createAfricaTalkingSpeech(env: VoiceServerEnv): VoiceTextToSpeechAdapter | null {
-  if (env.VOICE_TTS_PROVIDER !== AFRICAS_TALKING_PROVIDER_ID) return null;
+  if (voiceTtsProviderFromEnv(env) !== AFRICAS_TALKING_PROVIDER_ID) return null;
   return {
     providerId: AFRICAS_TALKING_PROVIDER_ID,
     speak: (text, callbackUrl) => recordVoiceXml(text, callbackUrl),
@@ -996,7 +1055,7 @@ export function createAfricaTalkingVoiceCallbackHandler(dependencies: VoiceCallb
           { state: "active" },
           { state: "escalated" },
         );
-        return responseXml(dialHumanXml());
+        return dialBoundPlatformSupport(db);
       }
       if (callback.recordingUrl) {
         if (!assistant) throw new Error("voice AI providers are not configured");
@@ -1045,7 +1104,7 @@ export function createAfricaTalkingVoiceCallbackHandler(dependencies: VoiceCallb
             { state: "active" },
             { state: "escalated" },
           );
-          return responseXml(dialHumanXml());
+          return dialBoundPlatformSupport(db);
         }
         await recordCommsEvent(db, session, transcript, "caller_transcript", eventHash);
         await voiceAudit(audit, session, "voice.transcript.caller_recorded", null, {
