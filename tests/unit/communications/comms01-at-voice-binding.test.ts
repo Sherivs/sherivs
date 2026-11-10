@@ -12,6 +12,7 @@ import {
 } from "../../../frontend/src/lib/communications/africas-talking-voice.server";
 import { createAfricaTalkingVoiceAdapter } from "../../../frontend/src/lib/communications/africas-talking-outbound.server";
 import {
+  PLATFORM_VOICE_TENANT_REF,
   assertNoRawVoiceNumber,
   assertRecipientMembership,
   assertVoiceNumberTenant,
@@ -51,40 +52,26 @@ const ENV: VoiceServerEnv = {
   AT_VOICE_CALLBACK_URL: "https://voice.example.test/api/public/webhooks/africas-talking-voice",
 };
 
-const { tables } = vi.hoisted(() => ({ tables: [] as string[] }));
+const { rpcCalls } = vi.hoisted(() => ({ rpcCalls: [] as string[] }));
 
 vi.mock("@/integrations/supabase/client.server", () => ({
   supabaseAdmin: {
-    from(table: string) {
-      tables.push(table);
-      const filters = new Map<string, unknown>();
-      const query = {
-        select: () => query,
-        eq: (column: string, value: unknown) => {
-          filters.set(column, value);
-          return query;
-        },
-        in: () => query,
-        maybeSingle: async () => {
-          if (table === "school_tenant_map") return { data: { school_id: TENANT_A }, error: null };
-          if (table === "organization_memberships") {
-            return filters.get("user_id") === USER_A && filters.get("school_id") === TENANT_A
-              ? { data: { school_id: TENANT_A }, error: null }
-              : { data: null, error: null };
-          }
-          if (table === "users") return { data: { phone: "+2348011111111" }, error: null };
-          if (table === "comms_optins") return { data: { status: "opted_in" }, error: null };
-          return { data: null, error: null };
-        },
-      };
-      return query;
+    rpc: async (name: string, args: Record<string, unknown>) => {
+      rpcCalls.push(name);
+      if (name !== "voice_agent_assert_recipient_consent") {
+        return { data: null, error: { message: "not allowed" } };
+      }
+      if (args.p_recipient_user !== USER_A) {
+        return { data: null, error: { message: "recipient is outside this organization" } };
+      }
+      return { data: null, error: null };
     },
   },
 }));
 
 describe("COMMS-01 voice number binding", () => {
   beforeEach(() => {
-    tables.length = 0;
+    rpcCalls.length = 0;
   });
 
   it("rejects raw numbers from client or AI input", () => {
@@ -154,12 +141,15 @@ describe("COMMS-01 voice number binding", () => {
     await expect(assertVoiceRecipientConsent(TENANT_A, "+2348011111111")).rejects.toThrow(
       /Raw phone numbers/,
     );
-    expect(tables).not.toContain("comms_optins");
+    expect(rpcCalls).toEqual([]);
     await expect(
       assertVoiceRecipientConsent(TENANT_A, "00000000-0000-4000-8000-000000000099"),
     ).rejects.toThrow(/not a member of this organization/);
-    expect(tables).not.toContain("comms_optins");
     await expect(assertVoiceRecipientConsent(TENANT_A, USER_A)).resolves.toBeUndefined();
+    expect(rpcCalls).toEqual([
+      "voice_agent_assert_recipient_consent",
+      "voice_agent_assert_recipient_consent",
+    ]);
   });
 
   it("fails closed when an Africa's Talking key is missing and when the webhook token is wrong", async () => {
@@ -270,6 +260,21 @@ describe("COMMS-01 voice number binding", () => {
       "DROP FUNCTION IF EXISTS public.voice_agent_request_call(text, text, text, text, text);",
     );
     expect(MIGRATION).toContain("phone_redacted");
+    expect(MIGRATION).toContain("voice.number.unbound");
+    expect(MIGRATION).toContain("voice.number.bound");
+    expect(MIGRATION).toContain("OLD.org_id IS DISTINCT FROM NEW.org_id");
+    expect(MIGRATION).toContain(
+      "platform support line can only be attached to the platform organization",
+    );
+    expect(MIGRATION).toContain("platform support line is already attached");
+    expect(MIGRATION).toContain("IS DISTINCT FROM EXCLUDED.provider");
+    expect(MIGRATION).toContain("au.phone_confirmed_at IS NOT NULL");
+    expect(MIGRATION).toContain("regexp_replace(o.phone, '\\D', '', 'g') = v_digits");
+    expect(MIGRATION).not.toMatch(/u\.school_id/);
+    expect(ROLLBACK).toContain(
+      "DROP FUNCTION IF EXISTS public.voice_agent_assert_recipient_consent(text, uuid);",
+    );
+    expect(RLS_CHECK).toContain("voice_agent_assert_recipient_consent");
     expect(ROLLBACK).toContain(
       "DROP FUNCTION IF EXISTS public.comms_bind_voice_sender(uuid, text);",
     );
@@ -277,5 +282,150 @@ describe("COMMS-01 voice number binding", () => {
     expect(ROLLBACK).toContain("public.voice_agent_request_call(text, text, text, text, text)");
     expect(RLS_CHECK).toContain("comms_sender_numbers RLS is not forced after COMMS-01");
     expect(RLS_CHECK).toContain("comms_bind_voice_sender");
+  });
+
+  it("routes platform calls only to the platform tenant and survives a missing binding column", async () => {
+    const PLATFORM_SCHOOL = "00000000-0000-4000-8000-0000000000aa";
+    const OTHER_ORG = "00000000-0000-4000-8000-0000000000bb";
+    function callbackDb(mode: "platform" | "missing-column"): VoiceCallbackDatabase {
+      let wroteSession = false;
+      return {
+        from(table: string) {
+          let selected = "";
+          const filters = new Map<string, unknown>();
+          const query = {
+            select(columns: string) {
+              selected = columns;
+              return query;
+            },
+            eq(column: string, value: unknown) {
+              filters.set(column, value);
+              return query;
+            },
+            order: () => query,
+            limit: () => query,
+            maybeSingle: async () => {
+              if (table === "cg_org_communication_sender") return { data: null, error: null };
+              if (
+                table === "comms_sender_numbers" &&
+                mode === "missing-column" &&
+                selected.includes("binding_role")
+              ) {
+                return {
+                  data: null,
+                  error: { message: "column binding_role does not exist", code: "42703" },
+                };
+              }
+              if (table === "comms_sender_numbers" && mode === "missing-column") {
+                return { data: { school_id: PLATFORM_SCHOOL }, error: null };
+              }
+              if (
+                table === "comms_sender_numbers" &&
+                filters.get("binding_role") === "platform_support"
+              ) {
+                return {
+                  data: {
+                    provider_number: "+2349015056201",
+                    binding_role: "platform_support",
+                    number_status: "active",
+                  },
+                  error: null,
+                };
+              }
+              if (table === "comms_sender_numbers") {
+                return {
+                  data: {
+                    school_id: OTHER_ORG,
+                    org_id: OTHER_ORG,
+                    binding_role: "platform_support",
+                    tenant_ref: PLATFORM_VOICE_TENANT_REF,
+                    number_status: "active",
+                  },
+                  error: null,
+                };
+              }
+              if (table === "school_tenant_map") {
+                return filters.get("tenant_id") === PLATFORM_VOICE_TENANT_REF
+                  ? { data: { school_id: PLATFORM_SCHOOL }, error: null }
+                  : { data: null, error: null };
+              }
+              if (table === "voice_call_sessions" && wroteSession) {
+                const values = inserted[inserted.length - 1] ?? {};
+                return {
+                  data: {
+                    id: "00000000-0000-4000-8000-0000000000cc",
+                    tenant_id: values.tenant_id,
+                    tenant_ref: values.tenant_ref ?? null,
+                    provider_session_id: values.provider_session_id,
+                    caller_number: values.caller_number,
+                    destination_number: values.destination_number,
+                    state: "consent_pending",
+                    recording_consent_at: null,
+                    turn_count: 0,
+                  },
+                  error: null,
+                };
+              }
+              return { data: null, error: null };
+            },
+            insert(values: Record<string, unknown>) {
+              wroteSession = table === "voice_call_sessions";
+              if (wroteSession) inserted.push(values);
+              return query;
+            },
+            upsert: () => query,
+            update: () => query,
+            then: (resolve: (value: { data: null; error: null }) => unknown) =>
+              Promise.resolve({ data: null, error: null }).then(resolve),
+          };
+          return query;
+        },
+        rpc: async () => ({ data: true, error: null }),
+      } as unknown as VoiceCallbackDatabase;
+    }
+    const inserted: Record<string, unknown>[] = [];
+    const platformHandler = createAfricaTalkingVoiceCallbackHandler({
+      env: ENV,
+      db: callbackDb("platform"),
+      assistant: null,
+    });
+    const platformResponse = await platformHandler(
+      new Request(`${ENV.AT_VOICE_CALLBACK_URL}?token=${ENV.AT_VOICE_WEBHOOK_TOKEN}`, {
+        method: "POST",
+        headers: { "content-type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          sessionId: "at-platform-1",
+          direction: "Inbound",
+          callerNumber: "+2348012345678",
+          destinationNumber: "+2349015056201",
+        }),
+      }),
+    );
+    expect(platformResponse.status).toBe(200);
+    expect(inserted[0]).toMatchObject({
+      tenant_id: PLATFORM_SCHOOL,
+      tenant_ref: PLATFORM_VOICE_TENANT_REF,
+    });
+    expect(inserted[0]?.tenant_id).not.toBe(OTHER_ORG);
+
+    const missingHandler = createAfricaTalkingVoiceCallbackHandler({
+      env: ENV,
+      db: callbackDb("missing-column"),
+      assistant: null,
+    });
+    const missingResponse = await missingHandler(
+      new Request(`${ENV.AT_VOICE_CALLBACK_URL}?token=${ENV.AT_VOICE_WEBHOOK_TOKEN}`, {
+        method: "POST",
+        headers: { "content-type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          sessionId: "at-legacy-1",
+          direction: "Inbound",
+          callerNumber: "+2348012345678",
+          destinationNumber: "+2348098765432",
+        }),
+      }),
+    );
+    expect(missingResponse.status).not.toBe(500);
+    expect(await missingResponse.text()).toContain("<GetDigits");
   });
 });

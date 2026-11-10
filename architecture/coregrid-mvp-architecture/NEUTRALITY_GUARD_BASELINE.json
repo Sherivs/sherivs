@@ -17,7 +17,7 @@
   },
   "summary": {
     "entryCount": 871,
-    "totalObservedHits": 4909,
+    "totalObservedHits": 4910,
     "hitsByFile": {
       "database/supabase/migrations/20261024000240_sherivs_017_role_permission_catalog.sql": 549,
       "database/supabase/migrations/20261025100210_sherivs_ux1_workspace_manifest.sql": 119,
@@ -222,7 +222,7 @@
       "frontend/src/lib/scheduling-conflicts.ts": 1,
       "frontend/src/lib/scheduling-quality.ts": 1,
       "frontend/src/lib/workforce-positions.ts": 1,
-      "database/supabase/migrations/20261104032000_sherivs_comms01_at_number_binding.sql": 14
+      "database/supabase/migrations/20261104032000_sherivs_comms01_at_number_binding.sql": 15
     },
     "baselineGroups": 427
   },
@@ -13827,22 +13827,23 @@
       "kind": "structural",
       "token": "school_id",
       "streamIRef": "ADR-067 (architecture/adr/ADR-067_COMMS01_AT_VOICE_NUMBER_BINDING.md)",
-      "occurrences": 14,
+      "occurrences": 15,
       "lines": [
-        206,
-        216,
-        272,
-        275,
-        280,
-        328,
-        369,
-        435,
-        510,
-        518,
-        525,
-        617,
-        629,
-        702
+        268,
+        278,
+        342,
+        345,
+        350,
+        397,
+        422,
+        462,
+        528,
+        586,
+        594,
+        601,
+        730,
+        742,
+        815
       ],
       "firstSnippet": "school_id, org_id, channel, provider_number, provider, binding_role, tenant_ref, number_status"
     }

@@ -3,6 +3,14 @@
 -- voice_live stays at its existing default (off). No provider secret is stored.
 -- Rollback: database/supabase/rollbacks/20261104032000_sherivs_comms01_at_number_binding.sql
 -- ADR-067. Reserved timestamp 20261104032000.
+--
+-- Apply order:
+-- 1. Run the read-only pre-apply query in ADR-067. It must return zero rows.
+-- 2. Apply this file only after 20261101000050 (voice add-on) and
+--    20261103000200 (sender channels include voice). Do not apply it to production here.
+-- 3. The inbound callback treats missing binding columns as "not available" (not HTTP 500),
+--    so the application may deploy before this file. Apply this file before operators
+--    call voice_agent_configure or voice_agent_request_call.
 
 DO $comms01_guard$
 BEGIN
@@ -98,10 +106,11 @@ SECURITY DEFINER
 SET search_path = ''
 AS $$
 DECLARE
-  v_row public.comms_sender_numbers%ROWTYPE;
-  v_org uuid;
   v_actor text := coalesce(auth.uid()::text, 'comms01-binding');
   v_actor_kind text := CASE WHEN auth.uid() IS NULL THEN 'system' ELSE 'user' END;
+  v_old_org uuid;
+  v_new_org uuid;
+  v_org uuid;
   v_action text;
   v_target_id text;
   v_seq bigint;
@@ -110,29 +119,23 @@ DECLARE
   v_before_hash text;
   v_after_hash text;
   v_number text;
+  v_step int;
 BEGIN
-  IF TG_OP = 'DELETE' THEN
-    v_row := OLD;
-    v_action := 'voice.number.unbound';
-  ELSE
-    v_row := NEW;
-    v_action := CASE WHEN TG_OP = 'INSERT' THEN 'voice.number.bound' ELSE 'voice.number.updated' END;
-  END IF;
-  IF v_row.channel IS DISTINCT FROM 'voice' THEN
-    IF TG_OP = 'DELETE' THEN RETURN OLD; END IF;
+  IF TG_OP <> 'DELETE' AND NEW.channel IS DISTINCT FROM 'voice'
+     AND (TG_OP = 'INSERT' OR OLD.channel IS DISTINCT FROM 'voice') THEN
     RETURN NEW;
   END IF;
-  v_org := coalesce(
-    v_row.org_id,
-    CASE WHEN v_row.tenant_ref ~ '^[0-9a-fA-F-]{36}$' THEN v_row.tenant_ref::uuid ELSE NULL END
-  );
-  IF v_org IS NULL THEN
-    RAISE EXCEPTION 'voice number binding requires a tenant' USING ERRCODE = '23514';
+  IF TG_OP = 'DELETE' AND OLD.channel IS DISTINCT FROM 'voice' THEN
+    RETURN OLD;
   END IF;
-  v_number := coalesce(v_row.provider_number, '');
-  v_target_id := v_row.channel || ':' || left(
+  v_number := coalesce(CASE WHEN TG_OP = 'DELETE' THEN OLD.provider_number ELSE NEW.provider_number END, '');
+  v_target_id := 'voice:' || left(
     encode(extensions.digest(convert_to(v_number, 'UTF8'), 'sha256'), 'hex'), 32);
   IF TG_OP <> 'INSERT' THEN
+    v_old_org := coalesce(
+      OLD.org_id,
+      CASE WHEN OLD.tenant_ref ~ '^[0-9a-fA-F-]{36}$' THEN OLD.tenant_ref::uuid ELSE NULL END
+    );
     v_before_hash := encode(extensions.digest(convert_to(jsonb_build_object(
       'binding_role', OLD.binding_role,
       'org_id', OLD.org_id,
@@ -141,12 +144,66 @@ BEGIN
     )::text, 'UTF8'), 'sha256'), 'hex');
   END IF;
   IF TG_OP <> 'DELETE' THEN
+    v_new_org := coalesce(
+      NEW.org_id,
+      CASE WHEN NEW.tenant_ref ~ '^[0-9a-fA-F-]{36}$' THEN NEW.tenant_ref::uuid ELSE NULL END
+    );
     v_after_hash := encode(extensions.digest(convert_to(jsonb_build_object(
       'binding_role', NEW.binding_role,
       'org_id', NEW.org_id,
       'number_status', NEW.number_status,
       'number_hash', encode(extensions.digest(convert_to(coalesce(NEW.provider_number, ''), 'UTF8'), 'sha256'), 'hex')
     )::text, 'UTF8'), 'sha256'), 'hex');
+  END IF;
+
+  -- An organization change writes unbound on the previous chain and bound on the new one.
+  IF TG_OP = 'UPDATE' AND OLD.org_id IS DISTINCT FROM NEW.org_id THEN
+    FOR v_step IN 1..2 LOOP
+      IF v_step = 1 THEN
+        v_org := v_old_org;
+        v_action := 'voice.number.unbound';
+      ELSE
+        v_org := v_new_org;
+        v_action := 'voice.number.bound';
+      END IF;
+      IF v_org IS NULL THEN
+        CONTINUE;
+      END IF;
+      PERFORM pg_advisory_xact_lock(hashtextextended(v_org::text, 7013));
+      SELECT seq, entry_hash INTO v_seq, v_prev_hash
+        FROM public.audit_chain WHERE org_id = v_org ORDER BY seq DESC LIMIT 1;
+      v_seq := coalesce(v_seq, 0) + 1;
+      v_prev_hash := coalesce(v_prev_hash, repeat('0', 64));
+      INSERT INTO public.audit_chain
+        (org_id, seq, at, actor_kind, actor_id, action, target_type, target_id, ip, device,
+         before_hash, after_hash, prev_hash, entry_hash)
+      VALUES (
+        v_org, v_seq, v_at::timestamptz, v_actor_kind, v_actor, v_action, 'voice_sender', v_target_id,
+        NULL, NULL,
+        CASE WHEN v_step = 1 THEN v_before_hash ELSE NULL END,
+        CASE WHEN v_step = 2 THEN v_after_hash ELSE NULL END,
+        v_prev_hash,
+        public.audit_chain_canonical_hash(
+          v_prev_hash, v_seq, v_at::timestamptz, v_org, v_actor_kind, v_actor, v_action,
+          'voice_sender', v_target_id, NULL, NULL,
+          CASE WHEN v_step = 1 THEN v_before_hash ELSE NULL END,
+          CASE WHEN v_step = 2 THEN v_after_hash ELSE NULL END)
+      );
+    END LOOP;
+    IF v_old_org IS NULL AND v_new_org IS NULL THEN
+      RAISE EXCEPTION 'voice number binding requires a tenant' USING ERRCODE = '23514';
+    END IF;
+    RETURN NEW;
+  END IF;
+
+  v_org := CASE WHEN TG_OP = 'DELETE' THEN v_old_org ELSE v_new_org END;
+  v_action := CASE
+    WHEN TG_OP = 'DELETE' THEN 'voice.number.unbound'
+    WHEN TG_OP = 'INSERT' THEN 'voice.number.bound'
+    ELSE 'voice.number.updated'
+  END;
+  IF v_org IS NULL THEN
+    RAISE EXCEPTION 'voice number binding requires a tenant' USING ERRCODE = '23514';
   END IF;
   PERFORM pg_advisory_xact_lock(hashtextextended(v_org::text, 7013));
   SELECT seq, entry_hash INTO v_seq, v_prev_hash
@@ -158,10 +215,15 @@ BEGIN
      before_hash, after_hash, prev_hash, entry_hash)
   VALUES (
     v_org, v_seq, v_at::timestamptz, v_actor_kind, v_actor, v_action, 'voice_sender', v_target_id,
-    NULL, NULL, v_before_hash, v_after_hash, v_prev_hash,
+    NULL, NULL,
+    CASE WHEN TG_OP = 'INSERT' THEN NULL ELSE v_before_hash END,
+    CASE WHEN TG_OP = 'DELETE' THEN NULL ELSE v_after_hash END,
+    v_prev_hash,
     public.audit_chain_canonical_hash(
       v_prev_hash, v_seq, v_at::timestamptz, v_org, v_actor_kind, v_actor, v_action,
-      'voice_sender', v_target_id, NULL, NULL, v_before_hash, v_after_hash)
+      'voice_sender', v_target_id, NULL, NULL,
+      CASE WHEN TG_OP = 'INSERT' THEN NULL ELSE v_before_hash END,
+      CASE WHEN TG_OP = 'DELETE' THEN NULL ELSE v_after_hash END)
   );
   IF TG_OP = 'DELETE' THEN RETURN OLD; END IF;
   RETURN NEW;
@@ -215,8 +277,16 @@ SET provider = EXCLUDED.provider,
     number_status = 'active',
     school_id = public.comms_sender_numbers.school_id,
     org_id = public.comms_sender_numbers.org_id
-WHERE public.comms_sender_numbers.binding_role IS NULL
-   OR public.comms_sender_numbers.binding_role = 'platform_support';
+WHERE (
+    public.comms_sender_numbers.binding_role IS NULL
+    OR public.comms_sender_numbers.binding_role = 'platform_support'
+  )
+  AND (
+    public.comms_sender_numbers.provider IS DISTINCT FROM EXCLUDED.provider
+    OR public.comms_sender_numbers.binding_role IS DISTINCT FROM EXCLUDED.binding_role
+    OR public.comms_sender_numbers.tenant_ref IS DISTINCT FROM EXCLUDED.tenant_ref
+    OR public.comms_sender_numbers.number_status IS DISTINCT FROM 'active'
+  );
 
 CREATE OR REPLACE FUNCTION public.comms_bind_voice_sender(p_org uuid, p_number text)
 RETURNS void
@@ -317,12 +387,36 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = ''
 AS $$
+DECLARE
+  v_allowed uuid;
+  v_current uuid;
 BEGIN
   IF coalesce(auth.role(), '') <> 'service_role' THEN
     RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501';
   END IF;
-  IF p_org IS NULL OR NOT EXISTS (SELECT 1 FROM public.schools s WHERE s.id = p_org) THEN
-    RAISE EXCEPTION 'organization is not provisioned';
+  SELECT m.school_id INTO v_allowed
+    FROM public.school_tenant_map m
+    WHERE m.tenant_id = '3c0d0f9a-56bb-4a3e-8e02-b1a426f1c201'::uuid;
+  IF p_org IS NULL OR v_allowed IS NULL OR p_org IS DISTINCT FROM v_allowed THEN
+    RAISE EXCEPTION 'platform support line can only be attached to the platform organization'
+      USING ERRCODE = '42501';
+  END IF;
+  SELECT n.org_id INTO v_current
+    FROM public.comms_sender_numbers n
+    WHERE n.channel = 'voice'
+      AND n.provider = 'africas_talking'
+      AND n.binding_role = 'platform_support'
+      AND n.provider_number = '+2349015056201'
+      AND n.number_status = 'active'
+      AND n.tenant_ref = '3c0d0f9a-56bb-4a3e-8e02-b1a426f1c201';
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'platform support line is not bound';
+  END IF;
+  IF v_current IS NOT NULL AND v_current IS DISTINCT FROM p_org THEN
+    RAISE EXCEPTION 'platform support line is already attached' USING ERRCODE = '42501';
+  END IF;
+  IF v_current IS NOT DISTINCT FROM p_org THEN
+    RETURN;
   END IF;
   UPDATE public.comms_sender_numbers
     SET school_id = p_org, org_id = p_org
@@ -330,10 +424,9 @@ BEGIN
       AND provider = 'africas_talking'
       AND binding_role = 'platform_support'
       AND provider_number = '+2349015056201'
-      AND number_status = 'active';
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'platform support line is not bound';
-  END IF;
+      AND number_status = 'active'
+      AND tenant_ref = '3c0d0f9a-56bb-4a3e-8e02-b1a426f1c201'
+      AND org_id IS NULL;
 END;
 $$;
 
@@ -471,22 +564,14 @@ BEGIN
 END;
 $$;
 
-DROP FUNCTION IF EXISTS public.voice_agent_request_call(text, text, text, text, text);
-DROP FUNCTION IF EXISTS public.voice_agent_request_call(text, text, text);
-
-CREATE OR REPLACE FUNCTION public.voice_agent_request_call(
-  p_tenant_ref text,
-  p_requester text,
-  p_category text,
-  p_recipient_user uuid,
-  p_subject_ref text DEFAULT NULL
-) RETURNS uuid
+CREATE OR REPLACE FUNCTION public.voice_agent_assert_recipient_consent(
+  p_tenant_ref text, p_recipient_user uuid
+) RETURNS text
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = ''
 AS $$
 DECLARE
-  v_id uuid;
   v_org uuid;
   v_raw text;
   v_digits text;
@@ -495,17 +580,8 @@ BEGIN
   IF coalesce(auth.role(), '') <> 'service_role' THEN
     RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501';
   END IF;
-  IF p_tenant_ref IS NULL OR p_tenant_ref !~ '^[0-9a-fA-F-]{36}$'
-     OR p_requester IS NULL OR length(p_requester) NOT BETWEEN 1 AND 160
-     OR p_category IS NULL OR p_category NOT IN ('fee_reminder', 'absence_alert')
-     OR p_recipient_user IS NULL
-     OR (p_subject_ref IS NOT NULL AND length(p_subject_ref) > 160) THEN
-    RAISE EXCEPTION 'invalid voice call request';
-  END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM public.cg_org_voice_agent WHERE tenant_ref = p_tenant_ref AND enabled
-  ) THEN
-    RAISE EXCEPTION 'voice agent is not enabled for this organization';
+  IF p_tenant_ref IS NULL OR p_tenant_ref !~ '^[0-9a-fA-F-]{36}$' OR p_recipient_user IS NULL THEN
+    RAISE EXCEPTION 'invalid voice recipient' USING ERRCODE = '42501';
   END IF;
   SELECT m.school_id INTO v_org
     FROM public.school_tenant_map m
@@ -530,8 +606,7 @@ BEGIN
       AND regexp_replace(coalesce(au.phone, ''), '\D', '', 'g')
           = regexp_replace(coalesce(u.phone, ''), '\D', '', 'g');
   IF v_raw IS NULL THEN
-    RAISE EXCEPTION 'recipient is outside this organization or has no confirmed phone'
-      USING ERRCODE = '42501';
+    RAISE EXCEPTION 'recipient has no confirmed voice number' USING ERRCODE = '42501';
   END IF;
   v_digits := regexp_replace(v_raw, '\D', '', 'g');
   IF v_raw ~ '^\+[1-9][0-9]{7,14}$' THEN
@@ -541,17 +616,55 @@ BEGIN
   ELSIF v_digits ~ '^0[0-9]{10}$' THEN
     v_phone := '+234' || substr(v_digits, 2);
   ELSE
-    RAISE EXCEPTION 'recipient has no usable voice number';
+    RAISE EXCEPTION 'recipient has no confirmed voice number' USING ERRCODE = '42501';
   END IF;
   IF NOT EXISTS (
     SELECT 1 FROM public.comms_optins o
     WHERE o.org_id = v_org
       AND o.channel = 'voice'
       AND o.status = 'opted_in'
-      AND regexp_replace(o.phone, '\D', '', 'g') = regexp_replace(v_phone, '\D', '', 'g')
+      AND regexp_replace(o.phone, '\D', '', 'g') = v_digits
   ) THEN
-    RAISE EXCEPTION 'recipient has not opted in to voice calls';
+    RAISE EXCEPTION 'recipient has not opted in to voice calls' USING ERRCODE = '42501';
   END IF;
+  RETURN v_phone;
+END;
+$$;
+
+DROP FUNCTION IF EXISTS public.voice_agent_request_call(text, text, text, text, text);
+DROP FUNCTION IF EXISTS public.voice_agent_request_call(text, text, text);
+
+CREATE OR REPLACE FUNCTION public.voice_agent_request_call(
+  p_tenant_ref text,
+  p_requester text,
+  p_category text,
+  p_recipient_user uuid,
+  p_subject_ref text DEFAULT NULL
+) RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_id uuid;
+  v_phone text;
+BEGIN
+  IF coalesce(auth.role(), '') <> 'service_role' THEN
+    RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501';
+  END IF;
+  IF p_tenant_ref IS NULL OR p_tenant_ref !~ '^[0-9a-fA-F-]{36}$'
+     OR p_requester IS NULL OR length(p_requester) NOT BETWEEN 1 AND 160
+     OR p_category IS NULL OR p_category NOT IN ('fee_reminder', 'absence_alert')
+     OR p_recipient_user IS NULL
+     OR (p_subject_ref IS NOT NULL AND length(p_subject_ref) > 160) THEN
+    RAISE EXCEPTION 'invalid voice call request';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.cg_org_voice_agent WHERE tenant_ref = p_tenant_ref AND enabled
+  ) THEN
+    RAISE EXCEPTION 'voice agent is not enabled for this organization';
+  END IF;
+  v_phone := public.voice_agent_assert_recipient_consent(p_tenant_ref, p_recipient_user);
   PERFORM pg_advisory_xact_lock(hashtextextended(p_tenant_ref, 108));
   IF (
     SELECT count(*) FROM public.cg_voice_call_approvals
@@ -729,6 +842,7 @@ $$;
 
 REVOKE ALL ON FUNCTION public.voice_agent_configure(boolean, text),
   public.voice_agent_request_call(text, text, text, uuid, text),
+  public.voice_agent_assert_recipient_consent(text, uuid),
   public.voice_agent_consented_recipients(),
   public.voice_agent_claim_call(uuid, text)
   FROM PUBLIC, anon, authenticated;
@@ -736,6 +850,7 @@ GRANT EXECUTE ON FUNCTION public.voice_agent_configure(boolean, text),
   public.voice_agent_consented_recipients()
   TO authenticated;
 GRANT EXECUTE ON FUNCTION public.voice_agent_request_call(text, text, text, uuid, text),
+  public.voice_agent_assert_recipient_consent(text, uuid),
   public.voice_agent_claim_call(uuid, text)
   TO service_role;
 

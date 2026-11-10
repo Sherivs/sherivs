@@ -18,6 +18,7 @@ import {
 import { SystemClock, TimeAuthority } from "../kernel/time-authority";
 import {
   PLATFORM_VOICE_SUPPORT_NUMBER,
+  PLATFORM_VOICE_TENANT_REF,
   voiceSttProviderFromEnv,
   voiceTtsProviderFromEnv,
 } from "./voice-number-binding";
@@ -132,7 +133,13 @@ export interface VoiceSession {
 
 interface DatabaseResult<T = unknown> {
   data: T | null;
-  error: { message: string } | null;
+  error: { message: string; code?: string } | null;
+}
+
+function isMissingVoiceBindingColumn(error: { message: string; code?: string } | null): boolean {
+  if (!error) return false;
+  if (error.code === "42703" || error.code === "PGRST204") return true;
+  return /column .+ does not exist|schema cache/i.test(error.message);
 }
 
 interface VoiceQuery extends PromiseLike<DatabaseResult> {
@@ -300,7 +307,21 @@ async function resolveTenant(
     .eq("provider", AFRICAS_TALKING_PROVIDER_ID)
     .eq("provider_number", destination)
     .maybeSingle();
-  if (result.error) throw new Error("voice destination lookup failed");
+  if (result.error) {
+    if (!isMissingVoiceBindingColumn(result.error)) {
+      throw new Error("voice destination lookup failed");
+    }
+    const legacy = await db
+      .from("comms_sender_numbers")
+      .select("school_id")
+      .eq("channel", "voice")
+      .eq("provider", AFRICAS_TALKING_PROVIDER_ID)
+      .eq("provider_number", destination)
+      .maybeSingle();
+    if (legacy.error || legacy.data === null) return null;
+    const legacyRow = z.object({ school_id: z.string().uuid() }).safeParse(legacy.data);
+    return legacyRow.success ? { schoolId: legacyRow.data.school_id, tenantRef: null } : null;
+  }
   const parsed = z
     .object({
       school_id: z.string().uuid().nullable().optional(),
@@ -315,16 +336,17 @@ async function resolveTenant(
   if (row.org_id && row.school_id && row.org_id !== row.school_id) return null;
   const schoolId = row.school_id ?? row.org_id ?? null;
   if (row.binding_role === "platform_support") {
-    if (schoolId) return { schoolId, tenantRef: row.tenant_ref ?? null };
-    if (!row.tenant_ref) return null;
+    if (row.tenant_ref !== PLATFORM_VOICE_TENANT_REF) return null;
     const mapping = await db
       .from("school_tenant_map")
       .select("school_id")
-      .eq("tenant_id", row.tenant_ref)
+      .eq("tenant_id", PLATFORM_VOICE_TENANT_REF)
       .maybeSingle();
-    if (mapping.error) throw new Error("voice tenant mapping lookup failed");
+    if (mapping.error) return null;
     const mapped = z.object({ school_id: z.string().uuid() }).safeParse(mapping.data);
-    return mapped.success ? { schoolId: mapped.data.school_id, tenantRef: row.tenant_ref } : null;
+    return mapped.success
+      ? { schoolId: mapped.data.school_id, tenantRef: PLATFORM_VOICE_TENANT_REF }
+      : null;
   }
   return schoolId ? { schoolId, tenantRef: row.tenant_ref ?? null } : null;
 }
@@ -339,6 +361,7 @@ async function loadPlatformSupportNumber(db: VoiceCallbackDatabase): Promise<str
     .eq("number_status", "active")
     .maybeSingle();
   if (result.error || result.data === null) return null;
+  if (result.data === null) return null;
   const parsed = z
     .object({
       provider_number: z.literal(PLATFORM_VOICE_SUPPORT_NUMBER),

@@ -249,7 +249,8 @@ WHERE g.specific_schema = 'public'
   AND g.routine_name IN (
     'comms_bind_voice_sender',
     'comms_attach_platform_voice_org',
-    'comms_voice_number_audit'
+    'comms_voice_number_audit',
+    'voice_agent_assert_recipient_consent'
   )
   AND g.grantee IN ('anon', 'PUBLIC', 'authenticated')
   AND g.privilege_type = 'EXECUTE';

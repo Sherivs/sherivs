@@ -64,8 +64,31 @@ Store the platform support line and each entitled organization's Africa's Talkin
 - **WHY?** Issue #328 requires Africa's Talking as the provider without a second fabric and without client-supplied numbers.
 - **UNDER WHICH POLICY?** AGENTS.md §§13, 16, 17, 19, 26–31, and 45; forced RLS; `voice_live` remains default-off; ADR-004 baseline growth is limited to the observed group.
 
+## Pre-apply query and apply order
+
+Run this read-only query before applying `20261104032000_sherivs_comms01_at_number_binding.sql`. It must return zero rows. A voice row whose provider is not Africa's Talking, or an existing voice row for `+2349015056201`, has to be resolved by an operator before apply. This query does not write.
+
+```sql
+SELECT channel, provider, provider_number
+FROM public.comms_sender_numbers
+WHERE channel = 'voice'
+  AND (
+    provider IS DISTINCT FROM 'africas_talking'
+    OR provider_number = '+2349015056201'
+  );
+```
+
+Apply order:
+
+1. The voice add-on `20261101000050` and the sender channel check `20261103000200` are already earlier in the migration sequence.
+2. Run the query above.
+3. Apply `20261104032000`. Do not apply it to production from this pull request.
+4. The inbound callback may be deployed before step 3. If `binding_role` is missing it answers "not available" and does not return HTTP 500. Apply the migration before operators call `voice_agent_configure` or `voice_agent_request_call`.
+5. Re-applying the file does not rewrite an unchanged platform row, so it does not append another audit entry for that row.
+6. `comms_attach_platform_voice_org` accepts only the organization mapped to tenant `3c0d0f9a-56bb-4a3e-8e02-b1a426f1c201` and refuses to move a line that is already attached. Inbound platform calls follow that same tenant map, not an arbitrary `org_id` on the row.
+
 ## UNKNOWNs
 
 - The operator must apply the migration and set `AT_USERNAME`, `AT_API_KEY`, `AT_VOICE_WEBHOOK_TOKEN`, and `AT_VOICE_CALLBACK_URL` before any non-test call. This change does not do that.
 - Turning on `voice_live` is a separate operator action and is not authorized here.
-- The platform line routes inbound audio only after `comms_attach_platform_voice_org` links it to a provisioned organization. Until then the number is stored and inbound routing fails closed.
+- Inbound platform audio still needs a `school_tenant_map` row for `3c0d0f9a-56bb-4a3e-8e02-b1a426f1c201`. Until that map exists the number is stored and inbound routing fails closed.
