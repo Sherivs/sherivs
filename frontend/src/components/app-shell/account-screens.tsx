@@ -38,6 +38,7 @@ import {
   listVoiceCalls,
   listVoiceConsentedRecipients,
   requestVoiceCall,
+  setVoicePin,
   type VoiceAgentCall,
   type VoiceAgentSettings,
   type VoiceCallLogEntry,
@@ -452,6 +453,8 @@ export function AppSecurityScreen() {
   const app = useApp();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [voicePin, setVoicePinValue] = useState("");
+  const [voicePinConfirm, setVoicePinConfirm] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [googleBusy, setGoogleBusy] = useState(false);
   const googleConnected = hasGoogleIdentity(app.authUser);
@@ -467,6 +470,23 @@ export function AppSecurityScreen() {
     setMessage(error ? error.message : "Password updated.");
     setPassword("");
     setConfirm("");
+  }
+
+  async function saveVoicePin(event: React.FormEvent) {
+    event.preventDefault();
+    setMessage(null);
+    if (!/^[0-9]{4,8}$/.test(voicePin) || voicePin !== voicePinConfirm) {
+      setMessage("Use the same 4 to 8 digit voice PIN in both fields.");
+      return;
+    }
+    try {
+      await setVoicePin({ data: { pin: voicePin } });
+      setVoicePinValue("");
+      setVoicePinConfirm("");
+      setMessage("Voice PIN saved.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Voice PIN could not be saved.");
+    }
   }
 
   async function connectGoogle() {
@@ -530,6 +550,34 @@ export function AppSecurityScreen() {
           />
         </label>
         <button type="submit">Update password</button>
+      </form>
+      <form className="app-shell-form" onSubmit={(event) => void saveVoicePin(event)}>
+        <h2>Voice PIN</h2>
+        <p>
+          This PIN is the second check before the calling agent can discuss your own records. It is
+          stored as a hash.
+        </p>
+        <label>
+          Voice PIN
+          <input
+            type="password"
+            inputMode="numeric"
+            autoComplete="new-password"
+            value={voicePin}
+            onChange={(event) => setVoicePinValue(event.target.value)}
+          />
+        </label>
+        <label>
+          Confirm voice PIN
+          <input
+            type="password"
+            inputMode="numeric"
+            autoComplete="new-password"
+            value={voicePinConfirm}
+            onChange={(event) => setVoicePinConfirm(event.target.value)}
+          />
+        </label>
+        <button type="submit">Save voice PIN</button>
       </form>
       {message ? <p className="app-shell-empty">{message}</p> : null}
 

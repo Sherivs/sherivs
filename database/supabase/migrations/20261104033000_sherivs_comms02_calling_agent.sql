@@ -27,7 +27,16 @@ END
 $comms02_guard$;
 
 ALTER TABLE public.voice_call_sessions
-  ADD COLUMN IF NOT EXISTS line_role text NOT NULL DEFAULT 'legacy';
+  ADD COLUMN IF NOT EXISTS line_role text NOT NULL DEFAULT 'legacy',
+  ADD COLUMN IF NOT EXISTS pin_verified_at timestamptz,
+  ADD COLUMN IF NOT EXISTS pin_member_id uuid;
+
+ALTER TABLE public.voice_call_sessions DROP CONSTRAINT IF EXISTS voice_call_sessions_state_check;
+ALTER TABLE public.voice_call_sessions
+  ADD CONSTRAINT voice_call_sessions_state_check
+  CHECK (state IN (
+    'consent_pending', 'pin_pending', 'active', 'completed', 'escalated', 'declined', 'failed'
+  ));
 
 DO $comms02_line_role$
 BEGIN
@@ -123,7 +132,9 @@ BEGIN
     END IF;
     v_tenant := NEW.tenant_ref;
   ELSIF TG_TABLE_NAME = 'comms_sender_numbers' THEN
-    IF NEW.channel IS DISTINCT FROM 'voice' OR NEW.binding_role IS DISTINCT FROM 'organization' THEN
+    IF NEW.channel IS DISTINCT FROM 'voice'
+       OR NEW.binding_role IS DISTINCT FROM 'organization'
+       OR NEW.number_status IS DISTINCT FROM 'active' THEN
       RETURN NEW;
     END IF;
     v_tenant := coalesce(NEW.tenant_ref, NEW.org_id::text);
@@ -273,8 +284,199 @@ BEGIN
 END;
 $$;
 
+CREATE TABLE IF NOT EXISTS public.cg_voice_member_pin (
+  tenant_ref text NOT NULL CHECK (tenant_ref ~ '^[0-9a-fA-F-]{36}$'),
+  user_id uuid NOT NULL,
+  pin_hash text NOT NULL CHECK (length(pin_hash) BETWEEN 20 AND 200),
+  failed_attempts integer NOT NULL DEFAULT 0 CHECK (failed_attempts >= 0),
+  locked_until timestamptz,
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (tenant_ref, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.cg_voice_pin_attempt (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_ref text NOT NULL CHECK (tenant_ref ~ '^[0-9a-fA-F-]{36}$'),
+  user_id uuid,
+  outcome text NOT NULL CHECK (outcome IN ('ok', 'rejected', 'locked', 'missing', 'rate_limited')),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.cg_voice_member_pin ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.cg_voice_member_pin FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.cg_voice_pin_attempt ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.cg_voice_pin_attempt FORCE ROW LEVEL SECURITY;
+REVOKE ALL ON public.cg_voice_member_pin, public.cg_voice_pin_attempt
+  FROM PUBLIC, anon, authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.voice_agent_pin_audit(
+  p_org uuid, p_action text, p_member uuid, p_outcome text
+) RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_seq bigint;
+  v_prev text;
+  v_at timestamptz := statement_timestamp();
+  v_actor text := coalesce(auth.uid()::text, 'voice-pin');
+  v_kind text := CASE WHEN auth.uid() IS NULL THEN 'system' ELSE 'user' END;
+  v_target text := coalesce(p_member::text, 'unknown');
+  v_after text;
+BEGIN
+  IF p_org IS NULL OR p_action IS NULL THEN
+    RETURN;
+  END IF;
+  v_after := encode(extensions.digest(convert_to(p_action || ':' || p_outcome, 'UTF8'), 'sha256'), 'hex');
+  PERFORM pg_advisory_xact_lock(hashtextextended(p_org::text, 7014));
+  SELECT seq, entry_hash INTO v_seq, v_prev
+    FROM public.audit_chain WHERE org_id = p_org ORDER BY seq DESC LIMIT 1;
+  v_seq := coalesce(v_seq, 0) + 1;
+  v_prev := coalesce(v_prev, repeat('0', 64));
+  INSERT INTO public.audit_chain (
+    org_id, seq, at, actor_kind, actor_id, action, target_type, target_id, ip, device,
+    before_hash, after_hash, prev_hash, entry_hash
+  ) VALUES (
+    p_org, v_seq, v_at, v_kind, v_actor, p_action, 'voice_pin', v_target,
+    NULL, NULL, NULL, v_after, v_prev,
+    public.audit_chain_canonical_hash(
+      v_prev, v_seq, v_at, p_org, v_kind, v_actor, p_action,
+      'voice_pin', v_target, NULL, NULL, NULL, v_after
+    )
+  );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.voice_agent_set_own_pin(p_pin text)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_tenant text := public.get_my_tenant_id();
+  v_org uuid;
+  v_tier text;
+BEGIN
+  IF auth.uid() IS NULL OR v_tenant IS NULL OR v_tenant !~ '^[0-9a-fA-F-]{36}$' THEN
+    RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501';
+  END IF;
+  IF p_pin IS NULL OR p_pin !~ '^[0-9]{4,8}$' THEN
+    RAISE EXCEPTION 'invalid voice pin' USING ERRCODE = '22023';
+  END IF;
+  SELECT m.school_id INTO v_org
+    FROM public.school_tenant_map m
+    WHERE m.tenant_id = v_tenant::uuid;
+  IF v_org IS NULL THEN
+    v_org := v_tenant::uuid;
+  END IF;
+  SELECT lower(btrim(coalesce(s.subscription_tier, 'trial'))) INTO v_tier
+    FROM public.schools s
+    WHERE s.id = v_org;
+  IF coalesce(v_tier, 'trial') NOT IN ('professional', 'enterprise') THEN
+    RAISE EXCEPTION 'calling agent is not included in this organization plan' USING ERRCODE = '42501';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.organization_memberships mem
+    WHERE mem.user_id = auth.uid() AND mem.school_id = v_org AND mem.is_active
+  ) THEN
+    RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501';
+  END IF;
+  INSERT INTO public.cg_voice_member_pin (tenant_ref, user_id, pin_hash, failed_attempts, locked_until)
+  VALUES (
+    v_tenant, auth.uid(), extensions.crypt(p_pin, extensions.gen_salt('bf', 8)), 0, NULL
+  )
+  ON CONFLICT (tenant_ref, user_id) DO UPDATE SET
+    pin_hash = EXCLUDED.pin_hash,
+    failed_attempts = 0,
+    locked_until = NULL,
+    updated_at = statement_timestamp();
+  PERFORM public.voice_agent_pin_audit(v_org, 'voice.pin.set', auth.uid(), 'set');
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.voice_agent_verify_pin(
+  p_tenant_ref text, p_member uuid, p_pin text
+) RETURNS text
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_org uuid;
+  v_hash text;
+  v_failed integer;
+  v_locked timestamptz;
+  v_org_attempts integer;
+  v_outcome text;
+BEGIN
+  IF coalesce(auth.role(), '') <> 'service_role' THEN
+    RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501';
+  END IF;
+  IF p_tenant_ref IS NULL OR p_tenant_ref !~ '^[0-9a-fA-F-]{36}$' OR p_member IS NULL THEN
+    RETURN 'missing';
+  END IF;
+  SELECT m.school_id INTO v_org
+    FROM public.school_tenant_map m
+    WHERE m.tenant_id = p_tenant_ref::uuid;
+  IF v_org IS NULL THEN
+    v_org := p_tenant_ref::uuid;
+  END IF;
+  SELECT count(*) INTO v_org_attempts
+    FROM public.cg_voice_pin_attempt a
+    WHERE a.tenant_ref = p_tenant_ref
+      AND a.created_at >= statement_timestamp() - interval '1 hour';
+  IF v_org_attempts >= 30 THEN
+    INSERT INTO public.cg_voice_pin_attempt (tenant_ref, user_id, outcome)
+    VALUES (p_tenant_ref, p_member, 'rate_limited');
+    PERFORM public.voice_agent_pin_audit(v_org, 'voice.pin.rejected', p_member, 'rate_limited');
+    RETURN 'rate_limited';
+  END IF;
+  SELECT pin_hash, failed_attempts, locked_until
+    INTO v_hash, v_failed, v_locked
+    FROM public.cg_voice_member_pin
+    WHERE tenant_ref = p_tenant_ref AND user_id = p_member
+    FOR UPDATE;
+  IF v_hash IS NULL THEN
+    INSERT INTO public.cg_voice_pin_attempt (tenant_ref, user_id, outcome)
+    VALUES (p_tenant_ref, p_member, 'missing');
+    PERFORM public.voice_agent_pin_audit(v_org, 'voice.pin.rejected', p_member, 'missing');
+    RETURN 'missing';
+  END IF;
+  IF v_locked IS NOT NULL AND v_locked > statement_timestamp() THEN
+    INSERT INTO public.cg_voice_pin_attempt (tenant_ref, user_id, outcome)
+    VALUES (p_tenant_ref, p_member, 'locked');
+    PERFORM public.voice_agent_pin_audit(v_org, 'voice.pin.rejected', p_member, 'locked');
+    RETURN 'locked';
+  END IF;
+  IF p_pin ~ '^[0-9]{4,8}$' AND extensions.crypt(p_pin, v_hash) = v_hash THEN
+    UPDATE public.cg_voice_member_pin
+      SET failed_attempts = 0, locked_until = NULL, updated_at = statement_timestamp()
+      WHERE tenant_ref = p_tenant_ref AND user_id = p_member;
+    INSERT INTO public.cg_voice_pin_attempt (tenant_ref, user_id, outcome)
+    VALUES (p_tenant_ref, p_member, 'ok');
+    PERFORM public.voice_agent_pin_audit(v_org, 'voice.pin.accepted', p_member, 'ok');
+    RETURN 'ok';
+  END IF;
+  v_failed := coalesce(v_failed, 0) + 1;
+  v_outcome := CASE WHEN v_failed >= 5 THEN 'locked' ELSE 'rejected' END;
+  UPDATE public.cg_voice_member_pin
+    SET failed_attempts = v_failed,
+        locked_until = CASE WHEN v_failed >= 5 THEN statement_timestamp() + interval '15 minutes' ELSE NULL END,
+        updated_at = statement_timestamp()
+    WHERE tenant_ref = p_tenant_ref AND user_id = p_member;
+  INSERT INTO public.cg_voice_pin_attempt (tenant_ref, user_id, outcome)
+  VALUES (p_tenant_ref, p_member, v_outcome);
+  PERFORM public.voice_agent_pin_audit(v_org, 'voice.pin.rejected', p_member, v_outcome);
+  RETURN v_outcome;
+END;
+$$;
+
+DROP FUNCTION IF EXISTS public.voice_agent_member_facts(text, uuid);
+
 CREATE OR REPLACE FUNCTION public.voice_agent_member_facts(
-  p_tenant_ref text, p_member uuid
+  p_tenant_ref text, p_member uuid, p_session uuid
 ) RETURNS jsonb
 LANGUAGE plpgsql
 STABLE
@@ -303,6 +505,17 @@ BEGIN
     WHERE m.tenant_id = p_tenant_ref::uuid;
   IF v_org IS NULL THEN
     v_org := p_tenant_ref::uuid;
+  END IF;
+  IF p_session IS NULL OR NOT EXISTS (
+    SELECT 1 FROM public.voice_call_sessions s
+    WHERE s.id = p_session
+      AND s.pin_member_id = p_member
+      AND s.pin_verified_at IS NOT NULL
+      AND s.line_role = 'organization'
+      AND s.state = 'active'
+      AND (s.tenant_ref = p_tenant_ref OR s.tenant_id = v_org)
+  ) THEN
+    RETURN jsonb_build_object('tenantRef', p_tenant_ref, 'verified', false);
   END IF;
   BEGIN
     PERFORM public.voice_agent_assert_recipient_consent(p_tenant_ref, p_member);
@@ -459,22 +672,29 @@ REVOKE ALL ON FUNCTION public.voice_agent_plan_entitled(text),
   public.comms02_require_calling_plan(),
   public.voice_agent_school_line_open(text),
   public.voice_agent_caller_member(text, text),
-  public.voice_agent_member_facts(text, uuid),
-  public.voice_agent_call_log()
+  public.voice_agent_member_facts(text, uuid, uuid),
+  public.voice_agent_call_log(),
+  public.voice_agent_pin_audit(uuid, text, uuid, text),
+  public.voice_agent_set_own_pin(text),
+  public.voice_agent_verify_pin(text, uuid, text)
   FROM PUBLIC, anon, authenticated, service_role;
 
 GRANT EXECUTE ON FUNCTION public.voice_agent_plan_entitled(text),
   public.voice_agent_subscription_tier(),
-  public.voice_agent_call_log()
+  public.voice_agent_call_log(),
+  public.voice_agent_set_own_pin(text)
   TO authenticated;
 
 GRANT EXECUTE ON FUNCTION public.voice_agent_plan_entitled(text),
   public.voice_agent_school_line_open(text),
   public.voice_agent_caller_member(text, text),
-  public.voice_agent_member_facts(text, uuid)
+  public.voice_agent_member_facts(text, uuid, uuid),
+  public.voice_agent_verify_pin(text, uuid, text)
   TO service_role;
 
 COMMENT ON FUNCTION public.voice_agent_plan_entitled(text) IS
   'COMMS-02 commercial gate. Professional and Enterprise only. Does not enable voice_live.';
-COMMENT ON FUNCTION public.voice_agent_member_facts(text, uuid) IS
-  'Service-role facts for one verified member of one organization. No phone number is returned.';
+COMMENT ON FUNCTION public.voice_agent_member_facts(text, uuid, uuid) IS
+  'Service-role facts only after a verified voice PIN on this call. Caller ID is not enough. No phone number or PIN is returned.';
+COMMENT ON FUNCTION public.voice_agent_set_own_pin(text) IS
+  'Stores a member voice PIN as a bcrypt hash. The PIN value is not written to audit_chain.';

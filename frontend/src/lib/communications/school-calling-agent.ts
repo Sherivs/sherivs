@@ -101,30 +101,26 @@ export function groundedSchoolAnswer(
   return { speak: `Published schedule: ${lines}.`, escalate: false };
 }
 
-function numberTokens(value: string): string[] {
-  return value.match(/\d+(?:\.\d+)?/g) ?? [];
+function sentences(value: string): string[] {
+  return value
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => sentence.length > 0);
 }
 
-function allowedNumbers(grounded: string): Set<string> {
-  const allowed = new Set<string>();
-  for (const token of numberTokens(grounded)) {
-    allowed.add(token);
-    const whole = token.split(".")[0];
-    if (whole) allowed.add(whole);
-  }
-  return allowed;
-}
-
-/** Accept an AI proposal only when it adds no phone number and no new amount. */
+/**
+ * An organization line speaks the grounded answer word for word.
+ * A proposal is kept only when every one of its sentences is already a
+ * sentence of that answer. Anything else, including an injected instruction,
+ * is discarded.
+ */
 export function selectSchoolCallingSpeech(proposal: string, grounded: string): string {
-  const cleaned = proposal.replace(/\s+/g, " ").trim();
-  if (!cleaned || cleaned.length > 500) return grounded;
-  if (/\+\d{7,}/.test(cleaned) || /\b(?:phone|mobile|whatsapp)\b/i.test(cleaned)) return grounded;
-  const allowed = allowedNumbers(grounded);
-  for (const token of numberTokens(cleaned)) {
-    if (!allowed.has(token)) return grounded;
+  const proposed = sentences(proposal);
+  const allowed = new Set(sentences(grounded));
+  if (proposed.length === 0 || !proposed.every((sentence) => allowed.has(sentence))) {
+    return grounded;
   }
-  return cleaned;
+  return proposed.join(" ");
 }
 
 export function schoolCallingPromptContext(facts: SchoolCallingFacts, question: string): string {

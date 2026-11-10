@@ -352,6 +352,22 @@ const callLogInput = z.object({
 
 export type VoiceCallLogEntry = z.infer<typeof callLogInput>;
 
+const voicePinInput = z.object({
+  pin: z.string().regex(/^[0-9]{4,8}$/),
+});
+
+export const setVoicePin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: unknown) => voicePinInput.parse(input))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc(
+      "voice_agent_set_own_pin" as never,
+      { p_pin: data.pin } as never,
+    );
+    if (error) throw new Error("Voice PIN could not be saved.");
+    return { saved: true as const };
+  });
+
 export const listVoiceCallLog = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: unknown) => {

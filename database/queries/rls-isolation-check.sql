@@ -283,6 +283,13 @@ WHERE n.nspname = 'public'
   )
   AND c.relforcerowsecurity IS NOT TRUE;
 
+SELECT format('FAIL: %s RLS is not forced after COMMS-02', c.relname) AS issue
+FROM pg_class c
+JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public'
+  AND c.relname IN ('cg_voice_member_pin', 'cg_voice_pin_attempt')
+  AND c.relforcerowsecurity IS NOT TRUE;
+
 SELECT format('FAIL: %s can execute public.%s', g.grantee, g.routine_name) AS issue
 FROM information_schema.role_routine_grants g
 WHERE g.specific_schema = 'public'
@@ -290,9 +297,18 @@ WHERE g.specific_schema = 'public'
     'comms02_require_calling_plan',
     'voice_agent_school_line_open',
     'voice_agent_caller_member',
-    'voice_agent_member_facts'
+    'voice_agent_member_facts',
+    'voice_agent_verify_pin',
+    'voice_agent_pin_audit'
   )
   AND g.grantee IN ('anon', 'PUBLIC', 'authenticated')
+  AND g.privilege_type = 'EXECUTE';
+
+SELECT format('FAIL: anon can execute public.voice_agent_set_own_pin') AS issue
+FROM information_schema.role_routine_grants g
+WHERE g.specific_schema = 'public'
+  AND g.routine_name = 'voice_agent_set_own_pin'
+  AND g.grantee IN ('anon', 'PUBLIC')
   AND g.privilege_type = 'EXECUTE';
 
 SELECT format('FAIL: anon can execute public.%s', g.routine_name) AS issue

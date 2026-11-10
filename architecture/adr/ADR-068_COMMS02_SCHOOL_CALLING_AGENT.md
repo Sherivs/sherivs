@@ -4,7 +4,7 @@
 ||---|---|
 || Status | PROPOSED (operator review before any production migration or live-calling flag) |
 || Date | 2026-11-10 |
-|| Author | Automated coding agent for issue #329. Extends the voice fabric from ADR-067. |
+|| Author | Automated coding agent for issue #329. Extends the voice fabric authored by `copilot-swe-agent[bot]` (issues #216 and #221). |
 || Mission | COMMS-02 — dedicated calling agent for Professional and Enterprise organizations |
 || Capabilities | V1 organizational communications; one calling agent scoped to the organization that owns the bound number |
 || Supersedes-in-part | None. ADR-067 still binds Africa's Talking numbers. This ADR adds the plan gate, the organization line, and the observed legacy-vocabulary groups for migration `20261104033000`. |
@@ -41,7 +41,7 @@ Professional and Enterprise are the commercial entitlement in `payments/tier-ent
 
 ## Recommendation (decision)
 
-**Use Option 3.** COMMS-02 extends the COMMS-01 voice agent. It does not add a second telephony stack, does not accept a raw number from the client or the model, and does not apply the migration to production from this change.
+**Use Option 3.** COMMS-02 extends the COMMS-01 voice agent. It does not add a second telephony stack, does not accept a raw number from the client or the model, and does not apply the migration to production from this change. Caller ID only identifies a candidate member. Fees, results, admission numbers, and timetable are released only after that member's voice PIN is confirmed on the keypad. The PIN is stored with `pgcrypto` `crypt` using `bf`, and it is never written to `audit_chain` or the call log. The spoken organization answer is the server-built sentence, not a free model phrasing.
 
 ### Explicit residual risk (stated, bounded, owned — not hidden)
 

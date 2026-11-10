@@ -24,13 +24,10 @@ import {
   voiceTtsProviderFromEnv,
 } from "./voice-number-binding";
 import {
-  EMPTY_SCHOOL_CALLING_FACTS,
-  SCHOOL_CALLING_CONTEXT_MARKER,
   groundedSchoolAnswer,
   parseSchoolCallingFacts,
   proposeSchoolIntent,
-  schoolCallingPromptContext,
-  selectSchoolCallingSpeech,
+  SCHOOL_CALLING_CONTEXT_MARKER,
   type SchoolCallingFacts,
 } from "./school-calling-agent";
 
@@ -130,6 +127,17 @@ export function isHumanEscalationRequest(transcript: string): boolean {
   return HUMAN_ESCALATION.test(transcript);
 }
 
+export function pinVoiceXml(
+  callbackUrl: URL,
+  message = "Enter your voice PIN, then press pound.",
+): string {
+  const callback = escapeVoiceXml(callbackUrl.toString());
+  return voiceXml(
+    message,
+    `<GetDigits numDigits="8" finishOnKey="#" timeout="10" callbackUrl="${callback}"><Say>Enter your voice PIN, then press pound.</Say></GetDigits><Hangup/>`,
+  );
+}
+
 export interface VoiceSession {
   id: string;
   tenant_id: string;
@@ -137,10 +145,19 @@ export interface VoiceSession {
   provider_session_id: string;
   caller_number: string;
   destination_number: string;
-  state: "consent_pending" | "active" | "completed" | "escalated" | "declined" | "failed";
+  state:
+    | "consent_pending"
+    | "pin_pending"
+    | "active"
+    | "completed"
+    | "escalated"
+    | "declined"
+    | "failed";
   recording_consent_at: string | null;
   turn_count: number;
   line_role?: "legacy" | "organization" | "platform_support" | null;
+  pin_verified_at?: string | null;
+  pin_member_id?: string | null;
 }
 
 interface DatabaseResult<T = unknown> {
@@ -250,15 +267,25 @@ const VoiceSessionSchema = z.object({
   provider_session_id: z.string().min(1).max(160),
   caller_number: z.string().min(1).max(20),
   destination_number: z.string().min(1).max(20),
-  state: z.enum(["consent_pending", "active", "completed", "escalated", "declined", "failed"]),
+  state: z.enum([
+    "consent_pending",
+    "pin_pending",
+    "active",
+    "completed",
+    "escalated",
+    "declined",
+    "failed",
+  ]),
   recording_consent_at: z.string().nullable(),
   turn_count: z.number().int().min(0).max(MAX_VOICE_TURNS),
   line_role: z.enum(["legacy", "organization", "platform_support"]).nullish(),
+  pin_verified_at: z.string().nullish(),
+  pin_member_id: z.string().uuid().nullish(),
 });
 
 const SESSION_COLUMNS =
   "id,tenant_id,tenant_ref,provider_session_id,caller_number,destination_number,state,recording_consent_at,turn_count";
-const SESSION_COLUMNS_WITH_ROLE = `${SESSION_COLUMNS},line_role`;
+const SESSION_COLUMNS_WITH_ROLE = `${SESSION_COLUMNS},line_role,pin_verified_at,pin_member_id`;
 
 async function findSession(
   db: VoiceCallbackDatabase,
@@ -349,9 +376,7 @@ async function resolveTenant(
     if (!isMissingVoiceBindingColumn(result.error)) {
       throw new Error("voice destination lookup failed");
     }
-    if (neutral) {
-      return { schoolId: neutral.schoolId, tenantRef: neutral.tenantId, lineRole: "legacy" };
-    }
+    if (neutral) return openLegacySenderLine(db, neutral);
     const legacy = await db
       .from("comms_sender_numbers")
       .select("school_id")
@@ -396,11 +421,18 @@ async function resolveTenant(
     if (open.error || open.data !== true) return null;
     return { schoolId, tenantRef: row.tenant_ref, lineRole: "organization" };
   }
-  if (neutral) {
-    return { schoolId: neutral.schoolId, tenantRef: neutral.tenantId, lineRole: "legacy" };
-  }
+  if (neutral) return openLegacySenderLine(db, neutral);
   const schoolId = row?.school_id ?? row?.org_id ?? null;
   return schoolId ? { schoolId, tenantRef: row?.tenant_ref ?? null, lineRole: "legacy" } : null;
+}
+
+async function openLegacySenderLine(
+  db: VoiceCallbackDatabase,
+  neutral: { tenantId: string; schoolId: string },
+): Promise<ResolvedVoiceTenant | null> {
+  const open = await db.rpc("voice_agent_school_line_open", { p_tenant_ref: neutral.tenantId });
+  if (open.error || open.data !== true) return null;
+  return { schoolId: neutral.schoolId, tenantRef: neutral.tenantId, lineRole: "legacy" };
 }
 
 async function loadPlatformSupportNumber(db: VoiceCallbackDatabase): Promise<string | null> {
@@ -940,38 +972,115 @@ async function loadOrganizationFacts(
   session: VoiceSession,
 ): Promise<SchoolCallingFacts> {
   const tenantRef = session.tenant_ref;
-  if (!tenantRef) throw new Error("organization voice session has no tenant");
-  const member = await db.rpc("voice_agent_caller_member", {
-    p_tenant_ref: tenantRef,
-    p_caller_digits: canonicalVoiceDigits(session.caller_number),
-  });
-  if (member.error) throw new Error("organization caller lookup failed");
-  if (typeof member.data !== "string") {
-    return { ...EMPTY_SCHOOL_CALLING_FACTS, tenantRef };
+  if (!tenantRef || !session.pin_verified_at || !session.pin_member_id) {
+    throw new Error("organization facts require a verified voice PIN");
   }
   const facts = await db.rpc("voice_agent_member_facts", {
     p_tenant_ref: tenantRef,
-    p_member: member.data,
+    p_member: session.pin_member_id,
+    p_session: session.id,
   });
   if (facts.error) throw new Error("organization facts lookup failed");
   return parseSchoolCallingFacts(facts.data, tenantRef);
 }
 
+async function verifyOrganizationPin(
+  db: VoiceCallbackDatabase,
+  session: VoiceSession,
+  digits: string | undefined,
+  callbackUrl: URL,
+  now: () => string,
+  audit: (input: AuditInput) => Promise<unknown>,
+): Promise<Response> {
+  const stop = async (outcome: string) => {
+    const endedAt = now();
+    await updateSession(db, session, {
+      state: "escalated",
+      updated_at: endedAt,
+      ended_at: endedAt,
+    });
+    await recordCommsEvent(
+      db,
+      session,
+      "Voice PIN verification stopped.",
+      "pin_stopped",
+      `pin-stopped-${outcome}`,
+    );
+    await voiceAudit(audit, session, "voice.pin.rejected", { state: "pin_pending" }, { outcome });
+    return dialBoundPlatformSupport(db);
+  };
+  if (!session.tenant_ref) return stop("missing");
+  if (!digits || !/^[0-9]{4,8}$/.test(digits)) {
+    await voiceAudit(
+      audit,
+      session,
+      "voice.pin.rejected",
+      { state: "pin_pending" },
+      {
+        outcome: "invalid",
+      },
+    );
+    return responseXml(pinVoiceXml(callbackUrl));
+  }
+  const member = await db.rpc("voice_agent_caller_member", {
+    p_tenant_ref: session.tenant_ref,
+    p_caller_digits: canonicalVoiceDigits(session.caller_number),
+  });
+  if (member.error || typeof member.data !== "string") return stop("missing");
+  const verified = await db.rpc("voice_agent_verify_pin", {
+    p_tenant_ref: session.tenant_ref,
+    p_member: member.data,
+    p_pin: digits,
+  });
+  const outcome = typeof verified.data === "string" ? verified.data : "rejected";
+  await voiceAudit(
+    audit,
+    session,
+    outcome === "ok" ? "voice.pin.accepted" : "voice.pin.rejected",
+    { state: "pin_pending" },
+    { outcome, memberId: member.data },
+  );
+  if (outcome === "ok") {
+    const verifiedAt = now();
+    await updateSession(db, session, {
+      state: "active",
+      pin_verified_at: verifiedAt,
+      pin_member_id: member.data,
+      updated_at: verifiedAt,
+    });
+    await recordCommsEvent(db, session, "Voice PIN accepted.", "pin_accepted", "pin-accepted");
+    return responseXml(
+      recordVoiceXml("Thank you. Please briefly describe how we can help you.", callbackUrl),
+    );
+  }
+  if (outcome === "rejected") {
+    await recordCommsEvent(
+      db,
+      session,
+      "Voice PIN was not accepted.",
+      "pin_rejected",
+      `pin-rejected-${now()}`,
+    );
+    return responseXml(
+      pinVoiceXml(
+        callbackUrl,
+        "That PIN was not accepted. Enter your voice PIN, then press pound.",
+      ),
+    );
+  }
+  return stop(outcome);
+}
+
 async function organizationAnswer(
   db: VoiceCallbackDatabase,
-  assistant: VoiceAssistant,
   session: VoiceSession,
   transcript: string,
 ): Promise<string | null> {
+  if (!session.pin_verified_at || !session.pin_member_id) return null;
   const facts = await loadOrganizationFacts(db, session);
   const grounded = groundedSchoolAnswer(proposeSchoolIntent(transcript), facts);
-  if (grounded.escalate || !session.tenant_ref) return null;
-  const proposal = await assistant.language.answer(
-    schoolCallingPromptContext(facts, transcript),
-    session.tenant_ref,
-    session.id,
-  );
-  return selectSchoolCallingSpeech(proposal, grounded.speak);
+  if (grounded.escalate || !facts.verified) return null;
+  return grounded.speak;
 }
 
 export function createAfricaTalkingVoiceCallbackHandler(dependencies: VoiceCallbackDependencies) {
@@ -1120,8 +1229,9 @@ export function createAfricaTalkingVoiceCallbackHandler(dependencies: VoiceCallb
       if (session.state === "consent_pending") {
         if (callback.dtmfDigits === "1") {
           const consentAt = now();
+          const organizationLine = session.line_role === "organization";
           await updateSession(db, session, {
-            state: "active",
+            state: organizationLine ? "pin_pending" : "active",
             recording_consent_at: consentAt,
             updated_at: consentAt,
           });
@@ -1137,8 +1247,9 @@ export function createAfricaTalkingVoiceCallbackHandler(dependencies: VoiceCallb
             session,
             "voice.call.consent_granted",
             { state: "consent_pending" },
-            { state: "active", consentedAt: consentAt },
+            { state: organizationLine ? "pin_pending" : "active", consentedAt: consentAt },
           );
+          if (organizationLine) return responseXml(pinVoiceXml(config.callbackUrl));
           return responseXml(
             recordVoiceXml(
               "Thank you. Please briefly describe how we can help you.",
@@ -1172,6 +1283,17 @@ export function createAfricaTalkingVoiceCallbackHandler(dependencies: VoiceCallb
           );
         }
         return responseXml(consentVoiceXml(config.callbackUrl));
+      }
+
+      if (session.state === "pin_pending") {
+        return verifyOrganizationPin(
+          db,
+          session,
+          callback.dtmfDigits,
+          config.callbackUrl,
+          now,
+          audit,
+        );
       }
 
       if (session.state !== "active" || session.recording_consent_at === null) {
@@ -1257,7 +1379,7 @@ export function createAfricaTalkingVoiceCallbackHandler(dependencies: VoiceCallb
         });
         const answer =
           session.line_role === "organization"
-            ? await organizationAnswer(db, assistant, session, redactSensitive(transcript))
+            ? await organizationAnswer(db, session, redactSensitive(transcript))
             : await assistant.language.answer(
                 redactSensitive(transcript),
                 session.tenant_ref ?? session.tenant_id,
@@ -1286,12 +1408,35 @@ export function createAfricaTalkingVoiceCallbackHandler(dependencies: VoiceCallb
           );
           return dialBoundPlatformSupport(db);
         }
-        await recordCommsEvent(db, session, answer, "assistant_response", `assistant-${eventHash}`);
-        await voiceAudit(audit, session, "voice.transcript.assistant_recorded", null, {
-          providerEventHash: eventHash,
-          answerHash: createHash("sha256").update(answer).digest("hex"),
-          answerLength: answer.length,
-        });
+        const answerHash = createHash("sha256").update(answer).digest("hex");
+        if (session.line_role === "organization") {
+          const topic = proposeSchoolIntent(redactSensitive(transcript));
+          await recordCommsEvent(
+            db,
+            session,
+            `topic=${topic} (redacted) hash=${answerHash}`,
+            "assistant_response",
+            `assistant-${eventHash}`,
+          );
+          await voiceAudit(audit, session, "voice.transcript.assistant_recorded", null, {
+            providerEventHash: eventHash,
+            topic,
+            answerHash,
+          });
+        } else {
+          await recordCommsEvent(
+            db,
+            session,
+            answer,
+            "assistant_response",
+            `assistant-${eventHash}`,
+          );
+          await voiceAudit(audit, session, "voice.transcript.assistant_recorded", null, {
+            providerEventHash: eventHash,
+            answerHash,
+            answerLength: answer.length,
+          });
+        }
         const turnCount = session.turn_count + 1;
         if (turnCount >= MAX_VOICE_TURNS) {
           const endedAt = now();
