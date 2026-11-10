@@ -11,7 +11,9 @@
       "bundleIdentifier": "com.coregrid.app",
       "buildNumber": "1",
       "supportsTablet": true,
-      "associatedDomains": ["webcredentials:sherivs.com"],
+      "associatedDomains": [
+        "webcredentials:sherivs.com"
+      ],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -38,7 +40,10 @@
       "expo-secure-store"
     ],
     "extra": {
-      "router": {}
+      "router": {},
+      "eas": {
+        "projectId": "2e19ca55-cc79-4634-ae8a-bf8b551a6a20"
+      }
     },
     "owner": "sherivs"
   }
