@@ -1,24 +1,45 @@
-/** Browser Sentry init. No-op without VITE_SENTRY_DSN. */
-import { sentryOptions } from "./sentry-config";
+/** Browser Sentry init. Staging-only; fail closed without VITE_APP_ENV=staging. */
+import { sentryOptions, type SentryEnv } from "./sentry-config";
 
 let started = false;
 let startPromise: Promise<void> | null = null;
 
-export function initClientSentry(router: unknown): boolean {
-  if (started || typeof window === "undefined") return started;
-  const opts = sentryOptions({
+export function readClientSentryEnv(): SentryEnv {
+  return {
     dsn: import.meta.env.VITE_SENTRY_DSN as string | undefined,
-    environment: import.meta.env.VITE_SENTRY_ENVIRONMENT as string | undefined,
+    appEnv: import.meta.env.VITE_APP_ENV as string | undefined,
+    viteAppEnv: import.meta.env.VITE_APP_ENV as string | undefined,
     release: import.meta.env.VITE_SENTRY_RELEASE as string | undefined,
-  });
-  if (!opts) return false;
+  };
+}
+
+type ClientSdk = {
+  init: (options: unknown) => void;
+  tanstackRouterBrowserTracingIntegration: (router: unknown) => unknown;
+};
+
+/**
+ * Returns false (and does not call the SDK) unless the env is explicit
+ * staging with a DSN. `loadSdk` is injectable so tests can prove init
+ * without a browser. The default loader runs only in the browser.
+ */
+export function initClientSentry(
+  router: unknown,
+  env: SentryEnv = readClientSentryEnv(),
+  loadSdk?: () => Promise<ClientSdk>,
+): boolean {
+  if (started) return true;
+  const options = sentryOptions(env);
+  if (!options) return false;
+  if (!loadSdk && typeof window === "undefined") return false;
+  const load = loadSdk ?? (() => import("@sentry/tanstackstart-react") as Promise<ClientSdk>);
   if (!startPromise) {
-    startPromise = import("@sentry/tanstackstart-react")
+    startPromise = load()
       .then((Sentry) => {
         Sentry.init({
-          ...opts,
-          integrations: [Sentry.tanstackRouterBrowserTracingIntegration(router as never)],
-        } as never);
+          ...options,
+          integrations: [Sentry.tanstackRouterBrowserTracingIntegration(router)],
+        });
         started = true;
       })
       .catch(() => undefined);

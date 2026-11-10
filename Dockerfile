@@ -26,6 +26,10 @@ RUN npm ci
 FROM deps AS build
 COPY . .
 # VITE_PUBLIC_* build-time variables are injected as build args, never secrets.
+# This image is the production artifact: Sentry and PostHog stay off, and
+# client vendor keys are not inlined (frontend/src/lib/observability/vendor-telemetry.ts).
+ENV APP_ENV=production \
+    VITE_APP_ENV=production
 RUN npm run build
 
 # ---------------------------------------------------------------------------
@@ -35,6 +39,8 @@ FROM node:22-slim AS runtime
 WORKDIR /app
 
 ENV NODE_ENV=production \
+    APP_ENV=production \
+    VITE_APP_ENV=production \
     PORT=3000
 
 # Build artifacts + the node_modules tree the server bundle resolves against.

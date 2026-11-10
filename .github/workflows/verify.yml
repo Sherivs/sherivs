@@ -75,13 +75,14 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Capture desktop and mobile role-management screens
         run: npx playwright test tests/e2e/role-management-screenshots.spec.ts --project=desktop-chromium --project=mobile-chromium
+      # Screenshot-evidence job: keep the PNGs (success and failure). 3-day retention.
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: ui-screenshots
           path: test-results/**/role-management-*.png
           if-no-files-found: warn
-          retention-days: 7
+          retention-days: 3
 
   repo-guards:
     name: Registry, drift, neutrality, secrets guards + build
@@ -110,13 +111,14 @@ jobs:
       - run: npm ci --no-audit --fund=false
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test tests/e2e/workspace-shell.spec.ts --project=mobile-chromium
-      - if: always()
+      # Playwright traces are large. Upload only when this E2E job fails.
+      - if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: ui-screenshots
           path: test-results/
           if-no-files-found: warn
-          retention-days: 7
+          retention-days: 3
 
   gitleaks:
     name: Secret scan (gitleaks)
@@ -190,6 +192,7 @@ jobs:
             tools/sim-lab/sim/scenario-results.json
             tools/sim-lab/security-audit.json
           if-no-files-found: ignore
+          retention-days: 7
 
   mobile:
     name: Mobile typecheck (Expo)
@@ -233,6 +236,9 @@ jobs:
           node -e 'const fs=require("fs");const p=".vercel/project.json";const j=JSON.parse(fs.readFileSync(p,"utf8"));if(j.projectSettings){j.projectSettings.outputDirectory=null;}fs.writeFileSync(p,JSON.stringify(j,null,2));'
           # Offline vercel build may not set VERCEL=1; force Nitro vercel preset.
           export NITRO_PRESET=vercel
+          # Preview is not production. Keep Sentry/PostHog keys only when the
+          # pulled env file itself says APP_ENV=staging (names only; no values echoed).
+          node scripts/strip-vendor-telemetry-env.mjs .vercel/.env.preview.local
           vercel build --token="$VERCEL_TOKEN"
           # Hobby teams BLOCK CLI deploys attributed to a non-owner git commit
           # (PR merge commits / CI authors). Prebuilt output does not need .git;
@@ -283,6 +289,13 @@ jobs:
           node -e 'const fs=require("fs");const p=".vercel/project.json";const j=JSON.parse(fs.readFileSync(p,"utf8"));if(j.projectSettings){j.projectSettings.outputDirectory=null;}fs.writeFileSync(p,JSON.stringify(j,null,2));'
           export NITRO_PRESET=vercel
           export VERCEL_GIT_COMMIT_SHA=$GITHUB_SHA
+          # Production builds must not receive Sentry or PostHog credentials.
+          # Force the explicit app env and drop those names from the pulled file
+          # before vite inlines client env. Values are never printed.
+          export APP_ENV=production
+          export VITE_APP_ENV=production
+          unset SENTRY_DSN SENTRY_AUTH_TOKEN VITE_SENTRY_DSN VITE_POSTHOG_KEY VITE_POSTHOG_HOST VITE_SENTRY_RELEASE VITE_SENTRY_ENVIRONMENT || true
+          node scripts/strip-vendor-telemetry-env.mjs --force-app-env=production .vercel/.env.production.local
           vercel build --prod --token="$VERCEL_TOKEN"
           mv .git .git.bak
           set +e

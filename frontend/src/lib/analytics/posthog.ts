@@ -6,8 +6,19 @@
  * identified by internal id + role + tenant id only.
  */
 import type { PostHog } from "posthog-js";
+import {
+  vendorTelemetryEnabled,
+  type VendorTelemetryInput,
+} from "@/lib/observability/vendor-telemetry";
 
 export const DEFAULT_POSTHOG_HOST = "https://eu.i.posthog.com";
+
+export function readClientVendorEnv(): VendorTelemetryInput {
+  return {
+    appEnv: import.meta.env.VITE_APP_ENV as string | undefined,
+    viteAppEnv: import.meta.env.VITE_APP_ENV as string | undefined,
+  };
+}
 
 export function posthogConfig(host: string | null | undefined) {
   return {
@@ -43,17 +54,32 @@ export function posthogConfig(host: string | null | undefined) {
 let client: PostHog | null = null;
 let loading: Promise<PostHog | null> | null = null;
 
-export async function startPosthog(key: string, host?: string | null): Promise<PostHog | null> {
+type PosthogModule = { default: { init: (key: string, config: unknown) => void } };
+
+/**
+ * Loads posthog-js only when the explicit app environment is staging and a
+ * project key is present. Production, development, and unset return null
+ * before the SDK is imported.
+ */
+export async function startPosthog(
+  key: string,
+  host?: string | null,
+  env: VendorTelemetryInput = readClientVendorEnv(),
+  load?: () => Promise<PosthogModule>,
+): Promise<PostHog | null> {
+  if (!vendorTelemetryEnabled(env)) return null;
+  if (!key.trim()) return null;
   if (client) {
     client.opt_in_capturing();
     return client;
   }
   if (!loading) {
-    loading = import("posthog-js")
+    const importer = load ?? (() => import("posthog-js") as Promise<PosthogModule>);
+    loading = importer()
       .then(({ default: posthog }) => {
         posthog.init(key, posthogConfig(host) as never);
-        client = posthog;
-        return posthog;
+        client = posthog as unknown as PostHog;
+        return client;
       })
       .catch(() => null);
   }
@@ -71,7 +97,11 @@ export function stopPosthog(): void {
 }
 
 /** Identify by internal id + role + tenant only — never names, emails or phones. */
-export function analyticsIdentity(input: { id?: string | null; role?: string | null; tenantId?: string | null }) {
+export function analyticsIdentity(input: {
+  id?: string | null;
+  role?: string | null;
+  tenantId?: string | null;
+}) {
   if (!input.id) return null;
   return {
     distinctId: input.id,
@@ -79,7 +109,11 @@ export function analyticsIdentity(input: { id?: string | null; role?: string | n
   };
 }
 
-export function identifyPosthog(input: { id?: string | null; role?: string | null; tenantId?: string | null }) {
+export function identifyPosthog(input: {
+  id?: string | null;
+  role?: string | null;
+  tenantId?: string | null;
+}) {
   const ident = analyticsIdentity(input);
   if (!client || !ident) return;
   client.identify(ident.distinctId, ident.properties);

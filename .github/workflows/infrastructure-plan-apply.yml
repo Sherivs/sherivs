@@ -93,7 +93,7 @@ jobs:
         with:
           name: fabric-plan-${{ inputs.provider }}
           path: infrastructure/terraform/${{ inputs.provider }}/fabric.tfplan
-          retention-days: 14
+          retention-days: 7
 
   apply:
     name: Apply (${{ inputs.provider }}) — approval required

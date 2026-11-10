@@ -424,9 +424,42 @@ Full detail in `infrastructure/deploy/README.md`; the operator sequence:
 
 - Container logs: `docker logs coregrid-scholar` (json-file, 10m × 5
   rotation, defined in compose). No secrets are logged (secret-redacting
-  logger is enforced in the app; §29 law).
+  logger is enforced in the app; §29 law). Boundary errors are structured
+  lines with a scrubbed summary and pseudonymous `trace_id` /
+  `correlation_id`. Raw error objects are not logged.
 - Health: `/health.json` (unauthenticated, leak-free, whitelisted payload;
   503 → drain).
 - Deploy audit trail: release.yml run history (human-approved `production`
   environment) + `deploy.sh` stdout; record each operator action in
   `progress/` evidence notes.
+
+### Vendor sink matrix (INFRA-01, names only)
+
+Self-funded: do not buy a new observability product from this runbook. The
+names below are the approved policy. Datadog and CloudWatch are not
+provisioned by application code.
+
+| Environment | `APP_ENV` and `VITE_APP_ENV` | Sentry / PostHog | Production sinks |
+| --- | --- | --- | --- |
+| development, local, test | `development`, `local`, or `test` | Off. Local structured logs only. | — |
+| unset, or the two names disagree | empty | Off (fail closed). | — |
+| staging | both exactly `staging` | On, when the staging names below are set. PostHog still requires consent. | — |
+| production | both `production` | Off. Keys must not be bundled. Events must not be exported. | Datadog, CloudWatch, provider-native consoles |
+
+`VERCEL_ENV=production` and `VERCEL_ENV=development` also force Sentry and
+PostHog off. `NODE_ENV` is not the gate.
+
+Staging-only names: `SENTRY_DSN`, `VITE_SENTRY_DSN`, `VITE_POSTHOG_KEY`,
+`VITE_POSTHOG_HOST`, `SENTRY_AUTH_TOKEN`. Do not set those on the production
+Vercel environment or in `/opt/coregrid/scholar.env`. Source-map upload runs
+only for a staging build that has `SENTRY_AUTH_TOKEN`.
+
+### GitHub Actions artifact retention
+
+Free-tier storage is the constraint. Screenshot artifacts
+(`ui-screenshots`) are kept 3 days. The role-management job is the
+screenshot-evidence job and still uploads its PNGs on every run. The
+workspace-shell E2E job uploads `test-results/` only when that job fails.
+Other CI artifacts are kept 7 days. The nightly production database backup
+artifact stays at 90 days (`nightly-db-backup.yml`). Secret scan and the
+migration dry-run are unchanged.

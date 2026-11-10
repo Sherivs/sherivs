@@ -11,7 +11,11 @@ import { analyticsIdentity, posthogConfig } from "@/lib/analytics/posthog";
 
 function mem() {
   const m = new Map<string, string>();
-  return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v), removeItem: (k: string) => void m.delete(k) };
+  return {
+    getItem: (k: string) => m.get(k) ?? null,
+    setItem: (k: string, v: string) => void m.set(k, v),
+    removeItem: (k: string) => void m.delete(k),
+  };
 }
 
 describe("analytics consent gating", () => {
@@ -39,11 +43,26 @@ describe("analytics consent gating", () => {
   });
 
   it("asks only when relevant", () => {
-    expect(shouldAskForAnalyticsConsent({ key: "k", consent: "unset", doNotTrack: false })).toBe(true);
-    expect(shouldAskForAnalyticsConsent({ key: "k", consent: "unset", doNotTrack: true })).toBe(false);
-    expect(shouldAskForAnalyticsConsent({ key: "k", consent: "unset", doNotTrack: false, role: "student" })).toBe(false);
-    expect(shouldAskForAnalyticsConsent({ key: "", consent: "unset", doNotTrack: false })).toBe(false);
-    expect(shouldAskForAnalyticsConsent({ key: "k", consent: "denied", doNotTrack: false })).toBe(false);
+    expect(shouldAskForAnalyticsConsent({ key: "k", consent: "unset", doNotTrack: false })).toBe(
+      true,
+    );
+    expect(shouldAskForAnalyticsConsent({ key: "k", consent: "unset", doNotTrack: true })).toBe(
+      false,
+    );
+    expect(
+      shouldAskForAnalyticsConsent({
+        key: "k",
+        consent: "unset",
+        doNotTrack: false,
+        role: "student",
+      }),
+    ).toBe(false);
+    expect(shouldAskForAnalyticsConsent({ key: "", consent: "unset", doNotTrack: false })).toBe(
+      false,
+    );
+    expect(shouldAskForAnalyticsConsent({ key: "k", consent: "denied", doNotTrack: false })).toBe(
+      false,
+    );
   });
 
   it("detects Do Not Track and Global Privacy Control", () => {
@@ -70,7 +89,12 @@ describe("PostHog config and identity", () => {
   });
 
   it("identifies by internal id + role + tenant only", () => {
-    const id = analyticsIdentity({ id: "u-1", role: "teacher", tenantId: "t-9", ...({ email: "a@b.cc", full_name: "Ada" } as object) });
+    const id = analyticsIdentity({
+      id: "u-1",
+      role: "teacher",
+      tenantId: "t-9",
+      ...({ email: "a@b.cc", full_name: "Ada" } as object),
+    });
     expect(id).toEqual({ distinctId: "u-1", properties: { role: "teacher", tenant_id: "t-9" } });
     expect(analyticsIdentity({ id: null })).toBeNull();
   });
@@ -82,18 +106,33 @@ describe("nothing is loaded before consent", () => {
     const loaded = vi.fn();
     vi.doMock("posthog-js", () => {
       loaded();
-      return { default: { init: vi.fn(), identify: vi.fn(), capture: vi.fn(), opt_in_capturing: vi.fn(), opt_out_capturing: vi.fn(), reset: vi.fn() } };
+      return {
+        default: {
+          init: vi.fn(),
+          identify: vi.fn(),
+          capture: vi.fn(),
+          opt_in_capturing: vi.fn(),
+          opt_out_capturing: vi.fn(),
+          reset: vi.fn(),
+        },
+      };
     });
     const mod = await import("@/lib/analytics/posthog");
     mod.identifyPosthog({ id: "u" });
     mod.capturePosthog("x");
     mod.stopPosthog();
     expect(loaded).not.toHaveBeenCalled();
-    const ph = await mod.startPosthog("phc_test", "https://eu.i.posthog.com");
+    const ph = await mod.startPosthog("phc_test", "https://eu.i.posthog.com", {
+      appEnv: "staging",
+      viteAppEnv: "staging",
+    });
     expect(loaded).toHaveBeenCalledTimes(1);
     expect((ph as unknown as { init: ReturnType<typeof vi.fn> }).init).toHaveBeenCalledWith(
       "phc_test",
-      expect.objectContaining({ api_host: "https://eu.i.posthog.com", disable_session_recording: true }),
+      expect.objectContaining({
+        api_host: "https://eu.i.posthog.com",
+        disable_session_recording: true,
+      }),
     );
   });
 });

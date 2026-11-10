@@ -5,21 +5,32 @@ import { defineConfig } from "vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import { nitro } from "nitro/vite";
 import { sentryTanstackStart } from "@sentry/tanstackstart-react/vite";
+import {
+  clientVendorDefine,
+  sentrySourceMapUploadEnabled,
+  serverVendorDefine,
+} from "./frontend/src/lib/observability/vendor-telemetry.ts";
 
 const isVitest = process.env.VITEST === "true";
 
-// Sentry source-map upload is optional: only when SENTRY_AUTH_TOKEN is set
-// (e.g. in Vercel). Without it the build is unchanged and no maps are uploaded.
-const sentryUpload = !isVitest && Boolean(process.env.SENTRY_AUTH_TOKEN);
-// Release + environment for Sentry, from Vercel's build-time system env.
-const sentryRelease = process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.VITE_SENTRY_RELEASE ?? "";
-const sentryEnvironment =
-  process.env.VERCEL_ENV ?? process.env.VITE_SENTRY_ENVIRONMENT ?? process.env.NODE_ENV ?? "";
+// Sentry/PostHog and source-map upload run only when APP_ENV / VITE_APP_ENV
+// is exactly "staging". Production (including VERCEL_ENV=production) fails
+// closed and the client keys are defined as empty strings so they are not
+// bundled. See frontend/src/lib/observability/vendor-telemetry.ts.
+const telemetryInput = {
+  appEnv: process.env.APP_ENV,
+  viteAppEnv: process.env.VITE_APP_ENV,
+  vercelEnv: process.env.VERCEL_ENV,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  vitest: isVitest,
+  release: process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.VITE_SENTRY_RELEASE ?? "",
+};
+const sentryUpload = sentrySourceMapUploadEnabled(telemetryInput);
 
 export default defineConfig({
   define: {
-    "import.meta.env.VITE_SENTRY_RELEASE": JSON.stringify(sentryRelease),
-    "import.meta.env.VITE_SENTRY_ENVIRONMENT": JSON.stringify(sentryEnvironment),
+    ...clientVendorDefine(telemetryInput),
+    ...serverVendorDefine(telemetryInput),
   },
   build: sentryUpload ? { sourcemap: "hidden" } : undefined,
   resolve: {
@@ -72,7 +83,7 @@ export default defineConfig({
           org: process.env.SENTRY_ORG ?? "sherivs-technologies",
           project: process.env.SENTRY_PROJECT ?? "sherivs-web",
           authToken: process.env.SENTRY_AUTH_TOKEN,
-          release: sentryRelease ? { name: sentryRelease } : undefined,
+          release: telemetryInput.release ? { name: telemetryInput.release } : undefined,
           sourcemaps: { filesToDeleteAfterUpload: ["./.output/**/*.map", "./dist/**/*.map"] },
           telemetry: false,
         })
