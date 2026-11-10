@@ -11,6 +11,7 @@ DROP FUNCTION IF EXISTS public.comms_bind_voice_sender(uuid, text);
 DROP FUNCTION IF EXISTS public.comms_attach_platform_voice_org(uuid);
 DROP FUNCTION IF EXISTS public.voice_agent_consented_recipients();
 DROP FUNCTION IF EXISTS public.voice_agent_assert_recipient_consent(text, uuid);
+DROP FUNCTION IF EXISTS public.comms_voice_digits(text);
 DROP FUNCTION IF EXISTS public.voice_agent_configure(boolean, text);
 DROP FUNCTION IF EXISTS public.voice_agent_request_call(text, text, text, uuid, text);
 

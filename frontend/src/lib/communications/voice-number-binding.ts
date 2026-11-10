@@ -101,6 +101,13 @@ export function assertRecipientMembership(
   }
 }
 
+/** Digits only, with a Nigerian local 080… number rewritten to 234…. */
+export function canonicalVoiceDigits(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  if (/^0\d{10}$/.test(digits)) return `234${digits.slice(1)}`;
+  return digits;
+}
+
 export function normalizeStoredVoicePhone(phone: string | null | undefined): string | null {
   if (!phone) return null;
   const trimmed = phone.trim();

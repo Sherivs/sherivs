@@ -14,6 +14,7 @@ import { createAfricaTalkingVoiceAdapter } from "../../../frontend/src/lib/commu
 import {
   PLATFORM_VOICE_TENANT_REF,
   assertNoRawVoiceNumber,
+  canonicalVoiceDigits,
   assertRecipientMembership,
   assertVoiceNumberTenant,
   decideVoiceConsent,
@@ -228,6 +229,17 @@ describe("COMMS-01 voice number binding", () => {
     expect(calls).toEqual([]);
   });
 
+  it("treats a local 080 number and +234 as the same opted-in phone", () => {
+    const local = "08031234567";
+    const international = "+2348031234567";
+    expect(canonicalVoiceDigits(local)).toBe("2348031234567");
+    expect(canonicalVoiceDigits(international)).toBe(canonicalVoiceDigits(local));
+    expect(canonicalVoiceDigits("2348031234567")).toBe(canonicalVoiceDigits(local));
+    expect(canonicalVoiceDigits("08039999999")).not.toBe(canonicalVoiceDigits(international));
+    expect(MIGRATION).toContain("WHEN d ~ '^0[0-9]{10}$' THEN '234' || substr(d, 2)");
+    expect(ROLLBACK).toContain("DROP FUNCTION IF EXISTS public.comms_voice_digits(text);");
+  });
+
   it("defaults speech to Africa's Talking Say and keeps the platform escalation number pinned", () => {
     expect(voiceTtsProviderFromEnv({})).toBe("africas_talking");
     expect(voiceSttProviderFromEnv({})).toBe("openai");
@@ -269,7 +281,10 @@ describe("COMMS-01 voice number binding", () => {
     expect(MIGRATION).toContain("platform support line is already attached");
     expect(MIGRATION).toContain("IS DISTINCT FROM EXCLUDED.provider");
     expect(MIGRATION).toContain("au.phone_confirmed_at IS NOT NULL");
-    expect(MIGRATION).toContain("regexp_replace(o.phone, '\\D', '', 'g') = v_digits");
+    expect(MIGRATION).toContain(
+      "public.comms_voice_digits(o.phone) = public.comms_voice_digits(v_phone)",
+    );
+    expect(MIGRATION).not.toContain("regexp_replace(o.phone, '\\D', '', 'g') = v_digits");
     expect(MIGRATION).not.toMatch(/u\.school_id/);
     expect(ROLLBACK).toContain(
       "DROP FUNCTION IF EXISTS public.voice_agent_assert_recipient_consent(text, uuid);",

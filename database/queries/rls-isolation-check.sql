@@ -250,7 +250,8 @@ WHERE g.specific_schema = 'public'
     'comms_bind_voice_sender',
     'comms_attach_platform_voice_org',
     'comms_voice_number_audit',
-    'voice_agent_assert_recipient_consent'
+    'voice_agent_assert_recipient_consent',
+    'comms_voice_digits'
   )
   AND g.grantee IN ('anon', 'PUBLIC', 'authenticated')
   AND g.privilege_type = 'EXECUTE';

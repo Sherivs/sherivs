@@ -66,7 +66,11 @@ Store the platform support line and each entitled organization's Africa's Talkin
 
 ## Pre-apply query and apply order
 
-Run this read-only query before applying `20261104032000_sherivs_comms01_at_number_binding.sql`. It must return zero rows. A voice row whose provider is not Africa's Talking, or an existing voice row for `+2349015056201`, has to be resolved by an operator before apply. This query does not write.
+Run these read-only queries before applying `20261104032000_sherivs_comms01_at_number_binding.sql`. They do not write.
+
+The voice-row query must return zero rows. A voice row whose provider is not Africa's Talking, or an existing voice row for `+2349015056201`, has to be resolved by an operator before apply.
+
+The root-tenant query must return exactly one organization. That organization is the only one `comms_attach_platform_voice_org` will accept, and inbound platform calls route through it.
 
 ```sql
 SELECT channel, provider, provider_number
@@ -76,12 +80,16 @@ WHERE channel = 'voice'
     provider IS DISTINCT FROM 'africas_talking'
     OR provider_number = '+2349015056201'
   );
+
+SELECT m.school_id, m.tenant_id
+FROM public.school_tenant_map m
+WHERE m.tenant_id = '3c0d0f9a-56bb-4a3e-8e02-b1a426f1c201';
 ```
 
 Apply order:
 
 1. The voice add-on `20261101000050` and the sender channel check `20261103000200` are already earlier in the migration sequence.
-2. Run the query above.
+2. Run both queries above.
 3. Apply `20261104032000`. Do not apply it to production from this pull request.
 4. The inbound callback may be deployed before step 3. If `binding_role` is missing it answers "not available" and does not return HTTP 500. Apply the migration before operators call `voice_agent_configure` or `voice_agent_request_call`.
 5. Re-applying the file does not rewrite an unchanged platform row, so it does not append another audit entry for that row.

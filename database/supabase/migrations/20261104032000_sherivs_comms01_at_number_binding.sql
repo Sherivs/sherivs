@@ -5,7 +5,9 @@
 -- ADR-067. Reserved timestamp 20261104032000.
 --
 -- Apply order:
--- 1. Run the read-only pre-apply query in ADR-067. It must return zero rows.
+-- 1. Run the read-only pre-apply checks in ADR-067. The voice-row query must
+--    return zero rows. The root-tenant map query for
+--    3c0d0f9a-56bb-4a3e-8e02-b1a426f1c201 must return exactly one organization.
 -- 2. Apply this file only after 20261101000050 (voice add-on) and
 --    20261103000200 (sender channels include voice). Do not apply it to production here.
 -- 3. The inbound callback treats missing binding columns as "not available" (not HTTP 500),
@@ -564,6 +566,21 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.comms_voice_digits(p_phone text)
+RETURNS text
+LANGUAGE sql
+IMMUTABLE
+SET search_path = ''
+AS $$
+  SELECT CASE
+    WHEN d ~ '^0[0-9]{10}$' THEN '234' || substr(d, 2)
+    ELSE d
+  END
+  FROM (SELECT regexp_replace(coalesce(p_phone, ''), '\D', '', 'g') AS d) s;
+$$;
+
+REVOKE ALL ON FUNCTION public.comms_voice_digits(text) FROM PUBLIC, anon, authenticated;
+
 CREATE OR REPLACE FUNCTION public.voice_agent_assert_recipient_consent(
   p_tenant_ref text, p_recipient_user uuid
 ) RETURNS text
@@ -603,12 +620,11 @@ BEGIN
     WHERE u.id = p_recipient_user
       AND coalesce(u.is_active, true)
       AND au.phone_confirmed_at IS NOT NULL
-      AND regexp_replace(coalesce(au.phone, ''), '\D', '', 'g')
-          = regexp_replace(coalesce(u.phone, ''), '\D', '', 'g');
+      AND public.comms_voice_digits(au.phone) = public.comms_voice_digits(u.phone);
   IF v_raw IS NULL THEN
     RAISE EXCEPTION 'recipient has no confirmed voice number' USING ERRCODE = '42501';
   END IF;
-  v_digits := regexp_replace(v_raw, '\D', '', 'g');
+  v_digits := public.comms_voice_digits(v_raw);
   IF v_raw ~ '^\+[1-9][0-9]{7,14}$' THEN
     v_phone := v_raw;
   ELSIF v_digits ~ '^234[0-9]{10}$' THEN
@@ -623,7 +639,7 @@ BEGIN
     WHERE o.org_id = v_org
       AND o.channel = 'voice'
       AND o.status = 'opted_in'
-      AND regexp_replace(o.phone, '\D', '', 'g') = v_digits
+      AND public.comms_voice_digits(o.phone) = public.comms_voice_digits(v_phone)
   ) THEN
     RAISE EXCEPTION 'recipient has not opted in to voice calls' USING ERRCODE = '42501';
   END IF;
@@ -745,11 +761,10 @@ BEGIN
     ON o.org_id = v_org
    AND o.channel = 'voice'
    AND o.status = 'opted_in'
-   AND regexp_replace(o.phone, '\D', '', 'g') = regexp_replace(coalesce(u.phone, ''), '\D', '', 'g')
+   AND public.comms_voice_digits(o.phone) = public.comms_voice_digits(u.phone)
   WHERE coalesce(u.is_active, true)
     AND au.phone_confirmed_at IS NOT NULL
-    AND regexp_replace(coalesce(au.phone, ''), '\D', '', 'g')
-        = regexp_replace(coalesce(u.phone, ''), '\D', '', 'g')
+    AND public.comms_voice_digits(au.phone) = public.comms_voice_digits(u.phone)
   ORDER BY u.full_name ASC
   LIMIT 100;
 END;
