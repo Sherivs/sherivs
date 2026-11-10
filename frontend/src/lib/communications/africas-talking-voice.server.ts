@@ -158,6 +158,7 @@ export interface VoiceSession {
   line_role?: "legacy" | "organization" | "platform_support" | null;
   pin_verified_at?: string | null;
   pin_member_id?: string | null;
+  pin_attempts?: number | null;
 }
 
 interface DatabaseResult<T = unknown> {
@@ -281,11 +282,12 @@ const VoiceSessionSchema = z.object({
   line_role: z.enum(["legacy", "organization", "platform_support"]).nullish(),
   pin_verified_at: z.string().nullish(),
   pin_member_id: z.string().uuid().nullish(),
+  pin_attempts: z.number().int().nonnegative().nullish(),
 });
 
 const SESSION_COLUMNS =
   "id,tenant_id,tenant_ref,provider_session_id,caller_number,destination_number,state,recording_consent_at,turn_count";
-const SESSION_COLUMNS_WITH_ROLE = `${SESSION_COLUMNS},line_role,pin_verified_at,pin_member_id`;
+const SESSION_COLUMNS_WITH_ROLE = `${SESSION_COLUMNS},line_role,pin_verified_at,pin_member_id,pin_attempts`;
 
 async function findSession(
   db: VoiceCallbackDatabase,
@@ -984,6 +986,9 @@ async function loadOrganizationFacts(
   return parseSchoolCallingFacts(facts.data, tenantRef);
 }
 
+const PIN_ATTEMPT_LIMIT = 3;
+const PIN_FAILURE_PROMPT = "That PIN was not accepted. Enter your voice PIN, then press pound.";
+
 async function verifyOrganizationPin(
   db: VoiceCallbackDatabase,
   session: VoiceSession,
@@ -992,10 +997,13 @@ async function verifyOrganizationPin(
   now: () => string,
   audit: (input: AuditInput) => Promise<unknown>,
 ): Promise<Response> {
-  const stop = async (outcome: string) => {
+  const attempts = (session.pin_attempts ?? 0) + 1;
+  await updateSession(db, session, { pin_attempts: attempts, updated_at: now() });
+  const stop = async () => {
     const endedAt = now();
     await updateSession(db, session, {
       state: "escalated",
+      pin_attempts: attempts,
       updated_at: endedAt,
       ended_at: endedAt,
     });
@@ -1004,71 +1012,71 @@ async function verifyOrganizationPin(
       session,
       "Voice PIN verification stopped.",
       "pin_stopped",
-      `pin-stopped-${outcome}`,
+      "pin-stopped",
     );
-    await voiceAudit(audit, session, "voice.pin.rejected", { state: "pin_pending" }, { outcome });
-    return dialBoundPlatformSupport(db);
-  };
-  if (!session.tenant_ref) return stop("missing");
-  if (!digits || !/^[0-9]{4,8}$/.test(digits)) {
     await voiceAudit(
       audit,
       session,
       "voice.pin.rejected",
       { state: "pin_pending" },
       {
-        outcome: "invalid",
+        outcome: "stopped",
       },
     );
-    return responseXml(pinVoiceXml(callbackUrl));
+    return dialBoundPlatformSupport(db);
+  };
+  const sameFailure = () => responseXml(pinVoiceXml(callbackUrl, PIN_FAILURE_PROMPT));
+  if (!session.tenant_ref) {
+    return attempts >= PIN_ATTEMPT_LIMIT ? stop() : sameFailure();
+  }
+  const wellFormed = typeof digits === "string" && /^[0-9]{6,8}$/.test(digits);
+  if (!wellFormed) {
+    return attempts >= PIN_ATTEMPT_LIMIT ? stop() : sameFailure();
   }
   const member = await db.rpc("voice_agent_caller_member", {
     p_tenant_ref: session.tenant_ref,
     p_caller_digits: canonicalVoiceDigits(session.caller_number),
   });
-  if (member.error || typeof member.data !== "string") return stop("missing");
+  const memberId = !member.error && typeof member.data === "string" ? member.data : null;
   const verified = await db.rpc("voice_agent_verify_pin", {
     p_tenant_ref: session.tenant_ref,
-    p_member: member.data,
+    p_member: memberId,
     p_pin: digits,
+    p_caller_digits: canonicalVoiceDigits(session.caller_number),
   });
   const outcome = typeof verified.data === "string" ? verified.data : "rejected";
-  await voiceAudit(
-    audit,
-    session,
-    outcome === "ok" ? "voice.pin.accepted" : "voice.pin.rejected",
-    { state: "pin_pending" },
-    { outcome, memberId: member.data },
-  );
-  if (outcome === "ok") {
+  if (outcome === "ok" && memberId) {
     const verifiedAt = now();
     await updateSession(db, session, {
       state: "active",
       pin_verified_at: verifiedAt,
-      pin_member_id: member.data,
+      pin_member_id: memberId,
+      pin_attempts: attempts,
       updated_at: verifiedAt,
     });
     await recordCommsEvent(db, session, "Voice PIN accepted.", "pin_accepted", "pin-accepted");
+    await voiceAudit(
+      audit,
+      session,
+      "voice.pin.accepted",
+      { state: "pin_pending" },
+      {
+        outcome: "ok",
+      },
+    );
     return responseXml(
       recordVoiceXml("Thank you. Please briefly describe how we can help you.", callbackUrl),
     );
   }
-  if (outcome === "rejected") {
-    await recordCommsEvent(
-      db,
-      session,
-      "Voice PIN was not accepted.",
-      "pin_rejected",
-      `pin-rejected-${now()}`,
-    );
-    return responseXml(
-      pinVoiceXml(
-        callbackUrl,
-        "That PIN was not accepted. Enter your voice PIN, then press pound.",
-      ),
-    );
-  }
-  return stop(outcome);
+  if (attempts >= PIN_ATTEMPT_LIMIT) return stop();
+  await recordCommsEvent(
+    db,
+    session,
+    "Voice PIN was not accepted.",
+    "pin_rejected",
+    `pin-rejected-${attempts}`,
+  );
+  return sameFailure();
 }
 
 async function organizationAnswer(

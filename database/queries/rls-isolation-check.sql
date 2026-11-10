@@ -299,7 +299,8 @@ WHERE g.specific_schema = 'public'
     'voice_agent_caller_member',
     'voice_agent_member_facts',
     'voice_agent_verify_pin',
-    'voice_agent_pin_audit'
+    'voice_agent_pin_audit',
+    'voice_agent_pin_acceptable'
   )
   AND g.grantee IN ('anon', 'PUBLIC', 'authenticated')
   AND g.privilege_type = 'EXECUTE';

@@ -29,6 +29,7 @@ import { useAppShell } from "./shell-context";
 import { ShellGlassIcon } from "./glass-icon";
 import { NotificationCentre } from "./notification-centre";
 import { AssistantScreen } from "./assistant-screen";
+import { isAcceptableVoicePin } from "@/lib/communications/voice-pin";
 import {
   configureVoiceAgent,
   decideVoiceCall,
@@ -436,7 +437,9 @@ export function AppVoiceAgentScreen() {
                   <div>
                     <p>{entry.kind === "inbound" ? "Inbound call" : callSummary(entry.summary)}</p>
                     <small>
-                      {entry.status} · {new Date(entry.at).toLocaleString()}
+                      {entry.status}
+                      {entry.signal === "member_locked" ? " · Member locked" : ""} ·{" "}
+                      {new Date(entry.at).toLocaleString()}
                     </small>
                   </div>
                 </article>
@@ -475,8 +478,10 @@ export function AppSecurityScreen() {
   async function saveVoicePin(event: React.FormEvent) {
     event.preventDefault();
     setMessage(null);
-    if (!/^[0-9]{4,8}$/.test(voicePin) || voicePin !== voicePinConfirm) {
-      setMessage("Use the same 4 to 8 digit voice PIN in both fields.");
+    if (voicePin !== voicePinConfirm || !isAcceptableVoicePin(voicePin)) {
+      setMessage(
+        "Use the same 6 to 8 digit PIN in both fields. Repeated digits, straight runs, and common PINs are not accepted.",
+      );
       return;
     }
     try {
@@ -554,8 +559,9 @@ export function AppSecurityScreen() {
       <form className="app-shell-form" onSubmit={(event) => void saveVoicePin(event)}>
         <h2>Voice PIN</h2>
         <p>
-          This PIN is the second check before the calling agent can discuss your own records. It is
-          stored as a hash.
+          This PIN is the second check before the calling agent can discuss your own records. Use 6
+          to 8 digits. It is stored as a hash. Repeated digits, straight runs, and common PINs are
+          not accepted.
         </p>
         <label>
           Voice PIN

@@ -29,7 +29,8 @@ $comms02_guard$;
 ALTER TABLE public.voice_call_sessions
   ADD COLUMN IF NOT EXISTS line_role text NOT NULL DEFAULT 'legacy',
   ADD COLUMN IF NOT EXISTS pin_verified_at timestamptz,
-  ADD COLUMN IF NOT EXISTS pin_member_id uuid;
+  ADD COLUMN IF NOT EXISTS pin_member_id uuid,
+  ADD COLUMN IF NOT EXISTS pin_attempts integer NOT NULL DEFAULT 0;
 
 ALTER TABLE public.voice_call_sessions DROP CONSTRAINT IF EXISTS voice_call_sessions_state_check;
 ALTER TABLE public.voice_call_sessions
@@ -299,8 +300,12 @@ CREATE TABLE IF NOT EXISTS public.cg_voice_pin_attempt (
   tenant_ref text NOT NULL CHECK (tenant_ref ~ '^[0-9a-fA-F-]{36}$'),
   user_id uuid,
   outcome text NOT NULL CHECK (outcome IN ('ok', 'rejected', 'locked', 'missing', 'rate_limited')),
+  caller_hash text,
   created_at timestamptz NOT NULL DEFAULT now()
 );
+
+ALTER TABLE public.cg_voice_pin_attempt
+  ADD COLUMN IF NOT EXISTS caller_hash text;
 
 ALTER TABLE public.cg_voice_member_pin ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.cg_voice_member_pin FORCE ROW LEVEL SECURITY;
@@ -328,10 +333,11 @@ BEGIN
   IF p_org IS NULL OR p_action IS NULL THEN
     RETURN;
   END IF;
-  v_after := encode(extensions.digest(convert_to(p_action || ':' || p_outcome, 'UTF8'), 'sha256'), 'hex');
-  PERFORM pg_advisory_xact_lock(hashtextextended(p_org::text, 7014));
+  -- Same advisory lock and order as audit_chain_link_guard: lock 7013, then read the head.
+  PERFORM pg_advisory_xact_lock(hashtextextended(p_org::text, 7013));
   SELECT seq, entry_hash INTO v_seq, v_prev
     FROM public.audit_chain WHERE org_id = p_org ORDER BY seq DESC LIMIT 1;
+  v_after := encode(extensions.digest(convert_to(p_action || ':' || p_outcome, 'UTF8'), 'sha256'), 'hex');
   v_seq := coalesce(v_seq, 0) + 1;
   v_prev := coalesce(v_prev, repeat('0', 64));
   INSERT INTO public.audit_chain (
@@ -345,6 +351,46 @@ BEGIN
       'voice_pin', v_target, NULL, NULL, NULL, v_after
     )
   );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.voice_agent_pin_acceptable(p_pin text)
+RETURNS boolean
+LANGUAGE plpgsql
+IMMUTABLE
+SET search_path = ''
+AS $$
+DECLARE
+  v_index integer;
+  v_asc boolean := true;
+  v_desc boolean := true;
+  v_step integer;
+BEGIN
+  IF p_pin IS NULL OR p_pin !~ '^[0-9]+$' THEN
+    RETURN false;
+  END IF;
+  IF p_pin IN ('0000', '1111', '1234', '1212', '2580', '6969', '1004', '2000') THEN
+    RETURN false;
+  END IF;
+  IF length(p_pin) = 4 AND p_pin::integer BETWEEN 1950 AND 2030 THEN
+    RETURN false;
+  END IF;
+  IF length(p_pin) < 6 OR length(p_pin) > 8 THEN
+    RETURN false;
+  END IF;
+  IF p_pin ~ '^([0-9])\1+$' THEN
+    RETURN false;
+  END IF;
+  FOR v_index IN 2..length(p_pin) LOOP
+    v_step := ascii(substr(p_pin, v_index, 1)) - ascii(substr(p_pin, v_index - 1, 1));
+    IF v_step <> 1 THEN
+      v_asc := false;
+    END IF;
+    IF v_step <> -1 THEN
+      v_desc := false;
+    END IF;
+  END LOOP;
+  RETURN NOT v_asc AND NOT v_desc;
 END;
 $$;
 
@@ -362,7 +408,7 @@ BEGIN
   IF auth.uid() IS NULL OR v_tenant IS NULL OR v_tenant !~ '^[0-9a-fA-F-]{36}$' THEN
     RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501';
   END IF;
-  IF p_pin IS NULL OR p_pin !~ '^[0-9]{4,8}$' THEN
+  IF NOT public.voice_agent_pin_acceptable(p_pin) THEN
     RAISE EXCEPTION 'invalid voice pin' USING ERRCODE = '22023';
   END IF;
   SELECT m.school_id INTO v_org
@@ -396,26 +442,34 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS public.voice_agent_verify_pin(text, uuid, text);
+
 CREATE OR REPLACE FUNCTION public.voice_agent_verify_pin(
-  p_tenant_ref text, p_member uuid, p_pin text
+  p_tenant_ref text, p_member uuid, p_pin text, p_caller_digits text
 ) RETURNS text
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = ''
 AS $$
 DECLARE
+  -- Cost-8 bcrypt of a fixed non-member pad so a missing hash still runs crypt().
+  v_dummy text := '$2a$08$MATINFJHiPrCcpsqpnNfL.VwBfsABRwqbmPLGjJh2uzdixF1QbPfW';
   v_org uuid;
   v_hash text;
   v_failed integer;
   v_locked timestamptz;
   v_org_attempts integer;
+  v_caller_attempts integer := 0;
+  v_caller_hash text;
   v_outcome text;
+  v_pin text := coalesce(p_pin, '');
 BEGIN
   IF coalesce(auth.role(), '') <> 'service_role' THEN
     RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501';
   END IF;
-  IF p_tenant_ref IS NULL OR p_tenant_ref !~ '^[0-9a-fA-F-]{36}$' OR p_member IS NULL THEN
-    RETURN 'missing';
+  IF p_tenant_ref IS NULL OR p_tenant_ref !~ '^[0-9a-fA-F-]{36}$' THEN
+    PERFORM extensions.crypt(v_pin, v_dummy);
+    RETURN 'rejected';
   END IF;
   SELECT m.school_id INTO v_org
     FROM public.school_tenant_map m
@@ -423,15 +477,34 @@ BEGIN
   IF v_org IS NULL THEN
     v_org := p_tenant_ref::uuid;
   END IF;
+  IF p_caller_digits ~ '^[0-9]{7,15}$' THEN
+    v_caller_hash := encode(
+      extensions.digest(convert_to(p_tenant_ref || ':' || p_caller_digits, 'UTF8'), 'sha256'),
+      'hex'
+    );
+    SELECT count(*) INTO v_caller_attempts
+      FROM public.cg_voice_pin_attempt a
+      WHERE a.tenant_ref = p_tenant_ref
+        AND a.caller_hash = v_caller_hash
+        AND a.created_at >= statement_timestamp() - interval '1 hour';
+  END IF;
   SELECT count(*) INTO v_org_attempts
     FROM public.cg_voice_pin_attempt a
     WHERE a.tenant_ref = p_tenant_ref
       AND a.created_at >= statement_timestamp() - interval '1 hour';
-  IF v_org_attempts >= 30 THEN
-    INSERT INTO public.cg_voice_pin_attempt (tenant_ref, user_id, outcome)
-    VALUES (p_tenant_ref, p_member, 'rate_limited');
+  IF v_org_attempts >= 30 OR v_caller_attempts >= 10 THEN
+    PERFORM extensions.crypt(v_pin, v_dummy);
+    INSERT INTO public.cg_voice_pin_attempt (tenant_ref, user_id, outcome, caller_hash)
+    VALUES (p_tenant_ref, p_member, 'rate_limited', v_caller_hash);
     PERFORM public.voice_agent_pin_audit(v_org, 'voice.pin.rejected', p_member, 'rate_limited');
     RETURN 'rate_limited';
+  END IF;
+  IF p_member IS NULL THEN
+    PERFORM extensions.crypt(v_pin, v_dummy);
+    INSERT INTO public.cg_voice_pin_attempt (tenant_ref, user_id, outcome, caller_hash)
+    VALUES (p_tenant_ref, NULL, 'rejected', v_caller_hash);
+    PERFORM public.voice_agent_pin_audit(v_org, 'voice.pin.rejected', NULL, 'rejected');
+    RETURN 'rejected';
   END IF;
   SELECT pin_hash, failed_attempts, locked_until
     INTO v_hash, v_failed, v_locked
@@ -439,23 +512,25 @@ BEGIN
     WHERE tenant_ref = p_tenant_ref AND user_id = p_member
     FOR UPDATE;
   IF v_hash IS NULL THEN
-    INSERT INTO public.cg_voice_pin_attempt (tenant_ref, user_id, outcome)
-    VALUES (p_tenant_ref, p_member, 'missing');
-    PERFORM public.voice_agent_pin_audit(v_org, 'voice.pin.rejected', p_member, 'missing');
-    RETURN 'missing';
+    PERFORM extensions.crypt(v_pin, v_dummy);
+    INSERT INTO public.cg_voice_pin_attempt (tenant_ref, user_id, outcome, caller_hash)
+    VALUES (p_tenant_ref, p_member, 'rejected', v_caller_hash);
+    PERFORM public.voice_agent_pin_audit(v_org, 'voice.pin.rejected', p_member, 'rejected');
+    RETURN 'rejected';
   END IF;
   IF v_locked IS NOT NULL AND v_locked > statement_timestamp() THEN
-    INSERT INTO public.cg_voice_pin_attempt (tenant_ref, user_id, outcome)
-    VALUES (p_tenant_ref, p_member, 'locked');
+    PERFORM extensions.crypt(v_pin, v_hash);
+    INSERT INTO public.cg_voice_pin_attempt (tenant_ref, user_id, outcome, caller_hash)
+    VALUES (p_tenant_ref, p_member, 'locked', v_caller_hash);
     PERFORM public.voice_agent_pin_audit(v_org, 'voice.pin.rejected', p_member, 'locked');
     RETURN 'locked';
   END IF;
-  IF p_pin ~ '^[0-9]{4,8}$' AND extensions.crypt(p_pin, v_hash) = v_hash THEN
+  IF extensions.crypt(v_pin, v_hash) = v_hash AND public.voice_agent_pin_acceptable(v_pin) THEN
     UPDATE public.cg_voice_member_pin
       SET failed_attempts = 0, locked_until = NULL, updated_at = statement_timestamp()
       WHERE tenant_ref = p_tenant_ref AND user_id = p_member;
-    INSERT INTO public.cg_voice_pin_attempt (tenant_ref, user_id, outcome)
-    VALUES (p_tenant_ref, p_member, 'ok');
+    INSERT INTO public.cg_voice_pin_attempt (tenant_ref, user_id, outcome, caller_hash)
+    VALUES (p_tenant_ref, p_member, 'ok', v_caller_hash);
     PERFORM public.voice_agent_pin_audit(v_org, 'voice.pin.accepted', p_member, 'ok');
     RETURN 'ok';
   END IF;
@@ -466,8 +541,8 @@ BEGIN
         locked_until = CASE WHEN v_failed >= 5 THEN statement_timestamp() + interval '15 minutes' ELSE NULL END,
         updated_at = statement_timestamp()
     WHERE tenant_ref = p_tenant_ref AND user_id = p_member;
-  INSERT INTO public.cg_voice_pin_attempt (tenant_ref, user_id, outcome)
-  VALUES (p_tenant_ref, p_member, v_outcome);
+  INSERT INTO public.cg_voice_pin_attempt (tenant_ref, user_id, outcome, caller_hash)
+  VALUES (p_tenant_ref, p_member, v_outcome, v_caller_hash);
   PERFORM public.voice_agent_pin_audit(v_org, 'voice.pin.rejected', p_member, v_outcome);
   RETURN v_outcome;
 END;
@@ -644,6 +719,15 @@ BEGIN
             'kind', 'inbound',
             'status', s.state,
             'summary', 'Inbound call',
+            'signal', CASE
+              WHEN EXISTS (
+                SELECT 1 FROM public.cg_voice_member_pin p
+                WHERE p.user_id = s.pin_member_id
+                  AND p.tenant_ref = coalesce(s.tenant_ref, s.tenant_id::text)
+                  AND p.locked_until > statement_timestamp()
+              ) THEN 'member_locked'
+              ELSE NULL
+            END,
             'at', s.created_at
           ) AS item
         FROM public.voice_call_sessions s
@@ -655,6 +739,7 @@ BEGIN
             'kind', 'outbound',
             'status', a.status,
             'summary', a.category,
+            'signal', NULL,
             'at', a.created_at
           )
         FROM public.cg_voice_call_approvals a
@@ -676,7 +761,8 @@ REVOKE ALL ON FUNCTION public.voice_agent_plan_entitled(text),
   public.voice_agent_call_log(),
   public.voice_agent_pin_audit(uuid, text, uuid, text),
   public.voice_agent_set_own_pin(text),
-  public.voice_agent_verify_pin(text, uuid, text)
+  public.voice_agent_verify_pin(text, uuid, text, text),
+  public.voice_agent_pin_acceptable(text)
   FROM PUBLIC, anon, authenticated, service_role;
 
 GRANT EXECUTE ON FUNCTION public.voice_agent_plan_entitled(text),
@@ -689,7 +775,7 @@ GRANT EXECUTE ON FUNCTION public.voice_agent_plan_entitled(text),
   public.voice_agent_school_line_open(text),
   public.voice_agent_caller_member(text, text),
   public.voice_agent_member_facts(text, uuid, uuid),
-  public.voice_agent_verify_pin(text, uuid, text)
+  public.voice_agent_verify_pin(text, uuid, text, text)
   TO service_role;
 
 COMMENT ON FUNCTION public.voice_agent_plan_entitled(text) IS

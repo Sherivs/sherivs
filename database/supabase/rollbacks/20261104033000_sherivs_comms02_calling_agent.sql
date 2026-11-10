@@ -15,7 +15,9 @@ DROP FUNCTION IF EXISTS public.voice_agent_call_log();
 DROP FUNCTION IF EXISTS public.voice_agent_subscription_tier();
 DROP FUNCTION IF EXISTS public.voice_agent_plan_entitled(text);
 DROP FUNCTION IF EXISTS public.voice_agent_set_own_pin(text);
+DROP FUNCTION IF EXISTS public.voice_agent_verify_pin(text, uuid, text, text);
 DROP FUNCTION IF EXISTS public.voice_agent_verify_pin(text, uuid, text);
+DROP FUNCTION IF EXISTS public.voice_agent_pin_acceptable(text);
 DROP FUNCTION IF EXISTS public.voice_agent_pin_audit(uuid, text, uuid, text);
 
 DROP TABLE IF EXISTS public.cg_voice_pin_attempt;
@@ -34,6 +36,7 @@ ALTER TABLE public.voice_call_sessions
   DROP CONSTRAINT IF EXISTS voice_call_sessions_line_role_check;
 
 ALTER TABLE public.voice_call_sessions
+  DROP COLUMN IF EXISTS pin_attempts,
   DROP COLUMN IF EXISTS pin_member_id,
   DROP COLUMN IF EXISTS pin_verified_at,
   DROP COLUMN IF EXISTS line_role;

@@ -60,6 +60,7 @@ function organizationDb(options: {
   facts?: Record<string, unknown> | null;
   factsError?: boolean;
   pin?: string;
+  noPin?: boolean;
 }) {
   let session: VoiceSession | null = null;
   const calls: Array<{ name: string; args?: Record<string, unknown> }> = [];
@@ -139,6 +140,7 @@ function organizationDb(options: {
         return { data: options.memberId ?? null, error: null };
       }
       if (name === "voice_agent_verify_pin") {
+        if (!args.p_member || options.noPin) return { data: "rejected", error: null };
         const failures = calls.filter(
           (call) => call.name === "voice_agent_verify_pin" && call.args?.p_pin !== options.pin,
         ).length;
@@ -251,6 +253,16 @@ describe("COMMS-02 migration contract", () => {
     expect(MIGRATION).toContain("NEW.number_status IS DISTINCT FROM 'active'");
     expect(MIGRATION).toContain("extensions.crypt(p_pin, extensions.gen_salt('bf', 8))");
     expect(MIGRATION).toContain("pin_verified_at IS NOT NULL");
+    const pinAudit = MIGRATION.slice(
+      MIGRATION.indexOf("FUNCTION public.voice_agent_pin_audit"),
+      MIGRATION.indexOf("FUNCTION public.voice_agent_pin_acceptable"),
+    );
+    const lockAt = pinAudit.indexOf("hashtextextended(p_org::text, 7013)");
+    expect(lockAt).toBeGreaterThan(-1);
+    expect(lockAt).toBeLessThan(pinAudit.indexOf("FROM public.audit_chain"));
+    expect(pinAudit).not.toContain("7014");
+    expect(MIGRATION).toContain("voice_agent_pin_acceptable");
+    expect(MIGRATION).toContain("BETWEEN 1950 AND 2030");
     expect(RLS_CHECK).toContain("voice_agent_caller_member");
     expect(RLS_CHECK).toContain("voice_call_sessions RLS is not forced after COMMS-02");
   });
@@ -468,13 +480,21 @@ describe("COMMS-02 inbound organization line", () => {
       }),
     );
     await handler(request({ sessionId: "at-org-lock", dtmfDigits: "1" }));
-    let last = "";
-    for (let attempt = 0; attempt < 5; attempt += 1) {
+    const prompts: string[] = [];
+    for (let attempt = 0; attempt < 3; attempt += 1) {
       const response = await handler(request({ sessionId: "at-org-lock", dtmfDigits: "1111" }));
-      last = await response.text();
+      prompts.push(await response.text());
     }
-    expect(last).toContain("not available");
+    expect(prompts[0]).toContain("That PIN was not accepted");
+    expect(prompts[1]).toContain("That PIN was not accepted");
+    expect(prompts[2]).toContain("not available");
+    expect(calls.some((call) => call.name === "voice_agent_verify_pin")).toBe(false);
     expect(calls.some((call) => call.name === "voice_agent_member_facts")).toBe(false);
+    const pinAuditCount = () =>
+      (JSON.stringify(audit.mock.calls).match(/voice\.pin\.rejected/g) ?? []).length;
+    expect(pinAuditCount()).toBe(1);
+    await handler(request({ sessionId: "at-org-lock", dtmfDigits: "11" }));
+    expect(pinAuditCount()).toBe(1);
     const logged =
       JSON.stringify(calls.filter((call) => call.name === "comms_inbound")) +
       JSON.stringify(audit.mock.calls);
@@ -545,5 +565,44 @@ describe("COMMS-02 inbound organization line", () => {
     );
     expect(await response.text()).toContain("not available");
     expect(inserts).not.toContain("voice_call_sessions");
+  });
+
+  it("uses one prompt for a non-member, a member with no PIN, and a wrong PIN", async () => {
+    const promptFor = async (
+      label: string,
+      options: { memberId?: string | null; noPin?: boolean },
+    ) => {
+      const { db } = organizationDb({ ...options, pin: "582913" });
+      const handler = createAfricaTalkingVoiceCallbackHandler({
+        env: ENV,
+        db,
+        assistant: null,
+        audit: vi.fn(async () => undefined),
+      });
+      await handler(
+        request({
+          sessionId: `at-${label}`,
+          direction: "Inbound",
+          callerNumber: "+2348012345678",
+          destinationNumber: "+2348090000000",
+        }),
+      );
+      await handler(request({ sessionId: `at-${label}`, dtmfDigits: "1" }));
+      const response = await handler(request({ sessionId: `at-${label}`, dtmfDigits: "135790" }));
+      const xml = await response.text();
+      expect(xml).toContain("That PIN was not accepted");
+      expect(xml).not.toMatch(/not a member|no PIN|does not have/i);
+      return xml;
+    };
+    const nonMember = await promptFor("non-member", { memberId: null });
+    const noPin = await promptFor("no-pin", {
+      memberId: "00000000-0000-4000-8000-000000000012",
+      noPin: true,
+    });
+    const wrong = await promptFor("wrong", {
+      memberId: "00000000-0000-4000-8000-000000000012",
+    });
+    expect(nonMember).toBe(noPin);
+    expect(noPin).toBe(wrong);
   });
 });

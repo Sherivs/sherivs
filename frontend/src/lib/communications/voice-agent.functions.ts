@@ -19,6 +19,7 @@ import {
   voiceCallRequestInput,
 } from "@/lib/communications/voice-number-binding";
 import { decideSchoolCallingAgentAccess } from "@/lib/communications/school-calling-agent";
+import { isAcceptableVoicePin } from "@/lib/communications/voice-pin";
 import { schoolCallingAgentEntitlement } from "@/lib/payments/tier-entitlements";
 import { roleIdsForWorkforceKind } from "@/lib/scholar/roles/role-registry";
 import { tenantId } from "@/lib/tenant-core";
@@ -347,18 +348,25 @@ const callLogInput = z.object({
   kind: z.enum(["inbound", "outbound"]),
   status: z.string().max(40),
   summary: z.string().max(80),
+  signal: z.enum(["member_locked"]).nullable().optional(),
   at: z.string(),
 });
 
 export type VoiceCallLogEntry = z.infer<typeof callLogInput>;
 
 const voicePinInput = z.object({
-  pin: z.string().regex(/^[0-9]{4,8}$/),
+  pin: z.string().regex(/^[0-9]{6,8}$/),
 });
 
 export const setVoicePin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .validator((input: unknown) => voicePinInput.parse(input))
+  .validator((input: unknown) => {
+    const parsed = voicePinInput.parse(input);
+    if (!isAcceptableVoicePin(parsed.pin)) {
+      throw new Error("Choose a 6 to 8 digit PIN that is not a simple sequence.");
+    }
+    return parsed;
+  })
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.rpc(
       "voice_agent_set_own_pin" as never,
