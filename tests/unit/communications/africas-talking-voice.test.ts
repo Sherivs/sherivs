@@ -293,7 +293,10 @@ describe("Africa's Talking voice support callback", () => {
     expect(audit).toHaveBeenCalledWith(
       expect.objectContaining({ orgId: TENANT_REF, action: "voice.call.started" }),
     );
-    expect(calls.some((call) => call.table === "comms_sender_numbers")).toBe(false);
+    expect(
+      calls.find((call) => call.table === "voice_call_sessions" && call.operation === "insert")
+        ?.values,
+    ).toMatchObject({ line_role: "legacy" });
   });
 
   it("requires consent before recording, then stores grounded responses in the comms log", async () => {

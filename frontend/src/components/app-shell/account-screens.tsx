@@ -34,12 +34,25 @@ import {
   decideVoiceCall,
   dispatchApprovedVoiceCall,
   getVoiceAgentSettings,
+  listVoiceCallLog,
   listVoiceCalls,
   listVoiceConsentedRecipients,
   requestVoiceCall,
   type VoiceAgentCall,
   type VoiceAgentSettings,
+  type VoiceCallLogEntry,
 } from "@/lib/communications/voice-agent.functions";
+
+function planLabel(tier: string): string {
+  if (!tier) return "Trial";
+  return tier.charAt(0).toUpperCase() + tier.slice(1);
+}
+
+function callSummary(summary: string): string {
+  if (summary === "fee_reminder") return "Fee reminder";
+  if (summary === "absence_alert") return "Absence alert";
+  return summary;
+}
 
 function SectionBack() {
   return (
@@ -101,6 +114,7 @@ export function AppSettingsScreen() {
 export function AppVoiceAgentScreen() {
   const [settings, setSettings] = useState<VoiceAgentSettings | null>(null);
   const [calls, setCalls] = useState<VoiceAgentCall[]>([]);
+  const [callLog, setCallLog] = useState<VoiceCallLogEntry[]>([]);
   const [recipients, setRecipients] = useState<
     Array<{ userId: string; displayName: string; phoneRedacted: string }>
   >([]);
@@ -114,15 +128,17 @@ export function AppVoiceAgentScreen() {
 
   async function reload() {
     try {
-      const [nextSettings, nextCalls, nextRecipients] = await Promise.all([
+      const [nextSettings, nextCalls, nextRecipients, nextLog] = await Promise.all([
         getVoiceAgentSettings({ data: {} }),
         listVoiceCalls({ data: {} }),
         listVoiceConsentedRecipients({ data: {} }).catch(() => []),
+        listVoiceCallLog({ data: {} }).catch(() => []),
       ]);
       setSettings(nextSettings);
       setEnabled(nextSettings.enabled);
       setExtension(nextSettings.extension ?? "");
       setCalls(nextCalls);
+      setCallLog(nextLog);
       setRecipients(nextRecipients);
       setRecipientUserId((current) =>
         nextRecipients.some((recipient) => recipient.userId === current)
@@ -218,14 +234,14 @@ export function AppVoiceAgentScreen() {
       </Link>
       <h1>Organization voice agent</h1>
       <p className="app-shell-empty">
-        The organization number is bound on the server. Request calls only for members who already
-        opted in. Live voice stays disabled until the separate voice_live flag is explicitly
-        enabled.
+        Professional and Enterprise organizations can enable one calling agent. The number is bound
+        on the server. Request calls only for members who already opted in. Live voice stays
+        disabled until the separate voice_live flag is explicitly enabled.
       </p>
       <p className="app-shell-empty">
-        Incoming callers are not authenticated. The voice agent currently answers public help only;
-        organization-specific fees, results, admissions, and timetable records remain unavailable
-        until secure caller verification is implemented.
+        A verified caller hears only that caller&apos;s own fees, results, admissions, and
+        timetable. Unknown questions go to the platform support line. The agent cannot place a call
+        or change a record; a person approves every outbound request.
       </p>
       {message ? (
         <p role="status" className="app-shell-empty">
@@ -238,6 +254,20 @@ export function AppVoiceAgentScreen() {
         </p>
       ) : (
         <>
+          <div className="app-shell-card" data-testid="calling-agent-plan">
+            <div>
+              <p>Plan</p>
+              <small>
+                {settings.callingEntitled
+                  ? `${planLabel(settings.subscriptionTier)} includes the calling agent`
+                  : `${planLabel(settings.subscriptionTier)} does not include the calling agent`}
+              </small>
+            </div>
+            <div>
+              <p>Bound number</p>
+              <small>{settings.providerNumber ?? "Not bound"}</small>
+            </div>
+          </div>
           <div className="app-shell-card">
             <div>
               <p>Live voice</p>
@@ -287,9 +317,10 @@ export function AppVoiceAgentScreen() {
               <input
                 type="checkbox"
                 checked={enabled}
+                disabled={!settings.callingEntitled && !enabled}
                 onChange={(event) => setEnabled(event.target.checked)}
               />
-              Enable organization add-on
+              Enable organization calling agent
             </label>
             <button type="submit" className="app-shell-primary" disabled={busy}>
               Save settings
@@ -332,7 +363,9 @@ export function AppVoiceAgentScreen() {
             <button
               type="submit"
               className="app-shell-primary"
-              disabled={busy || !settings.enabled || recipients.length === 0}
+              disabled={
+                busy || !settings.enabled || !settings.callingEntitled || recipients.length === 0
+              }
             >
               Request approval
             </button>
@@ -377,6 +410,7 @@ export function AppVoiceAgentScreen() {
                         className="app-shell-primary"
                         disabled={
                           busy ||
+                          !settings.callingEntitled ||
                           !settings.voiceLive ||
                           !settings.enabled ||
                           settings.provider !== "africas_talking"
@@ -386,6 +420,23 @@ export function AppVoiceAgentScreen() {
                         Dispatch approved call
                       </button>
                     )}
+                  </div>
+                </article>
+              ))
+            )}
+          </section>
+          <section aria-labelledby="voice-log-heading" data-testid="voice-call-log">
+            <h2 id="voice-log-heading">Call log</h2>
+            {callLog.length === 0 ? (
+              <p className="app-shell-empty">No calls have been recorded for this organization.</p>
+            ) : (
+              callLog.map((entry) => (
+                <article className="app-shell-card" key={`${entry.kind}-${entry.id}`}>
+                  <div>
+                    <p>{entry.kind === "inbound" ? "Inbound call" : callSummary(entry.summary)}</p>
+                    <small>
+                      {entry.status} · {new Date(entry.at).toLocaleString()}
+                    </small>
                   </div>
                 </article>
               ))
