@@ -7,12 +7,14 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { sentryOptions } from "@/lib/observability/sentry-config";
+import { readServerSentryEnv } from "@/lib/observability/sentry.server";
 import {
   CLIENT_VENDOR_ENV_NAMES,
   clientVendorDefine,
   explicitAppEnv,
   sentrySourceMapUploadEnabled,
   serverVendorDefine,
+  vendorBuildDefine,
   vendorTelemetryEnabled,
 } from "@/lib/observability/vendor-telemetry";
 import { stripVendorTelemetryEnvText } from "../../scripts/strip-vendor-telemetry-env.mjs";
@@ -57,15 +59,23 @@ function readRepo(path: string): string {
 }
 
 describe("vendor telemetry gate", () => {
-  it("enables only an unambiguous staging app env", () => {
+  it("enables only when both names are exactly staging", () => {
     expect(vendorTelemetryEnabled({ appEnv: "staging", viteAppEnv: "staging" })).toBe(true);
-    expect(vendorTelemetryEnabled({ appEnv: "staging" })).toBe(true);
-    expect(vendorTelemetryEnabled({ viteAppEnv: "Staging" })).toBe(true);
+    expect(explicitAppEnv({ appEnv: "staging", viteAppEnv: "staging" })).toBe("staging");
+    expect(vendorTelemetryEnabled({ appEnv: "staging" })).toBe(false);
+    expect(vendorTelemetryEnabled({ viteAppEnv: "staging" })).toBe(false);
+    expect(explicitAppEnv({ appEnv: "staging" })).toBe("");
+    expect(explicitAppEnv({ viteAppEnv: "staging" })).toBe("");
+    expect(vendorTelemetryEnabled({ appEnv: "Staging", viteAppEnv: "Staging" })).toBe(false);
+    expect(vendorTelemetryEnabled({ appEnv: "staging", viteAppEnv: "Staging" })).toBe(false);
+    expect(explicitAppEnv({ appEnv: "Staging", viteAppEnv: "Staging" })).toBe("Staging");
     expect(vendorTelemetryEnabled({})).toBe(false);
     expect(vendorTelemetryEnabled({ appEnv: "production", viteAppEnv: "production" })).toBe(false);
-    expect(vendorTelemetryEnabled({ appEnv: "development" })).toBe(false);
-    expect(vendorTelemetryEnabled({ appEnv: "test" })).toBe(false);
-    expect(vendorTelemetryEnabled({ appEnv: "local" })).toBe(false);
+    expect(vendorTelemetryEnabled({ appEnv: "development", viteAppEnv: "development" })).toBe(
+      false,
+    );
+    expect(vendorTelemetryEnabled({ appEnv: "test", viteAppEnv: "test" })).toBe(false);
+    expect(vendorTelemetryEnabled({ appEnv: "local", viteAppEnv: "local" })).toBe(false);
     expect(explicitAppEnv({ appEnv: "staging", viteAppEnv: "production" })).toBe("");
     expect(vendorTelemetryEnabled({ appEnv: "staging", viteAppEnv: "production" })).toBe(false);
     expect(
@@ -99,6 +109,7 @@ describe("vendor telemetry gate", () => {
       expect(production[`import.meta.env.${name}`]).toBe(JSON.stringify(""));
     }
     expect(production["import.meta.env.VITE_APP_ENV"]).toBe(JSON.stringify("production"));
+    expect(production["import.meta.env.VITE_VERCEL_ENV"]).toBe(JSON.stringify("production"));
     expect(JSON.stringify(production)).not.toContain(secretDsn);
     expect(JSON.stringify(production)).not.toContain(POSTHOG_KEY);
     expect(serverVendorDefine({ appEnv: "production", vercelEnv: "production" })).toEqual({
@@ -137,6 +148,7 @@ describe("vendor telemetry gate", () => {
     expect(staging["import.meta.env.VITE_SENTRY_DSN"]).toBeUndefined();
     expect(staging["import.meta.env.VITE_POSTHOG_KEY"]).toBeUndefined();
     expect(staging["import.meta.env.VITE_SENTRY_ENVIRONMENT"]).toBe(JSON.stringify("staging"));
+    expect(staging["import.meta.env.VITE_VERCEL_ENV"]).toBe(JSON.stringify("preview"));
     expect(serverVendorDefine({ appEnv: "staging", viteAppEnv: "staging" })).toEqual({});
     expect(
       sentrySourceMapUploadEnabled({
@@ -183,6 +195,66 @@ describe("vendor telemetry gate", () => {
     expect(staging).not.toBeNull();
     expect(staging?.environment).toBe("staging");
     expect(staging?.dsn).toBe(dsn);
+  });
+
+  it("applies the vendor define only to a production build", () => {
+    const blanked = vendorBuildDefine({
+      command: "build",
+      mode: "production",
+      appEnv: "production",
+      viteAppEnv: "production",
+      vercelEnv: "production",
+    });
+    expect(blanked["import.meta.env.VITE_SENTRY_DSN"]).toBe(JSON.stringify(""));
+    expect(blanked["import.meta.env.VITE_POSTHOG_KEY"]).toBe(JSON.stringify(""));
+    expect(blanked["process.env.SENTRY_DSN"]).toBe(JSON.stringify(""));
+    expect(vendorBuildDefine({ command: "serve", mode: "development" })).toEqual({});
+    expect(
+      vendorBuildDefine({
+        command: "serve",
+        mode: "production",
+        appEnv: "production",
+        viteAppEnv: "production",
+      }),
+    ).toEqual({});
+    expect(
+      vendorBuildDefine({
+        command: "build",
+        mode: "development",
+        appEnv: "production",
+        viteAppEnv: "production",
+      }),
+    ).toEqual({});
+  });
+
+  it("production define empties the DSN readServerSentryEnv passes to sentryOptions", () => {
+    const define = serverVendorDefine({
+      appEnv: "production",
+      viteAppEnv: "production",
+      vercelEnv: "production",
+    });
+    expect(define["process.env.SENTRY_DSN"]).toBe(JSON.stringify(""));
+    const source = readRepo("frontend/src/lib/observability/sentry.server.ts");
+    expect(source).toContain("dsn: process.env.SENTRY_DSN");
+    expect(source).not.toMatch(/dsn:\s*env\.SENTRY_DSN/);
+    const clientSource = readRepo("frontend/src/lib/observability/sentry-browser.ts");
+    expect(clientSource).toContain("vercelEnv: import.meta.env.VITE_VERCEL_ENV");
+    const previous = process.env.SENTRY_DSN;
+    process.env.SENTRY_DSN = JSON.parse(define["process.env.SENTRY_DSN"]) as string;
+    try {
+      const read = readServerSentryEnv({
+        APP_ENV: "staging",
+        VITE_APP_ENV: "staging",
+        VERCEL_ENV: "preview",
+        SENTRY_DSN: DSN,
+      });
+      expect(read.dsn).toBe("");
+      expect(read.dsn).not.toBe(DSN);
+      expect(sentryOptions(read)).toBeNull();
+    } finally {
+      if (previous === undefined) delete process.env.SENTRY_DSN;
+      else process.env.SENTRY_DSN = previous;
+    }
   });
 });
 

@@ -442,12 +442,13 @@ provisioned by application code.
 | Environment | `APP_ENV` and `VITE_APP_ENV` | Sentry / PostHog | Production sinks |
 | --- | --- | --- | --- |
 | development, local, test | `development`, `local`, or `test` | Off. Local structured logs only. | — |
-| unset, or the two names disagree | empty | Off (fail closed). | — |
+| unset, one name missing, or the two names disagree | empty | Off (fail closed). The match is case-sensitive. | — |
 | staging | both exactly `staging` | On, when the staging names below are set. PostHog still requires consent. | — |
 | production | both `production` | Off. Keys must not be bundled. Events must not be exported. | Datadog, CloudWatch, provider-native consoles |
 
-`VERCEL_ENV=production` and `VERCEL_ENV=development` also force Sentry and
-PostHog off. `NODE_ENV` is not the gate.
+`VERCEL_ENV=production` and `VERCEL_ENV=development` (exact) also force Sentry
+and PostHog off. `NODE_ENV` is not the gate. The Vite define that strips
+vendor keys runs only for a production build, not the dev server.
 
 Staging-only names: `SENTRY_DSN`, `VITE_SENTRY_DSN`, `VITE_POSTHOG_KEY`,
 `VITE_POSTHOG_HOST`, `SENTRY_AUTH_TOKEN`. Do not set those on the production

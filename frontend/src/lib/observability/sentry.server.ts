@@ -4,7 +4,9 @@ import { sentryOptions, type SentryEnv } from "./sentry-config";
 
 export function readServerSentryEnv(env: NodeJS.ProcessEnv = process.env): SentryEnv {
   return {
-    dsn: env.SENTRY_DSN,
+    // This identifier is what Vite's production define replaces with "".
+    // Reading env.SENTRY_DSN would keep the runtime value and skip that strip.
+    dsn: process.env.SENTRY_DSN,
     appEnv: env.APP_ENV,
     viteAppEnv: env.VITE_APP_ENV,
     vercelEnv: env.VERCEL_ENV,

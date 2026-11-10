@@ -9,6 +9,7 @@ export function readClientSentryEnv(): SentryEnv {
     dsn: import.meta.env.VITE_SENTRY_DSN as string | undefined,
     appEnv: import.meta.env.VITE_APP_ENV as string | undefined,
     viteAppEnv: import.meta.env.VITE_APP_ENV as string | undefined,
+    vercelEnv: import.meta.env.VITE_VERCEL_ENV as string | undefined,
     release: import.meta.env.VITE_SENTRY_RELEASE as string | undefined,
   };
 }

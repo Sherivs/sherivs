@@ -15,7 +15,8 @@ Approved policy. The company is self-funding: this document names sinks. It does
 
 ## Env names (values never belong in git)
 
-- `APP_ENV`, `VITE_APP_ENV` — explicit environment. Both must be `staging` before Sentry or PostHog start.
+- `APP_ENV`, `VITE_APP_ENV` — both must be set and each must be exactly `staging` (case-sensitive; one unset fails closed) before Sentry or PostHog start. The browser also reads the baked `VITE_VERCEL_ENV` label.
+- The Vite define that blanks vendor keys runs only for `vite build` in mode `production`. The dev server is not rewritten.
 - Staging only: `SENTRY_DSN`, `VITE_SENTRY_DSN`, `VITE_POSTHOG_KEY`, `VITE_POSTHOG_HOST`, `SENTRY_AUTH_TOKEN` (source-map upload).
 - Production builds define the `VITE_` vendor names as empty and do not upload source maps. The production server bundle does not embed `SENTRY_DSN`.
 

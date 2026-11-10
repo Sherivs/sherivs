@@ -44,7 +44,7 @@ export function logBoundaryFailure(
   if (input.fields) {
     for (const [key, value] of Object.entries(input.fields)) {
       if (key === "err" || key === "error") continue;
-      fields[key] = typeof value === "string" ? scrubString(value) : value;
+      fields[key] = scrubValue(value);
     }
   }
   logStructured(

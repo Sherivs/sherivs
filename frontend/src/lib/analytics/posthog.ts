@@ -17,6 +17,7 @@ export function readClientVendorEnv(): VendorTelemetryInput {
   return {
     appEnv: import.meta.env.VITE_APP_ENV as string | undefined,
     viteAppEnv: import.meta.env.VITE_APP_ENV as string | undefined,
+    vercelEnv: import.meta.env.VITE_VERCEL_ENV as string | undefined,
   };
 }
 

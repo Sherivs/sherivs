@@ -6,17 +6,16 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import { nitro } from "nitro/vite";
 import { sentryTanstackStart } from "@sentry/tanstackstart-react/vite";
 import {
-  clientVendorDefine,
   sentrySourceMapUploadEnabled,
-  serverVendorDefine,
+  vendorBuildDefine,
 } from "./frontend/src/lib/observability/vendor-telemetry.ts";
 
 const isVitest = process.env.VITEST === "true";
 
-// Sentry/PostHog and source-map upload run only when APP_ENV / VITE_APP_ENV
-// is exactly "staging". Production (including VERCEL_ENV=production) fails
-// closed and the client keys are defined as empty strings so they are not
-// bundled. See frontend/src/lib/observability/vendor-telemetry.ts.
+// Sentry/PostHog run only when APP_ENV and VITE_APP_ENV are both exactly
+// "staging". The define that blanks those keys is applied only to a
+// production vite build. The dev server used by Playwright must not receive
+// it — replacing import.meta.env / process.env there breaks the client graph.
 const telemetryInput = {
   appEnv: process.env.APP_ENV,
   viteAppEnv: process.env.VITE_APP_ENV,
@@ -27,11 +26,8 @@ const telemetryInput = {
 };
 const sentryUpload = sentrySourceMapUploadEnabled(telemetryInput);
 
-export default defineConfig({
-  define: {
-    ...clientVendorDefine(telemetryInput),
-    ...serverVendorDefine(telemetryInput),
-  },
+export default defineConfig(({ command, mode }) => ({
+  define: vendorBuildDefine({ ...telemetryInput, command, mode }),
   build: sentryUpload ? { sourcemap: "hidden" } : undefined,
   resolve: {
     alias: {
@@ -89,4 +85,4 @@ export default defineConfig({
         })
       : []),
   ],
-});
+}));

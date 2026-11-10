@@ -35,33 +35,36 @@ export interface VendorTelemetryInput {
   release?: string | null;
   authToken?: string | null;
   vitest?: boolean;
+  /** Vite command. The shipping define runs only for "build". */
+  command?: string | null;
+  /** Vite mode. The shipping define runs only for "production". */
+  mode?: string | null;
 }
 
-function normalized(value: string | null | undefined): string {
-  return String(value ?? "")
-    .trim()
-    .toLowerCase();
+function exact(value: string | null | undefined): string {
+  return typeof value === "string" ? value : "";
 }
 
 /**
- * The explicit app environment. APP_ENV and VITE_APP_ENV must agree when
- * both are set; a disagreement fails closed (empty string). NODE_ENV is
- * not an input — staging builds are still NODE_ENV=production.
+ * The explicit app environment. Both APP_ENV and VITE_APP_ENV must be set
+ * and equal. Comparison is exact: no trim and no case folding. One unset,
+ * a disagreement, or any other spelling (including "Staging") fails closed
+ * to an empty string. NODE_ENV is not an input.
  */
 export function explicitAppEnv(input: VendorTelemetryInput = {}): string {
-  const app = normalized(input.appEnv);
-  const vite = normalized(input.viteAppEnv);
-  if (app && vite && app !== vite) return "";
-  return vite || app;
+  const app = exact(input.appEnv);
+  const vite = exact(input.viteAppEnv);
+  if (!app || !vite || app !== vite) return "";
+  return app;
 }
 
 /**
- * True only for an explicit staging app environment.
- * A Vercel production or development target always fails closed, even if
- * APP_ENV was mistakenly set to staging on that target.
+ * True only when both names are exactly "staging".
+ * VERCEL_ENV "production" or "development" (exact) always fails closed.
+ * VERCEL_ENV "preview" does not, so a preview target can still be staging.
  */
 export function vendorTelemetryEnabled(input: VendorTelemetryInput = {}): boolean {
-  const vercel = normalized(input.vercelEnv);
+  const vercel = exact(input.vercelEnv);
   if (vercel === "production" || vercel === "development") return false;
   return explicitAppEnv(input) === VENDOR_TELEMETRY_ENV_VALUE;
 }
@@ -69,7 +72,7 @@ export function vendorTelemetryEnabled(input: VendorTelemetryInput = {}): boolea
 /** Value baked into import.meta.env.VITE_APP_ENV. Never "staging" unless enabled. */
 export function clientAppEnvLabel(input: VendorTelemetryInput = {}): string {
   if (vendorTelemetryEnabled(input)) return VENDOR_TELEMETRY_ENV_VALUE;
-  const vercel = normalized(input.vercelEnv);
+  const vercel = exact(input.vercelEnv);
   if (vercel === "production") return "production";
   const explicit = explicitAppEnv(input);
   if (explicit === VENDOR_TELEMETRY_ENV_VALUE) return "";
@@ -86,6 +89,8 @@ export function clientVendorDefine(input: VendorTelemetryInput = {}): Record<str
   const enabled = vendorTelemetryEnabled(input);
   const define: Record<string, string> = {
     "import.meta.env.VITE_APP_ENV": JSON.stringify(clientAppEnvLabel(input)),
+    // Baked so the browser gate can see VERCEL_ENV. Exact spelling, no folding.
+    "import.meta.env.VITE_VERCEL_ENV": JSON.stringify(exact(input.vercelEnv)),
   };
   if (!enabled) {
     for (const name of CLIENT_VENDOR_ENV_NAMES) {
@@ -110,6 +115,20 @@ export function clientVendorDefine(input: VendorTelemetryInput = {}): Record<str
 export function serverVendorDefine(input: VendorTelemetryInput = {}): Record<string, string> {
   if (vendorTelemetryEnabled(input)) return {};
   return { "process.env.SENTRY_DSN": JSON.stringify("") };
+}
+
+/**
+ * Vite `define` for a build that ships. The dev server (`command: "serve"`)
+ * and non-production modes get an empty map so Playwright's dev graph is
+ * left alone. Production `vite build` still blanks vendor keys unless both
+ * app env names are exactly "staging".
+ */
+export function vendorBuildDefine(input: VendorTelemetryInput = {}): Record<string, string> {
+  if (input.command !== "build" || input.mode !== "production") return {};
+  return {
+    ...clientVendorDefine(input),
+    ...serverVendorDefine(input),
+  };
 }
 
 /** Source-map upload follows the same staging-only, fail-closed rule. */

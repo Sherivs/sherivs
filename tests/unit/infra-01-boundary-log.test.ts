@@ -60,7 +60,11 @@ describe("boundary error log", () => {
           component: "test",
           error: leakyError(),
           trace,
-          fields: { path: `/students?token=${QUERY_TOKEN}`, note: EMAIL },
+          fields: {
+            path: `/students?token=${QUERY_TOKEN}`,
+            note: EMAIL,
+            meta: { student_name: STUDENT, parent_name: PARENT, token: QUERY_TOKEN },
+          },
         },
         {
           sink: (line) => lines.push(line),
