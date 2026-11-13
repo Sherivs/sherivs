@@ -61,21 +61,32 @@ describe("runtime-webhooks", () => {
       maxTimestampSkewMs: 60_000,
       allowedVersions: ["v1"],
     };
+    const rawBody = JSON.stringify({ event: "student.enrolled", id: "evt-1" });
 
     it("accepts a valid signature", () => {
       const result = validateWebhookSignature(
-        { signature: "a".repeat(16), timestamp: NOW, version: "v1" },
+        {
+          signature: computeWebhookSignature(rawBody, config.secret, NOW),
+          timestamp: NOW,
+          version: "v1",
+        },
         config,
         NOW,
+        rawBody,
       );
       expect(result.valid).toBe(true);
     });
 
     it("rejects unsupported version", () => {
       const result = validateWebhookSignature(
-        { signature: "a".repeat(16), timestamp: NOW, version: "v2" },
+        {
+          signature: computeWebhookSignature(rawBody, config.secret, NOW),
+          timestamp: NOW,
+          version: "v2",
+        },
         config,
         NOW,
+        rawBody,
       );
       expect(result.valid).toBe(false);
       if (!result.valid) expect(result.reason).toContain("version");
@@ -83,19 +94,82 @@ describe("runtime-webhooks", () => {
 
     it("rejects timestamp outside skew (replay protection)", () => {
       const result = validateWebhookSignature(
-        { signature: "a".repeat(16), timestamp: "2026-08-22T10:00:00.000Z", version: "v1" },
+        {
+          signature: computeWebhookSignature(rawBody, config.secret, "2026-08-22T10:00:00.000Z"),
+          timestamp: "2026-08-22T10:00:00.000Z",
+          version: "v1",
+        },
         config,
         NOW,
+        rawBody,
       );
       expect(result.valid).toBe(false);
       if (!result.valid) expect(result.reason).toContain("skew");
     });
 
-    it("rejects short signature", () => {
+    it("rejects arbitrary signatures even when they have the old accepted length", () => {
       const result = validateWebhookSignature(
         { signature: "short", timestamp: NOW, version: "v1" },
         config,
         NOW,
+        rawBody,
+      );
+      expect(result.valid).toBe(false);
+    });
+
+    it("rejects a signature that is not an HMAC of the request body", () => {
+      const result = validateWebhookSignature(
+        { signature: "a".repeat(64), timestamp: NOW, version: "v1" },
+        config,
+        NOW,
+        rawBody,
+      );
+      expect(result.valid).toBe(false);
+    });
+
+    it("rejects signatures made with the wrong secret", () => {
+      const signature = computeWebhookSignature(rawBody, config.secret, NOW);
+      const result = validateWebhookSignature(
+        { signature, timestamp: NOW, version: "v1" },
+        { ...config, secret: "wrong-secret" },
+        NOW,
+        rawBody,
+      );
+      expect(result.valid).toBe(false);
+    });
+
+    it("rejects a modified request body", () => {
+      const signature = computeWebhookSignature(rawBody, config.secret, NOW);
+      const result = validateWebhookSignature(
+        { signature, timestamp: NOW, version: "v1" },
+        config,
+        NOW,
+        `${rawBody} `,
+      );
+      expect(result.valid).toBe(false);
+    });
+
+    it("does not accept an equivalent timestamp representation with a changed body", () => {
+      const signature = computeWebhookSignature(rawBody, config.secret, NOW);
+      const equivalentTimestamp = NOW.replace("Z", "+00:00");
+      expect(Date.parse(equivalentTimestamp)).toBe(Date.parse(NOW));
+
+      const result = validateWebhookSignature(
+        { signature, timestamp: equivalentTimestamp, version: "v1" },
+        config,
+        NOW,
+        `${rawBody} `,
+      );
+      expect(result.valid).toBe(false);
+    });
+
+    it("rejects an invalid current time", () => {
+      const signature = computeWebhookSignature(rawBody, config.secret, NOW);
+      const result = validateWebhookSignature(
+        { signature, timestamp: NOW, version: "v1" },
+        config,
+        "invalid",
+        rawBody,
       );
       expect(result.valid).toBe(false);
     });
@@ -103,16 +177,48 @@ describe("runtime-webhooks", () => {
 
   describe("computeWebhookSignature", () => {
     it("produces a deterministic signature", () => {
-      const s1 = computeWebhookSignature({ a: 1 }, "secret", NOW);
-      const s2 = computeWebhookSignature({ a: 1 }, "secret", NOW);
+      const s1 = computeWebhookSignature('{"a":1}', "secret", NOW);
+      const s2 = computeWebhookSignature('{"a":1}', "secret", NOW);
       expect(s1).toBe(s2);
-      expect(s1.length).toBeGreaterThanOrEqual(16);
+      expect(s1).toBe("b06e72867d658194516cc7a43f765aaed81525d33e1aaf0260e9dbfab1baab98");
     });
 
     it("produces different signatures for different payloads", () => {
-      const s1 = computeWebhookSignature({ a: 1 }, "secret", NOW);
-      const s2 = computeWebhookSignature({ a: 2 }, "secret", NOW);
+      const s1 = computeWebhookSignature('{"a":1}', "secret", NOW);
+      const s2 = computeWebhookSignature('{"a":2}', "secret", NOW);
       expect(s1).not.toBe(s2);
+    });
+
+    it("frames the timestamp and body so separator collisions cannot preserve a signature", () => {
+      const timestampA = "T";
+      const bodyA = "0.1";
+      const timestampB = "T.0";
+      const bodyB = "1";
+      expect(`${timestampA}.${bodyA}`).toBe(`${timestampB}.${bodyB}`);
+      expect(computeWebhookSignature(bodyA, "secret", timestampA)).not.toBe(
+        computeWebhookSignature(bodyB, "secret", timestampB),
+      );
+    });
+
+    it("signs equivalent timestamp formats as distinct byte sequences", () => {
+      const equivalentTimestamp = NOW.replace("Z", "+00:00");
+      expect(Date.parse(equivalentTimestamp)).toBe(Date.parse(NOW));
+      expect(computeWebhookSignature('{"a":1}', "secret", NOW)).not.toBe(
+        computeWebhookSignature('{"a":1}', "secret", equivalentTimestamp),
+      );
+    });
+
+    it("signs exact request bytes", () => {
+      const text = new TextEncoder().encode('{"a":1}');
+      const s1 = computeWebhookSignature(text, "secret", NOW);
+      const s2 = computeWebhookSignature('{"a":1}', "secret", NOW);
+      expect(s1).toBe(s2);
+    });
+
+    it("rejects an empty signing secret", () => {
+      expect(() => computeWebhookSignature('{"a":1}', "", NOW)).toThrow(
+        "Webhook signing secret must not be empty",
+      );
     });
   });
 
