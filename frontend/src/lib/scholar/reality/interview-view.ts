@@ -1,5 +1,5 @@
 /**
- * SV1-REALITY R3 (#334) — client-safe view of an interview (ADR-052).
+ * SV1-REALITY R3 (#334) — client-safe view of an interview (ADR-053).
  *
  * What the school-admin screen needs and nothing more: the visible questions with
  * their input constraints, the visible answers, progress, blockers and approval

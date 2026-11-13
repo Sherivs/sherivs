@@ -6,11 +6,11 @@
  * tenant comes from the verified actor, never from the client. The client sends
  * one answer, one clear or one approval at a time; it never sends state, a
  * source, an approver or an approval flag. Every change goes through the pure
- * engine, which owns all rules. See ADR-052.
+ * engine, which owns all rules. See ADR-053.
  *
  * Known limit: read-then-write is not atomic. `expectedRevision` stops a stale
  * screen from overwriting newer work; it does not serialise two simultaneous
- * requests (see ADR-052, consequences).
+ * requests (see ADR-053, consequences).
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";

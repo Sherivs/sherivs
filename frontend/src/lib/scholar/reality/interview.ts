@@ -1,5 +1,5 @@
 /**
- * SV1-REALITY R3 (#334) — adaptive V1 school onboarding interview engine (ADR-052).
+ * SV1-REALITY R3 (#334) — adaptive V1 school onboarding interview engine (ADR-053).
  *
  * Pure and send-free: no storage, network, timers or AI. It sits on the R1
  * registry and answer semantics and adds only what an interview needs:
