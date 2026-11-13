@@ -5,7 +5,7 @@
 | Status | PROPOSED (operator review required before production rollout) |
 | Date | 2026-11-13 |
 | Author | Claude (M009 Stage B-3 build) |
-| Creator | Claude Code agent, mission B-3 (issue #282) |
+| Creator | Claude Code agent, mission B-003 (issue #282) |
 | Mission | M009 Stage B-3 — Administrative and Institutional Operations workspace |
 | Cites | ADR-025; `database/supabase/migrations/20261024000240_sherivs_017_role_permission_catalog.sql` (`sod_template_conflicts`, `sod_permission_rules`); `database/supabase/migrations/20261101000010_sherivs_m009_a1_role_responsibility_engine.sql` (`workspace_role_sod_assert_at`); `frontend/src/lib/workspaces/administrative-operations.ts`; `tests/unit/m009-b3-administrative-operations.test.ts` |
 | Minimal ownership artifact | This ADR and the operations spec |
