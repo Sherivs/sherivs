@@ -19,9 +19,17 @@ import { SystemClock, TimeAuthority } from "../kernel/time-authority";
 import {
   PLATFORM_VOICE_SUPPORT_NUMBER,
   PLATFORM_VOICE_TENANT_REF,
+  canonicalVoiceDigits,
   voiceSttProviderFromEnv,
   voiceTtsProviderFromEnv,
 } from "./voice-number-binding";
+import {
+  groundedSchoolAnswer,
+  parseSchoolCallingFacts,
+  proposeSchoolIntent,
+  SCHOOL_CALLING_CONTEXT_MARKER,
+  type SchoolCallingFacts,
+} from "./school-calling-agent";
 
 const timeAuthority = new TimeAuthority(new SystemClock());
 const MAX_CALLBACK_BYTES = 16 * 1024;
@@ -119,6 +127,17 @@ export function isHumanEscalationRequest(transcript: string): boolean {
   return HUMAN_ESCALATION.test(transcript);
 }
 
+export function pinVoiceXml(
+  callbackUrl: URL,
+  message = "Enter your voice PIN, then press pound.",
+): string {
+  const callback = escapeVoiceXml(callbackUrl.toString());
+  return voiceXml(
+    message,
+    `<GetDigits numDigits="8" finishOnKey="#" timeout="10" callbackUrl="${callback}"><Say>Enter your voice PIN, then press pound.</Say></GetDigits><Hangup/>`,
+  );
+}
+
 export interface VoiceSession {
   id: string;
   tenant_id: string;
@@ -126,9 +145,20 @@ export interface VoiceSession {
   provider_session_id: string;
   caller_number: string;
   destination_number: string;
-  state: "consent_pending" | "active" | "completed" | "escalated" | "declined" | "failed";
+  state:
+    | "consent_pending"
+    | "pin_pending"
+    | "active"
+    | "completed"
+    | "escalated"
+    | "declined"
+    | "failed";
   recording_consent_at: string | null;
   turn_count: number;
+  line_role?: "legacy" | "organization" | "platform_support" | null;
+  pin_verified_at?: string | null;
+  pin_member_id?: string | null;
+  pin_attempts?: number | null;
 }
 
 interface DatabaseResult<T = unknown> {
@@ -238,13 +268,26 @@ const VoiceSessionSchema = z.object({
   provider_session_id: z.string().min(1).max(160),
   caller_number: z.string().min(1).max(20),
   destination_number: z.string().min(1).max(20),
-  state: z.enum(["consent_pending", "active", "completed", "escalated", "declined", "failed"]),
+  state: z.enum([
+    "consent_pending",
+    "pin_pending",
+    "active",
+    "completed",
+    "escalated",
+    "declined",
+    "failed",
+  ]),
   recording_consent_at: z.string().nullable(),
   turn_count: z.number().int().min(0).max(MAX_VOICE_TURNS),
+  line_role: z.enum(["legacy", "organization", "platform_support"]).nullish(),
+  pin_verified_at: z.string().nullish(),
+  pin_member_id: z.string().uuid().nullish(),
+  pin_attempts: z.number().int().nonnegative().nullish(),
 });
 
 const SESSION_COLUMNS =
   "id,tenant_id,tenant_ref,provider_session_id,caller_number,destination_number,state,recording_consent_at,turn_count";
+const SESSION_COLUMNS_WITH_ROLE = `${SESSION_COLUMNS},line_role,pin_verified_at,pin_member_id,pin_attempts`;
 
 async function findSession(
   db: VoiceCallbackDatabase,
@@ -252,9 +295,19 @@ async function findSession(
 ): Promise<VoiceSession | null> {
   const result = await db
     .from("voice_call_sessions")
-    .select(SESSION_COLUMNS)
+    .select(SESSION_COLUMNS_WITH_ROLE)
     .eq("provider_session_id", sessionId)
     .maybeSingle();
+  if (result.error && isMissingVoiceBindingColumn(result.error)) {
+    const legacy = await db
+      .from("voice_call_sessions")
+      .select(SESSION_COLUMNS)
+      .eq("provider_session_id", sessionId)
+      .maybeSingle();
+    if (legacy.error) throw new Error("voice session lookup failed");
+    if (legacy.data === null) return null;
+    return VoiceSessionSchema.parse(legacy.data);
+  }
   if (result.error) throw new Error("voice session lookup failed");
   if (result.data === null) return null;
   return VoiceSessionSchema.parse(result.data);
@@ -263,12 +316,21 @@ async function findSession(
 interface ResolvedVoiceTenant {
   schoolId: string;
   tenantRef: string | null;
+  lineRole: "legacy" | "organization" | "platform_support";
 }
 
-async function resolveTenant(
+const bindingRowSchema = z.object({
+  school_id: z.string().uuid().nullable().optional(),
+  org_id: z.string().uuid().nullable().optional(),
+  binding_role: z.enum(["platform_support", "organization"]).nullable().optional(),
+  tenant_ref: z.string().uuid().nullable().optional(),
+  number_status: z.enum(["active", "suspended"]).nullable().optional(),
+});
+
+async function loadNeutralSender(
   db: VoiceCallbackDatabase,
   destination: string,
-): Promise<ResolvedVoiceTenant | null> {
+): Promise<{ tenantId: string; schoolId: string } | null> {
   const neutral = await db
     .from("cg_org_communication_sender")
     .select("tenant_id")
@@ -278,28 +340,33 @@ async function resolveTenant(
     .eq("from_number", destination)
     .maybeSingle();
   if (neutral.error) throw new Error("voice destination lookup failed");
-  if (neutral.data !== null) {
-    const sender = z.object({ tenant_id: z.string().uuid() }).parse(neutral.data);
-    const setting = await db
-      .from("cg_org_voice_agent")
-      .select("enabled")
-      .eq("tenant_ref", sender.tenant_id)
-      .maybeSingle();
-    if (setting.error) throw new Error("voice agent configuration lookup failed");
-    if (setting.data === null || (setting.data as { enabled?: unknown }).enabled !== true)
-      return null;
-    const mapping = await db
-      .from("school_tenant_map")
-      .select("school_id")
-      .eq("tenant_id", sender.tenant_id)
-      .maybeSingle();
-    if (mapping.error) throw new Error("voice tenant mapping lookup failed");
-    const parsedMapping = z.object({ school_id: z.string().uuid() }).safeParse(mapping.data);
-    return parsedMapping.success
-      ? { schoolId: parsedMapping.data.school_id, tenantRef: sender.tenant_id }
-      : null;
-  }
+  if (neutral.data === null) return null;
+  const sender = z.object({ tenant_id: z.string().uuid() }).parse(neutral.data);
+  const setting = await db
+    .from("cg_org_voice_agent")
+    .select("enabled")
+    .eq("tenant_ref", sender.tenant_id)
+    .maybeSingle();
+  if (setting.error) throw new Error("voice agent configuration lookup failed");
+  if (setting.data === null || (setting.data as { enabled?: unknown }).enabled !== true)
+    return null;
+  const mapping = await db
+    .from("school_tenant_map")
+    .select("school_id")
+    .eq("tenant_id", sender.tenant_id)
+    .maybeSingle();
+  if (mapping.error) throw new Error("voice tenant mapping lookup failed");
+  const parsedMapping = z.object({ school_id: z.string().uuid() }).safeParse(mapping.data);
+  return parsedMapping.success
+    ? { tenantId: sender.tenant_id, schoolId: parsedMapping.data.school_id }
+    : null;
+}
 
+async function resolveTenant(
+  db: VoiceCallbackDatabase,
+  destination: string,
+): Promise<ResolvedVoiceTenant | null> {
+  const neutral = await loadNeutralSender(db, destination);
   const result = await db
     .from("comms_sender_numbers")
     .select("school_id,org_id,binding_role,tenant_ref,number_status")
@@ -311,6 +378,7 @@ async function resolveTenant(
     if (!isMissingVoiceBindingColumn(result.error)) {
       throw new Error("voice destination lookup failed");
     }
+    if (neutral) return openLegacySenderLine(db, neutral);
     const legacy = await db
       .from("comms_sender_numbers")
       .select("school_id")
@@ -320,22 +388,17 @@ async function resolveTenant(
       .maybeSingle();
     if (legacy.error || legacy.data === null) return null;
     const legacyRow = z.object({ school_id: z.string().uuid() }).safeParse(legacy.data);
-    return legacyRow.success ? { schoolId: legacyRow.data.school_id, tenantRef: null } : null;
+    return legacyRow.success
+      ? { schoolId: legacyRow.data.school_id, tenantRef: null, lineRole: "legacy" }
+      : null;
   }
-  const parsed = z
-    .object({
-      school_id: z.string().uuid().nullable().optional(),
-      org_id: z.string().uuid().nullable().optional(),
-      binding_role: z.enum(["platform_support", "organization"]).nullable().optional(),
-      tenant_ref: z.string().uuid().nullable().optional(),
-      number_status: z.enum(["active", "suspended"]).nullable().optional(),
-    })
-    .safeParse(result.data);
-  if (!parsed.success || parsed.data.number_status === "suspended") return null;
-  const row = parsed.data;
-  if (row.org_id && row.school_id && row.org_id !== row.school_id) return null;
-  const schoolId = row.school_id ?? row.org_id ?? null;
-  if (row.binding_role === "platform_support") {
+  const parsed = bindingRowSchema.safeParse(result.data);
+  if (result.data !== null && (!parsed.success || parsed.data.number_status === "suspended")) {
+    return null;
+  }
+  const row = parsed.success ? parsed.data : null;
+  if (row?.org_id && row.school_id && row.org_id !== row.school_id) return null;
+  if (row?.binding_role === "platform_support") {
     if (row.tenant_ref !== PLATFORM_VOICE_TENANT_REF) return null;
     const mapping = await db
       .from("school_tenant_map")
@@ -345,10 +408,33 @@ async function resolveTenant(
     if (mapping.error) return null;
     const mapped = z.object({ school_id: z.string().uuid() }).safeParse(mapping.data);
     return mapped.success
-      ? { schoolId: mapped.data.school_id, tenantRef: PLATFORM_VOICE_TENANT_REF }
+      ? {
+          schoolId: mapped.data.school_id,
+          tenantRef: PLATFORM_VOICE_TENANT_REF,
+          lineRole: "platform_support",
+        }
       : null;
   }
-  return schoolId ? { schoolId, tenantRef: row.tenant_ref ?? null } : null;
+  if (row?.binding_role === "organization") {
+    const schoolId = row.school_id ?? row.org_id ?? null;
+    if (!schoolId || !row.tenant_ref) return null;
+    if (neutral && neutral.tenantId !== row.tenant_ref) return null;
+    const open = await db.rpc("voice_agent_school_line_open", { p_tenant_ref: row.tenant_ref });
+    if (open.error || open.data !== true) return null;
+    return { schoolId, tenantRef: row.tenant_ref, lineRole: "organization" };
+  }
+  if (neutral) return openLegacySenderLine(db, neutral);
+  const schoolId = row?.school_id ?? row?.org_id ?? null;
+  return schoolId ? { schoolId, tenantRef: row?.tenant_ref ?? null, lineRole: "legacy" } : null;
+}
+
+async function openLegacySenderLine(
+  db: VoiceCallbackDatabase,
+  neutral: { tenantId: string; schoolId: string },
+): Promise<ResolvedVoiceTenant | null> {
+  const open = await db.rpc("voice_agent_school_line_open", { p_tenant_ref: neutral.tenantId });
+  if (open.error || open.data !== true) return null;
+  return { schoolId: neutral.schoolId, tenantRef: neutral.tenantId, lineRole: "legacy" };
 }
 
 async function loadPlatformSupportNumber(db: VoiceCallbackDatabase): Promise<string | null> {
@@ -389,11 +475,13 @@ async function createSession(
   callback: z.infer<typeof VoiceCallbackSchema>,
   tenantId: string,
   tenantRef: string | null,
+  lineRole: ResolvedVoiceTenant["lineRole"],
   now: string,
-): Promise<VoiceSession> {
+): Promise<VoiceSession | null> {
   const row = {
     tenant_id: tenantId,
     tenant_ref: tenantRef,
+    line_role: lineRole,
     provider: AFRICAS_TALKING_PROVIDER_ID,
     provider_session_id: callback.sessionId,
     caller_number: callback.callerNumber,
@@ -406,8 +494,18 @@ async function createSession(
   const insert = await db
     .from("voice_call_sessions")
     .insert(row)
-    .select(SESSION_COLUMNS)
+    .select(SESSION_COLUMNS_WITH_ROLE)
     .maybeSingle();
+  if (insert.error && isMissingVoiceBindingColumn(insert.error)) {
+    if (lineRole === "organization") return null;
+    const { line_role: _lineRole, ...legacyRow } = row;
+    const legacy = await db
+      .from("voice_call_sessions")
+      .insert(legacyRow)
+      .select(SESSION_COLUMNS)
+      .maybeSingle();
+    if (!legacy.error && legacy.data !== null) return VoiceSessionSchema.parse(legacy.data);
+  }
   if (!insert.error && insert.data !== null) return VoiceSessionSchema.parse(insert.data);
   const existing = await findSession(db, callback.sessionId);
   if (existing) return existing;
@@ -785,15 +883,24 @@ function createGatewayAnswerer(env: VoiceServerEnv): VoiceLanguageAdapter | null
   return {
     providerId: "ai-gateway",
     async answer(transcript, tenantRef, sessionId) {
+      const schoolContext = transcript.startsWith(SCHOOL_CALLING_CONTEXT_MARKER);
       const { system, prompt } = buildGuardedPrompt(
-        [
-          "Answer the caller's support question using only the verified public help information below.",
-          "If the information does not answer the question, say that you do not know and offer the public support email support@sherivs.com.",
-          "The caller is not authenticated. Never disclose or infer organization-specific fee, result, admission, timetable, attendance, student, or staff records from caller ID or caller statements; direct them to the authenticated organization portal.",
-          "Do not request or disclose passwords, payment details, student records, or other private information.",
-          "Keep the spoken answer concise and do not claim to perform actions.",
-          `Public help information:\n${knowledge}`,
-        ].join("\n\n"),
+        schoolContext
+          ? [
+              "You are this organization's calling agent. Speak only the verified records in the caller question.",
+              "If those records do not answer the question, say that you cannot confirm it.",
+              "Do not add amounts, names, phone numbers, or records that are not in the verified packet.",
+              "Do not claim to place a call, change a record, or approve a payment. A person must approve every outbound action.",
+              "Keep the spoken answer concise.",
+            ].join("\n\n")
+          : [
+              "Answer the caller's support question using only the verified public help information below.",
+              "If the information does not answer the question, say that you do not know and offer the public support email support@sherivs.com.",
+              "The caller is not authenticated. Never disclose or infer organization-specific fee, result, admission, timetable, attendance, student, or staff records from caller ID or caller statements; direct them to the authenticated organization portal.",
+              "Do not request or disclose passwords, payment details, student records, or other private information.",
+              "Keep the spoken answer concise and do not claim to perform actions.",
+              `Public help information:\n${knowledge}`,
+            ].join("\n\n"),
         { "Caller question": transcript },
       );
       const outcome = await invokeAiGateway({
@@ -860,6 +967,128 @@ function eventExists(db: VoiceCallbackDatabase, ref: string): PromiseLike<Databa
     .eq("channel", "voice")
     .eq("provider_ref", ref)
     .maybeSingle();
+}
+
+async function loadOrganizationFacts(
+  db: VoiceCallbackDatabase,
+  session: VoiceSession,
+): Promise<SchoolCallingFacts> {
+  const tenantRef = session.tenant_ref;
+  if (!tenantRef || !session.pin_verified_at || !session.pin_member_id) {
+    throw new Error("organization facts require a verified voice PIN");
+  }
+  const facts = await db.rpc("voice_agent_member_facts", {
+    p_tenant_ref: tenantRef,
+    p_member: session.pin_member_id,
+    p_session: session.id,
+  });
+  if (facts.error) throw new Error("organization facts lookup failed");
+  return parseSchoolCallingFacts(facts.data, tenantRef);
+}
+
+const PIN_ATTEMPT_LIMIT = 3;
+const PIN_FAILURE_PROMPT = "That PIN was not accepted. Enter your voice PIN, then press pound.";
+
+async function verifyOrganizationPin(
+  db: VoiceCallbackDatabase,
+  session: VoiceSession,
+  digits: string | undefined,
+  callbackUrl: URL,
+  now: () => string,
+  audit: (input: AuditInput) => Promise<unknown>,
+): Promise<Response> {
+  const attempts = (session.pin_attempts ?? 0) + 1;
+  await updateSession(db, session, { pin_attempts: attempts, updated_at: now() });
+  const stop = async () => {
+    const endedAt = now();
+    await updateSession(db, session, {
+      state: "escalated",
+      pin_attempts: attempts,
+      updated_at: endedAt,
+      ended_at: endedAt,
+    });
+    await recordCommsEvent(
+      db,
+      session,
+      "Voice PIN verification stopped.",
+      "pin_stopped",
+      "pin-stopped",
+    );
+    await voiceAudit(
+      audit,
+      session,
+      "voice.pin.rejected",
+      { state: "pin_pending" },
+      {
+        outcome: "stopped",
+      },
+    );
+    return dialBoundPlatformSupport(db);
+  };
+  const sameFailure = () => responseXml(pinVoiceXml(callbackUrl, PIN_FAILURE_PROMPT));
+  if (!session.tenant_ref) {
+    return attempts >= PIN_ATTEMPT_LIMIT ? stop() : sameFailure();
+  }
+  const wellFormed = typeof digits === "string" && /^[0-9]{6,8}$/.test(digits);
+  if (!wellFormed) {
+    return attempts >= PIN_ATTEMPT_LIMIT ? stop() : sameFailure();
+  }
+  const member = await db.rpc("voice_agent_caller_member", {
+    p_tenant_ref: session.tenant_ref,
+    p_caller_digits: canonicalVoiceDigits(session.caller_number),
+  });
+  const memberId = !member.error && typeof member.data === "string" ? member.data : null;
+  const verified = await db.rpc("voice_agent_verify_pin", {
+    p_tenant_ref: session.tenant_ref,
+    p_member: memberId,
+    p_pin: digits,
+    p_caller_digits: canonicalVoiceDigits(session.caller_number),
+  });
+  const outcome = typeof verified.data === "string" ? verified.data : "rejected";
+  if (outcome === "ok" && memberId) {
+    const verifiedAt = now();
+    await updateSession(db, session, {
+      state: "active",
+      pin_verified_at: verifiedAt,
+      pin_member_id: memberId,
+      pin_attempts: attempts,
+      updated_at: verifiedAt,
+    });
+    await recordCommsEvent(db, session, "Voice PIN accepted.", "pin_accepted", "pin-accepted");
+    await voiceAudit(
+      audit,
+      session,
+      "voice.pin.accepted",
+      { state: "pin_pending" },
+      {
+        outcome: "ok",
+      },
+    );
+    return responseXml(
+      recordVoiceXml("Thank you. Please briefly describe how we can help you.", callbackUrl),
+    );
+  }
+  if (attempts >= PIN_ATTEMPT_LIMIT) return stop();
+  await recordCommsEvent(
+    db,
+    session,
+    "Voice PIN was not accepted.",
+    "pin_rejected",
+    `pin-rejected-${attempts}`,
+  );
+  return sameFailure();
+}
+
+async function organizationAnswer(
+  db: VoiceCallbackDatabase,
+  session: VoiceSession,
+  transcript: string,
+): Promise<string | null> {
+  if (!session.pin_verified_at || !session.pin_member_id) return null;
+  const facts = await loadOrganizationFacts(db, session);
+  const grounded = groundedSchoolAnswer(proposeSchoolIntent(transcript), facts);
+  if (grounded.escalate || !facts.verified) return null;
+  return grounded.speak;
 }
 
 export function createAfricaTalkingVoiceCallbackHandler(dependencies: VoiceCallbackDependencies) {
@@ -930,7 +1159,15 @@ export function createAfricaTalkingVoiceCallbackHandler(dependencies: VoiceCallb
         if (!(await featureEnabled(db, tenant.schoolId))) {
           return responseXml(voiceXml("This support line is currently unavailable."));
         }
-        session = await createSession(db, callback, tenant.schoolId, tenant.tenantRef, now());
+        session = await createSession(
+          db,
+          callback,
+          tenant.schoolId,
+          tenant.tenantRef,
+          tenant.lineRole,
+          now(),
+        );
+        if (!session) return responseXml(voiceXml("This number is not available."));
         await recordCommsEvent(
           db,
           session,
@@ -1000,8 +1237,9 @@ export function createAfricaTalkingVoiceCallbackHandler(dependencies: VoiceCallb
       if (session.state === "consent_pending") {
         if (callback.dtmfDigits === "1") {
           const consentAt = now();
+          const organizationLine = session.line_role === "organization";
           await updateSession(db, session, {
-            state: "active",
+            state: organizationLine ? "pin_pending" : "active",
             recording_consent_at: consentAt,
             updated_at: consentAt,
           });
@@ -1017,8 +1255,9 @@ export function createAfricaTalkingVoiceCallbackHandler(dependencies: VoiceCallb
             session,
             "voice.call.consent_granted",
             { state: "consent_pending" },
-            { state: "active", consentedAt: consentAt },
+            { state: organizationLine ? "pin_pending" : "active", consentedAt: consentAt },
           );
+          if (organizationLine) return responseXml(pinVoiceXml(config.callbackUrl));
           return responseXml(
             recordVoiceXml(
               "Thank you. Please briefly describe how we can help you.",
@@ -1052,6 +1291,17 @@ export function createAfricaTalkingVoiceCallbackHandler(dependencies: VoiceCallb
           );
         }
         return responseXml(consentVoiceXml(config.callbackUrl));
+      }
+
+      if (session.state === "pin_pending") {
+        return verifyOrganizationPin(
+          db,
+          session,
+          callback.dtmfDigits,
+          config.callbackUrl,
+          now,
+          audit,
+        );
       }
 
       if (session.state !== "active" || session.recording_consent_at === null) {
@@ -1135,17 +1385,66 @@ export function createAfricaTalkingVoiceCallbackHandler(dependencies: VoiceCallb
           transcriptHash: createHash("sha256").update(transcript).digest("hex"),
           transcriptLength: transcript.length,
         });
-        const answer = await assistant.language.answer(
-          redactSensitive(transcript),
-          session.tenant_ref ?? session.tenant_id,
-          session.id,
-        );
-        await recordCommsEvent(db, session, answer, "assistant_response", `assistant-${eventHash}`);
-        await voiceAudit(audit, session, "voice.transcript.assistant_recorded", null, {
-          providerEventHash: eventHash,
-          answerHash: createHash("sha256").update(answer).digest("hex"),
-          answerLength: answer.length,
-        });
+        const answer =
+          session.line_role === "organization"
+            ? await organizationAnswer(db, session, redactSensitive(transcript))
+            : await assistant.language.answer(
+                redactSensitive(transcript),
+                session.tenant_ref ?? session.tenant_id,
+                session.id,
+              );
+        if (answer === null) {
+          const endedAt = now();
+          await updateSession(db, session, {
+            state: "escalated",
+            updated_at: endedAt,
+            ended_at: endedAt,
+          });
+          await recordCommsEvent(
+            db,
+            session,
+            "Caller question was outside the verified organization records.",
+            "escalated",
+            `escalated-${eventHash}`,
+          );
+          await voiceAudit(
+            audit,
+            session,
+            "voice.call.escalated",
+            { state: "active" },
+            { state: "escalated" },
+          );
+          return dialBoundPlatformSupport(db);
+        }
+        const answerHash = createHash("sha256").update(answer).digest("hex");
+        if (session.line_role === "organization") {
+          const topic = proposeSchoolIntent(redactSensitive(transcript));
+          await recordCommsEvent(
+            db,
+            session,
+            `topic=${topic} (redacted) hash=${answerHash}`,
+            "assistant_response",
+            `assistant-${eventHash}`,
+          );
+          await voiceAudit(audit, session, "voice.transcript.assistant_recorded", null, {
+            providerEventHash: eventHash,
+            topic,
+            answerHash,
+          });
+        } else {
+          await recordCommsEvent(
+            db,
+            session,
+            answer,
+            "assistant_response",
+            `assistant-${eventHash}`,
+          );
+          await voiceAudit(audit, session, "voice.transcript.assistant_recorded", null, {
+            providerEventHash: eventHash,
+            answerHash,
+            answerLength: answer.length,
+          });
+        }
         const turnCount = session.turn_count + 1;
         if (turnCount >= MAX_VOICE_TURNS) {
           const endedAt = now();

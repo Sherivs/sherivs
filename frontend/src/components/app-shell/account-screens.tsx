@@ -29,17 +29,32 @@ import { useAppShell } from "./shell-context";
 import { ShellGlassIcon } from "./glass-icon";
 import { NotificationCentre } from "./notification-centre";
 import { AssistantScreen } from "./assistant-screen";
+import { isAcceptableVoicePin } from "@/lib/communications/voice-pin";
 import {
   configureVoiceAgent,
   decideVoiceCall,
   dispatchApprovedVoiceCall,
   getVoiceAgentSettings,
+  listVoiceCallLog,
   listVoiceCalls,
   listVoiceConsentedRecipients,
   requestVoiceCall,
+  setVoicePin,
   type VoiceAgentCall,
   type VoiceAgentSettings,
+  type VoiceCallLogEntry,
 } from "@/lib/communications/voice-agent.functions";
+
+function planLabel(tier: string): string {
+  if (!tier) return "Trial";
+  return tier.charAt(0).toUpperCase() + tier.slice(1);
+}
+
+function callSummary(summary: string): string {
+  if (summary === "fee_reminder") return "Fee reminder";
+  if (summary === "absence_alert") return "Absence alert";
+  return summary;
+}
 
 function SectionBack() {
   return (
@@ -101,6 +116,7 @@ export function AppSettingsScreen() {
 export function AppVoiceAgentScreen() {
   const [settings, setSettings] = useState<VoiceAgentSettings | null>(null);
   const [calls, setCalls] = useState<VoiceAgentCall[]>([]);
+  const [callLog, setCallLog] = useState<VoiceCallLogEntry[]>([]);
   const [recipients, setRecipients] = useState<
     Array<{ userId: string; displayName: string; phoneRedacted: string }>
   >([]);
@@ -114,15 +130,17 @@ export function AppVoiceAgentScreen() {
 
   async function reload() {
     try {
-      const [nextSettings, nextCalls, nextRecipients] = await Promise.all([
+      const [nextSettings, nextCalls, nextRecipients, nextLog] = await Promise.all([
         getVoiceAgentSettings({ data: {} }),
         listVoiceCalls({ data: {} }),
         listVoiceConsentedRecipients({ data: {} }).catch(() => []),
+        listVoiceCallLog({ data: {} }).catch(() => []),
       ]);
       setSettings(nextSettings);
       setEnabled(nextSettings.enabled);
       setExtension(nextSettings.extension ?? "");
       setCalls(nextCalls);
+      setCallLog(nextLog);
       setRecipients(nextRecipients);
       setRecipientUserId((current) =>
         nextRecipients.some((recipient) => recipient.userId === current)
@@ -218,14 +236,14 @@ export function AppVoiceAgentScreen() {
       </Link>
       <h1>Organization voice agent</h1>
       <p className="app-shell-empty">
-        The organization number is bound on the server. Request calls only for members who already
-        opted in. Live voice stays disabled until the separate voice_live flag is explicitly
-        enabled.
+        Professional and Enterprise organizations can enable one calling agent. The number is bound
+        on the server. Request calls only for members who already opted in. Live voice stays
+        disabled until the separate voice_live flag is explicitly enabled.
       </p>
       <p className="app-shell-empty">
-        Incoming callers are not authenticated. The voice agent currently answers public help only;
-        organization-specific fees, results, admissions, and timetable records remain unavailable
-        until secure caller verification is implemented.
+        A verified caller hears only that caller&apos;s own fees, results, admissions, and
+        timetable. Unknown questions go to the platform support line. The agent cannot place a call
+        or change a record; a person approves every outbound request.
       </p>
       {message ? (
         <p role="status" className="app-shell-empty">
@@ -238,6 +256,20 @@ export function AppVoiceAgentScreen() {
         </p>
       ) : (
         <>
+          <div className="app-shell-card" data-testid="calling-agent-plan">
+            <div>
+              <p>Plan</p>
+              <small>
+                {settings.callingEntitled
+                  ? `${planLabel(settings.subscriptionTier)} includes the calling agent`
+                  : `${planLabel(settings.subscriptionTier)} does not include the calling agent`}
+              </small>
+            </div>
+            <div>
+              <p>Bound number</p>
+              <small>{settings.providerNumber ?? "Not bound"}</small>
+            </div>
+          </div>
           <div className="app-shell-card">
             <div>
               <p>Live voice</p>
@@ -287,9 +319,10 @@ export function AppVoiceAgentScreen() {
               <input
                 type="checkbox"
                 checked={enabled}
+                disabled={!settings.callingEntitled && !enabled}
                 onChange={(event) => setEnabled(event.target.checked)}
               />
-              Enable organization add-on
+              Enable organization calling agent
             </label>
             <button type="submit" className="app-shell-primary" disabled={busy}>
               Save settings
@@ -332,7 +365,9 @@ export function AppVoiceAgentScreen() {
             <button
               type="submit"
               className="app-shell-primary"
-              disabled={busy || !settings.enabled || recipients.length === 0}
+              disabled={
+                busy || !settings.enabled || !settings.callingEntitled || recipients.length === 0
+              }
             >
               Request approval
             </button>
@@ -377,6 +412,7 @@ export function AppVoiceAgentScreen() {
                         className="app-shell-primary"
                         disabled={
                           busy ||
+                          !settings.callingEntitled ||
                           !settings.voiceLive ||
                           !settings.enabled ||
                           settings.provider !== "africas_talking"
@@ -386,6 +422,25 @@ export function AppVoiceAgentScreen() {
                         Dispatch approved call
                       </button>
                     )}
+                  </div>
+                </article>
+              ))
+            )}
+          </section>
+          <section aria-labelledby="voice-log-heading" data-testid="voice-call-log">
+            <h2 id="voice-log-heading">Call log</h2>
+            {callLog.length === 0 ? (
+              <p className="app-shell-empty">No calls have been recorded for this organization.</p>
+            ) : (
+              callLog.map((entry) => (
+                <article className="app-shell-card" key={`${entry.kind}-${entry.id}`}>
+                  <div>
+                    <p>{entry.kind === "inbound" ? "Inbound call" : callSummary(entry.summary)}</p>
+                    <small>
+                      {entry.status}
+                      {entry.signal === "member_locked" ? " · Member locked" : ""} ·{" "}
+                      {new Date(entry.at).toLocaleString()}
+                    </small>
                   </div>
                 </article>
               ))
@@ -401,6 +456,8 @@ export function AppSecurityScreen() {
   const app = useApp();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [voicePin, setVoicePinValue] = useState("");
+  const [voicePinConfirm, setVoicePinConfirm] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [googleBusy, setGoogleBusy] = useState(false);
   const googleConnected = hasGoogleIdentity(app.authUser);
@@ -416,6 +473,25 @@ export function AppSecurityScreen() {
     setMessage(error ? error.message : "Password updated.");
     setPassword("");
     setConfirm("");
+  }
+
+  async function saveVoicePin(event: React.FormEvent) {
+    event.preventDefault();
+    setMessage(null);
+    if (voicePin !== voicePinConfirm || !isAcceptableVoicePin(voicePin)) {
+      setMessage(
+        "Use the same 6 to 8 digit PIN in both fields. Repeated digits, straight runs, and common PINs are not accepted.",
+      );
+      return;
+    }
+    try {
+      await setVoicePin({ data: { pin: voicePin } });
+      setVoicePinValue("");
+      setVoicePinConfirm("");
+      setMessage("Voice PIN saved.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Voice PIN could not be saved.");
+    }
   }
 
   async function connectGoogle() {
@@ -479,6 +555,35 @@ export function AppSecurityScreen() {
           />
         </label>
         <button type="submit">Update password</button>
+      </form>
+      <form className="app-shell-form" onSubmit={(event) => void saveVoicePin(event)}>
+        <h2>Voice PIN</h2>
+        <p>
+          This PIN is the second check before the calling agent can discuss your own records. Use 6
+          to 8 digits. It is stored as a hash. Repeated digits, straight runs, and common PINs are
+          not accepted.
+        </p>
+        <label>
+          Voice PIN
+          <input
+            type="password"
+            inputMode="numeric"
+            autoComplete="new-password"
+            value={voicePin}
+            onChange={(event) => setVoicePinValue(event.target.value)}
+          />
+        </label>
+        <label>
+          Confirm voice PIN
+          <input
+            type="password"
+            inputMode="numeric"
+            autoComplete="new-password"
+            value={voicePinConfirm}
+            onChange={(event) => setVoicePinConfirm(event.target.value)}
+          />
+        </label>
+        <button type="submit">Save voice PIN</button>
       </form>
       {message ? <p className="app-shell-empty">{message}</p> : null}
 
