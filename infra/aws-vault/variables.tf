@@ -3,8 +3,12 @@ variable "region" {
   default = "eu-north-1"
 }
 variable "github_repo" {
+  # Repo moved to Sherivs/sherivs (org transfer). Changing this default is
+  # additive-safe in git only: do NOT terraform-apply from this PR. The AWS
+  # OIDC trust condition (repo:<github_repo>:ref:...) must be applied by the
+  # PR sweep / owner after reviewing enable_github_oidc and org SCPs.
   type    = string
-  default = "vibeoraai-bit/coregrid-scholar-migration"
+  default = "Sherivs/sherivs"
 }
 variable "github_branch" {
   type    = string
