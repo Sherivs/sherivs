@@ -1,0 +1,22 @@
+-- PROPOSAL 05 — tenants cannot change their own plan.
+-- NOT APPLIED. The policy "School admin updates own school" (migration 20260620122048) allows UPDATE of every column,
+-- and authenticated holds table-level UPDATE, so a school admin can run UPDATE schools SET subscription_tier = 'enterprise'
+-- over PostgREST; trg_schools_tier_entitlements then rewrites org_entitlements to the Enterprise plan (reproduced in a
+-- local clone). The sanctioned tenant route is request_plan_change (a request, effective next term); the sanctioned
+-- operator route is updateSchoolPlan (super admin, service role).
+CREATE OR REPLACE FUNCTION public.schools_guard_commercial_columns() RETURNS trigger
+LANGUAGE plpgsql SET search_path = '' AS $$
+BEGIN
+  IF (NEW.subscription_tier IS DISTINCT FROM OLD.subscription_tier
+      OR NEW.subscription_status IS DISTINCT FROM OLD.subscription_status
+      OR NEW.subscription_expires_at IS DISTINCT FROM OLD.subscription_expires_at
+      OR NEW.monthly_fee IS DISTINCT FROM OLD.monthly_fee)
+     AND coalesce(auth.role(), '') IN ('authenticated', 'anon')
+     AND NOT coalesce(public.is_super_admin(), false) THEN
+    RAISE EXCEPTION 'subscription fields are managed by the platform' USING ERRCODE = '42501';
+  END IF;
+  RETURN NEW;
+END $$;
+DROP TRIGGER IF EXISTS trg_schools_guard_commercial_columns ON public.schools;
+CREATE TRIGGER trg_schools_guard_commercial_columns BEFORE UPDATE ON public.schools
+  FOR EACH ROW EXECUTE FUNCTION public.schools_guard_commercial_columns();

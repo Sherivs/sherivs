@@ -1,0 +1,73 @@
+-- PROPOSAL 01 — refund primitives for SMS charges that never reached the provider.
+-- NOT APPLIED. Not in database/supabase/migrations/. Requires owner approval of the refund policy (ADR-069, section 3).
+-- Depends on: 20261024000260 (wallet_ledger kind 'refund', _wallet_post, usage_events, term_usage_pools).
+
+CREATE TABLE IF NOT EXISTS public.usage_event_reversals (
+  school_id uuid NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
+  reference text NOT NULL,
+  reason text NOT NULL CHECK (reason IN ('rejected_before_submission','provider_rejected','provider_duplicate','cancelled_unsent')),
+  refunded_amount numeric NOT NULL CHECK (refunded_amount >= 0),
+  restored_from_pool numeric NOT NULL CHECK (restored_from_pool >= 0),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (school_id, reference));
+ALTER TABLE public.usage_event_reversals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.usage_event_reversals FORCE ROW LEVEL SECURITY;
+REVOKE ALL ON public.usage_event_reversals FROM anon, authenticated, service_role;
+GRANT SELECT ON public.usage_event_reversals TO authenticated, service_role;
+DROP POLICY IF EXISTS usage_event_reversals_read ON public.usage_event_reversals;
+CREATE POLICY usage_event_reversals_read ON public.usage_event_reversals FOR SELECT TO authenticated
+  USING (public.scholar_can(school_id, 'wallet.view'));
+DROP TRIGGER IF EXISTS trg_usage_event_reversals_append_only ON public.usage_event_reversals;
+CREATE TRIGGER trg_usage_event_reversals_append_only BEFORE UPDATE OR DELETE ON public.usage_event_reversals
+  FOR EACH ROW EXECUTE FUNCTION public.append_only_guard();
+
+-- Internal: undo the charge recorded for one message reference. Idempotent (one reversal row per reference).
+-- Credits the wallet by the amount actually charged and returns pool allowance that the message consumed.
+CREATE OR REPLACE FUNCTION public._comms_refund_charge(p_org uuid, p_message_reference text, p_reason text)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
+DECLARE u public.usage_events%ROWTYPE;
+BEGIN
+  SELECT * INTO u FROM public.usage_events WHERE school_id = p_org AND reference = 'msg:' || p_message_reference FOR UPDATE;
+  IF NOT FOUND THEN RETURN jsonb_build_object('refunded', false, 'reason', 'no_charge_recorded'); END IF;
+  INSERT INTO public.usage_event_reversals (school_id, reference, reason, refunded_amount, restored_from_pool)
+  VALUES (p_org, u.reference, p_reason, u.charged, u.from_pool)
+  ON CONFLICT (school_id, reference) DO NOTHING;
+  IF NOT FOUND THEN RETURN jsonb_build_object('refunded', false, 'reason', 'already_refunded'); END IF;
+  IF u.charged > 0 THEN
+    PERFORM public._wallet_post(p_org, 'refund', u.charged, 'refund:' || u.reference, u.item, u.quantity - u.from_pool,
+      u.student_id, jsonb_build_object('reason', p_reason, 'of', u.reference));
+  END IF;
+  IF u.from_pool > 0 THEN
+    UPDATE public.term_usage_pools SET used = greatest(used - u.from_pool, 0), updated_at = now()
+     WHERE school_id = p_org AND academic_year = u.academic_year AND term = u.term AND item = u.item;
+  END IF;
+  RETURN jsonb_build_object('refunded', true, 'amount', u.charged, 'pool_restored', u.from_pool);
+END $$;
+REVOKE ALL ON FUNCTION public._comms_refund_charge(uuid, text, text) FROM PUBLIC, anon, authenticated, service_role;
+
+-- Operator entry point (service_role only): refund one SMS that the provider provably never accepted, or cancel+refund
+-- a queued message that will never be sent (no scheduler, sms_live switched off). It refuses accepted and claimed
+-- messages: those need manual reconciliation against the provider first.
+CREATE OR REPLACE FUNCTION public.comms_refund_unsubmitted(p_message uuid, p_org uuid, p_reason text)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
+DECLARE m public.outbound_messages%ROWTYPE;
+BEGIN
+  IF coalesce(auth.role(), '') <> 'service_role' THEN RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501'; END IF;
+  IF p_reason NOT IN ('rejected_before_submission','provider_rejected','provider_duplicate','cancelled_unsent') THEN
+    RAISE EXCEPTION 'invalid refund reason';
+  END IF;
+  SELECT * INTO m FROM public.outbound_messages WHERE id = p_message AND org_id = p_org AND channel = 'sms' FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'message not found'; END IF;
+  IF m.provider_ref IS NOT NULL THEN
+    RAISE EXCEPTION 'message was claimed or accepted by the provider: reconcile it manually before any refund';
+  END IF;
+  IF m.status = 'queued' THEN
+    IF p_reason <> 'cancelled_unsent' THEN RAISE EXCEPTION 'a queued message can only be cancelled_unsent'; END IF;
+    UPDATE public.outbound_messages SET status = 'failed', error = 'cancelled_unsent', updated_at = now() WHERE id = m.id;
+  ELSIF m.status <> 'failed' THEN
+    RAISE EXCEPTION 'message state does not allow a refund';
+  END IF;
+  RETURN public._comms_refund_charge(p_org, m.reference, p_reason);
+END $$;
+REVOKE ALL ON FUNCTION public.comms_refund_unsubmitted(uuid, uuid, text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.comms_refund_unsubmitted(uuid, uuid, text) TO service_role;

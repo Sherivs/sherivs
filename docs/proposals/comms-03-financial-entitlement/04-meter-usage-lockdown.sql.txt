@@ -1,0 +1,8 @@
+-- PROPOSAL 04 — meter_usage is not a client API.
+-- NOT APPLIED. Today `authenticated` holds EXECUTE on public.meter_usage and the function admits anyone with
+-- comms.send_class OR ai_tutor.use. The legacy role bridge in scholar_can() grants ai_tutor.use to every parent and
+-- student, and p_priority = 'safety' lets the caller overdraw the wallet, so a parent can debit or overdraw the school
+-- wallet with no message (reproduced in a local clone; ADR-069 section 2). No application code calls it: the only
+-- callers are comms_send (a SECURITY DEFINER function, unaffected by this REVOKE) and the sim-lab scenario script.
+REVOKE EXECUTE ON FUNCTION public.meter_usage(uuid, text, numeric, text, uuid, text, text, text) FROM authenticated;
+-- service_role keeps EXECUTE (server-side AI-tutor metering would go through it after verifying the call).
