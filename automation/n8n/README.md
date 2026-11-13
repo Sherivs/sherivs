@@ -33,3 +33,11 @@ The forward tick runs every minute and uses the named Header Auth credential to
 call the protected outbox endpoint. For setup, smoke-test, activation, and
 rollback order, follow
 [`../../docs/runbooks/whatsapp-e2e.md`](../../docs/runbooks/whatsapp-e2e.md).
+
+## SMS dispatch tick (COMMS-03)
+
+`sherivs-sms-dispatch-tick.json` is a separate, inactive export. It calls
+`/api/public/cron/sms-dispatch` every minute with the same Header Auth credential
+(`Sherivs CRON Authorization`). Do not activate it until the gates in
+[`../../docs/runbooks/sms-dispatch-bulksms-nigeria.md`](../../docs/runbooks/sms-dispatch-bulksms-nigeria.md)
+are met.
