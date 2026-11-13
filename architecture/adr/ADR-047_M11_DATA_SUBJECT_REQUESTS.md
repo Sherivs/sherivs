@@ -5,6 +5,7 @@
 | Status | PROPOSED |
 | Date | 2026-11-13 |
 | Author | Claude (continuation of issue #190) |
+| Creator | claude (Claude Code session on behalf of the repository owner) |
 | Mission | M11 — data-subject requests (access, rectification, portability, erasure) |
 | Depends on | M04 tenant substrate, M09 identity, M12 retention and legal holds (ADR-048) |
 | Cites | ADR-005, ADR-008, ADR-009, ADR-048; `AGENTS.md` tenant-isolation, audit and RLS rules |
