@@ -49,8 +49,8 @@ Classification vocabulary from issue #347. "Verified" means: master merged in, `
 | #6, #5 | Cursor | CoreGrid → Sherivs refoundation, base `coregrid-scholar-migration` | Possibly superseded; needs owner decision | Base is not `master`; #5 is 115 files, +14,924/−6,422. Do not close without owner review. |
 
 ### Overlaps and dependencies noticed
-- Every branch above that touches `architecture/adr/INDEX.md` conflicts on the intro paragraph and table rows (shared hot spot). Recommendation: a single integration owner for ADR numbers, or generate the index.
-- `NEUTRALITY_GUARD_BASELINE.json` is the second hot spot; merging requires recomputing `entryCount`, `totalObservedHits`, `hitsByFile`.
+- `architecture/adr/INDEX.md` is a shared hot spot: at least six branches (#308, #315, #320, #321, #324, #336) conflicted on its intro paragraph and table rows when `master` was merged in. Recommendation: a single integration owner for ADR numbers, or generate the index.
+- `NEUTRALITY_GUARD_BASELINE.json` is the second hot spot (conflicted in #308, #315, #320); merging requires recomputing `entryCount`, `totalObservedHits`, `hitsByFile`.
 - ADR numbers in use across open PRs: 022 (#308), 029 (#320), 035 (#321), 046 (#315), 050 (#324), 051 (#336), plus master's 023/045/067/068. No collisions found at this snapshot.
 - Stacking: M11 (#190) needs M12 (#318); M14 (#193) needs M05–M08; B-2..B-5 (#281–284) need B-1; JARVIS-02..06 need #321; TWIN-02..06 need #320; REALITY R3/R9 need #336. These issues have no PRs yet.
 
