@@ -164,6 +164,11 @@ jobs:
           psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
             -f tests/integration/whatsapp-n8n-ambiguity-fix.local.sql 2>&1 | tee /tmp/wafix.out
           test "$(grep -c 'WA-FIX PASS' /tmp/wafix.out)" -ge 10
+      - name: SEC-02 privilege hardening (real Postgres, rolled back)
+        run: |
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/sec02-privilege-hardening.local.sql 2>&1 | tee /tmp/sec02.out
+          grep -q 'SEC02 ALL PASS' /tmp/sec02.out
       - name: Seed synthetic schools (10% scale)
         working-directory: tools/sim-lab
         run: SIM_SCALE=0.1 node sim/gen.mjs && node sim/seed-flows.mjs
