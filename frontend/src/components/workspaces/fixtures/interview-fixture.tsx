@@ -8,11 +8,15 @@ import {
   InstitutionInterviewScreen,
   type InterviewApi,
 } from "@/components/app-shell/institution-interview-screen";
+import type { WebsiteSyncApi } from "@/components/app-shell/website-sync-panel";
 import type { InterviewOutcome } from "@/lib/runtime/scholar/reality-interview.functions";
+import { generateSite, type Facts } from "@/lib/website/generator";
+import { planRealitySync } from "@/lib/website/reality-sync";
 import {
   TYPE_QUESTION_ID,
   applyAnswer,
   approveInterview,
+  approvedSnapshot,
   buildInterviewView,
   clearAnswer,
   emptyInterview,
@@ -52,7 +56,7 @@ function seed(name: string): { state: InterviewState; notes: string[] } {
   if (name === "ready") return { state: s, notes: [] };
   const a = approveInterview(s, "demo-admin", NOW + 60_000);
   if (a.ok) s = a.state;
-  if (name === "approved") return { state: s, notes: [] };
+  if (name === "approved" || name === "site-exists") return { state: s, notes: [] };
   // "withdrawn": a stored approval that no longer matches is withdrawn with a note.
   const stored = JSON.parse(JSON.stringify(s));
   stored.answers["core.academics.calendar_kind"].value = "semester";
@@ -67,9 +71,13 @@ const SCENARIOS = [
   ["approved", "Approved"],
   ["withdrawn", "Approval withdrawn"],
   ["unsupported", "Out-of-scope type"],
+  ["site-exists", "Approved, site already exists"],
 ] as const;
 
-function localApi(initial: { state: InterviewState; notes: string[] }): InterviewApi {
+function localApi(initial: { state: InterviewState; notes: string[] }): {
+  api: InterviewApi;
+  current: () => InterviewState;
+} {
   let state = initial.state;
   const notes = initial.notes;
   const view = () => buildInterviewView(state, notes);
@@ -84,18 +92,66 @@ function localApi(initial: { state: InterviewState; notes: string[] }): Intervie
     }
     return { ok: false, issues: r.issues, view: view() };
   };
-  return {
+  const api: InterviewApi = {
     get: async () => view(),
     submit: async (answer, rev) =>
       done(applyAnswer(state, { ...answer, source: "human" } as DiscoveryAnswer, NOW + 1000, rev)),
     clear: async (id, rev) => done(clearAnswer(state, id, NOW + 1000, rev)),
     approve: async (rev) => done(approveInterview(state, "demo-admin", NOW + 2000, rev)),
   };
+  return { api, current: () => state };
+}
+
+const DEMO_BASE: Facts = {
+  data: { school: { name: "Demo Academy", slug: "demo-academy" } },
+  onboarding: null,
+};
+
+/** Real mapping and generator over synthetic base facts; the "site" lives in memory only. */
+function localWebsiteApi(current: () => InterviewState, siteExists: boolean): WebsiteSyncApi {
+  let exists = siteExists;
+  const derive = () => {
+    const snapshot = approvedSnapshot(current());
+    if (snapshot.length === 0) return null;
+    const plan = planRealitySync(snapshot, DEMO_BASE);
+    const doc = generateSite(plan.facts);
+    return {
+      plan,
+      pages: doc.pages.filter((p) => p.nav).map((p) => p.title[doc.locales[0]] ?? p.slug),
+    };
+  };
+  return {
+    preview: async () => {
+      const d = derive();
+      if (!d) return { status: "not_approved" };
+      if (exists) return { status: "website_exists" };
+      return {
+        status: "ready",
+        applied: d.plan.applied,
+        notSupported: d.plan.notSupported,
+        withheldCount: d.plan.withheldCount,
+        pages: d.pages,
+        planHash: d.plan.planHash,
+      };
+    },
+    publish: async (planHash) => {
+      const d = derive();
+      if (!d) return { status: "not_approved" };
+      if (exists) return { status: "website_exists" };
+      if (d.plan.planHash !== planHash) return { status: "stale" };
+      exists = true;
+      return { status: "published", version: 1 };
+    },
+  };
 }
 
 export function InterviewFixture() {
   const [scenario, setScenario] = useState<(typeof SCENARIOS)[number][0]>("progress");
-  const api = useMemo(() => localApi(seed(scenario)), [scenario]);
+  const local = useMemo(() => localApi(seed(scenario)), [scenario]);
+  const websiteApi = useMemo(
+    () => localWebsiteApi(local.current, scenario === "site-exists"),
+    [local, scenario],
+  );
   return (
     <section aria-label="School interview demo" data-testid="interview-fixture">
       <p>
@@ -119,7 +175,7 @@ export function InterviewFixture() {
           </button>
         ))}
       </div>
-      <InstitutionInterviewScreen key={scenario} api={api} />
+      <InstitutionInterviewScreen key={scenario} api={local.api} websiteApi={websiteApi} />
     </section>
   );
 }

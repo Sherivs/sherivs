@@ -61,7 +61,7 @@ export type InterviewOutcome =
       readonly view: InterviewView;
     };
 
-async function scope(context: {
+export async function scope(context: {
   supabase: Parameters<typeof requireSchoolAdminScope>[0];
   claims?: { exp?: number } | null;
 }): Promise<string> {
@@ -73,7 +73,7 @@ async function scope(context: {
   });
 }
 
-async function load(
+export async function load(
   db: ReturnType<typeof asKernelAdmin>,
   schoolId: string,
   nowMs: number,

@@ -381,3 +381,18 @@
     transition: none;
   }
 }
+
+.website-sync-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.website-sync-wrap {
+  padding-top: 0;
+}
+
+.website-sync-wrap h3 {
+  margin: 0 0 0.3rem;
+  font-size: 0.9rem;
+}
