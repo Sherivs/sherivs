@@ -3,3 +3,4 @@ export * from "./question-types";
 export * from "./answers";
 export * from "./registry-validation";
 export * from "./question-registry";
+export * from "./interview";
