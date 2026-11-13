@@ -122,7 +122,7 @@ const contracts = [
 ] as never;
 const actor = { tenantRef: "t1", userRef: "u1", heldPermissions: ["attendance.take"] };
 function proposalFlow(i: number) {
-  let st: ProposalStore = EMPTY_PROPOSAL_STORE;
+  const st: ProposalStore = EMPTY_PROPOSAL_STORE;
   const c = createProposal(
     st,
     {
