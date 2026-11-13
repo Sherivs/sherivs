@@ -20,6 +20,8 @@ import {
   institutionalExecutiveCards,
   isInstitutionalExecutiveWorkspace,
 } from "@/lib/workspaces/institutional-executive";
+import { categoryWorkspaces } from "@/lib/workspaces/category-workspaces";
+import { CategoryWorkspaceSections } from "./category-workspace-sections";
 import { ShellGlassIcon } from "./glass-icon";
 import { NotificationCentre } from "./notification-centre";
 import { useAppShell } from "./shell-context";
@@ -75,6 +77,12 @@ export function AppHomeScreen() {
         Boolean(shell.widgetsError),
       )
     : [];
+  const categoryViews = categoryWorkspaces(
+    shell.manifest,
+    shell.cards,
+    shell.widgetsLoading,
+    Boolean(shell.widgetsError),
+  );
   const newsLists = composeActivity({
     inbox: [],
     widgets:
@@ -270,6 +278,8 @@ export function AppHomeScreen() {
           <NotificationCentre compact />
         </section>
       ) : null}
+
+      <CategoryWorkspaceSections views={categoryViews} />
 
       {showSearch ? (
         <section className="app-shell-search-region" aria-label="Workspace search">

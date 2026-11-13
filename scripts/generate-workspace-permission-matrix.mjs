@@ -91,6 +91,13 @@ template permissions and explicitly assigned responsibilities remain the
 authorization source. No authority links or mandates are seeded. The tertiary
 executive fallback template is read-only and exposes only institution analytics
 and academic/financial reports.
+
+## Category workspaces
+
+Category workspaces (academic and teaching, and later stages) add no permission and
+no catalog row. Each one is a view over the caller's already-permitted manifest: it
+can hide items but never add them. Items that expose learner welfare data are shown
+only when the named permission itself granted them (see ADR-025).
 `;
 }
 
