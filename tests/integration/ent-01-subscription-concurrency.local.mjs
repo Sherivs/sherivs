@@ -54,6 +54,13 @@ async function cleanup() {
       LOOP
         EXECUTE format('DELETE FROM public.%I WHERE %I = ANY ($1)', t.table_name, t.column_name) USING ids;
       END LOOP;
+      -- tables that key the organization by a text column (role assignments use tenant_ref)
+      FOR t IN SELECT c.table_name, c.column_name FROM information_schema.columns c
+                 JOIN information_schema.tables tb ON tb.table_schema = c.table_schema AND tb.table_name = c.table_name AND tb.table_type = 'BASE TABLE'
+                WHERE c.table_schema = 'public' AND c.column_name = 'tenant_ref' AND c.data_type = 'text'
+      LOOP
+        EXECUTE format('DELETE FROM public.%I WHERE %I = ANY ($1)', t.table_name, t.column_name) USING (SELECT array_agg(i::text) FROM unnest(ids) i);
+      END LOOP;
       DELETE FROM public.users WHERE school_id = ANY (ids);
       IF uids IS NOT NULL THEN DELETE FROM auth.users WHERE id = ANY (uids); END IF;
       DELETE FROM public.schools WHERE id = ANY (ids);
