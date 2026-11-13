@@ -1,6 +1,7 @@
 import type { CardData } from "@/lib/sherivs-ws/live";
 import type { WorkspaceManifest } from "@/components/workspaces/_contract-shim";
 import { ACADEMIC_TEACHING_WORKSPACE } from "./academic-teaching";
+import { ADMINISTRATIVE_OPERATIONS_WORKSPACE } from "./administrative-operations";
 import {
   buildCategoryWorkspace,
   type CategoryWorkspaceSpec,
@@ -10,6 +11,7 @@ import {
 /** Registered category workspaces, in display order. Later stages append here. */
 export const CATEGORY_WORKSPACE_SPECS: readonly CategoryWorkspaceSpec[] = [
   ACADEMIC_TEACHING_WORKSPACE,
+  ADMINISTRATIVE_OPERATIONS_WORKSPACE,
 ];
 
 export function categoryWorkspaces(
