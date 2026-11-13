@@ -1,32 +1,38 @@
 import { z } from "zod";
+import { parseVoiceRecipientRef } from "@/lib/communications/voice-number-binding";
 
 const tenantInput = z.string().uuid();
-const phoneInput = z.string().regex(/^\+[1-9][0-9]{7,14}$/);
 
-export async function assertVoiceRecipientConsent(tenantRef: string, recipientPhone: string) {
-  const tenant = tenantInput.parse(tenantRef);
-  const phone = phoneInput.parse(recipientPhone);
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: mapping, error: mappingError } = await supabaseAdmin
-    .from("school_tenant_map" as never)
-    .select("school_id" as never)
-    .eq("tenant_id" as never, tenant)
-    .maybeSingle();
-  const parsedMapping = z.object({ school_id: z.string().uuid() }).safeParse(mapping);
-  if (mappingError || !parsedMapping.success) {
-    throw new Error("Recipient voice consent could not be verified.");
+function consentErrorMessage(error: { message?: string } | null): string {
+  const message = error?.message ?? "";
+  if (/outside this organization/i.test(message)) {
+    return "Recipient is not a member of this organization.";
   }
+  if (/opted in/i.test(message)) {
+    return "Recipient has not opted in to voice calls.";
+  }
+  if (/confirmed voice number/i.test(message)) {
+    return "Recipient has no confirmed voice number.";
+  }
+  return "Recipient voice consent could not be verified.";
+}
 
-  const phoneVariants = [phone, phone.slice(1)];
-  const { data: consent, error: consentError } = await supabaseAdmin
-    .from("comms_optins" as never)
-    .select("status" as never)
-    .eq("school_id" as never, parsedMapping.data.school_id)
-    .eq("channel" as never, "voice")
-    .in("phone" as never, phoneVariants as never)
-    .maybeSingle();
-  const parsedConsent = z.object({ status: z.string() }).safeParse(consent);
-  if (consentError || !parsedConsent.success || parsedConsent.data.status !== "opted_in") {
-    throw new Error("Recipient has not opted in to voice calls.");
+/**
+ * Confirms the member may receive a voice call.
+ * Phone confirmation, membership, and normalized opt-in are decided by
+ * voice_agent_assert_recipient_consent (service role). Membership comes from
+ * organization_memberships inside that RPC. This function does not invent
+ * phone confirmation.
+ */
+export async function assertVoiceRecipientConsent(tenantRef: string, recipientUserId: string) {
+  const tenant = tenantInput.parse(tenantRef);
+  const recipient = parseVoiceRecipientRef(recipientUserId);
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { error } = await supabaseAdmin.rpc(
+    "voice_agent_assert_recipient_consent" as never,
+    { p_tenant_ref: tenant, p_recipient_user: recipient } as never,
+  );
+  if (error) {
+    throw new Error(consentErrorMessage(error as { message?: string }));
   }
 }
