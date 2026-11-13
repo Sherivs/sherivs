@@ -63,6 +63,15 @@ blocked on store accounts (§4); BLK-4 **PARKED** unchanged (§2); OPS-RL
 **STILL OPEN** — direct real signup attempt re-confirmed
 `429 over_email_send_rate_limit` (§6).
 
+**2026-11-10 — Expo account move:** ST-1 Expo ownership is moving from
+`vibeoraai-bit` to the new Expo account `sherivs`. The old
+`extra.eas.projectId` is removed from `mobile/app.json`; the owner must run
+`npx eas-cli login` as `sherivs` and `npx eas init` in `mobile/` to create
+the new project. Historical builds (including the 2026-10-06 preview APK)
+remain on the old project. Store submission remains blocked on Apple/Google
+accounts (§4). Any future `EXPO_TOKEN` must be issued from the `sherivs`
+account.
+
 ---
 
 ## 1. BLK-3 — Deployment credentials (SSH/host + registry)
@@ -271,6 +280,15 @@ real Android APK (`/opt/cursor/artifacts/eas-preview-apk-header.bin`):
 The EAS BUILD dimension of V1-010 is now live-proven end-to-end.
 **ST-1 store SUBMISSION remains BLOCKED**: Apple Developer ($99/yr) and
 Google Play Console ($25 one-time) accounts are NOT yet provided.
+
+**2026-11-10 — Expo account move:** current Expo owner is `sherivs`, not
+`vibeoraai-bit`. The project id recorded above is the old project and has
+been removed from `mobile/app.json`. Recreate the EAS project with
+`npx eas init` under the `sherivs` account (do not invent a project id),
+then rebuild. Re-set push credentials if any existed only on the old
+project. Add an `EXPO_TOKEN` Actions secret only if CI starts using EAS;
+no workflow currently does. The 2026-10-03 / 2026-10-06 evidence above is
+left as a historical record of the previous account.
 
 ## 5. BLK-2 — AI provider key
 
