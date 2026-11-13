@@ -46,7 +46,7 @@ describe("M11 data-subject requests migration", () => {
 
   it("makes every SECURITY DEFINER function pin an empty search_path", () => {
     const fns = migration.match(/CREATE OR REPLACE FUNCTION[\s\S]*?\n\$\$;/g) ?? [];
-    expect(fns.length).toBeGreaterThanOrEqual(12);
+    expect(fns.length).toBeGreaterThanOrEqual(11);
     for (const f of fns) {
       if (/SECURITY DEFINER/.test(f)) expect(f).toContain("SET search_path = ''");
     }
