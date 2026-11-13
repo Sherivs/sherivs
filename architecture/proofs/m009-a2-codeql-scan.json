@@ -1,0 +1,39 @@
+{
+  "artifact": "m009-a2-scoped-codeql-scan",
+  "tool": "CodeQL CLI 2.27.4",
+  "language": "javascript (JavaScript and TypeScript extractor)",
+  "queryPack": "codeql/javascript-queries@2.5.0",
+  "querySuite": "codeql-suites/javascript-security-and-quality.qls",
+  "ruleCount": 201,
+  "databaseLinesOfCode": 11494,
+  "scope": [
+    "frontend/src/components/workspaces",
+    "frontend/src/components/app-shell",
+    "frontend/src/routes/home",
+    "frontend/src/routes/index.tsx",
+    "frontend/src/routes/pages.$slug.tsx",
+    "frontend/src/routes/posts.$post.tsx",
+    "frontend/src/components/website",
+    "frontend/src/lib/observability",
+    "scripts/verify-home-bundle.mjs"
+  ],
+  "initialAlerts": [
+    {
+      "ruleId": "js/unused-local-variable",
+      "location": "frontend/src/components/app-shell/student-mobility-screen.tsx:497",
+      "symbol": "classOptions",
+      "disposition": "fixed"
+    },
+    {
+      "ruleId": "js/unused-local-variable",
+      "location": "frontend/src/lib/observability/health-map.ts:156",
+      "symbol": "severity",
+      "disposition": "fixed"
+    }
+  ],
+  "finalAnalysis": {
+    "executionSuccessful": true,
+    "alertCount": 0
+  },
+  "githubCodeScanning": "Unavailable: repository code scanning is disabled (GitHub API 403); no repository settings were changed."
+}

@@ -1,8 +1,8 @@
 /** Browser Sentry init. No-op without VITE_SENTRY_DSN. */
-import * as Sentry from "@sentry/tanstackstart-react";
 import { sentryOptions } from "./sentry-config";
 
 let started = false;
+let startPromise: Promise<void> | null = null;
 
 export function initClientSentry(router: unknown): boolean {
   if (started || typeof window === "undefined") return started;
@@ -12,23 +12,29 @@ export function initClientSentry(router: unknown): boolean {
     release: import.meta.env.VITE_SENTRY_RELEASE as string | undefined,
   });
   if (!opts) return false;
-  try {
-    Sentry.init({
-      ...opts,
-      integrations: [Sentry.tanstackRouterBrowserTracingIntegration(router as never)],
-    } as never);
-    started = true;
-  } catch {
-    // Monitoring must never break the app.
+  if (!startPromise) {
+    startPromise = import("@sentry/tanstackstart-react")
+      .then((Sentry) => {
+        Sentry.init({
+          ...opts,
+          integrations: [Sentry.tanstackRouterBrowserTracingIntegration(router as never)],
+        } as never);
+        started = true;
+      })
+      .catch(() => undefined);
   }
   return started;
 }
 
 export function captureClientError(error: unknown): void {
-  if (!started) return;
-  try {
-    Sentry.captureException(error);
-  } catch {
-    /* ignore */
-  }
+  if (!startPromise) return;
+  void startPromise
+    .then(() =>
+      started
+        ? import("@sentry/tanstackstart-react").then(({ captureException }) =>
+            captureException(error),
+          )
+        : undefined,
+    )
+    .catch(() => undefined);
 }

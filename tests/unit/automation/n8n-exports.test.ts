@@ -1,4 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
+import * as crypto from "node:crypto";
+import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";
 
 type N8nNode = {
@@ -29,6 +31,68 @@ function findNode(workflow: N8nWorkflow, name: string) {
   const node = workflow.nodes.find((entry) => entry.name === name);
   if (!node) throw new Error(`Missing n8n node: ${name}`);
   return node;
+}
+
+const inboundBody = JSON.stringify({
+  event_type: "whatsapp.inbound",
+  event_id: "123e4567-e89b-42d3-a456-426614174000",
+  provider_message_id: "wamid.test",
+  tenant_id: "tenant-test",
+  org_ref: "org-test",
+  conversation_id: "123e4567-e89b-42d3-a456-426614174001",
+  recipient_hash: "a".repeat(64),
+  received_at: null,
+  body: "hello",
+});
+const inboundSecret = "test-signing-secret-that-is-at-least-32-characters";
+
+async function runInboundVerification({
+  body = inboundBody,
+  signedBody = body,
+  timestamp = String(Math.floor(Date.now() / 1000)),
+  signature,
+  includeBinary = true,
+}: {
+  body?: string;
+  signedBody?: string;
+  timestamp?: string;
+  signature?: string;
+  includeBinary?: boolean;
+} = {}) {
+  const workflow = workflows.get("sherivs-wa-inbound-handler.json");
+  if (!workflow) throw new Error("Missing inbound handler export");
+  const code = findNode(workflow, "Verify signature and inbound shape").parameters.jsCode as string;
+  const binaryData = includeBinary
+    ? { data: { data: Buffer.from(body).toString("base64") } }
+    : undefined;
+  const input = {
+    json: {
+      headers: {
+        "x-sherivs-timestamp": timestamp,
+        "x-sherivs-signature":
+          signature ??
+          `sha256=${crypto.createHmac("sha256", inboundSecret).update(`${timestamp}.${signedBody}`).digest("hex")}`,
+      },
+    },
+    ...(binaryData ? { binary: binaryData } : {}),
+  };
+  const getBinaryDataBuffer = async (index: number, propertyName: string) => {
+    if (index !== 0 || propertyName !== "data" || !binaryData) {
+      throw new Error("Missing binary data");
+    }
+    return Buffer.from(binaryData.data.data, "base64");
+  };
+  return runInNewContext(`(async function () {\n${code}\n}).call(this)`, {
+    helpers: { getBinaryDataBuffer },
+    require: (name: string) => {
+      if (name !== "crypto") throw new Error(`Unexpected module: ${name}`);
+      return crypto;
+    },
+    $input: { first: () => input },
+    process: { env: { N8N_WHATSAPP_SIGNING_SECRET: inboundSecret } },
+    Buffer,
+    Date,
+  }) as Promise<Array<{ json: { valid: boolean } }>>;
 }
 
 describe("n8n workflow exports", () => {
@@ -81,6 +145,8 @@ describe("n8n workflow exports", () => {
     expect(code).toContain("x-sherivs-signature");
     expect(code).toContain("> 300");
     expect(code).toContain("crypto.timingSafeEqual");
+    expect(code).toContain("this.helpers.getBinaryDataBuffer(0, 'data')");
+    expect(code).not.toContain("item.rawBody");
     expect(code).toContain("event.event_type !== 'whatsapp.inbound'");
     expect(code).toContain("N8N_WHATSAPP_SIGNING_SECRET");
     expect(findNode(workflow, "Reject unauthorized request").parameters.options).toMatchObject({
@@ -100,6 +166,30 @@ describe("n8n workflow exports", () => {
       "https://www.sherivs.com/api/public/webhooks/whatsapp-reply",
     );
     expect(JSON.stringify(request.parameters)).not.toMatch(/tenant_id|phone|graph\.facebook\.com/i);
+  });
+
+  it("verifies inbound signatures against n8n binary data", async () => {
+    const valid = await runInboundVerification();
+    expect(valid[0].json.valid).toBe(true);
+
+    const stale = await runInboundVerification({
+      timestamp: String(Math.floor(Date.now() / 1000) - 301),
+    });
+    expect(stale[0].json.valid).toBe(false);
+
+    const badSignature = await runInboundVerification({
+      signature: `sha256=${"0".repeat(64)}`,
+    });
+    expect(badSignature[0].json.valid).toBe(false);
+
+    const missingBinary = await runInboundVerification({ includeBinary: false });
+    expect(missingBinary[0].json.valid).toBe(false);
+
+    const whitespaceChanged = await runInboundVerification({
+      body: inboundBody.replace('"body":"hello"', '"body": "hello"'),
+      signedBody: inboundBody,
+    });
+    expect(whitespaceChanged[0].json.valid).toBe(false);
   });
 
   it("runs the authenticated outbox tick every minute", () => {

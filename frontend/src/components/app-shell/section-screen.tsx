@@ -12,6 +12,7 @@ import { RoleManagementScreen } from "./role-management-screen";
 import { CommunicationInboxScreen } from "./communication-inbox";
 import { StudentMobilityScreen } from "./student-mobility-screen";
 import { PrivacyRegisterScreen } from "./privacy-register-screen";
+import { AscExportScreen } from "./asc-export-screen";
 
 export function AppSectionScreen({ sectionKey }: { sectionKey: string }) {
   const shell = useAppShell();
@@ -25,6 +26,7 @@ export function AppSectionScreen({ sectionKey }: { sectionKey: string }) {
     return <PrivacyRegisterScreen />;
   if (sectionKey === "communications") return <CommunicationInboxScreen />;
   if (sectionKey === "nav.students" || sectionKey === "students") return <StudentMobilityScreen />;
+  if (sectionKey === "nav.reports") return <AscExportScreen />;
   const item =
     shell.nav.find((row) => row.key === sectionKey) ??
     shell.manifest?.widgets.find((row) => row.key === sectionKey) ??
