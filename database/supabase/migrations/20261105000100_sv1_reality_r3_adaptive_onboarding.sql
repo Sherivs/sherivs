@@ -1,4 +1,4 @@
--- SV1-REALITY R3 (#334): adaptive V1 school onboarding interview — storage hardening only.
+-- SV1-REALITY R3 (#334): adaptive V1 onboarding interview — storage hardening only.
 --
 -- The interview persists its save/resume state in the EXISTING domain-neutral
 -- `public.cg_org_profile` store under profile key `reality.onboarding_interview`.
@@ -6,7 +6,7 @@
 --   1. forces row-level security on cg_org_profile (it was enabled with zero
 --      policies and no client grants; FORCE also binds the table owner), and
 --   2. bounds the size of the interview payload for new and updated rows.
--- Tenant scoping and school-admin authorization stay in the existing
+-- Tenant scoping and organization-admin authorization stay in the existing
 -- get_org_profile / upsert_org_profile RPCs. This file does not change them.
 --
 -- Forward-only. Rollback: database/supabase/rollbacks/20261105000100_sv1_reality_r3_adaptive_onboarding.sql
