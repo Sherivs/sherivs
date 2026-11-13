@@ -1,0 +1,1 @@
+psql:tests/integration/sv1-reality-r3.local.sql:192: NOTICE:  SV1-REALITY-R3 storage checks: ALL PASS

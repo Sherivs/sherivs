@@ -12,11 +12,13 @@ import { RoleManagementScreen } from "./role-management-screen";
 import { CommunicationInboxScreen } from "./communication-inbox";
 import { StudentMobilityScreen } from "./student-mobility-screen";
 import { AscExportScreen } from "./asc-export-screen";
+import { InstitutionInterviewScreen } from "./institution-interview-screen";
 
 export function AppSectionScreen({ sectionKey }: { sectionKey: string }) {
   const shell = useAppShell();
   const [query, setQuery] = useState("");
   if (sectionKey === "roles") return <RoleManagementScreen />;
+  if (sectionKey === "school_setup") return <InstitutionInterviewScreen />;
   if (sectionKey === "communications") return <CommunicationInboxScreen />;
   if (sectionKey === "nav.students" || sectionKey === "students") return <StudentMobilityScreen />;
   if (sectionKey === "nav.reports") return <AscExportScreen />;

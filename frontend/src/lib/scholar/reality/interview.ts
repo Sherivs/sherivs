@@ -186,14 +186,7 @@ function boundIssues(q: DiscoveryQuestion, a: DiscoveryAnswer): QuestionIssue[] 
       for (const item of v) {
         if (typeof item === "string" && item.length > MAX_LIST_ITEM_LENGTH)
           bad("item_too_long", "list item too long");
-        else if (
-          typeof item !== "string" &&
-          q.answerType !== "repeating_group" &&
-          q.answerType !== "hierarchy"
-        )
-          bad("invalid_shape", "list items must be text");
-        else if (typeof item !== "string" && jsonLength(item) > MAX_LIST_ITEM_LENGTH * 4)
-          bad("item_too_long", "list item too large");
+        else if (typeof item !== "string") bad("invalid_shape", "list items must be text");
       }
   }
   if (

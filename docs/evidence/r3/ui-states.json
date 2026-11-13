@@ -1,0 +1,170 @@
+[
+  {
+    "w": 1440,
+    "name": "1-fresh",
+    "status": "draft",
+    "overflow": false,
+    "progress": "0 of 1 answered · 1 required still open",
+    "msg": null
+  },
+  {
+    "w": 1440,
+    "name": "2-after-type",
+    "status": "draft",
+    "overflow": false,
+    "progress": "1 of 12 answered · 3 required still open",
+    "msg": "Saved."
+  },
+  {
+    "w": 1440,
+    "name": "3-validation-error",
+    "status": "draft",
+    "overflow": false,
+    "progress": "1 of 12 answered · 3 required still open",
+    "msg": null
+  },
+  {
+    "w": 1440,
+    "name": "4-branch-opens-campuses",
+    "status": "draft",
+    "overflow": false,
+    "progress": "2 of 13 answered · 3 required still open",
+    "msg": "Saved."
+  },
+  {
+    "w": 1440,
+    "name": "5-progress",
+    "status": "draft",
+    "overflow": false,
+    "progress": "4 of 13 answered · 1 required still open",
+    "msg": null
+  },
+  {
+    "w": 1440,
+    "name": "6-ready",
+    "status": "draft",
+    "overflow": false,
+    "progress": "7 of 14 answered",
+    "msg": null
+  },
+  {
+    "w": 1440,
+    "name": "8-approved",
+    "status": "approved",
+    "overflow": false,
+    "progress": "7 of 14 answered",
+    "msg": "Approved. Nothing has been published or switched on."
+  },
+  {
+    "w": 1440,
+    "name": "9-edit-withdraws-approval",
+    "status": "draft",
+    "overflow": false,
+    "progress": "8 of 14 answered",
+    "msg": "Saved."
+  },
+  {
+    "w": 1440,
+    "name": "10-withdrawn-note",
+    "status": "draft",
+    "overflow": false,
+    "progress": "7 of 14 answered",
+    "msg": null
+  },
+  {
+    "w": 1440,
+    "name": "11-out-of-scope",
+    "status": "draft",
+    "overflow": false,
+    "progress": "1 of 1 answered",
+    "msg": null
+  },
+  {
+    "w": 1440,
+    "errs": ["Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"]
+  },
+  {
+    "w": 390,
+    "name": "1-fresh",
+    "status": "draft",
+    "overflow": false,
+    "progress": "0 of 1 answered · 1 required still open",
+    "msg": null
+  },
+  {
+    "w": 390,
+    "name": "2-after-type",
+    "status": "draft",
+    "overflow": false,
+    "progress": "1 of 12 answered · 3 required still open",
+    "msg": "Saved."
+  },
+  {
+    "w": 390,
+    "name": "3-validation-error",
+    "status": "draft",
+    "overflow": false,
+    "progress": "1 of 12 answered · 3 required still open",
+    "msg": null
+  },
+  {
+    "w": 390,
+    "name": "4-branch-opens-campuses",
+    "status": "draft",
+    "overflow": false,
+    "progress": "2 of 13 answered · 3 required still open",
+    "msg": "Saved."
+  },
+  {
+    "w": 390,
+    "name": "5-progress",
+    "status": "draft",
+    "overflow": false,
+    "progress": "4 of 13 answered · 1 required still open",
+    "msg": null
+  },
+  {
+    "w": 390,
+    "name": "6-ready",
+    "status": "draft",
+    "overflow": false,
+    "progress": "7 of 14 answered",
+    "msg": null
+  },
+  {
+    "w": 390,
+    "name": "8-approved",
+    "status": "approved",
+    "overflow": false,
+    "progress": "7 of 14 answered",
+    "msg": "Approved. Nothing has been published or switched on."
+  },
+  {
+    "w": 390,
+    "name": "9-edit-withdraws-approval",
+    "status": "draft",
+    "overflow": false,
+    "progress": "8 of 14 answered",
+    "msg": "Saved."
+  },
+  {
+    "w": 390,
+    "name": "10-withdrawn-note",
+    "status": "draft",
+    "overflow": false,
+    "progress": "7 of 14 answered",
+    "msg": null
+  },
+  {
+    "w": 390,
+    "name": "11-out-of-scope",
+    "status": "draft",
+    "overflow": false,
+    "progress": "1 of 1 answered",
+    "msg": null
+  },
+  {
+    "w": 390,
+    "errs": ["Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"]
+  }
+]
