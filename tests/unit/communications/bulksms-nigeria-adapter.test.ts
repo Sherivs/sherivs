@@ -252,6 +252,29 @@ describe("callback token", () => {
     expect([...url.searchParams.keys()].sort()).toEqual(["ref", "sig"]);
     expect(url.toString()).not.toContain(SECRET);
   });
+
+  it("preserves a query string already on the configured webhook URL and never lets it forge ref/sig", () => {
+    const url = new URL(
+      bulkSmsCallbackUrl(
+        {
+          baseUrl:
+            "https://app.example.test/api/public/webhooks/bulksms?env=prod&ref=forged&sig=forged",
+          secret: SECRET,
+        },
+        MSG,
+      ),
+    );
+    expect(url.searchParams.get("env")).toBe("prod");
+    expect(url.searchParams.getAll("ref")).toEqual([MSG]);
+    expect(url.searchParams.getAll("sig")).toHaveLength(1);
+    expect(
+      verifyBulkSmsCallback({
+        secret: SECRET,
+        messageId: MSG,
+        signature: url.searchParams.get("sig"),
+      }),
+    ).toBe(true);
+  });
 });
 
 describe("delivery status mapping", () => {

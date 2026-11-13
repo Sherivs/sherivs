@@ -21,7 +21,7 @@
  * - Delivery reports are verified by a per-message HMAC token (the provider does not sign
  *   webhooks), resolve the organization from OUR row, and ignore unknown ids.
  */
-import { randomUUID } from "node:crypto";
+import { randomUUID, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import { SystemClock, TimeAuthority } from "../kernel/time-authority";
 import { tenantTierEntitlement } from "../payments/tier-entitlements";
@@ -35,6 +35,7 @@ import {
   type ServerEnv,
 } from "./bulksms-nigeria.server";
 import type { SmsGatewaySelection } from "./sms-gateway-contract";
+import { selectSmsGateway } from "./sms-gateway.server";
 
 /** J-023: time enters only via the kernel time-authority. */
 const timeAuthority = new TimeAuthority(new SystemClock());
@@ -49,6 +50,8 @@ interface DbQuery extends PromiseLike<DbResult> {
   eq(column: string, value: unknown): DbQuery;
   in(column: string, values: unknown[]): DbQuery;
   is(column: string, value: null): DbQuery;
+  like(column: string, pattern: string): DbQuery;
+  lt(column: string, value: string): DbQuery;
   limit(count: number): DbQuery;
   maybeSingle(): PromiseLike<DbResult>;
   update(values: Record<string, unknown>): DbQuery;
@@ -408,5 +411,125 @@ export function createBulkSmsWebhookHandler(deps: BulkSmsWebhookDependencies) {
       return Response.json({ ok: true, applied: false });
     }
     return Response.json({ ok: true, applied: true });
+  };
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * Scheduled dispatch (Bearer CRON_SECRET) — nothing else drains the queue
+ * ────────────────────────────────────────────────────────────*/
+
+/** Most messages one scheduled run will hand to the provider (bounds run time and spend). */
+export const SMS_DISPATCH_MAX_MESSAGES_PER_RUN = 20;
+/** Most organizations one scheduled run will visit. */
+export const SMS_DISPATCH_MAX_ORGS_PER_RUN = 10;
+/** A claim older than this with no provider id is reported as stuck (never auto-resent). */
+export const SMS_STALE_CLAIM_AGE_MS = 15 * 60_000;
+const SMS_STALE_CLAIM_REPORT_LIMIT = 20;
+
+export interface SmsDispatchCronDependencies {
+  env: ServerEnv;
+  db: SmsFabricDatabase;
+  fetchImpl?: typeof fetch;
+  now?: () => string;
+}
+
+function cronAuthorized(header: string | null, secret: string): boolean {
+  const want = Buffer.from(`Bearer ${secret}`);
+  const got = Buffer.from(header ?? "");
+  return got.length === want.length && timingSafeEqual(got, want);
+}
+
+/**
+ * Scheduled SMS dispatcher. Same contract as the other `/api/public/cron/*` jobs: it answers
+ * 503 until `CRON_SECRET` is set, 401 without the bearer secret, and does nothing unless a
+ * provider is selected AND configured AND the organization's `sms_live` flag is on (checked per
+ * organization inside {@link dispatchQueuedSms}). It reports counts only — never message text,
+ * numbers or credentials. A provider-level halt (bad credentials, rate limit) stops the whole
+ * run. Rows that hold a claim but never got a provider id are REPORTED, never re-sent: after
+ * a crash we cannot tell whether the provider accepted the message, and the provider offers no
+ * lookup by our reference.
+ */
+export function createSmsDispatchCronHandler(deps: SmsDispatchCronDependencies) {
+  return async (request: Request): Promise<Response> => {
+    if (request.method !== "GET" && request.method !== "POST") {
+      return new Response("Method not allowed", { status: 405 });
+    }
+    const cron = deps.env.CRON_SECRET;
+    if (!cron || cron.trim() === "")
+      return new Response("SMS dispatch not configured", { status: 503 });
+    if (!cronAuthorized(request.headers.get("authorization"), cron)) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    const now = (deps.now ?? isoNow)();
+    const selection = selectSmsGateway(deps.env, deps.fetchImpl);
+    const staleCutoff = new Date(Date.parse(now) - SMS_STALE_CLAIM_AGE_MS).toISOString();
+    const stale = await deps.db
+      .from("outbound_messages")
+      .select("id")
+      .eq("channel", "sms")
+      .eq("status", "queued")
+      .like("provider_ref", `${CLAIM_PREFIX}%`)
+      .lt("updated_at", staleCutoff)
+      .limit(SMS_STALE_CLAIM_REPORT_LIMIT);
+    const staleClaims =
+      !stale.error && Array.isArray(stale.data)
+        ? stale.data.map((r) => (r as { id?: unknown }).id).filter((id) => typeof id === "string")
+        : [];
+
+    if (!selection.ok) {
+      return Response.json({ ok: true, status: "skipped", reason: selection.code, staleClaims });
+    }
+
+    const pending = await deps.db
+      .from("outbound_messages")
+      .select("org_id")
+      .eq("channel", "sms")
+      .eq("status", "queued")
+      .is("provider_ref", null)
+      .limit(500);
+    if (pending.error || !Array.isArray(pending.data)) {
+      return Response.json({ ok: false, error: "queued sms lookup failed" }, { status: 500 });
+    }
+    const orgIds = [
+      ...new Set(
+        pending.data
+          .map((r) => (r as { org_id?: unknown }).org_id)
+          .filter((id): id is string => z.string().uuid().safeParse(id).success),
+      ),
+    ].slice(0, SMS_DISPATCH_MAX_ORGS_PER_RUN);
+
+    const totals = { sent: 0, failed: 0, rejected: 0, skipped: 0 };
+    let remaining = SMS_DISPATCH_MAX_MESSAGES_PER_RUN;
+    let haltedReason: string | null = null;
+    let orgsVisited = 0;
+    let orgErrors = 0;
+    for (const orgId of orgIds) {
+      if (remaining <= 0 || haltedReason) break;
+      orgsVisited += 1;
+      try {
+        const run = await dispatchQueuedSms(
+          { db: deps.db, selection, now: deps.now },
+          orgId,
+          remaining,
+        );
+        if (run.status === "skipped") continue;
+        for (const outcome of run.outcomes) totals[outcome.outcome] += 1;
+        remaining -= run.outcomes.length;
+        haltedReason = run.haltedReason;
+      } catch {
+        // State-write failure for this organization: never echo internals; keep serving others.
+        orgErrors += 1;
+      }
+    }
+    return Response.json({
+      ok: true,
+      status: "ran",
+      orgsVisited,
+      orgErrors,
+      ...totals,
+      haltedReason,
+      staleClaims,
+    });
   };
 }

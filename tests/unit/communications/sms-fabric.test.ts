@@ -26,7 +26,9 @@ import {
 import { SMS_PROVIDER_ENV } from "../../../frontend/src/lib/communications/sms-gateway-contract";
 import { selectSmsGateway } from "../../../frontend/src/lib/communications/sms-gateway.server";
 import {
+  SMS_DISPATCH_MAX_MESSAGES_PER_RUN,
   createBulkSmsWebhookHandler,
+  createSmsDispatchCronHandler,
   dispatchQueuedSms,
   type SmsFabricDatabase,
 } from "../../../frontend/src/lib/communications/sms-fabric.server";
@@ -78,6 +80,17 @@ function makeDb(tables: Record<string, Row[]>, flagOn = true): SmsFabricDatabase
         eq: (k: string, v: unknown) => (filters.push((r) => r[k] === v), q),
         in: (k: string, vs: unknown[]) => (filters.push((r) => vs.includes(r[k])), q),
         is: (k: string, v: null) => (filters.push((r) => (r[k] ?? null) === v), q),
+        like: (k: string, pattern: string) => (
+          filters.push(
+            (r) =>
+              typeof r[k] === "string" && (r[k] as string).startsWith(pattern.replace(/%$/, "")),
+          ),
+          q
+        ),
+        lt: (k: string, v: string) => (
+          filters.push((r) => typeof r[k] === "string" && (r[k] as string) < v),
+          q
+        ),
         limit: (n: number) => ((cap = n), q),
         update: (v: Row) => ((patch = v), q),
         maybeSingle: () => ((single = true), Promise.resolve(run())),
@@ -487,6 +500,143 @@ describe("bulksms delivery-report webhook", () => {
     const t = sentWorld();
     expect((await hook(t)(post(url(), "{not json"))).status).toBe(400);
     expect((await hook(t)(post(url(), { delivery_status: "delivrd" }))).status).toBe(400);
+  });
+});
+
+describe("scheduled dispatcher (cron)", () => {
+  const CRON = "unit-cron-secret-sentinel";
+  const NOW = "2026-11-13T12:00:00.000Z";
+  const call = (
+    tables: ReturnType<typeof world>,
+    opts: {
+      env?: Record<string, string | undefined>;
+      auth?: string | null;
+      method?: string;
+      flag?: boolean;
+    } = {},
+  ) => {
+    const f = vi.fn(async () => sentResponse());
+    const handler = createSmsDispatchCronHandler({
+      env: opts.env ?? { ...ENV, CRON_SECRET: CRON },
+      db: makeDb(tables, opts.flag ?? true),
+      fetchImpl: f as unknown as typeof fetch,
+      now: () => NOW,
+    });
+    const headers: Record<string, string> = {};
+    if (opts.auth !== null) headers.authorization = opts.auth ?? `Bearer ${CRON}`;
+    return {
+      f,
+      res: handler(
+        new Request("https://app.example.test/api/public/cron/sms-dispatch", {
+          method: opts.method ?? "POST",
+          headers,
+        }),
+      ),
+    };
+  };
+
+  it("fails closed: 503 without CRON_SECRET, 401 without or with a wrong bearer, 405 for other verbs", async () => {
+    const t = world();
+    expect((await call(t, { env: { ...ENV } }).res).status).toBe(503);
+    expect((await call(t, { auth: null }).res).status).toBe(401);
+    expect((await call(t, { auth: "Bearer nope" }).res).status).toBe(401);
+    expect((await call(t, { method: "DELETE" }).res).status).toBe(405);
+    const probe = call(t, { auth: "Bearer nope" });
+    await probe.res;
+    expect(probe.f).not.toHaveBeenCalled();
+    expect(t.outbound_messages.every((r) => r.status === "queued" && r.provider_ref === null)).toBe(
+      true,
+    );
+  });
+
+  it("drains every organization's queue through the gateway and reports counts only", async () => {
+    const t = world();
+    const { f, res } = call(t);
+    const response = await res;
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body).toMatchObject({ ok: true, status: "ran", orgsVisited: 2, sent: 2, failed: 0 });
+    expect(f).toHaveBeenCalledTimes(2);
+    expect(t.outbound_messages.map((r) => r.status)).toEqual(["sent", "sent"]);
+    const text = JSON.stringify(body);
+    for (const secret of [TOKEN, SECRET, CRON, "+234803", "Hello from the school"]) {
+      expect(text).not.toContain(secret);
+    }
+  });
+
+  it("sends nothing while sms_live is off or the provider is not selected", async () => {
+    const off = world();
+    const a = call(off, { flag: false });
+    expect(await (await a.res).json()).toMatchObject({ ok: true, status: "ran", sent: 0 });
+    expect(a.f).not.toHaveBeenCalled();
+
+    const unselected = world();
+    const b = call(unselected, {
+      env: { ...ENV, [SMS_PROVIDER_ENV]: undefined, CRON_SECRET: CRON },
+    });
+    expect(await (await b.res).json()).toMatchObject({
+      ok: true,
+      status: "skipped",
+      reason: "provider_not_selected",
+    });
+    expect(b.f).not.toHaveBeenCalled();
+    expect(unselected.outbound_messages.every((r) => r.status === "queued")).toBe(true);
+  });
+
+  it("halts the whole run on a provider-level failure and keeps rows queued", async () => {
+    const t = world();
+    const f = vi.fn(async () => new Response("{}", { status: 401 }));
+    const handler = createSmsDispatchCronHandler({
+      env: { ...ENV, CRON_SECRET: CRON },
+      db: makeDb(t),
+      fetchImpl: f as unknown as typeof fetch,
+      now: () => NOW,
+    });
+    const response = await handler(
+      new Request("https://app.example.test/x", {
+        method: "GET",
+        headers: { authorization: `Bearer ${CRON}` },
+      }),
+    );
+    expect(await response.json()).toMatchObject({
+      ok: true,
+      haltedReason: "provider_auth_failed",
+      orgsVisited: 1,
+    });
+    expect(f).toHaveBeenCalledTimes(1);
+    expect(t.outbound_messages.every((r) => r.status === "queued" && r.provider_ref === null)).toBe(
+      true,
+    );
+  });
+
+  it("caps one run at the per-run message limit", async () => {
+    const t = world();
+    for (let i = 0; i < SMS_DISPATCH_MAX_MESSAGES_PER_RUN + 5; i += 1) {
+      t.outbound_messages.push({
+        ...t.outbound_messages[0],
+        id: `00000000-0000-4000-8000-${String(1000 + i).padStart(12, "0")}`,
+      });
+    }
+    const { f, res } = call(t);
+    const body = await (await res).json();
+    expect(body.sent).toBeLessThanOrEqual(SMS_DISPATCH_MAX_MESSAGES_PER_RUN);
+    expect(f.mock.calls.length).toBeLessThanOrEqual(SMS_DISPATCH_MAX_MESSAGES_PER_RUN);
+  });
+
+  it("reports stale claims without re-sending or releasing them", async () => {
+    const t = world();
+    t.outbound_messages[0].provider_ref = "claim:crashed-worker";
+    t.outbound_messages[0].updated_at = "2026-11-13T11:00:00.000Z";
+    t.outbound_messages[1].provider_ref = "claim:in-flight";
+    t.outbound_messages[1].updated_at = "2026-11-13T11:59:00.000Z";
+    const { f, res } = call(t);
+    const body = await (await res).json();
+    expect(body.staleClaims).toEqual([MSG_A]);
+    expect(f).not.toHaveBeenCalled();
+    expect(t.outbound_messages[0]).toMatchObject({
+      status: "queued",
+      provider_ref: "claim:crashed-worker",
+    });
   });
 });
 
