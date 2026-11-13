@@ -5,7 +5,7 @@
 | Status | PROPOSED (operator review required before production rollout) |
 | Date | 2026-11-13 |
 | Author | Claude (M009 Stage B-4 build) |
-| Creator | Claude Code agent, mission B-4 (issue #283) |
+| Creator | Claude Code agent, mission B-004 (issue #283) |
 | Mission | M009 Stage B-4 — Student, Parent and Family workspace |
 | Cites | ADR-025; ADR-017 (guardian relationships and consent); `frontend/src/lib/workspaces/student-family.ts`; `tests/unit/m009-b4-student-family.test.ts` |
 | Minimal ownership artifact | This ADR and the student/family specs |
