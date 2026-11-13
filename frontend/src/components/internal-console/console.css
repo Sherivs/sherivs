@@ -538,18 +538,72 @@
   cursor: pointer;
 }
 
-.sherivs-console-fixture-switch {
+.sherivs-console-envbar {
+  margin: 0 0 0.85rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 14px;
+  border: 1px solid rgba(180, 83, 9, 0.22);
+  background: rgba(180, 83, 9, 0.07);
+  color: var(--console-amber);
+  font-size: 0.82rem;
+}
+
+.sherivs-console-envbar-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.55rem;
-  margin: 0.35rem 0 0.85rem;
-  font-size: 0.82rem;
+  justify-content: space-between;
+  gap: 0.4rem 0.9rem;
+}
+
+.sherivs-console-envbar-summary {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.15rem 0.5rem;
+  min-width: 0;
+}
+
+.sherivs-console-envbar-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: currentColor;
+  flex: none;
+}
+
+.sherivs-console-envbar-sub {
+  color: var(--console-muted);
+}
+
+.sherivs-console-envbar-details summary {
+  cursor: pointer;
+  min-height: 1.75rem;
+  display: inline-flex;
+  align-items: center;
+  color: var(--console-muted);
+  font-size: 0.76rem;
+}
+
+.sherivs-console-envbar-details ul {
+  margin: 0.25rem 0 0.15rem;
+  padding-left: 1.1rem;
+  color: var(--console-ink);
+  line-height: 1.45;
+}
+
+.sherivs-console-fixture-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 0.8rem;
   color: var(--console-muted);
 }
 
 .sherivs-console-fixture-switch select {
-  min-height: 2.4rem;
+  min-height: 2.75rem;
   padding: 0.35rem 0.7rem;
   border-radius: 12px;
   border: 1px solid rgba(16, 24, 43, 0.12);
@@ -1016,5 +1070,38 @@
 
   .sherivs-console-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .sherivs-console-switchers {
+    flex-wrap: nowrap;
+    gap: 0.35rem;
+  }
+
+  .sherivs-console-switchers .sherivs-console-chip {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.76rem;
+  }
+
+  .sherivs-console-switchers .sherivs-console-chip strong {
+    max-width: 7.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sherivs-console-env {
+    flex: none;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.66rem;
+  }
+
+  .sherivs-console-fixture-switch {
+    width: 100%;
+  }
+
+  .sherivs-console-fixture-switch select {
+    flex: 1;
   }
 }

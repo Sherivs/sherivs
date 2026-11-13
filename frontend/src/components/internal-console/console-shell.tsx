@@ -61,7 +61,7 @@ import {
   readSelectedFixturePersona,
   selectConsoleVisualFixturePersona,
 } from "@/lib/internal-console/visual-fixture";
-import { ConsoleLoadingState, ConsoleNotice } from "./console-primitives";
+import { ConsoleLoadingState } from "./console-primitives";
 import { ConsoleNotAuthorised, ConsoleElsewhere } from "./not-authorised";
 import "./console.css";
 
@@ -669,39 +669,71 @@ function ConsoleChrome({ children }: { children: ReactNode }) {
 
         <main id="console-main" className="sherivs-console-main" tabIndex={-1}>
           <div className="sherivs-console-sheet">
-            {consoleVisualFixtureActive() ? (
-              <>
-                <ConsoleNotice tone="warning">
-                  Local V1 role simulation for {overview?.viewer.presentationLabel ?? "staff"}. This
-                  is not a production identity. Persistent workspace storage is not connected.
-                </ConsoleNotice>
-                <label className="sherivs-console-fixture-switch">
-                  Simulate role
-                  <select
-                    data-testid="console-fixture-role-switcher"
-                    value={readSelectedFixturePersona().key}
-                    onChange={(event) => {
-                      selectConsoleVisualFixturePersona(event.target.value);
-                      void app.refresh().then(() => {
-                        void console.reload();
-                        void navigate({ to: CONSOLE_PATHS.home as never });
-                      });
-                    }}
-                  >
-                    {CONSOLE_FIXTURE_PERSONAS.map((persona) => (
-                      <option key={persona.key} value={persona.key}>
-                        {persona.jobTitle}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </>
-            ) : null}
-            {overview?.workspaceStore === "derived-fallback" ? (
-              <ConsoleNotice tone="warning">
-                Persistent workspace storage is not configured in this environment. Compatibility
-                workspaces are shown from role membership and cannot hold custom members.
-              </ConsoleNotice>
+            {consoleVisualFixtureActive() || overview?.workspaceStore === "derived-fallback" ? (
+              <section
+                className="sherivs-console-envbar"
+                data-testid="console-environment-bar"
+                aria-label="Environment status"
+              >
+                <div className="sherivs-console-envbar-row">
+                  {consoleVisualFixtureActive() ? (
+                    <>
+                      <p className="sherivs-console-envbar-summary">
+                        <span className="sherivs-console-envbar-dot" aria-hidden="true" />
+                        <strong>Local role simulation</strong>
+                        <span className="sherivs-console-envbar-sub">
+                          {overview?.viewer.presentationLabel ?? "staff"} · not a production
+                          identity
+                        </span>
+                      </p>
+                      <label className="sherivs-console-fixture-switch">
+                        <span className="sherivs-console-fixture-label">Simulate role</span>
+                        <select
+                          data-testid="console-fixture-role-switcher"
+                          value={readSelectedFixturePersona().key}
+                          onChange={(event) => {
+                            selectConsoleVisualFixturePersona(event.target.value);
+                            void app.refresh().then(() => {
+                              void console.reload();
+                              void navigate({ to: CONSOLE_PATHS.home as never });
+                            });
+                          }}
+                        >
+                          {CONSOLE_FIXTURE_PERSONAS.map((persona) => (
+                            <option key={persona.key} value={persona.key}>
+                              {persona.jobTitle}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </>
+                  ) : (
+                    <p className="sherivs-console-envbar-summary">
+                      <span className="sherivs-console-envbar-dot" aria-hidden="true" />
+                      <strong>Compatibility workspaces</strong>
+                    </p>
+                  )}
+                </div>
+                <details className="sherivs-console-envbar-details">
+                  <summary>Environment notes</summary>
+                  <ul>
+                    {consoleVisualFixtureActive() ? (
+                      <li>
+                        Local V1 role simulation for{" "}
+                        {overview?.viewer.presentationLabel ?? "staff"}. This is not a production
+                        identity. Persistent workspace storage is not connected.
+                      </li>
+                    ) : null}
+                    {overview?.workspaceStore === "derived-fallback" ? (
+                      <li>
+                        Persistent workspace storage is not configured in this environment.
+                        Compatibility workspaces are shown from role membership and cannot hold
+                        custom members.
+                      </li>
+                    ) : null}
+                  </ul>
+                </details>
+              </section>
             ) : null}
             {children}
           </div>

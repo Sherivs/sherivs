@@ -257,14 +257,14 @@ function AuthPage() {
 
   if (busy && busyKind === "password") {
     return (
-      <div className="auth-shell app-entry app-entry-login">
+      <main id="main-content" className="auth-shell app-entry app-entry-login">
         <div className="app-entry-login-orbs" aria-hidden="true">
           <span className="app-entry-orb app-entry-orb-cyan" />
           <span className="app-entry-orb app-entry-orb-blue" />
           <span className="app-entry-orb app-entry-orb-violet" />
         </div>
         <SignInLoading />
-      </div>
+      </main>
     );
   }
 
@@ -273,7 +273,7 @@ function AuthPage() {
   }
 
   return (
-    <div className="auth-shell app-entry app-entry-login">
+    <main id="main-content" className="auth-shell app-entry app-entry-login">
       <div className="app-entry-login-orbs" aria-hidden="true">
         <span className="app-entry-orb app-entry-orb-cyan" />
         <span className="app-entry-orb app-entry-orb-blue" />
@@ -490,13 +490,16 @@ function AuthPage() {
             <p className="app-entry-login-invite">{ACCOUNT_INVITATION_COPY}</p>
           )}
           {hostKind !== "internal" ? (
-            <Link to="/" className="block text-xs text-muted-foreground hover:text-foreground">
+            <Link
+              to="/"
+              className="block min-h-11 py-3 text-xs text-muted-foreground hover:text-foreground"
+            >
               Back to site
             </Link>
           ) : null}
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 

@@ -697,13 +697,20 @@
   cursor: pointer;
 }
 
+.app-entry-login-remember {
+  min-height: 2.75rem;
+}
+
 .app-entry-login-remember input {
-  width: 0.95rem;
-  height: 0.95rem;
+  width: 1.1rem;
+  height: 1.1rem;
   accent-color: #1848fd;
 }
 
 .app-entry-login-forgot {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
   font-size: 0.88rem;
   font-weight: 600;
   color: #1848fd;
@@ -756,7 +763,7 @@
 .app-entry-login-forgot-row {
   display: flex;
   justify-content: flex-start;
-  margin-top: -0.15rem;
+  margin-top: -0.6rem;
 }
 
 .app-entry-login-form > .app-entry-login-remember {
