@@ -46,9 +46,31 @@ Environment contract (names in `.env.example`; never commit real values):
 
 ## Build (EAS)
 
+The Expo project is owned by the **sherivs** Expo account (signed up
+through GitHub as Sharfaddeen100). Do not use the old `vibeoraai-bit`
+Expo account. After this account move, `extra.eas.projectId` is
+intentionally absent until the owner creates the new project. Do not
+invent or paste a project ID by hand.
+
+One-time steps (owner, on a machine signed in to the sherivs Expo account):
+
+```bash
+cd mobile
+npx eas-cli login    # sign in as sherivs
+npx eas init         # creates the project under sherivs and writes the new projectId into app.json
+```
+
+Then rebuild with the profiles below. If any push-notification credentials
+existed on the old Expo project, re-set them on the new one (this repo has
+no `expo-notifications` dependency, no `google-services.json`, and no
+`GoogleService-Info.plist`). GitHub Actions does not currently run EAS; if
+a future workflow does (`eas build` / `eas update` / `eas submit`), add an
+`EXPO_TOKEN` issued from the **sherivs** Expo account as a repository
+Actions secret.
+
 ```bash
 npm install -g eas-cli   # once
-eas login
+eas login                # as sherivs
 eas build:configure      # uses the checked-in eas.json
 eas build --profile development --platform all   # dev client / simulator
 eas build --profile preview --platform android   # internal APK
@@ -166,7 +188,7 @@ Signed-in users now land in `app/(school)/`, a tab bar built from the **workspac
 Verified locally: `npm run typecheck` passes, `npx expo start` serves Metro, and `npx expo export --platform android` bundles the app.
 
 ### Needed to ship (not available in this environment)
-- **Expo account + `EXPO_TOKEN`** (for `eas build` / `eas update`; set as a CI secret).
+- **Expo account `sherivs` + `EXPO_TOKEN`** issued from that account (for `eas build` / `eas update`; set as a CI secret if a workflow starts using EAS).
 - **Apple Developer Program** membership ($99/yr) + App Store Connect app record. EAS can manage the certificates and profiles.
 - **Google Play Console** account ($25 one-time) + an upload keystore (EAS can generate it) + a service-account JSON for `eas submit`.
 - Production `EXPO_PUBLIC_*` values (Supabase URL + publishable key, web base URL) in EAS environment variables.
