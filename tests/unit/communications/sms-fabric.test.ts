@@ -12,6 +12,10 @@
  * 6. The delivery-report webhook rejects every bad token, resolves the organization from OUR
  *    row, and ignores unknown/replayed/mismatched reports.
  * 7. The database trigger that audits every outbound_messages change is still present.
+ * 8. Money (ADR-069/ADR-072): a message the provider provably never accepted is closed AND refunded; an ambiguous
+ *    outcome is HELD (claim kept, no refund, never resent, run halted); a delivery failure never refunds; a message of an
+ *    organization that lost its plan or its live flag is never claimed, so the provider is never called.
+ * 9. The dispatcher has no direct write path: it never issues an UPDATE on outbound_messages.
  */
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -27,6 +31,7 @@ import { SMS_PROVIDER_ENV } from "../../../frontend/src/lib/communications/sms-g
 import { selectSmsGateway } from "../../../frontend/src/lib/communications/sms-gateway.server";
 import {
   SMS_DISPATCH_MAX_MESSAGES_PER_RUN,
+  classifyGatewayFailure,
   createBulkSmsWebhookHandler,
   createSmsDispatchCronHandler,
   dispatchQueuedSms,
@@ -52,31 +57,113 @@ const ENV = {
 
 type Row = Record<string, unknown>;
 
+const ENTITLED_TIERS = ["growth", "professional", "enterprise"];
+const REFUND_REASONS = ["rejected_before_submission", "provider_rejected"];
+
+/**
+ * In-memory model of the service_role-only SQL functions of migration 20261104052000. The SQL semantics themselves are
+ * proven against PostgreSQL by tests/integration/comms-03-sms-dispatch-financials.local.sql; this model lets the
+ * dispatcher's decisions (claim, settle, hold, refund, delivery report) be proven without a database. `outbound_messages`
+ * has NO update path in the double, exactly as service_role has none in production: every write is an rpc.
+ */
+function makeRpc(tables: Record<string, Row[]>, flagOn: boolean): SmsFabricDatabase["rpc"] {
+  const messages = () => tables.outbound_messages ?? [];
+  const refunds = (tables.refunds ??= []);
+  const holds = (tables.holds ??= []);
+  const find = (id: unknown, org: unknown) =>
+    messages().find((r) => r.id === id && r.org_id === org && r.channel === "sms");
+  const refundOnce = (row: Row, reason: string) => {
+    if (!refunds.some((r) => r.message_id === row.id)) refunds.push({ message_id: row.id, reason });
+  };
+  const fail = (message: string) => ({ data: null, error: { message } });
+  return async (name, a) => {
+    if (name === "flag_on") return { data: flagOn, error: null };
+    if (name === "comms_sms_claim") {
+      if (typeof a.p_claim !== "string" || !/^claim:[0-9a-f-]{36}$/.test(a.p_claim))
+        return fail("invalid claim");
+      const school = (tables.schools ?? []).find((r) => r.id === a.p_org);
+      const entitled = ENTITLED_TIERS.includes(String(school?.subscription_tier ?? ""));
+      const row = find(a.p_message, a.p_org);
+      if (
+        !flagOn ||
+        !entitled ||
+        !row ||
+        row.status !== "queued" ||
+        (row.provider_ref ?? null) !== null
+      ) {
+        return { data: false, error: null };
+      }
+      Object.assign(row, { provider: a.p_provider, provider_ref: a.p_claim });
+      return { data: true, error: null };
+    }
+    if (name === "comms_sms_settle") {
+      if (!["queued", "sent", "failed"].includes(String(a.p_status))) return fail("invalid status");
+      if (
+        a.p_status === "sent" &&
+        (!a.p_provider_ref || String(a.p_provider_ref).startsWith("claim:"))
+      )
+        return fail("a sent message needs the provider message id");
+      if (a.p_status !== "sent" && a.p_provider_ref)
+        return fail("only a sent message carries a provider id");
+      if (
+        a.p_refund_reason &&
+        (a.p_status !== "failed" || !REFUND_REASONS.includes(String(a.p_refund_reason)))
+      )
+        return fail("invalid refund request");
+      const row = find(a.p_message, a.p_org);
+      if (
+        !row ||
+        row.status !== "queued" ||
+        (row.provider_ref ?? null) !== (a.p_expected_ref ?? null)
+      ) {
+        return { data: false, error: null };
+      }
+      Object.assign(row, {
+        status: a.p_status,
+        provider: a.p_provider ?? row.provider,
+        provider_ref: a.p_provider_ref ?? null,
+        error: a.p_error ?? null,
+      });
+      if (a.p_refund_reason) refundOnce(row, String(a.p_refund_reason));
+      return { data: true, error: null };
+    }
+    if (name === "comms_sms_hold") {
+      const row = find(a.p_message, a.p_org);
+      if (!row || row.status !== "queued" || row.provider_ref !== a.p_expected_ref)
+        return { data: false, error: null };
+      row.error = `held:${a.p_code}: ${a.p_detail ?? ""}`;
+      holds.push({ message_id: row.id, code: a.p_code });
+      return { data: true, error: null };
+    }
+    if (name === "comms_sms_report_delivery") {
+      const row = find(a.p_message, a.p_org);
+      if (!row || row.status !== "sent") return { data: false, error: null };
+      Object.assign(row, { status: a.p_status, error: a.p_code ?? null });
+      return { data: true, error: null };
+    }
+    return fail(`unexpected rpc ${name}`);
+  };
+}
+
 function makeDb(tables: Record<string, Row[]>, flagOn = true): SmsFabricDatabase {
   return {
-    rpc: async () => ({ data: flagOn, error: null }),
+    rpc: makeRpc(tables, flagOn),
     from(table: string) {
       const filters: Array<(r: Row) => boolean> = [];
-      let patch: Row | null = null;
       let single = false;
-      let returning = false;
       let cap = Infinity;
       const run = () => {
         const rows = (tables[table] ?? []).filter((r) => filters.every((f) => f(r)));
-        if (patch) rows.forEach((r) => Object.assign(r, patch));
-        const data =
-          patch && !returning
-            ? null
-            : single
-              ? rows[0]
-                ? { ...rows[0] }
-                : null
-              : rows.slice(0, cap).map((r) => ({ ...r }));
+        const data = single
+          ? rows[0]
+            ? { ...rows[0] }
+            : null
+          : rows.slice(0, cap).map((r) => ({ ...r }));
         return { data, error: null };
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const q: any = {
-        select: () => ((returning = true), q),
+        select: () => q,
         eq: (k: string, v: unknown) => (filters.push((r) => r[k] === v), q),
         in: (k: string, vs: unknown[]) => (filters.push((r) => vs.includes(r[k])), q),
         is: (k: string, v: null) => (filters.push((r) => (r[k] ?? null) === v), q),
@@ -92,7 +179,6 @@ function makeDb(tables: Record<string, Row[]>, flagOn = true): SmsFabricDatabase
           q
         ),
         limit: (n: number) => ((cap = n), q),
-        update: (v: Row) => ((patch = v), q),
         maybeSingle: () => ((single = true), Promise.resolve(run())),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         then: (res: any, rej: any) => Promise.resolve(run()).then(res, rej),
@@ -680,5 +766,249 @@ describe("audit posture", () => {
     );
     expect(migration).toContain("AFTER INSERT OR UPDATE ON public.%1$I");
     expect(migration).toContain("EXECUTE FUNCTION public.comms_audit_event()");
+  });
+});
+
+describe("financial integrity of the dispatcher (COMMS-03)", () => {
+  const twoRows = () => {
+    const t = world();
+    t.outbound_messages.push({ ...t.outbound_messages[0]!, id: MSG_A2 });
+    return t;
+  };
+  const refundsOf = (t: ReturnType<typeof world>) =>
+    ((t as unknown as Record<string, Row[]>).refunds ?? []).map(
+      (r) => `${r.message_id}:${r.reason}`,
+    );
+  const holdsOf = (t: ReturnType<typeof world>) =>
+    ((t as unknown as Record<string, Row[]>).holds ?? []).map((r) => `${r.message_id}:${r.code}`);
+
+  it("closes AND refunds a message rejected before submission (no provider call)", async () => {
+    const tables = world();
+    tables.outbound_messages[0]!.to_address = "+2348099999999";
+    const t = setup(tables);
+    await dispatchQueuedSms(t.deps, ORG_A);
+    expect(t.f).not.toHaveBeenCalled();
+    expect(tables.outbound_messages[0]!.status).toBe("failed");
+    expect(refundsOf(tables)).toEqual([`${MSG_A}:rejected_before_submission`]);
+  });
+
+  it("refunds a message the provider definitively rejected, and continues with the next one", async () => {
+    const tables = twoRows();
+    const t = setup(tables);
+    t.f.mockImplementationOnce(async () => new Response("{}", { status: 422 }));
+    const run = await dispatchQueuedSms(t.deps, ORG_A);
+    expect(run).toMatchObject({ haltedReason: null });
+    expect(refundsOf(tables)).toEqual([`${MSG_A}:provider_rejected`]);
+    expect(tables.outbound_messages[0]).toMatchObject({ status: "failed", provider_ref: null });
+    expect(tables.outbound_messages[2]).toMatchObject({ status: "sent" });
+  });
+
+  it("refunds an invalid payload that never left Sherivs", async () => {
+    const tables = world();
+    tables.outbound_messages[0]!.body = "";
+    const t = setup(tables);
+    const run = await dispatchQueuedSms(t.deps, ORG_A);
+    expect(t.f).not.toHaveBeenCalled();
+    expect(run).toMatchObject({ outcomes: [{ outcome: "failed", code: "invalid_payload" }] });
+    expect(refundsOf(tables)).toEqual([`${MSG_A}:rejected_before_submission`]);
+  });
+
+  const ambiguous: Array<[string, (f: ReturnType<typeof setup>["f"]) => void, string]> = [
+    [
+      "a 5xx answer after the request was sent",
+      (f) => f.mockImplementation(async () => new Response("{}", { status: 500 })),
+      "provider_error",
+    ],
+    [
+      "a timeout after the request was sent",
+      (f) =>
+        f.mockImplementation(async () => {
+          throw new Error("The operation timed out");
+        }),
+      "provider_unreachable",
+    ],
+    [
+      "a 200 without a usable message id",
+      (f) =>
+        f.mockImplementation(
+          async () => new Response(JSON.stringify({ status: "success" }), { status: 200 }),
+        ),
+      "provider_response_invalid",
+    ],
+    [
+      "a duplicate report",
+      (f) => f.mockImplementation(async () => new Response("{}", { status: 409 })),
+      "provider_duplicate",
+    ],
+  ];
+  for (const [label, arrange, code] of ambiguous) {
+    it(`HOLDS ${label}: claim kept, no refund, never resent, run halted`, async () => {
+      const tables = twoRows();
+      const t = setup(tables);
+      arrange(t.f);
+      const run = await dispatchQueuedSms(t.deps, ORG_A);
+      expect(run).toMatchObject({ haltedReason: code, outcomes: [{ outcome: "held", code }] });
+      expect(t.f).toHaveBeenCalledTimes(1);
+      expect(tables.outbound_messages[0]).toMatchObject({ status: "queued" });
+      expect(String(tables.outbound_messages[0]!.provider_ref)).toMatch(/^claim:/);
+      expect(String(tables.outbound_messages[0]!.error)).toMatch(new RegExp(`^held:${code}`));
+      expect(tables.outbound_messages[2]).toMatchObject({ status: "queued", provider_ref: null });
+      expect(refundsOf(tables)).toEqual([]);
+      expect(holdsOf(tables)).toEqual([`${MSG_A}:${code}`]);
+      // a second run never touches the held message and never calls the provider for it
+      const again = setup(tables);
+      again.f.mockImplementation(async () => sentResponse("bsng-2"));
+      await dispatchQueuedSms(again.deps, ORG_A);
+      expect(String(tables.outbound_messages[0]!.provider_ref)).toMatch(/^claim:/);
+      expect(tables.outbound_messages[2]).toMatchObject({ status: "sent" });
+      expect(refundsOf(tables)).toEqual([]);
+    });
+  }
+
+  it("releases (no refund, no hold) when the provider was provably not asked or did not process it", async () => {
+    for (const arrange of [
+      (f: ReturnType<typeof setup>["f"]) =>
+        f.mockImplementation(async () => new Response("{}", { status: 429 })),
+      (f: ReturnType<typeof setup>["f"]) =>
+        f.mockImplementation(async () => new Response("{}", { status: 503 })),
+      (f: ReturnType<typeof setup>["f"]) =>
+        f.mockImplementation(async () => new Response("{}", { status: 401 })),
+      (f: ReturnType<typeof setup>["f"]) =>
+        f.mockImplementation(async () => {
+          throw Object.assign(new Error("fetch failed"), { cause: { code: "ENOTFOUND" } });
+        }),
+    ]) {
+      const tables = twoRows();
+      const t = setup(tables);
+      arrange(t.f);
+      await dispatchQueuedSms(t.deps, ORG_A);
+      expect(tables.outbound_messages[0]).toMatchObject({ status: "queued", provider_ref: null });
+      expect(refundsOf(tables)).toEqual([]);
+      expect(holdsOf(tables)).toEqual([]);
+    }
+  });
+
+  it("classifies every gateway failure code; unknown codes fail safe to HOLD", () => {
+    const failed = (code: string, retryable = false) =>
+      ({ outcome: "failed", code, reason: "r", retryable }) as never;
+    expect(
+      classifyGatewayFailure({
+        outcome: "undeliverable",
+        code: "provider_not_configured",
+        reason: "r",
+      }),
+    ).toEqual({ kind: "release" });
+    expect(classifyGatewayFailure(failed("provider_auth_failed"))).toEqual({ kind: "release" });
+    expect(classifyGatewayFailure(failed("provider_unreachable", true))).toEqual({
+      kind: "release",
+    });
+    expect(classifyGatewayFailure(failed("provider_rejected", true))).toEqual({ kind: "release" });
+    expect(classifyGatewayFailure(failed("invalid_payload"))).toEqual({
+      kind: "reject",
+      refundReason: "rejected_before_submission",
+    });
+    expect(classifyGatewayFailure(failed("provider_rejected"))).toEqual({
+      kind: "reject",
+      refundReason: "provider_rejected",
+    });
+    for (const code of [
+      "provider_unreachable",
+      "provider_duplicate",
+      "provider_error",
+      "provider_response_invalid",
+      "something_new",
+    ]) {
+      expect(classifyGatewayFailure(failed(code))).toEqual({ kind: "hold" });
+    }
+  });
+
+  it("never claims, calls the provider or charges for an organization that lost its SMS plan", async () => {
+    const tables = world();
+    // the TypeScript pre-check says growth; the DATABASE (authoritative) says the plan is gone
+    const t = setup(tables);
+    tables.schools[0]!.subscription_tier = "growth";
+    const db = makeDb(tables);
+    const realRpc = db.rpc.bind(db);
+    // simulate the platform downgrading the plan between the read and the claim
+    const racing: SmsFabricDatabase = {
+      from: db.from.bind(db),
+      rpc: async (name, args) => {
+        if (name === "comms_sms_claim") tables.schools[0]!.subscription_tier = "trial";
+        return realRpc(name, args);
+      },
+    };
+    const run = await dispatchQueuedSms({ db: racing, selection: t.deps.selection }, ORG_A);
+    expect(run).toMatchObject({ outcomes: [{ id: MSG_A, outcome: "skipped" }] });
+    expect(t.f).not.toHaveBeenCalled();
+    expect(tables.outbound_messages[0]).toMatchObject({ status: "queued", provider_ref: null });
+    expect(refundsOf(tables)).toEqual([]);
+  });
+
+  it("a delivery FAILURE report never refunds, and a replay changes nothing", async () => {
+    const tables = world();
+    Object.assign(tables.outbound_messages[0]!, { status: "sent", provider_ref: "bsng-A" });
+    const handler = createBulkSmsWebhookHandler({ env: ENV, db: makeDb(tables) });
+    const target = `https://app.example.test/api/public/webhooks/bulksms?ref=${MSG_A}&sig=${signBulkSmsCallback(SECRET, MSG_A)}`;
+    const report = (status: string) =>
+      handler(
+        new Request(target, {
+          method: "POST",
+          body: JSON.stringify({
+            message_id: "bsng-A",
+            recipient: "2348031234567",
+            delivery_status: status,
+          }),
+        }),
+      );
+    expect(await (await report("undeliv")).json()).toEqual({ ok: true, applied: true });
+    expect(await (await report("undeliv")).json()).toEqual({ ok: true, applied: false });
+    expect(await (await report("delivrd")).json()).toEqual({ ok: true, applied: false });
+    expect(tables.outbound_messages[0]).toMatchObject({ status: "failed", error: "dlr_undeliv" });
+    expect(refundsOf(tables)).toEqual([]);
+  });
+
+  it("reports held messages on every scheduled run, separately from stale claims", async () => {
+    const tables = world();
+    Object.assign(tables.outbound_messages[0]!, {
+      provider_ref: "claim:00000000-0000-4000-8000-000000000001",
+      error: "held:provider_error: http 502",
+      updated_at: "2026-11-13T11:59:00.000Z",
+    });
+    const f = vi.fn(async () => sentResponse());
+    const handler = createSmsDispatchCronHandler({
+      env: { ...ENV, CRON_SECRET: "c" },
+      db: makeDb(tables),
+      fetchImpl: f as unknown as typeof fetch,
+      now: () => "2026-11-13T12:00:00.000Z",
+    });
+    const res = await handler(
+      new Request("https://app.example.test/x", {
+        method: "POST",
+        headers: { authorization: "Bearer c" },
+      }),
+    );
+    const body = await res.json();
+    expect(body.heldMessages).toEqual([MSG_A]);
+    expect(body.staleClaims).toEqual([]);
+    expect(refundsOf(tables)).toEqual([]);
+  });
+
+  it("has no direct write path: the dispatcher never UPDATEs outbound_messages", () => {
+    const source = readFileSync(
+      path.resolve(
+        import.meta.dirname,
+        "../../../frontend/src/lib/communications/sms-fabric.server.ts",
+      ),
+      "utf8",
+    );
+    expect(source).not.toMatch(/\.update\(/);
+    for (const fn of [
+      "comms_sms_claim",
+      "comms_sms_settle",
+      "comms_sms_hold",
+      "comms_sms_report_delivery",
+    ]) {
+      expect(source).toContain(fn);
+    }
   });
 });

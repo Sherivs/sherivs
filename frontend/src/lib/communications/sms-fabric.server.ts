@@ -12,12 +12,20 @@
  *   membership and the member's stored phone. A mismatch fails the row closed.
  * - Consent is re-checked at send time (an opt-out can land after the row was queued) and
  *   the organization's plan must still include SMS (Growth, Professional, Enterprise).
- * - At-most-once: a row is CLAIMED atomically (`provider_ref IS NULL` → claim token) before
- *   the provider is contacted, so two workers can never both send it.
+ * - At-most-once: a row is CLAIMED atomically (`comms_sms_claim`) before the provider is
+ *   contacted, so two workers can never both send it. The database refuses the claim when the
+ *   organization lost its SMS plan or its `sms_live` flag, so no provider call can follow.
+ * - Writes: `outbound_messages` is read-only for `service_role` (migration 20261024000270), so every state
+ *   change goes through the service_role-only compare-and-set functions of migration
+ *   20261104052000 (`comms_sms_claim`, `comms_sms_settle`, `comms_sms_hold`,
+ *   `comms_sms_report_delivery`). This module never issues a direct UPDATE.
+ * - Money (ADR-069/ADR-072): only a message the provider PROVABLY never accepted is refunded,
+ *   atomically with its close. An ambiguous outcome is HELD (still claimed, never resent, never
+ *   refunded) for operator reconciliation. A delivery failure never refunds.
  * - Audit: `outbound_messages` carries `trg_outbound_messages_comms_audit` (migration
  *   20261101001000), which appends every insert and status change to `audit_chain` in the
- *   same transaction. The proposal and approval rows are covered by the same trigger family,
- *   so no second audit writer is added here.
+ *   same transaction; refunds add `usage_event_reversals` rows (audited) and holds/reconciles
+ *   add `audit_logs` rows inside the database functions. No second audit writer is added here.
  * - Delivery reports are verified by a per-message HMAC token (the provider does not sign
  *   webhooks), resolve the organization from OUR row, and ignore unknown ids.
  */
@@ -34,7 +42,7 @@ import {
   verifyBulkSmsCallback,
   type ServerEnv,
 } from "./bulksms-nigeria.server";
-import type { SmsGatewaySelection } from "./sms-gateway-contract";
+import type { SmsGatewaySelection, SmsSendResult } from "./sms-gateway-contract";
 import { selectSmsGateway } from "./sms-gateway.server";
 
 /** J-023: time enters only via the kernel time-authority. */
@@ -54,7 +62,6 @@ interface DbQuery extends PromiseLike<DbResult> {
   lt(column: string, value: string): DbQuery;
   limit(count: number): DbQuery;
   maybeSingle(): PromiseLike<DbResult>;
-  update(values: Record<string, unknown>): DbQuery;
 }
 export interface SmsFabricDatabase {
   from(table: string): DbQuery;
@@ -83,6 +90,7 @@ export type SmsDispatchOutcome =
   | { id: string; outcome: "sent"; providerMessageId: string }
   | { id: string; outcome: "failed"; code: string; reason: string; retryable: boolean }
   | { id: string; outcome: "rejected"; reason: string }
+  | { id: string; outcome: "held"; code: string; reason: string }
   | { id: string; outcome: "skipped"; reason: string };
 
 export type SmsDispatchRun =
@@ -185,29 +193,101 @@ async function resolveRecipient(db: SmsFabricDatabase, row: QueuedRow): Promise<
   return { ok: true, recipient };
 }
 
+type RefundReason = "rejected_before_submission" | "provider_rejected";
+
 /**
- * Compare-and-set close of one row. With a claim, only the worker holding that claim can close
- * it. Without one (a pre-claim rejection) the row must still be UNCLAIMED, so a rejection can
- * never overwrite a row another worker has already claimed for sending. Returns whether this
- * call changed the row.
+ * What a provider failure means for the message and the money. Fail-safe by construction: only the
+ * outcomes the gateway contract guarantees ("nothing was sent" or "the provider definitively
+ * refused it") release or refund; every other outcome — including any code this module does not
+ * know — is HELD, because the provider may have accepted the message and may bill it.
+ *
+ * - release:  the provider was provably not asked, or provably did not process it (not configured,
+ *             unreachable before connect, 429/503 not-processed, unusable credentials). The row goes back to
+ *             `queued` for a later run; nothing is charged twice because the charge was taken once, at queue time.
+ * - reject:   the message is closed `failed` and its charge is refunded in the same database call.
+ * - hold:     ambiguous (timeout after the request was written, 5xx, 200 without an id, duplicate report).
  */
-async function closeRow(
+export type FailureDisposition =
+  { kind: "release" } | { kind: "reject"; refundReason: RefundReason } | { kind: "hold" };
+
+export function classifyGatewayFailure(
+  result: Exclude<SmsSendResult, { outcome: "sent" }>,
+): FailureDisposition {
+  if (result.outcome === "undeliverable") return { kind: "release" };
+  if (result.code === "provider_auth_failed") return { kind: "release" };
+  if (result.retryable) return { kind: "release" };
+  if (result.code === "invalid_payload") {
+    return { kind: "reject", refundReason: "rejected_before_submission" };
+  }
+  if (result.code === "provider_rejected") {
+    return { kind: "reject", refundReason: "provider_rejected" };
+  }
+  return { kind: "hold" };
+}
+
+async function rpcBoolean(
+  deps: DispatchSmsDependencies,
+  name: string,
+  args: Record<string, unknown>,
+): Promise<boolean> {
+  const result = await deps.db.rpc(name, args);
+  if (result.error) throw new Error("sms delivery state write failed");
+  return result.data === true;
+}
+
+/** Atomic claim. False when another worker holds it, or the database no longer allows SMS for the organization. */
+const claimRow = (deps: DispatchSmsDependencies, row: QueuedRow, claim: string, provider: string) =>
+  rpcBoolean(deps, "comms_sms_claim", {
+    p_message: row.id,
+    p_org: row.org_id,
+    p_claim: claim,
+    p_provider: provider,
+  });
+
+/**
+ * Compare-and-set close of one row through `comms_sms_settle`. With a claim, only the worker holding it can close the
+ * row; without one (a pre-claim rejection) the row must still be UNCLAIMED, so a rejection can never overwrite a row
+ * another worker has claimed. `refundReason` refunds the charge in the same transaction. Returns whether this call
+ * changed the row.
+ */
+const settleRow = (
   deps: DispatchSmsDependencies,
   row: QueuedRow,
-  values: Record<string, unknown>,
   claim: string | null,
-): Promise<boolean> {
-  let query = deps.db
-    .from("outbound_messages")
-    .update({ ...values, updated_at: (deps.now ?? isoNow)() })
-    .eq("id", row.id)
-    .eq("org_id", row.org_id)
-    .eq("status", "queued");
-  query = claim === null ? query.is("provider_ref", null) : query.eq("provider_ref", claim);
-  const result = await query.select("id");
-  if (result.error) throw new Error("sms delivery state write failed");
-  return Array.isArray(result.data) && result.data.length > 0;
-}
+  settle: {
+    status: "queued" | "sent" | "failed";
+    provider?: string;
+    providerRef?: string;
+    error: string | null;
+    refundReason?: RefundReason;
+  },
+) =>
+  rpcBoolean(deps, "comms_sms_settle", {
+    p_message: row.id,
+    p_org: row.org_id,
+    p_expected_ref: claim,
+    p_status: settle.status,
+    p_provider: settle.provider ?? null,
+    p_provider_ref: settle.providerRef ?? null,
+    p_error: settle.error,
+    p_refund_reason: settle.refundReason ?? null,
+  });
+
+/** Park an ambiguous outcome: keeps the claim (so it is never resent), refunds nothing, audits the hold. */
+const holdRow = (
+  deps: DispatchSmsDependencies,
+  row: QueuedRow,
+  claim: string,
+  code: string,
+  detail: string,
+) =>
+  rpcBoolean(deps, "comms_sms_hold", {
+    p_message: row.id,
+    p_org: row.org_id,
+    p_expected_ref: claim,
+    p_code: code,
+    p_detail: detail.slice(0, 120),
+  });
 
 /**
  * Dispatch queued SMS rows of ONE organization. `orgId` is required and every query is
@@ -249,12 +329,12 @@ export async function dispatchQueuedSms(
 
     const recipient = await resolveRecipient(deps.db, row);
     if (!recipient.ok) {
-      const closed = await closeRow(
-        deps,
-        row,
-        { status: "failed", error: recipient.reason.slice(0, 200) },
-        null,
-      );
+      // Never sent, so the charge taken at queue time goes back with the close (one transaction).
+      const closed = await settleRow(deps, row, null, {
+        status: "failed",
+        error: recipient.reason.slice(0, 200),
+        refundReason: "rejected_before_submission",
+      });
       outcomes.push(
         closed
           ? { id: row.id, outcome: "rejected", reason: recipient.reason }
@@ -265,21 +345,14 @@ export async function dispatchQueuedSms(
 
     // Atomic claim: only one worker can move provider_ref from NULL, so only one can send.
     const claim = `${CLAIM_PREFIX}${randomUUID()}`;
-    const claimed = await deps.db
-      .from("outbound_messages")
-      .update({
-        provider: gateway.providerId,
-        provider_ref: claim,
-        updated_at: (deps.now ?? isoNow)(),
-      })
-      .eq("id", row.id)
-      .eq("org_id", row.org_id)
-      .eq("status", "queued")
-      .is("provider_ref", null)
-      .select("id");
-    if (claimed.error) throw new Error("sms claim failed");
-    if (!Array.isArray(claimed.data) || claimed.data.length === 0) {
-      outcomes.push({ id: row.id, outcome: "skipped", reason: "claimed by another worker" });
+    const claimed = await claimRow(deps, row, claim, gateway.providerId);
+    if (!claimed) {
+      outcomes.push({
+        id: row.id,
+        outcome: "skipped",
+        reason:
+          "not claimable: claimed by another worker or SMS is no longer enabled for the organization",
+      });
       continue;
     }
 
@@ -290,29 +363,21 @@ export async function dispatchQueuedSms(
     });
 
     if (result.outcome === "sent") {
-      await closeRow(
-        deps,
-        row,
-        {
-          status: "sent",
-          provider: gateway.providerId,
-          provider_ref: result.providerMessageId,
-          error: null,
-        },
-        claim,
-      );
+      await settleRow(deps, row, claim, {
+        status: "sent",
+        provider: gateway.providerId,
+        providerRef: result.providerMessageId,
+        error: null,
+      });
       outcomes.push({ id: row.id, outcome: "sent", providerMessageId: result.providerMessageId });
       continue;
     }
 
     const code = result.code;
-    const retryable =
-      result.outcome === "undeliverable" ||
-      result.retryable ||
-      result.code === "provider_auth_failed";
-    if (retryable) {
+    const disposition = classifyGatewayFailure(result);
+    if (disposition.kind === "release") {
       // Provably not processed (or credentials unusable): release the claim, keep it queued, stop.
-      await closeRow(deps, row, { provider_ref: null, error: code }, claim);
+      await settleRow(deps, row, claim, { status: "queued", error: code });
       outcomes.push({
         id: row.id,
         outcome: "failed",
@@ -323,8 +388,27 @@ export async function dispatchQueuedSms(
       haltedReason = code;
       break;
     }
-    await closeRow(deps, row, { status: "failed", provider_ref: null, error: code }, claim);
-    outcomes.push({ id: row.id, outcome: "failed", code, reason: result.reason, retryable: false });
+    if (disposition.kind === "reject") {
+      await settleRow(deps, row, claim, {
+        status: "failed",
+        error: code,
+        refundReason: disposition.refundReason,
+      });
+      outcomes.push({
+        id: row.id,
+        outcome: "failed",
+        code,
+        reason: result.reason,
+        retryable: false,
+      });
+      continue;
+    }
+    // Ambiguous: the provider may have accepted (and may bill) it. Keep the claim, refund nothing, never resend,
+    // and stop the run so an outage does not turn every queued row into a held one.
+    await holdRow(deps, row, claim, code, result.reason);
+    outcomes.push({ id: row.id, outcome: "held", code, reason: result.reason });
+    haltedReason = code;
+    break;
   }
   return { status: "ran", outcomes, haltedReason };
 }
@@ -411,21 +495,16 @@ export function createBulkSmsWebhookHandler(deps: BulkSmsWebhookDependencies) {
     }
     if (row.data.status !== "sent") return Response.json({ ok: true, applied: false });
 
-    const update = await deps.db
-      .from("outbound_messages")
-      .update({
-        status: mapped.outcome,
-        error: mapped.code,
-        updated_at: (deps.now ?? isoNow)(),
-      })
-      .eq("id", row.data.id)
-      .eq("org_id", row.data.org_id)
-      .eq("status", "sent")
-      .select("id");
+    // Compare-and-set from 'sent' inside the database: a replayed or contradicting report changes nothing, and a
+    // delivery failure never refunds (whether a failed delivery is charged is a provider billing fact not yet verified).
+    const update = await deps.db.rpc("comms_sms_report_delivery", {
+      p_message: row.data.id,
+      p_org: row.data.org_id,
+      p_status: mapped.outcome,
+      p_code: mapped.code,
+    });
     if (update.error) return new Response("Unavailable", { status: 503 });
-    if (!Array.isArray(update.data) || update.data.length === 0) {
-      return Response.json({ ok: true, applied: false });
-    }
+    if (update.data !== true) return Response.json({ ok: true, applied: false });
     return Response.json({ ok: true, applied: true });
   };
 }
@@ -493,8 +572,29 @@ export function createSmsDispatchCronHandler(deps: SmsDispatchCronDependencies) 
         ? stale.data.map((r) => (r as { id?: unknown }).id).filter((id) => typeof id === "string")
         : [];
 
+    // Messages parked by `comms_sms_hold` (ambiguous provider outcome) wait for operator reconciliation
+    // (`comms_sms_reconcile`); they are reported on every run, never retried and never refunded automatically.
+    const held = await deps.db
+      .from("outbound_messages")
+      .select("id")
+      .eq("channel", "sms")
+      .eq("status", "queued")
+      .like("provider_ref", `${CLAIM_PREFIX}%`)
+      .like("error", "held:%")
+      .limit(SMS_STALE_CLAIM_REPORT_LIMIT);
+    const heldMessages =
+      !held.error && Array.isArray(held.data)
+        ? held.data.map((r) => (r as { id?: unknown }).id).filter((id) => typeof id === "string")
+        : [];
+
     if (!selection.ok) {
-      return Response.json({ ok: true, status: "skipped", reason: selection.code, staleClaims });
+      return Response.json({
+        ok: true,
+        status: "skipped",
+        reason: selection.code,
+        staleClaims,
+        heldMessages,
+      });
     }
 
     const pending = await deps.db
@@ -515,7 +615,7 @@ export function createSmsDispatchCronHandler(deps: SmsDispatchCronDependencies) 
       ),
     ].slice(0, SMS_DISPATCH_MAX_ORGS_PER_RUN);
 
-    const totals = { sent: 0, failed: 0, rejected: 0, skipped: 0 };
+    const totals = { sent: 0, failed: 0, rejected: 0, held: 0, skipped: 0 };
     let remaining = SMS_DISPATCH_MAX_MESSAGES_PER_RUN;
     let haltedReason: string | null = null;
     let orgsVisited = 0;
@@ -546,6 +646,7 @@ export function createSmsDispatchCronHandler(deps: SmsDispatchCronDependencies) 
       ...totals,
       haltedReason,
       staleClaims,
+      heldMessages,
     });
   };
 }
