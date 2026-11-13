@@ -1,0 +1,135 @@
+-- ROLLBACK for 20261104052000_sherivs_comms03_sms_dispatch_financials.sql. NOT run automatically.
+-- Order: revert the application change FIRST (the dispatcher and the delivery webhook must stop calling comms_sms_*),
+-- then run this file. After it, the dispatcher's direct writes are denied again (the F1 defect returns), so keep
+-- SMS inactive (no SMS_PROVIDER, scheduler off) until the migration is re-applied.
+-- Data written while the migration was live is NOT deleted:
+--   * wallet_ledger refund rows and usage_event_reversals rows (and their audit rows) stay: append-only evidence of money
+--     already returned. The reversals table is kept for that reason.
+--   * outbound_messages rows with status 'blocked_plan' are converted to 'failed' / error 'blocked_plan' so the previous
+--     status CHECK can be restored without losing the evidence.
+--   * messages that were held (status queued, claim kept) stay as they are; reconcile them before rolling back.
+-- Idempotent.
+
+-- restore the previous comms_send (live definition before COMMS-03)
+CREATE OR REPLACE FUNCTION public.comms_send(p_school uuid, p_channel text, p_to text, p_template text, p_vars jsonb DEFAULT '{}'::jsonb, p_student uuid DEFAULT NULL::uuid, p_priority text DEFAULT 'normal'::text, p_reference text DEFAULT NULL::text, p_language text DEFAULT 'en'::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+DECLARE
+  tpl public.comms_templates; v_body text; v_ref text := coalesce(p_reference, gen_random_uuid()::text);
+  v_status text; v_seg int := 1; v_item text; v_cost numeric := 0; v_opt text;
+  v_id uuid; v_err text; m jsonb; v_live boolean; v_recipients uuid[];
+  v_org_name text; v_vars jsonb; v_template_parameters text[];
+BEGIN
+  IF NOT (coalesce(auth.role(), '') = 'service_role'
+    OR public.scholar_can(p_school, 'comms.send_class')
+    OR public.scholar_can(p_school, 'comms.broadcast')) THEN
+    RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501';
+  END IF;
+  SELECT * INTO tpl FROM public.comms_templates t
+  WHERE t.code = p_template AND t.channel = p_channel AND t.status = 'approved'
+    AND (t.org_id = p_school OR t.org_id IS NULL)
+  ORDER BY (t.language = p_language) DESC, (t.org_id IS NOT NULL) DESC, (t.language = 'en') DESC
+  LIMIT 1;
+  IF tpl.id IS NULL THEN RAISE EXCEPTION 'no approved % template %', p_channel, p_template; END IF;
+  IF p_channel = 'whatsapp' AND (tpl.wa_template_name IS NULL OR tpl.body NOT LIKE '%{{school}}%') THEN
+    RAISE EXCEPTION 'WhatsApp template must be approved and include the organization name';
+  END IF;
+  IF tpl.category = 'marketing' AND NOT public.scholar_can(p_school, 'comms.broadcast') THEN
+    RAISE EXCEPTION 'not allowed: marketing needs comms.broadcast' USING ERRCODE = '42501';
+  END IF;
+  IF p_priority = 'safety' AND tpl.category NOT IN ('safety', 'authentication') THEN p_priority := 'normal'; END IF;
+  IF p_student IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM public.students WHERE id = p_student AND school_id = p_school
+  ) THEN RAISE EXCEPTION 'student not in this school'; END IF;
+  IF EXISTS (SELECT 1 FROM public.outbound_messages WHERE org_id = p_school AND reference = v_ref) THEN
+    SELECT jsonb_build_object('id', id, 'status', status, 'replay', true)
+      INTO m FROM public.outbound_messages WHERE org_id = p_school AND reference = v_ref;
+    RETURN m;
+  END IF;
+
+  SELECT array_agg(DISTINCT u.id) INTO v_recipients
+  FROM public.users u
+  JOIN public.organization_memberships om ON om.user_id = u.id AND om.school_id = p_school AND om.is_active
+  JOIN auth.users au ON au.id = u.id
+  WHERE coalesce(u.is_active, true)
+    AND ((p_channel = 'in_app' AND u.id::text = p_to)
+      OR (p_channel = 'email' AND lower(coalesce(u.email,'')) = lower(p_to)
+          AND lower(coalesce(au.email,'')) = lower(coalesce(u.email,'')) AND au.email_confirmed_at IS NOT NULL)
+      OR (p_channel IN ('sms','whatsapp','voice')
+          AND regexp_replace(coalesce(u.phone,''), '\D', '', 'g') = regexp_replace(p_to, '\D', '', 'g')
+          AND regexp_replace(coalesce(au.phone,''), '\D', '', 'g') = regexp_replace(coalesce(u.phone,''), '\D', '', 'g')
+          AND au.phone_confirmed_at IS NOT NULL));
+  IF coalesce(cardinality(v_recipients), 0) <> 1 THEN
+    RAISE EXCEPTION 'recipient must resolve to exactly one verified contact in this organization' USING ERRCODE = '23514';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.comms_send_proposals p
+    WHERE p.org_id = p_school AND p.status = 'released' AND p.channel = p_channel
+      AND p.template_code = p_template
+      AND p.id::text || ':' || v_recipients[1]::text = v_ref
+      AND v_recipients[1] = ANY(p.recipient_user_ids)) THEN
+    RAISE EXCEPTION 'every outbound message must originate from an approved organization proposal'
+      USING ERRCODE = '42501';
+  END IF;
+  IF p_channel IN ('sms','whatsapp','email','voice') THEN
+    SELECT status INTO v_opt FROM public.comms_optins
+    WHERE org_id = p_school AND regexp_replace(phone, '\D', '', 'g') = regexp_replace(p_to, '\D', '', 'g')
+      AND channel = p_channel;
+  END IF;
+  v_org_name := (SELECT name FROM public.schools WHERE id = p_school);
+  v_vars := coalesce(p_vars, '{}'::jsonb) || jsonb_build_object('school', v_org_name);
+  v_body := public.comms_render(tpl.body, v_vars);
+  SELECT coalesce(array_agg(left(coalesce(v_vars->>x.matches[1], ''), 200) ORDER BY x.ordinality), ARRAY[]::text[])
+    INTO v_template_parameters
+  FROM regexp_matches(tpl.body, '\{\{([a-z_]+)\}\}', 'g') WITH ORDINALITY AS x(matches, ordinality);
+  IF p_channel = 'sms' THEN
+    v_seg := greatest(1, ceil(length(v_body) / 160.0)::int); v_item := 'sms';
+  ELSIF p_channel = 'whatsapp' THEN
+    v_item := CASE WHEN tpl.category = 'marketing' THEN 'whatsapp_marketing' ELSE 'whatsapp_utility' END;
+  END IF;
+  IF p_priority <> 'safety' AND (v_opt = 'opted_out'
+      OR (p_channel = 'whatsapp' OR tpl.category = 'marketing')
+        AND v_opt IS DISTINCT FROM 'opted_in') THEN
+    v_status := 'blocked_optout';
+  ELSE
+    BEGIN
+      IF v_item IS NOT NULL THEN
+        m := public.meter_usage(p_school, v_item, v_seg, 'msg:' || v_ref, p_student, p_priority);
+        v_cost := coalesce((m->>'charged')::numeric, 0);
+      END IF;
+      v_live := p_channel = 'in_app' OR public.flag_on(p_channel || '_live', p_school);
+      v_status := CASE WHEN p_channel = 'in_app' THEN 'sent'
+        WHEN v_live THEN 'queued' ELSE 'sent_stub' END;
+    EXCEPTION WHEN others THEN
+      v_err := SQLERRM;
+      v_status := CASE WHEN v_err LIKE 'insufficient_wallet%' THEN 'blocked_wallet'
+        WHEN v_err LIKE 'daily_cap%' THEN 'blocked_cap' ELSE NULL END;
+      IF v_status IS NULL THEN RAISE; END IF;
+    END;
+  END IF;
+  INSERT INTO public.outbound_messages
+    (school_id, org_id, recipient_user_id, channel, to_address, template_code, template_parameters, language, category,
+     body, priority, status, provider, segments, cost, student_id, reference, error, created_by)
+  VALUES (p_school, p_school, v_recipients[1], p_channel, p_to, p_template, v_template_parameters, tpl.language, tpl.category,
+    v_body, p_priority, v_status,
+    CASE WHEN v_status = 'queued' THEN CASE p_channel WHEN 'whatsapp' THEN 'meta_cloud'
+      WHEN 'sms' THEN 'bulksmsnigeria' ELSE p_channel END ELSE 'stub' END,
+    v_seg, v_cost, p_student, v_ref, v_err, auth.uid()) RETURNING id INTO v_id;
+  RETURN jsonb_build_object('id', v_id, 'status', v_status, 'segments', v_seg,
+    'cost', v_cost, 'language', tpl.language);
+END $function$;
+
+UPDATE public.outbound_messages SET status = 'failed', error = 'blocked_plan', updated_at = now() WHERE status = 'blocked_plan';
+ALTER TABLE public.outbound_messages DROP CONSTRAINT IF EXISTS outbound_messages_status_check;
+ALTER TABLE public.outbound_messages ADD CONSTRAINT outbound_messages_status_check CHECK (status IN
+  ('queued','sent_stub','sent','delivered','failed','blocked_optout','blocked_wallet','blocked_cap'));
+
+DROP FUNCTION IF EXISTS public.comms_sms_claim(uuid, uuid, text, text);
+DROP FUNCTION IF EXISTS public.comms_sms_settle(uuid, uuid, text, text, text, text, text, text);
+DROP FUNCTION IF EXISTS public.comms_sms_hold(uuid, uuid, text, text, text);
+DROP FUNCTION IF EXISTS public.comms_sms_reconcile(uuid, uuid, text, text, text);
+DROP FUNCTION IF EXISTS public.comms_sms_report_delivery(uuid, uuid, text, text);
+DROP FUNCTION IF EXISTS public.comms_refund_unsubmitted(uuid, uuid, text);
+DROP FUNCTION IF EXISTS public._comms_refund_charge(uuid, text, text);
