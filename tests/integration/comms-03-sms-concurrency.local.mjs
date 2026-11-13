@@ -61,6 +61,13 @@ async function cleanup() {
       LOOP
         EXECUTE format('DELETE FROM public.%I WHERE %I = ANY ($1)', t.table_name, t.column_name) USING ids;
       END LOOP;
+      -- tables that key the organization by a text column (role assignments use tenant_ref)
+      FOR t IN SELECT c.table_name, c.column_name FROM information_schema.columns c
+                 JOIN information_schema.tables tb ON tb.table_schema = c.table_schema AND tb.table_name = c.table_name AND tb.table_type = 'BASE TABLE'
+                WHERE c.table_schema = 'public' AND c.column_name = 'tenant_ref' AND c.data_type = 'text'
+      LOOP
+        EXECUTE format('DELETE FROM public.%I WHERE %I = ANY ($1)', t.table_name, t.column_name) USING (SELECT array_agg(i::text) FROM unnest(ids) i);
+      END LOOP;
       DELETE FROM public.users WHERE school_id = ANY (ids);
       IF uids IS NOT NULL THEN DELETE FROM auth.users WHERE id = ANY (uids); END IF;
       DELETE FROM public.schools WHERE id = ANY (ids);
@@ -116,7 +123,14 @@ async function fixture(key, messages) {
     );
     await owner.query(
       "insert into public.users (id, school_id, full_name, role, email, phone, is_active) values ($1, $2, $3, $4, $5, $6, true)",
-      [ids[i], s, `C03C ${key} ${i}`, i < 2 ? "admin" : "parent", `c03c-${tag}-${i}@c03.test`, phones[i]],
+      [
+        ids[i],
+        s,
+        `C03C ${key} ${i}`,
+        i < 2 ? "admin" : "parent",
+        `c03c-${tag}-${i}@c03.test`,
+        phones[i],
+      ],
     );
   }
   await svc("select public.wallet_credit_topup($1, 1000, $2)", [s, `C03C-TOPUP-${key}`]);
@@ -140,14 +154,24 @@ async function fixture(key, messages) {
 }
 
 const balance = async (s) =>
-  Number((await owner.query("select balance from public.school_wallets where school_id=$1", [s])).rows[0].balance);
+  Number(
+    (await owner.query("select balance from public.school_wallets where school_id=$1", [s])).rows[0]
+      .balance,
+  );
 const msgRow = async (id) =>
-  (await owner.query("select status, provider_ref, error from public.outbound_messages where id=$1", [id])).rows[0];
+  (
+    await owner.query(
+      "select status, provider_ref, error from public.outbound_messages where id=$1",
+      [id],
+    )
+  ).rows[0];
 const count = async (sql, p) => Number((await owner.query(sql, p)).rows[0].n);
 const reversals = (s) =>
   count("select count(*)::int n from public.usage_event_reversals where school_id=$1", [s]);
 const refundLedger = (s) =>
-  count("select count(*)::int n from public.wallet_ledger where school_id=$1 and kind='refund'", [s]);
+  count("select count(*)::int n from public.wallet_ledger where school_id=$1 and kind='refund'", [
+    s,
+  ]);
 
 let failed = false;
 try {
@@ -158,7 +182,11 @@ try {
     const f = await fixture("k1", 1);
     const attempts = await Promise.all(
       Array.from({ length: 24 }, () =>
-        svcRows("select public.comms_sms_claim($1, $2, $3, 'bulksmsnigeria') ok", [f.msgs[0], f.s, claimToken()]),
+        svcRows("select public.comms_sms_claim($1, $2, $3, 'bulksmsnigeria') ok", [
+          f.msgs[0],
+          f.s,
+          claimToken(),
+        ]),
       ),
     );
     const winners = attempts.filter((a) => a?.ok === true).length;
@@ -176,13 +204,19 @@ try {
     const before = await balance(f.s);
     const attempts = await Promise.all(
       Array.from({ length: 12 }, () =>
-        svc("select public.comms_refund_unsubmitted($1, $2, 'cancelled_unsent') r", [f.msgs[0], f.s]),
+        svc("select public.comms_refund_unsubmitted($1, $2, 'cancelled_unsent') r", [
+          f.msgs[0],
+          f.s,
+        ]),
       ),
     );
     const refunded = attempts.filter((a) => a.ok && a.out.rows[0].r.refunded === true).length;
     expect(
       "K2 12 concurrent refund requests credit the wallet exactly once (NGN10), one reversal row, one ledger row",
-      refunded === 1 && (await balance(f.s)) === before + 10 && (await reversals(f.s)) === 1 && (await refundLedger(f.s)) === 1,
+      refunded === 1 &&
+        (await balance(f.s)) === before + 10 &&
+        (await reversals(f.s)) === 1 &&
+        (await refundLedger(f.s)) === 1,
       `refunded=${refunded} delta=${(await balance(f.s)) - before} reversals=${await reversals(f.s)} ledger=${await refundLedger(f.s)}`,
     );
   }
@@ -191,7 +225,11 @@ try {
   {
     const f = await fixture("k3", 1);
     const claim = claimToken();
-    await svc("select public.comms_sms_claim($1, $2, $3, 'bulksmsnigeria')", [f.msgs[0], f.s, claim]);
+    await svc("select public.comms_sms_claim($1, $2, $3, 'bulksmsnigeria')", [
+      f.msgs[0],
+      f.s,
+      claim,
+    ]);
     const before = await balance(f.s);
     const attempts = await Promise.all([
       ...Array.from({ length: 6 }, () =>
@@ -211,7 +249,11 @@ try {
     const row = await msgRow(f.msgs[0]);
     expect(
       "K3 racing settles (holder vs strangers): one wins, the message is failed, refunded once",
-      winners === 1 && row.status === "failed" && row.provider_ref === null && (await balance(f.s)) === before + 10 && (await reversals(f.s)) === 1,
+      winners === 1 &&
+        row.status === "failed" &&
+        row.provider_ref === null &&
+        (await balance(f.s)) === before + 10 &&
+        (await reversals(f.s)) === 1,
       `winners=${winners} status=${row.status} delta=${(await balance(f.s)) - before}`,
     );
   }
@@ -220,14 +262,29 @@ try {
   {
     const f = await fixture("k4", 1);
     const claim = claimToken();
-    await svc("select public.comms_sms_claim($1, $2, $3, 'bulksmsnigeria')", [f.msgs[0], f.s, claim]);
-    await svc("select public.comms_sms_hold($1, $2, $3, 'provider_error', 'http 502')", [f.msgs[0], f.s, claim]);
+    await svc("select public.comms_sms_claim($1, $2, $3, 'bulksmsnigeria')", [
+      f.msgs[0],
+      f.s,
+      claim,
+    ]);
+    await svc("select public.comms_sms_hold($1, $2, $3, 'provider_error', 'http 502')", [
+      f.msgs[0],
+      f.s,
+      claim,
+    ]);
     const before = await balance(f.s);
     const attempts = await Promise.all(
       Array.from({ length: 10 }, (_, i) =>
         i % 2 === 0
-          ? svc("select public.comms_sms_reconcile($1, $2, 'not_accepted', null, 'checked') r", [f.msgs[0], f.s])
-          : svc("select public.comms_sms_reconcile($1, $2, 'accepted', $3, 'checked') r", [f.msgs[0], f.s, `prov-${i}`]),
+          ? svc("select public.comms_sms_reconcile($1, $2, 'not_accepted', null, 'checked') r", [
+              f.msgs[0],
+              f.s,
+            ])
+          : svc("select public.comms_sms_reconcile($1, $2, 'accepted', $3, 'checked') r", [
+              f.msgs[0],
+              f.s,
+              `prov-${i}`,
+            ]),
       ),
     );
     const winners = attempts.filter((a) => a.ok).length;
@@ -247,19 +304,33 @@ try {
   {
     const f = await fixture("k5", 1);
     const claim = claimToken();
-    await svc("select public.comms_sms_claim($1, $2, $3, 'bulksmsnigeria')", [f.msgs[0], f.s, claim]);
-    await svc("select public.comms_sms_settle($1, $2, $3, 'sent', 'bulksmsnigeria', 'prov-5', null)", [f.msgs[0], f.s, claim]);
+    await svc("select public.comms_sms_claim($1, $2, $3, 'bulksmsnigeria')", [
+      f.msgs[0],
+      f.s,
+      claim,
+    ]);
+    await svc(
+      "select public.comms_sms_settle($1, $2, $3, 'sent', 'bulksmsnigeria', 'prov-5', null)",
+      [f.msgs[0], f.s, claim],
+    );
     const before = await balance(f.s);
     const attempts = await Promise.all(
       Array.from({ length: 16 }, (_, i) =>
-        svcRows("select public.comms_sms_report_delivery($1, $2, $3, 'DLR') ok", [f.msgs[0], f.s, i % 2 ? "delivered" : "failed"]),
+        svcRows("select public.comms_sms_report_delivery($1, $2, $3, 'DLR') ok", [
+          f.msgs[0],
+          f.s,
+          i % 2 ? "delivered" : "failed",
+        ]),
       ),
     );
     const winners = attempts.filter((a) => a?.ok === true).length;
     const row = await msgRow(f.msgs[0]);
     expect(
       "K5 16 racing delivery reports: exactly one applies, the final state is terminal, nothing is refunded",
-      winners === 1 && ["delivered", "failed"].includes(row.status) && (await balance(f.s)) === before && (await reversals(f.s)) === 0,
+      winners === 1 &&
+        ["delivered", "failed"].includes(row.status) &&
+        (await balance(f.s)) === before &&
+        (await reversals(f.s)) === 0,
       `winners=${winners} status=${row.status}`,
     );
   }
@@ -268,7 +339,11 @@ try {
   {
     const f = await fixture("k6", 1);
     const claim = claimToken();
-    await svc("select public.comms_sms_claim($1, $2, $3, 'bulksmsnigeria')", [f.msgs[0], f.s, claim]);
+    await svc("select public.comms_sms_claim($1, $2, $3, 'bulksmsnigeria')", [
+      f.msgs[0],
+      f.s,
+      claim,
+    ]);
     const before = await balance(f.s);
     const r = await asRole("service_role", null, async (c) => {
       await c.query(
@@ -280,7 +355,12 @@ try {
     const row = await msgRow(f.msgs[0]);
     expect(
       "K6 a failed transaction rolls back the close and the refund together",
-      !r.ok && row.provider_ref === claim && row.status === "queued" && (await balance(f.s)) === before && (await reversals(f.s)) === 0 && (await refundLedger(f.s)) === 0,
+      !r.ok &&
+        row.provider_ref === claim &&
+        row.status === "queued" &&
+        (await balance(f.s)) === before &&
+        (await reversals(f.s)) === 0 &&
+        (await refundLedger(f.s)) === 0,
       `ref=${row.provider_ref} delta=${(await balance(f.s)) - before}`,
     );
     const again = await svcRows(
@@ -298,12 +378,22 @@ try {
   {
     const f = await fixture("k7", 6);
     const claims = Array.from({ length: 6 }, (_, i) =>
-      svcRows("select public.comms_sms_claim($1, $2, $3, 'bulksmsnigeria') ok", [f.msgs[i], f.s, claimToken()]),
+      svcRows("select public.comms_sms_claim($1, $2, $3, 'bulksmsnigeria') ok", [
+        f.msgs[i],
+        f.s,
+        claimToken(),
+      ]),
     );
     await owner.query("update public.schools set subscription_tier='trial' where id=$1", [f.s]);
     const early = (await Promise.all(claims)).filter((a) => a?.ok === true).length;
     const late = await Promise.all(
-      f.msgs.map(() => svcRows("select public.comms_sms_claim($1, $2, $3, 'bulksmsnigeria') ok", [f.msgs[0], f.s, claimToken()])),
+      f.msgs.map(() =>
+        svcRows("select public.comms_sms_claim($1, $2, $3, 'bulksmsnigeria') ok", [
+          f.msgs[0],
+          f.s,
+          claimToken(),
+        ]),
+      ),
     );
     const claimedAfter = late.filter((a) => a?.ok === true).length;
     const unclaimedStillQueued = await count(
@@ -338,7 +428,10 @@ try {
         ),
       ),
     );
-    const rows = await count("select count(*)::int n from public.outbound_messages where org_id=$1 and reference=$2", [f.s, ref]);
+    const rows = await count(
+      "select count(*)::int n from public.outbound_messages where org_id=$1 and reference=$2",
+      [f.s, ref],
+    );
     const delta = (await balance(f.s)) - before;
     expect(
       "K8 8 concurrent sends of one reference produce one message and one NGN10 charge",
@@ -352,7 +445,9 @@ try {
 } finally {
   await cleanup();
   const left = (
-    await owner.query("select count(*)::int n from public.schools where slug like $1", [`${PREFIX}%`])
+    await owner.query("select count(*)::int n from public.schools where slug like $1", [
+      `${PREFIX}%`,
+    ])
   ).rows[0].n;
   expect("Z the fixture was removed completely", left === 0, `left=${left}`);
   await owner.end();

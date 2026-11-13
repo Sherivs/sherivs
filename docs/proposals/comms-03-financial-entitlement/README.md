@@ -2,6 +2,8 @@
 
 **Status: PROPOSAL. Nothing here has been applied to any shared or production database, and none of it is in `database/supabase/migrations/`.** The SQL files carry a `.sql.txt` extension on purpose so no migration tooling picks them up. Approval of the financial policy and of each part is the owner's decision (ADR-069, "Financial integrity and tenant entitlement review").
 
+> **Update 2026-11-13 (COMMS-03 execution): parts 01-03 are implemented** in `database/supabase/migrations/20261104052000_sherivs_comms03_sms_dispatch_financials.sql` (ADR-072), and parts 04 and 05 by FIN-01 (ADR-070) and ENT-01 (ADR-071). This directory is kept as the review record. The implementation differs from the proposal in four deliberate ways: (1) `provider_duplicate` is **not** a refund reason (a duplicate report means the provider may hold the first copy, so it is ambiguous); (2) `comms_sms_hold` and `comms_sms_reconcile` were added so an ambiguous outcome stays claimed and is resolved by an operator instead of being cleared; (3) `comms_sms_claim` refuses when the organization lost its plan or its `sms_live` flag; (4) `sms_plan_entitled` is the catalog-derived ENT-01 function, not the tier list in part 03.
+
 ## What was tested, and where
 
 Every claim in ADR-069 about database behavior was reproduced on a throwaway local PostgreSQL 16 server with all 168 repository migrations applied and synthetic data only (no production data, no production connection, no secret). Two environment notes, both stated so the evidence is not over-read:

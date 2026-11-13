@@ -164,6 +164,18 @@ jobs:
           psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
             -f tests/integration/whatsapp-n8n-ambiguity-fix.local.sql 2>&1 | tee /tmp/wafix.out
           test "$(grep -c 'WA-FIX PASS' /tmp/wafix.out)" -ge 10
+      - name: COMMS-03 SMS dispatch write path, refunds and plan gate (real Postgres, rolled back)
+        run: |
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/comms-03-sms-dispatch-financials.local.sql 2>&1 | tee /tmp/comms03.out
+          grep -q 'COMMS-03 RESULT: pass=65 fail=0' /tmp/comms03.out
+          test "$(grep -c 'COMMS-03 PASS' /tmp/comms03.out)" -ge 65
+          ! grep -q 'COMMS-03 FAIL' /tmp/comms03.out
+      - name: COMMS-03 concurrent claims, refunds and rollback (real Postgres, many connections)
+        working-directory: tools/sim-lab
+        run: |
+          node ../../tests/integration/comms-03-sms-concurrency.local.mjs 2>&1 | tee /tmp/comms03-conc.out
+          grep -q 'COMMS-03-CONC RESULT: pass=10 fail=0' /tmp/comms03-conc.out
       - name: Seed synthetic schools (10% scale)
         working-directory: tools/sim-lab
         run: SIM_SCALE=0.1 node sim/gen.mjs && node sim/seed-flows.mjs

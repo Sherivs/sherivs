@@ -24,8 +24,8 @@ Nothing drains the queue until a scheduler calls the dispatcher. Do not activate
 The owner decides each gate. Until they are met, keep `sms_live` off for every organization.
 
 1. Migrations `20261101001000` (communication scope lock) and its predecessors are applied to the target database. Confirm with a read-only migration listing.
-2. Plan rule settled. Issue #330 says only Growth, Professional and Enterprise include SMS; the database still lets Trial and Starter through (see ADR-069, "Production readiness review"). Enable `sms_live` only for organizations on an SMS plan.
-3. Refund policy settled. A message rejected or failed after metering is not credited back, and metering also happens while `sms_live` is off (the row becomes `sent_stub`). Decide the policy first.
+2. Plan rule enforced in the database. Only Growth, Professional and Enterprise include SMS (issue #330). ENT-01 (ADR-071) makes the database know the plan, and COMMS-03 (ADR-072) makes `comms_send` record `blocked_plan` for Trial and Starter and `comms_sms_claim` refuse a message of an organization without the plan. Both migrations must be applied (the COMMS-03 migration refuses to run without them). Residual: the check is tier-only; it does not read `subscription_status`, expiry or overrides.
+3. Refund policy approved. ADR-072 rules: simulated (`sent_stub`) messages are never charged; a message the provider provably never accepted is refunded once, atomically; an ambiguous outcome is held for operator reconciliation and never resent or refunded automatically; a delivery failure never refunds. The owner approves this policy and the unverified assumption that BulkSMS Nigeria does not bill a refused message before any live message.
 4. An opt-out path exists. The provider documents no inbound-reply webhook, so an SMS STOP reply cannot reach the system; confirm the regulatory position with counsel.
 5. A live delivery-report test has passed against a test organization (needs credentials).
 
@@ -73,11 +73,12 @@ Use placeholders; never paste a secret into a terminal history you do not contro
 
 ## Monitoring
 
-The dispatcher returns counts only: `orgsVisited`, `orgErrors`, `sent`, `failed`, `rejected`, `skipped`, `haltedReason`, `staleClaims` (message ids). It never returns message text, numbers or credentials. Alert on:
+The dispatcher returns counts only: `orgsVisited`, `orgErrors`, `sent`, `failed`, `rejected`, `held`, `skipped`, `haltedReason`, `staleClaims` and `heldMessages` (message ids). It never returns message text, numbers or credentials. Alert on:
 
 - `haltedReason` of `provider_auth_failed` (credentials unusable; rows stay queued) or a rate-limit code.
 - `orgErrors` above 0 (a state write failed for one organization).
-- any `staleClaims`.
+- any `staleClaims` or `heldMessages` (a held message is an ambiguous provider outcome waiting for an operator; see below).
+- a `haltedReason` other than null after a `held` outcome: the run stopped on the first ambiguous answer.
 
 Read-only queries for an operator with database access:
 
@@ -105,27 +106,25 @@ where channel = 'sms' and provider = 'bulksmsnigeria' and status = 'sent'
 
 A claim that never receives a provider id means the worker stopped between claiming the row and recording the provider's answer. We cannot tell whether the provider accepted the message, and the provider looks messages up by its own `message_id` only. The dispatcher therefore reports these rows and never re-sends them.
 
-For each stale row an operator with database authority and the owner's approval **(needs authorization)** checks the BulkSMS Nigeria dashboard for a message to that recipient around that time, then:
+A held message (the dispatcher received an ambiguous answer: a timeout after the request was written, a 5xx other than 503, a 200 without a message id, or a duplicate report) is the same situation and is listed under `heldMessages`; its `error` starts with `held:`.
 
-- Message found: record it as sent with the provider's id, so a late delivery report can still finalize it.
+For each stale or held row an operator with `service_role` database authority and the owner's approval **(needs authorization)** checks the BulkSMS Nigeria dashboard for a message to that recipient around that time, then calls ONE function. The functions are compare-and-set, audited, and refund idempotently; do not edit the table by hand.
 
-```sql
-update public.outbound_messages
-set status = 'sent', provider_ref = '<provider message_id>', error = null, updated_at = now()
-where id = '<row id>' and org_id = '<org id>'
-  and status = 'queued' and provider_ref like 'claim:%';
-```
-
-- No message found: close it as failed. Do not put it back in the queue. If the parent still needs the message, create a new proposal so it goes through approval, consent and metering again.
+- Message found: record it as sent with the provider's id, so a late delivery report can still finalize it. The charge stands.
 
 ```sql
-update public.outbound_messages
-set status = 'failed', provider_ref = null, error = 'operator_reconciled_not_sent', updated_at = now()
-where id = '<row id>' and org_id = '<org id>'
-  and status = 'queued' and provider_ref like 'claim:%';
+select public.comms_sms_reconcile('<row id>', '<org id>', 'accepted', '<provider message_id>', '<short note>');
 ```
 
-- Unsure: leave it. A stuck row costs nothing; a double text to a parent cannot be undone.
+- No message found: close it as failed and refund the charge once. Do not put it back in the queue. If the parent still needs the message, create a new proposal so it goes through approval, consent and metering again.
+
+```sql
+select public.comms_sms_reconcile('<row id>', '<org id>', 'not_accepted', null, '<short note>');
+```
+
+- Unsure: leave it. A stuck row costs nothing; a double text to a parent cannot be undone, and a refund for a message the provider delivered cannot be taken back automatically.
+
+`comms_sms_reconcile` refuses any message that is not claimed and queued, so a second call cannot refund twice. Every call writes an `audit_logs` row (`sms.reconcile`); every hold writes `sms.hold`; every refund writes a `usage_event_reversals` row and a `refund` ledger entry.
 
 The audit trigger on `outbound_messages` records each update in `audit_chain`.
 
@@ -146,7 +145,7 @@ Tokens are minted per message from this secret. After a rotation, a delivery rep
 ## Kill switches (fastest first)
 
 1. Disable the n8n workflow (or use Vercel's Disable Cron Jobs if Option B was chosen). The queue stops draining; nothing else changes.
-2. Turn `sms_live` off for the organization. The dispatcher skips it. New messages for that organization become `sent_stub` and are still metered.
+2. Turn `sms_live` off for the organization. The dispatcher skips it. New messages for that organization become `sent_stub` and are not metered or charged. Messages already queued are not claimed (the database refuses), so no provider call is made for them; refund them with `comms_refund_unsubmitted(message, org, 'cancelled_unsent')` if they will never be sent.
 3. Unset `SMS_PROVIDER`. The dispatcher skips every organization.
 4. Remove `CRON_SECRET`. Every cron route returns 503.
 

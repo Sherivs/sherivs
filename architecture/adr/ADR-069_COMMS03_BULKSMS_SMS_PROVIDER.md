@@ -340,3 +340,14 @@ Each criterion is checked by the named test in `tests.sql.txt` unless marked oth
 5. **One read-only production catalog check** (grants on `outbound_messages` and `meter_usage`, the policies and triggers on `schools`) and the detection queries above, so that F1, F5 and F6 are confirmed or refuted against production rather than the repository.
 
 Nothing in this section has been applied, merged or deployed; GitHub publication remains pending on repository write access.
+
+## Implementation update (COMMS-03, 2026-11-13, execution authorization)
+
+The findings of the financial integrity and tenant entitlement review above are now implemented, with evidence, by **ADR-072** (`database/supabase/migrations/20261104052000_sherivs_comms03_sms_dispatch_financials.sql`) on top of FIN-01 (ADR-070) and ENT-01 (ADR-071):
+
+- F1 (dispatcher write path): the dispatcher and the delivery webhook write only through the service-role-only compare-and-set functions `comms_sms_claim`, `comms_sms_settle`, `comms_sms_hold`, `comms_sms_report_delivery` and `comms_sms_reconcile`; the code no longer issues a direct `UPDATE`.
+- Plan and live-flag enforcement are in the database (`blocked_plan`; the claim is refused when the plan or `sms_live` is gone).
+- Simulated (`sent_stub`) messages are never metered.
+- Refunds are limited to messages the provider provably never accepted; ambiguous outcomes are held, never resent and never refunded automatically; delivery failures do not refund. Two points differ from the review proposal: `provider_duplicate` is not a refund reason, and an operator reconciliation path exists.
+
+Statements earlier in this ADR that describe these behaviors as defects or proposals describe the state before this update. SMS remains inactive: no provider selected, no credentials, scheduler not active, nothing applied to production by this change.
