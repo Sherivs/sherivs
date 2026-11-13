@@ -1,0 +1,28 @@
+[
+ {
+  "w": 1440,
+  "lowContrast": [],
+  "unnamed": 0,
+  "smallTargets": [],
+  "describedMissing": 0,
+  "labelled": true,
+  "reducedMotionRule": true,
+  "live": true,
+  "h2": "Your twin brief",
+  "focusAfterApproveKey": "Confirm approval",
+  "focusAfterCancelOnApprove": true
+ },
+ {
+  "w": 390,
+  "lowContrast": [],
+  "unnamed": 0,
+  "smallTargets": [],
+  "describedMissing": 0,
+  "labelled": true,
+  "reducedMotionRule": true,
+  "live": true,
+  "h2": "Your twin brief",
+  "focusAfterApproveKey": "Confirm approval",
+  "focusAfterCancelOnApprove": true
+ }
+]
