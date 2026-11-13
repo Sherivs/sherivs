@@ -69,6 +69,7 @@ export interface RoleTemplate {
   readonly permissions: readonly Permission[];
   readonly approvalAuthorities: readonly ApprovalAuthority[];
   readonly reportingRelationships: readonly ReportingRelationship[];
+  readonly requiresVerifiedAuthorityLink?: boolean;
 }
 
 export interface RoleAssignment {
@@ -95,6 +96,14 @@ export interface ResponsibilityGrant {
   readonly validFrom: string;
   readonly validUntil?: string | null;
   readonly revokedAt?: string | null;
+}
+
+export interface InstitutionAuthorityLink {
+  readonly id: string;
+  readonly tenantId: string;
+  readonly verificationStatus: "unverified" | "verified";
+  readonly effectiveFrom: string;
+  readonly effectiveUntil?: string | null;
 }
 
 export interface RoleDelegation {

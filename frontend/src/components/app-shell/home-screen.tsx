@@ -15,7 +15,13 @@ import {
   reorderWidgetKeys,
   visibleWorkspaceWidgets,
 } from "@/components/workspaces/workspace-shell";
+import {
+  institutionalExecutiveApprovals,
+  institutionalExecutiveCards,
+  isInstitutionalExecutiveWorkspace,
+} from "@/lib/workspaces/institutional-executive";
 import { ShellGlassIcon } from "./glass-icon";
+import { NotificationCentre } from "./notification-centre";
 import { useAppShell } from "./shell-context";
 
 function matches(needle: string, label: string, key: string): boolean {
@@ -29,6 +35,7 @@ export function AppHomeScreen() {
   const [manageWidgets, setManageWidgets] = useState(false);
   const [savingWidgets, setSavingWidgets] = useState(false);
   const [widgetMessage, setWidgetMessage] = useState<string | null>(null);
+  const [lastRefreshed, setLastRefreshed] = useState<string | null>(null);
   const needle = shell.query.trim().toLowerCase();
   const widgets = shell.home.widgets.filter((item) => matches(needle, item.label, item.key));
   const actions = shell.home.actions
@@ -51,6 +58,23 @@ export function AppHomeScreen() {
     : [];
   const widgetCatalog = shell.manifest ? permittedWidgetCatalog(shell.manifest) : [];
   const availableWidgets = widgetCatalog.filter((item) => !widgetKeys.includes(item.key));
+  const isExecutive = isInstitutionalExecutiveWorkspace(shell.manifest);
+  const executiveCards = shell.manifest
+    ? institutionalExecutiveCards(
+        shell.manifest,
+        shell.cards,
+        shell.widgetsLoading,
+        Boolean(shell.widgetsError),
+      )
+    : [];
+  const executiveApprovals = shell.manifest
+    ? institutionalExecutiveApprovals(
+        shell.manifest,
+        shell.cards,
+        shell.widgetsLoading,
+        Boolean(shell.widgetsError),
+      )
+    : [];
   const newsLists = composeActivity({
     inbox: [],
     widgets:
@@ -64,6 +88,12 @@ export function AppHomeScreen() {
   useEffect(() => {
     setRecent(readRecentResources(allowedHrefs));
   }, [allowedHrefs]);
+
+  useEffect(() => {
+    if (!shell.widgetsLoading && !shell.widgetsError) {
+      setLastRefreshed(new Date().toISOString());
+    }
+  }, [shell.cards, shell.widgetsError, shell.widgetsLoading]);
 
   function remember(item: { key: string; label: string; href: string }) {
     shell.recordUsage(item.key);
@@ -174,6 +204,72 @@ export function AppHomeScreen() {
           </label>
         ) : null}
       </header>
+
+      {isExecutive ? (
+        <section
+          className="app-shell-widget-section"
+          aria-labelledby="executive-summary-heading"
+          data-testid="institutional-executive-workspace"
+        >
+          <div className="app-shell-section-title">
+            <h2 id="executive-summary-heading">Institution overview</h2>
+          </div>
+          <p className="app-shell-empty">
+            Tenant-scoped summaries from authorized workspace widgets. Freshness reflects the latest
+            successful widget request; source record timestamps are not available in this feed.
+          </p>
+          <p className="app-shell-empty" role="status" aria-live="polite">
+            {shell.widgetsLoading
+              ? "Refreshing executive summaries…"
+              : shell.widgetsError
+                ? "Executive summary freshness is unavailable."
+                : lastRefreshed
+                  ? `Last refreshed ${new Date(lastRefreshed).toLocaleString()}`
+                  : "Executive summary freshness is unavailable."}
+          </p>
+          <div className="app-shell-cards">
+            {executiveCards.map((item) => (
+              <article className="app-shell-card" key={item.key}>
+                <div>
+                  <p>{item.label}</p>
+                  <strong>{item.value}</strong>
+                  <small>{item.source}</small>
+                </div>
+                {item.href ? (
+                  <Link to={item.href as never} aria-label={`Open ${item.label}`}>
+                    Open
+                  </Link>
+                ) : null}
+              </article>
+            ))}
+          </div>
+          <div className="app-shell-section-title">
+            <h3>Pending approvals</h3>
+          </div>
+          {executiveApprovals.length ? (
+            <div className="app-shell-cards">
+              {executiveApprovals.map((item) => (
+                <Link
+                  className="app-shell-card"
+                  key={item.key}
+                  to={item.href as never}
+                  aria-label={`Open ${item.label} approvals`}
+                >
+                  <div>
+                    <p>{item.label}</p>
+                    <strong>{item.value}</strong>
+                    <small>{item.source}</small>
+                  </div>
+                  <ChevronRight size={16} aria-hidden="true" />
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="app-shell-empty">No approval queues are assigned to this workspace.</p>
+          )}
+          <NotificationCentre compact />
+        </section>
+      ) : null}
 
       {showSearch ? (
         <section className="app-shell-search-region" aria-label="Workspace search">

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  AUTHORITY_LINK_EVIDENCE_PREFIX,
   resolveWorkspaceManifest,
   type WorkspaceResolutionData,
 } from "../../frontend/src/lib/workspaces/manifest-resolver";
@@ -174,6 +175,113 @@ describe("resolveWorkspaceManifest", () => {
     expect(resolveWorkspaceManifest({ id: "delegate" }, institution, data, at)).not.toBeNull();
     expect(
       resolveWorkspaceManifest({ id: "delegate" }, institution, data, "2026-08-01T00:00:00.000Z"),
+    ).toBeNull();
+  });
+
+  it("fails closed for authority-dependent templates without one active verified linked relationship", () => {
+    const authorityRole: RoleTemplate = {
+      ...role,
+      requiresVerifiedAuthorityLink: true,
+    };
+    const authorityAssignment = {
+      ...assignment("authority-assignment", "user-a", "school-a"),
+      evidence: [`${AUTHORITY_LINK_EVIDENCE_PREFIX}link-a`],
+    };
+    const resolve = (
+      verificationStatus: "unverified" | "verified",
+      effectiveUntil: string | null,
+    ) =>
+      resolveWorkspaceManifest(
+        { id: "user-a" },
+        institution,
+        {
+          assignments: [authorityAssignment],
+          roleTemplates: [authorityRole],
+          authorityLinks: [
+            {
+              id: "link-a",
+              tenantId: "school-a",
+              verificationStatus,
+              effectiveFrom: "2026-01-01T00:00:00.000Z",
+              effectiveUntil,
+            },
+          ],
+        },
+        at,
+      );
+
+    expect(resolve("unverified", null)).toBeNull();
+    expect(resolve("verified", "2026-05-01T00:00:00.000Z")).toBeNull();
+    expect(resolve("verified", null)?.primaryNav).toHaveLength(3);
+  });
+
+  it("does not accept an unrelated or ambiguous relationship reference as authority evidence", () => {
+    const authorityRole: RoleTemplate = {
+      ...role,
+      requiresVerifiedAuthorityLink: true,
+    };
+    const linkedAssignment = {
+      ...assignment("authority-assignment", "user-a", "school-a"),
+      evidence: [
+        `${AUTHORITY_LINK_EVIDENCE_PREFIX}link-a`,
+        `${AUTHORITY_LINK_EVIDENCE_PREFIX}link-b`,
+      ],
+    };
+    expect(
+      resolveWorkspaceManifest(
+        { id: "user-a" },
+        institution,
+        {
+          assignments: [linkedAssignment],
+          roleTemplates: [authorityRole],
+          authorityLinks: [
+            {
+              id: "link-a",
+              tenantId: "school-a",
+              verificationStatus: "verified",
+              effectiveFrom: "2026-01-01T00:00:00.000Z",
+            },
+            {
+              id: "link-b",
+              tenantId: "school-a",
+              verificationStatus: "verified",
+              effectiveFrom: "2026-01-01T00:00:00.000Z",
+            },
+          ],
+        },
+        at,
+      ),
+    ).toBeNull();
+  });
+
+  it("rejects verified authority evidence from another tenant", () => {
+    const authorityRole: RoleTemplate = {
+      ...role,
+      requiresVerifiedAuthorityLink: true,
+    };
+    expect(
+      resolveWorkspaceManifest(
+        { id: "user-a" },
+        institution,
+        {
+          assignments: [
+            {
+              ...assignment("authority-assignment", "user-a", "school-a"),
+              evidence: [`${AUTHORITY_LINK_EVIDENCE_PREFIX}link-a`],
+            },
+          ],
+          roleTemplates: [authorityRole],
+          authorityLinks: [
+            {
+              id: "link-a",
+              tenantId: "school-b",
+              verificationStatus: "verified",
+              effectiveFrom: "2026-01-01T00:00:00.000Z",
+            },
+          ],
+        },
+        at,
+      ),
     ).toBeNull();
   });
 });

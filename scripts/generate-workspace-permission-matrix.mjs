@@ -5,7 +5,8 @@ const query = String.raw`WITH matrix AS (
   SELECT r.code AS role_code, r.name AS role_name, '(role template)'::text AS responsibility,
          tp.kind AS responsibility_kind, p.code AS permission,
          CASE WHEN tp.kind = 'mandatory' THEN true ELSE coalesce(s.enabled, tp.default_on) END AS enabled,
-         t.approval_limit_ngn AS approval_limit, t.guardrails
+         t.approval_limit_ngn AS approval_limit, t.guardrails,
+         r.requires_verified_authority_link
     FROM public.role_catalog r
     JOIN public.role_templates t ON t.code = r.template_code
     JOIN public.role_template_permissions tp ON tp.template_code = t.code
@@ -15,7 +16,7 @@ const query = String.raw`WITH matrix AS (
    WHERE r.org_id IS NULL OR r.org_id = :institution_id
   UNION ALL
   SELECT r.code, r.name, rc.code, rc.kind, p.code, true,
-         t.approval_limit_ngn, t.guardrails
+         t.approval_limit_ngn, t.guardrails, r.requires_verified_authority_link
     FROM public.role_catalog r
     JOIN public.role_templates t ON t.code = r.template_code
     JOIN public.workspace_role_responsibilities rr
@@ -29,7 +30,7 @@ const query = String.raw`WITH matrix AS (
    WHERE r.org_id IS NULL OR r.org_id = :institution_id
   UNION ALL
     SELECT r.code, r.name, rc.code, rc.kind, p.code, true,
-           t.approval_limit_ngn, t.guardrails
+           t.approval_limit_ngn, t.guardrails, r.requires_verified_authority_link
       FROM public.role_assignment_responsibility_grants g
       JOIN public.user_role_assignments a ON a.id = g.assignment_id
       JOIN public.role_catalog r ON r.code = a.role_code
@@ -44,7 +45,7 @@ const query = String.raw`WITH matrix AS (
     UNION ALL
   SELECT r.code, r.name, '(institution custom grant)', 'custom',
          coalesce(cg.permission_code, cg.custom_key), true,
-         t.approval_limit_ngn, t.guardrails
+         t.approval_limit_ngn, t.guardrails, r.requires_verified_authority_link
     FROM public.role_catalog r
     JOIN public.role_templates t ON t.code = r.template_code
     JOIN public.org_role_custom_grants cg
@@ -52,7 +53,7 @@ const query = String.raw`WITH matrix AS (
    WHERE r.org_id IS NULL OR r.org_id = :institution_id
 )
 SELECT role_code, role_name, responsibility, responsibility_kind, permission,
-       enabled, approval_limit, guardrails
+       enabled, approval_limit, guardrails, requires_verified_authority_link
   FROM matrix
  ORDER BY role_code, responsibility, permission;`;
 
@@ -81,6 +82,15 @@ authorized institution and user; it includes only assignments and delegations
 that are active at query time and reports their effective scopes. Permission
 checks remain server-side and in RLS. The mandatory separation-of-duties rules
 are hard-coded in the database guard and cannot be disabled by an institution.
+
+Authority-dependent roles are marked with \`role_catalog.requires_verified_authority_link\`.
+Their assignments are effective only while their evidence names exactly one
+same-tenant M04 institution-authority link that is verified and within its
+effective dates. A title or relationship does not itself grant permissions;
+template permissions and explicitly assigned responsibilities remain the
+authorization source. No authority links or mandates are seeded. The tertiary
+executive fallback template is read-only and exposes only institution analytics
+and academic/financial reports.
 `;
 }
 
