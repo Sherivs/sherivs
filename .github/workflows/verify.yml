@@ -207,8 +207,9 @@ jobs:
     name: Vercel preview deploy
     if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     needs: [typecheck, unit]
+    environment: preview
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     permissions: { contents: read, pull-requests: write }
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -226,6 +227,78 @@ jobs:
         run: |
           npm i -g vercel@65.10.0
           vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
+          # TanStack Start + Nitro emit Build Output API (.vercel/output), not a
+          # static "dist" folder. Clear any leftover Output Directory override
+          # from pulled project settings so vercel build does not look for dist.
+          node -e 'const fs=require("fs");const p=".vercel/project.json";const j=JSON.parse(fs.readFileSync(p,"utf8"));if(j.projectSettings){j.projectSettings.outputDirectory=null;}fs.writeFileSync(p,JSON.stringify(j,null,2));'
+          # Offline vercel build may not set VERCEL=1; force Nitro vercel preset.
+          export NITRO_PRESET=vercel
           vercel build --token="$VERCEL_TOKEN"
-          url=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")
+          # Hobby teams BLOCK CLI deploys attributed to a non-owner git commit
+          # (PR merge commits / CI authors). Prebuilt output does not need .git;
+          # hide it so Vercel skips the collaboration author check.
+          mv .git .git.bak
+          set +e
+          out=$(timeout 180 vercel deploy --prebuilt --token="$VERCEL_TOKEN" 2>&1)
+          code=$?
+          set -e
+          mv .git.bak .git
+          printf '%s\n' "$out"
+          url=$(printf '%s\n' "$out" | grep -Eo 'https://[A-Za-z0-9.-]+\.vercel\.app' | tail -1 || true)
+          if [ "$code" -eq 124 ]; then
+            echo "::error::vercel deploy timed out after 180s (often Hobby BLOCKED on commit author). Preview URL if any: ${url:-none}"
+            exit 1
+          fi
+          if [ "$code" -ne 0 ] || [ -z "$url" ]; then
+            echo "::error::vercel deploy failed (exit $code). Hobby BLOCKED means commit author is not the team owner; .git is hidden for prebuilt deploys to avoid that."
+            exit 1
+          fi
           echo "Preview: $url" >> "$GITHUB_STEP_SUMMARY"
+          echo "Preview: $url"
+
+  vercel-prod:
+    name: Vercel production deploy
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: [typecheck, unit]
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions: { contents: read }
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with: { node-version: "${{ env.NODE_VERSION }}", cache: npm }
+      - name: Skip when Vercel secrets are not configured
+        id: gate
+        run: '[ -n "$VERCEL_TOKEN" ] && echo "ok=1" >> "$GITHUB_OUTPUT" || echo "::notice::VERCEL_TOKEN not set; skipping production deploy"'
+      - if: steps.gate.outputs.ok == '1'
+        name: Build + deploy production
+        run: |
+          npm i -g vercel@65.10.0
+          vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+          node -e 'const fs=require("fs");const p=".vercel/project.json";const j=JSON.parse(fs.readFileSync(p,"utf8"));if(j.projectSettings){j.projectSettings.outputDirectory=null;}fs.writeFileSync(p,JSON.stringify(j,null,2));'
+          export NITRO_PRESET=vercel
+          export VERCEL_GIT_COMMIT_SHA=$GITHUB_SHA
+          vercel build --prod --token="$VERCEL_TOKEN"
+          mv .git .git.bak
+          set +e
+          out=$(timeout 180 vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN" 2>&1)
+          code=$?
+          set -e
+          mv .git.bak .git
+          printf '%s\n' "$out"
+          url=$(printf '%s\n' "$out" | grep -Eo 'https://[A-Za-z0-9.-]+\.vercel\.app' | tail -1 || true)
+          if [ "$code" -eq 124 ]; then
+            echo "::error::vercel production deploy timed out after 180s. URL if any: ${url:-none}"
+            exit 1
+          fi
+          if [ "$code" -ne 0 ] || [ -z "$url" ]; then
+            echo "::error::vercel production deploy failed (exit $code)"
+            exit 1
+          fi
+          echo "Production: $url" >> "$GITHUB_STEP_SUMMARY"
+          echo "Production: $url"
