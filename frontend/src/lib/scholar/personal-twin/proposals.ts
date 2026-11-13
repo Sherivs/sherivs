@@ -353,7 +353,23 @@ function decide(
   check?: (p: Proposal) => DecisionRejection | null,
 ): DecisionResult {
   const o = open(store, proposalId, actor, nowMs);
-  if ("reason" in o) return { ok: false, reason: o.reason, store: o.store };
+  if ("reason" in o) {
+    // The expiry path already audited itself; every other refusal is audited here,
+    // including a different user or tenant trying to decide on someone else's item.
+    const known = store.proposals.find((x) => x.proposalId === proposalId);
+    return {
+      ok: false,
+      reason: o.reason,
+      store:
+        o.reason === "proposal_expired"
+          ? o.store
+          : audit(o.store, nowMs, "rejected", `${to}:${o.reason}`, {
+              proposalId,
+              actorUserRef: actor.userRef,
+              correlationId: known?.correlationId ?? null,
+            }),
+    };
+  }
   const rejection = check?.(o.p) ?? null;
   if (rejection) {
     return {
@@ -522,7 +538,21 @@ export function recordExecutionOutcome(
   nowMs: number,
 ): { ok: boolean; store: ProposalStore } {
   const p = store.proposals.find((x) => x.proposalId === proposalId);
-  if (!p || p.status !== "handed_off") return { ok: false, store };
+  if (!p || p.status !== "handed_off") {
+    return {
+      ok: false,
+      store: audit(
+        store,
+        nowMs,
+        "rejected",
+        `outcome:${p ? "not_handed_off" : "unknown_proposal"}`,
+        {
+          proposalId,
+          correlationId: p?.correlationId ?? null,
+        },
+      ),
+    };
+  }
   const next: Proposal = {
     ...p,
     status: outcome === "succeeded" ? "executed" : "execution_failed",

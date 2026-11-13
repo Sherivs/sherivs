@@ -1,0 +1,293 @@
+BEGIN
+DO
+CREATE SCHEMA
+GRANT
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+GRANT
+INSERT 0 3
+INSERT 0 2
+INSERT 0 3
+SELECT 1
+                                                                      cg_personal_twin_provision                                                                       
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"created": true, "outcome": "succeeded", "twin_id": "a7a786ef-2938-4189-840d-55dcfd0a99d4", "memory_scope_id": "personal-twin:a7a786ef-2938-4189-840d-55dcfd0a99d4"}
+(1 row)
+
+                                                                       cg_personal_twin_provision                                                                       
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"created": false, "outcome": "succeeded", "twin_id": "a7a786ef-2938-4189-840d-55dcfd0a99d4", "memory_scope_id": "personal-twin:a7a786ef-2938-4189-840d-55dcfd0a99d4"}
+(1 row)
+
+                                                                      cg_personal_twin_provision                                                                       
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"created": true, "outcome": "succeeded", "twin_id": "3ef8b54d-b264-4e68-b055-c53dd1e935d5", "memory_scope_id": "personal-twin:3ef8b54d-b264-4e68-b055-c53dd1e935d5"}
+(1 row)
+
+                                                                       cg_personal_twin_provision                                                                       
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"created": false, "outcome": "succeeded", "twin_id": "3ef8b54d-b264-4e68-b055-c53dd1e935d5", "memory_scope_id": "personal-twin:3ef8b54d-b264-4e68-b055-c53dd1e935d5"}
+(1 row)
+
+ cg_personal_twin_provision 
+----------------------------
+ {"outcome": "denied"}
+(1 row)
+
+ cg_personal_twin_provision 
+----------------------------
+ {"outcome": "denied"}
+(1 row)
+
+                                                                      cg_personal_twin_provision                                                                       
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"created": true, "outcome": "succeeded", "twin_id": "0fcb0a91-d6d9-4e1b-842b-c81961a84e32", "memory_scope_id": "personal-twin:0fcb0a91-d6d9-4e1b-842b-c81961a84e32"}
+(1 row)
+
+DO
+ login 
+-------
+ 
+(1 row)
+
+ count_rows 
+------------
+ 
+(1 row)
+
+ count_rows 
+------------
+ 
+(1 row)
+
+ count_rows 
+------------
+ 
+(1 row)
+
+ count_rows 
+------------
+ 
+(1 row)
+
+ logout 
+--------
+ 
+(1 row)
+
+ login 
+-------
+ 
+(1 row)
+
+ count_rows 
+------------
+ 
+(1 row)
+
+ count_rows 
+------------
+ 
+(1 row)
+
+ logout 
+--------
+ 
+(1 row)
+
+ login 
+-------
+ 
+(1 row)
+
+ count_rows 
+------------
+ 
+(1 row)
+
+ count_rows 
+------------
+ 
+(1 row)
+
+ logout 
+--------
+ 
+(1 row)
+
+ set_config 
+------------
+ {}
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+SET
+ count_rows 
+------------
+ 
+(1 row)
+
+RESET
+SET
+UPDATE 1
+RESET
+ login 
+-------
+ 
+(1 row)
+
+ count_rows 
+------------
+ 
+(1 row)
+
+ logout 
+--------
+ 
+(1 row)
+
+SET
+UPDATE 1
+RESET
+ login 
+-------
+ 
+(1 row)
+
+ count_rows 
+------------
+ 
+(1 row)
+
+ logout 
+--------
+ 
+(1 row)
+
+SET
+UPDATE 1
+RESET
+ login 
+-------
+ 
+(1 row)
+
+ count_rows 
+------------
+ 
+(1 row)
+
+ logout 
+--------
+ 
+(1 row)
+
+SET
+UPDATE 1
+RESET
+DO
+ anon 
+------
+ 
+(1 row)
+
+ expect_error 
+--------------
+ 
+(1 row)
+
+ logout 
+--------
+ 
+(1 row)
+
+ login 
+-------
+ 
+(1 row)
+
+ expect_error 
+--------------
+ 
+(1 row)
+
+ expect_error 
+--------------
+ 
+(1 row)
+
+ expect_error 
+--------------
+ 
+(1 row)
+
+ expect_error 
+--------------
+ 
+(1 row)
+
+ expect_error 
+--------------
+ 
+(1 row)
+
+ expect_error 
+--------------
+ 
+(1 row)
+
+ expect_error 
+--------------
+ 
+(1 row)
+
+ logout 
+--------
+ 
+(1 row)
+
+ anon 
+------
+ 
+(1 row)
+
+ expect_error 
+--------------
+ 
+(1 row)
+
+ expect_error 
+--------------
+ 
+(1 row)
+
+ logout 
+--------
+ 
+(1 row)
+
+DO
+INSERT 0 1
+ expect_error 
+--------------
+ 
+(1 row)
+
+ expect_error 
+--------------
+ 
+(1 row)
+
+DO
+psql:tests/integration/sv1-twin-gate.local.sql:310: NOTICE:  COST provision_retry_calls=500 total_ms=139.2 avg_ms=0.279 audit_rows_added=500 twin_rows_added=0 scope_rows_added=0
+DO
+psql:tests/integration/sv1-twin-gate.local.sql:312: NOTICE:  SV1-TWIN-06 isolation, privilege and audit checks: ALL PASS
+DO
+ROLLBACK
