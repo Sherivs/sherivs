@@ -169,6 +169,11 @@ jobs:
           psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
             -f tests/integration/m12-retention-tombstones.local.sql 2>&1 | tee /tmp/m12-retention.out
           grep -q 'M12 ALL PASS' /tmp/m12-retention.out
+      - name: M11 data-subject requests (real Postgres, rolled back)
+        run: |
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/m11-data-subject-requests.local.sql 2>&1 | tee /tmp/m11-dsr.out
+          grep -q 'M11 ALL PASS' /tmp/m11-dsr.out
       - name: Seed synthetic schools (10% scale)
         working-directory: tools/sim-lab
         run: SIM_SCALE=0.1 node sim/gen.mjs && node sim/seed-flows.mjs
