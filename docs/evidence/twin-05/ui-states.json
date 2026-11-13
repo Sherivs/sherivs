@@ -1,0 +1,108 @@
+[
+ {
+  "w": 1440,
+  "name": "1-live",
+  "status": "live",
+  "overflow": false,
+  "fresh": "Updated just now",
+  "cards": 3,
+  "approveDisabled": false
+ },
+ {
+  "w": 1440,
+  "name": "3-stale",
+  "status": "stale",
+  "overflow": false,
+  "fresh": "Updated 20 min ago",
+  "cards": 3,
+  "approveDisabled": true
+ },
+ {
+  "w": 1440,
+  "name": "4-offline-cached",
+  "status": "offline_cached",
+  "overflow": false,
+  "fresh": "Updated 20 min ago",
+  "cards": 3,
+  "approveDisabled": true
+ },
+ {
+  "w": 1440,
+  "name": "5-unavailable",
+  "status": "unavailable",
+  "overflow": false,
+  "fresh": "Suggestions only. Nothing runs without your approval.",
+  "cards": 0,
+  "approveDisabled": null
+ },
+ {
+  "w": 1440,
+  "name": "6-empty",
+  "status": "empty",
+  "overflow": false,
+  "fresh": "Updated just now",
+  "cards": 0,
+  "approveDisabled": null
+ },
+ {
+  "w": 1440,
+  "errs": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "[Supabase] Browser Supabase client requires VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY. Server-only SUPABASE_* values are not a browser fallback.",
+   "[Supabase] Browser Supabase client requires VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY. Server-only SUPABASE_* values are not a browser fallback."
+  ]
+ },
+ {
+  "w": 390,
+  "name": "1-live",
+  "status": "live",
+  "overflow": false,
+  "fresh": "Updated just now",
+  "cards": 3,
+  "approveDisabled": false
+ },
+ {
+  "w": 390,
+  "name": "3-stale",
+  "status": "stale",
+  "overflow": false,
+  "fresh": "Updated 20 min ago",
+  "cards": 3,
+  "approveDisabled": true
+ },
+ {
+  "w": 390,
+  "name": "4-offline-cached",
+  "status": "offline_cached",
+  "overflow": false,
+  "fresh": "Updated 20 min ago",
+  "cards": 3,
+  "approveDisabled": true
+ },
+ {
+  "w": 390,
+  "name": "5-unavailable",
+  "status": "unavailable",
+  "overflow": false,
+  "fresh": "Suggestions only. Nothing runs without your approval.",
+  "cards": 0,
+  "approveDisabled": null
+ },
+ {
+  "w": 390,
+  "name": "6-empty",
+  "status": "empty",
+  "overflow": false,
+  "fresh": "Updated just now",
+  "cards": 0,
+  "approveDisabled": null
+ },
+ {
+  "w": 390,
+  "errs": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "[Supabase] Browser Supabase client requires VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY. Server-only SUPABASE_* values are not a browser fallback.",
+   "[Supabase] Browser Supabase client requires VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY. Server-only SUPABASE_* values are not a browser fallback."
+  ]
+ }
+]
