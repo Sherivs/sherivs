@@ -268,6 +268,15 @@ export const SCHOLAR_FEATURE_CODES: readonly ScholarFeatureCode[] = [
     roleCategories: ["COMMUNITY"],
     workspace: "community",
   },
+  {
+    code: "r001.communications.school-calling-agent",
+    label: "Dedicated organization calling agent",
+    capability: "communication-messaging",
+    phase: "10",
+    featureKeys: ["communications.school-calling-agent"],
+    roleCategories: ["INSTITUTIONAL_LEADERSHIP"],
+    workspace: "leadership",
+  },
 ];
 
 const BY_CODE = new Map(SCHOLAR_FEATURE_CODES.map((entry) => [entry.code, entry]));
