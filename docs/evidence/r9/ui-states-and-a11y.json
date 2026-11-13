@@ -1,0 +1,122 @@
+[
+  {
+    "w": 1440,
+    "n": "ready-has-panel",
+    "count": 0
+  },
+  {
+    "w": 1440,
+    "n": "1-preview",
+    "lowContrast": [],
+    "smallTargets": [],
+    "unnamed": 0,
+    "labelled": true,
+    "overflow": false,
+    "status": "ready"
+  },
+  {
+    "w": 1440,
+    "n": "focus-after-ask",
+    "focus": "Yes, publish my website"
+  },
+  {
+    "w": 1440,
+    "n": "2-confirm",
+    "lowContrast": [],
+    "smallTargets": [],
+    "unnamed": 0,
+    "labelled": true,
+    "overflow": false,
+    "status": "ready"
+  },
+  {
+    "w": 1440,
+    "n": "focus-after-cancel",
+    "focus": "Create and publish my website"
+  },
+  {
+    "w": 1440,
+    "n": "3-published",
+    "lowContrast": [],
+    "smallTargets": [],
+    "unnamed": 0,
+    "labelled": true,
+    "overflow": false,
+    "status": "done"
+  },
+  {
+    "w": 1440,
+    "n": "4-site-exists",
+    "lowContrast": [],
+    "smallTargets": [],
+    "unnamed": 0,
+    "labelled": true,
+    "overflow": false,
+    "status": "blocked"
+  },
+  {
+    "w": 1440,
+    "n": "errs",
+    "errs": []
+  },
+  {
+    "w": 390,
+    "n": "ready-has-panel",
+    "count": 0
+  },
+  {
+    "w": 390,
+    "n": "1-preview",
+    "lowContrast": [],
+    "smallTargets": [],
+    "unnamed": 0,
+    "labelled": true,
+    "overflow": false,
+    "status": "ready"
+  },
+  {
+    "w": 390,
+    "n": "focus-after-ask",
+    "focus": "Yes, publish my website"
+  },
+  {
+    "w": 390,
+    "n": "2-confirm",
+    "lowContrast": [],
+    "smallTargets": [],
+    "unnamed": 0,
+    "labelled": true,
+    "overflow": false,
+    "status": "ready"
+  },
+  {
+    "w": 390,
+    "n": "focus-after-cancel",
+    "focus": "Create and publish my website"
+  },
+  {
+    "w": 390,
+    "n": "3-published",
+    "lowContrast": [],
+    "smallTargets": [],
+    "unnamed": 0,
+    "labelled": true,
+    "overflow": false,
+    "status": "done"
+  },
+  {
+    "w": 390,
+    "n": "4-site-exists",
+    "lowContrast": [],
+    "smallTargets": [],
+    "unnamed": 0,
+    "labelled": true,
+    "overflow": false,
+    "status": "blocked"
+  },
+  {
+    "w": 390,
+    "n": "errs",
+    "errs": []
+  }
+]

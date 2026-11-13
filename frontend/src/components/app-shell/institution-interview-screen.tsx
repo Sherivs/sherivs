@@ -18,6 +18,7 @@ import {
   type InterviewView,
   type QuestionView,
 } from "@/lib/scholar/reality";
+import { WebsiteSyncPanel, type WebsiteSyncApi } from "./website-sync-panel";
 import "./institution-interview-screen.css";
 
 export interface ScreenMessage {
@@ -492,7 +493,13 @@ function outcomeMessage(outcome: InterviewOutcome, okText: string): ScreenMessag
   return { tone: "error", text: issueMessage(first?.code ?? "") };
 }
 
-export function InstitutionInterviewScreen({ api = serverApi }: { api?: InterviewApi }) {
+export function InstitutionInterviewScreen({
+  api = serverApi,
+  websiteApi,
+}: {
+  api?: InterviewApi;
+  websiteApi?: WebsiteSyncApi;
+}) {
   const [view, setView] = useState<InterviewView | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -594,38 +601,45 @@ export function InstitutionInterviewScreen({ api = serverApi }: { api?: Intervie
   };
 
   return (
-    <InterviewScreenView
-      view={view}
-      activeId={activeId}
-      draft={q ? draft : ""}
-      fieldError={fieldError}
-      busy={busy}
-      message={message}
-      confirmingApproval={confirming}
-      onDraft={(d) => {
-        setDraft(d);
-        setFieldError(null);
-      }}
-      onSave={() => save("confirmed")}
-      onUnknown={() => save("unknown")}
-      onNotApplicable={() => save("not_applicable")}
-      onEdit={(id) => focusQuestion(view, id)}
-      onClear={(id) =>
-        void apply(
-          () => api.clear(id, view.revision),
-          "Cleared. This question is open again.",
-          false,
-        )
-      }
-      onAskApprove={() => setConfirming(true)}
-      onConfirmApprove={() =>
-        void apply(
-          () => api.approve(view.revision),
-          "Approved. Nothing has been published or switched on.",
-          false,
-        )
-      }
-      onCancelApprove={() => setConfirming(false)}
-    />
+    <>
+      <InterviewScreenView
+        view={view}
+        activeId={activeId}
+        draft={q ? draft : ""}
+        fieldError={fieldError}
+        busy={busy}
+        message={message}
+        confirmingApproval={confirming}
+        onDraft={(d) => {
+          setDraft(d);
+          setFieldError(null);
+        }}
+        onSave={() => save("confirmed")}
+        onUnknown={() => save("unknown")}
+        onNotApplicable={() => save("not_applicable")}
+        onEdit={(id) => focusQuestion(view, id)}
+        onClear={(id) =>
+          void apply(
+            () => api.clear(id, view.revision),
+            "Cleared. This question is open again.",
+            false,
+          )
+        }
+        onAskApprove={() => setConfirming(true)}
+        onConfirmApprove={() =>
+          void apply(
+            () => api.approve(view.revision),
+            "Approved. Nothing has been published or switched on.",
+            false,
+          )
+        }
+        onCancelApprove={() => setConfirming(false)}
+      />
+      {view.approvalValid ? (
+        <div className="interview website-sync-wrap">
+          <WebsiteSyncPanel key={view.approvedAtMs ?? 0} api={websiteApi} />
+        </div>
+      ) : null}
+    </>
   );
 }
