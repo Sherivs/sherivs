@@ -10,7 +10,11 @@ import {
   readRecentResources,
   rememberResource,
 } from "@/lib/internal-console/recent";
-import { permittedWidgetCatalog, reorderWidgetKeys } from "@/components/workspaces/workspace-shell";
+import {
+  permittedWidgetCatalog,
+  reorderWidgetKeys,
+  visibleWorkspaceWidgets,
+} from "@/components/workspaces/workspace-shell";
 import { ShellGlassIcon } from "./glass-icon";
 import { useAppShell } from "./shell-context";
 
@@ -42,7 +46,9 @@ export function AppHomeScreen() {
     [shell.nav, shell.drawer],
   );
   const [recent, setRecent] = useState<ReturnType<typeof readRecentResources>>([]);
-  const widgetKeys = shell.manifest?.widgets.map((item) => item.key) ?? [];
+  const widgetKeys = shell.manifest
+    ? visibleWorkspaceWidgets(shell.manifest, shell.prefs.hidden).map((item) => item.key)
+    : [];
   const widgetCatalog = shell.manifest ? permittedWidgetCatalog(shell.manifest) : [];
   const availableWidgets = widgetCatalog.filter((item) => !widgetKeys.includes(item.key));
   const newsLists = composeActivity({
