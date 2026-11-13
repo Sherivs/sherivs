@@ -2,6 +2,7 @@ import type { CardData } from "@/lib/sherivs-ws/live";
 import type { WorkspaceManifest } from "@/components/workspaces/_contract-shim";
 import { ACADEMIC_TEACHING_WORKSPACE } from "./academic-teaching";
 import { ADMINISTRATIVE_OPERATIONS_WORKSPACE } from "./administrative-operations";
+import { GUARDIAN_FAMILY_WORKSPACE, LEARNER_WORKSPACE } from "./student-family";
 import {
   buildCategoryWorkspace,
   type CategoryWorkspaceSpec,
@@ -12,6 +13,8 @@ import {
 export const CATEGORY_WORKSPACE_SPECS: readonly CategoryWorkspaceSpec[] = [
   ACADEMIC_TEACHING_WORKSPACE,
   ADMINISTRATIVE_OPERATIONS_WORKSPACE,
+  GUARDIAN_FAMILY_WORKSPACE,
+  LEARNER_WORKSPACE,
 ];
 
 export function categoryWorkspaces(
