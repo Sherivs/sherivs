@@ -26,6 +26,11 @@ export interface CategoryWorkspaceSpec {
   readonly actionKeys: readonly string[];
   /** Item key -> permission that must be among the item's granting permissions. */
   readonly restricted?: Readonly<Record<string, string>>;
+  /**
+   * Separation of duties, defence in depth. If one manifest holds BOTH keys of a
+   * pair, neither is shown (fail closed). The database remains the enforcer.
+   */
+  readonly exclusivePairs?: readonly (readonly [string, string])[];
   /** Aggregate-only: drop identifiable payload (lists, notes) and forbid keys. */
   readonly aggregateOnly?: boolean;
   readonly forbiddenKeys?: readonly string[];
@@ -63,7 +68,31 @@ function holdsFamily(
   return Boolean(manifest?.families.some((family) => spec.families.includes(family)));
 }
 
-function itemAllowed(spec: CategoryWorkspaceSpec, item: WorkspaceManifestItem): boolean {
+function conflictedKeys(
+  spec: CategoryWorkspaceSpec,
+  manifest: WorkspaceManifest,
+): ReadonlySet<string> {
+  const present = new Set(
+    [...manifest.widgets, ...manifest.actions, ...manifest.nav, ...manifest.inbox].map(
+      (item) => item.key,
+    ),
+  );
+  const blocked = new Set<string>();
+  for (const [left, right] of spec.exclusivePairs ?? []) {
+    if (present.has(left) && present.has(right)) {
+      blocked.add(left);
+      blocked.add(right);
+    }
+  }
+  return blocked;
+}
+
+function itemAllowed(
+  spec: CategoryWorkspaceSpec,
+  item: WorkspaceManifestItem,
+  blocked: ReadonlySet<string>,
+): boolean {
+  if (blocked.has(item.key)) return false;
   if (spec.forbiddenKeys?.includes(item.key)) return false;
   const required = spec.restricted?.[item.key];
   return required === undefined || item.via.includes(required);
@@ -92,17 +121,19 @@ export function buildCategoryWorkspace(
 ): CategoryWorkspaceView | null {
   if (!manifest || !holdsFamily(manifest, spec)) return null;
 
+  const blocked = conflictedKeys(spec, manifest);
   const widgetsByKey = new Map(manifest.widgets.map((item) => [item.key, item]));
   const queues: CategoryQueueCard[] = [];
   for (const key of spec.queueKeys) {
     const item = widgetsByKey.get(key);
-    if (!item || !itemAllowed(spec, item)) continue;
+    if (!item || !itemAllowed(spec, item, blocked)) continue;
     const value = queueValue(spec, cards[key], loading, failed);
     queues.push({
       key,
       label: item.label,
       value,
-      source: value === "Not configured" ? "No widget data returned" : "Authorized workspace widget",
+      source:
+        value === "Not configured" ? "No widget data returned" : "Authorized workspace widget",
       href: item.to,
     });
   }
@@ -111,7 +142,7 @@ export function buildCategoryWorkspace(
   const actions: CategoryDailyAction[] = [];
   for (const key of spec.actionKeys) {
     const item = actionsByKey.get(key);
-    if (!item || !itemAllowed(spec, item)) continue;
+    if (!item || !itemAllowed(spec, item, blocked)) continue;
     actions.push({ key, label: item.label, href: item.to });
   }
 
