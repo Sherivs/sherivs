@@ -185,21 +185,28 @@ async function resolveRecipient(db: SmsFabricDatabase, row: QueuedRow): Promise<
   return { ok: true, recipient };
 }
 
+/**
+ * Compare-and-set close of one row. With a claim, only the worker holding that claim can close
+ * it. Without one (a pre-claim rejection) the row must still be UNCLAIMED, so a rejection can
+ * never overwrite a row another worker has already claimed for sending. Returns whether this
+ * call changed the row.
+ */
 async function closeRow(
   deps: DispatchSmsDependencies,
   row: QueuedRow,
   values: Record<string, unknown>,
   claim: string | null,
-): Promise<void> {
+): Promise<boolean> {
   let query = deps.db
     .from("outbound_messages")
     .update({ ...values, updated_at: (deps.now ?? isoNow)() })
     .eq("id", row.id)
     .eq("org_id", row.org_id)
     .eq("status", "queued");
-  query = claim === null ? query : query.eq("provider_ref", claim);
-  const result = await query;
+  query = claim === null ? query.is("provider_ref", null) : query.eq("provider_ref", claim);
+  const result = await query.select("id");
   if (result.error) throw new Error("sms delivery state write failed");
+  return Array.isArray(result.data) && result.data.length > 0;
 }
 
 /**
@@ -242,8 +249,17 @@ export async function dispatchQueuedSms(
 
     const recipient = await resolveRecipient(deps.db, row);
     if (!recipient.ok) {
-      await closeRow(deps, row, { status: "failed", error: recipient.reason.slice(0, 200) }, null);
-      outcomes.push({ id: row.id, outcome: "rejected", reason: recipient.reason });
+      const closed = await closeRow(
+        deps,
+        row,
+        { status: "failed", error: recipient.reason.slice(0, 200) },
+        null,
+      );
+      outcomes.push(
+        closed
+          ? { id: row.id, outcome: "rejected", reason: recipient.reason }
+          : { id: row.id, outcome: "skipped", reason: "claimed by another worker" },
+      );
       continue;
     }
 

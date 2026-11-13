@@ -393,6 +393,32 @@ describe("dispatchQueuedSms", () => {
     expect(outcomes.filter((o) => o === "sent")).toHaveLength(1);
   });
 
+  it("never lets a rejection overwrite a row another worker claimed in the meantime", async () => {
+    const tables = world();
+    // The row reads as unclaimed at selection time; another worker claims it before this
+    // worker finishes re-resolving the recipient (and this worker then finds a mismatch).
+    tables.users[0]!.phone = "+2348099999999";
+    const real = makeDb(tables);
+    const db = {
+      rpc: real.rpc,
+      from(table: string) {
+        if (table === "users") tables.outbound_messages[0]!.provider_ref = "claim:other-worker";
+        return real.from(table);
+      },
+    } as SmsFabricDatabase;
+    const f = vi.fn(async () => sentResponse());
+    const selection = selectSmsGateway(ENV, f as unknown as typeof fetch);
+    const run = await dispatchQueuedSms({ db, selection }, ORG_A);
+    expect(run).toMatchObject({
+      outcomes: [{ id: MSG_A, outcome: "skipped", reason: "claimed by another worker" }],
+    });
+    expect(tables.outbound_messages[0]).toMatchObject({
+      status: "queued",
+      provider_ref: "claim:other-worker",
+    });
+    expect(f).not.toHaveBeenCalled();
+  });
+
   it("never re-sends a row that already holds a claim or a provider id", async () => {
     const tables = world();
     tables.outbound_messages[0]!.provider_ref = "claim:crashed-mid-send";
