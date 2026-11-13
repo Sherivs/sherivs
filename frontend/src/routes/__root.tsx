@@ -6,7 +6,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { AppProvider } from "@/contexts/app-context";
@@ -18,6 +18,8 @@ import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme";
 import { SherivsLockup, SherivsLogo } from "@/components/brand/sherivs-logo";
 import { AnalyticsConsent } from "@/components/analytics/analytics-consent";
 import { captureClientError } from "@/lib/observability/sentry-browser";
+import { scrubString } from "@/lib/observability/scrub";
+import { reportRootError } from "@/lib/observability/root-boundary";
 
 const PUBLIC_X_HANDLE = publishedCompanySocial().find((item) => item.id === "x")?.handle;
 
@@ -49,9 +51,13 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent({ error, reset }: { error: unknown; reset?: () => void }) {
-  console.error(error);
-  captureClientError(error);
-  const message = error instanceof Error ? error.message : "An unexpected error occurred.";
+  useEffect(() => {
+    reportRootError(error);
+    captureClientError(error);
+  }, [error]);
+  const raw = error instanceof Error ? error.message : "";
+  const scrubbed = raw ? scrubString(raw) : "";
+  const message = scrubbed.trim() ? scrubbed : "An unexpected error occurred.";
   return (
     <div className="flex min-h-dvh items-center justify-center px-4">
       <div className="max-w-md text-center">

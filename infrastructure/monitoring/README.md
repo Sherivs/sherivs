@@ -21,9 +21,18 @@ declarative values/configuration it is deployed with (CF-9).
 - fabric: provider health, quota consumption, drift, cost per tenant
 - autonomy: agent and workflow failure rates, approval backlog
 
+## Approved sinks (INFRA-01)
+
+Production events go to Datadog, CloudWatch, and provider-native consoles.
+Staging may use Sentry and PostHog. Development uses local structured logs
+only. Production must not export events to Sentry or PostHog. No paid account
+is created from this repository. See `docs/architecture/observability.md`.
+
 ## Status
 
 **Not deployed.** CF-9 requires a running cluster (CF-4/CF-5) and credentials.
-The stack choice (managed observability vs self-hosted) is an owner decision
-recorded as an ADR before CF-9 applies — the tables above are the contract either
-way, so the decision does not change what we measure, only where it runs.
+The application gate for Sentry and PostHog is in
+`frontend/src/lib/observability/vendor-telemetry.ts`. Datadog and CloudWatch are the
+approved production sinks and are not wired in this tree until an owner
+configures an existing account. The tables above remain the measurement
+contract.
