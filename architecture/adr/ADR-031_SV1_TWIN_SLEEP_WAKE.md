@@ -1,0 +1,29 @@
+# ADR-031: SV1 Personal Twin Event-Triggered Sleep/Wake
+
+| Field                      | Value                                                                                                                                                                                                            |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Status                     | PROPOSED (operator ratification required before deployment)                                                                                                                                                      |
+| Date                       | 2026-11-13                                                                                                                                                                                                       |
+| Author                     | Claude Code agent (SV1-TWIN-03 implementation)                                                                                                                                                                   |
+| Creator                    | Claude Code agent, mission T-003 (issue #288)                                                                                                                                                                    |
+| Mission                    | SV1-TWIN-03 (event-triggered sleep/wake, budgets and kill switch)                                                                                                                                                |
+| Capabilities               | TWIN-01 personal twin (ADR-029); TWIN-02 role lenses (ADR-030); ephemeral agent lifecycle (`agent-runtime/ephemeral-lifecycle.ts`)                                                                               |
+| Supersedes-in-part         | None                                                                                                                                                                                                             |
+| Cites                      | [ADR-029](./ADR-029_SV1_TWIN_PERSONAL_PROVISIONING.md); [ADR-030](./ADR-030_SV1_TWIN_ROLE_LENSES.md); [ephemeral lifecycle](../../frontend/src/lib/agent-runtime/ephemeral-lifecycle.ts); AGENTS.md §§13, 16, 21 |
+| Minimal ownership artifact | `frontend/src/lib/scholar/personal-twin/sleep-wake.ts` (pure functions); no migration, no table                                                                                                                  |
+
+## Context
+
+A personal twin must not be an always-on process. Each twin should exist only while it handles one defined event, stop the moment a budget is spent or an operator pulls the kill switch, and leave an audit trail that ties every step to the event that caused it. The repository already has an ephemeral lease state machine; what was missing was the layer that decides which events may wake a twin and when.
+
+## Decision
+
+Add one pure module, `sleep-wake.ts`, that composes with the existing ephemeral lifecycle instead of adding a second state machine. (1) A fixed allowlist of six event types; anything else is rejected, and events whose source is a twin are rejected so a twin cannot wake itself or another twin. (2) An immutable state holding a bounded queue, duplicate-suppression ids, in-flight runs, usage buckets, kill switches, a dead-letter list and an append-only audit list. (3) `planNextWake` issues a lease through `issueLease`, then `TRIGGER` and `MISSION_BIND`; it returns the identical state object when there is nothing queued. (4) Per-user and per-tenant wake and token budgets over a rolling window, with the run's token ceiling capped at what the user and tenant have left. (5) `advanceRun` applies lifecycle events through `transition`, so lease expiry, action limits and token caps are enforced by the existing machine, and then charges the window buckets. (6) `completeRun` accepts only a sleeping lease and releases the slot. (7) A global, tenant or user kill switch drops matching queued events and terminates matching runs in the same call. (8) The host drives everything; the module has no timers or loops, and `reapExpiredRuns` is called by the host when it handles other work. The default limits are proposals for owner review, not tuned values.
+
+## Consequences
+
+Idle cost is zero in the module: with an empty queue and no run, a call allocates nothing. The host that will call these functions (a request handler or queue consumer) is not part of this mission, so no twin is woken in any environment yet. Wake events that arrive while a user's budget is spent stay queued until their time-to-live passes, then go to the dead-letter list. State is held by the caller; persistence of the queue and audit list is a later decision and would need a migration in the reserved block 20261103160000–160999, which this mission does not use. Time-based triggers (a deadline coming due) must be raised by an external scheduler as a `scheduler` source event; this module does not schedule.
+
+## Verification
+
+`tests/unit/sv1-twin-sleep-wake.test.ts` (31 tests) covers the allowlist, twin-source rejection, malformed events, duplicates, queue bounds, idle identity, run completion, per-user concurrency and FIFO, expiry, wake and token budgets (user and tenant), kill switch scopes and release, audit correlation, immutability, a 1500-step seeded random stream with invariants checked after every step, and a source check for timers, loops, clocks and network calls. 15 deliberate mutations of the module were each caught by at least one test. `tests/unit/agent-runtime-lifecycle.test.ts` still passes. No CI evidence exists because the organisation billing hold blocks Actions.
