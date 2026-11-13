@@ -467,7 +467,7 @@ body:has(.app-shell-frame.is-student-mobility) {
 
 .app-shell-widget span {
   color: var(--shell-muted);
-  font-size: 0.64rem;
+  font-size: 0.74rem;
   font-weight: 650;
   line-height: 1.25;
 }
@@ -498,7 +498,7 @@ body:has(.app-shell-frame.is-student-mobility) {
   gap: 0.4rem;
   text-decoration: none;
   color: inherit;
-  font-size: 0.68rem;
+  font-size: 0.74rem;
   font-weight: 650;
   text-align: center;
   line-height: 1.2;
@@ -608,7 +608,7 @@ body:has(.app-shell-frame.is-student-mobility) {
   min-height: 3.15rem;
   color: var(--shell-muted);
   text-decoration: none;
-  font-size: 0.62rem;
+  font-size: 0.7rem;
   font-weight: 700;
 }
 
