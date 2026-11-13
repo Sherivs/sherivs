@@ -56,8 +56,9 @@ describe("organization voice-agent migration posture", () => {
 
   it("checks consent in the server boundary and requires a different admin for approval", () => {
     expect(SERVER_FUNCTIONS).toContain("assertVoiceRecipientConsent");
-    expect(CONSENT_HELPER).toContain('.from("comms_optins"');
-    expect(CONSENT_HELPER).toContain('.eq("channel" as never, "voice")');
+    expect(CONSENT_HELPER).toContain("voice_agent_assert_recipient_consent");
+    expect(CONSENT_HELPER).not.toContain("phoneConfirmed: true");
+    expect(CONSENT_HELPER).not.toContain("users.school_id");
     expect(MIGRATION).toContain(
       "GRANT EXECUTE ON FUNCTION public.voice_agent_request_call(text, text, text, text, text)",
     );
