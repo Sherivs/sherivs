@@ -127,6 +127,7 @@ import { Route as ApiPublicCronIntegrationsSyncRouteImport } from './routes/api/
 import { Route as ApiPublicCronWalletTopupReconcileRouteImport } from './routes/api/public/cron/wallet-topup-reconcile'
 import { Route as ApiPublicCronWhatsappN8nForwardRouteImport } from './routes/api/public/cron/whatsapp-n8n-forward'
 import { Route as ApiPublicWebhooksAfricasTalkingVoiceRouteImport } from './routes/api/public/webhooks/africas-talking-voice'
+import { Route as ApiPublicWebhooksBulksmsRouteImport } from './routes/api/public/webhooks/bulksms'
 import { Route as ApiPublicWebhooksPaystackRouteImport } from './routes/api/public/webhooks/paystack'
 import { Route as ApiPublicWebhooksUssdRouteImport } from './routes/api/public/webhooks/ussd'
 import { Route as ApiPublicWebhooksWhatsappRouteImport } from './routes/api/public/webhooks/whatsapp'
@@ -736,6 +737,12 @@ const ApiPublicWebhooksAfricasTalkingVoiceRoute =
     path: '/api/public/webhooks/africas-talking-voice',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicWebhooksBulksmsRoute =
+  ApiPublicWebhooksBulksmsRouteImport.update({
+    id: '/api/public/webhooks/bulksms',
+    path: '/api/public/webhooks/bulksms',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicWebhooksPaystackRoute =
   ApiPublicWebhooksPaystackRouteImport.update({
     id: '/api/public/webhooks/paystack',
@@ -884,6 +891,7 @@ export interface FileRoutesByFullPath {
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
+  '/api/public/webhooks/bulksms': typeof ApiPublicWebhooksBulksmsRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
   '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
   '/api/public/webhooks/whatsapp': typeof ApiPublicWebhooksWhatsappRoute
@@ -996,6 +1004,7 @@ export interface FileRoutesByTo {
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
+  '/api/public/webhooks/bulksms': typeof ApiPublicWebhooksBulksmsRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
   '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
   '/api/public/webhooks/whatsapp': typeof ApiPublicWebhooksWhatsappRoute
@@ -1122,6 +1131,7 @@ export interface FileRoutesById {
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
+  '/api/public/webhooks/bulksms': typeof ApiPublicWebhooksBulksmsRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
   '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
   '/api/public/webhooks/whatsapp': typeof ApiPublicWebhooksWhatsappRoute
@@ -1248,6 +1258,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/wallet-topup-reconcile'
     | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/webhooks/africas-talking-voice'
+    | '/api/public/webhooks/bulksms'
     | '/api/public/webhooks/paystack'
     | '/api/public/webhooks/ussd'
     | '/api/public/webhooks/whatsapp'
@@ -1360,6 +1371,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/wallet-topup-reconcile'
     | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/webhooks/africas-talking-voice'
+    | '/api/public/webhooks/bulksms'
     | '/api/public/webhooks/paystack'
     | '/api/public/webhooks/ussd'
     | '/api/public/webhooks/whatsapp'
@@ -1485,6 +1497,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/wallet-topup-reconcile'
     | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/webhooks/africas-talking-voice'
+    | '/api/public/webhooks/bulksms'
     | '/api/public/webhooks/paystack'
     | '/api/public/webhooks/ussd'
     | '/api/public/webhooks/whatsapp'
@@ -1520,6 +1533,7 @@ export interface RootRouteChildren {
   ApiPublicCronWalletTopupReconcileRoute: typeof ApiPublicCronWalletTopupReconcileRoute
   ApiPublicCronWhatsappN8nForwardRoute: typeof ApiPublicCronWhatsappN8nForwardRoute
   ApiPublicWebhooksAfricasTalkingVoiceRoute: typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
+  ApiPublicWebhooksBulksmsRoute: typeof ApiPublicWebhooksBulksmsRoute
   ApiPublicWebhooksPaystackRoute: typeof ApiPublicWebhooksPaystackRoute
   ApiPublicWebhooksUssdRoute: typeof ApiPublicWebhooksUssdRoute
   ApiPublicWebhooksWhatsappRoute: typeof ApiPublicWebhooksWhatsappRoute
@@ -2355,6 +2369,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWebhooksAfricasTalkingVoiceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/webhooks/bulksms': {
+      id: '/api/public/webhooks/bulksms'
+      path: '/api/public/webhooks/bulksms'
+      fullPath: '/api/public/webhooks/bulksms'
+      preLoaderRoute: typeof ApiPublicWebhooksBulksmsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/webhooks/paystack': {
       id: '/api/public/webhooks/paystack'
       path: '/api/public/webhooks/paystack'
@@ -2739,6 +2760,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCronWhatsappN8nForwardRoute: ApiPublicCronWhatsappN8nForwardRoute,
   ApiPublicWebhooksAfricasTalkingVoiceRoute:
     ApiPublicWebhooksAfricasTalkingVoiceRoute,
+  ApiPublicWebhooksBulksmsRoute: ApiPublicWebhooksBulksmsRoute,
   ApiPublicWebhooksPaystackRoute: ApiPublicWebhooksPaystackRoute,
   ApiPublicWebhooksUssdRoute: ApiPublicWebhooksUssdRoute,
   ApiPublicWebhooksWhatsappRoute: ApiPublicWebhooksWhatsappRoute,
