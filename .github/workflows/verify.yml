@@ -159,6 +159,12 @@ jobs:
           key: sim-lab-bin-pg17.2-pgrst12.2.3-k6v0.54.0
       - name: Apply all migrations (fresh DB)
         run: bash tools/sim-lab/up.sh
+      - name: SV1-SCHED forced-RLS isolation (real Postgres, rolled back)
+        run: |
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" \
+            -v ON_ERROR_STOP=1 -f tests/integration/scheduling-rls.local.sql \
+            2>&1 | tee /tmp/sched-rls.out
+          grep -q 'SV1-SCHED RLS ALL PASS' /tmp/sched-rls.out
       - name: WhatsApp n8n RPC ambiguity fix (real Postgres, rolled back)
         run: |
           psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
