@@ -5,7 +5,7 @@
 | Status | PROPOSED (operator review required before production rollout) |
 | Date | 2026-11-13 |
 | Author | Claude (M009 Stage B-2 build) |
-| Creator | Claude Code agent, mission B-2 (issue #281) |
+| Creator | Claude Code agent, mission B-002 (issue #281) |
 | Mission | M009 Stage B-2 — Academic and Teaching workspace |
 | Cites | `AGENTS.md` identity versus authorization and honesty rules; ADR-024; `frontend/src/lib/workspaces/category-workspace.ts`; `frontend/src/lib/workspaces/academic-teaching.ts`; `tests/unit/m009-b2-academic-teaching.test.ts` |
 | Minimal ownership artifact | This ADR and the category workspace library |
