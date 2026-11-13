@@ -155,6 +155,7 @@ export type AuditKind =
   | "wake_started"
   | "run_progress"
   | "run_stopped"
+  | "request_rejected"
   | "run_slept"
   | "kill_switch_engaged"
   | "kill_switch_released";
@@ -567,7 +568,16 @@ export function advanceRun(
   nowMs: number,
 ): AdvanceResult {
   const run = state.inFlight.find((r) => r.runId === runId);
-  if (!run) return { ok: false, state, stopped: false, reason: "unknown_run" };
+  if (!run) {
+    return {
+      ok: false,
+      state: withAudit(state, nowMs, "request_rejected", `advance:unknown_run:${event.type}`, {
+        runId,
+      }),
+      stopped: false,
+      reason: "unknown_run",
+    };
+  }
 
   if (killSwitchFor(state, run.tenantRef, run.userRef)) {
     return {
@@ -582,7 +592,17 @@ export function advanceRun(
   // completeRun, which is what releases the slot. TERMINATE here is an abort.
   const result = transition(run.lease, event);
   if (!result.ok) {
-    return { ok: false, state, stopped: false, reason: "illegal_transition" };
+    return {
+      ok: false,
+      state: withAudit(state, nowMs, "request_rejected", `advance:${result.reason}:${event.type}`, {
+        correlationId: run.correlationId,
+        tenantRef: run.tenantRef,
+        userRef: run.userRef,
+        runId,
+      }),
+      stopped: false,
+      reason: "illegal_transition",
+    };
   }
   if (result.forcedTermination) {
     return {
@@ -650,8 +670,25 @@ export type CompleteResult =
  */
 export function completeRun(state: SleepWakeState, runId: string, nowMs: number): CompleteResult {
   const run = state.inFlight.find((r) => r.runId === runId);
-  if (!run) return { ok: false, state, reason: "unknown_run" };
-  if (run.lease.state !== "sleeping") return { ok: false, state, reason: "run_not_asleep" };
+  if (!run) {
+    return {
+      ok: false,
+      state: withAudit(state, nowMs, "request_rejected", "complete:unknown_run", { runId }),
+      reason: "unknown_run",
+    };
+  }
+  if (run.lease.state !== "sleeping") {
+    return {
+      ok: false,
+      state: withAudit(state, nowMs, "request_rejected", "complete:run_not_asleep", {
+        correlationId: run.correlationId,
+        tenantRef: run.tenantRef,
+        userRef: run.userRef,
+        runId,
+      }),
+      reason: "run_not_asleep",
+    };
+  }
   const at = Math.max(nowMs, run.lease.lastEventAtMs);
   transition(run.lease, { type: "TERMINATE", atMs: at, reason: "mission_completed" });
   return {
@@ -717,7 +754,14 @@ export function engageKillSwitch(
 ): KillSwitchResult {
   const key = switchKey(req);
   if (key === undefined || !nonEmpty(req.actor) || !nonEmpty(req.reason)) {
-    return { ok: false, state, reason: "invalid_request" };
+    return {
+      ok: false,
+      state: withAudit(state, nowMs, "request_rejected", `engage:invalid_request:${req.scope}`, {
+        tenantRef: req.tenantRef ?? null,
+        userRef: req.userRef ?? null,
+      }),
+      reason: "invalid_request",
+    };
   }
   const sw: KillSwitch = Object.freeze({
     scope: req.scope,
@@ -751,13 +795,17 @@ export function releaseKillSwitch(
   nowMs: number,
 ): KillSwitchResult {
   const key = switchKey({ ...req, reason: req.reason ?? "release" });
-  if (key === undefined || !nonEmpty(req.actor)) {
-    return { ok: false, state, reason: "invalid_request" };
-  }
+  const rejectRelease = (detail: string): KillSwitchResult => ({
+    ok: false,
+    state: withAudit(state, nowMs, "request_rejected", `release:${detail}:${req.scope}`, {
+      tenantRef: req.tenantRef ?? null,
+      userRef: req.userRef ?? null,
+    }),
+    reason: "invalid_request",
+  });
+  if (key === undefined || !nonEmpty(req.actor)) return rejectRelease("invalid_request");
   const remaining = state.killSwitches.filter((k) => !(k.scope === req.scope && k.key === key));
-  if (remaining.length === state.killSwitches.length) {
-    return { ok: false, state, reason: "invalid_request" };
-  }
+  if (remaining.length === state.killSwitches.length) return rejectRelease("no_such_switch");
   return {
     ok: true,
     state: withAudit(
