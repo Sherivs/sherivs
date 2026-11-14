@@ -5,8 +5,8 @@
 | Status                     | PROPOSED (operator ratification required before deployment)                                     |
 | Date                       | 2026-11-13                                                                                      |
 | Author                     | Claude Code agent (DB-12 implementation)                                                        |
-| Creator                    | Claude Code agent, mission DB-12 (issue #357)                                                   |
-| Mission                    | DB-12 (audit finding R-12, database advisor clean-up)                                           |
+| Creator                    | Claude Code agent, mission R-012 (audit finding R-12, issue #357)                               |
+| Mission                    | R-012 (audit finding R-12, database advisor clean-up)                                           |
 | Capabilities               | Database integrity, schema hygiene                                                              |
 | Supersedes-in-part         | None                                                                                            |
 | Cites                      | ADR-018 fee configuration and flags (migration 20261024000250); Supabase advisors 0004 and 0009 |

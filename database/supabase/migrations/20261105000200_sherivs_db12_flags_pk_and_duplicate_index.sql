@@ -9,7 +9,7 @@
 --     primary key on (key, org_id) is impossible because org_id is nullable (a NULL org_id is the
 --     platform-wide default), so a surrogate id is added and feature_flags_scope is kept as the
 --     rule that stops duplicate flags. flag_set() depends on it for ON CONFLICT inference.
---   * public.teacher_biometrics carries two identical indexes on (user_id, school_id):
+--   * public.teacher_biometrics carries two identical two-column indexes (user, tenant):
 --     idx_teacher_biometrics_user and idx_biometrics_user (advisor 0009). The second is dropped.
 --
 -- Apply order: no dependencies. The table is small (9 rows in production), so the rewrite is brief.
