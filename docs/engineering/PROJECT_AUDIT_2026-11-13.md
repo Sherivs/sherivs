@@ -33,6 +33,10 @@ Later in the same session, the missions that had no PRs were built as stacked dr
 | #367 to #371           | TWIN-02 to TWIN-06 (TWIN-06 is the isolation, injection and audit gate with a cost report) | #320       |
 | #372                   | REALITY R3 adaptive onboarding interview (ADR-053, unapplied migration)                    | R1 branch  |
 | #373                   | REALITY R9 start the public website from approved reality (ADR-054, no migration)          | #372       |
+| #374                   | DB-12 feature_flags primary key and duplicate index (ADR-073, unapplied migration)         | master     |
+| #375                   | REALITY R20 reserved reality.* writer and atomic save (ADR-074, unapplied migration)       | #373       |
+| #376                   | REALITY R23 early-childhood question pack (ADR-075, no migration)                          | #375       |
+| #377                   | SEC-03 proposal: private-by-default privileges (ADR-076, proposal file, not applied)       | master     |
 
 ## 3a. Production advisor snapshot (read-only, 2026-11-13)
 
@@ -82,6 +86,10 @@ Priority: P0 do before onboarding real tenants, P1 next, P2 planned. "Owner" mea
 | R-21 | P2       | Reality interview and org-profile writes are read-modify-write and not atomic; `expectedRevision` only stops stale screens.                                                                                                                                                                 | Move to a compare-and-set RPC if concurrent admins become likely.                                                                                                                           | Observe                     |
 | R-22 | P2       | Reality to website mapping is narrow: only institution type and levels have an existing place in the generator's inputs. Campus count, senior streams and external examinations are approved and public-safe but cannot be shown. R9 is create-only and never updates an existing site.     | Decide whether to extend the website catalog (and, for data-driven blocks, a migration) and design a merge for existing sites.                                                              | Owner decision              |
 | R-23 | P2       | R1 has no early-childhood question pack, so creche interviews contain only the core questions; islamic, special-needs and multi-institution types are refused by the interview.                                                                                                             | Authorise an early-childhood pack and the remaining types as a later V1 slice.                                                                                                              | Owner decision              |
+
+## 4a. Status update, 2026-11-14
+
+Drafts opened for findings R-12 (#374), R-20 and R-21 (#375), R-23 (#376) and the R-06 proposal (#377). They are not merged or applied. `DECISIONS_2026-11-14.md` records the recommended option for each remaining owner decision and the check that M14 does not depend on M06.
 
 ## 5. What this audit did not do
 

@@ -34,6 +34,9 @@ Independent of each other unless noted. Within a stack, bottom to top.
 | JARVIS                  | #321, #362 to #366                                     | 20261103165000 (#362)                                          |                                                                                                 |
 | TWIN                    | #320, #367 to #371                                     | 20261103154000 (#320)                                          |                                                                                                 |
 | Reality                 | #336 R1, #372 R3, #373 R9                              | 20261105000100 (R3)                                            | R3 migration not applied; R9 has no migration.                                                  |
+| Database clean-up       | #374 DB-12                                             | 20261105000200                                                 | Unapplied; independent of the other groups.                                                     |
+| Reality (continued)     | #375 R20, #376 R23 (stacked on #373)                   | 20261105000300 (R20)                                           | R20 migration unapplied; R23 has no migration.                                                  |
+| Proposal                | #377 SEC-03 default privileges                         | none (proposal file)                                           | Apply last, after all pending migrations; owner decision R-06.                                  |
 | Docs                    | #357 audit register and this plan                      | none                                                           |                                                                                                 |
 
 No two PRs use the same migration version. R3's version (20261105000100) is later than every other file in the repository.
@@ -46,6 +49,8 @@ No two PRs use the same migration version. R3's version (20261105000100) is late
 4. Whether to apply the unapplied migrations (#351, #355, #315, #318, #352, #313, #324, #353, #372 and the stacks' migrations) and when; staging first.
 5. Reality: reserved-prefix guard for the interview attestation (R-20) and catalog extension for the website sync (R-22).
 6. Fate of #5 and #6 (Cursor drafts on an older base) and the Dependabot PRs (merge after CI works).
+
+See `DECISIONS_2026-11-14.md` for the recommended option on each decision above, the M14 versus M06 check (no dependency; textual conflicts only) and the merge-day hazards.
 
 ## 4. After merging
 
