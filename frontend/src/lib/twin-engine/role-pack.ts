@@ -20,7 +20,7 @@ import { z } from "zod";
 export const ROLE_PACK_SCHEMA = "sherivs.role-pack.v1" as const;
 
 /** Risk tiers, aligned with the JARVIS risk policy (ADR-035). Kept local so the
- * engine has no dependency on the JARVIS stack; a test pins the alignment. */
+ * engine has no dependency on the JARVIS stack; alignment is by convention until the JARVIS stack is restacked (ADR-082). */
 export const ROLE_PACK_TIERS = ["T0", "T1", "T2", "T3", "T4"] as const;
 export type RolePackTier = (typeof ROLE_PACK_TIERS)[number];
 

@@ -31,9 +31,9 @@ Sherivs adapters with an exit plan.
 | Mission   | Deliverable                                                                                  | ADR           |
 | --------- | -------------------------------------------------------------------------------------------- | ------------- |
 | ENGINE-01 | Person Passport, membership contexts, Role Packs, autonomy ladder, tenant and internal packs | 077, 078, 079 |
-| ENGINE-02 | Sherivs Conductor (Hermes rename) and the runtime spine contracts                            | 080           |
+| ENGINE-02 | Sherivs Conductor (Hermes rename, compatibility-first)                                       | 080           |
 | ENGINE-03 | Tool Broker and connector vault contracts                                                    | 081           |
-| ENGINE-04 | JARVIS executive authority, escalation and oversight                                         | 082           |
+| ENGINE-04 | JARVIS executive authority, severity routing, owner alerts and workforce oversight           | 082           |
 
 ## Operator actions (not done by the agent)
 
@@ -41,3 +41,17 @@ Sherivs adapters with an exit plan.
 - Decide the cutover from `cg_personal_twin` to contexts (follow-up ADR).
 - Review the quarantine baseline entry for the new migration with the neutrality owner.
 - Counsel review of staff-twin privacy against the Nigeria Data Protection Act 2023.
+
+## Status and what is not built
+
+Built and tested as drafts (nothing applied, merged or deployed): ENGINE-01 to ENGINE-04 above.
+
+Not built, and not claimed:
+
+- Wake and sleep runtime wiring that makes the Conductor run on events and schedules for twin contexts.
+- An LLM-backed agent runtime (the engine decides authority and routes; it does not yet run a model loop per context). The existing AI gateway and draft-only call sites are the starting point.
+- Connector adapters (GitHub, Slack, email, WhatsApp, SMS, social, payments, CRM, n8n, IAM) and the secret manager behind the vault references.
+- Channel adapters for owner alerts (voice, WhatsApp, SMS), and the owner's consent for live outbound.
+- The JARVIS service identity, and the restack that wires ENGINE-04 to the JARVIS approval inbox and escalation ladder.
+- Console and shell UI for the passport, approval inbox, workforce view and kill switch.
+- The `cg_personal_twin` cutover to the person passport (ADR-077).
