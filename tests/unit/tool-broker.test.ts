@@ -322,7 +322,12 @@ describe("ENGINE-03 ledger redaction", () => {
       api_key: "x",
       nested: { password: "p", note: "ok", t: "ghp_" + "z".repeat(30) },
       Authorization: "Bearer " + "q".repeat(30),
-    }) as Record<string, any>;
+    }) as {
+      to?: string;
+      api_key?: unknown;
+      Authorization?: unknown;
+      nested: { password?: unknown; note?: string; t?: string };
+    };
     expect(out.to).toBe("parent@example.test");
     expect(out.api_key).toBeUndefined();
     expect(out.Authorization).toBeUndefined();
