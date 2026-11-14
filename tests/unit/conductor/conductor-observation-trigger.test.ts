@@ -1,9 +1,9 @@
 /**
- * V1 wave follow-up team T-E (HERMES-WIRE) — Hermes event-observation
+ * V1 wave follow-up team T-E (CONDUCTOR-WIRE) — Conductor event-observation
  * runtime trigger wiring.
  *
  * Proves, at unit level (structural fake Supabase client — no real database,
- * no network), that the runtime consumption point (`runHermesEventObservationStep`)
+ * no network), that the runtime consumption point (`runConductorEventObservationStep`)
  * actually drives the event→observation flow:
  *  1. backend selection is respected: unset/memory (the DEFAULT) is a typed
  *     no-op that changes nothing and touches nothing; db consumes PENDING
@@ -19,22 +19,22 @@
 import { afterEach, describe, expect, it } from "vitest";
 import type { KernelEventRecord } from "@/lib/kernel/event-semantics";
 import {
-  HERMES_EVENT_TRIGGER_DELIVERY_REJECTION,
-  HERMES_EVENT_TRIGGER_MEMORY_SKIP_REASON,
-  runHermesEventObservationStep,
-} from "@/lib/hermes/hermes-observation-trigger.server";
+  CONDUCTOR_EVENT_TRIGGER_DELIVERY_REJECTION,
+  CONDUCTOR_EVENT_TRIGGER_MEMORY_SKIP_REASON,
+  runConductorEventObservationStep,
+} from "@/lib/conductor/conductor-observation-trigger.server";
 import {
-  createInMemoryHermesObservationPort,
-  type HermesObservationRecorder,
-} from "@/lib/hermes/hermes-observation";
-import { HERMES_OBSERVATION_SUBSTRATE_GAP } from "@/lib/hermes/hermes-observation-db.server";
+  createInMemoryConductorObservationPort,
+  type ConductorObservationRecorder,
+} from "@/lib/conductor/conductor-observation";
+import { CONDUCTOR_OBSERVATION_SUBSTRATE_GAP } from "@/lib/conductor/conductor-observation-db.server";
 
 /* ─────────────────────────────────────────────────────────────
  * Fixtures
  * ────────────────────────────────────────────────────────────*/
 
 const TENANT = "tenant-alpha";
-const HERMES = "hermes-wire-1";
+const CONDUCTOR = "conductor-wire-1";
 const NOW = "2026-10-03T12:00:00.000Z";
 const T0 = "2026-10-03T11:00:00.000Z";
 
@@ -57,7 +57,7 @@ function event(overrides?: Partial<KernelEventRecord>): KernelEventRecord {
   };
 }
 
-const BACKEND_ENV = "HERMES_OBSERVATION_BACKEND";
+const BACKEND_ENV = "CONDUCTOR_OBSERVATION_BACKEND";
 
 afterEach(() => {
   delete process.env[BACKEND_ENV];
@@ -177,7 +177,7 @@ function eventRow(overrides?: Record<string, unknown>): Row {
   };
 }
 
-const stepInput = { tenantId: TENANT, hermesId: HERMES, now: NOW } as const;
+const stepInput = { tenantId: TENANT, conductorId: CONDUCTOR, now: NOW } as const;
 
 /* ─────────────────────────────────────────────────────────────
  * 1. Backend selection is respected
@@ -185,25 +185,25 @@ const stepInput = { tenantId: TENANT, hermesId: HERMES, now: NOW } as const;
 
 describe("Backend selection", () => {
   it("the DEFAULT (unset env) backend is memory: a typed no-op that changes nothing", async () => {
-    const result = await runHermesEventObservationStep(stepInput);
+    const result = await runConductorEventObservationStep(stepInput);
     expect(result.backend).toBe("memory");
     expect(result.ok).toBe(true);
     expect(result.consumed).toBe("skipped");
-    expect(result.reason).toBe(HERMES_EVENT_TRIGGER_MEMORY_SKIP_REASON);
+    expect(result.reason).toBe(CONDUCTOR_EVENT_TRIGGER_MEMORY_SKIP_REASON);
     expect(result.ingestion).toBeNull();
   });
 
-  it("an explicit HERMES_OBSERVATION_BACKEND=memory behaves identically", async () => {
+  it("an explicit CONDUCTOR_OBSERVATION_BACKEND=memory behaves identically", async () => {
     process.env[BACKEND_ENV] = "memory";
-    const result = await runHermesEventObservationStep(stepInput);
+    const result = await runConductorEventObservationStep(stepInput);
     expect(result.backend).toBe("memory");
     expect(result.consumed).toBe("skipped");
   });
 
   it("a memory skip touches NEITHER the client NOR the recorder (existing paths unchanged)", async () => {
     const client = fakeSupabaseClient();
-    const recorder = createInMemoryHermesObservationPort();
-    const result = await runHermesEventObservationStep(stepInput, {
+    const recorder = createInMemoryConductorObservationPort();
+    const result = await runConductorEventObservationStep(stepInput, {
       backend: "memory",
       client: client as never,
       recorder,
@@ -213,11 +213,11 @@ describe("Backend selection", () => {
     expect(recorder.size()).toBe(0);
   });
 
-  it("HERMES_OBSERVATION_BACKEND=db consumes PENDING cg_event rows through the DB adapter", async () => {
+  it("CONDUCTOR_OBSERVATION_BACKEND=db consumes PENDING cg_event rows through the DB adapter", async () => {
     process.env[BACKEND_ENV] = "db";
     const client = fakeSupabaseClient({ cg_event: { rows: [eventRow()] } });
 
-    const result = await runHermesEventObservationStep(stepInput, { client: client as never });
+    const result = await runConductorEventObservationStep(stepInput, { client: client as never });
     expect(result.backend).toBe("db");
     expect(result.ok).toBe(true);
     expect(result.consumed).toBe("ingested");
@@ -231,7 +231,7 @@ describe("Backend selection", () => {
     expect(observationInsert).toBeDefined();
     expect(observationInsert?.row.source).toBe("event");
     expect(observationInsert?.row.event_ref).toBe("11111111-1111-4111-8111-111111111111");
-    expect(observationInsert?.row.created_by).toBe(HERMES);
+    expect(observationInsert?.row.created_by).toBe(CONDUCTOR);
     expect(observationInsert?.row.generated_by_ai).toBe(true);
     expect(observationInsert?.row.verified).toBe(false);
 
@@ -241,20 +241,20 @@ describe("Backend selection", () => {
 
   it("an unknown backend value fails the step closed — typed, observable, no crash", async () => {
     process.env[BACKEND_ENV] = "redis";
-    const result = await runHermesEventObservationStep(stepInput);
+    const result = await runConductorEventObservationStep(stepInput);
     expect(result.ok).toBe(false);
     expect(result.backend).toBe("unresolved");
     expect(result.consumed).toBe("failed");
-    expect(result.reason).toContain("not a registered Hermes observation backend");
+    expect(result.reason).toContain("not a registered Conductor observation backend");
     expect(result.ingestion).toBeNull();
   });
 
   it("an injected backend override is validated too", async () => {
-    const result = await runHermesEventObservationStep(stepInput, {
+    const result = await runConductorEventObservationStep(stepInput, {
       backend: "s3" as never,
     });
     expect(result.ok).toBe(false);
-    expect(result.reason).toContain("not a registered Hermes observation backend");
+    expect(result.reason).toContain("not a registered Conductor observation backend");
   });
 });
 
@@ -264,8 +264,8 @@ describe("Backend selection", () => {
 
 describe("Memory mode with explicit in-process deliveries", () => {
   it("records observations from event fixtures through the in-memory port (§12 stamps)", async () => {
-    const recorder = createInMemoryHermesObservationPort();
-    const result = await runHermesEventObservationStep(
+    const recorder = createInMemoryConductorObservationPort();
+    const result = await runConductorEventObservationStep(
       { ...stepInput, deliveries: [event()] },
       { backend: "memory", recorder },
     );
@@ -278,7 +278,7 @@ describe("Memory mode with explicit in-process deliveries", () => {
     if (!listed.ok) throw new Error(listed.error);
     expect(listed.observations).toHaveLength(1);
     const observation = listed.observations[0];
-    expect(observation.recordedBy).toBe(HERMES);
+    expect(observation.recordedBy).toBe(CONDUCTOR);
     expect(observation.generatedByAi).toBe(true);
     expect(observation.verified).toBe(false);
     expect(observation.source).toBe("event");
@@ -287,8 +287,8 @@ describe("Memory mode with explicit in-process deliveries", () => {
   });
 
   it("duplicate deliveries inside one step collapse — exactly-once (§10)", async () => {
-    const recorder = createInMemoryHermesObservationPort();
-    const result = await runHermesEventObservationStep(
+    const recorder = createInMemoryConductorObservationPort();
+    const result = await runConductorEventObservationStep(
       { ...stepInput, deliveries: [event(), event(), event()] },
       { backend: "memory", recorder },
     );
@@ -299,15 +299,15 @@ describe("Memory mode with explicit in-process deliveries", () => {
   });
 
   it("a repeated step over the same event ref REPLAYS — nothing recorded twice", async () => {
-    const recorder = createInMemoryHermesObservationPort();
-    const first = await runHermesEventObservationStep(
+    const recorder = createInMemoryConductorObservationPort();
+    const first = await runConductorEventObservationStep(
       { ...stepInput, deliveries: [event()] },
       { backend: "memory", recorder },
     );
     if (!first.ok || !first.ingestion) throw new Error("first step must ingest");
     expect(first.ingestion.recorded).toHaveLength(1);
 
-    const second = await runHermesEventObservationStep(
+    const second = await runConductorEventObservationStep(
       { ...stepInput, deliveries: [event()] },
       { backend: "memory", recorder },
     );
@@ -319,8 +319,8 @@ describe("Memory mode with explicit in-process deliveries", () => {
   });
 
   it("excludes deliveries without tenant context or from another tenant (§13)", async () => {
-    const recorder = createInMemoryHermesObservationPort();
-    const result = await runHermesEventObservationStep(
+    const recorder = createInMemoryConductorObservationPort();
+    const result = await runConductorEventObservationStep(
       {
         ...stepInput,
         deliveries: [event({ tenant_id: null }), event({ tenant_id: "tenant-beta" })],
@@ -334,7 +334,7 @@ describe("Memory mode with explicit in-process deliveries", () => {
   });
 
   it("a recorder failure fails the step closed", async () => {
-    const failingRecorder: HermesObservationRecorder = {
+    const failingRecorder: ConductorObservationRecorder = {
       backend: "memory",
       async recordObservation() {
         return { ok: false, error: "observation_substrate_missing: injected gap" };
@@ -343,7 +343,7 @@ describe("Memory mode with explicit in-process deliveries", () => {
         return { ok: false, error: "observation_substrate_missing: injected gap" };
       },
     };
-    const result = await runHermesEventObservationStep(
+    const result = await runConductorEventObservationStep(
       { ...stepInput, deliveries: [event()] },
       { backend: "memory", recorder: failingRecorder },
     );
@@ -362,7 +362,7 @@ describe("DB mode: fail-closed and exactly-once", () => {
     const client = fakeSupabaseClient({
       cg_event: { selectError: "relation cg_event does not exist" },
     });
-    const result = await runHermesEventObservationStep(stepInput, {
+    const result = await runConductorEventObservationStep(stepInput, {
       backend: "db",
       client: client as never,
     });
@@ -381,18 +381,18 @@ describe("DB mode: fail-closed and exactly-once", () => {
         insertError: { message: "relation cg_hermes_observation does not exist" },
       },
     });
-    const result = await runHermesEventObservationStep(stepInput, {
+    const result = await runConductorEventObservationStep(stepInput, {
       backend: "db",
       client: client as never,
     });
     expect(result.ok).toBe(false);
-    expect(result.reason).toContain(HERMES_OBSERVATION_SUBSTRATE_GAP);
+    expect(result.reason).toContain(CONDUCTOR_OBSERVATION_SUBSTRATE_GAP);
     expect(client.inserted).toHaveLength(0);
   });
 
   it("repeated db steps over the same pending event replay — recorded exactly once", async () => {
     const client = fakeSupabaseClient({ cg_event: { rows: [eventRow()] } });
-    const first = await runHermesEventObservationStep(stepInput, {
+    const first = await runConductorEventObservationStep(stepInput, {
       backend: "db",
       client: client as never,
     });
@@ -402,7 +402,7 @@ describe("DB mode: fail-closed and exactly-once", () => {
 
     // The outbox state is untouched, so the row still reads as pending — the
     // deterministic digest identity + port replay make this a replay (§10).
-    const second = await runHermesEventObservationStep(stepInput, {
+    const second = await runConductorEventObservationStep(stepInput, {
       backend: "db",
       client: client as never,
     });
@@ -415,13 +415,13 @@ describe("DB mode: fail-closed and exactly-once", () => {
 
   it("rejects explicit deliveries in db mode — the cg_event substrate is authoritative", async () => {
     const client = fakeSupabaseClient({ cg_event: { rows: [eventRow()] } });
-    const result = await runHermesEventObservationStep(
+    const result = await runConductorEventObservationStep(
       { ...stepInput, deliveries: [event()] },
       { backend: "db", client: client as never },
     );
     expect(result.ok).toBe(false);
     expect(result.consumed).toBe("failed");
-    expect(result.reason).toBe(HERMES_EVENT_TRIGGER_DELIVERY_REJECTION);
+    expect(result.reason).toBe(CONDUCTOR_EVENT_TRIGGER_DELIVERY_REJECTION);
     expect(client.inserted).toHaveLength(0);
   });
 });
@@ -432,22 +432,22 @@ describe("DB mode: fail-closed and exactly-once", () => {
 
 describe("Step input validation", () => {
   it("rejects a step without tenant context (§13)", async () => {
-    const result = await runHermesEventObservationStep({ ...stepInput, tenantId: "  " });
+    const result = await runConductorEventObservationStep({ ...stepInput, tenantId: "  " });
     expect(result.ok).toBe(false);
     expect(result.reason).toContain("event observation step rejected");
     expect(result.ingestion).toBeNull();
   });
 
-  it("rejects a step without a governed Hermes identity or a parseable record instant", async () => {
-    const noIdentity = await runHermesEventObservationStep({ ...stepInput, hermesId: "" });
+  it("rejects a step without a governed Conductor identity or a parseable record instant", async () => {
+    const noIdentity = await runConductorEventObservationStep({ ...stepInput, conductorId: "" });
     expect(noIdentity.ok).toBe(false);
 
-    const badClock = await runHermesEventObservationStep({ ...stepInput, now: "not-a-time" });
+    const badClock = await runConductorEventObservationStep({ ...stepInput, now: "not-a-time" });
     expect(badClock.ok).toBe(false);
   });
 
   it("rejects an out-of-bounds batch limit", async () => {
-    const result = await runHermesEventObservationStep({ ...stepInput, limit: 0 });
+    const result = await runConductorEventObservationStep({ ...stepInput, limit: 0 });
     expect(result.ok).toBe(false);
     expect(result.reason).toContain("event observation step rejected");
   });

@@ -1,5 +1,5 @@
 /**
- * V1 wave team R4 (HERMES-PORT) — Hermes event→observation wiring.
+ * V1 wave team R4 (CONDUCTOR-PORT) — Conductor event→observation wiring.
  *
  * Proves, at unit level (pure adapter + structural fake Supabase client —
  * no real database, no network):
@@ -14,34 +14,34 @@
  *     observation substrate aborts the ingestion with `{ ok: false }` and
  *     records NOTHING (no invented observations);
  *  5. the DB wiring reads pending cg_event rows tenant-scoped and records
- *     through HermesObservationPortDb end-to-end.
+ *     through ConductorObservationPortDb end-to-end.
  */
 
 import { describe, expect, it } from "vitest";
 import { KERNEL_BUILTIN_EVENT_TYPES, isKnownEventType } from "@/lib/kernel/event-semantics";
 import type { KernelEventRecord } from "@/lib/kernel/event-semantics";
 import {
-  HERMES_EVENT_SOURCE_ORIGIN,
-  hermesEventObservationId,
+  CONDUCTOR_EVENT_SOURCE_ORIGIN,
+  conductorEventObservationId,
   ingestEventsAsObservations,
   observationFromEvent,
-} from "@/lib/hermes/hermes-event-source";
-import { createHermesEventObservationSource } from "@/lib/hermes/hermes-event-source-db.server";
+} from "@/lib/conductor/conductor-event-source";
+import { createConductorEventObservationSource } from "@/lib/conductor/conductor-event-source-db.server";
 import {
-  createInMemoryHermesObservationPort,
-  type HermesObservationRecorder,
-} from "@/lib/hermes/hermes-observation";
+  createInMemoryConductorObservationPort,
+  type ConductorObservationRecorder,
+} from "@/lib/conductor/conductor-observation";
 import {
-  createHermesObservationPortDb,
-  HERMES_OBSERVATION_SUBSTRATE_GAP,
-} from "@/lib/hermes/hermes-observation-db.server";
+  createConductorObservationPortDb,
+  CONDUCTOR_OBSERVATION_SUBSTRATE_GAP,
+} from "@/lib/conductor/conductor-observation-db.server";
 
 /* ─────────────────────────────────────────────────────────────
  * Fixtures
  * ────────────────────────────────────────────────────────────*/
 
 const TENANT = "tenant-alpha";
-const HERMES = "hermes-1";
+const CONDUCTOR = "conductor-1";
 const NOW = "2026-10-01T12:00:00.000Z";
 const T0 = "2026-10-01T11:00:00.000Z";
 
@@ -64,10 +64,10 @@ function event(overrides?: Partial<KernelEventRecord>): KernelEventRecord {
   };
 }
 
-function ingest(port: HermesObservationRecorder, events: KernelEventRecord[]) {
+function ingest(port: ConductorObservationRecorder, events: KernelEventRecord[]) {
   return ingestEventsAsObservations(port, events, {
     tenantId: TENANT,
-    hermesId: HERMES,
+    conductorId: CONDUCTOR,
     now: NOW,
   });
 }
@@ -84,18 +84,18 @@ describe("Event → observation mapping", () => {
   });
 
   it("maps a registered event to a provenance-stamped, event-sourced observation", () => {
-    const mapping = observationFromEvent(event(), { tenantId: TENANT, hermesId: HERMES });
+    const mapping = observationFromEvent(event(), { tenantId: TENANT, conductorId: CONDUCTOR });
     expect(mapping.ok).toBe(true);
     if (!mapping.ok) throw new Error(mapping.reason);
 
     const observation = mapping.observation;
-    expect(observation.observationId).toBe(hermesEventObservationId(event()));
+    expect(observation.observationId).toBe(conductorEventObservationId(event()));
     expect(observation.source).toBe("event");
     expect(observation.eventRef).toBe("11111111-1111-4111-8111-111111111111");
     expect(observation.kind).toBe("event_observation");
     expect(observation.tenantId).toBe(TENANT);
     expect(observation.subjectRef).toBe("cg_event:mission_execution:exec-1");
-    expect(observation.declaredOrigin).toBe(HERMES_EVENT_SOURCE_ORIGIN);
+    expect(observation.declaredOrigin).toBe(CONDUCTOR_EVENT_SOURCE_ORIGIN);
     expect(observation.observedAt).toBe(T0);
     expect(observation.correlationId).toBe("corr-1");
     expect(observation.statement.eventType).toBe("core.state.changed");
@@ -103,7 +103,7 @@ describe("Event → observation mapping", () => {
   });
 
   it("records the observation through the port with §12/§9 stamps the caller cannot claim", async () => {
-    const port = createInMemoryHermesObservationPort();
+    const port = createInMemoryConductorObservationPort();
     const result = await ingest(port, [event()]);
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error(result.reason);
@@ -114,7 +114,7 @@ describe("Event → observation mapping", () => {
     if (!listed.ok) throw new Error(listed.error);
     expect(listed.observations).toHaveLength(1);
     const observation = listed.observations[0];
-    expect(observation.recordedBy).toBe(HERMES);
+    expect(observation.recordedBy).toBe(CONDUCTOR);
     expect(observation.generatedByAi).toBe(true);
     expect(observation.verified).toBe(false);
     expect(observation.source).toBe("event");
@@ -128,7 +128,7 @@ describe("Event → observation mapping", () => {
 
 describe("Duplicate delivery collapse / replay", () => {
   it("collapses duplicate deliveries of the same event into one observation", async () => {
-    const port = createInMemoryHermesObservationPort();
+    const port = createInMemoryConductorObservationPort();
     const result = await ingest(port, [event(), event(), event()]);
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error(result.reason);
@@ -139,7 +139,7 @@ describe("Duplicate delivery collapse / replay", () => {
   });
 
   it("a same-content event with a DIFFERENT cause digests differently — never collapses", async () => {
-    const port = createInMemoryHermesObservationPort();
+    const port = createInMemoryConductorObservationPort();
     const first = event({ causation_id: "cause-a" });
     const second = event({ causation_id: "cause-b" });
     const result = await ingest(port, [first, second]);
@@ -150,14 +150,14 @@ describe("Duplicate delivery collapse / replay", () => {
 
   it("an event with no id uses its digest as the event ref — still deterministic", () => {
     const idless = event({ id: null });
-    const mapping = observationFromEvent(idless, { tenantId: TENANT, hermesId: HERMES });
+    const mapping = observationFromEvent(idless, { tenantId: TENANT, conductorId: CONDUCTOR });
     if (!mapping.ok) throw new Error(mapping.reason);
     expect(mapping.observation.eventRef).toMatch(/^digest:[0-9a-f]{16}$/);
-    expect(hermesEventObservationId(idless)).toBe(hermesEventObservationId(event({ id: "other" })));
+    expect(conductorEventObservationId(idless)).toBe(conductorEventObservationId(event({ id: "other" })));
   });
 
   it("a re-ingestion over unchanged state replays — zero new observations", async () => {
-    const port = createInMemoryHermesObservationPort();
+    const port = createInMemoryConductorObservationPort();
     const first = await ingest(port, [event()]);
     if (!first.ok) throw new Error(first.reason);
     expect(first.ingestion.recorded).toHaveLength(1);
@@ -176,7 +176,7 @@ describe("Duplicate delivery collapse / replay", () => {
 
 describe("Fail-closed event consumption", () => {
   it("rejects an event whose type is NOT registered in the taxonomy", async () => {
-    const port = createInMemoryHermesObservationPort();
+    const port = createInMemoryConductorObservationPort();
     const unregistered = event({ event_type: "totally.unknown.event" });
     expect(isKnownEventType(unregistered.event_type)).toBe(false);
 
@@ -190,7 +190,7 @@ describe("Fail-closed event consumption", () => {
   });
 
   it("rejects an event without a parsable temporal coordinate", async () => {
-    const port = createInMemoryHermesObservationPort();
+    const port = createInMemoryConductorObservationPort();
     const timeless = event({ occurred_at: null, recorded_at: null });
     const result = await ingest(port, [timeless]);
     if (!result.ok) throw new Error(result.reason);
@@ -201,7 +201,7 @@ describe("Fail-closed event consumption", () => {
   });
 
   it("excludes events without tenant context or from another tenant (§13)", async () => {
-    const port = createInMemoryHermesObservationPort();
+    const port = createInMemoryConductorObservationPort();
     const result = await ingest(port, [
       event({ tenant_id: null }),
       event({ tenant_id: "tenant-beta" }),
@@ -218,7 +218,7 @@ describe("Fail-closed event consumption", () => {
   });
 
   it("rejects an event with malformed aggregate coordinates or payload", async () => {
-    const port = createInMemoryHermesObservationPort();
+    const port = createInMemoryConductorObservationPort();
     const result = await ingest(port, [
       event({ aggregate_type: "  " }),
       event({ payload: [1, 2, 3] as unknown as Record<string, unknown> }),
@@ -235,7 +235,7 @@ describe("Fail-closed event consumption", () => {
 
 describe("Fail-closed substrate gaps", () => {
   it("a recorder failure aborts the ingestion closed", async () => {
-    const failingPort: HermesObservationRecorder = {
+    const failingPort: ConductorObservationRecorder = {
       backend: "db",
       async recordObservation() {
         return { ok: false, error: "observation_substrate_missing: injected gap" };
@@ -367,16 +367,16 @@ function eventRow(overrides?: Record<string, unknown>): Row {
   };
 }
 
-describe("Hermes event source over the cg_event substrate (db)", () => {
+describe("Conductor event source over the cg_event substrate (db)", () => {
   it("consumes pending events end-to-end into the observation substrate", async () => {
     const client = fakeSupabaseClient({
       cg_event: { rows: [eventRow()] },
     });
-    const source = createHermesEventObservationSource(client as never);
+    const source = createConductorEventObservationSource(client as never);
 
     const result = await source.ingestPendingEvents({
       tenantId: TENANT,
-      hermesId: HERMES,
+      conductorId: CONDUCTOR,
       now: NOW,
     });
     expect(result.ok).toBe(true);
@@ -390,7 +390,7 @@ describe("Hermes event source over the cg_event substrate (db)", () => {
     if (!observationInsert) throw new Error("no observation persisted");
     expect(observationInsert.row.source).toBe("event");
     expect(observationInsert.row.event_ref).toBe("11111111-1111-4111-8111-111111111111");
-    expect(observationInsert.row.created_by).toBe(HERMES);
+    expect(observationInsert.row.created_by).toBe(CONDUCTOR);
     expect(observationInsert.row.generated_by_ai).toBe(true);
     expect(observationInsert.row.verified).toBe(false);
 
@@ -402,11 +402,11 @@ describe("Hermes event source over the cg_event substrate (db)", () => {
     const client = fakeSupabaseClient({
       cg_event: { selectError: "relation cg_event does not exist" },
     });
-    const source = createHermesEventObservationSource(client as never);
+    const source = createConductorEventObservationSource(client as never);
 
     const result = await source.ingestPendingEvents({
       tenantId: TENANT,
-      hermesId: HERMES,
+      conductorId: CONDUCTOR,
       now: NOW,
     });
     expect(result.ok).toBe(false);
@@ -423,16 +423,16 @@ describe("Hermes event source over the cg_event substrate (db)", () => {
         insertError: { message: "relation cg_hermes_observation does not exist" },
       },
     });
-    const source = createHermesEventObservationSource(client as never);
+    const source = createConductorEventObservationSource(client as never);
 
     const result = await source.ingestPendingEvents({
       tenantId: TENANT,
-      hermesId: HERMES,
+      conductorId: CONDUCTOR,
       now: NOW,
     });
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("must fail closed");
-    expect(result.reason).toContain(HERMES_OBSERVATION_SUBSTRATE_GAP);
+    expect(result.reason).toContain(CONDUCTOR_OBSERVATION_SUBSTRATE_GAP);
     expect(client.inserted).toHaveLength(0);
   });
 
@@ -445,11 +445,11 @@ describe("Hermes event source over the cg_event substrate (db)", () => {
         ],
       },
     });
-    const source = createHermesEventObservationSource(client as never);
+    const source = createConductorEventObservationSource(client as never);
 
     const result = await source.ingestPendingEvents({
       tenantId: TENANT,
-      hermesId: HERMES,
+      conductorId: CONDUCTOR,
       now: NOW,
     });
     if (!result.ok) throw new Error(result.reason);
@@ -462,10 +462,10 @@ describe("Hermes event source over the cg_event substrate (db)", () => {
     const client = fakeSupabaseClient({
       cg_event: { rows: [eventRow({ event_type: "" })] },
     });
-    const source = createHermesEventObservationSource(client as never);
+    const source = createConductorEventObservationSource(client as never);
     const result = await source.ingestPendingEvents({
       tenantId: TENANT,
-      hermesId: HERMES,
+      conductorId: CONDUCTOR,
       now: NOW,
     });
     expect(result.ok).toBe(false);

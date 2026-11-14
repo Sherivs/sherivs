@@ -1,5 +1,5 @@
 /**
- * MISSION V1-002 — Hermes executive orchestrator core (team HERMES).
+ * MISSION V1-002 — Conductor executive orchestrator core (team CONDUCTOR).
  *
  * Proves, at unit level (in-memory ports + the reference mission store + the
  * in-memory canonical memory adapter — no database, no process, no I/O):
@@ -8,7 +8,7 @@
  *     provenance-stamped memory writes, structured report;
  *  2. blocked/failed/denied mission detection (stuck stages, exhaustion,
  *     admission denial, failed independent verification);
- *  3. delegation goes through the neutral RBAC engine: a Hermes with NO
+ *  3. delegation goes through the neutral RBAC engine: a Conductor with NO
  *     delegation grants CANNOT act (Invariant 12 denial, zero intents);
  *  4. the approval gate produces a typed REQUIRE_APPROVAL routed to a human
  *     — never an execution;
@@ -32,21 +32,21 @@ import {
 } from "@/lib/workforce/worker-registry";
 import { createInMemoryMemoryTierAdapter } from "@/lib/memory/memory-adapter";
 import {
-  classifyHermesAction,
-  type HermesClassificationInput,
-} from "@/lib/hermes/hermes-classifier";
+  classifyConductorAction,
+  type ConductorClassificationInput,
+} from "@/lib/conductor/conductor-classifier";
 import {
   assessExecutions,
   assessWorkers,
   prioritizeFindings,
-  runHermesCycle,
-} from "@/lib/hermes/hermes-cycle";
+  runConductorCycle,
+} from "@/lib/conductor/conductor-cycle";
 import {
-  hermesClaim,
-  type HermesObservationPort,
-  type HermesVerificationRecord,
-  type HermesWorkerPosture,
-} from "@/lib/hermes/hermes-contract";
+  conductorClaim,
+  type ConductorObservationPort,
+  type ConductorVerificationRecord,
+  type ConductorWorkerPosture,
+} from "@/lib/conductor/conductor-contract";
 
 /* ─────────────────────────────────────────────────────────────
  * Fixtures
@@ -96,11 +96,11 @@ function verifier(): MissionActorContext {
   };
 }
 
-/** A governed AI Hermes definition (deny-by-default until grants land). */
-function hermesDefinition(): WorkerDefinition {
+/** A governed AI Conductor definition (deny-by-default until grants land). */
+function conductorDefinition(): WorkerDefinition {
   const validated = validateWorkerRegistration({
     tenantId: TENANT,
-    definitionId: "hermes-1",
+    definitionId: "conductor-1",
     identityRef: "31313131-3131-4311-8311-313131313131",
     classification: "ai",
     capabilities: [
@@ -110,21 +110,21 @@ function hermesDefinition(): WorkerDefinition {
     maxRiskClass: "medium",
     resourceScopes: ["mission"],
     createdBy: "registrar-1",
-    traceId: "trace-hermes-1",
-    correlationId: "correlation-hermes-1",
+    traceId: "trace-conductor-1",
+    correlationId: "correlation-conductor-1",
   });
   if (!validated.ok) throw new Error(validated.errors.join("; "));
   return validated.definition;
 }
 
-/** Human delegation grants for Hermes (pre-recorded — never self-minted). */
-function hermesGrants(count: number): WorkerDelegationGrantState[] {
+/** Human delegation grants for Conductor (pre-recorded — never self-minted). */
+function conductorGrants(count: number): WorkerDelegationGrantState[] {
   if (count === 0) return [];
   return [
     {
-      grantId: "grant-hermes-1",
-      definitionId: "hermes-1",
-      delegationRef: "delegation:hermes-ops-1",
+      grantId: "grant-conductor-1",
+      definitionId: "conductor-1",
+      delegationRef: "delegation:conductor-ops-1",
       delegatedCapabilities: ["mission:create:*", "mission:execute:*"],
       maxGrantedRiskClass: "medium",
       state: "active",
@@ -146,7 +146,7 @@ async function seedAssigned(
       tenantId: TENANT,
       missionId: `MISSION-${input.executionId}`,
       version: "1.0",
-      purpose: "hermes-seeded-probe",
+      purpose: "conductor-seeded-probe",
       authorityRef: "CONTROL-PLANE-06",
       contextRef: "context-1",
       ownerRef: "MISSIONS.md",
@@ -229,7 +229,7 @@ async function seededWorld() {
       tenantId: TENANT,
       missionId: "MISSION-exec-denied",
       version: "1.0",
-      purpose: "hermes-seeded-probe",
+      purpose: "conductor-seeded-probe",
       authorityRef: "CONTROL-PLANE-06",
       contextRef: "context-1",
       ownerRef: "MISSIONS.md",
@@ -274,7 +274,7 @@ async function seededWorld() {
           {
             evidenceKind: "observation-recorded",
             sourceRef: "cg_entity:22222222-2222-4222-8222-222222222222",
-            lineage: ["hermes-probe"],
+            lineage: ["conductor-probe"],
           },
         ],
       },
@@ -303,7 +303,7 @@ async function seededWorld() {
           {
             evidenceKind: "observation-recorded",
             sourceRef: "cg_entity:22222222-2222-4222-8222-222222222222",
-            lineage: ["hermes-probe"],
+            lineage: ["conductor-probe"],
           },
         ],
       },
@@ -321,7 +321,7 @@ async function seededWorld() {
   expect(verification.value.verification.decision).toBe("failed");
 
   // Worker postures (workforce registry read shape).
-  const workerPostures: HermesWorkerPosture[] = [
+  const workerPostures: ConductorWorkerPosture[] = [
     {
       workerId: "worker-quarantined",
       tenantId: TENANT,
@@ -340,7 +340,7 @@ async function seededWorld() {
     },
   ];
 
-  const verificationRecords: HermesVerificationRecord[] = [
+  const verificationRecords: ConductorVerificationRecord[] = [
     {
       executionId: "exec-verify-failed",
       decision: "failed",
@@ -363,7 +363,7 @@ async function seededWorld() {
     if (execution !== null) listed.push(execution);
   }
 
-  const observations: HermesObservationPort = {
+  const observations: ConductorObservationPort = {
     backend: "db",
     async listExecutions(tenantId) {
       if (tenantId !== TENANT) return [];
@@ -380,7 +380,7 @@ async function seededWorld() {
   return { store, observations };
 }
 
-/** Counting mission-port wrapper — proves exactly which intents Hermes tried. */
+/** Counting mission-port wrapper — proves exactly which intents Conductor tried. */
 function countingMissions(store: MissionExecutionStore) {
   const intentCalls: string[] = [];
   return {
@@ -401,16 +401,16 @@ function countingMissions(store: MissionExecutionStore) {
  * 1. Full cycle over seeded state
  * ────────────────────────────────────────────────────────────*/
 
-describe("Hermes full cycle", () => {
+describe("Conductor full cycle", () => {
   it("runs OBSERVE→ASSESS→PRIORITIZE→ACT→REPORT over seeded state and delegates lawful repairs", async () => {
     const { store, observations } = await seededWorld();
     const { missions, intentCalls } = countingMissions(store);
     const memory = createInMemoryMemoryTierAdapter();
-    const definition = hermesDefinition();
+    const definition = conductorDefinition();
 
-    const result = await runHermesCycle(
+    const result = await runConductorCycle(
       { missions, observations, memory },
-      { definition, grants: hermesGrants(1) },
+      { definition, grants: conductorGrants(1) },
       { tenantId: TENANT, now: T_CYCLE },
     );
 
@@ -427,7 +427,7 @@ describe("Hermes full cycle", () => {
     expect(result.phases.every((p) => p.ok)).toBe(true);
 
     const report = result.report;
-    expect(report.actorRef).toBe("hermes");
+    expect(report.actorRef).toBe("conductor");
     expect(report.sleep.state).toBe("sleeping");
 
     // Findings: stuck, requeued-stuck, exhausted→failed, denied,
@@ -448,7 +448,7 @@ describe("Hermes full cycle", () => {
     for (const finding of report.findings) {
       expect(finding.claim.verified).toBe(true);
       expect(finding.claim.confidence).toBe("canonical");
-      expect(finding.claim.source).not.toBe("hermes_memory");
+      expect(finding.claim.source).not.toBe("conductor_memory");
       expect(finding.claim.sourceRef.length).toBeGreaterThan(0);
       expect(finding.evidenceRefs.length).toBeGreaterThan(0);
     }
@@ -462,7 +462,7 @@ describe("Hermes full cycle", () => {
     }
 
     // Delegation: the safe stuck mission gets a repair intent + assignment
-    // through the V1-004 record port under Hermes' own resolved identity.
+    // through the V1-004 record port under Conductor' own resolved identity.
     const stuckDelegation = report.delegations.find(
       (d) => d.findingId === "mission_stuck:exec-stuck",
     );
@@ -471,11 +471,11 @@ describe("Hermes full cycle", () => {
     expect(stuckDelegation.intentRecorded).toBe(true);
     expect(stuckDelegation.assignmentRecorded).toBe(true);
     expect(stuckDelegation.replayed).toBe(false);
-    expect(stuckDelegation.authorityRef).toBe("delegation:grant-hermes-1");
-    expect(stuckDelegation.repairMissionId).toBe("hermes-repair-exec-stuck");
-    expect(intentCalls).toContain("hermes-repair-exec-stuck");
+    expect(stuckDelegation.authorityRef).toBe("delegation:grant-conductor-1");
+    expect(stuckDelegation.repairMissionId).toBe("conductor-repair-exec-stuck");
+    expect(intentCalls).toContain("conductor-repair-exec-stuck");
     const repairExecution = await store.getExecution(TENANT, stuckDelegation.repairExecutionId);
-    expect(repairExecution?.assignedBy).toBe("hermes-1");
+    expect(repairExecution?.assignedBy).toBe("conductor-1");
 
     // The failed/denied/unverified findings escalate to humans.
     expect(report.escalations.length).toBeGreaterThanOrEqual(4);
@@ -489,7 +489,7 @@ describe("Hermes full cycle", () => {
  * 2. Blocked-mission detection
  * ────────────────────────────────────────────────────────────*/
 
-describe("Hermes blocked-mission detection", () => {
+describe("Conductor blocked-mission detection", () => {
   it("detects stuck assigned work past the staleness window", async () => {
     const { observations } = await seededWorld();
     const executions = await observations.listExecutions(TENANT);
@@ -526,10 +526,10 @@ describe("Hermes blocked-mission detection", () => {
     expect(findings.some((f) => f.findingId === "evidence_unverified:exec-evidenced")).toBe(true);
   });
 
-  it("never derives findings from Hermes' own repair missions (no recursion)", () => {
+  it("never derives findings from Conductor' own repair missions (no recursion)", () => {
     const repairExecution = {
-      executionId: "hermes-repair-exec-stuck-exec-1",
-      missionId: "hermes-repair-exec-stuck",
+      executionId: "conductor-repair-exec-stuck-exec-1",
+      missionId: "conductor-repair-exec-stuck",
     } as unknown as MissionExecutionState;
     const findings = assessExecutions([repairExecution], [], TENANT, T_CYCLE, {
       assignedStaleAfterMs: 60_000,
@@ -542,15 +542,15 @@ describe("Hermes blocked-mission detection", () => {
  * 3. Delegation goes through the neutral RBAC engine
  * ────────────────────────────────────────────────────────────*/
 
-describe("Hermes delegation authority", () => {
-  it("a Hermes WITHOUT delegation grants CANNOT act — zero intents recorded", async () => {
+describe("Conductor delegation authority", () => {
+  it("a Conductor WITHOUT delegation grants CANNOT act — zero intents recorded", async () => {
     const { store, observations } = await seededWorld();
     const { missions, intentCalls } = countingMissions(store);
     const memory = createInMemoryMemoryTierAdapter();
 
-    const result = await runHermesCycle(
+    const result = await runConductorCycle(
       { missions, observations, memory },
-      { definition: hermesDefinition(), grants: hermesGrants(0) },
+      { definition: conductorDefinition(), grants: conductorGrants(0) },
       { tenantId: TENANT, now: T_CYCLE },
     );
 
@@ -571,22 +571,22 @@ describe("Hermes delegation authority", () => {
     expect(repair).toBeNull();
   });
 
-  it("a Hermes with grants acts ONLY through its resolved governed identity", async () => {
+  it("a Conductor with grants acts ONLY through its resolved governed identity", async () => {
     const { store, observations } = await seededWorld();
     const { missions } = countingMissions(store);
     const memory = createInMemoryMemoryTierAdapter();
 
-    const result = await runHermesCycle(
+    const result = await runConductorCycle(
       { missions, observations, memory },
-      { definition: hermesDefinition(), grants: hermesGrants(1) },
+      { definition: conductorDefinition(), grants: conductorGrants(1) },
       { tenantId: TENANT, now: T_CYCLE },
     );
 
     for (const delegation of result.report.delegations) {
       if (!delegation.assignmentRecorded) continue;
       const execution = await store.getExecution(TENANT, delegation.repairExecutionId);
-      expect(execution?.assignedBy).toBe("hermes-1");
-      expect(delegation.authorityRef).toBe("delegation:grant-hermes-1");
+      expect(execution?.assignedBy).toBe("conductor-1");
+      expect(delegation.authorityRef).toBe("delegation:grant-conductor-1");
     }
   });
 });
@@ -595,7 +595,7 @@ describe("Hermes delegation authority", () => {
  * 4. Approval gate: REQUIRE_APPROVAL, never execution
  * ────────────────────────────────────────────────────────────*/
 
-describe("Hermes approval gate", () => {
+describe("Conductor approval gate", () => {
   it("routes a critical stuck mission to REQUIRE_APPROVAL and does NOT execute", async () => {
     const { store, observations } = await seededWorld();
     const { missions, intentCalls } = countingMissions(store);
@@ -605,7 +605,7 @@ describe("Hermes approval gate", () => {
     await seedAssigned(store, { executionId: "exec-critical", action: ACTION_CRITICAL });
     const critical = await store.getExecution(TENANT, "exec-critical");
     if (critical === null) throw new Error("seed failed");
-    const withCritical: HermesObservationPort = {
+    const withCritical: ConductorObservationPort = {
       backend: "db",
       listExecutions: async (tenantId) =>
         tenantId === TENANT ? [...(await observations.listExecutions(TENANT)), critical] : [],
@@ -613,9 +613,9 @@ describe("Hermes approval gate", () => {
       listVerificationRecords: observations.listVerificationRecords,
     };
 
-    const result = await runHermesCycle(
+    const result = await runConductorCycle(
       { missions, observations: withCritical, memory },
-      { definition: hermesDefinition(), grants: hermesGrants(1) },
+      { definition: conductorDefinition(), grants: conductorGrants(1) },
       { tenantId: TENANT, now: T_CYCLE },
     );
 
@@ -636,10 +636,10 @@ describe("Hermes approval gate", () => {
     expect(result.report.escalations.some((e) => e.recordId.includes("exec-critical"))).toBe(true);
 
     // …but the repair was NEVER delegated or executed.
-    expect(intentCalls.filter((missionId) => missionId === "hermes-repair-exec-critical")).toEqual(
+    expect(intentCalls.filter((missionId) => missionId === "conductor-repair-exec-critical")).toEqual(
       [],
     );
-    const repair = await store.getExecution(TENANT, "hermes-repair-exec-critical-exec-1");
+    const repair = await store.getExecution(TENANT, "conductor-repair-exec-critical-exec-1");
     expect(repair).toBeNull();
   });
 });
@@ -648,8 +648,8 @@ describe("Hermes approval gate", () => {
  * 5. Deny rules block destructive action classes
  * ────────────────────────────────────────────────────────────*/
 
-describe("Hermes deny rules (fail-closed)", () => {
-  const destructive: Array<[HermesClassificationInput["actionClass"], string]> = [
+describe("Conductor deny rules (fail-closed)", () => {
+  const destructive: Array<[ConductorClassificationInput["actionClass"], string]> = [
     ["deploy", "deploy_forbidden"],
     ["delete_data", "destructive_write_forbidden"],
     ["purge_production_state", "production_state_forbidden"],
@@ -659,15 +659,15 @@ describe("Hermes deny rules (fail-closed)", () => {
 
   for (const [actionClass, expectedCode] of destructive) {
     it(`DENIES ${actionClass} with code ${expectedCode}`, () => {
-      const verdict = classifyHermesAction({ actionClass, underlyingAction: "" });
+      const verdict = classifyConductorAction({ actionClass, underlyingAction: "" });
       expect(verdict.decision).toBe("DENY");
       if (verdict.decision === "DENY") expect(verdict.code).toBe(expectedCode);
     });
   }
 
   it("DENIES unknown action classes (no guessing)", () => {
-    const verdict = classifyHermesAction({
-      actionClass: "reformat_everything" as HermesClassificationInput["actionClass"],
+    const verdict = classifyConductorAction({
+      actionClass: "reformat_everything" as ConductorClassificationInput["actionClass"],
       underlyingAction: "",
     });
     expect(verdict.decision).toBe("DENY");
@@ -675,7 +675,7 @@ describe("Hermes deny rules (fail-closed)", () => {
   });
 
   it("a retry proposal for a critical underlying action is elevated to the approval gate, not allowed", () => {
-    const verdict = classifyHermesAction({
+    const verdict = classifyConductorAction({
       actionClass: "retry_safe_mission",
       underlyingAction: "delete-tenant-export",
     });
@@ -687,16 +687,16 @@ describe("Hermes deny rules (fail-closed)", () => {
  * 6. Memory writes carry provenance (canonical memory tier)
  * ────────────────────────────────────────────────────────────*/
 
-describe("Hermes memory provenance", () => {
+describe("Conductor memory provenance", () => {
   it("writes decisions through the canonical adapter with AI-generated, unverified provenance", async () => {
     const { observations } = await seededWorld();
     const memory = createInMemoryMemoryTierAdapter();
     const store = createInMemoryMissionExecutionStore({ config: CONFIG });
     const { missions } = countingMissions(store);
 
-    await runHermesCycle(
+    await runConductorCycle(
       { missions, observations, memory },
-      { definition: hermesDefinition(), grants: hermesGrants(1) },
+      { definition: conductorDefinition(), grants: conductorGrants(1) },
       { tenantId: TENANT, now: T_CYCLE },
     );
 
@@ -704,28 +704,28 @@ describe("Hermes memory provenance", () => {
     expect(loaded.ok).toBe(true);
     if (!loaded.ok) throw new Error(loaded.error);
 
-    // One declared Hermes scope, with §12 declaredBy provenance.
+    // One declared Conductor scope, with §12 declaredBy provenance.
     expect(loaded.store.scopes).toHaveLength(1);
     const scope = loaded.store.scopes[0];
-    expect(scope.scopeId).toBe(`hermes:scope:${TENANT}`);
+    expect(scope.scopeId).toBe(`conductor:scope:${TENANT}`);
     expect(scope.domains).toEqual(["orchestration"]);
-    expect(scope.actorScope).toEqual(["hermes-1"]);
+    expect(scope.actorScope).toEqual(["conductor-1"]);
 
     // Every decision record: AI-generated, UNVERIFIED (memory ≠ truth, §9).
     expect(loaded.store.records.length).toBeGreaterThan(0);
     for (const record of loaded.store.records) {
-      expect(record.envelope.provenance.source).toBe("hermes:orchestrator");
+      expect(record.envelope.provenance.source).toBe("conductor:orchestrator");
       expect(record.envelope.provenance.generatedByAi).toBe(true);
       expect(record.envelope.provenance.verified).toBe(false);
       expect(record.envelope.provenance.originTenantId).toBe(TENANT);
-      expect(record.envelope.created_by).toBe("hermes-1");
-      expect(record.scopeId).toBe(`hermes:scope:${TENANT}`);
+      expect(record.envelope.created_by).toBe("conductor-1");
+      expect(record.scopeId).toBe(`conductor:scope:${TENANT}`);
     }
   });
 
   it("marks memory-sourced claims uncertain and DB-backed claims canonical", () => {
-    const memoryClaim = hermesClaim("hermes_memory", "mem:1", T_CYCLE, "prior decision");
-    const dbClaim = hermesClaim("mission_record_port", "cg_execution_record:e1", T_CYCLE, "stage");
+    const memoryClaim = conductorClaim("conductor_memory", "mem:1", T_CYCLE, "prior decision");
+    const dbClaim = conductorClaim("mission_record_port", "cg_execution_record:e1", T_CYCLE, "stage");
     expect(memoryClaim.verified).toBe(false);
     expect(memoryClaim.confidence).toBe("uncertain");
     expect(dbClaim.verified).toBe(true);
@@ -737,21 +737,21 @@ describe("Hermes memory provenance", () => {
  * 7. Cycle idempotency
  * ────────────────────────────────────────────────────────────*/
 
-describe("Hermes cycle idempotency", () => {
+describe("Conductor cycle idempotency", () => {
   it("a re-run over unchanged state replays outcomes — no duplicated missions or memory", async () => {
     const { store, observations } = await seededWorld();
     const { missions, intentCalls } = countingMissions(store);
     const memory = createInMemoryMemoryTierAdapter();
-    const identity = { definition: hermesDefinition(), grants: hermesGrants(1) };
+    const identity = { definition: conductorDefinition(), grants: conductorGrants(1) };
     const input = { tenantId: TENANT, now: T_CYCLE };
 
-    const first = await runHermesCycle({ missions, observations, memory }, identity, input);
+    const first = await runConductorCycle({ missions, observations, memory }, identity, input);
     const intentsAfterFirst = intentCalls.length;
     const loadedAfterFirst = await memory.load();
     if (!loadedAfterFirst.ok) throw new Error(loadedAfterFirst.error);
     const recordsAfterFirst = loadedAfterFirst.store.records.length;
 
-    const second = await runHermesCycle({ missions, observations, memory }, identity, input);
+    const second = await runConductorCycle({ missions, observations, memory }, identity, input);
 
     // Every delegation in the second cycle replayed a recorded outcome (§10).
     expect(second.report.delegations.length).toBe(first.report.delegations.length);
@@ -772,7 +772,7 @@ describe("Hermes cycle idempotency", () => {
  * Prioritization determinism (explainability)
  * ────────────────────────────────────────────────────────────*/
 
-describe("Hermes prioritization", () => {
+describe("Conductor prioritization", () => {
   it("orders findings deterministically: severity rank, then stable subject tie-break", async () => {
     const { observations } = await seededWorld();
     const executions = await observations.listExecutions(TENANT);

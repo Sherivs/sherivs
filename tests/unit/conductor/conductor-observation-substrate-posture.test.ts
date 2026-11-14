@@ -1,6 +1,6 @@
 /**
- * V1 wave team R4 (HERMES-PORT) — migration posture adjudication for the
- * Hermes observation substrate: cg_hermes_observation.
+ * V1 wave team R4 (CONDUCTOR-PORT) — migration posture adjudication for the
+ * Conductor observation substrate: cg_hermes_observation.
  *
  * Text-level posture verification (the h3-040 pattern): the AUTHORED, NOT
  * APPLIED migration must carry the deny-by-default signature of the repo's

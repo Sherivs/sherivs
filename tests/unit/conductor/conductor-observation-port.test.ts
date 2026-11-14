@@ -1,12 +1,12 @@
 /**
- * V1 wave team R4 (HERMES-PORT) — Hermes observation port.
+ * V1 wave team R4 (CONDUCTOR-PORT) — Conductor observation port.
  *
  * Proves, at unit level (in-memory port + a structural fake Supabase client
  * — no real database, no network):
  *  1. adapter contract: the in-memory port is the DEFAULT backend; the DB
- *     adapter (HermesObservationPortDb) satisfies the same recorder
+ *     adapter (ConductorObservationPortDb) satisfies the same recorder
  *     contract over cg_hermes_observation; backend selection via
- *     HERMES_OBSERVATION_BACKEND ("memory" default, "db", unknown throws);
+ *     CONDUCTOR_OBSERVATION_BACKEND ("memory" default, "db", unknown throws);
  *  2. §12 provenance stamping: the PORT stamps recordedBy / generatedByAi /
  *     verified — callers cannot claim provenance; it survives the DB
  *     round trip;
@@ -28,14 +28,14 @@ vi.mock("@/integrations/supabase/client.server", () => ({
 }));
 
 const {
-  createHermesObservationPortDb,
-  createHermesObservationPort,
-  resolveHermesObservationBackend,
-  HERMES_OBSERVATION_SUBSTRATE_GAP,
-} = await import("@/lib/hermes/hermes-observation-db.server");
-const { createInMemoryHermesObservationPort } = await import("@/lib/hermes/hermes-observation");
+  createConductorObservationPortDb,
+  createConductorObservationPort,
+  resolveConductorObservationBackend,
+  CONDUCTOR_OBSERVATION_SUBSTRATE_GAP,
+} = await import("@/lib/conductor/conductor-observation-db.server");
+const { createInMemoryConductorObservationPort } = await import("@/lib/conductor/conductor-observation");
 
-type DbClient = Parameters<typeof createHermesObservationPortDb>[0];
+type DbClient = Parameters<typeof createConductorObservationPortDb>[0];
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -46,12 +46,12 @@ afterEach(() => {
  * ────────────────────────────────────────────────────────────*/
 
 const TENANT = "tenant-alpha";
-const HERMES = "hermes-1";
+const CONDUCTOR = "conductor-1";
 const NOW = "2026-10-01T12:00:00.000Z";
 
 function observationInput(overrides?: Record<string, unknown>) {
   return {
-    observationId: "hermes:obs:direct:exec-1",
+    observationId: "conductor:obs:direct:exec-1",
     tenantId: TENANT,
     kind: "mission_observation" as const,
     subjectRef: "cg_execution_record:exec-1",
@@ -59,9 +59,9 @@ function observationInput(overrides?: Record<string, unknown>) {
     observedAt: "2026-10-01T11:59:00.000Z",
     source: "direct" as const,
     eventRef: null,
-    traceId: "trace:hermes-1",
-    correlationId: "corr:hermes-1",
-    declaredOrigin: "hermes.observation-port",
+    traceId: "trace:conductor-1",
+    correlationId: "corr:conductor-1",
+    declaredOrigin: "conductor.observation-port",
     ...overrides,
   };
 }
@@ -170,7 +170,7 @@ const DB_DEFAULTS = { recorded_at: NOW, created_at: NOW, updated_at: NOW };
 /** A fully persisted-shape observation row (what the DB would hold). */
 function persistedRow(overrides?: Record<string, unknown>): Row {
   return {
-    id: "hermes:obs:direct:exec-1",
+    id: "conductor:obs:direct:exec-1",
     tenant_id: TENANT,
     kind: "mission_observation",
     subject_ref: "cg_execution_record:exec-1",
@@ -179,10 +179,10 @@ function persistedRow(overrides?: Record<string, unknown>): Row {
     recorded_at: NOW,
     source: "direct",
     event_ref: null,
-    trace_id: "trace:hermes-1",
-    correlation_id: "corr:hermes-1",
-    declared_origin: "hermes.observation-port",
-    created_by: HERMES,
+    trace_id: "trace:conductor-1",
+    correlation_id: "corr:conductor-1",
+    declared_origin: "conductor.observation-port",
+    created_by: CONDUCTOR,
     generated_by_ai: true,
     verified: false,
     ...overrides,
@@ -193,27 +193,27 @@ function persistedRow(overrides?: Record<string, unknown>): Row {
  * 1. Backend selection (env-driven; memory is the default)
  * ────────────────────────────────────────────────────────────*/
 
-describe("Hermes observation backend selection", () => {
+describe("Conductor observation backend selection", () => {
   it("resolves 'memory' as the DEFAULT backend (unset/empty)", () => {
-    expect(resolveHermesObservationBackend(undefined)).toBe("memory");
-    expect(resolveHermesObservationBackend("")).toBe("memory");
-    expect(resolveHermesObservationBackend("memory")).toBe("memory");
+    expect(resolveConductorObservationBackend(undefined)).toBe("memory");
+    expect(resolveConductorObservationBackend("")).toBe("memory");
+    expect(resolveConductorObservationBackend("memory")).toBe("memory");
   });
 
   it("resolves 'db' when configured and THROWS on an unknown backend", () => {
-    expect(resolveHermesObservationBackend("db")).toBe("db");
-    expect(() => resolveHermesObservationBackend("sqlite")).toThrow(/HERMES_OBSERVATION_BACKEND/);
+    expect(resolveConductorObservationBackend("db")).toBe("db");
+    expect(() => resolveConductorObservationBackend("sqlite")).toThrow(/CONDUCTOR_OBSERVATION_BACKEND/);
   });
 
-  it("createHermesObservationPort returns the in-memory port by default", async () => {
-    vi.stubEnv("HERMES_OBSERVATION_BACKEND", "");
-    const port = await createHermesObservationPort();
+  it("createConductorObservationPort returns the in-memory port by default", async () => {
+    vi.stubEnv("CONDUCTOR_OBSERVATION_BACKEND", "");
+    const port = await createConductorObservationPort();
     expect(port.backend).toBe("memory");
   });
 
-  it("createHermesObservationPort returns the DB port (HermesObservationPortDb) when configured", async () => {
-    vi.stubEnv("HERMES_OBSERVATION_BACKEND", "db");
-    const port = await createHermesObservationPort();
+  it("createConductorObservationPort returns the DB port (ConductorObservationPortDb) when configured", async () => {
+    vi.stubEnv("CONDUCTOR_OBSERVATION_BACKEND", "db");
+    const port = await createConductorObservationPort();
     expect(port.backend).toBe("db");
   });
 });
@@ -222,17 +222,17 @@ describe("Hermes observation backend selection", () => {
  * 2. Adapter contract + §12 provenance stamping (in-memory)
  * ────────────────────────────────────────────────────────────*/
 
-describe("In-memory Hermes observation port (default backend)", () => {
+describe("In-memory Conductor observation port (default backend)", () => {
   it("records an observation and lists it tenant-scoped", async () => {
-    const port = createInMemoryHermesObservationPort();
+    const port = createInMemoryConductorObservationPort();
     const recorded = await port.recordObservation({
       observation: observationInput(),
-      observedBy: HERMES,
+      observedBy: CONDUCTOR,
       now: NOW,
     });
     expect(recorded).toEqual({
       ok: true,
-      observationId: "hermes:obs:direct:exec-1",
+      observationId: "conductor:obs:direct:exec-1",
       recorded: true,
       replayed: false,
     });
@@ -245,12 +245,12 @@ describe("In-memory Hermes observation port (default backend)", () => {
   });
 
   it("stamps §12 provenance itself — the caller cannot claim it", async () => {
-    const port = createInMemoryHermesObservationPort();
-    await port.recordObservation({ observation: observationInput(), observedBy: HERMES, now: NOW });
+    const port = createInMemoryConductorObservationPort();
+    await port.recordObservation({ observation: observationInput(), observedBy: CONDUCTOR, now: NOW });
     const listed = await port.listObservations(TENANT);
     if (!listed.ok) throw new Error(listed.error);
     const observation = listed.observations[0];
-    expect(observation.recordedBy).toBe(HERMES);
+    expect(observation.recordedBy).toBe(CONDUCTOR);
     expect(observation.generatedByAi).toBe(true);
     expect(observation.verified).toBe(false);
     expect(observation.recordedAt).toBe(NOW);
@@ -258,7 +258,7 @@ describe("In-memory Hermes observation port (default backend)", () => {
   });
 
   it("rejects observations with invalid shapes (fail-closed Zod boundary)", async () => {
-    const port = createInMemoryHermesObservationPort();
+    const port = createInMemoryConductorObservationPort();
     for (const bad of [
       observationInput({ observationId: "" }),
       observationInput({ kind: "mystery_kind" }),
@@ -271,7 +271,7 @@ describe("In-memory Hermes observation port (default backend)", () => {
     ]) {
       const result = await port.recordObservation({
         observation: bad as never,
-        observedBy: HERMES,
+        observedBy: CONDUCTOR,
         now: NOW,
       });
       expect(result.ok).toBe(false);
@@ -279,7 +279,7 @@ describe("In-memory Hermes observation port (default backend)", () => {
   });
 
   it("rejects an empty observedBy / unparsable record instant (provenance required)", async () => {
-    const port = createInMemoryHermesObservationPort();
+    const port = createInMemoryConductorObservationPort();
     const noObserver = await port.recordObservation({
       observation: observationInput(),
       observedBy: "  ",
@@ -288,7 +288,7 @@ describe("In-memory Hermes observation port (default backend)", () => {
     expect(noObserver.ok).toBe(false);
     const badNow = await port.recordObservation({
       observation: observationInput(),
-      observedBy: HERMES,
+      observedBy: CONDUCTOR,
       now: "yesterday-ish",
     });
     expect(badNow.ok).toBe(false);
@@ -301,9 +301,9 @@ describe("In-memory Hermes observation port (default backend)", () => {
 
 describe("Append-only semantics", () => {
   it("exposes record + list ONLY — no update, no delete", async () => {
-    const memory = createInMemoryHermesObservationPort();
+    const memory = createInMemoryConductorObservationPort();
     const client = fakeSupabaseClient();
-    const db = createHermesObservationPortDb(client as unknown as DbClient);
+    const db = createConductorObservationPortDb(client as unknown as DbClient);
     for (const port of [memory, db]) {
       // The recorder contract surface; `size` is the in-memory port's test
       // introspection only. NOTHING mutating exists on either backend.
@@ -316,8 +316,8 @@ describe("Append-only semantics", () => {
   });
 
   it("a replayed observation id leaves the ORIGINAL record verbatim (in-memory)", async () => {
-    const port = createInMemoryHermesObservationPort();
-    await port.recordObservation({ observation: observationInput(), observedBy: HERMES, now: NOW });
+    const port = createInMemoryConductorObservationPort();
+    await port.recordObservation({ observation: observationInput(), observedBy: CONDUCTOR, now: NOW });
 
     const replay = await port.recordObservation({
       observation: observationInput({ statement: { stage: "TAMPERED" } }),
@@ -326,7 +326,7 @@ describe("Append-only semantics", () => {
     });
     expect(replay).toEqual({
       ok: true,
-      observationId: "hermes:obs:direct:exec-1",
+      observationId: "conductor:obs:direct:exec-1",
       recorded: false,
       replayed: true,
     });
@@ -339,7 +339,7 @@ describe("Append-only semantics", () => {
       stage: "assigned",
       action: "record-observation",
     });
-    expect(listed.observations[0].recordedBy).toBe(HERMES);
+    expect(listed.observations[0].recordedBy).toBe(CONDUCTOR);
     expect(listed.observations[0].recordedAt).toBe(NOW);
   });
 
@@ -347,7 +347,7 @@ describe("Append-only semantics", () => {
     const client = fakeSupabaseClient({
       cg_hermes_observation: { rows: [persistedRow()] },
     });
-    const port = createHermesObservationPortDb(client as unknown as DbClient);
+    const port = createConductorObservationPortDb(client as unknown as DbClient);
 
     const replay = await port.recordObservation({
       observation: observationInput({ statement: { stage: "TAMPERED" } }),
@@ -356,7 +356,7 @@ describe("Append-only semantics", () => {
     });
     expect(replay).toEqual({
       ok: true,
-      observationId: "hermes:obs:direct:exec-1",
+      observationId: "conductor:obs:direct:exec-1",
       recorded: false,
       replayed: true,
     });
@@ -367,36 +367,36 @@ describe("Append-only semantics", () => {
     if (!listed.ok) throw new Error(listed.error);
     expect(listed.observations).toHaveLength(1);
     expect(listed.observations[0].statement).toEqual({ stage: "assigned" });
-    expect(listed.observations[0].recordedBy).toBe(HERMES);
+    expect(listed.observations[0].recordedBy).toBe(CONDUCTOR);
   });
 });
 
 /* ─────────────────────────────────────────────────────────────
- * 4. DB adapter (HermesObservationPortDb) over cg_hermes_observation
+ * 4. DB adapter (ConductorObservationPortDb) over cg_hermes_observation
  * ────────────────────────────────────────────────────────────*/
 
-describe("HermesObservationPortDb (cg_hermes_observation adapter)", () => {
+describe("ConductorObservationPortDb (cg_hermes_observation adapter)", () => {
   it("persists the stamped row and maps reads back through the contract", async () => {
     const client = fakeSupabaseClient();
-    const port = createHermesObservationPortDb(client as unknown as DbClient);
+    const port = createConductorObservationPortDb(client as unknown as DbClient);
 
     const recorded = await port.recordObservation({
       observation: observationInput(),
-      observedBy: HERMES,
+      observedBy: CONDUCTOR,
       now: NOW,
     });
     expect(recorded).toEqual({
       ok: true,
-      observationId: "hermes:obs:direct:exec-1",
+      observationId: "conductor:obs:direct:exec-1",
       recorded: true,
       replayed: false,
     });
 
     expect(client.inserted).toHaveLength(1);
     const row = client.inserted[0].row;
-    expect(row.id).toBe("hermes:obs:direct:exec-1");
+    expect(row.id).toBe("conductor:obs:direct:exec-1");
     expect(row.tenant_id).toBe(TENANT);
-    expect(row.created_by).toBe(HERMES);
+    expect(row.created_by).toBe(CONDUCTOR);
     expect(row.generated_by_ai).toBe(true);
     expect(row.verified).toBe(false);
     // recorded_at is the DATABASE clock — the adapter never backdates it.
@@ -406,7 +406,7 @@ describe("HermesObservationPortDb (cg_hermes_observation adapter)", () => {
     expect(listed.ok).toBe(true);
     if (!listed.ok) throw new Error(listed.error);
     expect(listed.observations[0]).toEqual({
-      observationId: "hermes:obs:direct:exec-1",
+      observationId: "conductor:obs:direct:exec-1",
       tenantId: TENANT,
       kind: "mission_observation",
       subjectRef: "cg_execution_record:exec-1",
@@ -415,10 +415,10 @@ describe("HermesObservationPortDb (cg_hermes_observation adapter)", () => {
       recordedAt: NOW,
       source: "direct",
       eventRef: null,
-      traceId: "trace:hermes-1",
-      correlationId: "corr:hermes-1",
-      declaredOrigin: "hermes.observation-port",
-      recordedBy: HERMES,
+      traceId: "trace:conductor-1",
+      correlationId: "corr:conductor-1",
+      declaredOrigin: "conductor.observation-port",
+      recordedBy: CONDUCTOR,
       generatedByAi: true,
       verified: false,
     });
@@ -426,11 +426,11 @@ describe("HermesObservationPortDb (cg_hermes_observation adapter)", () => {
 
   it("contract rejections never touch the database", async () => {
     const client = fakeSupabaseClient();
-    const port = createHermesObservationPortDb(client as unknown as DbClient);
+    const port = createConductorObservationPortDb(client as unknown as DbClient);
 
     const rejected = await port.recordObservation({
       observation: observationInput({ source: "event", eventRef: null }),
-      observedBy: HERMES,
+      observedBy: CONDUCTOR,
       now: NOW,
     });
     expect(rejected.ok).toBe(false);
@@ -443,15 +443,15 @@ describe("HermesObservationPortDb (cg_hermes_observation adapter)", () => {
         insertError: { message: "duplicate key value violates unique constraint", code: "23505" },
       },
     });
-    const port = createHermesObservationPortDb(client as unknown as DbClient);
+    const port = createConductorObservationPortDb(client as unknown as DbClient);
     const result = await port.recordObservation({
       observation: observationInput(),
-      observedBy: HERMES,
+      observedBy: CONDUCTOR,
       now: NOW,
     });
     expect(result).toEqual({
       ok: true,
-      observationId: "hermes:obs:direct:exec-1",
+      observationId: "conductor:obs:direct:exec-1",
       recorded: false,
       replayed: true,
     });
@@ -463,13 +463,13 @@ describe("HermesObservationPortDb (cg_hermes_observation adapter)", () => {
         selectError: "relation cg_hermes_observation does not exist",
       },
     });
-    const port = createHermesObservationPortDb(client as unknown as DbClient);
+    const port = createConductorObservationPortDb(client as unknown as DbClient);
 
     const listed = await port.listObservations(TENANT);
     expect(listed.ok).toBe(false);
     if (listed.ok) throw new Error("must fail closed");
     expect(listed.error).toContain("observation_substrate_missing");
-    expect(listed.error).toContain(HERMES_OBSERVATION_SUBSTRATE_GAP);
+    expect(listed.error).toContain(CONDUCTOR_OBSERVATION_SUBSTRATE_GAP);
   });
 
   it("FAILS CLOSED on a missing substrate: typed gap, nothing written (record)", async () => {
@@ -481,17 +481,17 @@ describe("HermesObservationPortDb (cg_hermes_observation adapter)", () => {
         },
       },
     });
-    const port = createHermesObservationPortDb(client as unknown as DbClient);
+    const port = createConductorObservationPortDb(client as unknown as DbClient);
 
     const result = await port.recordObservation({
       observation: observationInput(),
-      observedBy: HERMES,
+      observedBy: CONDUCTOR,
       now: NOW,
     });
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("must fail closed");
     expect(result.error).toContain("observation_substrate_missing");
-    expect(result.error).toContain(HERMES_OBSERVATION_SUBSTRATE_GAP);
+    expect(result.error).toContain(CONDUCTOR_OBSERVATION_SUBSTRATE_GAP);
     // Nothing persisted under a missing substrate.
     expect(client.inserted).toHaveLength(0);
   });
@@ -502,7 +502,7 @@ describe("HermesObservationPortDb (cg_hermes_observation adapter)", () => {
         selectError: "connection terminated unexpectedly",
       },
     });
-    const port = createHermesObservationPortDb(client as unknown as DbClient);
+    const port = createConductorObservationPortDb(client as unknown as DbClient);
     const listed = await port.listObservations(TENANT);
     expect(listed.ok).toBe(false);
     if (!listed.ok) expect(listed.error).toContain("connection terminated");
@@ -512,11 +512,11 @@ describe("HermesObservationPortDb (cg_hermes_observation adapter)", () => {
     const client = fakeSupabaseClient({
       cg_hermes_observation: {
         // §9 intelligence-only violation: a row claiming verified state can
-        // never re-enter Hermes state.
+        // never re-enter Conductor state.
         rows: [persistedRow({ verified: true })],
       },
     });
-    const port = createHermesObservationPortDb(client as unknown as DbClient);
+    const port = createConductorObservationPortDb(client as unknown as DbClient);
     const listed = await port.listObservations(TENANT);
     expect(listed.ok).toBe(false);
     if (!listed.ok) expect(listed.error).toContain("row validation rejected");
@@ -527,11 +527,11 @@ describe("HermesObservationPortDb (cg_hermes_observation adapter)", () => {
       cg_hermes_observation: {
         rows: [
           persistedRow(),
-          persistedRow({ id: "hermes:obs:direct:exec-2", tenant_id: "tenant-beta" }),
+          persistedRow({ id: "conductor:obs:direct:exec-2", tenant_id: "tenant-beta" }),
         ],
       },
     });
-    const port = createHermesObservationPortDb(client as unknown as DbClient);
+    const port = createConductorObservationPortDb(client as unknown as DbClient);
     const listed = await port.listObservations(TENANT);
     if (!listed.ok) throw new Error(listed.error);
     expect(listed.observations.map((o) => o.tenantId)).toEqual([TENANT]);
