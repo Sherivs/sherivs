@@ -40,8 +40,8 @@ A forward-only migration (with matching rollback) enforces FORCE ROW LEVEL SECUR
 ## Consequences
 
 - Positive: no new tables, tenant isolation and role gating are inherited from the existing RPCs, and the engine is fully testable offline.
-- **Limit, attestation:** `upsert_org_profile` lets any school administrator of the tenant write any profile key directly, so `approvedBy` and `approvedAt` are not tamper-proof against an administrator calling the RPC directly. The content hash detects drift; it is not a secret. Recommended follow-up (separate reserved migration and owner approval): a reserved-prefix guard so only the interview functions can write this key.
-- **Limit, concurrency:** the write is read-modify-write and not atomic; `expectedRevision` only prevents stale screens from overwriting newer answers.
+- **Limit, attestation (addressed in draft by ADR-074, unapplied):** `upsert_org_profile` lets any school administrator of the tenant write any profile key directly, so `approvedBy` and `approvedAt` are not tamper-proof against an administrator calling the RPC directly. The content hash detects drift; it is not a secret. Recommended follow-up (separate reserved migration and owner approval): a reserved-prefix guard so only the interview functions can write this key.
+- **Limit, concurrency (addressed in draft by ADR-074, unapplied):** the write is read-modify-write and not atomic; `expectedRevision` only prevents stale screens from overwriting newer answers.
 - **Limit, scope:** islamic, special_needs and multi_institution_group are refused. Creche has only core questions because R1 has no early-childhood pack. Repeating-group answers (campuses, premises) are stored as text lists until a structured model is authorized.
 - Nothing is merged, applied, deployed or activated by this change. CI is blocked by an organization billing hold, so all evidence is local.
 
