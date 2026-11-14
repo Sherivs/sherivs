@@ -36,6 +36,7 @@ Sherivs adapters with an exit plan.
 | ENGINE-04 | JARVIS executive authority, severity routing, owner alerts and workforce oversight           | 082           |
 | ENGINE-05 | Playbook runner: wake events to governed steps through the broker                            | 083           |
 | ENGINE-06 | Connector adapter framework, execution gate, read-only GitHub adapter                        | 084           |
+| ENGINE-07 | Per-context agent model loop (draft-only, proposals only)                                    | 085           |
 
 ## Operator actions (not done by the agent)
 
@@ -46,12 +47,12 @@ Sherivs adapters with an exit plan.
 
 ## Status and what is not built
 
-Built and tested as drafts (nothing applied, merged or deployed): ENGINE-01 to ENGINE-06 above.
+Built and tested as drafts (nothing applied, merged or deployed): ENGINE-01 to ENGINE-07 above.
 
 Not built, and not claimed:
 
 - A scheduler or durable queue that calls the playbook runner, persistence of run state, and bindings for the tenant and department packs (ENGINE-05 ships the runner and the JARVIS bindings only).
-- An LLM-backed agent runtime (the engine decides authority and routes; it does not yet run a model loop per context). The existing AI gateway and draft-only call sites are the starting point.
+- Persistence and scheduling of agent turns, evaluation of proposal quality, and any model call with live credentials (ENGINE-07 ships a draft-only loop and a gateway-backed port, tested with fakes).
 - Connector adapters beyond the read-only GitHub adapter (Slack, email, WhatsApp, SMS, social, payments, CRM, n8n, IAM), any write-capable adapter, and the secret manager behind the vault references (ENGINE-06 ships the gate and the GitHub read adapter only).
 - Channel adapters for owner alerts (voice, WhatsApp, SMS), and the owner's consent for live outbound.
 - The JARVIS service identity, and the restack that wires ENGINE-04 to the JARVIS approval inbox and escalation ladder.
