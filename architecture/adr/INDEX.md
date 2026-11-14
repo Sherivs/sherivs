@@ -57,6 +57,7 @@ The H3-wave ADR directory. M09 was assigned **ADR-017** and M13 **ADR-018** by o
 | 084 | [ADR-084_ENGINE_CONNECTOR_ADAPTERS.md](./ADR-084_ENGINE_CONNECTOR_ADAPTERS.md) | Connector Adapter Framework and Execution Gate | PROPOSED | 2026-11-14 | Execution gate re-verifies the ledger decision; GET-only egress allowlist; read-only GitHub adapter; secrets never leave the gate |
 | 085 | [ADR-085_ENGINE_AGENT_MODEL_LOOP.md](./ADR-085_ENGINE_AGENT_MODEL_LOOP.md) | Per-Context Agent Model Loop (Draft-Only) | PROPOSED | 2026-11-14 | Draft-only model turn per context: budget gates, context-scoped memory, untrusted output, proposals only |
 | 086 | [ADR-086_ENGINE_JARVIS_APPROVAL_BRIDGE.md](./ADR-086_ENGINE_JARVIS_APPROVAL_BRIDGE.md) | Playbook Runner to JARVIS Approval Inbox Bridge | PROPOSED | 2026-11-15 | Runner approval gates use the JARVIS durable inbox; tier-equal action map; approval consumed only after kill switch, role and precondition checks |
+| 087 | [ADR-087_ENGINE_ALERT_DELIVERY_GATES.md](./ADR-087_ENGINE_ALERT_DELIVERY_GATES.md) | Owner Alert Delivery Through the JARVIS Channel Gates | PROPOSED | 2026-11-15 | Alert channels gated by owner enablement and live authorization; SMS never planned; test mode uses synthetic sinks |
 
 ## ADR register — `architecture/coregrid-mvp-architecture/adr/`
 
