@@ -176,6 +176,11 @@ jobs:
           node sim/security-audit.mjs > security-audit.json
           node -e "const a=require('./security-audit.json'); const bad=a.rls_disabled.length+a.rls_not_forced.length+a.secdef_no_search_path.length; if(bad){console.error(a);process.exit(1)}"
           node sim/rls-e-check.mjs
+      - name: DB-12 feature_flags primary key and duplicate index (real Postgres, rolled back)
+        run: |
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/db12-flags-pk-and-index.local.sql 2>&1 | tee /tmp/db12.out
+          grep -q 'DB12 ALL PASS' /tmp/db12.out
       - name: k6 smoke (50 VUs, key flows)
         working-directory: tools/sim-lab
         run: |
