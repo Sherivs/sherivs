@@ -24,6 +24,12 @@ BEGIN
 END
 $guard$;
 
+-- R20 (ADR-074) reserves reality.* keys for the server-side writer. These storage checks exercise the
+-- generic RPCs and the payload bound directly, so they run as the reality writer would. This is
+-- a no-op when the R20 migration is not present. The R20 guard itself is proved by
+-- tests/integration/sv1-reality-r20.local.sql.
+SELECT set_config('coregrid.reality_writer', 'on', true);
+
 CREATE SCHEMA r3_gate;
 GRANT USAGE ON SCHEMA r3_gate TO authenticated, anon;
 

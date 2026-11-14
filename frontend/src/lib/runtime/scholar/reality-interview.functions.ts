@@ -2,15 +2,15 @@
  * SV1-REALITY R3 (#334) — school onboarding interview server functions (school-admin scope).
  *
  * The interview is stored in the existing neutral org-profile store (profile key
- * `reality.onboarding_interview`) through the existing tenant-scoped RPCs. The
- * tenant comes from the verified actor, never from the client. The client sends
- * one answer, one clear or one approval at a time; it never sends state, a
- * source, an approver or an approval flag. Every change goes through the pure
- * engine, which owns all rules. See ADR-053.
- *
- * Known limit: read-then-write is not atomic. `expectedRevision` stops a stale
- * screen from overwriting newer work; it does not serialise two simultaneous
- * requests (see ADR-053, consequences).
+ * `reality.onboarding_interview`). Reads go through the tenant-scoped `get_org_profile`
+ * RPC as the signed-in administrator. Writes go through `upsert_reality_profile`, which only
+ * the server (service role) can call: the generic `upsert_org_profile` RPC is refused for
+ * `reality.*` keys, so an administrator cannot store an interview or approval that did not pass
+ * the pure engine (ADR-074, audit finding R-20). The write is an atomic compare-and-set on the
+ * stored revision (finding R-21). The tenant comes from the verified actor, never from the
+ * client. The client sends one answer, one clear or one approval at a time; it never sends
+ * state, a source, an approver or an approval flag. Every change goes through the pure engine,
+ * which owns all rules. See ADR-053 and ADR-074.
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -91,17 +91,28 @@ export async function load(
 }
 
 async function save(
-  db: ReturnType<typeof asKernelAdmin>,
   schoolId: string,
   state: InterviewState,
-): Promise<void> {
-  const { error } = await db.rpc("upsert_org_profile", {
+  actorId: string,
+  expectedRevision: number,
+): Promise<InterviewIssue | null> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { error } = await asKernelAdmin(supabaseAdmin).rpc("upsert_reality_profile", {
     p_tenant: schoolId,
+    p_actor: actorId,
     p_runtime: SCHOLAR_PROFILE_RUNTIME,
     p_profile_key: INTERVIEW_PROFILE_KEY,
     p_payload: state as unknown as Record<string, unknown>,
+    p_expected_revision: expectedRevision,
   });
-  if (error) throw new Error(error.message);
+  if (!error) return null;
+  // 40001 = the stored revision moved between our read and our write: tell the screen to reload.
+  if (error.code === "40001")
+    return {
+      code: "revision_conflict",
+      message: "The interview changed while you were saving. Reload to see the latest answers.",
+    };
+  throw new Error(error.message);
 }
 
 export const getInterview = createServerFn({ method: "POST" })
@@ -128,7 +139,8 @@ export const submitInterviewAnswer = createServerFn({ method: "POST" })
     const result = applyAnswer(state, answer, nowMs, data.expectedRevision);
     if (!result.ok)
       return { ok: false, issues: result.issues, view: buildInterviewView(state, notes) };
-    await save(db, schoolId, result.state);
+    const conflict = await save(schoolId, result.state, context.userId, state.revision);
+    if (conflict) return { ok: false, issues: [conflict], view: buildInterviewView(state, notes) };
     return { ok: true, view: buildInterviewView(result.state, notes) };
   });
 
@@ -148,7 +160,8 @@ export const clearInterviewAnswer = createServerFn({ method: "POST" })
     const result = clearAnswer(state, data.questionId, nowMs, data.expectedRevision);
     if (!result.ok)
       return { ok: false, issues: result.issues, view: buildInterviewView(state, notes) };
-    await save(db, schoolId, result.state);
+    const conflict = await save(schoolId, result.state, context.userId, state.revision);
+    if (conflict) return { ok: false, issues: [conflict], view: buildInterviewView(state, notes) };
     return { ok: true, view: buildInterviewView(result.state, notes) };
   });
 
@@ -164,6 +177,7 @@ export const approveInterviewAnswers = createServerFn({ method: "POST" })
     const result = approveInterview(state, context.userId, nowMs, data.expectedRevision);
     if (!result.ok)
       return { ok: false, issues: result.issues, view: buildInterviewView(state, notes) };
-    await save(db, schoolId, result.state);
+    const conflict = await save(schoolId, result.state, context.userId, state.revision);
+    if (conflict) return { ok: false, issues: [conflict], view: buildInterviewView(state, notes) };
     return { ok: true, view: buildInterviewView(result.state, notes) };
   });
