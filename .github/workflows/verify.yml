@@ -188,6 +188,14 @@ jobs:
               -f tests/integration/engine02-conductor-compat.local.sql 2>&1 | tee /tmp/engine02.out
           ! grep -Fq 'ENGINE-02 FAIL' /tmp/engine02.out
           grep -Fq 'ENGINE-02 HARNESS PASSED' /tmp/engine02.out
+      - name: ENGINE-03 tool broker registry, vault references and append-only ledger (real Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          PGOPTIONS="-c coregrid.test_disposable_database=on" \
+            psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+              -f tests/integration/engine03-tool-broker.local.sql 2>&1 | tee /tmp/engine03.out
+          ! grep -Fq 'ENGINE-03 FAIL' /tmp/engine03.out
+          grep -Fq 'ENGINE-03 HARNESS PASSED' /tmp/engine03.out
       - name: Seed synthetic schools (10% scale)
         working-directory: tools/sim-lab
         run: SIM_SCALE=0.1 node sim/gen.mjs && node sim/seed-flows.mjs
