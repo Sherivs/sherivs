@@ -58,7 +58,7 @@ export interface DriveResult {
   readonly actionsToday: number;
 }
 
-const stepArgs = (run: PlaybookRun) => ({
+export const stepArgs = (run: PlaybookRun) => ({
   subjectRef: run.subjectRef,
   correlationId: run.correlationId,
 });

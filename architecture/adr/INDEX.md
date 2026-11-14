@@ -56,6 +56,7 @@ The H3-wave ADR directory. M09 was assigned **ADR-017** and M13 **ADR-018** by o
 | 083 | [ADR-083_ENGINE_PLAYBOOK_RUNNER.md](./ADR-083_ENGINE_PLAYBOOK_RUNNER.md) | Playbook runner: wake events to governed steps through the broker | PROPOSED | 2026-11-14 | A port-based runner turns a declared wake into playbook steps: fail-closed admission, every step authorised by the broker or ladder, stops at the first human gate, deny or failure, right-approver resume, no double effects. |
 | 084 | [ADR-084_ENGINE_CONNECTOR_ADAPTERS.md](./ADR-084_ENGINE_CONNECTOR_ADAPTERS.md) | Connector Adapter Framework and Execution Gate | PROPOSED | 2026-11-14 | Execution gate re-verifies the ledger decision; GET-only egress allowlist; read-only GitHub adapter; secrets never leave the gate |
 | 085 | [ADR-085_ENGINE_AGENT_MODEL_LOOP.md](./ADR-085_ENGINE_AGENT_MODEL_LOOP.md) | Per-Context Agent Model Loop (Draft-Only) | PROPOSED | 2026-11-14 | Draft-only model turn per context: budget gates, context-scoped memory, untrusted output, proposals only |
+| 086 | [ADR-086_ENGINE_JARVIS_APPROVAL_BRIDGE.md](./ADR-086_ENGINE_JARVIS_APPROVAL_BRIDGE.md) | Playbook Runner to JARVIS Approval Inbox Bridge | PROPOSED | 2026-11-15 | Runner approval gates use the JARVIS durable inbox; tier-equal action map; approval consumed only after kill switch, role and precondition checks |
 
 ## ADR register — `architecture/coregrid-mvp-architecture/adr/`
 

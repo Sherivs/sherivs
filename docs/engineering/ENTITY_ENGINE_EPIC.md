@@ -37,6 +37,7 @@ Sherivs adapters with an exit plan.
 | ENGINE-05 | Playbook runner: wake events to governed steps through the broker                            | 083           |
 | ENGINE-06 | Connector adapter framework, execution gate, read-only GitHub adapter                        | 084           |
 | ENGINE-07 | Per-context agent model loop (draft-only, proposals only)                                    | 085           |
+| ENGINE-08 | Restack: runner approval gates through the JARVIS durable approval inbox                     | 086           |
 
 ## Operator actions (not done by the agent)
 
@@ -47,7 +48,7 @@ Sherivs adapters with an exit plan.
 
 ## Status and what is not built
 
-Built and tested as drafts (nothing applied, merged or deployed): ENGINE-01 to ENGINE-07 above.
+Built and tested as drafts (nothing applied, merged or deployed): ENGINE-01 to ENGINE-08 above.
 
 Not built, and not claimed:
 
@@ -55,6 +56,6 @@ Not built, and not claimed:
 - Persistence and scheduling of agent turns, evaluation of proposal quality, and any model call with live credentials (ENGINE-07 ships a draft-only loop and a gateway-backed port, tested with fakes).
 - Connector adapters beyond the read-only GitHub adapter (Slack, email, WhatsApp, SMS, social, payments, CRM, n8n, IAM), any write-capable adapter, and the secret manager behind the vault references (ENGINE-06 ships the gate and the GitHub read adapter only).
 - Channel adapters for owner alerts (voice, WhatsApp, SMS), and the owner's consent for live outbound.
-- The JARVIS service identity, and the restack that wires ENGINE-04 to the JARVIS approval inbox and escalation ladder.
+- The JARVIS service identity. ENGINE-08 wires the runner's approval gates to the JARVIS inbox and ladder; ENGINE-04 severity routing is not yet connected to the ladder's delivery planner, and the TWIN-03 sleep/wake scheduler is not wired to the runner.
 - Console and shell UI for the passport, approval inbox, workforce view and kill switch.
 - The `cg_personal_twin` cutover to the person passport (ADR-077).
