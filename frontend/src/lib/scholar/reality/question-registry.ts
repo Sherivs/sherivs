@@ -3,7 +3,8 @@
  * representative branch packs (ADR-051). Static, deterministic data; no
  * answers are stored here and nothing is persisted.
  *
- * V1 school-onboarding packs only: core (all school types), primary, secondary.
+ * V1 school-onboarding packs only: core (all school types), early childhood (creche), primary,
+ * secondary.
  * Tertiary/health/agriculture packs are future scope and deliberately absent. Answers will map onto the
  * existing `scholar.institution.operating_model` attributes (config mapping).
  */
@@ -91,6 +92,7 @@ const pack =
     build(name, types, id, domain, at, prompt, path, o);
 
 const core = pack("core", ALL);
+const early = pack("early", ["creche"]);
 const primary = pack("primary", ["primary"]);
 const secondary = pack("secondary", ["secondary"]);
 
@@ -211,6 +213,86 @@ const RAW: readonly DiscoveryQuestion[] = [
     {
       entity: "position",
       validation: { options: ["centralised", "decentralised"] },
+    },
+  ),
+
+  early(
+    "academics.levels",
+    "academic_topology",
+    "multi",
+    "Which early-childhood groups does the centre run?",
+    "levels",
+    {
+      web: PUBLIC("levels_offered"),
+      activate: true,
+      entity: "level",
+      validation: { options: ["day_care", "playgroup", "nursery"], minItems: 1 },
+    },
+  ),
+  early(
+    "academics.youngest_age_months",
+    "academic_topology",
+    "number",
+    "What is the youngest age, in months, that the centre admits?",
+    "youngest_age_months",
+    {
+      entity: "level",
+      validation: { min: 0, max: 72 },
+    },
+  ),
+  early(
+    "operations.care_hours",
+    "temporal",
+    "single",
+    "Does the centre offer part-day care, full-day care or both?",
+    "care_hours",
+    {
+      entity: "shift",
+      validation: { options: ["part_day", "full_day", "both"] },
+    },
+  ),
+  early(
+    "operations.meals",
+    "operations",
+    "bool",
+    "Does the centre provide meals?",
+    "meals_provided",
+    {
+      entity: "institution",
+      na: true,
+    },
+  ),
+  early(
+    "human.children_per_caregiver",
+    "human",
+    "number",
+    "What is the target number of children for each caregiver?",
+    "children_per_caregiver",
+    {
+      entity: "position",
+      validation: { min: 1, max: 40 },
+    },
+  ),
+  early(
+    "assessment.development_reports",
+    "assessment_grading",
+    "single",
+    "How often does the centre report on each child's development?",
+    "development_reports",
+    {
+      entity: "assessment_scheme",
+      validation: { options: ["none", "termly", "monthly"] },
+    },
+  ),
+  early(
+    "governance.registration",
+    "governance_external",
+    "bool",
+    "Is the centre registered with the relevant state authority?",
+    "state_registration",
+    {
+      entity: "external_body",
+      na: true,
     },
   ),
 
@@ -342,7 +424,7 @@ function withFollowUps(list: readonly DiscoveryQuestion[]): DiscoveryQuestion[] 
 export const QUESTION_REGISTRY: readonly DiscoveryQuestion[] = Object.freeze(withFollowUps(RAW));
 
 export const REQUIRED_BRANCH_COVERAGE: readonly BranchCoverageRule[] = (
-  ["primary", "secondary"] as const
+  ["creche", "primary", "secondary"] as const
 ).map((institutionType) => ({
   institutionType,
   domains: ["org_topology", "academic_topology", "assessment_grading"],
