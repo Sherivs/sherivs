@@ -12,6 +12,7 @@ import {
   type RosterRow,
   type RosterView,
 } from "@/lib/internal-console/workforce-view";
+import type { WorkbenchView } from "@/lib/internal-console/workbench-view";
 import { ConsoleNotice } from "./console-primitives";
 
 const money = (minor: number) => `${(minor / 100).toLocaleString("en-US")} (major units)`;
@@ -169,6 +170,11 @@ export function AgentDashboardView({ dashboard }: { dashboard: AgentDashboard })
       <h1>
         {d.codename} · {d.title}
       </h1>
+      <p>
+        <Link to={CONSOLE_PATHS.workforceWorkbench(d.code) as never} data-testid="open-workbench">
+          Open the workbench
+        </Link>
+      </p>
       <p>
         {d.binding === "bound"
           ? "Wired to the engine. Read-only view: nothing on this page changes the agent."
@@ -413,6 +419,86 @@ export function AgentDashboardView({ dashboard }: { dashboard: AgentDashboard })
       ) : null}
 
       {d.workspace ? <WorkspacePanels workspace={d.workspace} /> : null}
+    </section>
+  );
+}
+
+export function AgentWorkbenchView({ view }: { view: WorkbenchView }) {
+  const w = view;
+  return (
+    <section className="sherivs-console-card" data-testid={`console-workbench-${w.code}`}>
+      <p className="sherivs-console-page-kicker">
+        <Link to={CONSOLE_PATHS.workforceAgent(w.code) as never}>
+          {w.codename} · {w.title}
+        </Link>
+      </p>
+      <h1>{WORKBENCH_TITLES[w.kind]}</h1>
+      <p>{w.headline}</p>
+      <p>Read-only: nothing on this page changes the agent.</p>
+
+      <Panel id="workbench-queues" title="Queues">
+        {w.queues.length === 0 ? <p>{w.emptyState}</p> : null}
+        {w.queues.map((q) => (
+          <div key={q.id} data-testid={`workbench-queue-${q.id}`}>
+            <h3>{q.title}</h3>
+            {q.state.available ? (
+              q.state.items.length === 0 ? (
+                <p>{w.emptyState}</p>
+              ) : (
+                <div className="sherivs-console-list">
+                  {q.state.items.map((i) => (
+                    <div key={i.id} className="sherivs-console-row">
+                      <strong>{i.title}</strong>
+                      <small>
+                        {i.detail ? `${i.detail} · ` : ""}
+                        {i.at}
+                      </small>
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : (
+              <Unavailable reason={`${q.title}: ${q.state.reason}`} />
+            )}
+          </div>
+        ))}
+      </Panel>
+
+      <Panel id="workbench-actions" title="Quick actions">
+        <div className="sherivs-console-list">
+          {w.quickActions.map((a) => (
+            <div
+              key={a.id}
+              className="sherivs-console-row"
+              data-testid={`workbench-action-${a.id}`}
+            >
+              <strong>{a.label}</strong>
+              <small>{a.effect}</small>
+              {a.enabled ? (
+                <Link
+                  to={
+                    `${CONSOLE_PATHS.workforceAgent(w.code)}${a.anchor ? `#${a.anchor}` : ""}` as never
+                  }
+                >
+                  Open
+                </Link>
+              ) : (
+                <button type="button" disabled aria-disabled="true">
+                  Unavailable
+                </button>
+              )}
+              {a.disabledReason ? <small>{a.disabledReason}</small> : null}
+            </div>
+          ))}
+        </div>
+      </Panel>
+
+      <Panel id="workbench-pause" title="Pause control">
+        <p>
+          Pausing needs {w.pause.pauseNeeds}. Resuming needs {w.pause.resumeNeeds}. {w.pause.reach}
+        </p>
+        <Unavailable reason={w.pause.reason} />
+      </Panel>
     </section>
   );
 }

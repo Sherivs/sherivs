@@ -81,12 +81,15 @@ export interface GuardPorts {
   readonly now: () => Date;
   /** The global kill switch, resolved server-side. */
   readonly killSwitch: () => boolean;
+  /** True when the agent is paused, directly or by a cascade (see workforce-pause). Required: a guard without it does not compile. */
+  readonly isPaused: (agentCode: string) => boolean;
   /** Defaults to the shipped workspaces; injectable so tests can use their own. */
   readonly workspaces?: readonly AgentWorkspace[];
 }
 
 export type GuardError =
   | "kill_switch"
+  | "agent_paused"
   | "unknown_agent"
   | "invalid_operation"
   | "lookup_failed"
@@ -129,6 +132,11 @@ export async function runAsAgent(
   };
 
   if (ports.killSwitch()) return refuse("kill_switch");
+  try {
+    if (ports.isPaused(agentCode)) return refuse("agent_paused");
+  } catch {
+    return refuse("lookup_failed");
+  }
   if (!OP_KINDS.includes(op.kind)) return refuse("invalid_operation");
 
   const workspace = (ports.workspaces ?? WORKFORCE_WORKSPACES).find(

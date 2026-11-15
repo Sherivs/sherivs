@@ -30,6 +30,7 @@ function rig(
   over: Partial<{
     facts: Partial<ScopeFactsPort>;
     kill: boolean;
+    paused: (code: string) => boolean;
     auditFails: boolean;
     innerFails: boolean;
     grantMinutes: (resource: string) => number;
@@ -68,6 +69,7 @@ function rig(
       },
       now: () => NOW,
       killSwitch: () => over.kill === true,
+      isPaused: (code) => over.paused?.(code) ?? false,
     },
   };
 }
@@ -355,6 +357,28 @@ describe("ENGINE-15 scope guard: fail closed", () => {
   it("the kill switch stops everything, even an allowed call", async () => {
     const r = rig({ kill: true });
     expect(await runAsAgent(r.ports, agent, op)).toEqual({ ok: false, error: "kill_switch" });
+    expect(r.innerCalls).toEqual([]);
+  });
+
+  it("a paused agent is refused everything, and only that agent", async () => {
+    const r = rig({ paused: (c) => c === agent });
+    expect(await runAsAgent(r.ports, agent, op)).toEqual({ ok: false, error: "agent_paused" });
+    expect(r.innerCalls).toEqual([]);
+    expect(r.audit[0]).toMatchObject({ allowed: false, reason: "agent_paused" });
+    const other = WORKFORCE_WORKSPACES.find(
+      (w) => w.packCode !== agent && w.scopes.some((s) => s.resource === "platform_health"),
+    );
+    expect(other).toBeDefined();
+    expect((await runAsAgent(r.ports, other!.packCode, op)).ok).toBe(true);
+  });
+
+  it("a failing pause lookup refuses instead of assuming the agent is running", async () => {
+    const r = rig({
+      paused: () => {
+        throw new Error("x");
+      },
+    });
+    expect(await runAsAgent(r.ports, agent, op)).toEqual({ ok: false, error: "lookup_failed" });
     expect(r.innerCalls).toEqual([]);
   });
 

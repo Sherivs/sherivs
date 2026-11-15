@@ -134,6 +134,7 @@ import { Route as ApiPublicWebhooksPaystackRouteImport } from './routes/api/publ
 import { Route as ApiPublicWebhooksUssdRouteImport } from './routes/api/public/webhooks/ussd'
 import { Route as ApiPublicWebhooksWhatsappRouteImport } from './routes/api/public/webhooks/whatsapp'
 import { Route as ApiPublicWebhooksWhatsappReplyRouteImport } from './routes/api/public/webhooks/whatsapp-reply'
+import { Route as ConsoleWorkforceAgentCodeWorkbenchRouteImport } from './routes/console/workforce/$agentCode_.workbench'
 import { Route as ApiPublicWebhooksIntegrationsWebhookIdRouteImport } from './routes/api/public/webhooks/integrations/$webhookId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -778,6 +779,12 @@ const ApiPublicWebhooksWhatsappReplyRoute =
     path: '/api/public/webhooks/whatsapp-reply',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ConsoleWorkforceAgentCodeWorkbenchRoute =
+  ConsoleWorkforceAgentCodeWorkbenchRouteImport.update({
+    id: '/$agentCode_/workbench',
+    path: '/$agentCode/workbench',
+    getParentRoute: () => ConsoleWorkforceRouteRoute,
+  } as any)
 const ApiPublicWebhooksIntegrationsWebhookIdRoute =
   ApiPublicWebhooksIntegrationsWebhookIdRouteImport.update({
     id: '/api/public/webhooks/integrations/$webhookId',
@@ -910,6 +917,7 @@ export interface FileRoutesByFullPath {
   '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
   '/api/public/webhooks/whatsapp': typeof ApiPublicWebhooksWhatsappRoute
   '/api/public/webhooks/whatsapp-reply': typeof ApiPublicWebhooksWhatsappReplyRoute
+  '/console/workforce/$agentCode/workbench': typeof ConsoleWorkforceAgentCodeWorkbenchRoute
   '/api/public/webhooks/integrations/$webhookId': typeof ApiPublicWebhooksIntegrationsWebhookIdRoute
 }
 export interface FileRoutesByTo {
@@ -1024,6 +1032,7 @@ export interface FileRoutesByTo {
   '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
   '/api/public/webhooks/whatsapp': typeof ApiPublicWebhooksWhatsappRoute
   '/api/public/webhooks/whatsapp-reply': typeof ApiPublicWebhooksWhatsappReplyRoute
+  '/console/workforce/$agentCode/workbench': typeof ConsoleWorkforceAgentCodeWorkbenchRoute
   '/api/public/webhooks/integrations/$webhookId': typeof ApiPublicWebhooksIntegrationsWebhookIdRoute
 }
 export interface FileRoutesById {
@@ -1153,6 +1162,7 @@ export interface FileRoutesById {
   '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
   '/api/public/webhooks/whatsapp': typeof ApiPublicWebhooksWhatsappRoute
   '/api/public/webhooks/whatsapp-reply': typeof ApiPublicWebhooksWhatsappReplyRoute
+  '/console/workforce/$agentCode_/workbench': typeof ConsoleWorkforceAgentCodeWorkbenchRoute
   '/api/public/webhooks/integrations/$webhookId': typeof ApiPublicWebhooksIntegrationsWebhookIdRoute
 }
 export interface FileRouteTypes {
@@ -1282,6 +1292,7 @@ export interface FileRouteTypes {
     | '/api/public/webhooks/ussd'
     | '/api/public/webhooks/whatsapp'
     | '/api/public/webhooks/whatsapp-reply'
+    | '/console/workforce/$agentCode/workbench'
     | '/api/public/webhooks/integrations/$webhookId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -1396,6 +1407,7 @@ export interface FileRouteTypes {
     | '/api/public/webhooks/ussd'
     | '/api/public/webhooks/whatsapp'
     | '/api/public/webhooks/whatsapp-reply'
+    | '/console/workforce/$agentCode/workbench'
     | '/api/public/webhooks/integrations/$webhookId'
   id:
     | '__root__'
@@ -1524,6 +1536,7 @@ export interface FileRouteTypes {
     | '/api/public/webhooks/ussd'
     | '/api/public/webhooks/whatsapp'
     | '/api/public/webhooks/whatsapp-reply'
+    | '/console/workforce/$agentCode_/workbench'
     | '/api/public/webhooks/integrations/$webhookId'
   fileRoutesById: FileRoutesById
 }
@@ -2439,6 +2452,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWebhooksWhatsappReplyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/console/workforce/$agentCode_/workbench': {
+      id: '/console/workforce/$agentCode_/workbench'
+      path: '/$agentCode/workbench'
+      fullPath: '/console/workforce/$agentCode/workbench'
+      preLoaderRoute: typeof ConsoleWorkforceAgentCodeWorkbenchRouteImport
+      parentRoute: typeof ConsoleWorkforceRouteRoute
+    }
     '/api/public/webhooks/integrations/$webhookId': {
       id: '/api/public/webhooks/integrations/$webhookId'
       path: '/api/public/webhooks/integrations/$webhookId'
@@ -2693,11 +2713,14 @@ const ConsoleTeamRouteRouteWithChildren =
 interface ConsoleWorkforceRouteRouteChildren {
   ConsoleWorkforceAgentCodeRoute: typeof ConsoleWorkforceAgentCodeRoute
   ConsoleWorkforceIndexRoute: typeof ConsoleWorkforceIndexRoute
+  ConsoleWorkforceAgentCodeWorkbenchRoute: typeof ConsoleWorkforceAgentCodeWorkbenchRoute
 }
 
 const ConsoleWorkforceRouteRouteChildren: ConsoleWorkforceRouteRouteChildren = {
   ConsoleWorkforceAgentCodeRoute: ConsoleWorkforceAgentCodeRoute,
   ConsoleWorkforceIndexRoute: ConsoleWorkforceIndexRoute,
+  ConsoleWorkforceAgentCodeWorkbenchRoute:
+    ConsoleWorkforceAgentCodeWorkbenchRoute,
 }
 
 const ConsoleWorkforceRouteRouteWithChildren =
