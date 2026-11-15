@@ -1,4 +1,4 @@
--- PROPOSAL ONLY. NOT APPLIED. NOT IN THE MIGRATIONS DIRECTORY.
+-- APPLIED TO PRODUCTION 2026-11-15 as migration 20261115000800_sherivs_engine16_agent_pause_state.
 -- ENGINE-16 (ADR-094): database-side agent pause state.
 -- The code-side policy is frontend/src/lib/workforce-pause/pause-policy.ts. This gives the
 -- database the same rules so a pause cannot be skipped by a bug in an agent, a tool or a prompt.
@@ -37,11 +37,12 @@ CREATE INDEX IF NOT EXISTS agent_pause_events_target_idx ON public.agent_pause_e
 
 -- Events are never changed or removed, not even by the service role.
 CREATE OR REPLACE FUNCTION public.agent_pause_events_immutable()
-RETURNS trigger LANGUAGE plpgsql AS $$
+RETURNS trigger LANGUAGE plpgsql SET search_path = pg_catalog AS $$
 BEGIN
   RAISE EXCEPTION 'agent_pause_events is append-only';
 END;
 $$;
+REVOKE ALL ON FUNCTION public.agent_pause_events_immutable() FROM PUBLIC, anon, authenticated;
 DROP TRIGGER IF EXISTS agent_pause_events_no_change ON public.agent_pause_events;
 CREATE TRIGGER agent_pause_events_no_change
   BEFORE UPDATE OR DELETE ON public.agent_pause_events
