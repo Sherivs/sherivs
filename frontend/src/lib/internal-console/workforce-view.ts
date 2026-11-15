@@ -93,7 +93,7 @@ export const ACCESS_LABELS: Readonly<Record<AccessMode, string>> = {
 /** What each row rule means, in words an operator can check against the database policy. */
 export const ROW_SCOPE_LABELS: Readonly<Record<RowScope, string>> = {
   platform: "Platform records that belong to no organization",
-  tenant_metadata: "One identity and plan row per organization, never its content",
+  tenant_metadata: "Per-organization metadata only, never its content",
   aggregate: "Aggregated figures only, never an individual record",
   tenant_with_grant: "An organization's rows only under an active, time-boxed support grant",
   tenant_flagged: "Only rows the organization itself flagged to the platform",

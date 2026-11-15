@@ -22,7 +22,7 @@ export type AccessMode = (typeof ACCESS_MODES)[number];
 export const ROW_SCOPES = [
   /** Platform-wide records that belong to no organization (runbooks, CI, incidents). */
   "platform",
-  /** One row per organization, identity and plan columns only; never its content. */
+  /** One row per organization, metadata columns only (identity, plan, import column names); never its content. */
   "tenant_metadata",
   /** Aggregated figures; never an individual record. */
   "aggregate",
