@@ -186,6 +186,13 @@ export const CONSOLE_NAV: readonly ConsoleNavItem[] = [
     ],
   },
   {
+    key: "workforce",
+    label: "AI Workforce",
+    href: CONSOLE_PATHS.workforce,
+    capability: "platform.operations.read",
+    anyOf: ["platform.operations.read", "platform.audit.read"],
+  },
+  {
     key: "activity",
     label: "Intelligence & Assurance",
     href: CONSOLE_PATHS.activity,

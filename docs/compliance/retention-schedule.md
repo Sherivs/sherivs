@@ -2,7 +2,7 @@
 
 The authoritative, machine-readable schedule is `architecture/coregrid-mvp-architecture/RETENTION_POLICY_SCHEDULE.json` (human form: `RETENTION_POLICY_SCHEDULE.md`), typed in `frontend/src/lib/governance/retention-policy-schedule.ts` and validated by `node scripts/verify-retention-schedule.mjs`. Mechanism: ADR-005 (immutable records are tombstoned, never deleted). This document does not redefine it.
 
-**All durations are provisional defaults — LEGAL REVIEW REQUIRED** before any automated deletion exists. No automated deletion is implemented; SHERIVS-003 adds a read-only report.
+**All durations are provisional defaults — LEGAL REVIEW REQUIRED** before production execution. M12 provides tenant-scoped dry-run reporting and approved tombstone execution only: source rows and immutable audit records are never physically deleted or mutated. An active legal hold blocks an otherwise eligible candidate.
 
 ## Mapping to Scholar tables (education-institution tenants)
 
@@ -15,16 +15,20 @@ The authoritative, machine-readable schedule is `architecture/coregrid-mvp-archi
 
 Not yet mapped to tables (event-triggered or no Scholar table): identity-profile (subject-relationship-end), workforce-employment (employment-end), biometric-reference (consent withdrawal or enrolment end), memory, evidence, kernel-object, event, ai-snapshot (180 d). `grades` has no policy entry of its own: **LEGAL REVIEW REQUIRED** (education-record retention).
 
-## Dry run
+## Dry run and approved tombstones
 
-`public.retention_dry_run()` returns `(category, table_name, record_count, oldest, retention)` — one row per mapped table, with `record_count` = rows older than the window across all tenants. It is `SECURITY DEFINER`, callable only by `service_role` or a platform super admin (anything else raises `42501`), and **never deletes**.
+`public.retention_run_dry(org_id)` is the default scheduler/operator entry point. It reports policy/category candidate counts and record IDs for one tenant; reports do not modify source records or create tombstones. An authenticated tenant retention administrator can configure the seeded policy durations, create/release audited holds, approve a dry-run initiated by another actor, and execute that approved report. Execution rechecks holds, policy settings, and source eligibility. Each successful tombstone is an immutable `retention_deletion_audit` row containing the policy reference, run, tenant, target, approver, executor, and time; the source row remains intact. Audit, event, memory, evidence, and other immutable families are not execution targets.
 
 ```sql
--- as service_role (local stack or an approved operator session)
-SELECT * FROM public.retention_dry_run();
+-- As the scheduler service role, for a tenant resolved by the trusted scheduler.
+SELECT public.retention_run_dry('<tenant UUID>');
+
+-- Human approval and execution use the same tenant-scoped, authenticated RPCs.
+SELECT public.retention_run_approve('<dry-run UUID>');
+SELECT public.retention_run_execute('<approved-run UUID>');
 ```
 
-Verified by `tests/integration/sherivs-003-ndpa.local.sql` (counts unchanged after the call; authenticated callers denied).
+Verified on a disposable loopback PostgreSQL instance by `tests/integration/m12-retention-tombstones.local.sql` (Verify's `migrations-sim` job). This is not authorization to apply migrations or run jobs on a production database. See [ADR-048](../../architecture/adr/ADR-048_M12_RETENTION_TOMBSTONE_EXECUTION.md).
 
 ## Related
 

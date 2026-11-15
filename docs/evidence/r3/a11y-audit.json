@@ -1,0 +1,90 @@
+[
+  {
+    "w": 1440,
+    "fresh": {
+      "lowContrast": [],
+      "unnamed": [],
+      "smallTargets": [],
+      "badRefs": [],
+      "headings": ["H1", "H2", "H2", "H3", "H2"],
+      "progressOk": true,
+      "live": true,
+      "overflow": false
+    },
+    "progress": {
+      "lowContrast": [],
+      "unnamed": [],
+      "smallTargets": [],
+      "badRefs": [],
+      "headings": ["H1", "H2", "H2", "H3", "H3", "H3", "H3", "H3", "H3", "H3", "H3", "H3", "H2"],
+      "progressOk": true,
+      "live": true,
+      "overflow": false
+    },
+    "ready": {
+      "lowContrast": [],
+      "unnamed": [],
+      "smallTargets": [],
+      "badRefs": [],
+      "headings": ["H1", "H2", "H2", "H3", "H3", "H3", "H3", "H3", "H3", "H3", "H3", "H3", "H2"],
+      "progressOk": true,
+      "live": true,
+      "overflow": false
+    },
+    "focusAfterApprove": "Yes, approve these answers",
+    "confirmInGroup": true,
+    "focusAfterCancel": "Approve answers",
+    "errorAlert": {
+      "text": "Use 1 or more.",
+      "role": "alert",
+      "describes": true,
+      "focusOnField": "BUTTON"
+    },
+    "tabStop": "BUTTON:I don’t know yet",
+    "reducedMotionRule": true
+  },
+  {
+    "w": 390,
+    "fresh": {
+      "lowContrast": [],
+      "unnamed": [],
+      "smallTargets": [],
+      "badRefs": [],
+      "headings": ["H1", "H2", "H2", "H3", "H2"],
+      "progressOk": true,
+      "live": true,
+      "overflow": false
+    },
+    "progress": {
+      "lowContrast": [],
+      "unnamed": [],
+      "smallTargets": [],
+      "badRefs": [],
+      "headings": ["H1", "H2", "H2", "H3", "H3", "H3", "H3", "H3", "H3", "H3", "H3", "H3", "H2"],
+      "progressOk": true,
+      "live": true,
+      "overflow": false
+    },
+    "ready": {
+      "lowContrast": [],
+      "unnamed": [],
+      "smallTargets": [],
+      "badRefs": [],
+      "headings": ["H1", "H2", "H2", "H3", "H3", "H3", "H3", "H3", "H3", "H3", "H3", "H3", "H2"],
+      "progressOk": true,
+      "live": true,
+      "overflow": false
+    },
+    "focusAfterApprove": "Yes, approve these answers",
+    "confirmInGroup": true,
+    "focusAfterCancel": "Approve answers",
+    "errorAlert": {
+      "text": "Use 1 or more.",
+      "role": "alert",
+      "describes": true,
+      "focusOnField": "BUTTON"
+    },
+    "tabStop": "BUTTON:I don’t know yet",
+    "reducedMotionRule": true
+  }
+]

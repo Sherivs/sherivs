@@ -103,7 +103,7 @@ function ShellChrome({ children }: { children: ReactNode }) {
         <span className="app-shell-orb app-shell-orb-violet" />
       </div>
       <div
-        className={`app-shell-frame${path === "/home/s/roles" ? " is-role-management" : ""}${path === "/home/s/nav.students" || path === "/home/s/students" ? " is-student-mobility" : ""}`}
+        className={`app-shell-frame${path === "/home/s/roles" ? " is-role-management" : ""}${path === "/home/s/nav.students" || path === "/home/s/students" ? " is-student-mobility" : ""}${path === "/home/s/school_setup" ? " is-school-setup" : ""}`}
       >
         <header className="app-shell-header">
           <button
@@ -214,7 +214,7 @@ function ShellChrome({ children }: { children: ReactNode }) {
             </button>
           </div>
         </header>
-        <main className="app-shell-main">
+        <main id="main-content" tabIndex={-1} className="app-shell-main">
           <div className="app-shell-sheet">{children}</div>
         </main>
         <nav className="app-shell-bottom" aria-label="Primary">

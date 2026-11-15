@@ -73,7 +73,7 @@ export function CompanySocialLinks({
                 href={item.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm text-sherivs-cyan underline-offset-4 hover:underline"
+                className="inline-flex min-h-6 items-center gap-2 text-sm text-sherivs-cyan underline-offset-4 hover:underline"
               >
                 {Icon ? <Icon /> : null}
                 <span>{caption(item)}</span>

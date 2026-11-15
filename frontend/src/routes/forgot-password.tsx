@@ -150,7 +150,7 @@ function FindAccountPage() {
           </>
         ) : (
           <div data-testid="link-sent">
-            <div className="mb-4 grid size-12 place-items-center rounded-full bg-primary/15 text-primary">
+            <div className="mb-4 grid size-12 place-items-center rounded-full bg-primary/15 text-primary-text">
               <MailCheck className="size-6" aria-hidden="true" />
             </div>
             <h1 className="font-display text-2xl font-bold">Check your email</h1>
