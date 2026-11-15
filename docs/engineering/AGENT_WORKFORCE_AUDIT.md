@@ -44,9 +44,9 @@ Roster rules checked across agents: unique codes, existing supervisors and hando
 
 Each gets a Role Pack, a charter, new platform roles (seed SQL kept under `database/proposals/`, unapplied) and the dashboard panels below. The breach-notification clock and any legal wording need counsel confirmation before they are encoded.
 
-## 5. Per-agent dashboard (ENGINE-12, proposed)
+## 5. Per-agent dashboard (ENGINE-12: built, read-only)
 
-Panels: Charter, Context, Permissions, Autonomy, Budget, Proposals, Runs, Handoffs, SLOs, Safety. The first six plus Safety are mandatory for every agent. A roster view lists agents by tier and supervision line; actions stay disabled until the engine tables are applied.
+Panels: Charter, Context, Permissions, Autonomy, Budget, Proposals, Runs, Handoffs, SLOs, Safety. The first six plus Safety are mandatory for every agent. A roster view lists agents by tier and supervision line. Both are read-only; panels that need recorded data say it is unavailable until the engine tables are applied. Not yet viewed in a browser.
 
 ## 6. Blue-ocean position
 

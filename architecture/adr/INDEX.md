@@ -60,6 +60,7 @@ The H3-wave ADR directory. M09 was assigned **ADR-017** and M13 **ADR-018** by o
 | 087 | [ADR-087_ENGINE_ALERT_DELIVERY_GATES.md](./ADR-087_ENGINE_ALERT_DELIVERY_GATES.md) | Owner Alert Delivery Through the JARVIS Channel Gates | PROPOSED | 2026-11-15 | Alert channels gated by owner enablement and live authorization; SMS never planned; test mode uses synthetic sinks |
 | 088 | [ADR-088_ENGINE_AGENT_CHARTER_AND_ROSTER.md](./ADR-088_ENGINE_AGENT_CHARTER_AND_ROSTER.md) | Agent Charter and Roster Validation | PROPOSED | 2026-11-15 | Per-agent charter checked against its Role Pack; one owner per T3 capability; evaluation suite per T1+ capability; independent assurance tier |
 | 089 | [ADR-089_ENGINE_WORKFORCE_EXPANSION_AND_ACTION_COVERAGE.md](./ADR-089_ENGINE_WORKFORCE_EXPANSION_AND_ACTION_COVERAGE.md) | Workforce Expansion and Complete Approval Action Coverage | PROPOSED | 2026-11-15 | Eight additional unbound agent packs and charters; no new T3; every gated capability mapped to a JARVIS action or listed as an exception |
+| 090 | [ADR-090_ENGINE_WORKFORCE_CONSOLE.md](./ADR-090_ENGINE_WORKFORCE_CONSOLE.md) | Workforce Console, Roster and Per-Agent Dashboards | PROPOSED | 2026-11-15 | Read-only roster and per-agent dashboards from packs and charters; live data shown as unavailable until engine tables exist |
 
 ## ADR register — `architecture/coregrid-mvp-architecture/adr/`
 

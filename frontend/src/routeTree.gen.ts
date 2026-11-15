@@ -61,6 +61,7 @@ import { Route as ConsoleOrganizationsRouteRouteImport } from './routes/console/
 import { Route as ConsoleRuntimesRouteRouteImport } from './routes/console/runtimes/route'
 import { Route as ConsoleSettingsRouteImport } from './routes/console/settings'
 import { Route as ConsoleTeamRouteRouteImport } from './routes/console/team/route'
+import { Route as ConsoleWorkforceRouteRouteImport } from './routes/console/workforce/route'
 import { Route as ConsoleWorkspacesRouteRouteImport } from './routes/console/workspaces/route'
 import { Route as HomeIndexRouteImport } from './routes/home/index'
 import { Route as HomeAiRouteImport } from './routes/home/ai'
@@ -118,6 +119,8 @@ import { Route as ConsoleTeamAccessRouteImport } from './routes/console/team/acc
 import { Route as ConsoleTeamInvitationsRouteImport } from './routes/console/team/invitations'
 import { Route as ConsoleTeamRolesRouteImport } from './routes/console/team/roles'
 import { Route as ConsoleTeamSuspendedRouteImport } from './routes/console/team/suspended'
+import { Route as ConsoleWorkforceIndexRouteImport } from './routes/console/workforce/index'
+import { Route as ConsoleWorkforceAgentCodeRouteImport } from './routes/console/workforce/$agentCode'
 import { Route as ConsoleWorkspacesIndexRouteImport } from './routes/console/workspaces/index'
 import { Route as ConsoleWorkspacesWorkspaceIdRouteImport } from './routes/console/workspaces/$workspaceId'
 import { Route as HomeSSectionRouteImport } from './routes/home/s.$section'
@@ -393,6 +396,11 @@ const ConsoleSettingsRoute = ConsoleSettingsRouteImport.update({
 const ConsoleTeamRouteRoute = ConsoleTeamRouteRouteImport.update({
   id: '/team',
   path: '/team',
+  getParentRoute: () => ConsoleRouteRoute,
+} as any)
+const ConsoleWorkforceRouteRoute = ConsoleWorkforceRouteRouteImport.update({
+  id: '/workforce',
+  path: '/workforce',
   getParentRoute: () => ConsoleRouteRoute,
 } as any)
 const ConsoleWorkspacesRouteRoute = ConsoleWorkspacesRouteRouteImport.update({
@@ -684,6 +692,17 @@ const ConsoleTeamSuspendedRoute = ConsoleTeamSuspendedRouteImport.update({
   path: '/suspended',
   getParentRoute: () => ConsoleTeamRouteRoute,
 } as any)
+const ConsoleWorkforceIndexRoute = ConsoleWorkforceIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ConsoleWorkforceRouteRoute,
+} as any)
+const ConsoleWorkforceAgentCodeRoute =
+  ConsoleWorkforceAgentCodeRouteImport.update({
+    id: '/$agentCode',
+    path: '/$agentCode',
+    getParentRoute: () => ConsoleWorkforceRouteRoute,
+  } as any)
 const ConsoleWorkspacesIndexRoute = ConsoleWorkspacesIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -786,6 +805,7 @@ export interface FileRoutesByFullPath {
   '/console/organizations': typeof ConsoleOrganizationsRouteRouteWithChildren
   '/console/runtimes': typeof ConsoleRuntimesRouteRouteWithChildren
   '/console/team': typeof ConsoleTeamRouteRouteWithChildren
+  '/console/workforce': typeof ConsoleWorkforceRouteRouteWithChildren
   '/console/workspaces': typeof ConsoleWorkspacesRouteRouteWithChildren
   '/about': typeof siteAboutRoute
   '/accessibility': typeof siteAccessibilityRoute
@@ -866,6 +886,7 @@ export interface FileRoutesByFullPath {
   '/console/team/invitations': typeof ConsoleTeamInvitationsRoute
   '/console/team/roles': typeof ConsoleTeamRolesRoute
   '/console/team/suspended': typeof ConsoleTeamSuspendedRoute
+  '/console/workforce/$agentCode': typeof ConsoleWorkforceAgentCodeRoute
   '/console/workspaces/$workspaceId': typeof ConsoleWorkspacesWorkspaceIdRoute
   '/home/s/$section': typeof HomeSSectionRoute
   '/help/': typeof siteHelpIndexRoute
@@ -877,6 +898,7 @@ export interface FileRoutesByFullPath {
   '/console/organizations/': typeof ConsoleOrganizationsIndexRoute
   '/console/runtimes/': typeof ConsoleRuntimesIndexRoute
   '/console/team/': typeof ConsoleTeamIndexRoute
+  '/console/workforce/': typeof ConsoleWorkforceIndexRoute
   '/console/workspaces/': typeof ConsoleWorkspacesIndexRoute
   '/insights/category/$slug': typeof siteInsightsCategorySlugRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
@@ -978,6 +1000,7 @@ export interface FileRoutesByTo {
   '/console/team/invitations': typeof ConsoleTeamInvitationsRoute
   '/console/team/roles': typeof ConsoleTeamRolesRoute
   '/console/team/suspended': typeof ConsoleTeamSuspendedRoute
+  '/console/workforce/$agentCode': typeof ConsoleWorkforceAgentCodeRoute
   '/console/workspaces/$workspaceId': typeof ConsoleWorkspacesWorkspaceIdRoute
   '/home/s/$section': typeof HomeSSectionRoute
   '/help': typeof siteHelpIndexRoute
@@ -989,6 +1012,7 @@ export interface FileRoutesByTo {
   '/console/organizations': typeof ConsoleOrganizationsIndexRoute
   '/console/runtimes': typeof ConsoleRuntimesIndexRoute
   '/console/team': typeof ConsoleTeamIndexRoute
+  '/console/workforce': typeof ConsoleWorkforceIndexRoute
   '/console/workspaces': typeof ConsoleWorkspacesIndexRoute
   '/insights/category/$slug': typeof siteInsightsCategorySlugRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
@@ -1024,6 +1048,7 @@ export interface FileRoutesById {
   '/console/organizations': typeof ConsoleOrganizationsRouteRouteWithChildren
   '/console/runtimes': typeof ConsoleRuntimesRouteRouteWithChildren
   '/console/team': typeof ConsoleTeamRouteRouteWithChildren
+  '/console/workforce': typeof ConsoleWorkforceRouteRouteWithChildren
   '/console/workspaces': typeof ConsoleWorkspacesRouteRouteWithChildren
   '/(site)/about': typeof siteAboutRoute
   '/(site)/accessibility': typeof siteAccessibilityRoute
@@ -1104,6 +1129,7 @@ export interface FileRoutesById {
   '/console/team/invitations': typeof ConsoleTeamInvitationsRoute
   '/console/team/roles': typeof ConsoleTeamRolesRoute
   '/console/team/suspended': typeof ConsoleTeamSuspendedRoute
+  '/console/workforce/$agentCode': typeof ConsoleWorkforceAgentCodeRoute
   '/console/workspaces/$workspaceId': typeof ConsoleWorkspacesWorkspaceIdRoute
   '/home/s/$section': typeof HomeSSectionRoute
   '/(site)/help/': typeof siteHelpIndexRoute
@@ -1115,6 +1141,7 @@ export interface FileRoutesById {
   '/console/organizations/': typeof ConsoleOrganizationsIndexRoute
   '/console/runtimes/': typeof ConsoleRuntimesIndexRoute
   '/console/team/': typeof ConsoleTeamIndexRoute
+  '/console/workforce/': typeof ConsoleWorkforceIndexRoute
   '/console/workspaces/': typeof ConsoleWorkspacesIndexRoute
   '/(site)/insights/category/$slug': typeof siteInsightsCategorySlugRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
@@ -1150,6 +1177,7 @@ export interface FileRouteTypes {
     | '/console/organizations'
     | '/console/runtimes'
     | '/console/team'
+    | '/console/workforce'
     | '/console/workspaces'
     | '/about'
     | '/accessibility'
@@ -1230,6 +1258,7 @@ export interface FileRouteTypes {
     | '/console/team/invitations'
     | '/console/team/roles'
     | '/console/team/suspended'
+    | '/console/workforce/$agentCode'
     | '/console/workspaces/$workspaceId'
     | '/home/s/$section'
     | '/help/'
@@ -1241,6 +1270,7 @@ export interface FileRouteTypes {
     | '/console/organizations/'
     | '/console/runtimes/'
     | '/console/team/'
+    | '/console/workforce/'
     | '/console/workspaces/'
     | '/insights/category/$slug'
     | '/api/public/audit/password-reset'
@@ -1342,6 +1372,7 @@ export interface FileRouteTypes {
     | '/console/team/invitations'
     | '/console/team/roles'
     | '/console/team/suspended'
+    | '/console/workforce/$agentCode'
     | '/console/workspaces/$workspaceId'
     | '/home/s/$section'
     | '/help'
@@ -1353,6 +1384,7 @@ export interface FileRouteTypes {
     | '/console/organizations'
     | '/console/runtimes'
     | '/console/team'
+    | '/console/workforce'
     | '/console/workspaces'
     | '/insights/category/$slug'
     | '/api/public/audit/password-reset'
@@ -1387,6 +1419,7 @@ export interface FileRouteTypes {
     | '/console/organizations'
     | '/console/runtimes'
     | '/console/team'
+    | '/console/workforce'
     | '/console/workspaces'
     | '/(site)/about'
     | '/(site)/accessibility'
@@ -1467,6 +1500,7 @@ export interface FileRouteTypes {
     | '/console/team/invitations'
     | '/console/team/roles'
     | '/console/team/suspended'
+    | '/console/workforce/$agentCode'
     | '/console/workspaces/$workspaceId'
     | '/home/s/$section'
     | '/(site)/help/'
@@ -1478,6 +1512,7 @@ export interface FileRouteTypes {
     | '/console/organizations/'
     | '/console/runtimes/'
     | '/console/team/'
+    | '/console/workforce/'
     | '/console/workspaces/'
     | '/(site)/insights/category/$slug'
     | '/api/public/audit/password-reset'
@@ -1893,6 +1928,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConsoleTeamRouteRouteImport
       parentRoute: typeof ConsoleRouteRoute
     }
+    '/console/workforce': {
+      id: '/console/workforce'
+      path: '/workforce'
+      fullPath: '/console/workforce'
+      preLoaderRoute: typeof ConsoleWorkforceRouteRouteImport
+      parentRoute: typeof ConsoleRouteRoute
+    }
     '/console/workspaces': {
       id: '/console/workspaces'
       path: '/workspaces'
@@ -2292,6 +2334,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConsoleTeamSuspendedRouteImport
       parentRoute: typeof ConsoleTeamRouteRoute
     }
+    '/console/workforce/': {
+      id: '/console/workforce/'
+      path: '/'
+      fullPath: '/console/workforce/'
+      preLoaderRoute: typeof ConsoleWorkforceIndexRouteImport
+      parentRoute: typeof ConsoleWorkforceRouteRoute
+    }
+    '/console/workforce/$agentCode': {
+      id: '/console/workforce/$agentCode'
+      path: '/$agentCode'
+      fullPath: '/console/workforce/$agentCode'
+      preLoaderRoute: typeof ConsoleWorkforceAgentCodeRouteImport
+      parentRoute: typeof ConsoleWorkforceRouteRoute
+    }
     '/console/workspaces/': {
       id: '/console/workspaces/'
       path: '/'
@@ -2634,6 +2690,21 @@ const ConsoleTeamRouteRouteChildren: ConsoleTeamRouteRouteChildren = {
 const ConsoleTeamRouteRouteWithChildren =
   ConsoleTeamRouteRoute._addFileChildren(ConsoleTeamRouteRouteChildren)
 
+interface ConsoleWorkforceRouteRouteChildren {
+  ConsoleWorkforceAgentCodeRoute: typeof ConsoleWorkforceAgentCodeRoute
+  ConsoleWorkforceIndexRoute: typeof ConsoleWorkforceIndexRoute
+}
+
+const ConsoleWorkforceRouteRouteChildren: ConsoleWorkforceRouteRouteChildren = {
+  ConsoleWorkforceAgentCodeRoute: ConsoleWorkforceAgentCodeRoute,
+  ConsoleWorkforceIndexRoute: ConsoleWorkforceIndexRoute,
+}
+
+const ConsoleWorkforceRouteRouteWithChildren =
+  ConsoleWorkforceRouteRoute._addFileChildren(
+    ConsoleWorkforceRouteRouteChildren,
+  )
+
 interface ConsoleWorkspacesRouteRouteChildren {
   ConsoleWorkspacesWorkspaceIdRoute: typeof ConsoleWorkspacesWorkspaceIdRoute
   ConsoleWorkspacesIndexRoute: typeof ConsoleWorkspacesIndexRoute
@@ -2655,6 +2726,7 @@ interface ConsoleRouteRouteChildren {
   ConsoleOrganizationsRouteRoute: typeof ConsoleOrganizationsRouteRouteWithChildren
   ConsoleRuntimesRouteRoute: typeof ConsoleRuntimesRouteRouteWithChildren
   ConsoleTeamRouteRoute: typeof ConsoleTeamRouteRouteWithChildren
+  ConsoleWorkforceRouteRoute: typeof ConsoleWorkforceRouteRouteWithChildren
   ConsoleWorkspacesRouteRoute: typeof ConsoleWorkspacesRouteRouteWithChildren
   ConsoleAccountRoute: typeof ConsoleAccountRoute
   ConsoleCommunicationsRoute: typeof ConsoleCommunicationsRoute
@@ -2668,6 +2740,7 @@ const ConsoleRouteRouteChildren: ConsoleRouteRouteChildren = {
   ConsoleOrganizationsRouteRoute: ConsoleOrganizationsRouteRouteWithChildren,
   ConsoleRuntimesRouteRoute: ConsoleRuntimesRouteRouteWithChildren,
   ConsoleTeamRouteRoute: ConsoleTeamRouteRouteWithChildren,
+  ConsoleWorkforceRouteRoute: ConsoleWorkforceRouteRouteWithChildren,
   ConsoleWorkspacesRouteRoute: ConsoleWorkspacesRouteRouteWithChildren,
   ConsoleAccountRoute: ConsoleAccountRoute,
   ConsoleCommunicationsRoute: ConsoleCommunicationsRoute,
