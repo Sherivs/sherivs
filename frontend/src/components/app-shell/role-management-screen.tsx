@@ -3,8 +3,13 @@ import { Link } from "@tanstack/react-router";
 import { Copy } from "lucide-react";
 import { useApp } from "@/contexts/app-context";
 import { supabase } from "@/integrations/supabase/client";
-import { resolveWorkspaceManifest } from "@/lib/workspaces/manifest-resolver";
+import {
+  AUTHORITY_LINK_EVIDENCE_PREFIX,
+  resolveWorkspaceManifest,
+  verifiedAuthorityLinkId,
+} from "@/lib/workspaces/manifest-resolver";
 import type {
+  InstitutionAuthorityLink,
   Responsibility,
   ResponsibilityGrant,
   RoleAssignment,
@@ -100,6 +105,7 @@ export function RoleManagementScreen() {
   const [assignmentStart, setAssignmentStart] = useState("");
   const [assignmentEnd, setAssignmentEnd] = useState("");
   const [assignmentTemporary, setAssignmentTemporary] = useState(false);
+  const [assignmentAuthorityLinkId, setAssignmentAuthorityLinkId] = useState("");
   const [grantAssignment, setGrantAssignment] = useState("");
   const [grantResponsibility, setGrantResponsibility] = useState("");
   const [grantStart, setGrantStart] = useState("");
@@ -119,7 +125,10 @@ export function RoleManagementScreen() {
     const [assignPermission, configurePermission, ...results] = await Promise.all([
       db.rpc("can_manage_roles", { p_org: orgId, p_perm: "roles.assign" }),
       db.rpc("can_manage_roles", { p_org: orgId, p_perm: "roles.configure" }),
-      db.from("role_catalog").select("code,name,category,template_code,org_id").order("name"),
+      db
+        .from("role_catalog")
+        .select("code,name,category,template_code,org_id,requires_verified_authority_link")
+        .order("name"),
       db
         .from("user_role_assignments")
         .select(
@@ -168,6 +177,11 @@ export function RoleManagementScreen() {
         )
         .eq("org_id", orgId)
         .order("occurred_at", { ascending: false }),
+      db
+        .from("institution_authority_links")
+        .select("id,authority_name,verification_status,effective_from,effective_until")
+        .eq("school_id", orgId)
+        .order("effective_from", { ascending: false }),
     ]);
     setCanAssign(assignPermission.data === true);
     setCanConfigure(configurePermission.data === true);
@@ -182,6 +196,7 @@ export function RoleManagementScreen() {
       "role_assignment_responsibility_grants",
       "role_assignment_delegations",
       "role_assignment_audit_events",
+      "institution_authority_links",
     ];
     const next: Record<string, Row[]> = {};
     let firstError = "";
@@ -255,6 +270,7 @@ export function RoleManagementScreen() {
       permissions: [],
       approvalAuthorities: [],
       reportingRelationships: [],
+      requiresVerifiedAuthorityLink: role.requires_verified_authority_link === true,
     }));
   }, [
     roles,
@@ -301,6 +317,15 @@ export function RoleManagementScreen() {
       validUntil: text(row.valid_until),
       revokedAt: typeof row.revoked_at === "string" ? row.revoked_at : null,
     }));
+    const authorityLinks: InstitutionAuthorityLink[] = (rows.institution_authority_links ?? []).map(
+      (row) => ({
+        id: text(row.id),
+        tenantId: orgId,
+        verificationStatus: row.verification_status === "verified" ? "verified" : "unverified",
+        effectiveFrom: text(row.effective_from),
+        effectiveUntil: typeof row.effective_until === "string" ? row.effective_until : null,
+      }),
+    );
     return resolveWorkspaceManifest(
       { id: userId },
       { id: orgId, category: CATEGORY },
@@ -309,6 +334,7 @@ export function RoleManagementScreen() {
         roleTemplates: templates,
         responsibilityGrants: grants,
         delegations,
+        authorityLinks,
       },
       new Date().toISOString(),
     );
@@ -317,9 +343,45 @@ export function RoleManagementScreen() {
     orgId,
     rows.role_assignment_delegations,
     rows.role_assignment_responsibility_grants,
+    rows.institution_authority_links,
     templates,
     userId,
   ]);
+
+  const selectedAssignmentRole = roles.find((row) => row.code === assignmentRole);
+  const requiresVerifiedAuthorityLink =
+    selectedAssignmentRole?.requires_verified_authority_link === true;
+  const assignmentAuthorityEvidence = assignmentAuthorityLinkId
+    ? [`${AUTHORITY_LINK_EVIDENCE_PREFIX}${assignmentAuthorityLinkId}`]
+    : [];
+  const authorityLinkAtAssignmentStart = verifiedAuthorityLinkId(
+    assignmentAuthorityEvidence,
+    (rows.institution_authority_links ?? []).map((row) => ({
+      id: text(row.id),
+      tenantId: orgId,
+      verificationStatus: row.verification_status === "verified" ? "verified" : "unverified",
+      effectiveFrom: text(row.effective_from),
+      effectiveUntil: typeof row.effective_until === "string" ? row.effective_until : null,
+    })),
+    toLocalIso(assignmentStart) ?? Date.now(),
+    orgId,
+  );
+  const verifiedAuthorityLinks = (rows.institution_authority_links ?? []).filter((row) =>
+    verifiedAuthorityLinkId(
+      [`${AUTHORITY_LINK_EVIDENCE_PREFIX}${text(row.id)}`],
+      [
+        {
+          id: text(row.id),
+          tenantId: orgId,
+          verificationStatus: row.verification_status === "verified" ? "verified" : "unverified",
+          effectiveFrom: text(row.effective_from),
+          effectiveUntil: typeof row.effective_until === "string" ? row.effective_until : null,
+        },
+      ],
+      toLocalIso(assignmentStart) ?? Date.now(),
+      orgId,
+    ),
+  );
 
   async function mutate(
     event: FormEvent<HTMLFormElement>,
@@ -381,9 +443,12 @@ export function RoleManagementScreen() {
           {manifest ? (
             <>
               <p className="text-sm text-muted-foreground">Primary navigation</p>
-              <ul className="grid gap-1 pl-5 text-sm">
+              <ul
+                className="grid gap-1 pl-5 text-sm"
+                data-testid="manifest-primary-responsibilities"
+              >
                 {manifest.primaryNav.map((item) => (
-                  <li key={item.id}>
+                  <li key={item.id} data-responsibility={item.responsibilityId}>
                     {item.label} · {item.kind}
                   </li>
                 ))}
@@ -614,7 +679,10 @@ export function RoleManagementScreen() {
                           p_valid_until: toLocalIso(assignmentEnd),
                           p_temporary: assignmentTemporary,
                           p_org_unit_id: null,
-                          p_evidence: [],
+                          p_evidence:
+                            requiresVerifiedAuthorityLink && authorityLinkAtAssignmentStart
+                              ? assignmentAuthorityEvidence
+                              : [],
                           p_restrictions: [],
                         },
                         () => {
@@ -645,7 +713,10 @@ export function RoleManagementScreen() {
                         className="w-full rounded-md border bg-background p-2"
                         aria-label="Assignment role"
                         value={assignmentRole}
-                        onChange={(event) => setAssignmentRole(event.target.value)}
+                        onChange={(event) => {
+                          setAssignmentRole(event.target.value);
+                          setAssignmentAuthorityLinkId("");
+                        }}
                       >
                         {roles.map((row) => (
                           <option key={text(row.code)} value={text(row.code)}>
@@ -654,6 +725,36 @@ export function RoleManagementScreen() {
                         ))}
                       </select>
                     </Field>
+                    {requiresVerifiedAuthorityLink ? (
+                      <Field label="Verified institution-authority relationship">
+                        <select
+                          className="w-full rounded-md border bg-background p-2"
+                          aria-label="Verified institution-authority relationship"
+                          value={assignmentAuthorityLinkId}
+                          onChange={(event) => setAssignmentAuthorityLinkId(event.target.value)}
+                          required
+                        >
+                          <option value="">Select a verified, effective relationship</option>
+                          {verifiedAuthorityLinks.map((row) => (
+                            <option key={text(row.id)} value={text(row.id)}>
+                              {text(row.authority_name)}
+                            </option>
+                          ))}
+                        </select>
+                        {!verifiedAuthorityLinks.length ? (
+                          <p className="text-sm text-muted-foreground">
+                            This template is unavailable until an institution-authority relationship
+                            is verified and effective.
+                          </p>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">
+                            The relationship gates eligibility only. It does not grant permissions;
+                            the role assignment remains subject to its template, scope, policy, and
+                            audit controls.
+                          </p>
+                        )}
+                      </Field>
+                    ) : null}
                     <Field label="Scope">
                       <select
                         className="w-full rounded-md border bg-background p-2"
@@ -709,6 +810,7 @@ export function RoleManagementScreen() {
                         !assignmentUser ||
                         !assignmentRole ||
                         !assignmentStart ||
+                        (requiresVerifiedAuthorityLink && !authorityLinkAtAssignmentStart) ||
                         (assignmentTemporary && !assignmentEnd)
                       }
                       type="submit"
