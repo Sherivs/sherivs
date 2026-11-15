@@ -28,7 +28,9 @@ describe("SEC-02 privilege hardening", () => {
       "cg_fee_invoice_balances",
       "cg_fee_receipt_sequence_status",
     ]) {
-      expect(sql).toMatch(new RegExp(`REVOKE ALL ON public\\.${view} FROM PUBLIC, anon, authenticated`));
+      expect(sql).toMatch(
+        new RegExp(`REVOKE ALL ON public\\.${view} FROM PUBLIC, anon, authenticated`),
+      );
       expect(sql).toMatch(new RegExp(`GRANT SELECT ON public\\.${view} TO authenticated`));
     }
   });
