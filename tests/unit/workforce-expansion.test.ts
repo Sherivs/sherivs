@@ -78,12 +78,21 @@ describe("ENGINE-11 additional agent packs", () => {
     expect(restricted.map((p) => p.code)).toEqual(["compliance-agent"]);
   });
 
-  it("each new platform role and permission is in the unapplied role proposal", () => {
+  it("each new platform role and permission is in the role proposal and the applied migration", () => {
     for (const p of EXPANSION_WORKFORCE_PACKS) {
       for (const role of p.appliesTo) expect(sql, role).toContain(`('${role}',`);
       for (const perm of p.permissions) expect(sql, perm).toContain(`'${perm}'`);
     }
-    expect(sql).toContain("NOT APPLIED");
+    const applied = readFileSync(
+      "database/supabase/migrations/20261115000700_sherivs_engine11_13_platform_roles.sql",
+      "utf8",
+    );
+    for (const p of EXPANSION_WORKFORCE_PACKS) {
+      for (const role of p.appliesTo) expect(applied, role).toContain(`('${role}',`);
+      for (const perm of p.permissions) expect(applied, perm).toContain(`'${perm}'`);
+    }
+    expect(applied).not.toMatch(/,\s*true,\s*\d+\)/);
+    expect(sql).toContain("APPLIED TO PRODUCTION");
     expect(sql).toContain("is_privileged");
     expect(sql).not.toMatch(/,\s*true,\s*\d+\)/);
   });

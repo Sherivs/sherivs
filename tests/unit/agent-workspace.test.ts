@@ -150,12 +150,21 @@ describe("ENGINE-13 the ten remaining agents", () => {
     expect(restricted.map((p) => p.code)).toEqual(["safeguarding-agent"]);
   });
 
-  it("each new platform role and permission is in the unapplied role proposal", () => {
+  it("each new platform role and permission is in the role proposal and the applied migration", () => {
     for (const p of COMPLETION_WORKFORCE_PACKS) {
       for (const role of p.appliesTo) expect(rolesSql, role).toContain(`('${role}',`);
       for (const perm of p.permissions) expect(rolesSql, perm).toContain(`'${perm}'`);
     }
-    expect(rolesSql).toContain("NOT APPLIED");
+    const applied = readFileSync(
+      "database/supabase/migrations/20261115000700_sherivs_engine11_13_platform_roles.sql",
+      "utf8",
+    );
+    for (const p of COMPLETION_WORKFORCE_PACKS) {
+      for (const role of p.appliesTo) expect(applied, role).toContain(`('${role}',`);
+      for (const perm of p.permissions) expect(applied, perm).toContain(`'${perm}'`);
+    }
+    expect(applied).not.toMatch(/,\s*true,\s*\d+\)/);
+    expect(rolesSql).toContain("APPLIED TO PRODUCTION");
     expect(rolesSql).not.toMatch(/,\s*true,\s*\d+\)/);
     expect(rolesSql).toContain("-- Rollback");
   });

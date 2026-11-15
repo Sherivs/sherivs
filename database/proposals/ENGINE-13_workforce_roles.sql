@@ -1,4 +1,4 @@
--- PROPOSAL ONLY. NOT APPLIED. NOT IN THE MIGRATIONS DIRECTORY.
+-- APPLIED TO PRODUCTION 2026-11-15 as migration 20261115000700_sherivs_engine11_13_platform_roles. Kept as the review record.
 -- ENGINE-13 (ADR-091): platform roles for the ten remaining workforce agents.
 -- Owner must review, then apply on staging first through the normal migration process
 -- with a matching rollback. Role codes follow the platform_roles check (lower-case letters
