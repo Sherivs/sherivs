@@ -1947,6 +1947,14 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
         (await asOwner("select balance from school_wallets where school_id=$1", [A.schoolId])).row
           ?.balance ?? 0,
       );
+    // FIN-01: metering is a server-side financial operation. EXECUTE on meter_usage is
+    // restricted to service_role, so the sim drives it as trusted server code does
+    // and then returns to the school admin's session for the remaining checks.
+    const meter = async (sql, p = []) => {
+      const r = await svc(sql, p);
+      await act(A.admin);
+      return r;
+    };
     await asOwner("insert into auth.users (id) values ($1) on conflict do nothing", [SA]);
     await asOwner(
       "insert into super_admins (id, full_name, email, is_active) values ($1,'Sim SA2','sa2@sim.local',true)",
@@ -1969,44 +1977,58 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
       await t("select public.open_term_pools($1,'2025/2026','first') p", [A.schoolId])
     ).row?.p;
     out.fromPool = (
-      await t(
+      await meter(
         "select public.meter_usage($1,'sms',5,'sim-sms-1',null,'normal','2025/2026','first') r",
         [A.schoolId],
       )
     ).row?.r;
     await asOwner("update term_usage_pools set used = allowance where school_id=$1", [A.schoolId]);
     out.overage = (
-      await t(
+      await meter(
         "select public.meter_usage($1,'sms',10,'sim-sms-2',null,'normal','2025/2026','first') r",
         [A.schoolId],
       )
     ).row?.r;
     out.replay = (
-      await t(
+      await meter(
         "select public.meter_usage($1,'sms',10,'sim-sms-2',null,'normal','2025/2026','first') r",
         [A.schoolId],
       )
     ).row?.r;
     out.bal2 = await bal();
     // daily cap per student (growth: 1 SMS/student/day)
-    out.cap1 = await t(
+    out.cap1 = await meter(
       "select public.meter_usage($1,'sms',1,'sim-cap-1',$2,'normal','2025/2026','first') r",
       [A.schoolId, studs[0]],
     );
-    out.cap2 = await t(
+    out.cap2 = await meter(
       "select public.meter_usage($1,'sms',1,'sim-cap-2',$2,'normal','2025/2026','first') r",
       [A.schoolId, studs[0]],
     );
     // hard stop vs safety
-    out.bigNormal = await t(
+    out.bigNormal = await meter(
       "select public.meter_usage($1,'voice_min',200,'sim-voice-1',null,'normal','2025/2026','first') r",
       [A.schoolId],
     );
-    out.bigSafety = await t(
-      "select public.meter_usage($1,'voice_min',200,'sim-voice-2',null,'safety','2025/2026','first') r",
+    // FIN-01: a safety message may cross zero, but only within the wallet's bounded
+    // overdraft allowance (default 1000). 72 minutes (50400) from ~49890 stays inside it;
+    // a further oversized safety call must be refused, not driven arbitrarily negative.
+    out.bigSafety = await meter(
+      "select public.meter_usage($1,'voice_min',72,'sim-voice-2',null,'safety','2025/2026','first') r",
       [A.schoolId],
     );
     out.bal3 = await bal();
+    out.bigSafety2 = await meter(
+      "select public.meter_usage($1,'voice_min',200,'sim-voice-3',null,'safety','2025/2026','first') r",
+      [A.schoolId],
+    );
+    out.bal3b = await bal();
+    // FIN-01: the school admin's own session can no longer meter (EXECUTE is service_role only)
+    out.adminMeter = await t(
+      "select public.meter_usage($1,'sms',1,'sim-admin-direct',null,'normal','2025/2026','first') r",
+      [A.schoolId],
+    );
+    out.bal3c = await bal();
     out.alerts =
       (
         await asOwner(
@@ -2209,9 +2231,22 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
   );
   rec(
     "wallet",
-    "Hard stop at zero for optional sends; safety messages still go out (wallet may go negative)",
-    /insufficient_wallet/.test(v.bigNormal?.err ?? "") && v.bigSafety?.ok && v.bal3 < 0,
-    `normal ${W_ERR(v.bigNormal)}; safety ${v.bigSafety?.ok ? "sent" : v.bigSafety?.err}; balance ${v.bal3}`,
+    "Hard stop at zero for optional sends; safety messages may cross zero only within the bounded overdraft (FIN-01)",
+    /insufficient_wallet/.test(v.bigNormal?.err ?? "") &&
+      v.bigSafety?.ok &&
+      v.bal3 < 0 &&
+      v.bal3 >= -1000 &&
+      !v.bigSafety2?.ok &&
+      /insufficient_wallet/.test(v.bigSafety2?.err ?? "") &&
+      v.bal3b === v.bal3,
+    `normal ${W_ERR(v.bigNormal)}; safety ${v.bigSafety?.ok ? "sent" : v.bigSafety?.err}; balance ${v.bal3}; oversized safety ${W_ERR(v.bigSafety2)}; balance after refusal ${v.bal3b}`,
+    "critical",
+  );
+  rec(
+    "wallet",
+    "A school administrator cannot debit the wallet by calling meter_usage directly (FIN-01); no balance change",
+    !v.adminMeter?.ok && /permission denied/i.test(v.adminMeter?.err ?? "") && v.bal3c === v.bal3b,
+    `admin ${W_ERR(v.adminMeter)}; balance ${v.bal3c}`,
     "critical",
   );
   rec(
