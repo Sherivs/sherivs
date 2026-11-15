@@ -48,6 +48,7 @@ Sherivs adapters with an exit plan.
 | ENGINE-16 | Agent workbench, sheriff-gated pause policy and proposal, internal console scope lock            | 094           |
 | ENGINE-17 | Organization workforce (17 agents) and plan-tier packaging                                       | 095           |
 | ENGINE-18 | Organization twin escalation and reporting, agent activation gate, context switcher view         | 096           |
+| ENGINE-19 | Organization agent roster, role packet selector and workspace policy editor screens              | 097           |
 
 ## Operator actions (not done by the agent)
 
@@ -58,7 +59,7 @@ Sherivs adapters with an exit plan.
 
 ## Status and what is not built
 
-Built and tested as drafts (nothing applied, merged or deployed): ENGINE-01 to ENGINE-18 above.
+Built and tested as drafts (nothing applied, merged or deployed): ENGINE-01 to ENGINE-19 above.
 
 Not built, and not claimed:
 

@@ -67,6 +67,7 @@ The H3-wave ADR directory. M09 was assigned **ADR-017** and M13 **ADR-018** by o
 | 094 | [ADR-094_ENGINE_WORKBENCH_PAUSE_AND_SCOPE_LOCK.md](./ADR-094_ENGINE_WORKBENCH_PAUSE_AND_SCOPE_LOCK.md) | Agent Workbench, Pause Control and Console Scope Lock | PROPOSED | 2026-11-15 | Honest per-agent workbench; sheriff-gated pause policy with append-only state and unapplied SQL; internal console scope locked |
 | 095 | [ADR-095_ENGINE_ORGANIZATION_WORKFORCE_AND_PLAN_PACKAGING.md](./ADR-095_ENGINE_ORGANIZATION_WORKFORCE_AND_PLAN_PACKAGING.md) | Organization Workforce and Plan Packaging | PROPOSED | 2026-11-15 | 17 organization agents as definition-only tenant packs; plan packaging derived from the plan catalog, Enterprise gets all |
 | 096 | [ADR-096_ENGINE_ORGANIZATION_TWIN_ESCALATION_AND_ACTIVATION.md](./ADR-096_ENGINE_ORGANIZATION_TWIN_ESCALATION_AND_ACTIVATION.md) | Organization Twin, Escalation and Agent Activation | PROPOSED | 2026-11-15 | Agents serve a role, not replace one; activation gate; money-push and weekly-report policy; context switcher view |
+| 097 | [ADR-097_ENGINE_ORG_AGENT_ROSTER_ROLE_PACKETS_AND_POLICIES.md](./ADR-097_ENGINE_ORG_AGENT_ROSTER_ROLE_PACKETS_AND_POLICIES.md) | Organization Agent Roster, Role Packet Selector and Workspace Policy Editor | PROPOSED | 2026-11-15 | Screens over the existing role-packet and policy functions; sensitive permissions confirmed; agent switch-on disabled until add-on table exists |
 
 ## ADR register — `architecture/coregrid-mvp-architecture/adr/`
 
