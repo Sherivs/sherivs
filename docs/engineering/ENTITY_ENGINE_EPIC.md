@@ -49,6 +49,7 @@ Sherivs adapters with an exit plan.
 | ENGINE-17 | Organization workforce (17 agents) and plan-tier packaging                                       | 095           |
 | ENGINE-18 | Organization twin escalation and reporting, agent activation gate, context switcher view         | 096           |
 | ENGINE-19 | Organization agent roster, role packet selector and workspace policy editor screens              | 097           |
+| ENGINE-20 | Database proposal: org agent add-ons, event log, notification outbox, weekly report requests     | 098           |
 
 ## Operator actions (not done by the agent)
 
@@ -59,7 +60,7 @@ Sherivs adapters with an exit plan.
 
 ## Status and what is not built
 
-Built and tested as drafts (nothing applied, merged or deployed): ENGINE-01 to ENGINE-19 above.
+Built and tested as drafts (nothing applied, merged or deployed): ENGINE-01 to ENGINE-20 above.
 
 Not built, and not claimed:
 
