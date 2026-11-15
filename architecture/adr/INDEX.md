@@ -65,6 +65,7 @@ The H3-wave ADR directory. M09 was assigned **ADR-017** and M13 **ADR-018** by o
 | 092 | [ADR-092_ENGINE_WORKFORCE_EVALUATION_HARNESS.md](./ADR-092_ENGINE_WORKFORCE_EVALUATION_HARNESS.md) | Workforce Evaluation Harness | PROPOSED | 2026-11-15 | Synthetic cases generated from every charter suite; scored evidence for the autonomy ladder; ungraded model cases cap promotion at propose |
 | 093 | [ADR-093_ENGINE_AGENT_SCOPE_GUARD.md](./ADR-093_ENGINE_AGENT_SCOPE_GUARD.md) | Agent Scope Guard | PROPOSED | 2026-11-15 | Single guarded door for agent data access; grants, flags and owners resolved server-side; fail-closed, audited |
 | 094 | [ADR-094_ENGINE_WORKBENCH_PAUSE_AND_SCOPE_LOCK.md](./ADR-094_ENGINE_WORKBENCH_PAUSE_AND_SCOPE_LOCK.md) | Agent Workbench, Pause Control and Console Scope Lock | PROPOSED | 2026-11-15 | Honest per-agent workbench; sheriff-gated pause policy with append-only state and unapplied SQL; internal console scope locked |
+| 095 | [ADR-095_ENGINE_ORGANIZATION_WORKFORCE_AND_PLAN_PACKAGING.md](./ADR-095_ENGINE_ORGANIZATION_WORKFORCE_AND_PLAN_PACKAGING.md) | Organization Workforce and Plan Packaging | PROPOSED | 2026-11-15 | 17 organization agents as definition-only tenant packs; plan packaging derived from the plan catalog, Enterprise gets all |
 
 ## ADR register — `architecture/coregrid-mvp-architecture/adr/`
 
