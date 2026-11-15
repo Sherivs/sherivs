@@ -359,7 +359,7 @@ function GovernanceSection() {
           Read the{" "}
           <PublicLink
             href="/privacy"
-            className="sherivs-band-link underline-offset-4 hover:underline"
+            className="sherivs-band-link underline underline-offset-4 hover:decoration-2"
           >
             privacy policy
           </PublicLink>

@@ -108,7 +108,7 @@
 .passkey-enroll-primary {
   border: 0;
   color: #fff;
-  background: linear-gradient(180deg, #4b86ff 0%, #1848fd 58%, #143cdc 100%);
+  background: linear-gradient(180deg, #3366ff 0%, #1848fd 58%, #143cdc 100%);
 }
 
 .passkey-enroll-primary:disabled,

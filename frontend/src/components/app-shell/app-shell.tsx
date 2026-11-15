@@ -214,7 +214,7 @@ function ShellChrome({ children }: { children: ReactNode }) {
             </button>
           </div>
         </header>
-        <main className="app-shell-main">
+        <main id="main-content" tabIndex={-1} className="app-shell-main">
           <div className="app-shell-sheet">{children}</div>
         </main>
         <nav className="app-shell-bottom" aria-label="Primary">

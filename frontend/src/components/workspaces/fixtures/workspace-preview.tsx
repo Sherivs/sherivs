@@ -48,7 +48,7 @@ export function WorkspaceFixturePreview() {
   const renderResponsibility = (item: (typeof primary)[number], group: string) => {
     const Icon = shellIcon(workspaceResponsibilityIcon(item));
     return (
-      <article
+      <div
         key={item.key}
         role="listitem"
         className="app-shell-card workspace-preview-responsibility-card"
@@ -60,7 +60,7 @@ export function WorkspaceFixturePreview() {
           <p>{item.label}</p>
           <small>{group}</small>
         </div>
-      </article>
+      </div>
     );
   };
 
@@ -84,7 +84,7 @@ export function WorkspaceFixturePreview() {
           </select>
         </label>
       </header>
-      <main className="app-shell-main">
+      <main id="main-content" tabIndex={-1} className="app-shell-main">
         <div className="app-shell-sheet app-shell-home">
           <header className="app-shell-greeting">
             <p>Demo School A · synthetic fixture only</p>

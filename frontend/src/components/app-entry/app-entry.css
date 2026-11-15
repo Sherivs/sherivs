@@ -29,7 +29,7 @@
 
 .app-entry:focus-visible,
 .app-entry :focus-visible {
-  outline: 2px solid #7aa2ff;
+  outline: 2px solid #0d37ca;
   outline-offset: 3px;
 }
 
@@ -171,7 +171,7 @@
 
 .app-entry-card-primary {
   color: #ffffff;
-  background: linear-gradient(180deg, #4b86ff 0%, #2f6dff 52%, #2463f5 100%);
+  background: linear-gradient(180deg, #3366ff 0%, #2f6dff 52%, #2463f5 100%);
   border: 0;
   box-shadow:
     0 10px 28px rgba(36, 107, 253, 0.38),
@@ -276,7 +276,7 @@
 .app-entry-field span {
   display: block;
   margin-bottom: 0.4rem;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 650;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -383,7 +383,7 @@
   background: rgba(47, 109, 255, 0.18);
   border: 1px solid rgba(75, 134, 255, 0.35);
   color: #dce7ff;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 700;
 }
 
@@ -471,7 +471,7 @@
 /* Light sign-in (screenshot layout + Sherivs mark colours + glass) */
 .app-entry-login {
   --app-entry-login-ink: #10182b;
-  --app-entry-login-muted: #6b7690;
+  --app-entry-login-muted: #566179;
   --app-entry-login-field: #eef2f8;
   color: var(--app-entry-login-ink);
   background:
@@ -601,7 +601,7 @@
   margin: 0;
   font-size: 0.92rem;
   font-weight: 500;
-  color: #8b93a7;
+  color: #566179;
 }
 
 .app-entry-login-title {
@@ -655,7 +655,7 @@
   min-height: 3.05rem;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(16, 24, 43, 0.1);
+  border: 1px solid #76819a;
   padding: 0.78rem 0.95rem 0.78rem 3.05rem;
   color: #10182b;
   outline: none;
@@ -664,7 +664,7 @@
 }
 
 .app-entry-login-input::placeholder {
-  color: #9aa3b8;
+  color: #566179;
 }
 
 .app-entry-login-input:focus {
@@ -677,7 +677,7 @@
 }
 
 .app-entry-login .text-muted-foreground {
-  color: #6b7690;
+  color: #566179;
 }
 
 .app-entry-login-row {
@@ -691,6 +691,7 @@
 .app-entry-login-remember {
   display: inline-flex;
   align-items: center;
+  min-height: 1.5rem;
   gap: 0.45rem;
   font-size: 0.84rem;
   color: #3d4660;
@@ -698,12 +699,15 @@
 }
 
 .app-entry-login-remember input {
-  width: 0.95rem;
-  height: 0.95rem;
+  width: 1.1rem;
+  height: 1.1rem;
   accent-color: #1848fd;
 }
 
 .app-entry-login-forgot {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
   font-size: 0.88rem;
   font-weight: 600;
   color: #1848fd;
@@ -789,7 +793,7 @@ a.app-entry-login-submit {
   font-size: 0.98rem;
   font-weight: 650;
   cursor: pointer;
-  background: linear-gradient(180deg, #4b86ff 0%, #1848fd 58%, #143cdc 100%);
+  background: linear-gradient(180deg, #3366ff 0%, #1848fd 58%, #143cdc 100%);
   box-shadow:
     0 12px 24px rgba(24, 72, 253, 0.28),
     inset 0 1px 0 rgba(255, 255, 255, 0.32);
@@ -858,7 +862,7 @@ a.app-entry-login-submit {
   margin: 0.15rem 0 0;
   text-align: center;
   font-size: 0.84rem;
-  color: #8b93a7;
+  color: #566179;
   text-wrap: balance;
 }
 
@@ -1177,7 +1181,7 @@ html:has(.app-entry-onboarding) {
   background: rgba(24, 72, 253, 0.08);
   border: 1px solid rgba(24, 72, 253, 0.2);
   color: #143cdc;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 700;
 }
 

@@ -1,3 +1,5 @@
+import { parseHexColor } from "./tenant-contrast";
+
 /**
  * schools.primary_color / secondary_color default to the legacy teal/amber pair
  * at the database level, so almost every school row carries those values even
@@ -19,8 +21,10 @@ export function customTenantColors(
   const p = norm(primary);
   const s = norm(secondary);
   const legacyPair = p === LEGACY_DEFAULT_PRIMARY && (s === "" || s === LEGACY_DEFAULT_SECONDARY);
+  // A value that is not a hex colour would be written into a CSS variable and break every
+  // button that uses it, so it counts as "no custom colour".
   return {
-    primary: !p || legacyPair ? null : primary!.trim(),
-    secondary: !s || legacyPair ? null : secondary!.trim(),
+    primary: !p || legacyPair || !parseHexColor(p) ? null : primary!.trim(),
+    secondary: !s || legacyPair || !parseHexColor(s) ? null : secondary!.trim(),
   };
 }

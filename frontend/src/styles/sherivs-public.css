@@ -14,13 +14,14 @@
   --sherivs-blue: #1848fd;
   --sherivs-blue-bright: #3d6dff;
   --sherivs-cyan: #14a8fc;
+  --sherivs-link: #0b5ec0;
   --sherivs-violet: #8254f6;
   --sherivs-white: #f7f9ff;
   --sherivs-muted: #aab4c8;
   --sherivs-paper: #eef2f8;
   --sherivs-paper-2: #e8ecf6;
   --sherivs-ink: #10182b;
-  --sherivs-ink-muted: #6b7690;
+  --sherivs-ink-muted: #566179;
   --sherivs-success: #39d98a;
   --sherivs-warning: #ffc857;
   --sherivs-danger: #ff6b7a;
@@ -32,6 +33,8 @@
   --sherivs-text-muted: var(--sherivs-ink-muted);
   --sherivs-border: rgba(16, 24, 43, 0.1);
   --sherivs-border-strong: rgba(16, 24, 43, 0.14);
+  /* Form field edges: 3:1 against the page (WCAG 1.4.11). The hairline borders above are decoration. */
+  --sherivs-control-border: #76819a;
   --sherivs-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.58));
   --sherivs-glass-border: rgba(255, 255, 255, 0.82);
   --sherivs-focus: #1848fd;
@@ -163,6 +166,17 @@ body:has(.sherivs-public) {
   outline-offset: 3px;
 }
 
+/* The brand blue ring is 2.9:1 on the navy bands; they take the light ring. */
+.sherivs-public .sherivs-band-ink :focus-visible,
+.sherivs-public .sherivs-band-dusk :focus-visible {
+  outline-color: #93b0ff;
+}
+
+.sherivs-public .sherivs-band-ink .sherivs-glass-card :focus-visible,
+.sherivs-public .sherivs-band-dusk .sherivs-glass-card :focus-visible {
+  outline-color: var(--sherivs-focus);
+}
+
 .sherivs-public [id] {
   scroll-margin-top: calc(var(--sherivs-header-offset) + 0.75rem);
 }
@@ -226,7 +240,7 @@ body:has(.sherivs-public) {
 }
 
 .sherivs-kicker {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 650;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -246,7 +260,7 @@ body:has(.sherivs-public) {
 
 .sherivs-btn-primary {
   color: #ffffff;
-  background: linear-gradient(180deg, #4b86ff 0%, #1848fd 58%, #143cdc 100%);
+  background: linear-gradient(180deg, #3366ff 0%, #1848fd 58%, #143cdc 100%);
   border: 0;
   box-shadow:
     0 12px 24px rgba(24, 72, 253, 0.28),
@@ -425,6 +439,37 @@ body:has(.sherivs-public) {
 .sherivs-public .sherivs-band-ink .sherivs-glass-card,
 .sherivs-public .sherivs-band-dusk .sherivs-glass-card {
   color: var(--sherivs-ink);
+  /* Solid, not translucent: 78% white over navy renders a murky grey where
+     muted text measured 3:1 and the amber badge 1.3:1. */
+  background: #f4f7fb;
+}
+
+.sherivs-public .sherivs-band-ink .sherivs-glass-card::before,
+.sherivs-public .sherivs-band-dusk .sherivs-glass-card::before {
+  background: transparent;
+}
+
+/* Amber is tuned for dark surfaces (1.4:1 on the light page). Light surfaces
+   get a dark amber; dark bands keep the bright one, except inside their cards. */
+.sherivs-public .text-sherivs-warning,
+.sherivs-public .sherivs-band-ink .sherivs-glass-card .text-sherivs-warning,
+.sherivs-public .sherivs-band-dusk .sherivs-glass-card .text-sherivs-warning {
+  color: #8a5300;
+}
+
+.sherivs-public .sherivs-band-ink .text-sherivs-warning,
+.sherivs-public .sherivs-band-dusk .text-sherivs-warning {
+  color: var(--sherivs-warning);
+}
+
+.sherivs-public .sherivs-band-ink .sherivs-btn-secondary,
+.sherivs-public .sherivs-band-dusk .sherivs-btn-secondary {
+  background: #f4f7fb;
+}
+
+.sherivs-public .sherivs-band-ink .sherivs-glass-card .text-sherivs-cyan,
+.sherivs-public .sherivs-band-dusk .sherivs-glass-card .text-sherivs-cyan {
+  color: var(--sherivs-link);
 }
 
 .sherivs-public .sherivs-band-ink .sherivs-glass-card .text-sherivs-muted,
@@ -435,6 +480,18 @@ body:has(.sherivs-public) {
 .sherivs-public .sherivs-band-ink .sherivs-band-link,
 .sherivs-public .sherivs-band-dusk .sherivs-band-link {
   color: #d6e4ff;
+}
+
+/* Cyan is for dark surfaces. On the light page it is 2.4:1, so text links use
+   the darker link token there and keep the bright cyan inside dark bands. */
+.sherivs-public .text-sherivs-cyan,
+.sherivs-public .hover\:text-sherivs-cyan:hover {
+  color: var(--sherivs-link);
+}
+
+.sherivs-public .sherivs-band-ink .text-sherivs-cyan,
+.sherivs-public .sherivs-band-dusk .text-sherivs-cyan {
+  color: var(--sherivs-cyan);
 }
 
 .sherivs-public .sherivs-nav-drawer.sherivs-glass-card {
@@ -691,7 +748,7 @@ body:has(.sherivs-public) {
 
 .sherivs-map-kicker {
   margin: 0;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 650;
   letter-spacing: 0.12em;
   line-height: 1.45;
@@ -800,7 +857,7 @@ body:has(.sherivs-public) {
   background: #fff4df;
   color: #6e3b00;
   font-family: inherit;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   line-height: 1.35;
