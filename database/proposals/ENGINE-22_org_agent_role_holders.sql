@@ -1,8 +1,8 @@
--- PROPOSAL ONLY. NOT APPLIED. NOT IN THE MIGRATIONS DIRECTORY.
+-- APPLIED TO PRODUCTION 2026-11-15. The exact SQL that ran is in ops/2026-11-15-apply-engine20-engine22/.
+-- Kept here as the reviewed source. Not in the migrations directory: the neutrality guard rejects school vocabulary there.
 -- ENGINE-22 (ADR-100): who holds the roles the organization agents answer to.
 -- Code side: frontend/src/lib/org-workforce/agent-state-loader.ts and activation.ts.
--- Apply on staging first, AFTER ENGINE-20 (it reads org_agent_catalog), with the matching
--- rollback at the end.
+-- Applied to production directly (no staging, by the owner's decision), AFTER ENGINE-20 (it reads org_agent_catalog); rollback is in the ops folder.
 --
 -- Why a function and not a plain read of organization_memberships:
 --  The table's policy lets a school administrator read other people's rows, and everyone else

@@ -1,4 +1,5 @@
--- PROPOSAL ONLY. NOT APPLIED. NOT IN THE MIGRATIONS DIRECTORY.
+-- APPLIED TO PRODUCTION 2026-11-15. The exact SQL that ran is in ops/2026-11-15-apply-engine20-engine22/.
+-- Kept here as the reviewed source. Not in the migrations directory: the neutrality guard rejects school vocabulary there.
 -- ENGINE-20 (ADR-098): database side of the organization workforce.
 -- Code side: frontend/src/lib/org-workforce/ (packaging, activation, escalation).
 -- Apply on staging first, with the matching rollback at the end. A test keeps the catalog
