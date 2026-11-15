@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import type { TenantId } from "../../frontend/src/lib/tenant-core";
 import { ORG_AGENTS, MEMBERSHIP_ROLES } from "../../frontend/src/lib/org-workforce/org-agents";
 import {
   TIER_ORDER,
@@ -12,6 +13,7 @@ import {
   nextWeeklySendAt,
 } from "../../frontend/src/lib/org-workforce/escalation";
 
+const TENANT = "t1" as TenantId;
 const FILE = "database/proposals/ENGINE-20_org_agent_addons_events_reports.sql";
 const CHECK = "database/proposals/ENGINE-20_org_agent_addons_events_reports.check.sql";
 const sql = readFileSync(FILE, "utf8");
@@ -78,8 +80,8 @@ describe("ENGINE-20 SQL proposal stays in step with the code", () => {
 
   it("agrees with the plan rule: an unknown plan counts as the trial", () => {
     for (const a of ORG_AGENTS) {
-      const unknown = orgAgentEntitlement("t1", "mystery", a.pack.code);
-      const trial = orgAgentEntitlement("t1", "trial", a.pack.code);
+      const unknown = orgAgentEntitlement(TENANT, "mystery", a.pack.code);
+      const trial = orgAgentEntitlement(TENANT, "trial", a.pack.code);
       expect(unknown.tier).toBe("trial");
       expect(unknown.entitled).toBe(trial.entitled);
     }
