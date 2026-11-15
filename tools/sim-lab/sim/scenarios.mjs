@@ -1163,6 +1163,7 @@ const inTx = async (uid, fn, role = "authenticated") => {
     "select s.subscription_tier t, e.plan_id p from schools s left join org_entitlements e on e.org_id=s.id order by 1",
   );
   const want = {
+    trial: "trial",
     starter: "starter",
     growth: "growth",
     professional: "growth",
@@ -1191,28 +1192,66 @@ const inTx = async (uid, fn, role = "authenticated") => {
     up.ok ? `starter -> ${up.v}` : up.err,
     "high",
   );
-  const q = await inTx(
-    null,
-    async (c) => {
-      let ok = 0;
-      for (let i = 0; i < 6; i++)
-        if (
-          (
-            await c.query("select public.meter_consume_for_plan($1,'sms','2026-10',null,100) r", [
-              B.schoolId,
-            ])
-          ).rows[0].r
-        )
-          ok++;
-      return ok;
-    },
-    "postgres",
-  );
+  // ENT-01: a school administrator cannot promote their own school, and a new school starts in trial.
+  const elev = await inTx(B.admin, async (c) => {
+    await c.query(
+      "update schools set subscription_tier='enterprise', max_students=1000000 where id=$1",
+      [B.schoolId],
+    );
+  });
+  const stillTier = (await sys("select subscription_tier t from schools where id=$1", [B.schoolId]))
+    .rows[0].t;
   rec(
     "tiers",
-    "Starter SMS quota (500/month placeholder) enforced from the plan",
-    q.ok && q.v === 5,
+    "A school admin cannot change their own school's tier or limits (ENT-01)",
+    !elev.ok && /managed by the platform/i.test(elev.err ?? "") && stillTier === "starter",
+    elev.ok ? "elevation succeeded" : `${elev.err} (tier stays ${stillTier})`,
+    "high",
+  );
+  const dflt = (
+    await sys(
+      "select column_default d from information_schema.columns where table_name='schools' and column_name='subscription_tier'",
+    )
+  ).rows[0].d;
+  rec(
+    "tiers",
+    "New schools default to the trial tier (ENT-01)",
+    /'trial'/.test(dflt),
+    dflt,
+    "high",
+  );
+  const smsSends = (school) =>
+    inTx(
+      null,
+      async (c) => {
+        let ok = 0;
+        for (let i = 0; i < 6; i++)
+          if (
+            (
+              await c.query("select public.meter_consume_for_plan($1,'sms','2026-10',null,100) r", [
+                school,
+              ])
+            ).rows[0].r
+          )
+            ok++;
+        return ok;
+      },
+      "postgres",
+    );
+  const q = await smsSends(B.schoolId);
+  rec(
+    "tiers",
+    "Starter has no paid SMS quota from the plan (ENT-01: quota 0)",
+    q.ok && q.v === 0,
     q.ok ? `${q.v} of 6 x100 sends allowed` : q.err,
+    "high",
+  );
+  const qg = await smsSends(A.schoolId);
+  rec(
+    "tiers",
+    "Growth keeps its paid SMS quota from the plan (3000/month placeholder)",
+    qg.ok && qg.v === 6,
+    qg.ok ? `${qg.v} of 6 x100 sends allowed` : qg.err,
     "high",
   );
   const u = await inTx(A.admin, (c) =>
