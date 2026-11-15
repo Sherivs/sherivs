@@ -1,5 +1,5 @@
 -- DB-12: structural clean-up found by the production database advisors (audit finding R-12).
--- Status: AUTHORED, NOT APPLIED. Do not apply to production from the pull request.
+-- Status: APPLIED TO PRODUCTION 2026-11-15 (project nwrflbpbhyiqdptmlccm) at the founder's instruction.
 -- Rollback: database/supabase/rollbacks/20261105000200_sherivs_db12_flags_pk_and_duplicate_index.sql
 -- ADR-073. Forward-only and idempotent. It changes no policy, grant, trigger, function or row value.
 --

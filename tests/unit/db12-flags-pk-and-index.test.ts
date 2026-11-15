@@ -12,7 +12,7 @@ describe("DB-12 feature_flags primary key and duplicate index", () => {
   const code = sql.replace(/--[^\n]*/g, "");
 
   it("is marked not applied and names its rollback and ADR", () => {
-    expect(sql).toContain("NOT APPLIED");
+    expect(sql).toContain("APPLIED TO PRODUCTION");
     expect(sql).toContain("ADR-073");
     expect(readFileSync(ROLLBACK, "utf8")).toContain("feature_flags_pkey");
   });

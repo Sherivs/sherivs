@@ -1,5 +1,5 @@
 -- SEC-02: least-privilege hardening found by the production security audit.
--- Status: AUTHORED, NOT APPLIED. Do not apply to production from the pull request.
+-- Status: APPLIED TO PRODUCTION 2026-11-15 (project nwrflbpbhyiqdptmlccm) at the founder's instruction.
 -- Rollback: database/supabase/rollbacks/20261104034500_sherivs_sec02_privilege_hardening.sql
 -- ADR-069. Forward-only and idempotent. It removes privileges and pins function search paths.
 -- It does not change any table, policy, row or function body.

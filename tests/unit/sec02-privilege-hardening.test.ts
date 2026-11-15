@@ -17,7 +17,7 @@ describe("SEC-02 privilege hardening", () => {
   const code = sql.replace(/--[^\n]*/g, "");
 
   it("is marked not applied and names its rollback and ADR", () => {
-    expect(sql).toContain("NOT APPLIED");
+    expect(sql).toContain("APPLIED TO PRODUCTION");
     expect(sql).toContain("ADR-069");
     expect(readFileSync(ROLLBACK, "utf8")).toContain("GRANT");
   });
