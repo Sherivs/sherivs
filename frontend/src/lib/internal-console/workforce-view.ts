@@ -28,6 +28,8 @@ import { EXISTING_CHARTERS } from "../workforce-charter/charters/existing-charte
 import { COMPLETION_CHARTERS } from "../workforce-charter/charters/completion-charters";
 import { EXPANSION_CHARTERS } from "../workforce-charter/charters/expansion-charters";
 import { WORKFORCE_WORKSPACES } from "../workforce-charter/workspaces/workforce-workspaces";
+import { generateCases, suiteCapabilities } from "../workforce-eval/eval-case";
+import { workforceRoster } from "../workforce-charter/roster";
 import type { AccessMode, AgentWorkspace, RowScope } from "../workforce-charter/workspace";
 
 export const ENGINE_TABLES_NOTE =
@@ -209,6 +211,23 @@ export interface WorkspaceView {
   readonly workbench: AgentWorkspace["ui"];
 }
 
+export interface EvaluationView {
+  readonly suites: readonly {
+    readonly capabilityId: string;
+    readonly suiteId: string;
+    readonly bar: number;
+    readonly deterministic: number;
+    readonly modelRequired: number;
+    readonly critical: number;
+  }[];
+  readonly deterministicTotal: number;
+  readonly modelRequiredTotal: number;
+  /** Highest state reachable until the model-graded cases have a grader. */
+  readonly reachableCeiling: "propose";
+  readonly ceilingNote: string;
+  readonly runs: { readonly available: false; readonly reason: string };
+}
+
 export interface AgentDashboard {
   readonly code: string;
   readonly codename: string;
@@ -241,6 +260,7 @@ export interface AgentDashboard {
     readonly current: "shadow";
     readonly note: string;
     readonly ceilingByCapability: readonly { readonly id: string; readonly ceiling: string }[];
+    readonly evaluation: EvaluationView;
   };
   readonly budget: {
     readonly dailyActions: number;
@@ -294,6 +314,15 @@ export interface AgentDashboard {
 
 const unavailable = { available: false, reason: ENGINE_TABLES_NOTE } as const;
 
+const EMPTY_EVALUATION: EvaluationView = {
+  suites: [],
+  deterministicTotal: 0,
+  modelRequiredTotal: 0,
+  reachableCeiling: "propose",
+  ceilingNote: "No evaluation suites are defined for this agent.",
+  runs: unavailable,
+};
+
 const OVERSIGHT: Readonly<Record<AgentCharter["agentTier"], string>> = {
   executive: "Reports to the sheriff. Every T3 decision needs the sheriff with a passkey.",
   department: "Supervised by the executive agent; reviewed by the independent audit agent.",
@@ -318,6 +347,33 @@ export function buildWorkspaceView(code: string): WorkspaceView | null {
     ),
     boundaries: ws.boundaries,
     workbench: ws.ui,
+  };
+}
+
+export function buildEvaluationView(code: string): EvaluationView | null {
+  const roster = workforceRoster();
+  const member = roster.find((m) => m.pack.code === code);
+  if (!member) return null;
+  const suites = suiteCapabilities(member).map((cap) => {
+    const cases = generateCases(member, cap.id, roster);
+    const bar = member.charter.evalSuites.find((e) => e.capabilityId === cap.id);
+    return {
+      capabilityId: cap.id,
+      suiteId: bar?.suiteId ?? "",
+      bar: bar?.minPassRate ?? 1,
+      deterministic: cases.filter((c) => c.grading === "deterministic").length,
+      modelRequired: cases.filter((c) => c.grading === "model").length,
+      critical: cases.filter((c) => c.critical).length,
+    };
+  });
+  return {
+    suites,
+    deterministicTotal: suites.reduce((n, x) => n + x.deterministic, 0),
+    modelRequiredTotal: suites.reduce((n, x) => n + x.modelRequired, 0),
+    reachableCeiling: "propose",
+    ceilingNote:
+      "Cases that need a model to answer (injection and boundary tests) have no grader yet, so no capability can be promoted past propose until they are graded.",
+    runs: unavailable,
   };
 }
 
@@ -372,6 +428,7 @@ export function buildAgentDashboard(code: string): AgentDashboard | null {
         id: c.id,
         ceiling: AUTONOMY_LABELS[c.autonomy],
       })),
+      evaluation: buildEvaluationView(pack.code) ?? EMPTY_EVALUATION,
     },
     budget: {
       dailyActions: pack.budget.dailyActions,

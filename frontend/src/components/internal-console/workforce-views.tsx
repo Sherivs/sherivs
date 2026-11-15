@@ -263,6 +263,39 @@ export function AgentDashboardView({ dashboard }: { dashboard: AgentDashboard })
       {shown.has("autonomy") ? (
         <Panel id="autonomy" title={PANEL_TITLES.autonomy}>
           <p>Current level: shadow. {d.autonomy.note}</p>
+          <div data-testid="autonomy-evaluation">
+            <h3>Evaluation</h3>
+            <p>
+              {d.autonomy.evaluation.deterministicTotal} governance cases are graded automatically;{" "}
+              {d.autonomy.evaluation.modelRequiredTotal} need a model and are not graded yet.{" "}
+              {d.autonomy.evaluation.ceilingNote}
+            </p>
+            {d.autonomy.evaluation.suites.length === 0 ? null : (
+              <table className="sherivs-console-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Suite</th>
+                    <th scope="col">Pass bar</th>
+                    <th scope="col">Graded cases</th>
+                    <th scope="col">Needs a model</th>
+                    <th scope="col">Safety-critical</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {d.autonomy.evaluation.suites.map((x) => (
+                    <tr key={x.suiteId || x.capabilityId}>
+                      <th scope="row">{x.suiteId}</th>
+                      <td>{Math.round(x.bar * 100)}%</td>
+                      <td>{x.deterministic}</td>
+                      <td>{x.modelRequired}</td>
+                      <td>{x.critical}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            <Unavailable reason={`Evaluation runs: ${d.autonomy.evaluation.runs.reason}`} />
+          </div>
         </Panel>
       ) : null}
 

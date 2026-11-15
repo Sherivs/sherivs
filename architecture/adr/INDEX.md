@@ -62,6 +62,7 @@ The H3-wave ADR directory. M09 was assigned **ADR-017** and M13 **ADR-018** by o
 | 089 | [ADR-089_ENGINE_WORKFORCE_EXPANSION_AND_ACTION_COVERAGE.md](./ADR-089_ENGINE_WORKFORCE_EXPANSION_AND_ACTION_COVERAGE.md) | Workforce Expansion and Complete Approval Action Coverage | PROPOSED | 2026-11-15 | Eight additional unbound agent packs and charters; no new T3; every gated capability mapped to a JARVIS action or listed as an exception |
 | 090 | [ADR-090_ENGINE_WORKFORCE_CONSOLE.md](./ADR-090_ENGINE_WORKFORCE_CONSOLE.md) | Workforce Console, Roster and Per-Agent Dashboards | PROPOSED | 2026-11-15 | Read-only roster and per-agent dashboards from packs and charters; live data shown as unavailable until engine tables exist |
 | 091 | [ADR-091_ENGINE_WORKFORCE_COMPLETION_AND_WORKSPACES.md](./ADR-091_ENGINE_WORKFORCE_COMPLETION_AND_WORKSPACES.md) | Workforce Completion and Agent Workspaces | PROPOSED | 2026-11-15 | Ten remaining agents (25 total); per-agent data scopes, boundaries and workbench; deny-by-default scope check; unapplied role and scope RLS proposals |
+| 092 | [ADR-092_ENGINE_WORKFORCE_EVALUATION_HARNESS.md](./ADR-092_ENGINE_WORKFORCE_EVALUATION_HARNESS.md) | Workforce Evaluation Harness | PROPOSED | 2026-11-15 | Synthetic cases generated from every charter suite; scored evidence for the autonomy ladder; ungraded model cases cap promotion at propose |
 
 ## ADR register — `architecture/coregrid-mvp-architecture/adr/`
 

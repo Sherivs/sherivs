@@ -23,6 +23,7 @@ import {
 import {
   ENGINE_TABLES_NOTE,
   buildAgentDashboard,
+  buildEvaluationView,
   buildRoster,
   canViewWorkforce,
   workforceEntries,
@@ -328,5 +329,44 @@ describe("ENGINE-13 workspace panels in the console", () => {
 
   it("an unknown agent has no dashboard and so no workspace", () => {
     expect(buildAgentDashboard("ghost-agent")).toBeNull();
+  });
+});
+
+describe("ENGINE-14 evaluation in the console", () => {
+  it("every agent's autonomy panel shows its suites, the ungraded cases and the honest ceiling", () => {
+    for (const e of workforceEntries()) {
+      const d = buildAgentDashboard(e.pack.code)!;
+      const ev = d.autonomy.evaluation;
+      expect(ev.suites.length, e.pack.code).toBe(e.charter.evalSuites.length);
+      expect(ev.reachableCeiling).toBe("propose");
+      expect(ev.runs).toEqual({ available: false, reason: ENGINE_TABLES_NOTE });
+      expect(ev.deterministicTotal).toBe(ev.suites.reduce((n, x) => n + x.deterministic, 0));
+      expect(ev.modelRequiredTotal).toBeGreaterThan(0);
+      if (!d.panels.includes("autonomy")) continue;
+      const html = renderToStaticMarkup(<AgentDashboardView dashboard={d} />);
+      expect(html, e.pack.code).toContain('data-testid="autonomy-evaluation"');
+      expect(html, e.pack.code).toContain("need a model and are not graded yet");
+      expect(html, e.pack.code).toContain("Evaluation runs:");
+      for (const x of ev.suites) expect(html, e.pack.code).toContain(x.suiteId);
+    }
+  });
+
+  it("suite counts match the generated cases, with the refund suite at a 99% bar", () => {
+    const ev = buildEvaluationView("finance-agent")!;
+    const refund = ev.suites.find((x) => x.capabilityId === "request.refund")!;
+    expect(refund.bar).toBe(0.99);
+    expect(refund.deterministic).toBeGreaterThan(0);
+    expect(refund.critical).toBeGreaterThan(0);
+    expect(refund.critical).toBeLessThan(refund.deterministic + refund.modelRequired);
+  });
+
+  it("an unknown agent has no evaluation view", () => {
+    expect(buildEvaluationView("nope")).toBeNull();
+  });
+
+  it("the page claims no measured results", () => {
+    const d = buildAgentDashboard("finance-agent")!;
+    const html = renderToStaticMarkup(<AgentDashboardView dashboard={d} />);
+    expect(html).not.toMatch(/passed|pass rate of|last run/i);
   });
 });
