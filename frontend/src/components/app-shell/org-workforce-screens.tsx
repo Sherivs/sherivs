@@ -23,13 +23,27 @@ import {
   planPolicyChanges,
   type PolicyView,
 } from "@/lib/org-workforce/policy-view";
-import { OrgAgentRosterPanel, RolePacketPanel, WorkspacePolicyPanel } from "./org-workforce-panels";
+import { planAgentAction, type AgentAction } from "@/lib/org-workforce/agent-actions";
+import {
+  EMPTY_SWITCHES,
+  loadAgentState,
+  runAgentCall,
+  type AgentScreenState,
+} from "@/lib/org-workforce/agent-state-loader";
+import { ORG_AGENTS } from "@/lib/org-workforce/org-agents";
+import {
+  AgentEventsPanel,
+  OrgAgentRosterPanel,
+  RolePacketPanel,
+  WorkspacePolicyPanel,
+} from "./org-workforce-panels";
 
 type Row = Record<string, unknown>;
 type Result = { data: unknown; error: { message: string } | null };
 type Query = PromiseLike<Result> & {
   eq(column: string, value: unknown): Query;
-  order(column: string): Query;
+  order(column: string, options?: { ascending: boolean }): Query;
+  limit(count: number): Query;
 };
 type Client = {
   from(table: string): { select(columns: string): Query };
@@ -51,9 +65,34 @@ function Back() {
   );
 }
 
+const KNOWN_CODES = ORG_AGENTS.map((a) => a.pack.code);
+
 export function OrgAgentsScreen() {
   const app = useApp();
   const school = app.school;
+  const orgId = school?.id ?? "";
+  const [state, setState] = useState<AgentScreenState>({
+    canManage: false,
+    applied: false,
+    switches: EMPTY_SWITCHES,
+    events: [],
+    error: "",
+  });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const { canManage, applied, switches, events } = state;
+
+  const load = useCallback(async () => {
+    if (!orgId) return;
+    const next = await loadAgentState(db, orgId);
+    setState(next);
+    setError(next.error);
+  }, [orgId]);
+  useEffect(() => {
+    void load();
+  }, [load]);
+
   const view = useMemo(
     () =>
       school
@@ -63,19 +102,84 @@ export function OrgAgentsScreen() {
               tier: school.subscription_tier,
               active: !INACTIVE_STATUSES.has((school.subscription_status ?? "").toLowerCase()),
             },
+            enabledCodes: switches.enabledCodes,
+            pausedCodes: switches.pausedCodes,
+            platformPausedCodes: switches.platformPausedCodes,
+            addOnsApplied: applied,
+            // Who holds each agent's approving role is not loaded here yet.
+            holdersKnown: false,
+            stateKnown: canManage,
           })
         : null,
-    [school],
+    [school, switches, applied, canManage],
   );
+
+  async function onAction(code: string, action: AgentAction, reason?: string) {
+    const plan = planAgentAction({
+      orgId,
+      agentCode: code,
+      action,
+      ...(reason !== undefined ? { reason } : {}),
+      knownCodes: KNOWN_CODES,
+    });
+    setError("");
+    setNotice("");
+    if (!plan.ok) {
+      setError(plan.reason);
+      return;
+    }
+    setBusy(true);
+    const failure = await runAgentCall(db, plan.call.rpc, { ...plan.call.args });
+    if (failure) setError(failure);
+    else {
+      setNotice("Change saved and audited.");
+      await load();
+    }
+    setBusy(false);
+  }
+
+  async function onAcknowledge(id: string) {
+    setBusy(true);
+    setError("");
+    setNotice("");
+    const failure = await runAgentCall(db, "ack_org_agent_event", { p_event: id });
+    if (failure) setError(failure);
+    else {
+      setNotice("Acknowledged.");
+      await load();
+    }
+    setBusy(false);
+  }
+
   return (
     <section className="app-shell-section" data-testid="org-agents-screen">
       <Back />
       <h1>Agents</h1>
+      {error ? <p role="alert">{error}</p> : null}
+      {notice ? <p role="status">{notice}</p> : null}
       {view ? (
-        <OrgAgentRosterPanel view={view} />
+        <OrgAgentRosterPanel
+          view={view}
+          {...(canManage && applied
+            ? { actions: { busy, onAction: (c, a, r) => void onAction(c, a, r) } }
+            : {})}
+        />
       ) : (
         <p role="status">Your organization could not be loaded.</p>
       )}
+      {canManage && applied ? (
+        <AgentEventsPanel
+          events={events}
+          busy={busy}
+          onAcknowledge={(id) => void onAcknowledge(id)}
+        />
+      ) : null}
+      {!canManage && view ? (
+        <p className="text-sm text-muted-foreground" data-testid="agents-manage-note">
+          Switching agents on and off, and acknowledging what they raise, is for people who manage
+          settings.
+        </p>
+      ) : null}
     </section>
   );
 }

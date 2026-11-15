@@ -3,6 +3,7 @@
  * They render a view model and call back; they hold no data access, so they can be
  * rendered and tested without a database.
  */
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -14,8 +15,22 @@ import {
 } from "@/lib/org-workforce/role-packet-view";
 import type { PolicyView } from "@/lib/org-workforce/policy-view";
 import type { RosterCard, RosterView } from "@/lib/org-workforce/roster-view";
+import {
+  eventHeadline,
+  formatMinor,
+  type AgentAction,
+  type AgentEventRow,
+} from "@/lib/org-workforce/agent-actions";
 
-function AgentCard({ card }: { card: RosterCard }) {
+export interface RosterActions {
+  readonly busy: boolean;
+  /** Called with the agent code, the action and, for pause and resume, the reason. */
+  readonly onAction: (code: string, action: AgentAction, reason?: string) => void;
+}
+
+function AgentCard({ card, actions }: { card: RosterCard; actions?: RosterActions }) {
+  const [reason, setReason] = useState("");
+  const busy = actions?.busy === true;
   return (
     <li data-testid={`agent-${card.code}`} className="rounded-md border p-4">
       <div className="flex items-baseline justify-between gap-2">
@@ -35,9 +50,55 @@ function AgentCard({ card }: { card: RosterCard }) {
       {card.minTierLabel && card.status === "locked" ? (
         <p className="text-sm">Included from the {card.minTierLabel} plan.</p>
       ) : null}
-      <Button type="button" disabled={!card.switchOn.enabled} className="mt-2">
+      <Button
+        type="button"
+        disabled={!card.switchOn.enabled || !actions || busy}
+        className="mt-2"
+        onClick={() => actions?.onAction(card.code, "enable")}
+      >
         Switch on
       </Button>
+      {card.manage.switchOff ? (
+        <Button
+          type="button"
+          variant="outline"
+          disabled={!actions || busy}
+          className="mt-2 ml-2"
+          onClick={() => actions?.onAction(card.code, "disable")}
+        >
+          Switch off
+        </Button>
+      ) : null}
+      {card.manage.pause || card.manage.resume ? (
+        <div className="mt-2 grid gap-1">
+          <label className="text-xs" htmlFor={`reason-${card.code}`}>
+            Reason to {card.manage.resume ? "resume" : "pause"} (10 to 300 characters)
+          </label>
+          <input
+            id={`reason-${card.code}`}
+            className="rounded-md border px-2 py-1 text-sm"
+            value={reason}
+            maxLength={300}
+            onChange={(e) => setReason(e.target.value)}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!actions || busy}
+            onClick={() => {
+              actions?.onAction(card.code, card.manage.resume ? "resume" : "pause", reason);
+              setReason("");
+            }}
+          >
+            {card.manage.resume ? "Resume" : "Pause"}
+          </Button>
+        </div>
+      ) : null}
+      {card.manage.resumeBlockedReason ? (
+        <p className="text-xs text-muted-foreground" data-testid={`agent-held-${card.code}`}>
+          {card.manage.resumeBlockedReason}
+        </p>
+      ) : null}
       {card.switchOn.disabledReason ? (
         <p className="text-xs text-muted-foreground" data-testid={`agent-why-${card.code}`}>
           {card.switchOn.disabledReason}
@@ -47,7 +108,13 @@ function AgentCard({ card }: { card: RosterCard }) {
   );
 }
 
-export function OrgAgentRosterPanel({ view }: { view: RosterView }) {
+export function OrgAgentRosterPanel({
+  view,
+  actions,
+}: {
+  view: RosterView;
+  actions?: RosterActions;
+}) {
   return (
     <div data-testid="org-agent-roster" className="grid gap-4">
       <Card>
@@ -68,7 +135,7 @@ export function OrgAgentRosterPanel({ view }: { view: RosterView }) {
       </Card>
       <ul className="grid gap-3 sm:grid-cols-2" data-testid="roster-included">
         {view.included.map((c) => (
-          <AgentCard key={c.code} card={c} />
+          <AgentCard key={c.code} card={c} {...(actions ? { actions } : {})} />
         ))}
       </ul>
       {view.upgrade.length > 0 ? (
@@ -79,13 +146,71 @@ export function OrgAgentRosterPanel({ view }: { view: RosterView }) {
           <CardContent>
             <ul className="grid gap-3 sm:grid-cols-2" data-testid="roster-upgrade">
               {view.upgrade.map((c) => (
-                <AgentCard key={c.code} card={c} />
+                <AgentCard key={c.code} card={c} {...(actions ? { actions } : {})} />
               ))}
             </ul>
           </CardContent>
         </Card>
       ) : null}
     </div>
+  );
+}
+
+export function AgentEventsPanel(props: {
+  events: readonly AgentEventRow[];
+  busy: boolean;
+  onAcknowledge: (id: string) => void;
+}) {
+  const open = props.events.filter((e) => !e.acknowledged).length;
+  return (
+    <Card data-testid="agent-events">
+      <CardHeader>
+        <CardTitle>What your agents raised</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {props.events.length === 0 ? (
+          <p data-testid="agent-events-empty">Nothing has been raised.</p>
+        ) : (
+          <>
+            <p className="text-sm text-muted-foreground">
+              {open} open of {props.events.length} shown.
+            </p>
+            <ul className="grid gap-2">
+              {props.events.map((e) => (
+                <li
+                  key={e.id}
+                  data-testid={`agent-event-${e.id}`}
+                  className="flex items-start justify-between gap-2 rounded-md border p-3"
+                >
+                  <div>
+                    <strong className="text-sm">{e.severity}</strong>{" "}
+                    <span className="text-sm">{eventHeadline(e)}</span>
+                    {e.kind === "money" && e.amountMinor !== null ? (
+                      <span className="text-sm"> · {formatMinor(e.amountMinor)}</span>
+                    ) : null}
+                    <p className="text-xs text-muted-foreground">
+                      {e.agentCode} · {e.kind} · {e.createdAt.slice(0, 16).replace("T", " ")} UTC
+                    </p>
+                  </div>
+                  {e.acknowledged ? (
+                    <span className="text-xs text-muted-foreground">Acknowledged</span>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={props.busy}
+                      onClick={() => props.onAcknowledge(e.id)}
+                    >
+                      Acknowledge
+                    </Button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

@@ -34,7 +34,7 @@ The weekly schedule is deliberately not created. The repository does not use `pg
 - The check file stubs the Supabase pieces and runs on a throwaway Postgres 16. It was run on a fresh scratch server (port 54351, deleted afterwards): 102 checks, all passed, the proposal applies twice without error, and the rollback removes every table and function it created. It has not been run against a real Supabase project, so `auth.role()`, `scholar_can` and `get_my_school_id` behave here as stubs and must be confirmed on staging.
 - `scholar_can(org, 'settings.manage')` is used as the permission for switching agents on and off and for acknowledging events. The owner may prefer a dedicated permission, which needs a row in the permission catalog.
 - `subscription_status = 'active'` is the only status that may switch an agent on. If other values mean "active" in practice, the owner must say so.
-- The app does not yet call these functions. Wiring the roster button, the event path and the weekly job to them is the next step after the proposal is applied.
+- The app calls these functions from ENGINE-21 ([ADR-099](./ADR-099_ENGINE_ORG_AGENT_WIRING_AND_WEEKLY_JOB.md)), inert until the proposal is applied. The weekly job is built but not scheduled.
 - No agent data path calls the scope guard yet (ADR-093); events raised here are still proposals for people to act on.
 
 ## Verification

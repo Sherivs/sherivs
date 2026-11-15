@@ -127,6 +127,7 @@ import { Route as HomeSSectionRouteImport } from './routes/home/s.$section'
 import { Route as siteInsightsCategorySlugRouteImport } from './routes/(site)/insights.category.$slug'
 import { Route as ApiPublicAuditPasswordResetRouteImport } from './routes/api/public/audit.password-reset'
 import { Route as ApiPublicCronIntegrationsSyncRouteImport } from './routes/api/public/cron/integrations-sync'
+import { Route as ApiPublicCronOrgWeeklyReportsRouteImport } from './routes/api/public/cron/org-weekly-reports'
 import { Route as ApiPublicCronWalletTopupReconcileRouteImport } from './routes/api/public/cron/wallet-topup-reconcile'
 import { Route as ApiPublicCronWhatsappN8nForwardRouteImport } from './routes/api/public/cron/whatsapp-n8n-forward'
 import { Route as ApiPublicWebhooksAfricasTalkingVoiceRouteImport } from './routes/api/public/webhooks/africas-talking-voice'
@@ -738,6 +739,12 @@ const ApiPublicCronIntegrationsSyncRoute =
     path: '/api/public/cron/integrations-sync',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronOrgWeeklyReportsRoute =
+  ApiPublicCronOrgWeeklyReportsRouteImport.update({
+    id: '/api/public/cron/org-weekly-reports',
+    path: '/api/public/cron/org-weekly-reports',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronWalletTopupReconcileRoute =
   ApiPublicCronWalletTopupReconcileRouteImport.update({
     id: '/api/public/cron/wallet-topup-reconcile',
@@ -910,6 +917,7 @@ export interface FileRoutesByFullPath {
   '/insights/category/$slug': typeof siteInsightsCategorySlugRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/cron/integrations-sync': typeof ApiPublicCronIntegrationsSyncRoute
+  '/api/public/cron/org-weekly-reports': typeof ApiPublicCronOrgWeeklyReportsRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
@@ -1025,6 +1033,7 @@ export interface FileRoutesByTo {
   '/insights/category/$slug': typeof siteInsightsCategorySlugRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/cron/integrations-sync': typeof ApiPublicCronIntegrationsSyncRoute
+  '/api/public/cron/org-weekly-reports': typeof ApiPublicCronOrgWeeklyReportsRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
@@ -1155,6 +1164,7 @@ export interface FileRoutesById {
   '/(site)/insights/category/$slug': typeof siteInsightsCategorySlugRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/cron/integrations-sync': typeof ApiPublicCronIntegrationsSyncRoute
+  '/api/public/cron/org-weekly-reports': typeof ApiPublicCronOrgWeeklyReportsRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
@@ -1285,6 +1295,7 @@ export interface FileRouteTypes {
     | '/insights/category/$slug'
     | '/api/public/audit/password-reset'
     | '/api/public/cron/integrations-sync'
+    | '/api/public/cron/org-weekly-reports'
     | '/api/public/cron/wallet-topup-reconcile'
     | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/webhooks/africas-talking-voice'
@@ -1400,6 +1411,7 @@ export interface FileRouteTypes {
     | '/insights/category/$slug'
     | '/api/public/audit/password-reset'
     | '/api/public/cron/integrations-sync'
+    | '/api/public/cron/org-weekly-reports'
     | '/api/public/cron/wallet-topup-reconcile'
     | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/webhooks/africas-talking-voice'
@@ -1529,6 +1541,7 @@ export interface FileRouteTypes {
     | '/(site)/insights/category/$slug'
     | '/api/public/audit/password-reset'
     | '/api/public/cron/integrations-sync'
+    | '/api/public/cron/org-weekly-reports'
     | '/api/public/cron/wallet-topup-reconcile'
     | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/webhooks/africas-talking-voice'
@@ -1565,6 +1578,7 @@ export interface RootRouteChildren {
   ApiPublicWebauthnRoute: typeof ApiPublicWebauthnRoute
   ApiPublicAuditPasswordResetRoute: typeof ApiPublicAuditPasswordResetRoute
   ApiPublicCronIntegrationsSyncRoute: typeof ApiPublicCronIntegrationsSyncRoute
+  ApiPublicCronOrgWeeklyReportsRoute: typeof ApiPublicCronOrgWeeklyReportsRoute
   ApiPublicCronWalletTopupReconcileRoute: typeof ApiPublicCronWalletTopupReconcileRoute
   ApiPublicCronWhatsappN8nForwardRoute: typeof ApiPublicCronWhatsappN8nForwardRoute
   ApiPublicWebhooksAfricasTalkingVoiceRoute: typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
@@ -2403,6 +2417,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronIntegrationsSyncRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/org-weekly-reports': {
+      id: '/api/public/cron/org-weekly-reports'
+      path: '/api/public/cron/org-weekly-reports'
+      fullPath: '/api/public/cron/org-weekly-reports'
+      preLoaderRoute: typeof ApiPublicCronOrgWeeklyReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/wallet-topup-reconcile': {
       id: '/api/public/cron/wallet-topup-reconcile'
       path: '/api/public/cron/wallet-topup-reconcile'
@@ -2830,6 +2851,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicWebauthnRoute: ApiPublicWebauthnRoute,
   ApiPublicAuditPasswordResetRoute: ApiPublicAuditPasswordResetRoute,
   ApiPublicCronIntegrationsSyncRoute: ApiPublicCronIntegrationsSyncRoute,
+  ApiPublicCronOrgWeeklyReportsRoute: ApiPublicCronOrgWeeklyReportsRoute,
   ApiPublicCronWalletTopupReconcileRoute:
     ApiPublicCronWalletTopupReconcileRoute,
   ApiPublicCronWhatsappN8nForwardRoute: ApiPublicCronWhatsappN8nForwardRoute,
