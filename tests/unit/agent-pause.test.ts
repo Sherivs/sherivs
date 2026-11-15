@@ -299,7 +299,7 @@ describe("ENGINE-16 the database proposal matches the policy", () => {
   });
 
   it("is append-only, forced-RLS, definer-safe and reversible", () => {
-    expect(sql.startsWith("-- PROPOSAL ONLY. NOT APPLIED.")).toBe(true);
+    expect(sql.startsWith("-- APPLIED TO PRODUCTION 2026-11-15")).toBe(true);
     expect(sql).toContain("ALTER TABLE public.agent_pause_events FORCE ROW LEVEL SECURITY");
     expect(sql).toContain("ALTER TABLE public.agent_pause_rules FORCE ROW LEVEL SECURITY");
     expect(sql).toContain("BEFORE UPDATE OR DELETE ON public.agent_pause_events");
